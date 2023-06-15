@@ -22,8 +22,8 @@ import {
 } from '@testing-library/react';
 
 import { ExoneratedTestVariantBuilder } from '../model/mocks';
-import ExonerationExplanationSection from './exoneration_explanation_section';
 import { ChromiumCriteria } from '../model/model';
+import ExonerationExplanationSection from './exoneration_explanation_section';
 
 describe('Test ExonerationExplanationSection', () => {
   it('shows statistics related to test flakiness', async () => {

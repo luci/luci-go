@@ -80,7 +80,7 @@ describe('Test createPriorityRecommendation', () => {
         },
       ],
     },
-  ]
+  ];
 
   it('handles empty metric values', () => {
     const r = createPriorityRecommendation({}, metrics, priorities);

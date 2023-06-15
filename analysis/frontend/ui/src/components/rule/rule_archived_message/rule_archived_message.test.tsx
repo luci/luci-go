@@ -31,6 +31,6 @@ describe('Test RuleArchivedMessage component', () => {
 
     await screen.findByText('This Rule is Archived');
 
-    expect(screen.getByText('If you came here', {exact: false})).toBeInTheDocument();
+    expect(screen.getByText('If you came here', { exact: false })).toBeInTheDocument();
   });
 });

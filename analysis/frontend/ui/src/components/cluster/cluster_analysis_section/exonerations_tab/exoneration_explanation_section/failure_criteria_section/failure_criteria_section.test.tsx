@@ -20,8 +20,8 @@ import {
 } from '@testing-library/react';
 
 import { ExoneratedTestVariantBuilder } from '../../model/mocks';
-import FailureCriteriaSection from './failure_criteria_section';
 import { ChromiumCriteria } from '../../model/model';
+import FailureCriteriaSection from './failure_criteria_section';
 
 describe('Test FailureCriteriaSection', () => {
   it('shows statistics related to the criteria', async () => {

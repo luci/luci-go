@@ -3,9 +3,15 @@
 LUCI Analysis is a system designed to understand and reduce the impact of test
 failures.
 
-This app follows the structure described in [Template for GAE Standard app].
+## Prerequisites
 
-## Local Development
+Commands below assume you are running in the infra environment.
+To enter the infra env (via the infra.git checkout), run:
+```
+eval infra/go/env.py
+```
+
+## Local Development flow
 
 To run the server locally, first authorize as the correct GCP project (you should only need to do this once):
 ```
@@ -13,18 +19,19 @@ gcloud config set project luci-analysis-dev
 gcloud auth application-default login
 ```
 
-Authenticate in LUCI and in :
+Authenticate in LUCI and in CIPD:
 
 1. In LUCI Analysis's `frontend` directory run:
-    ```
-    luci-auth login -scopes "https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/userinfo.email"
-    ```
+   ```
+   luci-auth login -scopes "https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/userinfo.email"
+   ```
 2. In the same directory run:
    ```
    cipd auth-login
    ```
 
 Once the GCP project is authorized, in one terminal start esbuild to rebuild the UI code after any changes:
+
 ```
 cd frontend/ui
 npm run watch
@@ -57,35 +64,13 @@ You may also be able to use an arbitrary cloud project (e.g. 'dev') if you
 setup Cloud Datastore emulator and setup a config for that project under
 configs.
 
+## Running UI tests
+
 You can run the UI tests by:
 ```
 cd frontend/ui
 npm run test
 ```
-
-## Deployment
-
-### Developer Testing {#test-deployment}
-
-LUCI Analysis uses `gae.py` for deployment of the GAE instances for developer
-testing (e.g. of local changes).
-
-First, enter the infra env (via the infra.git checkout):
-```
-eval infra/go/env.py
-```
-
-Then use the following commands to deploy:
-```
-cd frontend/ui
-npm run build
-gae.py upload --target-version ${USER} -A luci-analysis-dev
-```
-
-### Dev and Prod Instances
-
-The dev and prod instances are managed via
-[LUCI GAE Automatic Deployment (Googlers-only)](http://go/luci/how_to_deploy.md).
 
 ## Run Spanner integration tests using Cloud Spanner Emulator
 
@@ -117,9 +102,40 @@ Then run go test as usual. For example:
 go test go.chromium.org/luci/analysis/...
 ```
 
-[Template for GAE Standard app]: https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/examples/appengine/helloworld_standard/README.md
+## Run UI linter
 
-## Production release
+To run the UI code linter, run:
+
+```
+cd frontend/ui
+npx eslint ./src/ --fix
+```
+
+## Deployment
+
+### Developer Testing {#test-deployment}
+
+LUCI Analysis uses `gae.py` for deployment of the GAE instances for developer
+testing (e.g. of local changes).
+
+First, enter the infra env (via the infra.git checkout):
+```
+eval infra/go/env.py
+```
+
+Then use the following commands to deploy:
+```
+cd frontend/ui
+npm run build
+gae.py upload --target-version ${USER} -A luci-analysis-dev
+```
+
+### Dev and Prod Instances
+
+The dev and prod instances are managed via
+[LUCI GAE Automatic Deployment (Googlers-only)](http://go/luci/how_to_deploy.md).
+
+#### Make a production release
 
 1. Make sure that you have an `infra_internal` checkout.
 2. Navigate to `data/gae` directory under your base checkout directory, should be `~/infra`.

@@ -74,11 +74,11 @@ describe('Test BugPicker component', () => {
     mockFetchProjectConfig(bareProjectConfig);
 
     renderWithRouterAndClient(
-      <BugPicker
-        bugId="123456"
-        bugSystem="buganizer"
-        handleBugSystemChanged={identityFunction}
-        handleBugIdChanged={identityFunction} />, '/p/chromium', '/p/:project');
+        <BugPicker
+          bugId="123456"
+          bugSystem="buganizer"
+          handleBugSystemChanged={identityFunction}
+          handleBugIdChanged={identityFunction} />, '/p/chromium', '/p/:project');
     await screen.findByText('Bug tracker');
     expect(screen.getByTestId('bug-system')).toHaveValue('buganizer');
     expect(screen.getByTestId('bug-number')).toHaveValue('123456');

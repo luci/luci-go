@@ -71,23 +71,23 @@ export const ChromiumCriteria: ExonerationCriteria = {
   runFlakyVerdicts5wd: 3,
   recentVerdictsWithUnexpectedRuns: 7,
   runFlakyPercentage1wd: 0,
-}
+};
 
 export const ChromeOSCriteria: ExonerationCriteria = {
   runFlakyVerdicts1wd: 3,
   runFlakyVerdicts5wd: 0,
   recentVerdictsWithUnexpectedRuns: 6,
   runFlakyPercentage1wd: 1,
-}
+};
 
 export const isFlakyCriteriaAlmostMet = (criteria: ExonerationCriteria, tv: ExoneratedTestVariant): boolean => {
   if (isFlakyCriteriaMet(criteria, tv)) {
     return false;
   }
-  if(criteria.runFlakyVerdicts5wd > 0 && tv.runFlakyVerdicts5wd >= Math.ceil(criteria.runFlakyVerdicts5wd / 2)) {
+  if (criteria.runFlakyVerdicts5wd > 0 && tv.runFlakyVerdicts5wd >= Math.ceil(criteria.runFlakyVerdicts5wd / 2)) {
     return true;
   }
-  if(criteria.runFlakyVerdicts1wd > 0 && tv.runFlakyVerdicts1wd >= Math.ceil(criteria.runFlakyVerdicts1wd / 2)) {
+  if (criteria.runFlakyVerdicts1wd > 0 && tv.runFlakyVerdicts1wd >= Math.ceil(criteria.runFlakyVerdicts1wd / 2)) {
     return true;
   }
   return false;

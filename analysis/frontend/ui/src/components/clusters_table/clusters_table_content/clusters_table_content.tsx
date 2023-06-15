@@ -63,7 +63,7 @@ const ClustersTableContent = ({
     isLoading: isBasicSummariesLoading,
     isSuccess: isBasicSummariesSuccess,
     data: basicSummaries,
-    error: basicSummariesError
+    error: basicSummariesError,
   } = useFetchClusterSummaries(fetchOptions, 'BASIC');
   const {
     isLoading: isFullSummariesLoading,

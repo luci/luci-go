@@ -79,10 +79,10 @@ export const HistoryChartsSection = () => {
     data,
     error,
   } = useQueryClusterHistory(
-    clusterId.project,
-    `cluster_algorithm="${clusterId.algorithm}" cluster_id="${clusterId.id}"`,
-    days,
-    selectedMetrics.map((m) => m.metricId),
+      clusterId.project,
+      `cluster_algorithm="${clusterId.algorithm}" cluster_id="${clusterId.id}"`,
+      days,
+      selectedMetrics.map((m) => m.metricId),
   );
 
   // Calculate each chart's column size, given that a chart with data for the
@@ -112,7 +112,7 @@ export const HistoryChartsSection = () => {
             <Grid item
               key={m.metricId}
               xs={itemSize}
-              data-testid={"chart-" + m.metricId} >
+              data-testid={'chart-' + m.metricId} >
               <SingleMetricChart
                 height={chartHeight}
                 color={getMetricColor(metrics.indexOf(m))}
@@ -120,12 +120,12 @@ export const HistoryChartsSection = () => {
                 metric={m}
                 data={data.days}
               />
-            </Grid>
+            </Grid>,
           )}
         </Grid> :
         <Typography color="GrayText">Select some metrics to see its history.</Typography>
       }
-      <div style={{ paddingTop: "2rem" }}>
+      <div style={{ paddingTop: '2rem' }}>
         {selectedMetrics.length > 0 && (
           <Typography>This chart shows the history of metrics for this cluster for each day in the selected time period.</Typography>
         )}

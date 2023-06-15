@@ -25,14 +25,14 @@ interface ExplanationChipProps {
 }
 
 export const ExplanationChip = ({ value, threshold, text, testId }: ExplanationChipProps) => {
-    return <Chip
-        variant='outlined'
-        color={value >= threshold ? 'success' : 'default'}
-        icon={value >= threshold ? (<DoneIcon />) : (<CloseIcon />)}
-        label={
-            <>{text} <strong data-testid={testId}>(current value: {value})</strong> &gt;= {threshold}</>
-        }
-    />
-}
+  return <Chip
+    variant='outlined'
+    color={value >= threshold ? 'success' : 'default'}
+    icon={value >= threshold ? (<DoneIcon />) : (<CloseIcon />)}
+    label={
+      <>{text} <strong data-testid={testId}>(current value: {value})</strong> &gt;= {threshold}</>
+    }
+  />;
+};
 
 export default ExplanationChip;

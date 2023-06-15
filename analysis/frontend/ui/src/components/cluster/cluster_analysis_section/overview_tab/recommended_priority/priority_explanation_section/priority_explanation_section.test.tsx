@@ -19,8 +19,8 @@ import {
   screen,
 } from '@testing-library/react';
 
-import { PriorityExplanationSection } from './priority_explanation_section';
 import { PriorityRecommendation } from '../priority_recommendation';
+import { PriorityExplanationSection } from './priority_explanation_section';
 
 describe('Test PriorityExplanationSection component', () => {
   it('renders the justification for a bug priority recommendation', async () => {
@@ -89,7 +89,7 @@ describe('Test PriorityExplanationSection component', () => {
     };
 
     render(
-      <PriorityExplanationSection recommendation={recommendation} />
+        <PriorityExplanationSection recommendation={recommendation} />,
     );
 
     await screen.findAllByTestId('priority-explanation-section');
@@ -107,12 +107,12 @@ describe('Test PriorityExplanationSection component', () => {
     // Check the "Satisfied?" column.
     const verdicts = screen.getAllByTestId('priority-explanation-table-row-verdict');
     expect(verdicts.length).toBe(3);
-    const veridictValues = verdicts.map(verdictElement => verdictElement.textContent);
+    const veridictValues = verdicts.map((verdictElement) => verdictElement.textContent);
     expect(veridictValues).toEqual(['No', 'Yes', 'Yes']);
 
     expect(screen.queryByText(
-      "no priority's criteria was satisfied",
-      { exact: false },
+        'no priority\'s criteria was satisfied',
+        { exact: false },
     )).not.toBeInTheDocument();
 
     // Check there's a link to update the project config.
@@ -174,7 +174,7 @@ describe('Test PriorityExplanationSection component', () => {
     };
 
     render(
-      <PriorityExplanationSection recommendation={recommendation} />
+        <PriorityExplanationSection recommendation={recommendation} />,
     );
 
     await screen.findAllByTestId('priority-explanation-section');
@@ -191,12 +191,12 @@ describe('Test PriorityExplanationSection component', () => {
     // Check the "Satisfied?" column.
     const verdicts = screen.getAllByTestId('priority-explanation-table-row-verdict');
     expect(verdicts.length).toBe(3);
-    const veridictValues = verdicts.map(verdictElement => verdictElement.textContent);
+    const veridictValues = verdicts.map((verdictElement) => verdictElement.textContent);
     expect(veridictValues).toEqual(['No', 'No', 'No']);
 
     expect(screen.getByText(
-      "no priority's criteria was satisfied",
-      { exact: false },
+        'no priority\'s criteria was satisfied',
+        { exact: false },
     )).toBeInTheDocument();
 
     // Check there's a link to update the project config.
@@ -211,7 +211,7 @@ describe('Test PriorityExplanationSection component', () => {
     };
 
     render(
-      <PriorityExplanationSection recommendation={recommendation} />
+        <PriorityExplanationSection recommendation={recommendation} />,
     );
 
     await screen.findAllByTestId('priority-explanation-section');
@@ -225,13 +225,13 @@ describe('Test PriorityExplanationSection component', () => {
     expect(screen.queryByTestId('priority-explanation-table')).not.toBeInTheDocument();
 
     expect(screen.queryByText(
-      "no priority's criteria was satisfied",
-      { exact: false },
+        'no priority\'s criteria was satisfied',
+        { exact: false },
     )).not.toBeInTheDocument();
 
     expect(screen.getByText(
-      'project configuration does not have priority thresholds specified',
-      { exact: false },
+        'project configuration does not have priority thresholds specified',
+        { exact: false },
     )).toBeInTheDocument();
 
     // Check there's a link to update the project config.

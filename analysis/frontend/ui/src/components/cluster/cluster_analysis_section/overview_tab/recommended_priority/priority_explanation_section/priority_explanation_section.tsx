@@ -45,7 +45,7 @@ const NoPriorityCriteriaAlert = () => {
       </Alert>
     </Box>
   );
-}
+};
 
 const PriorityRecommendationDescription = () => {
   return <>
@@ -90,14 +90,14 @@ const PriorityRecommendationDescription = () => {
         underline="always">go/luci-analysis-bug-management</Link> for more information.
     </Typography>
   </>;
-}
+};
 
 interface PriorityRowProps {
   priorityResult: PriorityCriteriaResult;
 }
 
 const PriorityRow = ({ priorityResult }: PriorityRowProps) => {
-  let elements = [];
+  const elements = [];
 
   // Construct the list of elements for each metric criterium, inserting an
   // element to display "OR" between criteria.
@@ -110,12 +110,12 @@ const PriorityRow = ({ priorityResult }: PriorityRowProps) => {
         <Chip
           variant="outlined"
           icon={criterium.satisfied ? (<DoneIcon />) : (<CloseIcon />)}
-          color={criterium.satisfied ? "success" : "default"}
+          color={criterium.satisfied ? 'success' : 'default'}
           label={constructCriteriumLabel(criterium)} />
         {(i < priorityResult.criteria.length - 1) &&
           <Typography
             component="span"
-            sx={{ paddingLeft: "0.5rem" }} >
+            sx={{ paddingLeft: '0.5rem' }} >
             OR
           </Typography>
         }
@@ -135,18 +135,18 @@ const PriorityRow = ({ priorityResult }: PriorityRowProps) => {
       <TableCell data-testid="priority-explanation-table-row-verdict">
         {priorityResult.satisfied ?
           <Typography display="flex">
-            <DoneIcon color="success" sx={{ marginRight: "0.5rem" }} />
+            <DoneIcon color="success" sx={{ marginRight: '0.5rem' }} />
             Yes
           </Typography> :
           <Typography display="flex">
-            <CloseIcon color="error" sx={{ marginRight: "0.5rem" }} />
+            <CloseIcon color="error" sx={{ marginRight: '0.5rem' }} />
             No
           </Typography>
         }
       </TableCell>
     </TableRow>
-  )
-}
+  );
+};
 
 interface Props {
   recommendation: PriorityRecommendation;
@@ -169,7 +169,7 @@ const PriorityJustification = ({ recommendation }: Props) => {
           {recommendation.justification.map((result) =>
             <PriorityRow
               key={result.priority}
-              priorityResult={result}></PriorityRow>
+              priorityResult={result}></PriorityRow>,
           )}
         </TableBody>
       </Table>
@@ -182,7 +182,7 @@ const PriorityJustification = ({ recommendation }: Props) => {
       )}
     </>
   );
-}
+};
 
 export const PriorityExplanationSection = ({ recommendation }: Props) => {
   return (
@@ -196,4 +196,4 @@ export const PriorityExplanationSection = ({ recommendation }: Props) => {
       </Box>
     </main>
   );
-}
+};

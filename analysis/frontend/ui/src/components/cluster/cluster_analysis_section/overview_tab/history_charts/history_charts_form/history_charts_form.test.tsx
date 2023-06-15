@@ -34,9 +34,9 @@ describe('Test HistoryChartsForm component', () => {
 
   it('annotations can be toggled', async () => {
     renderWithRouter(
-      <OverviewTabContextProvider >
-        <HistoryChartsForm />
-      </OverviewTabContextProvider>
+        <OverviewTabContextProvider >
+          <HistoryChartsForm />
+        </OverviewTabContextProvider>,
     );
 
     await screen.findAllByText('Annotate values');
@@ -53,9 +53,9 @@ describe('Test HistoryChartsForm component', () => {
 
   it('should display all time range options', async () => {
     renderWithRouter(
-      <OverviewTabContextProvider metrics={[]} >
-        <HistoryChartsForm />
-      </OverviewTabContextProvider>
+        <OverviewTabContextProvider metrics={[]} >
+          <HistoryChartsForm />
+        </OverviewTabContextProvider>,
     );
 
     await screen.findAllByText('Time Range');
@@ -72,44 +72,44 @@ describe('Test HistoryChartsForm component', () => {
   it('given a history time range in the URL, the time range selection should match', async () => {
     const lastOption = HISTORY_TIME_RANGE_OPTIONS[HISTORY_TIME_RANGE_OPTIONS.length - 1];
     renderWithRouter(
-      <OverviewTabContextProvider metrics={[]} >
-        <HistoryChartsForm />
-      </OverviewTabContextProvider>,
-      `/?historyTimeRange=${lastOption.id}`,
+        <OverviewTabContextProvider metrics={[]} >
+          <HistoryChartsForm />
+        </OverviewTabContextProvider>,
+        `/?historyTimeRange=${lastOption.id}`,
     );
 
     await screen.findAllByText('Time Range');
     expect(
-      screen.getByTestId('history-charts-form-time-range-selection')
+        screen.getByTestId('history-charts-form-time-range-selection'),
     ).toHaveValue(lastOption.id);
   });
 
   it('should have no time range when given an unrecognized time range ID', async () => {
     renderWithRouter(
-      <OverviewTabContextProvider metrics={[]} >
-        <HistoryChartsForm />
-      </OverviewTabContextProvider>,
-      `/?historyTimeRange=9d`,
+        <OverviewTabContextProvider metrics={[]} >
+          <HistoryChartsForm />
+        </OverviewTabContextProvider>,
+        '/?historyTimeRange=9d',
     );
 
     await screen.findAllByText('Time Range');
     expect(
-      screen.getByTestId('history-charts-form-time-range-selection')
+        screen.getByTestId('history-charts-form-time-range-selection'),
     ).toHaveValue('');
   });
 
   it('should display all metrics options', async () => {
     renderWithRouter(
-      <OverviewTabContextProvider metrics={metrics} >
-        <HistoryChartsForm />
-      </OverviewTabContextProvider>
+        <OverviewTabContextProvider metrics={metrics} >
+          <HistoryChartsForm />
+        </OverviewTabContextProvider>,
     );
 
     await screen.findAllByText('Metrics');
 
     // Check all metrics are available options.
     await fireEvent.mouseDown(screen.getByRole('button', {
-      name: 'Metrics'
+      name: 'Metrics',
     }));
     metrics.forEach((metric) => {
       expect(screen.getByText(metric.humanReadableName)).toBeInTheDocument();
@@ -119,30 +119,30 @@ describe('Test HistoryChartsForm component', () => {
   it('given selected metrics in the URL, the selected metrics should match', async () => {
     const selectedMetrics = [metrics[0].metricId, metrics[1].metricId];
     renderWithRouter(
-      <OverviewTabContextProvider metrics={metrics} >
-        <HistoryChartsForm />
-      </OverviewTabContextProvider>,
-      `/?selectedMetrics=${selectedMetrics.join(',')}`,
+        <OverviewTabContextProvider metrics={metrics} >
+          <HistoryChartsForm />
+        </OverviewTabContextProvider>,
+        `/?selectedMetrics=${selectedMetrics.join(',')}`,
     );
 
     await screen.findAllByText('Metrics');
     expect(
-      screen.getByTestId('history-charts-form-metrics-selection')
+        screen.getByTestId('history-charts-form-metrics-selection'),
     ).toHaveValue(selectedMetrics.join(','));
   });
 
   it('should have only known metrics when given an unrecognized metric ID', async () => {
     const selectedMetrics = [metrics[0].metricId, metrics[1].metricId];
     renderWithRouter(
-      <OverviewTabContextProvider metrics={metrics} >
-        <HistoryChartsForm />
-      </OverviewTabContextProvider>,
-      `/?selectedMetrics=testMetric,${selectedMetrics.join(',')}`,
+        <OverviewTabContextProvider metrics={metrics} >
+          <HistoryChartsForm />
+        </OverviewTabContextProvider>,
+        `/?selectedMetrics=testMetric,${selectedMetrics.join(',')}`,
     );
 
     await screen.findAllByText('Metrics');
     expect(
-      screen.getByTestId('history-charts-form-metrics-selection')
+        screen.getByTestId('history-charts-form-metrics-selection'),
     ).toHaveValue(selectedMetrics.join(','));
   });
 });

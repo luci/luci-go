@@ -27,4 +27,4 @@ const metricColors = [
 
 export const getMetricColor = (metricIndex: number) => {
   return metricColors[metricIndex % metricColors.length];
-}
+};

@@ -78,7 +78,7 @@ const FailuresTable = ({
   const [failureFilter, setFailureFilter] = useState<FailureFilter>(defaultFailureFilter);
   const [impactFilter, setImpactFilter] = useState<ImpactFilter>(defaultImpactFilter);
   // TODO: This should be read from the URL instead.
-  const [selectedVariantGroups, setSelectedVariantGroups] = useSelectedVariantGroupsParam(variantGroups.map(g => g.key));
+  const [selectedVariantGroups, setSelectedVariantGroups] = useSelectedVariantGroupsParam(variantGroups.map((g) => g.key));
 
   const [sortMetric, setCurrentSortMetric] = useState<MetricName>('latestFailureTime');
   const [isAscending, setIsAscending] = useState(false);

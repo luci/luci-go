@@ -53,14 +53,14 @@ function meetsThreshold(actual: string, threshold: string): boolean {
 }
 
 export function createPriorityRecommendation(
-  metricValues: ClusterMetrics,
-  metrics: Metric[],
-  priorities: PriorityThreshold[]): PriorityRecommendation {
-  let processedPriorities: PriorityCriteriaResult[] = [];
+    metricValues: ClusterMetrics,
+    metrics: Metric[],
+    priorities: PriorityThreshold[]): PriorityRecommendation {
+  const processedPriorities: PriorityCriteriaResult[] = [];
 
   // Process the priority thresholds from lowest priority to highest.
   for (let i = priorities.length - 1; i >= 0; i--) {
-    let criteria: Criterium[] = [];
+    const criteria: Criterium[] = [];
 
     const priorityThresholds = priorities[i].thresholds || [];
     priorityThresholds.forEach((impactMetricThreshold) => {
@@ -69,7 +69,7 @@ export function createPriorityRecommendation(
       const metricThreshold: MetricThreshold = impactMetricThreshold.threshold || {};
 
       // Preferably use the human readable name from the metric definition.
-      const metric = metrics.find(m => m.metricId === metricId);
+      const metric = metrics.find((m) => m.metricId === metricId);
       const metricName = metric?.humanReadableName || metricId;
 
       if (metricThreshold.oneDay !== undefined) {
@@ -106,7 +106,7 @@ export function createPriorityRecommendation(
 
     // The priority criteria may be satisfied if at least one criterium has
     // been satisfied.
-    let satisfied = criteria.map(c => c.satisfied).includes(true);
+    let satisfied = criteria.map((c) => c.satisfied).includes(true);
 
     // Lower priorities' criteria must be satisfied as part of satisfying higher
     // priorities' criteria.
@@ -118,14 +118,14 @@ export function createPriorityRecommendation(
       priority: priorities[i].priority,
       criteria: criteria,
       satisfied: satisfied,
-    })
+    });
   }
 
   // Reverse the priorities so that higher priorities are first.
   processedPriorities.reverse();
 
   return {
-    recommendation: processedPriorities.find(p => p.satisfied),
+    recommendation: processedPriorities.find((p) => p.satisfied),
     justification: processedPriorities,
   };
 }

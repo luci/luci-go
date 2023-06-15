@@ -49,7 +49,7 @@ describe('test RecommendedPrioritySection component', () => {
 
   const metrics = getMockMetricsList();
   const project = 'chrome';
-  const algorithm = 'rules'
+  const algorithm = 'rules';
   const id = '123456';
   const mockCluster = getMockCluster(id, project, algorithm);
 
@@ -60,14 +60,14 @@ describe('test RecommendedPrioritySection component', () => {
     mockFetchProjectConfig(mockConfig);
 
     renderWithRouterAndClient(
-      <ClusterContextProvider
-        project={project}
-        clusterAlgorithm={algorithm}
-        clusterId={id} >
-        <OverviewTabContextProvider metrics={metrics} >
-          <RecommendedPrioritySection />
-        </OverviewTabContextProvider>
-      </ClusterContextProvider>
+        <ClusterContextProvider
+          project={project}
+          clusterAlgorithm={algorithm}
+          clusterId={id} >
+          <OverviewTabContextProvider metrics={metrics} >
+            <RecommendedPrioritySection />
+          </OverviewTabContextProvider>
+        </ClusterContextProvider>,
     );
 
     await screen.findAllByTestId('recommended-priority-summary');
@@ -84,14 +84,14 @@ describe('test RecommendedPrioritySection component', () => {
     mockFetchProjectConfig(mockConfig);
 
     renderWithRouterAndClient(
-      <ClusterContextProvider
-        project={project}
-        clusterAlgorithm={algorithm}
-        clusterId={id} >
-        <OverviewTabContextProvider metrics={metrics} >
-          <RecommendedPrioritySection />
-        </OverviewTabContextProvider>
-      </ClusterContextProvider>
+        <ClusterContextProvider
+          project={project}
+          clusterAlgorithm={algorithm}
+          clusterId={id} >
+          <OverviewTabContextProvider metrics={metrics} >
+            <RecommendedPrioritySection />
+          </OverviewTabContextProvider>
+        </ClusterContextProvider>,
     );
 
     await screen.findAllByTestId('recommended-priority-summary');
@@ -106,14 +106,14 @@ describe('test RecommendedPrioritySection component', () => {
     mockFetchProjectConfig(mockConfig);
 
     renderWithRouterAndClient(
-      <ClusterContextProvider
-        project={project}
-        clusterAlgorithm={algorithm}
-        clusterId={id} >
-        <OverviewTabContextProvider metrics={metrics} >
-          <RecommendedPrioritySection />
-        </OverviewTabContextProvider>
-      </ClusterContextProvider>
+        <ClusterContextProvider
+          project={project}
+          clusterAlgorithm={algorithm}
+          clusterId={id} >
+          <OverviewTabContextProvider metrics={metrics} >
+            <RecommendedPrioritySection />
+          </OverviewTabContextProvider>
+        </ClusterContextProvider>,
     );
 
     await screen.findAllByTestId('recommended-priority-summary');
@@ -131,12 +131,12 @@ describe('test RecommendedPrioritySection component', () => {
     mockFetchProjectConfig(mockConfig);
 
     renderWithRouterAndClient(
-      <ClusterContextProvider
-        project={project}
-        clusterAlgorithm={algorithm}
-        clusterId={id} >
-        <RecommendedPrioritySection />
-      </ClusterContextProvider>
+        <ClusterContextProvider
+          project={project}
+          clusterAlgorithm={algorithm}
+          clusterId={id} >
+          <RecommendedPrioritySection />
+        </ClusterContextProvider>,
     );
 
     await screen.findAllByTestId('recommended-priority-summary');

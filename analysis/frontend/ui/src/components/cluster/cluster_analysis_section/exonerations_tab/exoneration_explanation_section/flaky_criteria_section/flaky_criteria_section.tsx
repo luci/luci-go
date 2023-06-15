@@ -69,7 +69,7 @@ const FlakyCriteriaSection = ({
       </Typography>
       <Typography component='div' paragraph>
         {chips.map((chip, i) => {
-          return <Fragment key={i}>{i > 0 ? <>&nbsp;AND&nbsp;</> : null}{chip}</Fragment>
+          return <Fragment key={i}>{i > 0 ? <>&nbsp;AND&nbsp;</> : null}{chip}</Fragment>;
         })}
         &nbsp;.
       </Typography>

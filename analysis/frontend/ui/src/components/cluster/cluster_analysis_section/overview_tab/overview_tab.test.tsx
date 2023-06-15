@@ -62,7 +62,7 @@ describe('Test OverviewTab component', () => {
 
   it('given a project and cluster ID, should recommend priority and show cluster history for that cluster', async () => {
     const project = 'chrome';
-    const algorithm = 'rules'
+    const algorithm = 'rules';
     const id = '123456';
     const mockCluster = getMockCluster(id, project, algorithm);
 
@@ -77,18 +77,18 @@ describe('Test OverviewTab component', () => {
           'human-cls-failed-presubmit': 10,
           'critical-failures-exonerated': 20,
           'test-runs-failed': 100,
-        }
-      }]
+        },
+      }],
     };
     mockQueryHistory(history);
 
     renderTabWithRouterAndClient(
-      <ClusterContextProvider
-        project={project}
-        clusterAlgorithm={algorithm}
-        clusterId={id}>
-        <OverviewTab value='test' />
-      </ClusterContextProvider>,
+        <ClusterContextProvider
+          project={project}
+          clusterAlgorithm={algorithm}
+          clusterId={id}>
+          <OverviewTab value='test' />
+        </ClusterContextProvider>,
     );
 
     await waitFor(() => {

@@ -23,8 +23,8 @@ import {
 
 import { ExoneratedTestVariantBuilder } from '../model/mocks';
 
-import ExonerationsTableRow from './exonerations_table_row';
 import { ChromiumCriteria } from '../model/model';
+import ExonerationsTableRow from './exonerations_table_row';
 
 describe('Test ExonerationsTableRows component', () => {
   it('displays test variant statistics', async () => {

@@ -1,9 +1,9 @@
-import { ParamKeyValuePair, useSearchParams } from "react-router-dom";
+import { ParamKeyValuePair, useSearchParams } from 'react-router-dom';
 
 export function useSelectedVariantGroupsParam(validVariantGroups: string[]): [string[], (selectedVariantGroups: string[], replace?: boolean) => void] {
   const [searchParams, setSearchParams] = useSearchParams();
   const groupByParam = searchParams.get('groupby') || '';
-  let selectedVariantGroups: string[] = [];
+  const selectedVariantGroups: string[] = [];
   if (groupByParam) {
     const groups = groupByParam.split(',');
     for (let i = 0; i < groups.length; i++) {

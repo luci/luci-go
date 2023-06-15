@@ -102,14 +102,14 @@ export const HistoryChartsForm = () => {
 
   const renderMetricsValue = (selected: string[]): string => {
     return metrics.filter((m) => selected.indexOf(m.metricId) >= 0)
-      .map((m) => m.humanReadableName).join(', ');
+        .map((m) => m.humanReadableName).join(', ');
   };
 
   return (
     <Box sx={{
-      display: "flex",
-      alignItems: "baseline",
-      gap: "1rem"
+      display: 'flex',
+      alignItems: 'baseline',
+      gap: '1rem',
     }} >
       <PanelHeading>History</PanelHeading>
       <Typography color="GrayText">All dates and times are in UTC.</Typography>
@@ -120,7 +120,7 @@ export const HistoryChartsForm = () => {
             checked={isAnnotated || false}
             onChange={handleAnnotationsChange}
             inputProps={{
-              "aria-label": "toggle annotations"
+              'aria-label': 'toggle annotations',
             }} />
         }
         label="Annotate values"
@@ -130,13 +130,13 @@ export const HistoryChartsForm = () => {
         <InputLabel id="time-range-label">Time Range</InputLabel>
         <Select
           labelId="time-range-label"
-          value={selectedHistoryTimeRange?.id || ""}
+          value={selectedHistoryTimeRange?.id || ''}
           onChange={handleHistoryTimeRangeChanged}
           input={<OutlinedInput label="Time Range" />}
           MenuProps={MenuProps}
           inputProps={{
-            "aria-label": "select time range",
-            "data-testid": "history-charts-form-time-range-selection"
+            'aria-label': 'select time range',
+            'data-testid': 'history-charts-form-time-range-selection',
           }}
         >
           {HISTORY_TIME_RANGE_OPTIONS.map((option) =>
@@ -144,7 +144,7 @@ export const HistoryChartsForm = () => {
               key={option.id}
               value={option.id} >
               {option.label}
-            </MenuItem>
+            </MenuItem>,
           )}
         </Select>
       </FormControl>
@@ -159,8 +159,8 @@ export const HistoryChartsForm = () => {
           renderValue={renderMetricsValue}
           MenuProps={MenuProps}
           inputProps={{
-            "aria-label": "select metrics",
-            "data-testid": "history-charts-form-metrics-selection"
+            'aria-label': 'select metrics',
+            'data-testid': 'history-charts-form-metrics-selection',
           }}
         >
           {metrics.map((metric) =>
@@ -169,7 +169,7 @@ export const HistoryChartsForm = () => {
               value={metric.metricId}>
               <Checkbox checked={selectedMetrics.indexOf(metric) > -1} />
               <ListItemText primary={metric.humanReadableName} />
-            </MenuItem>
+            </MenuItem>,
           )}
         </Select>
       </FormControl>

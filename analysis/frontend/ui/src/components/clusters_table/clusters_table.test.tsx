@@ -104,7 +104,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-      <ClustersTable project="testproject" />,
+        <ClustersTable project="testproject" />,
     );
     await screen.findByTestId('clusters_table_body');
     expect(screen.getByText('Metric Alpha')).toBeInTheDocument();
@@ -132,7 +132,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-      <ClustersTable project="testproject" />,
+        <ClustersTable project="testproject" />,
     );
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -156,7 +156,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-      <ClustersTable project="testproject" />,
+        <ClustersTable project="testproject" />,
     );
 
     await screen.findByTestId('clusters_table_body');
@@ -185,7 +185,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-      <ClustersTable project="testproject" />,
+        <ClustersTable project="testproject" />,
     );
 
     await screen.findByTestId('clusters_table_body');
@@ -238,7 +238,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-      <ClustersTable project="testproject" />,
+        <ClustersTable project="testproject" />,
     );
 
     await screen.findByTestId('clusters_table_body');
@@ -289,7 +289,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-      <ClustersTable project="testproject" />,
+        <ClustersTable project="testproject" />,
     );
 
     await screen.findByTestId('clusters_table_head');
@@ -316,7 +316,7 @@ describe('Test ClustersTable component', () => {
     await waitFor(() => {
       expect(screen.getByTestId('clusters_table_head')).toBeInTheDocument();
       expect(within(screen.getByTestId('clusters_table_head')).queryByText('User Cls Failed Presubmit'))
-        .not.toBeInTheDocument();
+          .not.toBeInTheDocument();
     });
   });
 
@@ -358,7 +358,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-      <ClustersTable project="testproject" />,
+        <ClustersTable project="testproject" />,
     );
     await screen.findByTestId('clusters_table_body');
     expect(screen.getByText('Metric Alpha')).toBeInTheDocument();
@@ -423,7 +423,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-      <ClustersTable project="testproject" />,
+        <ClustersTable project="testproject" />,
     );
 
     await screen.findByTestId('clusters_table_body');
@@ -454,7 +454,7 @@ describe('Test ClustersTable component', () => {
       getMockRuleBasicClusterSummary('10000000000000001000000000000000'),
     ];
     const basicSummariesResponse: QueryClusterSummariesResponse = {
-      clusterSummaries: mockBasicClusterSummaries
+      clusterSummaries: mockBasicClusterSummaries,
     };
     const fullSummariesRequest: QueryClusterSummariesRequest = {
       project: 'testproject',

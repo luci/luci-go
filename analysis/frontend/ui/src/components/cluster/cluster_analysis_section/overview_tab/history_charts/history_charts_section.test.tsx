@@ -64,17 +64,17 @@ describe('test HistoryChartsSection component', () => {
           'human-cls-failed-presubmit': 10,
           'critical-failures-exonerated': 20,
           'test-runs-failed': 100,
-        }
-      }]
+        },
+      }],
     };
     mockQueryHistory(history);
 
     renderWithRouterAndClient(
-      <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='123456'>
-        <OverviewTabContextProvider metrics={metrics} >
-          <HistoryChartsSection />
-        </OverviewTabContextProvider>
-      </ClusterContextProvider>,
+        <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='123456'>
+          <OverviewTabContextProvider metrics={metrics} >
+            <HistoryChartsSection />
+          </OverviewTabContextProvider>
+        </ClusterContextProvider>,
     );
 
     await screen.findAllByTestId('history-charts-container');
@@ -97,17 +97,17 @@ describe('test HistoryChartsSection component', () => {
           'human-cls-failed-presubmit': 10,
           'critical-failures-exonerated': 20,
           'test-runs-failed': 100,
-        }
-      }]
+        },
+      }],
     };
     mockQueryHistory(history);
 
     renderWithRouterAndClient(
-      <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='123456'>
-        <OverviewTabContextProvider metrics={metrics} >
-          <HistoryChartsSection />
-        </OverviewTabContextProvider>
-      </ClusterContextProvider>,
+        <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='123456'>
+          <OverviewTabContextProvider metrics={metrics} >
+            <HistoryChartsSection />
+          </OverviewTabContextProvider>
+        </ClusterContextProvider>,
     );
 
     await screen.findAllByTestId('history-charts-container');
@@ -121,8 +121,8 @@ describe('test HistoryChartsSection component', () => {
         metrics: {
           'critical-failures-exonerated': 20,
           'test-runs-failed': 100,
-        }
-      }]
+        },
+      }],
     };
     mockQueryHistory(updatedHistory);
 

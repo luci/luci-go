@@ -25,7 +25,7 @@ import {
 import { prpcRetrier } from '@/services/shared_models';
 
 export const useFetchProjectConfig = (
-  project: string,
+    project: string,
 ): UseQueryResult<ProjectConfig, Error> => {
   const projectsService = getProjectsService();
   return useQuery(['projectconfig', project], async () => {

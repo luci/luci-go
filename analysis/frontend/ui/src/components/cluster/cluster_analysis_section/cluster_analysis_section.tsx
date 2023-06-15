@@ -34,7 +34,6 @@ import ExonerationsTab from '@/components/cluster/cluster_analysis_section/exone
 import { ClusterContext } from '../cluster_context';
 
 
-
 const ClusterAnalysisSection = () => {
   const {
     project,
@@ -43,15 +42,15 @@ const ClusterAnalysisSection = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const handleTabChange = (newValue: string) => {
-    setSearchParams(params => {
+    setSearchParams((params) => {
       params.set('tab', newValue);
       return params;
-    }, {replace: true});
+    }, { replace: true });
   };
 
   const exonerationsAvailable = project == 'chromium' || project == 'chrome' || project == 'chromeos';
 
-  const validValues = ['overview', 'recent-failures']
+  const validValues = ['overview', 'recent-failures'];
   if (exonerationsAvailable) {
     validValues.push('exonerations');
   }
@@ -62,7 +61,7 @@ const ClusterAnalysisSection = () => {
     // Cut off the leading '#'.
     hashValue = hashValue.slice(1);
   }
-  if(validValues.indexOf(hashValue) != -1) {
+  if (validValues.indexOf(hashValue) != -1) {
     handleTabChange(hashValue);
   }
 

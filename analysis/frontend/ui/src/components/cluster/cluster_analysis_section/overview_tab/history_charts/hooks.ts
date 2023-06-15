@@ -27,24 +27,24 @@ export interface HistoryTimeRange {
 
 export function useAnnotatedParam(): [boolean | undefined, (isAnnotated: boolean, replace?: boolean) => void] {
   const [searchParams, setSearchParams] = useSearchParams();
-  let annotatedParam = searchParams.get("annotated") || "";
+  let annotatedParam = searchParams.get('annotated') || '';
   annotatedParam = annotatedParam.toLowerCase();
   let annotated: boolean | undefined = undefined;
-  if (annotatedParam === "true") {
+  if (annotatedParam === 'true') {
     annotated = true;
-  } else if (annotatedParam === "false") {
+  } else if (annotatedParam === 'false') {
     annotated = false;
   }
 
   function updateAnnotatedParam(newAnnotated: boolean, replace = false) {
     const params: ParamKeyValuePair[] = [];
     for (const [k, v] of searchParams.entries()) {
-      if (k !== "annotated") {
+      if (k !== 'annotated') {
         params.push([k, v]);
       }
     }
 
-    params.push(["annotated", newAnnotated ? "true" : "false"]);
+    params.push(['annotated', newAnnotated ? 'true' : 'false']);
     setSearchParams(params, {
       replace,
     });
@@ -55,7 +55,7 @@ export function useAnnotatedParam(): [boolean | undefined, (isAnnotated: boolean
 
 export function useHistoryTimeRangeParam(options: HistoryTimeRange[]): [HistoryTimeRange | undefined, (selectedHistoryTimeRange: HistoryTimeRange, replace?: boolean) => void] {
   const [searchParams, setSearchParams] = useSearchParams();
-  const timeRangeParam = searchParams.get("historyTimeRange") || "";
+  const timeRangeParam = searchParams.get('historyTimeRange') || '';
   let timeRange: HistoryTimeRange | undefined = undefined;
   if (timeRangeParam) {
     timeRange = options.find((option) => option.id === timeRangeParam);
@@ -64,12 +64,12 @@ export function useHistoryTimeRangeParam(options: HistoryTimeRange[]): [HistoryT
   function updateHistoryTimeRangeParam(selectedHistoryTimeRange: HistoryTimeRange, replace = false) {
     const params: ParamKeyValuePair[] = [];
     for (const [k, v] of searchParams.entries()) {
-      if (k !== "historyTimeRange") {
+      if (k !== 'historyTimeRange') {
         params.push([k, v]);
       }
     }
 
-    params.push(["historyTimeRange", selectedHistoryTimeRange.id]);
+    params.push(['historyTimeRange', selectedHistoryTimeRange.id]);
     setSearchParams(params, {
       replace,
     });
@@ -80,8 +80,8 @@ export function useHistoryTimeRangeParam(options: HistoryTimeRange[]): [HistoryT
 
 export function useSelectedMetricsParam(metrics: Metric[]): [Metric[], (selectedMetrics: Metric[], replace?: boolean) => void] {
   const [searchParams, setSearchParams] = useSearchParams();
-  const selectedMetricsParam = searchParams.get("selectedMetrics") || "";
-  const selectedMetricsIds = selectedMetricsParam.split(",");
+  const selectedMetricsParam = searchParams.get('selectedMetrics') || '';
+  const selectedMetricsIds = selectedMetricsParam.split(',');
 
   const selectedMetrics = metrics.filter((metric) => selectedMetricsIds.indexOf(metric.metricId) > -1);
 
@@ -89,13 +89,13 @@ export function useSelectedMetricsParam(metrics: Metric[]): [Metric[], (selected
   function updateSelectedMetricsParam(selectedMetrics: Metric[], replace = false) {
     const params: ParamKeyValuePair[] = [];
     for (const [k, v] of searchParams.entries()) {
-      if (k !== "selectedMetrics") {
+      if (k !== 'selectedMetrics') {
         params.push([k, v]);
       }
     }
 
-    const selectedMetricsIds = selectedMetrics.map((metric) => metric.metricId).join(",");
-    params.push(["selectedMetrics", selectedMetricsIds]);
+    const selectedMetricsIds = selectedMetrics.map((metric) => metric.metricId).join(',');
+    params.push(['selectedMetrics', selectedMetricsIds]);
 
     setSearchParams(params, {
       replace,

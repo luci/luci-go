@@ -16,17 +16,17 @@ import { AuthorizedPrpcClient } from '@/clients/authorized_client';
 
 // An enum that represents the bug filing system that the project uses.
 export type BugSystem =
-  | "BUG_SYSTEM_UNSPECIFIED"
-  | "MONORAIL"
-  | "BUGANIZER";
+  | 'BUG_SYSTEM_UNSPECIFIED'
+  | 'MONORAIL'
+  | 'BUGANIZER';
 
 export type BuganizerPriority =
-  | "BUGANIZER_PRIORITY_UNSPECIFIED"
-  | "P0"
-  | "P1"
-  | "P2"
-  | "P3"
-  | "P4";
+  | 'BUGANIZER_PRIORITY_UNSPECIFIED'
+  | 'P0'
+  | 'P1'
+  | 'P2'
+  | 'P3'
+  | 'P4';
 
 export const getProjectsService = () => {
   const client = new AuthorizedPrpcClient();

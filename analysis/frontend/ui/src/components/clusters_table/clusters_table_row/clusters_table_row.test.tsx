@@ -32,18 +32,18 @@ describe('Test ClustersTableRow component', () => {
     const metrics = getMockMetricsList();
     const mockCluster = getMockRuleBasicClusterSummary('abcdef1234567890abcdef1234567890');
     renderWithRouterAndClient(
-      <ClusterTableContextWrapper metrics={metrics}>
-        <table>
-          <tbody>
-            <ClustersTableRow
-              project='testproject'
-              cluster={mockCluster}
-            />
-          </tbody>
-        </table>
-      </ClusterTableContextWrapper>,
-      '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
-      '/',
+        <ClusterTableContextWrapper metrics={metrics}>
+          <table>
+            <tbody>
+              <ClustersTableRow
+                project='testproject'
+                cluster={mockCluster}
+              />
+            </tbody>
+          </table>
+        </ClusterTableContextWrapper>,
+        '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
+        '/',
     );
 
     await screen.findByText(mockCluster.title);
@@ -60,18 +60,18 @@ describe('Test ClustersTableRow component', () => {
     const metrics = getMockMetricsList();
     const mockCluster = getMockSuggestedBasicClusterSummary('abcdef1234567890abcdef1234567890');
     renderWithRouterAndClient(
-      <ClusterTableContextWrapper metrics={metrics}>
-        <table>
-          <tbody>
-            <ClustersTableRow
-              project='testproject'
-              cluster={mockCluster}
-            />
-          </tbody>
-        </table>
-      </ClusterTableContextWrapper>,
-      '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
-      '/',
+        <ClusterTableContextWrapper metrics={metrics}>
+          <table>
+            <tbody>
+              <ClustersTableRow
+                project='testproject'
+                cluster={mockCluster}
+              />
+            </tbody>
+          </table>
+        </ClusterTableContextWrapper>,
+        '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
+        '/',
     );
 
     await screen.findByText(mockCluster.title);
@@ -87,20 +87,20 @@ describe('Test ClustersTableRow component', () => {
     const metrics = getMockMetricsList();
     const mockCluster = getMockRuleBasicClusterSummary('abcdef1234567890abcdef1234567890');
     renderWithRouterAndClient(
-      <ClusterTableContextWrapper metrics={metrics}>
-        <table>
-          <tbody>
-            <ClustersTableRow
-              project='testproject'
-              cluster={mockCluster}
-              isBreakdownLoading={true}
-              isBreakdownSuccess={false}
-            />
-          </tbody>
-        </table>
-      </ClusterTableContextWrapper>,
-      '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
-      '/',
+        <ClusterTableContextWrapper metrics={metrics}>
+          <table>
+            <tbody>
+              <ClustersTableRow
+                project='testproject'
+                cluster={mockCluster}
+                isBreakdownLoading={true}
+                isBreakdownSuccess={false}
+              />
+            </tbody>
+          </table>
+        </ClusterTableContextWrapper>,
+        '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
+        '/',
     );
 
     await screen.findByText(mockCluster.title);
@@ -121,20 +121,20 @@ describe('Test ClustersTableRow component', () => {
     const metrics = getMockMetricsList();
     const mockCluster = getMockRuleBasicClusterSummary('abcdef1234567890abcdef1234567890');
     renderWithRouterAndClient(
-      <ClusterTableContextWrapper metrics={metrics}>
-        <table>
-          <tbody>
-            <ClustersTableRow
-              project='testproject'
-              cluster={mockCluster}
-              isBreakdownLoading={false}
-              isBreakdownSuccess={true}
-            />
-          </tbody>
-        </table>
-      </ClusterTableContextWrapper>,
-      '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
-      '/',
+        <ClusterTableContextWrapper metrics={metrics}>
+          <table>
+            <tbody>
+              <ClustersTableRow
+                project='testproject'
+                cluster={mockCluster}
+                isBreakdownLoading={false}
+                isBreakdownSuccess={true}
+              />
+            </tbody>
+          </table>
+        </ClusterTableContextWrapper>,
+        '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
+        '/',
     );
 
     await screen.findByText(mockCluster.title);
@@ -155,20 +155,20 @@ describe('Test ClustersTableRow component', () => {
     const metrics = getMockMetricsList();
     const mockCluster = getMockRuleFullClusterSummary('abcdef1234567890abcdef1234567890');
     renderWithRouterAndClient(
-      <ClusterTableContextWrapper metrics={metrics}>
-        <table>
-          <tbody>
-            <ClustersTableRow
-              project='testproject'
-              cluster={mockCluster}
-              isBreakdownLoading={false}
-              isBreakdownSuccess={true}
-            />
-          </tbody>
-        </table>
-      </ClusterTableContextWrapper>,
-      '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
-      '/',
+        <ClusterTableContextWrapper metrics={metrics}>
+          <table>
+            <tbody>
+              <ClustersTableRow
+                project='testproject'
+                cluster={mockCluster}
+                isBreakdownLoading={false}
+                isBreakdownSuccess={true}
+              />
+            </tbody>
+          </table>
+        </ClusterTableContextWrapper>,
+        '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
+        '/',
     );
 
     await screen.findByText(mockCluster.title);

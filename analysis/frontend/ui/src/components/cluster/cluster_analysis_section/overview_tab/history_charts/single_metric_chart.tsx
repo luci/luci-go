@@ -34,7 +34,7 @@ interface Props {
 }
 
 export const SingleMetricChart = (
-  { height, color, isAnnotated, metric, data }: Props) => {
+    { height, color, isAnnotated, metric, data }: Props) => {
   return (
     <ResponsiveContainer
       width="100%"
@@ -58,4 +58,4 @@ export const SingleMetricChart = (
       </BarChart>
     </ResponsiveContainer>
   );
-}
+};

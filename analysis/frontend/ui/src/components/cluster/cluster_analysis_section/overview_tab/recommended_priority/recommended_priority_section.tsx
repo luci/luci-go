@@ -49,7 +49,7 @@ import {
   PriorityThreshold,
 } from './priority_recommendation';
 
-const priorityTooltipText = "The priority with which LUCI Analysis recommends actioning this cluster, based on the cluster's impact and project configuration.";
+const priorityTooltipText = 'The priority with which LUCI Analysis recommends actioning this cluster, based on the cluster\'s impact and project configuration.';
 
 export const RecommendedPrioritySection = () => {
   const clusterId = useContext(ClusterContext);
@@ -80,8 +80,8 @@ export const RecommendedPrioritySection = () => {
       )}
       {!(configError || clusterError) &&
         (isConfigLoading || isClusterLoading) && (
-          <CentralizedProgress />
-        )
+        <CentralizedProgress />
+      )
       }
       {projectConfig && cluster && metrics && (
         <RecommendedPrioritySummary
@@ -111,31 +111,31 @@ const RecommendedPrioritySummary = ({ metricValues, metrics, projectConfig }: Pr
   };
 
   const priorities: PriorityThreshold[] = tidyPriorityLabels(
-    getPriorityThresholds(projectConfig),
+      getPriorityThresholds(projectConfig),
   );
   const recommendation = createPriorityRecommendation(
-    metricValues,
-    metrics,
-    priorities,
+      metricValues,
+      metrics,
+      priorities,
   );
 
   const recommendedPriority = recommendation.recommendation;
-  const priorityLabel = recommendedPriority?.priority || "N/A";
-  const satisfiedCriteria = recommendedPriority?.criteria.filter(c => c.satisfied) || [];
+  const priorityLabel = recommendedPriority?.priority || 'N/A';
+  const satisfiedCriteria = recommendedPriority?.criteria.filter((c) => c.satisfied) || [];
 
-  const isHighPriority = (priorityLabel === "P0" || priorityLabel === "P1");
+  const isHighPriority = (priorityLabel === 'P0' || priorityLabel === 'P1');
 
   return (
     <Box data-testid="recommended-priority-summary">
       {
         recommendedPriority ?
           <Chip
-            color={isHighPriority ? "primary" : "default"
+            color={isHighPriority ? 'primary' : 'default'
             }
-            variant={priorityLabel === "P0" ? "filled" : "outlined"}
+            variant={priorityLabel === 'P0' ? 'filled' : 'outlined'}
             label={
               <Typography
-                sx={{ fontWeight: isHighPriority ? "bold" : "regular" }}
+                sx={{ fontWeight: isHighPriority ? 'bold' : 'regular' }}
                 color="inherit"
                 variant="h6" >
                 {priorityLabel}
@@ -152,7 +152,7 @@ const RecommendedPrioritySummary = ({ metricValues, metrics, projectConfig }: Pr
             <Typography>
               {constructCriteriumLabel(criterium)}
             </Typography>
-          </li>
+          </li>,
         )}
       </ul>
       <Chip
@@ -171,7 +171,7 @@ const RecommendedPrioritySummary = ({ metricValues, metrics, projectConfig }: Pr
             aria-label="Close recommended priority justification"
             onClick={handleClose}
             sx={{
-              position: "absolute",
+              position: 'absolute',
               right: 8,
               top: 8,
               color: (theme) => theme.palette.grey[500],
@@ -193,13 +193,13 @@ const RecommendedPrioritySummary = ({ metricValues, metrics, projectConfig }: Pr
       </Dialog>
     </Box>
   );
-}
+};
 
-function tidyPriorityLabels(priorities: PriorityThreshold[], prefix: string = "P"): PriorityThreshold[] {
-  const isOnlyDigits = new RegExp("^\\d+$");
+function tidyPriorityLabels(priorities: PriorityThreshold[], prefix = 'P'): PriorityThreshold[] {
+  const isOnlyDigits = new RegExp('^\\d+$');
 
-  let tidiedPriorities: PriorityThreshold[] = [];
-  priorities.forEach(priorityThreshold => {
+  const tidiedPriorities: PriorityThreshold[] = [];
+  priorities.forEach((priorityThreshold) => {
     // Remove leading and trailing whitespace in priorities.
     let priorityName = priorityThreshold.priority.trim();
 
@@ -224,9 +224,9 @@ function getPriorityThresholds(projectConfig: ProjectConfig): PriorityThreshold[
 
   // Return the priority criteria for the specified bug system,
   // if it is available in the project config.
-  if (projectConfig.bugSystem === "BUGANIZER" && buganizerPriorities) {
+  if (projectConfig.bugSystem === 'BUGANIZER' && buganizerPriorities) {
     return buganizerPriorities;
-  } else if (projectConfig.bugSystem === "MONORAIL" && monorailPriorities) {
+  } else if (projectConfig.bugSystem === 'MONORAIL' && monorailPriorities) {
     return monorailPriorities;
   }
 

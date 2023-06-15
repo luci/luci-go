@@ -20,8 +20,8 @@ import {
 } from '@testing-library/react';
 
 import { ExoneratedTestVariantBuilder } from '../../model/mocks';
-import FlakyCriteriaSection from './flaky_criteria_section';
 import { ChromiumCriteria } from '../../model/model';
+import FlakyCriteriaSection from './flaky_criteria_section';
 
 describe('Test FlakyCriteriaSection', () => {
   it('shows statistics related to the criteria', async () => {

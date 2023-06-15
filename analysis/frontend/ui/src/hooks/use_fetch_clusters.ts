@@ -36,7 +36,7 @@ export interface ClustersFetchOptions {
   orderBy?: OrderBy;
   metrics: Metric[];
   interval?: TimeInterval;
-};
+}
 
 export interface OrderBy {
   metric: MetricId;
@@ -80,36 +80,36 @@ const metricsKey = (metrics: Metric[]): string => {
 };
 
 export const useFetchClusterSummaries = (
-  { project, failureFilter, orderBy, interval, metrics }: ClustersFetchOptions,
-  view: ClusterSummaryView,
+    { project, failureFilter, orderBy, interval, metrics }: ClustersFetchOptions,
+    view: ClusterSummaryView,
 ): UseQueryResult<QueryClusterSummariesResponse, Error> => {
   const clustersService = getClustersService();
   return useQuery(
-    ['clusters', view, project, failureFilter, orderByClause(orderBy), intervalDuration(interval), metricsKey(metrics)],
-    async () => {
-      const latestTime = dayjs();
-      const request: QueryClusterSummariesRequest = {
-        project: project,
-        timeRange: {
-          earliest: latestTime.subtract(intervalDuration(interval), 'hours').toISOString(),
-          latest: latestTime.toISOString(),
-        },
-        failureFilter: failureFilter,
-        orderBy: orderByClause(orderBy),
-        metrics: metrics.map((m) => m.name),
-        view: view,
-      };
-      return await clustersService.queryClusterSummaries(request);
-    },
-    {
-      retry: prpcRetrier,
-      enabled: (
-        orderBy !== undefined
-        && orderBy.metric !== ''
-        && metrics.length > 0
-        && interval !== undefined
-        && (view !== 'FULL' || (view === 'FULL' && interval.duration > 24))
-      ),
-    },
+      ['clusters', view, project, failureFilter, orderByClause(orderBy), intervalDuration(interval), metricsKey(metrics)],
+      async () => {
+        const latestTime = dayjs();
+        const request: QueryClusterSummariesRequest = {
+          project: project,
+          timeRange: {
+            earliest: latestTime.subtract(intervalDuration(interval), 'hours').toISOString(),
+            latest: latestTime.toISOString(),
+          },
+          failureFilter: failureFilter,
+          orderBy: orderByClause(orderBy),
+          metrics: metrics.map((m) => m.name),
+          view: view,
+        };
+        return await clustersService.queryClusterSummaries(request);
+      },
+      {
+        retry: prpcRetrier,
+        enabled: (
+          orderBy !== undefined &&
+        orderBy.metric !== '' &&
+        metrics.length > 0 &&
+        interval !== undefined &&
+        (view !== 'FULL' || (view === 'FULL' && interval.duration > 24))
+        ),
+      },
   );
 };

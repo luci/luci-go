@@ -64,14 +64,14 @@ const Sparkline = ({ isLoading, isSuccess, values, color }: SparklineProps) => {
 
   // Note the maximum height is set to be 5% more than the actual maximum value,
   // so the top of plots still have space for the thick day-to-day polyline.
-  const parsedValues = values.map(v => parseInt(v, 10));
+  const parsedValues = values.map((v) => parseInt(v, 10));
   const max = 1.05 * Math.max(...parsedValues) || 1;
 
   const daySegment = sparklineWidth / values.length;
   const barWidth = daySegment * 0.7;
   const barOffset = (daySegment - barWidth) / 2;
 
-  let coords: string[] = [];
+  const coords: string[] = [];
   parsedValues.forEach((value, i) => {
     const x = sparklineWidth - (i + 0.5) * daySegment;
     const y = sparklineHeight - sparklineHeight * value / max;
@@ -83,7 +83,7 @@ const Sparkline = ({ isLoading, isSuccess, values, color }: SparklineProps) => {
       data-testid='clusters_table_sparkline'
       viewBox={`0 0 ${sparklineWidth} ${sparklineHeight}`}
       xmlns="http://www.w3.org/2000/svg"
-      style={{ width: "100%", height: "auto" }}>
+      style={{ width: '100%', height: 'auto' }}>
       <line x1={0} y1={sparklineHeight} x2={sparklineWidth} y2={sparklineHeight} stroke={color} />
       {parsedValues.map((value, i) => {
         const x = sparklineWidth - (i + 1) * daySegment + barOffset;
@@ -140,8 +140,8 @@ const ClustersTableRow = ({
           // A sparkline may be added if the daily breakdown for the metric is:
           // 1. being fetched; or
           // 2. fetched and there are at least 2 data points.
-          const hasSparkline = (isBreakdownLoading && !isBreakdownSuccess)
-            || (isBreakdownSuccess && dailyBreakdown && dailyBreakdown.length > 1);
+          const hasSparkline = (isBreakdownLoading && !isBreakdownSuccess) ||
+            (isBreakdownSuccess && dailyBreakdown && dailyBreakdown.length > 1);
           return (
             <TableCell key={metric.metricId} className="number">
               {metricValue.value || '0'}
