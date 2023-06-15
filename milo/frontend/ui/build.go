@@ -617,7 +617,7 @@ var (
 					`{{ $link.HTML }}` +
 					`{{ end }}`))
 	newBuildPageOptInTemplate = template.Must(
-		template.New("optIn").
+		template.New("buildOptIn").
 			Parse(`
 				<div id="opt-in-banner">
 					<div id="opt-in-link">

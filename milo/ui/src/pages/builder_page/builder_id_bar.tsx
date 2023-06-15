@@ -12,7 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getProjectURLPath } from '@/common/libs/url_utils';
+import { Link } from '@mui/material';
+
+import {
+  getLegacyBuilderURLPath,
+  getProjectURLPath,
+} from '@/common/libs/url_utils';
 import { BuilderID } from '@/common/services/buildbucket';
 
 export interface BuilderIdBarProps {
@@ -46,6 +51,32 @@ export function BuilderIdBar({ builderId }: BuilderIdBarProps) {
         <span> / </span>
         <span>{builderId.builder}</span>
       </div>
+      <div
+        css={{
+          borderLeft: '1px solid var(--divider-color)',
+          width: '1px',
+          marginLeft: '10px',
+          marginRight: '10px',
+        }}
+      ></div>
+      <Link
+        onClick={(e) => {
+          const switchVerTemporarily =
+            e.metaKey || e.shiftKey || e.ctrlKey || e.altKey;
+
+          if (switchVerTemporarily) {
+            return;
+          }
+
+          const expires = new Date(
+            Date.now() + 24 * 60 * 60 * 1000
+          ).toUTCString();
+          document.cookie = `showNewBuilderPage=false; expires=${expires}; path=/`;
+        }}
+        href={getLegacyBuilderURLPath(builderId)}
+      >
+        Switch to the legacy builder page
+      </Link>
     </div>
   );
 }

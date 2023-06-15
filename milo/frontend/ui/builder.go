@@ -15,7 +15,9 @@
 package ui
 
 import (
+	"bytes"
 	"context"
+	"html/template"
 	"net/url"
 	"time"
 
@@ -125,4 +127,30 @@ func NewMachinePool(c context.Context, botPool *model.BotPool) *MachinePool {
 		result.Bots[i] = uiBot
 	}
 	return result
+}
+
+var newBuilderPageOptInTemplate = template.Must(
+	template.New("builderOptIn").
+		Parse(`
+			<div id="opt-in-banner">
+				<div id="opt-in-link">
+					Switch to
+					<a
+						id="new-builder-page-link"
+						href="/ui/p/{{.Builder.Id.Project}}/builders/{{.Builder.Id.Bucket}}/{{.Builder.Id.Builder}}"
+					>the new builder page!</a>
+				</div>
+				<div id="feedback-bar">
+					Or <a id="feedback-link" href="/">tell us what's missing</a>.
+					[<a id="dismiss-feedback-bar" href="/">dismiss</a>]
+				</div>
+			</div>`))
+
+// NewBuilderPageOptInHTML returns a link to the new build page of the build.
+func (bp *BuilderPage) NewBuilderPageOptInHTML() template.HTML {
+	buf := bytes.Buffer{}
+	if err := newBuilderPageOptInTemplate.Execute(&buf, bp); err != nil {
+		panic(err)
+	}
+	return template.HTML(buf.Bytes())
 }

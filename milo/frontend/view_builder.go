@@ -22,6 +22,7 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 )
@@ -60,6 +61,19 @@ func BuilderHandler(c *router.Context) error {
 
 	templates.MustRender(c.Request.Context(), c.Writer, "pages/builder.html", templates.Args{
 		"BuilderPage": page,
+		"BannerHTML":  page.NewBuilderPageOptInHTML(),
 	})
 	return nil
+}
+
+func getShowNewBuilderPageCookie(c *router.Context) bool {
+	switch cookie, err := c.Request.Cookie("showNewBuilderPage"); err {
+	case nil:
+		return cookie.Value == "true"
+	case http.ErrNoCookie:
+		return true
+	default:
+		logging.WithError(err).Errorf(c.Request.Context(), "failed to read showNewBuilderPage cookie")
+		return true
+	}
 }

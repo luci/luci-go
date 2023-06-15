@@ -54,7 +54,11 @@ export function getLegacyBuildURLPath(
   builder: BuilderID,
   buildNumOrId: string
 ) {
-  return `/old${getBuilderURLPath(builder)}/${buildNumOrId}`;
+  return `${getLegacyBuilderURLPath(builder)}/${buildNumOrId}`;
+}
+
+export function getLegacyBuilderURLPath(builder: BuilderID) {
+  return `/old${getBuilderURLPath(builder)}`;
 }
 
 export function getGitilesRepoURL(

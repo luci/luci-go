@@ -81,7 +81,7 @@ func Run(srv *server.Server, templatePath string) {
 		}
 	}).Extend(optionalProjectMW...)
 	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId", buildPageMW, handleError(handleLUCIBuild))
-	// TODO(crbug/1108198): remvoe this route once we turned down the old build page.
+	// TODO(crbug/1108198): remove this route once we turned down the old build page.
 	r.GET("/old/p/:project/builders/:bucket/:builder/:numberOrId", optionalProjectMW, handleError(handleLUCIBuild))
 
 	// Only the new build page can take path suffix, redirect to the new build page.
@@ -111,11 +111,22 @@ func Run(srv *server.Server, templatePath string) {
 	r.GET("/swarming/prod/:id/steps/*logname", htmlMW, handleError(HandleSwarmingLog))
 	r.GET("/swarming/prod/:id", htmlMW, handleError(handleSwarmingBuild))
 
+	builderPageMW := router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
+		shouldShowNewBuilderPage := getShowNewBuilderPageCookie(c)
+		if shouldShowNewBuilderPage {
+			redirect("/ui/p/:project/builders/:bucket/:builder", http.StatusFound)(c)
+		} else {
+			next(c)
+		}
+	}).Extend(optionalProjectMW...)
+
 	// Buildbucket
 	// If these routes change, also change links in
 	// common/model/builder_summary.go:SelfLink.
 	// Redirects to the SPA implementation.
-	r.GET("/p/:project/builders/:bucket/:builder", baseMW, redirect("/ui/p/:project/builders/:bucket/:builder", http.StatusFound))
+	r.GET("/p/:project/builders/:bucket/:builder", builderPageMW, handleError(BuilderHandler))
+	// TODO(weiweilin): remove this once we turned down the old builder page.
+	r.GET("/old/p/:project/builders/:bucket/:builder", optionalProjectMW, handleError(BuilderHandler))
 
 	r.GET("/buildbucket/:bucket/:builder", baseMW, redirectFromProjectlessBuilder)
 
