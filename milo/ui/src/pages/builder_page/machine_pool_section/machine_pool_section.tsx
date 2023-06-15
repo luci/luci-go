@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GrpcError, RpcCode } from '@chopsui/prpc-client';
+import { GrpcError } from '@chopsui/prpc-client';
 import styled from '@emotion/styled';
 import { Alert, AlertTitle, CircularProgress, Link } from '@mui/material';
 import { useState } from 'react';
@@ -22,6 +22,7 @@ import {
   ExpandableEntryBody,
   ExpandableEntryHeader,
 } from '@/common/components/expandable_entry';
+import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants';
 import { getSwarmingBotListURL } from '@/common/libs/url_utils';
 import { usePrpcQuery } from '@/common/libs/use_prpc_query';
 import { StringPair } from '@/common/services/common';
@@ -93,11 +94,7 @@ export function MachinePoolSection({
   const isPermissionError =
     isError &&
     error instanceof GrpcError &&
-    [
-      RpcCode.NOT_FOUND,
-      RpcCode.PERMISSION_DENIED,
-      RpcCode.UNAUTHENTICATED,
-    ].includes(error.code);
+    POTENTIAL_PERM_ERROR_CODES.includes(error.code);
   if (isError && !isPermissionError) {
     throw error;
   }

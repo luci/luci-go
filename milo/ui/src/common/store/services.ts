@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { PrpcClientOptions, RpcCode } from '@chopsui/prpc-client';
+import { PrpcClientOptions } from '@chopsui/prpc-client';
 import { computed, untracked } from 'mobx';
 import {
   addDisposer,
@@ -25,6 +25,7 @@ import {
 import { keepAlive } from 'mobx-utils';
 
 import { MAY_REQUIRE_SIGNIN } from '@/common/common_tags';
+import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants';
 import { PrpcClientExt } from '@/common/libs/prpc_client_ext';
 import { attachTags } from '@/common/libs/tag/tag';
 import { BuildersService, BuildsService } from '@/common/services/buildbucket';
@@ -36,12 +37,6 @@ import { MiloInternal } from '@/common/services/milo_internal';
 import { ResultDb } from '@/common/services/resultdb';
 
 import { AuthStateStore, AuthStateStoreInstance } from './auth_state';
-
-const MAY_REQUIRE_SIGNIN_ERROR_CODE = [
-  RpcCode.NOT_FOUND,
-  RpcCode.PERMISSION_DENIED,
-  RpcCode.UNAUTHENTICATED,
-];
 
 export const ServicesStore = types
   .model('ServicesStore', {
@@ -59,7 +54,7 @@ export const ServicesStore = types
             () => (isAlive(self) && self.authState?.value?.accessToken) || ''
           ),
         (e) => {
-          if (MAY_REQUIRE_SIGNIN_ERROR_CODE.includes(e.code)) {
+          if (POTENTIAL_PERM_ERROR_CODES.includes(e.code)) {
             attachTags(e, MAY_REQUIRE_SIGNIN);
           }
           throw e;

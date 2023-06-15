@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { RpcCode } from '@chopsui/prpc-client';
 import { fromPromise } from 'mobx-utils';
 
 import { BuildStatus } from '@/common/services/buildbucket';
@@ -227,3 +228,13 @@ export const NEVER_PROMISE = new Promise<never>(() => {
   /* Never resolves. */
 });
 export const NEVER_OBSERVABLE = fromPromise(NEVER_PROMISE);
+
+/**
+ * A list of RPC Error code that MAY indicate the user lacks permission.
+ */
+export const POTENTIAL_PERM_ERROR_CODES = Object.freeze([
+  // Some RPCs will return NOT_FOUND when user isn't able to access it.
+  RpcCode.NOT_FOUND,
+  RpcCode.PERMISSION_DENIED,
+  RpcCode.UNAUTHENTICATED,
+]);
