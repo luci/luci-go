@@ -104,8 +104,7 @@ export function App({ isDevEnv, enableUiSW }: AppProps) {
         // vite-plugin-pwa hosts the service worker in a different route in dev
         // mode.
         // See https://vite-pwa-org.netlify.app/guide/development.html#injectmanifest-strategy
-        // TODO(weiweilin): rename back to /ui/ui_sw.js in the next release.
-        isDevEnv ? '/ui/dev-sw.js?dev-sw' : '/ui/service-worker.js'
+        isDevEnv ? '/ui/dev-sw.js?dev-sw' : '/ui/ui_sw.js'
       );
       store.workbox.init(swUrl);
     }
