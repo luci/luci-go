@@ -104,11 +104,11 @@ go test go.chromium.org/luci/analysis/...
 
 ## Run UI linter
 
-To run the UI code linter, run:
+To run the UI code linter (note: this will also try to auto-fix issues), run:
 
 ```
 cd frontend/ui
-npx eslint ./src/ --fix
+npm run lint
 ```
 
 ## Deployment

@@ -9,7 +9,8 @@
     "watch": "tsc --noEmit --skipLibCheck && node esbuild_watch.mjs",
     "typecheck": "tsc --noEmit --skipLibCheck",
     "e2e": "tsc --noEmit --skipLibCheck && cypress run",
-    "test": "tsc --noEmit --skipLibCheck && jest"
+    "test": "tsc --noEmit --skipLibCheck && jest",
+    "lint": "npx eslint ./src/ --fix"
   },
   "dependencies": {
     "@chopsui/prpc-client": "^1.1.0",
