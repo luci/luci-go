@@ -339,17 +339,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 				Id:     "1",
 				Target: "swarming",
 			},
-		}
-		req := &pb.BuildTaskUpdate{
-			BuildId: "1",
-			Task: &pb.Task{
-				Status: pb.Status_STARTED,
-				Id: &pb.TaskID{
-					Id:     "1",
-					Target: "swarming",
-				},
-				Link: "a link",
-			},
+			UpdateId: 50,
 		}
 		infraProto := &pb.BuildInfra{
 			Backend: &pb.BuildInfra_Backend{
@@ -373,9 +363,20 @@ func TestUpdateTaskEntity(t *testing.T) {
 			Build: datastore.KeyForObj(ctx, buildModel),
 			Proto: infraProto,
 		}
-
+		So(datastore.Put(ctx, buildModel, infraModel), ShouldBeNil)
 		Convey("normal task save", func() {
-			So(datastore.Put(ctx, buildModel, infraModel), ShouldBeNil)
+			req := &pb.BuildTaskUpdate{
+				BuildId: "1",
+				Task: &pb.Task{
+					Status: pb.Status_STARTED,
+					Id: &pb.TaskID{
+						Id:     "1",
+						Target: "swarming",
+					},
+					Link:     "a link",
+					UpdateId: 100,
+				},
+			}
 			err := updateTaskEntity(ctx, req, 1)
 			So(err, ShouldBeNil)
 			bk := datastore.KeyForObj(ctx, &model.Build{ID: 1})
@@ -392,10 +393,28 @@ func TestUpdateTaskEntity(t *testing.T) {
 							Id:     "1",
 							Target: "swarming",
 						},
-						Link: "a link",
+						Link:     "a link",
+						UpdateId: 100,
 					},
 				},
 			})
+		})
+
+		Convey("old update_id", func() {
+			req := &pb.BuildTaskUpdate{
+				BuildId: "1",
+				Task: &pb.Task{
+					Status: pb.Status_STARTED,
+					Id: &pb.TaskID{
+						Id:     "1",
+						Target: "swarming",
+					},
+					Link:     "a link",
+					UpdateId: 2,
+				},
+			}
+			err := updateTaskEntity(ctx, req, 1)
+			So(err, ShouldBeNil)
 		})
 	})
 }

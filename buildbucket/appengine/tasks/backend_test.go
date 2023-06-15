@@ -92,8 +92,9 @@ func (mc *MockedClient) RunTask(ctx context.Context, taskReq *pb.RunTaskRequest,
 	}
 	return &pb.RunTaskResponse{
 		Task: &pb.Task{
-			Id:   &pb.TaskID{Id: "abc123", Target: taskReq.Target},
-			Link: "this_is_a_url_link",
+			Id:       &pb.TaskID{Id: "abc123", Target: taskReq.Target},
+			Link:     "this_is_a_url_link",
+			UpdateId: 1,
 		},
 	}, nil
 }
@@ -622,7 +623,8 @@ func TestCreateBackendTask(t *testing.T) {
 					Id:     "abc123",
 					Target: "swarming://chromium-swarm",
 				},
-				Link: "this_is_a_url_link",
+				Link:     "this_is_a_url_link",
+				UpdateId: 1,
 			})
 		})
 

@@ -170,6 +170,11 @@ func updateTaskEntity(ctx context.Context, req *pb.BuildTaskUpdate, buildID int6
 		}
 		build := entities[0].(*model.Build)
 		infra := entities[1].(*model.BuildInfra)
+		if req.Task.UpdateId < infra.Proto.Backend.Task.UpdateId {
+			// Returning nil since there is no work to do here.
+			// The task in the request is outdated.
+			return nil
+		}
 		build.Proto.UpdateTime = timestamppb.New(clock.Now(ctx))
 		infra.Proto.Backend.Task = req.Task
 		toSave := []any{build, infra}

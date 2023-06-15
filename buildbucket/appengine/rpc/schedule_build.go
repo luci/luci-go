@@ -1350,6 +1350,7 @@ func setInfraBackend(ctx context.Context, build *pb.Build, backend *pb.BuilderCo
 			Id: &pb.TaskID{
 				Target: backend.GetTarget(),
 			},
+			UpdateId: 0,
 		},
 	}
 }

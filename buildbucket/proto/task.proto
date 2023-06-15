@@ -45,6 +45,14 @@ message Task {
   //
   // This is limited to 10KB (binary PB + gzip(5))
   google.protobuf.Struct details = 6;
+
+  // A monotonically increasing integer set by the backend to track
+  // which task is the most up to date when calling UpdateBuildTask.
+  // When the build is first created, this will be set to 0.
+  // When RunTask is called and returns a task, this should not be 0 or nil.
+  // Each UpdateBuildTask call will check this to ensure the latest task is
+  // being stored in datastore.
+  int64 update_id = 7;
 }
 
 // A unique identifier for tasks.

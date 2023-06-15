@@ -390,7 +390,7 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 	}
 
 	// Create a backend task via RunTask
-	task, err := backend.RunTask(ctx, taskReq)
+	taskResp, err := backend.RunTask(ctx, taskReq)
 	if err != nil {
 		// Give up if HTTP 500s are happening continuously. Otherwise re-throw the
 		// error so Cloud Tasks retries the task.
@@ -407,6 +407,9 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 		}
 		return tq.Fatal.Apply(errors.Annotate(err, "failed to create a backend task").Err())
 	}
+	if taskResp.Task.GetUpdateId() == 0 {
+		return tq.Fatal.Apply(errors.Reason("task returned with an updateID of 0").Err())
+	}
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		switch err := datastore.Get(ctx, infra); {
 		case errors.Contains(err, datastore.ErrNoSuchEntity):
@@ -415,11 +418,11 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 			return transient.Tag.Apply(errors.Annotate(err, "failed to fetch buildInfar for build %d", buildID).Err())
 		}
 
-		infra.Proto.Backend.Task = task.Task
+		infra.Proto.Backend.Task = taskResp.Task
 		return datastore.Put(ctx, infra)
 	}, nil)
 	if txErr != nil {
-		logging.Errorf(ctx, "Task failed to save in BuildInfra: %s", task.String())
+		logging.Errorf(ctx, "Task failed to save in BuildInfra: %s", taskResp.String())
 		return transient.Tag.Apply(errors.Annotate(err, "failed to save the backend task in BuildInfra").Err())
 	}
 	return nil
