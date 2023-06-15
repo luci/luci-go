@@ -16,9 +16,12 @@ import { Box, Button, CircularProgress, Input } from '@mui/material';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { BuilderID, BuildStatusMask } from '@/common/services/buildbucket';
-
-import { useBuilds } from '../utils';
+import { usePrpcQuery } from '@/common/libs/use_prpc_query';
+import {
+  BuilderID,
+  BuildsService,
+  BuildStatusMask,
+} from '@/common/services/buildbucket';
 
 import { EndedBuildsTable } from './ended_builds_table';
 
@@ -61,8 +64,11 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
     return currentPageToken ? [''] : [];
   });
 
-  const { data, error, isError, isLoading, isPreviousData } = useBuilds(
-    {
+  const { data, error, isError, isLoading, isPreviousData } = usePrpcQuery({
+    host: CONFIGS.BUILDBUCKET.HOST,
+    Service: BuildsService,
+    method: 'searchBuilds',
+    request: {
       predicate: {
         builder: builderId,
         includeExperimental: true,
@@ -72,8 +78,8 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
       pageToken: currentPageToken,
       fields: FIELD_MASK,
     },
-    { keepPreviousData: true }
-  );
+    options: { keepPreviousData: true },
+  });
 
   if (isError) {
     throw error;

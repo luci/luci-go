@@ -53,12 +53,21 @@ module.exports = {
     sourceType: 'module',
   },
   rules: {
-    // Allow using `_` prefix to declare unused arguments can make the following
-    // easier and more elegant.
-    // - declare a function property with a default value
-    // - ignore some function parameters when writing a callback function
-    // See http://b/182855639.
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      {
+        // Use cases:
+        // - declare a function property with a default value
+        // - ignore some function parameters when writing a callback function
+        // See http://b/182855639.
+        argsIgnorePattern: '^_',
+        // Use cases:
+        // - explicitly ignore some elements from a destructed array
+        // - explicitly ignore some inferred type parameters
+        // See http://b/182855639.
+        varsIgnorePattern: '^_',
+      },
+    ],
 
     // We need to import Lit component definition file separately as a
     // side-effect (e.g. `import './a_component'`) because type-only imports

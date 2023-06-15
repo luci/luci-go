@@ -21,9 +21,12 @@ import {
   NUMERIC_TIME_FORMAT,
 } from '@/common/libs/time_utils';
 import { getBuildURLPathFromBuildId } from '@/common/libs/url_utils';
-import { BuilderID, BuildStatus } from '@/common/services/buildbucket';
-
-import { useBuilds } from './utils';
+import { usePrpcQuery } from '@/common/libs/use_prpc_query';
+import {
+  BuilderID,
+  BuildsService,
+  BuildStatus,
+} from '@/common/services/buildbucket';
 
 const PAGE_SIZE = 100;
 const FIELD_MASK = 'builds.*.id,builds.*.number,builds.*.createTime';
@@ -33,14 +36,19 @@ export interface PendingBuildsSectionProps {
 }
 
 export function PendingBuildsSection({ builderId }: PendingBuildsSectionProps) {
-  const { data, error, isError, isLoading } = useBuilds({
-    predicate: {
-      builder: builderId,
-      includeExperimental: true,
-      status: BuildStatus.Scheduled,
+  const { data, error, isError, isLoading } = usePrpcQuery({
+    host: CONFIGS.BUILDBUCKET.HOST,
+    Service: BuildsService,
+    method: 'searchBuilds',
+    request: {
+      predicate: {
+        builder: builderId,
+        includeExperimental: true,
+        status: BuildStatus.Scheduled,
+      },
+      pageSize: PAGE_SIZE,
+      fields: FIELD_MASK,
     },
-    pageSize: PAGE_SIZE,
-    fields: FIELD_MASK,
   });
 
   if (isError) {

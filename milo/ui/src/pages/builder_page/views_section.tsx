@@ -13,53 +13,30 @@
 // limitations under the License.
 
 import { CircularProgress, Link } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
 
-import {
-  useAuthState,
-  useGetAccessToken,
-} from '@/common/components/auth_state_provider';
-import { PrpcClientExt } from '@/common/libs/prpc_client_ext';
+import { usePrpcQuery } from '@/common/libs/use_prpc_query';
 import { extractProject } from '@/common/libs/utils';
 import { BuilderID } from '@/common/services/buildbucket';
-import {
-  MiloInternal,
-  QueryConsolesRequest,
-} from '@/common/services/milo_internal';
+import { MiloInternal } from '@/common/services/milo_internal';
 
 const PAGE_SIZE = 100;
-
-function useConsoles(req: QueryConsolesRequest) {
-  const { identity } = useAuthState();
-  const getAccessToken = useGetAccessToken();
-  return useQuery({
-    queryKey: [identity, MiloInternal.SERVICE, 'QueryConsoles', req],
-    queryFn: async () => {
-      const miloInternalService = new MiloInternal(
-        new PrpcClientExt(
-          { host: '', insecure: location.protocol === 'http:' },
-          getAccessToken
-        )
-      );
-      return await miloInternalService.queryConsoles(
-        req,
-        // Let react-query manage caching.
-        { acceptCache: false, skipUpdate: true }
-      );
-    },
-  });
-}
 
 export interface ViewsSectionProps {
   readonly builderId: BuilderID;
 }
 
 export function ViewsSection({ builderId }: ViewsSectionProps) {
-  const { data, error, isError, isLoading } = useConsoles({
-    predicate: {
-      builder: builderId,
+  const { data, error, isError, isLoading } = usePrpcQuery({
+    host: '',
+    insecure: location.protocol === 'http:',
+    Service: MiloInternal,
+    method: 'queryConsoles',
+    request: {
+      predicate: {
+        builder: builderId,
+      },
+      pageSize: PAGE_SIZE,
     },
-    pageSize: PAGE_SIZE,
   });
 
   if (isError) {

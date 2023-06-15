@@ -13,14 +13,9 @@
 // limitations under the License.
 
 import Link from '@mui/material/Link';
-import { useQuery } from '@tanstack/react-query';
 
-import {
-  useAuthState,
-  useGetAccessToken,
-} from '@/common/components/auth_state_provider';
-import { PrpcClientExt } from '@/common/libs/prpc_client_ext';
 import { getCodeSourceUrl } from '@/common/libs/url_utils';
+import { usePrpcQuery } from '@/common/libs/use_prpc_query';
 import { extractProject, extractProperty } from '@/common/libs/utils';
 import { StringPair } from '@/common/services/common';
 import { MiloInternal, Project } from '@/common/services/milo_internal';
@@ -31,28 +26,6 @@ import { useTestMetadata } from './utils';
 export interface TestIdLabelProps {
   readonly projectOrRealm: string; // A project name or a realm name.
   readonly testId: string;
-}
-
-function useProjectConfig(project: string) {
-  const { identity } = useAuthState();
-  const getAccessToken = useGetAccessToken();
-  const req = { project };
-  return useQuery({
-    queryKey: [identity, MiloInternal.SERVICE, 'GetProjectCfg', req],
-    queryFn: async () => {
-      const miloInternalService = new MiloInternal(
-        new PrpcClientExt(
-          { host: '', insecure: location.protocol === 'http:' },
-          getAccessToken
-        )
-      );
-      const res = await miloInternalService.getProjectCfg(req, {
-        acceptCache: false,
-        skipUpdate: true,
-      });
-      return res;
-    },
-  });
 }
 
 function propertiesToDisplay(
@@ -101,7 +74,14 @@ export function TestIdLabel({ projectOrRealm, testId }: TestIdLabelProps) {
     data: projectCfg,
     isSuccess: cfgIsSuccess,
     isLoading: cfgIsLoading,
-  } = useProjectConfig(project);
+  } = usePrpcQuery({
+    host: '',
+    insecure: location.protocol === 'http:',
+    Service: MiloInternal,
+    method: 'getProjectCfg',
+    request: { project },
+  });
+
   return (
     <table>
       <tbody>

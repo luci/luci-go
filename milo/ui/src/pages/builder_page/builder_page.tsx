@@ -13,19 +13,11 @@
 // limitations under the License.
 
 import { Grid, LinearProgress } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 
-import {
-  useAuthState,
-  useGetAccessToken,
-} from '@/common/components/auth_state_provider';
 import { parseLegacyBucketId } from '@/common/libs/build_utils';
-import { PrpcClientExt } from '@/common/libs/prpc_client_ext';
-import {
-  BuildersService,
-  GetBuilderRequest,
-} from '@/common/services/buildbucket';
+import { usePrpcQuery } from '@/common/libs/use_prpc_query';
+import { BuildersService } from '@/common/services/buildbucket';
 
 import { BuilderIdBar } from './builder_id_bar';
 import { EndedBuildsSection } from './ended_builds_section';
@@ -33,36 +25,6 @@ import { MachinePoolSection } from './machine_pool_section';
 import { PendingBuildsSection } from './pending_builds_section';
 import { StartedBuildsSection } from './started_builds_section';
 import { ViewsSection } from './views_section';
-
-function useBuilder(req: GetBuilderRequest) {
-  const { identity } = useAuthState();
-  const getAccessToken = useGetAccessToken();
-  return useQuery({
-    queryKey: [identity, BuildersService.SERVICE, 'GetBuilder', req],
-    queryFn: async () => {
-      const buildersService = new BuildersService(
-        new PrpcClientExt({ host: CONFIGS.BUILDBUCKET.HOST }, getAccessToken)
-      );
-      const res = await buildersService.getBuilder(
-        req,
-        // Let react-query manage caching.
-        { acceptCache: false, skipUpdate: true }
-      );
-      return {
-        swarmingHost: res.config.swarmingHost,
-        // Convert dimensions to StringPair[] and remove expirations.
-        dimensions:
-          res.config.dimensions?.map((dim) => {
-            const parts = dim.split(':', 3);
-            if (parts.length === 3) {
-              return { key: parts[1], value: parts[2] };
-            }
-            return { key: parts[0], value: parts[1] };
-          }) || [],
-      };
-    },
-  });
-}
 
 export function BuilderPage() {
   const { project, bucket, builder } = useParams();
@@ -82,7 +44,27 @@ export function BuilderPage() {
     builder,
   };
 
-  const { data, error, isError, isLoading } = useBuilder({ id: builderId });
+  const { data, error, isError, isLoading } = usePrpcQuery({
+    host: CONFIGS.BUILDBUCKET.HOST,
+    Service: BuildersService,
+    method: 'getBuilder',
+    request: { id: builderId },
+    options: {
+      select: (res) => ({
+        swarmingHost: res.config.swarmingHost,
+        // Convert dimensions to StringPair[] and remove expirations.
+        dimensions:
+          res.config.dimensions?.map((dim) => {
+            const parts = dim.split(':', 3);
+            if (parts.length === 3) {
+              return { key: parts[1], value: parts[2] };
+            }
+            return { key: parts[0], value: parts[1] };
+          }) || [],
+      }),
+    },
+  });
+
   if (isError) {
     throw error;
   }

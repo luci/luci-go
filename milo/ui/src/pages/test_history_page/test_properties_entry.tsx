@@ -41,7 +41,7 @@ export function TestPropertiesEntry({
   });
   return (
     <>
-      {!isLoading && isSuccess && data.testMetadata?.properties && (
+      {!isLoading && isSuccess && data?.testMetadata?.properties && (
         <ExpandableEntry expanded={testPropertiesExpanded}>
           <div css={{ color: 'var(--light-text-color)' }}>
             <ExpandableEntryHeader onToggle={setTestPropertiesExpanded}>
