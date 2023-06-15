@@ -16,6 +16,7 @@ package model
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -25,9 +26,12 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/api/taskspb"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/tq"
 )
 
@@ -167,22 +171,22 @@ type AuthDBChange struct {
 	Class []string `gae:"class"` // A list of "class" names giving the NDB Polymodel hierarchy
 
 	// Fields common across all change types.
-	ChangeType     ChangeType `gae:"change_type"` // What kind of a change this is (see Change*)
-	Target         string     `gae:"target"`      // Entity (or subentity) that was changed: kind$id[$subid] (subid is optional).
-	AuthDBRev      int64      `gae:"auth_db_rev"` // AuthDB revision at which the change was made.
-	Who            string     `gae:"who"`         // Who made the change.
-	When           time.Time  `gae:"when"`        // When the change was made.
-	Comment        string     `gae:"comment"`     // Comment passed to record_revision or record_deletion.
-	AppVersion     string     `gae:"app_version"` // GAE application version at which the change was made.
-	Description    string     `gae:"description,noindex"`
-	OldDescription string     `gae:"old_description,noindex"`
+	ChangeType     ChangeType `gae:"change_type" json:"change_type"` // What kind of a change this is (see Change*)
+	Target         string     `gae:"target" json:"target"`           // Entity (or subentity) that was changed: kind$id[$subid] (subid is optional).
+	AuthDBRev      int64      `gae:"auth_db_rev" json:"auth_db_rev"` // AuthDB revision at which the change was made.
+	Who            string     `gae:"who" json:"who"`                 // Who made the change.
+	When           time.Time  `gae:"when" json:"when"`               // When the change was made.
+	Comment        string     `gae:"comment" json:"comment"`         // Comment passed to record_revision or record_deletion.
+	AppVersion     string     `gae:"app_version" json:"app_version"` // GAE application version at which the change was made.
+	Description    string     `gae:"description,noindex" json:"description"`
+	OldDescription string     `gae:"old_description,noindex" json:"old_description"`
 
 	// Fields specific to AuthDBGroupChange.
-	Owners    string   `gae:"owners"`     // Valid for ChangeGroupCreated and ChangeGroupOwnersChanged.
-	OldOwners string   `gae:"old_owners"` // Valid for ChangeGroupOwnersChanged and ChangeGroupDeleted.
-	Members   []string `gae:"members"`    // Valid for ChangeGroupMembersAdded and ChangeGroupMembersRemoved.
-	Globs     []string `gae:"globs"`      // Valid for ChangeGroupGlobsAdded and ChangeGroupGlobsRemoved.
-	Nested    []string `gae:"nested"`     // Valid for ChangeGroupNestedAdded and ChangeGroupNestedRemoved.
+	Owners    string   `gae:"owners" json:"owners"`         // Valid for ChangeGroupCreated and ChangeGroupOwnersChanged.
+	OldOwners string   `gae:"old_owners" json:"old_owners"` // Valid for ChangeGroupOwnersChanged and ChangeGroupDeleted.
+	Members   []string `gae:"members" json:"members"`       // Valid for ChangeGroupMembersAdded and ChangeGroupMembersRemoved.
+	Globs     []string `gae:"globs" json:"globs"`           // Valid for ChangeGroupGlobsAdded and ChangeGroupGlobsRemoved.
+	Nested    []string `gae:"nested" json:"nested"`         // Valid for ChangeGroupNestedAdded and ChangeGroupNestedRemoved.
 
 	// Fields specific to AuthDBIPAllowlistChange.
 	Subnets []string `gae:"subnets"` // Valid for ChangeIPWLSubnetsAdded and ChangeIPWLSubnetsRemoved.
@@ -361,13 +365,37 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 	changes := []*AuthDBChange{}
 
 	err := datastore.Run(ctx, query, func(pm datastore.PropertyMap) error {
+		c := &AuthDBChange{
+			Kind:   "AuthDBChange",
+			Parent: ChangeLogRevisionKey(ctx, authDBRev),
+		}
+
 		k, ok := pm.GetMeta("key")
 		if !ok {
 			return errors.New("key meta doesn't exist")
 		}
 		switch key := k.(*datastore.Key); {
 		case strings.Contains(key.String(), "AuthGroupHistory"):
-			// TODO(cjacomet): Implement!
+			target := fmt.Sprintf("%s$%s", "AuthGroup", key.StringID())
+			c.ID = target
+			if err := datastore.Get(ctx, c); err == nil {
+				return nil
+			}
+			var oldpm datastore.PropertyMap
+			if pk := PreviousHistoricalRevisionKey(ctx, pm); pk != nil {
+				oldpm = make(datastore.PropertyMap)
+				oldpm.SetMeta("key", datastore.NewKey(ctx, "AuthGroupHistory", key.StringID(), 0, pk))
+				err := datastore.Get(ctx, oldpm)
+				if err != nil {
+					return err
+				}
+			}
+
+			groupChanges, err := diffGroups(ctx, target, oldpm, pm)
+			if err != nil {
+				return err
+			}
+			changes = append(changes, groupChanges...)
 		case strings.Contains(key.String(), "AuthIPWhitelistHistory"):
 			// TODO(cjacomet): Implement!
 		case strings.Contains(key.String(), "AuthIPWhitelistAssignmentsHistory"):
@@ -397,3 +425,199 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 	}
 	return changes, nil
 }
+
+func diffLists(old, new []string) ([]string, []string) {
+	oldss := stringset.NewFromSlice(old...)
+	newss := stringset.NewFromSlice(new...)
+	return newss.Difference(oldss).ToSortedSlice(), oldss.Difference(newss).ToSortedSlice()
+}
+
+func makeChange(ctx context.Context, ct ChangeType, target string, authDBRev int64, class string, kwargs ...string) *AuthDBChange {
+	var ancestor *datastore.Key
+	if authDBRev != 0 {
+		ancestor = ChangeLogRevisionKey(ctx, authDBRev)
+	} else {
+		ancestor = ChangeLogRootKey(ctx)
+	}
+	a := &AuthDBChange{
+		Kind:       "AuthDBChange",
+		ID:         fmt.Sprintf("%s!%d", target, ct),
+		Parent:     ancestor,
+		Class:      []string{"AuthDBChange", class},
+		ChangeType: ct,
+		Target:     target,
+		AuthDBRev:  authDBRev,
+		Who:        string(auth.CurrentIdentity(ctx)),
+		When:       clock.Now(ctx).UTC(),
+	}
+
+	jsonMap := make(map[string]interface{})
+
+	for _, kwarg := range kwargs {
+		k, v, ok := strings.Cut(kwarg, "=")
+		if !ok {
+			logging.Warningf(ctx, "kwarg has incorrect format: %s, should be k=v, where k is a string, v can be any value", kwarg)
+		}
+		jsonMap[k] = v
+	}
+	b, err := json.Marshal(jsonMap)
+	if err != nil {
+		logging.Errorf(ctx, "failed trying to marshal json map for AuthChange: %s", err.Error())
+	}
+	if err = json.Unmarshal(b, a); err != nil {
+		logging.Errorf(ctx, "failed trying to unmarshal json for AuthChange: %s", err.Error())
+	}
+
+	return a
+}
+
+func kvPair(k string, v any) string {
+	return fmt.Sprintf("%s=%v", k, v)
+}
+
+func diffGroups(ctx context.Context, target string, old, new datastore.PropertyMap) ([]*AuthDBChange, error) {
+	changes := []*AuthDBChange{}
+	authDBRev := getInt64Prop(new, "auth_db_rev")
+	class := "AuthDBGroupChange"
+
+	if getBoolProp(new, "auth_db_deleted") {
+		if mems := getStringSliceProp(new, "members"); mems != nil {
+			changes = append(changes, makeChange(ctx, ChangeGroupMembersRemoved, target, authDBRev, class, kvPair("members", mems)))
+		}
+		if globs := getStringSliceProp(new, "globs"); globs != nil {
+			changes = append(changes, makeChange(ctx, ChangeGroupGlobsRemoved, target, authDBRev, class, kvPair("globs", globs)))
+		}
+		if nested := getStringSliceProp(new, "nested"); nested != nil {
+			changes = append(changes, makeChange(ctx, ChangeGroupNestedRemoved, target, authDBRev, class, kvPair("nested", nested)))
+		}
+		desc := ""
+		if getProp(new, "description") != nil {
+			desc = getStringProp(new, "description")
+		}
+		owners := AdminGroup
+		if getProp(new, "owners") != nil {
+			owners = getStringProp(new, "owners")
+		}
+		changes = append(changes, makeChange(ctx, ChangeGroupDeleted, target, authDBRev, class, kvPair("old_description", desc), kvPair("owners", owners)))
+		return changes, nil
+	}
+
+	if old == nil {
+		desc := ""
+		if getProp(new, "description") != nil {
+			desc = getStringProp(new, "description")
+		}
+		owners := AdminGroup
+		if getProp(new, "owners") != nil {
+			owners = getStringProp(new, "owners")
+		}
+
+		changes = append(changes, makeChange(ctx, ChangeGroupCreated, target, authDBRev, class, kvPair("description", desc), kvPair("owners", owners)))
+		if mems := getStringSliceProp(new, "members"); mems != nil {
+			changes = append(changes, makeChange(ctx, ChangeGroupMembersAdded, target, authDBRev, class, kvPair("members", mems)))
+		}
+		if globs := getStringSliceProp(new, "globs"); globs != nil {
+			changes = append(changes, makeChange(ctx, ChangeGroupGlobsAdded, target, authDBRev, class, kvPair("globs", globs)))
+		}
+		if nested := getStringSliceProp(new, "nested"); nested != nil {
+			changes = append(changes, makeChange(ctx, ChangeGroupNestedAdded, target, authDBRev, class, kvPair("nested", nested)))
+		}
+		return changes, nil
+	}
+
+	if oldDesc, newDesc := getProp(old, "description"), getProp(new, "description"); oldDesc != newDesc {
+		d, od := "", ""
+		if newDesc != nil {
+			d = getStringProp(new, "description")
+		}
+		if oldDesc != nil {
+			od = getStringProp(old, "description")
+		}
+		changes = append(changes, makeChange(ctx, ChangeGroupDescriptionChanged, target, authDBRev, class, kvPair("description", d), kvPair("old_description", od)))
+	}
+
+	oldOwners := AdminGroup
+	if getProp(old, "owners") != nil {
+		oldOwners = getStringProp(old, "owners")
+	}
+	newOwners := getStringProp(new, "owners")
+	if oldOwners != newOwners {
+		changes = append(changes, makeChange(ctx, ChangeGroupOwnersChanged, target, authDBRev, class, kvPair("old_owners", oldOwners), kvPair("owners", newOwners)))
+	}
+
+	added, removed := diffLists(getStringSliceProp(old, "members"), getStringSliceProp(new, "members"))
+	if len(added) > 0 {
+		changes = append(changes, makeChange(ctx, ChangeGroupMembersAdded, target, authDBRev, class, kvPair("members", added)))
+	}
+	if len(removed) > 0 {
+		changes = append(changes, makeChange(ctx, ChangeGroupMembersRemoved, target, authDBRev, class, kvPair("members", removed)))
+	}
+
+	added, removed = diffLists(getStringSliceProp(old, "globs"), getStringSliceProp(new, "globs"))
+	if len(added) > 0 {
+		changes = append(changes, makeChange(ctx, ChangeGroupGlobsAdded, target, authDBRev, class, kvPair("globs", added)))
+	}
+	if len(removed) > 0 {
+		changes = append(changes, makeChange(ctx, ChangeGroupGlobsRemoved, target, authDBRev, class, kvPair("globs", removed)))
+	}
+
+	added, removed = diffLists(getStringSliceProp(old, "nested"), getStringSliceProp(new, "nested"))
+	if len(added) > 0 {
+		changes = append(changes, makeChange(ctx, ChangeGroupNestedAdded, target, authDBRev, class, kvPair("nested", added)))
+	}
+	if len(removed) > 0 {
+		changes = append(changes, makeChange(ctx, ChangeGroupNestedRemoved, target, authDBRev, class, kvPair("nested", removed)))
+	}
+
+	return changes, nil
+}
+
+// /////////////////////////////////////////////////////////////////////
+// ///////////////// PropertyMap helper functions //////////////////////
+// /////////////////////////////////////////////////////////////////////
+func getProp(pm datastore.PropertyMap, key string) any {
+	pd := pm[key]
+	if pd == nil {
+		return nil
+	}
+	switch v := pd.(type) {
+	case datastore.Property:
+		return v.Value()
+	default:
+		panic("getProp only supports single property values. Try getStringSliceProp() instead")
+	}
+}
+
+func getBoolProp(pm datastore.PropertyMap, key string) bool {
+	return getProp(pm, key).(bool)
+}
+
+func getStringSliceProp(pm datastore.PropertyMap, key string) []string {
+	vals := []string{}
+	ps := pm.Slice(key)
+	if ps == nil {
+		return nil
+	}
+	for _, p := range ps {
+		vals = append(vals, p.Value().(string))
+	}
+	return vals
+}
+
+func getStringProp(pm datastore.PropertyMap, key string) string {
+	return getProp(pm, key).(string)
+}
+
+func getInt64Prop(pm datastore.PropertyMap, key string) int64 {
+	return getProp(pm, key).(int64)
+}
+
+func getTimeProp(pm datastore.PropertyMap, key string) time.Time {
+	return getProp(pm, key).(time.Time)
+}
+
+func getByteSliceProp(pm datastore.PropertyMap, key string) []byte {
+	return getProp(pm, key).([]byte)
+}
+
+///////////////////////////////////////////////////////////////////////

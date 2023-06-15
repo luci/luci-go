@@ -431,6 +431,15 @@ func HistoricalRevisionKey(ctx context.Context, authDBRev int64) *datastore.Key 
 	return datastore.NewKey(ctx, "Rev", "", authDBRev, RootKey(ctx))
 }
 
+// PreviousHistoricalRevisionKey gets the key for the previous history entity of the given
+// historical entity PropertyMap.
+func PreviousHistoricalRevisionKey(ctx context.Context, pm datastore.PropertyMap) *datastore.Key {
+	if getProp(pm, "auth_db_prev_rev") != nil {
+		return datastore.NewKey(ctx, "Rev", "", getInt64Prop(pm, "auth_db_prev_rev"), RootKey(ctx))
+	}
+	return nil
+}
+
 // GetReplicationState fetches AuthReplicationState from the datastore.
 //
 // Returns datastore.ErrNoSuchEntity if it is missing.

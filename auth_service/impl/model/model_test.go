@@ -236,19 +236,6 @@ func getAllDatastoreEntities(ctx context.Context, entityKind string, parent *dat
 	return entities, err
 }
 
-func getProp(pm datastore.PropertyMap, key string) any {
-	pd := pm[key]
-	if pd == nil {
-		return nil
-	}
-	switch v := pd.(type) {
-	case datastore.Property:
-		return v.Value()
-	default:
-		panic("getProp only supports single property values. Try getStringSliceProp() instead")
-	}
-}
-
 // isPropIndexed returns true if any property with the given key is indexed.
 func isPropIndexed(pm datastore.PropertyMap, key string) bool {
 	ps := pm.Slice(key)
@@ -262,38 +249,6 @@ func isPropIndexed(pm datastore.PropertyMap, key string) bool {
 
 func getDatastoreKey(pm datastore.PropertyMap) *datastore.Key {
 	return getProp(pm, "$key").(*datastore.Key)
-}
-
-func getStringProp(pm datastore.PropertyMap, key string) string {
-	return getProp(pm, key).(string)
-}
-
-func getBoolProp(pm datastore.PropertyMap, key string) bool {
-	return getProp(pm, key).(bool)
-}
-
-func getInt64Prop(pm datastore.PropertyMap, key string) int64 {
-	return getProp(pm, key).(int64)
-}
-
-func getTimeProp(pm datastore.PropertyMap, key string) time.Time {
-	return getProp(pm, key).(time.Time)
-}
-
-func getStringSliceProp(pm datastore.PropertyMap, key string) []string {
-	vals := []string{}
-	ps := pm.Slice(key)
-	if ps == nil {
-		return nil
-	}
-	for _, p := range ps {
-		vals = append(vals, p.Value().(string))
-	}
-	return vals
-}
-
-func getByteSliceProp(pm datastore.PropertyMap, key string) []byte {
-	return getProp(pm, key).([]byte)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
