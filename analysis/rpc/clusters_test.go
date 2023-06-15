@@ -414,11 +414,9 @@ func TestClusters(t *testing.T) {
 					analysisClient.clustersByProject["testproject"] = []*analysis.Cluster{}
 
 					expectedResponse.HasExample = false
-					expectedResponse.Metrics = map[string]*pb.Cluster_TimewiseCounts{
-						metrics.HumanClsFailedPresubmit.ID.String():    emptyMetricValues(),
-						metrics.CriticalFailuresExonerated.ID.String(): emptyMetricValues(),
-						metrics.TestRunsFailed.ID.String():             emptyMetricValues(),
-						metrics.Failures.ID.String():                   emptyMetricValues(),
+					expectedResponse.Metrics = map[string]*pb.Cluster_TimewiseCounts{}
+					for _, metric := range metrics.ComputedMetrics {
+						expectedResponse.Metrics[metric.ID.String()] = emptyMetricValues()
 					}
 
 					// Run
@@ -543,12 +541,10 @@ func TestClusters(t *testing.T) {
 					expectedResponse := &pb.Cluster{
 						Name:       "projects/testproject/clusters/reason-v3/cccccc0000000000000000000000ffff",
 						HasExample: false,
-						Metrics: map[string]*pb.Cluster_TimewiseCounts{
-							metrics.HumanClsFailedPresubmit.ID.String():    emptyMetricValues(),
-							metrics.CriticalFailuresExonerated.ID.String(): emptyMetricValues(),
-							metrics.TestRunsFailed.ID.String():             emptyMetricValues(),
-							metrics.Failures.ID.String():                   emptyMetricValues(),
-						},
+						Metrics:    map[string]*pb.Cluster_TimewiseCounts{},
+					}
+					for _, metric := range metrics.ComputedMetrics {
+						expectedResponse.Metrics[metric.ID.String()] = emptyMetricValues()
 					}
 
 					// Run

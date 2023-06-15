@@ -95,9 +95,29 @@ var (
 		IsDefault:         true,
 	}.Build()
 
+	BuildsFailedDueToFlakyTests = metricBuilder{
+		ID:                "builds-failed-due-to-flaky-tests",
+		HumanReadableName: "Builds Failed by Flaky Test Variants",
+		Description: "The number of builds monitored by a gardener rotation which failed because of flaky test variants. To be considered flaky," +
+			" the test variant must have seen at least one flaky verdict on the same branch in the last 24 hours.",
+		SortPriority: 25,
+		// Criteria:
+		// - The test result's build is part of a gardener rotation, and
+		// - The verdict was only unexpected non-passed results
+		//   (excluding skips), and
+		// - The verdict was not exonerated, and
+		// - There was a flaky verdict in the last 24 hours.
+		FilterSQL: "ARRAY_LENGTH(f.build_gardener_rotations) > 0 AND " +
+			"f.is_ingested_invocation_blocked AND " +
+			"(f.exonerations IS NULL OR ARRAY_LENGTH(f.exonerations) = 0) AND " +
+			"f.test_variant_branch.flaky_verdicts_24h > 0",
+		// Count distinct builds.
+		CountSQL: "f.ingested_invocation_id",
+	}.Build()
+
 	// ComputedMetrics is the set of metrics computed for each cluster and
 	// stored on the cluster summaries table.
-	ComputedMetrics = []Definition{HumanClsFailedPresubmit, CriticalFailuresExonerated, TestRunsFailed, Failures}
+	ComputedMetrics = []Definition{HumanClsFailedPresubmit, CriticalFailuresExonerated, TestRunsFailed, Failures, BuildsFailedDueToFlakyTests}
 )
 
 // ByID returns the metric with the given ID, if any.
