@@ -600,24 +600,6 @@ func createSwarmingTask(ctx context.Context, build *model.Build, swarm clients.S
 	return nil
 }
 
-// sendOnBuildCompletion sends a bunch of related events when build is reaching
-// to an end status, e.g. finalizing the resultdb invocation, exporting to Bq,
-// and notify pubsub topics.
-func sendOnBuildCompletion(ctx context.Context, bld *model.Build) error {
-	if err := FinalizeResultDB(ctx, &taskdefs.FinalizeResultDBGo{
-		BuildId: bld.ID,
-	}); err != nil {
-		return errors.Annotate(err, "failed to enqueue resultDB finalization task: %d", bld.ID).Err()
-	}
-	if err := ExportBigQuery(ctx, bld.ID, strings.Contains(bld.ExperimentsString(), buildbucket.ExperimentBqExporterGo)); err != nil {
-		return errors.Annotate(err, "failed to enqueue bigquery export task: %d", bld.ID).Err()
-	}
-	if err := NotifyPubSub(ctx, bld); err != nil {
-		return errors.Annotate(err, "failed to enqueue pubsub notification task: %d", bld.ID).Err()
-	}
-	return nil
-}
-
 func computeSwarmingNewTaskReq(ctx context.Context, build *model.Build) (*swarming.SwarmingRpcsNewTaskRequest, error) {
 	sw := build.Proto.GetInfra().GetSwarming()
 	if sw == nil {

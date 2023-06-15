@@ -122,6 +122,11 @@ message Build {
 
     // Logs produced by the build script, typically "stdout" and "stderr".
     repeated Log logs = 5;
+
+    // Build status which is reported by the client via StartBuild or UpdateBuild.
+    Status status = 6;
+    StatusDetails status_details = 7;
+    string summary_html = 8;
   }
 
   reserved 5; // view_url
