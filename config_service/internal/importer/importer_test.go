@@ -15,12 +15,21 @@
 package importer
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
@@ -151,6 +160,441 @@ func TestImportAllConfigs(t *testing.T) {
 	})
 }
 
+func TestImportConfigSet(t *testing.T) {
+	t.Parallel()
+
+	Convey("import single ConfigSet", t, func() {
+		ctx := memory.UseWithAppID(context.Background(), "dev~app-id")
+		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mockGtClient := mock_gitiles.NewMockGitilesClient(ctl)
+		ctx = context.WithValue(ctx, &clients.MockGitilesClientKey, mockGtClient)
+		latestCommit := &git.Commit{
+			Id: "latest revision",
+			Committer: &git.Commit_User{
+				Name:  "user",
+				Email: "user@gmail.com",
+				Time:  timestamppb.New(datastore.RoundTime(clock.Now(ctx).UTC())),
+			},
+		}
+		expectedLatestRevInfo := model.RevisionInfo{
+			ID:             latestCommit.Id,
+			CommitTime:     latestCommit.Committer.Time.AsTime(),
+			CommitterEmail: latestCommit.Committer.Email,
+		}
+
+		Convey("happy path", func() {
+			Convey("success import", func() {
+				mockGtClient.EXPECT().Log(gomock.Any(), proto.MatcherEqual(
+					&gitilespb.LogRequest{
+						Project:    "infradata/config",
+						Committish: "main",
+						Path:       "dev-configs/myservice",
+						PageSize:   1,
+					},
+				)).Return(&gitilespb.LogResponse{
+					Log: []*git.Commit{latestCommit},
+				}, nil)
+				tarGzContent, err := buildTarGz(map[string]string{"file1": "file1 content", "sub_dir/file2": "file2 content", "sub_dir/": ""})
+				So(err, ShouldBeNil)
+				mockGtClient.EXPECT().Archive(gomock.Any(), proto.MatcherEqual(
+					&gitilespb.ArchiveRequest{
+						Project: "infradata/config",
+						Ref:     latestCommit.Id,
+						Path:    "dev-configs/myservice",
+						Format:  gitilespb.ArchiveRequest_GZIP,
+					},
+				)).Return(&gitilespb.ArchiveResponse{
+					Contents: tarGzContent,
+				}, nil)
+
+				err = ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+				So(err, ShouldBeNil)
+				cfgSet := &model.ConfigSet{
+					ID: config.MustServiceSet("myservice"),
+				}
+				attempt := &model.ImportAttempt{
+					ConfigSet: datastore.KeyForObj(ctx, cfgSet),
+				}
+				revKey := datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice", model.RevisionKind, latestCommit.Id)
+				var files []*model.File
+				So(datastore.Get(ctx, cfgSet, attempt), ShouldBeNil)
+				So(datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), ShouldBeNil)
+
+				So(cfgSet.Location, ShouldResembleProto, &cfgcommonpb.Location{
+					Location: &cfgcommonpb.Location_GitilesLocation{
+						GitilesLocation: &cfgcommonpb.GitilesLocation{
+							Repo: "https://chrome-internal.googlesource.com/infradata/config",
+							Ref:  "main",
+							Path: "dev-configs/myservice",
+						},
+					},
+				})
+				So(cfgSet.LatestRevision.Location, ShouldResembleProto, &cfgcommonpb.Location{
+					Location: &cfgcommonpb.Location_GitilesLocation{
+						GitilesLocation: &cfgcommonpb.GitilesLocation{
+							Repo: "https://chrome-internal.googlesource.com/infradata/config",
+							Ref:  latestCommit.Id,
+							Path: "dev-configs/myservice",
+						},
+					},
+				})
+				// Drop the `Location` as model ConfigSet has to use ShouldResemble which
+				// will not work if it contains proto. Same for other tests.
+				cfgSet.Location = nil
+				cfgSet.LatestRevision.Location = nil
+				So(cfgSet, ShouldResemble, &model.ConfigSet{
+					ID:             "services/myservice",
+					LatestRevision: expectedLatestRevInfo,
+				})
+
+				So(files, ShouldHaveLength, 2)
+				So(files[0].Location, ShouldResembleProto, &cfgcommonpb.Location{
+					Location: &cfgcommonpb.Location_GitilesLocation{
+						GitilesLocation: &cfgcommonpb.GitilesLocation{
+							Repo: "https://chrome-internal.googlesource.com/infradata/config",
+							Ref:  latestCommit.Id,
+							Path: "dev-configs/myservice/file1",
+						},
+					},
+				})
+				files[0].Location = nil
+				expectedSha256 := sha256.Sum256([]byte("file1 content"))
+				expectedContent1, err := gzipCompress([]byte("file1 content"))
+				So(err, ShouldBeNil)
+				So(files[0], ShouldResemble, &model.File{
+					Path:        "file1",
+					Revision:    revKey,
+					CreateTime:  datastore.RoundTime(clock.Now(ctx).UTC()),
+					Content:     expectedContent1,
+					ContentHash: "sha256:" + hex.EncodeToString(expectedSha256[:]),
+				})
+				So(files[1].Location, ShouldResembleProto, &cfgcommonpb.Location{
+					Location: &cfgcommonpb.Location_GitilesLocation{
+						GitilesLocation: &cfgcommonpb.GitilesLocation{
+							Repo: "https://chrome-internal.googlesource.com/infradata/config",
+							Ref:  latestCommit.Id,
+							Path: "dev-configs/myservice/sub_dir/file2",
+						},
+					},
+				})
+				files[1].Location = nil
+				expectedSha256 = sha256.Sum256([]byte("file2 content"))
+				expectedContent2, err := gzipCompress([]byte("file2 content"))
+				So(err, ShouldBeNil)
+				So(files[1], ShouldResemble, &model.File{
+					Path:        "sub_dir/file2",
+					Revision:    revKey,
+					CreateTime:  datastore.RoundTime(clock.Now(ctx).UTC()),
+					Content:     expectedContent2,
+					ContentHash: "sha256:" + hex.EncodeToString(expectedSha256[:]),
+				})
+
+				So(attempt.Revision.Location, ShouldResembleProto, &cfgcommonpb.Location{
+					Location: &cfgcommonpb.Location_GitilesLocation{
+						GitilesLocation: &cfgcommonpb.GitilesLocation{
+							Repo: "https://chrome-internal.googlesource.com/infradata/config",
+							Ref:  latestCommit.Id,
+							Path: "dev-configs/myservice",
+						},
+					},
+				})
+				attempt.Revision.Location = nil
+				So(attempt, ShouldResemble, &model.ImportAttempt{
+					ConfigSet: datastore.KeyForObj(ctx, cfgSet),
+					Revision:  expectedLatestRevInfo,
+					Success:   true,
+					Message:   "Imported",
+				})
+			})
+
+			Convey("same git revision", func() {
+				loc := &cfgcommonpb.Location{
+					Location: &cfgcommonpb.Location_GitilesLocation{
+						GitilesLocation: &cfgcommonpb.GitilesLocation{
+							Repo: "https://chrome-internal.googlesource.com/infradata/config",
+							Ref:  "main",
+							Path: "dev-configs/myservice",
+						},
+					},
+				}
+				cfgSetBeforeImport := &model.ConfigSet{
+					ID:             config.MustServiceSet("myservice"),
+					Location:       loc,
+					LatestRevision: model.RevisionInfo{ID: latestCommit.Id},
+				}
+				So(datastore.Put(ctx, cfgSetBeforeImport), ShouldBeNil)
+				mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(&gitilespb.LogResponse{
+					Log: []*git.Commit{latestCommit},
+				}, nil)
+
+				err := ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+
+				So(err, ShouldBeNil)
+				cfgSetAfterImport := &model.ConfigSet{
+					ID: config.MustServiceSet("myservice"),
+				}
+				So(datastore.Get(ctx, cfgSetAfterImport), ShouldBeNil)
+				So(cfgSetAfterImport.Location, ShouldResembleProto, loc)
+				cfgSetAfterImport.Location = nil
+				cfgSetBeforeImport.Location = nil
+				So(cfgSetAfterImport, ShouldResemble, cfgSetBeforeImport)
+				attempt := &model.ImportAttempt{ConfigSet: datastore.KeyForObj(ctx, cfgSetAfterImport)}
+				So(datastore.Get(ctx, attempt), ShouldBeNil)
+				So(attempt.Success, ShouldBeTrue)
+				So(attempt.Message, ShouldEqual, "Up-to-date")
+			})
+
+			Convey("empty archive", func() {
+				mockGtClient.EXPECT().Log(gomock.Any(), proto.MatcherEqual(
+					&gitilespb.LogRequest{
+						Project:    "infradata/config",
+						Committish: "main",
+						Path:       "dev-configs/myservice",
+						PageSize:   1,
+					},
+				)).Return(&gitilespb.LogResponse{
+					Log: []*git.Commit{latestCommit},
+				}, nil)
+				mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{}, nil)
+
+				err := ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+
+				So(err, ShouldBeNil)
+				cfgSet := &model.ConfigSet{
+					ID: config.MustServiceSet("myservice"),
+				}
+				attempt := &model.ImportAttempt{
+					ConfigSet: datastore.KeyForObj(ctx, cfgSet),
+				}
+				revKey := datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice", model.RevisionKind, latestCommit.Id)
+				So(datastore.Get(ctx, cfgSet, attempt), ShouldBeNil)
+				var files []*model.File
+				So(datastore.Run(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), func(f *model.File) {
+					files = append(files, f)
+				}), ShouldBeNil)
+				So(files, ShouldHaveLength, 0)
+
+				So(cfgSet.Location, ShouldResembleProto, &cfgcommonpb.Location{
+					Location: &cfgcommonpb.Location_GitilesLocation{
+						GitilesLocation: &cfgcommonpb.GitilesLocation{
+							Repo: "https://chrome-internal.googlesource.com/infradata/config",
+							Ref:  "main",
+							Path: "dev-configs/myservice",
+						},
+					},
+				})
+				So(cfgSet.LatestRevision.Location, ShouldResembleProto, &cfgcommonpb.Location{
+					Location: &cfgcommonpb.Location_GitilesLocation{
+						GitilesLocation: &cfgcommonpb.GitilesLocation{
+							Repo: "https://chrome-internal.googlesource.com/infradata/config",
+							Ref:  latestCommit.Id,
+							Path: "dev-configs/myservice",
+						},
+					},
+				})
+
+				cfgSet.Location = nil
+				cfgSet.LatestRevision.Location = nil
+				So(cfgSet, ShouldResemble, &model.ConfigSet{
+					ID:             "services/myservice",
+					LatestRevision: expectedLatestRevInfo,
+				})
+
+				So(attempt.Success, ShouldBeTrue)
+				So(attempt.Message, ShouldEqual, "No Configs. Imported as empty")
+			})
+
+			Convey("config set location change", func() {
+				cfgSetBeforeImport := &model.ConfigSet{
+					ID: config.MustServiceSet("myservice"),
+					Location: &cfgcommonpb.Location{
+						Location: &cfgcommonpb.Location_GitilesLocation{
+							GitilesLocation: &cfgcommonpb.GitilesLocation{
+								Repo: "https://chrome-internal.googlesource.com/infradata/config",
+								Ref:  "stale",
+								Path: "dev-configs/myservice",
+							},
+						},
+					},
+					LatestRevision: model.RevisionInfo{ID: latestCommit.Id},
+				}
+				So(datastore.Put(ctx, cfgSetBeforeImport), ShouldBeNil)
+				mockGtClient.EXPECT().Log(gomock.Any(), proto.MatcherEqual(
+					&gitilespb.LogRequest{
+						Project:    "infradata/config",
+						Committish: "main",
+						Path:       "dev-configs/myservice",
+						PageSize:   1,
+					},
+				)).Return(&gitilespb.LogResponse{
+					Log: []*git.Commit{latestCommit},
+				}, nil)
+				mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{}, nil)
+
+				err := ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+
+				So(err, ShouldBeNil)
+				cfgSetAfterImport := &model.ConfigSet{
+					ID: config.MustServiceSet("myservice"),
+				}
+				So(datastore.Get(ctx, cfgSetAfterImport), ShouldBeNil)
+				So(cfgSetAfterImport.Location.GetGitilesLocation().Ref, ShouldNotEqual, cfgSetBeforeImport.Location.GetGitilesLocation().Ref)
+				So(cfgSetAfterImport.Location, ShouldResembleProto, &cfgcommonpb.Location{
+					Location: &cfgcommonpb.Location_GitilesLocation{
+						GitilesLocation: &cfgcommonpb.GitilesLocation{
+							Repo: "https://chrome-internal.googlesource.com/infradata/config",
+							Ref:  "main",
+							Path: "dev-configs/myservice",
+						},
+					},
+				})
+			})
+
+			Convey("no logs", func() {
+				mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(&gitilespb.LogResponse{
+					Log: []*git.Commit{},
+				}, nil)
+				err := ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+				So(err, ShouldBeNil)
+				attempt := &model.ImportAttempt{
+					ConfigSet: datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice"),
+				}
+				So(datastore.Get(ctx, attempt), ShouldBeNil)
+				So(attempt.Success, ShouldBeTrue)
+				So(attempt.Message, ShouldContainSubstring, "no commit logs")
+			})
+		})
+
+		Convey("unhappy path", func() {
+			Convey("bad config set format", func() {
+				err := ImportConfigSet(ctx, config.Set("bad"))
+				So(err, ShouldErrLike, "Invalid config set")
+			})
+
+			Convey("project doesn't exist ", func() {
+				err := ImportConfigSet(ctx, config.MustProjectSet("unknown_proj"))
+				So(err, ShouldErrLike, `project "unknown_proj" not exist or has no gitiles location`)
+				So(ErrFatalTag.In(err), ShouldBeTrue)
+			})
+
+			Convey("no project gitiles location", func() {
+				cfgSetID := config.MustServiceSet(info.AppID(ctx))
+				cs := &model.ConfigSet{
+					ID:             cfgSetID,
+					LatestRevision: model.RevisionInfo{ID: "rev"},
+				}
+				prjCfgBytes, err := prototext.Marshal(&cfgcommonpb.ProjectsCfg{
+					Projects: []*cfgcommonpb.Project{
+						{Id: "proj"},
+					},
+				})
+				So(err, ShouldBeNil)
+				f := &model.File{
+					Path:     "projects.cfg",
+					Revision: datastore.MakeKey(ctx, model.ConfigSetKind, string(cfgSetID), model.RevisionKind, "rev"),
+					Content:  prjCfgBytes,
+				}
+				So(datastore.Put(ctx, cs, f), ShouldBeNil)
+				err = ImportConfigSet(ctx, config.MustProjectSet("proj"))
+				So(err, ShouldErrLike, `project "proj" not exist or has no gitiles location`)
+				So(ErrFatalTag.In(err), ShouldBeTrue)
+			})
+
+			Convey("cannot fetch logs", func() {
+				mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(nil, errors.New("gitiles internal errors"))
+				err := ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+				So(err, ShouldErrLike, "cannot fetch logs", "gitiles internal errors")
+				attempt := &model.ImportAttempt{
+					ConfigSet: datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice"),
+				}
+				So(datastore.Get(ctx, attempt), ShouldBeNil)
+				So(attempt.Success, ShouldBeFalse)
+				So(attempt.Message, ShouldContainSubstring, "cannot fetch logs")
+			})
+
+			Convey("bad tar file", func() {
+				loc := &cfgcommonpb.Location{
+					Location: &cfgcommonpb.Location_GitilesLocation{
+						GitilesLocation: &cfgcommonpb.GitilesLocation{
+							Repo: "https://chrome-internal.googlesource.com/infradata/config",
+							Ref:  "main",
+							Path: "dev-configs/myservice",
+						},
+					},
+				}
+				cfgSetBeforeImport := &model.ConfigSet{
+					ID:             config.MustServiceSet("myservice"),
+					Location:       loc,
+					LatestRevision: model.RevisionInfo{ID: "old revision"},
+				}
+				So(datastore.Put(ctx, cfgSetBeforeImport), ShouldBeNil)
+				mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(&gitilespb.LogResponse{
+					Log: []*git.Commit{latestCommit},
+				}, nil)
+				mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{
+					Contents: []byte("invalid .tar.gz content"),
+				}, nil)
+
+				err := ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+
+				So(err, ShouldErrLike, "Failed to import services/myservice revision latest revision")
+				cfgSetAfterImport := &model.ConfigSet{
+					ID: config.MustServiceSet("myservice"),
+				}
+				attempt := &model.ImportAttempt{
+					ConfigSet: datastore.KeyForObj(ctx, cfgSetAfterImport),
+				}
+				So(datastore.Get(ctx, cfgSetAfterImport, attempt), ShouldBeNil)
+
+				So(cfgSetAfterImport.Location, ShouldResembleProto, cfgSetBeforeImport.Location)
+				So(cfgSetAfterImport.LatestRevision.ID, ShouldEqual, cfgSetBeforeImport.LatestRevision.ID)
+
+				So(attempt.Success, ShouldBeFalse)
+				So(attempt.Message, ShouldContainSubstring, "Failed to import services/myservice revision latest revision")
+			})
+		})
+	})
+}
+
+func buildTarGz(raw map[string]string) ([]byte, error) {
+	var buf bytes.Buffer
+	gzw := gzip.NewWriter(&buf)
+	tw := tar.NewWriter(gzw)
+	for name, body := range raw {
+		hdr := &tar.Header{
+			Name:     name,
+			Size:     int64(len([]byte(body))),
+			Typeflag: tar.TypeReg,
+		}
+		if strings.HasSuffix(name, "/") {
+			hdr.Typeflag = tar.TypeDir
+		}
+
+		if err := tw.WriteHeader(hdr); err != nil {
+			return nil, err
+		}
+		if _, err := tw.Write([]byte(body)); err != nil {
+			return nil, err
+		}
+	}
+	if err := tw.Flush(); err != nil {
+		return nil, err
+	}
+	if err := tw.Close(); err != nil {
+		return nil, err
+	}
+	if err := gzw.Flush(); err != nil {
+		return nil, err
+	}
+	if err := gzw.Close(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
 func getCfgSetsInTaskQueue(sch *tqtesting.Scheduler) []string {
 	cfgSets := make([]string, len(sch.Tasks()))
 	for i, task := range sch.Tasks() {
@@ -158,4 +602,16 @@ func getCfgSetsInTaskQueue(sch *tqtesting.Scheduler) []string {
 	}
 	sort.Slice(cfgSets, func(i, j int) bool { return cfgSets[i] < cfgSets[j] })
 	return cfgSets
+}
+
+func gzipCompress(b []byte) ([]byte, error) {
+	buf := &bytes.Buffer{}
+	gw := gzip.NewWriter(buf)
+	if _, err := gw.Write(b); err != nil {
+		return nil, err
+	}
+	if err := gw.Close(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }

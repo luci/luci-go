@@ -96,7 +96,7 @@ type ImportAttempt struct {
 	Message string `gae:"message,noindex"`
 	// ValidationMessage is the error return by the corresponding downstream
 	// application when calling its validation API.
-	ValidationMessage *cfgcommonpb.ValidationResponseMessage `gae:"validationMessage,noindex"`
+	ValidationMessage *cfgcommonpb.ValidationResponseMessage `gae:"validationMessage"`
 }
 
 // RevisionInfo contains a revision metadata.
@@ -127,3 +127,5 @@ func GetLatestConfigFile(ctx context.Context, configSet config.Set, filePath str
 	}
 	return file, nil
 }
+
+// TODO(crbug.com/1446839): Add a function to uncompress the file content
