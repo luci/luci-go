@@ -17,22 +17,18 @@ import '@testing-library/jest-dom';
 import {
   fireEvent,
   screen,
+  render,
 } from '@testing-library/react';
 
-import { renderWithRouter } from '@/testing_tools/libs/mock_router';
 import { getMockMetricsList } from '@/testing_tools/mocks/metrics_mock';
 
-import { ClusterTableContextWrapper } from '@/components/clusters_table/clusters_table_context';
-
-import ClustersTableMetricSelection from './clusters_table_metric_selection';
+import MetricsSelector from './metrics_selector';
 
 describe('Test ClusterTableMetricSelection component', () => {
   it('given a list of metrics, should display select items', async () => {
     const metrics = getMockMetricsList();
-    renderWithRouter(
-        <ClusterTableContextWrapper metrics={metrics}>
-          <ClustersTableMetricSelection />
-        </ClusterTableContextWrapper>,
+    render(
+        <MetricsSelector metrics={metrics} selectedMetrics={[]} handleSelectedMetricsChanged={()=>{}}/>,
     );
 
     await (screen.findAllByText('Metrics'));
@@ -46,11 +42,8 @@ describe('Test ClusterTableMetricSelection component', () => {
     const metrics = getMockMetricsList();
 
     const selectedMetrics = [metrics[0].metricId, metrics[1].metricId];
-    renderWithRouter(
-        <ClusterTableContextWrapper metrics={metrics}>
-          <ClustersTableMetricSelection />
-        </ClusterTableContextWrapper>,
-        `/?selectedMetrics=${selectedMetrics.join(',')}`,
+    render(
+        <MetricsSelector metrics={metrics} selectedMetrics={selectedMetrics} handleSelectedMetricsChanged={()=>{}}/>,
     );
 
     await (screen.findAllByText('Metrics'));

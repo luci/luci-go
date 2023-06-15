@@ -15,52 +15,27 @@
 import { useContext } from 'react';
 
 import {
-  Checkbox,
   FormControl,
   Grid,
   InputLabel,
-  ListItemText,
-  MenuItem,
-  OutlinedInput,
-  Select,
-  SelectChangeEvent,
 } from '@mui/material';
 
 import { ClusterTableContextData } from '@/components/clusters_table/clusters_table_context';
 import { useSelectedMetricsParam } from '@/components/clusters_table/hooks';
-
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-const MenuProps = {
-  PaperProps: {
-    style: {
-      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-      width: 250,
-    },
-  },
-};
+import MetricsSelector from '@/components/metrics_selector/metrics_selector';
+import { MetricId } from '@/services/shared_models';
 
 const ClustersTableMetricSelection = () => {
   const metrics = useContext(ClusterTableContextData).metrics;
   const [selectedMetrics, updateSelectedMetricsParam] = useSelectedMetricsParam(metrics);
 
-  function handleSelectedMetricsChanged(event: SelectChangeEvent<string[]>) {
-    const {
-      target: { value },
-    } = event;
-    // On autofill we get a stringified value.
-    const selectedMetricsValue = typeof value === 'string' ? value.split(',') : value;
-
+  function handleSelectedMetricsChanged(selectedMetricsIds: MetricId[]) {
     // Only update if at least one metric has been selected.
-    if (selectedMetricsValue.length > 0) {
-      updateSelectedMetricsParam(metrics.filter((m) => selectedMetricsValue.indexOf(m.metricId) > -1));
+    if (selectedMetricsIds.length > 0) {
+      updateSelectedMetricsParam(metrics.filter((m) => selectedMetricsIds.indexOf(m.metricId) > -1));
     }
   }
 
-  function renderValue(selected: string[]) {
-    return metrics.filter((m) => selected.indexOf(m.metricId) >= 0)
-        .map((m) => m.humanReadableName).join(', ');
-  }
   return (
     <Grid item>
       <FormControl
@@ -69,24 +44,7 @@ const ClustersTableMetricSelection = () => {
           width: '100%',
         }}>
         <InputLabel id="metrics-selection-label">Metrics</InputLabel>
-        <Select
-          labelId="metrics-selection-label"
-          id="metrics-selection"
-          multiple
-          value={selectedMetrics.map((m) => m.metricId)}
-          onChange={handleSelectedMetricsChanged}
-          input={<OutlinedInput label="Metrics" />}
-          renderValue={renderValue}
-          MenuProps={MenuProps}
-          inputProps={{ 'data-testid': 'clusters-table-metrics-selection' }}
-        >
-          {metrics.map((metric) => (
-            <MenuItem key={metric.metricId} value={metric.metricId}>
-              <Checkbox checked={selectedMetrics.indexOf(metric) > -1} />
-              <ListItemText primary={metric.humanReadableName} />
-            </MenuItem>
-          ))}
-        </Select>
+        <MetricsSelector labelId="metrics-selection-label" metrics={metrics} selectedMetrics={selectedMetrics.map((m) => m.metricId)} handleSelectedMetricsChanged={handleSelectedMetricsChanged}/>
       </FormControl>
     </Grid>
   );

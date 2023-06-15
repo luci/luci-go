@@ -15,11 +15,9 @@
 import { useContext } from 'react';
 
 import Box from '@mui/material/Box';
-import Checkbox from '@mui/material/Checkbox';
 import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import InputLabel from '@mui/material/InputLabel';
-import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
@@ -27,6 +25,8 @@ import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
 
 import PanelHeading from '@/components/headings/panel_heading/panel_heading';
+import MetricsSelector from '@/components/metrics_selector/metrics_selector';
+import { MetricId } from '@/services/shared_models';
 
 import { OverviewTabContextData } from '../../overview_tab_context';
 import {
@@ -36,7 +36,7 @@ import {
   useSelectedMetricsParam,
 } from '../hooks';
 
-const ITEM_HEIGHT = 48;
+const ITEM_HEIGHT = 66;
 const ITEM_PADDING_TOP = 8;
 const MenuProps = {
   PaperProps: {
@@ -87,23 +87,12 @@ export const HistoryChartsForm = () => {
     }
   }
 
-  function handleSelectedMetricsChanged(event: SelectChangeEvent<string[]>) {
-    const {
-      target: { value },
-    } = event;
-    // On autofill we get a stringified value.
-    const selectedMetricsValue = typeof value === 'string' ? value.split(',') : value;
-
+  function handleSelectedMetricsChanged(selectedMetrics: MetricId[]) {
     // Only update if at least one metric has been selected.
-    if (selectedMetricsValue.length > 0) {
-      updateSelectedMetricsParam(metrics.filter((m) => selectedMetricsValue.indexOf(m.metricId) > -1));
+    if (selectedMetrics.length > 0) {
+      updateSelectedMetricsParam(metrics.filter((m) => selectedMetrics.indexOf(m.metricId) > -1));
     }
   }
-
-  const renderMetricsValue = (selected: string[]): string => {
-    return metrics.filter((m) => selected.indexOf(m.metricId) >= 0)
-        .map((m) => m.humanReadableName).join(', ');
-  };
 
   return (
     <Box sx={{
@@ -148,30 +137,10 @@ export const HistoryChartsForm = () => {
           )}
         </Select>
       </FormControl>
+
       <FormControl sx={{ m: 1, width: 300 }}>
         <InputLabel id="metric-label">Metrics</InputLabel>
-        <Select
-          labelId="metric-label"
-          multiple
-          value={selectedMetrics.map((m) => m.metricId)}
-          onChange={handleSelectedMetricsChanged}
-          input={<OutlinedInput label="Metrics" />}
-          renderValue={renderMetricsValue}
-          MenuProps={MenuProps}
-          inputProps={{
-            'aria-label': 'select metrics',
-            'data-testid': 'history-charts-form-metrics-selection',
-          }}
-        >
-          {metrics.map((metric) =>
-            <MenuItem
-              key={metric.metricId}
-              value={metric.metricId}>
-              <Checkbox checked={selectedMetrics.indexOf(metric) > -1} />
-              <ListItemText primary={metric.humanReadableName} />
-            </MenuItem>,
-          )}
-        </Select>
+        <MetricsSelector labelId="metric-label" metrics={metrics} selectedMetrics={selectedMetrics.map((m) => m.metricId)} handleSelectedMetricsChanged={handleSelectedMetricsChanged} />
       </FormControl>
     </Box>
   );

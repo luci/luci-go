@@ -127,7 +127,7 @@ describe('Test HistoryChartsForm component', () => {
 
     await screen.findAllByText('Metrics');
     expect(
-        screen.getByTestId('history-charts-form-metrics-selection'),
+        screen.getByTestId('metrics-selector'),
     ).toHaveValue(selectedMetrics.join(','));
   });
 
@@ -142,7 +142,7 @@ describe('Test HistoryChartsForm component', () => {
 
     await screen.findAllByText('Metrics');
     expect(
-        screen.getByTestId('history-charts-form-metrics-selection'),
+        screen.getByTestId('metrics-selector'),
     ).toHaveValue(selectedMetrics.join(','));
   });
 });
