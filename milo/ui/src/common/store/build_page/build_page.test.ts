@@ -105,7 +105,6 @@ describe('BuildPage', () => {
       );
 
       const getBuildStub = jest.spyOn(store.services.builds!, 'getBuild');
-      const getBuilderStub = jest.spyOn(store.services.builders!, 'getBuilder');
       const getProjectCfgStub = jest.spyOn(
         store.services.milo!,
         'getProjectCfg'
@@ -125,7 +124,6 @@ describe('BuildPage', () => {
         id: '123',
         builder: builderId,
       } as Build);
-      getBuilderStub.mockResolvedValueOnce({ id: builderId, config: {} });
       getProjectCfgStub.mockResolvedValueOnce({});
       batchCheckPermissionsStub.mockResolvedValueOnce({ results: {} });
 
@@ -133,7 +131,6 @@ describe('BuildPage', () => {
         store,
         autorun(() => {
           store.buildPage.build;
-          store.buildPage.builder;
           store.buildPage.customBugLink;
           store.buildPage.canRetry;
         })
@@ -141,7 +138,6 @@ describe('BuildPage', () => {
       await jest.runAllTimersAsync();
 
       expect(getBuildStub.mock.calls[0][0].builder).toBeUndefined();
-      expect(getBuilderStub.mock.calls[0][0].id).toEqual(builderId);
       expect(getProjectCfgStub.mock.calls[0][0].project).toStrictEqual(
         builderId.project
       );

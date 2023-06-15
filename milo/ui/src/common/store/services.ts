@@ -28,7 +28,7 @@ import { MAY_REQUIRE_SIGNIN } from '@/common/common_tags';
 import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants';
 import { PrpcClientExt } from '@/common/libs/prpc_client_ext';
 import { attachTags } from '@/common/libs/tag/tag';
-import { BuildersService, BuildsService } from '@/common/services/buildbucket';
+import { BuildsService } from '@/common/services/buildbucket';
 import {
   ClustersService,
   TestHistoryService,
@@ -93,14 +93,6 @@ export const ServicesStore = types
           makeClient({ host: CONFIGS.BUILDBUCKET.HOST })
         );
       },
-      get builders() {
-        if (!self.authState?.identity) {
-          return null;
-        }
-        return new BuildersService(
-          makeClient({ host: CONFIGS.BUILDBUCKET.HOST })
-        );
-      },
       get clusters() {
         if (!self.authState?.identity) {
           return null;
@@ -121,7 +113,6 @@ export const ServicesStore = types
       addDisposer(self, keepAlive(computed(() => self.testHistory)));
       addDisposer(self, keepAlive(computed(() => self.milo)));
       addDisposer(self, keepAlive(computed(() => self.builds)));
-      addDisposer(self, keepAlive(computed(() => self.builders)));
       addDisposer(self, keepAlive(computed(() => self.clusters)));
     },
   }));

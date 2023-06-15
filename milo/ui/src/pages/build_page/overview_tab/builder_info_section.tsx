@@ -12,30 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { observer } from 'mobx-react-lite';
+import { GrpcError } from '@chopsui/prpc-client';
 
-import { unwrapOrElse } from '@/common/libs/utils';
-import { useStore } from '@/common/store';
+import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants';
+import { usePrpcQuery } from '@/common/libs/use_prpc_query';
+import { BuilderID, BuildersService } from '@/common/services/buildbucket';
 
-export const BuilderInfoSection = observer(() => {
-  const store = useStore();
-  const pageState = store.buildPage;
+export interface BuilderInfoSectionProps {
+  readonly builderId: BuilderID;
+}
 
-  const builderDescriptionHtml = unwrapOrElse(
-    () => {
-      if (!pageState.canReadFullBuild) {
-        return '';
-      }
-      return pageState.builder?.config.descriptionHtml || '';
+export function BuilderInfoSection({ builderId }: BuilderInfoSectionProps) {
+  const { data, error } = usePrpcQuery({
+    host: CONFIGS.BUILDBUCKET.HOST,
+    Service: BuildersService,
+    method: 'getBuilder',
+    request: {
+      id: builderId,
     },
-    (err) => {
-      // The builder config might've been deleted from buildbucket or the
-      // builder is a dynamic builder.
-      console.warn('failed to get builder description', err);
-      return '';
-    }
-  );
-  if (!builderDescriptionHtml) {
+  });
+
+  if (
+    error &&
+    !(
+      error instanceof GrpcError &&
+      POTENTIAL_PERM_ERROR_CODES.includes(error.code)
+    )
+  ) {
+    // Optional resource.
+    // Log the warning in case of an error.
+    console.warn('failed to get builder description', error);
+  }
+
+  if (!data?.config.descriptionHtml) {
     return <></>;
   }
 
@@ -44,8 +53,8 @@ export const BuilderInfoSection = observer(() => {
       <h3>Builder Info</h3>
       <div
         id="builder-description"
-        dangerouslySetInnerHTML={{ __html: builderDescriptionHtml }}
+        dangerouslySetInnerHTML={{ __html: data.config.descriptionHtml }}
       />
     </>
   );
-});
+}

@@ -289,15 +289,6 @@ export const BuildPage = types
       );
     });
 
-    const builder = keepAliveComputed(self, () => {
-      if (!self.services?.builders || !self.build?.data.builder) {
-        return null;
-      }
-      return fromPromise(
-        self.services.builders.getBuilder({ id: self.build.data.builder })
-      );
-    });
-
     const permittedActions = keepAliveComputed(self, () => {
       if (!self.services?.milo || !self.build?.data.builder) {
         return null;
@@ -345,9 +336,6 @@ export const BuildPage = types
       },
       get relatedBuilds(): readonly BuildStateInstance[] | null {
         return unwrapObservable(relatedBuilds.get() || NEVER_OBSERVABLE, null);
-      },
-      get builder() {
-        return unwrapObservable(builder.get() || NEVER_OBSERVABLE, null);
       },
       get _permittedActions(): { readonly [key: string]: boolean | undefined } {
         const permittedActionRes = unwrapObservable(
