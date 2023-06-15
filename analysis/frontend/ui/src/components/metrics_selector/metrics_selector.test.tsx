@@ -36,6 +36,7 @@ describe('Test ClusterTableMetricSelection component', () => {
     await fireEvent.mouseDown(screen.getByRole('button'));
 
     metrics.forEach(((metric) => expect(screen.getByText(metric.humanReadableName)).toBeInTheDocument()));
+    metrics.forEach(((metric) => expect(screen.getByText(metric.description)).toBeInTheDocument()));
   });
 
   it('given a list of selected metrics, then should be values of the list', async () => {

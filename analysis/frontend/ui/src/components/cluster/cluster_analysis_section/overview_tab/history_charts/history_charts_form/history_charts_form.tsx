@@ -138,7 +138,7 @@ export const HistoryChartsForm = () => {
         </Select>
       </FormControl>
 
-      <FormControl sx={{ m: 1, width: 300 }}>
+      <FormControl sx={{ m: 1, width: '30%' }}>
         <InputLabel id="metric-label">Metrics</InputLabel>
         <MetricsSelector labelId="metric-label" metrics={metrics} selectedMetrics={selectedMetrics.map((m) => m.metricId)} handleSelectedMetricsChanged={handleSelectedMetricsChanged} />
       </FormControl>

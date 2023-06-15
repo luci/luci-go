@@ -38,7 +38,7 @@ var (
 	HumanClsFailedPresubmit = metricBuilder{
 		ID:                "human-cls-failed-presubmit",
 		HumanReadableName: "User Cls Failed Presubmit",
-		Description:       "The number of distinct developer changelists that failed at least one presubmit (CQ) run because of failure(s) in this cluster.",
+		Description:       "The number of distinct developer changelists that failed at least one presubmit (CQ) run because of failure(s) in a cluster.",
 		SortPriority:      30,
 		IsDefault:         true,
 
@@ -76,7 +76,7 @@ var (
 	TestRunsFailed = metricBuilder{
 		ID:                "test-runs-failed",
 		HumanReadableName: "Test Runs Failed",
-		Description:       "The number of distinct test runs (i.e. swarming tasks or builds) failed due to failures in this cluster.",
+		Description:       "The number of distinct test runs (i.e. swarming tasks or builds) failed due to failures in a cluster.",
 		SortPriority:      20,
 
 		FilterSQL: `f.is_test_run_blocked`,
@@ -90,7 +90,7 @@ var (
 	Failures = metricBuilder{
 		ID:                "failures",
 		HumanReadableName: "Test Results Failed",
-		Description:       "The total number of test results in this cluster. LUCI Analysis only clusters test results which are unexpected and have a status of crash, abort or fail.",
+		Description:       "The total number of test results in a cluster. LUCI Analysis only clusters test results which are unexpected and have a status of crash, abort or fail.",
 		SortPriority:      10,
 		IsDefault:         true,
 	}.Build()

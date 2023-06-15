@@ -24,12 +24,10 @@ import {
 import { MetricId } from '@/services/shared_models';
 import { Metric } from '@/services/metrics';
 
-const ITEM_HEIGHT = 66;
-const ITEM_PADDING_TOP = 8;
 const MenuProps = {
   PaperProps: {
     style: {
-      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+      maxHeight: 500,
       width: 250,
     },
   },
@@ -76,9 +74,12 @@ const MetricsSelector = ({
       }}
     >
       {metrics.map((metric) => (
-        <MenuItem key={metric.metricId} value={metric.metricId}>
+        <MenuItem key={metric.metricId} value={metric.metricId} sx={{
+          whiteSpace: 'unset',
+          wordBreak: 'break-word',
+        }}>
           <Checkbox checked={selectedMetrics.indexOf(metric.metricId) > -1} />
-          <ListItemText primary={metric.humanReadableName} />
+          <ListItemText primary={metric.humanReadableName} secondary={metric.description} />
         </MenuItem>
       ))}
     </Select>
