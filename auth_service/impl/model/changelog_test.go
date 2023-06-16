@@ -16,6 +16,7 @@ package model
 
 import (
 	"context"
+	"sort"
 	"testing"
 	"time"
 
@@ -260,6 +261,9 @@ func TestGenerateChanges(t *testing.T) {
 			for i, ct := range actualChanges {
 				SoMsg(msg, ct.ChangeType, ShouldEqual, cts[i])
 			}
+			sort.Slice(actualChanges, func(i, j int) bool {
+				return actualChanges[i].ChangeType < actualChanges[j].ChangeType
+			})
 			SoMsg(msg, actualChanges, ShouldResemble, getChanges(ctx, authDBRev))
 		}
 		//////////////////////////////////////////////////////////
@@ -422,6 +426,78 @@ func TestGenerateChanges(t *testing.T) {
 				actualChanges, err = generateChanges(ctx, 4, false)
 				So(err, ShouldBeNil)
 				validateChanges(ctx, "delete group -nested", actualChanges, 4, ChangeGroupNestedRemoved, ChangeGroupDeleted)
+			})
+		})
+
+		Convey("AuthIPAllowlist changes", func() {
+			Convey("AuthIPAllowlist Created/Deleted +/- subnets", func() {
+				// Creation with no subnet
+				baseSubnetMap := make(map[string][]string)
+				baseSubnetMap["test-allowlist-1"] = []string{}
+				So(UpdateAllowlistEntities(ctx, baseSubnetMap, false), ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				actualChanges, err := generateChanges(ctx, 1, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "create allowlist", actualChanges, 1, ChangeIPALCreated)
+
+				// Deletion with no subnet
+				baseSubnetMap = map[string][]string{}
+				So(UpdateAllowlistEntities(ctx, baseSubnetMap, false), ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
+				actualChanges, err = generateChanges(ctx, 2, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "delete allowlist", actualChanges, 2, ChangeIPALDeleted)
+
+				// Creation with subnets
+				baseSubnetMap["test-allowlist-1"] = []string{"123.4.5.6"}
+				So(UpdateAllowlistEntities(ctx, baseSubnetMap, false), ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 6)
+				actualChanges, err = generateChanges(ctx, 3, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "create allowlist w/ subnet", actualChanges, 3, ChangeIPALCreated, ChangeIPALSubnetsAdded)
+
+				// Add subnet
+				baseSubnetMap["test-allowlist-1"] = append(baseSubnetMap["test-allowlist-1"], "567.8.9.10")
+				So(UpdateAllowlistEntities(ctx, baseSubnetMap, false), ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 8)
+				actualChanges, err = generateChanges(ctx, 4, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "add subnet", actualChanges, 4, ChangeIPALSubnetsAdded)
+
+				// Remove subnet
+				baseSubnetMap["test-allowlist-1"] = baseSubnetMap["test-allowlist-1"][1:]
+				So(UpdateAllowlistEntities(ctx, baseSubnetMap, false), ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 10)
+				actualChanges, err = generateChanges(ctx, 5, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "remove subnet", actualChanges, 5, ChangeIPALSubnetsRemoved)
+
+				// Delete allowlist with subnet
+				baseSubnetMap = map[string][]string{}
+				So(UpdateAllowlistEntities(ctx, baseSubnetMap, false), ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 12)
+				actualChanges, err = generateChanges(ctx, 6, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "delete allowlist w/ subnet", actualChanges, 6, ChangeIPALDeleted, ChangeIPALSubnetsRemoved)
+			})
+
+			Convey("AuthIPAllowlist description changed", func() {
+				baseSubnetMap := make(map[string][]string)
+				baseSubnetMap["test-allowlist-1"] = []string{}
+				So(UpdateAllowlistEntities(ctx, baseSubnetMap, false), ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				_, err := generateChanges(ctx, 1, false)
+				So(err, ShouldBeNil)
+
+				al, err := GetAuthIPAllowlist(ctx, "test-allowlist-1")
+				So(err, ShouldBeNil)
+				So(runAuthDBChange(ctx, func(ctx context.Context, cae commitAuthEntity) error {
+					al.Description = "new-desc"
+					return cae(al, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), false)
+				}), ShouldBeNil)
+				actualChanges, err := generateChanges(ctx, 2, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "change description", actualChanges, 2, ChangeIPALDescriptionChanged)
 			})
 		})
 	})

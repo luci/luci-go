@@ -189,7 +189,7 @@ type AuthDBChange struct {
 	Nested    []string `gae:"nested" json:"nested"`         // Valid for ChangeGroupNestedAdded and ChangeGroupNestedRemoved.
 
 	// Fields specific to AuthDBIPAllowlistChange.
-	Subnets []string `gae:"subnets"` // Valid for ChangeIPWLSubnetsAdded and ChangeIPWLSubnetsRemoved.
+	Subnets []string `gae:"subnets" json:"subnets"` // Valid for ChangeIPWLSubnetsAdded and ChangeIPWLSubnetsRemoved.
 
 	// Fields specific to AuthDBIPAllowlistAssignmentChange.
 	Identity    string `gae:"identity"` // Valid for ChangeIPWLAssignSet and ChangeIPWLAssignUnset.
@@ -364,6 +364,23 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 	query := datastore.NewQuery("").Ancestor(HistoricalRevisionKey(ctx, authDBRev))
 	changes := []*AuthDBChange{}
 
+	getPms := func(key *datastore.Key, class string, ch *AuthDBChange, pm datastore.PropertyMap) (string, datastore.PropertyMap, datastore.PropertyMap, error) {
+		target := fmt.Sprintf("%s$%s", class, key.StringID())
+		ch.ID = target
+		if err := datastore.Get(ctx, ch); err == nil {
+			return "", nil, nil, err
+		}
+		var oldpm datastore.PropertyMap
+		if pk := PreviousHistoricalRevisionKey(ctx, pm); pk != nil {
+			oldpm = make(datastore.PropertyMap)
+			oldpm.SetMeta("key", datastore.NewKey(ctx, class+"History", key.StringID(), 0, pk))
+			if err := datastore.Get(ctx, oldpm); err != nil {
+				return "", nil, nil, err
+			}
+		}
+		return target, oldpm, pm, nil
+	}
+
 	err := datastore.Run(ctx, query, func(pm datastore.PropertyMap) error {
 		c := &AuthDBChange{
 			Kind:   "AuthDBChange",
@@ -376,19 +393,9 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 		}
 		switch key := k.(*datastore.Key); {
 		case strings.Contains(key.String(), "AuthGroupHistory"):
-			target := fmt.Sprintf("%s$%s", "AuthGroup", key.StringID())
-			c.ID = target
-			if err := datastore.Get(ctx, c); err == nil {
-				return nil
-			}
-			var oldpm datastore.PropertyMap
-			if pk := PreviousHistoricalRevisionKey(ctx, pm); pk != nil {
-				oldpm = make(datastore.PropertyMap)
-				oldpm.SetMeta("key", datastore.NewKey(ctx, "AuthGroupHistory", key.StringID(), 0, pk))
-				err := datastore.Get(ctx, oldpm)
-				if err != nil {
-					return err
-				}
+			target, oldpm, pm, err := getPms(key, "AuthGroup", c, pm)
+			if err != nil {
+				return err
 			}
 
 			groupChanges, err := diffGroups(ctx, target, oldpm, pm)
@@ -397,7 +404,16 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 			}
 			changes = append(changes, groupChanges...)
 		case strings.Contains(key.String(), "AuthIPWhitelistHistory"):
-			// TODO(cjacomet): Implement!
+			target, oldpm, pm, err := getPms(key, "AuthIPWhitelist", c, pm)
+			if err != nil {
+				return err
+			}
+
+			ipaChanges, err := diffIPAllowlists(ctx, target, oldpm, pm)
+			if err != nil {
+				return err
+			}
+			changes = append(changes, ipaChanges...)
 		case strings.Contains(key.String(), "AuthIPWhitelistAssignmentsHistory"):
 			// TODO(cjacomet): Implement!
 		case strings.Contains(key.String(), "AuthGlobalConfigHistory"):
@@ -572,6 +588,50 @@ func diffGroups(ctx context.Context, target string, old, new datastore.PropertyM
 	return changes, nil
 }
 
+func diffIPAllowlists(ctx context.Context, target string, old, new datastore.PropertyMap) ([]*AuthDBChange, error) {
+	changes := []*AuthDBChange{}
+	authDBRev := getInt64Prop(new, "auth_db_rev")
+	class := "AuthDBIPWhitelistChange"
+	if getBoolProp(new, "auth_db_deleted") {
+		d := getDescription(new)
+		changes = append(changes, makeChange(ctx,
+			ChangeIPALDeleted, target, authDBRev, class, kvPair("old_description", d)))
+		if subnets := getStringSliceProp(new, "subnets"); subnets != nil {
+			changes = append(changes, makeChange(ctx,
+				ChangeIPALSubnetsRemoved, target, authDBRev, class, kvPair("subnets", subnets)))
+		}
+		return changes, nil
+	}
+
+	if old == nil {
+		d := getDescription(new)
+		changes = append(changes, makeChange(ctx,
+			ChangeIPALCreated, target, authDBRev, class, kvPair("description", d)))
+		if subnets := getStringSliceProp(new, "subnets"); subnets != nil {
+			changes = append(changes, makeChange(ctx,
+				ChangeIPALSubnetsAdded, target, authDBRev, class, kvPair("subnets", subnets)))
+		}
+		return changes, nil
+	}
+
+	if getDescription(old) != getDescription(new) {
+		changes = append(changes, makeChange(ctx,
+			ChangeIPALDescriptionChanged, target, authDBRev, class,
+			kvPair("description", getDescription(new)), kvPair("old_description", getDescription(old))))
+	}
+
+	added, removed := diffLists(getStringSliceProp(old, "subnets"), getStringSliceProp(new, "subnets"))
+	if len(added) > 0 {
+		changes = append(changes, makeChange(ctx,
+			ChangeIPALSubnetsAdded, target, authDBRev, class, kvPair("subnets", added)))
+	}
+	if len(removed) > 0 {
+		changes = append(changes, makeChange(ctx,
+			ChangeIPALSubnetsRemoved, target, authDBRev, class, kvPair("subnets", removed)))
+	}
+	return changes, nil
+}
+
 // /////////////////////////////////////////////////////////////////////
 // ///////////////// PropertyMap helper functions //////////////////////
 // /////////////////////////////////////////////////////////////////////
@@ -585,6 +645,15 @@ func getProp(pm datastore.PropertyMap, key string) any {
 		return v.Value()
 	default:
 		panic("getProp only supports single property values. Try getStringSliceProp() instead")
+	}
+}
+
+func getDescription(pm datastore.PropertyMap) string {
+	switch getProp(pm, "description").(type) {
+	case string:
+		return getStringProp(pm, "description")
+	default:
+		return ""
 	}
 }
 
