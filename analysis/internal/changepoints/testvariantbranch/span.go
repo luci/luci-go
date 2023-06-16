@@ -37,6 +37,68 @@ type Key struct {
 	RefHash RefHash
 }
 
+// ReadF fetches rows from TestVariantBranch spanner table
+// and calls the specified callback function for each row.
+//
+// The callback function will be passed the read row and
+// the corresponding index in the key list that was read.
+// If an item does not exist, the provided callback function
+// will be called with the value 'nil'.
+// Absent any errors, the callback function will be called
+// exactly once for each key.
+// The callback function may not be called in order of keys,
+// as Spanner does not return items in order.
+//
+// This function assumes that it is running inside a transaction.
+func ReadF(ctx context.Context, ks []Key, f func(i int, e *Entry) error) error {
+	// Map keys back to key index.
+	// This is because spanner does not return ordered results.
+	keyMap := make(map[Key]int, len(ks))
+
+	// Create the keyset.
+	spannerKeys := make([]spanner.Key, len(ks))
+	for i := 0; i < len(ks); i++ {
+		spannerKeys[i] = spanner.Key{ks[i].Project, ks[i].TestID, ks[i].VariantHash, []byte(ks[i].RefHash)}
+		keyMap[ks[i]] = i
+	}
+	keyset := spanner.KeySetFromKeys(spannerKeys...)
+	cols := []string{
+		"Project", "TestId", "VariantHash", "RefHash", "Variant", "SourceRef",
+		"HotInputBuffer", "ColdInputBuffer", "FinalizingSegment", "FinalizedSegments", "Statistics",
+	}
+	err := span.Read(ctx, "TestVariantBranch", keyset, cols).Do(func(r *spanner.Row) error {
+		tvb, err := SpannerRowToTestVariantBranch(r)
+		if err != nil {
+			return errors.Annotate(err, "convert spanner row to test variant branch").Err()
+		}
+		key := Key{
+			Project:     tvb.Project,
+			TestID:      tvb.TestID,
+			VariantHash: tvb.VariantHash,
+			RefHash:     RefHash(tvb.RefHash),
+		}
+		index, ok := keyMap[key]
+		if !ok {
+			return errors.New("spanner returned unexpected key")
+		}
+		// Remove items which were read from the keyMap, so that
+		// only unread items remain.
+		delete(keyMap, key)
+		return f(index, tvb)
+	})
+	if err != nil {
+		return err
+	}
+	// Call callback function for items which did not exist.
+	for _, i := range keyMap {
+		if err := f(i, nil); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // Read fetches rows from TestVariantBranch spanner table
 // and returns the objects fetched.
 // The returned slice will have the same length and order as the
@@ -44,49 +106,14 @@ type Key struct {
 // element will be set to nil.
 // This function assumes that it is running inside a transaction.
 func Read(ctx context.Context, ks []Key) ([]*Entry, error) {
-	// Map keys to TestVariantBranch.
-	// This is because spanner does not return ordered results.
-	keyMap := map[Key]*Entry{}
-
-	// Create the keyset.
-	keys := make([]spanner.Key, len(ks))
-	for i := 0; i < len(ks); i++ {
-		keys[i] = spanner.Key{ks[i].Project, ks[i].TestID, ks[i].VariantHash, []byte(ks[i].RefHash)}
-	}
-	keyset := spanner.KeySetFromKeys(keys...)
-	cols := []string{
-		"Project", "TestId", "VariantHash", "RefHash", "Variant", "SourceRef",
-		"HotInputBuffer", "ColdInputBuffer", "FinalizingSegment", "FinalizedSegments", "Statistics",
-	}
-	err := span.Read(ctx, "TestVariantBranch", keyset, cols).Do(
-		func(row *spanner.Row) error {
-			tvb, err := SpannerRowToTestVariantBranch(row)
-			if err != nil {
-				return errors.Annotate(err, "convert spanner row to test variant branch").Err()
-			}
-			tvbk := Key{
-				Project:     tvb.Project,
-				TestID:      tvb.TestID,
-				VariantHash: tvb.VariantHash,
-				RefHash:     RefHash(tvb.RefHash),
-			}
-			keyMap[tvbk] = tvb
-			return nil
-		},
-	)
-
+	result := make([]*Entry, len(ks))
+	err := ReadF(ctx, ks, func(i int, e *Entry) error {
+		result[i] = e
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-
-	result := make([]*Entry, len(ks))
-	for i, tvbk := range ks {
-		tvb, ok := keyMap[tvbk]
-		if ok {
-			result[i] = tvb
-		}
-	}
-
 	return result, nil
 }
 

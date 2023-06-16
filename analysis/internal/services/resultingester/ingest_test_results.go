@@ -552,7 +552,10 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 // the specified test verdicts. The returned slice has exactly one entry
 // for each verdict in `tvs`. If analysis is not available for a given
 // verdict, the corresponding item in the response will be nil.
-func queryTestVariantAnalysisForClustering(ctx context.Context, tvs []*rdbpb.TestVariant, project string, partitionTime time.Time, sourcesMap map[string]*rdbpb.Sources) ([]*clusteringpb.TestVariantBranch, error) {
+func queryTestVariantAnalysisForClustering(ctx context.Context, tvs []*rdbpb.TestVariant, project string, partitionTime time.Time, sourcesMap map[string]*rdbpb.Sources) (tvbs []*clusteringpb.TestVariantBranch, err error) {
+	ctx, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.queryTestVariantAnalysisForClustering")
+	defer func() { s.End(err) }()
+
 	cfg, err := config.Get(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err, "read config").Err()

@@ -53,17 +53,12 @@ func QueryStatsForClustering(ctx context.Context, tvs []*rdbpb.TestVariant, proj
 		})
 	}
 
-	branches, err := testvariantbranch.Read(span.Single(ctx), keys)
-	if err != nil {
-		return nil, errors.Annotate(err, "read test variant branches").Err()
-	}
-
 	result := make([]*clusteringpb.TestVariantBranch, len(tvs))
-	for i, branch := range branches {
+	f := func(i int, e *testvariantbranch.Entry) error {
 		var resultItem *clusteringpb.TestVariantBranch
-		if branch != nil {
+		if e != nil {
 			// If there are previous verdicts for test variant branch.
-			stats := branch.MergedStatistics()
+			stats := e.MergedStatistics()
 			resultItem = toSummary(stats, partitionTime)
 		} else {
 			// There are no previous known verdicts for the test variant branch,
@@ -72,6 +67,20 @@ func QueryStatsForClustering(ctx context.Context, tvs []*rdbpb.TestVariant, proj
 		}
 		resultIndex := readIndexToResultIndex[i]
 		result[resultIndex] = resultItem
+		return nil
+	}
+	// We might read up to 10,000 test variant branches in this method
+	// (as at writing, this is the maximum number of verdicts that can
+	// be ingested in one task).
+	// As each deserialized test variant branch can take 10 or more kilobytes
+	// of memory, reading all of them may ordinarily require a hundred or more MB
+	// of memory.
+	// By using ReadF instead of Read, we allow each deserialized test variant
+	// to be garbage collected as it is used, and only hold onto the summaries,
+	// which requires far less memory.
+	err := testvariantbranch.ReadF(span.Single(ctx), keys, f)
+	if err != nil {
+		return nil, errors.Annotate(err, "read test variant branches").Err()
 	}
 	return result, nil
 }
