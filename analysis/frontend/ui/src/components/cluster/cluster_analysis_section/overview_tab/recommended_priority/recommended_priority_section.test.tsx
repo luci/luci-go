@@ -73,7 +73,8 @@ describe('test RecommendedPrioritySection component', () => {
     await screen.findAllByTestId('recommended-priority-summary');
 
     expect(screen.getByText('P0')).toBeInTheDocument();
-    expect(screen.getByText('User Cls Failed Presubmit (1d) (value: 98) \u2265 20')).toBeInTheDocument();
+    expect(screen.getByText('User Cls Failed Presubmit')).toBeInTheDocument();
+    expect(screen.getByText('(1d) (value: 98) \u2265 20')).toBeInTheDocument();
     expect(screen.getByText('more info')).toBeInTheDocument();
   });
 

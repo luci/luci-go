@@ -31,6 +31,7 @@ describe('Test PriorityExplanationSection component', () => {
         criteria: [
           {
             metricName: 'User Cls Failed Presubmit',
+            metricDescription: 'The number of user CLs that failed presubmit.',
             durationKey: '1d',
             thresholdValue: '10',
             actualValue: '13',
@@ -45,6 +46,7 @@ describe('Test PriorityExplanationSection component', () => {
           criteria: [
             {
               metricName: 'User Cls Failed Presubmit',
+              metricDescription: 'The number of user CLs that failed presubmit.',
               durationKey: '1d',
               thresholdValue: '20',
               actualValue: '13',
@@ -58,6 +60,7 @@ describe('Test PriorityExplanationSection component', () => {
           criteria: [
             {
               metricName: 'User Cls Failed Presubmit',
+              metricDescription: 'The number of user CLs that failed presubmit.',
               durationKey: '1d',
               thresholdValue: '10',
               actualValue: '13',
@@ -71,6 +74,7 @@ describe('Test PriorityExplanationSection component', () => {
           criteria: [
             {
               metricName: 'User Cls Failed Presubmit',
+              metricDescription: 'The number of user CLs that failed presubmit.',
               durationKey: '7d',
               thresholdValue: '1',
               actualValue: '167',
@@ -78,6 +82,7 @@ describe('Test PriorityExplanationSection component', () => {
             },
             {
               metricName: 'Presubmit-blocking Failures Exonerated',
+              metricDescription: 'The number of presubmit-blocking failures which were exonerated.',
               durationKey: '7d',
               thresholdValue: '1',
               actualValue: '0',
@@ -102,7 +107,9 @@ describe('Test PriorityExplanationSection component', () => {
     // Check the priority criteria table has been displayed.
     expect(screen.getByTestId('priority-explanation-table')).toBeInTheDocument();
     expect(screen.getAllByTestId('priority-explanation-table-row').length).toBe(3);
-    expect(screen.getByText('User Cls Failed Presubmit (1d) (value: 13) \u2265 10')).toBeInTheDocument();
+    expect(screen.getAllByText('User Cls Failed Presubmit').length).toBe(3);
+    expect(screen.getByText('(1d) (value: 13) \u2265 10')).toBeInTheDocument();
+
 
     // Check the "Satisfied?" column.
     const verdicts = screen.getAllByTestId('priority-explanation-table-row-verdict');
@@ -130,6 +137,7 @@ describe('Test PriorityExplanationSection component', () => {
           criteria: [
             {
               metricName: 'User Cls Failed Presubmit',
+              metricDescription: 'The number of user CLs which failed presubmit.',
               durationKey: '1d',
               thresholdValue: '20',
               actualValue: '0',
@@ -143,6 +151,7 @@ describe('Test PriorityExplanationSection component', () => {
           criteria: [
             {
               metricName: 'User Cls Failed Presubmit',
+              metricDescription: 'The number of user CLs which failed presubmit.',
               durationKey: '1d',
               thresholdValue: '10',
               actualValue: '0',
@@ -156,6 +165,7 @@ describe('Test PriorityExplanationSection component', () => {
           criteria: [
             {
               metricName: 'User Cls Failed Presubmit',
+              metricDescription: 'The number of user CLs which failed presubmit.',
               durationKey: '7d',
               thresholdValue: '1',
               actualValue: '0',
@@ -163,6 +173,7 @@ describe('Test PriorityExplanationSection component', () => {
             },
             {
               metricName: 'Presubmit-blocking Failures Exonerated',
+              metricDescription: 'The number of presubmit blocking failures that were exonerated.',
               durationKey: '7d',
               thresholdValue: '1',
               actualValue: '0',

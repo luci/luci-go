@@ -26,6 +26,7 @@ export interface PriorityThreshold {
 
 export interface Criterium {
   metricName: string;
+  metricDescription: string;
   durationKey: string;
   thresholdValue: string;
   actualValue: string;
@@ -71,11 +72,13 @@ export function createPriorityRecommendation(
       // Preferably use the human readable name from the metric definition.
       const metric = metrics.find((m) => m.metricId === metricId);
       const metricName = metric?.humanReadableName || metricId;
+      const metricDescription = metric?.description || '(metric description unavailable)';
 
       if (metricThreshold.oneDay !== undefined) {
         const actual = metricValue.oneDay?.nominal || '0';
         criteria.push({
           metricName: metricName,
+          metricDescription: metricDescription,
           durationKey: '1d',
           thresholdValue: metricThreshold.oneDay,
           actualValue: actual,
@@ -86,6 +89,7 @@ export function createPriorityRecommendation(
         const actual = metricValue.threeDay?.nominal || '0';
         criteria.push({
           metricName: metricName,
+          metricDescription: metricDescription,
           durationKey: '3d',
           thresholdValue: metricThreshold.threeDay,
           actualValue: actual,
@@ -96,6 +100,7 @@ export function createPriorityRecommendation(
         const actual = metricValue.sevenDay?.nominal || '0';
         criteria.push({
           metricName: metricName,
+          metricDescription: metricDescription,
           durationKey: '7d',
           thresholdValue: metricThreshold.sevenDay,
           actualValue: actual,

@@ -25,6 +25,7 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
 import {
@@ -33,8 +34,22 @@ import {
   PriorityRecommendation,
 } from '../priority_recommendation';
 
-export function constructCriteriumLabel(c: Criterium): string {
-  return `${c.metricName} (${c.durationKey}) (value: ${c.actualValue}) \u2265 ${c.thresholdValue}`;
+export function constructCriteriumLabel(c: Criterium): React.ReactNode {
+  return (
+    <>
+      <Tooltip arrow title={c.metricDescription}>
+        <Typography component='span' sx={{
+          textDecoration: 'underline',
+          textDecorationStyle: 'dotted',
+          textUnderlinePosition: 'under',
+          fontSize: 'inherit',
+        }}>
+          {c.metricName}
+        </Typography>
+      </Tooltip>
+      &nbsp;({c.durationKey}) (value: {c.actualValue}) {'\u2265'} {c.thresholdValue}
+    </>
+  );
 }
 
 const NoPriorityCriteriaAlert = () => {

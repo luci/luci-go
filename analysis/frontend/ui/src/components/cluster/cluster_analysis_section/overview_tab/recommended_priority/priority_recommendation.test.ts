@@ -92,6 +92,7 @@ describe('Test createPriorityRecommendation', () => {
         criteria: [
           {
             metricName: 'User Cls Failed Presubmit',
+            metricDescription: 'User Cls Failed Presubmit Description',
             durationKey: '1d',
             thresholdValue: '20',
             actualValue: '0',
@@ -105,6 +106,7 @@ describe('Test createPriorityRecommendation', () => {
         criteria: [
           {
             metricName: 'User Cls Failed Presubmit',
+            metricDescription: 'User Cls Failed Presubmit Description',
             durationKey: '1d',
             thresholdValue: '10',
             actualValue: '0',
@@ -118,6 +120,7 @@ describe('Test createPriorityRecommendation', () => {
         criteria: [
           {
             metricName: 'User Cls Failed Presubmit',
+            metricDescription: 'User Cls Failed Presubmit Description',
             durationKey: '7d',
             thresholdValue: '1',
             actualValue: '0',
@@ -125,6 +128,7 @@ describe('Test createPriorityRecommendation', () => {
           },
           {
             metricName: 'Presubmit-blocking Failures Exonerated',
+            metricDescription: 'Critical Failures Exonerated Description',
             durationKey: '7d',
             thresholdValue: '1',
             actualValue: '0',
@@ -146,6 +150,7 @@ describe('Test createPriorityRecommendation', () => {
         criteria: [
           {
             metricName: 'human-cls-failed-presubmit',
+            metricDescription: '(metric description unavailable)',
             durationKey: '1d',
             thresholdValue: '20',
             actualValue: '98',
@@ -160,6 +165,7 @@ describe('Test createPriorityRecommendation', () => {
           criteria: [
             {
               metricName: 'human-cls-failed-presubmit',
+              metricDescription: '(metric description unavailable)',
               durationKey: '1d',
               thresholdValue: '20',
               actualValue: '98',
@@ -173,6 +179,7 @@ describe('Test createPriorityRecommendation', () => {
           criteria: [
             {
               metricName: 'human-cls-failed-presubmit',
+              metricDescription: '(metric description unavailable)',
               durationKey: '1d',
               thresholdValue: '10',
               actualValue: '98',
@@ -186,6 +193,7 @@ describe('Test createPriorityRecommendation', () => {
           criteria: [
             {
               metricName: 'human-cls-failed-presubmit',
+              metricDescription: '(metric description unavailable)',
               durationKey: '7d',
               thresholdValue: '1',
               actualValue: '167',
@@ -193,6 +201,7 @@ describe('Test createPriorityRecommendation', () => {
             },
             {
               metricName: 'critical-failures-exonerated',
+              metricDescription: '(metric description unavailable)',
               durationKey: '7d',
               thresholdValue: '1',
               actualValue: '0',
@@ -219,6 +228,7 @@ describe('Test createPriorityRecommendation', () => {
         criteria: [
           {
             metricName: 'User Cls Failed Presubmit',
+            metricDescription: 'User Cls Failed Presubmit Description',
             durationKey: '1d',
             thresholdValue: '20',
             actualValue: '98',
@@ -233,6 +243,7 @@ describe('Test createPriorityRecommendation', () => {
           criteria: [
             {
               metricName: 'User Cls Failed Presubmit',
+              metricDescription: 'User Cls Failed Presubmit Description',
               durationKey: '1d',
               thresholdValue: '20',
               actualValue: '98',
@@ -246,6 +257,7 @@ describe('Test createPriorityRecommendation', () => {
           criteria: [
             {
               metricName: 'User Cls Failed Presubmit',
+              metricDescription: 'User Cls Failed Presubmit Description',
               durationKey: '1d',
               thresholdValue: '10',
               actualValue: '98',
@@ -259,6 +271,7 @@ describe('Test createPriorityRecommendation', () => {
           criteria: [
             {
               metricName: 'User Cls Failed Presubmit',
+              metricDescription: 'User Cls Failed Presubmit Description',
               durationKey: '7d',
               thresholdValue: '1',
               actualValue: '167',
@@ -266,6 +279,7 @@ describe('Test createPriorityRecommendation', () => {
             },
             {
               metricName: 'Presubmit-blocking Failures Exonerated',
+              metricDescription: 'Critical Failures Exonerated Description',
               durationKey: '7d',
               thresholdValue: '1',
               actualValue: '0',
@@ -304,6 +318,7 @@ describe('Test createPriorityRecommendation', () => {
         criteria: [
           {
             metricName: 'User Cls Failed Presubmit',
+            metricDescription: 'User Cls Failed Presubmit Description',
             durationKey: '1d',
             thresholdValue: '20',
             actualValue: '0',
@@ -317,6 +332,7 @@ describe('Test createPriorityRecommendation', () => {
         criteria: [
           {
             metricName: 'User Cls Failed Presubmit',
+            metricDescription: 'User Cls Failed Presubmit Description',
             durationKey: '1d',
             thresholdValue: '10',
             actualValue: '0',
@@ -330,6 +346,7 @@ describe('Test createPriorityRecommendation', () => {
         criteria: [
           {
             metricName: 'User Cls Failed Presubmit',
+            metricDescription: 'User Cls Failed Presubmit Description',
             durationKey: '7d',
             thresholdValue: '1',
             actualValue: '0',
@@ -337,6 +354,7 @@ describe('Test createPriorityRecommendation', () => {
           },
           {
             metricName: 'Presubmit-blocking Failures Exonerated',
+            metricDescription: 'Critical Failures Exonerated Description',
             durationKey: '7d',
             thresholdValue: '1',
             actualValue: '0',
@@ -377,6 +395,7 @@ describe('Test createPriorityRecommendation', () => {
         criteria: [
           {
             metricName: 'User Cls Failed Presubmit',
+            metricDescription: 'User Cls Failed Presubmit Description',
             durationKey: '1d',
             thresholdValue: '20',
             actualValue: '27',
@@ -390,6 +409,7 @@ describe('Test createPriorityRecommendation', () => {
         criteria: [
           {
             metricName: 'User Cls Failed Presubmit',
+            metricDescription: 'User Cls Failed Presubmit Description',
             durationKey: '1d',
             thresholdValue: '10',
             actualValue: '27',
@@ -403,6 +423,7 @@ describe('Test createPriorityRecommendation', () => {
         criteria: [
           {
             metricName: 'User Cls Failed Presubmit',
+            metricDescription: 'User Cls Failed Presubmit Description',
             durationKey: '7d',
             thresholdValue: '1',
             actualValue: '0',
@@ -410,6 +431,7 @@ describe('Test createPriorityRecommendation', () => {
           },
           {
             metricName: 'Presubmit-blocking Failures Exonerated',
+            metricDescription: 'Critical Failures Exonerated Description',
             durationKey: '7d',
             thresholdValue: '1',
             actualValue: '0',

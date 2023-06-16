@@ -60,7 +60,7 @@ var (
 	CriticalFailuresExonerated = metricBuilder{
 		ID:                "critical-failures-exonerated",
 		HumanReadableName: "Presubmit-blocking Failures Exonerated",
-		Description:       "The number of failures on test variants which were configured to be presubmit-blocking, which were exonerated (i.e. did not actually block presubmit) because infrastructure determined the test variant to be failing or too flaky at tip-of-tree. If this number is non-zero, it means a test variant which was configured to be presubmit-blocking is not stable enough to do so, and should be fixed or made non-blocking.",
+		Description:       "The number of failures on test variants which were configured to be presubmit-blocking, which were exonerated (i.e. did not actually block presubmit) because infrastructure determined the test variant to be failing or too flaky at tip-of-tree.",
 		SortPriority:      40,
 		IsDefault:         true,
 
