@@ -15,6 +15,8 @@
 package model
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"testing"
 
@@ -41,32 +43,177 @@ func TestModel(t *testing.T) {
 		So(datastore.Put(ctx, cs), ShouldBeNil)
 
 		Convey("ok", func() {
+			var err error
 			latest := &File{
 				Path:     "file",
 				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "latest"),
-				Content:  []byte("latest"),
 			}
+			latest.Content, err = gzipCompress([]byte("latest"))
+			So(err, ShouldBeNil)
 			stale := &File{
 				Path:     "file",
 				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "stale"),
-				Content:  []byte("stale"),
 			}
-			So(datastore.Put(ctx, latest, stale), ShouldBeNil)
-			actual, err := GetLatestConfigFile(ctx, config.MustServiceSet("service"), "file")
+			stale.Content, err = gzipCompress([]byte("stale"))
 			So(err, ShouldBeNil)
-			So(actual, ShouldResemble, latest)
+			So(datastore.Put(ctx, latest, stale), ShouldBeNil)
+			actual, err := GetLatestConfigFile(ctx, config.MustServiceSet("service"), "file", false)
+			So(err, ShouldBeNil)
+			So(actual, ShouldResemble, &File{
+				Path:     "file",
+				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "latest"),
+				Content:  []byte("latest"),
+			})
 		})
 
 		Convey("error", func() {
 			Convey("configset not exist", func() {
-				_, err := GetLatestConfigFile(ctx, config.MustServiceSet("nonexist"), "file")
+				_, err := GetLatestConfigFile(ctx, config.MustServiceSet("nonexist"), "file", false)
 				So(err, ShouldErrLike, `failed to fetch ConfigSet "services/nonexist"`)
 			})
 
 			Convey("file not exist", func() {
-				_, err := GetLatestConfigFile(ctx, config.MustServiceSet("service"), "file")
-				So(err, ShouldErrLike, `failed to fetch file "services/service" for config set "file"`)
+				_, err := GetLatestConfigFile(ctx, config.MustServiceSet("service"), "file", false)
+				So(err, ShouldErrLike, `failed to fetch file "file" in "services/service"`)
 			})
 		})
 	})
+
+	Convey("File.Load", t, func() {
+		ctx := memory.UseWithAppID(context.Background(), "dev~app-id")
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+
+		Convey("by path and revision", func() {
+			content, err := gzipCompress([]byte("content"))
+			So(err, ShouldBeNil)
+			So(datastore.Put(ctx, &File{
+				Path:     "file",
+				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
+				Content:  content,
+			}), ShouldBeNil)
+
+			file := &File{
+				Path:     "file",
+				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
+			}
+			So(file.Load(ctx, false), ShouldBeNil)
+			So(file, ShouldResemble, &File{
+				Path:     "file",
+				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
+				Content:  []byte("content"),
+			})
+		})
+
+		Convey("by content hash", func() {
+			content, err := gzipCompress([]byte("content"))
+			So(err, ShouldBeNil)
+			So(datastore.Put(ctx, &File{
+				Path:        "file",
+				Revision:    datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
+				ContentHash: "hash",
+				Content:     content,
+			}), ShouldBeNil)
+
+			file := &File{
+				ContentHash: "hash",
+			}
+			So(file.Load(ctx, false), ShouldBeNil)
+			So(file, ShouldResemble, &File{
+				Path:        "file",
+				Revision:    datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
+				ContentHash: "hash",
+				Content:     []byte("content"),
+			})
+		})
+
+		Convey("nil content", func() {
+			So(datastore.Put(ctx, &File{
+				Path:     "file",
+				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
+			}), ShouldBeNil)
+
+			file := &File{
+				Path:     "file",
+				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
+			}
+			So(file.Load(ctx, false), ShouldErrLike, "file content is nil. Might be damaged?")
+		})
+
+		Convey("empty content", func() {
+			content, err := gzipCompress([]byte(""))
+			So(err, ShouldBeNil)
+			So(datastore.Put(ctx, &File{
+				Path:        "file",
+				Revision:    datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
+				ContentHash: "hash",
+				Content:     content,
+			}), ShouldBeNil)
+
+			file := &File{
+				ContentHash: "hash",
+			}
+			So(file.Load(ctx, false), ShouldBeNil)
+			So(file, ShouldResemble, &File{
+				Path:        "file",
+				Revision:    datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
+				ContentHash: "hash",
+				Content:     []byte(""),
+			})
+		})
+
+		Convey("empty bytes", func() {
+			content, err := gzipCompress([]byte{})
+			So(err, ShouldBeNil)
+			So(datastore.Put(ctx, &File{
+				Path:        "file",
+				Revision:    datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
+				ContentHash: "hash",
+				Content:     content,
+			}), ShouldBeNil)
+
+			file := &File{
+				ContentHash: "hash",
+			}
+			So(file.Load(ctx, false), ShouldBeNil)
+			So(file, ShouldResemble, &File{
+				Path:        "file",
+				Revision:    datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
+				ContentHash: "hash",
+				Content:     []byte{},
+			})
+		})
+
+		Convey("miss required field", func() {
+			file := &File{}
+			So(file.Load(ctx, false), ShouldErrLike, "One of ContentHash or (path and revision) is required")
+		})
+
+		Convey("not found (path+revision)", func() {
+			file := &File{
+				Path:     "file",
+				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
+			}
+			So(file.Load(ctx, false), ShouldErrLike, datastore.ErrNoSuchEntity)
+		})
+
+		Convey("not found (hash)", func() {
+			file := &File{
+				ContentHash: "hash",
+			}
+			So(file.Load(ctx, false), ShouldErrLike, datastore.ErrNoSuchEntity)
+		})
+	})
+}
+
+func gzipCompress(b []byte) ([]byte, error) {
+	buf := &bytes.Buffer{}
+	gw := gzip.NewWriter(buf)
+	if _, err := gw.Write(b); err != nil {
+		return nil, err
+	}
+	if err := gw.Close(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }

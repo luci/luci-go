@@ -16,7 +16,10 @@
 package model
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
+	"io"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
@@ -66,9 +69,9 @@ type File struct {
 	Revision *datastore.Key `gae:"$parent"`
 	// CreateTime is the timestamp when this File entity is imported.
 	CreateTime time.Time `gae:"create_time,noindex"`
-	// Content is the raw content of the small config file.
+	// Content is the gzipped raw content of the small config file.
 	Content []byte `gae:"content,noindex"`
-	// GcsURI is a Google Cloud Storage URI where the large file stores.
+	// GcsURI is a Google Cloud Storage URI where it stores large gzipped file.
 	// The format is "gs://<bucket>/<object_name>"
 	// Note: Either Content field or GcsUri field will be set, but not both.
 	GcsURI string `gae:"gcs_uri,noindex"`
@@ -113,7 +116,8 @@ type RevisionInfo struct {
 }
 
 // GetLatestConfigFile returns the latest File for the given config set.
-func GetLatestConfigFile(ctx context.Context, configSet config.Set, filePath string) (*File, error) {
+// If resolveGcsURI, it will download content from File.GcsURI.
+func GetLatestConfigFile(ctx context.Context, configSet config.Set, filePath string, resolveGcsURI bool) (*File, error) {
 	cfgSet := &ConfigSet{ID: configSet}
 	if err := datastore.Get(ctx, cfgSet); err != nil {
 		return nil, errors.Annotate(err, "failed to fetch ConfigSet %q", configSet).Err()
@@ -122,10 +126,50 @@ func GetLatestConfigFile(ctx context.Context, configSet config.Set, filePath str
 		Path:     filePath,
 		Revision: datastore.MakeKey(ctx, ConfigSetKind, string(configSet), RevisionKind, cfgSet.LatestRevision.ID),
 	}
-	if err := datastore.Get(ctx, file); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch file %q for config set %q", configSet, filePath).Err()
+	if err := file.Load(ctx, resolveGcsURI); err != nil {
+		return nil, errors.Annotate(err, "failed to fetch file %q in %q", file.Path, configSet).Err()
 	}
 	return file, nil
 }
 
-// TODO(crbug.com/1446839): Add a function to uncompress the file content
+// Load loads the file entity from Datastore with content being decompressed.
+// If resolveGcsURI is true, it will download content from File.GcsURI.
+func (f *File) Load(ctx context.Context, resolveGcsURI bool) error {
+	switch {
+	case f.Path != "" && f.Revision != nil:
+		if err := datastore.Get(ctx, f); err != nil {
+			return err
+		}
+	case f.ContentHash != "":
+		found := false
+		if err := datastore.Run(ctx, datastore.NewQuery(FileKind).Eq("content_hash", f.ContentHash), func(file *File) error {
+			*f = *file
+			found = true
+			return datastore.Stop
+		}); err != nil {
+			return err
+		}
+		if !found {
+			return datastore.ErrNoSuchEntity
+		}
+	default:
+		return errors.Reason("One of ContentHash or (path and revision) is required").Err()
+	}
+
+	//  TODO(crbug.com/1446839): download from GCS if resolveGcsURI is true
+
+	// For empty file, the gzipped content bytes will still be non-nil.
+	if len(f.Content) == 0 {
+		return errors.Reason("file content is nil. Might be damaged?").Err()
+	}
+	gr, err := gzip.NewReader(bytes.NewReader(f.Content))
+	if err != nil {
+		return errors.Annotate(err, "failed to create gzip reader").Err()
+	}
+	uncompressed, err := io.ReadAll(gr)
+	if err != nil {
+		return errors.Annotate(err, "failed to uncompress file content").Err()
+	}
+	f.Content = uncompressed
+	return nil
+}

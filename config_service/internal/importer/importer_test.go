@@ -112,10 +112,12 @@ func TestImportAllConfigs(t *testing.T) {
 					},
 				})
 				So(err, ShouldBeNil)
+				compressed, err := gzipCompress(prjCfgBytes)
+				So(err, ShouldBeNil)
 				f := &model.File{
 					Path:     "projects.cfg",
 					Revision: datastore.MakeKey(ctx, model.ConfigSetKind, string(cfgSetID), model.RevisionKind, "rev"),
-					Content:  prjCfgBytes,
+					Content:  compressed,
 				}
 				So(datastore.Put(ctx, cs, f), ShouldBeNil)
 				err = ImportAllConfigs(ctx)
@@ -147,13 +149,15 @@ func TestImportAllConfigs(t *testing.T) {
 					ID:             cfgSetID,
 					LatestRevision: model.RevisionInfo{ID: "rev"},
 				}
+				compressed, err := gzipCompress([]byte("bad"))
+				So(err, ShouldBeNil)
 				f := &model.File{
 					Path:     "projects.cfg",
 					Revision: datastore.MakeKey(ctx, model.ConfigSetKind, string(cfgSetID), model.RevisionKind, "rev"),
-					Content:  []byte("bad"),
+					Content:  compressed,
 				}
 				So(datastore.Put(ctx, cs, f), ShouldBeNil)
-				err := ImportAllConfigs(ctx)
+				err = ImportAllConfigs(ctx)
 				So(err, ShouldErrLike, `failed to load project config sets: failed to unmarshal projects.cfg file content`)
 			})
 		})
@@ -198,7 +202,7 @@ func TestImportConfigSet(t *testing.T) {
 				)).Return(&gitilespb.LogResponse{
 					Log: []*git.Commit{latestCommit},
 				}, nil)
-				tarGzContent, err := buildTarGz(map[string]string{"file1": "file1 content", "sub_dir/file2": "file2 content", "sub_dir/": ""})
+				tarGzContent, err := buildTarGz(map[string]string{"file1": "file1 content", "sub_dir/file2": "file2 content", "sub_dir/": "", "empty_file": ""})
 				So(err, ShouldBeNil)
 				mockGtClient.EXPECT().Archive(gomock.Any(), proto.MatcherEqual(
 					&gitilespb.ArchiveRequest{
@@ -251,8 +255,28 @@ func TestImportConfigSet(t *testing.T) {
 					LatestRevision: expectedLatestRevInfo,
 				})
 
-				So(files, ShouldHaveLength, 2)
+				So(files, ShouldHaveLength, 3)
 				So(files[0].Location, ShouldResembleProto, &cfgcommonpb.Location{
+					Location: &cfgcommonpb.Location_GitilesLocation{
+						GitilesLocation: &cfgcommonpb.GitilesLocation{
+							Repo: "https://chrome-internal.googlesource.com/infradata/config",
+							Ref:  latestCommit.Id,
+							Path: "dev-configs/myservice/empty_file",
+						},
+					},
+				})
+				files[0].Location = nil
+				expectedSha256 := sha256.Sum256([]byte(""))
+				expectedContent0, err := gzipCompress([]byte(""))
+				So(err, ShouldBeNil)
+				So(files[0], ShouldResemble, &model.File{
+					Path:        "empty_file",
+					Revision:    revKey,
+					CreateTime:  datastore.RoundTime(clock.Now(ctx).UTC()),
+					Content:     expectedContent0,
+					ContentHash: "sha256:" + hex.EncodeToString(expectedSha256[:]),
+				})
+				So(files[1].Location, ShouldResembleProto, &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
 							Repo: "https://chrome-internal.googlesource.com/infradata/config",
@@ -261,18 +285,18 @@ func TestImportConfigSet(t *testing.T) {
 						},
 					},
 				})
-				files[0].Location = nil
-				expectedSha256 := sha256.Sum256([]byte("file1 content"))
+				files[1].Location = nil
+				expectedSha256 = sha256.Sum256([]byte("file1 content"))
 				expectedContent1, err := gzipCompress([]byte("file1 content"))
 				So(err, ShouldBeNil)
-				So(files[0], ShouldResemble, &model.File{
+				So(files[1], ShouldResemble, &model.File{
 					Path:        "file1",
 					Revision:    revKey,
 					CreateTime:  datastore.RoundTime(clock.Now(ctx).UTC()),
 					Content:     expectedContent1,
 					ContentHash: "sha256:" + hex.EncodeToString(expectedSha256[:]),
 				})
-				So(files[1].Location, ShouldResembleProto, &cfgcommonpb.Location{
+				So(files[2].Location, ShouldResembleProto, &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
 							Repo: "https://chrome-internal.googlesource.com/infradata/config",
@@ -281,11 +305,11 @@ func TestImportConfigSet(t *testing.T) {
 						},
 					},
 				})
-				files[1].Location = nil
+				files[2].Location = nil
 				expectedSha256 = sha256.Sum256([]byte("file2 content"))
 				expectedContent2, err := gzipCompress([]byte("file2 content"))
 				So(err, ShouldBeNil)
-				So(files[1], ShouldResemble, &model.File{
+				So(files[2], ShouldResemble, &model.File{
 					Path:        "sub_dir/file2",
 					Revision:    revKey,
 					CreateTime:  datastore.RoundTime(clock.Now(ctx).UTC()),
@@ -493,10 +517,12 @@ func TestImportConfigSet(t *testing.T) {
 					},
 				})
 				So(err, ShouldBeNil)
+				compressed, err := gzipCompress(prjCfgBytes)
+				So(err, ShouldBeNil)
 				f := &model.File{
 					Path:     "projects.cfg",
 					Revision: datastore.MakeKey(ctx, model.ConfigSetKind, string(cfgSetID), model.RevisionKind, "rev"),
-					Content:  prjCfgBytes,
+					Content:  compressed,
 				}
 				So(datastore.Put(ctx, cs, f), ShouldBeNil)
 				err = ImportConfigSet(ctx, config.MustProjectSet("proj"))

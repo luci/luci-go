@@ -441,7 +441,7 @@ func importRevision(ctx context.Context, cfgSet config.Set, loc *cfgcommonpb.Git
 
 // getSelfProjectsCfg gets Luci-Config self projects.cfg proto message.
 func getSelfProjectsCfg(ctx context.Context) (*cfgcommonpb.ProjectsCfg, error) {
-	file, err := model.GetLatestConfigFile(ctx, config.MustServiceSet(info.AppID(ctx)), projRegistryFilePath)
+	file, err := model.GetLatestConfigFile(ctx, config.MustServiceSet(info.AppID(ctx)), projRegistryFilePath, true)
 	switch {
 	case errors.Contains(err, datastore.ErrNoSuchEntity):
 		// May happen on the cron job first run. Just log the warning.
@@ -451,10 +451,8 @@ func getSelfProjectsCfg(ctx context.Context) (*cfgcommonpb.ProjectsCfg, error) {
 		return nil, err
 	}
 
-	content := file.Content
-	// TODO(crbug.com/1446839): if file.Content is nil, download from GCS url;
 	projCfg := &cfgcommonpb.ProjectsCfg{}
-	if err := prototext.Unmarshal(content, projCfg); err != nil {
+	if err := prototext.Unmarshal(file.Content, projCfg); err != nil {
 		return nil, errors.Annotate(err, "failed to unmarshal %s file content", projRegistryFilePath).Err()
 	}
 	return projCfg, nil
