@@ -16,6 +16,8 @@
 package testutil
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"strconv"
 	"testing"
@@ -81,10 +83,15 @@ func InjectConfigSet(ctx context.Context, cfgSet config.Set, configs map[string]
 	for filepath, msg := range configs {
 		content, err := prototext.Marshal(msg)
 		So(err, ShouldBeNil)
+		var compressed bytes.Buffer
+		gw := gzip.NewWriter(&compressed)
+		_, err = gw.Write(content)
+		So(err, ShouldBeNil)
+		So(gw.Close(), ShouldBeNil)
 		files = append(files, &model.File{
 			Path:     filepath,
 			Revision: datastore.MakeKey(ctx, model.ConfigSetKind, string(cfgSet), model.RevisionKind, cs.LatestRevision.ID),
-			Content:  content,
+			Content:  compressed.Bytes(),
 		})
 	}
 	So(datastore.Put(ctx, cs, files), ShouldBeNil)
