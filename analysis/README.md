@@ -111,6 +111,13 @@ cd frontend/ui
 npm run lint
 ```
 
+To additionally auto-fix issues, run:
+
+```
+cd frontend/ui
+npm run lint-fix
+```
+
 ## Deployment
 
 ### Developer Testing {#test-deployment}
