@@ -506,10 +506,7 @@ func diffGroups(ctx context.Context, target string, old, new datastore.PropertyM
 		if nested := getStringSliceProp(new, "nested"); nested != nil {
 			changes = append(changes, makeChange(ctx, ChangeGroupNestedRemoved, target, authDBRev, class, kvPair("nested", nested)))
 		}
-		desc := ""
-		if getProp(new, "description") != nil {
-			desc = getStringProp(new, "description")
-		}
+		desc := getDescription(new)
 		owners := AdminGroup
 		if getProp(new, "owners") != nil {
 			owners = getStringProp(new, "owners")
@@ -519,10 +516,7 @@ func diffGroups(ctx context.Context, target string, old, new datastore.PropertyM
 	}
 
 	if old == nil {
-		desc := ""
-		if getProp(new, "description") != nil {
-			desc = getStringProp(new, "description")
-		}
+		desc := getDescription(new)
 		owners := AdminGroup
 		if getProp(new, "owners") != nil {
 			owners = getStringProp(new, "owners")
@@ -541,15 +535,8 @@ func diffGroups(ctx context.Context, target string, old, new datastore.PropertyM
 		return changes, nil
 	}
 
-	if oldDesc, newDesc := getProp(old, "description"), getProp(new, "description"); oldDesc != newDesc {
-		d, od := "", ""
-		if newDesc != nil {
-			d = getStringProp(new, "description")
-		}
-		if oldDesc != nil {
-			od = getStringProp(old, "description")
-		}
-		changes = append(changes, makeChange(ctx, ChangeGroupDescriptionChanged, target, authDBRev, class, kvPair("description", d), kvPair("old_description", od)))
+	if oldDesc, newDesc := getDescription(old), getDescription(new); oldDesc != newDesc {
+		changes = append(changes, makeChange(ctx, ChangeGroupDescriptionChanged, target, authDBRev, class, kvPair("description", newDesc), kvPair("old_description", oldDesc)))
 	}
 
 	oldOwners := AdminGroup
