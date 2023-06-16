@@ -54,6 +54,9 @@ type BotInfo struct {
 	// LastSeen is when this bot pinged Swarming last time (if ever).
 	LastSeen time.Time `gae:"last_seen_ts,noindex"`
 
+	// Quarantined is true if the bot is in quarantine.
+	Quarantined bool `gae:"quarantined,noindex"`
+
 	_extra datastore.PropertyMap `gae:"-,extra"`
 }
 

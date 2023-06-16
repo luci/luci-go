@@ -158,21 +158,26 @@ func (s *shardState) collect(ctx context.Context, bot *model.BotInfo) {
 	}
 
 	migrationState := "UNKNOWN"
-	var botState struct {
-		RBEInstance   string `json:"rbe_instance,omitempty"`
-		RBEHybridMode bool   `json:"rbe_hybrid_mode,omitempty"`
-	}
-	if err := json.Unmarshal(bot.State, &botState); err == nil {
-		switch {
-		case botState.RBEInstance == "":
-			migrationState = "SWARMING"
-		case botState.RBEHybridMode:
-			migrationState = "HYBRID"
-		case !botState.RBEHybridMode:
-			migrationState = "RBE"
-		}
+
+	if bot.Quarantined {
+		migrationState = "QUARANTINED"
 	} else {
-		logging.Warningf(ctx, "Bot %s: bad state:\n:%s", bot.Parent.StringID(), bot.State)
+		var botState struct {
+			RBEInstance   string `json:"rbe_instance,omitempty"`
+			RBEHybridMode bool   `json:"rbe_hybrid_mode,omitempty"`
+		}
+		if err := json.Unmarshal(bot.State, &botState); err == nil {
+			switch {
+			case botState.RBEInstance == "":
+				migrationState = "SWARMING"
+			case botState.RBEHybridMode:
+				migrationState = "HYBRID"
+			case !botState.RBEHybridMode:
+				migrationState = "RBE"
+			}
+		} else {
+			logging.Warningf(ctx, "Bot %s: bad state:\n:%s", bot.Parent.StringID(), bot.State)
+		}
 	}
 
 	if bot.IsDead() {
