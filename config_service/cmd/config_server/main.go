@@ -15,6 +15,7 @@
 package main
 
 import (
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
@@ -23,6 +24,7 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/config_service/internal/clients"
 	configpb "go.chromium.org/luci/config_service/proto"
 	"go.chromium.org/luci/config_service/rpc"
 )
@@ -34,6 +36,13 @@ func main() {
 	}
 
 	server.Main(nil, mods, func(srv *server.Server) error {
+		// Install a global Cloud Storage client.
+		gsClient, err := clients.NewGsProdClient(srv.Context)
+		if err != nil {
+			return errors.Annotate(err, "failed to initiate the global GCS client").Err()
+		}
+		srv.Context = clients.WithGsClient(srv.Context, gsClient)
+
 		mw := router.MiddlewareChain{
 			auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
 				AudienceCheck: openid.AudienceMatchesHost,
