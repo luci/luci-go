@@ -34,19 +34,25 @@ message GitilesLocation {
   //     https://chromium.googlesource.com/infra/infra/
   //     https://chromium.googlesource.com/infra/infra.git
   string repo = 1;
-  // Ref of the Git repository.
-  // Must be a fully qualifed ref starting with "refs/".
+  // Ref or commit hash of the Git repository.
+  //
+  // Must be a fully qualified ref starting with "refs/" or a commit hash.
   //
   // Example:
   //   OK:
   //     refs/heads/branch
   //     refs/heads/infra/config
   //     refs/branch-heads/beta
+  //     $a_valid_git_sha
   //   Not OK:
   //     main
   //     HEAD
   //     origin/main
   //     tags/123
+  //
+  // TODO: crbug/1446839 - Replace this field with a new `committish` field
+  // to better reflect the fact that field value can be either refs or
+  // revision hash.
   string ref = 2;
   // Path to the directory inside Git repository where configurations are stored.
   // Optional. If not specified, defaults to top-level folder of the git repo.
@@ -220,11 +226,15 @@ message Service {
   // Email addresses of responsible and point-of-contacts for the service.
   repeated string owners = 2;
   // An HTTPS endpoint that returns JSON-encoded ServiceDynamicMetadata in body.
+  //
+  // TODO: crbug/1232565 - Deprecate this field in favor of `service_endpoint`
+  // after the new LUCI Config service has launched.
   string metadata_url = 4;
-  // TODO(yiwzhang): add `service_url` so that the new LUCI Config service can
-  // call the Consumer prpc service to get the service metadata and perform
-  // validation. The metadata_url will be deprecated in favor of the new field.
-
+  // The endpoint of the service.
+  //
+  // LUCI Config will call this endpoint to interact with `config.Consumer`
+  // prpc Service.
+  string service_endpoint = 7;
   // A list of identities that have access to this service's configs.
   // of:
   // * "group:<group>", where group is defined on auth server.
@@ -233,7 +243,6 @@ message Service {
   //
   // If not specified, only admins and trusted services have access.
   repeated string access = 5;
-
   // If set, use JWT auth in requests to services. This is usually used for
   // Cloud Endpoints v2 support.
   JWTAuth jwt_auth = 6;
