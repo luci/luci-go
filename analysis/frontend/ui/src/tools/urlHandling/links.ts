@@ -46,8 +46,11 @@ export const invocationName = (invocationId: string): string => {
   return invocationId;
 };
 
-export const failureLink = (invocationId: string, testId: string): string => {
-  const query = `ID:${testId} `;
+export const failureLink = (invocationId: string, testId: string, variant?: Variant): string => {
+  const variantQuery = variantAsPairs(variant).map((vp) => {
+    return 'V:' + encodeURIComponent(vp.key || '') + '=' + encodeURIComponent(vp.value);
+  }).join(' ');
+  const query = `ID:${testId} ${variantQuery}`;
   if (invocationId.startsWith('build-')) {
     return `https://ci.chromium.org/ui/b/${invocationId.slice('build-'.length)}/test-results?q=${encodeURIComponent(query)}`;
   }

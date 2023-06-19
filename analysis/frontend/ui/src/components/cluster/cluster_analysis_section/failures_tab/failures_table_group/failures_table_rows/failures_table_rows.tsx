@@ -177,7 +177,7 @@ const FailuresTableRows = ({
               <Link
                 aria-label="Failure invocation id"
                 sx={{ mr: 2 }}
-                href={failureLink(group.failure.ingestedInvocationId, group.failure.testId)}
+                href={failureLink(group.failure.ingestedInvocationId, group.failure.testId, group.failure.variant)}
                 target="_blank"
               >
                 {invocationName(group.failure.ingestedInvocationId)}
