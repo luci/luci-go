@@ -25,7 +25,6 @@ import {
   createDefaultMockFailureGroupWithChildren,
   createMockVariantGroups,
 } from '@/testing_tools/mocks/failures_mock';
-import { GroupKey } from '@/tools/failures_tools';
 
 import FailuresTableGroup from './failures_table_group';
 
@@ -69,23 +68,18 @@ describe('Test FailureTableGroup component', () => {
   it('given a test name group it should show a test history link', async () => {
     const mockGroup = createDefaultMockFailureGroupWithChildren();
     mockGroup.key = { type: 'test', value: 'ninja://package/sometest.Blah?a=1' };
-    const parentKeys : GroupKey[] = [{
-      type: 'variant',
-      key: 'k1',
-      value: 'v1',
-    }, {
-      // Consider a variant with special characters.
-      type: 'variant',
-      key: 'key %+',
-      value: 'value %+',
-    }];
-
+    mockGroup.commonVariant = {
+      def: {
+        'k1': 'v1',
+        // Consider a variant with special characters.
+        'key %+': 'value %+'
+      }
+    }
     render(
         <table>
           <tbody>
             <FailuresTableGroup
               project='testproject'
-              parentKeys={parentKeys}
               group={mockGroup}
               variantGroups={createMockVariantGroups()}/>
           </tbody>

@@ -19,6 +19,7 @@ import {
   DistinctClusterFailure,
   Exoneration,
 } from '@/services/cluster';
+import { Variant, unionVariant } from '@/services/shared_models';
 
 /**
  * Creates a list of distinct variants found in the list of failures provided.
@@ -78,8 +79,32 @@ export const groupFailures = (failures: DistinctClusterFailure[], grouper: (f: D
     failureGroup.level = level;
     groups.push(failureGroup);
   });
+  for (const group of topGroups) {
+    populateCommonVariant(group);
+  }
   return topGroups;
 };
+
+const populateCommonVariant = (group: FailureGroup): Variant | undefined => {
+  if (group.failure) {
+    return group.failure.variant
+  }
+  let firstChild = true;
+  let commonVariant: Variant | undefined;
+  for (const child of group.children) {
+    if (firstChild) {
+      // For the first child, take the variant as the common variant.
+      commonVariant = populateCommonVariant(child)
+      firstChild = false;
+    } else {
+      // For subsequent children, combine the variant.
+      let childVariant = populateCommonVariant(child)
+      commonVariant = unionVariant(commonVariant, childVariant)
+    }
+  }
+  group.commonVariant = commonVariant
+  return commonVariant
+}
 
 // Create a new group.
 export const newGroup = (key: GroupKey, failureTime: string): FailureGroup => {
@@ -420,15 +445,26 @@ export const keyEqual = (a: GroupKey, b: GroupKey) => {
 export interface FailureGroup {
     id: string;
     key: GroupKey;
+
+    // Impact metrics for the group.
     criticalFailuresExonerated: number;
     failures: number;
     invocationFailures: number;
     presubmitRejects: number;
     latestFailureTime: string;
+
     level: number;
+
+    // Child groups and expansion status. Only set for
+    // non-leaf groups.
     children: FailureGroup[];
     isExpanded: boolean;
+
+    // The failure. Only set for leaf groups.
     failure?: DistinctClusterFailure;
+
+    // Variant key-value pairs that are common across all child failures.
+    commonVariant?: Variant;
 }
 
 // VariantGroup represents variant key that appear on at least one failure.

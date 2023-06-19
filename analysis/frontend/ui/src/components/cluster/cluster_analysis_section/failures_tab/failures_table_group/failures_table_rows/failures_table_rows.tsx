@@ -49,7 +49,6 @@ import {
 } from '@/tools/urlHandling/links';
 
 import CLList from '@/components/cl_list/cl_list';
-import { Variant } from '@/services/shared_models';
 
 interface Props {
   project: string;
@@ -72,7 +71,6 @@ const NarrowTableCell = styled(TableCell)(() => ({
 
 const FailuresTableRows = ({
   project,
-  parentKeys = [],
   group,
   variantGroups,
   children = null,
@@ -97,17 +95,6 @@ const FailuresTableRows = ({
       });
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return unselectedVariantPairs.filter((vp) => vp != null).map((vp) => vp!);
-  };
-
-  const groupByVariant = (): Variant => {
-    // Returns the parent grouping keys as a partial variant.
-    const result: Variant = { def: {} };
-    parentKeys.forEach((v) => {
-      if (v.type == 'variant' && v.key) {
-        result.def[v.key] = v.value;
-      }
-    });
-    return result;
   };
 
   const presubmitRunIcon = (run: PresubmitRun) => {
@@ -260,7 +247,7 @@ const FailuresTableRows = ({
                   <Link
                     sx={{ display: 'inline-flex' }}
                     aria-label='Test history link'
-                    href={testHistoryLink(project, group.key.value, groupByVariant())}
+                    href={testHistoryLink(project, group.key.value, group.commonVariant)}
                     target="_blank">
                       History
                   </Link>
