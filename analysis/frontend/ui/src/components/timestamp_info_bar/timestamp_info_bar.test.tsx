@@ -71,4 +71,20 @@ describe('Test TimestampInfoBar component', () => {
     expect(screen.getByTestId('timestamp-info-bar-update'))
         .toHaveTextContent('Last modified by user@example.com a few seconds ago');
   });
+  it('when provided with no user, then only time should be displayed', async () => {
+    const rule = createDefaultMockRule();
+    rule.createUser = undefined;
+    rule.lastUpdateUser = undefined;
+    render(<TimestampInfoBar
+      createUsername={rule.createUser}
+      createTime={rule.createTime}
+      updateUsername={rule.lastUpdateUser}
+      updateTime={rule.lastUpdateTime}/>);
+    await waitFor(() => screen.getByTestId('timestamp-info-bar-create'));
+
+    expect(screen.getByTestId('timestamp-info-bar-create'))
+        .toHaveTextContent('Created a few seconds ago');
+    expect(screen.getByTestId('timestamp-info-bar-update'))
+        .toHaveTextContent('Last modified a few seconds ago');
+  });
 });

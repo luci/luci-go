@@ -13,21 +13,20 @@
 // limitations under the License.
 
 import dayjs from 'dayjs';
-import {
-  useState,
-  MouseEvent,
-} from 'react';
+import { useState } from 'react';
 
-import Button from '@mui/material/Button';
 import CloseIcon from '@mui/icons-material/Close';
+import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
 import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
+import Typography from '@mui/material/Typography';
 
 import {
   ExoneratedTestVariant,
@@ -37,12 +36,9 @@ import {
   isFlakyCriteriaAlmostMet,
   isFlakyCriteriaMet,
 } from '@/components/cluster/cluster_analysis_section/exonerations_tab/model/model';
-import {
-  testHistoryLink,
-} from '@/tools/urlHandling/links';
-import {
-  variantAsPairs,
-} from '@/services/shared_models';
+import { variantAsPairs } from '@/services/shared_models';
+import { testHistoryLink } from '@/tools/urlHandling/links';
+
 import ExonerationExplanationSection from '../exoneration_explanation_section/exoneration_explanation_section';
 
 interface Props {
@@ -58,9 +54,8 @@ const ExonerationsTableRow = ({
 }: Props) => {
   const [open, setOpen] = useState(false);
 
-  const handleClickOpen = (e: MouseEvent<HTMLAnchorElement>) => {
+  const handleClickOpen = () => {
     setOpen(true);
-    e.preventDefault();
   };
   const handleClose = () => {
     setOpen(false);
@@ -75,6 +70,14 @@ const ExonerationsTableRow = ({
       variation = ' not';
     }
     return `Why is this test variant${variation} being exonerated?`;
+  };
+  const statusLabel = (): string => {
+    if (isFlakyCriteriaMet(criteria, testVariant) || isFailureCriteriaMet(criteria, testVariant)) {
+      return 'Yes ';
+    } else if ((isFlakyCriteriaAlmostMet(criteria, testVariant) || isFailureCriteriaAlmostMet(criteria, testVariant))) {
+      return 'No, but close to ';
+    }
+    return 'No ';
   };
 
   return (
@@ -95,10 +98,16 @@ const ExonerationsTableRow = ({
         </Link>
       </TableCell>
       <TableCell>
-        {(isFlakyCriteriaMet(criteria, testVariant) || isFailureCriteriaMet(criteria, testVariant)) ? 'Yes ' :
-          ((isFlakyCriteriaAlmostMet(criteria, testVariant) || isFailureCriteriaAlmostMet(criteria, testVariant)) ? 'No, but close to ' :
-            'No ')}
-        <Link onClick={handleClickOpen} href='#'>Why?</Link>
+        {statusLabel()}
+        <Chip
+          variant='outlined'
+          color='default'
+          onClick={handleClickOpen}
+          label={
+            <Typography variant="button">more info</Typography>
+          }
+          size='small'
+          sx={{ borderRadius: 1, float: 'right' }} />
         <Dialog open={open} onClose={handleClose} maxWidth='lg' fullWidth>
           <DialogTitle>
             {dialogTitle()}

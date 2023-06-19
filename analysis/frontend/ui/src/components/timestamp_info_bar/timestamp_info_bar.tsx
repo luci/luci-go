@@ -59,13 +59,27 @@ const TimestampInfoBar = ({
           title={dayjs.utc(createTime).local().format(dateFormat)}
           data-testid="timestamp-info-bar-create"
           className='timestamp-text'>
-            Created by {<FormattedUsername username={createUsername} />} {dayjs.utc(createTime).local().fromNow()}. |
+            Created
+            {
+              createUsername &&
+                <>
+                  {' '}by {<FormattedUsername username={createUsername} />}
+                </>
+            }
+            {' '}{dayjs.utc(createTime).local().fromNow()}. |
         </small>
         <small
           title={dayjs.utc(updateTime).local().format(dateFormat)}
           data-testid="timestamp-info-bar-update"
           className='timestamp-text'>
-          {' '}Last modified by {<FormattedUsername username={updateUsername} />} {dayjs.utc(updateTime).local().fromNow()}.
+          {' '}Last modified
+          {
+            updateUsername &&
+              <>
+                {' '}by {<FormattedUsername username={updateUsername} />}
+              </>
+          }
+          {' '}{dayjs.utc(updateTime).local().fromNow()}.
         </small>
       </Grid>
     </Grid>

@@ -64,7 +64,7 @@ describe('Test ExonerationsTableRows component', () => {
     expect(await screen.findByText('someTestId')).toBeInTheDocument();
 
     // Open dialog.
-    fireEvent.click(screen.getByText('Why?'));
+    fireEvent.click(screen.getByText('more info'));
     expect(await screen.findByText('Why is this test variant close to being exonerated?')).toBeInTheDocument();
 
     // Close dialog.
