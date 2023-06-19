@@ -82,7 +82,10 @@ message ProjectConfig {
   // metric, the threshold as a whole is unsatisfiable.
   repeated ImpactMetricThreshold bug_filing_thresholds = 10;
 
-  // Next ID: 11
+  // Configuration related to metrics in LUCI Analysis.
+  Metrics metrics = 11;
+
+  // Next ID: 12
 }
 
 
@@ -92,6 +95,26 @@ message ProjectMetadata {
   // Indicates the preferred display name for the project in the UI.
   // Deprecated: not used anymore.
   string display_name = 1;
+}
+
+// Settings related to metrics used to measure cluster impact.
+message Metrics {
+  message MetricOverride {
+    // The id of the impact metric.
+    //
+    // Full list of available metrics here:
+    // https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/internal/analysis/metrics/metrics.go
+    string metric_id = 1;
+    // Whether the metric should be selected by default.
+    optional bool is_default = 2;
+    // Controls the default sort order between metrics. By default,
+    // a list will sort by the metric with the highest sort priority,
+    // followed by the metric with second highest sort priority,
+    // and so on.
+    optional int32 sort_priority = 3;
+  }
+  // Overrides to the default metrics configuration for a project.
+  repeated MetricOverride overrides = 1;
 }
 
 // Settings related to bug management.

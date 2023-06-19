@@ -121,6 +121,23 @@ func createPlaceholderRealms() []*configpb.RealmConfig {
 	}
 }
 
+func createPlaceholderMetrics() *configpb.Metrics {
+	return &configpb.Metrics{
+		Overrides: []*configpb.Metrics_MetricOverride{
+			{
+				MetricId:     string(metrics.HumanClsFailedPresubmit.ID),
+				IsDefault:    proto.Bool(true),
+				SortPriority: proto.Int32(1000),
+			},
+			{
+				MetricId:     string(metrics.Failures.ID),
+				IsDefault:    proto.Bool(false),
+				SortPriority: proto.Int32(10),
+			},
+		},
+	}
+}
+
 // Creates a placeholder project config with key "chromium".
 func CreateMonorailPlaceholderProjectConfig() *configpb.ProjectConfig {
 	return &configpb.ProjectConfig{
@@ -129,6 +146,7 @@ func CreateMonorailPlaceholderProjectConfig() *configpb.ProjectConfig {
 		BugFilingThresholds: CreatePlaceholderImpactThreshold(),
 		Realms:              createPlaceholderRealms(),
 		Clustering:          createPlaceholderClustering(),
+		Metrics:             createPlaceholderMetrics(),
 	}
 }
 
@@ -139,6 +157,7 @@ func CreateBuganizerPlaceholderProjectConfig() *configpb.ProjectConfig {
 		BugFilingThresholds: CreatePlaceholderImpactThreshold(),
 		Realms:              createPlaceholderRealms(),
 		Clustering:          createPlaceholderClustering(),
+		Metrics:             createPlaceholderMetrics(),
 	}
 }
 
@@ -150,5 +169,6 @@ func CreateConfigWithBothBuganizerAndMonorail(bugSystem configpb.ProjectConfig_B
 		BugFilingThresholds: CreatePlaceholderImpactThreshold(),
 		Realms:              createPlaceholderRealms(),
 		Clustering:          createPlaceholderClustering(),
+		Metrics:             createPlaceholderMetrics(),
 	}
 }

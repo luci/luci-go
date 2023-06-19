@@ -421,7 +421,7 @@ func TestProjectConfigValidator(t *testing.T) {
 						Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(502)},
 					},
 				}
-				So(validate(project, cfg), ShouldErrLike, "same metric can't have more than one threshold")
+				So(validate(project, cfg), ShouldErrLike, `metric with ID "failures" appears in collection more than once`)
 			})
 			Convey(fmt.Sprintf("%s - metric values are not negative", name), func() {
 				Convey("one day", func() {
@@ -563,7 +563,7 @@ func TestProjectConfigValidator(t *testing.T) {
 
 		clustering := cfg.Clustering
 
-		Convey(" may not be specified", func() {
+		Convey("may not be specified", func() {
 			cfg.Clustering = nil
 			So(validate(project, cfg), ShouldBeNil)
 		})
@@ -595,6 +595,36 @@ func TestProjectConfigValidator(t *testing.T) {
 			Convey("like template is invalid", func() {
 				rule.LikeTemplate = "blah${broken"
 				So(validate(project, cfg), ShouldErrLike, `invalid use of the $ operator at position 4 in "blah${broken"`)
+			})
+		})
+	})
+	Convey("clustering", t, func() {
+		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.ProjectConfig_MONORAIL)
+
+		metrics := cfg.Metrics
+
+		Convey("may not be specified", func() {
+			cfg.Metrics = nil
+			So(validate(project, cfg), ShouldBeNil)
+		})
+		Convey("overrides must be valid", func() {
+			override := metrics.Overrides[0]
+			Convey("metric ID is not specified", func() {
+				override.MetricId = ""
+				So(validate(project, cfg), ShouldErrLike, `no metric with ID ""`)
+			})
+			Convey("metric ID is invalid", func() {
+				override.MetricId = "not-exists"
+				So(validate(project, cfg), ShouldErrLike, `no metric with ID "not-exists"`)
+			})
+			Convey("metric ID is repeated", func() {
+				metrics.Overrides[0].MetricId = "failures"
+				metrics.Overrides[1].MetricId = "failures"
+				So(validate(project, cfg), ShouldErrLike, `metric with ID "failures" appears in collection more than once`)
+			})
+			Convey("sort priority is invalid", func() {
+				override.SortPriority = proto.Int32(0)
+				So(validate(project, cfg), ShouldErrLike, `value must be positive`)
 			})
 		})
 	})

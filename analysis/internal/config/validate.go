@@ -216,6 +216,7 @@ func ValidateProjectConfig(ctx *validation.Context, project string, cfg *configp
 		validateRealmConfig(ctx, rCfg)
 	}
 	validateClustering(ctx, cfg.Clustering)
+	validateMetrics(ctx, cfg.Metrics)
 }
 
 func validateBuganizer(ctx *validation.Context, project string, cfg *configpb.BuganizerProject, bugFilingThres []*configpb.ImpactMetricThreshold) {
@@ -396,16 +397,10 @@ func validateImpactMetricThresholds(ctx *validation.Context, project string, ts 
 	if len(ts) == 0 && !ChromiumMilestoneProjectRe.MatchString(project) {
 		ctx.Errorf("impact thresholds must be specified")
 	}
-	seen := map[string]bool{}
+	seenIDs := map[string]struct{}{}
 	for i, t := range ts {
 		ctx.Enter("[%v]", i)
-		if _, err := metrics.ByID(metrics.ID(t.MetricId)); err != nil {
-			ctx.Error(err)
-		}
-		if _, ok := seen[t.MetricId]; ok {
-			ctx.Errorf("same metric can't have more than one threshold")
-		}
-		seen[t.MetricId] = true
+		validateMetricID(ctx, t.MetricId, seenIDs)
 		validateMetricThreshold(ctx, t.Threshold, "threshold")
 		ctx.Exit()
 	}
@@ -540,4 +535,48 @@ func validateTestNameRule(ctx *validation.Context, r *configpb.TestNameClusterin
 	if err != nil {
 		ctx.Error(err)
 	}
+}
+
+func validateMetrics(ctx *validation.Context, m *configpb.Metrics) {
+	ctx.Enter("metrics")
+	defer ctx.Exit()
+
+	if m == nil {
+		// Allow non-existent metrics section.
+		return
+	}
+	seenIDs := map[string]struct{}{}
+	for i, o := range m.Overrides {
+		ctx.Enter("[%v]", i)
+		validateMetricOverride(ctx, o, seenIDs)
+		ctx.Exit()
+	}
+}
+
+func validateMetricOverride(ctx *validation.Context, o *configpb.Metrics_MetricOverride, seenIDs map[string]struct{}) {
+	validateMetricID(ctx, o.MetricId, seenIDs)
+	if o.SortPriority != nil {
+		validateSortPriority(ctx, int64(*o.SortPriority))
+	}
+}
+
+func validateMetricID(ctx *validation.Context, metricID string, seenIDs map[string]struct{}) {
+	ctx.Enter("metric_id")
+	if _, err := metrics.ByID(metrics.ID(metricID)); err != nil {
+		ctx.Error(err)
+	} else {
+		if _, ok := seenIDs[metricID]; ok {
+			ctx.Errorf("metric with ID %q appears in collection more than once", metricID)
+		}
+		seenIDs[metricID] = struct{}{}
+	}
+	ctx.Exit()
+}
+
+func validateSortPriority(ctx *validation.Context, value int64) {
+	ctx.Enter("sort_priority")
+	if value <= 0 {
+		ctx.Errorf("value must be positive")
+	}
+	ctx.Exit()
 }

@@ -193,6 +193,8 @@ type ProjectConfig struct {
 	// are combined using an OR-semantic). If no threshold is set on any individual
 	// metric, the threshold as a whole is unsatisfiable.
 	BugFilingThresholds []*ImpactMetricThreshold `protobuf:"bytes,10,rep,name=bug_filing_thresholds,json=bugFilingThresholds,proto3" json:"bug_filing_thresholds,omitempty"`
+	// Configuration related to metrics in LUCI Analysis.
+	Metrics *Metrics `protobuf:"bytes,11,opt,name=metrics,proto3" json:"metrics,omitempty"`
 }
 
 func (x *ProjectConfig) Reset() {
@@ -297,6 +299,13 @@ func (x *ProjectConfig) GetBugFilingThresholds() []*ImpactMetricThreshold {
 	return nil
 }
 
+func (x *ProjectConfig) GetMetrics() *Metrics {
+	if x != nil {
+		return x.Metrics
+	}
+	return nil
+}
+
 // ProjectMetadata provides data about the project that are mostly used in ui.
 type ProjectMetadata struct {
 	state         protoimpl.MessageState
@@ -347,6 +356,55 @@ func (x *ProjectMetadata) GetDisplayName() string {
 	return ""
 }
 
+// Settings related to metrics used to measure cluster impact.
+type Metrics struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Overrides to the default metrics configuration for a project.
+	Overrides []*Metrics_MetricOverride `protobuf:"bytes,1,rep,name=overrides,proto3" json:"overrides,omitempty"`
+}
+
+func (x *Metrics) Reset() {
+	*x = Metrics{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Metrics) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Metrics) ProtoMessage() {}
+
+func (x *Metrics) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Metrics.ProtoReflect.Descriptor instead.
+func (*Metrics) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Metrics) GetOverrides() []*Metrics_MetricOverride {
+	if x != nil {
+		return x.Overrides
+	}
+	return nil
+}
+
 // Settings related to bug management.
 type BugManagement struct {
 	state         protoimpl.MessageState
@@ -364,7 +422,7 @@ type BugManagement struct {
 func (x *BugManagement) Reset() {
 	*x = BugManagement{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[2]
+		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -377,7 +435,7 @@ func (x *BugManagement) String() string {
 func (*BugManagement) ProtoMessage() {}
 
 func (x *BugManagement) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[2]
+	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -390,7 +448,7 @@ func (x *BugManagement) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BugManagement.ProtoReflect.Descriptor instead.
 func (*BugManagement) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{2}
+	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *BugManagement) GetDisableDuplicateBugComments() bool {
@@ -437,7 +495,7 @@ type ImpactThreshold struct {
 func (x *ImpactThreshold) Reset() {
 	*x = ImpactThreshold{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[3]
+		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -450,7 +508,7 @@ func (x *ImpactThreshold) String() string {
 func (*ImpactThreshold) ProtoMessage() {}
 
 func (x *ImpactThreshold) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[3]
+	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -463,7 +521,7 @@ func (x *ImpactThreshold) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImpactThreshold.ProtoReflect.Descriptor instead.
 func (*ImpactThreshold) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{3}
+	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ImpactThreshold) GetTestResultsFailed() *MetricThreshold {
@@ -547,7 +605,7 @@ type ImpactMetricThreshold struct {
 func (x *ImpactMetricThreshold) Reset() {
 	*x = ImpactMetricThreshold{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[4]
+		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -560,7 +618,7 @@ func (x *ImpactMetricThreshold) String() string {
 func (*ImpactMetricThreshold) ProtoMessage() {}
 
 func (x *ImpactMetricThreshold) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[4]
+	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -573,7 +631,7 @@ func (x *ImpactMetricThreshold) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImpactMetricThreshold.ProtoReflect.Descriptor instead.
 func (*ImpactMetricThreshold) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{4}
+	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ImpactMetricThreshold) GetMetricId() string {
@@ -611,7 +669,7 @@ type MetricThreshold struct {
 func (x *MetricThreshold) Reset() {
 	*x = MetricThreshold{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[5]
+		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -624,7 +682,7 @@ func (x *MetricThreshold) String() string {
 func (*MetricThreshold) ProtoMessage() {}
 
 func (x *MetricThreshold) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -637,7 +695,7 @@ func (x *MetricThreshold) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MetricThreshold.ProtoReflect.Descriptor instead.
 func (*MetricThreshold) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{5}
+	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *MetricThreshold) GetOneDay() int64 {
@@ -721,7 +779,7 @@ type MonorailProject struct {
 func (x *MonorailProject) Reset() {
 	*x = MonorailProject{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[6]
+		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -734,7 +792,7 @@ func (x *MonorailProject) String() string {
 func (*MonorailProject) ProtoMessage() {}
 
 func (x *MonorailProject) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[6]
+	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -747,7 +805,7 @@ func (x *MonorailProject) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MonorailProject.ProtoReflect.Descriptor instead.
 func (*MonorailProject) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{6}
+	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *MonorailProject) GetProject() string {
@@ -839,7 +897,7 @@ type MonorailFieldValue struct {
 func (x *MonorailFieldValue) Reset() {
 	*x = MonorailFieldValue{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[7]
+		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -852,7 +910,7 @@ func (x *MonorailFieldValue) String() string {
 func (*MonorailFieldValue) ProtoMessage() {}
 
 func (x *MonorailFieldValue) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[7]
+	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -865,7 +923,7 @@ func (x *MonorailFieldValue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MonorailFieldValue.ProtoReflect.Descriptor instead.
 func (*MonorailFieldValue) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{7}
+	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *MonorailFieldValue) GetFieldId() int64 {
@@ -905,7 +963,7 @@ type MonorailPriority struct {
 func (x *MonorailPriority) Reset() {
 	*x = MonorailPriority{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[8]
+		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -918,7 +976,7 @@ func (x *MonorailPriority) String() string {
 func (*MonorailPriority) ProtoMessage() {}
 
 func (x *MonorailPriority) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[8]
+	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -931,7 +989,7 @@ func (x *MonorailPriority) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MonorailPriority.ProtoReflect.Descriptor instead.
 func (*MonorailPriority) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{8}
+	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *MonorailPriority) GetPriority() string {
@@ -974,7 +1032,7 @@ type RealmConfig struct {
 func (x *RealmConfig) Reset() {
 	*x = RealmConfig{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[9]
+		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -987,7 +1045,7 @@ func (x *RealmConfig) String() string {
 func (*RealmConfig) ProtoMessage() {}
 
 func (x *RealmConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[9]
+	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1000,7 +1058,7 @@ func (x *RealmConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RealmConfig.ProtoReflect.Descriptor instead.
 func (*RealmConfig) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{9}
+	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *RealmConfig) GetName() string {
@@ -1041,7 +1099,7 @@ type Clustering struct {
 func (x *Clustering) Reset() {
 	*x = Clustering{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[10]
+		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1054,7 +1112,7 @@ func (x *Clustering) String() string {
 func (*Clustering) ProtoMessage() {}
 
 func (x *Clustering) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[10]
+	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1067,7 +1125,7 @@ func (x *Clustering) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Clustering.ProtoReflect.Descriptor instead.
 func (*Clustering) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{10}
+	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *Clustering) GetTestNameRules() []*TestNameClusteringRule {
@@ -1183,7 +1241,7 @@ type TestNameClusteringRule struct {
 func (x *TestNameClusteringRule) Reset() {
 	*x = TestNameClusteringRule{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[11]
+		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1196,7 +1254,7 @@ func (x *TestNameClusteringRule) String() string {
 func (*TestNameClusteringRule) ProtoMessage() {}
 
 func (x *TestNameClusteringRule) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[11]
+	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1209,7 +1267,7 @@ func (x *TestNameClusteringRule) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestNameClusteringRule.ProtoReflect.Descriptor instead.
 func (*TestNameClusteringRule) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{11}
+	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *TestNameClusteringRule) GetName() string {
@@ -1246,7 +1304,7 @@ type BuganizerComponent struct {
 func (x *BuganizerComponent) Reset() {
 	*x = BuganizerComponent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[12]
+		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1259,7 +1317,7 @@ func (x *BuganizerComponent) String() string {
 func (*BuganizerComponent) ProtoMessage() {}
 
 func (x *BuganizerComponent) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[12]
+	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1272,7 +1330,7 @@ func (x *BuganizerComponent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuganizerComponent.ProtoReflect.Descriptor instead.
 func (*BuganizerComponent) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{12}
+	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *BuganizerComponent) GetId() int64 {
@@ -1319,7 +1377,7 @@ type BuganizerProject struct {
 func (x *BuganizerProject) Reset() {
 	*x = BuganizerProject{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[13]
+		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1332,7 +1390,7 @@ func (x *BuganizerProject) String() string {
 func (*BuganizerProject) ProtoMessage() {}
 
 func (x *BuganizerProject) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[13]
+	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1345,7 +1403,7 @@ func (x *BuganizerProject) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuganizerProject.ProtoReflect.Descriptor instead.
 func (*BuganizerProject) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{13}
+	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *BuganizerProject) GetDefaultComponent() *BuganizerComponent {
@@ -1367,6 +1425,78 @@ func (x *BuganizerProject) GetPriorityMappings() []*BuganizerProject_PriorityMap
 		return x.PriorityMappings
 	}
 	return nil
+}
+
+type Metrics_MetricOverride struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The id of the impact metric.
+	//
+	// Full list of available metrics here:
+	// https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/internal/analysis/metrics/metrics.go
+	MetricId string `protobuf:"bytes,1,opt,name=metric_id,json=metricId,proto3" json:"metric_id,omitempty"`
+	// Whether the metric should be selected by default.
+	IsDefault *bool `protobuf:"varint,2,opt,name=is_default,json=isDefault,proto3,oneof" json:"is_default,omitempty"`
+	// Controls the default sort order between metrics. By default,
+	// a list will sort by the metric with the highest sort priority,
+	// followed by the metric with second highest sort priority,
+	// and so on.
+	SortPriority *int32 `protobuf:"varint,3,opt,name=sort_priority,json=sortPriority,proto3,oneof" json:"sort_priority,omitempty"`
+}
+
+func (x *Metrics_MetricOverride) Reset() {
+	*x = Metrics_MetricOverride{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Metrics_MetricOverride) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Metrics_MetricOverride) ProtoMessage() {}
+
+func (x *Metrics_MetricOverride) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Metrics_MetricOverride.ProtoReflect.Descriptor instead.
+func (*Metrics_MetricOverride) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{2, 0}
+}
+
+func (x *Metrics_MetricOverride) GetMetricId() string {
+	if x != nil {
+		return x.MetricId
+	}
+	return ""
+}
+
+func (x *Metrics_MetricOverride) GetIsDefault() bool {
+	if x != nil && x.IsDefault != nil {
+		return *x.IsDefault
+	}
+	return false
+}
+
+func (x *Metrics_MetricOverride) GetSortPriority() int32 {
+	if x != nil && x.SortPriority != nil {
+		return *x.SortPriority
+	}
+	return 0
 }
 
 // A mapping between a Buganizer priority to an Impact Threshold.
@@ -1391,7 +1521,7 @@ type BuganizerProject_PriorityMapping struct {
 func (x *BuganizerProject_PriorityMapping) Reset() {
 	*x = BuganizerProject_PriorityMapping{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[14]
+		mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1404,7 +1534,7 @@ func (x *BuganizerProject_PriorityMapping) String() string {
 func (*BuganizerProject_PriorityMapping) ProtoMessage() {}
 
 func (x *BuganizerProject_PriorityMapping) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[14]
+	mi := &file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1417,7 +1547,7 @@ func (x *BuganizerProject_PriorityMapping) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuganizerProject_PriorityMapping.ProtoReflect.Descriptor instead.
 func (*BuganizerProject_PriorityMapping) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{13, 0}
+	return file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDescGZIP(), []int{14, 0}
 }
 
 func (x *BuganizerProject_PriorityMapping) GetPriority() BuganizerPriority {
@@ -1456,7 +1586,7 @@ var file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDesc
 	0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f,
 	0x6e, 0x66, 0x69, 0x67, 0x2f, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e,
 	0x74, 0x5f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69,
-	0x67, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xc0, 0x06, 0x0a, 0x0d, 0x50, 0x72, 0x6f, 0x6a,
+	0x67, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xf9, 0x06, 0x0a, 0x0d, 0x50, 0x72, 0x6f, 0x6a,
 	0x65, 0x63, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x50, 0x0a, 0x10, 0x70, 0x72, 0x6f,
 	0x6a, 0x65, 0x63, 0x74, 0x5f, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x18, 0x06, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x25, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79,
@@ -1504,14 +1634,33 @@ var file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDesc
 	0x69, 0x73, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x49, 0x6d, 0x70, 0x61, 0x63, 0x74,
 	0x4d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x54, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x52,
 	0x13, 0x62, 0x75, 0x67, 0x46, 0x69, 0x6c, 0x69, 0x6e, 0x67, 0x54, 0x68, 0x72, 0x65, 0x73, 0x68,
-	0x6f, 0x6c, 0x64, 0x73, 0x22, 0x44, 0x0a, 0x09, 0x42, 0x75, 0x67, 0x53, 0x79, 0x73, 0x74, 0x65,
-	0x6d, 0x12, 0x1a, 0x0a, 0x16, 0x42, 0x55, 0x47, 0x5f, 0x53, 0x59, 0x53, 0x54, 0x45, 0x4d, 0x5f,
-	0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0c, 0x0a,
-	0x08, 0x4d, 0x4f, 0x4e, 0x4f, 0x52, 0x41, 0x49, 0x4c, 0x10, 0x01, 0x12, 0x0d, 0x0a, 0x09, 0x42,
-	0x55, 0x47, 0x41, 0x4e, 0x49, 0x5a, 0x45, 0x52, 0x10, 0x02, 0x22, 0x34, 0x0a, 0x0f, 0x50, 0x72,
-	0x6f, 0x6a, 0x65, 0x63, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x12, 0x21, 0x0a,
-	0x0c, 0x64, 0x69, 0x73, 0x70, 0x6c, 0x61, 0x79, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x0b, 0x64, 0x69, 0x73, 0x70, 0x6c, 0x61, 0x79, 0x4e, 0x61, 0x6d, 0x65,
+	0x6f, 0x6c, 0x64, 0x73, 0x12, 0x37, 0x0a, 0x07, 0x6d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x73, 0x18,
+	0x0b, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61,
+	0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x4d, 0x65, 0x74,
+	0x72, 0x69, 0x63, 0x73, 0x52, 0x07, 0x6d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x73, 0x22, 0x44, 0x0a,
+	0x09, 0x42, 0x75, 0x67, 0x53, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x12, 0x1a, 0x0a, 0x16, 0x42, 0x55,
+	0x47, 0x5f, 0x53, 0x59, 0x53, 0x54, 0x45, 0x4d, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49,
+	0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0c, 0x0a, 0x08, 0x4d, 0x4f, 0x4e, 0x4f, 0x52, 0x41,
+	0x49, 0x4c, 0x10, 0x01, 0x12, 0x0d, 0x0a, 0x09, 0x42, 0x55, 0x47, 0x41, 0x4e, 0x49, 0x5a, 0x45,
+	0x52, 0x10, 0x02, 0x22, 0x34, 0x0a, 0x0f, 0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x4d, 0x65,
+	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x12, 0x21, 0x0a, 0x0c, 0x64, 0x69, 0x73, 0x70, 0x6c, 0x61,
+	0x79, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64, 0x69,
+	0x73, 0x70, 0x6c, 0x61, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x22, 0xf4, 0x01, 0x0a, 0x07, 0x4d, 0x65,
+	0x74, 0x72, 0x69, 0x63, 0x73, 0x12, 0x4a, 0x0a, 0x09, 0x6f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64,
+	0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x2c, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e,
+	0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e,
+	0x4d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x73, 0x2e, 0x4d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x4f, 0x76,
+	0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x52, 0x09, 0x6f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65,
+	0x73, 0x1a, 0x9c, 0x01, 0x0a, 0x0e, 0x4d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x4f, 0x76, 0x65, 0x72,
+	0x72, 0x69, 0x64, 0x65, 0x12, 0x1b, 0x0a, 0x09, 0x6d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x5f, 0x69,
+	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x6d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x49,
+	0x64, 0x12, 0x22, 0x0a, 0x0a, 0x69, 0x73, 0x5f, 0x64, 0x65, 0x66, 0x61, 0x75, 0x6c, 0x74, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x08, 0x48, 0x00, 0x52, 0x09, 0x69, 0x73, 0x44, 0x65, 0x66, 0x61, 0x75,
+	0x6c, 0x74, 0x88, 0x01, 0x01, 0x12, 0x28, 0x0a, 0x0d, 0x73, 0x6f, 0x72, 0x74, 0x5f, 0x70, 0x72,
+	0x69, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x03, 0x20, 0x01, 0x28, 0x05, 0x48, 0x01, 0x52, 0x0c,
+	0x73, 0x6f, 0x72, 0x74, 0x50, 0x72, 0x69, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x88, 0x01, 0x01, 0x42,
+	0x0d, 0x0a, 0x0b, 0x5f, 0x69, 0x73, 0x5f, 0x64, 0x65, 0x66, 0x61, 0x75, 0x6c, 0x74, 0x42, 0x10,
+	0x0a, 0x0e, 0x5f, 0x73, 0x6f, 0x72, 0x74, 0x5f, 0x70, 0x72, 0x69, 0x6f, 0x72, 0x69, 0x74, 0x79,
 	0x22, 0x54, 0x0a, 0x0d, 0x42, 0x75, 0x67, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x6d, 0x65, 0x6e,
 	0x74, 0x12, 0x43, 0x0a, 0x1e, 0x64, 0x69, 0x73, 0x61, 0x62, 0x6c, 0x65, 0x5f, 0x64, 0x75, 0x70,
 	0x6c, 0x69, 0x63, 0x61, 0x74, 0x65, 0x5f, 0x62, 0x75, 0x67, 0x5f, 0x63, 0x6f, 0x6d, 0x6d, 0x65,
@@ -1703,60 +1852,64 @@ func file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDes
 }
 
 var file_go_chromium_org_luci_analysis_proto_config_project_config_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_go_chromium_org_luci_analysis_proto_config_project_config_proto_goTypes = []interface{}{
 	(BuganizerPriority)(0),                   // 0: luci.analysis.config.BuganizerPriority
 	(ProjectConfig_BugSystem)(0),             // 1: luci.analysis.config.ProjectConfig.BugSystem
 	(*ProjectConfig)(nil),                    // 2: luci.analysis.config.ProjectConfig
 	(*ProjectMetadata)(nil),                  // 3: luci.analysis.config.ProjectMetadata
-	(*BugManagement)(nil),                    // 4: luci.analysis.config.BugManagement
-	(*ImpactThreshold)(nil),                  // 5: luci.analysis.config.ImpactThreshold
-	(*ImpactMetricThreshold)(nil),            // 6: luci.analysis.config.ImpactMetricThreshold
-	(*MetricThreshold)(nil),                  // 7: luci.analysis.config.MetricThreshold
-	(*MonorailProject)(nil),                  // 8: luci.analysis.config.MonorailProject
-	(*MonorailFieldValue)(nil),               // 9: luci.analysis.config.MonorailFieldValue
-	(*MonorailPriority)(nil),                 // 10: luci.analysis.config.MonorailPriority
-	(*RealmConfig)(nil),                      // 11: luci.analysis.config.RealmConfig
-	(*Clustering)(nil),                       // 12: luci.analysis.config.Clustering
-	(*TestNameClusteringRule)(nil),           // 13: luci.analysis.config.TestNameClusteringRule
-	(*BuganizerComponent)(nil),               // 14: luci.analysis.config.BuganizerComponent
-	(*BuganizerProject)(nil),                 // 15: luci.analysis.config.BuganizerProject
-	(*BuganizerProject_PriorityMapping)(nil), // 16: luci.analysis.config.BuganizerProject.PriorityMapping
-	(*timestamppb.Timestamp)(nil),            // 17: google.protobuf.Timestamp
-	(*TestVariantAnalysisConfig)(nil),        // 18: luci.analysis.config.TestVariantAnalysisConfig
+	(*Metrics)(nil),                          // 4: luci.analysis.config.Metrics
+	(*BugManagement)(nil),                    // 5: luci.analysis.config.BugManagement
+	(*ImpactThreshold)(nil),                  // 6: luci.analysis.config.ImpactThreshold
+	(*ImpactMetricThreshold)(nil),            // 7: luci.analysis.config.ImpactMetricThreshold
+	(*MetricThreshold)(nil),                  // 8: luci.analysis.config.MetricThreshold
+	(*MonorailProject)(nil),                  // 9: luci.analysis.config.MonorailProject
+	(*MonorailFieldValue)(nil),               // 10: luci.analysis.config.MonorailFieldValue
+	(*MonorailPriority)(nil),                 // 11: luci.analysis.config.MonorailPriority
+	(*RealmConfig)(nil),                      // 12: luci.analysis.config.RealmConfig
+	(*Clustering)(nil),                       // 13: luci.analysis.config.Clustering
+	(*TestNameClusteringRule)(nil),           // 14: luci.analysis.config.TestNameClusteringRule
+	(*BuganizerComponent)(nil),               // 15: luci.analysis.config.BuganizerComponent
+	(*BuganizerProject)(nil),                 // 16: luci.analysis.config.BuganizerProject
+	(*Metrics_MetricOverride)(nil),           // 17: luci.analysis.config.Metrics.MetricOverride
+	(*BuganizerProject_PriorityMapping)(nil), // 18: luci.analysis.config.BuganizerProject.PriorityMapping
+	(*timestamppb.Timestamp)(nil),            // 19: google.protobuf.Timestamp
+	(*TestVariantAnalysisConfig)(nil),        // 20: luci.analysis.config.TestVariantAnalysisConfig
 }
 var file_go_chromium_org_luci_analysis_proto_config_project_config_proto_depIdxs = []int32{
 	3,  // 0: luci.analysis.config.ProjectConfig.project_metadata:type_name -> luci.analysis.config.ProjectMetadata
 	1,  // 1: luci.analysis.config.ProjectConfig.bug_system:type_name -> luci.analysis.config.ProjectConfig.BugSystem
-	8,  // 2: luci.analysis.config.ProjectConfig.monorail:type_name -> luci.analysis.config.MonorailProject
-	15, // 3: luci.analysis.config.ProjectConfig.buganizer:type_name -> luci.analysis.config.BuganizerProject
-	5,  // 4: luci.analysis.config.ProjectConfig.bug_filing_threshold:type_name -> luci.analysis.config.ImpactThreshold
-	11, // 5: luci.analysis.config.ProjectConfig.realms:type_name -> luci.analysis.config.RealmConfig
-	17, // 6: luci.analysis.config.ProjectConfig.last_updated:type_name -> google.protobuf.Timestamp
-	12, // 7: luci.analysis.config.ProjectConfig.clustering:type_name -> luci.analysis.config.Clustering
-	4,  // 8: luci.analysis.config.ProjectConfig.bug_management:type_name -> luci.analysis.config.BugManagement
-	6,  // 9: luci.analysis.config.ProjectConfig.bug_filing_thresholds:type_name -> luci.analysis.config.ImpactMetricThreshold
-	7,  // 10: luci.analysis.config.ImpactThreshold.test_results_failed:type_name -> luci.analysis.config.MetricThreshold
-	7,  // 11: luci.analysis.config.ImpactThreshold.test_runs_failed:type_name -> luci.analysis.config.MetricThreshold
-	7,  // 12: luci.analysis.config.ImpactThreshold.presubmit_runs_failed:type_name -> luci.analysis.config.MetricThreshold
-	7,  // 13: luci.analysis.config.ImpactThreshold.critical_failures_exonerated:type_name -> luci.analysis.config.MetricThreshold
-	7,  // 14: luci.analysis.config.ImpactMetricThreshold.threshold:type_name -> luci.analysis.config.MetricThreshold
-	9,  // 15: luci.analysis.config.MonorailProject.default_field_values:type_name -> luci.analysis.config.MonorailFieldValue
-	10, // 16: luci.analysis.config.MonorailProject.priorities:type_name -> luci.analysis.config.MonorailPriority
-	5,  // 17: luci.analysis.config.MonorailPriority.threshold:type_name -> luci.analysis.config.ImpactThreshold
-	6,  // 18: luci.analysis.config.MonorailPriority.thresholds:type_name -> luci.analysis.config.ImpactMetricThreshold
-	18, // 19: luci.analysis.config.RealmConfig.test_variant_analysis:type_name -> luci.analysis.config.TestVariantAnalysisConfig
-	13, // 20: luci.analysis.config.Clustering.test_name_rules:type_name -> luci.analysis.config.TestNameClusteringRule
-	14, // 21: luci.analysis.config.BuganizerProject.default_component:type_name -> luci.analysis.config.BuganizerComponent
-	16, // 22: luci.analysis.config.BuganizerProject.priority_mappings:type_name -> luci.analysis.config.BuganizerProject.PriorityMapping
-	0,  // 23: luci.analysis.config.BuganizerProject.PriorityMapping.priority:type_name -> luci.analysis.config.BuganizerPriority
-	5,  // 24: luci.analysis.config.BuganizerProject.PriorityMapping.threshold:type_name -> luci.analysis.config.ImpactThreshold
-	6,  // 25: luci.analysis.config.BuganizerProject.PriorityMapping.thresholds:type_name -> luci.analysis.config.ImpactMetricThreshold
-	26, // [26:26] is the sub-list for method output_type
-	26, // [26:26] is the sub-list for method input_type
-	26, // [26:26] is the sub-list for extension type_name
-	26, // [26:26] is the sub-list for extension extendee
-	0,  // [0:26] is the sub-list for field type_name
+	9,  // 2: luci.analysis.config.ProjectConfig.monorail:type_name -> luci.analysis.config.MonorailProject
+	16, // 3: luci.analysis.config.ProjectConfig.buganizer:type_name -> luci.analysis.config.BuganizerProject
+	6,  // 4: luci.analysis.config.ProjectConfig.bug_filing_threshold:type_name -> luci.analysis.config.ImpactThreshold
+	12, // 5: luci.analysis.config.ProjectConfig.realms:type_name -> luci.analysis.config.RealmConfig
+	19, // 6: luci.analysis.config.ProjectConfig.last_updated:type_name -> google.protobuf.Timestamp
+	13, // 7: luci.analysis.config.ProjectConfig.clustering:type_name -> luci.analysis.config.Clustering
+	5,  // 8: luci.analysis.config.ProjectConfig.bug_management:type_name -> luci.analysis.config.BugManagement
+	7,  // 9: luci.analysis.config.ProjectConfig.bug_filing_thresholds:type_name -> luci.analysis.config.ImpactMetricThreshold
+	4,  // 10: luci.analysis.config.ProjectConfig.metrics:type_name -> luci.analysis.config.Metrics
+	17, // 11: luci.analysis.config.Metrics.overrides:type_name -> luci.analysis.config.Metrics.MetricOverride
+	8,  // 12: luci.analysis.config.ImpactThreshold.test_results_failed:type_name -> luci.analysis.config.MetricThreshold
+	8,  // 13: luci.analysis.config.ImpactThreshold.test_runs_failed:type_name -> luci.analysis.config.MetricThreshold
+	8,  // 14: luci.analysis.config.ImpactThreshold.presubmit_runs_failed:type_name -> luci.analysis.config.MetricThreshold
+	8,  // 15: luci.analysis.config.ImpactThreshold.critical_failures_exonerated:type_name -> luci.analysis.config.MetricThreshold
+	8,  // 16: luci.analysis.config.ImpactMetricThreshold.threshold:type_name -> luci.analysis.config.MetricThreshold
+	10, // 17: luci.analysis.config.MonorailProject.default_field_values:type_name -> luci.analysis.config.MonorailFieldValue
+	11, // 18: luci.analysis.config.MonorailProject.priorities:type_name -> luci.analysis.config.MonorailPriority
+	6,  // 19: luci.analysis.config.MonorailPriority.threshold:type_name -> luci.analysis.config.ImpactThreshold
+	7,  // 20: luci.analysis.config.MonorailPriority.thresholds:type_name -> luci.analysis.config.ImpactMetricThreshold
+	20, // 21: luci.analysis.config.RealmConfig.test_variant_analysis:type_name -> luci.analysis.config.TestVariantAnalysisConfig
+	14, // 22: luci.analysis.config.Clustering.test_name_rules:type_name -> luci.analysis.config.TestNameClusteringRule
+	15, // 23: luci.analysis.config.BuganizerProject.default_component:type_name -> luci.analysis.config.BuganizerComponent
+	18, // 24: luci.analysis.config.BuganizerProject.priority_mappings:type_name -> luci.analysis.config.BuganizerProject.PriorityMapping
+	0,  // 25: luci.analysis.config.BuganizerProject.PriorityMapping.priority:type_name -> luci.analysis.config.BuganizerPriority
+	6,  // 26: luci.analysis.config.BuganizerProject.PriorityMapping.threshold:type_name -> luci.analysis.config.ImpactThreshold
+	7,  // 27: luci.analysis.config.BuganizerProject.PriorityMapping.thresholds:type_name -> luci.analysis.config.ImpactMetricThreshold
+	28, // [28:28] is the sub-list for method output_type
+	28, // [28:28] is the sub-list for method input_type
+	28, // [28:28] is the sub-list for extension type_name
+	28, // [28:28] is the sub-list for extension extendee
+	0,  // [0:28] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_proto_config_project_config_proto_init() }
@@ -1791,7 +1944,7 @@ func file_go_chromium_org_luci_analysis_proto_config_project_config_proto_init()
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BugManagement); i {
+			switch v := v.(*Metrics); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1803,7 +1956,7 @@ func file_go_chromium_org_luci_analysis_proto_config_project_config_proto_init()
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ImpactThreshold); i {
+			switch v := v.(*BugManagement); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1815,7 +1968,7 @@ func file_go_chromium_org_luci_analysis_proto_config_project_config_proto_init()
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ImpactMetricThreshold); i {
+			switch v := v.(*ImpactThreshold); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1827,7 +1980,7 @@ func file_go_chromium_org_luci_analysis_proto_config_project_config_proto_init()
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MetricThreshold); i {
+			switch v := v.(*ImpactMetricThreshold); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1839,7 +1992,7 @@ func file_go_chromium_org_luci_analysis_proto_config_project_config_proto_init()
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MonorailProject); i {
+			switch v := v.(*MetricThreshold); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1851,7 +2004,7 @@ func file_go_chromium_org_luci_analysis_proto_config_project_config_proto_init()
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MonorailFieldValue); i {
+			switch v := v.(*MonorailProject); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1863,7 +2016,7 @@ func file_go_chromium_org_luci_analysis_proto_config_project_config_proto_init()
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MonorailPriority); i {
+			switch v := v.(*MonorailFieldValue); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1875,7 +2028,7 @@ func file_go_chromium_org_luci_analysis_proto_config_project_config_proto_init()
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RealmConfig); i {
+			switch v := v.(*MonorailPriority); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1887,7 +2040,7 @@ func file_go_chromium_org_luci_analysis_proto_config_project_config_proto_init()
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Clustering); i {
+			switch v := v.(*RealmConfig); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1899,7 +2052,7 @@ func file_go_chromium_org_luci_analysis_proto_config_project_config_proto_init()
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TestNameClusteringRule); i {
+			switch v := v.(*Clustering); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1911,7 +2064,7 @@ func file_go_chromium_org_luci_analysis_proto_config_project_config_proto_init()
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BuganizerComponent); i {
+			switch v := v.(*TestNameClusteringRule); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1923,7 +2076,7 @@ func file_go_chromium_org_luci_analysis_proto_config_project_config_proto_init()
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BuganizerProject); i {
+			switch v := v.(*BuganizerComponent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1935,6 +2088,30 @@ func file_go_chromium_org_luci_analysis_proto_config_project_config_proto_init()
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BuganizerProject); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Metrics_MetricOverride); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*BuganizerProject_PriorityMapping); i {
 			case 0:
 				return &v.state
@@ -1947,15 +2124,16 @@ func file_go_chromium_org_luci_analysis_proto_config_project_config_proto_init()
 			}
 		}
 	}
-	file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[3].OneofWrappers = []interface{}{}
-	file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[5].OneofWrappers = []interface{}{}
+	file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[4].OneofWrappers = []interface{}{}
+	file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[6].OneofWrappers = []interface{}{}
+	file_go_chromium_org_luci_analysis_proto_config_project_config_proto_msgTypes[15].OneofWrappers = []interface{}{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_analysis_proto_config_project_config_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   15,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
