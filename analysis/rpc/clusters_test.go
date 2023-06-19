@@ -141,11 +141,11 @@ func TestClusters(t *testing.T) {
 		Convey("Cluster", func() {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
-					Realm:      "testproject:@root",
+					Realm:      "testproject:@project",
 					Permission: perms.PermGetClustersByFailure,
 				},
 				{
-					Realm:      "testproject:@root",
+					Realm:      "testproject:@project",
 					Permission: perms.PermGetRule,
 				},
 			}
@@ -297,11 +297,11 @@ func TestClusters(t *testing.T) {
 		Convey("Get", func() {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
-					Realm:      "testproject:@root",
+					Realm:      "testproject:@project",
 					Permission: perms.PermGetCluster,
 				},
 				{
-					Realm:      "testproject:@root",
+					Realm:      "testproject:@project",
 					Permission: perms.PermExpensiveClusterQueries,
 				},
 				{
@@ -627,19 +627,19 @@ func TestClusters(t *testing.T) {
 			)
 			authState.IdentityPermissions = append(authState.IdentityPermissions, []authtest.RealmPermission{
 				{
-					Realm:      "testproject:@root",
+					Realm:      "testproject:@project",
 					Permission: perms.PermListClusters,
 				},
 				{
-					Realm:      "testproject:@root",
+					Realm:      "testproject:@project",
 					Permission: perms.PermExpensiveClusterQueries,
 				},
 				{
-					Realm:      "testproject:@root",
+					Realm:      "testproject:@project",
 					Permission: perms.PermGetRule,
 				},
 				{
-					Realm:      "testproject:@root",
+					Realm:      "testproject:@project",
 					Permission: perms.PermGetRuleDefinition,
 				},
 			}...)
@@ -1038,7 +1038,7 @@ func TestClusters(t *testing.T) {
 		})
 		Convey("GetReclusteringProgress", func() {
 			authState.IdentityPermissions = []authtest.RealmPermission{{
-				Realm:      "testproject:@root",
+				Realm:      "testproject:@project",
 				Permission: perms.PermGetCluster,
 			}}
 
@@ -1125,10 +1125,10 @@ func TestClusters(t *testing.T) {
 				"otherproject:realm3",
 			)
 			authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
-				Realm:      "testproject:@root",
+				Realm:      "testproject:@project",
 				Permission: perms.PermGetCluster,
 			}, authtest.RealmPermission{
-				Realm:      "testproject:@root",
+				Realm:      "testproject:@project",
 				Permission: perms.PermExpensiveClusterQueries,
 			})
 
@@ -1355,10 +1355,10 @@ func TestClusters(t *testing.T) {
 				"otherproject:realm3",
 			)
 			authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
-				Realm:      "testproject:@root",
+				Realm:      "testproject:@project",
 				Permission: perms.PermGetCluster,
 			}, authtest.RealmPermission{
-				Realm:      "testproject:@root",
+				Realm:      "testproject:@project",
 				Permission: perms.PermExpensiveClusterQueries,
 			})
 

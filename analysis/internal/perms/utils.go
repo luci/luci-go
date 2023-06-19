@@ -88,11 +88,11 @@ func VerifyPermissions(ctx context.Context, realm string, attrs realms.Attrs, pe
 }
 
 // VerifyProjectPermissions verifies the caller has the given permissions in the
-// @root realm of the given project. If the caller does not have permission,
+// @project realm of the given project. If the caller does not have permission,
 // an appropriate appstatus error is returned, which should be returned
 // immediately to the RPC caller.
 func VerifyProjectPermissions(ctx context.Context, project string, permissions ...realms.Permission) error {
-	realm := project + ":@root"
+	realm := realms.Join(project, realms.ProjectRealm)
 	for _, p := range permissions {
 		allowed, err := HasProjectPermission(ctx, project, p)
 		if err != nil {
@@ -106,10 +106,10 @@ func VerifyProjectPermissions(ctx context.Context, project string, permissions .
 }
 
 // HasProjectPermission returns if the caller has the given permission in
-// the @root realm of the given project. This method only returns an error
+// the @project realm of the given project. This method only returns an error
 // if there is some AuthDB issue.
 func HasProjectPermission(ctx context.Context, project string, permission realms.Permission) (bool, error) {
-	realm := project + ":@root"
+	realm := realms.Join(project, realms.ProjectRealm)
 	switch allowed, err := auth.HasPermission(ctx, permission, realm, nil); {
 	case err != nil:
 		return false, err

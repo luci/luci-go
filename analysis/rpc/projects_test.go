@@ -73,11 +73,11 @@ func TestProjects(t *testing.T) {
 		Convey("GetConfig", func() {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
-					Realm:      "testprojectmonorail:@root",
+					Realm:      "testprojectmonorail:@project",
 					Permission: perms.PermGetConfig,
 				},
 				{
-					Realm:      "testprojectbuganizer:@root",
+					Realm:      "testprojectbuganizer:@project",
 					Permission: perms.PermGetConfig,
 				},
 			}
@@ -206,15 +206,15 @@ func TestProjects(t *testing.T) {
 		Convey("List", func() {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
-					Realm:      "chromium:@root",
+					Realm:      "chromium:@project",
 					Permission: perms.PermGetConfig,
 				},
 				{
-					Realm:      "chrome:@root",
+					Realm:      "chrome:@project",
 					Permission: perms.PermGetConfig,
 				},
 				{
-					Realm:      "chromeos:@root",
+					Realm:      "chromeos:@project",
 					Permission: perms.PermGetConfig,
 				},
 			}

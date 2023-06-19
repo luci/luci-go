@@ -123,7 +123,7 @@ func (*projectServer) List(ctx context.Context, request *pb.ListProjectsRequest)
 	readableProjects := make([]string, 0)
 	for _, r := range readableRealms {
 		project, realm := realms.Split(r)
-		if realm == "@root" {
+		if realm == realms.RootRealm || realm == realms.ProjectRealm {
 			readableProjects = append(readableProjects, project)
 		}
 	}

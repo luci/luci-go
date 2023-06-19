@@ -131,11 +131,11 @@ func TestRules(t *testing.T) {
 		Convey("Get", func() {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
-					Realm:      "testproject:@root",
+					Realm:      "testproject:@project",
 					Permission: perms.PermGetRule,
 				},
 				{
-					Realm:      "testproject:@root",
+					Realm:      "testproject:@project",
 					Permission: perms.PermGetRuleDefinition,
 				},
 			}
@@ -267,11 +267,11 @@ func TestRules(t *testing.T) {
 		Convey("List", func() {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
-					Realm:      "testproject:@root",
+					Realm:      "testproject:@project",
 					Permission: perms.PermListRules,
 				},
 				{
-					Realm:      "testproject:@root",
+					Realm:      "testproject:@project",
 					Permission: perms.PermGetRuleDefinition,
 				},
 			}
@@ -350,11 +350,11 @@ func TestRules(t *testing.T) {
 		Convey("Update", func() {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
-					Realm:      "testproject:@root",
+					Realm:      "testproject:@project",
 					Permission: perms.PermUpdateRule,
 				},
 				{
-					Realm:      "testproject:@root",
+					Realm:      "testproject:@project",
 					Permission: perms.PermGetRuleDefinition,
 				},
 			}
@@ -582,7 +582,7 @@ func TestRules(t *testing.T) {
 		Convey("Create", func() {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
-					Realm:      "testproject:@root",
+					Realm:      "testproject:@project",
 					Permission: perms.PermCreateRule,
 				},
 			}
@@ -761,11 +761,11 @@ func TestRules(t *testing.T) {
 		Convey("LookupBug", func() {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
-					Realm:      "testproject:@root",
+					Realm:      "testproject:@project",
 					Permission: perms.PermListRules,
 				},
 				{
-					Realm:      "otherproject:@root",
+					Realm:      "otherproject:@project",
 					Permission: perms.PermListRules,
 				},
 			}
@@ -826,7 +826,7 @@ func TestRules(t *testing.T) {
 				Convey("If list permission exists in only some projects", func() {
 					authState.IdentityPermissions = []authtest.RealmPermission{
 						{
-							Realm:      "testproject:@root",
+							Realm:      "testproject:@project",
 							Permission: perms.PermListRules,
 						},
 					}

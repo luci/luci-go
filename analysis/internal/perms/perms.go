@@ -21,7 +21,7 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 )
 
-// All permissions in this file are checked against "<luciproject>:@root"
+// All permissions in this file are checked against "<luciproject>:@project"
 // realm, as rules and clusters do not live in any particular realm.
 
 // Permissions that should usually be granted to all users that can view
