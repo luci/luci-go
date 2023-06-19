@@ -50,7 +50,7 @@ var limitedFields = mask.MustFromReadMask(&pb.TestResult{},
 	"start_time",
 	"duration",
 	"variant_hash",
-	"failure_reason.primary_error_message",
+	"failure_reason",
 )
 
 // limitedReasonLength is the length to which the failure reason's primary error
@@ -494,14 +494,26 @@ func ToLimitedData(ctx context.Context, tr *pb.TestResult) error {
 	}
 
 	if tr.FailureReason != nil {
-		runes := []rune(tr.FailureReason.PrimaryErrorMessage)
-		if len(runes) > limitedReasonLength {
-			// Truncate the error message.
-			tr.FailureReason.PrimaryErrorMessage = string(runes[:limitedReasonLength]) + "..."
+		tr.FailureReason.PrimaryErrorMessage = truncateErrorMessage(
+			tr.FailureReason.PrimaryErrorMessage, limitedReasonLength)
+
+		for i := range tr.FailureReason.Errors {
+			tr.FailureReason.Errors[i].Message = truncateErrorMessage(
+				tr.FailureReason.Errors[i].Message, limitedReasonLength)
 		}
 	}
 
 	tr.IsMasked = true
-
 	return nil
+}
+
+// truncateErrorMessage truncates the error message if its length exceeds the
+// limit.
+func truncateErrorMessage(errorMessage string, maxLength int) string {
+	if len(errorMessage) <= maxLength {
+		return errorMessage
+	}
+
+	runes := []rune(errorMessage)
+	return string(runes[:maxLength]) + "..."
 }

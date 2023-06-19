@@ -26,6 +26,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/text/unicode/norm"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -37,6 +38,7 @@ const (
 	resultIDPattern           = `[a-z0-9\-_.]{1,32}`
 	maxLenSummaryHTML         = 4 * 1024
 	maxLenPrimaryErrorMessage = 1024
+	maxSizeErrors             = 3*1024 + 100
 	maxLenPropertiesSchema    = 256
 	// clockSkew is the maxmium amount of time that clocks could have been out of sync for.
 	clockSkew = 10 * time.Minute
@@ -287,7 +289,44 @@ func validateFileName(name string) error {
 // ValidateFailureReason returns a non-nil error if fr is invalid.
 func ValidateFailureReason(fr *pb.FailureReason) error {
 	if len(fr.PrimaryErrorMessage) > maxLenPrimaryErrorMessage {
-		return errors.Reason("primary_error_message exceeds the maximum size of %d bytes", maxLenPrimaryErrorMessage).Err()
+		return errors.Reason("primary_error_message: exceeds the maximum "+
+			"size of %d bytes", maxLenPrimaryErrorMessage).Err()
+	}
+
+	// Validates the error list:
+	// 1. Check if the first error message matches primary_error_message
+	// 2. Check if any error message exceeds the maximum size
+	// 3. Check if the total size of the error list exceeds the maximum size
+	totalErrorLen := 0
+	for i, error := range fr.Errors {
+		if i == 0 && error.Message != fr.PrimaryErrorMessage {
+			return errors.Reason(
+				"errors[0]: message: must match primary_error_message").Err()
+		}
+
+		if err := ValidateError(error); err != nil {
+			return errors.Annotate(err, "errors[%d]", i).Err()
+		}
+
+		totalErrorLen += proto.Size(error)
+	}
+	if totalErrorLen > maxSizeErrors {
+		return errors.Reason("errors: exceeds the maximum total size of %d "+
+			"bytes", maxSizeErrors).Err()
+	}
+
+	if fr.TruncatedErrorsCount < 0 {
+		return errors.Reason(
+			"truncated_errors_count: must be non-negative").Err()
+	}
+	return nil
+}
+
+func ValidateError(error *pb.FailureReason_Error) error {
+	if len(error.GetMessage()) > maxLenPrimaryErrorMessage {
+		return errors.Reason(
+			"message: exceeds the maximum size of %d bytes",
+			maxLenPrimaryErrorMessage).Err()
 	}
 	return nil
 }

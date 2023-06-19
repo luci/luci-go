@@ -16,6 +16,7 @@ package sink
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -197,9 +198,19 @@ func TestReportTestResults(t *testing.T) {
 			Convey("specified", func() {
 				tr.FailureReason = &pb.FailureReason{
 					PrimaryErrorMessage: "Example failure reason.",
+					Errors: []*pb.FailureReason_Error{
+						{Message: "Example failure reason."},
+						{Message: "Example failure reason2."},
+					},
+					TruncatedErrorsCount: 0,
 				}
 				expectedTR.FailureReason = &pb.FailureReason{
 					PrimaryErrorMessage: "Example failure reason.",
+					Errors: []*pb.FailureReason_Error{
+						{Message: "Example failure reason."},
+						{Message: "Example failure reason2."},
+					},
+					TruncatedErrorsCount: 0,
 				}
 				checkResults()
 			})
@@ -226,7 +237,37 @@ func TestReportTestResults(t *testing.T) {
 
 				req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
 				_, err = sink.ReportTestResults(ctx, req)
-				So(err, ShouldErrLike, "failure_reason: primary_error_message exceeds the maximum size of 1024 bytes")
+				So(err, ShouldErrLike,
+					"failure_reason: primary_error_message: exceeds the"+
+						" maximum size of 1024 bytes")
+			})
+
+			Convey("error_messages too long", func() {
+				var b strings.Builder
+				// Make a string that exceeds the 1024-byte length limit
+				// (when encoded as UTF-8).
+				for i := 0; i < 1025; i++ {
+					b.WriteRune('.')
+				}
+				tr.FailureReason = &pb.FailureReason{
+					PrimaryErrorMessage: "Example failure reason.",
+					Errors: []*pb.FailureReason_Error{
+						{Message: "Example failure reason."},
+						{Message: b.String()},
+					},
+					TruncatedErrorsCount: 0,
+				}
+
+				sink, err := newSinkServer(ctx, cfg)
+				So(err, ShouldBeNil)
+
+				req := &sinkpb.ReportTestResultsRequest{
+					TestResults: []*sinkpb.TestResult{tr},
+				}
+				_, err = sink.ReportTestResults(ctx, req)
+				So(err, ShouldErrLike,
+					fmt.Sprintf("errors[1]: message: exceeds the maximum "+
+						"size of 1024 bytes"))
 			})
 		})
 

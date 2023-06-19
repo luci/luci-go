@@ -370,6 +370,11 @@ func TestQueryTestResults(t *testing.T) {
 			expected := insert.MakeTestResults("inv1", "DoFailureReason", nil, pb.TestStatus_PASS)
 			expected[0].FailureReason = &pb.FailureReason{
 				PrimaryErrorMessage: "want true, got false",
+				Errors: []*pb.FailureReason_Error{
+					{Message: "want true, got false"},
+					{Message: "want false, got true"},
+				},
+				TruncatedErrorsCount: 0,
 			}
 			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 			testutil.MustApply(ctx, insert.TestResultMessages(expected)...)
@@ -619,6 +624,11 @@ func TestToLimitedData(t *testing.T) {
 				},
 				FailureReason: &pb.FailureReason{
 					PrimaryErrorMessage: "an error message",
+					Errors: []*pb.FailureReason_Error{
+						{Message: "an error message"},
+						{Message: "an error message2"},
+					},
+					TruncatedErrorsCount: 0,
 				},
 				Properties: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -639,6 +649,11 @@ func TestToLimitedData(t *testing.T) {
 				VariantHash: variantHash,
 				FailureReason: &pb.FailureReason{
 					PrimaryErrorMessage: "an error message",
+					Errors: []*pb.FailureReason_Error{
+						{Message: "an error message"},
+						{Message: "an error message2"},
+					},
+					TruncatedErrorsCount: 0,
 				},
 				IsMasked: true,
 			}
@@ -680,6 +695,17 @@ func TestToLimitedData(t *testing.T) {
 				},
 				FailureReason: &pb.FailureReason{
 					PrimaryErrorMessage: strings.Repeat("a very long error message", 10),
+					Errors: []*pb.FailureReason_Error{
+						{
+							Message: strings.Repeat("a very long error message",
+								10),
+						},
+						{
+							Message: strings.Repeat("a very long error message2",
+								10),
+						},
+					},
+					TruncatedErrorsCount: 0,
 				},
 				Properties: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -689,6 +715,10 @@ func TestToLimitedData(t *testing.T) {
 			}
 			So(pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, testResult), ShouldBeNil)
 
+			limitedLongErrMsg := strings.Repeat("a very long error message",
+				10)[:limitedReasonLength] + "..."
+			limitedLongErrMsg2 := strings.Repeat("a very long error message2",
+				10)[:limitedReasonLength] + "..."
 			expected := &pb.TestResult{
 				Name:        name,
 				TestId:      testID,
@@ -699,7 +729,12 @@ func TestToLimitedData(t *testing.T) {
 				Duration:    &durpb.Duration{Seconds: int64(123), Nanos: 234567000},
 				VariantHash: variantHash,
 				FailureReason: &pb.FailureReason{
-					PrimaryErrorMessage: strings.Repeat("a very long error message", 10)[:limitedReasonLength] + "...",
+					PrimaryErrorMessage: limitedLongErrMsg,
+					Errors: []*pb.FailureReason_Error{
+						{Message: limitedLongErrMsg},
+						{Message: limitedLongErrMsg2},
+					},
+					TruncatedErrorsCount: 0,
 				},
 				IsMasked: true,
 			}

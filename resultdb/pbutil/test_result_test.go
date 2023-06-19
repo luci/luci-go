@@ -480,5 +480,84 @@ func TestValidateTestResult(t *testing.T) {
 			So(validate(msg), ShouldErrLike, "properties: exceeds the maximum size")
 		})
 
+		Convey("Validate failure reason", func() {
+			errorMessage1 := "error1"
+			errorMessage2 := "error2"
+			longErrorMessage := strings.Repeat("a very long error message", 100)
+			Convey("valid failure reason", func() {
+				msg.FailureReason = &pb.FailureReason{
+					PrimaryErrorMessage: errorMessage1,
+					Errors: []*pb.FailureReason_Error{
+						{Message: errorMessage1},
+						{Message: errorMessage2},
+					},
+					TruncatedErrorsCount: 0,
+				}
+				So(validate(msg), ShouldBeNil)
+			})
+
+			Convey("primary_error_message exceeds the maximum limit", func() {
+				msg.FailureReason = &pb.FailureReason{
+					PrimaryErrorMessage: longErrorMessage,
+				}
+				So(validate(msg), ShouldErrLike, "primary_error_message: "+
+					"exceeds the maximum")
+			})
+
+			Convey("one of the error messages exceeds the maximum limit", func() {
+				msg.FailureReason = &pb.FailureReason{
+					PrimaryErrorMessage: errorMessage1,
+					Errors: []*pb.FailureReason_Error{
+						{Message: errorMessage1},
+						{Message: longErrorMessage},
+					},
+					TruncatedErrorsCount: 0,
+				}
+				So(validate(msg), ShouldErrLike,
+					"errors[1]: message: exceeds the maximum size of 1024 "+
+						"bytes")
+			})
+
+			Convey("the first error doesn't match primary_error_message", func() {
+				msg.FailureReason = &pb.FailureReason{
+					PrimaryErrorMessage: errorMessage1,
+					Errors: []*pb.FailureReason_Error{
+						{Message: errorMessage2},
+					},
+					TruncatedErrorsCount: 0,
+				}
+				So(validate(msg), ShouldErrLike,
+					"errors[0]: message: must match primary_error_message")
+			})
+
+			Convey("the total size of the errors list exceeds the limit", func() {
+				maxErrorMessage := strings.Repeat(".", 1024)
+				msg.FailureReason = &pb.FailureReason{
+					PrimaryErrorMessage: maxErrorMessage,
+					Errors: []*pb.FailureReason_Error{
+						{Message: maxErrorMessage},
+						{Message: maxErrorMessage},
+						{Message: maxErrorMessage},
+						{Message: maxErrorMessage},
+					},
+					TruncatedErrorsCount: 1,
+				}
+				So(validate(msg), ShouldErrLike,
+					"errors: exceeds the maximum total size of 3172 bytes")
+			})
+
+			Convey("invalid truncated error count", func() {
+				msg.FailureReason = &pb.FailureReason{
+					PrimaryErrorMessage: errorMessage1,
+					Errors: []*pb.FailureReason_Error{
+						{Message: errorMessage1},
+						{Message: errorMessage2},
+					},
+					TruncatedErrorsCount: -1,
+				}
+				So(validate(msg), ShouldErrLike, "truncated_errors_count: "+
+					"must be non-negative")
+			})
+		})
 	})
 }

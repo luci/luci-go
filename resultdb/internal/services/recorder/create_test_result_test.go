@@ -86,6 +86,11 @@ func validCreateTestResultRequest(now time.Time, invName, testID string) *pb.Cre
 			},
 			FailureReason: &pb.FailureReason{
 				PrimaryErrorMessage: "got 1, want 0",
+				Errors: []*pb.FailureReason_Error{
+					{Message: "got 1, want 0"},
+					{Message: "got 2, want 1"},
+				},
+				TruncatedErrorsCount: 0,
 			},
 			Properties: properties,
 		},

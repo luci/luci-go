@@ -129,6 +129,11 @@ func validTestResult() (*sinkpb.TestResult, func()) {
 		},
 		FailureReason: &pb.FailureReason{
 			PrimaryErrorMessage: "This is a failure message.",
+			Errors: []*pb.FailureReason_Error{
+				{Message: "This is a failure message."},
+				{Message: "This is a failure message2."},
+			},
+			TruncatedErrorsCount: 0,
 		},
 	}, cleanup
 }

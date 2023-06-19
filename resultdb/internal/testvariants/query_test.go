@@ -178,6 +178,11 @@ func TestQueryTestVariants(t *testing.T) {
 
 		failureReason := &pb.FailureReason{
 			PrimaryErrorMessage: "primary error msg",
+			Errors: []*pb.FailureReason_Error{
+				{Message: "primary error msg"},
+				{Message: "primary error msg2"},
+			},
+			TruncatedErrorsCount: 0,
 		}
 		failureReasonBytes, _ := proto.Marshal(failureReason)
 		properties := &structpb.Struct{
@@ -255,6 +260,11 @@ func TestQueryTestVariants(t *testing.T) {
 						SummaryHtml: "SummaryHtml",
 						FailureReason: &pb.FailureReason{
 							PrimaryErrorMessage: "primary error msg",
+							Errors: []*pb.FailureReason_Error{
+								{Message: "primary error msg"},
+								{Message: "primary error msg2"},
+							},
+							TruncatedErrorsCount: 0,
 						},
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -691,6 +701,11 @@ func TestQueryTestVariants(t *testing.T) {
 							Duration:  duration,
 							FailureReason: &pb.FailureReason{
 								PrimaryErrorMessage: "primary error msg",
+								Errors: []*pb.FailureReason_Error{
+									{Message: "primary error msg"},
+									{Message: "primary error msg2"},
+								},
+								TruncatedErrorsCount: 0,
 							},
 							IsMasked: true,
 						},
@@ -762,6 +777,11 @@ func TestQueryTestVariants(t *testing.T) {
 							SummaryHtml: "SummaryHtml",
 							FailureReason: &pb.FailureReason{
 								PrimaryErrorMessage: "primary error msg",
+								Errors: []*pb.FailureReason_Error{
+									{Message: "primary error msg"},
+									{Message: "primary error msg2"},
+								},
+								TruncatedErrorsCount: 0,
 							},
 							Properties: &structpb.Struct{
 								Fields: map[string]*structpb.Value{
