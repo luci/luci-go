@@ -30,6 +30,7 @@ import (
 	taskpb "go.chromium.org/luci/bisection/task/proto"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/server/tq"
 )
 
@@ -59,6 +60,43 @@ func TestBuildBucketPubsub(t *testing.T) {
 		}
 		expected := proto.Clone(task).(*taskpb.FailedBuildIngestionTask)
 		So(scheduler.Tasks().Payloads()[0], ShouldResembleProto, expected)
+	})
+
+	Convey("Rerun metrics captured", t, func() {
+		c, _ := tsmon.WithDummyInMemory(context.Background())
+
+		// Receiving a pubsub message for a terminal status should increase counter.
+		buildPubsub := &buildbucketpb.BuildsV2PubSub{
+			Build: &buildbucketpb.Build{
+				Id: 8000,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "findit",
+				},
+				Status: buildbucketpb.Status_INFRA_FAILURE,
+			},
+		}
+		r := &http.Request{Body: makeBBReq(buildPubsub)}
+		err := buildbucketPubSubHandlerImpl(c, r)
+		So(err, ShouldBeNil)
+		So(rerunCounter.Get(c, "chromium", "INFRA_FAILURE"), ShouldEqual, 1)
+
+		// Receiving a pubsub message for a terminal status should not increase counter.
+		buildPubsub = &buildbucketpb.BuildsV2PubSub{
+			Build: &buildbucketpb.Build{
+				Id: 8001,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "findit",
+				},
+				Status: buildbucketpb.Status_SCHEDULED,
+			},
+		}
+		r = &http.Request{Body: makeBBReq(buildPubsub)}
+		err = buildbucketPubSubHandlerImpl(c, r)
+		So(err, ShouldBeNil)
+		So(rerunCounter.Get(c, "chromium", "SCHEDULED"), ShouldEqual, 0)
+
 	})
 }
 

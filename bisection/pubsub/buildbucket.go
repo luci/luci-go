@@ -34,7 +34,6 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/server/tq"
 )
 
@@ -48,6 +47,16 @@ var (
 		// The outcome action of the ingestion
 		// "unsupported", "update_rerun", "update_succeeded_build", "ignore", "analyze"
 		field.String("outcome"),
+	)
+	rerunCounter = metric.NewCounter(
+		"bisection/ingestion/rerun",
+		"The number of rerun build result, by project and status",
+		nil,
+		// The LUCI Project.
+		field.String("project"),
+		// The status of the rerun build.
+		// The possible values are "SUCCESS", "FAILURE", "INFRA_FAILURE", "CANCELED".
+		field.String("status"),
 	)
 )
 
@@ -67,11 +76,6 @@ type pubsubMessage struct {
 		Data       []byte
 		Attributes map[string]any
 	}
-}
-
-type buildBucketMessage struct {
-	Build    bbv1.LegacyApiCommonBuildMessage
-	Hostname string
 }
 
 // BuildbucketPubSubHandler handles pub/sub messages from buildbucket
@@ -117,10 +121,18 @@ func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
 		c = loggingutil.SetAnalyzedBBID(c, bbid)
 		logging.Debugf(c, "Received message for build id %d", bbid)
 
-		// Special handling for pubsub message for LUCI Bisection
+		// Special handling for pubsub message for LUCI Bisection.
+		// This is only triggered for rerun builds.
 		if project == "chromium" && bucket == "findit" {
 			logging.Infof(c, "Received pubsub for luci bisection build %d", bbid)
 			bbCounter.Add(c, 1, project, string(OutcomeTypeUpdateRerun))
+
+			// We only update the rerun counter after the build finished.
+			// Status_ENDED_MASK is a union of all terminal statuses.
+			if status&buildbucketpb.Status_ENDED_MASK == buildbucketpb.Status_ENDED_MASK {
+				rerunCounter.Add(c, 1, project, status.String())
+			}
+
 			if bbmsg.Build.Status == buildbucketpb.Status_STARTED {
 				return rerun.UpdateRerunStartTime(c, bbid)
 			}
