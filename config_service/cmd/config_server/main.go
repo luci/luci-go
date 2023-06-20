@@ -19,18 +19,21 @@ import (
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
+	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/config_service/internal/clients"
+	"go.chromium.org/luci/config_service/internal/service"
 	configpb "go.chromium.org/luci/config_service/proto"
 	"go.chromium.org/luci/config_service/rpc"
 )
 
 func main() {
 	mods := []module.Module{
+		cron.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
 	}
@@ -53,6 +56,8 @@ func main() {
 			c.Writer.Write([]byte("Hello world!"))
 		})
 		configpb.RegisterConfigsServer(srv, rpc.NewConfigs())
+
+		cron.RegisterHandler("update-service-metadata", service.UpdateMetadata)
 		return nil
 	})
 }

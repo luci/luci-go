@@ -29,6 +29,12 @@ import (
 	"go.chromium.org/luci/config_service/internal/model"
 )
 
+const (
+	// ServiceRegistryFilePath is the path of luci-config self config file where
+	// it stores a list of registered services.
+	ServiceRegistryFilePath = "services.cfg"
+)
+
 // GitilesURL assembles a URL from the given gitiles location.
 // Note: it doesn't validate the format of GitilesLocation.
 func GitilesURL(loc *cfgcommonpb.GitilesLocation) string {

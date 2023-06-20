@@ -116,6 +116,23 @@ type RevisionInfo struct {
 	CommitterEmail string `gae:"committer_email"`
 }
 
+// ServiceMetadata contains the metadata of a service.
+type ServiceMetadata struct {
+	// ServiceName is the name of the service.
+	ServiceName string `gae:"$id"`
+	// Metadata describes the metadata of a service.
+	Metadata *cfgcommonpb.ServiceMetadata `gae:"metadata"`
+	// LegacyMetadata is returned by the service that is still talking in
+	// legacy LUCI Config protocol (i.e. REST based).
+	//
+	// TODO: crbug/1232565 - Remove this support once all backend services are
+	// able to talk in the new LUCI Config protocol (i.e. expose
+	// `cfgcommonpb.Consumer` interface)
+	LegacyMetadata *cfgcommonpb.ServiceDynamicMetadata `gae:"legacy_metadata"`
+	// UpdateTime is the time this entity is updated.
+	UpdateTime time.Time `gae:"update_time"`
+}
+
 // NoSuchConfigError captures the error caused by unknown config set or file.
 type NoSuchConfigError struct {
 	unknownConfigSet  string
