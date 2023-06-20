@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
+	"go.chromium.org/luci/analysis/internal/perms"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
@@ -32,23 +33,34 @@ func NewMetricsServer() *pb.DecoratedMetrics {
 	}
 }
 
-// List lists the metrics supported by the LUCI Analysis instance. See proto definition for more.
-func (*metricsServer) List(ctx context.Context, req *pb.ListMetricsRequest) (*pb.ListMetricsResponse, error) {
-	result := &pb.ListMetricsResponse{}
+// ListForProject lists the metrics for a given LUCI Project. See proto definition for more.
+func (*metricsServer) ListForProject(ctx context.Context, req *pb.ListProjectMetricsRequest) (*pb.ListProjectMetricsResponse, error) {
+	project, err := parseProjectName(req.Parent)
+	if err != nil {
+		return nil, invalidArgumentError(err)
+	}
+	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetConfig); err != nil {
+		return nil, err
+	}
+	cfg, err := readProjectConfig(ctx, project)
+	if err != nil {
+		return nil, err
+	}
+	result := &pb.ListProjectMetricsResponse{}
 	for _, m := range metrics.ComputedMetrics {
-		result.Metrics = append(result.Metrics, toMetricPB(m))
-
+		projectMetric := m.AdaptToProject(project, cfg.Config.Metrics)
+		result.Metrics = append(result.Metrics, toProjectMetricPB(projectMetric))
 	}
 	return result, nil
 }
 
-func toMetricPB(metric metrics.Definition) *pb.Metric {
-	return &pb.Metric{
+func toProjectMetricPB(metric metrics.Definition) *pb.ProjectMetric {
+	return &pb.ProjectMetric{
 		Name:              metric.Name,
 		MetricId:          metric.ID.String(),
 		HumanReadableName: metric.HumanReadableName,
 		Description:       metric.Description,
-		IsDefault:         metric.IsDefault,
-		SortPriority:      int32(metric.SortPriority),
+		IsDefault:         metric.Config.IsDefault,
+		SortPriority:      int32(metric.Config.SortPriority),
 	}
 }

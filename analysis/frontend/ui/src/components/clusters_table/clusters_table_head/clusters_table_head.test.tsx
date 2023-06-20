@@ -25,7 +25,7 @@ import ClustersTableHead from './clusters_table_head';
 
 describe('Test ClustersTableHead', () => {
   it('should display sortable table head', async () => {
-    const metrics = getMockMetricsList();
+    const metrics = getMockMetricsList('testproject');
     renderWithRouter(
         <ClusterTableContextWrapper metrics={metrics}>
           <table>

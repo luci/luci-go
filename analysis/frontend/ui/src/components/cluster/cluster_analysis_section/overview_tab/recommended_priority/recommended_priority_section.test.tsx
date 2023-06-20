@@ -47,7 +47,7 @@ describe('test RecommendedPrioritySection component', () => {
     fetchMock.reset();
   });
 
-  const metrics = getMockMetricsList();
+  const metrics = getMockMetricsList('chrome');
   const project = 'chrome';
   const algorithm = 'rules';
   const id = '123456';

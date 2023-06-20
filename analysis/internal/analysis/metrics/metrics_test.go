@@ -25,9 +25,9 @@ func TestMetrics(t *testing.T) {
 		Convey(`Metrics have unique sort orders`, func() {
 			usedSortOrders := make(map[int]bool)
 			for _, m := range ComputedMetrics {
-				unique := !usedSortOrders[m.SortPriority]
+				unique := !usedSortOrders[m.DefaultConfig.SortPriority]
 				So(unique, ShouldBeTrue)
-				usedSortOrders[m.SortPriority] = true
+				usedSortOrders[m.DefaultConfig.SortPriority] = true
 			}
 		})
 		Convey(`Metrics have unique IDs`, func() {

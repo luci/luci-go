@@ -400,13 +400,19 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 		return nil, err
 	}
 
+	// Fetch a recent project configuration.
+	// (May be a recent value that was cached.)
+	cfg, err := readProjectConfig(ctx, req.Project)
+	if err != nil {
+		return nil, err
+	}
+
 	view := req.View
 	if view == pb.ClusterSummaryView_CLUSTER_SUMMARY_VIEW_UNSPECIFIED {
 		view = pb.ClusterSummaryView_BASIC
 	}
 	var includeMetricBreakdown = view == pb.ClusterSummaryView_FULL
 
-	var cfg *compiledcfg.ProjectConfig
 	var ruleset *cache.Ruleset
 	var clusters []*analysis.ClusterSummary
 	var bqErr error
@@ -416,12 +422,6 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 		ch <- func() error {
 			start := time.Now()
 			var err error
-			// Fetch a recent project configuration.
-			// (May be a recent value that was cached.)
-			cfg, err = readProjectConfig(ctx, req.Project)
-			if err != nil {
-				return err
-			}
 
 			// Fetch a recent ruleset.
 			ruleset, err = reclustering.Ruleset(ctx, req.Project, cache.StrongRead)
@@ -441,6 +441,7 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 				IncludeMetricBreakdown: includeMetricBreakdown,
 			}
 			var err error
+
 			opts.FailureFilter, err = aip.ParseFilter(req.FailureFilter)
 			if err != nil {
 				bqErr = invalidArgumentError(errors.Annotate(err, "failure_filter").Err())
@@ -451,7 +452,7 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 				bqErr = invalidArgumentError(errors.Annotate(err, "order_by").Err())
 				return nil
 			}
-			opts.Metrics, err = metricsByName(req.Metrics)
+			opts.Metrics, err = metricsByName(req.Project, cfg, req.Metrics)
 			if err != nil {
 				bqErr = invalidArgumentError(errors.Annotate(err, "metrics").Err())
 				return nil
@@ -545,18 +546,25 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 	return &pb.QueryClusterSummariesResponse{ClusterSummaries: result}, nil
 }
 
-func metricsByName(names []string) ([]metrics.Definition, error) {
+// metricsByName retrieves the metrics with the given names from a
+// given LUCI Project and configuration. If the metrics are not
+// from the given LUCI Project, an error will be returned.
+func metricsByName(project string, cfg *compiledcfg.ProjectConfig, names []string) ([]metrics.Definition, error) {
 	results := make([]metrics.Definition, 0, len(names))
 	for _, name := range names {
-		id, err := parseMetricName(name)
+		metricProject, id, err := parseProjectMetricName(name)
 		if err != nil {
 			return nil, err
+		}
+		if metricProject != project {
+			return nil, errors.Reason("metric %s cannot be used as it is from a different LUCI Project", name).Err()
 		}
 		metric, err := metrics.ByID(id)
 		if err != nil {
 			return nil, err
 		}
-		results = append(results, metric)
+		projectMetric := metric.AdaptToProject(project, cfg.Config.Metrics)
+		results = append(results, projectMetric)
 	}
 	return results, nil
 }
@@ -570,6 +578,7 @@ func (c *clustersServer) QueryClusterFailures(ctx context.Context, req *pb.Query
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster, perms.PermExpensiveClusterQueries); err != nil {
 		return nil, err
 	}
+
 	opts := analysis.ReadClusterFailuresOptions{
 		Project:   project,
 		ClusterID: clusterID,
@@ -714,7 +723,12 @@ func (c *clustersServer) QueryHistory(ctx context.Context, req *pb.QueryClusterH
 		return nil, invalidArgumentError(errors.Reason("project").Err())
 	}
 
-	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermExpensiveClusterQueries); err != nil {
+	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermExpensiveClusterQueries, perms.PermGetConfig); err != nil {
+		return nil, err
+	}
+
+	cfg, err := readProjectConfig(ctx, req.Project)
+	if err != nil {
 		return nil, err
 	}
 
@@ -723,13 +737,12 @@ func (c *clustersServer) QueryHistory(ctx context.Context, req *pb.QueryClusterH
 		Days:    req.Days,
 	}
 
-	var err error
 	opts.FailureFilter, err = aip.ParseFilter(req.FailureFilter)
 	if err != nil {
 		return nil, invalidArgumentError(errors.Annotate(err, "failure_filter").Err())
 	}
 
-	opts.Metrics, err = metricsByName(req.Metrics)
+	opts.Metrics, err = metricsByName(req.Project, cfg, req.Metrics)
 	if err != nil {
 		return nil, invalidArgumentError(err)
 	}

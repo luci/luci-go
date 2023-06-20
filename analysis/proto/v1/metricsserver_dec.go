@@ -23,19 +23,19 @@ type DecoratedMetrics struct {
 	Postlude func(ctx context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedMetrics) List(ctx context.Context, req *ListMetricsRequest) (rsp *ListMetricsResponse, err error) {
+func (s *DecoratedMetrics) ListForProject(ctx context.Context, req *ListProjectMetricsRequest) (rsp *ListProjectMetricsResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "List", req)
+		newCtx, err = s.Prelude(ctx, "ListForProject", req)
 		if err == nil {
 			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.List(ctx, req)
+		rsp, err = s.Service.ListForProject(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(ctx, "List", rsp, err)
+		err = s.Postlude(ctx, "ListForProject", rsp, err)
 	}
 	return
 }

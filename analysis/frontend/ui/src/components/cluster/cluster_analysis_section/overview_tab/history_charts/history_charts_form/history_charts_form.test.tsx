@@ -30,7 +30,7 @@ import {
 } from './history_charts_form';
 
 describe('Test HistoryChartsForm component', () => {
-  const metrics = getMockMetricsList();
+  const metrics = getMockMetricsList('testproject');
 
   it('annotations can be toggled', async () => {
     renderWithRouter(

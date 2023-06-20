@@ -28,7 +28,7 @@ import ClustersTableMetricSelection from './clusters_table_metric_selection';
 
 describe('Test ClusterTableMetricSelection component', () => {
   it('given a list of metrics, should display select items', async () => {
-    const metrics = getMockMetricsList();
+    const metrics = getMockMetricsList('testproject');
     renderWithRouter(
         <ClusterTableContextWrapper metrics={metrics}>
           <ClustersTableMetricSelection />
@@ -43,7 +43,7 @@ describe('Test ClusterTableMetricSelection component', () => {
   });
 
   it('given a list of selected metrics, then should be values of the list', async () => {
-    const metrics = getMockMetricsList();
+    const metrics = getMockMetricsList('testproject');
 
     const selectedMetrics = [metrics[0].metricId, metrics[1].metricId];
     renderWithRouter(

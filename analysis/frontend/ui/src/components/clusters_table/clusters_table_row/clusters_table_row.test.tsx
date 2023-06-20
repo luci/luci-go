@@ -29,7 +29,7 @@ import ClustersTableRow from './clusters_table_row';
 
 describe('Test ClustersTableRow component', () => {
   it('given a rule cluster', async () => {
-    const metrics = getMockMetricsList();
+    const metrics = getMockMetricsList('testproject');
     const mockCluster = getMockRuleBasicClusterSummary('abcdef1234567890abcdef1234567890');
     renderWithRouterAndClient(
         <ClusterTableContextWrapper metrics={metrics}>
@@ -57,7 +57,7 @@ describe('Test ClustersTableRow component', () => {
   });
 
   it('given a suggested cluster', async () => {
-    const metrics = getMockMetricsList();
+    const metrics = getMockMetricsList('testproject');
     const mockCluster = getMockSuggestedBasicClusterSummary('abcdef1234567890abcdef1234567890');
     renderWithRouterAndClient(
         <ClusterTableContextWrapper metrics={metrics}>
@@ -84,7 +84,7 @@ describe('Test ClustersTableRow component', () => {
   });
 
   it('shows placeholders for sparklines when breakdown is loading', async () => {
-    const metrics = getMockMetricsList();
+    const metrics = getMockMetricsList('testproject');
     const mockCluster = getMockRuleBasicClusterSummary('abcdef1234567890abcdef1234567890');
     renderWithRouterAndClient(
         <ClusterTableContextWrapper metrics={metrics}>
@@ -118,7 +118,7 @@ describe('Test ClustersTableRow component', () => {
   });
 
   it('handles missing breakdown data', async () => {
-    const metrics = getMockMetricsList();
+    const metrics = getMockMetricsList('testproject');
     const mockCluster = getMockRuleBasicClusterSummary('abcdef1234567890abcdef1234567890');
     renderWithRouterAndClient(
         <ClusterTableContextWrapper metrics={metrics}>
@@ -152,7 +152,7 @@ describe('Test ClustersTableRow component', () => {
   });
 
   it('shows metric breakdowns', async () => {
-    const metrics = getMockMetricsList();
+    const metrics = getMockMetricsList('testproject');
     const mockCluster = getMockRuleFullClusterSummary('abcdef1234567890abcdef1234567890');
     renderWithRouterAndClient(
         <ClusterTableContextWrapper metrics={metrics}>

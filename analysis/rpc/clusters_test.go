@@ -120,7 +120,7 @@ func TestClusters(t *testing.T) {
 		err = rules.SetForTesting(ctx, rs)
 		So(err, ShouldBeNil)
 
-		Convey("requests are rejected", func() {
+		Convey("Unauthorized requests are rejected", func() {
 			// Ensure no access to luci-analysis-access.
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
@@ -721,9 +721,9 @@ func TestClusters(t *testing.T) {
 				FailureFilter: "test_id:\"pita.Boot\" failure_reason:\"failed to boot\"",
 				OrderBy:       "metrics.`human-cls-failed-presubmit`.value desc, metrics.`critical-failures-exonerated`.value desc, metrics.failures.value desc",
 				Metrics: []string{
-					"metrics/human-cls-failed-presubmit",
-					"metrics/critical-failures-exonerated",
-					"metrics/failures",
+					"projects/testproject/metrics/human-cls-failed-presubmit",
+					"projects/testproject/metrics/critical-failures-exonerated",
+					"projects/testproject/metrics/failures",
 				},
 				TimeRange: &pb.TimeRange{
 					Earliest: timestamppb.New(now.Add(-24 * time.Hour)),
@@ -1002,8 +1002,26 @@ func TestClusters(t *testing.T) {
 					So(response, ShouldBeNil)
 					So(err, ShouldBeRPCInvalidArgument, "failure_filter: comparator operator not implemented yet")
 				})
+				Convey("Metrics references non-existent metric", func() {
+					request.Metrics = []string{"projects/testproject/metrics/not-exists"}
+					// Run
+					response, err := server.QueryClusterSummaries(ctx, request)
+
+					// Verify
+					So(response, ShouldBeNil)
+					So(err, ShouldBeRPCInvalidArgument, `metrics: no metric with ID "not-exists"`)
+				})
+				Convey("Metrics references metric in another project", func() {
+					request.Metrics = []string{"projects/anotherproject/metrics/failures"}
+					// Run
+					response, err := server.QueryClusterSummaries(ctx, request)
+
+					// Verify
+					So(response, ShouldBeNil)
+					So(err, ShouldBeRPCInvalidArgument, `metrics: metric projects/anotherproject/metrics/failures cannot be used as it is from a different LUCI Project`)
+				})
 				Convey("Order by references metric that is not selected", func() {
-					request.Metrics = []string{"metrics/failures"}
+					request.Metrics = []string{"projects/testproject/metrics/failures"}
 					request.OrderBy = "metrics.`human-cls-failed-presubmit`.value desc"
 
 					// Run

@@ -82,7 +82,7 @@ export const HistoryChartsSection = () => {
       clusterId.project,
       `cluster_algorithm="${clusterId.algorithm}" cluster_id="${clusterId.id}"`,
       days,
-      selectedMetrics.map((m) => m.metricId),
+      selectedMetrics.map((m) => m.name),
   );
 
   // Calculate each chart's column size, given that a chart with data for the

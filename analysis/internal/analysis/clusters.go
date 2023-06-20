@@ -402,7 +402,7 @@ func (c *Client) ReadImpactfulClusters(ctx context.Context, opts ImpactfulCluste
 // metricExpression returns a SQL expression for the given metric
 // in the cluster_summaries table. The type of the result will be NULLABLE INTEGER.
 // The value will be NULL only if the metric is not in the underlying table.
-func metricExpression(metric metrics.Definition, basis metrics.CalculationBasis) string {
+func metricExpression(metric metrics.BaseDefinition, basis metrics.CalculationBasis) string {
 	jsonColumnName := fmt.Sprintf("metrics_%s", basis.ColumnSuffix())
 	return fmt.Sprintf("INT64(%s.%s)", jsonColumnName, metric.BaseColumnName)
 }
@@ -522,7 +522,7 @@ func valueOrDefault(value *int64, defaultValue int64) int64 {
 
 // whereThresholdsMet generates a SQL Where clause to query
 // where a particular metric meets a given threshold.
-func whereThresholdsMet(metric metrics.Definition, threshold *configpb.MetricThreshold) (string, []bigquery.QueryParameter) {
+func whereThresholdsMet(metric metrics.BaseDefinition, threshold *configpb.MetricThreshold) (string, []bigquery.QueryParameter) {
 	if threshold == nil {
 		threshold = &configpb.MetricThreshold{}
 	}

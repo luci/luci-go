@@ -20,6 +20,7 @@ import (
 	"regexp"
 	"strings"
 
+	configpb "go.chromium.org/luci/analysis/proto/config"
 	"go.chromium.org/luci/common/errors"
 )
 
@@ -39,9 +40,10 @@ var (
 		ID:                "human-cls-failed-presubmit",
 		HumanReadableName: "User Cls Failed Presubmit",
 		Description:       "The number of distinct developer changelists that failed at least one presubmit (CQ) run because of failure(s) in a cluster.",
-		SortPriority:      30,
-		IsDefault:         true,
-
+		DefaultConfig: Configuration{
+			SortPriority: 400,
+			IsDefault:    true,
+		},
 		// Human presubmit full-runs failed due to a failure in the cluster.
 		FilterSQL: `f.is_ingested_invocation_blocked AND COALESCE(ARRAY_LENGTH(f.exonerations) = 0, TRUE) AND f.build_status = 'FAILURE' ` +
 			`AND f.build_critical AND f.presubmit_run_mode = 'FULL_RUN' AND f.presubmit_run_owner='user'`,
@@ -61,8 +63,10 @@ var (
 		ID:                "critical-failures-exonerated",
 		HumanReadableName: "Presubmit-blocking Failures Exonerated",
 		Description:       "The number of failures on test variants which were configured to be presubmit-blocking, which were exonerated (i.e. did not actually block presubmit) because infrastructure determined the test variant to be failing or too flaky at tip-of-tree.",
-		SortPriority:      40,
-		IsDefault:         true,
+		DefaultConfig: Configuration{
+			SortPriority: 500,
+			IsDefault:    true,
+		},
 
 		// Exonerated for a reason other than NOT_CRITICAL or UNEXPECTED_PASS.
 		// Passes are not ingested by LUCI Analysis, but if a test has both an unexpected pass
@@ -77,8 +81,9 @@ var (
 		ID:                "test-runs-failed",
 		HumanReadableName: "Test Runs Failed",
 		Description:       "The number of distinct test runs (i.e. swarming tasks or builds) failed due to failures in a cluster.",
-		SortPriority:      20,
-
+		DefaultConfig: Configuration{
+			SortPriority: 200,
+		},
 		FilterSQL: `f.is_test_run_blocked`,
 		CountSQL:  `f.test_run_id`,
 	}.Build()
@@ -91,8 +96,10 @@ var (
 		ID:                "failures",
 		HumanReadableName: "Test Results Failed",
 		Description:       "The total number of test results in a cluster. LUCI Analysis only clusters test results which are unexpected and have a status of crash, abort or fail.",
-		SortPriority:      10,
-		IsDefault:         true,
+		DefaultConfig: Configuration{
+			SortPriority: 100,
+			IsDefault:    true,
+		},
 	}.Build()
 
 	BuildsFailedDueToFlakyTests = metricBuilder{
@@ -100,7 +107,9 @@ var (
 		HumanReadableName: "Builds Failed by Flaky Test Variants",
 		Description: "The number of builds monitored by a gardener rotation which failed because of flaky test variants. To be considered flaky," +
 			" the test variant must have seen at least one flaky verdict on the same branch in the last 24 hours.",
-		SortPriority: 25,
+		DefaultConfig: Configuration{
+			SortPriority: 300,
+		},
 		// Criteria:
 		// - The test result's build is part of a gardener rotation, and
 		// - The verdict was only unexpected non-passed results
@@ -117,21 +126,21 @@ var (
 
 	// ComputedMetrics is the set of metrics computed for each cluster and
 	// stored on the cluster summaries table.
-	ComputedMetrics = []Definition{HumanClsFailedPresubmit, CriticalFailuresExonerated, TestRunsFailed, Failures, BuildsFailedDueToFlakyTests}
+	ComputedMetrics = []BaseDefinition{HumanClsFailedPresubmit, CriticalFailuresExonerated, TestRunsFailed, Failures, BuildsFailedDueToFlakyTests}
 )
 
 // ByID returns the metric with the given ID, if any.
-func ByID(id ID) (Definition, error) {
+func ByID(id ID) (BaseDefinition, error) {
 	for _, metric := range ComputedMetrics {
 		if metric.ID == id {
 			return metric, nil
 		}
 	}
-	return Definition{}, errors.Reason("no metric with ID %q", id.String()).Err()
+	return BaseDefinition{}, errors.Reason("no metric with ID %q", id.String()).Err()
 }
 
 // MustByID returns the metric with the given ID and panic if no metric with the id exists.
-func MustByID(id ID) Definition {
+func MustByID(id ID) BaseDefinition {
 	for _, metric := range ComputedMetrics {
 		if metric.ID == id {
 			return metric
@@ -155,12 +164,9 @@ type metricBuilder struct {
 	// behind a help tooltip.
 	Description string
 
-	// Used to define the default sort order for metrics.
-	// See Definition.SortPriority.
-	SortPriority int
-
-	// IsDefault indicates whether this metric is shown by default in the UI.
-	IsDefault bool
+	// The default values of metric properties that can be overriden by
+	// individual LUCI Projects.
+	DefaultConfig Configuration
 
 	// A predicate on failures, that defines which failures are included in
 	// the metric. See Definition.FilterSQL for more details.
@@ -171,7 +177,7 @@ type metricBuilder struct {
 	CountSQL string
 }
 
-func (m metricBuilder) Build() Definition {
+func (m metricBuilder) Build() BaseDefinition {
 	if !metricIDRE.MatchString(m.ID) {
 		panic(fmt.Sprintf("metric ID %q does not match expected pattern", m.ID))
 	}
@@ -182,16 +188,14 @@ func (m metricBuilder) Build() Definition {
 	if m.Description == "" {
 		panic("description must be set")
 	}
-	if m.SortPriority <= 0 {
+	if m.DefaultConfig.SortPriority <= 0 {
 		panic("sort priority must be set to a positive integer")
 	}
-	return Definition{
+	return BaseDefinition{
 		ID:                ID(m.ID),
 		HumanReadableName: m.HumanReadableName,
 		Description:       m.Description,
-		SortPriority:      m.SortPriority,
-		IsDefault:         m.IsDefault,
-		Name:              fmt.Sprintf("metrics/%s", m.ID),
+		DefaultConfig:     m.DefaultConfig,
 		BaseColumnName:    strings.ReplaceAll(m.ID, "-", "_"),
 		FilterSQL:         m.FilterSQL,
 		CountSQL:          m.CountSQL,
@@ -206,16 +210,27 @@ func (i ID) String() string {
 	return string(i)
 }
 
-// Definition describes a metric.
-type Definition struct {
+// Configuration represents properties of a metric that can be overriden
+// by a LUCI project.
+type Configuration struct {
+	// SortPriority is a number that defines the order by which metrics are
+	// sorted by default.The metric with the highest sort priority
+	// will define the primary sort order, followed by the metric with the
+	// second highest sort priority, and so on.
+	SortPriority int
+
+	// IsDefault indicates whether this metric is shown by default in the UI.
+	IsDefault bool
+}
+
+// BaseDefinition represents the built-in definition of a metric.
+// It does not include the parts of the metric definition which can
+// be overriden by individual LUCI Project.
+type BaseDefinition struct {
 	// ID is the identifier of the metric, for example "human-cls-failed-presubmit".
 	// This is the same as the AIP-122 resource name of the metric,
 	// excluding "metrics/".
 	ID ID
-
-	// The AIP-122 resource name of the metric, starting with "metrics/".
-	// E.g. "metrics/human-cls-failed-presubmit"
-	Name string
 
 	// A human readable name for the metric. Appears on the user interface.
 	HumanReadableName string
@@ -223,15 +238,6 @@ type Definition struct {
 	// A human readable descripton of the metric. Appears on the user interface
 	// behind a help tooltip.
 	Description string
-
-	// SortPriority is a number that defines the order by which metrics are
-	// sorted by default. By default, the metric with the highest sort priority
-	// will define the primary sort order, followed by the metric with the
-	// second highest sort priority, and so on.
-	SortPriority int
-
-	// IsDefault indicates whether this metric is shown by default in the UI.
-	IsDefault bool
 
 	// BaseColumnName is the name of the metric to use in SQL column names.
 	// It is the same as the identifier ID, but with hypens (-) replaced with
@@ -259,12 +265,54 @@ type Definition struct {
 	//
 	// If failures are to be counted instead of distinct items, this is left blank.
 	CountSQL string
+
+	// DefaultConfig represents the default configuration for the metric.
+	DefaultConfig Configuration
 }
 
 // ColumnName returns a column name to use for the metric in queries, with
 // metric_ prefix used to namespace the column name to avoid name collisions
 // with other predefined columns, and the specified suffix used to namespace
 // the column name within other columns for the same metric.
-func (m Definition) ColumnName(suffix string) string {
+func (m BaseDefinition) ColumnName(suffix string) string {
 	return "metric_" + m.BaseColumnName + "_" + suffix
+}
+
+// AdaptToProject completes the definition of a built-in metric, by
+// attaching LUCI Project-specific configuration.
+func (m BaseDefinition) AdaptToProject(project string, cfg *configpb.Metrics) Definition {
+	var overrides *configpb.Metrics_MetricOverride
+	for _, o := range cfg.GetOverrides() {
+		if o.MetricId == string(m.ID) {
+			overrides = o
+			break
+		}
+	}
+	config := m.DefaultConfig
+	if overrides != nil {
+		if overrides.IsDefault != nil {
+			config.IsDefault = *overrides.IsDefault
+		}
+		if overrides.SortPriority != nil {
+			config.SortPriority = int(*overrides.SortPriority)
+		}
+	}
+	return Definition{
+		Name:           fmt.Sprintf("projects/%s/metrics/%s", project, string(m.ID)),
+		BaseDefinition: m,
+		Config:         config,
+	}
+}
+
+// Definition represents the complete definition of a metric for a LUCI Project.
+// It includes the values of metric properties that the project can override.
+type Definition struct {
+	BaseDefinition
+
+	// The AIP-122 resource name of the metric.
+	// E.g. "projects/chromium/metrics/human-cls-failed-presubmit"
+	Name string
+
+	// Config represents the configuration of the metric for the LUCI Project.
+	Config Configuration
 }

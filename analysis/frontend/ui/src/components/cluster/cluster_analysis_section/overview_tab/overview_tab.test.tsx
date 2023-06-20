@@ -52,7 +52,7 @@ window.ResizeObserver = ResizeObserver;
 describe('Test OverviewTab component', () => {
   beforeEach(() => {
     mockFetchAuthState();
-    mockFetchMetrics();
+    mockFetchMetrics('chrome');
   });
 
   afterEach(() => {

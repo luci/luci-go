@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { useContext } from 'react';
+
 import TabPanel from '@mui/lab/TabPanel';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 
 import CentralizedProgress from '@/components/centralized_progress/centralized_progress';
+import { ClusterContext } from '@/components/cluster/cluster_context';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import useFetchMetrics from '@/hooks/use_fetch_metrics';
 
@@ -31,11 +34,15 @@ interface Props {
 
 const OverviewTab = ({ value }: Props) => {
   const {
+    project,
+  } = useContext(ClusterContext);
+
+  const {
     isLoading,
     isSuccess,
     data: metrics,
     error,
-  } = useFetchMetrics();
+  } = useFetchMetrics(project);
 
   return (
     <OverviewTabContextProvider metrics={metrics} >

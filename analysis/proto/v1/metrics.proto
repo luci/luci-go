@@ -20,31 +20,35 @@ option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 
 // Provides information about metrics in LUCI Analysis.
 service Metrics {
-    // Lists metrics available in the LUCI Analysis instance.
+    // ListForProject lists metrics in a given LUCI Project.
     // Designed to follow aip.dev/132.
-    rpc List(ListMetricsRequest) returns (ListMetricsResponse) {};
+    rpc ListForProject(ListProjectMetricsRequest) returns (ListProjectMetricsResponse) {};
 }
 
-// A request to list metrics available in a LUCI Analysis instance.
-message ListMetricsRequest {
+// A request to list metrics in a given LUCI project.
+message ListProjectMetricsRequest {
+    // The parent LUCI Project, which owns the collection of metrics.
+    // Format: projects/{project}.
+    string parent = 1;
+
     // Currently does not comply with aip.dev/132 as page_size and
     // page_token are missing. These should be added in future.
     // For now, the method is guaranteed to return all metrics.
 }
 
-// Lists the metrics available in a LUCI Analysis instance.
+// Lists the metrics available in a LUCI Project.
 // Designed to follow aip.dev/132.
-message ListMetricsResponse {
-    // The metrics available in the LUCI Analysis instance.
-    repeated Metric metrics = 1;
+message ListProjectMetricsResponse {
+    // The metrics available in the LUCI Project.
+    repeated ProjectMetric metrics = 1;
 
     // TODO: Add next_page_token to comply with aip.dev/132.
 }
 
-// A metric resource.
-message Metric {
+// A metric with LUCI project-specific configuration attached.
+message ProjectMetric {
     // The resource name of the metric.
-    // Format: metrics/{metric_id}.
+    // Format: projects/{project}/metrics/{metric_id}.
     // See aip.dev/122 for more.
     string name = 1;
 
@@ -65,8 +69,8 @@ message Metric {
     bool is_default = 5;
 
     // SortPriority defines the order by which metrics are sorted by default.
-    // By default, the metric with the highest sort priority will define
-    // the primary sort order, followed by the metric with the
+    // The metric with the highest sort priority will define the
+    // (default) primary sort order, followed by the metric with the
     // second highest sort priority, and so on.
     // Each metric is guaranteed to have a unique sort priority.
     int32 sort_priority = 6;

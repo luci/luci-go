@@ -39,7 +39,7 @@ describe('Test createPriorityRecommendation', () => {
       sevenDay: { nominal: '15800' },
     },
   };
-  const metrics: Metric[] = getMockMetricsList();
+  const metrics: Metric[] = getMockMetricsList('testproject');
   const priorities: PriorityThreshold[] = [
     {
       priority: 'P0',

@@ -54,7 +54,7 @@ describe('test HistoryChartsSection component', () => {
     fetchMock.reset();
   });
 
-  const metrics = getMockMetricsList();
+  const metrics = getMockMetricsList('testproject');
 
   it('given cluster and metrics context, should fetch cluster history for that cluster', async () => {
     const history: QueryClusterHistoryResponse = {

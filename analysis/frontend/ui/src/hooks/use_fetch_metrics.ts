@@ -15,18 +15,20 @@
 import { useQuery, UseQueryResult } from 'react-query';
 
 import {
-  ListMetricsRequest,
+  ListProjectMetricsRequest,
   getMetricsService,
   Metric,
 } from '@/services/metrics';
 import { prpcRetrier } from '@/services/shared_models';
 
-const useFetchMetrics = (onSuccess?: (data: Metric[]) => void): UseQueryResult<Metric[], Error> => {
+const useFetchMetrics = (project: string, onSuccess?: (data: Metric[]) => void): UseQueryResult<Metric[], Error> => {
   const metricsService = getMetricsService();
-  return useQuery(['metrics'], async () => {
-    const request: ListMetricsRequest = {};
+  return useQuery(['metrics', project], async () => {
+    const request: ListProjectMetricsRequest = {
+      parent: 'projects/' + project,
+    };
 
-    const response = await metricsService.list(request);
+    const response = await metricsService.listForProject(request);
     return response.metrics || [];
   }, {
     retry: prpcRetrier,

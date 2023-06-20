@@ -33,22 +33,25 @@ export class MetricsService {
     this.client = client;
   }
 
-  async list(request: ListMetricsRequest): Promise<ListMetricsResponse> {
-    return this.client.call(MetricsService.SERVICE, 'List', request);
+  async listForProject(request: ListProjectMetricsRequest): Promise<ListProjectMetricsResponse> {
+    return this.client.call(MetricsService.SERVICE, 'ListForProject', request);
   }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface ListMetricsRequest {
+export interface ListProjectMetricsRequest {
+  // The parent LUCI Project, which owns the collection of metrics.
+  // Format: projects/{project}.
+  parent: string;
 }
 
-export interface ListMetricsResponse {
+export interface ListProjectMetricsResponse {
     metrics?: Metric[];
 }
 
 export interface Metric {
     // The resource name of the metric.
-    // Format: metrics/{metric_id}.
+    // Format: projects/{project}/metrics/{metric_id}.
     name: string;
     // The identifier of the metric.
     metricId: MetricId;

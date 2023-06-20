@@ -68,28 +68,28 @@ describe('Test ClustersTable component', () => {
 
   it('should display column headings reflecting the system metrics', async () => {
     const metrics: Metric[] = [{
-      name: 'metrics/metric-a',
+      name: 'projects/testproject/metrics/metric-a',
       metricId: 'metric-a',
       humanReadableName: 'Metric Alpha',
       description: 'Metric alpha is the first metric',
       isDefault: true,
       sortPriority: 20,
     }, {
-      name: 'metrics/metric-b',
+      name: 'projects/testproject/metrics/metric-b',
       metricId: 'metric-b',
       humanReadableName: 'Metric Beta',
       description: 'Metric beta is the second metric',
       isDefault: true,
       sortPriority: 30,
     }, {
-      name: 'metrics/metric-c',
+      name: 'projects/testproject/metrics/metric-c',
       metricId: 'metric-c',
       humanReadableName: 'Metric Charlie',
       description: 'Metric charlie is the third metric',
       isDefault: false,
       sortPriority: 10,
     }];
-    mockFetchMetrics(metrics);
+    mockFetchMetrics('testproject', metrics);
 
     // Only default metrics (i.e. metric A and B) should be queried and shown.
     const request: QueryClusterSummariesRequest = {
@@ -97,7 +97,7 @@ describe('Test ClustersTable component', () => {
       timeRange: last24Hours,
       orderBy: 'metrics.`metric-b`.value desc',
       failureFilter: '',
-      metrics: ['metrics/metric-a', 'metrics/metric-b'],
+      metrics: ['projects/testproject/metrics/metric-a', 'projects/testproject/metrics/metric-b'],
       view: 'BASIC',
     };
     const response: QueryClusterSummariesResponse = { clusterSummaries: [] };
@@ -123,9 +123,9 @@ describe('Test ClustersTable component', () => {
       timeRange: last24Hours,
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       failureFilter: '',
-      metrics: ['metrics/human-cls-failed-presubmit',
-        'metrics/critical-failures-exonerated',
-        'metrics/failures'],
+      metrics: ['projects/testproject/metrics/human-cls-failed-presubmit',
+        'projects/testproject/metrics/critical-failures-exonerated',
+        'projects/testproject/metrics/failures'],
       view: 'BASIC',
     };
     const response: QueryClusterSummariesResponse = { clusterSummaries: mockClusters };
@@ -147,9 +147,9 @@ describe('Test ClustersTable component', () => {
       timeRange: last24Hours,
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       failureFilter: '',
-      metrics: ['metrics/human-cls-failed-presubmit',
-        'metrics/critical-failures-exonerated',
-        'metrics/failures'],
+      metrics: ['projects/testproject/metrics/human-cls-failed-presubmit',
+        'projects/testproject/metrics/critical-failures-exonerated',
+        'projects/testproject/metrics/failures'],
       view: 'BASIC',
     };
     const response: QueryClusterSummariesResponse = { clusterSummaries: [] };
@@ -174,9 +174,9 @@ describe('Test ClustersTable component', () => {
       timeRange: last24Hours,
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       failureFilter: '',
-      metrics: ['metrics/human-cls-failed-presubmit',
-        'metrics/critical-failures-exonerated',
-        'metrics/failures'],
+      metrics: ['projects/testproject/metrics/human-cls-failed-presubmit',
+        'projects/testproject/metrics/critical-failures-exonerated',
+        'projects/testproject/metrics/failures'],
       view: 'BASIC',
     };
     const response: QueryClusterSummariesResponse = {
@@ -196,9 +196,9 @@ describe('Test ClustersTable component', () => {
       timeRange: last24Hours,
       orderBy: 'metrics.`failures`.value desc',
       failureFilter: '',
-      metrics: ['metrics/human-cls-failed-presubmit',
-        'metrics/critical-failures-exonerated',
-        'metrics/failures'],
+      metrics: ['projects/testproject/metrics/human-cls-failed-presubmit',
+        'projects/testproject/metrics/critical-failures-exonerated',
+        'projects/testproject/metrics/failures'],
       view: 'BASIC',
     };
     const ruleCluster2 = getMockRuleBasicClusterSummary('20000000000000002000000000000000');
@@ -227,9 +227,9 @@ describe('Test ClustersTable component', () => {
       timeRange: last24Hours,
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       failureFilter: '',
-      metrics: ['metrics/human-cls-failed-presubmit',
-        'metrics/critical-failures-exonerated',
-        'metrics/failures'],
+      metrics: ['projects/testproject/metrics/human-cls-failed-presubmit',
+        'projects/testproject/metrics/critical-failures-exonerated',
+        'projects/testproject/metrics/failures'],
       view: 'BASIC',
     };
     const response: QueryClusterSummariesResponse = {
@@ -249,9 +249,9 @@ describe('Test ClustersTable component', () => {
       timeRange: last24Hours,
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       failureFilter: 'new_criteria',
-      metrics: ['metrics/human-cls-failed-presubmit',
-        'metrics/critical-failures-exonerated',
-        'metrics/failures'],
+      metrics: ['projects/testproject/metrics/human-cls-failed-presubmit',
+        'projects/testproject/metrics/critical-failures-exonerated',
+        'projects/testproject/metrics/failures'],
       view: 'BASIC',
     };
     const ruleCluster2 = getMockRuleBasicClusterSummary('20000000000000002000000000000000');
@@ -280,9 +280,9 @@ describe('Test ClustersTable component', () => {
       timeRange: last24Hours,
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       failureFilter: '',
-      metrics: ['metrics/human-cls-failed-presubmit',
-        'metrics/critical-failures-exonerated',
-        'metrics/failures'],
+      metrics: ['projects/testproject/metrics/human-cls-failed-presubmit',
+        'projects/testproject/metrics/critical-failures-exonerated',
+        'projects/testproject/metrics/failures'],
       view: 'BASIC',
     };
     const response: QueryClusterSummariesResponse = { clusterSummaries: mockClusters };
@@ -303,7 +303,7 @@ describe('Test ClustersTable component', () => {
       timeRange: last24Hours,
       failureFilter: '',
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
-      metrics: ['metrics/critical-failures-exonerated', 'metrics/failures'],
+      metrics: ['projects/testproject/metrics/critical-failures-exonerated', 'projects/testproject/metrics/failures'],
       view: 'BASIC',
     };
     const response2 = { clusterSummaries: mockClusters };
@@ -322,28 +322,28 @@ describe('Test ClustersTable component', () => {
 
   it('when removing order by column, should select highest sort order in selected metrics', async () => {
     const metrics: Metric[] = [{
-      name: 'metrics/metric-a',
+      name: 'projects/testproject/metrics/metric-a',
       metricId: 'metric-a',
       humanReadableName: 'Metric Alpha',
       description: 'Metric alpha is the first metric',
       isDefault: true,
       sortPriority: 20,
     }, {
-      name: 'metrics/metric-b',
+      name: 'projects/testproject/metrics/metric-b',
       metricId: 'metric-b',
       humanReadableName: 'Metric Beta',
       description: 'Metric beta is the second metric',
       isDefault: true,
       sortPriority: 10,
     }, {
-      name: 'metrics/metric-c',
+      name: 'projects/testproject/metrics/metric-c',
       metricId: 'metric-c',
       humanReadableName: 'Metric Charlie',
       description: 'Metric charlie is the third metric',
       isDefault: false,
       sortPriority: 30,
     }];
-    mockFetchMetrics(metrics);
+    mockFetchMetrics('testproject', metrics);
 
     // Only default metrics (i.e. metric A and B) should be queried and shown.
     const request: QueryClusterSummariesRequest = {
@@ -351,7 +351,7 @@ describe('Test ClustersTable component', () => {
       timeRange: last24Hours,
       orderBy: 'metrics.`metric-a`.value desc',
       failureFilter: '',
-      metrics: ['metrics/metric-a', 'metrics/metric-b'],
+      metrics: ['projects/testproject/metrics/metric-a', 'projects/testproject/metrics/metric-b'],
       view: 'BASIC',
     };
     const response: QueryClusterSummariesResponse = { clusterSummaries: [] };
@@ -371,7 +371,7 @@ describe('Test ClustersTable component', () => {
       failureFilter: '',
       timeRange: last24Hours,
       orderBy: 'metrics.`metric-a`.value desc',
-      metrics: ['metrics/metric-a', 'metrics/metric-b', 'metrics/metric-c'],
+      metrics: ['projects/testproject/metrics/metric-a', 'projects/testproject/metrics/metric-b', 'projects/testproject/metrics/metric-c'],
       view: 'BASIC',
     };
     const response2 = { clusterSummaries: [] };
@@ -387,7 +387,7 @@ describe('Test ClustersTable component', () => {
       timeRange: last24Hours,
       failureFilter: '',
       orderBy: 'metrics.`metric-c`.value desc',
-      metrics: ['metrics/metric-b', 'metrics/metric-c'],
+      metrics: ['projects/testproject/metrics/metric-b', 'projects/testproject/metrics/metric-c'],
       view: 'BASIC',
     };
     const response3 = { clusterSummaries: [] };
@@ -413,9 +413,9 @@ describe('Test ClustersTable component', () => {
       failureFilter: '',
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       metrics: [
-        'metrics/human-cls-failed-presubmit',
-        'metrics/critical-failures-exonerated',
-        'metrics/failures',
+        'projects/testproject/metrics/human-cls-failed-presubmit',
+        'projects/testproject/metrics/critical-failures-exonerated',
+        'projects/testproject/metrics/failures',
       ],
       view: 'BASIC',
     };
@@ -443,9 +443,9 @@ describe('Test ClustersTable component', () => {
       failureFilter: '',
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       metrics: [
-        'metrics/human-cls-failed-presubmit',
-        'metrics/critical-failures-exonerated',
-        'metrics/failures',
+        'projects/testproject/metrics/human-cls-failed-presubmit',
+        'projects/testproject/metrics/critical-failures-exonerated',
+        'projects/testproject/metrics/failures',
       ],
       view: 'BASIC',
     };
@@ -461,9 +461,9 @@ describe('Test ClustersTable component', () => {
       timeRange: lastWeek,
       failureFilter: '',
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
-      metrics: ['metrics/human-cls-failed-presubmit',
-        'metrics/critical-failures-exonerated',
-        'metrics/failures'],
+      metrics: ['projects/testproject/metrics/human-cls-failed-presubmit',
+        'projects/testproject/metrics/critical-failures-exonerated',
+        'projects/testproject/metrics/failures'],
       view: 'FULL',
     };
     const mockFullClusterSummaries = [

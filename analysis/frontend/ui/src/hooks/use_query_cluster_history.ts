@@ -20,15 +20,15 @@ const useQueryClusterHistory = (
     project: string,
     failureFilter: string,
     days: number,
-    metricIds: string[],
+    metricNames: string[],
 ) => {
   const clustersService = getClustersService();
-  return useQuery(['cluster', project, 'history', days, failureFilter, metricIds.join(',')], async () => {
+  return useQuery(['cluster', project, 'history', days, failureFilter, metricNames.join(',')], async () => {
     const request: QueryClusterHistoryRequest = {
       project,
       failureFilter,
       days,
-      metrics: metricIds.map((id) => `metrics/${id}`),
+      metrics: metricNames,
     };
 
     const response = await clustersService.queryHistory(request);
@@ -37,7 +37,7 @@ const useQueryClusterHistory = (
     return response;
   }, {
     retry: prpcRetrier,
-    enabled: metricIds.length > 0,
+    enabled: metricNames.length > 0,
   });
 };
 

@@ -20,8 +20,16 @@ const useFetchClusterAndMetrics = (
     algorithm: string,
     id: string,
 ) => {
-  const { data: cluster, error: clusterError, isLoading: clusterIsLoading } = useFetchCluster(project, algorithm, id);
-  const { data: metrics, error: metricsError, isLoading: metricsIsLoading } = useFetchMetrics();
+  const {
+    data: cluster,
+    error: clusterError,
+    isLoading: clusterIsLoading,
+  } = useFetchCluster(project, algorithm, id);
+  const {
+    data: metrics,
+    error: metricsError,
+    isLoading: metricsIsLoading,
+  } = useFetchMetrics(project);
   return {
     isLoading: metricsIsLoading || clusterIsLoading,
     metricsError: metricsError,

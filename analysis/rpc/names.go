@@ -44,24 +44,15 @@ var (
 	// Cluster algorithm and ID must be further validated by
 	// ClusterID.Validate().
 	ClusterExoneratedTestVariantsNameRe = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/clusters/(` + GenericKeyPattern + `)/(` + GenericKeyPattern + `)/exoneratedTestVariants$`)
-	MetricNameRe                        = regexp.MustCompile(`^metrics/(` + metrics.MetricIDPattern + `)$`)
 	ProjectNameRe                       = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)$`)
 	ProjectConfigNameRe                 = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/config$`)
+	ProjectMetricNameRe                 = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/metrics/(` + metrics.MetricIDPattern + `)$`)
 	ReclusteringProgressNameRe          = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/reclusteringProgress$`)
 	RuleNameRe                          = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/rules/(` + rules.RuleIDRePattern + `)$`)
 	// TestVariantBranchNameRe performs a partial validation of a TestVariantBranch name.
 	// Test ID must be further validated with ValidateTestID.
 	TestVariantBranchNameRe = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/tests/([^/]+)/variants/(` + config.VariantHashRePattern + `)/refs/(` + config.RefHashRePattern + `)$`)
 )
-
-// parseMetricName parses a metric resource name into a metric ID.
-func parseMetricName(name string) (metrics.ID, error) {
-	match := MetricNameRe.FindStringSubmatch(name)
-	if match == nil {
-		return "", errors.New("invalid metric name, expected format: metrics/{metric_id}")
-	}
-	return metrics.ID(match[1]), nil
-}
 
 // parseProjectName parses a project resource name into a project ID.
 func parseProjectName(name string) (project string, err error) {
@@ -79,6 +70,16 @@ func parseProjectConfigName(name string) (project string, err error) {
 		return "", errors.New("invalid project config name, expected format: projects/{project}/config")
 	}
 	return match[1], nil
+}
+
+// parseProjectMetricName parses a project metric name into its constituent
+// project and metric ID parts.
+func parseProjectMetricName(name string) (project string, metricID metrics.ID, err error) {
+	match := ProjectMetricNameRe.FindStringSubmatch(name)
+	if match == nil {
+		return "", "", errors.New("invalid project metric name, expected format: projects/{project}/metrics/{metric_id}")
+	}
+	return match[1], metrics.ID(match[2]), nil
 }
 
 // parseReclusteringProgressName parses a reclustering progress resource name

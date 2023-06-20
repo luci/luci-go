@@ -41,7 +41,7 @@ const ClustersTable = ({
     isSuccess,
     data: metrics,
     error,
-  } = useFetchMetrics();
+  } = useFetchMetrics(project);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedMetrics, updateSelectedMetricsParam] = useSelectedMetricsParam(metrics || []);

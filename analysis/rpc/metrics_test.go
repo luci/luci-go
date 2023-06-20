@@ -17,11 +17,19 @@ package rpc
 import (
 	"context"
 	"testing"
+	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/analysis/internal/analysis/metrics"
+	"go.chromium.org/luci/analysis/internal/config"
+	"go.chromium.org/luci/analysis/internal/perms"
+	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 )
@@ -36,6 +44,30 @@ func TestMetrics(t *testing.T) {
 		}
 		ctx = auth.WithState(ctx, authState)
 
+		configVersion := time.Date(2025, time.August, 12, 0, 1, 2, 3, time.UTC)
+		projectCfg := config.CreateConfigWithBothBuganizerAndMonorail(configpb.ProjectConfig_MONORAIL)
+		projectCfg.LastUpdated = timestamppb.New(configVersion)
+		projectCfg.Metrics = &configpb.Metrics{
+			Overrides: []*configpb.Metrics_MetricOverride{
+				{
+					MetricId:     metrics.HumanClsFailedPresubmit.ID.String(),
+					IsDefault:    proto.Bool(false),
+					SortPriority: proto.Int32(1000),
+				},
+			},
+		}
+		configs := make(map[string]*configpb.ProjectConfig)
+		configs["testproject"] = projectCfg
+
+		// Provides datastore implementation needed for project config.
+		ctx = memory.Use(ctx)
+		err := config.SetTestProjectConfig(ctx, configs)
+		So(err, ShouldBeNil)
+
+		request := &pb.ListProjectMetricsRequest{
+			Parent: "projects/testproject",
+		}
+
 		server := NewMetricsServer()
 
 		Convey("Unauthorised requests are rejected", func() {
@@ -48,28 +80,82 @@ func TestMetrics(t *testing.T) {
 
 			// Make some request (the request should not matter, as
 			// a common decorator is used for all requests.)
-			request := &pb.ListMetricsRequest{}
+			request := &pb.ListProjectMetricsRequest{
+				Parent: "projects/a",
+			}
 
-			rule, err := server.List(ctx, request)
+			rsp, err := server.ListForProject(ctx, request)
 			So(err, ShouldBeRPCPermissionDenied, "not a member of luci-analysis-access")
-			So(rule, ShouldBeNil)
+			So(rsp, ShouldBeNil)
 		})
 		Convey("List", func() {
-			request := &pb.ListMetricsRequest{}
-			response, err := server.List(ctx, request)
-			So(err, ShouldBeNil)
-			So(len(response.Metrics), ShouldBeGreaterThanOrEqualTo, 1)
-			hasDefaultMetric := false
-			for _, metric := range response.Metrics {
-				So(metric.MetricId, ShouldNotBeEmpty)
-				So(metric.Name, ShouldEqual, "metrics/"+metric.MetricId)
-				So(metric.HumanReadableName, ShouldNotBeEmpty)
-				So(metric.Description, ShouldNotBeEmpty)
-				if metric.IsDefault {
-					hasDefaultMetric = true
-				}
+			authState.IdentityPermissions = []authtest.RealmPermission{
+				{
+					Realm:      "testproject:@project",
+					Permission: perms.PermGetConfig,
+				},
 			}
-			So(hasDefaultMetric, ShouldBeTrue)
+
+			validateResponse := func(response *pb.ListProjectMetricsResponse) {
+				So(len(response.Metrics), ShouldBeGreaterThanOrEqualTo, 1)
+				hasDefaultMetric := false
+				for _, metric := range response.Metrics {
+					So(metric.MetricId, ShouldNotBeEmpty)
+					So(metric.Name, ShouldEqual, "projects/testproject/metrics/"+metric.MetricId)
+					So(metric.HumanReadableName, ShouldNotBeEmpty)
+					So(metric.Description, ShouldNotBeEmpty)
+					if metric.IsDefault {
+						hasDefaultMetric = true
+					}
+				}
+				So(hasDefaultMetric, ShouldBeTrue)
+			}
+
+			Convey("No config access", func() {
+				authState.IdentityPermissions = nil
+				response, err := server.ListForProject(ctx, request)
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.config.get")
+				So(response, ShouldBeNil)
+			})
+			Convey("Baseline", func() {
+				response, err := server.ListForProject(ctx, request)
+				So(err, ShouldBeNil)
+				validateResponse(response)
+
+				var clsFailedPresubmitMetric *pb.ProjectMetric
+				for _, metric := range response.Metrics {
+					if metric.MetricId == metrics.HumanClsFailedPresubmit.ID.String() {
+						clsFailedPresubmitMetric = metric
+					}
+				}
+				So(clsFailedPresubmitMetric, ShouldNotBeNil)
+
+				// Verify the overriden values are used for the metric.
+				So(clsFailedPresubmitMetric.IsDefault, ShouldBeFalse)
+				So(clsFailedPresubmitMetric.SortPriority, ShouldEqual, 1000)
+			})
+			Convey("No project config", func() {
+				configs := make(map[string]*configpb.ProjectConfig)
+				err := config.SetTestProjectConfig(ctx, configs)
+				So(err, ShouldBeNil)
+
+				response, err := server.ListForProject(ctx, request)
+				So(err, ShouldBeNil)
+
+				validateResponse(response)
+
+				var clsFailedPresubmitMetric *pb.ProjectMetric
+				for _, metric := range response.Metrics {
+					if metric.MetricId == metrics.HumanClsFailedPresubmit.ID.String() {
+						clsFailedPresubmitMetric = metric
+					}
+				}
+				So(clsFailedPresubmitMetric, ShouldNotBeNil)
+
+				// Verify default values are used for the metric.
+				So(clsFailedPresubmitMetric.IsDefault, ShouldEqual, metrics.HumanClsFailedPresubmit.DefaultConfig.IsDefault)
+				So(clsFailedPresubmitMetric.SortPriority, ShouldEqual, metrics.HumanClsFailedPresubmit.DefaultConfig.SortPriority)
+			})
 		})
 	})
 }

@@ -130,9 +130,16 @@ func defaultOrder(ms []metrics.Definition) []aip.OrderBy {
 	sortedMetrics := make([]metrics.Definition, len(ms))
 	copy(sortedMetrics, ms)
 
-	// Sort by SortPriority descending.
+	// Sort by SortPriority descending, then by ID ascending.
 	sort.Slice(sortedMetrics, func(i, j int) bool {
-		return sortedMetrics[i].SortPriority > sortedMetrics[j].SortPriority
+		if sortedMetrics[i].Config.SortPriority > sortedMetrics[j].Config.SortPriority {
+			return true
+		}
+		if (sortedMetrics[i].Config.SortPriority == sortedMetrics[j].Config.SortPriority) &&
+			(sortedMetrics[i].ID < sortedMetrics[j].ID) {
+			return true
+		}
+		return false
 	})
 
 	var result []aip.OrderBy

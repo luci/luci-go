@@ -14,11 +14,15 @@
 
 import fetchMock from 'fetch-mock-jest';
 
-import { ListMetricsResponse, Metric } from '@/services/metrics';
+import {
+  ListProjectMetricsRequest,
+  ListProjectMetricsResponse,
+  Metric,
+} from '@/services/metrics';
 
-export const getMockMetricsList = (): Metric[] => {
+export const getMockMetricsList = (project: string): Metric[] => {
   const humanClsFailedPresubmitMetric : Metric = {
-    name: 'metrics/human-cls-failed-presubmit',
+    name: 'projects/' + project + '/metrics/human-cls-failed-presubmit',
     metricId: 'human-cls-failed-presubmit',
     humanReadableName: 'User Cls Failed Presubmit',
     description: 'User Cls Failed Presubmit Description',
@@ -26,7 +30,7 @@ export const getMockMetricsList = (): Metric[] => {
     sortPriority: 30,
   };
   const criticalFailuresExonerated : Metric = {
-    name: 'metrics/critical-failures-exonerated',
+    name: 'projects/' + project + '/metrics/critical-failures-exonerated',
     metricId: 'critical-failures-exonerated',
     humanReadableName: 'Presubmit-blocking Failures Exonerated',
     description: 'Critical Failures Exonerated Description',
@@ -34,7 +38,7 @@ export const getMockMetricsList = (): Metric[] => {
     sortPriority: 40,
   };
   const testRunsFailed : Metric = {
-    name: 'metrics/test-runs-failed',
+    name: 'projects/' + project + '/metrics/test-runs-failed',
     metricId: 'test-runs-failed',
     humanReadableName: 'Test Runs Failed',
     description: 'Test Runs Failed Description',
@@ -42,7 +46,7 @@ export const getMockMetricsList = (): Metric[] => {
     sortPriority: 20,
   };
   const failures : Metric = {
-    name: 'metrics/failures',
+    name: 'projects/' + project + '/metrics/failures',
     metricId: 'failures',
     humanReadableName: 'Total Failures',
     description: 'Test Results Failed Description',
@@ -52,14 +56,24 @@ export const getMockMetricsList = (): Metric[] => {
   return [humanClsFailedPresubmitMetric, criticalFailuresExonerated, testRunsFailed, failures];
 };
 
-export const mockFetchMetrics = (metrics?: Metric[]) => {
-  if (metrics === undefined) {
-    metrics = getMockMetricsList();
+export const mockFetchMetrics = (project?: string, metrics?: Metric[]) => {
+  if (project === undefined) {
+    project = 'testproject';
   }
-  const response: ListMetricsResponse = {
+  if (metrics === undefined) {
+    metrics = getMockMetricsList(project);
+  }
+  const request: ListProjectMetricsRequest = {
+    parent: 'projects/' + project,
+  };
+  const response: ListProjectMetricsResponse = {
     metrics: metrics,
   };
-  fetchMock.post('http://localhost/prpc/luci.analysis.v1.Metrics/List', {
+
+  fetchMock.post({
+    url: 'http://localhost/prpc/luci.analysis.v1.Metrics/ListForProject',
+    body: request,
+  }, {
     headers: {
       'X-Prpc-Grpc-Code': '0',
     },

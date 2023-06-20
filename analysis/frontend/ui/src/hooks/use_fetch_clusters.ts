@@ -68,15 +68,15 @@ const orderByClause = (orderBy?: OrderBy): string => {
 // metricsKey returns a unique key to represent the given
 // set of metrics.
 const metricsKey = (metrics: Metric[]): string => {
-  const metricIds = metrics.map((m) => m.metricId);
+  const metricNames = metrics.map((m) => m.name);
   // Sort to ensure we treat the input as a set instead
   // of a list.
-  metricIds.sort();
+  metricNames.sort();
   // Metric IDs only contain characters in [a-z0-9-]
   // so it is safe to concatenate them with other characters
   // while still guaranteeing the returned keys is unique
   // for each combination of metrics.
-  return metricIds.join(':');
+  return metricNames.join(':');
 };
 
 export const useFetchClusterSummaries = (
