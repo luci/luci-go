@@ -29,9 +29,10 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/appengine/common"
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildstatus"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
-	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/appengine/tasks"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -48,28 +49,6 @@ func validateStartBuildRequest(ctx context.Context, req *pb.StartBuildRequest) e
 	return nil
 }
 
-// getBuildInfraStatus returns the build, its infra and status entity with the
-// given ID or NotFound appstatus if any entity is not found.
-func getBuildInfraStatus(ctx context.Context, id int64) (*model.Build, *model.BuildInfra, *model.BuildStatus, error) {
-	bld := &model.Build{ID: id}
-	infra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, &model.Build{ID: id})}
-	bs := &model.BuildStatus{Build: datastore.KeyForObj(ctx, &model.Build{ID: id})}
-	switch err := datastore.Get(ctx, bld, infra, bs); {
-	case errors.Contains(err, datastore.ErrNoSuchEntity):
-		merr, ok := err.(errors.MultiError)
-		if ok && merr[0] == nil && merr[1] == nil && merr[2] == datastore.ErrNoSuchEntity {
-			// This is allowed during BuildStatus rollout.
-			// TODO(crbug.com/1430324): also disallow ErrNoSuchEntity for bs.
-			return bld, infra, nil, nil
-		}
-		return nil, nil, nil, perm.NotFoundErr(ctx)
-	case err != nil:
-		return nil, nil, nil, errors.Annotate(err, "error fetching build or infra with ID %d", id).Err()
-	default:
-		return bld, infra, bs, nil
-	}
-}
-
 // startBuildOnSwarming starts a build if it runs on swarming.
 //
 // For builds on Swarming, the swarming task id and update_token have been
@@ -78,13 +57,13 @@ func startBuildOnSwarming(ctx context.Context, req *pb.StartBuildRequest) (*mode
 	var b *model.Build
 	buildStatusChanged := false
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		var infra *model.BuildInfra
-		var bs *model.BuildStatus
-		var err error
-		b, infra, bs, err = getBuildInfraStatus(ctx, req.BuildId)
+		entities, err := common.GetBuildEntities(ctx, req.BuildId, model.BuildKind, model.BuildInfraKind, model.BuildStatusKind)
 		if err != nil {
 			return errors.Annotate(err, "failed to get build %d", req.BuildId).Err()
 		}
+		b = entities[0].(*model.Build)
+		infra := entities[1].(*model.BuildInfra)
+		bs := entities[2].(*model.BuildStatus)
 
 		if infra.Proto.GetSwarming() == nil {
 			return appstatus.Errorf(codes.Internal, "the build %d does not run on swarming", req.BuildId)
@@ -137,7 +116,7 @@ func startBuildOnSwarming(ctx context.Context, req *pb.StartBuildRequest) (*mode
 	return b, buildStatusChanged, nil
 }
 
-func startBuildOnBackendOnFirstReq(ctx context.Context, req *pb.StartBuildRequest, b *model.Build, infra *model.BuildInfra, bs *model.BuildStatus) (bool, error) {
+func startBuildOnBackendOnFirstReq(ctx context.Context, req *pb.StartBuildRequest, b *model.Build, infra *model.BuildInfra) (bool, error) {
 	taskID := infra.Proto.Backend.Task.GetId()
 	if taskID.GetId() != "" && taskID.GetId() != req.TaskId {
 		// The build has been associated with another task, possible from a previous
@@ -159,16 +138,29 @@ func startBuildOnBackendOnFirstReq(ctx context.Context, req *pb.StartBuildReques
 	}
 
 	// Start the build.
+	toSave := []any{b}
 	b.StartBuildRequestID = req.RequestId
 	updateBuildToken, err := buildtoken.GenerateToken(ctx, b.ID, pb.TokenBody_BUILD)
 	if err != nil {
 		return false, errors.Annotate(err, "failed to generate BUILD token for build %d", b.ID).Err()
 	}
 	b.UpdateToken = updateBuildToken
-	protoutil.SetStatus(clock.Now(ctx), b.Proto, pb.Status_STARTED)
-	toSave := []any{b}
+	if b.Proto.Output == nil {
+		b.Proto.Output = &pb.Build_Output{}
+	}
+	b.Proto.Output.Status = pb.Status_STARTED
+	statusUpdater := buildstatus.Updater{
+		Build:        b,
+		OutputStatus: pb.Status_STARTED,
+		UpdateTime:   clock.Now(ctx),
+		PostProcess:  tasks.SendOnBuildStatusChange,
+	}
+	var bs *model.BuildStatus
+	bs, err = statusUpdater.Do(ctx)
+	if err != nil {
+		return false, appstatus.Errorf(codes.Internal, "failed to update status for build %d: %s", b.ID, err)
+	}
 	if bs != nil {
-		bs.Status = pb.Status_STARTED
 		toSave = append(toSave, bs)
 	}
 
@@ -182,10 +174,6 @@ func startBuildOnBackendOnFirstReq(ctx context.Context, req *pb.StartBuildReques
 		return false, errors.Annotate(err, "failed to start build %d: %s", b.ID, err).Err()
 	}
 
-	// Notify Pubsub.
-	// NotifyPubSub is a Transactional task, so do it inside the transaction.
-	_ = tasks.NotifyPubSub(ctx, b)
-
 	return true, nil
 }
 
@@ -193,13 +181,12 @@ func startBuildOnBackend(ctx context.Context, req *pb.StartBuildRequest) (*model
 	var b *model.Build
 	buildStatusChanged := false
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		var infra *model.BuildInfra
-		var bs *model.BuildStatus
-		var err error
-		b, infra, bs, err = getBuildInfraStatus(ctx, req.BuildId)
+		entities, err := common.GetBuildEntities(ctx, req.BuildId, model.BuildKind, model.BuildInfraKind)
 		if err != nil {
 			return errors.Annotate(err, "failed to get build %d", req.BuildId).Err()
 		}
+		b = entities[0].(*model.Build)
+		infra := entities[1].(*model.BuildInfra)
 
 		if infra.Proto.GetBackend().GetTask() == nil {
 			return errors.Reason("the build %d does not run on task backend", req.BuildId).Err()
@@ -207,7 +194,7 @@ func startBuildOnBackend(ctx context.Context, req *pb.StartBuildRequest) (*model
 
 		if b.StartBuildRequestID == "" {
 			// First StartBuild for the build.
-			buildStatusChanged, err = startBuildOnBackendOnFirstReq(ctx, req, b, infra, bs)
+			buildStatusChanged, err = startBuildOnBackendOnFirstReq(ctx, req, b, infra)
 			return err
 		}
 
