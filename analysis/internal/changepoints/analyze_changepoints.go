@@ -151,19 +151,17 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 
 		// Query TestVariantBranch from spanner.
 		tvbks := testVariantBranchKeys(filteredTVs, payload.Build.Project, sourcesMap)
-		tvbs, err := testvariantbranch.Read(ctx, tvbks)
-		if err != nil {
-			return errors.Annotate(err, "read test variant branches").Err()
-		}
 
 		// The list of mutations for this transaction.
 		mutations := []*spanner.Mutation{}
-		for i, tv := range filteredTVs {
-			tvb := tvbs[i]
+
+		// Handle each read test variant branch.
+		f := func(i int, tvb *testvariantbranch.Entry) error {
+			tv := filteredTVs[i]
 			if isOutOfOrderAndShouldBeDiscarded(tvb, sourcesMap[tv.SourcesId]) {
 				verdictCounter.Add(ctx, 1, payload.Build.Project, "skipped_out_of_order")
 				logging.Debugf(ctx, "Out of order verdict in build %d", payload.Build.Id)
-				continue
+				return nil
 			}
 			// "Insert" the new test variant to input buffer.
 			tvb, err := insertIntoInputBuffer(tvb, tv, payload, duplicateMap, sourcesMap)
@@ -181,7 +179,12 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 				TestVariantBranch:   tvb,
 				InputBufferSegments: inputSegments,
 			})
+			return nil
 		}
+		if err := testvariantbranch.ReadF(ctx, tvbks, f); err != nil {
+			return errors.Annotate(err, "read test variant branches").Err()
+		}
+
 		ingestedVerdictCount := len(mutations)
 
 		// Store new Invocations to Invocations table.
