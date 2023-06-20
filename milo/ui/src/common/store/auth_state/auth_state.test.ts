@@ -19,7 +19,7 @@ import {
   AuthState,
   queryAuthState,
   setAuthStateCache,
-} from '@/common/libs/auth_state';
+} from '@/common/api/auth_state';
 
 import { AuthStateStore, AuthStateStoreInstance } from './auth_state';
 

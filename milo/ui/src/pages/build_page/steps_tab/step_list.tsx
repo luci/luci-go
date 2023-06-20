@@ -17,24 +17,24 @@ import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable } from 'mobx';
 
-import '@/common/components/dot_spinner';
+import '@/generic_libs/components/dot_spinner';
 import './step_cluster';
-import { MiloBaseElement } from '@/common/components/milo_base';
-import { consumer } from '@/common/libs/context';
+import { consumeStore, StoreInstance } from '@/common/store';
+import { commonStyles } from '@/common/styles/stylesheets';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
 import {
   errorHandler,
   forwardWithoutMsg,
   reportRenderError,
-} from '@/common/libs/error_handler';
-import { consumeStore, StoreInstance } from '@/common/store';
-import { commonStyles } from '@/common/styles/stylesheets';
+} from '@/generic_libs/tools/error_handler';
+import { consumer } from '@/generic_libs/tools/lit_context';
 
 import { BuildPageStepClusterElement } from './step_cluster';
 
 @customElement('milo-bp-step-list')
 @errorHandler(forwardWithoutMsg)
 @consumer
-export class BuildPageStepListElement extends MiloBaseElement {
+export class BuildPageStepListElement extends MobxExtLitElement {
   @observable.ref
   @consumeStore()
   store!: StoreInstance;

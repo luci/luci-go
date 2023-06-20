@@ -17,20 +17,20 @@ import styled from '@emotion/styled';
 import { Alert, AlertTitle, CircularProgress, Link } from '@mui/material';
 import { useState } from 'react';
 
-import {
-  ExpandableEntry,
-  ExpandableEntryBody,
-  ExpandableEntryHeader,
-} from '@/common/components/expandable_entry';
 import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants';
-import { getSwarmingBotListURL } from '@/common/libs/url_utils';
-import { usePrpcQuery } from '@/common/libs/use_prpc_query';
+import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
 import { StringPair } from '@/common/services/common';
 import {
   BotsService,
   BotStatus,
   getBotStatus,
 } from '@/common/services/swarming';
+import { getSwarmingBotListURL } from '@/common/tools/url_utils';
+import {
+  ExpandableEntry,
+  ExpandableEntryBody,
+  ExpandableEntryHeader,
+} from '@/generic_libs/components/expandable_entry';
 
 import { BotStatusTable } from './bot_status_table';
 import { BotTable } from './bot_table';

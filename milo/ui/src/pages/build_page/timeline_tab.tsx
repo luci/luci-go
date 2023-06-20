@@ -28,8 +28,7 @@ import { customElement } from 'lit/decorators.js';
 import { DateTime } from 'luxon';
 import { autorun, makeObservable, observable } from 'mobx';
 
-import '@/common/components/dot_spinner';
-import { MiloBaseElement } from '@/common/components/milo_base';
+import '@/generic_libs/components/dot_spinner';
 import {
   HideTooltipEventDetail,
   ShowTooltipEventDetail,
@@ -38,24 +37,28 @@ import {
   BUILD_STATUS_CLASS_MAP,
   PREDEFINED_TIME_INTERVALS,
 } from '@/common/constants';
+import { consumeStore, StoreInstance } from '@/common/store';
+import { StepExt } from '@/common/store/build_state';
+import { commonStyles } from '@/common/styles/stylesheets';
 import {
   GA_ACTIONS,
   GA_CATEGORIES,
   trackEvent,
-} from '@/common/libs/analytics_utils';
-import { consumer } from '@/common/libs/context';
+} from '@/common/tools/analytics_utils';
+import {
+  displayDuration,
+  NUMERIC_TIME_FORMAT,
+} from '@/common/tools/time_utils';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
 import {
   errorHandler,
   forwardWithoutMsg,
   reportError,
   reportRenderError,
-} from '@/common/libs/error_handler';
-import { enumerate } from '@/common/libs/iter_utils';
-import { displayDuration, NUMERIC_TIME_FORMAT } from '@/common/libs/time_utils';
-import { roundDown } from '@/common/libs/utils';
-import { consumeStore, StoreInstance } from '@/common/store';
-import { StepExt } from '@/common/store/build_state';
-import { commonStyles } from '@/common/styles/stylesheets';
+} from '@/generic_libs/tools/error_handler';
+import { enumerate } from '@/generic_libs/tools/iter_utils';
+import { consumer } from '@/generic_libs/tools/lit_context';
+import { roundDown } from '@/generic_libs/tools/utils';
 
 const MARGIN = 10;
 const TOP_AXIS_HEIGHT = 35;
@@ -88,7 +91,7 @@ const V_GRID_LINE_MAX_GAP = 80;
 @customElement('milo-timeline-tab')
 @errorHandler(forwardWithoutMsg)
 @consumer
-export class TimelineTabElement extends MiloBaseElement {
+export class TimelineTabElement extends MobxExtLitElement {
   @observable.ref
   @consumeStore()
   store!: StoreInstance;

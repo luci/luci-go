@@ -22,9 +22,9 @@ import {
 } from '@testing-library/react';
 import { destroy, protect, unprotect } from 'mobx-state-tree';
 
-import { URLExt } from '@/common/libs/utils';
 import { Store, StoreInstance, StoreProvider } from '@/common/store';
 import { SearchTarget } from '@/common/store/search_page';
+import { URLExt } from '@/generic_libs/tools/utils';
 
 import { SearchPage } from './search_page';
 

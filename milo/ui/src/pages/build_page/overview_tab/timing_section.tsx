@@ -18,8 +18,8 @@ import { IconProps } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 
 import { Timestamp } from '@/common/components/timestamp';
-import { displayDuration } from '@/common/libs/time_utils';
 import { useStore } from '@/common/store';
+import { displayDuration } from '@/common/tools/time_utils';
 
 const InlineInfo = styled(Info)<IconProps>({
   verticalAlign: 'bottom',

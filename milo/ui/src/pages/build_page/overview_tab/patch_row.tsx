@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getGerritChangeURL } from '@/common/libs/url_utils';
 import { GerritChange } from '@/common/services/buildbucket';
+import { getGerritChangeURL } from '@/common/tools/url_utils';
 
 export interface PatchRowProps {
   readonly gerritChange: GerritChange;

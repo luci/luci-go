@@ -19,31 +19,31 @@ import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import '@/common/components/commit_entry';
-import '@/common/components/dot_spinner';
-import '@/common/components/hotkey';
+import '@/generic_libs/components/dot_spinner';
+import '@/generic_libs/components/hotkey';
 import { CommitEntryElement } from '@/common/components/commit_entry';
-import { MiloBaseElement } from '@/common/components/milo_base';
+import { GitCommit } from '@/common/services/milo_internal';
+import { consumeStore, StoreInstance } from '@/common/store';
+import { commonStyles } from '@/common/styles/stylesheets';
 import {
   GA_ACTIONS,
   GA_CATEGORIES,
   trackEvent,
-} from '@/common/libs/analytics_utils';
-import { consumer } from '@/common/libs/context';
+} from '@/common/tools/analytics_utils';
+import { getGitilesRepoURL } from '@/common/tools/url_utils';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
 import {
   errorHandler,
   forwardWithoutMsg,
   reportErrorAsync,
   reportRenderError,
-} from '@/common/libs/error_handler';
-import { getGitilesRepoURL } from '@/common/libs/url_utils';
-import { GitCommit } from '@/common/services/milo_internal';
-import { consumeStore, StoreInstance } from '@/common/store';
-import { commonStyles } from '@/common/styles/stylesheets';
+} from '@/generic_libs/tools/error_handler';
+import { consumer } from '@/generic_libs/tools/lit_context';
 
 @customElement('milo-blamelist-tab')
 @errorHandler(forwardWithoutMsg)
 @consumer
-export class BlamelistTabElement extends MiloBaseElement {
+export class BlamelistTabElement extends MobxExtLitElement {
   @observable.ref
   @consumeStore()
   store!: StoreInstance;

@@ -18,11 +18,11 @@ import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 import { ReactNode } from 'react';
 
-import { MiloBaseElement } from '@/common/components/milo_base';
-import { consumer, provider } from '@/common/libs/context';
-import { getInvURLPath } from '@/common/libs/url_utils';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { provideInvocationState } from '@/common/store/invocation_state';
+import { getInvURLPath } from '@/common/tools/url_utils';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { consumer, provider } from '@/generic_libs/tools/lit_context';
 
 import {
   provideProject,
@@ -35,7 +35,7 @@ import {
 @customElement('milo-inv-lit-env-provider')
 @provider
 @consumer
-export class InvLitEnvProviderElement extends MiloBaseElement {
+export class InvLitEnvProviderElement extends MobxExtLitElement {
   @observable.ref
   @consumeStore()
   store!: StoreInstance;

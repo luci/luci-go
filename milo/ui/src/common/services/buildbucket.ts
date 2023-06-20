@@ -14,9 +14,9 @@
 
 import stableStringify from 'fast-json-stable-stringify';
 
-import { cached, CacheOption } from '@/common/libs/cached_fn';
-import { PrpcClientExt } from '@/common/libs/prpc_client_ext';
 import { StringPair } from '@/common/services/common';
+import { cached, CacheOption } from '@/generic_libs/tools/cached_fn';
+import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
 
 /* eslint-disable max-len */
 /**

@@ -25,13 +25,13 @@ import { debounce } from 'lodash-es';
 import { observer } from 'mobx-react-lite';
 import { useCallback, useEffect, useState } from 'react';
 
-import { URLExt } from '@/common/libs/utils';
 import { useStore } from '@/common/store';
 import {
   DEFAULT_SEARCH_TARGET,
   DEFAULT_TEST_PROJECT,
   SearchTarget,
 } from '@/common/store/search_page';
+import { URLExt } from '@/generic_libs/tools/utils';
 
 import { BuilderList } from './builder_list';
 import { TestList } from './test_list';

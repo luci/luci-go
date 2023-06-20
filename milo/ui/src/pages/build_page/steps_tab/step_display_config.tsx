@@ -31,8 +31,7 @@ import { makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { createRoot, Root } from 'react-dom/client';
 
-import '@/common/components/dot_spinner';
-import { consumer } from '@/common/libs/context';
+import '@/generic_libs/components/dot_spinner';
 import {
   consumeStore,
   StoreInstance,
@@ -41,6 +40,7 @@ import {
 } from '@/common/store';
 import { ExpandStepOption } from '@/common/store/user_config';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { consumer } from '@/generic_libs/tools/lit_context';
 
 const StepCategoryLabelMap = Object.freeze({
   [ExpandStepOption.All]: 'All',

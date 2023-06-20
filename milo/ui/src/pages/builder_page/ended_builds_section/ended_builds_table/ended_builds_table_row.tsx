@@ -33,18 +33,21 @@ import {
   BUILD_STATUS_DISPLAY_MAP,
   BUILD_STATUS_ICON_MAP,
 } from '@/common/constants';
-import { renderMarkdown } from '@/common/libs/markdown_utils';
-import { displayDuration, NUMERIC_TIME_FORMAT } from '@/common/libs/time_utils';
-import {
-  getBuildURLPathFromBuildId,
-  getGerritChangeURL,
-  getGitilesCommitURL,
-} from '@/common/libs/url_utils';
 import {
   Build,
   getAssociatedGitilesCommit,
 } from '@/common/services/buildbucket';
-import { ExpandableEntriesStateInstance } from '@/common/store/expandable_entries_state/expandable_entries_state';
+import { ExpandableEntriesStateInstance } from '@/common/store/expandable_entries_state';
+import { renderMarkdown } from '@/common/tools/markdown/utils';
+import {
+  displayDuration,
+  NUMERIC_TIME_FORMAT,
+} from '@/common/tools/time_utils';
+import {
+  getBuildURLPathFromBuildId,
+  getGerritChangeURL,
+  getGitilesCommitURL,
+} from '@/common/tools/url_utils';
 
 const MarkdownContainer = styled(Box)({
   padding: '0 10px',

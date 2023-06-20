@@ -18,16 +18,14 @@ import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 
 import '@/common/components/status_bar';
-import '@/common/components/dot_spinner';
+import '@/generic_libs/components/dot_spinner';
 import './graph_config';
 import checkCircle from '@/common/assets/svgs/check_circle_24dp.svg';
 import checkCircleStacked from '@/common/assets/svgs/check_circle_stacked_24dp.svg';
-import { MiloBaseElement } from '@/common/components/milo_base';
 import {
   VARIANT_STATUS_CLASS_MAP,
   VERDICT_VARIANT_STATUS_MAP,
 } from '@/common/constants';
-import { consumer } from '@/common/libs/context';
 import {
   QueryTestHistoryStatsResponseGroup,
   TestVerdictStatus,
@@ -35,6 +33,8 @@ import {
 import { TestVariantStatus } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { consumer } from '@/generic_libs/tools/lit_context';
 
 import { CELL_PADDING, CELL_SIZE, INNER_CELL_SIZE } from './constants';
 
@@ -50,7 +50,7 @@ const STATUS_ORDER = [
 
 @customElement('milo-th-status-graph')
 @consumer
-export class TestHistoryStatusGraphElement extends MiloBaseElement {
+export class TestHistoryStatusGraphElement extends MobxExtLitElement {
   @observable.ref @consumeStore() store!: StoreInstance;
   @computed get pageState() {
     return this.store.testHistoryPage;

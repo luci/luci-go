@@ -20,9 +20,7 @@ import { DateTime } from 'luxon';
 import { autorun, computed, makeObservable, observable } from 'mobx';
 
 import '@/common/components/timeline';
-import { MiloBaseElement } from '@/common/components/milo_base';
 import { TimelineBlock } from '@/common/components/timeline';
-import { consumer } from '@/common/libs/context';
 import { Invocation } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import {
@@ -30,6 +28,8 @@ import {
   InvocationStateInstance,
 } from '@/common/store/invocation_state';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { consumer } from '@/generic_libs/tools/lit_context';
 
 const MARGIN = 20;
 const MIN_GRAPH_WIDTH = 900;
@@ -40,7 +40,7 @@ function stripInvocationPrefix(invocationName: string): string {
 
 @customElement('milo-invocation-details-tab')
 @consumer
-export class InvocationDetailsTabElement extends MiloBaseElement {
+export class InvocationDetailsTabElement extends MobxExtLitElement {
   @observable.ref
   @consumeStore()
   store!: StoreInstance;

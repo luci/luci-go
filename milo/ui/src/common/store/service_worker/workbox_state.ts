@@ -15,7 +15,7 @@
 import { types } from 'mobx-state-tree';
 import { Workbox } from 'workbox-window';
 
-import { aliveFlow } from '@/common/libs/mobx_utils';
+import { aliveFlow } from '@/generic_libs/tools/mobx_utils';
 
 import { getEnv } from '../env';
 

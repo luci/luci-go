@@ -14,7 +14,6 @@
 
 import { beforeEach, expect, jest } from '@jest/globals';
 
-import { CacheOption } from '@/common/libs/cached_fn';
 import {
   createTVPropGetter,
   QueryTestVariantsRequest,
@@ -22,6 +21,7 @@ import {
   ResultDb,
   TestVariantStatus,
 } from '@/common/services/resultdb';
+import { CacheOption } from '@/generic_libs/tools/cached_fn';
 
 import { LoadingStage, TestLoader } from './test_loader';
 

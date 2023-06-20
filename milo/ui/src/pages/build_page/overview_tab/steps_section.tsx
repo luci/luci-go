@@ -14,8 +14,8 @@
 
 import { observer } from 'mobx-react-lite';
 
-import { getBuildURLPath } from '@/common/libs/url_utils';
 import { useStore } from '@/common/store';
+import { getBuildURLPath } from '@/common/tools/url_utils';
 
 import { StepDisplayConfig } from '../steps_tab/step_display_config';
 import { StepList } from '../steps_tab/step_list';

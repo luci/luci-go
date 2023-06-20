@@ -25,15 +25,15 @@ import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 
-import { MiloBaseElement } from '@/common/components/milo_base';
-import { consumer } from '@/common/libs/context';
 import { consumeStore, StoreInstance } from '@/common/store';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { consumer } from '@/generic_libs/tools/lit_context';
 
 import { CELL_SIZE, X_AXIS_HEIGHT } from './constants';
 
 @customElement('milo-th-date-axis')
 @consumer
-export class TestHistoryDateAxisElement extends MiloBaseElement {
+export class TestHistoryDateAxisElement extends MobxExtLitElement {
   @observable.ref @consumeStore() store!: StoreInstance;
   @computed get pageState() {
     return this.store.testHistoryPage;

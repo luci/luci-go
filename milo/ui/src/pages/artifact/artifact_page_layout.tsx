@@ -20,11 +20,11 @@ import { Outlet, useParams } from 'react-router-dom';
 
 import '@/common/components/image_diff_viewer';
 import '@/common/components/status_bar';
-import { MiloBaseElement } from '@/common/components/milo_base';
-import { createContextLink, provider } from '@/common/libs/context';
-import { getInvURLPath } from '@/common/libs/url_utils';
 import { ArtifactIdentifier } from '@/common/services/resultdb';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { getInvURLPath } from '@/common/tools/url_utils';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { createContextLink, provider } from '@/generic_libs/tools/lit_context';
 
 export const [provideArtifactIdent, consumeArtifactIdent] =
   createContextLink<ArtifactIdentifier>();
@@ -34,7 +34,7 @@ export const [provideArtifactIdent, consumeArtifactIdent] =
  */
 @customElement('milo-artifact-page-layout')
 @provider
-export class ArtifactPageLayoutElement extends MiloBaseElement {
+export class ArtifactPageLayoutElement extends MobxExtLitElement {
   @observable.ref private invId!: string;
   @observable.ref private testId?: string;
   @observable.ref private resultId?: string;

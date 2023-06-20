@@ -19,8 +19,8 @@ import { DateTime } from 'luxon';
 import { action, computed, makeAutoObservable } from 'mobx';
 import { destroy } from 'mobx-state-tree';
 
-import { renderMarkdown } from '@/common/libs/markdown_utils';
 import { Build, BuildStatus, Step } from '@/common/services/buildbucket';
+import { renderMarkdown } from '@/common/tools/markdown/utils';
 
 import {
   BuildState,

@@ -16,7 +16,7 @@ import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 import { cleanup, render } from '@testing-library/react';
 import { destroy } from 'mobx-state-tree';
 
-import { ANONYMOUS_IDENTITY } from '@/common/libs/auth_state';
+import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { Store, StoreInstance, StoreProvider } from '@/common/store';
 
 import { BuilderList } from './builder_list';

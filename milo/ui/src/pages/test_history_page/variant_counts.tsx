@@ -16,8 +16,8 @@ import { Info } from '@mui/icons-material';
 import { Button } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 
-import { DotSpinner } from '@/common/components/dot_spinner';
 import { useStore } from '@/common/store';
+import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 
 const LOADING_VARIANT_INFO_TOOLTIP =
   'It may take several clicks to find any new variant. ' +

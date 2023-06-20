@@ -19,7 +19,7 @@ import {
   HideTooltipEventDetail,
   ShowTooltipEventDetail,
 } from '@/common/components/tooltip';
-import { displayDuration, LONG_TIME_FORMAT } from '@/common/libs/time_utils';
+import { displayDuration, LONG_TIME_FORMAT } from '@/common/tools/time_utils';
 
 export interface TimeZoneConfig {
   label: string;

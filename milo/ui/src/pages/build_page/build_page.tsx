@@ -29,22 +29,22 @@ import {
   BUILD_STATUS_COLOR_THEME_MAP,
   BUILD_STATUS_DISPLAY_MAP,
 } from '@/common/constants';
+import { BuildStatus } from '@/common/services/buildbucket';
+import { useStore } from '@/common/store';
+import { InvocationProvider } from '@/common/store/invocation_state';
 import {
   GA_ACTIONS,
   GA_CATEGORIES,
   trackEvent,
-} from '@/common/libs/analytics_utils';
-import { displayDuration, LONG_TIME_FORMAT } from '@/common/libs/time_utils';
+} from '@/common/tools/analytics_utils';
+import { displayDuration, LONG_TIME_FORMAT } from '@/common/tools/time_utils';
 import {
   getBuilderURLPath,
   getBuildURLPath,
   getLegacyBuildURLPath,
   getProjectURLPath,
-} from '@/common/libs/url_utils';
-import { unwrapOrElse } from '@/common/libs/utils';
-import { BuildStatus } from '@/common/services/buildbucket';
-import { useStore } from '@/common/store';
-import { InvocationProvider } from '@/common/store/invocation_state';
+} from '@/common/tools/url_utils';
+import { unwrapOrElse } from '@/generic_libs/tools/utils';
 
 import { CountIndicator } from '../test_results_tab/count_indicator';
 

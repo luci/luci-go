@@ -21,16 +21,8 @@ import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
 import '@/common/components/status_bar';
-import '@/common/components/dot_spinner';
+import '@/generic_libs/components/dot_spinner';
 import './row';
-import { MiloBaseElement } from '@/common/components/milo_base';
-import { consumer, provider } from '@/common/libs/context';
-import { reportError, reportErrorAsync } from '@/common/libs/error_handler';
-import {
-  IntersectionNotifier,
-  provideNotifier,
-} from '@/common/libs/observer_element';
-import { getProjectURLPath } from '@/common/libs/url_utils';
 import { BuilderID } from '@/common/services/buildbucket';
 import {
   ListBuildersRequest,
@@ -38,11 +30,22 @@ import {
 } from '@/common/services/milo_internal';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { getProjectURLPath } from '@/common/tools/url_utils';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import {
+  reportError,
+  reportErrorAsync,
+} from '@/generic_libs/tools/error_handler';
+import { consumer, provider } from '@/generic_libs/tools/lit_context';
+import {
+  IntersectionNotifier,
+  provideNotifier,
+} from '@/generic_libs/tools/observer_element';
 
 @customElement('milo-builders-page')
 @provider
 @consumer
-export class BuildersPageElement extends MiloBaseElement {
+export class BuildersPageElement extends MobxExtLitElement {
   static get properties() {
     return {
       project: {

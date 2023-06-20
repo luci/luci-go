@@ -17,14 +17,13 @@ import { DateTime } from 'luxon';
 import { autorun, comparer, computed } from 'mobx';
 import { addDisposer, types } from 'mobx-state-tree';
 
-import { keepAliveComputed } from '@/common/libs/mobx_utils';
-import { PageLoader } from '@/common/libs/page_loader';
+import { PageLoader } from '@/common/models/page_loader';
+import { TestHistoryStatsLoader } from '@/common/models/test_history_stats_loader';
 import {
   parseVariantFilter,
   parseVariantPredicate,
   VariantFilter,
-} from '@/common/libs/queries/th_filter_query';
-import { TestHistoryStatsLoader } from '@/common/models/test_history_stats_loader';
+} from '@/common/queries/th_filter_query';
 import {
   QueryTestHistoryStatsResponseGroup,
   TestVerdictBundle,
@@ -35,6 +34,7 @@ import {
 import { getCriticalVariantKeys } from '@/common/services/resultdb';
 import { ServicesStore } from '@/common/store/services';
 import { Timestamp } from '@/common/store/timestamp';
+import { keepAliveComputed } from '@/generic_libs/tools/mobx_utils';
 
 export const enum GraphType {
   STATUS = 'STATUS',

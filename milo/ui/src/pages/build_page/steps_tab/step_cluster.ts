@@ -21,26 +21,26 @@ import { action, computed, makeObservable, observable, reaction } from 'mobx';
 
 import './step_entry';
 import checkCircleStacked from '@/common/assets/svgs/check_circle_stacked_24dp.svg';
-import { MiloBaseElement } from '@/common/components/milo_base';
 import {
   HideTooltipEventDetail,
   ShowTooltipEventDetail,
 } from '@/common/components/tooltip';
-import { consumer } from '@/common/libs/context';
+import { consumeStore, StoreInstance } from '@/common/store';
+import { StepExt } from '@/common/store/build_state';
+import { commonStyles } from '@/common/styles/stylesheets';
 import {
   displayCompactDuration,
   displayDuration,
   NUMERIC_TIME_FORMAT,
-} from '@/common/libs/time_utils';
-import { consumeStore, StoreInstance } from '@/common/store';
-import { StepExt } from '@/common/store/build_state';
-import { commonStyles } from '@/common/styles/stylesheets';
+} from '@/common/tools/time_utils';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { consumer } from '@/generic_libs/tools/lit_context';
 
 import { BuildPageStepEntryElement } from './step_entry';
 
 @customElement('milo-bp-step-cluster')
 @consumer
-export class BuildPageStepClusterElement extends MiloBaseElement {
+export class BuildPageStepClusterElement extends MobxExtLitElement {
   @observable.ref @consumeStore() store!: StoreInstance;
   @observable.ref steps!: readonly StepExt[];
 

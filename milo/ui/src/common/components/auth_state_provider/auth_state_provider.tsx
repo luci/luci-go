@@ -16,7 +16,7 @@ import { untracked } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { createContext, useCallback, useContext, useState } from 'react';
 
-import { AuthState } from '@/common/libs/auth_state';
+import { AuthState } from '@/common/api/auth_state';
 import { useStore } from '@/common/store';
 
 const AuthStateContext = createContext<(() => AuthState) | null>(null);

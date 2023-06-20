@@ -16,7 +16,7 @@ import { Box, Button, CircularProgress, Input } from '@mui/material';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { usePrpcQuery } from '@/common/libs/use_prpc_query';
+import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
 import {
   BuilderID,
   BuildsService,

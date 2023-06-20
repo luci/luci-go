@@ -21,15 +21,10 @@ import { repeat } from 'lit/directives/repeat.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { makeObservable, observable, reaction } from 'mobx';
 
-import '@/common/components/dot_spinner';
+import '@/generic_libs/components/dot_spinner';
 import '@/common/components/column_header';
 import './test_variant_entry';
-import { MiloBaseElement } from '@/common/components/milo_base';
 import { VARIANT_STATUS_CLASS_MAP } from '@/common/constants';
-import { consumer } from '@/common/libs/context';
-import { reportErrorAsync } from '@/common/libs/error_handler';
-import { getTestHistoryURLPath } from '@/common/libs/url_utils';
-import { urlSetSearchQueryParam } from '@/common/libs/utils';
 import {
   getPropKeyLabel,
   TestVariant,
@@ -41,6 +36,11 @@ import {
   InvocationStateInstance,
 } from '@/common/store/invocation_state';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
+import { getTestHistoryURLPath } from '@/common/tools/url_utils';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { reportErrorAsync } from '@/generic_libs/tools/error_handler';
+import { consumer } from '@/generic_libs/tools/lit_context';
+import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
 
 import { consumeProject } from './context';
 import { TestVariantEntryElement } from './test_variant_entry';
@@ -56,7 +56,7 @@ export interface VariantGroup {
  */
 @customElement('milo-test-variants-table')
 @consumer
-export class TestVariantsTableElement extends MiloBaseElement {
+export class TestVariantsTableElement extends MobxExtLitElement {
   @observable.ref @consumeStore() store!: StoreInstance;
   @observable.ref @consumeInvocationState() invState!: InvocationStateInstance;
   @observable.ref @consumeProject() project: string | undefined;

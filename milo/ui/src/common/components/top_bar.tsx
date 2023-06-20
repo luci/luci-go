@@ -18,7 +18,7 @@ import { Box, IconButton, Link, LinkProps, styled } from '@mui/material';
 import { AppMenu } from '@/common/components/app_menu';
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { SignIn } from '@/common/components/signin';
-import { genFeedbackUrl } from '@/common/libs/utils';
+import { genFeedbackUrl } from '@/common/tools/utils';
 
 const NavLink = styled(Link)<LinkProps>(() => ({
   color: 'var(--default-text-color)',

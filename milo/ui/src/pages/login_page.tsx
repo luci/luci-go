@@ -16,9 +16,9 @@ import { Link } from '@mui/material';
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
-import { ANONYMOUS_IDENTITY } from '@/common/libs/auth_state';
-import { getLoginUrl } from '@/common/libs/url_utils';
+import { getLoginUrl } from '@/common/tools/url_utils';
 
 /**
  * Prompts the user to login.

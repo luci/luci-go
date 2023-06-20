@@ -26,15 +26,6 @@ import {
 import { fromPromise } from 'mobx-utils';
 
 import { NEVER_OBSERVABLE, POTENTIALLY_EXPIRED } from '@/common/constants';
-import { renderBugUrlTemplate } from '@/common/libs/build_utils';
-import * as iter from '@/common/libs/iter_utils';
-import {
-  aliveFlow,
-  keepAliveComputed,
-  unwrapObservable,
-} from '@/common/libs/mobx_utils';
-import { attachTags, InnerTag, TAG_SOURCE } from '@/common/libs/tag/tag';
-import { getGitilesRepoURL } from '@/common/libs/url_utils';
 import {
   Build,
   BUILD_FIELD_MASK,
@@ -67,6 +58,15 @@ import { InvocationState } from '@/common/store/invocation_state';
 import { ServicesStore } from '@/common/store/services';
 import { Timestamp } from '@/common/store/timestamp';
 import { UserConfig } from '@/common/store/user_config';
+import { renderBugUrlTemplate } from '@/common/tools/build_utils';
+import { getGitilesRepoURL } from '@/common/tools/url_utils';
+import * as iter from '@/generic_libs/tools/iter_utils';
+import {
+  aliveFlow,
+  keepAliveComputed,
+  unwrapObservable,
+} from '@/generic_libs/tools/mobx_utils';
+import { attachTags, InnerTag, TAG_SOURCE } from '@/generic_libs/tools/tag';
 
 export const enum SearchTarget {
   Builders,

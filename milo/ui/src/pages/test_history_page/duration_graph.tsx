@@ -18,18 +18,18 @@ import { customElement } from 'lit/decorators.js';
 import { Duration } from 'luxon';
 import { computed, makeObservable, observable } from 'mobx';
 
-import { MiloBaseElement } from '@/common/components/milo_base';
-import { consumer } from '@/common/libs/context';
-import { displayDuration, parseProtoDuration } from '@/common/libs/time_utils';
 import { QueryTestHistoryStatsResponseGroup } from '@/common/services/luci_analysis';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { displayDuration, parseProtoDuration } from '@/common/tools/time_utils';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { consumer } from '@/generic_libs/tools/lit_context';
 
 import { CELL_PADDING, CELL_SIZE, INNER_CELL_SIZE } from './constants';
 
 @customElement('milo-th-duration-graph')
 @consumer
-export class TestHistoryDurationGraphElement extends MiloBaseElement {
+export class TestHistoryDurationGraphElement extends MobxExtLitElement {
   @observable.ref @consumeStore() store!: StoreInstance;
   @computed get pageState() {
     return this.store.testHistoryPage;

@@ -17,24 +17,24 @@ import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
-import '@/common/components/dot_spinner';
-import { MiloBaseElement } from '@/common/components/milo_base';
+import '@/generic_libs/components/dot_spinner';
 import { BUILD_STATUS_CLASS_MAP } from '@/common/constants';
-import { reportRenderError } from '@/common/libs/error_handler';
-import { unwrapObservable } from '@/common/libs/mobx_utils';
-import { lazyRendering } from '@/common/libs/observer_element';
-import {
-  getBuilderURLPath,
-  getBuildURLPathFromBuildData,
-} from '@/common/libs/url_utils';
 import { Build, BuilderID } from '@/common/services/buildbucket';
 import { BuilderStats } from '@/common/services/milo_internal';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
+import {
+  getBuilderURLPath,
+  getBuildURLPathFromBuildData,
+} from '@/common/tools/url_utils';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { reportRenderError } from '@/generic_libs/tools/error_handler';
+import { unwrapObservable } from '@/generic_libs/tools/mobx_utils';
+import { lazyRendering } from '@/generic_libs/tools/observer_element';
 
 @customElement('milo-builders-page-row')
 @lazyRendering
-export class BuildersPageRowElement extends MiloBaseElement {
+export class BuildersPageRowElement extends MobxExtLitElement {
   @observable.ref
   @consumeStore()
   store!: StoreInstance;

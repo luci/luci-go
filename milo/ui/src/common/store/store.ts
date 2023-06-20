@@ -15,7 +15,7 @@
 import { Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
 import { createContext, useContext } from 'react';
 
-import { createContextLink } from '@/common/libs/context';
+import { createContextLink } from '@/generic_libs/tools/lit_context';
 
 import { AuthStateStore } from './auth_state';
 import { BuildPage } from './build_page';

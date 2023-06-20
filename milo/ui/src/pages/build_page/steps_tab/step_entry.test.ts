@@ -17,14 +17,14 @@ import { css, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 
 import './step_entry';
-import { provider } from '@/common/libs/context';
-import {
-  IntersectionNotifier,
-  provideNotifier,
-} from '@/common/libs/observer_element';
 import { BuildStatus } from '@/common/services/buildbucket';
 import { Store } from '@/common/store';
 import { StepExt } from '@/common/store/build_state';
+import { provider } from '@/generic_libs/tools/lit_context';
+import {
+  IntersectionNotifier,
+  provideNotifier,
+} from '@/generic_libs/tools/observer_element';
 
 @customElement('milo-bp-step-entry-test-notifier-provider')
 @provider

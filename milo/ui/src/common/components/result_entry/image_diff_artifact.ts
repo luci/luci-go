@@ -18,10 +18,10 @@ import { html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 
-import '@/common/components/expandable_entry';
-import '../image_diff_viewer';
-import { getImageDiffArtifactURLPath } from '@/common/libs/url_utils';
+import '@/generic_libs/components/expandable_entry';
+import '@/common/components/image_diff_viewer';
 import { Artifact } from '@/common/services/resultdb';
+import { getImageDiffArtifactURLPath } from '@/common/tools/url_utils';
 
 /**
  * Renders an image diff artifact entry.

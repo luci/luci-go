@@ -21,17 +21,17 @@ import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
-import '@/common/components/expandable_entry';
+import '@/generic_libs/components/expandable_entry';
 import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants';
-import { reportRenderError } from '@/common/libs/error_handler';
-import { unwrapObservable } from '@/common/libs/mobx_utils';
+import { Artifact } from '@/common/services/resultdb';
+import { commonStyles } from '@/common/styles/stylesheets';
 import {
   getRawArtifactURLPath,
   getTextDiffArtifactURLPath,
-} from '@/common/libs/url_utils';
-import { urlSetSearchQueryParam } from '@/common/libs/utils';
-import { Artifact } from '@/common/services/resultdb';
-import { commonStyles } from '@/common/styles/stylesheets';
+} from '@/common/tools/url_utils';
+import { reportRenderError } from '@/generic_libs/tools/error_handler';
+import { unwrapObservable } from '@/generic_libs/tools/mobx_utils';
+import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
 
 /**
  * Renders a text diff artifact.

@@ -16,8 +16,8 @@ import { EditorConfiguration, ModeSpec } from 'codemirror';
 import { useRef } from 'react';
 import { useLatest } from 'react-use';
 
-import { CodeMirrorEditor } from '@/common/components/code_mirror_editor';
 import { PropertyViewerConfigInstance } from '@/common/store/user_config';
+import { CodeMirrorEditor } from '@/generic_libs/components/code_mirror_editor';
 
 export interface PropertyViewerProps {
   readonly properties: { readonly [key: string]: unknown };

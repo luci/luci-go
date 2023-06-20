@@ -14,14 +14,14 @@
 
 import stableStringify from 'fast-json-stable-stringify';
 
-import { cached, CacheOption } from '@/common/libs/cached_fn';
-import { PrpcClientExt } from '@/common/libs/prpc_client_ext';
 import {
   Build,
   BuilderID,
   BuilderItem,
   GitilesCommit,
 } from '@/common/services/buildbucket';
+import { cached, CacheOption } from '@/generic_libs/tools/cached_fn';
+import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
 
 /**
  * Manually coded type definition and classes for milo internal service.

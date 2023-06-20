@@ -21,12 +21,12 @@ import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable } from 'mobx';
 
-import { consumer } from '@/common/libs/context';
 import {
   consumeInvocationState,
   InvocationStateInstance,
 } from '@/common/store/invocation_state';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { consumer } from '@/generic_libs/tools/lit_context';
 
 @customElement('milo-tvt-config-widget')
 @consumer

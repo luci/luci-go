@@ -15,8 +15,7 @@
 import { afterAll, beforeAll, expect, jest } from '@jest/globals';
 import { destroy, protect, unprotect } from 'mobx-state-tree';
 
-import { ANONYMOUS_IDENTITY } from '@/common/libs/auth_state';
-import { CacheOption } from '@/common/libs/cached_fn';
+import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import {
   QueryTestVariantsRequest,
   QueryTestVariantsResponse,
@@ -24,6 +23,7 @@ import {
   TestVariantStatus,
 } from '@/common/services/resultdb';
 import { Store, StoreInstance } from '@/common/store';
+import { CacheOption } from '@/generic_libs/tools/cached_fn';
 
 const variant1: TestVariant = {
   testId: 'invocation-a/test-suite-a/test-1',

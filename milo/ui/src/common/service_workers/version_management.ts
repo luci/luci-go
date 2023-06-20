@@ -32,7 +32,7 @@ declare const self: ServiceWorkerGlobalScope;
 // This is critical if we need to rollback the release.
 // TODO(weiweilin): use the key below once we transitioned into the new version.
 const VERSION_KEY = 'force-update-token-' + self.registration.scope;
-// const VERSION_KEY = `@/common/service_workers/force_update-VERSION-${self.registration.scope}`;
+// const VERSION_KEY = `@/common/service_workers/version_management/VERSION_KEY-${self.registration.scope}`;
 
 export interface VersionUpdateEventData {
   readonly type: 'VERSION_UPDATE';

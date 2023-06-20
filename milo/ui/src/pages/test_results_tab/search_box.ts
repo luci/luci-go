@@ -20,14 +20,14 @@ import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable } from 'mobx';
 
 import '@/common/components/auto_complete';
-import '@/common/components/hotkey';
+import '@/generic_libs/components/hotkey';
 import { SuggestionEntry } from '@/common/components/auto_complete';
-import { consumer } from '@/common/libs/context';
-import { suggestTestResultSearchQuery } from '@/common/libs/queries/tr_search_query';
+import { suggestTestResultSearchQuery } from '@/common/queries/tr_search_query';
 import {
   consumeInvocationState,
   InvocationStateInstance,
 } from '@/common/store/invocation_state';
+import { consumer } from '@/generic_libs/tools/lit_context';
 
 /**
  * An element that let the user search tests in the test results tab with DSL.

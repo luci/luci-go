@@ -19,13 +19,13 @@ import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
-import '@/common/components/expandable_entry';
+import '@/generic_libs/components/expandable_entry';
 import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants';
-import { reportRenderError } from '@/common/libs/error_handler';
-import { unwrapObservable } from '@/common/libs/mobx_utils';
-import { urlSetSearchQueryParam } from '@/common/libs/utils';
 import { Artifact } from '@/common/services/resultdb';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { reportRenderError } from '@/generic_libs/tools/error_handler';
+import { unwrapObservable } from '@/generic_libs/tools/mobx_utils';
+import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
 
 // Allowlist of hosts, used to validate URLs specified in the contents of link
 // artifacts. If the URL specified in a link artifact is not in this allowlist,

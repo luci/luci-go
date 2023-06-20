@@ -25,9 +25,9 @@ import {
   AuthState,
   queryAuthState,
   setAuthStateCache,
-} from '@/common/libs/auth_state';
-import { aliveFlow } from '@/common/libs/mobx_utils';
-import { timeout } from '@/common/libs/utils';
+} from '@/common/api/auth_state';
+import { aliveFlow } from '@/generic_libs/tools/mobx_utils';
+import { timeout } from '@/generic_libs/tools/utils';
 
 export const AuthStateStore = types
   .model('AuthStateStore', {

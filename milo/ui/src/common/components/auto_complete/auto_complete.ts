@@ -18,7 +18,7 @@ import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { action, computed, makeObservable, observable, reaction } from 'mobx';
 
-import { MiloBaseElement } from '@/common/components/milo_base';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
 
 export type Suggestion = SuggestionEntry | SuggestionHeader;
 
@@ -41,7 +41,7 @@ export interface SuggestionHeader {
  * An input box that supports auto-complete dropdown.
  */
 @customElement('milo-auto-complete')
-export class AutoCompleteElement extends MiloBaseElement {
+export class AutoCompleteElement extends MobxExtLitElement {
   @observable.ref value = '';
   @observable.ref placeHolder = '';
   @observable.ref suggestions: readonly Suggestion[] = [];

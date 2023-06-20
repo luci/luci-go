@@ -21,9 +21,9 @@ import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 
-import { consumer } from '@/common/libs/context';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { consumer } from '@/generic_libs/tools/lit_context';
 
 @customElement('milo-thdt-config-widget')
 @consumer

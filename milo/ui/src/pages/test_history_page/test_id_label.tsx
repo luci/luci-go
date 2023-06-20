@@ -14,12 +14,13 @@
 
 import Link from '@mui/material/Link';
 
-import { getCodeSourceUrl } from '@/common/libs/url_utils';
-import { usePrpcQuery } from '@/common/libs/use_prpc_query';
-import { extractProject, extractProperty } from '@/common/libs/utils';
+import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
 import { StringPair } from '@/common/services/common';
 import { MiloInternal, Project } from '@/common/services/milo_internal';
 import { TestMetadata } from '@/common/services/resultdb';
+import { getCodeSourceUrl } from '@/common/tools/url_utils';
+import { extractProject } from '@/common/tools/utils';
+import { extractProperty } from '@/generic_libs/tools/utils';
 
 import { useTestMetadata } from './utils';
 

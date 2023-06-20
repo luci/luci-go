@@ -17,14 +17,17 @@ import { customElement } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 
-import '@/common/components/hotkey';
-import '@/common/components/pixel_viewer';
-import { MiloBaseElement } from '@/common/components/milo_base';
-import { Coordinate, provideCoord } from '@/common/components/pixel_viewer';
-import { provider } from '@/common/libs/context';
-import { getRawArtifactURLPath } from '@/common/libs/url_utils';
+import '@/generic_libs/components/hotkey';
+import '@/generic_libs/components/pixel_viewer';
 import { Artifact } from '@/common/services/resultdb';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { getRawArtifactURLPath } from '@/common/tools/url_utils';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import {
+  Coordinate,
+  provideCoord,
+} from '@/generic_libs/components/pixel_viewer';
+import { provider } from '@/generic_libs/tools/lit_context';
 
 const enum ViewOption {
   Expected,
@@ -49,7 +52,7 @@ const VIEW_OPTION_CLASS_MAP = Object.freeze({
 // TODO(weiweilin): improve error handling.
 @customElement('milo-image-diff-viewer')
 @provider
-export class ImageDiffViewerElement extends MiloBaseElement {
+export class ImageDiffViewerElement extends MobxExtLitElement {
   @observable.ref expected!: Artifact;
   @observable.ref actual!: Artifact;
   @observable.ref diff!: Artifact;

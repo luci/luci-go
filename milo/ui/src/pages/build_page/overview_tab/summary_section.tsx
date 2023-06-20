@@ -19,9 +19,9 @@ import {
   BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_DISPLAY_MAP,
 } from '@/common/constants';
-import { renderMarkdown } from '@/common/libs/markdown_utils';
 import { BuildStatus } from '@/common/services/buildbucket';
 import { useStore } from '@/common/store';
+import { renderMarkdown } from '@/common/tools/markdown/utils';
 
 export const SummarySection = observer(() => {
   const store = useStore();

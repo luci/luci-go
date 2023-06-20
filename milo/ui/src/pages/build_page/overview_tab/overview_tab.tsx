@@ -16,12 +16,12 @@ import styled from '@emotion/styled';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
 
+import { useStore } from '@/common/store';
 import {
   GA_ACTIONS,
   GA_CATEGORIES,
   trackEvent,
-} from '@/common/libs/analytics_utils';
-import { useStore } from '@/common/store';
+} from '@/common/tools/analytics_utils';
 
 import { ActionsSection, Dialog } from './actions_section';
 import { BuildLogSection } from './build_log_section';

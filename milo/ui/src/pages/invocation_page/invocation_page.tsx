@@ -19,12 +19,12 @@ import { Outlet, useParams } from 'react-router-dom';
 
 import { Tab, Tabs } from '@/common/components/tabs';
 import { INVOCATION_STATE_DISPLAY_MAP } from '@/common/constants';
+import { useStore } from '@/common/store';
 import {
   getBuildURLPathFromBuildId,
   getInvURLPath,
   getSwarmingTaskURL,
-} from '@/common/libs/url_utils';
-import { useStore } from '@/common/store';
+} from '@/common/tools/url_utils';
 
 import { CountIndicator } from '../test_results_tab/count_indicator';
 

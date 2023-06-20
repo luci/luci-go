@@ -22,19 +22,19 @@ import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 import { ForwardedRef, forwardRef } from 'react';
 
-import '@/common/components/dot_spinner';
+import '@/generic_libs/components/dot_spinner';
 import '@/common/components/column_header';
 import './test_history_details_entry';
-import { MiloBaseElement } from '@/common/components/milo_base';
-import { consumer } from '@/common/libs/context';
-import { reportErrorAsync } from '@/common/libs/error_handler';
-import { assertNonNullable } from '@/common/libs/utils';
 import {
   createTVPropGetter,
   getPropKeyLabel,
 } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { reportErrorAsync } from '@/generic_libs/tools/error_handler';
+import { consumer } from '@/generic_libs/tools/lit_context';
+import { assertNonNullable } from '@/generic_libs/tools/utils';
 
 import { TestHistoryDetailsEntryElement } from './test_history_details_entry';
 
@@ -43,7 +43,7 @@ import { TestHistoryDetailsEntryElement } from './test_history_details_entry';
  */
 @customElement('milo-th-details-table')
 @consumer
-export class TestHistoryDetailsTableElement extends MiloBaseElement {
+export class TestHistoryDetailsTableElement extends MobxExtLitElement {
   @observable.ref @consumeStore() store!: StoreInstance;
   @computed get pageState() {
     return this.store.testHistoryPage;

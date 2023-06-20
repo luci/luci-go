@@ -23,22 +23,14 @@ import { fromPromise } from 'mobx-utils';
 import { useEffect, useRef } from 'react';
 
 import '@/common/components/associated_bugs_badge';
-import '@/common/components/expandable_entry';
-import '@/common/components/copy_to_clipboard';
+import '@/generic_libs/components/expandable_entry';
+import '@/generic_libs/components/copy_to_clipboard';
 import '@/common/components/result_entry';
 import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '@/common/common_tags';
 import {
   VARIANT_STATUS_CLASS_MAP,
   VARIANT_STATUS_ICON_MAP,
 } from '@/common/constants';
-import { unwrapObservable } from '@/common/libs/mobx_utils';
-import {
-  lazyRendering,
-  RenderPlaceHolder,
-} from '@/common/libs/observer_element';
-import { attachTags, hasTags } from '@/common/libs/tag/tag';
-import { getCodeSourceUrl } from '@/common/libs/url_utils';
-import { urlSetSearchQueryParam } from '@/common/libs/utils';
 import { Cluster } from '@/common/services/luci_analysis';
 import {
   RESULT_LIMIT,
@@ -47,6 +39,14 @@ import {
 } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
+import { getCodeSourceUrl } from '@/common/tools/url_utils';
+import { unwrapObservable } from '@/generic_libs/tools/mobx_utils';
+import {
+  lazyRendering,
+  RenderPlaceHolder,
+} from '@/generic_libs/tools/observer_element';
+import { attachTags, hasTags } from '@/generic_libs/tools/tag';
+import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
 
 import { consumeProject, consumeTestTabUrl } from './context';
 

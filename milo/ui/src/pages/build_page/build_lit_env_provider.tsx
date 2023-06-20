@@ -18,16 +18,7 @@ import { computed, makeObservable, observable, reaction } from 'mobx';
 import { ReactNode } from 'react';
 
 import { OPTIONAL_RESOURCE } from '@/common/common_tags';
-import { MiloBaseElement } from '@/common/components/milo_base';
 import { POTENTIALLY_EXPIRED } from '@/common/constants';
-import { consumer, provider } from '@/common/libs/context';
-import {
-  errorHandler,
-  forwardWithoutMsg,
-  renderErrorInPre,
-} from '@/common/libs/error_handler';
-import { attachTags, hasTags } from '@/common/libs/tag/tag';
-import { getBuildURLPath } from '@/common/libs/url_utils';
 import { LoadTestVariantsError } from '@/common/models/test_loader';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { GetBuildError } from '@/common/store/build_page';
@@ -35,6 +26,15 @@ import {
   provideInvocationState,
   QueryInvocationError,
 } from '@/common/store/invocation_state';
+import { getBuildURLPath } from '@/common/tools/url_utils';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import {
+  errorHandler,
+  forwardWithoutMsg,
+  renderErrorInPre,
+} from '@/generic_libs/tools/error_handler';
+import { consumer, provider } from '@/generic_libs/tools/lit_context';
+import { attachTags, hasTags } from '@/generic_libs/tools/tag';
 
 import {
   provideProject,
@@ -113,7 +113,7 @@ function renderError(err: ErrorEvent, ele: BuildLitEnvProviderElement) {
 @errorHandler(retryWithoutComputedInvId, renderError)
 @provider
 @consumer
-export class BuildLitEnvProviderElement extends MiloBaseElement {
+export class BuildLitEnvProviderElement extends MobxExtLitElement {
   @observable.ref
   @consumeStore()
   store!: StoreInstance;

@@ -21,15 +21,15 @@ import { DateTime } from 'luxon';
 import markdownIt from 'markdown-it';
 import { computed, makeObservable, observable } from 'mobx';
 
-import '@/common/components/expandable_entry';
-import { bugLine } from '@/common/libs/markdown_it_plugins/bug_line';
-import { bugnizerLink } from '@/common/libs/markdown_it_plugins/bugnizer_link';
-import { crbugLink } from '@/common/libs/markdown_it_plugins/crbug_link';
-import { defaultTarget } from '@/common/libs/markdown_it_plugins/default_target';
-import { reviewerLine } from '@/common/libs/markdown_it_plugins/reviewer_line';
-import { NUMERIC_TIME_FORMAT } from '@/common/libs/time_utils';
+import '@/generic_libs/components/expandable_entry';
 import { GitCommit } from '@/common/services/milo_internal';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { bugLine } from '@/common/tools/markdown/plugins/bug_line';
+import { bugnizerLink } from '@/common/tools/markdown/plugins/bugnizer_link';
+import { crbugLink } from '@/common/tools/markdown/plugins/crbug_link';
+import { defaultTarget } from '@/common/tools/markdown/plugins/default_target';
+import { reviewerLine } from '@/common/tools/markdown/plugins/reviewer_line';
+import { NUMERIC_TIME_FORMAT } from '@/common/tools/time_utils';
 
 const md = markdownIt('zero', { breaks: true, linkify: true })
   .enable(['linkify', 'newline'])

@@ -20,20 +20,20 @@ import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 
-import '@/common/components/dot_spinner';
+import '@/generic_libs/components/dot_spinner';
 import '@/common/components/status_bar';
 import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants';
-import { consumer } from '@/common/libs/context';
-import { reportRenderError } from '@/common/libs/error_handler';
-import { unwrapObservable } from '@/common/libs/mobx_utils';
-import { getRawArtifactURLPath } from '@/common/libs/url_utils';
-import { urlSetSearchQueryParam } from '@/common/libs/utils';
 import {
   ArtifactIdentifier,
   constructArtifactName,
 } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { getRawArtifactURLPath } from '@/common/tools/url_utils';
+import { reportRenderError } from '@/generic_libs/tools/error_handler';
+import { consumer } from '@/generic_libs/tools/lit_context';
+import { unwrapObservable } from '@/generic_libs/tools/mobx_utils';
+import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
 
 import { consumeArtifactIdent } from './artifact_page_layout';
 

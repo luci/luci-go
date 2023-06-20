@@ -20,8 +20,6 @@
 import { groupBy } from 'lodash-es';
 import { action, computed, makeObservable, observable } from 'mobx';
 
-import { InnerTag, TAG_SOURCE } from '@/common/libs/tag';
-import { toError } from '@/common/libs/utils';
 import {
   QueryTestVariantsRequest,
   QueryTestVariantsResponse,
@@ -29,6 +27,8 @@ import {
   TestVariant,
   TestVariantStatus,
 } from '@/common/services/resultdb';
+import { InnerTag, TAG_SOURCE } from '@/generic_libs/tools/tag';
+import { toError } from '@/generic_libs/tools/utils';
 
 /**
  * The stage of the next test variant. The stage can be

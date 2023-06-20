@@ -20,10 +20,7 @@ import { computed } from 'mobx';
 import { destroy } from 'mobx-state-tree';
 
 import './test_results_tab';
-import { ANONYMOUS_IDENTITY } from '@/common/libs/auth_state';
-import { CacheOption } from '@/common/libs/cached_fn';
-import { provider } from '@/common/libs/context';
-import { timeout } from '@/common/libs/utils';
+import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import {
   QueryTestVariantsRequest,
   QueryTestVariantsResponse,
@@ -31,6 +28,9 @@ import {
 } from '@/common/services/resultdb';
 import { provideStore, Store, StoreInstance } from '@/common/store';
 import { provideInvocationState } from '@/common/store/invocation_state';
+import { CacheOption } from '@/generic_libs/tools/cached_fn';
+import { provider } from '@/generic_libs/tools/lit_context';
+import { timeout } from '@/generic_libs/tools/utils';
 
 import { TestResultsTabElement } from './test_results_tab';
 

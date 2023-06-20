@@ -16,7 +16,7 @@ import { expect, jest } from '@jest/globals';
 import { act, cleanup, render } from '@testing-library/react';
 import { applySnapshot, destroy } from 'mobx-state-tree';
 
-import * as authStateLib from '@/common/libs/auth_state';
+import * as authStateLib from '@/common/api/auth_state';
 import { Store, StoreInstance, StoreProvider } from '@/common/store';
 
 import {
@@ -52,9 +52,9 @@ function IdentityConsumer({ renderCallback }: IdentityConsumerProps) {
   return <></>;
 }
 
-jest.mock('@/common/libs/auth_state', () => {
+jest.mock('@/common/api/auth_state', () => {
   const actual = jest.requireActual(
-    '@/common/libs/auth_state'
+    '@/common/api/auth_state'
   ) as typeof authStateLib;
   const mocked: typeof authStateLib = {
     ...actual,

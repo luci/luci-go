@@ -17,8 +17,8 @@ import { DateTime } from 'luxon';
 
 import { Timestamp } from '@/common/components/timestamp';
 import { BOT_STATUS_COLOR_MAP, BOT_STATUS_LABEL_MAP } from '@/common/constants';
-import { NUMERIC_TIME_FORMAT } from '@/common/libs/time_utils';
 import { BotInfo, getBotStatus, getBotUrl } from '@/common/services/swarming';
+import { NUMERIC_TIME_FORMAT } from '@/common/tools/time_utils';
 
 interface BotRowProps {
   readonly swarmingHost: string;

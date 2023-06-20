@@ -17,19 +17,19 @@ import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { reaction } from 'mobx';
 
-import '@/common/components/dot_spinner';
-import { MiloBaseElement } from '@/common/components/milo_base';
-import { consumer } from '@/common/libs/context';
-import {
-  errorHandler,
-  forwardWithoutMsg,
-  reportErrorAsync,
-} from '@/common/libs/error_handler';
+import '@/generic_libs/components/dot_spinner';
 import { LoadingStage } from '@/common/models/test_loader';
 import {
   consumeInvocationState,
   InvocationStateInstance,
 } from '@/common/store/invocation_state';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import {
+  errorHandler,
+  forwardWithoutMsg,
+  reportErrorAsync,
+} from '@/generic_libs/tools/error_handler';
+import { consumer } from '@/generic_libs/tools/lit_context';
 
 /**
  * Format number with a cap.
@@ -49,7 +49,7 @@ function formatNum(num: number, hasMore: boolean, cap?: number) {
 @customElement('milo-trt-count-indicator')
 @errorHandler(forwardWithoutMsg, () => html``)
 @consumer
-export class TestResultsTabCountIndicatorElement extends MiloBaseElement {
+export class TestResultsTabCountIndicatorElement extends MobxExtLitElement {
   @consumeInvocationState() invState!: InvocationStateInstance;
 
   connectedCallback() {

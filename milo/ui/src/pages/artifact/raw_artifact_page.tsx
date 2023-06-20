@@ -15,8 +15,8 @@
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { getRawArtifactURLPath } from '@/common/libs/url_utils';
 import { constructArtifactName } from '@/common/services/resultdb';
+import { getRawArtifactURLPath } from '@/common/tools/url_utils';
 
 // Redirects user to the new URL for raw artifact "/raw-artifact/:artifactName".
 // Keep this around so we don't break the old URLs.

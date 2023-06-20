@@ -15,11 +15,11 @@
 import stableStringify from 'fast-json-stable-stringify';
 import { groupBy } from 'lodash-es';
 
-import { cached, CacheOption } from '@/common/libs/cached_fn';
-import { PrpcClientExt } from '@/common/libs/prpc_client_ext';
-import { sha256 } from '@/common/libs/utils';
 import { BuilderID } from '@/common/services/buildbucket';
 import { StringPair } from '@/common/services/common';
+import { cached, CacheOption } from '@/generic_libs/tools/cached_fn';
+import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
+import { sha256 } from '@/generic_libs/tools/utils';
 
 /* eslint-disable max-len */
 /**

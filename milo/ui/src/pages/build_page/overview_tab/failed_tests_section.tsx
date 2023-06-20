@@ -15,15 +15,15 @@
 import { observer } from 'mobx-react-lite';
 import { Link } from 'react-router-dom';
 
-import { DotSpinner } from '@/common/components/dot_spinner';
-import {
-  getBuildURLPath,
-  getTestHistoryURLPath,
-} from '@/common/libs/url_utils';
-import { urlSetSearchQueryParam } from '@/common/libs/utils';
 import { getPropKeyLabel } from '@/common/services/resultdb';
 import { useStore } from '@/common/store';
 import { useInvocation } from '@/common/store/invocation_state';
+import {
+  getBuildURLPath,
+  getTestHistoryURLPath,
+} from '@/common/tools/url_utils';
+import { DotSpinner } from '@/generic_libs/components/dot_spinner';
+import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
 
 import { TestVariantEntry } from '../../test_results_tab/test_variants_table/test_variant_entry';
 

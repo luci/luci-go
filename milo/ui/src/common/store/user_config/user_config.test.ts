@@ -16,7 +16,7 @@ import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 import { Duration } from 'luxon';
 import { destroy, Instance, isAlive, types } from 'mobx-state-tree';
 
-import { FakeStorage } from '@/common/libs/test_utils/fake_storage';
+import { FakeStorage } from '@/testing_tools/fakes/fake_storage';
 
 import {
   BuildStepsConfig,

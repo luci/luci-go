@@ -18,14 +18,14 @@ import { html, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { destroy, protect, unprotect } from 'mobx-state-tree';
 
-import { ANONYMOUS_IDENTITY } from '@/common/libs/auth_state';
-import { provider } from '@/common/libs/context';
+import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { TestVariantStatus } from '@/common/services/resultdb';
 import { Store, StoreInstance } from '@/common/store';
 import {
   InvocationStateInstance,
   provideInvocationState,
 } from '@/common/store/invocation_state';
+import { provider } from '@/generic_libs/tools/lit_context';
 
 import './count_indicator';
 import { TestResultsTabCountIndicatorElement } from './count_indicator';

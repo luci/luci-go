@@ -15,9 +15,9 @@
 import { Grid, LinearProgress } from '@mui/material';
 import { useParams } from 'react-router-dom';
 
-import { parseLegacyBucketId } from '@/common/libs/build_utils';
-import { usePrpcQuery } from '@/common/libs/use_prpc_query';
+import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
 import { BuildersService } from '@/common/services/buildbucket';
+import { parseLegacyBucketId } from '@/common/tools/build_utils';
 
 import { BuilderIdBar } from './builder_id_bar';
 import { EndedBuildsSection } from './ended_builds_section';

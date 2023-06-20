@@ -17,7 +17,7 @@ import { computed } from 'mobx';
 import { addDisposer, types } from 'mobx-state-tree';
 import { keepAlive } from 'mobx-utils';
 
-import { PageLoader } from '@/common/libs/page_loader';
+import { PageLoader } from '@/common/models/page_loader';
 import { BuilderID } from '@/common/services/buildbucket';
 import { ServicesStore } from '@/common/store/services';
 

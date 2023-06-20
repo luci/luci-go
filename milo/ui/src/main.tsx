@@ -15,9 +15,9 @@
 import { configure } from 'mobx';
 import { createRoot } from 'react-dom/client';
 
-import '@/common/stackdriver_errors';
+import '@/common/api/stackdriver_errors';
 import { App } from '@/App';
-import { initDefaultTrustedTypesPolicy } from '@/common/libs/sanitize_html';
+import { initDefaultTrustedTypesPolicy } from '@/common/tools/sanitize_html';
 
 /**
  * Whether the UI service worker should be enabled.

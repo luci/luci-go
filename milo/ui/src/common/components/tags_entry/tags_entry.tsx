@@ -20,13 +20,13 @@ import { makeObservable, observable } from 'mobx';
 import { Fragment, useState } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 
+import { StringPair } from '@/common/services/common';
+import { commonStyles } from '@/common/styles/stylesheets';
 import {
   ExpandableEntry,
   ExpandableEntryBody,
   ExpandableEntryHeader,
-} from '@/common/components/expandable_entry';
-import { StringPair } from '@/common/services/common';
-import { commonStyles } from '@/common/styles/stylesheets';
+} from '@/generic_libs/components/expandable_entry';
 
 export interface TagsEntryProps {
   readonly tags: readonly StringPair[];

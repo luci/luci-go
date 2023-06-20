@@ -16,8 +16,7 @@ import { expect, jest } from '@jest/globals';
 import { when } from 'mobx';
 import { destroy, Instance, types } from 'mobx-state-tree';
 
-import { ANONYMOUS_IDENTITY } from '@/common/libs/auth_state';
-import { CacheOption } from '@/common/libs/cached_fn';
+import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { ListBuildersRequest } from '@/common/services/buildbucket';
 import {
   QueryTestsRequest,
@@ -26,6 +25,7 @@ import {
 import { ListBuildersResponse } from '@/common/services/milo_internal';
 import { AuthStateStore } from '@/common/store/auth_state';
 import { ServicesStore } from '@/common/store/services';
+import { CacheOption } from '@/generic_libs/tools/cached_fn';
 
 import { SearchPage, SearchTarget } from './search_page';
 

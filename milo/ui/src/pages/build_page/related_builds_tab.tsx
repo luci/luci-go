@@ -28,31 +28,34 @@ import {
 import { observer } from 'mobx-react-lite';
 import { createContext, useContext, useEffect, useState } from 'react';
 
-import '@/common/components/dot_spinner';
-import { DotSpinner } from '@/common/components/dot_spinner';
+import '@/generic_libs/components/dot_spinner';
 import {
   BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_DISPLAY_MAP,
   BUILD_STATUS_ICON_MAP,
 } from '@/common/constants';
-import {
-  GA_ACTIONS,
-  GA_CATEGORIES,
-  trackEvent,
-} from '@/common/libs/analytics_utils';
-import { renderMarkdown } from '@/common/libs/markdown_utils';
-import { displayDuration, NUMERIC_TIME_FORMAT } from '@/common/libs/time_utils';
-import {
-  getBuilderURLPath,
-  getBuildURLPathFromBuildData,
-  getProjectURLPath,
-} from '@/common/libs/url_utils';
 import { useStore } from '@/common/store';
 import { BuildStateInstance } from '@/common/store/build_state';
 import {
   ExpandableEntriesState,
   ExpandableEntriesStateInstance,
 } from '@/common/store/expandable_entries_state/expandable_entries_state';
+import {
+  GA_ACTIONS,
+  GA_CATEGORIES,
+  trackEvent,
+} from '@/common/tools/analytics_utils';
+import { renderMarkdown } from '@/common/tools/markdown/utils';
+import {
+  displayDuration,
+  NUMERIC_TIME_FORMAT,
+} from '@/common/tools/time_utils';
+import {
+  getBuilderURLPath,
+  getBuildURLPathFromBuildData,
+  getProjectURLPath,
+} from '@/common/tools/url_utils';
+import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 
 const TableStateContext = createContext<ExpandableEntriesStateInstance>(
   ExpandableEntriesState.create()

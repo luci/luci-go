@@ -73,7 +73,7 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         input: {
           index: 'index.html',
-          root_sw: './src/common/service_workers/root_sw.ts',
+          root_sw: './src/root_sw.ts',
         },
         output: {
           entryFileNames: (chunkInfo) =>
@@ -91,7 +91,7 @@ export default defineConfig(({ mode }) => {
         // We have different building pipeline for dev/test/production builds.
         // Limits the impact of the pipeline-specific features to only the
         // entry files for better consistently across different builds.
-        include: ['./src/main.tsx', './src/common/service_workers/ui_sw.ts'],
+        include: ['./src/main.tsx', './src/ui_sw.ts'],
         values: {
           ENABLE_UI_SW: JSON.stringify(
             getBoolEnv(env, 'VITE_ENABLE_UI_SW') ?? true
@@ -112,9 +112,9 @@ export default defineConfig(({ mode }) => {
           // `importScripts` is only available in workers.
           // Ensure this module is only used by service workers.
           if (
-            !importer?.startsWith(
-              path.join(__dirname, 'src/common/service_workers')
-            )
+            !['src/root_sw.ts', 'src/ui_sw.ts']
+              .map((p) => path.join(__dirname, p))
+              .includes(importer || '')
           ) {
             throw new Error(
               'virtual:configs.js should only be imported by a service worker script.'
@@ -163,7 +163,7 @@ export default defineConfig(({ mode }) => {
           // Serve `/root_sw.js`
           server.middlewares.use((req, _res, next) => {
             if (req.url === '/root_sw.js') {
-              req.url = '/ui/src/common/service_workers/root_sw.ts';
+              req.url = '/ui/src/root_sw.ts';
             }
             return next();
           });
@@ -190,7 +190,7 @@ export default defineConfig(({ mode }) => {
       vitePWA({
         injectRegister: null,
         strategies: 'injectManifest',
-        srcDir: 'src/common/service_workers',
+        srcDir: 'src',
         filename: 'ui_sw.ts',
         outDir: 'out',
         devOptions: {

@@ -19,13 +19,12 @@ import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 
-import '@/common/components/copy_to_clipboard';
-import '@/common/components/expandable_entry';
+import '@/generic_libs/components/copy_to_clipboard';
+import '@/generic_libs/components/expandable_entry';
 import '@/common/components/buildbucket_log_link';
-import '@/common/components/pin_toggle';
+import '@/generic_libs/components/pin_toggle';
 import './step_cluster';
 
-import { MiloBaseElement } from '@/common/components/milo_base';
 import {
   HideTooltipEventDetail,
   ShowTooltipEventDetail,
@@ -35,20 +34,21 @@ import {
   BUILD_STATUS_DISPLAY_MAP,
   BUILD_STATUS_ICON_MAP,
 } from '@/common/constants';
-import {
-  lazyRendering,
-  RenderPlaceHolder,
-} from '@/common/libs/observer_element';
-import {
-  displayCompactDuration,
-  displayDuration,
-  NUMERIC_TIME_FORMAT,
-} from '@/common/libs/time_utils';
 import { BuildStatus } from '@/common/services/buildbucket';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { StepExt } from '@/common/store/build_state';
 import { ExpandStepOption } from '@/common/store/user_config';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
+import {
+  displayCompactDuration,
+  displayDuration,
+  NUMERIC_TIME_FORMAT,
+} from '@/common/tools/time_utils';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import {
+  lazyRendering,
+  RenderPlaceHolder,
+} from '@/generic_libs/tools/observer_element';
 
 import { BuildPageStepClusterElement } from './step_cluster';
 
@@ -58,7 +58,7 @@ import { BuildPageStepClusterElement } from './step_cluster';
 @customElement('milo-bp-step-entry')
 @lazyRendering
 export class BuildPageStepEntryElement
-  extends MiloBaseElement
+  extends MobxExtLitElement
   implements RenderPlaceHolder
 {
   @observable.ref

@@ -16,10 +16,10 @@ import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 import { autorun } from 'mobx';
 import { addDisposer, destroy } from 'mobx-state-tree';
 
-import { ANONYMOUS_IDENTITY } from '@/common/libs/auth_state';
-import { CacheOption } from '@/common/libs/cached_fn';
+import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { Build, GetBuildRequest } from '@/common/services/buildbucket';
 import { Store, StoreInstance } from '@/common/store';
+import { CacheOption } from '@/generic_libs/tools/cached_fn';
 
 describe('BuildPage', () => {
   describe('cache', () => {

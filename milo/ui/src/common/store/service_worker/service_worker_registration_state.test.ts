@@ -15,8 +15,8 @@
 import { beforeEach, expect, jest } from '@jest/globals';
 import { destroy } from 'mobx-state-tree';
 
-import { FakeServiceWorker } from '@/common/libs/test_utils/fake_service_worker';
-import { FakeServiceWorkerRegistration } from '@/common/libs/test_utils/fake_service_worker_registration';
+import { FakeServiceWorker } from '@/testing_tools/fakes/fake_service_worker';
+import { FakeServiceWorkerRegistration } from '@/testing_tools/fakes/fake_service_worker_registration';
 
 import {
   ServiceWorkerRegistrationState,

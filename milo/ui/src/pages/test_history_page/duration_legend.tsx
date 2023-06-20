@@ -27,16 +27,16 @@ import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 
-import { MiloBaseElement } from '@/common/components/milo_base';
 import {
   HOUR_MS,
   MINUTE_MS,
   PREDEFINED_TIME_INTERVALS,
   SECOND_MS,
 } from '@/common/constants';
-import { consumer } from '@/common/libs/context';
-import { roundUp } from '@/common/libs/utils';
 import { consumeStore, StoreInstance } from '@/common/store';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { consumer } from '@/generic_libs/tools/lit_context';
+import { roundUp } from '@/generic_libs/tools/utils';
 
 import { CELL_SIZE, X_AXIS_HEIGHT } from './constants';
 
@@ -47,7 +47,7 @@ const MIN_TICK_SIZE = 20;
 
 @customElement('milo-th-duration-legend')
 @consumer
-export class TestHistoryDurationLegendElement extends MiloBaseElement {
+export class TestHistoryDurationLegendElement extends MobxExtLitElement {
   @observable.ref @consumeStore() store!: StoreInstance;
   @computed get pageState() {
     return this.store.testHistoryPage;

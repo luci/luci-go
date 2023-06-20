@@ -15,7 +15,7 @@
 import { DateTime, Duration } from 'luxon';
 import { useEffect, useState } from 'react';
 
-import { displayDuration } from '@/common/libs/time_utils';
+import { displayDuration } from '@/common/tools/time_utils';
 
 export interface RelativeTimestampProps {
   readonly timestamp: DateTime;

@@ -14,7 +14,7 @@
 
 import { deepEqual } from 'fast-equals';
 
-import { removeDefaultProps } from '../../src/common/libs/prpc_utils';
+import { removeDefaultProps } from '@/generic_libs/tools/prpc_utils';
 
 import { StubRequestsOption } from './stub_requests';
 

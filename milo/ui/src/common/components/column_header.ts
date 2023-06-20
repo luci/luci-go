@@ -19,9 +19,9 @@ import { customElement } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable } from 'mobx';
 
-import '@/common/components/drag_tracker';
-import { DragEvent } from '@/common/components/drag_tracker';
+import '@/generic_libs/components/drag_tracker';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { DragEvent } from '@/generic_libs/components/drag_tracker';
 
 @customElement('milo-column-header')
 export class ColumnHeaderElement extends MobxLitElement {

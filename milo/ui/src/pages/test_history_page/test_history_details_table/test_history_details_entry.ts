@@ -22,7 +22,7 @@ import { DateTime } from 'luxon';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 
-import '@/common/components/expandable_entry';
+import '@/generic_libs/components/expandable_entry';
 import '@/common/components/result_entry';
 import '@/common/components/changelists_badge';
 import {
@@ -30,21 +30,21 @@ import {
   VARIANT_STATUS_ICON_MAP,
   VERDICT_VARIANT_STATUS_MAP,
 } from '@/common/constants';
-import { unwrapObservable } from '@/common/libs/mobx_utils';
-import {
-  lazyRendering,
-  RenderPlaceHolder,
-} from '@/common/libs/observer_element';
-import { LONG_TIME_FORMAT, SHORT_TIME_FORMAT } from '@/common/libs/time_utils';
-import {
-  getBuildURLPathFromBuildId,
-  getCodeSourceUrl,
-  getInvURLPath,
-} from '@/common/libs/url_utils';
 import { TestVerdictBundle } from '@/common/services/luci_analysis';
 import { RESULT_LIMIT } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
+import { LONG_TIME_FORMAT, SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
+import {
+  getBuildURLPathFromBuildId,
+  getCodeSourceUrl,
+  getInvURLPath,
+} from '@/common/tools/url_utils';
+import { unwrapObservable } from '@/generic_libs/tools/mobx_utils';
+import {
+  lazyRendering,
+  RenderPlaceHolder,
+} from '@/generic_libs/tools/observer_element';
 
 // This list defines the order in which variant def keys should be displayed.
 // Any unrecognized keys will be listed after the ones defined below.

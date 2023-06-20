@@ -17,8 +17,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { destroy, Instance } from 'mobx-state-tree';
 
+import * as authStateLib from '@/common/api/auth_state';
 import { AuthStateProvider } from '@/common/components/auth_state_provider';
-import * as authStateLib from '@/common/libs/auth_state';
 import { MiloInternal, Project } from '@/common/services/milo_internal';
 import { ResultDb } from '@/common/services/resultdb';
 import { TestMetadataDetail } from '@/common/services/resultdb';
@@ -26,9 +26,9 @@ import { Store, StoreProvider } from '@/common/store';
 
 import { TestIdLabel } from './test_id_label';
 
-jest.mock('@/common/libs/auth_state', () => {
+jest.mock('@/common/api/auth_state', () => {
   const actual = jest.requireActual(
-    '@/common/libs/auth_state'
+    '@/common/api/auth_state'
   ) as typeof authStateLib;
   const mocked: typeof authStateLib = {
     ...actual,

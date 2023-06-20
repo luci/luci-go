@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createContextLink } from '@/common/libs/context';
+import { createContextLink } from '@/generic_libs/tools/lit_context';
 
 export const [provideProject, consumeProject] = createContextLink<
   string | undefined

@@ -18,16 +18,16 @@ import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import '@/common/components/associated_bugs_tooltip';
-import { MiloBaseElement } from '@/common/components/milo_base';
 import {
   HideTooltipEventDetail,
   ShowTooltipEventDetail,
 } from '@/common/components/tooltip';
 import { AssociatedBug, Cluster } from '@/common/services/luci_analysis';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
 
 @customElement('milo-associated-bugs-badge')
-export class AssociatedBugsBadgeElement extends MiloBaseElement {
+export class AssociatedBugsBadgeElement extends MobxExtLitElement {
   @observable.ref project!: string;
   @observable.ref clusters!: readonly Cluster[];
 

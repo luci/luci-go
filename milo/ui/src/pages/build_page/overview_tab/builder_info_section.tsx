@@ -15,7 +15,7 @@
 import { GrpcError } from '@chopsui/prpc-client';
 
 import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants';
-import { usePrpcQuery } from '@/common/libs/use_prpc_query';
+import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
 import { BuilderID, BuildersService } from '@/common/services/buildbucket';
 
 export interface BuilderInfoSectionProps {

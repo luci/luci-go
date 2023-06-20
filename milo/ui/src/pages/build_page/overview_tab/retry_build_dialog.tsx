@@ -24,8 +24,8 @@ import { observer } from 'mobx-react-lite';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { getBuildURLPathFromBuildData } from '@/common/libs/url_utils';
 import { useStore } from '@/common/store';
+import { getBuildURLPathFromBuildData } from '@/common/tools/url_utils';
 
 export interface RetryBuildDialogProps {
   readonly open: boolean;

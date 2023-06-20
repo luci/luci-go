@@ -26,14 +26,11 @@ import { fromPromise } from 'mobx-utils';
 import { createContext, useContext } from 'react';
 
 import { NEVER_OBSERVABLE, NEVER_PROMISE } from '@/common/constants';
-import { createContextLink } from '@/common/libs/context';
-import { keepAliveComputed, unwrapObservable } from '@/common/libs/mobx_utils';
+import { TestLoader } from '@/common/models/test_loader';
 import {
   parseTestResultSearchQuery,
   TestVariantFilter,
-} from '@/common/libs/queries/tr_search_query';
-import { InnerTag, TAG_SOURCE } from '@/common/libs/tag/tag';
-import { TestLoader } from '@/common/models/test_loader';
+} from '@/common/queries/tr_search_query';
 import { TestPresentationConfig } from '@/common/services/buildbucket';
 import {
   createTVCmpFn,
@@ -43,8 +40,13 @@ import {
   TestVariantStatus,
 } from '@/common/services/resultdb';
 import { ServicesStore } from '@/common/store/services';
-
-import { VariantGroup } from '../../../pages/test_results_tab/test_variants_table/test_variants_table';
+import { createContextLink } from '@/generic_libs/tools/lit_context';
+import {
+  keepAliveComputed,
+  unwrapObservable,
+} from '@/generic_libs/tools/mobx_utils';
+import { InnerTag, TAG_SOURCE } from '@/generic_libs/tools/tag';
+import { VariantGroup } from '@/pages/test_results_tab/test_variants_table/test_variants_table';
 
 export class QueryInvocationError extends Error implements InnerTag {
   readonly [TAG_SOURCE]: Error;

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getSafeUrlFromTagValue } from '@/common/libs/build_utils';
+import { getSafeUrlFromTagValue } from '@/common/tools/build_utils';
 
 export interface BuildTagRowProps {
   readonly tagKey: string;

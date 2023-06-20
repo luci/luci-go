@@ -21,16 +21,16 @@ import { useSearchParams } from 'react-router-dom';
 
 import '@/common/components/image_diff_viewer';
 import '@/common/components/status_bar';
-import '@/common/components/dot_spinner';
-import { consumer } from '@/common/libs/context';
-import { reportRenderError } from '@/common/libs/error_handler';
-import { unwrapObservable } from '@/common/libs/mobx_utils';
+import '@/generic_libs/components/dot_spinner';
 import {
   ArtifactIdentifier,
   constructArtifactName,
 } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { reportRenderError } from '@/generic_libs/tools/error_handler';
+import { consumer } from '@/generic_libs/tools/lit_context';
+import { unwrapObservable } from '@/generic_libs/tools/mobx_utils';
 
 import { consumeArtifactIdent } from './artifact_page_layout';
 

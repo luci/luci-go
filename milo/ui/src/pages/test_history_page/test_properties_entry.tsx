@@ -15,13 +15,13 @@
 import { ModeSpec } from 'codemirror';
 import { useState } from 'react';
 
-import { CodeMirrorEditor } from '@/common/components/code_mirror_editor';
+import { extractProject } from '@/common/tools/utils';
+import { CodeMirrorEditor } from '@/generic_libs/components/code_mirror_editor';
 import {
   ExpandableEntry,
   ExpandableEntryBody,
   ExpandableEntryHeader,
-} from '@/common/components/expandable_entry';
-import { extractProject } from '@/common/libs/utils';
+} from '@/generic_libs/components/expandable_entry';
 
 import { useTestMetadata } from './utils';
 

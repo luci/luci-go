@@ -15,14 +15,14 @@
 import { CircularProgress, Link } from '@mui/material';
 import { DateTime } from 'luxon';
 
-import { displayCompactDuration } from '@/common/libs/time_utils';
-import { getBuildURLPathFromBuildId } from '@/common/libs/url_utils';
-import { usePrpcQuery } from '@/common/libs/use_prpc_query';
+import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
 import {
   BuilderID,
   BuildsService,
   BuildStatus,
 } from '@/common/services/buildbucket';
+import { displayCompactDuration } from '@/common/tools/time_utils';
+import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
 
 const PAGE_SIZE = 100;
 const FIELD_MASK = 'builds.*.id,builds.*.number,builds.*.startTime';

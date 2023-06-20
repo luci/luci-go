@@ -23,7 +23,7 @@ import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable, PENDING } from 'mobx-utils';
 
 import '@/common/components/associated_bugs_badge';
-import '@/common/components/expandable_entry';
+import '@/generic_libs/components/expandable_entry';
 import '@/common/components/tags_entry';
 import './artifact_provider';
 import './image_diff_artifact';
@@ -31,16 +31,6 @@ import './link_artifact';
 import './text_artifact';
 import './text_diff_artifact';
 import { TEST_STATUS_DISPLAY_MAP } from '@/common/constants';
-import { consumer } from '@/common/libs/context';
-import { reportRenderError } from '@/common/libs/error_handler';
-import { unwrapObservable } from '@/common/libs/mobx_utils';
-import {
-  displayCompactDuration,
-  displayDuration,
-  parseProtoDuration,
-} from '@/common/libs/time_utils';
-import { getInvURLPath, getRawArtifactURLPath } from '@/common/libs/url_utils';
-import { unwrapOrElse } from '@/common/libs/utils';
 import { Cluster, makeClusterLink } from '@/common/services/luci_analysis';
 import {
   Artifact,
@@ -50,6 +40,16 @@ import {
 } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
+import {
+  displayCompactDuration,
+  displayDuration,
+  parseProtoDuration,
+} from '@/common/tools/time_utils';
+import { getInvURLPath, getRawArtifactURLPath } from '@/common/tools/url_utils';
+import { reportRenderError } from '@/generic_libs/tools/error_handler';
+import { consumer } from '@/generic_libs/tools/lit_context';
+import { unwrapObservable } from '@/generic_libs/tools/mobx_utils';
+import { unwrapOrElse } from '@/generic_libs/tools/utils';
 
 /**
  * Renders an expandable entry of the given test result.

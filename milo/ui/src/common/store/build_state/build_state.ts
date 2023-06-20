@@ -18,9 +18,6 @@ import { DateTime, Duration } from 'luxon';
 import { action, computed, makeObservable, untracked } from 'mobx';
 import { Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
 
-import { renderMarkdown } from '@/common/libs/markdown_utils';
-import { keepAliveComputed } from '@/common/libs/mobx_utils';
-import { parseProtoDuration } from '@/common/libs/time_utils';
 import {
   BLAMELIST_PIN_KEY,
   Build,
@@ -33,6 +30,9 @@ import {
 import { StringPair } from '@/common/services/common';
 import { Timestamp, TimestampInstance } from '@/common/store/timestamp';
 import { UserConfig, UserConfigInstance } from '@/common/store/user_config';
+import { renderMarkdown } from '@/common/tools/markdown/utils';
+import { parseProtoDuration } from '@/common/tools/time_utils';
+import { keepAliveComputed } from '@/generic_libs/tools/mobx_utils';
 
 export interface StepInit {
   step: Step;

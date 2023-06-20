@@ -18,15 +18,15 @@ import { customElement } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable } from 'mobx';
 
-import { MiloBaseElement } from '@/common/components/milo_base';
-import { consumer } from '@/common/libs/context';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { GraphType, XAxisType } from '@/common/store/test_history_page';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { consumer } from '@/generic_libs/tools/lit_context';
 
 @customElement('milo-th-graph-config')
 @consumer
-export class TestHistoryGraphConfigElement extends MiloBaseElement {
+export class TestHistoryGraphConfigElement extends MobxExtLitElement {
   @observable.ref @consumeStore() store!: StoreInstance;
   @computed get pageState() {
     return this.store.testHistoryPage;

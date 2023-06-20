@@ -14,7 +14,7 @@
 
 import { expect, jest } from '@jest/globals';
 
-import { PrpcClientExt } from '@/common/libs/prpc_client_ext';
+import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
 
 import {
   ClusterRequest,

@@ -34,10 +34,13 @@ import {
   ShowTooltipEventDetail,
 } from '@/common/components/tooltip';
 import { PREDEFINED_TIME_INTERVALS } from '@/common/constants';
-import { enumerate } from '@/common/libs/iter_utils';
-import { displayDuration, NUMERIC_TIME_FORMAT } from '@/common/libs/time_utils';
-import { roundDown } from '@/common/libs/utils';
 import { commonStyles } from '@/common/styles/stylesheets';
+import {
+  displayDuration,
+  NUMERIC_TIME_FORMAT,
+} from '@/common/tools/time_utils';
+import { enumerate } from '@/generic_libs/tools/iter_utils';
+import { roundDown } from '@/generic_libs/tools/utils';
 
 const TOP_AXIS_HEIGHT = 35;
 const BOTTOM_AXIS_HEIGHT = 25;

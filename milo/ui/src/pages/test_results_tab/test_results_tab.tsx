@@ -17,30 +17,30 @@ import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable, reaction } from 'mobx';
 
-import '@/common/components/dot_spinner';
-import '@/common/components/hotkey';
+import '@/generic_libs/components/dot_spinner';
+import '@/generic_libs/components/hotkey';
 import './test_variants_table/test_variants_table';
 import './test_variants_table/config_widget';
 import './search_box';
-import { MiloBaseElement } from '@/common/components/milo_base';
-import {
-  GA_ACTIONS,
-  GA_CATEGORIES,
-  trackEvent,
-} from '@/common/libs/analytics_utils';
-import { consumer } from '@/common/libs/context';
-import {
-  errorHandler,
-  forwardWithoutMsg,
-  reportRenderError,
-} from '@/common/libs/error_handler';
-import { URLExt, assertNonNullable } from '@/common/libs/utils';
 import { consumeStore, StoreInstance } from '@/common/store';
 import {
   consumeInvocationState,
   InvocationStateInstance,
 } from '@/common/store/invocation_state';
 import { commonStyles } from '@/common/styles/stylesheets';
+import {
+  GA_ACTIONS,
+  GA_CATEGORIES,
+  trackEvent,
+} from '@/common/tools/analytics_utils';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import {
+  errorHandler,
+  forwardWithoutMsg,
+  reportRenderError,
+} from '@/generic_libs/tools/error_handler';
+import { consumer } from '@/generic_libs/tools/lit_context';
+import { URLExt, assertNonNullable } from '@/generic_libs/tools/utils';
 
 import { TestVariantsTableElement } from './test_variants_table/test_variants_table';
 
@@ -50,7 +50,7 @@ import { TestVariantsTableElement } from './test_variants_table/test_variants_ta
 @customElement('milo-test-results-tab')
 @errorHandler(forwardWithoutMsg)
 @consumer
-export class TestResultsTabElement extends MiloBaseElement {
+export class TestResultsTabElement extends MobxExtLitElement {
   @observable.ref
   @consumeStore()
   store!: StoreInstance;

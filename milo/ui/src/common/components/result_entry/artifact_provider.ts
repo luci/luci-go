@@ -16,9 +16,9 @@ import { html, PropertyValues } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable, reaction } from 'mobx';
 
-import { MiloBaseElement } from '@/common/components/milo_base';
-import { createContextLink, provider } from '@/common/libs/context';
 import { Artifact } from '@/common/services/resultdb';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { createContextLink, provider } from '@/generic_libs/tools/lit_context';
 
 export const [provideArtifacts, consumeArtifacts] =
   createContextLink<Map<string, Artifact>>();
@@ -30,7 +30,7 @@ export const [provideArtifactsFinalized, consumeArtifactsFinalized] =
  */
 @customElement('milo-artifact-provider')
 @provider
-export class ArtifactProvider extends MiloBaseElement {
+export class ArtifactProvider extends MobxExtLitElement {
   @observable.ref
   @provideArtifacts()
   artifacts!: Map<string, Artifact>;

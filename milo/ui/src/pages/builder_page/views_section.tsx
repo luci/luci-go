@@ -14,10 +14,10 @@
 
 import { CircularProgress, Link } from '@mui/material';
 
-import { usePrpcQuery } from '@/common/libs/use_prpc_query';
-import { extractProject } from '@/common/libs/utils';
+import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
 import { BuilderID } from '@/common/services/buildbucket';
 import { MiloInternal } from '@/common/services/milo_internal';
+import { extractProject } from '@/common/tools/utils';
 
 const PAGE_SIZE = 100;
 

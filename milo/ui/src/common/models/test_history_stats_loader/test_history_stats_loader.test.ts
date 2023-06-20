@@ -15,13 +15,13 @@
 import { expect, jest } from '@jest/globals';
 import { DateTime } from 'luxon';
 
-import { CacheOption } from '@/common/libs/cached_fn';
 import {
   QueryTestHistoryStatsRequest,
   QueryTestHistoryStatsResponse,
   QueryTestHistoryStatsResponseGroup,
   TestHistoryService,
 } from '@/common/services/luci_analysis';
+import { CacheOption } from '@/generic_libs/tools/cached_fn';
 
 import { TestHistoryStatsLoader } from './test_history_stats_loader';
 

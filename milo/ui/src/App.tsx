@@ -26,12 +26,12 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import '@/common/styles/common_style.css';
 import '@/common/styles/color_classes.css';
 import '@/common/components/tooltip';
+import { obtainAuthState } from '@/common/api/auth_state';
 import { LitEnvProvider } from '@/common/components/lit_env_provider';
 import { BaseLayout } from '@/common/layouts/base';
-import { obtainAuthState } from '@/common/libs/auth_state';
-import { createStaticTrustedURL } from '@/common/libs/utils';
 import { Store, StoreProvider } from '@/common/store';
-import { theme } from '@/common/theme';
+import { theme } from '@/common/themes/base';
+import { createStaticTrustedURL } from '@/generic_libs/tools/utils';
 
 import { ArtifactPageLayout } from './pages/artifact/artifact_page_layout';
 import { ImageDiffArtifactPage } from './pages/artifact/image_diff_artifact_page';

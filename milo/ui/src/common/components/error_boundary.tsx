@@ -16,7 +16,7 @@ import styled from '@emotion/styled';
 import { Alert, AlertTitle, Link } from '@mui/material';
 import { Component, ReactNode } from 'react';
 
-import { genFeedbackUrl } from '../libs/utils';
+import { genFeedbackUrl } from '@/common/tools/utils';
 
 export interface ErrorBoundaryProps {
   readonly children: ReactNode;

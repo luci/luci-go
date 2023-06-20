@@ -14,10 +14,10 @@
 
 import { Outlet, useLoaderData } from 'react-router-dom';
 
+import { AuthState } from '@/common/api/auth_state';
 import { AuthStateProvider } from '@/common/components/auth_state_provider';
 import { ErrorBoundary } from '@/common/components/error_boundary';
 import { TopBar } from '@/common/components/top_bar';
-import { AuthState } from '@/common/libs/auth_state';
 
 /**
  * Renders page header, and tooltip.

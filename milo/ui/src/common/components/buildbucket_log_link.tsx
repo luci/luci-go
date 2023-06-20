@@ -20,9 +20,9 @@ import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable } from 'mobx';
 import { createRoot, Root } from 'react-dom/client';
 
-import { getLogdogRawUrl } from '@/common/libs/build_utils';
 import { Log } from '@/common/services/buildbucket';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { getLogdogRawUrl } from '@/common/tools/build_utils';
 
 export interface BuildbucketLogLinkProps {
   readonly log: Log;

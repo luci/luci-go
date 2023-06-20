@@ -14,11 +14,11 @@
 
 import { Link } from '@mui/material';
 
+import { BuilderID } from '@/common/services/buildbucket';
 import {
   getLegacyBuilderURLPath,
   getProjectURLPath,
-} from '@/common/libs/url_utils';
-import { BuilderID } from '@/common/services/buildbucket';
+} from '@/common/tools/url_utils';
 
 export interface BuilderIdBarProps {
   readonly builderId: BuilderID;

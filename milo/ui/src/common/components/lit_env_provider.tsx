@@ -17,17 +17,20 @@ import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable, reaction } from 'mobx';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 
+import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '@/common/common_tags';
-import { MiloBaseElement } from '@/common/components/milo_base';
-import { ANONYMOUS_IDENTITY } from '@/common/libs/auth_state';
-import { provider } from '@/common/libs/context';
-import { errorHandler, handleLocally } from '@/common/libs/error_handler';
+import { provideStore, StoreInstance, useStore } from '@/common/store';
+import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import {
+  errorHandler,
+  handleLocally,
+} from '@/generic_libs/tools/error_handler';
+import { provider } from '@/generic_libs/tools/lit_context';
 import {
   ProgressiveNotifier,
   provideNotifier,
-} from '@/common/libs/observer_element';
-import { hasTags } from '@/common/libs/tag/tag';
-import { provideStore, StoreInstance, useStore } from '@/common/store';
+} from '@/generic_libs/tools/observer_element';
+import { hasTags } from '@/generic_libs/tools/tag';
 
 function redirectToLogin(err: ErrorEvent, ele: LitEnvProviderElement) {
   if (
@@ -49,7 +52,7 @@ function redirectToLogin(err: ErrorEvent, ele: LitEnvProviderElement) {
 @customElement('milo-lit-env-provider')
 @errorHandler(redirectToLogin)
 @provider
-export class LitEnvProviderElement extends MiloBaseElement {
+export class LitEnvProviderElement extends MobxExtLitElement {
   @observable.ref
   @provideStore({ global: true })
   store!: StoreInstance;

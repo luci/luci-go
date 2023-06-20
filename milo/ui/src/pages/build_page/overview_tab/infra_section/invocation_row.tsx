@@ -13,8 +13,8 @@
 // limitations under the License.
 
 import { MiloLink } from '@/common/components/link';
-import { getInvocationLink } from '@/common/libs/build_utils';
 import { BuildInfraResultdb } from '@/common/services/buildbucket';
+import { getInvocationLink } from '@/common/tools/build_utils';
 
 export interface InvocationRowProps {
   readonly resultdb?: BuildInfraResultdb;
