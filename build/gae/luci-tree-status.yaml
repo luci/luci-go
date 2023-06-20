@@ -1,0 +1,8 @@
+name: luci-go/luci-tree-status
+extends: ../gae.yaml
+
+inputsdir: ../../tree_status
+
+build:
+  - go_gae_bundle: ${inputsdir}/app.yaml
+    dest: ${contextdir}/tree_status
