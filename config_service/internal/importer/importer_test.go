@@ -37,12 +37,9 @@ import (
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
 	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
-	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/model"
@@ -57,9 +54,7 @@ func TestImportAllConfigs(t *testing.T) {
 	t.Parallel()
 
 	Convey("import all configs", t, func() {
-		ctx := memory.UseWithAppID(context.Background(), "dev~app-id")
-		datastore.GetTestable(ctx).AutoIndex(true)
-		datastore.GetTestable(ctx).Consistent(true)
+		ctx := testutil.SetupContext()
 		ctx, sch := tq.TestingContext(ctx, nil)
 
 		ctl := gomock.NewController(t)
@@ -102,26 +97,14 @@ func TestImportAllConfigs(t *testing.T) {
 			})
 
 			Convey("projects.cfg File entity exist", func() {
-				cfgSetID := config.MustServiceSet(info.AppID(ctx))
-				cs := &model.ConfigSet{
-					ID:             cfgSetID,
-					LatestRevision: model.RevisionInfo{ID: "rev"},
-				}
-				prjCfgBytes, err := prototext.Marshal(&cfgcommonpb.ProjectsCfg{
-					Projects: []*cfgcommonpb.Project{
-						{Id: "proj1"},
+				testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+					"projects.cfg": &cfgcommonpb.ProjectsCfg{
+						Projects: []*cfgcommonpb.Project{
+							{Id: "proj1"},
+						},
 					},
 				})
-				So(err, ShouldBeNil)
-				compressed, err := gzipCompress(prjCfgBytes)
-				So(err, ShouldBeNil)
-				f := &model.File{
-					Path:     "projects.cfg",
-					Revision: datastore.MakeKey(ctx, model.ConfigSetKind, string(cfgSetID), model.RevisionKind, "rev"),
-					Content:  compressed,
-				}
-				So(datastore.Put(ctx, cs, f), ShouldBeNil)
-				err = ImportAllConfigs(ctx)
+				err := ImportAllConfigs(ctx)
 				So(err, ShouldBeNil)
 				cfgSetsInQueue := getCfgSetsInTaskQueue(sch)
 				So(cfgSetsInQueue, ShouldResemble, []string{"projects/proj1", "services/service1", "services/service2"})
@@ -144,22 +127,14 @@ func TestImportAllConfigs(t *testing.T) {
 			})
 
 			Convey("bad projects.cfg content", func() {
-				cfgSetID := config.MustServiceSet(info.AppID(ctx))
 				mockClient.EXPECT().ListFiles(gomock.Any(), gomock.Any()).Return(&gitilespb.ListFilesResponse{}, nil)
-				cs := &model.ConfigSet{
-					ID:             cfgSetID,
-					LatestRevision: model.RevisionInfo{ID: "rev"},
-				}
-				compressed, err := gzipCompress([]byte("bad"))
-				So(err, ShouldBeNil)
-				f := &model.File{
-					Path:     "projects.cfg",
-					Revision: datastore.MakeKey(ctx, model.ConfigSetKind, string(cfgSetID), model.RevisionKind, "rev"),
-					Content:  compressed,
-				}
-				So(datastore.Put(ctx, cs, f), ShouldBeNil)
-				err = ImportAllConfigs(ctx)
-				So(err, ShouldErrLike, `failed to load project config sets: failed to unmarshal projects.cfg file content`)
+				testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+					"projects.cfg": &cfgcommonpb.ServicesCfg{
+						Services: []*cfgcommonpb.Service{
+							{Id: "my-service"},
+						}}, // bad type
+				})
+				So(ImportAllConfigs(ctx), ShouldErrLike, `failed to load project config sets: failed to unmarshal file "projects.cfg": proto`)
 			})
 		})
 	})

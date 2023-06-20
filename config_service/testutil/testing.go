@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/config_service/internal/model"
 
@@ -52,7 +51,6 @@ func SetupContext() context.Context {
 		ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Info)
 	}
 
-	ctx, _ = tq.TestingContext(ctx, nil)
 	ctx = memory.UseWithAppID(ctx, "dev~"+AppID)
 	datastore.GetTestable(ctx).Consistent(true)
 	// Intentionally not enabling AutoIndex to ensure the composite index must

@@ -111,7 +111,7 @@ type RevisionInfo struct {
 	// Location is a pinned location with revision info in the source repo.
 	Location *cfgcommonpb.Location `gae:"location"`
 	// CommitTime is the commit time of this revision.
-	CommitTime time.Time `gae:"time"`
+	CommitTime time.Time `gae:"commit_time"`
 	// CommitterEmail is the committer's email.
 	CommitterEmail string `gae:"committer_email"`
 }

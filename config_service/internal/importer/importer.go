@@ -26,7 +26,6 @@ import (
 	"io"
 	"strings"
 
-	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/api/gitiles"
@@ -40,7 +39,6 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/config_service/internal/clients"
@@ -132,9 +130,9 @@ func ImportAllConfigs(ctx context.Context) error {
 
 // getAllProjCfgSets fetches all "projects/*" config sets
 func getAllProjCfgSets(ctx context.Context) ([]string, error) {
-	projectsCfg, err := getSelfProjectsCfg(ctx)
+	projectsCfg := &cfgcommonpb.ProjectsCfg{}
 	var nerr *model.NoSuchConfigError
-	switch {
+	switch err := common.LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, projRegistryFilePath, projectsCfg); {
 	case errors.As(err, &nerr) && nerr.IsUnknownConfigSet():
 		// May happen on the cron job first run. Just log the warning.
 		logging.Warningf(ctx, "failed to compose all project config sets because the self config set is missing")
@@ -225,11 +223,10 @@ func ImportConfigSet(ctx context.Context, cfgSet config.Set) error {
 
 // importProject imports a project config set.
 func importProject(ctx context.Context, projectID string) error {
-	projectsCfg, err := getSelfProjectsCfg(ctx)
-	if err != nil {
-		return err
+	projectsCfg := &cfgcommonpb.ProjectsCfg{}
+	if err := common.LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, projRegistryFilePath, projectsCfg); err != nil {
+		return ErrFatalTag.Apply(err)
 	}
-
 	var projLoc *cfgcommonpb.GitilesLocation
 	for _, p := range projectsCfg.GetProjects() {
 		if p.Id == projectID {
@@ -443,18 +440,4 @@ func importRevision(ctx context.Context, cfgSet config.Set, loc *cfgcommonpb.Git
 	return datastore.RunInTransaction(ctx, func(c context.Context) error {
 		return datastore.Put(ctx, configSet, attempt)
 	}, nil)
-}
-
-// getSelfProjectsCfg gets Luci-Config self projects.cfg proto message.
-func getSelfProjectsCfg(ctx context.Context) (*cfgcommonpb.ProjectsCfg, error) {
-	file, err := model.GetLatestConfigFile(ctx, config.MustServiceSet(info.AppID(ctx)), projRegistryFilePath, true)
-	if err != nil {
-		return nil, err
-	}
-
-	projCfg := &cfgcommonpb.ProjectsCfg{}
-	if err := prototext.Unmarshal(file.Content, projCfg); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshal %s file content", projRegistryFilePath).Err()
-	}
-	return projCfg, nil
 }

@@ -17,9 +17,13 @@ package common
 import (
 	"testing"
 
+	"google.golang.org/protobuf/proto"
+
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/config_service/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCommon(t *testing.T) {
@@ -43,5 +47,25 @@ func TestCommon(t *testing.T) {
 		So(GitilesURL(&cfgcommonpb.GitilesLocation{
 			Repo: "https://chromium.googlesource.com/infra/infra",
 		}), ShouldEqual, "https://chromium.googlesource.com/infra/infra")
+	})
+
+	Convey("LoadSelfConfig", t, func() {
+		ctx := testutil.SetupContext()
+		projectsCfg := &cfgcommonpb.ProjectsCfg{
+			Projects: []*cfgcommonpb.Project{
+				{Id: "foo"},
+			},
+		}
+		testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+			"projects.cfg": projectsCfg,
+		})
+
+		loaded := &cfgcommonpb.ProjectsCfg{}
+		So(LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, "projects.cfg", loaded), ShouldBeNil)
+		So(loaded, ShouldResembleProto, projectsCfg)
+
+		So(LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, "service.cfg", loaded), ShouldErrLike, "can not find file entity \"service.cfg\" from datastore for config set")
+
+		So(LoadSelfConfig[*cfgcommonpb.ServicesCfg](ctx, "projects.cfg", &cfgcommonpb.ServicesCfg{}), ShouldErrLike, "failed to unmarshal")
 	})
 }
