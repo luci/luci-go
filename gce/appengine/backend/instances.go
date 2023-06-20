@@ -350,7 +350,7 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 	var countLeaks int64
 	// Delete the ones we don't know of
 	for hostname, vm := range hostToVM {
-		if vm == nil {
+		if vm == nil && isLeakHuerestic(c, hostname, proj, zone) {
 			countLeaks += 1
 			logging.Debugf(c, "plugging the instance leak in %s-%s: %s", proj, zone, hostname)
 			/* TODO(b/274688233): Uncomment this once we are sure that
@@ -388,4 +388,28 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 	}
 	metrics.UpdateLeaks(c, countLeaks, proj, zone)
 	return nil
+}
+
+// isLeakHuerestic determines if the given hostname is a leak from gce-provider
+// using a heuristic.
+func isLeakHuerestic(ctx context.Context, hostname, proj, zone string) bool {
+	// If this was an instance created by gce-provider. There must be a
+	// record for this. The record is referenced by the primary key that
+	// is partly the hostname for the vm. If the vm hostname was say
+	// 'host-xxxx` then the primary key for this entry must be `host`
+	id := hostname[:len(hostname)-5] // Remove the last 5 characters
+	vm := &model.VM{
+		ID: id,
+	}
+	err := datastore.Get(ctx, vm)
+	if err == nil {
+		if vm.Hostname != hostname {
+			logging.Debugf(ctx, "%s is a leaked instance replaced by %s", hostname, vm.Hostname)
+			return true
+		} else {
+			logging.Debugf(ctx, "%s record exists. Not a leak", hostname)
+		}
+	}
+	logging.Warningf(ctx, "%s in %s and %s is not recognized by gce-provider", hostname, proj, zone)
+	return false
 }
