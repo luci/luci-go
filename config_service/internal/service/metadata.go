@@ -18,11 +18,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -76,6 +78,7 @@ func UpdateMetadata(ctx context.Context) error {
 func updateServiceMetadata(ctx context.Context, srv *cfgcommonpb.Service) error {
 	eg, ectx := errgroup.WithContext(ctx)
 	var metadataFromService *cfgcommonpb.ServiceMetadata
+	var legacyMetadataFromService *cfgcommonpb.ServiceDynamicMetadata
 	switch {
 	case srv.GetServiceEndpoint() != "":
 		eg.Go(func() (err error) {
@@ -83,7 +86,10 @@ func updateServiceMetadata(ctx context.Context, srv *cfgcommonpb.Service) error 
 			return err
 		})
 	case srv.GetMetadataUrl() != "":
-		// TODO(yiwzhang): add support for updating legacy metadata.
+		eg.Go(func() (err error) {
+			legacyMetadataFromService, err = fetchLegacyMetadata(ctx, srv.GetMetadataUrl(), srv.GetJwtAuth().GetAudience())
+			return err
+		})
 	default:
 		panic(errors.New("impossible; must provide either service_endpoint or metadata_url"))
 	}
@@ -105,12 +111,13 @@ func updateServiceMetadata(ctx context.Context, srv *cfgcommonpb.Service) error 
 		return err
 	}
 
-	if metadataEntity.Metadata != nil && proto.Equal(metadataEntity.Metadata, metadataFromService) {
+	if skipUpdate(ctx, metadataEntity, metadataFromService, legacyMetadataFromService) {
 		logging.Infof(ctx, "skip updating service metadata as LUCI Config already has the latest")
 		return nil
 	}
 
 	metadataEntity.Metadata = metadataFromService
+	metadataEntity.LegacyMetadata = legacyMetadataFromService
 	metadataEntity.UpdateTime = clock.Now(ctx).UTC()
 	if err := datastore.Put(ctx, metadataEntity); err != nil {
 		return err
@@ -133,4 +140,51 @@ func fetchMetadata(ctx context.Context, endpoint string) (*cfgcommonpb.ServiceMe
 	}
 	client := cfgcommonpb.NewConsumerClient(prpcClient)
 	return client.GetMetadata(ctx, &emptypb.Empty{})
+}
+
+func fetchLegacyMetadata(ctx context.Context, metadataURL string, jwtAud string) (*cfgcommonpb.ServiceDynamicMetadata, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, metadataURL, http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create http request due to %w", err)
+	}
+	var authOpts []auth.RPCOption
+	if jwtAud != "" {
+		authOpts = append(authOpts, auth.WithIDTokenAudience(jwtAud))
+	}
+	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, authOpts...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create transport %w", err)
+	}
+	client := &http.Client{Transport: tr}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request to %s due to %w", metadataURL, err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	switch body, err := io.ReadAll(resp.Body); {
+	case err != nil:
+		return nil, fmt.Errorf("failed to read the response from %s: %w", metadataURL, err)
+	case resp.StatusCode != http.StatusOK:
+		return nil, fmt.Errorf("%s returns %d. Body: %s", metadataURL, resp.StatusCode, body)
+	default:
+		ret := &cfgcommonpb.ServiceDynamicMetadata{}
+		if err := protojson.Unmarshal(body, ret); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal ServiceDynamicMetadata: %w; Response body from %s: %s", err, metadataURL, body)
+		}
+		return ret, nil
+	}
+}
+
+func skipUpdate(ctx context.Context, metadataEntity *model.ServiceMetadata, metadata *cfgcommonpb.ServiceMetadata, legacyMetadata *cfgcommonpb.ServiceDynamicMetadata) bool {
+	switch {
+	case metadataEntity == nil:
+		panic(errors.New("nil metadataEntity"))
+	case metadata != nil:
+		return proto.Equal(metadataEntity.Metadata, metadata)
+	case legacyMetadata != nil:
+		return proto.Equal(metadataEntity.LegacyMetadata, legacyMetadata)
+	default:
+		logging.Warningf(ctx, "FIXME: both metadata and legacy metadata are nil")
+		return false
+	}
 }

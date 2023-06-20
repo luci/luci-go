@@ -16,9 +16,13 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -140,6 +144,116 @@ func TestUpdateMetadata(t *testing.T) {
 				ServiceName: serviceName,
 			}
 			So(datastore.Get(ctx, metadataEntity), ShouldErrLike, datastore.ErrNoSuchEntity)
+		})
+
+		Convey("Legacy Metadata", func() {
+			legacyMetadata := &cfgcommonpb.ServiceDynamicMetadata{
+				Version: "1.0",
+				Validation: &cfgcommonpb.Validator{
+					Patterns: []*cfgcommonpb.ConfigPattern{
+						{ConfigSet: string(config.MustProjectSet("foo")), Path: "exact:bar.cfg"},
+					},
+				},
+				SupportsGzipCompression: true,
+			}
+			var legacySrvErrMsg string
+
+			legacyTestSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if legacySrvErrMsg != "" {
+					w.WriteHeader(http.StatusInternalServerError)
+					fmt.Fprint(w, legacySrvErrMsg)
+					return
+				}
+
+				switch bytes, err := protojson.Marshal(legacyMetadata); {
+				case err != nil:
+					w.WriteHeader(http.StatusInternalServerError)
+					fmt.Fprintf(w, "%s", err)
+				default:
+					w.Write(bytes)
+				}
+			}))
+			defer legacyTestSrv.Close()
+
+			testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+				common.ServiceRegistryFilePath: &cfgcommonpb.ServicesCfg{
+					Services: []*cfgcommonpb.Service{
+						{
+							Id:          serviceName,
+							MetadataUrl: legacyTestSrv.URL,
+						},
+					},
+				},
+			})
+
+			Convey("First time update", func() {
+				metadataEntity := &model.ServiceMetadata{
+					ServiceName: serviceName,
+				}
+				So(datastore.Get(ctx, metadataEntity), ShouldErrLike, datastore.ErrNoSuchEntity)
+				So(UpdateMetadata(ctx), ShouldBeNil)
+				So(datastore.Get(ctx, metadataEntity), ShouldBeNil)
+				So(metadataEntity.LegacyMetadata, ShouldResembleProto, legacyMetadata)
+				So(metadataEntity.UpdateTime, ShouldEqual, clock.Now(ctx).UTC())
+			})
+
+			Convey("Update existing", func() {
+				So(UpdateMetadata(ctx), ShouldBeNil)
+				legacyMetadata = proto.Clone(legacyMetadata).(*cfgcommonpb.ServiceDynamicMetadata)
+				legacyMetadata.SupportsGzipCompression = false
+				So(UpdateMetadata(ctx), ShouldBeNil)
+				metadataEntity := &model.ServiceMetadata{
+					ServiceName: serviceName,
+				}
+				So(datastore.Get(ctx, metadataEntity), ShouldBeNil)
+				So(metadataEntity.LegacyMetadata, ShouldResembleProto, legacyMetadata)
+				So(metadataEntity.UpdateTime, ShouldEqual, clock.Now(ctx).UTC())
+			})
+
+			Convey("Skip update for same metadata", func() {
+				So(UpdateMetadata(ctx), ShouldBeNil)
+				metadataEntity := &model.ServiceMetadata{
+					ServiceName: serviceName,
+				}
+				So(datastore.Get(ctx, metadataEntity), ShouldBeNil)
+				prevUpdateTime := metadataEntity.UpdateTime
+				tc := clock.Get(ctx).(testclock.TestClock)
+				tc.Add(1 * time.Hour)
+				So(UpdateMetadata(ctx), ShouldBeNil)
+				metadataEntity = &model.ServiceMetadata{
+					ServiceName: serviceName,
+				}
+				So(datastore.Get(ctx, metadataEntity), ShouldBeNil)
+				So(metadataEntity.UpdateTime, ShouldEqual, prevUpdateTime)
+			})
+
+			Convey("Upgrade from legacy to new", func() {
+				So(UpdateMetadata(ctx), ShouldBeNil)
+				metadataEntity := &model.ServiceMetadata{
+					ServiceName: serviceName,
+				}
+				So(datastore.Get(ctx, metadataEntity), ShouldBeNil)
+				So(metadataEntity.Metadata, ShouldBeNil)
+				So(metadataEntity.LegacyMetadata, ShouldNotBeNil)
+
+				testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+					common.ServiceRegistryFilePath: &cfgcommonpb.ServicesCfg{
+						Services: []*cfgcommonpb.Service{
+							{
+								Id:              serviceName,
+								ServiceEndpoint: ts.Host,
+							},
+						},
+					},
+				})
+				So(UpdateMetadata(ctx), ShouldBeNil)
+				metadataEntity = &model.ServiceMetadata{
+					ServiceName: serviceName,
+				}
+				So(datastore.Get(ctx, metadataEntity), ShouldBeNil)
+				So(metadataEntity.Metadata, ShouldNotBeNil)
+				So(metadataEntity.LegacyMetadata, ShouldBeNil)
+			})
 		})
 	})
 }
