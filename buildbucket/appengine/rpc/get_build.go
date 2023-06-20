@@ -100,7 +100,6 @@ func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build
 	if err != nil {
 		return nil, err
 	}
-	bp.SummaryMarkdown = protoutil.CombineCancelSummary(bp)
 
 	return bp, nil
 

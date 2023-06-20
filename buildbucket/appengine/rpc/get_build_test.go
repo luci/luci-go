@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -246,6 +247,27 @@ func TestGetBuild(t *testing.T) {
 						},
 						CancellationMarkdown: "cancelled",
 						SummaryMarkdown:      "summary\ncancelled",
+					})
+				})
+
+				Convey("summary", func() {
+					ctx = auth.WithState(ctx, &authtest.FakeState{
+						Identity: userID,
+						FakeDB: authtest.NewFakeDB(
+							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+						),
+					})
+					req.Mask = &pb.BuildMask{
+						Fields: &fieldmaskpb.FieldMask{
+							Paths: []string{
+								"summary_markdown",
+							},
+						},
+					}
+					rsp, err := srv.GetBuild(ctx, req)
+					So(err, ShouldBeNil)
+					So(rsp, ShouldResembleProto, &pb.Build{
+						SummaryMarkdown: "summary\ncancelled",
 					})
 				})
 			})

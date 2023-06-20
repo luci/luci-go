@@ -433,6 +433,9 @@ func LoadBuildDetails(ctx context.Context, m *BuildMask, redact func(*pb.Build) 
 		if err != nil {
 			return errors.Annotate(err, "error fetching steps for build %q", p.Id).Err()
 		}
+		if m.Includes("summary_markdown") {
+			p.SummaryMarkdown = protoutil.CombineCancelSummary(p)
+		}
 		if redact != nil {
 			if err = redact(p); err != nil {
 				return errors.Annotate(err, "error redacting build %q", p.Id).Err()
