@@ -26,12 +26,12 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto"
+	protoutil "go.chromium.org/luci/common/proto"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
@@ -47,6 +47,7 @@ import (
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/model"
 	"go.chromium.org/luci/config_service/internal/taskpb"
+	"go.chromium.org/luci/config_service/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -67,7 +68,7 @@ func TestImportAllConfigs(t *testing.T) {
 		ctx = context.WithValue(ctx, &clients.MockGitilesClientKey, mockClient)
 
 		Convey("ok", func() {
-			mockClient.EXPECT().ListFiles(gomock.Any(), proto.MatcherEqual(
+			mockClient.EXPECT().ListFiles(gomock.Any(), protoutil.MatcherEqual(
 				&gitilespb.ListFilesRequest{
 					Project:    "infradata/config",
 					Committish: "main",
@@ -168,10 +169,7 @@ func TestImportConfigSet(t *testing.T) {
 	t.Parallel()
 
 	Convey("import single ConfigSet", t, func() {
-		ctx := memory.UseWithAppID(context.Background(), "dev~app-id")
-		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
-		datastore.GetTestable(ctx).AutoIndex(true)
-		datastore.GetTestable(ctx).Consistent(true)
+		ctx := testutil.SetupContext()
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		mockGtClient := mock_gitiles.NewMockGitilesClient(ctl)
@@ -192,7 +190,7 @@ func TestImportConfigSet(t *testing.T) {
 
 		Convey("happy path", func() {
 			Convey("success import", func() {
-				mockGtClient.EXPECT().Log(gomock.Any(), proto.MatcherEqual(
+				mockGtClient.EXPECT().Log(gomock.Any(), protoutil.MatcherEqual(
 					&gitilespb.LogRequest{
 						Project:    "infradata/config",
 						Committish: "main",
@@ -204,7 +202,7 @@ func TestImportConfigSet(t *testing.T) {
 				}, nil)
 				tarGzContent, err := buildTarGz(map[string]string{"file1": "file1 content", "sub_dir/file2": "file2 content", "sub_dir/": "", "empty_file": ""})
 				So(err, ShouldBeNil)
-				mockGtClient.EXPECT().Archive(gomock.Any(), proto.MatcherEqual(
+				mockGtClient.EXPECT().Archive(gomock.Any(), protoutil.MatcherEqual(
 					&gitilespb.ArchiveRequest{
 						Project: "infradata/config",
 						Ref:     latestCommit.Id,
@@ -373,7 +371,7 @@ func TestImportConfigSet(t *testing.T) {
 			})
 
 			Convey("empty archive", func() {
-				mockGtClient.EXPECT().Log(gomock.Any(), proto.MatcherEqual(
+				mockGtClient.EXPECT().Log(gomock.Any(), protoutil.MatcherEqual(
 					&gitilespb.LogRequest{
 						Project:    "infradata/config",
 						Committish: "main",
@@ -447,7 +445,7 @@ func TestImportConfigSet(t *testing.T) {
 					LatestRevision: model.RevisionInfo{ID: latestCommit.Id},
 				}
 				So(datastore.Put(ctx, cfgSetBeforeImport), ShouldBeNil)
-				mockGtClient.EXPECT().Log(gomock.Any(), proto.MatcherEqual(
+				mockGtClient.EXPECT().Log(gomock.Any(), protoutil.MatcherEqual(
 					&gitilespb.LogRequest{
 						Project:    "infradata/config",
 						Committish: "main",
@@ -500,32 +498,36 @@ func TestImportConfigSet(t *testing.T) {
 			})
 
 			Convey("project doesn't exist ", func() {
+				testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+					projRegistryFilePath: &cfgcommonpb.ProjectsCfg{
+						Projects: []*cfgcommonpb.Project{
+							{
+								Id: "proj",
+								Location: &cfgcommonpb.Project_GitilesLocation{
+									GitilesLocation: &cfgcommonpb.GitilesLocation{
+										Repo: "https://chromium.googlesource.com/infra/infra",
+										Ref:  "refs/heads/main",
+										Path: "generated",
+									},
+								},
+							},
+						},
+					},
+				})
 				err := ImportConfigSet(ctx, config.MustProjectSet("unknown_proj"))
 				So(err, ShouldErrLike, `project "unknown_proj" not exist or has no gitiles location`)
 				So(ErrFatalTag.In(err), ShouldBeTrue)
 			})
 
 			Convey("no project gitiles location", func() {
-				cfgSetID := config.MustServiceSet(info.AppID(ctx))
-				cs := &model.ConfigSet{
-					ID:             cfgSetID,
-					LatestRevision: model.RevisionInfo{ID: "rev"},
-				}
-				prjCfgBytes, err := prototext.Marshal(&cfgcommonpb.ProjectsCfg{
-					Projects: []*cfgcommonpb.Project{
-						{Id: "proj"},
+				testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+					projRegistryFilePath: &cfgcommonpb.ProjectsCfg{
+						Projects: []*cfgcommonpb.Project{
+							{Id: "proj"},
+						},
 					},
 				})
-				So(err, ShouldBeNil)
-				compressed, err := gzipCompress(prjCfgBytes)
-				So(err, ShouldBeNil)
-				f := &model.File{
-					Path:     "projects.cfg",
-					Revision: datastore.MakeKey(ctx, model.ConfigSetKind, string(cfgSetID), model.RevisionKind, "rev"),
-					Content:  compressed,
-				}
-				So(datastore.Put(ctx, cs, f), ShouldBeNil)
-				err = ImportConfigSet(ctx, config.MustProjectSet("proj"))
+				err := ImportConfigSet(ctx, config.MustProjectSet("proj"))
 				So(err, ShouldErrLike, `project "proj" not exist or has no gitiles location`)
 				So(ErrFatalTag.In(err), ShouldBeTrue)
 			})

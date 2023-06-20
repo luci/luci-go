@@ -132,12 +132,18 @@ func ImportAllConfigs(ctx context.Context) error {
 
 // getAllProjCfgSets fetches all "projects/*" config sets
 func getAllProjCfgSets(ctx context.Context) ([]string, error) {
-	projCfg, err := getSelfProjectsCfg(ctx)
-	if err != nil {
+	projectsCfg, err := getSelfProjectsCfg(ctx)
+	var nerr *model.NoSuchConfigError
+	switch {
+	case errors.As(err, &nerr) && nerr.IsUnknownConfigSet():
+		// May happen on the cron job first run. Just log the warning.
+		logging.Warningf(ctx, "failed to compose all project config sets because the self config set is missing")
+		return nil, nil
+	case err != nil:
 		return nil, err
 	}
-	cfgsets := make([]string, len(projCfg.Projects))
-	for i, proj := range projCfg.Projects {
+	cfgsets := make([]string, len(projectsCfg.Projects))
+	for i, proj := range projectsCfg.Projects {
 		cs, err := config.ProjectSet(proj.Id)
 		if err != nil {
 			return nil, err
@@ -442,12 +448,7 @@ func importRevision(ctx context.Context, cfgSet config.Set, loc *cfgcommonpb.Git
 // getSelfProjectsCfg gets Luci-Config self projects.cfg proto message.
 func getSelfProjectsCfg(ctx context.Context) (*cfgcommonpb.ProjectsCfg, error) {
 	file, err := model.GetLatestConfigFile(ctx, config.MustServiceSet(info.AppID(ctx)), projRegistryFilePath, true)
-	switch {
-	case errors.Contains(err, datastore.ErrNoSuchEntity):
-		// May happen on the cron job first run. Just log the warning.
-		logging.Warningf(ctx, "failed to compose all project configsets: %s", err)
-		return &cfgcommonpb.ProjectsCfg{}, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 

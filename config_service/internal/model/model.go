@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"fmt"
 	"io"
 	"time"
 
@@ -115,11 +116,54 @@ type RevisionInfo struct {
 	CommitterEmail string `gae:"committer_email"`
 }
 
+// NoSuchConfigError captures the error caused by unknown config set or file.
+type NoSuchConfigError struct {
+	unknownConfigSet  string
+	unknownConfigFile struct {
+		configSet, revision, file, hash string
+	}
+}
+
+// Error implements error interface.
+func (e *NoSuchConfigError) Error() string {
+	switch {
+	case e.unknownConfigSet != "":
+		return fmt.Sprintf("can not find config set entity %q from datastore", e.unknownConfigSet)
+	case e.unknownConfigFile.file != "":
+		return fmt.Sprintf("can not find file entity %q from datastore for config set: %s, revision: %s", e.unknownConfigFile.file, e.unknownConfigFile.configSet, e.unknownConfigFile.revision)
+	case e.unknownConfigFile.hash != "":
+		return fmt.Sprintf("can not find matching file entity from datastore with hash %q", e.unknownConfigFile.hash)
+	default:
+		return ""
+	}
+}
+
+// IsUnknownConfigSet returns true the error is caused by unknown config set.
+func (e *NoSuchConfigError) IsUnknownConfigSet() bool {
+	return e.unknownConfigSet != ""
+}
+
+// IsUnknownFile returns true the error is caused by unknown file name.
+func (e *NoSuchConfigError) IsUnknownFile() bool {
+	return e.unknownConfigFile.file != ""
+}
+
+// IsUnknownFile returns true the error is caused by unknown file hash.
+func (e *NoSuchConfigError) IsUnknownFileHash() bool {
+	return e.unknownConfigFile.hash != ""
+}
+
 // GetLatestConfigFile returns the latest File for the given config set.
-// If resolveGcsURI, it will download content from File.GcsURI.
+//
+// If resolveGcsURI, download content from File.GcsURI.
+// The file content is depressed before returning.
+// Returns NoSuchConfigError when the config set or file can not be found.
 func GetLatestConfigFile(ctx context.Context, configSet config.Set, filePath string, resolveGcsURI bool) (*File, error) {
 	cfgSet := &ConfigSet{ID: configSet}
-	if err := datastore.Get(ctx, cfgSet); err != nil {
+	switch err := datastore.Get(ctx, cfgSet); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, &NoSuchConfigError{unknownConfigSet: string(configSet)}
+	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch ConfigSet %q", configSet).Err()
 	}
 	file := &File{
@@ -127,30 +171,45 @@ func GetLatestConfigFile(ctx context.Context, configSet config.Set, filePath str
 		Revision: datastore.MakeKey(ctx, ConfigSetKind, string(configSet), RevisionKind, cfgSet.LatestRevision.ID),
 	}
 	if err := file.Load(ctx, resolveGcsURI); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch file %q in %q", file.Path, configSet).Err()
+		return nil, err
 	}
 	return file, nil
 }
 
 // Load loads the file entity from Datastore with content being decompressed.
+//
 // If resolveGcsURI is true, it will download content from File.GcsURI.
+// Returns NoSuchConfigError when the matching file can not be found in the
+// storage.
 func (f *File) Load(ctx context.Context, resolveGcsURI bool) error {
 	switch {
 	case f.Path != "" && f.Revision != nil:
-		if err := datastore.Get(ctx, f); err != nil {
-			return err
+		switch err := datastore.Get(ctx, f); {
+		case err == datastore.ErrNoSuchEntity:
+			return &NoSuchConfigError{
+				unknownConfigFile: struct {
+					configSet, revision, file, hash string
+				}{
+					configSet: f.Revision.Root().StringID(),
+					revision:  f.Revision.StringID(),
+					file:      f.Path,
+				}}
+		case err != nil:
+			return errors.Annotate(err, "failed to fetch file %q", f.Path).Err()
 		}
 	case f.ContentHash != "":
-		found := false
-		if err := datastore.Run(ctx, datastore.NewQuery(FileKind).Eq("content_hash", f.ContentHash), func(file *File) error {
+		err := datastore.Run(ctx, datastore.NewQuery(FileKind).Eq("content_hash", f.ContentHash), func(file *File) error {
 			*f = *file
-			found = true
 			return datastore.Stop
-		}); err != nil {
-			return err
-		}
-		if !found {
-			return datastore.ErrNoSuchEntity
+		})
+		switch {
+		case err != nil:
+			return errors.Annotate(err, "failed to query file by hash %q", f.ContentHash).Err()
+		case f.Path == "":
+			return &NoSuchConfigError{
+				unknownConfigFile: struct {
+					configSet, revision, file, hash string
+				}{hash: f.ContentHash}}
 		}
 	default:
 		return errors.Reason("One of ContentHash or (path and revision) is required").Err()
@@ -166,10 +225,9 @@ func (f *File) Load(ctx context.Context, resolveGcsURI bool) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to create gzip reader").Err()
 	}
-	uncompressed, err := io.ReadAll(gr)
-	if err != nil {
-		return errors.Annotate(err, "failed to uncompress file content").Err()
+	defer gr.Close()
+	if f.Content, err = io.ReadAll(gr); err != nil {
+		return errors.Annotate(err, "failed to decompress file content").Err()
 	}
-	f.Content = uncompressed
 	return nil
 }

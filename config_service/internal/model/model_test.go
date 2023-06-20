@@ -69,12 +69,12 @@ func TestModel(t *testing.T) {
 		Convey("error", func() {
 			Convey("configset not exist", func() {
 				_, err := GetLatestConfigFile(ctx, config.MustServiceSet("nonexist"), "file", false)
-				So(err, ShouldErrLike, `failed to fetch ConfigSet "services/nonexist"`)
+				So(err, ShouldErrLike, `can not find config set entity "services/nonexist"`)
 			})
 
 			Convey("file not exist", func() {
 				_, err := GetLatestConfigFile(ctx, config.MustServiceSet("service"), "file", false)
-				So(err, ShouldErrLike, `failed to fetch file "file" in "services/service"`)
+				So(err, ShouldErrLike, `can not find file entity "file" from datastore for config set: services/service, revision: latest`)
 			})
 		})
 	})
@@ -194,14 +194,14 @@ func TestModel(t *testing.T) {
 				Path:     "file",
 				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
 			}
-			So(file.Load(ctx, false), ShouldErrLike, datastore.ErrNoSuchEntity)
+			So(file.Load(ctx, false), ShouldErrLike, `can not find file entity "file" from datastore for config set: services/service, revision: rev`)
 		})
 
 		Convey("not found (hash)", func() {
 			file := &File{
 				ContentHash: "hash",
 			}
-			So(file.Load(ctx, false), ShouldErrLike, datastore.ErrNoSuchEntity)
+			So(file.Load(ctx, false), ShouldErrLike, `can not find matching file entity from datastore with hash "hash"`)
 		})
 	})
 }
