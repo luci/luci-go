@@ -163,11 +163,15 @@ func (s *shardState) collect(ctx context.Context, bot *model.BotInfo) {
 		migrationState = "QUARANTINED"
 	} else {
 		var botState struct {
+			Handshaking   bool   `json:"handshaking,omitempty"`
 			RBEInstance   string `json:"rbe_instance,omitempty"`
 			RBEHybridMode bool   `json:"rbe_hybrid_mode,omitempty"`
 		}
 		if err := json.Unmarshal(bot.State, &botState); err == nil {
 			switch {
+			case botState.Handshaking:
+				// This is not a fully connected bot.
+				return
 			case botState.RBEInstance == "":
 				migrationState = "SWARMING"
 			case botState.RBEHybridMode:
