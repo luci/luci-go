@@ -71,8 +71,13 @@ export function CodeMirrorEditor({
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
   const editorRef = useRef<CodeMirror.EditorFromTextArea | null>(null);
 
+  // Wrap them in refs so eslint doesn't complain about missing dependencies in
+  // `useEffect` hooks.
+  const firstInitOptions = useRef(initOptions);
+  const firstOnInit = useRef(onInit);
+
   useEffect(() => {
-    // This will never happen, but useful for type checking.
+    // This will never happen, but useful for type narrowing.
     if (!textAreaRef.current) {
       return;
     }
@@ -81,18 +86,30 @@ export function CodeMirrorEditor({
       return;
     }
 
-    const editor = CodeMirror.fromTextArea(textAreaRef.current, initOptions);
+    const editor = CodeMirror.fromTextArea(
+      textAreaRef.current,
+      firstInitOptions.current
+    );
     editorRef.current = editor;
-    onInit?.(editorRef.current);
+    firstOnInit.current?.(editorRef.current);
   }, []);
 
   useEffect(() => {
-    // This will never happen, but useful for type checking.
+    // This will never happen, but useful for type narrowing.
     if (!editorRef.current) {
       return;
     }
 
     editorRef.current.setValue(value);
+
+    // Somehow codemirror does not display the content when the editor is
+    // initialized very early (it's likely that codemirror has some internal
+    // initialization steps).
+    // Force refresh in the NEXT JS event cycle to ensure the content are
+    // rendered properly.
+    setTimeout(() => {
+      editorRef.current?.refresh();
+    });
   }, [value]);
 
   return (
