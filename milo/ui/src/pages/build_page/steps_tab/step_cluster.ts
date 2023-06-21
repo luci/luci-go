@@ -132,7 +132,7 @@ export class BuildPageStepClusterElement extends MobxExtLitElement {
       <div id="elided-steps" @click=${() => this.setExpanded(true)}>
         <mwc-icon>more_horiz</mwc-icon>
         <svg width="24" height="24">
-          <image xlink:href=${checkCircleStacked} width="24" height="24" />
+          <image href=${checkCircleStacked} width="24" height="24" />
         </svg>
         ${this.renderDuration()}
         <div id="elided-steps-description">

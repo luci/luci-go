@@ -23,6 +23,13 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
+import grayFavicon from '@/common/assets/favicons/gray-32.png';
+import greenFavicon from '@/common/assets/favicons/green-32.png';
+import miloFavicon from '@/common/assets/favicons/milo-32.png';
+import purpleFavicon from '@/common/assets/favicons/purple-32.png';
+import redFavicon from '@/common/assets/favicons/red-32.png';
+import tealFavicon from '@/common/assets/favicons/teal-32.png';
+import yellowFavicon from '@/common/assets/favicons/yellow-32.png';
 import { Tab, Tabs } from '@/common/components/tabs';
 import {
   BUILD_STATUS_CLASS_MAP,
@@ -52,12 +59,12 @@ import { BuildLitEnvProvider } from './build_lit_env_provider';
 import { ChangeConfigDialog } from './change_config_dialog';
 
 const STATUS_FAVICON_MAP = Object.freeze({
-  [BuildStatus.Scheduled]: 'gray',
-  [BuildStatus.Started]: 'yellow',
-  [BuildStatus.Success]: 'green',
-  [BuildStatus.Failure]: 'red',
-  [BuildStatus.InfraFailure]: 'purple',
-  [BuildStatus.Canceled]: 'teal',
+  [BuildStatus.Scheduled]: grayFavicon,
+  [BuildStatus.Started]: yellowFavicon,
+  [BuildStatus.Success]: greenFavicon,
+  [BuildStatus.Failure]: redFavicon,
+  [BuildStatus.InfraFailure]: purpleFavicon,
+  [BuildStatus.Canceled]: tealFavicon,
 });
 
 export const BuildPageShortLink = observer(() => {
@@ -171,8 +178,8 @@ export const BuildPage = observer(() => {
   }, [documentTitle]);
 
   const faviconUrl = build
-    ? `/static/common/favicon/${STATUS_FAVICON_MAP[build.data.status]}-32.png`
-    : '/static/common/favicon/milo-32.png';
+    ? STATUS_FAVICON_MAP[build.data.status]
+    : miloFavicon;
   useEffect(() => {
     document.getElementById('favicon')?.setAttribute('href', faviconUrl);
   }, [faviconUrl]);
