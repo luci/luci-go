@@ -62,8 +62,17 @@ function renderTooltip(
 
 export interface TimestampProps {
   readonly datetime: DateTime;
+  /**
+   * Defaults to `LONG_TIME_FORMAT`;
+   */
   readonly format?: string;
-  readonly extraZones?: readonly TimeZoneConfig[];
+  readonly extra?: {
+    readonly zones?: readonly TimeZoneConfig[];
+    /**
+     * Defaults to `format`.
+     */
+    readonly format?: string;
+  };
 }
 
 /**
@@ -73,11 +82,12 @@ export interface TimestampProps {
 export function Timestamp(props: TimestampProps) {
   const datetime = props.datetime;
   const format = props.format ?? LONG_TIME_FORMAT;
-  const extraZones = props.extraZones ?? DEFAULT_EXTRA_ZONE_CONFIGS;
+  const extraZones = props.extra?.zones ?? DEFAULT_EXTRA_ZONE_CONFIGS;
+  const extraFormat = props.extra?.format ?? format;
 
   function onShowTooltip(target: HTMLElement) {
     const tooltip = document.createElement('div');
-    render(renderTooltip(datetime, format, extraZones), tooltip);
+    render(renderTooltip(datetime, extraFormat, extraZones), tooltip);
 
     window.dispatchEvent(
       new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
