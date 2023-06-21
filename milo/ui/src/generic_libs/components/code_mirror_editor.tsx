@@ -104,12 +104,10 @@ export function CodeMirrorEditor({
 
     // Somehow codemirror does not display the content when the editor is
     // initialized very early (it's likely that codemirror has some internal
-    // initialization steps).
-    // Force refresh in the NEXT JS event cycle to ensure the content are
-    // rendered properly.
-    setTimeout(() => {
-      editorRef.current?.refresh();
-    });
+    // asynchronous initialization steps).
+    // Force refresh AFTER all functions in the present queue are executed to
+    // to ensure the content are rendered properly.
+    setTimeout(() => editorRef.current?.refresh());
   }, [value]);
 
   return (
