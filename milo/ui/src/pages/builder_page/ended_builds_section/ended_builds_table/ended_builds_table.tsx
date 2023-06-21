@@ -27,10 +27,19 @@ export interface EndedBuildsTableProps {
 
 export function EndedBuildsTable({ endedBuilds }: EndedBuildsTableProps) {
   const [tableState] = useState(() => ExpandableEntriesState.create());
+  const hasChanges = endedBuilds.some((b) => b.input?.gerritChanges?.length);
 
   return (
-    <Table size="small">
-      <EndedBuildsTableHead tableState={tableState} />
+    <Table
+      size="small"
+      sx={{
+        borderCollapse: 'separate',
+      }}
+    >
+      <EndedBuildsTableHead
+        tableState={tableState}
+        displayGerritChanges={hasChanges}
+      />
       <TableBody
         sx={{
           // Each <EndedBuildsTableRow /> is consist of two <tr />s. The first
@@ -44,7 +53,12 @@ export function EndedBuildsTable({ endedBuilds }: EndedBuildsTableProps) {
         }}
       >
         {endedBuilds.map((b) => (
-          <EndedBuildsTableRow key={b.id} tableState={tableState} build={b} />
+          <EndedBuildsTableRow
+            key={b.id}
+            tableState={tableState}
+            build={b}
+            displayGerritChanges={hasChanges}
+          />
         ))}
       </TableBody>
     </Table>

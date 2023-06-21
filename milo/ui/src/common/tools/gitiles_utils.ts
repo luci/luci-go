@@ -13,22 +13,35 @@
 // limitations under the License.
 
 import { GitilesCommit } from '@/common/services/buildbucket';
-import { getGitilesCommitURL } from '@/common/tools/gitiles_utils';
 
-export interface RevisionRowProps {
-  readonly commit: GitilesCommit;
+export function getGitilesRepoURL(
+  commit: Pick<GitilesCommit, 'host' | 'project'>
+) {
+  return `https://${commit.host}/${commit.project}`;
 }
 
-export function RevisionRow({ commit }: RevisionRowProps) {
-  return (
-    <tr>
-      <td>Revision:</td>
-      <td>
-        <a href={getGitilesCommitURL(commit)} target="_blank" rel="noreferrer">
-          {commit.id}
-        </a>
-        {commit.position ? ` CP #${commit.position}` : ''}
-      </td>
-    </tr>
-  );
+export function getGitilesCommitURL(commit: GitilesCommit): string {
+  return `${getGitilesRepoURL(commit)}/+/${commit.id}`;
+}
+
+export function getGitilesCommitLabel(
+  commit: Pick<GitilesCommit, 'id' | 'position' | 'ref'>
+): string {
+  if (commit.position && commit.ref) {
+    return `${commit.ref}@{#${commit.position}}`;
+  }
+
+  if (commit.ref?.startsWith('refs/tags/')) {
+    return commit.ref;
+  }
+
+  if (commit.id) {
+    return commit.id;
+  }
+
+  if (commit.ref) {
+    return commit.ref;
+  }
+
+  return '';
 }

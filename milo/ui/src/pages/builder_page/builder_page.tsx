@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { Grid, LinearProgress } from '@mui/material';
+import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
@@ -43,6 +44,10 @@ export function BuilderPage() {
     bucket: parseLegacyBucketId(bucket)?.bucket ?? bucket,
     builder,
   };
+
+  useEffect(() => {
+    document.title = `${builderId.builder} | Builder`;
+  }, [builderId.builder]);
 
   const { data, error, isError, isLoading } = usePrpcQuery({
     host: CONFIGS.BUILDBUCKET.HOST,

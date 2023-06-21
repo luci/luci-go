@@ -20,12 +20,20 @@ import { ExpandableEntriesStateInstance } from '@/common/store/expandable_entrie
 
 export interface EndedBuildsTableHeadProps {
   readonly tableState: ExpandableEntriesStateInstance;
+  readonly displayGerritChanges: boolean;
 }
 
 export const EndedBuildsTableHead = observer(
-  ({ tableState }: EndedBuildsTableHeadProps) => {
+  ({ tableState, displayGerritChanges }: EndedBuildsTableHeadProps) => {
     return (
-      <TableHead>
+      <TableHead
+        sx={{
+          position: 'sticky',
+          top: 0,
+          backgroundColor: 'white',
+          zIndex: 2,
+        }}
+      >
         <TableRow>
           <TableCell>
             <IconButton
@@ -44,7 +52,7 @@ export const EndedBuildsTableHead = observer(
           <TableCell>End Time</TableCell>
           <TableCell>Run Duration</TableCell>
           <TableCell>Commit</TableCell>
-          <TableCell>Changes</TableCell>
+          {displayGerritChanges && <TableCell>Changes</TableCell>}
         </TableRow>
       </TableHead>
     );

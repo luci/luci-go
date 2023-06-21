@@ -30,7 +30,7 @@ import {
   GA_CATEGORIES,
   trackEvent,
 } from '@/common/tools/analytics_utils';
-import { getGitilesRepoURL } from '@/common/tools/url_utils';
+import { getGitilesRepoURL } from '@/common/tools/gitiles_utils';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
 import {
   errorHandler,

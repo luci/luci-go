@@ -12,12 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  Build,
-  BuilderID,
-  GerritChange,
-  GitilesCommit,
-} from '@/common/services/buildbucket';
+import { Build, BuilderID, GerritChange } from '@/common/services/buildbucket';
 import { TestLocation } from '@/common/services/resultdb';
 
 export function getBuildURLPathFromBuildData(
@@ -59,16 +54,6 @@ export function getLegacyBuildURLPath(
 
 export function getLegacyBuilderURLPath(builder: BuilderID) {
   return `/old${getBuilderURLPath(builder)}`;
-}
-
-export function getGitilesRepoURL(
-  commit: Pick<GitilesCommit, 'host' | 'project'>
-) {
-  return `https://${commit.host}/${commit.project}`;
-}
-
-export function getGitilesCommitURL(commit: GitilesCommit): string {
-  return `${getGitilesRepoURL(commit)}/+/${commit.id}`;
 }
 
 export function getGerritChangeURL(change: GerritChange): string {

@@ -27,7 +27,10 @@ import { DateTime } from 'luxon';
 import { observer } from 'mobx-react-lite';
 import { Fragment } from 'react';
 
-import { Timestamp } from '@/common/components/timestamp';
+import {
+  DEFAULT_EXTRA_ZONE_CONFIGS,
+  Timestamp,
+} from '@/common/components/timestamp';
 import {
   BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_DISPLAY_MAP,
@@ -38,15 +41,19 @@ import {
   getAssociatedGitilesCommit,
 } from '@/common/services/buildbucket';
 import { ExpandableEntriesStateInstance } from '@/common/store/expandable_entries_state';
+import {
+  getGitilesCommitLabel,
+  getGitilesCommitURL,
+} from '@/common/tools/gitiles_utils';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
 import {
-  displayDuration,
   NUMERIC_TIME_FORMAT,
+  SHORT_TIME_FORMAT,
+  displayDuration,
 } from '@/common/tools/time_utils';
 import {
   getBuildURLPathFromBuildId,
   getGerritChangeURL,
-  getGitilesCommitURL,
 } from '@/common/tools/url_utils';
 
 const MarkdownContainer = styled(Box)({
@@ -63,16 +70,38 @@ const MarkdownContainer = styled(Box)({
   },
 });
 
+function CompactTimestamp({ datetime }: { datetime: DateTime }) {
+  return (
+    <Timestamp
+      datetime={datetime}
+      // Use a more compact format to diaply the timestamp.
+      format={SHORT_TIME_FORMAT}
+      extra={{
+        // Use a more detailed format in the tooltip.
+        format: NUMERIC_TIME_FORMAT,
+        zones: [
+          // Add a local timezone to display the timestamp in local timezone
+          // with a more detailed format.
+          {
+            label: 'LOCAL',
+            zone: 'local',
+          },
+          ...DEFAULT_EXTRA_ZONE_CONFIGS,
+        ],
+      }}
+    />
+  );
+}
+
 export interface EndedBuildsTableRowProps {
   readonly tableState: ExpandableEntriesStateInstance;
   readonly build: Build;
+  readonly displayGerritChanges: boolean;
 }
 
 export const EndedBuildsTableRow = observer(
-  ({ tableState, build }: EndedBuildsTableRowProps) => {
-    const expanded = Boolean(
-      build.summaryMarkdown && tableState.isExpanded(build.id)
-    );
+  ({ tableState, build, displayGerritChanges }: EndedBuildsTableRowProps) => {
+    const expanded = tableState.isExpanded(build.id);
 
     const createTime = DateTime.fromISO(build.createTime);
     const startTime = build.startTime
@@ -91,15 +120,13 @@ export const EndedBuildsTableRow = observer(
           }}
         >
           <TableCell>
-            {build.summaryMarkdown && (
-              <IconButton
-                aria-label="toggle-row"
-                size="small"
-                onClick={() => tableState.toggle(build.id, !expanded)}
-              >
-                {expanded ? <ExpandMore /> : <ChevronRight />}
-              </IconButton>
-            )}
+            <IconButton
+              aria-label="toggle-row"
+              size="small"
+              onClick={() => tableState.toggle(build.id, !expanded)}
+            >
+              {expanded ? <ExpandMore /> : <ChevronRight />}
+            </IconButton>
           </TableCell>
           <TableCell>
             <link
@@ -119,50 +146,48 @@ export const EndedBuildsTableRow = observer(
             </Link>
           </TableCell>
           <TableCell>
-            <Timestamp datetime={createTime} format={NUMERIC_TIME_FORMAT} />
+            <CompactTimestamp datetime={createTime} />
           </TableCell>
           <TableCell>
-            {endTime ? (
-              <Timestamp datetime={endTime} format={NUMERIC_TIME_FORMAT} />
-            ) : (
-              'N/A'
-            )}
+            {endTime ? <CompactTimestamp datetime={endTime} /> : 'N/A'}
           </TableCell>
           <TableCell>
             {runDuration ? displayDuration(runDuration) : 'N/A'}
           </TableCell>
           <TableCell>
             {commit ? (
-              <Link href={getGitilesCommitURL(commit)}>{commit.id}</Link>
+              <Link href={getGitilesCommitURL(commit)}>
+                {getGitilesCommitLabel(commit)}
+              </Link>
             ) : (
               'N/A'
             )}
           </TableCell>
-          <TableCell>
-            {changes.map((c, i) => (
-              <Fragment key={c.change}>
-                {i !== 0 && <>, </>}
-                <Link key={c.change} href={getGerritChangeURL(c)}>
-                  CL {c.change} (ps #{c.patchset})
-                </Link>
-              </Fragment>
-            ))}
-          </TableCell>
+          {displayGerritChanges && (
+            <TableCell>
+              {changes.map((c, i) => (
+                <Fragment key={c.change}>
+                  {i !== 0 && <>, </>}
+                  <Link key={c.change} href={getGerritChangeURL(c)}>
+                    CL {c.change} (ps #{c.patchset})
+                  </Link>
+                </Fragment>
+              ))}
+            </TableCell>
+          )}
         </TableRow>
         <TableRow>
           <TableCell colSpan={8} sx={{ p: 0 }}>
-            {build.summaryMarkdown && (
-              <Collapse in={expanded} timeout="auto">
-                <MarkdownContainer
-                  className={`${BUILD_STATUS_CLASS_MAP[build.status]}-bg`}
-                  dangerouslySetInnerHTML={{
-                    __html: renderMarkdown(
-                      build.summaryMarkdown || 'No Summary.'
-                    ),
-                  }}
-                />
-              </Collapse>
-            )}
+            <Collapse in={expanded} timeout="auto">
+              <MarkdownContainer
+                className={`${BUILD_STATUS_CLASS_MAP[build.status]}-bg`}
+                dangerouslySetInnerHTML={{
+                  __html: renderMarkdown(
+                    build.summaryMarkdown || 'No Summary.'
+                  ),
+                }}
+              />
+            </Collapse>
           </TableCell>
         </TableRow>
       </>

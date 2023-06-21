@@ -59,7 +59,7 @@ import { ServicesStore } from '@/common/store/services';
 import { Timestamp } from '@/common/store/timestamp';
 import { UserConfig } from '@/common/store/user_config';
 import { renderBugUrlTemplate } from '@/common/tools/build_utils';
-import { getGitilesRepoURL } from '@/common/tools/url_utils';
+import { getGitilesRepoURL } from '@/common/tools/gitiles_utils';
 import * as iter from '@/generic_libs/tools/iter_utils';
 import {
   aliveFlow,

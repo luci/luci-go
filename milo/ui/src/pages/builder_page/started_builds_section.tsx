@@ -71,9 +71,11 @@ export function StartedBuildsSection({ builderId }: StartedBuildsSectionProps) {
       {isLoading ? (
         <CircularProgress />
       ) : (
-        <ul>
+        <ul css={{ maxHeight: '400px', overflow: 'auto' }}>
           {data.builds?.map((b) => {
             const [duration] = displayCompactDuration(
+              // Started builds always have a start time.
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               now.diff(DateTime.fromISO(b.startTime!))
             );
             return (

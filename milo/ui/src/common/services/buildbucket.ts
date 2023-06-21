@@ -177,7 +177,7 @@ export interface GitilesCommit {
   readonly project: string;
   readonly id?: string;
   readonly ref?: string;
-  readonly position: number;
+  readonly position?: number;
 }
 
 export interface GerritChange {

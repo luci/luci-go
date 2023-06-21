@@ -22,10 +22,7 @@ import {
   BuildsService,
   BuildStatus,
 } from '@/common/services/buildbucket';
-import {
-  displayCompactDuration,
-  NUMERIC_TIME_FORMAT,
-} from '@/common/tools/time_utils';
+import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
 
 const PAGE_SIZE = 100;
@@ -55,8 +52,6 @@ export function PendingBuildsSection({ builderId }: PendingBuildsSectionProps) {
     throw error;
   }
 
-  const now = DateTime.now();
-
   return (
     <>
       <h3>
@@ -75,28 +70,21 @@ export function PendingBuildsSection({ builderId }: PendingBuildsSectionProps) {
       {isLoading ? (
         <CircularProgress />
       ) : (
-        <>
-          <ul>
-            {data.builds?.map((b) => {
-              const createTime = DateTime.fromISO(b.createTime);
-              const [duration] = displayCompactDuration(now.diff(createTime));
-              return (
-                <li key={b.id}>
-                  <Link href={getBuildURLPathFromBuildId(b.id)}>
-                    {b.number || `b${b.id}`}
-                  </Link>
-                  <span> </span>
-                  Created at:{' '}
-                  <Timestamp
-                    datetime={createTime}
-                    format={NUMERIC_TIME_FORMAT}
-                  />
-                  , waiting {duration}
-                </li>
-              );
-            })}
-          </ul>
-        </>
+        <ul css={{ maxHeight: '400px', overflow: 'auto' }}>
+          {data.builds?.map((b) => {
+            const createTime = DateTime.fromISO(b.createTime);
+            return (
+              <li key={b.id}>
+                <Link href={getBuildURLPathFromBuildId(b.id)}>
+                  {b.number || `b${b.id}`}
+                </Link>
+                <span> </span>
+                Created at:{' '}
+                <Timestamp datetime={createTime} format={SHORT_TIME_FORMAT} />
+              </li>
+            );
+          })}
+        </ul>
       )}
     </>
   );
