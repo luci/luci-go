@@ -20,7 +20,6 @@ import (
 	"strings"
 	"time"
 
-	"go.chromium.org/luci/buildbucket"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -33,16 +32,15 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/mask"
-	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/buildbucket/appengine/common"
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildstatus"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/appengine/tasks"
-	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -440,16 +438,17 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 		origStatus = b.Proto.Status
 
 		if mustIncludes(updateMask, req, "status") == mask.IncludeEntirely {
-			protoutil.SetStatus(now, b.Proto, req.Build.Status)
-			bs := &model.BuildStatus{Build: datastore.KeyForObj(ctx, &model.Build{ID: b.ID})}
-			switch err := datastore.Get(ctx, bs); {
-			case err == datastore.ErrNoSuchEntity:
-				// This is allowed during BuildStatus rollout.
-				// TODO(crbug.com/1430324): also check ErrNoSuchEntity.
-			case err != nil:
-				return errors.Annotate(err, "failed to get build status for build %d", b.ID).Err()
-			default:
-				bs.Status = req.Build.Status
+			statusUpdater := buildstatus.Updater{
+				Build:       b,
+				BuildStatus: req.Build.Status,
+				UpdateTime:  now,
+				PostProcess: tasks.SendOnBuildStatusChange,
+			}
+			bs, err := statusUpdater.Do(ctx)
+			if err != nil {
+				return errors.Annotate(err, "updating build status").Err()
+			}
+			if bs != nil {
 				toSave = append(toSave, bs)
 			}
 		}
@@ -463,26 +462,8 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 		switch {
 		case origStatus == b.Proto.Status:
 		case b.Proto.Status == pb.Status_STARTED:
-			// TODO(crbug.com/1416971): StartBuild has been fully enabled, remove
-			// the logic in UpdateBuild to start a build.
-			if err := tasks.NotifyPubSub(ctx, b); err != nil {
-				return nil
-			}
 		case isEndedStatus:
-			b.ClearLease()
 			shouldCancelChildren = true
-			invTask := &taskdefs.FinalizeResultDBGo{BuildId: b.ID}
-
-			err := parallel.FanOutIn(func(tks chan<- func() error) {
-				tks <- func() error { return tasks.NotifyPubSub(ctx, b) }
-				tks <- func() error {
-					return tasks.ExportBigQuery(ctx, b.ID, strings.Contains(b.ExperimentsString(), buildbucket.ExperimentBqExporterGo))
-				}
-				tks <- func() error { return tasks.FinalizeResultDB(ctx, invTask) }
-			})
-			if err != nil {
-				return err
-			}
 		case len(req.UpdateMask.GetPaths()) == 0:
 			// empty request
 		default:
