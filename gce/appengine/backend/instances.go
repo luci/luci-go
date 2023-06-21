@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -35,6 +36,11 @@ import (
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
 	"go.chromium.org/luci/gce/appengine/model"
+)
+
+var (
+	// Check createVM in queues.go for the naming logic
+	hostnameSuffixMatch = regexp.MustCompile(`-[0-9]+-[a-z0-9]{4}$`)
 )
 
 // setCreated sets the GCE instance as created in the datastore if it isn't already.
@@ -393,23 +399,43 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 // isLeakHuerestic determines if the given hostname is a leak from gce-provider
 // using a heuristic.
 func isLeakHuerestic(ctx context.Context, hostname, proj, zone string) bool {
-	// If this was an instance created by gce-provider. There must be a
-	// record for this. The record is referenced by the primary key that
-	// is partly the hostname for the vm. If the vm hostname was say
-	// 'host-xxxx` then the primary key for this entry must be `host`
+	// If this was an instance created by gce-provider. There must be a set
+	// of VM records for the prefix matching the hostname. Checking the
+	// existence of these will let us determine if this was a leak
 	id := hostname[:len(hostname)-5] // Remove the last 5 characters
-	vm := &model.VM{
-		ID: id,
-	}
-	err := datastore.Get(ctx, vm)
-	if err == nil {
-		if vm.Hostname != hostname {
-			logging.Debugf(ctx, "%s is a leaked instance replaced by %s", hostname, vm.Hostname)
-			return true
-		} else {
+	prefix := hostnameSuffixMatch.ReplaceAllString(hostname, "")
+	q := datastore.NewQuery(model.VMKind)
+	// Get all the VMs under the prefix
+	q = q.Eq("prefix", prefix)
+	// Update the leak var based on the VM records that we find
+	leak := false
+	cb := func(vm *model.VM) error {
+		switch {
+		case vm.Hostname == hostname:
 			logging.Debugf(ctx, "%s record exists. Not a leak", hostname)
+			leak = false
+			// Stop searing as this is not a leak
+			return datastore.Stop
+		case vm.ID == id:
+			logging.Debugf(ctx, "%s is a leaked instance replaced by %s", hostname, vm.Hostname)
+			leak = true
+			// Stop searching as this is a leak
+			return datastore.Stop
+		default:
+			// Prefix matches but we cannot find the id that matches. Maybe the pool
+			// was resized. Might be a leak unless above conditions are true for
+			// other matches
+			leak = true
 		}
+		return nil
 	}
-	logging.Warningf(ctx, "%s in %s and %s is not recognized by gce-provider", hostname, proj, zone)
-	return false
+	err := datastore.Run(ctx, q, cb)
+	if err != nil {
+		logging.Errorf(ctx, "isLeakHuerestic -- [%s]Error querying DB %v", hostname, err)
+		leak = false
+	}
+	if leak {
+		logging.Debugf(ctx, "%s is probably a leak in %s and %s", hostname, proj, zone)
+	}
+	return leak
 }

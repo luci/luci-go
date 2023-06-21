@@ -704,3 +704,50 @@ func TestAuditInstanceInZone(t *testing.T) {
 		})
 	})
 }
+
+func TestIsLeakHuerestic(t *testing.T) {
+	t.Parallel()
+
+	Convey("isLeakHuerestic", t, func() {
+		c := context.Background()
+		c = memory.Use(c)
+		datastore.GetTestable(c).Consistent(true)
+
+		err := datastore.Put(c, &model.VM{
+			ID:       "host-vm-test-time-10",
+			Hostname: "host-vm-test-time-10-xyz3",
+			Prefix:   "host-vm-test-time",
+		})
+		So(err, ShouldBeNil)
+		err = datastore.Put(c, &model.VM{
+			ID:       "host-vm-test-time-11",
+			Hostname: "host-vm-test-time-11-xwz2",
+			Prefix:   "host-vm-test-time",
+		})
+		So(err, ShouldBeNil)
+		Convey("positive results", func() {
+			Convey("valid leak with replacement", func() {
+				// Leak replaced by host-vm-test-time-10-xyz3
+				leak := isLeakHuerestic(c, "host-vm-test-time-10-ijk1", "project", "us-numba-1")
+				So(leak, ShouldBeTrue)
+			})
+			Convey("valid leak resized pool", func() {
+				// Leak and pool resized
+				leak := isLeakHuerestic(c, "host-vm-test-time-12-abc2", "project", "us-numba-1")
+				So(leak, ShouldBeTrue)
+			})
+		})
+		Convey("negative results", func() {
+			Convey("non gce-provider instance", func() {
+				// gce-provider didn't create this instance
+				leak := isLeakHuerestic(c, "sha512-collision-detect", "project", "us-numba-1")
+				So(leak, ShouldBeFalse)
+			})
+			Convey("instance without a current config", func() {
+				// Config is deleted for this prefix
+				leak := isLeakHuerestic(c, "dut-12-abc2", "project", "us-numba-1")
+				So(leak, ShouldBeFalse)
+			})
+		})
+	})
+}
