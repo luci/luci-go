@@ -146,6 +146,22 @@ func TestUpdateMetadata(t *testing.T) {
 			So(datastore.Get(ctx, metadataEntity), ShouldErrLike, datastore.ErrNoSuchEntity)
 		})
 
+		Convey("Delete Metadata entity for deleted service", func() {
+			So(UpdateMetadata(ctx), ShouldBeNil)
+			er, err := datastore.Exists(ctx, datastore.MakeKey(ctx, "ServiceMetadata", serviceName))
+			So(err, ShouldBeNil)
+			So(er.All(), ShouldBeTrue)
+			testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+				common.ServiceRegistryFilePath: &cfgcommonpb.ServicesCfg{
+					Services: []*cfgcommonpb.Service{}, // delete the existing Service
+				},
+			})
+			So(UpdateMetadata(ctx), ShouldBeNil)
+			er, err = datastore.Exists(ctx, datastore.MakeKey(ctx, "ServiceMetadata", serviceName))
+			So(err, ShouldBeNil)
+			So(er.Any(), ShouldBeFalse)
+		})
+
 		Convey("Legacy Metadata", func() {
 			legacyMetadata := &cfgcommonpb.ServiceDynamicMetadata{
 				Version: "1.0",

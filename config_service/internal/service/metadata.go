@@ -29,6 +29,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -44,6 +45,11 @@ func UpdateMetadata(ctx context.Context) error {
 	servicesCfg := &cfgcommonpb.ServicesCfg{}
 	if err := common.LoadSelfConfig(ctx, common.ServiceRegistryFilePath, servicesCfg); err != nil {
 		return fmt.Errorf("failed to load %s. Reason: %w", common.ServiceRegistryFilePath, err)
+	}
+
+	toDelete, err := computeServiceMetadataToDelete(ctx, servicesCfg)
+	if err != nil {
+		return err
 	}
 
 	var errs []error
@@ -64,15 +70,44 @@ func UpdateMetadata(ctx context.Context) error {
 				}
 			}
 		}
-		// TODO(yiwzhang): Delete service metadata entity for service that has
-		// been deleted in servicesCfg.
+
+		if len(toDelete) > 0 {
+			workC <- func() error {
+				services := make([]string, len(toDelete))
+				for i, key := range toDelete {
+					services[i] = key.StringID()
+				}
+				if err := datastore.Delete(ctx, toDelete); err != nil {
+					return fmt.Errorf("failed to delete ServiceMetadata for deleted service(s) [%s]: %w", strings.Join(services, ", "), err)
+				}
+				logging.Infof(ctx, "successfully deleted ServiceMetadata for deleted service(s): [%s]", strings.Join(services, ", "))
+				return nil
+			}
+		}
 	})
 
 	if perr != nil {
 		panic(fmt.Errorf("impossible pool error %w", perr))
 	}
-
 	return errors.Join(errs...)
+}
+
+func computeServiceMetadataToDelete(ctx context.Context, servicesCfg *cfgcommonpb.ServicesCfg) ([]*datastore.Key, error) {
+	var keys []*datastore.Key
+	if err := datastore.GetAll(ctx, datastore.NewQuery("ServiceMetadata").KeysOnly(true), &keys); err != nil {
+		return nil, fmt.Errorf("failed to query all service metadata keys: %w", err)
+	}
+	currentServices := stringset.New(len(servicesCfg.GetServices()))
+	for _, srv := range servicesCfg.GetServices() {
+		currentServices.Add(srv.GetId())
+	}
+	toDelete := keys[:0] // reuse the memory of `keys`
+	for _, key := range keys {
+		if !currentServices.Has(key.StringID()) {
+			toDelete = append(toDelete, key)
+		}
+	}
+	return toDelete, nil
 }
 
 func updateServiceMetadata(ctx context.Context, srv *cfgcommonpb.Service) error {
