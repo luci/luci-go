@@ -29,6 +29,10 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+var panicRunner = execmock.Register(func(_ execmock.None) (_ execmock.None, exitcode int, err error) {
+	panic("big boom")
+})
+
 func TestCmd(t *testing.T) {
 	args := []string{"echo", "hello", "there"}
 	if runtime.GOOS == "windows" {
@@ -168,6 +172,24 @@ func TestCmd(t *testing.T) {
 			So(cmd.Wait(), ShouldBeNil)
 			So(err, ShouldBeNil)
 			So(string(data), ShouldResemble, "hello world")
+		})
+
+		Convey(`can see panic`, func() {
+			uses := panicRunner.Mock(ctx)
+
+			cmd := exec.CommandContext(ctx, prog, args...)
+			out, err := cmd.StdoutPipe()
+			So(err, ShouldBeNil)
+
+			So(cmd.Start(), ShouldBeNil)
+			data, err := io.ReadAll(out)
+			So(err, ShouldBeNil)
+			So(data, ShouldBeEmpty)
+
+			So(cmd.Wait(), ShouldErrLike, "exit status 1")
+
+			_, _, panicStack := uses.Snapshot()[0].GetOutput(context.Background())
+			So(panicStack, ShouldNotBeEmpty)
 		})
 	})
 

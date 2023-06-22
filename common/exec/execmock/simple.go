@@ -15,6 +15,7 @@
 package execmock
 
 import (
+	"errors"
 	"io"
 	"os"
 	"sync"
@@ -35,7 +36,7 @@ type SimpleInput struct {
 	ExitCode int
 
 	// Emit this error back to the Usage.
-	Error error
+	Error string
 }
 
 // Simple implements a very basic mock for executables which can read from
@@ -88,6 +89,8 @@ func simpleMocker(opts SimpleInput) (stdin string, code int, err error) {
 
 	wg.Wait()
 	code = opts.ExitCode
-	err = opts.Error
+	if opts.Error != "" {
+		err = errors.New(opts.Error)
+	}
 	return
 }

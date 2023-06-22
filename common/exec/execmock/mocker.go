@@ -54,6 +54,15 @@
 // Finally, you can simulate any error from the Start function using the
 // StartError mock; This will not run a sub-process, but will instead produce
 // an error from Start and other functions which call Start.
+//
+// # Debugging Runners
+//
+// Occassionally you have a Runner which is sufficiently complex that you would
+// need to debug it (e.g. with delve). execmock supports this by doing the
+// following:
+//
+// First, run `go test . -execmock.list`, which will print out all registered
+// runners at the point that your test calls Intercept().
 package execmock
 
 import (

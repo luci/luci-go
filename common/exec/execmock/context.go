@@ -132,7 +132,9 @@ func (state *mockState) createMockInvocation(mc *execmockctx.MockCriteria, proc 
 			}
 			envvar, id := execmockserver.RegisterInvocation(server, ent.inputData, usage.setOutput)
 			return &execmockctx.MockInvocation{
-				ID: id, EnvVar: envvar,
+				ID:             id,
+				EnvVar:         envvar,
+				GetErrorOutput: usage.getErrorOutput,
 			}, nil
 		}
 	}

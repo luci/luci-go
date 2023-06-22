@@ -64,6 +64,11 @@ type MockInvocation struct {
 	// Practically speaking this will always look like
 	// "LUCI_EXECMOCK_CTX=localhost:port|invocationID".
 	EnvVar string
+
+	// After Wait()'ing for the process, the Cmd runner can call this to get an
+	// error (if any) which the Runner returned, as well as the panic stack (if
+	// any) from the runner.
+	GetErrorOutput func() (panicStack string, err error)
 }
 
 // CreateMockInvocation encapsulates the entire functionality which

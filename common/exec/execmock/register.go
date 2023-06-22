@@ -17,6 +17,7 @@ package execmock
 import (
 	"encoding/gob"
 	"reflect"
+	"runtime"
 	"sync"
 
 	"go.chromium.org/luci/common/errors"
@@ -25,6 +26,11 @@ import (
 // None can be used as an In or Out type for a runner function which doesn't
 // need an input or an output.
 type None struct{}
+
+type runnerMeta struct {
+	file string
+	line int
+}
 
 // Because it is required to call Register from inside a module or init()
 // function (or, I guess, TestMain), and https://go.dev/ref/spec#Package_initialization
@@ -36,6 +42,7 @@ var (
 	runnerMu              sync.Mutex
 	runnerID              uint64
 	runnerRegistry        map[uint64]reflect.Value
+	runnerRegistryMeta    map[uint64]runnerMeta
 	runnerRegistryMutable = true
 )
 
@@ -81,7 +88,7 @@ type RunnerFunction[In any, Out any] func(indata In) (outdata Out, exitcode int,
 //
 //	var gitMocker := Register(exitCoder)
 //	gitMocker.WithArgs("^", "git").Mock(ctx, 100)
-func Register[In any, Out any](runner RunnerFunction[In, Out]) Mocker[In, Out] {
+func Register[In any, Out any](runnerFn RunnerFunction[In, Out]) Mocker[In, Out] {
 	var inExample In
 	gob.RegisterName(gobName(inExample), inExample)
 
@@ -100,8 +107,16 @@ func Register[In any, Out any](runner RunnerFunction[In, Out]) Mocker[In, Out] {
 
 	if runnerRegistry == nil {
 		runnerRegistry = make(map[uint64]reflect.Value)
+		runnerRegistryMeta = make(map[uint64]runnerMeta)
 	}
-	runnerRegistry[id] = reflect.ValueOf(runner)
+
+	runnerRegistry[id] = reflect.ValueOf(runnerFn)
+	if _, file, line, ok := runtime.Caller(1); ok {
+		runnerRegistryMeta[id] = runnerMeta{
+			file: file,
+			line: line,
+		}
+	}
 
 	return &execMocker[In, Out]{runnerID: id}
 }

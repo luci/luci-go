@@ -66,7 +66,7 @@ func TestServer(t *testing.T) {
 				RunnerInput: "world",
 			}
 			capturedOutput := ""
-			serverCb := func(output string, err error) {
+			serverCb := func(output string, stk string, err error) {
 				capturedOutput = output
 			}
 			setenv(split2(RegisterInvocation(srv, &input, serverCb)))
@@ -85,7 +85,7 @@ func TestServer(t *testing.T) {
 				RunnerInput: TestStruct{[]string{"hello"}},
 			}
 			var capturedOutput TestStruct
-			serverCb := func(output TestStruct, err error) {
+			serverCb := func(output TestStruct, stk string, err error) {
 				capturedOutput = output
 			}
 			setenv(split2(RegisterInvocation(srv, &input, serverCb)))
@@ -104,7 +104,7 @@ func TestServer(t *testing.T) {
 				RunnerInput: &TestStruct{[]string{"hello"}},
 			}
 			var capturedOutput *TestStruct
-			serverCb := func(output *TestStruct, err error) {
+			serverCb := func(output *TestStruct, stk string, err error) {
 				capturedOutput = output
 			}
 			setenv(split2(RegisterInvocation(srv, &input, serverCb)))
@@ -123,7 +123,7 @@ func TestServer(t *testing.T) {
 				RunnerInput: &List{"hello", &List{"there", nil}},
 			}
 			var capturedOutput *List
-			serverCb := func(output *List, err error) {
+			serverCb := func(output *List, stk string, err error) {
 				capturedOutput = output
 			}
 			setenv(split2(RegisterInvocation(srv, &input, serverCb)))
@@ -143,7 +143,7 @@ func TestServer(t *testing.T) {
 			}
 			var capturedOutput string
 			var capturedErr error
-			serverCb := func(output string, err error) {
+			serverCb := func(output string, stk string, err error) {
 				capturedOutput = output
 				capturedErr = err
 			}
@@ -165,7 +165,7 @@ func TestServer(t *testing.T) {
 			}
 			var capturedOutput string
 			var capturedErr error
-			serverCb := func(output string, err error) {
+			serverCb := func(output string, stk string, err error) {
 				capturedOutput = output
 				capturedErr = err
 			}

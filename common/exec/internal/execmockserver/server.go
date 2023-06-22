@@ -51,6 +51,7 @@ type InvocationOutput struct {
 	InvocationID uint64
 	RunnerOutput any
 	RunnerError  string
+	RunnerPanic  string
 }
 
 type Server struct {
@@ -60,7 +61,7 @@ type Server struct {
 
 	invocationID uint64
 	inputs       map[uint64]*InvocationInput
-	outputs      map[uint64]func(any, error)
+	outputs      map[uint64]func(any, string, error)
 
 	server *http.Server
 }
@@ -95,7 +96,7 @@ func (e *Server) SetInvocationOutput(InvocationOutput *InvocationOutput, none *i
 	if InvocationOutput.RunnerError != "" {
 		runnerErr = errors.New(InvocationOutput.RunnerError)
 	}
-	outfn(InvocationOutput.RunnerOutput, runnerErr)
+	outfn(InvocationOutput.RunnerOutput, InvocationOutput.RunnerPanic, runnerErr)
 	return nil
 }
 
@@ -107,7 +108,7 @@ func (e *Server) Close() error {
 
 // RegisterInvocation registers an invocation and returns an environment
 // variable which can be set for a subprocess which calls `Intercept()`.
-func RegisterInvocation[Out any](s *Server, InvocationInput *InvocationInput, outputFn func(Out, error)) (string, uint64) {
+func RegisterInvocation[Out any](s *Server, InvocationInput *InvocationInput, outputFn func(Out, string, error)) (string, uint64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -115,15 +116,15 @@ func RegisterInvocation[Out any](s *Server, InvocationInput *InvocationInput, ou
 	id := s.invocationID
 
 	s.inputs[id] = InvocationInput
-	s.outputs[id] = func(data any, err error) {
+	s.outputs[id] = func(data any, panicStack string, err error) {
 		var o Out
 		oT := reflect.TypeOf(&o).Elem()
 		if oT.Kind() == reflect.Pointer {
 			tmp := reflect.New(oT.Elem())
 			tmp.Elem().Set(reflect.ValueOf(data))
-			outputFn(tmp.Interface().(Out), err)
+			outputFn(tmp.Interface().(Out), panicStack, err)
 		} else {
-			outputFn(data.(Out), err)
+			outputFn(data.(Out), panicStack, err)
 		}
 	}
 
@@ -133,7 +134,7 @@ func RegisterInvocation[Out any](s *Server, InvocationInput *InvocationInput, ou
 func Start() (ret *Server) {
 	ret = &Server{
 		inputs:  map[uint64]*InvocationInput{},
-		outputs: map[uint64]func(any, error){},
+		outputs: map[uint64]func(any, string, error){},
 	}
 
 	srv := rpc.NewServer()

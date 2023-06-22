@@ -144,7 +144,7 @@ func ExampleInit() {
 	fmt.Printf("allOtherUses: got %d calls\n", len(allOtherUses.Snapshot()))
 	fmt.Printf("outputUses: got %d calls\n", len(outputUses.Snapshot()))
 
-	incallMock, err := inputUses.Snapshot()[0].GetOutput(ctx)
+	incallMock, _, err := inputUses.Snapshot()[0].GetOutput(ctx)
 	must(errors.Annotate(err, "could not get output from --input call").Err())
 	fmt.Printf("incallMock: saw %q written to the mock program\n", incallMock.InputData)
 	// END: TEST CODE

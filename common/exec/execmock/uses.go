@@ -25,7 +25,8 @@ import (
 )
 
 type usage interface {
-	setOutput(any, error)
+	setOutput(any, string, error)
+	getErrorOutput() (string, error)
 }
 
 type uses interface {
@@ -75,7 +76,6 @@ func (u *Uses[Out]) Snapshot() []*Usage[Out] {
 	return ret
 }
 
-var ErrNoOutput = errors.New("sub-process did not write an output")
 var ErrProcessNotStarted = errors.New("sub-process did not start yet")
 
 // Usage represents a single `hit` for a given mock.
@@ -89,6 +89,7 @@ type Usage[Out any] struct {
 	mu            sync.Mutex
 	outputWritten chan struct{}
 	output        Out
+	panicStack    string
 	err           error
 }
 
@@ -145,11 +146,12 @@ func (u *Usage[Out]) Kill() error {
 	return ErrProcessNotStarted
 }
 
-func (u *Usage[Out]) setOutput(data any, err error) {
+func (u *Usage[Out]) setOutput(data any, panicStack string, err error) {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 
 	u.output = data.(Out)
+	u.panicStack = panicStack
 	u.err = err
 	close(u.outputWritten)
 }
@@ -161,11 +163,10 @@ func (u *Usage[Out]) setOutput(data any, err error) {
 // If this is Usage[None] then this returns (nil, nil)
 //
 // Possible errors:
-//   - ErrNoOutput if the sub-process did not write an Out value.
 //   - ctx.Err() if `ctx` is Done.
 //   - errors which occured when reading the output from the sub-process.
 //   - errors which the mock itself (i.e. the RunnerFunction) returned.
-func (u *Usage[Out]) GetOutput(ctx context.Context) (value Out, err error) {
+func (u *Usage[Out]) GetOutput(ctx context.Context) (value Out, panicStack string, err error) {
 	select {
 	case <-ctx.Done():
 		err = ctx.Err()
@@ -175,5 +176,11 @@ func (u *Usage[Out]) GetOutput(ctx context.Context) (value Out, err error) {
 
 	u.mu.Lock()
 	defer u.mu.Unlock()
-	return u.output, u.err
+	return u.output, u.panicStack, u.err
+}
+
+func (u *Usage[Out]) getErrorOutput() (string, error) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	return u.panicStack, u.err
 }

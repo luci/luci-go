@@ -20,6 +20,7 @@ import (
 	"net/rpc"
 	"os"
 	"reflect"
+	"runtime/debug"
 	"strconv"
 	"strings"
 
@@ -39,8 +40,12 @@ func (c *client) getIvocationInput() *InvocationInput {
 	return &ret
 }
 
-func (c *client) setInvocationOutput(rslt, err reflect.Value) {
-	out := &InvocationOutput{InvocationID: c.invocationID, RunnerOutput: rslt.Interface()}
+func (c *client) setInvocationOutput(rslt, err reflect.Value, panicStack string) {
+	out := &InvocationOutput{
+		InvocationID: c.invocationID,
+		RunnerOutput: rslt.Interface(),
+		RunnerPanic:  panicStack,
+	}
 
 	if !err.IsNil() {
 		out.RunnerError = err.Interface().(error).Error()
@@ -115,18 +120,19 @@ func ClientIntercept(runnerRegistry map[uint64]reflect.Value) (exitcode int, int
 
 	defer func() {
 		if thing := recover(); thing != nil {
+			stack := string(debug.Stack())
 			exitcode = 1
 			if err, ok := thing.(error); ok {
 				emClient.setInvocationOutput(
-					reflect.New(runnerFn.Type().Out(0)).Elem(), reflect.ValueOf(err))
+					reflect.New(runnerFn.Type().Out(0)).Elem(), reflect.ValueOf(err), stack)
 			} else {
 				emClient.setInvocationOutput(
-					reflect.New(runnerFn.Type().Out(0)).Elem(), reflect.ValueOf(errors.Reason("%s", thing).Err()))
+					reflect.New(runnerFn.Type().Out(0)).Elem(), reflect.ValueOf(errors.Reason("%s", thing).Err()), stack)
 			}
 		}
 	}()
 	results := runnerFn.Call([]reflect.Value{v})
-	emClient.setInvocationOutput(results[0], results[2])
+	emClient.setInvocationOutput(results[0], results[2], "")
 
 	return int(results[1].Int()), true
 }

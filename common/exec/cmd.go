@@ -24,6 +24,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
+	"sync"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/environ"
@@ -36,6 +38,26 @@ var curExe, curExeErr = os.Executable()
 // ErrUseConstructor is returned from methods of Cmd if the Cmd struct was
 // created without using Command or CommandContext.
 var ErrUseConstructor = errors.New("you must use Command or CommandContext to create a usable Cmd")
+
+type mockPayload struct {
+	// mocker is only set if mocking is enabled for this process.
+	mocker execmockctx.CreateMockInvocation
+
+	// We store the original user-provided `name` for this Cmd in case we need to
+	// fall back to passthrough mode.
+	originalName string
+
+	// If mocked, this is a unique ID for this invocation. 0 means 'not mocked'.
+	invocationID uint64
+
+	// true iff this Cmd should be `chatty`
+	chatty bool
+
+	// buffering stdout for Output (and other modes), or stdout+stderr for CombinedOutput
+	stdoutBuf *bytes.Buffer
+	// buffering stderr for Output (and other modes).
+	stderrBuf *bytes.Buffer
+}
 
 // Cmd behaves like an "os/exec".Cmd, except that it can be mocked using the
 // "go.chromium.org/luci/common/exec/execmock" package.
@@ -52,23 +74,8 @@ type Cmd struct {
 	// set to true in Command and CommandContext.
 	safelyCreated bool
 
-	// We store the original user-provided `name` for this Cmd in case we need to
-	// fall back to passthrough mode.
-	originalName string
-
-	// mocker is only set if mocking is enabled for this process.
-	mocker execmockctx.CreateMockInvocation
-
-	// If mocked, this is a unique ID for this invocation. 0 means 'not mocked'.
-	invocationID uint64
-
-	// true iff this Cmd should be `chatty`
-	chatty bool
-
-	// buffering stdout for Output (and other modes), or stdout+stderr for CombinedOutput
-	stdoutBuf *bytes.Buffer
-	// buffering stderr for Output (and other modes).
-	stderrBuf *bytes.Buffer
+	mock      *mockPayload
+	waitDefer func()
 }
 
 func multiWriter(a, b io.Writer) io.Writer {
@@ -79,6 +86,36 @@ func multiWriter(a, b io.Writer) io.Writer {
 		return a
 	}
 	return io.MultiWriter(a, b)
+}
+
+var chattyMu sync.Mutex
+
+// chattySession implements a sprintf-like function to render a line which will
+// go into an internal buffer, and a closer, which will write the whole buffer
+// synchronously.
+//
+// This construction reduces the amount of mixed chatty output when running
+// multiple mocked processes in parallel.
+//
+// Unfortunately, in chatty mode, there will be some synchronization introduced
+// to the application which is not present in non-chatty mode, but this probably
+// can't be helped much; Firing the buffered blocks off to a goroutine sort of
+// works, but you need to introduce a way to close the chatty channel and wait
+// for the goroutine to complete; otherwise you risk losing random chunks (or
+// maybe all!) of the chatty output.
+type chattySession struct {
+	buf []string
+}
+
+func (c *chattySession) printlnf(msg string, args ...any) {
+	c.buf = append(c.buf, fmt.Sprintf(msg, args...))
+}
+
+func (c *chattySession) dump() {
+	toWrite := strings.Join(c.buf, "\n") + "\n"
+	chattyMu.Lock()
+	defer chattyMu.Unlock()
+	os.Stderr.WriteString(toWrite)
 }
 
 // applyMock will look up a mock from the `mocker` and then adjust the state of
@@ -94,29 +131,27 @@ func multiWriter(a, b io.Writer) io.Writer {
 // applyMock will only ever do it's action to cover a single Start event; just
 // like the underlying exec.Cmd object, this Cmd is not meant to be used
 // multiple times (it will enter an inconsistent state).
-func (c *Cmd) applyMock() (restore func(), err error) {
+func (c *Cmd) applyMock() (restore func(), mock *mockPayload, err error) {
 	if !c.safelyCreated {
 		c.Err = ErrUseConstructor
 	}
 	if c.Err != nil {
-		return nil, c.Err
+		return nil, nil, c.Err
 	}
-	if c.mocker == nil {
-		return func() {}, nil
+	if c.mock == nil {
+		return func() {}, nil, nil
 	}
 
-	invocation, err := c.mocker(execmockctx.NewMockCriteria(c.Cmd), &c.Cmd.Process)
-	c.mocker = nil // we should never try to mock this Cmd again
+	mock = c.mock
+	invocation, err := mock.mocker(execmockctx.NewMockCriteria(c.Cmd), &c.Cmd.Process)
+	c.mock = nil // we should never try to mock this Cmd again
 	if err != nil {
 		c.Err = err
-		return nil, c.Err
+		return nil, nil, c.Err
 	}
 	if invocation == nil {
 		// passthrough mode; we have to un-mock and possibly do a LookPath.
-		c.Path = c.originalName
-		c.stdoutBuf = nil
-		c.stderrBuf = nil
-		c.chatty = false
+		c.Path = mock.originalName
 		if filepath.Base(c.Path) == c.Path {
 			// NOTE: We don't want to use LookPath from this module's namespace to
 			// prevent accidental overrides, so we use exec.LookPath explicitly.
@@ -128,33 +163,36 @@ func (c *Cmd) applyMock() (restore func(), err error) {
 				c.Err = err
 			}
 		}
-		return func() {}, c.Err
+		return func() {}, nil, c.Err
 	}
 
-	c.invocationID = invocation.ID
+	mock.invocationID = invocation.ID
 
 	oldPath := c.Path
 	oldEnv := c.Env
 
 	sysEnv := environ.System()
 
-	if c.chatty {
+	if mock.chatty {
 		// stdoutBuf or stderrBuf may already be set if StdxxxPipe have already been
 		// called. If they have, then we don't want to touch them again, here, since
 		// StdxxxPipe have already set them to be correctly read by Wait()'s chatty
 		// printer.
-		if c.stdoutBuf == nil {
-			c.stdoutBuf = &bytes.Buffer{}
-			c.Stdout = multiWriter(c.stdoutBuf, c.Stdout)
+		if mock.stdoutBuf == nil {
+			mock.stdoutBuf = &bytes.Buffer{}
+			c.Stdout = multiWriter(mock.stdoutBuf, c.Stdout)
 		}
-		if c.stderrBuf == nil {
-			c.stderrBuf = &bytes.Buffer{}
-			c.Stderr = multiWriter(c.stderrBuf, c.Stderr)
+		if mock.stderrBuf == nil {
+			mock.stderrBuf = &bytes.Buffer{}
+			c.Stderr = multiWriter(mock.stderrBuf, c.Stderr)
 		}
 
-		fmt.Fprintf(os.Stderr, "execmock: Start(invocation=%d): %q\n", invocation.ID, c.Args)
+		var chat chattySession
+		defer chat.dump()
+
+		chat.printlnf("execmock: Start(invocation=%d): %q", invocation.ID, c.Args)
 		if c.Dir != "" {
-			fmt.Fprintln(os.Stderr, "  cwd:", c.Dir)
+			chat.printlnf("  cwd: %s", c.Dir)
 		}
 		if c.Env != nil {
 			diffEnv := sysEnv.Clone()
@@ -163,17 +201,17 @@ func (c *Cmd) applyMock() (restore func(), err error) {
 				sysVal, sysHas := diffEnv.Lookup(k)
 				if sysHas {
 					if sysVal != v {
-						fmt.Fprintf(os.Stderr, "  env~ %s=%s\n", k, v)
+						chat.printlnf("  env~ %s=%s", k, v)
 					}
 				} else {
-					fmt.Fprintf(os.Stderr, "  env+ %s=%s\n", k, v)
+					chat.printlnf("  env+ %s=%s", k, v)
 				}
 				diffEnv.Remove(k)
 				return nil
 			})
 			// diffEnv now contains envvars which aren't in cmdEnv
 			_ = diffEnv.Iter(func(k, v string) error {
-				fmt.Fprintf(os.Stderr, "  env- %s\n", k)
+				chat.printlnf("  env- %s", k)
 				return nil
 			})
 		}
@@ -191,6 +229,48 @@ func (c *Cmd) applyMock() (restore func(), err error) {
 		c.Env = append(c.Env, invocation.EnvVar)
 	}
 
+	if mock.chatty {
+		c.waitDefer = func() {
+			// not entirely sure how ProcessState could be nil, but check it, just the
+			// same.
+			if c.ProcessState != nil {
+				c.waitDefer = nil
+
+				outbuf, errbuf := mock.stdoutBuf, mock.stderrBuf
+				runnerPanic, runnerErr := invocation.GetErrorOutput()
+
+				var chat chattySession
+				defer chat.dump()
+
+				chat.printlnf("execmock: Wait(invocation=%d): %v", mock.invocationID, c.ProcessState)
+				if runnerErr != nil {
+					chat.printlnf("  ERROR: %s", runnerErr)
+				}
+				if runnerPanic != "" {
+					chat.printlnf("  PANIC:")
+					for scn := bufio.NewScanner(strings.NewReader(runnerPanic)); scn.Scan(); {
+						chat.printlnf("    !> %s", scn.Bytes())
+					}
+				}
+
+				// we use bytes.NewReader because `buf` itself may still be held by
+				// CombinedOutput. This won't actually do any additional allocations, but
+				// it will prevent the buffer in `buf` from being consumed before
+				// CombinedOutput can return it.
+				if outbuf != nil {
+					for scn := bufio.NewScanner(bytes.NewReader(outbuf.Bytes())); scn.Scan(); {
+						chat.printlnf("  O> %s", scn.Bytes())
+					}
+				}
+				if errbuf != nil {
+					for scn := bufio.NewScanner(bytes.NewReader(errbuf.Bytes())); scn.Scan(); {
+						chat.printlnf("  E> %s", scn.Bytes())
+					}
+				}
+			}
+		}
+	}
+
 	restore = func() {
 		c.Path = oldPath
 		c.Env = oldEnv
@@ -203,13 +283,13 @@ func (c *Cmd) CombinedOutput() ([]byte, error) {
 	stdoutSet := c.Stdout != nil
 	stderrSet := c.Stderr != nil
 
-	restore, err := c.applyMock()
+	restore, mock, err := c.applyMock()
 	if err != nil {
 		return nil, err
 	}
 	defer restore()
 
-	if !c.chatty {
+	if mock != nil && !mock.chatty {
 		return c.Cmd.CombinedOutput()
 	}
 
@@ -227,12 +307,12 @@ func (c *Cmd) CombinedOutput() ([]byte, error) {
 
 	// At this point applyMock has set up two buffers to capture stdout/stderr.
 	// We want to combine them, so just remove stderrBuf and duplicate stdoutBuf.
-	c.stderrBuf = nil
-	c.Stderr = c.stdoutBuf
+	mock.stderrBuf = nil
+	c.Stderr = mock.stdoutBuf
 
 	// keep a ref to stdoutBuf so that the post-Wait chatty printer doesn't
 	// replace it with nil.
-	buf := c.stdoutBuf
+	buf := mock.stdoutBuf
 	err = c.Run()
 	return buf.Bytes(), err
 }
@@ -242,13 +322,13 @@ func (c *Cmd) Output() ([]byte, error) {
 	stdoutSet := c.Stdout != nil
 	captureStderr := c.Cmd.Stderr == nil
 
-	restore, err := c.applyMock()
+	restore, mock, err := c.applyMock()
 	if err != nil {
 		return nil, err
 	}
 	defer restore()
 
-	if !c.chatty {
+	if mock == nil || !mock.chatty {
 		return c.Cmd.Output()
 	}
 
@@ -260,10 +340,10 @@ func (c *Cmd) Output() ([]byte, error) {
 
 	// keep refs to stdxxxBuf so we can use them after the post-Wait chatty
 	// printer nil's them out.
-	stdoutBuf := c.stdoutBuf
+	stdoutBuf := mock.stdoutBuf
 	var stderrBuf *bytes.Buffer
 	if captureStderr {
-		stderrBuf = c.stderrBuf
+		stderrBuf = mock.stderrBuf
 	}
 
 	err = c.Run()
@@ -286,7 +366,7 @@ func (c *Cmd) Run() error {
 
 // Start operates the same as "os/exec".Cmd.Start.
 func (c *Cmd) Start() error {
-	restore, err := c.applyMock()
+	restore, _, err := c.applyMock()
 	if err != nil {
 		return err
 	}
@@ -297,29 +377,9 @@ func (c *Cmd) Start() error {
 
 // Wait operates the same as "os/exec".Cmd.Wait.
 func (c *Cmd) Wait() error {
-	defer func() {
-		if c.ProcessState != nil && c.chatty {
-			outbuf, errbuf := c.stdoutBuf, c.stderrBuf
-			c.stdoutBuf = nil
-			c.stderrBuf = nil
-
-			fmt.Fprintf(os.Stderr, "execmock: Wait(invocation=%d): %v\n", c.invocationID, c.ProcessState)
-			// we use bytes.NewReader because `buf` itself may still be held by
-			// CombinedOutput. This won't actually do any additional allocations, but
-			// it will prevent the buffer in `buf` from being consumed before
-			// CombinedOutput can return it.
-			if outbuf != nil {
-				for scn := bufio.NewScanner(bytes.NewReader(outbuf.Bytes())); scn.Scan(); {
-					fmt.Fprintf(os.Stderr, "  O> %s\n", scn.Bytes())
-				}
-			}
-			if errbuf != nil {
-				for scn := bufio.NewScanner(bytes.NewReader(errbuf.Bytes())); scn.Scan(); {
-					fmt.Fprintf(os.Stderr, "  E> %s\n", scn.Bytes())
-				}
-			}
-		}
-	}()
+	if c.waitDefer != nil {
+		defer c.waitDefer()
+	}
 
 	return c.Cmd.Wait()
 }
@@ -332,23 +392,23 @@ type fakePipeReader struct {
 // StderrPipe operates the same as "os/exec".Cmd.StderrPipe.
 func (c *Cmd) StderrPipe() (io.ReadCloser, error) {
 	reader, err := c.Cmd.StderrPipe()
-	if err != nil || !c.chatty {
+	if err != nil || c.mock == nil || !c.mock.chatty {
 		return reader, err
 	}
 
-	c.stderrBuf = &bytes.Buffer{}
-	return &fakePipeReader{io.TeeReader(reader, c.stderrBuf), reader}, nil
+	c.mock.stderrBuf = &bytes.Buffer{}
+	return &fakePipeReader{io.TeeReader(reader, c.mock.stderrBuf), reader}, nil
 }
 
 // StdoutPipe operates the same as "os/exec".Cmd.StdoutPipe.
 func (c *Cmd) StdoutPipe() (io.ReadCloser, error) {
 	reader, err := c.Cmd.StdoutPipe()
-	if err != nil || !c.chatty {
+	if err != nil || c.mock == nil || !c.mock.chatty {
 		return reader, err
 	}
 
-	c.stdoutBuf = &bytes.Buffer{}
-	return &fakePipeReader{io.TeeReader(reader, c.stdoutBuf), reader}, nil
+	c.mock.stdoutBuf = &bytes.Buffer{}
+	return &fakePipeReader{io.TeeReader(reader, c.mock.stdoutBuf), reader}, nil
 }
 
 // We don't need to emulate these; the native cmd impl should take care of it.
@@ -357,13 +417,13 @@ func (c *Cmd) StdoutPipe() (io.ReadCloser, error) {
 
 func commandImpl(ctx context.Context, name string, arg []string, mkFn func(ctx context.Context, name string, arg ...string) *exec.Cmd) *Cmd {
 	mocker, chatty := execmockctx.GetMockCreator(ctx)
-	ret := &Cmd{safelyCreated: true, mocker: mocker, chatty: chatty}
-	if ret.mocker == nil {
+	ret := &Cmd{safelyCreated: true, mock: &mockPayload{mocker: mocker, chatty: chatty}}
+	if ret.mock == nil {
 		ret.Cmd = mkFn(ctx, name, arg...)
 		return ret
 	}
 
-	ret.originalName = name
+	ret.mock.originalName = name
 	if curExeErr != nil {
 		ret.Err = errors.Annotate(curExeErr, "cannot resolve os.Executable for execmock").Err()
 		return ret
