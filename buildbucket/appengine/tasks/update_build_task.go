@@ -130,8 +130,11 @@ func validateBuildTaskUpdate(ctx context.Context, req *pb.BuildTaskUpdate) error
 	if req.BuildId == "" {
 		return errors.Reason("build_id required").Err()
 	}
-	if req.GetTask().GetId().GetId() == "" {
+	if req.Task.GetId().GetId() == "" {
 		return errors.Reason("task.id: required").Err()
+	}
+	if req.Task.GetUpdateId() == 0 {
+		return errors.Reason("task.UpdateId: required").Err()
 	}
 	if err := validateTaskStatus(req.Task.Status); err != nil {
 		return errors.Annotate(err, "task.Status").Err()
@@ -170,13 +173,15 @@ func updateTaskEntity(ctx context.Context, req *pb.BuildTaskUpdate, buildID int6
 		}
 		build := entities[0].(*model.Build)
 		infra := entities[1].(*model.BuildInfra)
-		if req.Task.UpdateId < infra.Proto.Backend.Task.UpdateId {
+		if req.Task.UpdateId <= infra.Proto.Backend.Task.UpdateId {
 			// Returning nil since there is no work to do here.
 			// The task in the request is outdated.
 			return nil
 		}
+		// Required fields to change
 		build.Proto.UpdateTime = timestamppb.New(clock.Now(ctx))
-		infra.Proto.Backend.Task = req.Task
+		proto.Merge(infra.Proto.Backend.Task, req.Task)
+
 		toSave := []any{build, infra}
 		return datastore.Put(ctx, toSave)
 	}, nil)

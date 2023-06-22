@@ -231,6 +231,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 						Id:     "one",
 						Target: "swarming",
 					},
+					UpdateId: 1,
 				},
 			}
 			So(validateBuildTaskUpdate(ctx, req), ShouldBeNil)
@@ -239,7 +240,9 @@ func TestValidateTaskUpdate(t *testing.T) {
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 			}
-			So(validateBuildTaskUpdate(ctx, req), ShouldBeError)
+			err := validateBuildTaskUpdate(ctx, req)
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, "task.id: required")
 		})
 		Convey("is missing build ID", func() {
 			req := &pb.BuildTaskUpdate{
@@ -251,7 +254,9 @@ func TestValidateTaskUpdate(t *testing.T) {
 					},
 				},
 			}
-			So(validateBuildTaskUpdate(ctx, req), ShouldBeError)
+			err := validateBuildTaskUpdate(ctx, req)
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, "build_id required")
 		})
 		Convey("is missing task ID", func() {
 			req := &pb.BuildTaskUpdate{
@@ -260,7 +265,24 @@ func TestValidateTaskUpdate(t *testing.T) {
 					Status: pb.Status_STARTED,
 				},
 			}
-			So(validateBuildTaskUpdate(ctx, req), ShouldBeError)
+			err := validateBuildTaskUpdate(ctx, req)
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, "task.id: required")
+		})
+		Convey("is missing update ID", func() {
+			req := &pb.BuildTaskUpdate{
+				BuildId: "1",
+				Task: &pb.Task{
+					Status: pb.Status_STARTED,
+					Id: &pb.TaskID{
+						Id:     "one",
+						Target: "swarming",
+					},
+				},
+			}
+			err := validateBuildTaskUpdate(ctx, req)
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, "task.UpdateId: required")
 		})
 		Convey("is invalid task status: SCHEDULED", func() {
 			req := &pb.BuildTaskUpdate{
@@ -271,9 +293,12 @@ func TestValidateTaskUpdate(t *testing.T) {
 						Id:     "one",
 						Target: "swarming",
 					},
+					UpdateId: 1,
 				},
 			}
-			So(validateBuildTaskUpdate(ctx, req), ShouldBeError)
+			err := validateBuildTaskUpdate(ctx, req)
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, "invalid status SCHEDULED")
 		})
 		Convey("is invalid task status: ENDED_MASK", func() {
 			req := &pb.BuildTaskUpdate{
@@ -284,9 +309,12 @@ func TestValidateTaskUpdate(t *testing.T) {
 						Id:     "one",
 						Target: "swarming",
 					},
+					UpdateId: 1,
 				},
 			}
-			So(validateBuildTaskUpdate(ctx, req), ShouldBeError)
+			err := validateBuildTaskUpdate(ctx, req)
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, "invalid status ENDED_MASK")
 		})
 		Convey("is invalid task status: STATUS_UNSPECIFIED", func() {
 			req := &pb.BuildTaskUpdate{
@@ -297,9 +325,12 @@ func TestValidateTaskUpdate(t *testing.T) {
 						Id:     "one",
 						Target: "swarming",
 					},
+					UpdateId: 1,
 				},
 			}
-			So(validateBuildTaskUpdate(ctx, req), ShouldBeError)
+			err := validateBuildTaskUpdate(ctx, req)
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, "invalid status STATUS_UNSPECIFIED")
 		})
 		Convey("is invalid task detail", func() {
 
@@ -319,9 +350,12 @@ func TestValidateTaskUpdate(t *testing.T) {
 						Id:     "one",
 						Target: "swarming",
 					},
+					UpdateId: 1,
 				},
 			}
-			So(validateBuildTaskUpdate(ctx, req), ShouldBeError)
+			err := validateBuildTaskUpdate(ctx, req)
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, "task.details is greater than 10 kb")
 		})
 	})
 }
@@ -339,6 +373,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 				Id:     "1",
 				Target: "swarming",
 			},
+			Link:     "a link",
 			UpdateId: 50,
 		}
 		infraProto := &pb.BuildInfra{
@@ -373,7 +408,6 @@ func TestUpdateTaskEntity(t *testing.T) {
 						Id:     "1",
 						Target: "swarming",
 					},
-					Link:     "a link",
 					UpdateId: 100,
 				},
 			}
@@ -471,7 +505,8 @@ func TestUpdateBuildTask(t *testing.T) {
 							Id:     "one",
 							Target: "swarming://chromium-swarm",
 						},
-						Status: pb.Status_SCHEDULED,
+						Status:   pb.Status_SCHEDULED,
+						UpdateId: 1,
 					},
 				},
 			},
@@ -487,14 +522,18 @@ func TestUpdateBuildTask(t *testing.T) {
 						Id:     "one",
 						Target: "swarming://chromium-swarm",
 					},
+					UpdateId:    2,
+					SummaryHtml: "imo, html is ugly to read",
 				},
 			}
 			body := makeUpdateBuildTaskPubsubMsg(req, "msg_id_1")
 			So(UpdateBuildTask(ctx, body), ShouldBeRPCOK)
 
-			expectedBuild := &model.BuildInfra{Build: datastore.KeyForObj(ctx, &model.Build{ID: 1})}
-			So(datastore.Get(ctx, expectedBuild), ShouldBeNil)
-			So(expectedBuild.Proto.Backend.Task.Status, ShouldEqual, pb.Status_STARTED)
+			expectedBuildInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, &model.Build{ID: 1})}
+			So(datastore.Get(ctx, expectedBuildInfra), ShouldBeNil)
+			So(expectedBuildInfra.Proto.Backend.Task.Status, ShouldEqual, pb.Status_STARTED)
+			So(expectedBuildInfra.Proto.Backend.Task.UpdateId, ShouldEqual, 2)
+			So(expectedBuildInfra.Proto.Backend.Task.SummaryHtml, ShouldEqual, "imo, html is ugly to read")
 		})
 	})
 }

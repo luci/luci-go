@@ -43,6 +43,9 @@ type Task struct {
 
 	Id *TaskID `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// (optional) Human-clickable link to the status page for this task.
+	// This should be populated as part of the Task response in RunTaskResponse.
+	// Any update to this via the Task field in BuildTaskUpdate will override the
+	// existing link that was provided in RunTaskResponse.
 	Link string `protobuf:"bytes,2,opt,name=link,proto3" json:"link,omitempty"`
 	// The backend's status for handling this task.
 	Status Status `protobuf:"varint,3,opt,name=status,proto3,enum=buildbucket.v2.Status" json:"status,omitempty"`
@@ -56,6 +59,10 @@ type Task struct {
 	// startup/end time, etc.
 	//
 	// This is limited to 10KB (binary PB + gzip(5))
+	//
+	// This should be populated as part of the Task response in RunTaskResponse.
+	// Any update to this via the Task field in BuildTaskUpdate will override the
+	// existing details that were provided in RunTaskResponse.
 	Details *structpb.Struct `protobuf:"bytes,6,opt,name=details,proto3" json:"details,omitempty"`
 	// A monotonically increasing integer set by the backend to track
 	// which task is the most up to date when calling UpdateBuildTask.

@@ -27,6 +27,9 @@ message Task {
   TaskID id = 1 [ (buildbucket.v2.register_build_task_field_option).field_behavior = REQUIRED ];
 
   // (optional) Human-clickable link to the status page for this task.
+  // This should be populated as part of the Task response in RunTaskResponse.
+  // Any update to this via the Task field in BuildTaskUpdate will override the
+  // existing link that was provided in RunTaskResponse.
   string link = 2;
 
   // The backend's status for handling this task.
@@ -44,6 +47,10 @@ message Task {
   // startup/end time, etc.
   //
   // This is limited to 10KB (binary PB + gzip(5))
+  //
+  // This should be populated as part of the Task response in RunTaskResponse.
+  // Any update to this via the Task field in BuildTaskUpdate will override the
+  // existing details that were provided in RunTaskResponse.
   google.protobuf.Struct details = 6;
 
   // A monotonically increasing integer set by the backend to track
