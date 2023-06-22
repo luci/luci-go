@@ -18,61 +18,7 @@ import { destroy, Instance, isAlive, types } from 'mobx-state-tree';
 
 import { FakeStorage } from '@/testing_tools/fakes/fake_storage';
 
-import {
-  BuildStepsConfig,
-  BuildStepsConfigInstance,
-  UserConfig,
-  UserConfigInstance,
-  V1_CACHE_KEY,
-  V2_CACHE_KEY,
-} from './user_config';
-
-describe('BuildStepsConfig', () => {
-  let store: BuildStepsConfigInstance;
-
-  beforeEach(() => {
-    store = BuildStepsConfig.create({});
-  });
-  afterEach(() => {
-    destroy(store);
-  });
-
-  it('should set pins recursively', async () => {
-    // When pinned is true, set pins for all ancestors.
-    store.setStepPin('parent|step|child', true);
-    expect(store.stepIsPinned('parent')).toBeTruthy();
-    expect(store.stepIsPinned('parent|step')).toBeTruthy();
-    expect(store.stepIsPinned('parent|step|child')).toBeTruthy();
-    expect(store.stepIsPinned('parent|step|child2')).toBeFalsy();
-    expect(store.stepIsPinned('parent|step2')).toBeFalsy();
-    expect(store.stepIsPinned('parent|step2|child1')).toBeFalsy();
-
-    store.setStepPin('parent|step|child2', true);
-    expect(store.stepIsPinned('parent')).toBeTruthy();
-    expect(store.stepIsPinned('parent|step')).toBeTruthy();
-    expect(store.stepIsPinned('parent|step|child')).toBeTruthy();
-    expect(store.stepIsPinned('parent|step|child2')).toBeTruthy();
-    expect(store.stepIsPinned('parent|step2')).toBeFalsy();
-    expect(store.stepIsPinned('parent|step2|child1')).toBeFalsy();
-
-    store.setStepPin('parent|step2|child', true);
-    expect(store.stepIsPinned('parent')).toBeTruthy();
-    expect(store.stepIsPinned('parent|step')).toBeTruthy();
-    expect(store.stepIsPinned('parent|step|child')).toBeTruthy();
-    expect(store.stepIsPinned('parent|step|child2')).toBeTruthy();
-    expect(store.stepIsPinned('parent|step2')).toBeTruthy();
-    expect(store.stepIsPinned('parent|step2|child')).toBeTruthy();
-
-    // When pinned is false, remove pins for all descendants.
-    store.setStepPin('parent|step', false);
-    expect(store.stepIsPinned('parent')).toBeTruthy();
-    expect(store.stepIsPinned('parent|step')).toBeFalsy();
-    expect(store.stepIsPinned('parent|step|child')).toBeFalsy();
-    expect(store.stepIsPinned('parent|step|child2')).toBeFalsy();
-    expect(store.stepIsPinned('parent|step2')).toBeTruthy();
-    expect(store.stepIsPinned('parent|step2|child')).toBeTruthy();
-  });
-});
+import { UserConfig, UserConfigInstance } from './user_config';
 
 describe('UserConfig', () => {
   const RootStore = types
@@ -106,77 +52,6 @@ describe('UserConfig', () => {
     if (rootStore && isAlive(rootStore)) {
       destroy(rootStore);
     }
-  });
-
-  it('should recover from config v1 cache', () => {
-    const storage = new FakeStorage();
-    storage.setItem(
-      V1_CACHE_KEY,
-      JSON.stringify({
-        steps: {
-          showSucceededSteps: true,
-          showDebugLogs: false,
-          expandByDefault: true,
-          stepPinTime: {
-            parent: Date.now(),
-            'parent|child':
-              Date.now() - Duration.fromObject({ hour: 2 }).toMillis(),
-          },
-        },
-        testResults: {
-          columnWidths: {
-            'v.column1': 300,
-            'v.column2': 400,
-          },
-        },
-        inputPropLineFoldTime: {
-          inputKey1: Date.now(),
-          inputKey2: Date.now() - Duration.fromObject({ hour: 2 }).toMillis(),
-        },
-        outputPropLineFoldTime: {
-          outputKey1: Date.now(),
-          outputKey2: Date.now() - Duration.fromObject({ hour: 2 }).toMillis(),
-        },
-        defaultBuildPageTabName: 'build-test-results',
-      })
-    );
-    const transientKeysTTL = Duration.fromObject({ hour: 1 }).toMillis();
-    store1 = UserConfig.create({}, { storage, transientKeysTTL });
-    store1.enableCaching();
-
-    expect(store1.build.defaultTab).toStrictEqual('build-test-results');
-    expect(store1.build.inputProperties.isFolded('inputKey1')).toBeTruthy();
-    expect(store1.build.inputProperties.isFolded('inputKey2')).toBeFalsy();
-    expect(store1.build.outputProperties.isFolded('outputKey1')).toBeTruthy();
-    expect(store1.build.outputProperties.isFolded('outputKey2')).toBeFalsy();
-    expect(store1.build.steps.showDebugLogs).toBeFalsy();
-    expect(store1.build.steps.stepIsPinned('parent')).toBeTruthy();
-    expect(store1.build.steps.stepIsPinned('parent|child')).toBeFalsy();
-    expect(store1.tests.columnWidths).toEqual({
-      'v.test_suite': 350, // coming from the default V1 configuration.
-      'v.column1': 300,
-      'v.column2': 400,
-    });
-    expect(storage.getItem(V1_CACHE_KEY)).toBeNull();
-
-    // Should store the config to the new cache location even when there's no
-    // user initiated action.
-    expect(storage.getItem(V2_CACHE_KEY)).not.toBeNull();
-    store2 = UserConfig.create({}, { storage, transientKeysTTL });
-    store2.enableCaching();
-    expect(store2.build.defaultTab).toStrictEqual('build-test-results');
-    expect(store2.build.inputProperties.isFolded('inputKey1')).toBeTruthy();
-    expect(store2.build.inputProperties.isFolded('inputKey2')).toBeFalsy();
-    expect(store2.build.outputProperties.isFolded('outputKey1')).toBeTruthy();
-    expect(store2.build.outputProperties.isFolded('outputKey2')).toBeFalsy();
-    expect(store2.build.steps.showDebugLogs).toBeFalsy();
-    expect(store2.build.steps.stepIsPinned('parent')).toBeTruthy();
-    expect(store2.build.steps.stepIsPinned('parent|child')).toBeFalsy();
-    expect(store2.tests.columnWidths).toEqual({
-      'v.test_suite': 350, // coming from the default V1 configuration.
-      'v.column1': 300,
-      'v.column2': 400,
-    });
   });
 
   it('should persist config to storage correctly', () => {

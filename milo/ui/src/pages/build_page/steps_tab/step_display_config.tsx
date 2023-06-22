@@ -38,7 +38,7 @@ import {
   StoreProvider,
   useStore,
 } from '@/common/store';
-import { ExpandStepOption } from '@/common/store/user_config';
+import { ExpandStepOption } from '@/common/store/user_config/build_config';
 import { commonStyles } from '@/common/styles/stylesheets';
 import { consumer } from '@/generic_libs/tools/lit_context';
 

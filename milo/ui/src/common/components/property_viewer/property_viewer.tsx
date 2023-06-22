@@ -16,7 +16,7 @@ import { EditorConfiguration, ModeSpec } from 'codemirror';
 import { useRef } from 'react';
 import { useLatest } from 'react-use';
 
-import { PropertyViewerConfigInstance } from '@/common/store/user_config';
+import { PropertyViewerConfigInstance } from '@/common/store/user_config/build_config';
 import { CodeMirrorEditor } from '@/generic_libs/components/code_mirror_editor';
 
 export interface PropertyViewerProps {

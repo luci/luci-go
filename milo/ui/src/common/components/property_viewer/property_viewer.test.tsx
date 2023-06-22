@@ -20,7 +20,7 @@ import { destroy } from 'mobx-state-tree';
 import {
   PropertyViewerConfig,
   PropertyViewerConfigInstance,
-} from '@/common/store/user_config';
+} from '@/common/store/user_config/build_config';
 
 import { PropertyViewer } from './property_viewer';
 

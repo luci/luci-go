@@ -37,7 +37,7 @@ import {
 import { BuildStatus } from '@/common/services/buildbucket';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { StepExt } from '@/common/store/build_state';
-import { ExpandStepOption } from '@/common/store/user_config';
+import { ExpandStepOption } from '@/common/store/user_config/build_config';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
 import {
   displayCompactDuration,
