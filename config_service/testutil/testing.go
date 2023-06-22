@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/config_service/internal/model"
 
@@ -56,6 +57,7 @@ func SetupContext() context.Context {
 	// Intentionally not enabling AutoIndex to ensure the composite index must
 	// be explicitly added
 	datastore.GetTestable(ctx).AutoIndex(false)
+	ctx = caching.WithEmptyProcessCache(ctx)
 	return ctx
 }
 

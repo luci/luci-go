@@ -30,6 +30,9 @@ import (
 )
 
 const (
+	// ACLRegistryFilePath is the path of luci-config self config file where
+	// it stores the service ACL configurations.
+	ACLRegistryFilePath = "acl.cfg"
 	// ServiceRegistryFilePath is the path of luci-config self config file where
 	// it stores a list of registered services.
 	ServiceRegistryFilePath = "services.cfg"
