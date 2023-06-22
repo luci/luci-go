@@ -4,5 +4,5 @@
     "lib": ["es2021", "dom"],
     "types": ["cypress", "node"]
   },
-  "include": ["**/*.ts"]
+  "include": ["**/*.ts", "../cypress.config.ts"]
 }

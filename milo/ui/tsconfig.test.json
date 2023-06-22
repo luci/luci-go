@@ -4,5 +4,6 @@
     // The following settings are needed because Jest runs in the node
     // environnement.
     "moduleResolution": "node",
+    "types": ["vite/client", "@types/google.analytics", "@types/jest"]
   }
 }

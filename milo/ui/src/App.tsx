@@ -26,6 +26,9 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import '@/common/styles/common_style.css';
 import '@/common/styles/color_classes.css';
 import '@/common/components/tooltip';
+import { BaseLayout as BisectionBaseLayout } from '@/bisection/layouts/base';
+import { AnalysisDetailsPage } from '@/bisection/pages/analysis_details';
+import { FailureAnalysesPage } from '@/bisection/pages/failure_analyses';
 import { obtainAuthState } from '@/common/api/auth_state';
 import { LitEnvProvider } from '@/common/components/lit_env_provider';
 import { BaseLayout } from '@/common/layouts/base';
@@ -210,6 +213,20 @@ export function App({ isDevEnv, enableUiSW }: AppProps) {
         },
         { path: 'test/:projectOrRealm/:testId', element: <TestHistoryPage /> },
         { path: '*', element: <NotFoundPage /> },
+        {
+          path: 'bisection',
+          element: <BisectionBaseLayout />,
+          children: [
+            {
+              index: true,
+              element: <FailureAnalysesPage />,
+            },
+            {
+              path: 'analysis/b/:bbid',
+              element: <AnalysisDetailsPage />,
+            },
+          ],
+        },
       ],
     },
   ]);
