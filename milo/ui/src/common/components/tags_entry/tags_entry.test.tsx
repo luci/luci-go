@@ -23,7 +23,7 @@ const tags = [
 ];
 
 describe('TagsEntry', () => {
-  it('e2e', () => {
+  test('e2e', () => {
     const { rerender } = render(<TagsEntry tags={tags} />);
 
     const tagsEle = screen.getByText<HTMLSpanElement>('tags:', {

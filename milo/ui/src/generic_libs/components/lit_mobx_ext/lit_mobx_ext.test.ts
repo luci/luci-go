@@ -19,7 +19,7 @@ import { customElement } from 'lit/decorators.js';
 import { MobxExtLitElement } from './lit_mobx_ext';
 
 describe('MobxLitExtElement', () => {
-  it('should call disposers on disconnect in the correct order', async () => {
+  test('should call disposers on disconnect in the correct order', async () => {
     let records: number[] = [];
     let count = 0;
 

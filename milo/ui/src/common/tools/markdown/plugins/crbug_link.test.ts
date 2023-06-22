@@ -28,7 +28,7 @@ const md = markdownIt('zero', { linkify: true })
   .use(crbugLink);
 
 describe('crbug_link', () => {
-  it('can render links correctly', async () => {
+  test('can render links correctly', async () => {
     const ele = await fixture(md.render(crbugLinks));
 
     const anchors = ele.querySelectorAll('a');

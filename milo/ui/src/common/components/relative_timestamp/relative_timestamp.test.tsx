@@ -28,7 +28,7 @@ describe('RelativeTimestamp', () => {
     jest.useRealTimers();
   });
 
-  it('should display timestamp in the past correctly', async () => {
+  test('should display timestamp in the past correctly', async () => {
     const timestamp = DateTime.now().minus(
       Duration.fromObject({ seconds: 20, millisecond: 500 })
     );
@@ -38,7 +38,7 @@ describe('RelativeTimestamp', () => {
     expect(screen.queryByText('20 secs ago')).not.toBeNull();
   });
 
-  it('should display timestamp in the future correctly', async () => {
+  test('should display timestamp in the future correctly', async () => {
     const timestamp = DateTime.now().plus(
       Duration.fromObject({ seconds: 20, millisecond: 500 })
     );
@@ -48,7 +48,7 @@ describe('RelativeTimestamp', () => {
     expect(screen.queryByText('in 20 secs')).not.toBeNull();
   });
 
-  it('should update timestamp correctly', async () => {
+  test('should update timestamp correctly', async () => {
     const timestamp = DateTime.now().plus(
       Duration.fromObject({ seconds: 2, millisecond: 500 })
     );

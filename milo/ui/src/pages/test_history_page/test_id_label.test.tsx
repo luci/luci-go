@@ -109,7 +109,7 @@ describe('TestIdLabel', () => {
     expect(screen.queryByText('testid')).not.toBeNull();
   };
 
-  it('should load test source', async () => {
+  test('should load test source', async () => {
     const testMetadataStub = jest.spyOn(
       ResultDb.prototype,
       'queryTestMetadata'
@@ -127,7 +127,7 @@ describe('TestIdLabel', () => {
     ).toStrictEqual(expectedSource);
   });
 
-  it('should not crash if no test metadata returned from the query', async () => {
+  test('should not crash if no test metadata returned from the query', async () => {
     const testMetadataStub = jest.spyOn(
       ResultDb.prototype,
       'queryTestMetadata'
@@ -137,7 +137,7 @@ describe('TestIdLabel', () => {
     expect(renderTestIdLabel).not.toThrow();
   });
 
-  it('should load key value metadata using the metadataConfig', async () => {
+  test('should load key value metadata using the metadataConfig', async () => {
     const testProjectCfg: Project = {
       metadataConfig: {
         testMetadataProperties: [

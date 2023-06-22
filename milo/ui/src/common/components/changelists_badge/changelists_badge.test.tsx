@@ -50,7 +50,7 @@ describe('ChangelistsBadge', () => {
     jest.useRealTimers();
   });
 
-  it('single changelist', async () => {
+  test('single changelist', async () => {
     const dispatchEventSpy = jest.spyOn(window, 'dispatchEvent');
     render(<ChangelistsBadge changelists={changelists.slice(0, 1)} />);
 
@@ -68,7 +68,7 @@ describe('ChangelistsBadge', () => {
     expect(dispatchEventSpy.mock.calls.length).toStrictEqual(0);
   });
 
-  it('multiple changelists', async () => {
+  test('multiple changelists', async () => {
     const dispatchEventSpy = jest.spyOn(window, 'dispatchEvent');
     render(<ChangelistsBadge changelists={changelists} />);
 

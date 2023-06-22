@@ -127,14 +127,14 @@ describe.skip('enterViewObserver', () => {
     );
   });
 
-  it('should notify entries in the view.', async () => {
+  test('should notify entries in the view.', async () => {
     await aTimeout(20);
     entries.forEach((entry, i) => {
       expect(entry.onEnterCallCount).toStrictEqual(i <= 10 ? 1 : 0);
     });
   });
 
-  it('should notify new entries scrolls into the view.', async () => {
+  test('should notify new entries scrolls into the view.', async () => {
     await aTimeout(20);
     listView.scrollBy(0, 50);
     await aTimeout(20);
@@ -144,7 +144,7 @@ describe.skip('enterViewObserver', () => {
     });
   });
 
-  it('should re-notify old entries when scrolling back and forth.', async () => {
+  test('should re-notify old entries when scrolling back and forth.', async () => {
     await aTimeout(20);
     listView.scrollBy(0, 50);
     await aTimeout(20);
@@ -156,7 +156,7 @@ describe.skip('enterViewObserver', () => {
     });
   });
 
-  it('different instances can have different notifiers', async () => {
+  test('different instances can have different notifiers', async () => {
     const notifier1 = new IntersectionNotifier();
     const notifier2 = new IntersectionNotifier();
     const notifier1SubscribeSpy = jest.spyOn(notifier1, 'subscribe');
@@ -194,7 +194,7 @@ describe.skip('enterViewObserver', () => {
     expect(notifier1UnsubscribeSpy.mock.lastCall?.[0]).toStrictEqual(entry1);
   });
 
-  it('updating observer should works correctly', async () => {
+  test('updating observer should works correctly', async () => {
     const notifier1 = new IntersectionNotifier();
     const notifier2 = new IntersectionNotifier();
     const notifier1SubscribeSpy = jest.spyOn(notifier1, 'subscribe');
@@ -277,7 +277,7 @@ describe.skip('lazyRendering', () => {
     );
   });
 
-  it('should only render content for elements entered the view.', async () => {
+  test('should only render content for elements entered the view.', async () => {
     await aTimeout(20);
     entries.forEach((entry, i) => {
       expect(entry.shadowRoot!.textContent).toStrictEqual(
@@ -286,7 +286,7 @@ describe.skip('lazyRendering', () => {
     });
   });
 
-  it('should work with scrolling', async () => {
+  test('should work with scrolling', async () => {
     await aTimeout(20);
     listView.scrollBy(0, 50);
     await aTimeout(20);
@@ -371,7 +371,7 @@ describe.skip('progressiveNotifier', () => {
     );
   });
 
-  it('should only render content for elements entered the view.', async () => {
+  test('should only render content for elements entered the view.', async () => {
     await aTimeout(20);
     entries.forEach((entry, i) => {
       expect(entry.shadowRoot!.textContent).toStrictEqual(
@@ -380,7 +380,7 @@ describe.skip('progressiveNotifier', () => {
     });
   });
 
-  it('should work with scrolling', async () => {
+  test('should work with scrolling', async () => {
     await aTimeout(20);
     listView.scrollBy(0, 50);
     await aTimeout(20);
@@ -392,7 +392,7 @@ describe.skip('progressiveNotifier', () => {
     });
   });
 
-  it('should notify some of the remaining entries after certain interval', async () => {
+  test('should notify some of the remaining entries after certain interval', async () => {
     await aTimeout(20);
     entries.forEach((entry, i) => {
       expect(entry.shadowRoot!.textContent).toStrictEqual(
@@ -408,7 +408,7 @@ describe.skip('progressiveNotifier', () => {
     });
   });
 
-  it('new notification should reset interval', async () => {
+  test('new notification should reset interval', async () => {
     await aTimeout(20);
     entries.forEach((entry, i) => {
       expect(entry.shadowRoot!.textContent).toStrictEqual(

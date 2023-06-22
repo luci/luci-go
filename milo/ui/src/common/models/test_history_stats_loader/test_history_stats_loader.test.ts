@@ -44,7 +44,7 @@ const group4 = createGroup('2021-11-04T00:00:00Z', 'key1:val2');
 const group5 = createGroup('2021-11-03T00:00:00Z', 'key1:val1');
 
 describe('TestHistoryStatsLoader', () => {
-  it('loadUntil should work correctly', async () => {
+  test('loadUntil should work correctly', async () => {
     // Set up.
     const stub =
       jest.fn<

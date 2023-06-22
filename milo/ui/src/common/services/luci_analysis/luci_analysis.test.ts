@@ -29,7 +29,7 @@ const clusteringVersion = {
 };
 
 describe('ClustersService', () => {
-  it('should batch requests from the same project together', async () => {
+  test('should batch requests from the same project together', async () => {
     const prpc = new PrpcClientExt({}, () => '');
     const callStub = jest.spyOn(prpc, 'call');
     const clustersService = new ClustersService(prpc);
@@ -76,7 +76,7 @@ describe('ClustersService', () => {
     });
   });
 
-  it('should not batch requests from different projects together', async () => {
+  test('should not batch requests from different projects together', async () => {
     const prpc = new PrpcClientExt({}, () => '');
     const callStub = jest.spyOn(prpc, 'call');
     const clustersService = new ClustersService(prpc);
@@ -137,7 +137,7 @@ describe('ClustersService', () => {
     });
   });
 
-  it('should not batch more than 1000 requests together', async () => {
+  test('should not batch more than 1000 requests together', async () => {
     const prpc = new PrpcClientExt({}, () => '');
     const callStub = jest.spyOn(prpc, 'call');
     const clustersService = new ClustersService(prpc);

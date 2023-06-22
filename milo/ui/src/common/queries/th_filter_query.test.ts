@@ -60,7 +60,7 @@ const entry7 = {
 const variants = [entry1, entry2, entry3, entry4, entry5, entry6, entry7];
 
 describe('parseVariantFilter', () => {
-  it('should filter out variants with no matching variant key-value pair', () => {
+  test('should filter out variants with no matching variant key-value pair', () => {
     const filter = parseVariantFilter('v:key1=val1');
 
     const filtered = variants
@@ -72,7 +72,7 @@ describe('parseVariantFilter', () => {
     expect(filtered).toEqual([entry1.variant]);
   });
 
-  it("should support variant value with '=' in it", () => {
+  test("should support variant value with '=' in it", () => {
     const filter = parseVariantFilter('v:key2=val3%3Dval');
 
     const filtered = variants
@@ -84,7 +84,7 @@ describe('parseVariantFilter', () => {
     expect(filtered).toEqual([entry7.variant]);
   });
 
-  it('should support filter with only variant key', () => {
+  test('should support filter with only variant key', () => {
     const filter = parseVariantFilter('V:key2');
 
     const filtered = variants
@@ -96,7 +96,7 @@ describe('parseVariantFilter', () => {
     expect(filtered).toEqual([entry5.variant, entry6.variant, entry7.variant]);
   });
 
-  it('should work with negation', () => {
+  test('should work with negation', () => {
     const filter = parseVariantFilter('-v:key1=val1');
 
     const filtered = variants
@@ -115,7 +115,7 @@ describe('parseVariantFilter', () => {
     ]);
   });
 
-  it('should work multiple queries', () => {
+  test('should work multiple queries', () => {
     const filter = parseVariantFilter(
       '-v:key1=val1 STATUS:Unexpected v:key1=val2'
     );
@@ -135,7 +135,7 @@ describe('parseVariantFilter', () => {
     ]);
   });
 
-  it('should work with variant hash filter', () => {
+  test('should work with variant hash filter', () => {
     const filter = parseVariantFilter('vhash:key1:val2');
 
     const filtered = variants
@@ -147,7 +147,7 @@ describe('parseVariantFilter', () => {
     expect(filtered).toEqual([entry2.variant, entry4.variant]);
   });
 
-  it('should work with negated variant hash filter', () => {
+  test('should work with negated variant hash filter', () => {
     const filter = parseVariantFilter('-vhash:key1:val2');
 
     const filtered = variants
@@ -167,17 +167,17 @@ describe('parseVariantFilter', () => {
 });
 
 describe('suggestTestHistoryFilterQuery', () => {
-  it('should give user some suggestions when the query is empty', () => {
+  test('should give user some suggestions when the query is empty', () => {
     const suggestions1 = suggestTestHistoryFilterQuery('');
     expect(suggestions1.length).not.toStrictEqual(0);
   });
 
-  it('should not give suggestions when the sub-query is empty', () => {
+  test('should not give suggestions when the sub-query is empty', () => {
     const suggestions1 = suggestTestHistoryFilterQuery('VHash:abcd ');
     expect(suggestions1.length).toStrictEqual(0);
   });
 
-  it('should suggest V query when the query prefix is V:', () => {
+  test('should suggest V query when the query prefix is V:', () => {
     const suggestions1 = suggestTestHistoryFilterQuery('V:test_suite');
     expect(suggestions1.find((s) => s.value === 'V:test_suite')).toBeDefined();
     expect(suggestions1.find((s) => s.value === '-V:test_suite')).toBeDefined();
@@ -192,28 +192,28 @@ describe('suggestTestHistoryFilterQuery', () => {
 });
 
 describe('parseVariantPredicate', () => {
-  it('should work with multiple variant key-value filters', () => {
+  test('should work with multiple variant key-value filters', () => {
     const predicate = parseVariantPredicate('v:key1=val1 v:key2=val2');
     expect(predicate).toEqual({
       contains: { def: { key1: 'val1', key2: 'val2' } },
     });
   });
 
-  it('should ignore negative filters', () => {
+  test('should ignore negative filters', () => {
     const predicate = parseVariantPredicate(
       'v:key1=val1 -v:key2=val2 -vhash:902690735d13f8bd'
     );
     expect(predicate).toEqual({ contains: { def: { key1: 'val1' } } });
   });
 
-  it('should prioritize variant hash filter', () => {
+  test('should prioritize variant hash filter', () => {
     const predicate = parseVariantPredicate(
       'v:key1=val1 vhash:0123456789AbCdEf'
     );
     expect(predicate).toEqual({ hashEquals: '0123456789abcdef' });
   });
 
-  it('should ignore invalid filters', () => {
+  test('should ignore invalid filters', () => {
     const predicate = parseVariantPredicate(
       'v:key1=val1 vhash:invalidhash other:hash'
     );

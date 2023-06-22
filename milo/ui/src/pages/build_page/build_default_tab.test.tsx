@@ -67,7 +67,7 @@ describe('BuildDefaultTab', () => {
     useNavigateSpy.mockRestore();
   });
 
-  it('should redirect to the default tab', async () => {
+  test('should redirect to the default tab', async () => {
     const router = reactRouterDom.createMemoryRouter(
       [
         {
@@ -105,7 +105,7 @@ describe('BuildDefaultTab', () => {
     ]);
   });
 
-  it("should work with '/' suffix", async () => {
+  test("should work with '/' suffix", async () => {
     const router = reactRouterDom.createMemoryRouter(
       [
         {
@@ -143,7 +143,7 @@ describe('BuildDefaultTab', () => {
     ]);
   });
 
-  it('should not cause infinite redirects', async () => {
+  test('should not cause infinite redirects', async () => {
     // Set the default tab to redirect to itself.
     // This won't happen in prod but useful for testing purpose.
     applySnapshot(store, { userConfig: { build: { defaultTab: '' } } });

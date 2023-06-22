@@ -93,7 +93,7 @@ describe('batched_fn', () => {
     jest.useRealTimers();
   });
 
-  it('should batch calls together', async () => {
+  test('should batch calls together', async () => {
     const prom1 = batchedRpc({ maxPendingMs: 10 }, 'ns1', [1, 2]);
     const prom2 = batchedRpc({ maxPendingMs: 10 }, 'ns1', [3, 4, 5]);
     expect(rpcSpy.mock.calls.length).toStrictEqual(0);
@@ -141,7 +141,7 @@ describe('batched_fn', () => {
     expect(ret4).toEqual([{ key: 8, value: 'ns1-8' }]);
   });
 
-  it('should process calls within maxPendingMs', async () => {
+  test('should process calls within maxPendingMs', async () => {
     // Make the first call with a high maximum pending duration.
     const prom1 = batchedRpc({ maxPendingMs: 100 }, 'ns1', [1, 2]);
     expect(rpcSpy.mock.calls.length).toStrictEqual(0);
@@ -175,7 +175,7 @@ describe('batched_fn', () => {
     ]);
   });
 
-  it('should start a new batch when the calls cannot be batched together', async () => {
+  test('should start a new batch when the calls cannot be batched together', async () => {
     const prom1 = batchedRpc({ maxPendingMs: 100 }, 'ns1', [1, 2]);
     expect(rpcSpy.mock.calls.length).toStrictEqual(0);
 
@@ -212,7 +212,7 @@ describe('batched_fn', () => {
     ]);
   });
 
-  it('should forward error to all batched calls', async () => {
+  test('should forward error to all batched calls', async () => {
     const prom1 = batchedRpc({ maxPendingMs: 10 }, 'ns1', [1, 2]);
     const prom2 = batchedRpc({ maxPendingMs: 10 }, 'ns1', [3, 4, 5], true);
     expect(rpcSpy.mock.calls.length).toStrictEqual(0);

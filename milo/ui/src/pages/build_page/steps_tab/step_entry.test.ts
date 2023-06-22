@@ -46,7 +46,7 @@ class NotifierProviderElement extends LitElement {
 }
 
 describe('StepEntry', () => {
-  it('can render a step without start time', async () => {
+  test('can render a step without start time', async () => {
     const step = new StepExt({
       step: {
         name: 'stepname',

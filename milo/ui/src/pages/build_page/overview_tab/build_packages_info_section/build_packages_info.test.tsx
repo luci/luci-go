@@ -27,7 +27,7 @@ import {
 import { BuildPackagesInfo } from './build_packages_info';
 
 describe('BuildPackagesInfo', () => {
-  it('build without resolved packages', async () => {
+  test('build without resolved packages', async () => {
     const buildWithoutOutput = {
       input: { experiments: ['luci.buildbucket.agent.cipd_installation'] },
       infra: {
@@ -78,7 +78,7 @@ describe('BuildPackagesInfo', () => {
     expect(screen.queryByText('input-pkg')).toBeNull();
   });
 
-  it('build with resolved packages', async () => {
+  test('build with resolved packages', async () => {
     const buildWithoutOutput = {
       input: { experiments: ['luci.buildbucket.agent.cipd_installation'] },
       infra: {

@@ -90,7 +90,7 @@ describe('TestResultsTab', () => {
     destroy(store);
   });
 
-  it('should load the first page of test variants when connected', async () => {
+  test('should load the first page of test variants when connected', async () => {
     store = Store.create({
       authState: { value: { identity: ANONYMOUS_IDENTITY } },
       invocationPage: { invocationId: 'invocation-id' },
@@ -188,7 +188,7 @@ describe('loadNextTestVariants', () => {
     jest.useRealTimers();
   });
 
-  it('should trigger automatic loading when visiting the tab for the first time', async () => {
+  test('should trigger automatic loading when visiting the tab for the first time', async () => {
     expect(store.invocationPage.invocation.testLoader?.isLoading).toStrictEqual(
       true
     );

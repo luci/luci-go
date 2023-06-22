@@ -61,7 +61,7 @@ describe('InvocationDefaultTab', () => {
     useNavigateSpy.mockRestore();
   });
 
-  it('should redirect to the default tab', async () => {
+  test('should redirect to the default tab', async () => {
     const router = reactRouterDom.createMemoryRouter(
       [
         {
@@ -95,7 +95,7 @@ describe('InvocationDefaultTab', () => {
     ]);
   });
 
-  it("should work with '/' suffix", async () => {
+  test("should work with '/' suffix", async () => {
     const router = reactRouterDom.createMemoryRouter(
       [
         {

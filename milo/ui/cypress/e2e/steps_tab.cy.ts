@@ -14,8 +14,13 @@
 
 describe('Steps & Logs Tab', () => {
   it('should accept arbitrary path suffix', () => {
-    cy.visit('/p/chromium/builders/ci/linux-rel-swarming/15252/steps/an/arbitrary/path/suffix');
-    cy.location('pathname').should('equal', '/ui/p/chromium/builders/ci/linux-rel-swarming/15252/steps');
+    cy.visit(
+      '/p/chromium/builders/ci/linux-rel-swarming/15252/steps/an/arbitrary/path/suffix'
+    );
+    cy.location('pathname').should(
+      'equal',
+      '/ui/p/chromium/builders/ci/linux-rel-swarming/15252/steps'
+    );
   });
 
   it('support expanding all steps by default', () => {

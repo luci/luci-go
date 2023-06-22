@@ -18,7 +18,7 @@ import { expect, jest } from '@jest/globals';
 import { PrpcClientExt } from './prpc_client_ext';
 
 describe('PrpcClientExt', () => {
-  it('should grab access token from getAccessToken', async () => {
+  test('should grab access token from getAccessToken', async () => {
     let accessToken = '1';
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
@@ -44,7 +44,7 @@ describe('PrpcClientExt', () => {
     expect(req2.headers.get('Authorization')).toStrictEqual('Bearer 2');
   });
 
-  it('should not override additional header', async () => {
+  test('should not override additional header', async () => {
     const accessToken = '1';
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {

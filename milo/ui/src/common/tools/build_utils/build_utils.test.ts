@@ -24,7 +24,7 @@ import {
 } from './build_utils';
 
 describe('getLogdogRawUrl', () => {
-  it('should get correct logdog url for prod', async () => {
+  test('should get correct logdog url for prod', async () => {
     const logdogURL =
       // eslint-disable-next-line max-len
       'logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8865799866429037440/+/steps/compile__with_patch_/0/stdout';
@@ -33,7 +33,7 @@ describe('getLogdogRawUrl', () => {
       'https://logs.chromium.org/logs/chromium/buildbucket/cr-buildbucket.appspot.com/8865799866429037440/+/steps/compile__with_patch_/0/stdout?format=raw'
     );
   });
-  it('should get correct logdog url for dev', async () => {
+  test('should get correct logdog url for dev', async () => {
     const logdogURL =
       // eslint-disable-next-line max-len
       'logdog://luci-logdog-dev.appspot.com/chromium/buildbucket/cr-buildbucket-dev.appspot.com/8865403731021509824/+/u/ensure_output_directory/stdout';
@@ -42,14 +42,14 @@ describe('getLogdogRawUrl', () => {
       'https://luci-logdog-dev.appspot.com/logs/chromium/buildbucket/cr-buildbucket-dev.appspot.com/8865403731021509824/+/u/ensure_output_directory/stdout?format=raw'
     );
   });
-  it('should return null for invalid url', async () => {
+  test('should return null for invalid url', async () => {
     const logdogURL = 'http://notvalidurl.com';
     expect(getLogdogRawUrl(logdogURL)).toBeNull();
   });
 });
 
 describe('getBuildbucketLink', () => {
-  it('should get correct Buildbucket url', async () => {
+  test('should get correct Buildbucket url', async () => {
     const buildbucketLink = getBuildbucketLink(
       'cr-buildbucket-dev.appspot.com',
       '123'
@@ -62,7 +62,7 @@ describe('getBuildbucketLink', () => {
 });
 
 describe('getSafeUrlFromTagValue', () => {
-  it('should get the correct gerrit url', async () => {
+  test('should get the correct gerrit url', async () => {
     const url = getSafeUrlFromTagValue(
       'patch/gerrit/chromium-review.googlesource.com/2365643/6'
     );
@@ -71,7 +71,7 @@ describe('getSafeUrlFromTagValue', () => {
     );
   });
 
-  it('should get the correct gitiles url', async () => {
+  test('should get the correct gitiles url', async () => {
     const url = getSafeUrlFromTagValue(
       'commit/gitiles/chromium.googlesource.com/chromium/src/+/6ae002709a6e0df5f61428d962e44a62920e76e1'
     );
@@ -80,7 +80,7 @@ describe('getSafeUrlFromTagValue', () => {
     );
   });
 
-  it('should get the correct milo url', async () => {
+  test('should get the correct milo url', async () => {
     const url = getSafeUrlFromTagValue(
       'build/milo/project_name/bucket/Builder name/42'
     );
@@ -88,7 +88,7 @@ describe('getSafeUrlFromTagValue', () => {
       '/p/project_name/builders/bucket/Builder%20name/42'
     );
   });
-  it('should get the correct swarming url', async () => {
+  test('should get the correct swarming url', async () => {
     const url = getSafeUrlFromTagValue(
       'task/swarming/chrome-swarming/deadbeef'
     );
@@ -99,7 +99,7 @@ describe('getSafeUrlFromTagValue', () => {
 });
 
 describe('renderBugUrlTemplate', () => {
-  it('should render the chromium bug URL correctly', () => {
+  test('should render the chromium bug URL correctly', () => {
     const url = renderBugUrlTemplate(
       // eslint-disable-next-line max-len
       'https://bugs.chromium.org/p/chromium/issues/entry?summary=summary&description=project%3A+{{{build.builder.project}}}%0Abucket%3A+{{{build.builder.bucket}}}%0Abuilder%3A+{{{build.builder.builder}}}%0Abuilder+url%3A+{{{milo_builder_url}}}%0Abuild+url%3A+{{{milo_build_url}}}',
@@ -119,7 +119,7 @@ describe('renderBugUrlTemplate', () => {
     );
   });
 
-  it('should render the buganizer bug URL correctly', () => {
+  test('should render the buganizer bug URL correctly', () => {
     const url = renderBugUrlTemplate(
       // eslint-disable-next-line max-len
       'https://b.corp.google.com/createIssue?title=title&description=project%3A+{{{build.builder.project}}}%0Abucket%3A+{{{build.builder.bucket}}}%0Abuilder%3A+{{{build.builder.builder}}}%0Abuilder_url%3A+{{{milo_builder_url}}}%0Abuild_url%3A+{{{milo_build_url}}}',
@@ -139,7 +139,7 @@ describe('renderBugUrlTemplate', () => {
     );
   });
 
-  it("should return empty string if the domain doesn't match", () => {
+  test("should return empty string if the domain doesn't match", () => {
     const url = renderBugUrlTemplate(
       // eslint-disable-next-line max-len
       'https://bug.chromium.org/p/chromium/issues/entry',
@@ -156,7 +156,7 @@ describe('renderBugUrlTemplate', () => {
     expect(url).toStrictEqual('');
   });
 
-  it("should return empty string if the schema doesn't match", () => {
+  test("should return empty string if the schema doesn't match", () => {
     const url = renderBugUrlTemplate(
       // eslint-disable-next-line max-len
       'http://bugs.chromium.org/p/chromium/issues/entry',
@@ -175,7 +175,7 @@ describe('renderBugUrlTemplate', () => {
 });
 
 describe('getCipdLink', () => {
-  it('should get correct cipd url', async () => {
+  test('should get correct cipd url', async () => {
     const cipdLink = getCipdLink(
       'infra/3pp/tools/git/mac-amd64',
       'bHf2s_9KYiixd4SlHDugMeMqrngwz2QOGB_7bUcVpUoC'
@@ -188,21 +188,21 @@ describe('getCipdLink', () => {
 });
 
 describe('parseLegacyBucketId', () => {
-  it('should parse legacy bucket ID correctly', async () => {
+  test('should parse legacy bucket ID correctly', async () => {
     expect(parseLegacyBucketId('luci.proj.buck')).toEqual({
       project: 'proj',
       bucket: 'buck',
     });
   });
 
-  it('should parse legacy bucket ID with dots correctly', async () => {
+  test('should parse legacy bucket ID with dots correctly', async () => {
     expect(parseLegacyBucketId('luci.proj.buck.name')).toEqual({
       project: 'proj',
       bucket: 'buck.name',
     });
   });
 
-  it('should return null if bucket ID is invalid', async () => {
+  test('should return null if bucket ID is invalid', async () => {
     expect(parseLegacyBucketId('luci.projbuck')).toBeNull();
   });
 });

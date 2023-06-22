@@ -36,14 +36,14 @@ describe('cached_fn', () => {
     jest.useRealTimers();
   });
 
-  it('should return cached response when params are identical', async () => {
+  test('should return cached response when params are identical', async () => {
     const res1 = cachedFn({}, 1, 'a');
     const res2 = cachedFn({}, 1, 'a');
     expect(res1).toStrictEqual(res2);
     expect(fnSpy.mock.calls.length).toStrictEqual(1);
   });
 
-  it('should return cached response when params are different', async () => {
+  test('should return cached response when params are different', async () => {
     const res1 = cachedFn({}, 1, 'a');
     const res2 = cachedFn({}, 2, 'a');
     const res3 = cachedFn({}, 1, 'b');
@@ -53,7 +53,7 @@ describe('cached_fn', () => {
     expect(fnSpy.mock.calls.length).toStrictEqual(3);
   });
 
-  it('should be able to cache multiple different function calls', async () => {
+  test('should be able to cache multiple different function calls', async () => {
     const res1a = cachedFn({}, 1, 'a');
     const res2a = cachedFn({}, 2, 'a');
     const res3a = cachedFn({}, 1, 'b');
@@ -66,7 +66,7 @@ describe('cached_fn', () => {
     expect(fnSpy.mock.calls.length).toStrictEqual(3);
   });
 
-  it('should refresh the cache when acceptCache = false', async () => {
+  test('should refresh the cache when acceptCache = false', async () => {
     const res1 = cachedFn({}, 1, 'a');
     const res2 = cachedFn({ acceptCache: false }, 1, 'a');
     const res3 = cachedFn({}, 1, 'a');
@@ -76,7 +76,7 @@ describe('cached_fn', () => {
     expect(fnSpy.mock.calls.length).toStrictEqual(2);
   });
 
-  it('should not update the cache when calling with skipUpdate = true', async () => {
+  test('should not update the cache when calling with skipUpdate = true', async () => {
     const res1 = cachedFn({}, 1, 'a');
     const res2 = cachedFn({ acceptCache: false, skipUpdate: true }, 1, 'a');
     const res3 = cachedFn({}, 1, 'a');
@@ -86,7 +86,7 @@ describe('cached_fn', () => {
     expect(fnSpy.mock.calls.length).toStrictEqual(2);
   });
 
-  it('should invalidate the old cache when invalidateCache = true', async () => {
+  test('should invalidate the old cache when invalidateCache = true', async () => {
     const res1 = cachedFn({}, 1, 'a');
     const res2 = cachedFn({ invalidateCache: true }, 1, 'a');
     const res3 = cachedFn({}, 1, 'a');
@@ -96,7 +96,7 @@ describe('cached_fn', () => {
     expect(fnSpy.mock.calls.length).toStrictEqual(2);
   });
 
-  it('should not invalidate the new cache when invalidateCache = true', async () => {
+  test('should not invalidate the new cache when invalidateCache = true', async () => {
     const res1 = cachedFn({}, 1, 'a');
     const res2 = cachedFn(
       { acceptCache: false, invalidateCache: true },
@@ -118,7 +118,7 @@ describe('cached_fn', () => {
       });
     });
 
-    it('should return cached response when cache has not expired', async () => {
+    test('should return cached response when cache has not expired', async () => {
       const res1 = cachedFn({}, 1, 'a');
       await jest.advanceTimersByTimeAsync(10);
       const res2 = cachedFn({}, 1, 'a');
@@ -126,7 +126,7 @@ describe('cached_fn', () => {
       expect(fnSpy.mock.calls.length).toStrictEqual(1);
     });
 
-    it('should return a new response when cache has expired', async () => {
+    test('should return a new response when cache has expired', async () => {
       const res1 = cachedFn({}, 1, 'a');
       await jest.advanceTimersByTimeAsync(30);
       const res2 = cachedFn({}, 1, 'a');
@@ -135,7 +135,7 @@ describe('cached_fn', () => {
       expect(fnSpy.mock.calls.length).toStrictEqual(2);
     });
 
-    it('should not expire refreshed cache too early', async () => {
+    test('should not expire refreshed cache too early', async () => {
       const res1 = cachedFn({}, 1, 'a');
       await jest.advanceTimersByTimeAsync(15);
       const res2 = cachedFn({ acceptCache: false }, 1, 'a');
@@ -159,7 +159,7 @@ describe('cached_fn', () => {
       });
     });
 
-    it('should return cached response when cache has not expired', async () => {
+    test('should return cached response when cache has not expired', async () => {
       const res1 = cachedFn({}, 1, 'a');
       await jest.advanceTimersByTimeAsync(10);
       const res2 = cachedFn({}, 1, 'a');
@@ -167,7 +167,7 @@ describe('cached_fn', () => {
       expect(fnSpy.mock.calls.length).toStrictEqual(1);
     });
 
-    it('should return a new response when cache has expired', async () => {
+    test('should return a new response when cache has expired', async () => {
       const res1 = cachedFn({}, 1, 'a');
       await jest.advanceTimersByTimeAsync(30);
       const res2 = cachedFn({}, 1, 'a');
@@ -176,7 +176,7 @@ describe('cached_fn', () => {
       expect(fnSpy.mock.calls.length).toStrictEqual(2);
     });
 
-    it('should not invalidate refreshed cache too early', async () => {
+    test('should not invalidate refreshed cache too early', async () => {
       const res1 = cachedFn({}, 1, 'a');
       await jest.advanceTimersByTimeAsync(15);
       const res2 = cachedFn({ acceptCache: false }, 1, 'a');
@@ -197,13 +197,13 @@ describe('cached_fn', () => {
       });
     });
 
-    it('should not delete the cache before the function returns', async () => {
+    test('should not delete the cache before the function returns', async () => {
       const res1 = cachedFn({}, 1, 'a');
       expect(res1).toStrictEqual('1-a-0');
       expect(fnSpy.mock.calls.length).toStrictEqual(1);
     });
 
-    it('should delete the cache in the next event cycle', async () => {
+    test('should delete the cache in the next event cycle', async () => {
       const res1 = cachedFn({}, 1, 'a');
       await jest.advanceTimersByTimeAsync(0);
       const res2 = cachedFn({}, 1, 'a');
@@ -228,7 +228,7 @@ describe('cached_fn', () => {
       });
     });
 
-    it('should not cache the response', async () => {
+    test('should not cache the response', async () => {
       expect(() => cachedFn({}, 1, 'a')).toThrow();
       const res2 = cachedFn({}, 1, 'a');
       expect(res2).toStrictEqual('1-a-1');

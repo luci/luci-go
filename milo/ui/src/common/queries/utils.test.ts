@@ -17,31 +17,31 @@ import { expect } from '@jest/globals';
 import { parseKeyValue } from './utils';
 
 describe('parseKeyValue', () => {
-  it('should parse key-value pair', () => {
+  test('should parse key-value pair', () => {
     const [key, value] = parseKeyValue('key=value');
     expect(key).toStrictEqual('key');
     expect(value).toStrictEqual('value');
   });
 
-  it("should work when there's no value", () => {
+  test("should work when there's no value", () => {
     const [key, value] = parseKeyValue('key');
     expect(key).toStrictEqual('key');
     expect(value).toStrictEqual(null);
   });
 
-  it('should work when the value is empty', () => {
+  test('should work when the value is empty', () => {
     const [key, value] = parseKeyValue('key=');
     expect(key).toStrictEqual('key');
     expect(value).toStrictEqual('');
   });
 
-  it('should work when the key and value contain encoded characters', () => {
+  test('should work when the key and value contain encoded characters', () => {
     const [key, value] = parseKeyValue('%25key%20=value+');
     expect(key).toStrictEqual('%key ');
     expect(value).toStrictEqual('value ');
   });
 
-  it('should work when the key and value contain special characters', () => {
+  test('should work when the key and value contain special characters', () => {
     const [key, value] = parseKeyValue('key=valuekey=real&value');
     expect(key).toStrictEqual('key');
     expect(value).toStrictEqual('valuekey=real&value');

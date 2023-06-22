@@ -47,7 +47,7 @@ describe('default_target', () => {
     anchors = ele.querySelectorAll('a');
   });
 
-  it('can set default target', () => {
+  test('can set default target', () => {
     const anchor1 = anchors.item(0);
     expect(anchor1.target).toStrictEqual('_blank');
     expect(anchor1.href).toStrictEqual('http://www.a.com/');
@@ -69,7 +69,7 @@ describe('default_target', () => {
     expect(anchor5.href).toStrictEqual('http://www.f.com/');
   });
 
-  it('does not override target', () => {
+  test('does not override target', () => {
     const anchor4 = anchors.item(4);
     expect(anchor4.target).toStrictEqual('_parent');
     expect(anchor4.href).toStrictEqual('http://www.e.com/');

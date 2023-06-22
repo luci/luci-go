@@ -70,7 +70,7 @@ describe('AuthComplete', () => {
     completeSpy = jest.spyOn(autoSuggestionEle, 'onComplete');
   });
 
-  it('should be able to select suggestion with key strokes', () => {
+  test('should be able to select suggestion with key strokes', () => {
     simulateKeyStroke(inputEle, 'ArrowDown');
     simulateKeyStroke(inputEle, 'ArrowDown');
     simulateKeyStroke(inputEle, 'Enter');
@@ -78,7 +78,7 @@ describe('AuthComplete', () => {
     expect(completeSpy.mock.calls.length).toStrictEqual(0);
   });
 
-  it('should reset suggestion selection when suggestions are updated', () => {
+  test('should reset suggestion selection when suggestions are updated', () => {
     const suggestionSpy = jest.spyOn(autoSuggestionEle, 'onSuggestionSelected');
     const completeSpy = jest.spyOn(autoSuggestionEle, 'onComplete');
     autoSuggestionEle.suggestions = suggestions.slice(0, 2);
@@ -95,7 +95,7 @@ describe('AuthComplete', () => {
     expect(completeSpy.mock.calls.length).toStrictEqual(0);
   });
 
-  it('should skip suggestion headers when selecting with key strokes', () => {
+  test('should skip suggestion headers when selecting with key strokes', () => {
     autoSuggestionEle.suggestions = suggestions.slice();
     simulateKeyStroke(inputEle, 'ArrowDown');
     simulateKeyStroke(inputEle, 'ArrowDown');
@@ -115,7 +115,7 @@ describe('AuthComplete', () => {
     expect(completeSpy.mock.calls.length).toStrictEqual(0);
   });
 
-  it('should not navigate beyond boundary', () => {
+  test('should not navigate beyond boundary', () => {
     autoSuggestionEle.suggestions = suggestions.slice();
     for (let i = 0; i < suggestions.length * 2; ++i) {
       simulateKeyStroke(inputEle, 'ArrowDown');
@@ -142,7 +142,7 @@ describe('AuthComplete', () => {
     expect(completeSpy.mock.calls.length).toStrictEqual(0);
   });
 
-  it('should call onComplete when user hit enter with completed query', () => {
+  test('should call onComplete when user hit enter with completed query', () => {
     autoSuggestionEle.value = 'search text ';
     simulateKeyStroke(inputEle, 'Enter');
     expect(completeSpy.mock.calls.length).toStrictEqual(1);

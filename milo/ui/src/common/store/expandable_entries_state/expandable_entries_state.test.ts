@@ -30,7 +30,7 @@ describe('ExpandableEntriesState', () => {
     destroy(state);
   });
 
-  it('e2e', () => {
+  test('e2e', () => {
     // Toggle all to false.
     state.toggleAll(false);
     expect(state.defaultExpanded).toBeFalsy();

@@ -46,7 +46,7 @@ class ErrorHandlerTestOnErrorReturnsPropElement extends MobxLitElement {
 }
 
 describe('errorHandler', () => {
-  it('should render error message by default', async () => {
+  test('should render error message by default', async () => {
     const errorHandlerEle = await fixture<ErrorHandlerTestDefaultElement>(html`
       <milo-error-handler-test-default>
         <div></div>
@@ -70,7 +70,7 @@ describe('errorHandler', () => {
   // TODO(weiweilin): investigate why the second dispatch doesn't trigger the
   // event handler.
   // eslint-disable-next-line jest/no-disabled-tests
-  it.skip('should update error message when received a new error event', async () => {
+  test.skip('should update error message when received a new error event', async () => {
     const errorHandlerEle = await fixture<ErrorHandlerTestDefaultElement>(html`
       <milo-error-handler-test-default>
         <div></div>
@@ -101,7 +101,7 @@ describe('errorHandler', () => {
     ).toMatch('error msg 2');
   });
 
-  it('should render the original content when onErrorRender returns false', async () => {
+  test('should render the original content when onErrorRender returns false', async () => {
     const errorHandlerEle =
       await fixture<ErrorHandlerTestOnErrorReturnsPropElement>(html`
         <milo-error-handler-test-on-error-returns-prop>
@@ -122,7 +122,7 @@ describe('errorHandler', () => {
 });
 
 describe('reportError', () => {
-  it('should dispatch an error event when the fn throws', async () => {
+  test('should dispatch an error event when the fn throws', async () => {
     const div = document.createElement('div');
     const dispatchEventStub = jest.spyOn(div, 'dispatchEvent');
     class SpecialErrorClass extends Error {}
@@ -142,7 +142,7 @@ describe('reportError', () => {
     expect((event as ErrorEvent).message).toStrictEqual('err msg');
   });
 
-  it('should not throw the error when fallbackFn is provided', async () => {
+  test('should not throw the error when fallbackFn is provided', async () => {
     const div = document.createElement('div');
     const dispatchEventStub = jest.spyOn(div, 'dispatchEvent');
     class SpecialErrorClass extends Error {}
@@ -164,7 +164,7 @@ describe('reportError', () => {
     expect((event as ErrorEvent).message).toStrictEqual('err msg');
   });
 
-  it('should still dispatch the original error event when fallbackFn throws', async () => {
+  test('should still dispatch the original error event when fallbackFn throws', async () => {
     const div = document.createElement('div');
     const dispatchEventStub = jest.spyOn(div, 'dispatchEvent');
     class SpecialErrorClass extends Error {}
@@ -194,7 +194,7 @@ describe('reportError', () => {
 });
 
 describe('reportErrorAsync', () => {
-  it('should dispatch an error event when the fn throws', async () => {
+  test('should dispatch an error event when the fn throws', async () => {
     const div = document.createElement('div');
     const dispatchEventStub = jest.spyOn(div, 'dispatchEvent');
     const err = new Error('err msg');
@@ -212,7 +212,7 @@ describe('reportErrorAsync', () => {
     expect((event as ErrorEvent).message).toStrictEqual('err msg');
   });
 
-  it('should dispatch an error event when the fn throws immediately', async () => {
+  test('should dispatch an error event when the fn throws immediately', async () => {
     const div = document.createElement('div');
     const dispatchEventStub = jest.spyOn(div, 'dispatchEvent');
     const err = new Error('err msg');
@@ -230,7 +230,7 @@ describe('reportErrorAsync', () => {
     expect((event as ErrorEvent).message).toStrictEqual('err msg');
   });
 
-  it('should not throw the error when fallbackFn is provided', async () => {
+  test('should not throw the error when fallbackFn is provided', async () => {
     const div = document.createElement('div');
     const dispatchEventStub = jest.spyOn(div, 'dispatchEvent');
     class SpecialErrorClass extends Error {}
@@ -252,7 +252,7 @@ describe('reportErrorAsync', () => {
     expect((event as ErrorEvent).message).toStrictEqual('err msg');
   });
 
-  it('should still dispatch the original error event when fallbackFn throws', async () => {
+  test('should still dispatch the original error event when fallbackFn throws', async () => {
     const div = document.createElement('div');
     const dispatchEventStub = jest.spyOn(div, 'dispatchEvent');
     const err = new Error('err msg');
@@ -278,7 +278,7 @@ describe('reportErrorAsync', () => {
     expect((event as ErrorEvent).message).toStrictEqual('err msg');
   });
 
-  it('should still dispatch the original error event when fallbackFn throws immediately', async () => {
+  test('should still dispatch the original error event when fallbackFn throws immediately', async () => {
     const div = document.createElement('div');
     const dispatchEventStub = jest.spyOn(div, 'dispatchEvent');
     class SpecialErrorClass extends Error {}
@@ -328,7 +328,7 @@ class ErrorHandlerTestRecoverElement extends LitElement {
 }
 
 describe('forwardWithoutMsg', () => {
-  it('should dispatch an error event to the parent element with the same error but no message', async () => {
+  test('should dispatch an error event to the parent element with the same error but no message', async () => {
     const parentEle = await fixture(html`
       <div>
         <milo-error-handler-test-forward-without-msg>
@@ -365,7 +365,7 @@ describe('forwardWithoutMsg', () => {
     expect((event as ErrorEvent).message).toStrictEqual('');
   });
 
-  it('should recover from the error if e.preventDefault() is called', async () => {
+  test('should recover from the error if e.preventDefault() is called', async () => {
     const parentEle = await fixture(html`
       <milo-error-handler-test-recover>
         <milo-error-handler-test-forward-without-msg>
@@ -391,7 +391,7 @@ describe('forwardWithoutMsg', () => {
     expect(errorHandlerEle.shadowRoot?.querySelector('pre')).toBeNull();
   });
 
-  it('can recover from the error even when the error is forwarded multiple times', async () => {
+  test('can recover from the error even when the error is forwarded multiple times', async () => {
     const parentEle = await fixture<ErrorHandlerTestRecoverElement>(html`
       <milo-error-handler-test-recover>
         <milo-error-handler-test-forward-without-msg id="outer">

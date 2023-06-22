@@ -39,7 +39,7 @@ describe('CancelBuildDialog', () => {
     jest.useRealTimers();
   });
 
-  it('should not trigger cancel request when reason is not provided', async () => {
+  test('should not trigger cancel request when reason is not provided', async () => {
     const onCloseSpy = jest.fn();
 
     render(
@@ -57,7 +57,7 @@ describe('CancelBuildDialog', () => {
     screen.getByText('Reason is required');
   });
 
-  it('should trigger cancel request when reason is provided', async () => {
+  test('should trigger cancel request when reason is provided', async () => {
     const onCloseSpy = jest.fn();
 
     render(

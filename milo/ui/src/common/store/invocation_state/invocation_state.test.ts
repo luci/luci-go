@@ -89,7 +89,7 @@ describe('InvocationState', () => {
       destroy(store);
     });
 
-    it('should not filter out anything when search text is empty', () => {
+    test('should not filter out anything when search text is empty', () => {
       store.invocationPage.invocation.setSearchText('');
       expect(
         store.invocationPage.invocation.testLoader!.unexpectedTestVariants
@@ -99,7 +99,7 @@ describe('InvocationState', () => {
       ).toEqual([variant5]);
     });
 
-    it("should filter out variants whose test ID doesn't match the search text", () => {
+    test("should filter out variants whose test ID doesn't match the search text", () => {
       store.invocationPage.invocation.setSearchText('test-suite-a');
       expect(
         store.invocationPage.invocation.testLoader!.unexpectedTestVariants
@@ -109,7 +109,7 @@ describe('InvocationState', () => {
       ).toEqual([]);
     });
 
-    it('search text should be case insensitive', () => {
+    test('search text should be case insensitive', () => {
       store.invocationPage.invocation.setSearchText('test-suite-b');
       expect(
         store.invocationPage.invocation.testLoader!.unexpectedTestVariants
@@ -119,7 +119,7 @@ describe('InvocationState', () => {
       ).toEqual([variant5]);
     });
 
-    it('should preserve the last known valid filter', () => {
+    test('should preserve the last known valid filter', () => {
       store.invocationPage.invocation.setSearchText('test-suite-b');
       expect(
         store.invocationPage.invocation.testLoader!.unexpectedTestVariants

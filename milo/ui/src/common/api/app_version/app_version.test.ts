@@ -17,17 +17,17 @@ import { expect } from '@jest/globals';
 import { parseAppVersion } from './app_version';
 
 describe('parseVersion', () => {
-  it('should parse valid version correctly', async () => {
+  test('should parse valid version correctly', async () => {
     const ver = parseAppVersion('13381-5572ca8');
     expect(ver).toEqual({ num: 13381, hash: '5572ca8' });
   });
 
-  it('should parse valid version with suffix correctly', async () => {
+  test('should parse valid version with suffix correctly', async () => {
     const ver = parseAppVersion('13381-5572ca8-user-branch');
     expect(ver).toEqual({ num: 13381, hash: '5572ca8' });
   });
 
-  it('should throw an error when parsing invalid version', async () => {
+  test('should throw an error when parsing invalid version', async () => {
     const ver = parseAppVersion('5572ca8-13381');
     expect(ver).toBeNull();
   });

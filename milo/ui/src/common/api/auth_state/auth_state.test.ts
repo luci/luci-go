@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { expect } from '@jest/globals';
-
 import {
   getAuthStateCache,
   getAuthStateCacheSync,
@@ -21,7 +19,7 @@ import {
 } from './auth_state';
 
 describe('auth_state', () => {
-  it('support accessing auth state synchronously', () => {
+  test('support accessing auth state synchronously', () => {
     const state = {
       accessToken: Math.random().toString(),
       identity: `user: ${Math.random()}`,
@@ -31,7 +29,7 @@ describe('auth_state', () => {
     expect(getAuthStateCacheSync()).toEqual(state);
   });
 
-  it('support accessing auth state asynchronously', async () => {
+  test('support accessing auth state asynchronously', async () => {
     const state = {
       accessToken: Math.random().toString(),
       identity: `user: ${Math.random()}`,
@@ -41,7 +39,7 @@ describe('auth_state', () => {
     expect(await getAuthStateCache()).toEqual(state);
   });
 
-  it('clear expired auth state when accessing synchronously', () => {
+  test('clear expired auth state when accessing synchronously', () => {
     const state = {
       accessToken: Math.random().toString(),
       identity: `user: ${Math.random()}`,
@@ -51,7 +49,7 @@ describe('auth_state', () => {
     expect(getAuthStateCacheSync()).toBeNull();
   });
 
-  it('clear expired auth state when accessing asynchronously', async () => {
+  test('clear expired auth state when accessing asynchronously', async () => {
     const state = {
       accessToken: Math.random().toString(),
       identity: `user: ${Math.random()}`,

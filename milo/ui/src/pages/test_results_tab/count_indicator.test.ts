@@ -86,7 +86,7 @@ describe('CountIndicator', () => {
     destroy(store);
   });
 
-  it('should load the first page of test variants when connected', async () => {
+  test('should load the first page of test variants when connected', async () => {
     unprotect(store);
     const queryTestVariantsStub = jest.spyOn(
       store.services.resultDb!,

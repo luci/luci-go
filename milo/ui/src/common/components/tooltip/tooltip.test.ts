@@ -23,7 +23,7 @@ import {
 } from './tooltip';
 
 describe('Tooltip', () => {
-  it('should only display one tooltip at a time', async () => {
+  test('should only display one tooltip at a time', async () => {
     const tooltipContainer = await fixture<TooltipElement>(
       html`<milo-tooltip></milo-tooltip>`
     );
@@ -60,7 +60,7 @@ describe('Tooltip', () => {
     expect(tooltip2.isConnected).toBeTruthy();
   });
 
-  it('should hide tooltip after specified delay', async () => {
+  test('should hide tooltip after specified delay', async () => {
     const tooltipContainer = await fixture<TooltipElement>(
       html`<milo-tooltip></milo-tooltip>`
     );
@@ -93,7 +93,7 @@ describe('Tooltip', () => {
     expect(tooltip.isConnected).toBeFalsy();
   });
 
-  it('should handle race condition correctly', async () => {
+  test('should handle race condition correctly', async () => {
     const tooltipContainer = await fixture<TooltipElement>(
       html`<milo-tooltip></milo-tooltip>`
     );

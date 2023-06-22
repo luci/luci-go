@@ -28,7 +28,7 @@ const md = markdownIt('zero', { linkify: true })
   .use(bugnizerLink);
 
 describe('bugnizer_link', () => {
-  it('can render links correctly', async () => {
+  test('can render links correctly', async () => {
     const ele = await fixture(md.render(bugnizerLinks));
 
     const anchors = ele.querySelectorAll('a');

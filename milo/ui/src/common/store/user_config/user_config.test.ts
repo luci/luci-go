@@ -54,7 +54,7 @@ describe('UserConfig', () => {
     }
   });
 
-  it('should persist config to storage correctly', () => {
+  test('should persist config to storage correctly', () => {
     const storage = new FakeStorage();
     const setItemSpy = jest.spyOn(storage, 'setItem');
     const transientKeysTTL = Duration.fromObject({ hour: 2 }).toMillis();
@@ -98,7 +98,7 @@ describe('UserConfig', () => {
     expect(store2.build.outputProperties.isFolded('outputKey3')).toBeTruthy();
   });
 
-  it('should persist config to storage correctly when attached to another store', () => {
+  test('should persist config to storage correctly when attached to another store', () => {
     const storage = new FakeStorage();
     rootStore = RootStore.create({}, { storage });
 

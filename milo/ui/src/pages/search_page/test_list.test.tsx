@@ -37,7 +37,7 @@ describe('TestList', () => {
     jest.useRealTimers();
   });
 
-  it('should load the first page of test', () => {
+  test('should load the first page of test', () => {
     store.searchPage.setSearchQuery('test-id');
     store.searchPage.setSearchTarget(SearchTarget.Tests);
     const loadFirstPagesStub = jest.spyOn(

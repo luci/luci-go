@@ -45,7 +45,7 @@ describe('ServiceWorkerRegistrationState', () => {
     destroy(state);
   });
 
-  it('should sync properties correctly', () => {
+  test('should sync properties correctly', () => {
     state.init(fakeRegistration);
     expect(state.waiting).toBeUndefined();
     expect(state.installing?.serviceWorker).toBeUndefined();

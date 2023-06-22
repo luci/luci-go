@@ -27,7 +27,7 @@ describe('BuildStepsConfig', () => {
     destroy(store);
   });
 
-  it('should set pins recursively', async () => {
+  test('should set pins recursively', async () => {
     // When pinned is true, set pins for all ancestors.
     store.setStepPin('parent|step|child', true);
     expect(store.stepIsPinned('parent')).toBeTruthy();

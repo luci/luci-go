@@ -47,7 +47,7 @@ describe('AuthStateStore', () => {
   });
 
   describe('scheduleUpdate', () => {
-    it("when forceUpdate is false and there's no existing value", async () => {
+    test("when forceUpdate is false and there's no existing value", async () => {
       const authState = {
         identity: 'user:user@google.com',
         email: 'user@google.com',
@@ -67,7 +67,7 @@ describe('AuthStateStore', () => {
       expect(setAuthStateCacheStub.mock.calls[0]).toEqual([authState]);
     });
 
-    it("when forceUpdate is false and there's an existing value", async () => {
+    test("when forceUpdate is false and there's an existing value", async () => {
       const authState = {
         identity: 'user:user@google.com',
         email: 'user@google.com',
@@ -100,7 +100,7 @@ describe('AuthStateStore', () => {
       expect(setAuthStateCacheStub.mock.calls[0]).toEqual([refreshedAuthState]);
     });
 
-    it("when forceUpdate is true and there's no existing value", async () => {
+    test("when forceUpdate is true and there's no existing value", async () => {
       const authState = {
         identity: 'user:user@google.com',
         email: 'user@google.com',
@@ -120,7 +120,7 @@ describe('AuthStateStore', () => {
       expect(setAuthStateCacheStub.mock.calls[0]).toEqual([authState]);
     });
 
-    it("when forceUpdate is true and there's an existing value", async () => {
+    test("when forceUpdate is true and there's an existing value", async () => {
       const authState = {
         identity: 'user:user@google.com',
         email: 'user@google.com',
@@ -150,7 +150,7 @@ describe('AuthStateStore', () => {
   });
 
   describe('init', () => {
-    it("should update token immediately even when it's still valid", async () => {
+    test("should update token immediately even when it's still valid", async () => {
       const startTime = jest.now();
       store.init({
         identity: 'user:user@google.com',
@@ -176,7 +176,7 @@ describe('AuthStateStore', () => {
       expect(store.value).toMatchObject(refreshedAuthState);
     });
 
-    it('when getAuthState always return short-lived token', async () => {
+    test('when getAuthState always return short-lived token', async () => {
       const startTime = jest.now();
       store.init({
         identity: 'user:user@google.com',

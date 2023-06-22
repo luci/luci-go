@@ -33,7 +33,7 @@ describe('AppMenu', () => {
     destroy(store);
   });
 
-  it('has pending update', () => {
+  test('has pending update', () => {
     unprotect(store);
     jest
       .spyOn(store.workbox, 'hasPendingUpdate', 'get')
@@ -56,7 +56,7 @@ describe('AppMenu', () => {
     expect(menu.getAttribute('aria-disabled')).not.toStrictEqual('true');
   });
 
-  it('no pending update', () => {
+  test('no pending update', () => {
     unprotect(store);
     jest
       .spyOn(store.workbox, 'hasPendingUpdate', 'get')

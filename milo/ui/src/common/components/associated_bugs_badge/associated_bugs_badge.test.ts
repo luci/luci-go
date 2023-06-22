@@ -63,7 +63,7 @@ const cluster3: Cluster = {
 };
 
 describe('AssociatedBugsBadge', () => {
-  it('should remove duplicated bugs', async () => {
+  test('should remove duplicated bugs', async () => {
     const ele = await fixture<AssociatedBugsBadgeElement>(html`
       <milo-associated-bugs-badge
         .clusters=${[cluster1, cluster2, cluster3, cluster1]}
@@ -76,7 +76,7 @@ describe('AssociatedBugsBadge', () => {
     );
   });
 
-  it('should render a list on hover', async () => {
+  test('should render a list on hover', async () => {
     const ele = await fixture<AssociatedBugsBadgeElement>(html`
       <milo-associated-bugs-badge
         .clusters=${[cluster1, cluster2, cluster3]}

@@ -55,7 +55,7 @@ describe.skip('PropertyViewer', () => {
     jest.useRealTimers();
   });
 
-  it('e2e', async () => {
+  test('e2e', async () => {
     store.setFolded('  "key1": {', true);
     store.setFolded('  "key3": {', true);
 

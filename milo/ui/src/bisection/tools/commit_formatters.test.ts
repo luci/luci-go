@@ -15,7 +15,7 @@
 import { getCommitShortHash } from './commit_formatters';
 
 describe('Test commit formatters', () => {
-  it('getting commit short hash', () => {
+  test('getting commit short hash', () => {
     expect(getCommitShortHash('123456abcdef')).toBe('123456a');
     expect(getCommitShortHash('')).toBe('');
     expect(getCommitShortHash(null)).toBe('');

@@ -40,32 +40,32 @@ describe('sanitize_html', () => {
     anchors = root.querySelectorAll('a');
   });
 
-  it('should set rel="noopener" when target attribute is set to _blank', () => {
+  test('should set rel="noopener" when target attribute is set to _blank', () => {
     const anchor = anchors.item(0);
     expect(anchor.getAttribute('rel')).toStrictEqual('noopener');
   });
 
-  it('should set rel="noopener" when target attribute is not set', () => {
+  test('should set rel="noopener" when target attribute is not set', () => {
     const anchor = anchors.item(1);
     expect(anchor.getAttribute('rel')).toStrictEqual('noopener');
   });
 
-  it('should not set rel="noopener" when target attribute is set but not _blank', () => {
+  test('should not set rel="noopener" when target attribute is set but not _blank', () => {
     const anchor = anchors.item(2);
     expect(anchor.getAttribute('rel')).toBeNull();
   });
 
-  it('should append to the existing rel attribute', () => {
+  test('should append to the existing rel attribute', () => {
     const anchor = anchors.item(3);
     expect(anchor.getAttribute('rel')).toStrictEqual('nofollow noopener');
   });
 
-  it('should not set rel="noopener" when it is already present', () => {
+  test('should not set rel="noopener" when it is already present', () => {
     const anchor = anchors.item(4);
     expect(anchor.getAttribute('rel')).toStrictEqual('noopener nofollow');
   });
 
-  it('should set rel="noopener" on <form> and <area> as well', () => {
+  test('should set rel="noopener" on <form> and <area> as well', () => {
     const form = root.querySelector('form')!;
     expect(form.getAttribute('rel')).toStrictEqual('noopener');
 

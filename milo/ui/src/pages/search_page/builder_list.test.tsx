@@ -36,7 +36,7 @@ describe('BuilderList', () => {
     jest.useRealTimers();
   });
 
-  it('should start loading all builders', () => {
+  test('should start loading all builders', () => {
     const loadRemainingPagesStub = jest.spyOn(
       store.searchPage.builderLoader!,
       'loadRemainingPages'

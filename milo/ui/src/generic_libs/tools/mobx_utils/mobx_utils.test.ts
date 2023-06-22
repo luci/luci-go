@@ -51,7 +51,7 @@ describe('aliveFlow', () => {
     jest.useRealTimers();
   });
 
-  it('when the store is not destroyed', async () => {
+  test('when the store is not destroyed', async () => {
     const [promise1, resolve1] = deferred<number>();
     const [promise2, resolve2] = deferred<number>();
     const [promise3, resolve3] = deferred<number>();
@@ -78,7 +78,7 @@ describe('aliveFlow', () => {
     expect(actionPromise.state).toStrictEqual(FULFILLED);
   });
 
-  it('when the store is destroyed while running the action', async () => {
+  test('when the store is destroyed while running the action', async () => {
     const [promise1, resolve1] = deferred<number>();
     const [promise2, resolve2] = deferred<number>();
     const [promise3, resolve3] = deferred<number>();
@@ -154,7 +154,7 @@ describe('keepAliveComputed', () => {
     jest.useRealTimers();
   });
 
-  it('e2e', async () => {
+  test('e2e', async () => {
     expect(computeSpy).toHaveBeenCalledTimes(0);
 
     // Access the computed value.

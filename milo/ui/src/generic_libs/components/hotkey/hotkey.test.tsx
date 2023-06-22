@@ -110,17 +110,17 @@ describe('Hotkey', () => {
     jest.useRealTimers();
   });
 
-  it('should react to key press on the child element', () => {
+  test('should react to key press on the child element', () => {
     simulateKeyStroke(childEle, 'a');
     expect(handlerSpy.mock.calls.length).toStrictEqual(1);
   });
 
-  it('should react to key press outside of the child element', () => {
+  test('should react to key press outside of the child element', () => {
     simulateKeyStroke(document, 'a');
     expect(handlerSpy.mock.calls.length).toStrictEqual(1);
   });
 
-  it('should react to the new key press event when the key is updated', async () => {
+  test('should react to the new key press event when the key is updated', async () => {
     ele.rerender(
       <Hotkey hotkey="b" handler={handlerSpy}>
         <div data-testid="child"></div>
@@ -139,7 +139,7 @@ describe('Hotkey', () => {
     expect(handlerSpy.mock.calls.length).toStrictEqual(1);
   });
 
-  it('should trigger the new handler when the handler is updated', async () => {
+  test('should trigger the new handler when the handler is updated', async () => {
     ele.rerender(
       <Hotkey hotkey="b" handler={handlerSpy2}>
         <div data-testid="child"></div>
@@ -156,21 +156,21 @@ describe('Hotkey', () => {
     expect(handlerSpy2.mock.calls.length).toStrictEqual(1);
   });
 
-  it('should not trigger the handler when the target element is INPUT/SELECT/TEXTAREA', () => {
+  test('should not trigger the handler when the target element is INPUT/SELECT/TEXTAREA', () => {
     simulateKeyStroke(inputEle, 'b');
     simulateKeyStroke(selectEle, 'b');
     simulateKeyStroke(textareaEle, 'b');
     expect(handlerSpy2.mock.calls.length).toStrictEqual(0);
   });
 
-  it('should not trigger the handler when the target element is INPUT/SELECT/TEXTAREA in a web component', () => {
+  test('should not trigger the handler when the target element is INPUT/SELECT/TEXTAREA in a web component', () => {
     simulateKeyStroke(wrappedInputEle, 'b');
     simulateKeyStroke(wrappedSelectEle, 'b');
     simulateKeyStroke(wrappedTextareaEle, 'b');
     expect(handlerSpy2.mock.calls.length).toStrictEqual(0);
   });
 
-  it('should not trigger the handler when the component is disconnected', async () => {
+  test('should not trigger the handler when the component is disconnected', async () => {
     ele.unmount();
     await jest.runAllTimersAsync();
 

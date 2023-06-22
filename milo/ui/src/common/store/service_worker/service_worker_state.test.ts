@@ -32,7 +32,7 @@ describe('ServiceWorkerState', () => {
     destroy(state);
   });
 
-  it('should sync properties correctly', () => {
+  test('should sync properties correctly', () => {
     const fakeSW = new FakeServiceWorker('installing', 'sw.js');
     const addEventListenerStub = jest.spyOn(fakeSW, 'addEventListener');
     const removeEventListenerStub = jest.spyOn(fakeSW, 'removeEventListener');

@@ -42,7 +42,7 @@ describe('SearchPage', () => {
     jest.useRealTimers();
   });
 
-  it('should throttle search query updates', () => {
+  test('should throttle search query updates', () => {
     unprotect(store);
     const setSearchQuerySpy = jest.spyOn(store.searchPage, 'setSearchQuery');
     protect(store);
@@ -80,7 +80,7 @@ describe('SearchPage', () => {
     expect(setSearchQuerySpy.mock.calls[1]).toEqual(['another-builder-id']);
   });
 
-  it('should cancel search query updates when switching search targets', async () => {
+  test('should cancel search query updates when switching search targets', async () => {
     unprotect(store);
     const setSearchQuerySpy = jest.spyOn(store.searchPage, 'setSearchQuery');
     protect(store);
@@ -106,7 +106,7 @@ describe('SearchPage', () => {
     expect(setSearchQuerySpy.mock.calls[0]).toEqual(['test-id']);
   });
 
-  it('should read params from URL', async () => {
+  test('should read params from URL', async () => {
     const url = new URLExt(window.location.href)
       .setSearchParam('t', SearchTarget.Tests)
       .setSearchParam('tp', 'project')
@@ -132,7 +132,7 @@ describe('SearchPage', () => {
     expect(store.searchPage.searchQuery).toStrictEqual('query');
   });
 
-  it('should sync params with URL', async () => {
+  test('should sync params with URL', async () => {
     render(
       <StoreProvider value={store}>
         <SearchPage />

@@ -55,31 +55,31 @@ describe('StepExt', () => {
   }
 
   describe('succeededRecursively/failed', () => {
-    it('succeeded step with no children', async () => {
+    test('succeeded step with no children', async () => {
       const step = createStep(0, 'parent', BuildStatus.Success);
       expect(step.succeededRecursively).toBeTruthy();
       expect(step.failed).toBeFalsy();
     });
 
-    it('failed step with no children', async () => {
+    test('failed step with no children', async () => {
       const step = createStep(0, 'parent', BuildStatus.Failure);
       expect(step.succeededRecursively).toBeFalsy();
       expect(step.failed).toBeTruthy();
     });
 
-    it('infra-failed step with no children', async () => {
+    test('infra-failed step with no children', async () => {
       const step = createStep(0, 'parent', BuildStatus.InfraFailure);
       expect(step.succeededRecursively).toBeFalsy();
       expect(step.failed).toBeTruthy();
     });
 
-    it('non-(infra-)failed step with no children', async () => {
+    test('non-(infra-)failed step with no children', async () => {
       const step = createStep(0, 'parent', BuildStatus.Canceled);
       expect(step.succeededRecursively).toBeFalsy();
       expect(step.failed).toBeFalsy();
     });
 
-    it('succeeded step with only succeeded children', async () => {
+    test('succeeded step with only succeeded children', async () => {
       const step = createStep(0, 'parent', BuildStatus.Success, '', [
         createStep(0, 'parent|child1', BuildStatus.Success),
         createStep(1, 'parent|child2', BuildStatus.Success),
@@ -88,7 +88,7 @@ describe('StepExt', () => {
       expect(step.failed).toBeFalsy();
     });
 
-    it('succeeded step with failed child', async () => {
+    test('succeeded step with failed child', async () => {
       const step = createStep(0, 'parent', BuildStatus.Success, '', [
         createStep(0, 'parent|child1', BuildStatus.Success),
         createStep(1, 'parent|child2', BuildStatus.Failure),
@@ -97,7 +97,7 @@ describe('StepExt', () => {
       expect(step.failed).toBeTruthy();
     });
 
-    it('succeeded step with non-succeeded child', async () => {
+    test('succeeded step with non-succeeded child', async () => {
       const step = createStep(0, 'parent', BuildStatus.Success, '', [
         createStep(0, 'parent|child1', BuildStatus.Success),
         createStep(1, 'parent|child2', BuildStatus.Started),
@@ -106,7 +106,7 @@ describe('StepExt', () => {
       expect(step.failed).toBeFalsy();
     });
 
-    it('failed step with succeeded children', async () => {
+    test('failed step with succeeded children', async () => {
       const step = createStep(0, 'parent', BuildStatus.Failure, '', [
         createStep(0, 'parent|child1', BuildStatus.Success),
         createStep(1, 'parent|child2', BuildStatus.Success),
@@ -115,7 +115,7 @@ describe('StepExt', () => {
       expect(step.failed).toBeTruthy();
     });
 
-    it('infra-failed step with succeeded children', async () => {
+    test('infra-failed step with succeeded children', async () => {
       const step = createStep(0, 'parent', BuildStatus.InfraFailure, '', [
         createStep(0, 'parent|child1', BuildStatus.Success),
         createStep(1, 'parent|child2', BuildStatus.Success),
@@ -139,19 +139,19 @@ describe('StepExt', () => {
       return container.innerHTML;
     }
 
-    it('for no summary', async () => {
+    test('for no summary', async () => {
       const step = createStep(0, 'step', BuildStatus.Success, undefined);
       expect(step.header).toBeNull();
       expect(step.summary).toBeNull();
     });
 
-    it('for empty summary', async () => {
+    test('for empty summary', async () => {
       const step = createStep(0, 'step', BuildStatus.Success, '');
       expect(step.header).toBeNull();
       expect(step.summary).toBeNull();
     });
 
-    it('for text summary', async () => {
+    test('for text summary', async () => {
       const step = createStep(
         0,
         'step',
@@ -162,7 +162,7 @@ describe('StepExt', () => {
       expect(step.summary).toBeNull();
     });
 
-    it('for header and content separated by <br/>', async () => {
+    test('for header and content separated by <br/>', async () => {
       const step = createStep(
         0,
         'step',
@@ -177,7 +177,7 @@ describe('StepExt', () => {
       );
     });
 
-    it('for header and content separated by <br/>, header is empty', async () => {
+    test('for header and content separated by <br/>, header is empty', async () => {
       const step = createStep(0, 'step', BuildStatus.Success, '<br/>body');
       expect(step.header).toBeNull();
       expect(step.summary?.innerHTML).toStrictEqual(
@@ -185,7 +185,7 @@ describe('StepExt', () => {
       );
     });
 
-    it('for header and content separated by <br/>, body is empty', async () => {
+    test('for header and content separated by <br/>, body is empty', async () => {
       const step = createStep(0, 'step', BuildStatus.Success, 'header<br/>');
       expect(step.header?.innerHTML).toStrictEqual(
         getExpectedHeaderHTML('header')
@@ -193,7 +193,7 @@ describe('StepExt', () => {
       expect(step.summary).toBeNull();
     });
 
-    it('for header and content separated by <br/>, header is a link', async () => {
+    test('for header and content separated by <br/>, header is a link', async () => {
       const step = createStep(
         0,
         'step',
@@ -208,7 +208,7 @@ describe('StepExt', () => {
       );
     });
 
-    it('for header and content separated by <br/>, header has some inline elements', async () => {
+    test('for header and content separated by <br/>, header has some inline elements', async () => {
       const step = createStep(
         0,
         'step',
@@ -225,7 +225,7 @@ describe('StepExt', () => {
       );
     });
 
-    it('for header and content separated by <br/>, header is a list', async () => {
+    test('for header and content separated by <br/>, header is a list', async () => {
       const step = createStep(
         0,
         'step',
@@ -238,7 +238,7 @@ describe('StepExt', () => {
       );
     });
 
-    it('for header is a list', async () => {
+    test('for header is a list', async () => {
       const step = createStep(
         0,
         'step',
@@ -251,7 +251,7 @@ describe('StepExt', () => {
       );
     });
 
-    it('for <br/> is contained in <div>', async () => {
+    test('for <br/> is contained in <div>', async () => {
       const step = createStep(
         0,
         'step',
@@ -266,7 +266,7 @@ describe('StepExt', () => {
       );
     });
 
-    it('for <br/> is contained in some nested tags', async () => {
+    test('for <br/> is contained in some nested tags', async () => {
       const step = createStep(
         0,
         'step',
@@ -289,7 +289,7 @@ describe('clusterBuildSteps', () => {
     } as Partial<StepExt> as StepExt;
   }
 
-  it('should cluster build steps correctly', () => {
+  test('should cluster build steps correctly', () => {
     const clusteredSteps = clusterBuildSteps([
       createStep(1, false),
       createStep(2, false),
@@ -313,17 +313,17 @@ describe('clusterBuildSteps', () => {
     ]);
   });
 
-  it("should cluster build steps correctly when there're no steps", () => {
+  test("should cluster build steps correctly when there're no steps", () => {
     const clusteredSteps = clusterBuildSteps([]);
     expect(clusteredSteps).toEqual([]);
   });
 
-  it("should cluster build steps correctly when there's a single step", () => {
+  test("should cluster build steps correctly when there's a single step", () => {
     const clusteredSteps = clusterBuildSteps([createStep(1, false)]);
     expect(clusteredSteps).toEqual([[createStep(1, false)]]);
   });
 
-  it('should not re-cluster steps when the criticality is updated', () => {
+  test('should not re-cluster steps when the criticality is updated', () => {
     const step1 = makeAutoObservable(createStep(1, false));
     const step2 = makeAutoObservable(createStep(2, false));
     const step3 = makeAutoObservable(createStep(3, false));
@@ -351,7 +351,7 @@ describe('BuildState', () => {
     destroy(build);
   });
 
-  it('should build step-tree correctly', async () => {
+  test('should build step-tree correctly', async () => {
     const time = '2020-11-01T21:43:03.351951Z';
     build = BuildState.create({
       data: {
@@ -466,7 +466,7 @@ describe('BuildState', () => {
       jest.useRealTimers();
     });
 
-    it("when the build hasn't started", () => {
+    test("when the build hasn't started", () => {
       jest.setSystemTime(DateTime.fromISO('2020-01-01T00:00:20Z').toMillis());
       build = BuildState.create({
         data: {
@@ -486,7 +486,7 @@ describe('BuildState', () => {
       expect(build.exceededExecutionTimeout).toBeFalsy();
     });
 
-    it('when the build was canceled before exceeding the scheduling timeout', () => {
+    test('when the build was canceled before exceeding the scheduling timeout', () => {
       jest.setSystemTime(DateTime.fromISO('2020-01-01T00:00:50Z').toMillis());
       build = BuildState.create({
         data: {
@@ -507,7 +507,7 @@ describe('BuildState', () => {
       expect(build.exceededExecutionTimeout).toBeFalsy();
     });
 
-    it('when the build was canceled after exceeding the scheduling timeout', () => {
+    test('when the build was canceled after exceeding the scheduling timeout', () => {
       jest.setSystemTime(DateTime.fromISO('2020-01-01T00:00:50Z').toMillis());
       build = BuildState.create({
         data: {
@@ -528,7 +528,7 @@ describe('BuildState', () => {
       expect(build.exceededExecutionTimeout).toBeFalsy();
     });
 
-    it('when the build was started', () => {
+    test('when the build was started', () => {
       jest.setSystemTime(DateTime.fromISO('2020-01-01T00:00:30Z').toMillis());
       build = BuildState.create({
         data: {
@@ -549,7 +549,7 @@ describe('BuildState', () => {
       expect(build.exceededExecutionTimeout).toBeFalsy();
     });
 
-    it('when the build was started and canceled before exceeding the execution timeout', () => {
+    test('when the build was started and canceled before exceeding the execution timeout', () => {
       jest.setSystemTime(DateTime.fromISO('2020-01-01T00:00:40Z').toMillis());
       build = BuildState.create({
         data: {
@@ -571,7 +571,7 @@ describe('BuildState', () => {
       expect(build.exceededExecutionTimeout).toBeFalsy();
     });
 
-    it('when the build started and ended after exceeding the execution timeout', () => {
+    test('when the build started and ended after exceeding the execution timeout', () => {
       jest.setSystemTime(DateTime.fromISO('2020-01-01T00:00:50Z').toMillis());
       build = BuildState.create({
         data: {
@@ -593,7 +593,7 @@ describe('BuildState', () => {
       expect(build.exceededExecutionTimeout).toBeTruthy();
     });
 
-    it("when the build wasn't started or canceled after the scheduling timeout", () => {
+    test("when the build wasn't started or canceled after the scheduling timeout", () => {
       jest.setSystemTime(DateTime.fromISO('2020-01-01T00:00:50Z').toMillis());
       build = BuildState.create({
         data: {
@@ -613,7 +613,7 @@ describe('BuildState', () => {
       expect(build.exceededExecutionTimeout).toBeFalsy();
     });
 
-    it('when the build was started after the scheduling timeout', () => {
+    test('when the build was started after the scheduling timeout', () => {
       jest.setSystemTime(DateTime.fromISO('2020-01-01T00:00:50Z').toMillis());
       build = BuildState.create({
         data: {
@@ -634,7 +634,7 @@ describe('BuildState', () => {
       expect(build.exceededExecutionTimeout).toBeFalsy();
     });
 
-    it('when the build was not canceled after the execution timeout', () => {
+    test('when the build was not canceled after the execution timeout', () => {
       jest.setSystemTime(DateTime.fromISO('2020-01-01T00:01:10Z').toMillis());
       build = BuildState.create({
         data: {

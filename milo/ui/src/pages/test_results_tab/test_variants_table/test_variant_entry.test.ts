@@ -126,7 +126,7 @@ describe('TestVariantEntry', () => {
     destroy(store);
   });
 
-  it('should only query the necessary clusters', async () => {
+  test('should only query the necessary clusters', async () => {
     const clusterStub = jest.spyOn(store.services.clusters!, 'cluster');
     clusterStub.mockResolvedValueOnce({
       clusteringVersion,
@@ -202,7 +202,7 @@ describe('TestVariantEntry', () => {
     ]);
   });
 
-  it('should work properly if failed to query clusters from luci-analysis', async () => {
+  test('should work properly if failed to query clusters from luci-analysis', async () => {
     const clusterStub = jest.spyOn(store.services.clusters!, 'cluster');
     clusterStub.mockRejectedValueOnce(
       new GrpcError(RpcCode.PERMISSION_DENIED, 'not allowed')
@@ -256,7 +256,7 @@ describe('TestVariantEntry', () => {
     ).toBeTruthy();
   });
 
-  it('should generate test URLs correctly', async () => {
+  test('should generate test URLs correctly', async () => {
     const tv: TestVariant = {
       testId: 'test-id',
       variantHash: 'vhash',

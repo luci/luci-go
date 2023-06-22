@@ -25,7 +25,7 @@ import {
 } from './resultdb';
 
 describe('resultdb', () => {
-  it('should compute invocation ID from build number correctly', async () => {
+  test('should compute invocation ID from build number correctly', async () => {
     const invId = await getInvIdFromBuildNum(
       { project: 'chromium', bucket: 'ci', builder: 'ios-device' },
       179945
@@ -35,14 +35,14 @@ describe('resultdb', () => {
     );
   });
 
-  it('should compute invocation ID from build ID correctly', async () => {
+  test('should compute invocation ID from build ID correctly', async () => {
     const invId = await getInvIdFromBuildId('123456');
     expect(invId).toStrictEqual('build-123456');
   });
 });
 
 describe('createTVPropGetter', () => {
-  it('can create a status getter', async () => {
+  test('can create a status getter', async () => {
     const getter = createTVPropGetter('status');
     const prop = getter({
       status: TestVariantStatus.EXONERATED,
@@ -50,7 +50,7 @@ describe('createTVPropGetter', () => {
     expect(prop).toStrictEqual(TestVariantStatus.EXONERATED);
   });
 
-  it('can create a name getter', async () => {
+  test('can create a name getter', async () => {
     const getter = createTVPropGetter('Name');
 
     const prop1 = getter({
@@ -66,7 +66,7 @@ describe('createTVPropGetter', () => {
     expect(prop2).toStrictEqual('test-id');
   });
 
-  it('can create a variant value getter', async () => {
+  test('can create a variant value getter', async () => {
     const getter = createTVPropGetter('v.variant_key');
 
     const prop1 = getter({
@@ -103,7 +103,7 @@ describe('createTVCmpFn', () => {
     variant: { def: { key1: 'val1' } },
   } as Partial<TestVariant> as TestVariant;
 
-  it('can create a sort fn', async () => {
+  test('can create a sort fn', async () => {
     const cmpFn = createTVCmpFn(['name']);
 
     expect(cmpFn(variant1, variant2)).toStrictEqual(-1);
@@ -111,7 +111,7 @@ describe('createTVCmpFn', () => {
     expect(cmpFn(variant1, variant1)).toStrictEqual(0);
   });
 
-  it('can sort in descending order', async () => {
+  test('can sort in descending order', async () => {
     const cmpFn = createTVCmpFn(['-name']);
 
     expect(cmpFn(variant1, variant2)).toStrictEqual(1);
@@ -119,7 +119,7 @@ describe('createTVCmpFn', () => {
     expect(cmpFn(variant1, variant1)).toStrictEqual(0);
   });
 
-  it('can sort by status correctly', async () => {
+  test('can sort by status correctly', async () => {
     const cmpFn = createTVCmpFn(['status']);
 
     // Status should be treated as numbers rather than as strings when sorting.
@@ -128,7 +128,7 @@ describe('createTVCmpFn', () => {
     expect(cmpFn(variant1, variant1)).toStrictEqual(0);
   });
 
-  it('can sort by multiple keys', async () => {
+  test('can sort by multiple keys', async () => {
     const cmpFn = createTVCmpFn(['status', '-v.key1']);
 
     expect(cmpFn(variant1, variant2)).toStrictEqual(-1);
@@ -138,7 +138,7 @@ describe('createTVCmpFn', () => {
 });
 
 describe('getCriticalVariantKeys', () => {
-  it('when all variants are the same', () => {
+  test('when all variants are the same', () => {
     const keys = getCriticalVariantKeys([
       { def: { key1: 'val1', key2: 'val2' } },
       { def: { key1: 'val1', key2: 'val2' } },
@@ -148,7 +148,7 @@ describe('getCriticalVariantKeys', () => {
     expect(keys).toEqual(['key1']);
   });
 
-  it('when some variants are the different', () => {
+  test('when some variants are the different', () => {
     const keys = getCriticalVariantKeys([
       { def: { key1: 'val1', key2: 'val2' } },
       { def: { key1: 'val1', key2: 'val2' } },
@@ -158,7 +158,7 @@ describe('getCriticalVariantKeys', () => {
     expect(keys).toEqual(['key2']);
   });
 
-  it('when some variant defs has missing keys', () => {
+  test('when some variant defs has missing keys', () => {
     const keys = getCriticalVariantKeys([
       { def: { key1: 'val1', key2: 'val2' } },
       { def: { key1: 'val1', key2: 'val2' } },
@@ -168,7 +168,7 @@ describe('getCriticalVariantKeys', () => {
     expect(keys).toEqual(['key2']);
   });
 
-  it('when some variant values always change together', () => {
+  test('when some variant values always change together', () => {
     const keys = getCriticalVariantKeys([
       {
         def: {
@@ -202,7 +202,7 @@ describe('getCriticalVariantKeys', () => {
     expect(keys).toEqual(['builder', 'test_suite']);
   });
 
-  it("when there are additional variant keys that don't matter", () => {
+  test("when there are additional variant keys that don't matter", () => {
     const keys = getCriticalVariantKeys([
       {
         def: {
@@ -249,7 +249,7 @@ describe('getCriticalVariantKeys', () => {
     expect(keys).toEqual(['builder', 'test_suite', 'a_param4']);
   });
 
-  it('when there are multiple valid set of critical keys', () => {
+  test('when there are multiple valid set of critical keys', () => {
     const keys = getCriticalVariantKeys([
       {
         def: {

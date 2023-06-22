@@ -59,13 +59,13 @@ describe('BuildPage', () => {
       jest.useRealTimers();
     });
 
-    it('should accept cache when first querying build', async () => {
+    test('should accept cache when first querying build', async () => {
       store.buildPage.build;
       await jest.runAllTimersAsync();
       expect(getBuildStub.mock.calls[0][1]?.acceptCache).not.toBeFalsy();
     });
 
-    it('should not accept cache after calling refresh', async () => {
+    test('should not accept cache after calling refresh', async () => {
       store.buildPage.build;
       await jest.runAllTimersAsync();
 
@@ -94,7 +94,7 @@ describe('BuildPage', () => {
       jest.useRealTimers();
     });
 
-    it('ignore builderIdParam when buildNumOrIdParam is a buildId', async () => {
+    test('ignore builderIdParam when buildNumOrIdParam is a buildId', async () => {
       store.buildPage.setParams(
         {
           project: 'wrong_proj',

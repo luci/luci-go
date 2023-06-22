@@ -30,7 +30,7 @@ describe('TransientKeySet', () => {
     jest.useRealTimers();
   });
 
-  it('e2e', async () => {
+  test('e2e', async () => {
     const timestamp0 = jest.now();
     keySet.add('key0');
     expect(keySet.has('key0')).toBeTruthy();

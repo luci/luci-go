@@ -89,7 +89,7 @@ describe('AuthStateProvider', () => {
     jest.useRealTimers();
   });
 
-  it('e2e', async () => {
+  test('e2e', async () => {
     const tokenConsumerCBSpy = jest.fn(
       (
         _getIdToken: ReturnType<typeof useGetIdToken>,

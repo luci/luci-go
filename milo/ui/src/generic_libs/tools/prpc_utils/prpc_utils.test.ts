@@ -18,7 +18,7 @@ import { expect, jest } from '@jest/globals';
 import { genCacheKeyForPrpcRequest, removeDefaultProps } from './prpc_utils';
 
 describe('genCacheKeyForPrpcRequest', () => {
-  it('should generate identical keys for identical requests', async () => {
+  test('should generate identical keys for identical requests', async () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
@@ -39,7 +39,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     expect(key1).toStrictEqual(key2);
   });
 
-  it('should generate different keys for requests with different hosts', async () => {
+  test('should generate different keys for requests with different hosts', async () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
@@ -61,7 +61,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     expect(key1).not.toStrictEqual(key2);
   });
 
-  it('should generate different keys for requests with different access tokens', async () => {
+  test('should generate different keys for requests with different access tokens', async () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
@@ -89,7 +89,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     expect(key1).not.toStrictEqual(key2);
   });
 
-  it('should generate different keys for requests with different secure modes', async () => {
+  test('should generate different keys for requests with different secure modes', async () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
@@ -111,7 +111,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     expect(key1).not.toStrictEqual(key2);
   });
 
-  it('should generate different keys for requests with different services', async () => {
+  test('should generate different keys for requests with different services', async () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
@@ -132,7 +132,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     expect(key1).not.toStrictEqual(key2);
   });
 
-  it('should generate different keys for requests with different methods', async () => {
+  test('should generate different keys for requests with different methods', async () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
@@ -153,7 +153,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     expect(key1).not.toStrictEqual(key2);
   });
 
-  it('should generate different keys for requests with different bodies', async () => {
+  test('should generate different keys for requests with different bodies', async () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
@@ -174,7 +174,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     expect(key1).not.toStrictEqual(key2);
   });
 
-  it('should generate different keys for requests with different critical headers', async () => {
+  test('should generate different keys for requests with different critical headers', async () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
@@ -207,7 +207,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     expect(key1).not.toStrictEqual(key2);
   });
 
-  it('should generate different keys for requests with different default critical headers', async () => {
+  test('should generate different keys for requests with different default critical headers', async () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
@@ -276,7 +276,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     expect(key1).not.toStrictEqual(key4);
   });
 
-  it('should generate identical keys for requests with different non-critical headers', async () => {
+  test('should generate identical keys for requests with different non-critical headers', async () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
@@ -307,7 +307,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     expect(key1).toStrictEqual(key2);
   });
 
-  it('should generate identical keys for identical requests with different header key cases', async () => {
+  test('should generate identical keys for identical requests with different header key cases', async () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
@@ -333,7 +333,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     expect(key1).toStrictEqual(key2);
   });
 
-  it('should generate different keys when prefix are different', async () => {
+  test('should generate different keys when prefix are different', async () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
@@ -354,7 +354,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     expect(key1).not.toStrictEqual(key2);
   });
 
-  it('should generate identical keys when false-ish properties are omitted', async () => {
+  test('should generate identical keys when false-ish properties are omitted', async () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
@@ -381,7 +381,7 @@ describe('genCacheKeyForPrpcRequest', () => {
 });
 
 describe('removeDefaultProps', () => {
-  it('should remove false-ish properties', async () => {
+  test('should remove false-ish properties', async () => {
     const original = {
       prop: 1,
       emptyString: '',

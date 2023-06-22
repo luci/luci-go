@@ -20,7 +20,7 @@ const TAG_1 = {};
 const TAG_2 = {};
 
 describe('tag', () => {
-  it('can attach a tag to an object', () => {
+  test('can attach a tag to an object', () => {
     const obj1 = {};
     const obj2 = {};
     attachTags(obj1, TAG_1);
@@ -33,7 +33,7 @@ describe('tag', () => {
     expect(hasTags(obj2, TAG_1)).toBeFalsy();
   });
 
-  it('can attach multiple tags to an object', () => {
+  test('can attach multiple tags to an object', () => {
     const obj = {};
 
     attachTags(obj, TAG_1, TAG_2);
@@ -41,7 +41,7 @@ describe('tag', () => {
     expect(hasTags(obj, TAG_1, TAG_2)).toBeTruthy();
   });
 
-  it('can detect tag attached to [TAG_SOURCE]', () => {
+  test('can detect tag attached to [TAG_SOURCE]', () => {
     const innerObj = {};
     const outerObj = {
       [TAG_SOURCE]: innerObj,
@@ -59,7 +59,7 @@ describe('tag', () => {
     expect(hasTags(outerObj, TAG_1, TAG_2)).toBeTruthy();
   });
 
-  it('calling attachTags multiple times should not override previous calls', () => {
+  test('calling attachTags multiple times should not override previous calls', () => {
     const obj = {};
 
     attachTags(obj, TAG_1);

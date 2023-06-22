@@ -43,7 +43,7 @@ describe('ChangeConfigDialog', () => {
     jest.useRealTimers();
   });
 
-  it('should sync local state when opening the dialog', async () => {
+  test('should sync local state when opening the dialog', async () => {
     store.userConfig.build.setDefaultTab('test-results');
     const { rerender } = render(
       <StoreProvider value={store}>
@@ -82,7 +82,7 @@ describe('ChangeConfigDialog', () => {
     expect(screen.queryByRole('button', { name: 'Timeline' })).not.toBeNull();
   });
 
-  it('should update global config when confirmed', async () => {
+  test('should update global config when confirmed', async () => {
     store.userConfig.build.setDefaultTab('test-results');
     const onCloseSpy = jest.fn();
 
@@ -122,7 +122,7 @@ describe('ChangeConfigDialog', () => {
     expect(store.userConfig.build.defaultTab).toStrictEqual('timeline');
   });
 
-  it('should not update global config when dismissed', async () => {
+  test('should not update global config when dismissed', async () => {
     store.userConfig.build.setDefaultTab('test-results');
     const onCloseSpy = jest.fn();
 

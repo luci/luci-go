@@ -22,7 +22,7 @@ import {
 } from './expandable_entry';
 
 describe('ExpandableEntry', () => {
-  it('collapsed', () => {
+  test('collapsed', () => {
     render(
       <ExpandableEntry expanded={false}>
         <ExpandableEntryHeader onToggle={() => {}}>
@@ -39,7 +39,7 @@ describe('ExpandableEntry', () => {
     expect(screen.queryByText('Content')).toBeNull();
   });
 
-  it('expanded', () => {
+  test('expanded', () => {
     render(
       <ExpandableEntry expanded={true}>
         <ExpandableEntryHeader onToggle={() => {}}>
@@ -56,7 +56,7 @@ describe('ExpandableEntry', () => {
     expect(screen.queryByText('Content')).not.toBeNull();
   });
 
-  it('onToggle should be fired when the header is clicked', () => {
+  test('onToggle should be fired when the header is clicked', () => {
     const onToggleStub = jest.fn();
     const { rerender } = render(
       <ExpandableEntry expanded={false}>

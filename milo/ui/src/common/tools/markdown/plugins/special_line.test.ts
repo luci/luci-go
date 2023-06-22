@@ -27,7 +27,7 @@ function lookaheadLine(md: markdownIt) {
 }
 
 describe('special_line', () => {
-  it('can handle regex matching empty prefix (e.g. lookahead regex)', async () => {
+  test('can handle regex matching empty prefix (e.g. lookahead regex)', async () => {
     const md = markdownIt('zero', { breaks: true, linkify: true }).use(
       lookaheadLine
     );

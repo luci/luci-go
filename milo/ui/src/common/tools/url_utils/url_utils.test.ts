@@ -21,7 +21,7 @@ import {
 } from './url_utils';
 
 describe('getBuilderURLPath', () => {
-  it('should encode the builder', () => {
+  test('should encode the builder', () => {
     const url = getBuilderURLPath({
       project: 'testproject',
       bucket: 'testbucket',
@@ -34,14 +34,14 @@ describe('getBuilderURLPath', () => {
 });
 
 describe('getTestHisotryURLPath', () => {
-  it('should encode the test ID', () => {
+  test('should encode the test ID', () => {
     const url = getTestHistoryURLPath('testproject', 'test/id');
     expect(url).toStrictEqual('/ui/test/testproject/test%2Fid');
   });
 });
 
 describe('getSwarmingBotListURL', () => {
-  it('should support multiple dimensions', () => {
+  test('should support multiple dimensions', () => {
     const url = getSwarmingBotListURL('chromium-swarm-dev.appspot.com', [
       'cpu:x86-64',
       'os:Windows-11',

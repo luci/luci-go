@@ -18,65 +18,65 @@ import { Duration } from 'luxon';
 import { displayCompactDuration, displayDuration } from './time_utils';
 
 describe('displayDuration', () => {
-  it('should display correct duration in days and hours', async () => {
+  test('should display correct duration in days and hours', async () => {
     const duration = Duration.fromISO('P3DT11H');
     expect(displayDuration(duration)).toStrictEqual('3 days 11 hours');
   });
-  it('should display correct duration in hours and minutes', async () => {
+  test('should display correct duration in hours and minutes', async () => {
     const duration = Duration.fromISO('PT1H11M');
     expect(displayDuration(duration)).toStrictEqual('1 hour 11 mins');
   });
-  it('should display correct duration in minutes and seconds', async () => {
+  test('should display correct duration in minutes and seconds', async () => {
     const duration = Duration.fromISO('PT2M3S');
     expect(displayDuration(duration)).toStrictEqual('2 mins 3 secs');
   });
-  it('should display correct duration in seconds', async () => {
+  test('should display correct duration in seconds', async () => {
     const duration = Duration.fromISO('PT15S');
     expect(displayDuration(duration)).toStrictEqual('15 secs');
   });
-  it('should display correct duration in milliseconds', async () => {
+  test('should display correct duration in milliseconds', async () => {
     const duration = Duration.fromMillis(999);
     expect(displayDuration(duration)).toStrictEqual('999 ms');
   });
-  it('should ignore milliseconds if duration > 1 second', async () => {
+  test('should ignore milliseconds if duration > 1 second', async () => {
     const duration = Duration.fromMillis(1999);
     expect(displayDuration(duration)).toStrictEqual('1 sec');
   });
-  it('should display zero duration correctly', async () => {
+  test('should display zero duration correctly', async () => {
     const duration = Duration.fromMillis(0);
     expect(displayDuration(duration)).toStrictEqual('0 ms');
   });
 });
 
 describe('displayCompactDuration', () => {
-  it("should display correct duration when it's null", async () => {
+  test("should display correct duration when it's null", async () => {
     expect(displayCompactDuration(null)).toEqual(['N/A', '']);
   });
-  it('should display correct duration in days', async () => {
+  test('should display correct duration in days', async () => {
     const duration = Duration.fromISO('P3DT11H');
     expect(displayCompactDuration(duration)).toEqual(['3.5d', 'd']);
   });
-  it('should display correct duration in hours', async () => {
+  test('should display correct duration in hours', async () => {
     const duration = Duration.fromISO('PT1H11M');
     expect(displayCompactDuration(duration)).toEqual(['1.2h', 'h']);
   });
-  it('should display correct duration in minutes', async () => {
+  test('should display correct duration in minutes', async () => {
     const duration = Duration.fromISO('PT2M3S');
     expect(displayCompactDuration(duration)).toEqual(['2.0m', 'm']);
   });
-  it('should display correct duration in seconds', async () => {
+  test('should display correct duration in seconds', async () => {
     const duration = Duration.fromISO('PT15S');
     expect(displayCompactDuration(duration)).toEqual(['15s', 's']);
   });
-  it('should display correct duration in milliseconds', async () => {
+  test('should display correct duration in milliseconds', async () => {
     const duration = Duration.fromMillis(999);
     expect(displayCompactDuration(duration)).toEqual(['999ms', 'ms']);
   });
-  it("should not display the duration in ms if it's no less than 999.5ms", async () => {
+  test("should not display the duration in ms if it's no less than 999.5ms", async () => {
     const duration = Duration.fromMillis(999.5);
     expect(displayCompactDuration(duration)).toEqual(['1.0s', 's']);
   });
-  it("should display the duration in ms if it's less than 999.5ms", async () => {
+  test("should display the duration in ms if it's less than 999.5ms", async () => {
     const duration = Duration.fromMillis(999.4999);
     expect(displayCompactDuration(duration)).toEqual(['999ms', 'ms']);
   });

@@ -23,7 +23,7 @@ const multipleBugLinesWithSoftBreak = 'Bug: 123\nBUG:234';
 const multipleBugLinesWithHardBreak = 'Bug: 123  \nBUG:234';
 
 describe('bug_line', () => {
-  it('can render single bug line correctly', async () => {
+  test('can render single bug line correctly', async () => {
     const md = markdownIt('zero', { breaks: true })
       .enable('newline')
       .use(bugLine);
@@ -53,7 +53,7 @@ describe('bug_line', () => {
       .enable('newline')
       .use(bugLine);
 
-    it('can renders multiple bug lines with soft break correctly', async () => {
+    test('can renders multiple bug lines with soft break correctly', async () => {
       const ele = await fixture(md.render(multipleBugLinesWithSoftBreak));
 
       const anchors = ele.querySelectorAll('a');
@@ -68,7 +68,7 @@ describe('bug_line', () => {
       expect(anchor2.text).toStrictEqual('234');
     });
 
-    it('can renders multiple bug lines with hard break correctly', async () => {
+    test('can renders multiple bug lines with hard break correctly', async () => {
       const ele = await fixture(md.render(multipleBugLinesWithHardBreak));
 
       const anchors = ele.querySelectorAll('a');
@@ -89,7 +89,7 @@ describe('bug_line', () => {
       .enable('newline')
       .use(bugLine);
 
-    it('can renders multiple bug lines with soft break correctly', async () => {
+    test('can renders multiple bug lines with soft break correctly', async () => {
       const ele = await fixture(md.render(multipleBugLinesWithSoftBreak));
 
       const anchors = ele.querySelectorAll('a');
@@ -104,7 +104,7 @@ describe('bug_line', () => {
       expect(anchor2.text).toStrictEqual('BUG:234');
     });
 
-    it('can renders multiple bug lines with hard break correctly', async () => {
+    test('can renders multiple bug lines with hard break correctly', async () => {
       const ele = await fixture(md.render(multipleBugLinesWithHardBreak));
 
       const anchors = ele.querySelectorAll('a');

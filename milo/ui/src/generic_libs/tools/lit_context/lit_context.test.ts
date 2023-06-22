@@ -318,7 +318,7 @@ ContextConsumerWrapper;
 // DOM then reconnected to DOM.
 
 describe('context', () => {
-  it('should provide context to descendent context consumers', async () => {
+  test('should provide context to descendent context consumers', async () => {
     const outerProvider = await fixture<OuterContextProvider>(html`
       <milo-outer-context-provider-test>
         <milo-inner-context-provider-test>
@@ -454,7 +454,7 @@ describe('context', () => {
     expect(innerConsumer.setterCallCount).toStrictEqual(2);
   });
 
-  it('should provide context to any context consumers if global is set to true', async () => {
+  test('should provide context to any context consumers if global is set to true', async () => {
     const rootEle = await fixture<HTMLDivElement>(html`
       <div>
         <milo-outer-context-provider-test></milo-outer-context-provider-test>
@@ -480,7 +480,7 @@ describe('context', () => {
     expect(consumer.providerKey).toStrictEqual('global_provider-provider-val1');
   });
 
-  it('global context should not override local context', async () => {
+  test('global context should not override local context', async () => {
     const rootEle = await fixture<HTMLDivElement>(html`
       <div>
         <milo-global-context-provider-test></milo-global-context-provider-test>

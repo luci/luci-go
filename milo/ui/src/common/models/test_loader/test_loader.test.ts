@@ -149,7 +149,7 @@ describe('TestLoader', () => {
       } as Partial<ResultDb> as ResultDb);
     });
 
-    it('should preserve loading progress', async () => {
+    test('should preserve loading progress', async () => {
       expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingUnexpected);
       expect(stub.mock.calls.length).toStrictEqual(0);
 
@@ -284,7 +284,7 @@ describe('TestLoader', () => {
       expect(stub.mock.calls.length).toStrictEqual(4);
     });
 
-    it('should handle concurrent loadNextPage calls correctly', async () => {
+    test('should handle concurrent loadNextPage calls correctly', async () => {
       expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingUnexpected);
 
       const loadReq1 = testLoader.loadNextTestVariants();
@@ -436,7 +436,7 @@ describe('TestLoader', () => {
       });
     });
 
-    it('loadFirstPageOfTestVariants should work correctly', async () => {
+    test('loadFirstPageOfTestVariants should work correctly', async () => {
       const firstLoadPromise = testLoader.loadNextTestVariants();
       expect(firstLoadPromise).toStrictEqual(
         testLoader.loadFirstPageOfTestVariants()
@@ -447,7 +447,7 @@ describe('TestLoader', () => {
       );
     });
 
-    it('should load at least one test variant that matches the filter', async () => {
+    test('should load at least one test variant that matches the filter', async () => {
       testLoader.filter = (v) => v.testId === 'matched-id';
       await testLoader.loadNextTestVariants();
 
@@ -462,7 +462,7 @@ describe('TestLoader', () => {
       expect(testLoader.expectedTestVariants).toEqual([variant12]);
     });
 
-    it('should stop loading at the final page when no test variants matches the filter', async () => {
+    test('should stop loading at the final page when no test variants matches the filter', async () => {
       testLoader.filter = () => false;
 
       // Detect infinite loop and abort.
@@ -518,7 +518,7 @@ describe('TestLoader', () => {
       } as Partial<ResultDb> as ResultDb);
     });
 
-    it('should correctly handle a response with 0 variants', async () => {
+    test('should correctly handle a response with 0 variants', async () => {
       expect(stub.mock.calls.length).toStrictEqual(0);
 
       await testLoader.loadNextTestVariants();
@@ -567,12 +567,12 @@ describe('TestLoader', () => {
       } as Partial<ResultDb> as ResultDb);
     });
 
-    it('should not return empty groups', async () => {
+    test('should not return empty groups', async () => {
       // [] means there are no groups. [[]] means there is one empty group.
       expect(testLoader.groupedNonExpectedVariants).toEqual([]);
     });
 
-    it('should group test variants correctly', async () => {
+    test('should group test variants correctly', async () => {
       testLoader.groupers = [['status', createTVPropGetter('status')]];
       await testLoader.loadNextTestVariants();
       await testLoader.loadNextTestVariants();
@@ -592,7 +592,7 @@ describe('TestLoader', () => {
       ]);
     });
 
-    it('should support multiple grouping keys', async () => {
+    test('should support multiple grouping keys', async () => {
       testLoader.groupers = [
         ['status', createTVPropGetter('status')],
         ['v.key1', createTVPropGetter('v.key1')],

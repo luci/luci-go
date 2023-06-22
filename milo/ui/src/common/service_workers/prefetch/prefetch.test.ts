@@ -78,7 +78,7 @@ describe('Prefetcher', () => {
     );
   });
 
-  it('prefetches build page resources', async () => {
+  test('prefetches build page resources', async () => {
     const authResponse = new Response(
       JSON.stringify({ accessToken: 'access-token', identity: 'user:user-id' })
     );
@@ -188,7 +188,7 @@ describe('Prefetcher', () => {
     expect(fetchStub.mock.calls.length).toStrictEqual(4);
   });
 
-  it('prefetches build page resources when visiting a short build page url', async () => {
+  test('prefetches build page resources when visiting a short build page url', async () => {
     const authResponse = new Response(
       JSON.stringify({ accessToken: 'access-token', identity: 'user:user-id' })
     );
@@ -282,7 +282,7 @@ describe('Prefetcher', () => {
     expect(fetchStub.mock.calls.length).toStrictEqual(4);
   });
 
-  it('prefetches artifact page resources', async () => {
+  test('prefetches artifact page resources', async () => {
     const authResponse = new Response(
       JSON.stringify({ accessToken: 'access-token', identity: 'user:user-id' })
     );

@@ -114,7 +114,7 @@ describe('SearchPage', () => {
 
     afterEach(() => destroy(testStore));
 
-    it('should load builders correctly', () => {
+    test('should load builders correctly', () => {
       expect(listBuildersStub.mock.calls.length).toStrictEqual(3);
       expect(listBuildersStub.mock.calls[0][0]).toEqual({
         pageSize: 10000,
@@ -164,7 +164,7 @@ describe('SearchPage', () => {
       ]);
     });
 
-    it('should group builders correctly', () => {
+    test('should group builders correctly', () => {
       expect(testStore.searchPage.groupedBuilders).toEqual({
         'project1/bucket1': [
           { project: 'project1', bucket: 'bucket1', builder: 'builder1' },
@@ -185,7 +185,7 @@ describe('SearchPage', () => {
       });
     });
 
-    it('should filter builders correctly', () => {
+    test('should filter builders correctly', () => {
       testStore.searchPage.setSearchQuery('ject1/bucket2/bui');
 
       expect(testStore.searchPage.groupedBuilders).toEqual({
@@ -196,7 +196,7 @@ describe('SearchPage', () => {
       });
     });
 
-    it('should support fuzzy search', () => {
+    test('should support fuzzy search', () => {
       testStore.searchPage.setSearchQuery('JECT1 Cket2');
 
       expect(testStore.searchPage.groupedBuilders).toEqual({
@@ -227,7 +227,7 @@ describe('SearchPage', () => {
 
     afterEach(() => destroy(testStore));
 
-    it('e2e', async () => {
+    test('e2e', async () => {
       testStore.searchPage.setSearchTarget(SearchTarget.Tests);
       testStore.searchPage.setTestProject('testProject');
       testStore.searchPage.setSearchQuery('substr');
