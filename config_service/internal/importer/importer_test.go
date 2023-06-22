@@ -26,7 +26,6 @@ import (
 	"strings"
 	"testing"
 
-	"cloud.google.com/go/storage"
 	"github.com/golang/mock/gomock"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -489,10 +488,9 @@ func TestImportConfigSet(t *testing.T) {
 				mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{
 					Contents: tarGzContent,
 				}, nil)
-				mockGsClient.EXPECT().UploadIf(
+				mockGsClient.EXPECT().UploadIfMissing(
 					gomock.Any(), gomock.Eq(common.BucketName(ctx)),
-					gomock.Eq(expectedGsFileName), gomock.Any(),
-					gomock.Eq(storage.Conditions{DoesNotExist: true})).Return(true, nil)
+					gomock.Eq(expectedGsFileName), gomock.Any(), gomock.Any()).Return(true, nil)
 
 				err = ImportConfigSet(ctx, config.MustServiceSet("myservice"))
 
@@ -619,10 +617,9 @@ func TestImportConfigSet(t *testing.T) {
 				mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{
 					Contents: tarGzContent,
 				}, nil)
-				mockGsClient.EXPECT().UploadIf(
+				mockGsClient.EXPECT().UploadIfMissing(
 					gomock.Any(), gomock.Eq(common.BucketName(ctx)),
-					gomock.Eq(expectedGsFileName), gomock.Any(),
-					gomock.Eq(storage.Conditions{DoesNotExist: true})).Return(false, errors.New("GCS internal error"))
+					gomock.Eq(expectedGsFileName), gomock.Any(), gomock.Any()).Return(false, errors.New("GCS internal error"))
 
 				err = ImportConfigSet(ctx, config.MustServiceSet("myservice"))
 

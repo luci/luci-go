@@ -27,13 +27,13 @@ import (
 	"strings"
 
 	"cloud.google.com/go/storage"
+	"go.chromium.org/luci/common/gcloud/gs"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/logging"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/proto/git"
@@ -420,7 +420,9 @@ func importRevision(ctx context.Context, cfgSet config.Set, loc *cfgcommonpb.Git
 			file.Content = compressed.Bytes()
 		} else {
 			gsFileName := fmt.Sprintf("%s/%s", common.GSProdCfgFolder, file.ContentHash)
-			_, err := clients.GetGsClient(ctx).UploadIf(ctx, common.BucketName(ctx), gsFileName, compressed.Bytes(), storage.Conditions{DoesNotExist: true})
+			_, err := clients.GetGsClient(ctx).UploadIfMissing(ctx, common.BucketName(ctx), gsFileName, compressed.Bytes(), func(attrs *storage.ObjectAttrs) {
+				attrs.ContentEncoding = "gzip"
+			})
 			if err != nil {
 				return errors.Annotate(err, "failed to upload file %s as %s", filePath, gsFileName).Err()
 			}

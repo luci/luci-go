@@ -151,7 +151,7 @@ func TestModel(t *testing.T) {
 				ContentHash: "hash",
 			}
 
-			mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("bucket"), gomock.Eq("object")).Return(content, nil)
+			mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("bucket"), gomock.Eq("object"), false).Return(content, nil)
 
 			So(file.Load(ctx, true), ShouldBeNil)
 			So(file.Content, ShouldResemble, []byte("content"))
@@ -169,7 +169,7 @@ func TestModel(t *testing.T) {
 				ContentHash: "hash",
 			}
 
-			mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("bucket"), gomock.Eq("object")).Return(nil, errors.New("GCS internal error"))
+			mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("bucket"), gomock.Eq("object"), false).Return(nil, errors.New("GCS internal error"))
 
 			So(file.Load(ctx, true), ShouldErrLike, "cannot read from gs://bucket/object: GCS internal error")
 		})

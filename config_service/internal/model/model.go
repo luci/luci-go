@@ -235,7 +235,7 @@ func (f *File) Load(ctx context.Context, resolveGcsURI bool) error {
 	}
 
 	if resolveGcsURI && f.GcsURI != "" {
-		gzippedData, err := clients.GetGsClient(ctx).Read(ctx, f.GcsURI.Bucket(), f.GcsURI.Filename())
+		gzippedData, err := clients.GetGsClient(ctx).Read(ctx, f.GcsURI.Bucket(), f.GcsURI.Filename(), false)
 		if err != nil {
 			return errors.Annotate(err, "cannot read from %s", f.GcsURI).Err()
 		}

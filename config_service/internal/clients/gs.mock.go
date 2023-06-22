@@ -49,18 +49,18 @@ func (m *MockGsClient) EXPECT() *MockGsClientMockRecorder {
 }
 
 // Read mocks base method.
-func (m *MockGsClient) Read(ctx context.Context, bucket, object string) ([]byte, error) {
+func (m *MockGsClient) Read(ctx context.Context, bucket, object string, decompressive bool) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Read", ctx, bucket, object)
+	ret := m.ctrl.Call(m, "Read", ctx, bucket, object, decompressive)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Read indicates an expected call of Read.
-func (mr *MockGsClientMockRecorder) Read(ctx, bucket, object interface{}) *gomock.Call {
+func (mr *MockGsClientMockRecorder) Read(ctx, bucket, object, decompressive interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockGsClient)(nil).Read), ctx, bucket, object)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockGsClient)(nil).Read), ctx, bucket, object, decompressive)
 }
 
 // SignedURL mocks base method.
@@ -78,17 +78,17 @@ func (mr *MockGsClientMockRecorder) SignedURL(bucket, object, opts interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignedURL", reflect.TypeOf((*MockGsClient)(nil).SignedURL), bucket, object, opts)
 }
 
-// UploadIf mocks base method.
-func (m *MockGsClient) UploadIf(ctx context.Context, bucket, object string, data []byte, conditions storage.Conditions) (bool, error) {
+// UploadIfMissing mocks base method.
+func (m *MockGsClient) UploadIfMissing(ctx context.Context, bucket, object string, data []byte, attrsModifyFn func(*storage.ObjectAttrs)) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UploadIf", ctx, bucket, object, data, conditions)
+	ret := m.ctrl.Call(m, "UploadIfMissing", ctx, bucket, object, data, attrsModifyFn)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// UploadIf indicates an expected call of UploadIf.
-func (mr *MockGsClientMockRecorder) UploadIf(ctx, bucket, object, data, conditions interface{}) *gomock.Call {
+// UploadIfMissing indicates an expected call of UploadIfMissing.
+func (mr *MockGsClientMockRecorder) UploadIfMissing(ctx, bucket, object, data, attrsModifyFn interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadIf", reflect.TypeOf((*MockGsClient)(nil).UploadIf), ctx, bucket, object, data, conditions)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadIfMissing", reflect.TypeOf((*MockGsClient)(nil).UploadIfMissing), ctx, bucket, object, data, attrsModifyFn)
 }

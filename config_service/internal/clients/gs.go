@@ -27,11 +27,13 @@ var gsClientCtxKey = "holds the Google Cloud Storage client"
 
 // GsClient is an interface for interacting with Cloud Storage.
 type GsClient interface {
-	// UploadIf upload data to the bucket-to-object path if it meets the given
-	// conditions. Return true, if the upload operation is made this time.
-	UploadIf(ctx context.Context, bucket, object string, data []byte, conditions storage.Conditions) (bool, error)
+	// UploadIfMissing upload data with attrs to the bucket-to-object path if it
+	// does not exist. Return true, if the upload operation is made this time.
+	UploadIfMissing(ctx context.Context, bucket, object string, data []byte, attrsModifyFn func(*storage.ObjectAttrs)) (bool, error)
 	// Read reads data from the give bucket-to-object path.
-	Read(ctx context.Context, bucket, object string) ([]byte, error)
+	// If decompressive is true, it will read with decompressive transcoding:
+	// https://cloud.google.com/storage/docs/transcoding#decompressive_transcoding
+	Read(ctx context.Context, bucket, object string, decompressive bool) ([]byte, error)
 	// SignedURL is used to generate a signed url for a given GCS object.
 	SignedURL(bucket, object string, opts *storage.SignedURLOptions) (string, error)
 }
@@ -62,14 +64,12 @@ func GetGsClient(ctx context.Context) GsClient {
 	return ctx.Value(&gsClientCtxKey).(GsClient)
 }
 
-// UploadIf upload data to the bucket-to-object path if it meets the given
-// conditions. Return true, if the upload operation is made this time.
-func (p *prodClient) UploadIf(ctx context.Context, bucket, object string, data []byte, conditions storage.Conditions) (bool, error) {
-	var w io.WriteCloser
-	if conditions == (storage.Conditions{}) {
-		w = p.client.Bucket(bucket).Object(object).NewWriter(ctx)
-	} else {
-		w = p.client.Bucket(bucket).Object(object).If(conditions).NewWriter(ctx)
+// UploadIfMissing upload data with attrs to the bucket-to-object path if it
+// does not exist. Return true, if the upload operation is made this time.
+func (p *prodClient) UploadIfMissing(ctx context.Context, bucket, object string, data []byte, attrsModifyFn func(*storage.ObjectAttrs)) (bool, error) {
+	w := p.client.Bucket(bucket).Object(object).If(storage.Conditions{DoesNotExist: true}).NewWriter(ctx)
+	if attrsModifyFn != nil {
+		attrsModifyFn(&w.ObjectAttrs)
 	}
 
 	if _, err := w.Write(data); err != nil {
@@ -86,8 +86,10 @@ func (p *prodClient) UploadIf(ctx context.Context, bucket, object string, data [
 }
 
 // Read reads data from the give bucket-to-object path.
-func (p *prodClient) Read(ctx context.Context, bucket, object string) ([]byte, error) {
-	r, err := p.client.Bucket(bucket).Object(object).NewReader(ctx)
+// If decompressive is true, it will read with decompressive transcoding:
+// https://cloud.google.com/storage/docs/transcoding#decompressive_transcoding
+func (p *prodClient) Read(ctx context.Context, bucket, object string, decompressive bool) ([]byte, error) {
+	r, err := p.client.Bucket(bucket).Object(object).ReadCompressed(!decompressive).NewReader(ctx)
 	if err != nil {
 		return nil, err
 	}
