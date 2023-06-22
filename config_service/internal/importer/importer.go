@@ -26,12 +26,14 @@ import (
 	"io"
 	"strings"
 
+	"cloud.google.com/go/storage"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/logging"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/proto/git"
@@ -48,10 +50,6 @@ import (
 )
 
 const (
-	// projRegistryFilePath is the path of luci-config self config file where it
-	// stores a list of registered projects.
-	projRegistryFilePath = "projects.cfg"
-
 	// compressedContentLimit is the maximum allowed compressed content size to
 	// store into Datastore, in order to avoid exceeding 1MiB limit per entity.
 	compressedContentLimit = 800 * 1024
@@ -132,7 +130,7 @@ func ImportAllConfigs(ctx context.Context) error {
 func getAllProjCfgSets(ctx context.Context) ([]string, error) {
 	projectsCfg := &cfgcommonpb.ProjectsCfg{}
 	var nerr *model.NoSuchConfigError
-	switch err := common.LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, projRegistryFilePath, projectsCfg); {
+	switch err := common.LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, common.ProjRegistryFilePath, projectsCfg); {
 	case errors.As(err, &nerr) && nerr.IsUnknownConfigSet():
 		// May happen on the cron job first run. Just log the warning.
 		logging.Warningf(ctx, "failed to compose all project config sets because the self config set is missing")
@@ -224,7 +222,7 @@ func ImportConfigSet(ctx context.Context, cfgSet config.Set) error {
 // importProject imports a project config set.
 func importProject(ctx context.Context, projectID string) error {
 	projectsCfg := &cfgcommonpb.ProjectsCfg{}
-	if err := common.LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, projRegistryFilePath, projectsCfg); err != nil {
+	if err := common.LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, common.ProjRegistryFilePath, projectsCfg); err != nil {
 		return ErrFatalTag.Apply(err)
 	}
 	var projLoc *cfgcommonpb.GitilesLocation
@@ -421,7 +419,13 @@ func importRevision(ctx context.Context, cfgSet config.Set, loc *cfgcommonpb.Git
 		if compressed.Len() < compressedContentLimit {
 			file.Content = compressed.Bytes()
 		} else {
-			// TODO(crbug.com/1446839): upload to GCS and call validateConfig func
+			gsFileName := fmt.Sprintf("%s/%s", common.GSProdCfgFolder, file.ContentHash)
+			_, err := clients.GetGsClient(ctx).UploadIf(ctx, common.BucketName(ctx), gsFileName, compressed.Bytes(), storage.Conditions{DoesNotExist: true})
+			if err != nil {
+				return errors.Annotate(err, "failed to upload file %s as %s", filePath, gsFileName).Err()
+			}
+			// TODO(crbug.com/1446839): call validateConfig func
+			file.GcsURI = gs.MakePath(common.BucketName(ctx), gsFileName)
 		}
 		files = append(files, file)
 	}

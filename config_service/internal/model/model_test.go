@@ -20,9 +20,15 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/config_service/internal/clients"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -81,6 +87,10 @@ func TestModel(t *testing.T) {
 
 	Convey("File.Load", t, func() {
 		ctx := memory.UseWithAppID(context.Background(), "dev~app-id")
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mockGsClient := clients.NewMockGsClient(ctl)
+		ctx = clients.WithGsClient(ctx, mockGsClient)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
@@ -125,6 +135,43 @@ func TestModel(t *testing.T) {
 				ContentHash: "hash",
 				Content:     []byte("content"),
 			})
+		})
+
+		Convey("resolve GcsURI", func() {
+			content, err := gzipCompress([]byte("content"))
+			So(err, ShouldBeNil)
+			So(datastore.Put(ctx, &File{
+				Path:        "file",
+				Revision:    datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
+				ContentHash: "hash",
+				GcsURI:      gs.MakePath("bucket", "object"),
+			}), ShouldBeNil)
+
+			file := &File{
+				ContentHash: "hash",
+			}
+
+			mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("bucket"), gomock.Eq("object")).Return(content, nil)
+
+			So(file.Load(ctx, true), ShouldBeNil)
+			So(file.Content, ShouldResemble, []byte("content"))
+		})
+
+		Convey("GCS error", func() {
+			So(datastore.Put(ctx, &File{
+				Path:        "file",
+				Revision:    datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
+				ContentHash: "hash",
+				GcsURI:      gs.MakePath("bucket", "object"),
+			}), ShouldBeNil)
+
+			file := &File{
+				ContentHash: "hash",
+			}
+
+			mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("bucket"), gomock.Eq("object")).Return(nil, errors.New("GCS internal error"))
+
+			So(file.Load(ctx, true), ShouldErrLike, "cannot read from gs://bucket/object: GCS internal error")
 		})
 
 		Convey("nil content", func() {

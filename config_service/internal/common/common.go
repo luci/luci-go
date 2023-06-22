@@ -18,6 +18,7 @@ package common
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
@@ -33,10 +34,30 @@ const (
 	// ACLRegistryFilePath is the path of luci-config self config file where
 	// it stores the service ACL configurations.
 	ACLRegistryFilePath = "acl.cfg"
+
+	// ProjRegistryFilePath is the path of luci-config self config file where it
+	// stores a list of registered projects.
+	ProjRegistryFilePath = "projects.cfg"
+
 	// ServiceRegistryFilePath is the path of luci-config self config file where
 	// it stores a list of registered services.
 	ServiceRegistryFilePath = "services.cfg"
+
+	// GSProdCfgFolder is the folder name where it stores all production configs
+	// in GCS bucket.
+	GSProdCfgFolder = "configs"
 )
+
+var bucketName string
+var bucketNameOnce sync.Once
+
+// BucketName returns the global bucket name where it stores configs.
+func BucketName(ctx context.Context) string {
+	bucketNameOnce.Do(func() {
+		bucketName = fmt.Sprintf("storage-%s", info.AppID(ctx))
+	})
+	return bucketName
+}
 
 // GitilesURL assembles a URL from the given gitiles location.
 // Note: it doesn't validate the format of GitilesLocation.

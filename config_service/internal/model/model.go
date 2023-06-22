@@ -24,8 +24,10 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/gcloud/gs"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
@@ -75,7 +77,7 @@ type File struct {
 	// GcsURI is a Google Cloud Storage URI where it stores large gzipped file.
 	// The format is "gs://<bucket>/<object_name>"
 	// Note: Either Content field or GcsUri field will be set, but not both.
-	GcsURI string `gae:"gcs_uri,noindex"`
+	GcsURI gs.Path `gae:"gcs_uri,noindex"`
 	// ContentHash is the SHA256 hash of the file content.
 	ContentHash string `gae:"content_hash"`
 	// Location is a pinned, fully resolved source location to this file.
@@ -232,7 +234,13 @@ func (f *File) Load(ctx context.Context, resolveGcsURI bool) error {
 		return errors.Reason("One of ContentHash or (path and revision) is required").Err()
 	}
 
-	//  TODO(crbug.com/1446839): download from GCS if resolveGcsURI is true
+	if resolveGcsURI && f.GcsURI != "" {
+		gzippedData, err := clients.GetGsClient(ctx).Read(ctx, f.GcsURI.Bucket(), f.GcsURI.Filename())
+		if err != nil {
+			return errors.Annotate(err, "cannot read from %s", f.GcsURI).Err()
+		}
+		f.Content = gzippedData
+	}
 
 	// For empty file, the gzipped content bytes will still be non-nil.
 	if len(f.Content) == 0 {

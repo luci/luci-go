@@ -21,10 +21,12 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"math/rand"
 	"sort"
 	"strings"
 	"testing"
 
+	"cloud.google.com/go/storage"
 	"github.com/golang/mock/gomock"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -42,6 +44,7 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/config_service/internal/clients"
+	"go.chromium.org/luci/config_service/internal/common"
 	"go.chromium.org/luci/config_service/internal/model"
 	"go.chromium.org/luci/config_service/internal/taskpb"
 	"go.chromium.org/luci/config_service/testutil"
@@ -149,6 +152,8 @@ func TestImportConfigSet(t *testing.T) {
 		defer ctl.Finish()
 		mockGtClient := mock_gitiles.NewMockGitilesClient(ctl)
 		ctx = context.WithValue(ctx, &clients.MockGitilesClientKey, mockGtClient)
+		mockGsClient := clients.NewMockGsClient(ctl)
+		ctx = clients.WithGsClient(ctx, mockGsClient)
 		latestCommit := &git.Commit{
 			Id: "latest revision",
 			Committer: &git.Commit_User{
@@ -175,7 +180,7 @@ func TestImportConfigSet(t *testing.T) {
 				)).Return(&gitilespb.LogResponse{
 					Log: []*git.Commit{latestCommit},
 				}, nil)
-				tarGzContent, err := buildTarGz(map[string]string{"file1": "file1 content", "sub_dir/file2": "file2 content", "sub_dir/": "", "empty_file": ""})
+				tarGzContent, err := buildTarGz(map[string]any{"file1": "file1 content", "sub_dir/file2": "file2 content", "sub_dir/": "", "empty_file": ""})
 				So(err, ShouldBeNil)
 				mockGtClient.EXPECT().Archive(gomock.Any(), protoutil.MatcherEqual(
 					&gitilespb.ArchiveRequest{
@@ -464,6 +469,42 @@ func TestImportConfigSet(t *testing.T) {
 				So(attempt.Success, ShouldBeTrue)
 				So(attempt.Message, ShouldContainSubstring, "no commit logs")
 			})
+
+			Convey("large config", func() {
+				mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(&gitilespb.LogResponse{
+					Log: []*git.Commit{latestCommit},
+				}, nil)
+				// Construct incompressible data which is larger than compressedContentLimit.
+				incompressible := make([]byte, compressedContentLimit+1024*1024)
+				_, err := rand.New(rand.NewSource(1234)).Read(incompressible)
+				So(err, ShouldBeNil)
+				compressed, err := gzipCompress(incompressible)
+				So(err, ShouldBeNil)
+				So(len(compressed) > compressedContentLimit, ShouldBeTrue)
+
+				tarGzContent, err := buildTarGz(map[string]any{"file": "small content", "large": incompressible})
+				So(err, ShouldBeNil)
+				expectedSha256 := sha256.Sum256(incompressible)
+				expectedGsFileName := "configs/sha256:" + hex.EncodeToString(expectedSha256[:])
+				mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{
+					Contents: tarGzContent,
+				}, nil)
+				mockGsClient.EXPECT().UploadIf(
+					gomock.Any(), gomock.Eq(common.BucketName(ctx)),
+					gomock.Eq(expectedGsFileName), gomock.Any(),
+					gomock.Eq(storage.Conditions{DoesNotExist: true})).Return(true, nil)
+
+				err = ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+
+				So(err, ShouldBeNil)
+				revKey := datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice", model.RevisionKind, latestCommit.Id)
+				var files []*model.File
+				So(datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), ShouldBeNil)
+				So(files, ShouldHaveLength, 2)
+				So(files[0].Path, ShouldEqual, "file")
+				So(files[1].Path, ShouldEqual, "large")
+				So(files[1].GcsURI, ShouldEqual, "gs://storage-luci-config-dev/"+expectedGsFileName)
+			})
 		})
 
 		Convey("unhappy path", func() {
@@ -474,7 +515,7 @@ func TestImportConfigSet(t *testing.T) {
 
 			Convey("project doesn't exist ", func() {
 				testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
-					projRegistryFilePath: &cfgcommonpb.ProjectsCfg{
+					common.ProjRegistryFilePath: &cfgcommonpb.ProjectsCfg{
 						Projects: []*cfgcommonpb.Project{
 							{
 								Id: "proj",
@@ -496,7 +537,7 @@ func TestImportConfigSet(t *testing.T) {
 
 			Convey("no project gitiles location", func() {
 				testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
-					projRegistryFilePath: &cfgcommonpb.ProjectsCfg{
+					common.ProjRegistryFilePath: &cfgcommonpb.ProjectsCfg{
 						Projects: []*cfgcommonpb.Project{
 							{Id: "proj"},
 						},
@@ -559,28 +600,76 @@ func TestImportConfigSet(t *testing.T) {
 				So(attempt.Success, ShouldBeFalse)
 				So(attempt.Message, ShouldContainSubstring, "Failed to import services/myservice revision latest revision")
 			})
+
+			Convey("failed to upload to GCS", func() {
+				mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(&gitilespb.LogResponse{
+					Log: []*git.Commit{latestCommit},
+				}, nil)
+				// Construct incompressible data which is larger than compressedContentLimit.
+				incompressible := make([]byte, compressedContentLimit+1024*1024)
+				_, err := rand.New(rand.NewSource(1234)).Read(incompressible)
+				So(err, ShouldBeNil)
+				compressed, err := gzipCompress(incompressible)
+				So(err, ShouldBeNil)
+				So(len(compressed) > compressedContentLimit, ShouldBeTrue)
+				tarGzContent, err := buildTarGz(map[string]any{"large": incompressible})
+				So(err, ShouldBeNil)
+				expectedSha256 := sha256.Sum256(incompressible)
+				expectedGsFileName := "configs/sha256:" + hex.EncodeToString(expectedSha256[:])
+				mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{
+					Contents: tarGzContent,
+				}, nil)
+				mockGsClient.EXPECT().UploadIf(
+					gomock.Any(), gomock.Eq(common.BucketName(ctx)),
+					gomock.Eq(expectedGsFileName), gomock.Any(),
+					gomock.Eq(storage.Conditions{DoesNotExist: true})).Return(false, errors.New("GCS internal error"))
+
+				err = ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+
+				So(err, ShouldErrLike, "failed to upload file", "GCS internal error")
+				revKey := datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice", model.RevisionKind, latestCommit.Id)
+				var files []*model.File
+				So(datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), ShouldBeNil)
+				So(files, ShouldHaveLength, 0)
+
+				attempt := &model.ImportAttempt{
+					ConfigSet: datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice"),
+				}
+				So(datastore.Get(ctx, attempt), ShouldBeNil)
+				So(attempt.Success, ShouldBeFalse)
+				So(attempt.Message, ShouldContainSubstring, "failed to upload file")
+			})
 		})
 	})
 }
 
-func buildTarGz(raw map[string]string) ([]byte, error) {
+func buildTarGz(raw map[string]any) ([]byte, error) {
 	var buf bytes.Buffer
 	gzw := gzip.NewWriter(&buf)
 	tw := tar.NewWriter(gzw)
 	for name, body := range raw {
 		hdr := &tar.Header{
 			Name:     name,
-			Size:     int64(len([]byte(body))),
 			Typeflag: tar.TypeReg,
 		}
 		if strings.HasSuffix(name, "/") {
 			hdr.Typeflag = tar.TypeDir
 		}
 
+		var bodyBytes []byte
+		switch v := body.(type) {
+		case string:
+			bodyBytes = []byte(body.(string))
+		case []byte:
+			bodyBytes = body.([]byte)
+		default:
+			return nil, errors.Reason("unsupported type %T for %s", v, name).Err()
+		}
+		hdr.Size = int64(len(bodyBytes))
 		if err := tw.WriteHeader(hdr); err != nil {
 			return nil, err
 		}
-		if _, err := tw.Write([]byte(body)); err != nil {
+		if _, err := tw.Write(bodyBytes); err != nil {
 			return nil, err
 		}
 	}
