@@ -18,6 +18,7 @@ package compiledcfg
 
 import (
 	"context"
+	"regexp"
 	"time"
 
 	"go.chromium.org/luci/common/data/caching/lru"
@@ -42,6 +43,10 @@ type ProjectConfig struct {
 	// by test name.
 	TestNameRules []rules.Evaluator
 
+	// ReasonMaskPatterns is the set of patterns to use to mask out parts
+	// of the failure reason before clustering.
+	ReasonMaskPatterns []*regexp.Regexp
+
 	// LastUpdated is the time the configuration was last updated.
 	LastUpdated time.Time
 }
@@ -58,10 +63,21 @@ func NewConfig(config *configpb.ProjectConfig) (*ProjectConfig, error) {
 		}
 		compiledRules[i] = eval
 	}
+	rmps := config.Clustering.GetReasonMaskPatterns()
+	compiledReasonMaskPatterns := make([]*regexp.Regexp, len(rmps))
+	for i, p := range rmps {
+		re, err := regexp.Compile(p)
+		if err != nil {
+			return nil, errors.Annotate(err, "compiling reason mask pattern").Err()
+		}
+		compiledReasonMaskPatterns[i] = re
+	}
+
 	return &ProjectConfig{
-		Config:        config,
-		TestNameRules: compiledRules,
-		LastUpdated:   config.LastUpdated.AsTime(),
+		Config:             config,
+		TestNameRules:      compiledRules,
+		ReasonMaskPatterns: compiledReasonMaskPatterns,
+		LastUpdated:        config.LastUpdated.AsTime(),
 	}, nil
 }
 

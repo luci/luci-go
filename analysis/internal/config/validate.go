@@ -517,8 +517,13 @@ func validateClustering(ctx *validation.Context, ca *configpb.Clustering) {
 		return
 	}
 	for i, r := range ca.TestNameRules {
-		ctx.Enter("[%v]", i)
+		ctx.Enter("test_name_rules[%v]", i)
 		validateTestNameRule(ctx, r)
+		ctx.Exit()
+	}
+	for i, p := range ca.ReasonMaskPatterns {
+		ctx.Enter("reason_mask_patterns[%v]", i)
+		validateReasonMaskPattern(ctx, p)
 		ctx.Exit()
 	}
 }
@@ -534,6 +539,20 @@ func validateTestNameRule(ctx *validation.Context, r *configpb.TestNameClusterin
 	_, err := rules.Compile(r)
 	if err != nil {
 		ctx.Error(err)
+	}
+}
+
+func validateReasonMaskPattern(ctx *validation.Context, p string) {
+	if p == "" {
+		ctx.Errorf("empty pattern is not allowed")
+	}
+	re, err := regexp.Compile(p)
+	if err != nil {
+		ctx.Errorf("could not compile pattern: %s", err)
+	} else {
+		if re.NumSubexp() != 1 {
+			ctx.Errorf("pattern must contain exactly one parenthesised capturing subexpression indicating the text to mask")
+		}
 	}
 }
 

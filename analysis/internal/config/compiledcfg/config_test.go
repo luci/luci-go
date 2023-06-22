@@ -66,6 +66,8 @@ func TestCompiledConfig(t *testing.T) {
 			like, ok := rule(testName)
 			So(ok, ShouldBeTrue)
 			So(like, ShouldEqual, testName+"%")
+
+			So(cfg.ReasonMaskPatterns[0].String(), ShouldEqual, `(?:^\[Fixture failure\] )[a-zA-Z0-9_]+(?:[:])`)
 		}
 		verifyNotExists := func(minimumVersion time.Time) {
 			cfg, err := Project(ctx, "myproject", minimumVersion)
@@ -162,6 +164,7 @@ func generateProjectConfig(uniqifier int) *configpb.ProjectConfig {
 				LikeTemplate: fmt.Sprintf(`ninja://test_name/%v%%`, uniqifier),
 			},
 		},
+		ReasonMaskPatterns: []string{`(?:^\[Fixture failure\] )[a-zA-Z0-9_]+(?:[:])`},
 	}
 	version := configVersion(uniqifier)
 	projectCfg := &configpb.ProjectConfig{

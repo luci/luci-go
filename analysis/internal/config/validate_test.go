@@ -567,7 +567,7 @@ func TestProjectConfigValidator(t *testing.T) {
 			cfg.Clustering = nil
 			So(validate(project, cfg), ShouldBeNil)
 		})
-		Convey("rules must be valid", func() {
+		Convey("test name rules must be valid", func() {
 			rule := clustering.TestNameRules[0]
 			Convey("name is not specified", func() {
 				rule.Name = ""
@@ -597,8 +597,30 @@ func TestProjectConfigValidator(t *testing.T) {
 				So(validate(project, cfg), ShouldErrLike, `invalid use of the $ operator at position 4 in "blah${broken"`)
 			})
 		})
+		Convey("failure reason masks must be valid", func() {
+			Convey("pattern is not specified", func() {
+				clustering.ReasonMaskPatterns[0] = ""
+				So(validate(project, cfg), ShouldErrLike, "empty pattern is not allowed")
+			})
+			Convey("pattern is invalid", func() {
+				clustering.ReasonMaskPatterns[0] = "["
+				So(validate(project, cfg), ShouldErrLike, "could not compile pattern: error parsing regexp: missing closing ]")
+			})
+			Convey("pattern has multiple subexpressions", func() {
+				clustering.ReasonMaskPatterns[0] = `(a)(b)`
+				So(validate(project, cfg), ShouldErrLike, "pattern must contain exactly one parenthesised capturing subexpression indicating the text to mask")
+			})
+			Convey("non-capturing subexpressions does not count", func() {
+				clustering.ReasonMaskPatterns[0] = `^(?:\[Fixture failure\]) ([a-zA-Z0-9_]+)(?:[:])`
+				So(validate(project, cfg), ShouldBeNil)
+			})
+			Convey("no patterns", func() {
+				clustering.ReasonMaskPatterns = nil
+				So(validate(project, cfg), ShouldBeNil)
+			})
+		})
 	})
-	Convey("clustering", t, func() {
+	Convey("metrics", t, func() {
 		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.ProjectConfig_MONORAIL)
 
 		metrics := cfg.Metrics

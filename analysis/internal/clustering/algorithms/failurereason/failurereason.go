@@ -37,7 +37,7 @@ import (
 // version should be incremented whenever existing test results may be
 // clustered differently (i.e. Cluster(f) returns a different value for some
 // f that may have been already ingested).
-const AlgorithmVersion = 5
+const AlgorithmVersion = 6
 
 // AlgorithmName is the identifier for the clustering algorithm.
 // LUCI Analysis requires all clustering algorithms to have a unique
@@ -62,6 +62,16 @@ The following test(s) were observed to have matching failures at this time (at m
 // file names or prints of pointers), which will be replaced.
 var clusterExp = regexp.MustCompile(`[/+0-9a-zA-Z]{10,}=+|[\-0-9a-fA-F \t]{16,}|[0-9a-fA-Fx]{8,}|[0-9]+`)
 
+// likeEscapeRewriter escapes \, % and _ so that they are not interpreted by LIKE
+// pattern matching.
+var likeEscapeRewriter = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+
+// likeUnescapeRewriter unescapes the special sequences \\, \% and \_
+// used in LIKE expressions, so that literal text matched appears unescaped.
+// This is used to make cluster definitions read more naturally on the UI,
+// even if it introduces some ambiguity.
+var likeUnescapeRewriter = strings.NewReplacer(`\\`, `\`, `\%`, `%`, `\_`, `_`)
+
 // Algorithm represents an instance of the reason-based clustering
 // algorithm.
 type Algorithm struct{}
@@ -71,12 +81,65 @@ func (a *Algorithm) Name() string {
 	return AlgorithmName
 }
 
+// clusterLike returns the reason LIKE expression that defines
+// the cluster the given test result belongs to.
+//
+// By default only numbers, hexadecimals and base64-encoding-like
+// sequences are stripped out when clustering. But using configurable
+// masking patterns, it is possible to strip out other parts too.
+func clusterLike(config *compiledcfg.ProjectConfig, failure *clustering.Failure) string {
+	// Escape \, % and _ so that they are not interpreted by LIKE
+	// pattern matching.
+	likePattern := likeEscapeRewriter.Replace(failure.Reason.PrimaryErrorMessage)
+
+	// Replace hexadecimal sequences with wildcard matches. This is technically
+	// broader than our original cluster definition, but is more readable, and
+	// usually ends up matching the exact same set of failures.
+	likePattern = clusterExp.ReplaceAllString(likePattern, "%")
+
+	// Apply configured masks.
+	for _, re := range config.ReasonMaskPatterns {
+		likePattern = applyMask(re, likePattern)
+	}
+
+	return likePattern
+}
+
+// applyMask applies the given masking regexp to an error message.
+//
+// The regular expression re must have exactly one
+// capturing sub-expression, and the part of this expression
+// which matches the errorMessage is replaced with the LIKE
+// wildcard operator "%".
+//
+// Masking is applied to all non-overlapping matches.
+func applyMask(re *regexp.Regexp, errorMessage string) string {
+	matches := re.FindAllStringSubmatchIndex(errorMessage, -1)
+	if len(matches) == 0 {
+		return errorMessage
+	}
+	var builder strings.Builder
+	builder.Grow(len(errorMessage))
+
+	// Replace the text in the first capturing subexpression with "%".
+	var startIndex int
+	for _, match := range matches {
+		matchStart := match[2]
+		matchEnd := match[3]
+		builder.WriteString(errorMessage[startIndex:matchStart])
+		builder.WriteString("%")
+		startIndex = matchEnd
+	}
+	builder.WriteString(errorMessage[startIndex:])
+	return builder.String()
+}
+
 // clusterKey returns the unhashed key for the cluster. Absent an extremely
 // unlikely hash collision, this value is the same for all test results
 // in the cluster.
-func clusterKey(primaryErrorMessage string) string {
-	// Replace numbers and hex values.
-	return clusterExp.ReplaceAllString(primaryErrorMessage, "%")
+func clusterKey(config *compiledcfg.ProjectConfig, failure *clustering.Failure) string {
+	// Use like expression as the clustering key.
+	return clusterLike(config, failure)
 }
 
 // Cluster clusters the given test failure and returns its cluster ID (if it
@@ -85,7 +148,7 @@ func (a *Algorithm) Cluster(config *compiledcfg.ProjectConfig, failure *clusteri
 	if failure.Reason == nil || failure.Reason.PrimaryErrorMessage == "" {
 		return nil
 	}
-	id := clusterKey(failure.Reason.PrimaryErrorMessage)
+	id := clusterKey(config, failure)
 	// sha256 hash the resulting string.
 	h := sha256.Sum256([]byte(id))
 	// Take first 16 bytes as the ID. (Risk of collision is
@@ -125,15 +188,19 @@ func (a *Algorithm) ClusterDescription(config *compiledcfg.ProjectConfig, summar
 	}, nil
 }
 
-// ClusterKey returns the unhashed clustering key which is common
+// ClusterTitle returns a definition of the cluster, typically in
+// the form of an unhashed clustering key which is common
 // across all test results in a cluster. For display on the cluster
 // page or cluster listing.
-func (a *Algorithm) ClusterKey(config *compiledcfg.ProjectConfig, example *clustering.Failure) string {
+func (a *Algorithm) ClusterTitle(config *compiledcfg.ProjectConfig, example *clustering.Failure) string {
 	if example.Reason == nil || example.Reason.PrimaryErrorMessage == "" {
 		return ""
 	}
 	// Should match exactly the algorithm in Cluster(...)
-	key := clusterKey(example.Reason.PrimaryErrorMessage)
+	key := clusterKey(config, example)
+
+	// Remove LIKE escape sequences, as they are confusing in this context.
+	key = likeUnescapeRewriter.Replace(key)
 
 	return clustering.EscapeToGraphical(key)
 }
@@ -144,17 +211,10 @@ func (a *Algorithm) FailureAssociationRule(config *compiledcfg.ProjectConfig, ex
 	if example.Reason == nil || example.Reason.PrimaryErrorMessage == "" {
 		return ""
 	}
-	// Escape \, % and _ so that they are not interpreted by LIKE
-	// pattern matching.
-	rewriter := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
-	likePattern := rewriter.Replace(example.Reason.PrimaryErrorMessage)
+	likePattern := clusterLike(config, example)
 
-	// Replace hexadecimal sequences with wildcard matches. This is technically
-	// broader than our original cluster definition, but is more readable, and
-	// usually ends up matching the exact same set of failures.
-	likePattern = clusterExp.ReplaceAllString(likePattern, "%")
-
-	// Escape the pattern as a string literal.
+	// Escape the pattern as a string literal. Double-quoted go
+	// string literals are also valid GoogleSQL string literals.
 	stringLiteral := strconv.QuoteToGraphic(likePattern)
 	return fmt.Sprintf("reason LIKE %s", stringLiteral)
 }

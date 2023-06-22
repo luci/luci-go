@@ -333,6 +333,38 @@ message Clustering {
   //   like_template: "${testname}"
   // }
   repeated TestNameClusteringRule test_name_rules = 1;
+
+  // Regular expressions used to mask out part of a failure reason
+  // prior to clustering.
+  //
+  // The process of generating the clustering key is:
+  // 1. All '%', '_' and '\' characters in the failure reason are
+  //    escaped to generate a SQL LIKE expression that matches the
+  //    failure reason literally.
+  // 2. Regular expressions are run over the escaped failure reason
+  //    one by one to identify parts of the failure reason to mask
+  //    out (replace by a SQL LIKE wildcard match).
+  // 3. The clustering key is used in the failure association rule
+  //    of a newly field bug, or hashed to generate the clustering
+  //    key.
+  //
+  // For regular expression run against the failure reason,
+  // the part of the reason that matches the first (capturing)
+  // subexpression is masked out in the reason cluster.
+  // All non-overlapping matches are replaced.
+  //
+  // For example, given the masking expression:
+  // "^\\[Fixture failure\\] (\\w+):"
+  // The failure reason:
+  // `[Fixture failure] myFixture: some_error`
+  // will be escaped to (in step 1):
+  // `[Fixture failure] myFixture: some\_error`
+  // and will yield the following output after masking (step 2):
+  // `[Fixture failure] %: some\_error`
+  //
+  // Masking expressions are applied in the order that they appear
+  // in the list.
+  repeated string reason_mask_patterns = 2;
 }
 
 // A rule used to cluster a test result by test name.

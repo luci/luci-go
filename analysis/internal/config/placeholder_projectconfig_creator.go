@@ -93,6 +93,9 @@ func createPlaceholderClustering() *configpb.Clustering {
 				LikeTemplate: `ninja:${target}/%${suite}/%.${case}`,
 			},
 		},
+		ReasonMaskPatterns: []string{
+			`^\[Fixture failure\] ([a-zA-Z0-9_]+)[:]`,
+		},
 	}
 }
 

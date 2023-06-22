@@ -321,7 +321,7 @@ func suggestedClusterTitle(clusterID clustering.ClusterID, exampleFailure *clust
 		//    user may not be allowed to see.
 		exampleClusterID := hex.EncodeToString(alg.Cluster(cfg, exampleFailure))
 		if exampleClusterID == clusterID.ID {
-			return alg.ClusterKey(cfg, exampleFailure)
+			return alg.ClusterTitle(cfg, exampleFailure)
 		}
 	}
 	// Fallback.

@@ -115,10 +115,11 @@ func (a *Algorithm) ClusterDescription(config *compiledcfg.ProjectConfig, summar
 	}
 }
 
-// ClusterKey returns the unhashed clustering key which is common
+// ClusterTitle returns a definition of the cluster, typically in
+// the form of an unhashed clustering key which is common
 // across all test results in a cluster. For display on the cluster
 // page or cluster listing.
-func (a *Algorithm) ClusterKey(config *compiledcfg.ProjectConfig, example *clustering.Failure) string {
+func (a *Algorithm) ClusterTitle(config *compiledcfg.ProjectConfig, example *clustering.Failure) string {
 	key := clusterKey(config, example)
 	return clustering.EscapeToGraphical(key)
 }

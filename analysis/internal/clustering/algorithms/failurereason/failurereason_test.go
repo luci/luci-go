@@ -27,7 +27,13 @@ import (
 )
 
 func TestAlgorithm(t *testing.T) {
-	cfgpb := &configpb.ProjectConfig{}
+	cfgpb := &configpb.ProjectConfig{
+		Clustering: &configpb.Clustering{
+			ReasonMaskPatterns: []string{
+				`(?:^\[Fixture failure\] )([a-zA-Z0-9_]+)[:]`,
+			},
+		},
+	}
 	Convey(`Name`, t, func() {
 		// Algorithm name should be valid.
 		a := &Algorithm{}
@@ -117,6 +123,12 @@ func TestAlgorithm(t *testing.T) {
 			}
 			test(failure, `reason LIKE "Expected: to be called once\n          Actual: never called"`)
 		})
+		Convey(`User-defined masking`, func() {
+			failure := &clustering.Failure{
+				Reason: &pb.FailureReason{PrimaryErrorMessage: `[Fixture failure] crostiniBuster: Failed to install Crostini: 3 is not 5`},
+			}
+			test(failure, `reason LIKE "[Fixture failure] %: Failed to install Crostini: % is not %"`)
+		})
 	})
 	Convey(`Cluster Title`, t, func() {
 		a := &Algorithm{}
@@ -127,15 +139,22 @@ func TestAlgorithm(t *testing.T) {
 			failure := &clustering.Failure{
 				Reason: &pb.FailureReason{PrimaryErrorMessage: "Null pointer exception at ip 0x45637271"},
 			}
-			title := a.ClusterKey(cfg, failure)
+			title := a.ClusterTitle(cfg, failure)
 			So(title, ShouldEqual, `Null pointer exception at ip %`)
 		})
 		Convey(`Escaping`, func() {
 			failure := &clustering.Failure{
 				Reason: &pb.FailureReason{PrimaryErrorMessage: `_%"'+[]|` + "\u0000\r\n\v\u202E\u2066 AdafdxAAD17917+/="},
 			}
-			title := a.ClusterKey(cfg, failure)
+			title := a.ClusterTitle(cfg, failure)
 			So(title, ShouldEqual, `_%\"'+[]|\x00\r\n\v\u202e\u2066 %`)
+		})
+		Convey(`User-defined masking`, func() {
+			failure := &clustering.Failure{
+				Reason: &pb.FailureReason{PrimaryErrorMessage: `[Fixture failure] crostiniBuster: Failed to install Crostini: 3 is not 5`},
+			}
+			title := a.ClusterTitle(cfg, failure)
+			So(title, ShouldEqual, `[Fixture failure] %: Failed to install Crostini: % is not %`)
 		})
 	})
 	Convey(`Cluster Description`, t, func() {

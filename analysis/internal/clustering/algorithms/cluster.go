@@ -40,10 +40,10 @@ type Algorithm interface {
 	// FailureAssociationRule returns a failure association rule that
 	// captures the definition of the cluster containing the given example.
 	FailureAssociationRule(config *compiledcfg.ProjectConfig, example *clustering.Failure) string
-	// ClusterKey returns the unhashed clustering key which is common
+	// ClusterTitle returns the unhashed clustering key which is common
 	// across all test results in a cluster. This will be displayed
 	// on the cluster page or cluster listing.
-	ClusterKey(config *compiledcfg.ProjectConfig, example *clustering.Failure) string
+	ClusterTitle(config *compiledcfg.ProjectConfig, example *clustering.Failure) string
 	// ClusterDescription returns a description of the cluster, for use when
 	// filing bugs, with the help of the given example failure.
 	ClusterDescription(config *compiledcfg.ProjectConfig, summary *clustering.ClusterSummary) (*clustering.ClusterDescription, error)

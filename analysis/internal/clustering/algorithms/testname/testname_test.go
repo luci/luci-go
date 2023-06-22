@@ -153,14 +153,14 @@ func TestAlgorithm(t *testing.T) {
 			failure := &clustering.Failure{
 				TestID: "ninja://test_name_one",
 			}
-			title := a.ClusterKey(cfg, failure)
+			title := a.ClusterTitle(cfg, failure)
 			So(title, ShouldEqual, "ninja://test_name_one")
 		})
 		Convey(`Matching rule`, func() {
 			failure := &clustering.Failure{
 				TestID: "ninja://:blink_web_tests/virtual/dark-color-scheme/fast/forms/color-scheme/select/select-multiple-hover-unselected.html",
 			}
-			title := a.ClusterKey(cfg, failure)
+			title := a.ClusterTitle(cfg, failure)
 			So(title, ShouldEqual, `ninja://:blink\\_web\\_tests/%fast/forms/color-scheme/select/select-multiple-hover-unselected.html%`)
 		})
 	})
