@@ -55,10 +55,7 @@ export function setAuthStateCache(authState: AuthState | null): Promise<void> {
  * 2. the auth state has expired.
  */
 export function getAuthStateCacheSync() {
-  if (!cachedAuthState?.accessTokenExpiry) {
-    return cachedAuthState;
-  }
-  return cachedAuthState.accessTokenExpiry * 1000 > Date.now()
+  return cachedAuthState && msToExpire(cachedAuthState) > 0
     ? cachedAuthState
     : null;
 }
@@ -103,4 +100,15 @@ export async function obtainAuthState() {
   setAuthStateCache(authState);
 
   return authState;
+}
+
+/**
+ * Returns the time to expire in milliseconds.
+ */
+export function msToExpire(authState: AuthState) {
+  const expiry = Math.min(
+    authState.idTokenExpiry || Infinity,
+    authState.accessTokenExpiry || Infinity
+  );
+  return expiry * 1000 - Date.now();
 }

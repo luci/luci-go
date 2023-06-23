@@ -23,6 +23,7 @@ import {
 
 import {
   AuthState,
+  msToExpire,
   queryAuthState,
   setAuthStateCache,
 } from '@/common/api/auth_state';
@@ -81,15 +82,14 @@ export const AuthStateStore = types
         lastScheduleId = scheduleId;
         const authState = self.value;
 
-        let validDuration = 0;
-        if (!forceUpdate && authState) {
-          if (!authState.accessTokenExpiry) {
-            return;
-          }
-          // Refresh the access token 10s earlier to prevent the token from
-          // expiring before the new token is returned.
-          validDuration =
-            authState.accessTokenExpiry * 1000 - Date.now() - 10000;
+        const validDuration =
+          forceUpdate || !authState
+            ? 0
+            : // Refresh the auth state 10s earlier to prevent the tokens from
+              // expiring before the new tokens are returned.
+              msToExpire(authState) - 10000;
+        if (validDuration === Infinity) {
+          return;
         }
 
         yield timeout(validDuration);
