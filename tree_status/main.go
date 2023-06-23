@@ -21,7 +21,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
-	"go.chromium.org/luci/server/encryptedcookies"
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/loginsessions"
@@ -37,7 +36,6 @@ func main() {
 	// Additional modules that extend the server functionality.
 	modules := []module.Module{
 		cron.NewModuleFromFlags(),
-		encryptedcookies.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		loginsessions.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
