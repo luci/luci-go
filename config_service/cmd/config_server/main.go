@@ -57,7 +57,7 @@ func main() {
 		})
 		configpb.RegisterConfigsServer(srv, rpc.NewConfigs())
 
-		cron.RegisterHandler("update-service-metadata", service.UpdateMetadata)
+		cron.RegisterHandler("update-services", service.Update)
 		return nil
 	})
 }

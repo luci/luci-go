@@ -41,13 +41,16 @@ import (
 	"go.chromium.org/luci/config_service/internal/model"
 )
 
-func UpdateMetadata(ctx context.Context) error {
+// Update updates the `Service` entities for all registered services.
+//
+// Also deletes the entities for un-registered services.
+func Update(ctx context.Context) error {
 	servicesCfg := &cfgcommonpb.ServicesCfg{}
 	if err := common.LoadSelfConfig(ctx, common.ServiceRegistryFilePath, servicesCfg); err != nil {
 		return fmt.Errorf("failed to load %s. Reason: %w", common.ServiceRegistryFilePath, err)
 	}
 
-	toDelete, err := computeServiceMetadataToDelete(ctx, servicesCfg)
+	toDelete, err := computeServicesToDelete(ctx, servicesCfg)
 	if err != nil {
 		return err
 	}
@@ -56,18 +59,16 @@ func UpdateMetadata(ctx context.Context) error {
 	var errorsMu sync.Mutex
 	perr := parallel.WorkPool(8, func(workC chan<- func() error) {
 		for _, srv := range servicesCfg.GetServices() {
-			if srv.GetServiceEndpoint() != "" || srv.GetMetadataUrl() != "" {
-				srv := srv
-				workC <- func() error {
-					ctx = logging.SetField(ctx, "service", srv.GetId())
-					if err := updateServiceMetadata(ctx, srv); err != nil {
-						errorsMu.Lock()
-						errs = append(errs, err)
-						errorsMu.Unlock()
-						logging.Errorf(ctx, "failed to update service metadata. Reason: %s", err)
-					}
-					return nil
+			srv := srv
+			workC <- func() error {
+				ctx = logging.SetField(ctx, "service", srv.GetId())
+				if err := updateService(ctx, srv); err != nil {
+					errorsMu.Lock()
+					errs = append(errs, err)
+					errorsMu.Unlock()
+					logging.Errorf(ctx, "failed to update service. Reason: %s", err)
 				}
+				return nil
 			}
 		}
 
@@ -78,9 +79,10 @@ func UpdateMetadata(ctx context.Context) error {
 					services[i] = key.StringID()
 				}
 				if err := datastore.Delete(ctx, toDelete); err != nil {
-					return fmt.Errorf("failed to delete ServiceMetadata for deleted service(s) [%s]: %w", strings.Join(services, ", "), err)
+					errs = append(errs, fmt.Errorf("failed to delete service(s) [%s]: %w", strings.Join(services, ", "), err))
+					return nil
 				}
-				logging.Infof(ctx, "successfully deleted ServiceMetadata for deleted service(s): [%s]", strings.Join(services, ", "))
+				logging.Infof(ctx, "successfully deleted service(s): [%s]", strings.Join(services, ", "))
 				return nil
 			}
 		}
@@ -92,10 +94,10 @@ func UpdateMetadata(ctx context.Context) error {
 	return errors.Join(errs...)
 }
 
-func computeServiceMetadataToDelete(ctx context.Context, servicesCfg *cfgcommonpb.ServicesCfg) ([]*datastore.Key, error) {
+func computeServicesToDelete(ctx context.Context, servicesCfg *cfgcommonpb.ServicesCfg) ([]*datastore.Key, error) {
 	var keys []*datastore.Key
-	if err := datastore.GetAll(ctx, datastore.NewQuery("ServiceMetadata").KeysOnly(true), &keys); err != nil {
-		return nil, fmt.Errorf("failed to query all service metadata keys: %w", err)
+	if err := datastore.GetAll(ctx, datastore.NewQuery(model.ServiceKind).KeysOnly(true), &keys); err != nil {
+		return nil, fmt.Errorf("failed to query all service keys: %w", err)
 	}
 	currentServices := stringset.New(len(servicesCfg.GetServices()))
 	for _, srv := range servicesCfg.GetServices() {
@@ -110,54 +112,55 @@ func computeServiceMetadataToDelete(ctx context.Context, servicesCfg *cfgcommonp
 	return toDelete, nil
 }
 
-func updateServiceMetadata(ctx context.Context, srv *cfgcommonpb.Service) error {
+func updateService(ctx context.Context, info *cfgcommonpb.Service) error {
 	eg, ectx := errgroup.WithContext(ctx)
-	var metadataFromService *cfgcommonpb.ServiceMetadata
-	var legacyMetadataFromService *cfgcommonpb.ServiceDynamicMetadata
+	updated := &model.Service{
+		Name: info.GetId(),
+		Info: info,
+	}
 	switch {
-	case srv.GetServiceEndpoint() != "":
+	case info.GetServiceEndpoint() != "":
 		eg.Go(func() (err error) {
-			metadataFromService, err = fetchMetadata(ctx, srv.GetServiceEndpoint())
+			updated.Metadata, err = fetchMetadata(ectx, info.GetServiceEndpoint())
 			return err
 		})
-	case srv.GetMetadataUrl() != "":
+	case info.GetMetadataUrl() != "":
 		eg.Go(func() (err error) {
-			legacyMetadataFromService, err = fetchLegacyMetadata(ctx, srv.GetMetadataUrl(), srv.GetJwtAuth().GetAudience())
+			updated.LegacyMetadata, err = fetchLegacyMetadata(ectx, info.GetMetadataUrl(), info.GetJwtAuth().GetAudience())
 			return err
 		})
-	default:
-		panic(errors.New("impossible; must provide either service_endpoint or metadata_url"))
 	}
 
-	metadataEntity := &model.ServiceMetadata{
-		ServiceName: srv.GetId(),
-	}
+	var existing *model.Service
 	eg.Go(func() error {
-		switch err := datastore.Get(ectx, metadataEntity); err {
+		service := &model.Service{
+			Name: info.GetId(),
+		}
+		switch err := datastore.Get(ectx, service); err {
 		case datastore.ErrNoSuchEntity:
-			// Expect entity missing for the first time updating service metadata.
-			logging.Warningf(ectx, "missing ServiceMetadata datastore entity for %q. This is common for first time updating service metadata")
-			return nil
+			// Expect entity missing for the first time updating service.
+			logging.Warningf(ectx, "missing Service datastore entity for %q. This is common for first time updating service", info.GetId())
+		case nil:
+			existing = service
 		default:
 			return err
 		}
+		return nil
 	})
 	if err := eg.Wait(); err != nil {
 		return err
 	}
 
-	if skipUpdate(ctx, metadataEntity, metadataFromService, legacyMetadataFromService) {
-		logging.Infof(ctx, "skip updating service metadata as LUCI Config already has the latest")
+	if skipUpdate(existing, updated) {
+		logging.Infof(ctx, "skip updating service as LUCI Config already has the latest")
 		return nil
 	}
 
-	metadataEntity.Metadata = metadataFromService
-	metadataEntity.LegacyMetadata = legacyMetadataFromService
-	metadataEntity.UpdateTime = clock.Now(ctx).UTC()
-	if err := datastore.Put(ctx, metadataEntity); err != nil {
+	updated.UpdateTime = clock.Now(ctx).UTC()
+	if err := datastore.Put(ctx, updated); err != nil {
 		return err
 	}
-	logging.Infof(ctx, "successfully updated service metadata")
+	logging.Infof(ctx, "successfully updated service")
 	return nil
 }
 
@@ -210,16 +213,10 @@ func fetchLegacyMetadata(ctx context.Context, metadataURL string, jwtAud string)
 	}
 }
 
-func skipUpdate(ctx context.Context, metadataEntity *model.ServiceMetadata, metadata *cfgcommonpb.ServiceMetadata, legacyMetadata *cfgcommonpb.ServiceDynamicMetadata) bool {
-	switch {
-	case metadataEntity == nil:
-		panic(errors.New("nil metadataEntity"))
-	case metadata != nil:
-		return proto.Equal(metadataEntity.Metadata, metadata)
-	case legacyMetadata != nil:
-		return proto.Equal(metadataEntity.LegacyMetadata, legacyMetadata)
-	default:
-		logging.Warningf(ctx, "FIXME: both metadata and legacy metadata are nil")
-		return false
-	}
+func skipUpdate(existing, updated *model.Service) bool {
+	return existing != nil &&
+		existing.Name == updated.Name &&
+		proto.Equal(existing.Info, updated.Info) &&
+		proto.Equal(existing.Metadata, updated.Metadata) &&
+		proto.Equal(existing.LegacyMetadata, updated.LegacyMetadata)
 }

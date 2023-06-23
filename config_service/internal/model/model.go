@@ -43,6 +43,9 @@ const (
 
 	// ImportAttemptKind is the Datastore entity kind for ImportAttempt.
 	ImportAttemptKind = "ImportAttemptV2"
+
+	// ServiceKind is the Datastore entity kind for Service.
+	ServiceKind = "Service"
 )
 
 // ConfigSet is a versioned collection of config files.
@@ -118,10 +121,12 @@ type RevisionInfo struct {
 	CommitterEmail string `gae:"committer_email"`
 }
 
-// ServiceMetadata contains the metadata of a service.
-type ServiceMetadata struct {
-	// ServiceName is the name of the service.
-	ServiceName string `gae:"$id"`
+// Service contains information about a registered service.
+type Service struct {
+	// Name is the name of the service.
+	Name string `gae:"$id"`
+	// Info contains information  for LUCI Config to interact with the service.
+	Info *cfgcommonpb.Service `gae:"info"`
 	// Metadata describes the metadata of a service.
 	Metadata *cfgcommonpb.ServiceMetadata `gae:"metadata"`
 	// LegacyMetadata is returned by the service that is still talking in
