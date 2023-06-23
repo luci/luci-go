@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Button, CircularProgress, Input } from '@mui/material';
+import { Box, Button, CircularProgress, MenuItem, Select } from '@mui/material';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -93,19 +93,24 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
       ) : (
         <>
           <EndedBuildsTable endedBuilds={data.builds || []} />
-          <Box>
+          <Box sx={{ mt: '5px' }}>
             Page Size:{' '}
-            <Input
-              type="number"
-              inputProps={{ min: 25, max: 100 }}
-              sx={{ width: 40 }}
-              value={pageSize}
+            <Select
               onChange={(e) => setPageSize(Number(e.target.value))}
-            />
+              value={pageSize}
+              size="small"
+            >
+              <MenuItem value={25}>25</MenuItem>
+              <MenuItem value={50}>50</MenuItem>
+              <MenuItem value={100}>100</MenuItem>
+              <MenuItem value={200}>200</MenuItem>
+            </Select>
             <Button
               disabled={!prevPageTokens.length}
               onClick={() => {
                 const newPrevPageTokens = prevPageTokens.slice();
+                // The button is disabled when `newPrevPageTokens` is empty.
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 setCurrentPageToken(newPrevPageTokens.pop()!);
                 setPrevPageTokens(newPrevPageTokens);
               }}
@@ -115,6 +120,8 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
             <Button
               disabled={isPreviousData || !data.nextPageToken}
               onClick={() => {
+                // The button is disabled when `nextPageToken` is empty.
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 setCurrentPageToken(data.nextPageToken!);
                 setPrevPageTokens([...prevPageTokens, currentPageToken]);
               }}

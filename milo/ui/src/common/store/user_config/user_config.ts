@@ -27,6 +27,7 @@ import {
 } from 'mobx-state-tree';
 
 import { BuildConfig } from './build_config';
+import { BuilderPageConfig } from './builder_page_config';
 import { TestsConfig } from './tests_config';
 
 export const V2_CACHE_KEY = 'user-config-v2';
@@ -42,6 +43,7 @@ export const UserConfig = types
     id: types.optional(types.identifierNumber, () => Math.random()),
     build: types.optional(BuildConfig, {}),
     tests: types.optional(TestsConfig, {}),
+    builderPage: types.optional(BuilderPageConfig, {}),
   })
   .actions((self) => ({
     deleteStaleKeys(before: Date) {

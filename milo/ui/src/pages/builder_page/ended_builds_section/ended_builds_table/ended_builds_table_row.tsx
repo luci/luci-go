@@ -15,7 +15,6 @@
 import { ChevronRight, ExpandMore } from '@mui/icons-material';
 import {
   Box,
-  Collapse,
   Icon,
   IconButton,
   Link,
@@ -66,7 +65,10 @@ const MarkdownContainer = styled(Box)({
     fontSize: '12px',
   },
   '& *': {
-    marginBlock: '10px',
+    marginBlock: '5px',
+    paddingTop: '0',
+    paddingBottom: '0',
+    lineHeight: '20px',
   },
 });
 
@@ -113,84 +115,116 @@ export const EndedBuildsTableRow = observer(
     const changes = build.input?.gerritChanges || [];
 
     return (
-      <>
-        <TableRow
-          sx={{
-            '& > td': { borderBottom: 'unset' },
-          }}
-        >
-          <TableCell>
-            <IconButton
-              aria-label="toggle-row"
-              size="small"
-              onClick={() => tableState.toggle(build.id, !expanded)}
-            >
-              {expanded ? <ExpandMore /> : <ChevronRight />}
-            </IconButton>
-          </TableCell>
-          <TableCell>
-            <link
-              rel="stylesheet"
-              href="https://fonts.googleapis.com/css?family=Material+Icons&display=block"
-            />
-            <Icon
-              className={BUILD_STATUS_CLASS_MAP[build.status]}
-              title={BUILD_STATUS_DISPLAY_MAP[build.status]}
-            >
-              {BUILD_STATUS_ICON_MAP[build.status]}
-            </Icon>
-          </TableCell>
-          <TableCell>
-            <Link href={getBuildURLPathFromBuildId(build.id)}>
-              {build.number ?? 'b' + build.id}
+      <TableRow
+        sx={{
+          '& > td': {
+            // Use `vertical-align: baseline` so the cell content (including the
+            // expand button) won't shift downwards when the row is expanded.
+            verticalAlign: 'baseline',
+            whiteSpace: 'nowrap',
+          },
+        }}
+        hover
+      >
+        <TableCell>
+          <Icon
+            className={BUILD_STATUS_CLASS_MAP[build.status]}
+            title={BUILD_STATUS_DISPLAY_MAP[build.status]}
+            sx={{ transform: 'translateY(5px)' }}
+          >
+            {BUILD_STATUS_ICON_MAP[build.status]}
+          </Icon>
+        </TableCell>
+        <TableCell>
+          <Link href={getBuildURLPathFromBuildId(build.id)}>
+            {build.number ?? 'b' + build.id}
+          </Link>
+        </TableCell>
+        <TableCell>
+          <CompactTimestamp datetime={createTime} />
+        </TableCell>
+        <TableCell>
+          {endTime ? <CompactTimestamp datetime={endTime} /> : 'N/A'}
+        </TableCell>
+        <TableCell>
+          {runDuration ? displayDuration(runDuration) : 'N/A'}
+        </TableCell>
+        <TableCell>
+          {commit ? (
+            <Link href={getGitilesCommitURL(commit)}>
+              {getGitilesCommitLabel(commit)}
             </Link>
-          </TableCell>
-          <TableCell>
-            <CompactTimestamp datetime={createTime} />
-          </TableCell>
-          <TableCell>
-            {endTime ? <CompactTimestamp datetime={endTime} /> : 'N/A'}
-          </TableCell>
-          <TableCell>
-            {runDuration ? displayDuration(runDuration) : 'N/A'}
-          </TableCell>
-          <TableCell>
-            {commit ? (
-              <Link href={getGitilesCommitURL(commit)}>
-                {getGitilesCommitLabel(commit)}
-              </Link>
-            ) : (
-              'N/A'
-            )}
-          </TableCell>
-          {displayGerritChanges && (
-            <TableCell>
-              {changes.map((c, i) => (
-                <Fragment key={c.change}>
-                  {i !== 0 && <>, </>}
-                  <Link key={c.change} href={getGerritChangeURL(c)}>
-                    CL {c.change} (ps #{c.patchset})
-                  </Link>
-                </Fragment>
-              ))}
-            </TableCell>
+          ) : (
+            'N/A'
           )}
-        </TableRow>
-        <TableRow>
-          <TableCell colSpan={8} sx={{ p: 0 }}>
-            <Collapse in={expanded} timeout="auto">
-              <MarkdownContainer
-                className={`${BUILD_STATUS_CLASS_MAP[build.status]}-bg`}
-                dangerouslySetInnerHTML={{
-                  __html: renderMarkdown(
-                    build.summaryMarkdown || 'No Summary.'
-                  ),
-                }}
-              />
-            </Collapse>
+        </TableCell>
+        {displayGerritChanges && (
+          <TableCell>
+            {changes.map((c, i) => (
+              <Fragment key={c.change}>
+                {i !== 0 && <>, </>}
+                <Link key={c.change} href={getGerritChangeURL(c)}>
+                  CL {c.change} (ps #{c.patchset})
+                </Link>
+              </Fragment>
+            ))}
           </TableCell>
-        </TableRow>
-      </>
+        )}
+        <TableCell
+          onClick={() => {
+            if (window.getSelection()?.toString().length) {
+              return;
+            }
+            tableState.toggle(build.id, !expanded);
+          }}
+          sx={{ cursor: build.summaryMarkdown ? 'pointer' : '' }}
+        >
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: '34px 1fr',
+            }}
+          >
+            <Box>
+              <IconButton
+                aria-label="toggle-row"
+                size="small"
+                onClick={() => tableState.toggle(build.id, !expanded)}
+                // Always render the button to DOM so we have a stable layout.
+                // Hide it from users so it won't mislead users to think there
+                // are more summary.
+                disabled={!build.summaryMarkdown}
+                sx={{ visibility: build.summaryMarkdown ? '' : 'hidden' }}
+              >
+                {expanded ? <ExpandMore /> : <ChevronRight />}
+              </IconButton>
+            </Box>
+            <MarkdownContainer
+              className={`${BUILD_STATUS_CLASS_MAP[build.status]}-bg`}
+              css={{
+                marginBottom: '2px',
+                ...(!build.summaryMarkdown || expanded
+                  ? {}
+                  : {
+                      // Cap the size of the markdown container to only show the
+                      // first line.
+                      height: '30px',
+                      overflow: 'hidden',
+                      // Use dashed bottom border to hint that there could be
+                      // more summary.
+                      borderBottomStyle: 'dashed',
+                    }),
+              }}
+              dangerouslySetInnerHTML={{
+                __html: renderMarkdown(
+                  build.summaryMarkdown ||
+                    '<span style="color: var(--greyed-out-text-color);">No Summary.</span>'
+                ),
+              }}
+            />
+          </Box>
+        </TableCell>
+      </TableRow>
     );
   }
 );

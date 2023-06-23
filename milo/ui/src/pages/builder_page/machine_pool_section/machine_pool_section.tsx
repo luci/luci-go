@@ -121,7 +121,7 @@ export function MachinePoolSection({
       {isPermissionError && (
         <Alert severity="warning">
           <AlertTitle>
-            You&apos;ve no permission to view the machine pool
+            You don&apos;t have the permission to view the machine pool
           </AlertTitle>
           <ErrorDisplay>{`Original Error:\n${error.message}`}</ErrorDisplay>
         </Alert>

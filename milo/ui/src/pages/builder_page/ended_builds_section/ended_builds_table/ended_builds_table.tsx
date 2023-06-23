@@ -16,7 +16,8 @@ import { Table, TableBody } from '@mui/material';
 import { useState } from 'react';
 
 import { Build } from '@/common/services/buildbucket';
-import { ExpandableEntriesState } from '@/common/store/expandable_entries_state/expandable_entries_state';
+import { useStore } from '@/common/store';
+import { ExpandableEntriesState } from '@/common/store/expandable_entries_state';
 
 import { EndedBuildsTableHead } from './ended_builds_table_head';
 import { EndedBuildsTableRow } from './ended_builds_table_row';
@@ -26,7 +27,16 @@ export interface EndedBuildsTableProps {
 }
 
 export function EndedBuildsTable({ endedBuilds }: EndedBuildsTableProps) {
-  const [tableState] = useState(() => ExpandableEntriesState.create());
+  // The config is only used during initialization.
+  // Don't need to declare the component as an observable.
+  const config = useStore().userConfig.builderPage;
+
+  const [tableState] = useState(() =>
+    ExpandableEntriesState.create({
+      defaultExpanded: config.expandEndedBuildsEntryByDefault,
+    })
+  );
+
   const hasChanges = endedBuilds.some((b) => b.input?.gerritChanges?.length);
 
   return (
@@ -34,6 +44,10 @@ export function EndedBuildsTable({ endedBuilds }: EndedBuildsTableProps) {
       size="small"
       sx={{
         borderCollapse: 'separate',
+        '& td, th': {
+          padding: '0px 8px',
+        },
+        minWidth: '1000px',
       }}
     >
       <EndedBuildsTableHead
@@ -42,12 +56,9 @@ export function EndedBuildsTable({ endedBuilds }: EndedBuildsTableProps) {
       />
       <TableBody
         sx={{
-          // Each <EndedBuildsTableRow /> is consist of two <tr />s. The first
-          // <tr /> is the actual row while the second <tr /> contains the
-          // expandable body as the first <tr />.
-          // We only want to select the first <tr /> in every other
-          // <EndedBuildsTableRow />.
-          '& tr:nth-of-type(4n + 1)': {
+          // Only apply when the table body is not on hover because the row is
+          // already highlighted with a similar color on hover
+          '&:not(:hover) > tr:nth-of-type(odd)': {
             backgroundColor: 'var(--block-background-color)',
           },
         }}

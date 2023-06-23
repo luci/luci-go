@@ -13,9 +13,11 @@
 // limitations under the License.
 
 import { ChevronRight, ExpandMore } from '@mui/icons-material';
-import { IconButton, TableCell, TableHead, TableRow } from '@mui/material';
+import { Box, IconButton, TableCell, TableHead, TableRow } from '@mui/material';
+import { action } from 'mobx';
 import { observer } from 'mobx-react-lite';
 
+import { useStore } from '@/common/store';
 import { ExpandableEntriesStateInstance } from '@/common/store/expandable_entries_state/expandable_entries_state';
 
 export interface EndedBuildsTableHeadProps {
@@ -25,6 +27,8 @@ export interface EndedBuildsTableHeadProps {
 
 export const EndedBuildsTableHead = observer(
   ({ tableState, displayGerritChanges }: EndedBuildsTableHeadProps) => {
+    const config = useStore().userConfig.builderPage;
+
     return (
       <TableHead
         sx={{
@@ -34,25 +38,47 @@ export const EndedBuildsTableHead = observer(
           zIndex: 2,
         }}
       >
-        <TableRow>
+        <TableRow
+          sx={{
+            '& > th': {
+              whiteSpace: 'nowrap',
+            },
+          }}
+        >
+          {
+            // Use a small width on all columns except the summary column to
+            // prevent them from growing.
+          }
+          <TableCell width="1px" title="Status" sx={{ textAlign: 'center' }}>
+            S
+          </TableCell>
+          <TableCell width="1px">Build #</TableCell>
+          <TableCell width="1px">Create Time</TableCell>
+          <TableCell width="1px">End Time</TableCell>
+          <TableCell width="1px">Run Duration</TableCell>
+          <TableCell width="1px">Commit</TableCell>
+          {displayGerritChanges && <TableCell width="1px">Changes</TableCell>}
           <TableCell>
-            <IconButton
-              aria-label="toggle-all-rows"
-              size="small"
-              onClick={() => {
-                tableState.toggleAll(!tableState.defaultExpanded);
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: '34px 1fr',
               }}
             >
-              {tableState.defaultExpanded ? <ExpandMore /> : <ChevronRight />}
-            </IconButton>
+              <IconButton
+                aria-label="toggle-all-rows"
+                size="small"
+                onClick={action(() => {
+                  const shouldExpand = !tableState.defaultExpanded;
+                  config.setExpandEndedBuildsEntryByDefault(shouldExpand);
+                  tableState.toggleAll(shouldExpand);
+                })}
+              >
+                {tableState.defaultExpanded ? <ExpandMore /> : <ChevronRight />}
+              </IconButton>
+              <Box sx={{ lineHeight: '34px' }}>Summary</Box>
+            </Box>
           </TableCell>
-          <TableCell>Status</TableCell>
-          <TableCell>Build #</TableCell>
-          <TableCell>Create Time</TableCell>
-          <TableCell>End Time</TableCell>
-          <TableCell>Run Duration</TableCell>
-          <TableCell>Commit</TableCell>
-          {displayGerritChanges && <TableCell>Changes</TableCell>}
         </TableRow>
       </TableHead>
     );
