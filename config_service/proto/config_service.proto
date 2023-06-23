@@ -68,8 +68,8 @@ message Config {
     string signed_url = 4;
   }
 
-  // Content hash.
-  string content_hash = 5;
+  // SHA256 value of the raw content.
+  string content_sha256 = 5;
 
   // Git revision
   string revision = 6;

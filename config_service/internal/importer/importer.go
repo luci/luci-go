@@ -415,11 +415,11 @@ func importRevision(ctx context.Context, cfgSet config.Set, loc *cfgcommonpb.Git
 		if err := gzipWriter.Close(); err != nil {
 			return errors.Annotate(err, "failed to close gzip writer for file: %s", filePath).Err()
 		}
-		file.ContentHash = fmt.Sprintf("sha256:%s", hex.EncodeToString(sha.Sum(nil)[:]))
+		file.ContentSHA256 = hex.EncodeToString(sha.Sum(nil)[:])
 		if compressed.Len() < compressedContentLimit {
 			file.Content = compressed.Bytes()
 		} else {
-			gsFileName := fmt.Sprintf("%s/%s", common.GSProdCfgFolder, file.ContentHash)
+			gsFileName := fmt.Sprintf("%s/sha256/%s", common.GSProdCfgFolder, file.ContentSHA256)
 			_, err := clients.GetGsClient(ctx).UploadIfMissing(ctx, common.BucketName(ctx), gsFileName, compressed.Bytes(), func(attrs *storage.ObjectAttrs) {
 				attrs.ContentEncoding = "gzip"
 			})

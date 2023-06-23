@@ -247,11 +247,11 @@ func TestImportConfigSet(t *testing.T) {
 				expectedContent0, err := gzipCompress([]byte(""))
 				So(err, ShouldBeNil)
 				So(files[0], ShouldResemble, &model.File{
-					Path:        "empty_file",
-					Revision:    revKey,
-					CreateTime:  datastore.RoundTime(clock.Now(ctx).UTC()),
-					Content:     expectedContent0,
-					ContentHash: "sha256:" + hex.EncodeToString(expectedSha256[:]),
+					Path:          "empty_file",
+					Revision:      revKey,
+					CreateTime:    datastore.RoundTime(clock.Now(ctx).UTC()),
+					Content:       expectedContent0,
+					ContentSHA256: hex.EncodeToString(expectedSha256[:]),
 				})
 				So(files[1].Location, ShouldResembleProto, &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
@@ -267,11 +267,11 @@ func TestImportConfigSet(t *testing.T) {
 				expectedContent1, err := gzipCompress([]byte("file1 content"))
 				So(err, ShouldBeNil)
 				So(files[1], ShouldResemble, &model.File{
-					Path:        "file1",
-					Revision:    revKey,
-					CreateTime:  datastore.RoundTime(clock.Now(ctx).UTC()),
-					Content:     expectedContent1,
-					ContentHash: "sha256:" + hex.EncodeToString(expectedSha256[:]),
+					Path:          "file1",
+					Revision:      revKey,
+					CreateTime:    datastore.RoundTime(clock.Now(ctx).UTC()),
+					Content:       expectedContent1,
+					ContentSHA256: hex.EncodeToString(expectedSha256[:]),
 				})
 				So(files[2].Location, ShouldResembleProto, &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
@@ -287,11 +287,11 @@ func TestImportConfigSet(t *testing.T) {
 				expectedContent2, err := gzipCompress([]byte("file2 content"))
 				So(err, ShouldBeNil)
 				So(files[2], ShouldResemble, &model.File{
-					Path:        "sub_dir/file2",
-					Revision:    revKey,
-					CreateTime:  datastore.RoundTime(clock.Now(ctx).UTC()),
-					Content:     expectedContent2,
-					ContentHash: "sha256:" + hex.EncodeToString(expectedSha256[:]),
+					Path:          "sub_dir/file2",
+					Revision:      revKey,
+					CreateTime:    datastore.RoundTime(clock.Now(ctx).UTC()),
+					Content:       expectedContent2,
+					ContentSHA256: hex.EncodeToString(expectedSha256[:]),
 				})
 
 				So(attempt.Revision.Location, ShouldResembleProto, &cfgcommonpb.Location{
@@ -484,7 +484,7 @@ func TestImportConfigSet(t *testing.T) {
 				tarGzContent, err := buildTarGz(map[string]any{"file": "small content", "large": incompressible})
 				So(err, ShouldBeNil)
 				expectedSha256 := sha256.Sum256(incompressible)
-				expectedGsFileName := "configs/sha256:" + hex.EncodeToString(expectedSha256[:])
+				expectedGsFileName := "configs/sha256/" + hex.EncodeToString(expectedSha256[:])
 				mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{
 					Contents: tarGzContent,
 				}, nil)
@@ -613,7 +613,7 @@ func TestImportConfigSet(t *testing.T) {
 				tarGzContent, err := buildTarGz(map[string]any{"large": incompressible})
 				So(err, ShouldBeNil)
 				expectedSha256 := sha256.Sum256(incompressible)
-				expectedGsFileName := "configs/sha256:" + hex.EncodeToString(expectedSha256[:])
+				expectedGsFileName := "configs/sha256/" + hex.EncodeToString(expectedSha256[:])
 				mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{
 					Contents: tarGzContent,
 				}, nil)

@@ -81,8 +81,8 @@ type File struct {
 	// The format is "gs://<bucket>/<object_name>"
 	// Note: Either Content field or GcsUri field will be set, but not both.
 	GcsURI gs.Path `gae:"gcs_uri,noindex"`
-	// ContentHash is the SHA256 hash of the file content.
-	ContentHash string `gae:"content_hash"`
+	// ContentSHA256 is the SHA256 hash of the file content.
+	ContentSHA256 string `gae:"content_sha256"`
 	// Location is a pinned, fully resolved source location to this file.
 	Location *cfgcommonpb.Location `gae:"location"`
 }
@@ -221,22 +221,22 @@ func (f *File) Load(ctx context.Context, resolveGcsURI bool) error {
 		case err != nil:
 			return errors.Annotate(err, "failed to fetch file %q", f.Path).Err()
 		}
-	case f.ContentHash != "":
-		err := datastore.Run(ctx, datastore.NewQuery(FileKind).Eq("content_hash", f.ContentHash), func(file *File) error {
+	case f.ContentSHA256 != "":
+		err := datastore.Run(ctx, datastore.NewQuery(FileKind).Eq("content_sha256", f.ContentSHA256), func(file *File) error {
 			*f = *file
 			return datastore.Stop
 		})
 		switch {
 		case err != nil:
-			return errors.Annotate(err, "failed to query file by hash %q", f.ContentHash).Err()
+			return errors.Annotate(err, "failed to query file by sha256 hash %q", f.ContentSHA256).Err()
 		case f.Path == "":
 			return &NoSuchConfigError{
 				unknownConfigFile: struct {
 					configSet, revision, file, hash string
-				}{hash: f.ContentHash}}
+				}{hash: f.ContentSHA256}}
 		}
 	default:
-		return errors.Reason("One of ContentHash or (path and revision) is required").Err()
+		return errors.Reason("One of ContentSHA256 or (path and revision) is required").Err()
 	}
 
 	if resolveGcsURI && f.GcsURI != "" {
