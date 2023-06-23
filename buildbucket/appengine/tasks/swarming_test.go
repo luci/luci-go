@@ -513,25 +513,7 @@ func TestSyncBuild(t *testing.T) {
 				})}
 				So(datastore.Get(ctx, currentInfra), ShouldBeNil)
 				So(currentInfra.Proto.Swarming.TaskId, ShouldEqual, "old task ID")
-				// One task should be pushed into CancelSwarmingTask queue since update build failed.
-				So(sch.Tasks(), ShouldHaveLength, 1)
-				So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdefs.CancelSwarmingTaskGo{
-					Hostname: "swarm",
-					TaskId:   "new task ID",
-					Realm:    "proj:bucket",
-				})
-			})
-
-			Convey("create swarming - cancel swarming task fail", func() {
-				mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
-					// Hack to make the build update and the equeueing CancelSwarmingTask fail.
-					inf.Proto.Swarming.TaskId = "old task ID"
-					So(datastore.Put(ctx, inf), ShouldBeNil)
-					return &swarming.SwarmingRpcsTaskRequestMetadata{TaskId: ""}, nil
-				})
-
-				err := SyncBuild(ctx, 123, 0)
-				So(err, ShouldErrLike, "failed to enqueue swarming task cancellation task for build 123: task_id is required")
+				So(sch.Tasks(), ShouldHaveLength, 0)
 			})
 		})
 

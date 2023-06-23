@@ -53,7 +53,7 @@ func validateStartBuildRequest(ctx context.Context, req *pb.StartBuildRequest) e
 //
 // For builds on Swarming, the swarming task id and update_token have been
 // saved in datastore during task creation.
-func startBuildOnSwarming(ctx context.Context, req *pb.StartBuildRequest) (*model.Build, bool, error) {
+func startBuildOnSwarming(ctx context.Context, req *pb.StartBuildRequest, tok string) (*model.Build, bool, error) {
 	var b *model.Build
 	buildStatusChanged := false
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
@@ -71,42 +71,60 @@ func startBuildOnSwarming(ctx context.Context, req *pb.StartBuildRequest) (*mode
 
 		// First StartBuild request.
 		if b.StartBuildRequestID == "" {
-			if infra.Proto.Swarming.TaskId == req.TaskId {
-				if protoutil.IsEnded(b.Status) {
-					// The build has ended.
-					// For example the StartBuild request reaches Buildbucket late, when the task
-					// has crashed (e.g. BOT_DIED).
-					return appstatus.Errorf(codes.FailedPrecondition, "cannot start ended build %d", b.ID)
-				}
-
-				// Start the build.
-				toPut := []any{b}
-				b.StartBuildRequestID = req.RequestId
-				if b.Status == pb.Status_SCHEDULED {
-					// Should only set the build to STARTED if it's still pending.
-					// Because of the swarming sync flow, it's possible that build is
-					// already in STARTED status.
-					protoutil.SetStatus(clock.Now(ctx), b.Proto, pb.Status_STARTED)
-					buildStatusChanged = true
-					if bs != nil {
-						bs.Status = pb.Status_STARTED
-						toPut = append(toPut, bs)
-					}
-				}
-				if err = datastore.Put(ctx, toPut...); err != nil {
-					return appstatus.Errorf(codes.Internal, "failed to start build %d: %s", b.ID, err)
-				}
-
-				if buildStatusChanged {
-					// Notify Pubsub.
-					// NotifyPubSub is a Transactional task, so do it inside the transaction.
-					_ = tasks.NotifyPubSub(ctx, b)
-				}
-				return nil
+			if infra.Proto.Swarming.TaskId != req.TaskId && infra.Proto.Swarming.TaskId != "" {
+				// Duplicated task.
+				return buildbucket.DuplicateTask.Apply(appstatus.Errorf(codes.AlreadyExists, "build %d has associated with task %q", req.BuildId, infra.Proto.Swarming.TaskId))
 			}
 
-			// Duplicated task.
-			return buildbucket.DuplicateTask.Apply(appstatus.Errorf(codes.AlreadyExists, "build %d has associated with task %q", req.BuildId, infra.Proto.Swarming.TaskId))
+			if protoutil.IsEnded(b.Status) {
+				// The build has ended.
+				// For example the StartBuild request reaches Buildbucket late, when the task
+				// has crashed (e.g. BOT_DIED).
+				return appstatus.Errorf(codes.FailedPrecondition, "cannot start ended build %d", b.ID)
+			}
+
+			var toPut []any
+			if infra.Proto.Swarming.TaskId == "" {
+				// In rare cases that a StartBuild request for a build can reach Buildbucket
+				// before tasks.CreateSwarmingBuildTask: e.g.
+				// 1. CreateSwarmingBuildTask for a build succeeds to create a
+				//    swarming task for the build, but it fails to save the task to datastore,
+				//    then this task needs to retry
+				// 2. in the meantime swarming starts to run the task created in 1, sends
+				//    a StartBuild request
+				// 3. after StartBuild, the retried CreateSwarmingBuildTask tries to
+				//    update datastore again with the same task id (because now creating task
+				//    is idempotent).
+				infra.Proto.Swarming.TaskId = req.TaskId
+				b.UpdateToken = tok
+				toPut = append(toPut, infra)
+			}
+
+			// Start the build.
+			b.StartBuildRequestID = req.RequestId
+			toPut = append(toPut, b)
+			if b.Status == pb.Status_SCHEDULED {
+				// Should only set the build to STARTED if it's still pending.
+				// Because of the swarming sync flow, it's possible that build is
+				// already in STARTED status.
+				protoutil.SetStatus(clock.Now(ctx), b.Proto, pb.Status_STARTED)
+				buildStatusChanged = true
+				if bs != nil {
+					bs.Status = pb.Status_STARTED
+					toPut = append(toPut, bs)
+				}
+			}
+
+			if buildStatusChanged {
+				// Notify Pubsub.
+				// NotifyPubSub is a Transactional task, so do it inside the transaction.
+				_ = tasks.NotifyPubSub(ctx, b)
+			}
+
+			if err = datastore.Put(ctx, toPut...); err != nil {
+				return appstatus.Errorf(codes.Internal, "failed to start build %d: %s", b.ID, err)
+			}
+			return nil
 		}
 		return checkSubsequentRequest(req, b.StartBuildRequestID, infra.Proto.Swarming.TaskId)
 	}, nil)
@@ -246,7 +264,7 @@ func (*Builds) StartBuild(ctx context.Context, req *pb.StartBuildRequest) (*pb.S
 
 	switch tok.Purpose {
 	case pb.TokenBody_BUILD:
-		b, buildStatusChanged, err = startBuildOnSwarming(ctx, req)
+		b, buildStatusChanged, err = startBuildOnSwarming(ctx, req, rawToken)
 	case pb.TokenBody_START_BUILD:
 		b, buildStatusChanged, err = startBuildOnBackend(ctx, req)
 	default:

@@ -586,15 +586,9 @@ func createSwarmingTask(ctx context.Context, build *model.Build, swarm clients.S
 		return datastore.Put(ctx, bld, infra)
 	}, nil)
 	if err != nil {
-		logging.Errorf(ctx, "created a task, but failed to update datastore with the error:%s \n"+
-			"cancelling task %s, best effort", err, res.TaskId)
-		if err := CancelSwarmingTask(ctx, &taskdefs.CancelSwarmingTaskGo{
-			Hostname: build.Proto.Infra.Swarming.Hostname,
-			TaskId:   res.TaskId,
-			Realm:    build.Realm(),
-		}); err != nil {
-			return transient.Tag.Apply(errors.Annotate(err, "failed to enqueue swarming task cancellation task for build %d", build.ID).Err())
-		}
+		// now that swarm.CreateTask is idempotent, we should reuse the task,
+		// instead of cancelling it.
+		logging.Errorf(ctx, "created a task %s, but failed to update datastore with the error:%s", res.TaskId, err)
 		return transient.Tag.Apply(errors.Annotate(err, "failed to update build %d", build.ID).Err())
 	}
 	return nil

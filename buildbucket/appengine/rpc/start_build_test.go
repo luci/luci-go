@@ -398,6 +398,25 @@ func TestStartBuild(t *testing.T) {
 						So(tasks, ShouldHaveLength, 2)
 					})
 
+					Convey("first handshake with no task id in datastore", func() {
+						infra.Proto.Swarming = &pb.BuildInfra_Swarming{}
+						So(datastore.Put(ctx, infra), ShouldBeNil)
+						res, err := srv.StartBuild(ctx, req)
+						So(err, ShouldBeNil)
+
+						err = datastore.Get(ctx, build, bs, infra)
+						So(err, ShouldBeNil)
+						So(build.UpdateToken, ShouldEqual, res.UpdateBuildToken)
+						So(build.StartBuildRequestID, ShouldEqual, req.RequestId)
+						So(build.Status, ShouldEqual, pb.Status_STARTED)
+						So(bs.Status, ShouldEqual, pb.Status_STARTED)
+						So(infra.Proto.Swarming.TaskId, ShouldEqual, req.TaskId)
+
+						// TQ tasks for pubsub-notification.
+						tasks := sch.Tasks()
+						So(tasks, ShouldHaveLength, 2)
+					})
+
 					Convey("duplicated task", func() {
 						infra.Proto.Swarming = &pb.BuildInfra_Swarming{
 							TaskId: "another",
