@@ -34,10 +34,12 @@ func TestConfigSet(t *testing.T) {
 		s := MustServiceSet("foo")
 		So(s.Service(), ShouldEqual, "foo")
 		So(s.Project(), ShouldEqual, "")
+		So(s.Domain(), ShouldEqual, ServiceDomain)
 
 		s = MustProjectSet("foo")
 		So(s.Service(), ShouldEqual, "")
 		So(s.Project(), ShouldEqual, "foo")
+		So(s.Domain(), ShouldEqual, ProjectDomain)
 
 		s = Set("malformed/set/abc/def")
 		So(s.Service(), ShouldEqual, "")

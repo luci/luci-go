@@ -38,6 +38,17 @@ var serviceNameRegexp = regexp.MustCompile(fmt.Sprintf(`^%s$`, ServiceNamePatter
 //     is the project name.
 type Set string
 
+// Domain describes the domain of the config set.
+type Domain string
+
+const (
+	// ProjectDomain is the domain of project config set(e.g. projects/chromium).
+	ProjectDomain Domain = "projects"
+	// ServiceDomain is the domain of service config set (e.g.
+	// services/luci-config).
+	ServiceDomain Domain = "services"
+)
+
 // ServiceSet returns the name of a config set for the specified service.
 //
 // Returns error if the service name doesn't match `ServiceNamePattern`.
@@ -45,7 +56,7 @@ func ServiceSet(service string) (Set, error) {
 	if !serviceNameRegexp.MatchString(service) {
 		return "", fmt.Errorf("invalid service name %q, expected to match %q", service, ServiceNamePattern)
 	}
-	return Set("services/" + service), nil
+	return Set(fmt.Sprintf("%s/%s", ServiceDomain, service)), nil
 }
 
 // MustServiceSet is like `ServiceSet` but panic on invalid service name.
@@ -64,7 +75,7 @@ func ProjectSet(project string) (Set, error) {
 	if err := ValidateProjectName(project); err != nil {
 		return "", fmt.Errorf("invalid project name")
 	}
-	return Set("projects/" + project), nil
+	return Set(fmt.Sprintf("%s/%s", ProjectDomain, project)), nil
 }
 
 // MustProjectSet is like `ProjectSet` but panic on invalid project name.
@@ -77,19 +88,19 @@ func MustProjectSet(project string) Set {
 }
 
 // Split splits a Set into its domain, target components.
-func (cs Set) Split() (domain, target string) {
+func (cs Set) Split() (domain Domain, target string) {
 	p := strings.SplitN(string(cs), "/", 2)
 	if len(p) == 1 {
-		return p[0], ""
+		return Domain(p[0]), ""
 	}
-	return p[0], p[1]
+	return Domain(p[0]), p[1]
 }
 
 // Service returns a service name for a service config set or empty string for
 // all other sets.
 func (cs Set) Service() string {
 	domain, target := cs.Split()
-	if domain == "services" {
+	if domain == ServiceDomain {
 		return target
 	}
 	return ""
@@ -99,8 +110,14 @@ func (cs Set) Service() string {
 // all other sets.
 func (cs Set) Project() string {
 	domain, target := cs.Split()
-	if domain == "projects" {
+	if domain == ProjectDomain {
 		return target
 	}
 	return ""
+}
+
+// Domain returns the domain of the config set.
+func (cs Set) Domain() Domain {
+	domain, _ := cs.Split()
+	return domain
 }
