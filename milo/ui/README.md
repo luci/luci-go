@@ -1,18 +1,72 @@
-# ResultUI
-ResultUI is an attempt to rethink the Milo build page, with a focus on test results served from the new ResultDB backend.
-It aims to provide Chrome developers a convenient way to view the output of failing tests.
+# LUCI Test Single UI
+LUCI Test Single UI is the web UI for all LUCI Test systems.
 
-## Main Features
-* Test results page  
-  Test results page gives a cleaner view of all the tests run by a task, including why they failed, the test configurations, and any artifacts produced.
+## Local Development Workflows
+### Prerequisites
+You need to run the following commands to setup the environment.
+```sh
+# Activate the infra env (via the infra.git checkout):
+cd /path/to/infra/checkout
+eval infra/go/env.py
 
-## Contribution
-See the [contribution guide](docs/contribution.md).
+# Install the dependencies.
+cd /path/to/this/directory
+npm ci
+```
 
-## Q&A
-### Why is part of the test ID greyed out?
-If a test shares a common prefix with the previous test, the common prefix is greyed out. This makes it easier to scan through a long list of tests.
-### Why there were no new tests after I clicked load more?
-Due to a technical limitation, newly loaded test results are inserted into the list instead of appended to the end of the list. With the default filter setting, all of the tests should be loaded in the first page most of the time. So this will be less of an issue.
-### How do I provide feedback?
-There's a feedback button in the top right corner of the page. It will take you to Monorail with a pre-populated template. Feedback is always welcomed :)
+### Start a local AppEngine server
+TODO: add instructions
+
+### Start a local UI server
+To start a [Vite](https://vitejs.dev) local dev server, run
+```
+npm run dev
+```
+
+The local dev server only serves the SPA assets. It sends pRPC and HTTP REST
+requests to staging servers (typically hosted on GCP). Check
+[.env.development](.env.development) for instructions to configure the target
+servers and other local development settings.
+
+#### Login on a local UI server
+Currently, there's no easy way to perform a login flow on a local UI server. To
+test the page with a logged in session, you can
+
+ - deploy to a personal staging server with the following command, or
+
+   1. `npm run build && yes | gae.py upload -p ../ -A luci-milo-dev default`
+
+ - use an auth state obtained from staging or prod environment with the
+   following steps.
+
+   1. open `` `https://${singleUiHost}/ui/search` `` in a browser tab, then
+   2. perform a login flow, then
+   3. run `copy(JSON.stringify(__STORE.authState.value))` in the browser devtool
+   console to copy the auth state, then
+   4. paste the output to [auth_state.local.json](auth_state.local.json), then
+   5. visit any pages under http://localhost:8080/ui/.
+
+   note that the auth state obtained from a dev environment cannot be used to
+      query prod services and vice versa.
+
+### Add a new npm package
+You can use [npm install](https://docs.npmjs.com/cli/v8/commands/npm-install) to
+add a new npm package.
+
+LUCI Test Single UI uses a private npm registry (defined in [.npmrc](.npmrc)).
+By default, it rejects packages that are less than 7 days old (with an
+HTTP 451 Unknown error).
+
+You can avoid this issue by temporarily switching to the public npm registry
+with the following steps.
+
+ 1. comment out the registry setting in [.npmrc](.npmrc), then
+ 2. install the package, then
+ 3. replace the registry in all the URLs in the "resolved" field in
+ [package-lock.json](package-lock.json) with the private registry, then
+ 4. uncomment the registry setting in [.npmrc](.npmrc), then
+ 5. wait 7 days before submitting your CL.
+
+### Others
+Check the [Makefile](Makefile), the [parent Makefile](../Makefile), and the
+`"scripts"` section in [package.json](package.json) for more available commands.

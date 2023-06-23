@@ -12,7 +12,7 @@
     "build": "vite build",
     "dev": "vite",
     "test": "jest",
-    "test:watch": "jest --watch",
+    "lint": "eslint ./src",
     "cypress:open": "CYPRESS_CRASH_REPORTS=0 cypress open",
     "cypress:run": "CYPRESS_CRASH_REPORTS=0 cypress run",
     "cypress:train": "CYPRESS_CRASH_REPORTS=0 cypress run --env updateSnapshots=true,REQUEST_CAPTURE_WINDOW=4000"

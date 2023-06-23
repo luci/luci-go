@@ -10,14 +10,11 @@ node_deps:
 build: node_deps
 	npm run build
 
-release:
-	npm ci && npm run build
-
 test: node_deps
 	npm run test
 
 lint: node_deps
-	npx gts lint
+	npx eslint ./src
 
 format: node_deps
-	npx gts fix
+	npx eslint ./src --fix

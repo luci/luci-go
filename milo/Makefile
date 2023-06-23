@@ -6,10 +6,10 @@ mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 projdir := $(patsubst %/,%,$(dir $(mkfile_path)))
 
 up-dev: build-ui
-	gae.py upload -p ./ -A luci-milo-dev --target-version $$USER
+	gae.py upload -p ./ -A luci-milo-dev
 
 up-dev-default: build-ui
-	gae.py upload -p ./ -A luci-milo-dev default --target-version $$USER
+	gae.py upload -p ./ -A luci-milo-dev default
 
 test:
 	go test ./...

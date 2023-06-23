@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as fs from 'fs';
 import * as path from 'path';
 
 import replace from '@rollup/plugin-replace';
@@ -19,6 +20,8 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
 import { VitePWA as vitePWA } from 'vite-plugin-pwa';
 import tsconfigPaths from 'vite-tsconfig-paths';
+
+import { AuthState, msToExpire } from './src/common/api/auth_state';
 
 /**
  * Get a boolean from the envDir.
@@ -178,6 +181,29 @@ export default defineConfig(({ mode }) => {
             }
             res.setHeader('content-type', 'application/javascript');
             res.end(localDevConfigsJs);
+          });
+
+          // Return a predefined auth state object if a valid
+          // `auth_state.local.json` exists.
+          server.middlewares.use((req, res, next) => {
+            if (req.url !== '/auth/openid/state') {
+              return next();
+            }
+
+            let authState: AuthState;
+            try {
+              authState = JSON.parse(
+                fs.readFileSync('auth_state.local.json', 'utf8')
+              );
+              if (msToExpire(authState) < 10000) {
+                return next();
+              }
+            } catch (_e) {
+              return next();
+            }
+
+            res.setHeader('content-type', 'application/json');
+            res.end(JSON.stringify(authState));
           });
         },
       },
