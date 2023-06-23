@@ -16,16 +16,13 @@ package main
 
 import (
 	"context"
-	"net/http"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 	"go.chromium.org/luci/server/gaeemulation"
-	"go.chromium.org/luci/server/loginsessions"
 	"go.chromium.org/luci/server/module"
-	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
@@ -37,17 +34,11 @@ func main() {
 	modules := []module.Module{
 		cron.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
-		loginsessions.NewModuleFromFlags(),
-		redisconn.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
-		// When running locally, serve static files ourself.
-		if !srv.Options.Prod {
-			srv.Routes.Static("/static", nil, http.Dir("./static"))
-		}
 
 		pb.RegisterTreeStatusServer(srv, &treeStatusServer{})
 
