@@ -14,34 +14,37 @@
 
 
 import './styles/style.css';
-
 import * as React from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, useParams } from 'react-router-dom';
 
-import { BaseLayout } from './src/layouts/base';
-import { AnalysisDetailsPage } from './src/views/analysis_details/analysis_details';
-import { FailureAnalysesPage } from './src/views/failure_analyses';
-import { NotFoundPage } from './src/views/not_found';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
+// Redirect all pages to the corresponding page under MILO.
+// The LUCI bisection URL is only kept to keep legacy links working.
+// All contents are moved to MILO.
 export const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Routes>
-        <Route path='/' element={<BaseLayout />}>
-          <Route index element={<FailureAnalysesPage />} />
-          <Route path='analysis/b/:bbid' element={<AnalysisDetailsPage />} />
-          <Route path='*' element={<NotFoundPage />} />
+    <Routes>
+      <Route path='/'>
+          <Route path='analysis/b/:bbid' element={<RedirectAnalysis />} />
+          <Route path='*' element={<Redirect />} />
         </Route>
-      </Routes>
-    </QueryClientProvider>
+    </Routes>
   );
 };
+
+const getRedirectBaseURL = () => {
+  const isProd = window.location.host === "luci-bisection.appspot.com"
+  return isProd ? 'https://ci.chromium.org/ui/bisection': 'https://luci-milo-dev/ui/bisection'
+}
+
+const Redirect = () => {
+  window.location.href = getRedirectBaseURL();
+  return <></>;
+};
+
+const RedirectAnalysis = () => {
+  const { bbid } = useParams();
+  window.location.href = `${getRedirectBaseURL()}/analysis/b/${bbid}`;
+  return <></>;
+}
+
