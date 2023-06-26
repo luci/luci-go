@@ -247,10 +247,6 @@ func isPropIndexed(pm datastore.PropertyMap, key string) bool {
 	return false
 }
 
-func getDatastoreKey(pm datastore.PropertyMap) *datastore.Key {
-	return getProp(pm, "$key").(*datastore.Key)
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
 func TestGetReplicationState(t *testing.T) {

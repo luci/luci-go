@@ -360,6 +360,13 @@ func ensureInitialSnapshot() {
 	// TODO(cjacomet): Implement
 }
 
+var knownHistoricalEntities = map[string]diffFunc{
+	"AuthGroupHistory":       diffGroups,
+	"AuthIPWhitelistHistory": diffIPAllowlists,
+}
+
+type diffFunc = func(context.Context, string, datastore.PropertyMap, datastore.PropertyMap) ([]*AuthDBChange, error)
+
 func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*AuthDBChange, error) {
 	query := datastore.NewQuery("").Ancestor(HistoricalRevisionKey(ctx, authDBRev))
 	changes := []*AuthDBChange{}
@@ -387,42 +394,34 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 			Parent: ChangeLogRevisionKey(ctx, authDBRev),
 		}
 
-		k, ok := pm.GetMeta("key")
-		if !ok {
-			return errors.New("key meta doesn't exist")
+		key := getDatastoreKey(pm)
+		if key == nil {
+			return errors.New("key not found for pm")
 		}
-		switch key := k.(*datastore.Key); {
-		case strings.Contains(key.String(), "AuthGroupHistory"):
-			target, oldpm, pm, err := getPms(key, "AuthGroup", c, pm)
+
+		re := regexp.MustCompile("((Auth(Group|IPWhitelist|IPWhitelistAssignments|GlobalConfig|RealmsGlobals|ProjectRealms))History)")
+		heKeys := re.FindStringSubmatch(key.String())
+		if len(heKeys) != 4 {
+			return errors.New("entity not found in key")
+		}
+
+		//  match map will look like, (Entity name will change)
+		// [0] = AuthGroupHistory -- Full Match
+		// [1] = AuthGroupHistory -- first group
+		// [2] = AuthGroup -- second group
+		// [3] = Group -- third group
+		if df, ok := knownHistoricalEntities[heKeys[0]]; ok {
+			target, oldpm, pm, err := getPms(key, heKeys[2], c, pm)
 			if err != nil {
 				return err
 			}
 
-			groupChanges, err := diffGroups(ctx, target, oldpm, pm)
+			diffChanges, err := df(ctx, target, oldpm, pm)
 			if err != nil {
 				return err
 			}
-			changes = append(changes, groupChanges...)
-		case strings.Contains(key.String(), "AuthIPWhitelistHistory"):
-			target, oldpm, pm, err := getPms(key, "AuthIPWhitelist", c, pm)
-			if err != nil {
-				return err
-			}
-
-			ipaChanges, err := diffIPAllowlists(ctx, target, oldpm, pm)
-			if err != nil {
-				return err
-			}
-			changes = append(changes, ipaChanges...)
-		case strings.Contains(key.String(), "AuthIPWhitelistAssignmentsHistory"):
-			// TODO(cjacomet): Implement!
-		case strings.Contains(key.String(), "AuthGlobalConfigHistory"):
-			// TODO(cjacomet): Implement!
-		case strings.Contains(key.String(), "AuthRealmsGlobalHistory"):
-			// TODO(cjacomet): Implement!
-		case strings.Contains(key.String(), "AuthProjectRealmsHistory"):
-			// TODO(cjacomet): Implement!
-		default:
+			changes = append(changes, diffChanges...)
+		} else {
 			return fmt.Errorf("history entity not supported %s", key.String())
 		}
 		return nil
@@ -642,6 +641,10 @@ func getDescription(pm datastore.PropertyMap) string {
 	default:
 		return ""
 	}
+}
+
+func getDatastoreKey(pm datastore.PropertyMap) *datastore.Key {
+	return getProp(pm, "$key").(*datastore.Key)
 }
 
 func getBoolProp(pm datastore.PropertyMap, key string) bool {
