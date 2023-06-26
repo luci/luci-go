@@ -18,9 +18,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/server/span"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
@@ -114,9 +116,10 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 			},
 		}
 
-		mutation1, err := tvb1.ToMutation()
+		var hs inputbuffer.HistorySerializer
+		mutation1, err := tvb1.ToMutation(&hs)
 		So(err, ShouldBeNil)
-		mutation3, err := tvb3.ToMutation()
+		mutation3, err := tvb3.ToMutation(&hs)
 		So(err, ShouldBeNil)
 		testutil.MustApply(ctx, mutation1, mutation3)
 
@@ -132,26 +135,17 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		tvb1.IsNew = false
 		// After decoding, cold buffer should be empty.
 		tvb1.InputBuffer.ColdBuffer = inputbuffer.History{Verdicts: []inputbuffer.PositionVerdict{}}
-		// Compare the protobuf separately, as ShouldResemble does not work.
-		sourceRef1 := tvbs[0].SourceRef
-		sourceRef2 := tvb1.SourceRef
-		tvbs[0].SourceRef = nil
-		tvb1.SourceRef = nil
 
-		So(tvbs[0], ShouldResemble, tvb1)
+		diff := cmp.Diff(tvbs[0], tvb1, cmp.Comparer(proto.Equal))
+		So(diff, ShouldBeEmpty)
+
 		So(tvbs[1], ShouldBeNil)
-		So(sourceRef1, ShouldResembleProto, sourceRef2)
 
 		tvb3.IsNew = false
 		tvb3.InputBuffer.ColdBuffer = inputbuffer.History{Verdicts: []inputbuffer.PositionVerdict{}}
-		// Compare the protobuf separately, as ShouldResemble does not work.
-		sourceRef1 = tvbs[2].SourceRef
-		sourceRef2 = tvb3.SourceRef
-		tvbs[2].SourceRef = nil
-		tvb3.SourceRef = nil
 
-		So(tvbs[2], ShouldResemble, tvb3)
-		So(sourceRef1, ShouldResembleProto, sourceRef2)
+		diff = cmp.Diff(tvbs[2], tvb3, cmp.Comparer(proto.Equal))
+		So(diff, ShouldBeEmpty)
 	})
 
 	Convey("Insert and update", t, func() {
@@ -194,7 +188,8 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 			},
 		}
 
-		mutation, err := tvb.ToMutation()
+		var hs inputbuffer.HistorySerializer
+		mutation, err := tvb.ToMutation(&hs)
 		So(err, ShouldBeNil)
 		testutil.MustApply(ctx, mutation)
 
@@ -287,7 +282,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 			IsStatisticsDirty: true,
 		}
 
-		mutation, err = tvb.ToMutation()
+		mutation, err = tvb.ToMutation(&hs)
 		So(err, ShouldBeNil)
 		testutil.MustApply(ctx, mutation)
 
@@ -298,43 +293,13 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(len(tvbs), ShouldEqual, 1)
 
-		// We cannot use ShouldResemble to compare proto messages. We will compare
-		// them separately.
-		tvb.IsNew = false
-		tvb.InputBuffer.IsColdBufferDirty = false
+		tvb.IsStatisticsDirty = false
 		tvb.IsFinalizedSegmentsDirty = false
 		tvb.IsFinalizingSegmentDirty = false
-		tvb.IsStatisticsDirty = false
+		tvb.InputBuffer.IsColdBufferDirty = false
 
-		// Captures finalizing segment in separate variables.
-		finalizingSegment1 := tvb.FinalizingSegment
-		finalizingSegment2 := tvbs[0].FinalizingSegment
-		tvb.FinalizingSegment = nil
-		tvbs[0].FinalizingSegment = nil
-
-		// Captures finalized segments in separate variables.
-		finalizedSegments1 := tvb.FinalizedSegments
-		finalizedSegments2 := tvbs[0].FinalizedSegments
-		tvb.FinalizedSegments = nil
-		tvbs[0].FinalizedSegments = nil
-
-		// Captures statistics in seperate variables.
-		statistics1 := tvb.Statistics
-		statistics2 := tvbs[0].Statistics
-		tvb.Statistics = nil
-		tvbs[0].Statistics = nil
-
-		// Captures source ref in separate variables.
-		sourceRef1 := tvb.SourceRef
-		sourceRef2 := tvbs[0].SourceRef
-		tvb.SourceRef = nil
-		tvbs[0].SourceRef = nil
-
-		So(tvbs[0], ShouldResemble, tvb)
-		So(finalizingSegment1, ShouldResembleProto, finalizingSegment2)
-		So(finalizedSegments1, ShouldResembleProto, finalizedSegments2)
-		So(statistics1, ShouldResembleProto, statistics2)
-		So(sourceRef1, ShouldResembleProto, sourceRef2)
+		diff := cmp.Diff(tvbs[0], tvb, cmp.Comparer(proto.Equal))
+		So(diff, ShouldBeEmpty)
 	})
 }
 

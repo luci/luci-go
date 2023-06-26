@@ -82,6 +82,94 @@ type Run struct {
 	IsDuplicate bool
 }
 
+// New allocates an empty input buffer with default capacity.
+func New() *Buffer {
+	return NewWithCapacity(DefaultHotBufferCapacity, DefaultColdBufferCapacity)
+}
+
+// NewWithCapacity allocates an empty input buffer with the given capacity.
+func NewWithCapacity(hotBufferCapacity, coldBufferCapacity int) *Buffer {
+	return &Buffer{
+		HotBufferCapacity: hotBufferCapacity,
+		// HotBufferCapacity is a hard limit on the number of verdicts
+		// stored in Spanner, but only a soft limit during processing.
+		// After new verdicts are ingested, but before eviction is
+		// considered, the limit can be exceeded.
+		HotBuffer:          History{Verdicts: make([]PositionVerdict, 0, hotBufferCapacity+10)},
+		ColdBufferCapacity: coldBufferCapacity,
+		// ColdBufferCapacity is a hard limit on the number of verdicts
+		// stored in Spanner, but only a soft limit during processing.
+		// After new verdicts are ingested, but before eviction is
+		// considered, the limit can be exceeded (due to the new
+		// verdicts or due to compaction from hot buffer to cold buffer).
+		ColdBuffer: History{Verdicts: make([]PositionVerdict, 0, coldBufferCapacity+hotBufferCapacity+10)},
+	}
+}
+
+// Copy makes a deep copy of the input buffer.
+func (ib *Buffer) Copy() *Buffer {
+	return &Buffer{
+		HotBufferCapacity:  ib.HotBufferCapacity,
+		HotBuffer:          ib.HotBuffer.Copy(),
+		ColdBufferCapacity: ib.ColdBufferCapacity,
+		ColdBuffer:         ib.ColdBuffer.Copy(),
+		IsColdBufferDirty:  ib.IsColdBufferDirty,
+	}
+}
+
+// Copy makes a deep copy of the History.
+func (h History) Copy() History {
+	// Make a deep copy of verdicts.
+	verdictsCopy := make([]PositionVerdict, len(h.Verdicts), cap(h.Verdicts))
+	copy(verdictsCopy, h.Verdicts)
+
+	// Including the nested runs slice.
+	for i, v := range verdictsCopy {
+		if v.Details.Runs != nil {
+			runsCopy := make([]Run, len(v.Details.Runs))
+			copy(runsCopy, v.Details.Runs)
+			verdictsCopy[i].Details.Runs = runsCopy
+		}
+	}
+
+	return History{Verdicts: verdictsCopy}
+}
+
+// EvictBefore removes all verdicts prior (but not including) the given index.
+//
+// This will modify the verdicts buffer in-place, existing subslices
+// should be treated as invalid following this operation.
+func (h *History) EvictBefore(index int) {
+	// Instead of the obvious:
+	// h.Verdicts = h.Verdicts[index:]
+	// We shuffle all items forward by index so that we retain
+	// the same underlying Verdicts buffer, with the same capacity.
+
+	// Shuffle all items forward by 'index'.
+	for i := index; i < len(h.Verdicts); i++ {
+		h.Verdicts[i-index] = h.Verdicts[i]
+	}
+	h.Verdicts = h.Verdicts[:len(h.Verdicts)-index]
+}
+
+// Clear resets the input buffer to an empty state, similar to
+// its state after New().
+func (ib *Buffer) Clear() {
+	if cap(ib.HotBuffer.Verdicts) < ib.HotBufferCapacity+10 {
+		// Indicates a logic error if someone discarded part of the
+		// originally allocated buffer.
+		panic("buffer capacity unexpectedly modified")
+	}
+	if cap(ib.ColdBuffer.Verdicts) < ib.ColdBufferCapacity+ib.HotBufferCapacity+10 {
+		// Indicates a logic error if someone discarded part of the
+		// originally allocated buffer.
+		panic("buffer capacity unexpectedly modified")
+	}
+	ib.HotBuffer.Verdicts = ib.HotBuffer.Verdicts[:0]
+	ib.ColdBuffer.Verdicts = ib.ColdBuffer.Verdicts[:0]
+	ib.IsColdBufferDirty = false
+}
+
 // InsertVerdict inserts a new verdict into the input buffer.
 // It will first try to insert in the hot buffer, and if the hot buffer is full
 // as the result of the insert, then a compaction will occur.
@@ -92,14 +180,23 @@ func (ib *Buffer) InsertVerdict(v PositionVerdict) {
 	// As the new verdict is likely to have the latest commit position, we
 	// will iterate backwards from the end of the slice.
 	verdicts := ib.HotBuffer.Verdicts
-	pos := len(ib.HotBuffer.Verdicts) - 1
-	for ; pos >= 0; pos-- {
-		if compareVerdict(v, verdicts[pos]) == 1 {
+	pos := len(verdicts)
+	for ; pos > 0; pos-- {
+		if compareVerdict(v, verdicts[pos-1]) == 1 {
+			// verdict is after the verdict at position-1,
+			// so insert at position.
 			break
 		}
 	}
 
-	verdicts = append(verdicts[:pos+1], append([]PositionVerdict{v}, verdicts[pos+1:]...)...)
+	// Shuffle all verdicts in verdicts[pos:] forwards
+	// to create a spot at the insertion position.
+	// (We want to avoid allocating a new slice.)
+	verdicts = append(verdicts, PositionVerdict{})
+	for i := len(verdicts) - 1; i > pos; i-- {
+		verdicts[i] = verdicts[i-1]
+	}
+	verdicts[pos] = v
 	ib.HotBuffer.Verdicts = verdicts
 
 	if len(verdicts) == ib.HotBufferCapacity {
@@ -114,8 +211,14 @@ func (ib *Buffer) InsertVerdict(v PositionVerdict) {
 // This needs to be handled separately.
 func (ib *Buffer) Compact() {
 	merged := ib.MergeBuffer()
-	ib.HotBuffer.Verdicts = []PositionVerdict{}
-	ib.ColdBuffer.Verdicts = merged
+	ib.HotBuffer.Verdicts = ib.HotBuffer.Verdicts[:0]
+
+	// Copy the merged verdicts to the ColdBuffer instead of assigning
+	// the merged buffer, so that we keep the same pre-allocated buffer.
+	ib.ColdBuffer.Verdicts = ib.ColdBuffer.Verdicts[:0]
+	for _, v := range merged {
+		ib.ColdBuffer.Verdicts = append(ib.ColdBuffer.Verdicts, v)
+	}
 }
 
 // MergeBuffer merges the verdicts of the hot buffer and the cold buffer, and
@@ -178,17 +281,38 @@ func (ib *Buffer) Size() int {
 	return len(ib.ColdBuffer.Verdicts) + len(ib.HotBuffer.Verdicts)
 }
 
-// EncodeHistory uses varint encoding to encode history into a byte array.
+// HistorySerializer provides methods to decode and encode History objects.
+// Methods on a given instance are only safe to call on one goroutine at
+// a time.
+type HistorySerializer struct {
+	// A preallocated buffer to store encoded, uncompressed verdicts.
+	// Avoids needing to allocate a new buffer for every decode/encode
+	// operation, with consequent heap requirements and GC churn.
+	tempBuf []byte
+}
+
+// ensureAndClearBuf returns a temporary buffer with suitable capacity
+// and zero length.
+func (hs *HistorySerializer) ensureAndClearBuf() {
+	if hs.tempBuf == nil {
+		// At most the history will have 2000 verdicts (cold buffer).
+		// Most verdicts will be simple expected verdict, so 30,000 is probably fine
+		// for most cases.
+		// In case 30,000 bytes is not enough, Encode() or Decode()
+		// will resize to an appropriate size.
+		hs.tempBuf = make([]byte, 0, 30000)
+	} else {
+		hs.tempBuf = hs.tempBuf[:0]
+	}
+}
+
+// Encode uses varint encoding to encode history into a byte array.
 // See go/luci-test-variant-analysis-design for details.
-func EncodeHistory(history History) []byte {
-	// At most the history will have 2000 verdicts (cold buffer).
-	// Most verdicts will be simple expected verdict, so 15,000 is probably fine
-	// for most cases.
-	// In case 15,000 is not enough, AppendUvarint/AppendVarint will create a
-	// bigger buffer to hold the values.
-	result := make([]byte, 0, 15000)
-	result = binary.AppendUvarint(result, uint64(EncodingVersion))
-	result = binary.AppendUvarint(result, uint64(len(history.Verdicts)))
+func (hs *HistorySerializer) Encode(history History) []byte {
+	hs.ensureAndClearBuf()
+	buf := hs.tempBuf
+	buf = binary.AppendUvarint(buf, uint64(EncodingVersion))
+	buf = binary.AppendUvarint(buf, uint64(len(history.Verdicts)))
 
 	var lastPosition uint64
 	var lastHourNumber int64
@@ -201,7 +325,7 @@ func EncodeHistory(history History) []byte {
 			// Set the last bit to 1 if it is not a simple verdict.
 			deltaPosition |= 1
 		}
-		result = binary.AppendUvarint(result, deltaPosition)
+		buf = binary.AppendUvarint(buf, deltaPosition)
 		lastPosition = uint64(verdict.CommitPosition)
 
 		// Encode the "relative" hour.
@@ -209,50 +333,67 @@ func EncodeHistory(history History) []byte {
 		// it as varint.
 		hourNumber := verdict.Hour.Unix() / 3600
 		deltaHour := hourNumber - lastHourNumber
-		result = binary.AppendVarint(result, deltaHour)
+		buf = binary.AppendVarint(buf, deltaHour)
 		lastHourNumber = hourNumber
 
 		// Encode the verdict details, only if not simple verdict.
 		if !verdict.IsSimpleExpected {
-			result = appendVerdictDetails(result, verdict.Details)
+			buf = appendVerdictDetails(buf, verdict.Details)
 		}
 	}
-	// Use zstd to compress the result.
-	return span.Compress(result)
+	// It is possible the size of buf was increased in this method.
+	// If so, keep that larger buf for future encodings.
+	hs.tempBuf = buf
+
+	// Use zstd to compress the result. Note that the buffer returned
+	// by Compress is always different to hs.tempBuf, so tempBuf does
+	// not escape.
+	return span.Compress(buf)
 }
 
-// DecodeHistory decodes the buf and returns the history.
-func DecodeHistory(buf []byte) (History, error) {
-	history := History{}
-	decodedBuf := make([]byte, 10000)
-	decodedBuf, err := span.Decompress(buf, decodedBuf)
+// DecodeInto decodes the verdicts in buf, populating the history object.
+func (hs *HistorySerializer) DecodeInto(history *History, buf []byte) error {
+	// Clear existing verdicts to avoid state from a previous
+	// decoding leaking.
+	verdicts := history.Verdicts[:0]
+
+	var err error
+	hs.ensureAndClearBuf()
+	// If it is possible hs.tempBuf was resized to be able to accept
+	// all the decompressed content. If so, keep it, so we can use
+	// the larger buf for future decodings.
+	hs.tempBuf, err = span.Decompress(buf, hs.tempBuf)
 	if err != nil {
-		return history, errors.Annotate(err, "decompress error").Err()
+		return errors.Annotate(err, "decompress error").Err()
 	}
-	reader := bytes.NewReader(decodedBuf)
+	reader := bytes.NewReader(hs.tempBuf)
 
 	// Read version.
 	version, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return history, errors.Annotate(err, "read version").Err()
+		return errors.Annotate(err, "read version").Err()
 	}
 	if version != EncodingVersion {
-		return history, fmt.Errorf("version mismatched: got version %d, want %d", version, EncodingVersion)
+		return fmt.Errorf("version mismatched: got version %d, want %d", version, EncodingVersion)
 	}
 
 	// Read verdicts.
 	nVerdicts, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return history, errors.Annotate(err, "read number of verdicts").Err()
+		return errors.Annotate(err, "read number of verdicts").Err()
 	}
-	history.Verdicts = make([]PositionVerdict, nVerdicts)
+	if nVerdicts > uint64(cap(verdicts)) {
+		// The caller has allocated an inappropriately sized buffer.
+		return errors.Reason("found %v verdicts to decode, but capacity is only %v", nVerdicts, cap(verdicts)).Err()
+	}
+
 	for i := 0; i < int(nVerdicts); i++ {
 		// Get the commit position for the verdicts, and if the verdict is simple
 		// expected.
 		verdict := PositionVerdict{}
 		posSim, err := binary.ReadUvarint(reader)
 		if err != nil {
-			return history, errors.Annotate(err, "read position simple verdict").Err()
+			return errors.Annotate(err, "read position simple verdict").Err()
 		}
 		deltaPos, isSimple := decodePositionSimpleVerdict(posSim)
 
@@ -262,18 +403,18 @@ func DecodeHistory(buf []byte) (History, error) {
 			verdict.CommitPosition = deltaPos
 		} else {
 			// deltaPos records the relative difference.
-			verdict.CommitPosition = history.Verdicts[i-1].CommitPosition + deltaPos
+			verdict.CommitPosition = verdicts[i-1].CommitPosition + deltaPos
 		}
 
 		// Get the hour.
 		deltaHour, err := binary.ReadVarint(reader)
 		if err != nil {
-			return history, errors.Annotate(err, "read delta hour").Err()
+			return errors.Annotate(err, "read delta hour").Err()
 		}
 		if i == 0 {
 			verdict.Hour = time.Unix(deltaHour*3600, 0)
 		} else {
-			secs := history.Verdicts[i-1].Hour.Unix()
+			secs := verdicts[i-1].Hour.Unix()
 			verdict.Hour = time.Unix(secs+deltaHour*3600, 0)
 		}
 
@@ -281,14 +422,15 @@ func DecodeHistory(buf []byte) (History, error) {
 		if !isSimple {
 			vd, err := readVerdictDetails(reader)
 			if err != nil {
-				return history, errors.Annotate(err, "read verdict details").Err()
+				return errors.Annotate(err, "read verdict details").Err()
 			}
 			verdict.Details = vd
 		}
-		history.Verdicts[i] = verdict
+		verdicts = append(verdicts, verdict)
 	}
+	history.Verdicts = verdicts
 
-	return history, err
+	return err
 }
 
 func readVerdictDetails(reader *bytes.Reader) (VerdictDetails, error) {

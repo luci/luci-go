@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"cloud.google.com/go/spanner"
+	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/server/span"
 )
@@ -32,8 +33,10 @@ func FetchTestVariantBranches(ctx context.Context) ([]*testvariantbranch.Entry, 
 		`)
 	it := span.Query(span.Single(ctx), st)
 	results := []*testvariantbranch.Entry{}
+	var hs inputbuffer.HistorySerializer
 	err := it.Do(func(r *spanner.Row) error {
-		tvb, err := testvariantbranch.SpannerRowToTestVariantBranch(r)
+		tvb := testvariantbranch.New()
+		err := tvb.PopulateFromSpannerRow(r, &hs)
 		if err != nil {
 			return err
 		}

@@ -19,6 +19,8 @@ import (
 	"sort"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	pb "go.chromium.org/luci/analysis/proto/v1"
@@ -74,6 +76,58 @@ type Entry struct {
 	IsStatisticsDirty bool
 	// Statistics about verdicts which have been evicted from the input buffer.
 	Statistics *cpb.Statistics
+}
+
+// New creates a new empty test variant branch entry, with a preallocated input buffer.
+func New() *Entry {
+	tvb := &Entry{}
+	tvb.InputBuffer = inputbuffer.New()
+	return tvb
+}
+
+// Clear resets a test variant branch entry to an empty state, similar to
+// after a call to New().
+func (tvb *Entry) Clear() {
+	tvb.IsNew = false
+	tvb.Project = ""
+	tvb.TestID = ""
+	tvb.VariantHash = ""
+	tvb.Variant = nil
+	tvb.RefHash = nil
+	tvb.SourceRef = nil
+	tvb.InputBuffer.Clear()
+	tvb.IsFinalizingSegmentDirty = false
+	tvb.FinalizingSegment = nil
+	tvb.IsFinalizedSegmentsDirty = false
+	tvb.FinalizedSegments = nil
+	tvb.IsStatisticsDirty = false
+	tvb.Statistics = nil
+}
+
+// Copy makes a deep copy of a test variant branch entry.
+func (tvb *Entry) Copy() *Entry {
+	if tvb == nil {
+		return nil
+	}
+	refHashCopy := make([]byte, len(tvb.RefHash))
+	copy(refHashCopy, tvb.RefHash)
+
+	return &Entry{
+		IsNew:                    tvb.IsNew,
+		Project:                  tvb.Project,
+		TestID:                   tvb.TestID,
+		VariantHash:              tvb.VariantHash,
+		Variant:                  proto.Clone(tvb.Variant).(*pb.Variant),
+		RefHash:                  refHashCopy,
+		SourceRef:                proto.Clone(tvb.SourceRef).(*pb.SourceRef),
+		InputBuffer:              tvb.InputBuffer.Copy(),
+		IsFinalizingSegmentDirty: tvb.IsFinalizingSegmentDirty,
+		FinalizingSegment:        proto.Clone(tvb.FinalizingSegment).(*cpb.Segment),
+		IsFinalizedSegmentsDirty: tvb.IsFinalizedSegmentsDirty,
+		FinalizedSegments:        proto.Clone(tvb.FinalizedSegments).(*cpb.Segments),
+		IsStatisticsDirty:        tvb.IsStatisticsDirty,
+		Statistics:               proto.Clone(tvb.Statistics).(*cpb.Statistics),
+	}
 }
 
 // InsertToInputBuffer inserts data of a new test variant into the input

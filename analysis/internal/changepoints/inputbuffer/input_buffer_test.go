@@ -78,8 +78,12 @@ func TestEncodeAndDecode(t *testing.T) {
 			},
 		}
 
-		encoded := EncodeHistory(history)
-		decodedHistory, err := DecodeHistory(encoded)
+		hs := &HistorySerializer{}
+		encoded := hs.Encode(history)
+		decodedHistory := History{
+			Verdicts: make([]PositionVerdict, 0, 100),
+		}
+		err := hs.DecodeInto(&decodedHistory, encoded)
 		So(err, ShouldBeNil)
 		So(len(decodedHistory.Verdicts), ShouldEqual, 4)
 		So(decodedHistory, ShouldResemble, history)
@@ -115,8 +119,12 @@ func TestEncodeAndDecode(t *testing.T) {
 				},
 			}
 		}
-		encoded := EncodeHistory(history)
-		decodedHistory, err := DecodeHistory(encoded)
+		hs := &HistorySerializer{}
+		encoded := hs.Encode(history)
+		decodedHistory := History{
+			Verdicts: make([]PositionVerdict, 0, 2000),
+		}
+		err := hs.DecodeInto(&decodedHistory, encoded)
 		So(err, ShouldBeNil)
 		So(len(decodedHistory.Verdicts), ShouldEqual, 2000)
 		So(decodedHistory, ShouldResemble, history)
@@ -125,10 +133,10 @@ func TestEncodeAndDecode(t *testing.T) {
 
 func TestInputBuffer(t *testing.T) {
 	Convey(`Add item to input buffer`, t, func() {
-		ib := Buffer{
-			HotBufferCapacity:  10,
-			ColdBufferCapacity: 100,
-		}
+		ib := NewWithCapacity(10, 100)
+		originalHotBuffer := ib.HotBuffer.Verdicts
+		originalColdBuffer := ib.ColdBuffer.Verdicts
+
 		// Insert 9 verdicts into hot buffer.
 		ib.InsertVerdict(createTestVerdict(1, 4))
 		So(ib.IsColdBufferDirty, ShouldBeFalse)
@@ -177,6 +185,10 @@ func TestInputBuffer(t *testing.T) {
 			createTestVerdict(7, 7),
 			createTestVerdict(7, 8),
 		})
+
+		// The pre-allocated buffer should be retained, at the same capacity.
+		So(&ib.HotBuffer.Verdicts[0:1][0], ShouldEqual, &originalHotBuffer[0:1][0])
+		So(&ib.ColdBuffer.Verdicts[0], ShouldEqual, &originalColdBuffer[0:1][0])
 	})
 
 	Convey(`Compaction should maintain order`, t, func() {
@@ -193,15 +205,20 @@ func TestInputBuffer(t *testing.T) {
 			},
 			ColdBufferCapacity: 10,
 			ColdBuffer: History{
-				Verdicts: []PositionVerdict{
+				// Allocate with capacity 10 so there is enough
+				// space to do an in-place compaction.
+				Verdicts: append(make([]PositionVerdict, 0, 10), []PositionVerdict{
 					createTestVerdict(2, 1),
 					createTestVerdict(4, 1),
 					createTestVerdict(6, 1),
 					createTestVerdict(8, 1),
 					createTestVerdict(10, 1),
-				},
+				}...),
 			},
 		}
+		originalHotBuffer := ib.HotBuffer.Verdicts
+		originalColdBuffer := ib.ColdBuffer.Verdicts
+		So(cap(originalColdBuffer), ShouldEqual, 10)
 
 		ib.Compact()
 		So(len(ib.HotBuffer.Verdicts), ShouldEqual, 0)
@@ -218,6 +235,10 @@ func TestInputBuffer(t *testing.T) {
 			createTestVerdict(9, 1),
 			createTestVerdict(10, 1),
 		})
+
+		// The pre-allocated buffer should be retained, at the same capacity.
+		So(&ib.HotBuffer.Verdicts[0:1][0], ShouldEqual, &originalHotBuffer[0:1][0])
+		So(&ib.ColdBuffer.Verdicts[0], ShouldEqual, &originalColdBuffer[0:1][0])
 	})
 
 	Convey(`Cold buffer should keep old verdicts after compaction`, t, func() {
@@ -253,6 +274,105 @@ func TestInputBuffer(t *testing.T) {
 			createTestVerdict(9, 1),
 			createTestVerdict(10, 1),
 		})
+	})
+
+	Convey(`EvictBefore`, t, func() {
+		buffer := History{
+			Verdicts: []PositionVerdict{
+				createTestVerdict(2, 1),
+				createTestVerdict(4, 1),
+				createTestVerdict(6, 1),
+				createTestVerdict(8, 1),
+				createTestVerdict(10, 1),
+			},
+		}
+		originalVerdictsBuffer := buffer.Verdicts
+		So(cap(buffer.Verdicts), ShouldEqual, 5)
+
+		Convey(`Start of slice`, func() {
+			buffer.EvictBefore(0)
+			So(buffer, ShouldResemble, History{
+				Verdicts: []PositionVerdict{
+					createTestVerdict(2, 1),
+					createTestVerdict(4, 1),
+					createTestVerdict(6, 1),
+					createTestVerdict(8, 1),
+					createTestVerdict(10, 1),
+				},
+			})
+
+			So(&buffer.Verdicts[0:1][0], ShouldEqual, &originalVerdictsBuffer[0])
+			So(cap(buffer.Verdicts), ShouldEqual, 5)
+		})
+		Convey(`Middle of slice`, func() {
+			buffer.EvictBefore(2)
+			So(buffer, ShouldResemble, History{
+				Verdicts: []PositionVerdict{
+					createTestVerdict(6, 1),
+					createTestVerdict(8, 1),
+					createTestVerdict(10, 1),
+				},
+			})
+
+			// The pre-allocated buffer should be retained, at the same capacity.
+			So(&buffer.Verdicts[0:1][0], ShouldEqual, &originalVerdictsBuffer[0])
+			So(cap(buffer.Verdicts), ShouldEqual, 5)
+		})
+		Convey(`End of slice`, func() {
+			buffer.EvictBefore(5)
+			So(buffer, ShouldResemble, History{
+				Verdicts: []PositionVerdict{},
+			})
+
+			// The pre-allocated buffer should be retained, at the same capacity.
+			So(&buffer.Verdicts[0:1][0], ShouldEqual, &originalVerdictsBuffer[0])
+			So(cap(buffer.Verdicts), ShouldEqual, 5)
+		})
+		Convey(`Empty slice`, func() {
+			buffer := History{
+				Verdicts: []PositionVerdict{},
+			}
+			buffer.EvictBefore(0)
+			So(buffer, ShouldResemble, History{
+				Verdicts: []PositionVerdict{},
+			})
+		})
+	})
+
+	Convey(`Clear`, t, func() {
+		ib := NewWithCapacity(5, 10)
+		ib.HotBuffer.Verdicts = append(ib.HotBuffer.Verdicts, []PositionVerdict{
+			createTestVerdict(1, 1),
+			createTestVerdict(3, 1),
+			createTestVerdict(5, 1),
+			createTestVerdict(7, 1),
+			createTestVerdict(9, 1),
+		}...)
+		ib.ColdBuffer.Verdicts = append(ib.ColdBuffer.Verdicts, []PositionVerdict{
+			createTestVerdict(2, 1),
+			createTestVerdict(4, 1),
+			createTestVerdict(6, 1),
+			createTestVerdict(8, 1),
+			createTestVerdict(10, 1),
+		}...)
+		originalHotBuffer := ib.HotBuffer.Verdicts
+		originalColdBuffer := ib.ColdBuffer.Verdicts
+
+		ib.Clear()
+
+		So(ib, ShouldResemble, &Buffer{
+			HotBufferCapacity: 5,
+			HotBuffer: History{
+				Verdicts: []PositionVerdict{},
+			},
+			ColdBufferCapacity: 10,
+			ColdBuffer: History{
+				Verdicts: []PositionVerdict{},
+			},
+		})
+		// The pre-allocated buffer should be retained, at the same capacity.
+		So(&ib.HotBuffer.Verdicts[0:1][0], ShouldEqual, &originalHotBuffer[0])
+		So(&ib.ColdBuffer.Verdicts[0:1][0], ShouldEqual, &originalColdBuffer[0])
 	})
 }
 

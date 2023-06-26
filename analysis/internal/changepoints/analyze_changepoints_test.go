@@ -453,7 +453,8 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				IsColdBufferDirty: true,
 			},
 		}
-		mutation, err := tvb.ToMutation()
+		var hs inputbuffer.HistorySerializer
+		mutation, err := tvb.ToMutation(&hs)
 		So(err, ShouldBeNil)
 		testutil.MustApply(ctx, mutation)
 
@@ -624,7 +625,8 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			},
 			FinalizedSegments: &cpb.Segments{Segments: finalizedSegments},
 		}
-		mutation, err := tvb.ToMutation()
+		var hs inputbuffer.HistorySerializer
+		mutation, err := tvb.ToMutation(&hs)
 		So(err, ShouldBeNil)
 		testutil.MustApply(ctx, mutation)
 

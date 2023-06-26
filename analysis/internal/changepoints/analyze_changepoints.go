@@ -155,6 +155,8 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 		// The list of mutations for this transaction.
 		mutations := []*spanner.Mutation{}
 
+		var hs inputbuffer.HistorySerializer
+
 		// Handle each read test variant branch.
 		f := func(i int, tvb *testvariantbranch.Entry) error {
 			tv := filteredTVs[i]
@@ -170,7 +172,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 			}
 			inputSegments := runChangePointAnalysis(tvb)
 			tvb.ApplyRetentionPolicyForFinalizedSegments(payload.PartitionTime.AsTime())
-			mut, err := tvb.ToMutation()
+			mut, err := tvb.ToMutation(&hs)
 			if err != nil {
 				return errors.Annotate(err, "test variant branch to mutation").Err()
 			}

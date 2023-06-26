@@ -630,7 +630,8 @@ func setupTestVariantAnalysis(ctx context.Context, partitionTime time.Time) {
 			},
 		},
 	}
-	m, err := branch.ToMutation()
+	var hs inputbuffer.HistorySerializer
+	m, err := branch.ToMutation(&hs)
 	So(err, ShouldBeNil)
 	testutil.MustApply(ctx, m)
 }

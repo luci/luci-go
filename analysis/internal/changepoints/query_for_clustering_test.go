@@ -90,7 +90,8 @@ func TestQueryForClustering(t *testing.T) {
 				},
 			},
 		}
-		mutation, err := tvb.ToMutation()
+		var hs inputbuffer.HistorySerializer
+		mutation, err := tvb.ToMutation(&hs)
 		So(err, ShouldBeNil)
 		testutil.MustApply(ctx, mutation)
 

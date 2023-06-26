@@ -296,8 +296,11 @@ func (ib *Buffer) evictFinalizedSegment(seg *Segment) EvictedSegment {
 		}
 	}
 	var evictedVerdicts []PositionVerdict
+	// EvictBefore(...) will modify the Verdicts in-place, we should
+	// copy verdicts to a new slice to avoid them being overwritten.
 	evictedVerdicts = append(evictedVerdicts, ib.HotBuffer.Verdicts[:evictEndIndex+1]...)
-	ib.HotBuffer.Verdicts = ib.HotBuffer.Verdicts[evictEndIndex+1:]
+
+	ib.HotBuffer.EvictBefore(evictEndIndex + 1)
 
 	// Evict cold buffer.
 	evictEndIndex = -1
@@ -310,8 +313,10 @@ func (ib *Buffer) evictFinalizedSegment(seg *Segment) EvictedSegment {
 	}
 	if evictEndIndex > -1 {
 		ib.IsColdBufferDirty = true
+		// EvictBefore(...) will modify the Verdicts in-place, we should
+		// copy verdicts to a new slice to avoid them being overwritten.
 		evictedVerdicts = append(evictedVerdicts, ib.ColdBuffer.Verdicts[:evictEndIndex+1]...)
-		ib.ColdBuffer.Verdicts = ib.ColdBuffer.Verdicts[evictEndIndex+1:]
+		ib.ColdBuffer.EvictBefore(evictEndIndex + 1)
 	}
 
 	// Return evicted segment.
@@ -346,12 +351,15 @@ func (ib *Buffer) evictFinalizingSegment(endPos int, seg *Segment) (evicted Evic
 		panic("hot buffer is not empty during eviction")
 	}
 
-	evictedVerdicts := ib.ColdBuffer.Verdicts[:endPos+1]
-	evictedCount := segmentCounts(evictedVerdicts)
 	remainingCount := segmentCounts(ib.ColdBuffer.Verdicts[endPos+1 : seg.EndIndex+1])
 	evictedMostRecentHour := mostRecentUnexpectedResultHour(ib.ColdBuffer.Verdicts[:endPos+1])
 	remainingMostRecentHour := mostRecentUnexpectedResultHour(ib.ColdBuffer.Verdicts[endPos+1 : seg.EndIndex+1])
-	ib.ColdBuffer.Verdicts = ib.ColdBuffer.Verdicts[endPos+1:]
+
+	// EvictBefore(...) will modify the Verdicts in-place, we should
+	// copy verdicts to a new slice to avoid them being overwritten.
+	evictedVerdicts := append([]PositionVerdict(nil), ib.ColdBuffer.Verdicts[:endPos+1]...)
+	evictedCount := segmentCounts(evictedVerdicts)
+	ib.ColdBuffer.EvictBefore(endPos + 1)
 	ib.IsColdBufferDirty = true
 	// Evicted segment.
 	evicted = EvictedSegment{

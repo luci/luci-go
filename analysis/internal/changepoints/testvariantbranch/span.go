@@ -40,6 +40,11 @@ type Key struct {
 // ReadF fetches rows from TestVariantBranch spanner table
 // and calls the specified callback function for each row.
 //
+// Important: The caller must not retain a reference to the
+// provided *Entry after each call, as the object may be
+// re-used for in the next call. If an entry must be retained,
+// it should be copied.
+//
 // The callback function will be passed the read row and
 // the corresponding index in the key list that was read.
 // If an item does not exist, the provided callback function
@@ -66,8 +71,14 @@ func ReadF(ctx context.Context, ks []Key, f func(i int, e *Entry) error) error {
 		"Project", "TestId", "VariantHash", "RefHash", "Variant", "SourceRef",
 		"HotInputBuffer", "ColdInputBuffer", "FinalizingSegment", "FinalizedSegments", "Statistics",
 	}
+
+	// Re-use the same buffers for processing each test variant branch. This
+	// avoids creating excessive memory pressure.
+	tvb := New()
+	var hs inputbuffer.HistorySerializer
+
 	err := span.Read(ctx, "TestVariantBranch", keyset, cols).Do(func(r *spanner.Row) error {
-		tvb, err := SpannerRowToTestVariantBranch(r)
+		err := tvb.PopulateFromSpannerRow(r, &hs)
 		if err != nil {
 			return errors.Annotate(err, "convert spanner row to test variant branch").Err()
 		}
@@ -108,7 +119,9 @@ func ReadF(ctx context.Context, ks []Key, f func(i int, e *Entry) error) error {
 func Read(ctx context.Context, ks []Key) ([]*Entry, error) {
 	result := make([]*Entry, len(ks))
 	err := ReadF(ctx, ks, func(i int, e *Entry) error {
-		result[i] = e
+		// ReadF re-uses buffers between entries, so if we want to
+		// keep a reference to an entry, we must copy it.
+		result[i] = e.Copy()
 		return nil
 	})
 	if err != nil {
@@ -117,8 +130,10 @@ func Read(ctx context.Context, ks []Key) ([]*Entry, error) {
 	return result, nil
 }
 
-func SpannerRowToTestVariantBranch(row *spanner.Row) (*Entry, error) {
-	tvb := &Entry{}
+func (tvb *Entry) PopulateFromSpannerRow(row *spanner.Row, hs *inputbuffer.HistorySerializer) error {
+	// Avoid leaking state from the previous spanner row.
+	tvb.Clear()
+
 	var b spanutil.Buffer
 	var sourceRef []byte
 	var hotBuffer []byte
@@ -130,51 +145,46 @@ func SpannerRowToTestVariantBranch(row *spanner.Row) (*Entry, error) {
 	err := b.FromSpanner(row, &tvb.Project, &tvb.TestID, &tvb.VariantHash, &tvb.RefHash, &tvb.Variant,
 		&sourceRef, &hotBuffer, &coldBuffer, &finalizingSegment, &finalizedSegments, &statistics)
 	if err != nil {
-		return nil, errors.Annotate(err, "read values from spanner").Err()
+		return errors.Annotate(err, "read values from spanner").Err()
 	}
 
-	// Source ref
+	// Source ref.
 	tvb.SourceRef, err = DecodeSourceRef(sourceRef)
 	if err != nil {
-		return nil, errors.Annotate(err, "decode source ref").Err()
+		return errors.Annotate(err, "decode source ref").Err()
 	}
 
-	tvb.InputBuffer = &inputbuffer.Buffer{
-		HotBufferCapacity:  inputbuffer.DefaultHotBufferCapacity,
-		ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
-	}
-
-	tvb.InputBuffer.HotBuffer, err = inputbuffer.DecodeHistory(hotBuffer)
+	err = hs.DecodeInto(&tvb.InputBuffer.HotBuffer, hotBuffer)
 	if err != nil {
-		return nil, errors.Annotate(err, "decode hot history").Err()
+		return errors.Annotate(err, "decode hot history").Err()
 	}
-	tvb.InputBuffer.ColdBuffer, err = inputbuffer.DecodeHistory(coldBuffer)
+	err = hs.DecodeInto(&tvb.InputBuffer.ColdBuffer, coldBuffer)
 	if err != nil {
-		return nil, errors.Annotate(err, "decode cold history").Err()
+		return errors.Annotate(err, "decode cold history").Err()
 	}
 
 	// Process output buffer.
 	tvb.FinalizingSegment, err = DecodeSegment(finalizingSegment)
 	if err != nil {
-		return nil, errors.Annotate(err, "decode finalizing segment").Err()
+		return errors.Annotate(err, "decode finalizing segment").Err()
 	}
 
 	tvb.FinalizedSegments, err = DecodeSegments(finalizedSegments)
 	if err != nil {
-		return nil, errors.Annotate(err, "decode finalized segments").Err()
+		return errors.Annotate(err, "decode finalized segments").Err()
 	}
 
 	tvb.Statistics, err = DecodeStatistics(statistics)
 	if err != nil {
-		return nil, errors.Annotate(err, "decode statistics").Err()
+		return errors.Annotate(err, "decode statistics").Err()
 	}
 
-	return tvb, nil
+	return nil
 }
 
 // ToMutation returns a spanner Mutation to insert a TestVariantBranch to
 // Spanner table.
-func (tvb *Entry) ToMutation() (*spanner.Mutation, error) {
+func (tvb *Entry) ToMutation(hs *inputbuffer.HistorySerializer) (*spanner.Mutation, error) {
 	cols := []string{"Project", "TestId", "VariantHash", "RefHash", "LastUpdated"}
 	values := []interface{}{tvb.Project, tvb.TestID, tvb.VariantHash, tvb.RefHash, spanner.CommitTimestamp}
 
@@ -193,13 +203,13 @@ func (tvb *Entry) ToMutation() (*spanner.Mutation, error) {
 
 	// Based on the flow, we should always update the hot buffer.
 	cols = append(cols, "HotInputBuffer")
-	values = append(values, inputbuffer.EncodeHistory(tvb.InputBuffer.HotBuffer))
+	values = append(values, hs.Encode(tvb.InputBuffer.HotBuffer))
 
 	// We should only update the cold buffer if it is dirty, or if this is new
 	// record.
 	if tvb.InputBuffer.IsColdBufferDirty || tvb.IsNew {
 		cols = append(cols, "ColdInputBuffer")
-		values = append(values, inputbuffer.EncodeHistory(tvb.InputBuffer.ColdBuffer))
+		values = append(values, hs.Encode(tvb.InputBuffer.ColdBuffer))
 	}
 
 	// Finalizing segment.

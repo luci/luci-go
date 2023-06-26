@@ -602,35 +602,53 @@ func genInputbufferWithRetries(hotCap int, coldCap int, positions, total, hasUne
 }
 
 func BenchmarkEncode(b *testing.B) {
-	// Result when test added:
+	// Last known result (23-Jun-2023):
 	// cpu: Intel(R) Xeon(R) CPU @ 2.00GHz
-	// BenchmarkEncode-96    	   30672	     34227 ns/op	   35125 B/op	       6 allocs/op
+	// BenchmarkEncode-96    	   41640	     31182 ns/op	    2160 B/op	       2 allocs/op
 
 	b.StopTimer()
-	ib := genInputBuffer(100, 2000, simpleVerdicts(2100, 1, []int{5, 102, 174, 872, 971}))
+	hs := &HistorySerializer{}
+	hs.ensureAndClearBuf()
+	ib := &Buffer{
+		HotBufferCapacity:  100,
+		HotBuffer:          History{Verdicts: simpleVerdicts(100, 1, []int{5})},
+		ColdBufferCapacity: 2000,
+		ColdBuffer:         History{Verdicts: simpleVerdicts(2000, 1, []int{102, 174, 872, 971})},
+	}
 	b.StartTimer()
+
 	for i := 0; i < b.N; i++ {
-		EncodeHistory(ib.ColdBuffer)
-		EncodeHistory(ib.HotBuffer)
+		hs.Encode(ib.ColdBuffer)
+		hs.Encode(ib.HotBuffer)
 	}
 }
 
 func BenchmarkDecode(b *testing.B) {
-	// Result when test added:
+	// Last known result (23-Jun-2023):
 	// cpu: Intel(R) Xeon(R) CPU @ 2.00GHz
-	// BenchmarkDecode-96    	   11694	     99450 ns/op	  176464 B/op	      10 allocs/op
+	// BenchmarkDecode-96    	   20103	     59558 ns/op	     216 B/op	       7 allocs/op
 
 	b.StopTimer()
-	ib := genInputBuffer(100, 2000, simpleVerdicts(2100, 1, []int{5, 102, 174, 872, 971}))
-	encodedColdBuffer := EncodeHistory(ib.ColdBuffer) // 69 bytes compressed
-	encodedHotBuffer := EncodeHistory(ib.HotBuffer)   // 19 bytes compressed
+	var hs HistorySerializer
+	hs.ensureAndClearBuf()
+	inputBuffer := NewWithCapacity(100, 2000)
+
+	ib := &Buffer{
+		HotBufferCapacity:  100,
+		HotBuffer:          History{Verdicts: simpleVerdicts(100, 1, []int{5})},
+		ColdBufferCapacity: 2000,
+		ColdBuffer:         History{Verdicts: simpleVerdicts(2000, 1, []int{102, 174, 872, 971})},
+	}
+	encodedColdBuffer := hs.Encode(ib.ColdBuffer) // 62 bytes compressed
+	encodedHotBuffer := hs.Encode(ib.HotBuffer)   // 38 bytes compressed
 	b.StartTimer()
+
 	for i := 0; i < b.N; i++ {
-		_, err := DecodeHistory(encodedColdBuffer)
+		err := hs.DecodeInto(&inputBuffer.ColdBuffer, encodedColdBuffer)
 		if err != nil {
 			panic(err)
 		}
-		_, err = DecodeHistory(encodedHotBuffer)
+		err = hs.DecodeInto(&inputBuffer.HotBuffer, encodedHotBuffer)
 		if err != nil {
 			panic(err)
 		}
