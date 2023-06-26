@@ -45,9 +45,7 @@ describe('Test CulpritsTable component', () => {
     const culpritReviewLink = screen.getByRole('link');
     expect(culpritReviewLink).toBeInTheDocument();
     expect(culpritReviewLink.getAttribute('href')).toBe(mockCulprit.reviewUrl);
-    if (mockCulprit.reviewTitle) {
-      expect(culpritReviewLink.textContent).toContain(mockCulprit.reviewTitle);
-    }
+    expect(culpritReviewLink.textContent).toContain(mockCulprit.reviewTitle);
 
     // Check an appropriate message is displayed for no culprit actions
     expect(screen.getByText(new RegExp('no actions', 'i'))).toBeInTheDocument();

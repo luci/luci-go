@@ -15,39 +15,16 @@
 import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
-import { destroy, Instance } from 'mobx-state-tree';
 
-import * as authStateLib from '@/common/api/auth_state';
-import { AuthStateProvider } from '@/common/components/auth_state_provider';
 import { MiloInternal, Project } from '@/common/services/milo_internal';
 import { ResultDb } from '@/common/services/resultdb';
 import { TestMetadataDetail } from '@/common/services/resultdb';
-import { Store, StoreProvider } from '@/common/store';
+import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
 
 import { TestIdLabel } from './test_id_label';
 
-jest.mock('@/common/api/auth_state', () => {
-  const actual = jest.requireActual(
-    '@/common/api/auth_state'
-  ) as typeof authStateLib;
-  const mocked: typeof authStateLib = {
-    ...actual,
-    // Wraps `queryAuthState` in a mock so we can mock its implementation later.
-    queryAuthState: jest.fn(actual.queryAuthState),
-  };
-  return mocked;
-});
-
-const AUTH_STATE = {
-  identity: 'identity-1',
-  idToken: 'id-token-1',
-  accessToken: 'access-token-1',
-};
-
 describe('TestIdLabel', () => {
-  let store: Instance<typeof Store>;
   let client: QueryClient;
-  let queryAuthStateSpy: jest.Mock<typeof authStateLib.queryAuthState>;
   beforeEach(() => {
     client = new QueryClient({
       defaultOptions: {
@@ -56,16 +33,9 @@ describe('TestIdLabel', () => {
         },
       },
     });
-    store = Store.create();
-    queryAuthStateSpy = authStateLib.queryAuthState as jest.Mock<
-      typeof authStateLib.queryAuthState
-    >;
-    queryAuthStateSpy.mockResolvedValue(AUTH_STATE);
   });
   afterEach(() => {
-    queryAuthStateSpy.mockRestore();
     cleanup();
-    destroy(store);
   });
 
   const testSchema = 'testSchema';
@@ -98,11 +68,9 @@ describe('TestIdLabel', () => {
   const renderTestIdLabel = () => {
     render(
       <QueryClientProvider client={client}>
-        <StoreProvider value={store}>
-          <AuthStateProvider initialValue={AUTH_STATE}>
-            <TestIdLabel projectOrRealm="testrealm" testId="testid" />
-          </AuthStateProvider>
-        </StoreProvider>
+        <FakeAuthStateProvider>
+          <TestIdLabel projectOrRealm="testrealm" testId="testid" />
+        </FakeAuthStateProvider>
       </QueryClientProvider>
     );
     expect(screen.queryByText('testrealm')).not.toBeNull();

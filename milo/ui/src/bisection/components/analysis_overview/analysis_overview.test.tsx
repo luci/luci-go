@@ -120,11 +120,9 @@ describe('Test AnalysisOverview component', () => {
     ).toBeInTheDocument();
     mockAnalysis.culprits.forEach((culprit) => {
       culprit.culpritAction?.forEach((action) => {
-        if (action.bugUrl) {
-          expect(screen.getByText(action.bugUrl).getAttribute('href')).toBe(
-            action.bugUrl
-          );
-        }
+        expect(screen.getByText(action.bugUrl!).getAttribute('href')).toBe(
+          action.bugUrl
+        );
       });
     });
 
@@ -132,6 +130,7 @@ describe('Test AnalysisOverview component', () => {
     verifySuspectRangeLinks(mockAnalysis);
   });
 
+  // eslint-disable-next-line jest/expect-expect
   test('if there is a culprit for only the nth section analysis, then it should be the suspect range', async () => {
     const mockAnalysis = createMockAnalysis('4');
     mockAnalysis.nthSectionResult!.suspect = {
@@ -157,6 +156,7 @@ describe('Test AnalysisOverview component', () => {
     verifySuspectRangeLinks(mockAnalysis);
   });
 
+  // eslint-disable-next-line jest/expect-expect
   test('if there is no data for the suspect range, then the table cell should be empty', async () => {
     const mockAnalysis = createMockAnalysis('5');
     mockAnalysis.nthSectionResult = undefined;

@@ -41,9 +41,7 @@ describe('Test HeuristicAnalysisTableRow component', () => {
     const suspectReviewLink = screen.getByRole('link');
     expect(suspectReviewLink).toBeInTheDocument();
     expect(suspectReviewLink.getAttribute('href')).toBe(mockSuspect.reviewUrl);
-    if (mockSuspect.reviewTitle) {
-      expect(suspectReviewLink.textContent).toContain(mockSuspect.reviewTitle);
-    }
+    expect(suspectReviewLink.textContent).toContain(mockSuspect.reviewTitle);
 
     // Check confidence level, score and reasons are displayed
     expect(screen.getByText(mockSuspect.confidenceLevel)).toBeInTheDocument();

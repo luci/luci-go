@@ -17,8 +17,7 @@ import { render, RenderResult } from '@testing-library/react';
 import { FC, ReactElement } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
-import { AuthStateProvider } from '@/common/components/auth_state_provider';
-import { Store, StoreProvider } from '@/common/store';
+import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
 
 interface Props {
   children?: ReactElement;
@@ -38,12 +37,6 @@ export const renderWithRouter = (
   window.history.pushState({}, 'Test page', route);
 
   return render(ui, { wrapper: Router });
-};
-
-const AUTH_STATE = {
-  identity: 'identity-1',
-  idToken: 'id-token-1',
-  accessToken: 'access-token-1',
 };
 
 /**
@@ -82,9 +75,7 @@ export const renderWithRouterAndContexts = (
   });
   return render(
     <QueryClientProvider client={client}>
-      <StoreProvider value={Store.create()}>
-        <AuthStateProvider initialValue={AUTH_STATE}>{ui}</AuthStateProvider>
-      </StoreProvider>
+      <FakeAuthStateProvider>{ui}</FakeAuthStateProvider>
     </QueryClientProvider>,
     {
       wrapper,

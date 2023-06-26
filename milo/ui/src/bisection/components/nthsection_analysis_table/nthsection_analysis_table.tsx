@@ -35,7 +35,7 @@ import {
 
 import { NthSectionAnalysisTableRow } from './nthsection_analysis_table_row/nthsection_analysis_table_row';
 
-interface Props {
+interface NthSectionAnalysisTableProps {
   result?: NthSectionAnalysisResult | null;
 }
 
@@ -43,7 +43,9 @@ interface RerunProps {
   reruns: SingleRerun[];
 }
 
-export const NthSectionAnalysisTable = ({ result }: Props) => {
+export const NthSectionAnalysisTable = ({
+  result,
+}: NthSectionAnalysisTableProps) => {
   if (result == null || result == undefined) {
     return (
       <span className="data-placeholder">There is no nthsection analysis</span>
@@ -52,6 +54,8 @@ export const NthSectionAnalysisTable = ({ result }: Props) => {
 
   const reruns = result?.reruns ?? [];
   const sortedReruns = reruns.sort(
+    // All reruns used in Nth section analysis should have indicies.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     (a, b) => parseInt(a.index!) - parseInt(b.index!)
   );
   return (
@@ -64,7 +68,13 @@ export const NthSectionAnalysisTable = ({ result }: Props) => {
   );
 };
 
-export const NthSectionAnalysisDetail = ({ result }: Props) => {
+interface NthSectionAnalysisDetailProps {
+  result: NthSectionAnalysisResult;
+}
+
+export const NthSectionAnalysisDetail = ({
+  result,
+}: NthSectionAnalysisDetailProps) => {
   const commitLink = EMPTY_LINK;
   if (result?.suspect) {
     commitLink.url = result.suspect.reviewUrl;
@@ -85,14 +95,14 @@ export const NthSectionAnalysisDetail = ({ result }: Props) => {
         <TableBody data-testid="nthsection-analysis-detail">
           <TableRow>
             <TableCell variant="head">Start time</TableCell>
-            <TableCell>{getFormattedTimestamp(result!.startTime)}</TableCell>
+            <TableCell>{getFormattedTimestamp(result.startTime)}</TableCell>
             <TableCell variant="head">End time</TableCell>
-            <TableCell>{getFormattedTimestamp(result!.endTime)}</TableCell>
+            <TableCell>{getFormattedTimestamp(result.endTime)}</TableCell>
           </TableRow>
           <TableRow>
             <TableCell variant="head">Status</TableCell>
             <TableCell>
-              <AnalysisStatusInfo status={result!.status}></AnalysisStatusInfo>
+              <AnalysisStatusInfo status={result.status}></AnalysisStatusInfo>
             </TableCell>
             <TableCell variant="head">Suspect</TableCell>
             <TableCell>

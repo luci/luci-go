@@ -22,9 +22,7 @@ export const createMockAuthState = (): AuthState => {
     email: 'user@example.com',
     picture: '',
     accessToken: 'token_text_access',
-    accessTokenExpiry: 1648105586,
     idToken: 'token_text',
-    idTokenExpiry: 1648105586,
   };
 };
 

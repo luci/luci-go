@@ -19,7 +19,7 @@ import { createContext, useCallback, useContext, useState } from 'react';
 import { AuthState } from '@/common/api/auth_state';
 import { useStore } from '@/common/store';
 
-const AuthStateContext = createContext<(() => AuthState) | null>(null);
+export const AuthStateContext = createContext<(() => AuthState) | null>(null);
 
 export interface AuthStateProviderProps {
   readonly initialValue: AuthState;

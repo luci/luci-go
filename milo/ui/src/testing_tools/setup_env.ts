@@ -70,6 +70,8 @@ const idbMockStore = new Map();
 Object.defineProperty(self, 'crypto', {
   value: {
     subtle: crypto.webcrypto.subtle,
+    // GetRandomValues is required by the nanoid package to run tests.
+    getRandomValues: (arr: unknown[]) => crypto.randomBytes(arr.length),
   },
 });
 

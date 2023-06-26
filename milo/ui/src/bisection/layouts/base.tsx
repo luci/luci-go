@@ -32,9 +32,7 @@ declare global {
   }
 }
 
-function getCurrentLink(linkPatterns: string[]) {
-  const { pathname } = useLocation();
-
+function getCurrentLink(linkPatterns: string[], pathname: string) {
   for (let i = 0; i < linkPatterns.length; i += 1) {
     const linkMatch = matchPath(linkPatterns[i], pathname);
     if (linkMatch !== null) {
@@ -46,7 +44,8 @@ function getCurrentLink(linkPatterns: string[]) {
 }
 
 export const BaseLayout = () => {
-  const linkMatcher = getCurrentLink(['/']);
+  const { pathname } = useLocation();
+  const linkMatcher = getCurrentLink(['/'], pathname);
 
   let currentTab = '/';
   if (linkMatcher !== null) {

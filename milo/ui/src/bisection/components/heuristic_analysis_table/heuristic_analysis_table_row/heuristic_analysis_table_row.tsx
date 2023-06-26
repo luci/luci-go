@@ -17,7 +17,7 @@ import './heuristic_analysis_table_row.css';
 import Link from '@mui/material/Link';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
-import { nanoid } from '@reduxjs/toolkit';
+import { nanoid } from 'nanoid';
 
 import { getCommitShortHash } from '@/bisection/tools/commit_formatters';
 import { HeuristicSuspect } from '@/common/services/luci_bisection';

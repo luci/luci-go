@@ -109,7 +109,7 @@ export const AnalysisDetailsPage = () => {
           {/* TODO: display more error detail for input issues e.g.
               Build not found, No analysis for that build, etc */}
           An error occurred when querying for the analysis details using build
-          ID "{bbid}":
+          ID &quot;{bbid}&quot;:
           <Box sx={{ padding: '1rem' }}>{`${error}`}</Box>
         </Alert>
       </div>
@@ -129,21 +129,21 @@ export const AnalysisDetailsPage = () => {
     );
   }
 
-  if (isSuccess) {
+  if (isSuccess && analysis) {
     return (
       <>
         <div className="section">
           <Typography variant="h5" gutterBottom>
             Analysis Details
           </Typography>
-          <AnalysisOverview analysis={analysis!} />
+          <AnalysisOverview analysis={analysis} />
         </div>
-        {analysis!.culprits && analysis!.culprits.length > 0 && (
+        {analysis.culprits && analysis.culprits.length > 0 && (
           <div className="section">
             <Typography variant="h5" gutterBottom>
               Culprit Details
             </Typography>
-            <CulpritsTable culprits={analysis!.culprits!} />
+            <CulpritsTable culprits={analysis.culprits} />
           </div>
         )}
         <div className="section">
@@ -173,16 +173,16 @@ export const AnalysisDetailsPage = () => {
             />
           </Tabs>
           <TabPanel value={currentTab} name={AnalysisComponentTabs.HEURISTIC}>
-            <HeuristicAnalysisTable result={analysis!.heuristicResult} />
+            <HeuristicAnalysisTable result={analysis.heuristicResult} />
           </TabPanel>
           <TabPanel value={currentTab} name={AnalysisComponentTabs.NTH_SECTION}>
-            <NthSectionAnalysisTable result={analysis!.nthSectionResult} />
+            <NthSectionAnalysisTable result={analysis.nthSectionResult} />
           </TabPanel>
           <TabPanel
             value={currentTab}
             name={AnalysisComponentTabs.CULPRIT_VERIFICATION}
           >
-            <CulpritVerificationTable result={analysis!} />
+            <CulpritVerificationTable result={analysis} />
           </TabPanel>
         </div>
       </>

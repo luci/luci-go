@@ -24,15 +24,10 @@ import {
 } from '@/bisection/testing_tools/mocks/analysis_mock';
 import { createMockAnalysis } from '@/bisection/testing_tools/mocks/analysis_mock';
 import { Analysis } from '@/common/services/luci_bisection';
-import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 
 import { SearchAnalysisTable } from './search_analysis_table';
 
 describe('Test SearchAnalysisTable component', () => {
-  beforeEach(() => {
-    mockFetchAuthState();
-  });
-
   afterEach(() => {
     fetchMock.mockClear();
     fetchMock.reset();

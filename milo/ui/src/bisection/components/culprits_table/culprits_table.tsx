@@ -22,7 +22,7 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import { nanoid } from '@reduxjs/toolkit';
+import { nanoid } from 'nanoid';
 
 import { PlainTable } from '@/bisection/components/plain_table/plain_table';
 import { getCommitShortHash } from '@/bisection/tools/commit_formatters';
@@ -105,7 +105,7 @@ const CulpritActionTableCell = ({ action }: CulpritActionTableCellProps) => {
       linkText = 'bug';
       url = action.bugUrl || '';
       break;
-    case 'NO_ACTION':
+    case 'NO_ACTION': {
       const reason: CulpritInactionReason =
         action.inactionReason || 'CULPRIT_INACTION_REASON_UNSPECIFIED';
       if (INACTION_REASONS_WITH_REVERT_LINK.includes(reason)) {
@@ -113,6 +113,7 @@ const CulpritActionTableCell = ({ action }: CulpritActionTableCellProps) => {
         url = action.revertClUrl || '';
       }
       break;
+    }
     default:
     // continue
   }
