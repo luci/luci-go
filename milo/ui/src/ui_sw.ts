@@ -61,7 +61,11 @@ versionManagement.init({
     }
 
     // Ensures the service worker is always rolled back in case of a revert.
-    if (currentVer.num < lastVer.num) {
+    //
+    // Use `<=` so that when the service worker is rolled back when the version
+    // appears to be unchanged, which may happen if the new (now rolled back)
+    // version failed to update the stored version value.
+    if (currentVer.num <= lastVer.num) {
       return true;
     }
 
