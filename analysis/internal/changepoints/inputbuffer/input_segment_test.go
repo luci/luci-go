@@ -36,7 +36,10 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 			)
 			ib := genInputBuffer(10, 200, Verdicts(positions, total, hasUnexpected))
 			cps := []ChangePoint{}
-			sib := ib.Segmentize(cps)
+
+			var merged []PositionVerdict
+			ib.MergeBuffer(&merged)
+			sib := ib.Segmentize(merged, cps)
 			ibSegments := sib.Segments
 			So(len(ibSegments), ShouldEqual, 1)
 			diff := cmp.Diff(ibSegments[0], &Segment{
@@ -87,7 +90,9 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 					UpperBound99ThIndex: 10,
 				},
 			}
-			sib := ib.Segmentize(cps)
+			var merged []PositionVerdict
+			ib.MergeBuffer(&merged)
+			sib := ib.Segmentize(merged, cps)
 			ibSegments := sib.Segments
 			So(len(ibSegments), ShouldEqual, 4)
 			diff := cmp.Diff(ibSegments[0], &Segment{

@@ -155,7 +155,10 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 		// The list of mutations for this transaction.
 		mutations := []*spanner.Mutation{}
 
+		// Buffers allocated once and re-used for processing
+		// all test variant branches.
 		var hs inputbuffer.HistorySerializer
+		var analysis Analyzer
 
 		// Handle each read test variant branch.
 		f := func(i int, tvb *testvariantbranch.Entry) error {
@@ -170,7 +173,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 			if err != nil {
 				return errors.Annotate(err, "insert into input buffer").Err()
 			}
-			inputSegments := runChangePointAnalysis(tvb)
+			inputSegments := analysis.Run(tvb)
 			tvb.ApplyRetentionPolicyForFinalizedSegments(payload.PartitionTime.AsTime())
 			mut, err := tvb.ToMutation(&hs)
 			if err != nil {
@@ -273,10 +276,17 @@ func isOutOfOrderAndShouldBeDiscarded(tvb *testvariantbranch.Entry, src *rdbpb.S
 	return position < minPos
 }
 
-// runChangePointAnalysis runs change point analysis and returns the
+type Analyzer struct {
+	// MergeBuffer is a preallocated buffer used to store the result of
+	// merging hot and cold input buffers. Reusing the same buffer avoids
+	// allocating a new buffer for each test variant branch processed.
+	mergeBuffer []inputbuffer.PositionVerdict
+}
+
+// Run runs change point analysis and returns the
 // remaining segment in the input buffer after eviction.
-func runChangePointAnalysis(tvb *testvariantbranch.Entry) []*inputbuffer.Segment {
-	a := bayesian.ChangepointPredictor{
+func (a *Analyzer) Run(tvb *testvariantbranch.Entry) []*inputbuffer.Segment {
+	predictor := bayesian.ChangepointPredictor{
 		ChangepointLikelihood: 0.0001,
 		// We are leaning toward consistently passing test results.
 		HasUnexpectedPrior: bayesian.BetaDistribution{
@@ -288,9 +298,9 @@ func runChangePointAnalysis(tvb *testvariantbranch.Entry) []*inputbuffer.Segment
 			Beta:  0.5,
 		},
 	}
-	history := tvb.InputBuffer.MergeBuffer()
-	changePoints := a.ChangePoints(history, bayesian.ConfidenceIntervalTail)
-	sib := tvb.InputBuffer.Segmentize(changePoints)
+	tvb.InputBuffer.MergeBuffer(&a.mergeBuffer)
+	changePoints := predictor.ChangePoints(a.mergeBuffer, bayesian.ConfidenceIntervalTail)
+	sib := tvb.InputBuffer.Segmentize(a.mergeBuffer, changePoints)
 	evictedSegment := sib.EvictSegments()
 	tvb.UpdateOutputBuffer(evictedSegment)
 	return sib.Segments

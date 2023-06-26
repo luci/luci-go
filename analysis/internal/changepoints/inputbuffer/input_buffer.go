@@ -32,6 +32,15 @@ const (
 	DefaultHotBufferCapacity = 100
 	// Capacity of the cold buffer, i.e. how many verdicts it can hold.
 	DefaultColdBufferCapacity = 2000
+	// VerdictsInsertedHint is the number of verdicts expected
+	// to be inserted in one usage of the input buffer. Buffers
+	// will be allocated assuming this is the maximum number
+	// inserted, if the actual number is higher, it may trigger
+	// additional memory allocations.
+	//
+	// Currently a value of 1 is used as ingestion process ingests one
+	// invocation at a time.
+	VerdictsInsertedHint = 1
 )
 
 type Buffer struct {
@@ -82,6 +91,12 @@ type Run struct {
 	IsDuplicate bool
 }
 
+type MergedInputBuffer struct {
+	inputBuffer *Buffer
+	// Buffer contains the merged verdicts.
+	Buffer History
+}
+
 // New allocates an empty input buffer with default capacity.
 func New() *Buffer {
 	return NewWithCapacity(DefaultHotBufferCapacity, DefaultColdBufferCapacity)
@@ -95,14 +110,14 @@ func NewWithCapacity(hotBufferCapacity, coldBufferCapacity int) *Buffer {
 		// stored in Spanner, but only a soft limit during processing.
 		// After new verdicts are ingested, but before eviction is
 		// considered, the limit can be exceeded.
-		HotBuffer:          History{Verdicts: make([]PositionVerdict, 0, hotBufferCapacity+10)},
+		HotBuffer:          History{Verdicts: make([]PositionVerdict, 0, hotBufferCapacity+VerdictsInsertedHint)},
 		ColdBufferCapacity: coldBufferCapacity,
 		// ColdBufferCapacity is a hard limit on the number of verdicts
 		// stored in Spanner, but only a soft limit during processing.
 		// After new verdicts are ingested, but before eviction is
 		// considered, the limit can be exceeded (due to the new
 		// verdicts or due to compaction from hot buffer to cold buffer).
-		ColdBuffer: History{Verdicts: make([]PositionVerdict, 0, coldBufferCapacity+hotBufferCapacity+10)},
+		ColdBuffer: History{Verdicts: make([]PositionVerdict, 0, coldBufferCapacity+hotBufferCapacity+VerdictsInsertedHint)},
 	}
 }
 
@@ -155,12 +170,12 @@ func (h *History) EvictBefore(index int) {
 // Clear resets the input buffer to an empty state, similar to
 // its state after New().
 func (ib *Buffer) Clear() {
-	if cap(ib.HotBuffer.Verdicts) < ib.HotBufferCapacity+10 {
+	if cap(ib.HotBuffer.Verdicts) < ib.HotBufferCapacity+VerdictsInsertedHint {
 		// Indicates a logic error if someone discarded part of the
 		// originally allocated buffer.
 		panic("buffer capacity unexpectedly modified")
 	}
-	if cap(ib.ColdBuffer.Verdicts) < ib.ColdBufferCapacity+ib.HotBufferCapacity+10 {
+	if cap(ib.ColdBuffer.Verdicts) < ib.ColdBufferCapacity+ib.HotBufferCapacity+VerdictsInsertedHint {
 		// Indicates a logic error if someone discarded part of the
 		// originally allocated buffer.
 		panic("buffer capacity unexpectedly modified")
@@ -210,7 +225,8 @@ func (ib *Buffer) InsertVerdict(v PositionVerdict) {
 // i.e., len(ColdBuffer.Verdicts) > ColdBufferCapacity.
 // This needs to be handled separately.
 func (ib *Buffer) Compact() {
-	merged := ib.MergeBuffer()
+	var merged []PositionVerdict
+	ib.MergeBuffer(&merged)
 	ib.HotBuffer.Verdicts = ib.HotBuffer.Verdicts[:0]
 
 	// Copy the merged verdicts to the ColdBuffer instead of assigning
@@ -221,16 +237,22 @@ func (ib *Buffer) Compact() {
 	}
 }
 
-// MergeBuffer merges the verdicts of the hot buffer and the cold buffer, and
-// returns a merged slice.
+// MergeBuffer merges the verdicts of the hot buffer and the cold buffer
+// into the provided slice, resizing it if necessary.
 // The returned slice will be sorted by commit position (oldest first), and
 // then by result time (oldest first).
-func (ib *Buffer) MergeBuffer() []PositionVerdict {
+func (ib *Buffer) MergeBuffer(destination *[]PositionVerdict) {
 	// Because the hot buffer and cold buffer are both sorted, we can simply use
 	// a single merge to merge the 2 buffers.
 	hVerdicts := ib.HotBuffer.Verdicts
 	cVerdicts := ib.ColdBuffer.Verdicts
-	merged := make([]PositionVerdict, len(hVerdicts)+len(cVerdicts))
+
+	if *destination == nil {
+		*destination = make([]PositionVerdict, 0, ib.ColdBufferCapacity+ib.HotBufferCapacity+VerdictsInsertedHint)
+	}
+
+	// Reset destination slice to zero length.
+	merged := (*destination)[:0]
 
 	hPos := 0
 	cPos := 0
@@ -238,23 +260,23 @@ func (ib *Buffer) MergeBuffer() []PositionVerdict {
 		cmp := compareVerdict(hVerdicts[hPos], cVerdicts[cPos])
 		// Item in hot buffer is strictly older.
 		if cmp == -1 {
-			merged[hPos+cPos] = hVerdicts[hPos]
+			merged = append(merged, hVerdicts[hPos])
 			hPos++
 		} else {
-			merged[hPos+cPos] = cVerdicts[cPos]
+			merged = append(merged, cVerdicts[cPos])
 			cPos++
 		}
 	}
 
 	// Add the remaining items.
 	for ; hPos < len(hVerdicts); hPos++ {
-		merged[hPos+cPos] = hVerdicts[hPos]
+		merged = append(merged, hVerdicts[hPos])
 	}
 	for ; cPos < len(cVerdicts); cPos++ {
-		merged[hPos+cPos] = cVerdicts[cPos]
+		merged = append(merged, cVerdicts[cPos])
 	}
 
-	return merged
+	*destination = merged
 }
 
 // EvictionRange returns the part that should be evicted from cold buffer, due

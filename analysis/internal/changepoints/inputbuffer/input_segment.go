@@ -117,11 +117,12 @@ type ChangePoint struct {
 // Segmentize generates segments based on the input buffer and
 // the change points detected.
 // Input buffer verdicts are sorted by commit position (oldest first), then
-// by result time (oldest first).
+// by result time (oldest first) and MUST have been returned by a call to
+// MergeBuffer(...) immediately prior to this Segmentize call (i.e. without
+// mutating the input buffer or the merge buffer.)
 // changePoints is the change points for history. It is
 // sorted in ascending order (smallest index first).
-func (ib *Buffer) Segmentize(changePoints []ChangePoint) *SegmentedInputBuffer {
-	history := ib.MergeBuffer()
+func (ib *Buffer) Segmentize(history []PositionVerdict, changePoints []ChangePoint) *SegmentedInputBuffer {
 	// Exit early if we have empty history.
 	if len(history) == 0 {
 		return &SegmentedInputBuffer{
