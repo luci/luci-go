@@ -57,13 +57,12 @@ func startBuildOnSwarming(ctx context.Context, req *pb.StartBuildRequest, tok st
 	var b *model.Build
 	buildStatusChanged := false
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		entities, err := common.GetBuildEntities(ctx, req.BuildId, model.BuildKind, model.BuildInfraKind, model.BuildStatusKind)
+		entities, err := common.GetBuildEntities(ctx, req.BuildId, model.BuildKind, model.BuildInfraKind)
 		if err != nil {
 			return errors.Annotate(err, "failed to get build %d", req.BuildId).Err()
 		}
 		b = entities[0].(*model.Build)
 		infra := entities[1].(*model.BuildInfra)
-		bs := entities[2].(*model.BuildStatus)
 
 		if infra.Proto.GetSwarming() == nil {
 			return appstatus.Errorf(codes.Internal, "the build %d does not run on swarming", req.BuildId)
@@ -103,22 +102,24 @@ func startBuildOnSwarming(ctx context.Context, req *pb.StartBuildRequest, tok st
 			// Start the build.
 			b.StartBuildRequestID = req.RequestId
 			toPut = append(toPut, b)
-			if b.Status == pb.Status_SCHEDULED {
-				// Should only set the build to STARTED if it's still pending.
-				// Because of the swarming sync flow, it's possible that build is
-				// already in STARTED status.
-				protoutil.SetStatus(clock.Now(ctx), b.Proto, pb.Status_STARTED)
-				buildStatusChanged = true
-				if bs != nil {
-					bs.Status = pb.Status_STARTED
-					toPut = append(toPut, bs)
-				}
+			if b.Proto.Output == nil {
+				b.Proto.Output = &pb.Build_Output{}
 			}
-
-			if buildStatusChanged {
-				// Notify Pubsub.
-				// NotifyPubSub is a Transactional task, so do it inside the transaction.
-				_ = tasks.NotifyPubSub(ctx, b)
+			b.Proto.Output.Status = pb.Status_STARTED
+			statusUpdater := buildstatus.Updater{
+				Build:        b,
+				OutputStatus: pb.Status_STARTED,
+				UpdateTime:   clock.Now(ctx),
+				PostProcess:  tasks.SendOnBuildStatusChange,
+			}
+			var bs *model.BuildStatus
+			bs, err = statusUpdater.Do(ctx)
+			if err != nil {
+				return appstatus.Errorf(codes.Internal, "failed to update status for build %d: %s", b.ID, err)
+			}
+			if bs != nil {
+				buildStatusChanged = true
+				toPut = append(toPut, bs)
 			}
 
 			if err = datastore.Put(ctx, toPut...); err != nil {
