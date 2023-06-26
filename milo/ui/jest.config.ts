@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// eslint-disable-next-line no-undef
-module.exports = {
+import type { Config } from 'jest';
+
+const config: Config = {
   // Use `js-with-babel` instead of `js-with-ts` because
   // 1. `js-with-babel` is significantly faster than `js-with-ts`. This is
   // likely because babel transpiles each file individually while tsc compiles
@@ -26,17 +27,6 @@ module.exports = {
   preset: 'ts-jest/presets/js-with-babel',
   testEnvironment: 'jsdom',
   testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(test).[jt]s?(x)'],
-  transform: {
-    '^.+\\.jsx?$': 'babel-jest',
-    '^.+\\.[tj]sx?$': [
-      'ts-jest',
-      {
-        // Jest requires `moduleResolution: "node"`. Use a separate tsconfig
-        // file.
-        tsconfig: 'tsconfig.test.json',
-      },
-    ],
-  },
   // Some modules use `es6` modules, which is not compatible with jest, so we
   // need to transform them.
   transformIgnorePatterns: ['/node_modules/?!(lodash-es|lit)'],
@@ -46,3 +36,5 @@ module.exports = {
     '@/(.*)': '<rootDir>/src/$1',
   },
 };
+
+export default config;
