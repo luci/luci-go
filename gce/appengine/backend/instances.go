@@ -359,37 +359,31 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 		if vm == nil && isLeakHuerestic(c, hostname, proj, zone) {
 			countLeaks += 1
 			logging.Debugf(c, "plugging the instance leak in %s-%s: %s", proj, zone, hostname)
-			/* TODO(b/274688233): Uncomment this once we are sure that
-			* this will not result in an outage. Will use the logs to
-			* determine what instances will be deleted.
-			* -------------------------------------------------------------------------
-			* // Send a delete request for the instance
-			* reqID := uuid.NewSHA1(uuid.Nil, []byte(fmt.Sprintf("plug-%s", hostname)))
-			* del := srv.Delete(proj, zone, hostname)
-			* op, err := del.RequestId(reqID.String()).Context(c).Do()
-			* if err != nil {
-			* 	if gerr, ok := err.(*googleapi.Error); ok {
-			* 		if gerr.Code == http.StatusNotFound {
-			* 			// Instance is already destroyed.
-			* 			logging.Debugf(c, "instance does not exist: %s", hostname)
-			* 		}
-			* 		logErrors(c, hostname, gerr)
-			* 	}
-			* 	logging.Errorf(c, "failed to plug the leak %s. %v", hostname, err)
-			* 	continue
-			* }
-			* if op.Error != nil && len(op.Error.Errors) > 0 {
-			* 	//return errors.Reason("failed to plug %v", op.Error).Err()
-			* 	for _, e := range op.Error.Errors {
-			* 		logging.Errorf(c, "%s: %s", e.Code, e.Message)
-			* 	}
-			* 	logging.Errorf(c, "failed to plug the leak %s. %v", hostname, err)
-			* 	continue
-			* }
-			* if op.Status == "DONE" {
-			* 	logging.Debugf(c, "plugged the leak of instance: %s", op.TargetLink)
-			* }
-			* --------------------------------------------------------------------------*/
+			// Send a delete request for the instance
+			reqID := uuid.NewSHA1(uuid.Nil, []byte(fmt.Sprintf("plug-%s", hostname)))
+			del := srv.Delete(proj, zone, hostname)
+			op, err := del.RequestId(reqID.String()).Context(c).Do()
+			if err != nil {
+				if gerr, ok := err.(*googleapi.Error); ok {
+					if gerr.Code == http.StatusNotFound {
+						// Instance is already destroyed.
+						logging.Debugf(c, "instance does not exist: %s", hostname)
+					}
+					logErrors(c, hostname, gerr)
+				}
+				logging.Errorf(c, "failed to plug the leak %s. %v", hostname, err)
+				continue
+			}
+			if op.Error != nil && len(op.Error.Errors) > 0 {
+				for _, e := range op.Error.Errors {
+					logging.Errorf(c, "%s: %s", e.Code, e.Message)
+				}
+				logging.Errorf(c, "failed to plug the leak %s. %v", hostname, err)
+				continue
+			}
+			if op.Status == "DONE" {
+				logging.Debugf(c, "plugged the leak of instance: %s", op.TargetLink)
+			}
 		}
 	}
 	metrics.UpdateLeaks(c, countLeaks, proj, zone)
@@ -436,6 +430,8 @@ func isLeakHuerestic(ctx context.Context, hostname, proj, zone string) bool {
 	}
 	if leak {
 		logging.Debugf(ctx, "%s is probably a leak in %s and %s", hostname, proj, zone)
+	} else {
+		logging.Debugf(ctx, "Cannot determine if %s is a leak in %s and %s", hostname, proj, zone)
 	}
 	return leak
 }

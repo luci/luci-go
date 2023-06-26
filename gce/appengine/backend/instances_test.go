@@ -493,7 +493,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 						count += 1
 						return http.StatusOK, &compute.InstanceList{
 							Items: []*compute.Instance{{
-								Name: "double-k",
+								Name: "double-11-puts",
 							}},
 						}
 					default:
@@ -502,8 +502,9 @@ func TestAuditInstanceInZone(t *testing.T) {
 					}
 				}
 				err := datastore.Put(c, &model.VM{
-					ID:       "double",
-					Hostname: "double-k",
+					ID:       "double-11",
+					Hostname: "double-11-puts",
+					Prefix:   "double",
 				})
 				So(err, ShouldBeNil)
 				err = auditInstanceInZone(c, &tasks.AuditProject{
@@ -523,9 +524,9 @@ func TestAuditInstanceInZone(t *testing.T) {
 						count += 1
 						return http.StatusOK, &compute.InstanceList{
 							Items: []*compute.Instance{{
-								Name: "double-k",
+								Name: "double-11-puts",
 							}, {
-								Name: "thes-one",
+								Name: "thes-1-puts",
 							}},
 							NextPageToken: "next-page",
 						}
@@ -535,13 +536,15 @@ func TestAuditInstanceInZone(t *testing.T) {
 					}
 				}
 				err := datastore.Put(c, &model.VM{
-					ID:       "double",
-					Hostname: "double-k",
+					ID:       "double-11",
+					Hostname: "double-11-puts",
+					Prefix:   "double",
 				})
 				So(err, ShouldBeNil)
 				err = datastore.Put(c, &model.VM{
-					ID:       "thes",
-					Hostname: "thes-one",
+					ID:       "thes-1",
+					Hostname: "thes-1-puts",
+					Prefix:   "thes",
 				})
 				So(err, ShouldBeNil)
 				err = auditInstanceInZone(c, &tasks.AuditProject{
@@ -554,9 +557,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 			})
 
-			// TODO(b/274688233): Uncomment once we are sure this doesn't delete
-			// anything important
-			/*Convey("VM leaked (single)", func() {
+			Convey("VM leaked (single)", func() {
 				count := 0
 				rt.Handler = func(req any) (int, any) {
 					switch count {
@@ -564,7 +565,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 						count += 1
 						return http.StatusOK, &compute.InstanceList{
 							Items: []*compute.Instance{{
-								Name: "double-k",
+								Name: "double-11-acrd",
 							}},
 						}
 					case 1:
@@ -575,9 +576,15 @@ func TestAuditInstanceInZone(t *testing.T) {
 						return http.StatusInternalServerError, nil
 					}
 				}
-				err := auditInstanceInZone(c, &tasks.AuditProject{
+				err := datastore.Put(c, &model.VM{
+					ID:       "double-11",
+					Hostname: "double-11-puts",
+					Prefix:   "double",
+				})
+				So(err, ShouldBeNil)
+				err = auditInstanceInZone(c, &tasks.AuditProject{
 					Project: "libreboot",
-					Zone:  "us-mex-1",
+					Zone:    "us-mex-1",
 				})
 				So(err, ShouldBeNil)
 				So(count, ShouldEqual, 2)
@@ -592,9 +599,9 @@ func TestAuditInstanceInZone(t *testing.T) {
 						count += 1
 						return http.StatusOK, &compute.InstanceList{
 							Items: []*compute.Instance{{
-								Name: "double-k",
+								Name: "double-12-acrd",
 							}, {
-								Name: "thes-one",
+								Name: "thes-1-acrd",
 							}},
 						}
 					case 1:
@@ -608,14 +615,27 @@ func TestAuditInstanceInZone(t *testing.T) {
 						return http.StatusInternalServerError, nil
 					}
 				}
-				err := auditInstanceInZone(c, &tasks.AuditProject{
+				err := datastore.Put(c, &model.VM{
+					ID:       "double-11",
+					Hostname: "double-11-puts",
+					Prefix:   "double",
+				})
+				So(err, ShouldBeNil)
+				err = datastore.Put(c, &model.VM{
+					ID:       "thes-1",
+					Hostname: "thes-1-puts",
+					Prefix:   "thes",
+				})
+				So(err, ShouldBeNil)
+				err = auditInstanceInZone(c, &tasks.AuditProject{
 					Project: "libreboot",
-					Zone:  "us-mex-1",
+					Zone:    "us-mex-1",
 				})
 				So(count, ShouldEqual, 3)
 				So(err, ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 			})
+
 			Convey("VM leaked (mix)", func() {
 				count := 0
 				rt.Handler = func(req any) (int, any) {
@@ -624,9 +644,9 @@ func TestAuditInstanceInZone(t *testing.T) {
 						count += 1
 						return http.StatusOK, &compute.InstanceList{
 							Items: []*compute.Instance{{
-								Name: "double-k",
+								Name: "double-12-acrd",
 							}, {
-								Name: "thes-one",
+								Name: "thes-1-puts",
 							}},
 						}
 					case 1:
@@ -640,18 +660,18 @@ func TestAuditInstanceInZone(t *testing.T) {
 					}
 				}
 				err := datastore.Put(c, &model.VM{
-					ID:       "double",
-					Hostname: "double-k",
+					ID:       "double-11",
+					Hostname: "double-11-puts",
+					Prefix:   "double",
 				})
-				So(err, ShouldBeNil)
 				err = auditInstanceInZone(c, &tasks.AuditProject{
 					Project: "libreboot",
-					Zone:  "us-mex-1",
+					Zone:    "us-mex-1",
 				})
 				So(count, ShouldEqual, 2)
 				So(err, ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
-			})*/
+			})
 		})
 
 		Convey("error", func() {
@@ -666,9 +686,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 				So(err, ShouldErrLike, "failed to list")
 				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 			})
-			// TODO(b/274688233): Uncomment once we are sure this doesn't delete
-			// anything important
-			/*Convey("VM delete failure", func() {
+			Convey("VM delete failure", func() {
 				count := 0
 				rt.Handler = func(req any) (int, any) {
 					switch count {
@@ -676,7 +694,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 						count += 1
 						return http.StatusOK, &compute.InstanceList{
 							Items: []*compute.Instance{{
-								Name: "double-k",
+								Name: "double-12-acrd",
 							}},
 						}
 					case 1:
@@ -693,14 +711,20 @@ func TestAuditInstanceInZone(t *testing.T) {
 						return http.StatusInternalServerError, nil
 					}
 				}
-				err := auditInstanceInZone(c, &tasks.AuditProject{
+				err := datastore.Put(c, &model.VM{
+					ID:       "double-11",
+					Hostname: "double-11-puts",
+					Prefix:   "double",
+				})
+				So(err, ShouldBeNil)
+				err = auditInstanceInZone(c, &tasks.AuditProject{
 					Project: "libreboot",
-					Zone:  "us-mex-1",
+					Zone:    "us-mex-1",
 				})
 				So(count, ShouldEqual, 2)
 				So(err, ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
-			})*/
+			})
 		})
 	})
 }
