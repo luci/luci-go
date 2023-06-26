@@ -116,6 +116,7 @@ func pageMiddlewareChain(srv *luciserver.Server) router.MiddlewareChain {
 	return router.NewMiddlewareChain(
 		auth.Authenticate(srv.CookieAuth),
 		templates.WithTemplates(prepareTemplates(&srv.Options)),
+		checkAccess,
 	)
 }
 
