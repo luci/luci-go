@@ -1403,7 +1403,14 @@ func parseHeaders(h http.Header) ExecutionInfo {
 // `msg` is sent to the caller as is. `err` is logged, but not sent.
 func httpReply(c *router.Context, code int, msg string, err error) {
 	if err != nil && !quietOnError.In(err) {
-		logging.Errorf(c.Request.Context(), "server/tq task %s: %s", msg, err)
+		if Ignore.In(err) {
+			logging.Warningf(c.Request.Context(), "server/tq task %s: %s", msg, err)
+		} else {
+			logging.Errorf(c.Request.Context(), "server/tq task %s: %s", msg, err)
+		}
+	}
+	if code == http.StatusNoContent {
+		msg = ""
 	}
 	http.Error(c.Writer, msg, code)
 }
@@ -1412,15 +1419,15 @@ func httpReply(c *router.Context, code int, msg string, err error) {
 func replyWithErr(c *router.Context, err error) {
 	switch {
 	case err == nil:
-		httpReply(c, 200, "OK", nil)
+		httpReply(c, http.StatusOK /* 200 */, "OK", nil)
 	case Fatal.In(err):
-		httpReply(c, 202, "fatal error", err)
+		httpReply(c, http.StatusAccepted /* 202 */, "fatal error", err)
 	case Ignore.In(err):
-		httpReply(c, 204, "" /* HTTP 204 means no content */, err)
+		httpReply(c, http.StatusNoContent /* 204 */, "ignored error", err)
 	case transient.Tag.In(err):
-		httpReply(c, 500, "transient error", err)
+		httpReply(c, http.StatusInternalServerError /* 500 */, "transient error", err)
 	default:
-		status := 429
+		status := http.StatusTooManyRequests
 		if code, ok := errors.TagValueIn(httpStatusKey, err); ok {
 			status = code.(int)
 		}
