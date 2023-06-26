@@ -84,7 +84,7 @@ message ValidateConfigsRequest {
     // Relative path to the config file in POSIX style.
     string path = 1;
     // The SHA256 hash of the config file.
-    string hash = 2;
+    string sha256 = 2;
   }
   // ConfigSet to validate against.
   //
@@ -103,15 +103,16 @@ message ValidateConfigsResponse {
       string path = 1;
       // The url to upload the config.
       //
-      // The caller SHOULD send compressed config and include header
-      // "Content-Encoding: gzip" header.
+      // The caller SHOULD send compressed config and include following headers
+      //  * Content-Encoding: gzip
+      //  * x-goog-content-length-range: 0, 209715200
       string signed_url = 2;
     }
     // The files that have NOT been seen by LUCI Config and need to be uploaded.
     repeated MissingFile missing_files = 1;
-    // Files that none of the services can validate and SHOULD not be included
+    // Files that none of the services can validate and SHOULD NOT be included
     // in the ValidateConfigsRequest.
-    repeated string unnecessary_files = 2;
+    repeated string unvalidatable_files = 2;
   }
   oneof response {
     // The result of successful config validation.
