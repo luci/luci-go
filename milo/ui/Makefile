@@ -10,6 +10,11 @@ node_deps:
 build: node_deps
 	npm run build
 
+# Used when building release tarballs. See
+# https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/build/gae/milo.yaml#8
+release:
+	npm ci && npm run build
+
 test: node_deps
 	npm run test
 
