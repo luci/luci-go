@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	"google.golang.org/grpc/metadata"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -149,7 +150,7 @@ func TestValidateTags(t *testing.T) {
 		})
 
 		Convey("too big", func() {
-			So(validateSummaryMarkdown(strings.Repeat("☕", summaryMarkdownMaxLength)), ShouldErrLike, "too big to accept")
+			So(validateSummaryMarkdown(strings.Repeat("☕", protoutil.SummaryMarkdownMaxLength)), ShouldErrLike, "too big to accept")
 		})
 	})
 

@@ -97,6 +97,16 @@ func validateUpdate(ctx context.Context, req *pb.UpdateBuildRequest, bs *model.B
 		switch p {
 		case "build.output":
 			// TODO(crbug/1110990): validate properties and gitiles_commit
+		case "build.output.status":
+			if _, ok := updateBuildStatuses[req.Build.Output.GetStatus()]; !ok {
+				return errors.Reason("build.output.status: invalid status %s for UpdateBuild", req.Build.Output.GetStatus()).Err()
+			}
+			buildStatus = req.Build.Output.Status
+		case "build.output.status_details":
+		case "build.output.summary_html":
+			if err := validateSummaryMarkdown(req.Build.Output.GetSummaryHtml()); err != nil {
+				return errors.Annotate(err, "build.output.summary_html").Err()
+			}
 		case "build.output.properties":
 			for k, v := range req.Build.Output.GetProperties().AsMap() {
 				if v == nil {
@@ -344,6 +354,8 @@ func checkBuildForUpdate(updateMask *mask.Mask, req *pb.UpdateBuildRequest, buil
 	finalStatus := build.Proto.Status
 	if mustIncludes(updateMask, req, "status") == mask.IncludeEntirely {
 		finalStatus = req.Build.Status
+	} else if mustIncludes(updateMask, req, "output.status") == mask.IncludeEntirely {
+		finalStatus = req.Build.Output.GetStatus()
 	}
 
 	// ensure that a SCHEDULED build does not have steps, output or agent.output.
@@ -437,19 +449,22 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 		defer nilifyReqBuildDetails(req.Build)()
 		origStatus = b.Proto.Status
 
-		if mustIncludes(updateMask, req, "status") == mask.IncludeEntirely {
-			statusUpdater := buildstatus.Updater{
-				Build:       b,
-				BuildStatus: req.Build.Status,
-				UpdateTime:  now,
-				PostProcess: tasks.SendOnBuildStatusChange,
-			}
-			bs, err := statusUpdater.Do(ctx)
-			if err != nil {
-				return errors.Annotate(err, "updating build status").Err()
-			}
-			if bs != nil {
-				toSave = append(toSave, bs)
+		if mustIncludes(updateMask, req, "status") == mask.IncludeEntirely || mustIncludes(updateMask, req, "output.status") == mask.IncludeEntirely {
+			if req.Build.Status != pb.Status_STATUS_UNSPECIFIED || req.Build.Output.GetStatus() != pb.Status_STATUS_UNSPECIFIED {
+				statusUpdater := buildstatus.Updater{
+					Build:        b,
+					BuildStatus:  req.Build.Status,
+					OutputStatus: req.Build.Output.GetStatus(),
+					UpdateTime:   now,
+					PostProcess:  tasks.SendOnBuildStatusChange,
+				}
+				bs, err := statusUpdater.Do(ctx)
+				if err != nil {
+					return errors.Annotate(err, "updating build status").Err()
+				}
+				if bs != nil {
+					toSave = append(toSave, bs)
+				}
 			}
 		}
 		if err := updateMask.Merge(req.Build, b.Proto); err != nil {

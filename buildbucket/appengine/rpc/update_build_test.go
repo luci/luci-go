@@ -48,6 +48,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 
@@ -121,7 +122,7 @@ func TestValidateUpdate(t *testing.T) {
 	Convey("validate summary_markdown", t, func() {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.summary_markdown"}}
-		req.Build.SummaryMarkdown = strings.Repeat("☕", summaryMarkdownMaxLength)
+		req.Build.SummaryMarkdown = strings.Repeat("☕", protoutil.SummaryMarkdownMaxLength)
 		So(validateUpdate(ctx, req, nil), ShouldErrLike, "too big to accept")
 	})
 
@@ -166,6 +167,28 @@ func TestValidateUpdate(t *testing.T) {
 			req.Build.Output = &pb.Build_Output{Properties: largeProps}
 			So(validateUpdate(ctx, req, nil), ShouldErrLike, "build.output.properties: too large to accept")
 		})
+	})
+
+	Convey("validate output.status", t, func() {
+		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
+		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output.status"}}
+
+		Convey("succeeds", func() {
+			req.Build.Output = &pb.Build_Output{Status: pb.Status_SUCCESS}
+			So(validateUpdate(ctx, req, nil), ShouldBeNil)
+		})
+
+		Convey("fails", func() {
+			req.Build.Output = &pb.Build_Output{Status: pb.Status_SCHEDULED}
+			So(validateUpdate(ctx, req, nil), ShouldErrLike, "build.output.status: invalid status SCHEDULED for UpdateBuild")
+		})
+	})
+
+	Convey("validate output.summary_html", t, func() {
+		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
+		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output.summary_html"}}
+		req.Build.Output = &pb.Build_Output{SummaryHtml: strings.Repeat("☕", protoutil.SummaryMarkdownMaxLength)}
+		So(validateUpdate(ctx, req, nil), ShouldErrLike, "too big to accept")
 	})
 
 	Convey("validate steps", t, func() {
@@ -656,9 +679,12 @@ func TestUpdateBuild(t *testing.T) {
 			}{
 				{"build.output", ""},
 				{"build.output.properties", ""},
+				{"build.output.status", "invalid status STATUS_UNSPECIFIED"},
 				{"build.status", "invalid status STATUS_UNSPECIFIED"},
+				{"build.output.status_details", ""},
 				{"build.status_details", ""},
 				{"build.steps", ""},
+				{"build.output.summary_html", ""},
 				{"build.summary_markdown", ""},
 				{"build.tags", ""},
 				{"build.output.gitiles_commit", "ref is required"},
@@ -966,10 +992,59 @@ func TestUpdateBuild(t *testing.T) {
 				So(datastore.Get(ctx, buildStatus), ShouldBeNil)
 				So(buildStatus.Status, ShouldEqual, pb.Status_STARTED)
 			})
+
+			Convey("output.status Status_STARTED w/o status change", func() {
+				req.UpdateMask.Paths[0] = "build.output.status"
+				req.Build.Output = &pb.Build_Output{Status: pb.Status_STARTED}
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
+
+				// no TQ tasks should be scheduled.
+				So(sch.Tasks(), ShouldBeEmpty)
+
+				// no metric update, either.
+				So(store.Get(ctx, metrics.V1.BuildCountStarted, time.Time{}, fv(false)), ShouldEqual, nil)
+			})
+
+			Convey("output.status Status_STARTED w/ status change", func() {
+				// create a sample task with SCHEDULED.
+				build.Proto.Id++
+				build.ID++
+				tk, ctx = updateContextForNewBuildToken(ctx, build.ID)
+				build.UpdateToken = tk
+				build.Proto.Status, build.Status = pb.Status_SCHEDULED, pb.Status_SCHEDULED
+				buildStatus := &model.BuildStatus{
+					Build:  datastore.KeyForObj(ctx, build),
+					Status: pb.Status_SCHEDULED,
+				}
+				So(datastore.Put(ctx, build, buildStatus), ShouldBeNil)
+
+				// update it with STARTED
+				req.Build.Id = build.ID
+				req.UpdateMask.Paths[0] = "build.output.status"
+				req.Build.Output = &pb.Build_Output{Status: pb.Status_STARTED}
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
+
+				// TQ tasks for pubsub-notification.
+				tasks := sch.Tasks()
+				sortTasksByClassName(tasks)
+				So(tasks, ShouldHaveLength, 2)
+				So(tasks[0].Payload.(*taskdefs.NotifyPubSub).GetBuildId(), ShouldEqual, build.ID)
+				So(tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), ShouldEqual, 2)
+				So(tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), ShouldEqual, "project")
+
+				// BuildStarted metric should be set 1.
+				So(store.Get(ctx, metrics.V1.BuildCountStarted, time.Time{}, fv(false)), ShouldEqual, 1)
+
+				// BuildStatus should be updated.
+				buildStatus = &model.BuildStatus{Build: datastore.KeyForObj(ctx, build)}
+				So(datastore.Get(ctx, build, buildStatus), ShouldBeNil)
+				So(buildStatus.Status, ShouldEqual, pb.Status_STARTED)
+				So(build.Proto.Status, ShouldEqual, pb.Status_STARTED)
+			})
 		})
 
 		Convey("build-completion event", func() {
-			Convey("Status_SUCCESSS w/o status change", func() {
+			Convey("Status_SUCCESSS w/ status change", func() {
 				req.UpdateMask.Paths[0] = "build.status"
 				req.Build.Status = pb.Status_SUCCESS
 				So(updateBuild(ctx, req), ShouldBeRPCOK)
@@ -1001,6 +1076,31 @@ func TestUpdateBuild(t *testing.T) {
 				// BuildCompleted metric should be set to 1 with SUCCESS.
 				fvs := fv(model.Success.String(), "", "", false)
 				So(store.Get(ctx, metrics.V1.BuildCountCompleted, time.Time{}, fvs), ShouldEqual, 1)
+			})
+			Convey("output.status Status_SUCCESSS w/ status change", func() {
+				buildStatus := &model.BuildStatus{
+					Build:  datastore.KeyForObj(ctx, build),
+					Status: pb.Status_STARTED,
+				}
+				So(datastore.Put(ctx, build, buildStatus), ShouldBeNil)
+
+				req.UpdateMask.Paths[0] = "build.output.status"
+				req.Build.Output = &pb.Build_Output{Status: pb.Status_SUCCESS}
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
+
+				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
+				tasks := sch.Tasks()
+				So(tasks, ShouldHaveLength, 0)
+
+				// BuildCompleted metric should not be set.
+				fvs := fv(model.Success.String(), "", "", false)
+				So(store.Get(ctx, metrics.V1.BuildCountCompleted, time.Time{}, fvs), ShouldBeNil)
+
+				// BuildStatus should not be updated.
+				buildStatus = &model.BuildStatus{Build: datastore.KeyForObj(ctx, build)}
+				So(datastore.Get(ctx, build, buildStatus), ShouldBeNil)
+				So(buildStatus.Status, ShouldEqual, pb.Status_STARTED)
+				So(build.Proto.Status, ShouldEqual, pb.Status_STARTED)
 			})
 		})
 

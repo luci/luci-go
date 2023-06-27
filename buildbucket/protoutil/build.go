@@ -27,6 +27,10 @@ import (
 // BuildMediaType is a media type for a binary-encoded Build message.
 const BuildMediaType = "application/luci+proto; message=buildbucket.v2.Build"
 
+// SummaryMarkdownMaxLength is the maximum size of Build.summary_markdown field in bytes.
+// Find more details at https://godoc.org/go.chromium.org/luci/buildbucket/proto#Build
+const SummaryMarkdownMaxLength = 4 * 1000
+
 // RunDuration returns duration between build start and end.
 func RunDuration(b *pb.Build) (duration time.Duration, ok bool) {
 	if b.StartTime == nil || b.EndTime == nil {
@@ -112,17 +116,24 @@ func CacheDir(b *pb.Build) string {
 	return b.GetInfra().GetBbagent().GetCacheDir()
 }
 
-// CombineCancelSummary combines SummaryMarkdown and CancelMarkdown into a single string.
-func CombineCancelSummary(b *pb.Build) string {
-	if len(b.CancellationMarkdown) > 0 {
-		if len(b.SummaryMarkdown) > 0 {
-			combinedSummaryMarkdown := []string{
-				b.SummaryMarkdown,
-				b.CancellationMarkdown,
-			}
-			return strings.Join(combinedSummaryMarkdown, "\n")
-		}
-		return b.CancellationMarkdown
+// MergeSummary combines the contents of all summary fields.
+func MergeSummary(b *pb.Build) string {
+	summaries := []string{
+		b.SummaryMarkdown,
+		b.Output.GetSummaryHtml(),
+		b.Infra.GetBackend().GetTask().GetSummaryHtml(),
+		b.CancellationMarkdown,
 	}
-	return b.SummaryMarkdown
+
+	var contents []string
+	for _, s := range summaries {
+		if strings.TrimSpace(s) != "" {
+			contents = append(contents, s)
+		}
+	}
+	newSummary := strings.Join(contents, "\n")
+	if len(newSummary) > SummaryMarkdownMaxLength {
+		return newSummary[:SummaryMarkdownMaxLength-3] + "..."
+	}
+	return newSummary
 }
