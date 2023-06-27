@@ -78,6 +78,20 @@ func (mr *MockGsClientMockRecorder) SignedURL(bucket, object, opts interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignedURL", reflect.TypeOf((*MockGsClient)(nil).SignedURL), bucket, object, opts)
 }
 
+// Touch mocks base method.
+func (m *MockGsClient) Touch(ctx context.Context, bucket, object string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Touch", ctx, bucket, object)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Touch indicates an expected call of Touch.
+func (mr *MockGsClientMockRecorder) Touch(ctx, bucket, object interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Touch", reflect.TypeOf((*MockGsClient)(nil).Touch), ctx, bucket, object)
+}
+
 // UploadIfMissing mocks base method.
 func (m *MockGsClient) UploadIfMissing(ctx context.Context, bucket, object string, data []byte, attrsModifyFn func(*storage.ObjectAttrs)) (bool, error) {
 	m.ctrl.T.Helper()

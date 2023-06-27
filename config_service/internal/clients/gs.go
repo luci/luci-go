@@ -21,6 +21,8 @@ import (
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/googleapi"
+
+	"go.chromium.org/luci/common/clock"
 )
 
 var gsClientCtxKey = "holds the Google Cloud Storage client"
@@ -34,6 +36,10 @@ type GsClient interface {
 	// If decompressive is true, it will read with decompressive transcoding:
 	// https://cloud.google.com/storage/docs/transcoding#decompressive_transcoding
 	Read(ctx context.Context, bucket, object string, decompressive bool) ([]byte, error)
+	// Touch updates the custom time of the object to the current timestamp.
+	//
+	// Returns storage.ErrObjectNotExist if object is not found.
+	Touch(ctx context.Context, bucket, object string) error
 	// SignedURL is used to generate a signed url for a given GCS object.
 	SignedURL(bucket, object string, opts *storage.SignedURLOptions) (string, error)
 }
@@ -97,6 +103,16 @@ func (p *prodClient) Read(ctx context.Context, bucket, object string, decompress
 		_ = r.Close()
 	}()
 	return io.ReadAll(r)
+}
+
+// Touch updates the custom time of the object to the current timestamp.
+//
+// Returns storage.ErrObjectNotExist if object is not found.
+func (p *prodClient) Touch(ctx context.Context, bucket, object string) error {
+	_, err := p.client.Bucket(bucket).Object(object).Update(ctx, storage.ObjectAttrsToUpdate{
+		CustomTime: clock.Now(ctx).UTC(),
+	})
+	return err
 }
 
 // SignedURL is used to generate a signed url for a given GCS object.
