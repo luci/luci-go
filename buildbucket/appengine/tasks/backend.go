@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/server/caching/layered"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/buildbucket/appengine/common"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
@@ -369,14 +370,12 @@ func failBuild(ctx context.Context, buildID int64, msg string) error {
 
 // CreateBackendTask creates a backend task for the build.
 func CreateBackendTask(ctx context.Context, buildID int64, requestID string) error {
-	bld := &model.Build{ID: buildID}
-	infra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
-	switch err := datastore.Get(ctx, bld, infra); {
-	case errors.Contains(err, datastore.ErrNoSuchEntity):
-		return tq.Fatal.Apply(errors.Annotate(err, "build %d or buildInfra not found", buildID).Err())
-	case err != nil:
-		return transient.Tag.Apply(errors.Annotate(err, "failed to fetch build %d or buildInfra", buildID).Err())
+	entities, err := common.GetBuildEntities(ctx, buildID, model.BuildKind, model.BuildInfraKind)
+	if err != nil {
+		return errors.Annotate(err, "failed to get build %d", buildID).Err()
 	}
+	bld := entities[0].(*model.Build)
+	infra := entities[1].(*model.BuildInfra)
 
 	// Create a backend task client
 	backend, err := NewBackendClient(ctx, bld.Proto, infra.Proto)
@@ -391,11 +390,12 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 
 	// Create a backend task via RunTask
 	taskResp, err := backend.RunTask(ctx, taskReq)
+	now := clock.Now(ctx)
 	if err != nil {
 		// Give up if HTTP 500s are happening continuously. Otherwise re-throw the
 		// error so Cloud Tasks retries the task.
 		if apiErr, _ := err.(*googleapi.Error); apiErr == nil || apiErr.Code >= 500 {
-			if clock.Now(ctx).Sub(bld.CreateTime) < runTaskGiveUpTimeout {
+			if now.Sub(bld.CreateTime) < runTaskGiveUpTimeout {
 				return transient.Tag.Apply(errors.Annotate(err, "failed to create a backend task").Err())
 			}
 			logging.Errorf(ctx, "Give up backend task creation retry after %s", runTaskGiveUpTimeout.String())
@@ -411,15 +411,17 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 		return tq.Fatal.Apply(errors.Reason("task returned with an updateID of 0").Err())
 	}
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		switch err := datastore.Get(ctx, infra); {
-		case errors.Contains(err, datastore.ErrNoSuchEntity):
-			return tq.Fatal.Apply(errors.Annotate(err, "buildInfra for build %d not found", buildID).Err())
-		case err != nil:
-			return transient.Tag.Apply(errors.Annotate(err, "failed to fetch buildInfar for build %d", buildID).Err())
+		entities, err := common.GetBuildEntities(ctx, buildID, model.BuildKind, model.BuildInfraKind)
+		if err != nil {
+			return errors.Annotate(err, "failed to get build %d", buildID).Err()
 		}
+		bld = entities[0].(*model.Build)
+		infra = entities[1].(*model.BuildInfra)
 
+		// Also set build's UpdateTime.
+		bld.Proto.UpdateTime = timestamppb.New(now)
 		infra.Proto.Backend.Task = taskResp.Task
-		return datastore.Put(ctx, infra)
+		return datastore.Put(ctx, bld, infra)
 	}, nil)
 	if txErr != nil {
 		logging.Errorf(ctx, "Task failed to save in BuildInfra: %s", taskResp.String())

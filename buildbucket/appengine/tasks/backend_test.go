@@ -616,8 +616,10 @@ func TestCreateBackendTask(t *testing.T) {
 			So(datastore.Put(ctx, build, infra), ShouldBeNil)
 			err = CreateBackendTask(ctx, 1, "request_id")
 			So(err, ShouldBeNil)
+			eb := &model.Build{ID: build.ID}
 			expectedBuildInfra := &model.BuildInfra{Build: key}
-			So(datastore.Get(ctx, expectedBuildInfra), ShouldBeNil)
+			So(datastore.Get(ctx, eb, expectedBuildInfra), ShouldBeNil)
+			So(eb.Proto.UpdateTime.AsTime(), ShouldEqual, now)
 			So(expectedBuildInfra.Proto.Backend.Task, ShouldResembleProto, &pb.Task{
 				Id: &pb.TaskID{
 					Id:     "abc123",
