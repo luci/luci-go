@@ -15,6 +15,8 @@
 package main
 
 import (
+	"flag"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
@@ -27,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/service"
+	"go.chromium.org/luci/config_service/internal/settings"
 	configpb "go.chromium.org/luci/config_service/proto"
 	"go.chromium.org/luci/config_service/rpc"
 )
@@ -38,7 +41,15 @@ func main() {
 		tq.NewModuleFromFlags(),
 	}
 
+	loc := settings.GlobalConfigLoc{}
+	loc.RegisterFlags(flag.CommandLine)
+
 	server.Main(nil, mods, func(srv *server.Server) error {
+		if err := loc.Validate(); err != nil {
+			return errors.Annotate(err, "Wrong global config location flag value").Err()
+		}
+		srv.Context = settings.WithGlobalConfigLoc(srv.Context, loc.GitilesLocation)
+
 		// Install a global Cloud Storage client.
 		gsClient, err := clients.NewGsProdClient(srv.Context)
 		if err != nil {
