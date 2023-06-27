@@ -363,6 +363,8 @@ func ensureInitialSnapshot() {
 var knownHistoricalEntities = map[string]diffFunc{
 	"AuthGroupHistory":       diffGroups,
 	"AuthIPWhitelistHistory": diffIPAllowlists,
+	// TODO(cjacomet): AuthIPWhitelistAssignments hasn't been used since 2015,
+	// either implement it in full or remove it from Python code base.
 }
 
 type diffFunc = func(context.Context, string, datastore.PropertyMap, datastore.PropertyMap) ([]*AuthDBChange, error)
@@ -374,7 +376,7 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 	getPms := func(key *datastore.Key, class string, ch *AuthDBChange, pm datastore.PropertyMap) (string, datastore.PropertyMap, datastore.PropertyMap, error) {
 		target := fmt.Sprintf("%s$%s", class, key.StringID())
 		ch.ID = target
-		if err := datastore.Get(ctx, ch); err == nil {
+		if err := datastore.Get(ctx, ch); err != nil && err != datastore.ErrNoSuchEntity {
 			return "", nil, nil, err
 		}
 		var oldpm datastore.PropertyMap
@@ -664,7 +666,11 @@ func getStringSliceProp(pm datastore.PropertyMap, key string) []string {
 }
 
 func getStringProp(pm datastore.PropertyMap, key string) string {
-	return getProp(pm, key).(string)
+	value := getProp(pm, key)
+	if value == nil {
+		return ""
+	}
+	return value.(string)
 }
 
 func getInt64Prop(pm datastore.PropertyMap, key string) int64 {
@@ -676,7 +682,11 @@ func getTimeProp(pm datastore.PropertyMap, key string) time.Time {
 }
 
 func getByteSliceProp(pm datastore.PropertyMap, key string) []byte {
-	return getProp(pm, key).([]byte)
+	value := getProp(pm, key)
+	if value == nil {
+		return nil
+	}
+	return value.([]byte)
 }
 
 ///////////////////////////////////////////////////////////////////////
