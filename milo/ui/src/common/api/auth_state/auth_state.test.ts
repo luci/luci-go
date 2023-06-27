@@ -21,6 +21,14 @@ import {
 } from './auth_state';
 
 describe('auth_state', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   test('support accessing auth state synchronously', () => {
     const state = {
       accessToken: Math.random().toString(),
@@ -62,14 +70,14 @@ describe('auth_state', () => {
   });
 
   describe('msToExpire', () => {
-    it('when no tokens', () => {
+    test('when no tokens', () => {
       const expireMs = msToExpire({
         identity: ANONYMOUS_IDENTITY,
       });
       expect(expireMs).toBe(Infinity);
     });
 
-    it('when only access token', () => {
+    test('when only access token', () => {
       const expireMs = msToExpire({
         identity: `user: ${Math.random()}`,
         accessToken: Math.random().toString(),
@@ -78,7 +86,7 @@ describe('auth_state', () => {
       expect(expireMs).toStrictEqual(1234000);
     });
 
-    it('when only id token', () => {
+    test('when only id token', () => {
       const expireMs = msToExpire({
         identity: `user: ${Math.random()}`,
         idToken: Math.random().toString(),
@@ -87,7 +95,7 @@ describe('auth_state', () => {
       expect(expireMs).toStrictEqual(1234000);
     });
 
-    it('old id token and new access token', () => {
+    test('old id token and new access token', () => {
       const expireMs = msToExpire({
         identity: `user: ${Math.random()}`,
         idToken: Math.random().toString(),
@@ -98,7 +106,7 @@ describe('auth_state', () => {
       expect(expireMs).toStrictEqual(1234000);
     });
 
-    it('old access token and new id token', () => {
+    test('old access token and new id token', () => {
       const expireMs = msToExpire({
         identity: `user: ${Math.random()}`,
         idToken: Math.random().toString(),
