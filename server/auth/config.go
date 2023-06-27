@@ -48,15 +48,18 @@ type IDTokenProvider func(ctx context.Context, audience string) (*oauth2.Token, 
 type AnonymousTransportProvider func(ctx context.Context) http.RoundTripper
 
 // ActorTokensProvider knows how to produce OAuth and ID tokens for service
-// accounts the server "act as".
+// accounts the server "acts as".
+//
+// `serviceAccount` and `delegates` should just be service account email
+// addresses (no need to prefix them with `projects/-/serviceAccounts/`).
 //
 // Errors returned by its method may be tagged with transient.Tag to indicate
 // they are transient. All other errors are assumed to be fatal.
 type ActorTokensProvider interface {
 	// GenerateAccessToken generates an access token for the given account.
-	GenerateAccessToken(ctx context.Context, serviceAccount string, scopes []string) (*oauth2.Token, error)
+	GenerateAccessToken(ctx context.Context, serviceAccount string, scopes, delegates []string) (*oauth2.Token, error)
 	// GenerateIDToken generates an ID token for the given account.
-	GenerateIDToken(ctx context.Context, serviceAccount, audience string) (string, error)
+	GenerateIDToken(ctx context.Context, serviceAccount, audience string, delegates []string) (string, error)
 }
 
 // Config contains global configuration of the auth library.

@@ -38,10 +38,15 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 		ctx = caching.WithEmptyProcessCache(ctx)
 
 		returnedToken := "token1"
+		lastRequest := ""
+
 		generateTokenURL := fmt.Sprintf("https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/%s:generateAccessToken?alt=json",
 			url.QueryEscape("abc@example.com"))
+
 		transport := &clientRPCTransportMock{
 			cb: func(r *http.Request, body string) string {
+				lastRequest = body
+
 				expireTime, err := time.Parse(time.RFC3339, clock.Now(ctx).Add(time.Hour).UTC().Format(time.RFC3339))
 				if err != nil {
 					t.Fatalf("Unable to parse/format time: %v", err)
@@ -96,5 +101,18 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 		So(tok.Token, ShouldResemble, "token2") // new one
+
+		// Using delegates results in a different cache key.
+		returnedToken = "token3"
+		tok, err = MintAccessTokenForServiceAccount(ctx, MintAccessTokenParams{
+			ServiceAccount: "abc@example.com",
+			Scopes:         []string{"scope_b", "scope_a"},
+			Delegates:      []string{"d2@example.com", "d1@example.com"},
+			MinTTL:         30 * time.Minute,
+		})
+		So(err, ShouldBeNil)
+		So(tok.Token, ShouldResemble, "token3") // new one
+		So(lastRequest, ShouldEqual,
+			`{"delegates":["projects/-/serviceAccounts/d2@example.com","projects/-/serviceAccounts/d1@example.com"],"scope":["scope_a","scope_b"]}`)
 	})
 }

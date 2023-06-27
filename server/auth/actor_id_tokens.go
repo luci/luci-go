@@ -36,6 +36,14 @@ type MintIDTokenParams struct {
 	// Audience is a target audience of the token.
 	Audience string
 
+	// Delegates is a the sequence of service accounts in a delegation chain.
+	//
+	// Each service account must be granted the "iam.serviceAccountTokenCreator"
+	// role on its next service account in the chain. The last service account in
+	// the chain must be granted the "iam.serviceAccountTokenCreator" role on
+	// the service account specified by ServiceAccount field.
+	Delegates []string
+
 	// MinTTL defines an acceptable token lifetime.
 	//
 	// The returned token will be valid for at least MinTTL, but no longer than
@@ -78,10 +86,8 @@ func MintIDTokenForServiceAccount(ctx context.Context, params MintIDTokenParams)
 		return nil, ErrNotConfigured
 	}
 
-	// Check required inputs. Also the cache key uses '\n' as a separator, make
-	// sure inputs don't have it.
-	if params.ServiceAccount == "" || params.Audience == "" ||
-		strings.ContainsRune(params.ServiceAccount, '\n') || strings.ContainsRune(params.Audience, '\n') {
+	// Check required inputs.
+	if params.ServiceAccount == "" || params.Audience == "" {
 		err := fmt.Errorf("invalid parameters")
 		report(err, "ERROR_BAD_ARGUMENTS")
 		return nil, err
@@ -91,20 +97,39 @@ func MintIDTokenForServiceAccount(ctx context.Context, params MintIDTokenParams)
 		params.MinTTL = 2 * time.Minute
 	}
 
+	// Construct the cache key. Note that it is hashed by 'actorIDTokenCache'
+	// and thus can be as long as necessary.
+	cacheKey := cacheKeyBuilder{}
+	if err := cacheKey.add("service account", params.ServiceAccount); err != nil {
+		report(err, "ERROR_BAD_ARGUMENTS")
+		return nil, err
+	}
+	if err := cacheKey.add("audience", params.Audience); err != nil {
+		report(err, "ERROR_BAD_ARGUMENTS")
+		return nil, err
+	}
+	for _, delegate := range params.Delegates {
+		if err := cacheKey.add("delegate", delegate); err != nil {
+			report(err, "ERROR_BAD_ARGUMENTS")
+			return nil, err
+		}
+	}
+
 	ctx = logging.SetFields(ctx, logging.Fields{
-		"token":    "actor",
-		"account":  params.ServiceAccount,
-		"audience": params.Audience,
+		"token":     "actor",
+		"account":   params.ServiceAccount,
+		"audience":  params.Audience,
+		"delegates": strings.Join(params.Delegates, ":"),
 	})
 
 	cached, err, label := actorIDTokenCache.fetchOrMintToken(ctx, &fetchOrMintTokenOp{
-		CacheKey:    params.ServiceAccount + "\n" + params.Audience,
+		CacheKey:    cacheKey.finish(),
 		MinTTL:      params.MinTTL,
 		MintTimeout: cfg.adjustedTimeout(10 * time.Second),
 
 		// Mint is called on cache miss, under the lock.
 		Mint: func(ctx context.Context) (t *cachedToken, err error, label string) {
-			idToken, err := cfg.actorTokensProvider().GenerateIDToken(ctx, params.ServiceAccount, params.Audience)
+			idToken, err := cfg.actorTokensProvider().GenerateIDToken(ctx, params.ServiceAccount, params.Audience, params.Delegates)
 			if err != nil {
 				if transient.Tag.In(err) {
 					return nil, err, "ERROR_TRANSIENT_IN_MINTING"

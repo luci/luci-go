@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -185,4 +186,21 @@ func (tc *tokenCache) fetchOrMintToken(ctx context.Context, op *fetchOrMintToken
 	default:
 		return tok, nil, label
 	}
+}
+
+// Helper for constructing token cache keys which are a list of pairs.
+type cacheKeyBuilder struct {
+	b strings.Builder
+}
+
+func (c *cacheKeyBuilder) add(typ, val string) error {
+	if strings.ContainsRune(val, '\n') {
+		return fmt.Errorf("forbidden character in a %s: %q", typ, val)
+	}
+	fmt.Fprintf(&c.b, "%s:%s\n", typ, val)
+	return nil
+}
+
+func (c *cacheKeyBuilder) finish() string {
+	return c.b.String()
 }

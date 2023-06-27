@@ -35,6 +35,14 @@ type MintAccessTokenParams struct {
 	// Scopes is a list of OAuth scopes the token should have.
 	Scopes []string
 
+	// Delegates is a the sequence of service accounts in a delegation chain.
+	//
+	// Each service account must be granted the "iam.serviceAccountTokenCreator"
+	// role on its next service account in the chain. The last service account in
+	// the chain must be granted the "iam.serviceAccountTokenCreator" role on
+	// the service account specified by ServiceAccount field.
+	Delegates []string
+
 	// MinTTL defines an acceptable token lifetime.
 	//
 	// The returned token will be valid for at least MinTTL, but no longer than
@@ -92,31 +100,40 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 	sort.Strings(sortedScopes)
 
 	// Construct the cache key. Note that it is hashed by 'actorAccessTokenCache'
-	// and thus can be as long as necessary. Double check there's no malicious
-	// input.
-	parts := append([]string{params.ServiceAccount}, sortedScopes...)
-	for _, p := range parts {
-		if strings.ContainsRune(p, '\n') {
-			err := fmt.Errorf("forbidding character in a service account or scope name: %q", p)
+	// and thus can be as long as necessary.
+	cacheKey := cacheKeyBuilder{}
+	if err := cacheKey.add("service account", params.ServiceAccount); err != nil {
+		report(err, "ERROR_BAD_ARGUMENTS")
+		return nil, err
+	}
+	for _, scope := range sortedScopes {
+		if err := cacheKey.add("scope", scope); err != nil {
+			report(err, "ERROR_BAD_ARGUMENTS")
+			return nil, err
+		}
+	}
+	for _, delegate := range params.Delegates {
+		if err := cacheKey.add("delegate", delegate); err != nil {
 			report(err, "ERROR_BAD_ARGUMENTS")
 			return nil, err
 		}
 	}
 
 	ctx = logging.SetFields(ctx, logging.Fields{
-		"token":   "actor",
-		"account": params.ServiceAccount,
-		"scopes":  strings.Join(sortedScopes, " "),
+		"token":     "actor",
+		"account":   params.ServiceAccount,
+		"scopes":    strings.Join(sortedScopes, " "),
+		"delegates": strings.Join(params.Delegates, ":"),
 	})
 
 	cached, err, label := actorAccessTokenCache.fetchOrMintToken(ctx, &fetchOrMintTokenOp{
-		CacheKey:    strings.Join(parts, "\n"),
+		CacheKey:    cacheKey.finish(),
 		MinTTL:      params.MinTTL,
 		MintTimeout: cfg.adjustedTimeout(10 * time.Second),
 
 		// Mint is called on cache miss, under the lock.
 		Mint: func(ctx context.Context) (t *cachedToken, err error, label string) {
-			tok, err := cfg.actorTokensProvider().GenerateAccessToken(ctx, params.ServiceAccount, sortedScopes)
+			tok, err := cfg.actorTokensProvider().GenerateAccessToken(ctx, params.ServiceAccount, sortedScopes, params.Delegates)
 			if err != nil {
 				if transient.Tag.In(err) {
 					return nil, err, "ERROR_TRANSIENT_IN_MINTING"

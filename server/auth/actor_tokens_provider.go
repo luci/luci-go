@@ -35,18 +35,18 @@ var defaultActorTokensProviderImpl = defaultActorTokensProvider{}
 type defaultActorTokensProvider struct{}
 
 // GenerateAccessToken generates an access token for the given account.
-func (defaultActorTokensProvider) GenerateAccessToken(ctx context.Context, serviceAccount string, scopes []string) (tok *oauth2.Token, err error) {
+func (defaultActorTokensProvider) GenerateAccessToken(ctx context.Context, serviceAccount string, scopes, delegates []string) (tok *oauth2.Token, err error) {
 	err = withCredentialsClient(ctx, func(client *iam.CredentialsClient) (err error) {
-		tok, err = client.GenerateAccessToken(ctx, serviceAccount, scopes, nil, 0)
+		tok, err = client.GenerateAccessToken(ctx, serviceAccount, scopes, delegatesList(delegates), 0)
 		return
 	})
 	return
 }
 
 // GenerateIDToken generates an ID token for the given account.
-func (defaultActorTokensProvider) GenerateIDToken(ctx context.Context, serviceAccount, audience string) (tok string, err error) {
+func (defaultActorTokensProvider) GenerateIDToken(ctx context.Context, serviceAccount, audience string, delegates []string) (tok string, err error) {
 	err = withCredentialsClient(ctx, func(client *iam.CredentialsClient) (err error) {
-		tok, err = client.GenerateIDToken(ctx, serviceAccount, audience, true, nil)
+		tok, err = client.GenerateIDToken(ctx, serviceAccount, audience, true, delegatesList(delegates))
 		return
 	})
 	return
@@ -70,4 +70,16 @@ func withCredentialsClient(ctx context.Context, cb func(client *iam.CredentialsC
 		return transient.Tag.Apply(err)
 	}
 	return nil
+}
+
+// delegatesList prepends `projects/-/serviceAccounts/` to emails.
+func delegatesList(emails []string) []string {
+	if len(emails) == 0 {
+		return nil
+	}
+	out := make([]string, len(emails))
+	for i, email := range emails {
+		out[i] = "projects/-/serviceAccounts/" + email
+	}
+	return out
 }

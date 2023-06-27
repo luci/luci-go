@@ -2817,10 +2817,11 @@ type actorTokensImpl struct {
 }
 
 // GenerateAccessToken generates an access token for the given account.
-func (a *actorTokensImpl) GenerateAccessToken(ctx context.Context, serviceAccount string, scopes []string) (*oauth2.Token, error) {
+func (a *actorTokensImpl) GenerateAccessToken(ctx context.Context, serviceAccount string, scopes, delegates []string) (*oauth2.Token, error) {
 	resp, err := a.iamClient.GenerateAccessToken(ctx, &credentialspb.GenerateAccessTokenRequest{
-		Name:  "projects/-/serviceAccounts/" + serviceAccount,
-		Scope: scopes,
+		Name:      "projects/-/serviceAccounts/" + serviceAccount,
+		Scope:     scopes,
+		Delegates: delegatesList(delegates),
 	})
 	if err != nil {
 		return nil, grpcutil.WrapIfTransient(err)
@@ -2833,16 +2834,29 @@ func (a *actorTokensImpl) GenerateAccessToken(ctx context.Context, serviceAccoun
 }
 
 // GenerateIDToken generates an ID token for the given account.
-func (a *actorTokensImpl) GenerateIDToken(ctx context.Context, serviceAccount, audience string) (string, error) {
+func (a *actorTokensImpl) GenerateIDToken(ctx context.Context, serviceAccount, audience string, delegates []string) (string, error) {
 	resp, err := a.iamClient.GenerateIdToken(ctx, &credentialspb.GenerateIdTokenRequest{
 		Name:         "projects/-/serviceAccounts/" + serviceAccount,
 		Audience:     audience,
+		Delegates:    delegatesList(delegates),
 		IncludeEmail: true,
 	})
 	if err != nil {
 		return "", grpcutil.WrapIfTransient(err)
 	}
 	return resp.Token, nil
+}
+
+// delegatesList prepends `projects/-/serviceAccounts/` to emails.
+func delegatesList(emails []string) []string {
+	if len(emails) == 0 {
+		return nil
+	}
+	out := make([]string, len(emails))
+	for i, email := range emails {
+		out[i] = "projects/-/serviceAccounts/" + email
+	}
+	return out
 }
 
 // networkAddrsForLog returns a string with IPv4 addresses of local network

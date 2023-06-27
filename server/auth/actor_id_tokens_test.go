@@ -40,6 +40,7 @@ func TestMintIDTokenForServiceAccount(t *testing.T) {
 
 		// Will be changed throughout the test.
 		var returnedToken *Token
+		var lastRequest string
 
 		generateTokenURL := fmt.Sprintf(
 			"https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/%s:generateIdToken?alt=json",
@@ -47,6 +48,7 @@ func TestMintIDTokenForServiceAccount(t *testing.T) {
 
 		transport := &clientRPCTransportMock{
 			cb: func(r *http.Request, body string) string {
+				lastRequest = body
 				if r.URL.String() == generateTokenURL {
 					return fmt.Sprintf(`{"token":"%s"}`, returnedToken.Token)
 				}
@@ -63,6 +65,7 @@ func TestMintIDTokenForServiceAccount(t *testing.T) {
 
 		token1 := genFakeIDToken(ctx, "token1", time.Hour)
 		token2 := genFakeIDToken(ctx, "token2", 2*time.Hour)
+		token3 := genFakeIDToken(ctx, "token3", 2*time.Hour)
 
 		returnedToken = token1
 		tok, err := MintIDTokenForServiceAccount(ctx, MintIDTokenParams{
@@ -93,6 +96,19 @@ func TestMintIDTokenForServiceAccount(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 		So(tok, ShouldResemble, token2)
+
+		// Using delegates results in a different cache key.
+		returnedToken = token3
+		tok, err = MintIDTokenForServiceAccount(ctx, MintIDTokenParams{
+			ServiceAccount: "abc@example.com",
+			Audience:       "aud",
+			Delegates:      []string{"d2@example.com", "d1@example.com"},
+			MinTTL:         30 * time.Minute,
+		})
+		So(err, ShouldBeNil)
+		So(tok, ShouldResemble, token3) // new one
+		So(lastRequest, ShouldEqual,
+			`{"delegates":["projects/-/serviceAccounts/d2@example.com","projects/-/serviceAccounts/d1@example.com"],"audience":"aud","includeEmail":true}`)
 	})
 }
 
