@@ -173,6 +173,11 @@ func cmdStream(p Params) *subcommands.Command {
 				object.
 				Cannot be used in combination with -sources or -inherit-sources.
 			`))
+			r.Flags.StringVar(&r.baselineID, "baseline-id", "", text.Doc(`
+				Baseline identifier for this invocation, usually of the format
+				{buildbucket bucket}:{buildbucket builder name}.
+				For example, 'try:linux-rel'.
+			`))
 			return r
 		},
 	}
@@ -265,6 +270,7 @@ type streamRun struct {
 	inheritSources          bool
 	sourcesFile             string
 	sources                 sources
+	baselineID              string
 	// TODO(ddoman): add flags
 	// - invocation-tag
 	// - log-file
@@ -371,7 +377,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	if err != nil {
 		return r.done(errors.Annotate(err, "get source spec from arguments").Err())
 	}
-	if err := r.updateInvocation(ctx, invProperties, sourceSpec); err != nil {
+	if err := r.updateInvocation(ctx, invProperties, sourceSpec, r.baselineID); err != nil {
 		return r.done(err)
 	}
 
@@ -586,7 +592,7 @@ func (r *streamRun) includeInvocation(ctx context.Context, parent, child *lucict
 }
 
 // updateInvocation sets the properties and/or source spec on the invocation.
-func (r *streamRun) updateInvocation(ctx context.Context, properties *structpb.Struct, sourceSpec *pb.SourceSpec) error {
+func (r *streamRun) updateInvocation(ctx context.Context, properties *structpb.Struct, sourceSpec *pb.SourceSpec, baselineID string) error {
 	ctx = metadata.AppendToOutgoingContext(ctx, pb.UpdateTokenMetadataKey, r.invocation.UpdateToken)
 	request := &pb.UpdateInvocationRequest{
 		Invocation: &pb.Invocation{
@@ -601,6 +607,10 @@ func (r *streamRun) updateInvocation(ctx context.Context, properties *structpb.S
 	if sourceSpec != nil {
 		request.Invocation.SourceSpec = sourceSpec
 		request.UpdateMask.Paths = append(request.UpdateMask.Paths, "source_spec")
+	}
+	if baselineID != "" {
+		request.Invocation.BaselineId = baselineID
+		request.UpdateMask.Paths = append(request.UpdateMask.Paths, "baseline_id")
 	}
 	if len(request.UpdateMask.Paths) > 0 {
 		_, err := r.recorder.UpdateInvocation(ctx, request)

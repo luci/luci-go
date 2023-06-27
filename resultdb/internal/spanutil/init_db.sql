@@ -101,6 +101,20 @@ CREATE TABLE Invocations (
   -- invocation. Only this or InheritSources may be set, not both.
   Sources BYTES(MAX),
 
+  -- A user-specified baseline identifier that maps to a set of test variants.
+  -- Often, this will be the source that generated the test result, such as the
+  -- builder name for Chromium. For example, the baseline identifier may be
+  -- try:linux-rel. The supported syntax for a baseline identifier is
+  -- ^[a-zA-Z0-9\-_.\(\):]{1,229}$. This syntax was selected to allow
+  -- <buildbucket bucket name>:<buildbucket builder name> as a valid baseline ID.
+  -- See go/src/go.chromium.org/luci/buildbucket/proto/builder_common.proto for
+  -- character lengths for buildbucket bucket name and builder name.
+  --
+  -- Baselines are used to identify new tests; a subtraction between the set of
+  -- test variants for a baseline in the Baselines table and test variants from
+  -- a given invocation determines whether a test is new.
+  BaselineId STRING(229),
+
 ) PRIMARY KEY (InvocationId),
 -- Add TTL of 1.5 years to Invocations table. The row deletion policy
 -- configured in the parent table will also take effect on the interleaved child
@@ -355,3 +369,32 @@ CREATE TABLE TestMetadata (
    Position INT64 NOT NULL,
 ) PRIMARY KEY (Project, TestId, RefHash, SubRealm),
   ROW DELETION POLICY (OLDER_THAN(LastUpdated, INTERVAL 90 DAY));
+
+-- Stores test baselines. A baseline is a named set of test variants which is
+-- believed to be part of the submitted code for a project. New tests are detected
+-- by subtracting from an invocation all the test variants in its corresponding baseline.
+CREATE TABLE Baselines (
+  -- The LUCI project in which the test was observed.
+  Project STRING(40) NOT NULL,
+
+  -- A user-specified baseline identifier that maps to a set of test variants.
+  -- Often, this will be the source that generated the test result, such as the
+  -- builder name for Chromium. For example, the baseline identifier may be
+  -- try:linux-rel. The supported syntax for a baseline identifier is
+  -- ^[a-zA-Z0-9\-_.\(\):]{1,229}$. This syntax was selected to allow
+  -- <buildbucket bucket name>:<buildbucket builder name> as a valid baseline ID.
+  -- See go/src/go.chromium.org/luci/buildbucket/proto/builder_common.proto for
+  -- character lengths for buildbucket bucket name and builder name.
+  --
+  -- Baselines are used to identify new tests; a subtraction between the set of
+  -- test variants for a baseline in the Baselines table and test variants from
+  -- a given invocation determines whether a test is new.
+  BaselineId STRING(229) NOT NULL,
+
+  -- The time the baseline was last updated.
+  LastUpdatedTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+
+  -- The time the baseline was created.
+  CreationTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+) PRIMARY KEY (Project, BaselineId),
+  ROW DELETION POLICY (OLDER_THAN(LastUpdatedTime, INTERVAL 3 DAY))

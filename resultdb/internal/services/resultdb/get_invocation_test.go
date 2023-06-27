@@ -80,6 +80,7 @@ func TestGetInvocation(t *testing.T) {
 					"Properties":     spanutil.Compress(pbutil.MustMarshal(testutil.TestProperties())),
 					"Sources":        spanutil.Compress(pbutil.MustMarshal(testutil.TestSources())),
 					"InheritSources": spanner.NullBool{Valid: true, Bool: true},
+					"BaselineId":     "testrealm:testbuilder",
 				}),
 				insert.Invocation("included0", pb.Invocation_FINALIZED, nil),
 				insert.Invocation("included1", pb.Invocation_FINALIZED, nil),
@@ -103,6 +104,7 @@ func TestGetInvocation(t *testing.T) {
 					Sources: testutil.TestSources(),
 					Inherit: true,
 				},
+				BaselineId: "testrealm:testbuilder",
 			})
 		})
 

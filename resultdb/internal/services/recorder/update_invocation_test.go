@@ -188,6 +188,25 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 				So(err, ShouldErrLike, `invocation: source_spec: sources: gitiles_commit: host: unspecified`)
 			})
 		})
+		Convey(`baseline_id`, func() {
+			request.UpdateMask.Paths = []string{"baseline_id"}
+
+			Convey(`valid`, func() {
+				request.Invocation.BaselineId = "try:linux-rel"
+				err := validateUpdateInvocationRequest(request, now)
+				So(err, ShouldBeNil)
+			})
+			Convey(`empty`, func() {
+				request.Invocation.BaselineId = ""
+				err := validateUpdateInvocationRequest(request, now)
+				So(err, ShouldErrLike, `invocation: baseline_id: unspecified`)
+			})
+			Convey(`invalid`, func() {
+				request.Invocation.BaselineId = "try/linux-rel"
+				err := validateUpdateInvocationRequest(request, now)
+				So(err, ShouldErrLike, `invocation: baseline_id: does not match`)
+			})
+		})
 	})
 }
 
@@ -247,6 +266,7 @@ func TestUpdateInvocation(t *testing.T) {
 
 		// Insert the invocation.
 		testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+		updateMask.Paths = append(updateMask.Paths, "baseline_id")
 
 		Convey("e2e", func() {
 			req := &pb.UpdateInvocationRequest{
@@ -258,6 +278,7 @@ func TestUpdateInvocation(t *testing.T) {
 					SourceSpec: &pb.SourceSpec{
 						Sources: testutil.TestSourcesWithChangelistNumbers(431, 123),
 					},
+					BaselineId: "try:linux-rel",
 				},
 				UpdateMask: updateMask,
 			}
@@ -274,12 +295,14 @@ func TestUpdateInvocation(t *testing.T) {
 					// normalized.
 					Sources: testutil.TestSourcesWithChangelistNumbers(123, 431),
 				},
+				BaselineId: "try:linux-rel",
 			}
 			So(inv.Name, ShouldEqual, expected.Name)
 			So(inv.State, ShouldEqual, pb.Invocation_ACTIVE)
 			So(inv.Deadline, ShouldResembleProto, expected.Deadline)
 			So(inv.Properties, ShouldResembleProto, expected.Properties)
 			So(inv.SourceSpec, ShouldResembleProto, expected.SourceSpec)
+			So(inv.BaselineId, ShouldEqual, expected.BaselineId)
 
 			// Read from the database.
 			actual := &pb.Invocation{
@@ -295,6 +318,7 @@ func TestUpdateInvocation(t *testing.T) {
 				"Properties":      &compressedProperties,
 				"Sources":         &compressedSources,
 				"InheritSources":  &actual.SourceSpec.Inherit,
+				"BaselineId":      &actual.BaselineId,
 			})
 			actual.Properties = &structpb.Struct{}
 			err = proto.Unmarshal(compressedProperties, actual.Properties)

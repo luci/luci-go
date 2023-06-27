@@ -215,7 +215,7 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 					Realm: "invalid:",
 				},
 			})
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument, `invocation.realm: bad global realm name`)
+			So(err, ShouldHaveAppStatus, codes.InvalidArgument, `invocation: realm: bad global realm name`)
 		})
 	})
 
@@ -262,7 +262,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 		Convey(`invalid tags`, func() {
 			request.Invocation.Tags = pbutil.StringPairs("1", "a")
 			err := validateCreateInvocationRequest(request, now, addedInvs)
-			So(err, ShouldErrLike, `invocation.tags: "1":"a": key: does not match`)
+			So(err, ShouldErrLike, `invocation: tags: "1":"a": key: does not match`)
 		})
 
 		Convey(`invalid deadline`, func() {
@@ -274,13 +274,13 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 		Convey(`invalid realm`, func() {
 			request.Invocation.Realm = "B@d/f::rm@t"
 			err := validateCreateInvocationRequest(request, now, addedInvs)
-			So(err, ShouldErrLike, `invocation.realm: bad global realm name`)
+			So(err, ShouldErrLike, `invocation: realm: bad global realm name`)
 		})
 
 		Convey(`invalid state`, func() {
 			request.Invocation.State = pb.Invocation_FINALIZED
 			err := validateCreateInvocationRequest(request, now, addedInvs)
-			So(err, ShouldErrLike, `invocation.state: cannot be created in the state FINALIZED`)
+			So(err, ShouldErrLike, `invocation: state: cannot be created in the state FINALIZED`)
 		})
 
 		Convey(`invalid included invocation`, func() {
@@ -307,6 +307,12 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			}
 			err := validateCreateInvocationRequest(request, now, addedInvs)
 			So(err, ShouldErrLike, `source_spec: sources: gitiles_commit: host: unspecified`)
+		})
+
+		Convey(`invalid baseline`, func() {
+			request.Invocation.BaselineId = "try/linux-rel"
+			err := validateCreateInvocationRequest(request, now, addedInvs)
+			So(err, ShouldErrLike, `invocation: baseline_id: does not match`)
 		})
 
 		Convey(`invalid properties`, func() {
@@ -366,7 +372,7 @@ func TestCreateInvocation(t *testing.T) {
 				RequestId: "request id",
 			}
 			_, err := recorder.CreateInvocation(ctx, req)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `invocation.realm`)
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `invocation: realm`)
 		})
 		Convey(`missing invocation id`, func() {
 			_, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{
@@ -504,6 +510,7 @@ func TestCreateInvocation(t *testing.T) {
 					SourceSpec: &pb.SourceSpec{
 						Sources: testutil.TestSources(),
 					},
+					BaselineId: "testrealm:test-builder",
 				},
 			}
 			inv, err := recorder.CreateInvocation(ctx, req, grpc.Header(headers))

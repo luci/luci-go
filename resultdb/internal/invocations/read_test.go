@@ -76,6 +76,7 @@ func TestRead(t *testing.T) {
 				"Properties":     spanutil.Compressed(pbutil.MustMarshal(properties)),
 				"Sources":        spanutil.Compressed(pbutil.MustMarshal(sources)),
 				"InheritSources": spanner.NullBool{Bool: true, Valid: true},
+				"BaselineId":     "try:linux-rel",
 			}),
 			insertInvocation("included0", nil),
 			insertInvocation("included1", nil),
@@ -100,6 +101,7 @@ func TestRead(t *testing.T) {
 				Inherit: true,
 				Sources: sources,
 			},
+			BaselineId: "try:linux-rel",
 		})
 	})
 }

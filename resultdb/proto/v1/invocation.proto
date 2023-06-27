@@ -29,7 +29,7 @@ option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 // buildbucket build, CQ attempt.
 // Composable: can include other invocations, see inclusion.proto.
 //
-// Next id: 15.
+// Next id: 17.
 message Invocation {
   reserved 3; // bool interrupted, crbug.com/1078696.
 
@@ -165,6 +165,20 @@ message Invocation {
   // test results, so if there is inconsistency between included invocations,
   // the position of the verdict becomes not well defined.
   SourceSpec source_spec = 15;
+
+  // A user-specified baseline identifier that maps to a set of test variants.
+  // Often, this will be the source that generated the test result, such as the
+  // builder name for Chromium. For example, the baseline identifier may be
+  // try:linux-rel. The supported syntax for a baseline identifier is
+  // ^[a-zA-Z0-9\-_.\(\):]{1,229}$. This syntax was selected to allow
+  // <buildbucket bucket name>:<buildbucket builder name> as a valid baseline ID.
+  // See go/src/go.chromium.org/luci/buildbucket/proto/builder_common.proto for
+  // character lengths for buildbucket bucket name and builder name.
+
+  // Baselines are used to identify new tests; a subtraction between the set of
+  // test variants for a baseline in the Baselines table and test variants from
+  // a given invocation determines whether a test is new.
+  string baseline_id = 16;
 }
 
 // BigQueryExport indicates that results in this invocation should be exported

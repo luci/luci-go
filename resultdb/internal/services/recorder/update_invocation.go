@@ -67,6 +67,11 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 				return errors.Annotate(err, "invocation: source_spec").Err()
 			}
 
+		case "baseline_id":
+			if err := pbutil.ValidateBaselineID(req.Invocation.BaselineId); err != nil {
+				return errors.Annotate(err, "invocation: baseline_id").Err()
+			}
+
 		default:
 			return errors.Reason("update_mask: unsupported path %q", path).Err()
 		}
@@ -119,6 +124,11 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 				values["InheritSources"] = spanner.NullBool{Valid: in.Invocation.SourceSpec != nil, Bool: in.Invocation.SourceSpec.GetInherit()}
 				values["Sources"] = spanutil.Compressed(pbutil.MustMarshal(in.Invocation.SourceSpec.GetSources()))
 				ret.SourceSpec = in.Invocation.SourceSpec
+
+			case "baseline_id":
+				baseline_id := in.Invocation.BaselineId
+				values["BaselineId"] = baseline_id
+				ret.BaselineId = baseline_id
 
 			default:
 				panic("impossible")

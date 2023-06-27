@@ -19,8 +19,10 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+const baselineIDPattern = `[a-zA-Z0-9\-_.\(\):]{1,229}`
 const invocationIDPattern = `[a-z][a-z0-9_\-:.]{0,99}`
 
+var baselineIDRe = regexpf("^%s$", baselineIDPattern)
 var invocationIDRe = regexpf("^%s$", invocationIDPattern)
 var invocationNameRe = regexpf("^invocations/(%s)$", invocationIDPattern)
 
@@ -74,6 +76,11 @@ func ValidateSourceSpec(sourceSpec *pb.SourceSpec) error {
 		}
 	}
 	return nil
+}
+
+// ValidateBaseline returns a non-nil error if the id is invalid.
+func ValidateBaselineID(baseline string) error {
+	return validateWithRe(baselineIDRe, baseline)
 }
 
 // ValidateSources validates a set of sources.

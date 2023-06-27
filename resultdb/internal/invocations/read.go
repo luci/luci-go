@@ -74,6 +74,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		 i.Properties,
 		 i.Sources,
 		 i.InheritSources,
+		 i.BaselineId,
 		FROM Invocations i
 		WHERE i.InvocationID IN UNNEST(@invIDs)
 	`)
@@ -93,6 +94,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			properties       spanutil.Compressed
 			sources          spanutil.Compressed
 			inheritSources   spanner.NullBool
+			baselineId       spanner.NullString
 		)
 		err := b.FromSpanner(row, &id,
 			&inv.State,
@@ -107,7 +109,8 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			&realm,
 			&properties,
 			&sources,
-			&inheritSources)
+			&inheritSources,
+			&baselineId)
 		if err != nil {
 			return err
 		}
@@ -134,6 +137,10 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 					return err
 				}
 			}
+		}
+
+		if baselineId.Valid {
+			inv.BaselineId = baselineId.StringVal
 		}
 		return f(id, inv)
 	})

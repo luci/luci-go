@@ -236,6 +236,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 							SourceSpec: &pb.SourceSpec{
 								Inherit: true,
 							},
+							BaselineId: "testrealm:testbuilder",
 						},
 					},
 					{

@@ -93,15 +93,15 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 	}
 
 	if err := pbutil.ValidateStringPairs(inv.GetTags()); err != nil {
-		return errors.Annotate(err, "invocation.tags").Err()
+		return errors.Annotate(err, "invocation: tags").Err()
 	}
 
 	if inv.Realm == "" {
-		return errors.Annotate(errors.Reason("unspecified").Err(), "invocation.realm").Err()
+		return errors.Annotate(errors.Reason("unspecified").Err(), "invocation: realm").Err()
 	}
 
 	if err := realms.ValidateRealmName(inv.Realm, realms.GlobalScope); err != nil {
-		return errors.Annotate(err, "invocation.realm").Err()
+		return errors.Annotate(err, "invocation: realm").Err()
 	}
 
 	if inv.GetDeadline() != nil {
@@ -111,7 +111,7 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 	}
 
 	if !isValidCreateState(inv.GetState()) {
-		return errors.Reason("invocation.state: cannot be created in the state %s", inv.GetState()).Err()
+		return errors.Reason("invocation: state: cannot be created in the state %s", inv.GetState()).Err()
 	}
 
 	for i, bqExport := range inv.GetBigqueryExports() {
@@ -135,6 +135,12 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 		return errors.Annotate(err, "source_spec").Err()
 	}
 
+	if inv.GetBaselineId() != "" {
+		if err := pbutil.ValidateBaselineID(inv.GetBaselineId()); err != nil {
+			return errors.Annotate(err, "invocation: baseline_id").Err()
+		}
+	}
+
 	if err := pbutil.ValidateProperties(req.Invocation.GetProperties()); err != nil {
 		return errors.Annotate(err, "properties").Err()
 	}
@@ -150,10 +156,10 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 
 	realm := inv.Realm
 	if realm == "" {
-		return appstatus.BadRequest(errors.Annotate(errors.Reason("unspecified").Err(), "invocation.realm").Err())
+		return appstatus.BadRequest(errors.Annotate(errors.Reason("unspecified").Err(), "invocation: realm").Err())
 	}
 	if err := realms.ValidateRealmName(realm, realms.GlobalScope); err != nil {
-		return appstatus.BadRequest(errors.Annotate(err, "invocation.realm").Err())
+		return appstatus.BadRequest(errors.Annotate(err, "invocation: realm").Err())
 	}
 
 	switch allowed, err := auth.HasPermission(ctx, permCreateInvocation, realm, nil); {
