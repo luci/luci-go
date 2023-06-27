@@ -44,7 +44,7 @@ service Bots {
   // debug a machine specific issue. The user can trigger a terminate for one of
   // the bot exhibiting the issue, wait for the pseudo-task to run then access
   // the machine with the guarantee that the bot is not running anymore.
-  rpc TerminateBot(BotRequest) returns (TerminateResponse);
+  rpc TerminateBot(TerminateRequest) returns (TerminateResponse);
   // ListBotTasks returns a section of the Task history (limited in quantity, time
   // range) in the context of a single bot.
   //
@@ -1031,6 +1031,13 @@ message TerminateResponse {
 
 message BotRequest {
   string bot_id = 1;
+}
+
+message TerminateRequest {
+  // Id of bot to terminate.
+  string bot_id = 1;
+  // Reason why the termination was created.
+  string reason = 2;
 }
 
 message BotEventsRequest {

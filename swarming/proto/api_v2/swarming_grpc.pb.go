@@ -54,7 +54,7 @@ type BotsClient interface {
 	// debug a machine specific issue. The user can trigger a terminate for one of
 	// the bot exhibiting the issue, wait for the pseudo-task to run then access
 	// the machine with the guarantee that the bot is not running anymore.
-	TerminateBot(ctx context.Context, in *BotRequest, opts ...grpc.CallOption) (*TerminateResponse, error)
+	TerminateBot(ctx context.Context, in *TerminateRequest, opts ...grpc.CallOption) (*TerminateResponse, error)
 	// ListBotTasks returns a section of the Task history (limited in quantity, time
 	// range) in the context of a single bot.
 	//
@@ -104,7 +104,7 @@ func (c *botsClient) ListBotEvents(ctx context.Context, in *BotEventsRequest, op
 	return out, nil
 }
 
-func (c *botsClient) TerminateBot(ctx context.Context, in *BotRequest, opts ...grpc.CallOption) (*TerminateResponse, error) {
+func (c *botsClient) TerminateBot(ctx context.Context, in *TerminateRequest, opts ...grpc.CallOption) (*TerminateResponse, error) {
 	out := new(TerminateResponse)
 	err := c.cc.Invoke(ctx, "/swarming.v2.Bots/TerminateBot", in, out, opts...)
 	if err != nil {
@@ -184,7 +184,7 @@ type BotsServer interface {
 	// debug a machine specific issue. The user can trigger a terminate for one of
 	// the bot exhibiting the issue, wait for the pseudo-task to run then access
 	// the machine with the guarantee that the bot is not running anymore.
-	TerminateBot(context.Context, *BotRequest) (*TerminateResponse, error)
+	TerminateBot(context.Context, *TerminateRequest) (*TerminateResponse, error)
 	// ListBotTasks returns a section of the Task history (limited in quantity, time
 	// range) in the context of a single bot.
 	//
@@ -213,7 +213,7 @@ func (UnimplementedBotsServer) DeleteBot(context.Context, *BotRequest) (*DeleteR
 func (UnimplementedBotsServer) ListBotEvents(context.Context, *BotEventsRequest) (*BotEventsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListBotEvents not implemented")
 }
-func (UnimplementedBotsServer) TerminateBot(context.Context, *BotRequest) (*TerminateResponse, error) {
+func (UnimplementedBotsServer) TerminateBot(context.Context, *TerminateRequest) (*TerminateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TerminateBot not implemented")
 }
 func (UnimplementedBotsServer) ListBotTasks(context.Context, *BotTasksRequest) (*TaskListResponse, error) {
@@ -296,7 +296,7 @@ func _Bots_ListBotEvents_Handler(srv interface{}, ctx context.Context, dec func(
 }
 
 func _Bots_TerminateBot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BotRequest)
+	in := new(TerminateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -308,7 +308,7 @@ func _Bots_TerminateBot_Handler(srv interface{}, ctx context.Context, dec func(i
 		FullMethod: "/swarming.v2.Bots/TerminateBot",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BotsServer).TerminateBot(ctx, req.(*BotRequest))
+		return srv.(BotsServer).TerminateBot(ctx, req.(*TerminateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
