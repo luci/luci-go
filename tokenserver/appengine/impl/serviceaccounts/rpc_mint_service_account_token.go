@@ -140,8 +140,13 @@ func (r *MintServiceAccountTokenRPC) MintServiceAccountToken(ctx context.Context
 
 	// Impersonate through a project-scoped account if the LUCI project is
 	// opted-in to use this mechanism.
+	//
+	// There's a special case for accounts belonging to "@internal:..." realms.
+	// They are not part of any LUCI project and they are defined in global LUCI
+	// configs. Keep using token server's own global account when impersonating
+	// them.
 	var delegates []string
-	if env.mapping.UseProjectScopedAccount(validated.project) {
+	if env.mapping.UseProjectScopedAccount(validated.project) && validated.project != realms.InternalProject {
 		switch ident, err := r.ProjectIdentities(ctx).LookupByProject(ctx, validated.project); {
 		case err == projectidentity.ErrNotFound:
 			logging.WithError(err).Errorf(ctx, "No project-scoped account for project %s", validated.project)

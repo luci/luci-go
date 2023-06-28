@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/trace/tracetest"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 
@@ -56,6 +57,7 @@ const (
 	testRealm         = testProject + ":test-realm"
 	testProjectScoped = "test-proj-scoped"
 	testRealmScoped   = testProjectScoped + ":test-realm"
+	testInternalRealm = realms.InternalProject + ":test-realm"
 	testRequestID     = "gae-request-id"
 )
 
@@ -79,6 +81,8 @@ func TestMintServiceAccountToken(t *testing.T) {
 			authtest.MockPermission(testAccount, testRealm, permExistInRealm),
 			authtest.MockPermission(testCaller, testRealmScoped, permMintToken),
 			authtest.MockPermission(testAccount, testRealmScoped, permExistInRealm),
+			authtest.MockPermission(testCaller, testInternalRealm, permMintToken),
+			authtest.MockPermission(testAccount, testInternalRealm, permExistInRealm),
 		),
 	})
 	mapping, _ := loadMapping(ctx, fmt.Sprintf(`
@@ -88,7 +92,8 @@ func TestMintServiceAccountToken(t *testing.T) {
 		}
 
 		use_project_scoped_account: "%s"
-	`, testProject, testAccount.Email(), testProjectScoped))
+		use_project_scoped_account: "%s"
+	`, testProject, testAccount.Email(), testProjectScoped, realms.InternalProject))
 
 	_, err := projectidentity.ProjectIdentities(ctx).Create(ctx, &projectidentity.ProjectIdentity{
 		Project: testProjectScoped,
@@ -214,6 +219,29 @@ func TestMintServiceAccountToken(t *testing.T) {
 				ServiceAccount: testAccount.Email(),
 				Audience:       "test-audience",
 				Delegates:      []string{"scoped@example.com"},
+				MinTTL:         5 * time.Minute,
+			})
+		})
+
+		Convey("Delegation through project-scoped account in @internal", func() {
+			req := &minter.MintServiceAccountTokenRequest{
+				TokenKind:       minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ID_TOKEN,
+				ServiceAccount:  testAccount.Email(),
+				Realm:           testInternalRealm,
+				IdTokenAudience: "test-audience",
+				AuditTags:       []string{"k:v1", "k:v2"},
+			}
+			resp, err := rpc.MintServiceAccountToken(ctx, req)
+			So(err, ShouldBeNil)
+			So(resp, ShouldResembleProto, &minter.MintServiceAccountTokenResponse{
+				Token:          "id-token-for-" + testAccount.Email(),
+				Expiry:         timestamppb.New(testclock.TestRecentTimeUTC.Add(time.Hour).Truncate(time.Second)),
+				ServiceVersion: testServiceVer,
+			})
+
+			So(lastIDTokenCall, ShouldResemble, auth.MintIDTokenParams{
+				ServiceAccount: testAccount.Email(),
+				Audience:       "test-audience",
 				MinTTL:         5 * time.Minute,
 			})
 		})
