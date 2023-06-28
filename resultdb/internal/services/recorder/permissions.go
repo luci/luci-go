@@ -19,6 +19,8 @@ import (
 )
 
 var (
+	permPutBaseline = realms.RegisterPermission("resultdb.baselines.put")
+
 	permCreateInvocation  = realms.RegisterPermission("resultdb.invocations.create")
 	permIncludeInvocation = realms.RegisterPermission("resultdb.invocations.include")
 

@@ -23,6 +23,7 @@ var (
 	PermGetTestExoneration = realms.RegisterPermission("resultdb.testExonerations.get")
 	PermGetTestResult      = realms.RegisterPermission("resultdb.testResults.get")
 	PermGetArtifact        = realms.RegisterPermission("resultdb.artifacts.get")
+	PermGetBaseline        = realms.RegisterPermission("resultdb.baselines.get")
 
 	PermListTestExonerations        = realms.RegisterPermission("resultdb.testExonerations.list")
 	PermListLimitedTestExonerations = realms.RegisterPermission("resultdb.testExonerations.listLimited")
@@ -30,6 +31,7 @@ var (
 	PermListLimitedTestResults      = realms.RegisterPermission("resultdb.testResults.listLimited")
 	PermListArtifacts               = realms.RegisterPermission("resultdb.artifacts.list")
 	PermListTestMetadata            = realms.RegisterPermission("resultdb.testMetadata.list")
+
 )
 
 func init() {
