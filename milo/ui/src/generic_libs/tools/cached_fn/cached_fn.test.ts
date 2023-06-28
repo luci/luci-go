@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { beforeEach, expect, jest } from '@jest/globals';
 import stableStringify from 'fast-json-stable-stringify';
 
 import { timeout } from '@/generic_libs/tools/utils';
@@ -21,7 +20,7 @@ import { cached, CacheOption } from './cached_fn';
 
 describe('cached_fn', () => {
   let cachedFn: (opt: CacheOption, param1: number, param2: string) => string;
-  let fnSpy: jest.Mock<(param1: number, param2: string) => string>;
+  let fnSpy: jest.MockedFunction<(param1: number, param2: string) => string>;
 
   beforeEach(() => {
     jest.useFakeTimers();

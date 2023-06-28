@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { afterAll, beforeAll, expect, jest } from '@jest/globals';
 import { destroy, protect, unprotect } from 'mobx-state-tree';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';

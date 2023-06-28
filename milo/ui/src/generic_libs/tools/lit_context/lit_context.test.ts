@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { expect } from '@jest/globals';
 import { fixture } from '@open-wc/testing-helpers';
 import { html, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';

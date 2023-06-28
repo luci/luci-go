@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 import { cleanup, render } from '@testing-library/react';
 import CodeMirror from 'codemirror';
 import { destroy } from 'mobx-state-tree';

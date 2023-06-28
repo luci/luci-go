@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { expect, jest } from '@jest/globals';
 import { DateTime } from 'luxon';
 
 import {
@@ -46,13 +45,12 @@ const group5 = createGroup('2021-11-03T00:00:00Z', 'key1:val1');
 describe('TestHistoryStatsLoader', () => {
   test('loadUntil should work correctly', async () => {
     // Set up.
-    const stub =
-      jest.fn<
-        (
-          req: QueryTestHistoryStatsRequest,
-          cacheOpt?: CacheOption
-        ) => Promise<QueryTestHistoryStatsResponse>
-      >();
+    const stub: jest.MockedFunction<
+      (
+        req: QueryTestHistoryStatsRequest,
+        cacheOpt?: CacheOption
+      ) => Promise<QueryTestHistoryStatsResponse>
+    > = jest.fn();
     stub.mockResolvedValueOnce({
       groups: [group1, group2],
       nextPageToken: 'page2',

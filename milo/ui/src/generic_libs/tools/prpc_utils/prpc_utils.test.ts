@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { PrpcClient } from '@chopsui/prpc-client';
-import { expect, jest } from '@jest/globals';
 
 import { genCacheKeyForPrpcRequest, removeDefaultProps } from './prpc_utils';
 

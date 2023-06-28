@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { RpcCode } from '@chopsui/prpc-client';
-import { expect, jest } from '@jest/globals';
 
 import { PrpcClientExt } from './prpc_client_ext';
 

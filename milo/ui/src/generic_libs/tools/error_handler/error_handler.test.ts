@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { expect, jest } from '@jest/globals';
 import { aTimeout, fixture, html } from '@open-wc/testing-helpers';
 import { LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';

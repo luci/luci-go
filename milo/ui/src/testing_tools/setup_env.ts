@@ -17,7 +17,6 @@ import { TextDecoder, TextEncoder } from 'util';
 
 import 'isomorphic-fetch';
 import 'intersection-observer';
-import { jest } from '@jest/globals';
 import * as dotenv from 'dotenv';
 import * as idbKeyVal from 'idb-keyval';
 import { configure } from 'mobx';

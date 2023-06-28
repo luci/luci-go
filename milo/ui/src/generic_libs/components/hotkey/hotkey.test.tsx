@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 import { render, screen } from '@testing-library/react';
 import { HotkeysEvent } from 'hotkeys-js';
 import { html, LitElement } from 'lit';
@@ -60,10 +59,10 @@ declare global {
 }
 
 describe('Hotkey', () => {
-  let handlerSpy: jest.Mock<
+  let handlerSpy: jest.MockedFunction<
     (keyboardEvent: KeyboardEvent, hotkeysEvent: HotkeysEvent) => void
   >;
-  let handlerSpy2: jest.Mock<
+  let handlerSpy2: jest.MockedFunction<
     (keyboardEvent: KeyboardEvent, hotkeysEvent: HotkeysEvent) => void
   >;
   let ele: ReturnType<typeof render>;

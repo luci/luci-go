@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { afterEach, beforeEach, expect, jest } from '@jest/globals';
-
 import { batched, BatchOption } from './batched_fn';
 
 interface Item {
@@ -28,7 +26,7 @@ describe('batched_fn', () => {
     itemKeys: number[],
     shouldErr?: boolean
   ) => Promise<Item[]>;
-  let rpcSpy: jest.Mock<
+  let rpcSpy: jest.MockedFunction<
     (ns: string, itemKeys: number[], shouldErr?: boolean) => Promise<Item[]>
   >;
 

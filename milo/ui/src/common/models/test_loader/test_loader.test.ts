@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { beforeEach, expect, jest } from '@jest/globals';
-
 import {
   createTVPropGetter,
   QueryTestVariantsRequest,
@@ -112,7 +110,7 @@ const variant12 = {
 describe('TestLoader', () => {
   describe('when first page contains variants', () => {
     let testLoader: TestLoader;
-    let stub: jest.Mock<
+    let stub: jest.MockedFunction<
       (
         req: QueryTestVariantsRequest,
         cacheOpt?: CacheOption
@@ -121,13 +119,7 @@ describe('TestLoader', () => {
     const req = { invocations: ['invocation'], pageSize: 4 };
 
     beforeEach(() => {
-      stub =
-        jest.fn<
-          (
-            req: QueryTestVariantsRequest,
-            cacheOpt?: CacheOption
-          ) => Promise<QueryTestVariantsResponse>
-        >();
+      stub = jest.fn();
       stub.mockResolvedValueOnce({
         testVariants: [variant1, variant2, variant3, variant4],
         nextPageToken: 'page2',
@@ -488,7 +480,7 @@ describe('TestLoader', () => {
 
   describe('when first page contains no variants', () => {
     let testLoader: TestLoader;
-    let stub: jest.Mock<
+    let stub: jest.MockedFunction<
       (
         req: QueryTestVariantsRequest,
         cacheOpt?: CacheOption
@@ -497,13 +489,7 @@ describe('TestLoader', () => {
     const req = { invocations: ['invocation'], pageSize: 4 };
 
     beforeEach(() => {
-      stub =
-        jest.fn<
-          (
-            req: QueryTestVariantsRequest,
-            cacheOpt?: CacheOption
-          ) => Promise<QueryTestVariantsResponse>
-        >();
+      stub = jest.fn();
       stub.mockResolvedValueOnce({ nextPageToken: 'page2' });
       stub.mockResolvedValueOnce({
         testVariants: [variant8],
@@ -531,7 +517,7 @@ describe('TestLoader', () => {
 
   describe('when grouping test variants', () => {
     let testLoader: TestLoader;
-    let stub: jest.Mock<
+    let stub: jest.MockedFunction<
       (
         req: QueryTestVariantsRequest,
         cacheOpt?: CacheOption
@@ -540,13 +526,7 @@ describe('TestLoader', () => {
     const req = { invocations: ['invocation'], pageSize: 4 };
 
     beforeEach(() => {
-      stub =
-        jest.fn<
-          (
-            req: QueryTestVariantsRequest,
-            cacheOpt?: CacheOption
-          ) => Promise<QueryTestVariantsResponse>
-        >();
+      stub = jest.fn();
       stub.mockResolvedValueOnce({
         testVariants: [
           variant1,

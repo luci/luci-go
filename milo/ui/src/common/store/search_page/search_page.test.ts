@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { expect, jest } from '@jest/globals';
 import { when } from 'mobx';
 import { destroy, Instance, types } from 'mobx-state-tree';
 

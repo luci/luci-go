@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
-import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 import {
   aTimeout,
   fixture,

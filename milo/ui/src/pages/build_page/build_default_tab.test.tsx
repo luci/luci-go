@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 import { cleanup, render } from '@testing-library/react';
 import { applySnapshot, destroy, Instance } from 'mobx-state-tree';
 import type { NavigateFunction } from 'react-router-dom';
@@ -31,19 +30,21 @@ jest.mock('react-router-dom', () => {
 
 describe('BuildDefaultTab', () => {
   let store: Instance<typeof Store>;
-  let useNavigateSpy: jest.MockedFunction<() => jest.Mock<NavigateFunction>>;
+  let useNavigateSpy: jest.MockedFunction<
+    () => jest.MockedFunction<NavigateFunction>
+  >;
 
   beforeEach(() => {
     jest.useFakeTimers();
     const navigateSpies = new Map<
       NavigateFunction,
-      jest.Mock<NavigateFunction>
+      jest.MockedFunction<NavigateFunction>
     >();
     useNavigateSpy = jest
       .mocked(
         // We will return a mocked `navigate` function so we can intercept the
         // `navigate` calls.
-        reactRouterDom.useNavigate as unknown as () => jest.Mock<NavigateFunction>
+        reactRouterDom.useNavigate as () => jest.MockedFunction<NavigateFunction>
       )
       .mockImplementation(() => {
         const navigate = (
@@ -51,7 +52,13 @@ describe('BuildDefaultTab', () => {
         ).useNavigate();
         // Return the same mock reference if the reference to `navigate` is the
         // same. This is to ensure the dependency checks having the same result.
-        const navigateSpy = navigateSpies.get(navigate) || jest.fn(navigate);
+        const navigateSpy =
+          navigateSpies.get(navigate) ||
+          (jest.fn(
+            navigate
+            // `jest.fn` isn't smart enough to infer the function type when
+            // mocking an overloaded function. Use manual casting instead.
+          ) as unknown as jest.MockedFunction<NavigateFunction>);
         navigateSpies.set(navigate, navigateSpy);
         return navigateSpy;
       });

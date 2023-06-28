@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { expect } from '@jest/globals';
 import { fireEvent, render, screen } from '@testing-library/react';
 
 import { TagsEntry } from './tags_entry';

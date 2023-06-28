@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { beforeEach, expect, jest } from '@jest/globals';
 import { aTimeout } from '@open-wc/testing-helpers';
 
 import { queryAuthState, setAuthStateCache } from '@/common/api/auth_state';
@@ -28,25 +27,15 @@ import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
 import { Prefetcher } from './prefetch';
 
 describe('Prefetcher', () => {
-  let fetchStub: jest.Mock<{
-    (
-      input: RequestInfo | URL,
-      init?: RequestInit | undefined
-    ): Promise<Response>;
-  }>;
-  let respondWithStub: jest.Mock<
+  let fetchStub: jest.MockedFunction<typeof fetch>;
+  let respondWithStub: jest.MockedFunction<
     (_res: Response | ReturnType<typeof fetch>) => void
   >;
   let prefetcher: Prefetcher;
 
   // Helps generate fetch requests that are identical to the ones generated
   // by the pRPC Clients.
-  let fetchInterceptor: jest.Mock<{
-    (
-      input: RequestInfo | URL,
-      init?: RequestInit | undefined
-    ): Promise<Response>;
-  }>;
+  let fetchInterceptor: jest.MockedFunction<typeof fetch>;
   let buildsService: BuildsService;
   let resultdb: ResultDb;
 

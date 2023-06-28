@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { beforeAll, expect } from '@jest/globals';
 import { fixture, html } from '@open-wc/testing-helpers';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 

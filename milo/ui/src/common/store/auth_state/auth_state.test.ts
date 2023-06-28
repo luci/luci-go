@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 import { applySnapshot, destroy } from 'mobx-state-tree';
 
 import {
@@ -25,16 +24,20 @@ import { AuthStateStore, AuthStateStoreInstance } from './auth_state';
 
 describe('AuthStateStore', () => {
   let store: AuthStateStoreInstance;
-  let setAuthStateCacheStub: jest.Mock<
+  let setAuthStateCacheStub: jest.MockedFunction<
     (authState: AuthState | null) => Promise<void>
   >;
-  let queryAuthStateStub: jest.Mock<() => Promise<AuthState>>;
+  let queryAuthStateStub: jest.MockedFunction<() => Promise<AuthState>>;
 
   beforeEach(() => {
     jest.useFakeTimers();
     store = AuthStateStore.create({});
     setAuthStateCacheStub = jest.fn(setAuthStateCache);
-    queryAuthStateStub = jest.fn(queryAuthState);
+    queryAuthStateStub = jest.fn(
+      queryAuthState
+      // `jest.fn` isn't smart enough to infer the function type when
+      // mocking an overloaded function. Use manual casting instead.
+    ) as unknown as jest.MockedFunction<() => Promise<AuthState>>;
     store.setDependencies({
       setAuthStateCache: setAuthStateCacheStub,
       queryAuthState: queryAuthStateStub,
