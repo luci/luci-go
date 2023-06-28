@@ -20,6 +20,7 @@ import (
 
 	"google.golang.org/protobuf/encoding/prototext"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
@@ -30,13 +31,21 @@ const configFileName = "project_owned_accounts.cfg"
 
 // Mapping is a queryable representation of project_owned_accounts.cfg.
 type Mapping struct {
-	revision string                          // config revision this policy is imported from
-	pairs    map[projectAccountPair]struct{} // allowed (project, account) pairs
+	revision         string                          // config revision this policy is imported from
+	pairs            map[projectAccountPair]struct{} // allowed (project, account) pairs
+	useProjectScoped stringset.Set                   // LUCI projects opted-in into using project-scoped accounts for minting tokens
 }
 
 type projectAccountPair struct {
 	project string // e.g. "chromium"
 	account string // e.g. "ci-builder@..."
+}
+
+// UseProjectScopedAccount returns true if the token server should use
+// project-scoped accounts when minting tokens in context of the given LUCI
+// project.
+func (m *Mapping) UseProjectScopedAccount(project string) bool {
+	return m.useProjectScoped.Has(project)
 }
 
 // CanProjectUseAccount returns true if the given project is allowed to mint
@@ -141,7 +150,8 @@ func prepareMapping(ctx context.Context, cfg policy.ConfigBundle, revision strin
 	}
 
 	return &Mapping{
-		revision: revision,
-		pairs:    pairs,
+		revision:         revision,
+		pairs:            pairs,
+		useProjectScoped: stringset.NewFromSlice(parsed.UseProjectScopedAccount...),
 	}, nil
 }

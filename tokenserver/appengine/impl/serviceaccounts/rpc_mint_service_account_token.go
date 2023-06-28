@@ -37,6 +37,7 @@ import (
 
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils/projectidentity"
 )
 
 var (
@@ -57,6 +58,11 @@ type MintServiceAccountTokenRPC struct {
 	//
 	// In prod it is GlobalMappingCache.Mapping.
 	Mapping func(context.Context) (*Mapping, error)
+
+	// ProjectIdentities manages project scoped identities.
+	//
+	// In prod it is projectidentity.ProjectIdentities.
+	ProjectIdentities func(context.Context) projectidentity.Storage
 
 	// MintAccessToken produces an OAuth token for a service account.
 	//
@@ -101,19 +107,7 @@ type callEnv struct {
 // MintServiceAccountToken mints an OAuth2 access token or OpenID ID token
 // that belongs to some service account using LUCI Realms for authorization.
 //
-// As an input it takes a service account email and a name of a LUCI Realm the
-// caller is operating in. To authorize the call the token server checks the
-// following conditions:
-//  1. The caller has luci.serviceAccounts.mintToken permission in the
-//     realm, allowing them to "impersonate" all service accounts belonging
-//     to this realm.
-//  2. The service account has luci.serviceAccounts.existInRealm permission
-//     in the realm. This makes the account "belong" to the realm.
-//  3. Realm's LUCI project has the service account associated with it in
-//     the project_owned_accounts.cfg global config file. This makes sure
-//     different LUCI projects can't just arbitrary use each others accounts
-//     by adding them to their respective realms.cfg. See also comments for
-//     ServiceAccountsProjectMapping in api/admin/v1/config.proto.
+// See proto docs for more details.
 func (r *MintServiceAccountTokenRPC) MintServiceAccountToken(ctx context.Context, req *minter.MintServiceAccountTokenRequest) (*minter.MintServiceAccountTokenResponse, error) {
 	state := auth.GetState(ctx)
 	env := &callEnv{
@@ -139,9 +133,26 @@ func (r *MintServiceAccountTokenRPC) MintServiceAccountToken(ctx context.Context
 		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
-	// Check it passes ACLs as described in the comment for this function.
+	// Check it passes ACLs as described in the proto doc for this RPC.
 	if err := r.checkACLs(ctx, env, validated); err != nil {
 		return nil, err
+	}
+
+	// Impersonate through a project-scoped account if the LUCI project is
+	// opted-in to use this mechanism.
+	var delegates []string
+	if env.mapping.UseProjectScopedAccount(validated.project) {
+		switch ident, err := r.ProjectIdentities(ctx).LookupByProject(ctx, validated.project); {
+		case err == projectidentity.ErrNotFound:
+			logging.WithError(err).Errorf(ctx, "No project-scoped account for project %s", validated.project)
+			return nil, status.Errorf(codes.InvalidArgument, "project-scoped account for project %s is not configured", validated.project)
+		case err != nil:
+			logging.WithError(err).Errorf(ctx, "Error while looking up project-scoped account for %s", validated.project)
+			return nil, status.Errorf(codes.Internal, "internal error")
+		default:
+			logging.Infof(ctx, "Delegating through project-scoped account %q", ident.Email)
+			delegates = []string{ident.Email}
+		}
 	}
 
 	// Mint the token of the corresponding kind.
@@ -151,12 +162,14 @@ func (r *MintServiceAccountTokenRPC) MintServiceAccountToken(ctx context.Context
 		tok, err = r.MintAccessToken(ctx, auth.MintAccessTokenParams{
 			ServiceAccount: validated.account,
 			Scopes:         validated.oauthScopes,
+			Delegates:      delegates,
 			MinTTL:         validated.minTTL,
 		})
 	case validated.kind == minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ID_TOKEN:
 		tok, err = r.MintIDToken(ctx, auth.MintIDTokenParams{
 			ServiceAccount: validated.account,
 			Audience:       validated.idTokenAudience,
+			Delegates:      delegates,
 			MinTTL:         validated.minTTL,
 		})
 	default:
@@ -337,12 +350,16 @@ func (r *MintServiceAccountTokenRPC) checkACLs(ctx context.Context, env *callEnv
 	}
 
 	// Check the service account is allowed to be defined in this realm at all
-	// according to the global Token Server config.
-	if !env.mapping.CanProjectUseAccount(req.project, req.account) {
-		logging.Errorf(ctx, "Service account %q is not allowed to be used by the project %q", req.account, req.project)
-		return status.Errorf(codes.PermissionDenied,
-			"the service account %q is not allowed to be used by the project %q per %s configuration",
-			req.account, req.project, configFileName)
+	// according to the global Token Server config. Skip if we'll be using
+	// the project-scoped account to mint the token. The mapping is essentially
+	// stored in IAM policies in this case.
+	if !env.mapping.UseProjectScopedAccount(req.project) {
+		if !env.mapping.CanProjectUseAccount(req.project, req.account) {
+			logging.Errorf(ctx, "Service account %q is not allowed to be used by the project %q", req.account, req.project)
+			return status.Errorf(codes.PermissionDenied,
+				"the service account %q is not allowed to be used by the project %q per %s configuration",
+				req.account, req.project, configFileName)
+		}
 	}
 
 	return nil

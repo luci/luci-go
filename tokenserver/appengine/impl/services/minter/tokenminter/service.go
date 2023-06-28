@@ -62,11 +62,12 @@ func NewServer(signer signing.Signer, prod bool) minter.TokenMinterServer {
 			LogToken:          projectscope.NewTokenLogger(!prod),
 		},
 		MintServiceAccountTokenRPC: serviceaccounts.MintServiceAccountTokenRPC{
-			Signer:          signer,
-			Mapping:         serviceaccounts.GlobalMappingCache.Mapping,
-			MintAccessToken: auth.MintAccessTokenForServiceAccount,
-			MintIDToken:     auth.MintIDTokenForServiceAccount,
-			LogToken:        serviceaccounts.NewTokenLogger(!prod),
+			Signer:            signer,
+			Mapping:           serviceaccounts.GlobalMappingCache.Mapping,
+			ProjectIdentities: projectidentity.ProjectIdentities,
+			MintAccessToken:   auth.MintAccessTokenForServiceAccount,
+			MintIDToken:       auth.MintIDTokenForServiceAccount,
+			LogToken:          serviceaccounts.NewTokenLogger(!prod),
 		},
 	}
 }

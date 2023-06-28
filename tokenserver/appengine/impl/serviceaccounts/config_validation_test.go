@@ -61,6 +61,9 @@ func TestValidation(t *testing.T) {
 					project: "@internal"
 					service_account: "exclusive-4@example.com"
 				}
+
+				use_project_scoped_account: "proj4"
+				use_project_scoped_account: "proj5"
 			`,
 		},
 
@@ -133,6 +136,30 @@ func TestValidation(t *testing.T) {
 			`,
 			Errors: []string{
 				`service_account "sa@example.com" appears in more that one mapping`,
+			},
+		},
+
+		// Bad use_project_scoped_account.
+		{
+			Cfg: `
+				use_project_scoped_account: "  "
+			`,
+			Errors: []string{
+				`bad project in use_project_scoped_account #1 "  "`,
+			},
+		},
+
+		// Mapping for a project that uses scoped accounts.
+		{
+			Cfg: `
+				mapping {
+					project: "proj"
+					service_account: "sa@example.com"
+				}
+				use_project_scoped_account: "proj"
+			`,
+			Errors: []string{
+				`project "proj" is in use_project_scoped_account list, but also has mapping entries`,
 			},
 		},
 	}

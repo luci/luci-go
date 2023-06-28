@@ -42,6 +42,9 @@ mapping {
 mapping {
 	project: "proj4"
 }
+
+use_project_scoped_account: "proj5"
+use_project_scoped_account: "proj6"
 `
 
 func TestMapping(t *testing.T) {
@@ -68,6 +71,10 @@ func TestMapping(t *testing.T) {
 		So(mapping.CanProjectUseAccount("proj2", "sa3@example.com"), ShouldBeFalse)
 		So(mapping.CanProjectUseAccount("proj3", "sa3@example.com"), ShouldBeTrue)
 		So(mapping.CanProjectUseAccount("proj4", "sa3@example.com"), ShouldBeFalse)
+
+		So(mapping.UseProjectScopedAccount("proj1"), ShouldBeFalse)
+		So(mapping.UseProjectScopedAccount("proj5"), ShouldBeTrue)
+		So(mapping.UseProjectScopedAccount("proj6"), ShouldBeTrue)
 	})
 }
 

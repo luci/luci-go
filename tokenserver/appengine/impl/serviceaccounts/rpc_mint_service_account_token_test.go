@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils/projectidentity"
 
 	. "github.com/smartystreets/goconvey/convey"
 
@@ -44,16 +45,18 @@ import (
 )
 
 const (
-	testAppID      = "unit-tests"
-	testAppVer     = "mocked-ver"
-	testServiceVer = testAppID + "/" + testAppVer
-	testCaller     = identity.Identity("project:something")
-	testPeer       = identity.Identity("user:service@example.com")
-	testPeerIP     = "127.10.10.10"
-	testAccount    = identity.Identity("user:sa@example.com")
-	testProject    = "test-proj"
-	testRealm      = testProject + ":test-realm"
-	testRequestID  = "gae-request-id"
+	testAppID         = "unit-tests"
+	testAppVer        = "mocked-ver"
+	testServiceVer    = testAppID + "/" + testAppVer
+	testCaller        = identity.Identity("project:something")
+	testPeer          = identity.Identity("user:service@example.com")
+	testPeerIP        = "127.10.10.10"
+	testAccount       = identity.Identity("user:sa@example.com")
+	testProject       = "test-proj"
+	testRealm         = testProject + ":test-realm"
+	testProjectScoped = "test-proj-scoped"
+	testRealmScoped   = testProjectScoped + ":test-realm"
+	testRequestID     = "gae-request-id"
 )
 
 func init() {
@@ -74,12 +77,26 @@ func TestMintServiceAccountToken(t *testing.T) {
 		FakeDB: authtest.NewFakeDB(
 			authtest.MockPermission(testCaller, testRealm, permMintToken),
 			authtest.MockPermission(testAccount, testRealm, permExistInRealm),
+			authtest.MockPermission(testCaller, testRealmScoped, permMintToken),
+			authtest.MockPermission(testAccount, testRealmScoped, permExistInRealm),
 		),
 	})
-	mapping, _ := loadMapping(ctx, fmt.Sprintf(`mapping {
-		project: "%s"
-		service_account: "%s"
-	}`, testProject, testAccount.Email()))
+	mapping, _ := loadMapping(ctx, fmt.Sprintf(`
+		mapping {
+			project: "%s"
+			service_account: "%s"
+		}
+
+		use_project_scoped_account: "%s"
+	`, testProject, testAccount.Email(), testProjectScoped))
+
+	_, err := projectidentity.ProjectIdentities(ctx).Create(ctx, &projectidentity.ProjectIdentity{
+		Project: testProjectScoped,
+		Email:   "scoped@example.com",
+	})
+	if err != nil {
+		panic(err)
+	}
 
 	// Records last received arguments of Mint*Token.
 	var lastAccessTokenCall auth.MintAccessTokenParams
@@ -96,6 +113,7 @@ func TestMintServiceAccountToken(t *testing.T) {
 		Mapping: func(context.Context) (*Mapping, error) {
 			return mapping, nil
 		},
+		ProjectIdentities: projectidentity.ProjectIdentities,
 		MintAccessToken: func(ctx context.Context, params auth.MintAccessTokenParams) (*auth.Token, error) {
 			lastAccessTokenCall = params
 			return &auth.Token{
@@ -172,6 +190,30 @@ func TestMintServiceAccountToken(t *testing.T) {
 			So(lastIDTokenCall, ShouldResemble, auth.MintIDTokenParams{
 				ServiceAccount: testAccount.Email(),
 				Audience:       "test-audience",
+				MinTTL:         5 * time.Minute,
+			})
+		})
+
+		Convey("Delegation through project-scoped account", func() {
+			req := &minter.MintServiceAccountTokenRequest{
+				TokenKind:       minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ID_TOKEN,
+				ServiceAccount:  testAccount.Email(),
+				Realm:           testRealmScoped,
+				IdTokenAudience: "test-audience",
+				AuditTags:       []string{"k:v1", "k:v2"},
+			}
+			resp, err := rpc.MintServiceAccountToken(ctx, req)
+			So(err, ShouldBeNil)
+			So(resp, ShouldResembleProto, &minter.MintServiceAccountTokenResponse{
+				Token:          "id-token-for-" + testAccount.Email(),
+				Expiry:         timestamppb.New(testclock.TestRecentTimeUTC.Add(time.Hour).Truncate(time.Second)),
+				ServiceVersion: testServiceVer,
+			})
+
+			So(lastIDTokenCall, ShouldResemble, auth.MintIDTokenParams{
+				ServiceAccount: testAccount.Email(),
+				Audience:       "test-audience",
+				Delegates:      []string{"scoped@example.com"},
 				MinTTL:         5 * time.Minute,
 			})
 		})
@@ -285,6 +327,18 @@ func TestMintServiceAccountToken(t *testing.T) {
 				OauthScope:     []string{"zzz"},
 				AuditTags:      []string{"not kv"},
 			}), ShouldErrLike, "bad audit_tags")
+		})
+
+		Convey("Missing project-scoped identity", func() {
+			So(projectidentity.ProjectIdentities(ctx).Delete(ctx, &projectidentity.ProjectIdentity{
+				Project: testProjectScoped,
+			}), ShouldBeNil)
+			So(call(&minter.MintServiceAccountTokenRequest{
+				TokenKind:      minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
+				ServiceAccount: testAccount.Email(),
+				Realm:          testRealmScoped,
+				OauthScope:     []string{"zzz"},
+			}), ShouldErrLike, "project-scoped account for project test-proj-scoped is not configured")
 		})
 	})
 

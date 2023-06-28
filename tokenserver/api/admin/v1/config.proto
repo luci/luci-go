@@ -185,4 +185,13 @@ message ServiceAccountsProjectMapping {
 
   // Each entry maps a bunch of service accounts to one or more projects.
   repeated Mapping mapping = 1;
+
+  // A list of LUCI project names for which service account impersonation should
+  // be done using LUCI project-scoped account as a delegate. This allows to
+  // move "LUCI project => allowed service account" mapping into IAM policies,
+  // making `mapping` above obsolete.
+  //
+  // If a LUCI project belongs to this list, it must not have any entries in
+  // the `mapping` field above.
+  repeated string use_project_scoped_account = 2;
 }

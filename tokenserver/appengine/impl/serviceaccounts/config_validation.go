@@ -39,6 +39,7 @@ func validateConfigBundle(ctx *validation.Context, bundle policy.ConfigBundle) {
 // validateMappingCfg checks deserialized project_owned_accounts.cfg.
 func validateMappingCfg(ctx *validation.Context, cfg *admin.ServiceAccountsProjectMapping) {
 	seenAccounts := stringset.New(0)
+	seenProjects := stringset.New(0)
 
 	for i, m := range cfg.Mapping {
 		ctx.Enter("mapping #%d", i+1)
@@ -55,6 +56,7 @@ func validateMappingCfg(ctx *validation.Context, cfg *admin.ServiceAccountsProje
 			if err := realms.ValidateProjectName(project); err != nil {
 				ctx.Errorf("bad project %q: %s", project, err)
 			}
+			seenProjects.Add(project)
 		}
 
 		// We prefer to use service_account as a sort of a "primary key" in
@@ -68,5 +70,14 @@ func validateMappingCfg(ctx *validation.Context, cfg *admin.ServiceAccountsProje
 		}
 
 		ctx.Exit()
+	}
+
+	for i, project := range cfg.UseProjectScopedAccount {
+		if err := realms.ValidateProjectName(project); err != nil {
+			ctx.Errorf("bad project in use_project_scoped_account #%d %q: %s", i+1, project, err)
+		}
+		if seenProjects.Has(project) {
+			ctx.Errorf("project %q is in use_project_scoped_account list, but also has mapping entries", project)
+		}
 	}
 }

@@ -70,11 +70,23 @@ type TokenMinterClient interface {
 	//     to this realm.
 	//  2. The service account has luci.serviceAccounts.existInRealm permission
 	//     in the realm. This makes the account "belong" to the realm.
-	//  3. Realm's LUCI project has the service account associated with it in
-	//     the project_owned_accounts.cfg global config file. This makes sure
-	//     different LUCI projects can't just arbitrary use each others accounts
-	//     by adding them to their respective realms.cfg. See also comments for
-	//     ServiceAccountsProjectMapping in api/admin/v1/config.proto.
+	//  3. Realm's LUCI project is allowed to impersonate this service account:
+	//     a. Legacy approach being deprecated: realm's LUCI project is NOT listed
+	//     in `use_project_scoped_account` set in project_owned_accounts.cfg
+	//     global config file, but it has service accounts associated with it
+	//     there via `mapping` field. In that case LUCI Token Server will check
+	//     `mapping` and then use its own service account when minting tokens.
+	//     b. New approach being rolled out: realm's LUCI project is listed in
+	//     `use_project_scoped_account` set in project_owned_accounts.cfg
+	//     global config file. In that case LUCI Token Server will use
+	//     project-scoped account associated with this LUCI project when
+	//     minting service account tokens. This essentially shifts mapping
+	//     between LUCI projects and service accounts they can use into
+	//     service account IAM policies.
+	//
+	// Check (3) makes sure different LUCI projects can't arbitrarily use each
+	// others accounts by adding them to their respective realms.cfg. See also
+	// comments for ServiceAccountsProjectMapping in api/admin/v1/config.proto.
 	MintServiceAccountToken(ctx context.Context, in *MintServiceAccountTokenRequest, opts ...grpc.CallOption) (*MintServiceAccountTokenResponse, error)
 }
 
@@ -174,11 +186,23 @@ type TokenMinterServer interface {
 	//     to this realm.
 	//  2. The service account has luci.serviceAccounts.existInRealm permission
 	//     in the realm. This makes the account "belong" to the realm.
-	//  3. Realm's LUCI project has the service account associated with it in
-	//     the project_owned_accounts.cfg global config file. This makes sure
-	//     different LUCI projects can't just arbitrary use each others accounts
-	//     by adding them to their respective realms.cfg. See also comments for
-	//     ServiceAccountsProjectMapping in api/admin/v1/config.proto.
+	//  3. Realm's LUCI project is allowed to impersonate this service account:
+	//     a. Legacy approach being deprecated: realm's LUCI project is NOT listed
+	//     in `use_project_scoped_account` set in project_owned_accounts.cfg
+	//     global config file, but it has service accounts associated with it
+	//     there via `mapping` field. In that case LUCI Token Server will check
+	//     `mapping` and then use its own service account when minting tokens.
+	//     b. New approach being rolled out: realm's LUCI project is listed in
+	//     `use_project_scoped_account` set in project_owned_accounts.cfg
+	//     global config file. In that case LUCI Token Server will use
+	//     project-scoped account associated with this LUCI project when
+	//     minting service account tokens. This essentially shifts mapping
+	//     between LUCI projects and service accounts they can use into
+	//     service account IAM policies.
+	//
+	// Check (3) makes sure different LUCI projects can't arbitrarily use each
+	// others accounts by adding them to their respective realms.cfg. See also
+	// comments for ServiceAccountsProjectMapping in api/admin/v1/config.proto.
 	MintServiceAccountToken(context.Context, *MintServiceAccountTokenRequest) (*MintServiceAccountTokenResponse, error)
 	mustEmbedUnimplementedTokenMinterServer()
 }
