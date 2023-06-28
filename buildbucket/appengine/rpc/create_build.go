@@ -666,34 +666,39 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 						return errors.Annotate(err, "failed to store build: %d", b.ID).Err()
 					}
 
-					// If there is a backend set, lets use it and return to not use swarming.
-					if infra.GetBackend() != nil {
+					// If a backend is set, create a backend task. Otherwise, create a swarming task.
+					switch {
+					case infra.GetBackend() != nil:
 						if err := tasks.CreateBackendBuildTask(ctx, &taskdefs.CreateBackendBuildTask{
 							BuildId:   b.ID,
 							RequestId: uuid.New().String(),
 						}); err != nil {
 							return errors.Annotate(err, "failed to enqueue CreateBackendTask").Err()
 						}
-						return nil
-					}
-
-					if infra.GetSwarming().GetHostname() == "" {
+					case infra.GetSwarming().GetHostname() == "":
 						logging.Debugf(ctx, "skipped creating swarming task for build %d", b.ID)
 						return nil
+					default :
+						if stringset.NewFromSlice(b.Proto.Input.Experiments...).Has(bb.ExperimentBackendGo) {
+							if err := tasks.CreateSwarmingBuildTask(ctx, &taskdefs.CreateSwarmingBuildTask{
+								BuildId: b.ID,
+							}); err != nil {
+								return errors.Annotate(err, "failed to enqueue CreateSwarmingBuildTask: %d", b.ID).Err()
+							}
+						} else {
+							if err := tasks.CreateSwarmingTask(ctx, &taskdefs.CreateSwarmingTask{
+								BuildId: b.ID,
+							}); err != nil {
+								return errors.Annotate(err, "failed to enqueue CreateSwarmingTask: %d", b.ID).Err()
+							}
+						}
 					}
 
-					if stringset.NewFromSlice(b.Proto.Input.Experiments...).Has(bb.ExperimentBackendGo) {
-						if err := tasks.CreateSwarmingBuildTask(ctx, &taskdefs.CreateSwarmingBuildTask{
-							BuildId: b.ID,
-						}); err != nil {
-							return errors.Annotate(err, "failed to enqueue CreateSwarmingBuildTask: %d", b.ID).Err()
-						}
-					} else {
-						if err := tasks.CreateSwarmingTask(ctx, &taskdefs.CreateSwarmingTask{
-							BuildId: b.ID,
-						}); err != nil {
-							return errors.Annotate(err, "failed to enqueue CreateSwarmingTask: %d", b.ID).Err()
-						}
+					if err := tasks.NotifyPubSub(ctx, b); err != nil {
+						// Don't fail the entire creation. Just log the error since the
+						// status notification for unspecified -> scheduled is a
+						// nice-to-have not a must-to-have.
+						logging.Warningf(ctx, "failed to enqueue the notification when Build(%d) is scheduled: %s", b.ID, err)
 					}
 					return nil
 				}, nil)

@@ -56,6 +56,8 @@ func notifyPubSub(ctx context.Context, task *taskdefs.NotifyPubSub) error {
 
 // NotifyPubSub enqueues tasks to notify Pub/Sub about the given build.
 func NotifyPubSub(ctx context.Context, b *model.Build) error {
+	// TODO(crbug.com/1406393#c5): Stop pushing into Python side `builds` topic
+	// once all subscribers moved away.
 	if err := notifyPubSub(ctx, &taskdefs.NotifyPubSub{
 		BuildId: b.ID,
 	}); err != nil {

@@ -17,6 +17,7 @@ package rpc
 import (
 	"context"
 	"math/rand"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -49,6 +50,7 @@ import (
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/cachingtest"
 	"go.chromium.org/luci/server/tq"
+	"go.chromium.org/luci/server/tq/tqtesting"
 
 	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
@@ -768,7 +770,30 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			})
-			So(sch.Tasks(), ShouldHaveLength, 1)
+			tasks := sch.Tasks()
+			So(tasks, ShouldHaveLength, 4)
+			sortTasksByClassName(tasks)
+			So(tasks.Payloads()[0], ShouldResembleProto, &taskdefs.CreateSwarmingTask{
+				BuildId: 9021868963221667745,
+			})
+			// for `builds` topic.
+			So(tasks.Payloads()[1], ShouldResembleProto, &taskdefs.NotifyPubSub{
+				BuildId: 9021868963221667745,
+			})
+			// for topic in build.PubSubCallback.topic field.
+			So(tasks.Payloads()[2], ShouldResembleProto, &taskdefs.NotifyPubSubGo{
+				BuildId: 9021868963221667745,
+				Topic: &pb.BuildbucketCfg_Topic{
+					Name: "topic",
+				},
+				Callback: true,
+			})
+			// for `bulids_v2` topic
+			So(tasks.Payloads()[3], ShouldResembleProto, &taskdefs.NotifyPubSubGoProxy{
+				BuildId: 9021868963221667745,
+				Project: "project",
+			})
+
 			So(datastore.Get(ctx, blds), ShouldBeNil)
 
 			ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
@@ -1091,7 +1116,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			})
 
-			So(sch.Tasks(), ShouldHaveLength, 2)
+			So(sch.Tasks(), ShouldHaveLength, 6)
 			So(datastore.Get(ctx, blds), ShouldBeNil)
 		})
 
@@ -1264,7 +1289,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				nil,
 			})
-			So(sch.Tasks(), ShouldHaveLength, 1)
+			So(sch.Tasks(), ShouldHaveLength, 4)
 			So(datastore.Get(ctx, blds[0]), ShouldBeNil)
 
 			ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
@@ -1469,7 +1494,7 @@ func TestScheduleBuild(t *testing.T) {
 					ParentID:    1,
 				},
 			})
-			So(sch.Tasks(), ShouldHaveLength, 1)
+			So(sch.Tasks(), ShouldHaveLength, 4)
 			So(datastore.Get(ctx, blds), ShouldBeNil)
 		})
 	})
@@ -5303,9 +5328,18 @@ func TestScheduleBuild(t *testing.T) {
 						Number:     1,
 						Status:     pb.Status_SCHEDULED,
 					})
-					So(sch.Tasks(), ShouldHaveLength, 1)
-					So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdefs.CreateSwarmingTask{
+					tasks := sch.Tasks()
+					So(tasks, ShouldHaveLength, 3)
+					sortTasksByClassName(tasks)
+					So(tasks.Payloads()[0], ShouldResembleProto, &taskdefs.CreateSwarmingTask{
 						BuildId: 9021868963221667745,
+					})
+					So(tasks.Payloads()[1], ShouldResembleProto, &taskdefs.NotifyPubSub{
+						BuildId: 9021868963221667745,
+					})
+					So(tasks.Payloads()[2], ShouldResembleProto, &taskdefs.NotifyPubSubGoProxy{
+						BuildId: 9021868963221667745,
+						Project: "project",
 					})
 				})
 
@@ -5370,9 +5404,18 @@ func TestScheduleBuild(t *testing.T) {
 					So(bs.BuildAddress, ShouldEqual, "project/bucket/builder/1")
 					So(bs.Status, ShouldEqual, pb.Status_SCHEDULED)
 
-					So(sch.Tasks(), ShouldHaveLength, 1)
-					So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdefs.CreateSwarmingBuildTask{
+					tasks := sch.Tasks()
+					So(tasks, ShouldHaveLength, 3)
+					sortTasksByClassName(tasks)
+					So(tasks.Payloads()[0], ShouldResembleProto, &taskdefs.CreateSwarmingBuildTask{
 						BuildId: 9021868963221667745,
+					})
+					So(tasks.Payloads()[1], ShouldResembleProto, &taskdefs.NotifyPubSub{
+						BuildId: 9021868963221667745,
+					})
+					So(tasks.Payloads()[2], ShouldResembleProto, &taskdefs.NotifyPubSubGoProxy{
+						BuildId: 9021868963221667745,
+						Project: "project",
 					})
 				})
 
@@ -5514,7 +5557,7 @@ func TestScheduleBuild(t *testing.T) {
 							Input:      &pb.Build_Input{},
 							Status:     pb.Status_SCHEDULED,
 						})
-						So(sch.Tasks(), ShouldHaveLength, 1)
+						So(sch.Tasks(), ShouldHaveLength, 3)
 
 						r := &model.RequestID{
 							ID: "6d03f5c780125e74ac6cb0f25c5e0b6467ff96c96d98bfb41ba382863ba7707a",
@@ -5690,7 +5733,7 @@ func TestScheduleBuild(t *testing.T) {
 						Number:     1,
 						Status:     pb.Status_SCHEDULED,
 					})
-					So(sch.Tasks(), ShouldHaveLength, 1)
+					So(sch.Tasks(), ShouldHaveLength, 3)
 				})
 			})
 		})
@@ -5783,7 +5826,7 @@ func TestScheduleBuild(t *testing.T) {
 				Number:     1,
 				Status:     pb.Status_SCHEDULED,
 			})
-			So(sch.Tasks(), ShouldHaveLength, 1)
+			So(sch.Tasks(), ShouldHaveLength, 3)
 
 			ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
 			So(err, ShouldBeNil)
@@ -6087,7 +6130,7 @@ func TestScheduleBuild(t *testing.T) {
 					Number:     2,
 					Status:     pb.Status_SCHEDULED,
 				})
-				So(sch.Tasks(), ShouldHaveLength, 2)
+				So(sch.Tasks(), ShouldHaveLength, 6)
 
 				ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
 				So(err, ShouldBeNil)
@@ -7239,5 +7282,11 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			})
 		})
+	})
+}
+
+func sortTasksByClassName (tasks tqtesting.TaskList) {
+	sort.Slice(tasks, func(i, j int) bool {
+		return tasks[i].Class < tasks[j].Class
 	})
 }

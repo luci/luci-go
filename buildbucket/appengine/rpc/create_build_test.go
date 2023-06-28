@@ -891,7 +891,7 @@ func TestCreateBuild(t *testing.T) {
 				b, err := srv.CreateBuild(ctx, req)
 				So(b, ShouldNotBeNil)
 				So(err, ShouldBeNil)
-				So(sch.Tasks(), ShouldHaveLength, 1)
+				So(sch.Tasks(), ShouldHaveLength, 3)
 				So(protoutil.StringPairMap(b.Tags).Format(), ShouldResemble, []string{"parent_task_id:544239051"})
 				So(b.AncestorIds, ShouldResemble, []int64{97654321})
 			})
@@ -914,7 +914,7 @@ func TestCreateBuild(t *testing.T) {
 			b, err := srv.CreateBuild(ctx, req)
 			So(b, ShouldNotBeNil)
 			So(err, ShouldBeNil)
-			So(sch.Tasks(), ShouldHaveLength, 1)
+			So(sch.Tasks(), ShouldHaveLength, 3)
 
 			// Check datastore.
 			bld := &model.Build{ID: b.Id}
@@ -950,7 +950,7 @@ func TestCreateBuild(t *testing.T) {
 			b, err := srv.CreateBuild(ctx, req)
 			So(err, ShouldBeNil)
 			So(b, ShouldNotBeNil)
-			So(sch.Tasks(), ShouldHaveLength, 1)
+			So(sch.Tasks(), ShouldHaveLength, 3)
 
 			// Check datastore.
 			bld := &model.Build{ID: b.Id}
