@@ -81,6 +81,17 @@ func TestBQ(t *testing.T) {
 			ID:    1,
 			Build: bk,
 			Proto: &pb.BuildInfra{
+				Backend: &pb.BuildInfra_Backend{
+					Task: &pb.Task{
+						Id: &pb.TaskID{
+							Id:     "s93k0402js90",
+							Target: "swarming://chromium-swarm",
+						},
+						Status:   pb.Status_CANCELED,
+						Link:     "www.google.com/404",
+						UpdateId: 1100,
+					},
+				},
 				Buildbucket: &pb.BuildInfra_Buildbucket{
 					Hostname: "hostname",
 				},
@@ -145,7 +156,19 @@ func TestBQ(t *testing.T) {
 					Name: "step",
 					Logs: []*pb.Log{{Name: "log1"}},
 				}},
-				Infra: &pb.BuildInfra{Buildbucket: &pb.BuildInfra_Buildbucket{}},
+				Infra: &pb.BuildInfra{
+					Backend: &pb.BuildInfra_Backend{
+						Task: &pb.Task{
+							Id: &pb.TaskID{
+								Id:     "s93k0402js90",
+								Target: "swarming://chromium-swarm",
+							},
+							Status: pb.Status_CANCELED,
+							Link:   "www.google.com/404",
+						},
+					},
+					Buildbucket: &pb.BuildInfra_Buildbucket{},
+				},
 				Input: &pb.Build_Input{},
 				Output: &pb.Build_Output{
 					Properties: &structpb.Struct{
@@ -185,7 +208,19 @@ func TestBQ(t *testing.T) {
 					Name: "step",
 					Logs: []*pb.Log{{Name: "log1"}},
 				}},
-				Infra:  &pb.BuildInfra{Buildbucket: &pb.BuildInfra_Buildbucket{}},
+				Infra: &pb.BuildInfra{
+					Backend: &pb.BuildInfra_Backend{
+						Task: &pb.Task{
+							Id: &pb.TaskID{
+								Id:     "s93k0402js90",
+								Target: "swarming://chromium-swarm",
+							},
+							Status: pb.Status_CANCELED,
+							Link:   "www.google.com/404",
+						},
+					},
+					Buildbucket: &pb.BuildInfra_Buildbucket{},
+				},
 				Input:  &pb.Build_Input{},
 				Output: &pb.Build_Output{},
 			})
@@ -214,7 +249,19 @@ func TestBQ(t *testing.T) {
 					Name: "step",
 					Logs: []*pb.Log{{Name: "log1"}},
 				}},
-				Infra:  &pb.BuildInfra{Buildbucket: &pb.BuildInfra_Buildbucket{}},
+				Infra: &pb.BuildInfra{
+					Backend: &pb.BuildInfra_Backend{
+						Task: &pb.Task{
+							Id: &pb.TaskID{
+								Id:     "s93k0402js90",
+								Target: "swarming://chromium-swarm",
+							},
+							Status: pb.Status_CANCELED,
+							Link:   "www.google.com/404",
+						},
+					},
+					Buildbucket: &pb.BuildInfra_Buildbucket{},
+				},
 				Input:  &pb.Build_Input{},
 				Output: &pb.Build_Output{},
 			})

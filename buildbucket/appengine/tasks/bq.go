@@ -59,6 +59,9 @@ func ExportBuild(ctx context.Context, buildID int64) error {
 
 	// Clear fields that we don't want in BigQuery.
 	p.Infra.Buildbucket.Hostname = ""
+	if p.Infra.Backend.GetTask() != nil {
+		p.Infra.Backend.Task.UpdateId = 0
+	}
 	for _, step := range p.GetSteps() {
 		step.SummaryMarkdown = ""
 		step.MergeBuild = nil
