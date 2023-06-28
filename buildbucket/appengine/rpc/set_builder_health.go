@@ -121,8 +121,13 @@ func updateBuilderEntityWithHealth(ctx context.Context, bldr *pb.SetBuilderHealt
 			}
 			return appstatus.Errorf(codes.Internal, "failed to get builder %s: %s", bldr.Id.Builder, err)
 		}
-		bldr.Health.DataLinks = builder.Config.GetBuilderHealthMetricsLinks().GetDataLinks()
-		bldr.Health.DocLinks = builder.Config.GetBuilderHealthMetricsLinks().GetDocLinks()
+		// If the reporter did not provide data and doc links, use the default ones from the builder config.
+		if bldr.Health.DataLinks == nil {
+			bldr.Health.DataLinks = builder.Config.GetBuilderHealthMetricsLinks().GetDataLinks()
+		}
+		if bldr.Health.DocLinks == nil {
+			bldr.Health.DocLinks = builder.Config.GetBuilderHealthMetricsLinks().GetDocLinks()
+		}
 		bldr.Health.ReportedTime = timestamppb.Now()
 		bldr.Health.Reporter = auth.CurrentIdentity(ctx).Value()
 		if builder.Metadata != nil {

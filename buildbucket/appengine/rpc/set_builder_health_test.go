@@ -373,10 +373,30 @@ func TestSetBuilderHealth(t *testing.T) {
 			bldrToPut1 := &model.Builder{
 				ID:     "amd-cq",
 				Parent: bktKey,
+				Config: &pb.BuilderConfig{
+					BuilderHealthMetricsLinks: &pb.BuilderConfig_BuilderHealthLinks{
+						DataLinks: map[string]string{
+							"user": "data-link-for-amd-cq",
+						},
+						DocLinks: map[string]string{
+							"user": "doc-link-for-amd-cq",
+						},
+					},
+				},
 			}
 			bldrToPut2 := &model.Builder{
 				ID:     "amd-cq-2",
 				Parent: bktKey,
+				Config: &pb.BuilderConfig{
+					BuilderHealthMetricsLinks: &pb.BuilderConfig_BuilderHealthLinks{
+						DataLinks: map[string]string{
+							"user": "data-link-for-amd-cq-2",
+						},
+						DocLinks: map[string]string{
+							"user": "doc-link-for-amd-cq-2",
+						},
+					},
+				},
 			}
 			bldrToPut3 := &model.Builder{
 				ID:     "amd-cq-3",
@@ -402,6 +422,12 @@ func TestSetBuilderHealth(t *testing.T) {
 						},
 						Health: &pb.HealthStatus{
 							HealthScore: 9,
+							DataLinks: map[string]string{
+								"user": "data-link-for-amd-cq-from-req",
+							},
+							DocLinks: map[string]string{
+								"user": "doc-link-for-amd-cq-from-req",
+							},
 						},
 					},
 					{
@@ -435,9 +461,21 @@ func TestSetBuilderHealth(t *testing.T) {
 			So(expectedBuilder1.Metadata.Health.HealthScore, ShouldEqual, 9)
 			So(expectedBuilder1.Metadata.Health.Reporter, ShouldEqual, "someone@example.com")
 			So(expectedBuilder1.Metadata.Health.ReportedTime, ShouldNotBeNil)
+			So(expectedBuilder1.Metadata.Health.DataLinks, ShouldResemble, map[string]string{
+				"user": "data-link-for-amd-cq-from-req",
+			})
+			So(expectedBuilder1.Metadata.Health.DocLinks, ShouldResemble, map[string]string{
+				"user": "doc-link-for-amd-cq-from-req",
+			})
 			So(expectedBuilder2.Metadata.Health.HealthScore, ShouldEqual, 8)
 			So(expectedBuilder2.Metadata.Health.Reporter, ShouldEqual, "someone@example.com")
 			So(expectedBuilder2.Metadata.Health.ReportedTime, ShouldNotBeNil)
+			So(expectedBuilder2.Metadata.Health.DataLinks, ShouldResemble, map[string]string{
+				"user": "data-link-for-amd-cq-2",
+			})
+			So(expectedBuilder2.Metadata.Health.DocLinks, ShouldResemble, map[string]string{
+				"user": "doc-link-for-amd-cq-2",
+			})
 			So(expectedBuilder3.Metadata.Health.HealthScore, ShouldEqual, 2)
 			So(expectedBuilder3.Metadata.Health.Reporter, ShouldEqual, "someone@example.com")
 			So(expectedBuilder3.Metadata.Health.ReportedTime, ShouldNotBeNil)
