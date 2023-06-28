@@ -16,13 +16,16 @@ package clients
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/googleapi"
+	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/server/auth"
 )
 
 var gsClientCtxKey = "holds the Google Cloud Storage client"
@@ -51,7 +54,11 @@ type prodClient struct {
 
 // NewGsProdClient create a prodClient.
 func NewGsProdClient(ctx context.Context) (GsClient, error) {
-	client, err := storage.NewClient(ctx)
+	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get OAuth2 token source: %w", err)
+	}
+	client, err := storage.NewClient(ctx, option.WithTokenSource(ts))
 	if err != nil {
 		return nil, err
 	}
