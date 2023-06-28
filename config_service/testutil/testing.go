@@ -32,6 +32,9 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/auth/signing/signingtest"
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/config_service/internal/model"
@@ -40,6 +43,7 @@ import (
 )
 
 const AppID = "luci-config-dev"
+const ServiceAccount = "luci-config@luci-config-dev.iam.gserviceaccount.com"
 
 // SetupContext sets up testing common context for LUCI Config tests.
 func SetupContext() context.Context {
@@ -58,6 +62,13 @@ func SetupContext() context.Context {
 	// be explicitly added
 	datastore.GetTestable(ctx).AutoIndex(false)
 	ctx = caching.WithEmptyProcessCache(ctx)
+	ctx = auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
+		cfg.Signer = signingtest.NewSigner(&signing.ServiceInfo{
+			AppID:              AppID,
+			ServiceAccountName: ServiceAccount,
+		})
+		return cfg
+	})
 	return ctx
 }
 
