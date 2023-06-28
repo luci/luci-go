@@ -32,7 +32,7 @@ func TestParseRemoteIP(t *testing.T) {
 			exp string
 			err string
 		}{
-			{"", net.IPv6loopback.String(), ""},
+			{"", "0.0.0.0", ""},
 			{"1.2.3.4", "1.2.3.4", ""},
 			{"1.2.3.4:1337", "1.2.3.4", ""},
 			{"1::1", "1::1", ""},

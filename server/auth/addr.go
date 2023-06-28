@@ -33,10 +33,10 @@ import (
 //
 // Note that IPv6 addresses have colons in them.
 //
-// If the remote address is blank, IPv6 loopback (::1) will be returned.
+// If the remote address is blank, "0.0.0.0" will be returned.
 func parseRemoteIP(a string) (net.IP, error) {
 	if a == "" {
-		return net.IPv6loopback, nil
+		return net.IPv4(0, 0, 0, 0), nil
 	}
 
 	// IPv6 in braces with or without port.

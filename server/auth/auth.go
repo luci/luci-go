@@ -109,16 +109,19 @@ type RequestMetadata interface {
 	// cookies.
 	Cookie(key string) (*http.Cookie, error)
 
-	// RemoteAddr returns the IP address the request came from.
+	// RemoteAddr returns the IP address the request came from or "" if unknown.
 	//
 	// It is used by default for IP allowlist checks if there's no EndUserIP
 	// callback set in the auth library configuration. The EndUserIP callback is
 	// usually set in environments where the server runs behind a proxy, when
 	// the real end user IP is passed via some trusted header or other form of
 	// metadata.
+	//
+	// If "", IP allowlist check will be skipped and the request will be assumed
+	// to come from "0.0.0.0" aka "unspecified IPv4".
 	RemoteAddr() string
 
-	// Host returns the hostname the request was sent to.
+	// Host returns the hostname the request was sent to or "" if unknown.
 	//
 	// Also known as HTTP2 `:authority` pseudo-header.
 	Host() string
@@ -521,6 +524,9 @@ func checkEndUserIP(ctx context.Context, cfg *Config, db authdb.DB, r RequestMet
 	if err != nil {
 		logging.Errorf(ctx, "auth: bad remote_addr %q in a call from %q - %s", ipAddr, peerID, err)
 		return nil, ErrBadRemoteAddr
+	}
+	if peerIP.IsUnspecified() {
+		return peerIP, nil
 	}
 
 	// Some callers may be constrained by an IP allowlist.

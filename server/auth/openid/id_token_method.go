@@ -83,9 +83,10 @@ var _ interface {
 // It verifies token's audience matches "Host" request header. Suitable for
 // environments where "Host" header can be trusted.
 func AudienceMatchesHost(ctx context.Context, r auth.RequestMetadata, aud string) (valid bool, err error) {
-	host := r.Host()
-	valid = aud == "https://"+host || strings.HasPrefix(aud, "https://"+host+"/")
-	return
+	if host := r.Host(); host != "" {
+		return aud == "https://"+host || strings.HasPrefix(aud, "https://"+host+"/"), nil
+	}
+	return false, nil
 }
 
 // Authenticate extracts user information from the incoming request.
