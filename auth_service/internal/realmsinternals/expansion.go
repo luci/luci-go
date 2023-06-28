@@ -16,6 +16,7 @@ package realmsinternals
 
 import (
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -25,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	lucierr "go.chromium.org/luci/common/errors"
 	realmsconf "go.chromium.org/luci/common/proto/realms"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
 	"google.golang.org/protobuf/proto"
@@ -141,8 +143,10 @@ func sortConditions(conds []*protocol.Condition) {
 // finalize finalizes the set by preventing any future addCond calls.
 //
 // Sorts the list of stored conditions by attribute first then by values.
-// returns the final sorted list of protocol.Condition. Returns nil if
-// ConditionSet is not finalized.
+// returns the final sorted list of protocol.Condition.
+//
+// Returns nil if ConditionSet is already finalized or if
+// ConditionsSet is empty.
 //
 // Indexes returned by indexes() will refer to the indexes in this list.
 func (cs *ConditionsSet) finalize() []*protocol.Condition {
@@ -167,6 +171,10 @@ func (cs *ConditionsSet) finalize() []*protocol.Condition {
 
 	for key, old := range cs.indexMapping {
 		cs.indexMapping[key] = oldToNew[old]
+	}
+
+	if len(conds) == 0 {
+		return nil
 	}
 
 	return conds
@@ -325,7 +333,7 @@ func (re *RolesExpander) role(roleName string) (*indexSet, error) {
 		if !ok {
 			return nil, lucierr.Annotate(ErrRoleNotFound, "builtinRole: %s", roleName).Err()
 		}
-		perms = IndexSetFromSlice(re.permIndexes(role.Permissions...))
+		perms = IndexSetFromSlice(re.permIndexes(role.Permissions.ToSortedSlice()...))
 	} else if strings.HasPrefix(roleName, validation.PrefixCustomRole) {
 		customRole, ok := re.customRoles[roleName]
 		if !ok {
@@ -341,6 +349,10 @@ func (re *RolesExpander) role(roleName string) (*indexSet, error) {
 		}
 	} else {
 		return nil, ErrImpossibleRole
+	}
+
+	if perms == nil {
+		perms = emptyIndexSet()
 	}
 
 	re.roles[roleName] = perms
@@ -362,4 +374,81 @@ func (re *RolesExpander) sortedPermissions() ([]string, []uint32) {
 		mapping[oldIdx] = uint32(newIdx)
 	}
 	return perms, mapping
+}
+
+// RealmsExpander helps traverse the realm inheritance graph.
+type RealmsExpander struct {
+	// rolesExpander will handle role expansion for the realms.
+	rolesExpander *RolesExpander
+	// condsSet will handle the expansion for conditions in realms.
+	condsSet *ConditionsSet
+	// realms is a mapping from realm name -> *realmsconf.Realm.
+	realms map[string]*realmsconf.Realm
+}
+
+// parents returns the list of immediate parents given a realm.
+// includes @root realm by default since all realms implicitly
+// inherit from it.
+func parents(realm *realmsconf.Realm) []string {
+	if realm.GetName() == realms.RootRealm {
+		return nil
+	}
+	pRealms := []string{}
+	pRealms = append(pRealms, realms.RootRealm)
+	for _, name := range realm.Extends {
+		if name != realms.RootRealm {
+			pRealms = append(pRealms, name)
+		}
+	}
+	return pRealms
+}
+
+// principalBindings binds a principal to a set of
+// permissions and conditions
+type principalBindings struct {
+	// name is the name of this principal, can be a user, group, glob
+	name string
+	// permissions contains the indexes of permissions bound to this principal
+	permissions *indexSet
+	// conditions contains the indexes of conditions related to this principal
+	conditions []uint32
+}
+
+// perPrincipalBindings returns a slice of principalBindings.
+//
+// Visits all bindings in the realm and its parent realms. Returns a lot
+// of duplicates. It's the caller's job to skip them.
+func (rlme *RealmsExpander) perPrincipalBindings(realm string) ([]*principalBindings, error) {
+	r, ok := rlme.realms[realm]
+	if !ok {
+		return nil, fmt.Errorf("realm %s not found in RealmsExpander", realm)
+	}
+	if r.GetName() != realm {
+		return nil, fmt.Errorf("given realm: %s does not match name found internally: %s", realm, r.GetName())
+	}
+	pBindings := []*principalBindings{}
+	for _, b := range r.Bindings {
+		// set of permissions associated with this role
+		perms, err := rlme.rolesExpander.role(b.GetRole())
+		if err != nil {
+			return nil, lucierr.Annotate(err, "there was an issue fetching permissions for this binding role").Err()
+		}
+
+		// sorted conditions associated with this binding
+		// conditions must be finalized at this point
+		conds := rlme.condsSet.indexes(b.GetConditions())
+		for _, principal := range b.GetPrincipals() {
+			pBindings = append(pBindings, &principalBindings{principal, perms, conds})
+		}
+	}
+
+	// go through parents and get the bindings too
+	for _, parent := range parents(r) {
+		parentBindings, err := rlme.perPrincipalBindings(parent)
+		if err != nil {
+			return nil, fmt.Errorf("failed when getting parent bindings for %s", realm)
+		}
+		pBindings = append(pBindings, parentBindings...)
+	}
+	return pBindings, nil
 }

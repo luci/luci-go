@@ -57,8 +57,8 @@ type Role struct {
 	Name string
 
 	// Permissions contains all the permission strings for this
-	// role, sorted alphabetically.
-	Permissions []string
+	// role
+	Permissions stringset.Set
 }
 
 // NewPermissionsDB constructs a new instance of PermissionsDB from a given permissions.cfg.
@@ -70,18 +70,17 @@ func NewPermissionsDB(permissionscfg *configspb.PermissionsConfig, meta config.M
 	permissionsDB.revision = fmt.Sprintf("permissionsDB:%s", meta.Revision)
 	for _, role := range permissionscfg.GetRole() {
 
-		permissionsDB.Roles[role.GetName()] = &Role{role.GetName(), make([]string, len(role.GetPermissions()))}
-		for idx, perm := range role.GetPermissions() {
+		permissionsDB.Roles[role.GetName()] = &Role{role.GetName(), stringset.Set{}}
+		for _, perm := range role.GetPermissions() {
 			permissionsDB.Permissions[perm.GetName()] = perm
-			permissionsDB.Roles[role.GetName()].Permissions[idx] = perm.GetName()
+			permissionsDB.Roles[role.GetName()].Permissions.Add(perm.GetName())
 		}
 	}
 
 	// Expand includes after all values in map
 	for _, role := range permissionscfg.GetRole() {
 		for _, inc := range role.GetIncludes() {
-			permissionsDB.Roles[role.GetName()].Permissions = append(
-				permissionsDB.Roles[role.GetName()].Permissions, permissionsDB.Roles[inc].Permissions...)
+			permissionsDB.Roles[role.GetName()].Permissions = permissionsDB.Roles[role.GetName()].Permissions.Union(permissionsDB.Roles[inc].Permissions)
 		}
 	}
 	permissionsDB.attributes = stringset.NewFromSlice(permissionscfg.GetAttribute()...)

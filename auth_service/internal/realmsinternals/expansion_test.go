@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 package realmsinternals
 
 import (
@@ -92,6 +91,7 @@ func testPermissionsDB(implicitRootBindings bool) *permissions.PermissionsDB {
 	}, config.Meta{
 		Revision: "123",
 	})
+	db.ImplicitRootBindings = func(s string) []*realmsconf.Binding { return nil }
 	if implicitRootBindings {
 		db.ImplicitRootBindings = func(projectID string) []*realmsconf.Binding {
 			return []*realmsconf.Binding{
@@ -118,7 +118,6 @@ func testPermissionsDB(implicitRootBindings bool) *permissions.PermissionsDB {
 	}
 	return db
 }
-
 func TestConditionsSet(t *testing.T) {
 	t.Parallel()
 	restriction := func(attr string, values []string) *realmsconf.Condition {
@@ -131,7 +130,6 @@ func TestConditionsSet(t *testing.T) {
 			},
 		}
 	}
-
 	Convey("test key", t, func() {
 		cond1 := &protocol.Condition{
 			Op: &protocol.Condition_Restrict{
@@ -152,38 +150,30 @@ func TestConditionsSet(t *testing.T) {
 		// same contents == same key
 		cond1Key, cond2Key := conditionKey(cond1), conditionKey(cond2)
 		So(cond1Key, ShouldEqual, cond2Key)
-
 		condEmpty := &protocol.Condition{}
 		So(conditionKey(condEmpty), ShouldEqual, "")
 	})
-
 	Convey("errors", t, func() {
 		cs := &ConditionsSet{
 			normalized:   map[string]*conditionMapTuple{},
 			indexMapping: map[*realmsconf.Condition]uint32{},
 		}
-
 		r1 := restriction("a", []string{"1", "2"})
 		r2 := restriction("b", []string{"1"})
-
 		So(cs.addCond(r1), ShouldBeNil)
 		cs.finalize()
 		So(cs.addCond(r2), ShouldEqual, ErrFinalized)
 	})
-
 	Convey("works", t, func() {
-
 		cs := &ConditionsSet{
 			normalized:   map[string]*conditionMapTuple{},
 			indexMapping: map[*realmsconf.Condition]uint32{},
 			finalized:    false,
 		}
-
 		r1 := restriction("b", []string{"1", "2"})
 		r2 := restriction("a", []string{"2", "1", "1"})
 		r3 := restriction("a", []string{"1", "2"})
 		r4 := restriction("a", []string{"3", "4"})
-
 		So(cs.addCond(r1), ShouldBeNil)
 		So(cs.addCond(r1), ShouldBeNil)
 		So(cs.addCond(r2), ShouldBeNil)
@@ -217,7 +207,6 @@ func TestConditionsSet(t *testing.T) {
 			},
 		}
 		So(out, ShouldResembleProto, expected)
-
 		So(cs.indexes([]*realmsconf.Condition{r1}), ShouldResemble, []uint32{2})
 		So(cs.indexes([]*realmsconf.Condition{r2}), ShouldResemble, []uint32{0})
 		So(cs.indexes([]*realmsconf.Condition{r3}), ShouldResemble, []uint32{0})
@@ -226,10 +215,8 @@ func TestConditionsSet(t *testing.T) {
 		So(inds, ShouldResemble, []uint32{0, 1, 2})
 	})
 }
-
 func TestRolesExpander(t *testing.T) {
 	t.Parallel()
-
 	Convey("errors", t, func() {
 		permDB := testPermissionsDB(false)
 		r := &RolesExpander{
@@ -240,14 +227,11 @@ func TestRolesExpander(t *testing.T) {
 		}
 		_, err := r.role("role/notbuiltin")
 		So(err, ShouldErrLike, ErrRoleNotFound)
-
 		_, err = r.role("customRole/notarole")
 		So(err, ShouldErrLike, ErrRoleNotFound)
-
 		_, err = r.role("notarole/test")
 		So(err, ShouldErrLike, ErrImpossibleRole)
 	})
-
 	Convey("test builtin roles works", t, func() {
 		permDB := testPermissionsDB(false)
 		r := &RolesExpander{
@@ -258,16 +242,13 @@ func TestRolesExpander(t *testing.T) {
 		actual, err := r.role("role/dev.a")
 		So(err, ShouldBeNil)
 		So(actual, ShouldResemble, IndexSetFromSlice([]uint32{0, 1}))
-
 		actual, err = r.role("role/dev.b")
 		So(err, ShouldBeNil)
 		So(actual, ShouldResemble, IndexSetFromSlice([]uint32{1, 2}))
-
 		perms, mapping := r.sortedPermissions()
 		So(perms, ShouldResemble, []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"})
 		So(mapping, ShouldResemble, []uint32{0, 1, 2})
 	})
-
 	Convey("test custom roles works", t, func() {
 		permDB := testPermissionsDB(false)
 		r := &RolesExpander{
@@ -292,23 +273,18 @@ func TestRolesExpander(t *testing.T) {
 			permissions: map[string]uint32{},
 			roles:       map[string]*indexSet{},
 		}
-
 		actual, err := r.role("customRole/custom1")
 		So(err, ShouldBeNil)
 		So(actual, ShouldResemble, IndexSetFromSlice([]uint32{0, 1, 2, 3, 4}))
-
 		actual, err = r.role("customRole/custom2")
 		So(err, ShouldBeNil)
 		So(actual, ShouldResemble, IndexSetFromSlice([]uint32{1, 2, 3, 4}))
-
 		actual, err = r.role("customRole/custom3")
 		So(err, ShouldBeNil)
 		So(actual, ShouldResemble, IndexSetFromSlice([]uint32{2, 3, 4}))
-
 		perms, mapping := r.sortedPermissions()
 		So(perms, ShouldResemble, []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3", "luci.dev.p4", "luci.dev.p5"})
 		So(mapping, ShouldResemble, []uint32{0, 3, 1, 4, 2})
-
 		reMap := func(perms []string, mapping []uint32, permSet []uint32) []string {
 			res := make([]string, 0, len(permSet))
 			for _, idx := range permSet {
@@ -316,7 +292,6 @@ func TestRolesExpander(t *testing.T) {
 			}
 			return res
 		}
-
 		// This test is a bit redundant but just to ensure the permissions since
 		// eyeballing the numbers is difficult.
 		permSet, err := r.role("customRole/custom1")
@@ -328,7 +303,6 @@ func TestRolesExpander(t *testing.T) {
 			"luci.dev.p5",
 			"luci.dev.p3",
 		})
-
 		permSet, err = r.role("customRole/custom2")
 		So(err, ShouldBeNil)
 		So(reMap(perms, mapping, permSet.toSortedSlice()), ShouldResemble, []string{
@@ -337,13 +311,80 @@ func TestRolesExpander(t *testing.T) {
 			"luci.dev.p5",
 			"luci.dev.p3",
 		})
-
 		permSet, err = r.role("customRole/custom3")
 		So(err, ShouldBeNil)
 		So(reMap(perms, mapping, permSet.toSortedSlice()), ShouldResemble, []string{
 			"luci.dev.p2",
 			"luci.dev.p5",
 			"luci.dev.p3",
+		})
+	})
+}
+
+func TestRealmsExpander(t *testing.T) {
+	t.Parallel()
+
+	Convey("test perPrincipalBindings", t, func() {
+		Convey("errors", func() {
+			Convey("realm not found", func() {
+				r := &RealmsExpander{}
+				_, err := r.perPrincipalBindings("test")
+				So(err, ShouldErrLike, "realm test not found in RealmsExpander")
+			})
+
+			Convey("parent not found", func() {
+				r := &RealmsExpander{
+					realms: map[string]*realmsconf.Realm{
+						"test": {
+							Name:    "test",
+							Extends: []string{"test-2"},
+						},
+					},
+				}
+
+				_, err := r.perPrincipalBindings("test")
+				So(err, ShouldErrLike, "failed when getting parent bindings")
+			})
+
+			Convey("realm name mismatch", func() {
+				r := &RealmsExpander{
+					realms: map[string]*realmsconf.Realm{
+						"test": {
+							Name: "not-test",
+						},
+					},
+				}
+				_, err := r.perPrincipalBindings("test")
+				So(err, ShouldErrLike, "given realm: test does not match name found internally: not-test")
+			})
+
+			Convey("permissions fetch issue (ErrRoleNotfound)", func() {
+				r := &RealmsExpander{
+					rolesExpander: &RolesExpander{
+						permissions:  map[string]uint32{},
+						builtinRoles: map[string]*permissions.Role{},
+						roles:        map[string]*indexSet{},
+					},
+					realms: map[string]*realmsconf.Realm{
+						"@root": {
+							Name: "@root",
+						},
+						"test": {
+							Name:    "test",
+							Extends: []string{},
+							Bindings: []*realmsconf.Binding{
+								{
+									Role:       "role/test-role",
+									Principals: []string{"test-project"},
+								},
+							},
+							EnforceInService: []string{},
+						},
+					},
+				}
+				_, err := r.perPrincipalBindings("test")
+				So(err, ShouldErrLike, "there was an issue fetching permissions")
+			})
 		})
 	})
 }
