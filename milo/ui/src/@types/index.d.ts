@@ -14,6 +14,42 @@
 
 type Constructor<T, P extends unknown[] = []> = new (...params: P) => T;
 
+/**
+ * `varName: NoInfer<T>` makes TSC unable to be inferred `T` from the value
+ * assigned to `varName`.
+ *
+ * For example:
+ * ```
+ * // Without `NoInfer<T>`.
+ * function foo<T = never>(param: T): T {
+ *   return param;
+ * }
+ *
+ * // `T` is inferred to be `1`.
+ * foo(1);
+ *
+ * // With `NoInfer<T>`.
+ * // Note that `T = never` is needed. Otherwise the un-inferable `T` will
+ * // default to `unknown`, therefore making the type restriction too loose.
+ * function bar<T = never>(param: NoInfer<T>): T {
+ *   return param;
+ * }
+ *
+ * // The type of T cannot be inferred, therefore fallback to the default type
+ * // (i.e. `never`). As a result, TSC will report the following error:
+ * // Argument of type 'number' is not assignable to parameter of type 'never'.
+ * bar(1);
+ *
+ * // The type has to be specified explicitly.
+ * bar<number>(1);
+ * ```
+ */
+// `[T][T extends unknown ? 0 : never]` is a noop because it always evaluate to
+// `T`. However, TSC defers the evaluation of unresolved conditional types,
+// making the default type (explicitly specified or `unknown`) take precedence
+// over the inferred type.
+type NoInfer<T> = [T][T extends unknown ? 0 : never];
+
 type Mutable<T> = {
   -readonly [key in keyof T]: T[key];
 };

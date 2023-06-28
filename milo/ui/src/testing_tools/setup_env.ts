@@ -23,6 +23,7 @@ import * as idbKeyVal from 'idb-keyval';
 import { configure } from 'mobx';
 
 import { assertNonNullable } from '@/generic_libs/tools/utils';
+import './jest_utils';
 
 // TODO(crbug/1347294): encloses all state modifying actions in mobx actions
 // then delete this.
@@ -56,16 +57,12 @@ self.CSSStyleSheet.prototype.replace = () => Promise.race([]);
 
 jest.mock('idb-keyval');
 const idbMockStore = new Map();
-(idbKeyVal.get as jest.Mock<typeof idbKeyVal.get>).mockImplementation(
-  async (k) => {
-    return idbMockStore.get(k);
-  }
-);
-(idbKeyVal.set as jest.Mock<typeof idbKeyVal.set>).mockImplementation(
-  async (k, v) => {
-    idbMockStore.set(k, v);
-  }
-);
+jest.mocked(idbKeyVal.get).mockImplementation(async (k) => {
+  return idbMockStore.get(k);
+});
+jest.mocked(idbKeyVal.set).mockImplementation(async (k, v) => {
+  idbMockStore.set(k, v);
+});
 
 Object.defineProperty(self, 'crypto', {
   value: {

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { expect, jest } from '@jest/globals';
 import { act, cleanup, render } from '@testing-library/react';
 import { applySnapshot, destroy } from 'mobx-state-tree';
 
@@ -53,15 +52,9 @@ function IdentityConsumer({ renderCallback }: IdentityConsumerProps) {
 }
 
 jest.mock('@/common/api/auth_state', () => {
-  const actual = jest.requireActual(
-    '@/common/api/auth_state'
-  ) as typeof authStateLib;
-  const mocked: typeof authStateLib = {
-    ...actual,
-    // Wraps `queryAuthState` in a mock so we can mock its implementation later.
-    queryAuthState: jest.fn(actual.queryAuthState),
-  };
-  return mocked;
+  return createSelectiveMockFromModule<
+    typeof import('@/common/api/auth_state')
+  >('@/common/api/auth_state', ['queryAuthState']);
 });
 
 const AUTH_STATE = {
@@ -72,15 +65,16 @@ const AUTH_STATE = {
 
 describe('AuthStateProvider', () => {
   let store: StoreInstance;
-  let queryAuthStateSpy: jest.Mock<typeof authStateLib.queryAuthState>;
+  let queryAuthStateSpy: jest.MockedFunction<
+    typeof authStateLib.queryAuthState
+  >;
 
   beforeEach(() => {
     store = Store.create({});
     jest.useFakeTimers();
-    queryAuthStateSpy = authStateLib.queryAuthState as jest.Mock<
-      typeof authStateLib.queryAuthState
-    >;
-    queryAuthStateSpy.mockResolvedValue(AUTH_STATE);
+    queryAuthStateSpy = jest
+      .mocked(authStateLib.queryAuthState)
+      .mockResolvedValue(AUTH_STATE);
   });
   afterEach(() => {
     queryAuthStateSpy.mockRestore();

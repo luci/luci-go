@@ -23,40 +23,38 @@ import { Store, StoreProvider } from '@/common/store';
 import { BuildDefaultTab } from './build_default_tab';
 
 jest.mock('react-router-dom', () => {
-  const actualReactRouterDom = jest.requireActual(
-    'react-router-dom'
-  ) as typeof reactRouterDom;
-  const mockedReactRouterDom = {
-    ...actualReactRouterDom,
-    // Wraps `useNavigate` in a mock so we can mock its implementation later.
-    useNavigate: jest.fn(actualReactRouterDom.useNavigate),
-  };
-  return mockedReactRouterDom;
+  return createSelectiveMockFromModule<typeof import('react-router-dom')>(
+    'react-router-dom',
+    ['useNavigate']
+  );
 });
 
 describe('BuildDefaultTab', () => {
   let store: Instance<typeof Store>;
-  let useNavigateSpy: jest.Mock<() => jest.Mock<NavigateFunction>>;
+  let useNavigateSpy: jest.MockedFunction<() => jest.Mock<NavigateFunction>>;
 
   beforeEach(() => {
     jest.useFakeTimers();
-    useNavigateSpy = reactRouterDom.useNavigate as unknown as jest.Mock<
-      () => jest.Mock<NavigateFunction>
-    >;
     const navigateSpies = new Map<
       NavigateFunction,
       jest.Mock<NavigateFunction>
     >();
-    useNavigateSpy.mockImplementation(() => {
-      const navigate = (
-        jest.requireActual('react-router-dom') as typeof reactRouterDom
-      ).useNavigate();
-      // Return the same mock reference if the reference to `navigate` is the
-      // same. This is to ensure the dependency checks having the same result.
-      const navigateSpy = navigateSpies.get(navigate) || jest.fn(navigate);
-      navigateSpies.set(navigate, navigateSpy);
-      return navigateSpy;
-    });
+    useNavigateSpy = jest
+      .mocked(
+        // We will return a mocked `navigate` function so we can intercept the
+        // `navigate` calls.
+        reactRouterDom.useNavigate as unknown as () => jest.Mock<NavigateFunction>
+      )
+      .mockImplementation(() => {
+        const navigate = (
+          jest.requireActual('react-router-dom') as typeof reactRouterDom
+        ).useNavigate();
+        // Return the same mock reference if the reference to `navigate` is the
+        // same. This is to ensure the dependency checks having the same result.
+        const navigateSpy = navigateSpies.get(navigate) || jest.fn(navigate);
+        navigateSpies.set(navigate, navigateSpy);
+        return navigateSpy;
+      });
     store = Store.create({ userConfig: { build: { defaultTab: 'overview' } } });
   });
 
