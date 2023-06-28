@@ -149,7 +149,6 @@ func (p *loginSessionTokenProvider) MintToken(ctx context.Context, base *Token) 
 		session.LoginFlowUrl,
 	)
 
-	// Start a goroutine that renders the most recent confirmation code.
 	animationCtrl := startAnimation(ctx)
 	defer animationCtrl("", 0)
 	animationCtrl(session.ConfirmationCode, session.ConfirmationCodeRefresh.AsDuration())
@@ -235,6 +234,121 @@ func deriveCodeChallenge(codeVerifier string) string {
 	return base64.RawURLEncoding.EncodeToString(codeVerifierS256[:])
 }
 
+// codeAndExp represents a login confirmation code and its expiration time.
+type codeAndExp struct {
+	code string        // the code itself
+	exp  time.Time     // moment it expires
+	life time.Duration // its lifetime when we got it
+}
+
+// animator defines the functions that must be implemented to render
+// the code to the terminal.
+type animator interface {
+	// setup prepares the terminal and/or animator to display the confirmation code.
+	setup()
+
+	// updateCode updates the confirmation code being displayed by the animator.
+	updateCode(string)
+
+	// refreshAnimation updates any spinner animation using the remaining lifetime of
+	// current confirmation code.
+	refreshAnimation(context.Context, codeAndExp)
+
+	// finish is expected to print any information after the login has been completed.
+	finish()
+}
+
+// printTerminalCursorDown is a helper function to move the terminal cursor down.
+func printTerminalCursorDown(lines int) {
+	fmt.Printf("\033[%dB", lines)
+}
+
+// printTerminalCursorUp is a helper function to move the terminal cursor up.
+func printTerminalCursorUp(lines int) {
+	fmt.Printf("\033[%dA", lines)
+}
+
+// printTerminalLine resets the cursor to the start of the current line and prints
+// a message, erasing anything previously displayed on the current line.
+func printTerminalLine(msg string, args ...any) {
+	fmt.Printf("\r\033[2K"+msg+"\n", args...)
+}
+
+// dumbTerminal is a terminal that does not support some cursor control characters.
+type dumbTerminal struct{}
+
+func (dt *dumbTerminal) setup() {}
+
+func (dt *dumbTerminal) updateCode(code string) {
+	fmt.Printf("%s\r", code)
+}
+
+// refreshAnimation does nothing for dumbTerminal, we do not animate.
+func (dt *dumbTerminal) refreshAnimation(ctx context.Context, current codeAndExp) {}
+
+func (dt *dumbTerminal) finish() {
+	fmt.Printf("Done!\n")
+}
+
+func dumbAnimator() *dumbTerminal {
+	return &dumbTerminal{}
+}
+
+// smartTerminal is a terminal that supports the cursor control characters needed to animate the code refresh.
+type smartTerminal struct {
+	round int
+}
+
+func (st *smartTerminal) setup() {
+	// allocate lines, these will be overridden in smartAnimator.
+	fmt.Printf("\n\n\n\n")
+}
+
+// printCode uses control characters with a smart terminal to move the terminal cursor up and down,
+// overwriting previous code.
+func (st *smartTerminal) updateCode(code string) {
+	printTerminalCursorUp(4)
+	printTerminalLine("%s", code)
+	printTerminalCursorDown(3)
+}
+
+// refreshAnimation re-renders the loading bar animation and spinner animation as the
+// code expiry goes down.
+func (st *smartTerminal) refreshAnimation(ctx context.Context, current codeAndExp) {
+	spinner := string(spinnerChars[st.round%len(spinnerChars)])
+	st.round += 1
+
+	// Calculate a portion of code's lifetime left.
+	ratio := float32(time.Until(current.exp).Seconds() / current.life.Seconds())
+
+	// Convert it into a number of progress bar characters to print.
+	total := len(current.code)
+	filled := int(ratio*float32(total)) + 1
+	if filled < 0 {
+		filled = 0
+	} else if filled > total {
+		filled = total
+	}
+
+	// Redraw everything but code.
+	printTerminalCursorUp(3)
+	printTerminalLine("%s%s", strings.Repeat("─", filled), strings.Repeat(" ", total-filled))
+	printTerminalLine("")
+	printTerminalLine("Waiting for the login flow to complete in the browser %s", spinner)
+}
+
+func (st *smartTerminal) finish() {
+	// Redraw the last line replacing the spinner with "Done".
+	printTerminalCursorUp(1)
+	printTerminalLine("Waiting for the login flow to complete in the browser. Done!\n")
+}
+
+func smartAnimator() *smartTerminal {
+	return &smartTerminal{
+		round: 0,
+	}
+}
+
 // startAnimation starts background rendering of the most recent confirmation
 // code (plus some cute spinner animation).
 //
@@ -242,34 +356,25 @@ func deriveCodeChallenge(codeVerifier string) string {
 // a non-empty string would replace the confirmation code. Passing it an empty
 // string would stop the animation.
 func startAnimation(ctx context.Context) (ctrl func(string, time.Duration)) {
-	type codeAndExp struct {
-		code string        // the code itself
-		exp  time.Time     // moment it expires
-		life time.Duration // its lifetime when we got it
-	}
-
 	spinCh := make(chan codeAndExp)
-	spinDone := false
+	done := false
 
 	spinWG := sync.WaitGroup{}
 	spinWG.Add(1)
 
-	prevCode := ""
-
 	fmt.Printf("When asked, use this confirmation code (it refreshes with time):\n\n")
-	fmt.Printf("\n\n\n\n") // allocate lines we'll keep overriding in the loop
+	var a animator
+	a = dumbAnimator()
+	if !IsDumbTerminal() {
+		a = smartAnimator()
+	}
 
-	// ESC code sequence helpers.
-	down := func(lines int) { fmt.Printf("\033[%dB", lines) }
-	up := func(lines int) { fmt.Printf("\033[%dA", lines) }
-	line := func(msg string, args ...any) { fmt.Printf("\r\033[2K"+msg+"\n", args...) }
+	prevCode := ""
 
 	go func() {
 		defer spinWG.Done()
-
 		current := codeAndExp{}
-		round := 0
-
+		a.setup()
 	loop:
 		for {
 			select {
@@ -279,9 +384,7 @@ func startAnimation(ctx context.Context) (ctrl func(string, time.Duration)) {
 				}
 				current = code
 				if current.code != prevCode {
-					up(4)
-					line("%s", current.code)
-					down(3)
+					a.updateCode(current.code)
 					prevCode = current.code
 				}
 			case res := <-clock.After(ctx, 100*time.Millisecond):
@@ -297,38 +400,14 @@ func startAnimation(ctx context.Context) (ctrl func(string, time.Duration)) {
 			if current.code == "" {
 				continue
 			}
-
-			spinner := string(spinnerChars[round%len(spinnerChars)])
-			round += 1
-
-			// Calculate a portion of code's lifetime left.
-			ratio := float32(time.Until(current.exp).Seconds() / current.life.Seconds())
-
-			// Convert it into a number of progress bar characters to print.
-			total := len(current.code)
-			filled := int(ratio*float32(total)) + 1
-			if filled < 0 {
-				filled = 0
-			} else if filled > total {
-				filled = total
-			}
-
-			// Redraw everything but code.
-			up(3)
-			line("%s%s", strings.Repeat("─", filled), strings.Repeat(" ", total-filled))
-			line("")
-			line("Waiting for the login flow to complete in the browser %s", spinner)
+			a.refreshAnimation(ctx, current)
 		}
-
-		// Redraw the last line replacing the spinner with "Done".
-		up(1)
-		line("Waiting for the login flow to complete in the browser. Done!\n")
+		a.finish()
 	}()
-
 	return func(code string, exp time.Duration) {
-		if !spinDone {
+		if !done {
 			if code == "" {
-				spinDone = true
+				done = true
 				close(spinCh)
 				spinWG.Wait()
 			} else {

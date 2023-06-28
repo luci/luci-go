@@ -17,8 +17,26 @@
 
 package internal
 
+import (
+	"fmt"
+	"os"
+
+	"github.com/xo/terminfo"
+)
+
 // EnableVirtualTerminal is a dummy function on unix systems that always
 // returns supported=true.
 func EnableVirtualTerminal() (supported bool, done func()) {
 	return true, func() {}
+}
+
+// IsDumbTerminal determines if the current terminal supports CursorUp and CursorDown
+// control characters.
+func IsDumbTerminal() bool {
+	ti, err := terminfo.LoadFromEnv()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s, couldn't load terminal info from terminfo/\n", err.Error())
+		return true
+	}
+	return ti.Strings[terminfo.CursorDown] == nil || ti.Strings[terminfo.CursorUp] == nil
 }

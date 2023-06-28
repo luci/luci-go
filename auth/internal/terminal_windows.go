@@ -44,3 +44,9 @@ func EnableVirtualTerminal() (supported bool, done func()) {
 		windows.SetConsoleMode(fd, originalMode)
 	}
 }
+
+// IsDumbTerminal is currently a dummy function on windows systems. Returns
+// false to assume using control characters.
+func IsDumbTerminal() bool {
+	return false
+}
