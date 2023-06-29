@@ -135,6 +135,15 @@ func TestUpdateService(t *testing.T) {
 			})
 		})
 
+		Convey("Error for invalid metadata", func() {
+			srv.sm = &cfgcommonpb.ServiceMetadata{
+				ConfigPatterns: []*cfgcommonpb.ConfigPattern{
+					{ConfigSet: string(config.MustProjectSet("foo")), Path: "regex:["},
+				},
+			}
+			So(Update(ctx), ShouldErrLike, "invalid metadata for service")
+		})
+
 		Convey("Skip update if nothing changed", func() {
 			So(Update(ctx), ShouldBeNil)
 			service := &model.Service{
@@ -297,6 +306,20 @@ func TestUpdateService(t *testing.T) {
 					So(service.LegacyMetadata, ShouldResembleProto, legacyMetadata)
 					So(service.UpdateTime, ShouldEqual, clock.Now(ctx).UTC())
 				})
+			})
+
+			Convey("Error for invalid legacy metadata", func() {
+				Convey("Invalid regex", func() {
+					legacyMetadata = proto.Clone(legacyMetadata).(*cfgcommonpb.ServiceDynamicMetadata)
+					legacyMetadata.Validation.Patterns = []*cfgcommonpb.ConfigPattern{
+						{ConfigSet: string(config.MustProjectSet("foo")), Path: "regex:["},
+					}
+				})
+				Convey("Invalid url", func() {
+					legacyMetadata = proto.Clone(legacyMetadata).(*cfgcommonpb.ServiceDynamicMetadata)
+					legacyMetadata.Validation.Url = "http://example.com\\validate"
+				})
+				So(Update(ctx), ShouldErrLike, "invalid legacy metadata for service")
 			})
 
 			Convey("Upgrade from legacy to new", func() {

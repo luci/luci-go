@@ -120,14 +120,28 @@ func updateService(ctx context.Context, info *cfgcommonpb.Service) error {
 	}
 	switch {
 	case info.GetServiceEndpoint() != "":
-		eg.Go(func() (err error) {
-			updated.Metadata, err = fetchMetadata(ectx, info.GetServiceEndpoint())
-			return err
+		eg.Go(func() error {
+			metadata, err := fetchMetadata(ectx, info.GetServiceEndpoint())
+			if err != nil {
+				return err
+			}
+			if err := validateMetadata(metadata); err != nil {
+				return fmt.Errorf("invalid metadata for service %s: %w", info.GetId(), err)
+			}
+			updated.Metadata = metadata
+			return nil
 		})
 	case info.GetMetadataUrl() != "":
-		eg.Go(func() (err error) {
-			updated.LegacyMetadata, err = fetchLegacyMetadata(ectx, info.GetMetadataUrl(), info.GetJwtAuth().GetAudience())
-			return err
+		eg.Go(func() error {
+			legacyMetadata, err := fetchLegacyMetadata(ectx, info.GetMetadataUrl(), info.GetJwtAuth().GetAudience())
+			if err != nil {
+				return err
+			}
+			if err := validateLegacyMetadata(legacyMetadata); err != nil {
+				return fmt.Errorf("invalid legacy metadata for service %s: %w", info.GetId(), err)
+			}
+			updated.LegacyMetadata = legacyMetadata
+			return nil
 		})
 	}
 
