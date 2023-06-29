@@ -132,8 +132,8 @@ describe('Test BugInfo component', () => {
 
     await screen.findByText('Associated Bug');
 
-    await fireEvent.click(screen.getByLabelText('edit'));
-
-    expect(screen.getByText('Change associated bug')).toBeInTheDocument();
+    // Open the edit dialog to change the associated bug.
+    fireEvent.click(screen.getByLabelText('edit'));
+    expect(await screen.findByText('Change associated bug')).toBeInTheDocument();
   });
 });

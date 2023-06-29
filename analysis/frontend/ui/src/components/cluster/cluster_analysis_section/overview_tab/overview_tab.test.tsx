@@ -16,10 +16,7 @@ import '@testing-library/jest-dom';
 
 import fetchMock from 'fetch-mock-jest';
 
-import {
-  screen,
-  waitFor,
-} from '@testing-library/react';
+import { screen } from '@testing-library/react';
 
 import { ClusterContextProvider } from '@/components/cluster/cluster_context';
 import { QueryClusterHistoryResponse } from '@/services/cluster';
@@ -30,7 +27,10 @@ import {
   mockGetCluster,
   mockQueryHistory,
 } from '@/testing_tools/mocks/cluster_mock';
-import { mockFetchMetrics } from '@/testing_tools/mocks/metrics_mock';
+import {
+  getMockMetricsList,
+  mockFetchMetrics,
+} from '@/testing_tools/mocks/metrics_mock';
 import {
   createMockProjectConfigWithBuganizerThresholds,
   mockFetchProjectConfig,
@@ -50,9 +50,12 @@ class ResizeObserver {
 window.ResizeObserver = ResizeObserver;
 
 describe('Test OverviewTab component', () => {
+  const project = 'chrome';
+  const mockMetrics = getMockMetricsList(project);
+
   beforeEach(() => {
     mockFetchAuthState();
-    mockFetchMetrics('chrome');
+    mockFetchMetrics(project, mockMetrics);
   });
 
   afterEach(() => {
@@ -61,11 +64,10 @@ describe('Test OverviewTab component', () => {
   });
 
   it('given a project and cluster ID, should recommend priority and show cluster history for that cluster', async () => {
-    const project = 'chrome';
     const algorithm = 'rules';
     const id = '123456';
-    const mockCluster = getMockCluster(id, project, algorithm);
 
+    const mockCluster = getMockCluster(id, project, algorithm);
     mockGetCluster(project, algorithm, id, mockCluster);
     const mockConfig = createMockProjectConfigWithBuganizerThresholds();
     mockFetchProjectConfig(mockConfig);
@@ -86,14 +88,25 @@ describe('Test OverviewTab component', () => {
         <ClusterContextProvider
           project={project}
           clusterAlgorithm={algorithm}
-          clusterId={id}>
+          clusterId={id} >
           <OverviewTab value='test' />
         </ClusterContextProvider>,
     );
 
-    await waitFor(() => {
-      expect(screen.getByTestId('recommended-priority-summary')).toBeInTheDocument();
-      expect(screen.getByTestId('history-charts-container')).toBeInTheDocument();
+    await screen.findByTestId('recommended-priority-summary');
+    expect(screen.getByText('P0')).toBeInTheDocument();
+
+    await screen.findByTestId('history-charts-container');
+    // Expect charts only for the default metrics.
+    mockMetrics.filter(metric => metric.isDefault).forEach((metric) => {
+      expect(
+        screen.getByTestId('chart-' + metric.metricId)
+      ).toBeInTheDocument();
+    });
+    mockMetrics.filter(metric => !metric.isDefault).forEach((metric) => {
+      expect(
+        screen.queryByTestId('chart-' + metric.metricId)
+      ).toBeNull();
     });
   });
 });
