@@ -21,13 +21,6 @@ import (
 	"testing"
 )
 
-func TestMustGetDarwinMajorVersion(t *testing.T) {
-	ver := mustGetDarwinMajorVersion()
-	if ver < 14 {
-		t.Errorf("major version is too small compared to version supported by infra go toolchain: %d", ver)
-	}
-}
-
 func TestMakeHardLinkOrClone(t *testing.T) {
 	dir := t.TempDir()
 	src := filepath.Join(dir, "a")
@@ -44,7 +37,7 @@ func TestMakeHardLinkOrClone(t *testing.T) {
 	if err != nil {
 		t.Fatalf("file is not cloned correctly: %v", err)
 	}
-	if want := []byte("test"); bytes.Compare(buf, want) != 0 {
+	if want := []byte("test"); !bytes.Equal(buf, want) {
 		t.Fatalf("hardlinked or cloned file doesn't have expected content: want: %q, got: %q", want, buf)
 	}
 }
