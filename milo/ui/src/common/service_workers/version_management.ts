@@ -28,11 +28,7 @@ import { get as kvGet, set as kvSet } from 'idb-keyval';
 // Tell TSC that this is a ServiceWorker script.
 declare const self: ServiceWorkerGlobalScope;
 
-// Use the old key format to ensure we are still overwriting the existing key.
-// This is critical if we need to rollback the release.
-// TODO(weiweilin): use the key below once we transitioned into the new version.
-const VERSION_KEY = 'force-update-token-' + self.registration.scope;
-// const VERSION_KEY = `@/common/service_workers/version_management/VERSION_KEY-${self.registration.scope}`;
+const VERSION_KEY = `@/common/service_workers/version_management/VERSION_KEY-${self.registration.scope}`;
 
 export interface VersionUpdateEventData {
   readonly type: 'VERSION_UPDATE';
