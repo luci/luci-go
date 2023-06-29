@@ -580,6 +580,9 @@ func makeGerritAttentionSetInputs(addAttn gerrit.Whoms, ci *gerritpb.ChangeInfo,
 }
 
 func (c *change) annotateGerritErr(ctx context.Context, err error, action string) error {
+	if err == nil {
+		return nil
+	}
 	code := grpcutil.Code(err)
 	var retErr error
 	switch code {
@@ -590,11 +593,11 @@ func (c *change) annotateGerritErr(ctx context.Context, err error, action string
 	case codes.NotFound:
 		retErr = errors.Reason("change %s/%d not found", c.Host, c.Number).Tag(ErrResetPermanentTag).Err()
 	case codes.FailedPrecondition:
-		retErr = errors.Reason("change %s/%d in an unexpected state for action %s: %s", c.Host, c.Number, action, retErr).Tag(ErrResetPermanentTag).Err()
+		retErr = errors.Reason("change %s/%d in an unexpected state for action %s: %s", c.Host, c.Number, action, err).Tag(ErrResetPermanentTag).Err()
 	case codes.DeadlineExceeded:
 		retErr = errors.Reason("timeout when calling Gerrit to %s %s/%d", action, c.Host, c.Number).Tag(transient.Tag).Err()
 	default:
-		retErr = gerrit.UnhandledError(ctx, retErr, "failed to %s %s/%d", action, c.Host, c.Number)
+		retErr = gerrit.UnhandledError(ctx, err, "failed to %s %s/%d", action, c.Host, c.Number)
 	}
 	retErr = applyGerritErrTag(retErr, code)
 	return retErr
