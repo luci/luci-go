@@ -19,10 +19,19 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	cfgcommonpb "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/config_service/internal/validation"
 	configpb "go.chromium.org/luci/config_service/proto"
 )
+
+// validator is implemented by `validation.Validator`.
+type validator interface {
+	Examine(context.Context, config.Set, []validation.File) (*validation.ExamineResult, error)
+	Validate(context.Context, config.Set, []validation.File) (*cfgcommonpb.ValidationResult, error)
+}
 
 // ValidateConfigs validates configs. Implements configpb.ConfigsServer.
 func (c Configs) ValidateConfigs(ctx context.Context, req *configpb.ValidateConfigsRequest) (*configpb.ValidateConfigsResponse, error) {

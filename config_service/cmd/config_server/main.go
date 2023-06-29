@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/service"
 	"go.chromium.org/luci/config_service/internal/settings"
+	"go.chromium.org/luci/config_service/internal/validation"
 	configpb "go.chromium.org/luci/config_service/proto"
 	"go.chromium.org/luci/config_service/rpc"
 )
@@ -62,6 +63,10 @@ func main() {
 			return errors.Annotate(err, "failed to create service finder").Err()
 		}
 		srv.RunInBackground("refresh-service-finder", serviceFinder.RefreshPeriodically)
+		validator := &validation.Validator{
+			GsClient: gsClient,
+			Finder:   serviceFinder,
+		}
 
 		mw := router.MiddlewareChain{
 			auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
@@ -72,7 +77,7 @@ func main() {
 		srv.Routes.GET("/", mw, func(c *router.Context) {
 			c.Writer.Write([]byte("Hello world!"))
 		})
-		configpb.RegisterConfigsServer(srv, rpc.NewConfigs())
+		configpb.RegisterConfigsServer(srv, rpc.NewConfigs(validator))
 
 		cron.RegisterHandler("update-services", service.Update)
 		return nil

@@ -12,25 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package rpc contains rpc service implementation.
-package rpc
-
-import (
-	pb "go.chromium.org/luci/config_service/proto"
-)
-
-// Configs implements pb.ConfigsServer
-type Configs struct {
-	pb.UnimplementedConfigsServer
-	validator validator
-}
-
-// Ensure Configs implements pb.ConfigsServer.
-var _ pb.ConfigsServer = &Configs{}
-
-// NewConfigs returns a new pb.ConfigsServer.
-func NewConfigs(validator validator) pb.ConfigsServer {
-	return &Configs{
-		validator: validator,
-	}
-}
+// Package validation implements the validation logic in LUCI Config.
+package validation
