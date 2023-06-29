@@ -15,7 +15,6 @@
 package protoutil
 
 import (
-	"strings"
 	"testing"
 	"time"
 
@@ -114,22 +113,22 @@ func TestExePayloadPath(t *testing.T) {
 	})
 }
 
-func TestMergeSummary(t *testing.T) {
+func TestCombineSummaries(t *testing.T) {
 	t.Parallel()
 
-	Convey("Variants of MergeSummary", t, func() {
+	Convey("Variants of CombineCancelSummary", t, func() {
 		Convey("No cancel message", func() {
 			b := &pb.Build{
 				SummaryMarkdown: "summary",
 			}
-			So(MergeSummary(b), ShouldEqual, "summary")
+			So(CombineCancelSummary(b), ShouldEqual, "summary")
 		})
 
 		Convey("No summary message", func() {
 			b := &pb.Build{
 				CancellationMarkdown: "cancellation",
 			}
-			So(MergeSummary(b), ShouldEqual, "cancellation")
+			So(CombineCancelSummary(b), ShouldEqual, "cancellation")
 		})
 
 		Convey("Summary and cancel message", func() {
@@ -137,19 +136,12 @@ func TestMergeSummary(t *testing.T) {
 				SummaryMarkdown:      "summary",
 				CancellationMarkdown: "cancellation",
 			}
-			So(MergeSummary(b), ShouldEqual, "summary\ncancellation")
+			So(CombineCancelSummary(b), ShouldEqual, "summary\ncancellation")
 		})
 
 		Convey("Neither summary nor CancelMessage", func() {
 			b := &pb.Build{}
-			So(MergeSummary(b), ShouldBeEmpty)
-		})
-
-		Convey("merged summary too long", func() {
-			b := &pb.Build{
-				SummaryMarkdown: strings.Repeat("l", SummaryMarkdownMaxLength+1),
-			}
-			So(MergeSummary(b), ShouldEqual, strings.Repeat("l", SummaryMarkdownMaxLength-3)+"...")
+			So(CombineCancelSummary(b), ShouldBeEmpty)
 		})
 	})
 }

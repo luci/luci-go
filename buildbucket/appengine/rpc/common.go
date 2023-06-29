@@ -37,7 +37,6 @@ import (
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	pb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 type tagValidationMode int
@@ -49,6 +48,9 @@ const (
 
 const (
 	buildSetMaxLength = 1024
+	// summaryMardkdownMaxLength is the maximum size of Build.summary_markdown field in bytes.
+	// Find more details at https://godoc.org/go.chromium.org/luci/buildbucket/proto#Build
+	summaryMarkdownMaxLength = 4 * 1000
 
 	// buildOutputPropertiesMaxBytes is the maximum length of build.output.properties.
 	// If bytes exceeds this maximum, Buildbucket will reject this request.
@@ -217,8 +219,8 @@ func validateBuildSet(bs string) error {
 }
 
 func validateSummaryMarkdown(md string) error {
-	if len(md) > protoutil.SummaryMarkdownMaxLength {
-		return errors.Reason("too big to accept (%d > %d bytes)", len(md), protoutil.SummaryMarkdownMaxLength).Err()
+	if len(md) > summaryMarkdownMaxLength {
+		return errors.Reason("too big to accept (%d > %d bytes)", len(md), summaryMarkdownMaxLength).Err()
 	}
 	return nil
 }

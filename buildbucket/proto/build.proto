@@ -256,6 +256,8 @@ message Build {
   // (https://spec.commonmark.org/0.28/).
   // Explains status.
   // Up to 4 KB.
+  //
+  // BigQuery: excluded from rows.
   string summary_markdown = 20 [ (buildbucket.v2.create_build_field_option).field_behavior = OUTPUT_ONLY ];
 
   // Markdown reasoning for cancelling the build.
