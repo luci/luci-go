@@ -1129,8 +1129,21 @@ type ConfigPattern struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A string pattern for config_set.
+	//
+	// If the pattern string starts with "regex:", everything after the prefix
+	// will be treated as regular expression to match the config set. The
+	// regular expression will be auto-anchored with "^" at the beginning and "$"
+	// at the end if not already.
+	//
+	// If the pattern string starts with "exact:" or "text:", everything after the
+	// prefix should be exactly the same as the config set to match the pattern.
+	//
+	// If the pattern string doesn't start with any of the above prefixes, it will
+	// be used as exact match just like "exact:" and "text:" prefixes.
 	ConfigSet string `protobuf:"bytes,1,opt,name=config_set,json=configSet,proto3" json:"config_set,omitempty"`
 	// A string pattern for config file path.
+	//
+	// The pattern syntax is the same as `config_set`
 	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 }
 

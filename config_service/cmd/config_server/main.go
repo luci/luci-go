@@ -57,6 +57,12 @@ func main() {
 		}
 		srv.Context = clients.WithGsClient(srv.Context, gsClient)
 
+		serviceFinder, err := service.NewFinder(srv.Context)
+		if err != nil {
+			return errors.Annotate(err, "failed to create service finder").Err()
+		}
+		srv.RunInBackground("refresh-service-finder", serviceFinder.RefreshPeriodically)
+
 		mw := router.MiddlewareChain{
 			auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
 				AudienceCheck: openid.AudienceMatchesHost,
