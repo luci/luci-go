@@ -46,6 +46,7 @@ import (
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/common"
 	"go.chromium.org/luci/config_service/internal/model"
+	"go.chromium.org/luci/config_service/internal/settings"
 	"go.chromium.org/luci/config_service/internal/taskpb"
 )
 
@@ -76,7 +77,7 @@ func init() {
 // ImportAllConfigs schedules a task for each service and project config set to
 // import configs from Gitiles and clean up stale config sets.
 func ImportAllConfigs(ctx context.Context) error {
-	cfgLoc, _ := getGlobalConfigLoc()
+	cfgLoc := settings.GetGlobalConfigLoc(ctx)
 
 	// Get all config sets.
 	cfgSets, err := getAllServiceCfgSets(ctx, cfgLoc)
@@ -186,28 +187,13 @@ func getAllServiceCfgSets(ctx context.Context, cfgLoc *cfgcommonpb.GitilesLocati
 	return cfgSets, nil
 }
 
-// getGlobalConfigLoc return the root of gitiles location where it stores all
-// registered services in Luci Config.
-// TODO(crbug.com/1446839): implement this func once we figure out how to port
-// GlobalConfig and GlobalConfigRoot related functionality to v2.
-func getGlobalConfigLoc() (*cfgcommonpb.GitilesLocation, error) {
-	return &cfgcommonpb.GitilesLocation{
-		Repo: "https://chrome-internal.googlesource.com/infradata/config",
-		Ref:  "main",
-		Path: "dev-configs",
-	}, nil
-}
-
 // ImportConfigSet tries to import a config set.
 // TODO(crbug.com/1446839): Optional: for ErrFatalTag errors or errors which are
 // retried many times, may send notifications to Config Service owners in future
 // after the notification functionality is done.
 func ImportConfigSet(ctx context.Context, cfgSet config.Set) error {
 	if sID := cfgSet.Service(); sID != "" {
-		globalCfgLoc, err := getGlobalConfigLoc()
-		if err != nil {
-			return errors.Annotate(err, "errors on getting the global config location").Err()
-		}
+		globalCfgLoc := settings.GetGlobalConfigLoc(ctx)
 		return importConfigSet(ctx, cfgSet, &cfgcommonpb.GitilesLocation{
 			Repo: globalCfgLoc.Repo,
 			Ref:  globalCfgLoc.Ref,

@@ -45,6 +45,7 @@ import (
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/common"
 	"go.chromium.org/luci/config_service/internal/model"
+	"go.chromium.org/luci/config_service/internal/settings"
 	"go.chromium.org/luci/config_service/internal/taskpb"
 	"go.chromium.org/luci/config_service/testutil"
 
@@ -58,6 +59,11 @@ func TestImportAllConfigs(t *testing.T) {
 	Convey("import all configs", t, func() {
 		ctx := testutil.SetupContext()
 		ctx, sch := tq.TestingContext(ctx, nil)
+		ctx = settings.WithGlobalConfigLoc(ctx, &cfgcommonpb.GitilesLocation{
+			Repo: "https://a.googlesource.com/infradata/config",
+			Ref:  "refs/heads/main",
+			Path: "dev-configs",
+		})
 
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
@@ -68,7 +74,7 @@ func TestImportAllConfigs(t *testing.T) {
 			mockClient.EXPECT().ListFiles(gomock.Any(), protoutil.MatcherEqual(
 				&gitilespb.ListFilesRequest{
 					Project:    "infradata/config",
-					Committish: "main",
+					Committish: "refs/heads/main",
 					Path:       "dev-configs",
 				},
 			)).Return(&gitilespb.ListFilesResponse{
@@ -147,6 +153,11 @@ func TestImportConfigSet(t *testing.T) {
 
 	Convey("import single ConfigSet", t, func() {
 		ctx := testutil.SetupContext()
+		ctx = settings.WithGlobalConfigLoc(ctx, &cfgcommonpb.GitilesLocation{
+			Repo: "https://a.googlesource.com/infradata/config",
+			Ref:  "refs/heads/main",
+			Path: "dev-configs",
+		})
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		mockGtClient := mock_gitiles.NewMockGitilesClient(ctl)
@@ -172,7 +183,7 @@ func TestImportConfigSet(t *testing.T) {
 				mockGtClient.EXPECT().Log(gomock.Any(), protoutil.MatcherEqual(
 					&gitilespb.LogRequest{
 						Project:    "infradata/config",
-						Committish: "main",
+						Committish: "refs/heads/main",
 						Path:       "dev-configs/myservice",
 						PageSize:   1,
 					},
@@ -208,8 +219,8 @@ func TestImportConfigSet(t *testing.T) {
 				So(cfgSet.Location, ShouldResembleProto, &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
-							Repo: "https://chrome-internal.googlesource.com/infradata/config",
-							Ref:  "main",
+							Repo: "https://a.googlesource.com/infradata/config",
+							Ref:  "refs/heads/main",
 							Path: "dev-configs/myservice",
 						},
 					},
@@ -217,7 +228,7 @@ func TestImportConfigSet(t *testing.T) {
 				So(cfgSet.LatestRevision.Location, ShouldResembleProto, &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
-							Repo: "https://chrome-internal.googlesource.com/infradata/config",
+							Repo: "https://a.googlesource.com/infradata/config",
 							Ref:  latestCommit.Id,
 							Path: "dev-configs/myservice",
 						},
@@ -236,7 +247,7 @@ func TestImportConfigSet(t *testing.T) {
 				So(files[0].Location, ShouldResembleProto, &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
-							Repo: "https://chrome-internal.googlesource.com/infradata/config",
+							Repo: "https://a.googlesource.com/infradata/config",
 							Ref:  latestCommit.Id,
 							Path: "dev-configs/myservice/empty_file",
 						},
@@ -256,7 +267,7 @@ func TestImportConfigSet(t *testing.T) {
 				So(files[1].Location, ShouldResembleProto, &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
-							Repo: "https://chrome-internal.googlesource.com/infradata/config",
+							Repo: "https://a.googlesource.com/infradata/config",
 							Ref:  latestCommit.Id,
 							Path: "dev-configs/myservice/file1",
 						},
@@ -276,7 +287,7 @@ func TestImportConfigSet(t *testing.T) {
 				So(files[2].Location, ShouldResembleProto, &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
-							Repo: "https://chrome-internal.googlesource.com/infradata/config",
+							Repo: "https://a.googlesource.com/infradata/config",
 							Ref:  latestCommit.Id,
 							Path: "dev-configs/myservice/sub_dir/file2",
 						},
@@ -297,7 +308,7 @@ func TestImportConfigSet(t *testing.T) {
 				So(attempt.Revision.Location, ShouldResembleProto, &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
-							Repo: "https://chrome-internal.googlesource.com/infradata/config",
+							Repo: "https://a.googlesource.com/infradata/config",
 							Ref:  latestCommit.Id,
 							Path: "dev-configs/myservice",
 						},
@@ -316,8 +327,8 @@ func TestImportConfigSet(t *testing.T) {
 				loc := &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
-							Repo: "https://chrome-internal.googlesource.com/infradata/config",
-							Ref:  "main",
+							Repo: "https://a.googlesource.com/infradata/config",
+							Ref:  "refs/heads/main",
 							Path: "dev-configs/myservice",
 						},
 					},
@@ -353,7 +364,7 @@ func TestImportConfigSet(t *testing.T) {
 				mockGtClient.EXPECT().Log(gomock.Any(), protoutil.MatcherEqual(
 					&gitilespb.LogRequest{
 						Project:    "infradata/config",
-						Committish: "main",
+						Committish: "refs/heads/main",
 						Path:       "dev-configs/myservice",
 						PageSize:   1,
 					},
@@ -382,8 +393,8 @@ func TestImportConfigSet(t *testing.T) {
 				So(cfgSet.Location, ShouldResembleProto, &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
-							Repo: "https://chrome-internal.googlesource.com/infradata/config",
-							Ref:  "main",
+							Repo: "https://a.googlesource.com/infradata/config",
+							Ref:  "refs/heads/main",
 							Path: "dev-configs/myservice",
 						},
 					},
@@ -391,7 +402,7 @@ func TestImportConfigSet(t *testing.T) {
 				So(cfgSet.LatestRevision.Location, ShouldResembleProto, &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
-							Repo: "https://chrome-internal.googlesource.com/infradata/config",
+							Repo: "https://a.googlesource.com/infradata/config",
 							Ref:  latestCommit.Id,
 							Path: "dev-configs/myservice",
 						},
@@ -415,7 +426,7 @@ func TestImportConfigSet(t *testing.T) {
 					Location: &cfgcommonpb.Location{
 						Location: &cfgcommonpb.Location_GitilesLocation{
 							GitilesLocation: &cfgcommonpb.GitilesLocation{
-								Repo: "https://chrome-internal.googlesource.com/infradata/config",
+								Repo: "https://a.googlesource.com/infradata/config",
 								Ref:  "stale",
 								Path: "dev-configs/myservice",
 							},
@@ -427,7 +438,7 @@ func TestImportConfigSet(t *testing.T) {
 				mockGtClient.EXPECT().Log(gomock.Any(), protoutil.MatcherEqual(
 					&gitilespb.LogRequest{
 						Project:    "infradata/config",
-						Committish: "main",
+						Committish: "refs/heads/main",
 						Path:       "dev-configs/myservice",
 						PageSize:   1,
 					},
@@ -447,8 +458,8 @@ func TestImportConfigSet(t *testing.T) {
 				So(cfgSetAfterImport.Location, ShouldResembleProto, &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
-							Repo: "https://chrome-internal.googlesource.com/infradata/config",
-							Ref:  "main",
+							Repo: "https://a.googlesource.com/infradata/config",
+							Ref:  "refs/heads/main",
 							Path: "dev-configs/myservice",
 						},
 					},
@@ -562,8 +573,8 @@ func TestImportConfigSet(t *testing.T) {
 				loc := &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
-							Repo: "https://chrome-internal.googlesource.com/infradata/config",
-							Ref:  "main",
+							Repo: "https://a.googlesource.com/infradata/config",
+							Ref:  "refs/heads/main",
 							Path: "dev-configs/myservice",
 						},
 					},
