@@ -46,12 +46,12 @@ import {
   getLegacyBuildURLPath,
   getProjectURLPath,
 } from '@/common/tools/url_utils';
-import { unwrapOrElse } from '@/generic_libs/tools/utils';
 
 import { CountIndicator } from '../test_results_tab/count_indicator';
 
 import { BuildLitEnvProvider } from './build_lit_env_provider';
 import { ChangeConfigDialog } from './change_config_dialog';
+import { CustomBugLink } from './custom_bug_link';
 
 const STATUS_FAVICON_MAP = Object.freeze({
   [BuildStatus.Scheduled]: grayFavicon,
@@ -112,6 +112,9 @@ const delimiter = css({
   width: '1px',
   marginLeft: '10px',
   marginRight: '10px',
+  '& + &': {
+    display: 'none',
+  },
 });
 
 export const BuildPage = observer(() => {
@@ -133,16 +136,6 @@ export const BuildPage = observer(() => {
     store.buildPage.setParams({ project, bucket, builder }, buildNumOrId);
   }, [store, project, bucket, builder, buildNumOrId]);
 
-  const customBugLink = unwrapOrElse(
-    () => store.buildPage.customBugLink,
-    (err) => {
-      console.error('failed to get the custom bug link', err);
-      // Failing to get the bug link is Ok. Some users (e.g. CrOS partners)
-      // may have access to the build but not the project configuration.
-      return null;
-    }
-  );
-
   const build = store.buildPage.build;
   const buildURLPath = getBuildURLPath(
     { project, bucket, builder },
@@ -162,6 +155,23 @@ export const BuildPage = observer(() => {
   useEffect(() => {
     document.getElementById('favicon')?.setAttribute('href', faviconUrl);
   }, [faviconUrl]);
+
+  const handleSwitchVersion = (
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
+  ) => {
+    const switchVerTemporarily =
+      e.metaKey || e.shiftKey || e.ctrlKey || e.altKey;
+
+    if (switchVerTemporarily) {
+      return;
+    }
+
+    const expires = new Date(
+      Date.now() + 365 * 24 * 60 * 60 * 1000
+    ).toUTCString();
+    document.cookie = `showNewBuildPage=false; expires=${expires}; path=/`;
+    store.redirectSw?.unregister();
+  };
 
   return (
     <InvocationProvider value={store.buildPage.invocation}>
@@ -199,41 +209,18 @@ export const BuildPage = observer(() => {
             <span>&nbsp;/&nbsp;</span>
             <span>{buildNumOrId}</span>
           </div>
-          {customBugLink && (
-            <>
-              <div css={delimiter}></div>
-              <a href={customBugLink} target="_blank" rel="noreferrer">
-                File a bug
-              </a>
-            </>
-          )}
-          {store.redirectSw && (
-            <>
-              <div css={delimiter}></div>
-              <a
-                onClick={(e) => {
-                  const switchVerTemporarily =
-                    e.metaKey || e.shiftKey || e.ctrlKey || e.altKey;
-
-                  if (switchVerTemporarily) {
-                    return;
-                  }
-
-                  const expires = new Date(
-                    Date.now() + 365 * 24 * 60 * 60 * 1000
-                  ).toUTCString();
-                  document.cookie = `showNewBuildPage=false; expires=${expires}; path=/`;
-                  store.redirectSw?.unregister();
-                }}
-                href={getLegacyBuildURLPath(
-                  { project, bucket, builder },
-                  buildNumOrId
-                )}
-              >
-                Switch to the legacy build page
-              </a>
-            </>
-          )}
+          <div css={delimiter}></div>
+          <CustomBugLink project={project} build={build?.data} />
+          <div css={delimiter}></div>
+          <a
+            onClick={handleSwitchVersion}
+            href={getLegacyBuildURLPath(
+              { project, bucket, builder },
+              buildNumOrId
+            )}
+          >
+            Switch to the legacy build page
+          </a>
           <div
             css={{
               marginLeft: 'auto',

@@ -104,10 +104,6 @@ describe('BuildPage', () => {
       );
 
       const getBuildStub = jest.spyOn(store.services.builds!, 'getBuild');
-      const getProjectCfgStub = jest.spyOn(
-        store.services.milo!,
-        'getProjectCfg'
-      );
       const batchCheckPermissionsStub = jest.spyOn(
         store.services.milo!,
         'batchCheckPermissions'
@@ -123,23 +119,18 @@ describe('BuildPage', () => {
         id: '123',
         builder: builderId,
       } as Build);
-      getProjectCfgStub.mockResolvedValueOnce({});
       batchCheckPermissionsStub.mockResolvedValueOnce({ results: {} });
 
       addDisposer(
         store,
         autorun(() => {
           store.buildPage.build;
-          store.buildPage.customBugLink;
           store.buildPage.canRetry;
         })
       );
       await jest.runAllTimersAsync();
 
       expect(getBuildStub.mock.calls[0][0].builder).toBeUndefined();
-      expect(getProjectCfgStub.mock.calls[0][0].project).toStrictEqual(
-        builderId.project
-      );
       expect(batchCheckPermissionsStub.mock.calls[0][0].realm).toStrictEqual(
         `${builderId.project}:${builderId.bucket}`
       );

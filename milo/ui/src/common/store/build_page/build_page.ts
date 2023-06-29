@@ -58,7 +58,6 @@ import { InvocationState } from '@/common/store/invocation_state';
 import { ServicesStore } from '@/common/store/services';
 import { Timestamp } from '@/common/store/timestamp';
 import { UserConfig } from '@/common/store/user_config';
-import { renderBugUrlTemplate } from '@/common/tools/build_utils';
 import { getGitilesRepoURL } from '@/common/tools/gitiles_utils';
 import * as iter from '@/generic_libs/tools/iter_utils';
 import {
@@ -315,21 +314,6 @@ export const BuildPage = types
       );
     });
 
-    const projectCfg = keepAliveComputed(self, () => {
-      if (!self.services?.milo || !self.build?.data.builder?.project) {
-        return NEVER_OBSERVABLE;
-      }
-
-      // Establishes a dependency on the timestamp.
-      self.refreshTime?.value;
-
-      return fromPromise(
-        self.services.milo.getProjectCfg({
-          project: self.build?.data.builder.project,
-        })
-      );
-    });
-
     return {
       get invocationId() {
         return unwrapObservable(invocationId.get() || NEVER_OBSERVABLE, null);
@@ -360,19 +344,6 @@ export const BuildPage = types
         return (
           this._permittedActions[PERM_TEST_EXONERATIONS_LIST_LIMITED] &&
           this._permittedActions[PERM_TEST_RESULTS_LIST_LIMITED]
-        );
-      },
-      get projectCfg() {
-        return unwrapObservable(projectCfg.get() || NEVER_OBSERVABLE, null);
-      },
-      get customBugLink(): string | null {
-        if (!self.build || !this.projectCfg?.bugUrlTemplate) {
-          return null;
-        }
-
-        return renderBugUrlTemplate(
-          this.projectCfg.bugUrlTemplate,
-          self.build.data
         );
       },
       get gitilesCommitRepo() {
