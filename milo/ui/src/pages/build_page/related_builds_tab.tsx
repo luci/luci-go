@@ -40,11 +40,6 @@ import {
   ExpandableEntriesState,
   ExpandableEntriesStateInstance,
 } from '@/common/store/expandable_entries_state/expandable_entries_state';
-import {
-  GA_ACTIONS,
-  GA_CATEGORIES,
-  trackEvent,
-} from '@/common/tools/analytics_utils';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
 import {
   displayDuration,
@@ -165,12 +160,7 @@ export const RelatedBuildsTab = observer(() => {
 
   useEffect(() => {
     store.setSelectedTabId('related-builds');
-    trackEvent(
-      GA_CATEGORIES.RELATED_BUILD_TAB,
-      GA_ACTIONS.TAB_VISITED,
-      window.location.href
-    );
-  }, []);
+  }, [store]);
 
   if (!store.buildPage.build || !store.buildPage.relatedBuilds) {
     return (

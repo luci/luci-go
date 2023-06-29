@@ -41,11 +41,6 @@ import { consumeStore, StoreInstance } from '@/common/store';
 import { StepExt } from '@/common/store/build_state';
 import { commonStyles } from '@/common/styles/stylesheets';
 import {
-  GA_ACTIONS,
-  GA_CATEGORIES,
-  trackEvent,
-} from '@/common/tools/analytics_utils';
-import {
   displayDuration,
   NUMERIC_TIME_FORMAT,
 } from '@/common/tools/time_utils';
@@ -126,11 +121,6 @@ export class TimelineTabElement extends MobxExtLitElement {
   connectedCallback() {
     super.connectedCallback();
     this.store.setSelectedTabId('timeline');
-    trackEvent(
-      GA_CATEGORIES.TIMELINE_TAB,
-      GA_ACTIONS.TAB_VISITED,
-      window.location.href
-    );
 
     const syncWidth = () => {
       this.totalWidth = Math.max(

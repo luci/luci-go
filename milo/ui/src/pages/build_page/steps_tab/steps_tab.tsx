@@ -22,11 +22,6 @@ import './step_display_config';
 import './step_list';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
-import {
-  GA_ACTIONS,
-  GA_CATEGORIES,
-  trackEvent,
-} from '@/common/tools/analytics_utils';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
 import {
   errorHandler,
@@ -48,11 +43,6 @@ export class StepsTabElement extends MobxExtLitElement {
   connectedCallback() {
     super.connectedCallback();
     this.store.setSelectedTabId('steps');
-    trackEvent(
-      GA_CATEGORIES.STEPS_TAB,
-      GA_ACTIONS.TAB_VISITED,
-      window.location.href
-    );
   }
 
   private allStepsWereExpanded = false;

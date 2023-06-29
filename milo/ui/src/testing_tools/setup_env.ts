@@ -47,7 +47,6 @@ self.CONFIGS = Object.freeze({
     HOST: assertNonNullable(process.env['VITE_LUCI_BISECTION_HOST']),
   },
 });
-window.ENABLE_GA = false;
 
 self.TextEncoder = TextEncoder;
 self.TextDecoder = TextDecoder as typeof self.TextDecoder;

@@ -1,32 +1,33 @@
 <!DOCTYPE html>
 <head>
-  <meta charset="utf-8">
+  <!-- The tag manager to inject a GA4 tag with a proper measurement ID base on
+    the host. This allows us to differentiate prod and staging/dev traffics.
 
+    TODO: The current tag manager container is created under an account not
+    linked to the Google corp organization. We should replace it with a
+    container created under a corp organization associated account for better
+    account ownership/ACL management. -->
+  <!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-5SMGXGB');</script>
+  <!-- End Google Tag Manager -->
+
+  <meta charset="utf-8">
   <title>LUCI Milo</title>
   <link id="favicon" href="/src/common/assets/favicons/milo-32.png" rel="icon">
   <link href="/src/common/styles/style.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
 
-  <!-- Google Analytics -->
-  <script>
-    const ANALYTICS_URL = 'https://www.google-analytics.com/analytics.js';
-    const analyticUrl = window
-      .trustedTypes?.createPolicy('analytics-js-static', { createScriptURL: (_) => ANALYTICS_URL })
-      .createScriptURL('') || ANALYTICS_URL;
-    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-    })(window,document,'script',analyticUrl,'ga');
-
-    const trackingId = ['luci-milo.appspot.com', 'ci.chromium.org'].includes(window.location.hostname)
-      ? 'UA-55762617-24' // luci-milo
-      : 'UA-55762617-26'; // luci-milo-dev
-    ga('create', trackingId, 'auto');
-    ga('send', 'pageview');
-  </script>
-  <!-- End Google Analytics -->
   <script type="module" src="/src/main.tsx" defer></script>
 </head>
 <body>
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5SMGXGB"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
+
   <div id="app-root"></div>
 </body>

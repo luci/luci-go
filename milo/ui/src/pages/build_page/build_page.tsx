@@ -39,11 +39,6 @@ import {
 import { BuildStatus } from '@/common/services/buildbucket';
 import { useStore } from '@/common/store';
 import { InvocationProvider } from '@/common/store/invocation_state';
-import {
-  GA_ACTIONS,
-  GA_CATEGORIES,
-  trackEvent,
-} from '@/common/tools/analytics_utils';
 import { displayDuration, LONG_TIME_FORMAT } from '@/common/tools/time_utils';
 import {
   getBuilderURLPath,
@@ -128,22 +123,6 @@ export const BuildPage = observer(() => {
       'invariant violated: project, bucket, builder, buildNumOrId should be set'
     );
   }
-
-  useEffect(() => {
-    if (window.location.href.includes('javascript:')) {
-      return;
-    }
-    trackEvent(
-      GA_CATEGORIES.NEW_BUILD_PAGE,
-      GA_ACTIONS.PAGE_VISITED,
-      window.location.href
-    );
-    trackEvent(
-      GA_CATEGORIES.PROJECT_BUILD_PAGE,
-      GA_ACTIONS.VISITED_NEW,
-      project
-    );
-  }, [project, bucket, builder, buildNumOrId]);
 
   useEffect(() => {
     store.registerSettingsDialog();
@@ -235,13 +214,6 @@ export const BuildPage = observer(() => {
                 onClick={(e) => {
                   const switchVerTemporarily =
                     e.metaKey || e.shiftKey || e.ctrlKey || e.altKey;
-                  trackEvent(
-                    GA_CATEGORIES.LEGACY_BUILD_PAGE,
-                    switchVerTemporarily
-                      ? GA_ACTIONS.SWITCH_VERSION_TEMP
-                      : GA_ACTIONS.SWITCH_VERSION,
-                    window.location.href
-                  );
 
                   if (switchVerTemporarily) {
                     return;

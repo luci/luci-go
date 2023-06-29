@@ -28,11 +28,6 @@ import {
   InvocationStateInstance,
 } from '@/common/store/invocation_state';
 import { commonStyles } from '@/common/styles/stylesheets';
-import {
-  GA_ACTIONS,
-  GA_CATEGORIES,
-  trackEvent,
-} from '@/common/tools/analytics_utils';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
 import {
   errorHandler,
@@ -79,11 +74,6 @@ export class TestResultsTabElement extends MobxExtLitElement {
   connectedCallback() {
     super.connectedCallback();
     this.store.setSelectedTabId('test-results');
-    trackEvent(
-      GA_CATEGORIES.TEST_RESULTS_TAB,
-      GA_ACTIONS.TAB_VISITED,
-      window.location.href
-    );
 
     // Update filters to match the querystring without saving them.
     const searchParams = new URLSearchParams(window.location.search);

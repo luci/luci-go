@@ -25,11 +25,6 @@ import { CommitEntryElement } from '@/common/components/commit_entry';
 import { GitCommit } from '@/common/services/milo_internal';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
-import {
-  GA_ACTIONS,
-  GA_CATEGORIES,
-  trackEvent,
-} from '@/common/tools/analytics_utils';
 import { getGitilesRepoURL } from '@/common/tools/gitiles_utils';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
 import {
@@ -127,11 +122,6 @@ export class BlamelistTabElement extends MobxExtLitElement {
   connectedCallback() {
     super.connectedCallback();
     this.store.setSelectedTabId('blamelist');
-    trackEvent(
-      GA_CATEGORIES.BLAMELIST_TAB,
-      GA_ACTIONS.TAB_VISITED,
-      window.location.href
-    );
     this.addDisposer(
       reaction(
         () => this.queryBlamelistResIter,

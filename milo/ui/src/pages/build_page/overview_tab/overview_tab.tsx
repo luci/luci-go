@@ -17,11 +17,6 @@ import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
 
 import { useStore } from '@/common/store';
-import {
-  GA_ACTIONS,
-  GA_CATEGORIES,
-  trackEvent,
-} from '@/common/tools/analytics_utils';
 
 import { ActionsSection, Dialog } from './actions_section';
 import { BuildLogSection } from './build_log_section';
@@ -78,12 +73,7 @@ export const OverviewTab = observer(() => {
 
   useEffect(() => {
     store.setSelectedTabId('overview');
-    trackEvent(
-      GA_CATEGORIES.OVERVIEW_TAB,
-      GA_ACTIONS.TAB_VISITED,
-      window.location.href
-    );
-  }, []);
+  }, [store]);
 
   return (
     <>
