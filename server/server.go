@@ -669,6 +669,9 @@ func (o *Options) FromCloudRunEnv() error {
 	if err != nil {
 		return errors.Annotate(err, "failed to get the cloud region").Err()
 	}
+	// Region format returned by Cloud Run is `projects/PROJECT-NUMBER/regions/REGION`
+	parts := strings.Split(region, "/")
+	region = parts[len(parts)-1]
 	instance, err := gcemetadata.Get("instance/id")
 	if err != nil {
 		return errors.Annotate(err, "failed to get the instance ID").Err()
