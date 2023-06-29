@@ -279,7 +279,7 @@ func validateParent(ctx context.Context) (*model.Build, error) {
 		return nil, err
 	}
 
-	if protoutil.IsEnded(pBld.Proto.Status) {
+	if protoutil.IsEnded(pBld.Proto.Status) || protoutil.IsEnded(pBld.Proto.Output.GetStatus()) {
 		return nil, errors.Reason("%d has ended, cannot add child to it", pBld.ID).Err()
 	}
 

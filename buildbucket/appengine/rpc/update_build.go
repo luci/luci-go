@@ -347,7 +347,7 @@ func mustIncludes(updateMask *mask.Mask, req *pb.UpdateBuildRequest, path string
 }
 
 func checkBuildForUpdate(updateMask *mask.Mask, req *pb.UpdateBuildRequest, build *model.Build) error {
-	if protoutil.IsEnded(build.Status) {
+	if protoutil.IsEnded(build.Status) || protoutil.IsEnded(build.Proto.Output.GetStatus()) {
 		return appstatus.Errorf(codes.FailedPrecondition, "cannot update an ended build")
 	}
 
