@@ -66,6 +66,7 @@ export function BuilderPage() {
             }
             return { key: parts[0], value: parts[1] };
           }) || [],
+        descriptionHtml: res.config.descriptionHtml,
       }),
     },
   });
@@ -83,6 +84,14 @@ export function BuilderPage() {
         color="primary"
       />
       <Grid container spacing={2} sx={{ padding: '0 16px' }}>
+        {data?.descriptionHtml && (
+          <Grid item md={12}>
+            <div
+              css={{ paddingTop: '10px' }}
+              dangerouslySetInnerHTML={{ __html: data.descriptionHtml }}
+            />
+          </Grid>
+        )}
         {!isLoading && data.swarmingHost && (
           <Grid item md={4}>
             <MachinePoolSection
