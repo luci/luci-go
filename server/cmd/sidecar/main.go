@@ -85,6 +85,9 @@ type authServerImpl struct {
 
 // serverInfo returns information about the sidecar server to put into replies.
 func (s *authServerImpl) serverInfo(ctx context.Context) *sidecar.ServerInfo {
+	if s.info == nil {
+		return nil
+	}
 	info := &sidecar.ServerInfo{
 		SidecarService: s.info.SidecarService,
 		SidecarJob:     s.info.SidecarJob,
@@ -182,9 +185,39 @@ func (s *authServerImpl) Authenticate(ctx context.Context, req *sidecar.Authenti
 					"supported by the LUCI Sidecar server", user.Identity,
 			).Proto(),
 		}
+		return resp, nil
+	}
+
+	if len(req.Groups) != 0 {
+		resp.Groups, err = auth.GetState(ctx).DB().CheckMembership(ctx, user.Identity, req.Groups)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to check groups membership: %s", err)
+		}
 	}
 
 	return resp, nil
+}
+
+// IsMember implements corresponding RPC method.
+func (s *authServerImpl) IsMember(ctx context.Context, req *sidecar.IsMemberRequest) (*sidecar.IsMemberResponse, error) {
+	if req.Identity == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "identity field is required")
+	}
+	if len(req.Groups) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "at least one group is required")
+	}
+	ident, err := identity.MakeIdentity(req.Identity)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad identity: %s", err)
+	}
+	yes, err := auth.GetState(ctx).DB().IsMember(ctx, ident, req.Groups)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to check groups membership: %s", err)
+	}
+	return &sidecar.IsMemberResponse{
+		IsMember:   yes,
+		ServerInfo: s.serverInfo(ctx),
+	}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -51,6 +51,10 @@ func TestAuthServer(t *testing.T) {
 							Name:    auth.InternalServicesGroup,
 							Members: []string{"user:service@example.com"},
 						},
+						{
+							Name:    "user-group",
+							Members: []string{"user:someone@example.com"},
+						},
 					},
 				}, "http://auth.example.com", 1234, false)
 			}
@@ -211,6 +215,87 @@ func TestAuthServer(t *testing.T) {
 			_, err := call()
 			So(err, ShouldHaveGRPCStatus, codes.Internal)
 			So(err, ShouldErrLike, "boom")
+		})
+
+		Convey("Group check", func() {
+			mockAuthUser(&auth.User{
+				Identity: "user:someone@example.com",
+				Email:    "someone@example.com",
+			})
+			res, err := srv.Authenticate(ctx, &sidecar.AuthenticateRequest{
+				Protocol: sidecar.AuthenticateRequest_HTTP1,
+				Groups:   []string{"user-group", "something-else"},
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &sidecar.AuthenticateResponse{
+				Identity:   "user:someone@example.com",
+				ServerInfo: expectedInfo,
+				Groups:     []string{"user-group"},
+				Outcome: &sidecar.AuthenticateResponse_User_{
+					User: &sidecar.AuthenticateResponse_User{
+						Email: "someone@example.com",
+					},
+				},
+			})
+		})
+	})
+}
+
+func TestIsMember(t *testing.T) {
+	t.Parallel()
+
+	Convey("With mocks", t, func() {
+		ctx := auth.WithState(context.Background(), &authtest.FakeState{
+			Identity: "user:sidecar-user-unused@example.com",
+			FakeDB: authtest.NewFakeDB(
+				authtest.MockMembership("user:enduser@example.com", "group-1"),
+				authtest.MockMembership("user:sidecar-user-unused@example.com", "group-2"),
+			),
+		})
+
+		srv := &authServerImpl{}
+
+		Convey("OK", func() {
+			res, err := srv.IsMember(ctx, &sidecar.IsMemberRequest{
+				Identity: "user:enduser@example.com",
+				Groups:   []string{"group-1", "group-2"},
+			})
+			So(err, ShouldBeNil)
+			So(res.IsMember, ShouldBeTrue)
+		})
+
+		Convey("Not a member", func() {
+			res, err := srv.IsMember(ctx, &sidecar.IsMemberRequest{
+				Identity: "user:enduser@example.com",
+				Groups:   []string{"group-2"},
+			})
+			So(err, ShouldBeNil)
+			So(res.IsMember, ShouldBeFalse)
+		})
+
+		Convey("No ident", func() {
+			_, err := srv.IsMember(ctx, &sidecar.IsMemberRequest{
+				Groups: []string{"group-2"},
+			})
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			So(err, ShouldErrLike, "identity field is required")
+		})
+
+		Convey("Bad ident", func() {
+			_, err := srv.IsMember(ctx, &sidecar.IsMemberRequest{
+				Identity: "what",
+				Groups:   []string{"group-2"},
+			})
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			So(err, ShouldErrLike, "bad identity")
+		})
+
+		Convey("No groups", func() {
+			_, err := srv.IsMember(ctx, &sidecar.IsMemberRequest{
+				Identity: "user:enduser@example.com",
+			})
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			So(err, ShouldErrLike, "at least one group is required")
 		})
 	})
 }

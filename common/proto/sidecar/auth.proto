@@ -28,6 +28,13 @@ service Auth {
   // authenticate the caller, i.e. it extracts appropriate credentials and
   // verifies they are valid.
   //
+  // Optionally checks if the authenticated identity is a member of groups
+  // given by `groups` request field, returning groups the identity is a member
+  // of in `groups` response field (which will be a subset of groups passed in
+  // the request). This is useful for implementing simple broad group-based
+  // authorization checks skipping extra RPCs. For more flexible checks see
+  // IsMember and HasPermission RPCs.
+  //
   // Returns:
   //   * OK if the server understood the request and performed the
   //     authentication. The outcome (which can include an error if credentials
@@ -47,6 +54,23 @@ service Auth {
   //     the end user.
   //   * INTERNAL on transient internal errors that SHOULD be retried.
   rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse);
+
+  // IsMember checks if an identity belongs to any of the given groups.
+  //
+  // Returns:
+  //   * OK with the outcome of the check (which may be negative) if the check
+  //     was performed successfully.
+  //   * INVALID_ARGUMENT if the request is malformed.
+  //   * UNAUTHENTICATED if the call to the sidecar server failed due to invalid
+  //     (corrupted, expired, etc) RPC credentials. This response MUST be
+  //     presented as INTERNAL error to the end user, since it indicates some
+  //     internal misconfiguration between the application server and the
+  //     sidecar service.
+  //   * PERMISSION_DENIED if the call to the sidecar server itself is not
+  //     allowed. This response MUST also be presented as INTERNAL error to
+  //     the end user.
+  //   * INTERNAL on transient internal errors that SHOULD be retried.
+  rpc IsMember(IsMemberRequest) returns (IsMemberResponse);
 }
 
 
@@ -105,6 +129,11 @@ message AuthenticateRequest {
     string value = 2;
   }
   repeated Metadata metadata = 2;
+
+  // List of groups to check an authenticated identity is a member of.
+  //
+  // The result of this check is returned via `groups` response field.
+  repeated string groups = 3;
 }
 
 
@@ -123,6 +152,11 @@ message AuthenticateResponse {
   string identity = 1;
   // Sidecar server information for logging and debugging.
   ServerInfo server_info = 2;
+
+  // List of groups the identity is a member of.
+  //
+  // This is a subset of groups passed via `groups` request field.
+  repeated string groups = 3;
 
   message Anonymous {
     // Nothing here.
@@ -156,6 +190,34 @@ message AuthenticateResponse {
     // The request is an internal LUCI call from another LUCI service.
     Project project = 13;
   }
+}
+
+
+// IsMemberRequest specifies an identity and a list of groups to check.
+message IsMemberRequest {
+  // Identity to check a membership of as a `<kind>:<value>` string.
+  //
+  // This is the same identity as returned in AuthenticateResponse. Possible
+  // formats:
+  //    * `anonymous:anonymous` for an anonymous caller.
+  //    * `user:<email>` for an end user or a service account.
+  //    * `project:<name>` for a LUCI project calling a LUCI service.
+  string identity = 1;
+
+  // List of groups to check memberships in, must have at least one entry.
+  //
+  // The check is overall positive if `identity` is a member of at least one
+  // group here.
+  repeated string groups = 2;
+}
+
+
+// IsMemberResponse contains outcome of a groups membership check.
+message IsMemberResponse {
+  // True if the identity is a member of at least one group.
+  bool is_member = 1;
+  // Sidecar server information for logging and debugging.
+  ServerInfo server_info = 2;
 }
 
 
