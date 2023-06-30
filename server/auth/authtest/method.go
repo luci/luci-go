@@ -30,10 +30,14 @@ var ErrAuthenticationError = errors.New("authtest: fake Authenticate error")
 type FakeAuth struct {
 	User    *auth.User   // the user to return in Authenticate or nil for error
 	Session auth.Session // the session to return
+	Error   error        // an error to return from all methods, if set
 }
 
 // Authenticate returns predefined User object (if it is not nil) or error.
 func (m FakeAuth) Authenticate(context.Context, auth.RequestMetadata) (*auth.User, auth.Session, error) {
+	if m.Error != nil {
+		return nil, nil, m.Error
+	}
 	if m.User == nil {
 		return nil, nil, ErrAuthenticationError
 	}
@@ -42,10 +46,16 @@ func (m FakeAuth) Authenticate(context.Context, auth.RequestMetadata) (*auth.Use
 
 // LoginURL returns fake login URL.
 func (m FakeAuth) LoginURL(ctx context.Context, dest string) (string, error) {
+	if m.Error != nil {
+		return "", m.Error
+	}
 	return "http://fake.example.com/login?dest=" + url.QueryEscape(dest), nil
 }
 
 // LogoutURL returns fake logout URL.
 func (m FakeAuth) LogoutURL(ctx context.Context, dest string) (string, error) {
+	if m.Error != nil {
+		return "", m.Error
+	}
 	return "http://fake.example.com/logout?dest=" + url.QueryEscape(dest), nil
 }

@@ -1,0 +1,179 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.sidecar;
+
+option go_package = "go.chromium.org/luci/common/proto/sidecar";
+
+import "google/rpc/status.proto";
+
+
+// Auth exposes methods to authenticate user credentials and to make
+// authorization checks.
+service Auth {
+  // Authenticate receives metadata of the incoming call and uses it to
+  // authenticate the caller, i.e. it extracts appropriate credentials and
+  // verifies they are valid.
+  //
+  // Returns:
+  //   * OK if the server understood the request and performed the
+  //     authentication. The outcome (which can include an error if credentials
+  //     are invalid) is available as part of AuthenticateResponse. OK is
+  //     returned as well if the request doesn't have credentials attached at
+  //     all or they were invalid. In that case AuthenticateResponse contains
+  //     `anonymous` or `error` outcomes respectively.
+  //   * UNAUTHENTICATED if the call to the sidecar server itself failed due to
+  //     invalid (corrupted, expired, etc) RPC credentials, i.e. credentials of
+  //     the sidecar client itself, not credentials inside AuthenticateRequest.
+  //     This response MUST be presented as INTERNAL error to the end user,
+  //     since it indicates some internal misconfiguration between the
+  //     application server and the sidecar service, unrelated to credentials
+  //     sent by the end-user.
+  //   * PERMISSION_DENIED if the call to the sidecar server itself is not
+  //     allowed. This response MUST also be presented as INTERNAL error to
+  //     the end user.
+  //   * INTERNAL on transient internal errors that SHOULD be retried.
+  rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse);
+}
+
+
+// AuthenticateRequest contains information about an incoming request that needs
+// to be authenticated.
+//
+// To be forward compatible the application server should send all incoming
+// headers (or metadata in gRPC case) and let the sidecar server decide which
+// entries to use. If necessary, the application server can omit entries that
+// are obviously not used for authentication (for example custom metadata
+// entries used by the application server itself). But generally it should not
+// be cherry-picking headers it thinks carry authentication credentials and
+// sending only them.
+//
+// Note that in environments where the application server runs behind a
+// TLS-terminating load balancer (all cloud environments are like that),
+// metadata with key `Host` (for HTTP v1) or `:authority` (for HTTP v2 and gRPC)
+// is especially important to propagate, since it contains the verified
+// (by the load balancer) hostname of the service being called. It is often
+// needed to check JWT token audience. Omitting it may result in some JWT tokens
+// not being authenticated.
+//
+// If the application server terminates TLS itself, it MUST also itself verify
+// `Host` header (or `:authority` pseudo-header) matches the expected service
+// hostname before calling Authenticate.
+message AuthenticateRequest {
+  // The protocol used by the end user to call the application server. Affects
+  // how some metadata keys are interpreted.
+  enum Protocol {
+    PROTOCOL_UNSPECIFIED = 0;
+    HTTP1 = 1;
+    HTTP2 = 2;
+    GRPC = 3;
+  }
+  Protocol protocol = 1;
+
+  // An HTTP header or gRPC metadatum.
+  message Metadata {
+    // Metadata key. Case-insensitive.
+    //
+    // If `protocol` is `GRPC`, keys ending with `-bin` indicate the value
+    // is base64-encoded. The application server MUST base64-encode binary
+    // metadata values before passing them to the sidecar server.
+    //
+    // For other protocols, keys ending with `-bin` have no special meaning,
+    // since they don't support arbitrary binary headers.
+    string key = 1;
+    // Metadata value.
+    //
+    // If `protocol` is `GRPC` and the key ends with `-bin`, this MUST be
+    // the base64-encoded value. The sidecar server will decode it into its
+    // original binary form before using it.
+    //
+    // For other protocols, keys ending with `-bin` have no special meaning,
+    // since they don't support arbitrary binary headers.
+    string value = 2;
+  }
+  repeated Metadata metadata = 2;
+}
+
+
+// AuthenticateResponse is a result of authentication (successful or not).
+//
+// The primary result of the authentication is `identity` which is a LUCI
+// identity string (`<kind>:<value>` pair, e.g. `user:someone@example.com`).
+// It can be passed to methods that do authorization checks. Additional details
+// are available via `outcome` oneof. If the request is anonymous or
+// authentication failed, the identity is set to `anonymous:anonymous`.
+//
+// If credentials are present, but invalid (e.g. expired JWT), error details are
+// returned as part of `error` outcome.
+message AuthenticateResponse {
+  // An authenticated identity (`<kind>:<value>`). Details are in `outcome`.
+  string identity = 1;
+  // Sidecar server information for logging and debugging.
+  ServerInfo server_info = 2;
+
+  message Anonymous {
+    // Nothing here.
+  }
+
+  message User {
+    // An authenticated user email. Always set.
+    string email = 1;
+    // A full user name, if available.
+    string name = 2;
+    // An URL to profile picture, if available.
+    string picture = 3;
+    // OAuth client ID if the request was authenticated using OAuth.
+    string client_id = 4;
+  }
+
+  message Project {
+    // LUCI project name representing the context of the call.
+    string project = 1;
+    // Identity string of the LUCI service that makes the call.
+    string service = 2;
+  }
+
+  oneof outcome {
+    // Set if the RPC to the sidecar succeeded, but passed credentials are bad.
+    google.rpc.Status error = 10;
+    // The request had no recognized credentials attached.
+    Anonymous anonymous = 11;
+    // The request had an end-user credentials attached.
+    User user = 12;
+    // The request is an internal LUCI call from another LUCI service.
+    Project project = 13;
+  }
+}
+
+
+// ServerInfo is returned with every response. It contains details about the
+// sidecar server that handled the call and its current state. Useful for
+// debugging. Should usually be logged by the application server in its internal
+// logs. Do not return this to the end user.
+message ServerInfo {
+  // Service name of the LUCI Sidecar server to identify its monitoring metrics.
+  string sidecar_service = 1;
+  // Job name of the LUCI Sidecar server to identify its monitoring metrics.
+  string sidecar_job = 2;
+  // Hostname of the LUCI Sidecar server to identify its monitoring metrics.
+  string sidecar_host = 3;
+  // Version of the LUCI Sidecar server for logs.
+  string sidecar_version = 4;
+  // Hostname of LUCI Auth service that produced AuthDB.
+  string auth_db_service = 5;
+  // Revision of LUCI AuthDB used during authorization checks.
+  int64 auth_db_rev = 6;
+}

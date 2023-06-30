@@ -1,0 +1,261 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package main
+
+import (
+	"context"
+	"encoding/base64"
+	"fmt"
+	"testing"
+
+	statuspb "google.golang.org/genproto/googleapis/rpc/status"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/sidecar"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authdb"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/service/protocol"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
+)
+
+func TestAuthServer(t *testing.T) {
+	t.Parallel()
+
+	Convey("With mocks", t, func() {
+		ctx := authtest.MockAuthConfig(context.Background())
+		ctx = auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
+			cfg.DBProvider = func(ctx context.Context) (authdb.DB, error) {
+				return authdb.NewSnapshotDB(&protocol.AuthDB{
+					OauthClientId: "Client ID",
+					Groups: []*protocol.AuthGroup{
+						{
+							Name:    auth.InternalServicesGroup,
+							Members: []string{"user:service@example.com"},
+						},
+					},
+				}, "http://auth.example.com", 1234, false)
+			}
+			return cfg
+		})
+
+		srv := &authServerImpl{
+			info: &sidecar.ServerInfo{
+				SidecarService: "service",
+				SidecarJob:     "job",
+				SidecarHost:    "host",
+				SidecarVersion: "version",
+			},
+		}
+
+		expectedInfo := &sidecar.ServerInfo{
+			SidecarService: "service",
+			SidecarJob:     "job",
+			SidecarHost:    "host",
+			SidecarVersion: "version",
+			AuthDbService:  "http://auth.example.com",
+			AuthDbRev:      1234,
+		}
+
+		mockAuthUser := func(u *auth.User) {
+			srv.authenticator = auth.Authenticator{
+				Methods: []auth.Method{
+					authtest.FakeAuth{
+						User: u,
+					},
+				},
+			}
+		}
+
+		mockAuthError := func(err error) {
+			srv.authenticator = auth.Authenticator{
+				Methods: []auth.Method{
+					authtest.FakeAuth{
+						Error: err,
+					},
+				},
+			}
+		}
+
+		call := func(md ...*sidecar.AuthenticateRequest_Metadata) (*sidecar.AuthenticateResponse, error) {
+			return srv.Authenticate(ctx, &sidecar.AuthenticateRequest{
+				Protocol: sidecar.AuthenticateRequest_HTTP1,
+				Metadata: md,
+			})
+		}
+
+		Convey("Anonymous", func() {
+			mockAuthUser(&auth.User{Identity: identity.AnonymousIdentity})
+			res, err := call()
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &sidecar.AuthenticateResponse{
+				Identity:   "anonymous:anonymous",
+				ServerInfo: expectedInfo,
+				Outcome: &sidecar.AuthenticateResponse_Anonymous_{
+					Anonymous: &sidecar.AuthenticateResponse_Anonymous{},
+				},
+			})
+		})
+
+		Convey("User", func() {
+			mockAuthUser(&auth.User{
+				Identity: "user:someone@example.com",
+				Email:    "someone@example.com",
+				Name:     "Full Name",
+				Picture:  "Picture",
+				ClientID: "Client ID",
+			})
+			res, err := call()
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &sidecar.AuthenticateResponse{
+				Identity:   "user:someone@example.com",
+				ServerInfo: expectedInfo,
+				Outcome: &sidecar.AuthenticateResponse_User_{
+					User: &sidecar.AuthenticateResponse_User{
+						Email:    "someone@example.com",
+						Name:     "Full Name",
+						Picture:  "Picture",
+						ClientId: "Client ID",
+					},
+				},
+			})
+		})
+
+		Convey("Project", func() {
+			mockAuthUser(&auth.User{Identity: "user:service@example.com"})
+			res, err := call(&sidecar.AuthenticateRequest_Metadata{
+				Key:   auth.XLUCIProjectHeader,
+				Value: "something",
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &sidecar.AuthenticateResponse{
+				Identity:   "project:something",
+				ServerInfo: expectedInfo,
+				Outcome: &sidecar.AuthenticateResponse_Project_{
+					Project: &sidecar.AuthenticateResponse_Project{
+						Project: "something",
+						Service: "user:service@example.com",
+					},
+				},
+			})
+		})
+
+		Convey("Unknown identity kind", func() {
+			mockAuthUser(&auth.User{Identity: "bot:what"})
+			res, err := call()
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &sidecar.AuthenticateResponse{
+				Identity:   "anonymous:anonymous",
+				ServerInfo: expectedInfo,
+				Outcome: &sidecar.AuthenticateResponse_Error{
+					Error: &statuspb.Status{
+						Code:    int32(codes.Unauthenticated),
+						Message: "request was authenticated as \"bot:what\" which is an identity kind not supported by the LUCI Sidecar server",
+					},
+				},
+			})
+		})
+
+		Convey("Fatal auth error", func() {
+			mockAuthError(fmt.Errorf("boom"))
+			res, err := call()
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &sidecar.AuthenticateResponse{
+				Identity:   "anonymous:anonymous",
+				ServerInfo: expectedInfo,
+				Outcome: &sidecar.AuthenticateResponse_Error{
+					Error: &statuspb.Status{
+						Code:    int32(codes.Unauthenticated),
+						Message: "boom",
+					},
+				},
+			})
+		})
+
+		Convey("Fatal auth error with code", func() {
+			mockAuthError(status.Errorf(codes.PermissionDenied, "boom"))
+			res, err := call()
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &sidecar.AuthenticateResponse{
+				Identity:   "anonymous:anonymous",
+				ServerInfo: expectedInfo,
+				Outcome: &sidecar.AuthenticateResponse_Error{
+					Error: &statuspb.Status{
+						Code:    int32(codes.PermissionDenied),
+						Message: "boom",
+					},
+				},
+			})
+		})
+
+		Convey("Transient error", func() {
+			mockAuthError(errors.New("boom", transient.Tag))
+			_, err := call()
+			So(err, ShouldHaveGRPCStatus, codes.Internal)
+			So(err, ShouldErrLike, "boom")
+		})
+	})
+}
+
+func TestRequestMetadata(t *testing.T) {
+	t.Parallel()
+
+	Convey("HTTP", t, func() {
+		req, err := newRequestMetadata(&sidecar.AuthenticateRequest{
+			Protocol: sidecar.AuthenticateRequest_HTTP1,
+			Metadata: []*sidecar.AuthenticateRequest_Metadata{
+				{Key: "Header", Value: "Val1"},
+				{Key: "HeaDer", Value: "Val2"},
+				{Key: "Host", Value: "host"},
+				{Key: "Header-Bin", Value: "val"},
+				{Key: "Cookie", Value: "cookie_1=value_1; cookie_2=value_2"},
+				{Key: "Cookie", Value: "cookie_3=value_3"},
+			},
+		})
+		So(err, ShouldBeNil)
+		So(req.Host(), ShouldEqual, "host")
+		So(req.RemoteAddr(), ShouldEqual, "")
+		So(req.Header("HEADER"), ShouldEqual, "Val1")
+		So(req.Header("header-bin"), ShouldEqual, "val")
+
+		cookie, err := req.Cookie("cookie_3")
+		So(err, ShouldBeNil)
+		So(cookie.Value, ShouldEqual, "value_3")
+	})
+
+	Convey("gRPC", t, func() {
+		req, err := newRequestMetadata(&sidecar.AuthenticateRequest{
+			Protocol: sidecar.AuthenticateRequest_GRPC,
+			Metadata: []*sidecar.AuthenticateRequest_Metadata{
+				{Key: ":authority", Value: "host"},
+				{Key: "Header-Bin", Value: base64.RawStdEncoding.EncodeToString([]byte("val"))},
+			},
+		})
+		So(err, ShouldBeNil)
+		So(req.Host(), ShouldEqual, "host")
+		So(req.Header("header-bin"), ShouldEqual, "val")
+	})
+
+	Convey("Unknown protocol", t, func() {
+		_, err := newRequestMetadata(&sidecar.AuthenticateRequest{})
+		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+	})
+}
