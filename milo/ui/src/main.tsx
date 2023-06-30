@@ -18,16 +18,12 @@ import { createRoot } from 'react-dom/client';
 import '@/common/api/stackdriver_errors';
 import { App } from '@/App';
 import { initDefaultTrustedTypesPolicy } from '@/common/tools/sanitize_html';
+import { assertNonNullable } from '@/generic_libs/tools/utils';
 
 /**
  * Whether the UI service worker should be enabled.
  */
 declare const ENABLE_UI_SW: boolean;
-/**
- * Whether GA tracking should be enabled.
- */
-declare const ENABLE_GA: boolean;
-window.ENABLE_GA = ENABLE_GA;
 
 initDefaultTrustedTypesPolicy();
 
@@ -41,6 +37,6 @@ navigator.serviceWorker?.addEventListener('controllerchange', () =>
   window.location.reload()
 );
 
-const container = document.getElementById('app-root');
-const root = createRoot(container!);
+const container = assertNonNullable(document.getElementById('app-root'));
+const root = createRoot(container);
 root.render(<App isDevEnv={import.meta.env.DEV} enableUiSW={ENABLE_UI_SW} />);
