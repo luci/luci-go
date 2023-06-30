@@ -18,8 +18,11 @@ import (
 	"context"
 	"encoding/base64"
 	"flag"
+	"fmt"
 	"net/http"
+	"os"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -33,47 +36,95 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/openid"
+	"go.chromium.org/luci/server/auth/realms"
 )
 
 func main() {
+	var permissions stringlistflag.Flag
 	var openIDAudience stringlistflag.Flag
 
+	flag.Var(
+		&permissions,
+		"sidecar-subscribe-to-permission",
+		"A permission that will be accepted by HasPermission RPC",
+	)
 	flag.Var(
 		&openIDAudience,
 		"sidecar-open-id-rpc-auth-audience",
 		"Additional accepted value of `aud` claim in OpenID tokens, can be repeated",
 	)
 
-	server.Main(nil, nil, func(srv *server.Server) error {
-		sidecar.RegisterAuthServer(srv, &authServerImpl{
-			// Details about the server returned to clients.
-			info: &sidecar.ServerInfo{
-				SidecarService: srv.Options.TsMonServiceName,
-				SidecarJob:     srv.Options.TsMonJobName,
-				SidecarHost:    srv.Options.Hostname,
-				SidecarVersion: srv.Options.ImageVersion(),
-			},
-			// Authentication methods used by Authenticate RPC to authenticate
-			// end-user requests. Note that there's a separate stack of auth methods
-			// used to authenticate RPCs to the sidecar server itself. It is
-			// configured by server.Server as usual.
-			authenticator: auth.Authenticator{
-				Methods: []auth.Method{
-					// Preferred method using OpenID identity tokens (JWTs).
-					&openid.GoogleIDTokenAuthMethod{
-						AudienceCheck: openid.AudienceMatchesHost,
-						Audience:      openIDAudience,
-						SkipNonJWT:    true, // pass OAuth2 access tokens through
-					},
-					// Fallback method to support Google OAuth2 access tokens. Slow.
-					&auth.GoogleOAuth2Method{
-						Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
-					},
+	// Prepare server options by probing environment and parsing flags. This
+	// normally happens in server.Main(...), but here we can't use it, see the
+	// comment below.
+	opts, err := server.OptionsFromEnv(&server.Options{
+		DefaultRequestTimeout: 15 * time.Second, // all requests should be super fast
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "When constructing options: %s\n", err)
+		os.Exit(3)
+	}
+	opts.Register(flag.CommandLine)
+	flag.Parse()
+	if args := flag.Args(); len(args) > 0 {
+		fmt.Fprintf(os.Stderr, "got unexpected positional command line arguments: %v\n", args)
+		os.Exit(3)
+	}
+
+	// Register all permissions as soon as possible. Normally they are registered
+	// during init() time, but here this list is dynamic and we need to do it
+	// after flags are parsed. Note that doing it after server.New(...) call is
+	// already too late, since server.New(...) fetches AuthDB which uses
+	// registered permissions already. Registering them after server.New(...)
+	// causes a panic.
+	perms := make(map[string]realms.Permission, len(permissions))
+	for _, perm := range permissions {
+		if err := realms.ValidatePermissionName(perm); err != nil {
+			fmt.Fprintf(os.Stderr, "Bad -sidecar-subscribe-to-permission: %s\n", err)
+			os.Exit(3)
+		}
+		perms[perm] = realms.RegisterPermission(perm)
+	}
+
+	// Finish initializing the server.
+	srv, err := server.New(context.Background(), *opts, nil)
+	if err != nil {
+		srv.Fatal(err)
+	}
+	sidecar.RegisterAuthServer(srv, &authServerImpl{
+		// Details about the server returned to clients.
+		info: &sidecar.ServerInfo{
+			SidecarService: srv.Options.TsMonServiceName,
+			SidecarJob:     srv.Options.TsMonJobName,
+			SidecarHost:    srv.Options.Hostname,
+			SidecarVersion: srv.Options.ImageVersion(),
+		},
+		// Authentication methods used by Authenticate RPC to authenticate
+		// end-user requests. Note that there's a separate stack of auth methods
+		// used to authenticate RPCs to the sidecar server itself. It is
+		// configured by server.Server as usual.
+		authenticator: auth.Authenticator{
+			Methods: []auth.Method{
+				// Preferred method using OpenID identity tokens (JWTs).
+				&openid.GoogleIDTokenAuthMethod{
+					AudienceCheck: openid.AudienceMatchesHost,
+					Audience:      openIDAudience,
+					SkipNonJWT:    true, // pass OAuth2 access tokens through
+				},
+				// Fallback method to support Google OAuth2 access tokens. Slow.
+				&auth.GoogleOAuth2Method{
+					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
 				},
 			},
-		})
-		return nil
+		},
+		// Map permission name => realms.Permission.
+		perms: perms,
 	})
+
+	// Run the serving loop.
+	if err = srv.Serve(); err != nil {
+		srv.Fatal(err)
+	}
 }
 
 type authServerImpl struct {
@@ -81,6 +132,7 @@ type authServerImpl struct {
 
 	info          *sidecar.ServerInfo
 	authenticator auth.Authenticator
+	perms         map[string]realms.Permission
 }
 
 // serverInfo returns information about the sidecar server to put into replies.
@@ -217,6 +269,44 @@ func (s *authServerImpl) IsMember(ctx context.Context, req *sidecar.IsMemberRequ
 	return &sidecar.IsMemberResponse{
 		IsMember:   yes,
 		ServerInfo: s.serverInfo(ctx),
+	}, nil
+}
+
+// HasPermission implements corresponding RPC method.
+func (s *authServerImpl) HasPermission(ctx context.Context, req *sidecar.HasPermissionRequest) (*sidecar.HasPermissionResponse, error) {
+	if req.Identity == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "identity field is required")
+	}
+	ident, err := identity.MakeIdentity(req.Identity)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad identity: %s", err)
+	}
+
+	if req.Permission == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "permission field is required")
+	}
+	perm, ok := s.perms[req.Permission]
+	if !ok {
+		if err := realms.ValidatePermissionName(req.Permission); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "bad permission: %s", err)
+		}
+		return nil, status.Errorf(codes.InvalidArgument, "bad permission: %q is not registered with the sidecar server via -sidecar-subscribe-to-permission", req.Permission)
+	}
+
+	if req.Realm == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "realm field is required")
+	}
+	if err := realms.ValidateRealmName(req.Realm, realms.GlobalScope); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad realm: %s", err)
+	}
+
+	yes, err := auth.GetState(ctx).DB().HasPermission(ctx, ident, perm, req.Realm, req.Attributes)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to check permission: %s", err)
+	}
+	return &sidecar.HasPermissionResponse{
+		HasPermission: yes,
+		ServerInfo:    s.serverInfo(ctx),
 	}, nil
 }
 

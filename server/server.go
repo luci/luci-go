@@ -287,45 +287,25 @@ var cloudRegionFromGAERegion = map[string]string{
 //
 // On errors, logs them and aborts the process with non-zero exit code.
 func Main(opts *Options, mods []module.Module, init func(srv *Server) error) {
-	if opts == nil {
-		opts = &Options{}
-	}
-
-	// Populate unset ClientAuth fields with hardcoded defaults.
-	authDefaults := chromeinfra.DefaultAuthOptions()
-	if opts.ClientAuth.ClientID == "" {
-		opts.ClientAuth.ClientID = authDefaults.ClientID
-		opts.ClientAuth.ClientSecret = authDefaults.ClientSecret
-	}
-	if opts.ClientAuth.TokenServerHost == "" {
-		opts.ClientAuth.TokenServerHost = authDefaults.TokenServerHost
-	}
-	if opts.ClientAuth.SecretsDir == "" {
-		opts.ClientAuth.SecretsDir = authDefaults.SecretsDir
-	}
-
-	// Use CloudOAuthScopes by default when using UserCredentialsMethod auth mode.
-	// This is ignored when running in the cloud (the server uses the ambient
-	// credentials provided by the environment).
-	if len(opts.ClientAuth.Scopes) == 0 {
-		opts.ClientAuth.Scopes = auth.CloudOAuthScopes
-	}
-
 	// Prepopulate defaults for flags based on the runtime environment.
-	opts.FromGAEEnv()
-	if err := opts.FromCloudRunEnv(); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to probe Cloud Run environment: %s\n", err)
+	opts, err := OptionsFromEnv(opts)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "When constructing options: %s\n", err)
 		os.Exit(3)
 	}
+
+	// Register and parse server flags.
 	opts.Register(flag.CommandLine)
 	flag.Parse()
+	if args := flag.Args(); len(args) > 0 {
+		fmt.Fprintf(os.Stderr, "got unexpected positional command line arguments: %v\n", args)
+		os.Exit(3)
+	}
 
+	// Construct the server and run its serving loop.
 	srv, err := New(context.Background(), *opts, mods)
 	if err != nil {
 		srv.Fatal(err)
-	}
-	if args := flag.Args(); len(args) > 0 {
-		srv.Fatal(errors.Reason("got unexpected positional command line arguments: %v", args).Err())
 	}
 	if init != nil {
 		if err = init(srv); err != nil {
@@ -393,6 +373,47 @@ type Options struct {
 	testStderr         sdlogger.LogEntryWriter // mocks stderr in tests
 	testListeners      map[string]net.Listener // addr => net.Listener, for tests
 	testDisableTracing bool                    // don't install a tracing backend
+}
+
+// OptionsFromEnv prepopulates options based on the runtime environment.
+//
+// It detects if the process is running on GAE or Cloud Run and adjust options
+// accordingly. See FromGAEEnv and FromCloudRunEnv for exact details of how it
+// happens.
+//
+// Either mutates give `opts`, returning it in the end, or (if `opts` is nil)
+// create new Options.
+func OptionsFromEnv(opts *Options) (*Options, error) {
+	if opts == nil {
+		opts = &Options{}
+	}
+
+	// Populate unset ClientAuth fields with hardcoded defaults.
+	authDefaults := chromeinfra.DefaultAuthOptions()
+	if opts.ClientAuth.ClientID == "" {
+		opts.ClientAuth.ClientID = authDefaults.ClientID
+		opts.ClientAuth.ClientSecret = authDefaults.ClientSecret
+	}
+	if opts.ClientAuth.TokenServerHost == "" {
+		opts.ClientAuth.TokenServerHost = authDefaults.TokenServerHost
+	}
+	if opts.ClientAuth.SecretsDir == "" {
+		opts.ClientAuth.SecretsDir = authDefaults.SecretsDir
+	}
+
+	// Use CloudOAuthScopes by default when using UserCredentialsMethod auth mode.
+	// This is ignored when running in the cloud (the server uses the ambient
+	// credentials provided by the environment).
+	if len(opts.ClientAuth.Scopes) == 0 {
+		opts.ClientAuth.Scopes = auth.CloudOAuthScopes
+	}
+
+	// Prepopulate defaults for flags based on the runtime environment.
+	opts.FromGAEEnv()
+	if err := opts.FromCloudRunEnv(); err != nil {
+		return nil, errors.Annotate(err, "failed to probe Cloud Run environment").Err()
+	}
+	return opts, nil
 }
 
 // Register registers the command line flags.

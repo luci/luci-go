@@ -68,6 +68,28 @@ type AuthClient interface {
 	//     the end user.
 	//   - INTERNAL on transient internal errors that SHOULD be retried.
 	IsMember(ctx context.Context, in *IsMemberRequest, opts ...grpc.CallOption) (*IsMemberResponse, error)
+	// HasPermission check if an identity has a permission in a realm.
+	//
+	// Can only check permissions registered when the sidecar server was started
+	// via `-sidecar-subscribe-to-permission` command line flag. Checks for any
+	// other permission will end up with INVALID_ARGUMENT error.
+	//
+	// Returns:
+	//   - OK with the outcome of the check (which may be negative) if the check
+	//     was performed successfully.
+	//   - INVALID_ARGUMENT if the request is malformed or the specified
+	//     permission was not registered with the sidecar server via
+	//     `-sidecar-subscribe-to-permission` command line flag.
+	//   - UNAUTHENTICATED if the call to the sidecar server failed due to invalid
+	//     (corrupted, expired, etc) RPC credentials. This response MUST be
+	//     presented as INTERNAL error to the end user, since it indicates some
+	//     internal misconfiguration between the application server and the
+	//     sidecar service.
+	//   - PERMISSION_DENIED if the call to the sidecar server itself is not
+	//     allowed. This response MUST also be presented as INTERNAL error to
+	//     the end user.
+	//   - INTERNAL on transient internal errors that SHOULD be retried.
+	HasPermission(ctx context.Context, in *HasPermissionRequest, opts ...grpc.CallOption) (*HasPermissionResponse, error)
 }
 
 type authClient struct {
@@ -90,6 +112,15 @@ func (c *authClient) Authenticate(ctx context.Context, in *AuthenticateRequest, 
 func (c *authClient) IsMember(ctx context.Context, in *IsMemberRequest, opts ...grpc.CallOption) (*IsMemberResponse, error) {
 	out := new(IsMemberResponse)
 	err := c.cc.Invoke(ctx, "/luci.sidecar.Auth/IsMember", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) HasPermission(ctx context.Context, in *HasPermissionRequest, opts ...grpc.CallOption) (*HasPermissionResponse, error) {
+	out := new(HasPermissionResponse)
+	err := c.cc.Invoke(ctx, "/luci.sidecar.Auth/HasPermission", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -146,6 +177,28 @@ type AuthServer interface {
 	//     the end user.
 	//   - INTERNAL on transient internal errors that SHOULD be retried.
 	IsMember(context.Context, *IsMemberRequest) (*IsMemberResponse, error)
+	// HasPermission check if an identity has a permission in a realm.
+	//
+	// Can only check permissions registered when the sidecar server was started
+	// via `-sidecar-subscribe-to-permission` command line flag. Checks for any
+	// other permission will end up with INVALID_ARGUMENT error.
+	//
+	// Returns:
+	//   - OK with the outcome of the check (which may be negative) if the check
+	//     was performed successfully.
+	//   - INVALID_ARGUMENT if the request is malformed or the specified
+	//     permission was not registered with the sidecar server via
+	//     `-sidecar-subscribe-to-permission` command line flag.
+	//   - UNAUTHENTICATED if the call to the sidecar server failed due to invalid
+	//     (corrupted, expired, etc) RPC credentials. This response MUST be
+	//     presented as INTERNAL error to the end user, since it indicates some
+	//     internal misconfiguration between the application server and the
+	//     sidecar service.
+	//   - PERMISSION_DENIED if the call to the sidecar server itself is not
+	//     allowed. This response MUST also be presented as INTERNAL error to
+	//     the end user.
+	//   - INTERNAL on transient internal errors that SHOULD be retried.
+	HasPermission(context.Context, *HasPermissionRequest) (*HasPermissionResponse, error)
 	mustEmbedUnimplementedAuthServer()
 }
 
@@ -158,6 +211,9 @@ func (UnimplementedAuthServer) Authenticate(context.Context, *AuthenticateReques
 }
 func (UnimplementedAuthServer) IsMember(context.Context, *IsMemberRequest) (*IsMemberResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsMember not implemented")
+}
+func (UnimplementedAuthServer) HasPermission(context.Context, *HasPermissionRequest) (*HasPermissionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HasPermission not implemented")
 }
 func (UnimplementedAuthServer) mustEmbedUnimplementedAuthServer() {}
 
@@ -208,6 +264,24 @@ func _Auth_IsMember_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Auth_HasPermission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HasPermissionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).HasPermission(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.sidecar.Auth/HasPermission",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).HasPermission(ctx, req.(*HasPermissionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Auth_ServiceDesc is the grpc.ServiceDesc for Auth service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -222,6 +296,10 @@ var Auth_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "IsMember",
 			Handler:    _Auth_IsMember_Handler,
+		},
+		{
+			MethodName: "HasPermission",
+			Handler:    _Auth_HasPermission_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

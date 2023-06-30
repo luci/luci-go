@@ -31,10 +31,16 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+)
+
+var (
+	testPerm0 = realms.RegisterPermission("fake.permission.0")
+	testPerm1 = realms.RegisterPermission("fake.permission.1")
 )
 
 func TestAuthServer(t *testing.T) {
@@ -296,6 +302,127 @@ func TestIsMember(t *testing.T) {
 			})
 			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
 			So(err, ShouldErrLike, "at least one group is required")
+		})
+	})
+}
+
+func TestHasPermission(t *testing.T) {
+	t.Parallel()
+
+	Convey("With mocks", t, func() {
+		ctx := auth.WithState(context.Background(), &authtest.FakeState{
+			Identity: "user:sidecar-user-unused@example.com",
+			FakeDB: authtest.NewFakeDB(
+				authtest.MockPermission("user:enduser@example.com", "test:realm", testPerm0),
+				authtest.MockPermission("user:enduser@example.com", "test:realm", testPerm1,
+					authtest.RestrictAttribute("test.attr", "good-val"),
+				),
+			),
+		})
+
+		srv := &authServerImpl{
+			perms: map[string]realms.Permission{
+				testPerm0.Name(): testPerm0,
+				testPerm1.Name(): testPerm1,
+			},
+		}
+
+		Convey("OK", func() {
+			res, err := srv.HasPermission(ctx, &sidecar.HasPermissionRequest{
+				Identity:   "user:enduser@example.com",
+				Permission: testPerm0.Name(),
+				Realm:      "test:realm",
+			})
+			So(err, ShouldBeNil)
+			So(res.HasPermission, ShouldBeTrue)
+		})
+
+		Convey("OK with attrs", func() {
+			res, err := srv.HasPermission(ctx, &sidecar.HasPermissionRequest{
+				Identity:   "user:enduser@example.com",
+				Permission: testPerm1.Name(),
+				Realm:      "test:realm",
+				Attributes: map[string]string{"test.attr": "good-val"},
+			})
+			So(err, ShouldBeNil)
+			So(res.HasPermission, ShouldBeTrue)
+		})
+
+		Convey("No permission", func() {
+			res, err := srv.HasPermission(ctx, &sidecar.HasPermissionRequest{
+				Identity:   "user:enduser@example.com",
+				Permission: testPerm1.Name(),
+				Realm:      "test:realm",
+			})
+			So(err, ShouldBeNil)
+			So(res.HasPermission, ShouldBeFalse)
+		})
+
+		Convey("No ident", func() {
+			_, err := srv.HasPermission(ctx, &sidecar.HasPermissionRequest{
+				Permission: testPerm0.Name(),
+				Realm:      "test:realm",
+			})
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			So(err, ShouldErrLike, "identity field is required")
+		})
+
+		Convey("Bad ident", func() {
+			_, err := srv.HasPermission(ctx, &sidecar.HasPermissionRequest{
+				Identity:   "what",
+				Permission: testPerm0.Name(),
+				Realm:      "test:realm",
+			})
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			So(err, ShouldErrLike, "bad identity")
+		})
+
+		Convey("No perm", func() {
+			_, err := srv.HasPermission(ctx, &sidecar.HasPermissionRequest{
+				Identity: "user:enduser@example.com",
+				Realm:    "test:realm",
+			})
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			So(err, ShouldErrLike, "permission field is required")
+		})
+
+		Convey("Bad perm", func() {
+			_, err := srv.HasPermission(ctx, &sidecar.HasPermissionRequest{
+				Identity:   "user:enduser@example.com",
+				Permission: "what",
+				Realm:      "test:realm",
+			})
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			So(err, ShouldErrLike, "bad permission")
+		})
+
+		Convey("Unknown perm", func() {
+			_, err := srv.HasPermission(ctx, &sidecar.HasPermissionRequest{
+				Identity:   "user:enduser@example.com",
+				Permission: "fake.permission.unknown",
+				Realm:      "test:realm",
+			})
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			So(err, ShouldErrLike, "is not registered")
+		})
+
+		Convey("No realm", func() {
+			_, err := srv.HasPermission(ctx, &sidecar.HasPermissionRequest{
+				Identity:   "user:enduser@example.com",
+				Permission: testPerm0.Name(),
+			})
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			So(err, ShouldErrLike, "realm field is required")
+		})
+
+		Convey("Bad realm", func() {
+			_, err := srv.HasPermission(ctx, &sidecar.HasPermissionRequest{
+				Identity:   "user:enduser@example.com",
+				Permission: testPerm0.Name(),
+				Realm:      "bad",
+			})
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			So(err, ShouldErrLike, "bad global realm name")
 		})
 	})
 }

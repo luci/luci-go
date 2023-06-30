@@ -71,6 +71,29 @@ service Auth {
   //     the end user.
   //   * INTERNAL on transient internal errors that SHOULD be retried.
   rpc IsMember(IsMemberRequest) returns (IsMemberResponse);
+
+  // HasPermission check if an identity has a permission in a realm.
+  //
+  // Can only check permissions registered when the sidecar server was started
+  // via `-sidecar-subscribe-to-permission` command line flag. Checks for any
+  // other permission will end up with INVALID_ARGUMENT error.
+  //
+  // Returns:
+  //   * OK with the outcome of the check (which may be negative) if the check
+  //     was performed successfully.
+  //   * INVALID_ARGUMENT if the request is malformed or the specified
+  //     permission was not registered with the sidecar server via
+  //     `-sidecar-subscribe-to-permission` command line flag.
+  //   * UNAUTHENTICATED if the call to the sidecar server failed due to invalid
+  //     (corrupted, expired, etc) RPC credentials. This response MUST be
+  //     presented as INTERNAL error to the end user, since it indicates some
+  //     internal misconfiguration between the application server and the
+  //     sidecar service.
+  //   * PERMISSION_DENIED if the call to the sidecar server itself is not
+  //     allowed. This response MUST also be presented as INTERNAL error to
+  //     the end user.
+  //   * INTERNAL on transient internal errors that SHOULD be retried.
+  rpc HasPermission(HasPermissionRequest) returns (HasPermissionResponse);
 }
 
 
@@ -216,6 +239,50 @@ message IsMemberRequest {
 message IsMemberResponse {
   // True if the identity is a member of at least one group.
   bool is_member = 1;
+  // Sidecar server information for logging and debugging.
+  ServerInfo server_info = 2;
+}
+
+
+// HasPermissionRequest identifies an identity and a permission to check.
+message HasPermissionRequest {
+  // Identity to check a permission of as a `<kind>:<value>` string.
+  //
+  // This is the same identity as returned in AuthenticateResponse. Possible
+  // formats:
+  //    * `anonymous:anonymous` for an anonymous caller.
+  //    * `user:<email>` for an end user or a service account.
+  //    * `project:<name>` for a LUCI project calling a LUCI service.
+  string identity = 1;
+
+  // Permission to check as `<service>.<subject>.<verb>` string.
+  //
+  // The sidecar server can only check permissions registered when it was
+  // started via `-sidecar-subscribe-to-permission` command line flag. Checks
+  // for any other permission will end up with INVALID_ARGUMENT error.
+  string permission = 2;
+
+  // A realm to check the permission in as `<project>:<realm>` string.
+  //
+  // A non-existing realm is replaced with the corresponding root realm (e.g. if
+  // `projectA:some/realm` doesn't exist, `projectA:@root` will be used in its
+  // place). If the project doesn't exist, all its realms (including the root
+  // realm) are considered empty. The permission check ends with negative
+  // outcome in that case.
+  string realm = 3;
+
+  // Attributes are the context of this particular permission check and are used
+  // as inputs to `conditions` predicates in conditional bindings. If a service
+  // supports conditional bindings, it must document what attributes it passes
+  // with each permission it checks.
+  map<string, string> attributes = 4;
+}
+
+
+// HasPermissionResponse contains outcome of a permission check.
+message HasPermissionResponse {
+  // True if the identity has the requested permission.
+  bool has_permission = 1;
   // Sidecar server information for logging and debugging.
   ServerInfo server_info = 2;
 }
