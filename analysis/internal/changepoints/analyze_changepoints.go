@@ -124,7 +124,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 	}
 
 	// Contains the test variant branches to be written to BigQuery.
-	bqExporterInput := []*bqexporter.RowInput{}
+	bqExporterInput := make([]bqexporter.PartialBigQueryRow, 0, len(tvs))
 
 	commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		// Check the TestVariantBranch table for the existence of the batch.
@@ -180,10 +180,11 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 				return errors.Annotate(err, "test variant branch to mutation").Err()
 			}
 			mutations = append(mutations, mut)
-			bqExporterInput = append(bqExporterInput, &bqexporter.RowInput{
-				TestVariantBranch:   tvb,
-				InputBufferSegments: inputSegments,
-			})
+			bqRow, err := bqexporter.ToPartialBigQueryRow(tvb, inputSegments)
+			if err != nil {
+				return errors.Annotate(err, "test variant branch to bigquery row").Err()
+			}
+			bqExporterInput = append(bqExporterInput, bqRow)
 			return nil
 		}
 		if err := testvariantbranch.ReadF(ctx, tvbks, f); err != nil {
@@ -213,7 +214,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 	// the data will not be exported.
 	// This should not be a concern, since the export will happen again when the
 	// next test verdict comes, but it may result in some delay.
-	rowInputs := &bqexporter.RowInputs{
+	rowInputs := bqexporter.RowInputs{
 		Rows:            bqExporterInput,
 		CommitTimestamp: commitTimestamp,
 	}
@@ -227,7 +228,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 // exportToBigQuery exports the data in bqRows to BigQuery.
 // commitTimestamp is the Spanner commit timestamp of the
 // test variant branches.
-func exportToBigQuery(ctx context.Context, exporter *bqexporter.Exporter, rowInputs *bqexporter.RowInputs) error {
+func exportToBigQuery(ctx context.Context, exporter *bqexporter.Exporter, rowInputs bqexporter.RowInputs) error {
 	if len(rowInputs.Rows) == 0 {
 		return nil
 	}

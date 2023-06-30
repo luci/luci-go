@@ -53,6 +53,11 @@ func TestBQExporter(t *testing.T) {
 			},
 		}
 
+		type RowInput struct {
+			TestVariantBranch   *testvariantbranch.Entry
+			InputBufferSegments []*inputbuffer.Segment
+		}
+
 		row1 := &RowInput{
 			TestVariantBranch: &testvariantbranch.Entry{
 				Project:     "chromium",
@@ -215,8 +220,15 @@ func TestBQExporter(t *testing.T) {
 			},
 		}
 
-		ris := &RowInputs{
-			Rows:            []*RowInput{row1, row2, row3},
+		var bqRows []PartialBigQueryRow
+		for _, row := range []*RowInput{row1, row2, row3} {
+			bqRow, err := ToPartialBigQueryRow(row.TestVariantBranch, row.InputBufferSegments)
+			So(err, ShouldBeNil)
+			bqRows = append(bqRows, bqRow)
+		}
+
+		ris := RowInputs{
+			Rows:            bqRows,
 			CommitTimestamp: time.Unix(10000*3600, 0),
 		}
 		err := exporter.ExportTestVariantBranches(ctx, ris)

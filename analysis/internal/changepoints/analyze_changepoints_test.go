@@ -17,10 +17,12 @@ package changepoints
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"github.com/google/go-cmp/cmp"
 	"go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
@@ -32,6 +34,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	"go.chromium.org/luci/analysis/pbutil"
+	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/gae/impl/memory"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -39,8 +42,8 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/google/go-cmp/cmp"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type Invocation struct {
@@ -284,7 +287,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				VariantHash: "hash_2",
 				Variant: &rdbpb.Variant{
 					Def: map[string]string{
-						"k": "v",
+						"k2": "v2",
 					},
 				},
 				Status: rdbpb.TestVariantStatus_UNEXPECTED,
@@ -370,7 +373,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			RefHash:     pbutil.SourceRefHash(pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(sourcesMap["sources_id"]))),
 			Variant: &pb.Variant{
 				Def: map[string]string{
-					"k": "v",
+					"k2": "v2",
 				},
 			},
 			SourceRef: &pb.SourceRef{
@@ -410,6 +413,78 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		So(diff, ShouldEqual, "")
 
 		So(len(client.Insertions), ShouldEqual, 2)
+		for _, insert := range client.Insertions {
+			// Check the version is populated, but do not assert its value
+			// as it is a commit timestamp that varies each time the test runs.
+			So(insert.Version, ShouldNotBeNil)
+			insert.Version = nil
+		}
+
+		sort.Slice(client.Insertions, func(i, j int) bool {
+			return client.Insertions[i].TestId < client.Insertions[j].TestId
+		})
+		So(client.Insertions[0], ShouldResembleProto, &bqpb.TestVariantBranchRow{
+			Project:     "chromium",
+			TestId:      "test_1",
+			VariantHash: "hash_1",
+			RefHash:     "6de221242e011c91",
+			Variant:     "{\"k\":\"v\"}",
+			Ref: &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
+						Host:    "host",
+						Project: "proj",
+						Ref:     "ref",
+					},
+				},
+			},
+			Segments: []*bqpb.Segment{
+				{
+					StartPosition: 10,
+					StartHour:     timestamppb.New(time.Unix(3600*10, 0)),
+					EndPosition:   10,
+					EndHour:       timestamppb.New(time.Unix(3600*10, 0)),
+					Counts: &bqpb.Segment_Counts{
+						TotalResults:  1,
+						TotalRuns:     1,
+						TotalVerdicts: 1,
+					},
+				},
+			},
+		})
+		So(client.Insertions[1], ShouldResembleProto, &bqpb.TestVariantBranchRow{
+			Project:     "chromium",
+			TestId:      "test_2",
+			VariantHash: "hash_2",
+			RefHash:     "6de221242e011c91",
+			Variant:     "{\"k2\":\"v2\"}",
+			Ref: &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
+						Host:    "host",
+						Project: "proj",
+						Ref:     "ref",
+					},
+				},
+			},
+			Segments: []*bqpb.Segment{
+				{
+					StartPosition: 10,
+					StartHour:     timestamppb.New(time.Unix(3600*10, 0)),
+					EndPosition:   10,
+					EndHour:       timestamppb.New(time.Unix(3600*10, 0)),
+					Counts: &bqpb.Segment_Counts{
+						UnexpectedResults:       1,
+						TotalResults:            1,
+						UnexpectedUnretriedRuns: 1,
+						TotalRuns:               1,
+						UnexpectedVerdicts:      1,
+						TotalVerdicts:           1,
+					},
+				},
+			},
+		})
+
 		So(verdictCounter.Get(ctx, "chromium", "ingested"), ShouldEqual, 2)
 	})
 
