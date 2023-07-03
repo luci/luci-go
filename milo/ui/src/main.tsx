@@ -31,12 +31,8 @@ initDefaultTrustedTypesPolicy();
 // then delete this.
 configure({ enforceActions: 'never' });
 
-// Reload the page after a new version is activated to avoid different versions
-// of the code talking to each other.
-navigator.serviceWorker?.addEventListener('controllerchange', () =>
-  window.location.reload()
-);
-
 const container = assertNonNullable(document.getElementById('app-root'));
 const root = createRoot(container);
-root.render(<App isDevEnv={import.meta.env.DEV} enableUiSW={ENABLE_UI_SW} />);
+root.render(
+  <App initOpts={{ isDevEnv: import.meta.env.DEV, enableUiSW: ENABLE_UI_SW }} />
+);

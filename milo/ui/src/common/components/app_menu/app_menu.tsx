@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MoreVert, Settings, Upgrade } from '@mui/icons-material';
+import { MoreVert, Settings } from '@mui/icons-material';
 import {
   IconButton,
   ListItemIcon,
@@ -34,17 +34,15 @@ export const AppMenu = observer(({ container, children }: AppMenuProps) => {
   const store = useStore();
 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const hasPendingUpdate = store.workbox.hasPendingUpdate;
 
   return (
     <>
       <IconButton
         onClick={(event) => setAnchorEl(event.currentTarget)}
         size="medium"
-        color={hasPendingUpdate ? 'secondary' : 'default'}
         data-testid="menu-button"
       >
-        {hasPendingUpdate ? <Upgrade /> : children ?? <MoreVert />}
+        {children ?? <MoreVert />}
       </IconButton>
       <Menu
         open={Boolean(anchorEl)}
@@ -52,17 +50,6 @@ export const AppMenu = observer(({ container, children }: AppMenuProps) => {
         anchorEl={anchorEl}
         container={container}
       >
-        <MenuItem
-          onClick={() => store.workbox.workbox?.messageSkipWaiting()}
-          disabled={!hasPendingUpdate}
-          title="A new version of the website is available. Click to update."
-          aria-label="update website"
-        >
-          <ListItemIcon>
-            <Upgrade />
-          </ListItemIcon>
-          <ListItemText>Update Website</ListItemText>
-        </MenuItem>
         <MenuItem
           onClick={() => store.setShowSettingsDialog(true)}
           disabled={store.hasSettingsDialog === 0}

@@ -24,63 +24,37 @@ import {
 } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
 
-import { parseAppVersion } from '@/common/api/app_version';
 import { Prefetcher } from '@/common/service_workers/prefetch';
-import * as versionManagement from '@/common/service_workers/version_management';
 
 // Tell TSC that this is a ServiceWorker script.
 declare const self: ServiceWorkerGlobalScope & { CONFIGS: typeof CONFIGS };
 
-// Update the minimum version (exclusive) to force purging the old caches when
-// releasing a critical bug fix.
-// The identifier for the fixed version is not yet known when authoring a CL for
-// a critical bug fix. Make the minimum version exclusive so we can update it to
-// the last known released buggy version in the same CL.
-const MIN_VERSION_EXCLUSIVE = '13514-32491be';
-
-versionManagement.init({
-  version: self.CONFIGS.VERSION,
-  shouldSkipWaiting: (lastActivatedVersion) => {
-    if (!lastActivatedVersion) {
-      return true;
-    }
-
-    const lastVer = parseAppVersion(lastActivatedVersion);
-    const minVerExcl = parseAppVersion(MIN_VERSION_EXCLUSIVE);
-    const currentVer = parseAppVersion(self.CONFIGS.VERSION);
-
-    // Default to purge the last version if any of the versions cannot be
-    // parsed.
-    if (!lastVer || !minVerExcl || !currentVer) {
-      return true;
-    }
-
-    // Ensures the service worker is newer than the minimum version.
-    if (lastVer.num <= minVerExcl.num) {
-      return true;
-    }
-
-    // Ensures the service worker is always rolled back in case of a revert.
-    //
-    // Use `<=` so that when the service worker is rolled back when the version
-    // appears to be unchanged, which may happen if the new (now rolled back)
-    // version failed to update the stored version value.
-    if (currentVer.num <= lastVer.num) {
-      return true;
-    }
-
-    return false;
-  },
-});
-
-/**
- * Whether the UI service worker should skip waiting.
- * Injected by Vite.
- */
-declare const UI_SW_SKIP_WAITING: boolean;
-if (UI_SW_SKIP_WAITING) {
-  self.skipWaiting();
-}
+// Unconditionally skip waiting so the clients can always get the newest version
+// when the page is refreshed. The only downside is that clients on an old
+// version may encounter errors when lazy loading cached static assets. This is
+// very rare because
+// 1. We only have a single JS/CSS bundle since we don't use code splitting
+//    anyway. Code splitting and lazy JS/CSS asset loading is unlikely to bring
+//    enough benefit to justify its complexity because
+//    1. most page views are not first time visit, which means all the static
+//       assets should already be cached by the service worker, and
+//    2. the time spent on parsing unused JS/CSS modules is almost always
+//       insignificant, and
+//    3. the time spent on initializing unused JS modules should be
+//       insignificant. If that's not the case, the initialization step should
+//       be extracted to a callable function.
+// 2. All lazy-loadable assets (i.e. excluding entry files) have content hashes
+//    in their filenames. This means in case of a cache miss,
+//    1. it's virtually impossible to lazy load an asset of an incompatible
+//       version because the content hash won't match, and
+//    2. they can have a much longer cache duration (currently configured to be
+//       4 weeks), the asset loading request can likely be fulfilled by other
+//       cache layers (e.g. AppEngine server cache, browser HTTP cache).
+//
+// Even if the client failed to lazy load an asset,
+// 1. the asset is most likely a non-critical asset (e.g. .png, .svg, etc), and
+// 2. a simple refresh will be able to fix the issue anyway.
+self.skipWaiting();
 
 const prefetcher = new Prefetcher(self.CONFIGS, self.fetch.bind(self));
 
@@ -109,6 +83,9 @@ self.addEventListener('fetch', async (e) => {
 // requests.
 {
   self.addEventListener('message', (event) => {
+    // This is not used currently. We keep it here anyway to ensure that calling
+    // `Workbox.prototype.messageSkipWaiting` is not a noop should it be used in
+    // the future.
     if (event.data?.type === 'SKIP_WAITING') {
       self.skipWaiting();
     }

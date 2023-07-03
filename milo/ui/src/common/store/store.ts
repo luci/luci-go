@@ -21,7 +21,6 @@ import { AuthStateStore } from './auth_state';
 import { BuildPage } from './build_page';
 import { InvocationPage } from './invocation_page';
 import { SearchPage } from './search_page';
-import { WorkboxState } from './service_worker/workbox_state';
 import { ServicesStore } from './services';
 import { TestHistoryPage } from './test_history_page';
 import { Timestamp } from './timestamp';
@@ -45,7 +44,6 @@ export const Store = types
      */
     hasSettingsDialog: 0,
     showSettingsDialog: false,
-    workbox: types.optional(WorkboxState, {}),
 
     authState: types.optional(AuthStateStore, {}),
     userConfig: types.optional(UserConfig, {}),

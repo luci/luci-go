@@ -99,9 +99,6 @@ export default defineConfig(({ mode }) => {
           ENABLE_UI_SW: JSON.stringify(
             getBoolEnv(env, 'VITE_ENABLE_UI_SW') ?? true
           ),
-          UI_SW_SKIP_WAITING: JSON.stringify(
-            getBoolEnv(env, 'VITE_UI_SW_SKIP_WAITING') ?? false
-          ),
         },
       }),
       {

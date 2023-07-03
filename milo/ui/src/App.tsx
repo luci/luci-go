@@ -20,8 +20,9 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query';
 import { destroy } from 'mobx-state-tree';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { Workbox } from 'workbox-window';
 
 import '@/common/styles/common_style.css';
 import '@/common/styles/color_classes.css';
@@ -83,54 +84,74 @@ const QUERY_CLIENT_CONFIG: QueryClientConfig = {
 };
 
 export interface AppProps {
-  readonly isDevEnv: boolean;
-  readonly enableUiSW: boolean;
+  /**
+   * The App's configuration. The value is only used when initializing the App.
+   * Updates are not applied.
+   */
+  readonly initOpts: {
+    readonly isDevEnv: boolean;
+    readonly enableUiSW: boolean;
+  };
 }
 
-export function App({ isDevEnv, enableUiSW }: AppProps) {
-  const [store] = useState(() => Store.create({}, { isDevEnv }));
+export function App({ initOpts }: AppProps) {
+  const firstInitOpts = useRef(initOpts);
+  const [store] = useState(() =>
+    Store.create({}, { isDevEnv: firstInitOpts.current.isDevEnv })
+  );
   const [queryClient] = useState(() => new QueryClient(QUERY_CLIENT_CONFIG));
 
-  useEffect(() => {
-    // Expose `store` in the global namespace to make inspecting/debugging the
-    // store via the browser dev-tool easier.
-    //
-    // The __STORE variable should only be used for debugging purpose. As such,
-    // do not declare __STORE as a global variable explicity so it's less likely
-    // to be misused.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).__STORE = store;
+  useEffect(
+    () => {
+      // Expose `store` in the global namespace to make inspecting/debugging the
+      // store via the browser dev-tool easier.
+      //
+      // The __STORE variable should only be used for debugging purpose. As
+      // such, do not declare __STORE as a global variable explicity so it's
+      // less likely to be misused.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__STORE = store;
 
-    if (navigator.serviceWorker && enableUiSW) {
-      const swUrl = createStaticTrustedURL(
-        'sw-js-static',
+      const { isDevEnv, enableUiSW } = firstInitOpts.current;
+
+      if (navigator.serviceWorker && enableUiSW) {
         // vite-plugin-pwa hosts the service worker in a different route in dev
         // mode.
         // See https://vite-pwa-org.netlify.app/guide/development.html#injectmanifest-strategy
-        isDevEnv ? '/ui/dev-sw.js?dev-sw' : '/ui/ui_sw.js'
-      );
-      store.workbox.init(swUrl);
-    }
-    if (
-      navigator.serviceWorker &&
-      !document.cookie.includes('showNewBuildPage=false')
-    ) {
-      navigator.serviceWorker
-        .register(
-          // cast to string because TypeScript doesn't allow us to use
-          // TrustedScriptURL here
-          createStaticTrustedURL('root-sw-js-static', '/root_sw.js') as string,
+        const uiSwUrl = isDevEnv ? '/ui/dev-sw.js?dev-sw' : '/ui/ui_sw.js';
+        const workbox = new Workbox(
+          createStaticTrustedURL('sw-js-static', uiSwUrl),
           { type: isDevEnv ? 'module' : 'classic' }
-        )
-        .then((registration) => {
-          store.setRedirectSw(registration);
-        });
-    } else {
-      store.setRedirectSw(null);
-    }
+        );
+        workbox.register();
+      }
+      if (
+        navigator.serviceWorker &&
+        !document.cookie.includes('showNewBuildPage=false')
+      ) {
+        navigator.serviceWorker
+          .register(
+            // cast to string because TypeScript doesn't allow us to use
+            // TrustedScriptURL here
+            createStaticTrustedURL(
+              'root-sw-js-static',
+              '/root_sw.js'
+            ) as string,
+            { type: isDevEnv ? 'module' : 'classic' }
+          )
+          .then((registration) => {
+            store.setRedirectSw(registration);
+          });
+      } else {
+        store.setRedirectSw(null);
+      }
 
-    return () => destroy(store);
-  }, []);
+      return () => destroy(store);
+    },
+    // `store` will never change. But list it as a dependency to make eslint
+    // happy.
+    [store]
+  );
 
   const router = createBrowserRouter([
     {
