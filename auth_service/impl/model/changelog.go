@@ -206,9 +206,9 @@ type AuthDBChange struct {
 	SecurityConfigNew        []byte   `gae:"security_config_new,noindex" json:"security_config_new"`         // Valid for ChangeConfSecurityConfigChanged.
 
 	// Fields specific to AuthRealmsGlobalsChange.
-	PermissionsAdded   []string `gae:"permissions_added"`
-	PermissionsChanged []string `gae:"permissions_changed"`
-	PermissionsRemoved []string `gae:"permissions_removed"`
+	PermissionsAdded   []string `gae:"permissions_added" json:"permissions_added"`
+	PermissionsChanged []string `gae:"permissions_changed" json:"permissions_changed"`
+	PermissionsRemoved []string `gae:"permissions_removed" json:"permissions_removed"`
 
 	// Fields specific to AuthProjectRealmsChange.
 	ConfigRevOld string `gae:"config_rev_old,noindex"`
@@ -366,7 +366,8 @@ var knownHistoricalEntities = map[string]diffFunc{
 	"AuthIPWhitelistHistory": diffIPAllowlists,
 	// TODO(cjacomet): AuthIPWhitelistAssignments hasn't been used since 2015,
 	// either implement it in full or remove it from Python code base.
-	"AuthGlobalConfigHistory": diffGlobalConfig,
+	"AuthGlobalConfigHistory":  diffGlobalConfig,
+	"AuthRealmsGlobalsHistory": diffRealmsGlobals,
 }
 
 type diffFunc = func(context.Context, string, datastore.PropertyMap, datastore.PropertyMap) ([]*AuthDBChange, error)
@@ -681,6 +682,11 @@ func diffGlobalConfig(ctx context.Context, target string, old, new datastore.Pro
 	}
 
 	return changes, nil
+}
+
+func diffRealmsGlobals(ctx context.Context, target string, old, new datastore.PropertyMap) ([]*AuthDBChange, error) {
+	// TODO(cjacomet): Implement, this one is a bit tricky with current permissions representation vs Python.
+	return nil, nil
 }
 
 // /////////////////////////////////////////////////////////////////////
