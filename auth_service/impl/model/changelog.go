@@ -15,6 +15,7 @@
 package model
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -196,13 +197,13 @@ type AuthDBChange struct {
 	IPAllowlist string `gae:"ip_whitelist"`
 
 	// Fields specific to AuthDBConfigChange.
-	OauthClientID            string   `gae:"oauth_client_id"`             // Valid for ChangeConfOauthClientChanged.
-	OauthClientSecret        string   `gae:"oauth_client_secret"`         // Valid for ChangeConfOauthClientChanged.
-	OauthAdditionalClientIDs []string `gae:"oauth_additional_client_ids"` // Valid for ChangeConfClientIDsAdded and ChangeConfClientIDsRemoved.
-	TokenServerURLOld        string   `gae:"token_server_url_old"`        // Valid for ChangeConfTokenServerURLChanged.
-	TokenServerURLNew        string   `gae:"token_server_url_new"`        // Valid for ChangeConfTokenServerURLChanged.
-	SecurityConfigOld        []byte   `gae:"security_config_old,noindex"` // Valid for ChangeConfSecurityConfigChanged.
-	SecurityConfigNew        []byte   `gae:"security_config_new,noindex"` // Valid for ChangeConfSecurityConfigChanged.
+	OauthClientID            string   `gae:"oauth_client_id" json:"oauth_client_id"`                         // Valid for ChangeConfOauthClientChanged.
+	OauthClientSecret        string   `gae:"oauth_client_secret" json:"oauth_client_secret"`                 // Valid for ChangeConfOauthClientChanged.
+	OauthAdditionalClientIDs []string `gae:"oauth_additional_client_ids" json:"oauth_additional_client_ids"` // Valid for ChangeConfClientIDsAdded and ChangeConfClientIDsRemoved.
+	TokenServerURLOld        string   `gae:"token_server_url_old" json:"token_server_url_old"`               // Valid for ChangeConfTokenServerURLChanged.
+	TokenServerURLNew        string   `gae:"token_server_url_new" json:"token_server_url_new"`               // Valid for ChangeConfTokenServerURLChanged.
+	SecurityConfigOld        []byte   `gae:"security_config_old,noindex" json:"security_config_old"`         // Valid for ChangeConfSecurityConfigChanged.
+	SecurityConfigNew        []byte   `gae:"security_config_new,noindex" json:"security_config_new"`         // Valid for ChangeConfSecurityConfigChanged.
 
 	// Fields specific to AuthRealmsGlobalsChange.
 	PermissionsAdded   []string `gae:"permissions_added"`
@@ -365,6 +366,7 @@ var knownHistoricalEntities = map[string]diffFunc{
 	"AuthIPWhitelistHistory": diffIPAllowlists,
 	// TODO(cjacomet): AuthIPWhitelistAssignments hasn't been used since 2015,
 	// either implement it in full or remove it from Python code base.
+	"AuthGlobalConfigHistory": diffGlobalConfig,
 }
 
 type diffFunc = func(context.Context, string, datastore.PropertyMap, datastore.PropertyMap) ([]*AuthDBChange, error)
@@ -617,6 +619,67 @@ func diffIPAllowlists(ctx context.Context, target string, old, new datastore.Pro
 		changes = append(changes, makeChange(ctx,
 			ChangeIPALSubnetsRemoved, target, authDBRev, class, kvPair("subnets", removed)))
 	}
+	return changes, nil
+}
+
+func diffGlobalConfig(ctx context.Context, target string, old, new datastore.PropertyMap) ([]*AuthDBChange, error) {
+	changes := []*AuthDBChange{}
+	authDBRev := getInt64Prop(new, "auth_db_rev")
+	class := "AuthGlobalConfigChange"
+	const (
+		OAuthClientID     = "oauth_client_id"
+		OAuthClientSecret = "oauth_client_secret"
+		OAuthAddClientIDs = "oauth_additional_client_ids"
+		TokenServerURL    = "token_server_url"
+		SecurityConfig    = "security_config"
+	)
+
+	if getBoolProp(new, "auth_db_deleted") {
+		return nil, errors.New("AuthGlobalConfig cannot be deleted")
+	}
+
+	prevClientID := ""
+	prevClientSecret := ""
+	prevClientIDs := []string{}
+	prevTokenServerURL := ""
+	prevSecurityConfig := []byte{}
+	if old != nil {
+		prevClientID = getStringProp(old, OAuthClientID)
+		prevClientSecret = getStringProp(old, OAuthClientSecret)
+		prevClientIDs = getStringSliceProp(old, OAuthAddClientIDs)
+		prevTokenServerURL = getStringProp(old, TokenServerURL)
+		prevSecurityConfig = getByteSliceProp(old, SecurityConfig)
+	}
+
+	newClientID := getStringProp(new, OAuthClientID)
+	newClientSecret := getStringProp(new, OAuthClientSecret)
+	newClientIDs := getStringSliceProp(new, OAuthAddClientIDs)
+	newTokenServerURL := getStringProp(new, TokenServerURL)
+	newSecurityConfig := getByteSliceProp(new, SecurityConfig)
+
+	if prevClientID != newClientID || prevClientSecret != newClientSecret {
+		changes = append(changes, makeChange(ctx, ChangeConfOauthClientChanged, target, authDBRev, class,
+			kvPair(OAuthClientID, newClientID), kvPair(OAuthClientSecret, newClientSecret)))
+	}
+
+	added, removed := diffLists(prevClientIDs, newClientIDs)
+	if len(added) > 0 {
+		changes = append(changes, makeChange(ctx, ChangeConfClientIDsAdded, target, authDBRev, class, kvPair(OAuthAddClientIDs, added)))
+	}
+	if len(removed) > 0 {
+		changes = append(changes, makeChange(ctx, ChangeConfClientIDsRemoved, target, authDBRev, class, kvPair(OAuthAddClientIDs, removed)))
+	}
+
+	if prevTokenServerURL != newTokenServerURL {
+		changes = append(changes, makeChange(ctx, ChangeConfTokenServerURLChanged, target, authDBRev, class,
+			kvPair(TokenServerURL+"_old", prevTokenServerURL), kvPair(TokenServerURL+"_new", newTokenServerURL)))
+	}
+
+	if !bytes.Equal(prevSecurityConfig, newSecurityConfig) {
+		changes = append(changes, makeChange(ctx, ChangeConfSecurityConfigChanged, target, authDBRev, class,
+			kvPair(SecurityConfig+"_old", prevSecurityConfig), kvPair(SecurityConfig+"_new", newSecurityConfig)))
+	}
+
 	return changes, nil
 }
 

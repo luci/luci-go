@@ -21,6 +21,7 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -30,6 +31,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/tq"
 )
 
@@ -498,6 +500,104 @@ func TestGenerateChanges(t *testing.T) {
 				actualChanges, err := generateChanges(ctx, 2, false)
 				So(err, ShouldBeNil)
 				validateChanges(ctx, "change description", actualChanges, 2, ChangeIPALDescriptionChanged)
+			})
+		})
+
+		Convey("AuthGlobalConfig changes", func() {
+			Convey("AuthGlobalConfig ClientID/ClientSecret mismatch", func() {
+				baseCfg := &configspb.OAuthConfig{
+					PrimaryClientId:     "test-client-id",
+					PrimaryClientSecret: "test-client-secret",
+				}
+
+				// Old doesn't exist yet
+				So(UpdateAuthGlobalConfig(ctx, baseCfg, nil, false), ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				actualChanges, err := generateChanges(ctx, 1, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "update config with no old config present", actualChanges, 1, ChangeConfOauthClientChanged)
+
+				newCfg := &configspb.OAuthConfig{
+					PrimaryClientId: "diff-client-id",
+				}
+				So(UpdateAuthGlobalConfig(ctx, newCfg, nil, false), ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
+				actualChanges, err = generateChanges(ctx, 2, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "update config with client id changed", actualChanges, 2, ChangeConfOauthClientChanged)
+			})
+
+			Convey("AuthGlobalConfig additional +/- ClientID's", func() {
+				baseCfg := &configspb.OAuthConfig{
+					ClientIds: []string{"test.example.com"},
+				}
+
+				So(UpdateAuthGlobalConfig(ctx, baseCfg, nil, false), ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				actualChanges, err := generateChanges(ctx, 1, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "update config with client ids, old config not present", actualChanges, 1, ChangeConfClientIDsAdded)
+
+				newCfg := &configspb.OAuthConfig{
+					ClientIds: []string{"not-test.example.com"},
+				}
+				So(UpdateAuthGlobalConfig(ctx, newCfg, nil, false), ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
+				actualChanges, err = generateChanges(ctx, 2, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "update config with client id added and client id removed, old config is present",
+					actualChanges, 2, ChangeConfClientIDsAdded, ChangeConfClientIDsRemoved)
+			})
+
+			Convey("AuthGlobalConfig TokenServerURL change", func() {
+				baseCfg := &configspb.OAuthConfig{
+					TokenServerUrl: "test-token-server-url.example.com",
+				}
+
+				So(UpdateAuthGlobalConfig(ctx, baseCfg, nil, false), ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				actualChanges, err := generateChanges(ctx, 1, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "update config with token server url, old config not present", actualChanges, 1, ChangeConfTokenServerURLChanged)
+			})
+
+			Convey("AuthGlobalConfig Security Config change", func() {
+				baseCfg := &configspb.OAuthConfig{}
+				secCfg := &protocol.SecurityConfig{
+					InternalServiceRegexp: []string{"abc"},
+				}
+				So(UpdateAuthGlobalConfig(ctx, baseCfg, secCfg, false), ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				actualChanges, err := generateChanges(ctx, 1, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "update config with security config, old config not present", actualChanges, 1, ChangeConfSecurityConfigChanged)
+
+				secCfg = &protocol.SecurityConfig{
+					InternalServiceRegexp: []string{"def"},
+				}
+				So(UpdateAuthGlobalConfig(ctx, baseCfg, secCfg, false), ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
+				actualChanges, err = generateChanges(ctx, 2, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "update config with security config, old config present", actualChanges, 2, ChangeConfSecurityConfigChanged)
+
+			})
+
+			Convey("AuthGlobalConfig all changes at once", func() {
+				baseCfg := &configspb.OAuthConfig{
+					PrimaryClientId:     "test-client-id",
+					PrimaryClientSecret: "test-client-secret",
+					ClientIds:           []string{"a", "b", "c"},
+					TokenServerUrl:      "token-server.example.com",
+				}
+				secCfg := &protocol.SecurityConfig{
+					InternalServiceRegexp: []string{"test"},
+				}
+				So(UpdateAuthGlobalConfig(ctx, baseCfg, secCfg, false), ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				actualChanges, err := generateChanges(ctx, 1, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "all changes at once, old config not present", actualChanges, 1, ChangeConfOauthClientChanged, ChangeConfClientIDsAdded, ChangeConfTokenServerURLChanged, ChangeConfSecurityConfigChanged)
 			})
 		})
 	})
