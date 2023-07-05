@@ -24,9 +24,11 @@ import (
 	"cloud.google.com/go/spanner"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server/span"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
@@ -170,6 +172,10 @@ func JoinBuildResult(ctx context.Context, buildID, buildProject string, isPresub
 		return nil
 	}
 	if _, err := span.ReadWriteTransaction(ctx, f); err != nil {
+		if _, ok := status.FromError(errors.Unwrap(err)); ok {
+			// Spanner gRPC error.
+			return transient.Tag.Apply(err)
+		}
 		return err
 	}
 	if !saved {
@@ -196,7 +202,7 @@ func JoinBuildResult(ctx context.Context, buildID, buildProject string, isPresub
 func JoinPresubmitResult(ctx context.Context, presubmitResultByBuildID map[string]*ctlpb.PresubmitResult, presubmitProject string) error {
 	for id, result := range presubmitResultByBuildID {
 		if result == nil {
-			return fmt.Errorf("presubmit result for build %q must be specified", id)
+			return errors.Reason("presubmit result for build %q must be specified", id).Err()
 		}
 	}
 
@@ -229,7 +235,7 @@ func JoinPresubmitResult(ctx context.Context, presubmitResultByBuildID map[strin
 			// IsPresubmit should be populated and valid if either the build result
 			// or presubmit result has been populated.
 			if (entry.BuildResult != nil || entry.PresubmitResult != nil) && !entry.IsPresubmit {
-				return fmt.Errorf("attempt to save presubmit result on build %q not marked as presubmit", buildID)
+				return errors.Reason("attempt to save presubmit result on build %q not marked as presubmit", buildID).Err()
 			}
 			if entry.PresubmitResult != nil {
 				// Presubmit result already recorded. Do not modify and do not
@@ -254,6 +260,10 @@ func JoinPresubmitResult(ctx context.Context, presubmitResultByBuildID map[strin
 		return nil
 	}
 	if _, err := span.ReadWriteTransaction(ctx, f); err != nil {
+		if _, ok := status.FromError(errors.Unwrap(err)); ok {
+			// Spanner gRPC error.
+			return transient.Tag.Apply(err)
+		}
 		return err
 	}
 	if len(buildIDsSkipped) > 0 {
@@ -327,6 +337,10 @@ func JoinInvocationResult(ctx context.Context, buildID, invocationProject string
 		return nil
 	}
 	if _, err := span.ReadWriteTransaction(ctx, f); err != nil {
+		if _, ok := status.FromError(errors.Unwrap(err)); ok {
+			// Spanner gRPC error.
+			return transient.Tag.Apply(err)
+		}
 		return err
 	}
 	if !saved {
