@@ -111,6 +111,6 @@ func TestCommon(t *testing.T) {
 		So(recordedOpts.Scheme, ShouldEqual, storage.SigningSchemeV4)
 		So(recordedOpts.Method, ShouldEqual, http.MethodGet)
 		So(recordedOpts.Expires, ShouldEqual, clock.Now(ctx).Add(signedURLExpireDur))
-		So(recordedOpts.Headers, ShouldResemble, []string{"Another-Custom-Header: Another-Value", "Custom-Header: Value"})
+		So(recordedOpts.Headers, ShouldResemble, []string{"Another-Custom-Header:Another-Value", "Custom-Header:Value"})
 	})
 }

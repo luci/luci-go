@@ -115,7 +115,7 @@ func CreateSignedURLs(ctx context.Context, gsClient clients.GsClient, paths []gs
 	if len(headers) > 0 {
 		hdrs = make([]string, 0, len(headers))
 		for k, v := range headers {
-			hdrs = append(hdrs, fmt.Sprintf("%s: %s", k, v))
+			hdrs = append(hdrs, fmt.Sprintf("%s:%s", k, v))
 		}
 		sort.Strings(hdrs)
 	}
