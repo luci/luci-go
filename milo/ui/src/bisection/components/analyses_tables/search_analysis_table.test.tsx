@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import fetchMock from 'fetch-mock-jest';
 
 import '@testing-library/jest-dom';
 
-import { renderWithRouterAndContexts } from '@/bisection/testing_tools/libs/mock_router';
 import {
   mockErrorQueryingAnalysis,
   mockQueryAnalysis,
 } from '@/bisection/testing_tools/mocks/analysis_mock';
 import { createMockAnalysis } from '@/bisection/testing_tools/mocks/analysis_mock';
 import { Analysis } from '@/common/services/luci_bisection';
+import { TestContextProvider } from '@/testing_tools/test_context_provider';
 
 import { SearchAnalysisTable } from './search_analysis_table';
 
@@ -37,7 +37,11 @@ describe('Test SearchAnalysisTable component', () => {
     const mockAnalyses: Analysis[] = [createMockAnalysis('123')];
     mockQueryAnalysis(mockAnalyses);
 
-    renderWithRouterAndContexts(<SearchAnalysisTable bbid="123" />);
+    render(
+      <TestContextProvider>
+        <SearchAnalysisTable bbid="123" />
+      </TestContextProvider>
+    );
 
     await screen.findByTestId('search-analysis-table');
 
@@ -53,7 +57,11 @@ describe('Test SearchAnalysisTable component', () => {
     const mockAnalyses: Analysis[] = [createMockAnalysis('123')];
     mockQueryAnalysis(mockAnalyses);
 
-    renderWithRouterAndContexts(<SearchAnalysisTable bbid="124" />);
+    render(
+      <TestContextProvider>
+        <SearchAnalysisTable bbid="124" />
+      </TestContextProvider>
+    );
 
     await screen.findByTestId('search-analysis-table');
 
@@ -72,7 +80,11 @@ describe('Test SearchAnalysisTable component', () => {
     const mockAnalyses: Analysis[] = [];
     mockQueryAnalysis(mockAnalyses);
 
-    renderWithRouterAndContexts(<SearchAnalysisTable bbid="123" />);
+    render(
+      <TestContextProvider>
+        <SearchAnalysisTable bbid="123" />
+      </TestContextProvider>
+    );
 
     await screen.findByTestId('search-analysis-table');
 
@@ -85,7 +97,11 @@ describe('Test SearchAnalysisTable component', () => {
   test('if an appropriate message is displayed for an error', async () => {
     mockErrorQueryingAnalysis();
 
-    renderWithRouterAndContexts(<SearchAnalysisTable bbid="123" />);
+    render(
+      <TestContextProvider>
+        <SearchAnalysisTable bbid="123" />
+      </TestContextProvider>
+    );
 
     await screen.findByTestId('search-analysis-table');
 

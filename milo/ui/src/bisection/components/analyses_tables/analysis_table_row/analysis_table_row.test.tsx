@@ -16,11 +16,11 @@ import '@testing-library/jest-dom';
 
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
-import { screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 
-import { renderWithRouter } from '@/bisection/testing_tools/libs/mock_router';
 import { createMockAnalysis } from '@/bisection/testing_tools/mocks/analysis_mock';
 import { Analysis } from '@/common/services/luci_bisection';
+import { TestContextProvider } from '@/testing_tools/test_context_provider';
 
 import { AnalysisTableRow } from './analysis_table_row';
 
@@ -28,12 +28,14 @@ describe('Test AnalysisTableRow component', () => {
   test('if analysis information is displayed', async () => {
     const mockAnalysis: Analysis = createMockAnalysis('123');
 
-    renderWithRouter(
-      <Table>
-        <TableBody>
-          <AnalysisTableRow analysis={mockAnalysis} />
-        </TableBody>
-      </Table>
+    render(
+      <TestContextProvider>
+        <Table>
+          <TableBody>
+            <AnalysisTableRow analysis={mockAnalysis} />
+          </TableBody>
+        </Table>
+      </TestContextProvider>
     );
 
     await screen.findByTestId('analysis_table_row');
@@ -78,12 +80,14 @@ describe('Test AnalysisTableRow component', () => {
     const mockAnalysis: Analysis = createMockAnalysis('124');
     mockAnalysis.builder = undefined;
 
-    renderWithRouter(
-      <Table>
-        <TableBody>
-          <AnalysisTableRow analysis={mockAnalysis} />
-        </TableBody>
-      </Table>
+    render(
+      <TestContextProvider>
+        <Table>
+          <TableBody>
+            <AnalysisTableRow analysis={mockAnalysis} />
+          </TableBody>
+        </Table>
+      </TestContextProvider>
     );
 
     await screen.findByTestId('analysis_table_row');
@@ -141,12 +145,14 @@ describe('Test AnalysisTableRow component', () => {
       },
     ];
 
-    renderWithRouter(
-      <Table>
-        <TableBody>
-          <AnalysisTableRow analysis={mockAnalysis} />
-        </TableBody>
-      </Table>
+    render(
+      <TestContextProvider>
+        <Table>
+          <TableBody>
+            <AnalysisTableRow analysis={mockAnalysis} />
+          </TableBody>
+        </Table>
+      </TestContextProvider>
     );
 
     await screen.findByTestId('analysis_table_row');

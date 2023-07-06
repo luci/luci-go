@@ -12,27 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 
 import { MiloInternal, Project } from '@/common/services/milo_internal';
 import { ResultDb } from '@/common/services/resultdb';
 import { TestMetadataDetail } from '@/common/services/resultdb';
-import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
+import { TestContextProvider } from '@/testing_tools/test_context_provider';
 
 import { TestIdLabel } from './test_id_label';
 
 describe('TestIdLabel', () => {
-  let client: QueryClient;
-  beforeEach(() => {
-    client = new QueryClient({
-      defaultOptions: {
-        queries: {
-          retry: false,
-        },
-      },
-    });
-  });
   afterEach(() => {
     cleanup();
   });
@@ -66,11 +55,9 @@ describe('TestIdLabel', () => {
   };
   const renderTestIdLabel = () => {
     render(
-      <QueryClientProvider client={client}>
-        <FakeAuthStateProvider>
-          <TestIdLabel projectOrRealm="testrealm" testId="testid" />
-        </FakeAuthStateProvider>
-      </QueryClientProvider>
+      <TestContextProvider>
+        <TestIdLabel projectOrRealm="testrealm" testId="testid" />
+      </TestContextProvider>
     );
     expect(screen.queryByText('testrealm')).not.toBeNull();
     expect(screen.queryByText('testid')).not.toBeNull();

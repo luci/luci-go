@@ -14,17 +14,17 @@
 
 import '@testing-library/jest-dom';
 
-import { screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import fetchMock from 'fetch-mock-jest';
 
-import { renderWithRouterAndContexts } from '@/bisection/testing_tools/libs/mock_router';
 import {
   mockErrorFetchingAnalyses,
   mockFetchAnalyses,
 } from '@/bisection/testing_tools/mocks/analyses_mock';
 import { createMockAnalysis } from '@/bisection/testing_tools/mocks/analysis_mock';
 import { Analysis } from '@/common/services/luci_bisection';
+import { TestContextProvider } from '@/testing_tools/test_context_provider';
 
 import { ListAnalysesTable } from './list_analyses_table';
 
@@ -42,7 +42,11 @@ describe('Test AnalysesTable component', () => {
     ];
     mockFetchAnalyses(mockAnalyses, '');
 
-    renderWithRouterAndContexts(<ListAnalysesTable />);
+    render(
+      <TestContextProvider>
+        <ListAnalysesTable />
+      </TestContextProvider>
+    );
 
     await screen.findByTestId('list-analyses-table');
 
@@ -61,7 +65,11 @@ describe('Test AnalysesTable component', () => {
     }
     mockFetchAnalyses(firstPageMockAnalyses, 'test-token');
 
-    renderWithRouterAndContexts(<ListAnalysesTable />);
+    render(
+      <TestContextProvider>
+        <ListAnalysesTable />
+      </TestContextProvider>
+    );
 
     await screen.findByTestId('list-analyses-table');
 
@@ -93,7 +101,11 @@ describe('Test AnalysesTable component', () => {
     const mockAnalyses: Analysis[] = [];
     mockFetchAnalyses(mockAnalyses, '');
 
-    renderWithRouterAndContexts(<ListAnalysesTable />);
+    render(
+      <TestContextProvider>
+        <ListAnalysesTable />
+      </TestContextProvider>
+    );
 
     await screen.findByTestId('list-analyses-table');
 
@@ -104,7 +116,11 @@ describe('Test AnalysesTable component', () => {
   test('if an appropriate message is displayed for an error', async () => {
     mockErrorFetchingAnalyses();
 
-    renderWithRouterAndContexts(<ListAnalysesTable />);
+    render(
+      <TestContextProvider>
+        <ListAnalysesTable />
+      </TestContextProvider>
+    );
 
     await screen.findByTestId('list-analyses-table');
 
