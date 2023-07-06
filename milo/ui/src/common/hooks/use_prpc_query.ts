@@ -34,9 +34,7 @@ export type PrpcServiceMethodKeys<S> = keyof {
   // The request type has to be `any` because the argument type must be contra-
   // variant when sub-typing a function.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [MK in keyof S as Required<S>[MK] extends PrpcMethod<any, object>
-    ? MK
-    : never]: S[MK];
+  [MK in keyof S as S[MK] extends PrpcMethod<any, object> ? MK : never]: S[MK];
 };
 
 export type PrpcMethodRequest<T> = T extends PrpcMethod<infer Req, infer _Res>
@@ -66,19 +64,24 @@ export interface UsePrpcQueryOptions<S, MK, Req, Res, TError, TData> {
 /**
  * Call a pRPC method via `@tanstack/react-query`.
  *
- * This hook reduces boilerplate and ensures the `queryKey` is populated
- * correctly.
+ * This hook
+ *  * reduces boilerplate, and
+ *  * ensures the `queryKey` is populated correctly.
  */
 export function usePrpcQuery<
   S extends object,
   MK extends PrpcServiceMethodKeys<S>,
-  M extends Required<S>[MK],
-  Req extends PrpcMethodRequest<M>,
-  Res extends PrpcMethodResponse<M>,
   TError = unknown,
-  TData = Res
+  TData = PrpcMethodResponse<S[MK]>
 >(
-  opts: UsePrpcQueryOptions<S, MK, Req, Res, TError, TData>
+  opts: UsePrpcQueryOptions<
+    S,
+    MK,
+    PrpcMethodRequest<S[MK]>,
+    PrpcMethodResponse<S[MK]>,
+    TError,
+    TData
+  >
 ): UseQueryResult<TData, TError> {
   const { host, insecure, Service, method, request, options } = opts;
 
@@ -108,10 +111,15 @@ export function usePrpcQuery<
         new PrpcClientExt({ host, insecure }, getAccessToken)
       );
       // `method` is constrained to be a key that has an associated property of
-      // type `PrpcMethod` in a `Service`.
-      // Therefore `service[method]` is guaranteed to be a `PrpcMethod`.
-      // TSC isn't smart enough to know that, so we need to use type casting.
-      return await (service[method] as PrpcMethod<Req, Res>)(
+      // type `PrpcMethod` in a `Service`. Therefore `service[method]` is
+      // guaranteed to be a `PrpcMethod`. TSC isn't smart enough to know that,
+      // so we need to use type casting.
+      return await (
+        service[method] as PrpcMethod<
+          PrpcMethodRequest<S[MK]>,
+          PrpcMethodResponse<S[MK]>
+        >
+      )(
         request,
         // Let react-query handle caching.
         {
