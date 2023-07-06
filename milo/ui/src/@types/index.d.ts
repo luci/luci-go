@@ -50,6 +50,18 @@ type Constructor<T, P extends unknown[] = []> = new (...params: P) => T;
 // over the inferred type.
 type NoInfer<T> = [T][T extends unknown ? 0 : never];
 
+/**
+ * Any key that has an associated function in `S`.
+ */
+type FunctionKeys<S> = keyof {
+  // The request type has to be `any` because the argument type must be contra-
+  // variant when sub-typing a function.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [K in keyof S as S[K] extends (...params: any[]) => unknown
+    ? K
+    : never]: S[K];
+};
+
 type Mutable<T> = {
   -readonly [key in keyof T]: T[key];
 };

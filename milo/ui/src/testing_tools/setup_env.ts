@@ -22,7 +22,11 @@ import * as idbKeyVal from 'idb-keyval';
 import { configure } from 'mobx';
 
 import { assertNonNullable } from '@/generic_libs/tools/utils';
-import './jest_utils';
+
+import {
+  createSelectiveMockFromModule,
+  createSelectiveSpiesFromModule,
+} from './jest_utils';
 
 // TODO(crbug/1347294): encloses all state modifying actions in mobx actions
 // then delete this.
@@ -47,6 +51,16 @@ self.CONFIGS = Object.freeze({
     HOST: assertNonNullable(process.env['VITE_LUCI_BISECTION_HOST']),
   },
 });
+
+// `jest.mock` calls are automatically moved to the beginning of a test file by
+// the jest test runner (i.e. before any import statements), making it
+// impossible to use imported symbols in the module factory.
+//
+// Make the following functions accessible through `self` so they can be used in
+// the module factory in a
+// `jest.mock('module-name', () => { /* module factory */ })` call.
+self.createSelectiveMockFromModule = createSelectiveMockFromModule;
+self.createSelectiveSpiesFromModule = createSelectiveSpiesFromModule;
 
 self.TextEncoder = TextEncoder;
 self.TextDecoder = TextDecoder as typeof self.TextDecoder;

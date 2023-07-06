@@ -12,12 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// We cannot simply export this because this is often used in the module factory
-// in a `jest.mock('module-name', () => { /* module factory */ })` call.
-// `jest.mock` calls are automatically moved to the beginning of a test file by
-// the jest test runner (i.e. before any import statements), making it
-// impossible to use imported symbols in the module factory.
-self.createSelectiveMockFromModule = function <T = unknown>(
+/**
+ * See the type definition for `self.createSelectiveMockFromModule`.
+ */
+export function createSelectiveMockFromModule<T = unknown>(
   moduleName: string,
   keysToMock: ReadonlyArray<keyof NoInfer<T>>
 ): T {
@@ -28,7 +26,18 @@ self.createSelectiveMockFromModule = function <T = unknown>(
     ...actualModule,
     ...Object.fromEntries(keysToMock.map((k) => [k, mockedModule[k]])),
   };
-};
+}
 
-// Add an `export` statement to make this a module.
-export {};
+/**
+ * See the type definition for `self.createSelectiveSpiesFromModule`.
+ */
+export function createSelectiveSpiesFromModule<T = unknown>(
+  moduleName: string,
+  keysToSpy: ReadonlyArray<FunctionKeys<NoInfer<T>>>
+): T {
+  const actualModule = jest.requireActual(moduleName);
+  return {
+    ...actualModule,
+    ...Object.fromEntries(keysToSpy.map((k) => [k, jest.fn(actualModule[k])])),
+  };
+}

@@ -13,71 +13,69 @@
 // limitations under the License.
 
 import '@testing-library/jest-dom';
-import { UseQueryOptions } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 
-import * as usePrpcQueryLib from '@/common/hooks/use_prpc_query';
-import { MiloInternal, Project } from '@/common/services/milo_internal';
+import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
+import { MiloInternal } from '@/common/services/milo_internal';
+import { TestContextProvider } from '@/testing_tools/test_context_provider';
 
 import { CustomBugLink } from './custom_bug_link';
 
 jest.mock('@/common/hooks/use_prpc_query', () => {
-  return createSelectiveMockFromModule<
+  return createSelectiveSpiesFromModule<
     typeof import('@/common/hooks/use_prpc_query')
   >('@/common/hooks/use_prpc_query', ['usePrpcQuery']);
 });
 
 describe('CustomBugLink', () => {
-  let usePrpcQueryMock: jest.MockedFunction<
-    typeof usePrpcQueryLib.usePrpcQuery
-  >;
+  let usePrpcQueryMock: jest.MockedFunction<typeof usePrpcQuery>;
 
   beforeEach(() => {
-    usePrpcQueryMock = jest
-      .mocked(usePrpcQueryLib.usePrpcQuery)
-      .mockImplementation(({ options }) => {
-        const opt = options as UseQueryOptions<Project>;
-        // Use the actual `select` implementation so it can be tested as well.
-        const selectFn = opt.select || ((d) => d);
-        return {
-          data: selectFn({
-            bugUrlTemplate:
-              'https://b.corp.google.com/createIssue?description=builder%3A{{{milo_builder_url}}}build%3A{{{milo_build_url}}}',
-          }),
-        } as ReturnType<typeof usePrpcQueryLib.usePrpcQuery>;
-      });
+    jest.useFakeTimers();
+    usePrpcQueryMock = jest.mocked(usePrpcQuery);
+    jest.spyOn(MiloInternal.prototype, 'getProjectCfg').mockResolvedValue({
+      bugUrlTemplate:
+        'https://b.corp.google.com/createIssue?description=builder%3A{{{milo_builder_url}}}build%3A{{{milo_build_url}}}',
+    });
   });
 
-  test('e2e', () => {
-    const { rerender } = render(<CustomBugLink project="proj" />);
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  test('e2e', async () => {
+    const { rerender } = render(
+      <TestContextProvider>
+        <CustomBugLink project="proj" />
+      </TestContextProvider>
+    );
+    await jest.runAllTimersAsync();
 
     // The query is sent even when `build` is not yet populated.
-    expect(usePrpcQueryMock).toHaveBeenCalledTimes(1);
-    expect(usePrpcQueryMock.mock.lastCall?.[0]).toEqual({
-      host: '',
-      insecure: location.protocol === 'http:',
-      Service: MiloInternal,
-      method: 'getProjectCfg',
-      request: { project: 'proj' },
-      options: {
-        // The actual implementation is used in mocks.
-        // We only need to ensure that it exists here.
-        select: expect.any(Function),
-      },
-    });
+    expect(usePrpcQueryMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        host: '',
+        insecure: location.protocol === 'http:',
+        Service: MiloInternal,
+        method: 'getProjectCfg',
+        request: { project: 'proj' },
+      })
+    );
     expect(screen.queryByText('File a bug')).not.toBeInTheDocument();
 
     rerender(
-      <CustomBugLink
-        project="proj"
-        build={{
-          id: '1234',
-          builder: { project: 'proj', bucket: 'bucket', builder: 'builder' },
-        }}
-      />
+      <TestContextProvider>
+        <CustomBugLink
+          project="proj"
+          build={{
+            id: '1234',
+            builder: { project: 'proj', bucket: 'bucket', builder: 'builder' },
+          }}
+        />
+      </TestContextProvider>
     );
 
     // The bug link is only rendered when `build` is populated.
-    expect(screen.queryByText('File a bug')).toBeInTheDocument();
+    expect(screen.getByText('File a bug')).toBeInTheDocument();
   });
 });

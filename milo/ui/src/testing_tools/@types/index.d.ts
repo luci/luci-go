@@ -20,3 +20,18 @@ declare function createSelectiveMockFromModule<T = unknown>(
   moduleName: string,
   keysToMock: ReadonlyArray<keyof NoInfer<T>>
 ): T;
+
+/**
+ * Spy the exported functions specified in `keysToSpy` in a module.
+ *
+ * The spy is created via `jest.fn(actualImpl)` instead of `jest.spyOn` so
+ * `jest.restoreAllMocks()` will NOT restore the spies. This is intentional.
+ * `createSelectiveSpiesFromModule` is usually called in `jest.mock`, which
+ * usually lives in the top level scope of a test file, outside of a `before`
+ * hook. Restoring the spies will break the subsequent unit tests in the test
+ * file.
+ */
+declare function createSelectiveSpiesFromModule<T = unknown>(
+  moduleName: string,
+  keysToSpy: ReadonlyArray<FunctionKeys<NoInfer<T>>>
+): T;
