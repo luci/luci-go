@@ -27,6 +27,10 @@ import { URLExt } from '@/generic_libs/tools/utils';
 
 import { SearchPage } from './search_page';
 
+jest.mock('./builder_list', () => ({
+  BuilderList: () => <></>,
+}));
+
 describe('SearchPage', () => {
   let store: StoreInstance;
   beforeEach(() => {

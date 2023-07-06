@@ -13,8 +13,11 @@
 // limitations under the License.
 
 import {
+  UseInfiniteQueryOptions,
+  UseInfiniteQueryResult,
   UseQueryOptions,
   UseQueryResult,
+  useInfiniteQuery,
   useQuery,
 } from '@tanstack/react-query';
 
@@ -128,6 +131,135 @@ export function usePrpcQuery<
         }
       );
     },
+    ...options,
+  });
+}
+
+export type PaginatedPrpcMethod<
+  Req extends { pageToken?: string },
+  Ret extends { nextPageToken?: string }
+> = PrpcMethod<Req, Ret>;
+
+export type PrpcServicePaginatedMethodKeys<S> = keyof {
+  [MK in keyof S as S[MK] extends PaginatedPrpcMethod<
+    // The request type has to be `any` because the argument type must be
+    // contra-variant when sub-typing a function.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any,
+    { nextPageToken?: string }
+  >
+    ? MK
+    : never]: S[MK];
+};
+
+export type PaginatedPrpcMethodRequest<T> = T extends PaginatedPrpcMethod<
+  infer Req,
+  infer _Res
+>
+  ? Req
+  : never;
+
+export type PaginatedPrpcMethodResponse<T> = T extends PaginatedPrpcMethod<
+  infer _Req,
+  infer Res
+>
+  ? Res
+  : never;
+
+export interface UseInfinitePrpcQueryOptions<S, MK, Req, Res, TError, TData> {
+  readonly host: string;
+  readonly insecure?: boolean;
+  readonly Service: Constructor<S, [PrpcClientExt]> & { SERVICE: string };
+  readonly method: MK;
+  readonly request: Req;
+
+  /**
+   * options will be passed to `useInfiniteQuery` from `@tanstack/react-query`.
+   */
+  readonly options?: Omit<
+    UseInfiniteQueryOptions<
+      Res,
+      TError,
+      TData,
+      Res,
+      [string, string, string, MK, Req]
+    >,
+    'queryKey' | 'queryFn' | 'getNextPageParam'
+  >;
+}
+
+/**
+ * Call a pRPC method via `@tanstack/react-query`.
+ *
+ * This hook
+ *  * reduces boilerplate, and
+ *  * ensures the `queryKey` is populated correctly.
+ */
+// For the same reason that `@tanstack/react-query` maintains a separate set of
+// functions/interfaces for `useInfiniteQuery`, it's unlikely that we can dedupe
+// this function (and its supporting types) with `usePrpcQuery` in a meaningful
+// way.
+export function useInfinitePrpcQuery<
+  S extends object,
+  MK extends PrpcServicePaginatedMethodKeys<S>,
+  TError = unknown,
+  TData = PaginatedPrpcMethodResponse<S[MK]>
+>(
+  opts: UseInfinitePrpcQueryOptions<
+    S,
+    MK,
+    PaginatedPrpcMethodRequest<S[MK]>,
+    PaginatedPrpcMethodResponse<S[MK]>,
+    TError,
+    TData
+  >
+): UseInfiniteQueryResult<TData, TError> {
+  const { host, insecure, Service, method, request, options } = opts;
+
+  const { identity } = useAuthState();
+  const getAccessToken = useGetAccessToken();
+  return useInfiniteQuery({
+    queryKey: [
+      // The query response is tied to the user identity (ACL). The user
+      // identity may change after a auth state refresh after user logs in/out
+      // in another browser tab.
+      identity,
+      // Some pRPC services may get hosted on multiple hosts (e.g. swarming).
+      // Ensure the query to one host is not reused by query to another host.
+      host,
+      // Ensure methods sharing the same name from different services won't
+      // cause collision.
+      Service.SERVICE,
+      // Obviously query to one method shall not be reused by query to another
+      // method.
+      method,
+      // Include the whole request so whenever the request is changed, a new
+      // RPC call is triggered.
+      request,
+    ],
+    queryFn: async ({ pageParam }) => {
+      const service = new Service(
+        new PrpcClientExt({ host, insecure }, getAccessToken)
+      );
+      // `method` is constrained to be a key that has an associated property of
+      // type `PaginatedPrpcMethod` in a `Service`. Therefore `service[method]`
+      // is guaranteed to be a `PaginatedPrpcMethod`. TSC isn't smart enough to
+      // know that, so we need to use type casting.
+      return await (
+        service[method] as PaginatedPrpcMethod<
+          PaginatedPrpcMethodRequest<S[MK]>,
+          PaginatedPrpcMethodResponse<S[MK]>
+        >
+      )(
+        { ...request, pageToken: pageParam },
+        // Let react-query handle caching.
+        {
+          acceptCache: false,
+          skipUpdate: true,
+        }
+      );
+    },
+    getNextPageParam: (lastRes) => lastRes.nextPageToken,
     ...options,
   });
 }

@@ -12,43 +12,78 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Typography } from '@mui/material';
-import { observer } from 'mobx-react-lite';
-import { useEffect } from 'react';
+import { chain } from 'lodash-es';
+import { useEffect, useMemo } from 'react';
 
-import '@/generic_libs/components/dot_spinner';
-import { useStore } from '@/common/store';
-import { getBuilderURLPath } from '@/common/tools/url_utils';
-import { DotSpinner } from '@/generic_libs/components/dot_spinner';
+import { useInfinitePrpcQuery } from '@/common/hooks/use_prpc_query';
+import { MiloInternal } from '@/common/services/milo_internal';
 
-export const BuilderList = observer(() => {
-  const { groupedBuilders, builderLoader } = useStore().searchPage;
+import { BuilderListDisplay } from './builder_list_display';
 
+interface BuilderListProps {
+  readonly searchQuery: string;
+}
+
+export function BuilderList({ searchQuery }: BuilderListProps) {
+  const { data, isError, error, isLoading, fetchNextPage, hasNextPage } =
+    useInfinitePrpcQuery({
+      host: '',
+      insecure: location.protocol === 'http:',
+      Service: MiloInternal,
+      method: 'listBuilders',
+      request: {
+        pageSize: 10000,
+      },
+    });
+
+  if (isError) {
+    throw error;
+  }
+
+  // Computes `builders` separately so it's not re-computed when only
+  // `searchQuery` is updated.
+  const builders = useMemo(
+    () =>
+      data?.pages
+        .flatMap((p) => p.builders || [])
+        .map((b) => {
+          return [
+            // Pre-compute to support case-sensitive grouping.
+            `${b.id.project}/${b.id.bucket}`,
+            // Pre-compute to support case-insensitive searching.
+            `${b.id.project}/${b.id.bucket}/${b.id.builder}`.toLowerCase(),
+            b.id,
+          ] as const;
+        }) || [],
+    [data]
+  );
+
+  // Filter & group builders.
+  const groupedBuilders = useMemo(() => {
+    const parts = searchQuery.toLowerCase().split(' ');
+    const filteredBuilders = builders.filter(([_, lowerBuilderId]) =>
+      parts.every((part) => lowerBuilderId.includes(part))
+    );
+    return chain(filteredBuilders)
+      .groupBy(([bucketId]) => bucketId)
+      .mapValues((builders) =>
+        builders.map(([_bucketId, _lowerBuilderId, builder]) => builder)
+      )
+      .value();
+  }, [builders, searchQuery]);
+
+  // Keep loading builders until all pages are loaded.
   useEffect(() => {
-    if (builderLoader) {
-      builderLoader.loadRemainingPages();
+    if (isLoading || !hasNextPage) {
+      return;
     }
-  }, [builderLoader]);
+    fetchNextPage();
+  }, [fetchNextPage, isLoading, hasNextPage, data?.pages.length]);
 
   return (
-    <>
-      {Object.entries(groupedBuilders).map(([bucketId, builders]) => (
-        <Box key={bucketId}>
-          <Typography variant="h6">{bucketId}</Typography>
-          <ul>
-            {builders?.map((builder) => (
-              <li key={builder.builder}>
-                <a href={getBuilderURLPath(builder)}>{builder.builder}</a>
-              </li>
-            ))}
-          </ul>
-        </Box>
-      ))}
-      {(builderLoader?.isLoading ?? true) && (
-        <Typography component="span">
-          Loading <DotSpinner />
-        </Typography>
-      )}
-    </>
+    <BuilderListDisplay
+      groupedBuilders={groupedBuilders}
+      isLoading={isLoading}
+    />
   );
-});
+}

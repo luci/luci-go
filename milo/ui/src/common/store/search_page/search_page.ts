@@ -12,13 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { groupBy } from 'lodash-es';
 import { computed } from 'mobx';
 import { addDisposer, types } from 'mobx-state-tree';
 import { keepAlive } from 'mobx-utils';
 
 import { PageLoader } from '@/common/models/page_loader';
-import { BuilderID } from '@/common/services/buildbucket';
 import { ServicesStore } from '@/common/store/services';
 
 export enum SearchTarget {
@@ -39,35 +37,6 @@ export const SearchPage = types
     testProject: DEFAULT_TEST_PROJECT,
   })
   .views((self) => ({
-    get builderLoader() {
-      const milo = self.services?.milo;
-      if (!milo) {
-        return null;
-      }
-
-      return new PageLoader<BuilderID>(async (pageToken) => {
-        const res = await milo.listBuilders({
-          pageToken,
-          pageSize: 10000,
-        });
-        return [res.builders?.map((b) => b.id) || [], res.nextPageToken];
-      });
-    },
-    get builders() {
-      return this.builderLoader?.items.map<[string, BuilderID]>((b) => [
-        `${b.project}/${b.bucket}/${b.builder}`.toLowerCase(),
-        b,
-      ]);
-    },
-    get filteredBuilders() {
-      const parts = self.searchQuery.toLowerCase().split(' ');
-      return this.builders
-        ?.filter(([bid]) => parts.every((part) => bid.includes(part)))
-        .map(([_, builder]) => builder);
-    },
-    get groupedBuilders() {
-      return groupBy(this.filteredBuilders, (b) => `${b.project}/${b.bucket}`);
-    },
     get testLoader() {
       const testHistoryService = self.services?.testHistory;
       const project = self.testProject;
@@ -101,7 +70,6 @@ export const SearchPage = types
     },
     afterCreate() {
       // These computed properties contains internal caches. Keep them alive.
-      addDisposer(self, keepAlive(computed(() => self.builderLoader)));
       addDisposer(self, keepAlive(computed(() => self.testLoader)));
     },
   }));

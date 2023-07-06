@@ -190,7 +190,7 @@ export const SearchPage = observer(() => {
       </Box>
       <Box sx={{ mt: 5 }}>
         {searchTarget === SearchTarget.Builders ? (
-          <BuilderList />
+          <BuilderList searchQuery={pageState.searchQuery} />
         ) : (
           <TestList />
         )}
