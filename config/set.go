@@ -73,7 +73,7 @@ func MustServiceSet(service string) Set {
 // Returns error if the project name is invalid. See `ValidateProjectName`.
 func ProjectSet(project string) (Set, error) {
 	if err := ValidateProjectName(project); err != nil {
-		return "", fmt.Errorf("invalid project name")
+		return "", fmt.Errorf("invalid project name: %w", err)
 	}
 	return Set(fmt.Sprintf("%s/%s", ProjectDomain, project)), nil
 }
@@ -120,4 +120,20 @@ func (cs Set) Project() string {
 func (cs Set) Domain() Domain {
 	domain, _ := cs.Split()
 	return domain
+}
+
+// Validate checks that the config set is well-formed.
+func (cs Set) Validate() error {
+	switch domain, target := cs.Split(); domain {
+	case "":
+		return fmt.Errorf("can not extract domain from config set %q. expected syntax \"domain/target\"", cs)
+	case ProjectDomain:
+		_, err := ProjectSet(target)
+		return err
+	case ServiceDomain:
+		_, err := ServiceSet(target)
+		return err
+	default:
+		return fmt.Errorf("unknown domain %q for config set %q; currently supported domains [%s, %s]", domain, cs, ProjectDomain, ServiceDomain)
+	}
 }

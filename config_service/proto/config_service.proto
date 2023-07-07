@@ -33,14 +33,14 @@ service Configs {
 
 // A request message for GetConfig rpc.
 message GetConfigRequest {
-  // Requires path. Mutually exclusive with content_hash.
+  // Requires path. Mutually exclusive with content_sha256.
   string config_set = 1;
 
-  // Requires config_set. Mutually exclusive with content_hash.
+  // Requires config_set. Mutually exclusive with content_sha256.
   string path = 2;
 
   // Mutually exclusive with config_set and path.
-  string content_hash = 3;
+  string content_sha256 = 3;
 
   // Fields of the Config proto to include.
   //

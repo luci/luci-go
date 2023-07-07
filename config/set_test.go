@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfigSet(t *testing.T) {
@@ -26,9 +27,11 @@ func TestConfigSet(t *testing.T) {
 	Convey(`Testing config set utility methods`, t, func() {
 		ss, err := ServiceSet("my-service")
 		So(err, ShouldBeNil)
+		So(ss.Validate(), ShouldBeNil)
 		So(ss, ShouldEqual, "services/my-service")
 		ps, err := ProjectSet("my-project")
 		So(err, ShouldBeNil)
+		So(ps.Validate(), ShouldBeNil)
 		So(ps, ShouldEqual, "projects/my-project")
 
 		s := MustServiceSet("foo")
@@ -42,15 +45,21 @@ func TestConfigSet(t *testing.T) {
 		So(s.Domain(), ShouldEqual, ProjectDomain)
 
 		s = Set("malformed/set/abc/def")
+		So(s.Validate(), ShouldErrLike, "unknown domain \"malformed\" for config set \"malformed/set/abc/def\"; currently supported domains [projects, services]")
 		So(s.Service(), ShouldEqual, "")
 		So(s.Project(), ShouldEqual, "")
 
 		s, err = ServiceSet("malformed/service/set/abc")
-		So(err, ShouldNotBeNil)
+		So(err, ShouldErrLike, "invalid service name \"malformed/service/set/abc\", expected to match")
 		So(s, ShouldBeEmpty)
+		So(Set("services/malformed/service/set/abc").Validate(), ShouldErrLike, err)
 
-		s, err = ServiceSet("malformed/project/set/abc")
-		So(err, ShouldNotBeNil)
+		s, err = ProjectSet("malformed/project/set/abc")
+		So(err, ShouldErrLike, "invalid project name: invalid character")
 		So(s, ShouldBeEmpty)
+		So(Set("projects/malformed/service/set/abc").Validate(), ShouldErrLike, err)
+
+		So(Set("/abc").Validate(), ShouldErrLike, "can not extract domain from config set \"/abc\". expected syntax \"domain/target\"")
+		So(Set("unknown/abc").Validate(), ShouldErrLike, "unknown domain \"unknown\" for config set \"unknown/abc\"")
 	})
 }
