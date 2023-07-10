@@ -57,32 +57,6 @@ type File interface {
 	// TODO(yiwzhang): add GetRawContent to support legacy validation protocol.
 }
 
-// ExamineResult is the result of `Examine` method.
-type ExamineResult struct {
-	// MissingFiles are files whose the corresponding GCS object doesn't exist.
-	//
-	// Use the attached Signed URL instruct client to upload the config content.
-	MissingFiles []struct {
-		File      File
-		SignedURL string
-	}
-	// UnvalidatableFiles are files that no service can validate.
-	//
-	// Those files SHOULD not be included in the validation request.
-	UnvalidatableFiles []File
-}
-
-// Passed return True if the config files passed the examination and can
-// proceed to `Validate`.
-func (er *ExamineResult) Passed() bool {
-	return er == nil || (len(er.MissingFiles) == 0 && len(er.UnvalidatableFiles) == 0)
-}
-
-// Examine examines the configs files to ensure successful validation.
-func (v *Validator) Examine(ctx context.Context, cs config.Set, files []File) (*ExamineResult, error) {
-	panic("unimplemented")
-}
-
 // Validate validates the provided config files.
 func (v *Validator) Validate(ctx context.Context, cs config.Set, files []File) (*cfgcommonpb.ValidationResult, error) {
 	srvValidators := v.makeServiceValidators(cs, files)

@@ -54,6 +54,9 @@ const (
 	// in GCS bucket.
 	GSProdCfgFolder = "configs"
 
+	// ConfigMaxSize is the maximum size of the config LUCI Config supports.
+	ConfigMaxSize = 200 * 1024 * 1024 // 200 MiB
+
 	// signedURLExpireDur defines how long the signed url will be active.
 	signedURLExpireDur = 10 * time.Minute
 )
