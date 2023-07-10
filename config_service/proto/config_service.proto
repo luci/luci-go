@@ -19,16 +19,30 @@ import "go.chromium.org/luci/common/proto/config/service_config.proto";
 service Configs {
   // Get one configuration.
   rpc GetConfig(GetConfigRequest) returns (Config) {};
-  // Validates Configs for a config set.
+  // Validates configs for a config set.
   //
-  // The caller needs to passes the manifest of the config directory for
-  // validation. The manifest consists of the file path to each config file
-  // and the SHA256 hash of each config file content. LUCI Config will asks
-  // the caller to upload the config files that it has not seen their hashes
-  // in any previous validation session (up to 3 hours). The caller should
-  // call this rpc again with the same manifest after successfully uploading
-  // all the missing files.
-  rpc ValidateConfigs(ValidateConfigsRequest) returns (ValidateConfigsResponse) {};
+  // The validation workflow works as follows (assuming first time validation):
+  // 1. Client sends the manifest of the config directory for validation. The
+  //    manifest consists of the relative posix style path to each config file
+  //    and the SHA256 hash of the content of each config file.
+  // 2. Server returns grpc error status with InvalidArgument code and
+  //    a `BadValidationRequestFixInfo` message in status_detail.
+  //    `BadValidationRequestFixInfo` should contain a signed url for each
+  //    config file and Client is responsible to upload the *gzip compressed*
+  //    config to the url. Client should also fix any remaining error mentioned
+  //    in `BadValidationRequestFixInfo`. Note that, if the request contains
+  //    any invalid argument like malformed config set or absolute file path,
+  //    LUCI Config will only return the grpc error status with InvalidArgument
+  //    code but without anything in status_details because those type of errors
+  //    are not fixable.
+  // 3. Call the server again with the same validation request as in step 1. The
+  //    Server should be able to perform the validation and return the
+  //    result.
+  // 4. Repeat step 1-3 for any subsequent validation request. Note that for
+  //    step 2, the Server would only ask client to upload files that it has
+  //    not seen their hashes in any previous validation session (for up to 1
+  //    day).
+  rpc ValidateConfigs(ValidateConfigsRequest) returns (config.ValidationResult) {};
 }
 
 // A request message for GetConfig rpc.
@@ -94,31 +108,27 @@ message ValidateConfigsRequest {
   repeated FileHash file_hashes = 2;
 }
 
-
-// ValidateConfigsResponse is the response to ValidateConfigs rpc.
-message ValidateConfigsResponse {
-  message InvalidRequest {
-    message MissingFile {
-      // Relative path to the missing config file in POSIX style.
-      string path = 1;
-      // The url to upload the config.
-      //
-      // The caller SHOULD send compressed config and include following headers
-      //  * Content-Encoding: gzip
-      //  * x-goog-content-length-range: 0, 209715200
-      string signed_url = 2;
-    }
-    // The files that have NOT been seen by LUCI Config and need to be uploaded.
-    repeated MissingFile missing_files = 1;
-    // Files that none of the services can validate and SHOULD NOT be included
-    // in the ValidateConfigsRequest.
-    repeated string unvalidatable_files = 2;
+// BadValidationRequestFixInfo describes the problem in `ValidateConfigsRequest`
+// and provide the fix instruction. The server will include this message in
+// grpc error status details[1] and return InvalidArgument error code.
+//
+// [1]: https://github.com/googleapis/googleapis/blob/f36c65081b19e0758ef5696feca27c7dcee5475e/google/rpc/status.proto#L48
+message BadValidationRequestFixInfo {
+  message UploadFile {
+    // Relative path to the config file in POSIX style.
+    string path = 1;
+    // The url to upload the config.
+    //
+    // The caller SHOULD send compressed config and include following headers
+    //  * Content-Encoding: gzip
+    //  * x-goog-content-length-range: 0,$max_config_size
+    string signed_url = 2;
+    // Maximum config size in bytes that client can upload.
+    int64 max_config_size = 3;
   }
-  oneof response {
-    // The result of successful config validation.
-    config.ValidationResult result = 1;
-    // InvalidRequest describes the problem in ValidateConfigsRequest and how
-    // to fix them.
-    InvalidRequest invalid_request = 2;
-  }
+  // The files that have NOT been seen by LUCI Config and need to be uploaded.
+  repeated UploadFile upload_files = 1;
+  // Files that none of the services can validate and SHOULD NOT be included
+  // in the ValidateConfigsRequest.
+  repeated string unvalidatable_files = 2;
 }

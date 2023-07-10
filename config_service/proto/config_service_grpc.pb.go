@@ -8,6 +8,7 @@ package configpb
 
 import (
 	context "context"
+	config "go.chromium.org/luci/common/proto/config"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -24,16 +25,30 @@ const _ = grpc.SupportPackageIsVersion7
 type ConfigsClient interface {
 	// Get one configuration.
 	GetConfig(ctx context.Context, in *GetConfigRequest, opts ...grpc.CallOption) (*Config, error)
-	// Validates Configs for a config set.
+	// Validates configs for a config set.
 	//
-	// The caller needs to passes the manifest of the config directory for
-	// validation. The manifest consists of the file path to each config file
-	// and the SHA256 hash of each config file content. LUCI Config will asks
-	// the caller to upload the config files that it has not seen their hashes
-	// in any previous validation session (up to 3 hours). The caller should
-	// call this rpc again with the same manifest after successfully uploading
-	// all the missing files.
-	ValidateConfigs(ctx context.Context, in *ValidateConfigsRequest, opts ...grpc.CallOption) (*ValidateConfigsResponse, error)
+	// The validation workflow works as follows (assuming first time validation):
+	//  1. Client sends the manifest of the config directory for validation. The
+	//     manifest consists of the relative posix style path to each config file
+	//     and the SHA256 hash of the content of each config file.
+	//  2. Server returns grpc error status with InvalidArgument code and
+	//     a `BadValidationRequestFixInfo` message in status_detail.
+	//     `BadValidationRequestFixInfo` should contain a signed url for each
+	//     config file and Client is responsible to upload the *gzip compressed*
+	//     config to the url. Client should also fix any remaining error mentioned
+	//     in `BadValidationRequestFixInfo`. Note that, if the request contains
+	//     any invalid argument like malformed config set or absolute file path,
+	//     LUCI Config will only return the grpc error status with InvalidArgument
+	//     code but without anything in status_details because those type of errors
+	//     are not fixable.
+	//  3. Call the server again with the same validation request as in step 1. The
+	//     Server should be able to perform the validation and return the
+	//     result.
+	//  4. Repeat step 1-3 for any subsequent validation request. Note that for
+	//     step 2, the Server would only ask client to upload files that it has
+	//     not seen their hashes in any previous validation session (for up to 1
+	//     day).
+	ValidateConfigs(ctx context.Context, in *ValidateConfigsRequest, opts ...grpc.CallOption) (*config.ValidationResult, error)
 }
 
 type configsClient struct {
@@ -53,8 +68,8 @@ func (c *configsClient) GetConfig(ctx context.Context, in *GetConfigRequest, opt
 	return out, nil
 }
 
-func (c *configsClient) ValidateConfigs(ctx context.Context, in *ValidateConfigsRequest, opts ...grpc.CallOption) (*ValidateConfigsResponse, error) {
-	out := new(ValidateConfigsResponse)
+func (c *configsClient) ValidateConfigs(ctx context.Context, in *ValidateConfigsRequest, opts ...grpc.CallOption) (*config.ValidationResult, error) {
+	out := new(config.ValidationResult)
 	err := c.cc.Invoke(ctx, "/config.service.v2.Configs/ValidateConfigs", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -68,16 +83,30 @@ func (c *configsClient) ValidateConfigs(ctx context.Context, in *ValidateConfigs
 type ConfigsServer interface {
 	// Get one configuration.
 	GetConfig(context.Context, *GetConfigRequest) (*Config, error)
-	// Validates Configs for a config set.
+	// Validates configs for a config set.
 	//
-	// The caller needs to passes the manifest of the config directory for
-	// validation. The manifest consists of the file path to each config file
-	// and the SHA256 hash of each config file content. LUCI Config will asks
-	// the caller to upload the config files that it has not seen their hashes
-	// in any previous validation session (up to 3 hours). The caller should
-	// call this rpc again with the same manifest after successfully uploading
-	// all the missing files.
-	ValidateConfigs(context.Context, *ValidateConfigsRequest) (*ValidateConfigsResponse, error)
+	// The validation workflow works as follows (assuming first time validation):
+	//  1. Client sends the manifest of the config directory for validation. The
+	//     manifest consists of the relative posix style path to each config file
+	//     and the SHA256 hash of the content of each config file.
+	//  2. Server returns grpc error status with InvalidArgument code and
+	//     a `BadValidationRequestFixInfo` message in status_detail.
+	//     `BadValidationRequestFixInfo` should contain a signed url for each
+	//     config file and Client is responsible to upload the *gzip compressed*
+	//     config to the url. Client should also fix any remaining error mentioned
+	//     in `BadValidationRequestFixInfo`. Note that, if the request contains
+	//     any invalid argument like malformed config set or absolute file path,
+	//     LUCI Config will only return the grpc error status with InvalidArgument
+	//     code but without anything in status_details because those type of errors
+	//     are not fixable.
+	//  3. Call the server again with the same validation request as in step 1. The
+	//     Server should be able to perform the validation and return the
+	//     result.
+	//  4. Repeat step 1-3 for any subsequent validation request. Note that for
+	//     step 2, the Server would only ask client to upload files that it has
+	//     not seen their hashes in any previous validation session (for up to 1
+	//     day).
+	ValidateConfigs(context.Context, *ValidateConfigsRequest) (*config.ValidationResult, error)
 	mustEmbedUnimplementedConfigsServer()
 }
 
@@ -88,7 +117,7 @@ type UnimplementedConfigsServer struct {
 func (UnimplementedConfigsServer) GetConfig(context.Context, *GetConfigRequest) (*Config, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
 }
-func (UnimplementedConfigsServer) ValidateConfigs(context.Context, *ValidateConfigsRequest) (*ValidateConfigsResponse, error) {
+func (UnimplementedConfigsServer) ValidateConfigs(context.Context, *ValidateConfigsRequest) (*config.ValidationResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ValidateConfigs not implemented")
 }
 func (UnimplementedConfigsServer) mustEmbedUnimplementedConfigsServer() {}

@@ -34,6 +34,6 @@ type validator interface {
 }
 
 // ValidateConfigs validates configs. Implements configpb.ConfigsServer.
-func (c Configs) ValidateConfigs(ctx context.Context, req *configpb.ValidateConfigsRequest) (*configpb.ValidateConfigsResponse, error) {
+func (c Configs) ValidateConfigs(ctx context.Context, req *configpb.ValidateConfigsRequest) (*cfgcommonpb.ValidationResult, error) {
 	return nil, appstatus.Errorf(codes.Unimplemented, "ValidateConfigs hasn't been implemented yet.")
 }
