@@ -695,7 +695,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 			var ids []int64
 			So(ds.Run(c, ds.NewQuery("Foo").Order("__scatter__").Limit(5), func(f *Foo) {
-				So(f.Scatter, ShouldEqual, nil) // it is "invisible"
+				So(f.Scatter, ShouldBeNil) // it is "invisible"
 				ids = append(ids, f.ID)
 			}), ShouldBeNil)
 

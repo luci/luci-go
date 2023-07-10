@@ -195,7 +195,7 @@ func TestPoke(t *testing.T) {
 						rs.Submission.TreeErrorSince = timestamppb.New(now.Add(-11 * time.Minute))
 						res, err := h.Poke(ctx, rs)
 						So(err, ShouldBeNil)
-						So(res.State, ShouldNotEqual, rs)
+						So(res.State, ShouldNotPointTo, rs)
 						So(res.SideEffectFn, ShouldBeNil)
 						So(res.PreserveEvents, ShouldBeFalse)
 						So(res.PostProcessFn, ShouldBeNil)
@@ -256,7 +256,7 @@ func TestPoke(t *testing.T) {
 					So(res.SideEffectFn, ShouldBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldBeNil)
-					So(res.State, ShouldNotEqual, rs)
+					So(res.State, ShouldNotPointTo, rs)
 					So(res.State.LatestCLsRefresh, ShouldResemble, datastore.RoundTime(ct.Clock.Now().UTC()))
 					So(deps.clUpdater.refreshedCLs.Contains(1), ShouldBeTrue)
 				}
@@ -363,7 +363,7 @@ func TestPoke(t *testing.T) {
 					So(res.SideEffectFn, ShouldBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldBeNil)
-					So(res.State, ShouldNotEqual, rs)
+					So(res.State, ShouldNotPointTo, rs)
 					So(res.State.LatestTryjobsRefresh, ShouldEqual, datastore.RoundTime(ct.Clock.Now().UTC()))
 					So(deps.tjNotifier.updateScheduled, ShouldResemble, common.TryjobIDs{2})
 				}

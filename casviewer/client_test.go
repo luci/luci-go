@@ -48,7 +48,7 @@ func TestClient(t *testing.T) {
 			cl3, err := GetClient(c.Request.Context(), inst2)
 			So(err, ShouldBeNil)
 			So(cl3, ShouldNotBeNil)
-			So(cl3, ShouldNotEqual, cl1)
+			So(cl3, ShouldNotPointTo, cl1)
 		})
 
 		Convey("Clear", func() {

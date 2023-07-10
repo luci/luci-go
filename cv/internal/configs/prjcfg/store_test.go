@@ -92,7 +92,7 @@ func TestMakeConfigGroupID(t *testing.T) {
 	t.Parallel()
 	Convey("Make ConfigGroupID", t, func() {
 		id := MakeConfigGroupID("sha256:deadbeefdeadbeef", "foo")
-		So(id, ShouldEqual, "sha256:deadbeefdeadbeef/foo")
+		So(id, ShouldEqual, ConfigGroupID("sha256:deadbeefdeadbeef/foo"))
 	})
 }
 

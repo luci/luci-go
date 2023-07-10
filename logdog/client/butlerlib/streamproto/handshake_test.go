@@ -67,7 +67,7 @@ func TestHandshakeProtocol(t *testing.T) {
 			buf.Write([]byte(data))
 
 			So(f.FromHandshake(buf), ShouldBeNil)
-			So(f.Name, ShouldEqual, "test")
+			So(f.Name, ShouldEqual, StreamNameFlag("test"))
 		})
 
 		Convey(`Loading a fully-specified configuration`, func() {

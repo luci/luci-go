@@ -19,7 +19,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
-	"github.com/smartystreets/assertions"
+	"github.com/smarty/assertions"
 )
 
 // ShouldContainErr checks if an `errors.MultiError` on the left side contains

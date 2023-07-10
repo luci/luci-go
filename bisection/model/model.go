@@ -35,19 +35,19 @@ type SuspectVerificationStatus string
 
 const (
 	// The suspect is not verified and no verification is happening
-	SuspectVerificationStatus_Unverified = "Unverified"
+	SuspectVerificationStatus_Unverified SuspectVerificationStatus = "Unverified"
 	// The suspect is scheduled to be verified (via a task queue)
-	SuspectVerificationStatus_VerificationScheduled = "Verification Scheduled"
+	SuspectVerificationStatus_VerificationScheduled SuspectVerificationStatus = "Verification Scheduled"
 	// The suspect is under verification
-	SuspectVerificationStatus_UnderVerification = "Under Verification"
+	SuspectVerificationStatus_UnderVerification SuspectVerificationStatus = "Under Verification"
 	// The suspect is confirmed to be culprit
-	SuspectVerificationStatus_ConfirmedCulprit = "Confirmed Culprit"
+	SuspectVerificationStatus_ConfirmedCulprit SuspectVerificationStatus = "Confirmed Culprit"
 	// This is a false positive - the suspect is not the culprit
-	SuspectVerificationStatus_Vindicated = "Vindicated"
+	SuspectVerificationStatus_Vindicated SuspectVerificationStatus = "Vindicated"
 	// Some error happened during verification
-	SuspectVerificationStatus_VerificationError = "Verification Error"
+	SuspectVerificationStatus_VerificationError SuspectVerificationStatus = "Verification Error"
 	// The verification is canceled
-	SuspectVerificationStatus_Canceled = "Canceled"
+	SuspectVerificationStatus_Canceled SuspectVerificationStatus = "Canceled"
 )
 
 type SuspectType string

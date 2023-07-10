@@ -64,7 +64,7 @@ deps=(
   github.com/protocolbuffers/txtpbfmt@latest
   github.com/russross/blackfriday/v2@latest
   github.com/sergi/go-diff@latest
-  github.com/smartystreets/assertions@latest
+  github.com/smarty/assertions@latest
   github.com/smartystreets/goconvey@latest
   github.com/yosuke-furukawa/json5@latest
   go.starlark.net@latest

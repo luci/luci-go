@@ -28,11 +28,11 @@ func TestConfigSet(t *testing.T) {
 		ss, err := ServiceSet("my-service")
 		So(err, ShouldBeNil)
 		So(ss.Validate(), ShouldBeNil)
-		So(ss, ShouldEqual, "services/my-service")
+		So(ss, ShouldEqual, Set("services/my-service"))
 		ps, err := ProjectSet("my-project")
 		So(err, ShouldBeNil)
 		So(ps.Validate(), ShouldBeNil)
-		So(ps, ShouldEqual, "projects/my-project")
+		So(ps, ShouldEqual, Set("projects/my-project"))
 
 		s := MustServiceSet("foo")
 		So(s.Service(), ShouldEqual, "foo")

@@ -43,7 +43,7 @@ func TestMustParseName(t *testing.T) {
 		Convey("Parse", func() {
 			invID, testID, resultID := MustParseName(
 				"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5")
-			So(invID, ShouldEqual, "a")
+			So(invID, ShouldEqual, invocations.ID("a"))
 			So(testID, ShouldEqual, "ninja://chrome/test:foo_tests/BarTest.DoBaz")
 			So(resultID, ShouldEqual, "result5")
 		})

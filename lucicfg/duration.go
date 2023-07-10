@@ -43,9 +43,9 @@ func (x duration) String() string {
 	return (time.Duration(ms) * time.Millisecond).String()
 }
 
-// CompareSameType makes durations comparable by comparing them as integers.
-func (x duration) CompareSameType(op syntax.Token, y starlark.Value, depth int) (bool, error) {
-	return x.Int.CompareSameType(op, y.(duration).Int, depth)
+// Cmp makes durations comparable by comparing them as integers.
+func (x duration) Cmp(y starlark.Value, depth int) (int, error) {
+	return x.Int.Cmp(y.(duration).Int, depth)
 }
 
 // Binary implements binary operations between durations and ints.

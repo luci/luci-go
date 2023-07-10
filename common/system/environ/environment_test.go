@@ -16,6 +16,7 @@ package environ
 
 import (
 	"context"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -111,7 +112,7 @@ func TestEnvironmentManipulation(t *testing.T) {
 		So(env.Len(), ShouldEqual, 0)
 
 		Convey(`Can be sorted.`, func() {
-			So(env.Sorted(), ShouldEqual, nil)
+			So(env.Sorted(), ShouldBeNil)
 		})
 
 		Convey(`Can call Get`, func() {
@@ -136,7 +137,7 @@ func TestEnvironmentManipulation(t *testing.T) {
 		So(env.Len(), ShouldEqual, 0)
 
 		Convey(`Can be sorted.`, func() {
-			So(env.Sorted(), ShouldEqual, nil)
+			So(env.Sorted(), ShouldBeNil)
 		})
 
 		Convey(`Can call Get`, func() {
@@ -319,12 +320,16 @@ func TestEnvironmentContext(t *testing.T) {
 			ctx = env.SetInCtx(ctx)
 
 			Convey(`And get a copy back`, func() {
+				ptr := func(e Env) uintptr {
+					return reflect.ValueOf(e.env).Pointer()
+				}
+
 				env2 := FromCtx(ctx)
-				So(env2, ShouldNotEqual, env)
+				So(ptr(env2), ShouldNotEqual, ptr(env))
 				So(env2, ShouldResemble, env)
 
-				So(FromCtx(ctx), ShouldNotEqual, env)
-				So(FromCtx(ctx), ShouldNotEqual, env2)
+				So(ptr(FromCtx(ctx)), ShouldNotEqual, ptr(env))
+				So(ptr(FromCtx(ctx)), ShouldNotEqual, ptr(env2))
 			})
 
 			Convey(`Mutating after installation has no effect`, func() {

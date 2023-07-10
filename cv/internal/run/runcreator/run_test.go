@@ -257,7 +257,7 @@ func TestRunBuilder(t *testing.T) {
 			// If this test fails due to change of runID scheme, update the constant
 			// above.
 			rb.prepare(ct.Clock.Now())
-			So(rb.runID, ShouldEqual, expectedRunID)
+			So(rb.runID, ShouldEqual, common.RunID(expectedRunID))
 		})
 
 		Convey("Run already created", func() {

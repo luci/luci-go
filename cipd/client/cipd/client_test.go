@@ -1427,7 +1427,7 @@ func TestNewClientFromEnv(t *testing.T) {
 		So(opts.UserAgent, ShouldEqual, UserAgent)
 		So(opts.LoginInstructions, ShouldNotBeEmpty)
 		So(opts.PluginsContext, ShouldEqual, ctx)
-		So(opts.AdmissionPlugin, ShouldEqual, nil)
+		So(opts.AdmissionPlugin, ShouldBeNil)
 	})
 
 	Convey("With default config file", t, func() {

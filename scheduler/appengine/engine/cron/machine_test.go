@@ -77,7 +77,7 @@ func TestMachine(t *testing.T) {
 		tm.Now = parseTime("01:00").Add(-200 * time.Millisecond)
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(2) })
 		So(err, ShouldErrLike, "tick happened 200ms before it was expected")
-		So(tm.Actions, ShouldEqual, nil)
+		So(tm.Actions, ShouldBeNil)
 
 		// Slightly earlier tick (i.e. due to clock desync) is accepted.
 		tm.Now = parseTime("01:00").Add(-20 * time.Millisecond)
@@ -85,7 +85,7 @@ func TestMachine(t *testing.T) {
 		// A tick with wrong nonce is silently skipped.
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(123) })
 		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldEqual, nil)
+		So(tm.Actions, ShouldBeNil)
 
 		// The correct tick comes. Invocation is started and new tick is scheduled.
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(2) })
@@ -110,7 +110,7 @@ func TestMachine(t *testing.T) {
 		tm.Now = parseTime("02:00")
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(2) })
 		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldEqual, nil)
+		So(tm.Actions, ShouldBeNil)
 	})
 
 	Convey("Relative schedule", t, func() {

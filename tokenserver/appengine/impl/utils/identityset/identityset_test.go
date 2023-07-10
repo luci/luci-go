@@ -76,13 +76,13 @@ func TestFromStrings(t *testing.T) {
 	Convey("Bad group entry", t, func() {
 		s, err := FromStrings([]string{"group:"}, nil)
 		So(err, ShouldErrLike, "invalid entry")
-		So(s, ShouldEqual, nil)
+		So(s, ShouldBeNil)
 	})
 
 	Convey("Bad ID entry", t, func() {
 		s, err := FromStrings([]string{"shrug"}, nil)
 		So(err, ShouldErrLike, "bad identity string")
-		So(s, ShouldEqual, nil)
+		So(s, ShouldBeNil)
 	})
 }
 

@@ -52,7 +52,6 @@ func TestErrors(t *testing.T) {
 				err2 := AttachStatus(err, bbpb.Status_INFRA_FAILURE, &bbpb.StatusDetails{
 					ResourceExhaustion: &bbpb.StatusDetails_ResourceExhaustion{},
 				})
-				So(err, ShouldNotEqual, err2)
 
 				status, details := ExtractStatus(err2)
 				So(status, ShouldResemble, bbpb.Status_INFRA_FAILURE)

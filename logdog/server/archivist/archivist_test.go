@@ -919,22 +919,22 @@ func TestStagingPaths(t *testing.T) {
 			sa.path = "some-prefix/+/a/b/c/d/e"
 			So(sa.makeStagingPaths(120), ShouldBeNil)
 
-			So(sa.stream.staged, ShouldEqual, "gs://staging-bucket/staging-dir/some-project/p/lvAr3dzO3sXWufWt_4VTeV3-Me1qanKMnwLP90BacPQ/+/a/b/c/d/e/logstream.entries")
-			So(sa.stream.final, ShouldEqual, "gs://base-bucket/base-dir/some-project/some-prefix/+/a/b/c/d/e/logstream.entries")
+			So(sa.stream.staged, ShouldEqual, gs.Path("gs://staging-bucket/staging-dir/some-project/p/lvAr3dzO3sXWufWt_4VTeV3-Me1qanKMnwLP90BacPQ/+/a/b/c/d/e/logstream.entries"))
+			So(sa.stream.final, ShouldEqual, gs.Path("gs://base-bucket/base-dir/some-project/some-prefix/+/a/b/c/d/e/logstream.entries"))
 
-			So(sa.index.staged, ShouldEqual, "gs://staging-bucket/staging-dir/some-project/p/lvAr3dzO3sXWufWt_4VTeV3-Me1qanKMnwLP90BacPQ/+/a/b/c/d/e/logstream.index")
-			So(sa.index.final, ShouldEqual, "gs://base-bucket/base-dir/some-project/some-prefix/+/a/b/c/d/e/logstream.index")
+			So(sa.index.staged, ShouldEqual, gs.Path("gs://staging-bucket/staging-dir/some-project/p/lvAr3dzO3sXWufWt_4VTeV3-Me1qanKMnwLP90BacPQ/+/a/b/c/d/e/logstream.index"))
+			So(sa.index.final, ShouldEqual, gs.Path("gs://base-bucket/base-dir/some-project/some-prefix/+/a/b/c/d/e/logstream.index"))
 		})
 
 		Convey("Gets truncated", func() {
 			sa.path = "some-prefix/+/1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
 			So(sa.makeStagingPaths(120), ShouldBeNil)
 
-			So(sa.stream.staged, ShouldEqual, "gs://staging-bucket/staging-dir/some-project/p/lvAr3dzO3sXWufWt_4VTeV3-Me1qanKMnwLP90BacPQ/+/12-TRUNCATED-NatSoX9rqDX5JD2f/logstream.entries")
-			So(sa.stream.final, ShouldEqual, "gs://base-bucket/base-dir/some-project/some-prefix/+/12-TRUNCATED-NatSoX9rqDX5JD2f/logstream.entries")
+			So(sa.stream.staged, ShouldEqual, gs.Path("gs://staging-bucket/staging-dir/some-project/p/lvAr3dzO3sXWufWt_4VTeV3-Me1qanKMnwLP90BacPQ/+/12-TRUNCATED-NatSoX9rqDX5JD2f/logstream.entries"))
+			So(sa.stream.final, ShouldEqual, gs.Path("gs://base-bucket/base-dir/some-project/some-prefix/+/12-TRUNCATED-NatSoX9rqDX5JD2f/logstream.entries"))
 
-			So(sa.index.staged, ShouldEqual, "gs://staging-bucket/staging-dir/some-project/p/lvAr3dzO3sXWufWt_4VTeV3-Me1qanKMnwLP90BacPQ/+/12-TRUNCATED-NatSoX9rqDX5JD2f/logstream.index")
-			So(sa.index.final, ShouldEqual, "gs://base-bucket/base-dir/some-project/some-prefix/+/12-TRUNCATED-NatSoX9rqDX5JD2f/logstream.index")
+			So(sa.index.staged, ShouldEqual, gs.Path("gs://staging-bucket/staging-dir/some-project/p/lvAr3dzO3sXWufWt_4VTeV3-Me1qanKMnwLP90BacPQ/+/12-TRUNCATED-NatSoX9rqDX5JD2f/logstream.index"))
+			So(sa.index.final, ShouldEqual, gs.Path("gs://base-bucket/base-dir/some-project/some-prefix/+/12-TRUNCATED-NatSoX9rqDX5JD2f/logstream.index"))
 
 			for _, p := range []stagingPaths{sa.stream, sa.index} {
 				So(len(p.staged.Filename()), ShouldBeLessThanOrEqualTo, 120)

@@ -29,7 +29,7 @@ import (
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
 
-	. "github.com/smartystreets/assertions"
+	. "github.com/smarty/assertions"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 

@@ -55,7 +55,7 @@ func TestPrepareGetBuildRequest(t *testing.T) {
 			req, err := prepareGetBuildRequest(builderID, "b123")
 			So(err, ShouldBeNil)
 			So(req.Id, ShouldEqual, 123)
-			So(req.Builder, ShouldEqual, nil)
+			So(req.Builder, ShouldBeNil)
 		})
 
 		Convey("Should reject large build ID", func() {

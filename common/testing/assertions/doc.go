@@ -14,7 +14,7 @@
 
 // Package assertions is designed to be a collection of `.` importable, goconvey
 // compatible testing assertions, in the style of
-// "github.com/smartystreets/assertions".
+// "github.com/smarty/assertions".
 //
 // Due to a bug/feature in goconvey[1], files in this package end in
 // `_tests.go`.

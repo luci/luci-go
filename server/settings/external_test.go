@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 
-	"github.com/smartystreets/assertions"
+	"github.com/smarty/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

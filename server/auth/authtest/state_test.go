@@ -19,6 +19,7 @@ import (
 	"net"
 	"testing"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 
@@ -36,8 +37,8 @@ func TestFakeState(t *testing.T) {
 		state := FakeState{}
 		So(state.DB(), ShouldResemble, &FakeDB{})
 		So(state.Method(), ShouldNotBeNil)
-		So(state.User(), ShouldResemble, &auth.User{Identity: "anonymous:anonymous"})
-		So(state.PeerIdentity(), ShouldEqual, "anonymous:anonymous")
+		So(state.User(), ShouldResemble, &auth.User{Identity: identity.AnonymousIdentity})
+		So(state.PeerIdentity(), ShouldEqual, identity.AnonymousIdentity)
 		So(state.PeerIP().String(), ShouldEqual, "127.0.0.1")
 	})
 
@@ -60,7 +61,7 @@ func TestFakeState(t *testing.T) {
 			Email:    "abc@def.com",
 			Extra:    "blah",
 		})
-		So(state.PeerIdentity(), ShouldEqual, "bot:blah")
+		So(state.PeerIdentity(), ShouldEqual, identity.Identity("bot:blah"))
 		So(state.PeerIP().String(), ShouldEqual, "192.192.192.192")
 
 		db := state.DB()

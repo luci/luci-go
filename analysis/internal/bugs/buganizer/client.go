@@ -60,7 +60,6 @@ func NewRPCClient(ctx context.Context) (*RPCClient, error) {
 
 	clientOpts := &s2a.ClientOptions{
 		S2AAddress: s2aServerAddr,
-		EnableV2:   true,
 	}
 	creds, err := s2a.NewClientCreds(clientOpts)
 	if err != nil {

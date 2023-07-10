@@ -43,17 +43,29 @@ func baseTestContext() context.Context {
 func TestResolveSelf(t *testing.T) {
 	t.Parallel()
 
+	// On OSX temp dir is a symlink and it interferes with the test.
+	evalSymlinks := func(p string) string {
+		p, err := filepath.EvalSymlinks(p)
+		if err != nil {
+			t.Fatalf("eval symlinks: %s", err)
+		}
+		return p
+	}
+
 	realExec, err := os.Executable()
 	if err != nil {
 		t.Fatalf("failed to resolve the real executable: %s", err)
 	}
+	realExec = evalSymlinks(realExec)
+
 	realExecStat, err := os.Stat(realExec)
 	if err != nil {
 		t.Fatalf("failed to stat the real executable %q: %s", realExec, err)
 	}
 
 	Convey(`With a temporary directory`, t, func() {
-		tdir := t.TempDir()
+		tdir := evalSymlinks(t.TempDir())
+
 		// Set up a base probe.
 		probe := Probe{
 			Target: "git",

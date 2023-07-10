@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/auth/internal"
 	"go.chromium.org/luci/server/auth/signing"
@@ -62,14 +63,14 @@ func TestWorks(t *testing.T) {
 
 		id, certs, err := bundle.GetCerts(ctx)
 		So(err, ShouldBeNil)
-		So(id, ShouldEqual, "user:token-server-account@example.com")
+		So(id, ShouldEqual, identity.Identity("user:token-server-account@example.com"))
 		So(certs, ShouldNotBeNil)
 		So(calls, ShouldEqual, 1)
 
 		// Reuses stuff from cache.
 		id, certs, err = bundle.GetCerts(ctx)
 		So(err, ShouldBeNil)
-		So(id, ShouldEqual, "user:token-server-account@example.com")
+		So(id, ShouldEqual, identity.Identity("user:token-server-account@example.com"))
 		So(certs, ShouldNotBeNil)
 		So(calls, ShouldEqual, 1)
 
@@ -78,7 +79,7 @@ func TestWorks(t *testing.T) {
 		// Until it expires.
 		id, certs, err = bundle.GetCerts(ctx)
 		So(err, ShouldBeNil)
-		So(id, ShouldEqual, "user:token-server-account@example.com")
+		So(id, ShouldEqual, identity.Identity("user:token-server-account@example.com"))
 		So(certs, ShouldNotBeNil)
 		So(calls, ShouldEqual, 2)
 	})

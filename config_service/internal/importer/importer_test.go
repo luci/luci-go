@@ -32,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/gcloud/gs"
 	protoutil "go.chromium.org/luci/common/proto"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/proto/git"
@@ -512,7 +513,7 @@ func TestImportConfigSet(t *testing.T) {
 				So(files, ShouldHaveLength, 2)
 				So(files[0].Path, ShouldEqual, "file")
 				So(files[1].Path, ShouldEqual, "large")
-				So(files[1].GcsURI, ShouldEqual, "gs://storage-luci-config-dev/"+expectedGsFileName)
+				So(files[1].GcsURI, ShouldEqual, gs.Path("gs://storage-luci-config-dev/"+expectedGsFileName))
 			})
 		})
 

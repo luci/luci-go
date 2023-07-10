@@ -28,7 +28,7 @@ func TestID(t *testing.T) {
 
 	Convey("ID works", t, func() {
 		id := MakeRunID("infra", endOfTheWorld.Add(-time.Minute), 1, []byte{65, 15})
-		So(id, ShouldEqual, "infra/0000000060000-1-410f")
+		So(id, ShouldEqual, RunID("infra/0000000060000-1-410f"))
 		// Assert separately to ensure # of digits doesn't change,
 		// as this will break sorting order with IDs makde before.
 		So(id.InverseTS(), ShouldHaveLength, 13)
@@ -38,13 +38,13 @@ func TestID(t *testing.T) {
 
 		Convey("lexical ordering is oldest last", func() {
 			earlierId := MakeRunID("infra", endOfTheWorld.Add(-time.Hour), 2, []byte{31, 44})
-			So(earlierId, ShouldEqual, "infra/0000003600000-2-1f2c")
+			So(earlierId, ShouldEqual, RunID("infra/0000003600000-2-1f2c"))
 			So(earlierId, ShouldBeGreaterThan, id)
 		})
 
 		Convey("works for recent date", func() {
 			earlierId := MakeRunID("infra", time.Date(2020, 01, 01, 1, 1, 1, 2, time.UTC), 1, []byte{31, 44})
-			So(earlierId, ShouldEqual, "infra/9045130335854-1-1f2c")
+			So(earlierId, ShouldEqual, RunID("infra/9045130335854-1-1f2c"))
 			So(earlierId, ShouldBeGreaterThan, id)
 		})
 
@@ -109,7 +109,7 @@ func TestIDs(t *testing.T) {
 
 	Convey("IDs WithoutSorted works", t, func() {
 		So(MakeRunIDs().WithoutSorted(MakeRunIDs("1")), ShouldResemble, MakeRunIDs())
-		So(RunIDs(nil).WithoutSorted(MakeRunIDs("1")), ShouldEqual, nil)
+		So(RunIDs(nil).WithoutSorted(MakeRunIDs("1")), ShouldBeNil)
 
 		ids := MakeRunIDs("5", "8", "2")
 		sort.Sort(ids)

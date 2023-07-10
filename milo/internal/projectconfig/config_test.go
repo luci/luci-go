@@ -154,7 +154,7 @@ func TestConfig(t *testing.T) {
 				Convey("Check Console config removed", func() {
 					cs, err := GetConsole(c, "foo", "default")
 					So(err, ShouldNotBeNil)
-					So(cs, ShouldEqual, nil)
+					So(cs, ShouldBeNil)
 				})
 
 				Convey("Check builder group configs in correct order", func() {
@@ -207,7 +207,7 @@ func TestConfig(t *testing.T) {
 				Convey("Check removed the console", func() {
 					cs, err := GetConsole(c, "foo", "default")
 					So(err, ShouldNotBeNil)
-					So(cs, ShouldEqual, nil)
+					So(cs, ShouldBeNil)
 				})
 			})
 

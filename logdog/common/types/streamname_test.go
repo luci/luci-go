@@ -36,7 +36,7 @@ func TestStreamNameAsFlag(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey(`The stream variable should be populated with "test".`, func() {
-				So(stream, ShouldEqual, "test")
+				So(stream, ShouldEqual, StreamName("test"))
 			})
 		})
 
@@ -85,8 +85,8 @@ func TestStreamName(t *testing.T) {
 
 	Convey(`StreamName.Trim`, t, func() {
 		type e struct {
-			t string // Test value.
-			e string // Expected value.
+			t string     // Test value.
+			e StreamName // Expected value.
 		}
 		for _, entry := range []e{
 			{``, ``},
@@ -123,8 +123,8 @@ func TestStreamName(t *testing.T) {
 
 	Convey(`StreamName.AsNamespace`, t, func() {
 		type e struct {
-			t string // Test value.
-			e string // Expected value.
+			t string     // Test value.
+			e StreamName // Expected value.
 		}
 		for _, entry := range []e{
 			{``, ``},
@@ -237,9 +237,9 @@ func TestStreamPath(t *testing.T) {
 
 	Convey(`StreamPath.Split, StreamPath.Validate`, t, func() {
 		type e struct {
-			p      string // The stream path.
-			prefix string // The split prefix.
-			name   string // The split name.
+			p      string     // The stream path.
+			prefix StreamName // The split prefix.
+			name   StreamName // The split name.
 			sep    bool
 			valid  bool
 		}

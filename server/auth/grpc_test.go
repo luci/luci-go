@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc/peer"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/auth/identity"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -90,7 +91,7 @@ func TestAuthenticatingInterceptor(t *testing.T) {
 
 			// The handler was actually called and with the correct state.
 			So(innerCtx, ShouldNotBeNil)
-			So(CurrentIdentity(innerCtx), ShouldEqual, "user:someone@example.com")
+			So(CurrentIdentity(innerCtx), ShouldEqual, identity.Identity("user:someone@example.com"))
 		})
 
 		Convey("Blocked", func() {

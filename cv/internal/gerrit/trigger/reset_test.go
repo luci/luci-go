@@ -40,7 +40,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/usertext"
 
-	. "github.com/smartystreets/assertions"
+	. "github.com/smarty/assertions"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 

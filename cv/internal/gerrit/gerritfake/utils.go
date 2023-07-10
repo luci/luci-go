@@ -15,7 +15,7 @@
 package gerritfake
 
 import (
-	"github.com/smartystreets/assertions"
+	"github.com/smarty/assertions"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 )

@@ -91,8 +91,8 @@ func TestBuildRulesQuery(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(q, ShouldNotBeNil)
 
-		So(q.Requestor, ShouldEqual, "user:requestor@example.com")
-		So(q.Delegator, ShouldEqual, "user:delegated@example.com")
+		So(q.Requestor, ShouldEqual, identity.Identity("user:requestor@example.com"))
+		So(q.Delegator, ShouldEqual, identity.Identity("user:delegated@example.com"))
 		So(q.Audience.ToStrings(), ShouldResemble, []string{"group:A", "group:B", "user:c@example.com"})
 		So(q.Services.ToStrings(), ShouldResemble, []string{"*"})
 	})
@@ -106,8 +106,8 @@ func TestBuildRulesQuery(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(q, ShouldNotBeNil)
 
-		So(q.Requestor, ShouldEqual, "user:requestor@example.com")
-		So(q.Delegator, ShouldEqual, "user:requestor@example.com")
+		So(q.Requestor, ShouldEqual, identity.Identity("user:requestor@example.com"))
+		So(q.Delegator, ShouldEqual, identity.Identity("user:requestor@example.com"))
 		So(q.Audience.ToStrings(), ShouldResemble, []string{"group:A", "group:B", "user:requestor@example.com"})
 	})
 

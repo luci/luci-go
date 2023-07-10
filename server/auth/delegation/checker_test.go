@@ -58,7 +58,7 @@ func TestCheckToken(t *testing.T) {
 			OwnServiceIdentity:   "service:service-id",
 		})
 		So(err, ShouldBeNil)
-		So(ident, ShouldEqual, "user:from@example.com")
+		So(ident, ShouldEqual, identity.Identity("user:from@example.com"))
 	})
 
 	Convey("Basic use case with group check", t, func() {
@@ -79,7 +79,7 @@ func TestCheckToken(t *testing.T) {
 			OwnServiceIdentity:   "service:service-id",
 		})
 		So(err, ShouldBeNil)
-		So(ident, ShouldEqual, "user:from@example.com")
+		So(ident, ShouldEqual, identity.Identity("user:from@example.com"))
 
 		// Fail.
 		_, err = CheckToken(c, CheckTokenParams{

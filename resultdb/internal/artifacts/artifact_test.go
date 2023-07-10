@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -36,7 +37,7 @@ func TestMustParseName(t *testing.T) {
 		Convey(`Parse`, func() {
 			invID, testID, resultID, artifactID := MustParseName(
 				"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5/artifacts/a")
-			So(invID, ShouldEqual, "a")
+			So(invID, ShouldEqual, invocations.ID("a"))
 			So(testID, ShouldEqual, "ninja://chrome/test:foo_tests/BarTest.DoBaz")
 			So(resultID, ShouldEqual, "result5")
 			So(artifactID, ShouldEqual, "a")

@@ -25,7 +25,7 @@ import (
 
 	protoLegacy "github.com/golang/protobuf/proto"
 
-	"github.com/smartystreets/assertions"
+	"github.com/smarty/assertions"
 )
 
 // ShouldResembleProto asserts that given two values that contain proto messages

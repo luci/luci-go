@@ -34,7 +34,7 @@ func TestConfigBundle(t *testing.T) {
 
 		b, unknown, err := deserializeBundle(blob)
 		So(err, ShouldBeNil)
-		So(unknown, ShouldEqual, nil)
+		So(unknown, ShouldBeNil)
 		So(len(b), ShouldEqual, 0)
 	})
 
@@ -51,7 +51,7 @@ func TestConfigBundle(t *testing.T) {
 
 		b2, unknown, err := deserializeBundle(blob)
 		So(err, ShouldBeNil)
-		So(unknown, ShouldEqual, nil)
+		So(unknown, ShouldBeNil)
 		So(b2, ShouldHaveLength, len(b1))
 		for k := range b2 {
 			So(b2[k], ShouldResembleProto, b1[k])

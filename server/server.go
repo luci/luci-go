@@ -1490,13 +1490,11 @@ func (s *Server) Serve() error {
 		grpcmon.UnaryServerInterceptor,
 		grpcutil.UnaryServerPanicCatcherInterceptor,
 		authInterceptor.Unary(),
-		grpcutil.MalformedErrorFixer.Unary(),
 	}, s.unaryInterceptors...)
 	streamInterceptors := append([]grpc.StreamServerInterceptor{
 		grpcmon.StreamServerInterceptor,
 		grpcutil.StreamServerPanicCatcherInterceptor,
 		authInterceptor.Stream(),
-		grpcutil.MalformedErrorFixer.Stream(),
 	}, s.streamInterceptors...)
 
 	// Finish setting the pRPC server. It supports only unary RPCs. The root

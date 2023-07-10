@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
+	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/lucictx"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -48,8 +49,8 @@ func TestButler(t *testing.T) {
 				c.So(err, ShouldBeNil)
 				c.So(bs.Client, ShouldNotBeNil)
 				c.So(bs.Project, ShouldEqual, "null")
-				c.So(bs.Prefix, ShouldEqual, "null")
-				c.So(bs.Namespace, ShouldEqual, "u")
+				c.So(bs.Prefix, ShouldEqual, types.StreamName("null"))
+				c.So(bs.Namespace, ShouldEqual, types.StreamName("u"))
 
 				stream, err := bs.Client.NewStream(ctx, "sup")
 				c.So(err, ShouldBeNil)

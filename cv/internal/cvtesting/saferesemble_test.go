@@ -210,7 +210,7 @@ func TestSafeShouldResemble(t *testing.T) {
 			name:          "diff without no protos",
 			a:             &tNoProtos{a: 1},
 			e:             &tNoProtos{a: 2},
-			diffsContains: []string{"non-proto fields differ:", "(Should resemble)!"},
+			diffsContains: []string{"non-proto fields differ:", "(Should equal)!"},
 		},
 		{
 			name:          "diff, but not in protos",
@@ -252,7 +252,7 @@ func TestSafeShouldResemble(t *testing.T) {
 			name:          "diff inner struct no protos",
 			a:             saferesembletest.NewWithInnerStructNoProto(2, "y", saferesembletest.NewNoProtos(1, testclock.TestRecentTimeUTC)),
 			e:             saferesembletest.NewWithInnerStructNoProto(2, "y", saferesembletest.NewNoProtos(1, testclock.TestRecentTimeUTC.Add(1*time.Second))),
-			diffsContains: []string{"non-proto fields differ:", "(Should resemble)!"},
+			diffsContains: []string{"non-proto fields differ:", "(Should equal)!"},
 		},
 		{
 			name:          "diff inner struct has proto",
@@ -268,7 +268,7 @@ func TestSafeShouldResemble(t *testing.T) {
 			e: saferesembletest.NewWithInnerStructSliceNoProto(2, "y", []saferesembletest.NoProtos{
 				saferesembletest.NewNoProtos(1, testclock.TestRecentTimeUTC.Add(1*time.Second)),
 			}),
-			diffsContains: []string{"non-proto fields differ:", "(Should resemble)!"},
+			diffsContains: []string{"non-proto fields differ:", "(Should equal)!"},
 		},
 		{
 			name: "diff inner struct slice has proto",

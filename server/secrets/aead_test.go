@@ -83,8 +83,8 @@ func TestAEAD(t *testing.T) {
 				So(k2, ShouldNotBeNil)
 
 				// Got different objects.
-				So(k1, ShouldNotEqual, k2)
-				So(k1.Unwrap(), ShouldNotEqual, k2.Unwrap())
+				So(k1, ShouldNotPointTo, k2)
+				So(k1.Unwrap(), ShouldNotPointTo, k2.Unwrap())
 			})
 
 			Convey("Bad keyset", func() {
@@ -128,7 +128,7 @@ func TestAEAD(t *testing.T) {
 					putSecret(goodKey)
 					store.handler(ctx, store.secret)
 					// Got a different tink.AEAD now.
-					So(k.Unwrap(), ShouldNotEqual, pre)
+					So(k.Unwrap(), ShouldNotPointTo, pre)
 				})
 
 				Convey("Bad new key", func() {

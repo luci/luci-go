@@ -33,7 +33,7 @@ func TestStreamName(t *testing.T) {
 			Convey(`Will successfully parse a valid stream name.`, func() {
 				err := fs.Parse([]string{"-name", "test/stream/name"})
 				So(err, ShouldBeNil)
-				So(sn, ShouldEqual, "test/stream/name")
+				So(sn, ShouldEqual, StreamNameFlag("test/stream/name"))
 			})
 
 			Convey(`Will fail to parse an invalid stream name.`, func() {
@@ -53,7 +53,7 @@ func TestStreamName(t *testing.T) {
 					sn = ""
 					err := json.Unmarshal(d, &sn)
 					So(err, ShouldBeNil)
-					So(sn, ShouldEqual, "test/stream/name")
+					So(sn, ShouldEqual, StreamNameFlag("test/stream/name"))
 				})
 			})
 		})

@@ -55,8 +55,8 @@ func TestError(t *testing.T) {
 	})
 
 	Convey("Details", t, func() {
-		So(ToDetails(nil), ShouldEqual, nil)
-		So(ToDetails(errors.New("blah", Auth)), ShouldEqual, nil)
+		So(ToDetails(nil), ShouldBeNil)
+		So(ToDetails(errors.New("blah", Auth)), ShouldBeNil)
 
 		d := Details{Package: "a", Version: "b"}
 		So(ToDetails(errors.New("blah", Auth.WithDetails(d))), ShouldResemble, &d)

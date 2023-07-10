@@ -15,6 +15,7 @@
 package stringset
 
 import (
+	"reflect"
 	"sort"
 	"testing"
 
@@ -91,7 +92,7 @@ func TestSet(t *testing.T) {
 			Convey("Can dup them", func() {
 				dup := s.Dup()
 				So(dup, ShouldResemble, s)
-				So(dup, ShouldNotEqual, s)
+				So(reflect.ValueOf(dup).Pointer(), ShouldNotEqual, reflect.ValueOf(s).Pointer())
 				dup.Add("panwaffles") // the best of both!
 				So(dup, ShouldNotResemble, s)
 			})

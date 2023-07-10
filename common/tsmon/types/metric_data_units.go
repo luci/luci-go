@@ -19,25 +19,25 @@ type MetricDataUnits string
 
 // Units of metrics data.
 const (
-	Unknown      = ""
-	Seconds      = "s"
-	Milliseconds = "ms"
-	Microseconds = "us"
-	Nanoseconds  = "ns"
-	Bits         = "B"
-	Bytes        = "By"
+	Unknown      MetricDataUnits = ""
+	Seconds      MetricDataUnits = "s"
+	Milliseconds MetricDataUnits = "ms"
+	Microseconds MetricDataUnits = "us"
+	Nanoseconds  MetricDataUnits = "ns"
+	Bits         MetricDataUnits = "B"
+	Bytes        MetricDataUnits = "By"
 
-	Kilobytes = "kBy"  // 1000 bytes (not 1024).
-	Megabytes = "MBy"  // 1e6 (1,000,000) bytes.
-	Gigabytes = "GBy"  // 1e9 (1,000,000,000) bytes.
-	Kibibytes = "kiBy" // 1024 bytes.
-	Mebibytes = "MiBy" // 1024^2 (1,048,576) bytes.
-	Gibibytes = "GiBy" // 1024^3 (1,073,741,824) bytes.
+	Kilobytes MetricDataUnits = "kBy"  // 1000 bytes (not 1024).
+	Megabytes MetricDataUnits = "MBy"  // 1e6 (1,000,000) bytes.
+	Gigabytes MetricDataUnits = "GBy"  // 1e9 (1,000,000,000) bytes.
+	Kibibytes MetricDataUnits = "kiBy" // 1024 bytes.
+	Mebibytes MetricDataUnits = "MiBy" // 1024^2 (1,048,576) bytes.
+	Gibibytes MetricDataUnits = "GiBy" // 1024^3 (1,073,741,824) bytes.
 
 	// * Extended Units
-	AmpUnit           = "A"
-	MilliampUnit      = "mA"
-	DegreeCelsiusUnit = "Cel"
+	AmpUnit           MetricDataUnits = "A"
+	MilliampUnit      MetricDataUnits = "mA"
+	DegreeCelsiusUnit MetricDataUnits = "Cel"
 )
 
 // IsSpecified returns true if a unit annotation has been specified for a given

@@ -76,7 +76,7 @@ func TestFetchServiceInfo(t *testing.T) {
 			ctx = caching.WithEmptyProcessCache(ctx)
 			info3, err := FetchServiceInfo(ctx, testURL)
 			So(err, ShouldBeNil)
-			So(info3, ShouldNotEqual, info1)    // a new deserialized object
+			So(info3, ShouldNotPointTo, info1)  // a new deserialized object
 			So(info3, ShouldResemble, expected) // still has the correct value
 			So(calls, ShouldEqual, 1)           // no new calls
 		})

@@ -55,13 +55,13 @@ func TestResource(t *testing.T) {
 
 	Convey(`Can create a new, valid Topic.`, t, func() {
 		t := NewTopic("foo", "testTopic")
-		So(t, ShouldEqual, "projects/foo/topics/testTopic")
+		So(t, ShouldEqual, Topic("projects/foo/topics/testTopic"))
 		So(t.Validate(), ShouldBeNil)
 	})
 
 	Convey(`Can create a new, valid Subscription.`, t, func() {
 		t := NewSubscription("foo", "testSubscription")
-		So(t, ShouldEqual, "projects/foo/subscriptions/testSubscription")
+		So(t, ShouldEqual, Subscription("projects/foo/subscriptions/testSubscription"))
 		So(t.Validate(), ShouldBeNil)
 	})
 

@@ -16,6 +16,7 @@ package frontend
 
 import (
 	"bytes"
+	"html/template"
 	"net/http/httptest"
 	"testing"
 
@@ -43,49 +44,49 @@ func TestFuncs(t *testing.T) {
 			Convey("linkify https://", func() {
 				So(formatCommitDesc("https://foo.com"),
 					ShouldEqual,
-					"<a href=\"https://foo.com\">https://foo.com</a>")
+					template.HTML("<a href=\"https://foo.com\">https://foo.com</a>"))
 				Convey("but not http://", func() {
-					So(formatCommitDesc("http://foo.com"), ShouldEqual, "http://foo.com")
+					So(formatCommitDesc("http://foo.com"), ShouldEqual, template.HTML("http://foo.com"))
 				})
 			})
 			Convey("linkify b/ and crbug/", func() {
-				So(formatCommitDesc("blah blah b/123456 blah"), ShouldEqual, "blah blah <a href=\"http://b/123456\">b/123456</a> blah")
-				So(formatCommitDesc("crbug:foo/123456"), ShouldEqual, "<a href=\"https://crbug.com/foo/123456\">crbug:foo/123456</a>")
+				So(formatCommitDesc("blah blah b/123456 blah"), ShouldEqual, template.HTML("blah blah <a href=\"http://b/123456\">b/123456</a> blah"))
+				So(formatCommitDesc("crbug:foo/123456"), ShouldEqual, template.HTML("<a href=\"https://crbug.com/foo/123456\">crbug:foo/123456</a>"))
 			})
 			Convey("linkify Bug: lines", func() {
-				So(formatCommitDesc("\nBug: 12345\n"), ShouldEqual, "\nBug: <a href=\"https://crbug.com/12345\">12345</a>\n")
+				So(formatCommitDesc("\nBug: 12345\n"), ShouldEqual, template.HTML("\nBug: <a href=\"https://crbug.com/12345\">12345</a>\n"))
 				So(
 					formatCommitDesc(" > > BugS=  12345, butter:12345"),
 					ShouldEqual,
-					" &gt; &gt; BugS=  <a href=\"https://crbug.com/12345\">12345</a>, "+
-						"<a href=\"https://crbug.com/butter/12345\">butter:12345</a>")
+					template.HTML(" &gt; &gt; BugS=  <a href=\"https://crbug.com/12345\">12345</a>, "+
+						"<a href=\"https://crbug.com/butter/12345\">butter:12345</a>"))
 			})
 			Convey("linkify rules should not collide", func() {
 				So(
 					formatCommitDesc("I \"fixed\" https://crbug.com/123456 <today>"),
 					ShouldEqual,
-					"I &#34;fixed&#34; <a href=\"https://crbug.com/123456\">https://crbug.com/123456</a> &lt;today&gt;")
+					template.HTML("I &#34;fixed&#34; <a href=\"https://crbug.com/123456\">https://crbug.com/123456</a> &lt;today&gt;"))
 				So(
 					formatCommitDesc("Bug: 12, crbug/34, https://crbug.com/56, 78"),
 					ShouldEqual,
-					"Bug: <a href=\"https://crbug.com/12\">12</a>, <a href=\"https://crbug.com/34\">crbug/34</a>, <a href=\"https://crbug.com/56\">https://crbug.com/56</a>, <a href=\"https://crbug.com/78\">78</a>")
+					template.HTML("Bug: <a href=\"https://crbug.com/12\">12</a>, <a href=\"https://crbug.com/34\">crbug/34</a>, <a href=\"https://crbug.com/56\">https://crbug.com/56</a>, <a href=\"https://crbug.com/78\">78</a>"))
 			})
 			Convey("linkify rules interact correctly with escaping", func() {
 				So(
 					formatCommitDesc("\"https://example.com\""),
 					ShouldEqual,
-					"&#34;<a href=\"https://example.com\">https://example.com</a>&#34;")
+					template.HTML("&#34;<a href=\"https://example.com\">https://example.com</a>&#34;"))
 				So(
 					formatCommitDesc("Bug: <not a bug number, sorry>"),
 					ShouldEqual,
-					"Bug: &lt;not a bug number, sorry&gt;")
+					template.HTML("Bug: &lt;not a bug number, sorry&gt;"))
 				// This is not remotely valid of a URL, but exists to test that
 				// the linking template correctly escapes the URL, both as an
 				// attribute and as a value.
 				So(
 					formatCommitDesc("https://foo&bar<baz\"aaa>bbb"),
 					ShouldEqual,
-					"<a href=\"https://foo&amp;bar%3cbaz%22aaa%3ebbb\">https://foo&amp;bar&lt;baz&#34;aaa&gt;bbb</a>")
+					template.HTML("<a href=\"https://foo&amp;bar%3cbaz%22aaa%3ebbb\">https://foo&amp;bar&lt;baz&#34;aaa&gt;bbb</a>"))
 			})
 
 			Convey("trimLongString", func() {
@@ -197,16 +198,15 @@ func TestFuncs(t *testing.T) {
 			So(
 				logdogLink(buildbucketpb.Log{Name: "foo", Url: "logdog://www.example.com:1234/foo/bar/+/baz"}, true),
 				ShouldEqual,
-				`<a href="https://www.example.com:1234/logs/foo/bar/&#43;/baz?format=raw" aria-label="raw log foo">raw</a>`)
+				template.HTML(`<a href="https://www.example.com:1234/logs/foo/bar/&#43;/baz?format=raw" aria-label="raw log foo">raw</a>`))
 			So(
 				logdogLink(buildbucketpb.Log{Name: "foo", Url: "%zzzzz"}, true),
 				ShouldEqual,
-				`<a href="#invalid-logdog-link" aria-label="raw log foo">raw</a>`)
+				template.HTML(`<a href="#invalid-logdog-link" aria-label="raw log foo">raw</a>`))
 			So(
 				logdogLink(buildbucketpb.Log{Name: "foo", Url: "logdog://logs.chromium.org/foo/bar/+/baz"}, false),
 				ShouldEqual,
-				`<a href="https://logs.chromium.org/logs/foo/bar/&#43;/baz" aria-label="raw log foo">foo</a>`)
-
+				template.HTML(`<a href="https://logs.chromium.org/logs/foo/bar/&#43;/baz" aria-label="raw log foo">foo</a>`))
 		})
 	})
 }

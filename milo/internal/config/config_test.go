@@ -41,7 +41,7 @@ func TestConfig(t *testing.T) {
 				_, err := UpdateServiceConfig(c)
 				So(err.Error(), ShouldResemble, "could not load settings.cfg from luci-config: no such config")
 				settings := GetSettings(c)
-				So(settings.Buildbucket, ShouldEqual, nil)
+				So(settings.Buildbucket, ShouldBeNil)
 			})
 
 			Convey("Read a config", func() {

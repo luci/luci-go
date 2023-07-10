@@ -110,7 +110,7 @@ func TestRead(t *testing.T) {
 					v, n, err := ReadUint(buf)
 					So(err, ShouldBeNil)
 					So(n, ShouldEqual, len(c.expect))
-					So(v, ShouldEqual, c.val)
+					So(v, ShouldEqual, uint64(c.val))
 				}
 			})
 		}
