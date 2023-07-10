@@ -65,6 +65,11 @@ service Recorder {
   rpc UpdateIncludedInvocations(UpdateIncludedInvocationsRequest)
       returns (google.protobuf.Empty) {};
 
+  // Recursively marks all test variants associated with the invocation as
+  // submitted, merging them into the invocation's associated baseline.
+  rpc MarkInvocationSubmitted(MarkInvocationSubmittedRequest)
+      returns (google.protobuf.Empty) {};
+
   // == Test results ===========================================================
 
   // Appends a test result to a non-finalized invocation.
@@ -176,6 +181,16 @@ message UpdateIncludedInvocationsRequest {
   // ignored for idempotency.
   repeated string remove_invocations = 3;
 }
+
+// A request message for MarkInvocationSubmitted RPC.
+// To use this RPC, callers need:
+// - resultdb.baselines.put in the realm the <project>:@project, where project
+//   is the project of the nominated invocation.
+message MarkInvocationSubmittedRequest {
+  // Name of the invocation, e.g. "invocations/{id}".
+  string invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
+}
+
 
 // A request message for CreateTestResult RPC.
 message CreateTestResultRequest {

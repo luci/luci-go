@@ -397,4 +397,40 @@ CREATE TABLE Baselines (
   -- The time the baseline was created.
   CreationTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
 ) PRIMARY KEY (Project, BaselineId),
-  ROW DELETION POLICY (OLDER_THAN(LastUpdatedTime, INTERVAL 3 DAY))
+  ROW DELETION POLICY (OLDER_THAN(LastUpdatedTime, INTERVAL 3 DAY));
+
+-- Stores test baselines: the set of test variants which are expected to be run on a target (such as builder).
+CREATE TABLE BaselineTestVariants (
+  -- The LUCI project in which the test was observed.
+  Project STRING(40) NOT NULL,
+
+  -- A user-specified baseline identifier that maps to a set of test variants.
+  -- Often, this will be the source that generated the test result, such as the
+  -- builder name for Chromium. For example, the baseline identifier may be
+  -- try:linux-rel. The supported syntax for a baseline identifier is
+  -- ^[a-zA-Z0-9\-_.\(\):]{1,229}$. This syntax was selected to allow
+  -- <buildbucket bucket name>:<buildbucket builder name> as a valid baseline ID.
+  -- See go/src/go.chromium.org/luci/buildbucket/proto/builder_common.proto for
+  -- character lengths for buildbucket bucket name and builder name.
+  --
+  -- Baselines are used to identify new tests; subtracting the test variants in
+  -- a baseline from the test variants in an invocation determines which test
+  -- variants are new.
+  BaselineId String(229) NOT NULL,
+
+  -- Unique identifier of the test,
+  -- see also TestResult.test_id in test_result.proto.
+  TestId STRING(MAX) NOT NULL,
+
+  -- A hash of the key:variant pairs in the test variant.
+  -- Computed as hex(sha256(<concatenated_key_value_pairs>)[:8]),
+  -- where concatenated_key_value_pairs is the result of concatenating
+  -- variant pairs formatted as "<key>:<value>\n" in ascending key order.
+  -- Used to filter test results by variant.
+  VariantHash STRING(16) NOT NULL,
+
+  -- When the test history was introduced for the (project, subrealm, source).
+  -- Used to remove tests that have not been run longer than 72 hours.
+  LastUpdated TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+) PRIMARY KEY (Project, BaselineId, TestId, VariantHash),
+  ROW DELETION POLICY (OLDER_THAN(LastUpdated, INTERVAL 3 DAY))

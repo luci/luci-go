@@ -224,6 +224,9 @@ func cleanupDatabase(ctx context.Context, client *spanner.Client) error {
 
 		// All other tables are interleaved in Invocations table.
 		spanner.Delete("Invocations", spanner.AllKeys()),
+
+		spanner.Delete("Baselines", spanner.AllKeys()),
+		spanner.Delete("BaselineTestVariants", spanner.AllKeys()),
 	})
 	return err
 }

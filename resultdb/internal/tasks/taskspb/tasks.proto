@@ -43,3 +43,7 @@ message ExportInvocationArtifactsToBQ {
 message UpdateTestMetadata {
   string invocation_id = 1;
 }
+
+message MarkInvocationSubmitted {
+  string invocation_id = 1;
+}

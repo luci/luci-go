@@ -31,7 +31,6 @@ var (
 	PermListLimitedTestResults      = realms.RegisterPermission("resultdb.testResults.listLimited")
 	PermListArtifacts               = realms.RegisterPermission("resultdb.artifacts.list")
 	PermListTestMetadata            = realms.RegisterPermission("resultdb.testMetadata.list")
-
 )
 
 func init() {

@@ -110,6 +110,23 @@ func (s *DecoratedRecorder) UpdateIncludedInvocations(ctx context.Context, req *
 	return
 }
 
+func (s *DecoratedRecorder) MarkInvocationSubmitted(ctx context.Context, req *MarkInvocationSubmittedRequest) (rsp *emptypb.Empty, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "MarkInvocationSubmitted", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.MarkInvocationSubmitted(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "MarkInvocationSubmitted", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedRecorder) CreateTestResult(ctx context.Context, req *CreateTestResultRequest) (rsp *TestResult, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context

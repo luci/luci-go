@@ -195,6 +195,26 @@ func (mr *MockRecorderClientMockRecorder) FinalizeInvocation(ctx, in interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalizeInvocation", reflect.TypeOf((*MockRecorderClient)(nil).FinalizeInvocation), varargs...)
 }
 
+// MarkInvocationSubmitted mocks base method.
+func (m *MockRecorderClient) MarkInvocationSubmitted(ctx context.Context, in *MarkInvocationSubmittedRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "MarkInvocationSubmitted", varargs...)
+	ret0, _ := ret[0].(*emptypb.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MarkInvocationSubmitted indicates an expected call of MarkInvocationSubmitted.
+func (mr *MockRecorderClientMockRecorder) MarkInvocationSubmitted(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkInvocationSubmitted", reflect.TypeOf((*MockRecorderClient)(nil).MarkInvocationSubmitted), varargs...)
+}
+
 // UpdateIncludedInvocations mocks base method.
 func (m *MockRecorderClient) UpdateIncludedInvocations(ctx context.Context, in *UpdateIncludedInvocationsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
@@ -376,6 +396,21 @@ func (m *MockRecorderServer) FinalizeInvocation(arg0 context.Context, arg1 *Fina
 func (mr *MockRecorderServerMockRecorder) FinalizeInvocation(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalizeInvocation", reflect.TypeOf((*MockRecorderServer)(nil).FinalizeInvocation), arg0, arg1)
+}
+
+// MarkInvocationSubmitted mocks base method.
+func (m *MockRecorderServer) MarkInvocationSubmitted(arg0 context.Context, arg1 *MarkInvocationSubmittedRequest) (*emptypb.Empty, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkInvocationSubmitted", arg0, arg1)
+	ret0, _ := ret[0].(*emptypb.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MarkInvocationSubmitted indicates an expected call of MarkInvocationSubmitted.
+func (mr *MockRecorderServerMockRecorder) MarkInvocationSubmitted(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkInvocationSubmitted", reflect.TypeOf((*MockRecorderServer)(nil).MarkInvocationSubmitted), arg0, arg1)
 }
 
 // UpdateIncludedInvocations mocks base method.
