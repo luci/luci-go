@@ -24,7 +24,7 @@ import {
 } from '@/bisection/testing_tools/mocks/analyses_mock';
 import { createMockAnalysis } from '@/bisection/testing_tools/mocks/analysis_mock';
 import { Analysis } from '@/common/services/luci_bisection';
-import { TestContextProvider } from '@/testing_tools/test_context_provider';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ListAnalysesTable } from './list_analyses_table';
 
@@ -43,9 +43,9 @@ describe('Test AnalysesTable component', () => {
     mockFetchAnalyses(mockAnalyses, '');
 
     render(
-      <TestContextProvider>
+      <FakeContextProvider>
         <ListAnalysesTable />
-      </TestContextProvider>
+      </FakeContextProvider>
     );
 
     await screen.findByTestId('list-analyses-table');
@@ -66,9 +66,9 @@ describe('Test AnalysesTable component', () => {
     mockFetchAnalyses(firstPageMockAnalyses, 'test-token');
 
     render(
-      <TestContextProvider>
+      <FakeContextProvider>
         <ListAnalysesTable />
-      </TestContextProvider>
+      </FakeContextProvider>
     );
 
     await screen.findByTestId('list-analyses-table');
@@ -102,9 +102,9 @@ describe('Test AnalysesTable component', () => {
     mockFetchAnalyses(mockAnalyses, '');
 
     render(
-      <TestContextProvider>
+      <FakeContextProvider>
         <ListAnalysesTable />
-      </TestContextProvider>
+      </FakeContextProvider>
     );
 
     await screen.findByTestId('list-analyses-table');
@@ -117,9 +117,9 @@ describe('Test AnalysesTable component', () => {
     mockErrorFetchingAnalyses();
 
     render(
-      <TestContextProvider>
+      <FakeContextProvider>
         <ListAnalysesTable />
-      </TestContextProvider>
+      </FakeContextProvider>
     );
 
     await screen.findByTestId('list-analyses-table');

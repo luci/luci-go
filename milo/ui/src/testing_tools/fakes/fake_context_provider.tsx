@@ -16,16 +16,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 
-import { FakeAuthStateProvider } from './fakes/fake_auth_state_provider';
+import { FakeAuthStateProvider } from './fake_auth_state_provider';
 
-interface TestContextProviderProps {
+interface FakeContextProviderProps {
   readonly children: React.ReactNode;
 }
 
 /**
  * Provides various contexts for testing purpose.
  */
-export function TestContextProvider({ children }: TestContextProviderProps) {
+export function FakeContextProvider({ children }: FakeContextProviderProps) {
   const [client] = useState(
     () =>
       new QueryClient({

@@ -23,7 +23,7 @@ import {
 } from '@/bisection/testing_tools/mocks/analysis_mock';
 import { createMockAnalysis } from '@/bisection/testing_tools/mocks/analysis_mock';
 import { Analysis } from '@/common/services/luci_bisection';
-import { TestContextProvider } from '@/testing_tools/test_context_provider';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { SearchAnalysisTable } from './search_analysis_table';
 
@@ -38,9 +38,9 @@ describe('Test SearchAnalysisTable component', () => {
     mockQueryAnalysis(mockAnalyses);
 
     render(
-      <TestContextProvider>
+      <FakeContextProvider>
         <SearchAnalysisTable bbid="123" />
-      </TestContextProvider>
+      </FakeContextProvider>
     );
 
     await screen.findByTestId('search-analysis-table');
@@ -58,9 +58,9 @@ describe('Test SearchAnalysisTable component', () => {
     mockQueryAnalysis(mockAnalyses);
 
     render(
-      <TestContextProvider>
+      <FakeContextProvider>
         <SearchAnalysisTable bbid="124" />
-      </TestContextProvider>
+      </FakeContextProvider>
     );
 
     await screen.findByTestId('search-analysis-table');
@@ -81,9 +81,9 @@ describe('Test SearchAnalysisTable component', () => {
     mockQueryAnalysis(mockAnalyses);
 
     render(
-      <TestContextProvider>
+      <FakeContextProvider>
         <SearchAnalysisTable bbid="123" />
-      </TestContextProvider>
+      </FakeContextProvider>
     );
 
     await screen.findByTestId('search-analysis-table');
@@ -98,9 +98,9 @@ describe('Test SearchAnalysisTable component', () => {
     mockErrorQueryingAnalysis();
 
     render(
-      <TestContextProvider>
+      <FakeContextProvider>
         <SearchAnalysisTable bbid="123" />
-      </TestContextProvider>
+      </FakeContextProvider>
     );
 
     await screen.findByTestId('search-analysis-table');

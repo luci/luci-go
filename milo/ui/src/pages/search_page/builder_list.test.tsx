@@ -20,7 +20,7 @@ import {
   MiloInternal,
 } from '@/common/services/milo_internal';
 import { BuilderListDisplay } from '@/pages/search_page/builder_list_display';
-import { TestContextProvider } from '@/testing_tools/test_context_provider';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { BuilderList } from './builder_list';
 
@@ -99,9 +99,9 @@ describe('BuilderList', () => {
 
   test('e2e', async () => {
     const { rerender } = render(
-      <TestContextProvider>
+      <FakeContextProvider>
         <BuilderList searchQuery="" />
-      </TestContextProvider>
+      </FakeContextProvider>
     );
 
     await jest.runAllTimersAsync();
@@ -138,9 +138,9 @@ describe('BuilderList', () => {
 
     // Filter builder.
     rerender(
-      <TestContextProvider>
+      <FakeContextProvider>
         <BuilderList searchQuery="builder2" />
-      </TestContextProvider>
+      </FakeContextProvider>
     );
     // Do not trigger more list builder calls.
     expect(listBuilderMock).toHaveBeenCalledTimes(3);
@@ -165,9 +165,9 @@ describe('BuilderList', () => {
 
     // Fuzzy search builder.
     rerender(
-      <TestContextProvider>
+      <FakeContextProvider>
         <BuilderList searchQuery="CkEt1/bU Oj2" />
-      </TestContextProvider>
+      </FakeContextProvider>
     );
     // Do not trigger more list builder calls.
     expect(listBuilderMock).toHaveBeenCalledTimes(3);

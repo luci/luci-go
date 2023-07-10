@@ -17,7 +17,7 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { MiloInternal, Project } from '@/common/services/milo_internal';
 import { ResultDb } from '@/common/services/resultdb';
 import { TestMetadataDetail } from '@/common/services/resultdb';
-import { TestContextProvider } from '@/testing_tools/test_context_provider';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { TestIdLabel } from './test_id_label';
 
@@ -55,9 +55,9 @@ describe('TestIdLabel', () => {
   };
   const renderTestIdLabel = () => {
     render(
-      <TestContextProvider>
+      <FakeContextProvider>
         <TestIdLabel projectOrRealm="testrealm" testId="testid" />
-      </TestContextProvider>
+      </FakeContextProvider>
     );
     expect(screen.queryByText('testrealm')).not.toBeNull();
     expect(screen.queryByText('testid')).not.toBeNull();

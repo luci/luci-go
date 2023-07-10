@@ -17,7 +17,7 @@ import { render, screen } from '@testing-library/react';
 
 import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
 import { MiloInternal } from '@/common/services/milo_internal';
-import { TestContextProvider } from '@/testing_tools/test_context_provider';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { CustomBugLink } from './custom_bug_link';
 
@@ -45,9 +45,9 @@ describe('CustomBugLink', () => {
 
   test('e2e', async () => {
     const { rerender } = render(
-      <TestContextProvider>
+      <FakeContextProvider>
         <CustomBugLink project="proj" />
-      </TestContextProvider>
+      </FakeContextProvider>
     );
     await jest.runAllTimersAsync();
 
@@ -64,7 +64,7 @@ describe('CustomBugLink', () => {
     expect(screen.queryByText('File a bug')).not.toBeInTheDocument();
 
     rerender(
-      <TestContextProvider>
+      <FakeContextProvider>
         <CustomBugLink
           project="proj"
           build={{
@@ -72,7 +72,7 @@ describe('CustomBugLink', () => {
             builder: { project: 'proj', bucket: 'bucket', builder: 'builder' },
           }}
         />
-      </TestContextProvider>
+      </FakeContextProvider>
     );
 
     // The bug link is only rendered when `build` is populated.

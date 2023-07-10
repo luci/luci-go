@@ -20,7 +20,7 @@ import { render, screen } from '@testing-library/react';
 
 import { createMockAnalysis } from '@/bisection/testing_tools/mocks/analysis_mock';
 import { Analysis } from '@/common/services/luci_bisection';
-import { TestContextProvider } from '@/testing_tools/test_context_provider';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { AnalysisTableRow } from './analysis_table_row';
 
@@ -29,13 +29,13 @@ describe('Test AnalysisTableRow component', () => {
     const mockAnalysis: Analysis = createMockAnalysis('123');
 
     render(
-      <TestContextProvider>
+      <FakeContextProvider>
         <Table>
           <TableBody>
             <AnalysisTableRow analysis={mockAnalysis} />
           </TableBody>
         </Table>
-      </TestContextProvider>
+      </FakeContextProvider>
     );
 
     await screen.findByTestId('analysis_table_row');
@@ -81,13 +81,13 @@ describe('Test AnalysisTableRow component', () => {
     mockAnalysis.builder = undefined;
 
     render(
-      <TestContextProvider>
+      <FakeContextProvider>
         <Table>
           <TableBody>
             <AnalysisTableRow analysis={mockAnalysis} />
           </TableBody>
         </Table>
-      </TestContextProvider>
+      </FakeContextProvider>
     );
 
     await screen.findByTestId('analysis_table_row');
@@ -146,13 +146,13 @@ describe('Test AnalysisTableRow component', () => {
     ];
 
     render(
-      <TestContextProvider>
+      <FakeContextProvider>
         <Table>
           <TableBody>
             <AnalysisTableRow analysis={mockAnalysis} />
           </TableBody>
         </Table>
-      </TestContextProvider>
+      </FakeContextProvider>
     );
 
     await screen.findByTestId('analysis_table_row');
