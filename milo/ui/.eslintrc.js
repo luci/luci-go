@@ -94,6 +94,24 @@ module.exports = {
       },
     ],
 
+    'no-restricted-imports': [
+      'error',
+      {
+        patterns: [
+          {
+            group: ['lodash-es'],
+            importNames: ['chain'],
+            message: '`chain` from `lodash-es` does not work with tree-shaking',
+          },
+          {
+            group: ['lodash-es/chain'],
+            importNames: ['default'],
+            message: '`chain` from `lodash-es` does not work with tree-shaking',
+          },
+        ],
+      },
+    ],
+
     // TypeScript and LitElement template is hard to fit in 80 cols.
     // Note that the prettier will still try to reformat the code into 80 cols.
     // But the prettier does not apply a hard limit.

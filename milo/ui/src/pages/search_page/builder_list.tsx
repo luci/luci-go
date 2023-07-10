@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { chain } from 'lodash-es';
+import { groupBy, mapValues } from 'lodash-es';
 import { useEffect, useMemo } from 'react';
 
 import { useInfinitePrpcQuery } from '@/common/hooks/use_prpc_query';
@@ -64,12 +64,11 @@ export function BuilderList({ searchQuery }: BuilderListProps) {
     const filteredBuilders = builders.filter(([_, lowerBuilderId]) =>
       parts.every((part) => lowerBuilderId.includes(part))
     );
-    return chain(filteredBuilders)
-      .groupBy(([bucketId]) => bucketId)
-      .mapValues((builders) =>
+    return mapValues(
+      groupBy(filteredBuilders, ([bucketId]) => bucketId),
+      (builders) =>
         builders.map(([_bucketId, _lowerBuilderId, builder]) => builder)
-      )
-      .value();
+    );
   }, [builders, searchQuery]);
 
   // Keep loading builders until all pages are loaded.
