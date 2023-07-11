@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel/sdk/trace"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -30,25 +30,25 @@ func TestSamplerParsing(t *testing.T) {
 	t.Parallel()
 
 	Convey("Percent", t, func() {
-		s, err := Sampler("0.1%")
+		s, err := BaseSampler("0.1%")
 		So(err, ShouldBeNil)
 		So(s, ShouldNotBeNil)
 
-		_, err = Sampler("abc%")
+		_, err = BaseSampler("abc%")
 		So(err, ShouldErrLike, `not a float percent "abc%"`)
 	})
 
 	Convey("QPS", t, func() {
-		s, err := Sampler("0.1qps")
+		s, err := BaseSampler("0.1qps")
 		So(err, ShouldBeNil)
 		So(s, ShouldNotBeNil)
 
-		_, err = Sampler("abc%")
-		So(err, ShouldErrLike, `not a float percent "abc%"`)
+		_, err = BaseSampler("abcqps")
+		So(err, ShouldErrLike, `not a float QPS "abcqps"`)
 	})
 
 	Convey("Unrecognized", t, func() {
-		_, err := Sampler("huh")
+		_, err := BaseSampler("huh")
 		So(err, ShouldErrLike, "unrecognized sampling spec string")
 	})
 }
@@ -75,7 +75,7 @@ func TestQPSSampler(t *testing.T) {
 			if _, err := rand.Read(params.TraceID[:]); err != nil {
 				panic(err)
 			}
-			if sampler.Sampler(params).Sample {
+			if sampler.ShouldSample(params).Decision == trace.RecordAndSample {
 				sampled++
 			}
 			tick(10 * time.Millisecond) // 100 QPS

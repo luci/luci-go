@@ -148,10 +148,12 @@ func TestServer(t *testing.T) {
 			So(resp, ShouldEqual, "Hello, world")
 
 			// Stderr log captures details about the request.
+			const traceID = "projects/cloud-project-id/traces/680b4e7c8b763a1b1d49d4955c848621"
 			So(srv.stderr.Last(1), ShouldResemble, []sdlogger.LogEntry{
 				{
 					Severity:  sdlogger.WarningSeverity,
 					Timestamp: sdlogger.Timestamp{Seconds: 1454472307, Nanos: 7},
+					TraceID:   traceID,
 					RequestInfo: &sdlogger.RequestInfo{
 						Method:       "GET",
 						URL:          "http://" + srv.mainAddr + "/test",
@@ -170,16 +172,18 @@ func TestServer(t *testing.T) {
 					Severity:  sdlogger.InfoSeverity,
 					Message:   "Info log",
 					Timestamp: sdlogger.Timestamp{Seconds: 1454472306, Nanos: 7},
+					TraceID:   traceID,
 					Operation: &sdlogger.Operation{
-						ID: "eb9d18a44784045d87f3c67cf22746e9",
+						ID: "6325253fec738dd7a9e28bf921119c16",
 					},
 				},
 				{
 					Severity:  sdlogger.WarningSeverity,
 					Message:   "Warn log",
 					Timestamp: sdlogger.Timestamp{Seconds: 1454472307, Nanos: 7},
+					TraceID:   traceID,
 					Operation: &sdlogger.Operation{
-						ID: "eb9d18a44784045d87f3c67cf22746e9",
+						ID: "6325253fec738dd7a9e28bf921119c16",
 					},
 				},
 			})
@@ -1224,11 +1228,6 @@ func (r *logsRecorder) Write(e *sdlogger.LogEntry) {
 	if r.discard {
 		return
 	}
-
-	// opencensus.io/trace generates random trace and span IDs. Scrub them.
-	e.TraceID = ""
-	e.SpanID = ""
-
 	r.m.Lock()
 	r.logs = append(r.logs, *e)
 	r.m.Unlock()

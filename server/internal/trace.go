@@ -17,45 +17,46 @@ package internal
 import (
 	"context"
 	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	"net/http"
 
-	"go.opencensus.io/exporter/stackdriver/propagation"
-	octrace "go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/propagation"
+	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"go.chromium.org/luci/common/trace"
-	"go.chromium.org/luci/grpc/grpcutil"
 )
 
-// EnableOpenCensusTracing installs OpenCensus as a tracing backend for LUCI
-// packages.
-func EnableOpenCensusTracing() {
-	trace.SetBackend(ocTraceBackend{})
+var tracer = otel.Tracer("go.chromium.org/luci/common/trace")
+
+// EnableOpenTelemetryTracing installs OpenTelemetry as a tracing backend for
+// LUCI packages.
+//
+// TODO(vadimsh): Get rid of it and use OpenTelemetry API directly.
+func EnableOpenTelemetryTracing() {
+	trace.SetBackend(otelBackend{})
 }
 
-type ocTraceBackend struct{}
+type otelBackend struct{}
 
-func (ocTraceBackend) StartSpan(ctx context.Context, name string, kind trace.SpanKind) (context.Context, trace.Span) {
-	var ocKind int
+func (otelBackend) StartSpan(ctx context.Context, name string, kind trace.SpanKind) (context.Context, trace.Span) {
+	otelKind := oteltrace.SpanKindUnspecified
 	switch kind {
 	case trace.SpanKindInternal:
-		ocKind = octrace.SpanKindUnspecified
+		otelKind = oteltrace.SpanKindInternal
 	case trace.SpanKindClient:
-		ocKind = octrace.SpanKindClient
-	default:
-		ocKind = octrace.SpanKindUnspecified
+		otelKind = oteltrace.SpanKindClient
 	}
-	ctx, span := octrace.StartSpan(ctx, name, octrace.WithSpanKind(ocKind))
-	if span.IsRecordingEvents() {
-		return ctx, ocSpan{span}
+	ctx, span := tracer.Start(ctx, name, oteltrace.WithSpanKind(otelKind))
+	if span.IsRecording() {
+		return ctx, otelSpan{span}
 	}
 	return ctx, trace.NullSpan{}
 }
 
-var cloudTraceFormat = propagation.HTTPFormat{}
-
-func (ocTraceBackend) PropagateSpanContext(ctx context.Context, span trace.Span, req *http.Request) *http.Request {
+func (otelBackend) PropagateSpanContext(ctx context.Context, span trace.Span, req *http.Request) *http.Request {
 	// Inject the new context into the request, this also makes a shallow copy.
 	req = req.WithContext(ctx)
 
@@ -67,75 +68,50 @@ func (ocTraceBackend) PropagateSpanContext(ctx context.Context, span trace.Span,
 	}
 	req.Header = header
 
-	// Inject X-Cloud-Trace-Context header with the encoded span context.
-	cloudTraceFormat.SpanContextToRequest(span.(ocSpan).span.SpanContext(), req)
+	// Inject tracing headers.
+	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
 	return req
 }
 
-func (ocTraceBackend) SpanContext(ctx context.Context) string {
-	if span := octrace.FromContext(ctx); span != nil {
-		// Note: this is identical to what SpanContextToRequest does internally.
-		sc := span.SpanContext()
-		sid := binary.BigEndian.Uint64(sc.SpanID[:])
-		return fmt.Sprintf("%s/%d;o=%d", hex.EncodeToString(sc.TraceID[:]), sid, int64(sc.TraceOptions))
+func (otelBackend) SpanContext(ctx context.Context) string {
+	if sc := oteltrace.SpanContextFromContext(ctx); sc.IsValid() {
+		blob := sc.SpanID()
+		return fmt.Sprintf("%s/%d;o=%d",
+			sc.TraceID().String(),
+			binary.BigEndian.Uint64(blob[:]),
+			int64(sc.TraceFlags()),
+		)
 	}
 	return ""
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type ocSpan struct {
-	span *octrace.Span
+type otelSpan struct {
+	span oteltrace.Span
 }
 
 // End marks the span as finished (with the given status).
-func (s ocSpan) End(err error) {
+func (s otelSpan) End(err error) {
 	if err != nil {
-		s.span.SetStatus(octrace.Status{
-			Code:    int32(grpcutil.Code(err)),
-			Message: err.Error(),
-		})
+		s.span.RecordError(err)
+		s.span.SetStatus(codes.Error, err.Error())
 	}
 	s.span.End()
 }
 
 // Attribute annotates the span with an attribute.
-func (s ocSpan) Attribute(key string, val any) {
-	var a octrace.Attribute
+func (s otelSpan) Attribute(key string, val any) {
 	switch val := val.(type) {
 	case string:
-		a = octrace.StringAttribute(key, val)
+		s.span.SetAttributes(attribute.String(key, val))
 	case bool:
-		a = octrace.BoolAttribute(key, val)
+		s.span.SetAttributes(attribute.Bool(key, val))
 	case int:
-		a = octrace.Int64Attribute(key, int64(val))
+		s.span.SetAttributes(attribute.Int64(key, int64(val)))
 	case int64:
-		a = octrace.Int64Attribute(key, val)
+		s.span.SetAttributes(attribute.Int64(key, val))
 	default:
-		a = octrace.StringAttribute(key, fmt.Sprintf("%#v", val))
+		s.span.SetAttributes(attribute.String(key, fmt.Sprintf("%#v", val)))
 	}
-	s.span.AddAttributes(a)
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-const cloudTraceHeader = "X-Cloud-Trace-Context"
-
-// Headers knows how to return request headers.
-type Headers interface {
-	Header(string) string
-}
-
-// SpanContextFromMetadata extracts a Stackdriver Trace span context from
-// incoming request metadata.
-func SpanContextFromMetadata(h Headers) (octrace.SpanContext, bool) {
-	// Unfortunately OpenCensus Stackdriver package hardcodes *http.Request as
-	// the request type even though it only really just needs one header.
-	header := h.Header(cloudTraceHeader)
-	if header == "" {
-		return octrace.SpanContext{}, false
-	}
-	return cloudTraceFormat.SpanContextFromRequest(&http.Request{
-		Header: http.Header{cloudTraceHeader: []string{header}},
-	})
 }

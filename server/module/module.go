@@ -45,6 +45,11 @@ const (
 	CloudRun Serverless = "Cloud Run"
 )
 
+// IsGCP is true for a serverless Google platform.
+func (s Serverless) IsGCP() bool {
+	return s == GAE || s == CloudRun
+}
+
 // Module represents some optional part of a server.
 //
 // It is generally a stateful object constructed from some configuration. It can

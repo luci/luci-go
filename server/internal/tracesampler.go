@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -22,25 +23,26 @@ import (
 	"sync"
 	"time"
 
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel/sdk/trace"
+	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
-// Sampler constructs an object that decides how often to sample traces.
+// BaseSampler constructs an object that decides how often to sample traces.
 //
 // The spec is a string in one of the forms:
 //   - `X%` - to sample approximately X percent of requests.
 //   - `Xqps` - to produce approximately X samples per second.
 //
 // Returns an error if the spec can't be parsed.
-func Sampler(spec string) (trace.Sampler, error) {
+func BaseSampler(spec string) (trace.Sampler, error) {
 	switch spec = strings.ToLower(spec); {
 	case strings.HasSuffix(spec, "%"):
 		percent, err := strconv.ParseFloat(strings.TrimSuffix(spec, "%"), 64)
 		if err != nil {
 			return nil, fmt.Errorf("not a float percent %q", spec)
 		}
-		// Note: ProbabilitySampler takes care of <=0.0 && >=1.0 cases.
-		return trace.ProbabilitySampler(percent / 100.0), nil
+		// Note: TraceIDRatioBased takes care of <=0.0 && >=1.0 cases.
+		return trace.TraceIDRatioBased(percent / 100.0), nil
 
 	case strings.HasSuffix(spec, "qps"):
 		qps, err := strconv.ParseFloat(strings.TrimSuffix(spec, "qps"), 64)
@@ -49,17 +51,28 @@ func Sampler(spec string) (trace.Sampler, error) {
 		}
 		if qps <= 0.0000001 {
 			// Semantically the same, but slightly faster.
-			return trace.ProbabilitySampler(0), nil
+			return trace.TraceIDRatioBased(0), nil
 		}
-		return (&qpsSampler{
+		return &qpsSampler{
 			period: time.Duration(float64(time.Second) / qps),
 			now:    time.Now,
 			rnd:    rand.New(rand.NewSource(rand.Int63())),
-		}).Sampler, nil
+		}, nil
 
 	default:
 		return nil, fmt.Errorf("unrecognized sampling spec string %q - should be either 'X%%' or 'Xqps'", spec)
 	}
+}
+
+// GateSampler returns a sampler that calls the callback to decide if the span
+// should be sampled.
+//
+// If the callback returns false, the span will not be sampled.
+//
+// If the callback returns true, the decision will be handed over to the given
+// base sampler.
+func GateSampler(base trace.Sampler, cb func(context.Context) bool) trace.Sampler {
+	return &gateSampler{base, cb}
 }
 
 // qpsSampler asks to sample a trace approximately each 'period'.
@@ -74,11 +87,7 @@ type qpsSampler struct {
 	rnd    *rand.Rand       // for random jitter
 }
 
-func (s *qpsSampler) Sampler(p trace.SamplingParameters) trace.SamplingDecision {
-	if p.ParentContext.IsSampled() {
-		return trace.SamplingDecision{Sample: true}
-	}
-
+func (s *qpsSampler) ShouldSample(p trace.SamplingParameters) trace.SamplingResult {
 	now := s.now()
 
 	s.m.RLock()
@@ -99,9 +108,41 @@ func (s *qpsSampler) Sampler(p trace.SamplingParameters) trace.SamplingDecision 
 		s.m.Unlock()
 	}
 
-	return trace.SamplingDecision{Sample: sample}
+	decision := trace.Drop
+	if sample {
+		decision = trace.RecordAndSample
+	}
+	return trace.SamplingResult{
+		Decision:   decision,
+		Tracestate: oteltrace.SpanContextFromContext(p.ParentContext).TraceState(),
+	}
+}
+
+func (s *qpsSampler) Description() string {
+	return fmt.Sprintf("qpsSampler{period:%s}", s.period)
 }
 
 func (s *qpsSampler) randomDurationLocked(min, max time.Duration) time.Duration {
 	return min + time.Duration(s.rnd.Int63n(int64(max-min)))
+}
+
+// gateSampler is a sampler that calls the callback to decide if the span
+// should be sampled.
+type gateSampler struct {
+	base trace.Sampler
+	cb   func(context.Context) bool
+}
+
+func (s *gateSampler) ShouldSample(p trace.SamplingParameters) trace.SamplingResult {
+	if !s.cb(p.ParentContext) {
+		return trace.SamplingResult{
+			Decision:   trace.Drop,
+			Tracestate: oteltrace.SpanContextFromContext(p.ParentContext).TraceState(),
+		}
+	}
+	return s.base.ShouldSample(p)
+}
+
+func (s *gateSampler) Description() string {
+	return fmt.Sprintf("gateSampler{base:%s}", s.base.Description())
 }
