@@ -3,20 +3,20 @@ module go.chromium.org/luci
 go 1.20
 
 require (
-	cloud.google.com/go/bigquery v1.52.0
-	cloud.google.com/go/bigtable v1.19.0
-	cloud.google.com/go/cloudtasks v1.11.1
+	cloud.google.com/go/bigquery v1.49.0
+	cloud.google.com/go/bigtable v1.18.1
+	cloud.google.com/go/cloudtasks v1.10.0
 	cloud.google.com/go/compute/metadata v0.2.3
-	cloud.google.com/go/datastore v1.12.1
+	cloud.google.com/go/datastore v1.11.0
 	cloud.google.com/go/errorreporting v0.3.0
-	cloud.google.com/go/iam v1.1.1
-	cloud.google.com/go/kms v1.13.0
+	cloud.google.com/go/iam v1.0.0
+	cloud.google.com/go/kms v1.10.1
 	cloud.google.com/go/logging v1.7.0
 	cloud.google.com/go/profiler v0.3.1
-	cloud.google.com/go/pubsub v1.32.0
-	cloud.google.com/go/secretmanager v1.11.1
-	cloud.google.com/go/spanner v1.47.0
-	cloud.google.com/go/storage v1.31.0
+	cloud.google.com/go/pubsub v1.30.0
+	cloud.google.com/go/secretmanager v1.10.0
+	cloud.google.com/go/spanner v1.45.1
+	cloud.google.com/go/storage v1.30.1
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.12
 	github.com/Microsoft/go-winio v0.6.1
 	github.com/alecthomas/participle/v2 v2.0.0-alpha7
@@ -37,7 +37,7 @@ require (
 	github.com/google/s2a-go v0.1.4
 	github.com/google/tink/go v1.7.0
 	github.com/google/uuid v1.3.0
-	github.com/googleapis/gax-go/v2 v2.11.0
+	github.com/googleapis/gax-go/v2 v2.8.0
 	github.com/gorhill/cronexpr v0.0.0-20180427100037-88b0669f7d75
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/julienschmidt/httprouter v1.3.0
@@ -61,7 +61,7 @@ require (
 	go.starlark.net v0.0.0-20230612165344-9532f5667272
 	golang.org/x/crypto v0.11.0
 	golang.org/x/net v0.12.0
-	golang.org/x/oauth2 v0.10.0
+	golang.org/x/oauth2 v0.9.0
 	golang.org/x/sync v0.3.0
 	golang.org/x/sys v0.10.0
 	golang.org/x/term v0.10.0
@@ -69,26 +69,23 @@ require (
 	golang.org/x/time v0.3.0
 	golang.org/x/tools v0.11.0
 	gonum.org/v1/gonum v0.12.0
-	google.golang.org/api v0.130.0
+	google.golang.org/api v0.118.0
 	google.golang.org/appengine v1.6.8-0.20221117013220-504804fb50de
-	google.golang.org/genproto v0.0.0-20230710151506-e685fd7b542b
-	google.golang.org/genproto/googleapis/api v0.0.0-20230706204954-ccb25ca9f130
-	google.golang.org/genproto/googleapis/bytestream v0.0.0-20230629202037-9506855d4529
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230706204954-ccb25ca9f130
-	google.golang.org/grpc v1.56.2
+	google.golang.org/genproto v0.0.0-20230403163135-c38d8f061ccd
+	google.golang.org/grpc v1.56.0-dev
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
-	cloud.google.com/go v0.110.4 // indirect
-	cloud.google.com/go/compute v1.21.0 // indirect
-	cloud.google.com/go/longrunning v0.5.1 // indirect
-	cloud.google.com/go/monitoring v1.15.1 // indirect
-	cloud.google.com/go/trace v1.10.1 // indirect
+	cloud.google.com/go v0.110.0 // indirect
+	cloud.google.com/go/compute v1.19.1 // indirect
+	cloud.google.com/go/longrunning v0.4.1 // indirect
+	cloud.google.com/go/monitoring v1.13.0 // indirect
+	cloud.google.com/go/trace v1.9.0 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
-	github.com/apache/arrow/go/v12 v12.0.0 // indirect
+	github.com/apache/arrow/go/v11 v11.0.0 // indirect
 	github.com/apache/thrift v0.16.0 // indirect
 	github.com/aws/aws-sdk-go v1.44.20 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
