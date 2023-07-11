@@ -36,11 +36,11 @@ import (
 	"go.chromium.org/luci/milo/rpc"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/analytics"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/gtm"
 	"go.chromium.org/luci/server/loginsessions"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
@@ -58,7 +58,7 @@ func main() {
 		encryptedcookies.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
-		analytics.NewModuleFromFlags(),
+		gtm.NewModuleFromFlags(),
 		loginsessions.NewModuleFromFlags(),
 	}
 	server.Main(nil, modules, func(srv *server.Server) error {
