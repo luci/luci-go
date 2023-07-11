@@ -20,6 +20,7 @@ import (
 	"time"
 
 	cloudlogging "cloud.google.com/go/logging"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -284,7 +285,9 @@ func cloudLoggingClient(ctx context.Context, luciProject, cloudProject string) (
 	return cloudlogging.NewClient(
 		ctx, cloudProject,
 		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(cred)),
-		option.WithGRPCDialOption(grpcmon.WithClientRPCStatsMonitor()),
+		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
+		option.WithGRPCDialOption(grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor())),
+		option.WithGRPCDialOption(grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor())),
 	)
 }
 

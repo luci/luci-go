@@ -17,12 +17,12 @@ package rbe
 import (
 	"context"
 
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -45,7 +45,8 @@ func Dial(ctx context.Context, count int) ([]grpc.ClientConnInterface, error) {
 			grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 			grpc.WithPerRPCCredentials(creds),
 			grpc.WithBlock(),
-			grpcmon.WithClientRPCStatsMonitor(),
+			grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+			grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
 		)
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to dial RBE backend").Err()

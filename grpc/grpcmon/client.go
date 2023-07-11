@@ -19,13 +19,10 @@ import (
 	"math"
 	"time"
 
-	"go.opencensus.io/plugin/ocgrpc"
-	gcode "google.golang.org/genproto/googleapis/rpc/code"
-	"google.golang.org/grpc"
+	codepb "google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/grpc/stats"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
@@ -88,56 +85,15 @@ var (
 	rtKey = "Holds the current rpc tag"
 )
 
-// NewUnaryClientInterceptor returns an interceptor that gathers RPC call
-// metrics and sends them to tsmon.
-//
-// It can be optionally chained with other interceptor. The reported metrics
-// include time spent in this other interceptor too.
-//
-// Can be passed to a gRPC client via WithUnaryInterceptor(...) dial option.
-//
-// Use option.WithGRPCDialOption(grpc.WithUnaryInterceptor(...)) when
-// instrumenting Google Cloud API clients.
-//
-// It assumes the RPC context has tsmon initialized already.
-func NewUnaryClientInterceptor(next grpc.UnaryClientInterceptor) grpc.UnaryClientInterceptor {
-	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
-		started := clock.Now(ctx)
-		defer func() {
-			reportClientRPCMetrics(ctx, method, err, clock.Now(ctx).Sub(started))
-		}()
-		if next != nil {
-			return next(ctx, method, req, reply, cc, invoker, opts...)
-		}
-		return invoker(ctx, method, req, reply, cc, opts...)
-	}
-}
-
 // reportClientRPCMetrics sends metrics after RPC call has finished.
 func reportClientRPCMetrics(ctx context.Context, method string, err error, dur time.Duration) {
 	code := status.Code(err)
-	canon, ok := gcode.Code_name[int32(code)]
+	canon, ok := codepb.Code_name[int32(code)]
 	if !ok {
 		canon = code.String() // Code(%d)
 	}
 	grpcClientCount.Add(ctx, 1, method, canon)
-	// dur.Milliseconds() is only available in go >=1.13, but not every chops apps are running
-	// with go >= 1.13.
-	grpcClientDuration.Add(ctx, float64(dur.Nanoseconds()/1e6), method, canon)
-}
-
-// WithClientRPCStatsMonitor returns a DialOption that specifies a chain of
-// ClientRPCStatsMonitor and Opencensus' gRPC stats handler for all the outgoing
-// gRPC traffic.
-//
-// ClientRPCStatsMonitor updates the grpcmon metrics, and Opencensus' handler
-// propagates Google Cloud Trace contexts.
-func WithClientRPCStatsMonitor() grpc.DialOption {
-	return WithMultiStatsHandler(
-		&ClientRPCStatsMonitor{},
-		// https://github.com/googleapis/google-api-go-client/blob/6c8f9c553065cd8c92cb6f51c2eabea88ffb3407/transport/grpc/dial.go#L180
-		&ocgrpc.ClientHandler{},
-	)
+	grpcClientDuration.Add(ctx, float64(dur.Milliseconds()), method, canon)
 }
 
 // ClientRPCStatsMonitor implements stats.Handler to update tsmon metrics with

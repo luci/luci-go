@@ -198,6 +198,7 @@ import (
 	texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	gcppropagator "github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator"
 	"go.opentelemetry.io/contrib/detectors/gcp"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
@@ -2263,7 +2264,9 @@ func (s *Server) initAuthFinish() error {
 	iamClient, err := credentials.NewIamCredentialsClient(
 		s.Context,
 		option.WithTokenSource(s.cloudTS),
-		option.WithGRPCDialOption(grpcmon.WithClientRPCStatsMonitor()),
+		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
+		option.WithGRPCDialOption(grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor())),
+		option.WithGRPCDialOption(grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor())),
 	)
 	if err != nil {
 		return errors.Annotate(err, "failed to construct IAM client").Err()

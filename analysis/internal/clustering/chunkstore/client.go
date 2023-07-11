@@ -23,6 +23,7 @@ import (
 	"regexp"
 
 	"cloud.google.com/go/storage"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcmon"
@@ -59,7 +60,9 @@ func NewClient(ctx context.Context, bucket string) (*Client, error) {
 	// Initialize the client.
 	options := []option.ClientOption{
 		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
-		option.WithGRPCDialOption(grpcmon.WithClientRPCStatsMonitor()),
+		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
+		option.WithGRPCDialOption(grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor())),
+		option.WithGRPCDialOption(grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor())),
 		option.WithScopes(storage.ScopeReadWrite),
 	}
 	cl, err := storage.NewClient(ctx, options...)

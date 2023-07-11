@@ -21,6 +21,7 @@ import (
 	"io"
 	"strings"
 
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/genproto/googleapis/bytestream"
 	"google.golang.org/grpc"
@@ -48,7 +49,9 @@ func RBEConn(ctx context.Context) (*grpc.ClientConn, error) {
 		"remotebuildexecution.googleapis.com:443",
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 		grpc.WithPerRPCCredentials(creds),
-		grpcmon.WithClientRPCStatsMonitor(),
+		grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{}),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
 	)
 }
 

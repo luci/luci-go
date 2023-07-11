@@ -43,7 +43,9 @@ import (
 	"os"
 
 	"cloud.google.com/go/datastore"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/api/option"
+	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/appengine/gaesecrets"
 	"go.chromium.org/luci/gae/filter/dscache"
@@ -196,7 +198,9 @@ func (m *gaeModule) initDSClient(ctx context.Context, host module.Host, cloudPro
 		}
 		clientOpts = []option.ClientOption{
 			option.WithTokenSource(ts),
-			option.WithGRPCDialOption(grpcmon.WithClientRPCStatsMonitor()),
+			option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
+			option.WithGRPCDialOption(grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor())),
+			option.WithGRPCDialOption(grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor())),
 		}
 	}
 

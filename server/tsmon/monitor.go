@@ -17,6 +17,7 @@ package tsmon
 import (
 	"context"
 
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
@@ -43,7 +44,9 @@ func NewProdXMonitor(ctx context.Context, chunkSize int, account string) (monito
 		prodXEndpoint,
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 		grpc.WithPerRPCCredentials(cred),
-		grpcmon.WithClientRPCStatsMonitor(),
+		grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{}),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
 	)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to dial ProdX service %s", prodXEndpoint).Err()

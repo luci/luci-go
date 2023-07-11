@@ -25,45 +25,10 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/tsmon/distribution"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-func TestUnaryClientInterceptor(t *testing.T) {
-	Convey("Captures count and duration", t, func() {
-		c, memStore := testContext()
-		run := func(err error, dur time.Duration) {
-			method := "/service/method"
-			invoker := func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
-				clock.Get(ctx).(testclock.TestClock).Add(dur)
-				return err
-			}
-			_ = NewUnaryClientInterceptor(nil)(c, method, nil, nil, nil, invoker)
-		}
-		count := func(code string) int64 {
-			return memStore.Get(c, grpcClientCount, time.Time{}, []any{"/service/method", code}).(int64)
-		}
-		duration := func(code string) float64 {
-			val := memStore.Get(c, grpcClientDuration, time.Time{}, []any{"/service/method", code})
-			return val.(*distribution.Distribution).Sum()
-		}
-
-		run(nil, time.Millisecond)
-		So(count("OK"), ShouldEqual, 1)
-		So(duration("OK"), ShouldEqual, 1)
-
-		run(status.Error(codes.PermissionDenied, "no permission"), time.Second)
-		So(count("PERMISSION_DENIED"), ShouldEqual, 1)
-		So(duration("PERMISSION_DENIED"), ShouldEqual, 1000)
-
-		run(status.Error(codes.Unauthenticated, "no auth"), time.Minute)
-		So(count("UNAUTHENTICATED"), ShouldEqual, 1)
-		So(duration("UNAUTHENTICATED"), ShouldEqual, 60000)
-	})
-}
 
 type echoService struct {
 	err error

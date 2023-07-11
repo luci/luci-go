@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"cloud.google.com/go/pubsub"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -63,7 +64,9 @@ func NewPubsubClient(ctx context.Context, cloudProject, luciProject string) (*pu
 	}
 	client, err := pubsub.NewClient(
 		ctx, cloudProject,
-		option.WithGRPCDialOption(grpcmon.WithClientRPCStatsMonitor()),
+		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
+		option.WithGRPCDialOption(grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor())),
+		option.WithGRPCDialOption(grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor())),
 		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
 	)
 	if err != nil {
