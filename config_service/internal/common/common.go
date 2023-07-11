@@ -54,6 +54,10 @@ const (
 	// in GCS bucket.
 	GSProdCfgFolder = "configs"
 
+	// GSValidationCfgFolder is the folder name where it stores all configs
+	// for ad-hoc validation in GCS bucket.
+	GSValidationCfgFolder = "validation"
+
 	// ConfigMaxSize is the maximum size of the config LUCI Config supports.
 	ConfigMaxSize = 200 * 1024 * 1024 // 200 MiB
 

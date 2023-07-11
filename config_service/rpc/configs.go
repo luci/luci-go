@@ -22,15 +22,11 @@ import (
 // Configs implements pb.ConfigsServer
 type Configs struct {
 	pb.UnimplementedConfigsServer
-	validator validator
+	// Validator is used to validate configs.
+	Validator validator
+	// GSValidationBucket is bucket where the configs for validation upload to.
+	GSValidationBucket string
 }
 
 // Ensure Configs implements pb.ConfigsServer.
 var _ pb.ConfigsServer = &Configs{}
-
-// NewConfigs returns a new pb.ConfigsServer.
-func NewConfigs(validator validator) pb.ConfigsServer {
-	return &Configs{
-		validator: validator,
-	}
-}

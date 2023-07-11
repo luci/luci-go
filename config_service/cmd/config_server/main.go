@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/config_service/internal/clients"
+	"go.chromium.org/luci/config_service/internal/common"
 	"go.chromium.org/luci/config_service/internal/service"
 	"go.chromium.org/luci/config_service/internal/settings"
 	"go.chromium.org/luci/config_service/internal/validation"
@@ -57,6 +58,7 @@ func main() {
 			return errors.Annotate(err, "failed to initiate the global GCS client").Err()
 		}
 		srv.Context = clients.WithGsClient(srv.Context, gsClient)
+		gsBucket := common.BucketName(srv.Context)
 
 		serviceFinder, err := service.NewFinder(srv.Context)
 		if err != nil {
@@ -77,7 +79,10 @@ func main() {
 		srv.Routes.GET("/", mw, func(c *router.Context) {
 			c.Writer.Write([]byte("Hello world!"))
 		})
-		configpb.RegisterConfigsServer(srv, rpc.NewConfigs(validator))
+		configpb.RegisterConfigsServer(srv, &rpc.Configs{
+			Validator:          validator,
+			GSValidationBucket: gsBucket,
+		})
 
 		cron.RegisterHandler("update-services", service.Update)
 		return nil

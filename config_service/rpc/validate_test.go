@@ -15,14 +15,18 @@
 package rpc
 
 import (
+	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"testing"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/gcloud/gs"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -31,12 +35,41 @@ import (
 
 	"go.chromium.org/luci/config_service/internal/common"
 	"go.chromium.org/luci/config_service/internal/model"
+	"go.chromium.org/luci/config_service/internal/validation"
 	configpb "go.chromium.org/luci/config_service/proto"
 	"go.chromium.org/luci/config_service/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+type mockValidator struct {
+	examineResult  *validation.ExamineResult
+	examineErr     error
+	validateResult *cfgcommonpb.ValidationResult
+	validateErr    error
+
+	recordedExamineFiles  []validation.File
+	recordedValidateFiles []validation.File
+}
+
+func (mv *mockValidator) Examine(ctx context.Context, cs config.Set, files []validation.File) (*validation.ExamineResult, error) {
+	mv.recordedExamineFiles = files
+	if mv.examineErr != nil {
+		return nil, mv.examineErr
+	}
+	return mv.examineResult, nil
+
+}
+
+func (mv *mockValidator) Validate(ctx context.Context, cs config.Set, files []validation.File) (*cfgcommonpb.ValidationResult, error) {
+	mv.recordedValidateFiles = files
+	if mv.validateErr != nil {
+		return nil, mv.validateErr
+	}
+	return mv.validateResult, nil
+
+}
 
 func TestValidate(t *testing.T) {
 	t.Parallel()
@@ -60,8 +93,13 @@ func TestValidate(t *testing.T) {
 			FakeDB:   fakeAuthDB,
 		})
 
-		c := &Configs{}
+		mv := &mockValidator{}
+		c := &Configs{
+			Validator:          mv,
+			GSValidationBucket: "test-bucket",
+		}
 		cs := config.MustProjectSet("example-project")
+		So(datastore.Put(ctx, &model.ConfigSet{ID: cs}), ShouldBeNil)
 		const filePath = "sub/foo.cfg"
 		fileSHA256 := fmt.Sprintf("%x", sha256.Sum256([]byte("some content")))
 		validateRequest := &configpb.ValidateConfigsRequest{
@@ -163,5 +201,98 @@ func TestValidate(t *testing.T) {
 			})
 		})
 
+		Convey("Successful validation", func() {
+			vr := &cfgcommonpb.ValidationResult{
+				Messages: []*cfgcommonpb.ValidationResult_Message{
+					{
+						Path:     filePath,
+						Severity: cfgcommonpb.ValidationResult_ERROR,
+						Text:     "something is wrong",
+					},
+				},
+			}
+			mv.examineResult = &validation.ExamineResult{} //passed
+			So(mv.examineResult.Passed(), ShouldBeTrue)
+			mv.validateResult = vr
+			res, err := c.ValidateConfigs(ctx, validateRequest)
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, vr)
+			expectedValidationFiles := []validation.File{
+				validationFile{
+					path:   filePath,
+					gsPath: gs.MakePath("test-bucket", "validation", "users", "b8a0858b", "configs", "sha256", fileSHA256),
+				},
+			}
+			So(mv.recordedExamineFiles, ShouldResemble, expectedValidationFiles)
+			So(mv.recordedValidateFiles, ShouldResemble, expectedValidationFiles)
+		})
+		Convey("Validate error", func() {
+			mv.examineResult = &validation.ExamineResult{} //passed
+			mv.validateErr = errors.New("something went wrong. Transient but confidential!!!")
+			res, err := c.ValidateConfigs(ctx, validateRequest)
+			So(err, ShouldHaveGRPCStatus, codes.Internal, "failed to validate the configs")
+			So(res, ShouldBeNil)
+		})
+
+		Convey("Doesn't pass examination", func() {
+			Convey("Require uploading file", func() {
+				vf := validationFile{
+					path:   filePath,
+					gsPath: gs.MakePath("test-bucket", "validation", "users", "b8a0858b", "configs", "sha256", fileSHA256),
+				}
+				mv.examineResult = &validation.ExamineResult{
+					MissingFiles: []struct {
+						File      validation.File
+						SignedURL string
+					}{
+						{
+							File:      vf,
+							SignedURL: "http://example.com/signed-url",
+						},
+					},
+				}
+				mv.validateErr = errors.New("unreachable")
+				res, err := c.ValidateConfigs(ctx, validateRequest)
+				So(err, ShouldNotBeNil)
+				So(res, ShouldBeNil)
+				st, ok := status.FromError(err)
+				SoMsg("err must be a grpc error status", ok, ShouldBeTrue)
+				So(st.Code(), ShouldEqual, codes.InvalidArgument)
+				So(st.Message(), ShouldEqual, "invalid validate config request. See status detail for fix instruction.")
+				So(st.Details(), ShouldHaveLength, 1)
+				So(st.Details()[0], ShouldResembleProto, &configpb.BadValidationRequestFixInfo{
+					UploadFiles: []*configpb.BadValidationRequestFixInfo_UploadFile{
+						{
+							Path:          vf.GetPath(),
+							SignedUrl:     "http://example.com/signed-url",
+							MaxConfigSize: common.ConfigMaxSize,
+						},
+					},
+				})
+				So(mv.recordedExamineFiles, ShouldResemble, []validation.File{vf})
+			})
+			Convey("Unvalidatable file", func() {
+				vf := validationFile{
+					path:   filePath,
+					gsPath: gs.MakePath("test-bucket", "validation", "users", "b8a0858b", "configs", "sha256", fileSHA256),
+				}
+				mv.examineResult = &validation.ExamineResult{
+					UnvalidatableFiles: []validation.File{vf},
+				}
+				mv.validateErr = errors.New("unreachable")
+				res, err := c.ValidateConfigs(ctx, validateRequest)
+				So(err, ShouldNotBeNil)
+				So(res, ShouldBeNil)
+				st, ok := status.FromError(err)
+				SoMsg("err must be a grpc error status", ok, ShouldBeTrue)
+				So(st.Code(), ShouldEqual, codes.InvalidArgument)
+				So(st.Message(), ShouldEqual, "invalid validate config request. See status detail for fix instruction.")
+				So(st.Details(), ShouldHaveLength, 1)
+				So(st.Details()[0], ShouldResembleProto, &configpb.BadValidationRequestFixInfo{
+					UnvalidatableFiles: []string{vf.GetPath()},
+				})
+				So(mv.recordedExamineFiles, ShouldResemble, []validation.File{vf})
+			})
+		})
 	})
 }
