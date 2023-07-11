@@ -30,30 +30,30 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	gerritapi "go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/led/job"
 )
 
-func editCrCLCmd(opts cmdBaseOptions) *subcommands.Command {
+func editGerritCLCmd(opts cmdBaseOptions) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "edit-cr-cl [-remove|-no-implicit-clear] URL_TO_CHANGELIST",
-		ShortDesc: "sets Chromium CL-related properties on this JobDefinition (for experimenting with tryjob recipes)",
-		LongDesc: `This allows you to edit a JobDefinition for some tryjob recipe
-(e.g. chromium_tryjob), and associate a changelist with it, as if the recipe
-was triggered via Gerrit.
+		UsageLine: "edit-gerrit-cl [-remove|-no-implicit-clear] URL_TO_CHANGELIST",
+		ShortDesc: "sets Gerrit CL-related properties on this JobDefinition (for experimenting with tryjobs)",
+		LongDesc: `This allows you to edit a JobDefinition and associate a changelist with
+it, as if the job was triggered via Gerrit.
 
-Recognized URLs:
-	https://<gerrit_host>/<change> *
-	https://<gerrit_host>/c/<path/to/project>/+/<change> *
+Recognized URL forms:
+	https://<gerrit_host>/<change>
+	https://<gerrit_host>/c/<path/to/project>/+/<change>
 	https://<gerrit_host>/c/<path/to/project>/+/<change>/<patchset>
 
-* If you provide URLs in one of these forms AND <gerrit_host> has public read access,
-this will fill in the missing information for the change. Otherwise, this will fail
-and ask you to provide the full url containing host, project, change and patchset.
+If you provide URLs in one of the first two forms and <gerrit_host> has public read
+access, this will fill in the missing information for the change. Otherwise, this will
+fail and ask you to provide the full URL containing host, project, change and patchset.
 
 By default, when adding a CL, this will clear all existing CLs on the job, unless
-you pass -no-implicit-clear. Most jobs (as of 2020Q2) only expect one CL, so we
-did this implicit clearing behavior for CLI ergonomic reasons.
+you pass -no-implicit-clear. Most jobs only expect one CL, so this implicit clearing
+behavior is for CLI ergonomic reasons.
 `,
 
 		CommandRun: func() subcommands.CommandRun {
@@ -64,12 +64,30 @@ did this implicit clearing behavior for CLI ergonomic reasons.
 	}
 }
 
+func editCrCLCmd(opts cmdBaseOptions) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "edit-cr-cl [-remove|-no-implicit-clear] URL_TO_CHANGELIST",
+		ShortDesc: "DEPRECATED: sets Gerrit CL-related properties on this JobDefinition (for experimenting with tryjobs)",
+		LongDesc: `This command functions identically to edit-gerrit-cl but has a Chrome-specific
+name for historical reasons. It's kept for backwards compatibility. Prefer to use edit-gerrit-cl instead.
+`,
+		Advanced: true,
+		CommandRun: func() subcommands.CommandRun {
+			ret := &cmdEditCl{}
+			ret.initFlags(opts)
+			ret.printDeprecationWarning = true
+			return ret
+		},
+	}
+}
+
 type cmdEditCl struct {
 	cmdBase
 
-	gerritChange    *bbpb.GerritChange
-	remove          bool
-	noImplicitClear bool
+	gerritChange            *bbpb.GerritChange
+	remove                  bool
+	noImplicitClear         bool
+	printDeprecationWarning bool
 }
 
 func (c *cmdEditCl) initFlags(opts cmdBaseOptions) {
@@ -201,6 +219,9 @@ func (c *cmdEditCl) validateFlags(ctx context.Context, positionals []string, _ s
 }
 
 func (c *cmdEditCl) execute(ctx context.Context, _ *http.Client, _ auth.Options, inJob *job.Definition) (out any, err error) {
+	if c.printDeprecationWarning {
+		logging.Warningf(ctx, "'edit-cr-cl' is a deprecated alias, please use 'edit-gerrit-cl'.")
+	}
 	return inJob, inJob.HighLevelEdit(func(je job.HighLevelEditor) {
 		if c.remove {
 			je.RemoveGerritChange(c.gerritChange)

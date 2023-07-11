@@ -142,6 +142,7 @@ The spec (as it is) for JobDefinition is at:
 			editCmd(defaults),
 			editSystemCmd(defaults),
 			editRecipeBundleCmd(defaults),
+			editGerritCLCmd(defaults),
 			editCrCLCmd(defaults),
 			editPayloadCmd(defaults),
 
