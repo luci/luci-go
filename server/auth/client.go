@@ -19,12 +19,15 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
+	"net/http/httptrace"
 	"net/url"
 	"regexp"
 	"sort"
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/credentials"
 
@@ -32,7 +35,6 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server/auth/delegation"
 	"go.chromium.org/luci/server/auth/internal"
@@ -342,10 +344,19 @@ func GetRPCTransport(ctx context.Context, kind RPCAuthorityKind, opts ...RPCOpti
 		}
 	}
 
-	baseTransport := trace.InstrumentTransport(ctx,
+	baseTransport := otelhttp.NewTransport(
+		// Wrap with tsmon metrics.
 		metric.InstrumentTransport(ctx,
-			config.AnonymousTransport(ctx), options.monitoringClient,
+			config.AnonymousTransport(ctx),
+			options.monitoringClient,
 		),
+		// Further tweak OpenTelemetry tracing wrapper.
+		otelhttp.WithSpanNameFormatter(func(op string, r *http.Request) string {
+			return "HTTP:" + r.URL.Path
+		}),
+		otelhttp.WithClientTrace(func(ctx context.Context) *httptrace.ClientTrace {
+			return otelhttptrace.NewClientTrace(ctx)
+		}),
 	)
 	if options.kind == NoAuth {
 		return baseTransport, nil

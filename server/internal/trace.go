@@ -18,12 +18,10 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
-	"net/http"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/propagation"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"go.chromium.org/luci/common/trace"
@@ -54,23 +52,6 @@ func (otelBackend) StartSpan(ctx context.Context, name string, kind trace.SpanKi
 		return ctx, otelSpan{span}
 	}
 	return ctx, trace.NullSpan{}
-}
-
-func (otelBackend) PropagateSpanContext(ctx context.Context, span trace.Span, req *http.Request) *http.Request {
-	// Inject the new context into the request, this also makes a shallow copy.
-	req = req.WithContext(ctx)
-
-	// We are about to set some headers, clone the headers map. No need to do
-	// a deep clone, since we aren't going to add values to existing slices.
-	header := make(http.Header, len(req.Header))
-	for k, v := range req.Header {
-		header[k] = v
-	}
-	req.Header = header
-
-	// Inject tracing headers.
-	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
-	return req
 }
 
 func (otelBackend) SpanContext(ctx context.Context) string {

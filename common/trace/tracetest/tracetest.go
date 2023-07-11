@@ -17,7 +17,6 @@ package tracetest
 
 import (
 	"context"
-	"net/http"
 	"sync/atomic"
 
 	"go.chromium.org/luci/common/trace"
@@ -48,10 +47,6 @@ type testingBackend struct{}
 
 func (testingBackend) StartSpan(ctx context.Context, name string, kind trace.SpanKind) (context.Context, trace.Span) {
 	return ctx, trace.NullSpan{}
-}
-
-func (testingBackend) PropagateSpanContext(ctx context.Context, span trace.Span, req *http.Request) *http.Request {
-	return req
 }
 
 func (testingBackend) SpanContext(ctx context.Context) string {

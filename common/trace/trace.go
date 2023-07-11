@@ -21,7 +21,6 @@ package trace
 import (
 	"context"
 	"fmt"
-	"net/http"
 )
 
 // Span is in-progress trace span opened by StartSpan.
@@ -48,20 +47,6 @@ func StartSpan(ctx context.Context, name string) (context.Context, Span) {
 		return ctx, NullSpan{}
 	}
 	return backend.StartSpan(ctx, name, SpanKindInternal)
-}
-
-// InstrumentTransport wraps the transport with tracing.
-//
-// Each outgoing request will result in a span. Additionally, adds headers to
-// propagate the span context to the peer.
-//
-// Uses the context from requests or 'ctx' if requests don't have a
-// non-background context.
-func InstrumentTransport(ctx context.Context, t http.RoundTripper) http.RoundTripper {
-	if backend == nil {
-		return t
-	}
-	return &tracedTransport{ctx, t} // see transport.go
 }
 
 // SpanContext returns the current span context as an HTTP header-safe string.
@@ -91,9 +76,6 @@ const (
 type Backend interface {
 	// StartSpan implements public StartSpan function.
 	StartSpan(ctx context.Context, name string, kind SpanKind) (context.Context, Span)
-	// PropagateSpanContext returns a shallow copy of http.Request with the span
-	// context (from the given `ctx`) injected into the headers.
-	PropagateSpanContext(ctx context.Context, span Span, req *http.Request) *http.Request
 	// SpanContext implements public SpanContext function.
 	SpanContext(ctx context.Context) string
 }
