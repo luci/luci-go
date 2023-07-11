@@ -300,3 +300,13 @@ func ReadIncluded(ctx context.Context, id ID) (IDSet, error) {
 	}
 	return ret, nil
 }
+
+// ReadSubmitted returns the invocation's submitted status.
+func ReadSubmitted(ctx context.Context, id ID) (bool, error) {
+	var submitted spanner.NullBool
+	if err := ReadColumns(ctx, id, map[string]any{"Submitted": &submitted}); err != nil {
+		return false, err
+	}
+	// submitted is not a required field and so may be nil, in which we default to false.
+	return submitted.Valid && submitted.Bool, nil
+}

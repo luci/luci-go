@@ -115,6 +115,15 @@ CREATE TABLE Invocations (
   -- a given invocation determines whether a test is new.
   BaselineId STRING(229),
 
+  -- An invocation being marked submitted indicates that the test variants from
+  -- this invocation are added to the set of test variants for its baseline. The
+  -- set of test variants for the baseline are then used to identify new tests.
+  -- If the invocation is not yet finalized at the time it is being marked
+  -- submitted, it will be scheduled for handling after being finalized.
+  -- Finalization does not make this field immutable - it can can be updated
+  -- after the invocation has been finalized.
+  Submitted BOOL,
+
 ) PRIMARY KEY (InvocationId),
 -- Add TTL of 1.5 years to Invocations table. The row deletion policy
 -- configured in the parent table will also take effect on the interleaved child

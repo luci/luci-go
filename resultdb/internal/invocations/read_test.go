@@ -207,3 +207,37 @@ func TestReadRealms(t *testing.T) {
 		})
 	})
 }
+
+func TestReadSubmitted(t *testing.T) {
+	Convey(`TestReadSubmitted`, t, func() {
+		ctx := testutil.SpannerTestContext(t)
+
+		Convey(`Valid`, func() {
+			testutil.MustApply(ctx,
+				insertInvocation("inv0", map[string]any{"Submitted": true}),
+			)
+
+			submitted, err := ReadSubmitted(span.Single(ctx), ID("inv0"))
+			So(err, ShouldBeNil)
+			So(submitted, ShouldBeTrue)
+		})
+
+		Convey(`Not Found`, func() {
+			testutil.MustApply(ctx,
+				insertInvocation("inv0", map[string]any{"Submitted": true}),
+			)
+			_, err := ReadSubmitted(span.Single(ctx), ID("inv1"))
+			So(err, ShouldHaveAppStatus, codes.NotFound, "invocations/inv1 not found")
+		})
+
+		Convey(`Nil`, func() {
+			testutil.MustApply(ctx,
+				insertInvocation("inv0", map[string]any{}),
+			)
+			submitted, err := ReadSubmitted(span.Single(ctx), ID("inv0"))
+
+			So(err, ShouldBeNil)
+			So(submitted, ShouldBeFalse)
+		})
+	})
+}

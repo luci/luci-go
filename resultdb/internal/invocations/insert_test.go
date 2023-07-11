@@ -33,6 +33,7 @@ func insertInvocation(id ID, extraValues map[string]any) *spanner.Mutation {
 		"ExpectedTestResultsExpirationTime": future,
 		"CreateTime":                        spanner.CommitTimestamp,
 		"Deadline":                          future,
+		"Submitted":                         false,
 	}
 	updateDict(values, extraValues)
 

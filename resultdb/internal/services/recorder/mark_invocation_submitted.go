@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/services/baselineupdater"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
@@ -34,20 +35,20 @@ import (
 	"go.chromium.org/luci/server/span"
 )
 
-func noPermissionsError(invID string) string {
-	return fmt.Sprintf(`Caller does not have permission to mark invocations/%s submitted (or it might not exist)`, invID)
+func noPermissionsError(inv invocations.ID) string {
+	return fmt.Sprintf(`Caller does not have permission to mark invocations/%s submitted (or it might not exist)`, string(inv))
 }
 
-func validateMarkInvocationSubmittedPermissions(ctx context.Context, invID string) error {
+func validateMarkInvocationSubmittedPermissions(ctx context.Context, inv invocations.ID) error {
 	readCtx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 
-	invRealm, err := invocations.ReadRealm(readCtx, invocations.ID(invID))
+	invRealm, err := invocations.ReadRealm(readCtx, inv)
 	if err != nil {
 		// If the invocation does not exist, we mask the error with permission
 		// denied to avoid leaking resource existence.
 		if grpcutil.Code(err) == codes.NotFound {
-			return appstatus.Errorf(codes.PermissionDenied, noPermissionsError(invID))
+			return appstatus.Errorf(codes.PermissionDenied, noPermissionsError(inv))
 		} else {
 			return err
 		}
@@ -64,10 +65,19 @@ func validateMarkInvocationSubmittedPermissions(ctx context.Context, invID strin
 	case err != nil:
 		return err
 	case !allowed:
-		return appstatus.Errorf(codes.PermissionDenied, noPermissionsError(invID))
+		return appstatus.Errorf(codes.PermissionDenied, noPermissionsError(inv))
 	}
 
 	return nil
+}
+
+func markInvocationSubmitted(ctx context.Context, invocation invocations.ID) {
+	values := map[string]any{
+		"InvocationId": invocation,
+		"Submitted":    true,
+	}
+
+	span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", values))
 }
 
 // MarkInvocationSubmitted implements pb.RecorderServer.
@@ -80,12 +90,33 @@ func (s *recorderServer) MarkInvocationSubmitted(ctx context.Context, req *pb.Ma
 	if err != nil {
 		return &emptypb.Empty{}, appstatus.Error(codes.InvalidArgument, errors.Annotate(err, "invocation").Err().Error())
 	}
-	err = validateMarkInvocationSubmittedPermissions(ctx, invID)
-	if err != nil {
+	inv := invocations.ID(invID)
+
+	if err = validateMarkInvocationSubmittedPermissions(ctx, inv); err != nil {
 		return &emptypb.Empty{}, err
 	}
 
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		submitted, err := invocations.ReadSubmitted(ctx, inv)
+		if err != nil {
+			return err
+		}
+		if submitted {
+			// Invocation already marked submitted
+			return nil
+		}
+
+		markInvocationSubmitted(ctx, inv)
+
+		state, err := invocations.ReadState(ctx, inv)
+		if err != nil {
+			return err
+		}
+		if state != pb.Invocation_FINALIZED {
+			// Finalizer will schedule the task if it has not been finalized yet.
+			return nil
+		}
+
 		// Add this request to the task queue.
 		baselineupdater.Schedule(ctx, invID)
 		return nil

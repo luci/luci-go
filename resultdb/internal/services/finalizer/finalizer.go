@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/services/baselineupdater"
 	"go.chromium.org/luci/resultdb/internal/services/bqexporter"
 	"go.chromium.org/luci/resultdb/internal/services/testmetadataupdator"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -297,6 +298,10 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 			"State":        pb.Invocation_FINALIZED,
 			"FinalizeTime": spanner.CommitTimestamp,
 		}))
+
+		if err = scheduleBaselineTask(ctx, invID); err != nil {
+			return err
+		}
 		return nil
 	})
 	switch {
@@ -331,4 +336,15 @@ func parentsInFinalizingState(ctx context.Context, invID invocations.ID) (ids []
 		return nil
 	})
 	return ids, err
+}
+
+func scheduleBaselineTask(ctx context.Context, invID invocations.ID) error {
+	submitted, err := invocations.ReadSubmitted(ctx, invID)
+	if err != nil {
+		return err
+	}
+	if submitted {
+		baselineupdater.Schedule(ctx, string(invID))
+	}
+	return nil
 }

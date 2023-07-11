@@ -213,5 +213,21 @@ func TestFinalizeInvocation(t *testing.T) {
 					},
 				})
 		})
+
+		Convey(`Enqueue mark submitted tasks`, func() {
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				insert.InvocationWithInclusions("x", pb.Invocation_FINALIZING, map[string]any{
+					"Submitted": true,
+				}),
+			)...)
+
+			err := finalizeInvocation(ctx, "x")
+			So(err, ShouldBeNil)
+			// there should be two tasks ahead, test metadata and notify finalized.
+			So(sched.Tasks().Payloads()[0], ShouldResembleProto,
+				&taskspb.MarkInvocationSubmitted{
+					InvocationId: "x",
+				})
+		})
 	})
 }

@@ -20,11 +20,13 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -76,6 +78,50 @@ func TestMarkInvocationSubmitted(t *testing.T) {
 				Invocation: "invocations/inv",
 			})
 			So(err, ShouldBeRPCPermissionDenied, "Caller does not have permission to mark invocations/inv submitted")
+		})
+
+		Convey(`Unfinalized Invocation`, func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "chromium:try", Permission: permPutBaseline},
+				},
+			})
+			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZING, map[string]any{
+				"Realm": "chromium:try",
+			}))
+			_, err := recorder.MarkInvocationSubmitted(ctx, &pb.MarkInvocationSubmittedRequest{
+				Invocation: "invocations/inv",
+			})
+
+			So(err, ShouldBeNil)
+			// No tasks queued by call if the invocation is yet to be finalized. Should be invoked by
+			// finalizer to mark submitted.
+			So(sched.Tasks(), ShouldHaveLength, 0)
+
+			submitted, err := invocations.ReadSubmitted(span.Single(ctx), invocations.ID("inv"))
+			So(err, ShouldBeNil)
+			So(submitted, ShouldBeTrue)
+		})
+
+		Convey(`Already submitted`, func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "chromium:try", Permission: permPutBaseline},
+				},
+			})
+			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, map[string]any{
+				"Realm":     "chromium:try",
+				"Submitted": true,
+			}))
+			_, err := recorder.MarkInvocationSubmitted(ctx, &pb.MarkInvocationSubmittedRequest{
+				Invocation: "invocations/inv",
+			})
+
+			// Workflow should terminate early if the invocation is already submitted.
+			So(err, ShouldBeNil)
+			So(sched.Tasks(), ShouldHaveLength, 0)
 		})
 
 		Convey(`Success`, func() {
