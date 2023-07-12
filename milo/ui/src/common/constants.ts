@@ -238,3 +238,13 @@ export const POTENTIAL_PERM_ERROR_CODES = Object.freeze([
   RpcCode.PERMISSION_DENIED,
   RpcCode.UNAUTHENTICATED,
 ]);
+
+/**
+ * A list of RPC Error code that indicates the error is non-transient.
+ */
+export const NON_TRANSIENT_ERROR_CODES = Object.freeze([
+  RpcCode.INVALID_ARGUMENT,
+  RpcCode.PERMISSION_DENIED,
+  RpcCode.UNAUTHENTICATED,
+  RpcCode.UNIMPLEMENTED,
+]);

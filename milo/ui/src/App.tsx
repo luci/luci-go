@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GrpcError, RpcCode } from '@chopsui/prpc-client';
+import { GrpcError } from '@chopsui/prpc-client';
 import { ThemeProvider } from '@emotion/react';
 import {
   QueryClient,
@@ -37,6 +37,7 @@ import { Store, StoreProvider } from '@/common/store';
 import { theme } from '@/common/themes/base';
 import { createStaticTrustedURL } from '@/generic_libs/tools/utils';
 
+import { NON_TRANSIENT_ERROR_CODES } from './common/constants';
 import { ArtifactPageLayout } from './pages/artifact/artifact_page_layout';
 import { ImageDiffArtifactPage } from './pages/artifact/image_diff_artifact_page';
 import { RawArtifactPage } from './pages/artifact/raw_artifact_page';
@@ -59,25 +60,33 @@ import { SearchPage } from './pages/search_page/search_page';
 import { TestHistoryPage } from './pages/test_history_page/test_history_page';
 import { TestResultsTab } from './pages/test_results_tab/test_results_tab';
 
+const isNonTransientError = (error: unknown) =>
+  error instanceof GrpcError && NON_TRANSIENT_ERROR_CODES.includes(error.code);
+
 const QUERY_CLIENT_CONFIG: QueryClientConfig = {
   defaultOptions: {
     queries: {
       retry: (failureCount, error) => {
-        // Do not retry when the errors is non transient.
-        if (
-          error instanceof GrpcError &&
-          [
-            RpcCode.INVALID_ARGUMENT,
-            RpcCode.PERMISSION_DENIED,
-            RpcCode.UNAUTHENTICATED,
-            RpcCode.UNIMPLEMENTED,
-          ].includes(error.code)
-        ) {
+        // Do not retry when the errors is non-transient.
+        if (isNonTransientError(error)) {
           return false;
         }
 
         // Keep the default retry behavior otherwise.
         return failureCount < 3;
+      },
+      refetchOnWindowFocus(query) {
+        // Do not refetch when the errors is non-transient.
+        //
+        // Components often occupy vastly different amount of screen space when
+        // the query is loading comparing to when the query succeeded/failed.
+        // Refetching a failed query (therefore no stale data is available) that
+        // is destined to fail again can cause page-shifting with no benefit.
+        if (isNonTransientError(query.state.error)) {
+          return false;
+        }
+        // Keep the default refetch behavior otherwise.
+        return true;
       },
     },
   },
