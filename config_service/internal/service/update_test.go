@@ -31,6 +31,7 @@ import (
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/testing/prpctest"
 	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -204,7 +205,39 @@ func TestUpdateService(t *testing.T) {
 			})
 		})
 
-		Convey("Delete Metadata entity for deleted service", func() {
+		Convey("Update self", func() {
+			serviceInfo := &cfgcommonpb.Service{
+				Id:              testutil.AppID,
+				ServiceEndpoint: ts.Host,
+				// Add the service endpoint to ensure LUCI Config update its own
+				// Service entity without making rpc call to itself.
+			}
+			testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+				common.ServiceRegistryFilePath: &cfgcommonpb.ServicesCfg{
+					Services: []*cfgcommonpb.Service{
+						serviceInfo,
+					},
+				},
+			})
+			validation.Rules.Add("exact:services/"+testutil.AppID, "exact:foo.cfg", func(ctx *validation.Context, configSet, path string, content []byte) error { return nil })
+			service := &model.Service{
+				Name: testutil.AppID,
+			}
+			So(Update(ctx), ShouldBeNil)
+			So(datastore.Get(ctx, service), ShouldBeNil)
+			So(service.Info, ShouldResembleProto, serviceInfo)
+			So(service.Metadata, ShouldResembleProto, &cfgcommonpb.ServiceMetadata{
+				ConfigPatterns: []*cfgcommonpb.ConfigPattern{
+					{
+						ConfigSet: "exact:services/" + testutil.AppID,
+						Path:      "exact:foo.cfg",
+					},
+				},
+			})
+			So(service.UpdateTime, ShouldEqual, clock.Now(ctx).UTC())
+		})
+
+		Convey("Delete Service entity for deleted service", func() {
 			So(Update(ctx), ShouldBeNil)
 			er, err := datastore.Exists(ctx, datastore.MakeKey(ctx, model.ServiceKind, serviceName))
 			So(err, ShouldBeNil)

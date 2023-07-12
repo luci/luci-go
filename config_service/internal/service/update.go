@@ -33,7 +33,9 @@ import (
 	"go.chromium.org/luci/common/logging"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 
@@ -112,33 +114,45 @@ func computeServicesToDelete(ctx context.Context, servicesCfg *cfgcommonpb.Servi
 	return toDelete, nil
 }
 
-func updateService(ctx context.Context, info *cfgcommonpb.Service) error {
+func updateService(ctx context.Context, srvInfo *cfgcommonpb.Service) error {
 	eg, ectx := errgroup.WithContext(ctx)
 	updated := &model.Service{
-		Name: info.GetId(),
-		Info: info,
+		Name: srvInfo.GetId(),
+		Info: srvInfo,
 	}
 	switch {
-	case info.GetServiceEndpoint() != "":
+	case srvInfo.GetId() == info.AppID(ctx):
 		eg.Go(func() error {
-			metadata, err := fetchMetadata(ectx, info.GetServiceEndpoint())
+			metadata, err := getSelfMetadata(ctx)
 			if err != nil {
 				return err
 			}
 			if err := validateMetadata(metadata); err != nil {
-				return fmt.Errorf("invalid metadata for service %s: %w", info.GetId(), err)
+				return fmt.Errorf("invalid metadata for self service: %w", err)
 			}
 			updated.Metadata = metadata
 			return nil
 		})
-	case info.GetMetadataUrl() != "":
+	case srvInfo.GetServiceEndpoint() != "":
 		eg.Go(func() error {
-			legacyMetadata, err := fetchLegacyMetadata(ectx, info.GetMetadataUrl(), info.GetJwtAuth().GetAudience())
+			metadata, err := fetchMetadata(ectx, srvInfo.GetServiceEndpoint())
+			if err != nil {
+				return err
+			}
+			if err := validateMetadata(metadata); err != nil {
+				return fmt.Errorf("invalid metadata for service %s: %w", srvInfo.GetId(), err)
+			}
+			updated.Metadata = metadata
+			return nil
+		})
+	case srvInfo.GetMetadataUrl() != "":
+		eg.Go(func() error {
+			legacyMetadata, err := fetchLegacyMetadata(ectx, srvInfo.GetMetadataUrl(), srvInfo.GetJwtAuth().GetAudience())
 			if err != nil {
 				return err
 			}
 			if err := validateLegacyMetadata(legacyMetadata); err != nil {
-				return fmt.Errorf("invalid legacy metadata for service %s: %w", info.GetId(), err)
+				return fmt.Errorf("invalid legacy metadata for service %s: %w", srvInfo.GetId(), err)
 			}
 			updated.LegacyMetadata = legacyMetadata
 			return nil
@@ -148,12 +162,12 @@ func updateService(ctx context.Context, info *cfgcommonpb.Service) error {
 	var existing *model.Service
 	eg.Go(func() error {
 		service := &model.Service{
-			Name: info.GetId(),
+			Name: srvInfo.GetId(),
 		}
 		switch err := datastore.Get(ectx, service); err {
 		case datastore.ErrNoSuchEntity:
 			// Expect entity missing for the first time updating service.
-			logging.Warningf(ectx, "missing Service datastore entity for %q. This is common for first time updating service", info.GetId())
+			logging.Warningf(ectx, "missing Service datastore entity for %q. This is common for first time updating service", srvInfo.GetId())
 		case nil:
 			existing = service
 		default:
@@ -192,6 +206,23 @@ func fetchMetadata(ctx context.Context, endpoint string) (*cfgcommonpb.ServiceMe
 	}
 	client := cfgcommonpb.NewConsumerClient(prpcClient)
 	return client.GetMetadata(ctx, &emptypb.Empty{})
+}
+
+func getSelfMetadata(ctx context.Context) (*cfgcommonpb.ServiceMetadata, error) {
+	patterns, err := validation.Rules.ConfigPatterns(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect config patterns from self rules %w", err)
+	}
+	ret := &cfgcommonpb.ServiceMetadata{
+		ConfigPatterns: make([]*cfgcommonpb.ConfigPattern, len(patterns)),
+	}
+	for i, p := range patterns {
+		ret.ConfigPatterns[i] = &cfgcommonpb.ConfigPattern{
+			ConfigSet: p.ConfigSet.String(),
+			Path:      p.Path.String(),
+		}
+	}
+	return ret, nil
 }
 
 func fetchLegacyMetadata(ctx context.Context, metadataURL string, jwtAud string) (*cfgcommonpb.ServiceDynamicMetadata, error) {
