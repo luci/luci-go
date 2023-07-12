@@ -78,10 +78,8 @@ func (m *analyticsModule) Initialize(ctx context.Context, host module.Host, opts
 		return ctx, nil
 	case rGA4Allowed.MatchString(m.opts.AnalyticsID):
 		return context.WithValue(ctx, &ctxKey, makeGTagSnippet(m.opts.AnalyticsID)), nil
-	case rAllowed.MatchString(m.opts.AnalyticsID):
-		return context.WithValue(ctx, &ctxKey, makeUASnippet(m.opts.AnalyticsID)), nil
 	default:
-		return ctx, errors.Reason("given --analytics-id %q is not a measurement ID (like G-XXXXXX) or a tracking ID (like UA-XXXXX)", m.opts.AnalyticsID).Err()
+		return ctx, errors.Reason("given --analytics-id %q is not a measurement ID (like G-XXXXXX)", m.opts.AnalyticsID).Err()
 	}
 }
 
@@ -89,9 +87,6 @@ func (m *analyticsModule) Initialize(ctx context.Context, host module.Host, opts
 //
 // Depending on the kind of the AnalyticsID configured (see module's Options):
 //
-//   - format UA-XXXXX,
-//     documented at https://developers.google.com/analytics/devguides/collection/analyticsjs#the_google_analytics_tag
-//     will embed loading of "analytics.js"
 //   - format G-XXXXXX-YY
 //     documented at https://developers.google.com/analytics/devguides/collection/gtagjs#install_the_global_site_tag
 //     will embed loading of "gtag.js"
