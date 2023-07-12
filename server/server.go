@@ -207,8 +207,8 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.20.0"
-	"go.opentelemetry.io/otel/semconv/v1.20.0/httpconv"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
+	"go.opentelemetry.io/otel/semconv/v1.17.0/httpconv"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"go.chromium.org/luci/common/clock"
@@ -2554,7 +2554,6 @@ func (s *Server) otelResource(ctx context.Context) (*resource.Resource, error) {
 		ctx,
 		resource.WithTelemetrySDK(),
 		resource.WithDetectors(gcp.NewDetector()),
-		resource.WithSchemaURL(semconv.SchemaURL),
 		resource.WithAttributes(
 			semconv.ServiceName(fmt.Sprintf("%s/%s", s.Options.TsMonServiceName, s.Options.TsMonJobName)),
 			semconv.ServiceInstanceID(s.Options.Hostname),
