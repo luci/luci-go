@@ -21,7 +21,6 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/signals"
 )
@@ -67,12 +66,9 @@ func (t *cancelRun) parse(taskIDs []string) error {
 }
 
 func (t *cancelRun) cancelTask(ctx context.Context, taskID string, service swarmingService) error {
-	req := &swarming.SwarmingRpcsTaskCancelRequest{
-		KillRunning: t.killRunning,
-	}
-	res, err := service.CancelTask(ctx, taskID, req)
-	if res != nil && !res.Ok {
-		err = errors.Reason("response was not OK. running=%v\n", res.WasRunning).Err()
+	res, err := service.CancelTask(ctx, taskID, t.killRunning)
+	if res != nil && !res.Canceled {
+		err = errors.Reason("Task was not canceled. running=%v\n", res.WasRunning).Err()
 	}
 	if err != nil {
 		return errors.Annotate(err, "failed to cancel task %s\n", taskID).Err()

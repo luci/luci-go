@@ -20,8 +20,8 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	. "go.chromium.org/luci/common/testing/assertions"
+	swarming "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func TestCancelTaskParse(t *testing.T) {
@@ -64,15 +64,15 @@ func TestCancelTask(t *testing.T) {
 		failTaskID := "failtask"
 
 		service := &testService{
-			cancelTask: func(ctx context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error) {
+			cancelTask: func(ctx context.Context, taskID string, killRunning bool) (*swarming.CancelResponse, error) {
 				givenTaskID = taskID
-				givenKillRunning = req.KillRunning
-				res := &swarming.SwarmingRpcsCancelResponse{
-					Ok:         true,
+				givenKillRunning = killRunning
+				res := &swarming.CancelResponse{
+					Canceled:   true,
 					WasRunning: givenKillRunning,
 				}
 				if givenTaskID == failTaskID {
-					res.Ok = false
+					res.Canceled = false
 					return res, nil
 				}
 				return res, nil

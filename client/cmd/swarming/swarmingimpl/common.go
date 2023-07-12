@@ -81,7 +81,7 @@ type swarmingService interface {
 	NewTask(ctx context.Context, req *swarmingv1.SwarmingRpcsNewTaskRequest) (*swarmingv1.SwarmingRpcsTaskRequestMetadata, error)
 	CountTasks(ctx context.Context, start float64, state string, tags ...string) (*swarmingv1.SwarmingRpcsTasksCount, error)
 	ListTasks(ctx context.Context, limit int64, start float64, state string, tags []string, fields []googleapi.Field) ([]*swarmingv1.SwarmingRpcsTaskResult, error)
-	CancelTask(ctx context.Context, taskID string, req *swarmingv1.SwarmingRpcsTaskCancelRequest) (*swarmingv1.SwarmingRpcsCancelResponse, error)
+	CancelTask(ctx context.Context, taskID string, killRunning bool) (*swarmingv2.CancelResponse, error)
 	TaskRequest(ctx context.Context, taskID string) (*swarmingv1.SwarmingRpcsTaskRequest, error)
 	TaskResult(ctx context.Context, taskID string, perf bool) (*swarmingv1.SwarmingRpcsTaskResult, error)
 	TaskOutput(ctx context.Context, taskID string) (*swarmingv1.SwarmingRpcsTaskOutput, error)
@@ -94,9 +94,10 @@ type swarmingService interface {
 }
 
 type swarmingServiceImpl struct {
-	client     *http.Client
-	service    *swarmingv1.Service
-	botsClient swarmingv2.BotsClient
+	client      *http.Client
+	service     *swarmingv1.Service
+	botsClient  swarmingv2.BotsClient
+	tasksClient swarmingv2.TasksClient
 }
 
 func (s *swarmingServiceImpl) NewTask(ctx context.Context, req *swarmingv1.SwarmingRpcsNewTaskRequest) (res *swarmingv1.SwarmingRpcsTaskRequestMetadata, err error) {
@@ -150,12 +151,11 @@ func (s *swarmingServiceImpl) ListTasks(ctx context.Context, limit int64, start 
 	return tasks, nil
 }
 
-func (s *swarmingServiceImpl) CancelTask(ctx context.Context, taskID string, req *swarmingv1.SwarmingRpcsTaskCancelRequest) (res *swarmingv1.SwarmingRpcsCancelResponse, err error) {
-	err = retryGoogleRPC(ctx, "CancelTask", func() (ierr error) {
-		res, ierr = s.service.Task.Cancel(taskID, req).Context(ctx).Do()
-		return ierr
+func (s *swarmingServiceImpl) CancelTask(ctx context.Context, taskID string, killRunning bool) (res *swarmingv2.CancelResponse, err error) {
+	return s.tasksClient.CancelTask(ctx, &swarmingv2.TaskCancelRequest{
+		KillRunning: killRunning,
+		TaskId:      taskID,
 	})
-	return res, err
 }
 
 func (s *swarmingServiceImpl) TaskRequest(ctx context.Context, taskID string) (res *swarmingv1.SwarmingRpcsTaskRequest, err error) {
@@ -435,9 +435,10 @@ func (c *commonFlags) createSwarmingClient(ctx context.Context) (swarmingService
 		prpcClient.Host = c.serverURL
 	}
 	return &swarmingServiceImpl{
-		client:     authcli,
-		service:    s,
-		botsClient: swarmingv2.NewBotsClient(&prpcClient),
+		client:      authcli,
+		service:     s,
+		botsClient:  swarmingv2.NewBotsClient(&prpcClient),
+		tasksClient: swarmingv2.NewTasksClient(&prpcClient),
 	}, nil
 }
 
