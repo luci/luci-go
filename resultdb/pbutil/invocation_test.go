@@ -268,6 +268,7 @@ func TestBaselineID(t *testing.T) {
 	Convey(`ValidateBaselineID`, t, func() {
 		Convey(`Valid`, func() {
 			So(ValidateBaselineID("try:linux-rel"), ShouldBeNil)
+			So(ValidateBaselineID("try:linux asan"), ShouldBeNil)
 		})
 
 		Convey(`Invalid`, func() {
@@ -276,6 +277,7 @@ func TestBaselineID(t *testing.T) {
 			})
 			Convey(`Unsupported Symbol`, func() {
 				So(ValidateBaselineID("try/linux-rel"), ShouldErrLike, `does not match`)
+				So(ValidateBaselineID("try :rel"), ShouldErrLike, `does not match`)
 			})
 		})
 	})

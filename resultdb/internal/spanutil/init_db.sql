@@ -105,8 +105,9 @@ CREATE TABLE Invocations (
   -- Often, this will be the source that generated the test result, such as the
   -- builder name for Chromium. For example, the baseline identifier may be
   -- try:linux-rel. The supported syntax for a baseline identifier is
-  -- ^[a-zA-Z0-9\-_.\(\):]{1,229}$. This syntax was selected to allow
-  -- <buildbucket bucket name>:<buildbucket builder name> as a valid baseline ID.
+  -- ^[a-z0-9\-_.]{1,100}:[a-zA-Z0-9\-_.\(\) ]{1,128}$. This syntax was selected
+  -- to allow <buildbucket bucket name>:<buildbucket builder name> as a valid
+  -- baseline ID.
   -- See go/src/go.chromium.org/luci/buildbucket/proto/builder_common.proto for
   -- character lengths for buildbucket bucket name and builder name.
   --
@@ -390,8 +391,9 @@ CREATE TABLE Baselines (
   -- Often, this will be the source that generated the test result, such as the
   -- builder name for Chromium. For example, the baseline identifier may be
   -- try:linux-rel. The supported syntax for a baseline identifier is
-  -- ^[a-zA-Z0-9\-_.\(\):]{1,229}$. This syntax was selected to allow
-  -- <buildbucket bucket name>:<buildbucket builder name> as a valid baseline ID.
+  -- ^[a-z0-9\-_.]{1,100}:[a-zA-Z0-9\-_.\(\) ]{1,128}$. This syntax was selected
+  -- to allow <buildbucket bucket name>:<buildbucket builder name> as a valid
+  -- baseline ID.
   -- See go/src/go.chromium.org/luci/buildbucket/proto/builder_common.proto for
   -- character lengths for buildbucket bucket name and builder name.
   --
@@ -417,8 +419,9 @@ CREATE TABLE BaselineTestVariants (
   -- Often, this will be the source that generated the test result, such as the
   -- builder name for Chromium. For example, the baseline identifier may be
   -- try:linux-rel. The supported syntax for a baseline identifier is
-  -- ^[a-zA-Z0-9\-_.\(\):]{1,229}$. This syntax was selected to allow
-  -- <buildbucket bucket name>:<buildbucket builder name> as a valid baseline ID.
+  -- ^[a-z0-9\-_.]{1,100}:[a-zA-Z0-9\-_.\(\) ]{1,128}$. This syntax was selected
+  -- to allow <buildbucket bucket name>:<buildbucket builder name> as a valid
+  -- baseline ID.
   -- See go/src/go.chromium.org/luci/buildbucket/proto/builder_common.proto for
   -- character lengths for buildbucket bucket name and builder name.
   --

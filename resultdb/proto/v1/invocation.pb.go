@@ -200,6 +200,16 @@ type Invocation struct {
 	// test results, so if there is inconsistency between included invocations,
 	// the position of the verdict becomes not well defined.
 	SourceSpec *SourceSpec `protobuf:"bytes,15,opt,name=source_spec,json=sourceSpec,proto3" json:"source_spec,omitempty"`
+	// A user-specified baseline identifier that maps to a set of test variants.
+	// Often, this will be the source that generated the test result, such as the
+	// builder name for Chromium. For example, the baseline identifier may be
+	// try:linux-rel. The supported syntax for a baseline identifier is
+	// ^[a-z0-9\-_.]{1,100}:[a-zA-Z0-9\-_.\(\) ]{1,128}`$. This syntax was selected
+	// to allow <buildbucket bucket name>:<buildbucket builder name> as a valid
+	// baseline ID.
+	// See go/src/go.chromium.org/luci/buildbucket/proto/builder_common.proto for
+	// character lengths for buildbucket bucket name and builder name.
+	//
 	// Baselines are used to identify new tests; a subtraction between the set of
 	// test variants for a baseline in the Baselines table and test variants from
 	// a given invocation determines whether a test is new.

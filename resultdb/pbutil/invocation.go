@@ -19,7 +19,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-const baselineIDPattern = `[a-zA-Z0-9\-_.\(\):]{1,229}`
+const baselineIDPattern = `[a-z0-9\-_.]{1,100}:[a-zA-Z0-9\-_.\(\) ]{1,128}`
 const invocationIDPattern = `[a-z][a-z0-9_\-:.]{0,99}`
 
 var baselineIDRe = regexpf("^%s$", baselineIDPattern)
