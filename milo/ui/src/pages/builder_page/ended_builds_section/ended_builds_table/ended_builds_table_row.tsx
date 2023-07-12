@@ -26,6 +26,7 @@ import { DateTime } from 'luxon';
 import { observer } from 'mobx-react-lite';
 import { Fragment } from 'react';
 
+import { GerritClLink } from '@/common/components/gerrit_cl_link';
 import {
   DEFAULT_EXTRA_ZONE_CONFIGS,
   Timestamp,
@@ -50,10 +51,7 @@ import {
   SHORT_TIME_FORMAT,
   displayDuration,
 } from '@/common/tools/time_utils';
-import {
-  getBuildURLPathFromBuildId,
-  getGerritChangeURL,
-} from '@/common/tools/url_utils';
+import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
 
 const MarkdownContainer = styled(Box)({
   padding: '0 10px',
@@ -160,14 +158,53 @@ export const EndedBuildsTableRow = observer(
         </TableCell>
         {displayGerritChanges && (
           <TableCell>
-            {changes.map((c, i) => (
-              <Fragment key={c.change}>
-                {i !== 0 && <>, </>}
-                <Link key={c.change} href={getGerritChangeURL(c)}>
-                  CL {c.change} (ps #{c.patchset})
-                </Link>
-              </Fragment>
-            ))}
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: '34px 1fr',
+              }}
+            >
+              <Box>
+                <IconButton
+                  aria-label="toggle-row"
+                  size="small"
+                  onClick={() => tableState.toggle(build.id, !expanded)}
+                  // Always render the button to DOM so we have a stable layout.
+                  // Hide it from users so it won't mislead users to think there
+                  // are more gerrit changes.
+                  disabled={changes.length <= 1}
+                  sx={{ visibility: changes.length > 1 ? '' : 'hidden' }}
+                >
+                  {expanded ? <ExpandMore /> : <ChevronRight />}
+                </IconButton>
+              </Box>
+              <Box
+                sx={{
+                  width: '200px',
+                  lineHeight: '32px',
+                  ...(expanded
+                    ? { whiteSpace: 'pre' }
+                    : {
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        '& > br': {
+                          display: 'none',
+                        },
+                      }),
+                }}
+              >
+                {changes.map((c, i) => (
+                  <Fragment key={c.change}>
+                    {i !== 0 && (
+                      <>
+                        , <br />
+                      </>
+                    )}
+                    <GerritClLink cl={c} />
+                  </Fragment>
+                ))}
+              </Box>
+            </Box>
           </TableCell>
         )}
         <TableCell

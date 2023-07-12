@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GerritClLink } from '@/common/components/gerrit_cl_link';
-import { GerritChange } from '@/common/services/buildbucket';
+import { Link } from '@mui/material';
 
-export interface PatchRowProps {
-  readonly gerritChange: GerritChange;
+import { GerritChange } from '@/common/services/buildbucket';
+import { getGerritChangeURL } from '@/common/tools/url_utils';
+
+interface Props {
+  readonly cl: GerritChange;
 }
 
-export function PatchRow({ gerritChange }: PatchRowProps) {
+export function GerritClLink({ cl }: Props) {
   return (
-    <tr>
-      <td>Patch:</td>
-      <td>
-        <GerritClLink cl={gerritChange} />
-      </td>
-    </tr>
+    <Link key={cl.change} href={getGerritChangeURL(cl)}>
+      CL {cl.change} (ps #{cl.patchset})
+    </Link>
   );
 }

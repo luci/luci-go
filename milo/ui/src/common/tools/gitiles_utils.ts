@@ -36,7 +36,7 @@ export function getGitilesCommitLabel(
   }
 
   if (commit.id) {
-    return commit.id;
+    return commit.id.slice(0, 9);
   }
 
   if (commit.ref) {

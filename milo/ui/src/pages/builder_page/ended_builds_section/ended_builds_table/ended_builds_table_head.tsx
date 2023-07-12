@@ -57,7 +57,33 @@ export const EndedBuildsTableHead = observer(
           <TableCell width="1px">End Time</TableCell>
           <TableCell width="1px">Run Duration</TableCell>
           <TableCell width="1px">Commit</TableCell>
-          {displayGerritChanges && <TableCell width="1px">Changes</TableCell>}
+          {displayGerritChanges && (
+            <TableCell width="1px">
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: '34px 1fr',
+                }}
+              >
+                <IconButton
+                  aria-label="toggle-all-rows"
+                  size="small"
+                  onClick={action(() => {
+                    const shouldExpand = !tableState.defaultExpanded;
+                    config.setExpandEndedBuildsEntryByDefault(shouldExpand);
+                    tableState.toggleAll(shouldExpand);
+                  })}
+                >
+                  {tableState.defaultExpanded ? (
+                    <ExpandMore />
+                  ) : (
+                    <ChevronRight />
+                  )}
+                </IconButton>
+                <Box sx={{ lineHeight: '34px' }}>Changes</Box>
+              </Box>
+            </TableCell>
+          )}
           <TableCell>
             <Box
               sx={{
