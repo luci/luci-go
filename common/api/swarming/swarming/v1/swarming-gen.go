@@ -78,6 +78,7 @@ var _ = errors.New
 var _ = strings.Replace
 var _ = context.Canceled
 var _ = internaloption.WithDefaultEndpoint
+var _ = "luci-go"
 
 const apiId = "swarming:v1"
 const apiName = "swarming"
