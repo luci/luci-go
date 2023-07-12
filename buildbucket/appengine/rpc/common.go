@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/auth/identity"
@@ -28,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
@@ -114,7 +114,7 @@ func logToBQ(ctx context.Context, id, parent, methodName string) {
 // commonPostlude converts an appstatus error to a gRPC error and logs it.
 // Requires a *bqlog.Bundler in the context (see commonPrelude).
 func commonPostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
-	logToBQ(ctx, trace.SpanContext(ctx), "", methodName)
+	logToBQ(ctx, trace.SpanContextFromContext(ctx).TraceID().String(), "", methodName)
 	return appstatus.GRPCifyAndLog(ctx, err)
 }
 

@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -30,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/trace/tracetest"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
@@ -58,16 +58,15 @@ const (
 	testProjectScoped = "test-proj-scoped"
 	testRealmScoped   = testProjectScoped + ":test-realm"
 	testInternalRealm = realms.InternalProject + ":test-realm"
-	testRequestID     = "gae-request-id"
 )
 
-func init() {
-	tracetest.Enable()
-}
+var testRequestID = trace.TraceID{1, 2, 3, 4, 5}
 
 func TestMintServiceAccountToken(t *testing.T) {
 	ctx := gaetesting.TestingContext()
-	ctx = tracetest.WithSpanContext(ctx, "gae-request-id")
+	ctx = trace.ContextWithSpanContext(ctx, trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID: testRequestID,
+	}))
 	ctx = logging.SetLevel(ctx, logging.Debug) // coverage for logRequest
 	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
@@ -172,7 +171,7 @@ func TestMintServiceAccountToken(t *testing.T) {
 			So(loggedTok.PeerIdentity, ShouldEqual, testPeer)
 			So(loggedTok.ConfigRev, ShouldEqual, "fake-revision")
 			So(loggedTok.PeerIP.String(), ShouldEqual, testPeerIP)
-			So(loggedTok.RequestID, ShouldEqual, testRequestID)
+			So(loggedTok.RequestID, ShouldEqual, testRequestID.String())
 			So(loggedTok.AuthDBRev, ShouldEqual, 0) // FakeDB is always 0
 		})
 

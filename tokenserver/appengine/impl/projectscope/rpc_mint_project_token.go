@@ -18,13 +18,13 @@ import (
 	"context"
 	"time"
 
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/signing"
@@ -155,7 +155,7 @@ func (r *MintProjectTokenRPC) MintProjectToken(c context.Context, req *minter.Mi
 			Expiration:   resp.Expiry,
 			PeerIP:       state.PeerIP(),
 			PeerIdentity: state.PeerIdentity(),
-			RequestID:    trace.SpanContext(c),
+			RequestID:    trace.SpanContextFromContext(c).TraceID().String(),
 			AuthDBRev:    authdb.Revision(state.DB()),
 		}
 		if logErr := r.LogToken(c, &tokInfo); logErr != nil {

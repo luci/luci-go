@@ -86,7 +86,7 @@ func TestMintMachineTokenRPC(t *testing.T) {
 		So(loggedInfo.Response, ShouldResembleProto, resp.TokenResponse)
 		So(loggedInfo.CA, ShouldEqual, &testingCA)
 		So(loggedInfo.PeerIP, ShouldResemble, net.ParseIP("127.10.10.10"))
-		So(loggedInfo.RequestID, ShouldEqual, "gae-request-id")
+		So(loggedInfo.RequestID, ShouldEqual, testingRequestID.String())
 	})
 
 	Convey("Unsuccessful RPC", t, func() {

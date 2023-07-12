@@ -16,7 +16,6 @@ package internal
 
 import (
 	"context"
-	"encoding/binary"
 	"fmt"
 
 	"go.opentelemetry.io/otel"
@@ -52,18 +51,6 @@ func (otelBackend) StartSpan(ctx context.Context, name string, kind trace.SpanKi
 		return ctx, otelSpan{span}
 	}
 	return ctx, trace.NullSpan{}
-}
-
-func (otelBackend) SpanContext(ctx context.Context) string {
-	if sc := oteltrace.SpanContextFromContext(ctx); sc.IsValid() {
-		blob := sc.SpanID()
-		return fmt.Sprintf("%s/%d;o=%d",
-			sc.TraceID().String(),
-			binary.BigEndian.Uint64(blob[:]),
-			int64(sc.TraceFlags()),
-		)
-	}
-	return ""
 }
 
 ////////////////////////////////////////////////////////////////////////////////

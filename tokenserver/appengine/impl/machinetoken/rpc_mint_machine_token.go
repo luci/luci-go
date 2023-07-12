@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -28,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/signing"
 
@@ -173,7 +173,7 @@ func (r *MintMachineTokenRPC) MintMachineToken(c context.Context, req *minter.Mi
 				TokenBody: body,
 				CA:        ca,
 				PeerIP:    auth.GetState(c).PeerIP(),
-				RequestID: trace.SpanContext(c),
+				RequestID: trace.SpanContextFromContext(c).TraceID().String(),
 			}
 			if logErr := r.LogToken(c, &tokInfo); logErr != nil {
 				logging.WithError(logErr).Errorf(c, "Failed to insert the machine token into BigQuery log")

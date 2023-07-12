@@ -29,11 +29,15 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.opentelemetry.io/otel/propagation"
+	oteltrace "go.opentelemetry.io/otel/trace"
 
 	taskspb "cloud.google.com/go/cloudtasks/apiv2/cloudtaskspb"
 	"cloud.google.com/go/pubsub/apiv1/pubsubpb"
@@ -888,8 +892,8 @@ func (d *Dispatcher) prepCloudTasksRequest(ctx context.Context, cls *taskClassIm
 	}
 
 	// Inject tracing headers.
-	if span := trace.SpanContext(ctx); span != "" {
-		payload.Meta[TraceContextHeader] = span
+	if traceCtx := traceContext(ctx); traceCtx != "" {
+		payload.Meta[TraceContextHeader] = traceCtx
 	}
 
 	// Inject magic header with ETA.
@@ -1057,8 +1061,8 @@ func (d *Dispatcher) prepPubSubRequest(ctx context.Context, cls *taskClassImpl, 
 	for k, v := range payload.Meta {
 		msg.Attributes[k] = v
 	}
-	if span := trace.SpanContext(ctx); span != "" {
-		msg.Attributes[TraceContextHeader] = span
+	if traceCtx := traceContext(ctx); traceCtx != "" {
+		msg.Attributes[TraceContextHeader] = traceCtx
 	}
 
 	return &pubsubpb.PublishRequest{
@@ -1360,6 +1364,19 @@ func (cls *taskClassImpl) deserialize(env *envelope) (proto.Message, error) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+// traceContext returns a tracing context for TraceContextHeader header or "".
+//
+// We use Cloud Trace propagation format.
+func traceContext(ctx context.Context) string {
+	span := oteltrace.SpanContextFromContext(ctx)
+	if !span.IsValid() {
+		return ""
+	}
+	headers := make(propagation.MapCarrier, 1)
+	(propagator.CloudTraceFormatPropagator{}).Inject(ctx, headers)
+	return headers[propagator.TraceContextHeaderName]
+}
 
 // parseHeaders examines headers of the incoming Cloud Tasks push.
 func parseHeaders(h http.Header) ExecutionInfo {

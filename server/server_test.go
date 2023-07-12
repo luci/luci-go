@@ -33,6 +33,7 @@ import (
 	"testing"
 	"time"
 
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -190,9 +191,9 @@ func TestServer(t *testing.T) {
 		})
 
 		Convey("Context features", func() {
-			So(testContextFeatures(srv.Context), ShouldBeNil)
+			So(testContextFeatures(srv.Context, false), ShouldBeNil)
 			srv.Routes.GET("/request", nil, func(c *router.Context) {
-				if err := testContextFeatures(c.Request.Context()); err != nil {
+				if err := testContextFeatures(c.Request.Context(), true); err != nil {
 					http.Error(c.Writer, err.Error(), 500)
 				}
 			})
@@ -235,7 +236,7 @@ func TestServer(t *testing.T) {
 			var cleanups []string
 
 			srv.RegisterWarmup(func(ctx context.Context) {
-				if err := testContextFeatures(ctx); err != nil {
+				if err := testContextFeatures(ctx, false); err != nil {
 					panic(err)
 				}
 				warmups = append(warmups, "a")
@@ -245,7 +246,7 @@ func TestServer(t *testing.T) {
 			})
 
 			srv.RegisterCleanup(func(ctx context.Context) {
-				if err := testContextFeatures(ctx); err != nil {
+				if err := testContextFeatures(ctx, false); err != nil {
 					panic(err)
 				}
 				cleanups = append(cleanups, "a")
@@ -274,7 +275,7 @@ func TestServer(t *testing.T) {
 			}
 			activities := make(chan nameErrPair, 2)
 			srv.RunInBackground("background 1", func(ctx context.Context) {
-				activities <- nameErrPair{"background 1", testContextFeatures(ctx)}
+				activities <- nameErrPair{"background 1", testContextFeatures(ctx, false)}
 			})
 
 			srv.ServeInBackground()
@@ -282,7 +283,7 @@ func TestServer(t *testing.T) {
 
 			// Run one more activity after starting the serving loop.
 			srv.RunInBackground("background 2", func(ctx context.Context) {
-				activities <- nameErrPair{"background 2", testContextFeatures(ctx)}
+				activities <- nameErrPair{"background 2", testContextFeatures(ctx, false)}
 			})
 
 			wait := func() {
@@ -443,7 +444,7 @@ func TestH2C(t *testing.T) {
 		defer srv.cleanup()
 
 		srv.Routes.GET("/test", nil, func(c *router.Context) {
-			if err := testContextFeatures(c.Request.Context()); err != nil {
+			if err := testContextFeatures(c.Request.Context(), true); err != nil {
 				http.Error(c.Writer, err.Error(), 500)
 			} else {
 				c.Writer.WriteHeader(200)
@@ -536,7 +537,7 @@ func TestRPCServers(t *testing.T) {
 			Convey(protocol+" client", func() {
 				Convey("Context features", func() {
 					rpcSvc.unary = func(ctx context.Context, _ *testpb.Request) (*testpb.Response, error) {
-						if err := testContextFeatures(ctx); err != nil {
+						if err := testContextFeatures(ctx, true); err != nil {
 							return nil, err
 						}
 						return &testpb.Response{}, nil
@@ -607,7 +608,7 @@ func TestRPCServers(t *testing.T) {
 
 				Convey("Context features in stream RPCs", func() {
 					rpcSvc.clientServerStream = func(ss testpb.Test_ClientServerStreamServer) error {
-						if err := testContextFeatures(ss.Context()); err != nil {
+						if err := testContextFeatures(ss.Context(), true); err != nil {
 							return err
 						}
 						for {
@@ -713,12 +714,21 @@ func TestRPCServers(t *testing.T) {
 }
 
 // testContextFeatures check that the context has all subsystems enabled.
-func testContextFeatures(ctx context.Context) (err error) {
+func testContextFeatures(ctx context.Context, hasTraceID bool) (err error) {
 	defer func() {
 		if p := recover(); p != nil {
 			err = errors.Reason("Panic: %s", p).Err()
 		}
 	}()
+
+	// A TraceID is populated (or not) as expected.
+	traceID := trace.SpanContextFromContext(ctx).TraceID().String()
+	if hasTraceID && traceID == "00000000000000000000000000000000" {
+		return errors.New("unexpectedly empty trace ID")
+	}
+	if !hasTraceID && traceID != "00000000000000000000000000000000" {
+		return errors.New("unexpectedly populated trace ID")
+	}
 
 	// Experiments work.
 	if !testExperiment.Enabled(ctx) {

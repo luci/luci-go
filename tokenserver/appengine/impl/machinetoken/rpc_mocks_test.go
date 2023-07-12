@@ -26,13 +26,13 @@ import (
 	"encoding/pem"
 	"time"
 
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/trace/tracetest"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
@@ -193,13 +193,13 @@ var testingCA = certconfig.CA{
 	UpdatedRev: "cfg-updated-rev",
 }
 
-func init() {
-	tracetest.Enable()
-}
+var testingRequestID = trace.TraceID{1, 2, 3, 4, 5}
 
 func testingContext(ca certconfig.CA) context.Context {
 	ctx := gaetesting.TestingContext()
-	ctx = tracetest.WithSpanContext(ctx, "gae-request-id")
+	ctx = trace.ContextWithSpanContext(ctx, trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID: testingRequestID,
+	}))
 	ctx, _ = testclock.UseTime(ctx, testingTime)
 
 	// Put mocked CA config in the datastore.

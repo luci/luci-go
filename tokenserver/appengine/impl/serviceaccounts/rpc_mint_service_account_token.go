@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -29,7 +30,6 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/realms"
@@ -215,7 +215,7 @@ func (r *MintServiceAccountTokenRPC) MintServiceAccountToken(ctx context.Context
 			PeerIdentity:    env.peer,
 			ConfigRev:       env.mapping.ConfigRevision(),
 			PeerIP:          env.state.PeerIP(),
-			RequestID:       trace.SpanContext(ctx),
+			RequestID:       trace.SpanContextFromContext(ctx).TraceID().String(),
 			AuthDBRev:       authdb.Revision(state.DB()),
 		}
 		// Errors during logging are considered not fatal. We have a monitoring

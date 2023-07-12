@@ -18,6 +18,8 @@ import (
 	"context"
 	"time"
 
+	"go.opentelemetry.io/otel/trace"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -30,11 +32,15 @@ import (
 
 var TestTime = testclock.TestRecentTimeUTC.Round(time.Millisecond)
 var TestUser = identity.Identity("user:u@example.com")
+var TestRequestID = trace.TraceID{1, 2, 3, 4, 5}
 
 func TestingContext(mocks ...authtest.MockedDatum) (context.Context, testclock.TestClock, func(string) context.Context) {
 	ctx := memory.Use(context.Background())
 	ctx = txndefer.FilterRDS(ctx)
 	ctx, _ = testclock.UseTime(ctx, TestTime)
+	ctx = trace.ContextWithSpanContext(ctx, trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID: TestRequestID,
+	}))
 
 	datastore.GetTestable(ctx).AutoIndex(true)
 

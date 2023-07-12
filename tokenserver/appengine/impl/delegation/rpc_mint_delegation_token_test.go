@@ -22,8 +22,11 @@ import (
 	"testing"
 	"time"
 
+	"go.opentelemetry.io/otel/trace"
+
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -32,12 +35,11 @@ import (
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
-	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/trace/tracetest"
-
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+var testingRequestID = trace.TraceID{1, 2, 3, 4, 5}
 
 func mockedFetchLUCIServiceIdentity(c context.Context, u string) (identity.Identity, error) {
 	l, err := url.Parse(u)
@@ -55,12 +57,13 @@ func mockedFetchLUCIServiceIdentity(c context.Context, u string) (identity.Ident
 
 func init() {
 	fetchLUCIServiceIdentity = mockedFetchLUCIServiceIdentity
-	tracetest.Enable()
 }
 
 func testingContext() context.Context {
 	ctx := gaetesting.TestingContext()
-	ctx = tracetest.WithSpanContext(ctx, "gae-request-id")
+	ctx = trace.ContextWithSpanContext(ctx, trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID: testingRequestID,
+	}))
 	ctx, _ = testclock.UseTime(ctx, time.Date(2015, time.February, 3, 4, 5, 6, 0, time.UTC))
 	return auth.WithState(ctx, &authtest.FakeState{
 		Identity:       "user:requestor@example.com",
@@ -264,7 +267,7 @@ func TestMintDelegationToken(t *testing.T) {
 				MaxValidityDuration:  3600,
 			})
 			So(loggedInfo.PeerIP, ShouldResemble, net.ParseIP("127.10.10.10"))
-			So(loggedInfo.RequestID, ShouldEqual, "gae-request-id")
+			So(loggedInfo.RequestID, ShouldEqual, testingRequestID.String())
 			So(loggedInfo.AuthDBRev, ShouldEqual, 1234)
 		})
 

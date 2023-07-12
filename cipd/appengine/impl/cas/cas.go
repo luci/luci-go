@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"strings"
 
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -30,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server"
@@ -471,7 +471,7 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 		Started:        clock.Now(ctx).UnixNano() / 1000,
 		ServiceVersion: s.serviceVersion,
 		ProcessId:      s.processID,
-		TraceId:        trace.SpanContext(ctx),
+		TraceId:        trace.SpanContextFromContext(ctx).TraceID().String(),
 	}
 	if op.HexDigest != "" {
 		logEntry.ExpectedInstanceId = common.ObjectRefToInstanceID(&api.ObjectRef{

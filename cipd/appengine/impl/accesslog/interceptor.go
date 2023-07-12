@@ -21,13 +21,13 @@ import (
 	"fmt"
 	"strings"
 
+	"go.opentelemetry.io/otel/trace"
 	codepb "google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
@@ -62,7 +62,7 @@ func NewUnaryServerInterceptor(opts *server.Options) grpc.UnaryServerInterceptor
 			PeerIp:         state.PeerIP().String(),
 			ServiceVersion: opts.ContainerImageID,
 			ProcessId:      opts.Hostname,
-			RequestId:      trace.SpanContext(ctx),
+			RequestId:      trace.SpanContextFromContext(ctx).TraceID().String(),
 			AuthDbRev:      authdb.Revision(state.DB()),
 		}
 		if md, _ := metadata.FromIncomingContext(ctx); len(md["user-agent"]) > 0 {

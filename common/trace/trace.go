@@ -49,16 +49,6 @@ func StartSpan(ctx context.Context, name string) (context.Context, Span) {
 	return backend.StartSpan(ctx, name, SpanKindInternal)
 }
 
-// SpanContext returns the current span context as an HTTP header-safe string.
-//
-// It is empty if there's no span context.
-func SpanContext(ctx context.Context) string {
-	if backend == nil {
-		return ""
-	}
-	return backend.SpanContext(ctx)
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Implementation API.
 
@@ -76,8 +66,6 @@ const (
 type Backend interface {
 	// StartSpan implements public StartSpan function.
 	StartSpan(ctx context.Context, name string, kind SpanKind) (context.Context, Span)
-	// SpanContext implements public SpanContext function.
-	SpanContext(ctx context.Context) string
 }
 
 // SetBackend installs the process-global implementation of the span collector.

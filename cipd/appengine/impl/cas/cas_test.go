@@ -567,6 +567,7 @@ func TestFinishUpload(t *testing.T) {
 				// There's a log entry.
 				So(verificationLogs.last(), ShouldResembleProto, &api.VerificationLogEntry{
 					OperationId:        1,
+					TraceId:            testutil.TestRequestID.String(),
 					InitiatedBy:        string(testutil.TestUser),
 					TempGsPath:         "/bucket/tmp_path/1454472306_1",
 					VerifiedInstanceId: "WZRHGrsBESr8wYFZ9sx0tPURuZgG2lmzyvWpwXPKz8UC",
@@ -603,6 +604,7 @@ func TestFinishUpload(t *testing.T) {
 				// There's a log entry.
 				So(verificationLogs.last(), ShouldResembleProto, &api.VerificationLogEntry{
 					OperationId:        1,
+					TraceId:            testutil.TestRequestID.String(),
 					InitiatedBy:        string(testutil.TestUser),
 					TempGsPath:         "/bucket/tmp_path/1454472306_1",
 					VerifiedInstanceId: "WZRHGrsBESr8wYFZ9sx0tPURuZgG2lmzyvWpwXPKz8UC",
@@ -642,6 +644,7 @@ func TestFinishUpload(t *testing.T) {
 				// There's a log entry.
 				So(verificationLogs.last(), ShouldResembleProto, &api.VerificationLogEntry{
 					OperationId:        1,
+					TraceId:            testutil.TestRequestID.String(),
 					InitiatedBy:        string(testutil.TestUser),
 					TempGsPath:         "/bucket/tmp_path/1454472306_1",
 					VerifiedInstanceId: "WZRHGrsBESr8wYFZ9sx0tPURuZgG2lmzyvWpwXPKz8UC",
@@ -722,6 +725,7 @@ func TestFinishUpload(t *testing.T) {
 				// There's a log entry.
 				So(verificationLogs.last(), ShouldResembleProto, &api.VerificationLogEntry{
 					OperationId:        1,
+					TraceId:            testutil.TestRequestID.String(),
 					InitiatedBy:        string(testutil.TestUser),
 					TempGsPath:         "/bucket/tmp_path/1454472306_1",
 					ExpectedInstanceId: "WZRHGrsBESr8wYFZ9sx0tPURuZgG2lmzyvWpwXPKz8UC",

@@ -19,12 +19,13 @@ import (
 	"testing"
 	"time"
 
+	"go.opentelemetry.io/otel/trace"
+
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/testing/assertions"
-	"go.chromium.org/luci/common/trace/tracetest"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
@@ -36,11 +37,8 @@ import (
 
 var (
 	authorizedGroups = []string{projectActorsGroup}
+	testingRequestID = trace.TraceID{1, 2, 3, 4, 5}
 )
-
-func init() {
-	tracetest.Enable()
-}
 
 func testMintAccessToken(ctx context.Context, params auth.MintAccessTokenParams) (*auth.Token, error) {
 	return &auth.Token{
@@ -52,7 +50,9 @@ func testMintAccessToken(ctx context.Context, params auth.MintAccessTokenParams)
 func testingContext(caller identity.Identity) context.Context {
 	ctx := gaetesting.TestingContext()
 	ctx = logging.SetLevel(ctx, logging.Debug)
-	ctx = tracetest.WithSpanContext(ctx, "gae-request-id")
+	ctx = trace.ContextWithSpanContext(ctx, trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID: testingRequestID,
+	}))
 	ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC)
 	return auth.WithState(ctx, &authtest.FakeState{
 		Identity:       caller,

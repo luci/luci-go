@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -28,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/delegation/messages"
@@ -196,7 +196,7 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 			ConfigRev: rules.ConfigRevision(),
 			Rule:      rule,
 			PeerIP:    state.PeerIP(),
-			RequestID: trace.SpanContext(c),
+			RequestID: trace.SpanContextFromContext(c).TraceID().String(),
 			AuthDBRev: authdb.Revision(state.DB()),
 		}
 		if logErr := r.LogToken(c, &tokInfo); logErr != nil {

@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	oteltrace "go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	grpcStatus "google.golang.org/grpc/status"
 
@@ -85,7 +86,7 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 
 	// ID used to log this Batch operation in the pRPC request log (see common.go).
 	// Used as the parent request log ID when logging individual operations here.
-	parent := trace.SpanContext(ctx)
+	parent := oteltrace.SpanContextFromContext(ctx).TraceID().String()
 	err = parallel.WorkPool(64, func(c chan<- func() error) {
 		c <- func() (err error) {
 			ctx, span := trace.StartSpan(ctx, "Batch.ScheduleBuild")
@@ -97,7 +98,7 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 					res.Responses[schIndices[i]] = &pb.BatchResponse_Response{
 						Response: toBatchResponseError(ctx, e),
 					}
-					logToBQ(ctx, fmt.Sprintf("%s;%d", trace.SpanContext(ctx), schIndices[i]), parent, "ScheduleBuild")
+					logToBQ(ctx, fmt.Sprintf("%s;%d", parent, schIndices[i]), parent, "ScheduleBuild")
 				}
 			}
 			for i, r := range ret {
@@ -107,7 +108,7 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 							ScheduleBuild: r,
 						},
 					}
-					logToBQ(ctx, fmt.Sprintf("%s;%d", trace.SpanContext(ctx), schIndices[i]), parent, "ScheduleBuild")
+					logToBQ(ctx, fmt.Sprintf("%s;%d", parent, schIndices[i]), parent, "ScheduleBuild")
 				}
 			}
 			return nil
@@ -151,7 +152,7 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 				default:
 					panic(fmt.Sprintf("attempted to handle unexpected request type %T", r.Request))
 				}
-				logToBQ(ctx, trace.SpanContext(ctx), parent, method)
+				logToBQ(ctx, fmt.Sprintf("%s;%d", parent, goIndices[i]), parent, method)
 				if err != nil {
 					response.Response = toBatchResponseError(ctx, err)
 				}
