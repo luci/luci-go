@@ -46,9 +46,21 @@ const (
 	// stores a list of registered projects.
 	ProjRegistryFilePath = "projects.cfg"
 
+	// ProjMetadataFilePath is the path where project metadata config for each
+	// LUCI Project.
+	ProjMetadataFilePath = "project.cfg"
+
 	// ServiceRegistryFilePath is the path of luci-config self config file where
 	// it stores a list of registered services.
 	ServiceRegistryFilePath = "services.cfg"
+
+	// ImportConfigFilePath is the path of luci-config self config file where it
+	// stores config about importing from external source.
+	ImportConfigFilePath = "import.cfg"
+
+	// SchemaConfigFilePath is the path of luci-config self config file where
+	// it stores config to support schema redirection.
+	SchemaConfigFilePath = "schema.cfg"
 
 	// GSProdCfgFolder is the folder name where it stores all production configs
 	// in GCS bucket.

@@ -27,6 +27,9 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
 
+	// Register validation rules for LUCI Config itself.
+	_ "go.chromium.org/luci/config_service/internal/rules"
+
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/common"
 	"go.chromium.org/luci/config_service/internal/service"
