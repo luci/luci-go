@@ -18,9 +18,12 @@ import {
   useParams,
 } from 'react-router-dom';
 
+import Alert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
+import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 
 import MultiRulesFound from '@/components/bugs/multi_rules_found/multi_rules_found';
@@ -31,8 +34,11 @@ import {
   LookupBugRequest,
   parseRuleName,
 } from '@/services/rules';
-import { linkToRule } from '@/tools/urlHandling/links';
 import { prpcRetrier } from '@/services/shared_models';
+import {
+  linkToRule,
+  loginLink,
+} from '@/tools/urlHandling/links';
 
 const BugPage = () => {
   const { bugTracker, id } = useParams();
@@ -104,7 +110,7 @@ const BugPage = () => {
         {
           error && (
             <LoadErrorAlert
-              entityName="bug"
+              entityName="rule"
               error={error}
             />
           )
@@ -121,11 +127,23 @@ const BugPage = () => {
                   />
                 ) : (
                   <Grid item xs={12}>
-                    <ErrorAlert
-                      errorTitle="Rule not found"
-                      errorText={`No rule found matching the specified bug (${bugSystem}:${bugId}).`}
-                      showError
-                    />
+                    <Alert
+                      severity="error"
+                      sx={{ mb: 2 }}>
+                      <AlertTitle>Failed to load rule</AlertTitle>
+                      {
+                          window.isAnonymous ? (
+                            // Because of the design of the RPC, it cannot tell us if there are
+                            // rules we do not have access to. If the user is not logged in,
+                            // assume a rule exists and prompt the user to log in.
+                            <>
+                              Please <Link data-testid="error_login_link" href={loginLink(location.pathname + location.search + location.hash)}>log in</Link> to view this information.
+                            </>
+                          ) : (
+                            `No rule found matching the specified bug (${bugSystem}:${bugId}), or you do not have permission to view it.`
+                          )
+                      }
+                    </Alert>
                   </Grid>
                 )
               }
