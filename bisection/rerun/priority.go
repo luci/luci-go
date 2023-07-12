@@ -30,8 +30,7 @@ const (
 	PriorityCulpritVerificationHighConfidence   = 100
 	PriorityCulpritVerificationMediumConfidence = 120
 	PriorityCulpritVerificationLowConfidence    = 140
-	// TODO(nqmtuan): Revert this back to 130 after nthsection is working
-	PriorityNthSection = 250
+	PriorityNthSection                          = 130
 
 	// Offset priority
 	PriorityTreeClosureOffset                    = -70
