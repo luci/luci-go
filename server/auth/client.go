@@ -352,10 +352,10 @@ func GetRPCTransport(ctx context.Context, kind RPCAuthorityKind, opts ...RPCOpti
 		),
 		// Further tweak OpenTelemetry tracing wrapper.
 		otelhttp.WithSpanNameFormatter(func(op string, r *http.Request) string {
-			return "HTTP:" + r.URL.Path
+			return r.URL.Path
 		}),
 		otelhttp.WithClientTrace(func(ctx context.Context) *httptrace.ClientTrace {
-			return otelhttptrace.NewClientTrace(ctx)
+			return otelhttptrace.NewClientTrace(ctx, otelhttptrace.WithoutSubSpans())
 		}),
 	)
 	if options.kind == NoAuth {
