@@ -194,6 +194,7 @@ import (
 	"google.golang.org/api/option"
 	codepb "google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
@@ -202,9 +203,12 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	otelcodes "go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.20.0"
+	"go.opentelemetry.io/otel/semconv/v1.20.0/httpconv"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"go.chromium.org/luci/common/clock"
@@ -771,6 +775,21 @@ func (o *Options) ImageVersion() string {
 		return "unknown"
 	}
 	return o.ContainerImageID[idx+1:]
+}
+
+// ImageName extracts image name from ContainerImageID.
+//
+// This is the part of ContainerImageID before ':' or '@'.
+func (o *Options) ImageName() string {
+	// Recognize "<path>@sha256:<digest>" and "<path>:<tag>".
+	idx := strings.LastIndex(o.ContainerImageID, "@")
+	if idx == -1 {
+		idx = strings.LastIndex(o.ContainerImageID, ":")
+	}
+	if idx == -1 {
+		return "unknown"
+	}
+	return o.ContainerImageID[:idx]
 }
 
 // userAgent derives a user-agent like string identifying the server.
@@ -1756,15 +1775,19 @@ type incomingRequest struct {
 	uri      string               // the relative URI for logs, e.g. "/some/path?a=b"
 	method   string               // HTTP method verb for logs, e.g. "POST"
 	metadata auth.RequestMetadata // headers etc.
+	attrs    []attribute.KeyValue // OpenTelemetry attributes of the request
 	timeout  time.Duration        // the context timeout to set or 0 for unlimited
 }
 
 // requestResult is logged after completion of a request.
 type requestResult struct {
-	statusCode   int            // the HTTP status code to log
-	requestSize  int64          // the request size in bytes if known
-	responseSize int64          // the response size in bytes if known
-	extraFields  logging.Fields // extra fields to log (will be mutated!)
+	statusCode   int                  // the HTTP status code to log
+	requestSize  int64                // the request size in bytes if known
+	responseSize int64                // the response size in bytes if known
+	extraFields  logging.Fields       // extra fields to log (will be mutated!)
+	code         otelcodes.Code       // OpenTelemetry span code
+	status       string               // OpenTelemetry span status message
+	attrs        []attribute.KeyValue // OpenTelemetry attributes of the response
 }
 
 // Partially implement propagation.TextMapCarrier on top of `metadata`.
@@ -1885,12 +1908,8 @@ func (s *Server) startRequest(ctx context.Context, req *incomingRequest) (contex
 			defer cancelCtx()
 		}
 
-		span.SetAttributes(
-			// TODO(vadimsh): Use appropriate semconv aliases.
-			attribute.Int64("/http/status_code", int64(res.statusCode)),
-			attribute.Int64("/http/request/size", res.requestSize),
-			attribute.Int64("/http/response/size", res.responseSize),
-		)
+		span.SetAttributes(res.attrs...)
+		span.SetStatus(res.code, res.status)
 
 		now := clock.Now(ctx)
 		latency := now.Sub(started)
@@ -1977,15 +1996,27 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 		uri:      c.Request.RequestURI,
 		method:   c.Request.Method,
 		metadata: auth.RequestMetadataForHTTP(c.Request),
+		attrs:    httpconv.ServerRequest("", c.Request),
 		timeout:  timeout,
 	})
 
 	// Report the result when done.
 	defer func() {
+		statusCode := rw.Status()
+		requestSize := c.Request.ContentLength
+		responseSize := rw.ResponseSize()
+		code, status := httpconv.ServerStatus(statusCode)
 		done(&requestResult{
-			statusCode:   rw.Status(),
-			requestSize:  c.Request.ContentLength,
-			responseSize: rw.ResponseSize(),
+			statusCode:   statusCode,
+			requestSize:  requestSize,
+			responseSize: responseSize,
+			code:         code,
+			status:       status,
+			attrs: []attribute.KeyValue{
+				semconv.HTTPStatusCode(rw.Status()),
+				semconv.HTTPRequestContentLength(int(requestSize)),
+				semconv.HTTPResponseContentLength(int(responseSize)),
+			},
 		})
 	}()
 
@@ -1997,6 +2028,17 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 // rootInterceptor is a gRPC interceptor that prepares the per-request context.
 func (s *Server) rootInterceptor() grpcutil.UnifiedServerInterceptor {
 	return func(ctx context.Context, fullMethod string, handler func(ctx context.Context) error) (err error) {
+		// Prepare attributes for OpenTelemetry trace.
+		attrs := make([]attribute.KeyValue, 0, 3)
+		attrs = append(attrs, semconv.RPCSystemGRPC)
+		service, method, _ := strings.Cut(strings.TrimLeft(fullMethod, "/"), "/")
+		if service != "" {
+			attrs = append(attrs, semconv.RPCService(service))
+		}
+		if method != "" {
+			attrs = append(attrs, semconv.RPCMethod(method))
+		}
+
 		// Initialize per-request context, open the tracing span, etc.
 		//
 		// Here `ctx` is already derived from s.Context (except it is canceled if
@@ -2006,19 +2048,34 @@ func (s *Server) rootInterceptor() grpcutil.UnifiedServerInterceptor {
 			uri:      fullMethod,
 			method:   "POST",
 			metadata: auth.RequestMetadataForGRPC(ctx),
+			attrs:    attrs,
 		})
 
 		// Report the status code to logging when done.
 		defer func() {
-			code := status.Code(err)
-			statusCode := grpcutil.CodeStatus(code)
+			statuspb := status.Convert(err)
+			code := statuspb.Code()
+			httpStatusCode := grpcutil.CodeStatus(code)
 
 			// Log errors (for parity with pRPC server behavior).
 			switch {
-			case statusCode >= 400 && statusCode < 500:
+			case httpStatusCode >= 400 && httpStatusCode < 500:
 				logging.Warningf(ctx, "%s", err)
-			case statusCode >= 500:
+			case httpStatusCode >= 500:
 				logging.Errorf(ctx, "%s", err)
+			}
+
+			// Derive OpenTelemetry span status. This logic is taken from otelgrpc.
+			// Why this specific set of codes is a mystery.
+			otelCode, otelStatus := otelcodes.Unset, ""
+			if code == codes.Unknown ||
+				code == codes.DeadlineExceeded ||
+				code == codes.Unimplemented ||
+				code == codes.Internal ||
+				code == codes.Unavailable ||
+				code == codes.DataLoss {
+				otelCode = otelcodes.Error
+				otelStatus = statuspb.Message()
 			}
 
 			// Report canonical GRPC code as a log entry field for filtering by it.
@@ -2028,8 +2085,13 @@ func (s *Server) rootInterceptor() grpcutil.UnifiedServerInterceptor {
 			}
 
 			done(&requestResult{
-				statusCode:  statusCode, // this is an approximation
+				statusCode:  httpStatusCode, // this is an approximation
 				extraFields: logging.Fields{"code": canonical},
+				code:        otelCode,
+				status:      otelStatus,
+				attrs: []attribute.KeyValue{
+					semconv.RPCGRPCStatusCodeKey.Int(int(code)),
+				},
 			})
 		}()
 
@@ -2492,12 +2554,12 @@ func (s *Server) otelResource(ctx context.Context) (*resource.Resource, error) {
 		ctx,
 		resource.WithTelemetrySDK(),
 		resource.WithDetectors(gcp.NewDetector()),
+		resource.WithSchemaURL(semconv.SchemaURL),
 		resource.WithAttributes(
-			// TODO(vadimsh): Use appropriate semconv aliases.
-			attribute.String("cr.dev/image", s.Options.ContainerImageID),
-			attribute.String("cr.dev/service", s.Options.TsMonServiceName),
-			attribute.String("cr.dev/job", s.Options.TsMonJobName),
-			attribute.String("cr.dev/host", s.Options.Hostname),
+			semconv.ServiceName(fmt.Sprintf("%s/%s", s.Options.TsMonServiceName, s.Options.TsMonJobName)),
+			semconv.ServiceInstanceID(s.Options.Hostname),
+			semconv.ContainerImageName(s.Options.ImageName()),
+			semconv.ContainerImageTag(s.Options.ImageVersion()),
 		),
 	)
 }
@@ -2885,6 +2947,10 @@ func (s *Server) initWarmup() error {
 //
 // Reuses the existing trace (if specified in the request headers) or starts
 // a new one.
+//
+// TODO(vadimsh): Figure out how to reuse otelhttp middleware and otelgrpc
+// server interceptors. This will require offloading opening and closing of
+// the root span to OpenTelemetry code.
 func (s *Server) startRequestSpan(ctx context.Context, req *incomingRequest, skipSampling bool) (context.Context, oteltrace.Span) {
 	// Opt-in the request context tree into sampling. See otelSampler() for where
 	// this is checked and why this is necessary.
@@ -2902,13 +2968,7 @@ func (s *Server) startRequestSpan(ctx context.Context, req *incomingRequest, ski
 
 	ctx, span := tracer.Start(s.propagator.Extract(ctx, req), name,
 		oteltrace.WithSpanKind(oteltrace.SpanKindServer),
-		oteltrace.WithAttributes(
-			// TODO(vadimsh): Use appropriate semconv aliases.
-			attribute.String("/http/host", req.metadata.Host()),
-			attribute.String("/http/method", req.method),
-			attribute.String("/http/path", path),
-			attribute.String("/http/protocol", req.protocol),
-		),
+		oteltrace.WithAttributes(req.attrs...),
 	)
 
 	// A span can have an empty trace context if the tracing is completely
