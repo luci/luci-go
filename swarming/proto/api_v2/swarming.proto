@@ -261,7 +261,7 @@ message FileContent {
 // https://github.com/bazelbuild/remote-apis/blob/77cfb44a88577a7ade5dd2400425f6d50469ec6d/build/bazel/remote/execution/v2/remote_execution.proto#L753-L791
 message Digest {
   string hash = 1;
-  int32 size_bytes = 2;
+  int64 size_bytes = 2;
 }
 
 message CASReference {
