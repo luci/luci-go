@@ -106,10 +106,6 @@ func mustWrite(name string, buf []byte) {
 	}
 }
 
-type analyticsSettings struct {
-	AnalyticsID string `json:"analytics_id"`
-}
-
 func TestPages(t *testing.T) {
 	fixZeroDurationRE := regexp.MustCompile(`(Running for:|waiting) 0s?`)
 	fixZeroDuration := func(text string) string {
@@ -123,8 +119,6 @@ func TestPages(t *testing.T) {
 		c, _ = testclock.UseTime(c, now)
 		c = auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
 		c = settings.Use(c, settings.New(&settings.MemoryStorage{Expiration: time.Second}))
-		err := settings.Set(c, "analytics", &analyticsSettings{"UA-12345-01"}, "", "")
-		So(err, ShouldBeNil)
 		c = templates.Use(c, getTemplateBundle("appengine/templates", "testVersionID", false), &templates.Extra{Request: r})
 		for _, p := range allPackages {
 			Convey(fmt.Sprintf("Testing handler %q", p.DisplayName), func() {

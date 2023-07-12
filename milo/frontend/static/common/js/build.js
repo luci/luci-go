@@ -20,22 +20,6 @@
 $(document).ready(function() {
   'use strict';
 
-  function trackEvent(category, action, label) {
-    ga('send', {
-      hitType: 'event',
-      eventCategory: category,
-      eventAction: action,
-      eventLabel: label,
-      transport: 'beacon',
-    });
-  }
-
-  if (!window.location.href.includes('javascript:')) {
-    trackEvent('Old Build Page', 'Page Visited', window.location.href);
-    const project = /\/p\/([^\/]+)\//.exec(window.location.href)?.[1] || 'unknown';
-    trackEvent('Project Build Page', 'Visited Legacy', project)
-  }
-
   $('li.substeps').each(function() {
     const substep = $(this);
     $(this).find('>div.result').click(function() {
@@ -73,15 +57,9 @@ $(document).ready(function() {
   const newBuildPageLink = $('#new-build-page-link');
   newBuildPageLink.on('click', (e) => {
     if (e.metaKey || e.shiftKey || e.ctrlKey || e.altKey) {
-      trackEvent(
-        'New Build Page',
-        'Switch Version Temporarily',
-        window.location.href,
-      );
       return true;
     }
 
-    trackEvent('New Build Page', 'Switch Version', window.location.href);
     setCookie('showNewBuildPage', true);
 
     if ('serviceWorker' in navigator) {
