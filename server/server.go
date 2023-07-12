@@ -194,21 +194,18 @@ import (
 	"google.golang.org/api/option"
 	codepb "google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	gcppropagator "github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator"
 	"go.opentelemetry.io/contrib/detectors/gcp"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	otelcodes "go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
-	"go.opentelemetry.io/otel/semconv/v1.17.0/httpconv"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"go.chromium.org/luci/common/clock"
@@ -288,12 +285,8 @@ var cloudRegionFromGAERegion = map[string]string{
 	"s": "us-central1",
 }
 
-var (
-	// Tracer used by spans opened by the LUCI server framework.
-	tracer = otel.Tracer("go.chromium.org/luci/server")
-	// Context key present in contexts that handle incoming requests.
-	sampledContext = "go.chromium.org/luci/server.sampledContext"
-)
+// Context key of *incomingRequest{...}, see httpRoot(...) and grpcRoot(...).
+var incomingRequestKey = "go.chromium.org/luci/server.incomingRequest"
 
 // Main initializes the server and runs its serving loop until SIGTERM.
 //
@@ -1263,8 +1256,12 @@ func (s *Server) newRouter(opts PortOptions) *router.Router {
 		s.Fatal(errors.Reason("the server has already been started").Err())
 	}
 
+	// This is a chain of router.Middleware. It is preceded by a chain of raw
+	// net/http middlewares (see wrapHTTPHandler):
+	//   * s.httpRoot: initializes *incomingRequest in the context.
+	//   * otelhttp.NewHandler: opens a tracing span.
+	//   * s.httpDispatch: finishes the context initialization.
 	mw := router.NewMiddlewareChain(
-		s.rootMiddleware,            // prepares the per-request context
 		middleware.WithPanicCatcher, // transforms panics into HTTP 500
 	)
 	if s.tsmon != nil && !opts.DisableMetrics {
@@ -1527,17 +1524,25 @@ func (s *Server) Serve() error {
 	}, s.streamInterceptors...)
 
 	// Finish setting the pRPC server. It supports only unary RPCs. The root
-	// request context is created in the HTTP land inside rootMiddleware().
+	// request context is created in the HTTP land using base HTTP middlewares.
 	s.prpc.UnaryServerInterceptor = grpcutil.ChainUnaryServerInterceptors(unaryInterceptors...)
 
-	// Finish setting the gRPC server, if enabled. The root request context is
-	// created inside rootInterceptor().
+	// Finish setting the gRPC server, if enabled.
 	if s.grpcPort != nil {
-		rootInterceptor := s.rootInterceptor()
+		grpcRoot := s.grpcRoot()
+		grpcDispatch := s.grpcDispatch()
 		s.grpcPort.addServerOptions(
-			grpc.ChainUnaryInterceptor(rootInterceptor.Unary()),
+			grpc.ChainUnaryInterceptor(
+				grpcRoot.Unary(),
+				otelgrpc.UnaryServerInterceptor(),
+				grpcDispatch.Unary(),
+			),
 			grpc.ChainUnaryInterceptor(unaryInterceptors...),
-			grpc.ChainStreamInterceptor(rootInterceptor.Stream()),
+			grpc.ChainStreamInterceptor(
+				grpcRoot.Stream(),
+				otelgrpc.StreamServerInterceptor(),
+				grpcDispatch.Stream(),
+			),
 			grpc.ChainStreamInterceptor(streamInterceptors...),
 		)
 	}
@@ -1771,86 +1776,230 @@ func (s *Server) genUniqueID(l int) string {
 //
 // It is either an HTTP or a gRPC request.
 type incomingRequest struct {
-	protocol string               // for logs, e.g. "http", "https", "grpc"
-	uri      string               // the relative URI for logs, e.g. "/some/path?a=b"
-	method   string               // HTTP method verb for logs, e.g. "POST"
-	metadata auth.RequestMetadata // headers etc.
-	attrs    []attribute.KeyValue // OpenTelemetry attributes of the request
-	timeout  time.Duration        // the context timeout to set or 0 for unlimited
+	url         string               // the full URL for logs
+	method      string               // HTTP method verb for logs, e.g. "POST"
+	metadata    auth.RequestMetadata // headers etc.
+	healthCheck bool                 // true if this is a health check request
 }
 
 // requestResult is logged after completion of a request.
 type requestResult struct {
-	statusCode   int                  // the HTTP status code to log
-	requestSize  int64                // the request size in bytes if known
-	responseSize int64                // the response size in bytes if known
-	extraFields  logging.Fields       // extra fields to log (will be mutated!)
-	code         otelcodes.Code       // OpenTelemetry span code
-	status       string               // OpenTelemetry span status message
-	attrs        []attribute.KeyValue // OpenTelemetry attributes of the response
+	statusCode   int            // the HTTP status code to log
+	requestSize  int64          // the request size in bytes if known
+	responseSize int64          // the response size in bytes if known
+	extraFields  logging.Fields // extra fields to log (will be mutated!)
 }
 
-// Partially implement propagation.TextMapCarrier on top of `metadata`.
-
-// Get returns the value associated with the passed key.
-func (r *incomingRequest) Get(key string) string {
-	return r.metadata.Header(key)
+// wrapHTTPHandler wraps port's router into net/http middlewares.
+//
+// TODO(vadimsh): Get rid of router.Middleware and move this to newRouter(...).
+// Since introduction of http.Request.Context() there's no reason for
+// router.Middleware to exist anymore.
+func (s *Server) wrapHTTPHandler(next http.Handler) http.Handler {
+	return s.httpRoot(
+		otelhttp.NewHandler(
+			s.httpDispatch(next),
+			"",
+			otelhttp.WithMessageEvents(otelhttp.ReadEvents, otelhttp.WriteEvents),
+			otelhttp.WithSpanNameFormatter(func(_ string, r *http.Request) string {
+				return r.URL.Path
+			}),
+		),
+	)
 }
 
-// Set stores the key-value pair.
-func (r *incomingRequest) Set(key string, value string) {
-	panic("unexpected Set")
+// httpRoot is the entry point for non-gRPC HTTP requests.
+//
+// It is an http/net middleware for interoperability with other existing
+// http/net middlewares (currently only OpenTelemetry otelhttp middleware).
+//
+// Its job is to initialize *incomingRequest in the context which is then
+// examined by other middlewares (and the tracing sampler), in particular in
+// httpDispatch.
+//
+// See grpcRoot(...) for a gRPC counterpart.
+func (s *Server) httpRoot(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		// This context is derived from s.Context (see Serve) and has various server
+		// systems injected into it already. Its only difference from s.Context is
+		// that http.Server cancels it when the client disconnects, which we want.
+		ctx := r.Context()
+
+		// Apply per-request HTTP timeout, if any.
+		timeout := s.Options.DefaultRequestTimeout
+		if strings.HasPrefix(r.URL.Path, "/internal/") {
+			timeout = s.Options.InternalRequestTimeout
+		}
+		if timeout != 0 {
+			var cancelCtx context.CancelFunc
+			ctx, cancelCtx = context.WithTimeout(ctx, timeout)
+			defer cancelCtx()
+		}
+
+		// Reconstruct the original URL for logging.
+		protocol := r.Header.Get("X-Forwarded-Proto")
+		if protocol != "https" {
+			protocol = "http"
+		}
+		url := fmt.Sprintf("%s://%s%s", protocol, r.Host, r.RequestURI)
+
+		// incomingRequest is used by middlewares that work with both HTTP and gRPC
+		// requests, in particular it is used by startRequest(...).
+		next.ServeHTTP(rw, r.WithContext(context.WithValue(ctx, &incomingRequestKey, &incomingRequest{
+			url:         url,
+			method:      r.Method,
+			metadata:    auth.RequestMetadataForHTTP(r),
+			healthCheck: r.RequestURI == healthEndpoint && isHealthCheckerUA(r.UserAgent()),
+		})))
+	})
 }
 
-// Keys lists the keys stored in this carrier.
-func (r *incomingRequest) Keys() []string {
-	panic("unexpected Keys")
+// httpDispatch finishes HTTP request context initialization.
+//
+// Its primary purpose it so setup logging, but it also does some other context
+// touches. See startRequest(...) where the bulk of work is happening.
+//
+// The next stop is the router.Middleware chain as registered in newRouter(...)
+// and by the user code.
+//
+// See grpcDispatch(...) for a gRPC counterpart.
+func (s *Server) httpDispatch(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		// Track how many response bytes are sent and what status is set, for logs.
+		trackingRW := iotools.NewResponseWriter(rw)
+
+		// Initialize per-request context (logging, GAE tickets, etc).
+		ctx, done := s.startRequest(r.Context())
+
+		// Log the result when done.
+		defer func() {
+			done(&requestResult{
+				statusCode:   trackingRW.Status(),
+				requestSize:  r.ContentLength,
+				responseSize: trackingRW.ResponseSize(),
+			})
+		}()
+
+		next.ServeHTTP(trackingRW, r.WithContext(ctx))
+	})
 }
 
-// startRequest prepares the per-request context.
+// grpcRoot is the entry point for gRPC requests.
+//
+// Its job is to initialize *incomingRequest in the context which is then
+// examined by other middlewares (and the tracing sampler), in particular in
+// grpcDispatch.
+//
+// See httpRoot(...) for a HTTP counterpart.
+func (s *Server) grpcRoot() grpcutil.UnifiedServerInterceptor {
+	return func(ctx context.Context, fullMethod string, handler func(ctx context.Context) error) (err error) {
+		// incomingRequest is used by middlewares that work with both HTTP and gRPC
+		// requests, in particular it is used by startRequest(...).
+		//
+		// Note that here `ctx` is already derived from s.Context (except it is
+		// canceled if the client disconnects). See grpcPort{} implementation.
+		md := auth.RequestMetadataForGRPC(ctx)
+		return handler(context.WithValue(ctx, &incomingRequestKey, &incomingRequest{
+			url:         fmt.Sprintf("grpc://%s%s", md.Host(), fullMethod),
+			method:      "POST",
+			metadata:    md,
+			healthCheck: strings.HasPrefix(fullMethod, "/grpc.health.") && isHealthCheckerUA(md.Header("User-Agent")),
+		}))
+	}
+}
+
+// grpcDispatch finishes gRPC request context initialization.
+//
+// Its primary purpose it so setup logging, but it also does some other context
+// touches. See startRequest(...) where the bulk of work is happening.
+//
+// The next stop is the gRPC middleware chain as registered via server's API.
+//
+// See httpDispatch(...) for a HTTP counterpart.
+func (s *Server) grpcDispatch() grpcutil.UnifiedServerInterceptor {
+	return func(ctx context.Context, fullMethod string, handler func(ctx context.Context) error) (err error) {
+		// Initialize per-request context (logging, GAE tickets, etc).
+		ctx, done := s.startRequest(ctx)
+
+		// Log the result when done.
+		defer func() {
+			code := status.Code(err)
+			httpStatusCode := grpcutil.CodeStatus(code)
+
+			// Log errors (for parity with pRPC server behavior).
+			switch {
+			case httpStatusCode >= 400 && httpStatusCode < 500:
+				logging.Warningf(ctx, "%s", err)
+			case httpStatusCode >= 500:
+				logging.Errorf(ctx, "%s", err)
+			}
+
+			// Report canonical GRPC code as a log entry field for filtering by it.
+			canonical, ok := codepb.Code_name[int32(code)]
+			if !ok {
+				canonical = fmt.Sprintf("%d", int64(code))
+			}
+
+			done(&requestResult{
+				statusCode:  httpStatusCode, // this is an approximation
+				extraFields: logging.Fields{"code": canonical},
+			})
+		}()
+
+		return handler(ctx)
+	}
+}
+
+// startRequest finishes preparing the per-request context.
 //
 // It returns a callback that must be called after finishing processing this
 // request.
 //
-// The incoming context is assumed to be derived from the server root context.
-func (s *Server) startRequest(ctx context.Context, req *incomingRequest) (context.Context, func(*requestResult)) {
+// The incoming context is assumed to be derived by either httpRoot(...) or
+// grpcRoot(...) and have *incomingRequest inside.
+func (s *Server) startRequest(ctx context.Context) (context.Context, func(*requestResult)) {
+	// The value *must* be there. Let it panic if it is not.
+	req := ctx.Value(&incomingRequestKey).(*incomingRequest)
+
 	// If running on GAE, initialize the per-request API tickets needed to make
 	// RPCs to the GAE service bridge.
 	if s.Options.Serverless == module.GAE {
 		ctx = gae.WithTickets(ctx, gae.RequestTickets(req.metadata))
 	}
 
-	// Wrap the request in a tracing span. The span is closed in the request
-	// completion callback below (where we know the response status code). If
-	// this is a health check, open the span nonetheless, but do not record it
-	// (health checks are spammy and not interesting). This way the code is
-	// simpler ('span' is always non-nil and has TraceID). Additionally if some of
-	// health check code opens a span of its own, it will be ignored (as a child
-	// of not-recorded span).
-	healthCheck := isHealthCheckRequest(req)
-	ctx, span := s.startRequestSpan(ctx, req, healthCheck)
-
 	// This is used in waitUntilNotServing.
 	started := clock.Now(ctx)
-	if !healthCheck {
+	if !req.healthCheck {
 		s.lastReqTime.Store(started)
 	}
 
-	// Associate all logs with one another by using the same Trace ID. Use the
-	// full ID from the incoming trace if we can derive it. This is important to
-	// groups logs generated by us with logs generated by GCP (which uses the full
-	// trace ID) when running in Cloud. Outside of Cloud it doesn't really matter
-	// what Trace ID is used as long as all log entries use the same one. Note
-	// that startRequestSpan always opens a trace context (perhaps a non-recording
-	// one if there's no tracing backend), so we always have a valid trace ID
-	// here.
+	// If the tracing is completely disabled we'll have an empty span context.
+	// But we need a trace ID in the context anyway for correlating logs (see
+	// below). Open a noop non-recording span with random generated trace ID.
+	span := oteltrace.SpanFromContext(ctx)
 	spanCtx := span.SpanContext()
+	if !spanCtx.HasTraceID() {
+		var traceID oteltrace.TraceID
+		s.genUniqueBlob(traceID[:])
+		spanCtx = oteltrace.NewSpanContext(oteltrace.SpanContextConfig{
+			TraceID: traceID,
+		})
+		ctx = oteltrace.ContextWithSpanContext(ctx, spanCtx)
+	}
+
+	// Associate all logs with one another by using the same trace ID, which also
+	// matches the trace ID extracted by the propagator from incoming headers.
+	// Make sure to use the full trace ID format that includes the project name.
+	// This is important to group logs generated by us with logs generated by
+	// the GCP (which uses the full trace ID) when running in Cloud. Outside of
+	// Cloud it doesn't really matter what trace ID is used as long as all log
+	// entries use the same one.
 	traceID := spanCtx.TraceID().String()
 	if s.Options.CloudProject != "" {
 		traceID = fmt.Sprintf("projects/%s/traces/%s", s.Options.CloudProject, traceID)
 	}
 
-	// SpanID can be missing there's no actual tracing. This is fine.
+	// SpanID can be missing if there's no actual tracing. This is fine.
 	spanID := ""
 	if spanCtx.HasSpanID() {
 		spanID = spanCtx.SpanID().String()
@@ -1895,26 +2044,14 @@ func (s *Server) startRequest(ctx context.Context, req *incomingRequest) (contex
 	}
 
 	// Do final context touches.
-	var cancelCtx context.CancelFunc
-	if req.timeout != 0 {
-		ctx, cancelCtx = context.WithTimeout(ctx, req.timeout)
-	}
 	ctx = caching.WithRequestCache(ctx)
 
 	// This will be called once the request is fully processed.
 	return ctx, func(res *requestResult) {
-		defer span.End()
-		if cancelCtx != nil {
-			defer cancelCtx()
-		}
-
-		span.SetAttributes(res.attrs...)
-		span.SetStatus(res.code, res.status)
-
 		now := clock.Now(ctx)
 		latency := now.Sub(started)
 
-		if healthCheck {
+		if req.healthCheck {
 			// Do not log fast health check calls AT ALL, they just spam logs.
 			if latency < healthTimeLogThreshold {
 				return
@@ -1955,7 +2092,7 @@ func (s *Server) startRequest(ctx context.Context, req *incomingRequest) (contex
 			Fields:       extraFields,
 			RequestInfo: &sdlogger.RequestInfo{
 				Method:       req.method,
-				URL:          fmt.Sprintf("%s://%s%s", req.protocol, req.metadata.Host(), req.uri),
+				URL:          req.url,
 				Status:       res.statusCode,
 				RequestSize:  fmt.Sprintf("%d", res.requestSize),
 				ResponseSize: fmt.Sprintf("%d", res.responseSize),
@@ -1964,138 +2101,6 @@ func (s *Server) startRequest(ctx context.Context, req *incomingRequest) (contex
 				Latency:      fmt.Sprintf("%fs", latency.Seconds()),
 			},
 		})
-	}
-}
-
-// rootMiddleware is an HTTP middleware that prepares the per-request context.
-func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
-	// Log the protocol the end user is using. It is forwarded by proxies.
-	protocol := c.Request.Header.Get("X-Forwarded-Proto")
-	if protocol != "https" {
-		protocol = "http"
-	}
-
-	// Track how many response bytes are sent and what status is set.
-	rw := iotools.NewResponseWriter(c.Writer)
-	c.Writer = rw
-
-	// Apply per-request timeout.
-	timeout := s.Options.DefaultRequestTimeout
-	if strings.HasPrefix(c.Request.URL.Path, "/internal/") {
-		timeout = s.Options.InternalRequestTimeout
-	}
-
-	// Initialize per-request context, open the tracing span, etc.
-	//
-	// Note c.Request.Context() is derived from s.Context (see Serve) and has
-	// various server systems injected into it already. Its only difference from
-	// s.Context is that http.Server cancels it when the client disconnects, which
-	// we want.
-	ctx, done := s.startRequest(c.Request.Context(), &incomingRequest{
-		protocol: protocol,
-		uri:      c.Request.RequestURI,
-		method:   c.Request.Method,
-		metadata: auth.RequestMetadataForHTTP(c.Request),
-		attrs:    httpconv.ServerRequest("", c.Request),
-		timeout:  timeout,
-	})
-
-	// Report the result when done.
-	defer func() {
-		statusCode := rw.Status()
-		requestSize := c.Request.ContentLength
-		responseSize := rw.ResponseSize()
-		code, status := httpconv.ServerStatus(statusCode)
-		done(&requestResult{
-			statusCode:   statusCode,
-			requestSize:  requestSize,
-			responseSize: responseSize,
-			code:         code,
-			status:       status,
-			attrs: []attribute.KeyValue{
-				semconv.HTTPStatusCode(rw.Status()),
-				semconv.HTTPRequestContentLength(int(requestSize)),
-				semconv.HTTPResponseContentLength(int(responseSize)),
-			},
-		})
-	}()
-
-	// Finish processing the request.
-	c.Request = c.Request.WithContext(ctx)
-	next(c)
-}
-
-// rootInterceptor is a gRPC interceptor that prepares the per-request context.
-func (s *Server) rootInterceptor() grpcutil.UnifiedServerInterceptor {
-	return func(ctx context.Context, fullMethod string, handler func(ctx context.Context) error) (err error) {
-		// Prepare attributes for OpenTelemetry trace.
-		attrs := make([]attribute.KeyValue, 0, 3)
-		attrs = append(attrs, semconv.RPCSystemGRPC)
-		service, method, _ := strings.Cut(strings.TrimLeft(fullMethod, "/"), "/")
-		if service != "" {
-			attrs = append(attrs, semconv.RPCService(service))
-		}
-		if method != "" {
-			attrs = append(attrs, semconv.RPCMethod(method))
-		}
-
-		// Initialize per-request context, open the tracing span, etc.
-		//
-		// Here `ctx` is already derived from s.Context (except it is canceled if
-		// the client disconnects). See grpcPort{} implementation.
-		ctx, done := s.startRequest(ctx, &incomingRequest{
-			protocol: "grpc",
-			uri:      fullMethod,
-			method:   "POST",
-			metadata: auth.RequestMetadataForGRPC(ctx),
-			attrs:    attrs,
-		})
-
-		// Report the status code to logging when done.
-		defer func() {
-			statuspb := status.Convert(err)
-			code := statuspb.Code()
-			httpStatusCode := grpcutil.CodeStatus(code)
-
-			// Log errors (for parity with pRPC server behavior).
-			switch {
-			case httpStatusCode >= 400 && httpStatusCode < 500:
-				logging.Warningf(ctx, "%s", err)
-			case httpStatusCode >= 500:
-				logging.Errorf(ctx, "%s", err)
-			}
-
-			// Derive OpenTelemetry span status. This logic is taken from otelgrpc.
-			// Why this specific set of codes is a mystery.
-			otelCode, otelStatus := otelcodes.Unset, ""
-			if code == codes.Unknown ||
-				code == codes.DeadlineExceeded ||
-				code == codes.Unimplemented ||
-				code == codes.Internal ||
-				code == codes.Unavailable ||
-				code == codes.DataLoss {
-				otelCode = otelcodes.Error
-				otelStatus = statuspb.Message()
-			}
-
-			// Report canonical GRPC code as a log entry field for filtering by it.
-			canonical, ok := codepb.Code_name[int32(code)]
-			if !ok {
-				canonical = fmt.Sprintf("%d", int64(code))
-			}
-
-			done(&requestResult{
-				statusCode:  httpStatusCode, // this is an approximation
-				extraFields: logging.Fields{"code": canonical},
-				code:        otelCode,
-				status:      otelStatus,
-				attrs: []attribute.KeyValue{
-					semconv.RPCGRPCStatusCodeKey.Int(int(code)),
-				},
-			})
-		}()
-
-		return handler(ctx)
 	}
 }
 
@@ -2623,15 +2628,17 @@ func (s *Server) otelSampler(ctx context.Context) (trace.Sampler, error) {
 		return nil, errors.Annotate(err, "bad -trace-sampling").Err()
 	}
 
-	// Sample only if the context has sampling explicitly enabled. This is needed
+	// Sample only if the context is an incoming request context. This is needed
 	// to avoid various background goroutines spamming with top-level spans. This
 	// usually happens if a library is oblivious of tracing, but uses an
 	// instrumented HTTP or gRPC client it got from outside, and the passes
 	// context.Background() (or some unrelated context) to it. The end result is
 	// lots and lots of non-informative disconnected top-level spans.
+	//
+	// Also skip sampling health check requests, they end up being spammy as well.
 	sampler = internal.GateSampler(sampler, func(ctx context.Context) bool {
-		// See startRequestSpan(...) for where this is set.
-		return ctx.Value(&sampledContext) != nil
+		req, _ := ctx.Value(&incomingRequestKey).(*incomingRequest)
+		return req != nil && !req.healthCheck
 	})
 
 	// Inherit the sampling decision from a parent span. Note this totally ignores
@@ -2655,9 +2662,9 @@ func (s *Server) otelSpanExporter(ctx context.Context) (trace.SpanExporter, erro
 func (s *Server) initTracing() error {
 	// Initialize a transformer that knows how to extract span info from the
 	// context and serialize it as a bunch of headers and vice-versa. It is
-	// invoked by startRequestSpan and when creating instrumenting HTTP clients.
-	// Recognize X-Cloud-Trace-Context for compatibility with traces created by
-	// GCLB.
+	// invoked by otelhttp and otelgrpc middleware and when creating instrumented
+	// HTTP clients. Recognize X-Cloud-Trace-Context for compatibility with traces
+	// created by GCLB.
 	//
 	// It is used to parse incoming headers even when tracing is disabled, so
 	// initialize it unconditionally, just don't install as a global propagator.
@@ -2942,49 +2949,6 @@ func (s *Server) initWarmup() error {
 	return nil
 }
 
-// startRequestSpan opens a new per-request trace span.
-//
-// Reuses the existing trace (if specified in the request headers) or starts
-// a new one.
-//
-// TODO(vadimsh): Figure out how to reuse otelhttp middleware and otelgrpc
-// server interceptors. This will require offloading opening and closing of
-// the root span to OpenTelemetry code.
-func (s *Server) startRequestSpan(ctx context.Context, req *incomingRequest, skipSampling bool) (context.Context, oteltrace.Span) {
-	// Opt-in the request context tree into sampling. See otelSampler() for where
-	// this is checked and why this is necessary.
-	if !skipSampling {
-		ctx = context.WithValue(ctx, &sampledContext, true)
-	}
-
-	// Span name would be e.g. "HTTP:/some/path" or "GRPC:/Service/Method".
-	path, _, _ := strings.Cut(req.uri, "?")
-	protocol := req.protocol
-	if protocol == "https" {
-		protocol = "http" // don't care about the difference in this case
-	}
-	name := strings.ToUpper(protocol) + ":" + path
-
-	ctx, span := tracer.Start(s.propagator.Extract(ctx, req), name,
-		oteltrace.WithSpanKind(oteltrace.SpanKindServer),
-		oteltrace.WithAttributes(req.attrs...),
-	)
-
-	// A span can have an empty trace context if the tracing is completely
-	// disabled. But we need a trace ID in the context anyway for correlating
-	// logs. Open a noop non-recording span with random generated trace ID.
-	if !span.SpanContext().HasTraceID() {
-		var traceID oteltrace.TraceID
-		s.genUniqueBlob(traceID[:])
-		ctx = oteltrace.ContextWithSpanContext(ctx, oteltrace.NewSpanContext(oteltrace.SpanContextConfig{
-			TraceID: traceID,
-		}))
-		return ctx, oteltrace.SpanFromContext(ctx)
-	}
-
-	return ctx, span
-}
-
 // signerImpl implements signing.Signer on top of *Server.
 type signerImpl struct {
 	srv       *Server
@@ -3124,20 +3088,16 @@ func endUserIP(r auth.RequestMetadata) string {
 	return ip
 }
 
-// isHealthCheckRequest is true if the request appears to be coming from
-// a known health check probe.
-func isHealthCheckRequest(r *incomingRequest) bool {
-	grpcCheck := r.protocol == "gprc" && strings.HasPrefix(r.uri, "/grpc.health.")
-	httpCheck := r.uri == healthEndpoint
-	if grpcCheck || httpCheck {
-		switch ua := r.metadata.Header("User-Agent"); {
-		case strings.HasPrefix(ua, "kube-probe/"): // Kubernetes
-			return true
-		case strings.HasPrefix(ua, "GoogleHC"): // Cloud Load Balancer
-			return true
-		}
+// isHealthCheckerUA returns true for known user agents of health probers.
+func isHealthCheckerUA(ua string) bool {
+	switch {
+	case strings.HasPrefix(ua, "kube-probe/"): // Kubernetes
+		return true
+	case strings.HasPrefix(ua, "GoogleHC"): // Cloud Load Balancer
+		return true
+	default:
+		return false
 	}
-	return false
 }
 
 // resolveDependencies sorts modules based on their dependencies.

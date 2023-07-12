@@ -163,14 +163,15 @@ func (p *Port) initHandlerLocked() http.Handler {
 	fallback := p.Routes
 
 	if len(mapping) == 0 {
-		return fallback // no need for an extra layer of per-host routing at all
+		// No need for an extra layer of per-host routing at all.
+		return p.parent.wrapHTTPHandler(fallback)
 	}
 
-	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+	return p.parent.wrapHTTPHandler(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		if router, ok := mapping[r.Host]; ok {
 			router.ServeHTTP(rw, r)
 		} else {
 			fallback.ServeHTTP(rw, r)
 		}
-	})
+	}))
 }
