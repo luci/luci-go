@@ -33,11 +33,13 @@ import (
 	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/client/internal/common"
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	swarmingv1 "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/prpc"
+	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 const (
@@ -63,7 +65,7 @@ const (
 type TriggerResults struct {
 	// Tasks is a list of successfully triggered tasks represented as
 	// TriggerResult values.
-	Tasks []*swarming.SwarmingRpcsTaskRequestMetadata `json:"tasks"`
+	Tasks []*swarmingv1.SwarmingRpcsTaskRequestMetadata `json:"tasks"`
 }
 
 // The swarming server has an internal 60-second deadline for responding to
@@ -76,27 +78,28 @@ const swarmingAPISuffix = "/_ah/api/swarming/v1/"
 // swarmingService is an interface intended to stub out the swarming API
 // bindings for testing.
 type swarmingService interface {
-	NewTask(ctx context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error)
-	CountTasks(ctx context.Context, start float64, state string, tags ...string) (*swarming.SwarmingRpcsTasksCount, error)
-	ListTasks(ctx context.Context, limit int64, start float64, state string, tags []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsTaskResult, error)
-	CancelTask(ctx context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error)
-	TaskRequest(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error)
-	TaskResult(ctx context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error)
-	TaskOutput(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error)
-	FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error)
-	CountBots(ctx context.Context, dimensions ...string) (*swarming.SwarmingRpcsBotsCount, error)
-	ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error)
-	DeleteBot(ctx context.Context, botID string) (*swarming.SwarmingRpcsDeletedResponse, error)
-	TerminateBot(ctx context.Context, botID string) (*swarming.SwarmingRpcsTerminateResponse, error)
-	ListBotTasks(ctx context.Context, botID string, limit int64, start float64, state string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsTaskResult, error)
+	NewTask(ctx context.Context, req *swarmingv1.SwarmingRpcsNewTaskRequest) (*swarmingv1.SwarmingRpcsTaskRequestMetadata, error)
+	CountTasks(ctx context.Context, start float64, state string, tags ...string) (*swarmingv1.SwarmingRpcsTasksCount, error)
+	ListTasks(ctx context.Context, limit int64, start float64, state string, tags []string, fields []googleapi.Field) ([]*swarmingv1.SwarmingRpcsTaskResult, error)
+	CancelTask(ctx context.Context, taskID string, req *swarmingv1.SwarmingRpcsTaskCancelRequest) (*swarmingv1.SwarmingRpcsCancelResponse, error)
+	TaskRequest(ctx context.Context, taskID string) (*swarmingv1.SwarmingRpcsTaskRequest, error)
+	TaskResult(ctx context.Context, taskID string, perf bool) (*swarmingv1.SwarmingRpcsTaskResult, error)
+	TaskOutput(ctx context.Context, taskID string) (*swarmingv1.SwarmingRpcsTaskOutput, error)
+	FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarmingv1.SwarmingRpcsCASReference) ([]string, error)
+	CountBots(ctx context.Context, dimensions ...string) (*swarmingv1.SwarmingRpcsBotsCount, error)
+	ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarmingv1.SwarmingRpcsBotInfo, error)
+	DeleteBot(ctx context.Context, botID string) (*swarmingv1.SwarmingRpcsDeletedResponse, error)
+	TerminateBot(ctx context.Context, botID string, reason string) (*swarmingv2.TerminateResponse, error)
+	ListBotTasks(ctx context.Context, botID string, limit int64, start float64, state string, fields []googleapi.Field) ([]*swarmingv1.SwarmingRpcsTaskResult, error)
 }
 
 type swarmingServiceImpl struct {
-	client  *http.Client
-	service *swarming.Service
+	client     *http.Client
+	service    *swarmingv1.Service
+	botsClient swarmingv2.BotsClient
 }
 
-func (s *swarmingServiceImpl) NewTask(ctx context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (res *swarming.SwarmingRpcsTaskRequestMetadata, err error) {
+func (s *swarmingServiceImpl) NewTask(ctx context.Context, req *swarmingv1.SwarmingRpcsNewTaskRequest) (res *swarmingv1.SwarmingRpcsTaskRequestMetadata, err error) {
 	err = retryGoogleRPC(ctx, "NewTask", func() (ierr error) {
 		res, ierr = s.service.Tasks.New(req).Context(ctx).Do()
 		return
@@ -104,7 +107,7 @@ func (s *swarmingServiceImpl) NewTask(ctx context.Context, req *swarming.Swarmin
 	return
 }
 
-func (s *swarmingServiceImpl) CountTasks(ctx context.Context, start float64, state string, tags ...string) (res *swarming.SwarmingRpcsTasksCount, err error) {
+func (s *swarmingServiceImpl) CountTasks(ctx context.Context, start float64, state string, tags ...string) (res *swarmingv1.SwarmingRpcsTasksCount, err error) {
 	err = retryGoogleRPC(ctx, "CountTasks", func() (ierr error) {
 		res, ierr = s.service.Tasks.Count().Context(ctx).Start(start).State(state).Tags(tags...).Do()
 		return
@@ -112,10 +115,10 @@ func (s *swarmingServiceImpl) CountTasks(ctx context.Context, start float64, sta
 	return
 }
 
-func (s *swarmingServiceImpl) ListTasks(ctx context.Context, limit int64, start float64, state string, tags []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsTaskResult, error) {
+func (s *swarmingServiceImpl) ListTasks(ctx context.Context, limit int64, start float64, state string, tags []string, fields []googleapi.Field) ([]*swarmingv1.SwarmingRpcsTaskResult, error) {
 	// Create an empty array so that if serialized to JSON it's an empty list,
 	// not null.
-	tasks := []*swarming.SwarmingRpcsTaskResult{}
+	tasks := []*swarmingv1.SwarmingRpcsTaskResult{}
 	// If no fields are specified, all fields will be returned. If any fields are
 	// specified, ensure the cursor is specified so we can get subsequent pages.
 	if len(fields) > 0 {
@@ -124,7 +127,7 @@ func (s *swarmingServiceImpl) ListTasks(ctx context.Context, limit int64, start 
 	call := s.service.Tasks.List().Context(ctx).Limit(limit).Start(start).State(state).Tags(tags...).Fields(fields...)
 	// Keep calling as long as there's a cursor indicating more tasks to list.
 	for {
-		var res *swarming.SwarmingRpcsTaskList
+		var res *swarmingv1.SwarmingRpcsTaskList
 		err := retryGoogleRPC(ctx, "ListTasks", func() (ierr error) {
 			res, ierr = call.Do()
 			return
@@ -147,7 +150,7 @@ func (s *swarmingServiceImpl) ListTasks(ctx context.Context, limit int64, start 
 	return tasks, nil
 }
 
-func (s *swarmingServiceImpl) CancelTask(ctx context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (res *swarming.SwarmingRpcsCancelResponse, err error) {
+func (s *swarmingServiceImpl) CancelTask(ctx context.Context, taskID string, req *swarmingv1.SwarmingRpcsTaskCancelRequest) (res *swarmingv1.SwarmingRpcsCancelResponse, err error) {
 	err = retryGoogleRPC(ctx, "CancelTask", func() (ierr error) {
 		res, ierr = s.service.Task.Cancel(taskID, req).Context(ctx).Do()
 		return ierr
@@ -155,7 +158,7 @@ func (s *swarmingServiceImpl) CancelTask(ctx context.Context, taskID string, req
 	return res, err
 }
 
-func (s *swarmingServiceImpl) TaskRequest(ctx context.Context, taskID string) (res *swarming.SwarmingRpcsTaskRequest, err error) {
+func (s *swarmingServiceImpl) TaskRequest(ctx context.Context, taskID string) (res *swarmingv1.SwarmingRpcsTaskRequest, err error) {
 	err = retryGoogleRPC(ctx, "TaskRequest", func() (ierr error) {
 		res, ierr = s.service.Task.Request(taskID).Context(ctx).Do()
 		return ierr
@@ -163,7 +166,7 @@ func (s *swarmingServiceImpl) TaskRequest(ctx context.Context, taskID string) (r
 	return res, err
 }
 
-func (s *swarmingServiceImpl) TaskResult(ctx context.Context, taskID string, perf bool) (res *swarming.SwarmingRpcsTaskResult, err error) {
+func (s *swarmingServiceImpl) TaskResult(ctx context.Context, taskID string, perf bool) (res *swarmingv1.SwarmingRpcsTaskResult, err error) {
 	err = retryGoogleRPC(ctx, "TaskResult", func() (ierr error) {
 		res, ierr = s.service.Task.Result(taskID).IncludePerformanceStats(perf).Context(ctx).Do()
 		return
@@ -171,7 +174,7 @@ func (s *swarmingServiceImpl) TaskResult(ctx context.Context, taskID string, per
 	return res, err
 }
 
-func (s *swarmingServiceImpl) TaskOutput(ctx context.Context, taskID string) (res *swarming.SwarmingRpcsTaskOutput, err error) {
+func (s *swarmingServiceImpl) TaskOutput(ctx context.Context, taskID string) (res *swarmingv1.SwarmingRpcsTaskOutput, err error) {
 	err = retryGoogleRPC(ctx, "TaskOutput", func() (ierr error) {
 		res, ierr = s.service.Task.Stdout(taskID).Context(ctx).Do()
 		return ierr
@@ -180,7 +183,7 @@ func (s *swarmingServiceImpl) TaskOutput(ctx context.Context, taskID string) (re
 }
 
 // FilesFromCAS downloads outputs from CAS.
-func (s *swarmingServiceImpl) FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error) {
+func (s *swarmingServiceImpl) FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarmingv1.SwarmingRpcsCASReference) ([]string, error) {
 	d := digest.Digest{
 		Hash: casRef.Digest.Hash,
 		Size: casRef.Digest.SizeBytes,
@@ -197,7 +200,7 @@ func (s *swarmingServiceImpl) FilesFromCAS(ctx context.Context, outdir string, c
 	return files, nil
 }
 
-func (s *swarmingServiceImpl) CountBots(ctx context.Context, dimensions ...string) (res *swarming.SwarmingRpcsBotsCount, err error) {
+func (s *swarmingServiceImpl) CountBots(ctx context.Context, dimensions ...string) (res *swarmingv1.SwarmingRpcsBotsCount, err error) {
 	err = retryGoogleRPC(ctx, "CountBots", func() (ierr error) {
 		res, ierr = s.service.Bots.Count().Context(ctx).Dimensions(dimensions...).Do()
 		return
@@ -205,10 +208,10 @@ func (s *swarmingServiceImpl) CountBots(ctx context.Context, dimensions ...strin
 	return
 }
 
-func (s *swarmingServiceImpl) ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error) {
+func (s *swarmingServiceImpl) ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarmingv1.SwarmingRpcsBotInfo, error) {
 	// Create an empty array so that if serialized to JSON it's an empty list,
 	// not null.
-	bots := []*swarming.SwarmingRpcsBotInfo{}
+	bots := []*swarmingv1.SwarmingRpcsBotInfo{}
 	// If no fields are specified, all fields will be returned. If any fields are
 	// specified, ensure the cursor is specified so we can get subsequent pages.
 	if len(fields) > 0 {
@@ -221,7 +224,7 @@ func (s *swarmingServiceImpl) ListBots(ctx context.Context, dimensions []string,
 	call := s.service.Bots.List().Limit(1000).Context(ctx).Dimensions(dimensions...).Fields(fields...)
 	// Keep calling as long as there's a cursor indicating more bots to list.
 	for {
-		var res *swarming.SwarmingRpcsBotList
+		var res *swarmingv1.SwarmingRpcsBotList
 		err := retryGoogleRPC(ctx, "ListBots", func() (ierr error) {
 			res, ierr = call.Do()
 			return
@@ -239,7 +242,7 @@ func (s *swarmingServiceImpl) ListBots(ctx context.Context, dimensions []string,
 	return bots, nil
 }
 
-func (s *swarmingServiceImpl) DeleteBot(ctx context.Context, botID string) (res *swarming.SwarmingRpcsDeletedResponse, err error) {
+func (s *swarmingServiceImpl) DeleteBot(ctx context.Context, botID string) (res *swarmingv1.SwarmingRpcsDeletedResponse, err error) {
 	err = retryGoogleRPC(ctx, "DeleteBot", func() (ierr error) {
 		res, ierr = s.service.Bot.Delete(botID).Context(ctx).Do()
 		return
@@ -247,18 +250,17 @@ func (s *swarmingServiceImpl) DeleteBot(ctx context.Context, botID string) (res 
 	return
 }
 
-func (s *swarmingServiceImpl) TerminateBot(ctx context.Context, botID string) (res *swarming.SwarmingRpcsTerminateResponse, err error) {
-	err = retryGoogleRPC(ctx, "TerminateBot", func() (ierr error) {
-		res, ierr = s.service.Bot.Terminate(botID).Context(ctx).Do()
-		return
+func (s *swarmingServiceImpl) TerminateBot(ctx context.Context, botID string, reason string) (res *swarmingv2.TerminateResponse, err error) {
+	return s.botsClient.TerminateBot(ctx, &swarmingv2.TerminateRequest{
+		BotId:  botID,
+		Reason: reason,
 	})
-	return
 }
 
-func (s *swarmingServiceImpl) ListBotTasks(ctx context.Context, botID string, limit int64, start float64, state string, fields []googleapi.Field) (res []*swarming.SwarmingRpcsTaskResult, err error) {
+func (s *swarmingServiceImpl) ListBotTasks(ctx context.Context, botID string, limit int64, start float64, state string, fields []googleapi.Field) (res []*swarmingv1.SwarmingRpcsTaskResult, err error) {
 	// Create an empty array so that if serialized to JSON it's an empty list,
 	// not null.
-	tasks := []*swarming.SwarmingRpcsTaskResult{}
+	tasks := []*swarmingv1.SwarmingRpcsTaskResult{}
 	// If no fields are specified, all fields will be returned. If any fields are
 	// specified, ensure the cursor is specified so we can get subsequent pages.
 	if len(fields) > 0 {
@@ -271,7 +273,7 @@ func (s *swarmingServiceImpl) ListBotTasks(ctx context.Context, botID string, li
 	}
 	// Keep calling as long as there's a cursor indicating more tasks to list.
 	for {
-		var res *swarming.SwarmingRpcsBotTasks
+		var res *swarmingv1.SwarmingRpcsBotTasks
 		err := retryGoogleRPC(ctx, "ListBotTasks", func() (ierr error) {
 			res, ierr = call.Do()
 			return
@@ -406,15 +408,36 @@ func (c *commonFlags) createSwarmingClient(ctx context.Context) (swarmingService
 	// copy is ok because only the timeout needs to be different.
 	rpcClient := *authcli
 	rpcClient.Timeout = swarmingRPCRequestTimeout
-	s, err := swarming.NewService(ctx, option.WithHTTPClient(&rpcClient))
+	s, err := swarmingv1.NewService(ctx, option.WithHTTPClient(&rpcClient))
 	if err != nil {
 		return nil, err
 	}
 	s.BasePath = c.serverURL + swarmingAPISuffix
 	s.UserAgent = SwarmingUserAgent
+
+	prpcOpts := prpc.DefaultOptions()
+	prpcOpts.UserAgent = SwarmingUserAgent
+	prpcOpts.PerRPCTimeout = swarmingRPCRequestTimeout
+	prpcClient := prpc.Client{
+		C:       authcli,
+		Options: prpcOpts,
+	}
+	switch {
+	case strings.HasPrefix(c.serverURL, "https://"):
+		prpcClient.Host = strings.TrimPrefix(c.serverURL, "https://")
+	case strings.HasPrefix(c.serverURL, "http://"):
+		prpcClient.Host = strings.TrimPrefix(c.serverURL, "http://")
+		prpcClient.Options.Insecure = true
+		if !lhttp.IsLocalHost(prpcClient.Host) {
+			return nil, errors.Reason("http url for -server may only be used with localhost").Err()
+		}
+	default:
+		prpcClient.Host = c.serverURL
+	}
 	return &swarmingServiceImpl{
-		client:  authcli,
-		service: s,
+		client:     authcli,
+		service:    s,
+		botsClient: swarmingv2.NewBotsClient(&prpcClient),
 	}, nil
 }
 

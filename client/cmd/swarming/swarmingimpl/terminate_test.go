@@ -22,11 +22,12 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	googleapi "google.golang.org/api/googleapi"
 
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	swarmingv1 "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	. "go.chromium.org/luci/common/testing/assertions"
+	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func TestTerminateBotsParse(t *testing.T) {
@@ -76,49 +77,49 @@ func TestTerminateBots(t *testing.T) {
 		countLoop := 0
 
 		service := &testService{
-			terminateBot: func(ctx context.Context, botID string) (*swarming.SwarmingRpcsTerminateResponse, error) {
+			terminateBot: func(ctx context.Context, botID string, reason string) (*swarmingv2.TerminateResponse, error) {
 				givenBotID = botID
 				if botID == failBotID {
 					return nil, &googleapi.Error{Code: 404}
 				}
 				if botID == taskStillRunningBotID {
-					return &swarming.SwarmingRpcsTerminateResponse{
+					return &swarmingv2.TerminateResponse{
 						TaskId: stillRunningTaskID,
 					}, nil
 				}
 				if botID == errorAtTaskBotID {
-					return &swarming.SwarmingRpcsTerminateResponse{
+					return &swarmingv2.TerminateResponse{
 						TaskId: failTaskID,
 					}, nil
 				}
 				if botID == statusNotCompletedBotID {
-					return &swarming.SwarmingRpcsTerminateResponse{
+					return &swarmingv2.TerminateResponse{
 						TaskId: statusNotCompletedTaskID,
 					}, nil
 				}
-				return &swarming.SwarmingRpcsTerminateResponse{
+				return &swarmingv2.TerminateResponse{
 					TaskId: terminateTaskID,
 				}, nil
 			},
-			taskResult: func(ctx context.Context, taskID string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+			taskResult: func(ctx context.Context, taskID string, _ bool) (*swarmingv1.SwarmingRpcsTaskResult, error) {
 				givenTaskID = taskID
 				if taskID == stillRunningTaskID && countLoop < 2 {
 					countLoop += 1
-					return &swarming.SwarmingRpcsTaskResult{
+					return &swarmingv1.SwarmingRpcsTaskResult{
 						State: "RUNNING",
 					}, nil
 				}
 				if taskID == failTaskID {
-					return &swarming.SwarmingRpcsTaskResult{
+					return &swarmingv1.SwarmingRpcsTaskResult{
 						State: "TIMED_OUT",
 					}, errors.New("failed to call GetTaskResult")
 				}
 				if taskID == statusNotCompletedTaskID {
-					return &swarming.SwarmingRpcsTaskResult{
+					return &swarmingv1.SwarmingRpcsTaskResult{
 						State: "BOT_DIED",
 					}, nil
 				}
-				return &swarming.SwarmingRpcsTaskResult{
+				return &swarmingv1.SwarmingRpcsTaskResult{
 					State: "COMPLETED",
 				}, nil
 			},

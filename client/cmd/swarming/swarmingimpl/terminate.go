@@ -22,7 +22,7 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	swarmingv1 "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -45,12 +45,14 @@ func CmdTerminateBot(authFlags AuthFlags) *subcommands.Command {
 
 type terminateRun struct {
 	commonFlags
-	wait bool
+	wait   bool
+	reason string
 }
 
 func (t *terminateRun) Init(authFlags AuthFlags) {
 	t.commonFlags.Init(authFlags)
 	t.Flags.BoolVar(&t.wait, "wait", false, "Wait for the bot to terminate")
+	t.Flags.StringVar(&t.reason, "reason", "", "A human defined reason given for terminating bot")
 }
 
 func (t *terminateRun) parse(botIDs []string) error {
@@ -69,7 +71,7 @@ func (t *terminateRun) parse(botIDs []string) error {
 	return nil
 }
 
-func pollTask(ctx context.Context, taskID string, service swarmingService) (*swarming.SwarmingRpcsTaskResult, error) {
+func pollTask(ctx context.Context, taskID string, service swarmingService) (*swarmingv1.SwarmingRpcsTaskResult, error) {
 	for {
 		res, err := service.TaskResult(ctx, taskID, false)
 		if err != nil {
@@ -97,7 +99,7 @@ func pollTask(ctx context.Context, taskID string, service swarmingService) (*swa
 
 func (t *terminateRun) terminateBot(ctx context.Context, botID string, service swarmingService) error {
 
-	res, err := service.TerminateBot(ctx, botID)
+	res, err := service.TerminateBot(ctx, botID, t.reason)
 
 	if err != nil {
 		return errors.Annotate(err, "failed to terminate bot %s\n", botID).Err()
