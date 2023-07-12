@@ -20,10 +20,15 @@ option go_package = "go.chromium.org/luci/bisection/proto/config;configpb";
 
 // Config is the service-wide configuration data for LUCI Bisection
 message Config {
-  // Service-wide configuration data for Gerrit integration
+  // Configuration data for Gerrit integration for compile failures.
+  // TODO (nqmtuan): Rename this to make clear that this is only used for
+  // compile failures.
   GerritConfig gerrit_config = 1;
-  // Configuration data for analysis
+  // Configuration data for compile failure analysis.
+  // TODO (nqmtuan): Rename this to CompileFailureAnalysisConfig.
   AnalysisConfig analysis_config = 2;
+  // Configuration data for test failure analysis.
+  TestAnalysisConfig test_analysis_config = 3;
 }
 
 // GerritConfig is the configuration data for Gerrit integration
@@ -73,4 +78,17 @@ message AnalysisConfig {
 
   // Whether we should run nthsection analysis
   bool nthsection_enabled = 2;
+}
+
+// TestAnalysisConfig is the configuration data for test failure bisection.
+message TestAnalysisConfig {
+  // Global flag of whether test failure bisection is enabled.
+  // Although individual projects may have their own config, if this flag
+  // flag is off, then it is off for everything.
+  // This is for us to switch off everything in case something go wrong.
+  // During the development of the test failure bisection feature, it should
+  // be on for dev and off for prod (as we are testing). When everything is
+  // up and running, it should be off for dev and on for prod, because we want
+  // to save resources (running bisection on dev will be expensive).
+  bool enabled = 1;
 }

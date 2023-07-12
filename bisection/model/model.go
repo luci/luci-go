@@ -161,16 +161,6 @@ type CompileFailureAnalysis struct {
 	IsTreeCloser bool `gae:"is_tree_closer"`
 }
 
-// CompileFailureInRerunBuild is a compile failure in a rerun build.
-// Since we only need to keep a simple record on what's failed in rerun build,
-// there is no need to reuse CompileFailure.
-type CompileFailureInRerunBuild struct {
-	// Json string of the failed output target
-	// We store as json string instead of []string to avoid the "slice within
-	// slice" error when saving to datastore
-	OutputTargets string `gae:"output_targets"`
-}
-
 // CompileRerunBuild is one rerun build for CompileFailureAnalysis.
 // The rerun build may be for nth-section analysis or for culprit verification.
 type CompileRerunBuild struct {
@@ -184,14 +174,15 @@ type CompileRerunBuild struct {
 }
 
 // SingleRerun represents one rerun for a particular compile/test failures for a particular commit.
-// Multiple SingleRerun may present in one RerunBuild for different commits.
+// Initially, we wanted to trigger multiple reruns for different commits in the same build,
+// but it is not possible. We can only trigger one rerun per rerun build, i.e. the
+// relationship between single rerun : rerun build is 1:1.
 type SingleRerun struct {
 	Id int64 `gae:"$id"`
 	// Key to the parent CompileRerunBuild
 	RerunBuild *datastore.Key `gae:"rerun_build"`
 	// Type for the rerun build
-	// We need this for each rerun because we can mix running culprit verification
-	// rerun and nth-section rerun in one build
+	// Either culprit verification or nth section run.
 	Type RerunBuildType `gae:"rerun_type"`
 	// Key to the CompileFailureAnalysis of this SingleRerun
 	// This is mainly used for getting all reruns for an analysis,
@@ -208,9 +199,6 @@ type SingleRerun struct {
 	// Status of the rerun
 	Status pb.RerunStatus
 	// Key to the Suspect, if this is for culprit verification
-	// Note: We have the keys to suspect and nthsection here instead of CompileRerunBuild
-	// because in theory, we can mix culprit verification and nthsection runs
-	// within the same build
 	Suspect *datastore.Key `gae:"suspect"`
 	// Key to NthSectionAnalysis, if this is for nthsection
 	NthSectionAnalysis *datastore.Key `gae:"nthsection_analysis"`
