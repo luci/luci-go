@@ -18,12 +18,13 @@ import (
 	"context"
 
 	"cloud.google.com/go/bigquery"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/api/iterator"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/clustering"
+	"go.chromium.org/luci/analysis/internal/tracing"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/trace"
 )
 
 type ExoneratedTestVariant struct {
@@ -43,9 +44,10 @@ type ReadClusterExoneratedTestVariantsOptions struct {
 // ReadClusterExoneratedTestVariants reads the latest 100 test variants
 // which have presubmit-blocking failures exonerated in the last 7 days.
 func (c *Client) ReadClusterExoneratedTestVariants(ctx context.Context, opts ReadClusterExoneratedTestVariantsOptions) (cfs []*ExoneratedTestVariant, err error) {
-	_, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/analysis/ReadClusterExoneratedTestVariants")
-	s.Attribute("project", opts.Project)
-	defer func() { s.End(err) }()
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/analysis.ReadClusterExoneratedTestVariants",
+		attribute.String("project", opts.Project),
+	)
+	defer func() { tracing.End(s, err, attribute.Int("outcome", len(cfs))) }()
 	q := c.client.Query(`
 		WITH latest_failures_7d AS (
 			SELECT

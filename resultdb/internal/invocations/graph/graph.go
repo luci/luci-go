@@ -21,14 +21,15 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"github.com/gomodule/redigo/redis"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/tracing"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/span"
@@ -149,8 +150,8 @@ func reachable(ctx context.Context, roots invocations.IDSet, useRootCache bool) 
 
 // reachableUncached queries the Spanner database for the reachability graph if the data is not in the reach cache.
 func reachableUncached(ctx context.Context, roots invocations.IDSet) (ri ReachableInvocations, err error) {
-	ctx, ts := trace.StartSpan(ctx, "resultdb.graph.reachable")
-	defer func() { ts.End(err) }()
+	ctx, ts := tracing.Start(ctx, "resultdb.graph.reachable")
+	defer func() { tracing.End(ts, err) }()
 
 	reachableInvocations := invocations.NewIDSet()
 	reachableInvocations.Union(roots)
@@ -409,9 +410,10 @@ func (c reachCache) key() string {
 // Write writes the new value.
 // The value does not have to include c, this is implied.
 func (c reachCache) Write(ctx context.Context, value ReachableInvocations) (err error) {
-	ctx, ts := trace.StartSpan(ctx, "resultdb.reachCache.write")
-	ts.Attribute("id", string(c))
-	defer func() { ts.End(err) }()
+	ctx, ts := tracing.Start(ctx, "resultdb.reachCache.write",
+		attribute.String("id", string(c)),
+	)
+	defer func() { tracing.End(ts, err) }()
 
 	// Expect the set of reachable invocations to include the invocation
 	// for which the cache entry is.
@@ -431,7 +433,7 @@ func (c reachCache) Write(ctx context.Context, value ReachableInvocations) (err 
 	if err != nil {
 		return errors.Annotate(err, "marshal").Err()
 	}
-	ts.Attribute("size", len(marshaled))
+	ts.SetAttributes(attribute.Int("size", len(marshaled)))
 
 	if err := conn.Send("SET", key, marshaled); err != nil {
 		return err
@@ -461,9 +463,10 @@ var ErrUnknownReach = fmt.Errorf("the reachable set is unknown")
 //
 // If err is nil, ids includes c, even if it was not passed in Write().
 func (c reachCache) Read(ctx context.Context) (invs ReachableInvocations, err error) {
-	ctx, ts := trace.StartSpan(ctx, "resultdb.reachCache.read")
-	ts.Attribute("id", string(c))
-	defer func() { ts.End(err) }()
+	ctx, ts := tracing.Start(ctx, "resultdb.reachCache.read",
+		attribute.String("id", string(c)),
+	)
+	defer func() { tracing.End(ts, err) }()
 
 	conn, err := redisconn.Get(ctx)
 	if err != nil {
@@ -478,7 +481,7 @@ func (c reachCache) Read(ctx context.Context) (invs ReachableInvocations, err er
 	case err != nil:
 		return ReachableInvocations{}, err
 	}
-	ts.Attribute("size", len(b))
+	ts.SetAttributes(attribute.Int("size", len(b)))
 
 	return unmarshalReachableInvocations(b)
 }

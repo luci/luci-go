@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"cloud.google.com/go/bigquery"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/api/iterator"
 
 	"go.chromium.org/luci/analysis/internal/aip"
@@ -29,10 +30,10 @@ import (
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/rulesalgorithm"
+	"go.chromium.org/luci/analysis/internal/tracing"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/trace"
 )
 
 var ClusteredFailuresTable = aip.NewTable().WithColumns(
@@ -175,9 +176,10 @@ func ClusterSummariesTable(queriedMetrics []metrics.Definition) *aip.Table {
 // query schema, returns an error tagged with InvalidArgumentTag so that the
 // appropriate gRPC error can be returned to the client (if applicable).
 func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, options *QueryClusterSummariesOptions) (cs []*ClusterSummary, err error) {
-	_, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/analysis/QueryClusterSummaries")
-	s.Attribute("project", luciProject)
-	defer func() { s.End(err) }()
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/analysis.QueryClusterSummaries",
+		attribute.String("project", luciProject),
+	)
+	defer func() { tracing.End(s, err, attribute.Int("outcome", len(cs))) }()
 
 	if err := pbutil.ValidateTimeRange(ctx, options.TimeRange); err != nil {
 		return nil, errors.Annotate(err, "time_range").Tag(InvalidArgumentTag).Err()

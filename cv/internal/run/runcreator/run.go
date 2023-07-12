@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -41,6 +40,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/tracing"
 )
 
 // Creator creates a new Run.
@@ -152,8 +152,8 @@ var StateChangedTag = errors.BoolTag{Key: errors.NewTagKey("Run Creator: state c
 //   - all other errors are non retryable and typically indicate a bug or severe
 //     misconfiguration. For example, lack of ProjectStateOffload entity.
 func (rb *Creator) Create(ctx context.Context, clMutator *changelist.Mutator, pm pmNotifier, rm rmNotifier) (ret *run.Run, err error) {
-	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/run/Create")
-	defer func() { span.End(err) }()
+	ctx, span := tracing.Start(ctx, "go.chromium.org/luci/cv/internal/prjmanager/run/Create")
+	defer func() { tracing.End(span, err) }()
 
 	now := clock.Now(ctx)
 	rb.prepare(now)

@@ -56,14 +56,15 @@ import (
 	"fmt"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
+	"go.chromium.org/luci/cv/internal/tracing"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
-	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/trace"
 )
 
 // Set holds a set of Items and uses tombstones to achieve idempotency of Add.
@@ -190,8 +191,8 @@ func (s *Set) List(ctx context.Context, maxEvents int) (l *Listing, err error) {
 	case maxEvents <= 0:
 		panic(fmt.Errorf("maxEvents must be >0, but %d given", maxEvents))
 	}
-	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/eventbox/dsset/List")
-	defer func() { span.End(err) }()
+	ctx, span := tracing.Start(ctx, "go.chromium.org/luci/cv/internal/eventbox/dsset/List")
+	defer func() { tracing.End(span, err) }()
 
 	now := clock.Now(ctx).UTC()
 
@@ -274,8 +275,8 @@ func (s *Set) Delete(ctx context.Context, nextID func() string) (err error) {
 	if datastore.CurrentTransaction(ctx) != nil {
 		panic("dsset.Set.Delete must be called outside of a transaction")
 	}
-	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/eventbox/dsset/Delete")
-	defer func() { span.End(err) }()
+	ctx, span := tracing.Start(ctx, "go.chromium.org/luci/cv/internal/eventbox/dsset/Delete")
+	defer func() { tracing.End(span, err) }()
 
 	keys := []*datastore.Key{}
 	for {
@@ -477,8 +478,8 @@ func CleanupGarbage(ctx context.Context, cleanup ...Garbage) (err error) {
 	if datastore.CurrentTransaction(ctx) != nil {
 		panic("dsset.CleanupGarbage must be called outside of a transaction")
 	}
-	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/eventbox/dsset/CleanupGarbage")
-	defer func() { span.End(err) }()
+	ctx, span := tracing.Start(ctx, "go.chromium.org/luci/cv/internal/eventbox/dsset/CleanupGarbage")
+	defer func() { tracing.End(span, err) }()
 
 	keys := []*datastore.Key{}
 	for _, tombs := range cleanup {

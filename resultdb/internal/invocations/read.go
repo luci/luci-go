@@ -18,16 +18,17 @@ import (
 	"context"
 
 	"cloud.google.com/go/spanner"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -224,9 +225,10 @@ func ReadRealm(ctx context.Context, id ID) (string, error) {
 // Invocations table.
 // Makes a single RPC.
 func QueryRealms(ctx context.Context, ids IDSet) (realms map[ID]string, err error) {
-	ctx, ts := trace.StartSpan(ctx, "resultdb.invocations.QueryRealms")
-	ts.Attribute("cr.dev/count", len(ids))
-	defer func() { ts.End(err) }()
+	ctx, ts := tracing.Start(ctx, "resultdb.invocations.QueryRealms",
+		attribute.Int("cr.dev.count", len(ids)),
+	)
+	defer func() { tracing.End(ts, err) }()
 
 	realms = map[ID]string{}
 	st := spanner.NewStatement(`
@@ -257,9 +259,10 @@ func QueryRealms(ctx context.Context, ids IDSet) (realms map[ID]string, err erro
 // invocations.
 // Makes a single RPC.
 func ReadRealms(ctx context.Context, ids IDSet) (realms map[ID]string, err error) {
-	ctx, ts := trace.StartSpan(ctx, "resultdb.invocations.ReadRealms")
-	ts.Attribute("cr.dev/count", len(ids))
-	defer func() { ts.End(err) }()
+	ctx, ts := tracing.Start(ctx, "resultdb.invocations.ReadRealms",
+		attribute.Int("cr.dev.count", len(ids)),
+	)
+	defer func() { tracing.End(ts, err) }()
 
 	realms, err = QueryRealms(ctx, ids)
 	if err != nil {

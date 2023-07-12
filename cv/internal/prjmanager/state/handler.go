@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/trace"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -36,6 +35,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
 	"go.chromium.org/luci/cv/internal/prjmanager/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/tracing"
 )
 
 type RunNotifier interface {
@@ -175,8 +175,8 @@ func (h *Handler) Poke(ctx context.Context, s *State) (*State, SideEffect, error
 func (h *Handler) OnRunsCreated(ctx context.Context, s *State, created common.RunIDs) (_ *State, __ SideEffect, err error) {
 	s.ensureNotYetCloned()
 
-	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/OnRunsCreated")
-	defer func() { span.End(err) }()
+	ctx, span := tracing.Start(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/OnRunsCreated")
+	defer func() { tracing.End(span, err) }()
 
 	// Check if PM is already aware of these Runs.
 	remaining := created.Set()
@@ -217,8 +217,8 @@ func (h *Handler) OnRunsCreated(ctx context.Context, s *State, created common.Ru
 func (h *Handler) OnRunsFinished(ctx context.Context, s *State, finished common.RunIDs) (_ *State, __ SideEffect, err error) {
 	s.ensureNotYetCloned()
 
-	_, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/OnRunsFinished")
-	defer func() { span.End(err) }()
+	_, span := tracing.Start(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/OnRunsFinished")
+	defer func() { tracing.End(span, err) }()
 
 	// This is rarely a noop, so assume state is modified for simplicity.
 	s = s.cloneShallow()
@@ -238,8 +238,8 @@ func (h *Handler) OnRunsFinished(ctx context.Context, s *State, finished common.
 func (h *Handler) OnCLsUpdated(ctx context.Context, s *State, clEVersions map[int64]int64) (_ *State, __ SideEffect, err error) {
 	s.ensureNotYetCloned()
 
-	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/OnCLsUpdated")
-	defer func() { span.End(err) }()
+	ctx, span := tracing.Start(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/OnCLsUpdated")
+	defer func() { tracing.End(span, err) }()
 
 	if s.PB.GetStatus() != prjpb.Status_STARTED {
 		// Ignore all incoming CL events. If PM is re-enabled, then first full
@@ -267,8 +267,8 @@ func (h *Handler) OnCLsUpdated(ctx context.Context, s *State, clEVersions map[in
 func (h *Handler) OnPurgesCompleted(ctx context.Context, s *State, events []*prjpb.PurgeCompleted) (_ *State, __ SideEffect, err error) {
 	s.ensureNotYetCloned()
 
-	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/OnPurgesCompleted")
-	defer func() { span.End(err) }()
+	ctx, span := tracing.Start(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/OnPurgesCompleted")
+	defer func() { tracing.End(span, err) }()
 
 	opIDs := stringset.New(len(events))
 	for _, e := range events {
@@ -325,8 +325,8 @@ func (h *Handler) OnPurgesCompleted(ctx context.Context, s *State, events []*prj
 func (h *Handler) ExecDeferred(ctx context.Context, s *State) (_ *State, __ SideEffect, err error) {
 	s.ensureNotYetCloned()
 
-	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/ExecDeferred")
-	defer func() { span.End(err) }()
+	ctx, span := tracing.Start(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/ExecDeferred")
+	defer func() { tracing.End(span, err) }()
 
 	if s.PB.GetStatus() != prjpb.Status_STARTED {
 		return s, nil, nil

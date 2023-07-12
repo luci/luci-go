@@ -22,13 +22,13 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/testvariants"
+	"go.chromium.org/luci/resultdb/internal/tracing"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/span"
@@ -43,8 +43,8 @@ func determineListAccessLevel(ctx context.Context, ids invocations.IDSet) (a tes
 		return testvariants.AccessLevelInvalid, nil
 	}
 
-	ctx, ts := trace.StartSpan(ctx, "resultdb.query_test_variants.determineListAccessLevel")
-	defer func() { ts.End(err) }()
+	ctx, ts := tracing.Start(ctx, "resultdb.query_test_variants.determineListAccessLevel")
+	defer func() { tracing.End(ts, err) }()
 
 	realms, err := invocations.ReadRealms(span.Single(ctx), ids)
 	if err != nil {

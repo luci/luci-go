@@ -18,12 +18,13 @@ import (
 	"context"
 
 	"cloud.google.com/go/bigquery"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/api/iterator"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/clustering"
+	"go.chromium.org/luci/analysis/internal/tracing"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/trace"
 )
 
 type ClusterFailure struct {
@@ -78,9 +79,10 @@ type ReadClusterFailuresOptions struct {
 // A group of failures are failures that would be grouped together in MILO display, i.e.
 // same ingested_invocation_id, test_id and variant.
 func (c *Client) ReadClusterFailures(ctx context.Context, opts ReadClusterFailuresOptions) (cfs []*ClusterFailure, err error) {
-	_, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/analysis/ReadClusterFailures")
-	s.Attribute("project", opts.Project)
-	defer func() { s.End(err) }()
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/analysis.ReadClusterFailures",
+		attribute.String("project", opts.Project),
+	)
+	defer func() { tracing.End(s, err, attribute.Int("outcome", len(cfs))) }()
 
 	q := c.client.Query(`
 		WITH latest_failures_7d AS (

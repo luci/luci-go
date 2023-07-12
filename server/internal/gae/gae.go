@@ -45,10 +45,11 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/trace"
 
 	remotepb "go.chromium.org/luci/server/internal/gae/remote_api"
 )
@@ -57,7 +58,10 @@ import (
 //go:generate cproto mail
 //go:generate cproto remote_api
 
-var ticketsContextKey = "go.chromium.org/luci/server/internal/gae.Tickets"
+var (
+	ticketsContextKey = "go.chromium.org/luci/server/internal/gae.Tickets"
+	tracer            = otel.Tracer("go.chromium.org/luci/server/internal/gae")
+)
 
 // Note: Go GAE SDK attempts to limit the number of concurrent connections using
 // a hand-rolled semaphore-based dialer. It is not clear why it can't just use
@@ -122,8 +126,14 @@ func WithTickets(ctx context.Context, tickets *Tickets) context.Context {
 // Note: currently returns opaque stringy errors. Refactor if you need to
 // distinguish API errors from transport errors or need error codes, etc.
 func Call(ctx context.Context, service, method string, in, out proto.Message) (err error) {
-	ctx, span := trace.StartSpan(ctx, fmt.Sprintf("luci/gae.Call/%s.%s", service, method))
-	defer func() { span.End(err) }()
+	ctx, span := tracer.Start(ctx, fmt.Sprintf("luci/gae.Call/%s.%s", service, method))
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+		span.End()
+	}()
 
 	tickets, _ := ctx.Value(&ticketsContextKey).(*Tickets)
 	if tickets == nil {

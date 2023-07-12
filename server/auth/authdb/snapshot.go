@@ -18,14 +18,14 @@ import (
 	"context"
 	"io"
 	"net"
-	"strings"
 
 	"github.com/golang/protobuf/proto"
+	"go.opentelemetry.io/otel/attribute"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/trace"
+	"go.chromium.org/luci/server/auth/internal/tracing"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
@@ -161,14 +161,15 @@ func (db *SnapshotDB) IsInternalService(ctx context.Context, hostname string) (b
 //
 // Unknown groups are considered empty. May return errors if underlying
 // datastore has issues.
-func (db *SnapshotDB) IsMember(ctx context.Context, id identity.Identity, groups []string) (bool, error) {
+func (db *SnapshotDB) IsMember(ctx context.Context, id identity.Identity, groups []string) (ok bool, err error) {
+	_, span := tracing.Start(ctx, "go.chromium.org/luci/server/auth/authdb.IsMember",
+		attribute.StringSlice("cr.dev.groups", groups),
+	)
+	defer func() { tracing.End(span, err, attribute.Bool("cr.dev.outcome", ok)) }()
+
 	if db.groups == nil {
 		return false, nil
 	}
-
-	_, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth/authdb.IsMember")
-	span.Attribute("cr.dev/groups", strings.Join(groups, ", "))
-	defer span.End(nil)
 
 	// TODO(vadimsh): Optimize multi-group case.
 	for _, gr := range groups {
@@ -189,13 +190,14 @@ func (db *SnapshotDB) IsMember(ctx context.Context, id identity.Identity, groups
 //
 // May return errors if underlying datastore has issues.
 func (db *SnapshotDB) CheckMembership(ctx context.Context, id identity.Identity, groups []string) (out []string, err error) {
+	_, span := tracing.Start(ctx, "go.chromium.org/luci/server/auth/authdb.CheckMembership",
+		attribute.StringSlice("cr.dev.groups", groups),
+	)
+	defer func() { tracing.End(span, err, attribute.StringSlice("cr.dev.outcome", out)) }()
+
 	if db.groups == nil {
 		return
 	}
-
-	_, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth/authdb.CheckMembership")
-	span.Attribute("cr.dev/groups", strings.Join(groups, ", "))
-	defer span.End(nil)
 
 	// TODO(vadimsh): Optimize multi-group case.
 	for _, gr := range groups {
@@ -209,13 +211,17 @@ func (db *SnapshotDB) CheckMembership(ctx context.Context, id identity.Identity,
 // HasPermission returns true if the identity has the given permission in the
 // realm.
 func (db *SnapshotDB) HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realm string, attrs realms.Attrs) (ok bool, err error) {
-	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth/authdb.HasPermission")
-	span.Attribute("cr.dev/permission", perm.Name())
-	span.Attribute("cr.dev/realm", realm)
+	otelAttrs := append(make([]attribute.KeyValue, 0, 2+len(attrs)),
+		attribute.String("cr.dev.permission", perm.Name()),
+		attribute.String("cr.dev.realm", realm),
+	)
 	for k, v := range attrs {
-		span.Attribute("cr.dev/attr/"+k, v)
+		otelAttrs = append(otelAttrs, attribute.String("cr.dev.attr."+k, v))
 	}
-	defer func() { span.End(err) }()
+	ctx, span := tracing.Start(ctx, "go.chromium.org/luci/server/auth/authdb.HasPermission",
+		otelAttrs...,
+	)
+	defer func() { tracing.End(span, err, attribute.Bool("cr.dev.outcome", ok)) }()
 
 	// This may happen if the AuthDB proto has no Realms yet.
 	if db.realms == nil {
@@ -259,12 +265,18 @@ func (db *SnapshotDB) HasPermission(ctx context.Context, id identity.Identity, p
 // QueryRealms returns a list of realms where the identity has the given
 // permission.
 func (db *SnapshotDB) QueryRealms(ctx context.Context, id identity.Identity, perm realms.Permission, project string, attrs realms.Attrs) (out []string, err error) {
-	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth/authdb.QueryRealms")
-	span.Attribute("cr.dev/permission", perm.Name())
+	otelAttrs := append(make([]attribute.KeyValue, 0, 2+len(attrs)),
+		attribute.String("cr.dev.permission", perm.Name()),
+		attribute.String("cr.dev.project", project),
+	)
 	for k, v := range attrs {
-		span.Attribute("cr.dev/attr/"+k, v)
+		otelAttrs = append(otelAttrs, attribute.String("cr.dev.attr."+k, v))
 	}
-	defer func() { span.End(err) }()
+	ctx, span := tracing.Start(ctx, "go.chromium.org/luci/server/auth/authdb.QueryRealms",
+		otelAttrs...,
+	)
+	// `out` list can be huge. Just report the number of realms.
+	defer func() { tracing.End(span, err, attribute.Int("cr.dev.outcome", len(out))) }()
 
 	if project != "" {
 		if err := realms.ValidateProjectName(project); err != nil {

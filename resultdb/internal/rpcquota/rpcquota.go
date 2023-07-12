@@ -30,14 +30,15 @@ import (
 	"regexp"
 	"strings"
 
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/server/auth"
 	quota "go.chromium.org/luci/server/quotabeta"
 	"go.chromium.org/luci/server/quotabeta/quotaconfig"
@@ -116,8 +117,8 @@ func mangleUser(user string) string {
 //
 // - TODO: automatic opts.RequestID..?
 func UpdateUserQuota(ctx context.Context, resourcePrefix string, cost int64, service string, method string) (err error) {
-	ctx, ts := trace.StartSpan(ctx, "rpcquota.UpdateUserQuota")
-	defer func() { ts.End(err) }()
+	ctx, ts := tracing.Start(ctx, "rpcquota.UpdateUserQuota")
+	defer func() { tracing.End(ts, err) }()
 	who := mangleUser(string(auth.CurrentIdentity(ctx))) // TODO: should this be PeerIdentity?
 	wildcard := false
 	// Try deduct from current user first.  If no policy exists for this
@@ -133,7 +134,7 @@ func UpdateUserQuota(ctx context.Context, resourcePrefix string, cost int64, ser
 		}
 	}
 	quotaResultCounter.Add(ctx, 1, service, method, wildcard, err != quota.ErrInsufficientQuota)
-	ts.Attribute("wildcard", wildcard)
+	ts.SetAttributes(attribute.Bool("wildcard", wildcard))
 	if err == quota.ErrInsufficientQuota {
 		if ctx.Value(&quotaTrackOnlyKey) != nil {
 			// Suppress the quota error.

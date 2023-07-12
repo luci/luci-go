@@ -21,10 +21,12 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/trace"
+	"go.chromium.org/luci/server/auth/internal/tracing"
 )
 
 // MintAccessTokenParams is passed to MintAccessTokenForServiceAccount.
@@ -74,9 +76,10 @@ var actorAccessTokenCache = newTokenCache(tokenCacheConfig{
 // Recognizes transient errors and marks them, but does not automatically
 // retry. Has internal timeout of 10 sec.
 func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessTokenParams) (_ *Token, err error) {
-	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth.MintAccessTokenForServiceAccount")
-	span.Attribute("cr.dev/account", params.ServiceAccount)
-	defer func() { span.End(err) }()
+	ctx, span := tracing.Start(ctx, "go.chromium.org/luci/server/auth.MintAccessTokenForServiceAccount",
+		attribute.String("cr.dev.account", params.ServiceAccount),
+	)
+	defer func() { tracing.End(span, err) }()
 
 	report := durationReporter(ctx, mintAccessTokenDuration)
 

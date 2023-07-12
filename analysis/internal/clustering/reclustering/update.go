@@ -19,8 +19,9 @@ import (
 	"fmt"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/analysis/internal/clustering"
@@ -29,6 +30,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering/rules/cache"
 	"go.chromium.org/luci/analysis/internal/clustering/state"
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
+	"go.chromium.org/luci/analysis/internal/tracing"
 )
 
 // TODO(crbug.com/1243174). Instrument the size of this cache so that we
@@ -81,10 +83,11 @@ type PendingUpdate struct {
 // from Spanner, along with the test results. The chunk will be
 // re-clustered and updated.
 func PrepareUpdate(ctx context.Context, ruleset *cache.Ruleset, config *compiledcfg.ProjectConfig, chunk *cpb.Chunk, existingState *state.Entry) (upd *PendingUpdate, err error) {
-	_, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/clustering/reclustering.PrepareUpdate")
-	s.Attribute("project", existingState.Project)
-	s.Attribute("chunkID", existingState.ChunkID)
-	defer func() { s.End(err) }()
+	_, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/clustering/reclustering.PrepareUpdate",
+		attribute.String("project", existingState.Project),
+		attribute.String("chunkID", existingState.ChunkID),
+	)
+	defer func() { tracing.End(s, err) }()
 
 	exists := !existingState.LastUpdated.IsZero()
 	var existingClustering clustering.ClusterResults

@@ -17,13 +17,16 @@ package model
 import (
 	"context"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"golang.org/x/sync/errgroup"
 
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/service/protocol"
 )
+
+var tracer = otel.Tracer("go.chromium.org/luci/auth_service")
 
 // Snapshot contains transactionally captured AuthDB entities.
 type Snapshot struct {
@@ -44,8 +47,14 @@ type Snapshot struct {
 // Runs a read-only transaction internally.
 func TakeSnapshot(ctx context.Context) (snap *Snapshot, err error) {
 	// This is a potentially slow operation. Capture it in the trace.
-	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/auth_service/impl/model/TakeSnapshot")
-	defer func() { span.End(err) }()
+	ctx, span := tracer.Start(ctx, "go.chromium.org/luci/auth_service/impl/model/TakeSnapshot")
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+		span.End()
+	}()
 
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		snap = &Snapshot{

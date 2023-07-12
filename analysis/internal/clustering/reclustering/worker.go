@@ -21,23 +21,25 @@ import (
 	"math/big"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms"
 	cpb "go.chromium.org/luci/analysis/internal/clustering/proto"
 	"go.chromium.org/luci/analysis/internal/clustering/shards"
 	"go.chromium.org/luci/analysis/internal/clustering/state"
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
+	"go.chromium.org/luci/analysis/internal/tracing"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/span"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -177,10 +179,11 @@ func (w *Worker) Do(ctx context.Context, task *taskspb.ReclusterChunks, duration
 // as it succeeds. It returns 'true' if all chunks to be re-clustered by
 // the reclustering task were completed.
 func (t *taskContext) recluster(ctx context.Context) (done bool, err error) {
-	ctx, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/clustering/reclustering.recluster")
-	s.Attribute("project", t.task.Project)
-	s.Attribute("currentChunkID", t.currentChunkID)
-	defer func() { s.End(err) }()
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/clustering/reclustering.recluster",
+		attribute.String("project", t.task.Project),
+		attribute.String("currentChunkID", t.currentChunkID),
+	)
+	defer func() { tracing.End(s, err) }()
 
 	readOpts := state.ReadNextOptions{
 		StartChunkID:      t.currentChunkID,
@@ -279,8 +282,8 @@ func (t *taskContext) calculateAndReportProgress(ctx context.Context) (err error
 
 // updateProgress sets progress on the shard.
 func (t *taskContext) updateProgress(ctx context.Context, value int) (err error) {
-	ctx, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/clustering/reclustering.updateProgress")
-	defer func() { s.End(err) }()
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/clustering/reclustering.updateProgress")
+	defer func() { tracing.End(s, err) }()
 
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		err = shards.UpdateProgress(ctx, t.task.ShardNumber, t.task.AttemptTime.AsTime(), value)

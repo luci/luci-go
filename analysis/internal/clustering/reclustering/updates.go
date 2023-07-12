@@ -19,10 +19,10 @@ import (
 	"time"
 
 	"go.chromium.org/luci/analysis/internal/clustering/state"
+	"go.chromium.org/luci/analysis/internal/tracing"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/span"
 )
 
@@ -85,8 +85,8 @@ func (p *PendingUpdates) ShouldApply(ctx context.Context) bool {
 // again from a fresh read of the Clustering State and retry.
 // Note that some of the updates may have successfully applied.
 func (p *PendingUpdates) Apply(ctx context.Context, analysis Analysis) (err error) {
-	ctx, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/clustering/reclustering.Apply")
-	defer func() { s.End(err) }()
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/clustering/reclustering.Apply")
+	defer func() { tracing.End(s, err) }()
 
 	var appliedUpdates []*PendingUpdate
 	f := func(ctx context.Context) error {

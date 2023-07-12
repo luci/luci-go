@@ -22,9 +22,9 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
@@ -44,8 +44,8 @@ func VerifyInvocations(ctx context.Context, ids invocations.IDSet, permissions .
 	if len(ids) == 0 {
 		return nil
 	}
-	ctx, ts := trace.StartSpan(ctx, "resultdb.permissions.VerifyInvocations")
-	defer func() { ts.End(err) }()
+	ctx, ts := tracing.Start(ctx, "resultdb.permissions.VerifyInvocations")
+	defer func() { tracing.End(ts, err) }()
 
 	realms, err := invocations.ReadRealms(span.Single(ctx), ids)
 	if err != nil {

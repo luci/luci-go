@@ -39,13 +39,13 @@ import (
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
+	"go.chromium.org/luci/analysis/internal/tracing"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -478,8 +478,8 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestResults, next
 }
 
 func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, payload *taskspb.IngestTestResults, inv *testresults.IngestedInvocation, rsp *rdbpb.QueryTestVariantsResponse) (err error) {
-	ctx, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForClustering")
-	defer func() { s.End(err) }()
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForClustering")
+	defer func() { tracing.End(s, err) }()
 
 	changelists := make([]*pb.Changelist, 0, len(inv.Changelists))
 	for _, cl := range inv.Changelists {
@@ -553,8 +553,8 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 // for each verdict in `tvs`. If analysis is not available for a given
 // verdict, the corresponding item in the response will be nil.
 func queryTestVariantAnalysisForClustering(ctx context.Context, tvs []*rdbpb.TestVariant, project string, partitionTime time.Time, sourcesMap map[string]*rdbpb.Sources) (tvbs []*clusteringpb.TestVariantBranch, err error) {
-	ctx, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.queryTestVariantAnalysisForClustering")
-	defer func() { s.End(err) }()
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.queryTestVariantAnalysisForClustering")
+	defer func() { tracing.End(s, err) }()
 
 	cfg, err := config.Get(ctx)
 	if err != nil {
@@ -578,8 +578,8 @@ func queryTestVariantAnalysisForClustering(ctx context.Context, tvs []*rdbpb.Tes
 }
 
 func ingestForChangePointAnalysis(ctx context.Context, exporter *tvbexporter.Exporter, rsp *rdbpb.QueryTestVariantsResponse, payload *taskspb.IngestTestResults) (err error) {
-	ctx, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForChangePointAnalysis")
-	defer func() { s.End(err) }()
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForChangePointAnalysis")
+	defer func() { tracing.End(s, err) }()
 
 	cfg, err := config.Get(ctx)
 	if err != nil {
@@ -599,8 +599,8 @@ func ingestForChangePointAnalysis(ctx context.Context, exporter *tvbexporter.Exp
 func ingestForVerdictExport(ctx context.Context, verdictExporter *testverdicts.Exporter,
 	rsp *rdbpb.QueryTestVariantsResponse, inv *rdbpb.Invocation, payload *taskspb.IngestTestResults) (err error) {
 
-	ctx, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForVerdictExport")
-	defer func() { s.End(err) }()
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForVerdictExport")
+	defer func() { tracing.End(s, err) }()
 
 	cfg, err := config.Get(ctx)
 	if err != nil {

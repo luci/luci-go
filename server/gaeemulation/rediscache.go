@@ -23,12 +23,15 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/gae/filter/dscache"
 )
+
+var tracer = otel.Tracer("go.chromium.org/luci/server/gaeemulation")
 
 const (
 	lockPrefix = 'L' // items that hold locks start with this byte
@@ -70,8 +73,14 @@ type redisCache struct {
 }
 
 func (c redisCache) do(ctx context.Context, op string, cb func(conn redis.Conn) error) (err error) {
-	ctx, ts := trace.StartSpan(ctx, "go.chromium.org/luci/server/redisCache."+op)
-	defer func() { ts.End(err) }()
+	ctx, span := tracer.Start(ctx, "go.chromium.org/luci/server/redisCache."+op)
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+		span.End()
+	}()
 
 	conn, err := c.pool.GetContext(ctx)
 	if err != nil {

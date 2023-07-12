@@ -18,14 +18,15 @@ import (
 	"context"
 	"fmt"
 
-	oteltrace "go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel"
+	otelcodes "go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	grpcStatus "google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
@@ -36,6 +37,8 @@ const (
 	readReqsSizeLimit  = 1000
 	writeReqsSizeLimit = 200
 )
+
+var tracer = otel.Tracer("go.chromium.org/luci/buildbucket")
 
 // Batch handles a batch request. Implements pb.BuildsServer.
 func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResponse, error) {
@@ -86,13 +89,13 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 
 	// ID used to log this Batch operation in the pRPC request log (see common.go).
 	// Used as the parent request log ID when logging individual operations here.
-	parent := oteltrace.SpanContextFromContext(ctx).TraceID().String()
+	parent := trace.SpanContextFromContext(ctx).TraceID().String()
 	err = parallel.WorkPool(64, func(c chan<- func() error) {
 		c <- func() (err error) {
-			ctx, span := trace.StartSpan(ctx, "Batch.ScheduleBuild")
+			ctx, span := tracer.Start(ctx, "Batch.ScheduleBuild")
 			// Batch schedule requests. It allows partial success.
 			ret, merr := b.scheduleBuilds(ctx, globalCfg, schBatchReq)
-			defer span.End(err)
+			defer func() { endSpan(span, err) }()
 			for i, e := range merr {
 				if e != nil {
 					res.Responses[schIndices[i]] = &pb.BatchResponse_Response{
@@ -119,32 +122,31 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 				ctx := ctx
 				method := ""
 				response := &pb.BatchResponse_Response{}
-				var span trace.Span
+
+				var span trace.Span // opened below
+				defer func() { endSpan(span, err) }()
+
 				switch r.Request.(type) {
 				case *pb.BatchRequest_Request_GetBuild:
-					ctx, span = trace.StartSpan(ctx, "Batch.GetBuild")
-					defer span.End(err)
+					ctx, span = tracer.Start(ctx, "Batch.GetBuild")
 					ret, e := b.GetBuild(ctx, r.GetGetBuild())
 					response.Response = &pb.BatchResponse_Response_GetBuild{GetBuild: ret}
 					err = e
 					method = "GetBuild"
 				case *pb.BatchRequest_Request_SearchBuilds:
-					ctx, span = trace.StartSpan(ctx, "Batch.SearchBuilds")
-					defer span.End(err)
+					ctx, span = tracer.Start(ctx, "Batch.SearchBuilds")
 					ret, e := b.SearchBuilds(ctx, r.GetSearchBuilds())
 					response.Response = &pb.BatchResponse_Response_SearchBuilds{SearchBuilds: ret}
 					err = e
 					method = "SearchBuilds"
 				case *pb.BatchRequest_Request_CancelBuild:
-					ctx, span = trace.StartSpan(ctx, "Batch.CancelBuild")
-					defer span.End(err)
+					ctx, span = tracer.Start(ctx, "Batch.CancelBuild")
 					ret, e := b.CancelBuild(ctx, r.GetCancelBuild())
 					response.Response = &pb.BatchResponse_Response_CancelBuild{CancelBuild: ret}
 					err = e
 					method = "CancelBuild"
 				case *pb.BatchRequest_Request_GetBuildStatus:
-					ctx, span = trace.StartSpan(ctx, "Batch.GetBuildStatus")
-					defer span.End(err)
+					ctx, span = tracer.Start(ctx, "Batch.GetBuildStatus")
 					ret, e := b.GetBuildStatus(ctx, r.GetGetBuildStatus())
 					response.Response = &pb.BatchResponse_Response_GetBuildStatus{GetBuildStatus: ret}
 					err = e
@@ -157,7 +159,6 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 					response.Response = toBatchResponseError(ctx, err)
 				}
 				res.Responses[goIndices[i]] = response
-				span.End(nil)
 				return nil
 			}
 		}
@@ -166,6 +167,18 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 		return nil, err
 	}
 	return res, nil
+}
+
+// endSpan closes a tracing span.
+func endSpan(span trace.Span, err error) {
+	if span == nil {
+		return
+	}
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(otelcodes.Error, err.Error())
+	}
+	span.End()
 }
 
 // toBatchResponseError converts an error to BatchResponse_Response_Error type.

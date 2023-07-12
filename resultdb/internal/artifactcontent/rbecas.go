@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/genproto/googleapis/bytestream"
 	"google.golang.org/grpc"
@@ -31,9 +32,9 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcmon"
+	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 )
@@ -89,12 +90,12 @@ func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
 	// Forward the blob to the client.
 	wroteHeader := false
 	for {
-		_, readSpan := trace.StartSpan(c.Request.Context(), "resultdb.readChunk")
+		_, readSpan := tracing.Start(c.Request.Context(), "resultdb.readChunk")
 		chunk, err := stream.Recv()
 		if err == nil {
-			readSpan.Attribute("size", len(chunk.Data))
+			readSpan.SetAttributes(attribute.Int("size", len(chunk.Data)))
 		}
-		readSpan.End(err)
+		tracing.End(readSpan, err)
 
 		switch {
 		case err == io.EOF:
@@ -128,10 +129,11 @@ func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
 				wroteHeader = true
 			}
 
-			_, writeSpan := trace.StartSpan(c.Request.Context(), "resultdb.writeChunk")
-			writeSpan.Attribute("size", len(chunk.Data))
+			_, writeSpan := tracing.Start(c.Request.Context(), "resultdb.writeChunk",
+				attribute.Int("size", len(chunk.Data)),
+			)
 			_, err := c.Writer.Write(chunk.Data)
-			writeSpan.End(err)
+			tracing.End(writeSpan, err)
 			if err != nil {
 				logging.Warningf(c.Request.Context(), "Failed to write a response chunk: %s", err)
 				return
@@ -178,12 +180,12 @@ func (r *Reader) DownloadRBECASContent(ctx context.Context, bs bytestream.ByteSt
 	eg.Go(func() error {
 		defer pw.Close()
 		for {
-			_, readSpan := trace.StartSpan(ctx, "resultdb.readChunk")
+			_, readSpan := tracing.Start(ctx, "resultdb.readChunk")
 			chunk, err := stream.Recv()
 			if err == nil {
-				readSpan.Attribute("size", len(chunk.Data))
+				readSpan.SetAttributes(attribute.Int("size", len(chunk.Data)))
 			}
-			readSpan.End(err)
+			tracing.End(readSpan, err)
 
 			switch {
 			case err == io.EOF:

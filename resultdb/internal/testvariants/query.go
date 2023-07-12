@@ -21,6 +21,7 @@ import (
 	"text/template"
 
 	"cloud.google.com/go/spanner"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -28,13 +29,13 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/resultdb/internal/exonerations"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresults"
+	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
@@ -411,9 +412,10 @@ func (q *Query) toLimitedData(ctx context.Context, tv *pb.TestVariant,
 }
 
 func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f func(*pb.TestVariant) error) (err error) {
-	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.run")
-	ts.Attribute("cr.dev/invocations", len(q.ReachableInvocations.Invocations))
-	defer func() { ts.End(err) }()
+	ctx, ts := tracing.Start(ctx, "testvariants.Query.run",
+		attribute.Int("cr.dev.invocations", len(q.ReachableInvocations.Invocations)),
+	)
+	defer func() { tracing.End(ts, err) }()
 
 	if q.PageSize < 0 {
 		panic("PageSize < 0")
@@ -586,9 +588,10 @@ func (q *Query) fetchTestVariantsWithUnexpectedResults(ctx context.Context) (Pag
 // test result read. Test results are returned in test variant order.
 // Within each test variant, unexpected results are returned first.
 func (q *Query) queryTestResults(ctx context.Context, limit int, f func(testId, variantHash string, variant *pb.Variant, tmd spanutil.Compressed, tvr *tvResult) error) (err error) {
-	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.queryTestResults")
-	ts.Attribute("cr.dev/invocations", len(q.ReachableInvocations.Invocations))
-	defer func() { ts.End(err) }()
+	ctx, ts := tracing.Start(ctx, "testvariants.Query.queryTestResults",
+		attribute.Int("cr.dev.invocations", len(q.ReachableInvocations.Invocations)),
+	)
+	defer func() { tracing.End(ts, err) }()
 	st, err := spanutil.GenerateStatement(allTestResultsSQLTmpl, map[string]any{
 		"ResultColumns": strings.Join(q.resultSelectColumns(), ", "),
 		"HasTestIds":    len(q.TestIDs) > 0,

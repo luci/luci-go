@@ -19,14 +19,18 @@ import (
 	"sync"
 	"time"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/auth/authdb"
 
 	"go.chromium.org/luci/auth_service/impl/model"
 )
+
+var tracer = otel.Tracer("go.chromium.org/luci/auth_service")
 
 // AuthDBProvider knows how to produce an up-to-date authdb.DB instance.
 //
@@ -41,8 +45,14 @@ type AuthDBProvider struct {
 //
 // Refetches it from the datastore if necessary.
 func (a *AuthDBProvider) GetAuthDB(ctx context.Context) (db authdb.DB, err error) {
-	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/auth_service/impl/GetAuthDB")
-	defer func() { span.End(err) }()
+	ctx, span := tracer.Start(ctx, "go.chromium.org/luci/auth_service/impl/GetAuthDB")
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+		span.End()
+	}()
 
 	// Grab the latest AuthDB revision number in the datastore.
 	latestState, err := model.GetReplicationState(ctx)

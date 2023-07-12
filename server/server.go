@@ -17,10 +17,9 @@
 // It interprets command line flags and initializes the serving environment with
 // the following core services:
 //
-//   - go.chromium.org/luci/common/logging: logging via Google Cloud Logging and
-//     error reporting via Google Cloud Error Reporting.
-//   - go.chromium.org/luci/common/trace: Tracing via Google Cloud Trace and
-//     profiling Google Cloud Profiler.
+//   - go.chromium.org/luci/common/logging: logging via Google Cloud Logging.
+//   - go.opentelemetry.io/otel/trace: OpenTelemetry tracing with export to
+//     Google Cloud Trace.
 //   - go.chromium.org/luci/server/tsmon: monitoring metrics via ProdX.
 //   - go.chromium.org/luci/server/auth: sending and receiving RPCs
 //     authenticated with Google OAuth2 or OpenID tokens. Support for
@@ -31,6 +30,8 @@
 //     requests.
 //   - go.chromium.org/luci/server/experiments: simple feature flags support.
 //   - go.chromium.org/luci/grpc/prpc: pRPC server and RPC Explorer UI.
+//   - Error reporting via Google Cloud Error Reporting.
+//   - Continuous profiling via Google Cloud Profiler.
 //
 // Other functionality is optional and provided by modules (objects implementing
 // module.Module interface). They should be passed to the server when it starts
@@ -1015,13 +1016,6 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 		if err := binary.Read(cryptorand.Reader, binary.BigEndian, &seed); err != nil {
 			panic(err)
 		}
-	}
-
-	// Do this very early, so that various transports created during the
-	// initialization are already wrapped with tracing. The rest of the tracing
-	// infra (e.g. actual uploads) is initialized later in initTracing.
-	if opts.shouldEnableTracing() {
-		internal.EnableOpenTelemetryTracing()
 	}
 
 	srv = &Server{

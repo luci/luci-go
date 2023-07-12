@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/services/baselineupdater"
 	"go.chromium.org/luci/resultdb/internal/services/bqexporter"
@@ -35,6 +34,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
+	"go.chromium.org/luci/resultdb/internal/tracing"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/span"
@@ -127,8 +127,8 @@ var notReadyToFinalize = errors.BoolTag{Key: errors.NewTagKey("not ready to get 
 // An invocation is ready to be finalized if no ACTIVE invocation is reachable
 // from it.
 func readyToFinalize(ctx context.Context, invID invocations.ID) (ready bool, err error) {
-	ctx, ts := trace.StartSpan(ctx, "resultdb.readyToFinalize")
-	defer func() { ts.End(err) }()
+	ctx, ts := tracing.Start(ctx, "resultdb.readyToFinalize")
+	defer func() { tracing.End(ts, err) }()
 
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()

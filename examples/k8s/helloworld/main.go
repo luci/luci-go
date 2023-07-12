@@ -23,10 +23,10 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/prpc"
 
 	"go.chromium.org/luci/gae/service/datastore"
@@ -42,6 +42,8 @@ import (
 
 	"go.chromium.org/luci/examples/k8s/helloworld/apipb"
 )
+
+var tracer = otel.Tracer("go.chromium.org/luci/example")
 
 func main() {
 	// Additional modules that extend the server functionality.
@@ -60,10 +62,10 @@ func main() {
 		srv.Routes.GET("/", nil, func(c *router.Context) {
 			logging.Debugf(c.Request.Context(), "Hello debug world")
 
-			ctx, span := trace.StartSpan(c.Request.Context(), "Testing")
+			ctx, span := tracer.Start(c.Request.Context(), "Testing")
 			logging.Infof(ctx, "Hello info world")
 			time.Sleep(100 * time.Millisecond)
-			span.End(nil)
+			span.End()
 
 			logging.Warningf(c.Request.Context(), "Hello warning world")
 			c.Writer.Write([]byte("Hello, world"))

@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/auth/identity"
@@ -29,10 +30,10 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth/delegation/messages"
+	"go.chromium.org/luci/server/auth/internal/tracing"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 )
 
@@ -156,9 +157,10 @@ var delegationTokenCache = newTokenCache(tokenCacheConfig{
 // The token is cached internally. Same token may be returned by multiple calls,
 // if its lifetime allows.
 func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (_ *Token, err error) {
-	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth.MintDelegationToken")
-	span.Attribute("cr.dev/target", p.TargetHost)
-	defer func() { span.End(err) }()
+	ctx, span := tracing.Start(ctx, "go.chromium.org/luci/server/auth.MintDelegationToken",
+		attribute.String("cr.dev.target", p.TargetHost),
+	)
+	defer func() { tracing.End(span, err) }()
 
 	report := durationReporter(ctx, mintDelegationTokenDuration)
 

@@ -22,16 +22,17 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/api/iterator"
 
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/rulesalgorithm"
+	"go.chromium.org/luci/analysis/internal/tracing"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/trace"
 )
 
 // Cluster contains detailed information about a cluster, including
@@ -334,9 +335,10 @@ func EmptyCluster(clusterID clustering.ClusterID) *Cluster {
 // If information for the cluster could not be found (e.g. because there are no examples),
 // returns an empty cluster.
 func (c *Client) ReadCluster(ctx context.Context, luciProject string, clusterID clustering.ClusterID) (cl *Cluster, err error) {
-	_, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/analysis/ReadCluster")
-	s.Attribute("project", luciProject)
-	defer func() { s.End(err) }()
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/analysis.ReadCluster",
+		attribute.String("project", luciProject),
+	)
+	defer func() { tracing.End(s, err) }()
 
 	whereClause := `cluster_algorithm = @clusterAlgorithm AND cluster_id = @clusterID`
 	params := []bigquery.QueryParameter{
@@ -371,9 +373,10 @@ type ImpactfulClusterReadOptions struct {
 // ReadImpactfulClusters reads clusters exceeding specified impact metrics, or are otherwise
 // nominated to be read.
 func (c *Client) ReadImpactfulClusters(ctx context.Context, opts ImpactfulClusterReadOptions) (cs []*Cluster, err error) {
-	_, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/analysis/ReadImpactfulClusters")
-	s.Attribute("project", opts.Project)
-	defer func() { s.End(err) }()
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/analysis.ReadImpactfulClusters",
+		attribute.String("project", opts.Project),
+	)
+	defer func() { tracing.End(s, err, attribute.Int("outcome", len(cs))) }()
 
 	whereClauses := []string{"(@alwaysIncludeBugClusters AND cluster_algorithm = @ruleAlgorithmName)"}
 	queryParams := []bigquery.QueryParameter{

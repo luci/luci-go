@@ -27,6 +27,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/genproto/googleapis/bytestream"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -35,7 +36,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/router"
@@ -45,6 +45,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -183,8 +184,9 @@ func (ac *artifactCreator) handle(c *router.Context) error {
 // writeToCAS writes contents in r to RBE-CAS.
 // ac.hash and ac.size must match the contents.
 func (ac *artifactCreator) writeToCAS(ctx context.Context, r io.Reader) (err error) {
-	ctx, overallSpan := trace.StartSpan(ctx, "resultdb.writeToCAS")
-	defer func() { overallSpan.End(err) }()
+	ctx, overallSpan := tracing.Start(ctx, "resultdb.writeToCAS")
+	defer func() { tracing.End(overallSpan, err) }()
+
 	// Protocol:
 	// https://github.com/bazelbuild/remote-apis/blob/7802003e00901b4e740fe0ebec1243c221e02ae2/build/bazel/remote/execution/v2/remote_execution.proto#L193-L205
 	// https://github.com/googleapis/googleapis/blob/c8e291e6a4d60771219205b653715d5aeec3e96b/google/bytestream/bytestream.proto#L55
@@ -209,17 +211,16 @@ func (ac *artifactCreator) writeToCAS(ctx context.Context, r io.Reader) (err err
 	first := true
 	bytesSent := 0
 	for {
-		_, readSpan := trace.StartSpan(ctx, "resultdb.readChunk")
+		_, readSpan := tracing.Start(ctx, "resultdb.readChunk")
 		n, err := r.Read(buf)
 		if err != nil && err != io.EOF {
-			readSpan.End(err)
+			tracing.End(readSpan, err)
 			if err != io.ErrUnexpectedEOF {
 				return errors.Annotate(err, "failed to read artifact contents").Err()
 			}
 			return appstatus.BadRequest(errors.Annotate(err, "failed to read artifact contents").Err())
 		}
-		readSpan.Attribute("size", n)
-		readSpan.End(nil)
+		tracing.End(readSpan, nil, attribute.Int("size", n))
 		last := err == io.EOF
 
 		// Prepare the request.
@@ -237,14 +238,15 @@ func (ac *artifactCreator) writeToCAS(ctx context.Context, r io.Reader) (err err
 		}
 
 		// Send the request.
-		_, writeSpan := trace.StartSpan(ctx, "resultdb.writeChunk")
-		writeSpan.Attribute("size", n)
+		_, writeSpan := tracing.Start(ctx, "resultdb.writeChunk",
+			attribute.Int("size", n),
+		)
 		// Do not shadow err! It is checked below again.
 		if err = w.Send(req); err != nil && err != io.EOF {
-			writeSpan.End(err)
+			tracing.End(writeSpan, err)
 			return errors.Annotate(err, "failed to write data to RBE-CAS").Err()
 		}
-		writeSpan.End(nil)
+		tracing.End(writeSpan, nil)
 		bytesSent += n
 		if last || err == io.EOF {
 			// Either this was the last chunk, or server closed the stream.
@@ -416,8 +418,8 @@ func (v *digestVerifier) Read(p []byte) (n int, err error) {
 // and returns a non-nil error if the content have unexpected hash or size.
 // The error may be annotated with appstatus.
 func (v *digestVerifier) ReadVerify(ctx context.Context) (err error) {
-	ctx, ts := trace.StartSpan(ctx, "resultdb.digestVerifier.ReadVerify")
-	defer func() { ts.End(err) }()
+	_, ts := tracing.Start(ctx, "resultdb.digestVerifier.ReadVerify")
+	defer func() { tracing.End(ts, err) }()
 
 	// Read until the end.
 	if _, err := io.Copy(io.Discard, v); err != nil {

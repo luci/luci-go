@@ -22,17 +22,18 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox/dsset"
+	"go.chromium.org/luci/cv/internal/tracing"
 )
 
 // Recipient is the recipient of the events.
@@ -92,11 +93,11 @@ func List(ctx context.Context, r Recipient) (Events, error) {
 //   - error while processing events. Tags the error with common.DSContentionTag
 //     if entity's EVersion has changed or there is contention on Datastore
 //     entities involved in a transaction.
-func ProcessBatch(ctx context.Context, r Recipient, p Processor, maxEvents int) ([]PostProcessFn, error) {
-	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/eventbox/ProcessBatch")
-	var err error
-	span.Attribute("recipient", r.MonitoringString)
-	defer func() { span.End(err) }()
+func ProcessBatch(ctx context.Context, r Recipient, p Processor, maxEvents int) (_ []PostProcessFn, err error) {
+	ctx, span := tracing.Start(ctx, "go.chromium.org/luci/cv/internal/eventbox/ProcessBatch",
+		attribute.String("recipient", r.MonitoringString),
+	)
+	defer func() { tracing.End(span, err) }()
 	postProcessFn, err := processBatch(ctx, r, p, maxEvents)
 	if common.IsDatastoreContention(err) {
 		err = common.DSContentionTag.Apply(err)

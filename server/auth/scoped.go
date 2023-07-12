@@ -21,18 +21,18 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth/internal/tracing"
 
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 )
@@ -88,9 +88,10 @@ var scopedTokenCache = newTokenCache(tokenCacheConfig{
 // internally. Same token may be returned by multiple calls, if its lifetime
 // allows.
 func MintProjectToken(ctx context.Context, p ProjectTokenParams) (_ *Token, err error) {
-	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth.MintProjectToken")
-	span.Attribute("cr.dev/project", p.LuciProject)
-	defer func() { span.End(err) }()
+	ctx, span := tracing.Start(ctx, "go.chromium.org/luci/server/auth.MintProjectToken",
+		attribute.String("cr.dev.project", p.LuciProject),
+	)
+	defer func() { tracing.End(span, err) }()
 
 	report := durationReporter(ctx, mintProjectTokenDuration)
 

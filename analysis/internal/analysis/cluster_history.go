@@ -21,13 +21,14 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/api/iterator"
 
 	"go.chromium.org/luci/analysis/internal/aip"
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bqutil"
+	"go.chromium.org/luci/analysis/internal/tracing"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/trace"
 )
 
 type ReadClusterHistoryOptions struct {
@@ -47,9 +48,10 @@ type ReadClusterHistoryDay struct {
 // ReadCluster reads information about a list of clusters.
 // If the dataset for the LUCI project does not exist, returns ProjectNotExistsErr.
 func (c *Client) ReadClusterHistory(ctx context.Context, options ReadClusterHistoryOptions) (ret []*ReadClusterHistoryDay, err error) {
-	_, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/analysis/ReadClusterHistory")
-	s.Attribute("project", options.Project)
-	defer func() { s.End(err) }()
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/analysis.ReadClusterHistory",
+		attribute.String("project", options.Project),
+	)
+	defer func() { tracing.End(s, err, attribute.Int("outcome", len(ret))) }()
 
 	// Note that the content of the filter and order_by clause is untrusted
 	// user input and is validated as part of the Where/OrderBy clause

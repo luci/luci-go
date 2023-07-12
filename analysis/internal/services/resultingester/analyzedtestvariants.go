@@ -21,18 +21,19 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/trace"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/analysis/internal/analyzedtestvariants"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/services/testvariantupdator"
 	spanutil "go.chromium.org/luci/analysis/internal/span"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
+	"go.chromium.org/luci/analysis/internal/tracing"
 	"go.chromium.org/luci/analysis/pbutil"
 	atvpb "go.chromium.org/luci/analysis/proto/analyzedtestvariant"
 	configpb "go.chromium.org/luci/analysis/proto/config"
@@ -77,8 +78,8 @@ func createOrUpdateAnalyzedTestVariants(ctx context.Context, realm, builder stri
 		return nil
 	}
 
-	ctx, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.createOrUpdateAnalyzedTestVariants")
-	defer func() { s.End(err) }()
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.createOrUpdateAnalyzedTestVariants")
+	defer func() { tracing.End(s, err) }()
 
 	rc, err := config.Realm(ctx, realm)
 	switch {

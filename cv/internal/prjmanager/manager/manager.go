@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -41,6 +40,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/state"
 	"go.chromium.org/luci/cv/internal/prjmanager/triager"
 	"go.chromium.org/luci/cv/internal/run/runcreator"
+	"go.chromium.org/luci/cv/internal/tracing"
 )
 
 const (
@@ -180,8 +180,8 @@ func (proc *pmProcessor) LoadState(ctx context.Context) (eventbox.State, eventbo
 // All actions that must be done atomically with updating state must be
 // encapsulated inside Transition.SideEffectFn callback.
 func (proc *pmProcessor) PrepareMutation(ctx context.Context, events eventbox.Events, s eventbox.State) (ts []eventbox.Transition, noops eventbox.Events, err error) {
-	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/Mutate")
-	defer func() { span.End(err) }()
+	ctx, span := tracing.Start(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/Mutate")
+	defer func() { tracing.End(span, err) }()
 
 	tr := &triageResult{}
 	for _, e := range events {

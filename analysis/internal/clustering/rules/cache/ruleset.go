@@ -19,13 +19,15 @@ import (
 	"sort"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/clustering/rules/lang"
+	"go.chromium.org/luci/analysis/internal/tracing"
 )
 
 // CachedRule represents a "compiled" version of a failure
@@ -134,9 +136,10 @@ func (r *Ruleset) refresh(ctx context.Context) (ruleset *Ruleset, err error) {
 	// Under our design assumption of 10,000 active rules per project,
 	// pulling and compiling all rules could take a meaningful amount
 	// of time (@ 1KB per rule, = ~10MB).
-	ctx, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/clustering/rules/cache.Refresh")
-	s.Attribute("project", r.Project)
-	defer func() { s.End(err) }()
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/clustering/rules/cache.Refresh",
+		attribute.String("project", r.Project),
+	)
+	defer func() { tracing.End(s, err) }()
 
 	// Use clock reading before refresh. The refresh is guaranteed
 	// to contain all rule changes committed to Spanner prior to

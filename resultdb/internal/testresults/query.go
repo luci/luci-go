@@ -23,15 +23,16 @@ import (
 	"text/template"
 
 	"cloud.google.com/go/spanner"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/genproto/protobuf/field_mask"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
-	"go.chromium.org/luci/common/trace"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -92,9 +93,10 @@ type Query struct {
 }
 
 func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err error) {
-	ctx, ts := trace.StartSpan(ctx, "testresults.Query.run")
-	ts.Attribute("cr.dev/invocations", len(q.InvocationIDs))
-	defer func() { ts.End(err) }()
+	ctx, ts := tracing.Start(ctx, "testresults.Query.run",
+		attribute.Int("cr.dev.invocations", len(q.InvocationIDs)),
+	)
+	defer func() { tracing.End(ts, err) }()
 
 	switch {
 	case q.PageSize < 0:

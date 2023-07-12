@@ -20,10 +20,10 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/common/trace"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/internal/testresults/gitreferences"
+	"go.chromium.org/luci/analysis/internal/tracing"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -262,8 +263,8 @@ func batchTestResults(inv *testresults.IngestedInvocation, tvs []*rdbpb.TestVari
 
 // recordTestResults records test results from an test-verdict-ingestion task.
 func recordTestResults(ctx context.Context, inv *testresults.IngestedInvocation, tvs []*rdbpb.TestVariant) (err error) {
-	ctx, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.recordTestResults")
-	defer func() { s.End(err) }()
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.recordTestResults")
+	defer func() { tracing.End(s, err) }()
 
 	const workerCount = 8
 

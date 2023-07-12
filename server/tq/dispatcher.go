@@ -36,8 +36,11 @@ import (
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
-	oteltrace "go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace"
 
 	taskspb "cloud.google.com/go/cloudtasks/apiv2/cloudtaskspb"
 	"cloud.google.com/go/pubsub/apiv1/pubsubpb"
@@ -47,7 +50,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/trace"
 	srvinternal "go.chromium.org/luci/server/internal"
 	"go.chromium.org/luci/server/router"
 
@@ -607,11 +609,17 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 	if err != nil {
 		return err
 	}
-	ctx, span := startSpan(ctx, "go.chromium.org/luci/server/tq.AddTask", logging.Fields{
-		"cr.dev/class": cls.ID,
-		"cr.dev/title": task.Title,
+	ctx, span := startSpan(ctx, "go.chromium.org/luci/server/tq.AddTask", map[string]string{
+		"cr.dev.class": cls.ID,
+		"cr.dev.title": task.Title,
 	})
-	defer func() { span.End(err) }()
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+		span.End()
+	}()
 
 	// Prepare a raw request. We'll either submit it right away (for non-tx
 	// tasks), or attach it to a reminder and store in the DB for later handling.
@@ -659,7 +667,7 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 	if err != nil {
 		return errors.Annotate(err, "failed to prepare a reminder").Err()
 	}
-	span.Attribute("cr.dev/reminder", r.ID)
+	span.SetAttributes(attribute.String("cr.dev.reminder", r.ID))
 	if err := txndb.SaveReminder(ctx, r); err != nil {
 		return errors.Annotate(err, "failed to store a transactional enqueue reminder").Err()
 	}
@@ -672,12 +680,18 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 
 		// `ctx` here is an outer non-transactional context.
 		var err error
-		ctx, span := startSpan(ctx, "go.chromium.org/luci/server/tq.PostTxn", logging.Fields{
-			"cr.dev/class":    cls.ID,
-			"cr.dev/title":    task.Title,
-			"cr.dev/reminder": r.ID,
+		ctx, span := startSpan(ctx, "go.chromium.org/luci/server/tq.PostTxn", map[string]string{
+			"cr.dev.class":    cls.ID,
+			"cr.dev.title":    task.Title,
+			"cr.dev.reminder": r.ID,
 		})
-		defer func() { span.End(err) }()
+		defer func() {
+			if err != nil {
+				span.RecordError(err)
+				span.SetStatus(codes.Error, err.Error())
+			}
+			span.End()
+		}()
 
 		// Attempt to submit the task right away if the reminder is still fresh.
 		err = internal.ProcessReminderPostTxn(ctx, sub, txndb, r)
@@ -786,6 +800,8 @@ var (
 	namespaceRe = regexp.MustCompile(`^[a-zA-Z_][0-9a-zA-Z_]{0,49}$`)
 	// taskClassIDRe is used to validate TaskClass.ID.
 	taskClassIDRe = regexp.MustCompile(`^[a-zA-Z0-9_\-.]{1,100}$`)
+	// tracer is used to report tracing spans.
+	tracer = otel.Tracer("go.chromium.org/luci/server/tq")
 )
 
 const (
@@ -808,13 +824,14 @@ func defaultHeaders() map[string]string {
 
 // startSpan starts a new span and puts `meta` into its attributes and into
 // logger fields.
-func startSpan(ctx context.Context, title string, meta logging.Fields) (context.Context, trace.Span) {
-	ctx = logging.SetFields(ctx, meta)
-	ctx, span := trace.StartSpan(ctx, title)
+func startSpan(ctx context.Context, title string, meta map[string]string) (context.Context, trace.Span) {
+	attrs := make([]attribute.KeyValue, 0, len(meta))
+	fields := make(logging.Fields, len(meta))
 	for k, v := range meta {
-		span.Attribute(k, v)
+		attrs = append(attrs, attribute.String(k, v))
+		fields[k] = v
 	}
-	return ctx, span
+	return tracer.Start(logging.SetFields(ctx, fields), title, trace.WithAttributes(attrs...))
 }
 
 // prepPayload converts a task into a reminder.Payload.
@@ -1369,7 +1386,7 @@ func (cls *taskClassImpl) deserialize(env *envelope) (proto.Message, error) {
 //
 // We use Cloud Trace propagation format.
 func traceContext(ctx context.Context) string {
-	span := oteltrace.SpanContextFromContext(ctx)
+	span := trace.SpanContextFromContext(ctx)
 	if !span.IsValid() {
 		return ""
 	}
