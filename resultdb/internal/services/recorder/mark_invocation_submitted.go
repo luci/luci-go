@@ -61,7 +61,7 @@ func validateMarkInvocationSubmittedPermissions(ctx context.Context, inv invocat
 		return errors.Annotate(err, "invocation: realm").Err()
 	}
 
-	switch allowed, err := auth.HasPermission(ctx, permPutBaseline, invRealm, nil); {
+	switch allowed, err := auth.HasPermission(ctx, permSetSubmittedInvocation, invRealm, nil); {
 	case err != nil:
 		return err
 	case !allowed:

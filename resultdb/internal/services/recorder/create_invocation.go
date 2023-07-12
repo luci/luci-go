@@ -196,6 +196,15 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 		}
 	}
 
+	if inv.BaselineId != "" {
+		switch allowed, err := auth.HasPermission(ctx, permPutBaseline, realm, nil); {
+		case err != nil:
+			return err
+		case !allowed:
+			return appstatus.Errorf(codes.PermissionDenied, `creator does not have permission to set baseline ids in realm %q`, inv.GetRealm())
+		}
+	}
+
 	return nil
 }
 

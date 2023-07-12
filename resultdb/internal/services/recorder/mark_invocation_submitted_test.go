@@ -56,7 +56,7 @@ func TestMarkInvocationSubmitted(t *testing.T) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
-					{Realm: "chromium:try", Permission: permPutBaseline},
+					{Realm: "chromium:try", Permission: permSetSubmittedInvocation},
 				},
 			})
 
@@ -84,7 +84,7 @@ func TestMarkInvocationSubmitted(t *testing.T) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
-					{Realm: "chromium:try", Permission: permPutBaseline},
+					{Realm: "chromium:try", Permission: permSetSubmittedInvocation},
 				},
 			})
 			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZING, map[string]any{
@@ -108,7 +108,7 @@ func TestMarkInvocationSubmitted(t *testing.T) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
-					{Realm: "chromium:try", Permission: permPutBaseline},
+					{Realm: "chromium:try", Permission: permSetSubmittedInvocation},
 				},
 			})
 			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, map[string]any{
@@ -128,7 +128,7 @@ func TestMarkInvocationSubmitted(t *testing.T) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
-					{Realm: "chromium:try", Permission: permPutBaseline},
+					{Realm: "chromium:try", Permission: permSetSubmittedInvocation},
 				},
 			})
 			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, map[string]any{

@@ -111,6 +111,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 				{Realm: "testproject:testrealm", Permission: permSetProducerResource},
 				{Realm: "testproject:testrealm", Permission: permIncludeInvocation},
 				{Realm: "testproject:createonly", Permission: permCreateInvocation},
+				{Realm: "testproject:testrealm", Permission: permPutBaseline},
 			},
 		}
 		ctx = auth.WithState(ctx, authState)

@@ -19,9 +19,13 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -80,6 +84,16 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 	return nil
 }
 
+func validateUpdateBaselinePermissions(ctx context.Context, realm string) error {
+	switch allowed, err := auth.HasPermission(ctx, permPutBaseline, realm, nil); {
+	case err != nil:
+		return err
+	case !allowed:
+		return appstatus.Errorf(codes.PermissionDenied, `caller does not have permission to set baseline ids in realm %s`, realm)
+	}
+	return nil
+}
+
 // UpdateInvocation implements pb.RecorderServer.
 func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvocationRequest) (*pb.Invocation, error) {
 	if err := validateUpdateInvocationRequest(in, clock.Now(ctx).UTC()); err != nil {
@@ -126,9 +140,14 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 				ret.SourceSpec = in.Invocation.SourceSpec
 
 			case "baseline_id":
-				baseline_id := in.Invocation.BaselineId
-				values["BaselineId"] = baseline_id
-				ret.BaselineId = baseline_id
+				if err := validateUpdateBaselinePermissions(ctx, ret.Realm); err != nil {
+					// log the error and silently skip setting baseline id
+					logging.Warningf(ctx, "Silently swallowing permission error %s", err)
+					continue
+				}
+				baselineID := in.Invocation.BaselineId
+				values["BaselineId"] = baselineID
+				ret.BaselineId = baselineID
 
 			default:
 				panic("impossible")

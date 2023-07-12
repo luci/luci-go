@@ -191,6 +191,39 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 			})
 			So(err, ShouldErrLike, `does not have permission to set bigquery exports`)
 		})
+		Convey(`baseline allowed`, func() {
+			ctx = auth.WithState(context.Background(), &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "chromium:try", Permission: permCreateInvocation},
+					{Realm: "chromium:try", Permission: permPutBaseline},
+				},
+			})
+			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
+				InvocationId: "u-abc",
+				Invocation: &pb.Invocation{
+					Realm:      "chromium:try",
+					BaselineId: "try:linux-rel",
+				},
+			})
+			So(err, ShouldBeNil)
+		})
+		Convey(`baseline disallowed`, func() {
+			ctx = auth.WithState(context.Background(), &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "chromium:try", Permission: permCreateInvocation},
+				},
+			})
+			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
+				InvocationId: "u-abc",
+				Invocation: &pb.Invocation{
+					Realm:      "chromium:try",
+					BaselineId: "try:linux-rel",
+				},
+			})
+			So(err, ShouldErrLike, `does not have permission to set baseline ids`)
+		})
 		Convey(`creation disallowed`, func() {
 			ctx = auth.WithState(context.Background(), &authtest.FakeState{
 				Identity:            "user:someone@example.com",
@@ -340,6 +373,7 @@ func TestCreateInvocation(t *testing.T) {
 				{Realm: "testproject:testrealm", Permission: permSetProducerResource},
 				{Realm: "testproject:testrealm", Permission: permIncludeInvocation},
 				{Realm: "testproject:createonly", Permission: permCreateInvocation},
+				{Realm: "testproject:testrealm", Permission: permPutBaseline},
 			},
 		})
 

@@ -184,8 +184,8 @@ message UpdateIncludedInvocationsRequest {
 
 // A request message for MarkInvocationSubmitted RPC.
 // To use this RPC, callers need:
-// - resultdb.baselines.put in the realm the <project>:@project, where project
-//   is the project of the nominated invocation.
+// - resultdb.invocations.setSubmitted in the realm the <project>:@project, where
+//   project is the project of the nominated invocation.
 message MarkInvocationSubmittedRequest {
   // Name of the invocation, e.g. "invocations/{id}".
   string invocation = 1 [ (google.api.field_behavior) = REQUIRED ];

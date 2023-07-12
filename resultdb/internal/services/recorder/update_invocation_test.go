@@ -26,6 +26,8 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -268,7 +270,30 @@ func TestUpdateInvocation(t *testing.T) {
 		testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 		updateMask.Paths = append(updateMask.Paths, "baseline_id")
 
+		Convey("e2e no baseline permissions", func() {
+			req := &pb.UpdateInvocationRequest{
+				Invocation: &pb.Invocation{
+					Name:       "invocations/inv",
+					BaselineId: "try:linux-rel",
+				},
+				UpdateMask: &field_mask.FieldMask{Paths: []string{"baseline_id"}},
+			}
+
+			inv, err := recorder.UpdateInvocation(ctx, req)
+			So(err, ShouldBeNil)
+			// the request does not permissions, so baseline should not be set and
+			// silently ignored.
+			So(inv.BaselineId, ShouldEqual, "")
+		})
+
 		Convey("e2e", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					// permission required to set baseline
+					{Realm: "testproject:testrealm", Permission: permPutBaseline},
+				},
+			})
 			req := &pb.UpdateInvocationRequest{
 				Invocation: &pb.Invocation{
 					Name:            "invocations/inv",

@@ -21,8 +21,9 @@ import (
 var (
 	permPutBaseline = realms.RegisterPermission("resultdb.baselines.put")
 
-	permCreateInvocation  = realms.RegisterPermission("resultdb.invocations.create")
-	permIncludeInvocation = realms.RegisterPermission("resultdb.invocations.include")
+	permCreateInvocation       = realms.RegisterPermission("resultdb.invocations.create")
+	permIncludeInvocation      = realms.RegisterPermission("resultdb.invocations.include")
+	permSetSubmittedInvocation = realms.RegisterPermission("resultdb.invocations.setSubmitted")
 
 	// Internal permissions
 	permCreateWithReservedID = realms.RegisterPermission("resultdb.invocations.createWithReservedID")

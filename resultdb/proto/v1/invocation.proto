@@ -179,6 +179,9 @@ message Invocation {
   // Baselines are used to identify new tests; a subtraction between the set of
   // test variants for a baseline in the Baselines table and test variants from
   // a given invocation determines whether a test is new.
+  //
+  // The caller must have `resultdb.baselines.put` to be able to
+  // modify this field.
   string baseline_id = 16;
 }
 
