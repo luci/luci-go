@@ -19,6 +19,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
@@ -241,6 +242,22 @@ func (m *serverModule) authorizeConfigService(c *router.Context, next router.Han
 	if caller.Kind() == identity.User && caller.Value() == info.ServiceAccountName {
 		next(c)
 	} else {
-		http.Error(c.Writer, "Permission denied", http.StatusForbidden)
+		// TODO(yiwzhang): Temporarily allow both old and new LUCI Config service
+		// account to make the validation request. Revert this change after the old
+		// LUCI Config service is fully deprecated and all traffic have been
+		// migrated to the new LUCI Config service.
+		allowedGroup := "service-accounts-luci-config"
+		if strings.Contains(m.opts.ServiceHost, "dev") {
+			allowedGroup += "-dev"
+		}
+		switch yes, err := auth.IsMember(c.Request.Context(), allowedGroup); {
+		case err != nil:
+			errors.Log(c.Request.Context(), err)
+			http.Error(c.Writer, "error during authorization", http.StatusInternalServerError)
+		case yes:
+			next(c)
+		default:
+			http.Error(c.Writer, "Permission denied", http.StatusForbidden)
+		}
 	}
 }

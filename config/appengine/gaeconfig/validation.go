@@ -17,6 +17,7 @@ package gaeconfig
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"go.chromium.org/luci/gae/service/info"
 
@@ -117,6 +118,21 @@ func isAuthorizedCall(c context.Context, s *Settings) (bool, error) {
 		caller := auth.CurrentIdentity(c)
 		if caller.Kind() == identity.User && caller.Value() == info.ServiceAccountName {
 			return true, nil
+		} else {
+			// TODO(yiwzhang): Temporarily allow both old and new LUCI Config service
+			// account to make the validation request. Revert this change after the
+			// old LUCI Config service is fully deprecated and all traffic have been
+			// migrated to the new LUCI Config service.
+			allowedGroup := "service-accounts-luci-config"
+			if strings.Contains(s.ConfigServiceHost, "dev") {
+				allowedGroup += "-dev"
+			}
+			switch yes, err := auth.IsMember(c, allowedGroup); {
+			case err != nil:
+				return false, err
+			case yes:
+				return true, nil
+			}
 		}
 	}
 
