@@ -37,16 +37,23 @@ message WithInner {
 }
 
 message Full {
-  int32 num = 1;
-  repeated int32 nums = 2;
-  string str = 3;
-  repeated string strs = 4;
-  Full msg = 5;
-  repeated Full msgs = 6;
-  map<string, int32> map_str_num = 7;
-  map<int32, string> map_num_str = 8;
-  map<bool, string> map_bool_str = 9;
-  map<string, Full> map_str_msg = 10;
-  string json_name = 11;
-  string json_name_option = 12 [json_name="another_json_name"];
+  int32 i32 = 1;
+  int64 i64 = 2;
+  uint32 u32 = 3;
+  uint64 u64 = 4;
+  float f32 = 5;
+  double f64 = 6;
+  bool boolean = 7;
+  int32 num = 8;
+  repeated int32 nums = 9;
+  string str = 10;
+  repeated string strs = 11;
+  Full msg = 12;
+  repeated Full msgs = 13;
+  map<string, int32> map_str_num = 14;
+  map<int32, string> map_num_str = 15;
+  map<bool, string> map_bool_str = 16;
+  map<string, Full> map_str_msg = 17;
+  string json_name = 18;
+  string json_name_option = 19 [json_name = "another_json_name"];
 }
