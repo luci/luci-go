@@ -19,6 +19,10 @@ import "go.chromium.org/luci/common/proto/config/service_config.proto";
 service Configs {
   // Get one configuration.
   rpc GetConfig(GetConfigRequest) returns (Config) {};
+
+  // Get the specified project configs from all projects.
+  rpc GetProjectConfigs(GetProjectConfigsRequest) returns (GetProjectConfigsResponse) {};
+
   // Validates configs for a config set.
   //
   // The validation workflow works as follows (assuming first time validation):
@@ -102,6 +106,33 @@ message Config {
 
   // Original config file url on Git repo.
   string url = 7;
+}
+
+// Get project-level configs matched with the provided path in all `projects/xxx`
+// config_sets.
+message GetProjectConfigsRequest {
+  // Required
+  // Path to the desired config in each project config set.
+  //
+  // TODO: In future, it can expand to support regex match in some ways, since
+  // in v2, Luci-config is supposed to support multi-file configuration.
+  // For example, `cr-buildbucket.cfg` can be split into smaller configs,
+  // e.g. `bucket-a.cfg`, `bucket-b.cfg`, etc. But file names might be dynamic
+  // and how these files are organized with other project configs are undecided.
+  // It's better to implement the regex check logic when there is a concrete
+  // use case.
+  string path = 1;
+
+  // Fields of Config proto to include.
+  //
+  // By default, all fields are included.
+  google.protobuf.FieldMask fields = 2;
+}
+
+// GetProjectConfigsResponse is the response of GetProjectConfigs rpc.
+message GetProjectConfigsResponse {
+  // The requested configs in each project.
+  repeated Config configs = 1;
 }
 
 // ValidateConfigsRequest is the request of ValidateConfigs rpc.

@@ -24,8 +24,9 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Configs_GetConfig_FullMethodName       = "/config.service.v2.Configs/GetConfig"
-	Configs_ValidateConfigs_FullMethodName = "/config.service.v2.Configs/ValidateConfigs"
+	Configs_GetConfig_FullMethodName         = "/config.service.v2.Configs/GetConfig"
+	Configs_GetProjectConfigs_FullMethodName = "/config.service.v2.Configs/GetProjectConfigs"
+	Configs_ValidateConfigs_FullMethodName   = "/config.service.v2.Configs/ValidateConfigs"
 )
 
 // ConfigsClient is the client API for Configs service.
@@ -34,6 +35,8 @@ const (
 type ConfigsClient interface {
 	// Get one configuration.
 	GetConfig(ctx context.Context, in *GetConfigRequest, opts ...grpc.CallOption) (*Config, error)
+	// Get the specified project configs from all projects.
+	GetProjectConfigs(ctx context.Context, in *GetProjectConfigsRequest, opts ...grpc.CallOption) (*GetProjectConfigsResponse, error)
 	// Validates configs for a config set.
 	//
 	// The validation workflow works as follows (assuming first time validation):
@@ -77,6 +80,15 @@ func (c *configsClient) GetConfig(ctx context.Context, in *GetConfigRequest, opt
 	return out, nil
 }
 
+func (c *configsClient) GetProjectConfigs(ctx context.Context, in *GetProjectConfigsRequest, opts ...grpc.CallOption) (*GetProjectConfigsResponse, error) {
+	out := new(GetProjectConfigsResponse)
+	err := c.cc.Invoke(ctx, Configs_GetProjectConfigs_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *configsClient) ValidateConfigs(ctx context.Context, in *ValidateConfigsRequest, opts ...grpc.CallOption) (*config.ValidationResult, error) {
 	out := new(config.ValidationResult)
 	err := c.cc.Invoke(ctx, Configs_ValidateConfigs_FullMethodName, in, out, opts...)
@@ -92,6 +104,8 @@ func (c *configsClient) ValidateConfigs(ctx context.Context, in *ValidateConfigs
 type ConfigsServer interface {
 	// Get one configuration.
 	GetConfig(context.Context, *GetConfigRequest) (*Config, error)
+	// Get the specified project configs from all projects.
+	GetProjectConfigs(context.Context, *GetProjectConfigsRequest) (*GetProjectConfigsResponse, error)
 	// Validates configs for a config set.
 	//
 	// The validation workflow works as follows (assuming first time validation):
@@ -125,6 +139,9 @@ type UnimplementedConfigsServer struct {
 
 func (UnimplementedConfigsServer) GetConfig(context.Context, *GetConfigRequest) (*Config, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
+}
+func (UnimplementedConfigsServer) GetProjectConfigs(context.Context, *GetProjectConfigsRequest) (*GetProjectConfigsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProjectConfigs not implemented")
 }
 func (UnimplementedConfigsServer) ValidateConfigs(context.Context, *ValidateConfigsRequest) (*config.ValidationResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ValidateConfigs not implemented")
@@ -160,6 +177,24 @@ func _Configs_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Configs_GetProjectConfigs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProjectConfigsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConfigsServer).GetProjectConfigs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Configs_GetProjectConfigs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConfigsServer).GetProjectConfigs(ctx, req.(*GetProjectConfigsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Configs_ValidateConfigs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ValidateConfigsRequest)
 	if err := dec(in); err != nil {
@@ -188,6 +223,10 @@ var Configs_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetConfig",
 			Handler:    _Configs_GetConfig_Handler,
+		},
+		{
+			MethodName: "GetProjectConfigs",
+			Handler:    _Configs_GetProjectConfigs_Handler,
 		},
 		{
 			MethodName: "ValidateConfigs",
