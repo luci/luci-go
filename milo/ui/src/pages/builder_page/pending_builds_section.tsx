@@ -15,14 +15,13 @@
 import { CircularProgress, Link } from '@mui/material';
 import { DateTime } from 'luxon';
 
-import { Timestamp } from '@/common/components/timestamp';
+import { RelativeDurationBadge } from '@/common/components/relative_duration_badge';
 import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
 import {
   BuilderID,
   BuildsService,
   BuildStatus,
 } from '@/common/services/buildbucket';
-import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
 
 const PAGE_SIZE = 100;
@@ -72,15 +71,16 @@ export function PendingBuildsSection({ builderId }: PendingBuildsSectionProps) {
       ) : (
         <ul css={{ maxHeight: '400px', overflow: 'auto' }}>
           {data.builds?.map((b) => {
-            const createTime = DateTime.fromISO(b.createTime);
             return (
               <li key={b.id}>
                 <Link href={getBuildURLPathFromBuildId(b.id)}>
                   {b.number || `b${b.id}`}
-                </Link>
-                <span> </span>
-                Created at:{' '}
-                <Timestamp datetime={createTime} format={SHORT_TIME_FORMAT} />
+                </Link>{' '}
+                <RelativeDurationBadge
+                  css={{ verticalAlign: 'text-top' }}
+                  from={DateTime.fromISO(b.createTime)}
+                />{' '}
+                ago
               </li>
             );
           })}

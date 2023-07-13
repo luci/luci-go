@@ -93,20 +93,20 @@ export function BuilderPage() {
           </Grid>
         )}
         {!isLoading && data.swarmingHost && (
-          <Grid item md={4}>
+          <Grid item md={5}>
             <MachinePoolSection
               swarmingHost={data.swarmingHost}
               dimensions={data.dimensions}
             />
           </Grid>
         )}
-        <Grid item md={3}>
+        <Grid item md={2}>
           <StartedBuildsSection builderId={builderId} />
         </Grid>
-        <Grid item md={3}>
+        <Grid item md={2}>
           <PendingBuildsSection builderId={builderId} />
         </Grid>
-        <Grid item md={2}>
+        <Grid item md={3}>
           <ViewsSection builderId={builderId} />
         </Grid>
         <Grid item md={12}>

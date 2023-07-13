@@ -15,13 +15,13 @@
 import { CircularProgress, Link } from '@mui/material';
 import { DateTime } from 'luxon';
 
+import { RelativeDurationBadge } from '@/common/components/relative_duration_badge';
 import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
 import {
   BuilderID,
   BuildsService,
   BuildStatus,
 } from '@/common/services/buildbucket';
-import { displayCompactDuration } from '@/common/tools/time_utils';
 import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
 
 const PAGE_SIZE = 100;
@@ -51,8 +51,6 @@ export function StartedBuildsSection({ builderId }: StartedBuildsSectionProps) {
     throw error;
   }
 
-  const now = DateTime.now();
-
   return (
     <>
       <h3>
@@ -73,18 +71,18 @@ export function StartedBuildsSection({ builderId }: StartedBuildsSectionProps) {
       ) : (
         <ul css={{ maxHeight: '400px', overflow: 'auto' }}>
           {data.builds?.map((b) => {
-            const [duration] = displayCompactDuration(
-              // Started builds always have a start time.
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              now.diff(DateTime.fromISO(b.startTime!))
-            );
             return (
               <li key={b.id}>
                 <Link href={getBuildURLPathFromBuildId(b.id)}>
                   {b.number || `b${b.id}`}
-                </Link>
-                <span> </span>
-                [Running for: {duration}]
+                </Link>{' '}
+                <RelativeDurationBadge
+                  css={{ verticalAlign: 'text-top' }}
+                  // Started builds always have a start time.
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  from={DateTime.fromISO(b.startTime!)}
+                />{' '}
+                ago
               </li>
             );
           })}

@@ -26,6 +26,7 @@ import { DateTime } from 'luxon';
 import { observer } from 'mobx-react-lite';
 import { Fragment } from 'react';
 
+import { DurationBadge } from '@/common/components/duration_badge';
 import { GerritClLink } from '@/common/components/gerrit_cl_link';
 import {
   DEFAULT_EXTRA_ZONE_CONFIGS,
@@ -49,7 +50,6 @@ import { renderMarkdown } from '@/common/tools/markdown/utils';
 import {
   NUMERIC_TIME_FORMAT,
   SHORT_TIME_FORMAT,
-  displayDuration,
 } from '@/common/tools/time_utils';
 import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
 
@@ -145,7 +145,16 @@ export const EndedBuildsTableRow = observer(
           {endTime ? <CompactTimestamp datetime={endTime} /> : 'N/A'}
         </TableCell>
         <TableCell>
-          {runDuration ? displayDuration(runDuration) : 'N/A'}
+          {runDuration ? (
+            <DurationBadge
+              css={{ verticalAlign: 'text-top' }}
+              duration={runDuration}
+              from={startTime}
+              to={endTime}
+            />
+          ) : (
+            'N/A'
+          )}
         </TableCell>
         <TableCell>
           {commit ? (

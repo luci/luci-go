@@ -55,7 +55,9 @@ export const EndedBuildsTableHead = observer(
           <TableCell width="1px">Build #</TableCell>
           <TableCell width="1px">Create Time</TableCell>
           <TableCell width="1px">End Time</TableCell>
-          <TableCell width="1px">Run Duration</TableCell>
+          <TableCell width="1px" title="Run Duration">
+            Run D.
+          </TableCell>
           <TableCell width="1px">Commit</TableCell>
           {displayGerritChanges && (
             <TableCell width="1px">

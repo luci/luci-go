@@ -53,7 +53,8 @@ export function ViewsSection({ builderId }: ViewsSectionProps) {
           <ul>
             {data.consoles?.map((c) => {
               const project = extractProject(c.realm);
-              const consoleLabel = `${project} / ${c.id}`;
+              const consoleLabel =
+                project === builderId.project ? c.id : `${project}/${c.id}`;
               return (
                 <li key={consoleLabel}>
                   <Link href={`/p/${project}/g/${c.id}`}>{consoleLabel}</Link>
