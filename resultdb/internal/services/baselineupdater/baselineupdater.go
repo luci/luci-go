@@ -43,13 +43,13 @@ import (
 	"go.chromium.org/luci/server/tq"
 )
 
-// MarkSubmittedTasks describes how to route mark submitted tasks.
-var MarkSubmittedTasks = tq.RegisterTaskClass(tq.TaskClass{
-	ID:            "mark-inv-submitted",
+// BaselineUpdaterTasks describes how to route mark submitted tasks.
+var BaselineUpdaterTasks = tq.RegisterTaskClass(tq.TaskClass{
+	ID:            "update-baseline",
 	Prototype:     &taskspb.MarkInvocationSubmitted{},
 	Kind:          tq.Transactional,
-	Queue:         "marksubmitted",                 // use a dedicated queue
-	RoutingPrefix: "/internal/tasks/marksubmitted", // for routing to "baselineupdater" service
+	Queue:         "baselineupdater",                 // use a dedicated queue
+	RoutingPrefix: "/internal/tasks/baselineupdater", // for routing to "baselineupdater" service
 })
 
 // TransactionLimit is set to 8000 because Cloud Spanner limits 40k mutations per transaction.
@@ -69,7 +69,7 @@ func InitServer(srv *server.Server) {
 }
 
 func init() {
-	MarkSubmittedTasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
+	BaselineUpdaterTasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
 		task := msg.(*taskspb.MarkInvocationSubmitted)
 		err := tryMarkInvocationSubmitted(ctx, invocations.ID(task.InvocationId))
 		if _, ok := status.FromError(errors.Unwrap(err)); ok {
