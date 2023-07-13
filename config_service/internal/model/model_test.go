@@ -137,7 +137,7 @@ func TestModel(t *testing.T) {
 			})
 		})
 
-		Convey("resolve GcsURI", func() {
+		Convey("should resolve GcsURI", func() {
 			content, err := gzipCompress([]byte("content"))
 			So(err, ShouldBeNil)
 			So(datastore.Put(ctx, &File{
@@ -155,6 +155,29 @@ func TestModel(t *testing.T) {
 
 			So(file.Load(ctx, true), ShouldBeNil)
 			So(file.Content, ShouldResemble, []byte("content"))
+		})
+
+		Convey("should not resolve GcsURI", func() {
+			So(datastore.Put(ctx, &File{
+				Path:          "file",
+				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
+				ContentSHA256: "hash",
+				GcsURI:        gs.MakePath("bucket", "object"),
+			}), ShouldBeNil)
+
+			file := &File{
+				ContentSHA256: "hash",
+			}
+
+			mockGsClient.EXPECT().Read(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+
+			So(file.Load(ctx, false), ShouldBeNil)
+			So(file, ShouldResemble, &File{
+				Path:          "file",
+				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
+				ContentSHA256: "hash",
+				GcsURI:        "gs://bucket/object",
+			})
 		})
 
 		Convey("GCS error", func() {

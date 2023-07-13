@@ -19,6 +19,9 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"io"
 	"strconv"
 	"testing"
 	"time"
@@ -96,13 +99,16 @@ func InjectConfigSet(ctx context.Context, cfgSet config.Set, configs map[string]
 		So(err, ShouldBeNil)
 		var compressed bytes.Buffer
 		gw := gzip.NewWriter(&compressed)
-		_, err = gw.Write(content)
+		sha := sha256.New()
+		mw := io.MultiWriter(sha, gw)
+		_, err = mw.Write(content)
 		So(err, ShouldBeNil)
 		So(gw.Close(), ShouldBeNil)
 		files = append(files, &model.File{
-			Path:     filepath,
-			Revision: datastore.MakeKey(ctx, model.ConfigSetKind, string(cfgSet), model.RevisionKind, cs.LatestRevision.ID),
-			Content:  compressed.Bytes(),
+			Path:          filepath,
+			Revision:      datastore.MakeKey(ctx, model.ConfigSetKind, string(cfgSet), model.RevisionKind, cs.LatestRevision.ID),
+			Content:       compressed.Bytes(),
+			ContentSHA256: hex.EncodeToString(sha.Sum(nil)),
 		})
 	}
 	So(datastore.Put(ctx, cs, files), ShouldBeNil)

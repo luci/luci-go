@@ -41,6 +41,14 @@ type GetConfigRequest struct {
 	// Fields of the Config proto to include.
 	//
 	// By default, all fields are included.
+	//
+	// Note: For content field, the client should always pass "content" to get
+	// the content. Populating "raw_content" or "signed_url" is a pure server
+	// side decision based on the size of the config. Therefore, explicitly
+	// passing one of "raw_content" or "signed_url" may cause unexpected
+	// behavior. For example, "raw_content" is passed and the content is large
+	// and supposed to return by signed_url field, the client would get an
+	// empty "raw_content".
 	Fields *fieldmaskpb.FieldMask `protobuf:"bytes,4,opt,name=fields,proto3" json:"fields,omitempty"`
 }
 
@@ -224,13 +232,17 @@ type isConfig_Content interface {
 }
 
 type Config_RawContent struct {
-	// For small content, raw content will be included directly.
+	// For small content where the gzipped size is less than 800KB, raw and
+	// uncompressed content will be included directly.
 	RawContent []byte `protobuf:"bytes,3,opt,name=raw_content,json=rawContent,proto3,oneof"`
 }
 
 type Config_SignedUrl struct {
-	// For large content, a sign_url which points
-	// the actual config content will be provided.
+	// For large content, a sign_url which points the actual config content
+	// will be provided.
+	// Note: The signed url is set to expire in 10 minutes. And it's encouraged
+	// to use "Accept-Encoding: gzip" header in the request to minimize the size
+	// in data transfer, and decompress it by yourself.
 	SignedUrl string `protobuf:"bytes,4,opt,name=signed_url,json=signedUrl,proto3,oneof"`
 }
 

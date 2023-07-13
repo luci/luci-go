@@ -27,8 +27,9 @@ import (
 	"go.chromium.org/luci/common/gcloud/gs"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/config_service/internal/clients"
 )
 
 const (
@@ -239,7 +240,10 @@ func (f *File) Load(ctx context.Context, resolveGcsURI bool) error {
 		return errors.Reason("One of ContentSHA256 or (path and revision) is required").Err()
 	}
 
-	if resolveGcsURI && f.GcsURI != "" {
+	if f.GcsURI != "" {
+		if !resolveGcsURI {
+			return nil
+		}
 		gzippedData, err := clients.GetGsClient(ctx).Read(ctx, f.GcsURI.Bucket(), f.GcsURI.Filename(), false)
 		if err != nil {
 			return errors.Annotate(err, "cannot read from %s", f.GcsURI).Err()
