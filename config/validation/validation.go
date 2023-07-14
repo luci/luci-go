@@ -21,6 +21,9 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+
+	configpb "go.chromium.org/luci/common/proto/config"
 )
 
 // Error is an error with details of validation issues.
@@ -52,6 +55,38 @@ func (e *Error) WithSeverity(s Severity) error {
 		return filtered
 	}
 	return nil
+}
+
+// ToValidationResultMsgs converts `Error` to a slice of
+// `configpb.ValidationResult.Message`s.
+func (e *Error) ToValidationResultMsgs(ctx context.Context) []*configpb.ValidationResult_Message {
+	if e == nil || len(e.Errors) == 0 {
+		return nil
+	}
+	ret := make([]*configpb.ValidationResult_Message, len(e.Errors))
+	for i, err := range e.Errors {
+		// validation.Context supports just 2 severities now,
+		// but defensively default to ERROR level in unexpected cases.
+		msgSeverity := configpb.ValidationResult_ERROR
+		switch severity, ok := SeverityTag.In(err); {
+		case !ok:
+			logging.Errorf(ctx, "unset validation.Severity in %s", err)
+		case severity == Warning:
+			msgSeverity = configpb.ValidationResult_WARNING
+		case severity != Blocking:
+			logging.Errorf(ctx, "unrecognized validation.Severity %d in %s", severity, err)
+		}
+		file, ok := fileTag.In(err)
+		if !ok || file == "" {
+			file = "unspecified file"
+		}
+		ret[i] = &configpb.ValidationResult_Message{
+			Path:     file,
+			Severity: msgSeverity,
+			Text:     err.Error(),
+		}
+	}
+	return ret
 }
 
 // Context is an accumulator for validation errors.

@@ -219,38 +219,21 @@ func (srv consumerServer) validateOneFile(ctx context.Context, configSet, path s
 	if err := srv.rules.ValidateConfig(vc, configSet, path, content); err != nil {
 		return nil, err
 	}
-
-	var ret []*config.ValidationResult_Message
-	verdict := vc.Finalize()
-	switch verr, ok := verdict.(*validation.Error); {
-	case verdict == nil:
-	case !ok:
-		ret = append(ret, &config.ValidationResult_Message{
-			Path:     path,
-			Severity: config.ValidationResult_ERROR,
-			Text:     verdict.Error(),
-		})
-	case verr != nil && len(verr.Errors) > 0:
-		for _, err := range verr.Errors {
-			// validation.Context supports just 2 severities now,
-			// but defensively default to ERROR level in unexpected cases.
-			msgSeverity := config.ValidationResult_ERROR
-			switch severity, ok := validation.SeverityTag.In(err); {
-			case !ok:
-				logging.Errorf(ctx, "unset validation.Severity in %s", err)
-			case severity == validation.Warning:
-				msgSeverity = config.ValidationResult_WARNING
-			case severity != validation.Blocking:
-				logging.Errorf(ctx, "unrecognized validation.Severity %d in %s", severity, err)
-			}
-			ret = append(ret, &config.ValidationResult_Message{
+	var vErr *validation.Error
+	switch err := vc.Finalize(); {
+	case errors.As(err, &vErr):
+		return vErr.ToValidationResultMsgs(ctx), nil
+	case err != nil:
+		return []*config.ValidationResult_Message{
+			{
 				Path:     path,
-				Severity: msgSeverity,
+				Severity: config.ValidationResult_ERROR,
 				Text:     err.Error(),
-			})
-		}
+			},
+		}, nil
+	default:
+		return nil, nil
 	}
-	return ret, nil
 }
 
 // InstallHandlers installs the metadata and validation handlers that use

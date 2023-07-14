@@ -19,8 +19,10 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/errors"
+	configpb "go.chromium.org/luci/common/proto/config"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidation(t *testing.T) {
@@ -64,6 +66,14 @@ func TestValidation(t *testing.T) {
 		So(blocking.(errors.MultiError), ShouldHaveLength, 1)
 		warns := err.(*Error).WithSeverity(Warning)
 		So(warns, ShouldBeNil)
+
+		So(err.(*Error).ToValidationResultMsgs(c.Context), ShouldResembleProto, []*configpb.ValidationResult_Message{
+			{
+				Path:     "file.cfg",
+				Severity: configpb.ValidationResult_ERROR,
+				Text:     `in "file.cfg" (ctx 123): blah zzz`,
+			},
+		})
 	})
 
 	Convey("One simple warning", t, func() {
@@ -82,6 +92,14 @@ func TestValidation(t *testing.T) {
 		So(blocking, ShouldBeNil)
 		warns := err.(*Error).WithSeverity(Warning)
 		So(warns.(errors.MultiError), ShouldHaveLength, 1)
+
+		So(err.(*Error).ToValidationResultMsgs(c.Context), ShouldResembleProto, []*configpb.ValidationResult_Message{
+			{
+				Path:     "unspecified file",
+				Severity: configpb.ValidationResult_WARNING,
+				Text:     `in <unspecified file>: option "xyz: true" is a noop, please remove`,
+			},
+		})
 	})
 
 	Convey("Regular usage", t, func() {
