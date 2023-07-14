@@ -16,24 +16,27 @@ package validation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"testing"
 
 	"cloud.google.com/go/storage"
+	"github.com/golang/mock/gomock"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"go.chromium.org/luci/common/gcloud/gs"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/testing/prpctest"
 	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth/authtest"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/model"
 	"go.chromium.org/luci/config_service/testutil"
 
-	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -188,6 +191,59 @@ func TestValidate(t *testing.T) {
 						testFile{path: filePath, gsPath: gs.MakePath("test-bucket", "test-obj")},
 					})
 					So(err, ShouldErrLike, "failed to validate configs against service \"my-service\"")
+					So(res, ShouldBeNil)
+				})
+			})
+
+			Convey("Validate against self", func() {
+				finder.mapping = map[string][]*model.Service{
+					filePath: {
+						{
+							Name: testutil.AppID,
+							Info: &cfgcommonpb.Service{
+								Id:              testutil.AppID,
+								ServiceEndpoint: ts.Host,
+							},
+						},
+					},
+				}
+				Convey("Succeeds", func() {
+					var validated bool
+					var recordedContent []byte
+					validation.Rules.Add(string(cs), filePath, func(vCtx *validation.Context, configSet, path string, content []byte) error {
+						validated = true
+						recordedContent = content
+						vCtx.Errorf("bad config")
+						return nil
+					})
+					tf := testFile{
+						path:    filePath,
+						content: []byte("This is config content"),
+					}
+					res, err := v.Validate(ctx, cs, []File{tf})
+					So(err, ShouldBeNil)
+					So(res, ShouldResembleProto, &cfgcommonpb.ValidationResult{
+						Messages: []*cfgcommonpb.ValidationResult_Message{
+							{
+								Path:     filePath,
+								Severity: cfgcommonpb.ValidationResult_ERROR,
+								Text:     "in \"sub/foo.cfg\": bad config",
+							},
+						},
+					})
+					So(validated, ShouldBeTrue)
+					So(recordedContent, ShouldEqual, tf.content)
+				})
+				Convey("Error", func() {
+					validation.Rules.Add(string(cs), filePath, func(vCtx *validation.Context, configSet, path string, content []byte) error {
+						return errors.New("something went wrong")
+					})
+					tf := testFile{
+						path:    filePath,
+						content: []byte("This is config content"),
+					}
+					res, err := v.Validate(ctx, cs, []File{tf})
+					So(err, ShouldErrLike, "something went wrong")
 					So(res, ShouldBeNil)
 				})
 			})

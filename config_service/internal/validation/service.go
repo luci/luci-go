@@ -20,13 +20,16 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 
 	"go.chromium.org/luci/common/gcloud/gs"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
+	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/common"
@@ -43,15 +46,14 @@ type serviceValidator struct {
 }
 
 func (sv *serviceValidator) validate(ctx context.Context) (*cfgcommonpb.ValidationResult, error) {
-	if sv.service.Name == info.AppID(ctx) {
-		panic("implement")
-	}
-	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create transport %w", err)
-	}
 	switch {
+	case sv.service.Info.GetId() == info.AppID(ctx):
+		return sv.validateAgainstSelfRules(ctx)
 	case sv.service.Info.GetServiceEndpoint() != "":
+		tr, err := auth.GetRPCTransport(ctx, auth.AsSelf)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create transport %w", err)
+		}
 		endpoint := sv.service.Info.GetServiceEndpoint()
 		prpcClient := &prpc.Client{
 			C:    &http.Client{Transport: tr},
@@ -70,8 +72,56 @@ func (sv *serviceValidator) validate(ctx context.Context) (*cfgcommonpb.Validati
 		// TODO(yiwzhang): support legacy protocol
 		panic("unimplemented")
 	default:
-		return nil, errors.New("expected either service_endpoint or metadata_url to be non-empty")
+		return nil, fmt.Errorf("service is not %s; it also doesn't provide either service_endpoint or metadata_url for validation", sv.service.Info.GetId())
 	}
+}
+
+// validateAgainstSelfRules validates config files against the rules
+// registered to the current service (i.e. LUCI Config itself).
+func (sv *serviceValidator) validateAgainstSelfRules(ctx context.Context) (*cfgcommonpb.ValidationResult, error) {
+	var msgs []*cfgcommonpb.ValidationResult_Message
+	var msgsMu sync.Mutex
+	eg, ectx := errgroup.WithContext(ctx)
+	eg.SetLimit(8)
+
+	for _, file := range sv.files {
+		file := file
+		eg.Go(func() (err error) {
+			path := file.GetPath()
+			content, err := file.GetRawContent(ectx, sv.gsClient)
+			if err != nil {
+				return err
+			}
+			vc := &validation.Context{Context: ectx}
+			vc.SetFile(path)
+			if err := validation.Rules.ValidateConfig(vc, string(sv.cs), path, content); err != nil {
+				return err
+			}
+			var vErr *validation.Error
+			switch err := vc.Finalize(); {
+			case errors.As(err, &vErr):
+				msgsMu.Lock()
+				msgs = append(msgs, vErr.ToValidationResultMsgs(ctx)...)
+				msgsMu.Unlock()
+			case err != nil:
+				msgsMu.Lock()
+				msgs = append(msgs, &cfgcommonpb.ValidationResult_Message{
+					Path:     path,
+					Severity: cfgcommonpb.ValidationResult_ERROR,
+					Text:     err.Error(),
+				})
+				msgsMu.Unlock()
+			}
+			return nil
+		})
+	}
+
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+	return &cfgcommonpb.ValidationResult{
+		Messages: msgs,
+	}, nil
 }
 
 func (sv *serviceValidator) prepareRequest(ctx context.Context) (*cfgcommonpb.ValidateConfigsRequest, error) {
