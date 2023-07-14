@@ -1,0 +1,89 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+option go_package = "go.chromium.org/luci/cipkg/core";
+
+import "google/protobuf/any.proto";
+import "go.chromium.org/luci/cipkg/core/specs.proto";
+
+// Action is a high level description of one node in the build graph.
+//
+// It includes a set of predefined verbs (e.g. `command`, `reexec`, ...) and
+// provides the ability to add additional high level verbs within a single
+// application // (`extension` field, see `cipkg/base/actions.SetTransformer`
+// for additional details).
+//
+// Typically, Actions are produced via the Generation process (see
+// `cipkg/base/generators`` for more details).
+//
+// An action's dependency on additional Actions forms the high level build
+// graph.
+//
+// The Action graph is transformed into a Derivation graph via the
+// ActionProcessor (see `cipkg/base/actions.ActionProcessor` for additional
+// details).
+//
+// Actions exist apart from Derivations in order to maintain a
+// serializable/debuggable structure which is higher level than the raw
+// Derivations, which end up including system specific details.
+message Action {
+  // Name is required for all actions. It's the name of the action's output.
+  // The name shouldn't include version of the package and should represents
+  // its content (e.g. cpython3, curl, ninja), NOT the action taken place
+  // (e.g. build_cpython3, build_curl, build_ninja).
+  // This name doesn't need to be unique and won't be used for deduplication,
+  // but may be used as the placeholder for the path to the package during
+  // transformation.
+  string name = 1;
+
+  // Metadata contains metadata information which won't affect the result of the
+  // output. It can be used by package manager for cache/store packages and
+  // helping users to identify its content.
+  Metadata metadata = 2;
+  message Metadata {
+    message CIPD {
+      // Name is the cipd package name for the Action's output.
+      string name = 1;
+      // version is the cipd version tag for action's output.
+      string version = 2;
+    }
+  }
+
+  // Dependencies which PackageManager will ensure are available prior to the
+  // execution of this Action.
+  // TODO: Maybe move dependencies into specs?
+  repeated Dependency deps = 3;
+  message Dependency {
+    Action action = 2;
+    // Runtime, if set, indicates the PackageManager will ensure its
+    // availibility even if the package has been built.
+    bool runtime = 3;
+  }
+
+  // Spec is the action spec describing what action we want to perform.
+  // It can be extended using extension for domain-specific use cases.
+  // See cipkg/base/actions.ActionProcessor for additional details.
+  oneof spec {
+    ActionCommand command = 4;
+    ActionReexec reexec = 5;
+    ActionURLFetch url = 6;
+    ActionFilesCopy copy = 7;
+
+    ActionCIPDExport cipd = 8;
+
+    google.protobuf.Any extension = 99;
+  }
+}

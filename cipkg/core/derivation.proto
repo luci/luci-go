@@ -1,0 +1,65 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+option go_package = "go.chromium.org/luci/cipkg/core";
+
+// Derivation is the atomic step transformed from different types of actions. It
+// should contain all information used during the execution in its definition.
+// NOTE: ${out} enviroment variable is not part of the derivation. We can't
+// determine the output directory before we have a deterministic derivation so
+// it has to be excluded from derivation to avoid self-reference.
+message Derivation {
+  // Name is the name of the derivation's output and serves ONLY as an
+  // indicator of its output.
+  // The name shouldn't include version of the package and should represents
+  // its content (e.g. cpython3, curl, ninja), NOT the action taken place
+  // (e.g. build_cpython3, build_curl, build_ninja).
+  string name = 1;
+
+  // Platform is a textual description of the platform in which this Derivation
+  // should be performed, and serves ONLY as an indicator of implicit
+  // environmental contamination of the output of the derivation.
+  // Actions should relies on cipkg/base/actions.ActionProcessor to populate
+  // this field appropriately.
+  string platform = 2;
+
+  // Args are the `argv` vector of the derivation when executed.
+  repeated string args = 3;
+
+  // Env includes all the environment variables for the execution isolated from
+  // host.
+  // NOTE: ${out} is not included here but will be presented in the environment
+  // during execution.
+  repeated string env = 4;
+
+  // Inputs are ids of all packages referred by this derivation.
+  // It depends on the package manager to ensure packages represented by the
+  // derivation IDs will be available before execution.
+  // Ideally derivation should only be able to access derivations listed in the
+  // inputs. Executor may lock down the runtime environment to prevent the
+  // derivation from accessing any resource other than those listed in the
+  // future.
+  repeated string inputs = 5;
+
+  // fixed_output, if set, represents the content of the output. ID will be
+  // generated based on fixed_output exclusively.
+  // WARNING: Using fixed_output means shifting away the responsibility for
+  // detecting any change from derivation. This should be rarely touched and
+  // most of its use cases have a builtin implementation to take care of the
+  // generated fixed_output value. Any use of it outside the builtin modules
+  // are strongly discouraged. YOU HAVE BEEN WARNED.
+  string fixed_output = 6;
+}

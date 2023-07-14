@@ -1,0 +1,101 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+option go_package = "go.chromium.org/luci/cipkg/core";
+
+// ActionCommand executes the command directly.
+message ActionCommand {
+  repeated string args = 1;
+  repeated string env = 2;
+}
+
+// ActionReexec self-duplicates the executable binary.
+message ActionReexec {}
+
+// ActionURLFetch downloads from url into output directory with name
+// 'file'.
+message ActionURLFetch {
+  // HTTP(s) url for the remote resource.
+  string url = 1;
+  // HashAlgorithm is the hash function used to calculate hash value.
+  HashAlgorithm hash_algorithm = 2;
+  // HashValue is the lower-case text representation for the hex value of the
+  // hash sum.
+  string hash_value = 3;
+}
+
+// ActionFilesCopy copies listed files into the output directory.
+// TODO(fancl): Local, Embed, Output can be separated into different specs?
+message ActionFilesCopy {
+  // Files are the destination-source pairs which is the relative path
+  // source files should be copied to.
+  map<string, Source> files = 1;
+
+  // Source defines the source file we want to copied from.
+  message Source {
+    uint32 mode = 1;
+    oneof content {
+      // Raw contains the literal content of the file.
+      bytes raw = 2;
+      // Local refers to the local file.
+      Local local = 3;
+      // Embed refers to the embedded file in the go binary.
+      Embed embed = 4;
+      // Output refers to the output file from other derivations.
+      Output output = 5;
+    }
+
+    message Local {
+      // Path is the local filesystem absolute path to the file.
+      string path = 1;
+      // Version is the version string for the file.
+      string version = 2;
+      // Follow_symlinks, if set to true, will follow all the symlinks in the
+      // directories while copying.
+      bool follow_symlinks = 3;
+    }
+    message Embed {
+      // Ref is the reference to the embed.FS.
+      string ref = 1;
+      // Path is the relative path to the file inside the embedded filesystem.
+      string path = 2;
+    }
+    message Output {
+      // Name is the output action's Metadata.Name
+      string name = 1;
+      // Path is the relative path to the file inside the output.
+      string path = 2;
+    }
+  }
+}
+
+// ActionCIPDExport exports cipd packages to the output directory.
+// NOTE: this uses cipd export subcommand, which only includes CIPD package
+// content without any cipd tracking metadata.
+// TODO(fancl): use a protobuf ensure file instead.
+message ActionCIPDExport {
+  // Ensure_file is the serialized text ensure file for cipd.
+  string ensure_file = 1;
+  // Env is the extra environment variables passed to the cipd process.
+  repeated string env = 2;
+}
+
+// HashAlgorithm includes all supported hash algorithms shared by actions.
+enum HashAlgorithm {
+  HASH_UNSPECIFIED = 0;
+  HASH_MD5 = 1;
+  HASH_SHA256 = 2;
+}
