@@ -15,11 +15,14 @@
 package rpc
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"path"
 	"regexp"
 	"strings"
@@ -37,6 +40,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/config_service/internal/acl"
+	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/common"
 	"go.chromium.org/luci/config_service/internal/model"
 	"go.chromium.org/luci/config_service/internal/validation"
@@ -174,6 +178,26 @@ func (vf validationFile) GetPath() string { return vf.path }
 
 // GetGSPath returns the Google Storage path to the content of the config.
 func (vf validationFile) GetGSPath() gs.Path { return vf.gsPath }
+
+// GetRawContent downloads the content from gcs and returns uncompressed
+// content.
+//
+// The existing validation protocol explicitly asked the client to upload
+// compressed config to Google Storage so we should expect the data returned
+// from GS should be uncompressed fine.
+func (vf validationFile) GetRawContent(ctx context.Context, gsClient clients.GsClient) ([]byte, error) {
+	bucket, object := vf.gsPath.Split()
+	compressed, err := gsClient.Read(ctx, bucket, object, false)
+	if err != nil {
+		return nil, err
+	}
+	r, err := gzip.NewReader(bytes.NewBuffer(compressed))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create gzip reader: %w", err)
+	}
+	defer func() { _ = r.Close() }()
+	return io.ReadAll(r)
+}
 
 // makeValidationFiles creates a `validationFile` for each file_hash in the
 // validation request.

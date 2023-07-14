@@ -54,7 +54,11 @@ type File interface {
 	// The GCS object that the path points to SHOULD exist before calling
 	// `Validate`.
 	GetGSPath() gs.Path
-	// TODO(yiwzhang): add GetRawContent to support legacy validation protocol.
+	// GetRawContent returns the raw and uncompressed content of this config.
+	//
+	// This is currently used to validate the configs LUCI Config itself is
+	// interested in and validate configs against legacy services.
+	GetRawContent(context.Context, clients.GsClient) ([]byte, error)
 }
 
 // Validate validates the provided config files.

@@ -78,8 +78,9 @@ func (m *mockFinder) FindInterestedServices(_ config.Set, filePath string) []*mo
 }
 
 type testFile struct {
-	path   string
-	gsPath gs.Path
+	path    string
+	gsPath  gs.Path
+	content []byte
 }
 
 func (tf testFile) GetPath() string {
@@ -88,6 +89,10 @@ func (tf testFile) GetPath() string {
 
 func (tf testFile) GetGSPath() gs.Path {
 	return tf.gsPath
+}
+
+func (tf testFile) GetRawContent(context.Context, clients.GsClient) ([]byte, error) {
+	return tf.content, nil
 }
 
 var _ File = testFile{} // ensure testFile implements File interface.
