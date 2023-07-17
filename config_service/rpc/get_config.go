@@ -17,14 +17,11 @@ package rpc
 import (
 	"context"
 	"net/http"
-	"path"
-	"strings"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/logging"
@@ -59,32 +56,12 @@ func validateGetConfig(req *pb.GetConfigRequest) error {
 	return nil
 }
 
-func validatePath(p string) error {
-	if path.IsAbs(p) {
-		return errors.Reason("must not be absolute").Err()
-	}
-	if strings.HasPrefix(p, "./") || strings.HasPrefix(p, "../") {
-		return errors.Reason("should not start with './' or '../'").Err()
-	}
-	return nil
-}
-
 // GetConfig handles a request to retrieve a config. Implements pb.ConfigsServer.
 func (c Configs) GetConfig(ctx context.Context, req *pb.GetConfigRequest) (*pb.Config, error) {
 	if err := validateGetConfig(req); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
-
-	fieldMask := req.Fields
-	// Convert "content" path to "raw_content" and "signed_url", as "content" is
-	// 'oneof' field type and the mask lib hasn't supported to parse it yet.
-	if fieldSet := stringset.NewFromSlice(fieldMask.GetPaths()...); fieldSet.Has("content") {
-		fieldSet.Del("content")
-		fieldSet.Add("raw_content")
-		fieldSet.Add("signed_url")
-		fieldMask.Paths = fieldSet.ToSlice()
-	}
-	m, err := mask.FromFieldMask(fieldMask, &pb.Config{}, false, false)
+	m, err := toConfigMask(req.Fields)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid fields mask: %s", err)
 	}
