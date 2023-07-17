@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -45,6 +46,7 @@ func Dial(ctx context.Context, count int) ([]grpc.ClientConnInterface, error) {
 			grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 			grpc.WithPerRPCCredentials(creds),
 			grpc.WithBlock(),
+			grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{}),
 			grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
 			grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
 		)
