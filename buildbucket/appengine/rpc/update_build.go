@@ -97,6 +97,16 @@ func validateUpdate(ctx context.Context, req *pb.UpdateBuildRequest, bs *model.B
 		switch p {
 		case "build.output":
 			// TODO(crbug/1110990): validate properties and gitiles_commit
+		case "build.output.status":
+			if _, ok := updateBuildStatuses[req.Build.Output.GetStatus()]; !ok {
+				return errors.Reason("build.output.status: invalid status %s for UpdateBuild", req.Build.Output.GetStatus()).Err()
+			}
+			buildStatus = req.Build.Output.Status
+		case "build.output.status_details":
+		case "build.output.summary_html":
+			if err := validateSummaryMarkdown(req.Build.Output.GetSummaryHtml()); err != nil {
+				return errors.Annotate(err, "build.output.summary_html").Err()
+			}
 		case "build.output.properties":
 			for k, v := range req.Build.Output.GetProperties().AsMap() {
 				if v == nil {
@@ -336,6 +346,18 @@ func mustIncludes(updateMask *mask.Mask, req *pb.UpdateBuildRequest, path string
 	return updateMask.MustIncludes(path)
 }
 
+func explicitlyIncludesOutputStatus(req *pb.UpdateBuildRequest) bool {
+	// mustIncludes(updateMask, req, "output.status") will return mask.IncludeEntirely
+	// if output is part of the mask. Explicitly checking build.output.status in
+	// req.UpdateMask.GetPaths().
+	for _, p := range req.UpdateMask.GetPaths() {
+		if p == "build.output.status" {
+			return true
+		}
+	}
+	return false
+}
+
 func checkBuildForUpdate(updateMask *mask.Mask, req *pb.UpdateBuildRequest, build *model.Build) error {
 	if protoutil.IsEnded(build.Status) || protoutil.IsEnded(build.Proto.Output.GetStatus()) {
 		return appstatus.Errorf(codes.FailedPrecondition, "cannot update an ended build")
@@ -344,6 +366,8 @@ func checkBuildForUpdate(updateMask *mask.Mask, req *pb.UpdateBuildRequest, buil
 	finalStatus := build.Proto.Status
 	if mustIncludes(updateMask, req, "status") == mask.IncludeEntirely {
 		finalStatus = req.Build.Status
+	} else if explicitlyIncludesOutputStatus(req) {
+		finalStatus = req.Build.Output.GetStatus()
 	}
 
 	// ensure that a SCHEDULED build does not have steps, output or agent.output.
@@ -438,6 +462,9 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 		origStatus = b.Proto.Status
 
 		if mustIncludes(updateMask, req, "status") == mask.IncludeEntirely {
+			if req.Build.Status == pb.Status_STARTED {
+				logging.Debugf(ctx, "UpdateBuild is used to start build %d", b.ID)
+			}
 			statusUpdater := buildstatus.Updater{
 				Build:       b,
 				BuildStatus: req.Build.Status,
@@ -447,6 +474,23 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 			bs, err := statusUpdater.Do(ctx)
 			if err != nil {
 				return errors.Annotate(err, "updating build status").Err()
+			}
+			if bs != nil {
+				toSave = append(toSave, bs)
+			}
+		} else if explicitlyIncludesOutputStatus(req) {
+			if req.Build.Output.GetStatus() == pb.Status_STARTED {
+				logging.Debugf(ctx, "UpdateBuild is used to start build %d", b.ID)
+			}
+			statusUpdater := buildstatus.Updater{
+				Build:        b,
+				OutputStatus: req.Build.Output.GetStatus(),
+				UpdateTime:   now,
+				PostProcess:  tasks.SendOnBuildStatusChange,
+			}
+			bs, err := statusUpdater.Do(ctx)
+			if err != nil {
+				return errors.Annotate(err, "updating build status and output.status").Err()
 			}
 			if bs != nil {
 				toSave = append(toSave, bs)

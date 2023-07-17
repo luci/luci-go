@@ -422,6 +422,9 @@ type UpdateBuildRequest struct {
 	// - build.output
 	// - build.output.properties
 	// - build.output.gitiles_commit
+	// - build.output.status
+	// - build.output.status_details
+	// - build.output.summary_html
 	// - build.status
 	// - build.status_details
 	// - build.steps
@@ -429,6 +432,10 @@ type UpdateBuildRequest struct {
 	// - build.tags
 	// - build.infra.buildbucket.agent.output
 	// - build.infra.buildbucket.agent.purposes
+	//
+	// Note, "build.output.status" is required explicitly to update the field.
+	// If there is only "build.output" in update_mask, build.output.status will not
+	// be updated.
 	//
 	// If omitted, Buildbucket will update the Build's update_time, but nothing else.
 	UpdateMask *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`

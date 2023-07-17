@@ -276,8 +276,6 @@ type Build struct {
 	// (https://spec.commonmark.org/0.28/).
 	// Explains status.
 	// Up to 4 KB.
-	//
-	// BigQuery: excluded from rows.
 	SummaryMarkdown string `protobuf:"bytes,20,opt,name=summary_markdown,json=summaryMarkdown,proto3" json:"summary_markdown,omitempty"`
 	// Markdown reasoning for cancelling the build.
 	// Human readable and should be following https://spec.commonmark.org/0.28/.
