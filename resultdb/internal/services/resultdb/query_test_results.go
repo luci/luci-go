@@ -100,13 +100,17 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to read the reach").Err()
 	}
+	invocationIDs, err := invs.IDSet()
+	if err != nil {
+		return nil, err
+	}
 
 	// Query test results.
 	q := testresults.Query{
 		Predicate:     in.Predicate,
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
-		InvocationIDs: invs.IDSet(),
+		InvocationIDs: invocationIDs,
 		Mask:          readMask,
 	}
 	trs, token, err := q.Fetch(ctx)

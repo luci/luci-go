@@ -158,14 +158,17 @@ func (b *bqExporter) queryTestResults(
 	predicate *pb.TestResultPredicate,
 	exoneratedTestVariants map[testVariantKey]struct{},
 	batchC chan []rowInput) error {
-
+	invocationIds, err := reachableInvs.WithTestResultsIDSet()
+	if err != nil {
+		return err
+	}
 	q := testresults.Query{
 		Predicate:     predicate,
-		InvocationIDs: reachableInvs.WithTestResultsIDSet(),
+		InvocationIDs: invocationIds,
 		Mask:          testresults.AllFields,
 	}
 
-	invs, err := invocations.ReadBatch(ctx, reachableInvs.WithTestResultsIDSet())
+	invs, err := invocations.ReadBatch(ctx, invocationIds)
 	if err != nil {
 		return err
 	}
@@ -235,12 +238,16 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 		return errors.Reason("%s is not finalized yet", invID.Name()).Err()
 	}
 
-	invs, err := graph.ReachableWithoutLimit(ctx, invocations.NewIDSet(invID))
+	invs, err := graph.Reachable(ctx, invocations.NewIDSet(invID))
 	if err != nil {
 		return errors.Annotate(err, "querying reachable invocations").Err()
 	}
 
-	exoneratedTestVariants, err := queryExoneratedTestVariants(ctx, invs.WithExonerationsIDSet())
+	exonerationInvocationIds, err := invs.WithExonerationsIDSet()
+	if err != nil {
+		return err
+	}
+	exoneratedTestVariants, err := queryExoneratedTestVariants(ctx, exonerationInvocationIds)
 	if err != nil {
 		return errors.Annotate(err, "query exoneration").Err()
 	}

@@ -63,9 +63,13 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 		return nil, err
 	}
 
+	reachableInvIDs, err := reachableInvs.IDSet()
+	if err != nil {
+		return nil, err
+	}
 	// Query artifacts.
 	q := artifacts.Query{
-		InvocationIDs:       reachableInvs.IDSet(),
+		InvocationIDs:       reachableInvIDs,
 		TestResultPredicate: in.GetPredicate().GetTestResultPredicate(),
 		PageSize:            pagination.AdjustPageSize(in.PageSize),
 		PageToken:           in.PageToken,

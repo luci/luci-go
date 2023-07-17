@@ -17,11 +17,11 @@ package graph
 import (
 	"testing"
 
+	. "github.com/smartystreets/goconvey/convey"
+
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestReachableInvocations(t *testing.T) {
@@ -77,15 +77,18 @@ func TestReachableInvocations(t *testing.T) {
 			}
 		})
 		Convey(`IDSet`, func() {
-			invIDs := invs.IDSet()
+			invIDs, err := invs.IDSet()
+			So(err, ShouldBeNil)
 			So(invIDs, ShouldResemble, invocations.NewIDSet("0", "1", "2", "3", "4", "5"))
 		})
 		Convey(`WithTestResultsIDSet`, func() {
-			invIDs := invs.WithTestResultsIDSet()
+			invIDs, err := invs.WithTestResultsIDSet()
+			So(err, ShouldBeNil)
 			So(invIDs, ShouldResemble, invocations.NewIDSet("0", "1", "2"))
 		})
 		Convey(`WithExonerationsIDSet`, func() {
-			invIDs := invs.WithExonerationsIDSet()
+			invIDs, err := invs.WithExonerationsIDSet()
+			So(err, ShouldBeNil)
 			So(invIDs, ShouldResemble, invocations.NewIDSet("0", "2", "4"))
 		})
 	})

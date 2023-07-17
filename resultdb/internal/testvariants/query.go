@@ -821,10 +821,18 @@ func (q *Query) Fetch(ctx context.Context) (Page, error) {
 	if q.Predicate.GetStatus() == pb.TestVariantStatus_UNEXPECTED_MASK {
 		status = 0
 	}
+	testResultInvs, err := q.ReachableInvocations.WithTestResultsIDSet()
+	if err != nil {
+		return Page{}, errors.Annotate(err, "error getting invocations with test results").Err()
+	}
+	exonerationInvs, err := q.ReachableInvocations.WithExonerationsIDSet()
+	if err != nil {
+		return Page{}, errors.Annotate(err, "error getting invocations with exonerations").Err()
+	}
 
 	q.params = map[string]any{
-		"testResultInvIDs":      q.ReachableInvocations.WithTestResultsIDSet(),
-		"testExonerationInvIDs": q.ReachableInvocations.WithExonerationsIDSet(),
+		"testResultInvIDs":      testResultInvs,
+		"testExonerationInvIDs": exonerationInvs,
 		"testIDs":               q.TestIDs,
 		"skipStatus":            int(pb.TestStatus_SKIP),
 		"unexpected":            int(pb.TestVariantStatus_UNEXPECTED),

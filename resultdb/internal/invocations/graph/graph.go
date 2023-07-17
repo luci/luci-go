@@ -52,28 +52,8 @@ var TooManyTag = errors.BoolTag{
 }
 
 // Reachable returns all invocations reachable from roots along the inclusion
-// edges.  Will return an error if there are more than MaxNodes invocations.
-// May return an appstatus-annotated error.
+// edges. May return an appstatus-annotated error.
 func Reachable(ctx context.Context, roots invocations.IDSet) (ReachableInvocations, error) {
-	invs, err := ReachableWithoutLimit(ctx, roots)
-	if err != nil {
-		return ReachableInvocations{}, err
-	}
-	// Yes, this is an artificial limit.  With 20,000 invocations you are already likely
-	// to run into problems if you try to process all of these in one go (e.g. in a
-	// Spanner query).  If you want more, use the batched call and handle a batch at a time.
-	if len(invs.Invocations) > MaxNodes {
-		return ReachableInvocations{}, errors.Reason("more than %d invocations match", MaxNodes).Tag(TooManyTag).Err()
-	}
-	return invs, nil
-}
-
-// ReachableWithoutLimit returns all invocations reachable from roots along
-// the inclusion edges. Will not apply artificial limits to the graph returned;
-// the caller should do batching as it may not be possible to query Spanner
-// for all invocations at once.
-// May return an appstatus-annotated error.
-func ReachableWithoutLimit(ctx context.Context, roots invocations.IDSet) (ReachableInvocations, error) {
 	invs, err := reachable(ctx, roots, false)
 	if err != nil {
 		return ReachableInvocations{}, err

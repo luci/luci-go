@@ -63,12 +63,17 @@ func (s *resultDBServer) QueryTestExonerations(ctx context.Context, in *pb.Query
 		return nil, err
 	}
 
+	exonerationInvs, err := invs.WithExonerationsIDSet()
+	if err != nil {
+		return nil, err
+	}
+
 	// Query test exonerations.
 	q := exonerations.Query{
 		Predicate:     in.Predicate,
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
-		InvocationIDs: invs.WithExonerationsIDSet(),
+		InvocationIDs: exonerationInvs,
 	}
 	tes, token, err := q.Fetch(ctx)
 	if err != nil {

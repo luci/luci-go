@@ -181,7 +181,7 @@ func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocati
 		return errors.Reason("%s is not finalized yet", exportedID.Name()).Err()
 	}
 
-	invs, err := graph.ReachableWithoutLimit(ctx, invocations.NewIDSet(exportedID))
+	invs, err := graph.Reachable(ctx, invocations.NewIDSet(exportedID))
 	if err != nil {
 		return errors.Annotate(err, "querying reachable invocations").Err()
 	}
@@ -190,8 +190,12 @@ func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocati
 		if contentTypeRegexp == "" {
 			contentTypeRegexp = "text/.*"
 		}
+		batchInvocations, err := batch.IDSet()
+		if err != nil {
+			return err
+		}
 		q := artifacts.Query{
-			InvocationIDs:       batch.IDSet(),
+			InvocationIDs:       batchInvocations,
 			TestResultPredicate: bqExport.GetTextArtifacts().GetPredicate().GetTestResultPredicate(),
 			ContentTypeRegexp:   contentTypeRegexp,
 			ArtifactIDRegexp:    bqExport.GetTextArtifacts().GetPredicate().GetArtifactIdRegexp(),

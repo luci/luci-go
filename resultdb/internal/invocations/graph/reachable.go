@@ -84,7 +84,20 @@ func (r ReachableInvocations) Batches() []ReachableInvocations {
 
 // IDSet returns the set of invocation IDs included in the list of
 // reachable invocations.
-func (r ReachableInvocations) IDSet() invocations.IDSet {
+func (r ReachableInvocations) IDSet() (invocations.IDSet, error) {
+	// Yes, this is an artificial limit.  With 20,000 invocations you are already likely
+	// to run into problems if you try to process all of these in one go (e.g. in a
+	// Spanner query).  If you want more, use the batched call and handle a batch at a time.
+	if len(r.Invocations) > MaxNodes {
+		return nil, errors.Reason("more than %d invocations match", MaxNodes).Tag(TooManyTag).Err()
+	}
+	return r.idSetNoLimit(), nil
+}
+
+// IDSet returns the set of invocation IDs included in the list of
+// reachable invocations.  This internal only version has no limit and
+// is only for use where the limit will be checked in other ways.
+func (r ReachableInvocations) idSetNoLimit() invocations.IDSet {
 	result := make(invocations.IDSet, len(r.Invocations))
 	for id := range r.Invocations {
 		result[id] = struct{}{}
@@ -94,30 +107,42 @@ func (r ReachableInvocations) IDSet() invocations.IDSet {
 
 // WithTestResultsIDSet returns the set of invocation IDs
 // that contain test results.
-func (r ReachableInvocations) WithTestResultsIDSet() invocations.IDSet {
+func (r ReachableInvocations) WithTestResultsIDSet() (invocations.IDSet, error) {
 	result := make(invocations.IDSet, len(r.Invocations))
 	for id, inv := range r.Invocations {
 		if inv.HasTestResults {
 			result[id] = struct{}{}
 		}
 	}
-	return result
+	// Yes, this is an artificial limit.  With 20,000 invocations you are already likely
+	// to run into problems if you try to process all of these in one go (e.g. in a
+	// Spanner query).  If you want more, use the batched call and handle a batch at a time.
+	if len(result) > MaxNodes {
+		return nil, errors.Reason("more than %d invocations match", MaxNodes).Tag(TooManyTag).Err()
+	}
+	return result, nil
 }
 
 // WithExonerationsIDSet returns the set of invocation IDs
 // that contain test exonerations.
-func (r ReachableInvocations) WithExonerationsIDSet() invocations.IDSet {
+func (r ReachableInvocations) WithExonerationsIDSet() (invocations.IDSet, error) {
 	result := make(invocations.IDSet, len(r.Invocations))
 	for id, inv := range r.Invocations {
 		if inv.HasTestExonerations {
 			result[id] = struct{}{}
 		}
 	}
-	return result
+	// Yes, this is an artificial limit.  With 20,000 invocations you are already likely
+	// to run into problems if you try to process all of these in one go (e.g. in a
+	// Spanner query).  If you want more, use the batched call and handle a batch at a time.
+	if len(result) > MaxNodes {
+		return nil, errors.Reason("more than %d invocations match", MaxNodes).Tag(TooManyTag).Err()
+	}
+	return result, nil
 }
 
 func (r ReachableInvocations) batches(size int) []ReachableInvocations {
-	ids := r.IDSet().SortByRowID()
+	ids := r.idSetNoLimit().SortByRowID()
 	batches := make([]ReachableInvocations, 0, 1+len(ids)/size)
 	for len(ids) > 0 {
 		batchSize := size

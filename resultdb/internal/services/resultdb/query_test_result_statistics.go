@@ -49,8 +49,11 @@ func (s *resultDBServer) QueryTestResultStatistics(ctx context.Context, in *pb.Q
 	if err != nil {
 		return nil, err
 	}
-
-	totalNum, err := resultcount.ReadTestResultCount(ctx, invs.IDSet())
+	invocationIds, err := invs.IDSet()
+	if err != nil {
+		return nil, err
+	}
+	totalNum, err := resultcount.ReadTestResultCount(ctx, invocationIds)
 	if err != nil {
 		return nil, err
 	}
