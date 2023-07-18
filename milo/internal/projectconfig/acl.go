@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 )
@@ -37,10 +38,8 @@ func IsAllowed(c context.Context, project string) (bool, error) {
 	case err == datastore.ErrNoSuchEntity:
 		return false, nil
 	case err != nil:
-		// Do not leak internal error details to unauthorized users.
-		return false, errors.Reason("internal server error").
-			Tag(grpcutil.InternalTag).
-			InternalReason("datastore error when fetching project %q: %s", project, err).Err()
+		logging.Errorf(c, "datastore error when fetching project %q: %s", project, err)
+		return false, errors.New("internal server error", grpcutil.InternalTag)
 	default:
 		return CheckACL(c, proj.ACL)
 	}
@@ -62,10 +61,8 @@ func CheckACL(c context.Context, acl ACL) (bool, error) {
 	// TODO(nodir): unhardcode group name to config file if there is a need
 	yes, err := auth.IsMember(c, append(acl.Groups, "administrators")...)
 	if err != nil {
-		// Do not leak internal error details to unauthorized users.
-		return false, errors.Reason("internal server error").
-			Tag(grpcutil.InternalTag).
-			InternalReason("error when checking ACL: %s", err).Err()
+		logging.Errorf(c, "error when checking administrators ACL: %s", err)
+		return false, errors.New("internal server error", grpcutil.InternalTag)
 	}
 	return yes, nil
 }
