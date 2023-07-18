@@ -38,7 +38,7 @@ function BotStatusRow({ status, count, total }: BotStatusRowProps) {
           css={{
             backgroundColor: BOT_STATUS_COLOR_MAP[status],
             height: '10px',
-            width: `${(count / total) * 100}%`,
+            width: `${(total && count / total) * 100}%`,
           }}
         />
       </td>

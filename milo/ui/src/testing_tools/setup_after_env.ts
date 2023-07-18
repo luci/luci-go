@@ -18,6 +18,7 @@ import { TextDecoder, TextEncoder } from 'util';
 import '@testing-library/jest-dom';
 import 'isomorphic-fetch';
 import 'intersection-observer';
+import { matchers as emotionMatchers } from '@emotion/jest';
 import * as dotenv from 'dotenv';
 import * as idbKeyVal from 'idb-keyval';
 import { configure } from 'mobx';
@@ -28,6 +29,8 @@ import {
   createSelectiveMockFromModule,
   createSelectiveSpiesFromModule,
 } from './jest_utils';
+
+expect.extend(emotionMatchers);
 
 // TODO(crbug/1347294): encloses all state modifying actions in mobx actions
 // then delete this.
