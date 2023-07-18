@@ -15,15 +15,18 @@
 package acl
 
 import (
+	"fmt"
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/config_service/internal/common"
+	"go.chromium.org/luci/config_service/internal/model"
 	"go.chromium.org/luci/config_service/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -57,12 +60,58 @@ func TestServiceConfig(t *testing.T) {
 				allowed, err := CanReadService(ctx, service)
 				So(err, ShouldBeNil)
 				So(allowed, ShouldBeFalse)
+				Convey("Not even with consulting service config", func() {
+					srv := &model.Service{
+						Name: service,
+						Info: &cfgcommonpb.Service{
+							Id:     service,
+							Access: []string{"admin@example.com"},
+						},
+					}
+					So(datastore.Put(ctx, srv), ShouldBeNil)
+					allowed, err := CanReadService(ctx, service)
+					So(err, ShouldBeNil)
+					So(allowed, ShouldBeFalse)
+				})
 			})
-			Convey("allowed in AccessGroup", func() {
+			Convey("Allowed in AccessGroup", func() {
 				fakeAuthDB.AddMocks(authtest.MockMembership(requester, accessGroup))
 				allowed, err := CanReadService(ctx, service)
 				So(err, ShouldBeNil)
 				So(allowed, ShouldBeTrue)
+			})
+			Convey("Allowed in service config", func() {
+				Convey("By group", func() {
+					srv := &model.Service{
+						Name: service,
+						Info: &cfgcommonpb.Service{
+							Id:     service,
+							Access: []string{"group:some-access-group"},
+						},
+					}
+					So(datastore.Put(ctx, srv), ShouldBeNil)
+					fakeAuthDB.AddMocks(authtest.MockMembership(requester, "some-access-group"))
+					allowed, err := CanReadService(ctx, service)
+					So(err, ShouldBeNil)
+					So(allowed, ShouldBeTrue)
+				})
+				Convey("By explicit identity", func() {
+					for _, prefix := range []string{"", "user:"} {
+						Convey(fmt.Sprintf("With prefix %q", prefix), func() {
+							srv := &model.Service{
+								Name: service,
+								Info: &cfgcommonpb.Service{
+									Id:     service,
+									Access: []string{prefix + requester.Email()},
+								},
+							}
+							So(datastore.Put(ctx, srv), ShouldBeNil)
+							allowed, err := CanReadService(ctx, service)
+							So(err, ShouldBeNil)
+							So(allowed, ShouldBeTrue)
+						})
+					}
+				})
 			})
 		})
 

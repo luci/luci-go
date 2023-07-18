@@ -18,8 +18,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
+	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
+
+	"go.chromium.org/luci/config_service/internal/model"
 )
 
 // CanReadServices checks whether the requester can read the provided services.
@@ -50,7 +55,55 @@ func CanReadService(ctx context.Context, service string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return checkServicePerm(ctx, service, aclCfg.GetServiceAccessGroup())
+	switch allowed, err := checkServicePerm(ctx, service, aclCfg.GetServiceAccessGroup()); {
+	case err != nil:
+		return false, err
+	case allowed:
+		return allowed, nil
+	}
+
+	srv := &model.Service{Name: service}
+	switch err := datastore.Get(ctx, srv); {
+	case err == datastore.ErrNoSuchEntity:
+		return false, nil // Deny access for non-existing service.
+	case err != nil:
+		return false, fmt.Errorf("failed to load service %q: %w", service, err)
+	default:
+		for _, access := range srv.Info.GetAccess() {
+			switch yes, err := checkAccessEntry(ctx, access); {
+			case err != nil:
+				return false, err
+			case yes:
+				return true, nil
+			}
+		}
+		return false, nil
+	}
+}
+
+// check an access entry defined in the service config.
+//
+// The allowed value can be found in the proto definition of
+// https://pkg.go.dev/go.chromium.org/luci/common/proto/config#Service
+func checkAccessEntry(ctx context.Context, access string) (bool, error) {
+	if group, ok := strings.CutPrefix(access, "group:"); ok {
+		switch isMember, err := auth.IsMember(ctx, group); {
+		case err != nil:
+			return false, fmt.Errorf("failed to perform membership check for group %q: %w", group, err)
+		default:
+			return isMember, nil
+		}
+	}
+	if !strings.ContainsRune(access, ':') { // default to user kind
+		access = fmt.Sprintf("%s:%s", identity.User, access)
+	}
+	allowedIdentity, err := identity.MakeIdentity(access)
+	if err != nil {
+		// Unlikely to happen. This would be validated when importing service
+		// config.
+		return false, fmt.Errorf("invalid identity %q: %w", access, err)
+	}
+	return auth.CurrentIdentity(ctx) == allowedIdentity, nil
 }
 
 // CanValidateService checks whether the requester can validate the config
