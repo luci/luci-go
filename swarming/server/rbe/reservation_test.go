@@ -228,6 +228,196 @@ func TestReservationServer(t *testing.T) {
 			})
 			So(transient.Tag.In(err), ShouldBeTrue)
 		})
+
+		Convey("ExpireSliceBasedOnReservation", func() {
+			const (
+				reservationName = "projects/.../instances/.../reservations/..."
+				taskSliceIndex  = 1
+				taskToRunShard  = 5
+				taskToRunID     = 678
+				taskID          = "637f8e221100aa10"
+			)
+
+			var (
+				expireSliceReason  internalspb.ExpireSliceRequest_Reason
+				expireSliceDetails string
+			)
+			internals.expireSlice = func(r *internalspb.ExpireSliceRequest) error {
+				So(r.TaskId, ShouldEqual, taskID)
+				So(r.TaskToRunShard, ShouldEqual, taskToRunShard)
+				So(r.TaskToRunId, ShouldEqual, taskToRunID)
+				So(r.Reason, ShouldNotEqual, internalspb.ExpireSliceRequest_REASON_UNSPECIFIED)
+				expireSliceReason = r.Reason
+				expireSliceDetails = r.Details
+				return nil
+			}
+
+			prepTaskToRun := func(reapable bool) {
+				exp := time.Time{}
+				if reapable {
+					exp = testclock.TestRecentTimeUTC.Add(time.Hour)
+				}
+				taskReqKey, _ := model.TaskRequestKey(ctx, taskID)
+				So(datastore.Put(ctx, &model.TaskToRun{
+					Kind:       model.TaskToRunKind(taskToRunShard),
+					ID:         taskToRunID,
+					Parent:     taskReqKey,
+					Expiration: exp,
+				}), ShouldBeNil)
+			}
+
+			prepReapableTaskToRun := func() { prepTaskToRun(true) }
+			prepClaimedTaskToRun := func() { prepTaskToRun(false) }
+
+			expireBasedOnReservation := func(state remoteworkers.ReservationState, statusErr error, result *internalspb.TaskResult) {
+				rbe.reservation = &remoteworkers.Reservation{
+					Name:   reservationName,
+					State:  state,
+					Status: status.Convert(statusErr).Proto(),
+				}
+				rbe.reservation.Payload, _ = anypb.New(&internalspb.TaskPayload{
+					ReservationId:  "",
+					TaskId:         taskID,
+					SliceIndex:     taskSliceIndex,
+					TaskToRunShard: taskToRunShard,
+					TaskToRunId:    taskToRunID,
+				})
+				if result != nil {
+					rbe.reservation.Result, _ = anypb.New(result)
+				}
+				expireSliceReason = internalspb.ExpireSliceRequest_REASON_UNSPECIFIED
+				expireSliceDetails = ""
+				So(srv.ExpireSliceBasedOnReservation(ctx, reservationName), ShouldBeNil)
+			}
+
+			expectNoExpireSlice := func() {
+				So(expireSliceReason, ShouldEqual, internalspb.ExpireSliceRequest_REASON_UNSPECIFIED)
+			}
+
+			expectExpireSlice := func(r internalspb.ExpireSliceRequest_Reason, details string) {
+				So(expireSliceReason, ShouldEqual, r)
+				So(expireSliceDetails, ShouldContainSubstring, details)
+			}
+
+			Convey("Still pending", func() {
+				prepReapableTaskToRun()
+				expireBasedOnReservation(
+					remoteworkers.ReservationState_RESERVATION_PENDING,
+					nil,
+					nil,
+				)
+				expectNoExpireSlice()
+			})
+
+			Convey("Successful", func() {
+				prepClaimedTaskToRun()
+				expireBasedOnReservation(
+					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					nil,
+					&internalspb.TaskResult{},
+				)
+				expectNoExpireSlice()
+			})
+
+			Convey("Canceled #1", func() {
+				prepClaimedTaskToRun()
+				expireBasedOnReservation(
+					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					status.Errorf(codes.Canceled, "canceled"),
+					nil,
+				)
+				expectNoExpireSlice()
+			})
+
+			Convey("Canceled #2", func() {
+				prepClaimedTaskToRun()
+				expireBasedOnReservation(
+					remoteworkers.ReservationState_RESERVATION_CANCELLED,
+					nil,
+					nil,
+				)
+				expectNoExpireSlice()
+			})
+
+			Convey("Expired", func() {
+				prepReapableTaskToRun()
+				expireBasedOnReservation(
+					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					status.Errorf(codes.DeadlineExceeded, "deadline"),
+					nil,
+				)
+				expectExpireSlice(internalspb.ExpireSliceRequest_EXPIRED, "deadline")
+			})
+
+			Convey("No resources", func() {
+				prepReapableTaskToRun()
+				expireBasedOnReservation(
+					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					status.Errorf(codes.FailedPrecondition, "no bots"),
+					nil,
+				)
+				expectExpireSlice(internalspb.ExpireSliceRequest_NO_RESOURCE, "no bots")
+			})
+
+			Convey("Bot internal error", func() {
+				prepReapableTaskToRun()
+				expireBasedOnReservation(
+					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					status.Errorf(codes.DeadlineExceeded, "ignored"),
+					&internalspb.TaskResult{BotInternalError: "boom"},
+				)
+				expectExpireSlice(internalspb.ExpireSliceRequest_BOT_INTERNAL_ERROR, "boom")
+			})
+
+			Convey("Aborted before claimed", func() {
+				prepReapableTaskToRun()
+				expireBasedOnReservation(
+					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					status.Errorf(codes.Aborted, "bot died"),
+					nil,
+				)
+				expectExpireSlice(internalspb.ExpireSliceRequest_BOT_INTERNAL_ERROR, "bot died")
+			})
+
+			Convey("Unexpectedly successful reservations", func() {
+				prepReapableTaskToRun()
+				expireBasedOnReservation(
+					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					nil,
+					nil,
+				)
+				expectExpireSlice(internalspb.ExpireSliceRequest_BOT_INTERNAL_ERROR, "unexpectedly finished")
+			})
+
+			Convey("Unexpectedly canceled reservations", func() {
+				prepReapableTaskToRun()
+				expireBasedOnReservation(
+					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					status.Errorf(codes.Canceled, "ignored"),
+					nil,
+				)
+				expectNoExpireSlice()
+			})
+
+			Convey("Skips already claimed TaskToRun", func() {
+				prepClaimedTaskToRun()
+				expireBasedOnReservation(
+					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					status.Errorf(codes.FailedPrecondition, "no bots"),
+					nil,
+				)
+				expectNoExpireSlice()
+			})
+
+			Convey("Skips missing TaskToRun", func() {
+				expireBasedOnReservation(
+					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					status.Errorf(codes.FailedPrecondition, "no bots"),
+					nil,
+				)
+				expectNoExpireSlice()
+			})
+		})
 	})
 }
 

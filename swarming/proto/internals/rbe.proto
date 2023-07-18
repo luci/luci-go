@@ -282,9 +282,16 @@ message TaskPayload {
 // Reservation proto that contains TaskResult, so TaskPayload fields are not
 // duplicated in the TaskResult.
 message TaskResult {
-  // Set to a human readable string if the bot skipped executing the
-  // reservation. Used for debugging only.
+  // Set to a human readable string if the bot legitimately skipped executing
+  // the reservation e.g. because it was already claimed. Used for debugging
+  // only.
   string skip_reason = 1;
+
+  // Set if the bot picked up the reservation, but could not work on it and
+  // gave up. This usually happens if the bot can't claim the TaskToRun after
+  // many attempts. This is an internal Swarming error and it results in the
+  // task failing with BOT_DIED error.
+  string bot_internal_error = 2;
 }
 
 
@@ -294,7 +301,7 @@ message TaskResult {
 service Internals {
   // Marks the slice as expired or failed, switches the task to the next slice.
   //
-  // Does nothing (and succeeds) is the slice is no longer pending or doesn't
+  // Does nothing (and succeeds) if the slice is no longer pending or doesn't
   // exist.
   rpc ExpireSlice(ExpireSliceRequest) returns (google.protobuf.Empty);
 }
@@ -318,6 +325,8 @@ message ExpireSliceRequest {
     NO_RESOURCE = 1;        // no bots alive that match the requested dimensions
     PERMISSION_DENIED = 2;  // no access to the RBE instance
     INVALID_ARGUMENT = 3;   // RBE didn't like something about the reservation
+    BOT_INTERNAL_ERROR = 4; // the bot picked up the reservation and then died
+    EXPIRED = 5;            // the scheduling deadline exceeded
   }
   Reason reason = 4;
   string details = 5;

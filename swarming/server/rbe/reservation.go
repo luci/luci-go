@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
@@ -79,14 +80,6 @@ func (s *ReservationServer) RegisterTQTasks(disp *tq.Dispatcher) {
 
 // handleEnqueueRBETask is responsible for creating a reservation.
 func (s *ReservationServer) handleEnqueueRBETask(ctx context.Context, task *internalspb.EnqueueRBETask) (err error) {
-	// TODO(vadimsh): The following edge case is broken:
-	// 1. Try to submit a reservation, get FailedPrecondition, because no bots.
-	// 2. Try to report this to Swarming in reservationDenied(...) and fail.
-	// 3. This causes a retry of the whole thing.
-	// 4. Retry submitting the reservation, getting AlreadyExists now.
-	// 5. Call GetReservation to see if it is running or failed to be submitted.
-	// 6. RBE returns "Remote Build Execution - internal server error" :-/
-
 	// On fatal errors need to mark the TaskToRun in Swarming DB as failed. On
 	// transient errors just let the TQ to call us again for a retry. Note that
 	// CreateReservation will fail with AlreadyExists if we actually managed to
@@ -118,16 +111,11 @@ func (s *ReservationServer) handleEnqueueRBETask(ctx context.Context, task *inte
 	// already. This check is especially important if handleEnqueueRBETask is
 	// being retried in a loop due to some repeating error. Canceling TaskToRun
 	// should stop this retry loop.
-	taskReqKey, err := model.TaskRequestKey(ctx, task.Payload.TaskId)
+	ttr, err := newTaskToRunFromPayload(ctx, task.Payload)
 	if err != nil {
 		return errors.Annotate(err, "bad EnqueueRBETask payload").Err()
 	}
-	ttr := model.TaskToRun{
-		Kind:   model.TaskToRunKind(task.Payload.TaskToRunShard),
-		ID:     task.Payload.TaskToRunId,
-		Parent: taskReqKey,
-	}
-	switch err := datastore.Get(ctx, &ttr); {
+	switch err := datastore.Get(ctx, ttr); {
 	case err == datastore.ErrNoSuchEntity:
 		logging.Warningf(ctx, "TaskToRun entity is already gone")
 		return nil
@@ -213,12 +201,156 @@ func (s *ReservationServer) reservationDenied(ctx context.Context, task *interna
 	}
 
 	// Tell Swarming to switch to the next slice, if necessary.
+	return s.expireSlice(ctx, task, reasonCode, reason.Error())
+}
+
+// ExpireSliceBasedOnReservation checks the reservation status by calling
+// the Reservations API and invokes ExpireSlice if the reservation is dead.
+//
+// It is ultimately invoked from a PubSub push handler when handling
+// notifications from the RBE scheduler.
+//
+// `reservationName` is a full reservation name, including the project and
+// RBE instance IDs: `projects/.../instances/.../reservations/...`.
+func (s *ReservationServer) ExpireSliceBasedOnReservation(ctx context.Context, reservationName string) error {
+	// Get the up-to-date state of the reservation.
+	logging.Infof(ctx, "Checking %s", reservationName)
+	reservation, err := s.rbe.GetReservation(ctx, &remoteworkers.GetReservationRequest{
+		Name:        reservationName,
+		WaitSeconds: 0,
+	})
+	err = grpcutil.WrapIfTransientOr(err, codes.DeadlineExceeded)
+	if err != nil {
+		return errors.Annotate(err, "failed to fetch reservation").Err()
+	}
+
+	// Don't care about pending reservations.
+	if reservation.State != remoteworkers.ReservationState_RESERVATION_COMPLETED &&
+		reservation.State != remoteworkers.ReservationState_RESERVATION_CANCELLED {
+		logging.Warningf(ctx, "Ignoring reservation in non-terminal state: %s", reservation.State)
+		return nil
+	}
+
+	// Get the final reservation status. Note that if a bot picked up a lease and
+	// then failed it, the status is still OK and the error is propagated through
+	// the `result` field.
+	//
+	// Observed non-OK statuses:
+	//   * FAILED_PRECONDITION if there are no matching bots at all.
+	//   * DEADLINE_EXCEEDED if the reservation wasn't finished before its expiry.
+	//   * INTERNAL if the reservation was completed, but with unset result field.
+	//   * CANCELLED if the reservation was canceled before being assigned.
+	//   * ABORTED if the bot picked up the lease and then stopped sending pings.
+	//
+	// Note that canceling the reservation with the bot's acknowledgment (i.e.
+	// while it is already running) results in OK status.
+	statusErr := status.ErrorProto(reservation.Status)
+	if statusErr == nil && reservation.State == remoteworkers.ReservationState_RESERVATION_CANCELLED {
+		statusErr = status.Error(codes.Canceled, "reservation was canceled")
+	}
+
+	// TaskPayload contains exact "coordinates" of the TaskToRun in the datastore.
+	// It must be present in all leases.
+	var payload internalspb.TaskPayload
+	if err := reservation.Payload.UnmarshalTo(&payload); err != nil {
+		return errors.Annotate(err, "failed to unmarshal reservation payload").Err()
+	}
+	logging.Infof(ctx, "TaskPayload:\n%s", prettyProto(&payload))
+
+	// TaskResult contains extra information supplied by the bot when it was
+	// closing the lease. It is empty if the lease didn't reach the bot at all.
+	if reservation.Result != nil {
+		var result internalspb.TaskResult
+		if err := reservation.Result.UnmarshalTo(&result); err != nil {
+			return errors.Annotate(err, "failed to unmarshal reservation result").Err()
+		}
+		logging.Infof(ctx, "TaskResult:\n%s", prettyProto(&result))
+		if result.BotInternalError != "" {
+			if statusErr != nil {
+				logging.Errorf(ctx, "Overriding with a bot internal error: %s", statusErr)
+			}
+			statusErr = status.Errorf(codes.Internal, "%s: %s", reservation.AssignedBotId, result.BotInternalError)
+		}
+	}
+
+	// Log the final derived status.
+	if statusErr != nil {
+		logging.Infof(ctx, "Reservation state %s: %s", reservation.State, statusErr)
+	} else {
+		logging.Infof(ctx, "Reservation state %s", reservation.State)
+	}
+	if reservation.AssignedBotId != "" {
+		logging.Infof(ctx, "Assigned bot: %s", reservation.AssignedBotId)
+	}
+
+	// Ignore noop reservations: they are not associated with Swarming slices and
+	// used during manual testing only.
+	if payload.Noop {
+		return nil
+	}
+
+	// See if the TaskToRun is still pending. If it was already assigned or
+	// canceled per Swarming datastore state, there's nothing to do.
+	ttr, err := newTaskToRunFromPayload(ctx, &payload)
+	if err != nil {
+		return errors.Annotate(err, "bad TaskPayload").Err()
+	}
+	switch err := datastore.Get(ctx, ttr); {
+	case err == datastore.ErrNoSuchEntity:
+		logging.Warningf(ctx, "Skipping: TaskToRun entity is already gone")
+		return nil
+	case err != nil:
+		return errors.Annotate(err, "failed to fetch TaskToRun").Tag(transient.Tag).Err()
+	case !ttr.IsReapable():
+		logging.Infof(ctx, "Skipping: TaskToRun is no longer pending")
+		return nil
+	}
+
+	// We already checked the TaskToRun slice is still pending, which means the
+	// bot hasn't called `/bot/claim` yet and haven't started working on a task
+	// yet (it doesn't know what task to work on). But if `statusErr` is nil, the
+	// reservation is already finished (and successfully at that). This should not
+	// be possible and indicates some buggy or non-compliant bot.
+	if statusErr == nil {
+		logging.Errorf(ctx, "Unexpected completion notification")
+		statusErr = status.Errorf(codes.Internal, "the reservation is unexpectedly finished by %q", reservation.AssignedBotId)
+	}
+
+	// Convert an RBE error condition to a slice expiration status.
+	var reasonCode internalspb.ExpireSliceRequest_Reason
+	switch status.Code(statusErr) {
+	case codes.FailedPrecondition:
+		reasonCode = internalspb.ExpireSliceRequest_NO_RESOURCE
+	case codes.DeadlineExceeded:
+		reasonCode = internalspb.ExpireSliceRequest_EXPIRED
+	case codes.Internal, codes.Aborted:
+		reasonCode = internalspb.ExpireSliceRequest_BOT_INTERNAL_ERROR
+	default:
+		// Note that this branch includes codes.Canceled which happens when
+		// a reservation is canceled before it is assigned to a bot. Currently the
+		// cancellation is always initiated through Swarming and Swarming already
+		// marks the corresponding TaskToRun as consumed before canceling the
+		// reservation: we should never end up here due to ttr.IsReapable() check
+		// above.
+		logging.Errorf(ctx, "Ignoring unexpected reservation status: %s", statusErr)
+		return nil
+	}
+
+	// Tell Swarming to switch to the next slice, if necessary
+	if err := s.expireSlice(ctx, &payload, reasonCode, statusErr.Error()); err != nil {
+		return errors.Annotate(err, "failed to expire the slice").Tag(transient.Tag).Err()
+	}
+	return nil
+}
+
+// expireSlice calls Swarming Python's ExpireSlice RPC.
+func (s *ReservationServer) expireSlice(ctx context.Context, task *internalspb.TaskPayload, code internalspb.ExpireSliceRequest_Reason, details string) error {
 	_, err := s.internals.ExpireSlice(ctx, &internalspb.ExpireSliceRequest{
 		TaskId:         task.TaskId,
 		TaskToRunShard: task.TaskToRunShard,
 		TaskToRunId:    task.TaskToRunId,
-		Reason:         reasonCode,
-		Details:        reason.Error(),
+		Reason:         code,
+		Details:        details,
 	})
 	return err
 }
@@ -242,8 +374,34 @@ func (s *ReservationServer) handleCancelRBETask(ctx context.Context, task *inter
 	}
 }
 
+// newTaskToRunFromPayload returns an empty TaskToRun struct with populated
+// entity key using information from the TaskPayload proto.
+func newTaskToRunFromPayload(ctx context.Context, p *internalspb.TaskPayload) (*model.TaskToRun, error) {
+	taskReqKey, err := model.TaskRequestKey(ctx, p.TaskId)
+	if err != nil {
+		return nil, err
+	}
+	return &model.TaskToRun{
+		Kind:   model.TaskToRunKind(p.TaskToRunShard),
+		ID:     p.TaskToRunId,
+		Parent: taskReqKey,
+	}, nil
+}
+
 // isExpectedRBEError returns true for errors that are expected to happen during
 // normal code flow.
 func isExpectedRBEError(err error) bool {
 	return grpcutil.Code(err) == codes.FailedPrecondition
+}
+
+// prettyProto formats a proto message for logs.
+func prettyProto(msg proto.Message) string {
+	blob, err := prototext.MarshalOptions{
+		Multiline: true,
+		Indent:    "  ",
+	}.Marshal(msg)
+	if err != nil {
+		return fmt.Sprintf("<error: %s>", err)
+	}
+	return string(blob)
 }

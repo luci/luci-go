@@ -33,7 +33,7 @@ const (
 type InternalsClient interface {
 	// Marks the slice as expired or failed, switches the task to the next slice.
 	//
-	// Does nothing (and succeeds) is the slice is no longer pending or doesn't
+	// Does nothing (and succeeds) if the slice is no longer pending or doesn't
 	// exist.
 	ExpireSlice(ctx context.Context, in *ExpireSliceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -61,7 +61,7 @@ func (c *internalsClient) ExpireSlice(ctx context.Context, in *ExpireSliceReques
 type InternalsServer interface {
 	// Marks the slice as expired or failed, switches the task to the next slice.
 	//
-	// Does nothing (and succeeds) is the slice is no longer pending or doesn't
+	// Does nothing (and succeeds) if the slice is no longer pending or doesn't
 	// exist.
 	ExpireSlice(context.Context, *ExpireSliceRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedInternalsServer()
