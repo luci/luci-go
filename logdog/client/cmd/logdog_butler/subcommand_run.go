@@ -368,8 +368,7 @@ func (cmd *runCommandRun) maybeWriteResult(ctx context.Context, r *bootstrapResu
 		"path": cmd.resultPath,
 	}.Debugf(ctx, "Writing bootstrap result.")
 	if err := r.WriteJSON(cmd.resultPath); err != nil {
-		return errors.Annotate(err, "failed to write JSON file").
-			InternalReason("path(%s)", cmd.resultPath).Err()
+		return errors.Annotate(err, "failed to write JSON file: %s", cmd.resultPath).Err()
 	}
 	return nil
 }

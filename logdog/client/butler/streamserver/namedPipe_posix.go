@@ -58,8 +58,7 @@ func newStreamServer(ctx context.Context, path string) (*StreamServer, error) {
 	}
 
 	if len(path) > maxPOSIXNamedSocketLength {
-		return nil, errors.Reason("path exceeds maximum length %d", maxPOSIXNamedSocketLength).
-			InternalReason("path(%s)", path).Err()
+		return nil, errors.Reason("path exceeds maximum length %d", maxPOSIXNamedSocketLength).Err()
 	}
 
 	ctx = log.SetField(ctx, "namedPipePath", path)

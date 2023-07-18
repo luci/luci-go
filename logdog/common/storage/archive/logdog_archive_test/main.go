@@ -469,8 +469,7 @@ func dumpRecordIO(c context.Context, r io.Reader, cb func(context.Context, []byt
 			break
 
 		default:
-			return errors.Annotate(err, "Encountered error reading log stream.").
-				InternalReason("frameIndex(%d)", frameIndex).Err()
+			return errors.Annotate(err, "reading frameIndex(%d)", frameIndex).Err()
 		}
 
 		if frameSize > 0 {
@@ -478,8 +477,7 @@ func dumpRecordIO(c context.Context, r io.Reader, cb func(context.Context, []byt
 			buf.Grow(int(frameSize))
 
 			if _, err := buf.ReadFrom(r); err != nil {
-				return errors.Annotate(err, "Failed to buffer frame.").
-					InternalReason("frameIndex(%d)", frameIndex).Err()
+				return errors.Annotate(err, "buffering frameIndex(%d)", frameIndex).Err()
 			}
 
 			if err := cb(c, buf.Bytes()); err != nil {

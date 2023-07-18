@@ -99,12 +99,10 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 		return nil, errors.New("no host supplied")
 	}
 	if err := config.ValidateProjectName(cfg.Project); err != nil {
-		return nil, errors.Annotate(err, "failed to validate project").
-			InternalReason("project(%v)", cfg.Project).Err()
+		return nil, errors.Annotate(err, "failed to validate project %q", cfg.Project).Err()
 	}
 	if err := cfg.Prefix.Validate(); err != nil {
-		return nil, errors.Annotate(err, "failed to validate prefix").
-			InternalReason("prefix(%v)", cfg.Prefix).Err()
+		return nil, errors.Annotate(err, "failed to validate prefix %q", cfg.Prefix).Err()
 	}
 
 	// Check no cross-project shenanigans occur. Eventually cfg.Project will be

@@ -45,8 +45,7 @@ func newStreamServer(ctx context.Context, prefix string) (*StreamServer, error) 
 	realPath := streamproto.LocalNamedPipePath(path)
 
 	if len(realPath) > maxWindowsNamedPipeLength {
-		return nil, errors.Reason("path exceeds maximum length %d", maxWindowsNamedPipeLength).
-			InternalReason("realPath(%s)", realPath).Err()
+		return nil, errors.Reason("path exceeds maximum length %d", maxWindowsNamedPipeLength).Err()
 	}
 
 	ctx = log.SetField(ctx, "path", path)
