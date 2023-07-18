@@ -146,9 +146,11 @@ func TestSynthesizeBuild(t *testing.T) {
 					Name:           "builder",
 					ServiceAccount: "sa@chops-service-accounts.iam.gserviceaccount.com",
 					Dimensions:     []string{"pool:pool1"},
+					Properties:     `{"a":"b","b":"b"}`,
 					ShadowBuilderAdjustments: &pb.BuilderConfig_ShadowBuilderAdjustments{
 						ServiceAccount: "shadow@chops-service-accounts.iam.gserviceaccount.com",
 						Pool:           "pool2",
+						Properties:     `{"a":"b2","c":"c"}`,
 					},
 				},
 			}), ShouldBeNil)
@@ -246,7 +248,20 @@ func TestSynthesizeBuild(t *testing.T) {
 						},
 					},
 					Input: &pb.Build_Input{
-						Properties: &structpb.Struct{},
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"a": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "b",
+									},
+								},
+								"b": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "b",
+									},
+								},
+							},
+						},
 						GerritChanges: []*pb.GerritChange{
 							{
 								Host:     "host",
@@ -355,6 +370,21 @@ func TestSynthesizeBuild(t *testing.T) {
 												},
 											},
 										},
+									},
+								},
+								"a": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "b2",
+									},
+								},
+								"b": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "b",
+									},
+								},
+								"c": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "c",
 									},
 								},
 							},
@@ -470,6 +500,21 @@ func TestSynthesizeBuild(t *testing.T) {
 												},
 											},
 										},
+									},
+								},
+								"a": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "b2",
+									},
+								},
+								"b": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "b",
+									},
+								},
+								"c": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "c",
 									},
 								},
 							},

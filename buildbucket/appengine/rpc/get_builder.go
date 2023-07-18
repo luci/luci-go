@@ -19,6 +19,9 @@ import (
 	"fmt"
 	"sort"
 
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/structpb"
+
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/common/errors"
@@ -64,10 +67,34 @@ func applyShadowAdjustment(cfg *pb.BuilderConfig) {
 			cfg.Dimensions = append(cfg.Dimensions, poolDim)
 		}
 	}
+	if shadowBldrCfg.Properties != "" {
+		if cfg.GetProperties() == "" {
+			cfg.Properties = shadowBldrCfg.Properties
+		} else {
+			origProp := &structpb.Struct{}
+			shadowProp := &structpb.Struct{}
+			if err := protojson.Unmarshal([]byte(cfg.Properties), origProp); err != nil {
+				// Builder config should have been validated already.
+				panic(errors.Annotate(err, "error unmarshaling builder properties for %q", cfg.Name).Err())
+			}
+			if err := protojson.Unmarshal([]byte(shadowBldrCfg.Properties), shadowProp); err != nil {
+				// Builder config should have been validated already.
+				panic(errors.Annotate(err, "error unmarshaling builder shadow properties for %q", cfg.Name).Err())
+			}
+			for k, v := range shadowProp.GetFields() {
+				origProp.Fields[k] = v
+			}
+			updatedProp, err := protojson.Marshal(origProp)
+			if err != nil {
+				panic(errors.Annotate(err, "error marshaling builder properties for %q", cfg.Name).Err())
+			}
+			cfg.Properties = string(updatedProp)
+		}
+	}
 	cfg.ShadowBuilderAdjustments = nil
 }
 
-func trySynthesizeFromShadowdBuilder(ctx context.Context, req *pb.GetBuilderRequest) (*pb.BuilderItem, error) {
+func trySynthesizeFromShadowedBuilder(ctx context.Context, req *pb.GetBuilderRequest) (*pb.BuilderItem, error) {
 	reqBucket := &model.Bucket{
 		Parent: model.ProjectKey(ctx, req.Id.Project),
 		ID:     req.Id.Bucket,
@@ -120,7 +147,7 @@ func (*Builders) GetBuilder(ctx context.Context, req *pb.GetBuilderRequest) (*pb
 	}
 	switch err := datastore.Get(ctx, builder); {
 	case err == datastore.ErrNoSuchEntity:
-		return trySynthesizeFromShadowdBuilder(ctx, req)
+		return trySynthesizeFromShadowedBuilder(ctx, req)
 	case err != nil:
 		return nil, err
 	}

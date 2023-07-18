@@ -744,6 +744,13 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 		}
 		ctx.Exit()
 	}
+
+	// shadow_builder_adjustments
+	if b.ShadowBuilderAdjustments.GetProperties() != "" {
+		if !strings.HasPrefix(b.ShadowBuilderAdjustments.Properties, "{") || !json.Valid([]byte(b.ShadowBuilderAdjustments.Properties)) {
+			ctx.Errorf("shadow_builder_adjustments.properties is not a JSON object")
+		}
+	}
 }
 
 func validateBuilderRecipe(ctx *validation.Context, recipe *pb.BuilderConfig_Recipe) {

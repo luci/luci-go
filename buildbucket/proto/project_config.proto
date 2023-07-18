@@ -423,6 +423,11 @@ message BuilderConfig {
   message ShadowBuilderAdjustments {
     string service_account = 1;
     string pool = 2;
+    // A JSON object contains properties to override Build.input.properties
+    // when creating the led build.
+    // Same as ScheduleBuild, the top-level properties here will override the
+    // ones in builder config, instead of deep merge.
+    string properties = 3 [(luci.text_pb_format) = JSON];
   }
 
   ShadowBuilderAdjustments shadow_builder_adjustments = 35;

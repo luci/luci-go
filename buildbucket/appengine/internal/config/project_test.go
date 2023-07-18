@@ -203,10 +203,34 @@ func TestValidateProject(t *testing.T) {
 						cipd_package: "some/package"
 						name: "foo"
 					}
+					shadow_builder_adjustments {
+						properties: '{"a":"b","x":true}'
+					}
 				}
 			`
 			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
 			So(vctx.Finalize(), ShouldBeNil)
+		})
+
+		Convey("shadow_builder_adjustments", func() {
+			content := `
+								builders {
+					name: "release cipd"
+					swarming_host: "example.com"
+					recipe {
+						cipd_package: "some/package"
+						name: "foo"
+					}
+					shadow_builder_adjustments {
+						properties: "a:b'"
+					}
+				}
+			`
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+			ve, ok := vctx.Finalize().(*validation.Error)
+			So(ok, ShouldEqual, true)
+			So(len(ve.Errors), ShouldEqual, 1)
+			So(ve.Errors[0].Error(), ShouldContainSubstring, "(swarming / builders #0 - release cipd): shadow_builder_adjustments.properties is not a JSON object")
 		})
 
 		Convey("empty builders", func() {
@@ -701,6 +725,7 @@ func TestValidateProject(t *testing.T) {
 			So(allErrs, ShouldContainSubstring, `key "is_experimental": reserved key`)
 		})
 	})
+
 }
 
 func TestUpdateProject(t *testing.T) {
