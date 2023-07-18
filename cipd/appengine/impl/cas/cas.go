@@ -361,9 +361,8 @@ func fetchOp(ctx context.Context, wrappedOpID string) (*upload.Operation, error)
 		if transient.Tag.In(err) {
 			return nil, errors.Annotate(err, "failed to check HMAC on upload_operation_id").Err()
 		}
-		return nil, errors.Reason("no such upload operation").
-			InternalReason("HMAC check failed - %s", err).
-			Tag(grpcutil.NotFoundTag).Err()
+		logging.Infof(ctx, "HMAC check failed - %s", err)
+		return nil, errors.Reason("no such upload operation").Tag(grpcutil.NotFoundTag).Err()
 	}
 
 	op := &upload.Operation{ID: opID}

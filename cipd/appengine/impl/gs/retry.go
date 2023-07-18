@@ -73,8 +73,9 @@ func withRetry(ctx context.Context, call func() error) error {
 			}
 			return errors.Annotate(err, "failed to call GS").Tag(transient.Tag).Err()
 		}
+		logging.Infof(ctx, "GS replied with HTTP code %d", apiErr.Code)
+		logging.Debugf(ctx, "full response body:\n%s", apiErr.Body)
 		ann := errors.Annotate(err, "GS replied with HTTP code %d", apiErr.Code).
-			InternalReason("full response body:\n%s", apiErr.Body).
 			Tag(StatusCodeTag(apiErr.Code))
 		// Retry only on 429 and 5xx responses, according to
 		// https://cloud.google.com/storage/docs/exponential-backoff.
