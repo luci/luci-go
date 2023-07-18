@@ -284,8 +284,7 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 	}
 
 	if a.opts.CommandLine, err = python.ParseCommandLine(args); err != nil {
-		return errors.Annotate(err, "failed to parse Python command-line").
-			InternalReason("args(%v)", args).Err()
+		return errors.Annotate(err, "failed to parse Python command-line: %v", args).Err()
 	}
 	logging.Debugf(c, "Parsed command-line %v: %#v", args, a.opts.CommandLine)
 

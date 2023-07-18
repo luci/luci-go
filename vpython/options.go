@@ -206,8 +206,11 @@ func (o *Options) ResolveSpec(c context.Context) (err error) {
 	if isScriptTarget {
 		spec, _, err := o.SpecLoader.LoadForScript(c, script.Path, isModule)
 		if err != nil {
-			return errors.Annotate(err, "failed to load spec for script: %s", target).
-				InternalReason("isModule(%v)", isModule).Err()
+			kind := "script"
+			if isModule {
+				kind = "module"
+			}
+			return errors.Annotate(err, "failed to load spec for %s: %s", kind, target).Err()
 		}
 		if spec != nil {
 			o.EnvConfig.Spec = spec

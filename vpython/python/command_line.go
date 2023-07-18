@@ -366,8 +366,7 @@ func ParseCommandLine(args []string) (*CommandLine, error) {
 		}
 		for len(fs.flag) > 0 {
 			if err := cl.parseSingleFlag(&fs); err != nil {
-				return nil, errors.Annotate(err, "failed to parse Python flag #%d", i).
-					InternalReason("arg(%q)", arg).Err()
+				return nil, errors.Annotate(err, "failed to parse Python flag #%d: %q", i, arg).Err()
 			}
 		}
 		args = fs.args
