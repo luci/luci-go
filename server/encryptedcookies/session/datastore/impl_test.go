@@ -17,8 +17,13 @@ package datastore
 import (
 	"context"
 	"testing"
+	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/encryptedcookies/session"
 	"go.chromium.org/luci/server/encryptedcookies/session/sessionpb"
 
@@ -29,7 +34,9 @@ func TestWorks(t *testing.T) {
 	t.Parallel()
 
 	Convey("With DS", t, func() {
-		ctx := memory.Use(context.Background())
+		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
+		ctx, _ := testclock.UseTime(context.Background(), testTime)
+		ctx = memory.Use(ctx)
 
 		Convey("Works", func() {
 			store := Store{}
@@ -52,10 +59,15 @@ func TestWorks(t *testing.T) {
 			So(s.State, ShouldEqual, sessionpb.State_STATE_OPEN)
 			So(s.Email, ShouldEqual, "abc@example.com")
 
+			ent, err := fetchRawEntity(ctx, id)
+			So(err, ShouldBeNil)
+			So(ent.ExpireAt.Equal(testTime.Add(InactiveSessionExpiration)), ShouldBeTrue)
+
 			err = store.UpdateSession(ctx, id, func(s *sessionpb.Session) error {
 				So(s.State, ShouldEqual, sessionpb.State_STATE_OPEN)
 				So(s.Email, ShouldEqual, "abc@example.com")
 				s.State = sessionpb.State_STATE_CLOSED
+				s.LastRefresh = timestamppb.New(testTime.Add(5 * time.Hour))
 				return nil
 			})
 			So(err, ShouldBeNil)
@@ -63,6 +75,16 @@ func TestWorks(t *testing.T) {
 			s, err = store.FetchSession(ctx, id)
 			So(err, ShouldBeNil)
 			So(s.State, ShouldEqual, sessionpb.State_STATE_CLOSED)
+
+			ent, err = fetchRawEntity(ctx, id)
+			So(err, ShouldBeNil)
+			So(ent.ExpireAt.Equal(testTime.Add(5*time.Hour+InactiveSessionExpiration)), ShouldBeTrue)
 		})
 	})
+}
+
+func fetchRawEntity(ctx context.Context, id session.ID) (*SessionEntity, error) {
+	ent := &SessionEntity{ID: entityID(id)}
+	err := datastore.Get(ctx, ent)
+	return ent, err
 }

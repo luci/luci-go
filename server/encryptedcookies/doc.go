@@ -111,6 +111,15 @@
 //	  _ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 //	)
 //
+// # Inactive sessions cleanup
+//
+// When using Cloud Datastore as a session storage, configure a time-to-live
+// policy to delete `encryptedcookies.Session` entities based on `ExpireAt`
+// field. See https://cloud.google.com/datastore/docs/ttl. This step is usually
+// done via Terraform.
+//
+// A session is considered expired if it wasn't accessed for more than 14 days.
+//
 // # Exposed routes
 //
 // The module exposes 3 routes involved in the login/logout process:

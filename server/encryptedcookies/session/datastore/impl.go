@@ -22,6 +22,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
@@ -31,6 +32,13 @@ import (
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 )
+
+// InactiveSessionExpiration is used to derive ExpireAt field of the datastore
+// entity.
+//
+// It defines how long to keep inactive session in the datastore before they
+// are cleaned up by a TTL policy.
+const InactiveSessionExpiration time.Duration = 14 * 24 * time.Hour
 
 // Store uses Cloud Datastore for sessions.
 type Store struct {
@@ -56,7 +64,7 @@ func init() {
 // Returns (nil, nil) if there's no such session. All errors are transient.
 func (s *Store) FetchSession(ctx context.Context, id session.ID) (*sessionpb.Session, error) {
 	ctx = info.MustNamespace(ctx, s.Namespace)
-	ent := sessionEntity{ID: entityID(id)}
+	ent := SessionEntity{ID: entityID(id)}
 	switch err := datastore.Get(ctx, &ent); {
 	case err == datastore.ErrNoSuchEntity:
 		return nil, nil
@@ -81,7 +89,7 @@ func (s *Store) UpdateSession(ctx context.Context, id session.ID, cb func(*sessi
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		cbErr = nil
 		var mutable *sessionpb.Session
-		ent := sessionEntity{ID: entityID(id)}
+		ent := SessionEntity{ID: entityID(id)}
 		switch err := datastore.Get(ctx, &ent); {
 		case err == datastore.ErrNoSuchEntity:
 			mutable = &sessionpb.Session{}
@@ -93,7 +101,14 @@ func (s *Store) UpdateSession(ctx context.Context, id session.ID, cb func(*sessi
 		if cbErr = cb(mutable); cbErr != nil {
 			return cbErr
 		}
-		return datastore.Put(ctx, makeEntity(id, mutable))
+		var lastRefresh time.Time
+		if mutable.LastRefresh != nil {
+			lastRefresh = mutable.LastRefresh.AsTime()
+		} else {
+			lastRefresh = clock.Now(ctx).UTC()
+		}
+		exp := lastRefresh.Add(InactiveSessionExpiration)
+		return datastore.Put(ctx, makeEntity(id, mutable, exp))
 	}, nil)
 	if err == cbErr {
 		return cbErr // can also be nil on success
@@ -101,7 +116,8 @@ func (s *Store) UpdateSession(ctx context.Context, id session.ID, cb func(*sessi
 	return transient.Tag.Apply(err)
 }
 
-type sessionEntity struct {
+// SessionEntity is what is actually stored in the datastore.
+type SessionEntity struct {
 	_kind  string                `gae:"$kind,encryptedcookies.Session"`
 	_extra datastore.PropertyMap `gae:"-,extra"`
 
@@ -117,14 +133,21 @@ type sessionEntity struct {
 	Closed      time.Time
 	Sub         string
 	Email       string
+
+	// ExpireAt is used in a Cloud Datastore TTL policy.
+	//
+	// It is derived from LastRefresh (or the current time if LastRefresh is not
+	// populated) based on InactiveSessionExpiration whenever the entity is
+	// stored.
+	ExpireAt time.Time `gae:",noindex"`
 }
 
 func entityID(id session.ID) string {
 	return base64.RawStdEncoding.EncodeToString(id)
 }
 
-func makeEntity(id session.ID, s *sessionpb.Session) *sessionEntity {
-	return &sessionEntity{
+func makeEntity(id session.ID, s *sessionpb.Session, exp time.Time) *SessionEntity {
+	return &SessionEntity{
 		ID:          entityID(id),
 		Session:     s,
 		State:       s.State,
@@ -134,6 +157,7 @@ func makeEntity(id session.ID, s *sessionpb.Session) *sessionEntity {
 		Closed:      asTime(s.Closed),
 		Sub:         s.Sub,
 		Email:       s.Email,
+		ExpireAt:    exp,
 	}
 }
 
