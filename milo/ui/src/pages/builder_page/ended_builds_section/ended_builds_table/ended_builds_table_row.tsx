@@ -216,15 +216,7 @@ export const EndedBuildsTableRow = observer(
             </Box>
           </TableCell>
         )}
-        <TableCell
-          onClick={() => {
-            if (window.getSelection()?.toString().length) {
-              return;
-            }
-            tableState.toggle(build.id, !expanded);
-          }}
-          sx={{ cursor: build.summaryMarkdown ? 'pointer' : '' }}
-        >
+        <TableCell>
           <Box
             sx={{
               display: 'grid',
