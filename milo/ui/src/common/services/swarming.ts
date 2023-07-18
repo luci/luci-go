@@ -48,7 +48,7 @@ export interface BotInfo {
 }
 
 export interface BotInfoListResponse {
-  readonly cursor: string;
+  readonly cursor?: string;
   readonly items?: readonly BotInfo[];
   readonly now: string;
   readonly deathTimeout: number;

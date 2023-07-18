@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import '@testing-library/jest-dom';
 import { getAllByRole, render, screen } from '@testing-library/react';
 
 import { NthSectionAnalysisResult } from '@/common/services/luci_bisection';

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 
 import { usePrpcQuery } from '@/common/hooks/use_prpc_query';

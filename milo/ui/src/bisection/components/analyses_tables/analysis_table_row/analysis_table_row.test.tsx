@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import '@testing-library/jest-dom';
-
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import { render, screen } from '@testing-library/react';

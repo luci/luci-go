@@ -15,6 +15,7 @@
 import crypto from 'crypto';
 import { TextDecoder, TextEncoder } from 'util';
 
+import '@testing-library/jest-dom';
 import 'isomorphic-fetch';
 import 'intersection-observer';
 import * as dotenv from 'dotenv';

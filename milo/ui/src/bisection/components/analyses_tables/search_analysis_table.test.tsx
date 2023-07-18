@@ -15,8 +15,6 @@
 import { render, screen } from '@testing-library/react';
 import fetchMock from 'fetch-mock-jest';
 
-import '@testing-library/jest-dom';
-
 import {
   mockErrorQueryingAnalysis,
   mockQueryAnalysis,
