@@ -151,12 +151,24 @@ message PositionVerdict {
   bool is_exonerated = 3;
 
   message Run {
-    // Number of non-skipped expected results in the run.
-    int64 expected_result_count = 1;
-    // Number of non-skipped unexpected results in the run.
-    int64 unexpected_result_count = 2;
+    // Number of expectedly passed results in the run.
+    int64 expected_pass_count = 1;
+    // Number of expectedly failed results in the run.
+    int64 expected_fail_count = 2;
+    // Number of expectedly crashed results in the run.
+    int64 expected_crash_count = 3;
+    // Number of expectedly aborted results in the run.
+    int64 expected_abort_count = 4;
+    // Number of unexpectedly passed results in the run.
+    int64 unexpected_pass_count = 5;
+    // Number of unexpectedly failed results in the run.
+    int64 unexpected_fail_count = 6;
+    // Number of unexpectedly crashed results in the run.
+    int64 unexpected_crash_count = 7;
+    // Number of unexpectedly aborted results in the run.
+    int64 unexpected_abort_count = 8;
     // Whether this run is a duplicate run.
-    bool is_duplicate = 3;
+    bool is_duplicate = 9;
   }
   repeated Run runs = 4;
 }

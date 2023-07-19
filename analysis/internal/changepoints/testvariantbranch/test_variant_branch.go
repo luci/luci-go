@@ -301,6 +301,14 @@ func AddCounts(count1 *cpb.Counts, count2 *cpb.Counts) *cpb.Counts {
 	return &cpb.Counts{
 		TotalResults:             count1.TotalResults + count2.TotalResults,
 		UnexpectedResults:        count1.UnexpectedResults + count2.UnexpectedResults,
+		ExpectedPassedResults:    count1.ExpectedPassedResults + count2.ExpectedPassedResults,
+		ExpectedFailedResults:    count1.ExpectedFailedResults + count2.ExpectedFailedResults,
+		ExpectedCrashedResults:   count1.ExpectedCrashedResults + count2.ExpectedCrashedResults,
+		ExpectedAbortedResults:   count1.ExpectedAbortedResults + count2.ExpectedAbortedResults,
+		UnexpectedPassedResults:  count1.UnexpectedPassedResults + count2.UnexpectedPassedResults,
+		UnexpectedFailedResults:  count1.UnexpectedFailedResults + count2.UnexpectedFailedResults,
+		UnexpectedCrashedResults: count1.UnexpectedCrashedResults + count2.UnexpectedCrashedResults,
+		UnexpectedAbortedResults: count1.UnexpectedAbortedResults + count2.UnexpectedAbortedResults,
 		TotalRuns:                count1.TotalRuns + count2.TotalRuns,
 		UnexpectedUnretriedRuns:  count1.UnexpectedUnretriedRuns + count2.UnexpectedUnretriedRuns,
 		UnexpectedAfterRetryRuns: count1.UnexpectedAfterRetryRuns + count2.UnexpectedAfterRetryRuns,
@@ -336,12 +344,12 @@ func insertVerdictsIntoStatistics(stats *cpb.Statistics, verdicts []inputbuffer.
 
 		// Add verdict to hourly bucket.
 		bucket.TotalVerdicts++
-		if !v.IsSimpleExpected {
+		if !v.IsSimpleExpectedPass {
 			verdictHasExpectedResults := false
 			verdictHasUnexpectedResults := false
 			for _, run := range v.Details.Runs {
-				verdictHasExpectedResults = verdictHasExpectedResults || (run.ExpectedResultCount > 0)
-				verdictHasUnexpectedResults = verdictHasUnexpectedResults || (run.UnexpectedResultCount > 0)
+				verdictHasExpectedResults = verdictHasExpectedResults || (run.Expected.Count() > 0)
+				verdictHasUnexpectedResults = verdictHasUnexpectedResults || (run.Unexpected.Count() > 0)
 			}
 			if verdictHasUnexpectedResults && !verdictHasExpectedResults {
 				bucket.UnexpectedVerdicts++

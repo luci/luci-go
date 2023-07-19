@@ -27,7 +27,7 @@ import (
 
 const (
 	// The version of the encoding to encode the verdict history.
-	EncodingVersion = 1
+	EncodingVersion = 2
 	// Capacity of the hot buffer, i.e. how many verdicts it can hold.
 	DefaultHotBufferCapacity = 100
 	// Capacity of the cold buffer, i.e. how many verdicts it can hold.
@@ -65,9 +65,9 @@ type History struct {
 type PositionVerdict struct {
 	// The commit position for the verdict.
 	CommitPosition int
-	// Denotes whether this verdict is a simple expected verdict or not.
-	// A simple expected verdict has only one test result, which is expected.
-	IsSimpleExpected bool
+	// Denotes whether this verdict is a simple expected pass verdict or not.
+	// A simple expected pass verdict has only one test result, which is expected pass.
+	IsSimpleExpectedPass bool
 	// The partition time that this PositionVerdict was ingested.
 	// When stored, it is truncated to the nearest hour.
 	Hour time.Time
@@ -82,13 +82,28 @@ type VerdictDetails struct {
 	Runs []Run
 }
 
+type ResultCounts struct {
+	// Number of passed result.
+	PassCount int
+	// Number of failed result.
+	FailCount int
+	// Number of crashed result.
+	CrashCount int
+	// Number of aborted result.
+	AbortCount int
+}
+
 type Run struct {
-	// Number of non-skipped expected results in the run.
-	ExpectedResultCount int
-	// Number of non-skipped unexpected results in the run.
-	UnexpectedResultCount int
+	// Counts for expected results.
+	Expected ResultCounts
+	// Counts for unexpected results.
+	Unexpected ResultCounts
 	// Whether this run is a duplicate run.
 	IsDuplicate bool
+}
+
+func (r ResultCounts) Count() int {
+	return r.PassCount + r.FailCount + r.CrashCount + r.AbortCount
 }
 
 type MergedInputBuffer struct {
@@ -343,7 +358,7 @@ func (hs *HistorySerializer) Encode(history History) []byte {
 		// previous verdicts.
 		deltaPosition := uint64(verdict.CommitPosition) - lastPosition
 		deltaPosition = deltaPosition << 1
-		if !verdict.IsSimpleExpected {
+		if !verdict.IsSimpleExpectedPass {
 			// Set the last bit to 1 if it is not a simple verdict.
 			deltaPosition |= 1
 		}
@@ -359,7 +374,7 @@ func (hs *HistorySerializer) Encode(history History) []byte {
 		lastHourNumber = hourNumber
 
 		// Encode the verdict details, only if not simple verdict.
-		if !verdict.IsSimpleExpected {
+		if !verdict.IsSimpleExpectedPass {
 			buf = appendVerdictDetails(buf, verdict.Details)
 		}
 	}
@@ -419,7 +434,7 @@ func (hs *HistorySerializer) DecodeInto(history *History, buf []byte) error {
 		}
 		deltaPos, isSimple := decodePositionSimpleVerdict(posSim)
 
-		verdict.IsSimpleExpected = isSimple
+		verdict.IsSimpleExpectedPass = isSimple
 		// First verdict, deltaPos should be the absolute commit position.
 		if i == 0 {
 			verdict.CommitPosition = deltaPos
@@ -482,19 +497,61 @@ func readVerdictDetails(reader *bytes.Reader) (VerdictDetails, error) {
 
 func readRun(reader *bytes.Reader) (Run, error) {
 	r := Run{}
-	// Read expected count.
-	expectedCount, err := binary.ReadUvarint(reader)
+	// Read expected passed count.
+	expectedPassedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return r, errors.Annotate(err, "read expected count").Err()
+		return r, errors.Annotate(err, "read expected passed count").Err()
 	}
-	r.ExpectedResultCount = int(expectedCount)
+	r.Expected.PassCount = int(expectedPassedCount)
 
-	// Read unexpected count.
-	unexpectedCount, err := binary.ReadUvarint(reader)
+	// Read expected failed count.
+	expectedFailedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return r, errors.Annotate(err, "read unexpected count").Err()
+		return r, errors.Annotate(err, "read expected failed count").Err()
 	}
-	r.UnexpectedResultCount = int(unexpectedCount)
+	r.Expected.FailCount = int(expectedFailedCount)
+
+	// Read expected crashed count.
+	expectedCrashedCount, err := binary.ReadUvarint(reader)
+	if err != nil {
+		return r, errors.Annotate(err, "read expected crashed count").Err()
+	}
+	r.Expected.CrashCount = int(expectedCrashedCount)
+
+	// Read expected aborted count.
+	expectedAbortedCount, err := binary.ReadUvarint(reader)
+	if err != nil {
+		return r, errors.Annotate(err, "read expected aborted count").Err()
+	}
+	r.Expected.AbortCount = int(expectedAbortedCount)
+
+	// Read unexpected passed count.
+	unexpectedPassedCount, err := binary.ReadUvarint(reader)
+	if err != nil {
+		return r, errors.Annotate(err, "read unexpected passed count").Err()
+	}
+	r.Unexpected.PassCount = int(unexpectedPassedCount)
+
+	// Read unexpected failed count.
+	unexpectedFailedCount, err := binary.ReadUvarint(reader)
+	if err != nil {
+		return r, errors.Annotate(err, "read unexpected failed count").Err()
+	}
+	r.Unexpected.FailCount = int(unexpectedFailedCount)
+
+	// Read unexpected crashed count.
+	unexpectedCrashedCount, err := binary.ReadUvarint(reader)
+	if err != nil {
+		return r, errors.Annotate(err, "read unexpected crashed count").Err()
+	}
+	r.Unexpected.CrashCount = int(unexpectedCrashedCount)
+
+	// Read unexpected aborted count.
+	unexpectedAbortedCount, err := binary.ReadUvarint(reader)
+	if err != nil {
+		return r, errors.Annotate(err, "read unexpected aborted count").Err()
+	}
+	r.Unexpected.AbortCount = int(unexpectedAbortedCount)
 
 	// Read isDuplicate
 	isDuplicate, err := binary.ReadUvarint(reader)
@@ -519,16 +576,22 @@ func appendVerdictDetails(result []byte, vd VerdictDetails) []byte {
 }
 
 func appendRun(result []byte, run Run) []byte {
-	result = binary.AppendUvarint(result, uint64(run.ExpectedResultCount))
-	result = binary.AppendUvarint(result, uint64(run.UnexpectedResultCount))
+	result = binary.AppendUvarint(result, uint64(run.Expected.PassCount))
+	result = binary.AppendUvarint(result, uint64(run.Expected.FailCount))
+	result = binary.AppendUvarint(result, uint64(run.Expected.CrashCount))
+	result = binary.AppendUvarint(result, uint64(run.Expected.AbortCount))
+	result = binary.AppendUvarint(result, uint64(run.Unexpected.PassCount))
+	result = binary.AppendUvarint(result, uint64(run.Unexpected.FailCount))
+	result = binary.AppendUvarint(result, uint64(run.Unexpected.CrashCount))
+	result = binary.AppendUvarint(result, uint64(run.Unexpected.AbortCount))
 	result = binary.AppendUvarint(result, boolToUInt64(run.IsDuplicate))
 	return result
 }
 
 // decodePositionSimpleVerdict decodes the value posSim and returns 2 values.
 // 1. The (delta) commit position.
-// 2. Whether the verdict is a simple expected verdict.
-// The last bit of posSim is set to 1 if the verdict is NOT simple expected.
+// 2. Whether the verdict is a simple expected passed verdict.
+// The last bit of posSim is set to 1 if the verdict is NOT a simple expected pass.
 func decodePositionSimpleVerdict(posSim uint64) (int, bool) {
 	isSimple := false
 	lastBit := posSim & 1

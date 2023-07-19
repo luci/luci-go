@@ -275,8 +275,9 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
-							Name:   "invocations/abc/tests/xyz",
-							Status: rdbpb.TestStatus_PASS,
+							Name:     "invocations/abc/tests/xyz",
+							Status:   rdbpb.TestStatus_PASS,
+							Expected: true,
 						},
 					},
 				},
@@ -294,8 +295,54 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
+							Name:     "invocations/def/tests/xyz",
+							Status:   rdbpb.TestStatus_PASS,
+							Expected: true,
+						},
+					},
+					{
+						Result: &rdbpb.TestResult{
+							Name:     "invocations/def/tests/xyz",
+							Status:   rdbpb.TestStatus_FAIL,
+							Expected: true,
+						},
+					},
+					{
+						Result: &rdbpb.TestResult{
+							Name:     "invocations/def/tests/xyz",
+							Status:   rdbpb.TestStatus_CRASH,
+							Expected: true,
+						},
+					},
+					{
+						Result: &rdbpb.TestResult{
+							Name:     "invocations/def/tests/xyz",
+							Status:   rdbpb.TestStatus_ABORT,
+							Expected: true,
+						},
+					},
+					{
+						Result: &rdbpb.TestResult{
+							Name:   "invocations/def/tests/xyz",
+							Status: rdbpb.TestStatus_PASS,
+						},
+					},
+					{
+						Result: &rdbpb.TestResult{
+							Name:   "invocations/def/tests/xyz",
+							Status: rdbpb.TestStatus_FAIL,
+						},
+					},
+					{
+						Result: &rdbpb.TestResult{
 							Name:   "invocations/def/tests/xyz",
 							Status: rdbpb.TestStatus_CRASH,
+						},
+					},
+					{
+						Result: &rdbpb.TestResult{
+							Name:   "invocations/def/tests/xyz",
+							Status: rdbpb.TestStatus_ABORT,
 						},
 					},
 				},
@@ -351,9 +398,9 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				HotBuffer: inputbuffer.History{
 					Verdicts: []inputbuffer.PositionVerdict{
 						{
-							CommitPosition:   10,
-							IsSimpleExpected: true,
-							Hour:             payload.PartitionTime.AsTime(),
+							CommitPosition:       10,
+							IsSimpleExpectedPass: true,
+							Hour:                 payload.PartitionTime.AsTime(),
 						},
 					},
 				},
@@ -389,14 +436,25 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				HotBuffer: inputbuffer.History{
 					Verdicts: []inputbuffer.PositionVerdict{
 						{
-							CommitPosition:   10,
-							IsSimpleExpected: false,
-							Hour:             payload.PartitionTime.AsTime(),
+							CommitPosition:       10,
+							IsSimpleExpectedPass: false,
+							Hour:                 payload.PartitionTime.AsTime(),
 							Details: inputbuffer.VerdictDetails{
 								IsExonerated: false,
 								Runs: []inputbuffer.Run{
 									{
-										UnexpectedResultCount: 1,
+										Expected: inputbuffer.ResultCounts{
+											PassCount:  1,
+											FailCount:  1,
+											CrashCount: 1,
+											AbortCount: 1,
+										},
+										Unexpected: inputbuffer.ResultCounts{
+											PassCount:  1,
+											FailCount:  1,
+											CrashCount: 1,
+											AbortCount: 1,
+										},
 									},
 								},
 							},
@@ -445,9 +503,10 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 					EndPosition:   10,
 					EndHour:       timestamppb.New(time.Unix(3600*10, 0)),
 					Counts: &bqpb.Segment_Counts{
-						TotalResults:  1,
-						TotalRuns:     1,
-						TotalVerdicts: 1,
+						TotalResults:          1,
+						TotalRuns:             1,
+						TotalVerdicts:         1,
+						ExpectedPassedResults: 1,
 					},
 				},
 			},
@@ -474,12 +533,20 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 					EndPosition:   10,
 					EndHour:       timestamppb.New(time.Unix(3600*10, 0)),
 					Counts: &bqpb.Segment_Counts{
-						UnexpectedResults:       1,
-						TotalResults:            1,
-						UnexpectedUnretriedRuns: 1,
-						TotalRuns:               1,
-						UnexpectedVerdicts:      1,
-						TotalVerdicts:           1,
+						TotalVerdicts:            1,
+						FlakyVerdicts:            1,
+						TotalRuns:                1,
+						FlakyRuns:                1,
+						TotalResults:             8,
+						UnexpectedResults:        4,
+						ExpectedPassedResults:    1,
+						ExpectedFailedResults:    1,
+						ExpectedCrashedResults:   1,
+						ExpectedAbortedResults:   1,
+						UnexpectedPassedResults:  1,
+						UnexpectedFailedResults:  1,
+						UnexpectedCrashedResults: 1,
+						UnexpectedAbortedResults: 1,
 					},
 				},
 			},
@@ -640,9 +707,10 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 						EndPosition:         100,
 						EndHour:             timestamppb.New(time.Unix(100*3600, 0)),
 						FinalizedCounts: &cpb.Counts{
-							TotalResults:  101,
-							TotalRuns:     101,
-							TotalVerdicts: 101,
+							TotalResults:          101,
+							TotalRuns:             101,
+							TotalVerdicts:         101,
+							ExpectedPassedResults: 101,
 						},
 					},
 				},
@@ -688,8 +756,8 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				HotBuffer: inputbuffer.History{
 					Verdicts: []inputbuffer.PositionVerdict{
 						{
-							CommitPosition:   1,
-							IsSimpleExpected: true,
+							CommitPosition:       1,
+							IsSimpleExpectedPass: true,
 						},
 					},
 				},
@@ -771,13 +839,13 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				HotBuffer: inputbuffer.History{
 					Verdicts: []inputbuffer.PositionVerdict{
 						{
-							CommitPosition:   1,
-							IsSimpleExpected: true,
+							CommitPosition:       1,
+							IsSimpleExpectedPass: true,
 						},
 						{
-							CommitPosition:   10,
-							IsSimpleExpected: true,
-							Hour:             payload.PartitionTime.AsTime(),
+							CommitPosition:       10,
+							IsSimpleExpectedPass: true,
+							Hour:                 payload.PartitionTime.AsTime(),
 						},
 					},
 				},

@@ -27,19 +27,16 @@ import (
 )
 
 func ToPositionVerdict(tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool, src *rdbpb.Sources) (inputbuffer.PositionVerdict, error) {
-	// It may be enough to check the condition status == expected, given that
-	// an expected verdict should have only one expected run.
-	// However, we also check the length of the result just to be certain.
-	isSimpleExpected := (tv.Status == rdbpb.TestVariantStatus_EXPECTED && len(tv.Results) == 1)
+	isSimpleExpectedPassed := (tv.Status == rdbpb.TestVariantStatus_EXPECTED && len(tv.Results) == 1 && tv.Results[0].Result.Status == rdbpb.TestStatus_PASS)
 
 	verdict := inputbuffer.PositionVerdict{
-		CommitPosition:   sources.CommitPosition(src),
-		IsSimpleExpected: isSimpleExpected,
-		Hour:             payload.PartitionTime.AsTime(),
+		CommitPosition:       sources.CommitPosition(src),
+		IsSimpleExpectedPass: isSimpleExpectedPassed,
+		Hour:                 payload.PartitionTime.AsTime(),
 	}
 
-	// Add verdict details only if verdict is not simple.
-	if !isSimpleExpected {
+	// Add verdict details only if verdict is not simple expected passed.
+	if !isSimpleExpectedPassed {
 		vd, err := toVerdictDetails(tv, duplicateMap)
 		if err != nil {
 			return inputbuffer.PositionVerdict{}, errors.Annotate(err, "to verdict details").Err()
@@ -74,9 +71,31 @@ func toVerdictDetails(tv *rdbpb.TestVariant, duplicateMap map[string]bool) (inpu
 			}
 		}
 		if tr.Expected {
-			runData[invocationName].ExpectedResultCount++
+			if tr.Status == rdbpb.TestStatus_PASS {
+				runData[invocationName].Expected.PassCount++
+			}
+			if tr.Status == rdbpb.TestStatus_FAIL {
+				runData[invocationName].Expected.FailCount++
+			}
+			if tr.Status == rdbpb.TestStatus_CRASH {
+				runData[invocationName].Expected.CrashCount++
+			}
+			if tr.Status == rdbpb.TestStatus_ABORT {
+				runData[invocationName].Expected.AbortCount++
+			}
 		} else {
-			runData[invocationName].UnexpectedResultCount++
+			if tr.Status == rdbpb.TestStatus_PASS {
+				runData[invocationName].Unexpected.PassCount++
+			}
+			if tr.Status == rdbpb.TestStatus_FAIL {
+				runData[invocationName].Unexpected.FailCount++
+			}
+			if tr.Status == rdbpb.TestStatus_CRASH {
+				runData[invocationName].Unexpected.CrashCount++
+			}
+			if tr.Status == rdbpb.TestStatus_ABORT {
+				runData[invocationName].Unexpected.AbortCount++
+			}
 		}
 	}
 
@@ -96,13 +115,13 @@ func toVerdictDetails(tv *rdbpb.TestVariant, duplicateMap map[string]bool) (inpu
 		if vd.Runs[i].IsDuplicate && !vd.Runs[j].IsDuplicate {
 			return false
 		}
-		if vd.Runs[i].UnexpectedResultCount < vd.Runs[j].UnexpectedResultCount {
+		if vd.Runs[i].Unexpected.Count() < vd.Runs[j].Unexpected.Count() {
 			return false
 		}
-		if vd.Runs[i].UnexpectedResultCount > vd.Runs[j].UnexpectedResultCount {
+		if vd.Runs[i].Unexpected.Count() > vd.Runs[j].Unexpected.Count() {
 			return true
 		}
-		return vd.Runs[i].ExpectedResultCount > vd.Runs[j].ExpectedResultCount
+		return vd.Runs[i].Expected.Count() > vd.Runs[j].Expected.Count()
 	})
 	return vd, nil
 }

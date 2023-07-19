@@ -154,19 +154,25 @@ func toInputBufferProto(history inputbuffer.History) *pb.InputBuffer {
 			Hour:           timestamppb.New(verdict.Hour),
 			Runs:           []*pb.PositionVerdict_Run{},
 		}
-		if verdict.IsSimpleExpected {
+		if verdict.IsSimpleExpectedPass {
 			pv.Runs = []*pb.PositionVerdict_Run{
 				{
-					ExpectedResultCount: 1,
+					ExpectedPassCount: 1,
 				},
 			}
 		} else {
 			pv.IsExonerated = verdict.Details.IsExonerated
 			for _, r := range verdict.Details.Runs {
 				pv.Runs = append(pv.Runs, &pb.PositionVerdict_Run{
-					ExpectedResultCount:   int64(r.ExpectedResultCount),
-					UnexpectedResultCount: int64(r.UnexpectedResultCount),
-					IsDuplicate:           r.IsDuplicate,
+					ExpectedPassCount:    int64(r.Expected.PassCount),
+					ExpectedFailCount:    int64(r.Expected.FailCount),
+					ExpectedCrashCount:   int64(r.Expected.CrashCount),
+					ExpectedAbortCount:   int64(r.Expected.AbortCount),
+					UnexpectedPassCount:  int64(r.Unexpected.PassCount),
+					UnexpectedFailCount:  int64(r.Unexpected.FailCount),
+					UnexpectedCrashCount: int64(r.Unexpected.CrashCount),
+					UnexpectedAbortCount: int64(r.Unexpected.AbortCount),
+					IsDuplicate:          r.IsDuplicate,
 				})
 			}
 		}

@@ -133,6 +133,7 @@ message Segment {
   //     and submitted code as a result).
   //     Currently, when test results lead to CL submission via recycled CQ runs,
   //     they are not counted.
+  // Next ID: 18
   message Counts {
     // All the following statistics exclude the effect of exonerations,
     // and skipped test results.
@@ -144,6 +145,30 @@ message Segment {
 
     // The total number of non-skipped test results.
     int64 total_results = 2;
+
+    // The number of expected passed test results.
+    int64 expected_passed_results = 10;
+
+    // The number of expected failed test results.
+    int64 expected_failed_results = 11;
+
+    // The number of expected crashed test results.
+    int64 expected_crashed_results = 12;
+
+    // The number of expected aborted test results.
+    int64 expected_aborted_results = 13;
+
+    // The number of unexpected passed test results.
+    int64 unexpected_passed_results = 14;
+
+    // The number of unexpected failed test results.
+    int64 unexpected_failed_results = 15;
+
+    // The number of unexpected crashed test results.
+    int64 unexpected_crashed_results = 16;
+
+    // The number of unexpected aborted test results.
+    int64 unexpected_aborted_results = 17;
 
     // The number of test runs which had an unexpected test result but were
     // not retried.

@@ -670,7 +670,9 @@ func verifyTestVariantAnalysis(ctx context.Context, partitionTime time.Time, cli
 							IsExonerated: true,
 							Runs: []inputbuffer.Run{
 								{
-									UnexpectedResultCount: 1,
+									Unexpected: inputbuffer.ResultCounts{
+										FailCount: 1,
+									},
 								},
 							},
 						},

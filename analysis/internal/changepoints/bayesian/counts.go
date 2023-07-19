@@ -51,7 +51,7 @@ type counts struct {
 }
 
 func (h counts) addVerdict(cp inputbuffer.PositionVerdict) counts {
-	if cp.IsSimpleExpected {
+	if cp.IsSimpleExpectedPass {
 		h.Runs += 1
 		return h
 	}
@@ -60,15 +60,15 @@ func (h counts) addVerdict(cp inputbuffer.PositionVerdict) counts {
 			continue
 		}
 		h.Runs += 1
-		if run.UnexpectedResultCount == 0 {
+		if run.Unexpected.Count() == 0 {
 			continue
 		}
 		h.HasUnexpected += 1
-		if run.ExpectedResultCount+run.UnexpectedResultCount < 2 {
+		if run.Expected.Count()+run.Unexpected.Count() < 2 {
 			continue
 		}
 		h.Retried += 1
-		if run.ExpectedResultCount > 0 {
+		if run.Expected.Count() > 0 {
 			continue
 		}
 		h.UnexpectedAfterRetry += 1

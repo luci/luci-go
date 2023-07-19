@@ -147,9 +147,9 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 					HotBuffer: inputbuffer.History{
 						Verdicts: []inputbuffer.PositionVerdict{
 							{
-								CommitPosition:   20,
-								IsSimpleExpected: true,
-								Hour:             time.Unix(3600, 0),
+								CommitPosition:       20,
+								IsSimpleExpectedPass: true,
+								Hour:                 time.Unix(3600, 0),
 							},
 						},
 					},
@@ -162,13 +162,25 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 									IsExonerated: true,
 									Runs: []inputbuffer.Run{
 										{
-											ExpectedResultCount:   3,
-											UnexpectedResultCount: 4,
-											IsDuplicate:           true,
+											Expected: inputbuffer.ResultCounts{
+												PassCount: 1,
+												FailCount: 2,
+											},
+											Unexpected: inputbuffer.ResultCounts{
+												CrashCount: 3,
+												AbortCount: 4,
+											},
+											IsDuplicate: true,
 										},
 										{
-											ExpectedResultCount:   2,
-											UnexpectedResultCount: 1,
+											Expected: inputbuffer.ResultCounts{
+												CrashCount: 5,
+												AbortCount: 6,
+											},
+											Unexpected: inputbuffer.ResultCounts{
+												PassCount:  7,
+												AbortCount: 8,
+											},
 										},
 									},
 								},
@@ -258,7 +270,7 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 							Hour:           timestamppb.New(time.Unix(3600, 0)),
 							Runs: []*pb.PositionVerdict_Run{
 								{
-									ExpectedResultCount: 1,
+									ExpectedPassCount: 1,
 								},
 							},
 						},
@@ -273,13 +285,17 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 							IsExonerated:   true,
 							Runs: []*pb.PositionVerdict_Run{
 								{
-									ExpectedResultCount:   3,
-									UnexpectedResultCount: 4,
-									IsDuplicate:           true,
+									ExpectedPassCount:    1,
+									ExpectedFailCount:    2,
+									UnexpectedCrashCount: 3,
+									UnexpectedAbortCount: 4,
+									IsDuplicate:          true,
 								},
 								{
-									ExpectedResultCount:   2,
-									UnexpectedResultCount: 1,
+									ExpectedCrashCount:   5,
+									ExpectedAbortCount:   6,
+									UnexpectedPassCount:  7,
+									UnexpectedAbortCount: 8,
 								},
 							},
 						},

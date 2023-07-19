@@ -76,9 +76,33 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 				HotBuffer: inputbuffer.History{
 					Verdicts: []inputbuffer.PositionVerdict{
 						{
-							CommitPosition:   15,
-							IsSimpleExpected: true,
-							Hour:             time.Unix(0, 0),
+							CommitPosition:       15,
+							IsSimpleExpectedPass: true,
+							Hour:                 time.Unix(0, 0),
+						},
+						{
+							CommitPosition:       18,
+							IsSimpleExpectedPass: false,
+							Hour:                 time.Unix(0, 0),
+							Details: inputbuffer.VerdictDetails{
+								IsExonerated: true,
+								Runs: []inputbuffer.Run{
+									{
+										Expected: inputbuffer.ResultCounts{
+											PassCount:  1,
+											FailCount:  2,
+											CrashCount: 3,
+											AbortCount: 4,
+										},
+										Unexpected: inputbuffer.ResultCounts{
+											PassCount:  5,
+											FailCount:  6,
+											CrashCount: 7,
+											AbortCount: 8,
+										},
+									},
+								},
+							},
 						},
 					},
 				},
@@ -106,9 +130,9 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 				HotBuffer: inputbuffer.History{
 					Verdicts: []inputbuffer.PositionVerdict{
 						{
-							CommitPosition:   20,
-							IsSimpleExpected: true,
-							Hour:             time.Unix(0, 0),
+							CommitPosition:       20,
+							IsSimpleExpectedPass: true,
+							Hour:                 time.Unix(0, 0),
 						},
 					},
 				},
@@ -178,9 +202,9 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 				HotBuffer: inputbuffer.History{
 					Verdicts: []inputbuffer.PositionVerdict{
 						{
-							CommitPosition:   15,
-							IsSimpleExpected: true,
-							Hour:             time.Unix(0, 0),
+							CommitPosition:       15,
+							IsSimpleExpectedPass: true,
+							Hour:                 time.Unix(0, 0),
 						},
 					},
 				},
@@ -219,9 +243,9 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 				HotBuffer: inputbuffer.History{
 					Verdicts: []inputbuffer.PositionVerdict{
 						{
-							CommitPosition:   16,
-							IsSimpleExpected: true,
-							Hour:             time.Unix(0, 0),
+							CommitPosition:       16,
+							IsSimpleExpectedPass: true,
+							Hour:                 time.Unix(0, 0),
 						},
 					},
 				},
@@ -229,9 +253,28 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 				ColdBuffer: inputbuffer.History{
 					Verdicts: []inputbuffer.PositionVerdict{
 						{
-							CommitPosition:   15,
-							IsSimpleExpected: true,
-							Hour:             time.Unix(0, 0),
+							CommitPosition:       15,
+							IsSimpleExpectedPass: false,
+							Hour:                 time.Unix(0, 0),
+							Details: inputbuffer.VerdictDetails{
+								IsExonerated: false,
+								Runs: []inputbuffer.Run{
+									{
+										Expected: inputbuffer.ResultCounts{
+											PassCount:  1,
+											FailCount:  2,
+											CrashCount: 3,
+											AbortCount: 4,
+										},
+										Unexpected: inputbuffer.ResultCounts{
+											PassCount:  5,
+											FailCount:  6,
+											CrashCount: 7,
+											AbortCount: 8,
+										},
+									},
+								},
+							},
 						},
 					},
 				},
@@ -263,9 +306,18 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 						EndPosition:                  40,
 						EndHour:                      timestamppb.New(time.Unix(3600, 0)),
 						FinalizedCounts: &cpb.Counts{
-							TotalResults: 10,
-							TotalRuns:    10,
-							FlakyRuns:    10,
+							TotalResults:             10,
+							TotalRuns:                10,
+							FlakyRuns:                10,
+							UnexpectedResults:        10,
+							ExpectedPassedResults:    1,
+							ExpectedFailedResults:    2,
+							ExpectedCrashedResults:   3,
+							ExpectedAbortedResults:   4,
+							UnexpectedPassedResults:  5,
+							UnexpectedFailedResults:  6,
+							UnexpectedCrashedResults: 7,
+							UnexpectedAbortedResults: 8,
 						},
 					},
 				},
@@ -319,6 +371,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 				{
 					Result: &rdbpb.TestResult{
 						Expected: true,
+						Status:   rdbpb.TestStatus_PASS,
 					},
 				},
 			},
@@ -330,9 +383,9 @@ func TestInsertToInputBuffer(t *testing.T) {
 		So(len(tvb.InputBuffer.HotBuffer.Verdicts), ShouldEqual, 1)
 
 		So(tvb.InputBuffer.HotBuffer.Verdicts[0], ShouldResemble, inputbuffer.PositionVerdict{
-			CommitPosition:   12,
-			IsSimpleExpected: true,
-			Hour:             payload.PartitionTime.AsTime(),
+			CommitPosition:       12,
+			IsSimpleExpectedPass: true,
+			Hour:                 payload.PartitionTime.AsTime(),
 		})
 	})
 
@@ -352,43 +405,57 @@ func TestInsertToInputBuffer(t *testing.T) {
 				{
 					Result: &rdbpb.TestResult{
 						Name:     "invocations/run-1/tests/abc",
-						Expected: false,
-					},
-				},
-				{
-					Result: &rdbpb.TestResult{
-						Name:     "invocations/run-1/tests/abc",
-						Expected: false,
+						Expected: true,
+						Status:   rdbpb.TestStatus_PASS,
 					},
 				},
 				{
 					Result: &rdbpb.TestResult{
 						Name:     "invocations/run-1/tests/abc",
 						Expected: true,
+						Status:   rdbpb.TestStatus_FAIL,
+					},
+				},
+				{
+					Result: &rdbpb.TestResult{
+						Name:     "invocations/run-1/tests/abc",
+						Expected: true,
+						Status:   rdbpb.TestStatus_CRASH,
 					},
 				},
 				{
 					Result: &rdbpb.TestResult{
 						Name:     "invocations/run-2/tests/abc",
+						Expected: true,
+						Status:   rdbpb.TestStatus_ABORT,
+					},
+				},
+				{
+					Result: &rdbpb.TestResult{
+						Name:     "invocations/run-3/tests/abc",
 						Expected: false,
+						Status:   rdbpb.TestStatus_PASS,
 					},
 				},
 				{
 					Result: &rdbpb.TestResult{
 						Name:     "invocations/run-3/tests/abc",
-						Expected: true,
-					},
-				},
-				{
-					Result: &rdbpb.TestResult{
-						Name:     "invocations/run-3/tests/abc",
-						Expected: true,
+						Expected: false,
+						Status:   rdbpb.TestStatus_FAIL,
 					},
 				},
 				{
 					Result: &rdbpb.TestResult{
 						Name:     "invocations/run-4/tests/abc",
-						Expected: true,
+						Expected: false,
+						Status:   rdbpb.TestStatus_CRASH,
+					},
+				},
+				{
+					Result: &rdbpb.TestResult{
+						Name:     "invocations/run-4/tests/abc",
+						Expected: false,
+						Status:   rdbpb.TestStatus_ABORT,
 					},
 				},
 			},
@@ -403,31 +470,39 @@ func TestInsertToInputBuffer(t *testing.T) {
 		So(len(tvb.InputBuffer.HotBuffer.Verdicts), ShouldEqual, 1)
 
 		So(tvb.InputBuffer.HotBuffer.Verdicts[0], ShouldResemble, inputbuffer.PositionVerdict{
-			CommitPosition:   12,
-			IsSimpleExpected: false,
-			Hour:             payload.PartitionTime.AsTime(),
+			CommitPosition:       12,
+			IsSimpleExpectedPass: false,
+			Hour:                 payload.PartitionTime.AsTime(),
 			Details: inputbuffer.VerdictDetails{
 				IsExonerated: false,
 				Runs: []inputbuffer.Run{
 					{
-						ExpectedResultCount:   0,
-						UnexpectedResultCount: 1,
-						IsDuplicate:           false,
+						Unexpected: inputbuffer.ResultCounts{
+							CrashCount: 1,
+							AbortCount: 1,
+						},
+						IsDuplicate: false,
 					},
 					{
-						ExpectedResultCount:   1,
-						UnexpectedResultCount: 0,
-						IsDuplicate:           false,
+						Expected: inputbuffer.ResultCounts{
+							AbortCount: 1,
+						},
+						IsDuplicate: false,
 					},
 					{
-						ExpectedResultCount:   1,
-						UnexpectedResultCount: 2,
-						IsDuplicate:           true,
+						Unexpected: inputbuffer.ResultCounts{
+							PassCount: 1,
+							FailCount: 1,
+						},
+						IsDuplicate: true,
 					},
 					{
-						ExpectedResultCount:   2,
-						UnexpectedResultCount: 0,
-						IsDuplicate:           true,
+						Expected: inputbuffer.ResultCounts{
+							PassCount:  1,
+							FailCount:  1,
+							CrashCount: 1,
+						},
+						IsDuplicate: true,
 					},
 				},
 			},
@@ -445,16 +520,24 @@ func TestUpdateOutputBuffer(t *testing.T) {
 					StartPosition: 1,
 					EndPosition:   10,
 					FinalizedCounts: &cpb.Counts{
-						TotalResults:  10,
-						TotalRuns:     10,
-						TotalVerdicts: 10,
+						TotalResults:             10,
+						TotalRuns:                10,
+						TotalVerdicts:            10,
+						ExpectedPassedResults:    1,
+						ExpectedFailedResults:    2,
+						ExpectedCrashedResults:   3,
+						ExpectedAbortedResults:   4,
+						UnexpectedPassedResults:  5,
+						UnexpectedFailedResults:  6,
+						UnexpectedCrashedResults: 7,
+						UnexpectedAbortedResults: 8,
 					},
 				},
 				Verdicts: []inputbuffer.PositionVerdict{
 					{
-						CommitPosition:   2,
-						Hour:             time.Unix(10*3600, 0),
-						IsSimpleExpected: true,
+						CommitPosition:       2,
+						Hour:                 time.Unix(10*3600, 0),
+						IsSimpleExpectedPass: true,
 					},
 				},
 			},
@@ -471,24 +554,45 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				},
 				Verdicts: []inputbuffer.PositionVerdict{
 					{
-						CommitPosition:   11,
-						Hour:             time.Unix(11*3600, 0),
-						IsSimpleExpected: true,
+						CommitPosition:       11,
+						Hour:                 time.Unix(11*3600, 0),
+						IsSimpleExpectedPass: true,
 					},
 					{
-						CommitPosition:   12,
-						Hour:             time.Unix((100000-StatisticsRetentionDays*24)*3600, 0),
-						IsSimpleExpected: true,
+						CommitPosition:       12,
+						Hour:                 time.Unix((100000-StatisticsRetentionDays*24)*3600, 0),
+						IsSimpleExpectedPass: true,
 					},
 					{
-						CommitPosition:   13,
-						Hour:             time.Unix((100000-StatisticsRetentionDays*24+1)*3600, 0),
-						IsSimpleExpected: true,
+						CommitPosition:       13,
+						Hour:                 time.Unix((100000-StatisticsRetentionDays*24+1)*3600, 0),
+						IsSimpleExpectedPass: false,
+						Details: inputbuffer.VerdictDetails{
+							Runs: []inputbuffer.Run{
+								{
+									Expected: inputbuffer.ResultCounts{
+										PassCount: 1,
+									},
+									Unexpected: inputbuffer.ResultCounts{
+										FailCount: 1,
+									},
+								},
+							},
+						},
 					},
 					{
-						CommitPosition:   11,
-						Hour:             time.Unix(100000*3600, 0),
-						IsSimpleExpected: true,
+						CommitPosition:       11,
+						Hour:                 time.Unix(100000*3600, 0),
+						IsSimpleExpectedPass: false,
+						Details: inputbuffer.VerdictDetails{
+							Runs: []inputbuffer.Run{
+								{
+									Unexpected: inputbuffer.ResultCounts{
+										CrashCount: 1,
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -510,10 +614,12 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				{
 					Hour:          (100000 - StatisticsRetentionDays*24 + 1),
 					TotalVerdicts: 1,
+					FlakyVerdicts: 1,
 				},
 				{
-					Hour:          100000,
-					TotalVerdicts: 1,
+					Hour:               100000,
+					TotalVerdicts:      1,
+					UnexpectedVerdicts: 1,
 				},
 			},
 		})
@@ -539,6 +645,14 @@ func TestUpdateOutputBuffer(t *testing.T) {
 					TotalVerdicts:            10,
 					UnexpectedVerdicts:       1,
 					FlakyVerdicts:            2,
+					ExpectedPassedResults:    1,
+					ExpectedFailedResults:    2,
+					ExpectedCrashedResults:   3,
+					ExpectedAbortedResults:   4,
+					UnexpectedPassedResults:  5,
+					UnexpectedFailedResults:  6,
+					UnexpectedCrashedResults: 7,
+					UnexpectedAbortedResults: 8,
 				},
 				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(7*3600, 0)),
 			},
@@ -563,6 +677,14 @@ func TestUpdateOutputBuffer(t *testing.T) {
 						TotalVerdicts:            20,
 						UnexpectedVerdicts:       3,
 						FlakyVerdicts:            2,
+						ExpectedPassedResults:    1,
+						ExpectedFailedResults:    2,
+						ExpectedCrashedResults:   3,
+						ExpectedAbortedResults:   4,
+						UnexpectedPassedResults:  5,
+						UnexpectedFailedResults:  6,
+						UnexpectedCrashedResults: 7,
+						UnexpectedAbortedResults: 8,
 					},
 					MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 				},
@@ -591,6 +713,14 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				TotalVerdicts:            30,
 				UnexpectedVerdicts:       4,
 				FlakyVerdicts:            4,
+				ExpectedPassedResults:    2,
+				ExpectedFailedResults:    4,
+				ExpectedCrashedResults:   6,
+				ExpectedAbortedResults:   8,
+				UnexpectedPassedResults:  10,
+				UnexpectedFailedResults:  12,
+				UnexpectedCrashedResults: 14,
+				UnexpectedAbortedResults: 16,
 			},
 			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 		}
@@ -616,6 +746,14 @@ func TestUpdateOutputBuffer(t *testing.T) {
 					TotalVerdicts:            10,
 					UnexpectedVerdicts:       1,
 					FlakyVerdicts:            2,
+					ExpectedPassedResults:    1,
+					ExpectedFailedResults:    2,
+					ExpectedCrashedResults:   3,
+					ExpectedAbortedResults:   4,
+					UnexpectedPassedResults:  5,
+					UnexpectedFailedResults:  6,
+					UnexpectedCrashedResults: 7,
+					UnexpectedAbortedResults: 8,
 				},
 				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(7*3600, 0)),
 			},
@@ -641,6 +779,14 @@ func TestUpdateOutputBuffer(t *testing.T) {
 						TotalVerdicts:            20,
 						UnexpectedVerdicts:       3,
 						FlakyVerdicts:            2,
+						ExpectedPassedResults:    1,
+						ExpectedFailedResults:    2,
+						ExpectedCrashedResults:   3,
+						ExpectedAbortedResults:   4,
+						UnexpectedPassedResults:  5,
+						UnexpectedFailedResults:  6,
+						UnexpectedCrashedResults: 7,
+						UnexpectedAbortedResults: 8,
 					},
 					MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 				},
@@ -685,6 +831,14 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				TotalVerdicts:            30,
 				UnexpectedVerdicts:       4,
 				FlakyVerdicts:            4,
+				ExpectedPassedResults:    2,
+				ExpectedFailedResults:    4,
+				ExpectedCrashedResults:   6,
+				ExpectedAbortedResults:   8,
+				UnexpectedPassedResults:  10,
+				UnexpectedFailedResults:  12,
+				UnexpectedCrashedResults: 14,
+				UnexpectedAbortedResults: 16,
 			},
 			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 		}
@@ -710,6 +864,14 @@ func TestUpdateOutputBuffer(t *testing.T) {
 					TotalVerdicts:            10,
 					UnexpectedVerdicts:       1,
 					FlakyVerdicts:            2,
+					ExpectedPassedResults:    1,
+					ExpectedFailedResults:    2,
+					ExpectedCrashedResults:   3,
+					ExpectedAbortedResults:   4,
+					UnexpectedPassedResults:  5,
+					UnexpectedFailedResults:  6,
+					UnexpectedCrashedResults: 7,
+					UnexpectedAbortedResults: 8,
 				},
 				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(7*3600, 0)),
 			},
@@ -777,6 +939,14 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				TotalVerdicts:            30,
 				UnexpectedVerdicts:       4,
 				FlakyVerdicts:            4,
+				ExpectedPassedResults:    1,
+				ExpectedFailedResults:    2,
+				ExpectedCrashedResults:   3,
+				ExpectedAbortedResults:   4,
+				UnexpectedPassedResults:  5,
+				UnexpectedFailedResults:  6,
+				UnexpectedCrashedResults: 7,
+				UnexpectedAbortedResults: 8,
 			},
 			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 		}
@@ -873,9 +1043,9 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				Verdicts: []inputbuffer.PositionVerdict{
 					// Expected verdict.
 					{
-						CommitPosition:   190,
-						Hour:             time.Unix(1000*3600, 0),
-						IsSimpleExpected: true,
+						CommitPosition:       190,
+						Hour:                 time.Unix(1000*3600, 0),
+						IsSimpleExpectedPass: true,
 					},
 					// Expected verdict.
 					{
@@ -884,7 +1054,9 @@ func TestUpdateOutputBuffer(t *testing.T) {
 						Details: inputbuffer.VerdictDetails{
 							Runs: []inputbuffer.Run{
 								{
-									ExpectedResultCount: 2,
+									Expected: inputbuffer.ResultCounts{
+										PassCount: 2,
+									},
 								},
 							},
 						},
@@ -896,11 +1068,15 @@ func TestUpdateOutputBuffer(t *testing.T) {
 						Details: inputbuffer.VerdictDetails{
 							Runs: []inputbuffer.Run{
 								{
-									ExpectedResultCount: 1,
+									Expected: inputbuffer.ResultCounts{
+										PassCount: 1,
+									},
 								},
-								{
-									IsDuplicate:           true,
-									UnexpectedResultCount: 1,
+								inputbuffer.Run{
+									IsDuplicate: true,
+									Unexpected: inputbuffer.ResultCounts{
+										FailCount: 1,
+									},
 								},
 							},
 						},
@@ -912,10 +1088,14 @@ func TestUpdateOutputBuffer(t *testing.T) {
 						Details: inputbuffer.VerdictDetails{
 							Runs: []inputbuffer.Run{
 								{
-									UnexpectedResultCount: 1,
+									Unexpected: inputbuffer.ResultCounts{
+										FailCount: 1,
+									},
 								},
 								{
-									UnexpectedResultCount: 1,
+									Unexpected: inputbuffer.ResultCounts{
+										FailCount: 1,
+									},
 								},
 							},
 						},
@@ -927,10 +1107,14 @@ func TestUpdateOutputBuffer(t *testing.T) {
 						Details: inputbuffer.VerdictDetails{
 							Runs: []inputbuffer.Run{
 								{
-									UnexpectedResultCount: 1,
+									Unexpected: inputbuffer.ResultCounts{
+										FailCount: 1,
+									},
 								},
 								{
-									UnexpectedResultCount: 1,
+									Unexpected: inputbuffer.ResultCounts{
+										FailCount: 1,
+									},
 								},
 							},
 						},
@@ -942,7 +1126,9 @@ func TestUpdateOutputBuffer(t *testing.T) {
 						Details: inputbuffer.VerdictDetails{
 							Runs: []inputbuffer.Run{
 								{
-									UnexpectedResultCount: 1,
+									Unexpected: inputbuffer.ResultCounts{
+										FailCount: 1,
+									},
 								},
 							},
 						},

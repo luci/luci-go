@@ -141,18 +141,20 @@ func BenchmarkChangePointPositionConfidenceInterval(b *testing.B) {
 
 	for i := 0; i <= 1000; i++ {
 		vs = append(vs, inputbuffer.PositionVerdict{
-			CommitPosition:   i,
-			IsSimpleExpected: true,
+			CommitPosition:       i,
+			IsSimpleExpectedPass: true,
 		})
 	}
 	for i := 1001; i < 2000; i++ {
 		vs = append(vs, inputbuffer.PositionVerdict{
-			CommitPosition:   i,
-			IsSimpleExpected: false,
+			CommitPosition:       i,
+			IsSimpleExpectedPass: false,
 			Details: inputbuffer.VerdictDetails{
 				Runs: []inputbuffer.Run{
 					{
-						UnexpectedResultCount: 1,
+						Unexpected: inputbuffer.ResultCounts{
+							FailCount: 1,
+						},
 					},
 				},
 			},

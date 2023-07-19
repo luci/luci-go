@@ -202,7 +202,11 @@ func unexpectedVerdictAtHour(hour int) inputbuffer.PositionVerdict {
 		Hour:           time.Unix(int64(hour)*3600, 0),
 		Details: inputbuffer.VerdictDetails{
 			Runs: []inputbuffer.Run{
-				{UnexpectedResultCount: 1},
+				{
+					Unexpected: inputbuffer.ResultCounts{
+						FailCount: 1,
+					},
+				},
 			},
 		},
 	}
@@ -214,8 +218,14 @@ func flakyVerdictAtHour(hour int) inputbuffer.PositionVerdict {
 		Hour:           time.Unix(int64(hour)*3600, 0),
 		Details: inputbuffer.VerdictDetails{
 			Runs: []inputbuffer.Run{
-				{UnexpectedResultCount: 1},
-				{ExpectedResultCount: 1},
+				{
+					Unexpected: inputbuffer.ResultCounts{
+						FailCount: 1,
+					},
+					Expected: inputbuffer.ResultCounts{
+						PassCount: 1,
+					},
+				},
 			},
 		},
 	}

@@ -47,7 +47,7 @@ func VerdictsWithRetries(positions, total, hasUnexpected, retried, unexpectedAft
 			Hour:           time.Unix(int64(3600*(positions[i])), 0),
 		}
 		if hasUnexpectedCount == 0 && totalCount == 1 {
-			verdict.IsSimpleExpected = true
+			verdict.IsSimpleExpectedPass = true
 		} else {
 			verdict.Details = VerdictDetails{
 				Runs: []Run{},
@@ -55,20 +55,31 @@ func VerdictsWithRetries(positions, total, hasUnexpected, retried, unexpectedAft
 			for i := 0; i < totalCount; i++ {
 				if i < unexpectedAfterRetry {
 					verdict.Details.Runs = append(verdict.Details.Runs, Run{
-						UnexpectedResultCount: 2,
+						Unexpected: ResultCounts{
+							FailCount:  1,
+							CrashCount: 1,
+						},
 					})
 				} else if i < retriedCount {
 					verdict.Details.Runs = append(verdict.Details.Runs, Run{
-						UnexpectedResultCount: 1,
-						ExpectedResultCount:   1,
+						Expected: ResultCounts{
+							PassCount: 1,
+						},
+						Unexpected: ResultCounts{
+							FailCount: 1,
+						},
 					})
 				} else if i < hasUnexpectedCount {
 					verdict.Details.Runs = append(verdict.Details.Runs, Run{
-						UnexpectedResultCount: 1,
+						Unexpected: ResultCounts{
+							FailCount: 1,
+						},
 					})
 				} else {
 					verdict.Details.Runs = append(verdict.Details.Runs, Run{
-						ExpectedResultCount: 1,
+						Expected: ResultCounts{
+							PassCount: 1,
+						},
 					})
 				}
 			}

@@ -58,6 +58,8 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 					TotalVerdicts:           6,
 					FlakyVerdicts:           1,
 					UnexpectedVerdicts:      1,
+					ExpectedPassedResults:   6,
+					UnexpectedFailedResults: 3,
 				},
 				MostRecentUnexpectedResultHourAllVerdicts: timestamppb.New(time.Unix(4*3600, 0)),
 			}, cmp.Comparer(proto.Equal))
@@ -104,9 +106,10 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				StartHour:           timestamppb.New(time.Unix(3600, 0)),
 				EndHour:             timestamppb.New(time.Unix(3*3600, 0)),
 				Counts: &cpb.Counts{
-					TotalResults:  3,
-					TotalRuns:     3,
-					TotalVerdicts: 3,
+					TotalResults:          3,
+					TotalRuns:             3,
+					TotalVerdicts:         3,
+					ExpectedPassedResults: 3,
 				},
 			}, cmp.Comparer(proto.Equal))
 			So(diff, ShouldEqual, "")
@@ -128,6 +131,8 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 					UnexpectedAfterRetryRuns: 6,
 					TotalVerdicts:            3,
 					UnexpectedVerdicts:       3,
+					UnexpectedFailedResults:  6,
+					UnexpectedCrashedResults: 6,
 				},
 				MostRecentUnexpectedResultHourAllVerdicts: timestamppb.New(time.Unix(6*3600, 0)),
 			}, cmp.Comparer(proto.Equal))
@@ -144,12 +149,14 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				StartHour:                   timestamppb.New(time.Unix(7*3600, 0)),
 				EndHour:                     timestamppb.New(time.Unix(9*3600, 0)),
 				Counts: &cpb.Counts{
-					TotalResults:      12,
-					UnexpectedResults: 6,
-					TotalRuns:         6,
-					FlakyRuns:         6,
-					TotalVerdicts:     3,
-					FlakyVerdicts:     3,
+					TotalResults:            12,
+					UnexpectedResults:       6,
+					TotalRuns:               6,
+					FlakyRuns:               6,
+					TotalVerdicts:           3,
+					FlakyVerdicts:           3,
+					ExpectedPassedResults:   6,
+					UnexpectedFailedResults: 6,
 				},
 				MostRecentUnexpectedResultHourAllVerdicts: timestamppb.New(time.Unix(9*3600, 0)),
 			}, cmp.Comparer(proto.Equal))
@@ -172,6 +179,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 					UnexpectedUnretriedRuns: 3,
 					TotalVerdicts:           3,
 					UnexpectedVerdicts:      3,
+					UnexpectedFailedResults: 3,
 				},
 				MostRecentUnexpectedResultHourAllVerdicts: timestamppb.New(time.Unix(12*3600, 0)),
 			}, cmp.Comparer(proto.Equal))
@@ -216,9 +224,10 @@ func TestEvictSegments(t *testing.T) {
 				StartIndex: 0,
 				EndIndex:   2049,
 				Counts: &cpb.Counts{
-					TotalResults:  2050,
-					TotalRuns:     2050,
-					TotalVerdicts: 2050,
+					TotalResults:          2050,
+					TotalRuns:             2050,
+					TotalVerdicts:         2050,
+					ExpectedPassedResults: 2050,
 				},
 				HasStartChangepoint: false,
 				StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
@@ -230,9 +239,10 @@ func TestEvictSegments(t *testing.T) {
 				StartIndex: 2050,
 				EndIndex:   2099,
 				Counts: &cpb.Counts{
-					TotalResults:  50,
-					TotalRuns:     50,
-					TotalVerdicts: 50,
+					TotalResults:          50,
+					TotalRuns:             50,
+					TotalVerdicts:         50,
+					ExpectedPassedResults: 50,
 				},
 				HasStartChangepoint: true,
 				StartHour:           timestamppb.New(time.Unix(2051*3600, 0)),
@@ -265,6 +275,8 @@ func TestEvictSegments(t *testing.T) {
 					UnexpectedUnretriedRuns: 1,
 					TotalVerdicts:           100,
 					UnexpectedVerdicts:      1,
+					ExpectedPassedResults:   99,
+					UnexpectedFailedResults: 1,
 				},
 				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(51*3600, 0)),
 			},
@@ -284,6 +296,8 @@ func TestEvictSegments(t *testing.T) {
 				UnexpectedUnretriedRuns: 1,
 				TotalVerdicts:           1950,
 				UnexpectedVerdicts:      1,
+				ExpectedPassedResults:   1949,
+				UnexpectedFailedResults: 1,
 			},
 			MostRecentUnexpectedResultHourAllVerdicts: timestamppb.New(time.Unix(1901*3600, 0)),
 		}, cmp.Comparer(proto.Equal))
@@ -298,9 +312,10 @@ func TestEvictSegments(t *testing.T) {
 			EndPosition:         2100,
 			EndHour:             timestamppb.New(time.Unix(2100*3600, 0)),
 			Counts: &cpb.Counts{
-				TotalResults:  50,
-				TotalRuns:     50,
-				TotalVerdicts: 50,
+				TotalResults:          50,
+				TotalRuns:             50,
+				TotalVerdicts:         50,
+				ExpectedPassedResults: 50,
 			},
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
@@ -313,9 +328,10 @@ func TestEvictSegments(t *testing.T) {
 				StartIndex: 0, // Finalized segment.
 				EndIndex:   39,
 				Counts: &cpb.Counts{
-					TotalResults:  40,
-					TotalRuns:     40,
-					TotalVerdicts: 40,
+					TotalResults:          40,
+					TotalRuns:             40,
+					TotalVerdicts:         40,
+					ExpectedPassedResults: 40,
 				},
 				HasStartChangepoint: false,
 				StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
@@ -327,9 +343,10 @@ func TestEvictSegments(t *testing.T) {
 				StartIndex: 40, // Finalized segment.
 				EndIndex:   79,
 				Counts: &cpb.Counts{
-					TotalResults:  40,
-					TotalRuns:     40,
-					TotalVerdicts: 40,
+					TotalResults:          40,
+					TotalRuns:             40,
+					TotalVerdicts:         40,
+					ExpectedPassedResults: 40,
 				},
 				HasStartChangepoint:         true,
 				StartHour:                   timestamppb.New(time.Unix(41*3600, 0)),
@@ -343,9 +360,10 @@ func TestEvictSegments(t *testing.T) {
 				StartIndex: 80, // A finalizing segment.
 				EndIndex:   2049,
 				Counts: &cpb.Counts{
-					TotalResults:  1970,
-					TotalRuns:     1970,
-					TotalVerdicts: 1970,
+					TotalResults:          1970,
+					TotalRuns:             1970,
+					TotalVerdicts:         1970,
+					ExpectedPassedResults: 1970,
 				},
 				HasStartChangepoint:         true,
 				StartHour:                   timestamppb.New(time.Unix(81*3600, 0)),
@@ -359,9 +377,10 @@ func TestEvictSegments(t *testing.T) {
 				StartIndex: 2050, // An active segment.
 				EndIndex:   2099,
 				Counts: &cpb.Counts{
-					TotalResults:  50,
-					TotalRuns:     50,
-					TotalVerdicts: 50,
+					TotalResults:          50,
+					TotalRuns:             50,
+					TotalVerdicts:         50,
+					ExpectedPassedResults: 50,
 				},
 				HasStartChangepoint: true,
 				StartHour:           timestamppb.New(time.Unix(2051*3600, 0)),
@@ -390,9 +409,10 @@ func TestEvictSegments(t *testing.T) {
 				EndHour:             timestamppb.New(time.Unix(40*3600, 0)),
 				EndPosition:         40,
 				FinalizedCounts: &cpb.Counts{
-					TotalResults:  40,
-					TotalRuns:     40,
-					TotalVerdicts: 40,
+					TotalResults:          40,
+					TotalRuns:             40,
+					TotalVerdicts:         40,
+					ExpectedPassedResults: 40,
 				},
 			},
 			Verdicts: simpleVerdicts(40, 1, []int{}),
@@ -410,9 +430,10 @@ func TestEvictSegments(t *testing.T) {
 				EndHour:                      timestamppb.New(time.Unix(80*3600, 0)),
 				EndPosition:                  80,
 				FinalizedCounts: &cpb.Counts{
-					TotalResults:  40,
-					TotalRuns:     40,
-					TotalVerdicts: 40,
+					TotalResults:          40,
+					TotalRuns:             40,
+					TotalVerdicts:         40,
+					ExpectedPassedResults: 40,
 				},
 			},
 			Verdicts: simpleVerdicts(40, 41, []int{}),
@@ -428,9 +449,10 @@ func TestEvictSegments(t *testing.T) {
 				StartPositionLowerBound_99Th: 70,
 				StartPositionUpperBound_99Th: 90,
 				FinalizedCounts: &cpb.Counts{
-					TotalResults:  20,
-					TotalRuns:     20,
-					TotalVerdicts: 20,
+					TotalResults:          20,
+					TotalRuns:             20,
+					TotalVerdicts:         20,
+					ExpectedPassedResults: 20,
 				},
 			},
 			Verdicts: simpleVerdicts(20, 81, []int{}),
@@ -443,9 +465,10 @@ func TestEvictSegments(t *testing.T) {
 			EndPosition: 2050,
 			EndHour:     timestamppb.New(time.Unix(2050*3600, 0)),
 			Counts: &cpb.Counts{
-				TotalResults:  1950,
-				TotalRuns:     1950,
-				TotalVerdicts: 1950,
+				TotalResults:          1950,
+				TotalRuns:             1950,
+				TotalVerdicts:         1950,
+				ExpectedPassedResults: 1950,
 			},
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
@@ -459,9 +482,10 @@ func TestEvictSegments(t *testing.T) {
 			EndPosition:         2100,
 			EndHour:             timestamppb.New(time.Unix(2100*3600, 0)),
 			Counts: &cpb.Counts{
-				TotalResults:  50,
-				TotalRuns:     50,
-				TotalVerdicts: 50,
+				TotalResults:          50,
+				TotalRuns:             50,
+				TotalVerdicts:         50,
+				ExpectedPassedResults: 50,
 			},
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
@@ -481,9 +505,10 @@ func TestEvictSegments(t *testing.T) {
 				StartIndex: 0, // Finalized segment.
 				EndIndex:   39,
 				Counts: &cpb.Counts{
-					TotalResults:  40,
-					TotalRuns:     40,
-					TotalVerdicts: 40,
+					TotalResults:          40,
+					TotalRuns:             40,
+					TotalVerdicts:         40,
+					ExpectedPassedResults: 40,
 				},
 				HasStartChangepoint: false,
 				StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
@@ -495,9 +520,10 @@ func TestEvictSegments(t *testing.T) {
 				StartIndex: 40, // A finalizing segment.
 				EndIndex:   2000,
 				Counts: &cpb.Counts{
-					TotalResults:  1961,
-					TotalRuns:     1961,
-					TotalVerdicts: 1961,
+					TotalResults:          1961,
+					TotalRuns:             1961,
+					TotalVerdicts:         1961,
+					ExpectedPassedResults: 1961,
 				},
 				HasStartChangepoint:         true,
 				StartHour:                   timestamppb.New(time.Unix(40*3600, 0)),
@@ -539,9 +565,10 @@ func TestEvictSegments(t *testing.T) {
 				EndHour:             timestamppb.New(time.Unix(39*3600, 0)),
 				EndPosition:         39,
 				FinalizedCounts: &cpb.Counts{
-					TotalResults:  40,
-					TotalRuns:     40,
-					TotalVerdicts: 40,
+					TotalResults:          40,
+					TotalRuns:             40,
+					TotalVerdicts:         40,
+					ExpectedPassedResults: 40,
 				},
 			},
 			Verdicts: expectedVerdicts,

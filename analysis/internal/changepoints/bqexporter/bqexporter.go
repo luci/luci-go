@@ -226,6 +226,14 @@ func countsToBQCounts(counts *cpb.Counts) *bqpb.Segment_Counts {
 		UnexpectedAfterRetryRuns: counts.UnexpectedAfterRetryRuns,
 		TotalResults:             counts.TotalResults,
 		UnexpectedResults:        counts.UnexpectedResults,
+		ExpectedPassedResults:    counts.ExpectedPassedResults,
+		ExpectedFailedResults:    counts.ExpectedFailedResults,
+		ExpectedCrashedResults:   counts.ExpectedCrashedResults,
+		ExpectedAbortedResults:   counts.ExpectedAbortedResults,
+		UnexpectedPassedResults:  counts.UnexpectedPassedResults,
+		UnexpectedFailedResults:  counts.UnexpectedFailedResults,
+		UnexpectedCrashedResults: counts.UnexpectedCrashedResults,
+		UnexpectedAbortedResults: counts.UnexpectedAbortedResults,
 	}
 }
 

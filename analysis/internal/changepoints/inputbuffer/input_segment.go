@@ -395,38 +395,47 @@ func segmentCounts(history []PositionVerdict) *cpb.Counts {
 	counts := &cpb.Counts{}
 	for _, verdict := range history {
 		counts.TotalVerdicts++
-		if verdict.IsSimpleExpected {
+		if verdict.IsSimpleExpectedPass {
 			counts.TotalRuns++
 			counts.TotalResults++
+			counts.ExpectedPassedResults++
 		} else {
 			verdictHasExpectedResults := false
 			verdictHasUnexpectedResults := false
 			for _, run := range verdict.Details.Runs {
 				// Verdict-level statistics.
-				verdictHasExpectedResults = verdictHasExpectedResults || (run.ExpectedResultCount > 0)
-				verdictHasUnexpectedResults = verdictHasUnexpectedResults || (run.UnexpectedResultCount > 0)
+				verdictHasExpectedResults = verdictHasExpectedResults || (run.Expected.Count() > 0)
+				verdictHasUnexpectedResults = verdictHasUnexpectedResults || (run.Unexpected.Count() > 0)
 
 				if run.IsDuplicate {
 					continue
 				}
 				// Result-level statistics (ignores duplicate runs).
-				counts.TotalResults += int64(run.ExpectedResultCount + run.UnexpectedResultCount)
-				counts.UnexpectedResults += int64(run.UnexpectedResultCount)
+				counts.TotalResults += int64(run.Expected.Count() + run.Unexpected.Count())
+				counts.UnexpectedResults += int64(run.Unexpected.Count())
+				counts.ExpectedPassedResults += int64(run.Expected.PassCount)
+				counts.ExpectedFailedResults += int64(run.Expected.FailCount)
+				counts.ExpectedCrashedResults += int64(run.Expected.CrashCount)
+				counts.ExpectedAbortedResults += int64(run.Expected.AbortCount)
+				counts.UnexpectedPassedResults += int64(run.Unexpected.PassCount)
+				counts.UnexpectedFailedResults += int64(run.Unexpected.FailCount)
+				counts.UnexpectedCrashedResults += int64(run.Unexpected.CrashCount)
+				counts.UnexpectedAbortedResults += int64(run.Unexpected.AbortCount)
 
 				// Run-level statistics (ignores duplicate runs).
 				counts.TotalRuns++
 				// flaky run.
-				isFlakyRun := run.ExpectedResultCount > 0 && run.UnexpectedResultCount > 0
+				isFlakyRun := run.Expected.Count() > 0 && run.Unexpected.Count() > 0
 				if isFlakyRun {
 					counts.FlakyRuns++
 				}
 				// unexpected unretried run.
-				isUnexpectedUnretried := run.UnexpectedResultCount == 1 && run.ExpectedResultCount == 0
+				isUnexpectedUnretried := run.Unexpected.Count() == 1 && run.Expected.Count() == 0
 				if isUnexpectedUnretried {
 					counts.UnexpectedUnretriedRuns++
 				}
 				// unexpected after retries run.
-				isUnexpectedAfterRetries := run.UnexpectedResultCount > 1 && run.ExpectedResultCount == 0
+				isUnexpectedAfterRetries := run.Unexpected.Count() > 1 && run.Expected.Count() == 0
 				if isUnexpectedAfterRetries {
 					counts.UnexpectedAfterRetryRuns++
 				}
@@ -453,7 +462,7 @@ func mostRecentUnexpectedResultHour(history []PositionVerdict) *timestamppb.Time
 			if run.IsDuplicate {
 				continue
 			}
-			if run.UnexpectedResultCount > 0 {
+			if run.Unexpected.Count() > 0 {
 				if verdict.Hour.Unix() > latest.Unix() {
 					latest = verdict.Hour
 					found = true

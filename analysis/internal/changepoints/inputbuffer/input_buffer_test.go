@@ -26,51 +26,79 @@ func TestEncodeAndDecode(t *testing.T) {
 		history := History{
 			Verdicts: []PositionVerdict{
 				{
-					CommitPosition:   1345,
-					IsSimpleExpected: true,
-					Hour:             time.Unix(1000*3600, 0),
+					CommitPosition:       1345,
+					IsSimpleExpectedPass: true,
+					Hour:                 time.Unix(1000*3600, 0),
 				},
 				{
-					CommitPosition:   1355,
-					IsSimpleExpected: false,
-					Hour:             time.Unix(1005*3600, 0),
+					CommitPosition:       1355,
+					IsSimpleExpectedPass: false,
+					Hour:                 time.Unix(1005*3600, 0),
 					Details: VerdictDetails{
 						IsExonerated: false,
 						Runs: []Run{
 							{
-								ExpectedResultCount:   1,
-								UnexpectedResultCount: 2,
-								IsDuplicate:           false,
+								Expected: ResultCounts{
+									PassCount:  1,
+									FailCount:  2,
+									CrashCount: 3,
+									AbortCount: 4,
+								},
+								Unexpected: ResultCounts{
+									PassCount:  5,
+									FailCount:  6,
+									CrashCount: 7,
+									AbortCount: 8,
+								},
+								IsDuplicate: false,
 							},
 							{
-								ExpectedResultCount:   2,
-								UnexpectedResultCount: 3,
-								IsDuplicate:           true,
+								Expected: ResultCounts{
+									PassCount: 1,
+								},
+								Unexpected: ResultCounts{
+									FailCount: 2,
+								},
+								IsDuplicate: true,
 							},
 						},
 					},
 				},
 				{
-					CommitPosition:   1357,
-					IsSimpleExpected: true,
-					Hour:             time.Unix(1003*3600, 0),
+					CommitPosition:       1357,
+					IsSimpleExpectedPass: true,
+					Hour:                 time.Unix(1003*3600, 0),
 				},
 				{
-					CommitPosition:   1357,
-					IsSimpleExpected: false,
-					Hour:             time.Unix(1005*3600, 0),
+					CommitPosition:       1357,
+					IsSimpleExpectedPass: false,
+					Hour:                 time.Unix(1005*3600, 0),
 					Details: VerdictDetails{
 						IsExonerated: true,
 						Runs: []Run{
 							{
-								ExpectedResultCount:   0,
-								UnexpectedResultCount: 1,
-								IsDuplicate:           true,
+								Expected: ResultCounts{
+									PassCount: 1,
+								},
+								Unexpected: ResultCounts{
+									FailCount: 2,
+								},
+								IsDuplicate: true,
 							},
 							{
-								ExpectedResultCount:   0,
-								UnexpectedResultCount: 1,
-								IsDuplicate:           false,
+								Expected: ResultCounts{
+									PassCount:  9,
+									FailCount:  10,
+									CrashCount: 11,
+									AbortCount: 12,
+								},
+								Unexpected: ResultCounts{
+									PassCount:  13,
+									FailCount:  14,
+									CrashCount: 15,
+									AbortCount: 16,
+								},
+								IsDuplicate: false,
 							},
 						},
 					},
@@ -94,26 +122,38 @@ func TestEncodeAndDecode(t *testing.T) {
 		history.Verdicts = make([]PositionVerdict, 2000)
 		for i := 0; i < 2000; i++ {
 			history.Verdicts[i] = PositionVerdict{
-				CommitPosition:   i,
-				IsSimpleExpected: false,
-				Hour:             time.Unix(int64(i*3600), 0),
+				CommitPosition:       i,
+				IsSimpleExpectedPass: false,
+				Hour:                 time.Unix(int64(i*3600), 0),
 				Details: VerdictDetails{
 					IsExonerated: false,
 					Runs: []Run{
 						{
-							ExpectedResultCount:   1,
-							UnexpectedResultCount: 2,
-							IsDuplicate:           false,
+							Expected: ResultCounts{
+								PassCount: 1,
+							},
+							Unexpected: ResultCounts{
+								FailCount: 2,
+							},
+							IsDuplicate: false,
 						},
 						{
-							ExpectedResultCount:   1,
-							UnexpectedResultCount: 2,
-							IsDuplicate:           false,
+							Expected: ResultCounts{
+								PassCount: 1,
+							},
+							Unexpected: ResultCounts{
+								FailCount: 2,
+							},
+							IsDuplicate: false,
 						},
 						{
-							ExpectedResultCount:   1,
-							UnexpectedResultCount: 2,
-							IsDuplicate:           false,
+							Expected: ResultCounts{
+								PassCount: 1,
+							},
+							Unexpected: ResultCounts{
+								FailCount: 2,
+							},
+							IsDuplicate: false,
 						},
 					},
 				},
@@ -378,8 +418,8 @@ func TestInputBuffer(t *testing.T) {
 
 func createTestVerdict(pos int, hour int) PositionVerdict {
 	return PositionVerdict{
-		CommitPosition:   pos,
-		IsSimpleExpected: true,
-		Hour:             time.Unix(int64(3600*hour), 0),
+		CommitPosition:       pos,
+		IsSimpleExpectedPass: true,
+		Hour:                 time.Unix(int64(3600*hour), 0),
 	}
 }
