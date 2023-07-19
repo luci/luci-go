@@ -45,6 +45,7 @@ import { TextDiffArtifactPage } from './pages/artifact/text_diff_artifact_page';
 import { BuildPage, BuildPageShortLink } from './pages/build_page';
 import { BlamelistTab } from './pages/build_page/blamelist_tab';
 import { BuildDefaultTab } from './pages/build_page/build_default_tab';
+import { BuildPageTab } from './pages/build_page/common';
 import { OverviewTab } from './pages/build_page/overview_tab/overview_tab';
 import { RelatedBuildsTab } from './pages/build_page/related_builds_tab';
 import { StepsTab } from './pages/build_page/steps_tab';
@@ -185,10 +186,10 @@ export function App({ initOpts }: AppProps) {
           element: <BuildPage />,
           children: [
             { index: true, element: <BuildDefaultTab /> },
-            { path: 'overview', element: <OverviewTab /> },
-            { path: 'test-results', element: <TestResultsTab /> },
+            { path: BuildPageTab.Overview, element: <OverviewTab /> },
+            { path: BuildPageTab.TestResults, element: <TestResultsTab /> },
             {
-              path: 'steps',
+              path: BuildPageTab.Steps,
               element: <StepsTab />,
               children: [
                 // Some old systems generate links to a step by appending suffix
@@ -197,9 +198,9 @@ export function App({ initOpts }: AppProps) {
                 { path: '*' },
               ],
             },
-            { path: 'related-builds', element: <RelatedBuildsTab /> },
-            { path: 'timeline', element: <TimelineTab /> },
-            { path: 'blamelist', element: <BlamelistTab /> },
+            { path: BuildPageTab.RelatedBuilds, element: <RelatedBuildsTab /> },
+            { path: BuildPageTab.Timeline, element: <TimelineTab /> },
+            { path: BuildPageTab.Blamelist, element: <BlamelistTab /> },
           ],
         },
         {

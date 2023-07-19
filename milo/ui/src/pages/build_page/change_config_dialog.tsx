@@ -23,10 +23,13 @@ import {
   Select,
   Typography,
 } from '@mui/material';
+import { untracked } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
 
 import { useStore } from '@/common/store';
+
+import { BuildPageTab, INITIAL_DEFAULT_TAB, parseTab } from './common';
 
 export interface ChangeConfigDialogProps {
   readonly open: boolean;
@@ -37,18 +40,20 @@ export interface ChangeConfigDialogProps {
 // An array of [buildTabName, buildTabLabel] tuples.
 // Use an array of tuples instead of an Object to ensure order.
 const TAB_NAME_LABEL_TUPLES = Object.freeze([
-  ['overview', 'Overview'],
-  ['test-results', 'Test Results'],
-  ['steps', 'Steps & Logs'],
-  ['related-builds', 'Related Builds'],
-  ['timeline', 'Timeline'],
-  ['blamelist', 'Blamelist'],
+  [BuildPageTab.Overview, 'Overview'],
+  [BuildPageTab.TestResults, 'Test Results'],
+  [BuildPageTab.Steps, 'Steps & Logs'],
+  [BuildPageTab.RelatedBuilds, 'Related Builds'],
+  [BuildPageTab.Timeline, 'Timeline'],
+  [BuildPageTab.Blamelist, 'Blamelist'],
 ] as const);
 
 export const ChangeConfigDialog = observer(
   ({ open, onClose, container }: ChangeConfigDialogProps) => {
     const buildConfig = useStore().userConfig.build;
-    const [tab, setTabName] = useState(() => buildConfig.defaultTab);
+    const [tab, setTabName] = useState(() =>
+      untracked(() => parseTab(buildConfig.defaultTab) || INITIAL_DEFAULT_TAB)
+    );
 
     // Sync the local state with the global config whenever the dialog is
     // (re-)opened. Without this
@@ -60,7 +65,7 @@ export const ChangeConfigDialog = observer(
       if (!open) {
         return;
       }
-      setTabName(buildConfig.defaultTab);
+      setTabName(parseTab(buildConfig.defaultTab) || INITIAL_DEFAULT_TAB);
     }, [open, buildConfig]);
 
     return (
@@ -87,7 +92,7 @@ export const ChangeConfigDialog = observer(
           </Typography>
           <Select
             value={tab}
-            onChange={(e) => setTabName(e.target.value)}
+            onChange={(e) => setTabName(e.target.value as BuildPageTab)}
             input={<OutlinedInput size="small" />}
             MenuProps={{ disablePortal: true }}
             sx={{ width: '180px' }}

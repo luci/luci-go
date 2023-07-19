@@ -18,6 +18,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useStore } from '@/common/store';
 
+import { INITIAL_DEFAULT_TAB, parseTab } from './common';
+
 export function BuildDefaultTab() {
   const { pathname, search, hash } = useLocation();
   const store = useStore();
@@ -28,7 +30,9 @@ export function BuildDefaultTab() {
 
   // This is unnecessary since the component isn't an observer.
   // But add `untracked` just to be safe.
-  const defaultTab = untracked(() => store.userConfig.build.defaultTab);
+  const defaultTab =
+    parseTab(untracked(() => store.userConfig.build.defaultTab)) ||
+    INITIAL_DEFAULT_TAB;
 
   const newUrl = `${basePath}/${defaultTab}${search}${hash}`;
   useEffect(

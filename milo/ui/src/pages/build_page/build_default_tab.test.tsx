@@ -20,6 +20,7 @@ import * as reactRouterDom from 'react-router-dom';
 import { Store, StoreProvider } from '@/common/store';
 
 import { BuildDefaultTab } from './build_default_tab';
+import { BuildPageTab } from './common';
 
 jest.mock('react-router-dom', () => {
   return createSelectiveMockFromModule<typeof import('react-router-dom')>(
@@ -148,19 +149,24 @@ describe('BuildDefaultTab', () => {
     ]);
   });
 
-  test('should not cause infinite redirects', async () => {
-    // Set the default tab to redirect to itself.
-    // This won't happen in prod but useful for testing purpose.
-    applySnapshot(store, { userConfig: { build: { defaultTab: '' } } });
+  test('should redirect properly when the saved default tab is valid', async () => {
+    // This can happen when we changed/added/removed tab identifiers.
+    applySnapshot(store, {
+      userConfig: { build: { defaultTab: BuildPageTab.Steps } },
+    });
 
     const router = reactRouterDom.createMemoryRouter(
       [
         {
           path: 'path/prefix',
-          children: [{ index: true, element: <BuildDefaultTab /> }],
+          children: [
+            { index: true, element: <BuildDefaultTab /> },
+            { path: BuildPageTab.Overview, element: <></> },
+            { path: BuildPageTab.Steps, element: <></> },
+          ],
         },
       ],
-      { initialEntries: ['/path/prefix/?param#hash'] }
+      { initialEntries: ['/path/prefix?param#hash'] }
     );
 
     render(
@@ -169,14 +175,7 @@ describe('BuildDefaultTab', () => {
       </StoreProvider>
     );
 
-    expect(useNavigateSpy).toHaveBeenCalledTimes(2);
-    // Ensures the same `navigate` function is returned in both calls.
-    // This should always pass unless `react-router-dom` changes the
-    // implementation of `useNavigate`.
-    expect(useNavigateSpy.mock.results[0].value).toBe(
-      useNavigateSpy.mock.results[1].value
-    );
-
+    expect(useNavigateSpy).toHaveBeenCalledTimes(1);
     const useNavigateSpyResult = useNavigateSpy.mock.results[0];
     expect(useNavigateSpyResult.type).toEqual('return');
     // Won't happen. Useful for type inference.
@@ -184,13 +183,56 @@ describe('BuildDefaultTab', () => {
       throw new Error('unreachable');
     }
     const navigateSpy = useNavigateSpyResult.value;
-    // Still only called once.
     expect(navigateSpy).toHaveBeenCalledTimes(1);
     expect(navigateSpy.mock.calls[0]).toMatchObject([
       // The type definition for `.toMatchObject` is incomplete. Cast to any to
       // make TSC happy.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      '/path/prefix/?param#hash' as any,
+      '/path/prefix/steps?param#hash' as any,
+      { replace: true },
+    ]);
+  });
+
+  test('should redirect properly when the saved default tab is invalid', async () => {
+    // This can happen when we changed/added/removed tab identifiers.
+    applySnapshot(store, {
+      userConfig: { build: { defaultTab: 'invalid-tab' } },
+    });
+
+    const router = reactRouterDom.createMemoryRouter(
+      [
+        {
+          path: 'path/prefix',
+          children: [
+            { index: true, element: <BuildDefaultTab /> },
+            { path: BuildPageTab.Overview, element: <></> },
+            { path: BuildPageTab.Steps, element: <></> },
+          ],
+        },
+      ],
+      { initialEntries: ['/path/prefix?param#hash'] }
+    );
+
+    render(
+      <StoreProvider value={store}>
+        <reactRouterDom.RouterProvider router={router} />
+      </StoreProvider>
+    );
+
+    expect(useNavigateSpy).toHaveBeenCalledTimes(1);
+    const useNavigateSpyResult = useNavigateSpy.mock.results[0];
+    expect(useNavigateSpyResult.type).toEqual('return');
+    // Won't happen. Useful for type inference.
+    if (useNavigateSpyResult.type !== 'return') {
+      throw new Error('unreachable');
+    }
+    const navigateSpy = useNavigateSpyResult.value;
+    expect(navigateSpy).toHaveBeenCalledTimes(1);
+    expect(navigateSpy.mock.calls[0]).toMatchObject([
+      // The type definition for `.toMatchObject` is incomplete. Cast to any to
+      // make TSC happy.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      '/path/prefix/overview?param#hash' as any,
       { replace: true },
     ]);
   });

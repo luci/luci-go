@@ -125,7 +125,7 @@ export const BuildConfig = types
     steps: types.optional(BuildStepsConfig, {}),
     inputProperties: types.optional(PropertyViewerConfig, {}),
     outputProperties: types.optional(PropertyViewerConfig, {}),
-    defaultTab: 'overview',
+    defaultTab: '',
   })
   .actions((self) => ({
     setDefaultTab(tab: string) {
