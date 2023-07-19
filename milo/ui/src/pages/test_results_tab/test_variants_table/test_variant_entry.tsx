@@ -135,7 +135,7 @@ export class TestVariantEntryElement
             project: this.project,
             testResults: results.map((r) => ({
               testId: this.variant.testId,
-              failureReason: r.result.failureReason,
+              failureReason: r.result.failureReason && {primaryErrorMessage: r.result.failureReason?.primaryErrorMessage},
             })),
           },
           { maxPendingMs: 1000 }
