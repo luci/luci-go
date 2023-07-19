@@ -53,6 +53,7 @@ func TestParseStatusAndResult(t *testing.T) {
 			WithCreateTime(createTime).
 			WithStatus(bbpb.Status_SCHEDULED).
 			WithSummaryMarkdown(buildSummary).
+			WithInvocation("resultdb.example.com", "invocation/build:12345").
 			Construct()
 		ctx := context.Background()
 
@@ -88,6 +89,12 @@ func TestParseStatusAndResult(t *testing.T) {
 								Builder:         builder,
 								Status:          bbpb.Status_SUCCESS,
 								SummaryMarkdown: buildSummary,
+								Infra: &bbpb.BuildInfra{
+									Resultdb: &bbpb.BuildInfra_ResultDB{
+										Hostname:   "resultdb.example.com",
+										Invocation: "invocation/build:12345",
+									},
+								},
 							},
 						},
 					})

@@ -43,6 +43,8 @@ type BuildConstructor struct {
 	gerritChanges       []*bbpb.GerritChange
 	experimental        bool
 	requestedProperties *structpb.Struct
+	resultdbHost        string
+	invocation          string
 
 	template *bbpb.Build
 }
@@ -70,6 +72,8 @@ func NewConstructorFromBuild(build *bbpb.Build) *BuildConstructor {
 		gerritChanges:       make([]*bbpb.GerritChange, len(build.GetInput().GetGerritChanges())),
 		experimental:        build.GetInput().GetExperimental(),
 		requestedProperties: proto.Clone(build.GetInfra().GetBuildbucket().GetRequestedProperties()).(*structpb.Struct),
+		resultdbHost:        build.GetInfra().GetResultdb().GetHostname(),
+		invocation:          build.GetInfra().GetResultdb().GetInvocation(),
 
 		template: proto.Clone(build).(*bbpb.Build),
 	}
@@ -149,6 +153,12 @@ func (bc *BuildConstructor) WithTimeout(isTimeout bool) *BuildConstructor {
 // WithSummaryMarkdown specifies the summary markdown. Optional
 func (bc *BuildConstructor) WithSummaryMarkdown(sm string) *BuildConstructor {
 	bc.summaryMarkdown = sm
+	return bc
+}
+
+func (bc *BuildConstructor) WithInvocation(resultdbHost, inv string) *BuildConstructor {
+	bc.resultdbHost = resultdbHost
+	bc.invocation = inv
 	return bc
 }
 
@@ -257,5 +267,11 @@ func (bc *BuildConstructor) Construct() *bbpb.Build {
 	}
 	ret.Infra.Buildbucket.Hostname = bc.host
 	ret.Infra.Buildbucket.RequestedProperties = bc.requestedProperties
+
+	if ret.GetInfra().GetResultdb() == nil {
+		ret.Infra.Resultdb = &bbpb.BuildInfra_ResultDB{}
+	}
+	ret.Infra.Resultdb.Hostname = bc.resultdbHost
+	ret.Infra.Resultdb.Invocation = bc.invocation
 	return ret
 }

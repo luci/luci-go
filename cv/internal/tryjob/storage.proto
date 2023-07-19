@@ -20,6 +20,7 @@ option go_package = "go.chromium.org/luci/cv/internal/tryjob;tryjob";
 
 import "google/protobuf/timestamp.proto";
 
+import "go.chromium.org/luci/buildbucket/proto/build.proto";
 import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 
@@ -192,6 +193,12 @@ message Result {
     // SummaryMarkdown is a field containing a human readable summary of the
     // build's result.
     string summary_markdown = 3;
+
+    // Infra metadata from Buildbucket.
+    //
+    // NOTE: This ONLY supports ResultDB metadata and excludes the rest.
+    // See go/src/go.chromium.org/luci/buildbucket/proto/build.proto.
+    buildbucket.v2.BuildInfra infra = 5;
   }
 }
 

@@ -38,6 +38,7 @@ var fieldsToParse = []string{
 	"status_details",
 	"summary_markdown",
 	"update_time",
+	"infra.resultdb",
 }
 
 func parseStatusAndResult(ctx context.Context, b *bbpb.Build) (tryjob.Status, *tryjob.Result, error) {
@@ -53,6 +54,12 @@ func parseStatusAndResult(ctx context.Context, b *bbpb.Build) (tryjob.Status, *t
 				SummaryMarkdown: b.GetSummaryMarkdown(),
 			},
 		},
+	}
+
+	if resultdb := b.GetInfra().GetResultdb(); resultdb != nil {
+		r.GetBuildbucket().Infra = &bbpb.BuildInfra{
+			Resultdb: b.GetInfra().GetResultdb(),
+		}
 	}
 
 	buildResult := parseBuildResult(ctx, b)
