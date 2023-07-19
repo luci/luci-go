@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  Box,
-  Button,
-  CircularProgress,
-  ToggleButton,
-  ToggleButtonGroup,
-} from '@mui/material';
-import { useState } from 'react';
+import { Box, Button, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
@@ -70,6 +64,8 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
     return currentPageToken ? [''] : [];
   });
 
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
   const { data, error, isError, isLoading, isPreviousData } = usePrpcQuery({
     host: CONFIGS.BUILDBUCKET.HOST,
     Service: BuildsService,
@@ -93,51 +89,50 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
 
   return (
     <>
-      <h3>Ended Builds</h3>
-      {isLoading ? (
-        <CircularProgress />
-      ) : (
-        <>
-          <EndedBuildsTable endedBuilds={data.builds || []} />
-          <Box sx={{ mt: '5px' }}>
-            Page Size:{' '}
-            <ToggleButtonGroup
-              exclusive
-              value={pageSize}
-              onChange={(_e, newValue: number) => setPageSize(newValue)}
-              size="small"
-            >
-              <ToggleButton value={25}>25</ToggleButton>
-              <ToggleButton value={50}>50</ToggleButton>
-              <ToggleButton value={100}>100</ToggleButton>
-              <ToggleButton value={200}>200</ToggleButton>
-            </ToggleButtonGroup>{' '}
-            <Button
-              disabled={!prevPageTokens.length}
-              onClick={() => {
-                const newPrevPageTokens = prevPageTokens.slice();
-                // The button is disabled when `newPrevPageTokens` is empty.
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                setCurrentPageToken(newPrevPageTokens.pop()!);
-                setPrevPageTokens(newPrevPageTokens);
-              }}
-            >
-              Previous Page
-            </Button>
-            <Button
-              disabled={isPreviousData || !data.nextPageToken}
-              onClick={() => {
-                // The button is disabled when `nextPageToken` is empty.
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                setCurrentPageToken(data.nextPageToken!);
-                setPrevPageTokens([...prevPageTokens, currentPageToken]);
-              }}
-            >
-              Next Page
-            </Button>
-          </Box>
-        </>
-      )}
+      <h3 ref={headingRef}>Ended Builds</h3>
+      <EndedBuildsTable
+        endedBuilds={data?.builds || []}
+        isLoading={isLoading || isPreviousData}
+      />
+      <Box sx={{ mt: '5px' }}>
+        Page Size:{' '}
+        <ToggleButtonGroup
+          exclusive
+          value={pageSize}
+          onChange={(_e, newValue: number) => setPageSize(newValue)}
+          size="small"
+        >
+          <ToggleButton value={25}>25</ToggleButton>
+          <ToggleButton value={50}>50</ToggleButton>
+          <ToggleButton value={100}>100</ToggleButton>
+          <ToggleButton value={200}>200</ToggleButton>
+        </ToggleButtonGroup>{' '}
+        <Button
+          disabled={!prevPageTokens.length}
+          onClick={() => {
+            const newPrevPageTokens = prevPageTokens.slice();
+            // The button is disabled when `newPrevPageTokens` is empty.
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            setCurrentPageToken(newPrevPageTokens.pop()!);
+            setPrevPageTokens(newPrevPageTokens);
+            headingRef.current?.scrollIntoView();
+          }}
+        >
+          Previous Page
+        </Button>
+        <Button
+          disabled={isPreviousData || !data?.nextPageToken}
+          onClick={() => {
+            // The button is disabled when `nextPageToken` is empty.
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            setCurrentPageToken(data!.nextPageToken!);
+            setPrevPageTokens([...prevPageTokens, currentPageToken]);
+            headingRef.current?.scrollIntoView();
+          }}
+        >
+          Next Page
+        </Button>
+      </Box>
     </>
   );
 }

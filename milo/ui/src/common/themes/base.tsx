@@ -34,6 +34,9 @@ export const theme = createTheme({
     canceled: {
       main: '#0084ff',
     },
+    dividerLine: {
+      main: '#e0e0e0',
+    },
   },
 });
 
@@ -44,6 +47,7 @@ declare module '@mui/material/styles' {
     success: Palette['primary'];
     criticalFailure: Palette['primary'];
     canceled: Palette['primary'];
+    dividerLine: Palette['primary'];
   }
 
   interface PaletteOptions {
@@ -51,6 +55,7 @@ declare module '@mui/material/styles' {
     started: PaletteOptions['primary'];
     criticalFailure: PaletteOptions['primary'];
     canceled: PaletteOptions['primary'];
+    dividerLine: PaletteOptions['primary'];
   }
 }
 
@@ -61,5 +66,6 @@ declare module '@mui/material' {
     success: true;
     criticalFailure: true;
     canceled: true;
+    dividerLine: true;
   }
 }

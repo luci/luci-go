@@ -13,7 +13,14 @@
 // limitations under the License.
 
 import { ChevronRight, ExpandMore } from '@mui/icons-material';
-import { Box, IconButton, TableCell, TableHead, TableRow } from '@mui/material';
+import {
+  Box,
+  IconButton,
+  LinearProgress,
+  TableCell,
+  TableHead,
+  TableRow,
+} from '@mui/material';
 import { action } from 'mobx';
 import { observer } from 'mobx-react-lite';
 
@@ -23,10 +30,15 @@ import { ExpandableEntriesStateInstance } from '@/common/store/expandable_entrie
 export interface EndedBuildsTableHeadProps {
   readonly tableState: ExpandableEntriesStateInstance;
   readonly displayGerritChanges: boolean;
+  readonly isLoading: boolean;
 }
 
 export const EndedBuildsTableHead = observer(
-  ({ tableState, displayGerritChanges }: EndedBuildsTableHeadProps) => {
+  ({
+    tableState,
+    displayGerritChanges,
+    isLoading,
+  }: EndedBuildsTableHeadProps) => {
     const config = useStore().userConfig.builderPage;
 
     return (
@@ -36,6 +48,9 @@ export const EndedBuildsTableHead = observer(
           top: 0,
           backgroundColor: 'white',
           zIndex: 2,
+          '& th': {
+            border: 'none',
+          },
         }}
       >
         <TableRow
@@ -106,6 +121,20 @@ export const EndedBuildsTableHead = observer(
               </IconButton>
               <Box sx={{ lineHeight: '34px' }}>Summary</Box>
             </Box>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell
+            colSpan={100}
+            className="divider"
+            sx={{ '&.divider': { padding: '0' } }}
+          >
+            <LinearProgress
+              value={100}
+              variant={isLoading ? 'indeterminate' : 'determinate'}
+              color={isLoading ? 'primary' : 'dividerLine'}
+              sx={{ height: '1px' }}
+            />
           </TableCell>
         </TableRow>
       </TableHead>

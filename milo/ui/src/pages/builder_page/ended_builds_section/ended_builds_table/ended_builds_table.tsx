@@ -24,9 +24,13 @@ import { EndedBuildsTableRow } from './ended_builds_table_row';
 
 export interface EndedBuildsTableProps {
   readonly endedBuilds: readonly Build[];
+  readonly isLoading: boolean;
 }
 
-export function EndedBuildsTable({ endedBuilds }: EndedBuildsTableProps) {
+export function EndedBuildsTable({
+  endedBuilds,
+  isLoading,
+}: EndedBuildsTableProps) {
   // The config is only used during initialization.
   // Don't need to declare the component as an observable.
   const config = useStore().userConfig.builderPage;
@@ -53,6 +57,7 @@ export function EndedBuildsTable({ endedBuilds }: EndedBuildsTableProps) {
       <EndedBuildsTableHead
         tableState={tableState}
         displayGerritChanges={hasChanges}
+        isLoading={isLoading}
       />
       <TableBody
         sx={{
