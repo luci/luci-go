@@ -44,10 +44,8 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/common"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
-	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 const (
@@ -313,59 +311,6 @@ func extractCipdDetails(ctx context.Context, project string, infra *pb.BuildInfr
 		details[k] = val
 	}
 	return
-}
-
-// failBuild fails the given build with INFRA_FAILURE status.
-func failBuild(ctx context.Context, buildID int64, msg string) error {
-	bld := &model.Build{
-		ID: buildID,
-	}
-
-	var changedToEnded bool
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		switch err := datastore.Get(ctx, bld); {
-		case err == datastore.ErrNoSuchEntity:
-			logging.Warningf(ctx, "build %d not found: %s", buildID, err)
-			return nil
-		case err != nil:
-			return errors.Annotate(err, "failed to fetch build: %d", bld.ID).Err()
-		}
-
-		changedToEnded = !protoutil.IsEnded(bld.Proto.Status)
-		if !changedToEnded {
-			// Build already ended, no more change to it.
-			return nil
-		}
-
-		protoutil.SetStatus(clock.Now(ctx), bld.Proto, pb.Status_INFRA_FAILURE)
-		bld.Proto.SummaryMarkdown = msg
-
-		toSave := []any{bld}
-		bs := &model.BuildStatus{Build: datastore.KeyForObj(ctx, bld)}
-		switch err := datastore.Get(ctx, bs); {
-		case err == datastore.ErrNoSuchEntity:
-			// This is allowed during BuildStatus rollout.
-			// TODO(crbug.com/1430324): also check ErrNoSuchEntity.
-		case err != nil:
-			return errors.Annotate(err, "failed to fetch build status: %d", bld.ID).Err()
-		default:
-			bs.Status = pb.Status_INFRA_FAILURE
-			toSave = append(toSave, bs)
-		}
-
-		if err := sendOnBuildCompletion(ctx, bld); err != nil {
-			return err
-		}
-
-		return datastore.Put(ctx, toSave)
-	}, nil)
-	if err != nil {
-		return transient.Tag.Apply(errors.Annotate(err, "failed to terminate build: %d", buildID).Err())
-	}
-	if changedToEnded {
-		metrics.BuildCompleted(ctx, bld)
-	}
-	return nil
 }
 
 // CreateBackendTask creates a backend task for the build.

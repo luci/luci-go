@@ -329,55 +329,41 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 		if err := datastore.Get(ctx, bld, infra); err != nil {
 			return transient.Tag.Apply(errors.Annotate(err, "failed to fetch build or buildInfra: %d", bld.ID).Err())
 		}
-		oldStatus := bld.Status
 
-		shouldUpdate, err := updateBuildFromTaskResult(ctx, bld, infra, taskResult)
+		if protoutil.IsEnded(bld.Status) {
+			return nil
+		}
+		if bld.Status == pb.Status_STARTED && taskResult.State == "PENDING" {
+			// Most probably, race between PubSub push handler and Cron job.
+			// With swarming, a build cannot go from STARTED back to PENDING,
+			// so ignore this.
+			return nil
+		}
+
+		botDimsChanged := updateBotDimensions(infra, taskResult)
+
+		bs, steps, err := updateBuildStatusFromTaskResult(ctx, bld, taskResult)
 		if err != nil {
 			return tq.Fatal.Apply(err)
+		}
+
+		shouldUpdate := false
+		if bs != nil {
+			shouldUpdate = true
+		}
+		if bs == nil && botDimsChanged && bld.Proto.Status == pb.Status_STARTED {
+			shouldUpdate = true
 		}
 		if !shouldUpdate {
 			return nil
 		}
 
 		toPut := []any{bld, infra}
-		statusChanged = oldStatus != bld.Proto.Status
-		if statusChanged {
-			bs := &model.BuildStatus{Build: datastore.KeyForObj(ctx, bld)}
-			switch err := datastore.Get(ctx, bs); {
-			case err == datastore.ErrNoSuchEntity:
-				// This is allowed during BuildStatus rollout.
-				// TODO(crbug.com/1430324): also check ErrNoSuchEntity.
-			case err != nil:
-				return errors.Annotate(err, "failed to get build status for build %d", bld.ID).Err()
-			default:
-				bs.Status = bld.Proto.Status
-				toPut = append(toPut, bs)
-			}
-
+		if bs != nil {
+			toPut = append(toPut, bs)
 		}
-		switch {
-		case statusChanged && bld.Proto.Status == pb.Status_STARTED:
-			if err := NotifyPubSub(ctx, bld); err != nil {
-				return transient.Tag.Apply(err)
-			}
-		case statusChanged && protoutil.IsEnded(bld.Proto.Status):
-			steps := &model.BuildSteps{Build: datastore.KeyForObj(ctx, bld)}
-			// If the build has no steps, CancelIncomplete will return false.
-			if err := model.GetIgnoreMissing(ctx, steps); err != nil {
-				return transient.Tag.Apply(errors.Annotate(err, "failed to fetch steps for build %d", bld.ID).Err())
-			}
-			switch changed, err := steps.CancelIncomplete(ctx, bld.Proto.EndTime); {
-			case err != nil:
-				// The steps are fetched from datastore and should always be valid in
-				// CancelIncomplete. But in case of any errors, we can just log it here
-				// instead of rethrowing it to make the entire flow fail or retry.
-				logging.Errorf(ctx, "failed to mark steps cancelled for build %d: %s", bld.ID, err)
-			case changed:
-				toPut = append(toPut, steps)
-			}
-			if err := sendOnBuildCompletion(ctx, bld); err != nil {
-				return transient.Tag.Apply(err)
-			}
+		if steps != nil {
+			toPut = append(toPut, steps)
 		}
 		return transient.Tag.Apply(datastore.Put(ctx, toPut...))
 	}, nil)
@@ -393,17 +379,10 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 	return err
 }
 
-// updateBuildFromTaskResult mutate the build and infra entities according to
-// the given task result. Return true if the build status has been changed or
-// the build need to be updated for bot dimensions.
+// updateBotDimensions mutates the infra entity to update the bot dimensions
+// according to the given task result.
 // Note, it will not write the entities into Datastore.
-func updateBuildFromTaskResult(ctx context.Context, bld *model.Build, infra *model.BuildInfra, taskResult *swarming.SwarmingRpcsTaskResult) (bool, error) {
-	if protoutil.IsEnded(bld.Status) {
-		// Completed builds are immutable.
-		return false, nil
-	}
-
-	oldStatus := bld.Status
+func updateBotDimensions(infra *model.BuildInfra, taskResult *swarming.SwarmingRpcsTaskResult) bool {
 	sw := infra.Proto.Swarming
 	botDimsChanged := false
 
@@ -429,8 +408,15 @@ func updateBuildFromTaskResult(ctx context.Context, bld *model.Build, infra *mod
 		}
 		return sw.BotDimensions[i].Key < sw.BotDimensions[j].Key
 	})
+	return botDimsChanged
+}
 
+// updateBuildStatusFromTaskResult mutates the build entity to update the top
+// level status, and also the update time of the build.
+// Note, it will not write the entities into Datastore.
+func updateBuildStatusFromTaskResult(ctx context.Context, bld *model.Build, taskResult *swarming.SwarmingRpcsTaskResult) (bs *model.BuildStatus, steps *model.BuildSteps, err error) {
 	now := clock.Now(ctx)
+	oldStatus := bld.Status
 	// A helper function to correctly set Build ended status from taskResult. It
 	// corrects the build start_time only if start_time is empty and taskResult
 	// has start_ts populated.
@@ -440,6 +426,7 @@ func updateBuildFromTaskResult(ctx context.Context, bld *model.Build, infra *mod
 		}
 		if bld.Proto.StartTime == nil {
 			if startTime, err := time.Parse(swarmingTimeFormat, taskResult.StartedTs); err == nil {
+				// Backfill build start time.
 				protoutil.SetStatus(startTime, bld.Proto, pb.Status_STARTED)
 			}
 		}
@@ -456,25 +443,30 @@ func updateBuildFromTaskResult(ctx context.Context, bld *model.Build, infra *mod
 			endTime = bld.Proto.CreateTime.AsTime()
 		}
 
-		protoutil.SetStatus(endTime, bld.Proto, st)
+		bs, steps, err = updateBuildStatusOnTaskStatusChange(ctx, bld, st, st, endTime)
 	}
 
 	// Update build status
 	switch taskResult.State {
 	case "PENDING":
-		if bld.Status == pb.Status_STARTED {
-			// Most probably, race between PubSub push handler and Cron job.
-			// With swarming, a build cannot go from STARTED back to PENDING,
-			// so ignore this.
-			return false, nil
-		}
-		protoutil.SetStatus(now, bld.Proto, pb.Status_SCHEDULED)
-	case "RUNNING":
-		if startTime, err := time.Parse(swarmingTimeFormat, taskResult.StartedTs); err == nil {
-			protoutil.SetStatus(startTime, bld.Proto, pb.Status_STARTED)
+		if bld.Status == pb.Status_STATUS_UNSPECIFIED {
+			// Scheduled Build should have SCHEDULED status already, so in theory this
+			// should not happen.
+			// Adding a log to confirm this.
+			logging.Debugf(ctx, "build %d has unspecified status, setting it to pending", bld.ID)
+			protoutil.SetStatus(now, bld.Proto, pb.Status_SCHEDULED)
 		} else {
-			protoutil.SetStatus(now, bld.Proto, pb.Status_STARTED)
+			// Most probably, race between PubSub push handler and Cron job.
+			// With swarming, a build cannot go from STARTED/ended back to PENDING,
+			// so ignore this.
+			return
 		}
+	case "RUNNING":
+		updateTime := now
+		if startTime, err := time.Parse(swarmingTimeFormat, taskResult.StartedTs); err == nil {
+			updateTime = startTime
+		}
+		bs, steps, err = updateBuildStatusOnTaskStatusChange(ctx, bld, pb.Status_STARTED, pb.Status_STARTED, updateTime)
 	case "CANCELED", "KILLED":
 		setEndStatus(pb.Status_CANCELED)
 	case "NO_RESOURCE":
@@ -507,18 +499,15 @@ func updateBuildFromTaskResult(ctx context.Context, bld *model.Build, infra *mod
 			setEndStatus(pb.Status_SUCCESS)
 		}
 	default:
-		return false, errors.Reason("Unexpected task state: %s", taskResult.State).Err()
+		err = errors.Reason("Unexpected task state: %s", taskResult.State).Err()
+		return
 	}
 
 	if bld.Proto.Status != oldStatus {
 		logging.Infof(ctx, "Build %d status: %s -> %s", bld.ID, oldStatus, bld.Proto.Status)
-		return true, nil
+		return
 	}
-	if bld.Proto.Status == pb.Status_STARTED && botDimsChanged {
-		logging.Infof(ctx, "Detect bot dimensions change after Build %d started", bld.ID)
-		return true, nil
-	}
-	return false, nil
+	return
 }
 
 // createSwarmingTask creates a swarming task for the build.

@@ -611,9 +611,10 @@ func TestCreateBackendTask(t *testing.T) {
 				},
 			},
 		}
+		bs := &model.BuildStatus{Build: datastore.KeyForObj(ctx, build)}
+		So(datastore.Put(ctx, build, infra, bs), ShouldBeNil)
 
 		Convey("ok", func() {
-			So(datastore.Put(ctx, build, infra), ShouldBeNil)
 			err = CreateBackendTask(ctx, 1, "request_id")
 			So(err, ShouldBeNil)
 			eb := &model.Build{ID: build.ID}
@@ -632,7 +633,7 @@ func TestCreateBackendTask(t *testing.T) {
 
 		Convey("fail", func() {
 			infra.Proto.Backend.Task.Id.Target = "fail_me"
-			So(datastore.Put(ctx, build, infra), ShouldBeNil)
+			So(datastore.Put(ctx, infra), ShouldBeNil)
 			err = CreateBackendTask(ctx, 1, "request_id")
 			expectedBuild := &model.Build{ID: 1}
 			So(datastore.Get(ctx, expectedBuild), ShouldBeNil)
