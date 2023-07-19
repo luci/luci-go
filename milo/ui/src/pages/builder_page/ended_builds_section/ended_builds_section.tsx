@@ -12,7 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Button, CircularProgress, MenuItem, Select } from '@mui/material';
+import {
+  Box,
+  Button,
+  CircularProgress,
+  ToggleButton,
+  ToggleButtonGroup,
+} from '@mui/material';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -95,16 +101,17 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
           <EndedBuildsTable endedBuilds={data.builds || []} />
           <Box sx={{ mt: '5px' }}>
             Page Size:{' '}
-            <Select
-              onChange={(e) => setPageSize(Number(e.target.value))}
+            <ToggleButtonGroup
+              exclusive
               value={pageSize}
+              onChange={(_e, newValue: number) => setPageSize(newValue)}
               size="small"
             >
-              <MenuItem value={25}>25</MenuItem>
-              <MenuItem value={50}>50</MenuItem>
-              <MenuItem value={100}>100</MenuItem>
-              <MenuItem value={200}>200</MenuItem>
-            </Select>
+              <ToggleButton value={25}>25</ToggleButton>
+              <ToggleButton value={50}>50</ToggleButton>
+              <ToggleButton value={100}>100</ToggleButton>
+              <ToggleButton value={200}>200</ToggleButton>
+            </ToggleButtonGroup>{' '}
             <Button
               disabled={!prevPageTokens.length}
               onClick={() => {
