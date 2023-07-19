@@ -75,14 +75,10 @@ type QueryBlamelistRequest struct {
 	// exception of page_size and page_token, must match the call that provided
 	// the page token.
 	PageToken string `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	// Enable multi-project support.
+	// This field is unused.
 	//
-	// When set to false (default), BuildSummary.BuildSets will be used to find
-	// the closest ancestor commit with an associated build.
-	// When set to true, BuildSummary.BlamelistPins will be used instead. Older
-	// builds may not have BlamelistPins populated.
-	// TODO(crbugs/1047893): once all recent builds have BlamelistPins populated,
-	// remove this flag and use BlamelistPins unconditionally.
+	// TODO(crbugs/1047893): remove this field in the once no clients depends on
+	// this.
 	MultiProjectSupport bool `protobuf:"varint,5,opt,name=multi_project_support,json=multiProjectSupport,proto3" json:"multi_project_support,omitempty"`
 }
 

@@ -92,14 +92,10 @@ message QueryBlamelistRequest {
   // the page token.
   string page_token = 4;
 
-  // Enable multi-project support.
+  // This field is unused.
   //
-  // When set to false (default), BuildSummary.BuildSets will be used to find
-  // the closest ancestor commit with an associated build.
-  // When set to true, BuildSummary.BlamelistPins will be used instead. Older
-  // builds may not have BlamelistPins populated.
-  // TODO(crbugs/1047893): once all recent builds have BlamelistPins populated,
-  // remove this flag and use BlamelistPins unconditionally.
+  // TODO(crbugs/1047893): remove this field in the once no clients depends on
+  // this.
   bool multi_project_support = 5;
 }
 

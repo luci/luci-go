@@ -489,8 +489,7 @@ func TestQueryBlamelist(t *testing.T) {
 					Project: "other_fake_gitiles_project",
 					Id:      "commit3",
 				},
-				Builder:             builder1,
-				MultiProjectSupport: true,
+				Builder: builder1,
 			}
 			gitMock.
 				EXPECT().

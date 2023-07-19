@@ -82,10 +82,6 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 	commits := logRes.Log
 
 	q := datastore.NewQuery("BuildSummary").Eq("BuilderID", utils.LegacyBuilderIDString(req.Builder))
-	commitColumn := "BuildSet"
-	if req.MultiProjectSupport {
-		commitColumn = "BlamelistPins"
-	}
 	blameLength := len(commits)
 	m := sync.Mutex{}
 
@@ -110,7 +106,7 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 			c <- func() error {
 				// Check whether this commit has an associated build.
 				hasAssociatedBuild := false
-				err := datastore.Run(ctx, q.Eq(commitColumn, protoutil.GitilesBuildSet(curGC)), func(build *model.BuildSummary) error {
+				err := datastore.Run(ctx, q.Eq("BlamelistPins", protoutil.GitilesBuildSet(curGC)), func(build *model.BuildSummary) error {
 					switch build.Summary.Status {
 					case milostatus.InfraFailure, milostatus.Expired, milostatus.Canceled:
 						return nil
