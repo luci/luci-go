@@ -17,6 +17,9 @@ package main
 import (
 	"flag"
 
+	// Enable gRPC server side gzip compression.
+	_ "google.golang.org/grpc/encoding/gzip"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
