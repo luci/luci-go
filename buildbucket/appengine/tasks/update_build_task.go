@@ -37,6 +37,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/common"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
+	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -166,28 +167,57 @@ func validateBuildTask(ctx context.Context, req *pb.BuildTaskUpdate, infra *mode
 }
 
 func updateTaskEntity(ctx context.Context, req *pb.BuildTaskUpdate, buildID int64) error {
+	var build *model.Build
+	setBuildToEnd := false
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		entities, err := common.GetBuildEntities(ctx, buildID, model.BuildKind, model.BuildInfraKind)
 		if err != nil {
 			return errors.Annotate(err, "invalid Build or BuildInfra").Err()
 		}
-		build := entities[0].(*model.Build)
+
+		build = entities[0].(*model.Build)
 		infra := entities[1].(*model.BuildInfra)
+
+		if protoutil.IsEnded(build.Status) {
+			// Cannot update an ended build.
+			logging.Infof(ctx, "build %d is ended", build.ID)
+			return nil
+		}
 		if req.Task.UpdateId <= infra.Proto.Backend.Task.UpdateId {
 			// Returning nil since there is no work to do here.
 			// The task in the request is outdated.
 			return nil
 		}
 		// Required fields to change
-		build.Proto.UpdateTime = timestamppb.New(clock.Now(ctx))
+		now := clock.Now(ctx)
+		build.Proto.UpdateTime = timestamppb.New(now)
 		proto.Merge(infra.Proto.Backend.Task, req.Task)
+		setBuildToEnd = protoutil.IsEnded(req.Task.Status)
 
 		toSave := []any{build, infra}
+
+		bs, steps, err := updateBuildStatusOnTaskStatusChange(ctx, build, pb.Status_STATUS_UNSPECIFIED, req.Task.Status, now)
+		if err != nil {
+			return err
+		}
+		if bs != nil {
+			toSave = append(toSave, bs)
+		}
+		if steps != nil {
+			toSave = append(toSave, steps)
+		}
+
 		return datastore.Put(ctx, toSave)
 	}, nil)
 
-	return txErr
-	// TODO [randymaldonado@] send pubsub notifications and update metrics.
+	if txErr != nil {
+		return txErr
+	}
+
+	if setBuildToEnd {
+		metrics.BuildCompleted(ctx, build)
+	}
+	return nil
 }
 
 // updateBuildTask allows the Backend to preemptively update the

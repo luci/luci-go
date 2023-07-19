@@ -28,12 +28,15 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/cachingtest"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
+	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -363,7 +366,9 @@ func TestValidateTaskUpdate(t *testing.T) {
 func TestUpdateTaskEntity(t *testing.T) {
 	t.Parallel()
 	Convey("UpdateTaskEntity", t, func() {
-		ctx := memory.Use(context.Background())
+		ctx, sch := tq.TestingContext(memory.Use(context.Background()), nil)
+		ctx = txndefer.FilterRDS(ctx)
+		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 
 		t0 := testclock.TestRecentTimeUTC
 
@@ -388,14 +393,17 @@ func TestUpdateTaskEntity(t *testing.T) {
 				Bucket:  "bucket",
 				Builder: "builder",
 			},
+			Status: pb.Status_STARTED,
 		}
 		buildModel := &model.Build{
 			ID:         1,
 			Proto:      buildProto,
 			CreateTime: t0,
+			Status:     pb.Status_STARTED,
 		}
+		bk := datastore.KeyForObj(ctx, buildModel)
 		infraModel := &model.BuildInfra{
-			Build: datastore.KeyForObj(ctx, buildModel),
+			Build: bk,
 			Proto: infraProto,
 		}
 		So(datastore.Put(ctx, buildModel, infraModel), ShouldBeNil)
@@ -449,6 +457,102 @@ func TestUpdateTaskEntity(t *testing.T) {
 			}
 			err := updateTaskEntity(ctx, req, 1)
 			So(err, ShouldBeNil)
+		})
+
+		Convey("end a task", func() {
+			bs := &model.BuildStatus{
+				Build:  bk,
+				Status: pb.Status_STARTED,
+			}
+			b, err := proto.Marshal(&pb.Build{
+				Steps: []*pb.Step{
+					{
+						Name: "step",
+					},
+				},
+			})
+			So(err, ShouldBeNil)
+			steps := &model.BuildSteps{
+				ID:       1,
+				Build:    bk,
+				IsZipped: false,
+				Bytes:    b,
+			}
+			So(datastore.Put(ctx, buildModel, infraModel, bs, steps), ShouldBeNil)
+
+			endReq := &pb.BuildTaskUpdate{
+				BuildId: "1",
+				Task: &pb.Task{
+					Status: pb.Status_INFRA_FAILURE,
+					Id: &pb.TaskID{
+						Id:     "1",
+						Target: "swarming",
+					},
+					UpdateId: 200,
+				},
+			}
+			err = updateTaskEntity(ctx, endReq, 1)
+			So(err, ShouldBeNil)
+			resultInfraModel := &model.BuildInfra{
+				Build: bk,
+			}
+			result := datastore.Get(ctx, resultInfraModel, bs, buildModel, steps)
+			So(result, ShouldBeNil)
+			So(resultInfraModel.Proto, ShouldResembleProto, &pb.BuildInfra{
+				Backend: &pb.BuildInfra_Backend{
+					Task: &pb.Task{
+						Status: pb.Status_INFRA_FAILURE,
+						Id: &pb.TaskID{
+							Id:     "1",
+							Target: "swarming",
+						},
+						UpdateId: 200,
+						Link:     "a link",
+					},
+				},
+			})
+
+			So(sch.Tasks(), ShouldHaveLength, 4)
+			So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+			So(buildModel.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+			stp, err := steps.ToProto(ctx)
+			So(err, ShouldBeNil)
+			for _, s := range stp {
+				So(s.Status, ShouldEqual, pb.Status_CANCELED)
+			}
+		})
+		Convey("start a task", func() {
+			buildModel.Proto.Status = pb.Status_SCHEDULED
+			infraModel.Proto.Backend.Task.Status = pb.Status_SCHEDULED
+			bs := &model.BuildStatus{
+				Build:  bk,
+				Status: pb.Status_SCHEDULED,
+			}
+			So(datastore.Put(ctx, buildModel, infraModel, bs), ShouldBeNil)
+
+			endReq := &pb.BuildTaskUpdate{
+				BuildId: "1",
+				Task: &pb.Task{
+					Status: pb.Status_STARTED,
+					Id: &pb.TaskID{
+						Id:     "1",
+						Target: "swarming",
+					},
+					UpdateId: 200,
+				},
+			}
+			err := updateTaskEntity(ctx, endReq, 1)
+			So(err, ShouldBeNil)
+			resultInfraModel := &model.BuildInfra{
+				Build: bk,
+			}
+			result := datastore.Get(ctx, resultInfraModel, bs, buildModel)
+			So(result, ShouldBeNil)
+			So(resultInfraModel.Proto.Backend.Task.Status, ShouldEqual, pb.Status_STARTED)
+
+			So(sch.Tasks(), ShouldHaveLength, 0)
+			So(bs.Status, ShouldEqual, pb.Status_SCHEDULED)
+			So(buildModel.Proto.Status, ShouldEqual, pb.Status_SCHEDULED)
 		})
 	})
 }
