@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Grid, LinearProgress } from '@mui/material';
+import { GrpcError } from '@chopsui/prpc-client';
+import styled from '@emotion/styled';
+import { Alert, AlertTitle, Grid, LinearProgress } from '@mui/material';
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -26,6 +28,11 @@ import { MachinePoolSection } from './machine_pool_section';
 import { PendingBuildsSection } from './pending_builds_section';
 import { StartedBuildsSection } from './started_builds_section';
 import { ViewsSection } from './views_section';
+
+const ErrorDisplay = styled.pre({
+  whiteSpace: 'pre-wrap',
+  overflowWrap: 'break-word',
+});
 
 export function BuilderPage() {
   const { project, bucket, builder } = useParams();
@@ -49,7 +56,7 @@ export function BuilderPage() {
     document.title = `${builderId.builder} | Builder`;
   }, [builderId.builder]);
 
-  const { data, error, isError, isLoading } = usePrpcQuery({
+  const { data, error, isLoading } = usePrpcQuery({
     host: CONFIGS.BUILDBUCKET.HOST,
     Service: BuildersService,
     method: 'getBuilder',
@@ -71,7 +78,7 @@ export function BuilderPage() {
     },
   });
 
-  if (isError) {
+  if (error && !(error instanceof GrpcError)) {
     throw error;
   }
 
@@ -84,6 +91,17 @@ export function BuilderPage() {
         color="primary"
       />
       <Grid container spacing={2} sx={{ padding: '0 16px' }}>
+        {error instanceof GrpcError && (
+          <Grid item md={12}>
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              <AlertTitle>
+                Failed to query the builder. If you can see recent builds, the
+                builder might have been deleted recently.
+              </AlertTitle>
+              <ErrorDisplay>{`Original Error:\n${error.message}`}</ErrorDisplay>
+            </Alert>
+          </Grid>
+        )}
         {data?.descriptionHtml && (
           <Grid item md={12}>
             <div
@@ -92,7 +110,7 @@ export function BuilderPage() {
             />
           </Grid>
         )}
-        {!isLoading && data.swarmingHost && (
+        {data?.swarmingHost && (
           <Grid item md={5}>
             <MachinePoolSection
               swarmingHost={data.swarmingHost}

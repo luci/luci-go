@@ -19,13 +19,19 @@ import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 import { FakeAuthStateProvider } from './fake_auth_state_provider';
 
 interface FakeContextProviderProps {
+  readonly mountedPath?: string;
+  readonly routerOptions?: Parameters<typeof createMemoryRouter>[1];
   readonly children: React.ReactNode;
 }
 
 /**
  * Provides various contexts for testing purpose.
  */
-export function FakeContextProvider({ children }: FakeContextProviderProps) {
+export function FakeContextProvider({
+  mountedPath = '/',
+  routerOptions,
+  children,
+}: FakeContextProviderProps) {
   const [client] = useState(
     () =>
       new QueryClient({
@@ -37,7 +43,10 @@ export function FakeContextProvider({ children }: FakeContextProviderProps) {
       })
   );
 
-  const router = createMemoryRouter([{ path: '/', element: children }]);
+  const router = createMemoryRouter(
+    [{ path: mountedPath, element: children }],
+    routerOptions
+  );
 
   return (
     <FakeAuthStateProvider>

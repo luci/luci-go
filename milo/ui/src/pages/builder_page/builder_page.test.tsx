@@ -1,0 +1,166 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import { GrpcError, RpcCode } from '@chopsui/prpc-client';
+import { render, screen } from '@testing-library/react';
+
+import {
+  BuilderItem,
+  BuildersService,
+  GetBuilderRequest,
+} from '@/common/services/buildbucket';
+import { CacheOption } from '@/generic_libs/tools/cached_fn';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+
+import { BuilderPage } from './builder_page';
+import { EndedBuildsSection } from './ended_builds_section';
+import { MachinePoolSection } from './machine_pool_section';
+
+jest.mock('@/pages/builder_page/machine_pool_section', () =>
+  createSelectiveMockFromModule<
+    typeof import('@/pages/builder_page/machine_pool_section')
+  >('@/pages/builder_page/machine_pool_section', ['MachinePoolSection'])
+);
+
+jest.mock('@/pages/builder_page/ended_builds_section', () =>
+  createSelectiveMockFromModule<
+    typeof import('@/pages/builder_page/ended_builds_section')
+  >('@/pages/builder_page/ended_builds_section', ['EndedBuildsSection'])
+);
+
+jest.mock('@/pages/builder_page/started_builds_section', () =>
+  createSelectiveMockFromModule<
+    typeof import('@/pages/builder_page/started_builds_section')
+  >('@/pages/builder_page/started_builds_section', ['StartedBuildsSection'])
+);
+
+jest.mock('@/pages/builder_page/pending_builds_section', () =>
+  createSelectiveMockFromModule<
+    typeof import('@/pages/builder_page/pending_builds_section')
+  >('@/pages/builder_page/pending_builds_section', ['PendingBuildsSection'])
+);
+
+jest.mock('@/pages/builder_page/views_section', () =>
+  createSelectiveMockFromModule<
+    typeof import('@/pages/builder_page/views_section')
+  >('@/pages/builder_page/views_section', ['ViewsSection'])
+);
+
+describe('BuilderPage', () => {
+  let getBuilderMock: jest.SpyInstance<
+    Promise<BuilderItem>,
+    [req: GetBuilderRequest, cacheOpt?: CacheOption | undefined]
+  >;
+  let mockedEndedBuildsSection: jest.MockedFunctionDeep<
+    typeof EndedBuildsSection
+  >;
+  let mockedMachinePoolSection: jest.MockedFunctionDeep<
+    typeof MachinePoolSection
+  >;
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    getBuilderMock = jest.spyOn(BuildersService.prototype, 'getBuilder');
+    mockedEndedBuildsSection = jest
+      .mocked(EndedBuildsSection)
+      .mockReturnValue(<>mocked ended builds section</>);
+    mockedMachinePoolSection = jest.mocked(MachinePoolSection);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+    getBuilderMock.mockReset();
+    mockedEndedBuildsSection.mockReset();
+    mockedMachinePoolSection.mockReset();
+  });
+
+  test('should render correctly', async () => {
+    getBuilderMock.mockResolvedValue({
+      id: { project: 'project', bucket: 'bucket', builder: 'builder' },
+      config: {
+        swarmingHost: 'https://swarming.host',
+        descriptionHtml: 'some builder description',
+        dimensions: ['10:key1:val1', '12:key2:val2'],
+      },
+    });
+    render(
+      <FakeContextProvider
+        mountedPath="/p/:project/builder/:bucket/:builder"
+        routerOptions={{
+          initialEntries: ['/p/project/builder/bucket/builder'],
+        }}
+      >
+        <BuilderPage />
+      </FakeContextProvider>
+    );
+
+    await jest.runAllTimersAsync();
+
+    expect(
+      screen.queryByText(
+        'Failed to query the builder. If you can see recent builds, the builder might have been deleted recently.'
+      )
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('some builder description')).toBeInTheDocument();
+    expect(mockedEndedBuildsSection).toHaveBeenCalledWith(
+      {
+        builderId: { project: 'project', bucket: 'bucket', builder: 'builder' },
+      },
+      expect.anything()
+    );
+    expect(mockedMachinePoolSection).toHaveBeenCalledWith(
+      {
+        swarmingHost: 'https://swarming.host',
+        dimensions: [
+          { key: 'key1', value: 'val1' },
+          { key: 'key2', value: 'val2' },
+        ],
+      },
+      expect.anything()
+    );
+  });
+
+  test('failing to query builder should not break the builder page', async () => {
+    getBuilderMock.mockRejectedValue(
+      new GrpcError(RpcCode.NOT_FOUND, 'builder was removed')
+    );
+    render(
+      <FakeContextProvider
+        mountedPath="/p/:project/builder/:bucket/:builder"
+        routerOptions={{
+          initialEntries: ['/p/project/builder/bucket/builder'],
+        }}
+      >
+        <BuilderPage />
+      </FakeContextProvider>
+    );
+
+    await jest.runAllTimersAsync();
+
+    expect(
+      screen.getByText(
+        'Failed to query the builder. If you can see recent builds, the builder might have been deleted recently.'
+      )
+    ).toBeInTheDocument();
+    // The ended builds section should still be displayed.
+    expect(screen.getByText('mocked ended builds section')).toBeInTheDocument();
+    expect(mockedEndedBuildsSection).toHaveBeenCalledWith(
+      {
+        builderId: { project: 'project', bucket: 'bucket', builder: 'builder' },
+      },
+      expect.anything()
+    );
+    expect(mockedMachinePoolSection).not.toHaveBeenCalled();
+  });
+});
