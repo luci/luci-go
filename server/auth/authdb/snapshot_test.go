@@ -576,7 +576,7 @@ func makeTestDB(users, groups int) *protocol.AuthDB {
 }
 
 type queryableGraph interface {
-	IsMember(ident identity.Identity, group string) bool
+	IsMember(ident identity.Identity, group string) graph.IsMemberResult
 }
 
 func oldQueryableGraph(db *protocol.AuthDB) queryableGraph {

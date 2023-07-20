@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/server/auth/authdb/internal/graph"
 	"go.chromium.org/luci/server/auth/service/protocol"
 )
 
@@ -76,7 +77,7 @@ func BuildGroups(groups []*protocol.AuthGroup) (*Groups, error) {
 }
 
 // IsMember returns true if the given identity belongs to the given group.
-func (g *Groups) IsMember(id identity.Identity, groupName string) bool {
+func (g *Groups) IsMember(id identity.Identity, groupName string) graph.IsMemberResult {
 	var backingStore [8]*group
 	current := backingStore[:0]
 
@@ -121,7 +122,10 @@ func (g *Groups) IsMember(id identity.Identity, groupName string) bool {
 	}
 
 	if gr := g.groups[groupName]; gr != nil {
-		return isMember(gr)
+		if isMember(gr) {
+			return graph.IdentIsMember
+		}
+		return graph.IdentIsNotMember
 	}
-	return false
+	return graph.GroupIsUnknown
 }

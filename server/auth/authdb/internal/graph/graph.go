@@ -358,12 +358,25 @@ func (g *QueryableGraph) GroupIndex(group string) (idx NodeIndex, ok bool) {
 	return
 }
 
+// IsMemberResult is the possible results for a 'ident in group' check
+// implemented by QueryableGraph.IsMember.
+type IsMemberResult byte
+
+const (
+	IdentIsNotMember IsMemberResult = iota
+	IdentIsMember
+	GroupIsUnknown
+)
+
 // IsMember returns true if the given identity belongs to the given group.
-func (g *QueryableGraph) IsMember(ident identity.Identity, group string) bool {
+func (g *QueryableGraph) IsMember(ident identity.Identity, group string) IsMemberResult {
 	if grpIdx, ok := g.groups[group]; ok {
-		return g.memberships[ident].Has(grpIdx) || g.globs[grpIdx].Has(ident)
+		if g.memberships[ident].Has(grpIdx) || g.globs[grpIdx].Has(ident) {
+			return IdentIsMember
+		}
+		return IdentIsNotMember
 	}
-	return false // unknown groups are considered empty
+	return GroupIsUnknown
 }
 
 // MembershipsQueryCache prepares a query for memberships of the given identity.

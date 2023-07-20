@@ -215,14 +215,14 @@ func TestQueryable(t *testing.T) {
 		b := q.globs[4]["user"]
 		So(a == b, ShouldBeTrue)
 
-		So(q.IsMember("user:a@3.example.com", "root"), ShouldBeTrue)
-		So(q.IsMember("user:a@3.example.com", "child1"), ShouldBeTrue)
-		So(q.IsMember("user:a@3.example.com", "child2"), ShouldBeTrue)
-		So(q.IsMember("user:a@3.example.com", "no globs"), ShouldBeFalse)
+		So(q.IsMember("user:a@3.example.com", "root"), ShouldEqual, IdentIsMember)
+		So(q.IsMember("user:a@3.example.com", "child1"), ShouldEqual, IdentIsMember)
+		So(q.IsMember("user:a@3.example.com", "child2"), ShouldEqual, IdentIsMember)
+		So(q.IsMember("user:a@3.example.com", "no globs"), ShouldEqual, IdentIsNotMember)
 
-		So(q.IsMember("user:a@1.example.com", "root"), ShouldBeTrue)
-		So(q.IsMember("user:a@1.example.com", "child1"), ShouldBeFalse)
-		So(q.IsMember("user:a@1.example.com", "child2"), ShouldBeFalse)
+		So(q.IsMember("user:a@1.example.com", "root"), ShouldEqual, IdentIsMember)
+		So(q.IsMember("user:a@1.example.com", "child1"), ShouldEqual, IdentIsNotMember)
+		So(q.IsMember("user:a@1.example.com", "child2"), ShouldEqual, IdentIsNotMember)
 	})
 
 	Convey("Memberships map", t, func() {
@@ -265,11 +265,11 @@ func TestQueryable(t *testing.T) {
 		b := q.memberships["user:2@example.com"]
 		So(&a[0] == &b[0], ShouldBeTrue)
 
-		So(q.IsMember("user:1@example.com", "root"), ShouldBeTrue)
-		So(q.IsMember("user:1@example.com", "child1"), ShouldBeTrue)
-		So(q.IsMember("user:1@example.com", "child2"), ShouldBeFalse)
-		So(q.IsMember("user:1@example.com", "standalone"), ShouldBeTrue)
-		So(q.IsMember("user:1@example.com", "unknown"), ShouldBeFalse)
+		So(q.IsMember("user:1@example.com", "root"), ShouldEqual, IdentIsMember)
+		So(q.IsMember("user:1@example.com", "child1"), ShouldEqual, IdentIsMember)
+		So(q.IsMember("user:1@example.com", "child2"), ShouldEqual, IdentIsNotMember)
+		So(q.IsMember("user:1@example.com", "standalone"), ShouldEqual, IdentIsMember)
+		So(q.IsMember("user:1@example.com", "unknown"), ShouldEqual, GroupIsUnknown)
 	})
 
 	Convey("IsMemberOfAny", t, func() {

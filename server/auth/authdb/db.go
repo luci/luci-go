@@ -42,8 +42,8 @@ type DB interface {
 
 	// IsMember returns true if the given identity belongs to any of the groups.
 	//
-	// Unknown groups are considered empty. May return errors if underlying
-	// datastore has issues.
+	// Unknown groups are considered empty (but logged as warnings).
+	// May return errors if underlying datastore has issues.
 	IsMember(ctx context.Context, id identity.Identity, groups []string) (bool, error)
 
 	// CheckMembership returns groups from the given list the identity belongs to.

@@ -136,7 +136,8 @@ func CurrentIdentity(ctx context.Context) identity.Identity {
 
 // IsMember returns true if the current caller is in any of the given groups.
 //
-// Unknown groups are considered empty (the function returns false).
+// Unknown groups are considered empty (the function returns false) but are
+// logged as warnings.
 //
 // May return errors if the check can not be performed (e.g. on datastore
 // issues).

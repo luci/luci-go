@@ -159,8 +159,8 @@ func (db *SnapshotDB) IsInternalService(ctx context.Context, hostname string) (b
 
 // IsMember returns true if the given identity belongs to any of the groups.
 //
-// Unknown groups are considered empty. May return errors if underlying
-// datastore has issues.
+// Unknown groups are considered empty, but are logged as warnings.
+// May return errors if underlying datastore has issues.
 func (db *SnapshotDB) IsMember(ctx context.Context, id identity.Identity, groups []string) (ok bool, err error) {
 	_, span := tracing.Start(ctx, "go.chromium.org/luci/server/auth/authdb.IsMember",
 		attribute.StringSlice("cr.dev.groups", groups),
@@ -173,8 +173,11 @@ func (db *SnapshotDB) IsMember(ctx context.Context, id identity.Identity, groups
 
 	// TODO(vadimsh): Optimize multi-group case.
 	for _, gr := range groups {
-		if db.groups.IsMember(id, gr) {
+		switch db.groups.IsMember(id, gr) {
+		case graph.IdentIsMember:
 			return true, nil
+		case graph.GroupIsUnknown:
+			logging.Warningf(ctx, "Group %q is unknown in auth db snapshot %d", gr, db.Rev)
 		}
 	}
 	return false, nil
@@ -201,8 +204,11 @@ func (db *SnapshotDB) CheckMembership(ctx context.Context, id identity.Identity,
 
 	// TODO(vadimsh): Optimize multi-group case.
 	for _, gr := range groups {
-		if db.groups.IsMember(id, gr) {
+		switch db.groups.IsMember(id, gr) {
+		case graph.IdentIsMember:
 			out = append(out, gr)
+		case graph.GroupIsUnknown:
+			logging.Warningf(ctx, "Group %q is unknown in auth db snapshot %d", gr, db.Rev)
 		}
 	}
 	return
