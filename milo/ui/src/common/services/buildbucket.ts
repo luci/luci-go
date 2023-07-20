@@ -51,6 +51,11 @@ export const enum Trinary {
   No = 'NO',
 }
 
+export interface TimeRange {
+  readonly startTime?: string;
+  readonly endTime?: string;
+}
+
 export interface GetBuildRequest {
   readonly id?: string;
   readonly builder?: BuilderID;
@@ -79,6 +84,7 @@ export interface BuildPredicate {
   readonly build?: BuildRange;
   readonly experiments?: readonly string[];
   readonly includeExperimental?: boolean;
+  readonly createTime?: TimeRange;
 }
 
 export interface BuildRange {

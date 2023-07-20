@@ -32,6 +32,7 @@
     "@material/mwc-menu": "^0.27.0",
     "@mui/icons-material": "^5.11.0",
     "@mui/material": "^5.11.5",
+    "@mui/x-date-pickers": "^6.9.1",
     "@tanstack/react-query": "^4.29.5",
     "codemirror": "^5.65.11",
     "copy-to-clipboard": "^3.3.3",

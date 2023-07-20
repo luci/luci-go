@@ -14,6 +14,8 @@
 
 import { GrpcError } from '@chopsui/prpc-client';
 import { ThemeProvider } from '@emotion/react';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon';
 import {
   QueryClient,
   QueryClientConfig,
@@ -263,15 +265,17 @@ export function App({ initOpts }: AppProps) {
   ]);
 
   return (
-    <StoreProvider value={store}>
-      <ThemeProvider theme={theme}>
-        <QueryClientProvider client={queryClient}>
-          <LitEnvProvider>
-            <milo-tooltip />
-            <RouterProvider router={router} />
-          </LitEnvProvider>
-        </QueryClientProvider>
-      </ThemeProvider>
-    </StoreProvider>
+    <LocalizationProvider dateAdapter={AdapterLuxon}>
+      <StoreProvider value={store}>
+        <ThemeProvider theme={theme}>
+          <QueryClientProvider client={queryClient}>
+            <LitEnvProvider>
+              <milo-tooltip />
+              <RouterProvider router={router} />
+            </LitEnvProvider>
+          </QueryClientProvider>
+        </ThemeProvider>
+      </StoreProvider>
+    </LocalizationProvider>
   );
 }

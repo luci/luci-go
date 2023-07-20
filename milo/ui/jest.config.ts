@@ -30,6 +30,7 @@ const config: Config = {
   // Some modules use `es6` modules, which is not compatible with jest, so we
   // need to transform them.
   transformIgnorePatterns: ['/node_modules/?!(lodash-es|lit)'],
+  globalSetup: './src/testing_tools/global_setup.ts',
   setupFilesAfterEnv: ['./src/testing_tools/setup_after_env.ts'],
   moduleNameMapper: {
     '\\.(css|less|svg)$': 'identity-obj-proxy',

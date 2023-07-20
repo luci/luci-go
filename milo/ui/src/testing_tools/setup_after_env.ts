@@ -87,3 +87,7 @@ Object.defineProperty(self, 'crypto', {
     getRandomValues: (arr: unknown[]) => crypto.randomBytes(arr.length),
   },
 });
+
+// jsdom does not support `scrollIntoView`.
+// See https://github.com/jsdom/jsdom/issues/1695
+window.HTMLElement.prototype.scrollIntoView = jest.fn();

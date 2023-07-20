@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { RouterProvider, createMemoryRouter } from 'react-router-dom';
@@ -49,10 +51,12 @@ export function FakeContextProvider({
   );
 
   return (
-    <FakeAuthStateProvider>
-      <QueryClientProvider client={client}>
-        <RouterProvider router={router} />
-      </QueryClientProvider>
-    </FakeAuthStateProvider>
+    <LocalizationProvider dateAdapter={AdapterLuxon}>
+      <FakeAuthStateProvider>
+        <QueryClientProvider client={client}>
+          <RouterProvider router={router} />
+        </QueryClientProvider>
+      </FakeAuthStateProvider>
+    </LocalizationProvider>
   );
 }

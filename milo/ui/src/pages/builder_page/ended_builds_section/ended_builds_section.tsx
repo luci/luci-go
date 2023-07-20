@@ -13,6 +13,8 @@
 // limitations under the License.
 
 import { Box, Button, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { DateTimePicker } from '@mui/x-date-pickers';
+import { DateTime } from 'luxon';
 import { useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -22,6 +24,7 @@ import {
   BuildsService,
   BuildStatusMask,
 } from '@/common/services/buildbucket';
+import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 
 import { EndedBuildsTable } from './ended_builds_table';
 
@@ -57,6 +60,19 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
     setSearchParams(searchParam);
   };
 
+  const createdBeforeTs = searchParam.get('createdBefore');
+  const createdBefore = createdBeforeTs
+    ? DateTime.fromSeconds(Number(createdBeforeTs))
+    : null;
+  const setCreatedBefore = (newCreatedBefore: DateTime | null) => {
+    if (!newCreatedBefore) {
+      searchParam.delete('createdBefore');
+    } else {
+      searchParam.set('createdBefore', String(newCreatedBefore.toSeconds()));
+    }
+    setSearchParams(searchParam);
+  };
+
   // There could be a lot of prev pages. Do not keep those tokens in the URL.
   const [prevPageTokens, setPrevPageTokens] = useState(() => {
     // If there's a page token when the component is FIRST INITIALIZED, allow
@@ -75,6 +91,9 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
         builder: builderId,
         includeExperimental: true,
         status: BuildStatusMask.EndedMask,
+        createTime: {
+          endTime: createdBefore?.toISO(),
+        },
       },
       pageSize,
       pageToken: currentPageToken,
@@ -90,6 +109,28 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
   return (
     <>
       <h3 ref={headingRef}>Ended Builds</h3>
+      <Box>
+        <DateTimePicker
+          label="Created Before"
+          format={SHORT_TIME_FORMAT}
+          value={createdBefore}
+          // Buildbucket only retain builds for ~1.5 years. No point going
+          // further than that.
+          minDate={DateTime.now().minus({ year: 1, months: 6 })}
+          disableFuture
+          slotProps={{
+            actionBar: {
+              actions: ['today', 'clear', 'cancel', 'accept'],
+            },
+          }}
+          onAccept={(t) => {
+            setPrevPageTokens([]);
+            setCurrentPageToken('');
+            setCreatedBefore(t);
+            headingRef.current?.scrollIntoView();
+          }}
+        />
+      </Box>
       <EndedBuildsTable
         endedBuilds={data?.builds || []}
         isLoading={isLoading || isPreviousData}
