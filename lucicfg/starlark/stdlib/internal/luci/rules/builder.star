@@ -76,6 +76,7 @@ def _builder(
         # led build adjustments.
         shadow_service_account = None,
         shadow_pool = None,
+        shadow_properties = None,
 
         # Relations.
         triggers = None,
@@ -240,7 +241,7 @@ def _builder(
       backend_alt: the name of the alternative task backend defined via
         luci.task_backend(...). Supports the module-scoped default.
 
-      shadow_service_account: If set, then led builds created for this Builder
+      shadow_service_account: If set, the led builds created for this Builder
         will instead use this service account. This is useful to allow users to
         automatically have their testing builds assume a service account which
         is different than your production service account.
@@ -248,12 +249,14 @@ def _builder(
         the shadow bucket's constraints (see luci.bucket_constraints(...)).
         Which also means it will be granted the
         `role/buildbucket.builderServiceAccount` role in the shadow bucket realm.
-      shadow_pool: If set, then led builds created for this Builder will instead
+      shadow_pool: If set, the led builds created for this Builder will instead
         be set to use this alternate pool instead. This would allow you to grant
         users the ability to create led builds in the alternate pool without
         allowing them to create builds in the production pool.
         When specified, the shadow_pool will also be included into
         the shadow bucket's constraints (see luci.bucket_constraints(...)).
+      shadow_properties: If set, the led builds created for this Builder will
+        override the top-level input properties with the same keys.
 
       triggers: builders this builder triggers.
       triggered_by: builders or pollers this builder is triggered by.
@@ -300,6 +303,7 @@ def _builder(
         "backend_alt": keys.task_backend(backend_alt) if backend_alt != None else None,
         "shadow_service_account": validate.string("shadow_service_account", shadow_service_account, required = False),
         "shadow_pool": validate.string("shadow_pool", shadow_pool, required = False),
+        "shadow_properties": validate.str_dict("shadow_properties", shadow_properties, required = False),
     }
 
     # Merge explicitly passed properties with the module-scoped defaults.
@@ -336,10 +340,11 @@ def _builder(
         props["properties"] = dict(props["properties"])
         props["properties"]["$recipe_engine/resultdb/test_presentation"] = resultdbimpl.test_presentation_to_dict(test_presentation)
 
-    # Properties should be JSON-serializable. The only way to check is to try to
-    # serialize. We do it here (instead of generators.star) to get a more
-    # informative stack trace.
+    # Properties and shadow_properties should be JSON-serializable.
+    # The only way to check is to try to serialize. We do it here (instead of
+    # generators.star) to get a more informative stack trace.
     _ = to_json(props["properties"])  # @unused
+    _ = to_json(props["shadow_properties"])  # @unused
 
     # There should be no dimensions and experiments with value None after
     # merging.

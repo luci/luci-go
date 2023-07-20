@@ -485,10 +485,11 @@ def _buildbucket_builders(bucket):
             bldr_config.swarming_host = swarming_host
             bldr_config.swarming_tags = node.props.swarming_tags
 
-        if node.props.shadow_service_account or node.props.shadow_pool:
+        if node.props.shadow_service_account or node.props.shadow_pool or node.props.shadow_properties:
             bldr_config.shadow_builder_adjustments = buildbucket_pb.BuilderConfig.ShadowBuilderAdjustments(
                 service_account = node.props.shadow_service_account,
                 pool = node.props.shadow_pool,
+                properties = to_json(node.props.shadow_properties) if node.props.shadow_properties else None,
             )
         builders.append(bldr_config)
     return buildbucket_pb.Swarming(builders = builders) if builders else None

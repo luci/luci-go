@@ -27,6 +27,7 @@ luci.builder(
     },
     shadow_service_account = "shadow_builder@example.com",
     shadow_pool = "shadow_pool",
+    shadow_properties = {"k": "v"},
 )
 
 luci.builder(
@@ -42,7 +43,6 @@ luci.builder(
     shadow_pool = "shadow_pool",
 )
 
-#
 luci.builder(
     name = "linux ci builder 2",
     bucket = "ci",
@@ -76,6 +76,10 @@ luci.builder(
 #       shadow_builder_adjustments {
 #         service_account: "shadow_builder@example.com"
 #         pool: "shadow_pool"
+#         properties:
+#           '{'
+#           '  "k": "v"'
+#           '}'
 #       }
 #     }
 #     builders {
