@@ -72,47 +72,6 @@ message TestFailureDetectionTask {
 
 // Payload for test failure bisection.
 message TestFailureBisectionTask {
-  // The project of the test variants.
-  string project = 1;
-
-  message TestVariant {
-    // Test ID of the test.
-    string test_id = 1;
-    // Variant hash of the test variant.
-    string variant_hash = 2;
-    // The variant of the test.
-    luci.bisection.v1.Variant variant = 3;
-  }
-  // The test variants to bisect. The first one is “primary” and will be used
-  // as the target test variant for the bisection process.
-  // It is possible that some test variant in the list may get “diverged” results
-  // during the bisection. In which case they will get ignored.
-  // Test variants in the list must use the same builder.
-  repeated TestVariant test_variants = 2;
-
-  // Ref hash for the test variants.
-  // Hash of the source branch, as 16 lowercase hexadecimal characters.
-  string ref_hash = 3;
-
-   // The branch in source control for the test variants.
-  luci.bisection.v1.SourceRef ref = 4;
-
-  // The regression range to bisect.
-  TestFailureRegressionRange regression_range = 5;
-
-  // Priority of the bisection.
-  // Always set to 160 for test failures for now. More value can be introduced if needed.
-  int64 priority = 6;
-}
-
-// The regression range of a test failure.
-message TestFailureRegressionRange {
-  // Start commit position of the regression range inclusive.
-  int64 start_position = 1;
-  // End commit position of the regression range inclusive.
-  int64 end_position = 2;
-  // Expected failure rate at start_position, between 0 and 1 inclusive.
-  float start_position_failure_rate = 3;
-  // Expected failure rate at end_position, between 0 and 1 inclusive.
-  float end_position_failure_rate = 4;
+  // The ID of TestFailureAnalysis that the bisector should bisect.
+  int64 analysis_id = 1;
 }
