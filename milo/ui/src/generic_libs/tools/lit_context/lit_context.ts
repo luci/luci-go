@@ -227,6 +227,8 @@ export function provider<Cls extends Constructor<MobxLitElement>>(cls: Cls) {
 
         if (opt.global) {
           if (globalContextProviders.has(eventType)) {
+            // Not much we can do when a global context provider is overridden.
+            // eslint-disable-next-line no-console
             console.warn('Overriding a global context provider.');
           }
 

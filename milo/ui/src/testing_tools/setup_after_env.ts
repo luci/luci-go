@@ -87,7 +87,3 @@ Object.defineProperty(self, 'crypto', {
     getRandomValues: (arr: unknown[]) => crypto.randomBytes(arr.length),
   },
 });
-
-self.console.error = () => {
-  // Silence errors printed out to the console during test.
-};

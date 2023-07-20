@@ -20,6 +20,7 @@ import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
 import { Build } from '@/common/services/buildbucket';
 import { MiloInternal } from '@/common/services/milo_internal';
 import { renderBugUrlTemplate } from '@/common/tools/build_utils';
+import { logging } from '@/common/tools/logging';
 
 interface CustomBugLinkProps {
   readonly project: string;
@@ -55,7 +56,7 @@ export function CustomBugLink({ project, build }: CustomBugLinkProps) {
     !POTENTIAL_PERM_ERROR_CODES.includes(error.code)
   ) {
     // Failing to get the bug link is Ok. Simply log the error here.
-    console.error('failed to get the custom bug link', error);
+    logging.error('failed to get the custom bug link', error);
   }
 
   if (!data) {

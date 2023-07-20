@@ -17,6 +17,7 @@ import { groupBy } from 'lodash-es';
 
 import { BuilderID } from '@/common/services/buildbucket';
 import { StringPair } from '@/common/services/common';
+import { logging } from '@/common/tools/logging';
 import { cached, CacheOption } from '@/generic_libs/tools/cached_fn';
 import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
 import { sha256 } from '@/generic_libs/tools/utils';
@@ -523,7 +524,7 @@ export function createTVPropGetter(
     case 'status':
       return (v) => v.status;
     default:
-      console.warn('invalid property key', propKey);
+      logging.warn('invalid property key', propKey);
       return () => '';
   }
 }

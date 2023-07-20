@@ -34,6 +34,7 @@ import {
 import { getCriticalVariantKeys } from '@/common/services/resultdb';
 import { ServicesStore } from '@/common/store/services';
 import { Timestamp } from '@/common/store/timestamp';
+import { logging } from '@/common/tools/logging';
 import { keepAliveComputed } from '@/generic_libs/tools/mobx_utils';
 
 export const enum GraphType {
@@ -335,7 +336,7 @@ export const TestHistoryPage = types
             this._updateFilters(newVariantFilter, newVariantPredicate);
           } catch (e) {
             // TODO(weiweilin): display the error to the user.
-            console.error(e);
+            logging.error(e);
           }
         })
       );
@@ -415,7 +416,7 @@ export function createTVPropGetter(
     case 'patitiontime':
       return ({ verdict }) => verdict.partitionTime;
     default:
-      console.warn('invalid property key', propKey);
+      logging.warn('invalid property key', propKey);
       return () => '';
   }
 }

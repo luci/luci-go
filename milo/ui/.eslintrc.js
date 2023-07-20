@@ -120,11 +120,12 @@ module.exports = {
       { code: 120, ignoreUrls: true, ignoreRegExpLiterals: true },
     ],
 
-    // console.error/warn is still useful for error reporting from our users
-    // (most of them know how to work with the browser dev console).
-    // Ban the usage of console.log to prevent temporary debug code from being
-    // merged.
-    'no-console': ['error', { allow: ['error', 'warn'] }],
+    // Ban `console.log` to encourage displaying message via DOM and prevent
+    // debugging statements from being accidentally left in the codebase.
+    // `console.error/warn` is still useful for error reporting from our users
+    // (most of them know how to work with the browser dev console). But they
+    // should be accessed via `@/common/tools/logging`.
+    'no-console': ['error'],
 
     // Modify the prettier config to make it match the eslint rule from other
     // presets better.

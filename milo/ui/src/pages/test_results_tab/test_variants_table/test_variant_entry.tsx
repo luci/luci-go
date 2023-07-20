@@ -39,6 +39,7 @@ import {
 } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
+import { logging } from '@/common/tools/logging';
 import { getCodeSourceUrl } from '@/common/tools/url_utils';
 import { unwrapObservable } from '@/generic_libs/tools/mobx_utils';
 import {
@@ -135,7 +136,10 @@ export class TestVariantEntryElement
             project: this.project,
             testResults: results.map((r) => ({
               testId: this.variant.testId,
-              failureReason: r.result.failureReason && {primaryErrorMessage: r.result.failureReason?.primaryErrorMessage},
+              failureReason: r.result.failureReason && {
+                primaryErrorMessage:
+                  r.result.failureReason?.primaryErrorMessage,
+              },
             })),
           },
           { maxPendingMs: 1000 }
@@ -164,7 +168,7 @@ export class TestVariantEntryElement
       return unwrapObservable(this.clustersByResultId$, []);
     } catch (err) {
       if (!hasTags(err, MAY_REQUIRE_SIGNIN)) {
-        console.error(err);
+        logging.error(err);
       }
       // LUCI-Analysis integration should not break the rest of the component.
       return [];

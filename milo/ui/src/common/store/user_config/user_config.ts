@@ -26,6 +26,8 @@ import {
   types,
 } from 'mobx-state-tree';
 
+import { logging } from '@/common/tools/logging';
+
 import { BuildConfig } from './build_config';
 import { BuilderPageConfig } from './builder_page_config';
 import { TestsConfig } from './tests_config';
@@ -57,8 +59,8 @@ export const UserConfig = types
         }
         applySnapshot(self, { ...JSON.parse(snapshotStr), id: self.id });
       } catch (e) {
-        console.error(e);
-        console.warn(
+        logging.error(e);
+        logging.warn(
           'encountered an error when restoring user configs from the cache, deleting it'
         );
         storage.removeItem(V2_CACHE_KEY);

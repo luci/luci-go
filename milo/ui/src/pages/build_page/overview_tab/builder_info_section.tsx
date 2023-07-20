@@ -17,6 +17,7 @@ import { GrpcError } from '@chopsui/prpc-client';
 import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants';
 import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
 import { BuilderID, BuildersService } from '@/common/services/buildbucket';
+import { logging } from '@/common/tools/logging';
 
 export interface BuilderInfoSectionProps {
   readonly builderId: BuilderID;
@@ -41,7 +42,7 @@ export function BuilderInfoSection({ builderId }: BuilderInfoSectionProps) {
   ) {
     // Optional resource.
     // Log the warning in case of an error.
-    console.warn('failed to get builder description', error);
+    logging.warn('failed to get builder description', error);
   }
 
   if (!data?.config.descriptionHtml) {

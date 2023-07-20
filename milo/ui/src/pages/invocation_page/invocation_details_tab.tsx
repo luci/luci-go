@@ -28,6 +28,7 @@ import {
   InvocationStateInstance,
 } from '@/common/store/invocation_state';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { logging } from '@/common/tools/logging';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
 import { consumer } from '@/generic_libs/tools/lit_context';
 
@@ -93,7 +94,7 @@ export class InvocationDetailsTabElement extends MobxExtLitElement {
                 .then(invocationReceivedCallback)
                 .catch((e) => {
                   // TODO(mwarton): display the error to the user.
-                  console.error(e);
+                  logging.error(e);
                 });
             }
           };
@@ -103,12 +104,12 @@ export class InvocationDetailsTabElement extends MobxExtLitElement {
               .then(invocationReceivedCallback)
               .catch((e) => {
                 // TODO(mwarton): display the error to the user.
-                console.error(e);
+                logging.error(e);
               });
           }
         } catch (e) {
           // TODO(mwarton): display the error to the user.
-          console.error(e);
+          logging.error(e);
         }
       })
     );

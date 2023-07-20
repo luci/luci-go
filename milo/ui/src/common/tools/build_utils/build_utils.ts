@@ -17,6 +17,7 @@ import Mustache from 'mustache';
 import { Link } from '@/common/models/link';
 import { Build, BuildInfraSwarming } from '@/common/services/buildbucket';
 import { getBotUrl } from '@/common/services/swarming';
+import { logging } from '@/common/tools/logging';
 import {
   getBuilderURLPath,
   getInvURLPath,
@@ -151,7 +152,7 @@ export function renderBugUrlTemplate(
       ),
     });
   } catch (_e) {
-    console.warn(
+    logging.warn(
       'failed to render the bug URL template. Please ensure the bug URL template is a valid mustache template.'
     );
     // Do nothing.
@@ -159,7 +160,7 @@ export function renderBugUrlTemplate(
   if (!RE_BUG_URL.test(bugUrl)) {
     // IDEA: instead of failing silently, we could link users to a page that
     // shows the error log and how to fix it.
-    console.warn('the bug URL has an invalid/disallowed domain name or scheme');
+    logging.warn('the bug URL has an invalid/disallowed domain name or scheme');
     bugUrl = '';
   }
   return bugUrl;

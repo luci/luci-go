@@ -40,6 +40,7 @@ import {
   TestVariantStatus,
 } from '@/common/services/resultdb';
 import { ServicesStore } from '@/common/store/services';
+import { logging } from '@/common/tools/logging';
 import { createContextLink } from '@/generic_libs/tools/lit_context';
 import {
   keepAliveComputed,
@@ -300,7 +301,7 @@ export const InvocationState = types
             this._setSearchFilter(parseTestResultSearchQuery(self.searchText));
           } catch (e) {
             // TODO(weiweilin): display the error to the user.
-            console.error(e);
+            logging.error(e);
           }
         })
       );

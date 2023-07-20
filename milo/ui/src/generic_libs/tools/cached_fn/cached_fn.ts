@@ -89,6 +89,7 @@ export function cached<T extends unknown[], V>(
             // there's nothing we can do when the expire function rejects
             // other than logging it.
             // use a catch statement to prevent it from failing unit tests.
+            // eslint-disable-next-line no-console
             console.error(e);
           })
           // Also invalidates the cache when the promise is rejected to

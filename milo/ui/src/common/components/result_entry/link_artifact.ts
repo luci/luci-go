@@ -23,6 +23,7 @@ import '@/generic_libs/components/expandable_entry';
 import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants';
 import { Artifact } from '@/common/services/resultdb';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { logging } from '@/common/tools/logging';
 import { reportRenderError } from '@/generic_libs/tools/error_handler';
 import { unwrapObservable } from '@/generic_libs/tools/mobx_utils';
 import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
@@ -74,7 +75,7 @@ export class LinkArtifactElement extends MobxLitElement {
       const allowedProtocol = ['http:', 'https:'].includes(url.protocol);
       const allowedHost = LINK_ARTIFACT_HOST_ALLOWLIST.includes(url.host);
       if (!allowedProtocol || !allowedHost) {
-        console.warn(
+        logging.warn(
           `Invalid target URL for link artifact ${this.artifact.name} - ` +
             'returning the original fetch URL for the artifact instead'
         );

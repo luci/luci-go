@@ -40,6 +40,7 @@ import {
 } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
+import { logging } from '@/common/tools/logging';
 import {
   displayCompactDuration,
   displayDuration,
@@ -113,7 +114,7 @@ export class ResultEntryElement extends MobxLitElement {
       // Optional resource, users may not have access to the artifacts.
       (e) => {
         if (!(e instanceof GrpcError && e.code === RpcCode.PERMISSION_DENIED)) {
-          console.error(e);
+          logging.error(e);
         }
         return [];
       }
@@ -138,7 +139,7 @@ export class ResultEntryElement extends MobxLitElement {
       // Optional resource, users may not have access to the artifacts.
       (e) => {
         if (!(e instanceof GrpcError && e.code === RpcCode.PERMISSION_DENIED)) {
-          console.error(e);
+          logging.error(e);
         }
         return [];
       }
