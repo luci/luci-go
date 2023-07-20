@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package devtools.foundry.api.notifications;
+
+option go_package = "go.chromium.org/luci/swarming/internal/notifications";
+
+// Wire proto defining the payload of a Cloud PubSub notification, which is sent
+// by RBE when the `scheduler_notification_config` is populated for an instance
+// and the corresponding RBE event occurs.
+message SchedulerNotification {
+  // Exactly one of these IDs will be populated, depending on whether the
+  // notification is for a completed action or reservation.
+  string action_id = 1;
+  string reservation_id = 2;
+
+  // Status code for the received event.
+  int32 status_code = 3;
+}

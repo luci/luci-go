@@ -10,6 +10,9 @@ dispatch:
   # Serve TQ tasks using Go.
   - url: "*/internal/tasks/t/*"
     service: default-go
+  # Serve RBE PubSub push subscription handler using Go.
+  - url: "*/pubsub/rbe/*"
+    service: default-go
   # Serve web UI authentication endpoints using Go.
   - url: "*/auth/openid/*"
     service: default-go

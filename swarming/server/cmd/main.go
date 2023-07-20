@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -28,9 +29,11 @@ import (
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/swarming/internal/notifications"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/hmactoken"
 	"go.chromium.org/luci/swarming/server/internals"
+	"go.chromium.org/luci/swarming/server/pubsub"
 	"go.chromium.org/luci/swarming/server/rbe"
 	"go.chromium.org/luci/swarming/server/testing/integrationmocks"
 
@@ -92,6 +95,41 @@ func main() {
 		// Handlers for TQ tasks submitted by Python Swarming.
 		rbeReservations := rbe.NewReservationServer(srv.Context, reservationsConn, internals, srv.Options.ImageVersion())
 		rbeReservations.RegisterTQTasks(&tq.Default)
+
+		// PubSub push handler for notifications from the RBE scheduler.
+		pubsub.InstallHandler(
+			srv.Routes,
+			pubsub.HandlerOptions{
+				Route:              "/pubsub/rbe/scheduler",
+				PushServiceAccount: fmt.Sprintf("rbe-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject),
+			},
+			func(ctx context.Context, m *notifications.SchedulerNotification, md *pubsub.Metadata) error {
+				// TODO(vadimsh): Switch to message attributes for getting project ID
+				// and instance ID once they are populated by the RBE scheduler. Just
+				// check if they are there for now, but expect to see them in the URL
+				// string instead.
+				if len(md.Attributes) != 0 {
+					logging.Infof(ctx, "Attributes: %v", md.Attributes)
+				}
+				projectID := md.Query.Get("project_id")
+				if projectID == "" {
+					return errors.New("no project_id URL query value")
+				}
+				instanceID := md.Query.Get("instance_id")
+				if instanceID == "" {
+					return errors.New("no instance_id URL query value")
+				}
+				if m.ReservationId == "" {
+					return errors.New("reservation_id is unexpectedly empty")
+				}
+				reservationName := fmt.Sprintf("projects/%s/instances/%s/reservations/%s",
+					projectID,
+					instanceID,
+					m.ReservationId,
+				)
+				return rbeReservations.ExpireSliceBasedOnReservation(ctx, reservationName)
+			},
+		)
 
 		// Helpers for running local integration tests. They fake some of Swarming
 		// Python server behavior.
