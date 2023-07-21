@@ -27,10 +27,11 @@ import (
 	"golang.org/x/sync/semaphore"
 	googleapi "google.golang.org/api/googleapi"
 
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	swarmingv1 "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
+	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func TestCollectParse_NoArgs(t *testing.T) {
@@ -119,7 +120,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 
 	Convey(`Test fatal response`, t, func() {
 		service := &testService{
-			taskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+			taskResult: func(c context.Context, _ string, _ bool) (*swarmingv1.SwarmingRpcsTaskResult, error) {
 				return nil, &googleapi.Error{Code: 404}
 			},
 		}
@@ -129,7 +130,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 
 	Convey(`Test timeout exceeded`, t, func() {
 		service := &testService{
-			taskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+			taskResult: func(c context.Context, _ string, _ bool) (*swarmingv1.SwarmingRpcsTaskResult, error) {
 				return nil, &googleapi.Error{Code: 502}
 			},
 		}
@@ -142,19 +143,19 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		var writtenInstance string
 		var writtenDigest string
 		service := &testService{
-			taskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
-				return &swarming.SwarmingRpcsTaskResult{
+			taskResult: func(c context.Context, _ string, _ bool) (*swarmingv1.SwarmingRpcsTaskResult, error) {
+				return &swarmingv1.SwarmingRpcsTaskResult{
 					State: "COMPLETED",
-					CasOutputRoot: &swarming.SwarmingRpcsCASReference{
+					CasOutputRoot: &swarmingv1.SwarmingRpcsCASReference{
 						CasInstance: "test-instance",
-						Digest:      &swarming.SwarmingRpcsDigest{Hash: "aaaaaaaaa", SizeBytes: 111111},
+						Digest:      &swarmingv1.SwarmingRpcsDigest{Hash: "aaaaaaaaa", SizeBytes: 111111},
 					},
 				}, nil
 			},
-			taskOutput: func(c context.Context, _ string) (*swarming.SwarmingRpcsTaskOutput, error) {
-				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
+			taskOutput: func(c context.Context, _ string) (*swarmingv1.SwarmingRpcsTaskOutput, error) {
+				return &swarmingv1.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
 			},
-			filesFromCAS: func(c context.Context, outdir string, _ *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error) {
+			filesFromCAS: func(c context.Context, outdir string, _ *rbeclient.Client, casRef *swarmingv2.CASReference) ([]string, error) {
 				writtenTo = outdir
 				writtenInstance = casRef.CasInstance
 				writtenDigest = fmt.Sprintf("%s/%d", casRef.Digest.Hash, casRef.Digest.SizeBytes)
@@ -181,12 +182,12 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		i := 0
 		maxTries := 5
 		service := &testService{
-			taskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+			taskResult: func(c context.Context, _ string, _ bool) (*swarmingv1.SwarmingRpcsTaskResult, error) {
 				if i < maxTries {
 					i++
 					return nil, &googleapi.Error{Code: http.StatusBadGateway}
 				}
-				return &swarming.SwarmingRpcsTaskResult{State: "COMPLETED"}, nil
+				return &swarmingv1.SwarmingRpcsTaskResult{State: "COMPLETED"}, nil
 			},
 		}
 		result := testCollectPollWithServer(&collectRun{taskOutput: taskOutputNone}, service)
@@ -226,7 +227,7 @@ func TestCollectPollForTasks(t *testing.T) {
 		outputFetched := sync.Map{}
 
 		service := &testService{
-			taskResult: func(c context.Context, taskID string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+			taskResult: func(c context.Context, taskID string, _ bool) (*swarmingv1.SwarmingRpcsTaskResult, error) {
 				if taskID != firstID {
 					// Simulate the second task not finishing until the first
 					// task has already finished, downloaded its outputs, and
@@ -234,17 +235,17 @@ func TestCollectPollForTasks(t *testing.T) {
 					<-c.Done()
 					return nil, c.Err()
 				}
-				return &swarming.SwarmingRpcsTaskResult{
+				return &swarmingv1.SwarmingRpcsTaskResult{
 					State: "COMPLETED",
-					CasOutputRoot: &swarming.SwarmingRpcsCASReference{
+					CasOutputRoot: &swarmingv1.SwarmingRpcsCASReference{
 						CasInstance: "test-instance",
-						Digest:      &swarming.SwarmingRpcsDigest{Hash: "aaaaaaaaa", SizeBytes: 111111},
+						Digest:      &swarmingv1.SwarmingRpcsDigest{Hash: "aaaaaaaaa", SizeBytes: 111111},
 					},
 				}, nil
 			},
-			taskOutput: func(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
+			taskOutput: func(c context.Context, taskID string) (*swarmingv1.SwarmingRpcsTaskOutput, error) {
 				outputFetched.Store(taskID, true)
-				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
+				return &swarmingv1.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
 			},
 		}
 		runner := &collectRun{
@@ -277,16 +278,16 @@ func TestCollectPollForTasks(t *testing.T) {
 		firstTaskComplete := make(chan struct{})
 		lastTaskDownloading := make(chan struct{})
 		service := &testService{
-			taskResult: func(c context.Context, taskID string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
-				return &swarming.SwarmingRpcsTaskResult{
+			taskResult: func(c context.Context, taskID string, _ bool) (*swarmingv1.SwarmingRpcsTaskResult, error) {
+				return &swarmingv1.SwarmingRpcsTaskResult{
 					State: "COMPLETED",
-					CasOutputRoot: &swarming.SwarmingRpcsCASReference{
+					CasOutputRoot: &swarmingv1.SwarmingRpcsCASReference{
 						CasInstance: "test-instance",
-						Digest:      &swarming.SwarmingRpcsDigest{Hash: "aaaaaaaaa", SizeBytes: 111111},
+						Digest:      &swarmingv1.SwarmingRpcsDigest{Hash: "aaaaaaaaa", SizeBytes: 111111},
 					},
 				}, nil
 			},
-			taskOutput: func(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
+			taskOutput: func(c context.Context, taskID string) (*swarmingv1.SwarmingRpcsTaskOutput, error) {
 				// Make sure that the two tasks are downloading outputs at the
 				// same time, but have the second task wait for the first task's
 				// download to complete before continuing the download.
@@ -297,7 +298,7 @@ func TestCollectPollForTasks(t *testing.T) {
 					<-firstTaskComplete
 				}
 				outputFetched.Store(taskID, true)
-				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
+				return &swarmingv1.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
 			},
 		}
 
@@ -334,18 +335,18 @@ func TestCollectPollForTasks(t *testing.T) {
 		outputFetched := false
 
 		service := &testService{
-			taskResult: func(c context.Context, taskID string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
-				return &swarming.SwarmingRpcsTaskResult{
+			taskResult: func(c context.Context, taskID string, _ bool) (*swarmingv1.SwarmingRpcsTaskResult, error) {
+				return &swarmingv1.SwarmingRpcsTaskResult{
 					State: "COMPLETED",
-					CasOutputRoot: &swarming.SwarmingRpcsCASReference{
+					CasOutputRoot: &swarmingv1.SwarmingRpcsCASReference{
 						CasInstance: "test-instance",
-						Digest:      &swarming.SwarmingRpcsDigest{Hash: "aaaaaaaaa", SizeBytes: 111111},
+						Digest:      &swarmingv1.SwarmingRpcsDigest{Hash: "aaaaaaaaa", SizeBytes: 111111},
 					},
 				}, nil
 			},
-			taskOutput: func(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
+			taskOutput: func(c context.Context, taskID string) (*swarmingv1.SwarmingRpcsTaskOutput, error) {
 				outputFetched = true
-				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
+				return &swarmingv1.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
 			},
 		}
 		runner := &collectRun{
@@ -370,17 +371,17 @@ func TestCollectSummarizeResults(t *testing.T) {
 	}
 
 	Convey(`Generates json.`, t, func() {
-		result1, err := preserveEmptyFieldsOnTaskResult(&swarming.SwarmingRpcsTaskResult{
+		result1, err := preserveEmptyFieldsOnTaskResult(&swarmingv1.SwarmingRpcsTaskResult{
 			CurrentTaskSlice: 0,
 			Duration:         1,
 			ExitCode:         0,
 			State:            "COMPLETED",
-			PerformanceStats: &swarming.SwarmingRpcsPerformanceStats{
+			PerformanceStats: &swarmingv1.SwarmingRpcsPerformanceStats{
 				BotOverhead: 0.1,
-				CacheTrim:   &swarming.SwarmingRpcsOperationStats{Duration: 0.1},
-				Cleanup:     &swarming.SwarmingRpcsOperationStats{Duration: 0.1},
+				CacheTrim:   &swarmingv1.SwarmingRpcsOperationStats{Duration: 0.1},
+				Cleanup:     &swarmingv1.SwarmingRpcsOperationStats{Duration: 0.1},
 				// Stats with 0 value also should be kept.
-				IsolatedDownload: &swarming.SwarmingRpcsCASOperationStats{
+				IsolatedDownload: &swarmingv1.SwarmingRpcsCASOperationStats{
 					Duration:            0.1,
 					InitialNumberItems:  0,
 					InitialSize:         0,
@@ -391,7 +392,7 @@ func TestCollectSummarizeResults(t *testing.T) {
 					TotalBytesItemsCold: 0,
 					TotalBytesItemsHot:  1,
 				},
-				IsolatedUpload: &swarming.SwarmingRpcsCASOperationStats{
+				IsolatedUpload: &swarmingv1.SwarmingRpcsCASOperationStats{
 					Duration:            0.1,
 					InitialNumberItems:  0,
 					InitialSize:         0,
@@ -402,39 +403,39 @@ func TestCollectSummarizeResults(t *testing.T) {
 					TotalBytesItemsCold: 0,
 					TotalBytesItemsHot:  1,
 				},
-				NamedCachesInstall:   &swarming.SwarmingRpcsOperationStats{Duration: 0.1},
-				NamedCachesUninstall: &swarming.SwarmingRpcsOperationStats{Duration: 0.1},
-				PackageInstallation:  &swarming.SwarmingRpcsOperationStats{Duration: 0.1},
+				NamedCachesInstall:   &swarmingv1.SwarmingRpcsOperationStats{Duration: 0.1},
+				NamedCachesUninstall: &swarmingv1.SwarmingRpcsOperationStats{Duration: 0.1},
+				PackageInstallation:  &swarmingv1.SwarmingRpcsOperationStats{Duration: 0.1},
 			},
 		})
 		So(err, ShouldBeNil)
-		result2, err := preserveEmptyFieldsOnTaskResult(&swarming.SwarmingRpcsTaskResult{
+		result2, err := preserveEmptyFieldsOnTaskResult(&swarmingv1.SwarmingRpcsTaskResult{
 			CurrentTaskSlice: 1,
 			Duration:         1,
 			ExitCode:         -1,
 			State:            "COMPLETED",
-			PerformanceStats: &swarming.SwarmingRpcsPerformanceStats{
+			PerformanceStats: &swarmingv1.SwarmingRpcsPerformanceStats{
 				BotOverhead:          0.1,
-				CacheTrim:            &swarming.SwarmingRpcsOperationStats{},
-				Cleanup:              &swarming.SwarmingRpcsOperationStats{},
-				IsolatedDownload:     &swarming.SwarmingRpcsCASOperationStats{},
-				IsolatedUpload:       &swarming.SwarmingRpcsCASOperationStats{},
-				NamedCachesInstall:   &swarming.SwarmingRpcsOperationStats{},
-				NamedCachesUninstall: &swarming.SwarmingRpcsOperationStats{},
-				PackageInstallation:  &swarming.SwarmingRpcsOperationStats{},
+				CacheTrim:            &swarmingv1.SwarmingRpcsOperationStats{},
+				Cleanup:              &swarmingv1.SwarmingRpcsOperationStats{},
+				IsolatedDownload:     &swarmingv1.SwarmingRpcsCASOperationStats{},
+				IsolatedUpload:       &swarmingv1.SwarmingRpcsCASOperationStats{},
+				NamedCachesInstall:   &swarmingv1.SwarmingRpcsOperationStats{},
+				NamedCachesUninstall: &swarmingv1.SwarmingRpcsOperationStats{},
+				PackageInstallation:  &swarmingv1.SwarmingRpcsOperationStats{},
 			},
 		})
 		So(err, ShouldBeNil)
-		result3, err := preserveEmptyFieldsOnTaskResult(&swarming.SwarmingRpcsTaskResult{
+		result3, err := preserveEmptyFieldsOnTaskResult(&swarmingv1.SwarmingRpcsTaskResult{
 			CurrentTaskSlice: 0,
 			Duration:         1,
 			ExitCode:         -1,
 			State:            "KILLED",
-			PerformanceStats: &swarming.SwarmingRpcsPerformanceStats{
+			PerformanceStats: &swarmingv1.SwarmingRpcsPerformanceStats{
 				BotOverhead: 0.1,
-				CacheTrim:   &swarming.SwarmingRpcsOperationStats{Duration: 0.1},
-				Cleanup:     &swarming.SwarmingRpcsOperationStats{Duration: 0.1},
-				IsolatedDownload: &swarming.SwarmingRpcsCASOperationStats{
+				CacheTrim:   &swarmingv1.SwarmingRpcsOperationStats{Duration: 0.1},
+				Cleanup:     &swarmingv1.SwarmingRpcsOperationStats{Duration: 0.1},
+				IsolatedDownload: &swarmingv1.SwarmingRpcsCASOperationStats{
 					Duration:            0.1,
 					InitialNumberItems:  0,
 					InitialSize:         0,
@@ -445,14 +446,14 @@ func TestCollectSummarizeResults(t *testing.T) {
 					TotalBytesItemsCold: 0,
 					TotalBytesItemsHot:  1,
 				},
-				IsolatedUpload:       &swarming.SwarmingRpcsCASOperationStats{},
-				NamedCachesInstall:   &swarming.SwarmingRpcsOperationStats{Duration: 0.1},
-				NamedCachesUninstall: &swarming.SwarmingRpcsOperationStats{},
-				PackageInstallation:  &swarming.SwarmingRpcsOperationStats{Duration: 0.1},
+				IsolatedUpload:       &swarmingv1.SwarmingRpcsCASOperationStats{},
+				NamedCachesInstall:   &swarmingv1.SwarmingRpcsOperationStats{Duration: 0.1},
+				NamedCachesUninstall: &swarmingv1.SwarmingRpcsOperationStats{},
+				PackageInstallation:  &swarmingv1.SwarmingRpcsOperationStats{Duration: 0.1},
 			},
 		})
 		So(err, ShouldBeNil)
-		result4, err := preserveEmptyFieldsOnTaskResult(&swarming.SwarmingRpcsTaskResult{
+		result4, err := preserveEmptyFieldsOnTaskResult(&swarmingv1.SwarmingRpcsTaskResult{
 			CurrentTaskSlice: 0,
 			Duration:         1,
 			State:            "RUNNING",
@@ -608,7 +609,7 @@ func TestCollectSummarizeResultsPython(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Simple json.`, t, func() {
-		result, err := preserveEmptyFieldsOnTaskResult(&swarming.SwarmingRpcsTaskResult{
+		result, err := preserveEmptyFieldsOnTaskResult(&swarmingv1.SwarmingRpcsTaskResult{
 			State:    "COMPLETED",
 			Duration: 1,
 			ExitCode: 0,

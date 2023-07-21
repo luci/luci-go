@@ -30,13 +30,14 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"go.chromium.org/luci/client/casclient"
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	swarmingv1 "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/system/signals"
+	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 type taskOutputOption int64
@@ -102,7 +103,7 @@ type taskResult struct {
 
 	// result is the raw result structure returned by a swarming RPC call.
 	// result may be nil if err is non-nil.
-	result *swarming.SwarmingRpcsTaskResult
+	result *swarmingv1.SwarmingRpcsTaskResult
 
 	// output is the console output produced by the swarming task.
 	// output will only be populated if requested.
@@ -229,7 +230,7 @@ func (c *collectRun) Run(a subcommands.Application, args []string, env subcomman
 
 func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, service swarmingService, downloadSem weightedSemaphore) taskResult {
 	defer logging.Debugf(ctx, "Finished fetching task result: %s", taskID)
-	var result *swarming.SwarmingRpcsTaskResult
+	var result *swarmingv1.SwarmingRpcsTaskResult
 	var output string
 	var outputs []string
 	err := retry.Retry(ctx, transient.Only(retry.Default), func() error {
@@ -278,7 +279,14 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 				if err != nil {
 					return err
 				}
-				outputs, err = service.FilesFromCAS(ctx, outdir, cascli, result.CasOutputRoot)
+				casOutputRoot := swarmingv2.CASReference{
+					CasInstance: result.CasOutputRoot.CasInstance,
+					Digest: &swarmingv2.Digest{
+						Hash:      result.CasOutputRoot.Digest.Hash,
+						SizeBytes: result.CasOutputRoot.Digest.SizeBytes,
+					},
+				}
+				outputs, err = service.FilesFromCAS(ctx, outdir, cascli, &casOutputRoot)
 				if err != nil {
 					return tagTransientGoogleAPIError(err)
 				}
@@ -300,7 +308,7 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 	}
 }
 
-func preserveEmptyFieldsOnTaskResult(tr *swarming.SwarmingRpcsTaskResult) (*swarming.SwarmingRpcsTaskResult, error) {
+func preserveEmptyFieldsOnTaskResult(tr *swarmingv1.SwarmingRpcsTaskResult) (*swarmingv1.SwarmingRpcsTaskResult, error) {
 	state, err := parseTaskState(tr.State)
 	if err != nil {
 		return nil, err

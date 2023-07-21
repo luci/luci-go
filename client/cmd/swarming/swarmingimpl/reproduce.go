@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/client/casclient"
 	clientswarming "go.chromium.org/luci/client/swarming"
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
@@ -45,6 +44,7 @@ import (
 	"go.chromium.org/luci/lucictx"
 	rdbcli "go.chromium.org/luci/resultdb/cli"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
+	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // CmdReproduce returns an object fo the `reproduce` subcommand.
@@ -139,7 +139,7 @@ func (c *reproduceRun) main(a subcommands.Application, args []string, env subcom
 	return c.executeTaskRequestCommand(ctx, tr, cmd)
 }
 
-func (c *reproduceRun) executeTaskRequestCommand(ctx context.Context, tr *swarming.SwarmingRpcsTaskRequest, cmd *exec.Cmd) error {
+func (c *reproduceRun) executeTaskRequestCommand(ctx context.Context, tr *swarmingv2.TaskRequestResponse, cmd *exec.Cmd) error {
 	// Enable ResultDB if necessary.
 	if tr.Resultdb != nil && tr.Resultdb.Enable {
 		if c.realm == "" {
@@ -167,7 +167,7 @@ func (c *reproduceRun) executeTaskRequestCommand(ctx context.Context, tr *swarmi
 	return nil
 }
 
-func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, properties *swarming.SwarmingRpcsTaskProperties, service swarmingService) (*exec.Cmd, error) {
+func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, properties *swarmingv2.TaskProperties, service swarmingService) (*exec.Cmd, error) {
 	execDir := c.work
 	if properties.RelativeCwd != "" {
 		execDir = filepath.Join(execDir, properties.RelativeCwd)

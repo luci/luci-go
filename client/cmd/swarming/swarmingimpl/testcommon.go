@@ -34,10 +34,10 @@ type testService struct {
 	countBots    func(context.Context, ...string) (*swarmingv1.SwarmingRpcsBotsCount, error)
 	listTasks    func(context.Context, int64, float64, string, []string, []googleapi.Field) ([]*swarmingv1.SwarmingRpcsTaskResult, error)
 	cancelTask   func(context.Context, string, bool) (*swarmingv2.CancelResponse, error)
-	taskRequest  func(context.Context, string) (*swarmingv1.SwarmingRpcsTaskRequest, error)
+	taskRequest  func(context.Context, string) (*swarmingv2.TaskRequestResponse, error)
 	taskResult   func(context.Context, string, bool) (*swarmingv1.SwarmingRpcsTaskResult, error)
 	taskOutput   func(context.Context, string) (*swarmingv1.SwarmingRpcsTaskOutput, error)
-	filesFromCAS func(context.Context, string, *rbeclient.Client, *swarmingv1.SwarmingRpcsCASReference) ([]string, error)
+	filesFromCAS func(context.Context, string, *rbeclient.Client, *swarmingv2.CASReference) ([]string, error)
 	listBots     func(context.Context, []string, []googleapi.Field) ([]*swarmingv1.SwarmingRpcsBotInfo, error)
 	deleteBot    func(context.Context, string) (*swarmingv1.SwarmingRpcsDeletedResponse, error)
 	terminateBot func(context.Context, string, string) (*swarmingv2.TerminateResponse, error)
@@ -64,7 +64,7 @@ func (s testService) CancelTask(ctx context.Context, taskID string, killRunning 
 	return s.cancelTask(ctx, taskID, killRunning)
 }
 
-func (s testService) TaskRequest(ctx context.Context, taskID string) (*swarmingv1.SwarmingRpcsTaskRequest, error) {
+func (s testService) TaskRequest(ctx context.Context, taskID string) (*swarmingv2.TaskRequestResponse, error) {
 	return s.taskRequest(ctx, taskID)
 }
 
@@ -76,7 +76,7 @@ func (s testService) TaskOutput(ctx context.Context, taskID string) (*swarmingv1
 	return s.taskOutput(ctx, taskID)
 }
 
-func (s testService) FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarmingv1.SwarmingRpcsCASReference) ([]string, error) {
+func (s testService) FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarmingv2.CASReference) ([]string, error) {
 	return s.filesFromCAS(ctx, outdir, cascli, casRef)
 }
 

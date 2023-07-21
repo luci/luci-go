@@ -29,9 +29,9 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/system/environ"
 	. "go.chromium.org/luci/common/testing/assertions"
+	swarming "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func init() {
@@ -97,10 +97,10 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 
 		var fetchedCASFiles bool
 
-		properties := &swarming.SwarmingRpcsTaskProperties{
+		properties := &swarming.TaskProperties{
 			Command:     []string{"rbd", "stream", "-test-id-prefix", "--isolated-output=${ISOLATED_OUTDIR}/chicken-output.json"},
 			RelativeCwd: relativeCwd,
-			Env: []*swarming.SwarmingRpcsStringPair{
+			Env: []*swarming.StringPair{
 				{
 					Key:   "key",
 					Value: "value1",
@@ -114,7 +114,7 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 					Value: "",
 				},
 			},
-			EnvPrefixes: []*swarming.SwarmingRpcsStringListPair{
+			EnvPrefixes: []*swarming.StringListPair{
 				{
 					Key:   "PATH",
 					Value: []string{".task_template_packages", ".task_template_packages/zoo"},
@@ -124,11 +124,11 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 					Value: []string{"egg", "rooster"},
 				},
 			},
-			CasInputRoot: &swarming.SwarmingRpcsCASReference{
+			CasInputRoot: &swarming.CASReference{
 				CasInstance: "CAS-instance",
 			},
-			CipdInput: &swarming.SwarmingRpcsCipdInput{
-				Packages: []*swarming.SwarmingRpcsCipdPackage{
+			CipdInput: &swarming.CipdInput{
+				Packages: []*swarming.CipdPackage{
 					{
 						PackageName: "infra/tools/luci-auth/${platform}",
 						Path:        ".task_template_packages",
@@ -149,7 +149,7 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		}
 
 		service := &testService{
-			filesFromCAS: func(_ context.Context, _ string, _ *rbeclient.Client, _ *swarming.SwarmingRpcsCASReference) ([]string, error) {
+			filesFromCAS: func(_ context.Context, _ string, _ *rbeclient.Client, _ *swarming.CASReference) ([]string, error) {
 				fetchedCASFiles = true
 				return []string{}, nil
 			},
@@ -220,7 +220,7 @@ func TestReproduceTaskRequestCommand(t *testing.T) {
 
 		var stdout bytes.Buffer
 		cmd.Stdout = &stdout
-		err := c.executeTaskRequestCommand(ctx, &swarming.SwarmingRpcsTaskRequest{}, cmd)
+		err := c.executeTaskRequestCommand(ctx, &swarming.TaskRequestResponse{}, cmd)
 		So(err, ShouldBeNil)
 		if runtime.GOOS == "windows" {
 			So(stdout.String(), ShouldEqual, "chicken\r\n")

@@ -16,7 +16,6 @@ package swarmingimpl
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -24,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/signals"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // CmdRequestShow returns an object for the `request-show` subcommand.
@@ -68,7 +68,11 @@ func (c *requestShowRun) main(_ subcommands.Application, taskID string) error {
 	if err != nil {
 		return errors.Annotate(err, fmt.Sprintf("failed to get task request. task ID = %s", taskID)).Err()
 	}
-	b, err := json.MarshalIndent(request, "", "  ")
+	b, err := protojson.MarshalOptions{
+		UseProtoNames: true,
+		Multiline:     true,
+		Indent:        "  ",
+	}.Marshal(request)
 	if err != nil {
 		return errors.Annotate(err, "faled to marshal task request").Err()
 	}

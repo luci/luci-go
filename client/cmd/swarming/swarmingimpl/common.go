@@ -82,10 +82,10 @@ type swarmingService interface {
 	CountTasks(ctx context.Context, start float64, state string, tags ...string) (*swarmingv1.SwarmingRpcsTasksCount, error)
 	ListTasks(ctx context.Context, limit int64, start float64, state string, tags []string, fields []googleapi.Field) ([]*swarmingv1.SwarmingRpcsTaskResult, error)
 	CancelTask(ctx context.Context, taskID string, killRunning bool) (*swarmingv2.CancelResponse, error)
-	TaskRequest(ctx context.Context, taskID string) (*swarmingv1.SwarmingRpcsTaskRequest, error)
+	TaskRequest(ctx context.Context, taskID string) (*swarmingv2.TaskRequestResponse, error)
 	TaskResult(ctx context.Context, taskID string, perf bool) (*swarmingv1.SwarmingRpcsTaskResult, error)
 	TaskOutput(ctx context.Context, taskID string) (*swarmingv1.SwarmingRpcsTaskOutput, error)
-	FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarmingv1.SwarmingRpcsCASReference) ([]string, error)
+	FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarmingv2.CASReference) ([]string, error)
 	CountBots(ctx context.Context, dimensions ...string) (*swarmingv1.SwarmingRpcsBotsCount, error)
 	ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarmingv1.SwarmingRpcsBotInfo, error)
 	DeleteBot(ctx context.Context, botID string) (*swarmingv1.SwarmingRpcsDeletedResponse, error)
@@ -158,12 +158,8 @@ func (s *swarmingServiceImpl) CancelTask(ctx context.Context, taskID string, kil
 	})
 }
 
-func (s *swarmingServiceImpl) TaskRequest(ctx context.Context, taskID string) (res *swarmingv1.SwarmingRpcsTaskRequest, err error) {
-	err = retryGoogleRPC(ctx, "TaskRequest", func() (ierr error) {
-		res, ierr = s.service.Task.Request(taskID).Context(ctx).Do()
-		return ierr
-	})
-	return res, err
+func (s *swarmingServiceImpl) TaskRequest(ctx context.Context, taskID string) (res *swarmingv2.TaskRequestResponse, err error) {
+	return s.tasksClient.GetRequest(ctx, &swarmingv2.TaskIdRequest{TaskId: taskID})
 }
 
 func (s *swarmingServiceImpl) TaskResult(ctx context.Context, taskID string, perf bool) (res *swarmingv1.SwarmingRpcsTaskResult, err error) {
@@ -183,7 +179,7 @@ func (s *swarmingServiceImpl) TaskOutput(ctx context.Context, taskID string) (re
 }
 
 // FilesFromCAS downloads outputs from CAS.
-func (s *swarmingServiceImpl) FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarmingv1.SwarmingRpcsCASReference) ([]string, error) {
+func (s *swarmingServiceImpl) FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarmingv2.CASReference) ([]string, error) {
 	d := digest.Digest{
 		Hash: casRef.Digest.Hash,
 		Size: casRef.Digest.SizeBytes,
