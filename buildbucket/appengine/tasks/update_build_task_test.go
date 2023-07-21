@@ -561,16 +561,16 @@ func TestUpdateBuildTask(t *testing.T) {
 	t.Parallel()
 
 	Convey("pubsub handler", t, func() {
-		ctx := memory.Use(context.Background())
+		ctx := memory.UseWithAppID(context.Background(), "dev~app-id")
 		ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
 			"update-build-task-pubsub-msg-id": cachingtest.NewBlobCache(),
 		})
 		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
 			Backends: []*pb.BackendSetting{
 				{
-					Target:       "swarming://chromium-swarm",
-					Hostname:     "chromium-swarm.appspot.com",
-					Subscription: "projects/myproject/subscriptions/mysubscription",
+					Target:         "swarming://chromium-swarm",
+					Hostname:       "chromium-swarm.appspot.com",
+					SubscriptionId: "chromium-swarm-backend",
 				},
 			},
 		}), ShouldBeNil)
@@ -652,7 +652,7 @@ func makeUpdateBuildTaskPubsubMsg(req *pb.BuildTaskUpdate, msgID string) io.Read
 			Data:      base64.StdEncoding.EncodeToString(data),
 			MessageId: msgID,
 		},
-		Subscription: "projects/myproject/subscriptions/mysubscription",
+		Subscription: "projects/app-id/subscriptions/chromium-swarm-backend",
 	}
 	jmsg, _ := json.Marshal(msg)
 	return bytes.NewReader(jmsg)

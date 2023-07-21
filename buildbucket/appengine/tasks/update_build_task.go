@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"strconv"
 	"time"
@@ -32,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/caching"
 
@@ -114,8 +116,11 @@ func validatePubsubSubscription(ctx context.Context, req buildTaskUpdate) error 
 
 	isValid := false
 	for _, backend := range globalCfg.Backends {
-		if backend.Target == target && backend.Subscription == req.subscription {
+		subscription := fmt.Sprintf("projects/%s/subscriptions/%s", info.AppID(ctx), backend.SubscriptionId)
+		fmt.Println(subscription)
+		if backend.Target == target && subscription == req.subscription {
 			isValid = true
+			break
 		}
 	}
 

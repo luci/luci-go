@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -36,6 +37,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching/layered"
@@ -194,6 +196,21 @@ func computeAgentArgs(build *pb.Build, infra *pb.BuildInfra) (args []string) {
 	return
 }
 
+func computeBackendPubsubSubscription(ctx context.Context, target string) (string, error) {
+	globalCfg, err := config.GetSettingsCfg(ctx)
+	if err != nil {
+		return "", errors.Annotate(err, "error fetching service config").Err()
+	}
+
+	for _, backend := range globalCfg.Backends {
+
+		if backend.Target == target {
+			return fmt.Sprintf("projects/%s/subscriptions/%s", info.AppID(ctx), backend.SubscriptionId), nil
+		}
+	}
+	return "", errors.Reason("pubsub subscription not found").Err()
+}
+
 func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *model.BuildInfra, requestID string) (*pb.RunTaskRequest, error) {
 	// Create task token and secrets.
 	registerTaskToken, err := buildtoken.GenerateToken(ctx, build.ID, pb.TokenBody_REGISTER_TASK)
@@ -225,6 +242,11 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 		Seconds: build.Proto.GetCreateTime().GetSeconds() + int64(buildStartGiveUpTimeout.Seconds()),
 	}
 
+	pubsubSubscription, err := computeBackendPubsubSubscription(ctx, backend.Task.Id.Target)
+	if err != nil {
+		return nil, err
+	}
+
 	taskReq := &pb.RunTaskRequest{
 		BuildbucketHost:          infra.Proto.Buildbucket.Hostname,
 		RegisterBackendTaskToken: registerTaskToken,
@@ -241,6 +263,7 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 		Dimensions:               infra.Proto.Backend.GetTaskDimensions(),
 		StartDeadline:            startDeadline,
 		Experiments:              build.Proto.Input.GetExperiments(),
+		PubsubSubscriptionName:   pubsubSubscription,
 	}
 
 	project := build.Proto.Builder.Project
