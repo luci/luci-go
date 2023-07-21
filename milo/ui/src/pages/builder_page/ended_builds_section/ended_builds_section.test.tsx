@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { DateTime } from 'luxon';
 
 import {
@@ -104,7 +104,7 @@ describe('EndedBuildsSection', () => {
         <EndedBuildsSection builderId={builderId} />
       </FakeContextProvider>
     );
-    await jest.runAllTimersAsync();
+    await act(() => jest.runAllTimersAsync());
 
     expect(endedBuildsTableMock).toHaveBeenCalledWith(
       {
@@ -116,7 +116,7 @@ describe('EndedBuildsSection', () => {
     endedBuildsTableMock.mockClear();
 
     fireEvent.click(screen.getByText('Next Page'));
-    await jest.runAllTimersAsync();
+    await act(() => jest.runAllTimersAsync());
     expect(screen.getByText('Previous Page')).toBeEnabled();
     expect(endedBuildsTableMock).toHaveBeenCalledWith(
       {
@@ -133,7 +133,7 @@ describe('EndedBuildsSection', () => {
     fireEvent.click(screen.getByTestId('CalendarIcon'));
     fireEvent.click(screen.getByText('Today'));
 
-    await jest.runAllTimersAsync();
+    await act(() => jest.runAllTimersAsync());
     // Prev page tokens are purged.
     expect(screen.getByText('Previous Page')).toBeDisabled();
     expect(endedBuildsTableMock).toHaveBeenCalledWith(

@@ -22,6 +22,7 @@ import {
   TestVariantStatus,
 } from '@/common/services/resultdb';
 import { Store, StoreInstance } from '@/common/store';
+import { logging } from '@/common/tools/logging';
 import { CacheOption } from '@/generic_libs/tools/cached_fn';
 
 const variant1: TestVariant = {
@@ -68,6 +69,8 @@ describe('InvocationState', () => {
         cacheOpt?: CacheOption
       ) => Promise<QueryTestVariantsResponse>
     >;
+    let logErrorMock: jest.SpyInstance;
+
     beforeAll(async () => {
       store = Store.create({
         authState: { value: { identity: ANONYMOUS_IDENTITY } },
@@ -83,9 +86,11 @@ describe('InvocationState', () => {
       });
       protect(store);
       await store.invocationPage.invocation.testLoader!.loadNextTestVariants();
+      logErrorMock = jest.spyOn(logging, 'error').mockImplementation(() => {});
     });
     afterAll(() => {
       destroy(store);
+      logErrorMock.mockRestore();
     });
 
     test('should not filter out anything when search text is empty', () => {

@@ -128,7 +128,7 @@ describe('SearchPage', () => {
 
     // Ensure that the filters are not overwritten after all event hooks are
     // executed.
-    await act(async () => await jest.runAllTimersAsync());
+    await act(() => jest.runAllTimersAsync());
 
     expect(store.searchPage.searchTarget).toStrictEqual(SearchTarget.Tests);
     expect(store.searchPage.testProject).toStrictEqual('project');
@@ -152,7 +152,7 @@ describe('SearchPage', () => {
       store.searchPage.setTestProject('project');
     });
 
-    await act(async () => await jest.runAllTimersAsync());
+    await act(() => jest.runAllTimersAsync());
 
     expect(window.location.search).toStrictEqual('?t=TESTS&tp=project&q=query');
   });

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { cleanup, render } from '@testing-library/react';
+import { act, cleanup, render } from '@testing-library/react';
 
 import { useInfinitePrpcQuery } from '@/common/hooks/use_prpc_query';
 import {
@@ -104,7 +104,9 @@ describe('BuilderList', () => {
       </FakeContextProvider>
     );
 
-    await jest.runAllTimersAsync();
+    await act(() => jest.runAllTimersAsync());
+    await act(() => jest.runAllTimersAsync());
+    await act(() => jest.runAllTimersAsync());
 
     expect(useInfinitePrpcQuerySpy).toHaveBeenCalledWith({
       host: '',

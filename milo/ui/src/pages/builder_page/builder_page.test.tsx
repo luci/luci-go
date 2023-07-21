@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 
 import {
   BuilderItem,
@@ -105,7 +105,7 @@ describe('BuilderPage', () => {
       </FakeContextProvider>
     );
 
-    await jest.runAllTimersAsync();
+    await act(() => jest.runAllTimersAsync());
 
     expect(
       screen.queryByText(
@@ -146,7 +146,7 @@ describe('BuilderPage', () => {
       </FakeContextProvider>
     );
 
-    await jest.runAllTimersAsync();
+    await act(() => jest.runAllTimersAsync());
 
     expect(
       screen.getByText(

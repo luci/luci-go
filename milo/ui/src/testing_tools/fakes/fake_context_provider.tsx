@@ -34,16 +34,36 @@ export function FakeContextProvider({
   routerOptions,
   children,
 }: FakeContextProviderProps) {
-  const [client] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            retry: false,
-          },
+  const [client] = useState(() => {
+    const errorMock = jest
+      .spyOn(console, 'error')
+      .mockImplementationOnce(() => {
+        // Prevent react query from complaining about the custom logger.
+        //
+        // Custom logger is deprecated and will be removed in
+        // `@tanstack/react-query@5`. However, we still need to use it here to
+        // disable unnecessary network call error logs in unit tests.
+        //
+        // In the next react-query release, this will no longer be necessary
+        // since network call errors will no longer be logged anyway. See the
+        // `remove custom logger` section on
+        // https://github.com/TanStack/query/discussions/4252
+      });
+    const c = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
         },
-      })
-  );
+      },
+      logger: {
+        log: () => {},
+        warn: () => {},
+        error: () => {},
+      },
+    });
+    errorMock.mockRestore();
+    return c;
+  });
 
   const router = createMemoryRouter(
     [{ path: mountedPath, element: children }],

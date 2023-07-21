@@ -14,11 +14,11 @@
 
 import { fixture, html } from '@open-wc/testing-helpers';
 
-import './step_cluster';
 import { BuildStatus } from '@/common/services/buildbucket';
 import { Store } from '@/common/store';
 import { StepExt } from '@/common/store/build_state';
 
+import './step_cluster';
 import { BuildPageStepClusterElement } from './step_cluster';
 
 function createStep(index: number, startTime: string, endTime: string) {

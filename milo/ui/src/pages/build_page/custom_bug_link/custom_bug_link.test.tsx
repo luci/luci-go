@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 
 import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
 import { MiloInternal } from '@/common/services/milo_internal';
@@ -48,7 +48,7 @@ describe('CustomBugLink', () => {
         <CustomBugLink project="proj" />
       </FakeContextProvider>
     );
-    await jest.runAllTimersAsync();
+    await act(() => jest.runAllTimersAsync());
 
     // The query is sent even when `build` is not yet populated.
     expect(usePrpcQueryMock).toHaveBeenCalledWith(

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { DateTime } from 'luxon';
 
 import { RelativeDurationBadge } from './relative_duration_badge';
@@ -33,10 +33,10 @@ describe('RelativeDurationBadge', () => {
 
     expect(screen.getByTestId('duration')).toHaveTextContent('10m');
 
-    await jest.advanceTimersByTimeAsync(600000);
+    await act(() => jest.advanceTimersByTimeAsync(600000));
     expect(screen.getByTestId('duration')).toHaveTextContent('20m');
 
-    await jest.advanceTimersByTimeAsync(300000);
+    await act(() => jest.advanceTimersByTimeAsync(300000));
     expect(screen.getByTestId('duration')).toHaveTextContent('25m');
   });
 
@@ -50,10 +50,10 @@ describe('RelativeDurationBadge', () => {
 
     expect(screen.getByTestId('duration')).toHaveTextContent('5.0m');
 
-    await jest.advanceTimersByTimeAsync(600000);
+    await act(() => jest.advanceTimersByTimeAsync(600000));
     expect(screen.getByTestId('duration')).toHaveTextContent('5.0m');
 
-    await jest.advanceTimersByTimeAsync(300000);
+    await act(() => jest.advanceTimersByTimeAsync(300000));
     expect(screen.getByTestId('duration')).toHaveTextContent('5.0m');
   });
 });

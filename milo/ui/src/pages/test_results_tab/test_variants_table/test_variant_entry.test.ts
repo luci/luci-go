@@ -33,6 +33,7 @@ import {
   TestVariantStatus,
 } from '@/common/services/resultdb';
 import { provideStore, Store, StoreInstance } from '@/common/store';
+import { logging } from '@/common/tools/logging';
 import { ExpandableEntryElement } from '@/generic_libs/components/expandable_entry';
 import { provider } from '@/generic_libs/tools/lit_context';
 import {
@@ -115,14 +116,18 @@ class TestVariantEntryTestContextElement extends LitElement {
 
 describe('TestVariantEntry', () => {
   let store: StoreInstance;
+  let logErrorMock: jest.SpyInstance;
+
   beforeEach(() => {
     store = Store.create({
       authState: { value: { identity: ANONYMOUS_IDENTITY } },
     });
+    logErrorMock = jest.spyOn(logging, 'error').mockImplementation(() => {});
   });
   afterEach(() => {
     fixtureCleanup();
     destroy(store);
+    logErrorMock.mockRestore();
   });
 
   test('should only query the necessary clusters', async () => {

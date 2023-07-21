@@ -33,7 +33,8 @@ const config: Config = {
   globalSetup: './src/testing_tools/global_setup.ts',
   setupFilesAfterEnv: ['./src/testing_tools/setup_after_env.ts'],
   moduleNameMapper: {
-    '\\.(css|less|svg)$': 'identity-obj-proxy',
+    '\\.(css|less)$': 'identity-obj-proxy',
+    '\\.svg$': '<rootDir>/src/testing_tools/asset_module_stub',
     '@/(.*)': '<rootDir>/src/$1',
   },
 };

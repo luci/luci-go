@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { logging } from '@/common/tools/logging';
+
 import {
   getBuildbucketLink,
   getCipdLink,
@@ -97,6 +99,16 @@ describe('getSafeUrlFromTagValue', () => {
 });
 
 describe('renderBugUrlTemplate', () => {
+  let logWarnMock: jest.SpyInstance;
+
+  beforeEach(() => {
+    logWarnMock = jest.spyOn(logging, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    logWarnMock.mockRestore();
+  });
+
   test('should render the chromium bug URL correctly', () => {
     const url = renderBugUrlTemplate(
       // eslint-disable-next-line max-len

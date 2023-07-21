@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import fetchMock from 'fetch-mock-jest';
 
@@ -85,7 +85,7 @@ describe('Test AnalysesTable component', () => {
     }
     mockFetchAnalyses(secondPageMockAnalyses, '');
 
-    await userEvent.click(nextButton);
+    await act(() => userEvent.click(nextButton));
     await screen.findByText('Rows per page:');
 
     // Check the displayed rows label is correct

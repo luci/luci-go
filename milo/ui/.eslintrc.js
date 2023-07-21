@@ -157,7 +157,12 @@ module.exports = {
       extends: ['plugin:cypress/recommended'],
     },
     {
-      files: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'cypress/**'],
+      files: [
+        'src/**/*.test.ts',
+        'src/**/*.test.tsx',
+        'cypress/**',
+        '**/testing_tools/**',
+      ],
       rules: {
         // Allow assertion to make it easier to write test cases.
         // All incorrect assertion will be caught during test execution anyway.

@@ -16,6 +16,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { ChevronRight, ExpandMore } from '@mui/icons-material';
 import { Box } from '@mui/material';
 import { css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { makeObservable, observable } from 'mobx';
 import { createContext, useContext } from 'react';
@@ -129,6 +130,7 @@ export function ExpandableEntry({ expanded, children }: ExpandableEntryProps) {
 // 1. we can catch events originated from shadow-dom, and
 // 2. the rendering performance is as good as possible (there could be > 10,000
 // entries rendered on the screen).
+@customElement('milo-expandable-entry')
 export class ExpandableEntryElement extends MobxLitElement {
   /**
    * Configure whether the content ruler should be rendered.
@@ -218,13 +220,4 @@ export class ExpandableEntryElement extends MobxLitElement {
       margin-left: 11.5px;
     }
   `;
-}
-
-// `jest.requireActual` may cause the module to be initialized multiple times
-// and causing the element to be registered multiple times, leading to error:
-// 'NotSupportedError: This name has already been registered in the registry.'
-//
-// Register the element conditionally to avoid the error.
-if (!customElements.get('milo-expandable-entry')) {
-  customElements.define('milo-expandable-entry', ExpandableEntryElement);
 }

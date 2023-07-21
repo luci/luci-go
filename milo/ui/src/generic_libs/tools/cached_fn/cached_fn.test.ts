@@ -148,7 +148,11 @@ describe('cached_fn', () => {
   });
 
   describe('when config.expire() returns a promise that rejects', () => {
+    let consoleErrorMock: jest.SpyInstance;
     beforeEach(() => {
+      consoleErrorMock = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
       cachedFn = cached(fnSpy, {
         key: (...params) => stableStringify(params),
         expire: async () => {
@@ -156,6 +160,9 @@ describe('cached_fn', () => {
           throw new Error();
         },
       });
+    });
+    afterEach(() => {
+      consoleErrorMock.mockRestore();
     });
 
     test('should return cached response when cache has not expired', async () => {

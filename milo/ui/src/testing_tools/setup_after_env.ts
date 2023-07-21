@@ -91,3 +91,20 @@ Object.defineProperty(self, 'crypto', {
 // jsdom does not support `scrollIntoView`.
 // See https://github.com/jsdom/jsdom/issues/1695
 window.HTMLElement.prototype.scrollIntoView = jest.fn();
+
+jest.mock('lit/decorators.js', () => ({
+  ...jest.requireActual('lit/decorators.js'),
+  customElement(name: string) {
+    return function (eleCon: CustomElementConstructor) {
+      // jest's module mocking may cause the module to be initialized multiple
+      // times and causing the element to be registered multiple times, leading
+      // to error: 'NotSupportedError: This name has already been registered in
+      // the registry.'
+      //
+      // Register the element conditionally to avoid the error.
+      if (!customElements.get(name)) {
+        customElements.define(name, eleCon);
+      }
+    };
+  },
+}));
