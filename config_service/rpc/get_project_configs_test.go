@@ -15,11 +15,27 @@
 package rpc
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/errors"
+	cfgcommonpb "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+
+	"go.chromium.org/luci/config_service/internal/clients"
+	"go.chromium.org/luci/config_service/internal/common"
+	"go.chromium.org/luci/config_service/internal/model"
 	pb "go.chromium.org/luci/config_service/proto"
 	"go.chromium.org/luci/config_service/testutil"
 
@@ -32,7 +48,52 @@ func TestGetProjectConfigs(t *testing.T) {
 
 	Convey("GetProjectConfigs", t, func() {
 		ctx := testutil.SetupContext()
+		datastore.GetTestable(ctx).AutoIndex(true)
 		srv := &Configs{}
+
+		userID := identity.Identity("user:user@example.com")
+		fakeAuthDB := authtest.NewFakeDB()
+		testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+			common.ACLRegistryFilePath: &cfgcommonpb.AclCfg{
+				ProjectAccessGroup: "project-access-group",
+			},
+		})
+		fakeAuthDB.AddMocks(
+			authtest.MockMembership(userID, "project-access-group"),
+		)
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: userID,
+			FakeDB:   fakeAuthDB,
+		})
+
+		// Inject "services/myservice"
+		testutil.InjectConfigSet(ctx, config.MustServiceSet("myservice"), nil)
+
+		// Inject "projects/project1" with a small "config.cfg" file and "other1.cfg" file.
+		configPb := &cfgcommonpb.ProjectCfg{Name: "config.cfg"}
+		configPbBytes, err := prototext.Marshal(configPb)
+		So(err, ShouldBeNil)
+		configPbSha := sha256.Sum256(configPbBytes)
+		configPbShaStr := hex.EncodeToString(configPbSha[:])
+		testutil.InjectConfigSet(ctx, config.MustProjectSet("project1"), map[string]proto.Message{
+			"config.cfg": configPb,
+			"other1.cfg": &cfgcommonpb.ProjectCfg{Name: "other1.cfg"},
+		})
+
+		// Inject "projects/project2" with a large "config.cfg" file and "other2.cfg" file.
+		testutil.InjectConfigSet(ctx, config.MustProjectSet("project2"), map[string]proto.Message{
+			"other2.cfg": &cfgcommonpb.ProjectCfg{Name: "other2.cfg"},
+		})
+		So(datastore.Put(ctx, &model.File{
+			Path:          "config.cfg",
+			Revision:      datastore.MakeKey(ctx, model.ConfigSetKind, "projects/project2", model.RevisionKind, "1"),
+			ContentSHA256: "configsha256",
+			GcsURI:        "gs://bucket/configsha256",
+		}), ShouldBeNil)
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mockGsClient := clients.NewMockGsClient(ctl)
+		ctx = clients.WithGsClient(ctx, mockGsClient)
 
 		Convey("invalid path", func() {
 			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{})
@@ -57,6 +118,108 @@ func TestGetProjectConfigs(t *testing.T) {
 			})
 			So(res, ShouldBeNil)
 			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `invalid fields mask: field "random" does not exist in message Config`)
+		})
+
+		Convey("no access to matched files", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: identity.Identity("user:random@example.com"),
+				FakeDB:   fakeAuthDB,
+			})
+			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
+				Path: "config.cfg",
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &pb.GetProjectConfigsResponse{})
+		})
+
+		Convey("no matched files", func() {
+			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
+				Path: "non_exist.cfg",
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &pb.GetProjectConfigsResponse{})
+		})
+
+		Convey("too many small configs to return", func() {
+			originalLimit := maxProjConfigsResSize
+			// Make the limit to 1 byte to avoid taking too much memory to test this
+			// use case.
+			maxProjConfigsResSize = 1
+			defer func() { maxProjConfigsResSize = originalLimit }()
+
+			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
+				Path: "config.cfg",
+			})
+			So(res, ShouldBeNil)
+			So(err, ShouldHaveGRPCStatus, codes.ResourceExhausted, "Too many small configs to return")
+		})
+
+		Convey("found", func() {
+			mockGsClient.EXPECT().SignedURL(
+				gomock.Eq("bucket"),
+				gomock.Eq("configsha256"),
+				gomock.Any(),
+			).Return("signed_url", nil)
+
+			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
+				Path: "config.cfg",
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &pb.GetProjectConfigsResponse{
+				Configs: []*pb.Config{
+					{
+						ConfigSet: "projects/project1",
+						Path:      "config.cfg",
+						Content: &pb.Config_RawContent{
+							RawContent: configPbBytes,
+						},
+						ContentSha256: configPbShaStr,
+						Revision:      "1",
+					},
+					{
+						ConfigSet: "projects/project2",
+						Path:      "config.cfg",
+						Content: &pb.Config_SignedUrl{
+							SignedUrl: "signed_url",
+						},
+						ContentSha256: "configsha256",
+						Revision:      "1",
+					},
+				},
+			})
+		})
+
+		Convey("mask", func() {
+			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
+				Path: "other1.cfg",
+				Fields: &field_mask.FieldMask{
+					Paths: []string{"config_set", "path"},
+				},
+			})
+
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &pb.GetProjectConfigsResponse{
+				Configs: []*pb.Config{
+					{
+						ConfigSet: "projects/project1",
+						Path:      "other1.cfg",
+					},
+				},
+			})
+		})
+
+		Convey("GCS error on signed url", func() {
+			mockGsClient.EXPECT().SignedURL(
+				gomock.Eq("bucket"),
+				gomock.Eq("configsha256"),
+				gomock.Any(),
+			).Return("", errors.New("GCS internal error"))
+
+			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
+				Path: "config.cfg",
+			})
+			So(res, ShouldBeNil)
+			So(err, ShouldHaveGRPCStatus, codes.Internal, "error while generating the config signed url")
 		})
 	})
 }

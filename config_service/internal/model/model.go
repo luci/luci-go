@@ -58,7 +58,7 @@ type ConfigSet struct {
 	ID config.Set `gae:"$id"`
 
 	// LatestRevision contains the latest revision info for this ConfigSet.
-	LatestRevision RevisionInfo `gae:"latest_revision,noindex"`
+	LatestRevision RevisionInfo `gae:"latest_revision"`
 	// Location is the source location which points the root of this ConfigSet.
 	Location *cfgcommonpb.Location `gae:"location"`
 	// Version is the global version of the config set.
@@ -117,9 +117,9 @@ type RevisionInfo struct {
 	// Location is a pinned location with revision info in the source repo.
 	Location *cfgcommonpb.Location `gae:"location"`
 	// CommitTime is the commit time of this revision.
-	CommitTime time.Time `gae:"commit_time"`
+	CommitTime time.Time `gae:"commit_time,noindex"`
 	// CommitterEmail is the committer's email.
-	CommitterEmail string `gae:"committer_email"`
+	CommitterEmail string `gae:"committer_email,noindex"`
 }
 
 // Service contains information about a registered service.
