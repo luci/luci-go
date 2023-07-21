@@ -41,7 +41,10 @@ func validateLegacyMetadata(legacyMetadata *cfgcommonpb.ServiceDynamicMetadata) 
 			errs = append(errs, fmt.Errorf("invalid config pattern [%d]: %w", i, err))
 		}
 	}
-	if u := legacyMetadata.GetValidation().GetUrl(); u != "" {
+	switch u := legacyMetadata.GetValidation().GetUrl(); {
+	case u == "":
+		errs = append(errs, errors.New("empty validation url"))
+	default:
 		if _, err := url.Parse(u); err != nil {
 			errs = append(errs, fmt.Errorf("invalid url %q: %w", u, err))
 		}

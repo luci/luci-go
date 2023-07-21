@@ -257,6 +257,7 @@ func TestUpdateService(t *testing.T) {
 			legacyMetadata := &cfgcommonpb.ServiceDynamicMetadata{
 				Version: "1.0",
 				Validation: &cfgcommonpb.Validator{
+					Url: "https://example.com/validate",
 					Patterns: []*cfgcommonpb.ConfigPattern{
 						{ConfigSet: string(config.MustProjectSet("foo")), Path: "exact:bar.cfg"},
 					},
@@ -347,6 +348,10 @@ func TestUpdateService(t *testing.T) {
 					legacyMetadata.Validation.Patterns = []*cfgcommonpb.ConfigPattern{
 						{ConfigSet: string(config.MustProjectSet("foo")), Path: "regex:["},
 					}
+				})
+				Convey("Empty url", func() {
+					legacyMetadata = proto.Clone(legacyMetadata).(*cfgcommonpb.ServiceDynamicMetadata)
+					legacyMetadata.Validation.Url = ""
 				})
 				Convey("Invalid url", func() {
 					legacyMetadata = proto.Clone(legacyMetadata).(*cfgcommonpb.ServiceDynamicMetadata)

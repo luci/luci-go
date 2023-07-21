@@ -15,10 +15,17 @@
 package validation
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"cloud.google.com/go/storage"
@@ -385,6 +392,179 @@ func TestValidate(t *testing.T) {
 					},
 				},
 			})
+		})
+	})
+}
+
+func TestValidateLegacy(t *testing.T) {
+	t.Parallel()
+
+	Convey("Validate using legacy protocol", t, func() {
+		ctx := testutil.SetupContext()
+		ctx = authtest.MockAuthConfig(ctx)
+		ctl := gomock.NewController(t)
+		mockGsClient := clients.NewMockGsClient(ctl)
+		finder := &mockFinder{}
+		v := &Validator{
+			GsClient: mockGsClient,
+			Finder:   finder,
+		}
+
+		var srvResponse []byte
+		var srvErrMsg string
+		var capturedRequestBody []byte
+		var capturedRequestHeader http.Header
+		legacyTestSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			capturedRequestHeader = r.Header
+			var err error
+			if capturedRequestBody, err = io.ReadAll(r.Body); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprintf(w, "%s", err)
+				return
+			}
+			if srvErrMsg != "" {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprint(w, srvErrMsg)
+				return
+			}
+			if _, err := w.Write(srvResponse); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprintf(w, "failed to write response: %s", err)
+			}
+		}))
+		defer legacyTestSrv.Close()
+
+		cs := config.MustProjectSet("my-project")
+		const filePath = "sub/foo.cfg"
+		const serviceName = "my-service"
+		finder.mapping = map[string][]*model.Service{
+			filePath: {
+				{
+					Name: serviceName,
+					Info: &cfgcommonpb.Service{
+						Id:          serviceName,
+						MetadataUrl: legacyTestSrv.URL,
+					},
+					LegacyMetadata: &cfgcommonpb.ServiceDynamicMetadata{
+						Version: "1.0",
+						Validation: &cfgcommonpb.Validator{
+							Url: legacyTestSrv.URL,
+							Patterns: []*cfgcommonpb.ConfigPattern{
+								{ConfigSet: string(cs), Path: filePath},
+							},
+						},
+						SupportsGzipCompression: true,
+					},
+				},
+			},
+		}
+
+		Convey("Works", func() {
+			srvResponse = []byte(`{"messages": [{"severity": "ERROR", "text": "bad config"}]}`)
+			tf := testFile{
+				path:    filePath,
+				content: []byte("This is config content"),
+			}
+			res, err := v.Validate(ctx, cs, []File{tf})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &cfgcommonpb.ValidationResult{
+				Messages: []*cfgcommonpb.ValidationResult_Message{
+					{
+						Path:     filePath,
+						Severity: cfgcommonpb.ValidationResult_ERROR,
+						Text:     "bad config",
+					},
+				},
+			})
+
+			So(capturedRequestBody, ShouldNotBeEmpty)
+			reqMap := map[string]any{}
+			So(json.Unmarshal(capturedRequestBody, &reqMap), ShouldBeNil)
+			So(reqMap, ShouldHaveLength, 3)
+			So(reqMap["config_set"], ShouldEqual, "projects/my-project")
+			So(reqMap["path"], ShouldEqual, filePath)
+			So(reqMap["content"], ShouldEqual, base64.StdEncoding.EncodeToString(tf.content))
+			So(capturedRequestHeader.Get("Content-Type"), ShouldEqual, "application/json; charset=utf-8")
+			So(capturedRequestHeader.Get("Content-Encoding"), ShouldBeEmpty)
+		})
+
+		Convey("Empty messages", func() {
+			srvResponse = []byte(`{"messages": []}`)
+			tf := testFile{
+				path:    filePath,
+				content: []byte("This is config content"),
+			}
+			res, err := v.Validate(ctx, cs, []File{tf})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &cfgcommonpb.ValidationResult{})
+		})
+
+		Convey("Empty response", func() {
+			srvResponse = nil
+			tf := testFile{
+				path:    filePath,
+				content: []byte("This is config content"),
+			}
+			res, err := v.Validate(ctx, cs, []File{tf})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &cfgcommonpb.ValidationResult{})
+		})
+
+		Convey("Compress large payload", func() {
+			tf := testFile{
+				path:    filePath,
+				content: make([]byte, 1024*1024),
+			}
+			_, err := rand.Read(tf.content)
+			So(err, ShouldBeNil)
+			res, err := v.Validate(ctx, cs, []File{tf})
+			So(err, ShouldBeNil)
+			So(res, ShouldNotBeNil)
+
+			So(capturedRequestBody, ShouldNotBeEmpty)
+			r, err := gzip.NewReader(bytes.NewBuffer(capturedRequestBody))
+			So(err, ShouldBeNil)
+			uncompressed, err := io.ReadAll(r)
+			So(err, ShouldBeNil)
+			reqMap := map[string]any{}
+			So(json.Unmarshal(uncompressed, &reqMap), ShouldBeNil)
+			So(reqMap, ShouldHaveLength, 3)
+			So(reqMap["content"], ShouldEqual, base64.StdEncoding.EncodeToString(tf.content))
+			So(capturedRequestHeader.Get("Content-Type"), ShouldEqual, "application/json; charset=utf-8")
+			So(capturedRequestHeader.Get("Content-Encoding"), ShouldEqual, "gzip")
+		})
+
+		Convey("Omit unknown severity", func() {
+			srvResponse = []byte(`{"messages": [{"severity": "TRACE", "text": "bad config"}]}`)
+			tf := testFile{
+				path:    filePath,
+				content: []byte("This is config content"),
+			}
+			res, err := v.Validate(ctx, cs, []File{tf})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &cfgcommonpb.ValidationResult{})
+		})
+
+		Convey("Server Error", func() {
+			srvErrMsg = "server encounter error"
+			tf := testFile{
+				path:    filePath,
+				content: []byte("This is config content"),
+			}
+			res, err := v.Validate(ctx, cs, []File{tf})
+			So(err, ShouldErrLike, legacyTestSrv.URL+" returns 500")
+			So(res, ShouldBeNil)
+		})
+
+		Convey("Server returns malformed response", func() {
+			srvResponse = []byte("[")
+			tf := testFile{
+				path:    filePath,
+				content: []byte("This is config content"),
+			}
+			res, err := v.Validate(ctx, cs, []File{tf})
+			So(err, ShouldErrLike, "failed to unmarshal response")
+			So(res, ShouldBeNil)
 		})
 	})
 }

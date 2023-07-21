@@ -15,21 +15,28 @@
 package validation
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"sync"
 
+	"golang.org/x/sync/errgroup"
+
 	"go.chromium.org/luci/common/gcloud/gs"
+	"go.chromium.org/luci/common/logging"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
-	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/common"
@@ -68,9 +75,8 @@ func (sv *serviceValidator) validate(ctx context.Context) (*cfgcommonpb.Validati
 			return nil, err
 		}
 		return client.ValidateConfigs(ctx, req)
-	case sv.service.Info.GetMetadataUrl() != "":
-		// TODO(yiwzhang): support legacy protocol
-		panic("unimplemented")
+	case sv.service.LegacyMetadata != nil:
+		return sv.validateInLegacyProtocol(ctx)
 	default:
 		return nil, fmt.Errorf("service is not %s; it also doesn't provide either service_endpoint or metadata_url for validation", sv.service.Info.GetId())
 	}
@@ -155,4 +161,149 @@ func (sv *serviceValidator) prepareRequest(ctx context.Context) (*cfgcommonpb.Va
 		}
 	}
 	return req, nil
+}
+
+type legacyValidationRequest struct {
+	ConfigSet string `json:"config_set"`
+	Path      string `json:"path"`
+	Content   string `json:"content"` // base64 encoded
+}
+
+type legacyValidationResponse struct {
+	Messages []struct {
+		Severity string `json:"severity"`
+		Text     string `json:"text"`
+	} `json:"messages"`
+}
+
+// validateInLegacyProtocol validates all files of the `serviceValidator`
+// against a service using legacy protocol.
+func (sv *serviceValidator) validateInLegacyProtocol(ctx context.Context) (*cfgcommonpb.ValidationResult, error) {
+	var allMsgs []*cfgcommonpb.ValidationResult_Message
+	var msgsMu sync.Mutex
+	eg, ectx := errgroup.WithContext(ctx)
+	eg.SetLimit(8)
+
+	for _, file := range sv.files {
+		file := file
+		eg.Go(func() error {
+			msgs, err := sv.validateFileLegacy(ectx, file)
+			if err != nil {
+				return err
+			}
+			msgsMu.Lock()
+			allMsgs = append(allMsgs, msgs...)
+			msgsMu.Unlock()
+			return nil
+		})
+	}
+
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+	return &cfgcommonpb.ValidationResult{
+		Messages: allMsgs,
+	}, nil
+}
+
+// validateFileLegacy validates a file against service using legacy protocol.
+//
+// It is an HTTP POST request. The request and response formats are defined by
+// `legacyValidationRequest` and `legacyValidationResponse` respectively. It
+// also respects the `support_gzip_compression` setting in the service config.
+// It will compress any payload over 512KiB if enabled.
+func (sv *serviceValidator) validateFileLegacy(ctx context.Context, file File) ([]*cfgcommonpb.ValidationResult_Message, error) {
+	ctx = logging.SetFields(ctx, logging.Fields{
+		"Service": sv.service.Name,
+		"File":    file.GetPath(),
+	})
+	headers := map[string]string{
+		"Content-Type": "application/json; charset=utf-8",
+		"User-Agent":   info.AppID(ctx),
+	}
+	content, err := file.GetRawContent(ctx, sv.gsClient)
+	if err != nil {
+		return nil, err
+	}
+	req := legacyValidationRequest{
+		ConfigSet: string(sv.cs),
+		Path:      file.GetPath(),
+		Content:   base64.StdEncoding.EncodeToString(content),
+	}
+	payload, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal the request to JSON: %w", err)
+	}
+	var buf bytes.Buffer
+	if sv.service.LegacyMetadata.GetSupportsGzipCompression() && len(payload) > 512*1024 {
+		gzipWriter := gzip.NewWriter(&buf)
+		if _, err := gzipWriter.Write(payload); err != nil {
+			return nil, fmt.Errorf("failed to gzip compress the request: %w", err)
+		}
+		if err := gzipWriter.Close(); err != nil {
+			return nil, fmt.Errorf("failed to close gzip writer: %w", err)
+		}
+		headers["Content-Encoding"] = "gzip"
+	} else {
+		buf = *bytes.NewBuffer(payload)
+	}
+	url := sv.service.LegacyMetadata.GetValidation().GetUrl()
+	if url == "" {
+		panic(fmt.Errorf("expect non-empty legacy validation url for service %q", sv.service.Name))
+	}
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, &buf)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create http request: %w", err)
+	}
+	for k, v := range headers {
+		httpReq.Header.Set(k, v)
+	}
+
+	var authOpts []auth.RPCOption
+	if jwtAud := sv.service.Info.GetJwtAuth().GetAudience(); jwtAud != "" {
+		authOpts = append(authOpts, auth.WithIDTokenAudience(jwtAud))
+	}
+	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, authOpts...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create transport: %w", err)
+	}
+	client := &http.Client{Transport: tr}
+	logging.Debugf(ctx, "POST %s Content-Length: %d", url, buf.Len())
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request to %s: %w", url, err)
+	}
+	return sv.parseLegacyResponse(ctx, resp, url, file)
+}
+
+func (sv *serviceValidator) parseLegacyResponse(ctx context.Context, resp *http.Response, url string, file File) ([]*cfgcommonpb.ValidationResult_Message, error) {
+	defer func() { _ = resp.Body.Close() }()
+	switch body, err := io.ReadAll(resp.Body); {
+	case err != nil:
+		return nil, fmt.Errorf("failed to read the response from %s: %w", url, err)
+	case resp.StatusCode != http.StatusOK:
+		logging.Errorf(ctx, "validating against %s using legacy protocol fails with status code: %d. Full response body:\n\n%s", sv.service.Name, resp.StatusCode, body)
+		return nil, fmt.Errorf("%s returns %d", url, resp.StatusCode)
+	case len(body) == 0:
+		return nil, nil
+	default:
+		validationResponse := legacyValidationResponse{}
+		if err := json.Unmarshal(body, &validationResponse); err != nil {
+			logging.Errorf(ctx, "failed to unmarshal legacy validation response: %s; Full response body: %s", err, body)
+			return nil, fmt.Errorf("failed to unmarshal response from %s: %w", url, err)
+		}
+		ret := make([]*cfgcommonpb.ValidationResult_Message, 0, len(validationResponse.Messages))
+		for _, msg := range validationResponse.Messages {
+			if val, ok := cfgcommonpb.ValidationResult_Severity_value[msg.Severity]; ok {
+				ret = append(ret, &cfgcommonpb.ValidationResult_Message{
+					Path:     file.GetPath(),
+					Severity: cfgcommonpb.ValidationResult_Severity(val),
+					Text:     msg.Text,
+				})
+			} else {
+				logging.Errorf(ctx, "unknown severity %q; full response from %s: %q", msg.Severity, url, body)
+			}
+		}
+		return ret, nil
+	}
 }
