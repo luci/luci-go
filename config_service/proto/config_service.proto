@@ -12,6 +12,8 @@ option go_package = "go.chromium.org/luci/config_service/proto;configpb";
 option py_generic_services = true;
 
 import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
 import "go.chromium.org/luci/common/proto/config/service_config.proto";
 
 
@@ -22,6 +24,9 @@ service Configs {
 
   // Get the specified project configs from all projects.
   rpc GetProjectConfigs(GetProjectConfigsRequest) returns (GetProjectConfigsResponse) {};
+
+  // List config sets.
+  rpc ListConfigSets(ListConfigSetsRequest) returns (ListConfigSetsResponse) {};
 
   // Validates configs for a config set.
   //
@@ -174,4 +179,73 @@ message BadValidationRequestFixInfo {
   // Files that none of the services can validate and SHOULD NOT be included
   // in the ValidateConfigsRequest.
   repeated string unvalidatable_files = 2;
+}
+
+// ListConfigSetsRequest is the request of ListConfigSets rpc.
+message ListConfigSetsRequest {
+  enum ConfigSetDomain {
+    // The default value when domain is omitted. Used to retrieve config sets
+    // in all domains.
+    ALL = 0;
+    // Service domain.
+    SERVICE = 1;
+    // Project domain.
+    PROJECT = 2;
+  }
+
+  // List config sets in the specified domain.
+  ConfigSetDomain domain = 1;
+
+  // Fields of ConfigSet proto to include.
+  // By default, only return config_set, url and revision fields.
+  // Note: "file_paths" is not supported in this rpc and only be supported in
+  // GetConfigSet rpc.
+  google.protobuf.FieldMask fields = 2;
+}
+
+// ListConfigSetsResponse is the response of ListConfigSets rpc.
+message ListConfigSetsResponse {
+  // A list of config sets.
+  repeated ConfigSet config_sets = 1;
+}
+
+// A single ConfigSet.
+message ConfigSet {
+  message Revision {
+    // Revision id.
+    string id = 1;
+    // Repo url points to this revision of config set.
+    string url = 2;
+    // Committer email who commit this revision
+    string committer_email = 3;
+    // Time of this committed revision.
+    google.protobuf.Timestamp timestamp = 4;
+  }
+
+  // Attempt information about importing this config set.
+  message Attempt {
+    // Human-readable message of the attempt.
+    string message = 1;
+    // Whether this attempt is successful or not.
+    bool success = 2;
+    // Git revision attempt to import
+    Revision revision = 3;
+    // Time of this attempt.
+    google.protobuf.Timestamp timestamp = 4;
+  }
+
+  // Name of the config set.
+  string name = 1;
+
+  // Git Repo url which holds configs of this config set.
+  string url = 2;
+
+  // Latest imported Git revision.
+  Revision revision = 3;
+
+  // All file paths related to the corresponding config set location.
+  repeated string file_paths = 4;
+
+  // Last import attempt information.
+  Attempt last_import_attempt = 5;
 }
