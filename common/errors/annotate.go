@@ -617,7 +617,7 @@ func Annotate(err error, reason string, args ...any) *Annotator {
 //
 //	errors.Reason("something bad: %d", value).Tag(transient.Tag).Err()
 //
-// Prefer this form to errors.New(fmt.Sprintf("..."))
+// Prefer this form to errors.New(fmt.Sprintf("...")) or fmt.Errorf("...")
 func Reason(reason string, args ...any) *Annotator {
 	currentStack := captureStack(1)
 	frameInfo := stackFrameInfo{0, currentStack}
