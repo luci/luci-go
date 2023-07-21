@@ -329,6 +329,71 @@ type CompileNthSectionAnalysis struct {
 	Suspect *datastore.Key `gae:"suspect"`
 }
 
+// TestFailure represents a failure on a test variant.
+type TestFailure struct {
+	ID int64 `gae:"$id"`
+	// The LUCI project of this test variant.
+	Project string `gae:"project"`
+	// Test ID of the test variant.
+	TestID string `gae:"test_id"`
+	// Variant hash of the test variant.
+	VariantHash string `gae:"variant_hash"`
+	// The variant of the test.
+	Variant *pb.Variant `gae:"variant"`
+	// Hash of the ref to identify the branch in the source control.
+	RefHash string `gae:"ref_hash"`
+	// The branch where this failure happens.
+	Ref *pb.SourceRef `gae:"ref"`
+	// Start commit position of the regression range inclusive.
+	RegressionStartPosition int64 `gae:"regression_start_position"`
+	// End commit position of the regression range inclusive.
+	RegressionEndPosition int64 `gae:"regression_end_position"`
+	// Expected failure rate at regression_start_position, between 0 and 1 inclusive.
+	StartPositionFailureRate float64 `gae:"start_position_failure_rate"`
+	// Expected failure rate at regression_end_position, between 0 and 1 inclusive.
+	EndPositionFailureRate float64 `gae:"end_position_failure_rate"`
+	// When run multiple test variants in a bisection build, the bisection path
+	// follows the test variant of the primary test failure.
+	IsPrimary bool
+	// IsDiverged is true when the bisection path of this test failure diverges from
+	// the primary test failure. This suggests that this test failure has a different root cause.
+	// We will not attempt to re-bisect this test failure.
+	IsDiverged bool `gae:"is_diverged"`
+	// Key to the TestFailure that this failure merges into.
+	// If this exists, this test failure shares the same TestFailureAnalysis
+	// with the merged failure.
+	// This key is not set only when this is a primary test failure.
+	MergedFailureKey *datastore.Key `gae:"merged_failure_key"`
+	// RedundancyScore of the test failure, between 0 and 1, larger score means more redundant.
+	// Only set for primary test failure.
+	RedundancyScore float64 `gae:"redundancy_score"`
+	// The time when the failure starts, truncated into hours.
+	StartHour time.Time `gae:"start_hour"`
+}
+
+// TestFailureAnalysis is the analysis for test failure.
+// This stores information that is needed during the analysis, and also
+// some metadata for the analysis.
+type TestFailureAnalysis struct {
+	ID int64 `gae:"$id"`
+	// Key to the primary TestFailure entity that this analysis analyses.
+	TestFailure *datastore.Key `gae:"test_failure"`
+	// Time when the entity is first created.
+	CreateTime time.Time `gae:"create_time"`
+	// Time when the analysis starts to run.
+	StartTime time.Time `gae:"start_time"`
+	// Time when the analysis ends, or canceled.
+	EndTime time.Time `gae:"end_time"`
+	// Status of the analysis
+	Status pb.AnalysisStatus `gae:"status"`
+	// Run status of the analysis
+	RunStatus pb.AnalysisRunStatus `gae:"run_status"`
+	// Key to the suspect that was verified by Culprit verification
+	VerifiedCulprit *datastore.Key `gae:"verified_culprit"`
+	// Priority of this run.
+	Priority int32 `gae:"priority"`
+}
+
 func (cfa *CompileFailureAnalysis) HasEnded() bool {
 	return cfa.RunStatus == pb.AnalysisRunStatus_ENDED || cfa.RunStatus == pb.AnalysisRunStatus_CANCELED
 }
