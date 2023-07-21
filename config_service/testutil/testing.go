@@ -21,7 +21,11 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
+	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 	"time"
@@ -62,8 +66,29 @@ func SetupContext() context.Context {
 	ctx = memory.UseWithAppID(ctx, "dev~"+AppID)
 	datastore.GetTestable(ctx).Consistent(true)
 	// Intentionally not enabling AutoIndex to ensure the composite index must
-	// be explicitly added
+	// be explicitly added to index.yaml.
 	datastore.GetTestable(ctx).AutoIndex(false)
+	path, err := os.Getwd()
+	if err != nil {
+		panic(fmt.Errorf("can not get the cwd: %w", err))
+	}
+	for filepath.Base(path) != "config_service" {
+		path = filepath.Dir(path)
+	}
+	if path == "." {
+		panic(errors.New("can not find the root of config_service; may be the package is renamed?"))
+	}
+
+	file, err := os.Open(filepath.Join(path, "cmd", "config_server", "index.yaml"))
+	if err != nil {
+		panic(fmt.Errorf("failed to open index.yaml file: %w", err))
+	}
+	indexDefs, err := datastore.ParseIndexYAML(file)
+	if err != nil {
+		panic(fmt.Errorf("failed to parse index.yaml file: %w", err))
+	}
+	datastore.GetTestable(ctx).AddIndexes(indexDefs...)
+
 	ctx = caching.WithEmptyProcessCache(ctx)
 	ctx = auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
 		cfg.Signer = signingtest.NewSigner(&signing.ServiceInfo{

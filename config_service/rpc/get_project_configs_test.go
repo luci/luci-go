@@ -48,7 +48,6 @@ func TestGetProjectConfigs(t *testing.T) {
 
 	Convey("GetProjectConfigs", t, func() {
 		ctx := testutil.SetupContext()
-		datastore.GetTestable(ctx).AutoIndex(true)
 		srv := &Configs{}
 
 		userID := identity.Identity("user:user@example.com")
