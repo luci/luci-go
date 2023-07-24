@@ -106,6 +106,15 @@ type AuthMethod struct {
 	// authentication methods.
 	IncompatibleCookies []string
 
+	// LimitCookieExposure, if set, limits the cookie to be set only on
+	// "/auth/openid/" HTTP path and makes it `SameSite: strict`.
+	//
+	// This is useful for SPAs that exchange cookies for authentication tokens via
+	// fetch(...) requests to "/auth/openid/state". In this case the cookie is
+	// not normally used by any other HTTP handler and it makes no sense to send
+	// it in every request.
+	LimitCookieExposure bool
+
 	// RequiredScopes is a list of required OAuth scopes that will be requested
 	// when making the OAuth authorization request, in addition to the default
 	// scopes (openid email profile) and the OptionalScopes.
@@ -427,8 +436,7 @@ func (m *AuthMethod) logoutHandler(ctx *router.Context) {
 			return errors.Annotate(err, "bad redirect URI").Err()
 		}
 
-		// If we have a cookie, revoke the refresh token and mark the session
-		// as closed.
+		// If we have a cookie, mark the session as closed.
 		if encryptedCookie, _ := r.Cookie(internal.SessionCookieName); encryptedCookie != nil {
 			aead := m.AEADProvider(ctx)
 			if aead == nil {
@@ -441,10 +449,12 @@ func (m *AuthMethod) logoutHandler(ctx *router.Context) {
 		}
 
 		// Nuke all session cookies to get to a completely clean state.
-		internal.RemoveCookie(rw, r, internal.SessionCookieName)
+		internal.RemoveCookie(rw, r, internal.SessionCookieName, internal.UnlimitedCookiePath)
+		internal.RemoveCookie(rw, r, internal.SessionCookieName, internal.LimitedCookiePath)
 		for _, name := range m.IncompatibleCookies {
-			internal.RemoveCookie(rw, r, name)
+			internal.RemoveCookie(rw, r, name, "/")
 		}
+
 		http.Redirect(rw, r, dest, http.StatusFound)
 		return nil
 	})
@@ -635,16 +645,33 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 			}
 		}
 
-		// Encrypt the session cookie with the *global* AEAD key and set it.
+		// Encrypt the session cookie with the *global* AEAD key.
 		httpCookie, err := internal.EncryptSessionCookie(aead, cookie)
 		if err != nil {
 			logging.Errorf(ctx, "Cookie encryption error: %s", err)
 			return errors.Reason("failed to prepare the cookie").Err()
 		}
+
+		// Set the cookie at an appropriate path and remove a potentially stale
+		// cookie on a different path.
+		var curPath, prevPath string
+		var sameSite http.SameSite
+		if m.LimitCookieExposure {
+			curPath = internal.LimitedCookiePath
+			prevPath = internal.UnlimitedCookiePath
+			sameSite = http.SameSiteStrictMode
+		} else {
+			curPath = internal.UnlimitedCookiePath
+			prevPath = internal.LimitedCookiePath
+			sameSite = 0 // use browser's default
+		}
+		httpCookie.Path = curPath
+		httpCookie.SameSite = sameSite
 		httpCookie.Secure = !m.Insecure
 		http.SetCookie(rw, httpCookie)
+		internal.RemoveCookie(rw, r, internal.SessionCookieName, prevPath)
 		for _, name := range m.IncompatibleCookies {
-			internal.RemoveCookie(rw, r, name)
+			internal.RemoveCookie(rw, r, name, "/")
 		}
 
 		// Finally redirect the user to the originally requested destination.

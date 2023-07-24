@@ -65,15 +65,14 @@ func MakeRedirectURL(base, dest string) (string, error) {
 // RemoveCookie sets a cookie to a past expiration date so that the browser can
 // remove it.
 //
-// It also replaces the value with junk, in case the browser decides to ignore
-// the expiration time.
-func RemoveCookie(rw http.ResponseWriter, r *http.Request, cookie string) {
-	if prev, err := r.Cookie(cookie); err == nil {
-		cpy := *prev
-		cpy.Value = "deleted"
-		cpy.Path = "/"
-		cpy.MaxAge = -1
-		cpy.Expires = time.Unix(1, 0)
-		http.SetCookie(rw, &cpy)
-	}
+// It also replaces the value with junk, in unlikely case the browser decides
+// to ignore the expiration time.
+func RemoveCookie(rw http.ResponseWriter, r *http.Request, cookie, path string) {
+	http.SetCookie(rw, &http.Cookie{
+		Name:    cookie,
+		Value:   "deleted",
+		Path:    path,
+		MaxAge:  -1,
+		Expires: time.Unix(1, 0),
+	})
 }

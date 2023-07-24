@@ -38,6 +38,12 @@ const (
 	// SessionCookieName is the name of the session cookie.
 	SessionCookieName = "LUCISID"
 
+	// UnlimitedCookiePath is a path to set the cookie on by default.
+	UnlimitedCookiePath = "/"
+
+	// LimitedCookiePath is a path to set the cookie on when limiting exposure.
+	LimitedCookiePath = "/auth/openid/"
+
 	// rawCookiePrefix is prepended to the encrypted cookie value to give us
 	// an ability to identify it in logs (if it leaks) and to version its
 	// encryption/encoding scheme format.
@@ -110,7 +116,9 @@ func NewSessionCookie(id session.ID) (*encryptedcookiespb.SessionCookie, tink.AE
 	}, a
 }
 
-// EncryptSessionCookie produces the final session cookie.
+// EncryptSessionCookie produces the session cookie with prepopulated fields.
+//
+// The caller still needs to fill in at least `Path` field.
 func EncryptSessionCookie(aead tink.AEAD, pb *encryptedcookiespb.SessionCookie) (*http.Cookie, error) {
 	enc, err := encryptB64(aead, pb, aeadContextSessionCookie)
 	if err != nil {
@@ -119,7 +127,6 @@ func EncryptSessionCookie(aead tink.AEAD, pb *encryptedcookiespb.SessionCookie) 
 	return &http.Cookie{
 		Name:     SessionCookieName,
 		Value:    rawCookiePrefix + enc,
-		Path:     "/",
 		HttpOnly: true, // no access from Javascript
 		MaxAge:   sessionCookieMaxAge,
 	}, nil

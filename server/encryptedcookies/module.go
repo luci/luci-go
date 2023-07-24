@@ -95,6 +95,15 @@ type ModuleOptions struct {
 	// should be enabled only if the frontend code needs it and it is aware of
 	// XSS risks.
 	ExposeStateEndpoint bool
+
+	// LimitCookieExposure, if set, limits the cookie to be set only on
+	// "/auth/openid/" HTTP path and makes it `SameSite: strict`.
+	//
+	// This is useful for SPAs that exchange cookies for authentication tokens via
+	// fetch(...) requests to "/auth/openid/state". In this case the cookie is
+	// not normally used by any other HTTP handler and it makes no sense to send
+	// it in every request.
+	LimitCookieExposure bool
 }
 
 // Register registers the command line flags.
@@ -158,8 +167,13 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 	)
 	f.BoolVar(&o.ExposeStateEndpoint,
 		"encrypted-cookies-expose-state-endpoint",
-		false,
+		o.ExposeStateEndpoint,
 		`Controls whether to expose "/auth/openid/state" endpoint.`,
+	)
+	f.BoolVar(&o.LimitCookieExposure,
+		"encrypted-cookies-limit-cookie-exposure",
+		o.LimitCookieExposure,
+		`If set, assign the cookie only to "/auth/openid/" HTTP path and make it "SameSite: strict".`,
 	)
 }
 
@@ -266,6 +280,7 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 		OptionalScopes:      m.opts.OptionalScopes,
 		RequiredScopes:      m.opts.RequiredScopes,
 		ExposeStateEndpoint: m.opts.ExposeStateEndpoint,
+		LimitCookieExposure: m.opts.LimitCookieExposure,
 	}
 
 	// Register it with the server guts.
@@ -350,7 +365,7 @@ func (m *serverModule) loadOpenIDConfig(ctx context.Context) (*atomic.Value, err
 // Can be used on the localhost during the development as a replacement for the
 // real thing.
 func (m *serverModule) initInDevMode(ctx context.Context, host module.Host) error {
-	method := &fakecookies.AuthMethod{}
+	method := &fakecookies.AuthMethod{LimitCookieExposure: m.opts.LimitCookieExposure}
 	host.RegisterCookieAuth(method)
 	method.InstallHandlers(host.Routes(), nil)
 

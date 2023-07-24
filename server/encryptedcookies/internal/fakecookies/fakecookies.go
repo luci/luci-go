@@ -41,6 +41,12 @@ import (
 
 // AuthMethod is an auth.Method implementation that uses fake cookies.
 type AuthMethod struct {
+	// LimitCookieExposure, if set, makes the fake cookie behave the same way as
+	// when this option is used with production cookies.
+	//
+	// See the module documentation.
+	LimitCookieExposure bool
+
 	m              sync.Mutex
 	serverUser     *auth.User // see serverUserInfo
 	serverUserInit bool       // true if already initialized (can still be nil)
@@ -53,9 +59,9 @@ var _ interface {
 } = (*AuthMethod)(nil)
 
 const (
-	loginURL          = "/auth/fake/login"
-	logoutURL         = "/auth/fake/logout"
-	defaultPictureURL = "/auth/fake/profile.svg"
+	loginURL          = "/auth/openid/login"
+	logoutURL         = "/auth/openid/logout"
+	defaultPictureURL = "/auth/openid/profile.svg"
 
 	cookieName = "FAKE_LUCI_DEV_AUTH_COOKIE"
 )
@@ -274,14 +280,30 @@ func (m *AuthMethod) loginHandlerPOST(ctx *router.Context) {
 		if _, err := identity.MakeIdentity("user:" + email); err != nil {
 			return errors.Annotate(err, "bad email").Err()
 		}
+
+		var curPath, prevPath string
+		var sameSite http.SameSite
+		if m.LimitCookieExposure {
+			curPath = internal.LimitedCookiePath
+			prevPath = internal.UnlimitedCookiePath
+			sameSite = http.SameSiteStrictMode
+		} else {
+			curPath = internal.UnlimitedCookiePath
+			prevPath = internal.LimitedCookiePath
+			sameSite = 0 // use browser's default
+		}
+
 		http.SetCookie(rw, &http.Cookie{
 			Name:     cookieName,
 			Value:    encodeFakeCookie(email),
-			Path:     "/",
+			Path:     curPath,
+			SameSite: sameSite,
 			HttpOnly: true,
 			Secure:   false,
 			MaxAge:   60 * 60 * 24 * 14, // 2 weeks
 		})
+		internal.RemoveCookie(rw, r, cookieName, prevPath)
+
 		http.Redirect(rw, r, dest, http.StatusFound)
 		return nil
 	})
@@ -294,7 +316,8 @@ func (m *AuthMethod) logoutHandler(ctx *router.Context) {
 		if err != nil {
 			return errors.Annotate(err, "bad redirect URI").Err()
 		}
-		internal.RemoveCookie(rw, r, cookieName)
+		internal.RemoveCookie(rw, r, cookieName, internal.UnlimitedCookiePath)
+		internal.RemoveCookie(rw, r, cookieName, internal.LimitedCookiePath)
 		http.Redirect(rw, r, dest, http.StatusFound)
 		return nil
 	})

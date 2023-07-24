@@ -139,7 +139,8 @@ func TestMethod(t *testing.T) {
 			// callback URI with some query parameters.
 			return provider.CallbackRawQuery(authURL.Query())
 		}
-		performCallback := func(method *AuthMethod, callbackRawQuery string) (cookie string) {
+
+		performCallback := func(method *AuthMethod, callbackRawQuery string) (cookie *http.Cookie, deleted []*http.Cookie) {
 			// Provider calls us back on our primary host (not "dest.example.com").
 			resp := call(method.callbackHandler, "primary.example.com", &url.URL{
 				RawQuery: callbackRawQuery,
@@ -159,14 +160,37 @@ func TestMethod(t *testing.T) {
 			So(resp.Header.Get("Location"), ShouldEqual, "/some/dest")
 
 			// And we've got some session cookie!
-			setCookie := resp.Header.Get("Set-Cookie")
-			So(setCookie, ShouldNotEqual, "")
-			return strings.Split(setCookie, ";")[0]
+			for _, c := range resp.Cookies() {
+				if c.MaxAge == -1 {
+					deleted = append(deleted, c)
+				} else {
+					// Should have at most one new cookie.
+					So(cookie, ShouldBeNil)
+					cookie = c
+				}
+			}
+			So(cookie, ShouldNotBeNil)
+			return
+		}
+
+		phonyRequest := func(cookie *http.Cookie) auth.RequestMetadata {
+			req, _ := http.NewRequest("GET", "https://dest.example.com/phony", nil)
+			if cookie != nil {
+				req.Header.Add("Cookie", fmt.Sprintf("%s=%s", cookie.Name, cookie.Value))
+			}
+			return auth.RequestMetadataForHTTP(req)
 		}
 
 		Convey("Full flow", func() {
 			callbackRawQueryV1 := performLogin(methodV1)
-			cookieV1 := performCallback(methodV1, callbackRawQueryV1)
+			cookieV1, deleted := performCallback(methodV1, callbackRawQueryV1)
+
+			// Set the cookie on the correct path.
+			So(cookieV1.Path, ShouldEqual, internal.UnlimitedCookiePath)
+
+			// Removed a potentially stale cookie on a different path.
+			So(deleted, ShouldHaveLength, 1)
+			So(deleted[0].Path, ShouldEqual, internal.LimitedCookiePath)
 
 			// Handed out 1 access token thus far.
 			So(provider.AccessTokensMinted(), ShouldEqual, 1)
@@ -179,16 +203,8 @@ func TestMethod(t *testing.T) {
 				So(resp.StatusCode, ShouldEqual, http.StatusBadRequest)
 			})
 
-			phonyRequest := func(cookie string) auth.RequestMetadata {
-				req, _ := http.NewRequest("GET", "https://dest.example.com/phony", nil)
-				if cookie != "" {
-					req.Header.Add("Cookie", cookie)
-				}
-				return auth.RequestMetadataForHTTP(req)
-			}
-
 			Convey("No cookies => method is skipped", func() {
-				user, session, err := methodV1.Authenticate(ctx, phonyRequest(""))
+				user, session, err := methodV1.Authenticate(ctx, phonyRequest(nil))
 				So(err, ShouldBeNil)
 				So(user, ShouldBeNil)
 				So(session, ShouldBeNil)
@@ -219,7 +235,10 @@ func TestMethod(t *testing.T) {
 			})
 
 			Convey("Malformed cookie is ignored", func() {
-				user, session, err := methodV1.Authenticate(ctx, phonyRequest(cookieV1[:20]+"aaaaaa"+cookieV1[26:]))
+				user, session, err := methodV1.Authenticate(ctx, phonyRequest(&http.Cookie{
+					Name:  cookieV1.Name,
+					Value: cookieV1.Value[:20],
+				}))
 				So(err, ShouldBeNil)
 				So(user, ShouldBeNil)
 				So(session, ShouldBeNil)
@@ -292,15 +311,23 @@ func TestMethod(t *testing.T) {
 				parsed, _ := url.Parse(logoutURL)
 
 				resp := call(methodV1.logoutHandler, "primary.example.com", parsed, http.Header{
-					"Cookie": {cookieV1},
+					"Cookie": {fmt.Sprintf("%s=%s", cookieV1.Name, cookieV1.Value)},
 				})
 
 				// Got a redirect to the final destination URL.
 				So(resp.StatusCode, ShouldEqual, http.StatusFound)
 				So(resp.Header.Get("Location"), ShouldEqual, "/some/dest")
 
-				// The cookie is removed.
-				So(resp.Header.Get("Set-Cookie"), ShouldStartWith, "LUCISID=deleted")
+				// Cookies are removed.
+				cookies := resp.Cookies()
+				paths := []string{}
+				for _, c := range cookies {
+					So(c.Name, ShouldEqual, internal.SessionCookieName)
+					So(c.Value, ShouldEqual, "deleted")
+					So(c.MaxAge, ShouldEqual, -1)
+					paths = append(paths, c.Path)
+				}
+				So(paths, ShouldResemble, []string{internal.UnlimitedCookiePath, internal.LimitedCookiePath})
 
 				// It also no longer works.
 				user, session, err := methodV1.Authenticate(ctx, phonyRequest(cookieV1))
@@ -313,7 +340,7 @@ func TestMethod(t *testing.T) {
 
 				// Hitting logout again (resending the cookie) succeeds.
 				resp = call(methodV1.logoutHandler, "primary.example.com", parsed, http.Header{
-					"Cookie": {cookieV1},
+					"Cookie": {fmt.Sprintf("%s=%s", cookieV1.Name, cookieV1.Value)},
 				})
 				So(resp.StatusCode, ShouldEqual, http.StatusFound)
 				So(resp.Header.Get("Location"), ShouldEqual, "/some/dest")
@@ -370,7 +397,7 @@ func TestMethod(t *testing.T) {
 				// User hit the login handle in the v1 but the callback is handled by
 				// v2.
 				callbackRawQueryV1 := performLogin(methodV1)
-				cookieV1 := performCallback(methodV2, callbackRawQueryV1)
+				cookieV1, _ := performCallback(methodV2, callbackRawQueryV1)
 
 				// Cookies produced by login requests in methodV1 does not have the
 				// added scope.
@@ -382,7 +409,7 @@ func TestMethod(t *testing.T) {
 				// User hit the login handle in the v2 but the callback is handled by
 				// v1.
 				callbackRawQueryV2 := performLogin(methodV2)
-				cookieV2 := performCallback(methodV1, callbackRawQueryV2)
+				cookieV2, _ := performCallback(methodV1, callbackRawQueryV2)
 
 				// Cookies produced by login requests in methodV2 does have the added
 				// scope.
@@ -398,6 +425,29 @@ func TestMethod(t *testing.T) {
 			})
 		})
 
+		Convey("LimitCookieExposure cookie works", func() {
+			method := makeMethod([]string{"scope1"}, []string{"scope2"})
+			method.LimitCookieExposure = true
+
+			cookie, deleted := performCallback(method, performLogin(method))
+
+			// Set the cookie on the correct path.
+			So(cookie.Path, ShouldEqual, internal.LimitedCookiePath)
+			So(cookie.SameSite, ShouldEqual, http.SameSiteStrictMode)
+
+			// Removed a potentially stale cookie on a different path.
+			So(deleted, ShouldHaveLength, 1)
+			So(deleted[0].Path, ShouldEqual, internal.UnlimitedCookiePath)
+
+			user, _, _ := method.Authenticate(ctx, phonyRequest(cookie))
+			So(user, ShouldResemble, &auth.User{
+				Identity: identity.Identity("user:" + provider.UserEmail),
+				Email:    provider.UserEmail,
+				Name:     provider.UserName,
+				Picture:  provider.UserPicture,
+			})
+		})
+
 		Convey("State endpoint works", func() {
 			r := router.New()
 			r.Use(router.MiddlewareChain{
@@ -408,11 +458,11 @@ func TestMethod(t *testing.T) {
 			})
 			methodV1.InstallHandlers(r, nil)
 
-			callState := func(cookie string) (code int, state *AuthState) {
+			callState := func(cookie *http.Cookie) (code int, state *AuthState) {
 				rw := httptest.NewRecorder()
 				req := httptest.NewRequest("GET", stateURL, nil)
-				if cookie != "" {
-					req.Header.Add("Cookie", cookie)
+				if cookie != nil {
+					req.Header.Add("Cookie", fmt.Sprintf("%s=%s", cookie.Name, cookie.Value))
 				}
 				req.Header.Add("Sec-Fetch-Site", "same-origin")
 				r.ServeHTTP(rw, req)
@@ -425,12 +475,12 @@ func TestMethod(t *testing.T) {
 				return
 			}
 
-			goodCookie := performCallback(methodV1, performLogin(methodV1))
+			goodCookie, _ := performCallback(methodV1, performLogin(methodV1))
 			So(provider.AccessTokensMinted(), ShouldEqual, 1)
 			tc.Add(30 * time.Minute)
 
 			Convey("No cookie", func() {
-				code, state := callState("")
+				code, state := callState(nil)
 				So(code, ShouldEqual, 200)
 				So(state, ShouldResemble, &AuthState{Identity: "anonymous:anonymous"})
 			})
