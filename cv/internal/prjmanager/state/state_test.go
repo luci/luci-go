@@ -60,8 +60,8 @@ type ctest struct {
 	clUpdater *changelist.Updater
 }
 
-func (ct *ctest) SetUp() (context.Context, func()) {
-	ctx, cancel := ct.Test.SetUp()
+func (ct *ctest) SetUp(testingT *testing.T) (context.Context, func()) {
+	ctx, cancel := ct.Test.SetUp(testingT)
 	ct.pm = prjmanager.NewNotifier(ct.TQDispatcher)
 	ct.clUpdater = changelist.NewUpdater(ct.TQDispatcher, changelist.NewMutator(ct.TQDispatcher, ct.pm, nil, tryjob.NewNotifier(ct.TQDispatcher)))
 	gerritupdater.RegisterUpdater(ct.clUpdater, ct.GFactory())
@@ -149,7 +149,7 @@ func TestUpdateConfig(t *testing.T) {
 			gHost:    "c-review.example.com",
 			Test:     cvtesting.Test{},
 		}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		cfg1 := &cfgpb.Config{}
@@ -549,7 +549,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			lProject: "test",
 			gHost:    "c-review.example.com",
 		}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		cfg1 := &cfgpb.Config{}
@@ -816,7 +816,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 			lProject: "test",
 			gHost:    "c-review.example.com",
 		}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		cfg1 := &cfgpb.Config{}
@@ -1023,7 +1023,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 
 	Convey("OnPurgesCompleted works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		h := Handler{}

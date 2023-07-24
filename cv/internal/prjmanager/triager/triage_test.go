@@ -46,7 +46,7 @@ func TestTriage(t *testing.T) {
 
 	Convey("Triage works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		// Truncate start time point s.t. easy to see diff in test failures.

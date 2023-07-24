@@ -50,7 +50,7 @@ func TestRunManager(t *testing.T) {
 
 	Convey("RunManager", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 		const runID = "chromium/222-1-deadbeef"
 		const initialEVersion = 10
@@ -365,7 +365,7 @@ func TestRunManager(t *testing.T) {
 
 	Convey("Poke", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 		const (
 			lProject   = "chromium"

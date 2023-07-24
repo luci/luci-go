@@ -48,7 +48,7 @@ func TestTaskHandler(t *testing.T) {
 		})
 		Convey("works with", func() {
 			cvt := &cvtesting.Test{}
-			ctx, cancel := cvt.SetUp()
+			ctx, cancel := cvt.SetUp(t)
 			defer cancel()
 			n := tryjob.NewNotifier(cvt.TQDispatcher)
 			c := NewCancellator(n)

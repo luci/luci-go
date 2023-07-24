@@ -42,7 +42,7 @@ func TestUpgradeCLs(t *testing.T) {
 
 	Convey("Upgrade all RunCLs to not contain CL description", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		mkCL := func(id common.CLID, ci *gerritpb.ChangeInfo) *run.RunCL {

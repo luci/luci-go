@@ -37,7 +37,7 @@ func TestListener(t *testing.T) {
 
 	Convey("Listener", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 		client, closeFn := mockPubSub(ctx)
 		defer closeFn()

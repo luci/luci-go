@@ -40,7 +40,7 @@ func TestExportRunToBQ(t *testing.T) {
 
 	Convey("Exporting a Run to BQ works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		exporter := NewExporter(ct.TQDispatcher, ct.BQFake, ct.Env)

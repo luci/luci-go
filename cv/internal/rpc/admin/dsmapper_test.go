@@ -37,7 +37,7 @@ func TestDSMapperServer(t *testing.T) {
 
 	Convey("dsmapper job lifecycle", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		d := dsMapper{

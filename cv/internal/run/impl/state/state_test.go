@@ -37,7 +37,7 @@ func TestCheckTree(t *testing.T) {
 
 	Convey("CheckTree", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 		const lProject = "chromium"
 		rs := &RunState{

@@ -37,7 +37,7 @@ func TestSubmissionObeySubmitOptions(t *testing.T) {
 
 	Convey("Burst requests to submit", t, func() {
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "infra"

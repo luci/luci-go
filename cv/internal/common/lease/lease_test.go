@@ -36,7 +36,7 @@ func TestLease(t *testing.T) {
 
 	Convey("Apply", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(1)))
 
@@ -111,7 +111,7 @@ func TestLease(t *testing.T) {
 
 	Convey("Terminate", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		rid := ResourceID("foo/1")
@@ -154,7 +154,7 @@ func TestLease(t *testing.T) {
 
 	Convey("Extend", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(1)))
 
@@ -240,7 +240,7 @@ func TestRetryIfLeased(t *testing.T) {
 
 	Convey("RetryIfLeased", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		innerDelay, leaseDur := 2*time.Minute, 3*time.Minute

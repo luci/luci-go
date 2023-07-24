@@ -93,7 +93,7 @@ func TestListener(t *testing.T) {
 	const bbHost = "buildbucket.example.com"
 	Convey("Listener", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		srv := pstest.NewServer()

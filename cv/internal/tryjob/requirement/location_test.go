@@ -32,7 +32,7 @@ import (
 func TestLocationFilterMatch(t *testing.T) {
 	Convey("locationFilterMatch works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		// For the purpose of locationFilterMatch, only the Gerrit host,
@@ -223,7 +223,7 @@ func TestHelperFunctions(t *testing.T) {
 	Convey("isMergeCommit", t, func() {
 
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 		Convey("returns false on missing data", func() {
 			So(isMergeCommit(ctx, nil), ShouldBeFalse)
@@ -251,7 +251,7 @@ func TestHelperFunctions(t *testing.T) {
 
 	Convey("hostAndProjectMatch", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		Convey("when only some files in a repo are included", func() {

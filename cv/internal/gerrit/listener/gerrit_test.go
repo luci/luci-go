@@ -47,7 +47,7 @@ func TestGerrit(t *testing.T) {
 
 	Convey("gerritSubscriber", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 		client, closeFn := mockPubSub(ctx)
 		defer closeFn()

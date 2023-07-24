@@ -47,7 +47,7 @@ func TestGetRun(t *testing.T) {
 
 	Convey("GetRun", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		rs := RunsServer{}

@@ -49,7 +49,7 @@ func TestValidateProjectHighLevel(t *testing.T) {
 
 	Convey("ValidateProject works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		cfg := cfgpb.Config{}
@@ -70,7 +70,7 @@ func TestValidateProjectHighLevel(t *testing.T) {
 
 	Convey("ValidateProjectConfig works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		cfg := cfgpb.Config{}
@@ -136,7 +136,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 
 	Convey("Validate Config", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 		vctx := &validation.Context{Context: ctx}
 		validateProjectConfig := func(vctx *validation.Context, cfg *cfgpb.Config) {
@@ -896,7 +896,7 @@ func TestTryjobValidation(t *testing.T) {
 
 	Convey("Validate Tryjob Verifier Config", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		validate := func(textPB string, parentPB ...string) error {

@@ -52,7 +52,7 @@ func TestGetProject(t *testing.T) {
 
 	Convey("GetProject works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "luci"
@@ -84,7 +84,7 @@ func TestGetProjectLogs(t *testing.T) {
 
 	Convey("GetProjectLogs works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "luci"
@@ -117,7 +117,7 @@ func TestGetRun(t *testing.T) {
 
 	Convey("GetRun works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const rid = "proj/123-deadbeef"
@@ -155,7 +155,7 @@ func TestGetCL(t *testing.T) {
 
 	Convey("GetCL works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		a := AdminServer{}
@@ -186,7 +186,7 @@ func TestGetPoller(t *testing.T) {
 
 	Convey("GetPoller works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "luci"
@@ -222,7 +222,7 @@ func TestSearchRuns(t *testing.T) {
 
 	Convey("SearchRuns works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "proj"
@@ -564,7 +564,7 @@ func TestDeleteProjectEvents(t *testing.T) {
 
 	Convey("DeleteProjectEvents works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "luci"
@@ -613,7 +613,7 @@ func TestRefreshProjectCLs(t *testing.T) {
 
 	Convey("RefreshProjectCLs works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "luci"
@@ -670,7 +670,7 @@ func TestSendProjectEvent(t *testing.T) {
 
 	Convey("SendProjectEvent works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "luci"
@@ -707,7 +707,7 @@ func TestSendRunEvent(t *testing.T) {
 
 	Convey("SendRunEvent works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const rid = "proj/123-deadbeef"
@@ -744,7 +744,7 @@ func TestScheduleTask(t *testing.T) {
 
 	Convey("ScheduleTask works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "infra"

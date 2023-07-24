@@ -98,7 +98,7 @@ func TestComponentsActions(t *testing.T) {
 
 	Convey("Component actions logic work in the abstract", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 		now := ct.Clock.Now()
 

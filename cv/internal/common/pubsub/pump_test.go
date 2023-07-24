@@ -33,7 +33,7 @@ func TestPullingBatchProcessor(t *testing.T) {
 	t.Parallel()
 	Convey("PBP works ", t, func() {
 		ct := cvtesting.Test{MaxDuration: time.Minute}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		psSrv, err := NewTestPSServer(ctx)

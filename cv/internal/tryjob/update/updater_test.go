@@ -125,7 +125,7 @@ var tryjobDef = &tryjob.Definition{
 func TestHandleTask(t *testing.T) {
 	Convey("HandleTryjobUpdateTask", t, func() {
 		ct := cvtesting.Test{}
-		ctx, clean := ct.SetUp()
+		ctx, clean := ct.SetUp(t)
 		defer clean()
 
 		rn := &mockRMNotifier{}
@@ -310,7 +310,7 @@ func TestHandleTask(t *testing.T) {
 func TestUpdate(t *testing.T) {
 	Convey("Update", t, func() {
 		ct := cvtesting.Test{}
-		ctx, clean := ct.SetUp()
+		ctx, clean := ct.SetUp(t)
 		defer clean()
 
 		rn := &mockRMNotifier{}

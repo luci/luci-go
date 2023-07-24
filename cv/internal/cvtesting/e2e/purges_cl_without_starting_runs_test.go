@@ -41,7 +41,7 @@ func TestPurgesCLWithoutOwner(t *testing.T) {
 	Convey("PM purges CLs without owner's email", t, func() {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const (
@@ -83,7 +83,7 @@ func TestPurgesCLWatchedByTwoConfigGroups(t *testing.T) {
 	Convey("PM purges CLs watched by more than 1 Config Group of the same project", t, func() {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const (
@@ -129,7 +129,7 @@ func TestPurgesCLWatchedByTwoProjects(t *testing.T) {
 	Convey("PM purges CLs watched by more than 1 LUCI Projects", t, func() {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const (
@@ -232,7 +232,7 @@ func testPurgesCLWithUnwatchedDeps(
 ) {
 	Convey("PM purges CL with dep outside the project after waiting stabilization_delay: "+name, t, func() {
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const (
@@ -283,7 +283,7 @@ func TestPurgesCLWithMismatchedDepsMode(t *testing.T) {
 	Convey("PM purges CL with dep outside the project after waiting stabilization_delay", t, func() {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const (
@@ -356,7 +356,7 @@ func TestPurgesSingularFullRunWithOpenDeps(t *testing.T) {
 
 	Convey("PM purges CL in Full Run mode if it has not submitted deps", t, func() {
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const (
@@ -404,7 +404,7 @@ func TestPurgesCLCQDependingOnItself(t *testing.T) {
 	Convey("PM purges CL which CQ-Depends on itself", t, func() {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const (
@@ -446,7 +446,7 @@ func TestPurgesOnTriggerReuse(t *testing.T) {
 	Convey("PM purges CL which CQ-Depends on itself", t, func() {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const (
@@ -505,7 +505,7 @@ func TestPurgesOnCommitFalseFooter(t *testing.T) {
 
 	Convey("PM purges a CL with a 'Commit: false' footer", t, func() {
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const (

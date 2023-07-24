@@ -32,7 +32,7 @@ func TestGerritCLDeleted(t *testing.T) {
 
 	Convey("CV cancels a Run with some grace period after Gerrit CL is deleted", t, func() {
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "infra"

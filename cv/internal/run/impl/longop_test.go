@@ -45,7 +45,7 @@ func TestLongOps(t *testing.T) {
 
 	Convey("Manager handles long ops", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 		const runID = "chromium/222-1-deadbeef"
 		const initialEVersion = 10
@@ -246,7 +246,7 @@ func TestLongOpCancellationChecker(t *testing.T) {
 
 	Convey("longOpCancellationChecker works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 		const runID = "chromium/222-1-deadbeef"
 		const opID = "op-1"

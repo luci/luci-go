@@ -261,7 +261,7 @@ func TestGetDisallowedOwners(t *testing.T) {
 func TestCompute(t *testing.T) {
 	Convey("Compute works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 		ctx = makeFakeAuthState(ctx)
 

@@ -335,7 +335,7 @@ func TestGobMapConcurrentUpdates(t *testing.T) {
 
 	Convey("Update() works under flaky Datastore and lots of concurrent tries", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const (

@@ -41,7 +41,7 @@ func TestRunAggregator(t *testing.T) {
 
 	Convey("runAggregator works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 		// Truncate current time to seconds to deal with integer delays.
 		ct.Clock.Set(ct.Clock.Now().UTC().Add(time.Second).Truncate(time.Second))

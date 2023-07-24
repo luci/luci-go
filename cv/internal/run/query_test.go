@@ -40,7 +40,7 @@ func TestCLQueryBuilder(t *testing.T) {
 
 	Convey("CLQueryBuilder works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		// getAll asserts that LoadRuns returns Runs with the given RunIDs.
@@ -198,7 +198,7 @@ func TestProjectQueryBuilder(t *testing.T) {
 
 	Convey("ProjectQueryBuilder works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		getAll := func(qb ProjectQueryBuilder) common.RunIDs {
@@ -326,7 +326,7 @@ func TestRecentQueryBuilder(t *testing.T) {
 
 	Convey("RecentQueryBuilder works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		// checkOrder verifies this order:
@@ -522,7 +522,7 @@ func TestLoadRunsFromQuery(t *testing.T) {
 
 	Convey("loadRunsFromQuery", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		makeRun := func(proj string, delay time.Duration, clids ...common.CLID) common.RunID {

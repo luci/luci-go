@@ -29,6 +29,7 @@ import (
 	"time"
 
 	nativeDatastore "cloud.google.com/go/datastore"
+	"github.com/golang/mock/gomock"
 	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/auth"
@@ -57,8 +58,6 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
-	listenerpb "go.chromium.org/luci/cv/settings/listener"
-
 	bbfake "go.chromium.org/luci/cv/internal/buildbucket/fake"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/bq"
@@ -67,6 +66,7 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	listenerpb "go.chromium.org/luci/cv/settings/listener"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -80,7 +80,7 @@ const gaeTopLevelDomain = ".appspot.com"
 // Typical use:
 //
 //	ct := cvtesting.Test{}
-//	ctx, cancel := ct.SetUp()
+//	ctx, cancel := ct.SetUp(t)
 //	defer cancel()
 type Test struct {
 	// Env simulates CV environment.
@@ -115,6 +115,9 @@ type Test struct {
 	// Set to ~10ms when debugging a hung test.
 	MaxDuration time.Duration
 
+	// GoMockCtl is the controller for gomock.
+	GoMockCtl *gomock.Controller
+
 	// cleanupFuncs are executed in reverse order in cleanup().
 	cleanupFuncs []func()
 
@@ -130,7 +133,7 @@ func IsTestingContext(ctx context.Context) bool {
 	return ctx.Value(testingContextKeyType{}) != nil
 }
 
-func (t *Test) SetUp() (context.Context, func()) {
+func (t *Test) SetUp(testingT *testing.T) (context.Context, func()) {
 	if t.Env == nil {
 		t.Env = &common.Env{
 			LogicalHostname: "luci-change-verifier" + gaeTopLevelDomain,
@@ -211,6 +214,7 @@ func (t *Test) SetUp() (context.Context, func()) {
 	t.TSMonStore = store.NewInMemory(&target.Task{})
 	tsmon.GetState(ctx).SetStore(t.TSMonStore)
 
+	t.GoMockCtl = gomock.NewController(testingT)
 	if err := srvcfg.SetTestListenerConfig(ctx, &listenerpb.Settings{}, nil); err != nil {
 		panic(err)
 	}

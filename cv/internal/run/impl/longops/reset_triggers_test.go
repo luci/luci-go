@@ -45,7 +45,7 @@ func TestResetTriggers(t *testing.T) {
 
 	Convey("ResetTriggers works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 		mutator := changelist.NewMutator(ct.TQDispatcher, nil, nil, nil)
 

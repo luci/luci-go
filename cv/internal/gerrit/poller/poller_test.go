@@ -44,7 +44,7 @@ func TestSchedule(t *testing.T) {
 
 	Convey("Schedule works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		ct.Clock.Set(ct.Clock.Now().Truncate(pollInterval).Add(pollInterval))
@@ -95,7 +95,7 @@ func TestObservesProjectLifetime(t *testing.T) {
 
 	Convey("Gerrit Poller observes project lifetime", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "chromium"
@@ -172,7 +172,7 @@ func TestDiscoversCLs(t *testing.T) {
 
 	Convey("Gerrit Poller discovers CLs", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "chromium"

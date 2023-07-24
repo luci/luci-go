@@ -47,7 +47,7 @@ func TestCreatesSingularRun(t *testing.T) {
 	Convey("CV creates 1 CL Run, which gets canceled by the user", t, func() {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "infra"
@@ -128,7 +128,7 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 	Convey("CV creates 1 CL Quick Dry Run, which succeeds", t, func() {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "infra"
@@ -231,7 +231,7 @@ func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 	Convey("CV creates 1 CL Quick Dry Run first and then upgrades to Full Run", t, func() {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "infra"
@@ -358,7 +358,7 @@ func TestCreatesSingularFullRunSuccess(t *testing.T) {
 	Convey("CV creates 1 CL Full Run, which succeeds", t, func() {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "infra"
@@ -452,7 +452,7 @@ func TestCreatesSingularDryRunAborted(t *testing.T) {
 	Convey("CV creates 1 CL Run, which gets canceled by the user", t, func() {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "infra"
@@ -518,7 +518,7 @@ func TestCreatesSingularRunWithDeps(t *testing.T) {
 	Convey("CV creates Run in singular config in presence of Git dependencies.", t, func() {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "infra"
@@ -594,7 +594,7 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 	Convey("CV creates 3 CLs Full Run, which succeeds", t, func() {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "infra"
@@ -755,7 +755,7 @@ func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 
 	Convey("CV submits stack of 3 CLs in singular mode with allow_submit_with_open_deps=true", t, func() {
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "infra"
@@ -891,7 +891,7 @@ func TestCreatesMultiCLsFailPostStartMessage(t *testing.T) {
 
 	Convey("CV creates 2 CLs Full Run, but fails to post start message on one of the CLs", t, func() {
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "infra"

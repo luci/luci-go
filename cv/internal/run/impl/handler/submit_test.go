@@ -52,7 +52,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 
 	Convey("OnReadyForSubmission", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "l_project"
@@ -280,7 +280,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 
 	Convey("OnSubmissionCompleted", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "infra"
@@ -952,7 +952,7 @@ func TestOnCLsSubmitted(t *testing.T) {
 
 	Convey("OnCLsSubmitted", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 		rid := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("deadbeef"))
 		rs := &state.RunState{Run: run.Run{

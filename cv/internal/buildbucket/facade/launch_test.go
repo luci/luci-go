@@ -40,7 +40,7 @@ import (
 func TestLaunch(t *testing.T) {
 	Convey("Launch", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 		f := &Facade{
 			ClientFactory: ct.BuildbucketFake.NewClientFactory(),

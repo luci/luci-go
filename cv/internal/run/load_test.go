@@ -39,7 +39,7 @@ func TestLoadRunLogEntries(t *testing.T) {
 
 	Convey("LoadRunLogEntries works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		ev := int64(1)
@@ -109,7 +109,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 
 	Convey("LoadRunsBuilder works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "proj"

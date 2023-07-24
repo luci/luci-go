@@ -22,6 +22,7 @@ import (
 	"math"
 	"math/rand"
 	"strings"
+	"testing"
 	"time"
 
 	"cloud.google.com/go/pubsub"
@@ -105,7 +106,7 @@ func init() {
 // Typical use:
 //
 //	ct := Test{CVDev: true}
-//	ctx, cancel := ct.SetUp()
+//	ctx, cancel := ct.SetUp(t)
 //	defer cancel()
 //	...
 //	ct.RunUntil(ctx, func() bool { return len(ct.LoadRunsOf("project")) > 0 })
@@ -126,7 +127,7 @@ type Test struct {
 // SetUp sets up the end to end test.
 //
 // Must be called exactly once.
-func (t *Test) SetUp() (context.Context, func()) {
+func (t *Test) SetUp(testingT *testing.T) (context.Context, func()) {
 	if t.Test == nil {
 		t.Test = &cvtesting.Test{}
 	}
@@ -143,7 +144,7 @@ func (t *Test) SetUp() (context.Context, func()) {
 	}
 
 	// Delegate most setup to cvtesting.Test.
-	ctx, ctxCancel := t.Test.SetUp()
+	ctx, ctxCancel := t.Test.SetUp(testingT)
 	cleanupFns := []func(){ctxCancel}
 	t.Test.DisableProjectInGerritListener(ctx, ".*")
 

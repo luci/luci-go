@@ -148,7 +148,7 @@ func TestEventboxWorks(t *testing.T) {
 
 	Convey("eventbox works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const limit = 10000
@@ -263,7 +263,7 @@ func TestEventboxPostProcessFn(t *testing.T) {
 
 	Convey("eventbox", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const limit = 10000
@@ -321,7 +321,7 @@ func TestEventboxFails(t *testing.T) {
 
 	Convey("eventbox fails as intended in failure cases", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const limit = 100000
@@ -456,7 +456,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 
 	Convey("eventbox doesn't transact on nil transitions", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const limit = 100000

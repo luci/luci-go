@@ -32,7 +32,7 @@ func TestListenerConfigValidation(t *testing.T) {
 
 	Convey("Validate Config", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		vctx := &validation.Context{Context: ctx}

@@ -47,7 +47,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 	t.Parallel()
 	Convey("PrepExecutionPlan", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		executor := &Executor{
@@ -490,7 +490,7 @@ func TestExecutePlan(t *testing.T) {
 	t.Parallel()
 	Convey("ExecutePlan", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		Convey("Discard tryjobs", func() {

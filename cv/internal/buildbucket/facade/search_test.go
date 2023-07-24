@@ -38,7 +38,7 @@ import (
 func TestSearch(t *testing.T) {
 	Convey("Search", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 		f := &Facade{
 			ClientFactory: ct.BuildbucketFake.NewClientFactory(),

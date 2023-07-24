@@ -41,7 +41,7 @@ func TestSearchRuns(t *testing.T) {
 
 	Convey("SearchRuns", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		srv := RunsServer{}

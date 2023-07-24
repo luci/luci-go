@@ -54,7 +54,7 @@ func TestReset(t *testing.T) {
 
 	Convey("Reset", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const ownerID int64 = 5

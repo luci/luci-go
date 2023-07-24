@@ -49,7 +49,7 @@ func TestUpdaterBackend(t *testing.T) {
 	Convey("updaterBackend methods work, except Fetch()", t, func() {
 		// Fetch() is covered in TestUpdaterBackendFetch.
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		gu := &updaterBackend{
@@ -164,7 +164,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 
 	Convey("updaterBackend.Fetch() works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const (

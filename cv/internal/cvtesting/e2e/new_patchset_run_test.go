@@ -39,7 +39,7 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 	t.Parallel()
 	Convey("Non-combinable", t, func() {
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "infra"
@@ -318,7 +318,7 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 
 	Convey("Combinable", t, func() {
 		ct := Test{}
-		ctx, cancel := ct.SetUp()
+		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
 		const lProject = "infra"

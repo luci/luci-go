@@ -39,7 +39,7 @@ func TestCancel(t *testing.T) {
 
 	Convey("Cancel", t, func() {
 		ct := cvtesting.Test{}
-		ctx, close := ct.SetUp()
+		ctx, close := ct.SetUp(t)
 		defer close()
 		ctx, _ = pmtest.MockDispatch(ctx)
 
