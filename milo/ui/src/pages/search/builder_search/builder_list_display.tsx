@@ -32,7 +32,7 @@ export function BuilderListDisplay({
   return (
     <>
       {Object.entries(groupedBuilders).map(([bucketId, builders]) => (
-        <Box key={bucketId}>
+        <Box key={bucketId} data-testid="builder-data">
           <Typography variant="h6">{bucketId}</Typography>
           <ul>
             {builders?.map((builder) => (

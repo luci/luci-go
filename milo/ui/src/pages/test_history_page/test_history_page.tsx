@@ -18,6 +18,8 @@ import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
+import { PageMeta } from '@/common/components/page_meta';
+import { UiPage } from '@/common/constants';
 import { useStore } from '@/common/store';
 import { GraphType } from '@/common/store/test_history_page';
 
@@ -89,7 +91,7 @@ export const TestHistoryPage = observer(() => {
       { ...(!pageState.filterText ? {} : { q: pageState.filterText }) },
       { replace: true }
     );
-  }, [pageState.filterText]);
+  }, [pageState.filterText, setSearchParams]);
 
   useEffect(() => {
     pageState.entriesLoader?.loadFirstPage();
@@ -103,6 +105,11 @@ export const TestHistoryPage = observer(() => {
 
   return (
     <PageContainer>
+      <PageMeta
+        project={projectOrRealm}
+        title={UiPage.TestHistory}
+        selectedPage={UiPage.TestHistory}
+      />
       <div
         css={{
           width: '100%',

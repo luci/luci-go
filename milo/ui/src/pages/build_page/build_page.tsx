@@ -30,11 +30,13 @@ import purpleFavicon from '@/common/assets/favicons/purple-32.png';
 import redFavicon from '@/common/assets/favicons/red-32.png';
 import tealFavicon from '@/common/assets/favicons/teal-32.png';
 import yellowFavicon from '@/common/assets/favicons/yellow-32.png';
+import { PageMeta } from '@/common/components/page_meta/page_meta';
 import { Tab, Tabs } from '@/common/components/tabs';
 import {
   BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_COLOR_THEME_MAP,
   BUILD_STATUS_DISPLAY_MAP,
+  UiPage,
 } from '@/common/constants';
 import { BuildStatus } from '@/common/services/buildbucket';
 import { useStore } from '@/common/store';
@@ -145,9 +147,6 @@ export const BuildPage = observer(() => {
   const status = build?.data?.status;
   const statusDisplay = status ? BUILD_STATUS_DISPLAY_MAP[status] : 'loading';
   const documentTitle = `${statusDisplay} - ${builder} ${buildNumOrId}`;
-  useEffect(() => {
-    document.title = documentTitle;
-  }, [documentTitle]);
 
   const faviconUrl = build
     ? STATUS_FAVICON_MAP[build.data.status]
@@ -176,6 +175,11 @@ export const BuildPage = observer(() => {
   return (
     <InvocationProvider value={store.buildPage.invocation}>
       <BuildLitEnvProvider>
+        <PageMeta
+          project={project}
+          selectedPage={UiPage.Builders}
+          title={documentTitle}
+        />
         <ChangeConfigDialog
           open={store.showSettingsDialog}
           onClose={() => store.setShowSettingsDialog(false)}

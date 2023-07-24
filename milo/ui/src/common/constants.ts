@@ -248,3 +248,21 @@ export const NON_TRANSIENT_ERROR_CODES = Object.freeze([
   RpcCode.UNAUTHENTICATED,
   RpcCode.UNIMPLEMENTED,
 ]);
+
+/*
+ * An enum representing the pages
+ */
+export enum UiPage {
+  BuilderSearch = 'Builder search',
+  Builders = 'Builders',
+  Bisection = 'Bisection',
+  TestHistory = 'Test history',
+  FailureClusters = 'Failure clusters',
+  Testhaus = 'Testhaus',
+  Crosbolt = 'Crosbolt',
+  Consoles = 'Consoles',
+  SoM = 'Sheriff-o-Matic',
+  CQStatus = 'CQ Status Dashboard',
+  Goldeneye = 'Goldeneye',
+  ChromiumDash = 'ChromiumDash',
+}

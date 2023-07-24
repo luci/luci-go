@@ -17,6 +17,7 @@ import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 import { Outlet, useParams } from 'react-router-dom';
 
+import { PageMeta } from '@/common/components/page_meta/page_meta';
 import { Tab, Tabs } from '@/common/components/tabs';
 import { INVOCATION_STATE_DISPLAY_MAP } from '@/common/constants';
 import { useStore } from '@/common/store';
@@ -47,10 +48,10 @@ export const InvocationPage = observer(() => {
 
   useEffect(() => {
     store.invocationPage.setInvocationId(invId);
-    document.title = `inv: ${invId}`;
   }, [invId, store]);
 
   const inv = store.invocationPage.invocation.invocation;
+  const project = store.invocationPage.invocation.project;
   const buildId = invId.match(/^build-(?<id>\d+)/)?.groups?.['id'];
   const { swarmingHost, taskId } =
     invId.match(/^task-(?<swarmingHost>.*)-(?<taskId>[0-9a-fA-F]+)$/)?.groups ||
@@ -59,6 +60,7 @@ export const InvocationPage = observer(() => {
 
   return (
     <InvLitEnvProvider>
+      <PageMeta project={project || ''} title={`inv: ${invId}`} />
       <div
         css={{
           backgroundColor: 'var(--block-background-color)',

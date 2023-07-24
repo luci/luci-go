@@ -12,12 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Box, styled } from '@mui/material';
+import { useState } from 'react';
 import { Outlet, useLoaderData } from 'react-router-dom';
 
 import { AuthState } from '@/common/api/auth_state';
 import { AuthStateProvider } from '@/common/components/auth_state_provider';
 import { ErrorBoundary } from '@/common/components/error_boundary';
-import { TopBar } from '@/common/components/top_bar';
+import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
+
+import { AppBar } from './app_bar';
+import { drawerWidth } from './constants';
+import { Sidebar } from './side_bar';
+
+const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
+  open?: boolean;
+}>(({ theme, open }) => ({
+  flexGrow: 1,
+  transition: theme.transitions.create('margin', {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  marginLeft: `-${drawerWidth}px`,
+  ...(open && {
+    transition: theme.transitions.create('margin', {
+      easing: theme.transitions.easing.easeOut,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+    marginLeft: 0,
+  }),
+}));
 
 /**
  * Renders page header, and tooltip.
@@ -25,20 +49,28 @@ import { TopBar } from '@/common/components/top_bar';
 export function BaseLayout() {
   const initialAuthState = useLoaderData() as AuthState;
 
+  const [sideBarOpen, setSidebarOpen] = useState<boolean>(true);
+
   return (
     <ErrorBoundary>
       <AuthStateProvider initialValue={initialAuthState}>
-        <TopBar />
-        {/*
-         * <TopBar /> supports useful actions in case of an error (e.g. file a
-         * bug, log in/out).
-         * Wraps <Outlet /> in a separate <ErrorBoundary /> to ensure the
-         * <TopBar /> is always displayed when possible.
-         *
-         */}
-        <ErrorBoundary>
-          <Outlet />
-        </ErrorBoundary>
+        <PageMetaProvider>
+          <Box sx={{ display: 'flex', pt: 7 }}>
+            <AppBar open={sideBarOpen} setSidebarOpen={setSidebarOpen} />
+            <Sidebar open={sideBarOpen} />
+            <Main open={sideBarOpen}>
+              {/*
+               * <AppBar /> and the <SideBar /> supports useful actions in case of an error (e.g. file a
+               * bug, log in/out).
+               * Wraps <Outlet /> in a separate <ErrorBoundary /> to ensure the
+               * <AppBar /> and the <SideBar> are always displayed when possible.
+               */}
+              <ErrorBoundary>
+                <Outlet />
+              </ErrorBoundary>
+            </Main>
+          </Box>
+        </PageMetaProvider>
       </AuthStateProvider>
     </ErrorBoundary>
   );

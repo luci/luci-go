@@ -20,7 +20,6 @@ import { createContextLink } from '@/generic_libs/tools/lit_context';
 import { AuthStateStore } from './auth_state';
 import { BuildPage } from './build_page';
 import { InvocationPage } from './invocation_page';
-import { SearchPage } from './search_page';
 import { ServicesStore } from './services';
 import { TestHistoryPage } from './test_history_page';
 import { Timestamp } from './timestamp';
@@ -49,7 +48,6 @@ export const Store = types
     userConfig: types.optional(UserConfig, {}),
     services: types.optional(ServicesStore, {}),
 
-    searchPage: types.optional(SearchPage, {}),
     buildPage: types.optional(BuildPage, {}),
     testHistoryPage: types.optional(TestHistoryPage, {}),
     invocationPage: types.optional(InvocationPage, {}),
@@ -82,7 +80,6 @@ export const Store = types
     afterCreate() {
       self.services.setDependencies({ authState: self.authState });
       self.userConfig.enableCaching();
-      self.searchPage.setDependencies({ services: self.services });
       self.buildPage.setDependencies({
         currentTime: self.currentTime,
         refreshTime: self.refreshTime,

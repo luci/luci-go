@@ -19,7 +19,7 @@ import {
   ListBuildersResponse,
   MiloInternal,
 } from '@/common/services/milo_internal';
-import { BuilderListDisplay } from '@/pages/search_page/builder_list_display';
+import { BuilderListDisplay } from '@/pages/search/builder_search/builder_list_display';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { BuilderList } from './builder_list';
@@ -30,10 +30,12 @@ jest.mock('@/common/hooks/use_prpc_query', () => {
   >('@/common/hooks/use_prpc_query', ['useInfinitePrpcQuery']);
 });
 
-jest.mock('@/pages/search_page/builder_list_display', () => {
+jest.mock('@/pages/search/builder_search/builder_list_display', () => {
   return createSelectiveSpiesFromModule<
-    typeof import('@/pages/search_page/builder_list_display')
-  >('@/pages/search_page/builder_list_display', ['BuilderListDisplay']);
+    typeof import('@/pages/search/builder_search/builder_list_display')
+  >('@/pages/search/builder_search/builder_list_display', [
+    'BuilderListDisplay',
+  ]);
 });
 
 const builderPages: { [pageToken: string]: ListBuildersResponse } = {
@@ -97,7 +99,7 @@ describe('BuilderList', () => {
     jest.useRealTimers();
   });
 
-  test('e2e', async () => {
+  it('e2e', async () => {
     const { rerender } = render(
       <FakeContextProvider>
         <BuilderList searchQuery="" />

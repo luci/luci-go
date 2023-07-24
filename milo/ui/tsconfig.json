@@ -51,5 +51,5 @@
       "@/*": ["./src/*"],
     }
   },
-  "exclude": ["node_modules", "cypress.config.ts"]
+  "exclude": ["node_modules", "cypress.config.ts", "out"]
 }

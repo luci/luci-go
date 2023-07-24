@@ -73,10 +73,9 @@ export function BuilderList({ searchQuery }: BuilderListProps) {
 
   // Keep loading builders until all pages are loaded.
   useEffect(() => {
-    if (isLoading || !hasNextPage) {
-      return;
+    if (!isLoading && hasNextPage) {
+      fetchNextPage();
     }
-    fetchNextPage();
   }, [fetchNextPage, isLoading, hasNextPage, data?.pages.length]);
 
   return (

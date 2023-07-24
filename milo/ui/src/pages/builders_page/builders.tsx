@@ -17,12 +17,13 @@ import { customElement } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
-import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
 import '@/common/components/status_bar';
 import '@/generic_libs/components/dot_spinner';
 import './row';
+import { PageMeta } from '@/common/components/page_meta';
+import { UiPage } from '@/common/constants';
 import { BuilderID } from '@/common/services/buildbucket';
 import {
   ListBuildersRequest,
@@ -257,14 +258,14 @@ export function BuildersPage() {
     throw new Error('invariant violated: project should be set');
   }
 
-  useEffect(() => {
-    document.title = (group || project) + ' | Builders';
-  }, [project, group]);
-
   return (
-    <milo-builders-page
-      project={project}
-      group={group || ''}
-    ></milo-builders-page>
+    <>
+      <PageMeta
+        project={project}
+        selectedPage={UiPage.Builders}
+        title={`${group || project} | Builders`}
+      />
+      <milo-builders-page project={project} group={group || ''} />
+    </>
   );
 }

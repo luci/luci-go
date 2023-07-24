@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,46 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { cleanup, render } from '@testing-library/react';
+import '@testing-library/jest-dom';
+
+import { render, screen } from '@testing-library/react';
 import { destroy } from 'mobx-state-tree';
 
-import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { Store, StoreInstance, StoreProvider } from '@/common/store';
-import { SearchTarget } from '@/common/store/search_page';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { TestList } from './test_list';
+import { SettingsMenu } from './settings_menu';
 
-describe('TestList', () => {
+describe('SettingsMenu', () => {
   let store: StoreInstance;
 
   beforeEach(() => {
-    jest.useFakeTimers();
-    store = Store.create({
-      authState: { value: { identity: ANONYMOUS_IDENTITY } },
-    });
+    store = Store.create({});
   });
   afterEach(() => {
-    cleanup();
     destroy(store);
-    jest.useRealTimers();
   });
 
-  test('should load the first page of test', () => {
-    store.searchPage.setSearchQuery('test-id');
-    store.searchPage.setSearchTarget(SearchTarget.Tests);
-    const loadFirstPagesStub = jest.spyOn(
-      store.searchPage.testLoader!,
-      'loadFirstPage'
-    );
-
+  it('should display menu button', async () => {
     render(
       <StoreProvider value={store}>
-        <TestList />
+        <FakeContextProvider>
+          <SettingsMenu />
+        </FakeContextProvider>
       </StoreProvider>
     );
-
-    jest.runOnlyPendingTimers();
-
-    expect(loadFirstPagesStub.mock.calls.length).toStrictEqual(1);
+    await screen.findAllByRole('button');
+    expect(screen.getByLabelText('open settings menu')).toBeInTheDocument();
   });
 });

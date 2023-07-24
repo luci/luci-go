@@ -29,7 +29,7 @@ import { Workbox } from 'workbox-window';
 import '@/common/styles/common_style.css';
 import '@/common/styles/color_classes.css';
 import '@/common/components/tooltip';
-import { BaseLayout as BisectionBaseLayout } from '@/bisection/layouts/base';
+import { BisectionLayout } from '@/bisection/layouts/base';
 import { AnalysisDetailsPage } from '@/bisection/pages/analysis_details';
 import { FailureAnalysesPage } from '@/bisection/pages/failure_analyses';
 import { obtainAuthState } from '@/common/api/auth_state';
@@ -59,7 +59,9 @@ import { InvocationDetailsTab } from './pages/invocation_page/invocation_details
 import { InvocationPage } from './pages/invocation_page/invocation_page';
 import { LoginPage } from './pages/login_page';
 import { NotFoundPage } from './pages/not_found_page';
-import { SearchPage } from './pages/search_page/search_page';
+import { searchRedirectionLoader } from './pages/search';
+import { BuilderSearch } from './pages/search/builder_search';
+import { TestSearch } from './pages/search/test_search/test_search';
 import { TestHistoryPage } from './pages/test_history_page/test_history_page';
 import { TestResultsTab } from './pages/test_results_tab/test_results_tab';
 
@@ -175,7 +177,12 @@ export function App({ initOpts }: AppProps) {
       loader: async () => obtainAuthState(),
       children: [
         { path: 'login', element: <LoginPage /> },
-        { path: 'search', element: <SearchPage /> },
+        { path: 'search', loader: searchRedirectionLoader },
+        { path: 'builder-search', element: <BuilderSearch /> },
+        {
+          path: 'p/:project/test-search',
+          element: <TestSearch />,
+        },
         { path: 'p/:project/builders', element: <BuildersPage /> },
         { path: 'p/:project/g/:group/builders', element: <BuildersPage /> },
         {
@@ -248,7 +255,7 @@ export function App({ initOpts }: AppProps) {
         { path: '*', element: <NotFoundPage /> },
         {
           path: 'bisection',
-          element: <BisectionBaseLayout />,
+          element: <BisectionLayout />,
           children: [
             {
               index: true,

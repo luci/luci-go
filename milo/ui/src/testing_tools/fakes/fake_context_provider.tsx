@@ -18,21 +18,29 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 
+import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
+import { UiPage } from '@/common/constants';
+
 import { FakeAuthStateProvider } from './fake_auth_state_provider';
 
 interface FakeContextProviderProps {
   readonly mountedPath?: string;
   readonly routerOptions?: Parameters<typeof createMemoryRouter>[1];
   readonly children: React.ReactNode;
+  readonly pageMeta?: {
+    project?: string;
+    selectedPage?: UiPage;
+  };
 }
 
 /**
  * Provides various contexts for testing purpose.
  */
 export function FakeContextProvider({
-  mountedPath = '/',
-  routerOptions,
+  mountedPath,
   children,
+  pageMeta,
+  routerOptions,
 }: FakeContextProviderProps) {
   const [client] = useState(() => {
     const errorMock = jest
@@ -66,7 +74,7 @@ export function FakeContextProvider({
   });
 
   const router = createMemoryRouter(
-    [{ path: mountedPath, element: children }],
+    [{ path: mountedPath || '/', element: children }],
     routerOptions
   );
 
@@ -74,7 +82,12 @@ export function FakeContextProvider({
     <LocalizationProvider dateAdapter={AdapterLuxon}>
       <FakeAuthStateProvider>
         <QueryClientProvider client={client}>
-          <RouterProvider router={router} />
+          <PageMetaProvider
+            initPage={pageMeta?.selectedPage}
+            initProject={pageMeta?.project}
+          >
+            <RouterProvider router={router} />
+          </PageMetaProvider>
         </QueryClientProvider>
       </FakeAuthStateProvider>
     </LocalizationProvider>

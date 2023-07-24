@@ -15,9 +15,10 @@
 import { GrpcError } from '@chopsui/prpc-client';
 import styled from '@emotion/styled';
 import { Alert, AlertTitle, Grid, LinearProgress } from '@mui/material';
-import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
+import { PageMeta } from '@/common/components/page_meta';
+import { UiPage } from '@/common/constants';
 import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
 import { BuildersService } from '@/common/services/buildbucket';
 import { parseLegacyBucketId } from '@/common/tools/build_utils';
@@ -52,10 +53,6 @@ export function BuilderPage() {
     builder,
   };
 
-  useEffect(() => {
-    document.title = `${builderId.builder} | Builder`;
-  }, [builderId.builder]);
-
   const { data, error, isLoading } = usePrpcQuery({
     host: CONFIGS.BUILDBUCKET.HOST,
     Service: BuildersService,
@@ -84,6 +81,11 @@ export function BuilderPage() {
 
   return (
     <>
+      <PageMeta
+        project={project}
+        selectedPage={UiPage.Builders}
+        title={`${builderId.builder} | Builder`}
+      />
       <BuilderIdBar builderId={builderId} />
       <LinearProgress
         value={100}

@@ -12,20 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Outlet } from 'react-router-dom';
-
-import { PageMeta } from '@/common/components/page_meta';
-import { UiPage } from '@/common/constants';
-
-export const BisectionLayout = () => {
-  return (
-    <>
-      <PageMeta
-        project="chromium"
-        title="Bisection"
-        selectedPage={UiPage.Bisection}
-      />
-      <Outlet />
-    </>
-  );
-};
+export * from './test_list';
