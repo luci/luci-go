@@ -1,0 +1,12 @@
+name: luci-go/cookieserver
+extends: ../gae.yaml
+
+inputsdir: ../../server/cmd
+
+sources:
+  - ../../server/cmd/cookieserver
+  - ../../server/encryptedcookies
+
+build:
+  - go_gae_bundle: ${inputsdir}/cookieserver/service-cookieserver.yaml
+    dest: ${contextdir}/cookieserver
