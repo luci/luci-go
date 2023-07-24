@@ -83,7 +83,7 @@ type mockFinder struct {
 	mapping map[string][]*model.Service
 }
 
-func (m *mockFinder) FindInterestedServices(_ config.Set, filePath string) []*model.Service {
+func (m *mockFinder) FindInterestedServices(_ context.Context, _ config.Set, filePath string) []*model.Service {
 	return m.mapping[filePath]
 }
 

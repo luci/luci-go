@@ -34,7 +34,7 @@ import (
 // finder defines the interface for validator to find the corresponding services
 // to validate the given config file.
 type finder interface {
-	FindInterestedServices(cs config.Set, filePath string) []*model.Service
+	FindInterestedServices(ctx context.Context, cs config.Set, filePath string) []*model.Service
 }
 
 // Validator validates config files backed Google Cloud Storage.
@@ -63,7 +63,7 @@ type File interface {
 
 // Validate validates the provided config files.
 func (v *Validator) Validate(ctx context.Context, cs config.Set, files []File) (*cfgcommonpb.ValidationResult, error) {
-	srvValidators := v.makeServiceValidators(cs, files)
+	srvValidators := v.makeServiceValidators(ctx, cs, files)
 	if len(srvValidators) == 0 { // no service can validate input files.
 		return &cfgcommonpb.ValidationResult{}, nil
 	}
@@ -94,10 +94,10 @@ func (v *Validator) Validate(ctx context.Context, cs config.Set, files []File) (
 // makeServiceValidators constructs `serviceValidator`s with files each service
 // is interested in. The `serviceValidator` will be used to validate the config
 // later on.
-func (v *Validator) makeServiceValidators(cs config.Set, files []File) []*serviceValidator {
+func (v *Validator) makeServiceValidators(ctx context.Context, cs config.Set, files []File) []*serviceValidator {
 	svs := make(map[string]*serviceValidator, len(files))
 	for _, file := range files {
-		services := v.Finder.FindInterestedServices(cs, file.GetPath())
+		services := v.Finder.FindInterestedServices(ctx, cs, file.GetPath())
 		for _, service := range services {
 			if _, ok := svs[service.Name]; !ok {
 				svs[service.Name] = &serviceValidator{

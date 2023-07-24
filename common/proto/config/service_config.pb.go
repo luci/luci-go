@@ -1140,6 +1140,11 @@ type ConfigPattern struct {
 	//
 	// If the pattern string doesn't start with any of the above prefixes, it will
 	// be used as exact match just like "exact:" and "text:" prefixes.
+	//
+	// Note that LUCI Config will only send the service configs that belongs to
+	// / the service defined in `Service` or validation, even though the
+	// config_set pattern here can declare a much broader range (e.g.
+	// `regex:services/.+` that matches all services).
 	ConfigSet string `protobuf:"bytes,1,opt,name=config_set,json=configSet,proto3" json:"config_set,omitempty"`
 	// A string pattern for config file path.
 	//

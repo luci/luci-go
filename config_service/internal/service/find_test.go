@@ -67,9 +67,9 @@ func TestFinder(t *testing.T) {
 						})
 						finder, err := NewFinder(ctx)
 						So(err, ShouldBeNil)
-						services := finder.FindInterestedServices(configSet, "foo.cfg")
+						services := finder.FindInterestedServices(ctx, configSet, "foo.cfg")
 						So(convertToServiceNames(services), ShouldResemble, []string{serviceName})
-						So(finder.FindInterestedServices(configSet, "boo.cfg"), ShouldBeEmpty)
+						So(finder.FindInterestedServices(ctx, configSet, "boo.cfg"), ShouldBeEmpty)
 					})
 				}
 			})
@@ -88,9 +88,9 @@ func TestFinder(t *testing.T) {
 					})
 					finder, err := NewFinder(ctx)
 					So(err, ShouldBeNil)
-					services := finder.FindInterestedServices(configSet, "bucket-foo.cfg")
+					services := finder.FindInterestedServices(ctx, configSet, "bucket-foo.cfg")
 					So(convertToServiceNames(services), ShouldResemble, []string{serviceName})
-					So(finder.FindInterestedServices(configSet, "bucket-foo1.cfg"), ShouldBeEmpty)
+					So(finder.FindInterestedServices(ctx, configSet, "bucket-foo1.cfg"), ShouldBeEmpty)
 				})
 
 				Convey("Auto anchor", func() {
@@ -106,11 +106,30 @@ func TestFinder(t *testing.T) {
 					})
 					finder, err := NewFinder(ctx)
 					So(err, ShouldBeNil)
-					services := finder.FindInterestedServices(configSet, "bucket-foo.cfg")
+					services := finder.FindInterestedServices(ctx, configSet, "bucket-foo.cfg")
 					So(convertToServiceNames(services), ShouldResemble, []string{serviceName})
-					So(finder.FindInterestedServices("abc"+configSet, "bucket-foo.cfg"), ShouldBeEmpty)
-					So(finder.FindInterestedServices(configSet, "bucket-foo.cfg.gz"), ShouldBeEmpty)
+					So(finder.FindInterestedServices(ctx, "abc"+configSet, "bucket-foo.cfg"), ShouldBeEmpty)
+					So(finder.FindInterestedServices(ctx, configSet, "bucket-foo.cfg.gz"), ShouldBeEmpty)
 				})
+			})
+
+			Convey("Don't match different service even though the pattern says so", func() {
+				updateService(func(srv *model.Service) {
+					srv.Metadata = &cfgcommonpb.ServiceMetadata{
+						ConfigPatterns: []*cfgcommonpb.ConfigPattern{
+							{
+								ConfigSet: `regex:^services/.+$`,
+								Path:      `regex:^settings\-[a-z]+\.cfg$`,
+							},
+						},
+					}
+				})
+				finder, err := NewFinder(ctx)
+				So(err, ShouldBeNil)
+				services := finder.FindInterestedServices(ctx, config.MustServiceSet(serviceName), "settings-foo.cfg")
+				So(services, ShouldNotBeEmpty)
+				services = finder.FindInterestedServices(ctx, config.MustServiceSet("not-my-service"), "settings-foo.cfg")
+				So(services, ShouldBeEmpty)
 			})
 		})
 
@@ -189,11 +208,11 @@ func TestFinder(t *testing.T) {
 
 			finder, err := NewFinder(ctx)
 			So(err, ShouldBeNil)
-			So(convertToServiceNames(finder.FindInterestedServices(config.MustProjectSet("my-proj"), "bucket-abc.cfg")), ShouldResemble, []string{"buildbucket", "buildbucket-shadow"})
-			So(convertToServiceNames(finder.FindInterestedServices(config.MustProjectSet("my-proj"), "buildbucket.cfg")), ShouldResemble, []string{"buildbucket", "buildbucket-shadow"})
-			So(convertToServiceNames(finder.FindInterestedServices(config.MustProjectSet("my-proj"), "commit-queue.cfg")), ShouldResemble, []string{"luci-change-verifier"})
-			So(convertToServiceNames(finder.FindInterestedServices(config.MustProjectSet("my-proj"), "swarming.cfg")), ShouldResemble, []string{"swarming"})
-			So(convertToServiceNames(finder.FindInterestedServices(config.MustProjectSet("foo"), "buildbucket.cfg")), ShouldResemble, []string{"buildbucket", "buildbucket-project-foo-specific", "buildbucket-shadow"})
+			So(convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("my-proj"), "bucket-abc.cfg")), ShouldResemble, []string{"buildbucket", "buildbucket-shadow"})
+			So(convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("my-proj"), "buildbucket.cfg")), ShouldResemble, []string{"buildbucket", "buildbucket-shadow"})
+			So(convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("my-proj"), "commit-queue.cfg")), ShouldResemble, []string{"luci-change-verifier"})
+			So(convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("my-proj"), "swarming.cfg")), ShouldResemble, []string{"swarming"})
+			So(convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("foo"), "buildbucket.cfg")), ShouldResemble, []string{"buildbucket", "buildbucket-project-foo-specific", "buildbucket-shadow"})
 		})
 
 		Convey("Refresh", func() {
@@ -217,23 +236,23 @@ func TestFinder(t *testing.T) {
 			go func() {
 				finder.RefreshPeriodically(cctx)
 			}()
-			So(convertToServiceNames(finder.FindInterestedServices(cs, "old.cfg")), ShouldResemble, []string{"foo"})
-			So(convertToServiceNames(finder.FindInterestedServices(cs, "new.cfg")), ShouldBeEmpty)
+			So(convertToServiceNames(finder.FindInterestedServices(ctx, cs, "old.cfg")), ShouldResemble, []string{"foo"})
+			So(convertToServiceNames(finder.FindInterestedServices(ctx, cs, "new.cfg")), ShouldBeEmpty)
 			srv.Metadata.ConfigPatterns[0].Path = "new.cfg"
 			So(datastore.Put(ctx, srv), ShouldBeNil)
 			tc := clock.Get(ctx).(testclock.TestClock)
 			start := time.Now()
 			for {
 				tc.Add(1 * time.Minute) // Should trigger a refresh
-				if len(finder.FindInterestedServices(cs, "new.cfg")) > 0 {
+				if len(finder.FindInterestedServices(ctx, cs, "new.cfg")) > 0 {
 					break
 				}
 				if time.Since(start) > 30*time.Second {
 					t.Fatal("finder doesn't appear to be refreshed")
 				}
 			}
-			So(convertToServiceNames(finder.FindInterestedServices(cs, "old.cfg")), ShouldBeEmpty)
-			So(convertToServiceNames(finder.FindInterestedServices(cs, "new.cfg")), ShouldResemble, []string{"foo"})
+			So(convertToServiceNames(finder.FindInterestedServices(ctx, cs, "old.cfg")), ShouldBeEmpty)
+			So(convertToServiceNames(finder.FindInterestedServices(ctx, cs, "new.cfg")), ShouldResemble, []string{"foo"})
 		})
 	})
 }

@@ -68,7 +68,7 @@ func (v *Validator) Examine(ctx context.Context, cs config.Set, files []File) (*
 	for _, file := range files {
 		file := file
 		eg.Go(func() error {
-			services := v.Finder.FindInterestedServices(cs, file.GetPath())
+			services := v.Finder.FindInterestedServices(ctx, cs, file.GetPath())
 			if len(services) == 0 {
 				mu.Lock()
 				ret.UnvalidatableFiles = append(ret.UnvalidatableFiles, file)

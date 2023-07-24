@@ -80,7 +80,21 @@ func (m matcher) match(s string) bool {
 
 // matchConfig returns true if any of the pre-computed pattern matches the
 // provided config file.
-func (sw *serviceWrapper) matchConfig(cs config.Set, filePath string) bool {
+//
+// If the provided config set is a service, always returns false when the
+// service name is different from the service wrapped by serviceWrapper.
+// This is for tightening access control where service A doesn't get to
+// validate the service config for service B.
+func (sw *serviceWrapper) matchConfig(ctx context.Context, cs config.Set, filePath string) bool {
+	if domain, target := cs.Split(); domain == config.ServiceDomain && sw.service.Name != target {
+		for _, p := range sw.patterns {
+			if p.configSetMatcher.match(string(cs)) {
+				logging.Warningf(ctx, "service %q declares it is interested in the config of another service %q", sw.service.Name, target)
+				return false
+			}
+		}
+		return false
+	}
 	for _, p := range sw.patterns {
 		if p.configSetMatcher.match(string(cs)) && p.pathMatcher.match(filePath) {
 			return true
@@ -101,12 +115,12 @@ func NewFinder(ctx context.Context) (*Finder, error) {
 // FindInterestedServices look up for services interested in the given config.
 //
 // Look-up is performed in memory.
-func (m *Finder) FindInterestedServices(cs config.Set, filePath string) []*model.Service {
+func (m *Finder) FindInterestedServices(ctx context.Context, cs config.Set, filePath string) []*model.Service {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	var ret []*model.Service
 	for _, service := range m.services {
-		if service.matchConfig(cs, filePath) {
+		if service.matchConfig(ctx, cs, filePath) {
 			ret = append(ret, service.service)
 		}
 	}
