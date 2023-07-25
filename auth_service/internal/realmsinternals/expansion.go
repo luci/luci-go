@@ -384,6 +384,8 @@ type RealmsExpander struct {
 	condsSet *ConditionsSet
 	// realms is a mapping from realm name -> *realmsconf.Realm.
 	realms map[string]*realmsconf.Realm
+	// data is a mapping from realm name -> *protocol.RealmData.
+	data map[string]*protocol.RealmData
 }
 
 // parents returns the list of immediate parents given a realm.
@@ -451,4 +453,38 @@ func (rlme *RealmsExpander) perPrincipalBindings(realm string) ([]*principalBind
 		pBindings = append(pBindings, parentBindings...)
 	}
 	return pBindings, nil
+}
+
+// realmData returns calculated protocol.RealmData for a given realm.
+func (rlme *RealmsExpander) realmData(name string, extends []*protocol.RealmData) (*protocol.RealmData, error) {
+	_, ok := rlme.data[name]
+	if !ok {
+		rlm, found := rlme.realms[name]
+		if !found {
+			return nil, fmt.Errorf("realm %s not found in realms mapping", name)
+		}
+		for _, p := range parents(rlm) {
+			data, err := rlme.realmData(p, extends)
+			if err != nil {
+				return nil, err
+			}
+			extends = append(extends, data)
+		}
+		rlme.data[name] = deriveRealmData(rlm, extends)
+	}
+	return rlme.data[name], nil
+}
+
+// deriveRealmData calculates the protocol.RealmData from the realm config and parent data.
+func deriveRealmData(realm *realmsconf.Realm, extends []*protocol.RealmData) *protocol.RealmData {
+	enforceInService := stringset.NewFromSlice(realm.EnforceInService...)
+	for _, d := range extends {
+		enforceInService.AddAll(d.GetEnforceInService())
+	}
+	if len(enforceInService) == 0 {
+		return nil
+	}
+	return &protocol.RealmData{
+		EnforceInService: enforceInService.ToSortedSlice(),
+	}
 }
