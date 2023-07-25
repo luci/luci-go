@@ -359,11 +359,8 @@ type TestFailure struct {
 	// the primary test failure. This suggests that this test failure has a different root cause.
 	// We will not attempt to re-bisect this test failure.
 	IsDiverged bool `gae:"is_diverged"`
-	// Key to the TestFailure that this failure merges into.
-	// If this exists, this test failure shares the same TestFailureAnalysis
-	// with the merged failure.
-	// This key is not set only when this is a primary test failure.
-	MergedFailureKey *datastore.Key `gae:"merged_failure_key"`
+	// Key to the TestFailureAnalysis that analyses this TestFailure.
+	AnalysisKey *datastore.Key `gae:"analysis_key"`
 	// RedundancyScore of the test failure, between 0 and 1, larger score means more redundant.
 	// Only set for primary test failure.
 	RedundancyScore float64 `gae:"redundancy_score"`
