@@ -214,20 +214,19 @@ func (s *ReservationServer) reservationDenied(ctx context.Context, task *interna
 // RBE instance IDs: `projects/.../instances/.../reservations/...`.
 func (s *ReservationServer) ExpireSliceBasedOnReservation(ctx context.Context, reservationName string) error {
 	// Get the up-to-date state of the reservation.
-	logging.Infof(ctx, "Checking %s", reservationName)
 	reservation, err := s.rbe.GetReservation(ctx, &remoteworkers.GetReservationRequest{
 		Name:        reservationName,
 		WaitSeconds: 0,
 	})
 	err = grpcutil.WrapIfTransientOr(err, codes.DeadlineExceeded)
 	if err != nil {
-		return errors.Annotate(err, "failed to fetch reservation").Err()
+		return errors.Annotate(err, "failed to fetch reservation %s", reservationName).Err()
 	}
 
 	// Don't care about pending reservations.
 	if reservation.State != remoteworkers.ReservationState_RESERVATION_COMPLETED &&
 		reservation.State != remoteworkers.ReservationState_RESERVATION_CANCELLED {
-		logging.Warningf(ctx, "Ignoring reservation in non-terminal state: %s", reservation.State)
+		logging.Warningf(ctx, "Ignoring reservation %s in non-terminal state: %s", reservationName, reservation.State)
 		return nil
 	}
 
@@ -253,7 +252,7 @@ func (s *ReservationServer) ExpireSliceBasedOnReservation(ctx context.Context, r
 	// It must be present in all leases.
 	var payload internalspb.TaskPayload
 	if err := reservation.Payload.UnmarshalTo(&payload); err != nil {
-		return errors.Annotate(err, "failed to unmarshal reservation payload").Err()
+		return errors.Annotate(err, "failed to unmarshal reservation %s payload", reservationName).Err()
 	}
 	logging.Infof(ctx, "TaskPayload:\n%s", prettyProto(&payload))
 
@@ -264,7 +263,6 @@ func (s *ReservationServer) ExpireSliceBasedOnReservation(ctx context.Context, r
 		if err := reservation.Result.UnmarshalTo(&result); err != nil {
 			return errors.Annotate(err, "failed to unmarshal reservation result").Err()
 		}
-		logging.Infof(ctx, "TaskResult:\n%s", prettyProto(&result))
 		if result.BotInternalError != "" {
 			if statusErr != nil {
 				logging.Errorf(ctx, "Overriding with a bot internal error: %s", statusErr)
@@ -275,12 +273,9 @@ func (s *ReservationServer) ExpireSliceBasedOnReservation(ctx context.Context, r
 
 	// Log the final derived status.
 	if statusErr != nil {
-		logging.Infof(ctx, "Reservation state %s: %s", reservation.State, statusErr)
+		logging.Infof(ctx, "Reservation is %s by %q: %s", reservation.State, reservation.AssignedBotId, statusErr)
 	} else {
-		logging.Infof(ctx, "Reservation state %s", reservation.State)
-	}
-	if reservation.AssignedBotId != "" {
-		logging.Infof(ctx, "Assigned bot: %s", reservation.AssignedBotId)
+		logging.Infof(ctx, "Reservation is %s by %q", reservation.State, reservation.AssignedBotId, reservation.AssignedBotId)
 	}
 
 	// Ignore noop reservations: they are not associated with Swarming slices and
@@ -297,12 +292,11 @@ func (s *ReservationServer) ExpireSliceBasedOnReservation(ctx context.Context, r
 	}
 	switch err := datastore.Get(ctx, ttr); {
 	case err == datastore.ErrNoSuchEntity:
-		logging.Warningf(ctx, "Skipping: TaskToRun entity is already gone")
+		logging.Warningf(ctx, "TaskToRun entity is already gone")
 		return nil
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch TaskToRun").Tag(transient.Tag).Err()
 	case !ttr.IsReapable():
-		logging.Infof(ctx, "Skipping: TaskToRun is no longer pending")
 		return nil
 	}
 
@@ -337,6 +331,7 @@ func (s *ReservationServer) ExpireSliceBasedOnReservation(ctx context.Context, r
 	}
 
 	// Tell Swarming to switch to the next slice, if necessary
+	logging.Warningf(ctx, "Expiring slice with %s: %s", reasonCode, statusErr)
 	if err := s.expireSlice(ctx, &payload, reasonCode, statusErr.Error()); err != nil {
 		return errors.Annotate(err, "failed to expire the slice").Tag(transient.Tag).Err()
 	}

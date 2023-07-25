@@ -50,6 +50,7 @@ type RequestBody interface {
 	ExtractPollToken() []byte               // the poll token, if present
 	ExtractSessionToken() []byte            // the session token, if present
 	ExtractDimensions() map[string][]string // dimensions reported by the bot, if present
+	ExtractDebugRequest() any               // serialized as JSON and logged on errors
 }
 
 // Request is extracted from an authenticated request from a bot.
@@ -121,17 +122,62 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 		req := c.Request
 		wrt := c.Writer
 
-		logging.Infof(ctx, "Bot IP: %s", auth.GetState(ctx).PeerIP())
-		logging.Infof(ctx, "Authenticated: %s", auth.GetState(ctx).PeerIdentity())
+		// Deserialized request body.
+		var body *B
+
+		// Deserialized and validated tokens in the request.
+		var pollTokenState *internalspb.PollState
+		var sessionState *internalspb.BotSession
+
+		// This is either pollTokenState or the poll state inside sessionState,
+		// depending on which token is non-expired. Populated below.
+		var pollState *internalspb.PollState
+
+		// writeErr logs a gRPC error and writes it to the HTTP response.
+		writeErr := func(err error) {
+			// Log request details to help in debugging errors.
+			logging.Infof(ctx, "Bot IP: %s", auth.GetState(ctx).PeerIP())
+			logging.Infof(ctx, "Authenticated: %s", auth.GetState(ctx).PeerIdentity())
+			if pollState != nil {
+				logging.Infof(ctx, "Bot ID: %s", extractBotID(pollState))
+				logging.Infof(ctx, "Poll token ID: %s", pollState.Id)
+				logging.Infof(ctx, "RBE: %s", pollState.RbeInstance)
+				if pollState.DebugInfo != nil {
+					logging.Infof(ctx, "Poll token age: %s", clock.Now(ctx).Sub(pollState.DebugInfo.Created.AsTime()))
+				}
+			}
+			if sessionState != nil {
+				logging.Infof(ctx, "Session ID: %s", sessionState.RbeBotSessionId)
+			}
+			if body != nil {
+				blob, _ := json.MarshalIndent(RB(body).ExtractDebugRequest(), "", "  ")
+				logging.Infof(ctx, "Request body:\n%s", blob)
+			}
+
+			// Log the actual error.
+			err = grpcutil.GRPCifyAndLogErr(ctx, err)
+			statusCode := status.Code(err)
+			httpCode := grpcutil.CodeStatus(statusCode)
+			if statusCode == codes.Unavailable {
+				// UNAVAILABLE seems to happen a lot, but in bursts (probably when the
+				// RBE scheduler restarts). Log it at the warning severity to make other
+				// errors more noticeable.
+				logging.Warningf(ctx, "HTTP %d: %s", httpCode, err)
+			} else {
+				logging.Errorf(ctx, "HTTP %d: %s", httpCode, err)
+			}
+
+			http.Error(wrt, err.Error(), httpCode)
+		}
 
 		// Deserialize JSON request body.
 		if ct := req.Header.Get("Content-Type"); strings.ToLower(ct) != "application/json; charset=utf-8" {
-			writeErr(ctx, wrt, status.Errorf(codes.InvalidArgument, "bad content type %q", ct))
+			writeErr(status.Errorf(codes.InvalidArgument, "bad content type %q", ct))
 			return
 		}
-		body := new(B)
+		body = new(B)
 		if err := json.NewDecoder(req.Body).Decode(body); err != nil {
-			writeErr(ctx, wrt, status.Errorf(codes.InvalidArgument, "failed to deserialized the request: %s", err))
+			writeErr(status.Errorf(codes.InvalidArgument, "failed to deserialized the request: %s", err))
 			return
 		}
 
@@ -154,14 +200,11 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 		// token to us, which allows us to put up-to-date PollState into the
 		// session token. This happens in UpdateBotSession handler.
 
-		var pollTokenState *internalspb.PollState
-		var sessionState *internalspb.BotSession
-
 		// If have a poll token, validate and deserialize it.
 		if pollToken := RB(body).ExtractPollToken(); len(pollToken) != 0 {
 			pollTokenState = &internalspb.PollState{}
 			if err := s.hmacSecret.ValidateToken(pollToken, pollTokenState); err != nil {
-				writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "failed to verify poll token: %s", err))
+				writeErr(status.Errorf(codes.Unauthenticated, "failed to verify poll token: %s", err))
 				return
 			}
 			if exp := clock.Now(ctx).Sub(pollTokenState.Expiry.AsTime()); exp > 0 {
@@ -173,7 +216,7 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 		if sessionToken := RB(body).ExtractSessionToken(); len(sessionToken) != 0 {
 			sessionState = &internalspb.BotSession{}
 			if err := s.hmacSecret.ValidateToken(sessionToken, sessionState); err != nil {
-				writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "failed to verify session token: %s", err))
+				writeErr(status.Errorf(codes.Unauthenticated, "failed to verify session token: %s", err))
 				return
 			}
 			if exp := clock.Now(ctx).Sub(sessionState.Expiry.AsTime()); exp > 0 {
@@ -184,53 +227,40 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 
 		// Need at least one valid and fresh token.
 		if pollTokenState == nil && sessionState == nil {
-			writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "no valid poll or state token"))
+			writeErr(status.Errorf(codes.Unauthenticated, "no valid poll or state token"))
 			return
 		}
 
 		// Prefer the state from the poll token. It is fresher. Fallback to the
 		// state stored in the session token if there's no poll token or it has
 		// expired.
-		pollState := pollTokenState
+		pollState = pollTokenState
 		if pollState == nil {
 			pollState = sessionState.GetPollState()
 			if pollState == nil {
-				writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "no poll state available"))
+				writeErr(status.Errorf(codes.Unauthenticated, "no poll state available"))
 				return
 			}
 		}
 
 		// Extract bot ID from the validated PollToken.
-		botID := botID(pollState)
-
-		// Log some information about the request.
-		logging.Infof(ctx, "Bot ID: %s", botID)
-		logging.Infof(ctx, "Poll token ID: %s", pollState.Id)
-		logging.Infof(ctx, "RBE: %s", pollState.RbeInstance)
-		if pollState.DebugInfo != nil {
-			logging.Infof(ctx, "Poll token age: %s", clock.Now(ctx).Sub(pollState.DebugInfo.Created.AsTime()))
-		}
-		if sessionState != nil {
-			logging.Infof(ctx, "Session ID: %s", sessionState.RbeBotSessionId)
-		}
-
-		// Bot ID must be present.
+		botID := extractBotID(pollState)
 		if botID == "" {
-			writeErr(ctx, wrt, status.Errorf(codes.InvalidArgument, "no bot ID"))
+			writeErr(status.Errorf(codes.InvalidArgument, "no bot ID"))
 			return
 		}
 		// Session ID must be present if there's a session token.
 		if sessionState != nil && sessionState.RbeBotSessionId == "" {
-			writeErr(ctx, wrt, status.Errorf(codes.InvalidArgument, "no session ID"))
+			writeErr(status.Errorf(codes.InvalidArgument, "no session ID"))
 			return
 		}
 
 		// Verify bot credentials match what's recorded in the validated poll state.
 		if err := checkCredentials(ctx, pollState); err != nil {
 			if transient.Tag.In(err) {
-				writeErr(ctx, wrt, status.Errorf(codes.Internal, "transient error checking bot credentials: %s", err))
+				writeErr(status.Errorf(codes.Internal, "transient error checking bot credentials: %s", err))
 			} else {
-				writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "bad bot credentials: %s", err))
+				writeErr(status.Errorf(codes.Unauthenticated, "bad bot credentials: %s", err))
 			}
 			return
 		}
@@ -251,7 +281,7 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 
 		// There must be `pool` dimension with at least one value (perhaps more).
 		if len(dims["pool"]) == 0 {
-			writeErr(ctx, wrt, status.Errorf(codes.InvalidArgument, "no pool dimension"))
+			writeErr(status.Errorf(codes.InvalidArgument, "no pool dimension"))
 			return
 		}
 
@@ -263,7 +293,7 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 			Dimensions: dims,
 		})
 		if err != nil {
-			writeErr(ctx, wrt, err)
+			writeErr(err)
 			return
 		}
 
@@ -364,20 +394,10 @@ func checkCredentials(ctx context.Context, pollState *internalspb.PollState) err
 	return nil
 }
 
-// writeErr logs a gRPC error and writes it to the HTTP response.
-//
-// The error can be wrapped.
-func writeErr(ctx context.Context, w http.ResponseWriter, err error) {
-	err = grpcutil.GRPCifyAndLogErr(ctx, err)
-	httpCode := grpcutil.CodeStatus(status.Code(err))
-	logging.Errorf(ctx, "HTTP %d: %s", httpCode, err)
-	http.Error(w, err.Error(), httpCode)
-}
-
-// botID extracts the bot ID from PollState.
+// extractBotID extracts the bot ID from PollState.
 //
 // Returns "" if it is not present.
-func botID(s *internalspb.PollState) string {
+func extractBotID(s *internalspb.PollState) string {
 	for _, dim := range s.EnforcedDimensions {
 		if dim.Key == "id" {
 			if len(dim.Values) > 0 {

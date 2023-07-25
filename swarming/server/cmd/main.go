@@ -170,6 +170,14 @@ func (r *pingRequest) ExtractPollToken() []byte               { return r.RBEStat
 func (r *pingRequest) ExtractSessionToken() []byte            { return nil }
 func (r *pingRequest) ExtractDimensions() map[string][]string { return r.Dimensions }
 
+func (r *pingRequest) ExtractDebugRequest() any {
+	return &pingRequest{
+		Dimensions: r.Dimensions,
+		State:      r.State,
+		Version:    r.Version,
+	}
+}
+
 func pingHandler(ctx context.Context, body *pingRequest, r *botsrv.Request) (botsrv.Response, error) {
 	logging.Infof(ctx, "Dimensions: %v", r.Dimensions)
 	logging.Infof(ctx, "PollState: %v", r.PollState)

@@ -53,6 +53,7 @@ type testRequest struct {
 func (r *testRequest) ExtractPollToken() []byte               { return r.PollToken }
 func (r *testRequest) ExtractSessionToken() []byte            { return r.SessionToken }
 func (r *testRequest) ExtractDimensions() map[string][]string { return r.Dimensions }
+func (r *testRequest) ExtractDebugRequest() any               { return r }
 
 func TestBotHandler(t *testing.T) {
 	t.Parallel()

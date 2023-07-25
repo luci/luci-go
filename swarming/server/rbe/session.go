@@ -77,6 +77,12 @@ func (r *CreateBotSessionRequest) ExtractPollToken() []byte               { retu
 func (r *CreateBotSessionRequest) ExtractSessionToken() []byte            { return r.SessionToken }
 func (r *CreateBotSessionRequest) ExtractDimensions() map[string][]string { return r.Dimensions }
 
+func (r *CreateBotSessionRequest) ExtractDebugRequest() any {
+	return &CreateBotSessionRequest{
+		Dimensions: r.Dimensions,
+	}
+}
+
 // CreateBotSessionResponse is a body of `/bot/rbe/session/create` response.
 type CreateBotSessionResponse struct {
 	// SessionToken is a freshly produced session token.
@@ -113,7 +119,7 @@ func (srv *SessionServer) CreateBotSession(ctx context.Context, body *CreateBotS
 		// the original RBE errors in the bot logs.
 		return nil, err
 	}
-	logging.Infof(ctx, "Session ID: %s", session.Name)
+	logging.Infof(ctx, "%s: %s", r.BotID, session.Name)
 	for _, lease := range session.Leases {
 		logging.Errorf(ctx, "Unexpected lease when just opening the session: %s", lease)
 	}
@@ -216,6 +222,15 @@ func (r *UpdateBotSessionRequest) ExtractPollToken() []byte               { retu
 func (r *UpdateBotSessionRequest) ExtractSessionToken() []byte            { return r.SessionToken }
 func (r *UpdateBotSessionRequest) ExtractDimensions() map[string][]string { return r.Dimensions }
 
+func (r *UpdateBotSessionRequest) ExtractDebugRequest() any {
+	return &UpdateBotSessionRequest{
+		Dimensions:  r.Dimensions,
+		Status:      r.Status,
+		Nonblocking: r.Nonblocking,
+		Lease:       r.Lease,
+	}
+}
+
 // UpdateBotSessionResponse is a body of `/bot/rbe/session/update` response.
 type UpdateBotSessionResponse struct {
 	// SessionToken is a refreshed session token.
@@ -258,8 +273,10 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 		return nil, status.Errorf(codes.InvalidArgument, "missing session ID")
 	}
 
+	logging.Infof(ctx, "%s: %s", r.BotID, r.SessionID)
+	logSession(ctx, "Input", body.Status, body.Lease)
+
 	// Need a recognizable status enum.
-	logging.Infof(ctx, "Reported status: %s", body.Status)
 	botStatus := remoteworkers.BotStatus(remoteworkers.BotStatus_value[body.Status])
 	if botStatus == remoteworkers.BotStatus_BOT_STATUS_UNSPECIFIED {
 		if body.Status == "" {
@@ -272,7 +289,6 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 	// COMPLETED leases, see UpdateBotSessionRequest comment.
 	var leaseIn *remoteworkers.Lease
 	if body.Lease != nil {
-		logging.Infof(ctx, "Reported lease: %s %s", body.Lease.State, body.Lease.ID)
 		leaseIn = &remoteworkers.Lease{
 			Id:    body.Lease.ID,
 			State: remoteworkers.LeaseState(remoteworkers.LeaseState_value[body.Lease.State]),
@@ -319,16 +335,13 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 		timeout = randomDuration(45*time.Second, 55*time.Second)
 	}
 
-	logging.Infof(ctx, "RPC timeout is %s", timeout)
 	rpcCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	started := clock.Now(ctx)
 	session, err := srv.rbe.UpdateBotSession(rpcCtx, &remoteworkers.UpdateBotSessionRequest{
 		Name:       r.SessionID,
 		BotSession: rbeBotSession(r.SessionID, botStatus, r.Dimensions, leaseIn),
 	})
-	logging.Infof(ctx, "UpdateBotSession took %s", clock.Now(ctx).Sub(started))
 
 	if err != nil {
 		// If the bot was just polling for new work, treat DEADLINE_EXCEEDED as
@@ -376,14 +389,6 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 			logging.Errorf(ctx, "Unexpected RBE lease: %s", lease)
 		}
 		session.Leases = nil
-	} else {
-		// Log all returned leases as is to ease debugging.
-		for _, lease := range session.Leases {
-			logging.Infof(ctx, "RBE lease: %s", lease)
-		}
-		if len(session.Leases) == 0 {
-			logging.Infof(ctx, "No RBE leases")
-		}
 	}
 
 	// The lease we'll report to the bot.
@@ -436,6 +441,7 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 				// TODO(vadimsh): This is a fatally broken task with missing or
 				// unrecognized payload, need to tell the RBE to drop it otherwise it
 				// will haunt this bot until its expiration.
+				logging.Errorf(ctx, "Failed to unmarshal lease payload:\n%s", prettyProto(leaseOut))
 				return nil, status.Errorf(codes.Internal, "failed to unmarshal pending lease payload: %s", err)
 			}
 		}
@@ -449,7 +455,6 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 			State:   remoteworkers.LeaseState_name[int32(leaseOut.State)],
 			Payload: leasePayload,
 		}
-		logging.Infof(ctx, "Returned lease: %s %s", respLease.State, respLease.ID)
 	}
 
 	// Refresh the session token and embed new, potentially updated, PollState
@@ -459,12 +464,14 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "could not generate session token: %s", err)
 	}
-	return &UpdateBotSessionResponse{
+	resp := &UpdateBotSessionResponse{
 		SessionToken:  sessionToken,
 		SessionExpiry: tokenExpiry.Unix(),
 		Status:        remoteworkers.BotStatus_name[int32(session.Status)],
 		Lease:         respLease,
-	}, nil
+	}
+	logSession(ctx, "Output", resp.Status, resp.Lease)
+	return resp, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -556,4 +563,13 @@ func rbeBotSession(sessionID string, status remoteworkers.BotStatus, dims map[st
 // randomDuration returns a uniformly distributed random number in range [a, b).
 func randomDuration(a, b time.Duration) time.Duration {
 	return a + time.Duration(rand.Int63n(int64(b-a)))
+}
+
+// logSession logs some basic information about the session.
+func logSession(ctx context.Context, direction, status string, lease *Lease) {
+	if lease != nil {
+		logging.Infof(ctx, "%s: %s, lease %s %s", direction, status, lease.State, lease.ID)
+	} else {
+		logging.Infof(ctx, "%s: %s, no lease", direction, status)
+	}
 }
