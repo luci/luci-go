@@ -496,6 +496,12 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 				toSave = append(toSave, bs)
 			}
 		}
+
+		// Reset req.Build.Output.Status if the request does not intend to update
+		// Build.Output.Status.
+		if !explicitlyIncludesOutputStatus(req) && req.Build.GetOutput() != nil && req.Build.Output.Status != b.Proto.Output.GetStatus() {
+			req.Build.Output.Status = b.Proto.Output.GetStatus()
+		}
 		if err := updateMask.Merge(req.Build, b.Proto); err != nil {
 			return errors.Annotate(err, "attempting to merge masked build").Err()
 		}

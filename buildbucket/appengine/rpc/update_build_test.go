@@ -641,6 +641,9 @@ func TestUpdateBuild(t *testing.T) {
 					Builder: "builder",
 				},
 				Status: pb.Status_STARTED,
+				Output: &pb.Build_Output{
+					Status: pb.Status_STARTED,
+				},
 			},
 			CreateTime:  t0,
 			UpdateToken: tk,
@@ -1110,7 +1113,9 @@ func TestUpdateBuild(t *testing.T) {
 				So(datastore.Put(ctx, build, buildStatus), ShouldBeNil)
 
 				req.UpdateMask.Paths[0] = "build.output"
-				req.Build.Output = &pb.Build_Output{}
+				req.Build.Output = &pb.Build_Output{
+					Status: pb.Status_SUCCESS,
+				}
 				req.Build.Status = pb.Status_SUCCESS
 				So(updateBuild(ctx, req), ShouldBeRPCOK)
 
@@ -1127,6 +1132,7 @@ func TestUpdateBuild(t *testing.T) {
 				So(datastore.Get(ctx, build, buildStatus), ShouldBeNil)
 				So(buildStatus.Status, ShouldEqual, pb.Status_STARTED)
 				So(build.Proto.Status, ShouldEqual, pb.Status_STARTED)
+				So(build.Proto.Output.Status, ShouldEqual, pb.Status_STARTED)
 			})
 		})
 
