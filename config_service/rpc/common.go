@@ -18,12 +18,20 @@ import (
 	"path"
 	"strings"
 
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
+
+	"go.chromium.org/luci/config_service/internal/common"
+	"go.chromium.org/luci/config_service/internal/model"
 	pb "go.chromium.org/luci/config_service/proto"
-	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
+
+// defaultConfigSetMask is the default mask used for ConfigSet related RPCs.
+var defaultConfigSetMask = mask.MustFromReadMask(&pb.ConfigSet{}, "name", "url", "revision")
 
 // validatePath validates path in rpc requests.
 func validatePath(p string) error {
@@ -49,6 +57,48 @@ func toConfigMask(fields *fieldmaskpb.FieldMask) (*mask.Mask, error) {
 		fieldSet.Add("signed_url")
 		fields.Paths = fieldSet.ToSlice()
 	}
-	m, err := mask.FromFieldMask(fields, &pb.Config{}, false, false)
-	return m, err
+	return mask.FromFieldMask(fields, &pb.Config{}, false, false)
+}
+
+// toConfigSetMask converts the given field mask for ConfigSet proto to a
+// ConfigSet mask.
+func toConfigSetMask(fields *fieldmaskpb.FieldMask) (*mask.Mask, error) {
+	if len(fields.GetPaths()) == 0 {
+		return defaultConfigSetMask, nil
+	}
+	return mask.FromFieldMask(fields, &pb.ConfigSet{}, false, false)
+}
+
+// toConfigSetPb converts *model.ConfigSet to ConfigSet proto.
+func toConfigSetPb(cs *model.ConfigSet) *pb.ConfigSet {
+	if cs == nil {
+		return nil
+	}
+	return &pb.ConfigSet{
+		Name: string(cs.ID),
+		Url:  common.GitilesURL(cs.Location.GetGitilesLocation()),
+		Revision: &pb.ConfigSet_Revision{
+			Id:             cs.LatestRevision.ID,
+			Url:            common.GitilesURL(cs.LatestRevision.Location.GetGitilesLocation()),
+			CommitterEmail: cs.LatestRevision.CommitterEmail,
+			Timestamp:      timestamppb.New(cs.LatestRevision.CommitTime),
+		},
+	}
+}
+
+// toImportAttempt converts *model.ImportAttempt to ConfigSet_Attempt proto.
+func toImportAttempt(attempt *model.ImportAttempt) *pb.ConfigSet_Attempt {
+	if attempt == nil {
+		return nil
+	}
+	return &pb.ConfigSet_Attempt{
+		Message: attempt.Message,
+		Success: attempt.Success,
+		Revision: &pb.ConfigSet_Revision{
+			Id:             attempt.Revision.ID,
+			Url:            common.GitilesURL(attempt.Revision.Location.GetGitilesLocation()),
+			CommitterEmail: attempt.Revision.CommitterEmail,
+			Timestamp:      timestamppb.New(attempt.Revision.CommitTime),
+		},
+	}
 }

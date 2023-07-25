@@ -33,6 +33,7 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -117,6 +118,7 @@ func InjectConfigSet(ctx context.Context, cfgSet config.Set, configs map[string]
 	default:
 		So(err, ShouldBeNil)
 	}
+	cs.LatestRevision.CommitTime = clock.Now(ctx)
 
 	var files []*model.File
 	for filepath, msg := range configs {
