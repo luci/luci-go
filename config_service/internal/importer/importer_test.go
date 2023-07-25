@@ -21,11 +21,13 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"math/rand"
 	"sort"
 	"strings"
 	"testing"
 
+	"cloud.google.com/go/storage"
 	"github.com/golang/mock/gomock"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -203,6 +205,15 @@ func TestImportConfigSet(t *testing.T) {
 				)).Return(&gitilespb.ArchiveResponse{
 					Contents: tarGzContent,
 				}, nil)
+				var recordedGSPaths []gs.Path
+				mockGsClient.EXPECT().UploadIfMissing(
+					gomock.Any(), gomock.Eq(common.BucketName(ctx)),
+					gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(
+					func(ctx context.Context, bucket, object string, data []byte, attrsModifyFn func(*storage.ObjectAttrs)) (bool, error) {
+						recordedGSPaths = append(recordedGSPaths, gs.MakePath(bucket, object))
+						return true, nil
+					},
+				)
 
 				err = ImportConfigSet(ctx, config.MustServiceSet("myservice"))
 				So(err, ShouldBeNil)
@@ -245,6 +256,9 @@ func TestImportConfigSet(t *testing.T) {
 				})
 
 				So(files, ShouldHaveLength, 3)
+				sort.Slice(files, func(i, j int) bool {
+					return strings.Compare(files[i].Path, files[j].Path) < 0
+				})
 				So(files[0].Location, ShouldResembleProto, &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
@@ -255,15 +269,15 @@ func TestImportConfigSet(t *testing.T) {
 					},
 				})
 				files[0].Location = nil
-				expectedSha256 := sha256.Sum256([]byte(""))
-				expectedContent0, err := gzipCompress([]byte(""))
+				expectedSha256, expectedContent0, err := hashAndCompressConfig(bytes.NewBuffer([]byte("")))
 				So(err, ShouldBeNil)
 				So(files[0], ShouldResemble, &model.File{
 					Path:          "empty_file",
 					Revision:      revKey,
 					CreateTime:    datastore.RoundTime(clock.Now(ctx).UTC()),
 					Content:       expectedContent0,
-					ContentSHA256: hex.EncodeToString(expectedSha256[:]),
+					ContentSHA256: expectedSha256,
+					GcsURI:        gs.MakePath(common.BucketName(ctx), fmt.Sprintf("%s/sha256/%s", common.GSProdCfgFolder, expectedSha256)),
 				})
 				So(files[1].Location, ShouldResembleProto, &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
@@ -275,15 +289,15 @@ func TestImportConfigSet(t *testing.T) {
 					},
 				})
 				files[1].Location = nil
-				expectedSha256 = sha256.Sum256([]byte("file1 content"))
-				expectedContent1, err := gzipCompress([]byte("file1 content"))
+				expectedSha256, expectedContent1, err := hashAndCompressConfig(bytes.NewBuffer([]byte("file1 content")))
 				So(err, ShouldBeNil)
 				So(files[1], ShouldResemble, &model.File{
 					Path:          "file1",
 					Revision:      revKey,
 					CreateTime:    datastore.RoundTime(clock.Now(ctx).UTC()),
 					Content:       expectedContent1,
-					ContentSHA256: hex.EncodeToString(expectedSha256[:]),
+					ContentSHA256: expectedSha256,
+					GcsURI:        gs.MakePath(common.BucketName(ctx), fmt.Sprintf("%s/sha256/%s", common.GSProdCfgFolder, expectedSha256)),
 				})
 				So(files[2].Location, ShouldResembleProto, &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
@@ -295,16 +309,29 @@ func TestImportConfigSet(t *testing.T) {
 					},
 				})
 				files[2].Location = nil
-				expectedSha256 = sha256.Sum256([]byte("file2 content"))
-				expectedContent2, err := gzipCompress([]byte("file2 content"))
+				expectedSha256, expectedContent2, err := hashAndCompressConfig(bytes.NewBuffer([]byte("file2 content")))
 				So(err, ShouldBeNil)
 				So(files[2], ShouldResemble, &model.File{
 					Path:          "sub_dir/file2",
 					Revision:      revKey,
 					CreateTime:    datastore.RoundTime(clock.Now(ctx).UTC()),
 					Content:       expectedContent2,
-					ContentSHA256: hex.EncodeToString(expectedSha256[:]),
+					ContentSHA256: expectedSha256,
+					GcsURI:        gs.MakePath(common.BucketName(ctx), fmt.Sprintf("%s/sha256/%s", common.GSProdCfgFolder, expectedSha256)),
 				})
+
+				So(recordedGSPaths, ShouldHaveLength, len(files))
+				sort.Slice(recordedGSPaths, func(i, j int) bool {
+					return strings.Compare(string(recordedGSPaths[i]), string(recordedGSPaths[j])) < 0
+				})
+				expectedGSPaths := make([]gs.Path, len(files))
+				for i, f := range files {
+					expectedGSPaths[i] = f.GcsURI
+				}
+				sort.Slice(expectedGSPaths, func(i, j int) bool {
+					return strings.Compare(string(expectedGSPaths[i]), string(expectedGSPaths[j])) < 0
+				})
+				So(recordedGSPaths, ShouldResemble, expectedGSPaths)
 
 				So(attempt.Revision.Location, ShouldResembleProto, &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
@@ -493,7 +520,7 @@ func TestImportConfigSet(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(len(compressed) > compressedContentLimit, ShouldBeTrue)
 
-				tarGzContent, err := buildTarGz(map[string]any{"file": "small content", "large": incompressible})
+				tarGzContent, err := buildTarGz(map[string]any{"large": incompressible})
 				So(err, ShouldBeNil)
 				expectedSha256 := sha256.Sum256(incompressible)
 				expectedGsFileName := "configs/sha256/" + hex.EncodeToString(expectedSha256[:])
@@ -510,10 +537,11 @@ func TestImportConfigSet(t *testing.T) {
 				revKey := datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice", model.RevisionKind, latestCommit.Id)
 				var files []*model.File
 				So(datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), ShouldBeNil)
-				So(files, ShouldHaveLength, 2)
-				So(files[0].Path, ShouldEqual, "file")
-				So(files[1].Path, ShouldEqual, "large")
-				So(files[1].GcsURI, ShouldEqual, gs.Path("gs://storage-luci-config-dev/"+expectedGsFileName))
+				So(files, ShouldHaveLength, 1)
+				file := files[0]
+				So(file.Path, ShouldEqual, "large")
+				So(file.Content, ShouldBeNil)
+				So(file.GcsURI, ShouldEqual, gs.MakePath("storage-luci-config-dev", expectedGsFileName))
 			})
 		})
 
@@ -696,6 +724,7 @@ func buildTarGz(raw map[string]any) ([]byte, error) {
 	}
 	return buf.Bytes(), nil
 }
+
 func getCfgSetsInTaskQueue(sch *tqtesting.Scheduler) []string {
 	cfgSets := make([]string, len(sch.Tasks()))
 	for i, task := range sch.Tasks() {

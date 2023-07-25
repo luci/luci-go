@@ -389,36 +389,26 @@ func importRevision(ctx context.Context, cfgSet config.Set, loc *cfgcommonpb.Git
 				},
 			},
 		}
-
-		sha := sha256.New()
-		compressed := &bytes.Buffer{}
-		gzipWriter := gzip.NewWriter(compressed)
-		multiWriter := io.MultiWriter(sha, gzipWriter)
-		if _, err := io.Copy(multiWriter, tarReader); err != nil {
-			_ = gzipWriter.Close()
-			return errors.Annotate(err, "error reading tar file: %s", filePath).Err()
+		if file.ContentSHA256, file.Content, err = hashAndCompressConfig(tarReader); err != nil {
+			return errors.Annotate(err, "filepath: %q", filePath).Err()
 		}
-		if err := gzipWriter.Close(); err != nil {
-			return errors.Annotate(err, "failed to close gzip writer for file: %s", filePath).Err()
+		gsFileName := fmt.Sprintf("%s/sha256/%s", common.GSProdCfgFolder, file.ContentSHA256)
+		_, err = clients.GetGsClient(ctx).UploadIfMissing(ctx, common.BucketName(ctx), gsFileName, file.Content, func(attrs *storage.ObjectAttrs) {
+			attrs.ContentEncoding = "gzip"
+		})
+		if err != nil {
+			return errors.Annotate(err, "failed to upload file %s as %s", filePath, gsFileName).Err()
 		}
-		file.ContentSHA256 = hex.EncodeToString(sha.Sum(nil)[:])
-		if compressed.Len() < compressedContentLimit {
-			file.Content = compressed.Bytes()
-		} else {
-			gsFileName := fmt.Sprintf("%s/sha256/%s", common.GSProdCfgFolder, file.ContentSHA256)
-			_, err := clients.GetGsClient(ctx).UploadIfMissing(ctx, common.BucketName(ctx), gsFileName, compressed.Bytes(), func(attrs *storage.ObjectAttrs) {
-				attrs.ContentEncoding = "gzip"
-			})
-			if err != nil {
-				return errors.Annotate(err, "failed to upload file %s as %s", filePath, gsFileName).Err()
-			}
-			// TODO(crbug.com/1446839): call validateConfig func
-			file.GcsURI = gs.MakePath(common.BucketName(ctx), gsFileName)
+		file.GcsURI = gs.MakePath(common.BucketName(ctx), gsFileName)
+		if len(file.Content) > compressedContentLimit {
+			// Don't save the compressed content if the content is above the limit.
+			// Since Datastore has 1MiB entity size limit.
+			file.Content = nil
 		}
 		files = append(files, file)
 	}
-
-	// TODO(crbug.com/1446839): change them based on validateConfig response
+	// TODO(crbug.com/1446839): call validateConfig func and change them based on
+	// validateConfig response
 	attempt.Success = true
 	attempt.Message = "Imported"
 	for _, f := range files {
@@ -432,4 +422,21 @@ func importRevision(ctx context.Context, cfgSet config.Set, loc *cfgcommonpb.Git
 	return datastore.RunInTransaction(ctx, func(c context.Context) error {
 		return datastore.Put(ctx, configSet, attempt)
 	}, nil)
+}
+
+// hashAndCompressConfig reads the config and returns the sha256 of the config
+// and the gzip-compressed bytes.
+func hashAndCompressConfig(reader io.Reader) (string, []byte, error) {
+	sha := sha256.New()
+	compressed := &bytes.Buffer{}
+	gzipWriter := gzip.NewWriter(compressed)
+	multiWriter := io.MultiWriter(sha, gzipWriter)
+	if _, err := io.Copy(multiWriter, reader); err != nil {
+		_ = gzipWriter.Close()
+		return "", nil, errors.Annotate(err, "error reading tar file").Err()
+	}
+	if err := gzipWriter.Close(); err != nil {
+		return "", nil, errors.Annotate(err, "failed to close gzip writer").Err()
+	}
+	return hex.EncodeToString(sha.Sum(nil)), compressed.Bytes(), nil
 }
