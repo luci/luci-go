@@ -275,7 +275,7 @@ func (s *ReservationServer) ExpireSliceBasedOnReservation(ctx context.Context, r
 	if statusErr != nil {
 		logging.Infof(ctx, "Reservation is %s by %q: %s", reservation.State, reservation.AssignedBotId, statusErr)
 	} else {
-		logging.Infof(ctx, "Reservation is %s by %q", reservation.State, reservation.AssignedBotId, reservation.AssignedBotId)
+		logging.Infof(ctx, "Reservation is %s by %q", reservation.State, reservation.AssignedBotId)
 	}
 
 	// Ignore noop reservations: they are not associated with Swarming slices and
