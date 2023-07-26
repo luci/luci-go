@@ -34,8 +34,8 @@ import (
 // than they are identical, but if they don't have the same revision it does
 // not necessarily mean they are not identical.
 type PermissionsDB struct {
-	// revision is the revision of this permissionDB
-	revision string
+	// Rev is the revision of this permissionDB
+	Rev string
 
 	// Permissions is a map of Permissions str -> *protocol.Permission
 	Permissions map[string]*protocol.Permission
@@ -67,7 +67,7 @@ func NewPermissionsDB(permissionscfg *configspb.PermissionsConfig, meta config.M
 		Permissions: make(map[string]*protocol.Permission),
 		Roles:       make(map[string]*Role),
 	}
-	permissionsDB.revision = fmt.Sprintf("permissionsDB:%s", meta.Revision)
+	permissionsDB.Rev = fmt.Sprintf("permissionsDB:%s", meta.Revision)
 	for _, role := range permissionscfg.GetRole() {
 
 		permissionsDB.Roles[role.GetName()] = &Role{role.GetName(), stringset.Set{}}

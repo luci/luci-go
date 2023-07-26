@@ -60,7 +60,7 @@ func TestPermissionsDBGeneration(t *testing.T) {
 			},
 		}
 		expectedDB := &PermissionsDB{
-			revision: fmt.Sprintf("permissionsDB:%d", 123),
+			Rev: fmt.Sprintf("permissionsDB:%d", 123),
 			Permissions: map[string]*protocol.Permission{
 				"test.config.get":         {Name: "test.config.get"},
 				"test.config.create":      {Name: "test.config.create"},

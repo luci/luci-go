@@ -16,6 +16,7 @@
 package model
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	stderrors "errors"
@@ -1446,6 +1447,92 @@ func GetAuthProjectRealms(ctx context.Context, project string) (*AuthProjectReal
 	default:
 		return nil, errors.Annotate(err, "error getting AuthProjectRealms %s", project).Err()
 	}
+}
+
+// RealmsCfgRev is information about fetched or previously processed realms.cfg.
+// Comes either from LUCI Config (then `config_body` is set, but `perms_rev`
+// isn't) or from the datastore (then `perms_rev` is set, but `config_body`
+// isn't). All other fields are always set.
+type RealmsCfgRev struct {
+	ProjectID    string
+	ConfigRev    string
+	ConfigDigest string
+
+	// Thes two are mutually exclusive
+	ConfigBody []byte
+	PermsRev   string
+}
+
+// ExpandedRealms contains the expanded realms and information about the expanded
+// realms.
+type ExpandedRealms struct {
+	CfgRev *RealmsCfgRev
+	// Realms is the expanded form of the realms.cfg for a project
+	Realms *protocol.Realms
+}
+
+// UpdateAuthProjectRealms updates all the realms for a specific LUCI Project.
+// If an entity does not exist in datastore for a given AuthProjectRealm, one
+// will be created.
+//
+// Returns
+//
+//	datastore.ErrNoSuchEntity -- entity does not exist
+//	Annotated Error
+//		Failed to create new AuthProjectRealm entity
+//		Failed to update AuthProjectRealm entity
+//		Failed to put AuthProjectRealmsMeta entity
+func UpdateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, permsRev string) error {
+	return runAuthDBChange(ctx, func(ctx context.Context, commitEntity commitAuthEntity) error {
+		metas := []*AuthProjectRealmsMeta{}
+		existing := []*AuthProjectRealms{}
+		for _, r := range eRealms {
+			currentProjectRealms, err := GetAuthProjectRealms(ctx, r.CfgRev.ProjectID)
+			if err != nil && err != datastore.ErrNoSuchEntity {
+				return err
+			}
+			existing = append(existing, currentProjectRealms)
+		}
+
+		now := clock.Now(ctx).UTC()
+		for idx, r := range eRealms {
+			realms, err := proto.Marshal(r.Realms)
+			if err != nil {
+				return err
+			}
+			if existing[idx] == nil {
+				// create new one
+				newRealm := makeAuthProjectRealms(ctx, r.CfgRev.ProjectID)
+				newRealm.Realms = realms
+				newRealm.ConfigRev = r.CfgRev.ConfigRev
+				newRealm.PermsRev = permsRev
+				if err := commitEntity(newRealm, now, auth.CurrentIdentity(ctx), false); err != nil {
+					return errors.Annotate(err, "failed to create new AuthProjectRealm %s", r.CfgRev.ProjectID).Err()
+				}
+			} else if !bytes.Equal(existing[idx].Realms, realms) {
+				// update
+				existing[idx].Realms = realms
+				existing[idx].ConfigRev = r.CfgRev.ConfigRev
+				existing[idx].PermsRev = permsRev
+				if err := commitEntity(existing[idx], now, auth.CurrentIdentity(ctx), false); err != nil {
+					return errors.Annotate(err, "failed to update AuthProjectRealm %s", r.CfgRev.ProjectID).Err()
+				}
+			} else {
+				logging.Infof(ctx, "configs are fresh!")
+			}
+
+			currentMeta := makeAuthProjectRealmsMeta(ctx, r.CfgRev.ProjectID)
+			currentMeta.ConfigRev = r.CfgRev.ConfigRev
+			currentMeta.PermsRev = permsRev
+			currentMeta.ConfigDigest = r.CfgRev.ConfigDigest
+			currentMeta.ModifiedTS = now
+			metas = append(metas, currentMeta)
+		}
+		if err := datastore.Put(ctx, metas); err != nil {
+			return errors.Annotate(err, "failed trying to put AuthProjectRealmsMeta").Err()
+		}
+		return nil
+	})
 }
 
 // GetAuthProjectRealmsMeta returns the AuthProjectRealmsMeta datastore entity for a given project.

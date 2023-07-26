@@ -23,35 +23,24 @@ import (
 	"math"
 	"sort"
 	"sync"
+	"time"
 
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/internal/permissions"
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	realmsconf "go.chromium.org/luci/common/proto/realms"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
+	"google.golang.org/protobuf/proto"
 
 	"golang.org/x/sync/errgroup"
 )
-
-// RealmsCfgRev is information about fetched or previously processed realms.cfg.
-// Comes either from LUCI Config (then `config_body` is set, but `perms_rev`
-// isn't) or from the datastore (then `perms_rev` is set, but `config_body`
-// isn't). All other fields are always set.
-type RealmsCfgRev struct {
-	projectID    string
-	configRev    string
-	configDigest string
-
-	// Thes two are mutually exclusive
-	configBody []byte
-	permsRev   string
-}
 
 const (
 	Cria             = "services/chrome-infra-auth"
@@ -65,12 +54,53 @@ type realmsMap struct {
 	cfgMap map[string]*config.Config
 }
 
-func CheckConfigChanges(permissionsDB *permissions.PermissionsDB, latest []*RealmsCfgRev, stored []*RealmsCfgRev) {
+func CheckConfigChanges(permissionsDB *permissions.PermissionsDB, latest []*model.RealmsCfgRev, stored []*model.RealmsCfgRev) {
 	// TODO(cjacomet): Implement
 }
 
-func UpdateRealms(revs []*RealmsCfgRev) {
-	// TODO(cjacomet): Implement
+// UpdateRealms updates realms for projects given the fetched or previously processed realms.cfg.
+//
+// Returns
+//
+//	Annotated Error
+//		Unmarshalling proto error
+//		Failed Realm Expansion
+//		Failed to update datastore with Realms changes
+func UpdateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*model.RealmsCfgRev) error {
+	expanded := []*model.ExpandedRealms{}
+	for _, r := range revs {
+		logging.Infof(ctx, "expanding realms of project \"%s\"...", r.ProjectID)
+		start := time.Now()
+
+		parsed := &realmsconf.RealmsCfg{}
+		if err := proto.Unmarshal(r.ConfigBody, parsed); err != nil {
+			return errors.Annotate(err, "couldn't unmarshal config body").Err()
+		}
+		expandedRev, err := ExpandRealms(db, r.ProjectID, parsed)
+		if err != nil {
+			return errors.Annotate(err, "failed to process realms of \"%s\"", r.ProjectID).Err()
+		}
+		expanded = append(expanded, &model.ExpandedRealms{
+			CfgRev: r,
+			Realms: expandedRev,
+		})
+
+		dt := time.Since(start)
+
+		if dt.Seconds() > 5.0 {
+			logging.Errorf(ctx, "realms expansion of \"%s\" is slow: %1.f", r.ProjectID, dt)
+		}
+	}
+	if len(expanded) == 0 {
+		return nil
+	}
+
+	logging.Infof(ctx, "entering transaction")
+	if err := model.UpdateAuthProjectRealms(ctx, expanded, db.Rev); err != nil {
+		return err
+	}
+	logging.Infof(ctx, "transaction landed")
+	return nil
 }
 
 // ExpandRealms expands a realmsconf.RealmsCfg into a flat protocol.Realms.
@@ -366,7 +396,7 @@ func sliceCompare[T string | uint32](sli []T, slj []T) bool {
 //
 //	ErrNoConfig -- config is not found
 //	annotated error -- for all other errors
-func GetConfigs(ctx context.Context) ([]*RealmsCfgRev, []*RealmsCfgRev, error) {
+func GetConfigs(ctx context.Context) ([]*model.RealmsCfgRev, []*model.RealmsCfgRev, error) {
 	projects, err := cfgclient.ProjectsWithConfig(ctx, cfgPath(ctx))
 	if err != nil {
 		return nil, nil, err
@@ -374,7 +404,7 @@ func GetConfigs(ctx context.Context) ([]*RealmsCfgRev, []*RealmsCfgRev, error) {
 
 	// client to fetch configs
 	client := cfgclient.Client(ctx)
-	latestRevs := make([]*RealmsCfgRev, len(projects)+1)
+	latestRevs := make([]*model.RealmsCfgRev, len(projects)+1)
 
 	eg, childCtx := errgroup.WithContext(ctx)
 
@@ -419,25 +449,25 @@ func GetConfigs(ctx context.Context) ([]*RealmsCfgRev, []*RealmsCfgRev, error) {
 		return nil, nil, err
 	}
 
-	storedRevs := make([]*RealmsCfgRev, len(storedMeta))
+	storedRevs := make([]*model.RealmsCfgRev, len(storedMeta))
 
 	idx := 0
 	for projID, cfg := range latestMap.cfgMap {
-		latestRevs[idx] = &RealmsCfgRev{
-			projectID:    projID,
-			configRev:    cfg.Revision,
-			configDigest: cfg.ContentHash,
-			configBody:   []byte(cfg.Content),
+		latestRevs[idx] = &model.RealmsCfgRev{
+			ProjectID:    projID,
+			ConfigRev:    cfg.Revision,
+			ConfigDigest: cfg.ContentHash,
+			ConfigBody:   []byte(cfg.Content),
 		}
 		idx++
 	}
 
 	for i, meta := range storedMeta {
-		storedRevs[i] = &RealmsCfgRev{
-			projectID:    meta.ID,
-			configRev:    meta.ConfigRev,
-			configDigest: meta.ConfigDigest,
-			permsRev:     meta.PermsRev,
+		storedRevs[i] = &model.RealmsCfgRev{
+			ProjectID:    meta.ID,
+			ConfigRev:    meta.ConfigRev,
+			ConfigDigest: meta.ConfigDigest,
+			PermsRev:     meta.PermsRev,
 		}
 	}
 

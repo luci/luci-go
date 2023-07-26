@@ -16,10 +16,12 @@ package realmsinternals
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
@@ -27,14 +29,21 @@ import (
 	"go.chromium.org/luci/gae/filter/txndefer"
 	gaemem "go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/service/protocol"
+	"go.chromium.org/luci/server/tq"
+	"google.golang.org/protobuf/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	realmsconf "go.chromium.org/luci/common/proto/realms"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var (
+	testCreatedTS  = time.Date(2020, time.May, 4, 0, 0, 0, 0, time.UTC)
 	testModifiedTS = time.Date(2021, time.August, 16, 12, 20, 0, 0, time.UTC)
 )
 
@@ -55,8 +64,6 @@ func TestGetConfigs(t *testing.T) {
 	Convey("projects with config", t, func() {
 		ctx := gaemem.Use(context.Background())
 		ctx = cfgclient.Use(ctx, &fakeCfgClient{})
-		datastore.GetTestable(ctx).AutoIndex(true)
-		datastore.GetTestable(ctx).Consistent(true)
 		ctx = txndefer.FilterRDS(ctx)
 		datastore.Put(ctx, &model.AuthProjectRealms{
 			AuthVersionedEntityMixin: testAuthVersionedEntityMixin(),
@@ -77,37 +84,36 @@ func TestGetConfigs(t *testing.T) {
 			ModifiedTS:   testModifiedTS,
 		})
 
-		latestExpected := []*RealmsCfgRev{
+		latestExpected := []*model.RealmsCfgRev{
 			{
-				projectID:    "@internal",
-				configRev:    testRevision,
-				configDigest: testContentHash,
-				configBody:   []byte{},
-				permsRev:     "",
+				ProjectID:    "@internal",
+				ConfigRev:    testRevision,
+				ConfigDigest: testContentHash,
+				ConfigBody:   []byte{},
+				PermsRev:     "",
 			},
 			{
-				projectID:    "test-project-a",
-				configRev:    testRevision,
-				configDigest: testContentHash,
-				configBody:   []byte{},
-				permsRev:     "",
+				ProjectID:    "test-project-a",
+				ConfigRev:    testRevision,
+				ConfigDigest: testContentHash,
+				ConfigBody:   []byte{},
+				PermsRev:     "",
 			},
-
 			{
-				projectID:    "test-project-d",
-				configRev:    testRevision,
-				configDigest: testContentHash,
-				configBody:   []byte{},
-				permsRev:     "",
+				ProjectID:    "test-project-d",
+				ConfigRev:    testRevision,
+				ConfigDigest: testContentHash,
+				ConfigBody:   []byte{},
+				PermsRev:     "",
 			},
 		}
 
-		storedExpected := []*RealmsCfgRev{
+		storedExpected := []*model.RealmsCfgRev{
 			{
-				projectID:    "meta",
-				configRev:    "1234",
-				permsRev:     "123",
-				configDigest: "test-digest",
+				ProjectID:    "meta",
+				ConfigRev:    "1234",
+				PermsRev:     "123",
+				ConfigDigest: "test-digest",
 			},
 		}
 
@@ -124,8 +130,6 @@ func TestGetConfigs(t *testing.T) {
 	Convey("no projects with config", t, func() {
 		ctx := gaemem.Use(context.Background())
 		ctx = cfgclient.Use(ctx, memory.New(map[config.Set]memory.Files{}))
-		datastore.GetTestable(ctx).AutoIndex(true)
-		datastore.GetTestable(ctx).Consistent(true)
 		ctx = txndefer.FilterRDS(ctx)
 		datastore.Put(ctx, &model.AuthProjectRealms{
 			AuthVersionedEntityMixin: testAuthVersionedEntityMixin(),
@@ -955,8 +959,262 @@ func TestRealmsExpansion(t *testing.T) {
 	})
 }
 
-func sortRevsByID(revs []*RealmsCfgRev) {
+func TestUpdateRealms(t *testing.T) {
+	t.Parallel()
+
+	simpleProjectRealm := func(ctx context.Context, projectName string, expectedRealmsBody []byte, authDBRev int) *model.AuthProjectRealms {
+		return &model.AuthProjectRealms{
+			AuthVersionedEntityMixin: model.AuthVersionedEntityMixin{
+				ModifiedTS:    testCreatedTS,
+				ModifiedBy:    "user:someone@example.com",
+				AuthDBRev:     int64(authDBRev),
+				AuthDBPrevRev: int64(authDBRev - 1),
+			},
+			Kind:      "AuthProjectRealms",
+			ID:        fmt.Sprintf("test-project-%s", projectName),
+			Parent:    model.RootKey(ctx),
+			Realms:    expectedRealmsBody,
+			ConfigRev: testRevision,
+			PermsRev:  "permissionsDB:123",
+		}
+	}
+
+	simpleProjectRealmMeta := func(ctx context.Context, projectName string) *model.AuthProjectRealmsMeta {
+		return &model.AuthProjectRealmsMeta{
+			Kind:         "AuthProjectRealmsMeta",
+			ID:           "meta",
+			Parent:       datastore.NewKey(ctx, "AuthProjectRealms", fmt.Sprintf("test-project-%s", projectName), 0, model.RootKey(ctx)),
+			ConfigRev:    testRevision,
+			ConfigDigest: testContentHash,
+			ModifiedTS:   testCreatedTS,
+			PermsRev:     "permissionsDB:123",
+		}
+	}
+
+	Convey("testing updating realms", t, func() {
+		ctx := auth.WithState(gaemem.Use(context.Background()), &authtest.FakeState{
+			Identity: "user:someone@example.com",
+		})
+		ctx = clock.Set(ctx, testclock.New(testCreatedTS))
+		ctx = info.SetImageVersion(ctx, "test-version")
+		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
+
+		Convey("works", func() {
+			Convey("simple config 1 entry", func() {
+				configBody, _ := proto.Marshal(&realmsconf.RealmsCfg{
+					Realms: []*realmsconf.Realm{
+						{
+							Name: "test-realm",
+						},
+					},
+				})
+
+				revs := []*model.RealmsCfgRev{
+					{
+						ProjectID:    "test-project-a",
+						ConfigRev:    testRevision,
+						ConfigDigest: testContentHash,
+						ConfigBody:   configBody,
+					},
+				}
+				err := UpdateRealms(ctx, testPermissionsDB(false), revs)
+				So(err, ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+
+				expectedRealmsBody, _ := proto.Marshal(&protocol.Realms{
+					Realms: []*protocol.Realm{
+						{
+							Name: "test-project-a:@root",
+						},
+						{
+							Name: "test-project-a:test-realm",
+						},
+					},
+				})
+
+				fetchedPRealms, err := model.GetAuthProjectRealms(ctx, "test-project-a")
+				So(err, ShouldBeNil)
+				So(fetchedPRealms, ShouldResemble, simpleProjectRealm(ctx, "a", expectedRealmsBody, 1))
+
+				fetchedPRealmMeta, err := model.GetAuthProjectRealmsMeta(ctx, "test-project-a")
+				So(err, ShouldBeNil)
+				So(fetchedPRealmMeta, ShouldResemble, simpleProjectRealmMeta(ctx, "a"))
+			})
+
+			Convey("updating project entry with config changes", func() {
+				cfgBody, _ := proto.Marshal(&realmsconf.RealmsCfg{
+					Realms: []*realmsconf.Realm{
+						{
+							Name: "test-realm",
+						},
+					},
+				})
+
+				revs := []*model.RealmsCfgRev{
+					{
+						ProjectID:    "test-project-a",
+						ConfigRev:    testRevision,
+						ConfigDigest: testContentHash,
+						ConfigBody:   cfgBody,
+					},
+				}
+				So(UpdateRealms(ctx, testPermissionsDB(false), revs), ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+
+				expectedRealmsBody, _ := proto.Marshal(&protocol.Realms{
+					Realms: []*protocol.Realm{
+						{
+							Name: "test-project-a:@root",
+						},
+						{
+							Name: "test-project-a:test-realm",
+						},
+					},
+				})
+
+				fetchedPRealms, err := model.GetAuthProjectRealms(ctx, "test-project-a")
+				So(err, ShouldBeNil)
+				So(fetchedPRealms, ShouldResemble, simpleProjectRealm(ctx, "a", expectedRealmsBody, 1))
+
+				fetchedPRealmMeta, err := model.GetAuthProjectRealmsMeta(ctx, "test-project-a")
+				So(err, ShouldBeNil)
+				So(fetchedPRealmMeta, ShouldResemble, simpleProjectRealmMeta(ctx, "a"))
+
+				cfgBody, _ = proto.Marshal(&realmsconf.RealmsCfg{
+					Realms: []*realmsconf.Realm{
+						{
+							Name: "test-realm",
+						},
+						{
+							Name: "test-realm-2",
+						},
+					},
+				})
+
+				revs = []*model.RealmsCfgRev{
+					{
+						ProjectID:    "test-project-a",
+						ConfigRev:    testRevision,
+						ConfigDigest: testContentHash,
+						ConfigBody:   cfgBody,
+					},
+				}
+				So(UpdateRealms(ctx, testPermissionsDB(false), revs), ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
+
+				expectedRealmsBody, _ = proto.Marshal(&protocol.Realms{
+					Realms: []*protocol.Realm{
+						{
+							Name: "test-project-a:@root",
+						},
+						{
+							Name: "test-project-a:test-realm",
+						},
+						{
+							Name: "test-project-a:test-realm-2",
+						},
+					},
+				})
+
+				fetchedPRealms, err = model.GetAuthProjectRealms(ctx, "test-project-a")
+				So(err, ShouldBeNil)
+				So(fetchedPRealms, ShouldResemble, simpleProjectRealm(ctx, "a", expectedRealmsBody, 2))
+
+				fetchedPRealmMeta, err = model.GetAuthProjectRealmsMeta(ctx, "test-project-a")
+				So(err, ShouldBeNil)
+				So(fetchedPRealmMeta, ShouldResemble, simpleProjectRealmMeta(ctx, "a"))
+			})
+
+			Convey("updating many projects", func() {
+				cfgBody1, _ := proto.Marshal(&realmsconf.RealmsCfg{
+					Realms: []*realmsconf.Realm{
+						{
+							Name: "test-realm",
+						},
+						{
+							Name: "test-realm-2",
+						},
+					},
+				})
+
+				cfgBody2, _ := proto.Marshal(&realmsconf.RealmsCfg{
+					Realms: []*realmsconf.Realm{
+						{
+							Name: "test-realm",
+						},
+						{
+							Name: "test-realm-3",
+						},
+					},
+				})
+
+				revs := []*model.RealmsCfgRev{
+					{
+						ProjectID:    "test-project-a",
+						ConfigRev:    testRevision,
+						ConfigDigest: testContentHash,
+						ConfigBody:   cfgBody1,
+					},
+					{
+						ProjectID:    "test-project-b",
+						ConfigRev:    testRevision,
+						ConfigDigest: testContentHash,
+						ConfigBody:   cfgBody2,
+					},
+				}
+				So(UpdateRealms(ctx, testPermissionsDB(false), revs), ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+
+				expectedRealmsBodyA, _ := proto.Marshal(&protocol.Realms{
+					Realms: []*protocol.Realm{
+						{
+							Name: "test-project-a:@root",
+						},
+						{
+							Name: "test-project-a:test-realm",
+						},
+						{
+							Name: "test-project-a:test-realm-2",
+						},
+					},
+				})
+
+				expectedRealmsBodyB, _ := proto.Marshal(&protocol.Realms{
+					Realms: []*protocol.Realm{
+						{
+							Name: "test-project-b:@root",
+						},
+						{
+							Name: "test-project-b:test-realm",
+						},
+						{
+							Name: "test-project-b:test-realm-3",
+						},
+					},
+				})
+
+				fetchedPRealmsA, err := model.GetAuthProjectRealms(ctx, "test-project-a")
+				So(err, ShouldBeNil)
+				So(fetchedPRealmsA, ShouldResemble, simpleProjectRealm(ctx, "a", expectedRealmsBodyA, 1))
+
+				fetchedPRealmsB, err := model.GetAuthProjectRealms(ctx, "test-project-b")
+				So(err, ShouldBeNil)
+				So(fetchedPRealmsB, ShouldResemble, simpleProjectRealm(ctx, "b", expectedRealmsBodyB, 1))
+
+				fetchedPRealmMetaA, err := model.GetAuthProjectRealmsMeta(ctx, "test-project-a")
+				So(err, ShouldBeNil)
+				So(fetchedPRealmMetaA, ShouldResemble, simpleProjectRealmMeta(ctx, "a"))
+
+				fetchedPRealmMetaB, err := model.GetAuthProjectRealmsMeta(ctx, "test-project-b")
+				So(err, ShouldBeNil)
+				So(fetchedPRealmMetaB, ShouldResemble, simpleProjectRealmMeta(ctx, "b"))
+			})
+		})
+	})
+}
+
+func sortRevsByID(revs []*model.RealmsCfgRev) {
 	sort.Slice(revs, func(i, j int) bool {
-		return revs[i].projectID < revs[j].projectID
+		return revs[i].ProjectID < revs[j].ProjectID
 	})
 }
