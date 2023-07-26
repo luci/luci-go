@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, cleanup } from '@testing-library/react';
+import { render, cleanup, act } from '@testing-library/react';
 
 import { useInfinitePrpcQuery } from '@/common/hooks/use_prpc_query';
 import { TestHistoryService } from '@/common/services/luci_analysis';
@@ -26,7 +26,7 @@ jest.mock('@/common/hooks/use_prpc_query', () => {
   >('@/common/hooks/use_prpc_query', ['useInfinitePrpcQuery']);
 });
 
-describe('TestHistorySearch', () => {
+describe('TestList', () => {
   let useInfinitePrpcQuerySpy: jest.MockedFunction<typeof useInfinitePrpcQuery>;
   let queryTestsMock: jest.SpyInstance;
 
@@ -53,7 +53,7 @@ describe('TestHistorySearch', () => {
       </FakeContextProvider>
     );
 
-    await jest.runAllTimersAsync();
+    await act(() => jest.runAllTimersAsync());
 
     expect(useInfinitePrpcQuerySpy).toHaveBeenCalledWith({
       host: CONFIGS.LUCI_ANALYSIS.HOST,
@@ -74,8 +74,7 @@ describe('TestHistorySearch', () => {
       </FakeContextProvider>
     );
 
-    await jest.runAllTimersAsync();
-    await jest.runAllTimersAsync();
+    await act(() => jest.runAllTimersAsync());
 
     expect(useInfinitePrpcQuerySpy).toHaveBeenCalledWith({
       host: CONFIGS.LUCI_ANALYSIS.HOST,
