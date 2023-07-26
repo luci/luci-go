@@ -48,6 +48,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/impl/submit"
 	"go.chromium.org/luci/cv/internal/run/pubsub"
+	"go.chromium.org/luci/cv/internal/run/rdb"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
@@ -85,6 +86,7 @@ func New(
 	bb buildbucket.ClientFactory,
 	tc tree.Client,
 	bqc bq.Client,
+	rdbf rdb.RecorderClientFactory,
 	env *common.Env,
 ) *RunManager {
 	rm := &RunManager{
@@ -96,16 +98,17 @@ func New(
 		gFactory:     g,
 		bbFactory:    bb,
 		handler: &handler.Impl{
-			PM:         pm,
-			RM:         n,
-			TN:         tn,
-			CLUpdater:  clu,
-			CLMutator:  clm,
-			BQExporter: runbq.NewExporter(n.TasksBinding.TQDispatcher, bqc, env),
-			GFactory:   g,
-			TreeClient: tc,
-			Publisher:  pubsub.NewPublisher(n.TasksBinding.TQDispatcher, env),
-			Env:        env,
+			PM:          pm,
+			RM:          n,
+			TN:          tn,
+			CLUpdater:   clu,
+			CLMutator:   clm,
+			BQExporter:  runbq.NewExporter(n.TasksBinding.TQDispatcher, bqc, env),
+			RdbNotifier: rdb.NewNotifier(n.TasksBinding.TQDispatcher, rdbf),
+			GFactory:    g,
+			TreeClient:  tc,
+			Publisher:   pubsub.NewPublisher(n.TasksBinding.TQDispatcher, env),
+			Env:         env,
 		},
 	}
 	n.TasksBinding.ManageRun.AttachHandler(

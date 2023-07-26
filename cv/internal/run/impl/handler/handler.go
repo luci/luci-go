@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/pubsub"
+	"go.chromium.org/luci/cv/internal/run/rdb"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
@@ -119,16 +120,17 @@ type TryjobNotifier interface {
 
 // Impl is a prod implementation of Handler interface.
 type Impl struct {
-	PM         PM
-	RM         RM
-	TN         TryjobNotifier
-	GFactory   gerrit.Factory
-	CLUpdater  CLUpdater
-	CLMutator  *changelist.Mutator
-	BQExporter *bq.Exporter
-	TreeClient tree.Client
-	Publisher  *pubsub.Publisher
-	Env        *common.Env
+	PM          PM
+	RM          RM
+	TN          TryjobNotifier
+	GFactory    gerrit.Factory
+	CLUpdater   CLUpdater
+	CLMutator   *changelist.Mutator
+	BQExporter  *bq.Exporter
+	RdbNotifier *rdb.Notifier
+	TreeClient  tree.Client
+	Publisher   *pubsub.Publisher
+	Env         *common.Env
 }
 
 var _ Handler = (*Impl)(nil)

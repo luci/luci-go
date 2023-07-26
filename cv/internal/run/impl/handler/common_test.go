@@ -45,6 +45,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/pubsub"
+	"go.chromium.org/luci/cv/internal/run/rdb"
 	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -451,17 +452,19 @@ func makeImpl(ct *cvtesting.Test) (*Impl, dependencies) {
 		tjNotifier: &tryjobNotifierMock{},
 		clUpdater:  &clUpdaterMock{},
 	}
+	cf := rdb.NewMockRecorderClientFactory(ct.GoMockCtl)
 	impl := &Impl{
-		PM:         deps.pm,
-		RM:         deps.rm,
-		TN:         deps.tjNotifier,
-		CLMutator:  changelist.NewMutator(ct.TQDispatcher, deps.pm, deps.rm, nil),
-		CLUpdater:  deps.clUpdater,
-		TreeClient: ct.TreeFake.Client(),
-		GFactory:   ct.GFactory(),
-		BQExporter: bq.NewExporter(ct.TQDispatcher, ct.BQFake, ct.Env),
-		Publisher:  pubsub.NewPublisher(ct.TQDispatcher, ct.Env),
-		Env:        ct.Env,
+		PM:          deps.pm,
+		RM:          deps.rm,
+		TN:          deps.tjNotifier,
+		CLMutator:   changelist.NewMutator(ct.TQDispatcher, deps.pm, deps.rm, nil),
+		CLUpdater:   deps.clUpdater,
+		TreeClient:  ct.TreeFake.Client(),
+		GFactory:    ct.GFactory(),
+		BQExporter:  bq.NewExporter(ct.TQDispatcher, ct.BQFake, ct.Env),
+		RdbNotifier: rdb.NewNotifier(ct.TQDispatcher, cf),
+		Publisher:   pubsub.NewPublisher(ct.TQDispatcher, ct.Env),
+		Env:         ct.Env,
 	}
 	return impl, deps
 }

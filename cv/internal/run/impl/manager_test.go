@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/handler"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/cv/internal/run/rdb"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 	"go.chromium.org/luci/cv/internal/tryjob"
 
@@ -71,7 +72,8 @@ func TestRunManager(t *testing.T) {
 		tjNotifier := tryjob.NewNotifier(ct.TQDispatcher)
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pm, notifier, tjNotifier)
 		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
-		_ = New(notifier, pm, tjNotifier, clMutator, clUpdater, ct.GFactory(), ct.BuildbucketFake.NewClientFactory(), ct.TreeFake.Client(), ct.BQFake, ct.Env)
+		cf := rdb.NewMockRecorderClientFactory(ct.GoMockCtl)
+		_ = New(notifier, pm, tjNotifier, clMutator, clUpdater, ct.GFactory(), ct.BuildbucketFake.NewClientFactory(), ct.TreeFake.Client(), ct.BQFake, cf, ct.Env)
 
 		// sorted by the order of execution.
 		eventTestcases := []struct {
@@ -401,7 +403,8 @@ func TestRunManager(t *testing.T) {
 		tjNotifier := tryjob.NewNotifier(ct.TQDispatcher)
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pm, notifier, tjNotifier)
 		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
-		_ = New(notifier, pm, tjNotifier, clMutator, clUpdater, ct.GFactory(), ct.BuildbucketFake.NewClientFactory(), ct.TreeFake.Client(), ct.BQFake, ct.Env)
+		cf := rdb.NewMockRecorderClientFactory(ct.GoMockCtl)
+		_ = New(notifier, pm, tjNotifier, clMutator, clUpdater, ct.GFactory(), ct.BuildbucketFake.NewClientFactory(), ct.TreeFake.Client(), ct.BQFake, cf, ct.Env)
 
 		Convey("Recursive", func() {
 			So(notifier.PokeNow(ctx, runID), ShouldBeNil)

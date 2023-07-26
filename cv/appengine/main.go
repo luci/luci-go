@@ -63,6 +63,7 @@ import (
 	rpcv0 "go.chromium.org/luci/cv/internal/rpc/v0"
 	"go.chromium.org/luci/cv/internal/run"
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
+	"go.chromium.org/luci/cv/internal/run/rdb"
 	"go.chromium.org/luci/cv/internal/tryjob"
 	"go.chromium.org/luci/cv/internal/tryjob/tjcancel"
 	tjupdate "go.chromium.org/luci/cv/internal/tryjob/update"
@@ -123,7 +124,8 @@ func main() {
 		if err != nil {
 			return err
 		}
-		_ = runimpl.New(runNotifier, pmNotifier, tryjobNotifier, clMutator, clUpdater, gFactory, bbFactory, tc, bqc, env)
+		rdbClientFactory := rdb.NewRecorderClientFactory()
+		_ = runimpl.New(runNotifier, pmNotifier, tryjobNotifier, clMutator, clUpdater, gFactory, bbFactory, tc, bqc, rdbClientFactory, env)
 
 		// Setup pRPC authentication.
 		srv.SetRPCAuthMethods([]auth.Method{

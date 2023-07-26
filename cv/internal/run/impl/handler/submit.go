@@ -37,6 +37,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/run"
@@ -225,6 +226,13 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 	switch sc.GetResult() {
 	case eventpb.SubmissionResult_SUCCEEDED:
 		se := impl.endRun(ctx, rs, run.Status_SUCCEEDED, cg)
+		// Only mark run submitted to ResultDB when submission run is successful.
+		se = eventbox.Chain(
+			se,
+			func(ctx context.Context) error {
+				return impl.RdbNotifier.Schedule(ctx, rs.ID)
+			},
+		)
 		return &Result{
 			State:        rs,
 			SideEffectFn: se,

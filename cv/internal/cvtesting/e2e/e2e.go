@@ -65,6 +65,7 @@ import (
 	runbq "go.chromium.org/luci/cv/internal/run/bq"
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
 	cvpubsub "go.chromium.org/luci/cv/internal/run/pubsub"
+	"go.chromium.org/luci/cv/internal/run/rdb"
 	"go.chromium.org/luci/cv/internal/tryjob"
 	"go.chromium.org/luci/cv/internal/tryjob/tjcancel"
 	tjupdate "go.chromium.org/luci/cv/internal/tryjob/update"
@@ -171,8 +172,9 @@ func (t *Test) SetUp(testingT *testing.T) (context.Context, func()) {
 	cleanupFn = bblistener.StartListenerForTest(ctx, sub, tjNotifier)
 	cleanupFns = append(cleanupFns, cleanupFn)
 	gerritupdater.RegisterUpdater(clUpdater, gFactory)
+	rdbFactory := rdb.NewMockRecorderClientFactory(t.Test.GoMockCtl)
 	_ = pmimpl.New(t.PMNotifier, t.RunNotifier, clMutator, gFactory, clUpdater)
-	_ = runimpl.New(t.RunNotifier, t.PMNotifier, tjNotifier, clMutator, clUpdater, gFactory, bbFactory, t.TreeFake.Client(), t.BQFake, t.Env)
+	_ = runimpl.New(t.RunNotifier, t.PMNotifier, tjNotifier, clMutator, clUpdater, gFactory, bbFactory, t.TreeFake.Client(), t.BQFake, rdbFactory, t.Env)
 	bbFacade := &bbfacade.Facade{
 		ClientFactory: bbFactory,
 	}
