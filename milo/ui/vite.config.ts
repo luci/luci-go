@@ -85,6 +85,9 @@ export default defineConfig(({ mode }) => {
               : '[name].js',
         },
       },
+      // Set to 8 MB to silence warnings. The files are cached by service worker
+      // anyway. Large chunks won't hurt much.
+      chunkSizeWarningLimit: Math.pow(2, 13),
     },
     plugins: [
       // Use a plugin instead of the `define` property to substitute the const
@@ -235,6 +238,8 @@ export default defineConfig(({ mode }) => {
                 !id.includes('html')
             );
           },
+          // Set to 8 MB. Some files might be larger than the default.
+          maximumFileSizeToCacheInBytes: Math.pow(2, 23),
         },
       }),
     ],
