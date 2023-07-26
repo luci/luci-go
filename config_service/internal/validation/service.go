@@ -94,7 +94,7 @@ func (sv *serviceValidator) validateAgainstSelfRules(ctx context.Context) (*cfgc
 		file := file
 		eg.Go(func() (err error) {
 			path := file.GetPath()
-			content, err := file.GetRawContent(ectx, sv.gsClient)
+			content, err := file.GetRawContent(ectx)
 			if err != nil {
 				return err
 			}
@@ -221,7 +221,7 @@ func (sv *serviceValidator) validateFileLegacy(ctx context.Context, file File) (
 		"Content-Type": "application/json; charset=utf-8",
 		"User-Agent":   info.AppID(ctx),
 	}
-	content, err := file.GetRawContent(ctx, sv.gsClient)
+	content, err := file.GetRawContent(ctx)
 	if err != nil {
 		return nil, err
 	}

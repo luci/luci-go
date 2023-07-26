@@ -91,6 +91,16 @@ type File struct {
 	rawContent []byte `gae:"-"`
 }
 
+// GetPath returns that path to the File.
+func (f *File) GetPath() string {
+	return f.Path
+}
+
+// GetGSPath returns the GCS path to where the config file is stored.
+func (f *File) GetGSPath() gs.Path {
+	return f.GcsURI
+}
+
 // GetRawContent returns the raw and uncompressed content of this config.
 //
 // May download content from Google Cloud Storage if content is not

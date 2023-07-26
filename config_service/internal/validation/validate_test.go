@@ -101,7 +101,7 @@ func (tf testFile) GetGSPath() gs.Path {
 	return tf.gsPath
 }
 
-func (tf testFile) GetRawContent(context.Context, clients.GsClient) ([]byte, error) {
+func (tf testFile) GetRawContent(context.Context) ([]byte, error) {
 	return tf.content, nil
 }
 

@@ -185,9 +185,9 @@ func (vf validationFile) GetGSPath() gs.Path { return vf.gsPath }
 // The existing validation protocol explicitly asked the client to upload
 // compressed config to Google Storage so we should expect the data returned
 // from GS should be uncompressed fine.
-func (vf validationFile) GetRawContent(ctx context.Context, gsClient clients.GsClient) ([]byte, error) {
+func (vf validationFile) GetRawContent(ctx context.Context) ([]byte, error) {
 	bucket, object := vf.gsPath.Split()
-	compressed, err := gsClient.Read(ctx, bucket, object, false)
+	compressed, err := clients.GetGsClient(ctx).Read(ctx, bucket, object, false)
 	if err != nil {
 		return nil, err
 	}

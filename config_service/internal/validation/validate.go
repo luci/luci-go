@@ -58,8 +58,11 @@ type File interface {
 	//
 	// This is currently used to validate the configs LUCI Config itself is
 	// interested in and validate configs against legacy services.
-	GetRawContent(context.Context, clients.GsClient) ([]byte, error)
+	GetRawContent(context.Context) ([]byte, error)
 }
+
+// ensuring *model.File implements File interface
+var _ File = (*model.File)(nil)
 
 // Validate validates the provided config files.
 func (v *Validator) Validate(ctx context.Context, cs config.Set, files []File) (*cfgcommonpb.ValidationResult, error) {
