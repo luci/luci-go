@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { aTimeout } from '@open-wc/testing-helpers';
-
 import { queryAuthState, setAuthStateCache } from '@/common/api/auth_state';
 import { BUILD_FIELD_MASK, BuildsService } from '@/common/services/buildbucket';
 import {
@@ -40,6 +38,7 @@ describe('Prefetcher', () => {
   let resultdb: ResultDb;
 
   beforeEach(async () => {
+    jest.useFakeTimers();
     await setAuthStateCache({
       accessToken: 'access-token',
       identity: 'user:user-id',
@@ -67,6 +66,10 @@ describe('Prefetcher', () => {
     );
   });
 
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   test('prefetches build page resources', async () => {
     const authResponse = new Response(
       JSON.stringify({ accessToken: 'access-token', identity: 'user:user-id' })
@@ -75,10 +78,21 @@ describe('Prefetcher', () => {
     const invResponse = new Response(JSON.stringify({}));
     const testVariantsResponse = new Response(JSON.stringify({}));
 
-    fetchStub.mockResolvedValueOnce(authResponse);
-    fetchStub.mockResolvedValueOnce(buildResponse);
-    fetchStub.mockResolvedValueOnce(invResponse);
-    fetchStub.mockResolvedValueOnce(testVariantsResponse);
+    fetchStub.mockImplementation(async (input, init) => {
+      const req = new Request(input, init);
+      switch (req.url) {
+        case self.origin + '/auth/openid/state':
+          return authResponse;
+        case `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`:
+          return buildResponse;
+        case `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`:
+          return invResponse;
+        case `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`:
+          return testVariantsResponse;
+        default:
+          throw new Error('unexpected request URL');
+      }
+    });
 
     const invName =
       'invocations/' +
@@ -92,12 +106,11 @@ describe('Prefetcher', () => {
       ));
 
     await prefetcher.prefetchResources(
-      new URL(
-        'https://luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/Win7%20Tests%20(1)/116372'
-      )
+      '/ui/p/chromium/builders/ci/Win7%20Tests%20(1)/116372'
     );
 
-    await aTimeout(100);
+    await jest.advanceTimersByTimeAsync(100);
+    await jest.advanceTimersByTimeAsync(100);
 
     const requestedUrls = fetchStub.mock.calls.map(
       (c) => new Request(...c).url
@@ -105,7 +118,7 @@ describe('Prefetcher', () => {
     expect(requestedUrls.length).toStrictEqual(4);
     expect(requestedUrls).toEqual(
       expect.arrayContaining([
-        '/auth/openid/state',
+        self.origin + '/auth/openid/state',
         `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
         `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
         `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
@@ -126,7 +139,7 @@ describe('Prefetcher', () => {
     expect(fetchStub.mock.calls.length).toStrictEqual(4);
 
     // Generate a fetch request.
-    buildsService
+    await buildsService
       .getBuild({
         builder: {
           project: 'chromium',
@@ -149,7 +162,7 @@ describe('Prefetcher', () => {
     expect(fetchStub.mock.calls.length).toStrictEqual(4);
 
     // Generate a fetch request.
-    resultdb.getInvocation({ name: invName }).catch((_e) => {});
+    await resultdb.getInvocation({ name: invName }).catch((_e) => {});
     // Check whether the invocation was prefetched.
     cacheHit = prefetcher.respondWithPrefetched({
       request: new Request(...fetchInterceptor.mock.calls[2]),
@@ -162,7 +175,7 @@ describe('Prefetcher', () => {
     expect(fetchStub.mock.calls.length).toStrictEqual(4);
 
     // Generate a fetch request.
-    resultdb
+    await resultdb
       .queryTestVariants({ invocations: [invName], resultLimit: RESULT_LIMIT })
       .catch((_e) => {});
     // Check whether the test variants was prefetched.
@@ -185,18 +198,27 @@ describe('Prefetcher', () => {
     const invResponse = new Response(JSON.stringify({}));
     const testVariantsResponse = new Response(JSON.stringify({}));
 
-    fetchStub.mockResolvedValueOnce(authResponse);
-    fetchStub.mockResolvedValueOnce(buildResponse);
-    fetchStub.mockResolvedValueOnce(invResponse);
-    fetchStub.mockResolvedValueOnce(testVariantsResponse);
+    fetchStub.mockImplementation(async (input, init) => {
+      const req = new Request(input, init);
+      switch (req.url) {
+        case self.origin + '/auth/openid/state':
+          return authResponse;
+        case `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`:
+          return buildResponse;
+        case `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`:
+          return invResponse;
+        case `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`:
+          return testVariantsResponse;
+        default:
+          throw new Error('unexpected request URL');
+      }
+    });
 
     const invName = 'invocations/' + getInvIdFromBuildId('123456789');
 
-    await prefetcher.prefetchResources(
-      new URL('https://luci-milo-dev.appspot.com/ui/b/123456789')
-    );
+    await prefetcher.prefetchResources('/ui/b/123456789');
 
-    await aTimeout(100);
+    await jest.advanceTimersByTimeAsync(100);
 
     const requestedUrls = fetchStub.mock.calls.map(
       (c) => new Request(...c).url
@@ -204,7 +226,7 @@ describe('Prefetcher', () => {
     expect(requestedUrls.length).toStrictEqual(4);
     expect(requestedUrls).toEqual(
       expect.arrayContaining([
-        '/auth/openid/state',
+        self.origin + '/auth/openid/state',
         `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
         `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
         `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
@@ -225,7 +247,7 @@ describe('Prefetcher', () => {
     expect(fetchStub.mock.calls.length).toStrictEqual(4);
 
     // Generate a fetch request.
-    buildsService
+    await buildsService
       .getBuild({
         id: '123456789',
         fields: BUILD_FIELD_MASK,
@@ -243,7 +265,7 @@ describe('Prefetcher', () => {
     expect(fetchStub.mock.calls.length).toStrictEqual(4);
 
     // Generate a fetch request.
-    resultdb.getInvocation({ name: invName }).catch((_e) => {});
+    await resultdb.getInvocation({ name: invName }).catch((_e) => {});
     // Check whether the invocation was prefetched.
     cacheHit = prefetcher.respondWithPrefetched({
       request: new Request(...fetchInterceptor.mock.calls[2]),
@@ -256,7 +278,7 @@ describe('Prefetcher', () => {
     expect(fetchStub.mock.calls.length).toStrictEqual(4);
 
     // Generate a fetch request.
-    resultdb
+    await resultdb
       .queryTestVariants({ invocations: [invName], resultLimit: RESULT_LIMIT })
       .catch((_e) => {});
     // Check whether the test variants was prefetched.
@@ -282,17 +304,23 @@ describe('Prefetcher', () => {
       })
     );
 
-    fetchStub.mockResolvedValueOnce(authResponse);
-    fetchStub.mockResolvedValueOnce(artifactResponse);
+    fetchStub.mockImplementation(async (input, init) => {
+      const req = new Request(input, init);
+      switch (req.url) {
+        case self.origin + '/auth/openid/state':
+          return authResponse;
+        case `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`:
+          return artifactResponse;
+        default:
+          throw new Error('unexpected request URL');
+      }
+    });
 
     await prefetcher.prefetchResources(
-      new URL(
-        // eslint-disable-next-line max-len
-        'https://luci-milo-dev.appspot.com/ui/artifact/raw/invocations/inv-id/tests/test-id/results/result-id/artifacts/artifact-id'
-      )
+      '/ui/artifact/raw/invocations/inv-id/tests/test-id/results/result-id/artifacts/artifact-id'
     );
 
-    await aTimeout(100);
+    await jest.advanceTimersByTimeAsync(100);
 
     const requestedUrls = fetchStub.mock.calls.map(
       (c) => new Request(...c).url
@@ -300,7 +328,7 @@ describe('Prefetcher', () => {
     expect(requestedUrls.length).toStrictEqual(2);
     expect(requestedUrls).toEqual(
       expect.arrayContaining([
-        '/auth/openid/state',
+        self.origin + '/auth/openid/state',
         `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`,
       ])
     );
@@ -319,7 +347,7 @@ describe('Prefetcher', () => {
     expect(fetchStub.mock.calls.length).toStrictEqual(2);
 
     // Generate a fetch request.
-    resultdb
+    await resultdb
       .getArtifact({
         name: 'invocations/inv-id/tests/test-id/results/result-id/artifacts/artifact-id',
       })

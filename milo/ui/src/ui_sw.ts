@@ -59,14 +59,18 @@ self.skipWaiting();
 const prefetcher = new Prefetcher(self.CONFIGS, self.fetch.bind(self));
 
 self.addEventListener('fetch', async (e) => {
+  if (e.request.mode === 'navigate') {
+    const url = new URL(e.request.url);
+    prefetcher.prefetchResources(url.pathname);
+    return;
+  }
+
   if (prefetcher.respondWithPrefetched(e)) {
     return;
   }
 
-  const url = new URL(e.request.url);
-
   // Ensure all clients served by this service worker use the same config.
-  if (url.pathname === '/configs.js') {
+  if (e.request.url === self.origin + '/configs.js') {
     const res = new Response(
       `self.CONFIGS=Object.freeze(${JSON.stringify(CONFIGS)});`
     );
@@ -74,8 +78,6 @@ self.addEventListener('fetch', async (e) => {
     e.respondWith(res);
     return;
   }
-
-  prefetcher.prefetchResources(url);
 });
 
 // Enable workbox specific features AFTER we registered our own event handlers

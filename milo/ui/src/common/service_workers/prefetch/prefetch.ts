@@ -59,7 +59,7 @@ const CACHE_DURATION = 5000;
 const CACHE_OPTION = { acceptCache: false, skipUpdate: true };
 
 export class Prefetcher {
-  private readonly authStateUrl = '/auth/openid/state';
+  private readonly authStateUrl = self.origin + '/auth/openid/state';
   private readonly cachedUrls: readonly string[];
 
   private cachedFetch = cached(
@@ -124,18 +124,11 @@ export class Prefetcher {
   }
 
   /**
-   * Prefetches resources if the URL matches certain pattern.
+   * Prefetches resources if the pathname matches certain pattern.
    * Those resources are cached for a short duration and are expected to be
    * fetched by the browser momentarily.
    */
-  async prefetchResources(reqUrl: URL) {
-    // Prevents irrelevant requests from triggering excessive auth-state
-    // refresh requests.
-    // TODO(crbug/1108198): remove the /ui prefix.
-    if (!reqUrl.pathname.match(/^\/ui\/(p|b|inv|artifact)\//)) {
-      return;
-    }
-
+  async prefetchResources(pathname: string) {
     // Prefetch services relies on the in-memory cache.
     // Call getAuthState to populate the in-memory cache.
     const authState = await getAuthStateCache();
@@ -153,21 +146,20 @@ export class Prefetcher {
       await queryAuthStatePromise;
     }
 
-    this.prefetchBuildPageResources(reqUrl);
-    this.prefetchArtifactPageResources(reqUrl);
+    this.prefetchBuildPageResources(pathname);
+    this.prefetchArtifactPageResources(pathname);
   }
 
   /**
    * Prefetches build page related resources if the URL matches certain pattern.
    */
-  private async prefetchBuildPageResources(reqUrl: URL) {
+  private async prefetchBuildPageResources(pathname: string) {
     let buildId: string | null = null;
     let buildNum: number | null = null;
     let builderId: BuilderID | null = null;
     let invName: string | null = null;
 
-    // TODO(crbug/1108198): remove the /ui prefix.
-    let match = reqUrl.pathname.match(
+    let match = pathname.match(
       /^\/ui\/p\/([^/]+)\/builders\/([^/]+)\/([^/]+)\/(b?\d+)\/?/i
     );
     if (match) {
@@ -181,8 +173,7 @@ export class Prefetcher {
         builderId = { project, bucket, builder };
       }
     } else {
-      // TODO(crbug/1108198): remove the /ui prefix.
-      match = reqUrl.pathname.match(/^\/ui\/b\/(\d+)\/?/i);
+      match = pathname.match(/^\/ui\/b\/(\d+)\/?/i);
       if (match) {
         buildId = match[1];
       }
@@ -231,9 +222,8 @@ export class Prefetcher {
    * Prefetches artifact page related resources if the URL matches certain
    * pattern.
    */
-  private async prefetchArtifactPageResources(reqUrl: URL) {
-    // TODO(crbug/1108198): remove the /ui prefix.
-    const match = reqUrl.pathname.match(
+  private async prefetchArtifactPageResources(pathname: string) {
+    const match = pathname.match(
       /^\/ui\/artifact\/(?:[^/]+)\/invocations\/([^/]+)(?:\/tests\/([^/]+)\/results\/([^/]+))?\/artifacts\/([^/]+)\/?/i
     );
     if (!match) {

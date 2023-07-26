@@ -77,7 +77,10 @@ export async function getAuthStateCache() {
  * state.
  */
 export async function queryAuthState(fetchImpl = fetch): Promise<AuthState> {
-  const res = await fetchImpl('/auth/openid/state');
+  // `self.origin` isn't prepended to the path automatically in unit tests,
+  // which can lead to surprising behaviors in some cases (e.g. string
+  // matching). Do it manually here to make it easier to write unit tests.
+  const res = await fetchImpl(self.origin + '/auth/openid/state');
   if (!res.ok) {
     throw new Error('failed to get auth state:\n' + (await res.text()));
   }
