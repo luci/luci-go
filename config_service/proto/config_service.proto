@@ -28,6 +28,9 @@ service Configs {
   // List config sets.
   rpc ListConfigSets(ListConfigSetsRequest) returns (ListConfigSetsResponse) {};
 
+  // Get a single config set.
+  rpc GetConfigSet(GetConfigSetRequest) returns (ConfigSet) {};
+
   // Validates configs for a config set.
   //
   // The validation workflow works as follows (assuming first time validation):
@@ -248,4 +251,14 @@ message ConfigSet {
 
   // Last import attempt information.
   Attempt last_import_attempt = 5;
+}
+
+// GetConfigSetRequest is the request of GetConfigSet rpc.
+message GetConfigSetRequest {
+  // Config set to fetch.
+  string config_set = 1;
+
+  // Fields of ConfigSet proto to include.
+  // By default, only return config_set, url and revision fields.
+  google.protobuf.FieldMask fields = 2;
 }

@@ -27,6 +27,7 @@ const (
 	Configs_GetConfig_FullMethodName         = "/config.service.v2.Configs/GetConfig"
 	Configs_GetProjectConfigs_FullMethodName = "/config.service.v2.Configs/GetProjectConfigs"
 	Configs_ListConfigSets_FullMethodName    = "/config.service.v2.Configs/ListConfigSets"
+	Configs_GetConfigSet_FullMethodName      = "/config.service.v2.Configs/GetConfigSet"
 	Configs_ValidateConfigs_FullMethodName   = "/config.service.v2.Configs/ValidateConfigs"
 )
 
@@ -40,6 +41,8 @@ type ConfigsClient interface {
 	GetProjectConfigs(ctx context.Context, in *GetProjectConfigsRequest, opts ...grpc.CallOption) (*GetProjectConfigsResponse, error)
 	// List config sets.
 	ListConfigSets(ctx context.Context, in *ListConfigSetsRequest, opts ...grpc.CallOption) (*ListConfigSetsResponse, error)
+	// Get a single config set.
+	GetConfigSet(ctx context.Context, in *GetConfigSetRequest, opts ...grpc.CallOption) (*ConfigSet, error)
 	// Validates configs for a config set.
 	//
 	// The validation workflow works as follows (assuming first time validation):
@@ -101,6 +104,15 @@ func (c *configsClient) ListConfigSets(ctx context.Context, in *ListConfigSetsRe
 	return out, nil
 }
 
+func (c *configsClient) GetConfigSet(ctx context.Context, in *GetConfigSetRequest, opts ...grpc.CallOption) (*ConfigSet, error) {
+	out := new(ConfigSet)
+	err := c.cc.Invoke(ctx, Configs_GetConfigSet_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *configsClient) ValidateConfigs(ctx context.Context, in *ValidateConfigsRequest, opts ...grpc.CallOption) (*config.ValidationResult, error) {
 	out := new(config.ValidationResult)
 	err := c.cc.Invoke(ctx, Configs_ValidateConfigs_FullMethodName, in, out, opts...)
@@ -120,6 +132,8 @@ type ConfigsServer interface {
 	GetProjectConfigs(context.Context, *GetProjectConfigsRequest) (*GetProjectConfigsResponse, error)
 	// List config sets.
 	ListConfigSets(context.Context, *ListConfigSetsRequest) (*ListConfigSetsResponse, error)
+	// Get a single config set.
+	GetConfigSet(context.Context, *GetConfigSetRequest) (*ConfigSet, error)
 	// Validates configs for a config set.
 	//
 	// The validation workflow works as follows (assuming first time validation):
@@ -159,6 +173,9 @@ func (UnimplementedConfigsServer) GetProjectConfigs(context.Context, *GetProject
 }
 func (UnimplementedConfigsServer) ListConfigSets(context.Context, *ListConfigSetsRequest) (*ListConfigSetsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListConfigSets not implemented")
+}
+func (UnimplementedConfigsServer) GetConfigSet(context.Context, *GetConfigSetRequest) (*ConfigSet, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetConfigSet not implemented")
 }
 func (UnimplementedConfigsServer) ValidateConfigs(context.Context, *ValidateConfigsRequest) (*config.ValidationResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ValidateConfigs not implemented")
@@ -230,6 +247,24 @@ func _Configs_ListConfigSets_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Configs_GetConfigSet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetConfigSetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConfigsServer).GetConfigSet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Configs_GetConfigSet_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConfigsServer).GetConfigSet(ctx, req.(*GetConfigSetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Configs_ValidateConfigs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ValidateConfigsRequest)
 	if err := dec(in); err != nil {
@@ -266,6 +301,10 @@ var Configs_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListConfigSets",
 			Handler:    _Configs_ListConfigSets_Handler,
+		},
+		{
+			MethodName: "GetConfigSet",
+			Handler:    _Configs_GetConfigSet_Handler,
 		},
 		{
 			MethodName: "ValidateConfigs",
