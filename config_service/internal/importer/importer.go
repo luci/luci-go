@@ -28,6 +28,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"go.chromium.org/luci/common/gcloud/gs"
+	"go.chromium.org/luci/common/retry/transient"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/api/gitiles"
@@ -41,6 +42,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/config_service/internal/clients"
@@ -55,6 +57,10 @@ const (
 	// compressedContentLimit is the maximum allowed compressed content size to
 	// store into Datastore, in order to avoid exceeding 1MiB limit per entity.
 	compressedContentLimit = 800 * 1024
+
+	// maxRetryCount is the maximum number of retries allowed when importing
+	// a single config set hit non-fatal error.
+	maxRetryCount = 5
 )
 
 var (
@@ -76,21 +82,43 @@ type Importer struct {
 	Validator validator
 }
 
-func init() {
-	tq.RegisterTaskClass(tq.TaskClass{
+// RegisterImportConfigsCron register the cron to trigger import for all config
+// sets
+func (i Importer) RegisterImportConfigsCron(dispatcher *tq.Dispatcher) {
+	i.registerTQTask(dispatcher)
+	cron.RegisterHandler("import-configs", func(ctx context.Context) error {
+		return importAllConfigs(ctx, dispatcher)
+	})
+}
+
+func (i Importer) registerTQTask(dispatcher *tq.Dispatcher) {
+	dispatcher.RegisterTaskClass(tq.TaskClass{
 		ID:        "import-configs",
 		Kind:      tq.NonTransactional,
 		Prototype: (*taskpb.ImportConfigs)(nil),
 		Queue:     "backend-v2",
 		Handler: func(ctx context.Context, payload proto.Message) error {
-			return errors.Reason("import-configs handler hasn't implemented").Err()
+			task := payload.(*taskpb.ImportConfigs)
+			switch err := i.ImportConfigSet(ctx, config.Set(task.GetConfigSet())); {
+			case ErrFatalTag.In(err):
+				return tq.Fatal.Apply(err)
+			case err != nil: // non-fatal error
+				if info := tq.TaskExecutionInfo(ctx); info != nil && info.ExecutionCount >= maxRetryCount {
+					// ignore the task as it exceeds the max retry count. Alert should be
+					// set up to monitor the number of retries.
+					return tq.Ignore.Apply(err)
+				}
+				return transient.Tag.Apply(err) // make sure TQ retry the task.
+			default:
+				return nil
+			}
 		},
 	})
 }
 
-// ImportAllConfigs schedules a task for each service and project config set to
+// importAllConfigs schedules a task for each service and project config set to
 // import configs from Gitiles and clean up stale config sets.
-func ImportAllConfigs(ctx context.Context) error {
+func importAllConfigs(ctx context.Context, dispatcher *tq.Dispatcher) error {
 	cfgLoc := settings.GetGlobalConfigLoc(ctx)
 
 	// Get all config sets.
@@ -109,7 +137,7 @@ func ImportAllConfigs(ctx context.Context) error {
 		for _, cs := range cfgSets {
 			cs := cs
 			workCh <- func() error {
-				err := tq.AddTask(ctx, &tq.Task{
+				err := dispatcher.AddTask(ctx, &tq.Task{
 					Payload: &taskpb.ImportConfigs{ConfigSet: cs}},
 				)
 				return errors.Annotate(err, "failed to enqueue ImportConfigs task for %q: %s", cs, err).Err()

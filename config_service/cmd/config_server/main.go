@@ -77,7 +77,7 @@ func main() {
 			GsClient: gsClient,
 			Finder:   serviceFinder,
 		}
-		_ = importer.Importer{
+		importer := importer.Importer{
 			Validator: validator,
 			GSBucket:  gsBucket,
 		}
@@ -97,6 +97,7 @@ func main() {
 		})
 
 		cron.RegisterHandler("update-services", service.Update)
+		importer.RegisterImportConfigsCron(&tq.Default)
 		return nil
 	})
 }

@@ -74,6 +74,8 @@ func TestImportAllConfigs(t *testing.T) {
 		defer ctl.Finish()
 		mockClient := mock_gitiles.NewMockGitilesClient(ctl)
 		ctx = context.WithValue(ctx, &clients.MockGitilesClientKey, mockClient)
+		importer := &Importer{}
+		importer.registerTQTask(disp)
 
 		Convey("ok", func() {
 			mockClient.EXPECT().ListFiles(gomock.Any(), protoutil.MatcherEqual(
@@ -103,7 +105,7 @@ func TestImportAllConfigs(t *testing.T) {
 			}, nil)
 
 			Convey("projects.cfg File entity not exist", func() {
-				err := ImportAllConfigs(ctx)
+				err := importAllConfigs(ctx, disp)
 				So(err, ShouldBeNil)
 				cfgSetsInQueue := getCfgSetsInTaskQueue(sch)
 				So(cfgSetsInQueue, ShouldResemble, []string{"services/service1", "services/service2"})
@@ -117,7 +119,7 @@ func TestImportAllConfigs(t *testing.T) {
 						},
 					},
 				})
-				err := ImportAllConfigs(ctx)
+				err := importAllConfigs(ctx, disp)
 				So(err, ShouldBeNil)
 				cfgSetsInQueue := getCfgSetsInTaskQueue(sch)
 				So(cfgSetsInQueue, ShouldResemble, []string{"projects/proj1", "services/service1", "services/service2"})
@@ -126,7 +128,7 @@ func TestImportAllConfigs(t *testing.T) {
 			Convey("delete stale config set", func() {
 				stale := &model.ConfigSet{ID: config.MustServiceSet("stale")}
 				So(datastore.Put(ctx, stale), ShouldBeNil)
-				err := ImportAllConfigs(ctx)
+				err := importAllConfigs(ctx, disp)
 				So(err, ShouldBeNil)
 				So(datastore.Get(ctx, stale), ShouldEqual, datastore.ErrNoSuchEntity)
 			})
@@ -135,7 +137,7 @@ func TestImportAllConfigs(t *testing.T) {
 		Convey("error", func() {
 			Convey("gitiles", func() {
 				mockClient.EXPECT().ListFiles(gomock.Any(), gomock.Any()).Return(nil, errors.New("gitiles error"))
-				err := ImportAllConfigs(ctx)
+				err := importAllConfigs(ctx, disp)
 				So(err, ShouldErrLike, "failed to load service config sets: failed to call Gitiles to list files: gitiles error")
 			})
 
@@ -147,7 +149,7 @@ func TestImportAllConfigs(t *testing.T) {
 							{Id: "my-service"},
 						}}, // bad type
 				})
-				So(ImportAllConfigs(ctx), ShouldErrLike, `failed to load project config sets: failed to unmarshal file "projects.cfg": proto`)
+				So(importAllConfigs(ctx, disp), ShouldErrLike, `failed to load project config sets: failed to unmarshal file "projects.cfg": proto`)
 			})
 		})
 	})
