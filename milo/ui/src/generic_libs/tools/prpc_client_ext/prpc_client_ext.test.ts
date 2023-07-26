@@ -43,6 +43,31 @@ describe('PrpcClientExt', () => {
     expect(req2.headers.get('Authorization')).toStrictEqual('Bearer 2');
   });
 
+  test('should support async getAccessToken', async () => {
+    let accessToken = '1';
+    const fetchStub = jest.fn(
+      (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
+        return Promise.resolve(
+          new Response(")]}'\n{}", {
+            headers: { 'X-Prpc-Grpc-Code': RpcCode.OK.toString() },
+          })
+        );
+      }
+    );
+
+    const client = new PrpcClientExt({ fetchImpl: fetchStub }, () =>
+      Promise.resolve(accessToken)
+    );
+    await client.call('service', 'method', {});
+    const req1 = new Request(...fetchStub.mock.lastCall!);
+    expect(req1.headers.get('Authorization')).toStrictEqual('Bearer 1');
+
+    accessToken = '2';
+    await client.call('service', 'method', {});
+    const req2 = new Request(...fetchStub.mock.lastCall!);
+    expect(req2.headers.get('Authorization')).toStrictEqual('Bearer 2');
+  });
+
   test('should not override additional header', async () => {
     const accessToken = '1';
     const fetchStub = jest.fn(

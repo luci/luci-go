@@ -26,7 +26,7 @@ export class PrpcClientExt {
 
   constructor(
     opts: PrpcClientOptions,
-    private readonly getAccessToken: () => string,
+    private readonly getAccessToken: () => Promise<string> | string,
     private readonly onError = DEFAULT_ON_ERROR_FN
   ) {
     this.client = new PrpcClient({
@@ -41,7 +41,7 @@ export class PrpcClientExt {
     message: object,
     additionalHeaders: { [key: string]: string } = {}
   ) {
-    const accessToken = this.getAccessToken();
+    const accessToken = await this.getAccessToken();
     if (accessToken) {
       additionalHeaders = {
         Authorization: 'Bearer ' + accessToken,
