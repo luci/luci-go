@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"sync"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -76,17 +75,6 @@ const (
 	// signedURLExpireDur defines how long the signed url will be active.
 	signedURLExpireDur = 10 * time.Minute
 )
-
-var bucketName string
-var bucketNameOnce sync.Once
-
-// BucketName returns the global bucket name where it stores configs.
-func BucketName(ctx context.Context) string {
-	bucketNameOnce.Do(func() {
-		bucketName = fmt.Sprintf("storage-%s", info.AppID(ctx))
-	})
-	return bucketName
-}
 
 // GitilesURL assembles a URL from the given gitiles location.
 // Note: it doesn't validate the format of GitilesLocation.

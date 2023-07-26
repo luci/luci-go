@@ -48,6 +48,7 @@ import (
 	"go.chromium.org/luci/config_service/internal/model"
 	"go.chromium.org/luci/config_service/internal/settings"
 	"go.chromium.org/luci/config_service/internal/taskpb"
+	"go.chromium.org/luci/config_service/internal/validation"
 )
 
 const (
@@ -57,10 +58,23 @@ const (
 )
 
 var (
-	// ErrFatalTag is an error tag to indicate an unrecoverable error in the configs
-	// importing flow.
+	// ErrFatalTag is an error tag to indicate an unrecoverable error in the
+	// configs importing flow.
 	ErrFatalTag = errors.BoolTag{Key: errors.NewTagKey("A config importing unrecoverable error")}
 )
+
+// validator defines the interface to interact with validation logic.
+type validator interface {
+	Validate(context.Context, config.Set, []validation.File) (*cfgcommonpb.ValidationResult, error)
+}
+
+// Importer is able to import a config set.
+type Importer struct {
+	// GSBucket is the bucket name where the imported configs will be stored to.
+	GSBucket string
+	// Validator is used to validate the configs before import.
+	Validator validator
+}
 
 func init() {
 	tq.RegisterTaskClass(tq.TaskClass{
@@ -191,22 +205,22 @@ func getAllServiceCfgSets(ctx context.Context, cfgLoc *cfgcommonpb.GitilesLocati
 // TODO(crbug.com/1446839): Optional: for ErrFatalTag errors or errors which are
 // retried many times, may send notifications to Config Service owners in future
 // after the notification functionality is done.
-func ImportConfigSet(ctx context.Context, cfgSet config.Set) error {
+func (i *Importer) ImportConfigSet(ctx context.Context, cfgSet config.Set) error {
 	if sID := cfgSet.Service(); sID != "" {
 		globalCfgLoc := settings.GetGlobalConfigLoc(ctx)
-		return importConfigSet(ctx, cfgSet, &cfgcommonpb.GitilesLocation{
+		return i.importConfigSet(ctx, cfgSet, &cfgcommonpb.GitilesLocation{
 			Repo: globalCfgLoc.Repo,
 			Ref:  globalCfgLoc.Ref,
 			Path: strings.TrimPrefix(fmt.Sprintf("%s/%s", globalCfgLoc.Path, sID), "/"),
 		})
 	} else if pID := cfgSet.Project(); pID != "" {
-		return importProject(ctx, pID)
+		return i.importProject(ctx, pID)
 	}
 	return errors.Reason("Invalid config set: %q", cfgSet).Tag(ErrFatalTag).Err()
 }
 
 // importProject imports a project config set.
-func importProject(ctx context.Context, projectID string) error {
+func (i *Importer) importProject(ctx context.Context, projectID string) error {
 	projectsCfg := &cfgcommonpb.ProjectsCfg{}
 	if err := common.LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, common.ProjRegistryFilePath, projectsCfg); err != nil {
 		return ErrFatalTag.Apply(err)
@@ -221,12 +235,12 @@ func importProject(ctx context.Context, projectID string) error {
 	if projLoc == nil {
 		return errors.Reason("project %q not exist or has no gitiles location", projectID).Tag(ErrFatalTag).Err()
 	}
-	return importConfigSet(ctx, config.MustProjectSet(projectID), projLoc)
+	return i.importConfigSet(ctx, config.MustProjectSet(projectID), projLoc)
 }
 
 // importConfigSet tries to import the latest version of the given config set.
 // TODO(crbug.com/1446839): Add code to report to metrics
-func importConfigSet(ctx context.Context, cfgSet config.Set, loc *cfgcommonpb.GitilesLocation) error {
+func (i *Importer) importConfigSet(ctx context.Context, cfgSet config.Set, loc *cfgcommonpb.GitilesLocation) error {
 	ctx = logging.SetFields(ctx, logging.Fields{
 		"ConfigSet": string(cfgSet),
 		"Location":  common.GitilesURL(loc),
@@ -290,7 +304,7 @@ func importConfigSet(ctx context.Context, cfgSet config.Set, loc *cfgcommonpb.Gi
 	}
 
 	logging.Infof(ctx, "Rolling %s => %s", cfgSetInDB.LatestRevision.ID, latestCommit.Id)
-	err = importRevision(ctx, cfgSet, loc, latestCommit, gtClient, project)
+	err = i.importRevision(ctx, cfgSet, loc, latestCommit, gtClient, project)
 	if err != nil {
 		err = errors.Annotate(err, "Failed to import %s revision %s", cfgSet, latestCommit.Id).Err()
 		return errors.Append(err, saveAttempt(false, err.Error(), latestCommit))
@@ -302,7 +316,7 @@ func importConfigSet(ctx context.Context, cfgSet config.Set, loc *cfgcommonpb.Gi
 // importRevision imports a referenced Gitiles revision into a config set.
 // It only imports when all files are valid.
 // TODO(crbug.com/1446839): send notifications for any validation errors.
-func importRevision(ctx context.Context, cfgSet config.Set, loc *cfgcommonpb.GitilesLocation, commit *git.Commit, gtClient gitilespb.GitilesClient, gitilesProj string) error {
+func (i *Importer) importRevision(ctx context.Context, cfgSet config.Set, loc *cfgcommonpb.GitilesLocation, commit *git.Commit, gtClient gitilespb.GitilesClient, gitilesProj string) error {
 	if loc == nil || commit == nil {
 		return nil
 	}
@@ -393,13 +407,13 @@ func importRevision(ctx context.Context, cfgSet config.Set, loc *cfgcommonpb.Git
 			return errors.Annotate(err, "filepath: %q", filePath).Err()
 		}
 		gsFileName := fmt.Sprintf("%s/sha256/%s", common.GSProdCfgFolder, file.ContentSHA256)
-		_, err = clients.GetGsClient(ctx).UploadIfMissing(ctx, common.BucketName(ctx), gsFileName, file.Content, func(attrs *storage.ObjectAttrs) {
+		_, err = clients.GetGsClient(ctx).UploadIfMissing(ctx, i.GSBucket, gsFileName, file.Content, func(attrs *storage.ObjectAttrs) {
 			attrs.ContentEncoding = "gzip"
 		})
 		if err != nil {
 			return errors.Annotate(err, "failed to upload file %s as %s", filePath, gsFileName).Err()
 		}
-		file.GcsURI = gs.MakePath(common.BucketName(ctx), gsFileName)
+		file.GcsURI = gs.MakePath(i.GSBucket, gsFileName)
 		if len(file.Content) > compressedContentLimit {
 			// Don't save the compressed content if the content is above the limit.
 			// Since Datastore has 1MiB entity size limit.
@@ -407,14 +421,17 @@ func importRevision(ctx context.Context, cfgSet config.Set, loc *cfgcommonpb.Git
 		}
 		files = append(files, file)
 	}
-	// TODO(crbug.com/1446839): call validateConfig func and change them based on
-	// validateConfig response
-	attempt.Success = true
-	attempt.Message = "Imported"
-	for _, f := range files {
-		f.CreateTime = clock.Now(ctx).UTC()
+	if err := i.validateAndPopulateAttempt(ctx, cfgSet, files, attempt); err != nil {
+		return err
+	}
+	if !attempt.Success {
+		return errors.Annotate(datastore.Put(ctx, attempt), "saving attempt").Err()
 	}
 	logging.Infof(ctx, "Storing %d files, updating ConfigSet %s and ImportAttempt", len(files), cfgSet)
+	now := clock.Now(ctx).UTC()
+	for _, f := range files {
+		f.CreateTime = now
+	}
 	// Datastore transaction has a maximum size of 10MB.
 	if err := datastore.Put(ctx, files); err != nil {
 		return errors.Annotate(err, "failed to store files").Err()
@@ -439,4 +456,29 @@ func hashAndCompressConfig(reader io.Reader) (string, []byte, error) {
 		return "", nil, errors.Annotate(err, "failed to close gzip writer").Err()
 	}
 	return hex.EncodeToString(sha.Sum(nil)), compressed.Bytes(), nil
+}
+
+func (i Importer) validateAndPopulateAttempt(ctx context.Context, cfgSet config.Set, files []*model.File, attempt *model.ImportAttempt) error {
+	vfs := make([]validation.File, len(files))
+	for i, f := range files {
+		vfs[i] = f
+	}
+	vr, err := i.Validator.Validate(ctx, cfgSet, vfs)
+	if err != nil {
+		return errors.Annotate(err, "validating config set %q", cfgSet).Err()
+	}
+	attempt.Success = true // be optimistic
+	attempt.Message = "Imported"
+	attempt.ValidationResult = vr
+	for _, msg := range attempt.ValidationResult.GetMessages() {
+		switch sev := msg.GetSeverity(); {
+		case sev >= cfgcommonpb.ValidationResult_ERROR:
+			attempt.Success = false
+			attempt.Message = "Invalid config"
+			return nil
+		case sev == cfgcommonpb.ValidationResult_WARNING:
+			attempt.Message = "Imported with warnings"
+		}
+	}
+	return nil
 }

@@ -16,11 +16,13 @@ package main
 
 import (
 	"flag"
+	"fmt"
 
 	// Enable gRPC server side gzip compression.
 	_ "google.golang.org/grpc/encoding/gzip"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
@@ -34,7 +36,7 @@ import (
 	_ "go.chromium.org/luci/config_service/internal/rules"
 
 	"go.chromium.org/luci/config_service/internal/clients"
-	"go.chromium.org/luci/config_service/internal/common"
+	"go.chromium.org/luci/config_service/internal/importer"
 	"go.chromium.org/luci/config_service/internal/service"
 	"go.chromium.org/luci/config_service/internal/settings"
 	"go.chromium.org/luci/config_service/internal/validation"
@@ -64,7 +66,7 @@ func main() {
 			return errors.Annotate(err, "failed to initiate the global GCS client").Err()
 		}
 		srv.Context = clients.WithGsClient(srv.Context, gsClient)
-		gsBucket := common.BucketName(srv.Context)
+		gsBucket := fmt.Sprintf("storage-%s", info.AppID(srv.Context))
 
 		serviceFinder, err := service.NewFinder(srv.Context)
 		if err != nil {
@@ -74,6 +76,10 @@ func main() {
 		validator := &validation.Validator{
 			GsClient: gsClient,
 			Finder:   serviceFinder,
+		}
+		_ = importer.Importer{
+			Validator: validator,
+			GSBucket:  gsBucket,
 		}
 
 		mw := router.MiddlewareChain{

@@ -162,9 +162,8 @@ type ImportAttempt struct {
 	Success bool `gae:"success,noindex"`
 	// Message is a human-readable message about this import attempt.
 	Message string `gae:"message,noindex"`
-	// ValidationMessage is the error return by the corresponding downstream
-	// application when calling its validation API.
-	ValidationMessage *cfgcommonpb.ValidationResponseMessage `gae:"validationMessage"`
+	// ValidationResult is the result of validating the config set.
+	ValidationResult *cfgcommonpb.ValidationResult `gae:"validation_result"`
 }
 
 // RevisionInfo contains a revision metadata.

@@ -50,6 +50,7 @@ import (
 	"go.chromium.org/luci/config_service/internal/model"
 	"go.chromium.org/luci/config_service/internal/settings"
 	"go.chromium.org/luci/config_service/internal/taskpb"
+	"go.chromium.org/luci/config_service/internal/validation"
 	"go.chromium.org/luci/config_service/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -61,7 +62,8 @@ func TestImportAllConfigs(t *testing.T) {
 
 	Convey("import all configs", t, func() {
 		ctx := testutil.SetupContext()
-		ctx, sch := tq.TestingContext(ctx, nil)
+		disp := &tq.Dispatcher{}
+		ctx, sch := tq.TestingContext(ctx, disp)
 		ctx = settings.WithGlobalConfigLoc(ctx, &cfgcommonpb.GitilesLocation{
 			Repo: "https://a.googlesource.com/infradata/config",
 			Ref:  "refs/heads/main",
@@ -151,6 +153,15 @@ func TestImportAllConfigs(t *testing.T) {
 	})
 }
 
+type mockValidator struct {
+	result *cfgcommonpb.ValidationResult
+	err    error
+}
+
+func (mv *mockValidator) Validate(context.Context, config.Set, []validation.File) (*cfgcommonpb.ValidationResult, error) {
+	return mv.result, mv.err
+}
+
 func TestImportConfigSet(t *testing.T) {
 	t.Parallel()
 
@@ -167,6 +178,8 @@ func TestImportConfigSet(t *testing.T) {
 		ctx = context.WithValue(ctx, &clients.MockGitilesClientKey, mockGtClient)
 		mockGsClient := clients.NewMockGsClient(ctl)
 		ctx = clients.WithGsClient(ctx, mockGsClient)
+		const testGSBucket = "test-bucket"
+		cs := config.MustServiceSet("my-service")
 		latestCommit := &git.Commit{
 			Id: "latest revision",
 			Committer: &git.Commit_User{
@@ -179,6 +192,11 @@ func TestImportConfigSet(t *testing.T) {
 			ID:             latestCommit.Id,
 			CommitTime:     latestCommit.Committer.Time.AsTime(),
 			CommitterEmail: latestCommit.Committer.Email,
+		}
+		mockValidator := &mockValidator{}
+		importer := &Importer{
+			Validator: mockValidator,
+			GSBucket:  testGSBucket,
 		}
 
 		Convey("happy path", func() {
@@ -207,7 +225,7 @@ func TestImportConfigSet(t *testing.T) {
 				}, nil)
 				var recordedGSPaths []gs.Path
 				mockGsClient.EXPECT().UploadIfMissing(
-					gomock.Any(), gomock.Eq(common.BucketName(ctx)),
+					gomock.Any(), gomock.Eq(testGSBucket),
 					gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(
 					func(ctx context.Context, bucket, object string, data []byte, attrsModifyFn func(*storage.ObjectAttrs)) (bool, error) {
 						recordedGSPaths = append(recordedGSPaths, gs.MakePath(bucket, object))
@@ -215,7 +233,7 @@ func TestImportConfigSet(t *testing.T) {
 					},
 				)
 
-				err = ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+				err = importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
 				So(err, ShouldBeNil)
 				cfgSet := &model.ConfigSet{
 					ID: config.MustServiceSet("myservice"),
@@ -277,7 +295,7 @@ func TestImportConfigSet(t *testing.T) {
 					CreateTime:    datastore.RoundTime(clock.Now(ctx).UTC()),
 					Content:       expectedContent0,
 					ContentSHA256: expectedSha256,
-					GcsURI:        gs.MakePath(common.BucketName(ctx), fmt.Sprintf("%s/sha256/%s", common.GSProdCfgFolder, expectedSha256)),
+					GcsURI:        gs.MakePath(testGSBucket, fmt.Sprintf("%s/sha256/%s", common.GSProdCfgFolder, expectedSha256)),
 				})
 				So(files[1].Location, ShouldResembleProto, &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
@@ -297,7 +315,7 @@ func TestImportConfigSet(t *testing.T) {
 					CreateTime:    datastore.RoundTime(clock.Now(ctx).UTC()),
 					Content:       expectedContent1,
 					ContentSHA256: expectedSha256,
-					GcsURI:        gs.MakePath(common.BucketName(ctx), fmt.Sprintf("%s/sha256/%s", common.GSProdCfgFolder, expectedSha256)),
+					GcsURI:        gs.MakePath(testGSBucket, fmt.Sprintf("%s/sha256/%s", common.GSProdCfgFolder, expectedSha256)),
 				})
 				So(files[2].Location, ShouldResembleProto, &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
@@ -317,7 +335,7 @@ func TestImportConfigSet(t *testing.T) {
 					CreateTime:    datastore.RoundTime(clock.Now(ctx).UTC()),
 					Content:       expectedContent2,
 					ContentSHA256: expectedSha256,
-					GcsURI:        gs.MakePath(common.BucketName(ctx), fmt.Sprintf("%s/sha256/%s", common.GSProdCfgFolder, expectedSha256)),
+					GcsURI:        gs.MakePath(testGSBucket, fmt.Sprintf("%s/sha256/%s", common.GSProdCfgFolder, expectedSha256)),
 				})
 
 				So(recordedGSPaths, ShouldHaveLength, len(files))
@@ -371,7 +389,7 @@ func TestImportConfigSet(t *testing.T) {
 					Log: []*git.Commit{latestCommit},
 				}, nil)
 
-				err := ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+				err := importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
 
 				So(err, ShouldBeNil)
 				cfgSetAfterImport := &model.ConfigSet{
@@ -401,7 +419,7 @@ func TestImportConfigSet(t *testing.T) {
 				}, nil)
 				mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{}, nil)
 
-				err := ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+				err := importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
 
 				So(err, ShouldBeNil)
 				cfgSet := &model.ConfigSet{
@@ -475,7 +493,7 @@ func TestImportConfigSet(t *testing.T) {
 				}, nil)
 				mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{}, nil)
 
-				err := ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+				err := importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
 
 				So(err, ShouldBeNil)
 				cfgSetAfterImport := &model.ConfigSet{
@@ -498,7 +516,7 @@ func TestImportConfigSet(t *testing.T) {
 				mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(&gitilespb.LogResponse{
 					Log: []*git.Commit{},
 				}, nil)
-				err := ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+				err := importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
 				So(err, ShouldBeNil)
 				attempt := &model.ImportAttempt{
 					ConfigSet: datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice"),
@@ -506,6 +524,73 @@ func TestImportConfigSet(t *testing.T) {
 				So(datastore.Get(ctx, attempt), ShouldBeNil)
 				So(attempt.Success, ShouldBeTrue)
 				So(attempt.Message, ShouldContainSubstring, "no commit logs")
+			})
+
+			Convey("validate", func() {
+				mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(&gitilespb.LogResponse{
+					Log: []*git.Commit{latestCommit},
+				}, nil)
+
+				tarGzContent, err := buildTarGz(map[string]any{"foo.cfg": "content"})
+				So(err, ShouldBeNil)
+				mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{
+					Contents: tarGzContent,
+				}, nil)
+				mockGsClient.EXPECT().UploadIfMissing(
+					gomock.Any(), gomock.Eq(testGSBucket),
+					gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+
+				Convey("has warning", func() {
+					mockValidator.result = &cfgcommonpb.ValidationResult{
+						Messages: []*cfgcommonpb.ValidationResult_Message{
+							{
+								Path:     "foo.cfg",
+								Severity: cfgcommonpb.ValidationResult_WARNING,
+								Text:     "this is a warning",
+							},
+						},
+					}
+					err = importer.ImportConfigSet(ctx, cs)
+					So(err, ShouldBeNil)
+					revKey := datastore.MakeKey(ctx, model.ConfigSetKind, string(cs), model.RevisionKind, latestCommit.Id)
+					var files []*model.File
+					So(datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), ShouldBeNil)
+					So(files, ShouldHaveLength, 1)
+					So(files[0].Path, ShouldEqual, "foo.cfg")
+					attempt := &model.ImportAttempt{
+						ConfigSet: datastore.MakeKey(ctx, model.ConfigSetKind, string(cs)),
+					}
+					So(datastore.Get(ctx, attempt), ShouldBeNil)
+					So(attempt.Success, ShouldBeTrue)
+					So(attempt.Revision.ID, ShouldEqual, latestCommit.Id)
+					So(attempt.Message, ShouldEqual, "Imported with warnings")
+					So(attempt.ValidationResult, ShouldResembleProto, mockValidator.result)
+				})
+				Convey("has error", func() {
+					mockValidator.result = &cfgcommonpb.ValidationResult{
+						Messages: []*cfgcommonpb.ValidationResult_Message{
+							{
+								Path:     "foo.cfg",
+								Severity: cfgcommonpb.ValidationResult_ERROR,
+								Text:     "this is an error",
+							},
+						},
+					}
+					err = importer.ImportConfigSet(ctx, cs)
+					So(err, ShouldBeNil)
+					revKey := datastore.MakeKey(ctx, model.ConfigSetKind, string(cs), model.RevisionKind, latestCommit.Id)
+					var files []*model.File
+					So(datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), ShouldBeNil)
+					So(files, ShouldBeEmpty)
+					attempt := &model.ImportAttempt{
+						ConfigSet: datastore.MakeKey(ctx, model.ConfigSetKind, string(cs)),
+					}
+					So(datastore.Get(ctx, attempt), ShouldBeNil)
+					So(attempt.Success, ShouldBeFalse)
+					So(attempt.Message, ShouldEqual, "Invalid config")
+					So(attempt.Revision.ID, ShouldEqual, latestCommit.Id)
+					So(attempt.ValidationResult, ShouldResembleProto, mockValidator.result)
+				})
 			})
 
 			Convey("large config", func() {
@@ -528,10 +613,10 @@ func TestImportConfigSet(t *testing.T) {
 					Contents: tarGzContent,
 				}, nil)
 				mockGsClient.EXPECT().UploadIfMissing(
-					gomock.Any(), gomock.Eq(common.BucketName(ctx)),
+					gomock.Any(), gomock.Eq(testGSBucket),
 					gomock.Eq(expectedGsFileName), gomock.Any(), gomock.Any()).Return(true, nil)
 
-				err = ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+				err = importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
 
 				So(err, ShouldBeNil)
 				revKey := datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice", model.RevisionKind, latestCommit.Id)
@@ -541,13 +626,13 @@ func TestImportConfigSet(t *testing.T) {
 				file := files[0]
 				So(file.Path, ShouldEqual, "large")
 				So(file.Content, ShouldBeNil)
-				So(file.GcsURI, ShouldEqual, gs.MakePath("storage-luci-config-dev", expectedGsFileName))
+				So(file.GcsURI, ShouldEqual, gs.MakePath(testGSBucket, expectedGsFileName))
 			})
 		})
 
 		Convey("unhappy path", func() {
 			Convey("bad config set format", func() {
-				err := ImportConfigSet(ctx, config.Set("bad"))
+				err := importer.ImportConfigSet(ctx, config.Set("bad"))
 				So(err, ShouldErrLike, "Invalid config set")
 			})
 
@@ -568,7 +653,7 @@ func TestImportConfigSet(t *testing.T) {
 						},
 					},
 				})
-				err := ImportConfigSet(ctx, config.MustProjectSet("unknown_proj"))
+				err := importer.ImportConfigSet(ctx, config.MustProjectSet("unknown_proj"))
 				So(err, ShouldErrLike, `project "unknown_proj" not exist or has no gitiles location`)
 				So(ErrFatalTag.In(err), ShouldBeTrue)
 			})
@@ -581,14 +666,14 @@ func TestImportConfigSet(t *testing.T) {
 						},
 					},
 				})
-				err := ImportConfigSet(ctx, config.MustProjectSet("proj"))
+				err := importer.ImportConfigSet(ctx, config.MustProjectSet("proj"))
 				So(err, ShouldErrLike, `project "proj" not exist or has no gitiles location`)
 				So(ErrFatalTag.In(err), ShouldBeTrue)
 			})
 
 			Convey("cannot fetch logs", func() {
 				mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(nil, errors.New("gitiles internal errors"))
-				err := ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+				err := importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
 				So(err, ShouldErrLike, "cannot fetch logs", "gitiles internal errors")
 				attempt := &model.ImportAttempt{
 					ConfigSet: datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice"),
@@ -621,7 +706,7 @@ func TestImportConfigSet(t *testing.T) {
 					Contents: []byte("invalid .tar.gz content"),
 				}, nil)
 
-				err := ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+				err := importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
 
 				So(err, ShouldErrLike, "Failed to import services/myservice revision latest revision")
 				cfgSetAfterImport := &model.ConfigSet{
@@ -658,10 +743,10 @@ func TestImportConfigSet(t *testing.T) {
 					Contents: tarGzContent,
 				}, nil)
 				mockGsClient.EXPECT().UploadIfMissing(
-					gomock.Any(), gomock.Eq(common.BucketName(ctx)),
+					gomock.Any(), gomock.Eq(testGSBucket),
 					gomock.Eq(expectedGsFileName), gomock.Any(), gomock.Any()).Return(false, errors.New("GCS internal error"))
 
-				err = ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+				err = importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
 
 				So(err, ShouldErrLike, "failed to upload file", "GCS internal error")
 				revKey := datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice", model.RevisionKind, latestCommit.Id)
@@ -675,6 +760,25 @@ func TestImportConfigSet(t *testing.T) {
 				So(datastore.Get(ctx, attempt), ShouldBeNil)
 				So(attempt.Success, ShouldBeFalse)
 				So(attempt.Message, ShouldContainSubstring, "failed to upload file")
+			})
+
+			Convey("validation error", func() {
+				mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(&gitilespb.LogResponse{
+					Log: []*git.Commit{latestCommit},
+				}, nil)
+
+				tarGzContent, err := buildTarGz(map[string]any{"foo.cfg": "content"})
+				So(err, ShouldBeNil)
+				mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{
+					Contents: tarGzContent,
+				}, nil)
+				mockGsClient.EXPECT().UploadIfMissing(
+					gomock.Any(), gomock.Eq(testGSBucket),
+					gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+
+				mockValidator.err = errors.New("something went wrong during validation")
+				err = importer.ImportConfigSet(ctx, cs)
+				So(err, ShouldErrLike, "something went wrong during validation")
 			})
 		})
 	})
