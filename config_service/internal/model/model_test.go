@@ -63,23 +63,23 @@ func TestModel(t *testing.T) {
 			stale.Content, err = gzipCompress([]byte("stale"))
 			So(err, ShouldBeNil)
 			So(datastore.Put(ctx, latest, stale), ShouldBeNil)
-			actual, err := GetLatestConfigFile(ctx, config.MustServiceSet("service"), "file", false)
+			actual, err := GetLatestConfigFile(ctx, config.MustServiceSet("service"), "file")
 			So(err, ShouldBeNil)
 			So(actual, ShouldResemble, &File{
 				Path:     "file",
 				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "latest"),
-				Content:  []byte("latest"),
+				Content:  latest.Content,
 			})
 		})
 
 		Convey("error", func() {
 			Convey("configset not exist", func() {
-				_, err := GetLatestConfigFile(ctx, config.MustServiceSet("nonexist"), "file", false)
+				_, err := GetLatestConfigFile(ctx, config.MustServiceSet("nonexist"), "file")
 				So(err, ShouldErrLike, `can not find config set entity "services/nonexist"`)
 			})
 
 			Convey("file not exist", func() {
-				_, err := GetLatestConfigFile(ctx, config.MustServiceSet("service"), "file", false)
+				_, err := GetLatestConfigFile(ctx, config.MustServiceSet("service"), "file")
 				So(err, ShouldErrLike, `can not find file entity "file" from datastore for config set: services/service, revision: latest`)
 			})
 		})
@@ -91,7 +91,6 @@ func TestModel(t *testing.T) {
 		defer ctl.Finish()
 		mockGsClient := clients.NewMockGsClient(ctl)
 		ctx = clients.WithGsClient(ctx, mockGsClient)
-		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
 		Convey("by path and revision", func() {
@@ -101,17 +100,19 @@ func TestModel(t *testing.T) {
 				Path:     "file",
 				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
 				Content:  content,
+				GcsURI:   gs.MakePath("bucket", "object"),
 			}), ShouldBeNil)
 
 			file := &File{
 				Path:     "file",
 				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
 			}
-			So(file.Load(ctx, false), ShouldBeNil)
+			So(file.Load(ctx), ShouldBeNil)
 			So(file, ShouldResemble, &File{
 				Path:     "file",
 				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
-				Content:  []byte("content"),
+				Content:  content,
+				GcsURI:   gs.MakePath("bucket", "object"),
 			})
 		})
 
@@ -123,140 +124,25 @@ func TestModel(t *testing.T) {
 				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
 				ContentSHA256: "hash",
 				Content:       content,
+				GcsURI:        gs.MakePath("bucket", "object"),
 			}), ShouldBeNil)
 
 			file := &File{
 				ContentSHA256: "hash",
 			}
-			So(file.Load(ctx, false), ShouldBeNil)
+			So(file.Load(ctx), ShouldBeNil)
 			So(file, ShouldResemble, &File{
-				Path:          "file",
-				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
-				ContentSHA256: "hash",
-				Content:       []byte("content"),
-			})
-		})
-
-		Convey("should resolve GcsURI", func() {
-			content, err := gzipCompress([]byte("content"))
-			So(err, ShouldBeNil)
-			So(datastore.Put(ctx, &File{
-				Path:          "file",
-				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
-				ContentSHA256: "hash",
-				GcsURI:        gs.MakePath("bucket", "object"),
-			}), ShouldBeNil)
-
-			file := &File{
-				ContentSHA256: "hash",
-			}
-
-			mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("bucket"), gomock.Eq("object"), false).Return(content, nil)
-
-			So(file.Load(ctx, true), ShouldBeNil)
-			So(file.Content, ShouldResemble, []byte("content"))
-		})
-
-		Convey("should not resolve GcsURI", func() {
-			So(datastore.Put(ctx, &File{
-				Path:          "file",
-				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
-				ContentSHA256: "hash",
-				GcsURI:        gs.MakePath("bucket", "object"),
-			}), ShouldBeNil)
-
-			file := &File{
-				ContentSHA256: "hash",
-			}
-
-			mockGsClient.EXPECT().Read(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-
-			So(file.Load(ctx, false), ShouldBeNil)
-			So(file, ShouldResemble, &File{
-				Path:          "file",
-				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
-				ContentSHA256: "hash",
-				GcsURI:        "gs://bucket/object",
-			})
-		})
-
-		Convey("GCS error", func() {
-			So(datastore.Put(ctx, &File{
-				Path:          "file",
-				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
-				ContentSHA256: "hash",
-				GcsURI:        gs.MakePath("bucket", "object"),
-			}), ShouldBeNil)
-
-			file := &File{
-				ContentSHA256: "hash",
-			}
-
-			mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("bucket"), gomock.Eq("object"), false).Return(nil, errors.New("GCS internal error"))
-
-			So(file.Load(ctx, true), ShouldErrLike, "cannot read from gs://bucket/object: GCS internal error")
-		})
-
-		Convey("nil content", func() {
-			So(datastore.Put(ctx, &File{
-				Path:     "file",
-				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
-			}), ShouldBeNil)
-
-			file := &File{
-				Path:     "file",
-				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
-			}
-			So(file.Load(ctx, false), ShouldErrLike, "file content is nil. Might be damaged?")
-		})
-
-		Convey("empty content", func() {
-			content, err := gzipCompress([]byte(""))
-			So(err, ShouldBeNil)
-			So(datastore.Put(ctx, &File{
 				Path:          "file",
 				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
 				ContentSHA256: "hash",
 				Content:       content,
-			}), ShouldBeNil)
-
-			file := &File{
-				ContentSHA256: "hash",
-			}
-			So(file.Load(ctx, false), ShouldBeNil)
-			So(file, ShouldResemble, &File{
-				Path:          "file",
-				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
-				ContentSHA256: "hash",
-				Content:       []byte(""),
-			})
-		})
-
-		Convey("empty bytes", func() {
-			content, err := gzipCompress([]byte{})
-			So(err, ShouldBeNil)
-			So(datastore.Put(ctx, &File{
-				Path:          "file",
-				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
-				ContentSHA256: "hash",
-				Content:       content,
-			}), ShouldBeNil)
-
-			file := &File{
-				ContentSHA256: "hash",
-			}
-			So(file.Load(ctx, false), ShouldBeNil)
-			So(file, ShouldResemble, &File{
-				Path:          "file",
-				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
-				ContentSHA256: "hash",
-				Content:       []byte{},
+				GcsURI:        gs.MakePath("bucket", "object"),
 			})
 		})
 
 		Convey("miss required field", func() {
 			file := &File{}
-			So(file.Load(ctx, false), ShouldErrLike, "One of ContentSHA256 or (path and revision) is required")
+			So(file.Load(ctx), ShouldErrLike, "One of ContentSHA256 or (path and revision) is required")
 		})
 
 		Convey("not found (path+revision)", func() {
@@ -264,14 +150,84 @@ func TestModel(t *testing.T) {
 				Path:     "file",
 				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
 			}
-			So(file.Load(ctx, false), ShouldErrLike, `can not find file entity "file" from datastore for config set: services/service, revision: rev`)
+			So(file.Load(ctx), ShouldErrLike, `can not find file entity "file" from datastore for config set: services/service, revision: rev`)
 		})
 
 		Convey("not found (hash)", func() {
 			file := &File{
 				ContentSHA256: "hash",
 			}
-			So(file.Load(ctx, false), ShouldErrLike, `can not find matching file entity from datastore with hash "hash"`)
+			So(file.Load(ctx), ShouldErrLike, `can not find matching file entity from datastore with hash "hash"`)
+		})
+	})
+}
+
+func TestGetRawContent(t *testing.T) {
+	t.Parallel()
+	Convey("GetRawContent", t, func() {
+		ctx := memory.UseWithAppID(context.Background(), "dev~app-id")
+		ctl := gomock.NewController(t)
+		mockGsClient := clients.NewMockGsClient(ctl)
+		ctx = clients.WithGsClient(ctx, mockGsClient)
+		datastore.GetTestable(ctx).Consistent(true)
+		file := &File{
+			Path:          "file",
+			Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
+			ContentSHA256: "hash",
+		}
+
+		Convey("should read File.Content first", func() {
+			content, err := gzipCompress([]byte("raw content"))
+			So(err, ShouldBeNil)
+			file.Content = content
+			file.GcsURI = gs.MakePath("test-bucket", "test-object")
+			rawContent, err := file.GetRawContent(ctx)
+			So(err, ShouldBeNil)
+			So(rawContent, ShouldEqual, []byte("raw content"))
+			So(file.rawContent, ShouldEqual, []byte("raw content"))
+		})
+
+		Convey("should resolve GcsUri", func() {
+			content, err := gzipCompress([]byte("raw content"))
+			So(err, ShouldBeNil)
+			file.GcsURI = gs.MakePath("test-bucket", "test-object")
+			mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("test-bucket"), gomock.Eq("test-object"), false).Return(content, nil)
+			rawContent, err := file.GetRawContent(ctx)
+			So(err, ShouldBeNil)
+			So(rawContent, ShouldEqual, []byte("raw content"))
+			So(file.rawContent, ShouldEqual, []byte("raw content"))
+
+			Convey("use cache when calling agin", func() {
+				mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("test-bucket"), gomock.Eq("test-object"), false).Return(nil, errors.New("should not be called")).AnyTimes()
+				rawContent, err := file.GetRawContent(ctx)
+				So(err, ShouldBeNil)
+				So(rawContent, ShouldEqual, []byte("raw content"))
+			})
+		})
+
+		Convey("GCS error", func() {
+			file.GcsURI = gs.MakePath("test-bucket", "test-object")
+			mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("test-bucket"), gomock.Eq("test-object"), false).Return(nil, errors.New("GCS internal error"))
+			rawContent, err := file.GetRawContent(ctx)
+			So(err, ShouldErrLike, "failed to read from gs://test-bucket/test-object: GCS internal error")
+			So(rawContent, ShouldBeNil)
+		})
+
+		Convey("invalid file", func() {
+			rawContent, err := file.GetRawContent(ctx)
+			So(err, ShouldErrLike, "both content and gcs_uri are empty")
+			So(rawContent, ShouldBeNil)
+		})
+
+		Convey("empty raw content", func() {
+			content, err := gzipCompress([]byte(""))
+			So(err, ShouldBeNil)
+			file.Content = content
+			file.GcsURI = gs.MakePath("test-bucket", "test-object")
+			rawContent, err := file.GetRawContent(ctx)
+			So(err, ShouldBeNil)
+			So(rawContent, ShouldEqual, []byte(""))
+			So(file.rawContent, ShouldEqual, []byte(""))
 		})
 	})
 }

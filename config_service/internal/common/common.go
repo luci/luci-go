@@ -109,11 +109,15 @@ func GitilesURL(loc *cfgcommonpb.GitilesLocation) string {
 //
 // Return model.NoSuchConfigError if the provided config file can not be found.
 func LoadSelfConfig[T proto.Message](ctx context.Context, fileName string, configMsg T) error {
-	file, err := model.GetLatestConfigFile(ctx, config.MustServiceSet(info.AppID(ctx)), fileName, true)
+	file, err := model.GetLatestConfigFile(ctx, config.MustServiceSet(info.AppID(ctx)), fileName)
 	if err != nil {
 		return err
 	}
-	if err := prototext.Unmarshal(file.Content, configMsg); err != nil {
+	rawContent, err := file.GetRawContent(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get raw content of file %q: %w", fileName, err)
+	}
+	if err := prototext.Unmarshal(rawContent, configMsg); err != nil {
 		return fmt.Errorf("failed to unmarshal file %q: %w", fileName, err)
 	}
 	return nil

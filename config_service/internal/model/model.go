@@ -86,6 +86,54 @@ type File struct {
 	ContentSHA256 string `gae:"content_sha256"`
 	// Location is a pinned, fully resolved source location to this file.
 	Location *cfgcommonpb.Location `gae:"location"`
+
+	// rawContent caches the result of `GetRawContent`. Not saved in datastore.
+	rawContent []byte `gae:"-"`
+}
+
+// GetRawContent returns the raw and uncompressed content of this config.
+//
+// May download content from Google Cloud Storage if content is not
+// stored inside the entity due to its size.
+// The result will be cached so the next GetRawContent call will not pay
+// the cost to fetch and decompress.
+func (f *File) GetRawContent(ctx context.Context) ([]byte, error) {
+	switch {
+	case f.rawContent != nil:
+		break // rawContent is fetched and cached before.
+	case len(f.Content) > 0:
+		rawContent, err := decompressData(f.Content)
+		if err != nil {
+			return nil, err
+		}
+		f.rawContent = rawContent
+	case f.GcsURI != "":
+		compressed, err := clients.GetGsClient(ctx).Read(ctx, f.GcsURI.Bucket(), f.GcsURI.Filename(), false)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to read from %s", f.GcsURI).Err()
+		}
+		rawContent, err := decompressData(compressed)
+		if err != nil {
+			return nil, err
+		}
+		f.rawContent = rawContent
+	default:
+		return nil, errors.New("both content and gcs_uri are empty")
+	}
+	return f.rawContent, nil
+}
+
+func decompressData(data []byte) ([]byte, error) {
+	gr, err := gzip.NewReader(bytes.NewReader(data))
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to create gzip reader").Err()
+	}
+	defer func() { _ = gr.Close() }()
+	ret, err := io.ReadAll(gr)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to decompress the data").Err()
+	}
+	return ret, nil
 }
 
 // ImportAttempt describes what happened last time we tried to import a config
@@ -178,12 +226,11 @@ func (e *NoSuchConfigError) IsUnknownFileHash() bool {
 	return e.unknownConfigFile.hash != ""
 }
 
-// GetLatestConfigFile returns the latest File for the given config set.
+// GetLatestConfigFile returns the latest File entity as is for the given
+// config set.
 //
-// If resolveGcsURI, download content from File.GcsURI.
-// The file content is depressed before returning.
 // Returns NoSuchConfigError when the config set or file can not be found.
-func GetLatestConfigFile(ctx context.Context, configSet config.Set, filePath string, resolveGcsURI bool) (*File, error) {
+func GetLatestConfigFile(ctx context.Context, configSet config.Set, filePath string) (*File, error) {
 	cfgSet := &ConfigSet{ID: configSet}
 	switch err := datastore.Get(ctx, cfgSet); {
 	case err == datastore.ErrNoSuchEntity:
@@ -195,18 +242,17 @@ func GetLatestConfigFile(ctx context.Context, configSet config.Set, filePath str
 		Path:     filePath,
 		Revision: datastore.MakeKey(ctx, ConfigSetKind, string(configSet), RevisionKind, cfgSet.LatestRevision.ID),
 	}
-	if err := file.Load(ctx, resolveGcsURI); err != nil {
+	if err := file.Load(ctx); err != nil {
 		return nil, err
 	}
 	return file, nil
 }
 
-// Load loads the file entity from Datastore with content being decompressed.
+// Load loads the file entity from Datastore.
 //
-// If resolveGcsURI is true, it will download content from File.GcsURI.
 // Returns NoSuchConfigError when the matching file can not be found in the
 // storage.
-func (f *File) Load(ctx context.Context, resolveGcsURI bool) error {
+func (f *File) Load(ctx context.Context) error {
 	switch {
 	case f.Path != "" && f.Revision != nil:
 		switch err := datastore.Get(ctx, f); {
@@ -238,30 +284,6 @@ func (f *File) Load(ctx context.Context, resolveGcsURI bool) error {
 		}
 	default:
 		return errors.Reason("One of ContentSHA256 or (path and revision) is required").Err()
-	}
-
-	if f.GcsURI != "" {
-		if !resolveGcsURI {
-			return nil
-		}
-		gzippedData, err := clients.GetGsClient(ctx).Read(ctx, f.GcsURI.Bucket(), f.GcsURI.Filename(), false)
-		if err != nil {
-			return errors.Annotate(err, "cannot read from %s", f.GcsURI).Err()
-		}
-		f.Content = gzippedData
-	}
-
-	// For empty file, the gzipped content bytes will still be non-nil.
-	if len(f.Content) == 0 {
-		return errors.Reason("file content is nil. Might be damaged?").Err()
-	}
-	gr, err := gzip.NewReader(bytes.NewReader(f.Content))
-	if err != nil {
-		return errors.Annotate(err, "failed to create gzip reader").Err()
-	}
-	defer gr.Close()
-	if f.Content, err = io.ReadAll(gr); err != nil {
-		return errors.Annotate(err, "failed to decompress file content").Err()
 	}
 	return nil
 }

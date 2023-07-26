@@ -15,10 +15,7 @@
 package rpc
 
 import (
-	"bytes"
-	"compress/gzip"
 	"context"
-	"io"
 	"net/http"
 
 	"google.golang.org/grpc/codes"
@@ -109,21 +106,16 @@ func (c Configs) GetProjectConfigs(ctx context.Context, req *pb.GetProjectConfig
 			// This file is not found.
 			continue
 		case len(f.Content) != 0 && m.MustIncludes("raw_content") != mask.Exclude:
-			gr, err := gzip.NewReader(bytes.NewReader(f.Content))
+			rawContent, err := f.GetRawContent(ctx)
 			if err != nil {
-				logging.Errorf(ctx, "cannot create gzip reader for file(%s-%s): %s", cfgPb.ConfigSet, cfgPb.Path, err)
-				return nil, status.Errorf(codes.Internal, "error while processing project configs")
+				logging.Errorf(ctx, "failed to get the raw content of the config for %s-%s: %s", cfgPb.ConfigSet, cfgPb.Path, err)
+				return nil, status.Errorf(codes.Internal, "error while getting raw content")
 			}
-			defer func() { _ = gr.Close() }()
-			if f.Content, err = io.ReadAll(gr); err != nil {
-				logging.Errorf(ctx, "cannot read gzip content for file(%s-%s): %s", cfgPb.ConfigSet, cfgPb.Path, err)
-				return nil, status.Errorf(codes.Internal, "error while processing project configs")
-			}
-			cfgPb.Content = &pb.Config_RawContent{RawContent: f.Content}
-			totalFileSize += len(f.Content)
+			totalFileSize += len(rawContent)
 			if totalFileSize > maxProjConfigsResSize {
 				return nil, status.Errorf(codes.ResourceExhausted, "Too many small configs to return (Total size > %d MiB). Use ListConfigSets + GetConfig as a substitute", maxProjConfigsResSize/1024/1024)
 			}
+			cfgPb.Content = &pb.Config_RawContent{RawContent: rawContent}
 		case f.GcsURI != "" && m.MustIncludes("signed_url") != mask.Exclude:
 			urls, err := common.CreateSignedURLs(ctx, clients.GetGsClient(ctx), []gs.Path{f.GcsURI}, http.MethodGet, nil)
 			if err != nil {

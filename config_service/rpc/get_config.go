@@ -73,7 +73,7 @@ func (c Configs) GetConfig(ctx context.Context, req *pb.GetConfigRequest) (*pb.C
 	// Fetch by ContentSha256
 	if req.ContentSha256 != "" {
 		f = &model.File{ContentSHA256: req.ContentSha256}
-		switch err := f.Load(ctx, false); {
+		switch err := f.Load(ctx); {
 		case errors.As(err, &noSuchCfgErr):
 			logging.Infof(ctx, "no such config: %s", noSuchCfgErr.Error())
 			return nil, notFoundErr(auth.CurrentIdentity(ctx))
@@ -96,7 +96,7 @@ func (c Configs) GetConfig(ctx context.Context, req *pb.GetConfigRequest) (*pb.C
 
 	// Fetch by config set + path.
 	if req.ContentSha256 == "" {
-		switch f, err = model.GetLatestConfigFile(ctx, config.Set(cs), req.Path, false); {
+		switch f, err = model.GetLatestConfigFile(ctx, config.Set(cs), req.Path); {
 		case errors.As(err, &noSuchCfgErr):
 			logging.Infof(ctx, "no such config: %s", noSuchCfgErr.Error())
 			return nil, notFoundErr(auth.CurrentIdentity(ctx))
@@ -115,7 +115,12 @@ func (c Configs) GetConfig(ctx context.Context, req *pb.GetConfigRequest) (*pb.C
 		Url:           common.GitilesURL(f.Location.GetGitilesLocation()),
 	}
 	if len(f.Content) != 0 {
-		configPb.Content = &pb.Config_RawContent{RawContent: f.Content}
+		rawContent, err := f.GetRawContent(ctx)
+		if err != nil {
+			logging.Errorf(ctx, "failed to get the raw content of the config for %s-%s: %s", cs, f.Path, err)
+			return nil, status.Errorf(codes.Internal, "error while getting raw content")
+		}
+		configPb.Content = &pb.Config_RawContent{RawContent: rawContent}
 	} else if m.MustIncludes("signed_url") != mask.Exclude {
 		urls, err := common.CreateSignedURLs(ctx, clients.GetGsClient(ctx), []gs.Path{f.GcsURI}, http.MethodGet, nil)
 		if err != nil {
