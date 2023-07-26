@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { act, cleanup, render } from '@testing-library/react';
-import { applySnapshot, destroy } from 'mobx-state-tree';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { cleanup, render } from '@testing-library/react';
+import { DateTime } from 'luxon';
+import { destroy } from 'mobx-state-tree';
 
 import * as authStateLib from '@/common/api/auth_state';
 import { Store, StoreInstance, StoreProvider } from '@/common/store';
+import { timeout } from '@/generic_libs/tools/utils';
 
 import {
   AuthStateProvider,
@@ -57,12 +60,6 @@ jest.mock('@/common/api/auth_state', () => {
   >('@/common/api/auth_state', ['queryAuthState']);
 });
 
-const AUTH_STATE = {
-  identity: 'identity-1',
-  idToken: 'id-token-1',
-  accessToken: 'access-token-1',
-};
-
 describe('AuthStateProvider', () => {
   let store: StoreInstance;
   let queryAuthStateSpy: jest.MockedFunction<
@@ -72,9 +69,7 @@ describe('AuthStateProvider', () => {
   beforeEach(() => {
     store = Store.create({});
     jest.useFakeTimers();
-    queryAuthStateSpy = jest
-      .mocked(authStateLib.queryAuthState)
-      .mockResolvedValue(AUTH_STATE);
+    queryAuthStateSpy = jest.mocked(authStateLib.queryAuthState);
   });
   afterEach(() => {
     queryAuthStateSpy.mockRestore();
@@ -83,7 +78,7 @@ describe('AuthStateProvider', () => {
     jest.useRealTimers();
   });
 
-  test('e2e', async () => {
+  it('should refresh auth state correctly', async () => {
     const tokenConsumerCBSpy = jest.fn(
       (
         _getIdToken: ReturnType<typeof useGetIdToken>,
@@ -91,18 +86,41 @@ describe('AuthStateProvider', () => {
       ) => {}
     );
     const identityConsumerCBSpy = jest.fn((_identity: string) => {});
-
-    render(
-      <StoreProvider value={store}>
-        <AuthStateProvider initialValue={AUTH_STATE}>
-          <IdentityConsumer renderCallback={identityConsumerCBSpy} />
-          <TokenConsumer renderCallback={tokenConsumerCBSpy} />
-        </AuthStateProvider>
-      </StoreProvider>
+    const initialAuthState = {
+      identity: 'identity-1',
+      idToken: 'id-token-1',
+      accessToken: 'access-token-1',
+      accessTokenExpiry: DateTime.now().plus({ minute: 20 }).toSeconds(),
+    };
+    const firstQueryResponse = {
+      identity: 'identity-1',
+      idToken: 'id-token-2',
+      accessToken: 'access-token-2',
+      accessTokenExpiry: DateTime.now().plus({ minute: 60 }).toSeconds(),
+    };
+    queryAuthStateSpy.mockResolvedValue(
+      // Resolve after 1s.
+      timeout(1000).then(() => firstQueryResponse)
     );
 
-    await jest.runAllTimersAsync();
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <StoreProvider value={store}>
+          <AuthStateProvider initialValue={initialAuthState}>
+            <IdentityConsumer renderCallback={identityConsumerCBSpy} />
+            <TokenConsumer renderCallback={tokenConsumerCBSpy} />
+          </AuthStateProvider>
+        </StoreProvider>
+      </QueryClientProvider>
+    );
 
+    // Advance timer by 500ms, before the first query returns.
+    await jest.advanceTimersByTimeAsync(500);
+    // The first query should've been sent immediately. Even when the initial
+    // auth token hasn't expired yet. This is necessary because the initial
+    // value could've been an outdated cache (if user signed in/out in a
+    // different tab)
+    expect(queryAuthStateSpy).toHaveBeenCalledTimes(1);
     expect(identityConsumerCBSpy.mock.calls.length).toStrictEqual(1);
     expect(identityConsumerCBSpy.mock.lastCall?.[0]).toStrictEqual(
       'identity-1'
@@ -112,20 +130,11 @@ describe('AuthStateProvider', () => {
     expect(tokenConsumerCBSpy.mock.lastCall?.[1]()).toStrictEqual(
       'access-token-1'
     );
+    expect(store.authState.value).toEqual(initialAuthState);
 
-    // Update tokens but not identity.
-    act(() => {
-      applySnapshot(store.authState, {
-        id: store.authState.id,
-        value: {
-          identity: 'identity-1',
-          idToken: 'id-token-2',
-          accessToken: 'access-token-2',
-        },
-      });
-    });
-    await jest.runAllTimersAsync();
-
+    // Advance timer by 40s, after the initial query returns but before the
+    // initial token expires.
+    await jest.advanceTimersByTimeAsync(40000);
     // Update tokens should not trigger context updates.
     expect(identityConsumerCBSpy.mock.calls.length).toStrictEqual(1);
     expect(identityConsumerCBSpy.mock.lastCall?.[0]).toStrictEqual(
@@ -137,29 +146,154 @@ describe('AuthStateProvider', () => {
     expect(tokenConsumerCBSpy.mock.lastCall?.[1]()).toStrictEqual(
       'access-token-2'
     );
+    expect(store.authState.value).toEqual(firstQueryResponse);
 
-    // Update identity and tokens.
-    act(() => {
-      applySnapshot(store.authState, {
-        id: store.authState.id,
-        value: {
-          identity: 'identity-2',
-          idToken: 'id-token-3',
-          accessToken: 'access-token-3',
-        },
-      });
-    });
-    await jest.runAllTimersAsync();
+    const secondQueryResponse = {
+      identity: 'identity-2',
+      idToken: 'id-token-3',
+      accessToken: 'access-token-3',
+      accessTokenExpiry: DateTime.fromSeconds(
+        firstQueryResponse.accessTokenExpiry
+      )
+        .plus({ minute: 29 })
+        .toSeconds(),
+    };
+    queryAuthStateSpy.mockResolvedValue(secondQueryResponse);
 
+    // Advance the timer to just before the first queried token is about to
+    // expire.
+    await jest.advanceTimersByTimeAsync(
+      firstQueryResponse.accessTokenExpiry * 1000 - Date.now() - 10000
+    );
+
+    expect(queryAuthStateSpy).toHaveBeenCalledTimes(2);
     // Update identity should trigger context updates.
     expect(identityConsumerCBSpy.mock.calls.length).toStrictEqual(2);
     expect(identityConsumerCBSpy.mock.lastCall?.[0]).toStrictEqual(
       'identity-2'
     );
     expect(tokenConsumerCBSpy.mock.calls.length).toStrictEqual(2);
+    // The token getters can still return the latest tokens.
     expect(tokenConsumerCBSpy.mock.lastCall?.[0]()).toStrictEqual('id-token-3');
     expect(tokenConsumerCBSpy.mock.lastCall?.[1]()).toStrictEqual(
       'access-token-3'
     );
+    expect(store.authState.value).toEqual(secondQueryResponse);
+
+    const thirdQueryResponse = {
+      identity: 'identity-2',
+      idToken: 'id-token-4',
+      accessToken: 'access-token-4',
+      accessTokenExpiry: DateTime.fromSeconds(
+        secondQueryResponse.accessTokenExpiry
+      )
+        .plus({ minute: 59 })
+        .toSeconds(),
+    };
+    queryAuthStateSpy.mockResolvedValue(thirdQueryResponse);
+
+    // Advance the timer to just before the second queried token is about to
+    // expire.
+    await jest.advanceTimersByTimeAsync(
+      secondQueryResponse.accessTokenExpiry * 1000 - Date.now() - 10000
+    );
+
+    expect(queryAuthStateSpy).toHaveBeenCalledTimes(3);
+    // Update identity should trigger context updates.
+    expect(identityConsumerCBSpy.mock.calls.length).toStrictEqual(2);
+    expect(identityConsumerCBSpy.mock.lastCall?.[0]).toStrictEqual(
+      'identity-2'
+    );
+    expect(tokenConsumerCBSpy.mock.calls.length).toStrictEqual(2);
+    // The token getters can still return the latest tokens.
+    expect(tokenConsumerCBSpy.mock.lastCall?.[0]()).toStrictEqual('id-token-4');
+    expect(tokenConsumerCBSpy.mock.lastCall?.[1]()).toStrictEqual(
+      'access-token-4'
+    );
+    expect(store.authState.value).toEqual(thirdQueryResponse);
+  });
+
+  it('should not update auth state too frequently when tokens are very short lived', async () => {
+    queryAuthStateSpy.mockImplementation(async () => {
+      return {
+        identity: 'identity',
+        idToken: 'id-token',
+        accessToken: 'access-token',
+        idTokenExpiry: DateTime.now().plus({ seconds: 1 }).toSeconds(),
+      };
+    });
+
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <StoreProvider value={store}>
+          <AuthStateProvider
+            initialValue={{
+              identity: 'identity-1',
+              idToken: 'id-token-1',
+              accessToken: 'access-token-1',
+              idTokenExpiry: DateTime.now().plus({ seconds: 1 }).toSeconds(),
+            }}
+          >
+            <></>
+          </AuthStateProvider>
+        </StoreProvider>
+      </QueryClientProvider>
+    );
+
+    // In the first 3 seconds, there should only be one query.
+    await jest.advanceTimersByTimeAsync(1000);
+    expect(queryAuthStateSpy).toHaveBeenCalledTimes(1);
+    await jest.advanceTimersByTimeAsync(1000);
+    expect(queryAuthStateSpy).toHaveBeenCalledTimes(1);
+    await jest.advanceTimersByTimeAsync(1000);
+    expect(queryAuthStateSpy).toHaveBeenCalledTimes(1);
+
+    // Move the timer to when the next query is sent.
+    await jest.advanceTimersToNextTimerAsync();
+    expect(queryAuthStateSpy).toHaveBeenCalledTimes(2);
+
+    // In the next 3 seconds, no more query should be sent.
+    await jest.advanceTimersByTimeAsync(1000);
+    expect(queryAuthStateSpy).toHaveBeenCalledTimes(2);
+    await jest.advanceTimersByTimeAsync(1000);
+    expect(queryAuthStateSpy).toHaveBeenCalledTimes(2);
+    await jest.advanceTimersByTimeAsync(1000);
+    expect(queryAuthStateSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("should not refetch auth-state when tokens don't expire", async () => {
+    queryAuthStateSpy.mockImplementation(async () => {
+      return {
+        identity: 'identity',
+        idToken: 'id-token',
+        accessToken: 'access-token',
+      };
+    });
+
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <StoreProvider value={store}>
+          <AuthStateProvider
+            initialValue={{
+              identity: 'identity-1',
+              idToken: 'id-token-1',
+              accessToken: 'access-token-1',
+            }}
+          >
+            <></>
+          </AuthStateProvider>
+        </StoreProvider>
+      </QueryClientProvider>
+    );
+
+    // In the first 3 seconds, there should be only one query.
+    await jest.advanceTimersByTimeAsync(1000);
+    expect(queryAuthStateSpy).toHaveBeenCalledTimes(1);
+
+    // Move the timer by several hours, no more query should be sent.
+    await jest.advanceTimersByTimeAsync(3600000);
+    await jest.advanceTimersByTimeAsync(3600000);
+    await jest.advanceTimersByTimeAsync(3600000);
+    expect(queryAuthStateSpy).toHaveBeenCalledTimes(1);
   });
 });

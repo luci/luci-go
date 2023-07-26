@@ -12,23 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { reaction } from 'mobx';
-import {
-  addDisposer,
-  Instance,
-  SnapshotIn,
-  SnapshotOut,
-  types,
-} from 'mobx-state-tree';
+import { Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
 
-import {
-  AuthState,
-  msToExpire,
-  queryAuthState,
-  setAuthStateCache,
-} from '@/common/api/auth_state';
-import { aliveFlow } from '@/generic_libs/tools/mobx_utils';
-import { timeout } from '@/generic_libs/tools/utils';
+import { AuthState } from '@/common/api/auth_state';
 
 export const AuthStateStore = types
   .model('AuthStateStore', {
@@ -54,87 +40,9 @@ export const AuthStateStore = types
       return self.value?.picture;
     },
   }))
-  .volatile(() => ({
-    setAuthStateCache,
-    queryAuthState,
-  }))
   .actions((self) => ({
-    setDependencies(
-      deps: Partial<Pick<typeof self, 'setAuthStateCache' | 'queryAuthState'>>
-    ) {
-      Object.assign<typeof self, Partial<typeof self>>(self, deps);
-    },
-  }))
-  .actions((self) => {
-    // A unique reference that functions as the ID of the last scheduleUpdate
-    // call.
-    let lastScheduleId = {};
-
-    return {
-      /**
-       * Updates the auth state when before it expires. When called multiple times,
-       * only the last call is respected.
-       *
-       * @param forceUpdate when set to true, update the auth state immediately.
-       */
-      scheduleUpdate: aliveFlow(self, function* (forceUpdate = false) {
-        const scheduleId = {};
-        lastScheduleId = scheduleId;
-        const authState = self.value;
-
-        const validDuration =
-          forceUpdate || !authState
-            ? 0
-            : // Refresh the auth state 10s earlier to prevent the tokens from
-              // expiring before the new tokens are returned.
-              msToExpire(authState) - 10000;
-        if (validDuration === Infinity) {
-          return;
-        }
-
-        yield timeout(validDuration);
-
-        const call = self.queryAuthState();
-        const newAuthState: Awaited<typeof call> = yield call;
-
-        // There's another scheduled update. Abort the current one.
-        if (lastScheduleId !== scheduleId) {
-          return;
-        }
-
-        self.setAuthStateCache(newAuthState);
-        self.value = newAuthState;
-      }),
-    };
-  })
-  .actions((self) => ({
-    /**
-     * Initialize the AuthStateStore and make it update its value when it
-     * expires.
-     */
-    init(initialValue: AuthState) {
-      self.value = initialValue;
-      let isFirstUpdate = true;
-      addDisposer(
-        self,
-        reaction(
-          () => self.value,
-          () => {
-            // The initial value could be outdated. Force update when first
-            // initialized.
-            self.scheduleUpdate(isFirstUpdate);
-            isFirstUpdate = false;
-          },
-          {
-            fireImmediately: true,
-            // Ensure there are at least 10s between updates. So the backend
-            // returning short-lived tokens won't cause the update action to
-            // fire rapidly.
-            // Note: the delay is not applied to the first call.
-            delay: 10000,
-          }
-        )
-      );
+    setValue(value: AuthState) {
+      self.value = value;
     },
   }));
 
