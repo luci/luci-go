@@ -119,18 +119,21 @@ func CacheDir(b *pb.Build) string {
 // MergeSummary combines the contents of all summary fields.
 func MergeSummary(b *pb.Build) string {
 	summaries := []string{
-		b.SummaryMarkdown,
 		b.Output.GetSummaryHtml(),
 		b.Infra.GetBackend().GetTask().GetSummaryHtml(),
 		b.CancellationMarkdown,
 	}
 
 	var contents []string
+	if strings.TrimSpace(b.SummaryMarkdown) != "" {
+		contents = append(contents, b.SummaryMarkdown)
+	}
 	for _, s := range summaries {
-		if strings.TrimSpace(s) != "" {
+		if strings.TrimSpace(s) != "" && !strings.Contains(b.SummaryMarkdown, s) {
 			contents = append(contents, s)
 		}
 	}
+
 	newSummary := strings.Join(contents, "\n")
 	if len(newSummary) > SummaryMarkdownMaxLength {
 		return newSummary[:SummaryMarkdownMaxLength-3] + "..."

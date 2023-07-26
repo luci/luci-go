@@ -151,5 +151,16 @@ func TestMergeSummary(t *testing.T) {
 			}
 			So(MergeSummary(b), ShouldEqual, strings.Repeat("l", SummaryMarkdownMaxLength-3)+"...")
 		})
+
+		Convey("Summary duplication", func() {
+			b := &pb.Build{
+				SummaryMarkdown: "summary",
+				Output: &pb.Build_Output{
+					SummaryHtml: "summary",
+				},
+				CancellationMarkdown: "cancellation",
+			}
+			So(MergeSummary(b), ShouldEqual, "summary\ncancellation")
+		})
 	})
 }

@@ -497,6 +497,19 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 			}
 		}
 
+		// During build status transition, bbagent will try to update Build.Status
+		// and Build.Output.Status at the same time, while only Build.Status takes
+		// effect.
+		//
+		// Log the cases that Build.Status and Build.Output.Status are different so
+		// we can fix them.
+		//
+		// TODO(crbug.com/1450399): Remove the log after build status refinement
+		// is completed.
+		if mustIncludes(updateMask, req, "status") == mask.IncludeEntirely && explicitlyIncludesOutputStatus(req) && req.Build.Status != req.Build.Output.GetStatus() {
+			logging.Debugf(ctx, "Update Build %d to Status %s, while update Build.Output.Status to %s", req.Build.Id, req.Build.Status, req.Build.Output.GetStatus())
+		}
+
 		// Reset req.Build.Output.Status if the request does not intend to update
 		// Build.Output.Status.
 		if !explicitlyIncludesOutputStatus(req) && req.Build.GetOutput() != nil && req.Build.Output.Status != b.Proto.Output.GetStatus() {
