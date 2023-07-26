@@ -131,7 +131,7 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.15 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/pkg/xattr v0.4.7 // indirect
+	github.com/pkg/xattr v0.4.9 // indirect
 	github.com/spf13/afero v1.9.2 // indirect
 	github.com/texttheater/golang-levenshtein v1.0.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
