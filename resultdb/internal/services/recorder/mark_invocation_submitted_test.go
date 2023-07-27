@@ -56,7 +56,7 @@ func TestMarkInvocationSubmitted(t *testing.T) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
-					{Realm: "chromium:try", Permission: permSetSubmittedInvocation},
+					{Realm: "chromium:@project", Permission: permSetSubmittedInvocation},
 				},
 			})
 
@@ -68,10 +68,8 @@ func TestMarkInvocationSubmitted(t *testing.T) {
 
 		Convey(`Insufficient Permissions`, func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: "user:someone@example.com",
-				IdentityPermissions: []authtest.RealmPermission{
-					{Realm: "chromium:try", Permission: permCreateInvocation},
-				},
+				Identity:            "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{},
 			})
 
 			_, err := recorder.MarkInvocationSubmitted(ctx, &pb.MarkInvocationSubmittedRequest{
@@ -84,7 +82,7 @@ func TestMarkInvocationSubmitted(t *testing.T) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
-					{Realm: "chromium:try", Permission: permSetSubmittedInvocation},
+					{Realm: "chromium:@project", Permission: permSetSubmittedInvocation},
 				},
 			})
 			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZING, map[string]any{
@@ -108,7 +106,7 @@ func TestMarkInvocationSubmitted(t *testing.T) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
-					{Realm: "chromium:try", Permission: permSetSubmittedInvocation},
+					{Realm: "chromium:@project", Permission: permSetSubmittedInvocation},
 				},
 			})
 			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, map[string]any{
@@ -128,7 +126,7 @@ func TestMarkInvocationSubmitted(t *testing.T) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
-					{Realm: "chromium:try", Permission: permSetSubmittedInvocation},
+					{Realm: "chromium:@project", Permission: permSetSubmittedInvocation},
 				},
 			})
 			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, map[string]any{
