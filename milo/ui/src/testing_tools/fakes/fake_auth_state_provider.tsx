@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useMemo } from 'react';
 import { useLatest } from 'react-use';
 
 import { AuthState } from '@/common/api/auth_state';
@@ -15,10 +15,20 @@ export const FakeAuthStateProvider = ({ value, children }: props) => {
     value = createMockAuthState();
   }
   const valueRef = useLatest(value);
-  const getAuthState = useCallback(() => valueRef.current, [value.identity]);
+  const ctxValue = useMemo(
+    () => ({
+      getAuthState: () => valueRef.current,
+      // This doesn't ensure the auth state is valid. But it should be good
+      // enough for most unit tests that is not testing <AuthStateProvider />
+      // itself.
+      getValidAuthState: async () => valueRef.current,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [value.identity]
+  );
 
   return (
-    <AuthStateContext.Provider value={getAuthState}>
+    <AuthStateContext.Provider value={ctxValue}>
       {children}
     </AuthStateContext.Provider>
   );
