@@ -14,7 +14,7 @@
 
 import { Link } from '@mui/material';
 import { useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
@@ -29,28 +29,27 @@ import { getLoginUrl } from '@/common/tools/url_utils';
  */
 export function LoginPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const authState = useAuthState();
+  const [searchParam] = useSearchParams();
+  const redirectTo = searchParam.get('redirect') || '/';
 
-  const isLoggedIn = ![undefined, ANONYMOUS_IDENTITY].includes(
-    authState.identity
-  );
+  const isLoggedIn = authState.identity !== ANONYMOUS_IDENTITY;
 
+  // Perform redirection directly if the user is already logged in. This might
+  // happen if the user logged in via another browser tab and the auth state is
+  // refreshed.
   useEffect(() => {
     if (!isLoggedIn) {
       return;
     }
-    const redirect = new URLSearchParams(window.location.search).get(
-      'redirect'
-    );
-    navigate(redirect || '/');
-  }, [isLoggedIn, navigate]);
+    navigate(redirectTo);
+  }, [isLoggedIn, navigate, redirectTo]);
 
   return (
     <div css={{ margin: '8px 16px' }}>
       You must{' '}
       <Link
-        href={getLoginUrl(location.pathname + location.search + location.hash)}
+        href={getLoginUrl(redirectTo)}
         css={{ textDecoration: 'underline', cursor: 'pointer' }}
       >
         login
