@@ -52,14 +52,21 @@ message BackendSetting {
   // hostname for the target backend. e.g. chromium-swarm.appspot.com
   string hostname = 2;
 
-  // The associated UpdateBuildTask pubsub subscription id for this task backend.
-  // This must be set in order for buildbucket to recieve task updates.
+  // The associated UpdateBuildTask pubsub id for this task backend.
+  // This must be set in order for buildbucket to recieve task updates and send
+  // a pubsup topic that the task backend can use to send updates to.
+  // This id is provided by the backend owner, but added to buildbucket's service
+  // config by the buildbucket team.
+  // Buildbucket will subscribe to the pubsub subscription, which itself is
+  // subscribed to the topic that task backends send messages to.
   // i.e.
-  //     For this pubsub subscription name:
+  //     For this pubsub subscription:
   //         project/cr-buildbucket/subscriptions/chormium-swarm-backend
-  //     The subscription_id would be:
+  //     and topic:
+  //         project/cr-buildbucket/topics/chormium-swarm-backend
+  //     The pubsub_id would be:
   //         chormium-swarm-backend
-  string subscription_id = 3;
+  string pubsub_id = 3;
 }
 
 // Swarmbucket settings.

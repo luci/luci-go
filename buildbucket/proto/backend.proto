@@ -227,10 +227,10 @@ message RunTaskRequest {
   // Buildbucket will avoid raciness even in the face of duplicate tasks.
   string request_id = 16;
 
-  // The pubsub subscription name that the backend will use to send
-  // UpdateBuildTask messages to buildbucket. It is set in buildbucket
-  // service_config and updated to use the correct buildbucket host.
-  string pubsub_subscription_name = 17;
+  // The pubsub topic that the backend will use to send
+  // UpdateBuildTask messages to buildbucket. It is set by buildbucket using
+  // service_config and the current buildbucket host.
+  string pubsub_topic = 17;
 }
 
 message RunTaskResponse {

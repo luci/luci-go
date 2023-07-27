@@ -116,7 +116,7 @@ func validatePubsubSubscription(ctx context.Context, req buildTaskUpdate) error 
 
 	isValid := false
 	for _, backend := range globalCfg.Backends {
-		subscription := fmt.Sprintf("projects/%s/subscriptions/%s", info.AppID(ctx), backend.SubscriptionId)
+		subscription := fmt.Sprintf("projects/%s/subscriptions/%s", info.AppID(ctx), backend.PubsubId)
 		fmt.Println(subscription)
 		if backend.Target == target && subscription == req.subscription {
 			isValid = true

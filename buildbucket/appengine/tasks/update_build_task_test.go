@@ -568,9 +568,9 @@ func TestUpdateBuildTask(t *testing.T) {
 		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
 			Backends: []*pb.BackendSetting{
 				{
-					Target:         "swarming://chromium-swarm",
-					Hostname:       "chromium-swarm.appspot.com",
-					SubscriptionId: "chromium-swarm-backend",
+					Target:   "swarming://chromium-swarm",
+					Hostname: "chromium-swarm.appspot.com",
+					PubsubId: "chromium-swarm-backend",
 				},
 			},
 		}), ShouldBeNil)

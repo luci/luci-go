@@ -196,7 +196,7 @@ func computeAgentArgs(build *pb.Build, infra *pb.BuildInfra) (args []string) {
 	return
 }
 
-func computeBackendPubsubSubscription(ctx context.Context, target string) (string, error) {
+func computeBackendPubsubTopic(ctx context.Context, target string) (string, error) {
 	globalCfg, err := config.GetSettingsCfg(ctx)
 	if err != nil {
 		return "", errors.Annotate(err, "error fetching service config").Err()
@@ -205,10 +205,10 @@ func computeBackendPubsubSubscription(ctx context.Context, target string) (strin
 	for _, backend := range globalCfg.Backends {
 
 		if backend.Target == target {
-			return fmt.Sprintf("projects/%s/subscriptions/%s", info.AppID(ctx), backend.SubscriptionId), nil
+			return fmt.Sprintf("projects/%s/topics/%s", info.AppID(ctx), backend.PubsubId), nil
 		}
 	}
-	return "", errors.Reason("pubsub subscription not found").Err()
+	return "", errors.Reason("pubsub id not found").Err()
 }
 
 func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *model.BuildInfra, requestID string) (*pb.RunTaskRequest, error) {
@@ -242,7 +242,7 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 		Seconds: build.Proto.GetCreateTime().GetSeconds() + int64(buildStartGiveUpTimeout.Seconds()),
 	}
 
-	pubsubSubscription, err := computeBackendPubsubSubscription(ctx, backend.Task.Id.Target)
+	pubsubTopic, err := computeBackendPubsubTopic(ctx, backend.Task.Id.Target)
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +263,7 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 		Dimensions:               infra.Proto.Backend.GetTaskDimensions(),
 		StartDeadline:            startDeadline,
 		Experiments:              build.Proto.Input.GetExperiments(),
-		PubsubSubscriptionName:   pubsubSubscription,
+		PubsubTopic:              pubsubTopic,
 	}
 
 	project := build.Proto.Builder.Project

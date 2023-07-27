@@ -335,9 +335,9 @@ func TestCreateBackendTask(t *testing.T) {
 
 		backendSetting := []*pb.BackendSetting{}
 		backendSetting = append(backendSetting, &pb.BackendSetting{
-			Target:         "swarming:/chromium-swarm-dev",
-			Hostname:       "chromium-swarm-dev",
-			SubscriptionId: "chromium-swarm-dev-backend",
+			Target:   "swarming:/chromium-swarm-dev",
+			Hostname: "chromium-swarm-dev",
+			PubsubId: "chromium-swarm-dev-backend",
 		})
 		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 		err := config.SetTestSettingsCfg(ctx, settingsCfg)
@@ -483,7 +483,7 @@ func TestCreateBackendTask(t *testing.T) {
 				"cow_eggs_experiment",
 				"are_cow_eggs_real_experiment",
 			})
-			So(req.PubsubSubscriptionName, ShouldEqual, "projects/app-id/subscriptions/chromium-swarm-dev-backend")
+			So(req.PubsubTopic, ShouldEqual, "projects/app-id/topics/chromium-swarm-dev-backend")
 		})
 	})
 
