@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -78,6 +79,7 @@ func MarkInvocationSubmitted(ctx context.Context, clientFactory RecorderClientFa
 	switch err := datastore.Get(ctx, r); {
 	case err == datastore.ErrNoSuchEntity:
 		// no action to take if the run doesn't exist.
+		logging.Warningf(ctx, "run %s not exist to mark invocation submitted", id)
 		return nil
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch Run").Tag(transient.Tag).Err()
@@ -98,6 +100,7 @@ func MarkInvocationSubmitted(ctx context.Context, clientFactory RecorderClientFa
 			for _, attempt := range exec.GetAttempts() {
 				rdb := attempt.GetResult().GetBuildbucket().GetInfra().GetResultdb()
 				if rdb.GetHostname() == "" || rdb.GetInvocation() == "" {
+					logging.Infof(ctx, "rdb hostname %s and rdb invocation %s missing", rdb.GetHostname(), rdb.GetInvocation())
 					continue
 				}
 
