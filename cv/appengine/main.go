@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/gerritauth"
 	"go.chromium.org/luci/server/module"
+	srvquota "go.chromium.org/luci/server/quota"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
@@ -58,6 +59,7 @@ import (
 	gerritupdater "go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/manager"
+	"go.chromium.org/luci/cv/internal/quota"
 	"go.chromium.org/luci/cv/internal/rpc/admin"
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
 	rpcv0 "go.chromium.org/luci/cv/internal/rpc/v0"
@@ -82,6 +84,7 @@ func main() {
 		redisconn.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
+		srvquota.NewModuleFromFlags(),
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
@@ -125,7 +128,8 @@ func main() {
 			return err
 		}
 		rdbClientFactory := rdb.NewRecorderClientFactory()
-		_ = runimpl.New(runNotifier, pmNotifier, tryjobNotifier, clMutator, clUpdater, gFactory, bbFactory, tc, bqc, rdbClientFactory, env)
+		qm := quota.NewManager()
+		_ = runimpl.New(runNotifier, pmNotifier, tryjobNotifier, clMutator, clUpdater, gFactory, bbFactory, tc, bqc, rdbClientFactory, qm, env)
 
 		// Setup pRPC authentication.
 		srv.SetRPCAuthMethods([]auth.Method{
@@ -173,7 +177,6 @@ func main() {
 		if !srv.Options.Prod {
 			srv.Routes.Static("/static", nil, http.Dir("./static"))
 		}
-
 		return nil
 	})
 }

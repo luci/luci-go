@@ -18,6 +18,8 @@ import (
 	"context"
 	"time"
 
+	"go.chromium.org/luci/server/quota/quotapb"
+
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
@@ -107,6 +109,14 @@ type RM interface {
 	NotifySubmissionCompleted(ctx context.Context, runID common.RunID, sc *eventpb.SubmissionCompleted, invokeRM bool) error
 }
 
+// QM manages run and tryjob quotas.
+type QM interface {
+	DebitRunQuota(ctx context.Context) (*quotapb.OpResult, error)
+	CreditRunQuota(ctx context.Context) (*quotapb.OpResult, error)
+	DebitTryjobQuota(ctx context.Context) (*quotapb.OpResult, error)
+	CreditTryjobQuota(ctx context.Context) (*quotapb.OpResult, error)
+}
+
 // CLUpdater encapsulates interaction with CL Updater by the Run events handler.
 type CLUpdater interface {
 	ScheduleBatch(ctx context.Context, luciProject string, cls []*changelist.CL, requester changelist.UpdateCLTask_Requester) error
@@ -123,6 +133,7 @@ type Impl struct {
 	PM          PM
 	RM          RM
 	TN          TryjobNotifier
+	QM          QM
 	GFactory    gerrit.Factory
 	CLUpdater   CLUpdater
 	CLMutator   *changelist.Mutator

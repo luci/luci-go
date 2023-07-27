@@ -59,6 +59,7 @@ import (
 	gerritupdater "go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/manager"
+	"go.chromium.org/luci/cv/internal/quota"
 	"go.chromium.org/luci/cv/internal/rpc/admin"
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
 	"go.chromium.org/luci/cv/internal/run"
@@ -171,10 +172,11 @@ func (t *Test) SetUp(testingT *testing.T) (context.Context, func()) {
 	t.BuildbucketFake.RegisterPubsubTopic(buildbucketHost, topic)
 	cleanupFn = bblistener.StartListenerForTest(ctx, sub, tjNotifier)
 	cleanupFns = append(cleanupFns, cleanupFn)
+	qm := quota.NewManager()
 	gerritupdater.RegisterUpdater(clUpdater, gFactory)
 	rdbFactory := rdb.NewMockRecorderClientFactory(t.Test.GoMockCtl)
 	_ = pmimpl.New(t.PMNotifier, t.RunNotifier, clMutator, gFactory, clUpdater)
-	_ = runimpl.New(t.RunNotifier, t.PMNotifier, tjNotifier, clMutator, clUpdater, gFactory, bbFactory, t.TreeFake.Client(), t.BQFake, rdbFactory, t.Env)
+	_ = runimpl.New(t.RunNotifier, t.PMNotifier, tjNotifier, clMutator, clUpdater, gFactory, bbFactory, t.TreeFake.Client(), t.BQFake, rdbFactory, qm, t.Env)
 	bbFacade := &bbfacade.Facade{
 		ClientFactory: bbFactory,
 	}

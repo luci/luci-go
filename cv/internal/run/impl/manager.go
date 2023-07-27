@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/prjmanager"
+	"go.chromium.org/luci/cv/internal/quota"
 	"go.chromium.org/luci/cv/internal/run"
 	runbq "go.chromium.org/luci/cv/internal/run/bq"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -87,6 +88,7 @@ func New(
 	tc tree.Client,
 	bqc bq.Client,
 	rdbf rdb.RecorderClientFactory,
+	qm *quota.Manager,
 	env *common.Env,
 ) *RunManager {
 	rm := &RunManager{
@@ -101,6 +103,7 @@ func New(
 			PM:          pm,
 			RM:          n,
 			TN:          tn,
+			QM:          qm,
 			CLUpdater:   clu,
 			CLMutator:   clm,
 			BQExporter:  runbq.NewExporter(n.TasksBinding.TQDispatcher, bqc, env),
