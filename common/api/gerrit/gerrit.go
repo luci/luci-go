@@ -58,6 +58,7 @@ type Change struct {
 	Updated                string                  `json:"updated"`
 	Mergeable              bool                    `json:"mergeable"`
 	Messages               []ChangeMessageInfo     `json:"messages"`
+	Submittable            bool                    `json:"submittable"`
 	Submitted              string                  `json:"submitted"`
 	SubmitType             string                  `json:"submit_type"`
 	Insertions             int                     `json:"insertions"`
