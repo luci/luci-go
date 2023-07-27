@@ -16,6 +16,7 @@ package baselines
 
 import (
 	"testing"
+	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 
@@ -52,6 +53,32 @@ func TestRead(t *testing.T) {
 			So(res.BaselineID, ShouldEqual, expected.BaselineID)
 			So(res.LastUpdatedTime, ShouldEqual, commitTime)
 			So(res.CreationTime, ShouldEqual, commitTime)
+		})
+	})
+}
+
+func TestIsSpinningUp(t *testing.T) {
+	Convey(`IsSpinningUp`, t, func() {
+		now := time.Date(2026, 1, 2, 3, 4, 5, 6, time.UTC)
+
+		Convey(`Yes`, func() {
+			b := &Baseline{
+				Project:         "chromium",
+				BaselineID:      "try:linux-rel",
+				LastUpdatedTime: now.Add(-time.Hour * 1),
+				CreationTime:    now.Add(-time.Hour * 2),
+			}
+			So(b.IsSpinningUp(now), ShouldBeTrue)
+		})
+
+		Convey(`No`, func() {
+			b := &Baseline{
+				Project:         "chromium",
+				BaselineID:      "try:linux-rel",
+				LastUpdatedTime: now.Add(-time.Hour * 1),
+				CreationTime:    now.Add(-time.Hour * 100),
+			}
+			So(b.IsSpinningUp(now), ShouldBeFalse)
 		})
 	})
 }

@@ -262,23 +262,3 @@ func TestValidateInvocation(t *testing.T) {
 		})
 	})
 }
-
-func TestBaselineID(t *testing.T) {
-	t.Parallel()
-	Convey(`ValidateBaselineID`, t, func() {
-		Convey(`Valid`, func() {
-			So(ValidateBaselineID("try:linux-rel"), ShouldBeNil)
-			So(ValidateBaselineID("try:linux asan"), ShouldBeNil)
-		})
-
-		Convey(`Invalid`, func() {
-			Convey(`Empty`, func() {
-				So(ValidateBaselineID(""), ShouldErrLike, `unspecified`)
-			})
-			Convey(`Unsupported Symbol`, func() {
-				So(ValidateBaselineID("try/linux-rel"), ShouldErrLike, `does not match`)
-				So(ValidateBaselineID("try :rel"), ShouldErrLike, `does not match`)
-			})
-		})
-	})
-}

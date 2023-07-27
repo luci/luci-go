@@ -25,10 +25,11 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/pbutil"
 )
 
 // Baseline captures baseline identifiers, which map to a set of test variants.
-// When determining new tests, baselines that have been last updated within
+// When determining new tests, baselines that have been created within
 // 3 days are considered to be in a spin up state, and will not be able to
 // calculate new tests.
 type Baseline struct {
@@ -36,6 +37,13 @@ type Baseline struct {
 	BaselineID      string
 	LastUpdatedTime time.Time
 	CreationTime    time.Time
+}
+
+const SpinUpDuration = 72 * time.Hour
+
+// IsSpinningUp checks whether the creation time is within 72 hours.
+func (b Baseline) IsSpinningUp(now time.Time) bool {
+	return now.Sub(b.CreationTime) <= SpinUpDuration
 }
 
 // NotFound is the error returned by Read if the row could not be found.
@@ -90,4 +98,15 @@ func UpdateLastUpdatedTime(project, baselineID string) *spanner.Mutation {
 	}
 
 	return spanutil.UpdateMap("Baselines", row)
+}
+
+// MustParseBaselineName parses a baseline name to project and baselineID.
+// Panics if the name is invalid. Useful for situations when name was already
+// validated.
+func MustParseBaselineName(name string) (project, baselineID string) {
+	project, baselineID, err := pbutil.ParseBaselineName(name)
+	if err != nil {
+		panic(err)
+	}
+	return project, baselineID
 }

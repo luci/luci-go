@@ -74,6 +74,12 @@ service ResultDB {
   rpc QueryTestResultStatistics(QueryTestResultStatisticsRequest)
       returns (QueryTestResultStatisticsResponse) {};
 
+  // Calculate new test variants by running the difference between the tests
+  // run in the given invocation against the submitted test history for the
+  // source.
+  rpc QueryNewTestVariants(QueryNewTestVariantsRequest)
+      returns (QueryNewTestVariantsResponse) {};
+
   // == Artifacts =============================================================
 
   // Retrieves an artifact.
@@ -493,7 +499,6 @@ message BatchGetTestVariantsResponse {
   map<string, Sources> sources = 2;
 }
 
-
 // A request message for QueryTestMetadata RPC.
 message QueryTestMetadataRequest {
   // The LUCI Project to query.
@@ -526,4 +531,47 @@ message QueryTestMetadataResponse {
   // If this field is omitted, there were no subsequent pages at the time of
   // request.
   string next_page_token = 2;
+}
+
+// A request message for QueryNewTestVariants RPC.
+// To use this RPC, callers need:
+// - resultdb.baselines.get in the realm the <baseline_project>:@project, where
+//   baseline_project is the LUCI project that contains the baseline.
+// - resultdb.testResults.list in the realm of the invocation which is being
+//   queried.
+message QueryNewTestVariantsRequest {
+  // Name of the invocation, e.g. "invocations/{id}".
+  string invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
+
+  // The baseline to compare test variants against, to determine if they are new.
+  // e.g. “projects/{project}/baselines/{baseline_id}”.
+  // For example, in the project "chromium", the baseline_id may be
+  // "try:linux-rel".
+  string baseline = 2 [ (google.api.field_behavior) = REQUIRED ];
+}
+
+// A response message for QueryNewTestVariants RPC.
+message QueryNewTestVariantsResponse {
+
+  // Represents a new test, which contains minimal information to uniquely identify a TestVariant.
+  message NewTestVariant {
+    // A unique identifier of the test in a LUCI project.
+    // Regex: ^[[::print::]]{1,256}$
+    //
+    // Refer to TestResult.test_id for details.
+    string test_id = 1;
+
+    // Hash of the variant.
+    // hex(sha256(sorted(''.join('%s:%s\n' for k, v in variant.items())))).
+    string variant_hash = 2;
+  }
+
+  // Indicates whether the baseline has been populated with at least 72 hours
+  // of data and the results can be relied upon.
+  bool is_baseline_ready = 1;
+
+
+  // Test variants that are new, meaning that they have not been part of
+  // a submitted run prior.
+  repeated NewTestVariant new_test_variants = 2;
 }

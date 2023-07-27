@@ -36,6 +36,7 @@ import (
 
 const (
 	resultIDPattern           = `[a-z0-9\-_.]{1,32}`
+	projectPattern            = `[a-z0-9\-]{1,40}`
 	maxLenSummaryHTML         = 4 * 1024
 	maxLenPrimaryErrorMessage = 1024
 	maxSizeErrors             = 3*1024 + 100
@@ -45,7 +46,7 @@ const (
 )
 
 var (
-	projectRe        = regexp.MustCompile(`^[a-z0-9\-]{1,40}$`)
+	projectRe        = regexpf("^%s$", projectPattern)
 	resultIDRe       = regexpf("^%s$", resultIDPattern)
 	testResultNameRe = regexpf(
 		"^invocations/(%s)/tests/([^/]+)/results/(%s)$", invocationIDPattern,
