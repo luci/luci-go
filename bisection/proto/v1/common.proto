@@ -37,6 +37,10 @@ enum AnalysisStatus {
   ERROR = 5;
   // The analysis found some suspects, either from heuristic or nth-section.
   SUSPECTFOUND = 6;
+  // The analysis is unsupported (unsupported project, test...).
+  UNSUPPORTED = 7;
+  // The analysis was disabled (e.g. from config).
+  DISABLED = 8;
 }
 
 enum RerunStatus {

@@ -298,3 +298,30 @@ func GetRerunsForNthSectionAnalysis(c context.Context, nsa *model.CompileNthSect
 	}
 	return reruns, nil
 }
+
+// GetTestFailureAnalysis gets test failure analysis by its ID.
+func GetTestFailureAnalysis(ctx context.Context, analysisID int64) (*model.TestFailureAnalysis, error) {
+	analysis := &model.TestFailureAnalysis{
+		ID: analysisID,
+	}
+	err := datastore.Get(ctx, analysis)
+	if err != nil {
+		return nil, errors.Annotate(err, "get TestFailureAnalysis with id %d", analysis.ID).Err()
+	}
+	return analysis, err
+}
+
+// GetPrimaryTestFailure gets the primary TestFailure model for a TestFailureAnalysis.
+func GetPrimaryTestFailure(ctx context.Context, analysis *model.TestFailureAnalysis) (*model.TestFailure, error) {
+	if analysis.TestFailure == nil {
+		return nil, errors.New("no TestFailure for analysis")
+	}
+	testFailure := &model.TestFailure{
+		ID: analysis.TestFailure.IntID(),
+	}
+	err := datastore.Get(ctx, testFailure)
+	if err != nil {
+		return nil, errors.Annotate(err, "get TestFailure from datastore %d", analysis.TestFailure.IntID()).Err()
+	}
+	return testFailure, nil
+}

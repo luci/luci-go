@@ -114,6 +114,28 @@ func CreateNthSectionSuspect(c context.Context, nsa *model.CompileNthSectionAnal
 	return suspect
 }
 
+func CreateTestFailure(ctx context.Context, id int64, project string) *model.TestFailure {
+	tf := &model.TestFailure{
+		ID:      id,
+		Project: project,
+	}
+	So(datastore.Put(ctx, tf), ShouldBeNil)
+	datastore.GetTestable(ctx).CatchupIndexes()
+	return tf
+}
+
+func CreateTestFailureAnalysis(ctx context.Context, id int64, tf *model.TestFailure) *model.TestFailureAnalysis {
+	tfa := &model.TestFailureAnalysis{
+		ID: id,
+	}
+	if tf != nil {
+		tfa.TestFailure = datastore.KeyForObj(ctx, tf)
+	}
+	So(datastore.Put(ctx, tfa), ShouldBeNil)
+	datastore.GetTestable(ctx).CatchupIndexes()
+	return tfa
+}
+
 func UpdateIndices(c context.Context) {
 	datastore.GetTestable(c).AddIndexes(
 		&datastore.IndexDefinition{

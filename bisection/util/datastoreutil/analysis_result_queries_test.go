@@ -583,3 +583,36 @@ func TestGetRerunsForAnalysis(t *testing.T) {
 		So(nsectionReruns[0].Id, ShouldEqual, 333)
 	})
 }
+
+func TestGetTestFailureAnalysis(t *testing.T) {
+	t.Parallel()
+	ctx := memory.Use(context.Background())
+	testutil.UpdateIndices(ctx)
+
+	Convey("Get test failure analysis", t, func() {
+		testutil.CreateTestFailureAnalysis(ctx, 1000, nil)
+		tfa, err := GetTestFailureAnalysis(ctx, 1000)
+		So(err, ShouldBeNil)
+		So(tfa.ID, ShouldEqual, 1000)
+	})
+}
+
+func TestGetPrimaryTestFailure(t *testing.T) {
+	t.Parallel()
+	ctx := memory.Use(context.Background())
+	testutil.UpdateIndices(ctx)
+
+	Convey("No primary failure", t, func() {
+		tfa := testutil.CreateTestFailureAnalysis(ctx, 1000, nil)
+		_, err := GetPrimaryTestFailure(ctx, tfa)
+		So(err, ShouldNotBeNil)
+	})
+
+	Convey("Have primary failure", t, func() {
+		tf := testutil.CreateTestFailure(ctx, 100, "chromium")
+		tfa := testutil.CreateTestFailureAnalysis(ctx, 1002, tf)
+		tf, err := GetPrimaryTestFailure(ctx, tfa)
+		So(err, ShouldBeNil)
+		So(tf.ID, ShouldEqual, 100)
+	})
+}
