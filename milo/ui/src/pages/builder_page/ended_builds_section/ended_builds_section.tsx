@@ -122,6 +122,9 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
             actionBar: {
               actions: ['today', 'clear', 'cancel', 'accept'],
             },
+            textField: {
+              size: 'small',
+            },
           }}
           onAccept={(t) => {
             setPrevPageTokens([]);
