@@ -16,6 +16,7 @@ package resultingester
 
 import (
 	"context"
+	"encoding/hex"
 	"sort"
 	"strings"
 	"testing"
@@ -1215,6 +1216,15 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 	expectedProperties, err := testverdicts.MarshalStructPB(testProperties)
 	So(err, ShouldBeNil)
 
+	sr := &pb.SourceRef{
+		System: &pb.SourceRef_Gitiles{
+			Gitiles: &pb.GitilesRef{
+				Host:    "project.googlesource.com",
+				Project: "myproject/src",
+				Ref:     "refs/heads/main",
+			},
+		},
+	}
 	expectedRows := []*bqpb.TestVerdictRow{
 		{
 			Project:       "project",
@@ -1274,6 +1284,8 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 				},
 				IsDirty: false,
 			},
+			SourceRef:     sr,
+			SourceRefHash: hex.EncodeToString(pbutil.SourceRefHash(sr)),
 		},
 		{
 			Project:       "project",

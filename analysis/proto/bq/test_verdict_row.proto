@@ -38,7 +38,7 @@ option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
 //   retain data for 540 days.
 // - Cluster by project, test_id.
 //
-// NextId: 15
+// NextId: 17
 message TestVerdictRow {
   // The LUCI Project. E.g. "chromium".
   string project = 1;
@@ -267,6 +267,17 @@ message TestVerdictRow {
   // invocation, this is the resolved code sources (if they could be resolved).
   // Unset otherwise.
   luci.analysis.v1.Sources sources = 13;
+
+  // The branch in source control that was tested, if known.
+  // For example, the `refs/heads/main` branch in the `chromium/src` repo
+  // hosted by `chromium.googlesource.com`.
+  // This is a subset of the information in the `sources` field.
+  luci.analysis.v1.SourceRef source_ref = 15;
+
+  // Hash of the source_ref field, as 16 lowercase hexadecimal characters.
+  // Can be used to uniquely identify a branch in a source code
+  // version control system.
+  string source_ref_hash = 16;
 
   // Metadata of the test case,
   // e.g. the original test name and test location.

@@ -17,6 +17,7 @@ package testverdicts
 
 import (
 	"context"
+	"encoding/hex"
 
 	"go.chromium.org/luci/analysis/internal/analysis"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
@@ -96,8 +97,12 @@ func prepareExportRow(tv *rdbpb.TestVariant, sourcesByID map[string]*rdbpb.Sourc
 	}
 
 	var sources *pb.Sources
+	var sourceRef *pb.SourceRef
+	var sourceRefHash string
 	if tv.SourcesId != "" {
 		sources = pbutil.SourcesFromResultDB(sourcesByID[tv.SourcesId])
+		sourceRef = pbutil.SourceRefFromSources(sources)
+		sourceRefHash = hex.EncodeToString(pbutil.SourceRefHash(sourceRef))
 	}
 
 	var metadata *pb.TestMetadata
@@ -139,6 +144,8 @@ func prepareExportRow(tv *rdbpb.TestVariant, sourcesByID map[string]*rdbpb.Sourc
 		BuildbucketBuild:  build,
 		ChangeVerifierRun: cvRun,
 		Sources:           sources,
+		SourceRef:         sourceRef,
+		SourceRefHash:     sourceRefHash,
 		TestMetadata:      metadata,
 	}, nil
 }
