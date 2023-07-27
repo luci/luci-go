@@ -50,7 +50,7 @@ func NewNotifier(tqd *tq.Dispatcher, clientFactory RecorderClientFactory) *Notif
 		// TODO(yiwzhang): migrate this workflow to longops that works similar to post action
 		// This reuses the bq-export instead of creating a new one for rdb-notifier
 		// as they should both be migrated to longops.
-		Queue: "bq-exporter",
+		Queue: "bq-export",
 		Quiet: true,
 		Kind:  tq.Transactional,
 		Handler: func(ctx context.Context, payload proto.Message) error {
