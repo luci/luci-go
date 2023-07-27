@@ -104,20 +104,13 @@ func main() {
 				PushServiceAccount: fmt.Sprintf("rbe-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject),
 			},
 			func(ctx context.Context, m *notifications.SchedulerNotification, md *pubsub.Metadata) error {
-				// TODO(vadimsh): Switch to message attributes for getting project ID
-				// and instance ID once they are populated by the RBE scheduler. Just
-				// check if they are there for now, but expect to see them in the URL
-				// string instead.
-				if len(md.Attributes) != 0 {
-					logging.Infof(ctx, "Attributes: %v", md.Attributes)
-				}
-				projectID := md.Query.Get("project_id")
+				projectID := md.Attributes["project_id"]
 				if projectID == "" {
-					return errors.New("no project_id URL query value")
+					return errors.New("no project_id message attribute")
 				}
-				instanceID := md.Query.Get("instance_id")
+				instanceID := md.Attributes["instance_id"]
 				if instanceID == "" {
-					return errors.New("no instance_id URL query value")
+					return errors.New("no instance_id message attribute")
 				}
 				if m.ReservationId == "" {
 					return errors.New("reservation_id is unexpectedly empty")
