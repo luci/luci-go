@@ -82,13 +82,26 @@ message AnalysisConfig {
 
 // TestAnalysisConfig is the configuration data for test failure bisection.
 message TestAnalysisConfig {
-  // Global flag of whether test failure bisection is enabled.
+  // TODO(nqmtuan): Remove this when we update lucicfg to use separate
+  // configuration for bisector and detector.
+  bool enabled = 1;
+
+  // Global flag of whether test failure detector is enabled.
   // Although individual projects may have their own config, if this flag
-  // flag is off, then it is off for everything.
-  // This is for us to switch off everything in case something go wrong.
+  // flag is off, then the detector is off for every project.
+  // Usually the flag is on for both dev and prod, but we may want to turn
+  // it off for the cases when the bisector is down and we don't want to
+  // create tasks when the bisector cannot run (in which case, the bisector
+  // will just mark the analysis as "DISABLED").
+  // So in prod, if we need to turn the bisector off, we generally should turn
+  // the detector off as well.
+  bool detector_enabled = 2;
+  // Global flag of whether test failure bisector is enabled.
+  // Although individual projects may have their own config, if this flag
+  // flag is off, then the bisector is off for every project.
   // During the development of the test failure bisection feature, it should
   // be on for dev and off for prod (as we are testing). When everything is
   // up and running, it should be off for dev and on for prod, because we want
   // to save resources (running bisection on dev will be expensive).
-  bool enabled = 1;
+  bool bisector_enabled = 3;
 }

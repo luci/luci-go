@@ -129,6 +129,5 @@ func isEnabled(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	// TODO(nqmtuan): Change the flag to "bisection enabled".
-	return cfg.TestAnalysisConfig.GetEnabled(), nil
+	return cfg.TestAnalysisConfig.GetBisectorEnabled(), nil
 }

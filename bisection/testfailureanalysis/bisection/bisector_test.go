@@ -96,7 +96,7 @@ func TestRunBisector(t *testing.T) {
 func enableBisection(ctx context.Context, enabled bool) {
 	testCfg := &configpb.Config{
 		TestAnalysisConfig: &configpb.TestAnalysisConfig{
-			Enabled: enabled,
+			BisectorEnabled: enabled,
 		},
 	}
 	So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
