@@ -31,7 +31,7 @@ describe('AppDetails', () => {
           setSelectedPage: () => {},
         }}
       >
-        <AppDetails open={true} setSidebarOpen={() => {}} />
+        <AppDetails open={true} handleSidebarChanged={(_: boolean) => {}} />
       </PageMetaContext.Provider>
     );
     await screen.findByLabelText('menu');
@@ -45,7 +45,7 @@ describe('AppDetails', () => {
           selectedPage: UiPage.Builders,
         }}
       >
-        <AppDetails open={true} setSidebarOpen={() => {}} />
+        <AppDetails open={true} handleSidebarChanged={(_: boolean) => {}} />
       </FakeContextProvider>
     );
     await screen.findByLabelText('menu');
@@ -61,7 +61,7 @@ describe('AppDetails', () => {
           project: 'chrome',
         }}
       >
-        <AppDetails open={true} setSidebarOpen={() => {}} />
+        <AppDetails open={true} handleSidebarChanged={(_: boolean) => {}} />
       </FakeContextProvider>
     );
     await screen.findByLabelText('menu');

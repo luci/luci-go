@@ -108,7 +108,7 @@ export const StoreProvider = StoreContext.Provider;
 export function useStore() {
   const context = useContext(StoreContext);
   if (!context) {
-    throw new Error('useRootStore must be used within RootStoreProvider');
+    throw new Error('useStore must be used within StoreProvider');
   }
 
   return context;

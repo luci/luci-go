@@ -15,7 +15,6 @@
 import MuiAppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
-import { Dispatch, SetStateAction } from 'react';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
 
@@ -25,10 +24,10 @@ import { SignIn } from './sign_in';
 
 interface Props {
   open: boolean;
-  setSidebarOpen: Dispatch<SetStateAction<boolean>>;
+  handleSidebarChanged: (isOpen: boolean) => void;
 }
 
-export const AppBar = ({ open, setSidebarOpen }: Props) => {
+export const AppBar = ({ open, handleSidebarChanged }: Props) => {
   const authState = useAuthState();
 
   return (
@@ -37,7 +36,7 @@ export const AppBar = ({ open, setSidebarOpen }: Props) => {
       sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
     >
       <Toolbar variant="dense">
-        <AppDetails open={open} setSidebarOpen={setSidebarOpen} />
+        <AppDetails open={open} handleSidebarChanged={handleSidebarChanged} />
         <Box sx={{ flexGrow: 1 }}></Box>
         <SettingsMenu />
         <SignIn
