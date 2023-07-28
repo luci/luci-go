@@ -12,19 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import styled from '@emotion/styled';
 import { Link } from '@mui/material';
 
-import { BuilderID } from '@/common/services/buildbucket';
+import { BuilderID, HealthStatus } from '@/common/services/buildbucket';
 import {
   getLegacyBuilderURLPath,
   getProjectURLPath,
 } from '@/common/tools/url_utils';
 
+import { BuilderHealthIndicator } from './builder_health_indicator';
+
+const Divider = styled.div({
+  borderLeft: '1px solid var(--divider-color)',
+  width: '1px',
+  marginLeft: '10px',
+  marginRight: '10px',
+});
+
 export interface BuilderIdBarProps {
   readonly builderId: BuilderID;
+  readonly healthStatus?: HealthStatus;
 }
 
-export function BuilderIdBar({ builderId }: BuilderIdBarProps) {
+export function BuilderIdBar({ builderId, healthStatus }: BuilderIdBarProps) {
   return (
     <div
       css={{
@@ -51,14 +62,13 @@ export function BuilderIdBar({ builderId }: BuilderIdBarProps) {
         <span> / </span>
         <span>{builderId.builder}</span>
       </div>
-      <div
-        css={{
-          borderLeft: '1px solid var(--divider-color)',
-          width: '1px',
-          marginLeft: '10px',
-          marginRight: '10px',
-        }}
-      ></div>
+      <Divider />
+      {healthStatus && (
+        <>
+          <BuilderHealthIndicator healthStatus={healthStatus} />
+          <Divider />
+        </>
+      )}
       <Link
         onClick={(e) => {
           const switchVerTemporarily =

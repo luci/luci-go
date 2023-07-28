@@ -20,7 +20,7 @@ import { useParams } from 'react-router-dom';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants';
 import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
-import { BuildersService } from '@/common/services/buildbucket';
+import { BuildersService, BuilderMask } from '@/common/services/buildbucket';
 import { parseLegacyBucketId } from '@/common/tools/build_utils';
 
 import { BuilderIdBar } from './builder_id_bar';
@@ -57,7 +57,7 @@ export function BuilderPage() {
     host: CONFIGS.BUILDBUCKET.HOST,
     Service: BuildersService,
     method: 'getBuilder',
-    request: { id: builderId },
+    request: { id: builderId, mask: { type: BuilderMask.ALL } },
     options: {
       select: (res) => ({
         swarmingHost: res.config.swarmingHost,
@@ -71,6 +71,8 @@ export function BuilderPage() {
             return { key: parts[0], value: parts[1] };
           }) || [],
         descriptionHtml: res.config.descriptionHtml,
+        metadata: res.metadata,
+        // TODO guterman: check reported date and whether it's expired
       }),
     },
   });
@@ -86,7 +88,10 @@ export function BuilderPage() {
         selectedPage={UiPage.Builders}
         title={`${builderId.builder} | Builder`}
       />
-      <BuilderIdBar builderId={builderId} />
+      <BuilderIdBar
+        builderId={builderId}
+        healthStatus={data?.metadata?.health}
+      />
       <LinearProgress
         value={100}
         variant={isLoading ? 'indeterminate' : 'determinate'}

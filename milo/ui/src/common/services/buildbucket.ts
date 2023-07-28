@@ -22,7 +22,8 @@ import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
 /**
  * Manually coded type definition and classes for buildbucket services.
  * TODO(weiweilin): To be replaced by code generated version once we have one.
- * source: https://chromium.googlesource.com/infra/luci/luci-go/+/04a118946d13ad326c44dba9a635116ff7f31c4e/buildbucket/proto/builds_service.proto
+ * source:                  https://chromium.googlesource.com/infra/luci/luci-go/+/04a118946d13ad326c44dba9a635116ff7f31c4e/buildbucket/proto/builds_service.proto
+ * Builder metadata source: https://chromium.googlesource.com/infra/luci/luci-go/+/fe56f864b0e1dc61eaa6b9062fabb1119e872306/buildbucket/proto/builder_service.proto
  */
 /* eslint-enable max-len */
 
@@ -96,6 +97,12 @@ export interface BuilderID {
   readonly project: string;
   readonly bucket: string;
   readonly builder: string;
+}
+
+export enum BuilderMask {
+  CONFIG_ONLY = 'CONFIG_ONLY',
+  ALL = 'ALL',
+  METADATA_ONLY = 'METADATA_ONLY',
 }
 
 export interface Timestamp {
@@ -389,6 +396,7 @@ export class BuildsService {
 
 export interface GetBuilderRequest {
   readonly id: BuilderID;
+  readonly mask: { type: BuilderMask };
 }
 
 export interface BuilderConfig {
@@ -397,9 +405,24 @@ export interface BuilderConfig {
   readonly descriptionHtml?: string;
 }
 
+export interface BuilderMetadata {
+  readonly health?: HealthStatus;
+}
+
+export interface HealthStatus {
+  readonly healthScore?: string;
+  readonly healthMetrics?: { readonly [key: string]: number };
+  readonly description?: string;
+  readonly docLinks?: { readonly [domain: string]: string };
+  readonly dataLinks?: { readonly [domain: string]: string };
+  readonly reporter?: string;
+  readonly reportedTime?: string;
+}
+
 export interface BuilderItem {
   readonly id: BuilderID;
   readonly config: BuilderConfig;
+  readonly metadata?: BuilderMetadata;
 }
 
 export interface ListBuildersRequest {
