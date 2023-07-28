@@ -373,6 +373,8 @@ type TestFailure struct {
 // some metadata for the analysis.
 type TestFailureAnalysis struct {
 	ID int64 `gae:"$id"`
+	// The LUCI project of the test variants this analysis analyses.
+	Project string `gae:"project"`
 	// Key to the primary TestFailure entity that this analysis analyses.
 	TestFailure *datastore.Key `gae:"test_failure"`
 	// Time when the entity is first created.
