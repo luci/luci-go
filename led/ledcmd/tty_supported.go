@@ -1,4 +1,4 @@
-// Copyright 2019 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build unix
-// +build unix
+//go:build linux || windows || darwin
 
-package cli
+package ledcmd
 
 import (
-	"os"
+	"context"
 
-	"go.chromium.org/luci/common/system/terminal"
+	"github.com/mattn/go-tty"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 )
 
-func shouldDisableColors() bool {
-	return !terminal.IsTerminal(int(os.Stdout.Fd()))
+func awaitNewline(ctx context.Context) error {
+	term, err := tty.Open()
+	if err != nil {
+		return errors.Annotate(err, "opening terminal").Err()
+	}
+	defer term.Close()
+
+	logging.Infof(ctx, "When finished, press <enter> here to isolate it.")
+	_, err = term.ReadString()
+	return errors.Annotate(err, "reading <enter>").Err()
 }

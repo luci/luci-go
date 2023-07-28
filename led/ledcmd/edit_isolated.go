@@ -24,7 +24,6 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
-	"github.com/mattn/go-tty"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/casclient"
@@ -66,16 +65,7 @@ func PromptIsolatedTransformer() IsolatedTransformer {
 		logging.Infof(ctx, "")
 		logging.Infof(ctx, "Edit files as you wish in:")
 		logging.Infof(ctx, "\t%s", dir)
-
-		term, err := tty.Open()
-		if err != nil {
-			return errors.Annotate(err, "opening terminal").Err()
-		}
-		defer term.Close()
-
-		logging.Infof(ctx, "When finished, press <enter> here to isolate it.")
-		_, err = term.ReadString()
-		return errors.Annotate(err, "reading <enter>").Err()
+		return awaitNewline(ctx)
 	}
 }
 

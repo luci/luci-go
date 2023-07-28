@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !windows
-// +build !windows
+//go:build unix && !(netbsd || openbsd || solaris || illumos)
+// +build unix,!netbsd,!openbsd,!solaris,!illumos
 
 package filesystem
 
@@ -29,7 +29,7 @@ func umask(mask int) int {
 }
 
 func addReadMode(mode os.FileMode) os.FileMode {
-	return mode | syscall.S_IRUSR | syscall.S_IRGRP | syscall.S_IROTH
+	return mode | 0444
 }
 
 func getFreeSpace(path string) (uint64, error) {
@@ -37,5 +37,5 @@ func getFreeSpace(path string) (uint64, error) {
 	if err := unix.Statfs(path, &statfs); err != nil {
 		return 0, err
 	}
-	return statfs.Bavail * uint64(statfs.Bsize), nil
+	return uint64(statfs.Bavail) * uint64(statfs.Bsize), nil
 }

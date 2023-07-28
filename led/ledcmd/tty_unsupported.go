@@ -1,4 +1,4 @@
-// Copyright 2019 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build unix
-// +build unix
+//go:build !(linux || windows || darwin)
 
-package cli
+package ledcmd
 
 import (
-	"os"
-
-	"go.chromium.org/luci/common/system/terminal"
+	"context"
+	"fmt"
 )
 
-func shouldDisableColors() bool {
-	return !terminal.IsTerminal(int(os.Stdout.Fd()))
+func awaitNewline(_ context.Context) error {
+	return fmt.Errorf("interactive editing unsupported on this platform")
 }

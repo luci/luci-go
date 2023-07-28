@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build darwin || linux || freebsd || netbsd || openbsd || android
-// +build darwin linux freebsd netbsd openbsd android
+//go:build unix
+// +build unix
 
 package venv
 
