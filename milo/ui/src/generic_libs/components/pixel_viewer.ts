@@ -100,6 +100,7 @@ export class PixelViewerElement extends MobxExtLitElement {
           }
 
           this.img = new Image();
+          this.img.crossOrigin = 'anonymous';
           this.img.src = this.imgUrl;
           this.img.addEventListener('load', drawImg, { once: true });
         },
