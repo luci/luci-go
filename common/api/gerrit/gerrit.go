@@ -71,6 +71,7 @@ type Change struct {
 	Reviewers              Reviewers               `json:"reviewers"`
 	RevertOf               int                     `json:"revert_of"`
 	CurrentRevision        string                  `json:"current_revision"`
+	WorkInProgress         bool                    `json:"work_in_progress,omitempty"`
 	CherryPickOfChange     int                     `json:"cherry_pick_of_change"`
 	CherryPickOfPatchset   int                     `json:"cherry_pick_of_patch_set"`
 	Revisions              map[string]RevisionInfo `json:"revisions"`
