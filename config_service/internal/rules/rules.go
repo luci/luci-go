@@ -29,9 +29,12 @@
 package rules
 
 import (
+	"context"
 	"errors"
+	"fmt"
 
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/gae/service/info"
 
 	"go.chromium.org/luci/config_service/internal/common"
 )
@@ -41,6 +44,12 @@ func init() {
 }
 
 func addRules(r *validation.RuleSet) {
+	r.Vars.Register("appid", func(ctx context.Context) (string, error) {
+		if appid := info.AppID(ctx); appid != "" {
+			return appid, nil
+		}
+		return "", fmt.Errorf("can't resolve ${appid} from context")
+	})
 	r.Add("exact:services/${appid}", common.ACLRegistryFilePath, validateACLsCfg)
 	r.Add("exact:services/${appid}", common.ProjRegistryFilePath, validateProjectsCfg)
 	r.Add("exact:services/${appid}", common.ServiceRegistryFilePath, validateServicesCfg)
