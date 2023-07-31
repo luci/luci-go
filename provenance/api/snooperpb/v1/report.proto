@@ -213,15 +213,25 @@ message ReportTaskStageRequest {
     int64 pid = 4;
 }
 
+// Type of a reported artifact.  This is used to perform special processing for
+// the artifact.
+enum ArtifactType {
+    ARTIFACT_TYPE_UNSPECIFIED = 0;
+    SBOM = 1;
+}
+
 message ReportArtifactDigestRequest {
     // SHA256 digest of artifact.
     string digest = 1;
 
-    // Identifies storage location of a particular artifact. This will be used
+    // Identifies storage location of a particular artifact. This is used
     // by Spike to attach provenance:
     //      * GCS: provenance will be uploaded alongside the artifact.
     //      * CIPD: provenance will be added to package metadata.
     Artifact artifact = 2;
+    // Identifies important information about a particular artifact.  This is
+    // used by Spike to do special processing for the artifact.
+    repeated ArtifactType artifact_types = 3;
 }
 
 message ReportCipdRequest {
