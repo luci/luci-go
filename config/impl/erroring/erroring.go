@@ -52,3 +52,7 @@ func (i erroringInterface) GetProjects(ctx context.Context) ([]config.Project, e
 func (i erroringInterface) ListFiles(ctx context.Context, configSet config.Set) ([]string, error) {
 	return nil, i.err
 }
+
+func (i erroringInterface) Close() error {
+	return nil
+}

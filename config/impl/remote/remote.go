@@ -182,6 +182,10 @@ func (r *remoteImpl) GetProjects(ctx context.Context) ([]config.Project, error) 
 	return projects, err
 }
 
+func (r *remoteImpl) Close() error {
+	return nil
+}
+
 func (r *remoteImpl) GetProjectConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {
 	srv, err := r.service(ctx)
 	if err != nil {

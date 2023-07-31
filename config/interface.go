@@ -108,4 +108,9 @@ type Interface interface {
 
 	// ListFiles returns the list of files for a config set.
 	ListFiles(ctx context.Context, configSet Set) ([]string, error)
+
+	// Close closes resources the config.Interface uses.
+	// The caller is expected to call Close() after the config.Interface is no
+	// longer used.
+	Close() error
 }

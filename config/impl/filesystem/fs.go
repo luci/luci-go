@@ -493,3 +493,7 @@ func (fs *filesystemImpl) GetProjects(ctx context.Context) ([]config.Project, er
 	sort.Sort(ret)
 	return ret, nil
 }
+
+func (fs *filesystemImpl) Close() error {
+	return nil
+}

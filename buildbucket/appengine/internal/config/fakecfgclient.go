@@ -149,3 +149,7 @@ func (*fakeCfgClient) GetProjectConfigs(ctx context.Context, path string, metaOn
 	}
 	return configsToReturn, nil
 }
+
+func (*fakeCfgClient) Close() error {
+	return nil
+}

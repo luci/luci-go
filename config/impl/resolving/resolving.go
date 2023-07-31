@@ -83,3 +83,7 @@ func (r *resolvingInterface) ListFiles(ctx context.Context, configSet config.Set
 	}
 	return r.next.ListFiles(ctx, configSet)
 }
+
+func (r *resolvingInterface) Close() error {
+	return nil
+}

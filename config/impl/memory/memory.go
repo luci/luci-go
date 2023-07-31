@@ -127,6 +127,10 @@ func (m *memoryImpl) GetProjects(ctx context.Context) ([]config.Project, error) 
 	return out, nil
 }
 
+func (m *memoryImpl) Close() error {
+	return nil
+}
+
 // configMaybe returns config.Config if such config is in the set, else nil.
 func (b Files) configMaybe(configSet config.Set, path string, metaOnly bool) *config.Config {
 	if body, ok := b[path]; ok {
