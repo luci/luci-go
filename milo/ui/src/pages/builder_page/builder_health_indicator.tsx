@@ -89,6 +89,6 @@ function linkUrl(
   if (!dataLinks) {
     return '';
   }
-  const userDomain = authEmail?.split('@')[-1] || '';
+  const userDomain = authEmail?.split('@').at(-1) || '';
   return dataLinks[userDomain] || dataLinks[''] || '';
 }
