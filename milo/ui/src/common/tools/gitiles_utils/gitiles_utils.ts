@@ -21,7 +21,7 @@ export function getGitilesRepoURL(
 }
 
 export function getGitilesCommitURL(commit: GitilesCommit): string {
-  return `${getGitilesRepoURL(commit)}/+/${commit.id}`;
+  return `${getGitilesRepoURL(commit)}/+/${commit.id || commit.ref}`;
 }
 
 export function getGitilesCommitLabel(
