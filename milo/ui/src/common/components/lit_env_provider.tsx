@@ -39,7 +39,7 @@ function redirectToLogin(err: ErrorEvent, ele: LitEnvProviderElement) {
     !hasTags(err.error, OPTIONAL_RESOURCE)
   ) {
     window.location.href = `/ui/login?${new URLSearchParams([
-      ['redirect', window.location.href],
+      ['redirect', location.pathname + location.search + location.hash],
     ])}`;
     return false;
   }
