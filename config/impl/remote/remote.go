@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package remote implements backends for config client which will make calls
+// to the real Config Service.
 package remote
 
 import (
@@ -34,11 +36,11 @@ import (
 
 // ClientFactory returns HTTP client to use (given a context).
 //
-// See 'New' for more details.
+// See 'NewV1' for more details.
 type ClientFactory func(context.Context) (*http.Client, error)
 
-// New returns an implementation of the config service which talks to the actual
-// luci-config service using given transport.
+// NewV1 returns an implementation of the config service which talks to the
+// actual luci-config service v1 using given transport.
 //
 // configServiceURL is usually "https://<host>/_ah/api/config/v1/".
 //
@@ -47,7 +49,7 @@ type ClientFactory func(context.Context) (*http.Client, error)
 // trippers are bound to contexts and carry RPC deadlines.
 //
 // If 'clients' is nil, http.DefaultClient will be used for all requests.
-func New(host string, insecure bool, clients ClientFactory) config.Interface {
+func NewV1(host string, insecure bool, clients ClientFactory) config.Interface {
 	if clients == nil {
 		clients = func(context.Context) (*http.Client, error) {
 			return http.DefaultClient, nil

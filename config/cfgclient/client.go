@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/impl/erroring"
@@ -38,8 +39,10 @@ type Options struct {
 	// ServiceHost is a hostname of a LUCI Config service to use.
 	//
 	// If given, indicates configs should be fetched from the LUCI Config service.
-	// Requires ClientFactory to be provided as well. Not compatible with
-	// ConfigsDir.
+	// If it's Config Service V1 (where the host ends with "appspot.com"), it
+	// requires ClientFactory to be provided as well.
+	//
+	// Not compatible with ConfigsDir.
 	ServiceHost string
 
 	// ConfigsDir is a file system directory to fetch configs from instead of
@@ -54,8 +57,8 @@ type Options struct {
 
 	// ClientFactory initializes an authenticating HTTP client on demand.
 	//
-	// It will be used to call LUCI Config service. Must be set if ServiceHost is
-	// set, ignored otherwise.
+	// It will be used to call LUCI Config service. Must be set if ServiceHost
+	// points to Config Service V1, ignored otherwise.
 	ClientFactory func(context.Context) (*http.Client, error)
 }
 
@@ -65,27 +68,30 @@ type Options struct {
 // directory on disk (e.g. when running locally in development mode), depending
 // on values of ServiceHost and ConfigsDir. If neither are set, returns a client
 // that fails all calls with an error.
-func New(opts Options) (config.Interface, error) {
+func New(ctx context.Context, opts Options) (config.Interface, error) {
 	switch {
 	case opts.ServiceHost == "" && opts.ConfigsDir == "":
 		return erroring.New(errors.New("LUCI Config client is not configured")), nil
 	case opts.ServiceHost != "" && opts.ConfigsDir != "":
 		return nil, errors.New("either a LUCI Config service or a local config directory should be used, not both")
-	case opts.ServiceHost != "" && opts.ClientFactory == nil:
-		return nil, errors.New("need a client factory when using a LUCI Config service")
+	case IsV1Host(opts.ServiceHost) && opts.ClientFactory == nil:
+		return nil, errors.New("need a client factory when using a LUCI Config service v1")
 	}
 
 	var base config.Interface
+	var err error
 	switch {
+	case opts.ServiceHost != "" && IsV1Host(opts.ServiceHost):
+		base = remote.NewV1(opts.ServiceHost, false, opts.ClientFactory)
 	case opts.ServiceHost != "":
-		base = remote.New(opts.ServiceHost, false, opts.ClientFactory)
+		base, err = remote.NewV2(ctx, opts.ServiceHost)
 	case opts.ConfigsDir != "":
-		var err error
-		if base, err = filesystem.New(opts.ConfigsDir); err != nil {
-			return nil, err
-		}
+		base, err = filesystem.New(opts.ConfigsDir)
 	default:
 		panic("impossible")
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	varz := opts.Vars
@@ -94,4 +100,9 @@ func New(opts Options) (config.Interface, error) {
 	}
 
 	return resolving.New(varz, base), nil
+}
+
+// IsV1Host checks if the provided host points to the old v1 service.
+func IsV1Host(host string) bool {
+	return strings.HasSuffix(host, ".appspot.com")
 }

@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/cfgclient"
@@ -136,7 +137,7 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 	m.registerVars(opts)
 
 	// Instantiate an appropriate client based on options.
-	client, err := cfgclient.New(cfgclient.Options{
+	client, err := cfgclient.New(ctx, cfgclient.Options{
 		Vars:        m.opts.Vars,
 		ServiceHost: m.opts.ServiceHost,
 		ConfigsDir:  m.opts.LocalDir,
@@ -154,6 +155,12 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 
 	// Make it available in the server handlers.
 	ctx = cfgclient.Use(ctx, client)
+
+	host.RegisterCleanup(func(ctx context.Context) {
+		if err := client.Close(); err != nil {
+			logging.Warningf(ctx, "Failed to close the config client: %s", err)
+		}
+	})
 
 	// Enable authentication and authorization for the validation endpoint only
 	// when running in production (i.e. not on a developer workstation).

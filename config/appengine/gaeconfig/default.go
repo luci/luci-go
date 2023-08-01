@@ -21,13 +21,13 @@ import (
 	"os"
 	"path/filepath"
 
+	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/server/auth"
+
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/erroring"
 	"go.chromium.org/luci/config/vars"
-	"go.chromium.org/luci/server/auth"
-
-	"go.chromium.org/luci/gae/service/info"
 )
 
 // devCfgDir is a name of the directory with config files when running in
@@ -80,7 +80,8 @@ func newClientFromSettings(c context.Context, s *Settings) config.Interface {
 			return erroring.New(err)
 		}
 	}
-	client, err := cfgclient.New(cfgclient.Options{
+
+	client, err := cfgclient.New(c, cfgclient.Options{
 		Vars:        &vars.Vars,
 		ServiceHost: s.ConfigServiceHost,
 		ConfigsDir:  configsDir,

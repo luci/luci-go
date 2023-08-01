@@ -62,7 +62,7 @@ func testTools(code int, resp any) (*httptest.Server, config.Interface) {
 	if err != nil {
 		panic(err)
 	}
-	return server, New(u.Host, true, nil)
+	return server, NewV1(u.Host, true, nil)
 }
 
 func TestRemoteCalls(t *testing.T) {
@@ -227,7 +227,7 @@ func TestRemoteCalls(t *testing.T) {
 
 	Convey("Should handle errors well", t, func() {
 		Convey("Should pass through HTTP errors", func() {
-			remoteImpl := New("example.com", true, func(context.Context) (*http.Client, error) {
+			remoteImpl := NewV1("example.com", true, func(context.Context) (*http.Client, error) {
 				return &http.Client{
 					Transport: failingRoundTripper{},
 				}, nil
