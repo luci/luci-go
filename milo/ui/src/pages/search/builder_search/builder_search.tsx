@@ -55,7 +55,7 @@ export const BuilderSearch = () => {
         selectedPage={UiPage.BuilderSearch}
       />
       <SearchInput
-        placeholder="Search tests in the specified project"
+        placeholder="Search builders"
         onInputChange={handleSearchQueryChange}
         value={pendingSearchQuery}
       />
