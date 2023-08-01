@@ -396,7 +396,7 @@ export class BuildsService {
 
 export interface GetBuilderRequest {
   readonly id: BuilderID;
-  readonly mask: { type: BuilderMask };
+  readonly mask?: { type: BuilderMask };
 }
 
 export interface BuilderConfig {
