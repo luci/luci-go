@@ -19,7 +19,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/klauspost/compress/gzip"
@@ -31,7 +30,8 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/config"
+	cfgpb "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
@@ -48,10 +48,10 @@ const (
 	adminGroup            = "administrators"
 )
 
-// consumerServer implements `config.Consumer` interface that will be called
+// consumerServer implements `cfgpb.Consumer` interface that will be called
 // by LUCI Config.
 type consumerServer struct {
-	config.UnimplementedConsumerServer
+	cfgpb.UnimplementedConsumerServer
 
 	// Rules is a rule set to use for the config validation.
 	rules *validation.RuleSet
@@ -73,8 +73,8 @@ func makeConsumerServer(ctx context.Context, rules *validation.RuleSet, getConfi
 	}
 }
 
-// GetMetadata implements config.Consumer.GetMetadata.
-func (srv consumerServer) GetMetadata(ctx context.Context, _ *emptypb.Empty) (*config.ServiceMetadata, error) {
+// GetMetadata implements cfgpb.Consumer.GetMetadata.
+func (srv consumerServer) GetMetadata(ctx context.Context, _ *emptypb.Empty) (*cfgpb.ServiceMetadata, error) {
 	if err := srv.checkCaller(ctx); err != nil {
 		return nil, err
 	}
@@ -82,11 +82,11 @@ func (srv consumerServer) GetMetadata(ctx context.Context, _ *emptypb.Empty) (*c
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to collect the list of validation patterns: %s", err)
 	}
-	ret := &config.ServiceMetadata{}
+	ret := &cfgpb.ServiceMetadata{}
 	if len(patterns) > 0 {
-		ret.ConfigPatterns = make([]*config.ConfigPattern, len(patterns))
+		ret.ConfigPatterns = make([]*cfgpb.ConfigPattern, len(patterns))
 		for i, pattern := range patterns {
-			ret.ConfigPatterns[i] = &config.ConfigPattern{
+			ret.ConfigPatterns[i] = &cfgpb.ConfigPattern{
 				ConfigSet: pattern.ConfigSet.String(),
 				Path:      pattern.Path.String(),
 			}
@@ -95,8 +95,8 @@ func (srv consumerServer) GetMetadata(ctx context.Context, _ *emptypb.Empty) (*c
 	return ret, nil
 }
 
-// ValidateConfigs implements config.Consumer.ValidateConfigs.
-func (srv consumerServer) ValidateConfigs(ctx context.Context, req *config.ValidateConfigsRequest) (*config.ValidationResult, error) {
+// ValidateConfigs implements cfgpb.Consumer.ValidateConfigs.
+func (srv consumerServer) ValidateConfigs(ctx context.Context, req *cfgpb.ValidateConfigsRequest) (*cfgpb.ValidationResult, error) {
 	if err := srv.checkCaller(ctx); err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (srv consumerServer) ValidateConfigs(ctx context.Context, req *config.Valid
 		return nil, err
 	}
 
-	result := make([][]*config.ValidationResult_Message, len(req.GetFiles().GetFiles()))
+	result := make([][]*cfgpb.ValidationResult_Message, len(req.GetFiles().GetFiles()))
 	eg, ectx := errgroup.WithContext(ctx)
 	eg.SetLimit(8)
 	for i, file := range req.GetFiles().GetFiles() {
@@ -112,12 +112,12 @@ func (srv consumerServer) ValidateConfigs(ctx context.Context, req *config.Valid
 		eg.Go(func() error {
 			var content []byte
 			switch file.GetContent().(type) {
-			case *config.ValidateConfigsRequest_File_RawContent:
+			case *cfgpb.ValidateConfigsRequest_File_RawContent:
 				content = file.GetRawContent()
-			case *config.ValidateConfigsRequest_File_SignedUrl:
+			case *cfgpb.ValidateConfigsRequest_File_SignedUrl:
 				var err error
-				if content, err = srv.downloadFromSignedURL(ectx, file.GetSignedUrl()); err != nil {
-					return err
+				if content, err = config.DownloadConfigFromSignedURL(ectx, srv.httpClient, file.GetSignedUrl()); err != nil {
+					return fmt.Errorf("failed to download file %s from the signed url: %s", file.Path, err)
 				}
 			default:
 				panic(fmt.Errorf("unrecognized file content type: %T", file.GetContent()))
@@ -133,7 +133,7 @@ func (srv consumerServer) ValidateConfigs(ctx context.Context, req *config.Valid
 	}
 
 	// Flatten the messages
-	ret := &config.ValidationResult{}
+	ret := &cfgpb.ValidationResult{}
 	for _, msgs := range result {
 		ret.Messages = append(ret.Messages, msgs...)
 	}
@@ -161,7 +161,7 @@ func (srv consumerServer) checkCaller(ctx context.Context) error {
 	return status.Errorf(codes.PermissionDenied, "%q is not authorized", caller)
 }
 
-func checkValidateInput(req *config.ValidateConfigsRequest) error {
+func checkValidateInput(req *cfgpb.ValidateConfigsRequest) error {
 	switch {
 	case req.GetConfigSet() == "":
 		return status.Errorf(codes.InvalidArgument, "must specify the config_set of the file to validate")
@@ -179,41 +179,7 @@ func checkValidateInput(req *config.ValidateConfigsRequest) error {
 	return nil
 }
 
-func (srv consumerServer) downloadFromSignedURL(ctx context.Context, url string) ([]byte, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", url, http.NoBody)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create http request to download file: %w", err)
-	}
-	req.Header.Add("Accept-Encoding", "gzip")
-	res, err := srv.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute http request to download file to validate: %w", err)
-	}
-	reader := res.Body
-	defer func() { _ = reader.Close() }()
-	switch {
-	case res.StatusCode != http.StatusOK:
-		body, err := io.ReadAll(reader)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read response body: %w", err)
-		}
-		return nil, fmt.Errorf("failed to download file to validate, got http response code: %d, body: %q", res.StatusCode, string(body))
-	case res.Header.Get("Content-Encoding") == "gzip":
-		reader, err = gzip.NewReader(reader)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create gzip reader: %w", err)
-		}
-		fallthrough
-	default:
-		ret, err := io.ReadAll(reader)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read response body: %w", err)
-		}
-		return ret, nil
-	}
-}
-
-func (srv consumerServer) validateOneFile(ctx context.Context, configSet, path string, content []byte) ([]*config.ValidationResult_Message, error) {
+func (srv consumerServer) validateOneFile(ctx context.Context, configSet, path string, content []byte) ([]*cfgpb.ValidationResult_Message, error) {
 	vc := &validation.Context{Context: ctx}
 	vc.SetFile(path)
 	if err := srv.rules.ValidateConfig(vc, configSet, path, content); err != nil {
@@ -224,10 +190,10 @@ func (srv consumerServer) validateOneFile(ctx context.Context, configSet, path s
 	case errors.As(err, &vErr):
 		return vErr.ToValidationResultMsgs(ctx), nil
 	case err != nil:
-		return []*config.ValidationResult_Message{
+		return []*cfgpb.ValidationResult_Message{
 			{
 				Path:     path,
-				Severity: config.ValidationResult_ERROR,
+				Severity: cfgpb.ValidationResult_ERROR,
 				Text:     err.Error(),
 			},
 		}, nil
@@ -243,7 +209,7 @@ func (srv consumerServer) validateOneFile(ctx context.Context, configSet, path s
 // router.MiddlewareChain should implement any necessary authentication checks.
 //
 // Deprecated: The handlers are called by the legacy LUCI Config service. The
-// new LUCI Config service will make request to `config.Consumer` prpc service
+// new LUCI Config service will make request to `cfgpb.Consumer` prpc service
 // instead. See `consumerServer`.
 func InstallHandlers(r *router.Router, base router.MiddlewareChain, rules *validation.RuleSet) {
 	r.GET(metadataPath, base, metadataRequestHandler(rules))
@@ -283,7 +249,7 @@ func validationRequestHandler(rules *validation.RuleSet) router.Handler {
 			defer raw.Close()
 		}
 
-		var reqBody config.ValidationRequestMessage
+		var reqBody cfgpb.ValidationRequestMessage
 		switch err := json.NewDecoder(raw).Decode(&reqBody); {
 		case err != nil:
 			badRequestStatus(c, w, "Validation: error decoding request body", err)
@@ -313,7 +279,7 @@ func validationRequestHandler(rules *validation.RuleSet) router.Handler {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		var msgList []*config.ValidationResponseMessage_Message
+		var msgList []*cfgpb.ValidationResponseMessage_Message
 		if len(errors) == 0 {
 			logging.Infof(c, "No validation errors")
 		} else {
@@ -321,18 +287,18 @@ func validationRequestHandler(rules *validation.RuleSet) router.Handler {
 			for _, error := range errors {
 				// validation.Context supports just 2 severities now,
 				// but defensively default to ERROR level in unexpected cases.
-				msgSeverity := config.ValidationResponseMessage_ERROR
+				msgSeverity := cfgpb.ValidationResponseMessage_ERROR
 				switch severity, ok := validation.SeverityTag.In(error); {
 				case !ok:
 					logging.Errorf(c, "unset validation.Severity in %s", error)
 				case severity == validation.Warning:
-					msgSeverity = config.ValidationResponseMessage_WARNING
+					msgSeverity = cfgpb.ValidationResponseMessage_WARNING
 				case severity != validation.Blocking:
 					logging.Errorf(c, "unrecognized validation.Severity %d in %s", severity, error)
 				}
 
 				err := error.Error()
-				msgList = append(msgList, &config.ValidationResponseMessage_Message{
+				msgList = append(msgList, &cfgpb.ValidationResponseMessage_Message{
 					Severity: msgSeverity,
 					Text:     err,
 				})
@@ -340,7 +306,7 @@ func validationRequestHandler(rules *validation.RuleSet) router.Handler {
 			}
 			logging.Warningf(c, "Validation errors%s", errorBuffer.String())
 		}
-		if err := json.NewEncoder(w).Encode(config.ValidationResponseMessage{Messages: msgList}); err != nil {
+		if err := json.NewEncoder(w).Encode(cfgpb.ValidationResponseMessage{Messages: msgList}); err != nil {
 			internalErrStatus(c, w, "Validation: failed to JSON encode output", err)
 		}
 	}
@@ -358,15 +324,15 @@ func metadataRequestHandler(rules *validation.RuleSet) router.Handler {
 			return
 		}
 
-		meta := config.ServiceDynamicMetadata{
+		meta := cfgpb.ServiceDynamicMetadata{
 			Version:                 metaDataFormatVersion,
 			SupportsGzipCompression: true,
-			Validation: &config.Validator{
+			Validation: &cfgpb.Validator{
 				Url: fmt.Sprintf("https://%s%s", ctx.Request.Host, validationPath),
 			},
 		}
 		for _, p := range patterns {
-			meta.Validation.Patterns = append(meta.Validation.Patterns, &config.ConfigPattern{
+			meta.Validation.Patterns = append(meta.Validation.Patterns, &cfgpb.ConfigPattern{
 				ConfigSet: p.ConfigSet.String(),
 				Path:      p.Path.String(),
 			})
