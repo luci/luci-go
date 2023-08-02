@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -50,7 +51,7 @@ func TestRules(t *testing.T) {
 		ctx = authtest.MockAuthConfig(ctx)
 		authState := &authtest.FakeState{
 			Identity:       "user:someone@example.com",
-			IdentityGroups: []string{"luci-analysis-access"},
+			IdentityGroups: []string{luciAnalysisAccessGroup, auditUsersAccessGroup},
 		}
 		ctx = auth.WithState(ctx, authState)
 		ctx = secrets.Use(ctx, &testsecrets.Store{})
@@ -152,47 +153,19 @@ func TestRules(t *testing.T) {
 				So(rule, ShouldBeNil)
 			})
 			Convey("Rule exists", func() {
+				mask := ruleMask{
+					IncludeDefinition: true,
+					IncludeAuditUsers: true,
+				}
 				Convey("Read rule with Monorail bug", func() {
-					expectedRule := &pb.Rule{
-						Name:           fmt.Sprintf("projects/%s/rules/%s", ruleManaged.Project, ruleManaged.RuleID),
-						Project:        ruleManaged.Project,
-						RuleId:         ruleManaged.RuleID,
-						RuleDefinition: ruleManaged.RuleDefinition,
-						Bug: &pb.AssociatedBug{
-							System:   "monorail",
-							Id:       "monorailproject/111",
-							LinkText: "mybug.com/111",
-							Url:      "https://monorailhost.com/p/monorailproject/issues/detail?id=111",
-						},
-						IsActive:                         true,
-						IsManagingBug:                    true,
-						IsManagingBugPriority:            true,
-						IsManagingBugPriorityLastUpdated: timestamppb.New(ruleManaged.IsManagingBugPriorityLastUpdated),
-						SourceCluster: &pb.ClusterId{
-							Algorithm: ruleManaged.SourceCluster.Algorithm,
-							Id:        ruleManaged.SourceCluster.ID,
-						},
-						CreateTime:              timestamppb.New(ruleManaged.CreationTime),
-						CreateUser:              ruleManaged.CreationUser,
-						LastUpdateTime:          timestamppb.New(ruleManaged.LastUpdated),
-						LastUpdateUser:          ruleManaged.LastUpdatedUser,
-						PredicateLastUpdateTime: timestamppb.New(ruleManaged.PredicateLastUpdated),
-					}
-
-					Convey("With get rule definition permission", func() {
+					Convey("Baseline", func() {
 						request := &pb.GetRuleRequest{
 							Name: fmt.Sprintf("projects/%s/rules/%s", ruleManaged.Project, ruleManaged.RuleID),
 						}
 
 						rule, err := srv.Get(ctx, request)
 						So(err, ShouldBeNil)
-						includeDefinition := true
-						So(rule, ShouldResembleProto, createRulePB(ruleManaged, cfg, includeDefinition))
-
-						// Also verify createRulePB works as expected, so we do not need
-						// to test that again in later tests.
-						expectedRule.Etag = ruleETag(ruleManaged, includeDefinition)
-						So(rule, ShouldResembleProto, expectedRule)
+						So(rule, ShouldResembleProto, createRulePB(ruleManaged, cfg, mask))
 					})
 					Convey("Without get rule definition permission", func() {
 						authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
@@ -203,14 +176,20 @@ func TestRules(t *testing.T) {
 
 						rule, err := srv.Get(ctx, request)
 						So(err, ShouldBeNil)
-						includeDefinition := false
-						So(rule, ShouldResembleProto, createRulePB(ruleManaged, cfg, includeDefinition))
+						mask.IncludeDefinition = false
+						So(rule, ShouldResembleProto, createRulePB(ruleManaged, cfg, mask))
+					})
+					Convey("Without get rule audit users permission", func() {
+						authState.IdentityGroups = removeGroup(authState.IdentityGroups, auditUsersAccessGroup)
 
-						// Also verify createRulePB works as expected, so we do not need
-						// to test that again in later tests.
-						expectedRule.RuleDefinition = ""
-						expectedRule.Etag = ruleETag(ruleManaged, includeDefinition)
-						So(rule, ShouldResembleProto, expectedRule)
+						request := &pb.GetRuleRequest{
+							Name: fmt.Sprintf("projects/%s/rules/%s", ruleManaged.Project, ruleManaged.RuleID),
+						}
+
+						rule, err := srv.Get(ctx, request)
+						So(err, ShouldBeNil)
+						mask.IncludeAuditUsers = false
+						So(rule, ShouldResembleProto, createRulePB(ruleManaged, cfg, mask))
 					})
 				})
 				Convey("Read rule with Buganizer bug", func() {
@@ -220,8 +199,7 @@ func TestRules(t *testing.T) {
 
 					rule, err := srv.Get(ctx, request)
 					So(err, ShouldBeNil)
-					includeDefinition := true
-					So(rule, ShouldResembleProto, createRulePB(ruleBuganizer, cfg, includeDefinition))
+					So(rule, ShouldResembleProto, createRulePB(ruleBuganizer, cfg, mask))
 
 					// Also verify createRulePB works as expected, so we do not need
 					// to test that again in later tests.
@@ -249,7 +227,7 @@ func TestRules(t *testing.T) {
 						LastUpdateTime:          timestamppb.New(ruleBuganizer.LastUpdated),
 						LastUpdateUser:          ruleBuganizer.LastUpdatedUser,
 						PredicateLastUpdateTime: timestamppb.New(ruleBuganizer.PredicateLastUpdated),
-						Etag:                    ruleETag(ruleBuganizer, includeDefinition),
+						Etag:                    ruleETag(ruleBuganizer, mask),
 					})
 				})
 			})
@@ -287,7 +265,7 @@ func TestRules(t *testing.T) {
 				So(response, ShouldBeNil)
 			})
 			Convey("Non-Empty", func() {
-				test := func(includeDefinition bool, cfg *configpb.ProjectConfig) {
+				test := func(mask ruleMask, cfg *configpb.ProjectConfig) {
 					rs := []*rules.Entry{
 						ruleManaged,
 						ruleBuganizer,
@@ -305,11 +283,11 @@ func TestRules(t *testing.T) {
 
 					expected := &pb.ListRulesResponse{
 						Rules: []*pb.Rule{
-							createRulePB(rs[0], cfg, includeDefinition),
-							createRulePB(rs[1], cfg, includeDefinition),
-							createRulePB(rs[2], cfg, includeDefinition),
-							createRulePB(rs[3], cfg, includeDefinition),
-							createRulePB(rs[4], cfg, includeDefinition),
+							createRulePB(rs[0], cfg, mask),
+							createRulePB(rs[1], cfg, mask),
+							createRulePB(rs[2], cfg, mask),
+							createRulePB(rs[3], cfg, mask),
+							createRulePB(rs[4], cfg, mask),
 						},
 					}
 					sort.Slice(expected.Rules, func(i, j int) bool {
@@ -320,20 +298,29 @@ func TestRules(t *testing.T) {
 					})
 					So(response, ShouldResembleProto, expected)
 				}
-				Convey("With get rule definition permission", func() {
-					includeDefinition := true
-					test(includeDefinition, cfg)
+				mask := ruleMask{
+					IncludeDefinition: true,
+					IncludeAuditUsers: true,
+				}
+				Convey("Baseline", func() {
+					test(mask, cfg)
 				})
 				Convey("Without get rule definition permission", func() {
 					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
 
-					includeDefinition := false
-					test(includeDefinition, cfg)
+					mask.IncludeDefinition = false
+					test(mask, cfg)
+				})
+				Convey("Without get rule audit users permission", func() {
+					authState.IdentityGroups = removeGroup(authState.IdentityGroups, auditUsersAccessGroup)
+
+					mask.IncludeAuditUsers = false
+					test(mask, cfg)
 				})
 				Convey("With project not configured", func() {
 					err = config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{})
-					includeDefinition := true
-					test(includeDefinition, config.NewEmptyProject())
+
+					test(mask, config.NewEmptyProject())
 				})
 			})
 			Convey("Empty", func() {
@@ -374,7 +361,7 @@ func TestRules(t *testing.T) {
 					// bug, isActive, isManagingBug.
 					Paths: []string{"rule_definition", "bug", "is_active", "is_managing_bug", "is_managing_bug_priority"},
 				},
-				Etag: ruleETag(ruleManaged, true /*includeDefinition*/),
+				Etag: ruleETag(ruleManaged, ruleMask{IncludeDefinition: true, IncludeAuditUsers: false}),
 			}
 
 			Convey("No update rules permission", func() {
@@ -420,7 +407,41 @@ func TestRules(t *testing.T) {
 					So(storedRule, ShouldResemble, expectedRule)
 
 					// Verify the returned rule matches what was expected.
-					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, true /*includeDefinition*/))
+					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
+					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+				})
+				Convey("No audit users permission", func() {
+					authState.IdentityGroups = removeGroup(authState.IdentityGroups, auditUsersAccessGroup)
+
+					rule, err := srv.Update(ctx, request)
+					So(err, ShouldBeNil)
+
+					storedRule, err := rules.Read(span.Single(ctx), testProject, ruleManaged.RuleID)
+					So(err, ShouldBeNil)
+
+					So(storedRule.LastUpdated, ShouldNotEqual, ruleManaged.LastUpdated)
+
+					expectedRule := ruleManagedBuilder.
+						WithRuleDefinition(`test = "updated"`).
+						WithBug(bugs.BugID{System: "monorail", ID: "monorailproject/2"}).
+						WithActive(false).
+						WithBugManaged(false).
+						WithBugPriorityManaged(false).
+						WithBugPriorityManagedLastUpdated(storedRule.LastUpdated).
+						// Accept whatever the new last updated time is.
+						WithLastUpdated(storedRule.LastUpdated).
+						WithLastUpdatedUser("someone@example.com").
+						// The predicate last updated time should be the same as
+						// the last updated time.
+						WithPredicateLastUpdated(storedRule.LastUpdated).
+						Build()
+
+					// Verify the rule was correctly updated in the database.
+					So(storedRule, ShouldResemble, expectedRule)
+
+					// Verify the returned rule matches what was expected.
+					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: false}
+					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
 				})
 				Convey("Predicate not updated", func() {
 					request.UpdateMask.Paths = []string{"bug"}
@@ -450,7 +471,8 @@ func TestRules(t *testing.T) {
 					So(storedRule, ShouldResemble, expectedRule)
 
 					// Verify the returned rule matches what was expected.
-					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, true /*includeDefinition*/))
+					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
+					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
 				})
 				Convey("Managing bug priority updated", func() {
 					request.UpdateMask.Paths = []string{"is_managing_bug_priority"}
@@ -477,7 +499,8 @@ func TestRules(t *testing.T) {
 					So(storedRule, ShouldResemble, expectedRule)
 
 					// Verify the returned rule matches what was expected.
-					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, true /*includeDefinition*/))
+					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
+					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
 				})
 				Convey("Re-use of bug managed by another project", func() {
 					request.UpdateMask.Paths = []string{"bug"}
@@ -510,7 +533,8 @@ func TestRules(t *testing.T) {
 					So(storedRule, ShouldResemble, expectedRule)
 
 					// Verify the returned rule matches what was expected.
-					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, true /*includeDefinition*/))
+					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
+					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
 				})
 			})
 			Convey("Concurrent Modification", func() {
@@ -585,6 +609,10 @@ func TestRules(t *testing.T) {
 					Realm:      "testproject:@project",
 					Permission: perms.PermCreateRule,
 				},
+				{
+					Realm:      "testproject:@project",
+					Permission: perms.PermGetRuleDefinition,
+				},
 			}
 			request := &pb.CreateRuleRequest{
 				Parent: fmt.Sprintf("projects/%s", testProject),
@@ -611,11 +639,19 @@ func TestRules(t *testing.T) {
 				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.create")
 				So(rule, ShouldBeNil)
 			})
+			Convey("No create rule definition permission", func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
+
+				rule, err := srv.Create(ctx, request)
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.getDefinition")
+				So(rule, ShouldBeNil)
+			})
 			Convey("Success", func() {
 				expectedRuleBuilder := rules.NewRule(0).
 					WithProject(testProject).
 					WithRuleDefinition(`test = "create"`).
 					WithActive(false).
+					WithBug(bugs.BugID{System: "monorail", ID: "monorailproject/2"}).
 					WithBugManaged(true).
 					WithBugPriorityManaged(true).
 					WithCreationUser("someone@example.com").
@@ -657,7 +693,8 @@ func TestRules(t *testing.T) {
 					So(storedRule, ShouldResemble, expectedRuleBuilder.Build())
 
 					// Verify the returned rule matches our expectations.
-					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, true /*includeDefinition*/))
+					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
+					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
 				})
 				Convey("Bug managed by another rule", func() {
 					// Re-use the same bug as a rule in another project,
@@ -691,7 +728,8 @@ func TestRules(t *testing.T) {
 					So(storedRule, ShouldResemble, expectedRuleBuilder.Build())
 
 					// Verify the returned rule matches our expectations.
-					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, true /*includeDefinition*/))
+					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
+					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
 				})
 				Convey("Buganizer", func() {
 					request.Rule.Bug = &pb.AssociatedBug{
@@ -723,7 +761,37 @@ func TestRules(t *testing.T) {
 					So(storedRule, ShouldResemble, expectedRuleBuilder.Build())
 
 					// Verify the returned rule matches our expectations.
-					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, true /*includeDefinition*/))
+					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
+					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+				})
+				Convey("No audit users permission", func() {
+					authState.IdentityGroups = removeGroup(authState.IdentityGroups, auditUsersAccessGroup)
+
+					rule, err := srv.Create(ctx, request)
+					So(err, ShouldBeNil)
+
+					storedRule, err := rules.Read(span.Single(ctx), testProject, rule.RuleId)
+					So(err, ShouldBeNil)
+
+					expectedRule := expectedRuleBuilder.
+						// Accept the randomly generated rule ID.
+						WithRuleID(rule.RuleId).
+						// Accept whatever CreationTime was assigned, as it
+						// is determined by Spanner commit time.
+						// Rule spanner data access code tests already validate
+						// this is populated correctly.
+						WithCreationTime(storedRule.CreationTime).
+						WithLastUpdated(storedRule.CreationTime).
+						WithPredicateLastUpdated(storedRule.CreationTime).
+						WithBugPriorityManagedLastUpdated(storedRule.CreationTime).
+						Build()
+
+					// Verify the rule was correctly created in the database.
+					So(storedRule, ShouldResemble, expectedRuleBuilder.Build())
+
+					// Verify the returned rule matches our expectations.
+					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: false}
+					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
 				})
 			})
 			Convey("Validation error", func() {
@@ -842,6 +910,92 @@ func TestRules(t *testing.T) {
 			})
 		})
 	})
+	Convey("createRulePB", t, func() {
+		// The behaviour of createRulePB is assumed by many test cases.
+		// This verifies that behaviour.
+
+		rule := rules.NewRule(0).
+			WithProject(testProject).
+			WithBug(bugs.BugID{System: "monorail", ID: "monorailproject/111"}).Build()
+
+		expectedRule := &pb.Rule{
+			Name:           "projects/testproject/rules/617c8eaa66c7c5ab5138190e9d7335cc",
+			Project:        "testproject",
+			RuleId:         "617c8eaa66c7c5ab5138190e9d7335cc",
+			RuleDefinition: "reason LIKE \"%exit code 5%\" AND test LIKE \"tast.arc.%\"",
+			Bug: &pb.AssociatedBug{
+				System:   "monorail",
+				Id:       "monorailproject/111",
+				LinkText: "mybug.com/111",
+				Url:      "https://monorailhost.com/p/monorailproject/issues/detail?id=111",
+			},
+			IsActive:                         true,
+			IsManagingBug:                    true,
+			IsManagingBugPriority:            true,
+			IsManagingBugPriorityLastUpdated: timestamppb.New(time.Date(1900, 1, 2, 3, 4, 8, 0, time.UTC)),
+			SourceCluster: &pb.ClusterId{
+				Algorithm: "clusteralg0-v9",
+				Id:        "696430",
+			},
+			CreateTime:              timestamppb.New(time.Date(1900, 1, 2, 3, 4, 5, 0, time.UTC)),
+			CreateUser:              "system",
+			LastUpdateTime:          timestamppb.New(time.Date(1900, 1, 2, 3, 4, 7, 0, time.UTC)),
+			LastUpdateUser:          "user@google.com",
+			PredicateLastUpdateTime: timestamppb.New(time.Date(1900, 1, 2, 3, 4, 6, 0, time.UTC)),
+		}
+		cfg := &configpb.ProjectConfig{
+			Monorail: &configpb.MonorailProject{
+				Project:          "monorailproject",
+				DisplayPrefix:    "mybug.com",
+				MonorailHostname: "monorailhost.com",
+			},
+		}
+		mask := ruleMask{
+			IncludeDefinition: true,
+			IncludeAuditUsers: true,
+		}
+		Convey("With all fields", func() {
+			expectedRule.Etag = `W/"+d+u/1900-01-02T03:04:07Z"`
+			So(createRulePB(rule, cfg, mask), ShouldResembleProto, expectedRule)
+		})
+		Convey("Without definition field", func() {
+			mask.IncludeDefinition = false
+			expectedRule.RuleDefinition = ""
+			expectedRule.Etag = `W/"+u/1900-01-02T03:04:07Z"`
+			So(createRulePB(rule, cfg, mask), ShouldResembleProto, expectedRule)
+		})
+		Convey("Without audit users", func() {
+			mask.IncludeAuditUsers = false
+			expectedRule.CreateUser = ""
+			expectedRule.LastUpdateUser = ""
+			expectedRule.Etag = `W/"+d/1900-01-02T03:04:07Z"`
+			So(createRulePB(rule, cfg, mask), ShouldResembleProto, expectedRule)
+		})
+	})
+	Convey("isETagValid", t, func() {
+		rule := rules.NewRule(0).
+			WithProject(testProject).
+			WithBug(bugs.BugID{System: "monorail", ID: "monorailproject/111"}).Build()
+
+		Convey("Should match ETags for same rule version", func() {
+			masks := []ruleMask{
+				{IncludeDefinition: true, IncludeAuditUsers: true},
+				{IncludeDefinition: true, IncludeAuditUsers: false},
+				{IncludeDefinition: false, IncludeAuditUsers: true},
+				{IncludeDefinition: false, IncludeAuditUsers: false},
+			}
+			for _, mask := range masks {
+				So(isETagMatching(rule, ruleETag(rule, mask)), ShouldBeTrue)
+			}
+		})
+		Convey("Should not match ETag for different version of rule", func() {
+			mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
+			etag := ruleETag(rule, mask)
+
+			rule.LastUpdated = time.Date(2021, 5, 4, 3, 2, 1, 0, time.UTC)
+			So(isETagMatching(rule, etag), ShouldBeFalse)
+		})
+	})
 	Convey("formatRule", t, func() {
 		rule := rules.NewRule(0).
 			WithProject(testProject).
@@ -864,4 +1018,14 @@ func TestRules(t *testing.T) {
 }`
 		So(formatRule(rule), ShouldEqual, expectedRule)
 	})
+}
+
+func removeGroup(groups []string, group string) []string {
+	var result []string
+	for _, g := range groups {
+		if g != group {
+			result = append(result, g)
+		}
+	}
+	return result
 }

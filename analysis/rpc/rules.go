@@ -17,6 +17,7 @@ package rpc
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -59,7 +60,7 @@ func (*rulesServer) Get(ctx context.Context, req *pb.GetRuleRequest) (*pb.Rule, 
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetRule); err != nil {
 		return nil, err
 	}
-	canSeeDefinition, err := perms.HasProjectPermission(ctx, project, perms.PermGetRuleDefinition)
+	ruleMask, err := ruleFieldAccess(ctx, project)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +78,34 @@ func (*rulesServer) Get(ctx context.Context, req *pb.GetRuleRequest) (*pb.Rule, 
 		// This will result in an internal error being reported to the caller.
 		return nil, errors.Annotate(err, "reading rule %s", ruleID).Err()
 	}
-	return createRulePB(r, cfg.Config, canSeeDefinition), nil
+	return createRulePB(r, cfg.Config, ruleMask), nil
+}
+
+// ruleMask captures the fields the caller has access to see.
+type ruleMask struct {
+	// Include the definition of the rule.
+	// Guarded by analysis.rules.getDefinition permission.
+	IncludeDefinition bool
+	// Include the email address of users who created/modified the rule.
+	// Limited to Googlers only.
+	IncludeAuditUsers bool
+}
+
+// ruleFieldAccess checks the caller's access to rule fields in the given
+// project and returns a ruleMask corresponding to the fields they are
+// allowed to see.
+func ruleFieldAccess(ctx context.Context, project string) (ruleMask, error) {
+	var result ruleMask
+	var err error
+	result.IncludeDefinition, err = perms.HasProjectPermission(ctx, project, perms.PermGetRuleDefinition)
+	if err != nil {
+		return ruleMask{}, errors.Annotate(err, "determining access to rule definition").Err()
+	}
+	result.IncludeAuditUsers, err = auth.IsMember(ctx, auditUsersAccessGroup)
+	if err != nil {
+		return ruleMask{}, errors.Annotate(err, "determining access to read created/last modified users").Err()
+	}
+	return result, nil
 }
 
 // Lists rules.
@@ -89,7 +117,7 @@ func (*rulesServer) List(ctx context.Context, req *pb.ListRulesRequest) (*pb.Lis
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermListRules); err != nil {
 		return nil, err
 	}
-	canSeeDefinition, err := perms.HasProjectPermission(ctx, project, perms.PermGetRuleDefinition)
+	ruleMask, err := ruleFieldAccess(ctx, project)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +136,7 @@ func (*rulesServer) List(ctx context.Context, req *pb.ListRulesRequest) (*pb.Lis
 
 	rpbs := make([]*pb.Rule, 0, len(rs))
 	for _, r := range rs {
-		rpbs = append(rpbs, createRulePB(r, cfg.Config, canSeeDefinition))
+		rpbs = append(rpbs, createRulePB(r, cfg.Config, ruleMask))
 	}
 	response := &pb.ListRulesResponse{
 		Rules: rpbs,
@@ -122,7 +150,11 @@ func (*rulesServer) Create(ctx context.Context, req *pb.CreateRuleRequest) (*pb.
 	if err != nil {
 		return nil, invalidArgumentError(err)
 	}
-	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermCreateRule); err != nil {
+	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermCreateRule, perms.PermGetRuleDefinition); err != nil {
+		return nil, err
+	}
+	ruleMask, err := ruleFieldAccess(ctx, project)
+	if err != nil {
 		return nil, err
 	}
 
@@ -198,8 +230,7 @@ func (*rulesServer) Create(ctx context.Context, req *pb.CreateRuleRequest) (*pb.
 	// if malicious or unintended updates occur.
 	logRuleCreate(ctx, r)
 
-	canSeeDefinition := true
-	return createRulePB(r, cfg.Config, canSeeDefinition), nil
+	return createRulePB(r, cfg.Config, ruleMask), nil
 }
 
 func logRuleCreate(ctx context.Context, rule *rules.Entry) {
@@ -213,6 +244,10 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 		return nil, invalidArgumentError(err)
 	}
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermUpdateRule, perms.PermGetRuleDefinition); err != nil {
+		return nil, err
+	}
+	ruleMask, err := ruleFieldAccess(ctx, project)
+	if err != nil {
 		return nil, err
 	}
 
@@ -240,8 +275,7 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 		originalRule = &rules.Entry{}
 		*originalRule = *rule
 
-		canSeeDefinition := true
-		if req.Etag != "" && ruleETag(rule, canSeeDefinition) != req.Etag {
+		if req.Etag != "" && !isETagMatching(rule, req.Etag) {
 			// Attach a codes.Aborted appstatus to a vanilla error to avoid
 			// ReadWriteTransaction interpreting this case for a scenario
 			// in which it should retry the transaction.
@@ -343,8 +377,7 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 	// if malicious or unintended updates occur.
 	logRuleUpdate(ctx, originalRule, updatedRule)
 
-	canSeeDefinition := true
-	return createRulePB(updatedRule, cfg.Config, canSeeDefinition), nil
+	return createRulePB(updatedRule, cfg.Config, ruleMask), nil
 }
 
 func logRuleUpdate(ctx context.Context, old *rules.Entry, new *rules.Entry) {
@@ -393,10 +426,16 @@ func (*rulesServer) LookupBug(ctx context.Context, req *pb.LookupBugRequest) (*p
 	}, nil
 }
 
-func createRulePB(r *rules.Entry, cfg *configpb.ProjectConfig, includeDefinition bool) *pb.Rule {
+func createRulePB(r *rules.Entry, cfg *configpb.ProjectConfig, mask ruleMask) *pb.Rule {
 	definition := ""
-	if includeDefinition {
+	if mask.IncludeDefinition {
 		definition = r.RuleDefinition
+	}
+	creationUser := ""
+	lastUpdatedUser := ""
+	if mask.IncludeAuditUsers {
+		creationUser = r.CreationUser
+		lastUpdatedUser = r.LastUpdatedUser
 	}
 	return &pb.Rule{
 		Name:                             ruleName(r.Project, r.RuleID),
@@ -413,20 +452,41 @@ func createRulePB(r *rules.Entry, cfg *configpb.ProjectConfig, includeDefinition
 			Id:        r.SourceCluster.ID,
 		},
 		CreateTime:              timestamppb.New(r.CreationTime),
-		CreateUser:              r.CreationUser,
+		CreateUser:              creationUser,
 		LastUpdateTime:          timestamppb.New(r.LastUpdated),
-		LastUpdateUser:          r.LastUpdatedUser,
+		LastUpdateUser:          lastUpdatedUser,
 		PredicateLastUpdateTime: timestamppb.New(r.PredicateLastUpdated),
-		Etag:                    ruleETag(r, includeDefinition),
+		Etag:                    ruleETag(r, mask),
 	}
 }
 
-func ruleETag(rule *rules.Entry, includeDefinition bool) string {
-	filtered := "y"
-	if includeDefinition {
-		filtered = "n"
+// ruleETag returns the HTTP ETag for the given rule.
+func ruleETag(rule *rules.Entry, mask ruleMask) string {
+	definitionFilter := ""
+	if mask.IncludeDefinition {
+		definitionFilter = "+d"
 	}
-	return fmt.Sprintf(`W/"%s%s"`, filtered, rule.LastUpdated.UTC().Format(time.RFC3339Nano))
+	userFilter := ""
+	if mask.IncludeAuditUsers {
+		userFilter = "+u"
+	}
+	// Encode whether the definition and user were included,
+	// so that if the user is granted access to either of
+	// these fields, the browser cache is invalidated.
+	return fmt.Sprintf(`W/"%s%s/%s"`, definitionFilter, userFilter, rule.LastUpdated.UTC().Format(time.RFC3339Nano))
+}
+
+// etagRegexp extracts the rule last modified timestamp from a rule ETag.
+var etagRegexp = regexp.MustCompile(`^W/"(?:\+[ud])*/(.*)"$`)
+
+// isETagMatching determines if the Etag is consistent with the specified
+// Rule version.
+func isETagMatching(rule *rules.Entry, etag string) bool {
+	m := etagRegexp.FindStringSubmatch(etag)
+	if len(m) < 2 {
+		return false
+	}
+	return m[1] == rule.LastUpdated.UTC().Format(time.RFC3339Nano)
 }
 
 // validateBugAgainstConfig validates the specified bug is consistent with

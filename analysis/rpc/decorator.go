@@ -26,6 +26,10 @@ import (
 
 const luciAnalysisAccessGroup = "luci-analysis-access"
 
+// auditUsersAccessGroup is the group which contains people authorised
+// to see the details of the user who last created/modified entities.
+const auditUsersAccessGroup = "googlers"
+
 const luciAnalysisAdminGroup = "service-luci-analysis-admins"
 
 // Checks if this call is allowed, returns an error if it is.
