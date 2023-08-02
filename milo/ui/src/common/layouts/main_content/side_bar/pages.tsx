@@ -19,6 +19,7 @@ import GrainTwoToneIcon from '@mui/icons-material/GrainTwoTone';
 import HouseIcon from '@mui/icons-material/House';
 import LineAxisIcon from '@mui/icons-material/LineAxis';
 import LineStyleIcon from '@mui/icons-material/LineStyle';
+import ScheduleIcon from '@mui/icons-material/Schedule';
 import SearchIcon from '@mui/icons-material/Search';
 import SpeedIcon from '@mui/icons-material/Speed';
 import SpokeIcon from '@mui/icons-material/Spoke';
@@ -71,6 +72,14 @@ function generateBuildsSection(project: string | undefined): SidebarSection {
       url: `/ui/p/${project}/builders`,
       icon: <BuildIcon />,
     });
+
+    pages.push({
+      page: UiPage.Scheduler,
+      url: `https://luci-scheduler.appspot.com/jobs/${project}`,
+      icon: <ScheduleIcon />,
+      external: true,
+    });
+
 
     if (project === 'chromium') {
       pages.push({

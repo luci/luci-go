@@ -255,6 +255,7 @@ export const NON_TRANSIENT_ERROR_CODES = Object.freeze([
 export enum UiPage {
   BuilderSearch = 'Builder search',
   Builders = 'Builders',
+  Scheduler = 'Scheduler',
   Bisection = 'Bisection',
   TestHistory = 'Test history',
   FailureClusters = 'Failure clusters',

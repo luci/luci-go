@@ -19,6 +19,7 @@ import GrainTwoToneIcon from '@mui/icons-material/GrainTwoTone';
 import HouseIcon from '@mui/icons-material/House';
 import LineAxisIcon from '@mui/icons-material/LineAxis';
 import LineStyleIcon from '@mui/icons-material/LineStyle';
+import ScheduleIcon from '@mui/icons-material/Schedule';
 import SearchIcon from '@mui/icons-material/Search';
 import SpeedIcon from '@mui/icons-material/Speed';
 import SpokeIcon from '@mui/icons-material/Spoke';
@@ -67,6 +68,12 @@ describe('pages', () => {
             url: `/ui/p/projecttest/builders`,
             icon: <BuildIcon />,
           },
+          {
+            page: UiPage.Scheduler,
+            url: `https://luci-scheduler.appspot.com/jobs/projecttest`,
+            icon: <ScheduleIcon />,
+            external: true,
+          },
         ],
       },
       {
@@ -114,6 +121,12 @@ describe('pages', () => {
             page: UiPage.Builders,
             url: `/ui/p/chromium/builders`,
             icon: <BuildIcon />,
+          },
+          {
+            page: UiPage.Scheduler,
+            url: `https://luci-scheduler.appspot.com/jobs/chromium`,
+            icon: <ScheduleIcon />,
+            external: true,
           },
           {
             page: UiPage.Bisection,
@@ -184,6 +197,12 @@ describe('pages', () => {
             page: UiPage.Builders,
             url: `/ui/p/chromeos/builders`,
             icon: <BuildIcon />,
+          },
+          {
+            page: UiPage.Scheduler,
+            url: `https://luci-scheduler.appspot.com/jobs/chromeos`,
+            icon: <ScheduleIcon />,
+            external: true,
           },
         ],
       },
