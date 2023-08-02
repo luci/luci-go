@@ -110,6 +110,16 @@ func TestParseCLURL(t *testing.T) {
 				Patchset: 1337,
 			},
 		},
+
+		{
+			url: "https://thing-review.git.corp.google.com/c/project/+/123/1337",
+			cl: &bbpb.GerritChange{
+				Host:     "thing-review.googlesource.com",
+				Project:  "project",
+				Change:   123,
+				Patchset: 1337,
+			},
+		},
 	}
 
 	Convey(`parseCrChangeListURL`, t, func() {

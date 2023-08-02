@@ -107,6 +107,7 @@ func parseCrChangeListURL(clURL string, resolveChange changeResolver) (*bbpb.Ger
 	if err != nil {
 		return nil, errors.Annotate(err, "URL_TO_CHANGELIST").Err()
 	}
+	p.Host = strings.ReplaceAll(p.Host, ".git.corp.google.com", ".googlesource.com")
 	if !strings.HasSuffix(p.Hostname(), "-review.googlesource.com") {
 		return nil, errors.New("only *-review.googlesource.com URLs are supported")
 	}
