@@ -38,3 +38,16 @@ wellknown_descpb = __native__.wellknown_descpb
 #   load('@proto//google/type/quaternion.proto', quaternion_pb='google.type')
 #   load('@proto//google/type/timeofday.proto', timeofday_pb='google.type')
 googtypes_descpb = __native__.googtypes_descpb
+
+# annotations_descpb is proto.DescriptorSet with following files:
+#   load('@proto//google/api/annotations.proto', annotations_pb='google.api')
+#   load('@proto//google/api/client.proto', client_pb='google.api')
+#   load('@proto//google/api/field_behavior.proto', field_behavior_pb='google.api')
+#   load('@proto//google/api/http.proto', http_pb='google.api')
+#   load('@proto//google/api/resource.proto', resource_pb='google.api')
+annotations_descpb = __native__.annotations_descpb
+
+# validation_descpb is a proto.DescriptorSet with following files:
+#   load('@proto//validation/validation.proto', validation_pb='validate')
+# This is github.com/envoyproxy/protoc-gen-validate protos.
+validation_descpb = __native__.validation_descpb

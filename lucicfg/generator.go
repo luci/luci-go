@@ -90,9 +90,11 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 			"genstruct":     builtins.GenStruct,
 			"re_submatches": builtins.RegexpMatcher("submatches"),
 			// Built-in proto descriptors.
-			"wellknown_descpb": wellKnownDescSet,
-			"googtypes_descpb": googTypesDescSet,
-			"lucitypes_descpb": luciTypesDescSet,
+			"wellknown_descpb":   wellKnownDescSet,
+			"googtypes_descpb":   googTypesDescSet,
+			"annotations_descpb": annotationsDescSet,
+			"validation_descpb":  validateDescSet,
+			"lucitypes_descpb":   luciTypesDescSet,
 		}),
 	}
 	for k, v := range in.testPredeclared {

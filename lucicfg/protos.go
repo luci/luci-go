@@ -16,6 +16,7 @@ package lucicfg
 
 import (
 	"fmt"
+	"strings"
 
 	"go.starlark.net/starlark"
 	"google.golang.org/protobuf/proto"
@@ -48,6 +49,12 @@ import (
 	_ "google.golang.org/genproto/googleapis/type/quaternion"
 	_ "google.golang.org/genproto/googleapis/type/timeofday"
 
+	// This covers all of google/api/*.proto
+	_ "google.golang.org/genproto/googleapis/api/annotations"
+
+	// Dependency of some LUCI protos.
+	_ "github.com/envoyproxy/protoc-gen-validate/validate"
+
 	_ "go.chromium.org/luci/buildbucket/proto"
 	_ "go.chromium.org/luci/common/proto/config"
 	_ "go.chromium.org/luci/common/proto/realms"
@@ -63,9 +70,11 @@ import (
 // Collection of built-in descriptor sets built from the protobuf registry
 // embedded into the lucicfg binary.
 var (
-	wellKnownDescSet *starlarkproto.DescriptorSet
-	googTypesDescSet *starlarkproto.DescriptorSet
-	luciTypesDescSet *starlarkproto.DescriptorSet
+	wellKnownDescSet   *starlarkproto.DescriptorSet
+	googTypesDescSet   *starlarkproto.DescriptorSet
+	annotationsDescSet *starlarkproto.DescriptorSet
+	validateDescSet    *starlarkproto.DescriptorSet
+	luciTypesDescSet   *starlarkproto.DescriptorSet
 )
 
 // init initializes DescSet global vars.
@@ -78,47 +87,72 @@ func init() {
 	visited := stringset.New(0)
 
 	// Various well-known proto types (see also starlark/internal/descpb.star).
-	wellKnownDescSet = builtinDescriptorSet("google/protobuf", []string{
-		"google/protobuf/any.proto",
-		"google/protobuf/descriptor.proto",
-		"google/protobuf/duration.proto",
-		"google/protobuf/empty.proto",
-		"google/protobuf/field_mask.proto",
-		"google/protobuf/struct.proto",
-		"google/protobuf/timestamp.proto",
-		"google/protobuf/wrappers.proto",
-	}, visited)
+	wellKnownDescSet = builtinDescriptorSet(
+		visited, "google/protobuf", "google/protobuf/",
+		[]string{
+			"google/protobuf/any.proto",
+			"google/protobuf/descriptor.proto",
+			"google/protobuf/duration.proto",
+			"google/protobuf/empty.proto",
+			"google/protobuf/field_mask.proto",
+			"google/protobuf/struct.proto",
+			"google/protobuf/timestamp.proto",
+			"google/protobuf/wrappers.proto",
+		})
 
 	// Google API types (see also starlark/internal/descpb.star).
-	googTypesDescSet = builtinDescriptorSet("google/type", []string{
-		"google/type/calendar_period.proto",
-		"google/type/color.proto",
-		"google/type/date.proto",
-		"google/type/dayofweek.proto",
-		"google/type/expr.proto",
-		"google/type/fraction.proto",
-		"google/type/latlng.proto",
-		"google/type/money.proto",
-		"google/type/postal_address.proto",
-		"google/type/quaternion.proto",
-		"google/type/timeofday.proto",
-	}, visited, wellKnownDescSet)
+	googTypesDescSet = builtinDescriptorSet(
+		visited, "google/type", "google/type/",
+		[]string{
+			"google/type/calendar_period.proto",
+			"google/type/color.proto",
+			"google/type/date.proto",
+			"google/type/dayofweek.proto",
+			"google/type/expr.proto",
+			"google/type/fraction.proto",
+			"google/type/latlng.proto",
+			"google/type/money.proto",
+			"google/type/postal_address.proto",
+			"google/type/quaternion.proto",
+			"google/type/timeofday.proto",
+		}, wellKnownDescSet)
+
+	// Google API annotations (see also starlark/internal/descpb.star).
+	annotationsDescSet = builtinDescriptorSet(
+		visited, "google/api", "google/api/",
+		[]string{
+			"google/api/annotations.proto",
+			"google/api/client.proto",
+			"google/api/field_behavior.proto",
+			"google/api/http.proto",
+			"google/api/resource.proto",
+		}, wellKnownDescSet)
+
+	// github.com/envoyproxy/protoc-gen-validate protos, since they are needed by
+	// some LUCI protos (see also starlark/internal/descpb.star).
+	validateDescSet = builtinDescriptorSet(
+		visited, "protoc-gen-validate", "validate/",
+		[]string{
+			"validate/validate.proto",
+		}, wellKnownDescSet)
 
 	// LUCI protos used by stdlib (see also starlark/internal/luci/descpb.star).
-	luciTypesDescSet = builtinDescriptorSet("lucicfg/stdlib", []string{
-		"go.chromium.org/luci/buildbucket/proto/common.proto",
-		"go.chromium.org/luci/buildbucket/proto/project_config.proto",
-		"go.chromium.org/luci/common/proto/config/project_config.proto",
-		"go.chromium.org/luci/common/proto/realms/realms_config.proto",
-		"go.chromium.org/luci/cv/api/config/legacy/tricium.proto",
-		"go.chromium.org/luci/cv/api/config/v2/config.proto",
-		"go.chromium.org/luci/logdog/api/config/svcconfig/project.proto",
-		"go.chromium.org/luci/luci_notify/api/config/notify.proto",
-		"go.chromium.org/luci/milo/proto/projectconfig/project.proto",
-		"go.chromium.org/luci/resultdb/proto/v1/invocation.proto",
-		"go.chromium.org/luci/resultdb/proto/v1/predicate.proto",
-		"go.chromium.org/luci/scheduler/appengine/messages/config.proto",
-	}, visited, wellKnownDescSet, googTypesDescSet)
+	luciTypesDescSet = builtinDescriptorSet(
+		visited, "lucicfg/stdlib", "go.chromium.org/luci/",
+		[]string{
+			"go.chromium.org/luci/buildbucket/proto/common.proto",
+			"go.chromium.org/luci/buildbucket/proto/project_config.proto",
+			"go.chromium.org/luci/common/proto/config/project_config.proto",
+			"go.chromium.org/luci/common/proto/realms/realms_config.proto",
+			"go.chromium.org/luci/cv/api/config/legacy/tricium.proto",
+			"go.chromium.org/luci/cv/api/config/v2/config.proto",
+			"go.chromium.org/luci/logdog/api/config/svcconfig/project.proto",
+			"go.chromium.org/luci/luci_notify/api/config/notify.proto",
+			"go.chromium.org/luci/milo/proto/projectconfig/project.proto",
+			"go.chromium.org/luci/resultdb/proto/v1/invocation.proto",
+			"go.chromium.org/luci/resultdb/proto/v1/predicate.proto",
+			"go.chromium.org/luci/scheduler/appengine/messages/config.proto",
+		}, wellKnownDescSet, googTypesDescSet, annotationsDescSet, validateDescSet)
 }
 
 // builtinDescriptorSet assembles a *DescriptorSet from descriptors embedded
@@ -130,8 +164,12 @@ func init() {
 //
 // 'name' and 'deps' are passed verbatim to NewDescriptorSet(...).
 //
+// For each proto file added to the new descriptor set verifies its filename
+// starts with the given 'prefix' to detect if we accidentally pick up
+// dependencies that should logically belong to a different descriptor set.
+//
 // Panics on errors. Built-in descriptors can't be invalid.
-func builtinDescriptorSet(name string, files []string, visited stringset.Set, deps ...*starlarkproto.DescriptorSet) *starlarkproto.DescriptorSet {
+func builtinDescriptorSet(visited stringset.Set, name, prefix string, files []string, deps ...*starlarkproto.DescriptorSet) *starlarkproto.DescriptorSet {
 	var descs []*descriptorpb.FileDescriptorProto
 	for _, f := range files {
 		var err error
@@ -139,6 +177,17 @@ func builtinDescriptorSet(name string, files []string, visited stringset.Set, de
 			panic(fmt.Errorf("%s: %s", f, err))
 		}
 	}
+
+	var misplacedFiles []string
+	for _, desc := range descs {
+		if !strings.HasPrefix(desc.GetName(), prefix) {
+			misplacedFiles = append(misplacedFiles, desc.GetName())
+		}
+	}
+	if len(misplacedFiles) > 0 {
+		panic(fmt.Errorf("%s: proto dependencies are not under %q: %v", name, prefix, misplacedFiles))
+	}
+
 	ds, err := starlarkproto.NewDescriptorSet(name, descs, deps)
 	if err != nil {
 		panic(err)
