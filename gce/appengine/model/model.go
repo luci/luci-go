@@ -277,19 +277,33 @@ func (vm *VM) getScheduling() *compute.Scheduling {
 	}
 }
 
+// getShieldedInstanceConfig returns a *compute.ShieldedInstanceConfig
+// representation of this VM's shielded instance options.
+func (vm *VM) getShieldedInstanceConfig() *compute.ShieldedInstanceConfig {
+	if !vm.Attributes.DisableIntegrityMonitoring && !vm.Attributes.EnableSecureBoot && !vm.Attributes.DisableVtpm {
+		return nil
+	}
+	return &compute.ShieldedInstanceConfig{
+		EnableIntegrityMonitoring: !vm.Attributes.DisableIntegrityMonitoring,
+		EnableSecureBoot:          vm.Attributes.EnableSecureBoot,
+		EnableVtpm:                !vm.Attributes.DisableVtpm,
+	}
+}
+
 // GetInstance returns a *compute.Instance representation of this VM.
 func (vm *VM) GetInstance() *compute.Instance {
 	inst := &compute.Instance{
-		Name:              vm.Hostname,
-		Disks:             vm.getDisks(),
-		MachineType:       vm.Attributes.GetMachineType(),
-		Metadata:          vm.getMetadata(),
-		MinCpuPlatform:    vm.Attributes.GetMinCpuPlatform(),
-		NetworkInterfaces: vm.getNetworkInterfaces(),
-		ServiceAccounts:   vm.getServiceAccounts(),
-		Scheduling:        vm.getScheduling(),
-		Tags:              vm.getTags(),
-		Labels:            vm.getLabels(),
+		Name:                   vm.Hostname,
+		Disks:                  vm.getDisks(),
+		MachineType:            vm.Attributes.GetMachineType(),
+		Metadata:               vm.getMetadata(),
+		MinCpuPlatform:         vm.Attributes.GetMinCpuPlatform(),
+		NetworkInterfaces:      vm.getNetworkInterfaces(),
+		ServiceAccounts:        vm.getServiceAccounts(),
+		Scheduling:             vm.getScheduling(),
+		ShieldedInstanceConfig: vm.getShieldedInstanceConfig(),
+		Tags:                   vm.getTags(),
+		Labels:                 vm.getLabels(),
 	}
 	return inst
 }

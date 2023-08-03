@@ -154,6 +154,15 @@ message VM {
 
   // The labels to attach to this VM.
   map<string, string> label = 11;
+
+  // Whether to disable integrity monitoring for this VM.
+  bool disable_integrity_monitoring = 12;
+
+  // Whether to enable secure boot for this VM.
+  bool enable_secure_boot = 13;
+
+  // Whether to disable vTPM for this VM.
+  bool disable_vtpm = 14;
 }
 
 // A length of time.

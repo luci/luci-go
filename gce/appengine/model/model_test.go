@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"google.golang.org/api/compute/v1"
 	"google.golang.org/protobuf/testing/protocmp"
 
 	"go.chromium.org/luci/gce/api/config/v1"
@@ -625,6 +626,57 @@ func TestVM(t *testing.T) {
 		})
 	})
 
+	Convey("getShieldedInstanceConfig", t, func() {
+		Convey("zero", func() {
+			Convey("empty", func() {
+				v := &VM{}
+				c := v.getShieldedInstanceConfig()
+				So(c, ShouldBeNil)
+			})
+		})
+		Convey("non-zero", func() {
+			Convey("disableIntegrityMonitoring", func() {
+				v := &VM{
+					Attributes: config.VM{
+						DisableIntegrityMonitoring: true,
+					},
+				}
+				c := v.getShieldedInstanceConfig()
+				So(c, ShouldResemble, &compute.ShieldedInstanceConfig{
+					EnableIntegrityMonitoring: false,
+					EnableSecureBoot:          false,
+					EnableVtpm:                true,
+				})
+			})
+			Convey("enableSecureBoot", func() {
+				v := &VM{
+					Attributes: config.VM{
+						EnableSecureBoot: true,
+					},
+				}
+				c := v.getShieldedInstanceConfig()
+				So(c, ShouldResemble, &compute.ShieldedInstanceConfig{
+					EnableIntegrityMonitoring: true,
+					EnableSecureBoot:          true,
+					EnableVtpm:                true,
+				})
+			})
+			Convey("disablevTPM", func() {
+				v := &VM{
+					Attributes: config.VM{
+						DisableVtpm: true,
+					},
+				}
+				c := v.getShieldedInstanceConfig()
+				So(c, ShouldResemble, &compute.ShieldedInstanceConfig{
+					EnableIntegrityMonitoring: true,
+					EnableSecureBoot:          false,
+					EnableVtpm:                false,
+				})
+			})
+		})
+	})
+
 	Convey("getTags", t, func() {
 		Convey("zero", func() {
 			Convey("nil", func() {
@@ -701,6 +753,7 @@ func TestVM(t *testing.T) {
 			So(i.NetworkInterfaces, ShouldHaveLength, 0)
 			So(i.Scheduling, ShouldBeNil)
 			So(i.ServiceAccounts, ShouldBeNil)
+			So(i.ShieldedInstanceConfig, ShouldBeNil)
 			So(i.Tags, ShouldBeNil)
 			So(i.Labels, ShouldBeNil)
 		})
@@ -714,8 +767,9 @@ func TestVM(t *testing.T) {
 							Size:  100,
 						},
 					},
-					MachineType:    "type",
-					MinCpuPlatform: "plat",
+					EnableSecureBoot: true,
+					MachineType:      "type",
+					MinCpuPlatform:   "plat",
 					NetworkInterface: []*config.NetworkInterface{
 						{
 							AccessConfig: []*config.AccessConfig{
@@ -740,6 +794,7 @@ func TestVM(t *testing.T) {
 			So(i.ServiceAccounts, ShouldBeNil)
 			So(i.Scheduling, ShouldNotBeNil)
 			So(i.Scheduling.NodeAffinities, ShouldHaveLength, 1)
+			So(i.ShieldedInstanceConfig, ShouldNotBeNil)
 			So(i.Tags, ShouldBeNil)
 			So(i.Labels, ShouldBeNil)
 		})
