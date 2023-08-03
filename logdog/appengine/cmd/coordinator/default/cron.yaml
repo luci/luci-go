@@ -14,7 +14,12 @@
 
 cron:
 
+- description: "tsmon housekeeping task"
+  url: "/internal/cron/ts_mon/housekeeping"
+  schedule: "every 1 minutes"
+  target: default
+
 - description: "Syncing configs in datastore with LUCI Config"
-  url: /internal/cron/sync-configs
-  schedule: every 10 minutes
+  url: "/admin/cron/sync-configs"
+  schedule: "every 1 minutes"
   target: default

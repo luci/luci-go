@@ -14,7 +14,7 @@
 
 service: default
 runtime: go120
-instance_class: F1
+app_engine_apis: true
 
 inbound_services:
   - warmup
@@ -33,9 +33,3 @@ handlers:
 - url: "/.*"
   script: auto
   secure: always
-
-entrypoint: >
-  main
-  -auth-service-host ${AUTH_SERVICE_HOST}
-  -config-service-host ${CONFIG_SERVICE_HOST}
-  -ts-mon-account ${TS_MON_ACCOUNT}

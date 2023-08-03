@@ -22,55 +22,68 @@ package main
 import (
 	"net/http"
 
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/config/server/cfgmodule"
+	"google.golang.org/appengine"
+
 	logsPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	registrationPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	servicesPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/server/config"
 
-	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/cron"
-	"go.chromium.org/luci/server/gaeemulation"
-	"go.chromium.org/luci/server/module"
+	gaeserver "go.chromium.org/luci/appengine/gaeauth/server"
+	"go.chromium.org/luci/appengine/gaemiddleware/standard"
+	"go.chromium.org/luci/grpc/discovery"
+	"go.chromium.org/luci/grpc/grpcmon"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/web/gowrappers/rpcexplorer"
 )
 
-// main is the entrypoint for the `default` service.
+// Run installs and executes this site.
 func main() {
-	modules := []module.Module{
-		cfgmodule.NewModuleFromFlags(),
-		cron.NewModuleFromFlags(),
-		gaeemulation.NewModuleFromFlags(), // For datastore support.
+	r := router.New()
+
+	// Standard HTTP endpoints.
+	standard.InstallHandlers(r)
+	rpcexplorer.Install(r)
+
+	// Register all of the handlers that we want to show up in RPC explorer (via
+	// pRPC discovery).
+	//
+	// Note that most of these services have dedicated service handlers, and any
+	// RPCs sent to this module will automatically be routed to them via
+	// "dispatch.yaml".
+	svr := &prpc.Server{
+		UnaryServerInterceptor: grpcutil.ChainUnaryServerInterceptors(
+			grpcmon.UnaryServerInterceptor,
+			auth.AuthenticatingInterceptor([]auth.Method{
+				&gaeserver.OAuth2Method{Scopes: []string{gaeserver.EmailScope}},
+			}).Unary(),
+		),
 	}
+	logsPb.RegisterLogsServer(svr, dummyLogsService)
+	registrationPb.RegisterRegistrationServer(svr, dummyRegistrationService)
+	servicesPb.RegisterServicesServer(svr, dummyServicesService)
+	discovery.Enable(svr)
 
-	server.Main(nil, modules, func(srv *server.Server) error {
-		// Install the in-memory cache for configs in datastore, warm it up.
-		srv.Context = config.WithStore(srv.Context, &config.Store{})
-		if _, err := config.Config(srv.Context); err != nil {
-			return errors.Annotate(err, "failed to fetch the initial service config").Err()
-		}
+	base := standard.Base().Extend(config.Middleware(&config.Store{}))
+	svr.InstallHandlers(r, base)
 
-		// Register dummy pRPC services (for RPC explorer discovery only).
-		//
-		// Note that most of these services have dedicated services to
-		// handle them, and any RPCs sent to this module will automatically
-		// be routed to them via "dispatch.yaml".
-		logsPb.RegisterLogsServer(srv, dummyLogsService)
-		registrationPb.RegisterRegistrationServer(srv, dummyRegistrationService)
-		servicesPb.RegisterServicesServer(srv, dummyServicesService)
-
-		// Register cron job handlers.
-		cron.RegisterHandler("sync-configs", config.Sync)
-
-		// Register UI routes.
-		srv.Routes.GET("/", nil, func(c *router.Context) {
-			http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
-		})
-		srv.Routes.GET("/v/", nil, func(c *router.Context) {
-			path := "/logs/" + c.Request.URL.Query().Get("s")
-			http.Redirect(c.Writer, c.Request, path, http.StatusFound)
-		})
-		return nil
+	r.GET("/admin/cron/sync-configs", base, func(c *router.Context) {
+		config.Sync(c.Request.Context())
 	})
+
+	// Redirect "/" to "/rpcexplorer/".
+	r.GET("/", nil, func(c *router.Context) {
+		http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
+	})
+	// Redirect "/v/?s=..." to "/logs/..."
+	r.GET("/v/", nil, func(c *router.Context) {
+		path := "/logs/" + c.Request.URL.Query().Get("s")
+		http.Redirect(c.Writer, c.Request, path, http.StatusFound)
+	})
+
+	http.Handle("/", r)
+	appengine.Main()
 }
