@@ -20,3 +20,7 @@ cron:
 - description: "Global metrics collection"
   url: /internal/cron/collect-global-metrics
   schedule: every 5 minutes
+
+- description: "Sweeper job for transactional tasks."
+  url: /internal/tasks/c/sweep
+  schedule: every 1 minutes
