@@ -15,11 +15,12 @@
 /**
  * Generates URL for collecting feedback.
  */
-export function genFeedbackUrl(errMsg?: string) {
+export function genFeedbackUrl(errMsg?: string, stacktrace?: string) {
   const feedbackComment =
     `Version: ${CONFIGS.VERSION}\n` +
     `From Link: ${self.location.href}\n` +
     (errMsg ? `Error Message:\n${errMsg}\n` : '') +
+    (stacktrace ? `Stacktrace:\n${stacktrace}\n` : '') +
     'Please enter a description of the problem, with repro steps if applicable.';
 
   const searchParams = new URLSearchParams({

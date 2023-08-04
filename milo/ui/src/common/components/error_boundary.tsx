@@ -16,6 +16,7 @@ import styled from '@emotion/styled';
 import { Alert, AlertTitle, Link } from '@mui/material';
 import { Component, ReactNode } from 'react';
 
+import { logging } from '@/common/tools/logging';
 import { genFeedbackUrl } from '@/common/tools/utils';
 
 export interface ErrorBoundaryProps {
@@ -46,12 +47,16 @@ export class ErrorBoundary extends Component<
 
   render() {
     if (this.state.error) {
+      logging.error(this.state.error);
       return (
         <Alert severity="error">
           <AlertTitle>Error</AlertTitle>
           <ErrorDisplay>{this.state.error.message}</ErrorDisplay>
           <Link
-            href={genFeedbackUrl(this.state.error.message)}
+            href={genFeedbackUrl(
+              this.state.error.message,
+              this.state.error.stack
+            )}
             target="_blank"
             rel="noopener"
           >
