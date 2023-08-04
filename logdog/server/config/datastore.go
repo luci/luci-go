@@ -46,6 +46,10 @@ type cachedConfig struct {
 	Meta   config.Meta `gae:",noindex"` // mostly for Revision
 
 	_extra datastore.PropertyMap `gae:"-,extra"`
+
+	// Disable dscache to allow these entities be updated from GAEv2,
+	// which doesn't work with dscache.
+	_ datastore.Toggle `gae:"$dscache.enable,false"`
 }
 
 func (c *cachedConfig) update(cfg *config.Config, typ proto.Message) error {

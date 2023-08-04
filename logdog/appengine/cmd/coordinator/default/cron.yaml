@@ -14,12 +14,14 @@
 
 cron:
 
+# Needed to support tsmon implementation used in GAEv1 apps. Only
+# `services` service is still using GAEv1, so it must handle it.
 - description: "tsmon housekeeping task"
   url: "/internal/cron/ts_mon/housekeeping"
   schedule: "every 1 minutes"
-  target: default
+  target: services
 
 - description: "Syncing configs in datastore with LUCI Config"
-  url: "/admin/cron/sync-configs"
+  url: "/internal/cron/sync-configs"
   schedule: "every 1 minutes"
   target: default
