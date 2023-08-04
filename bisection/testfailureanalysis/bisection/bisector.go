@@ -17,6 +17,7 @@ package bisection
 
 import (
 	"context"
+	"fmt"
 
 	"go.chromium.org/luci/bisection/internal/config"
 	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
@@ -30,6 +31,9 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/tq"
 	"google.golang.org/protobuf/proto"
+
+	// Add support for datastore transactions in TQ.
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 const (
@@ -43,7 +47,7 @@ func RegisterTaskClass() {
 		ID:        taskClass,
 		Prototype: (*tpb.TestFailureBisectionTask)(nil),
 		Queue:     queue,
-		Kind:      tq.NonTransactional,
+		Kind:      tq.Transactional,
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*tpb.TestFailureBisectionTask)
 			analysisID := task.GetAnalysisId()
@@ -61,6 +65,16 @@ func RegisterTaskClass() {
 			}
 			return nil
 		},
+	})
+}
+
+// Schedule enqueues a task to perform bisection.
+func Schedule(ctx context.Context, analysisID int64) error {
+	return tq.AddTask(ctx, &tq.Task{
+		Payload: &tpb.TestFailureBisectionTask{
+			AnalysisId: analysisID,
+		},
+		Title: fmt.Sprintf("analysisID-%d", analysisID),
 	})
 }
 

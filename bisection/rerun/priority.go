@@ -31,6 +31,7 @@ const (
 	PriorityCulpritVerificationMediumConfidence = 120
 	PriorityCulpritVerificationLowConfidence    = 140
 	PriorityNthSection                          = 130
+	PriorityTestFailure                         = 160
 
 	// Offset priority
 	PriorityTreeClosureOffset                    = -70

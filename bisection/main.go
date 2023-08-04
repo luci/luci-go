@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"net/http"
 
@@ -31,10 +32,13 @@ import (
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/pubsub"
 	"go.chromium.org/luci/bisection/server"
+	"go.chromium.org/luci/bisection/testfailureanalysis/bisection"
+	"go.chromium.org/luci/bisection/testfailuredetection"
 	"go.chromium.org/luci/grpc/prpc"
 
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	luciserver "go.chromium.org/luci/server"
@@ -151,6 +155,10 @@ func main() {
 		secrets.NewModuleFromFlags(),          // Needed by encryptedcookies.
 		tq.NewModuleFromFlags(),
 	}
+	luciAnalysisProject := ""
+	flag.StringVar(
+		&luciAnalysisProject, "luci-analysis-project", luciAnalysisProject, `the GCP project id of LUCI analysis.`,
+	)
 
 	luciserver.Main(nil, modules, func(srv *luciserver.Server) error {
 		mwc := pageMiddlewareChain(srv)
@@ -204,6 +212,10 @@ func main() {
 		revertculprit.RegisterTaskClass()
 		cancelanalysis.RegisterTaskClass()
 		culpritverification.RegisterTaskClass()
+		if err := testfailuredetection.RegisterTaskClass(srv, luciAnalysisProject); err != nil {
+			return errors.Annotate(err, "register test failure detection").Err()
+		}
+		bisection.RegisterTaskClass()
 
 		return nil
 	})
