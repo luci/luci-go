@@ -17,6 +17,7 @@ package util
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	pb "go.chromium.org/luci/bisection/proto/v1"
 )
@@ -40,5 +41,6 @@ func VariantToStrings(vr *pb.Variant) []string {
 	for k, v := range vr.GetDef() {
 		pairs = append(pairs, fmt.Sprintf("%s:%s", k, v))
 	}
+	sort.Strings(pairs)
 	return pairs
 }
