@@ -60,9 +60,9 @@ func GetUncached(c context.Context, key string, value any) error {
 // In particular, Get() right after Set() may still return old value.
 //
 // Returns ErrNoSettings if context doesn't have Settings implementation.
-func Set(c context.Context, key string, value any, who, why string) error {
+func Set(c context.Context, key string, value any) error {
 	if s := GetSettings(c); s != nil {
-		return s.Set(c, key, value, who, why)
+		return s.Set(c, key, value)
 	}
 	return ErrNoSettings
 }
@@ -74,9 +74,9 @@ func Set(c context.Context, key string, value any, who, why string) error {
 // made. Also logs who is making the change.
 //
 // Returns ErrNoSettings if context doesn't have Settings implementation.
-func SetIfChanged(c context.Context, key string, value any, who, why string) error {
+func SetIfChanged(c context.Context, key string, value any) error {
 	if s := GetSettings(c); s != nil {
-		return s.SetIfChanged(c, key, value, who, why)
+		return s.SetIfChanged(c, key, value)
 	}
 	return ErrNoSettings
 }

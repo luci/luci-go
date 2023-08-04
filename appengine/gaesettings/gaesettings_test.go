@@ -55,11 +55,11 @@ func TestWorks(t *testing.T) {
 
 		// Produce a bunch of versions.
 		tc.Add(time.Minute)
-		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
+		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`)), ShouldBeNil)
 		tc.Add(time.Minute)
-		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val2"`), "who2", "why2"), ShouldBeNil)
+		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val2"`)), ShouldBeNil)
 		tc.Add(time.Minute)
-		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val3"`), "who3", "why3"), ShouldBeNil)
+		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val3"`)), ShouldBeNil)
 
 		bundle, exp, err = s.FetchAllSettings(ctx)
 		So(err, ShouldBeNil)
@@ -90,15 +90,11 @@ func TestWorks(t *testing.T) {
 				ID:      "1",
 				Version: 1,
 				Value:   "{\n  \"key\": \"val1\"\n}",
-				Who:     "who1",
-				Why:     "why1",
 			},
 			"2": {
 				ID:      "2",
 				Version: 2,
 				Value:   "{\n  \"key\": \"val2\"\n}",
-				Who:     "who2",
-				Why:     "why2",
 			},
 		})
 
@@ -118,7 +114,7 @@ func TestWorks(t *testing.T) {
 		s := Storage{}
 
 		// Put something using default namespace.
-		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
+		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`)), ShouldBeNil)
 
 		// Works when using default namespace.
 		bundle, _, err := s.FetchAllSettings(ctx)
@@ -131,7 +127,7 @@ func TestWorks(t *testing.T) {
 		So(*bundle.Values["key"], ShouldResemble, json.RawMessage(`"val1"`))
 
 		// Update using non-default namespace.
-		So(s.UpdateSetting(namespaced, "key", json.RawMessage(`"val2"`), "who2", "why2"), ShouldBeNil)
+		So(s.UpdateSetting(namespaced, "key", json.RawMessage(`"val2"`)), ShouldBeNil)
 
 		// Works when using default namespace.
 		bundle, _, err = s.FetchAllSettings(ctx)
@@ -144,7 +140,7 @@ func TestWorks(t *testing.T) {
 		s := Storage{}
 
 		// Put something.
-		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
+		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`)), ShouldBeNil)
 
 		// Works when fetching outside of a transaction.
 		bundle, _, err := s.FetchAllSettings(ctx)
@@ -165,7 +161,7 @@ func TestWorks(t *testing.T) {
 		s := Storage{}
 
 		// Put something.
-		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
+		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`)), ShouldBeNil)
 
 		// Works when fetching outside of a transaction.
 		bundle, _, err := s.FetchAllSettings(ctx)
@@ -187,7 +183,7 @@ func TestWorks(t *testing.T) {
 		s := Storage{}
 
 		// Put something.
-		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
+		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`)), ShouldBeNil)
 
 		// Works when fetching outside of a transaction.
 		bundle, _, err := s.FetchAllSettings(ctx)
@@ -208,7 +204,7 @@ func TestWorks(t *testing.T) {
 		s := Storage{}
 
 		// Put something.
-		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
+		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`)), ShouldBeNil)
 
 		// Works when fetching outside of a transaction.
 		bundle, _, err := s.FetchAllSettings(ctx)

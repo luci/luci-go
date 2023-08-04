@@ -258,7 +258,7 @@ func (p *settingsPage) ReadSettings(c context.Context) (map[string]string, error
 	}, nil
 }
 
-func (p *settingsPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
+func (p *settingsPage) WriteSettings(c context.Context, values map[string]string) error {
 	p.m.Lock()
 	ro := p.readOnly != nil
 	p.m.Unlock()
@@ -289,7 +289,7 @@ func (p *settingsPage) WriteSettings(c context.Context, values map[string]string
 		}
 	}
 
-	return settings.SetIfChanged(c, settingsKey, &modified, who, why)
+	return settings.SetIfChanged(c, settingsKey, &modified)
 }
 
 func (p *settingsPage) Actions(ctx context.Context) ([]portal.Action, error) {

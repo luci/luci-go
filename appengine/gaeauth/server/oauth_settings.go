@@ -85,10 +85,10 @@ func (oauthSettingsPage) ReadSettings(ctx context.Context) (map[string]string, e
 	}, nil
 }
 
-func (oauthSettingsPage) WriteSettings(ctx context.Context, values map[string]string, who, why string) error {
+func (oauthSettingsPage) WriteSettings(ctx context.Context, values map[string]string) error {
 	return settings.SetIfChanged(ctx, oauthSettingsKey, &oauthSettings{
 		ClientID: values["ClientID"],
-	}, who, why)
+	})
 }
 
 func init() {

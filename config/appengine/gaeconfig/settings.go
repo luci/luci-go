@@ -46,8 +46,8 @@ type Settings struct {
 
 // SetIfChanged sets "s" to be the new Settings if it differs from the current
 // settings value.
-func (s *Settings) SetIfChanged(c context.Context, who, why string) error {
-	return settings.SetIfChanged(c, settingsKey, s, who, why)
+func (s *Settings) SetIfChanged(c context.Context) error {
+	return settings.SetIfChanged(c, settingsKey, s)
 }
 
 // FetchCachedSettings fetches Settings from the settings store.
@@ -174,12 +174,12 @@ func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
 	}, nil
 }
 
-func (settingsPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
+func (settingsPage) WriteSettings(c context.Context, values map[string]string) error {
 	modified := Settings{
 		ConfigServiceHost:   translateConfigURLToHost(values["ConfigServiceHost"]),
 		AdministratorsGroup: values["AdministratorsGroup"],
 	}
-	return modified.SetIfChanged(c, who, why)
+	return modified.SetIfChanged(c)
 }
 
 func translateConfigURLToHost(v string) string {

@@ -21,7 +21,6 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 
-	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
@@ -146,7 +145,7 @@ func portalPagePOST(ctx *router.Context) {
 		}
 
 		// Store.
-		err = page.WriteSettings(c, values, auth.CurrentUser(c).Email, "modified via web UI")
+		err = page.WriteSettings(c, values)
 		if err != nil {
 			return err
 		}

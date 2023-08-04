@@ -58,9 +58,9 @@ type settingsEntity struct {
 	Parent  *ds.Key   `gae:"$parent"`
 	Version int       `gae:",noindex"`
 	Value   string    `gae:",noindex"`
-	Who     string    `gae:",noindex"`
-	Why     string    `gae:",noindex"`
 	When    time.Time `gae:",noindex"`
+
+	_extra ds.PropertyMap `gae:"-,extra"`
 }
 
 // defaultContext returns datastore interface configured to use default
@@ -113,7 +113,7 @@ func (s Storage) FetchAllSettings(ctx context.Context) (*settings.Bundle, time.D
 }
 
 // UpdateSetting updates a setting at the given key.
-func (s Storage) UpdateSetting(ctx context.Context, key string, value json.RawMessage, who, why string) error {
+func (s Storage) UpdateSetting(ctx context.Context, key string, value json.RawMessage) error {
 	ctx = defaultContext(ctx)
 
 	var fatalFail error // set in transaction on fatal errors
@@ -148,8 +148,6 @@ func (s Storage) UpdateSetting(ctx context.Context, key string, value json.RawMe
 		}
 		latest.Version++
 		latest.Value = string(buf)
-		latest.Who = who
-		latest.Why = why
 		latest.When = clock.Now(ctx).UTC()
 
 		// Skip update if no changes at all.

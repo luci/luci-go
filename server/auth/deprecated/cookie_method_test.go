@@ -106,7 +106,7 @@ func TestFullFlow(t *testing.T) {
 			ClientSecret: "client_secret",
 			RedirectURI:  "http://fake/redirect",
 		}
-		So(settings.Set(ctx, SettingsKey, &cfg, "who", "why"), ShouldBeNil)
+		So(settings.Set(ctx, SettingsKey, &cfg), ShouldBeNil)
 
 		method := CookieAuthMethod{
 			SessionStore:        &MemorySessionStore{},

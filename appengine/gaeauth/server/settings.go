@@ -110,7 +110,7 @@ func (settingsPage) ReadSettings(ctx context.Context) (map[string]string, error)
 	}
 }
 
-func (settingsPage) WriteSettings(ctx context.Context, values map[string]string, who, why string) error {
+func (settingsPage) WriteSettings(ctx context.Context, values map[string]string) error {
 	authServiceURL := values["AuthServiceURL"]
 	if authServiceURL != "" {
 		var err error

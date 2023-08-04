@@ -36,7 +36,7 @@ func TestSettingsURLToHostTranslation(t *testing.T) {
 			s := Settings{
 				ConfigServiceHost: "https://example.com/foo/bar",
 			}
-			So(s.SetIfChanged(c, "test harness", "initial settings"), ShouldBeNil)
+			So(s.SetIfChanged(c), ShouldBeNil)
 
 			Convey(`Will load the setting as a host.`, func() {
 				s, err := FetchCachedSettings(c)
@@ -51,7 +51,7 @@ func TestSettingsURLToHostTranslation(t *testing.T) {
 			s := Settings{
 				ConfigServiceHost: "example.com",
 			}
-			So(s.SetIfChanged(c, "test harness", "initial settings"), ShouldBeNil)
+			So(s.SetIfChanged(c), ShouldBeNil)
 
 			Convey(`Will load the setting as a host.`, func() {
 				s, err := FetchCachedSettings(c)

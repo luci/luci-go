@@ -53,7 +53,7 @@ type Page interface {
 	//
 	// Only values of editable, not read only fields are passed here. All values
 	// are also validated using field's validators before this call.
-	WriteSettings(c context.Context, values map[string]string, who, why string) error
+	WriteSettings(c context.Context, values map[string]string) error
 }
 
 // Field is description of a single UI element of the page.
@@ -134,7 +134,7 @@ func (BasePage) ReadSettings(c context.Context) (map[string]string, error) {
 }
 
 // WriteSettings saves settings described as a map "field ID => field value".
-func (BasePage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
+func (BasePage) WriteSettings(c context.Context, values map[string]string) error {
 	return errors.New("not implemented")
 }
 

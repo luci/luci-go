@@ -126,13 +126,13 @@ func (settingsPage) ReadSettings(ctx context.Context) (map[string]string, error)
 	}, nil
 }
 
-func (settingsPage) WriteSettings(ctx context.Context, values map[string]string, who, why string) error {
+func (settingsPage) WriteSettings(ctx context.Context, values map[string]string) error {
 	return settings.SetIfChanged(ctx, SettingsKey, &Settings{
 		DiscoveryURL: values["DiscoveryURL"],
 		ClientID:     values["ClientID"],
 		ClientSecret: values["ClientSecret"],
 		RedirectURI:  values["RedirectURI"],
-	}, who, why)
+	})
 }
 
 func init() {

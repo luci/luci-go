@@ -46,7 +46,7 @@ func TestSettings(t *testing.T) {
 			So(settings.Get(ctx, "key", &s), ShouldEqual, ErrNoSettings)
 
 			// Set something.
-			So(settings.Set(ctx, "key", &exampleSettings{"hi"}, "who", "why"), ShouldBeNil)
+			So(settings.Set(ctx, "key", &exampleSettings{"hi"}), ShouldBeNil)
 
 			// Old value (the lack of there of) is still cached.
 			So(settings.Get(ctx, "key", &s), ShouldEqual, ErrNoSettings)
@@ -69,16 +69,16 @@ func TestSettings(t *testing.T) {
 
 		Convey("SetIfChanged works", func() {
 			// Initial value. New change notification.
-			So(settings.SetIfChanged(ctx, "key", &exampleSettings{"hi"}, "who", "why"), ShouldBeNil)
+			So(settings.SetIfChanged(ctx, "key", &exampleSettings{"hi"}), ShouldBeNil)
 			So(len(log.Messages()), ShouldEqual, 1)
 			log.Reset()
 
 			// Noop change. No change notification.
-			So(settings.SetIfChanged(ctx, "key", &exampleSettings{"hi"}, "who", "why"), ShouldBeNil)
+			So(settings.SetIfChanged(ctx, "key", &exampleSettings{"hi"}), ShouldBeNil)
 			So(len(log.Messages()), ShouldEqual, 0)
 
 			// Some real change. New change notification.
-			So(settings.SetIfChanged(ctx, "key", &exampleSettings{"boo"}, "who", "why"), ShouldBeNil)
+			So(settings.SetIfChanged(ctx, "key", &exampleSettings{"boo"}), ShouldBeNil)
 			So(len(log.Messages()), ShouldEqual, 1)
 		})
 	})
@@ -91,12 +91,12 @@ func TestContext(t *testing.T) {
 
 		So(Get(ctx, "key", &exampleSettings{}), ShouldEqual, ErrNoSettings)
 		So(GetUncached(ctx, "key", &exampleSettings{}), ShouldEqual, ErrNoSettings)
-		So(Set(ctx, "key", &exampleSettings{}, "who", "why"), ShouldEqual, ErrNoSettings)
-		So(SetIfChanged(ctx, "key", &exampleSettings{}, "who", "why"), ShouldEqual, ErrNoSettings)
+		So(Set(ctx, "key", &exampleSettings{}), ShouldEqual, ErrNoSettings)
+		So(SetIfChanged(ctx, "key", &exampleSettings{}), ShouldEqual, ErrNoSettings)
 
 		ctx = Use(ctx, New(&MemoryStorage{}))
-		So(Set(ctx, "key", &exampleSettings{"hi"}, "who", "why"), ShouldBeNil)
-		So(SetIfChanged(ctx, "key", &exampleSettings{"hi"}, "who", "why"), ShouldBeNil)
+		So(Set(ctx, "key", &exampleSettings{"hi"}), ShouldBeNil)
+		So(SetIfChanged(ctx, "key", &exampleSettings{"hi"}), ShouldBeNil)
 
 		So(Get(ctx, "key", &s), ShouldBeNil)
 		So(s, ShouldResemble, exampleSettings{"hi"})

@@ -52,7 +52,7 @@ var (
 type Bundle struct {
 	Values map[string]*json.RawMessage // immutable
 
-	lock     sync.RWMutex           // protects 'unpacked'
+	lock     sync.RWMutex   // protects 'unpacked'
 	unpacked map[string]any // deserialized RawMessages
 }
 
@@ -125,7 +125,7 @@ type MutableStorage interface {
 	Storage
 
 	// UpdateSetting updates a setting at the given key.
-	UpdateSetting(c context.Context, key string, value json.RawMessage, who, why string) error
+	UpdateSetting(c context.Context, key string, value json.RawMessage) error
 }
 
 // EventualConsistentStorage is MutableStorage where settings changes take
@@ -215,7 +215,7 @@ func (s *Settings) GetUncached(c context.Context, key string, value any) error {
 //
 // New settings will apply only when existing in-memory cache expires.
 // In particular, Get() right after Set() may still return old value.
-func (s *Settings) Set(c context.Context, key string, value any, who, why string) error {
+func (s *Settings) Set(c context.Context, key string, value any) error {
 	if !s.IsMutable() {
 		return ErrReadOnly
 	}
@@ -223,7 +223,7 @@ func (s *Settings) Set(c context.Context, key string, value any, who, why string
 	if err != nil {
 		return err
 	}
-	return s.storage.(MutableStorage).UpdateSetting(c, key, json.RawMessage(blob), who, why)
+	return s.storage.(MutableStorage).UpdateSetting(c, key, json.RawMessage(blob))
 }
 
 // SetIfChanged is like Set, but fetches an existing value and compares it to
@@ -231,7 +231,7 @@ func (s *Settings) Set(c context.Context, key string, value any, who, why string
 //
 // Avoids generating new revisions of settings if no changes are actually
 // made. Also logs who is making the change.
-func (s *Settings) SetIfChanged(c context.Context, key string, value any, who, why string) error {
+func (s *Settings) SetIfChanged(c context.Context, key string, value any) error {
 	if !s.IsMutable() {
 		return ErrReadOnly
 	}
@@ -256,7 +256,7 @@ func (s *Settings) SetIfChanged(c context.Context, key string, value any, who, w
 	// (and must not happen anyway).
 	existingJSON, _ := json.Marshal(existing)
 	modifiedJSON, _ := json.Marshal(value)
-	logging.Warningf(c, "Settings %q changed from %s to %s by %q", key, existingJSON, modifiedJSON, who)
+	logging.Warningf(c, "Settings %q changed from %s to %s", key, existingJSON, modifiedJSON)
 
-	return s.Set(c, key, value, who, why)
+	return s.Set(c, key, value)
 }

@@ -177,7 +177,7 @@ func (settingsPage) ReadSettings(ctx context.Context) (map[string]string, error)
 	}, nil
 }
 
-func (settingsPage) WriteSettings(ctx context.Context, values map[string]string, who, why string) error {
+func (settingsPage) WriteSettings(ctx context.Context, values map[string]string) error {
 	modified := gaeSettings{}
 	if err := modified.LoggingLevel.Set(values["LoggingLevel"]); err != nil {
 		return err
@@ -203,7 +203,7 @@ func (settingsPage) WriteSettings(ctx context.Context, values map[string]string,
 		}
 	}
 
-	return settings.SetIfChanged(ctx, settingsKey, &modified, who, why)
+	return settings.SetIfChanged(ctx, settingsKey, &modified)
 }
 
 func init() {

@@ -47,7 +47,7 @@ func (m *MemoryStorage) FetchAllSettings(c context.Context) (*Bundle, time.Durat
 }
 
 // UpdateSetting updates a setting at the given key.
-func (m *MemoryStorage) UpdateSetting(c context.Context, key string, value json.RawMessage, who, why string) error {
+func (m *MemoryStorage) UpdateSetting(c context.Context, key string, value json.RawMessage) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	if m.values == nil {
