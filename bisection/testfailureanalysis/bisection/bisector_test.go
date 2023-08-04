@@ -44,7 +44,7 @@ func TestRunBisector(t *testing.T) {
 
 	Convey("Bisection is not enabled", t, func() {
 		enableBisection(ctx, false)
-		tfa := testutil.CreateTestFailureAnalysis(ctx, 1000, nil)
+		tfa := testutil.CreateTestFailureAnalysis(ctx, nil)
 
 		err := Run(ctx, 1000)
 		So(err, ShouldBeNil)
@@ -56,7 +56,9 @@ func TestRunBisector(t *testing.T) {
 
 	Convey("No primary failure", t, func() {
 		enableBisection(ctx, true)
-		tfa := testutil.CreateTestFailureAnalysis(ctx, 1001, nil)
+		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+			ID: 1001,
+		})
 
 		err := Run(ctx, 1001)
 		So(err, ShouldNotBeNil)
@@ -68,8 +70,13 @@ func TestRunBisector(t *testing.T) {
 
 	Convey("Unsupported project", t, func() {
 		enableBisection(ctx, true)
-		tf := testutil.CreateTestFailure(ctx, 100, "chromeos")
-		tfa := testutil.CreateTestFailureAnalysis(ctx, 1002, tf)
+		tf := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+			Project: "chromeos",
+		})
+		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+			ID:          1002,
+			TestFailure: tf,
+		})
 
 		err := Run(ctx, 1002)
 		So(err, ShouldBeNil)
@@ -81,8 +88,21 @@ func TestRunBisector(t *testing.T) {
 
 	Convey("Supported project", t, func() {
 		enableBisection(ctx, true)
-		tf := testutil.CreateTestFailure(ctx, 100, "chromium")
-		tfa := testutil.CreateTestFailureAnalysis(ctx, 1002, tf)
+		tf := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+			IsPrimary: true,
+			Variant: map[string]string{
+				"test_suite": "test_suite",
+			},
+		})
+		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+			ID:          1002,
+			TestFailure: tf,
+		})
+
+		// Link the test failure with test failure analysis.
+		tf.AnalysisKey = datastore.KeyForObj(ctx, tfa)
+		So(datastore.Put(ctx, tf), ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
 
 		err := Run(ctx, 1002)
 		So(err, ShouldBeNil)

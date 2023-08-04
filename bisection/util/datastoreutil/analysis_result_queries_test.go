@@ -590,7 +590,7 @@ func TestGetTestFailureAnalysis(t *testing.T) {
 	testutil.UpdateIndices(ctx)
 
 	Convey("Get test failure analysis", t, func() {
-		testutil.CreateTestFailureAnalysis(ctx, 1000, nil)
+		testutil.CreateTestFailureAnalysis(ctx, nil)
 		tfa, err := GetTestFailureAnalysis(ctx, 1000)
 		So(err, ShouldBeNil)
 		So(tfa.ID, ShouldEqual, 1000)
@@ -603,16 +603,63 @@ func TestGetPrimaryTestFailure(t *testing.T) {
 	testutil.UpdateIndices(ctx)
 
 	Convey("No primary failure", t, func() {
-		tfa := testutil.CreateTestFailureAnalysis(ctx, 1000, nil)
+		tfa := testutil.CreateTestFailureAnalysis(ctx, nil)
 		_, err := GetPrimaryTestFailure(ctx, tfa)
 		So(err, ShouldNotBeNil)
 	})
 
 	Convey("Have primary failure", t, func() {
-		tf := testutil.CreateTestFailure(ctx, 100, "chromium")
-		tfa := testutil.CreateTestFailureAnalysis(ctx, 1002, tf)
+		tf := testutil.CreateTestFailure(ctx, nil)
+		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+			ID:          1002,
+			TestFailure: tf,
+		})
 		tf, err := GetPrimaryTestFailure(ctx, tfa)
 		So(err, ShouldBeNil)
 		So(tf.ID, ShouldEqual, 100)
+	})
+}
+
+func TestGetTestFailureBundle(t *testing.T) {
+	t.Parallel()
+	ctx := memory.Use(context.Background())
+	testutil.UpdateIndices(ctx)
+
+	Convey("No test failures", t, func() {
+		tfa := testutil.CreateTestFailureAnalysis(ctx, nil)
+		_, err := GetTestFailureBundle(ctx, tfa)
+		So(err, ShouldNotBeNil)
+	})
+
+	Convey("Have test failure", t, func() {
+		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+			ID: 1002,
+		})
+		tf1 := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+			ID: 100,
+		})
+		tf1.AnalysisKey = datastore.KeyForObj(ctx, tfa)
+		tf2 := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+			ID: 101,
+		})
+		tf2.AnalysisKey = datastore.KeyForObj(ctx, tfa)
+		So(datastore.Put(ctx, tf1), ShouldBeNil)
+		So(datastore.Put(ctx, tf2), ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		// No primary test failure.
+		_, err := GetTestFailureBundle(ctx, tfa)
+		So(err, ShouldNotBeNil)
+
+		// Have primary test failure.
+		tf2.IsPrimary = true
+		So(datastore.Put(ctx, tf2), ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+		bundle, err := GetTestFailureBundle(ctx, tfa)
+		So(err, ShouldBeNil)
+		So(bundle.Primary().ID, ShouldEqual, 101)
+		others := bundle.Others()
+		So(len(others), ShouldEqual, 1)
+		So(others[0].ID, ShouldEqual, 100)
 	})
 }

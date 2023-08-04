@@ -15,15 +15,16 @@
 package model
 
 import (
+	"context"
 	"testing"
 
 	pb "go.chromium.org/luci/bisection/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/appengine/gaetesting"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
@@ -31,7 +32,7 @@ func TestDatastoreModel(t *testing.T) {
 	t.Parallel()
 
 	Convey("Datastore Model", t, func() {
-		c := gaetesting.TestingContext()
+		c := memory.Use(context.Background())
 		cl := testclock.New(testclock.TestTimeUTC)
 		c = clock.Set(c, cl)
 
@@ -147,7 +148,40 @@ func TestDatastoreModel(t *testing.T) {
 				},
 			}
 			So(datastore.Put(c, rerun_build), ShouldBeNil)
-
 		})
+	})
+}
+
+func TestTestFailureBundle(t *testing.T) {
+	t.Parallel()
+
+	Convey("Test failure bundle", t, func() {
+		bundle := &TestFailureBundle{}
+
+		tf1 := &TestFailure{
+			ID: 100,
+		}
+		tf2 := &TestFailure{
+			ID:        101,
+			IsPrimary: true,
+		}
+		err := bundle.Add([]*TestFailure{
+			tf1,
+			tf2,
+		})
+		So(err, ShouldBeNil)
+		So(bundle.Primary(), ShouldResemble, tf2)
+		So(len(bundle.Others()), ShouldEqual, 1)
+		So(bundle.Others()[0], ShouldResemble, tf1)
+		So(len(bundle.All()), ShouldEqual, 2)
+
+		tf3 := &TestFailure{
+			ID:        102,
+			IsPrimary: true,
+		}
+		err = bundle.Add([]*TestFailure{
+			tf3,
+		})
+		So(err, ShouldNotBeNil)
 	})
 }

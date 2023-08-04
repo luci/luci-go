@@ -126,7 +126,10 @@ func Run(ctx context.Context, analysisID int64) (reterr error) {
 	// Trigger specific project bisector.
 	switch primaryFailure.Project {
 	case "chromium":
-		return chromium.Run(ctx, tfa)
+		err := chromium.Run(ctx, tfa)
+		if err != nil {
+			return errors.Annotate(err, "run chromium bisector").Err()
+		}
 	default:
 		// We don't support other projects for now, so mark the analysis as unsupported.
 		logging.Infof(ctx, "Unsupported project: %s", primaryFailure.Project)

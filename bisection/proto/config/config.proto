@@ -82,10 +82,6 @@ message AnalysisConfig {
 
 // TestAnalysisConfig is the configuration data for test failure bisection.
 message TestAnalysisConfig {
-  // TODO(nqmtuan): Remove this when we update lucicfg to use separate
-  // configuration for bisector and detector.
-  bool enabled = 1;
-
   // Global flag of whether test failure detector is enabled.
   // Although individual projects may have their own config, if this flag
   // flag is off, then the detector is off for every project.

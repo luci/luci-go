@@ -325,3 +325,25 @@ func GetPrimaryTestFailure(ctx context.Context, analysis *model.TestFailureAnaly
 	}
 	return testFailure, nil
 }
+
+// GetTestFailureBundle returns a TestFailureBundle for a TestFailureAnalysis.
+func GetTestFailureBundle(ctx context.Context, tfa *model.TestFailureAnalysis) (*model.TestFailureBundle, error) {
+	q := datastore.NewQuery("TestFailure").Eq("analysis_key", datastore.KeyForObj(ctx, tfa))
+	tfs := []*model.TestFailure{}
+	err := datastore.GetAll(ctx, q, &tfs)
+	if err != nil {
+		return nil, errors.Annotate(err, "get test failures for analysis").Err()
+	}
+	if len(tfs) == 0 {
+		return nil, errors.New("no test failure for analysis")
+	}
+	bundle := &model.TestFailureBundle{}
+	err = bundle.Add(tfs)
+	if err != nil {
+		return nil, err
+	}
+	if bundle.Primary() == nil {
+		return nil, errors.New("no primary test failure for analysis")
+	}
+	return bundle, nil
+}

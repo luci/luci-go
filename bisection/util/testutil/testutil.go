@@ -114,22 +114,76 @@ func CreateNthSectionSuspect(c context.Context, nsa *model.CompileNthSectionAnal
 	return suspect
 }
 
-func CreateTestFailure(ctx context.Context, id int64, project string) *model.TestFailure {
+type TestFailureCreationOption struct {
+	ID        int64
+	Project   string
+	Variant   map[string]string
+	IsPrimary bool
+	Analysis  *model.TestFailureAnalysis
+}
+
+func CreateTestFailure(ctx context.Context, option *TestFailureCreationOption) *model.TestFailure {
+	id := int64(100)
+	project := "chromium"
+	variant := map[string]string{}
+	isPrimary := false
+	var analysisKey *datastore.Key = nil
+
+	if option != nil {
+		if option.ID != 0 {
+			id = option.ID
+		}
+		if option.Project != "" {
+			project = option.Project
+		}
+		if option.Analysis != nil {
+			analysisKey = datastore.KeyForObj(ctx, option.Analysis)
+		}
+		variant = option.Variant
+		isPrimary = option.IsPrimary
+	}
+
 	tf := &model.TestFailure{
 		ID:      id,
 		Project: project,
+		Variant: &pb.Variant{
+			Def: variant,
+		},
+		IsPrimary:   isPrimary,
+		AnalysisKey: analysisKey,
 	}
 	So(datastore.Put(ctx, tf), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()
 	return tf
 }
 
-func CreateTestFailureAnalysis(ctx context.Context, id int64, tf *model.TestFailure) *model.TestFailureAnalysis {
-	tfa := &model.TestFailureAnalysis{
-		ID: id,
+type TestFailureAnalysisCreationOption struct {
+	ID          int64
+	Project     string
+	TestFailure *model.TestFailure
+}
+
+func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisCreationOption) *model.TestFailureAnalysis {
+	id := int64(1000)
+	project := "chromium"
+	var tfKey *datastore.Key = nil
+
+	if option != nil {
+		if option.ID != 0 {
+			id = option.ID
+		}
+		if option.Project != "" {
+			project = option.Project
+		}
+		if option.TestFailure != nil {
+			tfKey = datastore.KeyForObj(ctx, option.TestFailure)
+		}
 	}
-	if tf != nil {
-		tfa.TestFailure = datastore.KeyForObj(ctx, tf)
+
+	tfa := &model.TestFailureAnalysis{
+		ID:          id,
+		Project:     project,
+		TestFailure: tfKey,
 	}
 	So(datastore.Put(ctx, tfa), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()

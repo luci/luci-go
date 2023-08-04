@@ -16,6 +16,7 @@
 package model
 
 import (
+	"errors"
 	"time"
 
 	pb "go.chromium.org/luci/bisection/proto/v1"
@@ -339,6 +340,12 @@ type TestFailure struct {
 	VariantHash string `gae:"variant_hash"`
 	// The variant of the test.
 	Variant *pb.Variant `gae:"variant"`
+	// The name of the test (used in recipe). Note that it is different
+	// from TestID.
+	TestName string `gae:"test_name"`
+	// The name of the test suite that this test variant belongs to.
+	// For chromium, this information can be derived from Variant field.
+	TestSuiteName string `gae:"test_suite_name"`
 	// Hash of the ref to identify the branch in the source control.
 	RefHash string `gae:"ref_hash"`
 	// The branch where this failure happens.
@@ -374,6 +381,10 @@ type TestFailureAnalysis struct {
 	ID int64 `gae:"$id"`
 	// The LUCI project of the test variants this analysis analyses.
 	Project string `gae:"project"`
+	// The LUCI bucket for the builder that this analysis analyses.
+	Bucket string `gae:"bucket"`
+	// The name for the builder that this analysis analyses.
+	Builder string `gae:"builder"`
 	// Key to the primary TestFailure entity that this analysis analyses.
 	TestFailure *datastore.Key `gae:"test_failure"`
 	// Time when the entity is first created.
@@ -390,6 +401,14 @@ type TestFailureAnalysis struct {
 	VerifiedCulprit *datastore.Key `gae:"verified_culprit"`
 	// Priority of this run.
 	Priority int32 `gae:"priority"`
+	// The start commit hash of the regression range that this analysis analyses.
+	// It corresponds to the RegressionStartPosition.
+	StartCommitHash string `gae:"start_commit_hash"`
+	// The end commit hash of the regression range that this analysis analyses.
+	// It corresponds to the RegressionEndPosition.
+	EndCommitHash string `gae:"end_commit_hash"`
+	// An example Buildbucket ID in which the test failed.
+	FailedBuildID int64 `gae:"failed_build_id"`
 }
 
 func (cfa *CompileFailureAnalysis) HasEnded() bool {
@@ -406,4 +425,47 @@ func (nsa *CompileNthSectionAnalysis) HasEnded() bool {
 
 func (rerun *SingleRerun) HasEnded() bool {
 	return rerun.Status == pb.RerunStatus_RERUN_STATUS_FAILED || rerun.Status == pb.RerunStatus_RERUN_STATUS_PASSED || rerun.Status == pb.RerunStatus_RERUN_STATUS_INFRA_FAILED || rerun.Status == pb.RerunStatus_RERUN_STATUS_CANCELED
+}
+
+// TestFailureBundle contains TestFailure models that will be bisected together.
+type TestFailureBundle struct {
+	// Primary test failure.
+	primaryFailure *TestFailure
+	// Non-primary test failures.
+	otherTestFailures []*TestFailure
+}
+
+func (tfb *TestFailureBundle) Add(testFailures []*TestFailure) error {
+	for _, tf := range testFailures {
+		if tf.IsPrimary {
+			if tfb.primaryFailure != nil {
+				return errors.New("added more than 1 primary test failure in bundle")
+			}
+			tfb.primaryFailure = tf
+		} else {
+			tfb.otherTestFailures = append(tfb.otherTestFailures, tf)
+		}
+	}
+	return nil
+}
+
+// Primary returns the primary test failure for the bundle.
+func (tfb *TestFailureBundle) Primary() *TestFailure {
+	return tfb.primaryFailure
+}
+
+// Others returns other test failures for the bundle.
+func (tfb *TestFailureBundle) Others() []*TestFailure {
+	result := make([]*TestFailure, len(tfb.otherTestFailures))
+	// Copy here to prevent callers from adding things to the slice.
+	copy(result, tfb.otherTestFailures)
+	return result
+}
+
+// All return all test failures for the bundle.
+func (tfb *TestFailureBundle) All() []*TestFailure {
+	if tfb.primaryFailure == nil {
+		return tfb.Others()
+	}
+	return append(tfb.otherTestFailures, tfb.primaryFailure)
 }
