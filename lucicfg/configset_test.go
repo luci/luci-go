@@ -180,7 +180,7 @@ func TestRemoteValidator(t *testing.T) {
 		var reqs []*ValidationRequest
 		var lock sync.Mutex
 
-		val := &remoteValidator{
+		val := &legacyRemoteValidator{
 			requestSizeLimitBytes: 6,
 			validateConfig: func(ctx context.Context, req *ValidationRequest) (*config.LuciConfigValidateConfigResponseMessage, error) {
 				lock.Lock()
@@ -235,7 +235,7 @@ func TestRemoteValidator(t *testing.T) {
 	})
 
 	Convey("Handles errors", t, func() {
-		val := &remoteValidator{
+		val := &legacyRemoteValidator{
 			requestSizeLimitBytes: 6,
 
 			validateConfig: func(ctx context.Context, req *ValidationRequest) (*config.LuciConfigValidateConfigResponseMessage, error) {

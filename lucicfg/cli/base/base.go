@@ -170,8 +170,9 @@ func (c *Subcommand) CheckArgs(args []string, minPosCount, maxPosCount int) bool
 	return true
 }
 
-// ConfigServiceClient returns an authenticated client to call LUCI Config.
-func (c *Subcommand) ConfigServiceClient(ctx context.Context) (*http.Client, error) {
+// LegacyConfigServiceClient returns an authenticated client to call legacy
+// LUCI Config service.
+func (c *Subcommand) LegacyConfigServiceClient(ctx context.Context) (*http.Client, error) {
 	authOpts, err := c.authFlags.Options()
 	if err != nil {
 		return nil, err

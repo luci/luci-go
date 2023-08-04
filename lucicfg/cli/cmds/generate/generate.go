@@ -170,11 +170,11 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 	// default.
 	if gr.validate {
 		result.LinterFindings, result.Validation, err = base.Validate(ctx, base.ValidateParams{
-			Loader:              state.Inputs.Code,
-			Source:              state.Visited,
-			Output:              output,
-			Meta:                meta,
-			ConfigServiceClient: gr.ConfigServiceClient,
+			Loader:                    state.Inputs.Code,
+			Source:                    state.Visited,
+			Output:                    output,
+			Meta:                      meta,
+			LegacyConfigServiceClient: gr.LegacyConfigServiceClient,
 		}, func(path string) (*build.Rewriter, error) {
 			// GetRewriter needs to see absolute paths; In Validate the paths are all
 			// relative to the entrypoint (e.g. main.star) becuase they refer to

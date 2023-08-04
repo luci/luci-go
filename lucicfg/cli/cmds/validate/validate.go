@@ -147,9 +147,9 @@ func (vr *validateRun) validateExisting(ctx context.Context, dir string) (*valid
 		return nil, err
 	}
 	_, res, err := base.Validate(ctx, base.ValidateParams{
-		Output:              configSet.AsOutput("."),
-		Meta:                vr.Meta,
-		ConfigServiceClient: vr.ConfigServiceClient,
+		Output:                    configSet.AsOutput("."),
+		Meta:                      vr.Meta,
+		LegacyConfigServiceClient: vr.LegacyConfigServiceClient,
 	}, nil)
 	return &validateResult{Validation: res}, err
 }
@@ -232,11 +232,11 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 	// Apply local linters and validate outputs via LUCI Config RPC. This silently
 	// skips configs not belonging to any config sets.
 	result.LinterFindings, result.Validation, err = base.Validate(ctx, base.ValidateParams{
-		Loader:              state.Inputs.Code,
-		Source:              state.Visited,
-		Output:              output,
-		Meta:                meta,
-		ConfigServiceClient: vr.ConfigServiceClient,
+		Loader:                    state.Inputs.Code,
+		Source:                    state.Visited,
+		Output:                    output,
+		Meta:                      meta,
+		LegacyConfigServiceClient: vr.LegacyConfigServiceClient,
 	}, func(path string) (*build.Rewriter, error) {
 		// GetRewriter needs to see absolute paths; In Validate the paths are all
 		// relative to the entrypoint (e.g. main.star) becuase they refer to

@@ -87,12 +87,12 @@ type ConfigSetValidator interface {
 	Validate(ctx context.Context, req *ValidationRequest) ([]*ValidationMessage, error)
 }
 
-type remoteValidator struct {
+type legacyRemoteValidator struct {
 	validateConfig        func(context.Context, *ValidationRequest) (*config.LuciConfigValidateConfigResponseMessage, error)
 	requestSizeLimitBytes int64
 }
 
-func (r *remoteValidator) Validate(ctx context.Context, req *ValidationRequest) ([]*ValidationMessage, error) {
+func (r *legacyRemoteValidator) Validate(ctx context.Context, req *ValidationRequest) ([]*ValidationMessage, error) {
 	// Sort by size, smaller first, to group small files in a single request.
 	files := append([]*config.LuciConfigValidateConfigRequestMessageFile(nil), req.Files...)
 	sort.Slice(files, func(i, j int) bool {
@@ -159,10 +159,11 @@ func (r *remoteValidator) Validate(ctx context.Context, req *ValidationRequest) 
 	return messages, err
 }
 
-// RemoteValidator returns ConfigSetValidator that makes RPCs to LUCI Config.
-func RemoteValidator(client *http.Client, host string) ConfigSetValidator {
+// LegacyRemoteValidator returns ConfigSetValidator that makes RPCs to legacy
+// LUCI Config service.
+func LegacyRemoteValidator(client *http.Client, host string) ConfigSetValidator {
 	validateURL := fmt.Sprintf("https://%s/_ah/api/config/v1/validate-config", host)
-	return &remoteValidator{
+	return &legacyRemoteValidator{
 		// 160 MiB is picked because compression is done before sending the final
 		// request and the real request size limit is 32 MiB. Since config is
 		// highly repetitive content, it should easily achieve 5:1 compression
