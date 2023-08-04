@@ -34,7 +34,7 @@ import { AnalysisDetailsPage } from '@/bisection/pages/analysis_details';
 import { FailureAnalysesPage } from '@/bisection/pages/failure_analyses';
 import { obtainAuthState } from '@/common/api/auth_state';
 import { LitEnvProvider } from '@/common/components/lit_env_provider';
-import { BaseLayout } from '@/common/layouts/base';
+import { BaseLayout } from '@/common/layouts/base_layout';
 import { Store, StoreProvider } from '@/common/store';
 import { theme } from '@/common/themes/base';
 import { createStaticTrustedURL } from '@/generic_libs/tools/utils';

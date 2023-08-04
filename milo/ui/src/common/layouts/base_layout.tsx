@@ -43,7 +43,7 @@ const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
 
 export const SIDE_BAR_OPEN_CACHE_KEY = 'side-bar-open';
 
-export const MainContent = () => {
+export const BaseLayout = () => {
   const [sidebarOpenCache, setSidebarOpenCache] = useLocalStorageItem(
     SIDE_BAR_OPEN_CACHE_KEY,
     'true'
@@ -55,20 +55,25 @@ export const MainContent = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', pt: 7 }}>
-      <AppBar open={sidebarOpen} handleSidebarChanged={handleSidebarChanged} />
-      <Sidebar open={sidebarOpen} />
-      <Main open={sidebarOpen}>
-        {/*
-         * <AppBar /> and the <SideBar /> supports useful actions in case of an error (e.g. file a
-         * bug, log in/out).
-         * Wraps <Outlet /> in a separate <ErrorBoundary /> to ensure the
-         * <AppBar /> and the <SideBar> are always displayed when possible.
-         */}
-        <ErrorBoundary>
-          <Outlet />
-        </ErrorBoundary>
-      </Main>
-    </Box>
+    <ErrorBoundary>
+      <Box sx={{ display: 'flex', pt: 7 }}>
+        <AppBar
+          open={sidebarOpen}
+          handleSidebarChanged={handleSidebarChanged}
+        />
+        <Sidebar open={sidebarOpen} />
+        <Main open={sidebarOpen}>
+          {/*
+           ** <AppBar /> and the <SideBar /> supports useful actions in case of
+           ** an error (e.g. file a bug, log in/out).
+           ** Wraps <Outlet /> in a separate <ErrorBoundary /> to ensure the
+           ** <AppBar /> and the <SideBar> are always displayed when possible.
+           */}
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
+        </Main>
+      </Box>
+    </ErrorBoundary>
   );
 };

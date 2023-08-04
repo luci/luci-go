@@ -21,8 +21,8 @@ import { UiPage } from '@/common/constants';
 import { Store, StoreInstance, StoreProvider } from '@/common/store';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { SIDE_BAR_OPEN_CACHE_KEY } from './main_content';
-import { MainContent } from './main_content';
+import { SIDE_BAR_OPEN_CACHE_KEY } from './base_layout';
+import { BaseLayout } from './base_layout';
 
 describe('BaseLayout', () => {
   const storageList = new Map<string, string>();
@@ -52,7 +52,7 @@ describe('BaseLayout', () => {
     render(
       <StoreProvider value={store}>
         <FakeContextProvider>
-          <MainContent />
+          <BaseLayout />
         </FakeContextProvider>
       </StoreProvider>
     );
@@ -68,7 +68,7 @@ describe('BaseLayout', () => {
     render(
       <StoreProvider value={store}>
         <FakeContextProvider>
-          <MainContent />
+          <BaseLayout />
         </FakeContextProvider>
       </StoreProvider>
     );
