@@ -23,8 +23,10 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	"go.chromium.org/luci/bisection/model"
+	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/rerun"
 	tpb "go.chromium.org/luci/bisection/task/proto"
@@ -139,6 +141,12 @@ func TestFailureDetection(t *testing.T) {
 
 	Convey("Have bisection task to send", t, func() {
 		ctx := memory.Use(context.Background())
+		testCfg := &configpb.Config{
+			TestAnalysisConfig: &configpb.TestAnalysisConfig{
+				DetectorEnabled: true,
+			},
+		}
+		So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
 		cl := testclock.New(testclock.TestTimeUTC)
 		cl.Set(time.Unix(10000, 0).UTC())
 		ctx = clock.Set(ctx, cl)
@@ -216,6 +224,12 @@ func TestFailureDetection(t *testing.T) {
 
 	Convey("No bisection task to send", t, func() {
 		ctx := memory.Use(context.Background())
+		testCfg := &configpb.Config{
+			TestAnalysisConfig: &configpb.TestAnalysisConfig{
+				DetectorEnabled: true,
+			},
+		}
+		So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
 		cl := testclock.New(testclock.TestTimeUTC)
 		cl.Set(time.Unix(10000, 0).UTC())
 		ctx = clock.Set(ctx, cl)

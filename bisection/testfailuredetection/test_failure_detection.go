@@ -20,6 +20,7 @@ import (
 	"context"
 	"math"
 
+	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
@@ -93,6 +94,15 @@ type TestFailureDetector struct {
 
 // Find finds and group test failures to send to bisector.
 func (d *TestFailureDetector) Find(ctx context.Context, task *tpb.TestFailureDetectionTask) error {
+	// Checks if test failure detection is enabled.
+	enabled, err := isEnabled(ctx)
+	if err != nil {
+		return errors.Annotate(err, "is enabled").Err()
+	}
+	if !enabled {
+		logging.Infof(ctx, "Dectection is not enabled")
+		return nil
+	}
 	opts := lucianalysis.ReadTestFailuresOptions{
 		Project:          task.Project,
 		VariantPredicate: task.VariantPredicate,
@@ -245,4 +255,12 @@ func saveTestFailuresAndAnalysis(ctx context.Context, bundle testFailureBundle) 
 		}
 		return nil
 	}, nil)
+}
+
+func isEnabled(ctx context.Context) (bool, error) {
+	cfg, err := config.Get(ctx)
+	if err != nil {
+		return false, err
+	}
+	return cfg.TestAnalysisConfig.GetDetectorEnabled(), nil
 }
