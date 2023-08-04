@@ -15,3 +15,4 @@
 package configpb
 
 //go:generate cproto -use-grpc-plugin
+//go:generate mockgen -source config_service_grpc.pb.go -destination config_service.mock.pb.go -package configpb -write_package_comment=false
