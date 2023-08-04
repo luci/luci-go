@@ -39,6 +39,8 @@ import { Store, StoreProvider } from '@/common/store';
 import { theme } from '@/common/themes/base';
 import { createStaticTrustedURL } from '@/generic_libs/tools/utils';
 
+import { AuthStateInitializer } from './common/components/auth_state_provider';
+import { PageMetaProvider } from './common/components/page_meta/page_meta_provider';
 import { NON_TRANSIENT_ERROR_CODES } from './common/constants';
 import { ArtifactPageLayout } from './pages/artifact/artifact_page_layout';
 import { ImageDiffArtifactPage } from './pages/artifact/image_diff_artifact_page';
@@ -173,7 +175,11 @@ export function App({ initOpts }: AppProps) {
       // to 'ui' so the URLs work the same whether they are consumed by a
       // component/function imported from 'react-router' or from other modules.
       path: 'ui',
-      element: <BaseLayout />,
+      element: (
+        <AuthStateInitializer>
+          <BaseLayout />
+        </AuthStateInitializer>
+      ),
       loader: async () => obtainAuthState(),
       children: [
         { path: 'login', element: <LoginPage /> },
@@ -271,18 +277,25 @@ export function App({ initOpts }: AppProps) {
     },
   ]);
 
+  // As a rule of thumb, we should put our own providers in inner layers since
+  // they have a chance of depending on contexts provided by 3rd party providers
+  // while 3rd party providers have no chance depending on our providers (with
+  // the exception of <RouterProvider /> since the pages depend on the
+  // providers).
   return (
     <LocalizationProvider dateAdapter={AdapterLuxon}>
-      <StoreProvider value={store}>
-        <ThemeProvider theme={theme}>
-          <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={theme}>
+        <QueryClientProvider client={queryClient}>
+          <StoreProvider value={store}>
             <LitEnvProvider>
-              <milo-tooltip />
-              <RouterProvider router={router} />
+              <PageMetaProvider>
+                <milo-tooltip />
+                <RouterProvider router={router} />
+              </PageMetaProvider>
             </LitEnvProvider>
-          </QueryClientProvider>
-        </ThemeProvider>
-      </StoreProvider>
+          </StoreProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
     </LocalizationProvider>
   );
 }

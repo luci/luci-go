@@ -12,17 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ErrorBoundary } from '@/common/components/error_boundary';
+import { ReactNode } from 'react';
+import { useLoaderData } from 'react-router-dom';
 
-import { MainContent } from './main_content/main_content';
+import { AuthState } from '@/common/api/auth_state';
 
-/**
- * Renders page header, and tooltip.
- */
-export function BaseLayout() {
+import { AuthStateProvider } from './auth_state_provider';
+
+export interface AuthStateInitializerProps {
+  readonly children: ReactNode;
+}
+
+export function AuthStateInitializer({ children }: AuthStateInitializerProps) {
+  const initialAuthState = useLoaderData() as AuthState;
   return (
-    <ErrorBoundary>
-      <MainContent />
-    </ErrorBoundary>
+    <AuthStateProvider initialValue={initialAuthState}>
+      {children}
+    </AuthStateProvider>
   );
 }

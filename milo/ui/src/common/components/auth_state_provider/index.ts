@@ -13,3 +13,4 @@
 // limitations under the License.
 
 export * from './auth_state_provider';
+export * from './auth_state_initializer';
