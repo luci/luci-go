@@ -14,25 +14,14 @@
 
 // Binary stub doesn't actually do anything. It exists to give GAE a deployable
 // target so that the static pages for this service can be available.
-//
-// We include a warmup handler because it is a prerequisite for application-wide
-// version switching.
 package main
 
 import (
-	"net/http"
-
-	"google.golang.org/appengine"
-
-	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/server/warmup"
+	"go.chromium.org/luci/server"
 )
 
 func main() {
-	r := router.New()
-
-	warmup.InstallHandlersDeprecated(r, nil)
-
-	http.Handle("/", r)
-	appengine.Main()
+	server.Main(nil, nil, func(srv *server.Server) error {
+		return nil
+	})
 }

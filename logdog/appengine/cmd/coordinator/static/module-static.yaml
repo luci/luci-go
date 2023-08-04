@@ -14,7 +14,13 @@
 
 service: static
 runtime: go120
-app_engine_apis: true
+
+luci_gae_vars:
+  luci-logdog-dev:
+    TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
+
+env_variables:
+  TS_MON_ACCOUNT: ${TS_MON_ACCOUNT}
 
 # This is necessary for "switch" command. There is no corresponding support in
 # the static app.
@@ -26,3 +32,7 @@ handlers:
 - url: /static
   static_dir: static
   secure: always
+
+entrypoint: >
+  main
+  -ts-mon-account ${TS_MON_ACCOUNT}
