@@ -15,11 +15,16 @@
 package handlers
 
 import (
+	"fmt"
+	"net/http"
+
 	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/server/templates"
 )
 
-// IndexPage serves a GET request for the index page for the frontend
-func IndexPage(ctx *router.Context) {
-	templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/index.html", templates.Args{})
+// Redirect returns a handler that redirect traffics to Milo.
+func Redirect(redirectURL string) func(ctx *router.Context) {
+	return func(ctx *router.Context) {
+		url := fmt.Sprintf("https://%s%s", redirectURL, ctx.Request.URL.Path)
+		http.Redirect(ctx.Writer, ctx.Request, url, http.StatusFound)
+	}
 }

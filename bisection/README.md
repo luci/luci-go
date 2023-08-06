@@ -36,7 +36,7 @@ npm test
 
 In the root bisection directory, run
 ```
-go run main.go -cloud-project luci-bisection-dev -primary-tink-aead-key sm://tink-aead-primary -config-service-host luci-config.appspot.com
+go run main.go -cloud-project luci-bisection-dev -primary-tink-aead-key sm://tink-aead-primary -config-service-host luci-config.appspot.com -luci-analysis-project luci-analysis-dev
 ```
 
 This will start a web server running at http://localhost:8800.

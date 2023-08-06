@@ -120,7 +120,6 @@ func pageMiddlewareChain(srv *luciserver.Server) router.MiddlewareChain {
 	return router.NewMiddlewareChain(
 		auth.Authenticate(srv.CookieAuth),
 		templates.WithTemplates(prepareTemplates(&srv.Options)),
-		checkAccess,
 	)
 }
 
@@ -159,14 +158,14 @@ func main() {
 	flag.StringVar(
 		&luciAnalysisProject, "luci-analysis-project", luciAnalysisProject, `the GCP project id of LUCI analysis.`,
 	)
+	uiRedirectURL := "luci-milo-dev.appspot.com/ui/bisection"
+	flag.StringVar(
+		&uiRedirectURL, "ui-redirect-url", uiRedirectURL, `the redirect url for the frontend.`,
+	)
 
 	luciserver.Main(nil, modules, func(srv *luciserver.Server) error {
-		mwc := pageMiddlewareChain(srv)
-
-		handlers.RegisterRoutes(srv.Routes, mwc)
-		srv.Routes.Static("/static/", mwc, http.Dir("./frontend/ui/dist"))
-		// Anything that is not found, serve app html and let the client side router handle it.
-		srv.Routes.NotFound(mwc, handlers.IndexPage)
+		// Redirect the frontend to Milo.
+		srv.Routes.NotFound(nil, handlers.Redirect(uiRedirectURL))
 
 		// Pubsub handler
 		pubsubMwc := router.NewMiddlewareChain(
