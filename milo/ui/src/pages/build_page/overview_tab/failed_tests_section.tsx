@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { observer } from 'mobx-react-lite';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 import { getPropKeyLabel } from '@/common/services/resultdb';
@@ -45,8 +46,15 @@ export const FailedTestSection = observer(() => {
   const store = useStore();
   const invState = useInvocation();
   const testLoader = invState.testLoader;
+  useEffect(() => {
+    testLoader?.loadFirstPageOfTestVariants();
+  }, [testLoader]);
 
-  if (!store.buildPage.builderIdParam || !store.buildPage.buildNumOrIdParam) {
+  if (
+    !store.buildPage.builderIdParam ||
+    !store.buildPage.buildNumOrIdParam ||
+    !store.buildPage.hasInvocation
+  ) {
     return <></>;
   }
 
@@ -56,7 +64,7 @@ export const FailedTestSection = observer(() => {
       store.buildPage.buildNumOrIdParam
     ) + '/test-results';
 
-  if (!testLoader?.firstPageLoaded) {
+  if (!testLoader?.firstPageLoaded || !store.buildPage.build) {
     return (
       <>
         <Header url={testsTabUrl} />
@@ -116,7 +124,7 @@ export const FailedTestSection = observer(() => {
           columnGetters={invState.columnGetters}
           historyUrl={urlSetSearchQueryParam(
             getTestHistoryURLPath(
-              store.buildPage.build!.data.builder.project,
+              store.buildPage.build.data.builder.project,
               testVariant.testId
             ),
             'q',
