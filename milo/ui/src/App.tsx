@@ -23,7 +23,7 @@ import {
 } from '@tanstack/react-query';
 import { destroy } from 'mobx-state-tree';
 import { useEffect, useRef, useState } from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, Outlet, RouterProvider } from 'react-router-dom';
 import { Workbox } from 'workbox-window';
 
 import '@/common/styles/common_style.css';
@@ -41,6 +41,7 @@ import { createStaticTrustedURL } from '@/generic_libs/tools/utils';
 
 import { AuthStateInitializer } from './common/components/auth_state_provider';
 import { PageMetaProvider } from './common/components/page_meta/page_meta_provider';
+import { RouteErrorBoundary } from './common/components/route_error_boundary';
 import { NON_TRANSIENT_ERROR_CODES } from './common/constants';
 import { ArtifactPageLayout } from './pages/artifact/artifact_page_layout';
 import { ImageDiffArtifactPage } from './pages/artifact/image_diff_artifact_page';
@@ -175,101 +176,135 @@ export function App({ initOpts }: AppProps) {
       // to 'ui' so the URLs work the same whether they are consumed by a
       // component/function imported from 'react-router' or from other modules.
       path: 'ui',
+      loader: async () => obtainAuthState(),
       element: (
         <AuthStateInitializer>
           <BaseLayout />
         </AuthStateInitializer>
       ),
-      loader: async () => obtainAuthState(),
+      errorElement: <RouteErrorBoundary />,
       children: [
-        { path: 'login', element: <LoginPage /> },
-        { path: 'search', loader: searchRedirectionLoader },
-        { path: 'builder-search', element: <BuilderSearch /> },
         {
-          path: 'p/:project/test-search',
-          element: <TestSearch />,
-        },
-        { path: 'p/:project/builders', element: <BuildersPage /> },
-        { path: 'p/:project/g/:group/builders', element: <BuildersPage /> },
-        {
-          path: 'p/:project/builders/:bucket/:builder',
-          element: <BuilderPage />,
-        },
-        { path: 'b/:buildId/*?', element: <BuildPageShortLink /> },
-        {
-          path: 'p/:project/builders/:bucket/:builder/:buildNumOrId',
-          element: <BuildPage />,
+          path: '*',
+          element: <Outlet />,
+          errorElement: <RouteErrorBoundary />,
           children: [
-            { index: true, element: <BuildDefaultTab /> },
-            { path: BuildPageTab.Overview, element: <OverviewTab /> },
-            { path: BuildPageTab.TestResults, element: <TestResultsTab /> },
+            { path: 'login', element: <LoginPage /> },
+            { path: 'search', loader: searchRedirectionLoader },
+            { path: 'builder-search', element: <BuilderSearch /> },
             {
-              path: BuildPageTab.Steps,
-              element: <StepsTab />,
+              path: 'p/:project/test-search',
+              element: <TestSearch />,
+            },
+            { path: 'p/:project/builders', element: <BuildersPage /> },
+            { path: 'p/:project/g/:group/builders', element: <BuildersPage /> },
+            {
+              path: 'p/:project/builders/:bucket/:builder',
+              element: <BuilderPage />,
+            },
+            { path: 'b/:buildId/*?', element: <BuildPageShortLink /> },
+            {
+              path: 'p/:project/builders/:bucket/:builder/:buildNumOrId',
+              element: <BuildPage />,
               children: [
-                // Some old systems generate links to a step by appending suffix
-                // to /steps/ (crbug/1204954).
-                // This allows those links to continue to work.
-                { path: '*' },
+                {
+                  path: '*',
+                  element: <Outlet />,
+                  errorElement: <RouteErrorBoundary />,
+                  children: [
+                    { index: true, element: <BuildDefaultTab /> },
+                    { path: BuildPageTab.Overview, element: <OverviewTab /> },
+                    {
+                      path: BuildPageTab.TestResults,
+                      element: <TestResultsTab />,
+                    },
+                    {
+                      path: BuildPageTab.Steps,
+                      element: <StepsTab />,
+                      children: [
+                        // Some old systems generate links to a step by
+                        // appending suffix to /steps/ (crbug/1204954).
+                        // This allows those links to continue to work.
+                        { path: '*' },
+                      ],
+                    },
+                    {
+                      path: BuildPageTab.RelatedBuilds,
+                      element: <RelatedBuildsTab />,
+                    },
+                    { path: BuildPageTab.Timeline, element: <TimelineTab /> },
+                    { path: BuildPageTab.Blamelist, element: <BlamelistTab /> },
+                  ],
+                },
               ],
             },
-            { path: BuildPageTab.RelatedBuilds, element: <RelatedBuildsTab /> },
-            { path: BuildPageTab.Timeline, element: <TimelineTab /> },
-            { path: BuildPageTab.Blamelist, element: <BlamelistTab /> },
-          ],
-        },
-        {
-          path: 'inv/:invId',
-          element: <InvocationPage />,
-          children: [
-            { index: true, element: <InvocationDefaultTab /> },
-            { path: 'test-results', element: <TestResultsTab /> },
-            { path: 'invocation-details', element: <InvocationDetailsTab /> },
-          ],
-        },
-        {
-          path: 'artifact',
-          element: <ArtifactPageLayout />,
-          children: [
             {
-              path: 'text-diff/invocations/:invId/artifacts/:artifactId',
-              element: <TextDiffArtifactPage />,
+              path: 'inv/:invId',
+              element: <InvocationPage />,
+              children: [
+                {
+                  path: '*',
+                  element: <Outlet />,
+                  errorElement: <RouteErrorBoundary />,
+                  children: [
+                    { index: true, element: <InvocationDefaultTab /> },
+                    { path: 'test-results', element: <TestResultsTab /> },
+                    {
+                      path: 'invocation-details',
+                      element: <InvocationDetailsTab />,
+                    },
+                  ],
+                },
+              ],
             },
             {
-              path: 'text-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
-              element: <TextDiffArtifactPage />,
+              path: 'artifact',
+              element: <ArtifactPageLayout />,
+              children: [
+                {
+                  path: 'text-diff/invocations/:invId/artifacts/:artifactId',
+                  element: <TextDiffArtifactPage />,
+                },
+                {
+                  path: 'text-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
+                  element: <TextDiffArtifactPage />,
+                },
+                {
+                  path: 'image-diff/invocations/:invId/artifacts/:artifactId',
+                  element: <ImageDiffArtifactPage />,
+                },
+                {
+                  path: 'image-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
+                  element: <ImageDiffArtifactPage />,
+                },
+                {
+                  path: 'raw/invocations/:invId/artifacts/:artifactId',
+                  element: <RawArtifactPage />,
+                },
+                {
+                  path: 'raw/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
+                  element: <RawArtifactPage />,
+                },
+              ],
             },
             {
-              path: 'image-diff/invocations/:invId/artifacts/:artifactId',
-              element: <ImageDiffArtifactPage />,
+              path: 'test/:projectOrRealm/:testId',
+              element: <TestHistoryPage />,
             },
+            { path: '*', element: <NotFoundPage /> },
             {
-              path: 'image-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
-              element: <ImageDiffArtifactPage />,
-            },
-            {
-              path: 'raw/invocations/:invId/artifacts/:artifactId',
-              element: <RawArtifactPage />,
-            },
-            {
-              path: 'raw/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
-              element: <RawArtifactPage />,
-            },
-          ],
-        },
-        { path: 'test/:projectOrRealm/:testId', element: <TestHistoryPage /> },
-        { path: '*', element: <NotFoundPage /> },
-        {
-          path: 'bisection',
-          element: <BisectionLayout />,
-          children: [
-            {
-              index: true,
-              element: <FailureAnalysesPage />,
-            },
-            {
-              path: 'analysis/b/:bbid',
-              element: <AnalysisDetailsPage />,
+              path: 'bisection',
+              element: <BisectionLayout />,
+              children: [
+                {
+                  index: true,
+                  element: <FailureAnalysesPage />,
+                },
+                {
+                  path: 'analysis/b/:bbid',
+                  element: <AnalysisDetailsPage />,
+                },
+              ],
             },
           ],
         },
