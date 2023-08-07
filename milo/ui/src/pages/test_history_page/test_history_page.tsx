@@ -22,6 +22,7 @@ import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants';
 import { useStore } from '@/common/store';
 import { GraphType } from '@/common/store/test_history_page';
+import { extractProject } from '@/common/tools/utils';
 
 import { DateAxis } from './date_axis';
 import { DurationGraph } from './duration_graph';
@@ -103,10 +104,12 @@ export const TestHistoryPage = observer(() => {
 
   const Graph = GRAPH_TYPE_COMPONENT_MAP[pageState.graphType];
 
+  const project = extractProject(projectOrRealm);
+
   return (
     <PageContainer>
       <PageMeta
-        project={projectOrRealm}
+        project={project}
         title={UiPage.TestHistory}
         selectedPage={UiPage.TestHistory}
       />
