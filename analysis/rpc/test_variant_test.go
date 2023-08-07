@@ -151,7 +151,7 @@ func TestTestVariantsServer(t *testing.T) {
 				response, err := server.QueryFailureRate(ctx, request)
 				st, _ := grpcStatus.FromError(err)
 				So(st.Code(), ShouldEqual, codes.InvalidArgument)
-				So(st.Message(), ShouldEqual, `project missing`)
+				So(st.Message(), ShouldEqual, `project: unspecified`)
 				So(response, ShouldBeNil)
 			})
 		})
@@ -182,19 +182,19 @@ func TestValidateQueryFailureRateRequest(t *testing.T) {
 		Convey("no project", func() {
 			req.Project = ""
 			err := validateQueryTestVariantFailureRateRequest(req)
-			So(err, ShouldErrLike, "project missing")
+			So(err, ShouldErrLike, "project: unspecified")
 		})
 
 		Convey("invalid project", func() {
 			req.Project = ":"
 			err := validateQueryTestVariantFailureRateRequest(req)
-			So(err, ShouldErrLike, `project is invalid, expected [a-z0-9\-]{1,40}`)
+			So(err, ShouldErrLike, `project: must match ^[a-z0-9\-]{1,40}$`)
 		})
 
 		Convey("no test variants", func() {
 			req.TestVariants = nil
 			err := validateQueryTestVariantFailureRateRequest(req)
-			So(err, ShouldErrLike, `test_variants missing`)
+			So(err, ShouldErrLike, `test_variants: unspecified`)
 		})
 
 		Convey("too many test variants", func() {
@@ -211,13 +211,13 @@ func TestValidateQueryFailureRateRequest(t *testing.T) {
 		Convey("no test id", func() {
 			req.TestVariants[1].TestId = ""
 			err := validateQueryTestVariantFailureRateRequest(req)
-			So(err, ShouldErrLike, `test_variants[1]: test_id missing`)
+			So(err, ShouldErrLike, `test_variants[1]: test_id: unspecified`)
 		})
 
 		Convey("variant_hash invalid", func() {
 			req.TestVariants[1].VariantHash = "invalid"
 			err := validateQueryTestVariantFailureRateRequest(req)
-			So(err, ShouldErrLike, `test_variants[1]: variant_hash is not valid`)
+			So(err, ShouldErrLike, `test_variants[1]: variant_hash: must match ^[0-9a-f]{16}$`)
 		})
 
 		Convey("variant_hash mismatch with variant", func() {

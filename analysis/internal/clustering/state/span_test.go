@@ -55,7 +55,7 @@ func TestSpanner(t *testing.T) {
 				Convey(`Project missing`, func() {
 					e.Project = ""
 					_, err := testCreate(e)
-					So(err, ShouldErrLike, `project "" is not valid`)
+					So(err, ShouldErrLike, `project: unspecified`)
 				})
 				Convey(`Chunk ID missing`, func() {
 					e.ChunkID = ""

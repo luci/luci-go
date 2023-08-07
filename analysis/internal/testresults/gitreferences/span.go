@@ -27,8 +27,8 @@ import (
 	"go.chromium.org/luci/server/span"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/analysis/internal/config"
 	spanutil "go.chromium.org/luci/analysis/internal/span"
+	"go.chromium.org/luci/analysis/pbutil"
 )
 
 // GitReference represents a row in the GitReferences table.
@@ -94,7 +94,7 @@ func EnsureExists(ctx context.Context, r *GitReference) error {
 		// (or vice-versa), to safeguard data privacy, verify no collision
 		// occurred.
 		if r.Hostname != hostname || r.Repository != repository || r.Reference != reference {
-			return errors.Reason("GitReferenceHash collision between (%s:%s:%s) and (%s:%s:%s)",
+			return errors.Reason("gitReferenceHash collision between (%s:%s:%s) and (%s:%s:%s)",
 				r.Hostname, r.Repository, r.Reference, hostname, repository, reference).Err()
 		}
 
@@ -114,21 +114,21 @@ func EnsureExists(ctx context.Context, r *GitReference) error {
 
 // validateGitReference validates that the GitReference is valid.
 func validateGitReference(cr *GitReference) error {
-	if !config.ProjectRe.MatchString(cr.Project) {
-		return errors.Reason("Project does not match pattern %s", config.ProjectRePattern).Err()
+	if err := pbutil.ValidateProject(cr.Project); err != nil {
+		return errors.Annotate(err, "project").Err()
 	}
 	if cr.Hostname == "" || len(cr.Hostname) > 255 {
-		return errors.Reason("Hostname must have a length between 1 and 255").Err()
+		return errors.Reason("hostname: must have a length between 1 and 255").Err()
 	}
 	if cr.Repository == "" || len(cr.Repository) > 4096 {
-		return errors.Reason("Repository must have a length between 1 and 4096").Err()
+		return errors.Reason("repository: must have a length between 1 and 4096").Err()
 	}
 	if cr.Reference == "" || len(cr.Reference) > 4096 {
-		return errors.Reason("Reference must have a length between 1 and 4096").Err()
+		return errors.Reason("reference: must have a length between 1 and 4096").Err()
 	}
 	gitRefHash := GitReferenceHash(cr.Hostname, cr.Repository, cr.Reference)
 	if !bytes.Equal(gitRefHash, cr.GitReferenceHash) {
-		return errors.Reason("GitReferenceHash is unset or inconsistent, expected %v", gitRefHash).Err()
+		return errors.Reason("gitReferenceHash: unset or inconsistent, expected %v", gitRefHash).Err()
 	}
 	return nil
 }

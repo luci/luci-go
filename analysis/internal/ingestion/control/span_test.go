@@ -115,12 +115,12 @@ func TestSpan(t *testing.T) {
 				Convey(`Missing`, func() {
 					e.BuildProject = ""
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "build project must be valid")
+					So(err, ShouldErrLike, "build project: unspecified")
 				})
 				Convey(`Invalid`, func() {
 					e.BuildProject = "!"
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "build project must be valid")
+					So(err, ShouldErrLike, `build project: must match ^[a-z0-9\-]{1,40}$`)
 				})
 			})
 			Convey(`With invalid Build Result`, func() {
@@ -162,15 +162,15 @@ func TestSpan(t *testing.T) {
 				})
 			})
 			Convey(`With invalid Invocation Project`, func() {
-				Convey(`Missing`, func() {
+				Convey(`Unspecified`, func() {
 					e.InvocationProject = ""
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "invocation project must be valid")
+					So(err, ShouldErrLike, `invocation project: unspecified`)
 				})
 				Convey(`Invalid`, func() {
 					e.InvocationProject = "!"
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "invocation project must be valid")
+					So(err, ShouldErrLike, `invocation project: must match ^[a-z0-9\-]{1,40}$`)
 				})
 			})
 			Convey(`With invalid Invocation Result`, func() {
@@ -182,15 +182,15 @@ func TestSpan(t *testing.T) {
 				})
 			})
 			Convey(`With invalid Presubmit Project`, func() {
-				Convey(`Missing`, func() {
+				Convey(`Unspecified`, func() {
 					e.PresubmitProject = ""
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "presubmit project must be valid")
+					So(err, ShouldErrLike, `presubmit project: unspecified`)
 				})
 				Convey(`Invalid`, func() {
 					e.PresubmitProject = "!"
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "presubmit project must be valid")
+					So(err, ShouldErrLike, `presubmit project: must match ^[a-z0-9\-]{1,40}$`)
 				})
 			})
 			Convey(`With invalid Presubmit Result`, func() {

@@ -39,6 +39,14 @@ var stringPairKeyRe = regexp.MustCompile(fmt.Sprintf(`^%s$`, stringPairKeyPatter
 var stringPairRe = regexp.MustCompile(fmt.Sprintf("(?s)^(%s):(.*)$", stringPairKeyPattern))
 var variantHashRe = regexp.MustCompile("^[0-9a-f]{16}$")
 
+// ProjectRePattern is the regular expression pattern that matches
+// validly formed LUCI Project names.
+// From https://source.chromium.org/chromium/infra/infra/+/main:luci/appengine/components/components/config/common.py?q=PROJECT_ID_PATTERN
+const ProjectRePattern = `[a-z0-9\-]{1,40}`
+
+// projectRe matches validly formed LUCI Project names.
+var projectRe = regexp.MustCompile(`^` + ProjectRePattern + `$`)
+
 // MustTimestampProto converts a time.Time to a *timestamppb.Timestamp and panics
 // on failure.
 func MustTimestampProto(t time.Time) *timestamppb.Timestamp {
@@ -242,4 +250,14 @@ func PresubmitRunStatusFromLUCICV(status cvv0.Run_Status) (pb.PresubmitRunStatus
 		return pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_CANCELED, nil
 	}
 	return pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_UNSPECIFIED, fmt.Errorf("unknown run status %q", status)
+}
+
+func ValidateProject(project string) error {
+	if project == "" {
+		return errors.Reason("unspecified").Err()
+	}
+	if !projectRe.MatchString(project) {
+		return errors.Reason("must match %s", projectRe).Err()
+	}
+	return nil
 }

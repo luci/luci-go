@@ -18,9 +18,7 @@ package bqutil
 import (
 	"strings"
 
-	"go.chromium.org/luci/analysis/internal/config"
-
-	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/analysis/pbutil"
 )
 
 // InternalDatasetID is the name of the BigQuery dataset which is intended
@@ -32,8 +30,8 @@ const InternalDatasetID = "internal"
 func DatasetForProject(luciProject string) (string, error) {
 	// The returned dataset may be used in SQL expressions, so we want to
 	// be absolutely sure no SQL Injection is possible.
-	if !config.ProjectRe.MatchString(luciProject) {
-		return "", errors.New("invalid LUCI Project")
+	if err := pbutil.ValidateProject(luciProject); err != nil {
+		return "", err
 	}
 
 	// The valid alphabet of LUCI project names [1] is [a-z0-9-] whereas
@@ -48,8 +46,8 @@ func DatasetForProject(luciProject string) (string, error) {
 func ProjectForDataset(dataset string) (string, error) {
 	project := strings.ReplaceAll(dataset, "_", "-")
 
-	if !config.ProjectRe.MatchString(project) {
-		return "", errors.New("invalid LUCI Project")
+	if err := pbutil.ValidateProject(project); err != nil {
+		return "", err
 	}
 
 	return project, nil

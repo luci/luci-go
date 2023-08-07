@@ -23,6 +23,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	cpb "go.chromium.org/luci/analysis/internal/clustering/proto"
+	"go.chromium.org/luci/analysis/pbutil"
 )
 
 // FakeClient provides a fake implementation of a chunk store, for testing.
@@ -48,7 +49,7 @@ func NewFakeClient() *FakeClient {
 // Put saves the given chunk to storage. If successful, it returns
 // the randomly-assigned ID of the created object.
 func (fc *FakeClient) Put(ctx context.Context, project string, content *cpb.Chunk) (string, error) {
-	if err := validateProject(project); err != nil {
+	if err := pbutil.ValidateProject(project); err != nil {
 		return "", err
 	}
 	_, err := proto.Marshal(content)
@@ -70,7 +71,7 @@ func (fc *FakeClient) Put(ctx context.Context, project string, content *cpb.Chun
 
 // Get retrieves the chunk with the specified object ID and returns it.
 func (fc *FakeClient) Get(ctx context.Context, project, objectID string) (*cpb.Chunk, error) {
-	if err := validateProject(project); err != nil {
+	if err := pbutil.ValidateProject(project); err != nil {
 		return nil, err
 	}
 	if err := validateObjectID(objectID); err != nil {

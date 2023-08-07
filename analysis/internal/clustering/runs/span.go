@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering/shards"
 	"go.chromium.org/luci/analysis/internal/config"
 	spanutil "go.chromium.org/luci/analysis/internal/span"
+	"go.chromium.org/luci/analysis/pbutil"
 )
 
 // ReclusteringRun contains the details of a runs used to re-cluster
@@ -212,9 +213,10 @@ func Create(ctx context.Context, r *ReclusteringRun) error {
 }
 
 func validateRun(r *ReclusteringRun) error {
+	if err := pbutil.ValidateProject(r.Project); err != nil {
+		return errors.Annotate(err, "project").Err()
+	}
 	switch {
-	case !config.ProjectRe.MatchString(r.Project):
-		return errors.New("project must be valid")
 	case r.AttemptTimestamp.Before(StartingEpoch):
 		return errors.New("attempt timestamp must be valid")
 	case r.AlgorithmsVersion <= 0:

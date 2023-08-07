@@ -29,8 +29,8 @@ import (
 	"go.chromium.org/luci/analysis/internal/bugs"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/rules/lang"
-	"go.chromium.org/luci/analysis/internal/config"
 	spanutil "go.chromium.org/luci/analysis/internal/span"
+	"go.chromium.org/luci/analysis/pbutil"
 )
 
 // RuleIDRe is the regular expression pattern that matches validly
@@ -488,9 +488,10 @@ func Update(ctx context.Context, rule *Entry, options UpdateOptions, user string
 }
 
 func validateRule(r *Entry) error {
+	if err := pbutil.ValidateProject(r.Project); err != nil {
+		return errors.Annotate(err, "project").Err()
+	}
 	switch {
-	case !config.ProjectRe.MatchString(r.Project):
-		return errors.New("project must be valid")
 	case !RuleIDRe.MatchString(r.RuleID):
 		return errors.New("rule ID must be valid")
 	case r.BugID.Validate() != nil:

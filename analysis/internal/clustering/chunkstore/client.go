@@ -34,7 +34,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	cpb "go.chromium.org/luci/analysis/internal/clustering/proto"
-	"go.chromium.org/luci/analysis/internal/config"
+	"go.chromium.org/luci/analysis/pbutil"
 )
 
 // objectRe matches validly formed object IDs.
@@ -84,7 +84,7 @@ func (c *Client) Close() {
 // Put saves the given chunk to storage. If successful, it returns
 // the randomly-assigned ID of the created object.
 func (c *Client) Put(ctx context.Context, project string, content *cpb.Chunk) (objectID string, retErr error) {
-	if err := validateProject(project); err != nil {
+	if err := pbutil.ValidateProject(project); err != nil {
 		return "", err
 	}
 	b, err := proto.Marshal(content)
@@ -127,7 +127,7 @@ func (c *Client) Put(ctx context.Context, project string, content *cpb.Chunk) (o
 
 // Get retrieves the chunk with the specified object ID and returns it.
 func (c *Client) Get(ctx context.Context, project, objectID string) (chunk *cpb.Chunk, retErr error) {
-	if err := validateProject(project); err != nil {
+	if err := pbutil.ValidateProject(project); err != nil {
 		return nil, err
 	}
 	if err := validateObjectID(objectID); err != nil {
@@ -156,13 +156,6 @@ func (c *Client) Get(ctx context.Context, project, objectID string) (chunk *cpb.
 		return nil, errors.Annotate(err, "unmarshal chunk").Err()
 	}
 	return content, nil
-}
-
-func validateProject(project string) error {
-	if !config.ProjectRe.MatchString(project) {
-		return fmt.Errorf("project %q is not a valid", project)
-	}
-	return nil
 }
 
 func validateObjectID(id string) error {

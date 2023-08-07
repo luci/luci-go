@@ -16,17 +16,22 @@ package rpc
 
 import (
 	"context"
+	"fmt"
+	"unicode"
+	"unicode/utf8"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
+	"golang.org/x/text/unicode/norm"
 
 	"go.chromium.org/luci/analysis/internal/pagination"
 	"go.chromium.org/luci/analysis/internal/perms"
 	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
+	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 )
 
 func init() {
@@ -87,11 +92,11 @@ func (s *testHistoryServer) Query(ctx context.Context, req *pb.QueryTestHistoryR
 }
 
 func validateQueryTestHistoryRequest(req *pb.QueryTestHistoryRequest) error {
-	switch {
-	case req.GetProject() == "":
-		return errors.Reason("project missing").Err()
-	case req.GetTestId() == "":
-		return errors.Reason("test_id missing").Err()
+	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
+		return errors.Annotate(err, "project").Err()
+	}
+	if err := rdbpbutil.ValidateTestID(req.TestId); err != nil {
+		return errors.Annotate(err, "test_id").Err()
 	}
 
 	if err := pbutil.ValidateTestVerdictPredicate(req.GetPredicate()); err != nil {
@@ -141,11 +146,11 @@ func (s *testHistoryServer) QueryStats(ctx context.Context, req *pb.QueryTestHis
 }
 
 func validateQueryTestHistoryStatsRequest(req *pb.QueryTestHistoryStatsRequest) error {
-	switch {
-	case req.GetProject() == "":
-		return errors.Reason("project missing").Err()
-	case req.GetTestId() == "":
-		return errors.Reason("test_id missing").Err()
+	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
+		return errors.Annotate(err, "project").Err()
+	}
+	if err := rdbpbutil.ValidateTestID(req.TestId); err != nil {
+		return errors.Annotate(err, "test_id").Err()
 	}
 
 	if err := pbutil.ValidateTestVerdictPredicate(req.GetPredicate()); err != nil {
@@ -191,11 +196,16 @@ func (*testHistoryServer) QueryVariants(ctx context.Context, req *pb.QueryVarian
 }
 
 func validateQueryVariantsRequest(req *pb.QueryVariantsRequest) error {
-	switch {
-	case req.GetProject() == "":
-		return errors.Reason("project missing").Err()
-	case req.GetTestId() == "":
-		return errors.Reason("test_id missing").Err()
+	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
+		return errors.Annotate(err, "project").Err()
+	}
+	if err := rdbpbutil.ValidateTestID(req.TestId); err != nil {
+		return errors.Annotate(err, "test_id").Err()
+	}
+	if req.SubRealm != "" {
+		if err := realms.ValidateRealmName(req.SubRealm, realms.ProjectScope); err != nil {
+			return errors.Annotate(err, "sub_realm").Err()
+		}
 	}
 
 	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
@@ -242,16 +252,42 @@ func (*testHistoryServer) QueryTests(ctx context.Context, req *pb.QueryTestsRequ
 }
 
 func validateQueryTestsRequest(req *pb.QueryTestsRequest) error {
-	switch {
-	case req.GetProject() == "":
-		return errors.Reason("project missing").Err()
-	case req.GetTestIdSubstring() == "":
-		return errors.Reason("test_id_substring missing").Err()
+	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
+		return errors.Annotate(err, "project").Err()
+	}
+	if err := validateTestIDPart(req.TestIdSubstring); err != nil {
+		return errors.Annotate(err, "test_id_substring").Err()
+	}
+	if req.SubRealm != "" {
+		if err := realms.ValidateRealmName(req.SubRealm, realms.ProjectScope); err != nil {
+			return errors.Annotate(err, "sub_realm").Err()
+		}
 	}
 
 	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
 		return errors.Annotate(err, "page_size").Err()
 	}
 
+	return nil
+}
+
+func validateTestIDPart(testIDPart string) error {
+	if testIDPart == "" {
+		return errors.Reason("unspecified").Err()
+	}
+	if len(testIDPart) > 512 {
+		return errors.Reason("length exceeds 512 bytes").Err()
+	}
+	if !utf8.ValidString(testIDPart) {
+		return errors.Reason("not a valid utf8 string").Err()
+	}
+	if !norm.NFC.IsNormalString(testIDPart) {
+		return errors.Reason("not in unicode normalized form C").Err()
+	}
+	for i, rune := range testIDPart {
+		if !unicode.IsPrint(rune) {
+			return fmt.Errorf("non-printable rune %+q at byte index %d", rune, i)
+		}
+	}
 	return nil
 }

@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/config"
 	spanutil "go.chromium.org/luci/analysis/internal/span"
+	"go.chromium.org/luci/analysis/pbutil"
 
 	"cloud.google.com/go/spanner"
 	"go.chromium.org/luci/common/errors"
@@ -386,9 +387,10 @@ func estimateChunksFromID(chunkID100 string) (int, error) {
 }
 
 func validateEntry(e *Entry) error {
+	if err := pbutil.ValidateProject(e.Project); err != nil {
+		return errors.Annotate(err, "project").Err()
+	}
 	switch {
-	case !config.ProjectRe.MatchString(e.Project):
-		return fmt.Errorf("project %q is not valid", e.Project)
 	case !clustering.ChunkRe.MatchString(e.ChunkID):
 		return fmt.Errorf("chunk ID %q is not valid", e.ChunkID)
 	case e.PartitionTime.IsZero():

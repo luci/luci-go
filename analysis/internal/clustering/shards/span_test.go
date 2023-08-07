@@ -167,15 +167,15 @@ func TestSpan(t *testing.T) {
 				So(err, ShouldErrLike, "shard number must be a positive integer")
 			})
 			Convey(`With invalid Project`, func() {
-				Convey(`Missing`, func() {
+				Convey(`Unspecified`, func() {
 					s.Project = ""
 					err := testCreate(s)
-					So(err, ShouldErrLike, "project must be valid")
+					So(err, ShouldErrLike, "project: unspecified")
 				})
 				Convey(`Invalid`, func() {
 					s.Project = "!"
 					err := testCreate(s)
-					So(err, ShouldErrLike, "project must be valid")
+					So(err, ShouldErrLike, `project: must match ^[a-z0-9\-]{1,40}$`)
 				})
 			})
 			Convey(`With invalid Attempt Timestamp`, func() {

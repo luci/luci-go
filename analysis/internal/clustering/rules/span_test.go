@@ -407,15 +407,15 @@ func TestSpan(t *testing.T) {
 				})
 			})
 			Convey(`With invalid Project`, func() {
-				Convey(`Missing`, func() {
+				Convey(`Unspecified`, func() {
 					r.Project = ""
 					_, err := testCreate(r, LUCIAnalysisSystem)
-					So(err, ShouldErrLike, "project must be valid")
+					So(err, ShouldErrLike, `project: unspecified`)
 				})
 				Convey(`Invalid`, func() {
 					r.Project = "!"
 					_, err := testCreate(r, LUCIAnalysisSystem)
-					So(err, ShouldErrLike, "project must be valid")
+					So(err, ShouldErrLike, `project: must match ^[a-z0-9\-]{1,40}$`)
 				})
 			})
 			Convey(`With invalid Rule Definition`, func() {

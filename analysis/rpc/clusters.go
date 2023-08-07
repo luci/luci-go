@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering/reclustering"
 	"go.chromium.org/luci/analysis/internal/clustering/rules/cache"
 	"go.chromium.org/luci/analysis/internal/clustering/runs"
-	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
 	"go.chromium.org/luci/analysis/internal/perms"
 	"go.chromium.org/luci/analysis/pbutil"
@@ -74,8 +73,8 @@ func NewClustersServer(analysisClient AnalysisClient) *pb.DecoratedClusters {
 
 // Cluster clusters a list of test failures. See proto definition for more.
 func (*clustersServer) Cluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
-	if !config.ProjectRe.MatchString(req.Project) {
-		return nil, invalidArgumentError(errors.Reason("project").Err())
+	if err := pbutil.ValidateProject(req.Project); err != nil {
+		return nil, invalidArgumentError(errors.Annotate(err, "project").Err())
 	}
 	// We could make an implementation that gracefully degrades if
 	// perms.PermGetRule is not available (i.e. by not returning the
@@ -376,8 +375,8 @@ func (c *clustersServer) GetReclusteringProgress(ctx context.Context, req *pb.Ge
 }
 
 func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.QueryClusterSummariesRequest) (*pb.QueryClusterSummariesResponse, error) {
-	if !config.ProjectRe.MatchString(req.Project) {
-		return nil, invalidArgumentError(errors.Reason("project").Err())
+	if err := pbutil.ValidateProject(req.Project); err != nil {
+		return nil, invalidArgumentError(errors.Annotate(err, "project").Err())
 	}
 
 	if err := pbutil.ValidateTimeRange(ctx, req.TimeRange); err != nil {
@@ -719,8 +718,8 @@ func createClusterExoneratedTestVariant(tv *analysis.ExoneratedTestVariant) *pb.
 
 // QueryHistory clusters a list of test failures. See proto definition for more.
 func (c *clustersServer) QueryHistory(ctx context.Context, req *pb.QueryClusterHistoryRequest) (*pb.QueryClusterHistoryResponse, error) {
-	if !config.ProjectRe.MatchString(req.Project) {
-		return nil, invalidArgumentError(errors.Reason("project").Err())
+	if err := pbutil.ValidateProject(req.Project); err != nil {
+		return nil, invalidArgumentError(errors.Annotate(err, "project").Err())
 	}
 
 	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermExpensiveClusterQueries, perms.PermGetConfig); err != nil {

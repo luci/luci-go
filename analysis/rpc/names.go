@@ -23,8 +23,9 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/config"
+	"go.chromium.org/luci/analysis/pbutil"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/resultdb/pbutil"
+	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 )
 
 // Regular expressions for matching resource names used in APIs.
@@ -33,25 +34,25 @@ var (
 	// ClusterNameRe performs partial validation of a cluster resource name.
 	// Cluster algorithm and ID must be further validated by
 	// ClusterID.Validate().
-	ClusterNameRe = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/clusters/(` + GenericKeyPattern + `)/(` + GenericKeyPattern + `)$`)
+	ClusterNameRe = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/clusters/(` + GenericKeyPattern + `)/(` + GenericKeyPattern + `)$`)
 	// ClusterFailuresNameRe performs a partial validation of the resource
 	// name for a cluster's failures.
 	// Cluster algorithm and ID must be further validated by
 	// ClusterID.Validate().
-	ClusterFailuresNameRe = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/clusters/(` + GenericKeyPattern + `)/(` + GenericKeyPattern + `)/failures$`)
+	ClusterFailuresNameRe = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/clusters/(` + GenericKeyPattern + `)/(` + GenericKeyPattern + `)/failures$`)
 	// ClusterExoneratedTestVariantsNameRe performs a partial validation of
 	// the resource name for a cluster's exonerated test variants.
 	// Cluster algorithm and ID must be further validated by
 	// ClusterID.Validate().
-	ClusterExoneratedTestVariantsNameRe = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/clusters/(` + GenericKeyPattern + `)/(` + GenericKeyPattern + `)/exoneratedTestVariants$`)
-	ProjectNameRe                       = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)$`)
-	ProjectConfigNameRe                 = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/config$`)
-	ProjectMetricNameRe                 = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/metrics/(` + metrics.MetricIDPattern + `)$`)
-	ReclusteringProgressNameRe          = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/reclusteringProgress$`)
-	RuleNameRe                          = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/rules/(` + rules.RuleIDRePattern + `)$`)
+	ClusterExoneratedTestVariantsNameRe = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/clusters/(` + GenericKeyPattern + `)/(` + GenericKeyPattern + `)/exoneratedTestVariants$`)
+	ProjectNameRe                       = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)$`)
+	ProjectConfigNameRe                 = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/config$`)
+	ProjectMetricNameRe                 = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/metrics/(` + metrics.MetricIDPattern + `)$`)
+	ReclusteringProgressNameRe          = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/reclusteringProgress$`)
+	RuleNameRe                          = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/rules/(` + rules.RuleIDRePattern + `)$`)
 	// TestVariantBranchNameRe performs a partial validation of a TestVariantBranch name.
 	// Test ID must be further validated with ValidateTestID.
-	TestVariantBranchNameRe = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/tests/([^/]+)/variants/(` + config.VariantHashRePattern + `)/refs/(` + config.RefHashRePattern + `)$`)
+	TestVariantBranchNameRe = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/tests/([^/]+)/variants/(` + config.VariantHashRePattern + `)/refs/(` + config.RefHashRePattern + `)$`)
 )
 
 // parseProjectName parses a project resource name into a project ID.
@@ -167,7 +168,7 @@ func parseTestVariantBranchName(name string) (project, testID, variantHash, refH
 		return "", "", "", "", errors.Annotate(err, "malformed test id").Err()
 	}
 
-	if err := pbutil.ValidateTestID(testID); err != nil {
+	if err := rdbpbutil.ValidateTestID(testID); err != nil {
 		return "", "", "", "", errors.Annotate(err, "test id %q", testID).Err()
 	}
 

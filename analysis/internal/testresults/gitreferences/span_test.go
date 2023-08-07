@@ -100,53 +100,53 @@ func TestSpan(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				_, err = save(entry)
-				So(err, ShouldErrLike, "GitReferenceHash collision")
+				So(err, ShouldErrLike, "gitReferenceHash collision")
 			})
 			Convey("Invalid entries are rejected", func() {
 				Convey("Project is empty", func() {
 					entry.Project = ""
 					_, err := save(entry)
-					So(err, ShouldErrLike, "Project does not match pattern")
+					So(err, ShouldErrLike, "project: unspecified")
 				})
 				Convey("Project is invalid", func() {
 					entry.Project = "!invalid"
 					_, err := save(entry)
-					So(err, ShouldErrLike, "Project does not match pattern")
+					So(err, ShouldErrLike, `project: must match ^[a-z0-9\-]{1,40}$`)
 				})
 				Convey("GitReferenceHash is invalid", func() {
 					entry.GitReferenceHash = nil
 					_, err := save(entry)
-					So(err, ShouldErrLike, "GitReferenceHash is unset or inconsistent")
+					So(err, ShouldErrLike, "gitReferenceHash: unset or inconsistent")
 				})
 				Convey("Hostname is empty", func() {
 					entry.Hostname = ""
 					_, err := save(entry)
-					So(err, ShouldErrLike, "Hostname must have a length between 1 and 255")
+					So(err, ShouldErrLike, "hostname: must have a length between 1 and 255")
 				})
 				Convey("Hostname is too long", func() {
 					entry.Hostname = strings.Repeat("h", 256)
 					_, err := save(entry)
-					So(err, ShouldErrLike, "Hostname must have a length between 1 and 255")
+					So(err, ShouldErrLike, "hostname: must have a length between 1 and 255")
 				})
 				Convey("Repository is empty", func() {
 					entry.Repository = ""
 					_, err := save(entry)
-					So(err, ShouldErrLike, "Repository must have a length between 1 and 4096")
+					So(err, ShouldErrLike, "repository: must have a length between 1 and 4096")
 				})
 				Convey("Repository is too long", func() {
 					entry.Repository = strings.Repeat("r", 4097)
 					_, err := save(entry)
-					So(err, ShouldErrLike, "Repository must have a length between 1 and 4096")
+					So(err, ShouldErrLike, "repository: must have a length between 1 and 4096")
 				})
 				Convey("Reference is empty", func() {
 					entry.Reference = ""
 					_, err := save(entry)
-					So(err, ShouldErrLike, "Reference must have a length between 1 and 4096")
+					So(err, ShouldErrLike, "reference: must have a length between 1 and 4096")
 				})
 				Convey("Reference is too long", func() {
 					entry.Reference = strings.Repeat("f", 4097)
 					_, err := save(entry)
-					So(err, ShouldErrLike, "Reference must have a length between 1 and 4096")
+					So(err, ShouldErrLike, "reference: must have a length between 1 and 4096")
 				})
 			})
 		})

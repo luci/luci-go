@@ -22,7 +22,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"go.chromium.org/luci/analysis/internal/bqutil"
-	"go.chromium.org/luci/analysis/internal/config"
+	"go.chromium.org/luci/analysis/pbutil"
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -77,48 +77,55 @@ type makeTableMetadata func(luciProject string) *bigquery.TableMetadata
 
 var luciProjectViewQueries = map[string]makeTableMetadata{
 	"failure_association_rules": func(luciProject string) *bigquery.TableMetadata {
-		if !config.ProjectRe.MatchString(luciProject) {
-			panic("invalid LUCI Project")
+		// Revalidate project as safeguard against SQL-Injection.
+		if err := pbutil.ValidateProject(luciProject); err != nil {
+			panic(err)
 		}
+
 		return &bigquery.TableMetadata{
 			ViewQuery: `SELECT * FROM internal.failure_association_rules WHERE project = "` + luciProject + `"`,
 		}
 	},
 	"clustered_failures": func(luciProject string) *bigquery.TableMetadata {
-		if !config.ProjectRe.MatchString(luciProject) {
-			panic("invalid LUCI Project")
+		// Revalidate project as safeguard against SQL-Injection.
+		if err := pbutil.ValidateProject(luciProject); err != nil {
+			panic(err)
 		}
 		return &bigquery.TableMetadata{
 			ViewQuery: `SELECT * FROM internal.clustered_failures WHERE project = "` + luciProject + `"`,
 		}
 	},
 	"cluster_summaries": func(luciProject string) *bigquery.TableMetadata {
-		if !config.ProjectRe.MatchString(luciProject) {
-			panic("invalid LUCI Project")
+		// Revalidate project as safeguard against SQL-Injection.
+		if err := pbutil.ValidateProject(luciProject); err != nil {
+			panic(err)
 		}
 		return &bigquery.TableMetadata{
 			ViewQuery: `SELECT * FROM internal.cluster_summaries WHERE project = "` + luciProject + `"`,
 		}
 	},
 	"test_verdicts": func(luciProject string) *bigquery.TableMetadata {
-		if !config.ProjectRe.MatchString(luciProject) {
-			panic("invalid LUCI Project")
+		// Revalidate project as safeguard against SQL-Injection.
+		if err := pbutil.ValidateProject(luciProject); err != nil {
+			panic(err)
 		}
 		return &bigquery.TableMetadata{
 			ViewQuery: `SELECT * FROM internal.test_verdicts WHERE project = "` + luciProject + `"`,
 		}
 	},
 	"test_variant_segments": func(luciProject string) *bigquery.TableMetadata {
-		if !config.ProjectRe.MatchString(luciProject) {
-			panic("invalid LUCI Project")
+		// Revalidate project as safeguard against SQL-Injection.
+		if err := pbutil.ValidateProject(luciProject); err != nil {
+			panic(err)
 		}
 		return &bigquery.TableMetadata{
 			ViewQuery: `SELECT * FROM internal.test_variant_segments WHERE project = "` + luciProject + `"`,
 		}
 	},
 	"test_variant_segments_unexpected_realtime": func(luciProject string) *bigquery.TableMetadata {
-		if !config.ProjectRe.MatchString(luciProject) {
-			panic("invalid LUCI Project")
+		// Revalidate project as safeguard against SQL-Injection.
+		if err := pbutil.ValidateProject(luciProject); err != nil {
+			panic(err)
 		}
 		viewQuery := fmt.Sprintf(segmentsUnexpectedRealtimeQuery, luciProject)
 		return &bigquery.TableMetadata{

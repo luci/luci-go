@@ -24,9 +24,9 @@ import (
 	"go.chromium.org/luci/server/span"
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/analysis/internal/config"
 	ctlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	spanutil "go.chromium.org/luci/analysis/internal/span"
+	"go.chromium.org/luci/analysis/pbutil"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 )
 
@@ -427,8 +427,8 @@ func validateEntry(e *Entry) error {
 		if err := ValidateBuildResult(e.BuildResult); err != nil {
 			return errors.Annotate(err, "build result").Err()
 		}
-		if !config.ProjectRe.MatchString(e.BuildProject) {
-			return errors.New("build project must be valid")
+		if err := pbutil.ValidateProject(e.BuildProject); err != nil {
+			return errors.Annotate(err, "build project").Err()
 		}
 	} else {
 		if e.BuildProject != "" {
@@ -441,8 +441,8 @@ func validateEntry(e *Entry) error {
 		if !e.HasInvocation {
 			return errors.New("invocation result must not be set unless HasInvocation is set")
 		}
-		if !config.ProjectRe.MatchString(e.InvocationProject) {
-			return errors.New("invocation project must be valid")
+		if err := pbutil.ValidateProject(e.InvocationProject); err != nil {
+			return errors.Annotate(err, "invocation project").Err()
 		}
 	} else {
 		if e.InvocationProject != "" {
@@ -458,8 +458,8 @@ func validateEntry(e *Entry) error {
 		if err := ValidatePresubmitResult(e.PresubmitResult); err != nil {
 			return errors.Annotate(err, "presubmit result").Err()
 		}
-		if !config.ProjectRe.MatchString(e.PresubmitProject) {
-			return errors.New("presubmit project must be valid")
+		if err := pbutil.ValidateProject(e.PresubmitProject); err != nil {
+			return errors.Annotate(err, "presubmit project").Err()
 		}
 	} else {
 		if e.PresubmitProject != "" {

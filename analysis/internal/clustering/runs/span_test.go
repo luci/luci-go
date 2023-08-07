@@ -335,15 +335,15 @@ func TestSpan(t *testing.T) {
 				testExists(r)
 			})
 			Convey(`With invalid Project`, func() {
-				Convey(`Missing`, func() {
+				Convey(`Unspecified`, func() {
 					r.Project = ""
 					err := testCreate(r)
-					So(err, ShouldErrLike, "project must be valid")
+					So(err, ShouldErrLike, "project: unspecified")
 				})
 				Convey(`Invalid`, func() {
 					r.Project = "!"
 					err := testCreate(r)
-					So(err, ShouldErrLike, "project must be valid")
+					So(err, ShouldErrLike, `project: must match ^[a-z0-9\-]{1,40}$`)
 				})
 			})
 			Convey(`With invalid Attempt Timestamp`, func() {

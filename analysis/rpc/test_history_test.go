@@ -633,13 +633,25 @@ func TestValidateQueryTestHistoryRequest(t *testing.T) {
 		Convey("no project", func() {
 			req.Project = ""
 			err := validateQueryTestHistoryRequest(req)
-			So(err, ShouldErrLike, "project missing")
+			So(err, ShouldErrLike, "project: unspecified")
+		})
+
+		Convey("invalid project", func() {
+			req.Project = "project:realm"
+			err := validateQueryTestHistoryRequest(req)
+			So(err, ShouldErrLike, `project: must match ^[a-z0-9\-]{1,40}$`)
 		})
 
 		Convey("no test_id", func() {
 			req.TestId = ""
 			err := validateQueryTestHistoryRequest(req)
-			So(err, ShouldErrLike, "test_id missing")
+			So(err, ShouldErrLike, "test_id: unspecified")
+		})
+
+		Convey("invalid test_id", func() {
+			req.TestId = "\xFF"
+			err := validateQueryTestHistoryRequest(req)
+			So(err, ShouldErrLike, "test_id: not a valid utf8 string")
 		})
 
 		Convey("no predicate", func() {
@@ -683,13 +695,25 @@ func TestValidateQueryTestHistoryStatsRequest(t *testing.T) {
 		Convey("no project", func() {
 			req.Project = ""
 			err := validateQueryTestHistoryStatsRequest(req)
-			So(err, ShouldErrLike, "project missing")
+			So(err, ShouldErrLike, "project: unspecified")
+		})
+
+		Convey("invalid project", func() {
+			req.Project = "project:realm"
+			err := validateQueryTestHistoryStatsRequest(req)
+			So(err, ShouldErrLike, `project: must match ^[a-z0-9\-]{1,40}$`)
 		})
 
 		Convey("no test_id", func() {
 			req.TestId = ""
 			err := validateQueryTestHistoryStatsRequest(req)
-			So(err, ShouldErrLike, "test_id missing")
+			So(err, ShouldErrLike, "test_id: unspecified")
+		})
+
+		Convey("invalid test_id", func() {
+			req.TestId = "\xFF"
+			err := validateQueryTestHistoryStatsRequest(req)
+			So(err, ShouldErrLike, "test_id: not a valid utf8 string")
 		})
 
 		Convey("no predicate", func() {
@@ -730,13 +754,31 @@ func TestValidateQueryVariantsRequest(t *testing.T) {
 		Convey("no project", func() {
 			req.Project = ""
 			err := validateQueryVariantsRequest(req)
-			So(err, ShouldErrLike, "project missing")
+			So(err, ShouldErrLike, "project: unspecified")
+		})
+
+		Convey("invalid project", func() {
+			req.Project = "project:realm"
+			err := validateQueryVariantsRequest(req)
+			So(err, ShouldErrLike, `project: must match ^[a-z0-9\-]{1,40}$`)
 		})
 
 		Convey("no test_id", func() {
 			req.TestId = ""
 			err := validateQueryVariantsRequest(req)
-			So(err, ShouldErrLike, "test_id missing")
+			So(err, ShouldErrLike, "test_id: unspecified")
+		})
+
+		Convey("invalid test_id", func() {
+			req.TestId = "\xFF"
+			err := validateQueryVariantsRequest(req)
+			So(err, ShouldErrLike, "test_id: not a valid utf8 string")
+		})
+
+		Convey("bad sub_realm", func() {
+			req.SubRealm = "a:realm"
+			err := validateQueryVariantsRequest(req)
+			So(err, ShouldErrLike, "sub_realm: bad project-scoped realm name")
 		})
 
 		Convey("no page size", func() {
@@ -771,13 +813,31 @@ func TestValidateQueryTestsRequest(t *testing.T) {
 		Convey("no project", func() {
 			req.Project = ""
 			err := validateQueryTestsRequest(req)
-			So(err, ShouldErrLike, "project missing")
+			So(err, ShouldErrLike, "project: unspecified")
+		})
+
+		Convey("invalid project", func() {
+			req.Project = "project:realm"
+			err := validateQueryTestsRequest(req)
+			So(err, ShouldErrLike, `project: must match ^[a-z0-9\-]{1,40}$`)
 		})
 
 		Convey("no test_id_substring", func() {
 			req.TestIdSubstring = ""
 			err := validateQueryTestsRequest(req)
-			So(err, ShouldErrLike, "test_id_substring missing")
+			So(err, ShouldErrLike, "test_id_substring: unspecified")
+		})
+
+		Convey("bad test_id_substring", func() {
+			req.TestIdSubstring = "\xFF"
+			err := validateQueryTestsRequest(req)
+			So(err, ShouldErrLike, "test_id_substring: not a valid utf8 string")
+		})
+
+		Convey("bad sub_realm", func() {
+			req.SubRealm = "a:realm"
+			err := validateQueryTestsRequest(req)
+			So(err, ShouldErrLike, "sub_realm: bad project-scoped realm name")
 		})
 
 		Convey("no page size", func() {

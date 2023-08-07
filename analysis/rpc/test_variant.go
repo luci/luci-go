@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/perms"
 	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/pbutil"
@@ -81,14 +80,11 @@ func validateQueryTestVariantFailureRateRequest(req *pb.QueryTestVariantFailureR
 	// MaxTestVariants is the maximum number of test variants to be queried in one request.
 	const MaxTestVariants = 100
 
-	if req.Project == "" {
-		return errors.Reason("project missing").Err()
-	}
-	if !config.ProjectRe.MatchString(req.Project) {
-		return errors.Reason("project is invalid, expected %s", config.ProjectRePattern).Err()
+	if err := pbutil.ValidateProject(req.Project); err != nil {
+		return errors.Annotate(err, "project").Err()
 	}
 	if len(req.TestVariants) == 0 {
-		return errors.Reason("test_variants missing").Err()
+		return errors.Reason("test_variants: unspecified").Err()
 	}
 	if len(req.TestVariants) > MaxTestVariants {
 		return errors.Reason("test_variants: no more than %v may be queried at a time", MaxTestVariants).Err()
@@ -100,12 +96,12 @@ func validateQueryTestVariantFailureRateRequest(req *pb.QueryTestVariantFailureR
 	uniqueTestVariants := make(map[testVariant]struct{})
 	for i, tv := range req.TestVariants {
 		if tv.GetTestId() == "" {
-			return errors.Reason("test_variants[%v]: test_id missing", i).Err()
+			return errors.Reason("test_variants[%v]: test_id: unspecified", i).Err()
 		}
 		var variantHash string
 		if tv.VariantHash != "" {
 			if !variantHashRe.MatchString(tv.VariantHash) {
-				return errors.Reason("test_variants[%v]: variant_hash is not valid", i).Err()
+				return errors.Reason("test_variants[%v]: variant_hash: must match %s", i, variantHashRe).Err()
 			}
 			variantHash = tv.VariantHash
 		}

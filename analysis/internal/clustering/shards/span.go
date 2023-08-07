@@ -24,8 +24,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/analysis/internal/config"
 	spanutil "go.chromium.org/luci/analysis/internal/span"
+	"go.chromium.org/luci/analysis/pbutil"
 )
 
 // ReclusteringShard is used to for shards to report progress re-clustering
@@ -201,11 +201,12 @@ func Create(ctx context.Context, r ReclusteringShard) error {
 }
 
 func validateShard(r ReclusteringShard) error {
+	if err := pbutil.ValidateProject(r.Project); err != nil {
+		return errors.Annotate(err, "project").Err()
+	}
 	switch {
 	case r.ShardNumber < 1:
 		return errors.New("shard number must be a positive integer")
-	case !config.ProjectRe.MatchString(r.Project):
-		return errors.New("project must be valid")
 	case r.AttemptTimestamp.Before(StartingEpoch):
 		return errors.New("attempt timestamp must be valid")
 	}
