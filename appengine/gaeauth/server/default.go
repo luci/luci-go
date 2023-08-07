@@ -53,6 +53,16 @@ var handlersInstalled = false
 // the server initialization.
 var CookieAuth auth.Method
 
+// DisableCookieAuth stops all cookie-based authentication.
+//
+// Must be called before InstallHandlers.
+func DisableCookieAuth() {
+	if handlersInstalled {
+		panic("DisableCookieAuth must be called before InstallHandlers")
+	}
+	CookieAuth = nil
+}
+
 // SwitchToEncryptedCookies opts-in CookieAuth to use a better implementation.
 //
 // The "better implementation" is not backward compatible with the previous one,

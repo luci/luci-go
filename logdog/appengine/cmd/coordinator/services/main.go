@@ -36,6 +36,13 @@ import (
 
 // Run installs and executes this site.
 func main() {
+	// Disable cookie-based authentication for this service.
+	// It should not be used as all RPCs served by this instance are
+	// made by Logdog backend. Moreover, the default implementation retains
+	// user email addresses in datastore indefinitely which is not acceptable
+	// for privacy reasons.
+	gaeserver.DisableCookieAuth()
+
 	r := router.New()
 
 	// Setup Cloud Endpoints.
