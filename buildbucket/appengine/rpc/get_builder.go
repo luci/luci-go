@@ -20,6 +20,7 @@ import (
 	"sort"
 
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/gae/service/datastore"
@@ -44,6 +45,31 @@ func validateGetBuilder(req *pb.GetBuilderRequest) error {
 	return nil
 }
 
+func stringsToRequestedDimensions(strDims []string) (map[string][]*pb.RequestedDimension, []string) {
+	// key -> slice of dimensions (key, value, expiration) with matching keys.
+	dims := make(map[string][]*pb.RequestedDimension)
+	var empty []string
+
+	for _, d := range strDims {
+		exp, k, v := config.ParseDimension(d)
+		if v == "" {
+			empty = append(empty, k)
+			continue
+		}
+		dim := &pb.RequestedDimension{
+			Key:   k,
+			Value: v,
+		}
+		if exp > 0 {
+			dim.Expiration = &durationpb.Duration{
+				Seconds: exp,
+			}
+		}
+		dims[k] = append(dims[k], dim)
+	}
+	return dims, empty
+}
+
 // applyShadowAdjustment applies shadow builder adjustments to builder config.
 //
 // It will mutate the given cfg.
@@ -55,18 +81,35 @@ func applyShadowAdjustment(cfg *pb.BuilderConfig) {
 	if shadowBldrCfg.ServiceAccount != "" {
 		cfg.ServiceAccount = shadowBldrCfg.ServiceAccount
 	}
-	if shadowBldrCfg.Pool != "" {
-		poolIdx := sort.Search(len(cfg.GetDimensions()), func(i int) bool {
-			_, k, _ := config.ParseDimension(cfg.GetDimensions()[i])
-			return k == "pool"
-		})
-		poolDim := fmt.Sprintf("pool:%s", shadowBldrCfg.Pool)
-		if poolIdx < len(cfg.GetDimensions()) {
-			cfg.Dimensions[poolIdx] = poolDim
-		} else {
-			cfg.Dimensions = append(cfg.Dimensions, poolDim)
-		}
+
+	if shadowBldrCfg.Pool != "" && len(shadowBldrCfg.Dimensions) == 0 {
+		shadowBldrCfg.Dimensions = []string{fmt.Sprintf("pool:%s", shadowBldrCfg.Pool)}
 	}
+
+	if len(shadowBldrCfg.Dimensions) > 0 {
+		dims, _ := stringsToRequestedDimensions(cfg.Dimensions)
+		shadowDims, empty := stringsToRequestedDimensions(shadowBldrCfg.Dimensions)
+
+		for k, d := range shadowDims {
+			dims[k] = d
+		}
+		for _, key := range empty {
+			delete(dims, key)
+		}
+		var updatedDims []string
+		for _, dims := range dims {
+			for _, dim := range dims {
+				dimStr := fmt.Sprintf("%s:%s", dim.Key, dim.Value)
+				if dim.Expiration != nil {
+					dimStr = fmt.Sprintf("%d:%s", dim.Expiration.Seconds, dimStr)
+				}
+				updatedDims = append(updatedDims, dimStr)
+			}
+		}
+		sort.Strings(updatedDims)
+		cfg.Dimensions = updatedDims
+	}
+
 	if shadowBldrCfg.Properties != "" {
 		if cfg.GetProperties() == "" {
 			cfg.Properties = shadowBldrCfg.Properties

@@ -686,7 +686,7 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 		ctx.Exit()
 	}
 
-	validateDimensions(ctx, b.Dimensions)
+	validateDimensions(ctx, b.Dimensions, false)
 
 	// resultdb
 	if b.Resultdb.GetHistoryOptions().GetCommit() != nil {
@@ -746,10 +746,52 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 	}
 
 	// shadow_builder_adjustments
-	if b.ShadowBuilderAdjustments.GetProperties() != "" {
-		if !strings.HasPrefix(b.ShadowBuilderAdjustments.Properties, "{") || !json.Valid([]byte(b.ShadowBuilderAdjustments.Properties)) {
-			ctx.Errorf("shadow_builder_adjustments.properties is not a JSON object")
+	if b.ShadowBuilderAdjustments != nil {
+		ctx.Enter("shadow_builder_adjustments")
+
+		if b.ShadowBuilderAdjustments.GetProperties() != "" {
+			if !strings.HasPrefix(b.ShadowBuilderAdjustments.Properties, "{") || !json.Valid([]byte(b.ShadowBuilderAdjustments.Properties)) {
+				ctx.Errorf("properties is not a JSON object")
+			}
 		}
+
+		// Validate dimensions and ensure pool and dimensions are consistent.
+		// In the coresponding lucicfg change, lucicfg will update the generated
+		// builder config so that:
+		// * setting shadow_pool would add the coresponding "pool:<shadow_pool>" dimension
+		//   to shadow_dimensions;
+		// * setting shadow_dimensions with "pool:<shadow_pool>" would also set shadow_pool.
+		// Because we need to deploy buildbucket and lucicfg separately, to make sure
+		// the old lucicfg still work during release, we temporarily allow setting
+		// shadow_pool without setting shadow_dimensions.
+		// TODO(crbug.com/1469965): disallow setting shadow_pool without
+		// setting shadow_dimensions.
+		dims := b.ShadowBuilderAdjustments.GetDimensions()
+		if len(dims) != 0 {
+			validateDimensions(ctx, dims, true)
+
+			empty := stringset.New(len(dims))
+			nonEmpty := stringset.New(len(dims))
+			for _, dim := range b.ShadowBuilderAdjustments.Dimensions {
+				_, key, value := ParseDimension(dim)
+				if value == "" {
+					if nonEmpty.Has(key) {
+						ctx.Errorf(fmt.Sprintf("dimensions contain both empty and non-empty value for the same key - %q", key))
+					}
+					empty.Add(key)
+				} else {
+					if empty.Has(key) {
+						ctx.Errorf(fmt.Sprintf("dimensions contain both empty and non-empty value for the same key - %q", key))
+					}
+					nonEmpty.Add(key)
+				}
+				if key == "pool" && value != b.ShadowBuilderAdjustments.Pool {
+					ctx.Errorf("dimensions.pool must be consistent with pool")
+				}
+			}
+		}
+
+		ctx.Exit()
 	}
 }
 
@@ -822,7 +864,7 @@ func ParseDimension(d string) (exp int64, k string, v string) {
 // validateDimensions validates dimensions in project configs.
 // A dimension supports 2 forms -
 // "<key>:<value>" and "<expiration_secs>:<key>:<value>" .
-func validateDimensions(ctx *validation.Context, dimensions []string) {
+func validateDimensions(ctx *validation.Context, dimensions []string, allowMissingValue bool) {
 	expirations := make(map[int64]bool)
 
 	for i, dim := range dimensions {
@@ -844,7 +886,7 @@ func validateDimensions(ctx *validation.Context, dimensions []string) {
 			ctx.Errorf("dimension key must not be 'caches'; caches must be declared via caches field")
 		case !dimensionKeyRegex.MatchString(key):
 			ctx.Errorf("key %q does not match pattern %q", key, dimensionKeyRegex)
-		case value == "":
+		case value == "" && !allowMissingValue:
 			ctx.Errorf("missing value")
 		default:
 			expirations[expiration] = true

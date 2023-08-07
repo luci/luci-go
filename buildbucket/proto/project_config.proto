@@ -428,6 +428,16 @@ message BuilderConfig {
     // Same as ScheduleBuild, the top-level properties here will override the
     // ones in builder config, instead of deep merge.
     string properties = 3 [(luci.text_pb_format) = JSON];
+
+    // Overrides default dimensions defined by builder config.
+    // Same as ScheduleBuild,
+    // * dimensions with empty value will be excluded.
+    // * same key dimensions with both empty and non-empty values are disallowed.
+    //
+    // Note: for historical reason, pool can be adjusted individually.
+    // If pool is adjusted individually, the same change should be reflected in
+    // dimensions, and vice versa.
+    repeated string dimensions = 4;
   }
 
   ShadowBuilderAdjustments shadow_builder_adjustments = 35;

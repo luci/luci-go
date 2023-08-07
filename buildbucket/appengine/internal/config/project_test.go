@@ -204,7 +204,10 @@ func TestValidateProject(t *testing.T) {
 						name: "foo"
 					}
 					shadow_builder_adjustments {
+						pool: "shadow_pool"
 						properties: '{"a":"b","x":true}'
+						dimensions: "pool:shadow_pool"
+						dimensions: "allowempty:"
 					}
 				}
 			`
@@ -213,7 +216,8 @@ func TestValidateProject(t *testing.T) {
 		})
 
 		Convey("shadow_builder_adjustments", func() {
-			content := `
+			Convey("properties", func() {
+				content := `
 								builders {
 					name: "release cipd"
 					swarming_host: "example.com"
@@ -226,11 +230,94 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
-			ve, ok := vctx.Finalize().(*validation.Error)
-			So(ok, ShouldEqual, true)
-			So(len(ve.Errors), ShouldEqual, 1)
-			So(ve.Errors[0].Error(), ShouldContainSubstring, "(swarming / builders #0 - release cipd): shadow_builder_adjustments.properties is not a JSON object")
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+				ve, ok := vctx.Finalize().(*validation.Error)
+				So(ok, ShouldEqual, true)
+				So(len(ve.Errors), ShouldEqual, 1)
+				So(ve.Errors[0].Error(), ShouldContainSubstring, "(swarming / builders #0 - release cipd / shadow_builder_adjustments): properties is not a JSON object")
+			})
+			Convey("set pool without setting dimensions is allowed", func() {
+				content := `
+								builders {
+					name: "release cipd"
+					swarming_host: "example.com"
+					recipe {
+						cipd_package: "some/package"
+						name: "foo"
+					}
+					shadow_builder_adjustments {
+						pool: "shadow_pool"
+					}
+				}
+			`
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+				_, ok := vctx.Finalize().(*validation.Error)
+				So(ok, ShouldEqual, false)
+			})
+			Convey("set dimensions without setting pool", func() {
+				content := `
+								builders {
+					name: "release cipd"
+					swarming_host: "example.com"
+					recipe {
+						cipd_package: "some/package"
+						name: "foo"
+					}
+					shadow_builder_adjustments {
+						dimensions: "pool:shadow_pool"
+					}
+				}
+			`
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+				ve, ok := vctx.Finalize().(*validation.Error)
+				So(ok, ShouldEqual, true)
+				So(len(ve.Errors), ShouldEqual, 1)
+				So(ve.Errors[0].Error(), ShouldContainSubstring, "(swarming / builders #0 - release cipd / shadow_builder_adjustments): dimensions.pool must be consistent with pool")
+			})
+			Convey("pool and dimensions different value", func() {
+				content := `
+								builders {
+					name: "release cipd"
+					swarming_host: "example.com"
+					recipe {
+						cipd_package: "some/package"
+						name: "foo"
+					}
+					shadow_builder_adjustments {
+						pool: "shadow_pool"
+						dimensions: "pool:another_pool"
+					}
+				}
+			`
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+				ve, ok := vctx.Finalize().(*validation.Error)
+				So(ok, ShouldEqual, true)
+				So(len(ve.Errors), ShouldEqual, 1)
+				So(ve.Errors[0].Error(), ShouldContainSubstring, "(swarming / builders #0 - release cipd / shadow_builder_adjustments): dimensions.pool must be consistent with pool")
+			})
+			Convey("same key dimensions", func() {
+				content := `
+								builders {
+					name: "release cipd"
+					swarming_host: "example.com"
+					recipe {
+						cipd_package: "some/package"
+						name: "foo"
+					}
+					shadow_builder_adjustments {
+						dimensions: "dup:v1"
+						dimensions: "dup:v2"
+						dimensions: "conflict:v1"
+						dimensions: "conflict:"
+					}
+				}
+			`
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+				ve, ok := vctx.Finalize().(*validation.Error)
+				So(ok, ShouldEqual, true)
+				So(len(ve.Errors), ShouldEqual, 1)
+				So(ve.Errors[0].Error(), ShouldContainSubstring, `(swarming / builders #0 - release cipd / shadow_builder_adjustments): dimensions contain both empty and non-empty value for the same key - "conflict"`)
+			})
 		})
 
 		Convey("empty builders", func() {
@@ -637,7 +724,7 @@ func TestValidateProject(t *testing.T) {
 			vctx := &validation.Context{
 				Context: context.Background(),
 			}
-			validateDimensions(vctx, dimensions)
+			validateDimensions(vctx, dimensions, false)
 			if strings.HasPrefix(expectedErr, "ok") {
 				So(vctx.Finalize(), ShouldBeNil)
 			} else {

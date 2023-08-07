@@ -288,12 +288,17 @@ func TestGetBuilder(t *testing.T) {
 					Config: &pb.BuilderConfig{
 						Name:           "builder",
 						ServiceAccount: "example@example.com",
-						Dimensions:     []string{"os:Linux", "pool:luci.chromium.try"},
+						Dimensions:     []string{"os:Linux", "pool:luci.chromium.try", "todelete:random"},
 						Properties:     `{"a":"b"}`,
 						ShadowBuilderAdjustments: &pb.BuilderConfig_ShadowBuilderAdjustments{
 							ServiceAccount: "shadow@example.com",
 							Pool:           "shadow.pool",
 							Properties:     `{"a":"b2"}`,
+							Dimensions: []string{
+								"pool:shadow.pool",
+								"todelete:",
+								"120:toadd:v",
+							},
 						},
 					},
 				},
@@ -311,7 +316,7 @@ func TestGetBuilder(t *testing.T) {
 				Config: &pb.BuilderConfig{
 					Name:           "builder",
 					ServiceAccount: "shadow@example.com",
-					Dimensions:     []string{"os:Linux", "pool:shadow.pool"},
+					Dimensions:     []string{"120:toadd:v", "os:Linux", "pool:shadow.pool"},
 					Properties:     `{"a":"b2"}`,
 				},
 			})
