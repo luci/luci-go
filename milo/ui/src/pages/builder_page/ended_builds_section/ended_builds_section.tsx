@@ -26,7 +26,7 @@ import {
 } from '@/common/services/buildbucket';
 import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 
-import { EndedBuildsTable } from './ended_builds_table';
+import { EndedBuildTable } from './ended_build_table';
 
 const DEFAULT_PAGE_SIZE = 25;
 const FIELD_MASK =
@@ -134,7 +134,7 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
           }}
         />
       </Box>
-      <EndedBuildsTable
+      <EndedBuildTable
         endedBuilds={data?.builds || []}
         isLoading={isLoading || isPreviousData}
       />

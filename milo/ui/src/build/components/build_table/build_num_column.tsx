@@ -12,4 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './ended_builds_table';
+import { Link, TableCell } from '@mui/material';
+
+import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
+
+import { useRowState } from './context';
+
+export function BuildNumHeadCell() {
+  return <TableCell width="1px">Build #</TableCell>;
+}
+
+export function BuildNumContentCell() {
+  const build = useRowState();
+
+  return (
+    <TableCell>
+      <Link href={getBuildURLPathFromBuildId(build.id)}>
+        {build.number ?? 'b' + build.id}
+      </Link>
+    </TableCell>
+  );
+}

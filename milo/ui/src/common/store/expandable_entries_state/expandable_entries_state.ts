@@ -14,6 +14,28 @@
 
 import { Instance, types } from 'mobx-state-tree';
 
+/**
+ * A MobX state that manages expandable entires state. Comparing to a regular
+ * combination of React context and React state, this helps reduce rerendering
+ * when the default state is changed.
+ *
+ * If we store the default expanded state as a regular React state,
+ *  * all non-memo-wrapped child components of the table will be rerendered when
+ *    the default expanded state is updated on the parent, and
+ *  * memo-wrapped child components will also be rerendered if they consume
+ *    the default expanded state (via props or context) even if their local
+ *    expanded state stay the same, and
+ *  * an additional `useEffect` hook is needed to reset the local expanded state
+ *    whenever the default expanded state is updated (store all entry state in
+ *    the parent will lead to all entries being rerendered whenever an entry
+ *    is toggled).
+ *
+ * If we store it in a MobX object,
+ *  * only components whose expansion state is changed by the update will be
+ *    rerendered, and
+ *  * we can make components conditionally depends on the default expansion
+ *    state (e.g. summary cell for a build with no summary isn't expandable).
+ */
 export const ExpandableEntriesState = types
   .model('ExpandableEntriesState', {
     defaultExpanded: false,

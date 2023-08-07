@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { ThemeProvider } from '@emotion/react';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -20,6 +21,7 @@ import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 
 import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
 import { UiPage } from '@/common/constants';
+import { theme } from '@/common/themes/base';
 
 import { FakeAuthStateProvider } from './fake_auth_state_provider';
 
@@ -79,17 +81,19 @@ export function FakeContextProvider({
   );
 
   return (
-    <LocalizationProvider dateAdapter={AdapterLuxon}>
-      <FakeAuthStateProvider>
-        <QueryClientProvider client={client}>
-          <PageMetaProvider
-            initPage={pageMeta?.selectedPage}
-            initProject={pageMeta?.project}
-          >
-            <RouterProvider router={router} />
-          </PageMetaProvider>
-        </QueryClientProvider>
-      </FakeAuthStateProvider>
-    </LocalizationProvider>
+    <ThemeProvider theme={theme}>
+      <LocalizationProvider dateAdapter={AdapterLuxon}>
+        <FakeAuthStateProvider>
+          <QueryClientProvider client={client}>
+            <PageMetaProvider
+              initPage={pageMeta?.selectedPage}
+              initProject={pageMeta?.project}
+            >
+              <RouterProvider router={router} />
+            </PageMetaProvider>
+          </QueryClientProvider>
+        </FakeAuthStateProvider>
+      </LocalizationProvider>
+    </ThemeProvider>
   );
 }

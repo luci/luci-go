@@ -23,11 +23,11 @@ import {
 } from '@/common/services/buildbucket';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
+import { EndedBuildTable } from './ended_build_table';
 import { EndedBuildsSection } from './ended_builds_section';
-import { EndedBuildsTable } from './ended_builds_table';
 
-jest.mock('./ended_builds_table', () => ({
-  EndedBuildsTable: jest.fn(() => <></>),
+jest.mock('./ended_build_table', () => ({
+  EndedBuildTable: jest.fn(() => <></>),
 }));
 
 const builderId = {
@@ -81,7 +81,7 @@ const pages: {
 };
 
 describe('EndedBuildsSection', () => {
-  let endedBuildsTableMock: jest.MockedFunctionDeep<typeof EndedBuildsTable>;
+  let endedBuildsTableMock: jest.MockedFunctionDeep<typeof EndedBuildTable>;
 
   beforeEach(() => {
     jest.useFakeTimers();
@@ -91,7 +91,7 @@ describe('EndedBuildsSection', () => {
         async ({ pageToken, predicate }) =>
           pages[predicate.createTime?.endTime || ''][pageToken || '']
       );
-    endedBuildsTableMock = jest.mocked(EndedBuildsTable);
+    endedBuildsTableMock = jest.mocked(EndedBuildTable);
   });
 
   afterEach(() => {
