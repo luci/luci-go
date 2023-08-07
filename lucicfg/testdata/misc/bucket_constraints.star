@@ -106,6 +106,7 @@ luci.bucket(
 #       shadow_builder_adjustments {
 #         service_account: "shadow_builder@example.com"
 #         pool: "shadow_pool"
+#         dimensions: "pool:shadow_pool"
 #       }
 #     }
 #     builders {
@@ -122,6 +123,7 @@ luci.bucket(
 #       shadow_builder_adjustments {
 #         service_account: "account-1@example.com"
 #         pool: "shadow_pool"
+#         dimensions: "pool:shadow_pool"
 #       }
 #     }
 #     builders {
@@ -138,6 +140,7 @@ luci.bucket(
 #       shadow_builder_adjustments {
 #         service_account: "a@example.com"
 #         pool: "shadow_pool"
+#         dimensions: "pool:shadow_pool"
 #       }
 #     }
 #   }

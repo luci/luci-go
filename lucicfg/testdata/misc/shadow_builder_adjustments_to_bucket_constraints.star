@@ -41,6 +41,9 @@ luci.builder(
     },
     shadow_service_account = "shadow_builder@example.com",
     shadow_pool = "shadow_pool",
+    shadow_dimensions = {
+        "pool": "shadow_pool",
+    },
 )
 
 luci.builder(
@@ -53,7 +56,9 @@ luci.builder(
         "pool": "luci.ci.tester",
     },
     shadow_service_account = "shadow_builder@example.com",
-    shadow_pool = "shadow_pool",
+    shadow_dimensions = {
+        "pool": "another_shadow_pool",
+    },
 )
 
 # Expect configs:
@@ -80,6 +85,7 @@ luci.builder(
 #           '{'
 #           '  "k": "v"'
 #           '}'
+#         dimensions: "pool:shadow_pool"
 #       }
 #     }
 #     builders {
@@ -96,6 +102,7 @@ luci.builder(
 #       shadow_builder_adjustments {
 #         service_account: "shadow_builder@example.com"
 #         pool: "shadow_pool"
+#         dimensions: "pool:shadow_pool"
 #       }
 #     }
 #     builders {
@@ -111,7 +118,8 @@ luci.builder(
 #       service_account: "account-3@example.com"
 #       shadow_builder_adjustments {
 #         service_account: "shadow_builder@example.com"
-#         pool: "shadow_pool"
+#         pool: "another_shadow_pool"
+#         dimensions: "pool:another_shadow_pool"
 #       }
 #     }
 #   }
@@ -124,6 +132,7 @@ luci.builder(
 # buckets {
 #   name: "ci.shadow"
 #   constraints {
+#     pools: "another_shadow_pool"
 #     pools: "shadow_pool"
 #     service_accounts: "shadow_builder@example.com"
 #   }

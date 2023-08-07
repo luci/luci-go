@@ -77,6 +77,7 @@ def _builder(
         shadow_service_account = None,
         shadow_pool = None,
         shadow_properties = None,
+        shadow_dimensions = None,
 
         # Relations.
         triggers = None,
@@ -254,9 +255,15 @@ def _builder(
         users the ability to create led builds in the alternate pool without
         allowing them to create builds in the production pool.
         When specified, the shadow_pool will also be included into
-        the shadow bucket's constraints (see luci.bucket_constraints(...)).
+        the shadow bucket's constraints (see luci.bucket_constraints(...)) and
+        a "pool:<shadow_pool>" dimension will be automatically added to
+        shadow_dimensions.
       shadow_properties: If set, the led builds created for this Builder will
         override the top-level input properties with the same keys.
+      shadow_dimensions: If set, the led builds created for this Builder will
+        override the dimensions with the same keys. Note: for historical reasons
+        pool can be set individually. If a "pool:<shadow_pool>" dimension is
+        included here, it would have the same effect as setting shadow_pool.
 
       triggers: builders this builder triggers.
       triggered_by: builders or pollers this builder is triggered by.
@@ -304,6 +311,7 @@ def _builder(
         "shadow_service_account": validate.string("shadow_service_account", shadow_service_account, required = False),
         "shadow_pool": validate.string("shadow_pool", shadow_pool, required = False),
         "shadow_properties": validate.str_dict("shadow_properties", shadow_properties, required = False),
+        "shadow_dimensions": swarming.validate_dimensions("shadow_dimensions", shadow_dimensions, allow_none = True),
     }
 
     # Merge explicitly passed properties with the module-scoped defaults.
@@ -350,6 +358,23 @@ def _builder(
     # merging.
     swarming.validate_dimensions("dimensions", props["dimensions"], allow_none = False)
     _validate_experiments("experiments", props["experiments"], allow_none = False)
+
+    # Update shadow_pool or shadow_dimensions.
+    if shadow_dimensions:
+        pools_in_dimensions = [p.value for p in props["shadow_dimensions"].get("pool", [])]
+        if shadow_pool:
+            if len(pools_in_dimensions) > 0:
+                for p in pools_in_dimensions:
+                    if shadow_pool != p:
+                        fail("shadow_pool and pool dimension in shadow_dimensions should have the same value")
+            else:
+                props["shadow_dimensions"]["pool"] = [swarming.dimension(shadow_pool)]
+        elif len(pools_in_dimensions) == 1:
+            props["shadow_pool"] = pools_in_dimensions[0]
+    elif shadow_pool:
+        props["shadow_dimensions"] = {
+            "pool": [swarming.dimension(shadow_pool)],
+        }
 
     # Add a node that carries the full definition of the builder.
     builder_key = keys.builder(bucket_key.id, name)

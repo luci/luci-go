@@ -1461,6 +1461,7 @@ luci.builder(
     shadow_service_account = None,
     shadow_pool = None,
     shadow_properties = None,
+    shadow_dimensions = None,
     triggers = None,
     triggered_by = None,
     notifies = None,
@@ -1545,8 +1546,9 @@ Buildbucket.
 * **backend**: the name of the task backend defined via [luci.task_backend(...)](#luci.task-backend). Supports the module-scoped default.
 * **backend_alt**: the name of the alternative task backend defined via [luci.task_backend(...)](#luci.task-backend). Supports the module-scoped default.
 * **shadow_service_account**: If set, the led builds created for this Builder will instead use this service account. This is useful to allow users to automatically have their testing builds assume a service account which is different than your production service account. When specified, the shadow_service_account will also be included into the shadow bucket's constraints (see [luci.bucket_constraints(...)](#luci.bucket-constraints)). Which also means it will be granted the `role/buildbucket.builderServiceAccount` role in the shadow bucket realm.
-* **shadow_pool**: If set, the led builds created for this Builder will instead be set to use this alternate pool instead. This would allow you to grant users the ability to create led builds in the alternate pool without allowing them to create builds in the production pool. When specified, the shadow_pool will also be included into the shadow bucket's constraints (see [luci.bucket_constraints(...)](#luci.bucket-constraints)).
+* **shadow_pool**: If set, the led builds created for this Builder will instead be set to use this alternate pool instead. This would allow you to grant users the ability to create led builds in the alternate pool without allowing them to create builds in the production pool. When specified, the shadow_pool will also be included into the shadow bucket's constraints (see [luci.bucket_constraints(...)](#luci.bucket-constraints)) and a "pool:<shadow_pool>" dimension will be automatically added to shadow_dimensions.
 * **shadow_properties**: If set, the led builds created for this Builder will override the top-level input properties with the same keys.
+* **shadow_dimensions**: If set, the led builds created for this Builder will override the dimensions with the same keys. Note: for historical reasons pool can be set individually. If a "pool:<shadow_pool>" dimension is included here, it would have the same effect as setting shadow_pool.
 * **triggers**: builders this builder triggers.
 * **triggered_by**: builders or pollers this builder is triggered by.
 * **notifies**: list of [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree-closer) the builder notifies when it changes its status. This relation can also be defined via `notified_by` field in [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree-closer).
