@@ -204,6 +204,8 @@ type SingleRerun struct {
 	NthSectionAnalysis *datastore.Key `gae:"nthsection_analysis"`
 	// Priority of this run
 	Priority int32 `gae:"priority"`
+	// The dimensions of the rerun build.
+	Dimensions *pb.Dimensions `gae:"dimensions"`
 }
 
 // ActionDetails encapsulate the details of actions performed by LUCI Bisection,
@@ -240,7 +242,7 @@ type ActionDetails struct {
 	InactionReason pb.CulpritInactionReason `gae:"inaction_reason"`
 }
 
-// Suspect is the suspect of heuristic analysis.
+// Suspect is the suspect of heuristic analysis or nthsection.
 type Suspect struct {
 	Id int64 `gae:"$id"`
 
@@ -409,6 +411,65 @@ type TestFailureAnalysis struct {
 	EndCommitHash string `gae:"end_commit_hash"`
 	// An example Buildbucket ID in which the test failed.
 	FailedBuildID int64 `gae:"failed_build_id"`
+}
+
+// TestNthSectionAnalysis is nth-section analysis for test failures.
+type TestNthSectionAnalysis struct {
+	ID int64 `gae:"$id"`
+	// Key to the parent TestFailureAnalysis.
+	ParentAnalysis *datastore.Key `gae:"$parent"`
+	// Time when the analysis starts to run.
+	StartTime time.Time `gae:"start_time"`
+	// Time when the analysis ends, or canceled.
+	EndTime time.Time `gae:"end_time"`
+	// Status of the analysis.
+	Status pb.AnalysisStatus `gae:"status"`
+	// Run status of the analysis.
+	RunStatus pb.AnalysisRunStatus `gae:"run_status"`
+
+	// When storing protobuf message, datastore will compress the data if it is big
+	// https://source.corp.google.com/chops_infra_internal/infra/go/src/go.chromium.org/luci/gae/service/datastore/protos.go;l=88
+	BlameList *pb.BlameList `gae:"blame_list"`
+
+	// Culprit is the result of nthsection analysis.
+	// Nthsection analysis follows the path of the primary test failure,
+	// so the culprit here is the culprit of the primary test failure.
+	CulpritKey *datastore.Key `gae:"culprit"`
+}
+
+// TestSingleRerun represents one rerun for test failures
+// at a particular commit.
+// A TestSingleRerun corresponds to one buildbucket run, and may
+// run multiple test failures at the same time.
+// A TestSingleRerun may be for nth-section or for culprit verification.
+type TestSingleRerun struct {
+	// The buildbucket ID of the rerun.
+	ID int64 `gae:"$id"`
+	// LUCI build data for the rerun build.
+	LuciBuild
+	// Type for the rerun build
+	// Either culprit verification or nth section run.
+	Type RerunBuildType `gae:"rerun_type"`
+	// Key to the TestFailureAnalysis of this SingleRerun
+	AnalysisKey *datastore.Key `gae:"analysis"`
+	// Time when the rerun was created in datastore.
+	// It may be (slightly) different from LuciBuild.create_time,
+	// which is when the build got created in buildbucket.
+	CreateTime time.Time `gae:"rerun_create_time"`
+	// Time when the rerun send the result to bisection from recipe.
+	ReportTime time.Time `gae:"report_time"`
+	// The dimensions of the rerun build.
+	Dimensions *pb.Dimensions `gae:"dimensions"`
+	// Key to the culprit (Suspect model), if this is for culprit verification
+	CulpritKey *datastore.Key `gae:"culprit"`
+	// Key to TestNthSectionAnalysis, if this is for nthsection.
+	NthSectionAnalysisKey *datastore.Key `gae:"nthsection_analysis"`
+	// Priority of this run.
+	Priority int32 `gae:"priority"`
+	// Status of the rerun.
+	// TODO (nqmtuan): The status here should capture the result of
+	// all the tests, instead of just a single status like this.
+	Status pb.RerunStatus
 }
 
 func (cfa *CompileFailureAnalysis) HasEnded() bool {

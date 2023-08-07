@@ -132,3 +132,17 @@ message GitilesRef {
   // Not the branch name, use "refs/heads/branch"
   string ref = 3;
 }
+
+// Represents dimensions requested to buildbucket.
+message Dimensions {
+  // List of dimensions, ordered by key ascendingly.
+  repeated Dimension dimensions = 1;
+}
+
+// Represent one dimension requested to buildbucket.
+message Dimension {
+  // Key, e.g. "os".
+  string key = 1;
+  // Value, e.g. "Ubuntu".
+  string value = 2;
+}
