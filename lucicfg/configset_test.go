@@ -16,6 +16,7 @@ package lucicfg
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -24,7 +25,8 @@ import (
 	"sync"
 	"testing"
 
-	"go.chromium.org/luci/common/api/luci_config/config/v1"
+	legacy_config "go.chromium.org/luci/common/api/luci_config/config/v1"
+	"go.chromium.org/luci/common/proto/config"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -74,12 +76,12 @@ func TestConfigSet(t *testing.T) {
 		const configSetName = "config set name"
 
 		validator := testValidator{
-			res: []*ValidationMessage{
-				{Severity: "ERROR", Text: "Boo"},
+			res: []*config.ValidationResult_Message{
+				{Severity: config.ValidationResult_ERROR, Text: "Boo"},
 			},
 		}
 
-		cfg := ConfigSet{
+		cfgSet := ConfigSet{
 			Name: configSetName,
 			Data: map[string][]byte{
 				"a.cfg": []byte("aaa"),
@@ -87,18 +89,12 @@ func TestConfigSet(t *testing.T) {
 			},
 		}
 
-		So(cfg.Validate(ctx, &validator), ShouldResemble, &ValidationResult{
+		So(cfgSet.Validate(ctx, &validator), ShouldResemble, &ValidationResult{
 			ConfigSet: configSetName,
 			Messages:  validator.res,
 		})
 
-		So(validator.req, ShouldResemble, &ValidationRequest{
-			ConfigSet: configSetName,
-			Files: []*config.LuciConfigValidateConfigRequestMessageFile{
-				{Path: "a.cfg", Content: "YWFh"},
-				{Path: "b.cfg", Content: "AAEC"},
-			},
-		})
+		So(validator.cs, ShouldResemble, cfgSet)
 	})
 
 	Convey("RPC error", t, func() {
@@ -125,10 +121,10 @@ func TestConfigSet(t *testing.T) {
 	})
 
 	Convey("Overall error check", t, func() {
-		result := func(level ...string) *ValidationResult {
+		result := func(level ...config.ValidationResult_Severity) *ValidationResult {
 			res := &ValidationResult{}
 			for _, l := range level {
-				res.Messages = append(res.Messages, &ValidationMessage{
+				res.Messages = append(res.Messages, &config.ValidationResult_Message{
 					Severity: l,
 					Text:     "boo",
 				})
@@ -138,51 +134,49 @@ func TestConfigSet(t *testing.T) {
 
 		// Fail on warnings = false.
 		So(result().OverallError(false), ShouldBeNil)
-		So(result("INFO", "WARNING").OverallError(false), ShouldBeNil)
-		So(result("INFO", "ERROR").OverallError(false), ShouldErrLike, "some files were invalid")
+		So(result(config.ValidationResult_INFO, config.ValidationResult_WARNING).OverallError(false), ShouldBeNil)
+		So(result(config.ValidationResult_INFO, config.ValidationResult_ERROR).OverallError(false), ShouldErrLike, "some files were invalid")
 
 		// Fail on warnings = true.
 		So(result().OverallError(true), ShouldBeNil)
-		So(result("INFO").OverallError(true), ShouldBeNil)
-		So(result("INFO", "WARNING", "ERROR").OverallError(true), ShouldErrLike, "some files were invalid")
-		So(result("INFO", "WARNING").OverallError(true), ShouldErrLike, "some files had validation warnings")
+		So(result(config.ValidationResult_INFO).OverallError(true), ShouldBeNil)
+		So(result(config.ValidationResult_INFO, config.ValidationResult_WARNING, config.ValidationResult_ERROR).OverallError(true), ShouldErrLike, "some files were invalid")
+		So(result(config.ValidationResult_INFO, config.ValidationResult_WARNING).OverallError(true), ShouldErrLike, "some files had validation warnings")
 	})
 }
 
-func TestRemoteValidator(t *testing.T) {
+func TestLegacyRemoteValidator(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 
-	testReq := &ValidationRequest{
-		ConfigSet: "config-set",
-		Files: []*config.LuciConfigValidateConfigRequestMessageFile{
-			{
-				Path:    "a",
-				Content: "aaa",
-			},
-			{
-				Path:    "b",
-				Content: "bb",
-			},
-			{
-				Path:    "c",
-				Content: "cccccc",
-			},
-			{
-				Path:    "d",
-				Content: "ddddd",
-			},
+	mustBase64Decode := func(s string) []byte {
+		ret, err := base64.StdEncoding.DecodeString(s)
+		if err != nil {
+			panic(err)
+		}
+		return ret
+	}
+
+	cfgSet := ConfigSet{
+		Name: "config-set",
+		Data: map[string][]byte{
+			// "aaaaaaaa", "bbbb", "cccccccccccc", "dddddddd" will be the actual
+			// content send to LUCI Config
+			"a.cfg": mustBase64Decode("aaaaaaaa"),
+			"b.cfg": mustBase64Decode("bbbb"),
+			"c.cfg": mustBase64Decode("cccccccccccc"),
+			"d.cfg": mustBase64Decode("dddddddd"),
 		},
 	}
 
 	Convey("Splits requests, collects messages", t, func() {
-		var reqs []*ValidationRequest
+		var reqs []*legacy_config.LuciConfigValidateConfigRequestMessage
 		var lock sync.Mutex
 
 		val := &legacyRemoteValidator{
-			requestSizeLimitBytes: 6,
-			validateConfig: func(ctx context.Context, req *ValidationRequest) (*config.LuciConfigValidateConfigResponseMessage, error) {
+			requestSizeLimitBytes: 12,
+			validateConfig: func(ctx context.Context, req *legacy_config.LuciConfigValidateConfigRequestMessage) (*legacy_config.LuciConfigValidateConfigResponseMessage, error) {
 				lock.Lock()
 				reqs = append(reqs, req)
 				lock.Unlock()
@@ -191,27 +185,28 @@ func TestRemoteValidator(t *testing.T) {
 					panic("bad ConfigSet")
 				}
 
-				var messages []*ValidationMessage
+				var messages []*legacy_config.ComponentsConfigEndpointValidationMessage
 				for _, f := range req.Files {
-					messages = append(messages, &ValidationMessage{
-						Path: f.Path,
-						Text: fmt.Sprintf("Boom in %s", f.Path),
+					messages = append(messages, &legacy_config.ComponentsConfigEndpointValidationMessage{
+						Path:     f.Path,
+						Severity: "ERROR",
+						Text:     fmt.Sprintf("Boom in %s", f.Path),
 					})
 				}
 
-				return &config.LuciConfigValidateConfigResponseMessage{
+				return &legacy_config.LuciConfigValidateConfigResponseMessage{
 					Messages: messages,
 				}, nil
 			},
 		}
 
-		msg, err := val.Validate(ctx, testReq)
+		msg, err := val.Validate(ctx, cfgSet)
 		So(err, ShouldBeNil)
-		So(msg, ShouldResemble, []*ValidationMessage{
-			{Path: "a", Text: "Boom in a"},
-			{Path: "b", Text: "Boom in b"},
-			{Path: "c", Text: "Boom in c"},
-			{Path: "d", Text: "Boom in d"},
+		So(msg, ShouldResembleProto, []*config.ValidationResult_Message{
+			{Path: "a.cfg", Severity: config.ValidationResult_ERROR, Text: "Boom in a.cfg"},
+			{Path: "b.cfg", Severity: config.ValidationResult_ERROR, Text: "Boom in b.cfg"},
+			{Path: "c.cfg", Severity: config.ValidationResult_ERROR, Text: "Boom in c.cfg"},
+			{Path: "d.cfg", Severity: config.ValidationResult_ERROR, Text: "Boom in d.cfg"},
 		})
 
 		var sets []string
@@ -226,57 +221,57 @@ func TestRemoteValidator(t *testing.T) {
 			So(reqSize, ShouldBeLessThanOrEqualTo, val.requestSizeLimitBytes)
 		}
 		sort.Strings(sets)
-		So(sets, ShouldResemble, []string{"b+a", "c", "d"})
+		So(sets, ShouldResemble, []string{"b.cfg+a.cfg", "c.cfg", "d.cfg"})
 		Convey("Single file too large", func() {
-			val.requestSizeLimitBytes = 5
-			_, err := val.Validate(ctx, testReq)
-			So(err, ShouldErrLike, "the size of file \"c\" is 6")
+			val.requestSizeLimitBytes = 10
+			_, err := val.Validate(ctx, cfgSet)
+			So(err, ShouldErrLike, "the size of file \"c.cfg\" is 12")
 		})
 	})
 
 	Convey("Handles errors", t, func() {
 		val := &legacyRemoteValidator{
-			requestSizeLimitBytes: 6,
-
-			validateConfig: func(ctx context.Context, req *ValidationRequest) (*config.LuciConfigValidateConfigResponseMessage, error) {
+			requestSizeLimitBytes: 12,
+			validateConfig: func(ctx context.Context, req *legacy_config.LuciConfigValidateConfigRequestMessage) (*legacy_config.LuciConfigValidateConfigResponseMessage, error) {
 				if req.ConfigSet != "config-set" {
 					panic("bad ConfigSet")
 				}
 
-				var messages []*ValidationMessage
+				var messages []*legacy_config.ComponentsConfigEndpointValidationMessage
 				for _, f := range req.Files {
-					if f.Path == "c" || f.Path == "d" {
+					if f.Path == "c.cfg" || f.Path == "d.cfg" {
 						return nil, fmt.Errorf("fake error")
 					}
-					messages = append(messages, &ValidationMessage{
-						Path: f.Path,
-						Text: fmt.Sprintf("Boom in %s", f.Path),
+					messages = append(messages, &legacy_config.ComponentsConfigEndpointValidationMessage{
+						Path:     f.Path,
+						Severity: "ERROR",
+						Text:     fmt.Sprintf("Boom in %s", f.Path),
 					})
 				}
 
-				return &config.LuciConfigValidateConfigResponseMessage{
+				return &legacy_config.LuciConfigValidateConfigResponseMessage{
 					Messages: messages,
 				}, nil
 			},
 		}
 
-		msg, err := val.Validate(ctx, testReq)
+		msg, err := val.Validate(ctx, cfgSet)
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldEqual, "fake error (and 1 other error)")
-		So(msg, ShouldResemble, []*ValidationMessage{
-			{Path: "a", Text: "Boom in a"},
-			{Path: "b", Text: "Boom in b"},
+		So(msg, ShouldResembleProto, []*config.ValidationResult_Message{
+			{Path: "a.cfg", Severity: config.ValidationResult_ERROR, Text: "Boom in a.cfg"},
+			{Path: "b.cfg", Severity: config.ValidationResult_ERROR, Text: "Boom in b.cfg"},
 		})
 	})
 }
 
 type testValidator struct {
-	req *ValidationRequest   // captured request
-	res []*ValidationMessage // a reply to send
-	err error                // an RPC error
+	cs  ConfigSet                          // captured config set
+	res []*config.ValidationResult_Message // a reply to send
+	err error                              // an RPC error
 }
 
-func (t *testValidator) Validate(ctx context.Context, req *ValidationRequest) ([]*ValidationMessage, error) {
-	t.req = req
+func (t *testValidator) Validate(ctx context.Context, cs ConfigSet) ([]*config.ValidationResult_Message, error) {
+	t.cs = cs
 	return t.res, t.err
 }

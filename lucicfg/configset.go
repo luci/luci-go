@@ -32,17 +32,12 @@ import (
 	"google.golang.org/api/googleapi"
 	"google.golang.org/grpc"
 
-	config "go.chromium.org/luci/common/api/luci_config/config/v1"
+	legacy_config "go.chromium.org/luci/common/api/luci_config/config/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/sync/parallel"
 	configpb "go.chromium.org/luci/config_service/proto"
-)
-
-// Alias some ridiculously long type names that we round-trip in the public API.
-type (
-	ValidationRequest = config.LuciConfigValidateConfigRequestMessage
-	ValidationMessage = config.ComponentsConfigEndpointValidationMessage
 )
 
 // ConfigSet is an in-memory representation of a single config set.
@@ -73,10 +68,10 @@ func (cs ConfigSet) AsOutput(root string) Output {
 
 // ValidationResult is what we get after validating a config set.
 type ValidationResult struct {
-	ConfigSet string               `json:"config_set"`          // a config set being validated
-	Failed    bool                 `json:"failed"`              // true if the config is bad
-	Messages  []*ValidationMessage `json:"messages"`            // errors, warnings, infos, etc.
-	RPCError  string               `json:"rpc_error,omitempty"` // set if the RPC itself failed
+	ConfigSet string                             `json:"config_set"`          // a config set being validated
+	Failed    bool                               `json:"failed"`              // true if the config is bad
+	Messages  []*config.ValidationResult_Message `json:"messages"`            // errors, warnings, infos, etc.
+	RPCError  string                             `json:"rpc_error,omitempty"` // set if the RPC itself failed
 }
 
 // ConfigSetValidator is primarily implemented through config.Service, but can
@@ -85,8 +80,8 @@ type ConfigSetValidator interface {
 	// Validate sends the validation request to the service.
 	//
 	// Returns errors only on RPC errors. Actual validation errors are
-	// communicated through []*ValidationMessage.
-	Validate(ctx context.Context, req *ValidationRequest) ([]*ValidationMessage, error)
+	// communicated through []*config.ValidationResult_Message.
+	Validate(ctx context.Context, cs ConfigSet) ([]*config.ValidationResult_Message, error)
 }
 
 type remoteValidator struct {
@@ -100,33 +95,42 @@ func NewRemoteValidator(conn *grpc.ClientConn) ConfigSetValidator {
 }
 
 // Validate implements ConfigSetValidator
-func (r *remoteValidator) Validate(ctx context.Context, req *ValidationRequest) ([]*ValidationMessage, error) {
+func (r *remoteValidator) Validate(ctx context.Context, cs ConfigSet) ([]*config.ValidationResult_Message, error) {
 	return nil, errors.New("not implemented")
 }
 
 type legacyRemoteValidator struct {
-	validateConfig        func(context.Context, *ValidationRequest) (*config.LuciConfigValidateConfigResponseMessage, error)
+	validateConfig        func(context.Context, *legacy_config.LuciConfigValidateConfigRequestMessage) (*legacy_config.LuciConfigValidateConfigResponseMessage, error)
 	requestSizeLimitBytes int64
 }
 
-func (r *legacyRemoteValidator) Validate(ctx context.Context, req *ValidationRequest) ([]*ValidationMessage, error) {
+func (r *legacyRemoteValidator) Validate(ctx context.Context, cs ConfigSet) ([]*config.ValidationResult_Message, error) {
 	// Sort by size, smaller first, to group small files in a single request.
-	files := append([]*config.LuciConfigValidateConfigRequestMessageFile(nil), req.Files...)
+	files := make([]*legacy_config.LuciConfigValidateConfigRequestMessageFile, 0, len(cs.Data))
+	for path, content := range cs.Data {
+		files = append(files, &legacy_config.LuciConfigValidateConfigRequestMessageFile{
+			Path:    path,
+			Content: base64.StdEncoding.EncodeToString(content),
+		})
+	}
 	sort.Slice(files, func(i, j int) bool {
+		if len(files[i].Content) == len(files[j].Content) {
+			return strings.Compare(files[i].Path, files[j].Path) < 0
+		}
 		return len(files[i].Content) < len(files[j].Content)
 	})
 
 	// Split all files into a bunch of smallish validation requests to avoid
 	// hitting 32MB request size limit.
 	var (
-		requests []*ValidationRequest
-		curFiles []*config.LuciConfigValidateConfigRequestMessageFile
+		requests []*legacy_config.LuciConfigValidateConfigRequestMessage
+		curFiles []*legacy_config.LuciConfigValidateConfigRequestMessageFile
 		curSize  int64
 	)
 	flush := func() {
 		if len(curFiles) > 0 {
-			requests = append(requests, &ValidationRequest{
-				ConfigSet: req.ConfigSet,
+			requests = append(requests, &legacy_config.LuciConfigValidateConfigRequestMessage{
+				ConfigSet: cs.Name,
 				Files:     curFiles,
 			})
 		}
@@ -149,7 +153,7 @@ func (r *legacyRemoteValidator) Validate(ctx context.Context, req *ValidationReq
 
 	var (
 		lock     sync.Mutex
-		messages []*ValidationMessage
+		messages []*config.ValidationResult_Message
 	)
 
 	// Execute all requests in parallel.
@@ -160,7 +164,17 @@ func (r *legacyRemoteValidator) Validate(ctx context.Context, req *ValidationReq
 				resp, err := r.validateConfig(ctx, req)
 				if resp != nil {
 					lock.Lock()
-					messages = append(messages, resp.Messages...)
+					for _, msg := range resp.Messages {
+						if val, ok := config.ValidationResult_Severity_value[strings.ToUpper(msg.Severity)]; ok {
+							messages = append(messages, &config.ValidationResult_Message{
+								Path:     msg.Path,
+								Severity: config.ValidationResult_Severity(val),
+								Text:     msg.Text,
+							})
+						} else {
+							logging.Warningf(ctx, "unknown severity %q; full msg: %+v", msg.Severity, msg)
+						}
+					}
 					lock.Unlock()
 				}
 				return err
@@ -186,7 +200,7 @@ func LegacyRemoteValidator(client *http.Client, host string) ConfigSetValidator 
 		// highly repetitive content, it should easily achieve 5:1 compression
 		// ratio.
 		requestSizeLimitBytes: 160 * 1024 * 1024,
-		validateConfig: func(ctx context.Context, req *ValidationRequest) (*config.LuciConfigValidateConfigResponseMessage, error) {
+		validateConfig: func(ctx context.Context, req *legacy_config.LuciConfigValidateConfigRequestMessage) (*legacy_config.LuciConfigValidateConfigResponseMessage, error) {
 
 			debug := make([]string, len(req.Files))
 			for i, f := range req.Files {
@@ -221,7 +235,7 @@ func LegacyRemoteValidator(client *http.Client, host string) ConfigSetValidator 
 			if res.StatusCode < 200 || res.StatusCode > 299 {
 				return nil, googleapi.CheckResponse(res)
 			}
-			ret := &config.LuciConfigValidateConfigResponseMessage{
+			ret := &legacy_config.LuciConfigValidateConfigResponseMessage{
 				ServerResponse: googleapi.ServerResponse{
 					Header:         res.Header,
 					HTTPStatusCode: res.StatusCode,
@@ -281,22 +295,12 @@ func (cs ConfigSet) Files() []string {
 // If the RPC call itself failed, ValidationResult is still returned, but it has
 // only ConfigSet and RPCError fields populated.
 func (cs ConfigSet) Validate(ctx context.Context, val ConfigSetValidator) *ValidationResult {
-	req := &ValidationRequest{
-		ConfigSet: cs.Name,
-		Files:     make([]*config.LuciConfigValidateConfigRequestMessageFile, len(cs.Data)),
-	}
-
 	logging.Infof(ctx, "Sending to LUCI Config for validation as config set %q:", cs.Name)
-	for idx, f := range cs.Files() {
+	for _, f := range cs.Files() {
 		logging.Infof(ctx, "  %s (%s)", f, humanize.Bytes(uint64(len(cs.Data[f]))))
-		req.Files[idx] = &config.LuciConfigValidateConfigRequestMessageFile{
-			Path:    f,
-			Content: base64.StdEncoding.EncodeToString(cs.Data[f]),
-		}
 	}
 
-	messages, err := val.Validate(ctx, req)
-
+	messages, err := val.Validate(ctx, cs)
 	res := &ValidationResult{
 		ConfigSet: cs.Name,
 		Messages:  messages,
@@ -324,9 +328,9 @@ func (vr *ValidationResult) OverallError(failOnWarnings bool) error {
 	errs, warns := 0, 0
 	for _, msg := range vr.Messages {
 		switch msg.Severity {
-		case "WARNING":
+		case config.ValidationResult_WARNING:
 			warns++
-		case "ERROR", "CRITICAL":
+		case config.ValidationResult_ERROR, config.ValidationResult_CRITICAL:
 			errs++
 		}
 	}
