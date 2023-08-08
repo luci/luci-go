@@ -30,11 +30,13 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"google.golang.org/api/googleapi"
+	"google.golang.org/grpc"
 
 	config "go.chromium.org/luci/common/api/luci_config/config/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+	configpb "go.chromium.org/luci/config_service/proto"
 )
 
 // Alias some ridiculously long type names that we round-trip in the public API.
@@ -85,6 +87,21 @@ type ConfigSetValidator interface {
 	// Returns errors only on RPC errors. Actual validation errors are
 	// communicated through []*ValidationMessage.
 	Validate(ctx context.Context, req *ValidationRequest) ([]*ValidationMessage, error)
+}
+
+type remoteValidator struct {
+	cfgClient configpb.ConfigsClient
+}
+
+func NewRemoteValidator(conn *grpc.ClientConn) ConfigSetValidator {
+	return &remoteValidator{
+		cfgClient: configpb.NewConfigsClient(conn),
+	}
+}
+
+// Validate implements ConfigSetValidator
+func (r *remoteValidator) Validate(ctx context.Context, req *ValidationRequest) ([]*ValidationMessage, error) {
+	return nil, errors.New("not implemented")
 }
 
 type legacyRemoteValidator struct {

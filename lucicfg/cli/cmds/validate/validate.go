@@ -150,6 +150,7 @@ func (vr *validateRun) validateExisting(ctx context.Context, dir string) (*valid
 		Output:                    configSet.AsOutput("."),
 		Meta:                      vr.Meta,
 		LegacyConfigServiceClient: vr.LegacyConfigServiceClient,
+		ConfigServiceConn:         vr.MakeConfigServiceConn,
 	}, nil)
 	return &validateResult{Validation: res}, err
 }
@@ -237,6 +238,7 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 		Output:                    output,
 		Meta:                      meta,
 		LegacyConfigServiceClient: vr.LegacyConfigServiceClient,
+		ConfigServiceConn:         vr.MakeConfigServiceConn,
 	}, func(path string) (*build.Rewriter, error) {
 		// GetRewriter needs to see absolute paths; In Validate the paths are all
 		// relative to the entrypoint (e.g. main.star) becuase they refer to

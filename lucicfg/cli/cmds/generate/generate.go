@@ -175,6 +175,7 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 			Output:                    output,
 			Meta:                      meta,
 			LegacyConfigServiceClient: gr.LegacyConfigServiceClient,
+			ConfigServiceConn:         gr.MakeConfigServiceConn,
 		}, func(path string) (*build.Rewriter, error) {
 			// GetRewriter needs to see absolute paths; In Validate the paths are all
 			// relative to the entrypoint (e.g. main.star) becuase they refer to

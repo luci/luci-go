@@ -26,9 +26,12 @@ import (
 	"strings"
 
 	"github.com/maruel/subcommands"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/logging"
 
@@ -178,6 +181,30 @@ func (c *Subcommand) LegacyConfigServiceClient(ctx context.Context) (*http.Clien
 		return nil, err
 	}
 	return auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
+}
+
+// MakeConfigServiceConn returns an authenticated grpc connection to call
+// call LUCI Config service.
+func (c *Subcommand) MakeConfigServiceConn(ctx context.Context, host string) (*grpc.ClientConn, error) {
+	authOpts, err := c.authFlags.Options()
+	if err != nil {
+		return nil, err
+	}
+	authOpts.UseIDTokens = true
+	authOpts.Audience = "https://" + host
+
+	creds, err := auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).PerRPCCredentials()
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get credentials to access %s", host).Err()
+	}
+	conn, err := grpc.DialContext(ctx, host+":443",
+		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
+		grpc.WithPerRPCCredentials(creds),
+	)
+	if err != nil {
+		return nil, errors.Annotate(err, "cannot dial to %s", host).Err()
+	}
+	return conn, nil
 }
 
 // Done is called as the last step of processing a subcommand.
