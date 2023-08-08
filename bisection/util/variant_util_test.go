@@ -38,10 +38,4 @@ func TestVariantUtil(t *testing.T) {
 		})
 	})
 
-	Convey("VariantToStrings", t, func() {
-		variants := VariantToStrings(&pb.Variant{
-			Def: map[string]string{"builder": "testbuilder", "os": "mac"},
-		})
-		So(variants, ShouldResemble, []string{"builder:testbuilder", "os:mac"})
-	})
 }

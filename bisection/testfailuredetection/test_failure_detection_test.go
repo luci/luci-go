@@ -151,14 +151,23 @@ func TestFailureDetection(t *testing.T) {
 		cl.Set(time.Unix(10000, 0).UTC())
 		ctx = clock.Set(ctx, cl)
 		ctx, skdr := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
-		analysisClient := &fakeLUCIAnalysisClient{testFailuresByProject: map[string][]*lucianalysis.BuilderRegressionGroup{}}
-		d := TestFailureDetector{LUCIAnalysis: analysisClient}
+		analysisClient := &fakeLUCIAnalysisClient{
+			testFailuresByProject: map[string][]*lucianalysis.BuilderRegressionGroup{},
+			buildInfoByProject: map[string]lucianalysis.BuildInfo{
+				"testProject": {
+					BuildID:         1,
+					Bucket:          "bucket",
+					Builder:         "builder",
+					StartCommitHash: "startCommitHash",
+					EndCommitHash:   "endCommitHash",
+				},
+			},
+		}
 		task := &tpb.TestFailureDetectionTask{
-			Project:          "testProject",
-			VariantPredicate: &tpb.VariantPredicate{},
+			Project: "testProject",
 		}
 		verify := func(selectedGroup *lucianalysis.BuilderRegressionGroup, redundancyScore float64) {
-			err := d.Find(ctx, task)
+			err := Run(ctx, analysisClient, task)
 			So(err, ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
@@ -184,12 +193,17 @@ func TestFailureDetection(t *testing.T) {
 			analysis, err := datastoreutil.GetTestFailureAnalysis(ctx, resultsTask.AnalysisId)
 			So(err, ShouldBeNil)
 			expected := &model.TestFailureAnalysis{
-				Project:     "testProject",
-				ID:          resultsTask.AnalysisId,
-				TestFailure: primaryFailureKey,
-				Status:      pb.AnalysisStatus_CREATED,
-				CreateTime:  clock.Now(ctx),
-				Priority:    rerun.PriorityTestFailure,
+				ID:              resultsTask.AnalysisId,
+				Project:         "testProject",
+				Bucket:          "bucket",
+				Builder:         "builder",
+				TestFailure:     primaryFailureKey,
+				CreateTime:      clock.Now(ctx),
+				Status:          pb.AnalysisStatus_CREATED,
+				Priority:        rerun.PriorityTestFailure,
+				StartCommitHash: "startCommitHash",
+				EndCommitHash:   "endCommitHash",
+				FailedBuildID:   1,
 			}
 			So(analysis, ShouldResemble, expected)
 		}
@@ -234,14 +248,23 @@ func TestFailureDetection(t *testing.T) {
 		cl.Set(time.Unix(10000, 0).UTC())
 		ctx = clock.Set(ctx, cl)
 		ctx, skdr := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
-		analysisClient := &fakeLUCIAnalysisClient{testFailuresByProject: map[string][]*lucianalysis.BuilderRegressionGroup{}}
-		d := TestFailureDetector{LUCIAnalysis: analysisClient}
+		analysisClient := &fakeLUCIAnalysisClient{
+			testFailuresByProject: map[string][]*lucianalysis.BuilderRegressionGroup{},
+			buildInfoByProject: map[string]lucianalysis.BuildInfo{
+				"testProject": {
+					BuildID:         1,
+					Bucket:          "bucket",
+					Builder:         "builder",
+					StartCommitHash: "startCommitHash",
+					EndCommitHash:   "endCommitHash",
+				},
+			},
+		}
 		task := &tpb.TestFailureDetectionTask{
-			Project:          "testProject",
-			VariantPredicate: &tpb.VariantPredicate{},
+			Project: "testProject",
 		}
 		Convey("no builder regression group", func() {
-			err := d.Find(ctx, task)
+			err := Run(ctx, analysisClient, task)
 			So(err, ShouldBeNil)
 			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 		})
@@ -257,7 +280,7 @@ func TestFailureDetection(t *testing.T) {
 			So(datastore.Put(ctx, failureInDB), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			err := d.Find(ctx, task)
+			err := Run(ctx, analysisClient, task)
 			So(err, ShouldBeNil)
 			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 		})
@@ -266,10 +289,15 @@ func TestFailureDetection(t *testing.T) {
 
 type fakeLUCIAnalysisClient struct {
 	testFailuresByProject map[string][]*lucianalysis.BuilderRegressionGroup
+	buildInfoByProject    map[string]lucianalysis.BuildInfo
 }
 
-func (f *fakeLUCIAnalysisClient) ReadTestFailures(ctx context.Context, opts lucianalysis.ReadTestFailuresOptions) ([]*lucianalysis.BuilderRegressionGroup, error) {
-	return f.testFailuresByProject[opts.Project], nil
+func (f *fakeLUCIAnalysisClient) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask) ([]*lucianalysis.BuilderRegressionGroup, error) {
+	return f.testFailuresByProject[task.Project], nil
+}
+
+func (f *fakeLUCIAnalysisClient) ReadBuildInfo(ctx context.Context, tf *model.TestFailure) (lucianalysis.BuildInfo, error) {
+	return f.buildInfoByProject[tf.Project], nil
 }
 
 func fakeBuilderRegressionGroup(primaryTestID, primaryVariantHash string, start, end int64) *lucianalysis.BuilderRegressionGroup {

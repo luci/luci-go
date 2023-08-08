@@ -16,8 +16,6 @@ package util
 
 import (
 	"encoding/json"
-	"fmt"
-	"sort"
 
 	pb "go.chromium.org/luci/bisection/proto/v1"
 )
@@ -29,18 +27,4 @@ func VariantPB(variant string) (*pb.Variant, error) {
 		return nil, err
 	}
 	return &pb.Variant{Def: v}, nil
-}
-
-// VariantToStrings returns a key:val string slice representation of the Variant.
-// Never returns nil.
-func VariantToStrings(vr *pb.Variant) []string {
-	if len(vr.GetDef()) == 0 {
-		return []string{}
-	}
-	pairs := make([]string, 0, len(vr.GetDef()))
-	for k, v := range vr.GetDef() {
-		pairs = append(pairs, fmt.Sprintf("%s:%s", k, v))
-	}
-	sort.Strings(pairs)
-	return pairs
 }

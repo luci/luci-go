@@ -51,23 +51,14 @@ message CulpritVerificationTask {
   string parent_key = 3;
 }
 
-// Represents a function Variant -> bool.
-message VariantPredicate {
-  oneof predicate {
-    // A variant's key-value pairs must contain those in this one.
-    // Eg. If variant here is {"os":"Mac-13"}, it will match all variants
-    // that have "Mac-13" in the "os" field.
-    luci.bisection.v1.Variant contains = 1;
-  }
-}
-
 // Payload for test failure detection.
 message TestFailureDetectionTask {
   // The project to select test failures from.
   string project = 1;
 
-  // Test variants must satisfy this predicate.
-  VariantPredicate variant_predicate = 2;
+  // Test variants must satisfy all items in this dimension contains list.
+  // Eg. {key:"os", value:"Ubuntu-22.04"}
+  repeated luci.bisection.v1.Dimension dimension_contains = 2;
 }
 
 // Payload for test failure bisection.

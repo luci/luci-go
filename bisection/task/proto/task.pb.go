@@ -258,77 +258,6 @@ func (x *CulpritVerificationTask) GetParentKey() string {
 	return ""
 }
 
-// Represents a function Variant -> bool.
-type VariantPredicate struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// Types that are assignable to Predicate:
-	//
-	//	*VariantPredicate_Contains
-	Predicate isVariantPredicate_Predicate `protobuf_oneof:"predicate"`
-}
-
-func (x *VariantPredicate) Reset() {
-	*x = VariantPredicate{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *VariantPredicate) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*VariantPredicate) ProtoMessage() {}
-
-func (x *VariantPredicate) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use VariantPredicate.ProtoReflect.Descriptor instead.
-func (*VariantPredicate) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP(), []int{4}
-}
-
-func (m *VariantPredicate) GetPredicate() isVariantPredicate_Predicate {
-	if m != nil {
-		return m.Predicate
-	}
-	return nil
-}
-
-func (x *VariantPredicate) GetContains() *v1.Variant {
-	if x, ok := x.GetPredicate().(*VariantPredicate_Contains); ok {
-		return x.Contains
-	}
-	return nil
-}
-
-type isVariantPredicate_Predicate interface {
-	isVariantPredicate_Predicate()
-}
-
-type VariantPredicate_Contains struct {
-	// A variant's key-value pairs must contain those in this one.
-	// Eg. If variant here is {"os":"Mac-13"}, it will match all variants
-	// that have "Mac-13" in the "os" field.
-	Contains *v1.Variant `protobuf:"bytes,1,opt,name=contains,proto3,oneof"`
-}
-
-func (*VariantPredicate_Contains) isVariantPredicate_Predicate() {}
-
 // Payload for test failure detection.
 type TestFailureDetectionTask struct {
 	state         protoimpl.MessageState
@@ -337,14 +266,15 @@ type TestFailureDetectionTask struct {
 
 	// The project to select test failures from.
 	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
-	// Test variants must satisfy this predicate.
-	VariantPredicate *VariantPredicate `protobuf:"bytes,2,opt,name=variant_predicate,json=variantPredicate,proto3" json:"variant_predicate,omitempty"`
+	// Test variants must satisfy all items in this dimension contains list.
+	// Eg. {key:"os", value:"Ubuntu-22.04"}
+	DimensionContains []*v1.Dimension `protobuf:"bytes,2,rep,name=dimension_contains,json=dimensionContains,proto3" json:"dimension_contains,omitempty"`
 }
 
 func (x *TestFailureDetectionTask) Reset() {
 	*x = TestFailureDetectionTask{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[5]
+		mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -357,7 +287,7 @@ func (x *TestFailureDetectionTask) String() string {
 func (*TestFailureDetectionTask) ProtoMessage() {}
 
 func (x *TestFailureDetectionTask) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -370,7 +300,7 @@ func (x *TestFailureDetectionTask) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestFailureDetectionTask.ProtoReflect.Descriptor instead.
 func (*TestFailureDetectionTask) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP(), []int{5}
+	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *TestFailureDetectionTask) GetProject() string {
@@ -380,9 +310,9 @@ func (x *TestFailureDetectionTask) GetProject() string {
 	return ""
 }
 
-func (x *TestFailureDetectionTask) GetVariantPredicate() *VariantPredicate {
+func (x *TestFailureDetectionTask) GetDimensionContains() []*v1.Dimension {
 	if x != nil {
-		return x.VariantPredicate
+		return x.DimensionContains
 	}
 	return nil
 }
@@ -400,7 +330,7 @@ type TestFailureBisectionTask struct {
 func (x *TestFailureBisectionTask) Reset() {
 	*x = TestFailureBisectionTask{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[6]
+		mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -413,7 +343,7 @@ func (x *TestFailureBisectionTask) String() string {
 func (*TestFailureBisectionTask) ProtoMessage() {}
 
 func (x *TestFailureBisectionTask) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[6]
+	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -426,7 +356,7 @@ func (x *TestFailureBisectionTask) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestFailureBisectionTask.ProtoReflect.Descriptor instead.
 func (*TestFailureBisectionTask) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP(), []int{6}
+	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *TestFailureBisectionTask) GetAnalysisId() int64 {
@@ -465,28 +395,22 @@ var file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDesc = []byte{
 	0x75, 0x73, 0x70, 0x65, 0x63, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52,
 	0x09, 0x73, 0x75, 0x73, 0x70, 0x65, 0x63, 0x74, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x70, 0x61,
 	0x72, 0x65, 0x6e, 0x74, 0x5f, 0x6b, 0x65, 0x79, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09,
-	0x70, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x4b, 0x65, 0x79, 0x22, 0x59, 0x0a, 0x10, 0x56, 0x61, 0x72,
-	0x69, 0x61, 0x6e, 0x74, 0x50, 0x72, 0x65, 0x64, 0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x38, 0x0a,
-	0x08, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x1a, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e,
-	0x2e, 0x76, 0x31, 0x2e, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x48, 0x00, 0x52, 0x08, 0x63,
-	0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x73, 0x42, 0x0b, 0x0a, 0x09, 0x70, 0x72, 0x65, 0x64, 0x69,
-	0x63, 0x61, 0x74, 0x65, 0x22, 0x7a, 0x0a, 0x18, 0x54, 0x65, 0x73, 0x74, 0x46, 0x61, 0x69, 0x6c,
-	0x75, 0x72, 0x65, 0x44, 0x65, 0x74, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x61, 0x73, 0x6b,
-	0x12, 0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x44, 0x0a, 0x11, 0x76, 0x61,
-	0x72, 0x69, 0x61, 0x6e, 0x74, 0x5f, 0x70, 0x72, 0x65, 0x64, 0x69, 0x63, 0x61, 0x74, 0x65, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x56, 0x61,
-	0x72, 0x69, 0x61, 0x6e, 0x74, 0x50, 0x72, 0x65, 0x64, 0x69, 0x63, 0x61, 0x74, 0x65, 0x52, 0x10,
-	0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x50, 0x72, 0x65, 0x64, 0x69, 0x63, 0x61, 0x74, 0x65,
-	0x22, 0x3b, 0x0a, 0x18, 0x54, 0x65, 0x73, 0x74, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x42,
-	0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x61, 0x73, 0x6b, 0x12, 0x1f, 0x0a, 0x0b,
-	0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x03, 0x52, 0x0a, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x49, 0x64, 0x42, 0x2b, 0x5a,
-	0x29, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67,
-	0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2f,
-	0x74, 0x61, 0x73, 0x6b, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x33,
+	0x70, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x4b, 0x65, 0x79, 0x22, 0x81, 0x01, 0x0a, 0x18, 0x54, 0x65,
+	0x73, 0x74, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x44, 0x65, 0x74, 0x65, 0x63, 0x74, 0x69,
+	0x6f, 0x6e, 0x54, 0x61, 0x73, 0x6b, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63,
+	0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74,
+	0x12, 0x4b, 0x0a, 0x12, 0x64, 0x69, 0x6d, 0x65, 0x6e, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x63, 0x6f,
+	0x6e, 0x74, 0x61, 0x69, 0x6e, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x6c,
+	0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31,
+	0x2e, 0x44, 0x69, 0x6d, 0x65, 0x6e, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x11, 0x64, 0x69, 0x6d, 0x65,
+	0x6e, 0x73, 0x69, 0x6f, 0x6e, 0x43, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x73, 0x22, 0x3b, 0x0a,
+	0x18, 0x54, 0x65, 0x73, 0x74, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x42, 0x69, 0x73, 0x65,
+	0x63, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x61, 0x73, 0x6b, 0x12, 0x1f, 0x0a, 0x0b, 0x61, 0x6e, 0x61,
+	0x6c, 0x79, 0x73, 0x69, 0x73, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0a,
+	0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x49, 0x64, 0x42, 0x2b, 0x5a, 0x29, 0x67, 0x6f,
+	0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75,
+	0x63, 0x69, 0x2f, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x74, 0x61, 0x73,
+	0x6b, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -501,25 +425,23 @@ func file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP() []b
 	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_go_chromium_org_luci_bisection_task_proto_task_proto_goTypes = []interface{}{
 	(*FailedBuildIngestionTask)(nil), // 0: proto.FailedBuildIngestionTask
 	(*RevertCulpritTask)(nil),        // 1: proto.RevertCulpritTask
 	(*CancelAnalysisTask)(nil),       // 2: proto.CancelAnalysisTask
 	(*CulpritVerificationTask)(nil),  // 3: proto.CulpritVerificationTask
-	(*VariantPredicate)(nil),         // 4: proto.VariantPredicate
-	(*TestFailureDetectionTask)(nil), // 5: proto.TestFailureDetectionTask
-	(*TestFailureBisectionTask)(nil), // 6: proto.TestFailureBisectionTask
-	(*v1.Variant)(nil),               // 7: luci.bisection.v1.Variant
+	(*TestFailureDetectionTask)(nil), // 4: proto.TestFailureDetectionTask
+	(*TestFailureBisectionTask)(nil), // 5: proto.TestFailureBisectionTask
+	(*v1.Dimension)(nil),             // 6: luci.bisection.v1.Dimension
 }
 var file_go_chromium_org_luci_bisection_task_proto_task_proto_depIdxs = []int32{
-	7, // 0: proto.VariantPredicate.contains:type_name -> luci.bisection.v1.Variant
-	4, // 1: proto.TestFailureDetectionTask.variant_predicate:type_name -> proto.VariantPredicate
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	6, // 0: proto.TestFailureDetectionTask.dimension_contains:type_name -> luci.bisection.v1.Dimension
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_bisection_task_proto_task_proto_init() }
@@ -577,18 +499,6 @@ func file_go_chromium_org_luci_bisection_task_proto_task_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*VariantPredicate); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*TestFailureDetectionTask); i {
 			case 0:
 				return &v.state
@@ -600,7 +510,7 @@ func file_go_chromium_org_luci_bisection_task_proto_task_proto_init() {
 				return nil
 			}
 		}
-		file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*TestFailureBisectionTask); i {
 			case 0:
 				return &v.state
@@ -613,16 +523,13 @@ func file_go_chromium_org_luci_bisection_task_proto_task_proto_init() {
 			}
 		}
 	}
-	file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[4].OneofWrappers = []interface{}{
-		(*VariantPredicate_Contains)(nil),
-	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

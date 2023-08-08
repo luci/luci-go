@@ -62,8 +62,7 @@ func RegisterTaskClass(srv *server.Server, luciAnalysisProject string) error {
 		Handler: func(c context.Context, payload proto.Message) error {
 			task := payload.(*tpb.TestFailureDetectionTask)
 			logging.Infof(c, "Processing test failure detection task with project = %s", task.Project)
-			d := &TestFailureDetector{LUCIAnalysis: ac}
-			err := d.Find(ctx, task)
+			err := Run(ctx, ac, task)
 			if err != nil {
 				err = errors.Annotate(err, "run detection").Err()
 				logging.Errorf(ctx, err.Error())
@@ -85,15 +84,12 @@ func Schedule(ctx context.Context, task *tpb.TestFailureDetectionTask) error {
 }
 
 type analysisClient interface {
-	ReadTestFailures(ctx context.Context, opts lucianalysis.ReadTestFailuresOptions) ([]*lucianalysis.BuilderRegressionGroup, error)
+	ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask) ([]*lucianalysis.BuilderRegressionGroup, error)
+	ReadBuildInfo(ctx context.Context, tf *model.TestFailure) (lucianalysis.BuildInfo, error)
 }
 
-type TestFailureDetector struct {
-	LUCIAnalysis analysisClient
-}
-
-// Find finds and group test failures to send to bisector.
-func (d *TestFailureDetector) Find(ctx context.Context, task *tpb.TestFailureDetectionTask) error {
+// Run finds and group test failures to send to bisector.
+func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetectionTask) error {
 	// Checks if test failure detection is enabled.
 	enabled, err := isEnabled(ctx)
 	if err != nil {
@@ -103,11 +99,7 @@ func (d *TestFailureDetector) Find(ctx context.Context, task *tpb.TestFailureDet
 		logging.Infof(ctx, "Dectection is not enabled")
 		return nil
 	}
-	opts := lucianalysis.ReadTestFailuresOptions{
-		Project:          task.Project,
-		VariantPredicate: task.VariantPredicate,
-	}
-	groups, err := d.LUCIAnalysis.ReadTestFailures(ctx, opts)
+	groups, err := client.ReadTestFailures(ctx, task)
 	if err != nil {
 		return errors.Annotate(err, "read test failures").Err()
 	}
@@ -140,7 +132,11 @@ func (d *TestFailureDetector) Find(ctx context.Context, task *tpb.TestFailureDet
 		return nil
 	}
 	bestBundle := First(bundles)
-	if err := saveTestFailuresAndAnalysis(ctx, bestBundle); err != nil {
+	testFailureAnalysis, err := prepareFailureAnalysis(ctx, client, bestBundle.primary())
+	if err != nil {
+		return errors.Annotate(err, "prepare failure analysis").Err()
+	}
+	if err := saveTestFailuresAndAnalysis(ctx, bestBundle, testFailureAnalysis); err != nil {
 		return errors.Annotate(err, "save test failure and analysis").Err()
 	}
 	return nil
@@ -226,15 +222,28 @@ func regressionRangeOverlap(rl1, ru1, rl2, ru2 int64) float64 {
 	return math.Max(0, numberOfOverlapCommit(rl1, ru1, rl2, ru2)) / float64(ru1-rl1+ru2-rl2+2)
 }
 
+func prepareFailureAnalysis(ctx context.Context, client analysisClient, tf *model.TestFailure) (*model.TestFailureAnalysis, error) {
+	buildInfo, err := client.ReadBuildInfo(ctx, tf)
+	if err != nil {
+		return nil, errors.Annotate(err, "read build info").Err()
+	}
+	testFailureAnalysis := &model.TestFailureAnalysis{
+		Project:         tf.Project,
+		Bucket:          buildInfo.Bucket,
+		Builder:         buildInfo.Builder,
+		CreateTime:      clock.Now(ctx),
+		Status:          pb.AnalysisStatus_CREATED,
+		Priority:        rerun.PriorityTestFailure,
+		StartCommitHash: buildInfo.StartCommitHash,
+		EndCommitHash:   buildInfo.EndCommitHash,
+		FailedBuildID:   buildInfo.BuildID,
+	}
+	return testFailureAnalysis, nil
+}
+
 // SaveTestFailureAndAnalysis saves the test failures and a test failures analysis into datastore.
 // It also transactionally enqueue a task to bisector.
-func saveTestFailuresAndAnalysis(ctx context.Context, bundle testFailureBundle) error {
-	testFailureAnalysis := &model.TestFailureAnalysis{
-		Project:    bundle.primary().Project,
-		CreateTime: clock.Now(ctx),
-		Status:     pb.AnalysisStatus_CREATED,
-		Priority:   rerun.PriorityTestFailure,
-	}
+func saveTestFailuresAndAnalysis(ctx context.Context, bundle testFailureBundle, testFailureAnalysis *model.TestFailureAnalysis) error {
 	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		if err := datastore.AllocateIDs(ctx, testFailureAnalysis); err != nil {
 			return errors.Annotate(err, "allocate datastore ID for test failure analysis").Err()
