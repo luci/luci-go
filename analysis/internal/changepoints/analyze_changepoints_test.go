@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"github.com/google/go-cmp/cmp"
 	"go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
@@ -39,7 +38,6 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -374,8 +372,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(len(tvbs), ShouldEqual, 2)
 
-		// Use diff here to compare both protobuf and non-protobuf.
-		diff := cmp.Diff(tvbs[0], &testvariantbranch.Entry{
+		So(tvbs[0], ShouldResembleProto, &testvariantbranch.Entry{
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
@@ -410,10 +407,9 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				HotBufferCapacity:  inputbuffer.DefaultHotBufferCapacity,
 				ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
 			},
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 
-		diff = cmp.Diff(tvbs[1], &testvariantbranch.Entry{
+		So(tvbs[1], ShouldResembleProto, &testvariantbranch.Entry{
 			Project:     "chromium",
 			TestID:      "test_2",
 			VariantHash: "hash_2",
@@ -467,8 +463,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				HotBufferCapacity:  inputbuffer.DefaultHotBufferCapacity,
 				ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
 			},
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 
 		So(len(client.Insertions), ShouldEqual, 2)
 		for _, insert := range client.Insertions {
@@ -658,8 +653,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			}
 		}
 
-		// Use diff here to compare both protobuf and non-protobuf.
-		diff := cmp.Diff(tvb, &testvariantbranch.Entry{
+		So(tvb, ShouldResembleProto, &testvariantbranch.Entry{
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
@@ -718,8 +712,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			Statistics: &cpb.Statistics{
 				HourlyBuckets: expectedBuckets,
 			},
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 		So(len(client.Insertions), ShouldEqual, 1)
 		So(verdictCounter.Get(ctx, "chromium", "ingested"), ShouldEqual, 1)
 	})
@@ -815,8 +808,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		So(len(tvbs), ShouldEqual, 1)
 		tvb = tvbs[0]
 
-		// Use diff here to compare both protobuf and non-protobuf.
-		diff := cmp.Diff(tvb, &testvariantbranch.Entry{
+		So(tvb, ShouldResembleProto, &testvariantbranch.Entry{
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
@@ -859,8 +851,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			FinalizedSegments: &cpb.Segments{
 				Segments: finalizedSegments[14:],
 			},
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 		So(len(client.Insertions), ShouldEqual, 1)
 		So(verdictCounter.Get(ctx, "chromium", "ingested"), ShouldEqual, 1)
 	})

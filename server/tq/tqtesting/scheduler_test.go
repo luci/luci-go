@@ -26,6 +26,7 @@ import (
 	taskspb "cloud.google.com/go/cloudtasks/apiv2/cloudtaskspb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -362,44 +363,44 @@ func TestTaskList(t *testing.T) {
 		}
 
 		Convey("Payloads", func() {
-			So(tl.Payloads(), ShouldResembleProto, []*durationpb.Duration{
-				{Seconds: 0},
-				{Seconds: 1},
-				{Seconds: 2},
-				{Seconds: 3},
-				{Seconds: 4},
-				{Seconds: 5},
-				{Seconds: 6},
-				{Seconds: 7},
+			So(tl.Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+				&durationpb.Duration{Seconds: 0},
+				&durationpb.Duration{Seconds: 1},
+				&durationpb.Duration{Seconds: 2},
+				&durationpb.Duration{Seconds: 3},
+				&durationpb.Duration{Seconds: 4},
+				&durationpb.Duration{Seconds: 5},
+				&durationpb.Duration{Seconds: 6},
+				&durationpb.Duration{Seconds: 7},
 			})
 		})
 
 		Convey("Executing/Pending", func() {
-			So(tl.Executing().Payloads(), ShouldResembleProto, []*durationpb.Duration{
-				{Seconds: 0},
-				{Seconds: 2},
-				{Seconds: 4},
-				{Seconds: 5},
-				{Seconds: 6},
-				{Seconds: 7},
+			So(tl.Executing().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+				&durationpb.Duration{Seconds: 0},
+				&durationpb.Duration{Seconds: 2},
+				&durationpb.Duration{Seconds: 4},
+				&durationpb.Duration{Seconds: 5},
+				&durationpb.Duration{Seconds: 6},
+				&durationpb.Duration{Seconds: 7},
 			})
 
-			So(tl.Pending().Payloads(), ShouldResembleProto, []*durationpb.Duration{
-				{Seconds: 1},
-				{Seconds: 3},
+			So(tl.Pending().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+				&durationpb.Duration{Seconds: 1},
+				&durationpb.Duration{Seconds: 3},
 			})
 		})
 
 		Convey("SortByETA", func() {
-			So(tl.SortByETA().Payloads(), ShouldResembleProto, []*durationpb.Duration{
-				{Seconds: 2},
-				{Seconds: 0},
-				{Seconds: 5},
-				{Seconds: 7},
-				{Seconds: 6},
-				{Seconds: 4},
-				{Seconds: 1},
-				{Seconds: 3},
+			So(tl.SortByETA().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+				&durationpb.Duration{Seconds: 2},
+				&durationpb.Duration{Seconds: 0},
+				&durationpb.Duration{Seconds: 5},
+				&durationpb.Duration{Seconds: 7},
+				&durationpb.Duration{Seconds: 6},
+				&durationpb.Duration{Seconds: 4},
+				&durationpb.Duration{Seconds: 1},
+				&durationpb.Duration{Seconds: 3},
 			})
 		})
 	})

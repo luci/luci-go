@@ -18,16 +18,16 @@ import (
 	"context"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
-	. "github.com/smartystreets/goconvey/convey"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestChunking(t *testing.T) {
@@ -229,8 +229,7 @@ func TestCreateSnapshot(t *testing.T) {
 
 		snapshot, err := CreateSnapshot(c, nthSectionAnalysis)
 		So(err, ShouldBeNil)
-		diff := cmp.Diff(snapshot.BlameList, blamelist, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		So(snapshot.BlameList, ShouldResembleProto, blamelist)
 
 		So(snapshot.NumInProgress, ShouldEqual, 2)
 		So(snapshot.NumInfraFailed, ShouldEqual, 1)

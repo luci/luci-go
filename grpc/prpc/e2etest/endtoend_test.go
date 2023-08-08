@@ -30,7 +30,6 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -169,7 +168,7 @@ func TestEndToEnd(t *testing.T) {
 
 			_, err = client.Greet(ctx, &HelloRequest{Name: "round-trip"})
 			details := status.Convert(err).Details()
-			So(details, ShouldResembleProto, []proto.Message{detail})
+			So(details, ShouldResembleProto, []any{detail})
 		})
 
 		Convey(`Can handle non-trivial metadata`, func() {

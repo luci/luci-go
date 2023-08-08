@@ -24,11 +24,8 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/mock/gomock"
-	"github.com/google/go-cmp/cmp"
-	. "github.com/smartystreets/goconvey/convey"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -69,6 +66,9 @@ import (
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSchedule(t *testing.T) {
@@ -652,8 +652,8 @@ func verifyTestVariantAnalysis(ctx context.Context, partitionTime time.Time, cli
 	}
 	// Truncated to nearest hour.
 	hour := time.Unix(partitionTime.Unix()/3600*3600, 0)
-	// Use diff here to compare both protobuf and non-protobuf.
-	diff := cmp.Diff(tvbs[0], &testvariantbranch.Entry{
+
+	So(tvbs[0], ShouldResembleProto, &testvariantbranch.Entry{
 		Project:     "project",
 		TestID:      "ninja://test_consistent_failure",
 		VariantHash: "hash",
@@ -694,8 +694,7 @@ func verifyTestVariantAnalysis(ctx context.Context, partitionTime time.Time, cli
 				},
 			},
 		},
-	}, cmp.Comparer(proto.Equal))
-	So(diff, ShouldEqual, "")
+	})
 
 	So(len(client.Insertions), ShouldEqual, 1)
 }

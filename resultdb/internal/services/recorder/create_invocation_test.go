@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/clock"
@@ -549,8 +550,8 @@ func TestCreateInvocation(t *testing.T) {
 			}
 			inv, err := recorder.CreateInvocation(ctx, req, grpc.Header(headers))
 			So(err, ShouldBeNil)
-			So(sched.Tasks().Payloads(), ShouldResembleProto, []*taskspb.TryFinalizeInvocation{
-				{InvocationId: "u-inv"},
+			So(sched.Tasks().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+				&taskspb.TryFinalizeInvocation{InvocationId: "u-inv"},
 			})
 
 			expected := proto.Clone(req.Invocation).(*pb.Invocation)

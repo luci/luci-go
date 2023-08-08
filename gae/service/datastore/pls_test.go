@@ -27,9 +27,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
-	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/gae/service/blobstore"
@@ -2149,9 +2146,7 @@ func TestRoundTrip(t *testing.T) {
 					return
 				}
 				if _, ok := tc.want.(protoEmbedder); ok {
-					// ShouldResemble fails on proto-containing structs.
-					diff := cmp.Diff(got, tc.want, protocmp.Transform(), cmpopts.IgnoreUnexported())
-					So(diff, ShouldEqual, "")
+					So(got, ShouldResembleProto, tc.want)
 					return
 				}
 				So(got, ShouldResemble, tc.want)

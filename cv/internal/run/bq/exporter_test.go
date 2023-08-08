@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
@@ -95,7 +96,7 @@ func TestExportRunToBQ(t *testing.T) {
 				So(schedule(), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
 				rows := ct.BQFake.Rows("", CVDataset, CVTable)
-				So(rows, ShouldResembleProto, []*cvbqpb.Attempt{{
+				So(rows, ShouldResembleProto, []protoreflect.ProtoMessage{&cvbqpb.Attempt{
 					Key:                  "616161",
 					LuciProject:          "lproject",
 					ConfigGroup:          "cgroup",

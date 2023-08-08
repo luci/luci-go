@@ -26,6 +26,7 @@ import (
 	cfgmemory "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
+	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -52,8 +53,8 @@ func TestConfigRefreshCron(t *testing.T) {
 			// Project chromium doesn't exist in datastore.
 			err := pcr.SubmitRefreshTasks(ctx)
 			So(err, ShouldBeNil)
-			So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []*RefreshProjectConfigTask{
-				{Project: "chromium"},
+			So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+				&RefreshProjectConfigTask{Project: "chromium"},
 			})
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
 			So(pm.updates, ShouldResemble, []string{"chromium"})
@@ -68,8 +69,8 @@ func TestConfigRefreshCron(t *testing.T) {
 				Enabled: true,
 			}), ShouldBeNil)
 			So(pcr.SubmitRefreshTasks(ctx), ShouldBeNil)
-			So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []*RefreshProjectConfigTask{
-				{Project: "chromium"},
+			So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+				&RefreshProjectConfigTask{Project: "chromium"},
 			})
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
 			So(pm.updates, ShouldResemble, []string{"chromium"})
@@ -104,8 +105,8 @@ func TestConfigRefreshCron(t *testing.T) {
 				}), ShouldBeNil)
 				err := pcr.SubmitRefreshTasks(ctx)
 				So(err, ShouldBeNil)
-				So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []*RefreshProjectConfigTask{
-					{Project: "chromium", Disable: true},
+				So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+					&RefreshProjectConfigTask{Project: "chromium", Disable: true},
 				})
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
 				So(pm.updates, ShouldResemble, []string{"chromium"})
@@ -118,8 +119,8 @@ func TestConfigRefreshCron(t *testing.T) {
 				}), ShouldBeNil)
 				err := pcr.SubmitRefreshTasks(ctx)
 				So(err, ShouldBeNil)
-				So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []*RefreshProjectConfigTask{
-					{Project: "chromium", Disable: true},
+				So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+					&RefreshProjectConfigTask{Project: "chromium", Disable: true},
 				})
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
 				So(pm.updates, ShouldResemble, []string{"chromium"})

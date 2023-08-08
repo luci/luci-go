@@ -20,14 +20,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/go-cmp/cmp"
-	. "github.com/smartystreets/goconvey/convey"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/bisection/internal/buildbucket"
@@ -35,6 +32,9 @@ import (
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestAnalyze(t *testing.T) {
@@ -135,7 +135,7 @@ func TestAnalyze(t *testing.T) {
 		So(len(nthsectionAnalyses), ShouldEqual, 1)
 		nsa = nthsectionAnalyses[0]
 
-		diff := cmp.Diff(nsa.BlameList, &pb.BlameList{
+		So(nsa.BlameList, ShouldResembleProto, &pb.BlameList{
 			Commits: []*pb.BlameListSingleCommit{
 				{
 					Commit:      "3424",
@@ -148,8 +148,7 @@ func TestAnalyze(t *testing.T) {
 					ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472130",
 				},
 			},
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 	})
 }
 

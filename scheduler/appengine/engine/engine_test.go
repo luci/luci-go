@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/runtime/protoiface"
 
 	"google.golang.org/api/pubsub/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -134,7 +135,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 			})
 
 			// The first tick is scheduled.
-			So(tq.GetScheduledTasks().Payloads(), ShouldResembleProto, []proto.Message{
+			So(tq.GetScheduledTasks().Payloads(), ShouldResembleProto, []protoiface.MessageV1{
 				&internal.CronTickTask{JobId: "proj/1", TickNonce: 6278013164014963328},
 			})
 
@@ -174,7 +175,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 
 			// The first tick is scheduled with ETA substantially before actual next
 			// tick.
-			So(tq.GetScheduledTasks().Payloads(), ShouldResembleProto, []proto.Message{
+			So(tq.GetScheduledTasks().Payloads(), ShouldResembleProto, []protoiface.MessageV1{
 				&internal.CronTickTask{JobId: "proj/1", TickNonce: 6278013164014963328},
 			})
 			So(tq.GetScheduledTasks()[0].Task.Delay, ShouldBeLessThan, 30*24*time.Hour)
@@ -203,7 +204,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 		Convey("updating job's schedule", func() {
 			// Adding a job that ticks every 5 sec. Make sure its tick is scheduled.
 			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), ShouldBeNil)
-			So(tq.GetScheduledTasks().Payloads(), ShouldResembleProto, []proto.Message{
+			So(tq.GetScheduledTasks().Payloads(), ShouldResembleProto, []protoiface.MessageV1{
 				&internal.CronTickTask{JobId: "proj/1", TickNonce: 6278013164014963328},
 			})
 
@@ -236,7 +237,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 			})
 
 			// The new tick is scheduled now too.
-			So(tq.GetScheduledTasks().Payloads(), ShouldResembleProto, []proto.Message{
+			So(tq.GetScheduledTasks().Payloads(), ShouldResembleProto, []protoiface.MessageV1{
 				&internal.CronTickTask{JobId: "proj/1", TickNonce: 6278013164014963328},
 				&internal.CronTickTask{JobId: "proj/1", TickNonce: 2673062197574995716},
 			})
@@ -279,7 +280,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 			})
 
 			// Kicked the triage indeed.
-			So(tq.GetScheduledTasks().Payloads(), ShouldResembleProto, []proto.Message{
+			So(tq.GetScheduledTasks().Payloads(), ShouldResembleProto, []protoiface.MessageV1{
 				&internal.KickTriageTask{JobId: "proj/1"},
 			})
 		})
@@ -1076,7 +1077,7 @@ func TestAbortJob(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// The sequence of tasks we've just performed.
-			So(tasks.Payloads(), ShouldResembleProto, []proto.Message{
+			So(tasks.Payloads(), ShouldResembleProto, []protoiface.MessageV1{
 				// The delayed triage directly from AbortJob.
 				&internal.KickTriageTask{JobId: jobID},
 				// The invocation finalization from AbortInvocation.
@@ -1125,7 +1126,7 @@ func TestAbortJob(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// The sequence of tasks we've just performed.
-			So(tasks.Payloads(), ShouldResembleProto, []proto.Message{
+			So(tasks.Payloads(), ShouldResembleProto, []protoiface.MessageV1{
 				&internal.LaunchInvocationsBatchTask{
 					Tasks: []*internal.LaunchInvocationTask{{JobId: jobID, InvId: expectedInvID}},
 				},
@@ -1157,7 +1158,7 @@ func TestAbortJob(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// The sequence of tasks we've just performed.
-			So(tasks.Payloads(), ShouldResembleProto, []proto.Message{
+			So(tasks.Payloads(), ShouldResembleProto, []protoiface.MessageV1{
 				// The delayed triage directly from AbortJob.
 				&internal.KickTriageTask{JobId: jobID},
 				// The invocation finalization from AbortInvocation.
@@ -1369,7 +1370,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			}
 
 			// All the tasks we've just executed.
-			So(tasks.Payloads(), ShouldResembleProto, []proto.Message{
+			So(tasks.Payloads(), ShouldResembleProto, []protoiface.MessageV1{
 				// Triggering job begins execution.
 				&internal.LaunchInvocationsBatchTask{
 					Tasks: []*internal.LaunchInvocationTask{{JobId: triggeringJob, InvId: triggeringInvID}},
@@ -1431,7 +1432,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// All the tasks we've just executed.
-			So(tasks.Payloads(), ShouldResembleProto, []proto.Message{
+			So(tasks.Payloads(), ShouldResembleProto, []protoiface.MessageV1{
 				// Triggered job is getting triaged (because pending triggers).
 				&internal.TriageJobStateTask{
 					JobId: triggeredJob,
@@ -1546,7 +1547,7 @@ func TestInvocationTimers(t *testing.T) {
 			})
 
 			// All the tasks we've just executed.
-			So(tasks.Payloads(), ShouldResembleProto, []proto.Message{
+			So(tasks.Payloads(), ShouldResembleProto, []protoiface.MessageV1{
 				// Triggering job begins execution.
 				&internal.LaunchInvocationsBatchTask{
 					Tasks: []*internal.LaunchInvocationTask{{JobId: testJobID, InvId: testInvID}},
@@ -1883,7 +1884,7 @@ func forceInvocation(c context.Context, e *engineImpl, jobID string) (inv *Invoc
 type expectedTasks struct {
 	JobID string
 	Epoch time.Time
-	Tasks []proto.Message
+	Tasks []protoiface.MessageV1
 }
 
 func (e *expectedTasks) clear() {

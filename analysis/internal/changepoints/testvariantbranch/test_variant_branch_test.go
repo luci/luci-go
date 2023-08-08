@@ -18,11 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/server/span"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
@@ -31,6 +27,9 @@ import (
 	"go.chromium.org/luci/analysis/internal/testutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestFetchUpdateTestVariantBranch(t *testing.T) {
@@ -160,16 +159,14 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		// After decoding, cold buffer should be empty.
 		tvb1.InputBuffer.ColdBuffer = inputbuffer.History{Verdicts: []inputbuffer.PositionVerdict{}}
 
-		diff := cmp.Diff(tvbs[0], tvb1, cmp.Comparer(proto.Equal))
-		So(diff, ShouldBeEmpty)
+		So(tvbs[0], ShouldResembleProto, tvb1)
 
 		So(tvbs[1], ShouldBeNil)
 
 		tvb3.IsNew = false
 		tvb3.InputBuffer.ColdBuffer = inputbuffer.History{Verdicts: []inputbuffer.PositionVerdict{}}
 
-		diff = cmp.Diff(tvbs[2], tvb3, cmp.Comparer(proto.Equal))
-		So(diff, ShouldBeEmpty)
+		So(tvbs[2], ShouldResembleProto, tvb3)
 	})
 
 	Convey("Insert and update", t, func() {
@@ -350,8 +347,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		tvb.IsFinalizingSegmentDirty = false
 		tvb.InputBuffer.IsColdBufferDirty = false
 
-		diff := cmp.Diff(tvbs[0], tvb, cmp.Comparer(proto.Equal))
-		So(diff, ShouldBeEmpty)
+		So(tvbs[0], ShouldResembleProto, tvb)
 	})
 }
 

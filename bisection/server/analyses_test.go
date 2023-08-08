@@ -22,8 +22,6 @@ import (
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
 
-	"github.com/google/go-cmp/cmp"
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -33,6 +31,9 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/secrets"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestQueryAnalysis(t *testing.T) {
@@ -423,7 +424,7 @@ func TestQueryAnalysis(t *testing.T) {
 		So(proto.Equal(nthSectionResult.StartTime, &timestamppb.Timestamp{Seconds: 100}), ShouldBeTrue)
 		So(proto.Equal(nthSectionResult.EndTime, &timestamppb.Timestamp{Seconds: 102}), ShouldBeTrue)
 		So(nthSectionResult.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
-		diff := cmp.Diff(nthSectionResult.Suspect, &pb.NthSectionSuspect{
+		So(nthSectionResult.Suspect, ShouldResembleProto, &pb.NthSectionSuspect{
 			GitilesCommit: &buildbucketpb.GitilesCommit{
 				Host:    "host1",
 				Project: "proj1",
@@ -434,10 +435,9 @@ func TestQueryAnalysis(t *testing.T) {
 			VerificationDetails: &pb.SuspectVerificationDetails{
 				Status: string(model.SuspectVerificationStatus_Vindicated),
 			},
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 
-		diff = cmp.Diff(nthSectionResult.RemainingNthSectionRange, &pb.RegressionRange{
+		So(nthSectionResult.RemainingNthSectionRange, ShouldResembleProto, &pb.RegressionRange{
 			LastPassed: &buildbucketpb.GitilesCommit{
 				Host:    "host1",
 				Project: "proj1",
@@ -450,12 +450,11 @@ func TestQueryAnalysis(t *testing.T) {
 				Ref:     "ref",
 				Id:      "commit5",
 			},
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 
 		So(len(nthSectionResult.Reruns), ShouldEqual, 3)
 
-		diff = cmp.Diff(nthSectionResult.Reruns[0], &pb.SingleRerun{
+		So(nthSectionResult.Reruns[0], ShouldResembleProto, &pb.SingleRerun{
 			Bbid:      8877665544332211,
 			StartTime: &timestamppb.Timestamp{Seconds: 101},
 			EndTime:   &timestamppb.Timestamp{Seconds: 102},
@@ -470,10 +469,9 @@ func TestQueryAnalysis(t *testing.T) {
 			},
 			Index: "5",
 			Type:  "Culprit Verification",
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 
-		diff = cmp.Diff(nthSectionResult.Reruns[1], &pb.SingleRerun{
+		So(nthSectionResult.Reruns[1], ShouldResembleProto, &pb.SingleRerun{
 			Bbid:      7766554433221100,
 			StartTime: &timestamppb.Timestamp{Seconds: 201},
 			EndTime:   &timestamppb.Timestamp{Seconds: 202},
@@ -488,10 +486,9 @@ func TestQueryAnalysis(t *testing.T) {
 			},
 			Index: "6",
 			Type:  "Culprit Verification",
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 
-		diff = cmp.Diff(nthSectionResult.Reruns[2], &pb.SingleRerun{
+		So(nthSectionResult.Reruns[2], ShouldResembleProto, &pb.SingleRerun{
 			Bbid:      800999000,
 			StartTime: &timestamppb.Timestamp{Seconds: 301},
 			EndTime:   &timestamppb.Timestamp{Seconds: 302},
@@ -506,11 +503,9 @@ func TestQueryAnalysis(t *testing.T) {
 			},
 			Index: "8",
 			Type:  "NthSection",
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 
-		diff = cmp.Diff(nthSectionResult.BlameList, nsa.BlameList, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		So(nthSectionResult.BlameList, ShouldResembleProto, nsa.BlameList)
 	})
 
 	Convey("Analysis found for a similar failure", t, func() {

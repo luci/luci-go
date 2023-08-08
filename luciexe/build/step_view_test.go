@@ -37,7 +37,7 @@ func TestStepTags(t *testing.T) {
 		step.AddTagValue("", "")
 		actualTags := step.stepPb.Tags
 
-		expectedTags := []*pb.StringPair{}
+		expectedTags := []*pb.StringPair(nil)
 		So(actualTags, ShouldResembleProto, expectedTags)
 	})
 

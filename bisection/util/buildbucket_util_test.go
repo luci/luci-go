@@ -17,10 +17,10 @@ package util
 import (
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
-	. "github.com/smartystreets/goconvey/convey"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"google.golang.org/protobuf/proto"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGetGitilesCommitForBuild(t *testing.T) {
@@ -45,14 +45,13 @@ func TestGetGitilesCommitForBuild(t *testing.T) {
 			},
 		}
 		commit := GetGitilesCommitForBuild(build)
-		diff := cmp.Diff(commit, &bbpb.GitilesCommit{
+		So(commit, ShouldResembleProto, &bbpb.GitilesCommit{
 			Host:     "chromium.googlesource.com",
 			Project:  "chromium/src",
 			Id:       "refs/heads/gfiTest",
 			Ref:      "1",
 			Position: 456,
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 	})
 
 	Convey("Output does not match input", t, func() {
@@ -76,13 +75,12 @@ func TestGetGitilesCommitForBuild(t *testing.T) {
 			},
 		}
 		commit := GetGitilesCommitForBuild(build)
-		diff := cmp.Diff(commit, &bbpb.GitilesCommit{
+		So(commit, ShouldResembleProto, &bbpb.GitilesCommit{
 			Host:    "chromium.googlesource.com",
 			Project: "chromium/src",
 			Id:      "refs/heads/gfiTest",
 			Ref:     "1",
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 	})
 
 	Convey("No output", t, func() {
@@ -97,12 +95,11 @@ func TestGetGitilesCommitForBuild(t *testing.T) {
 			},
 		}
 		commit := GetGitilesCommitForBuild(build)
-		diff := cmp.Diff(commit, &bbpb.GitilesCommit{
+		So(commit, ShouldResembleProto, &bbpb.GitilesCommit{
 			Host:    "chromium.googlesource.com",
 			Project: "chromium/src",
 			Id:      "refs/heads/gfiTest",
 			Ref:     "1",
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 	})
 }

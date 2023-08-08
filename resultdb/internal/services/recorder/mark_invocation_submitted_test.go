@@ -19,6 +19,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
@@ -138,8 +139,8 @@ func TestMarkInvocationSubmitted(t *testing.T) {
 
 			So(err, ShouldBeNil)
 			So(sched.Tasks(), ShouldHaveLength, 1)
-			So(sched.Tasks().Payloads(), ShouldResembleProto, []*taskspb.MarkInvocationSubmitted{
-				{InvocationId: "inv"},
+			So(sched.Tasks().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+				&taskspb.MarkInvocationSubmitted{InvocationId: "inv"},
 			})
 		})
 	})

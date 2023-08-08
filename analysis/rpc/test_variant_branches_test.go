@@ -19,10 +19,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -251,7 +249,7 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 			expectedStatistics, err := anypb.New(tvb.Statistics)
 			So(err, ShouldBeNil)
 
-			diff := cmp.Diff(res, &pb.TestVariantBranch{
+			So(res, ShouldResembleProto, &pb.TestVariantBranch{
 				Name:              "projects/project/tests/this%2F%2Fis%2Fa%2Ftest/variants/0123456789abcdef/refs/7265665f68617368",
 				Project:           "project",
 				TestId:            "this//is/a/test",
@@ -301,8 +299,7 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 						},
 					},
 				},
-			}, cmp.Comparer(proto.Equal))
-			So(diff, ShouldEqual, "")
+			})
 		})
 	})
 }

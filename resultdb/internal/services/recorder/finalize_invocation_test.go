@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
@@ -86,8 +87,8 @@ func TestFinalizeInvocation(t *testing.T) {
 			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
 
 			// Enqueued the finalization task.
-			So(sched.Tasks().Payloads(), ShouldResembleProto, []*taskspb.TryFinalizeInvocation{
-				{InvocationId: "inv"},
+			So(sched.Tasks().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+				&taskspb.TryFinalizeInvocation{InvocationId: "inv"},
 			})
 		})
 	})

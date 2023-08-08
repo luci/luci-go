@@ -20,14 +20,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/go-cmp/cmp"
-	. "github.com/smartystreets/goconvey/convey"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
@@ -39,6 +36,9 @@ import (
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
 	lnpb "go.chromium.org/luci/luci_notify/api/service/v1"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestAnalyzeFailure(t *testing.T) {
@@ -209,21 +209,19 @@ func TestFindRegressionRange(t *testing.T) {
 		rr, e := findRegressionRange(c, 8001, 8000)
 		So(e, ShouldBeNil)
 
-		diff := cmp.Diff(rr.FirstFailed, &bbpb.GitilesCommit{
+		So(rr.FirstFailed, ShouldResembleProto, &bbpb.GitilesCommit{
 			Host:    "host1",
 			Project: "proj1",
 			Id:      "id1",
 			Ref:     "ref1",
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 
-		diff = cmp.Diff(rr.LastPassed, &bbpb.GitilesCommit{
+		So(rr.LastPassed, ShouldResembleProto, &bbpb.GitilesCommit{
 			Host:    "host2",
 			Project: "proj2",
 			Id:      "id2",
 			Ref:     "ref2",
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 	})
 }
 

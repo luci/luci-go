@@ -27,6 +27,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -625,11 +626,11 @@ func TestTesting(t *testing.T) {
 		})
 
 		So(success, ShouldHaveLength, 4)
-		So(success.Payloads(), ShouldResembleProto, []*durationpb.Duration{
-			{Seconds: 1},
-			{Seconds: 2},
-			{Seconds: 3},
-			{Seconds: 4},
+		So(success.Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+			&durationpb.Duration{Seconds: 1},
+			&durationpb.Duration{Seconds: 2},
+			&durationpb.Duration{Seconds: 3},
+			&durationpb.Duration{Seconds: 4},
 		})
 	})
 }

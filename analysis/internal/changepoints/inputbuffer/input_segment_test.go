@@ -18,12 +18,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSegmentizeInputBuffer(t *testing.T) {
@@ -42,7 +41,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 			sib := ib.Segmentize(merged, cps)
 			ibSegments := sib.Segments
 			So(len(ibSegments), ShouldEqual, 1)
-			diff := cmp.Diff(ibSegments[0], &Segment{
+			So(ibSegments[0], ShouldResembleProto, &Segment{
 				StartIndex:          0,
 				EndIndex:            5,
 				HasStartChangepoint: false,
@@ -62,8 +61,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 					UnexpectedFailedResults: 3,
 				},
 				MostRecentUnexpectedResultHourAllVerdicts: timestamppb.New(time.Unix(4*3600, 0)),
-			}, cmp.Comparer(proto.Equal))
-			So(diff, ShouldEqual, "")
+			})
 		})
 
 		Convey("With change points and retries", func() {
@@ -97,7 +95,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 			sib := ib.Segmentize(merged, cps)
 			ibSegments := sib.Segments
 			So(len(ibSegments), ShouldEqual, 4)
-			diff := cmp.Diff(ibSegments[0], &Segment{
+			So(ibSegments[0], ShouldResembleProto, &Segment{
 				StartIndex:          0,
 				EndIndex:            2,
 				HasStartChangepoint: false,
@@ -111,10 +109,9 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 					TotalVerdicts:         3,
 					ExpectedPassedResults: 3,
 				},
-			}, cmp.Comparer(proto.Equal))
-			So(diff, ShouldEqual, "")
+			})
 
-			diff = cmp.Diff(ibSegments[1], &Segment{
+			So(ibSegments[1], ShouldResembleProto, &Segment{
 				StartIndex:                  3,
 				EndIndex:                    5,
 				HasStartChangepoint:         true,
@@ -135,10 +132,9 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 					UnexpectedCrashedResults: 6,
 				},
 				MostRecentUnexpectedResultHourAllVerdicts: timestamppb.New(time.Unix(6*3600, 0)),
-			}, cmp.Comparer(proto.Equal))
-			So(diff, ShouldEqual, "")
+			})
 
-			diff = cmp.Diff(ibSegments[2], &Segment{
+			So(ibSegments[2], ShouldResembleProto, &Segment{
 				StartIndex:                  6,
 				EndIndex:                    8,
 				HasStartChangepoint:         true,
@@ -159,10 +155,9 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 					UnexpectedFailedResults: 6,
 				},
 				MostRecentUnexpectedResultHourAllVerdicts: timestamppb.New(time.Unix(9*3600, 0)),
-			}, cmp.Comparer(proto.Equal))
-			So(diff, ShouldEqual, "")
+			})
 
-			diff = cmp.Diff(ibSegments[3], &Segment{
+			So(ibSegments[3], ShouldResembleProto, &Segment{
 				StartIndex:                  9,
 				EndIndex:                    11,
 				HasStartChangepoint:         true,
@@ -182,8 +177,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 					UnexpectedFailedResults: 3,
 				},
 				MostRecentUnexpectedResultHourAllVerdicts: timestamppb.New(time.Unix(12*3600, 0)),
-			}, cmp.Comparer(proto.Equal))
-			So(diff, ShouldEqual, "")
+			})
 		})
 	})
 }
@@ -213,8 +207,7 @@ func TestEvictSegments(t *testing.T) {
 		So(len(evicted), ShouldEqual, 0)
 		So(len(remaining), ShouldEqual, 1)
 		So(ib.IsColdBufferDirty, ShouldBeFalse)
-		diff := cmp.Diff(remaining[0], segments[0], cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		So(remaining[0], ShouldResembleProto, segments[0])
 	})
 
 	Convey("Evict finalizing segment", t, func() {
@@ -262,7 +255,7 @@ func TestEvictSegments(t *testing.T) {
 		So(len(remaining), ShouldEqual, 2)
 		So(ib.IsColdBufferDirty, ShouldBeTrue)
 
-		diff := cmp.Diff(evicted[0], EvictedSegment{
+		So(evicted[0], ShouldResembleProto, EvictedSegment{
 			Segment: &cpb.Segment{
 				State:               cpb.SegmentState_FINALIZING,
 				HasStartChangepoint: false,
@@ -281,10 +274,9 @@ func TestEvictSegments(t *testing.T) {
 				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(51*3600, 0)),
 			},
 			Verdicts: simpleVerdicts(100, 1, []int{50}),
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 
-		diff = cmp.Diff(remaining[0], &Segment{
+		So(remaining[0], ShouldResembleProto, &Segment{
 			StartIndex:  0,
 			EndIndex:    1949,
 			EndPosition: 2050,
@@ -300,10 +292,9 @@ func TestEvictSegments(t *testing.T) {
 				UnexpectedFailedResults: 1,
 			},
 			MostRecentUnexpectedResultHourAllVerdicts: timestamppb.New(time.Unix(1901*3600, 0)),
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 
-		diff = cmp.Diff(remaining[1], &Segment{
+		So(remaining[1], ShouldResembleProto, &Segment{
 			StartIndex:          1950,
 			EndIndex:            1999,
 			HasStartChangepoint: true,
@@ -317,8 +308,7 @@ func TestEvictSegments(t *testing.T) {
 				TotalVerdicts:         50,
 				ExpectedPassedResults: 50,
 			},
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 	})
 
 	Convey("Evict finalized segment", t, func() {
@@ -400,7 +390,7 @@ func TestEvictSegments(t *testing.T) {
 		So(len(remaining), ShouldEqual, 2)
 		So(ib.IsColdBufferDirty, ShouldBeTrue)
 
-		diff := cmp.Diff(evicted[0], EvictedSegment{
+		So(evicted[0], ShouldResembleProto, EvictedSegment{
 			Segment: &cpb.Segment{
 				State:               cpb.SegmentState_FINALIZED,
 				HasStartChangepoint: false,
@@ -416,10 +406,9 @@ func TestEvictSegments(t *testing.T) {
 				},
 			},
 			Verdicts: simpleVerdicts(40, 1, []int{}),
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 
-		diff = cmp.Diff(evicted[1], EvictedSegment{
+		So(evicted[1], ShouldResembleProto, EvictedSegment{
 			Segment: &cpb.Segment{
 				State:                        cpb.SegmentState_FINALIZED,
 				HasStartChangepoint:          true,
@@ -437,10 +426,9 @@ func TestEvictSegments(t *testing.T) {
 				},
 			},
 			Verdicts: simpleVerdicts(40, 41, []int{}),
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 
-		diff = cmp.Diff(evicted[2], EvictedSegment{
+		So(evicted[2], ShouldResembleProto, EvictedSegment{
 			Segment: &cpb.Segment{
 				State:                        cpb.SegmentState_FINALIZING,
 				HasStartChangepoint:          true,
@@ -456,10 +444,9 @@ func TestEvictSegments(t *testing.T) {
 				},
 			},
 			Verdicts: simpleVerdicts(20, 81, []int{}),
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 
-		diff = cmp.Diff(remaining[0], &Segment{
+		So(remaining[0], ShouldResembleProto, &Segment{
 			StartIndex:  0,
 			EndIndex:    1949,
 			EndPosition: 2050,
@@ -470,10 +457,9 @@ func TestEvictSegments(t *testing.T) {
 				TotalVerdicts:         1950,
 				ExpectedPassedResults: 1950,
 			},
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 
-		diff = cmp.Diff(remaining[1], &Segment{
+		So(remaining[1], ShouldResembleProto, &Segment{
 			StartIndex:          1950,
 			EndIndex:            1999,
 			HasStartChangepoint: true,
@@ -487,8 +473,7 @@ func TestEvictSegments(t *testing.T) {
 				TotalVerdicts:         50,
 				ExpectedPassedResults: 50,
 			},
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 	})
 
 	Convey("Evict all hot buffer", t, func() {
@@ -556,7 +541,7 @@ func TestEvictSegments(t *testing.T) {
 		// Plus the evicted verdicts in the cold buffer.
 		expectedVerdicts = append(expectedVerdicts, simpleVerdicts(39, 1, []int{})...)
 
-		diff := cmp.Diff(evicted[0], EvictedSegment{
+		So(evicted[0], ShouldResembleProto, EvictedSegment{
 			Segment: &cpb.Segment{
 				State:               cpb.SegmentState_FINALIZED,
 				HasStartChangepoint: false,
@@ -572,10 +557,9 @@ func TestEvictSegments(t *testing.T) {
 				},
 			},
 			Verdicts: expectedVerdicts,
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 
-		diff = cmp.Diff(evicted[1], EvictedSegment{
+		So(evicted[1], ShouldResembleProto, EvictedSegment{
 			Segment: &cpb.Segment{
 				State:                        cpb.SegmentState_FINALIZING,
 				HasStartChangepoint:          true,
@@ -586,12 +570,9 @@ func TestEvictSegments(t *testing.T) {
 				FinalizedCounts:              &cpb.Counts{},
 			},
 			Verdicts: []PositionVerdict{},
-		}, cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		})
 
-		// Use diff here to compare both protobuf and non-protobuf.
-		diff = cmp.Diff(remaining[0], segments[1], cmp.Comparer(proto.Equal))
-		So(diff, ShouldEqual, "")
+		So(remaining[0], ShouldResembleProto, segments[1])
 	})
 }
 

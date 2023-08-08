@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -67,8 +68,8 @@ func TestQueue(t *testing.T) {
 		So(EnqueueCountDown(ctx, 5), ShouldBeNil)
 
 		// Examine currently enqueue tasks.
-		So(sched.Tasks().Payloads(), ShouldResembleProto, []*taskspb.CountDownTask{
-			{Number: 5},
+		So(sched.Tasks().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+			&taskspb.CountDownTask{Number: 5},
 		})
 
 		// Simulate the Cloud Tasks run loop until there's no more pending or
@@ -90,13 +91,13 @@ func TestQueue(t *testing.T) {
 		})
 
 		// Can also examine all executed tasks.
-		So(succeeded.Payloads(), ShouldResembleProto, []*taskspb.CountDownTask{
-			{Number: 5},
-			{Number: 4},
-			{Number: 3},
-			{Number: 2},
-			{Number: 1},
-			{Number: 0},
+		So(succeeded.Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+			&taskspb.CountDownTask{Number: 5},
+			&taskspb.CountDownTask{Number: 4},
+			&taskspb.CountDownTask{Number: 3},
+			&taskspb.CountDownTask{Number: 2},
+			&taskspb.CountDownTask{Number: 1},
+			&taskspb.CountDownTask{Number: 0},
 		})
 	})
 }

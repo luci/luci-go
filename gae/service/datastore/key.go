@@ -461,6 +461,9 @@ func (k *Key) GQL() string {
 
 // Equal returns true iff the two keys represent identical key values.
 func (k *Key) Equal(other *Key) bool {
+	if k == nil || other == nil {
+		return k == nil && other == nil
+	}
 	return k.IncompleteEqual(other) && (k.LastTok() == other.LastTok())
 }
 

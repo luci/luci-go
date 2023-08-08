@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/gae/impl/memory"
@@ -291,8 +292,8 @@ func TestExportTestVariants(t *testing.T) {
 		_, err := a.ExportTestVariants(ctx, req)
 		So(err, ShouldBeNil)
 		So(len(skdr.Tasks().Payloads()), ShouldEqual, 2)
-		tasks := []*taskspb.ExportTestVariants{
-			{
+		tasks := []protoreflect.ProtoMessage{
+			&taskspb.ExportTestVariants{
 				Realm:        realm,
 				CloudProject: cloudProject,
 				Dataset:      dataset,
@@ -305,7 +306,7 @@ func TestExportTestVariants(t *testing.T) {
 					Latest:   timestamppb.New(start.Add(time.Hour)),
 				},
 			},
-			{
+			&taskspb.ExportTestVariants{
 				Realm:        realm,
 				CloudProject: cloudProject,
 				Dataset:      dataset,
