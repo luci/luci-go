@@ -18,19 +18,8 @@ luci-auth login -scopes "https://www.googleapis.com/auth/cloud-platform https://
 
 ### Building the Frontend
 
-In another terminal window, build the project with watch for development:
-```
-cd frontend/ui
-npm run watch
-```
-This will build the React app. If left running, local changes to the React app
-will trigger re-building automatically.
-
-To run the frontend unit tests,
-```
-cd frontend/ui
-npm test
-```
+The frontend code under the root bisection directory has been deprecated.
+See `milo/ui/src/bisection` for bisection frontend code.
 
 ### Running LUCI Bisection
 
@@ -40,8 +29,6 @@ go run main.go -cloud-project luci-bisection-dev -primary-tink-aead-key sm://tin
 ```
 
 This will start a web server running at http://localhost:8800.
-Navigate to this URL using your preferred browser.
-Once you "log in", the LUCI Bisection frontend should load.
 
 ### Developer Test Deployment
 

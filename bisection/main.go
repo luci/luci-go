@@ -46,7 +46,6 @@ import (
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/encryptedcookies"
-	"go.chromium.org/luci/server/templates"
 	"go.chromium.org/luci/server/tq"
 
 	// Store auth sessions in the datastore.
@@ -64,64 +63,6 @@ const (
 	ACCESS_GROUP         = "luci-bisection-access"
 	ACCESS_GROUP_FOR_BOT = "luci-bisection-bot-access"
 )
-
-// checkAccess is middleware that checks if the user is authorized to
-// access GoFindit.
-func checkAccess(ctx *router.Context, next router.Handler) {
-	user := auth.CurrentIdentity(ctx.Request.Context())
-	// User is not logged in
-	if user.Kind() == identity.Anonymous {
-		url, err := auth.LoginURL(ctx.Request.Context(), ctx.Request.URL.RequestURI())
-		if err != nil {
-			logging.Errorf(ctx.Request.Context(), "error in getting loginURL: %w", err)
-			http.Error(ctx.Writer, "Error in getting loginURL", http.StatusInternalServerError)
-		} else {
-			http.Redirect(ctx.Writer, ctx.Request, url, http.StatusFound)
-		}
-		return
-	}
-
-	// User is logged in, check access group
-	switch yes, err := auth.IsMember(ctx.Request.Context(), ACCESS_GROUP); {
-	case err != nil:
-		logging.Errorf(ctx.Request.Context(), "error in checking membership %s", err.Error())
-		http.Error(ctx.Writer, "Error in authorizing the user.", http.StatusInternalServerError)
-	case !yes:
-		ctx.Writer.WriteHeader(http.StatusForbidden)
-		templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/access-denied.html", nil)
-	default:
-		next(ctx)
-	}
-}
-
-// prepareTemplates configures templates.Bundle used by all UI handlers.
-func prepareTemplates(opts *luciserver.Options) *templates.Bundle {
-	return &templates.Bundle{
-		Loader: templates.FileSystemLoader("frontend/templates"),
-		// Controls whether templates are cached.
-		DebugMode: func(context.Context) bool { return !opts.Prod },
-		DefaultArgs: func(ctx context.Context, e *templates.Extra) (templates.Args, error) {
-			logoutURL, err := auth.LogoutURL(ctx, e.Request.URL.RequestURI())
-			if err != nil {
-				return nil, err
-			}
-
-			return templates.Args{
-				"UserAvatar": auth.CurrentUser(ctx).Picture,
-				"UserEmail":  auth.CurrentUser(ctx).Email,
-				"UserName":   auth.CurrentUser(ctx).Name,
-				"LogoutURL":  logoutURL,
-			}, nil
-		},
-	}
-}
-
-func pageMiddlewareChain(srv *luciserver.Server) router.MiddlewareChain {
-	return router.NewMiddlewareChain(
-		auth.Authenticate(srv.CookieAuth),
-		templates.WithTemplates(prepareTemplates(&srv.Options)),
-	)
-}
 
 func checkAPIAccess(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {
 	switch yes, err := auth.IsMember(ctx, ACCESS_GROUP); {
