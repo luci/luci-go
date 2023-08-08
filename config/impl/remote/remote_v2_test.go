@@ -20,11 +20,14 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	grpcGzip "google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/proto"
@@ -166,6 +169,173 @@ func TestRemoteV2Calls(t *testing.T) {
 
 				So(cfg, ShouldBeNil)
 				So(err, ShouldHaveGRPCStatus, codes.Internal, "internal error")
+			})
+		})
+
+		Convey("GetProjectConfigs", func() {
+
+			Convey("ok - meta only", func() {
+				mockClient.EXPECT().GetProjectConfigs(gomock.Any(), proto.MatcherEqual(&pb.GetProjectConfigsRequest{
+					Path: "config.cfg",
+					Fields: &field_mask.FieldMask{
+						Paths: []string{"config_set", "path", "content_sha256", "revision", "url"},
+					},
+				}), grpc.UseCompressor(grpcGzip.Name)).Return(&pb.GetProjectConfigsResponse{
+					Configs: []*pb.Config{
+						{
+							ConfigSet:     "projects/project1",
+							Path:          "config.cfg",
+							Revision:      "revision",
+							ContentSha256: "sha256",
+							Url:           "url",
+						},
+					},
+				}, nil)
+
+				configs, err := v2Impl.GetProjectConfigs(ctx, "config.cfg", true)
+				So(err, ShouldBeNil)
+				So(configs, ShouldResemble, []config.Config{
+					{
+						Meta: config.Meta{
+							ConfigSet:   "projects/project1",
+							Path:        "config.cfg",
+							ContentHash: "sha256",
+							Revision:    "revision",
+							ViewURL:     "url",
+						},
+					},
+				})
+			})
+
+			Convey("ok - raw + signed url", func(c C) {
+				signedURLSever := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					buf := &bytes.Buffer{}
+					gw := gzip.NewWriter(buf)
+					_, err := gw.Write([]byte("large content"))
+					c.So(err, ShouldBeNil)
+					c.So(gw.Close(), ShouldBeNil)
+					w.Header().Set("Content-Encoding", "gzip")
+					_, err = w.Write(buf.Bytes())
+					c.So(err, ShouldBeNil)
+				}))
+				defer signedURLSever.Close()
+
+				mockClient.EXPECT().GetProjectConfigs(gomock.Any(), proto.MatcherEqual(&pb.GetProjectConfigsRequest{
+					Path: "config.cfg",
+				}), grpc.UseCompressor(grpcGzip.Name)).Return(&pb.GetProjectConfigsResponse{
+					Configs: []*pb.Config{
+						{
+							ConfigSet:     "projects/project1",
+							Path:          "config.cfg",
+							Revision:      "revision",
+							ContentSha256: "sha256",
+							Url:           "url",
+							Content: &pb.Config_RawContent{
+								RawContent: []byte("small content"),
+							},
+						},
+						{
+							ConfigSet:     "projects/project2",
+							Path:          "config.cfg",
+							Revision:      "revision",
+							ContentSha256: "sha256",
+							Url:           "url",
+							Content: &pb.Config_SignedUrl{
+								SignedUrl: signedURLSever.URL,
+							},
+						},
+					},
+				}, nil)
+
+				configs, err := v2Impl.GetProjectConfigs(ctx, "config.cfg", false)
+				So(err, ShouldBeNil)
+				So(configs, ShouldResemble, []config.Config{
+					{
+						Meta: config.Meta{
+							ConfigSet:   "projects/project1",
+							Path:        "config.cfg",
+							ContentHash: "sha256",
+							Revision:    "revision",
+							ViewURL:     "url",
+						},
+						Content: "small content",
+					},
+					{
+						Meta: config.Meta{
+							ConfigSet:   "projects/project2",
+							Path:        "config.cfg",
+							ContentHash: "sha256",
+							Revision:    "revision",
+							ViewURL:     "url",
+						},
+						Content: "large content",
+					},
+				})
+			})
+
+			Convey("empty response", func() {
+				mockClient.EXPECT().GetProjectConfigs(gomock.Any(), proto.MatcherEqual(&pb.GetProjectConfigsRequest{
+					Path: "config.cfg",
+				}), grpc.UseCompressor(grpcGzip.Name)).Return(&pb.GetProjectConfigsResponse{}, nil)
+
+				configs, err := v2Impl.GetProjectConfigs(ctx, "config.cfg", false)
+				So(err, ShouldBeNil)
+				So(configs, ShouldBeEmpty)
+			})
+
+			Convey("rpc error", func() {
+				mockClient.EXPECT().GetProjectConfigs(gomock.Any(), proto.MatcherEqual(&pb.GetProjectConfigsRequest{
+					Path: "config.cfg",
+				}), grpc.UseCompressor(grpcGzip.Name)).Return(nil, status.Errorf(codes.Internal, "config server internal error"))
+
+				configs, err := v2Impl.GetProjectConfigs(ctx, "config.cfg", false)
+				So(configs, ShouldBeNil)
+				So(err, ShouldHaveGRPCStatus, codes.Internal, "config server internal error")
+			})
+
+			Convey("signed url error", func(c C) {
+				signedURLSever := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					if strings.HasSuffix(r.URL.String(), "err") {
+						w.WriteHeader(http.StatusInternalServerError)
+						_, err := w.Write([]byte("internal error"))
+						c.So(err, ShouldBeNil)
+						return
+					}
+					buf := &bytes.Buffer{}
+					gw := gzip.NewWriter(buf)
+					_, err := gw.Write([]byte("large content"))
+					c.So(err, ShouldBeNil)
+					c.So(gw.Close(), ShouldBeNil)
+					w.Header().Set("Content-Encoding", "gzip")
+					_, err = w.Write(buf.Bytes())
+					c.So(err, ShouldBeNil)
+				}))
+				defer signedURLSever.Close()
+
+				mockClient.EXPECT().GetProjectConfigs(gomock.Any(), proto.MatcherEqual(&pb.GetProjectConfigsRequest{
+					Path: "config.cfg",
+				}), grpc.UseCompressor(grpcGzip.Name)).Return(&pb.GetProjectConfigsResponse{
+					Configs: []*pb.Config{
+						{
+							ConfigSet: "projects/project1",
+							Path:      "config.cfg",
+							Content: &pb.Config_SignedUrl{
+								SignedUrl: signedURLSever.URL,
+							},
+						},
+						{
+							ConfigSet: "projects/project2",
+							Path:      "config.cfg",
+							Content: &pb.Config_SignedUrl{
+								SignedUrl: signedURLSever.URL + "/err",
+							},
+						},
+					},
+				}, nil)
+
+				configs, err := v2Impl.GetProjectConfigs(ctx, "config.cfg", false)
+				So(configs, ShouldBeNil)
+				So(err, ShouldErrLike, `For file(config.cfg) in config_set(projects/project2): failed to download file, got http response code: 500, body: "internal error"`)
 			})
 		})
 	})

@@ -19,10 +19,12 @@ import (
 	"net/http"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/encoding/gzip"
 
 	"go.chromium.org/luci/common/errors"
 	pb "go.chromium.org/luci/config_service/proto"
@@ -115,17 +117,7 @@ func (r *remoteV2Impl) GetConfig(ctx context.Context, configSet config.Set, path
 		return nil, err
 	}
 
-	cfg := &config.Config{
-		Meta: config.Meta{
-			ConfigSet:   configSet,
-			Path:        path,
-			ContentHash: res.ContentSha256,
-			Revision:    res.Revision,
-			ViewURL:     res.Url,
-		},
-		Content: string(res.GetRawContent()),
-	}
-
+	cfg := toConfig(res)
 	if res.GetSignedUrl() != "" {
 		content, err := config.DownloadConfigFromSignedURL(ctx, r.httpClient, res.GetSignedUrl())
 		if err != nil {
@@ -138,7 +130,46 @@ func (r *remoteV2Impl) GetConfig(ctx context.Context, configSet config.Set, path
 }
 
 func (r *remoteV2Impl) GetProjectConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {
-	return nil, errors.New("Hasn't implemented yet. Please don't point to Luci-Config v2 service")
+	if err := r.checkInitialized(); err != nil {
+		return nil, err
+	}
+	req := &pb.GetProjectConfigsRequest{Path: path}
+	if metaOnly {
+		req.Fields = &field_mask.FieldMask{
+			Paths: []string{"config_set", "path", "content_sha256", "revision", "url"},
+		}
+	}
+
+	// This rpc response is usually larger than others. So instruct the Server to
+	// return a compressed response to allow data transfer faster.
+	res, err := r.grpcClient.GetProjectConfigs(ctx, req, grpc.UseCompressor(gzip.Name))
+	if err != nil {
+		return nil, err
+	}
+
+	eg, ectx := errgroup.WithContext(ctx)
+	eg.SetLimit(8)
+	configs := make([]config.Config, len(res.Configs))
+	for i, cfg := range res.Configs {
+		configs[i] = *toConfig(cfg)
+		if cfg.GetSignedUrl() != "" {
+			i := i
+			signedURL := cfg.GetSignedUrl()
+			eg.Go(func() error {
+				content, err := config.DownloadConfigFromSignedURL(ectx, r.httpClient, signedURL)
+				if err != nil {
+					return errors.Annotate(err, "For file(%s) in config_set(%s)", configs[i].Path, configs[i].ConfigSet).Err()
+				}
+				configs[i].Content = string(content)
+				return nil
+			})
+		}
+	}
+
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+	return configs, nil
 }
 
 func (r *remoteV2Impl) GetProjects(ctx context.Context) ([]config.Project, error) {
@@ -161,4 +192,17 @@ func (r *remoteV2Impl) checkInitialized() error {
 		return errors.New("The Luci-config client is not initialized")
 	}
 	return nil
+}
+
+func toConfig(configPb *pb.Config) *config.Config {
+	return &config.Config{
+		Meta: config.Meta{
+			ConfigSet:   config.Set(configPb.ConfigSet),
+			Path:        configPb.Path,
+			ContentHash: configPb.ContentSha256,
+			Revision:    configPb.Revision,
+			ViewURL:     configPb.Url,
+		},
+		Content: string(configPb.GetRawContent()),
+	}
 }
