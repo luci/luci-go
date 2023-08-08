@@ -45,6 +45,7 @@ import (
 	"go.chromium.org/luci/luci_notify/internal"
 	"go.chromium.org/luci/luci_notify/mailtmpl"
 
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -273,7 +274,7 @@ func fetchOncallers(c context.Context, rotationURL, template string, matchingSte
 
 // ShouldNotify determines whether a trigger's conditions have been met, and returns the list
 // of steps matching the filters on the notification, if any.
-func ShouldNotify(n *notifypb.Notification, oldStatus buildbucketpb.Status, newBuild *buildbucketpb.Build) (bool, []*buildbucketpb.Step) {
+func ShouldNotify(ctx context.Context, n *notifypb.Notification, oldStatus buildbucketpb.Status, newBuild *buildbucketpb.Build) (bool, []*buildbucketpb.Step) {
 	newStatus := newBuild.Status
 
 	switch {
@@ -290,13 +291,29 @@ func ShouldNotify(n *notifypb.Notification, oldStatus buildbucketpb.Status, newB
 	case n.OnNewFailure && newStatus == buildbucketpb.Status_FAILURE && oldStatus != buildbucketpb.Status_FAILURE:
 
 	default:
+		logging.Debugf(ctx, "Build status (%v) did not match notification criteria.", newBuild.Status)
 		return false, nil
 	}
 
-	return matchingSteps(newBuild, n.FailedStepRegexp, n.FailedStepRegexpExclude)
+	failingSteps := findFailingSteps(newBuild)
+	matched, matchedSteps := matchingSteps(failingSteps, n.FailedStepRegexp, n.FailedStepRegexpExclude)
+	if n.FailedStepRegexp != "" || n.FailedStepRegexpExclude != "" {
+		logging.Debugf(ctx, "%v of %v failing steps match notification criteria.", len(matchedSteps), len(failingSteps))
+	}
+	return matched, matchedSteps
 }
 
-func matchingSteps(build *buildbucketpb.Build, failedStepRegexp, failedStepRegexpExclude string) (bool, []*buildbucketpb.Step) {
+func findFailingSteps(build *buildbucketpb.Build) []*buildbucketpb.Step {
+	var steps []*buildbucketpb.Step
+	for _, step := range build.Steps {
+		if step.Status == buildbucketpb.Status_FAILURE {
+			steps = append(steps, step)
+		}
+	}
+	return steps
+}
+
+func matchingSteps(failingSteps []*buildbucketpb.Step, failedStepRegexp, failedStepRegexpExclude string) (bool, []*buildbucketpb.Step) {
 	var includeRegex *regexp.Regexp
 	if failedStepRegexp != "" {
 		// We should never get an invalid regex here, as our validation should catch this.
@@ -310,12 +327,10 @@ func matchingSteps(build *buildbucketpb.Build, failedStepRegexp, failedStepRegex
 	}
 
 	var steps []*buildbucketpb.Step
-	for _, step := range build.Steps {
-		if step.Status == buildbucketpb.Status_FAILURE {
-			if (includeRegex == nil || includeRegex.MatchString(step.Name)) &&
-				(excludeRegex == nil || !excludeRegex.MatchString(step.Name)) {
-				steps = append(steps, step)
-			}
+	for _, step := range failingSteps {
+		if (includeRegex == nil || includeRegex.MatchString(step.Name)) &&
+			(excludeRegex == nil || !excludeRegex.MatchString(step.Name)) {
+			steps = append(steps, step)
 		}
 	}
 
@@ -329,11 +344,12 @@ func matchingSteps(build *buildbucketpb.Build, failedStepRegexp, failedStepRegex
 
 // Filter filters out Notification objects from Notifications by checking if we ShouldNotify
 // based on two build statuses.
-func Filter(n *notifypb.Notifications, oldStatus buildbucketpb.Status, newBuild *buildbucketpb.Build) []ToNotify {
+func Filter(ctx context.Context, n *notifypb.Notifications, oldStatus buildbucketpb.Status, newBuild *buildbucketpb.Build) []ToNotify {
 	notifications := n.GetNotifications()
 	filtered := make([]ToNotify, 0, len(notifications))
-	for _, notification := range notifications {
-		if match, steps := ShouldNotify(notification, oldStatus, newBuild); match {
+	for i, notification := range notifications {
+		logging.Debugf(ctx, "Considering notification rule %v: %s", i, formatNotification(notification))
+		if match, steps := ShouldNotify(ctx, notification, oldStatus, newBuild); match {
 			filtered = append(filtered, ToNotify{
 				Notification:  notification,
 				MatchingSteps: steps,
@@ -341,6 +357,28 @@ func Filter(n *notifypb.Notifications, oldStatus buildbucketpb.Status, newBuild 
 		}
 	}
 	return filtered
+}
+
+// formatNotification formats the notification config
+// as a human readable string. Email addreses are removed, to
+// allow the string to be recorded to a log file.
+func formatNotification(n *notifypb.Notification) string {
+	msg := proto.Clone(n).(*notifypb.Notification)
+	if msg.Email != nil {
+		// Remove email addresses from the formatted version
+		// as it is going to be put into logs.
+		for i := range msg.Email.Recipients {
+			msg.Email.Recipients[i] = "<omitted>"
+		}
+	}
+
+	m := &protojson.MarshalOptions{}
+	b, err := m.Marshal(msg)
+	if err != nil {
+		// Swallow any errors as this method is used only for logging.
+		return ""
+	}
+	return string(b)
 }
 
 // contains checks whether or not a build status is in a list of build statuses.
@@ -386,7 +424,7 @@ func UpdateTreeClosers(c context.Context, build *Build, oldStatus buildbucketpb.
 		if build.Status == buildbucketpb.Status_FAILURE {
 			t := tc.TreeCloser
 			var match bool
-			if match, steps = matchingSteps(&build.Build, t.FailedStepRegexp, t.FailedStepRegexpExclude); match {
+			if match, steps = matchingSteps(findFailingSteps(&build.Build), t.FailedStepRegexp, t.FailedStepRegexpExclude); match {
 				newStatus = config.Closed
 			}
 		}

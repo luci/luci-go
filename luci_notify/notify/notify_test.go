@@ -61,7 +61,7 @@ func TestNotify(t *testing.T) {
 
 		// Helper wrapper which discards the steps and just returns the bool.
 		s := func(oldStatus buildbucketpb.Status, newBuild *buildbucketpb.Build) bool {
-			should, _ := ShouldNotify(n, oldStatus, newBuild)
+			should, _ := ShouldNotify(context.Background(), n, oldStatus, newBuild)
 			return should
 		}
 
@@ -184,7 +184,7 @@ func TestNotify(t *testing.T) {
 			n.FailedStepRegexpExclude = "no"
 
 			shouldHaveStep := func(oldStatus buildbucketpb.Status, newBuild *buildbucketpb.Build, stepName string) {
-				should, steps := ShouldNotify(n, oldStatus, newBuild)
+				should, steps := ShouldNotify(context.Background(), n, oldStatus, newBuild)
 
 				So(should, ShouldBeTrue)
 				So(steps, ShouldHaveLength, 1)
