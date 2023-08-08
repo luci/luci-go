@@ -21,8 +21,8 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	googleapi "google.golang.org/api/googleapi"
 
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	. "go.chromium.org/luci/common/testing/assertions"
+	swarming "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func TestDeleteBotsParse_NoInput(t *testing.T) {
@@ -50,17 +50,17 @@ func TestDeleteBots(t *testing.T) {
 		givenbotID := []string{}
 
 		service := &testService{
-			deleteBot: func(ctx context.Context, botID string) (*swarming.SwarmingRpcsDeletedResponse, error) {
+			deleteBot: func(ctx context.Context, botID string) (*swarming.DeleteResponse, error) {
 				givenbotID = append(givenbotID, botID)
 				if botID == failbotID {
 					return nil, &googleapi.Error{Code: 404}
 				}
 				if botID == "cannotdeletebotID" {
-					return &swarming.SwarmingRpcsDeletedResponse{
+					return &swarming.DeleteResponse{
 						Deleted: false,
 					}, nil
 				}
-				return &swarming.SwarmingRpcsDeletedResponse{
+				return &swarming.DeleteResponse{
 					Deleted: true,
 				}, nil
 			},

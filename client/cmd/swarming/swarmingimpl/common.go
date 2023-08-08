@@ -93,7 +93,7 @@ type swarmingService interface {
 	FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarmingv2.CASReference) ([]string, error)
 	CountBots(ctx context.Context, dimensions []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error)
 	ListBots(ctx context.Context, dimensions []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error)
-	DeleteBot(ctx context.Context, botID string) (*swarmingv1.SwarmingRpcsDeletedResponse, error)
+	DeleteBot(ctx context.Context, botID string) (*swarmingv2.DeleteResponse, error)
 	TerminateBot(ctx context.Context, botID string, reason string) (*swarmingv2.TerminateResponse, error)
 	ListBotTasks(ctx context.Context, botID string, limit int64, start float64, state string, fields []googleapi.Field) ([]*swarmingv1.SwarmingRpcsTaskResult, error)
 }
@@ -234,12 +234,10 @@ func (s *swarmingServiceImpl) ListBots(ctx context.Context, dimensions []*swarmi
 	return bots, nil
 }
 
-func (s *swarmingServiceImpl) DeleteBot(ctx context.Context, botID string) (res *swarmingv1.SwarmingRpcsDeletedResponse, err error) {
-	err = retryGoogleRPC(ctx, "DeleteBot", func() (ierr error) {
-		res, ierr = s.service.Bot.Delete(botID).Context(ctx).Do()
-		return
+func (s *swarmingServiceImpl) DeleteBot(ctx context.Context, botID string) (res *swarmingv2.DeleteResponse, err error) {
+	return s.botsClient.DeleteBot(ctx, &swarmingv2.BotRequest{
+		BotId: botID,
 	})
-	return
 }
 
 func (s *swarmingServiceImpl) TerminateBot(ctx context.Context, botID string, reason string) (res *swarmingv2.TerminateResponse, err error) {
