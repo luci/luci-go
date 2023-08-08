@@ -31,14 +31,14 @@ var _ swarmingService = (*testService)(nil)
 type testService struct {
 	newTask      func(context.Context, *swarmingv1.SwarmingRpcsNewTaskRequest) (*swarmingv1.SwarmingRpcsTaskRequestMetadata, error)
 	countTasks   func(context.Context, float64, string, ...string) (*swarmingv1.SwarmingRpcsTasksCount, error)
-	countBots    func(context.Context, ...string) (*swarmingv1.SwarmingRpcsBotsCount, error)
+	countBots    func(context.Context, []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error)
 	listTasks    func(context.Context, int64, float64, string, []string, []googleapi.Field) ([]*swarmingv1.SwarmingRpcsTaskResult, error)
 	cancelTask   func(context.Context, string, bool) (*swarmingv2.CancelResponse, error)
 	taskRequest  func(context.Context, string) (*swarmingv2.TaskRequestResponse, error)
 	taskResult   func(context.Context, string, bool) (*swarmingv1.SwarmingRpcsTaskResult, error)
 	taskOutput   func(context.Context, string) (*swarmingv1.SwarmingRpcsTaskOutput, error)
 	filesFromCAS func(context.Context, string, *rbeclient.Client, *swarmingv2.CASReference) ([]string, error)
-	listBots     func(context.Context, []string, []googleapi.Field) ([]*swarmingv1.SwarmingRpcsBotInfo, error)
+	listBots     func(context.Context, []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error)
 	deleteBot    func(context.Context, string) (*swarmingv1.SwarmingRpcsDeletedResponse, error)
 	terminateBot func(context.Context, string, string) (*swarmingv2.TerminateResponse, error)
 	listBotTasks func(context.Context, string, int64, float64, string, []googleapi.Field) ([]*swarmingv1.SwarmingRpcsTaskResult, error)
@@ -80,12 +80,12 @@ func (s testService) FilesFromCAS(ctx context.Context, outdir string, cascli *rb
 	return s.filesFromCAS(ctx, outdir, cascli, casRef)
 }
 
-func (s testService) CountBots(ctx context.Context, dimensions ...string) (*swarmingv1.SwarmingRpcsBotsCount, error) {
-	return s.countBots(ctx, dimensions...)
+func (s testService) CountBots(ctx context.Context, dimensions []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error) {
+	return s.countBots(ctx, dimensions)
 }
 
-func (s *testService) ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarmingv1.SwarmingRpcsBotInfo, error) {
-	return s.listBots(ctx, dimensions, fields)
+func (s *testService) ListBots(ctx context.Context, dimensions []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error) {
+	return s.listBots(ctx, dimensions)
 }
 
 func (s testService) DeleteBot(ctx context.Context, botID string) (*swarmingv1.SwarmingRpcsDeletedResponse, error) {

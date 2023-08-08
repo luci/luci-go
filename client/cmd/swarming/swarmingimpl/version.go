@@ -22,7 +22,7 @@ import (
 
 // SwarmingVersion must be updated whenever functional change (behavior,
 // arguments, supported commands) is done.
-const SwarmingVersion = "0.3"
+const SwarmingVersion = "0.4"
 
 // SwarmingUserAgent stores the user agent name for this CLI.
 var SwarmingUserAgent = "swarming-go/" + SwarmingVersion

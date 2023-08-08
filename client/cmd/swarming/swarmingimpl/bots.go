@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 
 	"google.golang.org/api/googleapi"
@@ -28,6 +29,9 @@ import (
 	"go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/system/signals"
+
+	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // CmdBots returns an object for the `bots` subcommand.
@@ -77,7 +81,65 @@ func (b *botsRun) Parse() error {
 	return nil
 }
 
-func (b *botsRun) main(_ subcommands.Application) error {
+type botInfo struct {
+	options *protojson.MarshalOptions
+	bot     *swarmingv2.BotInfo
+}
+
+func (b *botInfo) MarshalJSON() ([]byte, error) {
+	return b.options.Marshal(b.bot)
+}
+
+func showBots(bots []*swarmingv2.BotInfo) ([]byte, error) {
+	botInfos := make([]botInfo, len(bots))
+	options := DefaultProtoMarshalOpts()
+	for i, bot := range bots {
+		botInfos[i] = botInfo{
+			bot:     bot,
+			options: &options,
+		}
+	}
+	return json.MarshalIndent(botInfos, "", options.Indent)
+}
+
+func (b *botsRun) bots(ctx context.Context, service swarmingService, out io.Writer) error {
+	dims := make([]*swarmingv2.StringPair, 0, len(b.dimensions))
+	for k, v := range b.dimensions {
+		dims = append(dims, &swarmingv2.StringPair{
+			Key:   k,
+			Value: v,
+		})
+	}
+
+	var output []byte
+	if b.count {
+		count, err := service.CountBots(ctx, dims)
+		if err != nil {
+			return err
+		}
+		output, err = DefaultProtoMarshalOpts().Marshal(count)
+		if err != nil {
+			return err
+		}
+
+	} else {
+		bots, err := service.ListBots(ctx, dims)
+		if err != nil {
+			return err
+		}
+		output, err = showBots(bots)
+		if err != nil {
+			return err
+		}
+	}
+	_, err := out.Write(append(output, '\n'))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (b *botsRun) main(_ subcommands.Application) (err error) {
 	ctx, cancel := context.WithCancel(b.defaultFlags.MakeLoggingContext(os.Stderr))
 	defer cancel()
 	defer signals.HandleInterrupt(cancel)()
@@ -85,42 +147,28 @@ func (b *botsRun) main(_ subcommands.Application) error {
 	if err != nil {
 		return err
 	}
-
-	dims := make([]string, 0, len(b.dimensions))
-	for k, v := range b.dimensions {
-		dims = append(dims, k+":"+v)
-	}
-
-	var data any
-	if b.count {
-		data, err = service.CountBots(ctx, dims...)
-		if err != nil {
-			return err
-		}
-	} else {
-		data, err = service.ListBots(ctx, dims, b.fields)
-		if err != nil {
-			return err
-		}
-	}
-
+	writers := make([]io.Writer, 0, 2)
 	if !b.defaultFlags.Quiet {
-		j, err := json.MarshalIndent(data, "", " ")
-		if err != nil {
-			return err
-		}
-		fmt.Printf("%s\n", j)
+		writers = append(writers, os.Stdout)
 	}
 	if b.outfile != "" {
-		j, err := json.Marshal(data)
+		f, err := os.OpenFile(b.outfile, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(b.outfile, j, 0644); err != nil {
-			return err
-		}
+		defer func() {
+			if closeErr := f.Close(); closeErr != nil {
+				if err == nil {
+					err = closeErr
+				} else {
+					err = errors.Append(closeErr, err)
+				}
+			}
+		}()
+		writers = append(writers, f)
 	}
-	return nil
+	out := io.MultiWriter(writers...)
+	return b.bots(ctx, service, out)
 }
 
 func (b *botsRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {

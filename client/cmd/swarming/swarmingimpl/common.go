@@ -40,6 +40,8 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/prpc"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -58,6 +60,9 @@ const (
 	// The `swarming` command line tool uses this to populate `User`
 	// when being used to trigger new tasks.
 	UserEnvVar = "USER"
+
+	// Number of tasks and bots to grab in List* requests
+	Limit = 1000
 )
 
 // TriggerResults is a set of results from using the trigger subcommand,
@@ -86,8 +91,8 @@ type swarmingService interface {
 	TaskResult(ctx context.Context, taskID string, perf bool) (*swarmingv1.SwarmingRpcsTaskResult, error)
 	TaskOutput(ctx context.Context, taskID string) (*swarmingv1.SwarmingRpcsTaskOutput, error)
 	FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarmingv2.CASReference) ([]string, error)
-	CountBots(ctx context.Context, dimensions ...string) (*swarmingv1.SwarmingRpcsBotsCount, error)
-	ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarmingv1.SwarmingRpcsBotInfo, error)
+	CountBots(ctx context.Context, dimensions []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error)
+	ListBots(ctx context.Context, dimensions []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error)
 	DeleteBot(ctx context.Context, botID string) (*swarmingv1.SwarmingRpcsDeletedResponse, error)
 	TerminateBot(ctx context.Context, botID string, reason string) (*swarmingv2.TerminateResponse, error)
 	ListBotTasks(ctx context.Context, botID string, limit int64, start float64, state string, fields []googleapi.Field) ([]*swarmingv1.SwarmingRpcsTaskResult, error)
@@ -196,44 +201,35 @@ func (s *swarmingServiceImpl) FilesFromCAS(ctx context.Context, outdir string, c
 	return files, nil
 }
 
-func (s *swarmingServiceImpl) CountBots(ctx context.Context, dimensions ...string) (res *swarmingv1.SwarmingRpcsBotsCount, err error) {
-	err = retryGoogleRPC(ctx, "CountBots", func() (ierr error) {
-		res, ierr = s.service.Bots.Count().Context(ctx).Dimensions(dimensions...).Do()
-		return
+func (s *swarmingServiceImpl) CountBots(ctx context.Context, dimensions []*swarmingv2.StringPair) (res *swarmingv2.BotsCount, err error) {
+	return s.botsClient.CountBots(ctx, &swarmingv2.BotsCountRequest{
+		Dimensions: dimensions,
 	})
-	return
 }
 
-func (s *swarmingServiceImpl) ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarmingv1.SwarmingRpcsBotInfo, error) {
-	// Create an empty array so that if serialized to JSON it's an empty list,
-	// not null.
-	bots := []*swarmingv1.SwarmingRpcsBotInfo{}
-	// If no fields are specified, all fields will be returned. If any fields are
-	// specified, ensure the cursor is specified so we can get subsequent pages.
-	if len(fields) > 0 {
-		fields = append(fields, "cursor")
-	}
+func (s *swarmingServiceImpl) ListBots(ctx context.Context, dimensions []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error) {
 	// TODO: Allow increasing the Limit past 1000. Ideally the server should treat
 	// a missing Limit as "as much as will fit within the RPC response" (e.g.
 	// 32MB). At the time of adding this Limit(1000) parameter, the server has
 	// a hard-coded maximum page size of 1000, and a default Limit of 200.
-	call := s.service.Bots.List().Limit(1000).Context(ctx).Dimensions(dimensions...).Fields(fields...)
+	cursor := ""
 	// Keep calling as long as there's a cursor indicating more bots to list.
+	bots := make([]*swarmingv2.BotInfo, 0, Limit)
 	for {
-		var res *swarmingv1.SwarmingRpcsBotList
-		err := retryGoogleRPC(ctx, "ListBots", func() (ierr error) {
-			res, ierr = call.Do()
-			return
+		resp, err := s.botsClient.ListBots(ctx, &swarmingv2.BotsRequest{
+			Limit:      Limit,
+			Cursor:     cursor,
+			Dimensions: dimensions,
 		})
+		bots = append(bots, resp.Items...)
 		if err != nil {
 			return bots, err
 		}
 
-		bots = append(bots, res.Items...)
-		if res.Cursor == "" {
+		cursor = resp.Cursor
+		if cursor == "" {
 			break
 		}
-		call.Cursor(res.Cursor)
 	}
 	return bots, nil
 }
@@ -290,6 +286,16 @@ func (s *swarmingServiceImpl) ListBotTasks(ctx context.Context, botID string, li
 	}
 
 	return tasks, nil
+}
+
+const DefaultIndent = " "
+
+func DefaultProtoMarshalOpts() protojson.MarshalOptions {
+	return protojson.MarshalOptions{
+		UseProtoNames: true,
+		Multiline:     true,
+		Indent:        DefaultIndent,
+	}
 }
 
 type taskState int32
