@@ -155,7 +155,7 @@ func main() {
 
 		// task-backend-update-task-push@ is a part of the PubSub Push subscription config.
 		taskBackendPusherID := identity.Identity(fmt.Sprintf("user:task-backend-update-task-push@%s.iam.gserviceaccount.com", srv.Options.CloudProject))
-		srv.Routes.POST("/internal/pubsub/update-build-task", oidcMW, func(ctx *router.Context) {
+		srv.Routes.POST("/internal/pubsub/backend/update-build-task", oidcMW, func(ctx *router.Context) {
 			handlePubSubMessage(ctx, taskBackendPusherID, tasks.UpdateBuildTask)
 		})
 
