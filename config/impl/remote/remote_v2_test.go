@@ -20,6 +20,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -336,6 +337,88 @@ func TestRemoteV2Calls(t *testing.T) {
 				configs, err := v2Impl.GetProjectConfigs(ctx, "config.cfg", false)
 				So(configs, ShouldBeNil)
 				So(err, ShouldErrLike, `For file(config.cfg) in config_set(projects/project2): failed to download file, got http response code: 500, body: "internal error"`)
+			})
+		})
+
+		Convey("GetProjects", func() {
+			Convey("ok", func() {
+				res := &pb.ListConfigSetsResponse{
+					ConfigSets: []*pb.ConfigSet{
+						{
+							Name: "projects/project1",
+							Url:  "https://a.googlesource.com/project1",
+						},
+						{
+							Name: "projects/project2",
+							Url:  "https://b.googlesource.com/project2",
+						},
+					},
+				}
+				mockClient.EXPECT().ListConfigSets(gomock.Any(), proto.MatcherEqual(&pb.ListConfigSetsRequest{
+					Domain: pb.ListConfigSetsRequest_PROJECT,
+				})).Return(res, nil)
+
+				projects, err := v2Impl.GetProjects(ctx)
+				So(err, ShouldBeNil)
+
+				url1, err := url.Parse(res.ConfigSets[0].Url)
+				So(err, ShouldBeNil)
+				url2, err := url.Parse(res.ConfigSets[1].Url)
+				So(err, ShouldBeNil)
+				So(projects, ShouldResemble, []config.Project{
+					{
+						ID:       "project1",
+						Name:     "project1",
+						RepoType: config.GitilesRepo,
+						RepoURL:  url1,
+					},
+					{
+						ID:       "project2",
+						Name:     "project2",
+						RepoType: config.GitilesRepo,
+						RepoURL:  url2,
+					},
+				})
+			})
+
+			Convey("rpc err", func() {
+				mockClient.EXPECT().ListConfigSets(gomock.Any(), proto.MatcherEqual(&pb.ListConfigSetsRequest{
+					Domain: pb.ListConfigSetsRequest_PROJECT,
+				})).Return(nil, status.Errorf(codes.Internal, "server internal error"))
+
+				projects, err := v2Impl.GetProjects(ctx)
+				So(projects, ShouldBeNil)
+				So(err, ShouldHaveGRPCStatus, codes.Internal, "server internal error")
+			})
+		})
+
+		Convey("ListFiles", func() {
+			Convey("ok", func() {
+				mockClient.EXPECT().GetConfigSet(gomock.Any(), proto.MatcherEqual(&pb.GetConfigSetRequest{
+					ConfigSet: "projects/project",
+					Fields: &field_mask.FieldMask{
+						Paths: []string{"file_paths"},
+					},
+				})).Return(&pb.ConfigSet{
+					FilePaths: []string{"file1", "file2"},
+				}, nil)
+
+				files, err := v2Impl.ListFiles(ctx, config.Set("projects/project"))
+				So(err, ShouldBeNil)
+				So(files, ShouldResemble, []string{"file1", "file2"})
+			})
+
+			Convey("rpc err", func() {
+				mockClient.EXPECT().GetConfigSet(gomock.Any(), proto.MatcherEqual(&pb.GetConfigSetRequest{
+					ConfigSet: "projects/project",
+					Fields: &field_mask.FieldMask{
+						Paths: []string{"file_paths"},
+					},
+				})).Return(nil, status.Errorf(codes.Internal, "server internal error"))
+
+				files, err := v2Impl.ListFiles(ctx, config.Set("projects/project"))
+				So(files, ShouldBeNil)
+				So(err, ShouldHaveGRPCStatus, codes.Internal, "server internal error")
 			})
 		})
 	})

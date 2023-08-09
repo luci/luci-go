@@ -17,6 +17,7 @@ package remote
 import (
 	"context"
 	"net/http"
+	"net/url"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/sync/errgroup"
@@ -173,11 +174,48 @@ func (r *remoteV2Impl) GetProjectConfigs(ctx context.Context, path string, metaO
 }
 
 func (r *remoteV2Impl) GetProjects(ctx context.Context) ([]config.Project, error) {
-	return nil, errors.New("Hasn't implemented yet. Please don't point to Luci-Config v2 service")
+	if err := r.checkInitialized(); err != nil {
+		return nil, err
+	}
+
+	res, err := r.grpcClient.ListConfigSets(ctx, &pb.ListConfigSetsRequest{Domain: pb.ListConfigSetsRequest_PROJECT})
+	if err != nil {
+		return nil, err
+	}
+
+	projects := make([]config.Project, len(res.ConfigSets))
+	for i, cs := range res.ConfigSets {
+		projectID := config.Set(cs.Name).Project()
+		parsedURL, err := url.Parse(cs.Url)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to parse repo url %s in project %s", cs.Url, projectID).Err()
+		}
+		projects[i] = config.Project{
+			ID:       projectID,
+			Name:     projectID,
+			RepoURL:  parsedURL,
+			RepoType: config.GitilesRepo,
+		}
+	}
+
+	return projects, nil
 }
 
 func (r *remoteV2Impl) ListFiles(ctx context.Context, configSet config.Set) ([]string, error) {
-	return nil, errors.New("Hasn't implemented yet. Please don't point to Luci-Config v2 service")
+	if err := r.checkInitialized(); err != nil {
+		return nil, err
+	}
+
+	res, err := r.grpcClient.GetConfigSet(ctx, &pb.GetConfigSetRequest{
+		ConfigSet: string(configSet),
+		Fields: &field_mask.FieldMask{
+			Paths: []string{"file_paths"},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return res.FilePaths, nil
 }
 
 func (r *remoteV2Impl) Close() error {

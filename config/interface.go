@@ -74,6 +74,7 @@ type Project struct {
 	ID string
 
 	// Name is a short friendly display name of the project.
+	// In remote_v2 implementation, Name and ID are always the same.
 	Name string
 
 	// RepoType specifies in what kind of storage projects configs are stored.
