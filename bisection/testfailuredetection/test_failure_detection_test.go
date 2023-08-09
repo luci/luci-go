@@ -30,7 +30,6 @@ import (
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/rerun"
 	tpb "go.chromium.org/luci/bisection/task/proto"
-	"go.chromium.org/luci/bisection/testfailureanalysis/bisection"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -137,7 +136,6 @@ func TestRedundancyScore(t *testing.T) {
 
 func TestFailureDetection(t *testing.T) {
 	t.Parallel()
-	bisection.RegisterTaskClass()
 
 	Convey("Have bisection task to send", t, func() {
 		ctx := memory.Use(context.Background())

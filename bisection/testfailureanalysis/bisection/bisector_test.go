@@ -16,11 +16,13 @@ package bisection
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/bisection/internal/config"
+	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
@@ -36,9 +38,10 @@ func TestRunBisector(t *testing.T) {
 	cl := testclock.New(testclock.TestTimeUTC)
 	cl.Set(time.Unix(10000, 0).UTC())
 	ctx = clock.Set(ctx, cl)
+	luciAnalysisClient := &fakeLUCIAnalysisClient{}
 
 	Convey("No analysis", t, func() {
-		err := Run(ctx, 123)
+		err := Run(ctx, 123, luciAnalysisClient)
 		So(err, ShouldNotBeNil)
 	})
 
@@ -46,7 +49,7 @@ func TestRunBisector(t *testing.T) {
 		enableBisection(ctx, false)
 		tfa := testutil.CreateTestFailureAnalysis(ctx, nil)
 
-		err := Run(ctx, 1000)
+		err := Run(ctx, 1000, luciAnalysisClient)
 		So(err, ShouldBeNil)
 		err = datastore.Get(ctx, tfa)
 		So(err, ShouldBeNil)
@@ -60,7 +63,7 @@ func TestRunBisector(t *testing.T) {
 			ID: 1001,
 		})
 
-		err := Run(ctx, 1001)
+		err := Run(ctx, 1001, luciAnalysisClient)
 		So(err, ShouldNotBeNil)
 		err = datastore.Get(ctx, tfa)
 		So(err, ShouldBeNil)
@@ -78,7 +81,7 @@ func TestRunBisector(t *testing.T) {
 			TestFailure: tf,
 		})
 
-		err := Run(ctx, 1002)
+		err := Run(ctx, 1002, luciAnalysisClient)
 		So(err, ShouldBeNil)
 		err = datastore.Get(ctx, tfa)
 		So(err, ShouldBeNil)
@@ -104,12 +107,16 @@ func TestRunBisector(t *testing.T) {
 		So(datastore.Put(ctx, tf), ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
-		err := Run(ctx, 1002)
+		err := Run(ctx, 1002, luciAnalysisClient)
 		So(err, ShouldBeNil)
 		err = datastore.Get(ctx, tfa)
 		So(err, ShouldBeNil)
 		So(tfa.Status, ShouldEqual, bisectionpb.AnalysisStatus_RUNNING)
 		So(tfa.RunStatus, ShouldEqual, bisectionpb.AnalysisRunStatus_STARTED)
+		err = datastore.Get(ctx, tf)
+		So(err, ShouldBeNil)
+		So(tf.TestSuiteName, ShouldEqual, "test_suite")
+		So(tf.TestName, ShouldEqual, "test_name_0")
 	})
 }
 
@@ -120,4 +127,15 @@ func enableBisection(ctx context.Context, enabled bool) {
 		},
 	}
 	So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+}
+
+type fakeLUCIAnalysisClient struct {
+}
+
+func (cl *fakeLUCIAnalysisClient) ReadTestNames(ctx context.Context, project string, keys []lucianalysis.TestVerdictKey) (map[lucianalysis.TestVerdictKey]string, error) {
+	results := map[lucianalysis.TestVerdictKey]string{}
+	for i, key := range keys {
+		results[key] = fmt.Sprintf("test_name_%d", i)
+	}
+	return results, nil
 }

@@ -19,12 +19,15 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"cloud.google.com/go/bigquery"
 	"go.chromium.org/luci/bisection/model"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	"go.chromium.org/luci/server/auth"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -274,4 +277,98 @@ func (c *Client) ReadBuildInfo(ctx context.Context, tf *model.TestFailure) (Buil
 	}
 	buildInfo.StartCommitHash = rowVals["CommitHash"].(string)
 	return buildInfo, nil
+}
+
+type TestVerdictKey struct {
+	TestID      string
+	VariantHash string
+	RefHash     string
+}
+
+type TestNameResult struct {
+	TestID      bigquery.NullString
+	VariantHash bigquery.NullString
+	RefHash     bigquery.NullString
+	TestName    bigquery.NullString
+}
+
+// ReadTestNames queries LUCI Analysis for test names.
+// It supports querying for multiple keys at a time to save time and resources.
+// Returns a map of TestVerdictKey -> test name.
+func (c *Client) ReadTestNames(ctx context.Context, project string, keys []TestVerdictKey) (map[TestVerdictKey]string, error) {
+	if len(keys) == 0 {
+		return nil, errors.New("no key specified")
+	}
+	err := validateTestVerdictKeys(keys)
+	if err != nil {
+		return nil, errors.Annotate(err, "validate keys").Err()
+	}
+	clauses := make([]string, len(keys))
+	for i, key := range keys {
+		clauses[i] = fmt.Sprintf("(test_id = %q AND variant_hash = %q AND source_ref_hash = %q)", key.TestID, key.VariantHash, key.RefHash)
+	}
+	whereClause := fmt.Sprintf("(%s)", strings.Join(clauses, " OR "))
+
+	// We expect a test to have result in the last 3 days.
+	// Set the partition time to 3 days to reduce the cost.
+	query := `
+		SELECT
+			test_id as TestID,
+			variant_hash as VariantHash,
+			source_ref_hash as RefHash,
+			ARRAY_AGG (
+				(	SELECT value FROM UNNEST(tv.results[0].tags) WHERE KEY = "test_name")
+					ORDER BY tv.partition_time DESC
+					LIMIT 1
+				)[OFFSET(0)] as TestName,
+		FROM test_verdicts tv
+		WHERE ` + whereClause + `
+		AND partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
+		GROUP BY test_id, variant_hash, source_ref_hash
+ 	`
+	logging.Infof(ctx, "Running query %s", query)
+	q := c.client.Query(query)
+	q.DefaultDatasetID = project
+	q.DefaultProjectID = c.luciAnalysisProject
+	job, err := q.Run(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "querying test name").Err()
+	}
+	it, err := job.Read(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "read").Err()
+	}
+	results := map[TestVerdictKey]string{}
+	for {
+		row := &TestNameResult{}
+		err := it.Next(row)
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, errors.Annotate(err, "obtain next row").Err()
+		}
+		key := TestVerdictKey{
+			TestID:      row.TestID.String(),
+			VariantHash: row.VariantHash.String(),
+			RefHash:     row.RefHash.String(),
+		}
+		results[key] = row.TestName.String()
+	}
+	return results, nil
+}
+
+func validateTestVerdictKeys(keys []TestVerdictKey) error {
+	for _, key := range keys {
+		if err := rdbpbutil.ValidateTestID(key.TestID); err != nil {
+			return err
+		}
+		if err := util.ValidateVariantHash(key.VariantHash); err != nil {
+			return err
+		}
+		if err := util.ValidateRefHash(key.RefHash); err != nil {
+			return err
+		}
+	}
+	return nil
 }

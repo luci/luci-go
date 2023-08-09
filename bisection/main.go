@@ -155,7 +155,9 @@ func main() {
 		if err := testfailuredetection.RegisterTaskClass(srv, luciAnalysisProject); err != nil {
 			return errors.Annotate(err, "register test failure detection").Err()
 		}
-		bisection.RegisterTaskClass()
+		if err := bisection.RegisterTaskClass(srv, luciAnalysisProject); err != nil {
+			return errors.Annotate(err, "register test failure bisector").Err()
+		}
 
 		return nil
 	})

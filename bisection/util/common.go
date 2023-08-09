@@ -26,15 +26,41 @@ import (
 // From https://source.chromium.org/chromium/infra/infra/+/main:luci/appengine/components/components/config/common.py?q=PROJECT_ID_PATTERN
 const ProjectRePattern = `[a-z0-9\-]{1,40}`
 
+// VariantHashRePattern is the regular expression pattern that matches
+// validly formed variant hash.
+// From https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/internal/config/constants.go;l=23
+const VariantHashRePattern = `[0-9a-f]{16}`
+
+// RefHashRePattern is the regular expression pattern that matches
+// validly formed ref hash.
+// From https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/internal/config/constants.go;l=27
+const RefHashRePattern = `[0-9a-f]{16}`
+
 // projectRe matches validly formed LUCI Project names.
 var projectRe = regexp.MustCompile(`^` + ProjectRePattern + `$`)
+var variantHashRe = regexp.MustCompile(`^` + VariantHashRePattern + `$`)
+var refHashRe = regexp.MustCompile(`^` + RefHashRePattern + `$`)
 
 func ValidateProject(project string) error {
 	if project == "" {
 		return errors.Reason("unspecified").Err()
 	}
 	if !projectRe.MatchString(project) {
-		return errors.Reason("must match %s", projectRe).Err()
+		return errors.Reason("project %s must match %s", project, projectRe).Err()
+	}
+	return nil
+}
+
+func ValidateVariantHash(variantHash string) error {
+	if !variantHashRe.MatchString(variantHash) {
+		return errors.Reason("variant hash %s must match %s", variantHash, variantHashRe).Err()
+	}
+	return nil
+}
+
+func ValidateRefHash(refHash string) error {
+	if !refHashRe.MatchString(refHash) {
+		return errors.Reason("ref hash %s must match %s", refHash, refHashRe).Err()
 	}
 	return nil
 }

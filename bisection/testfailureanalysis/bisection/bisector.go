@@ -20,15 +20,18 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/bisection/internal/config"
+	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/testfailureanalysis"
+	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/analysis"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/chromium"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/tq"
 	"google.golang.org/protobuf/proto"
 
@@ -41,31 +44,42 @@ const (
 	queue     = "test-failure-bisection"
 )
 
+var taskClassRef = tq.RegisterTaskClass(tq.TaskClass{
+	ID:        taskClass,
+	Prototype: (*tpb.TestFailureBisectionTask)(nil),
+	Queue:     queue,
+	Kind:      tq.Transactional,
+})
+
 // RegisterTaskClass registers the task class for tq dispatcher.
-func RegisterTaskClass() {
-	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        taskClass,
-		Prototype: (*tpb.TestFailureBisectionTask)(nil),
-		Queue:     queue,
-		Kind:      tq.Transactional,
-		Handler: func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*tpb.TestFailureBisectionTask)
-			analysisID := task.GetAnalysisId()
-			loggingutil.SetAnalysisID(ctx, analysisID)
-			logging.Infof(ctx, "Processing test failure bisection task with id = %d", analysisID)
-			err := Run(ctx, analysisID)
-			if err != nil {
-				err = errors.Annotate(err, "run bisection").Err()
-				logging.Errorf(ctx, err.Error())
-				// If the error is transient, return err to retry.
-				if transient.Tag.In(err) {
-					return err
-				}
-				return nil
+func RegisterTaskClass(srv *server.Server, luciAnalysisProject string) error {
+	ctx := srv.Context
+	client, err := lucianalysis.NewClient(ctx, srv.Options.CloudProject, luciAnalysisProject)
+	if err != nil {
+		return err
+	}
+	srv.RegisterCleanup(func(context.Context) {
+		client.Close()
+	})
+	handler := func(ctx context.Context, payload proto.Message) error {
+		task := payload.(*tpb.TestFailureBisectionTask)
+		analysisID := task.GetAnalysisId()
+		loggingutil.SetAnalysisID(ctx, analysisID)
+		logging.Infof(ctx, "Processing test failure bisection task with id = %d", analysisID)
+		err := Run(ctx, analysisID, client)
+		if err != nil {
+			err = errors.Annotate(err, "run bisection").Err()
+			logging.Errorf(ctx, err.Error())
+			// If the error is transient, return err to retry.
+			if transient.Tag.In(err) {
+				return err
 			}
 			return nil
-		},
-	})
+		}
+		return nil
+	}
+	taskClassRef.AttachHandler(handler)
+	return nil
 }
 
 // Schedule enqueues a task to perform bisection.
@@ -79,7 +93,7 @@ func Schedule(ctx context.Context, analysisID int64) error {
 }
 
 // Run runs bisection for the given analysisID.
-func Run(ctx context.Context, analysisID int64) (reterr error) {
+func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisClient) (reterr error) {
 	// Retrieves analysis from datastore.
 	tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, analysisID)
 	if err != nil {
@@ -126,7 +140,7 @@ func Run(ctx context.Context, analysisID int64) (reterr error) {
 	// Trigger specific project bisector.
 	switch primaryFailure.Project {
 	case "chromium":
-		err := chromium.Run(ctx, tfa)
+		err := chromium.Run(ctx, tfa, luciAnalysis)
 		if err != nil {
 			return errors.Annotate(err, "run chromium bisector").Err()
 		}
