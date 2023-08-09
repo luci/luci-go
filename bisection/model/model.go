@@ -352,7 +352,7 @@ type TestFailure struct {
 	RefHash string `gae:"ref_hash"`
 	// The branch where this failure happens.
 	Ref *pb.SourceRef `gae:"ref"`
-	// Start commit position of the regression range inclusive.
+	// Start commit position of the regression range exclusive.
 	RegressionStartPosition int64 `gae:"regression_start_position"`
 	// End commit position of the regression range inclusive.
 	RegressionEndPosition int64 `gae:"regression_end_position"`
@@ -403,10 +403,10 @@ type TestFailureAnalysis struct {
 	VerifiedCulprit *datastore.Key `gae:"verified_culprit"`
 	// Priority of this run.
 	Priority int32 `gae:"priority"`
-	// The start commit hash of the regression range that this analysis analyses.
+	// The start commit hash (exclusive) of the regression range that this analysis analyses.
 	// It corresponds to the RegressionStartPosition.
 	StartCommitHash string `gae:"start_commit_hash"`
-	// The end commit hash of the regression range that this analysis analyses.
+	// The end commit hash (inclusive) of the regression range that this analysis analyses.
 	// It corresponds to the RegressionEndPosition.
 	EndCommitHash string `gae:"end_commit_hash"`
 	// An example Buildbucket ID in which the test failed.

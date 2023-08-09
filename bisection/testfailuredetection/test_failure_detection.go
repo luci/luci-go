@@ -107,7 +107,7 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 		logging.Infof(ctx, "No test failure is found for %s", task.Project)
 		return nil
 	}
-	bundles := []testFailureBundle{}
+	bundles := []*model.TestFailureBundle{}
 	for _, g := range groups {
 		bundle, err := newTestFailureBundle(task.Project, g)
 		if err != nil {
@@ -115,7 +115,7 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 		}
 		// Use the redundancy score of the primary test failure as
 		// the redundancy score of this test failure bundle.
-		rs, err := redundancyScore(ctx, bundle.primary())
+		rs, err := redundancyScore(ctx, bundle.Primary())
 		if err != nil {
 			return errors.Annotate(err, "calculate redundancy score").Err()
 		}
@@ -124,7 +124,7 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 			// This bundle should be skipped.
 			continue
 		}
-		bundle.primary().RedundancyScore = rs
+		bundle.Primary().RedundancyScore = rs
 		bundles = append(bundles, bundle)
 	}
 	if len(bundles) == 0 {
@@ -132,7 +132,7 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 		return nil
 	}
 	bestBundle := First(bundles)
-	testFailureAnalysis, err := prepareFailureAnalysis(ctx, client, bestBundle.primary())
+	testFailureAnalysis, err := prepareFailureAnalysis(ctx, client, bestBundle.Primary())
 	if err != nil {
 		return errors.Annotate(err, "prepare failure analysis").Err()
 	}
@@ -142,16 +142,7 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 	return nil
 }
 
-type testFailureBundle []*model.TestFailure
-
-func (b testFailureBundle) primary() *model.TestFailure {
-	if !b[0].IsPrimary {
-		panic("primary failure is must be the first failure in the list")
-	}
-	return b[0]
-}
-
-func newTestFailureBundle(project string, group *lucianalysis.BuilderRegressionGroup) (testFailureBundle, error) {
+func newTestFailureBundle(project string, group *lucianalysis.BuilderRegressionGroup) (*model.TestFailureBundle, error) {
 	testFailures := make([]*model.TestFailure, len(group.TestVariants))
 	for i, tv := range group.TestVariants {
 		variant, err := util.VariantPB(tv.Variant.String())
@@ -183,7 +174,12 @@ func newTestFailureBundle(project string, group *lucianalysis.BuilderRegressionG
 			StartHour:                group.StartHour.Timestamp.UTC(),
 		}
 	}
-	return testFailureBundle(testFailures), nil
+	bundle := &model.TestFailureBundle{}
+	err := bundle.Add(testFailures)
+	if err != nil {
+		return nil, err
+	}
+	return bundle, nil
 }
 
 // RedundancyScore returns a floating point number between 0 and 1 inclusive.
@@ -243,18 +239,21 @@ func prepareFailureAnalysis(ctx context.Context, client analysisClient, tf *mode
 
 // SaveTestFailureAndAnalysis saves the test failures and a test failures analysis into datastore.
 // It also transactionally enqueue a task to bisector.
-func saveTestFailuresAndAnalysis(ctx context.Context, bundle testFailureBundle, testFailureAnalysis *model.TestFailureAnalysis) error {
+func saveTestFailuresAndAnalysis(ctx context.Context, bundle *model.TestFailureBundle, testFailureAnalysis *model.TestFailureAnalysis) error {
 	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		if err := datastore.AllocateIDs(ctx, testFailureAnalysis); err != nil {
 			return errors.Annotate(err, "allocate datastore ID for test failure analysis").Err()
 		}
-		for _, testFailure := range bundle {
+		for _, testFailure := range bundle.All() {
 			testFailure.AnalysisKey = datastore.KeyForObj(ctx, testFailureAnalysis)
 		}
-		if err := datastore.Put(ctx, bundle); err != nil {
+		// TODO(beining@): This will fail if the size of the bundle is greater than 499.
+		// If this becomes a problem, we need to save TestFailures in batches.
+		// https://cloud.google.com/datastore/docs/concepts/transactions#what_can_be_done_in_a_transaction
+		if err := datastore.Put(ctx, bundle.All()); err != nil {
 			return errors.Annotate(err, "save test failures").Err()
 		}
-		testFailureAnalysis.TestFailure = datastore.KeyForObj(ctx, bundle.primary())
+		testFailureAnalysis.TestFailure = datastore.KeyForObj(ctx, bundle.Primary())
 		if err := datastore.Put(ctx, testFailureAnalysis); err != nil {
 			return errors.Annotate(err, "save test failure analysis").Err()
 		}

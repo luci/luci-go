@@ -16,21 +16,23 @@ package testfailuredetection
 
 import (
 	"sort"
+
+	"go.chromium.org/luci/bisection/model"
 )
 
 // First sorts the input slice and returns the first element in the sorted slice.
-func First(bundles []testFailureBundle) testFailureBundle {
+func First(bundles []*model.TestFailureBundle) *model.TestFailureBundle {
 	Sort(bundles)
 	return bundles[0]
 }
 
 // Sort sorts slice of testFailureBundles by their
 // redundancy score and regression end position.
-func Sort(bundles []testFailureBundle) {
+func Sort(bundles []*model.TestFailureBundle) {
 	sort.Sort(sortableTestFailureBundles(bundles))
 }
 
-type sortableTestFailureBundles []testFailureBundle
+type sortableTestFailureBundles []*model.TestFailureBundle
 
 // Len is the number of elements in the collection.
 func (s sortableTestFailureBundles) Len() int {
@@ -40,10 +42,10 @@ func (s sortableTestFailureBundles) Len() int {
 // Less reports whether the element with
 // index i should sort before the element with index j.
 func (s sortableTestFailureBundles) Less(i int, j int) bool {
-	if s[i].primary().RedundancyScore != s[j].primary().RedundancyScore {
-		return s[i].primary().RedundancyScore < s[j].primary().RedundancyScore
+	if s[i].Primary().RedundancyScore != s[j].Primary().RedundancyScore {
+		return s[i].Primary().RedundancyScore < s[j].Primary().RedundancyScore
 	}
-	return s[i].primary().RegressionEndPosition > s[j].primary().RegressionEndPosition
+	return s[i].Primary().RegressionEndPosition > s[j].Primary().RegressionEndPosition
 }
 
 // Swap swaps the elements with indexes i and j.
