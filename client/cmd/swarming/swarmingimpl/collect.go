@@ -265,7 +265,7 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 			if err != nil {
 				return tagTransientGoogleAPIError(err)
 			}
-			output = taskOutput.Output
+			output = string(taskOutput.Output)
 		}
 		// Download the result files if available and if we have a place to put it.
 		if c.outputDir != "" {

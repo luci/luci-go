@@ -36,7 +36,7 @@ type testService struct {
 	cancelTask   func(context.Context, string, bool) (*swarmingv2.CancelResponse, error)
 	taskRequest  func(context.Context, string) (*swarmingv2.TaskRequestResponse, error)
 	taskResult   func(context.Context, string, bool) (*swarmingv1.SwarmingRpcsTaskResult, error)
-	taskOutput   func(context.Context, string) (*swarmingv1.SwarmingRpcsTaskOutput, error)
+	taskOutput   func(context.Context, string) (*swarmingv2.TaskOutputResponse, error)
 	filesFromCAS func(context.Context, string, *rbeclient.Client, *swarmingv2.CASReference) ([]string, error)
 	listBots     func(context.Context, []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error)
 	deleteBot    func(context.Context, string) (*swarmingv2.DeleteResponse, error)
@@ -72,7 +72,7 @@ func (s testService) TaskResult(ctx context.Context, taskID string, perf bool) (
 	return s.taskResult(ctx, taskID, perf)
 }
 
-func (s testService) TaskOutput(ctx context.Context, taskID string) (*swarmingv1.SwarmingRpcsTaskOutput, error) {
+func (s testService) TaskOutput(ctx context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error) {
 	return s.taskOutput(ctx, taskID)
 }
 

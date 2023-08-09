@@ -152,8 +152,8 @@ func TestCollectPollForTaskResult(t *testing.T) {
 					},
 				}, nil
 			},
-			taskOutput: func(c context.Context, _ string) (*swarmingv1.SwarmingRpcsTaskOutput, error) {
-				return &swarmingv1.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
+			taskOutput: func(c context.Context, _ string) (*swarmingv2.TaskOutputResponse, error) {
+				return &swarmingv2.TaskOutputResponse{Output: []byte("yipeeee")}, nil
 			},
 			filesFromCAS: func(c context.Context, outdir string, _ *rbeclient.Client, casRef *swarmingv2.CASReference) ([]string, error) {
 				writtenTo = outdir
@@ -243,9 +243,9 @@ func TestCollectPollForTasks(t *testing.T) {
 					},
 				}, nil
 			},
-			taskOutput: func(c context.Context, taskID string) (*swarmingv1.SwarmingRpcsTaskOutput, error) {
+			taskOutput: func(c context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error) {
 				outputFetched.Store(taskID, true)
-				return &swarmingv1.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
+				return &swarmingv2.TaskOutputResponse{Output: []byte("yipeeee")}, nil
 			},
 		}
 		runner := &collectRun{
@@ -287,7 +287,7 @@ func TestCollectPollForTasks(t *testing.T) {
 					},
 				}, nil
 			},
-			taskOutput: func(c context.Context, taskID string) (*swarmingv1.SwarmingRpcsTaskOutput, error) {
+			taskOutput: func(c context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error) {
 				// Make sure that the two tasks are downloading outputs at the
 				// same time, but have the second task wait for the first task's
 				// download to complete before continuing the download.
@@ -298,7 +298,7 @@ func TestCollectPollForTasks(t *testing.T) {
 					<-firstTaskComplete
 				}
 				outputFetched.Store(taskID, true)
-				return &swarmingv1.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
+				return &swarmingv2.TaskOutputResponse{Output: []byte("yipeeee")}, nil
 			},
 		}
 
@@ -344,9 +344,9 @@ func TestCollectPollForTasks(t *testing.T) {
 					},
 				}, nil
 			},
-			taskOutput: func(c context.Context, taskID string) (*swarmingv1.SwarmingRpcsTaskOutput, error) {
+			taskOutput: func(c context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error) {
 				outputFetched = true
-				return &swarmingv1.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
+				return &swarmingv2.TaskOutputResponse{Output: []byte("yipeeee")}, nil
 			},
 		}
 		runner := &collectRun{

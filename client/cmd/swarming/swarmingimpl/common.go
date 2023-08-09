@@ -15,6 +15,7 @@
 package swarmingimpl
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
@@ -89,7 +90,7 @@ type swarmingService interface {
 	CancelTask(ctx context.Context, taskID string, killRunning bool) (*swarmingv2.CancelResponse, error)
 	TaskRequest(ctx context.Context, taskID string) (*swarmingv2.TaskRequestResponse, error)
 	TaskResult(ctx context.Context, taskID string, perf bool) (*swarmingv1.SwarmingRpcsTaskResult, error)
-	TaskOutput(ctx context.Context, taskID string) (*swarmingv1.SwarmingRpcsTaskOutput, error)
+	TaskOutput(ctx context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error)
 	FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarmingv2.CASReference) ([]string, error)
 	CountBots(ctx context.Context, dimensions []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error)
 	ListBots(ctx context.Context, dimensions []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error)
@@ -175,12 +176,33 @@ func (s *swarmingServiceImpl) TaskResult(ctx context.Context, taskID string, per
 	return res, err
 }
 
-func (s *swarmingServiceImpl) TaskOutput(ctx context.Context, taskID string) (res *swarmingv1.SwarmingRpcsTaskOutput, err error) {
-	err = retryGoogleRPC(ctx, "TaskOutput", func() (ierr error) {
-		res, ierr = s.service.Task.Stdout(taskID).Context(ctx).Do()
-		return ierr
-	})
-	return res, err
+func (s *swarmingServiceImpl) TaskOutput(ctx context.Context, taskID string) (res *swarmingv2.TaskOutputResponse, err error) {
+	// We fetch 160 chunks every time which amounts to a max of 16mb each time.
+	// Each chunk is 100kbs.
+	// See https://chromium.googlesource.com/infra/luci/luci-py/+/b517353c0df0b52b4bdda4231ff37e749dc627af/appengine/swarming/api_common.py#343
+	const outputLength = 160 * 100 * 1024
+
+	var output bytes.Buffer
+	for {
+		resp, err := s.tasksClient.GetStdout(ctx, &swarmingv2.TaskIdWithOffsetRequest{
+			Offset: int64(output.Len()),
+			Length: outputLength,
+			TaskId: taskID,
+		})
+		if err != nil {
+			return nil, err
+		}
+		output.Write(resp.Output)
+		// If there is less output bytes than length then we have reached the
+		// final output chunk and can stop looking for new data.
+		if len(resp.Output) < outputLength {
+			// Pass the final state we saw as the current output
+			return &swarmingv2.TaskOutputResponse{
+				State:  resp.State,
+				Output: output.Bytes(),
+			}, nil
+		}
+	}
 }
 
 // FilesFromCAS downloads outputs from CAS.
