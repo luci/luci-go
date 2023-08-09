@@ -423,6 +423,15 @@ func consoleHeader(c context.Context, project string, header *projectconfigpb.He
 	// Get the oncall and tree status concurrently.
 	if err := parallel.FanOutIn(func(ch chan<- func() error) {
 		ch <- func() (err error) {
+			// Hide the oncall section to external users.
+			// TODO(weiweilin): Once the upstream service (rotation proxy) supports
+			// ACL checks, we should use the user's credential to query the oncall
+			// data and display it.
+			user := auth.CurrentUser(c)
+			if !strings.HasSuffix(user.Email, "@google.com") {
+				return nil
+			}
+
 			oncalls, err = consoleHeaderOncall(c, header.Oncalls)
 			if err != nil {
 				logging.WithError(err).Errorf(c, "getting oncalls")
