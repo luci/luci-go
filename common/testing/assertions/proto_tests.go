@@ -21,6 +21,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/testing/protocmp"
 
 	protoLegacy "github.com/golang/protobuf/proto"
 
@@ -50,11 +51,12 @@ func ShouldResembleProto(actual any, expected ...any) string {
 	exportAll := cmp.Exporter(func(t reflect.Type) bool {
 		return true
 	})
-	diff := cmp.Diff(actual, exp, cmp.Comparer(proto.Equal), exportAll)
+	diff := cmp.Diff(exp, actual, protocmp.Transform(), exportAll)
+	if diff != "" {
+		return fmt.Sprintf("Unexpected difference (-want +got):\n%s", diff)
+	}
 
-	// Anything other than "" indicates a failure and will be interpreted
-	// as such by convey.
-	return diff
+	return "" // Success
 }
 
 // ShouldResembleProtoText is like ShouldResembleProto, but expected
