@@ -24,11 +24,15 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 
 	"cloud.google.com/go/storage"
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/config_service/internal/acl"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/router"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/api/gitiles"
@@ -84,14 +88,14 @@ type Importer struct {
 
 // RegisterImportConfigsCron register the cron to trigger import for all config
 // sets
-func (i Importer) RegisterImportConfigsCron(dispatcher *tq.Dispatcher) {
+func (i *Importer) RegisterImportConfigsCron(dispatcher *tq.Dispatcher) {
 	i.registerTQTask(dispatcher)
 	cron.RegisterHandler("import-configs", func(ctx context.Context) error {
 		return importAllConfigs(ctx, dispatcher)
 	})
 }
 
-func (i Importer) registerTQTask(dispatcher *tq.Dispatcher) {
+func (i *Importer) registerTQTask(dispatcher *tq.Dispatcher) {
 	dispatcher.RegisterTaskClass(tq.TaskClass{
 		ID:        "import-configs",
 		Kind:      tq.NonTransactional,
@@ -486,7 +490,7 @@ func hashAndCompressConfig(reader io.Reader) (string, []byte, error) {
 	return hex.EncodeToString(sha.Sum(nil)), compressed.Bytes(), nil
 }
 
-func (i Importer) validateAndPopulateAttempt(ctx context.Context, cfgSet config.Set, files []*model.File, attempt *model.ImportAttempt) error {
+func (i *Importer) validateAndPopulateAttempt(ctx context.Context, cfgSet config.Set, files []*model.File, attempt *model.ImportAttempt) error {
 	vfs := make([]validation.File, len(files))
 	for i, f := range files {
 		vfs[i] = f
@@ -509,4 +513,48 @@ func (i Importer) validateAndPopulateAttempt(ctx context.Context, cfgSet config.
 		}
 	}
 	return nil
+}
+
+// Reimport handles the HTTP request of reimporting a single config set.
+func (i *Importer) Reimport(c *router.Context) {
+	ctx := c.Request.Context()
+	caller := auth.CurrentIdentity(ctx)
+	cs := config.Set(c.Params.ByName("ConfigSet"))
+
+	if cs == "" {
+		http.Error(c.Writer, "config set is not specified", http.StatusBadRequest)
+		return
+	} else if err := cs.Validate(); err != nil {
+		http.Error(c.Writer, fmt.Sprintf("invalid config set: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	switch hasPerm, err := acl.CanReimportConfigSet(ctx, cs); {
+	case err != nil:
+		logging.Errorf(ctx, "cannot check permission for %q: %s", caller, err)
+		http.Error(c.Writer, fmt.Sprintf("cannot check permission for %q", caller), http.StatusInternalServerError)
+		return
+	case !hasPerm:
+		logging.Infof(ctx, "%q does not have access to %s", caller, cs)
+		http.Error(c.Writer, fmt.Sprintf("%q is now allowed to reimport %s", caller, cs), http.StatusForbidden)
+		return
+	}
+
+	switch exists, err := datastore.Exists(ctx, &model.ConfigSet{ID: cs}); {
+	case err != nil:
+		logging.Errorf(ctx, "failed to check existence of %s", cs)
+		http.Error(c.Writer, fmt.Sprintf("error when reimporting  %s", cs), http.StatusInternalServerError)
+		return
+	case !exists.All():
+		logging.Infof(ctx, "config set %s doesn't exist", cs)
+		http.Error(c.Writer, fmt.Sprintf("%q is not found", cs), http.StatusNotFound)
+		return
+	}
+
+	if err := i.ImportConfigSet(ctx, cs); err != nil {
+		logging.Errorf(ctx, "cannot re-import config set %s: %s", cs, err)
+		http.Error(c.Writer, fmt.Sprintf("error when reimporting %q", cs), http.StatusInternalServerError)
+		return
+	}
+	c.Writer.WriteHeader(http.StatusOK)
 }

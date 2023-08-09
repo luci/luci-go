@@ -23,15 +23,19 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/rand"
+	"net/http"
+	"net/http/httptest"
 	"sort"
 	"strings"
 	"testing"
 
 	"cloud.google.com/go/storage"
 	"github.com/golang/mock/gomock"
+	"github.com/julienschmidt/httprouter"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
@@ -42,6 +46,9 @@ import (
 	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
@@ -782,6 +789,123 @@ func TestImportConfigSet(t *testing.T) {
 				err = importer.ImportConfigSet(ctx, cs)
 				So(err, ShouldErrLike, "something went wrong during validation")
 			})
+		})
+	})
+}
+
+func TestReImport(t *testing.T) {
+	t.Parallel()
+
+	Convey("Reimport", t, func() {
+		rsp := httptest.NewRecorder()
+		rctx := &router.Context{
+			Writer: rsp,
+		}
+
+		mockValidator := &mockValidator{}
+		importer := &Importer{
+			Validator: mockValidator,
+		}
+		ctx := testutil.SetupContext()
+		userID := identity.Identity("user:user@example.com")
+		fakeAuthDB := authtest.NewFakeDB()
+		testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+			common.ACLRegistryFilePath: &cfgcommonpb.AclCfg{
+				ServiceAccessGroup:   "service-access-group",
+				ServiceReimportGroup: "service-reimport-group",
+			},
+		})
+		fakeAuthDB.AddMocks(
+			authtest.MockMembership(userID, "service-access-group"),
+			authtest.MockMembership(userID, "service-reimport-group"),
+		)
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: userID,
+			FakeDB:   fakeAuthDB,
+		})
+
+		Convey("no ConfigSet param", func() {
+			rctx.Request = (&http.Request{}).WithContext(ctx)
+			importer.Reimport(rctx)
+			So(rsp.Code, ShouldEqual, http.StatusBadRequest)
+			So(rsp.Body.String(), ShouldContainSubstring, "config set is not specified")
+		})
+
+		Convey("invalid config set", func() {
+			rctx.Request = (&http.Request{}).WithContext(ctx)
+			rctx.Params = httprouter.Params{
+				{Key: "ConfigSet", Value: "badCfgSet"},
+			}
+			importer.Reimport(rctx)
+			So(rsp.Code, ShouldEqual, http.StatusBadRequest)
+			So(rsp.Body.String(), ShouldContainSubstring, `invalid config set: unknown domain "badCfgSet" for config set "badCfgSet"`)
+		})
+
+		Convey("no permission", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: identity.Identity("user:random@example.com"),
+				FakeDB:   authtest.NewFakeDB(),
+			})
+			rctx.Request = (&http.Request{}).WithContext(ctx)
+			rctx.Params = httprouter.Params{
+				{Key: "ConfigSet", Value: "services/myservice"},
+			}
+			importer.Reimport(rctx)
+			So(rsp.Code, ShouldEqual, http.StatusForbidden)
+			So(rsp.Body.String(), ShouldContainSubstring, `"user:random@example.com" is now allowed to reimport services/myservice`)
+		})
+
+		Convey("config set not found", func() {
+			rctx.Request = (&http.Request{}).WithContext(ctx)
+			rctx.Params = httprouter.Params{
+				{Key: "ConfigSet", Value: "services/myservice"},
+			}
+			importer.Reimport(rctx)
+			So(rsp.Code, ShouldEqual, http.StatusNotFound)
+			So(rsp.Body.String(), ShouldContainSubstring, `"services/myservice" is not found`)
+		})
+
+		Convey("ok", func() {
+			ctx = settings.WithGlobalConfigLoc(ctx, &cfgcommonpb.GitilesLocation{
+				Repo: "https://a.googlesource.com/infradata/config",
+				Ref:  "refs/heads/main",
+				Path: "dev-configs",
+			})
+			testutil.InjectConfigSet(ctx, "services/myservice", nil)
+			ctl := gomock.NewController(t)
+			mockGtClient := mock_gitiles.NewMockGitilesClient(ctl)
+			ctx = context.WithValue(ctx, &clients.MockGitilesClientKey, mockGtClient)
+			mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(&gitilespb.LogResponse{}, nil)
+
+			rctx.Request = (&http.Request{}).WithContext(ctx)
+			rctx.Params = httprouter.Params{
+				{Key: "ConfigSet", Value: "services/myservice"},
+			}
+			importer.Reimport(rctx)
+
+			So(rsp.Code, ShouldEqual, http.StatusOK)
+		})
+
+		Convey("internal error", func() {
+			ctx = settings.WithGlobalConfigLoc(ctx, &cfgcommonpb.GitilesLocation{
+				Repo: "https://a.googlesource.com/infradata/config",
+				Ref:  "refs/heads/main",
+				Path: "dev-configs",
+			})
+			testutil.InjectConfigSet(ctx, "services/myservice", nil)
+			ctl := gomock.NewController(t)
+			mockGtClient := mock_gitiles.NewMockGitilesClient(ctl)
+			ctx = context.WithValue(ctx, &clients.MockGitilesClientKey, mockGtClient)
+			mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(nil, errors.New("gitiles internal error"))
+
+			rctx.Request = (&http.Request{}).WithContext(ctx)
+			rctx.Params = httprouter.Params{
+				{Key: "ConfigSet", Value: "services/myservice"},
+			}
+			importer.Reimport(rctx)
+
+			So(rsp.Code, ShouldEqual, http.StatusInternalServerError)
+			So(rsp.Body.String(), ShouldContainSubstring, `error when reimporting "services/myservice"`)
 		})
 	})
 }

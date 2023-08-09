@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
+	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
@@ -98,6 +99,8 @@ func main() {
 
 		cron.RegisterHandler("update-services", service.Update)
 		importer.RegisterImportConfigsCron(&tq.Default)
+		// Protect against CSRF attacks from the web.
+		srv.Routes.POST("/internal/reimport/:ConfigSet", mw.Extend(xsrf.WithTokenCheck), importer.Reimport)
 		return nil
 	})
 }
