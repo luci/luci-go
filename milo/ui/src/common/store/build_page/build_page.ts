@@ -53,7 +53,7 @@ import {
   PERM_TEST_RESULTS_LIST,
   PERM_TEST_RESULTS_LIST_LIMITED,
 } from '@/common/services/resultdb';
-import { BuildState, BuildStateInstance } from '@/common/store/build_state';
+import { BuildState } from '@/common/store/build_state';
 import { InvocationState } from '@/common/store/invocation_state';
 import { ServicesStore } from '@/common/store/services';
 import { Timestamp } from '@/common/store/timestamp';
@@ -108,7 +108,6 @@ export const BuildPage = types
     // Properties that provide a mounting point for computed models so they can
     // have references to some other properties in the tree.
     _build: types.maybe(BuildState),
-    _relatedBuilds: types.array(BuildState),
   })
   .volatile(() => {
     const cachedBuildId = new Map<string, string>();
@@ -158,11 +157,6 @@ export const BuildPage = types
         currentTime: self.currentTime?.id,
         userConfig: self.userConfig?.id,
       });
-    },
-    _setRelatedBuilds(builds: readonly Build[]) {
-      self._relatedBuilds = cast(
-        builds.map((data) => ({ data, currentTime: self.currentTime?.id }))
-      );
     },
   }))
   .views((self) => {
@@ -282,8 +276,7 @@ export const BuildPage = types
               ? b1.id.localeCompare(b2.id)
               : b1.id.length - b2.id.length
           );
-          self._setRelatedBuilds(builds);
-          return self._relatedBuilds;
+          return builds;
         })
       );
     });
@@ -318,7 +311,7 @@ export const BuildPage = types
       get invocationId() {
         return unwrapObservable(invocationId.get() || NEVER_OBSERVABLE, null);
       },
-      get relatedBuilds(): readonly BuildStateInstance[] | null {
+      get relatedBuilds(): readonly Build[] | null {
         return unwrapObservable(relatedBuilds.get() || NEVER_OBSERVABLE, null);
       },
       get _permittedActions(): { readonly [key: string]: boolean | undefined } {
