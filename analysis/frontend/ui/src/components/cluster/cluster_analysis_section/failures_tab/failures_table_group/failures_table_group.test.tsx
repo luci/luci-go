@@ -72,9 +72,9 @@ describe('Test FailureTableGroup component', () => {
       def: {
         'k1': 'v1',
         // Consider a variant with special characters.
-        'key %+': 'value %+'
-      }
-    }
+        'key %+': 'value %+',
+      },
+    };
     render(
         <table>
           <tbody>

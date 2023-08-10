@@ -30,8 +30,8 @@ describe('Test TimestampInfoBar component', () => {
     render(<TimestampInfoBar
       createUsername={rule.createUser}
       createTime={rule.createTime}
-      updateUsername={rule.lastUpdateUser}
-      updateTime={rule.lastUpdateTime}/>);
+      updateUsername={rule.lastAuditableUpdateUser}
+      updateTime={rule.lastAuditableUpdateTime}/>);
     await waitFor(() => screen.getByTestId('timestamp-info-bar-create'));
 
     expect(screen.getByTestId('timestamp-info-bar-create'))
@@ -46,8 +46,8 @@ describe('Test TimestampInfoBar component', () => {
     render(<TimestampInfoBar
       createUsername={rule.createUser}
       createTime={rule.createTime}
-      updateUsername={rule.lastUpdateUser}
-      updateTime={rule.lastUpdateTime}/>);
+      updateUsername={rule.lastAuditableUpdateUser}
+      updateTime={rule.lastAuditableUpdateTime}/>);
     await waitFor(() => screen.getByTestId('timestamp-info-bar-create'));
 
     expect(screen.getByTestId('timestamp-info-bar-create'))
@@ -62,8 +62,8 @@ describe('Test TimestampInfoBar component', () => {
     render(<TimestampInfoBar
       createUsername={rule.createUser}
       createTime={rule.createTime}
-      updateUsername={rule.lastUpdateUser}
-      updateTime={rule.lastUpdateTime}/>);
+      updateUsername={rule.lastAuditableUpdateUser}
+      updateTime={rule.lastAuditableUpdateTime}/>);
     await waitFor(() => screen.getByTestId('timestamp-info-bar-create'));
 
     expect(screen.getByTestId('timestamp-info-bar-create'))
@@ -74,12 +74,12 @@ describe('Test TimestampInfoBar component', () => {
   it('when provided with no user, then only time should be displayed', async () => {
     const rule = createDefaultMockRule();
     rule.createUser = undefined;
-    rule.lastUpdateUser = undefined;
+    rule.lastAuditableUpdateUser = undefined;
     render(<TimestampInfoBar
       createUsername={rule.createUser}
       createTime={rule.createTime}
-      updateUsername={rule.lastUpdateUser}
-      updateTime={rule.lastUpdateTime}/>);
+      updateUsername={rule.lastAuditableUpdateUser}
+      updateTime={rule.lastAuditableUpdateTime}/>);
     await waitFor(() => screen.getByTestId('timestamp-info-bar-create'));
 
     expect(screen.getByTestId('timestamp-info-bar-create'))

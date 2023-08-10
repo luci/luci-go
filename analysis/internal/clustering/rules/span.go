@@ -144,15 +144,25 @@ type Entry struct {
 	CreationTime time.Time
 	// The user which created the rule. Output only.
 	CreationUser string
+	// The last time an auditable field was updated. An auditable field
+	// is any field other than a system controlled data field. Output only.
+	LastAuditableUpdate time.Time
+	// The last user who updated an auditable field. An auditable field
+	// is any field other than a system controlled data field. Output only.
+	LastAuditableUpdateUser string
 	// The time the rule was last updated. Output only.
 	LastUpdated time.Time
-	// The user which last updated the rule. Output only.
-	LastUpdatedUser string
 }
 
 // UpdateOptions are the options that are using during
 // the update of a rule.
 type UpdateOptions struct {
+	// IsAuditableUpdate should be set if any auditable field
+	// (that is, any field other than a system-controlled data field)
+	// has been updated.
+	// If set, the values of these fields will be saved and
+	// LastAuditableUpdate and LastAuditableUpdateUser will be updated.
+	IsAuditableUpdate bool
 	// PredicateUpdated should be set if IsActive and/or RuleDefinition
 	// have been updated.
 	// If set, these new values of these fields will be saved and
@@ -310,7 +320,9 @@ func readWhere(ctx context.Context, whereClause string, params map[string]any) (
 		  SourceClusterAlgorithm, SourceClusterId,
 			BugManagementState,
 			CreationTime, LastUpdated,
-		  CreationUser, LastUpdatedUser
+		  CreationUser,
+			LastAuditableUpdate,
+			LastAuditableUpdateUser
 		FROM FailureAssociationRules
 		WHERE (` + whereClause + `)
 		ORDER BY BugSystem, BugId, Project
@@ -332,7 +344,9 @@ func readWhere(ctx context.Context, whereClause string, params map[string]any) (
 		var sourceClusterAlgorithm, sourceClusterID string
 		var bugManagementStateCompressed spanutil.Compressed
 		var creationTime, lastUpdated time.Time
-		var creationUser, lastUpdatedUser string
+		var creationUser string
+		var lastAuditableUpdate spanner.NullTime
+		var lastAuditableUpdateUser spanner.NullString
 
 		err := b.FromSpanner(r,
 			&project, &ruleID,
@@ -346,7 +360,9 @@ func readWhere(ctx context.Context, whereClause string, params map[string]any) (
 			&sourceClusterAlgorithm, &sourceClusterID,
 			&bugManagementStateCompressed,
 			&creationTime, &lastUpdated,
-			&creationUser, &lastUpdatedUser,
+			&creationUser,
+			&lastAuditableUpdate,
+			&lastAuditableUpdateUser,
 		)
 		if err != nil {
 			return errors.Annotate(err, "read rule row").Err()
@@ -357,6 +373,13 @@ func readWhere(ctx context.Context, whereClause string, params map[string]any) (
 			if err := proto.Unmarshal(bugManagementStateCompressed, bugManagementState); err != nil {
 				return errors.Annotate(err, "unmarshal bug management state").Err()
 			}
+		}
+
+		lastAuditableUpdateTime := lastAuditableUpdate.Time
+		if !lastAuditableUpdate.Valid {
+			// Some rows may have been created before this field existed. Treat
+			// all previous updates as auditable updates.
+			lastAuditableUpdateTime = lastUpdated
 		}
 
 		rule := &Entry{
@@ -373,11 +396,12 @@ func readWhere(ctx context.Context, whereClause string, params map[string]any) (
 				Algorithm: sourceClusterAlgorithm,
 				ID:        sourceClusterID,
 			},
-			BugManagementState: bugManagementState,
-			CreationTime:       creationTime,
-			CreationUser:       creationUser,
-			LastUpdated:        lastUpdated,
-			LastUpdatedUser:    lastUpdatedUser,
+			BugManagementState:      bugManagementState,
+			CreationTime:            creationTime,
+			CreationUser:            creationUser,
+			LastAuditableUpdate:     lastAuditableUpdateTime,
+			LastAuditableUpdateUser: lastAuditableUpdateUser.StringVal,
+			LastUpdated:             lastUpdated,
 		}
 		rs = append(rs, rule)
 		return nil
@@ -509,8 +533,9 @@ func Create(ctx context.Context, rule *Entry, user string) error {
 		"BugManagementState":               spanutil.Compress(bugManagementStateBuf),
 		"CreationTime":                     spanner.CommitTimestamp,
 		"CreationUser":                     user,
+		"LastAuditableUpdate":              spanner.CommitTimestamp,
+		"LastAuditableUpdateUser":          user,
 		"LastUpdated":                      spanner.CommitTimestamp,
-		"LastUpdatedUser":                  user,
 	})
 	span.BufferWrite(ctx, ms)
 	return nil
@@ -526,31 +551,42 @@ func Update(ctx context.Context, rule *Entry, options UpdateOptions, user string
 	if err := validateUser(user); err != nil {
 		return err
 	}
+	if options.PredicateUpdated && !options.IsAuditableUpdate {
+		return errors.Reason("predicate updates are auditable updates, did you forget to set IsAuditableUpdate?").Err()
+	}
+	if options.IsManagingBugPriorityUpdated && !options.IsAuditableUpdate {
+		return errors.Reason("is managing bug priority updates are auditable updates, did you forget to set IsAuditableUpdate?").Err()
+	}
+
 	bugManagementStateBuf, err := proto.Marshal(rule.BugManagementState)
 	if err != nil {
 		return errors.Annotate(err, "marshal bug management state").Err()
 	}
 
 	update := map[string]any{
-		"Project":   rule.Project,
-		"RuleId":    rule.RuleID,
-		"BugSystem": rule.BugID.System,
-		"BugId":     rule.BugID.ID,
-		// IsManagingBug uses the value NULL to indicate false, and TRUE to indicate true.
-		"IsManagingBug":      spanner.NullBool{Bool: rule.IsManagingBug, Valid: rule.IsManagingBug},
+		"Project":            rule.Project,
+		"RuleId":             rule.RuleID,
 		"BugManagementState": spanutil.Compress(bugManagementStateBuf),
 		"LastUpdated":        spanner.CommitTimestamp,
-		"LastUpdatedUser":    user,
 	}
-	if options.PredicateUpdated {
-		update["RuleDefinition"] = rule.RuleDefinition
-		// IsActive uses the value NULL to indicate false, and TRUE to indicate true.
-		update["IsActive"] = spanner.NullBool{Bool: rule.IsActive, Valid: rule.IsActive}
-		update["PredicateLastUpdated"] = spanner.CommitTimestamp
-	}
-	if options.IsManagingBugPriorityUpdated {
-		update["IsManagingBugPriority"] = rule.IsManagingBugPriority
-		update["IsManagingBugPriorityLastUpdated"] = spanner.CommitTimestamp
+	if options.IsAuditableUpdate {
+		update["BugSystem"] = rule.BugID.System
+		update["BugId"] = rule.BugID.ID
+		// IsManagingBug uses the value NULL to indicate false, and TRUE to indicate true.
+		update["IsManagingBug"] = spanner.NullBool{Bool: rule.IsManagingBug, Valid: rule.IsManagingBug}
+		update["LastAuditableUpdate"] = spanner.CommitTimestamp
+		update["LastAuditableUpdateUser"] = user
+
+		if options.PredicateUpdated {
+			update["RuleDefinition"] = rule.RuleDefinition
+			// IsActive uses the value NULL to indicate false, and TRUE to indicate true.
+			update["IsActive"] = spanner.NullBool{Bool: rule.IsActive, Valid: rule.IsActive}
+			update["PredicateLastUpdated"] = spanner.CommitTimestamp
+		}
+		if options.IsManagingBugPriorityUpdated {
+			update["IsManagingBugPriority"] = rule.IsManagingBugPriority
+			update["IsManagingBugPriorityLastUpdated"] = spanner.CommitTimestamp
+		}
 	}
 	ms := spanutil.UpdateMap("FailureAssociationRules", update)
 	span.BufferWrite(ctx, ms)

@@ -33,9 +33,9 @@ import (
 func clearLastUpdatedUserColumn(ctx context.Context) (int64, error) {
 	stmt := spanner.NewStatement(`
 	UPDATE  FailureAssociationRules
-	SET  LastUpdatedUser = ''
-	WHERE LastUpdated <= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
-	AND LastUpdatedUser <> ''
+	SET  LastAuditableUpdateUser = ''
+	WHERE LastAuditableUpdate <= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
+	AND LastAuditableUpdateUser <> ''
 	`)
 	var rows int64
 	var err error
@@ -78,7 +78,7 @@ func clearCreationUserColumn(ctx context.Context) (int64, error) {
 	return rows, nil
 }
 
-// ClearRulesUsers clears the columns CreationUser and LastUpdateUser
+// ClearRulesUsers clears the columns CreationUser and LastAuditableUpdateUser
 // in table FailureAssociationRule.
 //
 // The retention policy is 63 days, but we delete it at 30 days

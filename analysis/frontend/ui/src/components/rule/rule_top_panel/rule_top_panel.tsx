@@ -57,8 +57,8 @@ const RuleTopPanel = ({ project, ruleId }: Props) => {
               <TimestampInfoBar
                 createUsername={rule.createUser}
                 createTime={rule.createTime}
-                updateUsername={rule.lastUpdateUser}
-                updateTime={rule.lastUpdateTime}/>
+                updateUsername={rule.lastAuditableUpdateUser}
+                updateTime={rule.lastAuditableUpdateTime}/>
             </Grid>
             <Grid container item xs={12} columnSpacing={2}>
               <Grid item xs={12} lg={8} display="grid">

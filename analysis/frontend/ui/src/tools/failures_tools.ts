@@ -87,24 +87,24 @@ export const groupFailures = (failures: DistinctClusterFailure[], grouper: (f: D
 
 const populateCommonVariant = (group: FailureGroup): Variant | undefined => {
   if (group.failure) {
-    return group.failure.variant
+    return group.failure.variant;
   }
   let firstChild = true;
   let commonVariant: Variant | undefined;
   for (const child of group.children) {
     if (firstChild) {
       // For the first child, take the variant as the common variant.
-      commonVariant = populateCommonVariant(child)
+      commonVariant = populateCommonVariant(child);
       firstChild = false;
     } else {
       // For subsequent children, combine the variant.
-      let childVariant = populateCommonVariant(child)
-      commonVariant = unionVariant(commonVariant, childVariant)
+      const childVariant = populateCommonVariant(child);
+      commonVariant = unionVariant(commonVariant, childVariant);
     }
   }
-  group.commonVariant = commonVariant
-  return commonVariant
-}
+  group.commonVariant = commonVariant;
+  return commonVariant;
+};
 
 // Create a new group.
 export const newGroup = (key: GroupKey, failureTime: string): FailureGroup => {

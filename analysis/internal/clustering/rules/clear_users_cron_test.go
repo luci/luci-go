@@ -58,10 +58,10 @@ func TestClearRuleUsers(t *testing.T) {
 			So(rows, ShouldEqual, 0)
 		})
 
-		Convey(`Rules updated more than 30 days ago have their LastUpdateUser cleared`, func() {
+		Convey(`Rules with auditable updates more than 30 days ago have their LastAuditableUpdateUser cleared`, func() {
 			expectedRule := NewRule(101).
-				WithLastUpdated(time.Now().AddDate(0, 0, -31)).
-				WithLastUpdatedUser("user@example.com").
+				WithLastAuditableUpdate(time.Now().AddDate(0, 0, -31)).
+				WithLastAuditableUpdateUser("user@example.com").
 				Build()
 			err := SetForTesting(ctx, []*Entry{expectedRule})
 			So(err, ShouldBeNil)
@@ -72,13 +72,13 @@ func TestClearRuleUsers(t *testing.T) {
 
 			rule, err := Read(span.Single(ctx), testProject, expectedRule.RuleID)
 			So(err, ShouldBeNil)
-			So(rule.LastUpdatedUser, ShouldEqual, "")
+			So(rule.LastAuditableUpdateUser, ShouldEqual, "")
 		})
 
-		Convey(`Rules updated less than 30 days ago should not change`, func() {
+		Convey(`Rules with auditable updates less than 30 days ago should not change`, func() {
 			expectedRule := NewRule(101).
-				WithLastUpdated(time.Now().AddDate(0, 0, -29)).
-				WithLastUpdatedUser("user@example.com").
+				WithLastAuditableUpdate(time.Now().AddDate(0, 0, -29)).
+				WithLastAuditableUpdateUser("user@example.com").
 				Build()
 			err := SetForTesting(ctx, []*Entry{expectedRule})
 			So(err, ShouldBeNil)
@@ -88,12 +88,12 @@ func TestClearRuleUsers(t *testing.T) {
 			So(rows, ShouldEqual, 0)
 		})
 
-		Convey(`ClearRulesUsers clears both LastUpdatedUser and CreationUser`, func() {
+		Convey(`ClearRulesUsers clears both LastAuditableUpdateUser and CreationUser`, func() {
 			expectedRule := NewRule(101).
 				WithCreationTime(time.Now().AddDate(0, 0, -31)).
 				WithCreationUser("user@example.com").
-				WithLastUpdated(time.Now().AddDate(0, 0, -31)).
-				WithLastUpdatedUser("user@example.com").
+				WithLastAuditableUpdate(time.Now().AddDate(0, 0, -31)).
+				WithLastAuditableUpdateUser("user@example.com").
 				Build()
 			err := SetForTesting(ctx, []*Entry{expectedRule})
 			So(err, ShouldBeNil)
@@ -104,7 +104,7 @@ func TestClearRuleUsers(t *testing.T) {
 			rule, err := Read(span.Single(ctx), testProject, expectedRule.RuleID)
 			So(err, ShouldBeNil)
 			So(rule.CreationUser, ShouldEqual, "")
-			So(rule.LastUpdatedUser, ShouldEqual, "")
+			So(rule.LastAuditableUpdateUser, ShouldEqual, "")
 		})
 	})
 }

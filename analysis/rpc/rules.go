@@ -223,8 +223,9 @@ func (*rulesServer) Create(ctx context.Context, req *pb.CreateRuleRequest) (*pb.
 	}
 	r.CreationTime = commitTime.In(time.UTC)
 	r.CreationUser = user
+	r.LastAuditableUpdate = commitTime.In(time.UTC)
+	r.LastAuditableUpdateUser = user
 	r.LastUpdated = commitTime.In(time.UTC)
-	r.LastUpdatedUser = user
 	r.PredicateLastUpdated = commitTime.In(time.UTC)
 	r.IsManagingBugPriorityLastUpdated = commitTime.In(time.UTC)
 
@@ -353,6 +354,7 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 		}
 
 		if err := rules.Update(ctx, rule, rules.UpdateOptions{
+			IsAuditableUpdate:            true,
 			PredicateUpdated:             updatePredicate,
 			IsManagingBugPriorityUpdated: updateIsManagingBugPriority,
 		}, user); err != nil {
@@ -367,8 +369,9 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 	if err != nil {
 		return nil, err
 	}
+	updatedRule.LastAuditableUpdate = commitTime.In(time.UTC)
+	updatedRule.LastAuditableUpdateUser = user
 	updatedRule.LastUpdated = commitTime.In(time.UTC)
-	updatedRule.LastUpdatedUser = user
 	if predicateUpdated {
 		updatedRule.PredicateLastUpdated = commitTime.In(time.UTC)
 	}
@@ -394,9 +397,12 @@ func formatRule(r *rules.Entry) string {
 		"\tIsManagingBug: %v,\n"+
 		"\tIsManagingBugPriority: %v,\n"+
 		"\tSourceCluster: %q\n"+
+		"\tLastAuditableUpdate: %q\n"+
 		"\tLastUpdated: %q\n"+
 		"}", r.RuleDefinition, r.BugID, r.IsActive, r.IsManagingBug,
-		r.IsManagingBugPriority, r.SourceCluster, r.LastUpdated.Format(time.RFC3339Nano))
+		r.IsManagingBugPriority, r.SourceCluster,
+		r.LastAuditableUpdate.Format(time.RFC3339Nano),
+		r.LastUpdated.Format(time.RFC3339Nano))
 }
 
 // LookupBug looks up the rule associated with the given bug.
@@ -434,10 +440,10 @@ func createRulePB(r *rules.Entry, cfg *configpb.ProjectConfig, mask ruleMask) *p
 		definition = r.RuleDefinition
 	}
 	creationUser := ""
-	lastUpdatedUser := ""
+	lastAuditableUpdateUser := ""
 	if mask.IncludeAuditUsers {
 		creationUser = r.CreationUser
-		lastUpdatedUser = r.LastUpdatedUser
+		lastAuditableUpdateUser = r.LastAuditableUpdateUser
 	}
 	return &pb.Rule{
 		Name:                             ruleName(r.Project, r.RuleID),
@@ -453,12 +459,32 @@ func createRulePB(r *rules.Entry, cfg *configpb.ProjectConfig, mask ruleMask) *p
 			Algorithm: r.SourceCluster.Algorithm,
 			Id:        r.SourceCluster.ID,
 		},
+		BugManagementState:      createBugManagementStatePB(r.BugManagementState),
 		CreateTime:              timestamppb.New(r.CreationTime),
 		CreateUser:              creationUser,
+		LastAuditableUpdateTime: timestamppb.New(r.LastAuditableUpdate),
+		LastAuditableUpdateUser: lastAuditableUpdateUser,
 		LastUpdateTime:          timestamppb.New(r.LastUpdated),
-		LastUpdateUser:          lastUpdatedUser,
 		PredicateLastUpdateTime: timestamppb.New(r.PredicateLastUpdated),
 		Etag:                    ruleETag(r, mask),
+	}
+}
+
+func createBugManagementStatePB(r *bugspb.BugManagementState) *pb.Rule_BugManagementState {
+	policyState := make(map[string]*pb.Rule_BugManagementState_PolicyState, len(r.PolicyState))
+	for policy, state := range r.PolicyState {
+		policyState[policy] = createPolicyStatePB(state)
+	}
+	return &pb.Rule_BugManagementState{
+		PolicyState: policyState,
+	}
+}
+
+func createPolicyStatePB(s *bugspb.BugManagementState_PolicyState) *pb.Rule_BugManagementState_PolicyState {
+	return &pb.Rule_BugManagementState_PolicyState{
+		IsActive:             s.IsActive,
+		LastActivationTime:   s.LastActivationTime,
+		LastDeactivationTime: s.LastDeactivationTime,
 	}
 }
 

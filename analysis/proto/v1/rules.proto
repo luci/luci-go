@@ -101,23 +101,71 @@ message Rule {
   // Until re-clustering is complete and has reduced the residual impact
   // of the source cluster, this cluster ID tells bug filing to ignore
   // the source cluster when determining whether new bugs need to be filed.
+  // Immutable after creation.
   luci.analysis.v1.ClusterId source_cluster = 7;
+
+  message BugManagementState {
+    // A mapping from bug management policy identifier to policy state.
+    map<string, PolicyState> policy_state = 1;
+
+    // The state of a bug management policy for a rule.
+    message PolicyState {
+      // Whether the given policy is active for the rule.
+      // Updated on every bug-filing run as follows:
+      // - Set to true if the policy activation criteria was met.
+      // - Set to false if the policy deactivation criteria was met.
+      bool is_active = 1;
+
+      // The last time the policy was made active.
+      // Allows detecting if policy is made active for the first time (as a
+      // zero last_activation_time indicates the policy was never active).
+      // Allows UI to filter to showing policies that were at least once active.
+      // Allows UI to sort which policy was most recently active.
+      // Allows UI to show when a policy last activated.
+      google.protobuf.Timestamp last_activation_time = 2;
+
+      // The last time the policy was made inactive.
+      // Allows UI to show when a policy last deactivated.
+      google.protobuf.Timestamp last_deactivation_time = 3;
+    }
+  }
+
+  // Bug management state.
+  // System controlled data, cannot be modified by the user.
+  BugManagementState bug_management_state = 17
+    [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // The time the rule was created.
   google.protobuf.Timestamp create_time = 8
     [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // The user which created the rule.
+  // This could be an email address or the value 'system' (for rules
+  // automaticatically created by LUCI Analysis itself).
+  // This value may not be available, as its disclosure is limited
+  // to Googlers only and is subject to automatic deletion after 30 days.
   string create_user = 9
+    [(google.api.field_behavior) = OUTPUT_ONLY];
+
+	// The last time an auditable field was updated. An auditable field
+	// is any field other than a system controlled data field.
+  google.protobuf.Timestamp last_auditable_update_time = 18
+    [(google.api.field_behavior) = OUTPUT_ONLY];
+
+	// The last user which updated an auditable field. An auditable field
+	// is any field other than a system controlled data field.
+  // This could be an email address or the value 'system' (for rules
+  // automaticatically modified by LUCI Analysis itself).
+  // This value may not be available, as its disclosure is limited
+  // to Googlers only and is subject to automatic deletion after 30 days.
+  string last_auditable_update_user = 19
     [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // The time the rule was last updated.
   google.protobuf.Timestamp last_update_time = 10
     [(google.api.field_behavior) = OUTPUT_ONLY];
 
-  // The user which last updated the rule.
-  string last_update_user = 11
-    [(google.api.field_behavior) = OUTPUT_ONLY];
+  reserved 11; // Removed.
 
   // The time the rule was last updated in a way that caused the
   // matched failures to change, i.e. because of a change to rule_definition
@@ -133,7 +181,7 @@ message Rule {
   // See also https://google.aip.dev/154.
   string etag = 12;
 
-  // Next ID: 17
+  // Next ID: 20
 }
 
 message GetRuleRequest {

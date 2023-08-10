@@ -80,14 +80,14 @@ describe('test HistoryChartsSection component', () => {
     await screen.findAllByTestId('history-charts-container');
 
     // Expect charts only for the default metrics.
-    metrics.filter(metric => metric.isDefault).forEach((metric) => {
+    metrics.filter((metric) => metric.isDefault).forEach((metric) => {
       expect(
-        screen.getByTestId('chart-' + metric.metricId)
+          screen.getByTestId('chart-' + metric.metricId),
       ).toBeInTheDocument();
     });
-    metrics.filter(metric => !metric.isDefault).forEach((metric) => {
+    metrics.filter((metric) => !metric.isDefault).forEach((metric) => {
       expect(
-        screen.queryByTestId('chart-' + metric.metricId)
+          screen.queryByTestId('chart-' + metric.metricId),
       ).toBeNull();
     });
   });

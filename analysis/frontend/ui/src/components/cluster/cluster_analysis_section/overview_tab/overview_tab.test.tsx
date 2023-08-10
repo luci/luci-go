@@ -98,14 +98,14 @@ describe('Test OverviewTab component', () => {
 
     await screen.findByTestId('history-charts-container');
     // Expect charts only for the default metrics.
-    mockMetrics.filter(metric => metric.isDefault).forEach((metric) => {
+    mockMetrics.filter((metric) => metric.isDefault).forEach((metric) => {
       expect(
-        screen.getByTestId('chart-' + metric.metricId)
+          screen.getByTestId('chart-' + metric.metricId),
       ).toBeInTheDocument();
     });
-    mockMetrics.filter(metric => !metric.isDefault).forEach((metric) => {
+    mockMetrics.filter((metric) => !metric.isDefault).forEach((metric) => {
       expect(
-        screen.queryByTestId('chart-' + metric.metricId)
+          screen.queryByTestId('chart-' + metric.metricId),
       ).toBeNull();
     });
   });

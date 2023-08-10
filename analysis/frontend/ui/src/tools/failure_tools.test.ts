@@ -253,11 +253,11 @@ describe('groupFailures', () => {
     ]);
     expect(groups.length).toBe(2);
     expect(groups[0].children.length).toBe(2);
-    expect(groups[0].commonVariant).toEqual({ def: { 'v1': 'a' }})
+    expect(groups[0].commonVariant).toEqual({ def: { 'v1': 'a' } });
     expect(groups[1].children.length).toBe(2);
-    expect(groups[1].commonVariant).toEqual({ def: { 'v1': 'b' }})
+    expect(groups[1].commonVariant).toEqual({ def: { 'v1': 'b' } });
     expect(groups[0].children[0].children.length).toBe(1);
-    expect(groups[0].children[0].commonVariant).toEqual({ def: { 'v1': 'a', 'v2': 'a' }})
+    expect(groups[0].children[0].commonVariant).toEqual({ def: { 'v1': 'a', 'v2': 'a' } });
   });
 });
 

@@ -59,12 +59,12 @@ func NewRule(uniqifier int) *RuleBuilder {
 		RuleID:               hex.EncodeToString(ruleIDBytes[0:16]),
 		RuleDefinition:       "reason LIKE \"%exit code 5%\" AND test LIKE \"tast.arc.%\"",
 		IsActive:             true,
-		PredicateLastUpdated: time.Date(1900, 1, 2, 3, 4, 6, uniqifier, time.UTC),
+		PredicateLastUpdated: time.Date(1904, 4, 4, 4, 4, 4, uniqifier, time.UTC),
 
 		BugID:                            bugID,
 		IsManagingBug:                    true,
 		IsManagingBugPriority:            true,
-		IsManagingBugPriorityLastUpdated: time.Date(1900, 1, 2, 3, 4, 8, uniqifier, time.UTC),
+		IsManagingBugPriorityLastUpdated: time.Date(1905, 5, 5, 5, 5, 5, uniqifier, time.UTC),
 		SourceCluster: clustering.ClusterID{
 			Algorithm: fmt.Sprintf("clusteralg%v-v9", uniqifier),
 			ID:        hex.EncodeToString([]byte(fmt.Sprintf("id%v", uniqifier))),
@@ -74,15 +74,16 @@ func NewRule(uniqifier int) *RuleBuilder {
 			PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
 				"policy-a": {
 					IsActive:           true,
-					LastActivationTime: timestamppb.New(time.Date(1901, 1, 1, 1, 1, 1, uniqifier, time.UTC)),
+					LastActivationTime: timestamppb.New(time.Date(1908, 8, 8, 8, 8, 8, uniqifier, time.UTC)),
 					ActivationNotified: true,
 				},
 			},
 		},
-		CreationTime:    time.Date(1900, 1, 2, 3, 4, 5, uniqifier, time.UTC),
-		CreationUser:    LUCIAnalysisSystem,
-		LastUpdated:     time.Date(1900, 1, 2, 3, 4, 7, uniqifier, time.UTC),
-		LastUpdatedUser: "user@google.com",
+		CreationTime:            time.Date(1900, 1, 2, 3, 4, 5, uniqifier, time.UTC),
+		CreationUser:            LUCIAnalysisSystem,
+		LastAuditableUpdate:     time.Date(1907, 7, 7, 7, 7, 7, uniqifier, time.UTC),
+		LastAuditableUpdateUser: "user@google.com",
+		LastUpdated:             time.Date(1909, 9, 9, 9, 9, 9, uniqifier, time.UTC),
 	}
 	return &RuleBuilder{
 		rule:      rule,
@@ -157,15 +158,21 @@ func (b *RuleBuilder) WithCreationUser(user string) *RuleBuilder {
 	return b
 }
 
-// WithLastUpdated specifies the "last updated" time on the rule.
-func (b *RuleBuilder) WithLastUpdated(lastUpdated time.Time) *RuleBuilder {
-	b.rule.LastUpdated = lastUpdated
+// WithLastAuditableUpdate specifies the "last auditable update" time on the rule.
+func (b *RuleBuilder) WithLastAuditableUpdate(value time.Time) *RuleBuilder {
+	b.rule.LastAuditableUpdate = value
 	return b
 }
 
-// WithLastUpdatedUser specifies the "last updated" user on the rule.
-func (b *RuleBuilder) WithLastUpdatedUser(user string) *RuleBuilder {
-	b.rule.LastUpdatedUser = user
+// WithLastAuditableUpdateUser specifies the "last updated" user on the rule.
+func (b *RuleBuilder) WithLastAuditableUpdateUser(user string) *RuleBuilder {
+	b.rule.LastAuditableUpdateUser = user
+	return b
+}
+
+// WithLastUpdated specifies the "last updated" time on the rule.
+func (b *RuleBuilder) WithLastUpdated(lastUpdated time.Time) *RuleBuilder {
+	b.rule.LastUpdated = lastUpdated
 	return b
 }
 
@@ -232,8 +239,9 @@ func SetForTesting(ctx context.Context, rs []*Entry) error {
 				"BugManagementState":               spanutil.Compress(bugManagementStateBuf),
 				"CreationTime":                     r.CreationTime,
 				"CreationUser":                     r.CreationUser,
+				"LastAuditableUpdate":              r.LastAuditableUpdate,
+				"LastAuditableUpdateUser":          r.LastAuditableUpdateUser,
 				"LastUpdated":                      r.LastUpdated,
-				"LastUpdatedUser":                  r.LastUpdatedUser,
 			})
 			span.BufferWrite(ctx, ms)
 		}

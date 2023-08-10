@@ -74,8 +74,9 @@ export interface Rule {
     sourceCluster: ClusterId;
     createTime: string; // RFC 3339 encoded date/time.
     createUser?: string;
+    lastAuditableUpdateTime: string; // RFC 3339 encoded date/time.
+    lastAuditableUpdateUser?: string;
     lastUpdateTime: string; // RFC 3339 encoded date/time.
-    lastUpdateUser?: string;
     predicateLastUpdateTime: string; // RFC 3339 encoded date/time.
     etag: string;
 }

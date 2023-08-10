@@ -174,16 +174,16 @@ func TestBuganizerUpdate(t *testing.T) {
 			expectCreate := true
 
 			expectedRule := &rules.Entry{
-				Project:               "chromeos",
-				RuleDefinition:        `reason LIKE "Failed to connect to %.%.%.%."`,
-				BugID:                 bugs.BugID{System: bugs.BuganizerSystem, ID: "1"},
-				IsActive:              true,
-				IsManagingBug:         true,
-				IsManagingBugPriority: true,
-				SourceCluster:         sourceClusterID,
-				CreationUser:          rules.LUCIAnalysisSystem,
-				LastUpdatedUser:       rules.LUCIAnalysisSystem,
-				BugManagementState:    &bugspb.BugManagementState{},
+				Project:                 "chromeos",
+				RuleDefinition:          `reason LIKE "Failed to connect to %.%.%.%."`,
+				BugID:                   bugs.BugID{System: bugs.BuganizerSystem, ID: "1"},
+				IsActive:                true,
+				IsManagingBug:           true,
+				IsManagingBugPriority:   true,
+				SourceCluster:           sourceClusterID,
+				CreationUser:            rules.LUCIAnalysisSystem,
+				LastAuditableUpdateUser: rules.LUCIAnalysisSystem,
+				BugManagementState:      &bugspb.BugManagementState{},
 			}
 
 			expectedBugSummary := "Failed to connect to 100.1.1.105."
@@ -223,6 +223,8 @@ func TestBuganizerUpdate(t *testing.T) {
 				// Accept creation and last updated times, as set by Spanner.
 				So(rule.CreationTime, ShouldNotBeZeroValue)
 				expectedRule.CreationTime = rule.CreationTime
+				So(rule.LastAuditableUpdate, ShouldNotBeZeroValue)
+				expectedRule.LastAuditableUpdate = rule.LastAuditableUpdate
 				So(rule.LastUpdated, ShouldNotBeZeroValue)
 				expectedRule.LastUpdated = rule.LastUpdated
 				So(rule.PredicateLastUpdated, ShouldNotBeZeroValue)
@@ -336,7 +338,8 @@ func TestBuganizerUpdate(t *testing.T) {
 					WithProject(project).
 					WithCreationTime(createTime).
 					WithPredicateLastUpdated(createTime.Add(1 * time.Hour)).
-					WithLastUpdated(createTime.Add(2 * time.Hour)).
+					WithLastAuditableUpdate(createTime.Add(2 * time.Hour)).
+					WithLastUpdated(createTime.Add(3 * time.Hour)).
 					WithBugPriorityManaged(true).
 					WithBugPriorityManagedLastUpdated(createTime.Add(1 * time.Hour)).
 					WithSourceCluster(sourceClusterID).Build()
@@ -511,40 +514,40 @@ func TestBuganizerUpdate(t *testing.T) {
 
 			expectedRules := []*rules.Entry{
 				{
-					Project:               "chromeos",
-					RuleDefinition:        `test = "testname-0"`,
-					BugID:                 bugs.BugID{System: bugs.BuganizerSystem, ID: "1"},
-					SourceCluster:         suggestedClusters[0].ClusterID,
-					IsActive:              true,
-					IsManagingBug:         true,
-					IsManagingBugPriority: true,
-					CreationUser:          rules.LUCIAnalysisSystem,
-					LastUpdatedUser:       rules.LUCIAnalysisSystem,
-					BugManagementState:    &bugspb.BugManagementState{},
+					Project:                 "chromeos",
+					RuleDefinition:          `test = "testname-0"`,
+					BugID:                   bugs.BugID{System: bugs.BuganizerSystem, ID: "1"},
+					SourceCluster:           suggestedClusters[0].ClusterID,
+					IsActive:                true,
+					IsManagingBug:           true,
+					IsManagingBugPriority:   true,
+					CreationUser:            rules.LUCIAnalysisSystem,
+					LastAuditableUpdateUser: rules.LUCIAnalysisSystem,
+					BugManagementState:      &bugspb.BugManagementState{},
 				},
 				{
-					Project:               "chromeos",
-					RuleDefinition:        `reason LIKE "want foo, got bar"`,
-					BugID:                 bugs.BugID{System: bugs.BuganizerSystem, ID: "2"},
-					SourceCluster:         suggestedClusters[1].ClusterID,
-					IsActive:              true,
-					IsManagingBug:         true,
-					IsManagingBugPriority: true,
-					CreationUser:          rules.LUCIAnalysisSystem,
-					LastUpdatedUser:       rules.LUCIAnalysisSystem,
-					BugManagementState:    &bugspb.BugManagementState{},
+					Project:                 "chromeos",
+					RuleDefinition:          `reason LIKE "want foo, got bar"`,
+					BugID:                   bugs.BugID{System: bugs.BuganizerSystem, ID: "2"},
+					SourceCluster:           suggestedClusters[1].ClusterID,
+					IsActive:                true,
+					IsManagingBug:           true,
+					IsManagingBugPriority:   true,
+					CreationUser:            rules.LUCIAnalysisSystem,
+					LastAuditableUpdateUser: rules.LUCIAnalysisSystem,
+					BugManagementState:      &bugspb.BugManagementState{},
 				},
 				{
-					Project:               "chromeos",
-					RuleDefinition:        `reason LIKE "want foofoo, got bar"`,
-					BugID:                 bugs.BugID{System: bugs.BuganizerSystem, ID: "3"},
-					SourceCluster:         suggestedClusters[2].ClusterID,
-					IsActive:              true,
-					IsManagingBug:         true,
-					IsManagingBugPriority: true,
-					CreationUser:          rules.LUCIAnalysisSystem,
-					LastUpdatedUser:       rules.LUCIAnalysisSystem,
-					BugManagementState:    &bugspb.BugManagementState{},
+					Project:                 "chromeos",
+					RuleDefinition:          `reason LIKE "want foofoo, got bar"`,
+					BugID:                   bugs.BugID{System: bugs.BuganizerSystem, ID: "3"},
+					SourceCluster:           suggestedClusters[2].ClusterID,
+					IsActive:                true,
+					IsManagingBug:           true,
+					IsManagingBugPriority:   true,
+					CreationUser:            rules.LUCIAnalysisSystem,
+					LastAuditableUpdateUser: rules.LUCIAnalysisSystem,
+					BugManagementState:      &bugspb.BugManagementState{},
 				},
 			}
 
@@ -555,12 +558,14 @@ func TestBuganizerUpdate(t *testing.T) {
 				for _, r := range rs {
 					So(r.RuleID, ShouldNotBeEmpty)
 					So(r.CreationTime, ShouldNotBeZeroValue)
+					So(r.LastAuditableUpdate, ShouldNotBeZeroValue)
 					So(r.LastUpdated, ShouldNotBeZeroValue)
 					So(r.PredicateLastUpdated, ShouldNotBeZeroValue)
 					So(r.IsManagingBugPriorityLastUpdated, ShouldNotBeZeroValue)
 					// Accept whatever values the implementation has set.
 					r.RuleID = ""
 					r.CreationTime = time.Time{}
+					r.LastAuditableUpdate = time.Time{}
 					r.LastUpdated = time.Time{}
 					r.PredicateLastUpdated = time.Time{}
 					r.IsManagingBugPriorityLastUpdated = time.Time{}
@@ -907,7 +912,8 @@ func TestBuganizerUpdate(t *testing.T) {
 							issueOneRule[0].RuleDefinition = longRule
 
 							return rules.Update(ctx, issueOneRule[0], rules.UpdateOptions{
-								PredicateUpdated: true,
+								IsAuditableUpdate: true,
+								PredicateUpdated:  true,
 							}, rules.LUCIAnalysisSystem)
 						})
 						So(err, ShouldBeNil)

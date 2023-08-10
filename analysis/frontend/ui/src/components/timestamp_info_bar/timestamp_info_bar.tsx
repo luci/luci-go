@@ -60,13 +60,13 @@ const TimestampInfoBar = ({
           data-testid="timestamp-info-bar-create"
           className='timestamp-text'>
             Created
-            {
-              createUsername &&
+          {
+            createUsername &&
                 <>
                   {' '}by {<FormattedUsername username={createUsername} />}
                 </>
-            }
-            {' '}{dayjs.utc(createTime).local().fromNow()}. |
+          }
+          {' '}{dayjs.utc(createTime).local().fromNow()}. |
         </small>
         <small
           title={dayjs.utc(updateTime).local().format(dateFormat)}

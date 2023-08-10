@@ -55,7 +55,7 @@ const RulesTable = ({ project } : Props ) => {
           // date/times are specified from most significant to least
           // significant, any string sort that produces a lexicographical
           // ordering should also sort by time.
-          return b.lastUpdateTime.localeCompare(a.lastUpdateTime);
+          return b.lastAuditableUpdateTime.localeCompare(a.lastAuditableUpdateTime);
         });
         return sortedRules;
       }, {
@@ -94,7 +94,7 @@ const RulesTable = ({ project } : Props ) => {
                     </Link>
                   </TableCell>
                   <TableCell><Link href={rule.bug.url} underline="hover">{rule.bug.linkText}</Link></TableCell>
-                  <TableCell>{dayjs.utc(rule.lastUpdateTime).local().fromNow()}</TableCell>
+                  <TableCell>{dayjs.utc(rule.lastAuditableUpdateTime).local().fromNow()}</TableCell>
                 </TableRow>
               ))
             )

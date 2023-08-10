@@ -38,8 +38,9 @@ export const createDefaultMockRule = (): Rule => {
     },
     createTime: dayjs().toISOString(),
     createUser: 'system',
+    lastAuditableUpdateTime: dayjs().toISOString(),
+    lastAuditableUpdateUser: 'user@example.com',
     lastUpdateTime: dayjs().toISOString(),
-    lastUpdateUser: 'user@example.com',
     predicateLastUpdateTime: '2022-01-31T03:36:14.896430Z',
     etag: 'W/"2022-01-31T03:36:14.89643Z"',
   };

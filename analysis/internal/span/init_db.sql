@@ -239,13 +239,20 @@ CREATE TABLE FailureAssociationRules (
   -- an email address.
   -- 320 is the maximum length of an email address (64 for local part,
   -- 1 for the '@', and 255 for the domain part).
+  -- A cron job automatically deletes this data after 30 days.
   CreationUser STRING(320) NOT NULL,
-  -- The last time the rule was updated.
-  LastUpdated TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
-  -- The user which last updated this rule. If this was LUCI Analysis itself,
+  -- The last time an auditable field was updated. An auditable field
+  -- is any field other than a system controlled data field.
+  LastAuditableUpdate TIMESTAMP OPTIONS (allow_commit_timestamp=true),
+  -- The last user who updated an auditable field. An auditable field
+  -- is any field other than a system controlled data field.
+  -- If this was LUCI Analysis itself,
   -- (e.g. in case of an auto-filed bug which was created and never
   -- modified) this is 'system'. Otherwise, it is an email address.
-  LastUpdatedUser STRING(320) NOT NULL,
+  -- A cron job automatically deletes this data after 30 days.
+  LastAuditableUpdateUser STRING(320),
+  -- The last time the rule was updated.
+  LastUpdated TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
 ) PRIMARY KEY (Project, RuleId);
 
 -- The failure association rules associated with a bug. This also

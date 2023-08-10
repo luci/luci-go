@@ -24,8 +24,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/server/span"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
+	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/testutil"
 )
@@ -338,7 +340,7 @@ func TestSpan(t *testing.T) {
 			}
 			r := NewRule(100).Build()
 			r.CreationUser = LUCIAnalysisSystem
-			r.LastUpdatedUser = LUCIAnalysisSystem
+			r.LastAuditableUpdateUser = LUCIAnalysisSystem
 
 			Convey(`Valid`, func() {
 				testExists := func(expectedRule Entry) {
@@ -361,6 +363,7 @@ func TestSpan(t *testing.T) {
 
 					expectedRule := *r
 					expectedRule.LastUpdated = commitTime
+					expectedRule.LastAuditableUpdate = commitTime
 					expectedRule.PredicateLastUpdated = commitTime
 					expectedRule.IsManagingBugPriorityLastUpdated = commitTime
 					expectedRule.CreationTime = commitTime
@@ -370,12 +373,13 @@ func TestSpan(t *testing.T) {
 					// E.g. in case of a manually created rule.
 					r.SourceCluster = clustering.ClusterID{}
 					r.CreationUser = "user@google.com"
-					r.LastUpdatedUser = "user@google.com"
+					r.LastAuditableUpdateUser = "user@google.com"
 					commitTime, err := testCreate(r, "user@google.com")
 					So(err, ShouldBeNil)
 
 					expectedRule := *r
 					expectedRule.LastUpdated = commitTime
+					expectedRule.LastAuditableUpdate = commitTime
 					expectedRule.PredicateLastUpdated = commitTime
 					expectedRule.IsManagingBugPriorityLastUpdated = commitTime
 					expectedRule.CreationTime = commitTime
@@ -388,6 +392,7 @@ func TestSpan(t *testing.T) {
 
 					expectedRule := *r
 					expectedRule.LastUpdated = commitTime
+					expectedRule.LastAuditableUpdate = commitTime
 					expectedRule.PredicateLastUpdated = commitTime
 					expectedRule.IsManagingBugPriorityLastUpdated = commitTime
 					expectedRule.CreationTime = commitTime
@@ -400,6 +405,7 @@ func TestSpan(t *testing.T) {
 
 					expectedRule := *r
 					expectedRule.LastUpdated = commitTime
+					expectedRule.LastAuditableUpdate = commitTime
 					expectedRule.PredicateLastUpdated = commitTime
 					expectedRule.IsManagingBugPriorityLastUpdated = commitTime
 					expectedRule.CreationTime = commitTime
@@ -468,80 +474,102 @@ func TestSpan(t *testing.T) {
 					r.BugID = bugs.BugID{System: "monorail", ID: "chromium/651234"}
 					r.IsActive = false
 					commitTime, err := testUpdate(r, UpdateOptions{
-						PredicateUpdated: true,
+						IsAuditableUpdate: true,
+						PredicateUpdated:  true,
 					}, "testuser@google.com")
 					So(err, ShouldBeNil)
 
 					expectedRule := *r
 					expectedRule.PredicateLastUpdated = commitTime
+					expectedRule.LastAuditableUpdate = commitTime
+					expectedRule.LastAuditableUpdateUser = "testuser@google.com"
 					expectedRule.LastUpdated = commitTime
-					expectedRule.LastUpdatedUser = "testuser@google.com"
-					testExists(&expectedRule)
-				})
-				Convey(`Do not update predicate`, func() {
-					r.BugID = bugs.BugID{System: "monorail", ID: "chromium/651234"}
-					commitTime, err := testUpdate(r, UpdateOptions{}, "testuser@google.com")
-					So(err, ShouldBeNil)
-
-					expectedRule := *r
-					expectedRule.LastUpdated = commitTime
-					expectedRule.LastUpdatedUser = "testuser@google.com"
 					testExists(&expectedRule)
 				})
 				Convey(`Update IsManagingBugPriority`, func() {
 					r.IsManagingBugPriority = false
 					commitTime, err := testUpdate(r, UpdateOptions{
+						IsAuditableUpdate:            true,
 						IsManagingBugPriorityUpdated: true,
 					}, "testuser@google.com")
 					So(err, ShouldBeNil)
 
 					expectedRule := *r
 					expectedRule.IsManagingBugPriorityLastUpdated = commitTime
+					expectedRule.LastAuditableUpdate = commitTime
+					expectedRule.LastAuditableUpdateUser = "testuser@google.com"
 					expectedRule.LastUpdated = commitTime
-					expectedRule.LastUpdatedUser = "testuser@google.com"
+					testExists(&expectedRule)
+				})
+				Convey(`Standard auditable update`, func() {
+					r.BugID = bugs.BugID{System: "monorail", ID: "chromium/651234"}
+					commitTime, err := testUpdate(r, UpdateOptions{
+						IsAuditableUpdate: true,
+					}, "testuser@google.com")
+					So(err, ShouldBeNil)
+
+					expectedRule := *r
+					expectedRule.LastAuditableUpdate = commitTime
+					expectedRule.LastAuditableUpdateUser = "testuser@google.com"
+					expectedRule.LastUpdated = commitTime
 					testExists(&expectedRule)
 				})
 				Convey(`SourceCluster is immutable`, func() {
 					originalSourceCluster := r.SourceCluster
 					r.SourceCluster = clustering.ClusterID{Algorithm: "testname-v1", ID: "00112233445566778899aabbccddeeff"}
-					commitTime, err := testUpdate(r, UpdateOptions{}, "testuser@google.com")
+					commitTime, err := testUpdate(r, UpdateOptions{
+						IsAuditableUpdate: true,
+					}, "testuser@google.com")
 					So(err, ShouldBeNil)
 
 					expectedRule := *r
 					expectedRule.SourceCluster = originalSourceCluster
+					expectedRule.LastAuditableUpdate = commitTime
+					expectedRule.LastAuditableUpdateUser = "testuser@google.com"
 					expectedRule.LastUpdated = commitTime
-					expectedRule.LastUpdatedUser = "testuser@google.com"
+					testExists(&expectedRule)
+				})
+				Convey(`Non-auditable update`, func() {
+					r.BugManagementState = &bugspb.BugManagementState{
+						RuleAssociationNotified: true,
+						PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
+							"policy-a": {
+								IsActive:           true,
+								LastActivationTime: timestamppb.New(time.Date(2050, 1, 2, 3, 4, 5, 6, time.UTC)),
+							},
+							"policy-b": {},
+						},
+					}
+
+					commitTime, err := testUpdate(r, UpdateOptions{}, "system")
+					So(err, ShouldBeNil)
+
+					expectedRule := *r
+					expectedRule.LastUpdated = commitTime
 					testExists(&expectedRule)
 				})
 			})
 			Convey(`Invalid`, func() {
 				Convey(`With invalid User`, func() {
 					_, err := testUpdate(r, UpdateOptions{
-						PredicateUpdated: false,
+						IsAuditableUpdate: true,
 					}, "")
 					So(err, ShouldErrLike, "user must be valid")
 				})
 				Convey(`With invalid Rule Definition`, func() {
 					r.RuleDefinition = "invalid"
 					_, err := testUpdate(r, UpdateOptions{
-						PredicateUpdated: true,
+						IsAuditableUpdate: true,
+						PredicateUpdated:  true,
 					}, LUCIAnalysisSystem)
 					So(err, ShouldErrLike, "rule definition: syntax error")
 				})
 				Convey(`With invalid Bug ID`, func() {
 					r.BugID.System = ""
 					_, err := testUpdate(r, UpdateOptions{
-						PredicateUpdated: false,
+						IsAuditableUpdate: true,
 					}, LUCIAnalysisSystem)
 					So(err, ShouldErrLike, "bug ID: invalid bug tracking system")
-				})
-				Convey(`With invalid Source Cluster`, func() {
-					So(r.SourceCluster.ID, ShouldNotBeNil)
-					r.SourceCluster.Algorithm = ""
-					_, err := testUpdate(r, UpdateOptions{
-						PredicateUpdated: false,
-					}, LUCIAnalysisSystem)
-					So(err, ShouldErrLike, "source cluster ID: algorithm not valid")
 				})
 			})
 		})
@@ -578,19 +606,19 @@ func TestSpan(t *testing.T) {
 			Convey("Cannot update a rule to manage the same bug", func() {
 				ruleToUpdate := rulesToCreate[2]
 				ruleToUpdate.IsManagingBug = true
-				err := testUpdate(ruleToUpdate, UpdateOptions{}, LUCIAnalysisSystem)
+				err := testUpdate(ruleToUpdate, UpdateOptions{IsAuditableUpdate: true}, LUCIAnalysisSystem)
 				So(err, ShouldBeRPCAlreadyExists)
 			})
 			Convey("Can swap which rule is managing a bug", func() {
 				// Stop the first rule from managing the bug.
 				ruleToUpdate := rulesToCreate[0]
 				ruleToUpdate.IsManagingBug = false
-				err := testUpdate(ruleToUpdate, UpdateOptions{}, LUCIAnalysisSystem)
+				err := testUpdate(ruleToUpdate, UpdateOptions{IsAuditableUpdate: true}, LUCIAnalysisSystem)
 				So(err, ShouldBeNil)
 
 				ruleToUpdate = rulesToCreate[2]
 				ruleToUpdate.IsManagingBug = true
-				err = testUpdate(ruleToUpdate, UpdateOptions{}, LUCIAnalysisSystem)
+				err = testUpdate(ruleToUpdate, UpdateOptions{IsAuditableUpdate: true}, LUCIAnalysisSystem)
 				So(err, ShouldBeNil)
 			})
 		})
