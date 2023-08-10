@@ -17,13 +17,13 @@ package failurereason
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/rules/lang"
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestAlgorithm(t *testing.T) {

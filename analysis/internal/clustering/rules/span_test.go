@@ -47,7 +47,7 @@ func TestSpan(t *testing.T) {
 
 				rule, err := Read(span.Single(ctx), testProject, expectedRule.RuleID)
 				So(err, ShouldBeNil)
-				So(rule, ShouldResemble, expectedRule)
+				So(rule, ShouldResembleProto, expectedRule)
 			})
 			Convey(`With null IsManagingBugPriorityLastUpdated`, func() {
 				expectedRule := NewRule(100).WithBugPriorityManagedLastUpdated(time.Time{}).Build()
@@ -64,7 +64,7 @@ func TestSpan(t *testing.T) {
 				rule, err := Read(span.Single(ctx), testProject, expectedRule.RuleID)
 				So(err, ShouldBeNil)
 				So(rule.IsManagingBugPriorityLastUpdated.IsZero(), ShouldBeTrue)
-				So(rule, ShouldResemble, expectedRule)
+				So(rule, ShouldResembleProto, expectedRule)
 			})
 		})
 		Convey(`ReadActive`, func() {
@@ -74,7 +74,7 @@ func TestSpan(t *testing.T) {
 
 				rules, err := ReadActive(span.Single(ctx), testProject)
 				So(err, ShouldBeNil)
-				So(rules, ShouldResemble, []*Entry{})
+				So(rules, ShouldResembleProto, []*Entry{})
 			})
 			Convey(`Multiple`, func() {
 				rulesToCreate := []*Entry{
@@ -88,7 +88,7 @@ func TestSpan(t *testing.T) {
 
 				rules, err := ReadActive(span.Single(ctx), testProject)
 				So(err, ShouldBeNil)
-				So(rules, ShouldResemble, []*Entry{
+				So(rules, ShouldResembleProto, []*Entry{
 					rulesToCreate[3],
 					rulesToCreate[0],
 				})
@@ -118,7 +118,7 @@ func TestSpan(t *testing.T) {
 
 				rules, err := ReadByBug(span.Single(ctx), bugID)
 				So(err, ShouldBeNil)
-				So(rules, ShouldResemble, expectedRules)
+				So(rules, ShouldResembleProto, expectedRules)
 			})
 		})
 		Convey(`ReadDelta`, func() {
@@ -132,7 +132,7 @@ func TestSpan(t *testing.T) {
 
 				rules, err := ReadDelta(span.Single(ctx), testProject, StartingEpoch)
 				So(err, ShouldBeNil)
-				So(rules, ShouldResemble, []*Entry{})
+				So(rules, ShouldResembleProto, []*Entry{})
 			})
 			Convey(`Multiple`, func() {
 				reference := time.Date(2020, 1, 2, 3, 4, 5, 6000, time.UTC)
@@ -147,7 +147,7 @@ func TestSpan(t *testing.T) {
 
 				rules, err := ReadDelta(span.Single(ctx), testProject, StartingEpoch)
 				So(err, ShouldBeNil)
-				So(rules, ShouldResemble, []*Entry{
+				So(rules, ShouldResembleProto, []*Entry{
 					rulesToCreate[3],
 					rulesToCreate[0],
 					rulesToCreate[2],
@@ -155,14 +155,14 @@ func TestSpan(t *testing.T) {
 
 				rules, err = ReadDelta(span.Single(ctx), testProject, reference)
 				So(err, ShouldBeNil)
-				So(rules, ShouldResemble, []*Entry{
+				So(rules, ShouldResembleProto, []*Entry{
 					rulesToCreate[3],
 					rulesToCreate[2],
 				})
 
 				rules, err = ReadDelta(span.Single(ctx), testProject, reference.Add(time.Minute))
 				So(err, ShouldBeNil)
-				So(rules, ShouldResemble, []*Entry{})
+				So(rules, ShouldResembleProto, []*Entry{})
 			})
 		})
 
@@ -177,7 +177,7 @@ func TestSpan(t *testing.T) {
 
 				rules, err := ReadDeltaAllProjects(span.Single(ctx), StartingEpoch)
 				So(err, ShouldBeNil)
-				So(rules, ShouldResemble, []*Entry{})
+				So(rules, ShouldResembleProto, []*Entry{})
 			})
 			Convey(`Multiple`, func() {
 				reference := time.Date(2020, 1, 2, 3, 4, 5, 6000, time.UTC)
@@ -200,7 +200,7 @@ func TestSpan(t *testing.T) {
 				}
 				sortByID(expected)
 				sortByID(rules)
-				So(rules, ShouldResemble, expected)
+				So(rules, ShouldResembleProto, expected)
 
 				rules, err = ReadDeltaAllProjects(span.Single(ctx), reference)
 				So(err, ShouldBeNil)
@@ -211,11 +211,11 @@ func TestSpan(t *testing.T) {
 				}
 				sortByID(expected)
 				sortByID(rules)
-				So(rules, ShouldResemble, expected)
+				So(rules, ShouldResembleProto, expected)
 
 				rules, err = ReadDeltaAllProjects(span.Single(ctx), reference.Add(time.Minute))
 				So(err, ShouldBeNil)
-				So(rules, ShouldResemble, []*Entry{})
+				So(rules, ShouldResembleProto, []*Entry{})
 			})
 		})
 
@@ -241,7 +241,7 @@ func TestSpan(t *testing.T) {
 			}
 			rules, err := ReadMany(span.Single(ctx), testProject, ids)
 			So(err, ShouldBeNil)
-			So(rules, ShouldResemble, []*Entry{
+			So(rules, ShouldResembleProto, []*Entry{
 				rulesToCreate[0],
 				nil,
 				rulesToCreate[2],
@@ -350,7 +350,7 @@ func TestSpan(t *testing.T) {
 					So(len(rules), ShouldEqual, 1)
 
 					readRule := rules[0]
-					So(*readRule, ShouldResemble, expectedRule)
+					So(*readRule, ShouldResembleProto, expectedRule)
 				}
 
 				Convey(`With Source Cluster`, func() {
@@ -421,23 +421,23 @@ func TestSpan(t *testing.T) {
 			Convey(`With invalid Rule Definition`, func() {
 				r.RuleDefinition = "invalid"
 				_, err := testCreate(r, LUCIAnalysisSystem)
-				So(err, ShouldErrLike, "rule definition is not valid")
+				So(err, ShouldErrLike, "rule definition: syntax error")
 			})
 			Convey(`With too long Rule Definition`, func() {
 				r.RuleDefinition = strings.Repeat(" ", MaxRuleDefinitionLength+1)
 				_, err := testCreate(r, LUCIAnalysisSystem)
-				So(err, ShouldErrLike, "rule definition exceeds maximum length of 65536")
+				So(err, ShouldErrLike, "rule definition: exceeds maximum length of 65536")
 			})
 			Convey(`With invalid Bug ID`, func() {
 				r.BugID.System = ""
 				_, err := testCreate(r, LUCIAnalysisSystem)
-				So(err, ShouldErrLike, "bug ID is not valid")
+				So(err, ShouldErrLike, "bug ID: invalid bug tracking system")
 			})
 			Convey(`With invalid Source Cluster`, func() {
 				So(r.SourceCluster.ID, ShouldNotBeNil)
 				r.SourceCluster.Algorithm = ""
 				_, err := testCreate(r, LUCIAnalysisSystem)
-				So(err, ShouldErrLike, "source cluster ID is not valid")
+				So(err, ShouldErrLike, "source cluster ID: algorithm not valid")
 			})
 			Convey(`With invalid User`, func() {
 				_, err := testCreate(r, "")
@@ -450,7 +450,7 @@ func TestSpan(t *testing.T) {
 				defer cancel()
 				rule, err := Read(txn, expectedRule.Project, expectedRule.RuleID)
 				So(err, ShouldBeNil)
-				So(rule, ShouldResemble, expectedRule)
+				So(rule, ShouldResembleProto, expectedRule)
 			}
 			testUpdate := func(bc *Entry, options UpdateOptions, user string) (time.Time, error) {
 				commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
@@ -467,7 +467,6 @@ func TestSpan(t *testing.T) {
 					r.RuleDefinition = `test = "UpdateTest"`
 					r.BugID = bugs.BugID{System: "monorail", ID: "chromium/651234"}
 					r.IsActive = false
-					r.SourceCluster = clustering.ClusterID{Algorithm: "testname-v1", ID: "00112233445566778899aabbccddeeff"}
 					commitTime, err := testUpdate(r, UpdateOptions{
 						PredicateUpdated: true,
 					}, "testuser@google.com")
@@ -481,10 +480,7 @@ func TestSpan(t *testing.T) {
 				})
 				Convey(`Do not update predicate`, func() {
 					r.BugID = bugs.BugID{System: "monorail", ID: "chromium/651234"}
-					r.SourceCluster = clustering.ClusterID{Algorithm: "testname-v1", ID: "00112233445566778899aabbccddeeff"}
-					commitTime, err := testUpdate(r, UpdateOptions{
-						PredicateUpdated: false,
-					}, "testuser@google.com")
+					commitTime, err := testUpdate(r, UpdateOptions{}, "testuser@google.com")
 					So(err, ShouldBeNil)
 
 					expectedRule := *r
@@ -505,6 +501,18 @@ func TestSpan(t *testing.T) {
 					expectedRule.LastUpdatedUser = "testuser@google.com"
 					testExists(&expectedRule)
 				})
+				Convey(`SourceCluster is immutable`, func() {
+					originalSourceCluster := r.SourceCluster
+					r.SourceCluster = clustering.ClusterID{Algorithm: "testname-v1", ID: "00112233445566778899aabbccddeeff"}
+					commitTime, err := testUpdate(r, UpdateOptions{}, "testuser@google.com")
+					So(err, ShouldBeNil)
+
+					expectedRule := *r
+					expectedRule.SourceCluster = originalSourceCluster
+					expectedRule.LastUpdated = commitTime
+					expectedRule.LastUpdatedUser = "testuser@google.com"
+					testExists(&expectedRule)
+				})
 			})
 			Convey(`Invalid`, func() {
 				Convey(`With invalid User`, func() {
@@ -518,14 +526,14 @@ func TestSpan(t *testing.T) {
 					_, err := testUpdate(r, UpdateOptions{
 						PredicateUpdated: true,
 					}, LUCIAnalysisSystem)
-					So(err, ShouldErrLike, "rule definition is not valid")
+					So(err, ShouldErrLike, "rule definition: syntax error")
 				})
 				Convey(`With invalid Bug ID`, func() {
 					r.BugID.System = ""
 					_, err := testUpdate(r, UpdateOptions{
 						PredicateUpdated: false,
 					}, LUCIAnalysisSystem)
-					So(err, ShouldErrLike, "bug ID is not valid")
+					So(err, ShouldErrLike, "bug ID: invalid bug tracking system")
 				})
 				Convey(`With invalid Source Cluster`, func() {
 					So(r.SourceCluster.ID, ShouldNotBeNil)
@@ -533,7 +541,7 @@ func TestSpan(t *testing.T) {
 					_, err := testUpdate(r, UpdateOptions{
 						PredicateUpdated: false,
 					}, LUCIAnalysisSystem)
-					So(err, ShouldErrLike, "source cluster ID is not valid")
+					So(err, ShouldErrLike, "source cluster ID: algorithm not valid")
 				})
 			})
 		})

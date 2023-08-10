@@ -153,27 +153,25 @@ CREATE NULL_FILTERED INDEX VerdictsByTestVariantAndIngestionTime
 -- that clusters failures based on failure association rules (e.g.
 -- 'rules-v2'), and (Project, RuleId) is the ID of the rule.
 CREATE TABLE FailureAssociationRules (
+  -- Identity fields.
+
   -- The LUCI Project this bug belongs to.
   Project STRING(40) NOT NULL,
   -- The unique identifier for the rule. This is a randomly generated
   -- 128-bit ID, encoded as 32 lowercase hexadecimal characters.
   RuleId STRING(32) NOT NULL,
+
+  -- Failure predicate field (which failures are matched by the rule).
+
   -- The rule predicate, defining which failures are being associated.
   RuleDefinition STRING(65536) NOT NULL,
-  -- The time the rule was created.
-  CreationTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
-  -- The user which created the rule. If this was auto-filed by LUCI Analysis
-  -- itself, this is the special value 'system'. Otherwise, it is
-  -- an email address.
-  -- 320 is the maximum length of an email address (64 for local part,
-  -- 1 for the '@', and 255 for the domain part).
-  CreationUser STRING(320) NOT NULL,
-  -- The last time the rule was updated.
-  LastUpdated TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
-  -- The user which last updated this rule. If this was LUCI Analysis itself,
-  -- (e.g. in case of an auto-filed bug which was created and never
-  -- modified) this is 'system'. Otherwise, it is an email address.
-  LastUpdatedUser STRING(320) NOT NULL,
+  -- Whether the bug must still be updated by LUCI Analysis, and whether
+  -- failures should still be matched against this rule. The only allowed
+  -- values are true or NULL (to indicate false). Only if the bug has
+  -- been closed and no failures have been observed for a while should
+  -- this be NULL. This makes it easy to retrofit a NULL_FILTERED index
+  -- in future, if it is needed for performance.
+  IsActive BOOL,
   -- The time the rule was last updated in a way that caused the
   -- matched failures to change, i.e. because of a change to RuleDefinition
   -- or IsActive. (For comparison, updating BugID does NOT change
@@ -181,6 +179,9 @@ CREATE TABLE FailureAssociationRules (
   -- When this value changes, it triggers re-clustering.
   -- Basis for RulesVersion on ClusteringState and ReclusteringRuns.
   PredicateLastUpdated TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+
+  -- Bug fields.
+
   -- The bug the failures are associated with (part 1). This is the
   -- bug tracking system containing the bug the failures are associated
   -- with. The only supported values are 'monorail' and 'buganizer'.
@@ -190,13 +191,6 @@ CREATE TABLE FailureAssociationRules (
   -- by the bug tracking system itself. For monorail, the scheme is
   -- {project}/{numeric_id}, for buganizer, the scheme is {numeric_id}.
   BugId STRING(255) NOT NULL,
-  -- Whether the bug must still be updated by LUCI Analysis, and whether
-  -- failures should still be matched against this rule. The only allowed
-  -- values are true or NULL (to indicate false). Only if the bug has
-  -- been closed and no failures have been observed for a while should
-  -- this be NULL. This makes it easy to retrofit a NULL_FILTERED index
-  -- in future, if it is needed for performance.
-  IsActive BOOL,
   -- Whether this rule should manage the priority and verified status
   -- of the associated bug based on the impact of the cluster defined
   -- by this rule.
@@ -210,9 +204,11 @@ CREATE TABLE FailureAssociationRules (
   -- out here because spanner emulator doesn't support DEFAULT
   -- expressions, see https://github.com/GoogleCloudPlatform/cloud-spanner-emulator/issues/71.
   IsManagingBugPriority BOOL NOT NULL, -- DEFAULT TRUE,
-
   -- Tracks when the field IsManagingBugPriority was last updated.
   IsManagingBugPriorityLastUpdated TIMESTAMP OPTIONS (allow_commit_timestamp=true),
+
+  -- Immutable data.
+
   -- The suggested cluster this failure association rule was created from
   -- (if any) (part 1).
   -- This is the algorithm component of the suggested cluster this rule
@@ -227,6 +223,29 @@ CREATE TABLE FailureAssociationRules (
   -- This is the algorithm-specific ID component of the suggested cluster
   -- this rule was created from.
   SourceClusterId STRING(32) NOT NULL,
+
+  -- System-controlled data (not user modifiable).
+
+  -- Serialized and compressed luci.analysis.internal.bugs.BugManagementState
+  -- proto. State used to control automatic bug management.
+  BugManagementState BYTES(MAX),
+
+  -- Audit fields.
+
+  -- The time the rule was created.
+  CreationTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+  -- The user which created the rule. If this was auto-filed by LUCI Analysis
+  -- itself, this is the special value 'system'. Otherwise, it is
+  -- an email address.
+  -- 320 is the maximum length of an email address (64 for local part,
+  -- 1 for the '@', and 255 for the domain part).
+  CreationUser STRING(320) NOT NULL,
+  -- The last time the rule was updated.
+  LastUpdated TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+  -- The user which last updated this rule. If this was LUCI Analysis itself,
+  -- (e.g. in case of an auto-filed bug which was created and never
+  -- modified) this is 'system'. Otherwise, it is an email address.
+  LastUpdatedUser STRING(320) NOT NULL,
 ) PRIMARY KEY (Project, RuleId);
 
 -- The failure association rules associated with a bug. This also

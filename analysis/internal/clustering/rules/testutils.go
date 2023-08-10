@@ -23,9 +23,13 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
+	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	spanutil "go.chromium.org/luci/analysis/internal/span"
 	"go.chromium.org/luci/analysis/internal/testutil"
@@ -51,23 +55,34 @@ func NewRule(uniqifier int) *RuleBuilder {
 	}
 
 	rule := Entry{
-		Project:                          testProject,
-		RuleID:                           hex.EncodeToString(ruleIDBytes[0:16]),
-		RuleDefinition:                   "reason LIKE \"%exit code 5%\" AND test LIKE \"tast.arc.%\"",
+		Project:              testProject,
+		RuleID:               hex.EncodeToString(ruleIDBytes[0:16]),
+		RuleDefinition:       "reason LIKE \"%exit code 5%\" AND test LIKE \"tast.arc.%\"",
+		IsActive:             true,
+		PredicateLastUpdated: time.Date(1900, 1, 2, 3, 4, 6, uniqifier, time.UTC),
+
 		BugID:                            bugID,
-		IsActive:                         true,
 		IsManagingBug:                    true,
 		IsManagingBugPriority:            true,
 		IsManagingBugPriorityLastUpdated: time.Date(1900, 1, 2, 3, 4, 8, uniqifier, time.UTC),
-		CreationTime:                     time.Date(1900, 1, 2, 3, 4, 5, uniqifier, time.UTC),
-		CreationUser:                     LUCIAnalysisSystem,
-		LastUpdated:                      time.Date(1900, 1, 2, 3, 4, 7, uniqifier, time.UTC),
-		LastUpdatedUser:                  "user@google.com",
-		PredicateLastUpdated:             time.Date(1900, 1, 2, 3, 4, 6, uniqifier, time.UTC),
 		SourceCluster: clustering.ClusterID{
 			Algorithm: fmt.Sprintf("clusteralg%v-v9", uniqifier),
 			ID:        hex.EncodeToString([]byte(fmt.Sprintf("id%v", uniqifier))),
 		},
+		BugManagementState: &bugspb.BugManagementState{
+			RuleAssociationNotified: true,
+			PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
+				"policy-a": {
+					IsActive:           true,
+					LastActivationTime: timestamppb.New(time.Date(1901, 1, 1, 1, 1, 1, uniqifier, time.UTC)),
+					ActivationNotified: true,
+				},
+			},
+		},
+		CreationTime:    time.Date(1900, 1, 2, 3, 4, 5, uniqifier, time.UTC),
+		CreationUser:    LUCIAnalysisSystem,
+		LastUpdated:     time.Date(1900, 1, 2, 3, 4, 7, uniqifier, time.UTC),
+		LastUpdatedUser: "user@google.com",
 	}
 	return &RuleBuilder{
 		rule:      rule,
@@ -173,6 +188,12 @@ func (b *RuleBuilder) WithSourceCluster(value clustering.ClusterID) *RuleBuilder
 	return b
 }
 
+// WithBugManagementState specifies the bug management state for the rule.
+func (b *RuleBuilder) WithBugManagementState(state *bugspb.BugManagementState) *RuleBuilder {
+	b.rule.BugManagementState = proto.Clone(state).(*bugspb.BugManagementState)
+	return b
+}
+
 func (b *RuleBuilder) Build() *Entry {
 	// Copy the result, so that calling further methods on the builder does
 	// not change the returned rule.
@@ -188,24 +209,31 @@ func SetForTesting(ctx context.Context, rs []*Entry) error {
 	// Insert some FailureAssociationRules.
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		for _, r := range rs {
+			bugManagementStateBuf, err := proto.Marshal(r.BugManagementState)
+			if err != nil {
+				return errors.Annotate(err, "marshal bug management state").Err()
+			}
+
 			ms := spanutil.InsertMap("FailureAssociationRules", map[string]any{
-				"Project":              r.Project,
-				"RuleId":               r.RuleID,
-				"RuleDefinition":       r.RuleDefinition,
-				"CreationTime":         r.CreationTime,
-				"CreationUser":         r.CreationUser,
-				"LastUpdated":          r.LastUpdated,
-				"LastUpdatedUser":      r.LastUpdatedUser,
+				"Project":        r.Project,
+				"RuleId":         r.RuleID,
+				"RuleDefinition": r.RuleDefinition,
+				// Uses the value 'NULL' to indicate false, and true to indicate true.
+				"IsActive":             spanner.NullBool{Bool: r.IsActive, Valid: r.IsActive},
+				"PredicateLastUpdated": r.PredicateLastUpdated,
 				"BugSystem":            r.BugID.System,
 				"BugID":                r.BugID.ID,
-				"PredicateLastUpdated": r.PredicateLastUpdated,
 				// Uses the value 'NULL' to indicate false, and true to indicate true.
-				"IsActive":                         spanner.NullBool{Bool: r.IsActive, Valid: r.IsActive},
 				"IsManagingBug":                    spanner.NullBool{Bool: r.IsManagingBug, Valid: r.IsManagingBug},
 				"IsManagingBugPriority":            r.IsManagingBugPriority,
 				"IsManagingBugPriorityLastUpdated": r.IsManagingBugPriorityLastUpdated,
 				"SourceClusterAlgorithm":           r.SourceCluster.Algorithm,
 				"SourceClusterId":                  r.SourceCluster.ID,
+				"BugManagementState":               spanutil.Compress(bugManagementStateBuf),
+				"CreationTime":                     r.CreationTime,
+				"CreationUser":                     r.CreationUser,
+				"LastUpdated":                      r.LastUpdated,
+				"LastUpdatedUser":                  r.LastUpdatedUser,
 			})
 			span.BufferWrite(ctx, ms)
 		}

@@ -19,13 +19,15 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/testutil"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var cache = caching.RegisterLRUCache[string, *Ruleset](50)
@@ -61,7 +63,7 @@ func TestRulesCache(t *testing.T) {
 			for _, e := range sortedExpectedRules {
 				if e.IsActive {
 					a := ruleset.ActiveRulesSorted[actualRuleIndex]
-					So(a.Rule, ShouldResemble, *e)
+					So(a.Rule, ShouldResembleProto, *e)
 					// Technically (*lang.Expr).String() may not get us
 					// back the original rule if RuleDefinition didn't use
 					// normalised formatting. But for this test, we use
@@ -72,7 +74,7 @@ func TestRulesCache(t *testing.T) {
 
 					a2, ok := ruleset.ActiveRulesByID[a.Rule.RuleID]
 					So(ok, ShouldBeTrue)
-					So(a2.Rule, ShouldResemble, *e)
+					So(a2.Rule, ShouldResembleProto, *e)
 				}
 			}
 			So(len(ruleset.ActiveRulesWithPredicateUpdatedSince(rules.StartingEpoch)), ShouldEqual, activeRules)

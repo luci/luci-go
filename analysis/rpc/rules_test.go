@@ -21,8 +21,6 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -33,6 +31,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
+	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/testname"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
@@ -41,6 +40,9 @@ import (
 	"go.chromium.org/luci/analysis/internal/testutil"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRules(t *testing.T) {
@@ -404,7 +406,7 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly updated in the database.
-					So(storedRule, ShouldResemble, expectedRule)
+					So(storedRule, ShouldResembleProto, expectedRule)
 
 					// Verify the returned rule matches what was expected.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
@@ -437,7 +439,7 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly updated in the database.
-					So(storedRule, ShouldResemble, expectedRule)
+					So(storedRule, ShouldResembleProto, expectedRule)
 
 					// Verify the returned rule matches what was expected.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: false}
@@ -468,7 +470,7 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly updated in the database.
-					So(storedRule, ShouldResemble, expectedRule)
+					So(storedRule, ShouldResembleProto, expectedRule)
 
 					// Verify the returned rule matches what was expected.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
@@ -496,7 +498,7 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly updated in the database.
-					So(storedRule, ShouldResemble, expectedRule)
+					So(storedRule, ShouldResembleProto, expectedRule)
 
 					// Verify the returned rule matches what was expected.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
@@ -530,7 +532,7 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly updated in the database.
-					So(storedRule, ShouldResemble, expectedRule)
+					So(storedRule, ShouldResembleProto, expectedRule)
 
 					// Verify the returned rule matches what was expected.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
@@ -599,7 +601,7 @@ func TestRules(t *testing.T) {
 
 					rule, err := srv.Update(ctx, request)
 					So(rule, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "rule definition is not valid")
+					So(err, ShouldBeRPCInvalidArgument, `rule definition: syntax error: 1:1: unexpected token "<EOF>"`)
 				})
 			})
 		})
@@ -659,7 +661,8 @@ func TestRules(t *testing.T) {
 					WithSourceCluster(clustering.ClusterID{
 						Algorithm: testname.AlgorithmName,
 						ID:        strings.Repeat("aa", 16),
-					})
+					}).
+					WithBugManagementState(&bugspb.BugManagementState{})
 
 				Convey("Bug not managed by another rule", func() {
 					// Re-use the same bug as a rule in another project,
@@ -690,7 +693,7 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly created in the database.
-					So(storedRule, ShouldResemble, expectedRuleBuilder.Build())
+					So(storedRule, ShouldResembleProto, expectedRuleBuilder.Build())
 
 					// Verify the returned rule matches our expectations.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
@@ -725,7 +728,7 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly created in the database.
-					So(storedRule, ShouldResemble, expectedRuleBuilder.Build())
+					So(storedRule, ShouldResembleProto, expectedRuleBuilder.Build())
 
 					// Verify the returned rule matches our expectations.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
@@ -758,7 +761,7 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly created in the database.
-					So(storedRule, ShouldResemble, expectedRuleBuilder.Build())
+					So(storedRule, ShouldResembleProto, expectedRuleBuilder.Build())
 
 					// Verify the returned rule matches our expectations.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
@@ -787,7 +790,7 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly created in the database.
-					So(storedRule, ShouldResemble, expectedRuleBuilder.Build())
+					So(storedRule, ShouldResembleProto, expectedRuleBuilder.Build())
 
 					// Verify the returned rule matches our expectations.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: false}
@@ -822,7 +825,7 @@ func TestRules(t *testing.T) {
 
 					rule, err := srv.Create(ctx, request)
 					So(rule, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "rule definition is not valid")
+					So(err, ShouldBeRPCInvalidArgument, `rule definition: syntax error: 1:1: unexpected token "<EOF>"`)
 				})
 			})
 		})

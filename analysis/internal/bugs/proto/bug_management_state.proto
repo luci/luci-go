@@ -1,0 +1,58 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.analysis.internal.bugs;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "go.chromium.org/luci/analysis/internal/bugs/proto;bugspb";
+
+// Automatic bug-management state for a single failure association rule.
+message BugManagementState {
+  // Whether the association of the rule to the bug has been notified.
+  // This is set to true whenever LUCI Analysis comments on a bug for any reason.
+  // This is set to false whenever the bug associated with a rule changes.
+  bool rule_association_notified = 1;
+
+  // A mapping from bug management policy identifier to policy state.
+  map<string, PolicyState> policy_state = 2;
+
+  message PolicyState {
+    // Whether the given policy is active for the rule.
+    // Updated on every bug-filing run as follows:
+    // - Set to true if the policy activation criteria was met.
+    // - Set to false if the policy deactivation criteria was met.
+    bool is_active = 1;
+
+    // The last time the policy was made active.
+    // Allows detecting if policy is made active for the first time (as a
+    // zero last_activation_time indicates the policy was never active).
+    // Allows UI to filter to showing policies that were at least once active.
+    // Allows UI to sort which policy was most recently active.
+    // Allows UI to show when a policy last activated.
+    google.protobuf.Timestamp last_activation_time = 2;
+
+    // The last time the policy was made inactive.
+    // Allows UI to show when a policy last deactivated.
+    google.protobuf.Timestamp last_deactivation_time = 3;
+
+    // Whether the policy's activation was ever notified to the bug.
+    // This is set to true whenever the policy state becomes active and the
+    // the activation was notified to the bug.
+    // This is set to false whenever the bug associated with a rule changes.
+    bool activation_notified = 4;
+  }
+}

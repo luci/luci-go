@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bugs"
+	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/rulesalgorithm"
@@ -864,6 +865,7 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 		IsManagingBug:         true,
 		IsManagingBugPriority: true,
 		SourceCluster:         cs.ClusterID,
+		BugManagementState:    &bugspb.BugManagementState{},
 	}
 	create := func(ctx context.Context) error {
 		user := rules.LUCIAnalysisSystem
@@ -877,7 +879,6 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 }
 
 func routeToBugSystem(projectCfg *compiledcfg.ProjectConfig, cs *analysis.Cluster) (string, error) {
-
 	if projectCfg.Config.Monorail == nil && projectCfg.Config.Buganizer == nil {
 		return "", errors.New("at least one bug filing system need to be configured")
 	}

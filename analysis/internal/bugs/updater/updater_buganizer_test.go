@@ -23,11 +23,14 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bugs"
 	"go.chromium.org/luci/analysis/internal/bugs/buganizer"
+	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/clustering/runs"
@@ -41,8 +44,9 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/timestamppb"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBuganizerUpdate(t *testing.T) {
@@ -150,7 +154,7 @@ func TestBuganizerUpdate(t *testing.T) {
 			// No failure association rules.
 			rs, err := rules.ReadActive(span.Single(ctx), project)
 			So(err, ShouldBeNil)
-			So(rs, ShouldResemble, []*rules.Entry{})
+			So(rs, ShouldResembleProto, []*rules.Entry{})
 
 			// No Buganizer issues.
 			So(fakeStore.Issues, ShouldHaveLength, 0)
@@ -179,6 +183,7 @@ func TestBuganizerUpdate(t *testing.T) {
 				SourceCluster:         sourceClusterID,
 				CreationUser:          rules.LUCIAnalysisSystem,
 				LastUpdatedUser:       rules.LUCIAnalysisSystem,
+				BugManagementState:    &bugspb.BugManagementState{},
 			}
 
 			expectedBugSummary := "Failed to connect to 100.1.1.105."
@@ -224,7 +229,7 @@ func TestBuganizerUpdate(t *testing.T) {
 				expectedRule.PredicateLastUpdated = rule.PredicateLastUpdated
 				So(rule.IsManagingBugPriorityLastUpdated, ShouldNotBeZeroValue)
 				expectedRule.IsManagingBugPriorityLastUpdated = rule.IsManagingBugPriorityLastUpdated
-				So(rule, ShouldResemble, expectedRule)
+				So(rule, ShouldResembleProto, expectedRule)
 
 				So(len(fakeStore.Issues), ShouldEqual, id)
 				So(fakeStore.Issues[id].Issue.IssueId, ShouldEqual, id)
@@ -515,6 +520,7 @@ func TestBuganizerUpdate(t *testing.T) {
 					IsManagingBugPriority: true,
 					CreationUser:          rules.LUCIAnalysisSystem,
 					LastUpdatedUser:       rules.LUCIAnalysisSystem,
+					BugManagementState:    &bugspb.BugManagementState{},
 				},
 				{
 					Project:               "chromeos",
@@ -526,6 +532,7 @@ func TestBuganizerUpdate(t *testing.T) {
 					IsManagingBugPriority: true,
 					CreationUser:          rules.LUCIAnalysisSystem,
 					LastUpdatedUser:       rules.LUCIAnalysisSystem,
+					BugManagementState:    &bugspb.BugManagementState{},
 				},
 				{
 					Project:               "chromeos",
@@ -537,6 +544,7 @@ func TestBuganizerUpdate(t *testing.T) {
 					IsManagingBugPriority: true,
 					CreationUser:          rules.LUCIAnalysisSystem,
 					LastUpdatedUser:       rules.LUCIAnalysisSystem,
+					BugManagementState:    &bugspb.BugManagementState{},
 				},
 			}
 
@@ -566,7 +574,7 @@ func TestBuganizerUpdate(t *testing.T) {
 							sortedExpected[i].BugID.ID < sortedExpected[j].BugID.ID)
 				})
 
-				So(rs, ShouldResemble, sortedExpected)
+				So(rs, ShouldResembleProto, sortedExpected)
 				So(len(fakeStore.Issues), ShouldEqual, len(sortedExpected)+numExtraIssues)
 			}
 
@@ -969,6 +977,7 @@ func TestBuganizerUpdate(t *testing.T) {
 							IsActive:              true,
 							IsManagingBug:         true,
 							IsManagingBugPriority: true,
+							BugManagementState:    &bugspb.BugManagementState{},
 						}
 						_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 							return rules.Create(ctx, extraRule, "user@chromium.org")

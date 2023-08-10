@@ -25,6 +25,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
+	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
@@ -184,6 +185,7 @@ func (*rulesServer) Create(ctx context.Context, req *pb.CreateRuleRequest) (*pb.
 			Algorithm: req.Rule.SourceCluster.GetAlgorithm(),
 			ID:        req.Rule.SourceCluster.GetId(),
 		},
+		BugManagementState: &bugspb.BugManagementState{},
 	}
 
 	if err := validateBugAgainstConfig(cfg, r.BugID); err != nil {

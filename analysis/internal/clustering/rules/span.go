@@ -25,8 +25,10 @@ import (
 	"cloud.google.com/go/spanner"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
+	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/rules/lang"
 	spanutil "go.chromium.org/luci/analysis/internal/span"
@@ -37,11 +39,19 @@ import (
 // formed rule IDs.
 const RuleIDRePattern = `[0-9a-f]{32}`
 
+// PolicyIDRePattern is the regular expression pattern that matches
+// validly formed bug management policy IDs.
+// Designed to conform to google.aip.dev/122 resource ID requirements.
+const PolicyIDRePattern = `[a-z]([a-z0-9-]{0,62}[a-z0-9])?`
+
 // MaxRuleDefinitionLength is the maximum length of a rule definition.
 const MaxRuleDefinitionLength = 65536
 
 // RuleIDRe matches validly formed rule IDs.
 var RuleIDRe = regexp.MustCompile(`^` + RuleIDRePattern + `$`)
+
+// PolicyIDRe matches validly formed bug management policy IDs.
+var PolicyIDRe = regexp.MustCompile(`^` + PolicyIDRePattern + `$`)
 
 // UserRe matches valid users. These are email addresses or the special
 // value "system".
@@ -73,21 +83,21 @@ var NotExistsErr = errors.New("no matching rule exists")
 // failures, the resultant cluster is known as a 'bug cluster' because
 // the cluster is associated with a bug (via the failure association rule).
 type Entry struct {
+	// Identity fields.
+
 	// The LUCI Project for which this rule is defined.
-	Project string `json:"project"`
+	Project string
 	// The unique identifier for the failure association rule,
 	// as 32 lowercase hexadecimal characters.
-	RuleID string `json:"ruleId"`
+	RuleID string
+
+	// Failure predicate fields (which failures are matched by the rule).
+
 	// The rule predicate, defining which failures are being associated.
-	RuleDefinition string `json:"ruleDefinition"`
-	// The time the rule was created. Output only.
-	CreationTime time.Time `json:"creationTime"`
-	// The user which created the rule. Output only.
-	CreationUser string `json:"creationUser"`
-	// The time the rule was last updated. Output only.
-	LastUpdated time.Time `json:"lastUpdated"`
-	// The user which last updated the rule. Output only.
-	LastUpdatedUser string `json:"lastUpdatedUser"`
+	RuleDefinition string
+	// Whether the bug should be updated by LUCI Analysis, and whether failures
+	// should still be matched against the rule.
+	IsActive bool
 	// The time the rule was last updated in a way that caused the
 	// matched failures to change, i.e. because of a change to RuleDefinition
 	// or IsActive. (By contrast, updating BugID does NOT change
@@ -96,29 +106,48 @@ type Entry struct {
 	// Compare with RulesVersion on ReclusteringRuns to identify
 	// reclustering state.
 	// Output only.
-	PredicateLastUpdated time.Time `json:"predicateLastUpdated"`
+	PredicateLastUpdated time.Time
+
+	// Bug fields.
+
 	// BugID is the identifier of the bug that the failures are
 	// associated with.
-	BugID bugs.BugID `json:"bugId"`
-	// Whether the bug should be updated by LUCI Analysis, and whether failures
-	// should still be matched against the rule.
-	IsActive bool `json:"isActive"`
+	BugID bugs.BugID
 	// Whether this rule should manage the priority and verified status
 	// of the associated bug based on the impact of the cluster defined
 	// by this rule.
-	IsManagingBug bool `json:"isManagingBug"`
+	IsManagingBug bool
 	// Whether the bug priority should be updated based on the cluster's impact.
 	// This flag is effective only if the IsManagingBug is true.
 	// The default value will be false.
-	IsManagingBugPriority bool `json:"isManagingBugPriority"`
+	IsManagingBugPriority bool
 	// Tracks the last time the field `IsManagingBugPriority` was updated.
 	// Defaults to nil which means the field was never updated.
-	IsManagingBugPriorityLastUpdated time.Time `json:"isManagingBugPriorityLastUpdated"`
+	IsManagingBugPriorityLastUpdated time.Time
+
+	// Immutable data.
+
 	// The suggested cluster this rule was created from (if any).
 	// Until re-clustering is complete and has reduced the residual impact
 	// of the source cluster, this cluster ID tells bug filing to ignore
 	// the source cluster when determining whether new bugs need to be filed.
-	SourceCluster clustering.ClusterID `json:"sourceCluster"`
+	SourceCluster clustering.ClusterID
+
+	// System-controlled data.
+
+	// State used to control automatic bug management.
+	BugManagementState *bugspb.BugManagementState
+
+	// Audit fields.
+
+	// The time the rule was created. Output only.
+	CreationTime time.Time
+	// The user which created the rule. Output only.
+	CreationUser string
+	// The time the rule was last updated. Output only.
+	LastUpdated time.Time
+	// The user which last updated the rule. Output only.
+	LastUpdatedUser string
 }
 
 // UpdateOptions are the options that are using during
@@ -269,11 +298,19 @@ func ReadMany(ctx context.Context, project string, ids []string) ([]*Entry, erro
 // substituting params for any SQL parameters used in that clause.
 func readWhere(ctx context.Context, whereClause string, params map[string]any) ([]*Entry, error) {
 	stmt := spanner.NewStatement(`
-		SELECT Project, RuleId, RuleDefinition, BugSystem, BugId,
-		  CreationTime, LastUpdated, PredicateLastUpdated,
-		  CreationUser, LastUpdatedUser,
-		  IsActive, IsManagingBug, IsManagingBugPriority, IsManagingBugPriorityLastUpdated,
-		  SourceClusterAlgorithm, SourceClusterId
+		SELECT
+			Project, RuleId,
+			RuleDefinition,
+			IsActive,
+			PredicateLastUpdated,
+			BugSystem, BugId,
+		  IsManagingBug,
+			IsManagingBugPriority,
+			IsManagingBugPriorityLastUpdated,
+		  SourceClusterAlgorithm, SourceClusterId,
+			BugManagementState,
+			CreationTime, LastUpdated,
+		  CreationUser, LastUpdatedUser
 		FROM FailureAssociationRules
 		WHERE (` + whereClause + `)
 		ORDER BY BugSystem, BugId, Project
@@ -282,37 +319,53 @@ func readWhere(ctx context.Context, whereClause string, params map[string]any) (
 
 	it := span.Query(ctx, stmt)
 	rs := []*Entry{}
+	var b spanutil.Buffer
 	err := it.Do(func(r *spanner.Row) error {
-		var project, ruleID, ruleDefinition, bugSystem, bugID string
-		var creationTime, lastUpdated, predicateLastUpdated time.Time
-		var creationUser, lastUpdatedUser string
-		var isActive, isManagingBug spanner.NullBool
-		var sourceClusterAlgorithm, sourceClusterID string
+		var project, ruleID string
+		var ruleDefinition string
+		var isActive spanner.NullBool
+		var predicateLastUpdated time.Time
+		var bugSystem, bugID string
+		var isManagingBug spanner.NullBool
 		var isManagingBugPriority bool
 		var isManagingBugPriorityLastUpdated spanner.NullTime
-		err := r.Columns(
-			&project, &ruleID, &ruleDefinition, &bugSystem, &bugID,
-			&creationTime, &lastUpdated, &predicateLastUpdated,
-			&creationUser, &lastUpdatedUser,
-			&isActive, &isManagingBug, &isManagingBugPriority,
+		var sourceClusterAlgorithm, sourceClusterID string
+		var bugManagementStateCompressed spanutil.Compressed
+		var creationTime, lastUpdated time.Time
+		var creationUser, lastUpdatedUser string
+
+		err := b.FromSpanner(r,
+			&project, &ruleID,
+			&ruleDefinition,
+			&isActive,
+			&predicateLastUpdated,
+			&bugSystem, &bugID,
+			&isManagingBug,
+			&isManagingBugPriority,
 			&isManagingBugPriorityLastUpdated,
 			&sourceClusterAlgorithm, &sourceClusterID,
+			&bugManagementStateCompressed,
+			&creationTime, &lastUpdated,
+			&creationUser, &lastUpdatedUser,
 		)
 		if err != nil {
 			return errors.Annotate(err, "read rule row").Err()
+		}
+
+		bugManagementState := &bugspb.BugManagementState{}
+		if len(bugManagementStateCompressed) > 0 {
+			if err := proto.Unmarshal(bugManagementStateCompressed, bugManagementState); err != nil {
+				return errors.Annotate(err, "unmarshal bug management state").Err()
+			}
 		}
 
 		rule := &Entry{
 			Project:                          project,
 			RuleID:                           ruleID,
 			RuleDefinition:                   ruleDefinition,
-			CreationTime:                     creationTime,
-			CreationUser:                     creationUser,
-			LastUpdated:                      lastUpdated,
-			LastUpdatedUser:                  lastUpdatedUser,
+			IsActive:                         isActive.Valid && isActive.Bool,
 			PredicateLastUpdated:             predicateLastUpdated,
 			BugID:                            bugs.BugID{System: bugSystem, ID: bugID},
-			IsActive:                         isActive.Valid && isActive.Bool,
 			IsManagingBug:                    isManagingBug.Valid && isManagingBug.Bool,
 			IsManagingBugPriority:            isManagingBugPriority,
 			IsManagingBugPriorityLastUpdated: isManagingBugPriorityLastUpdated.Time,
@@ -320,6 +373,11 @@ func readWhere(ctx context.Context, whereClause string, params map[string]any) (
 				Algorithm: sourceClusterAlgorithm,
 				ID:        sourceClusterID,
 			},
+			BugManagementState: bugManagementState,
+			CreationTime:       creationTime,
+			CreationUser:       creationUser,
+			LastUpdated:        lastUpdated,
+			LastUpdatedUser:    lastUpdatedUser,
 		}
 		rs = append(rs, rule)
 		return nil
@@ -427,24 +485,32 @@ func Create(ctx context.Context, rule *Entry, user string) error {
 	if err := validateUser(user); err != nil {
 		return err
 	}
+
+	bugManagementStateBuf, err := proto.Marshal(rule.BugManagementState)
+	if err != nil {
+		return errors.Annotate(err, "marshal bug management state").Err()
+	}
+
 	ms := spanutil.InsertMap("FailureAssociationRules", map[string]any{
-		"Project":              rule.Project,
-		"RuleId":               rule.RuleID,
-		"RuleDefinition":       rule.RuleDefinition,
+		"Project":        rule.Project,
+		"RuleId":         rule.RuleID,
+		"RuleDefinition": rule.RuleDefinition,
+		// IsActive uses the value NULL to indicate false, and TRUE to indicate true.
+		"IsActive":             spanner.NullBool{Bool: rule.IsActive, Valid: rule.IsActive},
 		"PredicateLastUpdated": spanner.CommitTimestamp,
-		"CreationTime":         spanner.CommitTimestamp,
-		"CreationUser":         user,
-		"LastUpdated":          spanner.CommitTimestamp,
-		"LastUpdatedUser":      user,
 		"BugSystem":            rule.BugID.System,
 		"BugId":                rule.BugID.ID,
-		// IsActive and IsManagingBug uses the value NULL to indicate false, and TRUE to indicate true.
-		"IsActive":                         spanner.NullBool{Bool: rule.IsActive, Valid: rule.IsActive},
+		// IsManagingBug uses the value NULL to indicate false, and TRUE to indicate true.
 		"IsManagingBug":                    spanner.NullBool{Bool: rule.IsManagingBug, Valid: rule.IsManagingBug},
 		"IsManagingBugPriority":            rule.IsManagingBugPriority,
 		"IsManagingBugPriorityLastUpdated": spanner.CommitTimestamp,
 		"SourceClusterAlgorithm":           rule.SourceCluster.Algorithm,
 		"SourceClusterId":                  rule.SourceCluster.ID,
+		"BugManagementState":               spanutil.Compress(bugManagementStateBuf),
+		"CreationTime":                     spanner.CommitTimestamp,
+		"CreationUser":                     user,
+		"LastUpdated":                      spanner.CommitTimestamp,
+		"LastUpdatedUser":                  user,
 	})
 	span.BufferWrite(ctx, ms)
 	return nil
@@ -460,17 +526,21 @@ func Update(ctx context.Context, rule *Entry, options UpdateOptions, user string
 	if err := validateUser(user); err != nil {
 		return err
 	}
+	bugManagementStateBuf, err := proto.Marshal(rule.BugManagementState)
+	if err != nil {
+		return errors.Annotate(err, "marshal bug management state").Err()
+	}
+
 	update := map[string]any{
-		"Project":                rule.Project,
-		"RuleId":                 rule.RuleID,
-		"LastUpdated":            spanner.CommitTimestamp,
-		"LastUpdatedUser":        user,
-		"BugSystem":              rule.BugID.System,
-		"BugId":                  rule.BugID.ID,
-		"SourceClusterAlgorithm": rule.SourceCluster.Algorithm,
-		"SourceClusterId":        rule.SourceCluster.ID,
+		"Project":   rule.Project,
+		"RuleId":    rule.RuleID,
+		"BugSystem": rule.BugID.System,
+		"BugId":     rule.BugID.ID,
 		// IsManagingBug uses the value NULL to indicate false, and TRUE to indicate true.
-		"IsManagingBug": spanner.NullBool{Bool: rule.IsManagingBug, Valid: rule.IsManagingBug},
+		"IsManagingBug":      spanner.NullBool{Bool: rule.IsManagingBug, Valid: rule.IsManagingBug},
+		"BugManagementState": spanutil.Compress(bugManagementStateBuf),
+		"LastUpdated":        spanner.CommitTimestamp,
+		"LastUpdatedUser":    user,
 	}
 	if options.PredicateUpdated {
 		update["RuleDefinition"] = rule.RuleDefinition
@@ -491,20 +561,46 @@ func validateRule(r *Entry) error {
 	if err := pbutil.ValidateProject(r.Project); err != nil {
 		return errors.Annotate(err, "project").Err()
 	}
-	switch {
-	case !RuleIDRe.MatchString(r.RuleID):
-		return errors.New("rule ID must be valid")
-	case r.BugID.Validate() != nil:
-		return errors.Annotate(r.BugID.Validate(), "bug ID is not valid").Err()
-	case r.SourceCluster.Validate() != nil && !r.SourceCluster.IsEmpty():
-		return errors.Annotate(r.SourceCluster.Validate(), "source cluster ID is not valid").Err()
+	if !RuleIDRe.MatchString(r.RuleID) {
+		return errors.Reason("rule ID: must match %s", RuleIDRe).Err()
+	}
+	if err := r.BugID.Validate(); err != nil {
+		return errors.Annotate(r.BugID.Validate(), "bug ID").Err()
+	}
+	if r.SourceCluster.Validate() != nil && !r.SourceCluster.IsEmpty() {
+		return errors.Annotate(r.SourceCluster.Validate(), "source cluster ID").Err()
 	}
 	if len(r.RuleDefinition) > MaxRuleDefinitionLength {
-		return errors.Reason("rule definition exceeds maximum length of %v", MaxRuleDefinitionLength).Err()
+		return errors.Reason("rule definition: exceeds maximum length of %v", MaxRuleDefinitionLength).Err()
 	}
 	_, err := lang.Parse(r.RuleDefinition)
 	if err != nil {
-		return errors.Annotate(err, "rule definition is not valid").Err()
+		return errors.Annotate(err, "rule definition").Err()
+	}
+	if err := validateBugManagementState(r.BugManagementState); err != nil {
+		return errors.Annotate(err, "bug management state").Err()
+	}
+	return nil
+}
+
+func validateBugManagementState(state *bugspb.BugManagementState) error {
+	if state == nil {
+		return errors.Reason("must be set").Err()
+	}
+	for policy, state := range state.PolicyState {
+		if !PolicyIDRe.MatchString(policy) {
+			return errors.Reason("policy_state[%q]: key must match pattern %s", policy, PolicyIDRe).Err()
+		}
+		if state.LastActivationTime != nil {
+			if err := state.LastActivationTime.CheckValid(); err != nil {
+				return errors.Annotate(err, "policy_state[%q]: last_activation_time", policy).Err()
+			}
+		}
+		if state.LastDeactivationTime != nil {
+			if err := state.LastDeactivationTime.CheckValid(); err != nil {
+				return errors.Annotate(err, "policy_state[%q]: last_deactivation_time", policy).Err()
+			}
+		}
 	}
 	return nil
 }
