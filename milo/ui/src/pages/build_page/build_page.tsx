@@ -16,12 +16,7 @@ import { css } from '@emotion/react';
 import { LinearProgress } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
-import {
-  Outlet,
-  useNavigate,
-  useParams,
-  useSearchParams,
-} from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import grayFavicon from '@/common/assets/favicons/gray-32.png';
 import greenFavicon from '@/common/assets/favicons/green-32.png';
@@ -31,7 +26,7 @@ import redFavicon from '@/common/assets/favicons/red-32.png';
 import tealFavicon from '@/common/assets/favicons/teal-32.png';
 import yellowFavicon from '@/common/assets/favicons/yellow-32.png';
 import { PageMeta } from '@/common/components/page_meta/page_meta';
-import { Tab, Tabs } from '@/common/components/tabs';
+import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import {
   BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_COLOR_THEME_MAP,
@@ -139,10 +134,6 @@ export const BuildPage = observer(() => {
   }, [store, project, bucket, builder, buildNumOrId]);
 
   const build = store.buildPage.build;
-  const buildURLPath = getBuildURLPath(
-    { project, bucket, builder },
-    buildNumOrId
-  );
 
   const status = build?.data?.status;
   const statusDisplay = status ? BUILD_STATUS_DISPLAY_MAP[status] : 'loading';
@@ -276,60 +267,44 @@ export const BuildPage = observer(() => {
             build ? BUILD_STATUS_COLOR_THEME_MAP[build.data.status] : 'primary'
           }
         />
-        <Tabs value={store.selectedTabId || false}>
-          <Tab
-            label="Overview"
-            value="overview"
-            to={buildURLPath + '/overview'}
+        <AppRoutedTabs>
+          <AppRoutedTab label="Overview" value="overview" to="overview" />
+          <AppRoutedTab
+            label="Test Results"
+            value="test-results"
+            to="test-results"
+            hideWhenInactive={
+              !store.buildPage.hasInvocation ||
+              !store.buildPage.canReadTestVerdicts
+            }
+            icon={<CountIndicator />}
+            iconPosition="end"
           />
-          {/* If the tab is visited directly via URL before we know if it could
-        exists, display the tab heading so <Tabs /> won't throw no matching tab
-        error */}
-          {(store.selectedTabId === 'test-results' ||
-            (store.buildPage.hasInvocation &&
-              store.buildPage.canReadTestVerdicts)) && (
-            <Tab
-              label="Test Results"
-              value="test-results"
-              to={buildURLPath + '/test-results'}
-              icon={<CountIndicator />}
-              iconPosition="end"
-            />
-          )}
-          {(store.selectedTabId === 'steps' ||
-            store.buildPage.canReadFullBuild) && (
-            <Tab
-              label="Steps & Logs"
-              value="steps"
-              to={buildURLPath + '/steps'}
-            />
-          )}
-          {(store.selectedTabId === 'related-builds' ||
-            store.buildPage.canReadFullBuild) && (
-            <Tab
-              label="Related Builds"
-              value="related-builds"
-              to={buildURLPath + '/related-builds'}
-            />
-          )}
-          {(store.selectedTabId === 'timeline' ||
-            store.buildPage.canReadFullBuild) && (
-            <Tab
-              label="Timeline"
-              value="timeline"
-              to={buildURLPath + '/timeline'}
-            />
-          )}
-          {(store.selectedTabId === 'blamelist' ||
-            store.buildPage.canReadFullBuild) && (
-            <Tab
-              label="Blamelist"
-              value="blamelist"
-              to={buildURLPath + '/blamelist'}
-            />
-          )}
-        </Tabs>
-        <Outlet />
+          <AppRoutedTab
+            label="Steps & Logs"
+            value="steps"
+            to="steps"
+            hideWhenInactive={!store.buildPage.canReadFullBuild}
+          />
+          <AppRoutedTab
+            label="Related Builds"
+            value="related-builds"
+            to="related-builds"
+            hideWhenInactive={!store.buildPage.canReadFullBuild}
+          />
+          <AppRoutedTab
+            label="Timeline"
+            value="timeline"
+            to="timeline"
+            hideWhenInactive={!store.buildPage.canReadFullBuild}
+          />
+          <AppRoutedTab
+            label="Blamelist"
+            value="blamelist"
+            to="blamelist"
+            hideWhenInactive={!store.buildPage.canReadFullBuild}
+          />
+        </AppRoutedTabs>
       </BuildLitEnvProvider>
     </InvocationProvider>
   );

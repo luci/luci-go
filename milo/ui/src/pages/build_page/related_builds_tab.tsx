@@ -26,7 +26,7 @@ import {
   Typography,
 } from '@mui/material';
 import { observer } from 'mobx-react-lite';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 
 import '@/generic_libs/components/dot_spinner';
 import {
@@ -51,6 +51,7 @@ import {
   getProjectURLPath,
 } from '@/common/tools/url_utils';
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
+import { useTabId } from '@/generic_libs/components/routed_tabs';
 
 const TableStateContext = createContext<ExpandableEntriesStateInstance>(
   ExpandableEntriesState.create()
@@ -155,12 +156,9 @@ const RelatedBuildsTableRow = observer(
 );
 
 export const RelatedBuildsTab = observer(() => {
+  useTabId('related-builds');
   const store = useStore();
   const [tableState] = useState(() => ExpandableEntriesState.create());
-
-  useEffect(() => {
-    store.setSelectedTabId('related-builds');
-  }, [store]);
 
   if (!store.buildPage.build || !store.buildPage.relatedBuilds) {
     return (

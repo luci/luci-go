@@ -29,6 +29,7 @@ import {
 } from '@/common/store/invocation_state';
 import { commonStyles } from '@/common/styles/stylesheets';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { useTabId } from '@/generic_libs/components/routed_tabs';
 import {
   errorHandler,
   forwardWithoutMsg,
@@ -73,7 +74,6 @@ export class TestResultsTabElement extends MobxExtLitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.store.setSelectedTabId('test-results');
 
     // Update filters to match the querystring without saving them.
     const searchParams = new URLSearchParams(window.location.search);
@@ -244,5 +244,6 @@ declare global {
 }
 
 export function TestResultsTab() {
+  useTabId('test-results');
   return <milo-test-results-tab />;
 }

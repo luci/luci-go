@@ -23,6 +23,7 @@ import './step_list';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { useTabId } from '@/generic_libs/components/routed_tabs';
 import {
   errorHandler,
   forwardWithoutMsg,
@@ -39,11 +40,6 @@ export class StepsTabElement extends MobxExtLitElement {
   @observable.ref
   @consumeStore()
   store!: StoreInstance;
-
-  connectedCallback() {
-    super.connectedCallback();
-    this.store.setSelectedTabId('steps');
-  }
 
   private allStepsWereExpanded = false;
   private toggleAllSteps(expand: boolean) {
@@ -130,5 +126,6 @@ declare global {
 }
 
 export function StepsTab() {
+  useTabId('steps');
   return <milo-steps-tab />;
 }

@@ -30,6 +30,7 @@ import {
 import { commonStyles } from '@/common/styles/stylesheets';
 import { logging } from '@/common/tools/logging';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { useTabId } from '@/generic_libs/components/routed_tabs';
 import { consumer } from '@/generic_libs/tools/lit_context';
 
 const MARGIN = 20;
@@ -133,7 +134,6 @@ export class InvocationDetailsTabElement extends MobxExtLitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.store.setSelectedTabId('invocation-details');
     this.now = DateTime.now();
 
     const syncWidth = () => {
@@ -240,5 +240,6 @@ declare global {
 }
 
 export function InvocationDetailsTab() {
+  useTabId('invocation-details');
   return <milo-invocation-details-tab />;
 }

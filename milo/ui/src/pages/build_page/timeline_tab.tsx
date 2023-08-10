@@ -45,6 +45,7 @@ import {
   NUMERIC_TIME_FORMAT,
 } from '@/common/tools/time_utils';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { useTabId } from '@/generic_libs/components/routed_tabs';
 import {
   errorHandler,
   forwardWithoutMsg,
@@ -120,7 +121,6 @@ export class TimelineTabElement extends MobxExtLitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.store.setSelectedTabId('timeline');
 
     const syncWidth = () => {
       this.totalWidth = Math.max(
@@ -660,5 +660,6 @@ declare global {
 }
 
 export function TimelineTab() {
+  useTabId('timeline');
   return <milo-timeline-tab />;
 }

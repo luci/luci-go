@@ -14,9 +14,10 @@
 
 import styled from '@emotion/styled';
 import { observer } from 'mobx-react-lite';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { useStore } from '@/common/store';
+import { useTabId } from '@/generic_libs/components/routed_tabs';
 
 import { ActionsSection, Dialog } from './actions_section';
 import { BuildLogSection } from './build_log_section';
@@ -67,13 +68,10 @@ const SecondColumn = styled.div({
 });
 
 export const OverviewTab = observer(() => {
+  useTabId('overview');
   const store = useStore();
 
   const [activeDialog, setActiveDialog] = useState(Dialog.None);
-
-  useEffect(() => {
-    store.setSelectedTabId('overview');
-  }, [store]);
 
   return (
     <>

@@ -15,15 +15,14 @@
 import { LinearProgress } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
-import { Outlet, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import { PageMeta } from '@/common/components/page_meta/page_meta';
-import { Tab, Tabs } from '@/common/components/tabs';
+import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import { INVOCATION_STATE_DISPLAY_MAP } from '@/common/constants';
 import { useStore } from '@/common/store';
 import {
   getBuildURLPathFromBuildId,
-  getInvURLPath,
   getSwarmingTaskURL,
 } from '@/common/tools/url_utils';
 
@@ -56,7 +55,6 @@ export const InvocationPage = observer(() => {
   const { swarmingHost, taskId } =
     invId.match(/^task-(?<swarmingHost>.*)-(?<taskId>[0-9a-fA-F]+)$/)?.groups ||
     {};
-  const invUrlPath = getInvURLPath(invId);
 
   return (
     <InvLitEnvProvider>
@@ -119,21 +117,20 @@ export const InvocationPage = observer(() => {
         value={100}
         variant={inv ? 'determinate' : 'indeterminate'}
       />
-      <Tabs value={store.selectedTabId || false}>
-        <Tab
+      <AppRoutedTabs>
+        <AppRoutedTab
           label="Test Results"
           value="test-results"
-          to={invUrlPath + '/test-results'}
+          to="test-results"
           icon={<CountIndicator />}
           iconPosition="end"
         />
-        <Tab
+        <AppRoutedTab
           label="Invocation Details"
           value="invocation-details"
-          to={invUrlPath + '/invocation-details'}
+          to="invocation-details"
         />
-      </Tabs>
-      <Outlet />
+      </AppRoutedTabs>
     </InvLitEnvProvider>
   );
 });

@@ -30,7 +30,6 @@ export const Store = types
     currentTime: types.optional(Timestamp, {}),
     refreshTime: types.optional(Timestamp, {}),
 
-    selectedTabId: types.maybe(types.string),
     // Use number instead of boolean because previousPage.disconnectedCallback
     // might be called after currentPage.disconnectedCallback.
     // Number allows us to reset the setting even when the execution is out of
@@ -64,9 +63,6 @@ export const Store = types
   .actions((self) => ({
     setRedirectSw(redirectSw: ServiceWorkerRegistration | null) {
       self.redirectSw = redirectSw;
-    },
-    setSelectedTabId(tabId: string) {
-      self.selectedTabId = tabId;
     },
     registerSettingsDialog() {
       self.hasSettingsDialog++;

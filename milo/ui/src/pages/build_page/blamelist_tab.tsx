@@ -27,6 +27,7 @@ import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
 import { getGitilesRepoURL } from '@/common/tools/gitiles_utils';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { useTabId } from '@/generic_libs/components/routed_tabs';
 import {
   errorHandler,
   forwardWithoutMsg,
@@ -121,7 +122,6 @@ export class BlamelistTabElement extends MobxExtLitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.store.setSelectedTabId('blamelist');
     this.addDisposer(
       reaction(
         () => this.queryBlamelistResIter,
@@ -375,5 +375,6 @@ declare global {
 }
 
 export function BlamelistTab() {
+  useTabId('blamelist');
   return <milo-blamelist-tab />;
 }
