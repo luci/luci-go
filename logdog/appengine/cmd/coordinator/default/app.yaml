@@ -26,16 +26,6 @@ inbound_services:
   - warmup
 
 handlers:
-- url: "/internal/*"
-  script: auto
-  secure: always
-  login: admin
-
-- url: "/admin/*"
-  script: auto
-  secure: always
-  login: admin
-
 - url: "/.*"
   script: auto
   secure: always

@@ -29,3 +29,11 @@ dispatch:
     service: services
   - url: "*/prpc/logdog.Registration/*"
     service: services
+
+  # GAEv1 endpoints must be handled by our only remaining GAEv1 service.
+  # GAEv1 AuthDB pub/sub.
+  - url: "*/auth/pubsub/authdb:push"
+    service: services
+  # GAEv1 Admin settings portal.
+  - url: "*/admin/*"
+    service: services
