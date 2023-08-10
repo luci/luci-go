@@ -3,30 +3,30 @@ module go.chromium.org/luci
 go 1.20
 
 require (
-	cloud.google.com/go/bigquery v1.49.0
-	cloud.google.com/go/bigtable v1.18.1
-	cloud.google.com/go/cloudtasks v1.10.0
+	cloud.google.com/go/bigquery v1.53.0
+	cloud.google.com/go/bigtable v1.19.0
+	cloud.google.com/go/cloudtasks v1.12.1
 	cloud.google.com/go/compute/metadata v0.2.3
-	cloud.google.com/go/datastore v1.11.0
+	cloud.google.com/go/datastore v1.13.0
 	cloud.google.com/go/errorreporting v0.3.0
-	cloud.google.com/go/iam v1.0.0
-	cloud.google.com/go/kms v1.10.1
-	cloud.google.com/go/logging v1.7.0
+	cloud.google.com/go/iam v1.1.2
+	cloud.google.com/go/kms v1.15.1
+	cloud.google.com/go/logging v1.8.0
 	cloud.google.com/go/profiler v0.3.1
-	cloud.google.com/go/pubsub v1.30.0
-	cloud.google.com/go/secretmanager v1.10.0
-	cloud.google.com/go/spanner v1.45.1
-	cloud.google.com/go/storage v1.30.1
+	cloud.google.com/go/pubsub v1.33.0
+	cloud.google.com/go/secretmanager v1.11.1
+	cloud.google.com/go/spanner v1.47.0
+	cloud.google.com/go/storage v1.31.0
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.16.1
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator v0.40.1
 	github.com/Microsoft/go-winio v0.6.1
 	github.com/alecthomas/participle/v2 v2.0.0-alpha7
 	github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a
-	github.com/alicebob/miniredis/v2 v2.30.4
+	github.com/alicebob/miniredis/v2 v2.30.5
 	github.com/bazelbuild/buildtools v0.0.0-20221004120235-7186f635531b
 	github.com/bazelbuild/remote-apis v0.0.0-20230411132548-35aee1c4a425
-	github.com/bazelbuild/remote-apis-sdks v0.0.0-20230511173731-022d76cc3978
-	github.com/danjacques/gofslock v0.0.0-20230227034627-eebdc482a3f5
+	github.com/bazelbuild/remote-apis-sdks v0.0.0-20230809203756-67f2ffbec0ef
+	github.com/danjacques/gofslock v0.0.0-20230728142113-ae8f59f9e88b
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/dustin/go-humanize v1.0.1
 	github.com/envoyproxy/protoc-gen-validate v1.0.2
@@ -38,7 +38,7 @@ require (
 	github.com/google/s2a-go v0.1.4
 	github.com/google/tink/go v1.7.0
 	github.com/google/uuid v1.3.0
-	github.com/googleapis/gax-go/v2 v2.8.0
+	github.com/googleapis/gax-go/v2 v2.12.0
 	github.com/gorhill/cronexpr v0.0.0-20180427100037-88b0669f7d75
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/julienschmidt/httprouter v1.3.0
@@ -50,7 +50,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/pmezard/go-difflib v1.0.0
-	github.com/protocolbuffers/txtpbfmt v0.0.0-20230706122021-58d06d1b3926
+	github.com/protocolbuffers/txtpbfmt v0.0.0-20230730201308-0c31dbd32b9f
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/sergi/go-diff v1.3.1
 	github.com/smarty/assertions v1.15.1
@@ -65,35 +65,38 @@ require (
 	go.opentelemetry.io/otel v1.16.0
 	go.opentelemetry.io/otel/sdk v1.16.0
 	go.opentelemetry.io/otel/trace v1.16.0
-	go.starlark.net v0.0.0-20230612165344-9532f5667272
-	golang.org/x/crypto v0.11.0
-	golang.org/x/net v0.12.0
-	golang.org/x/oauth2 v0.9.0
+	go.starlark.net v0.0.0-20230807144010-2aa75752d1da
+	golang.org/x/crypto v0.12.0
+	golang.org/x/net v0.14.0
+	golang.org/x/oauth2 v0.11.0
 	golang.org/x/sync v0.3.0
-	golang.org/x/sys v0.10.0
-	golang.org/x/term v0.10.0
-	golang.org/x/text v0.11.0
+	golang.org/x/sys v0.11.0
+	golang.org/x/term v0.11.0
+	golang.org/x/text v0.12.0
 	golang.org/x/time v0.3.0
-	golang.org/x/tools v0.11.0
+	golang.org/x/tools v0.12.0
 	gonum.org/v1/gonum v0.12.0
-	google.golang.org/api v0.118.0
+	google.golang.org/api v0.136.0
 	google.golang.org/appengine v1.6.8-0.20221117013220-504804fb50de
-	google.golang.org/genproto v0.0.0-20230403163135-c38d8f061ccd
-	google.golang.org/grpc v1.56.0-dev
+	google.golang.org/genproto v0.0.0-20230807174057-1744710a1577
+	google.golang.org/genproto/googleapis/api v0.0.0-20230803162519-f966b187b2e5
+	google.golang.org/genproto/googleapis/bytestream v0.0.0-20230807174057-1744710a1577
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230807174057-1744710a1577
+	google.golang.org/grpc v1.58.0-dev.0.20230804151048-7aceafcc52f9
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
-	cloud.google.com/go v0.110.0 // indirect
-	cloud.google.com/go/compute v1.19.1 // indirect
-	cloud.google.com/go/longrunning v0.4.1 // indirect
-	cloud.google.com/go/trace v1.9.0 // indirect
+	cloud.google.com/go v0.110.7 // indirect
+	cloud.google.com/go/compute v1.23.0 // indirect
+	cloud.google.com/go/longrunning v0.5.1 // indirect
+	cloud.google.com/go/trace v1.10.1 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.13.1 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.40.1 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
-	github.com/apache/arrow/go/v11 v11.0.0 // indirect
+	github.com/apache/arrow/go/v12 v12.0.0 // indirect
 	github.com/apache/thrift v0.16.0 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
@@ -101,7 +104,7 @@ require (
 	github.com/cncf/udpa/go v0.0.0-20220112060539-c52dc94e7fbe // indirect
 	github.com/cncf/xds/go v0.0.0-20230607035331-e9ce68804cb4 // indirect
 	github.com/dgraph-io/ristretto v0.1.0 // indirect
-	github.com/envoyproxy/go-control-plane v0.11.1-0.20230524094728-9239064ad72f // indirect
+	github.com/envoyproxy/go-control-plane v0.11.1 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.4.1 // indirect

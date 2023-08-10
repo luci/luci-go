@@ -25,6 +25,7 @@
 set -e
 
 deps=(
+  cloud.google.com/go/bigquery@latest
   cloud.google.com/go/bigtable@latest
   cloud.google.com/go/cloudtasks@latest
   cloud.google.com/go/compute@latest
@@ -87,9 +88,7 @@ deps=(
   # them, they can be bumped as dependencies. By updating them last, we'll
   # downgrade stuff that depend on them instead.
 
-  # The next version appears susceptible to
-  # https://github.com/googleapis/google-cloud-go/issues/8232
-  cloud.google.com/go/bigquery@v1.49.0
+  # Nothing to pin for now.
 )
 
 for mod in ${deps[@]}; do

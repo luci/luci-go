@@ -150,7 +150,7 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 
 	start := time.Now()
 
-	rootDg, entries, _, err := client.ComputeMerkleTree(root, "", "", &is, filemetadata.NewNoopCache())
+	rootDg, entries, _, err := client.ComputeMerkleTree(ctx, root, "", "", &is, filemetadata.NewNoopCache())
 
 	if err != nil {
 		if err := writeExitResult(c.dumpJSON, IOError, ""); err != nil {

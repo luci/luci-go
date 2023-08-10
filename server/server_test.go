@@ -551,6 +551,7 @@ func TestRPCServers(t *testing.T) {
 				})
 
 				Convey("Non-nil OK errors", func() {
+					// See https://github.com/grpc/grpc-go/pull/6374.
 					rpcSvc.unary = func(ctx context.Context, _ *testpb.Request) (*testpb.Response, error) {
 						return nil, malformedGrpcError{}
 					}
@@ -559,7 +560,7 @@ func TestRPCServers(t *testing.T) {
 					defer srv.StopBackgroundServing()
 
 					_, err := rpcClient.Unary(context.Background(), &testpb.Request{})
-					So(err, ShouldHaveGRPCStatus, codes.Internal)
+					So(err, ShouldHaveGRPCStatus, codes.Unknown)
 				})
 
 				Convey("Panic catcher is installed", func() {

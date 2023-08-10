@@ -177,7 +177,7 @@ func uploadToCas(ctx context.Context, client *client.Client, dir string) (*apipb
 	is := command.InputSpec{
 		Inputs: []string{"."}, // entire dir
 	}
-	rootDg, entries, _, err := client.ComputeMerkleTree(dir, "", "", &is, filemetadata.NewNoopCache())
+	rootDg, entries, _, err := client.ComputeMerkleTree(ctx, dir, "", "", &is, filemetadata.NewNoopCache())
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to compute Merkle Tree").Err()
 	}
