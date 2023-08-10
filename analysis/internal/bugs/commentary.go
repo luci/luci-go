@@ -64,21 +64,34 @@ func MergeCommentary(cs ...Commentary) string {
 // * why the bug was automatically filed.
 // It adds information about actioning the bug and what to do
 // if the component is not correct.
-func GenerateInitialIssueDescription(description *clustering.ClusterDescription, appID string, thresholdComment string) string {
-	commentary := Commentary{
-		Body: fmt.Sprintf(DescriptionTemplate, description.Description),
-		Footer: fmt.Sprintf("How to action this bug: https://%s.appspot.com/help#new-bug-filed\n"+
-			"Provide feedback: https://%s.appspot.com/help#feedback", appID, appID),
+func GenerateInitialIssueDescription(description *clustering.ClusterDescription, appID, thresholdComment, ruleLink string) string {
+	var commentary []Commentary
+
+	commentary = append(commentary, Commentary{
+		Body: description.Description,
+	})
+
+	if ruleLink != "" {
+		commentary = append(commentary, Commentary{
+			Body: fmt.Sprintf("See failure impact and configure the failure association rule for this bug at: %s", ruleLink),
+		})
 	}
 
-	thresholdCommentary := Commentary{
+	commentary = append(commentary, Commentary{
 		Body: thresholdComment,
-	}
+	})
 
-	componentSelectionCommentary := Commentary{
+	commentary = append(commentary, Commentary{
+		Body:   NewBugTrailingDescription,
+		Footer: fmt.Sprintf("How to action this bug: https://%s.appspot.com/help#new-bug-filed", appID),
+	})
+	commentary = append(commentary, Commentary{
+		Footer: fmt.Sprintf("Provide feedback: https://%s.appspot.com/help#feedback", appID),
+	})
+	commentary = append(commentary, Commentary{
 		Footer: fmt.Sprintf("Was this bug filed in the wrong component? See: "+
 			"https://%s.appspot.com/help#component-selection", appID),
-	}
+	})
 
-	return MergeCommentary(commentary, thresholdCommentary, componentSelectionCommentary)
+	return MergeCommentary(commentary...)
 }

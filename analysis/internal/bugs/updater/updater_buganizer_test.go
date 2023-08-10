@@ -233,11 +233,11 @@ func TestBuganizerUpdate(t *testing.T) {
 
 				So(len(fakeStore.Issues), ShouldEqual, id)
 				So(fakeStore.Issues[id].Issue.IssueId, ShouldEqual, id)
-				So(fakeStore.Issues[id].Issue.IssueComment.Comment, ShouldContainSubstring, expectedBugSummary)
+				So(fakeStore.Issues[id].Issue.Description.Comment, ShouldContainSubstring, expectedBugSummary)
 				So(fakeStore.Issues[id].Issue.IssueState.ComponentId, ShouldEqual, projectCfg.Buganizer.DefaultComponent.Id)
 				So(len(fakeStore.Issues[id].Comments), ShouldEqual, 1)
 				for _, expectedContent := range expectedBugContents {
-					So(fakeStore.Issues[id].Issue.IssueComment.Comment, ShouldContainSubstring, expectedContent)
+					So(fakeStore.Issues[id].Issue.Description.Comment, ShouldContainSubstring, expectedContent)
 				}
 				// Expect a link to the bug and the rule.
 				So(fakeStore.Issues[id].Comments[0].Comment, ShouldContainSubstring, fmt.Sprintf("https://luci-analysis-test.appspot.com/b/%d", id))

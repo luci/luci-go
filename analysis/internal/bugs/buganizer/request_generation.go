@@ -97,16 +97,19 @@ func NewRequestGenerator(
 // It sets the default values on the bug.
 func (rg *RequestGenerator) PrepareNew(impact *bugs.ClusterImpact,
 	description *clustering.ClusterDescription,
-	componentId int64) *issuetracker.CreateIssueRequest {
+	ruleID string,
+	componentID int64) *issuetracker.CreateIssueRequest {
 
 	issuePriority := rg.clusterPriority(impact)
 
 	// Justify the priority for the bug.
 	thresholdComment := rg.priorityComment(impact, issuePriority)
 
+	ruleLink := fmt.Sprintf("https://%s.appspot.com/p/%s/rules/%s", rg.appID, rg.project, ruleID)
+
 	issue := &issuetracker.Issue{
 		IssueState: &issuetracker.IssueState{
-			ComponentId: componentId,
+			ComponentId: componentID,
 			Type:        issuetracker.Issue_BUG,
 			Status:      issuetracker.Issue_NEW,
 			Priority:    issuePriority,
@@ -115,7 +118,7 @@ func (rg *RequestGenerator) PrepareNew(impact *bugs.ClusterImpact,
 		},
 		IssueComment: &issuetracker.IssueComment{
 			Comment: bugs.GenerateInitialIssueDescription(
-				description, rg.appID, thresholdComment),
+				description, rg.appID, thresholdComment, ruleLink),
 		},
 	}
 
@@ -160,26 +163,24 @@ func (rg *RequestGenerator) linkToRuleComment(issueId int64) string {
 	return fmt.Sprintf(bugs.LinkTemplate, issueLink)
 }
 
-// PrepareLinkComment prepares a request that adds links to LUCI Analysis to
-// a Buganizer bug.
-func (rg *RequestGenerator) PrepareLinkComment(issueId int64) *issuetracker.CreateIssueCommentRequest {
-	return &issuetracker.CreateIssueCommentRequest{
-		IssueId: issueId,
-		Comment: &issuetracker.IssueComment{
-			Comment: rg.linkToRuleComment(issueId),
-		},
-	}
-}
-
 // PrepareLinkIssueCommentUpdate prepares a request that adds links to LUCI Analysis to
 // a Buganizer bug by updating the issue description.
-func (rg *RequestGenerator) PrepareLinkIssueCommentUpdate(issue *issuetracker.Issue) *issuetracker.UpdateIssueCommentRequest {
-	linkComment := issue.IssueComment.Comment + "\n" + rg.linkToRuleComment(issue.IssueId)
+func (rg *RequestGenerator) PrepareLinkIssueCommentUpdate(impact *bugs.ClusterImpact,
+	description *clustering.ClusterDescription,
+	issueID int64) *issuetracker.UpdateIssueCommentRequest {
+
+	// Regenerate the initial comment in the same way as PrepareNew, but use
+	// the link for the rule that uses the bug ID instead of the rule ID.
+	issuePriority := rg.clusterPriority(impact)
+	thresholdComment := rg.priorityComment(impact, issuePriority)
+	ruleLink := fmt.Sprintf("https://%s.appspot.com/b/%d", rg.appID, issueID)
+
 	return &issuetracker.UpdateIssueCommentRequest{
-		IssueId:       issue.IssueId,
+		IssueId:       issueID,
 		CommentNumber: 1,
 		Comment: &issuetracker.IssueComment{
-			Comment: linkComment,
+			Comment: bugs.GenerateInitialIssueDescription(
+				description, rg.appID, thresholdComment, ruleLink),
 		},
 	}
 }

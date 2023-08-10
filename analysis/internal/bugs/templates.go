@@ -20,9 +20,7 @@ import (
 )
 
 const (
-	DescriptionTemplate = `%s
-
-This bug has been automatically filed by LUCI Analysis in response to a cluster of test failures.`
+	NewBugTrailingDescription = `This bug has been automatically filed by LUCI Analysis in response to a cluster of test failures.`
 
 	SourceBugRuleUpdatedTemplate = `Because this bug was merged into another bug, LUCI Analysis has` +
 		` merged the failure association rule for this bug into the rule for the canonical bug.

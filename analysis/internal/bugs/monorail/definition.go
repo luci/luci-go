@@ -160,8 +160,10 @@ func (g *Generator) PrepareNew(impact *bugs.ClusterImpact, description *clusteri
 	return &mpb.MakeIssueRequest{
 		Parent: fmt.Sprintf("projects/%s", g.monorailCfg.Project),
 		Issue:  issue,
+		// Do not include the link to the rule in monorail initial comments,
+		// as we will post it in a follow-up comment.
 		Description: bugs.GenerateInitialIssueDescription(
-			description, g.appID, thresholdComment),
+			description, g.appID, thresholdComment, "" /* ruleLink */),
 		NotifyType: mpb.NotifyType_EMAIL,
 	}
 }

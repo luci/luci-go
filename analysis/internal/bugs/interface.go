@@ -100,6 +100,8 @@ var ErrCreateSimulated = errors.New("CreateNew did not create a bug as the bug m
 // CreateRequest captures key details of a cluster and its impact,
 // as needed for filing new bugs.
 type CreateRequest struct {
+	// The ID of the rule that is in the process of being created.
+	RuleID string
 	// Description is the human-readable description of the cluster.
 	Description *clustering.ClusterDescription
 	// Impact describes the impact of cluster.

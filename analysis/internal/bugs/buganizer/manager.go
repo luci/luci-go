@@ -146,6 +146,7 @@ func (bm *BugManager) Create(ctx context.Context, createRequest *bugs.CreateRequ
 	createIssueRequest := bm.requestGenerator.PrepareNew(
 		createRequest.Impact,
 		createRequest.Description,
+		createRequest.RuleID,
 		componentID,
 	)
 	var issue *issuetracker.Issue
@@ -162,18 +163,19 @@ func (bm *BugManager) Create(ctx context.Context, createRequest *bugs.CreateRequ
 		issueId = issue.IssueId
 	}
 
+	issueCommentReq := bm.requestGenerator.PrepareLinkIssueCommentUpdate(
+		createRequest.Impact,
+		createRequest.Description,
+		issueId,
+	)
 	if bm.Simulate {
-		logging.Debugf(ctx, "Would update Buganizer issue and add issue link to description")
+		logging.Debugf(ctx, "Would update Buganizer issue comment: %s", textPBMultiline.Format(issueCommentReq))
 	} else {
-		issueCommentReq := bm.requestGenerator.PrepareLinkIssueCommentUpdate(issue)
 		if _, err := bm.client.UpdateIssueComment(ctx, issueCommentReq); err != nil {
 			if statusError, ok := status.FromError(err); ok && statusError.Code() == codes.PermissionDenied {
-				// If we fail to update the issue comment, then we add a comment with the issue link.
+				// If we fail to update the issue comment, then we leave the link to the rule
+				// that uses the rule ID instead of the bug ID.
 				logging.Warningf(ctx, "Failed to update issue comment: %v", statusError)
-				issueCommentReq := bm.requestGenerator.PrepareLinkComment(issueId)
-				if _, err := bm.client.CreateIssueComment(ctx, issueCommentReq); err != nil {
-					return "", errors.Annotate(err, "create issue link comment").Err()
-				}
 			} else {
 				return "", errors.Annotate(err, "add issue link to issue comment").Err()
 			}

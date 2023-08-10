@@ -17,6 +17,7 @@ package buganizer
 import (
 	"context"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -31,17 +32,6 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
 )
-
-// These are the common issue comment parts of all the
-// issues that we create; they are basically static parts
-// that are included in every issue comment.
-const commonIssueCommentBody = "This bug has been automatically filed by " +
-	"LUCI Analysis in response to a cluster of test failures."
-const commonIssueCommentFooter = "How to action this bug: " +
-	"https://luci-analysis-test.appspot.com/help#new-bug-filed\n" +
-	"Provide feedback: https://luci-analysis-test.appspot.com/help#feedback\n" +
-	"Was this bug filed in the wrong component? See: " +
-	"https://luci-analysis-test.appspot.com/help#component-selection"
 
 func TestBugManager(t *testing.T) {
 	t.Parallel()
@@ -89,63 +79,71 @@ func TestBugManager(t *testing.T) {
 				createRequest.Description.Title = reason
 				createRequest.Description.Description = "A cluster of failures has been found with reason: " + reason
 
-				bugID, err := bm.Create(ctx, createRequest)
-				So(err, ShouldBeNil)
-				So(bugID, ShouldEqual, "1")
-				So(len(fakeStore.Issues), ShouldEqual, 1)
-				issueData := fakeStore.Issues[1]
-
-				expectedIssue.IssueComment = &issuetracker.IssueComment{
+				expectedIssue.Description = &issuetracker.IssueComment{
 					CommentNumber: 1,
 					Comment: "A cluster of failures has been found with reason: Expected equality " +
 						"of these values:\n\t\t\t\t\t\"Expected_Value\"\n\t\t\t\t\tmy_expr.evaluate(123)\n\t\t\t\t\t\t" +
-						"Which is: \"Unexpected_Value\"" +
-						"\n\n" + commonIssueCommentBody +
-						"\n\nThe priority was set to P1 because:\n- Test Results Failed (1-day) >= 500" +
-						"\n\n" + commonIssueCommentFooter +
-						"\nSee failure impact and configure the failure association rule for this bug at: https://luci-analysis-test.appspot.com/b/1",
+						"Which is: \"Unexpected_Value\"\n" +
+						"\n" +
+						"See failure impact and configure the failure association rule for this bug at: https://luci-analysis-test.appspot.com/b/1\n" +
+						"\n" +
+						"The priority was set to P1 because:\n" +
+						"- Test Results Failed (1-day) >= 500\n" +
+						"\n" +
+						"This bug has been automatically filed by LUCI Analysis in response to a cluster of test failures.\n" +
+						"\n" +
+						"How to action this bug: https://luci-analysis-test.appspot.com/help#new-bug-filed\n" +
+						"Provide feedback: https://luci-analysis-test.appspot.com/help#feedback\n" +
+						"Was this bug filed in the wrong component? See: https://luci-analysis-test.appspot.com/help#component-selection",
 				}
 
-				expectedIssue.Description = expectedIssue.IssueComment
+				Convey("Happy path", func() {
+					bugID, err := bm.Create(ctx, createRequest)
+					So(err, ShouldBeNil)
+					So(bugID, ShouldEqual, "1")
+					So(len(fakeStore.Issues), ShouldEqual, 1)
 
-				So(issueData.Issue, ShouldResembleProto, expectedIssue)
-				So(len(issueData.Comments), ShouldEqual, 1)
-				// Link to cluster page should appear in output.
-				So(issueData.Comments[0].Comment, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
+					issueData := fakeStore.Issues[1]
+					So(issueData.Issue, ShouldResembleProto, expectedIssue)
+					So(len(issueData.Comments), ShouldEqual, 1)
+					// Link to cluster page should appear in output.
+					So(issueData.Comments[0].Comment, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
+				})
+				Convey("Failed to update issue comment", func() {
+					fakeClient.ShouldFailIssueCommentUpdates = true
+					bugID, err := bm.Create(ctx, createRequest)
+					So(err, ShouldBeNil)
+					So(bugID, ShouldEqual, "1")
+					So(len(fakeStore.Issues), ShouldEqual, 1)
 
+					expectedIssue.Description.Comment = strings.ReplaceAll(expectedIssue.Description.Comment,
+						"https://luci-analysis-test.appspot.com/b/1",
+						"https://luci-analysis-test.appspot.com/p/chromeos/rules/new-rule-id")
+
+					issueData := fakeStore.Issues[1]
+					So(issueData.Issue, ShouldResembleProto, expectedIssue)
+					So(len(issueData.Comments), ShouldEqual, 1)
+					So(issueData.Comments[0].Comment, ShouldNotContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
+				})
 			})
-			Convey("When failing to update issue comment, should append link comment", func() {
-				reason := `Expected equality of these values:
-				"Expected_Value"
-				my_expr.evaluate(123)
-					Which is: "Unexpected_Value"`
-				createRequest.Description.Title = reason
-				createRequest.Description.Description = "A cluster of failures has been found with reason: " + reason
-				fakeClient.ShouldFailIssueCommenUpdates = true
-				bugID, err := bm.Create(ctx, createRequest)
-
-				So(err, ShouldBeNil)
-				So(bugID, ShouldEqual, "1")
-				So(len(fakeStore.Issues), ShouldEqual, 1)
-				issueData := fakeStore.Issues[1]
-				So(len(issueData.Comments), ShouldEqual, 2)
-				So(issueData.Issue.IssueComment.Comment, ShouldNotContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
-				So(issueData.Comments[0].Comment, ShouldNotContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
-				So(issueData.Comments[1].Comment, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
-			})
-
 			Convey("With test name failure cluster", func() {
 				createRequest.Description.Title = "ninja://:blink_web_tests/media/my-suite/my-test.html"
 				createRequest.Description.Description = "A test is failing " + createRequest.Description.Title
-				expectedIssue.IssueComment = &issuetracker.IssueComment{
+				expectedIssue.Description = &issuetracker.IssueComment{
 					CommentNumber: 1,
-					Comment: "A test is failing ninja://:blink_web_tests/media/my-suite/my-test.html" +
-						"\n\n" + commonIssueCommentBody +
-						"\n\nThe priority was set to P1 because:\n- Test Results Failed (1-day) >= 500" +
-						"\n\n" + commonIssueCommentFooter +
-						"\nSee failure impact and configure the failure association rule for this bug at: https://luci-analysis-test.appspot.com/b/1",
+					Comment: "A test is failing ninja://:blink_web_tests/media/my-suite/my-test.html\n" +
+						"\n" +
+						"See failure impact and configure the failure association rule for this bug at: https://luci-analysis-test.appspot.com/b/1\n" +
+						"\n" +
+						"The priority was set to P1 because:\n" +
+						"- Test Results Failed (1-day) >= 500\n" +
+						"\n" +
+						"This bug has been automatically filed by LUCI Analysis in response to a cluster of test failures.\n" +
+						"\n" +
+						"How to action this bug: https://luci-analysis-test.appspot.com/help#new-bug-filed\n" +
+						"Provide feedback: https://luci-analysis-test.appspot.com/help#feedback\n" +
+						"Was this bug filed in the wrong component? See: https://luci-analysis-test.appspot.com/help#component-selection",
 				}
-				expectedIssue.Description = expectedIssue.IssueComment
 				expectedIssue.IssueState.Title = "Tests are failing: ninja://:blink_web_tests/media/my-suite/my-test.html"
 
 				bugID, err := bm.Create(ctx, createRequest)
@@ -712,6 +710,7 @@ func newCreateRequest() *bugs.CreateRequest {
 			Title:       "ClusterID",
 			Description: "Tests are failing with reason: Some failure reason.",
 		},
+		RuleID: "new-rule-id",
 	}
 	return cluster
 }

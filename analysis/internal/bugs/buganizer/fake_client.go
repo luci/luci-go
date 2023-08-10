@@ -23,6 +23,7 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
@@ -39,7 +40,7 @@ const ComponentWithNoAccess = 999999
 type FakeClient struct {
 	FakeStore *FakeIssueStore
 	// Whether or not it should fail to update issue comments.
-	ShouldFailIssueCommenUpdates bool
+	ShouldFailIssueCommentUpdates bool
 }
 
 func NewFakeClient() *FakeClient {
@@ -76,7 +77,22 @@ func (fic *FakeClient) GetIssue(ctx context.Context, in *issuetracker.GetIssueRe
 
 // CreateIssue creates an issue in the in-memory store.
 func (fic *FakeClient) CreateIssue(ctx context.Context, in *issuetracker.CreateIssueRequest) (*issuetracker.Issue, error) {
-	return fic.FakeStore.StoreIssue(ctx, in.Issue), nil
+	if in.Issue.IssueId != 0 {
+		return nil, errors.New("cannot set IssueId in CreateIssue requests")
+	}
+	// Copy the request to make sure the proto we store
+	// does not alias the request.
+	issue := proto.Clone(in.Issue).(*issuetracker.Issue)
+
+	// Move the issue description from IssueComment (the input-only field)
+	// to Description (the output-only field).
+	issue.Description = &issuetracker.IssueComment{
+		CommentNumber: 1,
+		Comment:       issue.IssueComment.Comment,
+	}
+	issue.IssueComment = nil
+
+	return fic.FakeStore.StoreIssue(ctx, issue), nil
 }
 
 // GetAutomationAccess checks access to a ComponentID. Access is always true
@@ -161,7 +177,7 @@ func (fic *FakeClient) CreateIssueComment(ctx context.Context, in *issuetracker.
 
 func (fic *FakeClient) UpdateIssueComment(ctx context.Context, in *issuetracker.UpdateIssueCommentRequest) (*issuetracker.IssueComment, error) {
 	issueData, err := fic.FakeStore.GetIssue(in.IssueId)
-	if fic.ShouldFailIssueCommenUpdates {
+	if fic.ShouldFailIssueCommentUpdates {
 		return nil, status.Errorf(codes.PermissionDenied, "Modification not allowed")
 	}
 	if err != nil {
@@ -173,7 +189,6 @@ func (fic *FakeClient) UpdateIssueComment(ctx context.Context, in *issuetracker.
 	comment := issueData.Comments[in.CommentNumber-1]
 	comment.Comment = in.Comment.Comment
 	issueData.Issue.Description = comment
-	issueData.Issue.IssueComment = comment
 	return comment, nil
 }
 

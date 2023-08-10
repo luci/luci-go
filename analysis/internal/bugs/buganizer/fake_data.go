@@ -18,10 +18,12 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // issueData represents all data that the store keeps for an issue.
@@ -78,42 +80,40 @@ func NewFakeIssueStore() *FakeIssueStore {
 	}
 }
 
-// StoreIssue stores an issue in the in-memory store.
-// Ids are created incrementally from 1.
-// If the issue already has an id that is greater than 0, the id will not change.
+// StoreIssue creates an issue in the in-memory store, assigning
+// it an ID (if unset) and creation timestamps. The issue that
+// was stored is returned.
 func (fis *FakeIssueStore) StoreIssue(ctx context.Context, issue *issuetracker.Issue) *issuetracker.Issue {
 	_, ok := fis.Issues[issue.IssueId]
 	if ok {
-		return issue
-	} else {
-		if issue.IssueId == 0 {
-			fis.lastID++
-			id := fis.lastID
-			issue.IssueId = id
-			issue.IssueComment.IssueId = id
-			issue.Description = &issuetracker.IssueComment{
-				CommentNumber: 1,
-				Comment:       issue.IssueComment.Comment,
-			}
-			issue.CreatedTime = timestamppb.New(clock.Now(ctx))
-		} else {
-			if issue.IssueId > fis.lastID {
-				fis.lastID = issue.IssueId
-			}
-		}
-		issue.ModifiedTime = timestamppb.New(clock.Now(ctx))
-		comments := make([]*issuetracker.IssueComment, 0)
-		comments = append(comments, &issuetracker.IssueComment{
-			CommentNumber: 1,
-			Comment:       issue.IssueComment.Comment,
-		})
-		fis.Issues[issue.IssueId] = &IssueData{
-			Issue:        issue,
-			Comments:     comments,
-			IssueUpdates: make([]*issuetracker.IssueUpdate, 0),
-		}
-		return issue
+		panic("already stored an issue with this ID")
 	}
+	if issue.IssueId == 0 {
+		// Assign an ID.
+		fis.lastID++
+		id := fis.lastID
+		issue.IssueId = id
+	} else {
+		// ID externally assigned.
+		if issue.IssueId > fis.lastID {
+			fis.lastID = issue.IssueId
+		}
+	}
+	issue.CreatedTime = timestamppb.New(clock.Now(ctx))
+	issue.ModifiedTime = timestamppb.New(clock.Now(ctx))
+	comments := make([]*issuetracker.IssueComment, 0)
+	comments = append(comments, &issuetracker.IssueComment{
+		CommentNumber: 1,
+		Comment:       issue.Description.GetComment(),
+	})
+	fis.Issues[issue.IssueId] = &IssueData{
+		Issue:        issue,
+		Comments:     comments,
+		IssueUpdates: make([]*issuetracker.IssueUpdate, 0),
+	}
+	// Clone the proto to avoid the response aliasing the
+	// stored issue.
+	return proto.Clone(issue).(*issuetracker.Issue)
 }
 
 func (fis *FakeIssueStore) BatchGetIssues(issueIds []int64) ([]*issuetracker.Issue, error) {

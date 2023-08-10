@@ -825,6 +825,7 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 	}
 
 	request := &bugs.CreateRequest{
+		RuleID:      ruleID,
 		Description: description,
 		Impact:      ExtractResidualImpact(cs),
 	}
