@@ -25,9 +25,11 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -49,6 +51,7 @@ func TestReservationServer(t *testing.T) {
 		const rbeReservation = "reservation-id"
 
 		ctx := memory.Use(context.Background())
+		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		rbe := mockedReservationClient{
 			newState: remoteworkers.ReservationState_RESERVATION_PENDING,
 		}
@@ -59,7 +62,9 @@ func TestReservationServer(t *testing.T) {
 			serverVersion: "go-version",
 		}
 
-		expiry := testclock.TestRecentTimeUTC
+		expirationTimeout := time.Hour
+		executionTimeout := 10 * time.Minute
+		expiry := clock.Now(ctx).Add(expirationTimeout).UTC()
 
 		enqueueTask := &internalspb.EnqueueRBETask{
 			Payload: &internalspb.TaskPayload{
@@ -71,9 +76,10 @@ func TestReservationServer(t *testing.T) {
 					PySwarmingVersion: "py-version",
 				},
 			},
-			RbeInstance:    rbeInstance,
-			Expiry:         timestamppb.New(expiry),
-			RequestedBotId: "some-bot-id",
+			RbeInstance:      rbeInstance,
+			Expiry:           timestamppb.New(expiry),
+			ExecutionTimeout: durationpb.New(executionTimeout),
+			RequestedBotId:   "some-bot-id",
 			Constraints: []*internalspb.EnqueueRBETask_Constraint{
 				{Key: "key1", AllowedValues: []string{"v1", "v2"}},
 				{Key: "key2", AllowedValues: []string{"v3"}},
@@ -87,7 +93,7 @@ func TestReservationServer(t *testing.T) {
 			Kind:       model.TaskToRunKind(enqueueTask.Payload.TaskToRunShard),
 			ID:         enqueueTask.Payload.TaskToRunId,
 			Parent:     taskReqKey,
-			Expiration: testclock.TestRecentTimeUTC,
+			Expiration: expiry,
 		}
 		So(datastore.Put(ctx, taskToRun), ShouldBeNil)
 
@@ -114,9 +120,11 @@ func TestReservationServer(t *testing.T) {
 					{Key: "label:key1", AllowedValues: []string{"v1", "v2"}},
 					{Key: "label:key2", AllowedValues: []string{"v3"}},
 				},
-				ExpireTime:     timestamppb.New(expiry),
-				Priority:       123,
-				RequestedBotId: "some-bot-id",
+				ExpireTime:       timestamppb.New(expiry.Add(executionTimeout)),
+				QueuingTimeout:   durationpb.New(expirationTimeout),
+				ExecutionTimeout: durationpb.New(executionTimeout),
+				Priority:         123,
+				RequestedBotId:   "some-bot-id",
 			})
 		})
 

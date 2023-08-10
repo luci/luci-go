@@ -8,6 +8,7 @@ package swarming.internals.rbe;
 
 option go_package = "go.chromium.org/luci/swarming/proto/internals;internalspb";
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -204,6 +205,8 @@ message EnqueueRBETask {
   int32 priority = 6;
   // Swarming scheduling algorithm, as specified in pools.cfg.
   swarming.config.Pool.SchedulingAlgorithm scheduling_algorithm = 7;
+  // How long the task is allowed to run once it starts on the bot.
+  google.protobuf.Duration execution_timeout = 8;
 }
 
 

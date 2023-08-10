@@ -24,7 +24,10 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -144,17 +147,41 @@ func (s *ReservationServer) handleEnqueueRBETask(ctx context.Context, task *inte
 		}
 	}
 
+	var overallExpiration *timestamppb.Timestamp
+	var queuingTimeout *durationpb.Duration
+	var executionTimeout *durationpb.Duration
+
+	if task.ExecutionTimeout == nil {
+		// TODO(vadimsh): Get rid of this code path when it is no longer being hit.
+		logging.Warningf(ctx, "No execution timeout set")
+		overallExpiration = task.Expiry
+	} else {
+		// How much time left to sit in the queue.
+		untilExpired := task.Expiry.AsTime().Sub(clock.Now(ctx))
+		if untilExpired < 0 {
+			untilExpired = 0
+		}
+		queuingTimeout = durationpb.New(untilExpired)
+		// How much time there is to run once started.
+		executionTimeout = task.ExecutionTimeout
+		// The task must be done by that time.
+		overallExpiration = timestamppb.New(
+			task.Expiry.AsTime().Add(task.ExecutionTimeout.AsDuration()))
+	}
+
 	logging.Infof(ctx, "Creating reservation %q", task.Payload.ReservationId)
 	reservationName := fmt.Sprintf("%s/reservations/%s", task.RbeInstance, task.Payload.ReservationId)
 	reservation, err := s.rbe.CreateReservation(ctx, &remoteworkers.CreateReservationRequest{
 		Parent: task.RbeInstance,
 		Reservation: &remoteworkers.Reservation{
-			Name:           reservationName,
-			Payload:        payload,
-			ExpireTime:     task.Expiry,
-			Priority:       task.Priority,
-			Constraints:    constraints,
-			RequestedBotId: task.RequestedBotId,
+			Name:             reservationName,
+			Payload:          payload,
+			ExpireTime:       overallExpiration,
+			QueuingTimeout:   queuingTimeout,
+			ExecutionTimeout: executionTimeout,
+			Priority:         task.Priority,
+			Constraints:      constraints,
+			RequestedBotId:   task.RequestedBotId,
 		},
 	})
 	if status.Code(err) == codes.AlreadyExists {

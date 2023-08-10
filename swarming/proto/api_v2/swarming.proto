@@ -641,6 +641,7 @@ message TaskRequestResponse {
   string pubsub_topic = 15;
   string pubsub_userdata = 16;
   int32 bot_ping_tolerance_secs = 17;
+  string rbe_instance = 18;
 }
 
 // Request to cancel one task.
