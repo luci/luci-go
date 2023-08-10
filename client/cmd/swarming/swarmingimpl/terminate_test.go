@@ -22,7 +22,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	googleapi "google.golang.org/api/googleapi"
 
-	swarmingv1 "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
@@ -101,26 +100,26 @@ func TestTerminateBots(t *testing.T) {
 					TaskId: terminateTaskID,
 				}, nil
 			},
-			taskResult: func(ctx context.Context, taskID string, _ bool) (*swarmingv1.SwarmingRpcsTaskResult, error) {
+			taskResult: func(ctx context.Context, taskID string, _ bool) (*swarmingv2.TaskResultResponse, error) {
 				givenTaskID = taskID
 				if taskID == stillRunningTaskID && countLoop < 2 {
 					countLoop += 1
-					return &swarmingv1.SwarmingRpcsTaskResult{
-						State: "RUNNING",
+					return &swarmingv2.TaskResultResponse{
+						State: swarmingv2.TaskState_RUNNING,
 					}, nil
 				}
 				if taskID == failTaskID {
-					return &swarmingv1.SwarmingRpcsTaskResult{
-						State: "TIMED_OUT",
+					return &swarmingv2.TaskResultResponse{
+						State: swarmingv2.TaskState_TIMED_OUT,
 					}, errors.New("failed to call GetTaskResult")
 				}
 				if taskID == statusNotCompletedTaskID {
-					return &swarmingv1.SwarmingRpcsTaskResult{
-						State: "BOT_DIED",
+					return &swarmingv2.TaskResultResponse{
+						State: swarmingv2.TaskState_BOT_DIED,
 					}, nil
 				}
-				return &swarmingv1.SwarmingRpcsTaskResult{
-					State: "COMPLETED",
+				return &swarmingv2.TaskResultResponse{
+					State: swarmingv2.TaskState_COMPLETED,
 				}, nil
 			},
 		}

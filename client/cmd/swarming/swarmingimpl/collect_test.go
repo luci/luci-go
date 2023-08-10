@@ -27,7 +27,6 @@ import (
 	"golang.org/x/sync/semaphore"
 	googleapi "google.golang.org/api/googleapi"
 
-	swarmingv1 "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -120,7 +119,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 
 	Convey(`Test fatal response`, t, func() {
 		service := &testService{
-			taskResult: func(c context.Context, _ string, _ bool) (*swarmingv1.SwarmingRpcsTaskResult, error) {
+			taskResult: func(c context.Context, _ string, _ bool) (*swarmingv2.TaskResultResponse, error) {
 				return nil, &googleapi.Error{Code: 404}
 			},
 		}
@@ -130,7 +129,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 
 	Convey(`Test timeout exceeded`, t, func() {
 		service := &testService{
-			taskResult: func(c context.Context, _ string, _ bool) (*swarmingv1.SwarmingRpcsTaskResult, error) {
+			taskResult: func(c context.Context, _ string, _ bool) (*swarmingv2.TaskResultResponse, error) {
 				return nil, &googleapi.Error{Code: 502}
 			},
 		}
@@ -143,12 +142,12 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		var writtenInstance string
 		var writtenDigest string
 		service := &testService{
-			taskResult: func(c context.Context, _ string, _ bool) (*swarmingv1.SwarmingRpcsTaskResult, error) {
-				return &swarmingv1.SwarmingRpcsTaskResult{
-					State: "COMPLETED",
-					CasOutputRoot: &swarmingv1.SwarmingRpcsCASReference{
+			taskResult: func(c context.Context, _ string, _ bool) (*swarmingv2.TaskResultResponse, error) {
+				return &swarmingv2.TaskResultResponse{
+					State: swarmingv2.TaskState_COMPLETED,
+					CasOutputRoot: &swarmingv2.CASReference{
 						CasInstance: "test-instance",
-						Digest:      &swarmingv1.SwarmingRpcsDigest{Hash: "aaaaaaaaa", SizeBytes: 111111},
+						Digest:      &swarmingv2.Digest{Hash: "aaaaaaaaa", SizeBytes: 111111},
 					},
 				}, nil
 			},
@@ -170,7 +169,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		result := testCollectPollWithServer(runner, service)
 		So(result.err, ShouldBeNil)
 		So(result.result, ShouldNotBeNil)
-		So(result.result.State, ShouldResemble, "COMPLETED")
+		So(result.result.State, ShouldEqual, swarmingv2.TaskState_COMPLETED)
 		So(result.output, ShouldResemble, "yipeeee")
 		So(result.outputs, ShouldResemble, []string{"hello"})
 		So(writtenTo, ShouldStartWith, "bah")
@@ -182,19 +181,19 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		i := 0
 		maxTries := 5
 		service := &testService{
-			taskResult: func(c context.Context, _ string, _ bool) (*swarmingv1.SwarmingRpcsTaskResult, error) {
+			taskResult: func(c context.Context, _ string, _ bool) (*swarmingv2.TaskResultResponse, error) {
 				if i < maxTries {
 					i++
 					return nil, &googleapi.Error{Code: http.StatusBadGateway}
 				}
-				return &swarmingv1.SwarmingRpcsTaskResult{State: "COMPLETED"}, nil
+				return &swarmingv2.TaskResultResponse{State: swarmingv2.TaskState_COMPLETED}, nil
 			},
 		}
 		result := testCollectPollWithServer(&collectRun{taskOutput: taskOutputNone}, service)
 		So(i, ShouldEqual, maxTries)
 		So(result.err, ShouldBeNil)
 		So(result.result, ShouldNotBeNil)
-		So(result.result.State, ShouldResemble, "COMPLETED")
+		So(result.result.State, ShouldEqual, swarmingv2.TaskState_COMPLETED)
 	})
 
 }
@@ -227,7 +226,7 @@ func TestCollectPollForTasks(t *testing.T) {
 		outputFetched := sync.Map{}
 
 		service := &testService{
-			taskResult: func(c context.Context, taskID string, _ bool) (*swarmingv1.SwarmingRpcsTaskResult, error) {
+			taskResult: func(c context.Context, taskID string, _ bool) (*swarmingv2.TaskResultResponse, error) {
 				if taskID != firstID {
 					// Simulate the second task not finishing until the first
 					// task has already finished, downloaded its outputs, and
@@ -235,11 +234,11 @@ func TestCollectPollForTasks(t *testing.T) {
 					<-c.Done()
 					return nil, c.Err()
 				}
-				return &swarmingv1.SwarmingRpcsTaskResult{
-					State: "COMPLETED",
-					CasOutputRoot: &swarmingv1.SwarmingRpcsCASReference{
+				return &swarmingv2.TaskResultResponse{
+					State: swarmingv2.TaskState_COMPLETED,
+					CasOutputRoot: &swarmingv2.CASReference{
 						CasInstance: "test-instance",
-						Digest:      &swarmingv1.SwarmingRpcsDigest{Hash: "aaaaaaaaa", SizeBytes: 111111},
+						Digest:      &swarmingv2.Digest{Hash: "aaaaaaaaa", SizeBytes: 111111},
 					},
 				}, nil
 			},
@@ -262,7 +261,7 @@ func TestCollectPollForTasks(t *testing.T) {
 		So(lastOutputFetched, ShouldBeFalse)
 		So(results[0].err, ShouldBeNil)
 		So(results[0].result, ShouldNotBeNil)
-		So(results[0].result.State, ShouldResemble, "COMPLETED")
+		So(results[0].result.State, ShouldEqual, swarmingv2.TaskState_COMPLETED)
 		So(results[1].err, ShouldUnwrapTo, context.Canceled)
 		So(results[1].result, ShouldBeNil)
 	})
@@ -278,12 +277,12 @@ func TestCollectPollForTasks(t *testing.T) {
 		firstTaskComplete := make(chan struct{})
 		lastTaskDownloading := make(chan struct{})
 		service := &testService{
-			taskResult: func(c context.Context, taskID string, _ bool) (*swarmingv1.SwarmingRpcsTaskResult, error) {
-				return &swarmingv1.SwarmingRpcsTaskResult{
-					State: "COMPLETED",
-					CasOutputRoot: &swarmingv1.SwarmingRpcsCASReference{
+			taskResult: func(c context.Context, taskID string, _ bool) (*swarmingv2.TaskResultResponse, error) {
+				return &swarmingv2.TaskResultResponse{
+					State: swarmingv2.TaskState_COMPLETED,
+					CasOutputRoot: &swarmingv2.CASReference{
 						CasInstance: "test-instance",
-						Digest:      &swarmingv1.SwarmingRpcsDigest{Hash: "aaaaaaaaa", SizeBytes: 111111},
+						Digest:      &swarmingv2.Digest{Hash: "aaaaaaaaa", SizeBytes: 111111},
 					},
 				}, nil
 			},
@@ -324,10 +323,9 @@ func TestCollectPollForTasks(t *testing.T) {
 		So(lastOutputFetched, ShouldBeTrue)
 		So(results[0].err, ShouldBeNil)
 		So(results[0].result, ShouldNotBeNil)
-		So(results[0].result.State, ShouldResemble, "COMPLETED")
+		So(results[0].result.State, ShouldResemble, swarmingv2.TaskState_COMPLETED)
 		So(results[0].err, ShouldBeNil)
 		So(results[0].result, ShouldNotBeNil)
-		So(results[0].result.State, ShouldResemble, "COMPLETED")
 	})
 
 	Convey(`Test eager return with one task`, t, func() {
@@ -335,12 +333,12 @@ func TestCollectPollForTasks(t *testing.T) {
 		outputFetched := false
 
 		service := &testService{
-			taskResult: func(c context.Context, taskID string, _ bool) (*swarmingv1.SwarmingRpcsTaskResult, error) {
-				return &swarmingv1.SwarmingRpcsTaskResult{
-					State: "COMPLETED",
-					CasOutputRoot: &swarmingv1.SwarmingRpcsCASReference{
+			taskResult: func(c context.Context, taskID string, _ bool) (*swarmingv2.TaskResultResponse, error) {
+				return &swarmingv2.TaskResultResponse{
+					State: swarmingv2.TaskState_COMPLETED,
+					CasOutputRoot: &swarmingv2.CASReference{
 						CasInstance: "test-instance",
-						Digest:      &swarmingv1.SwarmingRpcsDigest{Hash: "aaaaaaaaa", SizeBytes: 111111},
+						Digest:      &swarmingv2.Digest{Hash: "aaaaaaaaa", SizeBytes: 111111},
 					},
 				}, nil
 			},
@@ -359,7 +357,7 @@ func TestCollectPollForTasks(t *testing.T) {
 		So(outputFetched, ShouldBeTrue)
 		So(results[0].err, ShouldBeNil)
 		So(results[0].result, ShouldNotBeNil)
-		So(results[0].result.State, ShouldResemble, "COMPLETED")
+		So(results[0].result.State, ShouldEqual, swarmingv2.TaskState_COMPLETED)
 	})
 }
 
@@ -371,94 +369,90 @@ func TestCollectSummarizeResults(t *testing.T) {
 	}
 
 	Convey(`Generates json.`, t, func() {
-		result1, err := preserveEmptyFieldsOnTaskResult(&swarmingv1.SwarmingRpcsTaskResult{
+		result1 := &swarmingv2.TaskResultResponse{
 			CurrentTaskSlice: 0,
 			Duration:         1,
 			ExitCode:         0,
-			State:            "COMPLETED",
-			PerformanceStats: &swarmingv1.SwarmingRpcsPerformanceStats{
+			State:            swarmingv2.TaskState_COMPLETED,
+			PerformanceStats: &swarmingv2.PerformanceStats{
 				BotOverhead: 0.1,
-				CacheTrim:   &swarmingv1.SwarmingRpcsOperationStats{Duration: 0.1},
-				Cleanup:     &swarmingv1.SwarmingRpcsOperationStats{Duration: 0.1},
+				CacheTrim:   &swarmingv2.OperationStats{Duration: 0.1},
+				Cleanup:     &swarmingv2.OperationStats{Duration: 0.1},
 				// Stats with 0 value also should be kept.
-				IsolatedDownload: &swarmingv1.SwarmingRpcsCASOperationStats{
+				IsolatedDownload: &swarmingv2.CASOperationStats{
 					Duration:            0.1,
 					InitialNumberItems:  0,
 					InitialSize:         0,
-					ItemsCold:           "",
-					ItemsHot:            "download_hot",
+					ItemsCold:           []byte(""),
+					ItemsHot:            []byte("download_hot"),
 					NumItemsCold:        0,
 					NumItemsHot:         1,
 					TotalBytesItemsCold: 0,
 					TotalBytesItemsHot:  1,
 				},
-				IsolatedUpload: &swarmingv1.SwarmingRpcsCASOperationStats{
+				IsolatedUpload: &swarmingv2.CASOperationStats{
 					Duration:            0.1,
 					InitialNumberItems:  0,
 					InitialSize:         0,
-					ItemsCold:           "",
-					ItemsHot:            "upload_hot",
+					ItemsCold:           []byte(""),
+					ItemsHot:            []byte("upload_hot"),
 					NumItemsCold:        0,
 					NumItemsHot:         1,
 					TotalBytesItemsCold: 0,
 					TotalBytesItemsHot:  1,
 				},
-				NamedCachesInstall:   &swarmingv1.SwarmingRpcsOperationStats{Duration: 0.1},
-				NamedCachesUninstall: &swarmingv1.SwarmingRpcsOperationStats{Duration: 0.1},
-				PackageInstallation:  &swarmingv1.SwarmingRpcsOperationStats{Duration: 0.1},
+				NamedCachesInstall:   &swarmingv2.OperationStats{Duration: 0.1},
+				NamedCachesUninstall: &swarmingv2.OperationStats{Duration: 0.1},
+				PackageInstallation:  &swarmingv2.OperationStats{Duration: 0.1},
 			},
-		})
-		So(err, ShouldBeNil)
-		result2, err := preserveEmptyFieldsOnTaskResult(&swarmingv1.SwarmingRpcsTaskResult{
+		}
+		result2 := &swarmingv2.TaskResultResponse{
 			CurrentTaskSlice: 1,
 			Duration:         1,
 			ExitCode:         -1,
-			State:            "COMPLETED",
-			PerformanceStats: &swarmingv1.SwarmingRpcsPerformanceStats{
+			State:            swarmingv2.TaskState_COMPLETED,
+			PerformanceStats: &swarmingv2.PerformanceStats{
 				BotOverhead:          0.1,
-				CacheTrim:            &swarmingv1.SwarmingRpcsOperationStats{},
-				Cleanup:              &swarmingv1.SwarmingRpcsOperationStats{},
-				IsolatedDownload:     &swarmingv1.SwarmingRpcsCASOperationStats{},
-				IsolatedUpload:       &swarmingv1.SwarmingRpcsCASOperationStats{},
-				NamedCachesInstall:   &swarmingv1.SwarmingRpcsOperationStats{},
-				NamedCachesUninstall: &swarmingv1.SwarmingRpcsOperationStats{},
-				PackageInstallation:  &swarmingv1.SwarmingRpcsOperationStats{},
+				CacheTrim:            &swarmingv2.OperationStats{},
+				Cleanup:              &swarmingv2.OperationStats{},
+				IsolatedDownload:     &swarmingv2.CASOperationStats{},
+				IsolatedUpload:       &swarmingv2.CASOperationStats{},
+				NamedCachesInstall:   &swarmingv2.OperationStats{},
+				NamedCachesUninstall: &swarmingv2.OperationStats{},
+				PackageInstallation:  &swarmingv2.OperationStats{},
 			},
-		})
-		So(err, ShouldBeNil)
-		result3, err := preserveEmptyFieldsOnTaskResult(&swarmingv1.SwarmingRpcsTaskResult{
+		}
+		result3 := &swarmingv2.TaskResultResponse{
 			CurrentTaskSlice: 0,
 			Duration:         1,
 			ExitCode:         -1,
-			State:            "KILLED",
-			PerformanceStats: &swarmingv1.SwarmingRpcsPerformanceStats{
+			State:            swarmingv2.TaskState_KILLED,
+			PerformanceStats: &swarmingv2.PerformanceStats{
 				BotOverhead: 0.1,
-				CacheTrim:   &swarmingv1.SwarmingRpcsOperationStats{Duration: 0.1},
-				Cleanup:     &swarmingv1.SwarmingRpcsOperationStats{Duration: 0.1},
-				IsolatedDownload: &swarmingv1.SwarmingRpcsCASOperationStats{
+				CacheTrim:   &swarmingv2.OperationStats{Duration: 0.1},
+				Cleanup:     &swarmingv2.OperationStats{Duration: 0.1},
+				IsolatedDownload: &swarmingv2.CASOperationStats{
 					Duration:            0.1,
 					InitialNumberItems:  0,
 					InitialSize:         0,
-					ItemsCold:           "",
-					ItemsHot:            "download_hot",
+					ItemsCold:           []byte(""),
+					ItemsHot:            []byte("download_hot"),
 					NumItemsCold:        0,
 					NumItemsHot:         1,
 					TotalBytesItemsCold: 0,
 					TotalBytesItemsHot:  1,
 				},
-				IsolatedUpload:       &swarmingv1.SwarmingRpcsCASOperationStats{},
-				NamedCachesInstall:   &swarmingv1.SwarmingRpcsOperationStats{Duration: 0.1},
-				NamedCachesUninstall: &swarmingv1.SwarmingRpcsOperationStats{},
-				PackageInstallation:  &swarmingv1.SwarmingRpcsOperationStats{Duration: 0.1},
+				IsolatedUpload:       &swarmingv2.CASOperationStats{},
+				NamedCachesInstall:   &swarmingv2.OperationStats{Duration: 0.1},
+				NamedCachesUninstall: &swarmingv2.OperationStats{},
+				PackageInstallation:  &swarmingv2.OperationStats{Duration: 0.1},
 			},
-		})
-		So(err, ShouldBeNil)
-		result4, err := preserveEmptyFieldsOnTaskResult(&swarmingv1.SwarmingRpcsTaskResult{
+		}
+		result4 := &swarmingv2.TaskResultResponse{
 			CurrentTaskSlice: 0,
 			Duration:         1,
-			State:            "RUNNING",
-		})
-		So(err, ShouldBeNil)
+			State:            swarmingv2.TaskState_RUNNING,
+		}
 		results := []taskResult{
 			{
 				taskID: "task1",
@@ -483,125 +477,104 @@ func TestCollectSummarizeResults(t *testing.T) {
 		}
 		json, err := runner.summarizeResults(results)
 		So(err, ShouldBeNil)
-		So(string(json), ShouldEqual, `{
-  "task1": {
-    "output": "Output",
-    "outputs": null,
-    "results": {
-      "current_task_slice": "0",
-      "duration": 1,
-      "exit_code": "0",
-      "performance_stats": {
-        "bot_overhead": 0.1,
-        "cache_trim": {
-          "duration": 0.1
-        },
-        "cleanup": {
-          "duration": 0.1
-        },
-        "isolated_download": {
-          "duration": 0.1,
-          "initial_number_items": "0",
-          "initial_size": "0",
-          "items_cold": "",
-          "items_hot": "download_hot",
-          "num_items_cold": "0",
-          "num_items_hot": "1",
-          "total_bytes_items_cold": "0",
-          "total_bytes_items_hot": "1"
-        },
-        "isolated_upload": {
-          "duration": 0.1,
-          "initial_number_items": "0",
-          "initial_size": "0",
-          "items_cold": "",
-          "items_hot": "upload_hot",
-          "num_items_cold": "0",
-          "num_items_hot": "1",
-          "total_bytes_items_cold": "0",
-          "total_bytes_items_hot": "1"
-        },
-        "named_caches_install": {
-          "duration": 0.1
-        },
-        "named_caches_uninstall": {
-          "duration": 0.1
-        },
-        "package_installation": {
-          "duration": 0.1
-        }
-      },
-      "state": "COMPLETED"
+		expected := `{
+ "task1": {
+  "output": "Output",
+  "results": {
+   "duration": 1,
+   "state": "COMPLETED",
+   "performance_stats": {
+    "bot_overhead": 0.1,
+    "isolated_download": {
+     "duration": 0.1,
+     "items_hot": "ZG93bmxvYWRfaG90",
+     "num_items_hot": "1",
+     "total_bytes_items_hot": "1"
+    },
+    "isolated_upload": {
+     "duration": 0.1,
+     "items_hot": "dXBsb2FkX2hvdA==",
+     "num_items_hot": "1",
+     "total_bytes_items_hot": "1"
+    },
+    "package_installation": {
+     "duration": 0.1
+    },
+    "cache_trim": {
+     "duration": 0.1
+    },
+    "named_caches_install": {
+     "duration": 0.1
+    },
+    "named_caches_uninstall": {
+     "duration": 0.1
+    },
+    "cleanup": {
+     "duration": 0.1
     }
-  },
-  "task2": {
-    "output": "Output",
-    "outputs": null,
-    "results": {
-      "current_task_slice": "1",
-      "duration": 1,
-      "exit_code": "-1",
-      "performance_stats": {
-        "bot_overhead": 0.1,
-        "cache_trim": {},
-        "cleanup": {},
-        "isolated_download": {},
-        "isolated_upload": {},
-        "named_caches_install": {},
-        "named_caches_uninstall": {},
-        "package_installation": {}
-      },
-      "state": "COMPLETED"
-    }
-  },
-  "task3": {
-    "output": "Output",
-    "outputs": null,
-    "results": {
-      "current_task_slice": "0",
-      "duration": 1,
-      "exit_code": "-1",
-      "performance_stats": {
-        "bot_overhead": 0.1,
-        "cache_trim": {
-          "duration": 0.1
-        },
-        "cleanup": {
-          "duration": 0.1
-        },
-        "isolated_download": {
-          "duration": 0.1,
-          "initial_number_items": "0",
-          "initial_size": "0",
-          "items_cold": "",
-          "items_hot": "download_hot",
-          "num_items_cold": "0",
-          "num_items_hot": "1",
-          "total_bytes_items_cold": "0",
-          "total_bytes_items_hot": "1"
-        },
-        "isolated_upload": {},
-        "named_caches_install": {
-          "duration": 0.1
-        },
-        "named_caches_uninstall": {},
-        "package_installation": {
-          "duration": 0.1
-        }
-      },
-      "state": "KILLED"
-    }
-  },
-  "task4": {
-    "output": "Output",
-    "outputs": null,
-    "results": {
-      "current_task_slice": "0",
-      "duration": 1,
-      "state": "RUNNING"
-    }
+   }
   }
-}`)
+ },
+ "task2": {
+  "output": "Output",
+  "results": {
+   "duration": 1,
+   "exit_code": "-1",
+   "state": "COMPLETED",
+   "performance_stats": {
+    "bot_overhead": 0.1,
+    "isolated_download": {},
+    "isolated_upload": {},
+    "package_installation": {},
+    "cache_trim": {},
+    "named_caches_install": {},
+    "named_caches_uninstall": {},
+    "cleanup": {}
+   },
+   "current_task_slice": 1
+  }
+ },
+ "task3": {
+  "output": "Output",
+  "results": {
+   "duration": 1,
+   "exit_code": "-1",
+   "state": "KILLED",
+   "performance_stats": {
+    "bot_overhead": 0.1,
+    "isolated_download": {
+     "duration": 0.1,
+     "items_hot": "ZG93bmxvYWRfaG90",
+     "num_items_hot": "1",
+     "total_bytes_items_hot": "1"
+    },
+    "isolated_upload": {},
+    "package_installation": {
+     "duration": 0.1
+    },
+    "cache_trim": {
+     "duration": 0.1
+    },
+    "named_caches_install": {
+     "duration": 0.1
+    },
+    "named_caches_uninstall": {},
+    "cleanup": {
+     "duration": 0.1
+    }
+   }
+  }
+ },
+ "task4": {
+  "output": "Output",
+  "results": {
+   "duration": 1,
+   "state": "RUNNING"
+  }
+ }
+}`
+		actual := string(json)
+		So(actual, ShouldEqual, expected)
 	})
 }
 
@@ -609,12 +582,11 @@ func TestCollectSummarizeResultsPython(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Simple json.`, t, func() {
-		result, err := preserveEmptyFieldsOnTaskResult(&swarmingv1.SwarmingRpcsTaskResult{
-			State:    "COMPLETED",
+		result := &swarmingv2.TaskResultResponse{
+			State:    swarmingv2.TaskState_COMPLETED,
 			Duration: 1,
 			ExitCode: 0,
-		})
-		So(err, ShouldBeNil)
+		}
 		results := []taskResult{
 			{
 				result: result,
@@ -627,9 +599,7 @@ func TestCollectSummarizeResultsPython(t *testing.T) {
 		So(string(json), ShouldEqual, `{
   "shards": [
     {
-      "current_task_slice": "0",
       "duration": 1,
-      "exit_code": "0",
       "output": "Output",
       "state": "COMPLETED"
     },

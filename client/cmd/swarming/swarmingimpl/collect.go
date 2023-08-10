@@ -30,7 +30,6 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"go.chromium.org/luci/client/casclient"
-	swarmingv1 "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -103,7 +102,7 @@ type taskResult struct {
 
 	// result is the raw result structure returned by a swarming RPC call.
 	// result may be nil if err is non-nil.
-	result *swarmingv1.SwarmingRpcsTaskResult
+	result *swarmingv2.TaskResultResponse
 
 	// output is the console output produced by the swarming task.
 	// output will only be populated if requested.
@@ -230,7 +229,7 @@ func (c *collectRun) Run(a subcommands.Application, args []string, env subcomman
 
 func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, service swarmingService, downloadSem weightedSemaphore) taskResult {
 	defer logging.Debugf(ctx, "Finished fetching task result: %s", taskID)
-	var result *swarmingv1.SwarmingRpcsTaskResult
+	var result *swarmingv2.TaskResultResponse
 	var output string
 	var outputs []string
 	err := retry.Retry(ctx, transient.Only(retry.Default), func() error {
@@ -242,11 +241,6 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 		if err != nil {
 			return tagTransientGoogleAPIError(err)
 		}
-		result, err = preserveEmptyFieldsOnTaskResult(result)
-		if err != nil {
-			return tagTransientGoogleAPIError(err)
-		}
-
 		// Signal that we want to start downloading outputs. We'll only proceed
 		// to download them if another task has not already finished and
 		// triggered an eager return.
@@ -308,39 +302,6 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 	}
 }
 
-func preserveEmptyFieldsOnTaskResult(tr *swarmingv1.SwarmingRpcsTaskResult) (*swarmingv1.SwarmingRpcsTaskResult, error) {
-	state, err := parseTaskState(tr.State)
-	if err != nil {
-		return nil, err
-	}
-	tr.ForceSendFields = append(tr.ForceSendFields, "CurrentTaskSlice")
-
-	// Keep ExitCode=0 only if the task has completed.
-	if state.Completed() {
-		tr.ForceSendFields = append(tr.ForceSendFields, "ExitCode")
-	}
-	if tr.PerformanceStats != nil {
-		casStatsForceSendFields := []string{
-			"InitialNumberItems",
-			"InitialSize",
-			"ItemsCold",
-			"ItemsHot",
-			"NumItemsCold",
-			"NumItemsHot",
-			"TotalBytesItemsCold",
-			"TotalBytesItemsHot",
-		}
-		ps := tr.PerformanceStats
-		if ps.IsolatedDownload != nil && ps.IsolatedDownload.Duration > 0 {
-			ps.IsolatedDownload.ForceSendFields = append(ps.IsolatedDownload.ForceSendFields, casStatsForceSendFields...)
-		}
-		if ps.IsolatedUpload != nil && ps.IsolatedUpload.Duration > 0 {
-			ps.IsolatedUpload.ForceSendFields = append(ps.IsolatedUpload.ForceSendFields, casStatsForceSendFields...)
-		}
-	}
-	return tr, nil
-}
-
 func prepareOutputDir(outputDir, taskID string) (string, error) {
 	// Create a task-id-based subdirectory to house the outputs.
 	dir := filepath.Join(filepath.Clean(outputDir), taskID)
@@ -371,12 +332,7 @@ func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, servi
 		}
 
 		// Only stop if the swarming bot is "dead" (i.e. not running).
-		state, err := parseTaskState(result.result.State)
-		if err != nil {
-			logging.Debugf(ctx, "Task %s failed with error: %v", taskID, err)
-			return taskResult{taskID: taskID, err: err}
-		}
-		if !state.Alive() {
+		if !Alive(result.result.State) {
 			logging.Debugf(ctx, "Task completed successfully: %s", taskID)
 			return result
 		}
@@ -416,8 +372,9 @@ func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, servi
 func summarizeResultsPython(results []taskResult) ([]byte, error) {
 	shards := make([]map[string]any, len(results))
 
+	options := DefaultProtoMarshalOpts()
 	for i, result := range results {
-		buf, err := json.Marshal(result.result)
+		buf, err := options.Marshal(result.result)
 		if err != nil {
 			return nil, err
 		}
@@ -427,8 +384,10 @@ func summarizeResultsPython(results []taskResult) ([]byte, error) {
 			return nil, err
 		}
 
-		if jsonResult != nil {
+		if len(jsonResult) > 0 {
 			jsonResult["output"] = result.output
+		} else {
+			jsonResult = nil
 		}
 		shards[i] = jsonResult
 	}
@@ -438,28 +397,41 @@ func summarizeResultsPython(results []taskResult) ([]byte, error) {
 	}, "", "  ")
 }
 
+type taskResultJSON struct {
+	Error   string          `json:"error,omitempty"`
+	Output  string          `json:"output,omitempty"`
+	Outputs []string        `json:"outputs,omitempty"`
+	Results json.RawMessage `json:"results"`
+}
+
 // summarizeResults generate a marshalled JSON summary of the task results.
 func (c *collectRun) summarizeResults(results []taskResult) ([]byte, error) {
 	if c.taskSummaryPython {
 		return summarizeResultsPython(results)
 	}
+	options := DefaultProtoMarshalOpts()
 
-	jsonResults := map[string]any{}
+	jsonResults := map[string]taskResultJSON{}
 	for _, result := range results {
-		jsonResult := map[string]any{}
+		jsonResult := taskResultJSON{}
 		if result.err != nil {
-			jsonResult["error"] = result.err.Error()
+			jsonResult.Error = result.err.Error()
 		}
 		if result.result != nil {
-			jsonResult["results"] = result.result
-			if c.taskOutput.includesJSON() {
-				jsonResult["output"] = result.output
+			rawResult, err := options.Marshal(result.result)
+			if err != nil {
+				return nil, err
 			}
-			jsonResult["outputs"] = result.outputs
+			jsonResult.Results = rawResult
+			if c.taskOutput.includesJSON() {
+				jsonResult.Output = result.output
+			}
+			jsonResult.Outputs = result.outputs
 		}
 		jsonResults[result.taskID] = jsonResult
 	}
-	return json.MarshalIndent(jsonResults, "", "  ")
+
+	return json.MarshalIndent(jsonResults, "", options.Indent)
 }
 
 func (c *collectRun) pollForTasks(ctx context.Context, taskIDs []string, service swarmingService, downloadSem weightedSemaphore) []taskResult {

@@ -89,8 +89,8 @@ type swarmingService interface {
 	ListTasks(ctx context.Context, limit int64, start float64, state string, tags []string, fields []googleapi.Field) ([]*swarmingv1.SwarmingRpcsTaskResult, error)
 	CancelTask(ctx context.Context, taskID string, killRunning bool) (*swarmingv2.CancelResponse, error)
 	TaskRequest(ctx context.Context, taskID string) (*swarmingv2.TaskRequestResponse, error)
-	TaskResult(ctx context.Context, taskID string, perf bool) (*swarmingv1.SwarmingRpcsTaskResult, error)
 	TaskOutput(ctx context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error)
+	TaskResult(ctx context.Context, taskID string, perf bool) (*swarmingv2.TaskResultResponse, error)
 	FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarmingv2.CASReference) ([]string, error)
 	CountBots(ctx context.Context, dimensions []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error)
 	ListBots(ctx context.Context, dimensions []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error)
@@ -168,12 +168,11 @@ func (s *swarmingServiceImpl) TaskRequest(ctx context.Context, taskID string) (r
 	return s.tasksClient.GetRequest(ctx, &swarmingv2.TaskIdRequest{TaskId: taskID})
 }
 
-func (s *swarmingServiceImpl) TaskResult(ctx context.Context, taskID string, perf bool) (res *swarmingv1.SwarmingRpcsTaskResult, err error) {
-	err = retryGoogleRPC(ctx, "TaskResult", func() (ierr error) {
-		res, ierr = s.service.Task.Result(taskID).IncludePerformanceStats(perf).Context(ctx).Do()
-		return
+func (s *swarmingServiceImpl) TaskResult(ctx context.Context, taskID string, perf bool) (res *swarmingv2.TaskResultResponse, err error) {
+	return s.tasksClient.GetResult(ctx, &swarmingv2.TaskIdWithPerfRequest{
+		IncludePerformanceStats: perf,
+		TaskId:                  taskID,
 	})
-	return res, err
 }
 
 func (s *swarmingServiceImpl) TaskOutput(ctx context.Context, taskID string) (res *swarmingv2.TaskOutputResponse, err error) {
@@ -318,56 +317,12 @@ func DefaultProtoMarshalOpts() protojson.MarshalOptions {
 	}
 }
 
-type taskState int32
-
-const (
-	maskAlive                  = 1
-	stateBotDied     taskState = 1 << 1
-	stateCancelled   taskState = 1 << 2
-	stateCompleted   taskState = 1 << 3
-	stateExpired     taskState = 1 << 4
-	statePending     taskState = 1<<5 | maskAlive
-	stateRunning     taskState = 1<<6 | maskAlive
-	stateTimedOut    taskState = 1 << 7
-	stateNoResource  taskState = 1 << 8
-	stateKilled      taskState = 1 << 9
-	stateClientError taskState = 1 << 10
-	stateUnknown     taskState = -1
-)
-
-func parseTaskState(state string) (taskState, error) {
-	switch state {
-	case "BOT_DIED":
-		return stateBotDied, nil
-	case "CANCELED":
-		return stateCancelled, nil
-	case "COMPLETED":
-		return stateCompleted, nil
-	case "EXPIRED":
-		return stateExpired, nil
-	case "PENDING":
-		return statePending, nil
-	case "RUNNING":
-		return stateRunning, nil
-	case "TIMED_OUT":
-		return stateTimedOut, nil
-	case "NO_RESOURCE":
-		return stateNoResource, nil
-	case "KILLED":
-		return stateKilled, nil
-	case "CLIENT_ERROR":
-		return stateClientError, nil
-	default:
-		return stateUnknown, errors.Reason("unrecognized state: %q", state).Err()
-	}
+func Alive(t swarmingv2.TaskState) bool {
+	return t == swarmingv2.TaskState_PENDING || t == swarmingv2.TaskState_RUNNING
 }
 
-func (t taskState) Alive() bool {
-	return (t & maskAlive) != 0
-}
-
-func (t taskState) Completed() bool {
-	return (t & stateCompleted) != 0
+func Completed(t swarmingv2.TaskState) bool {
+	return t == swarmingv2.TaskState_COMPLETED
 }
 
 // AuthFlags is an interface to register auth flags and create http.Client and CAS Client.
