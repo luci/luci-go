@@ -411,6 +411,7 @@ func (c *commonFlags) createSwarmingClient(ctx context.Context) (swarmingService
 	default:
 		prpcClient.Host = c.serverURL
 	}
+	prpcClient.Host = strings.TrimRight(prpcClient.Host, "/")
 	return &swarmingServiceImpl{
 		client:      authcli,
 		service:     s,
