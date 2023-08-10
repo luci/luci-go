@@ -264,6 +264,8 @@ def _builder(
         override the dimensions with the same keys. Note: for historical reasons
         pool can be set individually. If a "pool:<shadow_pool>" dimension is
         included here, it would have the same effect as setting shadow_pool.
+        shadow_dimensions support dimensions with None values. It's useful for
+        led builds to remove some dimensions the production builds use.
 
       triggers: builders this builder triggers.
       triggered_by: builders or pollers this builder is triggered by.

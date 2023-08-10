@@ -490,7 +490,7 @@ def _buildbucket_builders(bucket):
                 service_account = node.props.shadow_service_account,
                 pool = node.props.shadow_pool,
                 properties = to_json(node.props.shadow_properties) if node.props.shadow_properties else None,
-                dimensions = _buildbucket_dimensions(node.props.shadow_dimensions),
+                dimensions = _buildbucket_dimensions(node.props.shadow_dimensions, allow_none = True),
             )
         builders.append(bldr_config)
     return buildbucket_pb.Swarming(builders = builders) if builders else None
@@ -560,10 +560,13 @@ def _buildbucket_caches(caches):
         ))
     return sorted(out, key = lambda x: x.name)
 
-def _buildbucket_dimensions(dims):
+def _buildbucket_dimensions(dims, allow_none = False):
     """{str: [swarming.dimension]} => [str] for 'dimensions' field."""
     out = []
     for key in sorted(dims):
+        if allow_none and dims[key] == None:
+            out.append("%s:" % key)
+            continue
         for d in dims[key]:
             if d.expiration == None:
                 out.append("%s:%s" % (key, d.value))

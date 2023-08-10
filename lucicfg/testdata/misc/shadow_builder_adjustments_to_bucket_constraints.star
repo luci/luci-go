@@ -38,11 +38,13 @@ luci.builder(
     dimensions = {
         "os": "Linux",
         "pool": "luci.ci.tester",
+        "empty_in_shadow": "true",
     },
     shadow_service_account = "shadow_builder@example.com",
     shadow_pool = "shadow_pool",
     shadow_dimensions = {
         "pool": "shadow_pool",
+        "empty_in_shadow": None,
     },
 )
 
@@ -91,6 +93,7 @@ luci.builder(
 #     builders {
 #       name: "linux ci builder 1"
 #       swarming_host: "chromium-swarm.appspot.com"
+#       dimensions: "empty_in_shadow:true"
 #       dimensions: "os:Linux"
 #       dimensions: "pool:luci.ci.tester"
 #       recipe {
@@ -102,6 +105,7 @@ luci.builder(
 #       shadow_builder_adjustments {
 #         service_account: "shadow_builder@example.com"
 #         pool: "shadow_pool"
+#         dimensions: "empty_in_shadow:"
 #         dimensions: "pool:shadow_pool"
 #       }
 #     }
