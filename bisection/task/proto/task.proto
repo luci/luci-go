@@ -56,9 +56,10 @@ message TestFailureDetectionTask {
   // The project to select test failures from.
   string project = 1;
 
-  // Test variants must satisfy all items in this dimension contains list.
-  // Eg. {key:"os", value:"Ubuntu-22.04"}
-  repeated luci.bisection.v1.Dimension dimension_contains = 2;
+  // Test variants selected must not satisfy any dimension in the dimension excludes list.
+  // Eg. [{key:"os", value:"Ubuntu-22.04"},{key:"os", value:"Mac13"}],
+  // test failures with either these two OS should be excluded.
+  repeated luci.bisection.v1.Dimension dimension_excludes = 2;
 }
 
 // Payload for test failure bisection.

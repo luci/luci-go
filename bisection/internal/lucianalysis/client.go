@@ -104,6 +104,10 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
 	if err != nil {
 		return nil, errors.Annotate(err, "buildBucketBuildTableName").Err()
 	}
+	dimensionExcludeFilter := "(TRUE)"
+	if len(task.DimensionExcludes) > 0 {
+		dimensionExcludeFilter = "(NOT (SELECT LOGICAL_OR((SELECT count(*) > 0 FROM UNNEST(task_dimensions) WHERE KEY = kv.key and value = kv.value)) FROM UNNEST(@dimensionExcludes) kv))"
+	}
 	q := c.client.Query(`
 	WITH
   segments_with_failure_rate AS (
@@ -156,19 +160,16 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
 		      AND b.create_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
 		GROUP BY g.testVariants[0].TestId,  g.testVariants[0].VariantHash, g.RefHash
   )
-	SELECT
-		regression_group.*,
-		build_id as BuildID,
-		(SELECT value FROM UNNEST(task_dimensions) WHERE KEY = "os" ) AS OS
+	SELECT regression_group.*
 	FROM builder_regression_groups_with_latest_build
-	WHERE  (SELECT LOGICAL_AND((SELECT count(*) > 0 FROM UNNEST(task_dimensions) WHERE KEY = kv.key and value = kv.value)) FROM UNNEST(@dimensionContains) kv)
-	ORDER BY regression_group.RegressionStartPosition DESC
+	WHERE  ` + dimensionExcludeFilter + `
+	ORDER BY regression_group.RegressionEndPosition DESC
 	LIMIT 5000
  `)
 	q.DefaultDatasetID = task.Project
 	q.DefaultProjectID = c.luciAnalysisProject
 	q.Parameters = []bigquery.QueryParameter{
-		{Name: "dimensionContains", Value: task.DimensionContains},
+		{Name: "dimensionExcludes", Value: task.DimensionExcludes},
 	}
 	job, err := q.Run(ctx)
 	if err != nil {
