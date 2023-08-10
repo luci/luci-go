@@ -4,17 +4,8 @@
 
 projdir := $(patsubst %/,%,$(dir $(mkfile_path)))
 
-up:
-	gae.py upload -A luci-notify
-
-switch:
-	gae.py switch -A luci-notify
-
 up-dev:
 	gae.py upload -A luci-notify-dev
-
-switch-dev:
-	gae.py switch -A luci-notify-dev
 
 test:
 	go test ./...
