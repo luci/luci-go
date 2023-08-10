@@ -6,6 +6,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/api/resource.proto";
 import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "google/rpc/status.proto";
 
@@ -79,8 +80,22 @@ message Reservation {
   repeated Constraint constraints = 13 [(google.api.field_behavior) = OPTIONAL];
 
   // The time after which the client no longer cares about this reservation. The
-  // lease must be *completed* by this time, not started.
+  // lease must be *completed* by this time, not started. expire_time is
+  // enforced independently of other timeouts like queuing_timeout and
+  // execution_timeout.
   google.protobuf.Timestamp expire_time = 7;
+
+  // Limits how long the reservation can be queued before being killed. Has no
+  // effect once the reservation begins execution. queuing_timeout is enforced
+  // independently of other timeouts like expire_time and execution_timeout.
+  google.protobuf.Duration queuing_timeout = 14
+      [(google.api.field_behavior) = OPTIONAL];
+
+  // Limits how long a reservation is allowed to run. Does not include any time
+  // the reservation was queued. execution_timeout is enforced independently of
+  // other timeouts like expire_time and queuing_timeout.
+  google.protobuf.Duration execution_timeout = 15
+      [(google.api.field_behavior) = OPTIONAL];
 
   // The priority (relative importance) of this reservation. Generally, a lower
   // value means that the reservation should be run sooner than reservations
