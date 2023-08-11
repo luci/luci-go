@@ -19,7 +19,7 @@ import { useStore } from '@/common/store';
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
-import { RelatedBuildTable } from './related_builds_tab/related_build_table';
+import { RelatedBuildTable } from './related_build_table';
 
 export const RelatedBuildsTab = observer(() => {
   useTabId('related-builds');
