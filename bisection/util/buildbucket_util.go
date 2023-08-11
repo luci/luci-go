@@ -16,6 +16,7 @@
 package util
 
 import (
+	pb "go.chromium.org/luci/bisection/proto/v1"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"google.golang.org/protobuf/proto"
 )
@@ -45,4 +46,15 @@ func GetGitilesCommitForBuild(build *bbpb.Build) *bbpb.GitilesCommit {
 		}
 	}
 	return commit
+}
+
+func ToDimensionsPB(dimensions []*bbpb.RequestedDimension) *pb.Dimensions {
+	dims := []*pb.Dimension{}
+	for _, d := range dimensions {
+		dims = append(dims, &pb.Dimension{
+			Key:   d.Key,
+			Value: d.Value,
+		})
+	}
+	return &pb.Dimensions{Dimensions: dims}
 }

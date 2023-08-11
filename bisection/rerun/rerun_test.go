@@ -20,11 +20,13 @@ import (
 
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/testutil"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	. "go.chromium.org/luci/common/testing/assertions"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -152,6 +154,35 @@ func TestRerun(t *testing.T) {
 func TestCreateRerunBuildModel(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
+	cl := testclock.New(testclock.TestTimeUTC)
+	c = clock.Set(c, cl)
+
+	// Setup mock for buildbucket
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	mc := buildbucket.NewMockedClient(c, ctl)
+	c = mc.Ctx
+	res := &bbpb.Build{
+		Infra: &bbpb.BuildInfra{
+			Swarming: &bbpb.BuildInfra_Swarming{
+				TaskDimensions: []*bbpb.RequestedDimension{
+					{
+						Key:   "dimen_key_1",
+						Value: "dimen_val_1",
+					},
+					{
+						Key:   "os",
+						Value: "ubuntu",
+					},
+					{
+						Key:   "gpu",
+						Value: "Intel",
+					},
+				},
+			},
+		},
+	}
+	mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
 
 	build := &bbpb.Build{
 		Builder: &bbpb.BuilderID{
@@ -252,6 +283,7 @@ func TestCreateRerunBuildModel(t *testing.T) {
 			So(singleReruns[0].Suspect, ShouldResemble, datastore.KeyForObj(c, suspect))
 			So(singleReruns[0].Analysis, ShouldResemble, datastore.KeyForObj(c, analysis))
 			So(singleReruns[0].Type, ShouldEqual, model.RerunBuildType_CulpritVerification)
+			So(singleReruns[0].Dimensions, ShouldResembleProto, util.ToDimensionsPB(res.Infra.Swarming.TaskDimensions))
 		})
 
 		Convey("Nth Section", func() {
@@ -287,6 +319,7 @@ func TestCreateRerunBuildModel(t *testing.T) {
 			So(singleReruns[0].NthSectionAnalysis, ShouldResemble, datastore.KeyForObj(c, nsa))
 			So(singleReruns[0].Analysis, ShouldResemble, datastore.KeyForObj(c, analysis))
 			So(singleReruns[0].Type, ShouldEqual, model.RerunBuildType_NthSection)
+			So(singleReruns[0].Dimensions, ShouldResembleProto, util.ToDimensionsPB(res.Infra.Swarming.TaskDimensions))
 		})
 	})
 }

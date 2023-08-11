@@ -19,10 +19,13 @@ import (
 	"context"
 	"net/http"
 
+	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/util"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 const (
@@ -151,4 +154,16 @@ func CancelBuild(c context.Context, bbid int64, reason string) (*bbpb.Build, err
 		SummaryMarkdown: reason,
 	}
 	return cl.Client.CancelBuild(c, req)
+}
+
+func GetBuildTaskDimension(ctx context.Context, bbid int64) (*pb.Dimensions, error) {
+	build, err := GetBuild(ctx, bbid, &bbpb.BuildMask{
+		Fields: &fieldmaskpb.FieldMask{
+			Paths: []string{"infra.swarming.task_dimensions"},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return util.ToDimensionsPB(build.GetInfra().GetSwarming().GetTaskDimensions()), nil
 }

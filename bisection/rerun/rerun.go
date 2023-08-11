@@ -185,7 +185,10 @@ func CreateRerunBuildModel(c context.Context, build *buildbucketpb.Build, rerunT
 		logging.Errorf(c, "Error in creating CompileRerunBuild model for build %d", build.GetId())
 		return nil, err
 	}
-
+	dimensions, err := buildbucket.GetBuildTaskDimension(c, build.GetId())
+	if err != nil {
+		return nil, errors.Annotate(err, "get build task dimension bbid %v", build.GetId()).Err()
+	}
 	// Create the first SingleRerun for CompileRerunBuild
 	// It will be updated when we receive updates from recipe
 	singleRerun := &model.SingleRerun{
@@ -201,6 +204,7 @@ func CreateRerunBuildModel(c context.Context, build *buildbucketpb.Build, rerunT
 		StartTime:  startTime,
 		Type:       rerunType,
 		Priority:   priority,
+		Dimensions: dimensions,
 	}
 
 	if rerunType == model.RerunBuildType_CulpritVerification {
