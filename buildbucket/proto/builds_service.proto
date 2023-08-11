@@ -413,6 +413,9 @@ message ScheduleBuildRequest {
   // Note: For the same key dimensions, it won't allow to pass empty and
   // non-empty values at the same time in the request.
   //
+  // Note: "caches" and "pool" dimensions may only be specified in builder
+  // configs. Setting them hear will fail the request.
+  //
   // A dimension expiration must be a multiple of 1min.
   repeated RequestedDimension dimensions = 10;
 

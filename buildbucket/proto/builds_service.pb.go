@@ -618,6 +618,9 @@ type ScheduleBuildRequest struct {
 	// Note: For the same key dimensions, it won't allow to pass empty and
 	// non-empty values at the same time in the request.
 	//
+	// Note: "caches" and "pool" dimensions may only be specified in builder
+	// configs. Setting them hear will fail the request.
+	//
 	// A dimension expiration must be a multiple of 1min.
 	Dimensions []*RequestedDimension `protobuf:"bytes,10,rep,name=dimensions,proto3" json:"dimensions,omitempty"`
 	// If not zero, overrides swarming task priority.
