@@ -157,8 +157,6 @@ func Run(srv *server.Server, templatePath string) {
 	r.POST("/actions/retry_build", xsrfMW, handleError(retryBuildHandler))
 
 	r.GET("/internal_widgets/related_builds/:id", htmlMW, handleError(handleGetRelatedBuildsTable))
-
-	r.GET("/auth-state", baseAuthMW, handleError(getAuthState))
 }
 
 // redirect returns a handler that responds with given HTTP status
