@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/common/logging"
 )
 
 // GetChangeLogs queries Gitiles for changelogs in the regression range
@@ -31,4 +32,30 @@ func GetChangeLogs(c context.Context, rr *pb.RegressionRange) ([]*model.ChangeLo
 	}
 	repoURL := gitiles.GetRepoUrl(c, rr.FirstFailed)
 	return gitiles.GetChangeLogs(c, repoURL, rr.LastPassed.Id, rr.FirstFailed.Id)
+}
+
+func ChangeLogsToBlamelist(ctx context.Context, changeLogs []*model.ChangeLog) *pb.BlameList {
+	commits := []*pb.BlameListSingleCommit{}
+	for _, cl := range changeLogs {
+		reviewURL, err := cl.GetReviewUrl()
+		if err != nil {
+			// Just log, this is not important for nth-section analysis
+			logging.Errorf(ctx, "Error getting review URL: %s", err)
+		}
+
+		reviewTitle, err := cl.GetReviewTitle()
+		if err != nil {
+			// Just log, this is not important for nth-section analysis
+			logging.Errorf(ctx, "Error getting review title: %s", err)
+		}
+
+		commits = append(commits, &pb.BlameListSingleCommit{
+			Commit:      cl.Commit,
+			ReviewUrl:   reviewURL,
+			ReviewTitle: reviewTitle,
+		})
+	}
+	return &pb.BlameList{
+		Commits: commits,
+	}
 }

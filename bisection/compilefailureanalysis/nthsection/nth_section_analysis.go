@@ -180,29 +180,8 @@ func getRerunProps(c context.Context, nthSectionAnalysis *model.CompileNthSectio
 
 func updateBlameList(c context.Context, nthSectionAnalysis *model.CompileNthSectionAnalysis, changeLogs []*model.ChangeLog) error {
 	logging.Infof(c, "Update blame list for nthsection. Change logs have %d items.", len(changeLogs))
-	commits := []*pb.BlameListSingleCommit{}
-	for _, cl := range changeLogs {
-		reviewURL, err := cl.GetReviewUrl()
-		if err != nil {
-			// Just log, this is not important for nth-section analysis
-			logging.Errorf(c, "Error getting review URL: %s", err)
-		}
-
-		reviewTitle, err := cl.GetReviewTitle()
-		if err != nil {
-			// Just log, this is not important for nth-section analysis
-			logging.Errorf(c, "Error getting review title: %s", err)
-		}
-
-		commits = append(commits, &pb.BlameListSingleCommit{
-			Commit:      cl.Commit,
-			ReviewUrl:   reviewURL,
-			ReviewTitle: reviewTitle,
-		})
-	}
-	nthSectionAnalysis.BlameList = &pb.BlameList{
-		Commits: commits,
-	}
+	blameList := changelogutil.ChangeLogsToBlamelist(c, changeLogs)
+	nthSectionAnalysis.BlameList = blameList
 	return datastore.Put(c, nthSectionAnalysis)
 }
 

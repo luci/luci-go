@@ -120,6 +120,7 @@ type TestFailureCreationOption struct {
 	Variant   map[string]string
 	IsPrimary bool
 	Analysis  *model.TestFailureAnalysis
+	Ref       *pb.SourceRef
 }
 
 func CreateTestFailure(ctx context.Context, option *TestFailureCreationOption) *model.TestFailure {
@@ -128,6 +129,7 @@ func CreateTestFailure(ctx context.Context, option *TestFailureCreationOption) *
 	variant := map[string]string{}
 	isPrimary := false
 	var analysisKey *datastore.Key = nil
+	var ref *pb.SourceRef = nil
 
 	if option != nil {
 		if option.ID != 0 {
@@ -141,6 +143,7 @@ func CreateTestFailure(ctx context.Context, option *TestFailureCreationOption) *
 		}
 		variant = option.Variant
 		isPrimary = option.IsPrimary
+		ref = option.Ref
 	}
 
 	tf := &model.TestFailure{
@@ -151,22 +154,28 @@ func CreateTestFailure(ctx context.Context, option *TestFailureCreationOption) *
 		},
 		IsPrimary:   isPrimary,
 		AnalysisKey: analysisKey,
+		Ref:         ref,
 	}
+
 	So(datastore.Put(ctx, tf), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()
 	return tf
 }
 
 type TestFailureAnalysisCreationOption struct {
-	ID          int64
-	Project     string
-	TestFailure *model.TestFailure
+	ID              int64
+	Project         string
+	TestFailure     *model.TestFailure
+	StartCommitHash string
+	EndCommitHash   string
 }
 
 func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisCreationOption) *model.TestFailureAnalysis {
 	id := int64(1000)
 	project := "chromium"
 	var tfKey *datastore.Key = nil
+	startCommitHash := ""
+	endCommitHash := ""
 
 	if option != nil {
 		if option.ID != 0 {
@@ -178,12 +187,20 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 		if option.TestFailure != nil {
 			tfKey = datastore.KeyForObj(ctx, option.TestFailure)
 		}
+		if option.StartCommitHash != "" {
+			startCommitHash = option.StartCommitHash
+		}
+		if option.EndCommitHash != "" {
+			endCommitHash = option.EndCommitHash
+		}
 	}
 
 	tfa := &model.TestFailureAnalysis{
-		ID:          id,
-		Project:     project,
-		TestFailure: tfKey,
+		ID:              id,
+		Project:         project,
+		TestFailure:     tfKey,
+		StartCommitHash: startCommitHash,
+		EndCommitHash:   endCommitHash,
 	}
 	So(datastore.Put(ctx, tfa), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()

@@ -16,18 +16,22 @@ package bisection
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/bisection/internal/config"
+	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
+	"go.chromium.org/luci/bisection/model"
 	configpb "go.chromium.org/luci/bisection/proto/config"
-	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -39,6 +43,28 @@ func TestRunBisector(t *testing.T) {
 	cl.Set(time.Unix(10000, 0).UTC())
 	ctx = clock.Set(ctx, cl)
 	luciAnalysisClient := &fakeLUCIAnalysisClient{}
+
+	// Mock gitiles response.
+	gitilesResponse := model.ChangeLogResponse{
+		Log: []*model.ChangeLog{
+			{
+				Commit:  "3424",
+				Message: "Use TestActivationManager for all page activations\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472129\nReviewed-by: blah blah\n",
+			},
+			{
+				Commit:  "3425",
+				Message: "Second Commit\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472130\nReviewed-by: blah blah\n",
+			},
+		},
+	}
+	gitilesResponseStr, err := json.Marshal(gitilesResponse)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	ctx = gitiles.MockedGitilesClientContext(ctx, map[string]string{
+		"https://chromium.googlesource.com/chromium/src/+log/12345..23456": string(gitilesResponseStr),
+	})
 
 	Convey("No analysis", t, func() {
 		err := Run(ctx, 123, luciAnalysisClient)
@@ -53,8 +79,8 @@ func TestRunBisector(t *testing.T) {
 		So(err, ShouldBeNil)
 		err = datastore.Get(ctx, tfa)
 		So(err, ShouldBeNil)
-		So(tfa.Status, ShouldEqual, bisectionpb.AnalysisStatus_DISABLED)
-		So(tfa.RunStatus, ShouldEqual, bisectionpb.AnalysisRunStatus_ENDED)
+		So(tfa.Status, ShouldEqual, pb.AnalysisStatus_DISABLED)
+		So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
 	})
 
 	Convey("No primary failure", t, func() {
@@ -67,39 +93,48 @@ func TestRunBisector(t *testing.T) {
 		So(err, ShouldNotBeNil)
 		err = datastore.Get(ctx, tfa)
 		So(err, ShouldBeNil)
-		So(tfa.Status, ShouldEqual, bisectionpb.AnalysisStatus_ERROR)
-		So(tfa.RunStatus, ShouldEqual, bisectionpb.AnalysisRunStatus_ENDED)
+		So(tfa.Status, ShouldEqual, pb.AnalysisStatus_ERROR)
+		So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
 	})
 
 	Convey("Unsupported project", t, func() {
 		enableBisection(ctx, true)
-		tf := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
-			Project: "chromeos",
-		})
 		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
-			ID:          1002,
-			TestFailure: tf,
+			ID:      1002,
+			Project: "chromeos",
 		})
 
 		err := Run(ctx, 1002, luciAnalysisClient)
 		So(err, ShouldBeNil)
 		err = datastore.Get(ctx, tfa)
 		So(err, ShouldBeNil)
-		So(tfa.Status, ShouldEqual, bisectionpb.AnalysisStatus_UNSUPPORTED)
-		So(tfa.RunStatus, ShouldEqual, bisectionpb.AnalysisRunStatus_ENDED)
+		So(tfa.Status, ShouldEqual, pb.AnalysisStatus_UNSUPPORTED)
+		So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
 	})
 
 	Convey("Supported project", t, func() {
 		enableBisection(ctx, true)
 		tf := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+			ID:        101,
 			IsPrimary: true,
 			Variant: map[string]string{
 				"test_suite": "test_suite",
 			},
+			Ref: &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
+						Host:    "chromium.googlesource.com",
+						Project: "chromium/src",
+						Ref:     "refs/heads/main",
+					},
+				},
+			},
 		})
 		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
-			ID:          1002,
-			TestFailure: tf,
+			ID:              1002,
+			TestFailure:     tf,
+			StartCommitHash: "12345",
+			EndCommitHash:   "23456",
 		})
 
 		// Link the test failure with test failure analysis.
@@ -109,14 +144,45 @@ func TestRunBisector(t *testing.T) {
 
 		err := Run(ctx, 1002, luciAnalysisClient)
 		So(err, ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
 		err = datastore.Get(ctx, tfa)
 		So(err, ShouldBeNil)
-		So(tfa.Status, ShouldEqual, bisectionpb.AnalysisStatus_RUNNING)
-		So(tfa.RunStatus, ShouldEqual, bisectionpb.AnalysisRunStatus_STARTED)
+		So(tfa.Status, ShouldEqual, pb.AnalysisStatus_RUNNING)
+		So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_STARTED)
 		err = datastore.Get(ctx, tf)
 		So(err, ShouldBeNil)
 		So(tf.TestSuiteName, ShouldEqual, "test_suite")
 		So(tf.TestName, ShouldEqual, "test_name_0")
+
+		// Check nthsection analysis.
+		q := datastore.NewQuery("TestNthSectionAnalysis").Ancestor(datastore.KeyForObj(ctx, tfa))
+		nthSectionAnalyses := []*model.TestNthSectionAnalysis{}
+		err = datastore.GetAll(ctx, q, &nthSectionAnalyses)
+		So(err, ShouldBeNil)
+		So(len(nthSectionAnalyses), ShouldEqual, 1)
+		nsa := nthSectionAnalyses[0]
+
+		So(nsa, ShouldResembleProto, &model.TestNthSectionAnalysis{
+			ID:             nsa.ID,
+			ParentAnalysis: datastore.KeyForObj(ctx, tfa),
+			StartTime:      nsa.StartTime,
+			Status:         pb.AnalysisStatus_RUNNING,
+			RunStatus:      pb.AnalysisRunStatus_STARTED,
+			BlameList: &pb.BlameList{
+				Commits: []*pb.BlameListSingleCommit{
+					{
+						Commit:      "3424",
+						ReviewTitle: "Use TestActivationManager for all page activations",
+						ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472129",
+					},
+					{
+						Commit:      "3425",
+						ReviewTitle: "Second Commit",
+						ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472130",
+					},
+				},
+			},
+		})
 	})
 }
 

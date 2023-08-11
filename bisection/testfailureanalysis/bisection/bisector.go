@@ -21,16 +21,22 @@ import (
 
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
-	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/testfailureanalysis"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/analysis"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/chromium"
+	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/projectbisector"
+	"go.chromium.org/luci/bisection/util/changelogutil"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/tq"
 	"google.golang.org/protobuf/proto"
@@ -103,7 +109,7 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 	defer func() {
 		if reterr != nil {
 			// If there is an error, mark the analysis as failing with error.
-			err := testfailureanalysis.UpdateStatus(ctx, tfa, bisectionpb.AnalysisStatus_ERROR, bisectionpb.AnalysisRunStatus_ENDED)
+			err := testfailureanalysis.UpdateStatus(ctx, tfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
 			if err != nil {
 				// Just log the error if there is something wrong.
 				err = errors.Annotate(err, "update status").Err()
@@ -119,40 +125,105 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 	}
 	if !enabled {
 		logging.Infof(ctx, "Bisection is not enabled")
-		err = testfailureanalysis.UpdateStatus(ctx, tfa, bisectionpb.AnalysisStatus_DISABLED, bisectionpb.AnalysisRunStatus_ENDED)
+		err = testfailureanalysis.UpdateStatus(ctx, tfa, pb.AnalysisStatus_DISABLED, pb.AnalysisRunStatus_ENDED)
 		if err != nil {
 			return errors.Annotate(err, "update status disabled").Err()
 		}
 		return nil
 	}
 
+	if tfa.Project != "chromium" {
+		// We don't support other projects for now, so mark the analysis as unsupported.
+		logging.Infof(ctx, "Unsupported project: %s", tfa.Project)
+		// TODO (nqmtuan): Also update the Nthsection analysis status.
+		err = testfailureanalysis.UpdateStatus(ctx, tfa, pb.AnalysisStatus_UNSUPPORTED, pb.AnalysisRunStatus_ENDED)
+		if err != nil {
+			return errors.Annotate(err, "update status unsupported").Err()
+		}
+		return
+	}
+
 	// Update the analysis status.
-	err = testfailureanalysis.UpdateStatus(ctx, tfa, bisectionpb.AnalysisStatus_RUNNING, bisectionpb.AnalysisRunStatus_STARTED)
+	err = testfailureanalysis.UpdateStatus(ctx, tfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 	if err != nil {
 		return errors.Annotate(err, "update status").Err()
 	}
 
+	// Create nthsection model.
 	primaryFailure, err := datastoreutil.GetPrimaryTestFailure(ctx, tfa)
 	if err != nil {
 		return errors.Annotate(err, "get primary test failure").Err()
 	}
-
-	// Trigger specific project bisector.
-	switch primaryFailure.Project {
-	case "chromium":
-		err := chromium.Run(ctx, tfa, luciAnalysis)
-		if err != nil {
-			return errors.Annotate(err, "run chromium bisector").Err()
-		}
-	default:
-		// We don't support other projects for now, so mark the analysis as unsupported.
-		logging.Infof(ctx, "Unsupported project: %s", primaryFailure.Project)
-		err = testfailureanalysis.UpdateStatus(ctx, tfa, bisectionpb.AnalysisStatus_UNSUPPORTED, bisectionpb.AnalysisRunStatus_ENDED)
-		if err != nil {
-			return errors.Annotate(err, "update status unsupported").Err()
-		}
+	_, err = createNthSectionModel(ctx, tfa, primaryFailure)
+	if err != nil {
+		return errors.Annotate(err, "create nth section model").Err()
 	}
+
+	projectBisector, err := getProjectBisector(ctx, tfa, luciAnalysis)
+	if err != nil {
+		return errors.Annotate(err, "get individual project bisector").Err()
+	}
+
+	err = projectBisector.Prepare(ctx, tfa)
+	if err != nil {
+		return errors.Annotate(err, "prepare").Err()
+	}
+
+	// TODO (nqmtuan): Run nthsection here
 	return nil
+}
+
+func getProjectBisector(ctx context.Context, tfa *model.TestFailureAnalysis, luciAnalysis analysis.AnalysisClient) (projectbisector.ProjectBisector, error) {
+	switch tfa.Project {
+	case "chromium":
+		bisector := &chromium.Bisector{
+			LuciAnalysis: luciAnalysis,
+		}
+		return bisector, nil
+	default:
+		return nil, errors.Reason("no bisector for project %s", tfa.Project).Err()
+	}
+}
+
+func createNthSectionModel(ctx context.Context, tfa *model.TestFailureAnalysis, primaryTestFailure *model.TestFailure) (*model.TestNthSectionAnalysis, error) {
+	gitiles := primaryTestFailure.Ref.GetGitiles()
+	if gitiles == nil {
+		return nil, errors.New("no gitiles")
+	}
+
+	regressionRange := &pb.RegressionRange{
+		LastPassed: &buildbucketpb.GitilesCommit{
+			Host:    gitiles.Host,
+			Project: gitiles.Project,
+			Ref:     gitiles.Ref,
+			Id:      tfa.StartCommitHash,
+		},
+		FirstFailed: &buildbucketpb.GitilesCommit{
+			Host:    gitiles.Host,
+			Project: gitiles.Project,
+			Ref:     gitiles.Ref,
+			Id:      tfa.EndCommitHash,
+		},
+	}
+	changeLogs, err := changelogutil.GetChangeLogs(ctx, regressionRange)
+	if err != nil {
+		return nil, errors.Annotate(err, "couldn't fetch changelog").Err()
+	}
+	blameList := changelogutil.ChangeLogsToBlamelist(ctx, changeLogs)
+
+	nsa := &model.TestNthSectionAnalysis{
+		ParentAnalysis: datastore.KeyForObj(ctx, tfa),
+		StartTime:      clock.Now(ctx),
+		Status:         pb.AnalysisStatus_RUNNING,
+		RunStatus:      pb.AnalysisRunStatus_STARTED,
+		BlameList:      blameList,
+	}
+
+	err = datastore.Put(ctx, nsa)
+	if err != nil {
+		return nil, errors.Annotate(err, "save nthsection").Err()
+	}
+	return nsa, nil
 }
 
 func isEnabled(ctx context.Context) (bool, error) {

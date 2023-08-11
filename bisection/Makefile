@@ -12,13 +12,5 @@ format:
 test:
 	go test ./...
 
-ui-test: build-frontend
-	cd frontend/ui; \
-	npm run test
-
-build-frontend:
-	cd frontend/ui; \
-	make release
-
-deploy: build-frontend
+deploy:
 	$(GAE_PY) upload --target-version ${USER} -A luci-bisection-dev

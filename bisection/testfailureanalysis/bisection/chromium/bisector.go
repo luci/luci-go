@@ -28,20 +28,23 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
-// Run runs bisection for the given analysis.
-func Run(ctx context.Context, tfa *model.TestFailureAnalysis, luciAnalysis analysis.AnalysisClient) error {
+type Bisector struct {
+	LuciAnalysis analysis.AnalysisClient
+}
+
+func (b *Bisector) Prepare(ctx context.Context, tfa *model.TestFailureAnalysis) error {
 	logging.Infof(ctx, "Run chromium bisection")
 	bundle, err := datastoreutil.GetTestFailureBundle(ctx, tfa)
 	if err != nil {
 		return errors.Annotate(err, "get test failures").Err()
 	}
 
-	err = populateTestSuiteName(ctx, bundle)
+	err = b.populateTestSuiteName(ctx, bundle)
 	if err != nil {
 		return errors.Annotate(err, "populate test suite name").Err()
 	}
 
-	err = populateTestNames(ctx, bundle, luciAnalysis)
+	err = b.populateTestNames(ctx, bundle)
 	if err != nil {
 		return errors.Annotate(err, "populate test names").Err()
 	}
@@ -51,7 +54,7 @@ func Run(ctx context.Context, tfa *model.TestFailureAnalysis, luciAnalysis analy
 
 // populateTestSuiteName set the correct TestSuiteName for TestFailures.
 // For chromium, it gets test suite name from test variant.
-func populateTestSuiteName(ctx context.Context, bundle *model.TestFailureBundle) error {
+func (b *Bisector) populateTestSuiteName(ctx context.Context, bundle *model.TestFailureBundle) error {
 	tfs := bundle.All()
 	for _, tf := range tfs {
 		testSuite, ok := tf.Variant.Def["test_suite"]
@@ -76,7 +79,7 @@ func populateTestSuiteName(ctx context.Context, bundle *model.TestFailureBundle)
 // the TestName for all TestFailure models in bundle.
 // This only triggered whenever we run a bisection (~20 times a day), so the
 // cost is manageable.
-func populateTestNames(ctx context.Context, bundle *model.TestFailureBundle, luciAnalysis analysis.AnalysisClient) error {
+func (b *Bisector) populateTestNames(ctx context.Context, bundle *model.TestFailureBundle) error {
 	tfs := bundle.All()
 	keys := make([]lucianalysis.TestVerdictKey, len(tfs))
 	for i, tf := range bundle.All() {
@@ -86,7 +89,7 @@ func populateTestNames(ctx context.Context, bundle *model.TestFailureBundle, luc
 			RefHash:     tf.RefHash,
 		}
 	}
-	keyMap, err := luciAnalysis.ReadTestNames(ctx, bundle.Primary().Project, keys)
+	keyMap, err := b.LuciAnalysis.ReadTestNames(ctx, bundle.Primary().Project, keys)
 	if err != nil {
 		return errors.Annotate(err, "read test names").Err()
 	}
