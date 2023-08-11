@@ -24,6 +24,7 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -148,6 +149,63 @@ func TestDatastoreModel(t *testing.T) {
 				},
 			}
 			So(datastore.Put(c, rerun_build), ShouldBeNil)
+		})
+
+		Convey("Can create TestSingleRerun models", func() {
+			tf1 := &TestFailure{
+				ID: 100,
+			}
+			tf2 := &TestFailure{
+				ID: 101,
+			}
+			tfa := &TestFailureAnalysis{
+				ID: 1000,
+			}
+			So(datastore.Put(c, tf1), ShouldBeNil)
+			So(datastore.Put(c, tf2), ShouldBeNil)
+			So(datastore.Put(c, tfa), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+			singleRerun := &TestSingleRerun{
+				AnalysisKey: datastore.KeyForObj(c, tfa),
+				LuciBuild: LuciBuild{
+					BuildId: 12345,
+					GitilesCommit: buildbucketpb.GitilesCommit{
+						Host:    "host",
+						Project: "proj",
+						Id:      "id",
+					},
+				},
+				Dimensions: &pb.Dimensions{
+					Dimensions: []*pb.Dimension{
+						{
+							Key:   "k",
+							Value: "v",
+						},
+					},
+				},
+				Type: RerunBuildType_NthSection,
+				TestResults: RerunTestResults{
+					IsFinalized: true,
+					Results: []RerunSingleTestResult{
+						{
+							TestFailureKey: datastore.KeyForObj(c, tf1),
+							ExpectedCount:  1,
+						},
+						{
+							TestFailureKey:  datastore.KeyForObj(c, tf2),
+							UnexpectedCount: 1,
+						},
+					},
+				},
+				Status: pb.RerunStatus_RERUN_STATUS_PASSED,
+			}
+			So(datastore.Put(c, singleRerun), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+			q := datastore.NewQuery("TestSingleRerun").Eq("analysis_key", datastore.KeyForObj(c, tfa))
+			reruns := []*TestSingleRerun{}
+			So(datastore.GetAll(c, q, &reruns), ShouldBeNil)
+			So(len(reruns), ShouldEqual, 1)
+			So(reruns[0], ShouldResembleProto, singleRerun)
 		})
 	})
 }

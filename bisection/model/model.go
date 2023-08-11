@@ -451,7 +451,7 @@ type TestSingleRerun struct {
 	// Either culprit verification or nth section run.
 	Type RerunBuildType `gae:"rerun_type"`
 	// Key to the TestFailureAnalysis of this SingleRerun
-	AnalysisKey *datastore.Key `gae:"analysis"`
+	AnalysisKey *datastore.Key `gae:"analysis_key"`
 	// Time when the rerun was created in datastore.
 	// It may be (slightly) different from LuciBuild.create_time,
 	// which is when the build got created in buildbucket.
@@ -461,15 +461,47 @@ type TestSingleRerun struct {
 	// The dimensions of the rerun build.
 	Dimensions *pb.Dimensions `gae:"dimensions"`
 	// Key to the culprit (Suspect model), if this is for culprit verification
-	CulpritKey *datastore.Key `gae:"culprit"`
+	CulpritKey *datastore.Key `gae:"culprit_key"`
 	// Key to TestNthSectionAnalysis, if this is for nthsection.
-	NthSectionAnalysisKey *datastore.Key `gae:"nthsection_analysis"`
+	NthSectionAnalysisKey *datastore.Key `gae:"nthsection_analysis_key"`
 	// Priority of this run.
 	Priority int32 `gae:"priority"`
+	// Results of the test runs.
+	// The TestFailureKey field of test result will be populated when this model
+	// is first created.
+	// This is useful to know which test failures are running for this rerun without
+	// waiting for the result.
+	TestResults RerunTestResults `gae:"test_results"`
 	// Status of the rerun.
-	// TODO (nqmtuan): The status here should capture the result of
-	// all the tests, instead of just a single status like this.
+	// If the rerun ended, this result will base on the result
+	// of the primary test failure. See pb.RerunStatus for more information.
 	Status pb.RerunStatus
+}
+
+// RerunTestResults captures test results of TestSingleRerun.
+type RerunTestResults struct {
+	// IsFinalized indicates whether the results have been finalized and
+	// is ready to be consumed.
+	IsFinalized bool                    `gae:"is_finalized"`
+	Results     []RerunSingleTestResult `gae:"results"`
+}
+
+// RerunSingleTestResult is the result for one TestFailure.
+type RerunSingleTestResult struct {
+	// Key to TestFailure model.
+	TestFailureKey *datastore.Key `gae:"test_failure_key"`
+
+	// TODO (nqmtuan): Consider breaking this to status level (e.g.
+	// unexpected pass count). But for now, keeping the total expected
+	// and unexpected count may be enough, as we only support bisection
+	// from expected to unexpected.
+	// We use number count instead of status to open for possibility
+	// to support flakiness bisection in the future (where a test may need
+	// to be rerun multiple times to get the flakiness level).
+	// The number of expected results. Skipped results are not counted.
+	ExpectedCount int64 `gae:"expected_count"`
+	// The number of unexpected results. Skipped results are not counted.
+	UnexpectedCount int64 `gae:"unexpected_count"`
 }
 
 func (cfa *CompileFailureAnalysis) HasEnded() bool {

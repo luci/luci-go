@@ -45,11 +45,28 @@ enum AnalysisStatus {
 
 enum RerunStatus {
   RERUN_STATUS_UNSPECIFIED = 0;
+  // The rerun is in progress.
+  // It may be scheduled or started, but not finished yet.
   RERUN_STATUS_IN_PROGRESS = 1;
+  // For compile failure, it means the rerun succeeded.
+  // For deterministic test failure, it means that the primary test failure
+  // got expected result.
   RERUN_STATUS_PASSED = 2;
+  // For compile failure, it means the compile was unsuccessful.
+  // For deterministic test failure, it means that the primary test failure
+  // got unexpected result.
   RERUN_STATUS_FAILED = 3;
+  // The rerun ended with infra failure.
+  // It means we will not know which direction to continue the bisection.
+  // This case usually mean that the bisection will not be able to
+  // find culprit.
   RERUN_STATUS_INFRA_FAILED = 4;
+  // The rerun was canceled.
   RERUN_STATUS_CANCELED = 5;
+  // Only used for test failure rerun.
+  // The rerun ended, but the primary test failure was not run.
+  // It usually means that we won't be able to continue the bisection.
+  RERUN_STATUS_TEST_SKIPPED = 6;
 }
 
 // RerunResult contains the result of one rerun.
