@@ -13,14 +13,12 @@
 // limitations under the License.
 
 import { ChevronRight, ExpandMore } from '@mui/icons-material';
-import { Box, IconButton, TableCell } from '@mui/material';
+import { IconButton, TableCell } from '@mui/material';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { Fragment, useMemo } from 'react';
 
 import { GerritClLink } from '@/common/components/gerrit_cl_link';
-import { Build } from '@/common/services/buildbucket';
-import { ExpandableEntriesStateInstance } from '@/common/store/expandable_entries_state';
 
 import { useRowState, useTableState } from '../context';
 
@@ -29,8 +27,8 @@ export const GerritChangesHeadCell = observer(() => {
 
   return (
     <TableCell width="1px">
-      <Box
-        sx={{
+      <div
+        css={{
           display: 'grid',
           gridTemplateColumns: '34px 1fr',
         }}
@@ -42,8 +40,8 @@ export const GerritChangesHeadCell = observer(() => {
         >
           {tableState.defaultExpanded ? <ExpandMore /> : <ChevronRight />}
         </IconButton>
-        <Box sx={{ lineHeight: '34px' }}>Changes</Box>
-      </Box>
+        <div css={{ lineHeight: '34px' }}>Changes</div>
+      </div>
     </TableCell>
   );
 });
@@ -66,36 +64,17 @@ export const GerritChangesContentCell = observer(() => {
   );
   const expanded = expandedObservable.get();
 
-  return (
-    <GerritChangesContentCellDisplay
-      tableState={tableState}
-      build={build}
-      expanded={expanded}
-    />
-  );
-});
-
-export interface GerritChangesContentCellDisplayProps {
-  readonly tableState: ExpandableEntriesStateInstance;
-  readonly build: Build;
-  readonly expanded: boolean;
-}
-
-export function GerritChangesContentCellDisplay({
-  tableState,
-  build,
-  expanded,
-}: GerritChangesContentCellDisplayProps) {
   const changes = build.input?.gerritChanges || [];
+
   return (
     <TableCell>
-      <Box
-        sx={{
+      <div
+        css={{
           display: 'grid',
           gridTemplateColumns: '34px 1fr',
         }}
       >
-        <Box>
+        <div>
           <IconButton
             aria-label="toggle-row"
             size="small"
@@ -108,9 +87,9 @@ export function GerritChangesContentCellDisplay({
           >
             {expanded ? <ExpandMore /> : <ChevronRight />}
           </IconButton>
-        </Box>
-        <Box
-          sx={{
+        </div>
+        <div
+          css={{
             width: '200px',
             lineHeight: '32px',
             ...(expanded
@@ -134,8 +113,8 @@ export function GerritChangesContentCellDisplay({
               <GerritClLink cl={c} />
             </Fragment>
           ))}
-        </Box>
-      </Box>
+        </div>
+      </div>
     </TableCell>
   );
-}
+});

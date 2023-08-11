@@ -28,8 +28,8 @@ export const SummaryHeadCell = observer(() => {
 
   return (
     <TableCell>
-      <Box
-        sx={{
+      <div
+        css={{
           display: 'grid',
           gridTemplateColumns: '34px 1fr',
         }}
@@ -41,8 +41,8 @@ export const SummaryHeadCell = observer(() => {
         >
           {tableState.defaultExpanded ? <ExpandMore /> : <ChevronRight />}
         </IconButton>
-        <Box sx={{ lineHeight: '34px' }}>Summary</Box>
-      </Box>
+        <div css={{ lineHeight: '34px' }}>Summary</div>
+      </div>
     </TableCell>
   );
 });
@@ -90,13 +90,13 @@ export const SummaryContentCell = observer(() => {
 
   return (
     <TableCell>
-      <Box
-        sx={{
+      <div
+        css={{
           display: 'grid',
           gridTemplateColumns: '34px 1fr',
         }}
       >
-        <Box>
+        <div>
           <IconButton
             aria-label="toggle-row"
             size="small"
@@ -109,7 +109,7 @@ export const SummaryContentCell = observer(() => {
           >
             {expanded ? <ExpandMore /> : <ChevronRight />}
           </IconButton>
-        </Box>
+        </div>
         <MarkdownContainer
           className={`${BUILD_STATUS_CLASS_MAP[build.status]}-bg`}
           css={{
@@ -130,7 +130,7 @@ export const SummaryContentCell = observer(() => {
             __html: summaryHtml,
           }}
         />
-      </Box>
+      </div>
     </TableCell>
   );
 });

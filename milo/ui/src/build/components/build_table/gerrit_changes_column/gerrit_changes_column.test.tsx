@@ -12,24 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { TableCell } from '@mui/material';
 import { act, cleanup, render, screen } from '@testing-library/react';
 
 import { Build } from '@/common/services/buildbucket';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+
+import { BuildTable } from '../build_table';
+import { BuildTableBody } from '../build_table_body';
+import { BuildTableHead } from '../build_table_head';
+import { BuildTableRow } from '../build_table_row';
+import { useRowState } from '../context';
+
 import {
-  ExpandableEntriesState,
-  ExpandableEntriesStateInstance,
-} from '@/common/store/expandable_entries_state';
+  GerritChangesContentCell,
+  GerritChangesHeadCell,
+} from './gerrit_changes_column';
 
-import { RowStateProvider, TableStateProvider } from '../context';
-
-import { GerritChangesContentCell } from './gerrit_changes_column';
-
-jest.mock('@mui/material', () =>
-  self.createSelectiveSpiesFromModule<typeof import('@mui/material')>(
-    '@mui/material',
-    ['TableCell']
-  )
+jest.mock('../context', () =>
+  self.createSelectiveSpiesFromModule<
+    typeof import('@/build/components/build_table/context')
+  >('@/build/components/build_table/context', ['useRowState'])
 );
 
 const buildWithMultipleCls = {
@@ -64,147 +66,143 @@ const buildWithNoCls = {
 } as Build;
 
 describe('GerritChangesContentCell', () => {
-  let tableCellSpy: jest.MockedFunctionDeep<typeof TableCell>;
-
   beforeEach(() => {
     jest.useFakeTimers();
-    tableCellSpy = jest
-      .mocked(TableCell)
-      .mockImplementation(({ children }) => <td>{children}</td>);
   });
 
   afterEach(() => {
     jest.useRealTimers();
-    tableCellSpy.mockReset();
   });
 
   describe('when there are CLs', () => {
-    let tableState: ExpandableEntriesStateInstance;
-
+    let useRowStateSpy: jest.MockedFunctionDeep<typeof useRowState>;
     beforeEach(() => {
-      tableState = ExpandableEntriesState.create({
-        defaultExpanded: false,
-      });
+      useRowStateSpy = jest.mocked(useRowState);
+
       render(
-        <TableStateProvider value={tableState}>
-          <table>
-            <tbody>
-              <RowStateProvider value={buildWithMultipleCls}>
-                <tr>
-                  <GerritChangesContentCell />
-                </tr>
-              </RowStateProvider>
-            </tbody>
-          </table>
-        </TableStateProvider>
+        <FakeContextProvider>
+          <BuildTable>
+            <BuildTableHead>
+              <GerritChangesHeadCell />
+            </BuildTableHead>
+            <BuildTableBody>
+              <BuildTableRow build={buildWithMultipleCls}>
+                <GerritChangesContentCell />
+              </BuildTableRow>
+            </BuildTableBody>
+          </BuildTable>
+        </FakeContextProvider>
       );
     });
 
     afterEach(() => {
+      useRowStateSpy.mockClear();
       cleanup();
     });
 
     it('should expand/collapse correctly', async () => {
-      const toggleButton = screen.getByLabelText('toggle-row');
+      const toggleRowButton = screen.getByLabelText('toggle-row');
+      const toggleAllRowsButton = screen.getByLabelText('toggle-all-rows');
 
-      expect(toggleButton).not.toBeDisabled();
-      expect(toggleButton).not.toHaveStyleRule('visibility', 'hidden');
+      expect(toggleRowButton).not.toBeDisabled();
+      expect(toggleRowButton).not.toHaveStyleRule('visibility', 'hidden');
 
       expect(
-        toggleButton.querySelector("[data-testid='ChevronRightIcon']")
+        toggleRowButton.querySelector("[data-testid='ChevronRightIcon']")
       ).toBeInTheDocument();
       expect(
-        toggleButton.querySelector("[data-testid='ExpandMoreIcon']")
+        toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']")
       ).not.toBeInTheDocument();
 
       // Expand by clicking on toggle button.
-      act(() => toggleButton.click());
+      act(() => toggleRowButton.click());
       expect(
-        toggleButton.querySelector("[data-testid='ChevronRightIcon']")
+        toggleRowButton.querySelector("[data-testid='ChevronRightIcon']")
       ).not.toBeInTheDocument();
       expect(
-        toggleButton.querySelector("[data-testid='ExpandMoreIcon']")
+        toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']")
       ).toBeInTheDocument();
 
       // Collapse by clicking on toggle button.
-      act(() => toggleButton.click());
+      act(() => toggleRowButton.click());
       expect(
-        toggleButton.querySelector("[data-testid='ChevronRightIcon']")
+        toggleRowButton.querySelector("[data-testid='ChevronRightIcon']")
       ).toBeInTheDocument();
       expect(
-        toggleButton.querySelector("[data-testid='ExpandMoreIcon']")
+        toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']")
       ).not.toBeInTheDocument();
 
       // Expand again by changing the default state.
-      act(() => tableState.toggleAll(true));
+      act(() => toggleAllRowsButton.click());
       await act(() => jest.runAllTimersAsync());
       expect(
-        toggleButton.querySelector("[data-testid='ChevronRightIcon']")
+        toggleRowButton.querySelector("[data-testid='ChevronRightIcon']")
       ).not.toBeInTheDocument();
       expect(
-        toggleButton.querySelector("[data-testid='ExpandMoreIcon']")
+        toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']")
       ).toBeInTheDocument();
 
       // Collapse by clicking on toggle button.
-      act(() => tableState.toggleAll(false));
+      act(() => toggleAllRowsButton.click());
       await act(() => jest.runAllTimersAsync());
       expect(
-        toggleButton.querySelector("[data-testid='ChevronRightIcon']")
+        toggleRowButton.querySelector("[data-testid='ChevronRightIcon']")
       ).toBeInTheDocument();
       expect(
-        toggleButton.querySelector("[data-testid='ExpandMoreIcon']")
+        toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']")
       ).not.toBeInTheDocument();
     });
 
     it('should avoid unnecessary rerendering', async () => {
-      const toggleButton = screen.getByLabelText('toggle-row');
-      expect(tableCellSpy).toHaveBeenCalledTimes(1);
+      const toggleRowButton = screen.getByLabelText('toggle-row');
+      const toggleAllRowsButton = screen.getByLabelText('toggle-all-rows');
+      expect(useRowStateSpy).toHaveBeenCalledTimes(1);
 
       // Expand by clicking on toggle button.
-      act(() => toggleButton.click());
-      expect(tableCellSpy).toHaveBeenCalledTimes(2);
+      act(() => toggleRowButton.click());
+      expect(useRowStateSpy).toHaveBeenCalledTimes(2);
 
       // Expand by changing the default state.
-      act(() => tableState.toggleAll(true));
+      act(() => toggleAllRowsButton.click());
       await act(() => jest.runAllTimersAsync());
       // Not rerendered. The entry was expanded already.
-      expect(tableCellSpy).toHaveBeenCalledTimes(2);
+      expect(useRowStateSpy).toHaveBeenCalledTimes(2);
 
       // Collapse by clicking on toggle button.
-      act(() => toggleButton.click());
-      expect(tableCellSpy).toHaveBeenCalledTimes(3);
+      act(() => toggleRowButton.click());
+      expect(useRowStateSpy).toHaveBeenCalledTimes(3);
 
-      // Collapse by clicking on toggle button.
-      act(() => tableState.toggleAll(false));
+      // Collapse by changing the default state.
+      act(() => toggleAllRowsButton.click());
       await act(() => jest.runAllTimersAsync());
       // Not rerendered. The entry was collapsed already.
-      expect(tableCellSpy).toHaveBeenCalledTimes(3);
+      expect(useRowStateSpy).toHaveBeenCalledTimes(3);
     });
   });
 
   describe('when there are no CLs', () => {
-    let tableState: ExpandableEntriesStateInstance;
-
+    let useRowStateSpy: jest.MockedFunctionDeep<typeof useRowState>;
     beforeEach(() => {
-      tableState = ExpandableEntriesState.create({
-        defaultExpanded: false,
-      });
+      useRowStateSpy = jest.mocked(useRowState);
+
       render(
-        <TableStateProvider value={tableState}>
-          <table>
-            <tbody>
-              <RowStateProvider value={buildWithNoCls}>
-                <tr>
-                  <GerritChangesContentCell />
-                </tr>
-              </RowStateProvider>
-            </tbody>
-          </table>
-        </TableStateProvider>
+        <FakeContextProvider>
+          <BuildTable>
+            <BuildTableHead>
+              <GerritChangesHeadCell />
+            </BuildTableHead>
+            <BuildTableBody>
+              <BuildTableRow build={buildWithNoCls}>
+                <GerritChangesContentCell />
+              </BuildTableRow>
+            </BuildTableBody>
+          </BuildTable>
+        </FakeContextProvider>
       );
     });
 
     afterEach(() => {
+      useRowStateSpy.mockClear();
       cleanup();
     });
 
@@ -216,19 +214,20 @@ describe('GerritChangesContentCell', () => {
     });
 
     it('should avoid unnecessary rerendering', async () => {
-      expect(tableCellSpy).toHaveBeenCalledTimes(1);
+      const toggleAllRowsButton = screen.getByLabelText('toggle-all-rows');
+      expect(useRowStateSpy).toHaveBeenCalledTimes(1);
 
       // Expand by changing the default state.
-      act(() => tableState.toggleAll(true));
+      act(() => toggleAllRowsButton.click());
       await act(() => jest.runAllTimersAsync());
       // Not rerendered. There are no CLs anyway.
-      expect(tableCellSpy).toHaveBeenCalledTimes(1);
+      expect(useRowStateSpy).toHaveBeenCalledTimes(1);
 
-      // Collapse by clicking on toggle button.
-      act(() => tableState.toggleAll(false));
+      // Collapse by changing the default state.
+      act(() => toggleAllRowsButton.click());
       await act(() => jest.runAllTimersAsync());
       // Not rerendered. There are no CLs anyway.
-      expect(tableCellSpy).toHaveBeenCalledTimes(1);
+      expect(useRowStateSpy).toHaveBeenCalledTimes(1);
     });
   });
 });
