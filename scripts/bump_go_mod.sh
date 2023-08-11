@@ -34,7 +34,6 @@ deps=(
   cloud.google.com/go/errorreporting@latest
   cloud.google.com/go/iam@latest
   cloud.google.com/go/kms@latest
-  cloud.google.com/go/logging@latest
   cloud.google.com/go/profiler@latest
   cloud.google.com/go/pubsub@latest
   cloud.google.com/go/secretmanager@latest
@@ -88,7 +87,8 @@ deps=(
   # them, they can be bumped as dependencies. By updating them last, we'll
   # downgrade stuff that depend on them instead.
 
-  # Nothing to pin for now.
+  # v1.8.0 is buggy: https://github.com/googleapis/google-cloud-go/issues/8408
+  cloud.google.com/go/logging@v1.7.0
 )
 
 for mod in ${deps[@]}; do
