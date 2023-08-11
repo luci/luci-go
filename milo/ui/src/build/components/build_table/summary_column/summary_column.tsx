@@ -80,6 +80,14 @@ export const SummaryContentCell = observer(() => {
   );
   const expanded = expandedObservable.get();
 
+  const summaryHtml = useMemo(
+    () =>
+      build.summaryMarkdown
+        ? renderMarkdown(build.summaryMarkdown)
+        : '<p style="color: var(--greyed-out-text-color);">No Summary.</p>',
+    [build.summaryMarkdown]
+  );
+
   return (
     <TableCell>
       <Box
@@ -119,10 +127,7 @@ export const SummaryContentCell = observer(() => {
                 }),
           }}
           dangerouslySetInnerHTML={{
-            __html: renderMarkdown(
-              build.summaryMarkdown ||
-                '<span style="color: var(--greyed-out-text-color);">No Summary.</span>'
-            ),
+            __html: summaryHtml,
           }}
         />
       </Box>
