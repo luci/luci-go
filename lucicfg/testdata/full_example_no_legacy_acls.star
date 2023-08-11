@@ -172,6 +172,7 @@ luci.builder(
         column_keys = ["v.gpu"],
         grouping_keys = ["status", "v.test_suite"],
     ),
+    contact_team_email = "a@b.com",
 )
 
 luci.builder(
@@ -908,6 +909,7 @@ lucicfg.emit(
 #         }
 #       }
 #       description_html: "this is a linux ci builder"
+#       contact_team_email: "a@b.com"
 #     }
 #     builders {
 #       name: "watched builder"

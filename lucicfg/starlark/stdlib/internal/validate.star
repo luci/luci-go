@@ -208,6 +208,36 @@ def _duration(attr, val, *, precision = time.second, min = time.zero, max = None
 
     return val
 
+def _email(attr, val, *, default = None, required = True):
+    """Validates that the value is a string RFC 2822 hostname and returns it.
+
+    Args:
+      attr: field name with this value, for error messages.
+      val: a value to validate.
+      default: a value to use if 'val' is None, ignored if required is True.
+      required: if False, allow 'val' to be None, return 'default' in this case.
+
+    Returns:
+      The validated email or None if required is False and default is None.
+    """
+    if val == None:
+        if required:
+            fail("missing required field %r" % attr)
+        if default == None:
+            return None
+        val = default
+
+    if type(val) != "string":
+        fail("bad %r: got %s, want string" % (attr, type(val)))
+    if not val:
+        fail("bad %r: must not be empty" % (attr,))
+
+    email_regexp = r"^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
+    if not re.submatches(email_regexp, val.lower()):
+        fail("bad %r: %r is not a valid RFC 2822 email" % (attr, val))
+
+    return val
+
 def _list(attr, val, *, required = False):
     """Validates that the value is a list and returns it.
 
@@ -465,6 +495,7 @@ validate = struct(
     float = _float,
     bool = _bool,
     duration = _duration,
+    email = _email,
     list = _list,
     str_dict = _str_dict,
     struct = _struct,

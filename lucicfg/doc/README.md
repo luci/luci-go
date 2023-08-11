@@ -1465,6 +1465,7 @@ luci.builder(
     triggers = None,
     triggered_by = None,
     notifies = None,
+    contact_team_email = None,
 )
 ```
 
@@ -1552,6 +1553,7 @@ Buildbucket.
 * **triggers**: builders this builder triggers.
 * **triggered_by**: builders or pollers this builder is triggered by.
 * **notifies**: list of [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree-closer) the builder notifies when it changes its status. This relation can also be defined via `notified_by` field in [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree-closer).
+* **contact_team_email**: the owning team's contact email. This team is responsible for fixing any builder health issues (see BuilderConfig.ContactTeamEmail).
 
 
 

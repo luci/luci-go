@@ -462,6 +462,7 @@ def _buildbucket_builders(bucket):
                 node.props.task_template_canary_percentage,
             ),
             resultdb = node.props.resultdb,
+            contact_team_email = node.props.contact_team_email,
         )
         if node.props.backend != None:
             backend = graph.node(node.props.backend)

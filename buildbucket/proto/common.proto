@@ -391,4 +391,7 @@ message HealthStatus {
   string reporter = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
   // Set by Buildbucket. Output only.
   google.protobuf.Timestamp reported_time = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+  // A contact email for the builder's owning team, for the purpose of fixing builder health issues
+  // See contact_team_email field in project_config.BuilderConfig
+  string contact_team_email = 8;
 }

@@ -128,6 +128,9 @@ func updateBuilderEntityWithHealth(ctx context.Context, bldr *pb.SetBuilderHealt
 		if bldr.Health.DocLinks == nil {
 			bldr.Health.DocLinks = builder.Config.GetBuilderHealthMetricsLinks().GetDocLinks()
 		}
+		if bldr.Health.ContactTeamEmail == "" {
+			bldr.Health.ContactTeamEmail = builder.Config.GetContactTeamEmail()
+		}
 		bldr.Health.ReportedTime = timestamppb.Now()
 		bldr.Health.Reporter = auth.CurrentIdentity(ctx).Value()
 		if builder.Metadata != nil {

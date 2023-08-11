@@ -472,6 +472,12 @@ message BuilderConfig {
   }
 
   BuilderHealthLinks builder_health_metrics_links = 37;
+
+  // The owning team's contact email. This team is responsible for fixing
+  // any builder health issues (see Builder.Metadata.HealthSpec).
+  // Will be validated as an email address, but nothing else.
+  // It will display on milo and could be public facing, so please don't put anything sensitive.
+  string contact_team_email = 38;
 }
 
 // Configuration of buildbucket-swarming integration for one bucket.

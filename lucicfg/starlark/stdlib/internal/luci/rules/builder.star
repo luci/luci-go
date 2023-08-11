@@ -82,7 +82,10 @@ def _builder(
         # Relations.
         triggers = None,
         triggered_by = None,
-        notifies = None):
+        notifies = None,
+
+        # Builder health indicators
+        contact_team_email = None):
     """Defines a generic builder.
 
     It runs some executable (usually a recipe) in some requested environment,
@@ -137,7 +140,6 @@ def _builder(
         for the list of allowed HTML elements.
       executable: an executable to run, e.g. a luci.recipe(...) or
         luci.executable(...). Required.
-
       properties: a dict with string keys and JSON-serializable values, defining
         properties to pass to the executable. Supports the module-scoped
         defaults. They are merged (non-recursively) with the explicitly passed
@@ -272,6 +274,9 @@ def _builder(
       notifies: list of luci.notifier(...) or luci.tree_closer(...) the builder
         notifies when it changes its status. This relation can also be defined
         via `notified_by` field in luci.notifier(...) or luci.tree_closer(...).
+
+      contact_team_email: the owning team's contact email. This team is responsible for fixing
+        any builder health issues (see BuilderConfig.ContactTeamEmail).
     """
     name = validate.string("name", name)
     bucket_key = keys.bucket(bucket)
@@ -314,6 +319,7 @@ def _builder(
         "shadow_pool": validate.string("shadow_pool", shadow_pool, required = False),
         "shadow_properties": validate.str_dict("shadow_properties", shadow_properties, required = False),
         "shadow_dimensions": swarming.validate_dimensions("shadow_dimensions", shadow_dimensions, allow_none = True),
+        "contact_team_email": validate.email("contact_team_email", contact_team_email, required = False),
     }
 
     # Merge explicitly passed properties with the module-scoped defaults.
