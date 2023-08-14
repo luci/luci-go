@@ -936,23 +936,3 @@ func RedirectsFromTask(c context.Context, host, taskID string) (int64, string, e
 	}
 	return 0, "", nil
 }
-
-// GetLog loads a step log.
-func GetLog(c context.Context, host, taskID, logname string) (text string, closed bool, err error) {
-	switch {
-	case taskID == "":
-		err = errors.New("no swarming task id", grpcutil.InvalidArgumentTag)
-		return
-	case logname == "":
-		err = errors.New("no log name", grpcutil.InvalidArgumentTag)
-		return
-	}
-
-	sf, err := newProdService(c, host)
-	if err != nil {
-		return
-	}
-	defer sf.Close()
-
-	return swarmingBuildLogImpl(c, sf, taskID, logname)
-}

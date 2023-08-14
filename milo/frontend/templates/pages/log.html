@@ -1,8 +1,0 @@
-{{define "title"}}Build Log{{end}}
-
-{{define "body"}}
-<div class="log"><pre>{{.Log}}</pre></div>
-{{ if not .Closed }}
-<div>(... Log is incomplete ...)</div>
-{{ end }}
-{{end}}

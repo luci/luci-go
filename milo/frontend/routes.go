@@ -105,10 +105,8 @@ func Run(srv *server.Server, templatePath string) {
 	r.GET("/p/:project/g/:group/builders", baseMW, redirect("/ui/p/:project/g/:group/builders", http.StatusFound))
 
 	// Swarming
-	r.GET(swarming.URLBase+"/:id/steps/*logname", htmlMW, handleError(HandleSwarmingLog))
 	r.GET(swarming.URLBase+"/:id", htmlMW, handleError(handleSwarmingBuild))
 	// Backward-compatible URLs for Swarming:
-	r.GET("/swarming/prod/:id/steps/*logname", htmlMW, handleError(HandleSwarmingLog))
 	r.GET("/swarming/prod/:id", htmlMW, handleError(handleSwarmingBuild))
 
 	builderPageMW := router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
