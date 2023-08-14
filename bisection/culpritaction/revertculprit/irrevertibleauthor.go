@@ -31,7 +31,7 @@ func HasIrrevertibleAuthor(ctx context.Context, change *gerritpb.ChangeInfo) (bo
 		return false, err
 	}
 
-	// TODO (aredulla): move the explicit irrevertible emails below to configs
+	// TODO (nqmtuan): move the explicit irrevertible emails below to configs
 	switch author {
 	case
 		"blink-w3c-test-autoroller@chromium.org",

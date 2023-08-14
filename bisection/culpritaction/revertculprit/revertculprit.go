@@ -343,8 +343,9 @@ func RevertCulprit(ctx context.Context, culpritModel *model.Suspect) error {
 				existingRevert.Project, existingRevert.Number,
 				culprit.Project, culprit.Number)
 
-			// TODO (aredulla): Abandon the revert created by LUCI Bisection if this
-			// merged revert is different
+			// TODO (nqmtuan): Automatically abandon the revert created by
+			// LUCI Bisection if this merged revert is different. Currently, the
+			// created revert will be left open until manually abandoned.
 
 			return nil
 		}

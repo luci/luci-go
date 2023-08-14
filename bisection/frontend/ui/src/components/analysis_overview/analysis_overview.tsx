@@ -161,7 +161,7 @@ export const AnalysisOverview = ({ analysis }: Props) => {
             <TableCell variant='head'>Status</TableCell>
             <TableCell>
               <AnalysisStatusInfo status={analysis.status}></AnalysisStatusInfo>
-              {/* TODO (aredulla): Currently, analyses are only canceled if
+              {/* TODO (nqmtuan): Currently, analyses are only canceled if
                   a later build is successful. If analyses are canceled for
                   other reasons, we will need to store the cancelation reason
                   in the backend and update the UI here to display it.*/}

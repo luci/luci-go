@@ -273,7 +273,7 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 		result.NthSectionResult = nthSectionResult
 	}
 
-	// TODO (aredulla): add culprit actions for:
+	// TODO (nqmtuan): add culprit actions for:
 	//     * commenting on related bugs
 
 	return result, nil
