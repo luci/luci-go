@@ -15,23 +15,33 @@
 package frontend
 
 import (
-	"html/template"
+	"text/template"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/router"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/milo/internal/config"
+	configpb "go.chromium.org/luci/milo/proto/config"
 )
 
 // configsJSHandler serves /configs.js used by the browser-side.
 func (s *HTTPService) configsJSHandler(c *router.Context) error {
-	template, err := template.ParseFiles("frontend/templates/configs.template.js")
+	tmpl, err := template.ParseFiles("frontend/templates/configs.template.js")
 	if err != nil {
 		logging.Errorf(c.Request.Context(), "Failed to load configs.template.js: %s", err)
 		return err
 	}
 
 	settings := config.GetSettings(c.Request.Context())
+	// Reassign to make exposing props explicit.
+	settings = &configpb.Settings{
+		Swarming:      settings.Swarming,
+		Buildbucket:   settings.Buildbucket,
+		Resultdb:      settings.Resultdb,
+		LuciAnalysis:  settings.LuciAnalysis,
+		LuciBisection: settings.LuciBisection,
+	}
 
 	header := c.Writer.Header()
 	header.Set("content-type", "application/javascript")
@@ -39,8 +49,11 @@ func (s *HTTPService) configsJSHandler(c *router.Context) error {
 	// We don't need to cache the configs file because it is fetched and re-served
 	// by the service worker.
 	header.Set("cache-control", "no-cache")
-	err = template.Execute(c.Writer, map[string]any{
-		"Version": s.Server.Options.ImageVersion(),
+	err = tmpl.Execute(c.Writer, map[string]any{
+		"Version":      s.Server.Options.ImageVersion(),
+		"SettingsJSON": protojson.Format(settings),
+		// TODO(weiweilin): remove the following once the frontend is migrated to
+		// use the settings above.
 		"ResultDB": map[string]string{
 			"Host": settings.GetResultdb().GetHost(),
 		},

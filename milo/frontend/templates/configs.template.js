@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+self.VERSION = '{{.Version}}';
+self.SETTINGS = Object.freeze({{.SettingsJSON}});
+
+// TODO(weiweilin): remove the following once the frontend is migrated to use
+// the settings above.
 self.CONFIGS = Object.freeze({
   VERSION: "{{.Version}}",
   RESULT_DB: {

@@ -46,26 +46,52 @@ function getBoolEnv(
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd());
 
-  const localDevConfigs: typeof CONFIGS = {
-    VERSION: env['VITE_MILO_VERSION'],
-    RESULT_DB: {
-      HOST: env['VITE_RESULT_DB_HOST'],
+  const localVersion = env['VITE_MILO_VERSION'];
+  const localSettings: typeof SETTINGS = {
+    buildbucket: {
+      host: env['VITE_BUILDBUCKET_HOST'],
     },
-    BUILDBUCKET: {
-      HOST: env['VITE_BUILDBUCKET_HOST'],
+    swarming: {
+      defaultHost: env['VITE_SWARMING_DEFAULT_HOST'],
     },
-    LUCI_ANALYSIS: {
-      HOST: env['VITE_LUCI_ANALYSIS_HOST'],
+    resultdb: {
+      host: env['VITE_RESULT_DB_HOST'],
     },
-    LUCI_BISECTION: {
-      HOST: env['VITE_LUCI_BISECTION_HOST'],
+    luciAnalysis: {
+      host: env['VITE_LUCI_ANALYSIS_HOST'],
+    },
+    luciBisection: {
+      host: env['VITE_LUCI_BISECTION_HOST'],
     },
   };
-  const localDevConfigsJs = `self.CONFIGS=Object.freeze(${JSON.stringify(
-    localDevConfigs,
-    undefined,
-    2
-  )});`;
+
+  const localDevConfigs: typeof CONFIGS = {
+    VERSION: localVersion,
+    RESULT_DB: {
+      HOST: localSettings.resultdb.host,
+    },
+    BUILDBUCKET: {
+      HOST: localSettings.buildbucket.host,
+    },
+    LUCI_ANALYSIS: {
+      HOST: localSettings.luciAnalysis.host,
+    },
+    LUCI_BISECTION: {
+      HOST: localSettings.luciBisection.host,
+    },
+  };
+  const localDevConfigsJs =
+    `self.VERSION = '${localVersion}';\n` +
+    `self.SETTINGS = Object.freeze(${JSON.stringify(
+      localSettings,
+      undefined,
+      2
+    )});\n` +
+    `self.CONFIGS=Object.freeze(${JSON.stringify(
+      localDevConfigs,
+      undefined,
+      2
+    )});`;
 
   return {
     base: '/ui',

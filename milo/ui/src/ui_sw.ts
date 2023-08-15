@@ -72,7 +72,9 @@ self.addEventListener('fetch', async (e) => {
   // Ensure all clients served by this service worker use the same config.
   if (e.request.url === self.origin + '/configs.js') {
     const res = new Response(
-      `self.CONFIGS=Object.freeze(${JSON.stringify(CONFIGS)});`
+      `self.VERSION = '${VERSION}';\n` +
+        `self.SETTINGS = Object.freeze(${JSON.stringify(SETTINGS)});\n` +
+        `self.CONFIGS=Object.freeze(${JSON.stringify(CONFIGS)});`
     );
     res.headers.set('content-type', 'application/javascript');
     e.respondWith(res);
