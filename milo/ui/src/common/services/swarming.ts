@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/**
+ * Manually coded type definition and classes for swarming services.
+ * source: https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/appengine/swarming/proto/api_v2/swarming.proto
+ */
+
 import { StringPair } from '@/common/services/common';
 import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
 
@@ -69,6 +74,32 @@ export class BotsService {
 
   async listBots(req: BotsRequest) {
     return (await this.callFn('ListBots', req)) as BotInfoListResponse;
+  }
+}
+
+export interface TaskIdRequest {
+  readonly taskId: string;
+}
+
+export interface TaskRequestResponse {
+  readonly tags?: readonly string[];
+}
+
+export class TasksServices {
+  static readonly SERVICE = 'swarming.v2.Tasks';
+
+  private readonly callFn: (
+    method: string,
+    message: object
+  ) => Promise<unknown>;
+
+  constructor(client: PrpcClientExt) {
+    this.callFn = (method: string, message: object) =>
+      client.call(TasksServices.SERVICE, method, message);
+  }
+
+  async getRequest(req: TaskIdRequest) {
+    return (await this.callFn('GetRequest', req)) as TaskRequestResponse;
   }
 }
 
