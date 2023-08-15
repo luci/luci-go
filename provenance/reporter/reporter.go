@@ -285,3 +285,36 @@ func (r *Report) ReportGcsDigest(ctx context.Context, digest, gcsURI string) (bo
 		return false, err
 	}
 }
+
+// ReportSbomDigest reports digest of a built gcs SBOM to provenance.
+//
+// It returns a success status and annotated error. Status is to indicate user
+// whether to block further execution.
+// If local provenance service is unavailable, it will return an ok status and
+// annotated error. This is to indicate, the user should continue normal
+// execution.
+// All other errors are annotated to indicate permanent failures.
+func (r *Report) ReportSbomDigest(ctx context.Context, digest, gcsURI string, subjectDigests []string) (bool, error) {
+	req := &snooperpb.ReportArtifactDigestRequest{
+		Digest: digest,
+		Artifact: &snooperpb.Artifact{
+			Kind: &snooperpb.Artifact_Gcs{
+				Gcs: gcsURI,
+			},
+		},
+		SbomSubjects: subjectDigests,
+	}
+
+	_, err := r.RClient.ReportArtifactDigest(ctx, req)
+	switch errS, _ := status.FromError(err); errS.Code() {
+	case codes.OK:
+		logging.Infof(ctx, "success to report sbom digest")
+		return true, nil
+	case codes.Unavailable:
+		logging.Errorf(ctx, "failed to report sbom digest: %v", ErrServiceUnavailable)
+		return true, ErrServiceUnavailable
+	default:
+		logging.Errorf(ctx, "failed to report sbom digest: %v", err)
+		return false, err
+	}
+}
