@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,86 +12,48 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package nthsection
+// Package nthsectionsnapshot contains the logic for getting the current state
+// for nthsection analysis and get the next commits to run.
+package nthsectionsnapshot
 
 import (
-	"context"
 	"fmt"
 	"math"
 	"sort"
 
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/gae/service/datastore"
 )
 
-// NthSectionSnapshot contains the current snapshot of the nth-section run
+// Snapshot contains the current snapshot of the nth-section run
 // Including the blamelist, status of the reruns...
-type NthSectionSnapshot struct {
+type Snapshot struct {
 	BlameList *pb.BlameList
 	// Runs are sorted by index
-	Runs []*NthSectionSnapshotRun
+	Runs []*Run
 	// We want a way to detect infinite loop where there is some "consistent" infra failure
 	// for a builder, and nth section keep retrying for that builder, and
 	// draining the resources.
 	// In such cases, keep track of the number of infra failed rerun, and if
 	// there are too many, don't run any more
 	NumInfraFailed int
-	NumInProgress  int
+	// NumInProgress is the number of reruns that are currently running.
+	NumInProgress int
+	// NumTestSkipped is the number of reruns with the TEST_SKIPPED status.
+	// It indicates that the primary test failure was not executed, so we
+	// may not know the next commit for bisection.
+	NumTestSkipped int
 }
 
-type NthSectionSnapshotRun struct {
-	Index  int // index of the run (on the blamelist)
+type Run struct {
+	// Index of the run (on the blamelist).
+	Index  int
 	Commit string
 	Status pb.RerunStatus       // status of the run
 	Type   model.RerunBuildType // Whether this is nth-section or culprit verification run
 }
 
-func CreateSnapshot(c context.Context, nthSectionAnalysis *model.CompileNthSectionAnalysis) (*NthSectionSnapshot, error) {
-	// Get all reruns for the current analysis
-	// This should contain all reruns for nth section and culprit verification
-	q := datastore.NewQuery("SingleRerun").Eq("analysis", nthSectionAnalysis.ParentAnalysis).Order("start_time")
-	reruns := []*model.SingleRerun{}
-	err := datastore.GetAll(c, q, &reruns)
-	if err != nil {
-		return nil, errors.Annotate(err, "getting all reruns").Err()
-	}
-
-	snapshot := &NthSectionSnapshot{
-		BlameList:      nthSectionAnalysis.BlameList,
-		Runs:           []*NthSectionSnapshotRun{},
-		NumInfraFailed: 0,
-	}
-
-	statusMap := map[string]pb.RerunStatus{}
-	typeMap := map[string]model.RerunBuildType{}
-	for _, r := range reruns {
-		statusMap[r.GetId()] = r.Status
-		typeMap[r.GetId()] = r.Type
-		if r.Status == pb.RerunStatus_RERUN_STATUS_INFRA_FAILED {
-			snapshot.NumInfraFailed++
-		}
-		if r.Status == pb.RerunStatus_RERUN_STATUS_IN_PROGRESS {
-			snapshot.NumInProgress++
-		}
-	}
-
-	blamelist := nthSectionAnalysis.BlameList
-	for index, cl := range blamelist.Commits {
-		if stat, ok := statusMap[cl.Commit]; ok {
-			snapshot.Runs = append(snapshot.Runs, &NthSectionSnapshotRun{
-				Index:  index,
-				Commit: cl.Commit,
-				Status: stat,
-				Type:   typeMap[cl.Commit],
-			})
-		}
-	}
-	return snapshot, nil
-}
-
-func (snapshot *NthSectionSnapshot) HasTooManyInfraFailure() bool {
+func (snapshot *Snapshot) HasTooManyInfraFailure() bool {
 	// TODO (nqmtuan): Move the "2" into config.
 	return snapshot.NumInfraFailed > 2
 }
@@ -102,7 +64,7 @@ func (snapshot *NthSectionSnapshot) HasTooManyInfraFailure() bool {
 // and index (n-1) refer to the commit after last pass
 // This function will return an error if the regression range is invalid
 // (there was a passed rerun which is more recent that a failed rerun)
-func (snapshot *NthSectionSnapshot) GetCurrentRegressionRange() (int, int, error) {
+func (snapshot *Snapshot) GetCurrentRegressionRange() (int, int, error) {
 	firstFailedIdx := 0
 	lastPassedIdx := len(snapshot.BlameList.Commits)
 	for _, run := range snapshot.Runs {
@@ -125,7 +87,7 @@ func (snapshot *NthSectionSnapshot) GetCurrentRegressionRange() (int, int, error
 // GetCulprit returns the result of NthSection
 // The first return value will be true iff there is a result
 // Second value will be the index of the culprit in the blamelist
-func (snapshot *NthSectionSnapshot) GetCulprit() (bool, int) {
+func (snapshot *Snapshot) GetCulprit() (bool, int) {
 	// GetCurrentRegressionRange returns the range that contain the culprit
 	start, end, err := snapshot.GetCurrentRegressionRange()
 	// If err != nil, it means last pass is later than first failed
@@ -156,7 +118,7 @@ func (chunk *NthSectionSnapshotChunk) length() int {
 // For example, if the regression is [0..9], and n=3,
 // We can run at indices 2, 5, 8 to break the range into 4 "chunks"
 // [0-1], [3-4], [6-7], [9]. The biggest chunk is of size 2.
-func (snapshot *NthSectionSnapshot) FindNextIndicesToRun(n int) ([]int, error) {
+func (snapshot *Snapshot) FindNextIndicesToRun(n int) ([]int, error) {
 	hasCulprit, _ := snapshot.GetCulprit()
 	// There is a culprit, no need to run anymore
 	if hasCulprit {
@@ -165,6 +127,10 @@ func (snapshot *NthSectionSnapshot) FindNextIndicesToRun(n int) ([]int, error) {
 
 	// Too many infra failure, we don't want to continue
 	if snapshot.HasTooManyInfraFailure() {
+		return []int{}, nil
+	}
+
+	if snapshot.NumTestSkipped > 0 {
 		return []int{}, nil
 	}
 
@@ -188,7 +154,7 @@ func (snapshot *NthSectionSnapshot) FindNextIndicesToRun(n int) ([]int, error) {
 
 // FindNextCommitsToRun is similar to FindNextIndicesToRun,
 // but it returns the commit hashes instead of indice
-func (snapshot *NthSectionSnapshot) FindNextCommitsToRun(n int) ([]string, error) {
+func (snapshot *Snapshot) FindNextCommitsToRun(n int) ([]string, error) {
 	indices, err := snapshot.FindNextIndicesToRun(n)
 	if err != nil {
 		return nil, err
@@ -202,7 +168,7 @@ func (snapshot *NthSectionSnapshot) FindNextCommitsToRun(n int) ([]string, error
 
 // findRegressionChunks finds the regression range and breaks it into chunks
 // the result will be sorted (biggest chunk will come first)
-func (snapshot *NthSectionSnapshot) findRegressionChunks() ([]*NthSectionSnapshotChunk, error) {
+func (snapshot *Snapshot) findRegressionChunks() ([]*NthSectionSnapshotChunk, error) {
 	start, end, err := snapshot.GetCurrentRegressionRange()
 	if err != nil {
 		return nil, err

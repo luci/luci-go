@@ -26,9 +26,11 @@ import (
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/nthsectionsnapshot"
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -39,6 +41,7 @@ import (
 func TestRunBisector(t *testing.T) {
 	t.Parallel()
 	ctx := memory.Use(context.Background())
+	testutil.UpdateIndices(ctx)
 	cl := testclock.New(testclock.TestTimeUTC)
 	cl.Set(time.Unix(10000, 0).UTC())
 	ctx = clock.Set(ctx, cl)
@@ -181,6 +184,122 @@ func TestRunBisector(t *testing.T) {
 						ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472130",
 					},
 				},
+			},
+		})
+	})
+}
+
+func TestCreateSnapshot(t *testing.T) {
+	t.Parallel()
+	c := memory.Use(context.Background())
+	testutil.UpdateIndices(c)
+
+	Convey("Create Snapshot", t, func() {
+		tfa := &model.TestFailureAnalysis{}
+		So(datastore.Put(c, tfa), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+		blamelist := testutil.CreateBlamelist(5)
+		nsa := &model.TestNthSectionAnalysis{
+			BlameList:      blamelist,
+			ParentAnalysis: datastore.KeyForObj(c, tfa),
+		}
+		So(datastore.Put(c, nsa), ShouldBeNil)
+
+		rerun1 := &model.TestSingleRerun{
+			Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+			LuciBuild: model.LuciBuild{
+				GitilesCommit: bbpb.GitilesCommit{
+					Id: "commit1",
+				},
+			},
+			NthSectionAnalysisKey: datastore.KeyForObj(c, nsa),
+		}
+
+		So(datastore.Put(c, rerun1), ShouldBeNil)
+
+		rerun2 := &model.TestSingleRerun{
+			Status: pb.RerunStatus_RERUN_STATUS_FAILED,
+			LuciBuild: model.LuciBuild{
+				GitilesCommit: bbpb.GitilesCommit{
+					Id: "commit3",
+				},
+			},
+			NthSectionAnalysisKey: datastore.KeyForObj(c, nsa),
+		}
+		So(datastore.Put(c, rerun2), ShouldBeNil)
+
+		rerun3 := &model.TestSingleRerun{
+			Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+			LuciBuild: model.LuciBuild{
+				GitilesCommit: bbpb.GitilesCommit{
+					Id: "commit0",
+				},
+			},
+			NthSectionAnalysisKey: datastore.KeyForObj(c, nsa),
+		}
+
+		So(datastore.Put(c, rerun3), ShouldBeNil)
+
+		rerun4 := &model.TestSingleRerun{
+			Status: pb.RerunStatus_RERUN_STATUS_INFRA_FAILED,
+			LuciBuild: model.LuciBuild{
+				GitilesCommit: bbpb.GitilesCommit{
+					Id: "commit2",
+				},
+			},
+			NthSectionAnalysisKey: datastore.KeyForObj(c, nsa),
+		}
+		So(datastore.Put(c, rerun4), ShouldBeNil)
+
+		rerun5 := &model.TestSingleRerun{
+			Status: pb.RerunStatus_RERUN_STATUS_TEST_SKIPPED,
+			LuciBuild: model.LuciBuild{
+				GitilesCommit: bbpb.GitilesCommit{
+					Id: "commit4",
+				},
+			},
+			NthSectionAnalysisKey: datastore.KeyForObj(c, nsa),
+		}
+		So(datastore.Put(c, rerun5), ShouldBeNil)
+
+		datastore.GetTestable(c).CatchupIndexes()
+
+		snapshot, err := CreateSnapshot(c, nsa)
+		So(err, ShouldBeNil)
+		So(snapshot.BlameList, ShouldResembleProto, blamelist)
+		So(snapshot.NumInProgress, ShouldEqual, 2)
+		So(snapshot.NumInfraFailed, ShouldEqual, 1)
+		So(snapshot.NumTestSkipped, ShouldEqual, 1)
+		So(snapshot.Runs, ShouldResemble, []*nthsectionsnapshot.Run{
+			{
+				Index:  0,
+				Commit: "commit0",
+				Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+				Type:   model.RerunBuildType_NthSection,
+			},
+			{
+				Index:  1,
+				Commit: "commit1",
+				Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+				Type:   model.RerunBuildType_NthSection,
+			},
+			{
+				Index:  2,
+				Commit: "commit2",
+				Status: pb.RerunStatus_RERUN_STATUS_INFRA_FAILED,
+				Type:   model.RerunBuildType_NthSection,
+			},
+			{
+				Index:  3,
+				Commit: "commit3",
+				Status: pb.RerunStatus_RERUN_STATUS_FAILED,
+				Type:   model.RerunBuildType_NthSection,
+			},
+			{
+				Index:  4,
+				Commit: "commit4",
+				Status: pb.RerunStatus_RERUN_STATUS_TEST_SKIPPED,
+				Type:   model.RerunBuildType_NthSection,
 			},
 		})
 	})

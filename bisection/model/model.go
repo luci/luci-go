@@ -76,6 +76,9 @@ type LuciBuild struct {
 	Bucket      string `gae:"bucket"`
 	Builder     string `gae:"builder"`
 	BuildNumber int    `gae:"build_number"`
+	// TODO (nqmtuan): Make it a named field so the "project" and "id" field
+	// are not so confusing.
+	// This would require migration of existing data or make sure they are compatible.
 	buildbucketpb.GitilesCommit
 	CreateTime time.Time            `gae:"create_time"`
 	EndTime    time.Time            `gae:"end_time"`

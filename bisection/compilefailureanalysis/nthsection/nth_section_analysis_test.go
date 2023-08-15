@@ -30,12 +30,109 @@ import (
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/nthsectionsnapshot"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func TestCreateSnapshot(t *testing.T) {
+	t.Parallel()
+	c := memory.Use(context.Background())
+	testutil.UpdateIndices(c)
+
+	Convey("Create Snapshot", t, func() {
+		analysis := &model.CompileFailureAnalysis{}
+		So(datastore.Put(c, analysis), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+		blamelist := testutil.CreateBlamelist(4)
+		nthSectionAnalysis := &model.CompileNthSectionAnalysis{
+			BlameList:      blamelist,
+			ParentAnalysis: datastore.KeyForObj(c, analysis),
+		}
+		So(datastore.Put(c, nthSectionAnalysis), ShouldBeNil)
+
+		rerun1 := &model.SingleRerun{
+			Type:   model.RerunBuildType_CulpritVerification,
+			Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+			GitilesCommit: bbpb.GitilesCommit{
+				Id: "commit1",
+			},
+			Analysis: datastore.KeyForObj(c, analysis),
+		}
+
+		So(datastore.Put(c, rerun1), ShouldBeNil)
+
+		rerun2 := &model.SingleRerun{
+			Type:   model.RerunBuildType_NthSection,
+			Status: pb.RerunStatus_RERUN_STATUS_FAILED,
+			GitilesCommit: bbpb.GitilesCommit{
+				Id: "commit3",
+			},
+			Analysis: datastore.KeyForObj(c, analysis),
+		}
+		So(datastore.Put(c, rerun2), ShouldBeNil)
+
+		rerun3 := &model.SingleRerun{
+			Type:   model.RerunBuildType_NthSection,
+			Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+			GitilesCommit: bbpb.GitilesCommit{
+				Id: "commit0",
+			},
+			Analysis: datastore.KeyForObj(c, analysis),
+		}
+
+		So(datastore.Put(c, rerun3), ShouldBeNil)
+
+		rerun4 := &model.SingleRerun{
+			Type:   model.RerunBuildType_NthSection,
+			Status: pb.RerunStatus_RERUN_STATUS_INFRA_FAILED,
+			GitilesCommit: bbpb.GitilesCommit{
+				Id: "commit2",
+			},
+			Analysis: datastore.KeyForObj(c, analysis),
+		}
+
+		So(datastore.Put(c, rerun4), ShouldBeNil)
+
+		datastore.GetTestable(c).CatchupIndexes()
+
+		snapshot, err := CreateSnapshot(c, nthSectionAnalysis)
+		So(err, ShouldBeNil)
+		So(snapshot.BlameList, ShouldResembleProto, blamelist)
+
+		So(snapshot.NumInProgress, ShouldEqual, 2)
+		So(snapshot.NumInfraFailed, ShouldEqual, 1)
+		So(snapshot.Runs, ShouldResemble, []*nthsectionsnapshot.Run{
+			{
+				Index:  0,
+				Commit: "commit0",
+				Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+				Type:   model.RerunBuildType_NthSection,
+			},
+			{
+				Index:  1,
+				Commit: "commit1",
+				Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+				Type:   model.RerunBuildType_CulpritVerification,
+			},
+			{
+				Index:  2,
+				Commit: "commit2",
+				Status: pb.RerunStatus_RERUN_STATUS_INFRA_FAILED,
+				Type:   model.RerunBuildType_NthSection,
+			},
+			{
+				Index:  3,
+				Commit: "commit3",
+				Status: pb.RerunStatus_RERUN_STATUS_FAILED,
+				Type:   model.RerunBuildType_NthSection,
+			},
+		})
+	})
+}
 
 func TestAnalyze(t *testing.T) {
 	t.Parallel()

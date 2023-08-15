@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/nthsectionsnapshot"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/rerun"
 	"go.chromium.org/luci/bisection/util/changelogutil"
@@ -211,4 +212,47 @@ func setStatusError(c context.Context, nsa *model.CompileNthSectionAnalysis) {
 		err = errors.Annotate(err, "couldn't setStatusError for nthsection analysis %d", nsa.ParentAnalysis.IntID()).Err()
 		logging.Errorf(c, err.Error())
 	}
+}
+
+func CreateSnapshot(c context.Context, nthSectionAnalysis *model.CompileNthSectionAnalysis) (*nthsectionsnapshot.Snapshot, error) {
+	// Get all reruns for the current analysis
+	// This should contain all reruns for nth section and culprit verification
+	q := datastore.NewQuery("SingleRerun").Eq("analysis", nthSectionAnalysis.ParentAnalysis).Order("start_time")
+	reruns := []*model.SingleRerun{}
+	err := datastore.GetAll(c, q, &reruns)
+	if err != nil {
+		return nil, errors.Annotate(err, "getting all reruns").Err()
+	}
+
+	snapshot := &nthsectionsnapshot.Snapshot{
+		BlameList:      nthSectionAnalysis.BlameList,
+		Runs:           []*nthsectionsnapshot.Run{},
+		NumInfraFailed: 0,
+	}
+
+	statusMap := map[string]pb.RerunStatus{}
+	typeMap := map[string]model.RerunBuildType{}
+	for _, r := range reruns {
+		statusMap[r.GitilesCommit.GetId()] = r.Status
+		typeMap[r.GitilesCommit.GetId()] = r.Type
+		if r.Status == pb.RerunStatus_RERUN_STATUS_INFRA_FAILED {
+			snapshot.NumInfraFailed++
+		}
+		if r.Status == pb.RerunStatus_RERUN_STATUS_IN_PROGRESS {
+			snapshot.NumInProgress++
+		}
+	}
+
+	blamelist := nthSectionAnalysis.BlameList
+	for index, cl := range blamelist.Commits {
+		if stat, ok := statusMap[cl.Commit]; ok {
+			snapshot.Runs = append(snapshot.Runs, &nthsectionsnapshot.Run{
+				Index:  index,
+				Commit: cl.Commit,
+				Status: stat,
+				Type:   typeMap[cl.Commit],
+			})
+		}
+	}
+	return snapshot, nil
 }

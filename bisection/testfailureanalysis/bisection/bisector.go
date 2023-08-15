@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/nthsectionsnapshot"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/testfailureanalysis"
@@ -154,7 +155,7 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 	if err != nil {
 		return errors.Annotate(err, "get primary test failure").Err()
 	}
-	_, err = createNthSectionModel(ctx, tfa, primaryFailure)
+	nsa, err := createNthSectionModel(ctx, tfa, primaryFailure)
 	if err != nil {
 		return errors.Annotate(err, "create nth section model").Err()
 	}
@@ -170,7 +171,62 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 	}
 
 	// TODO (nqmtuan): Run nthsection here
+	snapshot, err := CreateSnapshot(ctx, nsa)
+	if err != nil {
+		return errors.Annotate(err, "create snapshot").Err()
+	}
+
+	// maxRerun controls how many rerun we can run at a time.
+	// For now, hard-code it to run bisection.
+	// TODO (nqmtuan): Tune it when we have information about bot availability.
+	maxRerun := 1 // bisection
+	_, err = snapshot.FindNextCommitsToRun(maxRerun)
+	if err != nil {
+		return errors.Annotate(err, "find next commits to run").Err()
+	}
+
 	return nil
+}
+
+func CreateSnapshot(ctx context.Context, nsa *model.TestNthSectionAnalysis) (*nthsectionsnapshot.Snapshot, error) {
+	// Get all reruns for the current analysis.
+	q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa)).Order("rerun_create_time")
+	reruns := []*model.TestSingleRerun{}
+	err := datastore.GetAll(ctx, q, &reruns)
+	if err != nil {
+		return nil, errors.Annotate(err, "getting all reruns").Err()
+	}
+
+	snapshot := &nthsectionsnapshot.Snapshot{
+		BlameList: nsa.BlameList,
+		Runs:      []*nthsectionsnapshot.Run{},
+	}
+
+	statusMap := map[string]pb.RerunStatus{}
+	for _, r := range reruns {
+		statusMap[r.GitilesCommit.GetId()] = r.Status
+		switch r.Status {
+		case pb.RerunStatus_RERUN_STATUS_INFRA_FAILED:
+			snapshot.NumInfraFailed++
+		case pb.RerunStatus_RERUN_STATUS_IN_PROGRESS:
+			snapshot.NumInProgress++
+		case pb.RerunStatus_RERUN_STATUS_TEST_SKIPPED:
+			snapshot.NumTestSkipped++
+		}
+	}
+
+	blamelist := nsa.BlameList
+	for index, cl := range blamelist.Commits {
+		if stat, ok := statusMap[cl.Commit]; ok {
+			snapshot.Runs = append(snapshot.Runs, &nthsectionsnapshot.Run{
+				Index:  index,
+				Commit: cl.Commit,
+				Status: stat,
+				Type:   model.RerunBuildType_NthSection,
+			})
+		}
+	}
+	return snapshot, nil
 }
 
 func getProjectBisector(ctx context.Context, tfa *model.TestFailureAnalysis, luciAnalysis analysis.AnalysisClient) (projectbisector.ProjectBisector, error) {

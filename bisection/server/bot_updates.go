@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
 	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/nthsectionsnapshot"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	taskpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
@@ -358,7 +359,7 @@ func storeNthSectionResultToDatastore(c context.Context, nsa *model.CompileNthSe
 }
 
 // findNextNthSectionCommitToRun return true (and the commit) if it can find a nthsection commit to run next
-func findNextNthSectionCommitToRun(c context.Context, snapshot *nthsection.NthSectionSnapshot) (bool, string, error) {
+func findNextNthSectionCommitToRun(c context.Context, snapshot *nthsectionsnapshot.Snapshot) (bool, string, error) {
 	// We pass 1 as argument here because at this moment, we only have 1 "slot" left for nth section
 	commits, err := snapshot.FindNextCommitsToRun(1)
 	if err != nil {

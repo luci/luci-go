@@ -38,3 +38,8 @@ indexes:
   - name: builder
   - name: end_time
     direction: desc
+
+- kind: TestSingleRerun
+  properties:
+  - name: nthsection_analysis_key
+  - name: rerun_create_time

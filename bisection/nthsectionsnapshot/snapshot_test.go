@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,22 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package nthsection
+package nthsectionsnapshot
 
 import (
-	"context"
 	"testing"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/gae/service/datastore"
-
-	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestChunking(t *testing.T) {
@@ -166,111 +159,15 @@ func TestChunking(t *testing.T) {
 	})
 }
 
-func TestCreateSnapshot(t *testing.T) {
-	t.Parallel()
-	c := memory.Use(context.Background())
-	testutil.UpdateIndices(c)
-
-	Convey("Create Snapshot", t, func() {
-		analysis := &model.CompileFailureAnalysis{}
-		So(datastore.Put(c, analysis), ShouldBeNil)
-		datastore.GetTestable(c).CatchupIndexes()
-		blamelist := testutil.CreateBlamelist(4)
-		nthSectionAnalysis := &model.CompileNthSectionAnalysis{
-			BlameList:      blamelist,
-			ParentAnalysis: datastore.KeyForObj(c, analysis),
-		}
-		So(datastore.Put(c, nthSectionAnalysis), ShouldBeNil)
-
-		rerun1 := &model.SingleRerun{
-			Type:   model.RerunBuildType_CulpritVerification,
-			Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
-			GitilesCommit: buildbucketpb.GitilesCommit{
-				Id: "commit1",
-			},
-			Analysis: datastore.KeyForObj(c, analysis),
-		}
-
-		So(datastore.Put(c, rerun1), ShouldBeNil)
-
-		rerun2 := &model.SingleRerun{
-			Type:   model.RerunBuildType_NthSection,
-			Status: pb.RerunStatus_RERUN_STATUS_FAILED,
-			GitilesCommit: buildbucketpb.GitilesCommit{
-				Id: "commit3",
-			},
-			Analysis: datastore.KeyForObj(c, analysis),
-		}
-		So(datastore.Put(c, rerun2), ShouldBeNil)
-
-		rerun3 := &model.SingleRerun{
-			Type:   model.RerunBuildType_NthSection,
-			Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
-			GitilesCommit: buildbucketpb.GitilesCommit{
-				Id: "commit0",
-			},
-			Analysis: datastore.KeyForObj(c, analysis),
-		}
-
-		So(datastore.Put(c, rerun3), ShouldBeNil)
-
-		rerun4 := &model.SingleRerun{
-			Type:   model.RerunBuildType_NthSection,
-			Status: pb.RerunStatus_RERUN_STATUS_INFRA_FAILED,
-			GitilesCommit: buildbucketpb.GitilesCommit{
-				Id: "commit2",
-			},
-			Analysis: datastore.KeyForObj(c, analysis),
-		}
-
-		So(datastore.Put(c, rerun4), ShouldBeNil)
-
-		datastore.GetTestable(c).CatchupIndexes()
-
-		snapshot, err := CreateSnapshot(c, nthSectionAnalysis)
-		So(err, ShouldBeNil)
-		So(snapshot.BlameList, ShouldResembleProto, blamelist)
-
-		So(snapshot.NumInProgress, ShouldEqual, 2)
-		So(snapshot.NumInfraFailed, ShouldEqual, 1)
-		So(snapshot.Runs, ShouldResemble, []*NthSectionSnapshotRun{
-			{
-				Index:  0,
-				Commit: "commit0",
-				Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
-				Type:   model.RerunBuildType_NthSection,
-			},
-			{
-				Index:  1,
-				Commit: "commit1",
-				Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
-				Type:   model.RerunBuildType_CulpritVerification,
-			},
-			{
-				Index:  2,
-				Commit: "commit2",
-				Status: pb.RerunStatus_RERUN_STATUS_INFRA_FAILED,
-				Type:   model.RerunBuildType_NthSection,
-			},
-			{
-				Index:  3,
-				Commit: "commit3",
-				Status: pb.RerunStatus_RERUN_STATUS_FAILED,
-				Type:   model.RerunBuildType_NthSection,
-			},
-		})
-	})
-}
-
 func TestGetRegressionRange(t *testing.T) {
 	t.Parallel()
 
 	Convey("GetRegressionRangeNoRun", t, func() {
 		// Create a blamelist with 100 commit
 		blamelist := testutil.CreateBlamelist(100)
-		snapshot := &NthSectionSnapshot{
+		snapshot := &Snapshot{
 			BlameList: blamelist,
-			Runs:      []*NthSectionSnapshotRun{},
+			Runs:      []*Run{},
 		}
 		ff, lp, err := snapshot.GetCurrentRegressionRange()
 		So(err, ShouldBeNil)
@@ -281,9 +178,9 @@ func TestGetRegressionRange(t *testing.T) {
 	Convey("GetRegressionRangeOK", t, func() {
 		// Create a blamelist with 100 commit
 		blamelist := testutil.CreateBlamelist(100)
-		snapshot := &NthSectionSnapshot{
+		snapshot := &Snapshot{
 			BlameList: blamelist,
-			Runs: []*NthSectionSnapshotRun{
+			Runs: []*Run{
 				{
 					Index:  10,
 					Status: pb.RerunStatus_RERUN_STATUS_FAILED,
@@ -311,9 +208,9 @@ func TestGetRegressionRange(t *testing.T) {
 	Convey("GetRegressionRangeError", t, func() {
 		// Create a blamelist with 100 commit
 		blamelist := testutil.CreateBlamelist(100)
-		snapshot := &NthSectionSnapshot{
+		snapshot := &Snapshot{
 			BlameList: blamelist,
-			Runs: []*NthSectionSnapshotRun{
+			Runs: []*Run{
 				{
 					Index:  17,
 					Status: pb.RerunStatus_RERUN_STATUS_FAILED,
@@ -331,9 +228,9 @@ func TestGetRegressionRange(t *testing.T) {
 	Convey("GetRegressionRangeErrorFirstFailedEqualsLastPass", t, func() {
 		// Create a blamelist with 100 commit
 		blamelist := testutil.CreateBlamelist(100)
-		snapshot := &NthSectionSnapshot{
+		snapshot := &Snapshot{
 			BlameList: blamelist,
-			Runs: []*NthSectionSnapshotRun{
+			Runs: []*Run{
 				{
 					Index:  0,
 					Status: pb.RerunStatus_RERUN_STATUS_PASSED,
@@ -351,9 +248,9 @@ func TestGetCulprit(t *testing.T) {
 	Convey("GetCulpritOK", t, func() {
 		// Create a blamelist with 100 commit
 		blamelist := testutil.CreateBlamelist(100)
-		snapshot := &NthSectionSnapshot{
+		snapshot := &Snapshot{
 			BlameList: blamelist,
-			Runs: []*NthSectionSnapshotRun{
+			Runs: []*Run{
 				{
 					Index:  15,
 					Status: pb.RerunStatus_RERUN_STATUS_FAILED,
@@ -372,9 +269,9 @@ func TestGetCulprit(t *testing.T) {
 	Convey("GetCulpritFailed", t, func() {
 		// Create a blamelist with 100 commit
 		blamelist := testutil.CreateBlamelist(100)
-		snapshot := &NthSectionSnapshot{
+		snapshot := &Snapshot{
 			BlameList: blamelist,
-			Runs:      []*NthSectionSnapshotRun{},
+			Runs:      []*Run{},
 		}
 		ok, _ := snapshot.GetCulprit()
 		So(ok, ShouldBeFalse)
@@ -383,9 +280,9 @@ func TestGetCulprit(t *testing.T) {
 	Convey("GetCulpritError", t, func() {
 		// Create a blamelist with 100 commit
 		blamelist := testutil.CreateBlamelist(100)
-		snapshot := &NthSectionSnapshot{
+		snapshot := &Snapshot{
 			BlameList: blamelist,
-			Runs: []*NthSectionSnapshotRun{
+			Runs: []*Run{
 				{
 					Index:  10,
 					Status: pb.RerunStatus_RERUN_STATUS_FAILED,
@@ -407,9 +304,9 @@ func TestFindRegressionChunks(t *testing.T) {
 
 	Convey("findRegressionChunks", t, func() {
 		blamelist := testutil.CreateBlamelist(100)
-		snapshot := &NthSectionSnapshot{
+		snapshot := &Snapshot{
 			BlameList: blamelist,
-			Runs: []*NthSectionSnapshotRun{
+			Runs: []*Run{
 				{
 					Index:  15,
 					Status: pb.RerunStatus_RERUN_STATUS_FAILED,
@@ -484,9 +381,9 @@ func TestFindNextIndicesToRun(t *testing.T) {
 
 	Convey("FindNextIndicesToRun", t, func() {
 		blamelist := testutil.CreateBlamelist(10)
-		snapshot := &NthSectionSnapshot{
+		snapshot := &Snapshot{
 			BlameList: blamelist,
-			Runs: []*NthSectionSnapshotRun{
+			Runs: []*Run{
 				{
 					Index:  5,
 					Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
@@ -500,9 +397,9 @@ func TestFindNextIndicesToRun(t *testing.T) {
 
 	Convey("FindNextIndicesToRun already found culprit", t, func() {
 		blamelist := testutil.CreateBlamelist(10)
-		snapshot := &NthSectionSnapshot{
+		snapshot := &Snapshot{
 			BlameList: blamelist,
-			Runs: []*NthSectionSnapshotRun{
+			Runs: []*Run{
 				{
 					Index:  5,
 					Status: pb.RerunStatus_RERUN_STATUS_PASSED,
@@ -520,9 +417,9 @@ func TestFindNextIndicesToRun(t *testing.T) {
 
 	Convey("FindNextIndicesToRunAllRerunsAreRunning", t, func() {
 		blamelist := testutil.CreateBlamelist(3)
-		snapshot := &NthSectionSnapshot{
+		snapshot := &Snapshot{
 			BlameList: blamelist,
-			Runs: []*NthSectionSnapshotRun{
+			Runs: []*Run{
 				{
 					Index:  0,
 					Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
@@ -548,9 +445,9 @@ func TestFindNextCommitsToRun(t *testing.T) {
 
 	Convey("FindNextIndicesToRun", t, func() {
 		blamelist := testutil.CreateBlamelist(10)
-		snapshot := &NthSectionSnapshot{
+		snapshot := &Snapshot{
 			BlameList: blamelist,
-			Runs: []*NthSectionSnapshotRun{
+			Runs: []*Run{
 				{
 					Index:  5,
 					Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
