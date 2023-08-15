@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"sync/atomic"
 
 	"google.golang.org/genproto/protobuf/field_mask"
@@ -25,10 +26,12 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
 	"github.com/maruel/subcommands"
+	"google.golang.org/grpc/metadata"
 
 	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
 	"google.golang.org/protobuf/types/known/structpb"
@@ -136,6 +139,21 @@ func cmdAdd(p Params) *subcommands.Command {
 
 				This makes the child build lifetime bounded by the lifetime of the given swarming task.
 			`))
+			r.Flags.StringVar(&r.canOutliveParent, "can-outlive-parent", "", doc(`
+				Flag to indicate if the build to be triggered (child) can outlive its
+				parent build, which is discovered in the luci context.
+
+				Can be "yes" or "no".
+
+				* If "yes", the triggered build can keep running after its parent ends.
+				  * swarming-parent-run-id must be empty in this case.
+
+				* If "no", the triggered build will be canceled if its parent ends.
+
+				* If unspecified, the value would be determined by the presence of
+				swarming-parent-run-id: "no" if swarming-parent-run-id is provided,
+				otherwise "yes".
+			`))
 			return r
 		},
 	}
@@ -153,6 +171,7 @@ type addRun struct {
 	canary, noCanary    bool
 	properties          structpb.Struct
 	swarmingParentRunID string
+	canOutliveParent    string
 }
 
 func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -160,7 +179,10 @@ func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.E
 		fmt.Fprintf(os.Stderr, "-canary and -nocanary are mutually exclusive\n")
 		return 1
 	}
-
+	if err := r.validateCanOutliveParent(); err != nil {
+		fmt.Fprintln(os.Stderr, fmt.Sprint(err))
+		return 1
+	}
 	ctx := cli.GetContext(a, r, env)
 	if err := r.initClients(ctx, nil); err != nil {
 		return r.done(ctx, err)
@@ -169,6 +191,10 @@ func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.E
 	baseReq, err := r.prepareBaseRequest(ctx)
 	if err != nil {
 		return r.done(ctx, err)
+	}
+
+	if r.scheduleBuildToken != "" && r.scheduleBuildToken != bb.DummyBuildbucketToken {
+		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, r.scheduleBuildToken))
 	}
 
 	i := int32(0)
@@ -185,6 +211,24 @@ func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.E
 		}
 		return r.buildsClient.ScheduleBuild(ctx, req, expectedCodeRPCOption)
 	})
+}
+
+func (r *addRun) validateCanOutliveParent() error {
+	r.canOutliveParent = strings.ToLower(r.canOutliveParent)
+	if r.canOutliveParent != "" && r.canOutliveParent != "yes" && r.canOutliveParent != "no" {
+		return errors.New(`-can-outlive-parent can only be "yes", "no" or unspecified`)
+	}
+	if r.canOutliveParent == "yes" && r.swarmingParentRunID != "" {
+		return errors.New(`-can-outlive-parent can only be "no" or unspecified if -swarming-parent-run-id is set`)
+	}
+	if r.canOutliveParent == "" {
+		if r.swarmingParentRunID != "" {
+			r.canOutliveParent = "no"
+		} else {
+			r.canOutliveParent = "yes"
+		}
+	}
+	return nil
 }
 
 func (r *addRun) prepareBaseRequest(ctx context.Context) (*pb.ScheduleBuildRequest, error) {
@@ -222,5 +266,17 @@ func (r *addRun) prepareBaseRequest(ctx context.Context) (*pb.ScheduleBuildReque
 		ret.GitilesCommit.Ref = r.ref
 	}
 
+	// Only set ret.CanOutliveParent when triggering a child build for a real
+	// Buildbucket build.
+	if r.scheduleBuildToken != "" && r.scheduleBuildToken != bb.DummyBuildbucketToken {
+		switch r.canOutliveParent {
+		case "yes":
+			ret.CanOutliveParent = pb.Trinary_YES
+		case "no":
+			ret.CanOutliveParent = pb.Trinary_NO
+		default:
+			return nil, errors.New(fmt.Sprintf(`invalid value of -can-outlive-parent: %s, should be "yes"" or "no"`, r.canOutliveParent))
+		}
+	}
 	return ret, nil
 }
