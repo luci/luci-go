@@ -17,13 +17,24 @@ syntax = "proto3";
 option go_package = "go.chromium.org/luci/cipkg/core";
 
 // ActionCommand executes the command directly.
+// Template is supported in both args and env: {{.depName}} will be replaced by
+// the output path of the action's dependency with depName.
+// e.g. An ActionCommand with python3 as dependency:
+// &core.Action{
+//   Name: "some_script",
+//   Deps: []*core.Action_Dependency{Python3Action},
+//   Spec: &core.Action_Command{
+//     Command: &core.ActionCommand{
+//       Args: []string{"{{.python3}}/bin/python3", "something.py")},
+//     },
+//   }
+// }
+// "{{.python3}}/bin/python3" will be replaced by the output path in the
+// transformed derivation.
 message ActionCommand {
   repeated string args = 1;
   repeated string env = 2;
 }
-
-// ActionReexec self-duplicates the executable binary.
-message ActionReexec {}
 
 // ActionURLFetch downloads from url into output directory with name
 // 'file'.

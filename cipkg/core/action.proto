@@ -54,6 +54,11 @@ message Action {
   // helping users to identify its content.
   Metadata metadata = 2;
   message Metadata {
+    // Dependencies which PackageManager will ensure being available prior to the
+    // use of this Action's output.
+    repeated Action runtime_deps = 1;
+
+    CIPD cipd = 2;
     message CIPD {
       // Name is the cipd package name for the Action's output.
       string name = 1;
@@ -62,27 +67,20 @@ message Action {
     }
   }
 
-  // Dependencies which PackageManager will ensure are available prior to the
+  // Dependencies which PackageManager will ensure being available prior to the
   // execution of this Action.
   // TODO: Maybe move dependencies into specs?
-  repeated Dependency deps = 3;
-  message Dependency {
-    Action action = 2;
-    // Runtime, if set, indicates the PackageManager will ensure its
-    // availibility even if the package has been built.
-    bool runtime = 3;
-  }
+  repeated Action deps = 3;
 
   // Spec is the action spec describing what action we want to perform.
   // It can be extended using extension for domain-specific use cases.
   // See cipkg/base/actions.ActionProcessor for additional details.
   oneof spec {
     ActionCommand command = 4;
-    ActionReexec reexec = 5;
-    ActionURLFetch url = 6;
-    ActionFilesCopy copy = 7;
+    ActionURLFetch url = 5;
+    ActionFilesCopy copy = 6;
 
-    ActionCIPDExport cipd = 8;
+    ActionCIPDExport cipd = 7;
 
     google.protobuf.Any extension = 99;
   }
