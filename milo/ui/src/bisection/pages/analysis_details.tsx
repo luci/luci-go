@@ -76,7 +76,7 @@ export const AnalysisDetailsPage = () => {
     data: response,
     error,
   } = usePrpcQuery({
-    host: CONFIGS.LUCI_BISECTION.HOST,
+    host: SETTINGS.luciBisection.host,
     Service: LUCIBisectionService,
     method: 'queryAnalysis',
     request: {

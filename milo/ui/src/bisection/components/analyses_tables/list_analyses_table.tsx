@@ -66,7 +66,7 @@ export const ListAnalysesTable = () => {
     isFetching,
     isPreviousData,
   } = usePrpcQuery({
-    host: CONFIGS.LUCI_BISECTION.HOST,
+    host: SETTINGS.luciBisection.host,
     Service: LUCIBisectionService,
     method: 'listAnalyses',
     request: {

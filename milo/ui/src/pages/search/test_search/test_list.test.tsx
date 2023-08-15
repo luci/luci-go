@@ -56,7 +56,7 @@ describe('TestList', () => {
     await act(() => jest.runAllTimersAsync());
 
     expect(useInfinitePrpcQuerySpy).toHaveBeenCalledWith({
-      host: CONFIGS.LUCI_ANALYSIS.HOST,
+      host: SETTINGS.luciAnalysis.host,
       Service: TestHistoryService,
       method: 'queryTests',
       request: { project: 'chromium', testIdSubstring: '' },
@@ -77,7 +77,7 @@ describe('TestList', () => {
     await act(() => jest.runAllTimersAsync());
 
     expect(useInfinitePrpcQuerySpy).toHaveBeenCalledWith({
-      host: CONFIGS.LUCI_ANALYSIS.HOST,
+      host: SETTINGS.luciAnalysis.host,
       Service: TestHistoryService,
       method: 'queryTests',
       request: { project: 'chromium', testIdSubstring: 'test-id' },

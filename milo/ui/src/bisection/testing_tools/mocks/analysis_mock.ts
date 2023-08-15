@@ -77,7 +77,7 @@ const createMockQueryAnalysisResponse = (
 export const mockQueryAnalysis = (mockAnalyses: Analysis[]) => {
   fetchMock.post(
     'https://' +
-      CONFIGS.LUCI_BISECTION.HOST +
+      SETTINGS.luciBisection.host +
       '/prpc/luci.bisection.v1.Analyses/QueryAnalysis',
     {
       headers: {
@@ -93,7 +93,7 @@ export const mockQueryAnalysis = (mockAnalyses: Analysis[]) => {
 export const mockErrorQueryingAnalysis = () => {
   fetchMock.post(
     'https://' +
-      CONFIGS.LUCI_BISECTION.HOST +
+      SETTINGS.luciBisection.host +
       '/prpc/luci.bisection.v1.Analyses/QueryAnalysis',
     {
       headers: {

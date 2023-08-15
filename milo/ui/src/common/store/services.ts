@@ -67,14 +67,14 @@ export const ServicesStore = types
         if (!self.authState?.identity) {
           return null;
         }
-        return new ResultDb(makeClient({ host: CONFIGS.RESULT_DB.HOST }));
+        return new ResultDb(makeClient({ host: SETTINGS.resultdb.host }));
       },
       get testHistory() {
         if (!self.authState?.identity) {
           return null;
         }
         return new TestHistoryService(
-          makeClient({ host: CONFIGS.LUCI_ANALYSIS.HOST })
+          makeClient({ host: SETTINGS.luciAnalysis.host })
         );
       },
       get milo() {
@@ -90,7 +90,7 @@ export const ServicesStore = types
           return null;
         }
         return new BuildsService(
-          makeClient({ host: CONFIGS.BUILDBUCKET.HOST })
+          makeClient({ host: SETTINGS.buildbucket.host })
         );
       },
       get clusters() {
@@ -98,7 +98,7 @@ export const ServicesStore = types
           return null;
         }
         return new ClustersService(
-          makeClient({ host: CONFIGS.LUCI_ANALYSIS.HOST })
+          makeClient({ host: SETTINGS.luciAnalysis.host })
         );
       },
     };

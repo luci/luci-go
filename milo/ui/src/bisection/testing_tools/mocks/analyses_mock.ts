@@ -35,7 +35,7 @@ export const mockFetchAnalyses = (
 ) => {
   fetchMock.post(
     'https://' +
-      CONFIGS.LUCI_BISECTION.HOST +
+      SETTINGS.luciBisection.host +
       '/prpc/luci.bisection.v1.Analyses/ListAnalyses',
     {
       headers: {
@@ -54,7 +54,7 @@ export const mockFetchAnalyses = (
 export const mockErrorFetchingAnalyses = () => {
   fetchMock.post(
     'https://' +
-      CONFIGS.LUCI_BISECTION.HOST +
+      SETTINGS.luciBisection.host +
       '/prpc/luci.bisection.v1.Analyses/ListAnalyses',
     {
       headers: {

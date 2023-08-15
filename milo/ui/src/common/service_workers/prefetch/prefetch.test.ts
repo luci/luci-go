@@ -48,19 +48,19 @@ describe('Prefetcher', () => {
     respondWithStub = jest.fn(
       (_res: Response | ReturnType<typeof fetch>) => {}
     );
-    prefetcher = new Prefetcher(CONFIGS, fetchStub);
+    prefetcher = new Prefetcher(SETTINGS, fetchStub);
 
     fetchInterceptor = jest.fn(fetch);
     fetchInterceptor.mockResolvedValue(new Response(''));
     buildsService = new BuildsService(
       new PrpcClientExt(
-        { host: CONFIGS.BUILDBUCKET.HOST, fetchImpl: fetchInterceptor },
+        { host: SETTINGS.buildbucket.host, fetchImpl: fetchInterceptor },
         () => 'access-token'
       )
     );
     resultdb = new ResultDb(
       new PrpcClientExt(
-        { host: CONFIGS.RESULT_DB.HOST, fetchImpl: fetchInterceptor },
+        { host: SETTINGS.resultdb.host, fetchImpl: fetchInterceptor },
         () => 'access-token'
       )
     );
@@ -83,11 +83,11 @@ describe('Prefetcher', () => {
       switch (req.url) {
         case self.origin + '/auth/openid/state':
           return authResponse;
-        case `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`:
+        case `https://${SETTINGS.buildbucket.host}/prpc/buildbucket.v2.Builds/GetBuild`:
           return buildResponse;
-        case `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`:
+        case `https://${SETTINGS.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`:
           return invResponse;
-        case `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`:
+        case `https://${SETTINGS.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`:
           return testVariantsResponse;
         default:
           throw new Error('unexpected request URL');
@@ -119,9 +119,9 @@ describe('Prefetcher', () => {
     expect(requestedUrls).toEqual(
       expect.arrayContaining([
         self.origin + '/auth/openid/state',
-        `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
-        `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
-        `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
+        `https://${SETTINGS.buildbucket.host}/prpc/buildbucket.v2.Builds/GetBuild`,
+        `https://${SETTINGS.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
+        `https://${SETTINGS.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
       ])
     );
 
@@ -203,11 +203,11 @@ describe('Prefetcher', () => {
       switch (req.url) {
         case self.origin + '/auth/openid/state':
           return authResponse;
-        case `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`:
+        case `https://${SETTINGS.buildbucket.host}/prpc/buildbucket.v2.Builds/GetBuild`:
           return buildResponse;
-        case `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`:
+        case `https://${SETTINGS.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`:
           return invResponse;
-        case `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`:
+        case `https://${SETTINGS.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`:
           return testVariantsResponse;
         default:
           throw new Error('unexpected request URL');
@@ -227,9 +227,9 @@ describe('Prefetcher', () => {
     expect(requestedUrls).toEqual(
       expect.arrayContaining([
         self.origin + '/auth/openid/state',
-        `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
-        `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
-        `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
+        `https://${SETTINGS.buildbucket.host}/prpc/buildbucket.v2.Builds/GetBuild`,
+        `https://${SETTINGS.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
+        `https://${SETTINGS.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
       ])
     );
 
@@ -309,7 +309,7 @@ describe('Prefetcher', () => {
       switch (req.url) {
         case self.origin + '/auth/openid/state':
           return authResponse;
-        case `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`:
+        case `https://${SETTINGS.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`:
           return artifactResponse;
         default:
           throw new Error('unexpected request URL');
@@ -329,7 +329,7 @@ describe('Prefetcher', () => {
     expect(requestedUrls).toEqual(
       expect.arrayContaining([
         self.origin + '/auth/openid/state',
-        `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`,
+        `https://${SETTINGS.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`,
       ])
     );
 

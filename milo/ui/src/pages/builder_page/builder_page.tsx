@@ -54,7 +54,7 @@ export function BuilderPage() {
   };
 
   const { data, error, isLoading } = usePrpcQuery({
-    host: CONFIGS.BUILDBUCKET.HOST,
+    host: SETTINGS.buildbucket.host,
     Service: BuildersService,
     method: 'getBuilder',
     request: { id: builderId, mask: { type: BuilderMask.ALL } },

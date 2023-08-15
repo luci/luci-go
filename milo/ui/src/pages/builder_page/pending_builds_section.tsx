@@ -33,7 +33,7 @@ export interface PendingBuildsSectionProps {
 
 export function PendingBuildsSection({ builderId }: PendingBuildsSectionProps) {
   const { data, error, isError, isLoading } = usePrpcQuery({
-    host: CONFIGS.BUILDBUCKET.HOST,
+    host: SETTINGS.buildbucket.host,
     Service: BuildsService,
     method: 'searchBuilds',
     request: {

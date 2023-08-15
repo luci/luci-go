@@ -114,27 +114,3 @@ declare const SETTINGS: {
     readonly host: string;
   };
 };
-
-// TODO(weiweilin): remove the following once the frontend is migrated to use
-// the settings above.
-/**
- * Configs of the app.
- * Declared in the server generated file, /configs.js, included as a script tag.
- */
-// This is a global variable. We need to declare it with `var`.
-// eslint-disable-next-line no-var
-declare var CONFIGS: {
-  readonly VERSION: string;
-  readonly RESULT_DB: {
-    readonly HOST: string;
-  };
-  readonly BUILDBUCKET: {
-    readonly HOST: string;
-  };
-  readonly LUCI_ANALYSIS: {
-    readonly HOST: string;
-  };
-  readonly LUCI_BISECTION: {
-    readonly HOST: string;
-  };
-};

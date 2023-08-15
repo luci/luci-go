@@ -86,7 +86,7 @@ describe('pages', () => {
           },
           {
             page: UiPage.FailureClusters,
-            url: `https://${CONFIGS.LUCI_ANALYSIS.HOST}/p/projecttest/clusters`,
+            url: `https://${SETTINGS.luciAnalysis.host}/p/projecttest/clusters`,
             icon: <SpokeIcon />,
             external: true,
           },
@@ -145,7 +145,7 @@ describe('pages', () => {
           },
           {
             page: UiPage.FailureClusters,
-            url: `https://${CONFIGS.LUCI_ANALYSIS.HOST}/p/chromium/clusters`,
+            url: `https://${SETTINGS.luciAnalysis.host}/p/chromium/clusters`,
             icon: <SpokeIcon />,
             external: true,
           },
@@ -216,7 +216,7 @@ describe('pages', () => {
           },
           {
             page: UiPage.FailureClusters,
-            url: `https://${CONFIGS.LUCI_ANALYSIS.HOST}/p/chromeos/clusters`,
+            url: `https://${SETTINGS.luciAnalysis.host}/p/chromeos/clusters`,
             icon: <SpokeIcon />,
             external: true,
           },

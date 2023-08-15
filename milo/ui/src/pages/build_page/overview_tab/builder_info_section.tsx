@@ -25,7 +25,7 @@ export interface BuilderInfoSectionProps {
 
 export function BuilderInfoSection({ builderId }: BuilderInfoSectionProps) {
   const { data, error } = usePrpcQuery({
-    host: CONFIGS.BUILDBUCKET.HOST,
+    host: SETTINGS.buildbucket.host,
     Service: BuildersService,
     method: 'getBuilder',
     request: {

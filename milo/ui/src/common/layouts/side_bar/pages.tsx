@@ -80,7 +80,6 @@ function generateBuildsSection(project: string | undefined): SidebarSection {
       external: true,
     });
 
-
     if (project === 'chromium') {
       pages.push({
         page: UiPage.Bisection,
@@ -106,7 +105,7 @@ function generateTestsSection(project: string): SidebarSection {
     },
     {
       page: UiPage.FailureClusters,
-      url: `https://${CONFIGS.LUCI_ANALYSIS.HOST}/p/${project}/clusters`,
+      url: `https://${SETTINGS.luciAnalysis.host}/p/${project}/clusters`,
       icon: <SpokeIcon />,
       external: true,
     }

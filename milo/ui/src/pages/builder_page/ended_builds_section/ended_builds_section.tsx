@@ -83,7 +83,7 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   const { data, error, isError, isLoading, isPreviousData } = usePrpcQuery({
-    host: CONFIGS.BUILDBUCKET.HOST,
+    host: SETTINGS.buildbucket.host,
     Service: BuildsService,
     method: 'searchBuilds',
     request: {

@@ -40,19 +40,30 @@ dotenv.config({
   path: './.env.development',
 });
 
-self.CONFIGS = Object.freeze({
-  VERSION: assertNonNullable(process.env['VITE_MILO_VERSION']),
-  RESULT_DB: {
-    HOST: assertNonNullable(process.env['VITE_RESULT_DB_HOST']),
+// Those variables are declared as `const` so their value won't be accidentally
+// changed. But they are actually injected by `/configs.js` to `self` in
+// production environment. Here we need to do the same so they are available to
+// code run under the test environment.
+const configJSVars = self as unknown as {
+  VERSION: typeof VERSION;
+  SETTINGS: typeof SETTINGS;
+};
+configJSVars.VERSION = assertNonNullable(process.env['VITE_MILO_VERSION']);
+configJSVars.SETTINGS = Object.freeze({
+  buildbucket: {
+    host: assertNonNullable(process.env['VITE_BUILDBUCKET_HOST']),
   },
-  BUILDBUCKET: {
-    HOST: assertNonNullable(process.env['VITE_BUILDBUCKET_HOST']),
+  swarming: {
+    defaultHost: assertNonNullable(process.env['VITE_SWARMING_DEFAULT_HOST']),
   },
-  LUCI_ANALYSIS: {
-    HOST: assertNonNullable(process.env['VITE_LUCI_ANALYSIS_HOST']),
+  resultdb: {
+    host: assertNonNullable(process.env['VITE_RESULT_DB_HOST']),
   },
-  LUCI_BISECTION: {
-    HOST: assertNonNullable(process.env['VITE_LUCI_BISECTION_HOST']),
+  luciAnalysis: {
+    host: assertNonNullable(process.env['VITE_LUCI_ANALYSIS_HOST']),
+  },
+  luciBisection: {
+    host: assertNonNullable(process.env['VITE_LUCI_BISECTION_HOST']),
   },
 });
 

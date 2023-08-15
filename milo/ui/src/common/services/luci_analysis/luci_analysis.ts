@@ -335,12 +335,12 @@ export class ClustersService {
  * Construct a link to a luci-analysis rule page.
  */
 export function makeRuleLink(project: string, ruleId: string) {
-  return `https://${CONFIGS.LUCI_ANALYSIS.HOST}/p/${project}/rules/${ruleId}`;
+  return `https://${SETTINGS.luciAnalysis.host}/p/${project}/rules/${ruleId}`;
 }
 
 /**
  * Construct a link to a luci-analysis cluster.
  */
 export function makeClusterLink(project: string, clusterId: ClusterId) {
-  return `https://${CONFIGS.LUCI_ANALYSIS.HOST}/p/${project}/clusters/${clusterId.algorithm}/${clusterId.id}`;
+  return `https://${SETTINGS.luciAnalysis.host}/p/${project}/clusters/${clusterId.algorithm}/${clusterId.id}`;
 }

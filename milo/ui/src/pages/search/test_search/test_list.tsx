@@ -27,7 +27,7 @@ interface Props {
 export function TestList({ project, searchQuery }: Props) {
   const { data, isError, error, isLoading, fetchNextPage, hasNextPage } =
     useInfinitePrpcQuery({
-      host: CONFIGS.LUCI_ANALYSIS.HOST,
+      host: SETTINGS.luciAnalysis.host,
       Service: TestHistoryService,
       method: 'queryTests',
       request: {

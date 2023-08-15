@@ -27,7 +27,7 @@ import { NavigationRoute, registerRoute } from 'workbox-routing';
 import { Prefetcher } from '@/common/service_workers/prefetch';
 
 // Tell TSC that this is a ServiceWorker script.
-declare const self: ServiceWorkerGlobalScope & { CONFIGS: typeof CONFIGS };
+declare const self: ServiceWorkerGlobalScope;
 
 // Unconditionally skip waiting so the clients can always get the newest version
 // when the page is refreshed. The only downside is that clients on an old
@@ -56,7 +56,7 @@ declare const self: ServiceWorkerGlobalScope & { CONFIGS: typeof CONFIGS };
 // 2. a simple refresh will be able to fix the issue anyway.
 self.skipWaiting();
 
-const prefetcher = new Prefetcher(self.CONFIGS, self.fetch.bind(self));
+const prefetcher = new Prefetcher(SETTINGS, self.fetch.bind(self));
 
 self.addEventListener('fetch', async (e) => {
   if (e.request.mode === 'navigate') {
@@ -73,8 +73,7 @@ self.addEventListener('fetch', async (e) => {
   if (e.request.url === self.origin + '/configs.js') {
     const res = new Response(
       `self.VERSION = '${VERSION}';\n` +
-        `self.SETTINGS = Object.freeze(${JSON.stringify(SETTINGS)});\n` +
-        `self.CONFIGS=Object.freeze(${JSON.stringify(CONFIGS)});`
+        `self.SETTINGS = Object.freeze(${JSON.stringify(SETTINGS)});\n`
     );
     res.headers.set('content-type', 'application/javascript');
     e.respondWith(res);

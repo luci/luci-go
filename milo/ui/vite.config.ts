@@ -65,33 +65,13 @@ export default defineConfig(({ mode }) => {
     },
   };
 
-  const localDevConfigs: typeof CONFIGS = {
-    VERSION: localVersion,
-    RESULT_DB: {
-      HOST: localSettings.resultdb.host,
-    },
-    BUILDBUCKET: {
-      HOST: localSettings.buildbucket.host,
-    },
-    LUCI_ANALYSIS: {
-      HOST: localSettings.luciAnalysis.host,
-    },
-    LUCI_BISECTION: {
-      HOST: localSettings.luciBisection.host,
-    },
-  };
   const localDevConfigsJs =
     `self.VERSION = '${localVersion}';\n` +
     `self.SETTINGS = Object.freeze(${JSON.stringify(
       localSettings,
       undefined,
       2
-    )});\n` +
-    `self.CONFIGS=Object.freeze(${JSON.stringify(
-      localDevConfigs,
-      undefined,
-      2
-    )});`;
+    )});\n`;
 
   return {
     base: '/ui',
@@ -197,7 +177,7 @@ export default defineConfig(({ mode }) => {
           });
 
           // Serve `/configs.js` during development.
-          // We don't want to define `CONFIGS` directly because that would
+          // We don't want to define `SETTINGS` directly because that would
           // prevent us from testing the service worker's `GET '/configs.js'`
           // handler.
           server.middlewares.use((req, res, next) => {

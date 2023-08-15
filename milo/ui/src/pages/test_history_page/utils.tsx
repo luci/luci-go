@@ -20,7 +20,7 @@ const MAIN_GIT_REF = 'refs/heads/main';
 // TODO: query with pagination.
 export function useTestMetadata(request: QueryTestMetadataRequest) {
   return usePrpcQuery({
-    host: CONFIGS.RESULT_DB.HOST,
+    host: SETTINGS.resultdb.host,
     Service: ResultDb,
     method: 'queryTestMetadata',
     request,
