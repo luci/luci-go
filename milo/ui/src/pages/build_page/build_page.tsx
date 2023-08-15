@@ -16,7 +16,7 @@ import { css } from '@emotion/react';
 import { LinearProgress } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import grayFavicon from '@/common/assets/favicons/gray-32.png';
 import greenFavicon from '@/common/assets/favicons/green-32.png';
@@ -39,7 +39,6 @@ import { InvocationProvider } from '@/common/store/invocation_state';
 import { displayDuration, LONG_TIME_FORMAT } from '@/common/tools/time_utils';
 import {
   getBuilderURLPath,
-  getBuildURLPath,
   getLegacyBuildURLPath,
   getProjectURLPath,
 } from '@/common/tools/url_utils';
@@ -57,51 +56,6 @@ const STATUS_FAVICON_MAP = Object.freeze({
   [BuildStatus.Failure]: redFavicon,
   [BuildStatus.InfraFailure]: purpleFavicon,
   [BuildStatus.Canceled]: tealFavicon,
-});
-
-export const BuildPageShortLink = observer(() => {
-  const { buildId, ['*']: pathSuffix } = useParams();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const store = useStore();
-
-  if (!buildId) {
-    throw new Error('invariant violated: buildId should be set');
-  }
-
-  useEffect(() => {
-    store.buildPage.setParams(undefined, `b${buildId}`);
-  }, [store, buildId]);
-
-  const buildLoaded = Boolean(store.buildPage.build?.data);
-
-  useEffect(() => {
-    // Redirect to the long link after the build is fetched.
-    if (!buildLoaded) {
-      return;
-    }
-    const build = store.buildPage.build!;
-    if (build.data.number !== undefined) {
-      store.buildPage.setBuildId(
-        build.data.builder,
-        build.data.number,
-        build.data.id
-      );
-    }
-    const buildUrl = getBuildURLPath(build.data.builder, build.buildNumOrId);
-    const searchString = searchParams.toString();
-    const newUrl = `${buildUrl}${pathSuffix ? `/${pathSuffix}` : ''}${
-      searchString ? `?${searchParams}` : ''
-    }`;
-
-    // TODO(weiweilin): sinon is not able to mock useNavigate.
-    // Add a unit test once we setup jest.
-    navigate(newUrl, { replace: true });
-  }, [buildLoaded]);
-
-  // Page will be redirected once the build is loaded.
-  // Don't need to render anything.
-  return <></>;
 });
 
 const delimiter = css({
