@@ -225,9 +225,9 @@ func CreateRerunBuildModel(c context.Context, build *buildbucketpb.Build, rerunT
 	return rerunBuild, nil
 }
 
-// UpdateRerunStartTime updates the start time of rerun builds (when we received buildbucket pubsub messages)
-func UpdateRerunStartTime(c context.Context, bbid int64) error {
-	logging.Infof(c, "UpdateRerunStartTime for build %d", bbid)
+// UpdateRerunStatus updates the start/end time and status of rerun builds and single rerun (when we received buildbucket pubsub messages)
+func UpdateRerunStatus(c context.Context, bbid int64) error {
+	logging.Infof(c, "UpdateRerunStatus for build %d", bbid)
 	rerunModel := &model.CompileRerunBuild{
 		Id: bbid,
 	}
@@ -251,7 +251,7 @@ func UpdateRerunStartTime(c context.Context, bbid int64) error {
 
 	build, err := buildbucket.GetBuild(c, bbid, &buildbucketpb.BuildMask{
 		Fields: &fieldmaskpb.FieldMask{
-			Paths: []string{"id", "builder", "start_time", "status"},
+			Paths: []string{"id", "builder", "end_time", "start_time", "status"},
 		},
 	})
 	if err != nil {
@@ -259,6 +259,7 @@ func UpdateRerunStartTime(c context.Context, bbid int64) error {
 	}
 
 	startTime := build.StartTime.AsTime()
+	endTime := build.EndTime.AsTime()
 
 	err = datastore.RunInTransaction(c, func(ctx context.Context) error {
 		e := datastore.Get(c, rerunModel)
@@ -266,6 +267,7 @@ func UpdateRerunStartTime(c context.Context, bbid int64) error {
 			return e
 		}
 		rerunModel.StartTime = startTime
+		rerunModel.EndTime = endTime
 		rerunModel.Status = build.Status
 		return datastore.Put(c, rerunModel)
 	}, nil)
@@ -278,6 +280,14 @@ func UpdateRerunStartTime(c context.Context, bbid int64) error {
 		e := datastore.Get(c, lastRerun)
 		if e != nil {
 			return e
+		}
+		buildEnded := build.Status&buildbucketpb.Status_ENDED_MASK == buildbucketpb.Status_ENDED_MASK
+		if buildEnded && !lastRerun.HasEnded() {
+			// Edge case: when the build ends but the rerun isn't ended,
+			// this suggests that there is a infra failure in the rerun build
+			// which prevent it from sending back the update via the UpdateAnalysisProgress PRC.
+			lastRerun.Status = pb.RerunStatus_RERUN_STATUS_INFRA_FAILED
+			lastRerun.EndTime = endTime
 		}
 		lastRerun.StartTime = startTime
 		return datastore.Put(c, lastRerun)

@@ -17,9 +17,11 @@ package rerun
 import (
 	"context"
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/testutil"
 
@@ -324,47 +326,103 @@ func TestCreateRerunBuildModel(t *testing.T) {
 	})
 }
 
-func TestUpdateRerunStartTime(t *testing.T) {
+func TestUpdateRerunStatus(t *testing.T) {
 	t.Parallel()
-	c := memory.Use(context.Background())
-	testutil.UpdateIndices(c)
 
-	// Setup mock for buildbucket
-	ctl := gomock.NewController(t)
-	defer ctl.Finish()
-	mc := buildbucket.NewMockedClient(c, ctl)
-	c = mc.Ctx
-	res := &bbpb.Build{
-		Id: 1234,
-		Builder: &bbpb.BuilderID{
-			Project: "chromium",
-			Bucket:  "findit",
-			Builder: "luci-bisection-single-revision",
-		},
-		Status:    bbpb.Status_STARTED,
-		StartTime: &timestamppb.Timestamp{Seconds: 100},
-	}
-	mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
+	Convey("TestUpdateRerunStatus", t, func() {
+		c := memory.Use(context.Background())
+		testutil.UpdateIndices(c)
 
-	Convey("UpdateRerunStartTime", t, func() {
-		rerunBuild := &model.CompileRerunBuild{
+		// Setup mock for buildbucket
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := buildbucket.NewMockedClient(c, ctl)
+		c = mc.Ctx
+		res := &bbpb.Build{
 			Id: 1234,
+			Builder: &bbpb.BuilderID{
+				Project: "chromium",
+				Bucket:  "findit",
+				Builder: "luci-bisection-single-revision",
+			},
+			Status:    bbpb.Status_STARTED,
+			StartTime: &timestamppb.Timestamp{Seconds: 100},
+			EndTime:   &timestamppb.Timestamp{Seconds: 200},
 		}
-		So(datastore.Put(c, rerunBuild), ShouldBeNil)
-		datastore.GetTestable(c).CatchupIndexes()
-		singleRerun := &model.SingleRerun{
-			RerunBuild: datastore.KeyForObj(c, rerunBuild),
-		}
-		So(datastore.Put(c, singleRerun), ShouldBeNil)
-		datastore.GetTestable(c).CatchupIndexes()
-		So(UpdateRerunStartTime(c, 1234), ShouldBeNil)
-		datastore.GetTestable(c).CatchupIndexes()
 
-		// Checking the start time
-		So(datastore.Get(c, rerunBuild), ShouldBeNil)
-		So(rerunBuild.StartTime.Unix(), ShouldEqual, 100)
-		So(rerunBuild.Status, ShouldEqual, bbpb.Status_STARTED)
-		So(datastore.Get(c, singleRerun), ShouldBeNil)
-		So(singleRerun.StartTime.Unix(), ShouldEqual, 100)
+		Convey("build starts", func() {
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
+			rerunBuild := &model.CompileRerunBuild{
+				Id: 1234,
+			}
+			So(datastore.Put(c, rerunBuild), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+			singleRerun := &model.SingleRerun{
+				RerunBuild: datastore.KeyForObj(c, rerunBuild),
+				Status:     pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+			}
+			So(datastore.Put(c, singleRerun), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+			So(UpdateRerunStatus(c, 1234), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			// Checking the start time
+			So(datastore.Get(c, rerunBuild), ShouldBeNil)
+			So(rerunBuild.StartTime.Unix(), ShouldEqual, 100)
+			So(rerunBuild.Status, ShouldEqual, bbpb.Status_STARTED)
+			So(datastore.Get(c, singleRerun), ShouldBeNil)
+			So(singleRerun.StartTime.Unix(), ShouldEqual, 100)
+			So(singleRerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_IN_PROGRESS)
+		})
+
+		Convey("build ends", func() {
+			res.Status = bbpb.Status_SUCCESS
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
+			Convey("rerun didn't end", func() {
+				rerunBuild := &model.CompileRerunBuild{
+					Id: 1234,
+				}
+				So(datastore.Put(c, rerunBuild), ShouldBeNil)
+				singleRerun := &model.SingleRerun{
+					RerunBuild: datastore.KeyForObj(c, rerunBuild),
+					Status:     pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+				}
+				So(datastore.Put(c, singleRerun), ShouldBeNil)
+				datastore.GetTestable(c).CatchupIndexes()
+
+				So(UpdateRerunStatus(c, 1234), ShouldBeNil)
+				datastore.GetTestable(c).CatchupIndexes()
+				// Checking the end time and status.
+				So(datastore.Get(c, rerunBuild), ShouldBeNil)
+				So(rerunBuild.EndTime.Unix(), ShouldEqual, 200)
+				So(rerunBuild.Status, ShouldEqual, bbpb.Status_SUCCESS)
+				So(datastore.Get(c, singleRerun), ShouldBeNil)
+				So(singleRerun.EndTime.Unix(), ShouldEqual, 200)
+				So(singleRerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_INFRA_FAILED)
+			})
+			Convey("rerun ends", func() {
+				rerunBuild := &model.CompileRerunBuild{
+					Id: 1234,
+				}
+				So(datastore.Put(c, rerunBuild), ShouldBeNil)
+				singleRerun := &model.SingleRerun{
+					RerunBuild: datastore.KeyForObj(c, rerunBuild),
+					Status:     pb.RerunStatus_RERUN_STATUS_PASSED,
+					EndTime:    time.Unix(101, 0).UTC(),
+				}
+				So(datastore.Put(c, singleRerun), ShouldBeNil)
+				datastore.GetTestable(c).CatchupIndexes()
+
+				So(UpdateRerunStatus(c, 1234), ShouldBeNil)
+				datastore.GetTestable(c).CatchupIndexes()
+				// Checking the end time and status.
+				So(datastore.Get(c, rerunBuild), ShouldBeNil)
+				So(rerunBuild.EndTime.Unix(), ShouldEqual, 200)
+				So(rerunBuild.Status, ShouldEqual, bbpb.Status_SUCCESS)
+				So(datastore.Get(c, singleRerun), ShouldBeNil)
+				So(singleRerun.EndTime.Unix(), ShouldEqual, 101)
+				So(singleRerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_PASSED)
+			})
+		})
 	})
 }

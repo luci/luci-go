@@ -31,14 +31,16 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/tq"
 )
 
 func TestBuildBucketPubsub(t *testing.T) {
 	t.Parallel()
+	c := memory.Use(context.Background())
 
 	Convey("Buildbucket Pubsub Handler", t, func() {
-		c, scheduler := tq.TestingContext(context.Background(), nil)
+		c, scheduler := tq.TestingContext(c, nil)
 		compilefailuredetection.RegisterTaskClass()
 
 		buildPubsub := &buildbucketpb.BuildsV2PubSub{
@@ -63,7 +65,7 @@ func TestBuildBucketPubsub(t *testing.T) {
 	})
 
 	Convey("Rerun metrics captured", t, func() {
-		c, _ := tsmon.WithDummyInMemory(context.Background())
+		c, _ := tsmon.WithDummyInMemory(c)
 
 		// Receiving a pubsub message for a terminal status should increase counter.
 		buildPubsub := &buildbucketpb.BuildsV2PubSub{

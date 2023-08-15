@@ -124,7 +124,7 @@ func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
 		// Special handling for pubsub message for LUCI Bisection.
 		// This is only triggered for rerun builds.
 		if project == "chromium" && bucket == "findit" {
-			logging.Infof(c, "Received pubsub for luci bisection build %d", bbid)
+			logging.Infof(c, "Received pubsub for luci bisection build %d status %s", bbid, buildbucketpb.Status_name[int32(status)])
 			bbCounter.Add(c, 1, project, string(OutcomeTypeUpdateRerun))
 
 			// We only update the rerun counter after the build finished.
@@ -133,8 +133,8 @@ func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
 				rerunCounter.Add(c, 1, project, status.String())
 			}
 
-			if bbmsg.Build.Status == buildbucketpb.Status_STARTED {
-				return rerun.UpdateRerunStartTime(c, bbid)
+			if bbmsg.Build.Status != buildbucketpb.Status_SCHEDULED {
+				return rerun.UpdateRerunStatus(c, bbid)
 			}
 			return nil
 		}
