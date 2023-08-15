@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Fragment } from 'react';
+
 import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
 
 export interface AncestorBuildsRowProps {
@@ -28,7 +30,7 @@ export function AncestorBuildsRow({
         {!ancestorBuildIds?.length
           ? 'no ancestor builds'
           : ancestorBuildIds.map((id) => (
-              <>
+              <Fragment key={id}>
                 <a
                   href={getBuildURLPathFromBuildId(id)}
                   target="_blank"
@@ -36,7 +38,7 @@ export function AncestorBuildsRow({
                 >
                   {id}
                 </a>{' '}
-              </>
+              </Fragment>
             ))}
       </td>
     </tr>
