@@ -491,7 +491,7 @@ type RobotCommentInput struct {
 
 	// The range of the comment as a CommentRange entity.
 	// Optional
-	Range CommentRange `json:"range,omitempty"`
+	Range *CommentRange `json:"range,omitempty"`
 
 	// The URL encoded UUID of the comment to which this comment is a reply.
 	// Optional
@@ -515,9 +515,9 @@ type FixSuggestion struct {
 // Replacement represents a potential source replacement for applying a
 // suggested fix.
 type Replacement struct {
-	Path        string       `json:"path"`
-	Replacement string       `json:"replacement"`
-	Range       CommentRange `json:"range,omitempty"`
+	Path        string        `json:"path"`
+	Replacement string        `json:"replacement"`
+	Range       *CommentRange `json:"range,omitempty"`
 }
 
 // CommentRange is included within Comment. See Comment for more details.
