@@ -26,9 +26,10 @@ import { useRowState } from '../context';
 import { SummaryContentCell, SummaryHeadCell } from './summary_column';
 
 jest.mock('../context', () =>
-  self.createSelectiveSpiesFromModule<
-    typeof import('@/build/components/build_table/context')
-  >('@/build/components/build_table/context', ['useRowState'])
+  self.createSelectiveSpiesFromModule<typeof import('../context')>(
+    '../context',
+    ['useRowState']
+  )
 );
 
 const buildWithSummary = {

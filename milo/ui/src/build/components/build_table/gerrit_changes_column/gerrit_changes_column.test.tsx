@@ -29,9 +29,10 @@ import {
 } from './gerrit_changes_column';
 
 jest.mock('../context', () =>
-  self.createSelectiveSpiesFromModule<
-    typeof import('@/build/components/build_table/context')
-  >('@/build/components/build_table/context', ['useRowState'])
+  self.createSelectiveSpiesFromModule<typeof import('../context')>(
+    '../context',
+    ['useRowState']
+  )
 );
 
 const buildWithMultipleCls = {

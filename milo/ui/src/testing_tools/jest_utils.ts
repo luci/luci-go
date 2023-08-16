@@ -12,6 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as path from 'path';
+
+import callsites from 'callsites';
+
+/**
+ * Resolves a module in the specified file.
+ */
+function resolveModuleInFile(moduleName: string, filename: string): string {
+  if (!moduleName.startsWith('.')) {
+    return moduleName;
+  }
+
+  return path.join(path.dirname(filename), moduleName);
+}
+
 /**
  * See the type definition for `self.createSelectiveMockFromModule`.
  */
@@ -19,6 +34,9 @@ export function createSelectiveMockFromModule<T = unknown>(
   moduleName: string,
   keysToMock: ReadonlyArray<keyof NoInfer<T>>
 ): T {
+  // Resolve the module at the caller site.
+  // This allows the caller to mock a module with a relative path.
+  moduleName = resolveModuleInFile(moduleName, callsites()[1].getFileName()!);
   const actualModule = jest.requireActual(moduleName);
   const mockedModule = jest.createMockFromModule(moduleName) as T;
 
@@ -35,6 +53,9 @@ export function createSelectiveSpiesFromModule<T = unknown>(
   moduleName: string,
   keysToSpy: ReadonlyArray<FunctionKeys<NoInfer<T>>>
 ): T {
+  // Resolve the module at the caller site.
+  // This allows the caller to mock a module with a relative path.
+  moduleName = resolveModuleInFile(moduleName, callsites()[1].getFileName()!);
   const actualModule = jest.requireActual(moduleName);
   return {
     ...actualModule,

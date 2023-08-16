@@ -27,34 +27,39 @@ import { BuilderPage } from './builder_page';
 import { EndedBuildsSection } from './ended_builds_section';
 import { MachinePoolSection } from './machine_pool_section';
 
-jest.mock('@/pages/builder_page/machine_pool_section', () =>
-  createSelectiveMockFromModule<
-    typeof import('@/pages/builder_page/machine_pool_section')
-  >('@/pages/builder_page/machine_pool_section', ['MachinePoolSection'])
+jest.mock('./machine_pool_section', () =>
+  createSelectiveMockFromModule<typeof import('./machine_pool_section')>(
+    './machine_pool_section',
+    ['MachinePoolSection']
+  )
 );
 
-jest.mock('@/pages/builder_page/ended_builds_section', () =>
-  createSelectiveMockFromModule<
-    typeof import('@/pages/builder_page/ended_builds_section')
-  >('@/pages/builder_page/ended_builds_section', ['EndedBuildsSection'])
+jest.mock('./ended_builds_section', () =>
+  createSelectiveMockFromModule<typeof import('./ended_builds_section')>(
+    './ended_builds_section',
+    ['EndedBuildsSection']
+  )
 );
 
-jest.mock('@/pages/builder_page/started_builds_section', () =>
-  createSelectiveMockFromModule<
-    typeof import('@/pages/builder_page/started_builds_section')
-  >('@/pages/builder_page/started_builds_section', ['StartedBuildsSection'])
+jest.mock('./started_builds_section', () =>
+  createSelectiveMockFromModule<typeof import('./started_builds_section')>(
+    './started_builds_section',
+    ['StartedBuildsSection']
+  )
 );
 
-jest.mock('@/pages/builder_page/pending_builds_section', () =>
-  createSelectiveMockFromModule<
-    typeof import('@/pages/builder_page/pending_builds_section')
-  >('@/pages/builder_page/pending_builds_section', ['PendingBuildsSection'])
+jest.mock('./pending_builds_section', () =>
+  createSelectiveMockFromModule<typeof import('./pending_builds_section')>(
+    './pending_builds_section',
+    ['PendingBuildsSection']
+  )
 );
 
-jest.mock('@/pages/builder_page/views_section', () =>
-  createSelectiveMockFromModule<
-    typeof import('@/pages/builder_page/views_section')
-  >('@/pages/builder_page/views_section', ['ViewsSection'])
+jest.mock('./views_section', () =>
+  createSelectiveMockFromModule<typeof import('./views_section')>(
+    './views_section',
+    ['ViewsSection']
+  )
 );
 
 describe('BuilderPage', () => {
