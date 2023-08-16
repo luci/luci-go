@@ -52,20 +52,6 @@ func (s *HTTPService) configsJSHandler(c *router.Context) error {
 	err = tmpl.Execute(c.Writer, map[string]any{
 		"Version":      s.Server.Options.ImageVersion(),
 		"SettingsJSON": protojson.Format(settings),
-		// TODO(weiweilin): remove the following once the frontend is migrated to
-		// use the settings above.
-		"ResultDB": map[string]string{
-			"Host": settings.GetResultdb().GetHost(),
-		},
-		"Buildbucket": map[string]string{
-			"Host": settings.GetBuildbucket().GetHost(),
-		},
-		"LuciAnalysis": map[string]string{
-			"Host": settings.GetLuciAnalysis().GetHost(),
-		},
-		"LuciBisection": map[string]string{
-			"Host": settings.GetLuciBisection().GetHost(),
-		},
 	})
 
 	if err != nil {

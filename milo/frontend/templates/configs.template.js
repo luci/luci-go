@@ -14,21 +14,3 @@
 
 self.VERSION = '{{.Version}}';
 self.SETTINGS = Object.freeze({{.SettingsJSON}});
-
-// TODO(weiweilin): remove the following once the frontend is migrated to use
-// the settings above.
-self.CONFIGS = Object.freeze({
-  VERSION: "{{.Version}}",
-  RESULT_DB: {
-    HOST: "{{.ResultDB.Host}}",
-  },
-  BUILDBUCKET: {
-    HOST: "{{.Buildbucket.Host}}",
-  },
-  LUCI_ANALYSIS: {
-    HOST: "{{.LuciAnalysis.Host}}",
-  },
-  LUCI_BISECTION: {
-    HOST: "{{.LuciBisection.Host}}",
-  },
-});
