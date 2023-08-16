@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/sync/parallel"
+	"golang.org/x/exp/slices"
 
 	"go.chromium.org/luci/cipd/client/cipd/deployer"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
@@ -117,6 +118,20 @@ func ParseFile(r io.Reader) (*File, error) {
 	}
 
 	return ret, nil
+}
+
+// Clone returns a deep copy of the File.
+func (f *File) Clone() *File {
+	pkgs := make(map[string]PackageSlice)
+	for k, v := range f.PackagesBySubdir {
+		pkgs[k] = slices.Clone(v)
+	}
+	plats := slices.Clone(f.VerifyPlatforms)
+
+	newFile := *f
+	newFile.PackagesBySubdir = pkgs
+	newFile.VerifyPlatforms = plats
+	return &newFile
 }
 
 // VersionResolver transforms a {PackageName, Version} tuple (corresponding to

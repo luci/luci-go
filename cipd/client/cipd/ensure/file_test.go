@@ -124,3 +124,22 @@ func TestFileSerialization(t *testing.T) {
 		}
 	})
 }
+
+// TestFileClone is a test to prevent potential field change in the future
+// breaking File.Clone by accident. By using unkeyed fields for initialization
+// the test will generate a build failure if any struct changed.
+func TestFileClone(t *testing.T) {
+	t.Parallel()
+
+	Convey("File.Clone", t, func() {
+		f := &File{
+			"ServiceURL",
+			"ParanoidMode",
+			"ResolvedVersions",
+			"OverrideInstallMode",
+			map[string]PackageSlice{"key": {{"PackageTemplate", "UnresolvedVersion", 0}}},
+			[]template.Platform{{"os", "arch"}},
+		}
+		So(f.Clone(), ShouldResemble, f)
+	})
+}
