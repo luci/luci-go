@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/bbperms"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -86,9 +87,8 @@ func (s *MiloInternalService) QueryBuilderStats(ctx context.Context, req *milopb
 }
 
 func validatesQueryBuilderStatsRequest(req *milopb.QueryBuilderStatsRequest) error {
-	if req.Builder == nil || req.Builder.Project == "" || req.Builder.Bucket == "" || req.Builder.Builder == "" {
-
-		return errors.Reason("builder_id is required").Err()
+	if err := protoutil.ValidateRequiredBuilderID(req.Builder); err != nil {
+		return errors.Annotate(err, "builder").Err()
 	}
 	return nil
 }

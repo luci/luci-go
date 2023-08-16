@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/pagination"
 	"go.chromium.org/luci/common/pagination/dscursor"
@@ -136,12 +137,11 @@ func (s *MiloInternalService) QueryRecentBuilds(ctx context.Context, req *milopb
 }
 
 func validatesQueryRecentBuildsRequest(req *milopb.QueryRecentBuildsRequest) error {
-	switch {
-	case req.PageSize < 0:
+	if req.PageSize < 0 {
 		return errors.Reason("page_size can not be negative").Err()
-	case req.Builder == nil || req.Builder.Project == "" || req.Builder.Bucket == "" || req.Builder.Builder == "":
-		return errors.Reason("builder_id is required").Err()
-	default:
-		return nil
 	}
+	if err := protoutil.ValidateRequiredBuilderID(req.Builder); err != nil {
+		return errors.Annotate(err, "builder").Err()
+	}
+	return nil
 }

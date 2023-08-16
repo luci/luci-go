@@ -176,6 +176,10 @@ func prepareQueryBlamelistRequest(req *milopb.QueryBlamelistRequest) (startRev s
 		return "", errors.Reason("either gitiles_commit.id or gitiles_commit.ref needs to be specified").Err()
 	}
 
+	if err := protoutil.ValidateRequiredBuilderID(req.Builder); err != nil {
+		return "", errors.Annotate(err, "builder").Err()
+	}
+
 	if req.PageToken != "" {
 		token, err := parseQueryBlamelistPageToken(req.PageToken)
 		if err != nil {

@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/internal/model"
@@ -127,6 +128,38 @@ func TestQueryBuilderStats(t *testing.T) {
 				Builder: builder1,
 			})
 			So(err, ShouldNotBeNil)
+		})
+	})
+}
+
+func TestValidatesQueryBuilderStatsRequest(t *testing.T) {
+	t.Parallel()
+	Convey("validatesQueryBuilderStatsRequest", t, func() {
+		Convey("no builder", func() {
+			err := validatesQueryBuilderStatsRequest(&milopb.QueryBuilderStatsRequest{})
+			So(err, ShouldErrLike, "builder: project must match")
+		})
+
+		Convey("invalid builder", func() {
+			err := validatesQueryBuilderStatsRequest(&milopb.QueryBuilderStatsRequest{
+				Builder: &buildbucketpb.BuilderID{
+					Project: "fake_proj",
+					Bucket:  "fake[]ucket",
+					Builder: "fake_/uilder1",
+				},
+			})
+			So(err, ShouldErrLike, "builder: bucket must match")
+		})
+
+		Convey("valid", func() {
+			err := validatesQueryBuilderStatsRequest(&milopb.QueryBuilderStatsRequest{
+				Builder: &buildbucketpb.BuilderID{
+					Project: "fake_project",
+					Bucket:  "fake_bucket",
+					Builder: "fake_builder1",
+				},
+			})
+			So(err, ShouldBeNil)
 		})
 	})
 }

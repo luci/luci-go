@@ -23,6 +23,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/internal/model"
@@ -153,6 +154,50 @@ func TestQueryRecentBuilds(t *testing.T) {
 				PageSize: 2,
 			})
 			So(err, ShouldNotBeNil)
+		})
+	})
+}
+
+func TestValidatesQueryRecentBuildsRequest(t *testing.T) {
+	t.Parallel()
+	Convey("validatesQueryRecentBuildsRequest", t, func() {
+		Convey("negative page size builder", func() {
+			err := validatesQueryRecentBuildsRequest(&milopb.QueryRecentBuildsRequest{
+				Builder: &buildbucketpb.BuilderID{
+					Project: "fake_project",
+					Bucket:  "fake_bucket",
+					Builder: "fake_builder1",
+				},
+				PageSize: -10,
+			})
+			So(err, ShouldErrLike, "page_size can not be negative")
+		})
+
+		Convey("no builder", func() {
+			err := validatesQueryRecentBuildsRequest(&milopb.QueryRecentBuildsRequest{})
+			So(err, ShouldErrLike, "builder: project must match")
+		})
+
+		Convey("invalid builder", func() {
+			err := validatesQueryRecentBuildsRequest(&milopb.QueryRecentBuildsRequest{
+				Builder: &buildbucketpb.BuilderID{
+					Project: "fake_proj",
+					Bucket:  "fake[]ucket",
+					Builder: "fake_/uilder1",
+				},
+			})
+			So(err, ShouldErrLike, "builder: bucket must match")
+		})
+
+		Convey("valid", func() {
+			err := validatesQueryRecentBuildsRequest(&milopb.QueryRecentBuildsRequest{
+				Builder: &buildbucketpb.BuilderID{
+					Project: "fake_project",
+					Bucket:  "fake_bucket",
+					Builder: "fake_builder1",
+				},
+			})
+			So(err, ShouldBeNil)
 		})
 	})
 }

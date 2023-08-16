@@ -29,6 +29,7 @@ import (
 	gitpb "go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/internal/model"
 	"go.chromium.org/luci/milo/internal/projectconfig"
@@ -132,6 +133,35 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 				PageToken: "abc",
 			})
 			So(err, ShouldNotBeNil)
+		})
+
+		Convey("no builder", func() {
+			_, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
+				GitilesCommit: &buildbucketpb.GitilesCommit{
+					Host:    "host",
+					Project: "project/src",
+					Id:      "commit-id",
+					Ref:     "commit-ref",
+				},
+			})
+			So(err, ShouldErrLike, "builder: project must match")
+		})
+
+		Convey("invalid builder", func() {
+			_, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
+				GitilesCommit: &buildbucketpb.GitilesCommit{
+					Host:    "host",
+					Project: "project/src",
+					Id:      "commit-id",
+					Ref:     "commit-ref",
+				},
+				Builder: &buildbucketpb.BuilderID{
+					Project: "fake_proj",
+					Bucket:  "fake[]ucket",
+					Builder: "fake_/uilder1",
+				},
+			})
+			So(err, ShouldErrLike, "builder: bucket must match")
 		})
 	})
 }
