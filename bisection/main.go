@@ -22,6 +22,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/golang/protobuf/proto"
+	// Store auth sessions in the datastore.
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/cancelanalysis"
 	"go.chromium.org/luci/bisection/compilefailuredetection"
 	"go.chromium.org/luci/bisection/culpritaction/revertculprit"
@@ -35,29 +41,18 @@ import (
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection"
 	"go.chromium.org/luci/bisection/testfailuredetection"
 	"go.chromium.org/luci/bisection/throttle"
-	"go.chromium.org/luci/grpc/prpc"
-
-	"github.com/golang/protobuf/proto"
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/server/cfgmodule"
+	"go.chromium.org/luci/grpc/prpc"
 	luciserver "go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/cron"
-	"go.chromium.org/luci/server/encryptedcookies"
-	"go.chromium.org/luci/server/tq"
-
-	// Store auth sessions in the datastore.
-	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
-
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/server/secrets"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"go.chromium.org/luci/server/tq"
 )
 
 const (
@@ -92,8 +87,6 @@ func main() {
 		cfgmodule.NewModuleFromFlags(),
 		cron.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
-		encryptedcookies.NewModuleFromFlags(), // Required for auth sessions.
-		secrets.NewModuleFromFlags(),          // Needed by encryptedcookies.
 		tq.NewModuleFromFlags(),
 	}
 	luciAnalysisProject := ""
