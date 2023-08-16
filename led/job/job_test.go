@@ -19,25 +19,23 @@ import (
 	"os"
 	"testing"
 
-	"github.com/golang/protobuf/jsonpb"
-	durpb "google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/led/job/experiments"
 	"go.chromium.org/luci/luciexe/exe"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 
 	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 const phonyTagExperiment = "luci.test.add_phony_tag_experiment"
 
 func init() {
-	experiments.Register(phonyTagExperiment, func(ctx context.Context, b *bbpb.Build, task *swarmingpb.TaskRequest) error {
+	experiments.Register(phonyTagExperiment, func(ctx context.Context, b *bbpb.Build, task *swarmingpb.NewTaskRequest) error {
 		task.Tags = append(task.Tags, "phony_tag:experiment")
 		return nil
 	})
@@ -47,14 +45,13 @@ func TestFlattenToSwarming(t *testing.T) {
 	t.Parallel()
 
 	Convey(`FlattenToSwarming`, t, func() {
-		fixture, err := os.Open("jobcreate/testdata/bbagent_cas.job.json")
+		fixture, err := os.ReadFile("jobcreate/testdata/bbagent_cas.job.json")
 		So(err, ShouldBeNil)
-		defer fixture.Close()
 
 		ctx := cryptorand.MockForTest(context.Background(), 4)
 
 		bbJob := &Definition{}
-		So((&jsonpb.Unmarshaler{}).Unmarshal(fixture, bbJob), ShouldBeNil)
+		So(protojson.Unmarshal(fixture, bbJob), ShouldBeNil)
 		bb := bbJob.GetBuildbucket()
 		totalExpiration := bb.BbagentArgs.Build.SchedulingTimeout.Seconds
 
@@ -71,16 +68,15 @@ func TestFlattenToSwarming(t *testing.T) {
 			So(sw.Task.TaskSlices, ShouldHaveLength, 2)
 
 			slice0 := sw.Task.TaskSlices[0]
-			So(slice0.Expiration, ShouldResembleProto, &durpb.Duration{Seconds: 240})
-			So(slice0.Properties.Dimensions, ShouldResembleProto, []*swarmingpb.StringListPair{
+			So(slice0.ExpirationSecs, ShouldEqual, 240)
+			So(slice0.Properties.Dimensions, ShouldResembleProto, []*swarmingpb.StringPair{
 				{
-					Key: "caches", Values: []string{
-						"builder_1d1f048016f3dc7294e1abddfd758182bc95619cec2a87d01a3f24517b4e2814_v2",
-					},
+					Key:   "caches",
+					Value: "builder_1d1f048016f3dc7294e1abddfd758182bc95619cec2a87d01a3f24517b4e2814_v2",
 				},
-				{Key: "cpu", Values: []string{"x86-64"}},
-				{Key: "os", Values: []string{"Ubuntu"}},
-				{Key: "pool", Values: []string{"Chrome"}},
+				{Key: "cpu", Value: "x86-64"},
+				{Key: "os", Value: "Ubuntu"},
+				{Key: "pool", Value: "Chrome"},
 			})
 
 			So(slice0.Properties.Command[:3], ShouldResemble, []string{
@@ -109,22 +105,22 @@ func TestFlattenToSwarming(t *testing.T) {
 			So(props, ShouldResemble, expectedProps)
 
 			// Added `kitchen-checkout` as the last CipdInputs entry.
-			So(slice0.Properties.CipdInputs, ShouldHaveLength, 17) // see bbagent.job.json
-			So(slice0.Properties.CipdInputs[16], ShouldResembleProto, &swarmingpb.CIPDPackage{
-				DestPath:    "kitchen-checkout",
+			So(slice0.Properties.CipdInput.Packages, ShouldHaveLength, 17) // see bbagent.job.json
+			So(slice0.Properties.CipdInput.Packages[16], ShouldResembleProto, &swarmingpb.CipdPackage{
+				Path:        "kitchen-checkout",
 				PackageName: expectedProps.CIPDInput.Package,
 				Version:     expectedProps.CIPDInput.Version,
 			})
 
 			slice1 := sw.Task.TaskSlices[1]
-			So(slice1.Expiration, ShouldResembleProto, &durpb.Duration{Seconds: 21360})
-			So(slice1.Properties.Dimensions, ShouldResembleProto, []*swarmingpb.StringListPair{
-				{Key: "cpu", Values: []string{"x86-64"}},
-				{Key: "os", Values: []string{"Ubuntu"}},
-				{Key: "pool", Values: []string{"Chrome"}},
+			So(slice1.ExpirationSecs, ShouldEqual, 21360)
+			So(slice1.Properties.Dimensions, ShouldResembleProto, []*swarmingpb.StringPair{
+				{Key: "cpu", Value: "x86-64"},
+				{Key: "os", Value: "Ubuntu"},
+				{Key: "pool", Value: "Chrome"},
 			})
 
-			So(slice0.Expiration.Seconds+slice1.Expiration.Seconds, ShouldEqual, totalExpiration)
+			So(slice0.ExpirationSecs+slice1.ExpirationSecs, ShouldEqual, totalExpiration)
 		})
 
 		Convey(`kitchen`, func() {
@@ -143,8 +139,8 @@ func TestFlattenToSwarming(t *testing.T) {
 			So(sw, ShouldNotBeNil)
 			So(sw.Task.TaskSlices, ShouldHaveLength, 2)
 
-			So(sw.Task.TaskSlices[0].Expiration, ShouldResembleProto, &durpb.Duration{Seconds: 240})
-			So(sw.Task.TaskSlices[1].Expiration, ShouldResembleProto, &durpb.Duration{Seconds: 40000 - 240})
+			So(sw.Task.TaskSlices[0].ExpirationSecs, ShouldEqual, 240)
+			So(sw.Task.TaskSlices[1].ExpirationSecs, ShouldEqual, 40000-240)
 		})
 
 		Convey(`no expiring dims`, func() {
@@ -162,7 +158,7 @@ func TestFlattenToSwarming(t *testing.T) {
 			So(sw, ShouldNotBeNil)
 			So(sw.Task.TaskSlices, ShouldHaveLength, 1)
 
-			So(sw.Task.TaskSlices[0].Expiration, ShouldResembleProto, &durpb.Duration{Seconds: 21600})
+			So(sw.Task.TaskSlices[0].ExpirationSecs, ShouldEqual, 21600)
 		})
 
 		Convey(`CasUserPayload recipe`, func() {
@@ -184,7 +180,7 @@ func TestFlattenToSwarming(t *testing.T) {
 			So(sw.Task.TaskSlices, ShouldHaveLength, 2)
 
 			slice0 := sw.Task.TaskSlices[0]
-			for _, pkg := range slice0.Properties.CipdInputs {
+			for _, pkg := range slice0.Properties.CipdInput.Packages {
 				// there shouldn't be any recipe package any more
 				So(pkg.Version, ShouldNotEqual, "HEAD")
 			}

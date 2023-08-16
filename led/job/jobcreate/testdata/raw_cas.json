@@ -2,7 +2,7 @@
   "created_ts": "2019-11-05T18:44:22.415785",
   "task_slices": [
     {
-      "expiration_secs": "3600",
+      "expiration_secs": 3600,
       "wait_for_capacity": false,
       "properties": {
         "secret_bytes": "PFJFREFDVEVEPg==",
@@ -65,7 +65,7 @@
           "--jobs=1",
           "--extra-browser-args=--disable-gpu"
         ],
-        "io_timeout_secs": "1200",
+        "io_timeout_secs": 1200,
         "env_prefixes": [
           {
             "value": [
@@ -94,17 +94,17 @@
         ],
         "containment": {
           "lower_priority": false,
-          "containment_type": "NONE"
+          "containment_type": 1
         },
-        "execution_timeout_secs": "3600",
+        "execution_timeout_secs": 3600,
         "cas_input_root": {
           "cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
           "digest": {
             "hash": "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
-            "size_bytes": "24"
+            "size_bytes": 24
           }
         },
-        "grace_period_secs": "30",
+        "grace_period_secs": 30,
         "caches": [
           {
             "path": ".swarming_module_cache/vpython",
@@ -142,9 +142,9 @@
     "user:None"
   ],
   "authenticated": "user:chromium-try-builder@chops-service-accounts.iam.gserviceaccount.com",
-  "priority": "30",
+  "priority": 30,
   "parent_task_id": "4855a6e5d89adf11",
   "user": "",
   "service_account": "none",
-  "bot_ping_tolerance_secs": "1200"
+  "bot_ping_tolerance_secs": 1200
 }

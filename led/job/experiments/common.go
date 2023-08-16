@@ -20,13 +20,13 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 var knownExperiments = map[string]Experiment{}
 
 // Experiment mutates `task` based on `b`.
-type Experiment func(ctx context.Context, b *bbpb.Build, task *swarmingpb.TaskRequest) error
+type Experiment func(ctx context.Context, b *bbpb.Build, task *swarmingpb.NewTaskRequest) error
 
 // Register registers a known experiment given its key and implementation.
 func Register(key string, exp Experiment) {
@@ -34,7 +34,7 @@ func Register(key string, exp Experiment) {
 }
 
 // Apply mutates `task` based on known experiments in b.Input.Experiments.
-func Apply(ctx context.Context, b *bbpb.Build, task *swarmingpb.TaskRequest) error {
+func Apply(ctx context.Context, b *bbpb.Build, task *swarmingpb.NewTaskRequest) error {
 	for _, name := range b.GetInput().GetExperiments() {
 		if exp, ok := knownExperiments[name]; ok {
 			if err := exp(ctx, b, task); err != nil {

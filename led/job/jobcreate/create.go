@@ -27,18 +27,16 @@ import (
 
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/led/job"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // Returns "bbagent", "kitchen" or "raw" depending on the type of task detected.
-func detectMode(r *swarming.SwarmingRpcsNewTaskRequest) string {
-	arg0, ts := "", &swarming.SwarmingRpcsTaskSlice{}
-	ts = r.TaskSlices[0]
+func detectMode(r *swarmingpb.NewTaskRequest) string {
+	arg0, ts := "", r.TaskSlices[0]
 	if ts.Properties != nil {
 		if len(ts.Properties.Command) > 0 {
 			arg0 = ts.Properties.Command[0]
@@ -79,12 +77,12 @@ func setPriority(build *bbpb.Build, priorityDiff int) {
 }
 
 // FromNewTaskRequest generates a new job.Definition by parsing the
-// given SwarmingRpcsNewTaskRequest.
+// given NewTaskRequest.
 //
 // If the task's first slice looks like either a bbagent or kitchen-based
 // Buildbucket task, the returned Definition will have the `buildbucket`
 // field populated, otherwise the `swarming` field will be populated.
-func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequest, name, swarmingHost string, ks job.KitchenSupport, priorityDiff int, bld *bbpb.Build, extraTags []string, authClient *http.Client) (ret *job.Definition, err error) {
+func FromNewTaskRequest(ctx context.Context, r *swarmingpb.NewTaskRequest, name, swarmingHost string, ks job.KitchenSupport, priorityDiff int, bld *bbpb.Build, extraTags []string, authClient *http.Client) (ret *job.Definition, err error) {
 	if len(r.TaskSlices) == 0 {
 		return nil, errors.New("swarming tasks without task slices are not supported")
 	}
@@ -123,7 +121,7 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 		bb := &job.Buildbucket{LegacyKitchen: true}
 		ret.JobType = &job.Definition_Buildbucket{Buildbucket: bb}
 		bbCommonFromTaskRequest(bb, r)
-		err = ks.FromSwarming(ctx, r, bb)
+		err = ks.FromSwarmingV2(ctx, r, bb)
 
 	case "raw":
 		// non-Buildbucket Swarming task
@@ -248,7 +246,7 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 	return ret, err
 }
 
-func populateCasPayload(cas *swarmingpb.CASReference, cir *swarming.SwarmingRpcsCASReference) error {
+func populateCasPayload(cas *swarmingpb.CASReference, cir *swarmingpb.CASReference) error {
 	if cas.CasInstance == "" {
 		cas.CasInstance = cir.CasInstance
 	} else if cas.CasInstance != cir.CasInstance {

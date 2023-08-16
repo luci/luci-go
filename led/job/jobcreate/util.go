@@ -15,28 +15,10 @@
 package jobcreate
 
 import (
-	"fmt"
-
-	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
-func cipdPins(ci *swarming.SwarmingRpcsCipdInput) (ret []*swarmingpb.CIPDPackage) {
-	if ci == nil {
-		return
-	}
-	ret = make([]*swarmingpb.CIPDPackage, 0, len(ci.Packages))
-	for _, pkg := range ci.Packages {
-		ret = append(ret, &swarmingpb.CIPDPackage{
-			PackageName: pkg.PackageName,
-			Version:     pkg.Version,
-			DestPath:    pkg.Path,
-		})
-	}
-	return
-}
-
-func strPairs(pairs []*swarming.SwarmingRpcsStringPair, filter func(key string) bool) []*swarmingpb.StringPair {
+func strPairs(pairs []*swarmingpb.StringPair, filter func(key string) bool) []*swarmingpb.StringPair {
 	ret := make([]*swarmingpb.StringPair, 0, len(pairs))
 	for _, p := range pairs {
 		if filter != nil && !filter(p.Key) {
@@ -47,43 +29,14 @@ func strPairs(pairs []*swarming.SwarmingRpcsStringPair, filter func(key string) 
 	return ret
 }
 
-func strListPairs(pairs []*swarming.SwarmingRpcsStringListPair) []*swarmingpb.StringListPair {
-	ret := make([]*swarmingpb.StringListPair, len(pairs))
-	for i, p := range pairs {
-		vals := make([]string, len(p.Value))
-		copy(vals, p.Value)
-		ret[i] = &swarmingpb.StringListPair{Key: p.Key, Values: vals}
-	}
-	return ret
-}
-
-// dropRecipePackage removes the all CIPDPackages in pkgs whose DestPath
+// dropRecipePackage removes the all CIPDPackages in pkgs whose Path
 // matches checkoutDir.
-func dropRecipePackage(pkgs *[]*swarmingpb.CIPDPackage, checkoutDir string) {
-	ret := make([]*swarmingpb.CIPDPackage, 0, len(*pkgs))
+func dropRecipePackage(pkgs *[]*swarmingpb.CipdPackage, checkoutDir string) {
+	ret := make([]*swarmingpb.CipdPackage, 0, len(*pkgs))
 	for _, pkg := range *pkgs {
-		if pkg.DestPath != checkoutDir {
+		if pkg.Path != checkoutDir {
 			ret = append(ret, pkg)
 		}
 	}
 	*pkgs = ret
-}
-
-func containmentFromSwarming(con *swarming.SwarmingRpcsContainment) *swarmingpb.Containment {
-	if con == nil {
-		return nil
-	}
-	conType, ok := swarmingpb.Containment_ContainmentType_value[con.ContainmentType]
-	if !ok {
-		// TODO(iannucci): handle this more gracefully?
-		//
-		// This is a relatively unused field, and I don't expect any divergence
-		// between the proto / endpoints definitions...  hopefully by the time we
-		// touch this swarming has a real prpc api and then this entire file can go
-		// away.
-		panic(fmt.Sprintf("unknown containment type %q", con.ContainmentType))
-	}
-	return &swarmingpb.Containment{
-		ContainmentType: swarmingpb.Containment_ContainmentType(conType),
-	}
 }

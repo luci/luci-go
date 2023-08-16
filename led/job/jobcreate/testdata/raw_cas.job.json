@@ -1,73 +1,67 @@
 {
   "swarming": {
     "task": {
+      "name": "led: test_name",
+      "priority": 40,
       "task_slices": [
         {
           "properties": {
-            "cas_input_root": {
-              "cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
-              "digest": {
-                "hash": "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
-                "size_bytes": "24"
-              }
-            },
-            "cipd_inputs": [
-              {
-                "package_name": "infra/tools/luci/logdog/butler/${platform}",
-                "version": "git_revision:e1abc57be62d198b5c2f487bfb2fa2d2eb0e867c",
-                "dest_path": ".swarming_module"
-              },
-              {
-                "package_name": "infra/tools/luci/vpython-native/${platform}",
-                "version": "git_revision:e317c7d2c17d4c3460ee37524dfce4e1dee4306a",
-                "dest_path": ".swarming_module"
-              },
-              {
-                "package_name": "infra/tools/luci/vpython/${platform}",
-                "version": "git_revision:e317c7d2c17d4c3460ee37524dfce4e1dee4306a",
-                "dest_path": ".swarming_module"
-              },
-              {
-                "package_name": "infra/python/cpython/${platform}",
-                "version": "version:2.7.15.chromium14",
-                "dest_path": ".swarming_module/cpython"
-              },
-              {
-                "package_name": "infra/python/cpython3/${platform}",
-                "version": "version:3.8.0b1.chromium.1",
-                "dest_path": ".swarming_module/cpython3"
-              }
-            ],
-            "named_caches": [
+            "caches": [
               {
                 "name": "swarming_module_cache_vpython",
-                "dest_path": ".swarming_module_cache/vpython"
+                "path": ".swarming_module_cache/vpython"
               }
             ],
+            "cipd_input": {
+              "server": "https://chrome-infra-packages.appspot.com",
+              "client_package": {
+                "package_name": "infra/tools/cipd/${platform}",
+                "version": "git_revision:2a121dde003a3079db0fdf58195b52cbf486f6ba"
+              },
+              "packages": [
+                {
+                  "package_name": "infra/tools/luci/logdog/butler/${platform}",
+                  "version": "git_revision:e1abc57be62d198b5c2f487bfb2fa2d2eb0e867c",
+                  "path": ".swarming_module"
+                },
+                {
+                  "package_name": "infra/tools/luci/vpython-native/${platform}",
+                  "version": "git_revision:e317c7d2c17d4c3460ee37524dfce4e1dee4306a",
+                  "path": ".swarming_module"
+                },
+                {
+                  "package_name": "infra/tools/luci/vpython/${platform}",
+                  "version": "git_revision:e317c7d2c17d4c3460ee37524dfce4e1dee4306a",
+                  "path": ".swarming_module"
+                },
+                {
+                  "package_name": "infra/python/cpython/${platform}",
+                  "version": "version:2.7.15.chromium14",
+                  "path": ".swarming_module/cpython"
+                },
+                {
+                  "package_name": "infra/python/cpython3/${platform}",
+                  "version": "version:3.8.0b1.chromium.1",
+                  "path": ".swarming_module/cpython3"
+                }
+              ]
+            },
             "dimensions": [
               {
-                "key": "cpu",
-                "values": [
-                  "x86-64"
-                ]
-              },
-              {
                 "key": "gpu",
-                "values": [
-                  "none"
-                ]
+                "value": "none"
               },
               {
                 "key": "os",
-                "values": [
-                  "Mac-10.13.6"
-                ]
+                "value": "Mac-10.13.6"
+              },
+              {
+                "key": "cpu",
+                "value": "x86-64"
               },
               {
                 "key": "pool",
-                "values": [
-                  "chromium.tests"
-                ]
+                "value": "chromium.tests"
               }
             ],
             "env": [
@@ -80,10 +74,10 @@
                 "value": "4"
               }
             ],
-            "env_paths": [
+            "env_prefixes": [
               {
                 "key": "PATH",
-                "values": [
+                "value": [
                   ".swarming_module",
                   ".swarming_module/cpython/bin",
                   ".swarming_module/cpython3/bin"
@@ -91,25 +85,31 @@
               },
               {
                 "key": "VPYTHON_VIRTUALENV_ROOT",
-                "values": [
+                "value": [
                   ".swarming_module_cache/vpython"
                 ]
               }
             ],
+            "execution_timeout_secs": 3600,
+            "grace_period_secs": 30,
+            "cas_input_root": {
+              "cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
+              "digest": {
+                "hash": "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
+                "size_bytes": "24"
+              }
+            },
+            "io_timeout_secs": 1200,
+            "secret_bytes": "PFJFREFDVEVEPg==",
             "containment": {
               "containment_type": "NONE"
-            },
-            "execution_timeout": "3600s",
-            "io_timeout": "1200s",
-            "grace_period": "30s"
+            }
           },
-          "expiration": "3600s"
+          "expiration_secs": 3600
         }
       ],
-      "priority": 40,
       "service_account": "none",
-      "name": "led: test_name",
-      "bot_ping_tolerance": "1200s"
+      "bot_ping_tolerance_secs": 1200
     },
     "hostname": "swarming.example.com",
     "cas_user_payload": {

@@ -23,10 +23,11 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	swarmbucket "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
-	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/led/job"
 	"go.chromium.org/luci/led/job/jobcreate"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // GetBuildersOpts are the options for GetBuilder.
@@ -88,11 +89,13 @@ func GetBuilder(ctx context.Context, authClient *http.Client, opts GetBuildersOp
 		return nil, transient.Tag.Apply(err)
 	}
 
-	newTask := &swarming.SwarmingRpcsNewTaskRequest{}
+	newRpcsTask := &swarming.SwarmingRpcsNewTaskRequest{}
 	r := strings.NewReader(answer.TaskDefinition)
-	if err = json.NewDecoder(r).Decode(newTask); err != nil {
+	if err = json.NewDecoder(r).Decode(newRpcsTask); err != nil {
 		return nil, err
 	}
+
+	newTask := toNewTaskRequest(newRpcsTask)
 
 	jd, err := jobcreate.FromNewTaskRequest(
 		ctx, newTask, getBuilderJobName(opts),
@@ -122,4 +125,111 @@ func synthesizeBuildFromBuilder(ctx context.Context, authClient *http.Client, op
 		return nil, err
 	}
 	return jobcreate.FromBuild(build, opts.BuildbucketHost, getBuilderJobName(opts), opts.PriorityDiff, opts.ExtraTags), nil
+}
+
+func toNewTaskRequest(r *swarming.SwarmingRpcsNewTaskRequest) *swarmingpb.NewTaskRequest {
+	ret := &swarmingpb.NewTaskRequest{
+		Name:            r.Name,
+		ParentTaskId:    r.ParentTaskId,
+		Priority:        int32(r.Priority),
+		TaskSlices:      make([]*swarmingpb.TaskSlice, 0, len(r.TaskSlices)),
+		Tags:            r.Tags,
+		User:            r.User,
+		ServiceAccount:  r.ServiceAccount,
+		PubsubTopic:     r.PubsubTopic,
+		PubsubAuthToken: r.PubsubAuthToken,
+		PubsubUserdata:  r.PubsubUserdata,
+		EvaluateOnly:    r.EvaluateOnly,
+		PoolTaskTemplate: swarmingpb.NewTaskRequest_PoolTaskTemplateField(
+			swarmingpb.NewTaskRequest_PoolTaskTemplateField_value[r.PoolTaskTemplate],
+		),
+		BotPingToleranceSecs: int32(r.BotPingToleranceSecs),
+		RequestUuid:          r.RequestUuid,
+		Resultdb:             &swarmingpb.ResultDBCfg{},
+		Realm:                r.Realm,
+	}
+	for _, t := range r.TaskSlices {
+		props := t.Properties
+		nt := &swarmingpb.TaskSlice{
+			Properties: &swarmingpb.TaskProperties{
+				Caches: make([]*swarmingpb.CacheEntry, 0, len(props.Caches)),
+				CipdInput: &swarmingpb.CipdInput{
+					Packages: make([]*swarmingpb.CipdPackage, 0, len(props.CipdInput.Packages)),
+				},
+				Command:              props.Command,
+				RelativeCwd:          props.RelativeCwd,
+				Dimensions:           make([]*swarmingpb.StringPair, 0, len(props.Dimensions)),
+				Env:                  make([]*swarmingpb.StringPair, 0, len(props.Env)),
+				EnvPrefixes:          make([]*swarmingpb.StringListPair, 0, len(props.EnvPrefixes)),
+				ExecutionTimeoutSecs: int32(props.ExecutionTimeoutSecs),
+				GracePeriodSecs:      int32(props.GracePeriodSecs),
+				Idempotent:           props.Idempotent,
+				IoTimeoutSecs:        int32(props.IoTimeoutSecs),
+				Outputs:              props.Outputs,
+				SecretBytes:          []byte(props.SecretBytes),
+			},
+
+			ExpirationSecs:  int32(t.ExpirationSecs),
+			WaitForCapacity: t.WaitForCapacity,
+		}
+		ret.TaskSlices = append(ret.TaskSlices, nt)
+		if cir := props.CasInputRoot; cir != nil {
+			nt.Properties.CasInputRoot = &swarmingpb.CASReference{
+				CasInstance: cir.CasInstance,
+			}
+			if d := cir.Digest; d != nil {
+				nt.Properties.CasInputRoot.Digest = &swarmingpb.Digest{
+					Hash:      d.Hash,
+					SizeBytes: d.SizeBytes,
+				}
+			}
+		}
+		if c := props.Containment; c != nil {
+			nt.Properties.Containment = &swarmingpb.Containment{
+				ContainmentType: swarmingpb.ContainmentType(
+					swarmingpb.ContainmentType_value[c.ContainmentType],
+				),
+			}
+		}
+		for _, env := range props.Env {
+			nt.Properties.Env = append(nt.Properties.Env, &swarmingpb.StringPair{
+				Key:   env.Key,
+				Value: env.Value,
+			})
+		}
+
+		for _, path := range props.EnvPrefixes {
+			nt.Properties.EnvPrefixes = append(nt.Properties.EnvPrefixes, &swarmingpb.StringListPair{
+				Key:   path.Key,
+				Value: path.Value,
+			})
+		}
+
+		for _, cache := range props.Caches {
+			nt.Properties.Caches = append(nt.Properties.Caches, &swarmingpb.CacheEntry{
+				Name: cache.Name,
+				Path: cache.Path,
+			})
+		}
+
+		for _, pkg := range props.CipdInput.Packages {
+			nt.Properties.CipdInput.Packages = append(nt.Properties.CipdInput.Packages, &swarmingpb.CipdPackage{
+				PackageName: pkg.PackageName,
+				Version:     pkg.Version,
+				Path:        pkg.Path,
+			})
+		}
+
+		for _, dim := range props.Dimensions {
+			nt.Properties.Dimensions = append(nt.Properties.Dimensions, &swarmingpb.StringPair{
+				Key:   dim.Key,
+				Value: dim.Value,
+			})
+		}
+	}
+	if rdb := r.Resultdb; rdb != nil {
+		ret.Resultdb.Enable = rdb.Enable
+	}
+
+	return ret
 }

@@ -21,7 +21,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	api "go.chromium.org/luci/swarming/proto/api"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func TestClearCurrentIsolated(t *testing.T) {
@@ -32,9 +32,9 @@ func TestClearCurrentIsolated(t *testing.T) {
 			name: "basic with rbe-cas input",
 			fn: func(jd *Definition) {
 				if jd.GetSwarming() != nil {
-					jd.GetSwarming().CasUserPayload = &api.CASReference{
+					jd.GetSwarming().CasUserPayload = &swarmingpb.CASReference{
 						CasInstance: "instance",
-						Digest: &api.Digest{
+						Digest: &swarmingpb.Digest{
 							Hash:      "hash",
 							SizeBytes: 1,
 						},
@@ -42,11 +42,11 @@ func TestClearCurrentIsolated(t *testing.T) {
 				}
 				for _, slc := range jd.GetSwarming().GetTask().GetTaskSlices() {
 					if slc.Properties == nil {
-						slc.Properties = &api.TaskProperties{}
+						slc.Properties = &swarmingpb.TaskProperties{}
 					}
-					slc.Properties.CasInputRoot = &api.CASReference{
+					slc.Properties.CasInputRoot = &swarmingpb.CASReference{
 						CasInstance: "instance",
-						Digest: &api.Digest{
+						Digest: &swarmingpb.Digest{
 							Hash:      "hash",
 							SizeBytes: 1,
 						},

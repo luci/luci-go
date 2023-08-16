@@ -21,7 +21,7 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 type bbInfo struct {
@@ -94,8 +94,8 @@ func (b bbInfo) Priority() int32 {
 func (b bbInfo) PrefixPathEnv() (ret []string, err error) {
 	for _, keyVals := range b.EnvPrefixes {
 		if keyVals.Key == "PATH" {
-			ret = make([]string, len(keyVals.Values))
-			copy(ret, keyVals.Values)
+			ret = make([]string, len(keyVals.Value))
+			copy(ret, keyVals.Value)
 			break
 		}
 	}

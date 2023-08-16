@@ -15,139 +15,22 @@
 package jobcreate
 
 import (
-	"sort"
-	"time"
-
-	"google.golang.org/protobuf/types/known/durationpb"
-
-	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/led/job"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
-func casReferenceFromSwarming(cas *swarming.SwarmingRpcsCASReference) *swarmingpb.CASReference {
-	if cas == nil {
-		return nil
-	}
-	casRef := &swarmingpb.CASReference{CasInstance: cas.CasInstance}
-	if cas.Digest != nil {
-		casRef.Digest = &swarmingpb.Digest{
-			Hash:      cas.Digest.Hash,
-			SizeBytes: cas.Digest.SizeBytes,
-		}
-	}
-	return casRef
-}
-
-func cipdPkgsFromSwarming(pkgs *swarming.SwarmingRpcsCipdInput) []*swarmingpb.CIPDPackage {
-	if pkgs == nil || len(pkgs.Packages) == 0 {
-		return nil
-	}
-	// NOTE: We thought that ClientPackage would be useful for users,
-	// but it turns out that it isn't. Practically, the version of cipd to use for
-	// the swarming bot is (and should be) entirely driven by the implementation
-	// of the swarming bot.
-	ret := make([]*swarmingpb.CIPDPackage, len(pkgs.Packages))
-	for i, in := range pkgs.Packages {
-		ret[i] = &swarmingpb.CIPDPackage{
-			DestPath:    in.Path,
-			PackageName: in.PackageName,
-			Version:     in.Version,
-		}
-	}
-
-	return ret
-}
-
-func namedCachesFromSwarming(caches []*swarming.SwarmingRpcsCacheEntry) []*swarmingpb.NamedCacheEntry {
-	if len(caches) == 0 {
-		return nil
-	}
-	ret := make([]*swarmingpb.NamedCacheEntry, len(caches))
-	for i, in := range caches {
-		ret[i] = &swarmingpb.NamedCacheEntry{
-			Name:     in.Name,
-			DestPath: in.Path,
-		}
-	}
-	return ret
-}
-
-func dimensionsFromSwarming(dims []*swarming.SwarmingRpcsStringPair) []*swarmingpb.StringListPair {
-	if len(dims) == 0 {
-		return nil
-	}
-
-	intermediate := map[string][]string{}
-	for _, dim := range dims {
-		intermediate[dim.Key] = append(intermediate[dim.Key], dim.Value)
-	}
-
-	ret := make([]*swarmingpb.StringListPair, 0, len(intermediate))
-	for key, values := range intermediate {
-		ret = append(ret, &swarmingpb.StringListPair{Key: key, Values: values})
-	}
-	sort.Slice(ret, func(i, j int) bool {
-		return ret[i].Key < ret[j].Key
-	})
-	return ret
-}
-
-func envFromSwarming(env []*swarming.SwarmingRpcsStringPair) []*swarmingpb.StringPair {
-	if len(env) == 0 {
-		return nil
-	}
-	ret := make([]*swarmingpb.StringPair, len(env))
-	for i, in := range env {
-		ret[i] = &swarmingpb.StringPair{Key: in.Key, Value: in.Value}
-	}
-	return ret
-}
-
-func envPrefixesFromSwarming(envPrefixes []*swarming.SwarmingRpcsStringListPair) []*swarmingpb.StringListPair {
-	if len(envPrefixes) == 0 {
-		return nil
-	}
-	ret := make([]*swarmingpb.StringListPair, len(envPrefixes))
-	for i, in := range envPrefixes {
-		ret[i] = &swarmingpb.StringListPair{Key: in.Key, Values: in.Value}
-	}
-	return ret
-}
-
-func taskPropertiesFromSwarming(ts *swarming.SwarmingRpcsTaskProperties) *swarmingpb.TaskProperties {
-	// TODO(iannucci): log that we're dropping SecretBytes?
-
-	return &swarmingpb.TaskProperties{
-		CasInputRoot: casReferenceFromSwarming(ts.CasInputRoot),
-		CipdInputs:   cipdPkgsFromSwarming(ts.CipdInput),
-		NamedCaches:  namedCachesFromSwarming(ts.Caches),
-		Command:      ts.Command,
-		RelativeCwd:  ts.RelativeCwd,
-		// SecretBytes/HasSecretBytes are not provided by the swarming server.
-		Dimensions:       dimensionsFromSwarming(ts.Dimensions),
-		Env:              envFromSwarming(ts.Env),
-		EnvPaths:         envPrefixesFromSwarming(ts.EnvPrefixes),
-		Containment:      containmentFromSwarming(ts.Containment),
-		ExecutionTimeout: durationpb.New(time.Duration(ts.ExecutionTimeoutSecs) * time.Second),
-		IoTimeout:        durationpb.New(time.Duration(ts.IoTimeoutSecs) * time.Second),
-		GracePeriod:      durationpb.New(time.Duration(ts.GracePeriodSecs) * time.Second),
-		Idempotent:       ts.Idempotent,
-		Outputs:          ts.Outputs,
-	}
-}
-
-func jobDefinitionFromSwarming(sw *job.Swarming, r *swarming.SwarmingRpcsNewTaskRequest) {
+func jobDefinitionFromSwarming(sw *job.Swarming, r *swarmingpb.NewTaskRequest) {
 	// we ignore r.Properties; TaskSlices are the only thing generated from modern
 	// swarming tasks.
-	sw.Task = &swarmingpb.TaskRequest{}
+	// TODO(b/296244642): Remove redundant job.Swarming.Task <-> swarming.NewTaskRequest conversion
+	sw.Task = &swarmingpb.NewTaskRequest{}
 	t := sw.Task
 
 	t.TaskSlices = make([]*swarmingpb.TaskSlice, len(r.TaskSlices))
 	for i, inslice := range r.TaskSlices {
 		outslice := &swarmingpb.TaskSlice{
-			Expiration:      durationpb.New(time.Duration(inslice.ExpirationSecs) * time.Second),
-			Properties:      taskPropertiesFromSwarming(inslice.Properties),
+			ExpirationSecs:  inslice.ExpirationSecs,
+			Properties:      inslice.Properties,
 			WaitForCapacity: inslice.WaitForCapacity,
 		}
 		t.TaskSlices[i] = outslice
@@ -164,5 +47,5 @@ func jobDefinitionFromSwarming(sw *job.Swarming, r *swarming.SwarmingRpcsNewTask
 	// ParentTaskId is unpopulated for new task requests
 	// ParentRunId is unpopulated for new task requests
 	// PubsubNotification is intentionally not propagated.
-	t.BotPingTolerance = durationpb.New(time.Duration(r.BotPingToleranceSecs) * time.Second)
+	t.BotPingToleranceSecs = r.BotPingToleranceSecs
 }

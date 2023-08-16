@@ -21,7 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
-	apipb "go.chromium.org/luci/swarming/proto/api"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 
 	"go.chromium.org/luci/led/job"
 )
@@ -33,7 +33,7 @@ type EditPayloadOpts struct {
 	PropertyOnly bool
 
 	// CasDigest is the digest of the RBE-CAS reference.
-	CasDigest *apipb.Digest
+	CasDigest *swarmingpb.Digest
 
 	// CIPDPkg is the name of the CIPD package for the payload.
 	CIPDPkg string
@@ -43,7 +43,7 @@ type EditPayloadOpts struct {
 
 // editPayloadWithCASRef overrides the job payload with given RBE-CAS reference.
 func editPayloadWithCASRef(ctx context.Context, jd *job.Definition, opts *EditPayloadOpts) (err error) {
-	casRef := &apipb.CASReference{
+	casRef := &swarmingpb.CASReference{
 		Digest: opts.CasDigest,
 	}
 	if casRef.CasInstance, err = getCASInstance(jd); err != nil {

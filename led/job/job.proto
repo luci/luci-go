@@ -20,7 +20,7 @@ option go_package = "go.chromium.org/luci/led/job;job";
 import "google/protobuf/duration.proto";
 
 import "go.chromium.org/luci/buildbucket/proto/launcher.proto";
-import "go.chromium.org/luci/swarming/proto/api/swarming.proto";
+import "go.chromium.org/luci/swarming/proto/api_v2/swarming.proto";
 
 // Buildbucket is, ideally, just a BBAgentArgs, but there are bits of data that
 // led needs to track which aren't currently contained in BBAgentArgs.
@@ -32,17 +32,17 @@ message Buildbucket {
   buildbucket.v2.BBAgentArgs bbagent_args = 1;
 
   // Deprecated for Buildbucket v2 builds.
-  repeated swarming.v1.CIPDPackage cipd_packages = 2;
+  repeated swarming.v2.CipdPackage cipd_packages = 2;
 
-  repeated swarming.v1.StringPair env_vars = 3;
-  repeated swarming.v1.StringListPair env_prefixes = 4;
+  repeated swarming.v2.StringPair env_vars = 3;
+  repeated swarming.v2.StringListPair env_prefixes = 4;
   // Deprecated.
   // TODO(crbug.com/1345722): remove this.
   repeated string extra_tags = 5;
 
   google.protobuf.Duration bot_ping_tolerance = 7;
 
-  swarming.v1.Containment containment = 8;
+  swarming.v2.Containment containment = 8;
 
   // Indicates that this build should be generated as a legacy kitchen task when
   // launched.
@@ -71,7 +71,7 @@ message Buildbucket {
 // Swarming is the raw TaskRequest. When a Definition is in this form, the
 // user's ability to manipulate it via `led` subcommands is extremely limited.
 message Swarming {
-  swarming.v1.TaskRequest task = 1;
+  swarming.v2.NewTaskRequest task = 1;
 
   string hostname = 2;
 
@@ -79,7 +79,7 @@ message Swarming {
   //
   // At the time of launch, this will be merged with
   // swarming.task_slice[*].properties.cas_input_root, if any.
-  swarming.v1.CASReference cas_user_payload = 3;
+  swarming.v2.CASReference cas_user_payload = 3;
 }
 
 message Definition {
