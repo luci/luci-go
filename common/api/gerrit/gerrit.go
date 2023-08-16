@@ -522,10 +522,10 @@ type Replacement struct {
 
 // CommentRange is included within Comment. See Comment for more details.
 type CommentRange struct {
-	StartLine      int `json:"start_line"`
-	StartCharacter int `json:"start_character"`
-	EndLine        int `json:"end_line"`
-	EndCharacter   int `json:"end_character"`
+	StartLine      int `json:"start_line,omitempty"`
+	StartCharacter int `json:"start_character,omitempty"`
+	EndLine        int `json:"end_line,omitempty"`
+	EndCharacter   int `json:"end_character,omitempty"`
 }
 
 // Comment represents a comment on a Gerrit CL. Information about these fields
@@ -1135,7 +1135,11 @@ func (c *Client) post(ctx context.Context, path string, data any, result any) (i
 	}
 	defer r.Body.Close()
 	if r.StatusCode < 200 || r.StatusCode >= 300 {
-		err = errors.Reason("failed to post to %q with %v, status code %d", u.String(), data, r.StatusCode).Err()
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			return 0, transient.Tag.Apply(err)
+		}
+		err = errors.Reason("failed to post to %q, status code %d: %s", u.String(), r.StatusCode, strings.TrimSpace(string(b))).Err()
 		if r.StatusCode >= 500 {
 			err = transient.Tag.Apply(err)
 		}
