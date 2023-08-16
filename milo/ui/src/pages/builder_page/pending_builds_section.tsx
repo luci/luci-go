@@ -20,7 +20,7 @@ import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
 import {
   BuilderID,
   BuildsService,
-  BuildStatus,
+  BuildbucketStatus,
 } from '@/common/services/buildbucket';
 import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
 
@@ -40,7 +40,7 @@ export function PendingBuildsSection({ builderId }: PendingBuildsSectionProps) {
       predicate: {
         builder: builderId,
         includeExperimental: true,
-        status: BuildStatus.Scheduled,
+        status: BuildbucketStatus.Scheduled,
       },
       pageSize: PAGE_SIZE,
       fields: FIELD_MASK,

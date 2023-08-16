@@ -14,7 +14,7 @@
 
 import { fixture, html } from '@open-wc/testing-helpers';
 
-import { BuildStatus } from '@/common/services/buildbucket';
+import { BuildbucketStatus } from '@/common/services/buildbucket';
 import { Store } from '@/common/store';
 import { StepExt } from '@/common/store/build_state';
 
@@ -25,7 +25,7 @@ function createStep(index: number, startTime: string, endTime: string) {
   return new StepExt({
     step: {
       name: 'step' + index,
-      status: BuildStatus.Success,
+      status: BuildbucketStatus.Success,
       startTime,
       endTime,
     },

@@ -17,7 +17,7 @@ import { css, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 
 import './step_entry';
-import { BuildStatus } from '@/common/services/buildbucket';
+import { BuildbucketStatus } from '@/common/services/buildbucket';
 import { Store } from '@/common/store';
 import { StepExt } from '@/common/store/build_state';
 import { provider } from '@/generic_libs/tools/lit_context';
@@ -50,7 +50,7 @@ describe('StepEntry', () => {
     const step = new StepExt({
       step: {
         name: 'stepname',
-        status: BuildStatus.Scheduled,
+        status: BuildbucketStatus.Scheduled,
         startTime: undefined,
       },
       listNumber: '1.',

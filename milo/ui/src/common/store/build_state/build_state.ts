@@ -21,7 +21,7 @@ import { Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
 import {
   BLAMELIST_PIN_KEY,
   Build,
-  BuildStatus,
+  BuildbucketStatus,
   getAssociatedGitilesCommit,
   GitilesCommit,
   Log,
@@ -52,7 +52,7 @@ export class StepExt {
   readonly name: string;
   readonly startTime: DateTime | null;
   readonly endTime: DateTime | null;
-  readonly status: BuildStatus;
+  readonly status: BuildbucketStatus;
   readonly logs: readonly Log[];
   readonly summaryMarkdown?: string | undefined;
   readonly tags: readonly StringPair[];
@@ -216,13 +216,13 @@ export class StepExt {
   }
 
   @computed get isCritical() {
-    return this.status !== BuildStatus.Success || this.isPinned;
+    return this.status !== BuildbucketStatus.Success || this.isPinned;
   }
   /**
    * true if and only if the step and all of its descendants succeeded.
    */
   @computed get succeededRecursively(): boolean {
-    if (this.status !== BuildStatus.Success) {
+    if (this.status !== BuildbucketStatus.Success) {
       return false;
     }
     return this.children.every((child) => child.succeededRecursively);
@@ -233,8 +233,8 @@ export class StepExt {
    */
   @computed get failed(): boolean {
     if (
-      this.status === BuildStatus.Failure ||
-      this.status === BuildStatus.InfraFailure
+      this.status === BuildbucketStatus.Failure ||
+      this.status === BuildbucketStatus.InfraFailure
     ) {
       return true;
     }
@@ -321,8 +321,8 @@ export const BuildState = types
     },
     get buildOrStepInfraFailed() {
       return (
-        self.data.status === BuildStatus.InfraFailure ||
-        self.steps.some((s) => s.status === BuildStatus.InfraFailure)
+        self.data.status === BuildbucketStatus.InfraFailure ||
+        self.steps.some((s) => s.status === BuildbucketStatus.InfraFailure)
       );
     },
     get buildNumOrId() {
@@ -419,7 +419,7 @@ export const BuildState = types
      */
     get exceededExecutionTimeout(): boolean {
       return (
-        self.data.status === BuildStatus.Canceled &&
+        self.data.status === BuildbucketStatus.Canceled &&
         this.executionDuration !== null &&
         this.executionTimeout !== null &&
         this.executionDuration >= this.executionTimeout

@@ -78,7 +78,7 @@ export interface SearchBuildsResponse {
 
 export interface BuildPredicate {
   readonly builder?: BuilderID;
-  readonly status?: BuildStatus | BuildStatusMask;
+  readonly status?: BuildbucketStatus | BuildStatusMask;
   readonly gerritChanges?: readonly GerritChange[];
   readonly createdBy?: string;
   readonly tags?: readonly StringPair[];
@@ -119,7 +119,7 @@ export interface Build {
   readonly startTime?: string;
   readonly endTime?: string;
   readonly cancelTime?: string;
-  readonly status: BuildStatus;
+  readonly status: BuildbucketStatus;
   readonly summaryMarkdown?: string;
   readonly input?: BuildInput;
   readonly output?: BuildOutput;
@@ -135,7 +135,7 @@ export interface Build {
 }
 
 // This is from https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/buildbucket/proto/common.proto#25
-export enum BuildStatus {
+export enum BuildbucketStatus {
   Scheduled = 'SCHEDULED',
   Started = 'STARTED',
   Success = 'SUCCESS',
@@ -220,7 +220,7 @@ export interface Step {
   readonly name: string;
   readonly startTime?: string;
   readonly endTime?: string;
-  readonly status: BuildStatus;
+  readonly status: BuildbucketStatus;
   readonly logs?: Log[];
   readonly summaryMarkdown?: string;
   readonly tags?: readonly StringPair[];
@@ -230,6 +230,7 @@ export interface BuildInfra {
   readonly swarming: BuildInfraSwarming;
   readonly resultdb?: BuildInfraResultdb;
   readonly buildbucket?: BuildInfraBuildbucket;
+  readonly backend?: BuildInfraBackend;
 }
 
 export interface BuildInfraBuildbucket {
@@ -256,7 +257,7 @@ export interface BuildAgentInputDataRef {
 
 export interface BuildAgentOutput {
   readonly resolvedData: { [key: string]: BuildAgentResolvedDataRef };
-  readonly status: BuildStatus;
+  readonly status: BuildbucketStatus;
   readonly summaryHtml: string;
   readonly agentPlatform: string;
   readonly totalDuration: string;
@@ -313,6 +314,31 @@ export interface BuildInfraRecipe {
 export interface BuildInfraResultdb {
   readonly hostname: string;
   readonly invocation?: string;
+}
+
+export interface BuildInfraBackend {
+  readonly config: { [key: string]: unknown };
+  readonly task: Task;
+}
+
+export interface Task {
+  readonly id: TaskID;
+  readonly link?: string;
+  readonly status: BuildbucketStatus;
+  readonly statusDetails: StatusDetails;
+  readonly summaryHtml?: string;
+  readonly details: { [key: string]: unknown };
+  readonly updateId: string;
+}
+
+export interface TaskID {
+  readonly target: string;
+  readonly id: string;
+}
+
+export interface StatusDetails {
+  readonly resourceExhaustion?: Record<string, never>;
+  readonly timeout?: Record<string, never>;
 }
 
 export interface Executable {

@@ -19,7 +19,7 @@ import {
   BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_DISPLAY_MAP,
 } from '@/common/constants';
-import { BuildStatus } from '@/common/services/buildbucket';
+import { BuildbucketStatus } from '@/common/services/buildbucket';
 import { useStore } from '@/common/store';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
 
@@ -41,7 +41,7 @@ export const SummarySection = observer(() => {
   return (
     <>
       {build?.isCanary &&
-        [BuildStatus.Failure, BuildStatus.InfraFailure].includes(
+        [BuildbucketStatus.Failure, BuildbucketStatus.InfraFailure].includes(
           build.data.status
         ) && (
           <div

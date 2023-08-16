@@ -34,7 +34,7 @@ import {
   BUILD_STATUS_DISPLAY_MAP,
   BUILD_STATUS_ICON_MAP,
 } from '@/common/constants';
-import { BuildStatus } from '@/common/services/buildbucket';
+import { BuildbucketStatus } from '@/common/services/buildbucket';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { StepExt } from '@/common/store/build_state';
 import { ExpandStepOption } from '@/common/store/user_config/build_config';
@@ -209,7 +209,7 @@ export class BuildPageStepEntryElement
               this.expanded = false;
               break;
             case ExpandStepOption.NonSuccessful:
-              this.expanded = this.step.status !== BuildStatus.Success;
+              this.expanded = this.step.status !== BuildbucketStatus.Success;
               break;
             case ExpandStepOption.WithNonSuccessful:
               this.expanded = !this.step.succeededRecursively;
@@ -253,7 +253,7 @@ export class BuildPageStepEntryElement
             id="header-text"
             class=${classMap({
               [`${BUILD_STATUS_CLASS_MAP[this.step.status]}-bg`]:
-                this.step.status !== BuildStatus.Success &&
+                this.step.status !== BuildbucketStatus.Success &&
                 !(this.expanded && this.step.summary),
             })}
           >

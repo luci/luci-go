@@ -18,7 +18,7 @@ import { DateTime } from 'luxon';
 import { action, computed, makeAutoObservable } from 'mobx';
 import { destroy } from 'mobx-state-tree';
 
-import { Build, BuildStatus, Step } from '@/common/services/buildbucket';
+import { Build, BuildbucketStatus, Step } from '@/common/services/buildbucket';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
 
 import {
@@ -32,7 +32,7 @@ describe('StepExt', () => {
   function createStep(
     index: number,
     name: string,
-    status = BuildStatus.Success,
+    status = BuildbucketStatus.Success,
     summaryMarkdown = '',
     children: StepExt[] = []
   ) {
@@ -55,69 +55,69 @@ describe('StepExt', () => {
 
   describe('succeededRecursively/failed', () => {
     test('succeeded step with no children', async () => {
-      const step = createStep(0, 'parent', BuildStatus.Success);
+      const step = createStep(0, 'parent', BuildbucketStatus.Success);
       expect(step.succeededRecursively).toBeTruthy();
       expect(step.failed).toBeFalsy();
     });
 
     test('failed step with no children', async () => {
-      const step = createStep(0, 'parent', BuildStatus.Failure);
+      const step = createStep(0, 'parent', BuildbucketStatus.Failure);
       expect(step.succeededRecursively).toBeFalsy();
       expect(step.failed).toBeTruthy();
     });
 
     test('infra-failed step with no children', async () => {
-      const step = createStep(0, 'parent', BuildStatus.InfraFailure);
+      const step = createStep(0, 'parent', BuildbucketStatus.InfraFailure);
       expect(step.succeededRecursively).toBeFalsy();
       expect(step.failed).toBeTruthy();
     });
 
     test('non-(infra-)failed step with no children', async () => {
-      const step = createStep(0, 'parent', BuildStatus.Canceled);
+      const step = createStep(0, 'parent', BuildbucketStatus.Canceled);
       expect(step.succeededRecursively).toBeFalsy();
       expect(step.failed).toBeFalsy();
     });
 
     test('succeeded step with only succeeded children', async () => {
-      const step = createStep(0, 'parent', BuildStatus.Success, '', [
-        createStep(0, 'parent|child1', BuildStatus.Success),
-        createStep(1, 'parent|child2', BuildStatus.Success),
+      const step = createStep(0, 'parent', BuildbucketStatus.Success, '', [
+        createStep(0, 'parent|child1', BuildbucketStatus.Success),
+        createStep(1, 'parent|child2', BuildbucketStatus.Success),
       ]);
       expect(step.succeededRecursively).toBeTruthy();
       expect(step.failed).toBeFalsy();
     });
 
     test('succeeded step with failed child', async () => {
-      const step = createStep(0, 'parent', BuildStatus.Success, '', [
-        createStep(0, 'parent|child1', BuildStatus.Success),
-        createStep(1, 'parent|child2', BuildStatus.Failure),
+      const step = createStep(0, 'parent', BuildbucketStatus.Success, '', [
+        createStep(0, 'parent|child1', BuildbucketStatus.Success),
+        createStep(1, 'parent|child2', BuildbucketStatus.Failure),
       ]);
       expect(step.succeededRecursively).toBeFalsy();
       expect(step.failed).toBeTruthy();
     });
 
     test('succeeded step with non-succeeded child', async () => {
-      const step = createStep(0, 'parent', BuildStatus.Success, '', [
-        createStep(0, 'parent|child1', BuildStatus.Success),
-        createStep(1, 'parent|child2', BuildStatus.Started),
+      const step = createStep(0, 'parent', BuildbucketStatus.Success, '', [
+        createStep(0, 'parent|child1', BuildbucketStatus.Success),
+        createStep(1, 'parent|child2', BuildbucketStatus.Started),
       ]);
       expect(step.succeededRecursively).toBeFalsy();
       expect(step.failed).toBeFalsy();
     });
 
     test('failed step with succeeded children', async () => {
-      const step = createStep(0, 'parent', BuildStatus.Failure, '', [
-        createStep(0, 'parent|child1', BuildStatus.Success),
-        createStep(1, 'parent|child2', BuildStatus.Success),
+      const step = createStep(0, 'parent', BuildbucketStatus.Failure, '', [
+        createStep(0, 'parent|child1', BuildbucketStatus.Success),
+        createStep(1, 'parent|child2', BuildbucketStatus.Success),
       ]);
       expect(step.succeededRecursively).toBeFalsy();
       expect(step.failed).toBeTruthy();
     });
 
     test('infra-failed step with succeeded children', async () => {
-      const step = createStep(0, 'parent', BuildStatus.InfraFailure, '', [
-        createStep(0, 'parent|child1', BuildStatus.Success),
-        createStep(1, 'parent|child2', BuildStatus.Success),
+      const step = createStep(0, 'parent', BuildbucketStatus.InfraFailure, '', [
+        createStep(0, 'parent|child1', BuildbucketStatus.Success),
+        createStep(1, 'parent|child2', BuildbucketStatus.Success),
       ]);
       expect(step.succeededRecursively).toBeFalsy();
       expect(step.failed).toBeTruthy();
@@ -139,13 +139,13 @@ describe('StepExt', () => {
     }
 
     test('for no summary', async () => {
-      const step = createStep(0, 'step', BuildStatus.Success, undefined);
+      const step = createStep(0, 'step', BuildbucketStatus.Success, undefined);
       expect(step.header).toBeNull();
       expect(step.summary).toBeNull();
     });
 
     test('for empty summary', async () => {
-      const step = createStep(0, 'step', BuildStatus.Success, '');
+      const step = createStep(0, 'step', BuildbucketStatus.Success, '');
       expect(step.header).toBeNull();
       expect(step.summary).toBeNull();
     });
@@ -154,7 +154,7 @@ describe('StepExt', () => {
       const step = createStep(
         0,
         'step',
-        BuildStatus.Success,
+        BuildbucketStatus.Success,
         'this is some text'
       );
       expect(step.header?.innerHTML).toStrictEqual('this is some text');
@@ -165,7 +165,7 @@ describe('StepExt', () => {
       const step = createStep(
         0,
         'step',
-        BuildStatus.Success,
+        BuildbucketStatus.Success,
         'header<br/>content'
       );
       expect(step.header?.innerHTML).toStrictEqual(
@@ -177,7 +177,7 @@ describe('StepExt', () => {
     });
 
     test('for header and content separated by <br/>, header is empty', async () => {
-      const step = createStep(0, 'step', BuildStatus.Success, '<br/>body');
+      const step = createStep(0, 'step', BuildbucketStatus.Success, '<br/>body');
       expect(step.header).toBeNull();
       expect(step.summary?.innerHTML).toStrictEqual(
         getExpectedBodyHTML('body')
@@ -185,7 +185,7 @@ describe('StepExt', () => {
     });
 
     test('for header and content separated by <br/>, body is empty', async () => {
-      const step = createStep(0, 'step', BuildStatus.Success, 'header<br/>');
+      const step = createStep(0, 'step', BuildbucketStatus.Success, 'header<br/>');
       expect(step.header?.innerHTML).toStrictEqual(
         getExpectedHeaderHTML('header')
       );
@@ -196,7 +196,7 @@ describe('StepExt', () => {
       const step = createStep(
         0,
         'step',
-        BuildStatus.Success,
+        BuildbucketStatus.Success,
         '<a href="http://google.com">Link</a><br/>content'
       );
       expect(step.header?.innerHTML).toStrictEqual(
@@ -211,7 +211,7 @@ describe('StepExt', () => {
       const step = createStep(
         0,
         'step',
-        BuildStatus.Success,
+        BuildbucketStatus.Success,
         '<span>span</span><i>i</i><b>b</b><strong>strong</strong><br/>content'
       );
       expect(step.header?.innerHTML).toStrictEqual(
@@ -228,7 +228,7 @@ describe('StepExt', () => {
       const step = createStep(
         0,
         'step',
-        BuildStatus.Success,
+        BuildbucketStatus.Success,
         '<ul><li>item</li></ul><br/>content'
       );
       expect(step.header).toBeNull();
@@ -241,7 +241,7 @@ describe('StepExt', () => {
       const step = createStep(
         0,
         'step',
-        BuildStatus.Success,
+        BuildbucketStatus.Success,
         '<ul><li>item1</li><li>item2</li></ul>'
       );
       expect(step.header).toBeNull();
@@ -254,7 +254,7 @@ describe('StepExt', () => {
       const step = createStep(
         0,
         'step',
-        BuildStatus.Success,
+        BuildbucketStatus.Success,
         '<div>header<br/>other</div>content'
       );
       expect(step.header?.innerHTML).toStrictEqual(
@@ -269,7 +269,7 @@ describe('StepExt', () => {
       const step = createStep(
         0,
         'step',
-        BuildStatus.Success,
+        BuildbucketStatus.Success,
         '<div><div>header<br/>other</div></div>content'
       );
       expect(step.header).toBeNull();
@@ -469,7 +469,7 @@ describe('BuildState', () => {
       jest.setSystemTime(DateTime.fromISO('2020-01-01T00:00:20Z').toMillis());
       build = BuildState.create({
         data: {
-          status: BuildStatus.Scheduled,
+          status: BuildbucketStatus.Scheduled,
           createTime: '2020-01-01T00:00:10Z',
           schedulingTimeout: '20s',
           executionTimeout: '20s',
@@ -489,7 +489,7 @@ describe('BuildState', () => {
       jest.setSystemTime(DateTime.fromISO('2020-01-01T00:00:50Z').toMillis());
       build = BuildState.create({
         data: {
-          status: BuildStatus.Canceled,
+          status: BuildbucketStatus.Canceled,
           createTime: '2020-01-01T00:00:10Z',
           endTime: '2020-01-01T00:00:20Z',
           schedulingTimeout: '20s',
@@ -510,7 +510,7 @@ describe('BuildState', () => {
       jest.setSystemTime(DateTime.fromISO('2020-01-01T00:00:50Z').toMillis());
       build = BuildState.create({
         data: {
-          status: BuildStatus.Canceled,
+          status: BuildbucketStatus.Canceled,
           createTime: '2020-01-01T00:00:10Z',
           endTime: '2020-01-01T00:00:30Z',
           schedulingTimeout: '20s',
@@ -531,7 +531,7 @@ describe('BuildState', () => {
       jest.setSystemTime(DateTime.fromISO('2020-01-01T00:00:30Z').toMillis());
       build = BuildState.create({
         data: {
-          status: BuildStatus.Started,
+          status: BuildbucketStatus.Started,
           createTime: '2020-01-01T00:00:10Z',
           startTime: '2020-01-01T00:00:20Z',
           schedulingTimeout: '20s',
@@ -552,7 +552,7 @@ describe('BuildState', () => {
       jest.setSystemTime(DateTime.fromISO('2020-01-01T00:00:40Z').toMillis());
       build = BuildState.create({
         data: {
-          status: BuildStatus.Canceled,
+          status: BuildbucketStatus.Canceled,
           createTime: '2020-01-01T00:00:10Z',
           startTime: '2020-01-01T00:00:20Z',
           endTime: '2020-01-01T00:00:30Z',
@@ -574,7 +574,7 @@ describe('BuildState', () => {
       jest.setSystemTime(DateTime.fromISO('2020-01-01T00:00:50Z').toMillis());
       build = BuildState.create({
         data: {
-          status: BuildStatus.Canceled,
+          status: BuildbucketStatus.Canceled,
           createTime: '2020-01-01T00:00:10Z',
           startTime: '2020-01-01T00:00:20Z',
           endTime: '2020-01-01T00:00:40Z',
@@ -596,7 +596,7 @@ describe('BuildState', () => {
       jest.setSystemTime(DateTime.fromISO('2020-01-01T00:00:50Z').toMillis());
       build = BuildState.create({
         data: {
-          status: BuildStatus.Scheduled,
+          status: BuildbucketStatus.Scheduled,
           createTime: '2020-01-01T00:00:10Z',
           schedulingTimeout: '20s',
           executionTimeout: '20s',
@@ -616,7 +616,7 @@ describe('BuildState', () => {
       jest.setSystemTime(DateTime.fromISO('2020-01-01T00:00:50Z').toMillis());
       build = BuildState.create({
         data: {
-          status: BuildStatus.Started,
+          status: BuildbucketStatus.Started,
           createTime: '2020-01-01T00:00:10Z',
           startTime: '2020-01-01T00:00:40Z',
           schedulingTimeout: '20s',
@@ -637,7 +637,7 @@ describe('BuildState', () => {
       jest.setSystemTime(DateTime.fromISO('2020-01-01T00:01:10Z').toMillis());
       build = BuildState.create({
         data: {
-          status: BuildStatus.Success,
+          status: BuildbucketStatus.Success,
           createTime: '2020-01-01T00:00:10Z',
           startTime: '2020-01-01T00:00:40Z',
           endTime: '2020-01-01T00:01:10Z',

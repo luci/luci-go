@@ -33,7 +33,7 @@ import {
   BUILD_STATUS_DISPLAY_MAP,
   UiPage,
 } from '@/common/constants';
-import { BuildStatus } from '@/common/services/buildbucket';
+import { BuildbucketStatus } from '@/common/services/buildbucket';
 import { useStore } from '@/common/store';
 import { InvocationProvider } from '@/common/store/invocation_state';
 import { displayDuration, LONG_TIME_FORMAT } from '@/common/tools/time_utils';
@@ -50,12 +50,12 @@ import { ChangeConfigDialog } from './change_config_dialog';
 import { CustomBugLink } from './custom_bug_link';
 
 const STATUS_FAVICON_MAP = Object.freeze({
-  [BuildStatus.Scheduled]: grayFavicon,
-  [BuildStatus.Started]: yellowFavicon,
-  [BuildStatus.Success]: greenFavicon,
-  [BuildStatus.Failure]: redFavicon,
-  [BuildStatus.InfraFailure]: purpleFavicon,
-  [BuildStatus.Canceled]: tealFavicon,
+  [BuildbucketStatus.Scheduled]: grayFavicon,
+  [BuildbucketStatus.Started]: yellowFavicon,
+  [BuildbucketStatus.Success]: greenFavicon,
+  [BuildbucketStatus.Failure]: redFavicon,
+  [BuildbucketStatus.InfraFailure]: purpleFavicon,
+  [BuildbucketStatus.Canceled]: tealFavicon,
 });
 
 const delimiter = css({
@@ -188,21 +188,21 @@ export const BuildPage = observer(() => {
                 </i>
                 {(() => {
                   switch (build.data.status) {
-                    case BuildStatus.Scheduled:
+                    case BuildbucketStatus.Scheduled:
                       return `since ${build.createTime.toFormat(
                         LONG_TIME_FORMAT
                       )}`;
-                    case BuildStatus.Started:
+                    case BuildbucketStatus.Started:
                       return `since ${build.startTime!.toFormat(
                         LONG_TIME_FORMAT
                       )}`;
-                    case BuildStatus.Canceled:
+                    case BuildbucketStatus.Canceled:
                       return `after ${displayDuration(
                         build.endTime!.diff(build.createTime)
                       )} by ${build.data.canceledBy || 'unknown'}`;
-                    case BuildStatus.Failure:
-                    case BuildStatus.InfraFailure:
-                    case BuildStatus.Success:
+                    case BuildbucketStatus.Failure:
+                    case BuildbucketStatus.InfraFailure:
+                    case BuildbucketStatus.Success:
                       return `after ${displayDuration(
                         build.endTime!.diff(build.startTime || build.createTime)
                       )}`;

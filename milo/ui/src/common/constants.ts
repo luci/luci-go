@@ -15,7 +15,7 @@
 import { RpcCode } from '@chopsui/prpc-client';
 import { fromPromise } from 'mobx-utils';
 
-import { BuildStatus } from '@/common/services/buildbucket';
+import { BuildbucketStatus } from '@/common/services/buildbucket';
 import { TestVerdictStatus } from '@/common/services/luci_analysis';
 import {
   InvocationState,
@@ -89,48 +89,48 @@ export const TEST_STATUS_DISPLAY_MAP = Object.freeze({
 });
 
 export const BUILD_STATUS_DISPLAY_MAP = Object.freeze({
-  [BuildStatus.Scheduled]: 'scheduled',
-  [BuildStatus.Started]: 'running',
-  [BuildStatus.Success]: 'succeeded',
-  [BuildStatus.Failure]: 'failed',
-  [BuildStatus.InfraFailure]: 'infra failed',
-  [BuildStatus.Canceled]: 'canceled',
+  [BuildbucketStatus.Scheduled]: 'scheduled',
+  [BuildbucketStatus.Started]: 'running',
+  [BuildbucketStatus.Success]: 'succeeded',
+  [BuildbucketStatus.Failure]: 'failed',
+  [BuildbucketStatus.InfraFailure]: 'infra failed',
+  [BuildbucketStatus.Canceled]: 'canceled',
 });
 
 export const BUILD_STATUS_CLASS_MAP = Object.freeze({
-  [BuildStatus.Scheduled]: 'scheduled',
-  [BuildStatus.Started]: 'started',
-  [BuildStatus.Success]: 'success',
-  [BuildStatus.Failure]: 'failure',
-  [BuildStatus.InfraFailure]: 'infra-failure',
-  [BuildStatus.Canceled]: 'canceled',
+  [BuildbucketStatus.Scheduled]: 'scheduled',
+  [BuildbucketStatus.Started]: 'started',
+  [BuildbucketStatus.Success]: 'success',
+  [BuildbucketStatus.Failure]: 'failure',
+  [BuildbucketStatus.InfraFailure]: 'infra-failure',
+  [BuildbucketStatus.Canceled]: 'canceled',
 });
 
 export const BUILD_STATUS_ICON_MAP = Object.freeze({
-  [BuildStatus.Scheduled]: 'schedule',
-  [BuildStatus.Started]: 'pending',
-  [BuildStatus.Success]: 'check_circle',
-  [BuildStatus.Failure]: 'error',
-  [BuildStatus.InfraFailure]: 'report',
-  [BuildStatus.Canceled]: 'cancel',
+  [BuildbucketStatus.Scheduled]: 'schedule',
+  [BuildbucketStatus.Started]: 'pending',
+  [BuildbucketStatus.Success]: 'check_circle',
+  [BuildbucketStatus.Failure]: 'error',
+  [BuildbucketStatus.InfraFailure]: 'report',
+  [BuildbucketStatus.Canceled]: 'cancel',
 });
 
 export const BUILD_STATUS_COLOR_MAP = Object.freeze({
-  [BuildStatus.Scheduled]: 'var(--scheduled-color)',
-  [BuildStatus.Started]: 'var(--started-color)',
-  [BuildStatus.Success]: 'var(--success-color)',
-  [BuildStatus.Failure]: 'var(--failure-color)',
-  [BuildStatus.InfraFailure]: 'var(--critical-failure-color)',
-  [BuildStatus.Canceled]: 'var(--canceled-color)',
+  [BuildbucketStatus.Scheduled]: 'var(--scheduled-color)',
+  [BuildbucketStatus.Started]: 'var(--started-color)',
+  [BuildbucketStatus.Success]: 'var(--success-color)',
+  [BuildbucketStatus.Failure]: 'var(--failure-color)',
+  [BuildbucketStatus.InfraFailure]: 'var(--critical-failure-color)',
+  [BuildbucketStatus.Canceled]: 'var(--canceled-color)',
 });
 
 export const BUILD_STATUS_COLOR_THEME_MAP = Object.freeze({
-  [BuildStatus.Scheduled]: 'scheduled',
-  [BuildStatus.Started]: 'started',
-  [BuildStatus.Success]: 'success',
-  [BuildStatus.Failure]: 'error',
-  [BuildStatus.InfraFailure]: 'criticalFailure',
-  [BuildStatus.Canceled]: 'canceled',
+  [BuildbucketStatus.Scheduled]: 'scheduled',
+  [BuildbucketStatus.Started]: 'started',
+  [BuildbucketStatus.Success]: 'success',
+  [BuildbucketStatus.Failure]: 'error',
+  [BuildbucketStatus.InfraFailure]: 'criticalFailure',
+  [BuildbucketStatus.Canceled]: 'canceled',
 });
 
 export const BOT_STATUS_LABEL_MAP = Object.freeze({

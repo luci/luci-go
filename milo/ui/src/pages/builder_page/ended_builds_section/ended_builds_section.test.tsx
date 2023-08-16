@@ -17,7 +17,7 @@ import { DateTime } from 'luxon';
 
 import {
   Build,
-  BuildStatus,
+  BuildbucketStatus,
   BuildsService,
   SearchBuildsResponse,
 } from '@/common/services/buildbucket';
@@ -40,7 +40,7 @@ function createMockBuild(id: string): Build {
   return {
     id,
     builder: builderId,
-    status: BuildStatus.Success,
+    status: BuildbucketStatus.Success,
     createTime: '2020-01-01',
   };
 }
