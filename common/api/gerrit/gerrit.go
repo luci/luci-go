@@ -462,6 +462,64 @@ type CommentInput struct {
 	Unresolved bool `json:"unresolved,omitempty"`
 }
 
+// The RobotCommentInput entity contains information for creating an inline
+// robot comment.
+type RobotCommentInput struct {
+	// The name of the robot that generated this comment.
+	// Required
+	RobotID string `json:"robot_id"`
+
+	// A unique ID of the run of the robot.
+	// Required
+	RobotRunID string `json:"robot_run_id"`
+
+	// The file path for which the inline comment should be added.
+	Path string `json:"path,omitempty"`
+
+	// The side on which the comment should be added.
+	// Allowed values are REVISION and PARENT.
+	// If not set, the default is REVISION.
+	// Optional
+	Side string `json:"side,omitempty"`
+
+	// The number of the line for which the comment should be added.
+	// 0 if it is a file comment.
+	// If neither line nor range is set, a file comment is added.
+	// If range is set, this value is ignored in favor of the end_line of the range.
+	// Optional
+	Line int `json:"line,omitempty"`
+
+	// The range of the comment as a CommentRange entity.
+	// Optional
+	Range CommentRange `json:"range,omitempty"`
+
+	// The URL encoded UUID of the comment to which this comment is a reply.
+	// Optional
+	InReplyTo string `json:"in_reply_to,omitempty"`
+
+	// The comment message.
+	// If not set and an existing draft comment is updated, the existing draft comment is deleted.
+	// Optional
+	Message string `json:"message,omitempty"`
+
+	// Suggested fixes.
+	FixSuggestions []FixSuggestion `json:"fix_suggestions,omitempty"`
+}
+
+// FixSuggestion represents a suggested fix for a robot comment.
+type FixSuggestion struct {
+	Description  string        `json:"description"`
+	Replacements []Replacement `json:"replacements"`
+}
+
+// Replacement represents a potential source replacement for applying a
+// suggested fix.
+type Replacement struct {
+	Path        string       `json:"path"`
+	Replacement string       `json:"replacement"`
+	Range       CommentRange `json:"range,omitempty"`
+}
+
 // CommentRange is included within Comment. See Comment for more details.
 type CommentRange struct {
 	StartLine      int `json:"start_line"`
@@ -699,11 +757,13 @@ type ReviewerInput struct {
 
 // ReviewInput contains information for adding a review to a revision.
 //
-// TODO(mknyszek): Add support for robot_comments, drafts, notify, and
-// omit_duplicate_comments.
+// TODO(mknyszek): Add support for drafts, notify, and omit_duplicate_comments.
 type ReviewInput struct {
 	// Inline comments to be added to the revision.
 	Comments map[string][]CommentInput `json:"comments,omitempty"`
+
+	// Robot comments to be added to the revision.
+	RobotComments map[string][]RobotCommentInput `json:"robot_comments,omitempty"`
 
 	// Message is the message to be added as a review comment.
 	Message string `json:"message,omitempty"`
