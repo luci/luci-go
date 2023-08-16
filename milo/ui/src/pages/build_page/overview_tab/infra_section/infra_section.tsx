@@ -17,6 +17,7 @@ import { observer } from 'mobx-react-lite';
 import { useStore } from '@/common/store';
 
 import { AncestorBuildsRow } from './ancestor_build_row';
+import { BackendRows } from './backend_rows';
 import { BotLinkRow } from './bot_link_row';
 import { BuildbucketRow } from './buildbucket_row';
 import { InvocationRow } from './invocation_row';
@@ -38,6 +39,9 @@ export const InfraSection = observer(() => {
       <table>
         <tbody>
           <BuildbucketRow buildId={build.data.id} />
+          {build.data.infra?.backend && (
+            <BackendRows backend={build.data.infra.backend} />
+          )}
           {build.data.infra?.swarming && (
             <>
               <SwarmingTaskRow swarming={build.data.infra.swarming} />
@@ -46,7 +50,7 @@ export const InfraSection = observer(() => {
             </>
           )}
           <AncestorBuildsRow ancestorBuildIds={build.data.ancestorIds} />
-          {build?.recipeLink && <RecipeRow recipeLink={build.recipeLink} />}
+          {build.recipeLink && <RecipeRow recipeLink={build.recipeLink} />}
           <InvocationRow resultdb={build.data.infra?.resultdb} />
         </tbody>
       </table>
