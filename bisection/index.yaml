@@ -43,3 +43,16 @@ indexes:
   properties:
   - name: nthsection_analysis_key
   - name: rerun_create_time
+
+- kind: TestSingleRerun
+  properties:
+  - name: project
+  - name: status
+  - name: create_time
+
+- kind: CompileRerunBuild
+  properties:
+  - name: project
+  - name: status
+  - name: create_time
+

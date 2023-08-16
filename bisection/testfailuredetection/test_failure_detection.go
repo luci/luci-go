@@ -44,6 +44,13 @@ const (
 	queue     = "test-failure-detection"
 )
 
+var taskClassRef = tq.RegisterTaskClass(tq.TaskClass{
+	ID:        taskClass,
+	Prototype: (*tpb.TestFailureDetectionTask)(nil),
+	Queue:     queue,
+	Kind:      tq.NonTransactional,
+})
+
 // RegisterTaskClass registers the task class for tq dispatcher.
 func RegisterTaskClass(srv *server.Server, luciAnalysisProject string) error {
 	ctx := srv.Context
@@ -54,27 +61,22 @@ func RegisterTaskClass(srv *server.Server, luciAnalysisProject string) error {
 	srv.RegisterCleanup(func(context.Context) {
 		ac.Close()
 	})
-	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        taskClass,
-		Prototype: (*tpb.TestFailureDetectionTask)(nil),
-		Queue:     queue,
-		Kind:      tq.NonTransactional,
-		Handler: func(c context.Context, payload proto.Message) error {
-			task := payload.(*tpb.TestFailureDetectionTask)
-			logging.Infof(c, "Processing test failure detection task with project = %s", task.Project)
-			err := Run(ctx, ac, task)
-			if err != nil {
-				err = errors.Annotate(err, "run detection").Err()
-				logging.Errorf(ctx, err.Error())
-				// If the error is transient, return err to retry.
-				if transient.Tag.In(err) {
-					return err
-				}
-				return nil
+	handler := func(c context.Context, payload proto.Message) error {
+		task := payload.(*tpb.TestFailureDetectionTask)
+		logging.Infof(c, "Processing test failure detection task %v", task)
+		err := Run(ctx, ac, task)
+		if err != nil {
+			err = errors.Annotate(err, "run detection").Err()
+			logging.Errorf(ctx, err.Error())
+			// If the error is transient, return err to retry.
+			if transient.Tag.In(err) {
+				return err
 			}
 			return nil
-		},
-	})
+		}
+		return nil
+	}
+	taskClassRef.AttachHandler(handler)
 	return nil
 }
 

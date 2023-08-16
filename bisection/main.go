@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/bisection/server"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection"
 	"go.chromium.org/luci/bisection/testfailuredetection"
+	"go.chromium.org/luci/bisection/throttle"
 	"go.chromium.org/luci/grpc/prpc"
 
 	"github.com/golang/protobuf/proto"
@@ -146,6 +147,7 @@ func main() {
 		// GAE crons
 		cron.RegisterHandler("update-config", config.Update)
 		cron.RegisterHandler("collect-global-metrics", metrics.CollectGlobalMetrics)
+		cron.RegisterHandler("throttle-bisection", throttle.CronHandler)
 
 		// Task queues
 		compilefailuredetection.RegisterTaskClass()

@@ -293,6 +293,34 @@ func UpdateIndices(c context.Context) {
 				},
 			},
 		},
+		&datastore.IndexDefinition{
+			Kind: "CompileRerunBuild",
+			SortBy: []datastore.IndexColumn{
+				{
+					Property: "project",
+				},
+				{
+					Property: "status",
+				},
+				{
+					Property: "create_time",
+				},
+			},
+		},
+		&datastore.IndexDefinition{
+			Kind: "TestSingleRerun",
+			SortBy: []datastore.IndexColumn{
+				{
+					Property: "project",
+				},
+				{
+					Property: "status",
+				},
+				{
+					Property: "create_time",
+				},
+			},
+		},
 	)
 	datastore.GetTestable(c).CatchupIndexes()
 }
