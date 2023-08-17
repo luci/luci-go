@@ -93,7 +93,6 @@ message Build {
 
   // Result of the build executable.
   message Output {
-    reserved 2; // summary_markdown, was moved to Build.
     reserved 4; // critical, was moved to Build.
 
     // Arbitrary JSON object produced by the build.
@@ -126,7 +125,9 @@ message Build {
     // Build status which is reported by the client via StartBuild or UpdateBuild.
     Status status = 6;
     StatusDetails status_details = 7;
+    // Deprecated. Use summary_markdown instead.
     string summary_html = 8;
+    string summary_markdown = 2;
   }
 
   reserved 5; // view_url

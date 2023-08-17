@@ -103,9 +103,9 @@ func validateUpdate(ctx context.Context, req *pb.UpdateBuildRequest, bs *model.B
 			}
 			buildStatus = req.Build.Output.Status
 		case "build.output.status_details":
-		case "build.output.summary_html":
-			if err := validateSummaryMarkdown(req.Build.Output.GetSummaryHtml()); err != nil {
-				return errors.Annotate(err, "build.output.summary_html").Err()
+		case "build.output.summary_markdown":
+			if err := validateSummaryMarkdown(req.Build.Output.GetSummaryMarkdown()); err != nil {
+				return errors.Annotate(err, "build.output.summary_markdown").Err()
 			}
 		case "build.output.properties":
 			for k, v := range req.Build.Output.GetProperties().AsMap() {

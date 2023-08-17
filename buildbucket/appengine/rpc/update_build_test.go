@@ -184,10 +184,10 @@ func TestValidateUpdate(t *testing.T) {
 		})
 	})
 
-	Convey("validate output.summary_html", t, func() {
+	Convey("validate output.summary_markdown", t, func() {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
-		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output.summary_html"}}
-		req.Build.Output = &pb.Build_Output{SummaryHtml: strings.Repeat("☕", protoutil.SummaryMarkdownMaxLength)}
+		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output.summary_markdown"}}
+		req.Build.Output = &pb.Build_Output{SummaryMarkdown: strings.Repeat("☕", protoutil.SummaryMarkdownMaxLength)}
 		So(validateUpdate(ctx, req, nil), ShouldErrLike, "too big to accept")
 	})
 
@@ -687,7 +687,7 @@ func TestUpdateBuild(t *testing.T) {
 				{"build.output.status_details", ""},
 				{"build.status_details", ""},
 				{"build.steps", ""},
-				{"build.output.summary_html", ""},
+				{"build.output.summary_markdown", ""},
 				{"build.summary_markdown", ""},
 				{"build.tags", ""},
 				{"build.output.gitiles_commit", "ref is required"},

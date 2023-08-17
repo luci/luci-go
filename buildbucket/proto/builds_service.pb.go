@@ -424,7 +424,7 @@ type UpdateBuildRequest struct {
 	// - build.output.gitiles_commit
 	// - build.output.status
 	// - build.output.status_details
-	// - build.output.summary_html
+	// - build.output.summary_markdown
 	// - build.status
 	// - build.status_details
 	// - build.steps

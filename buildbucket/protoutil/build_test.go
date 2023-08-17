@@ -156,11 +156,11 @@ func TestMergeSummary(t *testing.T) {
 			b := &pb.Build{
 				SummaryMarkdown: "summary",
 				Output: &pb.Build_Output{
-					SummaryHtml: "<pre>summary</pre>",
+					SummaryMarkdown: "summary",
 				},
 				CancellationMarkdown: "cancellation",
 			}
-			So(MergeSummary(b), ShouldEqual, "<pre>summary</pre>\ncancellation")
+			So(MergeSummary(b), ShouldEqual, "summary\ncancellation")
 		})
 	})
 }
