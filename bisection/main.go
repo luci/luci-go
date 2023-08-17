@@ -52,6 +52,7 @@ import (
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 )
 
@@ -87,6 +88,7 @@ func main() {
 		cfgmodule.NewModuleFromFlags(),
 		cron.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
+		secrets.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
 	}
 	luciAnalysisProject := ""
