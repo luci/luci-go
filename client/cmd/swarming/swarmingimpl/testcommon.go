@@ -23,7 +23,6 @@ import (
 
 	swarmingv1 "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
-	"google.golang.org/api/googleapi"
 )
 
 var _ swarmingService = (*testService)(nil)
@@ -32,7 +31,7 @@ type testService struct {
 	newTask      func(context.Context, *swarmingv1.SwarmingRpcsNewTaskRequest) (*swarmingv1.SwarmingRpcsTaskRequestMetadata, error)
 	countTasks   func(context.Context, float64, string, ...string) (*swarmingv1.SwarmingRpcsTasksCount, error)
 	countBots    func(context.Context, []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error)
-	listTasks    func(context.Context, int64, float64, string, []string, []googleapi.Field) ([]*swarmingv1.SwarmingRpcsTaskResult, error)
+	listTasks    func(context.Context, int32, float64, swarmingv2.StateQuery, []string) ([]*swarmingv2.TaskResultResponse, error)
 	cancelTask   func(context.Context, string, bool) (*swarmingv2.CancelResponse, error)
 	taskRequest  func(context.Context, string) (*swarmingv2.TaskRequestResponse, error)
 	taskOutput   func(context.Context, string) (*swarmingv2.TaskOutputResponse, error)
@@ -41,7 +40,7 @@ type testService struct {
 	listBots     func(context.Context, []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error)
 	deleteBot    func(context.Context, string) (*swarmingv2.DeleteResponse, error)
 	terminateBot func(context.Context, string, string) (*swarmingv2.TerminateResponse, error)
-	listBotTasks func(context.Context, string, int64, float64, string, []googleapi.Field) ([]*swarmingv1.SwarmingRpcsTaskResult, error)
+	listBotTasks func(context.Context, string, int32, float64, swarmingv2.StateQuery) ([]*swarmingv2.TaskResultResponse, error)
 }
 
 func (testService) Client() *http.Client {
@@ -56,8 +55,8 @@ func (s testService) CountTasks(ctx context.Context, start float64, state string
 	return s.countTasks(ctx, start, state, tags...)
 }
 
-func (s testService) ListTasks(ctx context.Context, limit int64, start float64, state string, tags []string, fields []googleapi.Field) ([]*swarmingv1.SwarmingRpcsTaskResult, error) {
-	return s.listTasks(ctx, limit, start, state, tags, fields)
+func (s testService) ListTasks(ctx context.Context, limit int32, start float64, state swarmingv2.StateQuery, tags []string) ([]*swarmingv2.TaskResultResponse, error) {
+	return s.listTasks(ctx, limit, start, state, tags)
 }
 
 func (s testService) CancelTask(ctx context.Context, taskID string, killRunning bool) (*swarmingv2.CancelResponse, error) {
@@ -96,8 +95,8 @@ func (s testService) TerminateBot(ctx context.Context, botID string, reason stri
 	return s.terminateBot(ctx, botID, reason)
 }
 
-func (s testService) ListBotTasks(ctx context.Context, botID string, limit int64, start float64, state string, fields []googleapi.Field) ([]*swarmingv1.SwarmingRpcsTaskResult, error) {
-	return s.listBotTasks(ctx, botID, limit, start, state, fields)
+func (s testService) ListBotTasks(ctx context.Context, botID string, limit int32, start float64, state swarmingv2.StateQuery) ([]*swarmingv2.TaskResultResponse, error) {
+	return s.listBotTasks(ctx, botID, limit, start, state)
 }
 
 var _ AuthFlags = (*testAuthFlags)(nil)

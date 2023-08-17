@@ -19,6 +19,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"sort"
@@ -43,6 +44,7 @@ import (
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -63,7 +65,7 @@ const (
 	UserEnvVar = "USER"
 
 	// Number of tasks and bots to grab in List* requests
-	Limit = 1000
+	DefaultNumberToFetch = 1000
 )
 
 // TriggerResults is a set of results from using the trigger subcommand,
@@ -86,7 +88,7 @@ const swarmingAPISuffix = "/_ah/api/swarming/v1/"
 type swarmingService interface {
 	NewTask(ctx context.Context, req *swarmingv1.SwarmingRpcsNewTaskRequest) (*swarmingv1.SwarmingRpcsTaskRequestMetadata, error)
 	CountTasks(ctx context.Context, start float64, state string, tags ...string) (*swarmingv1.SwarmingRpcsTasksCount, error)
-	ListTasks(ctx context.Context, limit int64, start float64, state string, tags []string, fields []googleapi.Field) ([]*swarmingv1.SwarmingRpcsTaskResult, error)
+	ListTasks(ctx context.Context, limit int32, start float64, state swarmingv2.StateQuery, tags []string) ([]*swarmingv2.TaskResultResponse, error)
 	CancelTask(ctx context.Context, taskID string, killRunning bool) (*swarmingv2.CancelResponse, error)
 	TaskRequest(ctx context.Context, taskID string) (*swarmingv2.TaskRequestResponse, error)
 	TaskOutput(ctx context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error)
@@ -96,7 +98,7 @@ type swarmingService interface {
 	ListBots(ctx context.Context, dimensions []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error)
 	DeleteBot(ctx context.Context, botID string) (*swarmingv2.DeleteResponse, error)
 	TerminateBot(ctx context.Context, botID string, reason string) (*swarmingv2.TerminateResponse, error)
-	ListBotTasks(ctx context.Context, botID string, limit int64, start float64, state string, fields []googleapi.Field) ([]*swarmingv1.SwarmingRpcsTaskResult, error)
+	ListBotTasks(ctx context.Context, botID string, limit int32, start float64, state swarmingv2.StateQuery) ([]*swarmingv2.TaskResultResponse, error)
 }
 
 type swarmingServiceImpl struct {
@@ -122,36 +124,39 @@ func (s *swarmingServiceImpl) CountTasks(ctx context.Context, start float64, sta
 	return
 }
 
-func (s *swarmingServiceImpl) ListTasks(ctx context.Context, limit int64, start float64, state string, tags []string, fields []googleapi.Field) ([]*swarmingv1.SwarmingRpcsTaskResult, error) {
+func (s *swarmingServiceImpl) ListTasks(ctx context.Context, limit int32, start float64, state swarmingv2.StateQuery, tags []string) ([]*swarmingv2.TaskResultResponse, error) {
 	// Create an empty array so that if serialized to JSON it's an empty list,
 	// not null.
-	tasks := []*swarmingv1.SwarmingRpcsTaskResult{}
-	// If no fields are specified, all fields will be returned. If any fields are
-	// specified, ensure the cursor is specified so we can get subsequent pages.
-	if len(fields) > 0 {
-		fields = append(fields, "cursor")
-	}
-	call := s.service.Tasks.List().Context(ctx).Limit(limit).Start(start).State(state).Tags(tags...).Fields(fields...)
+	tasks := make([]*swarmingv2.TaskResultResponse, 0, limit)
+	cursor := ""
 	// Keep calling as long as there's a cursor indicating more tasks to list.
 	for {
-		var res *swarmingv1.SwarmingRpcsTaskList
-		err := retryGoogleRPC(ctx, "ListTasks", func() (ierr error) {
-			res, ierr = call.Do()
-			return
-		})
+		var numberToFetch int32
+		if limit < DefaultNumberToFetch {
+			numberToFetch = limit
+		} else {
+			numberToFetch = DefaultNumberToFetch
+		}
+		req := &swarmingv2.TasksWithPerfRequest{
+			Cursor:                  cursor,
+			Limit:                   numberToFetch,
+			IncludePerformanceStats: false,
+		}
+		if start > 0 {
+			req.Start = &timestamppb.Timestamp{
+				Seconds: int64(start),
+			}
+		}
+		tl, err := s.tasksClient.ListTasks(ctx, req)
 		if err != nil {
 			return tasks, err
 		}
-
-		tasks = append(tasks, res.Items...)
-		if res.Cursor == "" || int64(len(tasks)) >= limit || len(res.Items) == 0 {
+		limit -= int32(len(tl.Items))
+		tasks = append(tasks, tl.Items...)
+		cursor = tl.Cursor
+		if cursor == "" || limit <= 0 {
 			break
 		}
-		call.Cursor(res.Cursor)
-	}
-
-	if int64(len(tasks)) > limit {
-		tasks = tasks[0:limit]
 	}
 
 	return tasks, nil
@@ -235,10 +240,10 @@ func (s *swarmingServiceImpl) ListBots(ctx context.Context, dimensions []*swarmi
 	// a hard-coded maximum page size of 1000, and a default Limit of 200.
 	cursor := ""
 	// Keep calling as long as there's a cursor indicating more bots to list.
-	bots := make([]*swarmingv2.BotInfo, 0, Limit)
+	bots := make([]*swarmingv2.BotInfo, 0, DefaultNumberToFetch)
 	for {
 		resp, err := s.botsClient.ListBots(ctx, &swarmingv2.BotsRequest{
-			Limit:      Limit,
+			Limit:      DefaultNumberToFetch,
 			Cursor:     cursor,
 			Dimensions: dimensions,
 		})
@@ -268,40 +273,107 @@ func (s *swarmingServiceImpl) TerminateBot(ctx context.Context, botID string, re
 	})
 }
 
-func (s *swarmingServiceImpl) ListBotTasks(ctx context.Context, botID string, limit int64, start float64, state string, fields []googleapi.Field) (res []*swarmingv1.SwarmingRpcsTaskResult, err error) {
+func stateMap(value string) (state swarmingv2.StateQuery, err error) {
+	value = strings.ToLower(value)
+	switch value {
+	case "pending":
+		state = swarmingv2.StateQuery_QUERY_PENDING
+	case "running":
+		state = swarmingv2.StateQuery_QUERY_RUNNING
+	case "pending_running":
+		state = swarmingv2.StateQuery_QUERY_PENDING_RUNNING
+	case "completed":
+		state = swarmingv2.StateQuery_QUERY_COMPLETED
+	case "completed_success":
+		state = swarmingv2.StateQuery_QUERY_COMPLETED_SUCCESS
+	case "completed_failure":
+		state = swarmingv2.StateQuery_QUERY_COMPLETED_FAILURE
+	case "expired":
+		state = swarmingv2.StateQuery_QUERY_EXPIRED
+	case "timed_out":
+		state = swarmingv2.StateQuery_QUERY_TIMED_OUT
+	case "bot_died":
+		state = swarmingv2.StateQuery_QUERY_BOT_DIED
+	case "canceled":
+		state = swarmingv2.StateQuery_QUERY_CANCELED
+	case "":
+	case "all":
+		state = swarmingv2.StateQuery_QUERY_ALL
+	case "deduped":
+		state = swarmingv2.StateQuery_QUERY_DEDUPED
+	case "killed":
+		state = swarmingv2.StateQuery_QUERY_KILLED
+	case "no_resource":
+		state = swarmingv2.StateQuery_QUERY_NO_RESOURCE
+	case "client_error":
+		state = swarmingv2.StateQuery_QUERY_CLIENT_ERROR
+	default:
+		err = errors.Reason("Invalid state %s", value).Err()
+	}
+	return state, err
+}
+
+func writeOutput(outfile string, quiet bool, writer func(io.Writer) error) (err error) {
+	writers := make([]io.Writer, 0, 2)
+	if !quiet {
+		writers = append(writers, os.Stdout)
+	}
+	if outfile != "" {
+		f, err := os.OpenFile(outfile, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if closeErr := f.Close(); closeErr != nil {
+				if err == nil {
+					err = closeErr
+				} else {
+					err = errors.Append(closeErr, err)
+				}
+			}
+		}()
+		writers = append(writers, f)
+	}
+	out := io.MultiWriter(writers...)
+	return writer(out)
+}
+
+func (s *swarmingServiceImpl) ListBotTasks(ctx context.Context, botID string, limit int32, start float64, state swarmingv2.StateQuery) (res []*swarmingv2.TaskResultResponse, err error) {
 	// Create an empty array so that if serialized to JSON it's an empty list,
 	// not null.
-	tasks := []*swarmingv1.SwarmingRpcsTaskResult{}
-	// If no fields are specified, all fields will be returned. If any fields are
-	// specified, ensure the cursor is specified so we can get subsequent pages.
-	if len(fields) > 0 {
-		fields = append(fields, "cursor")
-	}
+	tasks := make([]*swarmingv2.TaskResultResponse, 0, limit)
+	cursor := ""
 
-	call := s.service.Bot.Tasks(botID).Context(ctx).Limit(limit).Start(start).Fields(fields...)
-	if state != "" {
-		call = call.State(state)
-	}
 	// Keep calling as long as there's a cursor indicating more tasks to list.
 	for {
-		var res *swarmingv1.SwarmingRpcsBotTasks
-		err := retryGoogleRPC(ctx, "ListBotTasks", func() (ierr error) {
-			res, ierr = call.Do()
-			return
-		})
+		var numberToFetch int32
+		if limit < DefaultNumberToFetch {
+			numberToFetch = limit
+		} else {
+			numberToFetch = DefaultNumberToFetch
+		}
+		req := &swarmingv2.BotTasksRequest{
+			BotId:                   botID,
+			Cursor:                  cursor,
+			Limit:                   numberToFetch,
+			State:                   state,
+			IncludePerformanceStats: false,
+		}
+		if start > 0 {
+			req.Start = &timestamppb.Timestamp{
+				Seconds: int64(start),
+			}
+		}
+		lbt, err := s.botsClient.ListBotTasks(ctx, req)
 		if err != nil {
 			return tasks, err
 		}
-
-		tasks = append(tasks, res.Items...)
-		if res.Cursor == "" || int64(len(tasks)) >= limit || len(res.Items) == 0 {
+		limit -= int32(len(lbt.Items))
+		tasks = append(tasks, lbt.Items...)
+		cursor = lbt.Cursor
+		if cursor == "" || limit <= 0 {
 			break
 		}
-		call.Cursor(res.Cursor)
-	}
-
-	if int64(len(tasks)) > limit {
-		tasks = tasks[0:limit]
 	}
 
 	return tasks, nil
@@ -338,6 +410,15 @@ type AuthFlags interface {
 
 	// NewRBEClient creates an authroised RBE Client.
 	NewRBEClient(ctx context.Context, addr string, instance string) (*rbeclient.Client, error)
+}
+
+type taskResultResponse struct {
+	options *protojson.MarshalOptions
+	result  *swarmingv2.TaskResultResponse
+}
+
+func (tr *taskResultResponse) MarshalJSON() ([]byte, error) {
+	return tr.options.Marshal(tr.result)
 }
 
 type commonFlags struct {

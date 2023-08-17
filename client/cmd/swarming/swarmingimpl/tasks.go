@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 
 	"google.golang.org/api/googleapi"
@@ -43,7 +44,7 @@ func CmdTasks(authFlags AuthFlags) *subcommands.Command {
 	}
 }
 
-const defaultLimit int64 = 200
+const defaultLimit = 200
 
 type tasksRun struct {
 	commonFlags
@@ -94,6 +95,46 @@ func (t *tasksRun) Parse() error {
 	return nil
 }
 
+func (t *tasksRun) tasks(ctx context.Context, service swarmingService, out io.Writer) error {
+	var output []byte
+	if t.count {
+		data, err := service.CountTasks(ctx, t.start, t.state, t.tags...)
+		if err != nil {
+			return err
+		}
+		output, err = json.MarshalIndent(data, "", DefaultIndent)
+		if err != nil {
+			return err
+		}
+	} else {
+		state, err := stateMap(t.state)
+		if err != nil {
+			return err
+		}
+		data, err := service.ListTasks(ctx, int32(t.limit), t.start, state, t.tags)
+		if err != nil {
+			return err
+		}
+		toOutput := make([]*taskResultResponse, len(data))
+		options := DefaultProtoMarshalOpts()
+		for idx, tr := range data {
+			toOutput[idx] = &taskResultResponse{
+				options: &options,
+				result:  tr,
+			}
+		}
+		output, err = json.MarshalIndent(toOutput, "", DefaultIndent)
+		if err != nil {
+			return err
+		}
+	}
+	_, err := out.Write(append(output, '\n'))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (t *tasksRun) main(_ subcommands.Application) error {
 	ctx, cancel := context.WithCancel(t.defaultFlags.MakeLoggingContext(os.Stderr))
 	signals.HandleInterrupt(cancel)
@@ -101,33 +142,9 @@ func (t *tasksRun) main(_ subcommands.Application) error {
 	if err != nil {
 		return err
 	}
-	var data any
-	if t.count {
-		if data, err = service.CountTasks(ctx, t.start, t.state, t.tags...); err != nil {
-			return err
-		}
-	} else {
-		if data, err = service.ListTasks(ctx, t.limit, t.start, t.state, t.tags, t.fields); err != nil {
-			return err
-		}
-	}
-	if !t.defaultFlags.Quiet {
-		j, err := json.MarshalIndent(data, "", " ")
-		if err != nil {
-			return err
-		}
-		fmt.Printf("%s\n", j)
-	}
-	if t.outfile != "" {
-		j, err := json.Marshal(data)
-		if err != nil {
-			return err
-		}
-		if err = os.WriteFile(t.outfile, j, 0644); err != nil {
-			return err
-		}
-	}
-	return nil
+	return writeOutput(t.outfile, t.defaultFlags.Quiet, func(out io.Writer) error {
+		return t.tasks(ctx, service, out)
+	})
 }
 
 func (t *tasksRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {

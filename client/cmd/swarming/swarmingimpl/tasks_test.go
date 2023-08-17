@@ -15,10 +15,14 @@
 package swarmingimpl
 
 import (
+	"bytes"
+	"context"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+
+	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func tasksExpectErr(argv []string, errLike string) {
@@ -52,5 +56,44 @@ func TestTasksParse(t *testing.T) {
 	Convey(`Make sure that Parse forbids -field or -limit to be used with -count.`, t, func() {
 		tasksExpectErr([]string{"-count", "-start", "1337", "-field", "items/task_id"}, "-field cannot")
 		tasksExpectErr([]string{"-count", "-start", "1337", "-limit", "100"}, "-limit cannot")
+	})
+}
+
+func TestListTasksOutput(t *testing.T) {
+	tr := tasksRun{}
+	tags := []string{"t:1", "t:2"}
+	tr.tags = tags
+	tr.state = "pending"
+	expectedTasks := []*swarmingv2.TaskResultResponse{
+		&swarmingv2.TaskResultResponse{
+			TaskId: "task1",
+		},
+		&swarmingv2.TaskResultResponse{
+			TaskId: "task2",
+		},
+	}
+	service := &testService{
+		listTasks: func(ctx context.Context, i int32, f float64, sq swarmingv2.StateQuery, s []string) ([]*swarmingv2.TaskResultResponse, error) {
+			So(s, ShouldEqual, tags)
+			So(swarmingv2.StateQuery_QUERY_PENDING, ShouldEqual, sq)
+			return expectedTasks, nil
+		},
+	}
+	ctx := context.Background()
+	Convey(`Expected tasks are outputted to the filewriter`, t, func() {
+		out := new(bytes.Buffer)
+		err := tr.tasks(ctx, service, out)
+		So(err, ShouldBeNil)
+		actual := out.Bytes()
+		expected := `[
+ {
+  "task_id": "task1"
+ },
+ {
+  "task_id": "task2"
+ }
+]
+`
+		So(string(actual), ShouldEqual, expected)
 	})
 }

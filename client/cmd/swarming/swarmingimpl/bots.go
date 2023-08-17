@@ -147,28 +147,9 @@ func (b *botsRun) main(_ subcommands.Application) (err error) {
 	if err != nil {
 		return err
 	}
-	writers := make([]io.Writer, 0, 2)
-	if !b.defaultFlags.Quiet {
-		writers = append(writers, os.Stdout)
-	}
-	if b.outfile != "" {
-		f, err := os.OpenFile(b.outfile, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			return err
-		}
-		defer func() {
-			if closeErr := f.Close(); closeErr != nil {
-				if err == nil {
-					err = closeErr
-				} else {
-					err = errors.Append(closeErr, err)
-				}
-			}
-		}()
-		writers = append(writers, f)
-	}
-	out := io.MultiWriter(writers...)
-	return b.bots(ctx, service, out)
+	return writeOutput(b.outfile, b.defaultFlags.Quiet, func(out io.Writer) error {
+		return b.bots(ctx, service, out)
+	})
 }
 
 func (b *botsRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {

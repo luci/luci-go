@@ -95,6 +95,7 @@ func getApplication() *subcommands.DefaultApplication {
 			swarmingimpl.CmdBots(af),
 			swarmingimpl.CmdDeleteBots(af),
 			swarmingimpl.CmdTerminateBot(af),
+			swarmingimpl.CmdBotTasks(af),
 			subcommands.Section("other commands\n"),
 			subcommands.CmdHelp,
 			authcli.SubcommandInfo(authOpts, "whoami", false),

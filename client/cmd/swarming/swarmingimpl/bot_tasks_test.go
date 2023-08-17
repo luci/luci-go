@@ -15,10 +15,14 @@
 package swarmingimpl
 
 import (
+	"bytes"
+	"context"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+
+	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func botTasksExpectErr(argv []string, errLike string) {
@@ -41,5 +45,49 @@ func TestBotTasksParse(t *testing.T) {
 
 	Convey(`Make sure that Parse fails with negative -limit.`, t, func() {
 		botTasksExpectErr([]string{"-id", "device_id", "-limit", "-1"}, "invalid -limit")
+	})
+
+	Convey(`Make sure that Parse fails with invalid -state.`, t, func() {
+		botTasksExpectErr([]string{"-id", "device_id", "-state", "invalid_state"}, "Invalid state invalid_state")
+	})
+}
+
+func TestListBotTasksOutput(t *testing.T) {
+	botID := "bot1"
+	b := botTasksRun{
+		state: "",
+		botID: botID,
+		limit: defaultLimit,
+	}
+	expectedTasks := []*swarmingv2.TaskResultResponse{
+		&swarmingv2.TaskResultResponse{
+			TaskId: "task1",
+		},
+		&swarmingv2.TaskResultResponse{
+			TaskId: "task2",
+		},
+	}
+	service := &testService{
+		listBotTasks: func(ctx context.Context, s string, i int32, f float64, sq swarmingv2.StateQuery) ([]*swarmingv2.TaskResultResponse, error) {
+			So(s, ShouldEqual, botID)
+			return expectedTasks, nil
+		},
+	}
+	ctx := context.Background()
+	Convey(`Expected tasks are outputted to the filewriter`, t, func() {
+		out := new(bytes.Buffer)
+		err := b.botTasks(ctx, service, out)
+		So(err, ShouldBeNil)
+		actual := out.Bytes()
+		expected := `[
+ {
+  "task_id": "task1"
+ },
+ {
+  "task_id": "task2"
+ }
+]
+`
+		So(string(actual), ShouldEqual, expected)
 	})
 }

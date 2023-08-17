@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 
 	"google.golang.org/api/googleapi"
@@ -46,7 +47,7 @@ func CmdBotTasks(authFlags AuthFlags) *subcommands.Command {
 type botTasksRun struct {
 	commonFlags
 	botID   string
-	limit   int64
+	limit   int
 	state   string
 	outfile string
 	fields  []googleapi.Field
@@ -56,8 +57,8 @@ type botTasksRun struct {
 func (b *botTasksRun) Init(authFlags AuthFlags) {
 	b.commonFlags.Init(authFlags)
 	b.Flags.StringVar(&b.botID, "id", "", "Bot ID to query for.")
-	b.Flags.Int64Var(&b.limit, "limit", defaultLimit, "Max number of tasks to return.")
-	b.Flags.StringVar(&b.state, "state", "", "Bot task state to filter to.")
+	b.Flags.IntVar(&b.limit, "limit", defaultLimit, "Max number of tasks to return.")
+	b.Flags.StringVar(&b.state, "state", "ALL", "Bot task state to filter to.")
 	b.Flags.StringVar(&b.outfile, "json", "", "Path to output JSON results. Implies quiet.")
 	b.Flags.Var(flag.FieldSlice(&b.fields), "field", "Fields to include in a partial response. May be repeated.")
 	b.Flags.Float64Var(&b.start, "start", 0, "Start time (in seconds since the epoch) for counting tasks.")
@@ -79,7 +80,35 @@ func (b *botTasksRun) Parse() error {
 	if b.limit < 1 {
 		return errors.Reason("invalid -limit %d, must be positive", b.limit).Err()
 	}
+	if _, err := stateMap(b.state); err != nil {
+		return err
+	}
 	return nil
+}
+
+func (b *botTasksRun) botTasks(ctx context.Context, service swarmingService, out io.Writer) error {
+	state, err := stateMap(b.state)
+	if err != nil {
+		return err
+	}
+	data, err := service.ListBotTasks(ctx, b.botID, int32(b.limit), b.start, state)
+	if err != nil {
+		return err
+	}
+	toOutput := make([]*taskResultResponse, len(data))
+	options := DefaultProtoMarshalOpts()
+	for idx, tr := range data {
+		toOutput[idx] = &taskResultResponse{
+			options: &options,
+			result:  tr,
+		}
+	}
+	output, err := json.MarshalIndent(toOutput, "", DefaultIndent)
+	if err != nil {
+		return err
+	}
+	_, err = out.Write(append(output, '\n'))
+	return err
 }
 
 func (b *botTasksRun) main(_ subcommands.Application) error {
@@ -90,30 +119,9 @@ func (b *botTasksRun) main(_ subcommands.Application) error {
 	if err != nil {
 		return err
 	}
-
-	var data any
-	data, err = service.ListBotTasks(ctx, b.botID, b.limit, b.start, b.state, b.fields)
-	if err != nil {
-		return err
-	}
-
-	if !b.defaultFlags.Quiet {
-		j, err := json.MarshalIndent(data, "", " ")
-		if err != nil {
-			return err
-		}
-		fmt.Printf("%s\n", j)
-	}
-	if b.outfile != "" {
-		j, err := json.Marshal(data)
-		if err != nil {
-			return err
-		}
-		if err := os.WriteFile(b.outfile, j, 0644); err != nil {
-			return err
-		}
-	}
-	return nil
+	return writeOutput(b.outfile, b.defaultFlags.Quiet, func(out io.Writer) error {
+		return b.botTasks(ctx, service, out)
+	})
 }
 
 func (b *botTasksRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
