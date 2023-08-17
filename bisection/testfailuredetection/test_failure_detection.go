@@ -134,6 +134,8 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 		return nil
 	}
 	bestBundle := First(bundles)
+	logging.Infof(ctx, "Selected test failure bundle with primary failure ID %s, variantHash %s, refHash %s",
+		bestBundle.Primary().TestID, bestBundle.Primary().VariantHash, bestBundle.Primary().RefHash)
 	testFailureAnalysis, err := prepareFailureAnalysis(ctx, client, bestBundle.Primary())
 	if err != nil {
 		return errors.Annotate(err, "prepare failure analysis").Err()
