@@ -28,17 +28,6 @@ message ProjectConfig {
   // The project metadata (eg. display name).
   ProjectMetadata project_metadata = 6;
 
-  // An enum that represents the bug filing system that the project uses.
-  enum BugSystem {
-    // An unspecified bug system, Do not use, this will
-    // break LUCI Analysis bug filing functionality.
-    BUG_SYSTEM_UNSPECIFIED = 0;
-    // Use Monorail to file bugs.
-    MONORAIL = 1;
-    // Use Buganizer to file bugs.
-    BUGANIZER = 2;
-  }
-
   // The bug system to use for filing bugs.
   BugSystem bug_system = 7;
 
@@ -530,4 +519,15 @@ message BuganizerProject {
   // In order to meet a higher priority, the impact must match all lower
   // priorities' criteria first.
   repeated PriorityMapping priority_mappings = 3;
+}
+
+// An enum that represents the bug filing system that the project uses.
+enum BugSystem {
+  // An unspecified bug system, Do not use, this will
+  // break LUCI Analysis bug filing functionality.
+  BUG_SYSTEM_UNSPECIFIED = 0;
+  // Use Monorail to file bugs.
+  MONORAIL = 1;
+  // Use Buganizer to file bugs.
+  BUGANIZER = 2;
 }

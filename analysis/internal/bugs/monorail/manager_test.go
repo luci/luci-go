@@ -68,7 +68,7 @@ func TestManager(t *testing.T) {
 		projectCfg := &configpb.ProjectConfig{
 			Monorail:            monorailCfgs,
 			BugFilingThresholds: bugFilingThreshold,
-			BugSystem:           configpb.ProjectConfig_MONORAIL,
+			BugSystem:           configpb.BugSystem_MONORAIL,
 		}
 		bm, err := NewBugManager(cl, "luci-analysis-test", "luciproject", projectCfg)
 		So(err, ShouldBeNil)

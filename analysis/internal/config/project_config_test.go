@@ -45,7 +45,7 @@ func TestProjectConfig(t *testing.T) {
 	t.Parallel()
 
 	Convey("SetTestProjectConfig updates context config", t, func() {
-		projectA := CreateConfigWithBothBuganizerAndMonorail(configpb.ProjectConfig_MONORAIL)
+		projectA := CreateConfigWithBothBuganizerAndMonorail(configpb.BugSystem_MONORAIL)
 		projectA.LastUpdated = timestamppb.New(time.Now())
 		configs := make(map[string]*configpb.ProjectConfig)
 		configs["a"] = projectA
@@ -60,7 +60,7 @@ func TestProjectConfig(t *testing.T) {
 		So(cfg.Project("a"), ShouldResembleProto, projectA)
 	})
 
-	Convey("With mocks", t, WithBothBugSystems(func(system configpb.ProjectConfig_BugSystem, name string) {
+	Convey("With mocks", t, WithBothBugSystems(func(system configpb.BugSystem, name string) {
 		projectA := CreateConfigWithBothBuganizerAndMonorail(system)
 		projectB := CreateConfigWithBothBuganizerAndMonorail(system)
 		projectB.Monorail.PriorityFieldId = 1
@@ -261,7 +261,7 @@ func withLastUpdated(cfg *configpb.ProjectConfig, lastUpdated time.Time) *config
 func TestProject(t *testing.T) {
 	t.Parallel()
 
-	Convey("Project", t, WithBothBugSystems(func(system configpb.ProjectConfig_BugSystem, name string) {
+	Convey("Project", t, WithBothBugSystems(func(system configpb.BugSystem, name string) {
 		pjChromium := CreateConfigWithBothBuganizerAndMonorail(system)
 		configs := map[string]*configpb.ProjectConfig{
 			"chromium": pjChromium,
@@ -287,7 +287,7 @@ func TestProject(t *testing.T) {
 func TestRealm(t *testing.T) {
 	t.Parallel()
 
-	Convey("Realm", t, WithBothBugSystems(func(system configpb.ProjectConfig_BugSystem, name string) {
+	Convey("Realm", t, WithBothBugSystems(func(system configpb.BugSystem, name string) {
 		pj := CreateConfigWithBothBuganizerAndMonorail(system)
 		configs := map[string]*configpb.ProjectConfig{
 			"chromium": pj,

@@ -82,7 +82,7 @@ func TestMonorailUpdate(t *testing.T) {
 			},
 		}
 		projectCfg := &configpb.ProjectConfig{
-			BugSystem:           configpb.ProjectConfig_MONORAIL,
+			BugSystem:           configpb.BugSystem_MONORAIL,
 			Monorail:            monorailCfg,
 			Buganizer:           buganizer.ChromeOSTestConfig(),
 			BugFilingThresholds: thres,
@@ -147,7 +147,7 @@ func TestMonorailUpdate(t *testing.T) {
 			So(c.Finalize(), ShouldBeNil)
 
 			Convey("Unspecified bug system in config defaults to monorail", func() {
-				projectCfg.BugSystem = configpb.ProjectConfig_BUG_SYSTEM_UNSPECIFIED
+				projectCfg.BugSystem = configpb.BugSystem_BUG_SYSTEM_UNSPECIFIED
 				config.ValidateProjectConfig(&c, project, projectCfg)
 				So(c.Finalize(), ShouldBeNil)
 			})

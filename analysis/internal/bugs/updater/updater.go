@@ -973,7 +973,7 @@ func extractMonorailComponents(cs *analysis.Cluster) []string {
 }
 
 func findDefaultBugSystem(projectCfg *compiledcfg.ProjectConfig) string {
-	if projectCfg.Config.BugSystem == configpb.ProjectConfig_BUGANIZER {
+	if projectCfg.Config.BugSystem == configpb.BugSystem_BUGANIZER {
 		return bugs.BuganizerSystem
 	} else {
 		return bugs.MonorailSystem

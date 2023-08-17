@@ -70,7 +70,7 @@ func TestBuganizerUpdate(t *testing.T) {
 			},
 		}
 		projectCfg := &configpb.ProjectConfig{
-			BugSystem:           configpb.ProjectConfig_BUGANIZER,
+			BugSystem:           configpb.BugSystem_BUGANIZER,
 			Buganizer:           buganizerCfg,
 			BugFilingThresholds: thres,
 			LastUpdated:         timestamppb.New(clock.Now(ctx)),

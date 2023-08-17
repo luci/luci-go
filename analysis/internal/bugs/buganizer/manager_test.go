@@ -46,7 +46,7 @@ func TestBugManager(t *testing.T) {
 		projectCfg := &configpb.ProjectConfig{
 			Buganizer:           buganizerCfg,
 			BugFilingThresholds: bugFilingThreshold,
-			BugSystem:           configpb.ProjectConfig_BUGANIZER,
+			BugSystem:           configpb.BugSystem_BUGANIZER,
 		}
 
 		bm := NewBugManager(fakeClient, "luci-analysis-test", "chromeos", projectCfg, false)

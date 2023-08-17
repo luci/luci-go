@@ -76,7 +76,7 @@ func TestClusters(t *testing.T) {
 		server := NewClustersServer(analysisClient)
 
 		configVersion := time.Date(2025, time.August, 12, 0, 1, 2, 3, time.UTC)
-		projectCfg := config.CreateConfigWithBothBuganizerAndMonorail(configpb.ProjectConfig_MONORAIL)
+		projectCfg := config.CreateConfigWithBothBuganizerAndMonorail(configpb.BugSystem_MONORAIL)
 		projectCfg.LastUpdated = timestamppb.New(configVersion)
 		projectCfg.Monorail.DisplayPrefix = "crbug.com"
 		projectCfg.Monorail.MonorailHostname = "bugs.chromium.org"

@@ -149,13 +149,13 @@ func TestProjectConfigValidator(t *testing.T) {
 
 	Convey("unspecified bug system defaults to monorail", t, func() {
 		cfg := CreateMonorailPlaceholderProjectConfig()
-		cfg.BugSystem = configpb.ProjectConfig_BUG_SYSTEM_UNSPECIFIED
+		cfg.BugSystem = configpb.BugSystem_BUG_SYSTEM_UNSPECIFIED
 		So(validate(project, cfg), ShouldBeNil)
 	})
 
 	Convey("no bug system specified", t, func() {
-		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.ProjectConfig_BUGANIZER)
-		cfg.BugSystem = configpb.ProjectConfig_BUG_SYSTEM_UNSPECIFIED
+		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.BugSystem_BUGANIZER)
+		cfg.BugSystem = configpb.BugSystem_BUG_SYSTEM_UNSPECIFIED
 		cfg.Monorail = nil
 		cfg.Buganizer = nil
 		So(validate(project, cfg), ShouldBeNil)
@@ -389,7 +389,7 @@ func TestProjectConfigValidator(t *testing.T) {
 	Convey("bug filing thresholds", t, func() {
 		Convey("not specified with no bug system", func() {
 			cfg := CreateMonorailPlaceholderProjectConfig()
-			cfg.BugSystem = configpb.ProjectConfig_BUG_SYSTEM_UNSPECIFIED
+			cfg.BugSystem = configpb.BugSystem_BUG_SYSTEM_UNSPECIFIED
 			cfg.BugFilingThresholds = nil
 			So(validate(project, cfg), ShouldBeNil)
 		})
@@ -456,7 +456,7 @@ func TestProjectConfigValidator(t *testing.T) {
 	})
 
 	Convey("realm config", t, func() {
-		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.ProjectConfig_MONORAIL)
+		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.BugSystem_MONORAIL)
 
 		So(len(cfg.Realms), ShouldEqual, 1)
 		realm := cfg.Realms[0]
@@ -559,7 +559,7 @@ func TestProjectConfigValidator(t *testing.T) {
 	})
 
 	Convey("clustering", t, func() {
-		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.ProjectConfig_MONORAIL)
+		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.BugSystem_MONORAIL)
 
 		clustering := cfg.Clustering
 
@@ -621,7 +621,7 @@ func TestProjectConfigValidator(t *testing.T) {
 		})
 	})
 	Convey("metrics", t, func() {
-		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.ProjectConfig_MONORAIL)
+		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.BugSystem_MONORAIL)
 
 		metrics := cfg.Metrics
 

@@ -145,7 +145,7 @@ func createPlaceholderMetrics() *configpb.Metrics {
 func CreateMonorailPlaceholderProjectConfig() *configpb.ProjectConfig {
 	return &configpb.ProjectConfig{
 		Monorail:            createPlaceholderMonorailProject(),
-		BugSystem:           configpb.ProjectConfig_MONORAIL,
+		BugSystem:           configpb.BugSystem_MONORAIL,
 		BugFilingThresholds: CreatePlaceholderImpactThreshold(),
 		Realms:              createPlaceholderRealms(),
 		Clustering:          createPlaceholderClustering(),
@@ -156,7 +156,7 @@ func CreateMonorailPlaceholderProjectConfig() *configpb.ProjectConfig {
 func CreateBuganizerPlaceholderProjectConfig() *configpb.ProjectConfig {
 	return &configpb.ProjectConfig{
 		Buganizer:           createBuganizerPlaceholderProject(),
-		BugSystem:           configpb.ProjectConfig_BUGANIZER,
+		BugSystem:           configpb.BugSystem_BUGANIZER,
 		BugFilingThresholds: CreatePlaceholderImpactThreshold(),
 		Realms:              createPlaceholderRealms(),
 		Clustering:          createPlaceholderClustering(),
@@ -164,7 +164,7 @@ func CreateBuganizerPlaceholderProjectConfig() *configpb.ProjectConfig {
 	}
 }
 
-func CreateConfigWithBothBuganizerAndMonorail(bugSystem configpb.ProjectConfig_BugSystem) *configpb.ProjectConfig {
+func CreateConfigWithBothBuganizerAndMonorail(bugSystem configpb.BugSystem) *configpb.ProjectConfig {
 	return &configpb.ProjectConfig{
 		Monorail:            createPlaceholderMonorailProject(),
 		Buganizer:           createBuganizerPlaceholderProject(),

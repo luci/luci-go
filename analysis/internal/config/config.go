@@ -75,9 +75,9 @@ func WithBothProjectConfigs(f func(cfg *configpb.ProjectConfig, name string)) fu
 	}
 }
 
-func WithBothBugSystems(f func(system configpb.ProjectConfig_BugSystem, name string)) func() {
+func WithBothBugSystems(f func(system configpb.BugSystem, name string)) func() {
 	return func() {
-		f(configpb.ProjectConfig_MONORAIL, "monorail")
-		f(configpb.ProjectConfig_BUGANIZER, "buganizer")
+		f(configpb.BugSystem_MONORAIL, "monorail")
+		f(configpb.BugSystem_BUGANIZER, "buganizer")
 	}
 }

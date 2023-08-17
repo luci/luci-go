@@ -192,12 +192,12 @@ func validateProjectConfigRaw(ctx *validation.Context, project, content string) 
 }
 
 func ValidateProjectConfig(ctx *validation.Context, project string, cfg *configpb.ProjectConfig) {
-	if cfg.BugSystem == configpb.ProjectConfig_MONORAIL && cfg.Monorail == nil {
+	if cfg.BugSystem == configpb.BugSystem_MONORAIL && cfg.Monorail == nil {
 		ctx.Errorf("monorail configuration is required when the configured bug system is Monorail")
 		return
 	}
 
-	if cfg.BugSystem == configpb.ProjectConfig_BUGANIZER && cfg.Buganizer == nil {
+	if cfg.BugSystem == configpb.BugSystem_BUGANIZER && cfg.Buganizer == nil {
 		ctx.Errorf("buganizer configuration is required when the configured bug system is Buganizer")
 		return
 	}
@@ -209,7 +209,7 @@ func ValidateProjectConfig(ctx *validation.Context, project string, cfg *configp
 		validateBuganizer(ctx, project, cfg.Buganizer, cfg.BugFilingThresholds)
 	}
 	// Validate BugFilingThreshold when it is not nil or there is a bug system specified.
-	if cfg.BugFilingThresholds != nil || cfg.BugSystem != configpb.ProjectConfig_BUG_SYSTEM_UNSPECIFIED {
+	if cfg.BugFilingThresholds != nil || cfg.BugSystem != configpb.BugSystem_BUG_SYSTEM_UNSPECIFIED {
 		validateImpactMetricThresholds(ctx, project, cfg.BugFilingThresholds, "bug_filing_thresholds")
 	}
 	for _, rCfg := range cfg.Realms {
