@@ -129,8 +129,9 @@ CREATE TABLE Invocations (
 -- Add TTL of 1.5 years to Invocations table. The row deletion policy
 -- configured in the parent table will also take effect on the interleaved child
 -- tables (Artifacts, IncludedInvocations, TestExonerations, TestResults,
--- TestResultCounts).
-  ROW DELETION POLICY (OLDER_THAN(CreateTime, INTERVAL 540 DAY));
+-- TestResultCounts).  Leave 30 days for Spanner to actually delete the data from
+-- storage after the row is deleted.
+  ROW DELETION POLICY (OLDER_THAN(CreateTime, INTERVAL 510 DAY));
 
 -- Index of invocations by expiration time.
 -- Used by a cron job that periodically removes expired invocations.
