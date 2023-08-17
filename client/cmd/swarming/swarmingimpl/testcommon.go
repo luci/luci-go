@@ -29,7 +29,7 @@ var _ swarmingService = (*testService)(nil)
 
 type testService struct {
 	newTask      func(context.Context, *swarmingv1.SwarmingRpcsNewTaskRequest) (*swarmingv1.SwarmingRpcsTaskRequestMetadata, error)
-	countTasks   func(context.Context, float64, string, ...string) (*swarmingv1.SwarmingRpcsTasksCount, error)
+	countTasks   func(context.Context, float64, swarmingv2.StateQuery, ...string) (*swarmingv2.TasksCount, error)
 	countBots    func(context.Context, []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error)
 	listTasks    func(context.Context, int32, float64, swarmingv2.StateQuery, []string) ([]*swarmingv2.TaskResultResponse, error)
 	cancelTask   func(context.Context, string, bool) (*swarmingv2.CancelResponse, error)
@@ -51,7 +51,7 @@ func (s testService) NewTask(ctx context.Context, req *swarmingv1.SwarmingRpcsNe
 	return s.newTask(ctx, req)
 }
 
-func (s testService) CountTasks(ctx context.Context, start float64, state string, tags ...string) (*swarmingv1.SwarmingRpcsTasksCount, error) {
+func (s testService) CountTasks(ctx context.Context, start float64, state swarmingv2.StateQuery, tags ...string) (*swarmingv2.TasksCount, error) {
 	return s.countTasks(ctx, start, state, tags...)
 }
 

@@ -87,7 +87,7 @@ const swarmingAPISuffix = "/_ah/api/swarming/v1/"
 // bindings for testing.
 type swarmingService interface {
 	NewTask(ctx context.Context, req *swarmingv1.SwarmingRpcsNewTaskRequest) (*swarmingv1.SwarmingRpcsTaskRequestMetadata, error)
-	CountTasks(ctx context.Context, start float64, state string, tags ...string) (*swarmingv1.SwarmingRpcsTasksCount, error)
+	CountTasks(ctx context.Context, start float64, state swarmingv2.StateQuery, tags ...string) (*swarmingv2.TasksCount, error)
 	ListTasks(ctx context.Context, limit int32, start float64, state swarmingv2.StateQuery, tags []string) ([]*swarmingv2.TaskResultResponse, error)
 	CancelTask(ctx context.Context, taskID string, killRunning bool) (*swarmingv2.CancelResponse, error)
 	TaskRequest(ctx context.Context, taskID string) (*swarmingv2.TaskRequestResponse, error)
@@ -116,12 +116,14 @@ func (s *swarmingServiceImpl) NewTask(ctx context.Context, req *swarmingv1.Swarm
 	return
 }
 
-func (s *swarmingServiceImpl) CountTasks(ctx context.Context, start float64, state string, tags ...string) (res *swarmingv1.SwarmingRpcsTasksCount, err error) {
-	err = retryGoogleRPC(ctx, "CountTasks", func() (ierr error) {
-		res, ierr = s.service.Tasks.Count().Context(ctx).Start(start).State(state).Tags(tags...).Do()
-		return
+func (s *swarmingServiceImpl) CountTasks(ctx context.Context, start float64, state swarmingv2.StateQuery, tags ...string) (res *swarmingv2.TasksCount, err error) {
+	return s.tasksClient.CountTasks(ctx, &swarmingv2.TasksCountRequest{
+		Start: &timestamppb.Timestamp{
+			Seconds: int64(start),
+		},
+		Tags:  tags,
+		State: state,
 	})
-	return
 }
 
 func (s *swarmingServiceImpl) ListTasks(ctx context.Context, limit int32, start float64, state swarmingv2.StateQuery, tags []string) ([]*swarmingv2.TaskResultResponse, error) {

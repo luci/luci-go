@@ -97,17 +97,21 @@ func (t *tasksRun) Parse() error {
 
 func (t *tasksRun) tasks(ctx context.Context, service swarmingService, out io.Writer) error {
 	var output []byte
+	state, err := stateMap(t.state)
+	if err != nil {
+		return err
+	}
+	options := DefaultProtoMarshalOpts()
 	if t.count {
-		data, err := service.CountTasks(ctx, t.start, t.state, t.tags...)
+		data, err := service.CountTasks(ctx, t.start, state, t.tags...)
 		if err != nil {
 			return err
 		}
-		output, err = json.MarshalIndent(data, "", DefaultIndent)
+		output, err = options.Marshal(data)
 		if err != nil {
 			return err
 		}
 	} else {
-		state, err := stateMap(t.state)
 		if err != nil {
 			return err
 		}
@@ -116,7 +120,6 @@ func (t *tasksRun) tasks(ctx context.Context, service swarmingService, out io.Wr
 			return err
 		}
 		toOutput := make([]*taskResultResponse, len(data))
-		options := DefaultProtoMarshalOpts()
 		for idx, tr := range data {
 			toOutput[idx] = &taskResultResponse{
 				options: &options,
@@ -128,7 +131,7 @@ func (t *tasksRun) tasks(ctx context.Context, service swarmingService, out io.Wr
 			return err
 		}
 	}
-	_, err := out.Write(append(output, '\n'))
+	_, err = out.Write(append(output, '\n'))
 	if err != nil {
 		return err
 	}
