@@ -34,35 +34,66 @@ import (
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 )
 
-// TriggerRerun triggers a rerun build for a particular build bucket build and Gitiles commit.
-// props is the extra properties to set to the rerun build
-// dims is the extra dimension to set to the rerun build
-func TriggerRerun(c context.Context, commit *buildbucketpb.GitilesCommit, failedBuildID int64, props map[string]any, dims map[string]string, priority int32) (*buildbucketpb.Build, error) {
-	logging.Infof(c, "triggerRerun with commit %s", commit.Id)
-	properties, dimensions, err := getRerunPropertiesAndDimensions(c, failedBuildID, props, dims)
+// TriggerOptions contains information how the rerun should be triggered.
+type TriggerOptions struct {
+	// The builder we should trigger the rerun on. Required.
+	Builder *buildbucketpb.BuilderID
+	// The gitiles commit for the revision that we want to run the rerun build. Required.
+	GitilesCommit *buildbucketpb.GitilesCommit
+	// The buildbucket ID that the rerun build should copy the properties
+	// and dimension from. Required.
+	SampleBuildID int64
+	// Extra properties we want the rerun build to have.
+	ExtraProperties map[string]any
+	// Extra dimensions we want the rerun build to have.
+	ExtraDimensions map[string]string
+	// Priority of the rerun build.
+	Priority int32
+}
+
+// TriggerRerun triggers a rerun build given the options.
+func TriggerRerun(c context.Context, options *TriggerOptions) (*buildbucketpb.Build, error) {
+	err := validateOptions(options)
 	if err != nil {
-		logging.Errorf(c, "Failed getRerunPropertiesAndDimension for build %d", failedBuildID)
+		return nil, errors.Annotate(err, "validate rerun options").Err()
+	}
+	logging.Infof(c, "triggerRerun with commit %s", options.GitilesCommit.Id)
+	properties, dimensions, err := getRerunPropertiesAndDimensions(c, options.SampleBuildID, options.ExtraProperties, options.ExtraDimensions)
+	if err != nil {
+		logging.Errorf(c, "Failed getRerunPropertiesAndDimension for build %d", options.SampleBuildID)
 		return nil, err
 	}
 	req := &buildbucketpb.ScheduleBuildRequest{
-		Builder: &buildbucketpb.BuilderID{
-			Project: "chromium",
-			Bucket:  "findit",
-			Builder: "gofindit-culprit-verification",
-		},
+		Builder:       options.Builder,
 		Properties:    properties,
 		Dimensions:    dimensions,
-		Tags:          getRerunTags(c, failedBuildID),
-		GitilesCommit: commit,
-		Priority:      priority,
+		Tags:          getRerunTags(c, options.SampleBuildID),
+		GitilesCommit: options.GitilesCommit,
+		Priority:      options.Priority,
 	}
 	build, err := buildbucket.ScheduleBuild(c, req)
 	if err != nil {
-		logging.Errorf(c, "Failed trigger rerun for build %d: %w", failedBuildID, err)
+		logging.Errorf(c, "Failed trigger rerun for build %d: %w", options.SampleBuildID, err)
 		return nil, err
 	}
-	logging.Infof(c, "Rerun build %d triggered for build: %d", build.GetId(), failedBuildID)
+	logging.Infof(c, "Rerun build %d triggered for build: %d", build.GetId(), options.SampleBuildID)
 	return build, nil
+}
+
+func validateOptions(options *TriggerOptions) error {
+	if options == nil {
+		return errors.New("option must not be nil")
+	}
+	if options.Builder == nil {
+		return errors.New("builder must not be nil")
+	}
+	if options.GitilesCommit == nil {
+		return errors.New("gitiles commit must not be nil")
+	}
+	if options.SampleBuildID == 0 {
+		return errors.New("sample build id must be specified")
+	}
+	return nil
 }
 
 // getRerunTags returns the build bucket tags for the rerun build

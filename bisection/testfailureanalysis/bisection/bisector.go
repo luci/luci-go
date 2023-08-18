@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 
+	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	"go.chromium.org/luci/bisection/model"
@@ -32,7 +33,7 @@ import (
 	"go.chromium.org/luci/bisection/util/changelogutil"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -180,17 +181,78 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 	// For now, hard-code it to run bisection.
 	// TODO (nqmtuan): Tune it when we have information about bot availability.
 	maxRerun := 1 // bisection
-	_, err = snapshot.FindNextCommitsToRun(maxRerun)
+	commitHashes, err := snapshot.FindNextCommitsToRun(maxRerun)
 	if err != nil {
 		return errors.Annotate(err, "find next commits to run").Err()
 	}
 
+	// Get test failure bundle
+	bundle, err := datastoreutil.GetTestFailureBundle(ctx, tfa)
+	if err != nil {
+		return errors.Annotate(err, "get test failure bundle").Err()
+	}
+	tfs := bundle.All()
+	for _, commitHash := range commitHashes {
+		gitilesCommit := &bbpb.GitilesCommit{
+			Host:    primaryFailure.Ref.GetGitiles().GetHost(),
+			Project: primaryFailure.Ref.GetGitiles().GetProject(),
+			Ref:     primaryFailure.Ref.GetGitiles().GetRef(),
+			Id:      commitHash,
+		}
+		build, err := projectBisector.TriggerRerun(ctx, tfa, tfs, gitilesCommit)
+		if err != nil {
+			return errors.Annotate(err, "trigger rerun for commit %s", commitHash).Err()
+		}
+		err = createTestRerunModel(ctx, tfa, nsa, tfs, build)
+		if err != nil {
+			return errors.Annotate(err, "create test rerun model for build %d", build.GetId()).Err()
+		}
+	}
 	return nil
+}
+
+func createTestRerunModel(ctx context.Context, tfa *model.TestFailureAnalysis, nsa *model.TestNthSectionAnalysis, tfs []*model.TestFailure, build *bbpb.Build) error {
+	dimensions, err := buildbucket.GetBuildTaskDimension(ctx, build.GetId())
+	if err != nil {
+		return errors.Annotate(err, "get build task dimension bbid %v", build.GetId()).Err()
+	}
+
+	rerun := &model.TestSingleRerun{
+		ID: build.GetId(),
+		LUCIBuild: model.LUCIBuild{
+			BuildID:     build.GetId(),
+			Project:     build.Builder.Project,
+			Bucket:      build.Builder.Bucket,
+			Builder:     build.Builder.Builder,
+			BuildNumber: int(build.Number),
+			GitilesCommit: &bbpb.GitilesCommit{
+				Host:     build.Input.GitilesCommit.Host,
+				Project:  build.Input.GitilesCommit.Project,
+				Id:       build.Input.GitilesCommit.Id,
+				Ref:      build.Input.GitilesCommit.Ref,
+				Position: build.Input.GitilesCommit.Position,
+			},
+			Status:     build.Status,
+			CreateTime: build.CreateTime.AsTime(),
+			StartTime:  build.StartTime.AsTime(),
+		},
+		Type:                  model.RerunBuildType_NthSection,
+		AnalysisKey:           datastore.KeyForObj(ctx, tfa),
+		NthSectionAnalysisKey: datastore.KeyForObj(ctx, nsa),
+		Status:                pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+		Dimensions:            dimensions,
+		Priority:              tfa.Priority,
+	}
+	return datastore.Put(ctx, rerun)
 }
 
 func CreateSnapshot(ctx context.Context, nsa *model.TestNthSectionAnalysis) (*nthsectionsnapshot.Snapshot, error) {
 	// Get all reruns for the current analysis.
-	q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa)).Order("rerun_create_time")
+	// We sort by create_time to make sure the latest rerun for a commit position
+	// is considered.
+	// If we retry INFRA_FAILURE rerun, we want to take the status of the retry,
+	// instead of the INFRA_FAILURE status.
+	q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa)).Order("luci_build.create_time")
 	reruns := []*model.TestSingleRerun{}
 	err := datastore.GetAll(ctx, q, &reruns)
 	if err != nil {
@@ -248,13 +310,13 @@ func createNthSectionModel(ctx context.Context, tfa *model.TestFailureAnalysis, 
 	}
 
 	regressionRange := &pb.RegressionRange{
-		LastPassed: &buildbucketpb.GitilesCommit{
+		LastPassed: &bbpb.GitilesCommit{
 			Host:    gitiles.Host,
 			Project: gitiles.Project,
 			Ref:     gitiles.Ref,
 			Id:      tfa.StartCommitHash,
 		},
-		FirstFailed: &buildbucketpb.GitilesCommit{
+		FirstFailed: &bbpb.GitilesCommit{
 			Host:    gitiles.Host,
 			Project: gitiles.Project,
 			Ref:     gitiles.Ref,

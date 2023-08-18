@@ -21,7 +21,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
@@ -36,6 +38,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestRunBisector(t *testing.T) {
@@ -68,6 +72,68 @@ func TestRunBisector(t *testing.T) {
 	ctx = gitiles.MockedGitilesClientContext(ctx, map[string]string{
 		"https://chromium.googlesource.com/chromium/src/+log/12345..23456": string(gitilesResponseStr),
 	})
+
+	// Setup mock for buildbucket.
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	mc := buildbucket.NewMockedClient(ctx, ctl)
+	ctx = mc.Ctx
+
+	bootstrapProperties := &structpb.Struct{
+		Fields: map[string]*structpb.Value{
+			"bs_key_1": structpb.NewStringValue("bs_val_1"),
+		},
+	}
+
+	getBuildRes := &bbpb.Build{
+		Builder: &bbpb.BuilderID{
+			Project: "chromium",
+			Bucket:  "ci",
+			Builder: "linux-test",
+		},
+		Input: &bbpb.Build_Input{
+			Properties: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"builder_group":         structpb.NewStringValue("buildergroup1"),
+					"$bootstrap/properties": structpb.NewStructValue(bootstrapProperties),
+					"another_prop":          structpb.NewStringValue("another_val"),
+				},
+			},
+		},
+		Infra: &bbpb.BuildInfra{
+			Swarming: &bbpb.BuildInfra_Swarming{
+				TaskDimensions: []*bbpb.RequestedDimension{
+					{
+						Key:   "key",
+						Value: "val",
+					},
+				},
+			},
+		},
+	}
+
+	scheduleBuildRes := &bbpb.Build{
+		Id: 8765,
+		Builder: &bbpb.BuilderID{
+			Project: "chromium",
+			Bucket:  "findit",
+			Builder: "test-single-revision",
+		},
+		Number:     10,
+		Status:     bbpb.Status_SCHEDULED,
+		CreateTime: timestamppb.New(time.Unix(1000, 0)),
+		Input: &bbpb.Build_Input{
+			GitilesCommit: &bbpb.GitilesCommit{
+				Host:    "chromium.googlesource.com",
+				Project: "chromium/src",
+				Ref:     "refs/heads/main",
+				Id:      "hash",
+			},
+		},
+	}
+
+	mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(getBuildRes, nil).AnyTimes()
+	mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(scheduleBuildRes, nil).AnyTimes()
 
 	Convey("No analysis", t, func() {
 		err := Run(ctx, 123, luciAnalysisClient)
@@ -138,6 +204,7 @@ func TestRunBisector(t *testing.T) {
 			TestFailure:     tf,
 			StartCommitHash: "12345",
 			EndCommitHash:   "23456",
+			Priority:        160,
 		})
 
 		// Link the test failure with test failure analysis.
@@ -186,6 +253,46 @@ func TestRunBisector(t *testing.T) {
 				},
 			},
 		})
+
+		// Check that rerun model was created.
+		q = datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa))
+		reruns := []*model.TestSingleRerun{}
+		err = datastore.GetAll(ctx, q, &reruns)
+		So(err, ShouldBeNil)
+		So(len(reruns), ShouldEqual, 1)
+
+		rerun := reruns[0]
+		So(rerun, ShouldResembleProto, &model.TestSingleRerun{
+			ID:                    8765,
+			Type:                  model.RerunBuildType_NthSection,
+			AnalysisKey:           datastore.KeyForObj(ctx, tfa),
+			NthSectionAnalysisKey: datastore.KeyForObj(ctx, nsa),
+			Status:                pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+			Priority:              160,
+			Dimensions: &pb.Dimensions{
+				Dimensions: []*pb.Dimension{
+					{
+						Key:   "key",
+						Value: "val",
+					},
+				},
+			},
+			LUCIBuild: model.LUCIBuild{
+				BuildID:     8765,
+				Project:     "chromium",
+				Bucket:      "findit",
+				Builder:     "test-single-revision",
+				BuildNumber: 10,
+				CreateTime:  time.Unix(1000, 0),
+				GitilesCommit: &bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Ref:     "refs/heads/main",
+					Id:      "hash",
+				},
+				Status: bbpb.Status_SCHEDULED,
+			},
+		})
 	})
 }
 
@@ -207,8 +314,8 @@ func TestCreateSnapshot(t *testing.T) {
 
 		rerun1 := &model.TestSingleRerun{
 			Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
-			LuciBuild: model.LuciBuild{
-				GitilesCommit: bbpb.GitilesCommit{
+			LUCIBuild: model.LUCIBuild{
+				GitilesCommit: &bbpb.GitilesCommit{
 					Id: "commit1",
 				},
 			},
@@ -219,8 +326,8 @@ func TestCreateSnapshot(t *testing.T) {
 
 		rerun2 := &model.TestSingleRerun{
 			Status: pb.RerunStatus_RERUN_STATUS_FAILED,
-			LuciBuild: model.LuciBuild{
-				GitilesCommit: bbpb.GitilesCommit{
+			LUCIBuild: model.LUCIBuild{
+				GitilesCommit: &bbpb.GitilesCommit{
 					Id: "commit3",
 				},
 			},
@@ -230,8 +337,8 @@ func TestCreateSnapshot(t *testing.T) {
 
 		rerun3 := &model.TestSingleRerun{
 			Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
-			LuciBuild: model.LuciBuild{
-				GitilesCommit: bbpb.GitilesCommit{
+			LUCIBuild: model.LUCIBuild{
+				GitilesCommit: &bbpb.GitilesCommit{
 					Id: "commit0",
 				},
 			},
@@ -242,8 +349,8 @@ func TestCreateSnapshot(t *testing.T) {
 
 		rerun4 := &model.TestSingleRerun{
 			Status: pb.RerunStatus_RERUN_STATUS_INFRA_FAILED,
-			LuciBuild: model.LuciBuild{
-				GitilesCommit: bbpb.GitilesCommit{
+			LUCIBuild: model.LUCIBuild{
+				GitilesCommit: &bbpb.GitilesCommit{
 					Id: "commit2",
 				},
 			},
@@ -253,8 +360,8 @@ func TestCreateSnapshot(t *testing.T) {
 
 		rerun5 := &model.TestSingleRerun{
 			Status: pb.RerunStatus_RERUN_STATUS_TEST_SKIPPED,
-			LuciBuild: model.LuciBuild{
-				GitilesCommit: bbpb.GitilesCommit{
+			LUCIBuild: model.LUCIBuild{
+				GitilesCommit: &bbpb.GitilesCommit{
 					Id: "commit4",
 				},
 			},

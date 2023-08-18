@@ -215,6 +215,7 @@ func TestAnalyze(t *testing.T) {
 			Id:                     123,
 			CompileFailure:         datastore.KeyForObj(c, cf),
 			InitialRegressionRange: rr,
+			FirstFailedBuildId:     1000,
 		}
 		So(datastore.Put(c, cfa), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()

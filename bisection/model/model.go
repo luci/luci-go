@@ -69,21 +69,33 @@ const (
 	PlatformLinux   Platform = "linux"
 )
 
-// LuciBuild represents one LUCI build
+// LuciBuild represents one LUCI build.
+// Deprecated. Please use LUCIBuild model instead.
+// It is kept here because some old code is still using it.
 type LuciBuild struct {
 	BuildId     int64  `gae:"build_id"`
 	Project     string `gae:"project"`
 	Bucket      string `gae:"bucket"`
 	Builder     string `gae:"builder"`
 	BuildNumber int    `gae:"build_number"`
-	// TODO (nqmtuan): Make it a named field so the "project" and "id" field
-	// are not so confusing.
-	// This would require migration of existing data or make sure they are compatible.
 	buildbucketpb.GitilesCommit
 	CreateTime time.Time            `gae:"create_time"`
 	EndTime    time.Time            `gae:"end_time"`
 	StartTime  time.Time            `gae:"start_time"`
 	Status     buildbucketpb.Status `gae:"status"`
+}
+
+type LUCIBuild struct {
+	BuildID       int64                        `gae:"build_id"`
+	Project       string                       `gae:"project"`
+	Bucket        string                       `gae:"bucket"`
+	Builder       string                       `gae:"builder"`
+	BuildNumber   int                          `gae:"build_number"`
+	GitilesCommit *buildbucketpb.GitilesCommit `gae:"gitiles_commit"`
+	CreateTime    time.Time                    `gae:"create_time"`
+	EndTime       time.Time                    `gae:"end_time"`
+	StartTime     time.Time                    `gae:"start_time"`
+	Status        buildbucketpb.Status         `gae:"status"`
 }
 
 type LuciFailedBuild struct {
@@ -449,16 +461,12 @@ type TestSingleRerun struct {
 	// The buildbucket ID of the rerun.
 	ID int64 `gae:"$id"`
 	// LUCI build data for the rerun build.
-	LuciBuild
+	LUCIBuild `gae:"luci_build"`
 	// Type for the rerun build
 	// Either culprit verification or nth section run.
 	Type RerunBuildType `gae:"rerun_type"`
 	// Key to the TestFailureAnalysis of this SingleRerun
 	AnalysisKey *datastore.Key `gae:"analysis_key"`
-	// Time when the rerun was created in datastore.
-	// It may be (slightly) different from LuciBuild.create_time,
-	// which is when the build got created in buildbucket.
-	CreateTime time.Time `gae:"rerun_create_time"`
 	// Time when the rerun send the result to bisection from recipe.
 	ReportTime time.Time `gae:"report_time"`
 	// The dimensions of the rerun build.
@@ -478,7 +486,7 @@ type TestSingleRerun struct {
 	// Status of the rerun.
 	// If the rerun ended, this result will base on the result
 	// of the primary test failure. See pb.RerunStatus for more information.
-	Status pb.RerunStatus
+	Status pb.RerunStatus `gae:"status"`
 }
 
 // RerunTestResults captures test results of TestSingleRerun.
@@ -564,4 +572,18 @@ func (tfb *TestFailureBundle) All() []*TestFailure {
 		return tfb.Others()
 	}
 	return append(tfb.otherTestFailures, tfb.primaryFailure)
+}
+
+// NonDiverged returns all non-diverged test failures for the bundle.
+func (tfb *TestFailureBundle) NonDiverged() []*TestFailure {
+	result := []*TestFailure{}
+	if tfb.primaryFailure != nil {
+		result = append(result, tfb.primaryFailure)
+	}
+	for _, other := range tfb.otherTestFailures {
+		if !other.IsDiverged {
+			result = append(result, other)
+		}
+	}
+	return result
 }

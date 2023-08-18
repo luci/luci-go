@@ -12,20 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package projectbisector declare the interface that each individual
-// project bisector needs to implement.
-package projectbisector
+package util
 
 import (
-	"context"
-
-	"go.chromium.org/luci/bisection/model"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/errors"
 )
 
-type ProjectBisector interface {
-	// Prepares data for bisection. This may involve populating models with data.
-	Prepare(ctx context.Context, tfa *model.TestFailureAnalysis) error
-	// TriggerRerun triggers a rerun build bucket build on a specific commit.
-	TriggerRerun(ctx context.Context, tfa *model.TestFailureAnalysis, tfs []*model.TestFailure, gitilesCommit *bbpb.GitilesCommit) (*bbpb.Build, error)
+func GetCompileRerunBuilder(project string) (*bbpb.BuilderID, error) {
+	if project != "chromium" {
+		return nil, errors.Reason("unsupported project: %q", project).Err()
+	}
+	return &bbpb.BuilderID{
+		Project: "chromium",
+		Bucket:  "findit",
+		Builder: "gofindit-culprit-verification",
+	}, nil
+}
+
+func GetTestRerunBuilder(project string) (*bbpb.BuilderID, error) {
+	if project != "chromium" {
+		return nil, errors.Reason("unsupported project: %q", project).Err()
+	}
+	return &bbpb.BuilderID{
+		Project: "chromium",
+		Bucket:  "findit",
+		Builder: "test-single-revision",
+	}, nil
 }

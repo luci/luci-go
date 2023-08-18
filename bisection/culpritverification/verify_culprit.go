@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/rerun"
+	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
 	"go.chromium.org/luci/server/tq"
@@ -168,7 +169,9 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 		return errors.Annotate(err, "failed getting priority").Err()
 	}
 
-	suspectBuild, parentBuild, err := VerifySuspectCommit(c, suspect, failedBuildID, props, priority)
+	// TODO(nqmtuan): Pass in the project.
+	// For now, hardcode to "chromium", since we only support chromium for compile failure.
+	suspectBuild, parentBuild, err := VerifySuspectCommit(c, "chromium", suspect, failedBuildID, props, priority)
 	if err != nil {
 		logging.Errorf(c, "Error triggering rerun for build %d: %s", failedBuildID, err)
 		return err
@@ -235,7 +238,7 @@ func hasNewTarget(c context.Context, failedFiles []string, changelog *model.Chan
 // Returns 2 builds:
 // - The 1st build is the rerun build for the commit
 // - The 2nd build is the rerun build for the parent commit
-func VerifySuspectCommit(c context.Context, suspect *model.Suspect, failedBuildID int64, props map[string]any, priority int32) (*buildbucketpb.Build, *buildbucketpb.Build, error) {
+func VerifySuspectCommit(c context.Context, project string, suspect *model.Suspect, failedBuildID int64, props map[string]any, priority int32) (*buildbucketpb.Build, *buildbucketpb.Build, error) {
 	commit := &suspect.GitilesCommit
 
 	// Query Gitiles to get parent commit
@@ -251,13 +254,27 @@ func VerifySuspectCommit(c context.Context, suspect *model.Suspect, failedBuildI
 		Id:      p,
 	}
 
+	builder, err := util.GetCompileRerunBuilder(project)
+	if err != nil {
+		return nil, nil, errors.Annotate(err, "get compile rerun builder").Err()
+	}
+
+	options := &rerun.TriggerOptions{
+		Builder:         builder,
+		GitilesCommit:   commit,
+		SampleBuildID:   failedBuildID,
+		ExtraProperties: props,
+		ExtraDimensions: nil,
+		Priority:        priority,
+	}
 	// Trigger a rerun with commit and parent commit
-	build1, err := rerun.TriggerRerun(c, commit, failedBuildID, props, nil, priority)
+	build1, err := rerun.TriggerRerun(c, options)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	build2, err := rerun.TriggerRerun(c, parentCommit, failedBuildID, props, nil, priority)
+	options.GitilesCommit = parentCommit
+	build2, err := rerun.TriggerRerun(c, options)
 	if err != nil {
 		return nil, nil, err
 	}

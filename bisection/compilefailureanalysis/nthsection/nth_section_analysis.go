@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/bisection/nthsectionsnapshot"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/rerun"
+	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/changelogutil"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 
@@ -118,7 +119,21 @@ func RerunCommit(c context.Context, nsa *model.CompileNthSectionAnalysis, commit
 		return errors.Annotate(err, "couldn't getRerunPriority").Err()
 	}
 
-	build, err := rerun.TriggerRerun(c, commit, failedBuildID, props, dims, priority)
+	// TODO(nqmtuan): Pass in the project.
+	// For now, hardcode to "chromium", since we only support chromium for compile failure.
+	builder, err := util.GetCompileRerunBuilder("chromium")
+	if err != nil {
+		return errors.Annotate(err, "get compile rerun builder").Err()
+	}
+	options := &rerun.TriggerOptions{
+		Builder:         builder,
+		GitilesCommit:   commit,
+		SampleBuildID:   failedBuildID,
+		ExtraProperties: props,
+		ExtraDimensions: dims,
+		Priority:        priority,
+	}
+	build, err := rerun.TriggerRerun(c, options)
 	if err != nil {
 		return errors.Annotate(err, "couldn't trigger rerun").Err()
 	}

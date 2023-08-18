@@ -42,13 +42,13 @@ indexes:
 - kind: TestSingleRerun
   properties:
   - name: nthsection_analysis_key
-  - name: rerun_create_time
+  - name: luci_build.create_time
 
 - kind: TestSingleRerun
   properties:
-  - name: project
-  - name: status
-  - name: create_time
+  - name: luci_build.project
+  - name: luci_build.status
+  - name: luci_build.create_time
 
 - kind: CompileRerunBuild
   properties:

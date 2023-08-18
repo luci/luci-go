@@ -168,6 +168,8 @@ type TestFailureAnalysisCreationOption struct {
 	TestFailure     *model.TestFailure
 	StartCommitHash string
 	EndCommitHash   string
+	FailedBuildID   int64
+	Priority        int32
 }
 
 func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisCreationOption) *model.TestFailureAnalysis {
@@ -176,6 +178,8 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 	var tfKey *datastore.Key = nil
 	startCommitHash := ""
 	endCommitHash := ""
+	failedBuildID := int64(8000)
+	var priority int32
 
 	if option != nil {
 		if option.ID != 0 {
@@ -193,6 +197,10 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 		if option.EndCommitHash != "" {
 			endCommitHash = option.EndCommitHash
 		}
+		if option.FailedBuildID != 0 {
+			failedBuildID = option.FailedBuildID
+		}
+		priority = option.Priority
 	}
 
 	tfa := &model.TestFailureAnalysis{
@@ -201,6 +209,8 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 		TestFailure:     tfKey,
 		StartCommitHash: startCommitHash,
 		EndCommitHash:   endCommitHash,
+		FailedBuildID:   failedBuildID,
+		Priority:        int32(priority),
 	}
 	So(datastore.Put(ctx, tfa), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()
@@ -289,7 +299,7 @@ func UpdateIndices(c context.Context) {
 					Property: "nthsection_analysis_key",
 				},
 				{
-					Property: "rerun_create_time",
+					Property: "luci_build.create_time",
 				},
 			},
 		},
@@ -311,13 +321,13 @@ func UpdateIndices(c context.Context) {
 			Kind: "TestSingleRerun",
 			SortBy: []datastore.IndexColumn{
 				{
-					Property: "project",
+					Property: "luci_build.project",
 				},
 				{
-					Property: "status",
+					Property: "luci_build.status",
 				},
 				{
-					Property: "create_time",
+					Property: "luci_build.create_time",
 				},
 			},
 		},

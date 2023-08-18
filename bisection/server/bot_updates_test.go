@@ -238,8 +238,9 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			datastore.GetTestable(c).CatchupIndexes()
 
 			cfa := &model.CompileFailureAnalysis{
-				Id:             1234,
-				CompileFailure: datastore.KeyForObj(c, cf),
+				Id:                 1234,
+				CompileFailure:     datastore.KeyForObj(c, cf),
+				FirstFailedBuildId: 1000,
 			}
 			So(datastore.Put(c, cfa), ShouldBeNil)
 			datastore.GetTestable(c).CatchupIndexes()

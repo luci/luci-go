@@ -104,10 +104,10 @@ func congestedTestReruns(ctx context.Context, project string) ([]*model.TestSing
 	cutoffTime := clock.Now(ctx).Add(cutoffThreshold)
 	pendingCutoffTime := clock.Now(ctx).Add(congestedPendingThreshold)
 	q := datastore.NewQuery("TestSingleRerun").
-		Eq("status", buildbucketpb.Status_SCHEDULED).
-		Eq("project", project).
-		Gt("create_time", cutoffTime).
-		Lt("create_time", pendingCutoffTime)
+		Eq("luci_build.status", buildbucketpb.Status_SCHEDULED).
+		Eq("luci_build.project", project).
+		Gt("luci_build.create_time", cutoffTime).
+		Lt("luci_build.create_time", pendingCutoffTime)
 	reruns := []*model.TestSingleRerun{}
 	err := datastore.GetAll(ctx, q, &reruns)
 	if err != nil {

@@ -21,11 +21,15 @@ import (
 
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/rerun"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/analysis"
+	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 )
 
 type Bisector struct {
@@ -50,6 +54,48 @@ func (b *Bisector) Prepare(ctx context.Context, tfa *model.TestFailureAnalysis) 
 	}
 
 	return nil
+}
+
+func (b *Bisector) TriggerRerun(ctx context.Context, tfa *model.TestFailureAnalysis, tfs []*model.TestFailure, gitilesCommit *bbpb.GitilesCommit) (*bbpb.Build, error) {
+	builder, err := util.GetTestRerunBuilder(tfa.Project)
+	if err != nil {
+		return nil, errors.Annotate(err, "get test rerun builder").Err()
+	}
+
+	extraProperties := getExtraProperties(ctx, tfa, tfs)
+
+	options := &rerun.TriggerOptions{
+		Builder:         builder,
+		GitilesCommit:   gitilesCommit,
+		Priority:        tfa.Priority,
+		SampleBuildID:   tfa.FailedBuildID,
+		ExtraProperties: extraProperties,
+	}
+
+	build, err := rerun.TriggerRerun(ctx, options)
+	if err != nil {
+		return nil, errors.Annotate(err, "trigger rerun").Err()
+	}
+
+	return build, nil
+}
+
+func getExtraProperties(ctx context.Context, tfa *model.TestFailureAnalysis, tfs []*model.TestFailure) map[string]any {
+	// This may change depending on what the recipe needs.
+	var testsToRun []map[string]string
+	for _, tf := range tfs {
+		testsToRun = append(testsToRun, map[string]string{
+			"test_suite":   tf.TestSuiteName,
+			"test_name":    tf.TestName,
+			"test_id":      tf.TestID,
+			"variant_hash": tf.VariantHash,
+		})
+	}
+	return map[string]any{
+		"analysis_id":    tfa.ID,
+		"bisection_host": fmt.Sprintf("%s.appspot.com", info.AppID(ctx)),
+		"tests_to_run":   testsToRun,
+	}
 }
 
 // populateTestSuiteName set the correct TestSuiteName for TestFailures.

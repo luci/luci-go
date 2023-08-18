@@ -113,8 +113,8 @@ func TestCronHandler(t *testing.T) {
 func createTestSingleRerun(ctx context.Context, status buildbucketpb.Status, createdTime time.Time, os string) *model.TestSingleRerun {
 	tsr := &model.TestSingleRerun{
 		ID: 0,
-		LuciBuild: model.LuciBuild{
-			BuildId:    0,
+		LUCIBuild: model.LUCIBuild{
+			BuildID:    0,
 			Project:    "chromium",
 			CreateTime: createdTime,
 			Status:     status,

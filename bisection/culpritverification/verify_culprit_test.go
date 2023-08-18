@@ -117,8 +117,9 @@ func TestVerifySuspect(t *testing.T) {
 		datastore.GetTestable(c).CatchupIndexes()
 
 		analysis := &model.CompileFailureAnalysis{
-			Id:             444,
-			CompileFailure: datastore.KeyForObj(c, compileFailure),
+			Id:                 444,
+			CompileFailure:     datastore.KeyForObj(c, compileFailure),
+			FirstFailedBuildId: 1000,
 		}
 		So(datastore.Put(c, analysis), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()

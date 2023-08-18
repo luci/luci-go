@@ -167,9 +167,9 @@ func TestDatastoreModel(t *testing.T) {
 			datastore.GetTestable(c).CatchupIndexes()
 			singleRerun := &TestSingleRerun{
 				AnalysisKey: datastore.KeyForObj(c, tfa),
-				LuciBuild: LuciBuild{
-					BuildId: 12345,
-					GitilesCommit: buildbucketpb.GitilesCommit{
+				LUCIBuild: LUCIBuild{
+					BuildID: 12345,
+					GitilesCommit: &buildbucketpb.GitilesCommit{
 						Host:    "host",
 						Project: "proj",
 						Id:      "id",
@@ -217,7 +217,8 @@ func TestTestFailureBundle(t *testing.T) {
 		bundle := &TestFailureBundle{}
 
 		tf1 := &TestFailure{
-			ID: 100,
+			ID:         100,
+			IsDiverged: true,
 		}
 		tf2 := &TestFailure{
 			ID:        101,
@@ -241,5 +242,17 @@ func TestTestFailureBundle(t *testing.T) {
 			tf3,
 		})
 		So(err, ShouldNotBeNil)
+
+		tf4 := &TestFailure{
+			ID: 103,
+		}
+		err = bundle.Add([]*TestFailure{
+			tf4,
+		})
+		So(err, ShouldBeNil)
+		nonDiverged := bundle.NonDiverged()
+		So(len(nonDiverged), ShouldEqual, 2)
+		So(nonDiverged[0].ID, ShouldEqual, 101)
+		So(nonDiverged[1].ID, ShouldEqual, 103)
 	})
 }
