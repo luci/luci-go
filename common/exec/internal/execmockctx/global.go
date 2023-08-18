@@ -113,9 +113,14 @@ func EnableMockingForThisProcess(mcFactory func(context.Context) (mocker CreateM
 //
 // Once this function has been called (i.e. after the first call of
 // ".../common/exec.CommandContext()"), EnableMockingForThisProcess will panic.
+//
+// If no mocking is configured for this process, returns (nil, false).
 func GetMockCreator(ctx context.Context) (mocker CreateMockInvocation, chatty bool) {
 	mockCreatorOnce.Do(func() {
 		mockCreator = nil
 	})
-	return mockCreator(ctx)
+	if mockCreator != nil {
+		mocker, chatty = mockCreator(ctx)
+	}
+	return
 }

@@ -26,6 +26,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/exec"
 	"go.chromium.org/luci/common/exec/execmock"
+	"go.chromium.org/luci/common/system/environ"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -196,6 +197,10 @@ func TestCmd(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
+	if environ.System().Get("EXEC_TEST_SELF_CALL") == "1" {
+		os.Stdout.WriteString("EXEC_TEST_SELF_CALL")
+		os.Exit(0)
+	}
 	execmock.Intercept()
 	os.Exit(m.Run())
 }

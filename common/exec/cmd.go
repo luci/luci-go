@@ -415,10 +415,15 @@ func (c *Cmd) StdoutPipe() (io.ReadCloser, error) {
 // func (c *Cmd) String() string
 // func (c *Cmd) StdinPipe() (io.WriteCloser, error)
 
+// mocked in tests
+var getMockCreator = execmockctx.GetMockCreator
+
 func commandImpl(ctx context.Context, name string, arg []string, mkFn func(ctx context.Context, name string, arg ...string) *exec.Cmd) *Cmd {
-	mocker, chatty := execmockctx.GetMockCreator(ctx)
-	ret := &Cmd{safelyCreated: true, mock: &mockPayload{mocker: mocker, chatty: chatty}}
-	if ret.mock == nil {
+	ret := &Cmd{safelyCreated: true}
+	mocker, chatty := getMockCreator(ctx)
+	if mocker != nil {
+		ret.mock = &mockPayload{mocker: mocker, chatty: chatty}
+	} else {
 		ret.Cmd = mkFn(ctx, name, arg...)
 		return ret
 	}
