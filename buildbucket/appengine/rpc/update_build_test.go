@@ -152,21 +152,6 @@ func TestValidateUpdate(t *testing.T) {
 			req.Build.Output = &pb.Build_Output{Properties: props}
 			So(validateUpdate(ctx, req, nil), ShouldErrLike, "value is not set")
 		})
-
-		Convey("too large", func() {
-			largeProps, _ := structpb.NewStruct(map[string]any{})
-			k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
-			v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"
-			for i := 0; i < 10000; i++ {
-				largeProps.Fields[k+strconv.Itoa(i)] = &structpb.Value{
-					Kind: &structpb.Value_StringValue{
-						StringValue: v,
-					},
-				}
-			}
-			req.Build.Output = &pb.Build_Output{Properties: largeProps}
-			So(validateUpdate(ctx, req, nil), ShouldErrLike, "build.output.properties: too large to accept")
-		})
 	})
 
 	Convey("validate output.status", t, func() {
@@ -189,6 +174,49 @@ func TestValidateUpdate(t *testing.T) {
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output.summary_markdown"}}
 		req.Build.Output = &pb.Build_Output{SummaryMarkdown: strings.Repeat("☕", protoutil.SummaryMarkdownMaxLength)}
 		So(validateUpdate(ctx, req, nil), ShouldErrLike, "too big to accept")
+	})
+
+	Convey("validate output without sub masks", t, func() {
+		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
+		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output"}}
+		Convey("ok", func() {
+			props, _ := structpb.NewStruct(map[string]any{"key": "value"})
+			req.Build.Output = &pb.Build_Output{
+				Properties: props,
+				GitilesCommit: &pb.GitilesCommit{
+					Host:     "host",
+					Project:  "project",
+					Ref:      "refs/",
+					Position: 1,
+				},
+				SummaryMarkdown: "summary",
+			}
+			So(validateUpdate(ctx, req, nil), ShouldBeNil)
+		})
+		Convey("properties is invalid", func() {
+			props, _ := structpb.NewStruct(map[string]any{"key": nil})
+			req.Build.Output = &pb.Build_Output{
+				Properties:      props,
+				SummaryMarkdown: "summary",
+			}
+			So(validateUpdate(ctx, req, nil), ShouldErrLike, "value is not set")
+		})
+		Convey("summary_markdown is invalid", func() {
+			req.Build.Output = &pb.Build_Output{
+				SummaryMarkdown: strings.Repeat("☕", protoutil.SummaryMarkdownMaxLength),
+			}
+			So(validateUpdate(ctx, req, nil), ShouldErrLike, "too big to accept")
+		})
+		Convey("gitiles_commit is invalid", func() {
+			req.Build.Output = &pb.Build_Output{
+				GitilesCommit: &pb.GitilesCommit{
+					Host:     "host",
+					Project:  "project",
+					Position: 1,
+				},
+			}
+			So(validateUpdate(ctx, req, nil), ShouldErrLike, "ref is required")
+		})
 	})
 
 	Convey("validate steps", t, func() {

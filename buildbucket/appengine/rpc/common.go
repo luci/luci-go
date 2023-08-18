@@ -49,10 +49,6 @@ const (
 
 const (
 	buildSetMaxLength = 1024
-
-	// buildOutputPropertiesMaxBytes is the maximum length of build.output.properties.
-	// If bytes exceeds this maximum, Buildbucket will reject this request.
-	buildOutputPropertiesMaxBytes = 1000 * 1000
 )
 
 const UserPackageDir = "cipd_bin_packages"

@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -93,37 +92,35 @@ func validateUpdate(ctx context.Context, req *pb.UpdateBuildRequest, bs *model.B
 
 	buildStatus := pb.Status_STATUS_UNSPECIFIED
 	hasStepsMask := false
+	hasOutputMask := false
+	outputSubMasks := stringset.New(len(req.UpdateMask.GetPaths()))
 	for _, p := range req.UpdateMask.GetPaths() {
 		switch p {
 		case "build.output":
-			// TODO(crbug/1110990): validate properties and gitiles_commit
+			hasOutputMask = true
 		case "build.output.status":
 			if _, ok := updateBuildStatuses[req.Build.Output.GetStatus()]; !ok {
 				return errors.Reason("build.output.status: invalid status %s for UpdateBuild", req.Build.Output.GetStatus()).Err()
 			}
 			buildStatus = req.Build.Output.Status
+			outputSubMasks.Add("build.output.status")
 		case "build.output.status_details":
+			outputSubMasks.Add("build.output.status_details")
 		case "build.output.summary_markdown":
 			if err := validateSummaryMarkdown(req.Build.Output.GetSummaryMarkdown()); err != nil {
 				return errors.Annotate(err, "build.output.summary_markdown").Err()
 			}
+			outputSubMasks.Add("build.output.summary_markdown")
 		case "build.output.properties":
-			for k, v := range req.Build.Output.GetProperties().AsMap() {
-				if v == nil {
-					return errors.Reason("build.output.properties[%q]: value is not set; if necessary, use null_value instead", k).Err()
-				}
+			if err := validateOutputProperties(req.Build.Output.GetProperties()); err != nil {
+				return err
 			}
-			propBytes, err := proto.Marshal(req.Build.Output.GetProperties())
-			if err != nil {
-				return errors.Reason("failed to marshal build.output.properties to byte: %s", err).Err()
-			}
-			if len(propBytes) > buildOutputPropertiesMaxBytes {
-				return errors.Reason("build.output.properties: too large to accept. It has %d bytes while the maximum allowed is %d bytes.", len(propBytes), buildOutputPropertiesMaxBytes).Err()
-			}
+			outputSubMasks.Add("build.output.properties")
 		case "build.output.gitiles_commit":
 			if err := validateCommitWithRef(req.Build.Output.GetGitilesCommit()); err != nil {
 				return errors.Annotate(err, "build.output.gitiles_commit").Err()
 			}
+			outputSubMasks.Add("build.output.gitiles_commit")
 		case "build.status":
 			if _, ok := updateBuildStatuses[req.Build.Status]; !ok {
 				return errors.Reason("build.status: invalid status %s for UpdateBuild", req.Build.Status).Err()
@@ -164,6 +161,44 @@ func validateUpdate(ctx context.Context, req *pb.UpdateBuildRequest, bs *model.B
 	if hasStepsMask {
 		if err := validateSteps(bs, req.Build.Steps, buildStatus); err != nil {
 			return errors.Annotate(err, "build.steps").Err()
+		}
+	}
+
+	if hasOutputMask {
+		if err := validateOutput(req.Build.Output, outputSubMasks); err != nil {
+			return errors.Annotate(err, "build.output").Err()
+		}
+	}
+	return nil
+}
+
+// validateOutput validates build.Output fields if "build.output" is part of
+// the update mask, while their corresponding sub paths are not.
+func validateOutput(output *pb.Build_Output, subMasks stringset.Set) error {
+	// output status will only be updated if "build.output.status" is explicitly
+	// included in update mask, so no need to validate here.
+	if output.GetSummaryMarkdown() != "" && !subMasks.Has("build.output.summary_markdown") {
+		if err := validateSummaryMarkdown(output.SummaryMarkdown); err != nil {
+			return errors.Annotate(err, "summary_markdown").Err()
+		}
+	}
+	if output.GetProperties() != nil && !subMasks.Has("build.output.properties") {
+		if err := validateOutputProperties(output.GetProperties()); err != nil {
+			return err
+		}
+	}
+	if output.GetGitilesCommit() != nil && !subMasks.Has("build.output.gitiles_commit") {
+		if err := validateCommitWithRef(output.GetGitilesCommit()); err != nil {
+			return errors.Annotate(err, "gitiles_commit").Err()
+		}
+	}
+	return nil
+}
+
+func validateOutputProperties(properties *structpb.Struct) error {
+	for k, v := range properties.AsMap() {
+		if v == nil {
+			return errors.Reason("build.output.properties[%q]: value is not set; if necessary, use null_value instead", k).Err()
 		}
 	}
 	return nil
