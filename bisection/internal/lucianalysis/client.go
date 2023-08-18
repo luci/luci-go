@@ -136,7 +136,8 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
       current_failure_rate = 1
       AND previous_failure_rate = 0
       AND segments[0].counts.unexpected_passed_results = 0
-      AND segments[0].start_hour >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
+      // TODO(beining@): Update to 30 days after we have the source_ref_hash available in test_verdicts table for the last 30 days.
+      AND segments[0].start_hour >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 8 DAY)
     GROUP BY ref_hash, builder, nominal_lower, nominal_upper
   ),
   builder_regression_groups_with_latest_build AS (
@@ -229,7 +230,8 @@ func (c *Client) ReadBuildInfo(ctx context.Context, tf *model.TestFailure) (Buil
 		AND variant_hash = @variantHash
 		AND source_ref_hash = @refHash
 		AND sources.gitiles_commit.position in (@startPosition, @endPosition)
-		AND partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
+		// TODO(beining@): Update to 30 days after we have the source_ref_hash available in test_verdicts table for the last 30 days.
+		AND partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 8 DAY)
 	GROUP BY sources.gitiles_commit.position
 	ORDER BY sources.gitiles_commit.position DESC
 `)
