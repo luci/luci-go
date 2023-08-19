@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/server/quota/quotapb"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -39,16 +40,22 @@ type PM interface {
 	UpdateConfig(ctx context.Context, luciProject string) error
 }
 
+// QM manages run and tryjob quotas.
+type QM interface {
+	WritePolicy(ctx context.Context, project string) (*quotapb.PolicyConfigID, error)
+}
+
 // Refresher handles RefreshProjectConfigTask.
 type Refresher struct {
 	pm  PM
 	tqd *tq.Dispatcher
+	qm  QM
 	env *common.Env
 }
 
 // NewRefresher creates a new project config Refresher and registers its TQ tasks.
-func NewRefresher(tqd *tq.Dispatcher, pm PM, env *common.Env) *Refresher {
-	pcr := &Refresher{pm, tqd, env}
+func NewRefresher(tqd *tq.Dispatcher, pm PM, qm QM, env *common.Env) *Refresher {
+	pcr := &Refresher{pm, tqd, qm, env}
 	pcr.tqd.RegisterTaskClass(tq.TaskClass{
 		ID:           "refresh-project-config",
 		Prototype:    &RefreshProjectConfigTask{},
@@ -143,6 +150,12 @@ func (r *Refresher) refreshProject(ctx context.Context, project string, disable 
 		action, actionFn = "disable", DisableProject
 	}
 	err := actionFn(ctx, project, func(ctx context.Context) error {
+		// Refresh quota policies along with project config.
+		_, err := r.qm.WritePolicy(ctx, project)
+		if err != nil {
+			return err
+		}
+
 		return r.pm.UpdateConfig(ctx, project)
 	})
 	if err != nil {

@@ -18,16 +18,34 @@ import (
 	"context"
 	"sync"
 
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	srvquota "go.chromium.org/luci/server/quota"
 	"go.chromium.org/luci/server/quota/quotapb"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 var qinit sync.Once
-var qapp *srvquota.Application
+var qapp SrvQuota
+
+const (
+	// Resource types that the quota can use.
+	runResource    = "runs"
+	tryjobResource = "tryjobs"
+
+	defaultPolicy = "default"
+
+	// Default lifetime of a quota account.
+	accountLifeTimeSeconds = 60 * 60 * 24 * 3 // 3 days
+)
 
 // Manager manages the quota accounts for CV users.
 type Manager struct {
-	qapp *srvquota.Application
+	qapp SrvQuota
+}
+
+// SrvQuota manages quota
+type SrvQuota interface {
+	LoadPoliciesAuto(ctx context.Context, realm string, cfg *quotapb.PolicyConfig) (*quotapb.PolicyConfigID, error)
 }
 
 // DebitRunQuota debits the run quota from a given user's account.
@@ -50,11 +68,101 @@ func (qm *Manager) CreditTryjobQuota(ctx context.Context) (*quotapb.OpResult, er
 	return nil, nil
 }
 
+// runPolicyKey is a helper to generate run quota policy key.
+func runPolicyKey(project, configName, name string) *quotapb.PolicyKey {
+	return &quotapb.PolicyKey{
+		Namespace:    configName,
+		Name:         name,
+		ResourceType: runResource,
+	}
+}
+
+// runPolicyEntry is a helper to generate a run quota policy entry.
+func runPolicyEntry(polkey *quotapb.PolicyKey, limit uint64) *quotapb.PolicyConfig_Entry {
+	return &quotapb.PolicyConfig_Entry{
+		Key: polkey,
+		Policy: &quotapb.Policy{
+			Default: limit,
+			Limit:   limit,
+			Lifetime: &durationpb.Duration{
+				Seconds: accountLifeTimeSeconds,
+			},
+		},
+	}
+}
+
+// makeRunQuotaPolicies is a a helper to format run quota policies for the given config groups.
+func makeRunQuotaPolicies(project string, configGroups []*prjcfg.ConfigGroup) []*quotapb.PolicyConfig_Entry {
+	var policies []*quotapb.PolicyConfig_Entry
+
+	for _, configGroup := range configGroups {
+		config := configGroup.Content
+		if config == nil {
+			continue
+		}
+
+		for _, userLimit := range config.GetUserLimits() {
+			runLimit := userLimit.GetRun()
+			if runLimit == nil {
+				continue
+			}
+
+			// limit is set to 0 when unlimited = True. The unlimited attribute
+			// will be handled by setting `IGNORE_POLICY_BOUNDS` for each
+			// quota op.
+			runLimitVal := uint64(runLimit.GetMaxActive().GetValue())
+			polkey := runPolicyKey(project, config.GetName(), userLimit.Name)
+
+			policies = append(policies, runPolicyEntry(polkey, runLimitVal))
+		}
+
+		// Add default run quota policy.
+		defaultRunLimit := config.GetUserLimitDefault().GetRun()
+		if defaultRunLimit == nil {
+			continue
+		}
+
+		// default limit is set to 0 when unlimited = True || not configured.
+		// Accounts using this policy will set `IGNORE_POLICY_BOUNDS` for each
+		// quota op.
+		defaultRunLimitVal := uint64(defaultRunLimit.GetMaxActive().GetValue())
+		defaultkey := runPolicyKey(project, config.GetName(), defaultPolicy)
+
+		policies = append(policies, runPolicyEntry(defaultkey, defaultRunLimitVal))
+	}
+
+	return policies
+}
+
+// WritePolicy writes lucicfg updates to the srvquota policies.
+func (qm *Manager) WritePolicy(ctx context.Context, project string) (*quotapb.PolicyConfigID, error) {
+	// Get all config groups.
+	meta, err := prjcfg.GetLatestMeta(ctx, project)
+	if err != nil {
+		return nil, err
+	}
+
+	configGroups, err := meta.GetConfigGroups(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	runQuotaPolicies := makeRunQuotaPolicies(project, configGroups)
+	if runQuotaPolicies == nil {
+		return nil, nil
+	}
+
+	// Load policies into server/quota.
+	return qm.qapp.LoadPoliciesAuto(ctx, project, &quotapb.PolicyConfig{
+		Policies: runQuotaPolicies,
+	})
+}
+
 // NewManager creates a new quota manager.
 func NewManager() *Manager {
 	qinit.Do(func() {
 		qapp = srvquota.Register("cv", &srvquota.ApplicationOptions{
-			ResourceTypes: []string{"runs", "tryjobs"},
+			ResourceTypes: []string{runResource, tryjobResource},
 		})
 	})
 	return &Manager{qapp: qapp}

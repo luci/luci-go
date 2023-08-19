@@ -157,7 +157,7 @@ func main() {
 		apiv0pb.RegisterRunsServer(srv, &rpcv0.RunsServer{})
 
 		// Register cron.
-		pcr := refresher.NewRefresher(&tq.Default, pmNotifier, env)
+		pcr := refresher.NewRefresher(&tq.Default, pmNotifier, qm, env)
 		cron.RegisterHandler("refresh-config", func(ctx context.Context) error {
 			return refreshConfig(ctx, pcr)
 		})

@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmemory "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/quota/quotapb"
 	"go.chromium.org/luci/server/tq/tqtesting"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
@@ -44,7 +45,8 @@ func TestConfigRefreshCron(t *testing.T) {
 		defer cancel()
 
 		pm := mockPM{}
-		pcr := NewRefresher(ct.TQDispatcher, &pm, ct.Env)
+		qm := mockQM{}
+		pcr := NewRefresher(ct.TQDispatcher, &pm, &qm, ct.Env)
 
 		Convey("for a new project", func() {
 			ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
@@ -58,6 +60,7 @@ func TestConfigRefreshCron(t *testing.T) {
 			})
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
 			So(pm.updates, ShouldResemble, []string{"chromium"})
+			So(qm.writes, ShouldResemble, []string{"chromium"})
 		})
 
 		Convey("for an existing project", func() {
@@ -74,7 +77,9 @@ func TestConfigRefreshCron(t *testing.T) {
 			})
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
 			So(pm.updates, ShouldResemble, []string{"chromium"})
+			So(qm.writes, ShouldResemble, []string{"chromium"})
 			pm.updates = nil
+			qm.writes = nil
 
 			Convey("randomly pokes existing projects even if there are no updates", func() {
 				// Simulate cron runs every 1 minute and expect PM to be poked at least
@@ -86,6 +91,7 @@ func TestConfigRefreshCron(t *testing.T) {
 					So(pcr.SubmitRefreshTasks(ctx), ShouldBeNil)
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
 					So(pm.updates, ShouldBeEmpty)
+					So(qm.writes, ShouldBeEmpty)
 					if len(pm.pokes) > 0 {
 						break
 					}
@@ -110,6 +116,7 @@ func TestConfigRefreshCron(t *testing.T) {
 				})
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
 				So(pm.updates, ShouldResemble, []string{"chromium"})
+				So(qm.writes, ShouldResemble, []string{"chromium"})
 			})
 			Convey("that doesn't exist in LUCI Config", func() {
 				ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{}))
@@ -124,6 +131,7 @@ func TestConfigRefreshCron(t *testing.T) {
 				})
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
 				So(pm.updates, ShouldResemble, []string{"chromium"})
+				So(qm.writes, ShouldResemble, []string{"chromium"})
 			})
 			Convey("Skip already disabled Project", func() {
 				ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{}))
@@ -152,4 +160,13 @@ func (m *mockPM) Poke(ctx context.Context, luciProject string) error {
 func (m *mockPM) UpdateConfig(ctx context.Context, luciProject string) error {
 	m.updates = append(m.updates, luciProject)
 	return nil
+}
+
+type mockQM struct {
+	writes []string
+}
+
+func (qm *mockQM) WritePolicy(ctx context.Context, project string) (*quotapb.PolicyConfigID, error) {
+	qm.writes = append(qm.writes, project)
+	return nil, nil
 }
