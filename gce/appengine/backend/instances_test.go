@@ -19,16 +19,19 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
 
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/gce/api/tasks/v1"
+	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
 	"go.chromium.org/luci/gce/appengine/model"
 	"go.chromium.org/luci/gce/appengine/testing/roundtripper"
 
@@ -45,9 +48,11 @@ func TestCreate(t *testing.T) {
 		rt := &roundtripper.JSONRoundTripper{}
 		gce, err := compute.New(&http.Client{Transport: rt})
 		So(err, ShouldBeNil)
-		c := withCompute(withDispatcher(memory.Use(context.Background()), dsp), gce)
+		c, _ := tsmon.WithDummyInMemory(memory.Use(context.Background()))
+		c = withCompute(withDispatcher(c, dsp), gce)
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
+		s := tsmon.Store(c)
 
 		Convey("invalid", func() {
 			Convey("nil", func() {
@@ -169,6 +174,8 @@ func TestCreate(t *testing.T) {
 			})
 
 			Convey("created", func() {
+				confFields := []any{"", "", "", "name"}
+				So(s.Get(c, metrics.CreatedInstanceChecked, time.Time{}, confFields), ShouldBeNil)
 				Convey("pending", func() {
 					rt.Handler = func(req any) (int, any) {
 						inst, ok := req.(*compute.Instance)
@@ -269,6 +276,7 @@ func TestCreate(t *testing.T) {
 						},
 					})
 					So(v.URL, ShouldEqual, "url")
+					So(s.Get(c, metrics.CreatedInstanceChecked, time.Time{}, confFields), ShouldEqual, 1)
 				})
 			})
 		})

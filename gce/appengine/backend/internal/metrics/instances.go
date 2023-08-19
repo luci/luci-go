@@ -45,6 +45,16 @@ var (
 		field.String("zone"),
 	)
 
+	CreatedInstanceChecked = metric.NewCounter(
+		"gce/instance/creation/checked",
+		"Cumulative number of GCE instances created and checked.",
+		nil,
+		field.String("prefix"),
+		field.String("project"),
+		field.String("zone"),
+		field.String("instance"),
+	)
+
 	connectedInstances = metric.NewInt(
 		"gce/instances/connected",
 		"The number of GCE instances connected to Swarming.",
