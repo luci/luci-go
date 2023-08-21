@@ -68,6 +68,7 @@ func validateSettingsCfg(ctx *validation.Context, configSet, path string, conten
 	for i, backend := range cfg.GetBackends() {
 		ctx.Enter("Backends.BackendSetting #%d", i)
 		validateHostname(ctx, "BackendSetting.hostname", backend.GetHostname())
+		validateBuildSyncSetting(ctx, backend.GetBuildSyncSetting())
 		ctx.Exit()
 	}
 
@@ -115,6 +116,16 @@ func validateHostname(ctx *validation.Context, field string, host string) {
 	}
 	if strings.Contains(host, "://") {
 		ctx.Errorf("%s must not contain '://'", field)
+	}
+}
+
+func validateBuildSyncSetting(ctx *validation.Context, setting *pb.BackendSetting_BuildSyncSetting) {
+	if setting.GetShards() < 0 {
+		ctx.Errorf("shards must be greater than or equal to 0")
+	}
+
+	if setting.GetSyncIntervalSeconds() != 0 && setting.GetSyncIntervalSeconds() < 60 {
+		ctx.Errorf("sync_interval_seconds must be greater than or equal to 60")
 	}
 }
 

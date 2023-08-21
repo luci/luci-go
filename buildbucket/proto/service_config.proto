@@ -67,6 +67,40 @@ message BackendSetting {
   //     The pubsub_id would be:
   //         chormium-swarm-backend
   string pubsub_id = 3;
+
+  // Setting for the fetch tasks cron job.
+  message BuildSyncSetting {
+    // Number of shards for Buildbucket to save the update_time of the builds on
+    // this backend.
+    //
+    // In Build model, we need to keep an index on the build update time in order
+    // to get all builds it haven't heard for a while.
+    // To avoid hotspotting, a new computed property NextBackendSyncTime is added
+    // for indexing, with format
+    // <backend_target>--<project>--<shard index>--<update_time>.
+    //
+    // Because some backends serves significantly larger amount of builds than
+    // other backends, we need different number of shards for each backend.
+    //
+    // Must be greater than or equal to 0, while 0 effectively means 1 shard.
+    //
+    // Note: when updating this field, the new number MUST be greater than the
+    // old one.
+    int32 shards = 1;
+
+    // How often should a incomplete build get updated. If Buildbucket doesn't
+    // hear from this build for sync_interval, it will sync it with its backend
+    // task.
+    //
+    // Buildbucket runs a cron job to find builds to sync every minute, so
+    // sync_interval_seconds must be greater than or equal to 60.
+    //
+    // If unset, a default threshold of 5min will be applied.
+    int32 sync_interval_seconds = 2;
+
+    // In the future, we could also add backoff factor here when have a use case.
+  }
+  BuildSyncSetting build_sync_setting = 4;
 }
 
 // Swarmbucket settings.
