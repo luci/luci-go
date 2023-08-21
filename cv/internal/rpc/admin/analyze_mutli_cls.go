@@ -119,18 +119,39 @@ type clGraph struct {
 func makeCLGraph(cls []*run.RunCL) clGraph {
 	ret := clGraph{}
 	ret.clMap = make(map[common.CLID]*run.RunCL, len(cls))
+	externalIDToCL := make(map[changelist.ExternalID]*run.RunCL, len(cls))
 	for _, cl := range cls {
 		ret.clMap[cl.ID] = cl
+		externalIDToCL[cl.ExternalID] = cl
 	}
 	ret.deps = make(map[common.CLID][]*changelist.Dep, len(cls))
 	for _, cl := range cls {
-		for _, depCL := range cl.Detail.GetDeps() {
-			// A CL may depend on an already submitted CL that are not part of the Run
-			// Ignore them.
-			if _, ok := ret.clMap[common.CLID(depCL.Clid)]; !ok {
+		for _, hardDep := range cl.Detail.GetGerrit().GetGitDeps() {
+			if !hardDep.GetImmediate() {
 				continue
 			}
-			ret.deps[cl.ID] = append(ret.deps[cl.ID], depCL)
+			depExternalID := changelist.MustGobID(cl.Detail.GetGerrit().GetHost(), hardDep.GetChange())
+			// A CL may depend on an already submitted CL that are not part of the
+			// Run. Ignore them.
+			if depCL, ok := externalIDToCL[depExternalID]; ok {
+				ret.deps[cl.ID] = append(ret.deps[cl.ID], &changelist.Dep{
+					Clid: int64(depCL.ID),
+					Kind: changelist.DepKind_HARD,
+				})
+			}
+
+		}
+
+		for _, softDep := range cl.Detail.GetGerrit().GetSoftDeps() {
+			depExternalID := changelist.MustGobID(softDep.GetHost(), softDep.GetChange())
+			// A CL may depend on an already submitted CL that are not part of the
+			// Run. Ignore them.
+			if depCL, ok := externalIDToCL[depExternalID]; ok {
+				ret.deps[cl.ID] = append(ret.deps[cl.ID], &changelist.Dep{
+					Clid: int64(depCL.ID),
+					Kind: changelist.DepKind_SOFT,
+				})
+			}
 		}
 	}
 	return ret

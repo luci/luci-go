@@ -127,22 +127,36 @@ func generateRunCL(n int) []*run.RunCL {
 		runCLs[i] = &run.RunCL{
 			ID:         common.CLID(i),
 			ExternalID: changelist.MustGobID("example.com", int64(i)),
-			Detail:     &changelist.Snapshot{},
+			Detail: &changelist.Snapshot{
+				Kind: &changelist.Snapshot_Gerrit{
+					Gerrit: &changelist.Gerrit{
+						Host: "example.com",
+					},
+				},
+			},
 		}
 	}
 	return runCLs
 }
 
 func setHardDepOn(from, to *run.RunCL) {
-	from.Detail.Deps = append(from.Detail.Deps, &changelist.Dep{
-		Clid: int64(to.ID),
-		Kind: changelist.DepKind_HARD,
+	_, change, err := to.ExternalID.ParseGobID()
+	if err != nil {
+		panic(err)
+	}
+	from.Detail.GetGerrit().GitDeps = append(from.Detail.GetGerrit().GitDeps, &changelist.GerritGitDep{
+		Change:    change,
+		Immediate: true,
 	})
 }
 
 func setSoftDepOn(from, to *run.RunCL) {
-	from.Detail.Deps = append(from.Detail.Deps, &changelist.Dep{
-		Clid: int64(to.ID),
-		Kind: changelist.DepKind_SOFT,
+	host, change, err := to.ExternalID.ParseGobID()
+	if err != nil {
+		panic(err)
+	}
+	from.Detail.GetGerrit().SoftDeps = append(from.Detail.GetGerrit().SoftDeps, &changelist.GerritSoftDep{
+		Host:   host,
+		Change: change,
 	})
 }
