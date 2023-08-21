@@ -16,8 +16,11 @@ package model
 
 import (
 	"context"
+	"fmt"
 	"strconv"
+	"strings"
 	"testing"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -71,6 +74,7 @@ func TestBuild(t *testing.T) {
 			So(datastore.Get(ctx, b), ShouldBeNil)
 			p := proto.Clone(b.Proto).(*pb.Build)
 			b.Proto = &pb.Build{}
+			b.NextBackendSyncTime = ""
 			So(b, ShouldResemble, &Build{
 				ID:                1,
 				Proto:             &pb.Build{},
@@ -127,6 +131,7 @@ func TestBuild(t *testing.T) {
 				So(datastore.Get(ctx, b), ShouldBeNil)
 				p := proto.Clone(b.Proto).(*pb.Build)
 				b.Proto = &pb.Build{}
+				b.NextBackendSyncTime = ""
 				So(b, ShouldResemble, &Build{
 					ID:                1,
 					Proto:             &pb.Build{},
@@ -183,6 +188,7 @@ func TestBuild(t *testing.T) {
 				So(datastore.Get(ctx, b), ShouldBeNil)
 				p := proto.Clone(b.Proto).(*pb.Build)
 				b.Proto = &pb.Build{}
+				b.NextBackendSyncTime = ""
 				So(b, ShouldResemble, &Build{
 					ID:                1,
 					Proto:             &pb.Build{},
@@ -239,6 +245,7 @@ func TestBuild(t *testing.T) {
 				So(datastore.Get(ctx, b), ShouldBeNil)
 				p := proto.Clone(b.Proto).(*pb.Build)
 				b.Proto = &pb.Build{}
+				b.NextBackendSyncTime = ""
 				So(b, ShouldResemble, &Build{
 					ID:                1,
 					Proto:             &pb.Build{},
@@ -508,6 +515,59 @@ func TestBuild(t *testing.T) {
 				exps := []string{"+exp4", "-exp3", "+exp1", "-exp10"}
 				check(exps, "exp1|exp4")
 			})
+		})
+
+		Convey("NextBackendSyncTime", func() {
+			b := &Build{
+				ID:      1,
+				Project: "project",
+				Proto: &pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Status:      pb.Status_STARTED,
+					CreateTime:  t0pb,
+					UpdateTime:  t0pb,
+					AncestorIds: []int64{2, 3, 4},
+				},
+				BackendTarget: "backend",
+			}
+			b.GenerateNextBackendSyncTime(ctx, 1)
+			So(datastore.Put(ctx, b), ShouldBeNil)
+
+			// First save.
+			So(datastore.Get(ctx, b), ShouldBeNil)
+			ut0 := b.NextBackendSyncTime
+			parts := strings.Split(ut0, syncTimeSep)
+			So(parts, ShouldHaveLength, 4)
+			So(parts[3], ShouldEqual, fmt.Sprint(t0.Add(b.BackendSyncInterval).Truncate(time.Minute).Unix()))
+			So(ut0, ShouldEqual, "backend--project--0--1454472600")
+
+			// update soon after, NextBackendSyncTime unchanged.
+			b.Proto.UpdateTime = timestamppb.New(t0.Add(time.Second))
+			So(datastore.Put(ctx, b), ShouldBeNil)
+			So(datastore.Get(ctx, b), ShouldBeNil)
+			So(b.NextBackendSyncTime, ShouldEqual, ut0)
+			So(b.BackendSyncInterval, ShouldEqual, defaultBuildSyncInterval)
+
+			// update after 30sec, NextBackendSyncTime unchanged.
+			b.Proto.UpdateTime = timestamppb.New(t0.Add(40 * time.Second))
+			So(datastore.Put(ctx, b), ShouldBeNil)
+			So(datastore.Get(ctx, b), ShouldBeNil)
+			So(b.NextBackendSyncTime, ShouldBeGreaterThan, ut0)
+
+			// update after 2min, NextBackendSyncTime changed.
+			t1 := t0.Add(2 * time.Minute)
+			b.Proto.UpdateTime = timestamppb.New(t1)
+			So(datastore.Put(ctx, b), ShouldBeNil)
+			So(datastore.Get(ctx, b), ShouldBeNil)
+			So(b.NextBackendSyncTime, ShouldBeGreaterThan, ut0)
+			parts = strings.Split(b.NextBackendSyncTime, syncTimeSep)
+			So(parts, ShouldHaveLength, 4)
+			So(parts[3], ShouldEqual, fmt.Sprint(t1.Add(b.BackendSyncInterval).Truncate(time.Minute).Unix()))
 		})
 	})
 }

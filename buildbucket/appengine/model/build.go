@@ -17,6 +17,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"sort"
 	"strings"
 	"time"
@@ -24,6 +25,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -49,6 +51,12 @@ const (
 	// BuildMaxCompletionTime defines the maximum duration that a Build must be
 	// completed within, from the build creation time.
 	BuildMaxCompletionTime = time.Hour * 24 * 2 // 2 days
+
+	// defaultBuildSyncInterval is the default interval between a build's latest
+	// update time and the next time to sync it with backend.
+	defaultBuildSyncInterval = 5 * time.Minute
+
+	syncTimeSep = "--"
 )
 
 // isHiddenTag returns whether the given tag should be hidden by ToProto.
@@ -164,6 +172,24 @@ type Build struct {
 	// Id of the first StartBuild call Buildbucket receives for the build.
 	// Buildbucket uses this to deduplicate the other StartBuild calls.
 	StartBuildRequestID string `gae:"start_build_request_id,noindex"`
+
+	// Computed field to be used by a cron job to get the builds that have not
+	// been updated for a while.
+	//
+	// It has a format like "<backend>--<project>--<shard>-=<next-sync-time>", where
+	//   * backend is the backend target.
+	//	 * project is the luci project of the build.
+	//   * shard is the added prefix to make sure the index on this property is
+	//     sharded to avoid hot spotting.
+	//   * next-sync-time is the unix time of the next time the build is supposed
+	//     to be synced with its backend task, truncated in minute.
+	NextBackendSyncTime string `gae:"next_backend_sync_time"`
+
+	// Backend target for builds on TaskBackend.
+	BackendTarget string `gae:"backend_target"`
+
+	// How far into the future should NextBackendSyncTime be set after a build update.
+	BackendSyncInterval time.Duration `gae:"backend_sync_interval,noindex"`
 }
 
 // Realm returns this build's auth realm, or an empty string if not opted into the
@@ -268,6 +294,22 @@ func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
 	}
 	b.CreateTime = b.Proto.CreateTime.AsTime()
 
+	if b.BackendTarget != "" && b.BackendSyncInterval == 0 {
+		b.BackendSyncInterval = defaultBuildSyncInterval
+	}
+
+	if b.NextBackendSyncTime != "" && b.Proto.UpdateTime != nil {
+		parts := strings.Split(b.NextBackendSyncTime, syncTimeSep)
+		if len(parts) != 4 {
+			return nil, errors.Reason("build.NextBackendSyncTime %s is in a wrong format", b.NextBackendSyncTime).Err()
+		}
+		oldUnix := parts[3]
+		newUnix := fmt.Sprint(b.calculateNextSyncTime().Unix())
+		if newUnix > oldUnix {
+			b.NextBackendSyncTime = strings.Join([]string{parts[0], parts[1], parts[2], newUnix}, syncTimeSep)
+		}
+	}
+
 	// Set legacy values used by Python.
 	switch b.Status {
 	case pb.Status_SCHEDULED:
@@ -368,6 +410,27 @@ func (b *Build) GetParentID() int64 {
 // NeverLeased is kept unchanged.
 func (b *Build) ClearLease() {
 	b.LeaseProperties = LeaseProperties{NeverLeased: b.LeaseProperties.NeverLeased}
+}
+
+// GenerateNextBackendSyncTime generates the build's NextBackendSyncTime if the build
+// runs on a backend.
+func (b *Build) GenerateNextBackendSyncTime(ctx context.Context, shards int32) {
+	if b.BackendTarget == "" {
+		return
+	}
+
+	shardID := 0
+	if shards > 1 {
+		seeded := rand.New(rand.NewSource(clock.Now(ctx).UnixNano()))
+		shardID = seeded.Intn(int(shards))
+	}
+	b.NextBackendSyncTime = strings.Join([]string{b.BackendTarget, b.Project, fmt.Sprint(shardID), fmt.Sprint(b.calculateNextSyncTime().Unix())}, syncTimeSep)
+}
+
+// calculateNextSyncTime calculates the next time the build should be synced.
+// It rounds the build's update time to the closest minute them add BackendSyncInterval.
+func (b *Build) calculateNextSyncTime() time.Time {
+	return b.Proto.UpdateTime.AsTime().Round(time.Minute).Add(b.BackendSyncInterval)
 }
 
 // LoadBuildDetails loads the details of the given builds, trimming them

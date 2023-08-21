@@ -16,12 +16,14 @@ package tasks
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	grpc "google.golang.org/grpc"
@@ -197,16 +199,14 @@ func TestBackendTaskClient(t *testing.T) {
 		}
 
 		Convey("global settings not defined", func() {
-			_, err := NewBackendClient(ctx, build, infra)
+			_, err := NewBackendClient(ctx, build, infra, nil)
 			So(err, ShouldErrLike, "could not get global settings config")
 		})
 
 		Convey("target not in global config", func() {
 			backendSetting := []*pb.BackendSetting{}
 			settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
-			err := config.SetTestSettingsCfg(ctx, settingsCfg)
-			So(err, ShouldBeNil)
-			_, err = NewBackendClient(ctx, build, infra)
+			_, err := NewBackendClient(ctx, build, infra, settingsCfg)
 			So(err, ShouldErrLike, "could not find target in global config settings")
 		})
 
@@ -217,9 +217,7 @@ func TestBackendTaskClient(t *testing.T) {
 				Hostname: "hostname",
 			})
 			settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
-			err := config.SetTestSettingsCfg(ctx, settingsCfg)
-			So(err, ShouldBeNil)
-			_, err = NewBackendClient(ctx, build, infra)
+			_, err := NewBackendClient(ctx, build, infra, settingsCfg)
 			So(err, ShouldBeNil)
 		})
 	})
@@ -340,8 +338,6 @@ func TestCreateBackendTask(t *testing.T) {
 			PubsubId: "chromium-swarm-dev-backend",
 		})
 		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
-		err := config.SetTestSettingsCfg(ctx, settingsCfg)
-		So(err, ShouldBeNil)
 		server := httptest.NewServer(describeBootstrapBundle(c))
 		defer server.Close()
 		client := &prpc.Client{
@@ -435,7 +431,7 @@ func TestCreateBackendTask(t *testing.T) {
 					},
 				},
 			}
-			req, err := computeBackendNewTaskReq(ctx, build, infra, "request_id")
+			req, err := computeBackendNewTaskReq(ctx, build, infra, "request_id", settingsCfg)
 			So(err, ShouldBeNil)
 			So(req.BackendConfig, ShouldResembleProto, &structpb.Struct{
 				Fields: map[string]*structpb.Value{
@@ -517,6 +513,10 @@ func TestCreateBackendTask(t *testing.T) {
 		backendSetting = append(backendSetting, &pb.BackendSetting{
 			Target:   "swarming://chromium-swarm",
 			Hostname: "hostname2",
+			BuildSyncSetting: &pb.BackendSetting_BuildSyncSetting{
+				Shards:              5,
+				SyncIntervalSeconds: 300,
+			},
 		})
 		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 		err := config.SetTestSettingsCfg(ctx, settingsCfg)
@@ -622,7 +622,19 @@ func TestCreateBackendTask(t *testing.T) {
 			eb := &model.Build{ID: build.ID}
 			expectedBuildInfra := &model.BuildInfra{Build: key}
 			So(datastore.Get(ctx, eb, expectedBuildInfra), ShouldBeNil)
-			So(eb.Proto.UpdateTime.AsTime(), ShouldEqual, now)
+			updateTime := eb.Proto.UpdateTime.AsTime()
+			So(updateTime, ShouldEqual, now)
+			So(eb.BackendTarget, ShouldEqual, "swarming://chromium-swarm")
+			So(eb.BackendSyncInterval, ShouldEqual, time.Duration(300)*time.Second)
+			parts := strings.Split(eb.NextBackendSyncTime, "--")
+			So(parts, ShouldHaveLength, 4)
+			So(parts[0], ShouldEqual, eb.BackendTarget)
+			So(parts[1], ShouldEqual, "project")
+			shardID, err := strconv.Atoi(parts[2])
+			So(err, ShouldBeNil)
+			So(shardID >= 0, ShouldBeTrue)
+			So(shardID < 5, ShouldBeTrue)
+			So(parts[3], ShouldEqual, fmt.Sprint(updateTime.Round(time.Minute).Add(eb.BackendSyncInterval).Unix()))
 			So(expectedBuildInfra.Proto.Backend.Task, ShouldResembleProto, &pb.Task{
 				Id: &pb.TaskID{
 					Id:     "abc123",

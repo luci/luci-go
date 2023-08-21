@@ -128,8 +128,8 @@ func newRawTaskBackendClient(ctx context.Context, host string, project string) (
 }
 
 // NewBackendClient creates a client to communicate with Buildbucket.
-func NewBackendClient(ctx context.Context, bld *pb.Build, infra *pb.BuildInfra) (*BackendClient, error) {
-	hostnname, err := computeHostnameFromTarget(ctx, infra.Backend.Task.Id.Target)
+func NewBackendClient(ctx context.Context, bld *pb.Build, infra *pb.BuildInfra, globalCfg *pb.SettingsCfg) (*BackendClient, error) {
+	hostnname, err := computeHostnameFromTarget(infra.Backend.Task.Id.Target, globalCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -155,10 +155,9 @@ func NewCipdClient(ctx context.Context, host string, project string) (client *pr
 	return
 }
 
-func computeHostnameFromTarget(ctx context.Context, target string) (hostname string, err error) {
-	globalCfg, err := config.GetSettingsCfg(ctx)
-	if err != nil {
-		return "", errors.Annotate(err, "could not get global settings config").Err()
+func computeHostnameFromTarget(target string, globalCfg *pb.SettingsCfg) (hostname string, err error) {
+	if globalCfg == nil {
+		return "", errors.Reason("could not get global settings config").Err()
 	}
 	for _, config := range globalCfg.Backends {
 		if config.Target == target {
@@ -196,14 +195,11 @@ func computeAgentArgs(build *pb.Build, infra *pb.BuildInfra) (args []string) {
 	return
 }
 
-func computeBackendPubsubTopic(ctx context.Context, target string) (string, error) {
-	globalCfg, err := config.GetSettingsCfg(ctx)
-	if err != nil {
-		return "", errors.Annotate(err, "error fetching service config").Err()
+func computeBackendPubsubTopic(ctx context.Context, target string, globalCfg *pb.SettingsCfg) (string, error) {
+	if globalCfg == nil {
+		return "", errors.Reason("error fetching service config").Err()
 	}
-
 	for _, backend := range globalCfg.Backends {
-
 		if backend.Target == target {
 			return fmt.Sprintf("projects/%s/topics/%s", info.AppID(ctx), backend.PubsubId), nil
 		}
@@ -211,7 +207,7 @@ func computeBackendPubsubTopic(ctx context.Context, target string) (string, erro
 	return "", errors.Reason("pubsub id not found").Err()
 }
 
-func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *model.BuildInfra, requestID string) (*pb.RunTaskRequest, error) {
+func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *model.BuildInfra, requestID string, globalCfg *pb.SettingsCfg) (*pb.RunTaskRequest, error) {
 	// Create task token and secrets.
 	registerTaskToken, err := buildtoken.GenerateToken(ctx, build.ID, pb.TokenBody_REGISTER_TASK)
 	if err != nil {
@@ -242,7 +238,7 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 		Seconds: build.Proto.GetCreateTime().GetSeconds() + int64(buildStartGiveUpTimeout.Seconds()),
 	}
 
-	pubsubTopic, err := computeBackendPubsubTopic(ctx, backend.Task.Id.Target)
+	pubsubTopic, err := computeBackendPubsubTopic(ctx, backend.Task.Id.Target, globalCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -345,13 +341,18 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 	bld := entities[0].(*model.Build)
 	infra := entities[1].(*model.BuildInfra)
 
+	globalCfg, err := config.GetSettingsCfg(ctx)
+	if err != nil {
+		return errors.Annotate(err, "could not get global settings config").Err()
+	}
+
 	// Create a backend task client
-	backend, err := NewBackendClient(ctx, bld.Proto, infra.Proto)
+	backend, err := NewBackendClient(ctx, bld.Proto, infra.Proto, globalCfg)
 	if err != nil {
 		return tq.Fatal.Apply(errors.Annotate(err, "failed to connect to backend service").Err())
 	}
 
-	taskReq, err := computeBackendNewTaskReq(ctx, bld, infra, requestID)
+	taskReq, err := computeBackendNewTaskReq(ctx, bld, infra, requestID, globalCfg)
 	if err != nil {
 		return tq.Fatal.Apply(err)
 	}
@@ -386,9 +387,25 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 		bld = entities[0].(*model.Build)
 		infra = entities[1].(*model.BuildInfra)
 
-		// Also set build's UpdateTime.
-		bld.Proto.UpdateTime = timestamppb.New(now)
 		infra.Proto.Backend.Task = taskResp.Task
+
+		// Update Build entity.
+		bld.Proto.UpdateTime = timestamppb.New(now)
+		target := taskResp.Task.Id.Target
+		for _, backendSetting := range globalCfg.Backends {
+			if backendSetting.Target == target {
+				if backendSetting.GetBuildSyncSetting() != nil {
+					bld.BackendTarget = target
+					interval := backendSetting.GetBuildSyncSetting().GetSyncIntervalSeconds()
+					if interval > 0 {
+						bld.BackendSyncInterval = time.Duration(interval) * time.Second
+					}
+					bld.GenerateNextBackendSyncTime(ctx, backendSetting.GetBuildSyncSetting().GetShards())
+				}
+				break
+			}
+		}
+
 		return datastore.Put(ctx, bld, infra)
 	}, nil)
 	if txErr != nil {
