@@ -11,7 +11,7 @@ require (
 	cloud.google.com/go/errorreporting v0.3.0
 	cloud.google.com/go/iam v1.1.2
 	cloud.google.com/go/kms v1.15.1
-	cloud.google.com/go/logging v1.7.0
+	cloud.google.com/go/logging v1.8.1
 	cloud.google.com/go/profiler v0.3.1
 	cloud.google.com/go/pubsub v1.33.0
 	cloud.google.com/go/secretmanager v1.11.1
