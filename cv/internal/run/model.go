@@ -119,6 +119,13 @@ type Run struct {
 	// LatestTryjobsRefresh is the latest time when Run Manager scheduled async
 	// refresh of Tryjobs.
 	LatestTryjobsRefresh time.Time `gae:",noindex"`
+	// DepRuns is a slice of Runs that this Run depends on.
+	//
+	// If this is set and mode == FullRun, this run
+	// - will not start before all the deps start.
+	// - will be canceled if any of the deps is canceled or failed.
+	// - will be submitted only after all the deps are submitted.
+	DepDeps []common.RunID
 }
 
 // Mutate mutates the Run by executing `mut`.
