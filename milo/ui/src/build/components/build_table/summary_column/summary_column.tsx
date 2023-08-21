@@ -51,15 +51,19 @@ const MarkdownContainer = styled(Box)({
   padding: '0 10px',
   clear: 'both',
   overflowWrap: 'break-word',
+  whiteSpace: 'normal',
   '& pre': {
     whiteSpace: 'pre-wrap',
     overflowWrap: 'break-word',
     fontSize: '12px',
   },
   '& *': {
-    marginBlock: '5px',
+    marginBlock: '0px',
     paddingTop: '0',
     paddingBottom: '0',
+  },
+  '& > p': {
+    marginBlock: '5px',
     lineHeight: '20px',
   },
 });
