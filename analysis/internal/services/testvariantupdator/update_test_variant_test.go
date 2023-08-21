@@ -108,7 +108,13 @@ func TestCheckTask(t *testing.T) {
 		Convey(`no schedule`, func() {
 			task.TestVariantKey.TestId = "anothertest"
 			_, err := checkTask(span.Single(ctx), task)
-			So(err, ShouldEqual, errShouldNotSchedule)
+			So(err, ShouldEqual, errDoesNotExist)
+		})
+
+		Convey(`no longer exists`, func() {
+			task.TestVariantKey.TestId = "notexists"
+			_, err := checkTask(span.Single(ctx), task)
+			So(err, ShouldEqual, errDoesNotExist)
 		})
 	})
 }

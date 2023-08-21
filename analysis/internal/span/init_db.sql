@@ -77,7 +77,14 @@ CREATE TABLE AnalyzedTestVariants (
   FlakeStatistics BYTES(MAX),
   -- Timestamp when the most recent flake statistics were computed.
   FlakeStatisticUpdateTime TIMESTAMP,
-) PRIMARY KEY (Realm, TestId, VariantHash);
+) PRIMARY KEY (Realm, TestId, VariantHash)
+-- Test variants and tags could contain email addresses and similar data.
+-- Tags in particular are merged (not replaced) meaning old data can
+-- accumulate. To ensure email addresses are always eventually deleted,
+-- force deletion after no more than 510 days.
+-- If test variants still need to be monitored after that, the records
+-- can be re-recreated.
+, ROW DELETION POLICY (OLDER_THAN(CreateTime, INTERVAL 510 DAY));
 
 -- Used by finding test variants with FLAKY status on a builder in
 -- CollectFlakeResults task.

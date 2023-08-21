@@ -45,9 +45,10 @@ const (
 	queue     = "update-test-variant"
 )
 
-// errShouldNotSchedule returned if the AnalyzedTestVariant spanner row
-// does not have timestamp.
-var errShouldNotSchedule = fmt.Errorf("should not schedule update task")
+// errDoesNotExist returned if the AnalyzedTestVariant spanner row
+// does not exist or does not have a timestamp.
+// This could be because it was deleted due to a TTL being applied.
+var errDoesNotExist = fmt.Errorf("test variant analysis row does not exist")
 
 // errUnknownTask is returned if the task has a mismatched timestamp.
 var errUnknownTask = fmt.Errorf("the task is unknown")
@@ -64,9 +65,9 @@ func RegisterTaskClass() {
 			tvKey := task.TestVariantKey
 			_, err := checkTask(span.Single(ctx), task)
 			switch {
-			case err == errShouldNotSchedule:
+			case err == errDoesNotExist:
 				// Ignore the task.
-				logging.Errorf(ctx, "test variant %s/%s/%s should not have any update task", tvKey.Realm, tvKey.TestId, tvKey.VariantHash)
+				logging.Infof(ctx, "test variant %s/%s/%s deleted", tvKey.Realm, tvKey.TestId, tvKey.VariantHash)
 				return nil
 			case err == errUnknownTask:
 				// Ignore the task.
@@ -122,7 +123,7 @@ func checkTask(ctx context.Context, task *taskspb.UpdateTestVariant) (*analyzedt
 	case err != nil:
 		return &analyzedtestvariants.StatusHistory{}, err
 	case enqTime.IsNull():
-		return statusHistory, errShouldNotSchedule
+		return statusHistory, errDoesNotExist
 	case enqTime.Time != pbutil.MustTimestamp(task.EnqueueTime):
 		return statusHistory, errUnknownTask
 	default:
