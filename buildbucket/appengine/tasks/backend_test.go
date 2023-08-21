@@ -87,7 +87,7 @@ func NewMockedClient(ctx context.Context, ctl *gomock.Controller) *MockedClient 
 	}
 }
 
-// RunTask Mocks the RunTask RPC.
+// RunTask mocks the RunTask RPC.
 func (mc *MockedClient) RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*pb.RunTaskResponse, error) {
 	if taskReq.Target == "fail_me" {
 		return nil, errors.Reason("idk, wanted to fail i guess :/").Err()
@@ -99,6 +99,30 @@ func (mc *MockedClient) RunTask(ctx context.Context, taskReq *pb.RunTaskRequest,
 			UpdateId: 1,
 		},
 	}, nil
+}
+
+// FetchTasks mocks the FetchTasks RPC.
+func (mc *MockedClient) FetchTasks(ctx context.Context, taskReq *pb.FetchTasksRequest, opts ...grpc.CallOption) (*pb.FetchTasksResponse, error) {
+	tasks := make([]*pb.Task, 0, len(taskReq.TaskIds))
+	for _, tID := range taskReq.TaskIds {
+		if strings.HasSuffix(tID.Id, "all_fail") {
+			return nil, errors.Reason("idk, wanted to fail i guess :/").Err()
+		}
+		if strings.HasSuffix(tID.Id, "fail_me") {
+			continue
+		}
+
+		status := pb.Status_STARTED
+		if strings.HasSuffix(tID.Id, "ended") {
+			status = pb.Status_SUCCESS
+		}
+		tasks = append(tasks, &pb.Task{
+			Id:       tID,
+			Status:   status,
+			UpdateId: 10,
+		})
+	}
+	return &pb.FetchTasksResponse{Tasks: tasks}, nil
 }
 
 // useTaskBackendClientForTesting specifies that the given test double shall be used
@@ -199,14 +223,14 @@ func TestBackendTaskClient(t *testing.T) {
 		}
 
 		Convey("global settings not defined", func() {
-			_, err := NewBackendClient(ctx, build, infra, nil)
+			_, err := NewBackendClient(ctx, build.Builder.Project, infra.Backend.Task.Id.Target, nil)
 			So(err, ShouldErrLike, "could not get global settings config")
 		})
 
 		Convey("target not in global config", func() {
 			backendSetting := []*pb.BackendSetting{}
 			settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
-			_, err := NewBackendClient(ctx, build, infra, settingsCfg)
+			_, err := NewBackendClient(ctx, build.Builder.Project, infra.Backend.Task.Id.Target, settingsCfg)
 			So(err, ShouldErrLike, "could not find target in global config settings")
 		})
 
@@ -217,7 +241,7 @@ func TestBackendTaskClient(t *testing.T) {
 				Hostname: "hostname",
 			})
 			settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
-			_, err := NewBackendClient(ctx, build, infra, settingsCfg)
+			_, err := NewBackendClient(ctx, build.Builder.Project, infra.Backend.Task.Id.Target, settingsCfg)
 			So(err, ShouldBeNil)
 		})
 	})

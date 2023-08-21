@@ -117,7 +117,6 @@ func validatePubsubSubscription(ctx context.Context, req buildTaskUpdate) error 
 	isValid := false
 	for _, backend := range globalCfg.Backends {
 		subscription := fmt.Sprintf("projects/%s/subscriptions/%s", info.AppID(ctx), backend.PubsubId)
-		fmt.Println(subscription)
 		if backend.Target == target && subscription == req.subscription {
 			isValid = true
 			break
@@ -130,26 +129,30 @@ func validatePubsubSubscription(ctx context.Context, req buildTaskUpdate) error 
 	return nil
 }
 
+func validateTask(task *pb.Task) error {
+	if task.GetId().GetId() == "" {
+		return errors.Reason("task.id: required").Err()
+	}
+	if task.GetUpdateId() == 0 {
+		return errors.Reason("task.UpdateId: required").Err()
+	}
+	if err := validateTaskStatus(task.Status); err != nil {
+		return errors.Annotate(err, "task.Status").Err()
+	}
+	detailsInKb := float64(len(task.GetDetails().String()) / 1024)
+	if detailsInKb > 10 {
+		return errors.Reason("task.details is greater than 10 kb").Err()
+	}
+	return nil
+}
+
 // validateBuildTaskUpdate ensures that the build_id, task, status, and details
 // are correctly set be sender.
 func validateBuildTaskUpdate(ctx context.Context, req *pb.BuildTaskUpdate) error {
 	if req.BuildId == "" {
 		return errors.Reason("build_id required").Err()
 	}
-	if req.Task.GetId().GetId() == "" {
-		return errors.Reason("task.id: required").Err()
-	}
-	if req.Task.GetUpdateId() == 0 {
-		return errors.Reason("task.UpdateId: required").Err()
-	}
-	if err := validateTaskStatus(req.Task.Status); err != nil {
-		return errors.Annotate(err, "task.Status").Err()
-	}
-	detailsInKb := float64(len(req.Task.GetDetails().String()) / 1024)
-	if detailsInKb > 10 {
-		return errors.Reason("task.details is greater than 10 kb").Err()
-	}
-	return nil
+	return validateTask(req.Task)
 }
 
 // validateBuildTask ensures that the taskID provided in the request matches
@@ -171,6 +174,32 @@ func validateBuildTask(ctx context.Context, req *pb.BuildTaskUpdate, infra *mode
 	return nil
 }
 
+func prepareUpdate(ctx context.Context, build *model.Build, infra *model.BuildInfra, task *pb.Task) ([]any, error) {
+	if task.UpdateId <= infra.Proto.Backend.Task.UpdateId {
+		// Returning nil since there is no work to do here.
+		// The task in the request is outdated.
+		return nil, nil
+	}
+	// Required fields to change
+	now := clock.Now(ctx)
+	build.Proto.UpdateTime = timestamppb.New(now)
+	proto.Merge(infra.Proto.Backend.Task, task)
+
+	toSave := []any{build, infra}
+
+	bs, steps, err := updateBuildStatusOnTaskStatusChange(ctx, build, pb.Status_STATUS_UNSPECIFIED, task.Status, now)
+	if err != nil {
+		return nil, err
+	}
+	if bs != nil {
+		toSave = append(toSave, bs)
+	}
+	if steps != nil {
+		toSave = append(toSave, steps)
+	}
+	return toSave, nil
+}
+
 func updateTaskEntity(ctx context.Context, req *pb.BuildTaskUpdate, buildID int64) error {
 	var build *model.Build
 	setBuildToEnd := false
@@ -188,30 +217,13 @@ func updateTaskEntity(ctx context.Context, req *pb.BuildTaskUpdate, buildID int6
 			logging.Infof(ctx, "build %d is ended", build.ID)
 			return nil
 		}
-		if req.Task.UpdateId <= infra.Proto.Backend.Task.UpdateId {
-			// Returning nil since there is no work to do here.
-			// The task in the request is outdated.
-			return nil
-		}
-		// Required fields to change
-		now := clock.Now(ctx)
-		build.Proto.UpdateTime = timestamppb.New(now)
-		proto.Merge(infra.Proto.Backend.Task, req.Task)
-		setBuildToEnd = protoutil.IsEnded(req.Task.Status)
 
-		toSave := []any{build, infra}
-
-		bs, steps, err := updateBuildStatusOnTaskStatusChange(ctx, build, pb.Status_STATUS_UNSPECIFIED, req.Task.Status, now)
+		toSave, err := prepareUpdate(ctx, build, infra, req.Task)
 		if err != nil {
 			return err
 		}
-		if bs != nil {
-			toSave = append(toSave, bs)
-		}
-		if steps != nil {
-			toSave = append(toSave, steps)
-		}
 
+		setBuildToEnd = protoutil.IsEnded(req.Task.Status)
 		return datastore.Put(ctx, toSave)
 	}, nil)
 
