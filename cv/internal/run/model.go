@@ -125,7 +125,7 @@ type Run struct {
 	// - will not start before all the deps start.
 	// - will be canceled if any of the deps is canceled or failed.
 	// - will be submitted only after all the deps are submitted.
-	DepDeps []common.RunID
+	DepRuns []common.RunID
 }
 
 // Mutate mutates the Run by executing `mut`.
