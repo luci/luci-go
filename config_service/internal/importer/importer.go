@@ -142,8 +142,9 @@ func importAllConfigs(ctx context.Context, dispatcher *tq.Dispatcher) error {
 			cs := cs
 			workCh <- func() error {
 				err := dispatcher.AddTask(ctx, &tq.Task{
-					Payload: &taskpb.ImportConfigs{ConfigSet: cs}},
-				)
+					Payload: &taskpb.ImportConfigs{ConfigSet: cs},
+					Title:   fmt.Sprintf("configset/%s", cs),
+				})
 				return errors.Annotate(err, "failed to enqueue ImportConfigs task for %q: %s", cs, err).Err()
 			}
 		}
