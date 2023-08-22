@@ -392,7 +392,8 @@ func TestCreateBackendTask(t *testing.T) {
 					CreateTime: &timestamppb.Timestamp{
 						Seconds: 1677511793,
 					},
-					ExecutionTimeout: &durationpb.Duration{Seconds: 500},
+					SchedulingTimeout: &durationpb.Duration{Seconds: 100},
+					ExecutionTimeout:  &durationpb.Duration{Seconds: 500},
 					Input: &pb.Build_Input{
 						Experiments: []string{
 							"cow_eggs_experiment",
@@ -498,7 +499,7 @@ func TestCreateBackendTask(t *testing.T) {
 					Value: "dim_val_1",
 				},
 			})
-			So(req.StartDeadline.Seconds, ShouldEqual, 1677515393)
+			So(req.StartDeadline.Seconds, ShouldEqual, 1677511893)
 			So(req.Experiments, ShouldResemble, []string{
 				"cow_eggs_experiment",
 				"are_cow_eggs_real_experiment",

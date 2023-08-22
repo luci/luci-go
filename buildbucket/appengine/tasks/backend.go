@@ -61,10 +61,6 @@ const (
 	// the CreateBackendTask before giving up with INFRA_FAILURE.
 	runTaskGiveUpTimeout = 10 * 60 * time.Second
 
-	// buildStartGiveUpTimeout indicates how long the build has
-	// to start before givin up with INFRA_FAILURE.
-	buildStartGiveUpTimeout = 60 * 60 * time.Second
-
 	cipdCacheTTL = 10 * time.Minute
 )
 
@@ -241,7 +237,7 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 	}
 
 	startDeadline := &timestamppb.Timestamp{
-		Seconds: build.Proto.GetCreateTime().GetSeconds() + int64(buildStartGiveUpTimeout.Seconds()),
+		Seconds: build.Proto.GetCreateTime().GetSeconds() + build.Proto.GetSchedulingTimeout().GetSeconds(),
 	}
 
 	pubsubTopic, err := computeBackendPubsubTopic(ctx, backend.Task.Id.Target, globalCfg)
