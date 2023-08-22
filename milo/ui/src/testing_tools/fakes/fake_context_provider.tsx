@@ -17,11 +17,12 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React, { useState } from 'react';
-import { RouterProvider, createMemoryRouter } from 'react-router-dom';
+import { Outlet, RouterProvider, createMemoryRouter } from 'react-router-dom';
 
 import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
 import { UiPage } from '@/common/constants';
 import { theme } from '@/common/themes/base';
+import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_params';
 
 import { FakeAuthStateProvider } from './fake_auth_state_provider';
 
@@ -76,7 +77,21 @@ export function FakeContextProvider({
   });
 
   const router = createMemoryRouter(
-    [{ path: mountedPath || '/', element: children }],
+    [
+      {
+        element: (
+          <SyncedSearchParamsProvider>
+            <Outlet />
+          </SyncedSearchParamsProvider>
+        ),
+        children: [
+          {
+            path: mountedPath || '/',
+            element: children,
+          },
+        ],
+      },
+    ],
     routerOptions
   );
 

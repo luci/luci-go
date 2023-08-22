@@ -13,9 +13,10 @@
 // limitations under the License.
 
 import { render, screen } from '@testing-library/react';
-import { RouterProvider, createMemoryRouter } from 'react-router-dom';
+import { Outlet, RouterProvider, createMemoryRouter } from 'react-router-dom';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
+import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_params';
 import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
 
 import { LoginPage } from './login_page';
@@ -25,8 +26,22 @@ describe('LoginPage', () => {
     const router = createMemoryRouter(
       [
         {
-          path: 'path/prefix',
-          children: [{ index: true, element: <LoginPage /> }],
+          element: (
+            <SyncedSearchParamsProvider>
+              <Outlet />
+            </SyncedSearchParamsProvider>
+          ),
+          children: [
+            {
+              path: 'path/prefix',
+              children: [
+                {
+                  index: true,
+                  element: <LoginPage />,
+                },
+              ],
+            },
+          ],
         },
       ],
       { initialEntries: ['/path/prefix'] }
@@ -48,8 +63,22 @@ describe('LoginPage', () => {
     const router = createMemoryRouter(
       [
         {
-          path: 'path/prefix',
-          children: [{ index: true, element: <LoginPage /> }],
+          element: (
+            <SyncedSearchParamsProvider>
+              <Outlet />
+            </SyncedSearchParamsProvider>
+          ),
+          children: [
+            {
+              path: 'path/prefix',
+              children: [
+                {
+                  index: true,
+                  element: <LoginPage />,
+                },
+              ],
+            },
+          ],
         },
       ],
       { initialEntries: ['/path/prefix?redirect=%2fto%2fhere'] }
@@ -70,12 +99,21 @@ describe('LoginPage', () => {
     const router = createMemoryRouter(
       [
         {
-          path: 'path/prefix',
-          children: [{ index: true, element: <LoginPage /> }],
-        },
-        {
-          path: 'to/here',
-          children: [{ index: true, element: <>reached</> }],
+          element: (
+            <SyncedSearchParamsProvider>
+              <Outlet />
+            </SyncedSearchParamsProvider>
+          ),
+          children: [
+            {
+              path: 'path/prefix',
+              children: [{ index: true, element: <LoginPage /> }],
+            },
+            {
+              path: 'to/here',
+              children: [{ index: true, element: <>reached</> }],
+            },
+          ],
         },
       ],
       { initialEntries: ['/path/prefix?redirect=%2fto%2fhere'] }

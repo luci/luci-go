@@ -16,7 +16,6 @@ import { Box, Button, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import { DateTime } from 'luxon';
 import { useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 
 import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
 import {
@@ -25,6 +24,7 @@ import {
   BuildStatusMask,
 } from '@/common/services/buildbucket';
 import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { EndedBuildTable } from './ended_build_table';
 
@@ -38,7 +38,7 @@ export interface EndedBuildsSectionProps {
 }
 
 export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
-  const [searchParam, setSearchParams] = useSearchParams();
+  const [searchParam, setSearchParams] = useSyncedSearchParams();
 
   const pageSize = Number(searchParam.get('limit')) || DEFAULT_PAGE_SIZE;
   const setPageSize = (newPageSize: number) => {

@@ -108,6 +108,13 @@ module.exports = {
             importNames: ['default'],
             message: '`chain` from `lodash-es` does not work with tree-shaking',
           },
+          // Ban the use of `useSearchParams` because it may accidentally
+          // override search params when updater pattern is used.
+          {
+            group: ['react-router-dom'],
+            importNames: ['useSearchParams'],
+            message: 'use `useSyncedSearchParams` instead',
+          },
         ],
       },
     ],

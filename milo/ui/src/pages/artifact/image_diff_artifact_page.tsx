@@ -17,7 +17,6 @@ import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
-import { useSearchParams } from 'react-router-dom';
 
 import '@/common/components/image_diff_viewer';
 import '@/common/components/status_bar';
@@ -28,6 +27,7 @@ import {
 } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { reportRenderError } from '@/generic_libs/tools/error_handler';
 import { consumer } from '@/generic_libs/tools/lit_context';
 import { unwrapObservable } from '@/generic_libs/tools/mobx_utils';
@@ -189,9 +189,20 @@ declare global {
 }
 
 export function ImageDiffArtifactPage() {
-  const [search] = useSearchParams();
-  const expectedArtifactId = search.get('expectedArtifactId')!;
-  const actualArtifactId = search.get('actualArtifactId')!;
+  const [search] = useSyncedSearchParams();
+
+  const expectedArtifactId = search.get('expectedArtifactId');
+  if (expectedArtifactId === null) {
+    throw new Error(
+      'expectedArtifactId must be provided via the search params'
+    );
+  }
+
+  const actualArtifactId = search.get('actualArtifactId');
+  if (actualArtifactId === null) {
+    throw new Error('actualArtifactId must be provided via the search params');
+  }
+
   return (
     <milo-image-diff-artifact-page
       expectedArtifactId={expectedArtifactId}

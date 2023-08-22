@@ -43,6 +43,7 @@ import { AuthStateInitializer } from './common/components/auth_state_provider';
 import { PageMetaProvider } from './common/components/page_meta/page_meta_provider';
 import { RouteErrorBoundary } from './common/components/route_error_boundary';
 import { NON_TRANSIENT_ERROR_CODES } from './common/constants';
+import { SyncedSearchParamsProvider } from './generic_libs/hooks/synced_search_params';
 import { ArtifactPageLayout } from './pages/artifact/artifact_page_layout';
 import { ImageDiffArtifactPage } from './pages/artifact/image_diff_artifact_page';
 import { RawArtifactPage } from './pages/artifact/raw_artifact_page';
@@ -179,9 +180,11 @@ export function App({ initOpts }: AppProps) {
       path: 'ui',
       loader: async () => obtainAuthState(),
       element: (
-        <AuthStateInitializer>
-          <BaseLayout />
-        </AuthStateInitializer>
+        <SyncedSearchParamsProvider>
+          <AuthStateInitializer>
+            <BaseLayout />
+          </AuthStateInitializer>
+        </SyncedSearchParamsProvider>
       ),
       errorElement: <RouteErrorBoundary />,
       children: [

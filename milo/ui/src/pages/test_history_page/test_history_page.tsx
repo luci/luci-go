@@ -16,13 +16,14 @@ import styled from '@emotion/styled';
 import { LinearProgress } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants';
 import { useStore } from '@/common/store';
 import { GraphType } from '@/common/store/test_history_page';
 import { extractProject } from '@/common/tools/utils';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { DateAxis } from './date_axis';
 import { DurationGraph } from './duration_graph';
@@ -62,7 +63,7 @@ const GraphContainer = styled.div({
 
 export const TestHistoryPage = observer(() => {
   const { projectOrRealm, testId } = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
 
   // Use useState to ensure initialFilterText won't change after search params
   // are updated.
@@ -89,7 +90,15 @@ export const TestHistoryPage = observer(() => {
   // Update the querystring when filters are updated.
   useEffect(() => {
     setSearchParams(
-      { ...(!pageState.filterText ? {} : { q: pageState.filterText }) },
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (!pageState.filterText) {
+          next.delete('q');
+        } else {
+          next.set('q', pageState.filterText);
+        }
+        return next;
+      },
       { replace: true }
     );
   }, [pageState.filterText, setSearchParams]);

@@ -14,18 +14,18 @@
 
 import Box from '@mui/material/Box';
 import { ChangeEvent, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { useDebounce } from 'react-use';
 
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { SearchInput } from '../search_input';
 
 import { BuilderList } from './builder_list';
 
 export const BuilderSearch = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
   const searchQuery = searchParams.get('q') || '';
   const [pendingSearchQuery, setPendingSearchQuery] = useState(searchQuery);
 

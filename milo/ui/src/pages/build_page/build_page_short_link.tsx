@@ -14,14 +14,14 @@
 
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { useStore } from '@/common/store';
 import { getBuildURLPath } from '@/common/tools/url_utils';
 
 export const BuildPageShortLink = observer(() => {
   const { buildId, ['*']: pathSuffix } = useParams();
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const store = useStore();
 
@@ -35,12 +35,15 @@ export const BuildPageShortLink = observer(() => {
 
   const buildLoaded = Boolean(store.buildPage.build?.data);
 
+  const urlSuffix =
+    (pathSuffix ? `/${pathSuffix}` : '') + location.search + location.hash;
   useEffect(() => {
     // Redirect to the long link after the build is fetched.
-    if (!buildLoaded) {
+    // The second check is noop but useful for type narrowing.
+    if (!buildLoaded || !store.buildPage.build) {
       return;
     }
-    const build = store.buildPage.build!;
+    const build = store.buildPage.build;
     if (build.data.number !== undefined) {
       store.buildPage.setBuildId(
         build.data.builder,
@@ -49,15 +52,12 @@ export const BuildPageShortLink = observer(() => {
       );
     }
     const buildUrl = getBuildURLPath(build.data.builder, build.buildNumOrId);
-    const searchString = searchParams.toString();
-    const newUrl = `${buildUrl}${pathSuffix ? `/${pathSuffix}` : ''}${
-      searchString ? `?${searchParams}` : ''
-    }`;
+    const newUrl = buildUrl + urlSuffix;
 
     // TODO(weiweilin): sinon is not able to mock useNavigate.
     // Add a unit test once we setup jest.
     navigate(newUrl, { replace: true });
-  }, [buildLoaded]);
+  }, [buildLoaded, navigate, urlSuffix, store]);
 
   // Page will be redirected once the build is loaded.
   // Don't need to render anything.

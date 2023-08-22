@@ -14,11 +14,12 @@
 
 import Box from '@mui/material/Box';
 import { ChangeEvent, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useDebounce } from 'react-use';
 
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { SearchInput } from '../search_input';
 import { DEFAULT_TEST_PROJECT } from '../search_redirection_loader';
@@ -27,18 +28,21 @@ import { TestList } from './test_list';
 
 export const TestSearch = () => {
   const { project } = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
   const searchQuery = searchParams.get('q') || '';
   const [pendingSearchQuery, setPendingSearchQuery] = useState(searchQuery);
 
   useDebounce(
     () => {
-      if (pendingSearchQuery === '') {
-        searchParams.delete('q');
-      } else {
-        searchParams.set('q', pendingSearchQuery);
-      }
-      setSearchParams(searchParams);
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        if (pendingSearchQuery === '') {
+          next.delete('q');
+        } else {
+          next.set('q', pendingSearchQuery);
+        }
+        return next;
+      });
     },
     600,
     [pendingSearchQuery]

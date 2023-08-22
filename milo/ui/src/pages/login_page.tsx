@@ -14,11 +14,12 @@
 
 import { Link } from '@mui/material';
 import { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { getLoginUrl } from '@/common/tools/url_utils';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 /**
  * Prompts the user to login.
@@ -30,7 +31,7 @@ import { getLoginUrl } from '@/common/tools/url_utils';
 export function LoginPage() {
   const navigate = useNavigate();
   const authState = useAuthState();
-  const [searchParam] = useSearchParams();
+  const [searchParam] = useSyncedSearchParams();
   const redirectTo = searchParam.get('redirect') || '/';
 
   const isLoggedIn = authState.identity !== ANONYMOUS_IDENTITY;
