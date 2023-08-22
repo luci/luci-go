@@ -298,6 +298,16 @@ func LoadRunLogEntries(ctx context.Context, runID common.RunID) ([]*LogEntry, er
 	return out, nil
 }
 
+// LoadChildRuns loads all Runs with the given Run in their dep_runs.
+func LoadChildRuns(ctx context.Context, runID common.RunID) ([]*Run, error) {
+	q := datastore.NewQuery(common.RunKind).Eq("DepRuns", runID)
+	var runs []*Run
+	if err := datastore.GetAll(ctx, q, &runs); err != nil {
+		return nil, errors.Annotate(err, "failed to fetch dependency Run entities").Tag(transient.Tag).Err()
+	}
+	return runs, nil
+}
+
 type nullRunChecker struct{}
 
 func (n nullRunChecker) Before(ctx context.Context, id common.RunID) error { return nil }

@@ -34,6 +34,40 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func TestLoadChildRuns(t *testing.T) {
+	t.Parallel()
+
+	Convey("LoadChildRuns works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp(t)
+		defer cancel()
+
+		put := func(runID common.RunID, depRuns common.RunIDs) {
+			So(datastore.Put(ctx, &Run{
+				ID:      runID,
+				DepRuns: depRuns,
+			}), ShouldBeNil)
+		}
+
+		const parentRun1 = common.RunID("parent/1-cow")
+
+		const orphanRun = common.RunID("orphan/1-chicken")
+		put(orphanRun, common.RunIDs{})
+		out1, err := LoadChildRuns(ctx, parentRun1)
+		So(err, ShouldBeNil)
+		So(out1, ShouldHaveLength, 0)
+
+		const pendingRun = common.RunID("child/1-pending")
+		put(pendingRun, common.RunIDs{parentRun1})
+		const runningRun = common.RunID("child/1-running")
+		put(runningRun, common.RunIDs{parentRun1})
+
+		out2, err := LoadChildRuns(ctx, parentRun1)
+		So(err, ShouldBeNil)
+		So(out2, ShouldHaveLength, 2)
+	})
+}
+
 func TestLoadRunLogEntries(t *testing.T) {
 	t.Parallel()
 
