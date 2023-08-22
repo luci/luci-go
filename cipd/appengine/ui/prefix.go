@@ -57,10 +57,23 @@ func prefixListingPage(c *router.Context, pfx string) error {
 		return err
 	}
 
+	pl := packagesListing(pfx, listing.Packages, "")
+
+	// Go directly to the package page if there are no
+	// package listings for that prefix and the given
+	// prefix matches a found package.
+	if len(pl) == 0 {
+		for _, p := range listing.Packages {
+			if pfx == p {
+				return packagePage(c, p)
+			}
+		}
+	}
+
 	templates.MustRender(c.Request.Context(), c.Writer, "pages/index.html", map[string]any{
 		"Breadcrumbs": breadcrumbs(pfx, ""),
 		"Prefixes":    prefixesListing(pfx, listing.Prefixes),
-		"Packages":    packagesListing(pfx, listing.Packages, ""),
+		"Packages":    pl,
 		"Metadata":    meta,
 		"Instances":   nil,
 	})
