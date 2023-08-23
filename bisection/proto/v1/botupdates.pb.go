@@ -179,6 +179,196 @@ func (x *UpdateAnalysisProgressResponse) GetNextRevisionToRun() *proto.GitilesCo
 	return nil
 }
 
+type UpdateTestAnalysisProgressRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The TestFailureAnalysis ID that the bot is running.
+	AnalysisId int64 `protobuf:"varint,1,opt,name=analysis_id,json=analysisId,proto3" json:"analysis_id,omitempty"`
+	// Bot ID.
+	BotId string `protobuf:"bytes,2,opt,name=bot_id,json=botId,proto3" json:"bot_id,omitempty"`
+	// BuildbucketID of the rerun build.
+	Bbid int64 `protobuf:"varint,3,opt,name=bbid,proto3" json:"bbid,omitempty"`
+	// Contains the results of the tests that were run in the rerun.
+	// Only the results of the requested tests (in tests_to_run properties of the recipe)
+	// will be included. The non-requested test results will not be included.
+	Results []*TestResult `protobuf:"bytes,4,rep,name=results,proto3" json:"results,omitempty"`
+}
+
+func (x *UpdateTestAnalysisProgressRequest) Reset() {
+	*x = UpdateTestAnalysisProgressRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UpdateTestAnalysisProgressRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateTestAnalysisProgressRequest) ProtoMessage() {}
+
+func (x *UpdateTestAnalysisProgressRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateTestAnalysisProgressRequest.ProtoReflect.Descriptor instead.
+func (*UpdateTestAnalysisProgressRequest) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *UpdateTestAnalysisProgressRequest) GetAnalysisId() int64 {
+	if x != nil {
+		return x.AnalysisId
+	}
+	return 0
+}
+
+func (x *UpdateTestAnalysisProgressRequest) GetBotId() string {
+	if x != nil {
+		return x.BotId
+	}
+	return ""
+}
+
+func (x *UpdateTestAnalysisProgressRequest) GetBbid() int64 {
+	if x != nil {
+		return x.Bbid
+	}
+	return 0
+}
+
+func (x *UpdateTestAnalysisProgressRequest) GetResults() []*TestResult {
+	if x != nil {
+		return x.Results
+	}
+	return nil
+}
+
+type TestResult struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Test ID of the test.
+	TestId string `protobuf:"bytes,1,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`
+	// Variant hash of the test.
+	VariantHash string `protobuf:"bytes,2,opt,name=variant_hash,json=variantHash,proto3" json:"variant_hash,omitempty"`
+	// Whether the result is expected or not.
+	IsExpected bool `protobuf:"varint,3,opt,name=is_expected,json=isExpected,proto3" json:"is_expected,omitempty"`
+	// ResultDB status, e.g. PASSED, FAILED...
+	Status TestResultStatus `protobuf:"varint,4,opt,name=status,proto3,enum=luci.bisection.v1.TestResultStatus" json:"status,omitempty"`
+}
+
+func (x *TestResult) Reset() {
+	*x = TestResult{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TestResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestResult) ProtoMessage() {}
+
+func (x *TestResult) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestResult.ProtoReflect.Descriptor instead.
+func (*TestResult) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *TestResult) GetTestId() string {
+	if x != nil {
+		return x.TestId
+	}
+	return ""
+}
+
+func (x *TestResult) GetVariantHash() string {
+	if x != nil {
+		return x.VariantHash
+	}
+	return ""
+}
+
+func (x *TestResult) GetIsExpected() bool {
+	if x != nil {
+		return x.IsExpected
+	}
+	return false
+}
+
+func (x *TestResult) GetStatus() TestResultStatus {
+	if x != nil {
+		return x.Status
+	}
+	return TestResultStatus_TEST_RESULT_STATUS_UNSPECIFIED
+}
+
+type UpdateTestAnalysisProgressResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *UpdateTestAnalysisProgressResponse) Reset() {
+	*x = UpdateTestAnalysisProgressResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UpdateTestAnalysisProgressResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateTestAnalysisProgressResponse) ProtoMessage() {}
+
+func (x *UpdateTestAnalysisProgressResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateTestAnalysisProgressResponse.ProtoReflect.Descriptor instead.
+func (*UpdateTestAnalysisProgressResponse) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_rawDescGZIP(), []int{4}
+}
+
 var File_go_chromium_org_luci_bisection_proto_v1_botupdates_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_rawDesc = []byte{
@@ -216,19 +406,52 @@ var file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_rawDesc = []by
 	0x1d, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32,
 	0x2e, 0x47, 0x69, 0x74, 0x69, 0x6c, 0x65, 0x73, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x52, 0x11,
 	0x6e, 0x65, 0x78, 0x74, 0x52, 0x65, 0x76, 0x69, 0x73, 0x69, 0x6f, 0x6e, 0x54, 0x6f, 0x52, 0x75,
-	0x6e, 0x32, 0x8b, 0x01, 0x0a, 0x0a, 0x42, 0x6f, 0x74, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x73,
-	0x12, 0x7d, 0x0a, 0x16, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73,
-	0x69, 0x73, 0x50, 0x72, 0x6f, 0x67, 0x72, 0x65, 0x73, 0x73, 0x12, 0x30, 0x2e, 0x6c, 0x75, 0x63,
-	0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x55,
-	0x70, 0x64, 0x61, 0x74, 0x65, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f,
-	0x67, 0x72, 0x65, 0x73, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x31, 0x2e, 0x6c,
-	0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31,
-	0x2e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x50,
-	0x72, 0x6f, 0x67, 0x72, 0x65, 0x73, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42,
-	0x35, 0x5a, 0x33, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f,
-	0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f,
-	0x6e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x62, 0x69, 0x73, 0x65, 0x63,
-	0x74, 0x69, 0x6f, 0x6e, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6e, 0x22, 0xa8, 0x01, 0x0a, 0x21, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x54, 0x65, 0x73, 0x74,
+	0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x67, 0x72, 0x65, 0x73, 0x73,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1f, 0x0a, 0x0b, 0x61, 0x6e, 0x61, 0x6c, 0x79,
+	0x73, 0x69, 0x73, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0a, 0x61, 0x6e,
+	0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x49, 0x64, 0x12, 0x15, 0x0a, 0x06, 0x62, 0x6f, 0x74, 0x5f,
+	0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x62, 0x6f, 0x74, 0x49, 0x64, 0x12,
+	0x12, 0x0a, 0x04, 0x62, 0x62, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x04, 0x62,
+	0x62, 0x69, 0x64, 0x12, 0x37, 0x0a, 0x07, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x73, 0x18, 0x04,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65,
+	0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x52, 0x65, 0x73,
+	0x75, 0x6c, 0x74, 0x52, 0x07, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x73, 0x22, 0xa6, 0x01, 0x0a,
+	0x0a, 0x54, 0x65, 0x73, 0x74, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x17, 0x0a, 0x07, 0x74,
+	0x65, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x74, 0x65,
+	0x73, 0x74, 0x49, 0x64, 0x12, 0x21, 0x0a, 0x0c, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x5f,
+	0x68, 0x61, 0x73, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x76, 0x61, 0x72, 0x69,
+	0x61, 0x6e, 0x74, 0x48, 0x61, 0x73, 0x68, 0x12, 0x1f, 0x0a, 0x0b, 0x69, 0x73, 0x5f, 0x65, 0x78,
+	0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0a, 0x69, 0x73,
+	0x45, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x12, 0x3b, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74,
+	0x75, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x23, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e,
+	0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73,
+	0x74, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x06, 0x73,
+	0x74, 0x61, 0x74, 0x75, 0x73, 0x22, 0x24, 0x0a, 0x22, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x54,
+	0x65, 0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x67, 0x72,
+	0x65, 0x73, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0x97, 0x02, 0x0a, 0x0a,
+	0x42, 0x6f, 0x74, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x73, 0x12, 0x7d, 0x0a, 0x16, 0x55, 0x70,
+	0x64, 0x61, 0x74, 0x65, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x67,
+	0x72, 0x65, 0x73, 0x73, 0x12, 0x30, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65,
+	0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x41,
+	0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x67, 0x72, 0x65, 0x73, 0x73, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x31, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69,
+	0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x70, 0x64, 0x61, 0x74,
+	0x65, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x67, 0x72, 0x65, 0x73,
+	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x89, 0x01, 0x0a, 0x1a, 0x55, 0x70,
+	0x64, 0x61, 0x74, 0x65, 0x54, 0x65, 0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73,
+	0x50, 0x72, 0x6f, 0x67, 0x72, 0x65, 0x73, 0x73, 0x12, 0x34, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e,
+	0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x70, 0x64,
+	0x61, 0x74, 0x65, 0x54, 0x65, 0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x50,
+	0x72, 0x6f, 0x67, 0x72, 0x65, 0x73, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x35,
+	0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e,
+	0x76, 0x31, 0x2e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x54, 0x65, 0x73, 0x74, 0x41, 0x6e, 0x61,
+	0x6c, 0x79, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x67, 0x72, 0x65, 0x73, 0x73, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x35, 0x5a, 0x33, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f,
+	0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x69,
+	0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31,
+	0x3b, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -243,24 +466,32 @@ func file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_rawDescGZIP()
 	return file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_goTypes = []interface{}{
-	(*UpdateAnalysisProgressRequest)(nil),  // 0: luci.bisection.v1.UpdateAnalysisProgressRequest
-	(*UpdateAnalysisProgressResponse)(nil), // 1: luci.bisection.v1.UpdateAnalysisProgressResponse
-	(*proto.GitilesCommit)(nil),            // 2: buildbucket.v2.GitilesCommit
-	(*RerunResult)(nil),                    // 3: luci.bisection.v1.RerunResult
+	(*UpdateAnalysisProgressRequest)(nil),      // 0: luci.bisection.v1.UpdateAnalysisProgressRequest
+	(*UpdateAnalysisProgressResponse)(nil),     // 1: luci.bisection.v1.UpdateAnalysisProgressResponse
+	(*UpdateTestAnalysisProgressRequest)(nil),  // 2: luci.bisection.v1.UpdateTestAnalysisProgressRequest
+	(*TestResult)(nil),                         // 3: luci.bisection.v1.TestResult
+	(*UpdateTestAnalysisProgressResponse)(nil), // 4: luci.bisection.v1.UpdateTestAnalysisProgressResponse
+	(*proto.GitilesCommit)(nil),                // 5: buildbucket.v2.GitilesCommit
+	(*RerunResult)(nil),                        // 6: luci.bisection.v1.RerunResult
+	(TestResultStatus)(0),                      // 7: luci.bisection.v1.TestResultStatus
 }
 var file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_depIdxs = []int32{
-	2, // 0: luci.bisection.v1.UpdateAnalysisProgressRequest.gitiles_commit:type_name -> buildbucket.v2.GitilesCommit
-	3, // 1: luci.bisection.v1.UpdateAnalysisProgressRequest.rerun_result:type_name -> luci.bisection.v1.RerunResult
-	2, // 2: luci.bisection.v1.UpdateAnalysisProgressResponse.next_revision_to_run:type_name -> buildbucket.v2.GitilesCommit
-	0, // 3: luci.bisection.v1.BotUpdates.UpdateAnalysisProgress:input_type -> luci.bisection.v1.UpdateAnalysisProgressRequest
-	1, // 4: luci.bisection.v1.BotUpdates.UpdateAnalysisProgress:output_type -> luci.bisection.v1.UpdateAnalysisProgressResponse
-	4, // [4:5] is the sub-list for method output_type
-	3, // [3:4] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	5, // 0: luci.bisection.v1.UpdateAnalysisProgressRequest.gitiles_commit:type_name -> buildbucket.v2.GitilesCommit
+	6, // 1: luci.bisection.v1.UpdateAnalysisProgressRequest.rerun_result:type_name -> luci.bisection.v1.RerunResult
+	5, // 2: luci.bisection.v1.UpdateAnalysisProgressResponse.next_revision_to_run:type_name -> buildbucket.v2.GitilesCommit
+	3, // 3: luci.bisection.v1.UpdateTestAnalysisProgressRequest.results:type_name -> luci.bisection.v1.TestResult
+	7, // 4: luci.bisection.v1.TestResult.status:type_name -> luci.bisection.v1.TestResultStatus
+	0, // 5: luci.bisection.v1.BotUpdates.UpdateAnalysisProgress:input_type -> luci.bisection.v1.UpdateAnalysisProgressRequest
+	2, // 6: luci.bisection.v1.BotUpdates.UpdateTestAnalysisProgress:input_type -> luci.bisection.v1.UpdateTestAnalysisProgressRequest
+	1, // 7: luci.bisection.v1.BotUpdates.UpdateAnalysisProgress:output_type -> luci.bisection.v1.UpdateAnalysisProgressResponse
+	4, // 8: luci.bisection.v1.BotUpdates.UpdateTestAnalysisProgress:output_type -> luci.bisection.v1.UpdateTestAnalysisProgressResponse
+	7, // [7:9] is the sub-list for method output_type
+	5, // [5:7] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_init() }
@@ -294,6 +525,42 @@ func file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UpdateTestAnalysisProgressRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TestResult); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UpdateTestAnalysisProgressResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -301,7 +568,7 @@ func file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_bisection_proto_v1_botupdates_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -327,8 +594,10 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type BotUpdatesClient interface {
-	// RPC called from bots to update the analysis progress.
+	// RPC called from bots to update the compile analysis progress.
 	UpdateAnalysisProgress(ctx context.Context, in *UpdateAnalysisProgressRequest, opts ...grpc.CallOption) (*UpdateAnalysisProgressResponse, error)
+	// RPC called from bots to update test analysis progress.
+	UpdateTestAnalysisProgress(ctx context.Context, in *UpdateTestAnalysisProgressRequest, opts ...grpc.CallOption) (*UpdateTestAnalysisProgressResponse, error)
 }
 type botUpdatesPRPCClient struct {
 	client *prpc.Client
@@ -341,6 +610,15 @@ func NewBotUpdatesPRPCClient(client *prpc.Client) BotUpdatesClient {
 func (c *botUpdatesPRPCClient) UpdateAnalysisProgress(ctx context.Context, in *UpdateAnalysisProgressRequest, opts ...grpc.CallOption) (*UpdateAnalysisProgressResponse, error) {
 	out := new(UpdateAnalysisProgressResponse)
 	err := c.client.Call(ctx, "luci.bisection.v1.BotUpdates", "UpdateAnalysisProgress", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *botUpdatesPRPCClient) UpdateTestAnalysisProgress(ctx context.Context, in *UpdateTestAnalysisProgressRequest, opts ...grpc.CallOption) (*UpdateTestAnalysisProgressResponse, error) {
+	out := new(UpdateTestAnalysisProgressResponse)
+	err := c.client.Call(ctx, "luci.bisection.v1.BotUpdates", "UpdateTestAnalysisProgress", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -364,10 +642,21 @@ func (c *botUpdatesClient) UpdateAnalysisProgress(ctx context.Context, in *Updat
 	return out, nil
 }
 
+func (c *botUpdatesClient) UpdateTestAnalysisProgress(ctx context.Context, in *UpdateTestAnalysisProgressRequest, opts ...grpc.CallOption) (*UpdateTestAnalysisProgressResponse, error) {
+	out := new(UpdateTestAnalysisProgressResponse)
+	err := c.cc.Invoke(ctx, "/luci.bisection.v1.BotUpdates/UpdateTestAnalysisProgress", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BotUpdatesServer is the server API for BotUpdates service.
 type BotUpdatesServer interface {
-	// RPC called from bots to update the analysis progress.
+	// RPC called from bots to update the compile analysis progress.
 	UpdateAnalysisProgress(context.Context, *UpdateAnalysisProgressRequest) (*UpdateAnalysisProgressResponse, error)
+	// RPC called from bots to update test analysis progress.
+	UpdateTestAnalysisProgress(context.Context, *UpdateTestAnalysisProgressRequest) (*UpdateTestAnalysisProgressResponse, error)
 }
 
 // UnimplementedBotUpdatesServer can be embedded to have forward compatible implementations.
@@ -376,6 +665,9 @@ type UnimplementedBotUpdatesServer struct {
 
 func (*UnimplementedBotUpdatesServer) UpdateAnalysisProgress(context.Context, *UpdateAnalysisProgressRequest) (*UpdateAnalysisProgressResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateAnalysisProgress not implemented")
+}
+func (*UnimplementedBotUpdatesServer) UpdateTestAnalysisProgress(context.Context, *UpdateTestAnalysisProgressRequest) (*UpdateTestAnalysisProgressResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateTestAnalysisProgress not implemented")
 }
 
 func RegisterBotUpdatesServer(s prpc.Registrar, srv BotUpdatesServer) {
@@ -400,6 +692,24 @@ func _BotUpdates_UpdateAnalysisProgress_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BotUpdates_UpdateTestAnalysisProgress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateTestAnalysisProgressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BotUpdatesServer).UpdateTestAnalysisProgress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.bisection.v1.BotUpdates/UpdateTestAnalysisProgress",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BotUpdatesServer).UpdateTestAnalysisProgress(ctx, req.(*UpdateTestAnalysisProgressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _BotUpdates_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "luci.bisection.v1.BotUpdates",
 	HandlerType: (*BotUpdatesServer)(nil),
@@ -407,6 +717,10 @@ var _BotUpdates_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateAnalysisProgress",
 			Handler:    _BotUpdates_UpdateAnalysisProgress_Handler,
+		},
+		{
+			MethodName: "UpdateTestAnalysisProgress",
+			Handler:    _BotUpdates_UpdateTestAnalysisProgress_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

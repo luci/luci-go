@@ -39,3 +39,20 @@ func (s *DecoratedBotUpdates) UpdateAnalysisProgress(ctx context.Context, req *U
 	}
 	return
 }
+
+func (s *DecoratedBotUpdates) UpdateTestAnalysisProgress(ctx context.Context, req *UpdateTestAnalysisProgressRequest) (rsp *UpdateTestAnalysisProgressResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "UpdateTestAnalysisProgress", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.UpdateTestAnalysisProgress(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "UpdateTestAnalysisProgress", rsp, err)
+	}
+	return
+}

@@ -159,6 +159,11 @@ func (server *BotUpdatesServer) UpdateAnalysisProgress(c context.Context, req *p
 	return nil, status.Errorf(codes.Internal, "unknown error")
 }
 
+func (server *BotUpdatesServer) UpdateTestAnalysisProgress(c context.Context, req *pb.UpdateTestAnalysisProgressRequest) (*pb.UpdateTestAnalysisProgressResponse, error) {
+	// TODO (nqmtuan): Implement this
+	return &pb.UpdateTestAnalysisProgressResponse{}, nil
+}
+
 func setNthSectionError(c context.Context, nsa *model.CompileNthSectionAnalysis) error {
 	if nsa == nil {
 		return nil

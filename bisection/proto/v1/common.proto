@@ -163,3 +163,39 @@ message Dimension {
   // Value, e.g. "Ubuntu".
   string value = 2;
 }
+
+// Status of a test result.
+// It is a mirror of luci.resultdb.v1.TestStatus, but the right to evolve
+// it independently is reserved.
+enum TestResultStatus {
+  // Status was not specified.
+  // Not to be used in actual test results; serves as a default value for an
+  // unset field.
+  TEST_RESULT_STATUS_UNSPECIFIED = 0;
+
+  // The test case has passed.
+  PASS = 1;
+
+  // The test case has failed.
+  // Suggests that the code under test is incorrect, but it is also possible
+  // that the test is incorrect or it is a flake.
+  FAIL = 2;
+
+  // The test case has crashed during execution.
+  // The outcome is inconclusive: the code under test might or might not be
+  // correct, but the test+code is incorrect.
+  CRASH = 3;
+
+  // The test case has started, but was aborted before finishing.
+  // A common reason: timeout.
+  ABORT = 4;
+
+  // The test case did not execute.
+  // Examples:
+  // - The execution of the collection of test cases, such as a test
+  //   binary, was aborted prematurely and execution of some test cases was
+  //   skipped.
+  // - The test harness configuration specified that the test case MUST be
+  //   skipped.
+  SKIP = 5;
+}
