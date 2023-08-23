@@ -80,6 +80,10 @@ func TestCLsTriage(t *testing.T) {
 	t.Parallel()
 
 	Convey("Component's PCL deps triage", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp(t)
+		defer cancel()
+
 		// Truncate start time point s.t. easy to see diff in test failures.
 		epoch := testclock.TestRecentTimeUTC.Truncate(10000 * time.Second)
 		dryRun := func(t time.Time) *run.Trigger {
@@ -117,7 +121,7 @@ func TestCLsTriage(t *testing.T) {
 			backup := prjpb.PState{}
 			proto.Merge(&backup, sup.pb)
 
-			cls := triageCLs(c, pm)
+			cls := triageCLs(ctx, c, pm)
 			So(sup.pb, ShouldResembleProto, &backup) // must not be modified
 			return cls
 		}

@@ -15,14 +15,18 @@
 package common
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/server/auth"
 )
 
 // RunKind is the Datastore entity kind for Run.
@@ -335,6 +339,22 @@ func MakeRunIDs(ids ...string) RunIDs {
 	ret := make(RunIDs, len(ids))
 	for i, id := range ids {
 		ret[i] = RunID(id)
+	}
+	return ret
+}
+
+// MCEDogfooderGroup is a CrIA group who signed up for dogfooding MCE.
+const MCEDogfooderGroup = "luci-cv-mce-dogfooders"
+
+// IsMCEDogfooder returns true if the user is an MCE dogfooder.
+//
+// TODO(ddoman): remove this function, once MCE dogfood is done.
+func IsMCEDogfooder(ctx context.Context, id identity.Identity) bool {
+	// if it fails to retrieve the authDB, then log the error and return false.
+	// this function will be removed, anyways.
+	ret, err := auth.GetState(ctx).DB().IsMember(ctx, id, []string{MCEDogfooderGroup})
+	if err != nil {
+		logging.Errorf(ctx, "IsMCEDogfooder: auth.IsMember: %s", err)
 	}
 	return ret
 }

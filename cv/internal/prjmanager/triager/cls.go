@@ -15,6 +15,7 @@
 package triager
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -24,7 +25,7 @@ import (
 )
 
 // triageCLs decides whether individual CLs ought to be acted upon.
-func triageCLs(c *prjpb.Component, pm pmState) map[int64]*clInfo {
+func triageCLs(ctx context.Context, c *prjpb.Component, pm pmState) map[int64]*clInfo {
 	cls := make(map[int64]*clInfo, len(c.GetClids()))
 	for _, clid := range c.GetClids() {
 		cls[clid] = &clInfo{
@@ -39,7 +40,7 @@ func triageCLs(c *prjpb.Component, pm pmState) map[int64]*clInfo {
 		}
 	}
 	for _, info := range cls {
-		info.triage(c, pm)
+		info.triage(ctx, c, pm)
 	}
 	return cls
 }
@@ -127,7 +128,7 @@ func (info *clInfo) prunCountByType(c *prjpb.Component) (int, int) {
 //
 // Expects non-triagedCL part of clInfo to be already set.
 // panics iff component is not in a valid state.
-func (info *clInfo) triage(c *prjpb.Component, pm pmState) {
+func (info *clInfo) triage(ctx context.Context, c *prjpb.Component, pm pmState) {
 	nCQVoteRuns, nNewPatchsetRuns := info.prunCountByType(c)
 	var triageCQTrigger, triageNPRTrigger bool
 	switch {
@@ -136,9 +137,9 @@ func (info *clInfo) triage(c *prjpb.Component, pm pmState) {
 		// state and have an incomplete Run for the same type of trigger at the
 		// same time. The presence in a Run is more important, so treat it as
 		// such.
-		info.triageInCQVoteRun(pm)
+		info.triageInCQVoteRun(ctx, pm)
 	case isCQVotePurging(info.purgingCL):
-		info.triageInCQVotePurge(pm)
+		info.triageInCQVotePurge(ctx, pm)
 	case info.pcl.GetTriggers().GetCqVoteTrigger() != nil:
 		triageCQTrigger = true
 	}
@@ -151,10 +152,10 @@ func (info *clInfo) triage(c *prjpb.Component, pm pmState) {
 	case info.pcl.GetTriggers().GetNewPatchsetRunTrigger() != nil:
 		triageNPRTrigger = true
 	}
-	info.triageNewTriggers(pm, triageCQTrigger, triageNPRTrigger)
+	info.triageNewTriggers(ctx, pm, triageCQTrigger, triageNPRTrigger)
 }
 
-func (info *clInfo) triageInCQVoteRun(pm pmState) {
+func (info *clInfo) triageInCQVoteRun(ctx context.Context, pm pmState) {
 	if !info.pcl.GetSubmitted() && info.pclStatusReadyForTriage() && info.pcl.GetTriggers().GetCqVoteTrigger() != nil {
 		pcl := info.pcl
 		if len(pcl.GetConfigGroupIndexes()) != 1 {
@@ -163,7 +164,7 @@ func (info *clInfo) triageInCQVoteRun(pm pmState) {
 			return
 		}
 		cgIndex := pcl.GetConfigGroupIndexes()[0]
-		info.deps = triageDeps(pcl, cgIndex, pm)
+		info.deps = triageDeps(ctx, pcl, cgIndex, pm)
 		// A purging CL must not be "ready" to avoid creating new Runs with them.
 		if info.deps.OK() && !isCQVotePurging(info.purgingCL) {
 			info.cqReady = true
@@ -194,7 +195,7 @@ func (info *clInfo) pclStatusReadyForTriage() bool {
 	}
 }
 
-func (info *clInfo) triageInCQVotePurge(pm pmState) {
+func (info *clInfo) triageInCQVotePurge(ctx context.Context, pm pmState) {
 	// The PM hasn't noticed yet the completion of the async purge.
 	// The result of purging is modified CL, which may be observed by PM earlier
 	// than completion of purge.
@@ -207,7 +208,7 @@ func (info *clInfo) triageInCQVotePurge(pm pmState) {
 		case 0:
 			panic(fmt.Errorf("PCL %d without ConfigGroup index not possible for CL not referenced by any Runs (partitioning bug?)", info.pcl.GetClid()))
 		case 1:
-			info.deps = triageDeps(info.pcl, cgIndexes[0], pm)
+			info.deps = triageDeps(ctx, info.pcl, cgIndexes[0], pm)
 			// info.deps.OK() may be true, for example if user has already corrected the
 			// mistake that previously resulted in purging op. However, don't mark CL
 			// ready until purging op completes or expires.
@@ -263,7 +264,7 @@ func (info *clInfo) addPurgeReason(t *run.Trigger, clError *changelist.CLError) 
 	}
 }
 
-func (info *clInfo) triageNewTriggers(pm pmState, triageCQTrigger, triageNPRTrigger bool) {
+func (info *clInfo) triageNewTriggers(ctx context.Context, pm pmState, triageCQTrigger, triageNPRTrigger bool) {
 	pcl := info.pcl
 	for _, r := range pcl.GetPurgeReasons() {
 		switch {
@@ -301,7 +302,7 @@ func (info *clInfo) triageNewTriggers(pm pmState, triageCQTrigger, triageNPRTrig
 	case 1:
 		// if either trigger is being purged, do not mark it as ready.
 		if triageCQTrigger {
-			if info.deps = triageDeps(pcl, cgIndexes[0], pm); info.deps.OK() {
+			if info.deps = triageDeps(ctx, pcl, cgIndexes[0], pm); info.deps.OK() {
 				info.cqReady = true
 			} else {
 				info.addPurgeReason(info.pcl.Triggers.GetCqVoteTrigger(), info.deps.makePurgeReason())

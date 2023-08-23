@@ -15,12 +15,17 @@
 package triager
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
 
+	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/logging"
+
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 )
@@ -50,16 +55,20 @@ type triagedDeps struct {
 	// notYetLoaded means that more specific category isn't yet known.
 	notYetLoaded []*changelist.Dep
 
+	// needToTrigger is a list of the deps that should be triggered with CQ
+	// votes.
+	needToTrigger []*changelist.Dep
+
 	invalidDeps *changelist.CLError_InvalidDeps
 }
 
 // triageDeps triages deps of a PCL. See triagedDeps for documentation.
-func triageDeps(pcl *prjpb.PCL, cgIndex int32, pm pmState) *triagedDeps {
+func triageDeps(ctx context.Context, pcl *prjpb.PCL, cgIndex int32, pm pmState) *triagedDeps {
 	cg := pm.ConfigGroup(cgIndex).Content
 	res := &triagedDeps{}
 	for _, dep := range pcl.GetDeps() {
 		dPCL := pm.PCL(dep.GetClid())
-		res.categorize(pcl, cgIndex, cg, dPCL, dep)
+		res.categorize(ctx, pcl, cgIndex, cg, dPCL, dep)
 		cqTrigger := dPCL.GetTriggers().GetCqVoteTrigger()
 		if cqTrigger != nil {
 			if tPB := cqTrigger.GetTime(); tPB != nil {
@@ -98,7 +107,7 @@ func (t *triagedDeps) makePurgeReason() *changelist.CLError {
 //
 // pcl is dependent PCL, which must be triggered.
 // Its dep is represented by dPCL.
-func (t *triagedDeps) categorize(pcl *prjpb.PCL, cgIndex int32, cg *cfgpb.ConfigGroup, dPCL *prjpb.PCL, dep *changelist.Dep) {
+func (t *triagedDeps) categorize(ctx context.Context, pcl *prjpb.PCL, cgIndex int32, cg *cfgpb.ConfigGroup, dPCL *prjpb.PCL, dep *changelist.Dep) {
 	if dPCL == nil {
 		t.notYetLoaded = append(t.notYetLoaded, dep)
 		return
@@ -155,7 +164,7 @@ func (t *triagedDeps) categorize(pcl *prjpb.PCL, cgIndex int32, cg *cfgpb.Config
 	tr := pcl.GetTriggers().GetCqVoteTrigger()
 	dtr := dPCL.GetTriggers().GetCqVoteTrigger()
 	if cg.GetCombineCls() == nil {
-		t.categorizeSingle(tr, dep, cg)
+		t.categorizeSingle(ctx, tr, dtr, dep, cg)
 	} else {
 		t.categorizeCombinable(tr, dtr, dep)
 	}
@@ -189,12 +198,32 @@ func (t *triagedDeps) categorizeCombinable(tr, dtr *run.Trigger, dep *changelist
 	}
 }
 
-func (t *triagedDeps) categorizeSingle(tr *run.Trigger, dep *changelist.Dep, cg *cfgpb.ConfigGroup) {
+func (t *triagedDeps) categorizeSingle(ctx context.Context, tr, dtr *run.Trigger, dep *changelist.Dep, cg *cfgpb.ConfigGroup) {
+	// TODO(crbug/1470341) once the dogfood process is done,
+	// enable chained cq votes by default, and remove all the unnecessary
+	// param "ctx".
+	var isMCEDogfooder bool
+	switch triggerer, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, tr.Email)); {
+	case err != nil:
+		// Log the error w/o handling it. Chained CQ votes will be turned on
+		// by default.
+		logging.Errorf(ctx, "categorizeSingle: MakeIdentity: %s", err)
+	default:
+		isMCEDogfooder = common.IsMCEDogfooder(ctx, triggerer)
+	}
 	// dependent is guaranteed non-nil.
-	switch mode := run.Mode(tr.GetMode()); mode {
-	case run.DryRun, run.QuickDryRun:
-		return // OK.
-	case run.FullRun:
+	switch mode := run.Mode(tr.GetMode()); {
+	case mode == run.DryRun || mode == run.QuickDryRun:
+		// OK.
+	case mode == run.FullRun && isMCEDogfooder && dep.GetKind() == changelist.DepKind_HARD:
+		// If a dep has no or different (prob CQ+1) CQ vote, then schedule
+		// a trigger for CQ+2 on the dep, and postpone a run creation for
+		// this CL.
+		if tr.GetMode() != dtr.GetMode() {
+			t.needToTrigger = append(t.needToTrigger, dep)
+			return
+		}
+	case mode == run.FullRun:
 		if cg.GetVerifiers().GetGerritCqAbility().GetAllowSubmitWithOpenDeps() && dep.GetKind() == changelist.DepKind_HARD {
 			// If configured, allow CV to submit the entire stack (HARD deps
 			// only) of changes.
@@ -202,7 +231,6 @@ func (t *triagedDeps) categorizeSingle(tr *run.Trigger, dep *changelist.Dep, cg 
 		}
 		t.ensureInvalidDeps()
 		t.invalidDeps.SingleFullDeps = append(t.invalidDeps.SingleFullDeps, dep)
-		return
 	default:
 		panic(fmt.Errorf("unknown dependent mode %v", tr))
 	}

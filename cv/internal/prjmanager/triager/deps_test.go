@@ -26,6 +26,7 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -39,6 +40,10 @@ func TestDepsTriage(t *testing.T) {
 	t.Parallel()
 
 	Convey("Component's PCL deps triage", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp(t)
+		defer cancel()
+
 		// Truncate start time point s.t. easy to see diff in test failures.
 		epoch := testclock.TestRecentTimeUTC.Truncate(10000 * time.Second)
 		dryRun := func(t time.Time) *run.Triggers {
@@ -63,7 +68,7 @@ func TestDepsTriage(t *testing.T) {
 			proto.Merge(&backup, sup.pb)
 
 			// Actual component doesn't matter in this test.
-			td := triageDeps(pcl, cgIdx, pmState{sup})
+			td := triageDeps(ctx, pcl, cgIdx, pmState{sup})
 			So(sup.pb, ShouldResembleProto, &backup) // must not be modified
 			return td
 		}
@@ -275,11 +280,104 @@ func TestDepsTriage(t *testing.T) {
 						So(td.OK(), ShouldBeFalse)
 					})
 				})
+
+				Convey("unless the user is an MCE dogfooder and deps are HARD", func() {
+					// TODO(crbug/1470341) remove this test if chained cq votes
+					// is enabled by default.
+					pcl31 := sup.PCL(31)
+					pcl31.Triggers = nil
+					pcl32 := sup.PCL(32)
+					pcl32.Triggers.CqVoteTrigger.Email = "test@example.org"
+					ct.AddMember("test@example.org", common.MCEDogfooderGroup)
+
+					// triage with HARD dep. It should be good.
+					td := do(pcl32, singIdx)
+					So(td.OK(), ShouldBeTrue)
+					// triage with a SOFT dep. This should fail, as chained cq
+					// votes only support HARD deps.
+					pcl32.GetDeps()[0].Kind = changelist.DepKind_SOFT
+					td = do(pcl32, singIdx)
+					So(td, cvtesting.SafeShouldResemble, &triagedDeps{
+						invalidDeps: &changelist.CLError_InvalidDeps{
+							SingleFullDeps: pcl32.GetDeps(),
+						},
+					})
+					So(td.OK(), ShouldBeFalse)
+				})
 			})
 		})
 
+		Convey("Full run with chained CQ votes", func() {
+			voter := "test@example.org"
+			ct.AddMember(voter, common.MCEDogfooderGroup)
+			sup.pb.Pcls = []*prjpb.PCL{
+				{
+					Clid: 31, ConfigGroupIndexes: []int32{singIdx},
+				},
+				{
+					Clid: 32, ConfigGroupIndexes: []int32{singIdx},
+					Deps: []*changelist.Dep{
+						{Clid: 31, Kind: changelist.DepKind_HARD},
+					},
+				},
+				{
+					Clid: 33, ConfigGroupIndexes: []int32{singIdx},
+					Deps: []*changelist.Dep{
+						{Clid: 31, Kind: changelist.DepKind_HARD},
+						{Clid: 32, Kind: changelist.DepKind_HARD},
+					},
+				},
+			}
+
+			Convey("Single vote on the topmost CL", func() {
+				pcl33 := sup.PCL(33)
+				pcl33.Triggers = fullRun(epoch)
+				pcl33.Triggers.CqVoteTrigger.Email = voter
+				td := do(pcl33, singIdx)
+
+				// The triage dep result should be OK(), but have
+				// the not-yet-voted deps in needToTrigger
+				So(td.OK(), ShouldBeTrue)
+				So(td.needToTrigger, ShouldResembleProto, []*changelist.Dep{
+					{Clid: 31, Kind: changelist.DepKind_HARD},
+					{Clid: 32, Kind: changelist.DepKind_HARD},
+				})
+			})
+			Convey("a dep already has CQ+2", func() {
+				pcl31 := sup.PCL(31)
+				pcl31.Triggers = fullRun(epoch)
+				pcl31.Triggers.CqVoteTrigger.Email = voter
+				pcl33 := sup.PCL(33)
+				pcl33.Triggers = fullRun(epoch)
+				pcl33.Triggers.CqVoteTrigger.Email = voter
+				td := do(pcl33, singIdx)
+
+				So(td.OK(), ShouldBeTrue)
+				So(td.needToTrigger, ShouldResembleProto, []*changelist.Dep{
+					{Clid: 32, Kind: changelist.DepKind_HARD},
+				})
+			})
+			Convey("a dep has CQ+1", func() {
+				pcl31 := sup.PCL(31)
+				pcl31.Triggers = dryRun(epoch)
+				pcl31.Triggers.CqVoteTrigger.Email = voter
+				pcl33 := sup.PCL(33)
+				pcl33.Triggers = fullRun(epoch)
+				pcl33.Triggers.CqVoteTrigger.Email = voter
+
+				// triageDep should still put the dep with CQ+1 in
+				// needToTrigger, so that PM will schedule a TQ task to override
+				// the CQ vote with CQ+2.
+				td := do(pcl33, singIdx)
+				So(td.OK(), ShouldBeTrue)
+				So(td.needToTrigger, ShouldResembleProto, []*changelist.Dep{
+					{Clid: 31, Kind: changelist.DepKind_HARD},
+					{Clid: 32, Kind: changelist.DepKind_HARD},
+				})
+			})
+		})
 		Convey("Combinable speciality", func() {
-			// Setup valid deps; sub-tests will mutate this to become invalid.
+			// Setup valid deps; sub-tests wll mutate this to become invalid.
 			sup.pb.Pcls = []*prjpb.PCL{
 				{
 					Clid: 31, ConfigGroupIndexes: []int32{combIdx},
