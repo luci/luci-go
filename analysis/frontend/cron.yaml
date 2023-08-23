@@ -18,7 +18,7 @@ cron:
   schedule: every 10 minutes
 - description: "Update analysis and create/update bugs for high-impact clusters"
   url: /internal/cron/update-analysis-and-bugs
-  schedule: every 15 minutes synchronized
+  schedule: every 15 minutes from 00:09 to 23:59
 - description: "Sweeper job for transactional tasks."
   url: /internal/tasks/c/sweep
   schedule: every 1 minutes
@@ -53,4 +53,4 @@ cron:
   schedule: every 10 minutes synchronized
 - description: "Merge Bigquery data from test_variant_segment_updates table to test_variant_segments table."
   url: /internal/cron/merge-test-variant-branches
-  schedule: every 10 minutes synchronized
+  schedule: every 10 minutes from 00:07 to 23:59
