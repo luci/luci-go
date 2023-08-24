@@ -119,15 +119,19 @@ func TestTriage(t *testing.T) {
 			c.TriageRequired = false
 			return c
 		}
+		voter := "user-1@example.org"
+		depKind := changelist.DepKind_SOFT
 		putPCL := func(clid int, grpIndex int32, mode run.Mode, triggerTime time.Time, depsCLIDs ...int) (*changelist.CL, *prjpb.PCL) {
 			mods := []gf.CIModifier{gf.PS(1), gf.Updated(triggerTime)}
-			u := gf.U("user-1")
+			u := gf.U(voter)
 			switch mode {
 			case run.FullRun:
 				mods = append(mods, gf.CQ(+2, triggerTime, u))
 			case run.DryRun:
 				mods = append(mods, gf.CQ(+1, triggerTime, u))
 			case run.NewPatchsetRun:
+			case "":
+				// skip
 			default:
 				panic(fmt.Errorf("unsupported %s", mode))
 			}
@@ -137,13 +141,16 @@ func TestTriage(t *testing.T) {
 			case run.NewPatchsetRun:
 				So(grpIndex, ShouldBeGreaterThanOrEqualTo, nprIdx)
 				So(trs.GetNewPatchsetRunTrigger(), ShouldNotBeNil)
+			case "":
+				// skip
 			default:
 				So(trs.GetCqVoteTrigger(), ShouldNotBeNil)
 				So(trs.GetCqVoteTrigger().GetMode(), ShouldResemble, string(mode))
 			}
 			cl := &changelist.CL{
-				ID:       common.CLID(clid),
-				EVersion: 1,
+				ID:         common.CLID(clid),
+				ExternalID: changelist.MustGobID(gHost, int64(clid)),
+				EVersion:   1,
 				Snapshot: &changelist.Snapshot{Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
 					Host: gHost,
 					Info: ci,
@@ -152,7 +159,7 @@ func TestTriage(t *testing.T) {
 			for _, d := range depsCLIDs {
 				cl.Snapshot.Deps = append(cl.Snapshot.Deps, &changelist.Dep{
 					Clid: int64(d),
-					Kind: changelist.DepKind_SOFT,
+					Kind: depKind,
 				})
 			}
 			So(datastore.Put(ctx, cl), ShouldBeNil)
@@ -162,7 +169,7 @@ func TestTriage(t *testing.T) {
 				pclTriggers.NewPatchsetRunTrigger.GerritAccountId = 0
 			}
 			if pclTriggers.GetCqVoteTrigger() != nil {
-				pclTriggers.CqVoteTrigger.Email = ""
+				pclTriggers.CqVoteTrigger.Email = voter
 				pclTriggers.CqVoteTrigger.GerritAccountId = 0
 			}
 			return cl, &prjpb.PCL{
@@ -188,6 +195,76 @@ func TestTriage(t *testing.T) {
 			So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
 			So(res.RunsToCreate, ShouldBeEmpty)
 			So(res.CLsToPurge, ShouldBeEmpty)
+		})
+
+		Convey("Chained CQ votes", func() {
+			now := ct.Clock.Now()
+			ct.AddMember(voter, common.MCEDogfooderGroup)
+			depKind = changelist.DepKind_HARD
+			const cl31, cl32, cl33, cl34 = 31, 32, 33, 34
+
+			Convey("with CQ vote on a child CL", func() {
+				_, pcl31 := putPCL(cl31, singIdx, "", now.Add(-time.Minute))
+				_, pcl32 := putPCL(cl32, singIdx, "", now.Add(-time.Second), cl31)
+				_, pcl33 := putPCL(cl33, singIdx, run.FullRun, now, cl31, cl32)
+				pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32, pcl33}
+				oldC := &prjpb.Component{Clids: []int64{cl31, cl32, cl33}, TriageRequired: true}
+				res := mustTriage(oldC)
+
+				// No triage required, as the Component will be waken up
+				// by the vote completion event.
+				So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
+				So(res.NewValue.GetDecisionTime(), ShouldBeNil)
+				// No runs should be created.
+				// No CLs should be purged.
+				// CL31 and CL32 should be in CLsToTrigger.
+				So(res.RunsToCreate, ShouldBeEmpty)
+				So(res.CLsToPurge, ShouldBeEmpty)
+				So(res.CLsToTrigger, ShouldResembleProto, []*prjpb.TriggeringCL{
+					&prjpb.TriggeringCL{
+						Clid:       cl31,
+						OriginClid: cl33,
+						Trigger:    pcl33.Triggers.GetCqVoteTrigger(),
+					},
+					&prjpb.TriggeringCL{
+						Clid:       cl32,
+						OriginClid: cl33,
+						Trigger:    pcl33.Triggers.GetCqVoteTrigger(),
+					},
+				})
+			})
+			Convey("with CQ vote on multi CLs", func() {
+				_, pcl31 := putPCL(cl31, singIdx, run.FullRun, now.Add(-time.Second))
+				_, pcl32 := putPCL(cl32, singIdx, "", now.Add(-time.Second), cl31)
+				_, pcl33 := putPCL(cl33, singIdx, run.FullRun, now.Add(-time.Minute), cl31, cl32)
+				_, pcl34 := putPCL(cl34, singIdx, run.FullRun, now.Add(-time.Minute), cl31, cl32, cl33)
+				pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32, pcl33, pcl34}
+				oldC := &prjpb.Component{
+					Clids: []int64{cl31, cl32, cl33, cl34}, TriageRequired: true}
+				res := mustTriage(oldC)
+
+				// No triage required, as the Component will be waken up
+				// by the vote completion event.
+				So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
+				So(res.NewValue.GetDecisionTime(), ShouldBeNil)
+
+				// run for CL31 should be created, as it meets all the run
+				// creation requirements.
+				So(res.RunsToCreate, ShouldHaveLength, 1)
+				So(res.RunsToCreate[0].InputCLs, ShouldHaveLength, 1)
+				So(res.RunsToCreate[0].InputCLs[0].ID, ShouldEqual, cl31)
+
+				// CL32 should be put in CLsToTrigger, and CLsToPurge should be
+				// empty
+				So(res.CLsToPurge, ShouldBeEmpty)
+				So(res.CLsToTrigger, ShouldResembleProto, []*prjpb.TriggeringCL{
+					&prjpb.TriggeringCL{
+						Clid:       cl32,
+						OriginClid: cl33,
+						Trigger:    pcl33.Triggers.GetCqVoteTrigger(),
+					},
+				})
+			})
 		})
 
 		Convey("Purges CLs", func() {

@@ -29,8 +29,9 @@ func triageCLs(ctx context.Context, c *prjpb.Component, pm pmState) map[int64]*c
 	cls := make(map[int64]*clInfo, len(c.GetClids()))
 	for _, clid := range c.GetClids() {
 		cls[clid] = &clInfo{
-			pcl:       pm.MustPCL(clid),
-			purgingCL: pm.PurgingCL(clid), // may be nil
+			pcl:          pm.MustPCL(clid),
+			purgingCL:    pm.PurgingCL(clid),    // may be nil
+			triggeringCL: pm.TriggeringCL(clid), // may be nil
 		}
 	}
 	for index, r := range c.GetPruns() {
@@ -52,6 +53,8 @@ type clInfo struct {
 	runIndexes []int32
 	// purgingCL is set if CL is already being purged.
 	purgingCL *prjpb.PurgingCL
+	// triggeringCL is set if CL is being triggered.
+	triggeringCL *prjpb.TriggeringCL
 
 	triagedCL
 }
@@ -165,8 +168,8 @@ func (info *clInfo) triageInCQVoteRun(ctx context.Context, pm pmState) {
 		}
 		cgIndex := pcl.GetConfigGroupIndexes()[0]
 		info.deps = triageDeps(ctx, pcl, cgIndex, pm)
-		// A purging CL must not be "ready" to avoid creating new Runs with them.
-		if info.deps.OK() && !isCQVotePurging(info.purgingCL) {
+		// A purging or triggering CL must not be "ready" to a new cq run.
+		if info.deps.OK() && !isCQVotePurging(info.purgingCL) && len(info.deps.needToTrigger) == 0 {
 			info.cqReady = true
 		}
 	}
@@ -302,10 +305,14 @@ func (info *clInfo) triageNewTriggers(ctx context.Context, pm pmState, triageCQT
 	case 1:
 		// if either trigger is being purged, do not mark it as ready.
 		if triageCQTrigger {
-			if info.deps = triageDeps(ctx, pcl, cgIndexes[0], pm); info.deps.OK() {
-				info.cqReady = true
-			} else {
+			info.deps = triageDeps(ctx, pcl, cgIndexes[0], pm)
+			switch {
+			case !info.deps.OK():
 				info.addPurgeReason(info.pcl.Triggers.GetCqVoteTrigger(), info.deps.makePurgeReason())
+			case len(info.deps.needToTrigger) > 0:
+				// no cqReady if it has deps that need to be triggered.
+			default:
+				info.cqReady = true
 			}
 		}
 		if triageNPRTrigger {

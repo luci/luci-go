@@ -27,6 +27,7 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -67,6 +68,7 @@ func shouldResembleTriagedCL(actual any, expected ...any) string {
 		ShouldResembleProto(a.pcl, b.pcl),
 		ShouldResembleProto(a.purgingCL, b.purgingCL),
 		ShouldResembleProto(a.purgeReasons, b.purgeReasons),
+		ShouldResembleProto(a.triggeringCL, b.triggeringCL),
 	} {
 		if err != "" {
 			buf.WriteRune(' ')
@@ -630,6 +632,85 @@ func TestCLsTriage(t *testing.T) {
 					cqReady: true,
 					deps:    &triagedDeps{notYetLoaded: sup.PCL(2).GetDeps()},
 				},
+			})
+		})
+
+		Convey("Multiple CL Runs with chained CQ votes", func() {
+			const clid1, clid2, clid3, clid4 = 1, 2, 3, 4
+
+			newCL := func(clid int64, deps ...*changelist.Dep) *prjpb.PCL {
+				return &prjpb.PCL{
+					Clid:               clid,
+					ConfigGroupIndexes: []int32{singIdx},
+					Status:             prjpb.PCL_OK,
+					Submitted:          false,
+					Deps:               deps,
+				}
+			}
+			Dep := func(clid int64) *changelist.Dep {
+				return &changelist.Dep{Clid: clid, Kind: changelist.DepKind_HARD}
+			}
+			voter := "test@example.org"
+			ct.AddMember(voter, common.MCEDogfooderGroup)
+			sup.pb.Pcls = []*prjpb.PCL{
+				newCL(clid1),
+				newCL(clid2, Dep(clid1)),
+				newCL(clid3, Dep(clid1), Dep(clid2)),
+				newCL(clid4, Dep(clid1), Dep(clid2), Dep(clid3)),
+			}
+
+			Convey("CQ vote on a child CL", func() {
+				// Trigger CQ on the CL 3 only.
+				sup.pb.Pcls[2].Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
+				sup.pb.Pcls[2].Triggers.CqVoteTrigger.Email = voter
+				cls := do(&prjpb.Component{Clids: []int64{clid1, clid2, clid3, clid4}})
+				So(cls, ShouldHaveLength, 4)
+
+				// - all CLs should be not-cq-ready.
+				So(cls[clid1].cqReady, ShouldBeFalse)
+				So(cls[clid2].cqReady, ShouldBeFalse)
+				So(cls[clid3].cqReady, ShouldBeFalse)
+				So(cls[clid4].cqReady, ShouldBeFalse)
+				// - CL3 should have CL1, and CL2 in needToTrigger, whereas
+				// the others shouldn't have any, because only CL3 has
+				// the CQ vote. Deps are not triaged, unless a given CL has
+				// a CQ vote.
+				So(cls[clid1].deps, ShouldBeNil)
+				So(cls[clid2].deps, ShouldBeNil)
+				So(cls[clid3].deps.needToTrigger, ShouldResembleProto, []*changelist.Dep{
+					Dep(clid1), Dep(clid2),
+				})
+				So(cls[clid4].deps, ShouldBeNil)
+			})
+
+			Convey("CQ vote on multi CLs", func() {
+				// Trigger CQ on the CL 2 and 4.
+				sup.pb.Pcls[1].Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
+				sup.pb.Pcls[1].Triggers.CqVoteTrigger.Email = voter
+				sup.pb.Pcls[3].Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
+				sup.pb.Pcls[3].Triggers.CqVoteTrigger.Email = voter
+				cls := do(&prjpb.Component{Clids: []int64{clid1, clid2, clid3, clid4}})
+				So(cls, ShouldHaveLength, 4)
+
+				// - all CLs should be not-cq-ready.
+				So(cls[clid1].cqReady, ShouldBeFalse)
+				So(cls[clid2].cqReady, ShouldBeFalse)
+				So(cls[clid3].cqReady, ShouldBeFalse)
+				So(cls[clid4].cqReady, ShouldBeFalse)
+				// - CL3 should have CL1, and CL2 in needToTrigger, whereas
+				// the others shouldn't have any, because only CL3 has
+				// the CQ vote. Deps are not triaged, unless a given CL has
+				// a CQ vote.
+				So(cls[clid1].deps, ShouldBeNil)
+				So(cls[clid2].deps.needToTrigger, ShouldResembleProto, []*changelist.Dep{
+					Dep(clid1),
+				})
+				So(cls[clid3].deps, ShouldBeNil)
+				So(cls[clid4].deps.needToTrigger, ShouldResembleProto, []*changelist.Dep{
+					// Should NOT have clid4 in needToTrigger, as it is already
+					// voted.
+					Dep(clid1), Dep(clid3),
+				})
 			})
 		})
 	})

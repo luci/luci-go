@@ -49,6 +49,15 @@ func (s *simplePMState) PurgingCL(clid int64) *prjpb.PurgingCL {
 	return nil
 }
 
+func (s *simplePMState) TriggeringCL(clid int64) *prjpb.TriggeringCL {
+	for _, p := range s.pb.GetTriggeringCls() {
+		if p.GetClid() == clid {
+			return p
+		}
+	}
+	return nil
+}
+
 func (s *simplePMState) ConfigGroup(index int32) *prjcfg.ConfigGroup {
 	return s.cgs[index]
 }

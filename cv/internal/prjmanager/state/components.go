@@ -376,10 +376,12 @@ func (s *State) makeTriageSupporter(ctx context.Context) (*triageSupporter, erro
 	for _, p := range s.PB.GetPurgingCls() {
 		purging[p.GetClid()] = p
 	}
+	triggering := make(map[int64]*prjpb.TriggeringCL, len(s.PB.GetTriggeringCls()))
 	return &triageSupporter{
 		pcls:         s.PB.GetPcls(),
 		pclIndex:     s.pclIndex,
 		purging:      purging,
+		triggering:   triggering,
 		configGroups: s.configGroups,
 	}, nil
 }
@@ -391,6 +393,7 @@ type triageSupporter struct {
 	pcls         []*prjpb.PCL
 	pclIndex     map[common.CLID]int
 	purging      map[int64]*prjpb.PurgingCL
+	triggering   map[int64]*prjpb.TriggeringCL
 	configGroups []*prjcfg.ConfigGroup
 }
 
@@ -410,6 +413,10 @@ func (a *triageSupporter) PurgingCL(clid int64) *prjpb.PurgingCL {
 
 func (a *triageSupporter) ConfigGroup(index int32) *prjcfg.ConfigGroup {
 	return a.configGroups[index]
+}
+
+func (a *triageSupporter) TriggeringCL(clid int64) *prjpb.TriggeringCL {
+	return a.triggering[clid]
 }
 
 func markForTriage(in []*prjpb.Component) []*prjpb.Component {
