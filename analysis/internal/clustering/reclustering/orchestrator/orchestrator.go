@@ -24,6 +24,8 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/field"
@@ -322,7 +324,10 @@ func startProjectRun(ctx context.Context, project string, runEnd time.Time, work
 			// Assign to variable to capture current value of loop variable.
 			t := task
 			c <- func() error {
-				return reclustering.Schedule(ctx, t)
+				err := retry.Retry(ctx, transient.Only(retry.Default), func() error {
+					return reclustering.Schedule(ctx, t)
+				}, nil)
+				return err
 			}
 		}
 	})

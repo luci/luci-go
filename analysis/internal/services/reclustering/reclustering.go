@@ -16,11 +16,17 @@ package reclustering
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/tq"
 
@@ -82,12 +88,52 @@ func RegisterTaskHandler(srv *server.Server) error {
 // Project.
 func Schedule(ctx context.Context, task *taskspb.ReclusterChunks) error {
 	title := fmt.Sprintf("%s-%s-shard-%v", task.Project, task.AttemptTime.AsTime().Format("20060102-150405"), task.EndChunkId)
-	return tq.AddTask(ctx, &tq.Task{
+
+	dedupKey, err := randomDeduplicationKey()
+	if err != nil {
+		return errors.Annotate(err, "obtain deduplication key").Err()
+	}
+	taskProto := &tq.Task{
 		Title: title,
 		// Copy the task to avoid the caller retaining an alias to
 		// the task proto passed to tq.AddTask.
 		Payload: proto.Clone(task).(*taskspb.ReclusterChunks),
-	})
+		// Use a deduplication key to avoid retried task creations
+		// accidentally resulting in two tasks being created, in case
+		// of failure to receive CreateTask response.
+		// Note that this is only a best-effort deduplication, the
+		// task should still assume the possibility of multiple
+		// tasks being created and avoid data correctness issues
+		// in this case.
+		DeduplicationKey: dedupKey,
+	}
+
+	// After 50 seconds, task creation is probably pointless as
+	// each reclustering run takes 1 minute.
+	ctx, cancel := context.WithTimeout(ctx, 50*time.Second)
+	defer cancel()
+
+	// Manually retry transient errors. The Cloud Tasks client
+	// does not automatically retry CreateTask RPCs, presumably
+	// as the RPC does not offer strong guarantees against multiple
+	// task creation in case of retry.
+	err = retry.Retry(ctx, transient.Only(retry.Default), func() error {
+		err := tq.AddTask(ctx, taskProto)
+		if err != nil {
+			return errors.Annotate(err, "create task").Err()
+		}
+		return nil
+	}, nil)
+	return err
+}
+
+func randomDeduplicationKey() (string, error) {
+	var b [16]byte
+	_, err := rand.Read(b[:])
+	if err != nil {
+		return "", errors.Annotate(err, "read random bytes").Err()
+	}
+	return hex.EncodeToString(b[:]), nil
 }
 
 func reclusterTestResults(ctx context.Context, worker *reclustering.Worker, task *taskspb.ReclusterChunks) error {
