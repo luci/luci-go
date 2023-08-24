@@ -16,6 +16,7 @@ import { Box, Button, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import { DateTime } from 'luxon';
 import { useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
 import {
@@ -27,8 +28,15 @@ import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { EndedBuildTable } from './ended_build_table';
+import {
+  createdBeforeUpdater,
+  getCreatedBefore,
+  getPageSize,
+  getPageToken,
+  pageSizeUpdater,
+  pageTokenUpdater,
+} from './search_param_utils';
 
-const DEFAULT_PAGE_SIZE = 25;
 const FIELD_MASK =
   'builds.*.status,builds.*.id,builds.*.number,builds.*.createTime,builds.*.endTime,builds.*.startTime,' +
   'builds.*.output.gitilesCommit,builds.*.input.gitilesCommit,builds.*.input.gerritChanges,builds.*.summaryMarkdown';
@@ -38,46 +46,16 @@ export interface EndedBuildsSectionProps {
 }
 
 export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
-  const [searchParam, setSearchParams] = useSyncedSearchParams();
-
-  const pageSize = Number(searchParam.get('limit')) || DEFAULT_PAGE_SIZE;
-  const setPageSize = (newPageSize: number) => {
-    if (newPageSize === DEFAULT_PAGE_SIZE) {
-      searchParam.delete('limit');
-    } else {
-      searchParam.set('limit', String(newPageSize));
-    }
-    setSearchParams(searchParam);
-  };
-
-  const currentPageToken = searchParam.get('cursor') || '';
-  const setCurrentPageToken = (newPageToken: string) => {
-    if (!newPageToken) {
-      searchParam.delete('cursor');
-    } else {
-      searchParam.set('cursor', newPageToken);
-    }
-    setSearchParams(searchParam);
-  };
-
-  const createdBeforeTs = searchParam.get('createdBefore');
-  const createdBefore = createdBeforeTs
-    ? DateTime.fromSeconds(Number(createdBeforeTs))
-    : null;
-  const setCreatedBefore = (newCreatedBefore: DateTime | null) => {
-    if (!newCreatedBefore) {
-      searchParam.delete('createdBefore');
-    } else {
-      searchParam.set('createdBefore', String(newCreatedBefore.toSeconds()));
-    }
-    setSearchParams(searchParam);
-  };
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const pageSize = getPageSize(searchParams);
+  const pageToken = getPageToken(searchParams);
+  const createdBefore = getCreatedBefore(searchParams);
 
   // There could be a lot of prev pages. Do not keep those tokens in the URL.
   const [prevPageTokens, setPrevPageTokens] = useState(() => {
     // If there's a page token when the component is FIRST INITIALIZED, allow
     // users to go back to the first page by inserting a blank page token.
-    return currentPageToken ? [''] : [];
+    return pageToken ? [''] : [];
   });
 
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -96,7 +74,7 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
         },
       },
       pageSize,
-      pageToken: currentPageToken,
+      pageToken,
       fields: FIELD_MASK,
     },
     options: { keepPreviousData: true },
@@ -105,6 +83,12 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
   if (isError) {
     throw error;
   }
+
+  const prevPageToken = prevPageTokens.length
+    ? prevPageTokens[prevPageTokens.length - 1]
+    : null;
+  const nextPageToken =
+    !isPreviousData && data?.nextPageToken ? data?.nextPageToken : null;
 
   return (
     <>
@@ -128,8 +112,8 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
           }}
           onAccept={(t) => {
             setPrevPageTokens([]);
-            setCurrentPageToken('');
-            setCreatedBefore(t);
+            setSearchParams(createdBeforeUpdater(t));
+            setSearchParams(pageTokenUpdater(''));
             headingRef.current?.scrollIntoView();
           }}
         />
@@ -140,37 +124,43 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
       />
       <Box sx={{ mt: '5px' }}>
         Page Size:{' '}
-        <ToggleButtonGroup
-          exclusive
-          value={pageSize}
-          onChange={(_e, newValue: number) => setPageSize(newValue)}
-          size="small"
-        >
-          <ToggleButton value={25}>25</ToggleButton>
-          <ToggleButton value={50}>50</ToggleButton>
-          <ToggleButton value={100}>100</ToggleButton>
-          <ToggleButton value={200}>200</ToggleButton>
+        <ToggleButtonGroup exclusive value={pageSize} size="small">
+          {[25, 50, 100, 200].map((s) => (
+            <ToggleButton
+              key={s}
+              component={Link}
+              to={`?${pageSizeUpdater(s)(searchParams)}`}
+              value={s}
+            >
+              {s}
+            </ToggleButton>
+          ))}
         </ToggleButtonGroup>{' '}
         <Button
-          disabled={!prevPageTokens.length}
-          onClick={() => {
-            const newPrevPageTokens = prevPageTokens.slice();
-            // The button is disabled when `newPrevPageTokens` is empty.
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            setCurrentPageToken(newPrevPageTokens.pop()!);
-            setPrevPageTokens(newPrevPageTokens);
+          disabled={prevPageToken === null}
+          component={Link}
+          to={`?${pageTokenUpdater(prevPageToken || '')(searchParams)}`}
+          onClick={(e) => {
+            if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) {
+              return;
+            }
+
+            setPrevPageTokens(prevPageTokens.slice(0, -1));
             headingRef.current?.scrollIntoView();
           }}
         >
           Previous Page
         </Button>
         <Button
-          disabled={isPreviousData || !data?.nextPageToken}
-          onClick={() => {
-            // The button is disabled when `nextPageToken` is empty.
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            setCurrentPageToken(data!.nextPageToken!);
-            setPrevPageTokens([...prevPageTokens, currentPageToken]);
+          disabled={nextPageToken === null}
+          component={Link}
+          to={`?${pageTokenUpdater(nextPageToken || '')(searchParams)}`}
+          onClick={(e) => {
+            if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) {
+              return;
+            }
+
+            setPrevPageTokens([...prevPageTokens, pageToken]);
             headingRef.current?.scrollIntoView();
           }}
         >

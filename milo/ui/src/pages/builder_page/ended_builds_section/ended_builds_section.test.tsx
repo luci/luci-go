@@ -12,7 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import {
+  render,
+  screen,
+  fireEvent,
+  act,
+  cleanup,
+} from '@testing-library/react';
 import { DateTime } from 'luxon';
 
 import {
@@ -96,9 +102,92 @@ describe('EndedBuildsSection', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+    cleanup();
   });
 
-  test('should clear page tokens after date filter is reset', async () => {
+  it('should navigate between pages properly', async () => {
+    render(
+      <FakeContextProvider>
+        <EndedBuildsSection builderId={builderId} />
+      </FakeContextProvider>
+    );
+    await act(() => jest.runAllTimersAsync());
+
+    const prevPageLink = screen.getByText('Previous Page');
+    const nextPageLink = screen.getByText('Next Page');
+
+    expect(prevPageLink).toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink).toHaveAttribute('href', '/?cursor=page2');
+    expect(endedBuildsTableMock).toHaveBeenCalledWith(
+      {
+        endedBuilds: builds.slice(0, 2),
+        isLoading: false,
+      },
+      expect.anything()
+    );
+    endedBuildsTableMock.mockClear();
+
+    fireEvent.click(nextPageLink);
+    await act(() => jest.runAllTimersAsync());
+    expect(prevPageLink).not.toHaveAttribute('aria-disabled', 'true');
+    expect(prevPageLink).toHaveAttribute('href', '/');
+    expect(nextPageLink).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink).toHaveAttribute('href', '/?cursor=page3');
+    expect(endedBuildsTableMock).toHaveBeenCalledWith(
+      {
+        endedBuilds: builds.slice(2, 4),
+        isLoading: false,
+      },
+      expect.anything()
+    );
+    endedBuildsTableMock.mockClear();
+
+    fireEvent.click(nextPageLink);
+    await act(() => jest.runAllTimersAsync());
+    expect(prevPageLink).not.toHaveAttribute('aria-disabled', 'true');
+    expect(prevPageLink).toHaveAttribute('href', '/?cursor=page2');
+    expect(nextPageLink).toHaveAttribute('aria-disabled', 'true');
+    expect(endedBuildsTableMock).toHaveBeenCalledWith(
+      {
+        endedBuilds: builds.slice(4, 6),
+        isLoading: false,
+      },
+      expect.anything()
+    );
+    endedBuildsTableMock.mockClear();
+
+    fireEvent.click(prevPageLink);
+    await act(() => jest.runAllTimersAsync());
+    expect(prevPageLink).not.toHaveAttribute('aria-disabled', 'true');
+    expect(prevPageLink).toHaveAttribute('href', '/');
+    expect(nextPageLink).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink).toHaveAttribute('href', '/?cursor=page3');
+    expect(endedBuildsTableMock).toHaveBeenCalledWith(
+      {
+        endedBuilds: builds.slice(2, 4),
+        isLoading: false,
+      },
+      expect.anything()
+    );
+    endedBuildsTableMock.mockClear();
+
+    fireEvent.click(prevPageLink);
+    await act(() => jest.runAllTimersAsync());
+    expect(prevPageLink).toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink).toHaveAttribute('href', '/?cursor=page2');
+    expect(endedBuildsTableMock).toHaveBeenCalledWith(
+      {
+        endedBuilds: builds.slice(0, 2),
+        isLoading: false,
+      },
+      expect.anything()
+    );
+    endedBuildsTableMock.mockClear();
+  });
+
+  it('should clear page tokens after date filter is reset', async () => {
     render(
       <FakeContextProvider>
         <EndedBuildsSection builderId={builderId} />
@@ -115,9 +204,12 @@ describe('EndedBuildsSection', () => {
     );
     endedBuildsTableMock.mockClear();
 
-    fireEvent.click(screen.getByText('Next Page'));
+    const prevPageLink = screen.getByText('Previous Page');
+    const nextPageLink = screen.getByText('Next Page');
+
+    fireEvent.click(nextPageLink);
     await act(() => jest.runAllTimersAsync());
-    expect(screen.getByText('Previous Page')).toBeEnabled();
+    expect(prevPageLink).not.toHaveAttribute('aria-disabled', 'true');
     expect(endedBuildsTableMock).toHaveBeenCalledWith(
       {
         endedBuilds: builds.slice(2, 4),
@@ -135,7 +227,7 @@ describe('EndedBuildsSection', () => {
 
     await act(() => jest.runAllTimersAsync());
     // Prev page tokens are purged.
-    expect(screen.getByText('Previous Page')).toBeDisabled();
+    expect(prevPageLink).toHaveAttribute('aria-disabled', 'true');
     expect(endedBuildsTableMock).toHaveBeenCalledWith(
       {
         endedBuilds: builds.slice(1, 3),
