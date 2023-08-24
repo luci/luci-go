@@ -74,6 +74,7 @@ func TestBuildBucketPubsub(t *testing.T) {
 				Builder: &buildbucketpb.BuilderID{
 					Project: "chromium",
 					Bucket:  "findit",
+					Builder: "gofindit-culprit-verification",
 				},
 				Status: buildbucketpb.Status_INFRA_FAILURE,
 			},
@@ -90,6 +91,7 @@ func TestBuildBucketPubsub(t *testing.T) {
 				Builder: &buildbucketpb.BuilderID{
 					Project: "chromium",
 					Bucket:  "findit",
+					Builder: "gofindit-culprit-verification",
 				},
 				Status: buildbucketpb.Status_SCHEDULED,
 			},

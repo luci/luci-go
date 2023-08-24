@@ -531,6 +531,10 @@ func (rerun *SingleRerun) HasEnded() bool {
 	return rerun.Status == pb.RerunStatus_RERUN_STATUS_FAILED || rerun.Status == pb.RerunStatus_RERUN_STATUS_PASSED || rerun.Status == pb.RerunStatus_RERUN_STATUS_INFRA_FAILED || rerun.Status == pb.RerunStatus_RERUN_STATUS_CANCELED
 }
 
+func (rerun *TestSingleRerun) HasEnded() bool {
+	return rerun.Status == pb.RerunStatus_RERUN_STATUS_FAILED || rerun.Status == pb.RerunStatus_RERUN_STATUS_PASSED || rerun.Status == pb.RerunStatus_RERUN_STATUS_INFRA_FAILED || rerun.Status == pb.RerunStatus_RERUN_STATUS_CANCELED || rerun.Status == pb.RerunStatus_RERUN_STATUS_TEST_SKIPPED
+}
+
 // TestFailureBundle contains TestFailure models that will be bisected together.
 type TestFailureBundle struct {
 	// Primary test failure.

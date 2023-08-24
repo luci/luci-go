@@ -116,15 +116,17 @@ func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
 		bbid := bbmsg.GetBuild().GetId()
 		project := bbmsg.GetBuild().GetBuilder().GetProject()
 		bucket := bbmsg.GetBuild().GetBuilder().GetBucket()
+		builder := bbmsg.GetBuild().GetBuilder().GetBuilder()
 		status := bbmsg.GetBuild().GetStatus()
 
 		c = loggingutil.SetAnalyzedBBID(c, bbid)
 		logging.Debugf(c, "Received message for build id %d", bbid)
 
-		// Special handling for pubsub message for LUCI Bisection.
+		// Special handling for pubsub message for compile failure for
+		// LUCI Bisection.
 		// This is only triggered for rerun builds.
-		if project == "chromium" && bucket == "findit" {
-			logging.Infof(c, "Received pubsub for luci bisection build %d status %s", bbid, buildbucketpb.Status_name[int32(status)])
+		if project == "chromium" && bucket == "findit" && builder == "gofindit-culprit-verification" {
+			logging.Infof(c, "Received pubsub for luci bisection compile rerun build %d status %s", bbid, buildbucketpb.Status_name[int32(status)])
 			bbCounter.Add(c, 1, project, string(OutcomeTypeUpdateRerun))
 
 			// We only update the rerun counter after the build finished.
@@ -134,7 +136,20 @@ func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
 			}
 
 			if bbmsg.Build.Status != buildbucketpb.Status_SCHEDULED {
-				return rerun.UpdateRerunStatus(c, bbid)
+				return rerun.UpdateCompileRerunStatus(c, bbid)
+			}
+			return nil
+		}
+
+		// Handle test rerun build.
+		// Hardcode the builder name for now.
+		// TODO (nqmtuan): Move this to config when we support other projects.
+		if project == "chromium" && bucket == "findit" && builder == "test-single-revision" {
+			logging.Infof(c, "Test bisection: received pubsub for rerun build %d status %s", bbid, buildbucketpb.Status_name[int32(status)])
+
+			// TODO (nqmtuan): Update tsmon counter.
+			if bbmsg.Build.Status != buildbucketpb.Status_SCHEDULED {
+				return rerun.UpdateTestRerunStatus(c, bbmsg.GetBuild())
 			}
 			return nil
 		}

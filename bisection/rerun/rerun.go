@@ -256,9 +256,9 @@ func CreateRerunBuildModel(c context.Context, build *buildbucketpb.Build, rerunT
 	return rerunBuild, nil
 }
 
-// UpdateRerunStatus updates the start/end time and status of rerun builds and single rerun (when we received buildbucket pubsub messages)
-func UpdateRerunStatus(c context.Context, bbid int64) error {
-	logging.Infof(c, "UpdateRerunStatus for build %d", bbid)
+// UpdateCompileRerunStatus updates the start/end time and status of rerun builds and single rerun (when we received buildbucket pubsub messages)
+func UpdateCompileRerunStatus(c context.Context, bbid int64) error {
+	logging.Infof(c, "UpdateCompileRerunStatus for build %d", bbid)
 	rerunModel := &model.CompileRerunBuild{
 		Id: bbid,
 	}
@@ -268,7 +268,7 @@ func UpdateRerunStatus(c context.Context, bbid int64) error {
 		// There are cases where we cannot find datastore entries, like
 		// luci-bisection-dev receives pubsub message for a prod run
 		// In this case, just log and return nil
-		logging.Warningf(c, "Couldn't find rerun to UpdateRerunStartTime: %d", bbid)
+		logging.Warningf(c, "Couldn't find compile rerun to update status: %d", bbid)
 		return nil
 	}
 	if err != nil {
@@ -316,7 +316,8 @@ func UpdateRerunStatus(c context.Context, bbid int64) error {
 		if buildEnded && !lastRerun.HasEnded() {
 			// Edge case: when the build ends but the rerun isn't ended,
 			// this suggests that there is a infra failure in the rerun build
-			// which prevent it from sending back the update via the UpdateAnalysisProgress PRC.
+			// which prevent it from sending back the update via the UpdateAnalysisProgress RPC.
+			// TODO (nqmtuan): Perhaps we need to update Analysis and NthSection analysis status too?
 			lastRerun.Status = pb.RerunStatus_RERUN_STATUS_INFRA_FAILED
 			lastRerun.EndTime = endTime
 		}
@@ -328,6 +329,48 @@ func UpdateRerunStatus(c context.Context, bbid int64) error {
 		return errors.Annotate(err, "failed saving last rerun for build %d", rerunModel.Id).Err()
 	}
 	return nil
+}
+
+// UpdateTestRerunStatus is called when we receive updates from buildbucket
+// for test rerun build.
+func UpdateTestRerunStatus(c context.Context, build *buildbucketpb.Build) error {
+	bbid := build.Id
+	logging.Infof(c, "UpdateTestRerunStatus for build %d", bbid)
+	return datastore.RunInTransaction(c, func(ctx context.Context) error {
+		singleRerun := &model.TestSingleRerun{
+			ID: bbid,
+		}
+
+		err := datastore.Get(c, singleRerun)
+		if err == datastore.ErrNoSuchEntity {
+			// There are cases where we cannot find datastore entries, like
+			// luci-bisection-dev receives pubsub message for a prod run.
+			// In this case, just log and return nil.
+			logging.Warningf(c, "Couldn't find test rerun to update status : %d", bbid)
+			return nil
+		}
+		if err != nil {
+			return errors.Annotate(err, "couldn't get TestSingleRerun %d", bbid).Err()
+		}
+
+		singleRerun.LUCIBuild.StartTime = build.StartTime.AsTime()
+		singleRerun.LUCIBuild.EndTime = build.EndTime.AsTime()
+		singleRerun.LUCIBuild.Status = build.Status
+		buildEnded := build.Status&buildbucketpb.Status_ENDED_MASK == buildbucketpb.Status_ENDED_MASK
+		if buildEnded && !singleRerun.HasEnded() {
+			// Edge case: when the build ends but the rerun isn't ended,
+			// this suggests that there is a infra failure in the rerun build
+			// which prevent it from sending back the update via the UpdateTestAnalysisProgress RPC.
+			// TODO (nqmtuan): Perhaps we need to update Analysis and NthSection analysis status too?
+			singleRerun.Status = pb.RerunStatus_RERUN_STATUS_INFRA_FAILED
+		}
+
+		err = datastore.Put(c, singleRerun)
+		if err != nil {
+			return errors.Annotate(err, "couldn't save single rerun %d", bbid).Err()
+		}
+		return nil
+	}, nil)
 }
 
 // TODO (nqmtuan): Move this into a helper class if it turns out we need to use
