@@ -57,14 +57,17 @@ const MarkdownContainer = styled(Box)({
     overflowWrap: 'break-word',
     fontSize: '12px',
   },
+  // The following two blocks of rules are needed to ensure the first line of
+  // the summary always have the same line height and margin/padding. This
+  // allows us to use them as short summaries when the summary is collapsed.
   '& *': {
     marginBlock: '0px',
     paddingTop: '0',
     paddingBottom: '0',
-  },
-  '& > p': {
-    marginBlock: '5px',
     lineHeight: '20px',
+  },
+  '& > *': {
+    marginBlock: '5px',
   },
 });
 
