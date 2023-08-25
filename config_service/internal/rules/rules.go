@@ -30,6 +30,7 @@ package rules
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -75,6 +76,11 @@ func validateSchemaCfg(ctx *validation.Context, configSet, path string, content 
 	return errors.New("unimplemented")
 }
 
-func validateJSON(ctx *validation.Context, configSet, path string, content []byte) error {
-	return errors.New("unimplemented")
+func validateJSON(vctx *validation.Context, configSet, path string, content []byte) error {
+	vctx.SetFile(path)
+	var obj any
+	if err := json.Unmarshal(content, &obj); err != nil {
+		vctx.Errorf("invalid JSON: %s", err)
+	}
+	return nil
 }

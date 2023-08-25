@@ -18,12 +18,14 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/data/text/pattern"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/config_service/internal/common"
 	"go.chromium.org/luci/config_service/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestAddRules(t *testing.T) {
@@ -63,6 +65,29 @@ func TestAddRules(t *testing.T) {
 				ConfigSet: pattern.MustParse(`regex:.+`),
 				Path:      pattern.MustParse(`regex:.+\.json`),
 			},
+		})
+	})
+}
+
+func TestValidateJSON(t *testing.T) {
+	t.Parallel()
+
+	Convey("Validate JSON", t, func() {
+		ctx := testutil.SetupContext()
+		vctx := &validation.Context{Context: ctx}
+		cs := config.MustProjectSet("foo")
+		path := "bar.json"
+
+		Convey("invalid", func() {
+			content := []byte(`{not a json object - "config"}`)
+			So(validateJSON(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `in "bar.json"`, "invalid JSON:")
+		})
+
+		Convey("valid", func() {
+			content := []byte(`{"abc": "xyz"}`)
+			So(validateJSON(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldBeNil)
 		})
 	})
 }
