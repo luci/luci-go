@@ -118,7 +118,7 @@ func (c *Client) SearchBuilds(ctx context.Context, in *bbpb.SearchBuildsRequest,
 			return nil, status.Errorf(codes.InvalidArgument, "invalid token %q, expecting a build ID", token)
 		}
 	}
-	candidates := make([]*bbpb.Build, 0, len(c.fa.buildStore))
+	var candidates []*bbpb.Build
 	c.fa.iterBuildStore(func(build *bbpb.Build) {
 		candidates = append(candidates, build)
 	})
