@@ -260,7 +260,7 @@ func TestTriage(t *testing.T) {
 				So(res.CLsToTrigger, ShouldResembleProto, []*prjpb.TriggeringCL{
 					&prjpb.TriggeringCL{
 						Clid:       cl32,
-						OriginClid: cl33,
+						OriginClid: cl34,
 						Trigger:    pcl33.Triggers.GetCqVoteTrigger(),
 					},
 				})

@@ -16,6 +16,7 @@ package triager
 
 import (
 	"context"
+	"sort"
 
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
@@ -23,10 +24,13 @@ import (
 // stageTriggerDeps creates TriggeringCLsTasks(s) for the deps that should be
 // triggered.
 func stageTriggerDeps(ctx context.Context, cls map[int64]*clInfo, pm pmState) ([]*prjpb.TriggeringCL, error) {
+	if len(cls) == 0 {
+		return nil, nil
+	}
 	var depsToTrigger []*prjpb.TriggeringCL
 	depsAdded := make(map[int64]struct{})
-
-	for _, info := range cls {
+	for _, clid := range computeSortedCLIDs(cls) {
+		info := cls[clid]
 		if info.deps == nil {
 			continue
 		}
@@ -67,4 +71,20 @@ func stageTriggerDeps(ctx context.Context, cls map[int64]*clInfo, pm pmState) ([
 	// In other words, all the deps in depsToTrigger are within the same
 	// component and connected with each other either directly or indirectly.
 	return depsToTrigger, nil
+}
+
+func computeSortedCLIDs(clinfos map[int64]*clInfo) []int64 {
+	// sort cls by clid in descending order to produce a consistent decision
+	// for OriginClid.
+	if len(clinfos) == 0 {
+		return nil
+	}
+	clids := make([]int64, 0, len(clinfos))
+	for clid, _ := range clinfos {
+		clids = append(clids, clid)
+	}
+	sort.Slice(clids, func(i, j int) bool {
+		return clids[i] > clids[j]
+	})
+	return clids
 }
