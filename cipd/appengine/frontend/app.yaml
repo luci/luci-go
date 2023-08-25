@@ -27,6 +27,11 @@ inbound_services:
 handlers:
 - url: /static/bootstrap
   static_dir: static/bootstrap
+  expiration: "4h"
+  secure: always
+- url: /static/icons
+  static_dir: static/icons
+  expiration: "4h"
   secure: always
 - url: /.*
   script: auto

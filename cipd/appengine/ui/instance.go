@@ -99,7 +99,7 @@ func instancePage(c *router.Context, pkg, ver string) error {
 		"Package":     pkg,
 		"Version":     ver,
 		"InstanceID":  common.ObjectRefToInstanceID(inst.Instance),
-		"Breadcrumbs": breadcrumbs(pkg, ver),
+		"Breadcrumbs": breadcrumbs(pkg, ver, true),
 		"HashAlgo":    inst.Instance.HashAlgo.String(),
 		"HexDigest":   inst.Instance.HexDigest,
 		"DownloadURL": url.SignedUrl,

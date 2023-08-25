@@ -19,95 +19,35 @@ import (
 )
 
 type breadcrumb struct {
-	Title string
-	Href  string
-	Last  bool
+	Title   string
+	Href    string
+	Package bool
+	Last    bool
 }
 
 // breadcrumbs builds a data for the breadcrumps navigation element.
 //
 // It contains a prefix path, where each element is clickable.
-func breadcrumbs(path string, ver string) []breadcrumb {
+func breadcrumbs(path string, ver string, pkg bool) []breadcrumb {
 	out := []breadcrumb{
-		{Title: "[root]", Href: prefixPageURL("")},
+		{Title: "[root]", Href: listingPageURL("", "")},
 	}
 	if path != "" {
 		chunks := strings.Split(path, "/")
 		for i, ch := range chunks {
 			out = append(out, breadcrumb{
 				Title: ch,
-				Href:  prefixPageURL(strings.Join(chunks[:i+1], "/")),
+				Href:  listingPageURL(strings.Join(chunks[:i+1], "/"), ""),
 			})
 		}
 	}
-
-	// This is a breadcrumb path to an instance of package named 'path'. Fix URL
-	// of the crumb that corresponds to the package to point to the package page,
-	// not the prefix page.
+	out[len(out)-1].Package = pkg
 	if ver != "" {
-		out[len(out)-1].Href = packagePageURL(path, "")
 		out = append(out, breadcrumb{
 			Title: ver,
 			Href:  instancePageURL(path, ver),
 		})
 	}
-
 	out[len(out)-1].Last = true
 	return out
-}
-
-type listingItem struct {
-	Title  string
-	Href   string
-	Back   bool
-	Active bool
-}
-
-// listing takes prefix "a/b" and children ["a/b/c", "a/b/d"] and returns
-// items titled ["c", "d"].
-func pathListing(pfx string, children []string, out []listingItem, cb func(ch string) listingItem) []listingItem {
-	if pfx != "" {
-		pfx += "/"
-	}
-	for _, ch := range children {
-		itm := cb(ch)
-		itm.Title = strings.TrimPrefix(ch, pfx)
-		out = append(out, itm)
-	}
-	return out
-}
-
-// prefixesListing formats a list of child prefixes of 'pfx'.
-//
-// The result includes '..' if 'pfx' is not root.
-func prefixesListing(pfx string, prefixes []string) []listingItem {
-	out := make([]listingItem, 0, len(prefixes)+1)
-	if pfx != "" {
-		parent := ""
-		if idx := strings.LastIndex(pfx, "/"); idx != -1 {
-			parent = pfx[:idx]
-		}
-		out = append(out, listingItem{
-			Back: true,
-			Href: prefixPageURL(parent),
-		})
-	}
-	return pathListing(pfx, prefixes, out, func(p string) listingItem {
-		return listingItem{
-			Href: prefixPageURL(p),
-		}
-	})
-}
-
-// packagesListing formats a list of packages under 'pfx'.
-//
-// One of them can be highlighted as Active.
-func packagesListing(pfx string, pkgs []string, active string) []listingItem {
-	out := make([]listingItem, 0, len(pkgs))
-	return pathListing(pfx, pkgs, out, func(p string) listingItem {
-		return listingItem{
-			Href:   packagePageURL(p, ""),
-			Active: p == active,
-		}
-	})
 }

@@ -7,35 +7,38 @@
 
     <div class="col-sm-6 border-end">
       <h4 class="mb-3">Packages</h4>
-      <table class="table table-striped table-sm">
-      {{range $item := .Prefixes}}
-        <tr>
-          <td>
-            <a href="{{$item.Href}}">
-            {{if $item.Back}}
-              &#8617;
-            {{else}}
-              {{$item.Title}}/&#8230;
-            {{end}}
-            </a>
-          </td>
-        </tr>
-      {{end}}
-      {{range $item := .Packages}}
-        <tr>
-          <td>
-            {{if $item.Active}}
-              <b>{{$item.Title}}</b>
-              {{if $.Instances}}
-                <a href="#instances" class="float-end me-2">{{template "arrow-down-icon" .}}</a>
+      {{ if .Missing}}
+        <p class="mb-3">No such package or prefix</p>
+      {{else}}
+        <table class="table table-striped table-sm">
+        {{range $item := .Listing}}
+          <tr>
+            <td>
+              {{if $item.Active}}
+                <b>
+                  {{if $item.Package}}{{template "package-icon" .}}{{end}}
+                  {{$item.Title}}
+                </b>
+                {{if $.Instances}}
+                  <a href="#instances" class="float-end me-2">{{template "arrow-down-icon" .}}</a>
+                {{end}}
+              {{else}}
+                <a href="{{$item.Href}}">
+                {{if $item.Package}}{{template "package-icon" .}}{{end}}
+                {{if $item.Back}}
+                  &#8617;
+                {{else if $item.Prefix}}
+                  {{$item.Title}}/&#8230;
+                {{else}}
+                  {{$item.Title}}
+                {{end}}
               {{end}}
-            {{else}}
-              <a href="{{$item.Href}}">{{$item.Title}}</a>
-            {{end}}
-          </td>
-        </tr>
+              </a>
+            </td>
+          </tr>
+        {{end}}
+        </table>
       {{end}}
-      </table>
     </div>
 
     <div class="col-sm-6">

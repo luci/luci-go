@@ -106,7 +106,7 @@ func fetchPrefixMetadata(ctx context.Context, pfx string) (*prefixMetadataBlock,
 					Who:        p,
 					WhoHref:    whoHref,
 					Prefix:     prefix,
-					PrefixHref: prefixPageURL(m.Prefix),
+					PrefixHref: listingPageURL(m.Prefix, ""),
 				})
 			}
 		}

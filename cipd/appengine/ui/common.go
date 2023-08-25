@@ -64,15 +64,11 @@ func InstallHandlers(srv *server.Server, svc *impl.Services, templatesPath strin
 	srv.Routes.GET("/p/*path", m, renderErr(routeToPage))
 }
 
-func prefixPageURL(pfx string) string {
+func listingPageURL(pfx, cursor string) string {
 	if pfx == "" {
 		return "/"
 	}
-	return "/p/" + pfx
-}
-
-func packagePageURL(pkg, cursor string) string {
-	p := "/p/" + pkg + "/+/"
+	p := "/p/" + pfx
 	if cursor != "" {
 		p += "?c=" + url.QueryEscape(cursor)
 	}
@@ -87,11 +83,14 @@ func instancePageURL(pkg, ver string) string {
 func routeToPage(c *router.Context) error {
 	path := c.Params.ByName("path")
 	switch chunks := strings.SplitN(path, "/+/", 2); {
-	case len(chunks) <= 1: // no '/+/' in path => prefix listing page
-		return prefixListingPage(c, path)
-	case len(chunks) == 2 && chunks[1] == "": // ends with '/+/' => package page
-		return packagePage(c, chunks[0])
-	case len(chunks) == 2: // has something after '/+/' => instance page
+	case len(chunks) <= 1:
+		// "/p/some/pkg": prefix and instance listing page.
+		return listingPage(c, path)
+	case len(chunks) == 2 && chunks[1] == "":
+		// "/p/some/pkg/+/": the same, for compatibility with older links.
+		return listingPage(c, chunks[0])
+	case len(chunks) == 2:
+		// "/p/some/pkg/+/version": the instance page
 		return instancePage(c, chunks[0], chunks[1])
 	default:
 		return status.Errorf(codes.InvalidArgument, "malformed page URL")
