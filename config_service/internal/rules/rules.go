@@ -12,20 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Copyright 2018 The LUCI Authors.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package rules
 
 import (
@@ -33,9 +19,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
+	"path"
+	"strings"
 
+	"go.chromium.org/luci/common/data/stringset"
+	cfgcommonpb "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/info"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/config_service/internal/common"
 )
@@ -72,8 +65,55 @@ func validateImportCfg(ctx *validation.Context, configSet, path string, content 
 	return errors.New("unimplemented")
 }
 
-func validateSchemaCfg(ctx *validation.Context, configSet, path string, content []byte) error {
-	return errors.New("unimplemented")
+func validateSchemaCfg(vctx *validation.Context, configSet, path string, content []byte) error {
+	vctx.SetFile(path)
+	cfg := &cfgcommonpb.SchemasCfg{}
+	if err := prototext.Unmarshal(content, cfg); err != nil {
+		vctx.Errorf("invalid schema proto: %s", err)
+		return nil
+	}
+	seenNames := stringset.New(len(cfg.GetSchemas()))
+	for i, schema := range cfg.GetSchemas() {
+		vctx.Enter("schemas #%d", i)
+
+		vctx.Enter("name")
+		switch name := schema.GetName(); {
+		case name == "":
+			vctx.Errorf("not specified")
+		case !strings.Contains(name, ":"):
+			vctx.Errorf("must contain \":\"")
+		case seenNames.Has(name):
+			vctx.Errorf("duplicate name: %q", name)
+		default:
+			segs := strings.SplitN(name, ":", 2)
+			prefix, p := segs[0], segs[1] // guaranteed by the colon check before
+			if cs := config.Set(prefix); prefix != "projects" && (cs.Validate() != nil || cs.Service() == "") {
+				vctx.Errorf("left side of \":\" must be a service config set or \"projects\"")
+			}
+			vctx.Enter("right side of \":\" (path)")
+			validatePath(vctx, p)
+			vctx.Exit()
+		}
+		seenNames.Add(schema.GetName())
+		vctx.Exit()
+
+		vctx.Enter("url")
+		if schema.GetUrl() == "" {
+			vctx.Errorf("not specified")
+		} else if u, err := url.Parse(schema.GetUrl()); err != nil {
+			vctx.Errorf("invalid url: %s", err)
+		} else {
+			if u.Hostname() == "" {
+				vctx.Errorf("hostname must be specified")
+			}
+			if u.Scheme != "https" {
+				vctx.Errorf("scheme must be \"https\"")
+			}
+		}
+		vctx.Exit()
+		vctx.Exit()
+	}
+	return nil
 }
 
 func validateJSON(vctx *validation.Context, configSet, path string, content []byte) error {
@@ -83,4 +123,18 @@ func validateJSON(vctx *validation.Context, configSet, path string, content []by
 		vctx.Errorf("invalid JSON: %s", err)
 	}
 	return nil
+}
+
+func validatePath(vctx *validation.Context, p string) {
+	switch {
+	case strings.TrimSpace(p) == "":
+		vctx.Errorf("not specified")
+	case path.IsAbs(p):
+		vctx.Errorf("must not be absolute: %q", p)
+	default:
+		pathSegs := stringset.NewFromSlice(strings.Split(p, "/")...)
+		if pathSegs.Has(".") || pathSegs.Has("..") {
+			vctx.Errorf("must not contain \".\" or \"..\" components: %q", p)
+		}
+	}
 }

@@ -69,6 +69,148 @@ func TestAddRules(t *testing.T) {
 	})
 }
 
+func TestValidateSchemaCfg(t *testing.T) {
+	t.Parallel()
+
+	Convey("Validate JSON", t, func() {
+		ctx := testutil.SetupContext()
+		vctx := &validation.Context{Context: ctx}
+		cs := config.MustServiceSet(testutil.AppID)
+		path := common.SchemaConfigFilePath
+
+		Convey("passed", func() {
+			content := []byte(`schemas {
+				name: "projects:foo.cfg"
+				url: "https://example.com/foo.proto"
+			}
+			schemas {
+				name: "services/abc:bar.cfg"
+				url: "https://example.com/bar.proto"
+			}`)
+			So(validateSchemaCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldBeNil)
+		})
+
+		Convey("invalid proto", func() {
+			content := []byte(`bad config`)
+			So(validateSchemaCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `in "schema.cfg"`, "invalid schema proto")
+		})
+
+		Convey("missing name", func() {
+			content := []byte(`schemas {
+				name: ""
+				url: "https://example.com/foo.proto"
+			}`)
+			So(validateSchemaCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, "(schemas #0 / name): not specified")
+		})
+
+		Convey("missing colon", func() {
+			content := []byte(`schemas {
+				name: "projects"
+				url: "https://example.com/foo.proto"
+			}`)
+			So(validateSchemaCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `(schemas #0 / name): must contain ":"`)
+		})
+
+		Convey("duplicate names", func() {
+			content := []byte(`schemas {
+				name: "projects:foo.cfg"
+				url: "https://example.com/foo.proto"
+			}
+			schemas {
+				name: "projects:foo.cfg"
+				url: "https://example.com/bar.proto"
+			}`)
+			So(validateSchemaCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `(schemas #1 / name): duplicate name: "projects:foo.cfg"`)
+		})
+
+		Convey("invalid left hand side of colon", func() {
+			content := []byte(`schemas {
+				name: "projects/abc:foo.cfg"
+				url: "https://example.com/foo.proto"
+			}`)
+			So(validateSchemaCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `(schemas #0 / name): left side of ":" must be a service config set or "projects"`)
+		})
+
+		Convey("missing path", func() {
+			content := []byte(`schemas {
+				name: "services/foo:"
+				url: "https://example.com/foo.proto"
+			}`)
+			So(validateSchemaCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `(schemas #0 / name / right side of ":" (path)): not specified`)
+		})
+
+		Convey("absolute", func() {
+			content := []byte(`schemas {
+				name: "services/foo:/etc/foo.cfg"
+				url: "https://example.com/foo.proto"
+			}`)
+			So(validateSchemaCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `(schemas #0 / name / right side of ":" (path)): must not be absolute: "/etc/foo.cfg"`)
+		})
+
+		Convey("contain .", func() {
+			content := []byte(`schemas {
+				name: "services/foo:./foo.cfg"
+				url: "https://example.com/foo.proto"
+			}`)
+			So(validateSchemaCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `(schemas #0 / name / right side of ":" (path)): must not contain "." or ".." components: "./foo.cfg"`)
+		})
+
+		Convey("contain ..", func() {
+			content := []byte(`schemas {
+				name: "services/foo:../foo.cfg"
+				url: "https://example.com/foo.proto"
+			}`)
+			So(validateSchemaCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `(schemas #0 / name / right side of ":" (path)): must not contain "." or ".." components: "../foo.cfg"`)
+		})
+
+		Convey("url not specified", func() {
+			content := []byte(`schemas {
+				name: "projects:foo.cfg"
+				url: ""
+			}`)
+			So(validateSchemaCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `(schemas #0 / url): not specified`)
+		})
+
+		Convey("invalid url ", func() {
+			content := []byte(`schemas {
+				name: "projects:foo.cfg"
+				url: "https://example.com\\foo.proto"
+			}`)
+			So(validateSchemaCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `(schemas #0 / url): invalid url:`)
+		})
+
+		Convey("url has empty hostname ", func() {
+			content := []byte(`schemas {
+				name: "projects:foo.cfg"
+				url: "foo.proto"
+			}`)
+			So(validateSchemaCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `(schemas #0 / url): hostname must be specified `)
+		})
+
+		Convey("url not using https", func() {
+			content := []byte(`schemas {
+				name: "projects:foo.cfg"
+				url: "http://example.com/foo.proto"
+			}`)
+			So(validateSchemaCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `(schemas #0 / url): scheme must be "https"`)
+		})
+	})
+}
+
 func TestValidateJSON(t *testing.T) {
 	t.Parallel()
 
