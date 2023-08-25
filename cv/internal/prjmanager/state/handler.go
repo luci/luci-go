@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
+	"go.chromium.org/luci/cv/internal/prjmanager/cltriggerer"
 	"go.chromium.org/luci/cv/internal/prjmanager/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/tracing"
@@ -51,6 +52,7 @@ type Handler struct {
 	PMNotifier      *prjmanager.Notifier
 	RunNotifier     RunNotifier
 	CLPurger        *clpurger.Purger
+	CLTriggerer     *cltriggerer.Triggerer
 	CLPoller        *poller.Poller
 	ComponentTriage itriager.Triage
 }

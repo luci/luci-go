@@ -45,6 +45,7 @@ const (
 	ManageProjectTaskClass     = "manage-project"
 	KickManageProjectTaskClass = "kick-" + ManageProjectTaskClass
 	PurgeProjectCLTaskClass    = "purge-project-cl"
+	TriggerProjectCLTaskClass  = "trigger-project-cl"
 )
 
 // TasksBinding binds Project Manager tasks to a TQ Dispatcher.
@@ -55,6 +56,7 @@ type TasksBinding struct {
 	ManageProject     tq.TaskClassRef
 	KickManageProject tq.TaskClassRef
 	PurgeProjectCL    tq.TaskClassRef
+	TriggerProjectCL  tq.TaskClassRef
 	TQDispatcher      *tq.Dispatcher
 }
 
@@ -84,6 +86,14 @@ func Register(tqd *tq.Dispatcher) TasksBinding {
 			Queue:        "purge-project-cl",
 			Kind:         tq.Transactional,
 			Quiet:        false, // these tasks are rare enough that verbosity only helps.
+			QuietOnError: true,
+		}),
+		TriggerProjectCL: tqd.RegisterTaskClass(tq.TaskClass{
+			ID:           TriggerProjectCLTaskClass,
+			Prototype:    &TriggeringCLsTask{},
+			Queue:        "trigger-project-cl",
+			Kind:         tq.Transactional,
+			Quiet:        true,
 			QuietOnError: true,
 		}),
 	}

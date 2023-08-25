@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
+	"go.chromium.org/luci/cv/internal/prjmanager/cltriggerer"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/prjmanager/state"
 	"go.chromium.org/luci/cv/internal/prjmanager/triager"
@@ -77,6 +78,7 @@ func New(n *prjmanager.Notifier, rn state.RunNotifier, c *changelist.Mutator, g 
 			PMNotifier:      n,
 			RunNotifier:     rn,
 			CLPurger:        clpurger.New(n, g, u, c),
+			CLTriggerer:     cltriggerer.New(n),
 			CLPoller:        poller.New(n.TasksBinding.TQDispatcher, g, u, n),
 			ComponentTriage: triager.Triage,
 		},

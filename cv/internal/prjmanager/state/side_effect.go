@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
+	"go.chromium.org/luci/cv/internal/prjmanager/cltriggerer"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
@@ -68,7 +69,16 @@ func NewSideEffects(items ...SideEffect) SideEffect {
 	if len(items) < 2 {
 		panic("at least 2 required")
 	}
-	return SideEffects{items: items}
+	se := &SideEffects{}
+	for _, item := range items {
+		if item != nil {
+			se.items = append(se.items, item)
+		}
+	}
+	if len(se.items) == 0 {
+		return nil
+	}
+	return se
 }
 
 // concurrency is how many goroutines may an individual SideEffect run at the
@@ -128,6 +138,28 @@ func (t *TriggerPurgeCLTasks) Do(ctx context.Context) error {
 			p := p
 			work <- func() error {
 				return t.clPurger.Schedule(ctx, p)
+			}
+		}
+	})
+	return common.MostSevereError(err)
+}
+
+// ScheduleTriggeringCLsTasks schedules TriggeringCLsTask(s) via TQ.
+type ScheduleTriggeringCLsTasks struct {
+	payloads    []*prjpb.TriggeringCLsTask
+	clTriggerer *cltriggerer.Triggerer
+}
+
+// Do implements SideEffect interface.
+func (t *ScheduleTriggeringCLsTasks) Do(ctx context.Context) error {
+	if len(t.payloads) == 0 {
+		return nil
+	}
+	err := parallel.WorkPool(concurrency, func(work chan<- func() error) {
+		for _, p := range t.payloads {
+			p := p
+			work <- func() error {
+				return t.clTriggerer.Schedule(ctx, p)
 			}
 		}
 	})

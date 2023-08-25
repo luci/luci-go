@@ -256,7 +256,7 @@ func TestComponentsActions(t *testing.T) {
 			So(state.PB, ShouldResembleProto, pb)
 
 			Convey("ExecDeferred", func() {
-				state2, sideEffect, err := h.ExecDeferred(ctx, state)
+				state2, sideEffects, err := h.ExecDeferred(ctx, state)
 				So(err, ShouldBeNil)
 				expectedDeadline := timestamppb.New(now.Add(maxPurgingCLDuration))
 				So(state2.PB.GetPurgingCls(), ShouldResembleProto, []*prjpb.PurgingCL{
@@ -268,6 +268,7 @@ func TestComponentsActions(t *testing.T) {
 					},
 				})
 
+				sideEffect := sideEffects.(*SideEffects).items[0]
 				So(sideEffect, ShouldHaveSameTypeAs, &TriggerPurgeCLTasks{})
 				ps := sideEffect.(*TriggerPurgeCLTasks).payloads
 				So(ps, ShouldHaveLength, 2)
@@ -491,9 +492,10 @@ func TestComponentsActions(t *testing.T) {
 					return res, nil
 				}
 
-				state2, sideEffect, err := h.ExecDeferred(ctx, state)
+				state2, sideEffects, err := h.ExecDeferred(ctx, state)
 				So(err, ShouldBeNil)
 				// Only #3 component purge must be a SideEffect.
+				sideEffect := sideEffects.(*SideEffects).items[0]
 				So(sideEffect, ShouldHaveSameTypeAs, &TriggerPurgeCLTasks{})
 				ps := sideEffect.(*TriggerPurgeCLTasks).payloads
 				So(ps, ShouldHaveLength, 1)
