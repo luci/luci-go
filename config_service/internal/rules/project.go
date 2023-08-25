@@ -15,15 +15,13 @@
 package rules
 
 import (
-	"errors"
-
 	"go.chromium.org/luci/config/validation"
 )
 
 func validateProjectsCfg(ctx *validation.Context, configSet, path string, content []byte) error {
-	return errors.New("unimplemented")
+	return nil
 }
 
 func validateProjectMetadata(ctx *validation.Context, configSet, path string, content []byte) error {
-	return errors.New("unimplemented")
+	return nil
 }

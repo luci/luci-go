@@ -17,7 +17,6 @@ package rules
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/url"
 	"path"
@@ -54,15 +53,15 @@ func addRules(r *validation.RuleSet) {
 }
 
 func validateACLsCfg(ctx *validation.Context, configSet, path string, content []byte) error {
-	return errors.New("unimplemented")
+	return nil
 }
 
 func validateServicesCfg(ctx *validation.Context, configSet, path string, content []byte) error {
-	return errors.New("unimplemented")
+	return nil
 }
 
 func validateImportCfg(ctx *validation.Context, configSet, path string, content []byte) error {
-	return errors.New("unimplemented")
+	return nil
 }
 
 func validateSchemaCfg(vctx *validation.Context, configSet, path string, content []byte) error {
