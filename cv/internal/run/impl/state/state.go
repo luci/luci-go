@@ -68,6 +68,9 @@ func (rs *RunState) ShallowCopy() *RunState {
 	if rs.NewLongOpIDs != nil {
 		ret.NewLongOpIDs = append([]string(nil), rs.NewLongOpIDs...)
 	}
+	if rs.DepRuns != nil {
+		ret.DepRuns = append(common.RunIDs(nil), rs.DepRuns...)
+	}
 	return &ret
 }
 
@@ -122,6 +125,9 @@ func (rs *RunState) DeepCopy() *RunState {
 	}
 	if rs.NewLongOpIDs != nil {
 		ret.NewLongOpIDs = append([]string(nil), rs.NewLongOpIDs...)
+	}
+	if rs.DepRuns != nil {
+		ret.DepRuns = append(common.RunIDs(nil), rs.DepRuns...)
 	}
 	return ret
 }

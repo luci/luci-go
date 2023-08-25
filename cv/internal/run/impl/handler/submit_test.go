@@ -177,6 +177,30 @@ func TestOnReadyForSubmission(t *testing.T) {
 			So(res.PostProcessFn, ShouldBeNil)
 		})
 
+		Convey("Do not submit if parent Run is not done yet.", func() {
+			const parentRun = common.RunID("parent/1-cow")
+			So(datastore.Put(ctx,
+				&run.Run{
+					ID:     parentRun,
+					Status: run.Status_RUNNING,
+					CLs:    common.CLIDs{13},
+				},
+				&run.RunCL{
+					ID:         13,
+					Run:        datastore.MakeKey(ctx, common.RunKind, string(parentRun)),
+					ExternalID: "gerrit/foo-review.googlesource.com/111",
+				},
+			), ShouldBeNil)
+			rs.Status = run.Status_WAITING_FOR_SUBMISSION
+			rs.DepRuns = common.RunIDs{parentRun}
+			res, err := h.OnReadyForSubmission(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res.State.LogEntries, ShouldHaveLength, 1)
+			So(res.SideEffectFn, ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
+			So(res.PostProcessFn, ShouldBeNil)
+		})
+
 		for _, status := range []run.Status{run.Status_RUNNING, run.Status_WAITING_FOR_SUBMISSION} {
 			now := ct.Clock.Now().UTC()
 			ctx = context.WithValue(ctx, &fakeTaskIDKey, "task-foo")

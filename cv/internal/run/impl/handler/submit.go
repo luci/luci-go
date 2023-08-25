@@ -47,6 +47,8 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/util"
 )
 
+const submissionPostponedMessage = "Posting Submittion Postponed Message"
+
 // OnReadyForSubmission implements Handler interface.
 func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) (*Result, error) {
 	switch status := rs.Status; {
@@ -78,6 +80,33 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		rs.Status = run.Status_WAITING_FOR_SUBMISSION
 	case status != run.Status_WAITING_FOR_SUBMISSION:
 		panic(fmt.Errorf("impossible status %s", status))
+	}
+	// Check DepRuns to see if we can start submitting this run.
+	if len(rs.DepRuns) > 0 {
+		runs, errs := run.LoadRunsFromIDs(rs.DepRuns...).Do(ctx)
+		for i, depr := range runs {
+			switch err := errs[i]; {
+			case err == datastore.ErrNoSuchEntity:
+				panic(fmt.Errorf("run %s has a non-existent DepRuns Run %s", rs.ID, depr.ID))
+			case err != nil:
+				return nil, errors.Annotate(err, "failed to load run %s", depr.ID).Tag(transient.Tag).Err()
+			case !run.IsEnded(depr.Status):
+				// If a parent run has not finished we cannot submit this run.
+				rs = rs.ShallowCopy()
+				runCLs, err := run.LoadRunCLs(ctx, depr.ID, depr.CLs)
+				if err != nil {
+					return nil, err
+				}
+				for _, runCL := range runCLs {
+					rs.LogInfof(ctx, submissionPostponedMessage, "Submission postponed, waiting for upstream CL %s to be submitted", runCL.ExternalID.MustURL())
+				}
+				return &Result{State: rs}, nil
+			case depr.Status != run.Status_SUCCEEDED:
+				// If a parent run has ended but was not successful, this run should not be submitted and
+				// the parent run will trigger OnParentRunCompleted to handle cancelling this run.
+				return &Result{State: rs}, nil
+			}
+		}
 	}
 
 	if rs.Mode != run.FullRun {
