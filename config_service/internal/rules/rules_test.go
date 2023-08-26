@@ -69,10 +69,37 @@ func TestAddRules(t *testing.T) {
 	})
 }
 
+func TestImportCfg(t *testing.T) {
+	t.Parallel()
+
+	Convey("Validate import.cfg", t, func() {
+		ctx := testutil.SetupContext()
+		vctx := &validation.Context{Context: ctx}
+		cs := config.MustServiceSet(testutil.AppID)
+		path := common.ImportConfigFilePath
+
+		Convey("invalid", func() {
+			content := []byte(`bad  config`)
+			So(validateImportCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `in "import.cfg"`, "invalid import proto:")
+		})
+
+		Convey("valid", func() {
+			content := []byte(`gitiles {
+				project_config_default_ref: "refs/heads/infra/config"
+				ref_config_default_path: "infra/config"
+				fetch_log_deadline: 60
+			}`)
+			So(validateImportCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldBeNil)
+		})
+	})
+}
+
 func TestValidateSchemaCfg(t *testing.T) {
 	t.Parallel()
 
-	Convey("Validate JSON", t, func() {
+	Convey("Validate schema.cfg", t, func() {
 		ctx := testutil.SetupContext()
 		vctx := &validation.Context{Context: ctx}
 		cs := config.MustServiceSet(testutil.AppID)

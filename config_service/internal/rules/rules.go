@@ -60,7 +60,12 @@ func validateServicesCfg(ctx *validation.Context, configSet, path string, conten
 	return nil
 }
 
-func validateImportCfg(ctx *validation.Context, configSet, path string, content []byte) error {
+func validateImportCfg(vctx *validation.Context, configSet, path string, content []byte) error {
+	vctx.SetFile(path)
+	cfg := &cfgcommonpb.ImportCfg{}
+	if err := prototext.Unmarshal(content, cfg); err != nil {
+		vctx.Errorf("invalid import proto: %s", err)
+	}
 	return nil
 }
 
