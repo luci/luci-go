@@ -162,11 +162,11 @@ func validateBuildTask(ctx context.Context, req *pb.BuildTaskUpdate, infra *mode
 	if infra.Proto.GetBackend() == nil {
 		infra.Proto.Backend = &pb.BuildInfra_Backend{}
 	}
-	if infra.Proto.Backend.GetTask() == nil {
+	switch {
+	case infra.Proto.Backend.GetTask() == nil:
 		infra.Proto.Backend.Task = &pb.Task{}
-	} else if infra.Proto.Backend.Task.Id.GetId() != req.Task.Id.GetId() ||
-		infra.Proto.Backend.Task.Id.GetTarget() != req.Task.Id.GetTarget() {
-		return errors.Reason("task ID in request does not match task ID associated with build").Err()
+	case infra.Proto.Backend.Task.Id.GetTarget() != req.Task.Id.GetTarget() || (infra.Proto.Backend.Task.Id.GetId() != "" && infra.Proto.Backend.Task.Id.GetId() != req.Task.Id.GetId()):
+		return errors.Reason("TaskID in request does not match TaskID associated with build").Err()
 	}
 	if protoutil.IsEnded(infra.Proto.Backend.Task.Status) {
 		return appstatus.Errorf(codes.FailedPrecondition, "cannot update an ended task")

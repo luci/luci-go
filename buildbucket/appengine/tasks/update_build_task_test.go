@@ -131,6 +131,36 @@ func TestValidateBuildTask(t *testing.T) {
 			err := validateBuildTask(ctx, req, infra)
 			So(err, ShouldBeError)
 		})
+		Convey("Run task did not return yet", func() {
+			infra := &model.BuildInfra{
+				Build: bk,
+				Proto: &pb.BuildInfra{
+					Backend: &pb.BuildInfra_Backend{
+						Task: &pb.Task{
+							Status: pb.Status_SCHEDULED,
+							Id: &pb.TaskID{
+								Id:     "",
+								Target: "swarming",
+							},
+							Link: "www.website.com",
+						},
+					},
+				},
+			}
+			So(datastore.Put(ctx, infra), ShouldBeNil)
+			req := &pb.BuildTaskUpdate{
+				BuildId: "1",
+				Task: &pb.Task{
+					Id: &pb.TaskID{
+						Id:     "1",
+						Target: "swarming",
+					},
+					Status: pb.Status_CANCELED,
+				},
+			}
+			err := validateBuildTask(ctx, req, infra)
+			So(err, ShouldBeNil)
+		})
 		Convey("task is complete and success", func() {
 			infra := &model.BuildInfra{
 				Build: bk,
@@ -553,6 +583,53 @@ func TestUpdateTaskEntity(t *testing.T) {
 			So(sch.Tasks(), ShouldHaveLength, 0)
 			So(bs.Status, ShouldEqual, pb.Status_SCHEDULED)
 			So(buildModel.Proto.Status, ShouldEqual, pb.Status_SCHEDULED)
+		})
+
+		Convey("RunTask did not return but UpdateBuildTask called", func() {
+			buildModel.Proto.Status = pb.Status_SCHEDULED
+			infraModel.Proto.Backend.Task.Id.Id = ""
+			infraModel.Proto.Backend.Task.UpdateId = 0
+			infraModel.Proto.Backend.Task.Link = ""
+			bs := &model.BuildStatus{
+				Build:  bk,
+				Status: pb.Status_SCHEDULED,
+			}
+			So(datastore.Put(ctx, buildModel, infraModel, bs), ShouldBeNil)
+
+			endReq := &pb.BuildTaskUpdate{
+				BuildId: "1",
+				Task: &pb.Task{
+					Status: pb.Status_STARTED,
+					Id: &pb.TaskID{
+						Id:     "1",
+						Target: "swarming",
+					},
+					UpdateId: 200,
+				},
+			}
+			err := updateTaskEntity(ctx, endReq, 1)
+			So(err, ShouldBeNil)
+			resultInfraModel := &model.BuildInfra{
+				Build: bk,
+			}
+			result := datastore.Get(ctx, resultInfraModel, bs, buildModel)
+			So(result, ShouldBeNil)
+			So(resultInfraModel.Proto.Backend.Task.Status, ShouldEqual, pb.Status_STARTED)
+
+			So(sch.Tasks(), ShouldHaveLength, 0)
+			So(bs.Status, ShouldEqual, pb.Status_SCHEDULED)
+			So(buildModel.Proto.Status, ShouldEqual, pb.Status_SCHEDULED)
+
+			post_infra := &model.BuildInfra{Build: bk}
+			So(datastore.Get(ctx, post_infra), ShouldBeNil)
+			So(post_infra.Proto.Backend.Task, ShouldResembleProto, &pb.Task{
+				Status: pb.Status_STARTED,
+				Id: &pb.TaskID{
+					Id:     "1",
+					Target: "swarming",
+				},
+				UpdateId: 200,
+			})
 		})
 	})
 }
