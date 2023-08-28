@@ -63,7 +63,7 @@ func Update(ctx context.Context) error {
 		for _, srv := range servicesCfg.GetServices() {
 			srv := srv
 			workC <- func() error {
-				ctx = logging.SetField(ctx, "service", srv.GetId())
+				ctx := logging.SetField(ctx, "service", srv.GetId())
 				if err := updateService(ctx, srv); err != nil {
 					errorsMu.Lock()
 					errs = append(errs, err)
