@@ -21,6 +21,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/auth_service/impl/info"
@@ -236,7 +237,11 @@ func TestImportBundles(t *testing.T) {
 	Convey("Testing importBundles", t, func() {
 		userIdent := identity.Identity("user:test-modifier@example.com")
 		ctx := memory.Use(context.Background())
-		ctx = clock.Set(ctx, testclock.New(testModifiedTS))
+		tc := testclock.New(testModifiedTS)
+		ctx = clock.Set(ctx, tc)
+		tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+			tc.Add(d)
+		})
 		ctx = info.SetImageVersion(ctx, "test-version")
 		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 

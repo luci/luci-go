@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/auth_service/api/configspb"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -337,7 +338,7 @@ func importBundles(ctx context.Context, bundles map[string]GroupBundle, provided
 	for {
 		// Use same timestamp everywhere to reflect that groups were imported
 		// atomically within a single transaction.
-		ts := time.Now().UTC()
+		ts := clock.Now(ctx).UTC()
 		loopCount += 1
 		groups, revision, err = groupsSnapshot(ctx)
 		if err != nil {
@@ -408,7 +409,7 @@ func importBundles(ctx context.Context, bundles map[string]GroupBundle, provided
 
 		if truncated {
 			logging.Infof(ctx, "going for another round to push the rest of the groups")
-			time.Sleep(time.Second * 5)
+			clock.Sleep(ctx, 5*time.Second)
 			continue
 		}
 
