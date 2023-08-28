@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/authtest"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -71,7 +72,7 @@ func TestAuthorizeRPCAccess(t *testing.T) {
 	Convey("Authorized", t, func() {
 		ctx := auth.WithState(context.Background(), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
-			IdentityGroups: []string{ServiceAccessGroup},
+			IdentityGroups: []string{authdb.AuthServiceAccessGroup},
 		})
 
 		So(check(ctx, "auth.service.Accounts", "GetSelf"), ShouldEqual, codes.OK)
@@ -84,7 +85,7 @@ func TestAuthorizeRPCAccess(t *testing.T) {
 	Convey("Authorized as admin", t, func() {
 		ctx := auth.WithState(context.Background(), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
-			IdentityGroups: []string{ServiceAccessGroup, model.AdminGroup},
+			IdentityGroups: []string{authdb.AuthServiceAccessGroup, model.AdminGroup},
 		})
 
 		So(check(ctx, "auth.service.Accounts", "GetSelf"), ShouldEqual, codes.OK)

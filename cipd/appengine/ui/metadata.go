@@ -23,7 +23,9 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authdb"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 )
@@ -36,7 +38,7 @@ type prefixMetadataBlock struct {
 	// ACLs is per-principal acls sorted by prefix length and role.
 	//
 	// Populated only if CanView is true.
-	ACLs []metadataACL
+	ACLs []*metadataACL
 
 	// CallerRoles is roles of the current caller.
 	//
@@ -49,6 +51,8 @@ type metadataACL struct {
 	Role       string   // e.g. "Reader"
 	Who        string   // either an email or a group name
 	WhoHref    string   // for groups, link to a group definition
+	Group      bool     // if true, this entry is a group
+	Missing    bool     // if true, this entry refers to a missing group
 	Prefix     string   // via what prefix this role is granted
 	PrefixHref string   // link to the corresponding prefix page
 }
@@ -70,11 +74,16 @@ func fetchPrefixMetadata(ctx context.Context, pfx string) (*prefixMetadataBlock,
 		return nil, err
 	}
 
+	db := auth.GetState(ctx).DB()
+
 	// Grab URL of an auth server with the groups, if available.
 	groupsURL := ""
-	if url, err := auth.GetState(ctx).DB().GetAuthServiceURL(ctx); err == nil {
+	if url, err := db.GetAuthServiceURL(ctx); err == nil {
 		groupsURL = url + "/auth/groups/"
 	}
+
+	// Collect all groups mentioned by the ACL to flag unknown ones.
+	groups := stringset.New(0)
 
 	out := &prefixMetadataBlock{CanView: true}
 	for _, m := range meta.PerPrefixMetadata {
@@ -88,23 +97,27 @@ func fetchPrefixMetadata(ctx context.Context, pfx string) (*prefixMetadataBlock,
 
 			for _, p := range a.Principals {
 				whoHref := ""
+				group := false
 				switch {
 				case strings.HasPrefix(p, "group:"):
 					p = strings.TrimPrefix(p, "group:")
 					if groupsURL != "" {
 						whoHref = groupsURL + p
 					}
+					groups.Add(p)
+					group = true
 				case p == string(identity.AnonymousIdentity):
 					p = "anonymous"
 				default:
 					p = strings.TrimPrefix(p, "user:")
 				}
 
-				out.ACLs = append(out.ACLs, metadataACL{
+				out.ACLs = append(out.ACLs, &metadataACL{
 					RolePb:     a.Role,
 					Role:       role,
 					Who:        p,
 					WhoHref:    whoHref,
+					Group:      group,
 					Prefix:     prefix,
 					PrefixHref: listingPageURL(m.Prefix, ""),
 				})
@@ -122,6 +135,24 @@ func fetchPrefixMetadata(ctx context.Context, pfx string) (*prefixMetadataBlock,
 		}
 		return l.Who < r.Who // alphabetically
 	})
+
+	// If the caller is allowed to see actual contents of groups, flag groups that
+	// do not exist.
+	if groups.Len() > 0 {
+		switch yes, err := db.IsMember(ctx, auth.CurrentIdentity(ctx), []string{authdb.AuthServiceAccessGroup}); {
+		case yes:
+			known, err := db.FilterKnownGroups(ctx, groups.ToSlice())
+			if err != nil {
+				return nil, err
+			}
+			knownSet := stringset.NewFromSlice(known...)
+			for _, acl := range out.ACLs {
+				acl.Missing = acl.Group && !knownSet.Has(acl.Who)
+			}
+		case err != nil:
+			return nil, err
+		}
+	}
 
 	return out, nil
 }

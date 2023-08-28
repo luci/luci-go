@@ -16,15 +16,9 @@ package impl
 
 import (
 	"go.chromium.org/luci/auth_service/impl/model"
+	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/rpcacl"
 )
-
-// ServiceAccessGroup defines a group whose members are allowed to use the
-// service API and UI.
-//
-// It nominally grants read access only. Permission to modify individual
-// groups is controlled by "owners" group field.
-const ServiceAccessGroup = "auth-service-access"
 
 // TrustedServicesGroup defines a group whose members are allowed to subscribe
 // to group change notifications and fetch all groups at once.
@@ -46,20 +40,20 @@ var AuthorizeRPCAccess = rpcacl.Interceptor(rpcacl.Map{
 	"/auth.service.Accounts/GetSelf": rpcacl.All,
 
 	// All methods to work with groups require authorization.
-	"/auth.service.Groups/*": ServiceAccessGroup,
+	"/auth.service.Groups/*": authdb.AuthServiceAccessGroup,
 
 	// Only administrators can create groups.
 	"/auth.service.Groups/CreateGroup": model.AdminGroup,
 
 	// All methods to work with allowlists require authorization.
-	"/auth.service.Allowlists/*": ServiceAccessGroup,
+	"/auth.service.Allowlists/*": authdb.AuthServiceAccessGroup,
 
 	// All methods to work with AuthDB require authorization.
-	"/auth.service.AuthDB/*": ServiceAccessGroup,
+	"/auth.service.AuthDB/*": authdb.AuthServiceAccessGroup,
 
 	// All methods to work with ChangeLogs require authorization.
-	"/auth.service.ChangeLogs/*": ServiceAccessGroup,
+	"/auth.service.ChangeLogs/*": authdb.AuthServiceAccessGroup,
 
 	// Internals are used by the UI which is accessible only to authorized users.
-	"/auth.internals.Internals/*": ServiceAccessGroup,
+	"/auth.internals.Internals/*": authdb.AuthServiceAccessGroup,
 })

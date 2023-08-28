@@ -69,9 +69,11 @@
           <td class="info-table-key">{{.Role}}</td>
           <td>
             {{if .WhoHref}}
-              <a href="{{.WhoHref}}">{{.Who}}</a>
+              <a href="{{.WhoHref}}" target="_blank">
+                {{.Who}} {{if .Missing}}{{template "missing-group-icon" .}}{{end}}
+              </a>
             {{else}}
-              {{.Who}}
+              {{.Who}} {{if .Missing}}{{template "missing-group-icon" .}}{{end}}
             {{end}}
             via <a href="{{.PrefixHref}}">{{.Prefix}}</a>
           </td>

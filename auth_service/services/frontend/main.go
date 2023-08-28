@@ -45,6 +45,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
+	srvauthdb "go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/encryptedcookies"
@@ -228,7 +229,7 @@ func requireLogin(ctx *router.Context, next router.Handler) {
 
 // authorizeUIAccess checks the user is allowed to access the web UI.
 func authorizeUIAccess(ctx *router.Context, next router.Handler) {
-	switch yes, err := auth.IsMember(ctx.Request.Context(), impl.ServiceAccessGroup); {
+	switch yes, err := auth.IsMember(ctx.Request.Context(), srvauthdb.AuthServiceAccessGroup); {
 	case err != nil:
 		replyError(ctx, err, "Failed to check group membership", http.StatusInternalServerError)
 	case !yes:

@@ -24,6 +24,9 @@ import (
 	"go.chromium.org/luci/server/auth/signing"
 )
 
+// AuthServiceAccessGroup members are allowed to see all groups.
+const AuthServiceAccessGroup = "auth-service-access"
+
 // DB is interface to access a database of authorization related information.
 //
 // It is static read only object that represent snapshot of auth data at some
