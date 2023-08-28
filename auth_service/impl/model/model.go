@@ -21,7 +21,6 @@ import (
 	"encoding/base64"
 	stderrors "errors"
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
@@ -461,17 +460,10 @@ func GetReplicationState(ctx context.Context) (*AuthReplicationState, error) {
 	}
 }
 
-var groupName = regexp.MustCompile(`^([a-z\-]+/)?[0-9a-z_\-\.@]{1,100}$`)
-
-// isValidAuthGroupName checks if the given name is a valid auth group name.
-func isValidAuthGroupName(name string) bool {
-	return groupName.MatchString(name)
-}
-
 // isExternalAuthGroupName checks if the given name is a valid external auth group
 // name. This also implies that the auth group is not editable.
 func isExternalAuthGroupName(name string) bool {
-	return strings.Contains(name, "/") && isValidAuthGroupName(name)
+	return strings.Contains(name, "/") && auth.IsValidGroupName(name)
 }
 
 // makeAuthGroup is a convenience function for creating an AuthGroup with the given ID.
@@ -818,7 +810,7 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup, external bool) (*Aut
 		}
 	} else {
 		// Check the supplied group name is valid, and not an external group.
-		if !isValidAuthGroupName(group.ID) || isExternalAuthGroupName(group.ID) {
+		if !auth.IsValidGroupName(group.ID) || isExternalAuthGroupName(group.ID) {
 			return nil, ErrInvalidName
 		}
 	}
@@ -1000,7 +992,7 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 
 		// Verify etag (if provided) to protect against concurrent modifications.
 		if etag != "" && authGroup.etag() != etag {
-			return errors.Annotate(ErrConcurrentModification, "group %q was updated by someone else", groupName).Err()
+			return errors.Annotate(ErrConcurrentModification, "group %q was updated by someone else", authGroup.ID).Err()
 		}
 
 		// Update fields according to the mask.
