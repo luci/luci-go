@@ -168,6 +168,27 @@ func TestVM(t *testing.T) {
 		})
 	})
 
+	Convey("getConfidentialInstanceConfig", t, func() {
+		Convey("zero", func() {
+			Convey("empty", func() {
+				v := &VM{}
+				c := v.getConfidentialInstanceConfig()
+				So(c, ShouldBeNil)
+			})
+		})
+		Convey("EnableConfidentialCompute", func() {
+			v := &VM{
+				Attributes: config.VM{
+					EnableConfidentialCompute: true,
+				},
+			}
+			c := v.getConfidentialInstanceConfig()
+			So(c, ShouldResemble, &compute.ConfidentialInstanceConfig{
+				EnableConfidentialCompute: true,
+			})
+		})
+	})
+
 	Convey("getDisks", t, func() {
 		Convey("zero", func() {
 			Convey("nil", func() {

@@ -163,6 +163,9 @@ message VM {
 
   // Whether to disable vTPM for this VM.
   bool disable_vtpm = 14;
+
+  // Whether to enable Confidential Compute for this VM.
+  bool enable_confidential_compute = 15;
 }
 
 // A length of time.

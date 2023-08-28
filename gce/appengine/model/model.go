@@ -290,20 +290,32 @@ func (vm *VM) getShieldedInstanceConfig() *compute.ShieldedInstanceConfig {
 	}
 }
 
+// getConfidentialInstanceConfig returns a *compute.ConfidentialInstanceConfig
+// representation of this VM's confidential instance options.
+func (vm *VM) getConfidentialInstanceConfig() *compute.ConfidentialInstanceConfig {
+	if !vm.Attributes.EnableConfidentialCompute {
+		return nil
+	}
+	return &compute.ConfidentialInstanceConfig{
+		EnableConfidentialCompute: true,
+	}
+}
+
 // GetInstance returns a *compute.Instance representation of this VM.
 func (vm *VM) GetInstance() *compute.Instance {
 	inst := &compute.Instance{
-		Name:                   vm.Hostname,
-		Disks:                  vm.getDisks(),
-		MachineType:            vm.Attributes.GetMachineType(),
-		Metadata:               vm.getMetadata(),
-		MinCpuPlatform:         vm.Attributes.GetMinCpuPlatform(),
-		NetworkInterfaces:      vm.getNetworkInterfaces(),
-		ServiceAccounts:        vm.getServiceAccounts(),
-		Scheduling:             vm.getScheduling(),
-		ShieldedInstanceConfig: vm.getShieldedInstanceConfig(),
-		Tags:                   vm.getTags(),
-		Labels:                 vm.getLabels(),
+		Name:                       vm.Hostname,
+		ConfidentialInstanceConfig: vm.getConfidentialInstanceConfig(),
+		Disks:                      vm.getDisks(),
+		MachineType:                vm.Attributes.GetMachineType(),
+		Metadata:                   vm.getMetadata(),
+		MinCpuPlatform:             vm.Attributes.GetMinCpuPlatform(),
+		NetworkInterfaces:          vm.getNetworkInterfaces(),
+		ServiceAccounts:            vm.getServiceAccounts(),
+		Scheduling:                 vm.getScheduling(),
+		ShieldedInstanceConfig:     vm.getShieldedInstanceConfig(),
+		Tags:                       vm.getTags(),
+		Labels:                     vm.getLabels(),
 	}
 	return inst
 }
