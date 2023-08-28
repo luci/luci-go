@@ -405,6 +405,10 @@ func (db *fakeDB) QueryRealms(ctx context.Context, id identity.Identity, perm re
 	return nil, errors.New("fakeDB: QueryRealms is not implemented")
 }
 
+func (db *fakeDB) FilterKnownGroups(ctx context.Context, groups []string) ([]string, error) {
+	return nil, errors.New("fakeDB: FilterKnownGroups is not implemented")
+}
+
 func (db *fakeDB) GetCertificates(ctx context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
 	return nil, errors.New("fakeDB: GetCertificates is not implemented")
 }

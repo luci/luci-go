@@ -96,6 +96,12 @@ type DB interface {
 	// or transient issues. This should usually result in an Internal error.
 	QueryRealms(ctx context.Context, id identity.Identity, perm realms.Permission, project string, attrs realms.Attrs) ([]string, error)
 
+	// FilterKnownGroups filters the list of groups keeping only ones that exist.
+	//
+	// May return errors if underlying datastore has issues. If all groups are
+	// unknown, returns an empty list and no error.
+	FilterKnownGroups(ctx context.Context, groups []string) ([]string, error)
+
 	// GetCertificates returns a bundle with certificates of a trusted signer.
 	//
 	// Returns (nil, nil) if the given signer is not trusted.

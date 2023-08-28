@@ -329,6 +329,29 @@ func (db *SnapshotDB) QueryRealms(ctx context.Context, id identity.Identity, per
 	return out, nil
 }
 
+// FilterKnownGroups filters the list of groups keeping only ones that exist.
+//
+// May return errors if underlying datastore has issues. If all groups are
+// unknown, returns an empty list and no error.
+func (db *SnapshotDB) FilterKnownGroups(ctx context.Context, groups []string) (known []string, err error) {
+	_, span := tracing.Start(ctx, "go.chromium.org/luci/server/auth/authdb.FilterKnownGroups",
+		attribute.Int("cr.dev.groups", len(groups)),
+	)
+	defer func() { tracing.End(span, err, attribute.Int("cr.dev.outcome", len(known))) }()
+
+	if db.groups == nil {
+		return nil, nil
+	}
+
+	known = make([]string, 0, len(groups))
+	for _, gr := range groups {
+		if _, ok := db.groups.GroupIndex(gr); ok {
+			known = append(known, gr)
+		}
+	}
+	return known, nil
+}
+
 // GetCertificates returns a bundle with certificates of a trusted signer.
 //
 // Currently only the Token Server is a trusted signer.

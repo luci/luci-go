@@ -50,6 +50,7 @@ type FakeDB struct {
 	perID     map[identity.Identity]*mockedForID // id => groups and perms it has
 	ips       map[string]stringset.Set           // IP => allowlists it belongs to
 	realmData map[string]*protocol.RealmData     // realm name => data
+	groups    stringset.Set                      // groups mentioned by the mocks
 }
 
 var _ authdb.DB = (*FakeDB)(nil)
@@ -94,7 +95,22 @@ type MockedDatum struct {
 // MockMembership modifies db to make IsMember(id, group) == true.
 func MockMembership(id identity.Identity, group string) MockedDatum {
 	return MockedDatum{
-		apply: func(db *FakeDB) { db.mockedForID(id).groups.Add(group) },
+		apply: func(db *FakeDB) {
+			db.addGroup(group)
+			db.mockedForID(id).groups.Add(group)
+		},
+	}
+}
+
+// MockGroup adds a group (potentially empty) to the fake DB.
+func MockGroup(group string, ids []identity.Identity) MockedDatum {
+	return MockedDatum{
+		apply: func(db *FakeDB) {
+			db.addGroup(group)
+			for _, id := range ids {
+				db.mockedForID(id).groups.Add(group)
+			}
+		},
 	}
 }
 
@@ -310,6 +326,24 @@ func (db *FakeDB) QueryRealms(ctx context.Context, id identity.Identity, perm re
 	return out, nil
 }
 
+// FilterKnownGroups is part of authdb.DB interface.
+func (db *FakeDB) FilterKnownGroups(ctx context.Context, groups []string) ([]string, error) {
+	db.m.RLock()
+	defer db.m.RUnlock()
+
+	if db.err != nil {
+		return nil, db.err
+	}
+
+	var filtered []string
+	for _, gr := range groups {
+		if db.groups.Has(gr) {
+			filtered = append(filtered, gr)
+		}
+	}
+	return filtered, nil
+}
+
 // IsAllowedOAuthClientID is part of authdb.DB interface.
 func (db *FakeDB) IsAllowedOAuthClientID(ctx context.Context, email, clientID string) (bool, error) {
 	return true, nil
@@ -355,6 +389,14 @@ func (db *FakeDB) GetRealmData(ctx context.Context, realm string) (*protocol.Rea
 	db.m.RLock()
 	defer db.m.RUnlock()
 	return db.realmData[realm], nil
+}
+
+// addGroup adds a group to the list of known groups.
+func (db *FakeDB) addGroup(group string) {
+	if db.groups == nil {
+		db.groups = stringset.New(1)
+	}
+	db.groups.Add(group)
 }
 
 // mockedForID returns db.perID[id], initializing it if necessary.

@@ -70,6 +70,12 @@ func (db ErroringDB) QueryRealms(ctx context.Context, id identity.Identity, perm
 	return nil, db.Error
 }
 
+// FilterKnownGroups filters the list of groups keeping only ones that exist.
+func (db ErroringDB) FilterKnownGroups(ctx context.Context, groups []string) ([]string, error) {
+	logging.Errorf(ctx, "%s", db.Error)
+	return nil, db.Error
+}
+
 // GetCertificates returns a bundle with certificates of a trusted signer.
 func (db ErroringDB) GetCertificates(ctx context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
 	logging.Errorf(ctx, "%s", db.Error)

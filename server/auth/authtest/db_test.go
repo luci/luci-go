@@ -21,6 +21,7 @@ import (
 	"sort"
 	"testing"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
@@ -51,6 +52,9 @@ func TestFakeDB(t *testing.T) {
 			MockMembership("user:abc@def.com", "group-a"),
 			MockMembership("user:abc@def.com", "group-b"),
 
+			MockGroup("group-c", []identity.Identity{"user:abc@def.com"}),
+			MockGroup("group-d", nil),
+
 			MockPermission("user:abc@def.com", "proj:realm", testPerm1),
 			MockPermission("user:abc@def.com", "another:realm", testPerm1),
 			MockPermission("user:abc@def.com", "proj:realm", testPerm2),
@@ -68,9 +72,9 @@ func TestFakeDB(t *testing.T) {
 		)
 
 		Convey("Membership checks work", func() {
-			out, err := db.CheckMembership(ctx, "user:abc@def.com", []string{"group-a", "group-b", "group-c"})
+			out, err := db.CheckMembership(ctx, "user:abc@def.com", []string{"group-a", "group-b", "group-c", "group-d"})
 			So(err, ShouldBeNil)
-			So(out, ShouldResemble, []string{"group-a", "group-b"})
+			So(out, ShouldResemble, []string{"group-a", "group-b", "group-c"})
 
 			resp, err := db.IsMember(ctx, "user:abc@def.com", nil)
 			So(err, ShouldBeNil)
@@ -79,6 +83,14 @@ func TestFakeDB(t *testing.T) {
 			resp, err = db.IsMember(ctx, "user:abc@def.com", []string{"group-b"})
 			So(err, ShouldBeNil)
 			So(resp, ShouldBeTrue)
+
+			resp, err = db.IsMember(ctx, "user:abc@def.com", []string{"group-c"})
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeTrue)
+
+			resp, err = db.IsMember(ctx, "user:abc@def.com", []string{"group-d"})
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeFalse)
 
 			resp, err = db.IsMember(ctx, "user:abc@def.com", []string{"another", "group-b"})
 			So(err, ShouldBeNil)
@@ -185,6 +197,14 @@ func TestFakeDB(t *testing.T) {
 			So(err, ShouldErrLike, "permission testing.tests.perm2 cannot be used in QueryRealms")
 		})
 
+		Convey("FilterKnownGroups works", func() {
+			known, err := db.FilterKnownGroups(ctx, []string{"missing", "group-b", "group-a", "group-c", "group-d", "group-a", "missing"})
+			So(err, ShouldBeNil)
+			So(known, ShouldResemble, []string{
+				"group-b", "group-a", "group-c", "group-d", "group-a",
+			})
+		})
+
 		Convey("GetRealmData works", func() {
 			data, err := db.GetRealmData(ctx, "proj:some")
 			So(err, ShouldBeNil)
@@ -221,6 +241,9 @@ func TestFakeDB(t *testing.T) {
 			So(err, ShouldEqual, mockedErr)
 
 			_, err = db.IsAllowedIP(ctx, net.ParseIP("127.0.0.42"), "allowlist")
+			So(err, ShouldEqual, mockedErr)
+
+			_, err = db.FilterKnownGroups(ctx, []string{"a", "b"})
 			So(err, ShouldEqual, mockedErr)
 		})
 	})

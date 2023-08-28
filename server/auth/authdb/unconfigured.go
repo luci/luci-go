@@ -73,6 +73,11 @@ func (db UnconfiguredDB) QueryRealms(ctx context.Context, id identity.Identity, 
 	return nil, db.Error
 }
 
+func (db UnconfiguredDB) FilterKnownGroups(ctx context.Context, groups []string) ([]string, error) {
+	db.log(ctx, "FilterKnownGroups")
+	return nil, db.Error
+}
+
 func (db UnconfiguredDB) GetCertificates(ctx context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
 	db.log(ctx, "GetCertificates")
 	return nil, db.Error

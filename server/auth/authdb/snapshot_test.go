@@ -100,6 +100,9 @@ func TestSnapshotDB(t *testing.T) {
 				Name:   "unknown nested",
 				Nested: []string{"unknown"},
 			},
+			{
+				Name: "empty",
+			},
 		},
 		IpWhitelistAssignments: []*protocol.AuthIPWhitelistAssignment{
 			{
@@ -202,6 +205,12 @@ func TestSnapshotDB(t *testing.T) {
 		So(call("user:abc@example.com"), ShouldBeNil)
 		So(call("user:abc@example.com", "unknown", "direct"), ShouldResemble, []string{"direct"})
 		So(call("user:abc@example.com", "via glob", "direct"), ShouldResemble, []string{"via glob", "direct"})
+	})
+
+	Convey("FilterKnownGroups works", t, func() {
+		known, err := db.FilterKnownGroups(c, []string{"direct", "unknown", "empty", "direct", "unknown"})
+		So(err, ShouldBeNil)
+		So(known, ShouldResemble, []string{"direct", "empty", "direct"})
 	})
 
 	Convey("With realms", t, func() {

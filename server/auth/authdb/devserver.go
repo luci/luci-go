@@ -67,6 +67,10 @@ func (DevServerDB) QueryRealms(ctx context.Context, id identity.Identity, perm r
 	return nil, errNotImplementedInDev
 }
 
+func (DevServerDB) FilterKnownGroups(ctx context.Context, groups []string) ([]string, error) {
+	return groups, nil
+}
+
 func (DevServerDB) GetCertificates(ctx context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
 	return nil, errNotImplementedInDev
 }
