@@ -128,6 +128,12 @@ export const SummaryContentCell = observer(() => {
                   // first line.
                   height: '30px',
                   overflow: 'hidden',
+                  // Ensure the 2nd line isn't partially rendered in the box
+                  // causing visual noises.
+                  fontSize: 0,
+                  '&::first-line': {
+                    fontSize: '0.875rem',
+                  },
                   // Use dashed bottom border to hint that there could be
                   // more summary.
                   borderBottomStyle: 'dashed',
