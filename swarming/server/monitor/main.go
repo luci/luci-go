@@ -17,8 +17,11 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon"
@@ -71,8 +74,11 @@ func main() {
 			state.SetMonitor(monitor.NewNilMonitor())
 		}
 
+		cron.RegisterHandler("report-bots", func(ctx context.Context) error {
+			return reportBots(ctx, state, srv.Options.TsMonServiceName)
+		})
 		cron.RegisterHandler("report-rbe-bots", func(ctx context.Context) error {
-			return reportRBEBots(ctx, state)
+			return reportBots(ctx, state, srv.Options.TsMonServiceName)
 		})
 		return nil
 	})
@@ -87,9 +93,28 @@ var (
 		field.String("pool"),  // e.g "luci.infra.ci"
 		field.String("state"), // e.g. "RBE", "SWARMING", "HYBRID"
 	)
+	botsStatus         = metric.NewString("executors/status", "Status of a job executor.", nil)
+	botsDimensionsPool = metric.NewString("executors/pool", "Pool name for a given job executor.", nil)
 )
 
-func reportRBEBots(ctx context.Context, state *tsmon.State) error {
+//   - android_devices is a side effect of the health of each Android devices
+//     connected to the bot.
+//   - caches has an unbounded matrix.
+//   - server_version is the current server version. It'd be good to have but the
+//     current monitoring pipeline is not adapted for this.
+//   - id is unique for each bot.
+//   - temp_band is android specific.
+//
+// Keep in sync with luci/appengine/swarming/ts_mon_metrics.py.
+var ignoredDimensions = stringset.NewFromSlice(
+	"android_devices",
+	"caches",
+	"id",
+	"server_version",
+	"temp_band",
+)
+
+func reportBots(ctx context.Context, state *tsmon.State, serviceName string) error {
 	const shardCount = 128
 
 	startTS := clock.Now(ctx)
@@ -99,9 +124,19 @@ func reportRBEBots(ctx context.Context, state *tsmon.State) error {
 		shards[i] = newShardState()
 	}
 
+	mctx := tsmon.WithState(ctx, state)
+	defer cleanUp(mctx, state)
+
 	err := dsmapperlite.Map(ctx, model.BotInfoQuery(), shardCount, 1000,
 		func(ctx context.Context, shardIdx int, bot *model.BotInfo) error {
+			// These appear to be phantom GCE provider bots which are either being created
+			// or weren't fully deleted. They don't have `state` JSON dict populated, and
+			// they aren't really running.
+			if bot.LastSeen.IsZero() || len(bot.State) == 0 {
+				return nil
+			}
 			shards[shardIdx].collect(ctx, bot)
+			setExecutorMetrics(mctx, bot, serviceName)
 			return nil
 		},
 	)
@@ -118,8 +153,6 @@ func reportRBEBots(ctx context.Context, state *tsmon.State) error {
 
 	// Flush them to tsmon. Do not retain in memory after that.
 	flushTS := clock.Now(ctx)
-	mctx := tsmon.WithState(ctx, state)
-	defer state.Store().Reset(mctx, botsPerState)
 	for key, val := range total.counts {
 		botsPerState.Set(mctx, val, key.pool, key.state)
 	}
@@ -133,14 +166,14 @@ func reportRBEBots(ctx context.Context, state *tsmon.State) error {
 	return nil
 }
 
-type shardState struct {
-	counts map[counterKey]int64
-	total  int64
-}
-
 type counterKey struct {
 	pool  string // e.g. "luci.infra.ci"
 	state string // e.g. "SWARMING"
+}
+
+type shardState struct {
+	counts map[counterKey]int64
+	total  int64
 }
 
 func newShardState() *shardState {
@@ -150,13 +183,6 @@ func newShardState() *shardState {
 }
 
 func (s *shardState) collect(ctx context.Context, bot *model.BotInfo) {
-	// These appear to be phantom GCE provider bots which are either being created
-	// or weren't fully deleted. They don't have `state` JSON dict populated, and
-	// they aren't really running.
-	if bot.LastSeen.IsZero() || len(bot.State) == 0 {
-		return
-	}
-
 	migrationState := "UNKNOWN"
 
 	if bot.Quarantined {
@@ -203,4 +229,49 @@ func (s *shardState) mergeFrom(another *shardState) {
 		s.counts[key] += count
 	}
 	s.total += another.total
+}
+
+// setExecutorMetrics sets the executors metrics.
+func setExecutorMetrics(mctx context.Context, bot *model.BotInfo, serviceName string) {
+	// HostName needs to be set per bot. Cannot use global target.
+	tctx := target.Set(mctx, &target.Task{
+		DataCenter:  "appengine",
+		ServiceName: serviceName + "-new",
+		HostName:    fmt.Sprintf("autogen:%s", bot.Parent.StringID()),
+	})
+
+	status := bot.GetStatus()
+	botsStatus.Set(tctx, status)
+	dims := poolFromDimensions(bot.Dimensions)
+	botsDimensionsPool.Set(tctx, dims)
+}
+
+// poolFromDimensions serializes the bot's dimensions and trims out redundant prefixes.
+// i.e. ["cpu:x86-64", "cpu:x86-64-Broadwell_GCE"] returns "cpu:x86-64-Broadwell_GCE".
+func poolFromDimensions(dimensions []string) string {
+	// Assuming dimensions are sorted.
+	var pairs []string
+
+	for current := 0; current < len(dimensions); current++ {
+		key := strings.SplitN(dimensions[current], ":", 2)[0]
+		if ignoredDimensions.Has(key) {
+			continue
+		}
+		next := current + 1
+		// Set `current` to the longest (and last) prefix of the chain.
+		// i.e. if chain is ["os:Ubuntu", "os:Ubuntu-22", "os:Ubuntu-22.04"]
+		// dimensions[current] is "os:Ubuntu-22.04"
+		for next < len(dimensions) && strings.HasPrefix(dimensions[next], dimensions[current]) {
+			current++
+			next++
+		}
+		pairs = append(pairs, dimensions[current])
+	}
+	return strings.Join(pairs, "|")
+}
+
+func cleanUp(mctx context.Context, state *tsmon.State) {
+	state.Store().Reset(mctx, botsPerState)
+	state.Store().Reset(mctx, botsStatus)
+	state.Store().Reset(mctx, botsDimensionsPool)
 }

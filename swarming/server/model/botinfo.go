@@ -73,6 +73,23 @@ func (b *BotInfo) IsDead() bool {
 	return false
 }
 
+// GetStatus returns the bot status.
+func (b *BotInfo) GetStatus() string {
+	for _, v := range b.Composite {
+		switch v {
+		case 256:
+			return "IN_MAINTENANCE"
+		case 4:
+			return "QUARANTINED"
+		case 64:
+			return "DEAD"
+		case 1:
+			return "RUNNING"
+		}
+	}
+	return "READY"
+}
+
 // DimenionsByKey returns a list of dimension values with the given key.
 func (b *BotInfo) DimenionsByKey(k string) (values []string) {
 	pfx := k + ":"
