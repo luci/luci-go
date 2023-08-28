@@ -14,7 +14,7 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { ChevronRight, ExpandMore } from '@mui/icons-material';
-import { Box } from '@mui/material';
+import { Box, SxProps, Theme } from '@mui/material';
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
@@ -25,6 +25,7 @@ const ExpandedContext = createContext(false);
 
 export interface ExpandableEntryHeaderProps {
   readonly onToggle: (expand: boolean) => void;
+  readonly sx?: SxProps<Theme>;
   readonly children: React.ReactNode;
 }
 
@@ -33,6 +34,7 @@ export interface ExpandableEntryHeaderProps {
  */
 export function ExpandableEntryHeader({
   onToggle,
+  sx,
   children,
 }: ExpandableEntryHeaderProps) {
   const expanded = useContext(ExpandedContext);
@@ -49,6 +51,7 @@ export function ExpandableEntryHeader({
         lineHeight: '24px',
         overflow: 'hidden',
         whiteSpace: 'nowrap',
+        ...sx,
       }}
     >
       {expanded ? <ExpandMore /> : <ChevronRight />}

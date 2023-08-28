@@ -28,6 +28,7 @@ import { EndedBuildsSection } from './ended_builds_section';
 import { MachinePoolSection } from './machine_pool_section';
 import { PendingBuildsSection } from './pending_builds_section';
 import { StartedBuildsSection } from './started_builds_section';
+import { BuilderDescriptionSection } from './summary_section';
 import { ViewsSection } from './views_section';
 
 const ErrorDisplay = styled.pre({
@@ -111,10 +112,7 @@ export function BuilderPage() {
         )}
         {data?.descriptionHtml && (
           <Grid item md={12}>
-            <div
-              css={{ paddingTop: '10px' }}
-              dangerouslySetInnerHTML={{ __html: data.descriptionHtml }}
-            />
+            <BuilderDescriptionSection descriptionHtml={data.descriptionHtml} />
           </Grid>
         )}
         {data?.swarmingHost && (
