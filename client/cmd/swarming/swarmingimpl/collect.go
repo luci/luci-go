@@ -201,7 +201,7 @@ func (c *collectRun) Parse(args *[]string) error {
 		}
 		// Modify args to contain all the task IDs.
 		for _, task := range input.Tasks {
-			*args = append(*args, task.TaskId)
+			*args = append(*args, task.Proto.TaskId)
 		}
 	}
 	for _, arg := range *args {
@@ -372,9 +372,8 @@ func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, servi
 func summarizeResultsPython(results []taskResult) ([]byte, error) {
 	shards := make([]map[string]any, len(results))
 
-	options := DefaultProtoMarshalOpts()
 	for i, result := range results {
-		buf, err := options.Marshal(result.result)
+		buf, err := DefaultProtoMarshalOpts.Marshal(result.result)
 		if err != nil {
 			return nil, err
 		}
@@ -409,7 +408,6 @@ func (c *collectRun) summarizeResults(results []taskResult) ([]byte, error) {
 	if c.taskSummaryPython {
 		return summarizeResultsPython(results)
 	}
-	options := DefaultProtoMarshalOpts()
 
 	jsonResults := map[string]taskResultJSON{}
 	for _, result := range results {
@@ -418,7 +416,7 @@ func (c *collectRun) summarizeResults(results []taskResult) ([]byte, error) {
 			jsonResult.Error = result.err.Error()
 		}
 		if result.result != nil {
-			rawResult, err := options.Marshal(result.result)
+			rawResult, err := DefaultProtoMarshalOpts.Marshal(result.result)
 			if err != nil {
 				return nil, err
 			}
@@ -431,7 +429,7 @@ func (c *collectRun) summarizeResults(results []taskResult) ([]byte, error) {
 		jsonResults[result.taskID] = jsonResult
 	}
 
-	return json.MarshalIndent(jsonResults, "", options.Indent)
+	return json.MarshalIndent(jsonResults, "", DefaultIndent)
 }
 
 func (c *collectRun) pollForTasks(ctx context.Context, taskIDs []string, service swarmingService, downloadSem weightedSemaphore) []taskResult {

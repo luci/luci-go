@@ -25,10 +25,10 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/system/signals"
+	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // CmdSpawnTasks returns an object for the `spawn-tasks` subcommand.
@@ -116,8 +116,14 @@ func (c *spawnTasksRun) main(a subcommands.Application, args []string, env subco
 		output = os.Stdout
 	}
 
-	data := TriggerResults{Tasks: results}
-	b, err := json.MarshalIndent(&data, "", "  ")
+	trs := make([]*triggerResult, len(results))
+	for i, res := range results {
+		trs[i] = &triggerResult{
+			Proto: res,
+		}
+	}
+	data := TriggerResults{Tasks: trs}
+	b, err := json.MarshalIndent(&data, "", DefaultIndent)
 	if err != nil {
 		return errors.Annotate(err, "marshalling trigger result").Err()
 	}
@@ -130,21 +136,13 @@ func (c *spawnTasksRun) main(a subcommands.Application, args []string, env subco
 	return merr
 }
 
-type tasksInput struct {
-	Requests []*swarming.SwarmingRpcsNewTaskRequest `json:"requests"`
-}
-
-func sendSizeBytes(p *swarming.SwarmingRpcsTaskProperties) {
-	if p != nil && p.CasInputRoot != nil && p.CasInputRoot.Digest != nil {
-		p.CasInputRoot.Digest.ForceSendFields = append(p.CasInputRoot.Digest.ForceSendFields, "SizeBytes")
-	}
-}
-
-func processTasksStream(tasks io.Reader) ([]*swarming.SwarmingRpcsNewTaskRequest, error) {
+func processTasksStream(tasks io.Reader) ([]*swarmingv2.NewTaskRequest, error) {
 	dec := json.NewDecoder(tasks)
 	dec.DisallowUnknownFields()
 
-	requests := tasksInput{}
+	requests := struct {
+		Requests []ProtoJSONAdapter[*swarmingv2.NewTaskRequest] `json:"requests"`
+	}{}
 	if err := dec.Decode(&requests); err != nil {
 		return nil, errors.Annotate(err, "decoding tasks file").Err()
 	}
@@ -153,29 +151,24 @@ func processTasksStream(tasks io.Reader) ([]*swarming.SwarmingRpcsNewTaskRequest
 	// if they're not already set.
 	currentUser := os.Getenv(UserEnvVar)
 	parentTaskID := os.Getenv(TaskIDEnvVar)
-	for _, request := range requests.Requests {
-		if request.User == "" {
-			request.User = currentUser
+	for _, ntr := range requests.Requests {
+		if ntr.Proto.User == "" {
+			ntr.Proto.User = currentUser
 		}
-		if request.ParentTaskId == "" {
-			request.ParentTaskId = parentTaskID
-		}
-	}
-
-	// Allow to send 0 size bytes for input digest.
-	for _, request := range requests.Requests {
-		sendSizeBytes(request.Properties)
-		for _, slice := range request.TaskSlices {
-			sendSizeBytes(slice.Properties)
+		if ntr.Proto.ParentTaskId == "" {
+			ntr.Proto.ParentTaskId = parentTaskID
 		}
 	}
-
-	return requests.Requests, nil
+	ntrs := make([]*swarmingv2.NewTaskRequest, len(requests.Requests))
+	for i, req := range requests.Requests {
+		ntrs[i] = req.Proto
+	}
+	return ntrs, nil
 }
 
-func createNewTasks(ctx context.Context, service swarmingService, requests []*swarming.SwarmingRpcsNewTaskRequest) ([]*swarming.SwarmingRpcsTaskRequestMetadata, error) {
+func createNewTasks(ctx context.Context, service swarmingService, requests []*swarmingv2.NewTaskRequest) ([]*swarmingv2.TaskRequestMetadataResponse, error) {
 	var mu sync.Mutex
-	results := make([]*swarming.SwarmingRpcsTaskRequestMetadata, 0, len(requests))
+	results := make([]*swarmingv2.TaskRequestMetadataResponse, 0, len(requests))
 	err := parallel.WorkPool(8, func(gen chan<- func() error) {
 		for _, request := range requests {
 			request := request

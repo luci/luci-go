@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // CmdBots returns an object for the `bots` subcommand.
@@ -81,25 +80,12 @@ func (b *botsRun) Parse() error {
 	return nil
 }
 
-type botInfo struct {
-	options *protojson.MarshalOptions
-	bot     *swarmingv2.BotInfo
-}
-
-func (b *botInfo) MarshalJSON() ([]byte, error) {
-	return b.options.Marshal(b.bot)
-}
-
 func showBots(bots []*swarmingv2.BotInfo) ([]byte, error) {
-	botInfos := make([]botInfo, len(bots))
-	options := DefaultProtoMarshalOpts()
+	botInfos := make([]ProtoJSONAdapter[*swarmingv2.BotInfo], len(bots))
 	for i, bot := range bots {
-		botInfos[i] = botInfo{
-			bot:     bot,
-			options: &options,
-		}
+		botInfos[i].Proto = bot
 	}
-	return json.MarshalIndent(botInfos, "", options.Indent)
+	return json.MarshalIndent(botInfos, "", DefaultIndent)
 }
 
 func (b *botsRun) bots(ctx context.Context, service swarmingService, out io.Writer) error {
@@ -117,7 +103,7 @@ func (b *botsRun) bots(ctx context.Context, service swarmingService, out io.Writ
 		if err != nil {
 			return err
 		}
-		output, err = DefaultProtoMarshalOpts().Marshal(count)
+		output, err = DefaultProtoMarshalOpts.Marshal(count)
 		if err != nil {
 			return err
 		}

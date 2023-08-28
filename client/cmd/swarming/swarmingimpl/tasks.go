@@ -101,13 +101,12 @@ func (t *tasksRun) tasks(ctx context.Context, service swarmingService, out io.Wr
 	if err != nil {
 		return err
 	}
-	options := DefaultProtoMarshalOpts()
 	if t.count {
 		data, err := service.CountTasks(ctx, t.start, state, t.tags...)
 		if err != nil {
 			return err
 		}
-		output, err = options.Marshal(data)
+		output, err = DefaultProtoMarshalOpts.Marshal(data)
 		if err != nil {
 			return err
 		}
@@ -122,8 +121,7 @@ func (t *tasksRun) tasks(ctx context.Context, service swarmingService, out io.Wr
 		toOutput := make([]*taskResultResponse, len(data))
 		for idx, tr := range data {
 			toOutput[idx] = &taskResultResponse{
-				options: &options,
-				result:  tr,
+				Proto: tr,
 			}
 		}
 		output, err = json.MarshalIndent(toOutput, "", DefaultIndent)

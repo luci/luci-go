@@ -15,7 +15,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"log"
 	"os"
@@ -26,7 +25,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl"
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // IntegrationTestEnvVar is the name of the environment variable which controls
@@ -81,7 +80,7 @@ func TestTasksCommand(t *testing.T) {
 }
 
 // triggerTask triggers a task and returns the triggered TaskRequest.
-func triggerTask(t *testing.T, args []string) *swarming.SwarmingRpcsTaskRequestMetadata {
+func triggerTask(t *testing.T, args []string) *swarmingv2.TaskRequestMetadataResponse {
 	dir := t.TempDir()
 	jsonPath := filepath.Join(dir, "out.json")
 	sbDir := t.TempDir()
@@ -102,10 +101,10 @@ func triggerTask(t *testing.T, args []string) *swarming.SwarmingRpcsTaskRequestM
 	results := readTriggerResults(jsonPath)
 	So(results.Tasks, ShouldHaveLength, 1)
 	task := results.Tasks[0]
-	slice := task.Request.TaskSlices[0]
-	redactedSb := base64.StdEncoding.EncodeToString([]byte("<REDACTED>"))
+	slice := task.Proto.Request.TaskSlices[0]
+	redactedSb := []byte("<REDACTED>")
 	So(slice.Properties.SecretBytes, ShouldEqual, redactedSb)
-	return results.Tasks[0]
+	return task.Proto
 }
 
 // readTriggerResults reads TriggerResults from output json file.

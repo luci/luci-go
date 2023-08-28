@@ -67,7 +67,7 @@ func (c *requestShowRun) main(_ subcommands.Application, taskID string) error {
 	if err != nil {
 		return errors.Annotate(err, fmt.Sprintf("failed to get task request. task ID = %s", taskID)).Err()
 	}
-	b, err := DefaultProtoMarshalOpts().Marshal(request)
+	b, err := DefaultProtoMarshalOpts.Marshal(request)
 	if err != nil {
 		return errors.Annotate(err, "faled to marshal task request").Err()
 	}

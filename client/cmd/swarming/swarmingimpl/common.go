@@ -22,6 +22,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"reflect"
 	"sort"
 	"strings"
 	"time"
@@ -32,19 +33,18 @@ import (
 	"github.com/maruel/subcommands"
 
 	"google.golang.org/api/googleapi"
-	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/client/internal/common"
-	swarmingv1 "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/lhttp"
-	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/prpc"
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 const (
@@ -68,12 +68,51 @@ const (
 	DefaultNumberToFetch = 1000
 )
 
+type ProtoJSONAdapter[T protoreflect.ProtoMessage] struct {
+	Proto T
+}
+
+func (pja *ProtoJSONAdapter[T]) MarshalJSON() ([]byte, error) {
+	return DefaultProtoMarshalOpts.Marshal(pja.Proto)
+}
+
+// createEmptyUnderlyingProto creates an empty proto for the given underlying ProtoJsonAdapter[T]
+// It is assumed that T is a pointer to a proto. This assumption is likely always valid as protos implement
+// protoreflect.Message as a pointer.
+func createEmptyUnderlyingProto[T protoreflect.ProtoMessage]() T {
+	// First, we allocate an empty pointer which will be *SomePBType
+	// But this will initially be a nil pointer, and so the program will crash
+	// So some reflection is required
+	var t T
+	// This will be *SomePBType
+	adapterType := reflect.TypeOf(t)
+	// From here we get SomePBType which is the base protobuf type
+	adapterPBType := adapterType.Elem()
+	// This will create an empty protobuf which started as T
+	pb := reflect.New(adapterPBType)
+	// Return pointer to underlying proto type
+	return pb.Interface().(T)
+}
+
+func (pja *ProtoJSONAdapter[T]) UnmarshalJSON(data []byte) error {
+	// pja will initially be allocated with a Nil pointer to its .Proto field
+	// This is guaranteed to panic protojson.Unmarshal
+	// And so we need to allocate it
+	pb := createEmptyUnderlyingProto[T]()
+	err := protojson.Unmarshal(data, pb)
+	if err != nil {
+		return err
+	}
+	pja.Proto = pb
+	return nil
+}
+
 // TriggerResults is a set of results from using the trigger subcommand,
 // describing all of the tasks that were triggered successfully.
 type TriggerResults struct {
 	// Tasks is a list of successfully triggered tasks represented as
 	// TriggerResult values.
-	Tasks []*swarmingv1.SwarmingRpcsTaskRequestMetadata `json:"tasks"`
+	Tasks []*ProtoJSONAdapter[*swarmingv2.TaskRequestMetadataResponse] `json:"tasks"`
 }
 
 // The swarming server has an internal 60-second deadline for responding to
@@ -86,7 +125,7 @@ const swarmingAPISuffix = "/_ah/api/swarming/v1/"
 // swarmingService is an interface intended to stub out the swarming API
 // bindings for testing.
 type swarmingService interface {
-	NewTask(ctx context.Context, req *swarmingv1.SwarmingRpcsNewTaskRequest) (*swarmingv1.SwarmingRpcsTaskRequestMetadata, error)
+	NewTask(ctx context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error)
 	CountTasks(ctx context.Context, start float64, state swarmingv2.StateQuery, tags ...string) (*swarmingv2.TasksCount, error)
 	ListTasks(ctx context.Context, limit int32, start float64, state swarmingv2.StateQuery, tags []string) ([]*swarmingv2.TaskResultResponse, error)
 	CancelTask(ctx context.Context, taskID string, killRunning bool) (*swarmingv2.CancelResponse, error)
@@ -103,17 +142,12 @@ type swarmingService interface {
 
 type swarmingServiceImpl struct {
 	client      *http.Client
-	service     *swarmingv1.Service
 	botsClient  swarmingv2.BotsClient
 	tasksClient swarmingv2.TasksClient
 }
 
-func (s *swarmingServiceImpl) NewTask(ctx context.Context, req *swarmingv1.SwarmingRpcsNewTaskRequest) (res *swarmingv1.SwarmingRpcsTaskRequestMetadata, err error) {
-	err = retryGoogleRPC(ctx, "NewTask", func() (ierr error) {
-		res, ierr = s.service.Tasks.New(req).Context(ctx).Do()
-		return
-	})
-	return
+func (s *swarmingServiceImpl) NewTask(ctx context.Context, req *swarmingv2.NewTaskRequest) (res *swarmingv2.TaskRequestMetadataResponse, err error) {
+	return s.tasksClient.NewTask(ctx, req)
 }
 
 func (s *swarmingServiceImpl) CountTasks(ctx context.Context, start float64, state swarmingv2.StateQuery, tags ...string) (res *swarmingv2.TasksCount, err error) {
@@ -383,12 +417,10 @@ func (s *swarmingServiceImpl) ListBotTasks(ctx context.Context, botID string, li
 
 const DefaultIndent = " "
 
-func DefaultProtoMarshalOpts() protojson.MarshalOptions {
-	return protojson.MarshalOptions{
-		UseProtoNames: true,
-		Multiline:     true,
-		Indent:        DefaultIndent,
-	}
+var DefaultProtoMarshalOpts = protojson.MarshalOptions{
+	UseProtoNames: true,
+	Multiline:     true,
+	Indent:        DefaultIndent,
 }
 
 func Alive(t swarmingv2.TaskState) bool {
@@ -414,14 +446,7 @@ type AuthFlags interface {
 	NewRBEClient(ctx context.Context, addr string, instance string) (*rbeclient.Client, error)
 }
 
-type taskResultResponse struct {
-	options *protojson.MarshalOptions
-	result  *swarmingv2.TaskResultResponse
-}
-
-func (tr *taskResultResponse) MarshalJSON() ([]byte, error) {
-	return tr.options.Marshal(tr.result)
-}
+type taskResultResponse = ProtoJSONAdapter[*swarmingv2.TaskResultResponse]
 
 type commonFlags struct {
 	subcommands.CommandRunBase
@@ -463,18 +488,6 @@ func (c *commonFlags) createSwarmingClient(ctx context.Context) (swarmingService
 	if err != nil {
 		return nil, err
 	}
-	// Create a copy of the client so that the timeout only applies to Swarming
-	// RPC requests, not to Isolate requests made by this service. A shallow
-	// copy is ok because only the timeout needs to be different.
-	rpcClient := *authcli
-	rpcClient.Timeout = swarmingRPCRequestTimeout
-	s, err := swarmingv1.NewService(ctx, option.WithHTTPClient(&rpcClient))
-	if err != nil {
-		return nil, err
-	}
-	s.BasePath = c.serverURL + swarmingAPISuffix
-	s.UserAgent = SwarmingUserAgent
-
 	prpcOpts := prpc.DefaultOptions()
 	prpcOpts.UserAgent = SwarmingUserAgent
 	prpcOpts.PerRPCTimeout = swarmingRPCRequestTimeout
@@ -497,7 +510,6 @@ func (c *commonFlags) createSwarmingClient(ctx context.Context) (swarmingService
 	prpcClient.Host = strings.TrimRight(prpcClient.Host, "/")
 	return &swarmingServiceImpl{
 		client:      authcli,
-		service:     s,
 		botsClient:  swarmingv2.NewBotsClient(&prpcClient),
 		tasksClient: swarmingv2.NewTasksClient(&prpcClient),
 	}, nil
@@ -521,36 +533,4 @@ func tagTransientGoogleAPIError(err error) error {
 
 func printError(a subcommands.Application, err error) {
 	fmt.Fprintf(a.GetErr(), "%s: %s\n%s\n", a.GetName(), err, strings.Join(errors.RenderStack(err), "\n"))
-}
-
-// retryGoogleRPC retries an RPC on transient errors, such as HTTP 500.
-func retryGoogleRPC(ctx context.Context, rpcName string, rpc func() error) error {
-	return retry.Retry(ctx, transient.Only(retry.Default), func() error {
-		err := rpc()
-		if gerr, ok := err.(*googleapi.Error); ok && gerr.Code >= 500 {
-			return transient.Tag.Apply(err)
-		}
-
-		if errors.Contains(err, context.DeadlineExceeded) {
-			return transient.Tag.Apply(err)
-		}
-
-		var temporary bool
-		errors.Walk(err, func(err error) bool {
-			if terr, ok := err.(interface{ Temporary() bool }); ok && terr.Temporary() {
-				temporary = true
-				return false
-			}
-			return true
-		})
-
-		if temporary {
-			return transient.Tag.Apply(err)
-		}
-
-		if err != nil {
-			return errors.Annotate(err, "failed to call %s", rpcName).Err()
-		}
-		return nil
-	}, retry.LogCallback(ctx, rpcName))
 }

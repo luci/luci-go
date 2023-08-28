@@ -96,11 +96,9 @@ func (b *botTasksRun) botTasks(ctx context.Context, service swarmingService, out
 		return err
 	}
 	toOutput := make([]*taskResultResponse, len(data))
-	options := DefaultProtoMarshalOpts()
 	for idx, tr := range data {
 		toOutput[idx] = &taskResultResponse{
-			options: &options,
-			result:  tr,
+			Proto: tr,
 		}
 	}
 	output, err := json.MarshalIndent(toOutput, "", DefaultIndent)

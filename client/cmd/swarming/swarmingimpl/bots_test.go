@@ -91,7 +91,7 @@ func TestFileOutput(t *testing.T) {
 		b := botsRun{}
 		b.Init(&testAuthFlags{})
 		b.dimensions = map[string]string{"a": "b", "c": "d"}
-		expected, err := DefaultProtoMarshalOpts().Marshal(expectedCount)
+		expected, err := DefaultProtoMarshalOpts.Marshal(expectedCount)
 		expected = append(expected, '\n')
 		So(err, ShouldBeNil)
 		b.count = true

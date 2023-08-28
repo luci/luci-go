@@ -22,10 +22,11 @@ import (
 
 	googleapi "google.golang.org/api/googleapi"
 
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	. "go.chromium.org/luci/common/testing/assertions"
 
 	. "github.com/smartystreets/goconvey/convey"
+
+	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func mockEnv(env map[string]string) func() {
@@ -99,11 +100,11 @@ func TestProcessTasksStream(t *testing.T) {
 		result, err := processTasksStream(r)
 		So(err, ShouldBeNil)
 		So(result, ShouldHaveLength, 1)
-		So(result[0], ShouldResemble, &swarming.SwarmingRpcsNewTaskRequest{
+		So(result[0], ShouldResembleProto, &swarmingv2.NewTaskRequest{
 			Name:         "foo",
 			User:         "test",
 			ParentTaskId: "293109284abc",
-			Properties: &swarming.SwarmingRpcsTaskProperties{
+			Properties: &swarmingv2.TaskProperties{
 				Command: []string{"/bin/ls"},
 				Outputs: []string{"my_output.bin"},
 			},
@@ -114,24 +115,24 @@ func TestProcessTasksStream(t *testing.T) {
 func TestCreateNewTasks(t *testing.T) {
 	t.Parallel()
 
-	req := &swarming.SwarmingRpcsNewTaskRequest{Name: "hello!"}
-	expectReq := &swarming.SwarmingRpcsTaskRequest{Name: "hello!"}
+	req := &swarmingv2.NewTaskRequest{Name: "hello!"}
+	expectReq := &swarmingv2.TaskRequestResponse{Name: "hello!"}
 	c := context.Background()
 
 	Convey(`Test fatal response`, t, func() {
 		service := &testService{
-			newTask: func(c context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
+			newTask: func(c context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error) {
 				return nil, &googleapi.Error{Code: 404}
 			},
 		}
-		_, err := createNewTasks(c, service, []*swarming.SwarmingRpcsNewTaskRequest{req})
+		_, err := createNewTasks(c, service, []*swarmingv2.NewTaskRequest{req})
 		So(err, ShouldErrLike, "404")
 	})
 
 	goodService := &testService{
-		newTask: func(c context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
-			return &swarming.SwarmingRpcsTaskRequestMetadata{
-				Request: &swarming.SwarmingRpcsTaskRequest{
+		newTask: func(c context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error) {
+			return &swarmingv2.TaskRequestMetadataResponse{
+				Request: &swarmingv2.TaskRequestResponse{
 					Name: req.Name,
 				},
 			}, nil
@@ -139,14 +140,14 @@ func TestCreateNewTasks(t *testing.T) {
 	}
 
 	Convey(`Test single success`, t, func() {
-		results, err := createNewTasks(c, goodService, []*swarming.SwarmingRpcsNewTaskRequest{req})
+		results, err := createNewTasks(c, goodService, []*swarmingv2.NewTaskRequest{req})
 		So(err, ShouldBeNil)
 		So(results, ShouldHaveLength, 1)
 		So(results[0].Request, ShouldResemble, expectReq)
 	})
 
 	Convey(`Test many success`, t, func() {
-		reqs := make([]*swarming.SwarmingRpcsNewTaskRequest, 0, 12)
+		reqs := make([]*swarmingv2.NewTaskRequest, 0, 12)
 		for i := 0; i < 12; i++ {
 			reqs = append(reqs, req)
 		}

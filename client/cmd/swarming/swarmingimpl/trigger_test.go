@@ -15,23 +15,29 @@
 package swarmingimpl
 
 import (
-	"encoding/base64"
 	"os"
 	"path/filepath"
 	"testing"
 
-	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+
+	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func init() {
 	// So that this test works on swarming!
-	os.Unsetenv(ServerEnvVar)
-	os.Unsetenv(TaskIDEnvVar)
+	err := os.Unsetenv(ServerEnvVar)
+	if err != nil {
+		panic("Could not unset ServerEnv")
+	}
+	err = os.Unsetenv(TaskIDEnvVar)
+	if err != nil {
+		panic("Could not unset TaskIdEnvVar")
+	}
 }
 
 // Make sure that stringmapflag.Value are returned as sorted arrays.
@@ -39,19 +45,19 @@ func TestMapToArray(t *testing.T) {
 	Convey(`Make sure that stringmapflag.Value are returned as sorted arrays.`, t, func() {
 		type item struct {
 			m stringmapflag.Value
-			a []*swarming.SwarmingRpcsStringPair
+			a []*swarmingv2.StringPair
 		}
 
 		data := []item{
 			{
 				m: stringmapflag.Value{},
-				a: []*swarming.SwarmingRpcsStringPair{},
+				a: []*swarmingv2.StringPair{},
 			},
 			{
 				m: stringmapflag.Value{
 					"foo": "bar",
 				},
-				a: []*swarming.SwarmingRpcsStringPair{
+				a: []*swarmingv2.StringPair{
 					{Key: "foo", Value: "bar"},
 				},
 			},
@@ -60,7 +66,7 @@ func TestMapToArray(t *testing.T) {
 					"foo":  "bar",
 					"toto": "fifi",
 				},
-				a: []*swarming.SwarmingRpcsStringPair{
+				a: []*swarmingv2.StringPair{
 					{Key: "foo", Value: "bar"},
 					{Key: "toto", Value: "fifi"},
 				},
@@ -70,7 +76,7 @@ func TestMapToArray(t *testing.T) {
 					"toto": "fifi",
 					"foo":  "bar",
 				},
-				a: []*swarming.SwarmingRpcsStringPair{
+				a: []*swarmingv2.StringPair{
 					{Key: "foo", Value: "bar"},
 					{Key: "toto", Value: "fifi"},
 				},
@@ -108,7 +114,7 @@ func TestOptionalDimension(t *testing.T) {
 			{
 				s: "foo=123:321",
 				d: &optionalDimension{
-					kv: &swarming.SwarmingRpcsStringPair{
+					kv: &swarmingv2.StringPair{
 						Key:   "foo",
 						Value: "123",
 					},
@@ -118,7 +124,7 @@ func TestOptionalDimension(t *testing.T) {
 			{
 				s: "foo=123:abc:321",
 				d: &optionalDimension{
-					kv: &swarming.SwarmingRpcsStringPair{
+					kv: &swarmingv2.StringPair{
 						Key:   "foo",
 						Value: "123:abc",
 					},
@@ -147,12 +153,12 @@ func TestListToStringListPairArray(t *testing.T) {
 			"y=c",
 			"x=b",
 		}
-		expected := []*swarming.SwarmingRpcsStringListPair{
+		expected := []*swarmingv2.StringListPair{
 			{Key: "x", Value: []string{"a", "b"}},
 			{Key: "y", Value: []string{"c"}},
 		}
 
-		So(listToStringListPairArray(input), ShouldResemble, expected)
+		So(listToStringListPairArray(input), ShouldResembleProto, expected)
 	})
 }
 
@@ -281,8 +287,8 @@ func TestProcessTriggerOptions_CipdPackages(t *testing.T) {
 		So(result.Properties, ShouldBeNil)
 		So(result.TaskSlices, ShouldHaveLength, 1)
 		properties := result.TaskSlices[0].Properties
-		So(properties.CipdInput, ShouldResemble, &swarming.SwarmingRpcsCipdInput{
-			Packages: []*swarming.SwarmingRpcsCipdPackage{{
+		So(properties.CipdInput, ShouldResembleProto, &swarmingv2.CipdInput{
+			Packages: []*swarmingv2.CipdPackage{{
 				PackageName: "name",
 				Path:        "path",
 				Version:     "version",
@@ -303,14 +309,12 @@ func TestProcessTriggerOptions_CAS(t *testing.T) {
 		So(result.Properties, ShouldBeNil)
 		So(result.TaskSlices, ShouldHaveLength, 1)
 		properties := result.TaskSlices[0].Properties
-		So(properties.CasInputRoot, ShouldResemble,
-			&swarming.SwarmingRpcsCASReference{
+		So(properties.CasInputRoot, ShouldResembleProto,
+			&swarmingv2.CASReference{
 				CasInstance: "projects/cas/instances/default_instance",
-				Digest: &swarming.SwarmingRpcsDigest{
+				Digest: &swarmingv2.Digest{
 					Hash:      "1d1e14a2d0da6348f3f37312ef524a2cea1db4ead9ebc6c335f9948ad634cbfd",
 					SizeBytes: 10430,
-
-					ForceSendFields: []string{"SizeBytes"},
 				},
 			})
 	})
@@ -324,8 +328,8 @@ func TestProcessTriggerOptions_OptionalDimension(t *testing.T) {
 		So(c.dimensions.Set("foo=abc"), ShouldBeNil)
 		So(c.optionalDimension.Set("bar=def:60"), ShouldBeNil)
 
-		optDimExp := int64(60)
-		totalExp := int64(660)
+		const optDimExp = 60
+		const totalExp = 660
 		c.expiration = totalExp
 
 		result, err := c.processTriggerOptions([]string(nil), nil)
@@ -333,29 +337,22 @@ func TestProcessTriggerOptions_OptionalDimension(t *testing.T) {
 		So(result.Properties, ShouldBeNil)
 		So(result.TaskSlices, ShouldHaveLength, 2)
 
-		slice := result.TaskSlices[0]
-		So(slice.Properties.Dimensions, ShouldResemble,
-			[]*swarming.SwarmingRpcsStringPair{
-				{
-					Key:   "foo",
-					Value: "abc",
-				},
-				{
-					Key:   "bar",
-					Value: "def",
-				},
-			})
-		So(slice.ExpirationSecs, ShouldResemble, optDimExp)
-
-		slice = result.TaskSlices[1]
-		So(slice.Properties.Dimensions, ShouldResemble,
-			[]*swarming.SwarmingRpcsStringPair{
-				{
-					Key:   "foo",
-					Value: "abc",
-				},
-			})
-		So(slice.ExpirationSecs, ShouldResemble, totalExp-optDimExp)
+		slice1 := result.TaskSlices[0]
+		expectedDims := []*swarmingv2.StringPair{
+			{
+				Key:   "foo",
+				Value: "abc",
+			},
+			{
+				Key:   "bar",
+				Value: "def",
+			},
+		}
+		So(slice1.Properties.Dimensions, ShouldResembleProto, expectedDims)
+		So(slice1.ExpirationSecs, ShouldEqual, optDimExp)
+		slice2 := result.TaskSlices[1]
+		So(slice2.Properties.Dimensions, ShouldResembleProto, expectedDims[0:1])
+		So(slice2.ExpirationSecs, ShouldEqual, totalExp-optDimExp)
 	})
 }
 
@@ -376,6 +373,6 @@ func TestProcessTriggerOptions_SecretBytesPath(t *testing.T) {
 		So(result.Properties, ShouldBeNil)
 		So(result.TaskSlices, ShouldHaveLength, 1)
 		slice := result.TaskSlices[0]
-		So(slice.Properties.SecretBytes, ShouldEqual, base64.StdEncoding.EncodeToString(secretBytes))
+		So(slice.Properties.SecretBytes, ShouldEqual, secretBytes)
 	})
 }

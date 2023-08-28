@@ -21,14 +21,13 @@ import (
 
 	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 
-	swarmingv1 "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 var _ swarmingService = (*testService)(nil)
 
 type testService struct {
-	newTask      func(context.Context, *swarmingv1.SwarmingRpcsNewTaskRequest) (*swarmingv1.SwarmingRpcsTaskRequestMetadata, error)
+	newTask      func(context.Context, *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error)
 	countTasks   func(context.Context, float64, swarmingv2.StateQuery, ...string) (*swarmingv2.TasksCount, error)
 	countBots    func(context.Context, []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error)
 	listTasks    func(context.Context, int32, float64, swarmingv2.StateQuery, []string) ([]*swarmingv2.TaskResultResponse, error)
@@ -47,7 +46,7 @@ func (testService) Client() *http.Client {
 	return nil
 }
 
-func (s testService) NewTask(ctx context.Context, req *swarmingv1.SwarmingRpcsNewTaskRequest) (*swarmingv1.SwarmingRpcsTaskRequestMetadata, error) {
+func (s testService) NewTask(ctx context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error) {
 	return s.newTask(ctx, req)
 }
 
