@@ -44,6 +44,7 @@ import (
 	"go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -54,6 +55,7 @@ import (
 
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/common"
+	"go.chromium.org/luci/config_service/internal/metrics"
 	"go.chromium.org/luci/config_service/internal/model"
 	"go.chromium.org/luci/config_service/internal/settings"
 	"go.chromium.org/luci/config_service/internal/taskpb"
@@ -181,8 +183,8 @@ func TestImportConfigSet(t *testing.T) {
 			Ref:  "refs/heads/main",
 			Path: "dev-configs",
 		})
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		ctl := gomock.NewController(t)
-		defer ctl.Finish()
 		mockGtClient := mock_gitiles.NewMockGitilesClient(ctl)
 		ctx = context.WithValue(ctx, &clients.MockGitilesClientKey, mockGtClient)
 		mockGsClient := clients.NewMockGsClient(ctl)
@@ -585,8 +587,31 @@ func TestImportConfigSet(t *testing.T) {
 							},
 						},
 					}
-					err = importer.ImportConfigSet(ctx, cs)
-					So(err, ShouldBeNil)
+
+					Convey("author email is google", func() {
+						latestCommit.Author = &git.Commit_User{
+							Name:  "author",
+							Email: "author@google.com",
+						}
+
+						err = importer.ImportConfigSet(ctx, cs)
+						So(err, ShouldBeNil)
+
+						So(metrics.RejectedCfgImportCounter.Get(ctx, string(cs), latestCommit.Id, "author"), ShouldEqual, 1)
+					})
+
+					Convey("author email is non-google", func() {
+						latestCommit.Author = &git.Commit_User{
+							Name:  "author",
+							Email: "author@chrmoium.org",
+						}
+
+						err = importer.ImportConfigSet(ctx, cs)
+						So(err, ShouldBeNil)
+
+						So(metrics.RejectedCfgImportCounter.Get(ctx, string(cs), latestCommit.Id, ""), ShouldEqual, 1)
+					})
+
 					revKey := datastore.MakeKey(ctx, model.ConfigSetKind, string(cs), model.RevisionKind, latestCommit.Id)
 					var files []*model.File
 					So(datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), ShouldBeNil)

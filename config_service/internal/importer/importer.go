@@ -28,29 +28,30 @@ import (
 	"strings"
 
 	"cloud.google.com/go/storage"
-	"go.chromium.org/luci/common/gcloud/gs"
-	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/config_service/internal/acl"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/router"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/logging"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/cron"
+	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/config_service/internal/acl"
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/common"
+	"go.chromium.org/luci/config_service/internal/metrics"
 	"go.chromium.org/luci/config_service/internal/model"
 	"go.chromium.org/luci/config_service/internal/settings"
 	"go.chromium.org/luci/config_service/internal/taskpb"
@@ -458,6 +459,11 @@ func (i *Importer) importRevision(ctx context.Context, cfgSet config.Set, loc *c
 		return err
 	}
 	if !attempt.Success {
+		if author, ok := strings.CutSuffix(commit.Author.GetEmail(), "@google.com"); ok {
+			metrics.RejectedCfgImportCounter.Add(ctx, 1, string(cfgSet), commit.Id, author)
+		} else {
+			metrics.RejectedCfgImportCounter.Add(ctx, 1, string(cfgSet), commit.Id, "")
+		}
 		return errors.Annotate(datastore.Put(ctx, attempt), "saving attempt").Err()
 	}
 	logging.Infof(ctx, "Storing %d files, updating ConfigSet %s and ImportAttempt", len(files), cfgSet)
