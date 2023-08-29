@@ -479,6 +479,8 @@ func Notify(c context.Context, recipients []EmailNotify, templateParams *notifyp
 		logging.Infof(c, "Nobody to notify...")
 		return nil
 	}
+	logging.Infof(c, "Notifying %v recipients...", len(recipients))
+
 	tasks, err := createEmailTasks(c, recipients, templateParams)
 	if err != nil {
 		return errors.Annotate(err, "failed to create email tasks").Err()

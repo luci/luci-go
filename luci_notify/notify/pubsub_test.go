@@ -365,7 +365,7 @@ func TestHandleBuild(t *testing.T) {
 					Status: buildbucketpb.Status_SUCCESS,
 				},
 			}
-			assertTasks(build, mockCheckoutFunc(nil))
+			assertTasks(build, mockCheckoutFunc(nil), successEmail)
 			grepLog("revision")
 		})
 
@@ -410,7 +410,7 @@ func TestHandleBuild(t *testing.T) {
 					},
 				},
 			}
-			assertTasks(newBuild, mockCheckoutFunc(nil), failEmail, propEmail)
+			assertTasks(newBuild, mockCheckoutFunc(nil), failEmail, propEmail, successEmail)
 			grepLog("triggered by commit")
 		})
 

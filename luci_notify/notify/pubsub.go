@@ -162,20 +162,13 @@ func putWithRetry(c context.Context, entity any) error {
 // revision ordering purposes. It's passed in as a parameter in order to mock it
 // for testing.
 func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, history HistoryFunc) error {
-	gCommit := build.Input.GetGitilesCommit()
-	if gCommit != nil && gCommit.Id == "" {
-		// Ignore builds without an associated commit ID. We can't order them,
-		// and otherwise we'll end up making invalid gitiles requests and
-		// returning errors. These are usually manually-created builds.
-		return nil
-	}
-
 	luciProject := build.Builder.Project
 	project := &config.Project{Name: luciProject}
 	switch ex, err := datastore.Exists(c, project); {
 	case err != nil:
 		return err
 	case !ex.All():
+		logging.Infof(c, "Build project not tracked by LUCI Notify, ignoring...")
 		return nil // This project is not tracked by luci-notify
 	}
 
@@ -193,10 +186,6 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 
 	// Get the Builder for the first time, and initialize if there's nothing there.
 	builderID := getBuilderID(&build.Build)
-	builder := config.Builder{
-		ProjectKey: datastore.KeyForObj(c, project),
-		ID:         builderID,
-	}
 	templateInput := &notifypb.TemplateInput{
 		BuildbucketHostname: build.BuildbucketHostname,
 		Build:               &build.Build,
@@ -220,9 +209,20 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 		})
 	}
 
-	keepGoing := false
+	gCommit := build.Input.GetGitilesCommit()
 	buildCreateTime := build.CreateTime.AsTime()
+
+	var keepGoing bool
+	var builder config.Builder
 	err = datastore.RunInTransaction(c, func(c context.Context) error {
+		// Reset these values everytime the transaction is retried, to avoid
+		// leaking state from a previous attempt to this attempt.
+		keepGoing = false
+		builder = config.Builder{
+			ProjectKey: datastore.KeyForObj(c, project),
+			ID:         builderID,
+		}
+
 		switch err := datastore.Get(c, &builder); {
 		case err == datastore.ErrNoSuchEntity:
 			// Even if the builder isn't found, we may still want to notify if the build
@@ -241,9 +241,8 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 			updatedBuilder.GitilesCommits = checkout.ToGitilesCommits()
 		}
 
-		switch {
-		case builder.Repository == "":
-			// Handle the case where there's no repository being tracked.
+		if builder.Repository == "" {
+			// No repository specified, so we follow build time ordering.
 			if builder.BuildTime.Before(buildCreateTime) {
 				// The build is in-order with respect to build time, so notify normally.
 				if err := notifyAndUpdateTrees(c, builder, builder.Status); err != nil {
@@ -255,11 +254,24 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 
 			// Don't update trees, since it's out of order.
 			return notifyNoBlame(c, builder, 0)
-		case gCommit == nil:
-			// If there's no revision information, and the builder has a repository, ignore
-			// the build.
-			logging.Infof(c, "No revision information found for this build, ignoring...")
-			return nil
+		}
+		// Repository specified, so we follow commit ordering.
+
+		if gCommit == nil || (gCommit != nil && gCommit.Id == "") {
+			// If there's no revision information, the build must be treated as out-
+			// of-order. For such builds we only perform non-on_change notifications,
+			// and do not update trees.
+			logging.Infof(c, "No revision information found for this build, treating as out-of-order...")
+			return notifyNoBlame(c, builder, 0)
+		}
+
+		builderRepoHost, builderRepoProject, _ := gitiles.ParseRepoURL(builder.Repository)
+		if builderRepoHost != gCommit.Host || builderRepoProject != gCommit.Project {
+			logging.Infof(c, "Builder %s triggered by commit to https://%s/%s"+
+				"instead of known https://%s, treating as out-of-order...",
+				builderID, gCommit.Host, gCommit.Project, builder.Repository)
+			// Only perform non-on_change notifications.
+			return notifyNoBlame(c, builder, 0)
 		}
 
 		// Update the new builder with revision information as we know it's now available.
@@ -277,17 +289,15 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 		keepGoing = true
 		return nil
 	}, nil)
-	if err != nil || !keepGoing {
+	if err != nil {
 		return err
 	}
-
-	builderRepoHost, builderRepoProject, _ := gitiles.ParseRepoURL(builder.Repository)
-	if builderRepoHost != gCommit.Host || builderRepoProject != gCommit.Project {
-		logging.Infof(c, "Builder %s triggered by commit to https://%s/%s"+
-			"instead of known https://%s, ignoring...",
-			builderID, gCommit.Host, gCommit.Project, builder.Repository)
+	if !keepGoing {
 		return nil
 	}
+
+	// We have a builder with a Repository set (i.e. following commit ordering),
+	// and a build with commit ID set. Continue processing notifications.
 
 	// Get the revision history for the build-related commit.
 	commits, err := history(c, luciProject, gCommit.Host, gCommit.Project, builder.Revision, gCommit.Id)
