@@ -60,7 +60,6 @@ describe('BaseLayout', () => {
     await screen.findByText('LUCI');
 
     expect(screen.getByText(UiPage.BuilderSearch)).toBeVisible();
-    expect(storageList.get(SIDE_BAR_OPEN_CACHE_KEY)).toEqual('true');
   });
 
   it('should hide sidebar if the local storage value is false', async () => {

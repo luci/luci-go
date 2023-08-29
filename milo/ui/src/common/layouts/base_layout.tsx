@@ -15,8 +15,7 @@
 import { styled } from '@mui/material';
 import Box from '@mui/material/Box';
 import { Outlet } from 'react-router-dom';
-
-import { useLocalStorageItem } from '@/common/hooks/use_local_storage_item';
+import { useLocalStorage } from 'react-use';
 
 import { AppBar } from './app_bar';
 import { drawerWidth } from './constants';
@@ -43,19 +42,13 @@ const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
 export const SIDE_BAR_OPEN_CACHE_KEY = 'side-bar-open';
 
 export const BaseLayout = () => {
-  const [sidebarOpenCache, setSidebarOpenCache] = useLocalStorageItem(
-    SIDE_BAR_OPEN_CACHE_KEY,
-    'true'
+  const [sidebarOpen = true, setSidebarOpen] = useLocalStorage<boolean>(
+    SIDE_BAR_OPEN_CACHE_KEY
   );
-  const sidebarOpen = sidebarOpenCache === 'true';
-
-  const handleSidebarChanged = (isOpen: boolean) => {
-    setSidebarOpenCache(String(isOpen));
-  };
 
   return (
     <Box sx={{ display: 'flex', pt: 7 }}>
-      <AppBar open={sidebarOpen} handleSidebarChanged={handleSidebarChanged} />
+      <AppBar open={sidebarOpen} handleSidebarChanged={setSidebarOpen} />
       <Sidebar open={sidebarOpen} />
       <Main open={sidebarOpen}>
         <Outlet />
