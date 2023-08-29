@@ -15,6 +15,7 @@
 package rules
 
 import (
+	"fmt"
 	"testing"
 
 	"go.chromium.org/luci/common/data/text/pattern"
@@ -66,6 +67,51 @@ func TestAddRules(t *testing.T) {
 				Path:      pattern.MustParse(`regex:.+\.json`),
 			},
 		})
+	})
+}
+
+func TestValidateACLsCfg(t *testing.T) {
+	t.Parallel()
+
+	Convey("Validate acl.cfg", t, func() {
+		ctx := testutil.SetupContext()
+		vctx := &validation.Context{Context: ctx}
+		cs := config.MustServiceSet(testutil.AppID)
+		path := common.ACLRegistryFilePath
+
+		Convey("valid", func() {
+			content := []byte(`
+			project_access_group: "config-project-access"
+			project_validation_group: "config-project-validation"
+			project_reimport_group: "config-project-reimport"
+			service_access_group: "config-service-access"
+			service_validation_group: "config-service-validation"
+			service_reimport_group: "config-service-reimport"
+			`)
+			So(validateACLsCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldBeNil)
+		})
+
+		Convey("invalid proto", func() {
+			content := []byte(`bad config`)
+			So(validateACLsCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `in "acl.cfg"`, "invalid AclCfg proto:")
+		})
+
+		for _, fieldName := range []string{
+			"project_access_group",
+			"project_validation_group",
+			"project_reimport_group",
+			"service_access_group",
+			"service_validation_group",
+			"service_reimport_group",
+		} {
+			Convey(fmt.Sprintf("invalid %s", fieldName), func() {
+				content := []byte(fmt.Sprintf(`%s: "bad^group"`, fieldName))
+				So(validateACLsCfg(vctx, string(cs), path, content), ShouldBeNil)
+				So(vctx.Finalize(), ShouldErrLike, fmt.Sprintf(`invalid %s: "bad^group"`, fieldName))
+			})
+		}
 	})
 }
 

@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/config_service/internal/common"
 )
@@ -52,7 +53,31 @@ func addRules(r *validation.RuleSet) {
 	r.Add(`regex:.+`, `regex:.+\.json`, validateJSON)
 }
 
-func validateACLsCfg(ctx *validation.Context, configSet, path string, content []byte) error {
+func validateACLsCfg(vctx *validation.Context, configSet, path string, content []byte) error {
+	vctx.SetFile(path)
+	cfg := &cfgcommonpb.AclCfg{}
+	if err := prototext.Unmarshal(content, cfg); err != nil {
+		vctx.Errorf("invalid AclCfg proto: %s", err)
+		return nil
+	}
+	if group := cfg.GetProjectAccessGroup(); group != "" && !auth.IsValidGroupName(group) {
+		vctx.Errorf("invalid project_access_group: %q", group)
+	}
+	if group := cfg.GetServiceAccessGroup(); group != "" && !auth.IsValidGroupName(group) {
+		vctx.Errorf("invalid service_access_group: %q", group)
+	}
+	if group := cfg.GetProjectValidationGroup(); group != "" && !auth.IsValidGroupName(group) {
+		vctx.Errorf("invalid project_validation_group: %q", group)
+	}
+	if group := cfg.GetServiceValidationGroup(); group != "" && !auth.IsValidGroupName(group) {
+		vctx.Errorf("invalid service_validation_group: %q", group)
+	}
+	if group := cfg.GetProjectReimportGroup(); group != "" && !auth.IsValidGroupName(group) {
+		vctx.Errorf("invalid project_reimport_group: %q", group)
+	}
+	if group := cfg.GetServiceReimportGroup(); group != "" && !auth.IsValidGroupName(group) {
+		vctx.Errorf("invalid service_reimport_group: %q", group)
+	}
 	return nil
 }
 
