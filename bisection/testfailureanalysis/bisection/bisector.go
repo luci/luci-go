@@ -216,6 +216,12 @@ func createTestRerunModel(ctx context.Context, tfa *model.TestFailureAnalysis, n
 	if err != nil {
 		return errors.Annotate(err, "get build task dimension bbid %v", build.GetId()).Err()
 	}
+	testResults := model.RerunTestResults{}
+	for _, tf := range tfs {
+		testResults.Results = append(testResults.Results, model.RerunSingleTestResult{
+			TestFailureKey: datastore.KeyForObj(ctx, tf),
+		})
+	}
 
 	rerun := &model.TestSingleRerun{
 		ID: build.GetId(),
@@ -242,6 +248,7 @@ func createTestRerunModel(ctx context.Context, tfa *model.TestFailureAnalysis, n
 		Status:                pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 		Dimensions:            dimensions,
 		Priority:              tfa.Priority,
+		TestResults:           testResults,
 	}
 	return datastore.Put(ctx, rerun)
 }

@@ -201,7 +201,7 @@ func TestRunBisector(t *testing.T) {
 		})
 		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
 			ID:              1002,
-			TestFailure:     tf,
+			TestFailureKey:  datastore.KeyForObj(ctx, tf),
 			StartCommitHash: "12345",
 			EndCommitHash:   "23456",
 			Priority:        160,
@@ -291,6 +291,14 @@ func TestRunBisector(t *testing.T) {
 					Id:      "hash",
 				},
 				Status: bbpb.Status_SCHEDULED,
+			},
+			TestResults: model.RerunTestResults{
+				IsFinalized: false,
+				Results: []model.RerunSingleTestResult{
+					{
+						TestFailureKey: datastore.KeyForObj(ctx, tf),
+					},
+				},
 			},
 		})
 	})

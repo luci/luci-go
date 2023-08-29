@@ -57,16 +57,21 @@ message UpdateAnalysisProgressResponse {
 }
 
 message UpdateTestAnalysisProgressRequest {
-  // The TestFailureAnalysis ID that the bot is running.
-  int64 analysis_id = 1;
+  // BuildbucketID of the rerun build.
+  int64 bbid = 1;
   // Bot ID.
   string bot_id = 2;
-  // BuildbucketID of the rerun build.
-  int64 bbid = 3;
   // Contains the results of the tests that were run in the rerun.
   // Only the results of the requested tests (in tests_to_run properties of the recipe)
   // will be included. The non-requested test results will not be included.
-  repeated TestResult results = 4;
+  repeated TestResult results = 3;
+  // Indicate whether the recipe has finished running tests and is sending back test results.
+  // This flag does not care about the test results, it only care about the tests
+  // were run and the test results being sent to LUCI Bisection.
+  // In cases of infra failure, or something went wrong (e.g. compile failure),
+  // tests may not get run. In such cases, this should be set to false.
+  // When this is set to false, LUCI Bisection will mark the rerun as INFRA_FAILURE.
+  bool run_succeeded = 4;
 }
 
 message TestResult {

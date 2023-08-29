@@ -611,8 +611,8 @@ func TestGetPrimaryTestFailure(t *testing.T) {
 	Convey("Have primary failure", t, func() {
 		tf := testutil.CreateTestFailure(ctx, nil)
 		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
-			ID:          1002,
-			TestFailure: tf,
+			ID:             1002,
+			TestFailureKey: datastore.KeyForObj(ctx, tf),
 		})
 		tf, err := GetPrimaryTestFailure(ctx, tfa)
 		So(err, ShouldBeNil)
@@ -661,5 +661,39 @@ func TestGetTestFailureBundle(t *testing.T) {
 		others := bundle.Others()
 		So(len(others), ShouldEqual, 1)
 		So(others[0].ID, ShouldEqual, 100)
+	})
+}
+
+func TestGetTestSingleRerun(t *testing.T) {
+	t.Parallel()
+	ctx := memory.Use(context.Background())
+	testutil.UpdateIndices(ctx)
+
+	Convey("Get test single rerun", t, func() {
+		_, err := GetTestSingleRerun(ctx, 123)
+		So(err, ShouldNotBeNil)
+		testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+			ID: 123,
+		})
+		rerun, err := GetTestSingleRerun(ctx, 123)
+		So(err, ShouldBeNil)
+		So(rerun.ID, ShouldEqual, 123)
+	})
+}
+
+func TestGetTestFailure(t *testing.T) {
+	t.Parallel()
+	ctx := memory.Use(context.Background())
+	testutil.UpdateIndices(ctx)
+
+	Convey("Get test failure", t, func() {
+		_, err := GetTestFailure(ctx, 123)
+		So(err, ShouldNotBeNil)
+		testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+			ID: 123,
+		})
+		rerun, err := GetTestFailure(ctx, 123)
+		So(err, ShouldBeNil)
+		So(rerun.ID, ShouldEqual, 123)
 	})
 }

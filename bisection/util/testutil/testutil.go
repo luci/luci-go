@@ -115,12 +115,14 @@ func CreateNthSectionSuspect(c context.Context, nsa *model.CompileNthSectionAnal
 }
 
 type TestFailureCreationOption struct {
-	ID        int64
-	Project   string
-	Variant   map[string]string
-	IsPrimary bool
-	Analysis  *model.TestFailureAnalysis
-	Ref       *pb.SourceRef
+	ID          int64
+	Project     string
+	Variant     map[string]string
+	IsPrimary   bool
+	Analysis    *model.TestFailureAnalysis
+	Ref         *pb.SourceRef
+	TestID      string
+	VariantHash string
 }
 
 func CreateTestFailure(ctx context.Context, option *TestFailureCreationOption) *model.TestFailure {
@@ -130,6 +132,8 @@ func CreateTestFailure(ctx context.Context, option *TestFailureCreationOption) *
 	isPrimary := false
 	var analysisKey *datastore.Key = nil
 	var ref *pb.SourceRef = nil
+	var testID = ""
+	var variantHash = ""
 
 	if option != nil {
 		if option.ID != 0 {
@@ -144,6 +148,8 @@ func CreateTestFailure(ctx context.Context, option *TestFailureCreationOption) *
 		variant = option.Variant
 		isPrimary = option.IsPrimary
 		ref = option.Ref
+		testID = option.TestID
+		variantHash = option.VariantHash
 	}
 
 	tf := &model.TestFailure{
@@ -155,6 +161,8 @@ func CreateTestFailure(ctx context.Context, option *TestFailureCreationOption) *
 		IsPrimary:   isPrimary,
 		AnalysisKey: analysisKey,
 		Ref:         ref,
+		TestID:      testID,
+		VariantHash: variantHash,
 	}
 
 	So(datastore.Put(ctx, tf), ShouldBeNil)
@@ -165,7 +173,7 @@ func CreateTestFailure(ctx context.Context, option *TestFailureCreationOption) *
 type TestFailureAnalysisCreationOption struct {
 	ID              int64
 	Project         string
-	TestFailure     *model.TestFailure
+	TestFailureKey  *datastore.Key
 	StartCommitHash string
 	EndCommitHash   string
 	FailedBuildID   int64
@@ -188,9 +196,6 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 		if option.Project != "" {
 			project = option.Project
 		}
-		if option.TestFailure != nil {
-			tfKey = datastore.KeyForObj(ctx, option.TestFailure)
-		}
 		if option.StartCommitHash != "" {
 			startCommitHash = option.StartCommitHash
 		}
@@ -201,6 +206,7 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 			failedBuildID = option.FailedBuildID
 		}
 		priority = option.Priority
+		tfKey = option.TestFailureKey
 	}
 
 	tfa := &model.TestFailureAnalysis{
@@ -215,6 +221,42 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 	So(datastore.Put(ctx, tfa), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()
 	return tfa
+}
+
+type TestSingleRerunCreationOption struct {
+	ID          int64
+	Status      pb.RerunStatus
+	AnalysisKey *datastore.Key
+	Type        model.RerunBuildType
+	TestResult  model.RerunTestResults
+}
+
+func CreateTestSingleRerun(ctx context.Context, option *TestSingleRerunCreationOption) *model.TestSingleRerun {
+	id := int64(1000)
+	status := pb.RerunStatus_RERUN_STATUS_UNSPECIFIED
+	var analysisKey *datastore.Key
+	var rerunType model.RerunBuildType
+	testresult := model.RerunTestResults{}
+
+	if option != nil {
+		if option.ID != 0 {
+			id = option.ID
+		}
+		status = option.Status
+		analysisKey = option.AnalysisKey
+		rerunType = option.Type
+		testresult = option.TestResult
+	}
+	rerun := &model.TestSingleRerun{
+		ID:          id,
+		Status:      status,
+		AnalysisKey: analysisKey,
+		Type:        rerunType,
+		TestResults: testresult,
+	}
+	So(datastore.Put(ctx, rerun), ShouldBeNil)
+	datastore.GetTestable(ctx).CatchupIndexes()
+	return rerun
 }
 
 func UpdateIndices(c context.Context) {

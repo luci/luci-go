@@ -347,3 +347,27 @@ func GetTestFailureBundle(ctx context.Context, tfa *model.TestFailureAnalysis) (
 	}
 	return bundle, nil
 }
+
+// GetTestSingleRerun gets test single rerun by its ID.
+func GetTestSingleRerun(ctx context.Context, rerunID int64) (*model.TestSingleRerun, error) {
+	rerun := &model.TestSingleRerun{
+		ID: rerunID,
+	}
+	err := datastore.Get(ctx, rerun)
+	if err != nil {
+		return nil, errors.Annotate(err, "get test single rerun with id %d", rerunID).Err()
+	}
+	return rerun, err
+}
+
+// GetTestFailure gets test failure by its ID.
+func GetTestFailure(ctx context.Context, failureID int64) (*model.TestFailure, error) {
+	failure := &model.TestFailure{
+		ID: failureID,
+	}
+	err := datastore.Get(ctx, failure)
+	if err != nil {
+		return nil, errors.Annotate(err, "get TestFailure with id %d", failure.ID).Err()
+	}
+	return failure, err
+}

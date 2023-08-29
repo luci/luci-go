@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/nthsectionsnapshot"
 	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/server/updatetestrerun"
 	taskpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
@@ -159,8 +160,12 @@ func (server *BotUpdatesServer) UpdateAnalysisProgress(c context.Context, req *p
 	return nil, status.Errorf(codes.Internal, "unknown error")
 }
 
-func (server *BotUpdatesServer) UpdateTestAnalysisProgress(c context.Context, req *pb.UpdateTestAnalysisProgressRequest) (*pb.UpdateTestAnalysisProgressResponse, error) {
-	// TODO (nqmtuan): Implement this
+func (server *BotUpdatesServer) UpdateTestAnalysisProgress(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (*pb.UpdateTestAnalysisProgressResponse, error) {
+	err := updatetestrerun.Update(ctx, req)
+	if err != nil {
+		logging.Errorf(ctx, "UpdateTestAnalysisProgress got error: %v", err.Error())
+		return nil, err
+	}
 	return &pb.UpdateTestAnalysisProgressResponse{}, nil
 }
 
