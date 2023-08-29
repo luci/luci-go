@@ -69,7 +69,111 @@ func TestAddRules(t *testing.T) {
 	})
 }
 
-func TestImportCfg(t *testing.T) {
+func TestValidateServicesCfg(t *testing.T) {
+	t.Parallel()
+
+	Convey("Validate services.cfg", t, func() {
+		ctx := testutil.SetupContext()
+		vctx := &validation.Context{Context: ctx}
+		cs := config.MustServiceSet(testutil.AppID)
+		path := common.ServiceRegistryFilePath
+
+		Convey("passed", func() {
+			content := []byte(`services {
+				id: "luci-config-dev"
+				owners: "luci-config-dev@google.com"
+				service_endpoint: "https://example.com"
+				access: "group:googlers"
+				access: "user:user-a@example.com"
+				access: "user-b@example.com"
+			}`)
+			So(validateServicesCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldBeNil)
+		})
+
+		Convey("invalid proto", func() {
+			content := []byte(`bad  config`)
+			So(validateServicesCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `in "services.cfg"`, "invalid services proto:")
+		})
+
+		Convey("empty id", func() {
+			content := []byte(`services {
+				id: ""
+			}`)
+			So(validateServicesCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `(services #0 / id): not specified`)
+		})
+
+		Convey("invalid id", func() {
+			content := []byte(`services {
+				id: "foo/bar"
+			}`)
+			So(validateServicesCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `(services #0 / id): invalid id:`)
+		})
+
+		Convey("duplicate id", func() {
+			content := []byte(`services {
+				id: "foo"
+			}
+			services {
+				id: "foo"
+			}`)
+			So(validateServicesCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `(services #1 / id): duplicate: "foo"`)
+		})
+
+		Convey("bad owner email address", func() {
+			content := []byte(`services {
+					id: "foo"
+					owners: "bad email"
+				}`)
+			So(validateServicesCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `(services #0 / owners #0): invalid email address:`)
+		})
+
+		Convey("invalid metadata url", func() {
+			content := []byte(`services {
+				id: "foo"
+				metadata_url: "https://example.com\\metadata"
+			}`)
+			So(validateServicesCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `(services #0 / metadata_url): invalid url:`)
+		})
+
+		Convey("invalid service endpoint", func() {
+			content := []byte(`services {
+				id: "foo"
+				service_endpoint: "https://example.com\\api/"
+			}`)
+			So(validateServicesCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `(services #0 / service_endpoint): invalid url:`)
+		})
+
+		Convey("invalid access group", func() {
+			content := []byte(`services {
+				id: "foo"
+				access: "group:goo!"
+			}`)
+			So(validateServicesCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `(services #0 / access #0): invalid auth group: "goo!"`)
+		})
+
+		Convey("not sorted", func() {
+			content := []byte(`services {
+				id: "foo"
+			}
+			services {
+				id: "bar"
+			}`)
+			So(validateServicesCfg(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `services are not sorted by id. First offending id: "bar"`)
+		})
+	})
+}
+
+func TestValidateImportCfg(t *testing.T) {
 	t.Parallel()
 
 	Convey("Validate import.cfg", t, func() {

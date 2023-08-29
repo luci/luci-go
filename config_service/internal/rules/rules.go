@@ -21,12 +21,13 @@ import (
 	"path"
 	"strings"
 
+	"google.golang.org/protobuf/encoding/prototext"
+
 	"go.chromium.org/luci/common/data/stringset"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/info"
-	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/config_service/internal/common"
 )
@@ -55,7 +56,54 @@ func validateACLsCfg(ctx *validation.Context, configSet, path string, content []
 	return nil
 }
 
-func validateServicesCfg(ctx *validation.Context, configSet, path string, content []byte) error {
+func validateServicesCfg(vctx *validation.Context, configSet, path string, content []byte) error {
+	vctx.SetFile(path)
+	cfg := &cfgcommonpb.ServicesCfg{}
+	if err := prototext.Unmarshal(content, cfg); err != nil {
+		vctx.Errorf("invalid services proto: %s", err)
+		return nil
+	}
+	seenServiceIDs := stringset.New(len(cfg.GetServices()))
+	for i, service := range cfg.GetServices() {
+		vctx.Enter("services #%d", i)
+
+		vctx.Enter("id")
+		validateUniqueID(vctx, service.GetId(), seenServiceIDs, func(vctx *validation.Context, id string) {
+			if _, err := config.ServiceSet(id); err != nil {
+				vctx.Errorf("invalid id: %s", err)
+			}
+		})
+		vctx.Exit()
+
+		for i, owner := range service.GetOwners() {
+			vctx.Enter("owners #%d", i)
+			validateEmail(vctx, owner)
+			vctx.Exit()
+		}
+
+		if metadataURL := service.GetMetadataUrl(); metadataURL != "" {
+			vctx.Enter("metadata_url")
+			validateURL(vctx, metadataURL)
+			vctx.Exit()
+		}
+
+		if endpoint := service.GetServiceEndpoint(); endpoint != "" {
+			vctx.Enter("service_endpoint")
+			validateURL(vctx, endpoint)
+			vctx.Exit()
+		}
+
+		for i, access := range service.GetAccess() {
+			vctx.Enter("access #%d", i)
+			validateAccess(vctx, access)
+			vctx.Exit()
+		}
+
+		vctx.Exit()
+	}
+	validateSorted[*cfgcommonpb.Service](vctx, cfg.GetServices(), "services", func(srv *cfgcommonpb.Service) string {
+		return srv.GetId()
+	})
 	return nil
 }
 
