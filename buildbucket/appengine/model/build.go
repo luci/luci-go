@@ -299,14 +299,10 @@ func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
 	}
 
 	if b.NextBackendSyncTime != "" && b.Proto.UpdateTime != nil {
-		parts := strings.Split(b.NextBackendSyncTime, syncTimeSep)
-		if len(parts) != 4 {
-			return nil, errors.Reason("build.NextBackendSyncTime %s is in a wrong format", b.NextBackendSyncTime).Err()
-		}
-		oldUnix := parts[3]
+		backend, project, shardID, oldUnix := b.MustParseNextBackendSyncTime()
 		newUnix := fmt.Sprint(b.calculateNextSyncTime().Unix())
 		if newUnix > oldUnix {
-			b.NextBackendSyncTime = strings.Join([]string{parts[0], parts[1], parts[2], newUnix}, syncTimeSep)
+			b.NextBackendSyncTime = strings.Join([]string{backend, project, shardID, newUnix}, syncTimeSep)
 		}
 	}
 
@@ -424,13 +420,25 @@ func (b *Build) GenerateNextBackendSyncTime(ctx context.Context, shards int32) {
 		seeded := rand.New(rand.NewSource(clock.Now(ctx).UnixNano()))
 		shardID = seeded.Intn(int(shards))
 	}
-	b.NextBackendSyncTime = strings.Join([]string{b.BackendTarget, b.Project, fmt.Sprint(shardID), fmt.Sprint(b.calculateNextSyncTime().Unix())}, syncTimeSep)
+	b.NextBackendSyncTime = ConstructNextSyncTime(b.BackendTarget, b.Project, shardID, b.calculateNextSyncTime())
+}
+
+func ConstructNextSyncTime(backend, project string, shardID int, syncTime time.Time) string {
+	return strings.Join([]string{backend, project, fmt.Sprint(shardID), fmt.Sprint(syncTime.Unix())}, syncTimeSep)
 }
 
 // calculateNextSyncTime calculates the next time the build should be synced.
 // It rounds the build's update time to the closest minute them add BackendSyncInterval.
 func (b *Build) calculateNextSyncTime() time.Time {
 	return b.Proto.UpdateTime.AsTime().Round(time.Minute).Add(b.BackendSyncInterval)
+}
+
+func (b *Build) MustParseNextBackendSyncTime() (backend, project, shardID, syncTime string) {
+	parts := strings.Split(b.NextBackendSyncTime, syncTimeSep)
+	if len(parts) != 4 {
+		panic(fmt.Sprintf("build.NextBackendSyncTime %s is in a wrong format", b.NextBackendSyncTime))
+	}
+	return parts[0], parts[1], parts[2], parts[3]
 }
 
 // LoadBuildDetails loads the details of the given builds, trimming them

@@ -126,3 +126,14 @@ message NotifyPubSubGoProxy {
   // The project that the build belongs to.
   string project = 2;
 }
+
+// SyncBuildsWithBackendTasks finds builds that have exceeded their next sync
+// time, then updates the builds. The builds should belong to the same project
+// and run on the same backend.
+message SyncBuildsWithBackendTasks {
+  // Target of the backend.
+  string backend = 1;
+
+  // LUCI project .
+  string project = 2;
+}

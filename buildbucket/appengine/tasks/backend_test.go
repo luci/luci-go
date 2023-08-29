@@ -55,6 +55,12 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+const (
+	defaultUpdateID = 5
+	staleUpdateID   = 3
+	newUpdateID     = 10
+)
+
 type MockedClient struct {
 	Client *MockTaskBackendClient
 	Ctx    context.Context
@@ -105,21 +111,24 @@ func (mc *MockedClient) RunTask(ctx context.Context, taskReq *pb.RunTaskRequest,
 func (mc *MockedClient) FetchTasks(ctx context.Context, taskReq *pb.FetchTasksRequest, opts ...grpc.CallOption) (*pb.FetchTasksResponse, error) {
 	tasks := make([]*pb.Task, 0, len(taskReq.TaskIds))
 	for _, tID := range taskReq.TaskIds {
-		if strings.HasSuffix(tID.Id, "all_fail") {
-			return nil, errors.Reason("idk, wanted to fail i guess :/").Err()
-		}
-		if strings.HasSuffix(tID.Id, "fail_me") {
-			continue
-		}
-
 		status := pb.Status_STARTED
-		if strings.HasSuffix(tID.Id, "ended") {
+		updateID := newUpdateID
+		switch {
+		case strings.HasSuffix(tID.Id, "all_fail"):
+			return nil, errors.Reason("idk, wanted to fail i guess :/").Err()
+		case strings.HasSuffix(tID.Id, "fail_me"):
+			continue
+		case strings.HasSuffix(tID.Id, "ended"):
 			status = pb.Status_SUCCESS
+		case strings.HasSuffix(tID.Id, "stale"):
+			updateID = staleUpdateID
+		case strings.HasSuffix(tID.Id, "unchanged"):
+			updateID = defaultUpdateID
 		}
 		tasks = append(tasks, &pb.Task{
 			Id:       tID,
 			Status:   status,
-			UpdateId: 10,
+			UpdateId: int64(updateID),
 		})
 	}
 	return &pb.FetchTasksResponse{Tasks: tasks}, nil

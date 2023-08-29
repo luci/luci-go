@@ -810,6 +810,66 @@ func (x *NotifyPubSubGoProxy) GetProject() string {
 	return ""
 }
 
+// SyncBuildsWithBackendTasks finds builds that have exceeded their next sync
+// time, then updates the builds. The builds should belong to the same project
+// and run on the same backend.
+type SyncBuildsWithBackendTasks struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Target of the backend.
+	Backend string `protobuf:"bytes,1,opt,name=backend,proto3" json:"backend,omitempty"`
+	// LUCI project .
+	Project string `protobuf:"bytes,2,opt,name=project,proto3" json:"project,omitempty"`
+}
+
+func (x *SyncBuildsWithBackendTasks) Reset() {
+	*x = SyncBuildsWithBackendTasks{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[14]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SyncBuildsWithBackendTasks) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncBuildsWithBackendTasks) ProtoMessage() {}
+
+func (x *SyncBuildsWithBackendTasks) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[14]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncBuildsWithBackendTasks.ProtoReflect.Descriptor instead.
+func (*SyncBuildsWithBackendTasks) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *SyncBuildsWithBackendTasks) GetBackend() string {
+	if x != nil {
+		return x.Backend
+	}
+	return ""
+}
+
+func (x *SyncBuildsWithBackendTasks) GetProject() string {
+	if x != nil {
+		return x.Project
+	}
+	return ""
+}
+
 var File_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDesc = []byte{
@@ -882,12 +942,17 @@ var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDe
 	0x62, 0x47, 0x6f, 0x50, 0x72, 0x6f, 0x78, 0x79, 0x12, 0x19, 0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c,
 	0x64, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c,
 	0x64, 0x49, 0x64, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x42, 0x40, 0x5a,
-	0x3e, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67,
-	0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65,
-	0x74, 0x2f, 0x61, 0x70, 0x70, 0x65, 0x6e, 0x67, 0x69, 0x6e, 0x65, 0x2f, 0x74, 0x61, 0x73, 0x6b,
-	0x73, 0x2f, 0x64, 0x65, 0x66, 0x73, 0x3b, 0x74, 0x61, 0x73, 0x6b, 0x64, 0x65, 0x66, 0x73, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x22, 0x50, 0x0a,
+	0x1a, 0x53, 0x79, 0x6e, 0x63, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x73, 0x57, 0x69, 0x74, 0x68, 0x42,
+	0x61, 0x63, 0x6b, 0x65, 0x6e, 0x64, 0x54, 0x61, 0x73, 0x6b, 0x73, 0x12, 0x18, 0x0a, 0x07, 0x62,
+	0x61, 0x63, 0x6b, 0x65, 0x6e, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x62, 0x61,
+	0x63, 0x6b, 0x65, 0x6e, 0x64, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x42,
+	0x40, 0x5a, 0x3e, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f,
+	0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63,
+	0x6b, 0x65, 0x74, 0x2f, 0x61, 0x70, 0x70, 0x65, 0x6e, 0x67, 0x69, 0x6e, 0x65, 0x2f, 0x74, 0x61,
+	0x73, 0x6b, 0x73, 0x2f, 0x64, 0x65, 0x66, 0x73, 0x3b, 0x74, 0x61, 0x73, 0x6b, 0x64, 0x65, 0x66,
+	0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -902,7 +967,7 @@ func file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawD
 	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_goTypes = []interface{}{
 	(*CancelSwarmingTask)(nil),         // 0: taskdefs.CancelSwarmingTask
 	(*CancelSwarmingTaskGo)(nil),       // 1: taskdefs.CancelSwarmingTaskGo
@@ -918,10 +983,11 @@ var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_goTyp
 	(*NotifyPubSubGo)(nil),             // 11: taskdefs.NotifyPubSubGo
 	(*CancelBuildTask)(nil),            // 12: taskdefs.CancelBuildTask
 	(*NotifyPubSubGoProxy)(nil),        // 13: taskdefs.NotifyPubSubGoProxy
-	(*proto.BuildbucketCfg_Topic)(nil), // 14: buildbucket.BuildbucketCfg.Topic
+	(*SyncBuildsWithBackendTasks)(nil), // 14: taskdefs.SyncBuildsWithBackendTasks
+	(*proto.BuildbucketCfg_Topic)(nil), // 15: buildbucket.BuildbucketCfg.Topic
 }
 var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_depIdxs = []int32{
-	14, // 0: taskdefs.NotifyPubSubGo.topic:type_name -> buildbucket.BuildbucketCfg.Topic
+	15, // 0: taskdefs.NotifyPubSubGo.topic:type_name -> buildbucket.BuildbucketCfg.Topic
 	1,  // [1:1] is the sub-list for method output_type
 	1,  // [1:1] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name
@@ -1103,6 +1169,18 @@ func file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_init
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SyncBuildsWithBackendTasks); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1110,7 +1188,7 @@ func file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_init
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
