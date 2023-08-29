@@ -78,16 +78,16 @@ func (b *BotInfo) GetStatus() string {
 	for _, v := range b.Composite {
 		switch v {
 		case 256:
-			return "IN_MAINTENANCE"
+			return "maintenance"
 		case 4:
-			return "QUARANTINED"
+			return "quarantined"
 		case 64:
-			return "DEAD"
+			return "dead"
 		case 1:
-			return "RUNNING"
+			return "running"
 		}
 	}
-	return "READY"
+	return "ready"
 }
 
 // DimenionsByKey returns a list of dimension values with the given key.
