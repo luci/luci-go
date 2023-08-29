@@ -71,6 +71,9 @@ type CreateBotSessionRequest struct {
 
 	// Dimensions is dimensions reported by the bot. Required.
 	Dimensions map[string][]string `json:"dimensions"`
+
+	// BotVersion identifies the bot software. It is reported to RBE as is.
+	BotVersion string `json:"bot_version,omitempty"`
 }
 
 func (r *CreateBotSessionRequest) ExtractPollToken() []byte               { return r.PollToken }
@@ -80,6 +83,7 @@ func (r *CreateBotSessionRequest) ExtractDimensions() map[string][]string { retu
 func (r *CreateBotSessionRequest) ExtractDebugRequest() any {
 	return &CreateBotSessionRequest{
 		Dimensions: r.Dimensions,
+		BotVersion: r.BotVersion,
 	}
 }
 
@@ -111,7 +115,7 @@ func (srv *SessionServer) CreateBotSession(ctx context.Context, body *CreateBotS
 	// up any tasks yet (indicated by INITIALIZING status).
 	session, err := srv.rbe.CreateBotSession(ctx, &remoteworkers.CreateBotSessionRequest{
 		Parent:     r.PollState.RbeInstance,
-		BotSession: rbeBotSession("", remoteworkers.BotStatus_INITIALIZING, r.Dimensions, nil),
+		BotSession: rbeBotSession("", remoteworkers.BotStatus_INITIALIZING, r.Dimensions, body.BotVersion, nil),
 	})
 	if err != nil {
 		// Return the exact same gRPC error in a reply. This is fine, we trust the
@@ -191,6 +195,9 @@ type UpdateBotSessionRequest struct {
 	// Dimensions is dimensions reported by the bot. Required.
 	Dimensions map[string][]string `json:"dimensions"`
 
+	// BotVersion identifies the bot software. It is reported to RBE as is.
+	BotVersion string `json:"bot_version,omitempty"`
+
 	// The intended bot session status as stringy remoteworkers.BotStatus enum.
 	//
 	// Possible values:
@@ -225,6 +232,7 @@ func (r *UpdateBotSessionRequest) ExtractDimensions() map[string][]string { retu
 func (r *UpdateBotSessionRequest) ExtractDebugRequest() any {
 	return &UpdateBotSessionRequest{
 		Dimensions:  r.Dimensions,
+		BotVersion:  r.BotVersion,
 		Status:      r.Status,
 		Nonblocking: r.Nonblocking,
 		Lease:       r.Lease,
@@ -340,7 +348,7 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 
 	session, err := srv.rbe.UpdateBotSession(rpcCtx, &remoteworkers.UpdateBotSessionRequest{
 		Name:       r.SessionID,
-		BotSession: rbeBotSession(r.SessionID, botStatus, r.Dimensions, leaseIn),
+		BotSession: rbeBotSession(r.SessionID, botStatus, r.Dimensions, body.BotVersion, leaseIn),
 	})
 
 	if err != nil {
@@ -506,7 +514,13 @@ func (srv *SessionServer) genSessionToken(ctx context.Context, ps *internalspb.P
 
 // rbeBotSession constructs remoteworkers.BotSession based on validated bot
 // dimensions and the current lease.
-func rbeBotSession(sessionID string, status remoteworkers.BotStatus, dims map[string][]string, lease *remoteworkers.Lease) *remoteworkers.BotSession {
+func rbeBotSession(
+	sessionID string,
+	status remoteworkers.BotStatus,
+	dims map[string][]string,
+	botVersion string,
+	lease *remoteworkers.Lease,
+) *remoteworkers.BotSession {
 	var props []*remoteworkers.Device_Property
 	var botID string
 
@@ -545,10 +559,11 @@ func rbeBotSession(sessionID string, status remoteworkers.BotStatus, dims map[st
 	}
 
 	return &remoteworkers.BotSession{
-		BotId:  botID,
-		Name:   sessionID,
-		Status: status,
-		Leases: leases,
+		BotId:   botID,
+		Name:    sessionID,
+		Version: botVersion,
+		Status:  status,
+		Leases:  leases,
 		Worker: &remoteworkers.Worker{
 			Devices: []*remoteworkers.Device{
 				{

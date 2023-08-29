@@ -100,8 +100,9 @@ func TestSessionServer(t *testing.T) {
 				So(r, ShouldResembleProto, &remoteworkers.CreateBotSessionRequest{
 					Parent: fakeRBEInstance,
 					BotSession: &remoteworkers.BotSession{
-						BotId:  fakeBotID,
-						Status: remoteworkers.BotStatus_INITIALIZING,
+						BotId:   fakeBotID,
+						Status:  remoteworkers.BotStatus_INITIALIZING,
+						Version: "bot-version",
 						Worker: &remoteworkers.Worker{
 							Devices: []*remoteworkers.Device{
 								{
@@ -128,6 +129,7 @@ func TestSessionServer(t *testing.T) {
 				Dimensions: map[string][]string{
 					"ignored": {""}, // uses validated botsrv.Request.Dimensions instead
 				},
+				BotVersion: "bot-version",
 			}, fakeRequest)
 
 			So(err, ShouldBeNil)
@@ -161,9 +163,10 @@ func TestSessionServer(t *testing.T) {
 				So(r, ShouldResembleProto, &remoteworkers.UpdateBotSessionRequest{
 					Name: fakeSessionID,
 					BotSession: &remoteworkers.BotSession{
-						Name:   fakeSessionID,
-						BotId:  fakeBotID,
-						Status: remoteworkers.BotStatus_OK,
+						Name:    fakeSessionID,
+						BotId:   fakeBotID,
+						Status:  remoteworkers.BotStatus_OK,
+						Version: "bot-version",
 						Worker: &remoteworkers.Worker{
 							Devices: []*remoteworkers.Device{
 								{
@@ -191,6 +194,7 @@ func TestSessionServer(t *testing.T) {
 				Dimensions: map[string][]string{
 					"ignored": {""}, // uses validated botsrv.Request.Dimensions instead
 				},
+				BotVersion: "bot-version",
 			}, fakeRequest)
 
 			So(err, ShouldBeNil)
