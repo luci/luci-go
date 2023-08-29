@@ -66,7 +66,7 @@ func validateSorted[T any](vctx *validation.Context, slice []T, listName string,
 			continue // empty id would be caught by some other validation rules.
 		}
 		if prevID != "" && strings.Compare(prevID, curID) > 0 {
-			vctx.Errorf("%s are not sorted by id. First offending id: %q", listName, curID)
+			vctx.Warningf("%s are not sorted by id. First offending id: %q", listName, curID)
 			return
 		}
 		prevID = curID

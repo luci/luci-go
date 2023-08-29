@@ -96,7 +96,8 @@ func TestValidateSorted(t *testing.T) {
 		})
 		Convey("not sorted", func() {
 			validateSorted[testItem](vctx, []testItem{{"a"}, {"c"}, {"b"}, {"d"}}, "test_items", getIDFn)
-			So(vctx.Finalize(), ShouldErrLike, `test_items are not sorted by id. First offending id: "b"`)
+			verr := vctx.Finalize().(*validation.Error)
+			So(verr.WithSeverity(validation.Warning), ShouldErrLike, `test_items are not sorted by id. First offending id: "b"`)
 		})
 	})
 }
