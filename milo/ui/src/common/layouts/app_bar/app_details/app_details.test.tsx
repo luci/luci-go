@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import '@testing-library/jest-dom';
-
 import { render, screen } from '@testing-library/react';
 
 import { PageMetaContext } from '@/common/components/page_meta/page_meta_provider';

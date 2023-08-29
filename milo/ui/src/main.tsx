@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Settings } from 'luxon';
 import { configure } from 'mobx';
 import { createRoot } from 'react-dom/client';
 
@@ -36,3 +37,10 @@ const root = createRoot(container);
 root.render(
   <App initOpts={{ isDevEnv: import.meta.env.DEV, enableUiSW: ENABLE_UI_SW }} />
 );
+
+Settings.throwOnInvalid = true;
+declare module 'luxon' {
+  interface TSSettings {
+    throwOnInvalid: true;
+  }
+}

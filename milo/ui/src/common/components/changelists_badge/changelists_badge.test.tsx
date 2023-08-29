@@ -53,9 +53,7 @@ describe('ChangelistsBadge', () => {
     const dispatchEventSpy = jest.spyOn(window, 'dispatchEvent');
     render(<ChangelistsBadge changelists={changelists.slice(0, 1)} />);
 
-    const anchorElement = screen.getByRole<HTMLAnchorElement>('link', {
-      exact: false,
-    });
+    const anchorElement = screen.getByRole<HTMLAnchorElement>('link');
     expect(anchorElement.href).toStrictEqual(
       'https://www.example.com/c/1234/1'
     );
@@ -71,9 +69,7 @@ describe('ChangelistsBadge', () => {
     const dispatchEventSpy = jest.spyOn(window, 'dispatchEvent');
     render(<ChangelistsBadge changelists={changelists} />);
 
-    const anchorElement = screen.getByRole<HTMLAnchorElement>('link', {
-      exact: false,
-    });
+    const anchorElement = screen.getByRole<HTMLAnchorElement>('link');
     expect(anchorElement.href).toStrictEqual(
       'https://www.example.com/c/1234/1'
     );
