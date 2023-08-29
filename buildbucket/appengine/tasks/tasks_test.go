@@ -293,5 +293,24 @@ func TestTasks(t *testing.T) {
 				So(sch.Tasks(), ShouldHaveLength, 1)
 			})
 		})
+
+		Convey("SyncWithBackend", func() {
+			Convey("invalid", func() {
+				Convey("empty backend", func() {
+					So(SyncWithBackend(ctx, "", "project"), ShouldErrLike, "backend is required")
+					So(sch.Tasks(), ShouldBeEmpty)
+				})
+
+				Convey("empty project", func() {
+					So(SyncWithBackend(ctx, "backend", ""), ShouldErrLike, "project is required")
+					So(sch.Tasks(), ShouldBeEmpty)
+				})
+			})
+
+			Convey("valid", func() {
+				So(SyncWithBackend(ctx, "backend", "project"), ShouldBeNil)
+				So(sch.Tasks(), ShouldHaveLength, 1)
+			})
+		})
 	})
 }

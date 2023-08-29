@@ -285,6 +285,17 @@ func init() {
 			return ExportBuild(ctx, t.BuildId)
 		},
 	})
+
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "sync-builds-with-backend-tasks",
+		Kind:      tq.NonTransactional,
+		Prototype: (*taskdefs.SyncBuildsWithBackendTasks)(nil),
+		Queue:     "backend-go-default",
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			t := payload.(*taskdefs.SyncBuildsWithBackendTasks)
+			return SyncBuildsWithBackendTasks(ctx, t.Backend, t.Project)
+		},
+	})
 }
 
 // CancelSwarmingTask enqueues a task queue task to cancel the given Swarming
@@ -377,5 +388,22 @@ func FinalizeResultDB(ctx context.Context, task *taskdefs.FinalizeResultDBGo) er
 	}
 	return tq.AddTask(ctx, &tq.Task{
 		Payload: task,
+	})
+}
+
+// SyncWithBackend enqueues a task queue task to sync builds in one project
+// running on a backend.
+func SyncWithBackend(ctx context.Context, backend, project string) error {
+	switch {
+	case backend == "":
+		return errors.Reason("backend is required").Err()
+	case project == "":
+		return errors.Reason("project is required").Err()
+	}
+	return tq.AddTask(ctx, &tq.Task{
+		Payload: &taskdefs.SyncBuildsWithBackendTasks{
+			Backend: backend,
+			Project: project,
+		},
 	})
 }
