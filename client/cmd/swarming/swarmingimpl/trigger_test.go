@@ -15,6 +15,7 @@
 package swarmingimpl
 
 import (
+	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
@@ -262,7 +263,10 @@ func TestProcessTriggerOptions_WithRawArgs(t *testing.T) {
 	Convey(`Make sure that processing trigger options handles raw-args.`, t, func() {
 		c := triggerRun{}
 		c.Init(&testAuthFlags{})
-		c.commonFlags.serverURL = "http://localhost:9050"
+		c.commonFlags.serverURL = &url.URL{
+			Scheme: "http",
+			Host:   "localhost:9050",
+		}
 
 		result, err := c.processTriggerOptions([]string{"arg1", "arg2"}, nil)
 		So(err, ShouldBeNil)
@@ -302,7 +306,10 @@ func TestProcessTriggerOptions_CAS(t *testing.T) {
 	Convey(`Make sure that processing trigger options handles cas digest.`, t, func() {
 		c := triggerRun{}
 		c.digest = "1d1e14a2d0da6348f3f37312ef524a2cea1db4ead9ebc6c335f9948ad634cbfd/10430"
-		c.commonFlags.serverURL = "https://cas.appspot.com"
+		c.commonFlags.serverURL = &url.URL{
+			Scheme: "https",
+			Host:   "cas.appspot.com",
+		}
 		result, err := c.processTriggerOptions([]string(nil), nil)
 		So(err, ShouldBeNil)
 		// Setting properties directly on the task is deprecated.

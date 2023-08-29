@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"reflect"
 	"sort"
@@ -32,12 +33,9 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
 	"github.com/maruel/subcommands"
 
-	"google.golang.org/api/googleapi"
-
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/lhttp"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/prpc"
 
 	"google.golang.org/protobuf/encoding/protojson"
@@ -115,11 +113,6 @@ type TriggerResults struct {
 	Tasks []*ProtoJSONAdapter[*swarmingv2.TaskRequestMetadataResponse] `json:"tasks"`
 }
 
-// The swarming server has an internal 60-second deadline for responding to
-// requests, so 90 seconds shouldn't cause any requests to fail that would
-// otherwise succeed.
-const swarmingRPCRequestTimeout = 90 * time.Second
-
 const swarmingAPISuffix = "/_ah/api/swarming/v1/"
 
 // swarmingService is an interface intended to stub out the swarming API
@@ -141,7 +134,6 @@ type swarmingService interface {
 }
 
 type swarmingServiceImpl struct {
-	client      *http.Client
 	botsClient  swarmingv2.BotsClient
 	tasksClient swarmingv2.TasksClient
 }
@@ -423,11 +415,13 @@ var DefaultProtoMarshalOpts = protojson.MarshalOptions{
 	Indent:        DefaultIndent,
 }
 
-func Alive(t swarmingv2.TaskState) bool {
+// TaskIsAlive is true if the task is pending or running.
+func TaskIsAlive(t swarmingv2.TaskState) bool {
 	return t == swarmingv2.TaskState_PENDING || t == swarmingv2.TaskState_RUNNING
 }
 
-func Completed(t swarmingv2.TaskState) bool {
+// TaskIsCompleted is true if the task has completed (successfully or not).
+func TaskIsCompleted(t swarmingv2.TaskState) bool {
 	return t == swarmingv2.TaskState_COMPLETED
 }
 
@@ -452,7 +446,8 @@ type commonFlags struct {
 	subcommands.CommandRunBase
 	defaultFlags common.Flags
 	authFlags    AuthFlags
-	serverURL    string
+	rawServerURL string
+	serverURL    *url.URL
 }
 
 // Init initializes common flags.
@@ -460,8 +455,8 @@ func (c *commonFlags) Init(authFlags AuthFlags) {
 	c.defaultFlags.Init(&c.Flags)
 	c.authFlags = authFlags
 	c.authFlags.Register(&c.Flags)
-	c.Flags.StringVar(&c.serverURL, "server", os.Getenv(ServerEnvVar), fmt.Sprintf("Server URL; required. Set $%s to set a default.", ServerEnvVar))
-	c.Flags.StringVar(&c.serverURL, "S", os.Getenv(ServerEnvVar), "Alias for -server.")
+	c.Flags.StringVar(&c.rawServerURL, "server", os.Getenv(ServerEnvVar), fmt.Sprintf("Server URL; required. Set $%s to set a default.", ServerEnvVar))
+	c.Flags.StringVar(&c.rawServerURL, "S", os.Getenv(ServerEnvVar), "Alias for -server.")
 }
 
 // Parse parses the common flags.
@@ -472,63 +467,37 @@ func (c *commonFlags) Parse() error {
 	if err := c.authFlags.Parse(); err != nil {
 		return err
 	}
-	if c.serverURL == "" {
+	if c.rawServerURL == "" {
 		return errors.Reason("must provide -server").Err()
 	}
-	s, err := lhttp.CheckURL(c.serverURL)
-	if err != nil {
-		return err
+	var err error
+	if c.serverURL, err = lhttp.ParseHostURL(c.rawServerURL); err != nil {
+		return errors.Annotate(err, "invalid -server %q", c.rawServerURL).Err()
 	}
-	c.serverURL = s
 	return nil
 }
 
 func (c *commonFlags) createSwarmingClient(ctx context.Context) (swarmingService, error) {
-	authcli, err := c.authFlags.NewHTTPClient(ctx)
+	httpClient, err := c.authFlags.NewHTTPClient(ctx)
 	if err != nil {
 		return nil, err
 	}
 	prpcOpts := prpc.DefaultOptions()
+	// The swarming server has an internal 60-second deadline for responding to
+	// requests, so 90 seconds shouldn't cause any requests to fail that would
+	// otherwise succeed.
+	prpcOpts.PerRPCTimeout = 90 * time.Second
 	prpcOpts.UserAgent = SwarmingUserAgent
-	prpcOpts.PerRPCTimeout = swarmingRPCRequestTimeout
+	prpcOpts.Insecure = c.serverURL.Scheme == "http"
 	prpcClient := prpc.Client{
-		C:       authcli,
+		C:       httpClient,
 		Options: prpcOpts,
+		Host:    c.serverURL.Host,
 	}
-	switch {
-	case strings.HasPrefix(c.serverURL, "https://"):
-		prpcClient.Host = strings.TrimPrefix(c.serverURL, "https://")
-	case strings.HasPrefix(c.serverURL, "http://"):
-		prpcClient.Host = strings.TrimPrefix(c.serverURL, "http://")
-		prpcClient.Options.Insecure = true
-		if !lhttp.IsLocalHost(prpcClient.Host) {
-			return nil, errors.Reason("http url for -server may only be used with localhost").Err()
-		}
-	default:
-		prpcClient.Host = c.serverURL
-	}
-	prpcClient.Host = strings.TrimRight(prpcClient.Host, "/")
 	return &swarmingServiceImpl{
-		client:      authcli,
 		botsClient:  swarmingv2.NewBotsClient(&prpcClient),
 		tasksClient: swarmingv2.NewTasksClient(&prpcClient),
 	}, nil
-}
-
-func tagTransientGoogleAPIError(err error) error {
-	// Responses with HTTP codes < 500, if we got them, indicate fatal errors.
-	if gerr, _ := err.(*googleapi.Error); gerr != nil && gerr.Code < 500 {
-		return err
-	}
-
-	// HTTP error already has transient.Tag if it is retryable.
-	if _, ok := lhttp.IsHTTPError(err); ok {
-		return err
-	}
-
-	// Everything else (timeouts, DNS issues, etc) is considered
-	// a transient error.
-	return transient.Tag.Apply(err)
 }
 
 func printError(a subcommands.Application, err error) {

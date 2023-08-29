@@ -123,7 +123,7 @@ func validateOAuth(ctx *validation.Context, configSet, path string, content []by
 
 	ctx.SetFile(path)
 	if cfg.GetTokenServerUrl() != "" {
-		if _, err := lhttp.CheckURL(cfg.GetTokenServerUrl()); err != nil {
+		if _, err := lhttp.ParseHostURL(cfg.GetTokenServerUrl()); err != nil {
 			ctx.Error(err)
 		}
 	}

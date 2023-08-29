@@ -81,7 +81,7 @@ func pollTask(ctx context.Context, taskID string, service swarmingService) (*swa
 		if err != nil {
 			return res, errors.Annotate(err, "failed to parse task state").Err()
 		}
-		if !Alive(res.State) {
+		if !TaskIsAlive(res.State) {
 			return res, nil
 		}
 
@@ -109,7 +109,7 @@ func (t *terminateRun) terminateBot(ctx context.Context, botID string, service s
 		if err != nil {
 			return errors.Annotate(err, "failed when polling task %s\n", res.TaskId).Err()
 		}
-		if !Completed(taskres.State) {
+		if !TaskIsCompleted(taskres.State) {
 			return errors.Reason("failed to terminate bot ID %s with task state %s", botID, taskres.State).Err()
 		}
 	}

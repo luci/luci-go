@@ -20,7 +20,8 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
-	googleapi "google.golang.org/api/googleapi"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -79,7 +80,7 @@ func TestTerminateBots(t *testing.T) {
 			terminateBot: func(ctx context.Context, botID string, reason string) (*swarmingv2.TerminateResponse, error) {
 				givenBotID = botID
 				if botID == failBotID {
-					return nil, &googleapi.Error{Code: 404}
+					return nil, status.Errorf(codes.NotFound, "no such bot")
 				}
 				if botID == taskStillRunningBotID {
 					return &swarmingv2.TerminateResponse{
@@ -132,7 +133,7 @@ func TestTerminateBots(t *testing.T) {
 
 		Convey(`Test when terminating bot fails`, func() {
 			err := t.terminateBot(ctx, failBotID, service)
-			So(err, ShouldErrLike, "404")
+			So(err, ShouldErrLike, "no such bot")
 			So(givenBotID, ShouldEqual, failBotID)
 		})
 

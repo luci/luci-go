@@ -275,7 +275,7 @@ func TestOAuthConfigValidation(t *testing.T) {
 				token_server_url: "http://example-token-server.appspot.com"
 			`
 			So(validateOAuth(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, "only https:// scheme is accepted for appspot hosts, it can be omitted")
+			So(vctx.Finalize(), ShouldErrLike, "http:// can only be used with localhost servers")
 		})
 
 		Convey("Bad URL Scheme in Token Server URL ", func() {

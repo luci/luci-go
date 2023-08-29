@@ -21,8 +21,6 @@ import (
 	"io"
 	"os"
 
-	"google.golang.org/api/googleapi"
-
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/errors"
@@ -46,13 +44,16 @@ func CmdTasks(authFlags AuthFlags) *subcommands.Command {
 
 const defaultLimit = 200
 
+// TODO(crbug.com/1467263): `fields` do nothing currently. Used to be a set of
+// fields to include in a partial response.
+
 type tasksRun struct {
 	commonFlags
 	outfile string
 	limit   int64
 	state   string
 	tags    []string
-	fields  []googleapi.Field
+	fields  []string
 	count   bool
 	start   float64
 }
@@ -63,7 +64,7 @@ func (t *tasksRun) Init(authFlags AuthFlags) {
 	t.Flags.Int64Var(&t.limit, "limit", defaultLimit, "Maximum number of tasks to retrieve.")
 	t.Flags.StringVar(&t.state, "state", "ALL", "Only include tasks in the specified state.")
 	t.Flags.Var(flag.StringSlice(&t.tags), "tag", "Tag attached to the task. May be repeated.")
-	t.Flags.Var(flag.FieldSlice(&t.fields), "field", "Fields to include in a partial response. May be repeated.")
+	t.Flags.Var(flag.StringSlice(&t.fields), "field", "This flag currently does nothing (https://crbug.com/1467263).")
 	t.Flags.BoolVar(&t.count, "count", false, "Report the count of tasks instead of listing them.")
 	t.Flags.Float64Var(&t.start, "start", 0, "Start time (in seconds since the epoch) for counting tasks.")
 }

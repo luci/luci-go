@@ -21,8 +21,6 @@ import (
 	"io"
 	"os"
 
-	"google.golang.org/api/googleapi"
-
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/errors"
@@ -47,11 +45,14 @@ func CmdBots(authFlags AuthFlags) *subcommands.Command {
 	}
 }
 
+// TODO(crbug.com/1467263): `fields` do nothing currently. Used to be a set of
+// fields to include in a partial response.
+
 type botsRun struct {
 	commonFlags
 	outfile    string
 	dimensions stringmapflag.Value
-	fields     []googleapi.Field
+	fields     []string
 	count      bool
 }
 
@@ -59,8 +60,7 @@ func (b *botsRun) Init(authFlags AuthFlags) {
 	b.commonFlags.Init(authFlags)
 	b.Flags.StringVar(&b.outfile, "json", "", "Path to output JSON results. Implies quiet.")
 	b.Flags.Var(&b.dimensions, "dimension", "Dimension to select the right kind of bot. In the form of `key=value`")
-	b.Flags.Var(flag.FieldSlice(&b.fields), "field", `Fields to include in a partial response. May be repeated.
-See https://pkg.go.dev/google.golang.org/api/googleapi#Field for more explanation`)
+	b.Flags.Var(flag.StringSlice(&b.fields), "field", "This flag currently does nothing (https://crbug.com/1467263).")
 	b.Flags.BoolVar(&b.count, "count", false, "Report the count of bots instead of listing them.")
 }
 

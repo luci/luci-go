@@ -20,7 +20,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net/url"
 	"os"
 	"sort"
 	"strconv"
@@ -390,18 +389,12 @@ func (c *triggerRun) processTriggerOptions(commands []string, env subcommands.En
 
 		casInstance := c.casInstance
 		if casInstance == "" {
-			// infer cas instance from server URL.
-			u, err := url.Parse(c.serverURL)
-			if err != nil {
-				return nil, errors.Annotate(err, "invalid server url: %s", c.serverURL).Err()
-			}
-
+			// Infer cas instance from the swarming server URL.
 			const appspot = ".appspot.com"
-			if !strings.HasSuffix(u.Host, appspot) {
+			if !strings.HasSuffix(c.serverURL.Host, appspot) {
 				return nil, errors.Reason("server url should have '%s' suffix: %s", appspot, c.serverURL).Err()
 			}
-
-			casInstance = "projects/" + strings.TrimSuffix(u.Host, appspot) + "/instances/default_instance"
+			casInstance = "projects/" + strings.TrimSuffix(c.serverURL.Host, appspot) + "/instances/default_instance"
 		}
 
 		CASRef = &swarmingv2.CASReference{

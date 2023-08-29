@@ -20,7 +20,8 @@ import (
 	"os"
 	"testing"
 
-	googleapi "google.golang.org/api/googleapi"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	. "go.chromium.org/luci/common/testing/assertions"
 
@@ -122,11 +123,11 @@ func TestCreateNewTasks(t *testing.T) {
 	Convey(`Test fatal response`, t, func() {
 		service := &testService{
 			newTask: func(c context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error) {
-				return nil, &googleapi.Error{Code: 404}
+				return nil, status.Errorf(codes.NotFound, "not found")
 			},
 		}
 		_, err := createNewTasks(c, service, []*swarmingv2.NewTaskRequest{req})
-		So(err, ShouldErrLike, "404")
+		So(err, ShouldErrLike, "not found")
 	})
 
 	goodService := &testService{

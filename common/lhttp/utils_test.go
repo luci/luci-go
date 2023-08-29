@@ -21,22 +21,29 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestCheckURL(t *testing.T) {
-	Convey(`Verifies that CheckURL properly checks a URL.`, t, func() {
+func TestParseHostURL(t *testing.T) {
+	Convey(`Verifies that ParseHostURL properly checks a URL.`, t, func() {
 		data := []struct {
-			in       string
-			expected string
-			err      error
+			in     string
+			scheme string
+			host   string
+			err    error
 		}{
-			{"foo", "https://foo", nil},
-			{"https://foo", "https://foo", nil},
-			{"http://foo.example.com", "http://foo.example.com", nil},
-			{"http://foo.appspot.com", "", errors.New("only https:// scheme is accepted for appspot hosts, it can be omitted")},
+			{"foo/zzz", "https", "foo", nil},
+			{"https://foo/zzz?a=b#zzz", "https", "foo", nil},
+			{"http://localhost:1111", "http", "localhost:1111", nil},
+			{"https://foo.appspot.com/", "https", "foo.appspot.com", nil},
+			{"http://foo.appspot.com", "", "", errors.New("http:// can only be used with localhost servers")},
 		}
 		for _, line := range data {
-			out, err := CheckURL(line.in)
-			So(out, ShouldResemble, line.expected)
+			out, err := ParseHostURL(line.in)
 			So(err, ShouldResemble, line.err)
+			if line.err == nil {
+				So(out, ShouldNotBeNil)
+				So(out.Scheme, ShouldEqual, line.scheme)
+				So(out.Host, ShouldEqual, line.host)
+				So(out.Path, ShouldEqual, "")
+			}
 		}
 	})
 }

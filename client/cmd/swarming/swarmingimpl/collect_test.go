@@ -17,7 +17,6 @@ package swarmingimpl
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"sync"
 	"testing"
 	"time"
@@ -25,7 +24,8 @@ import (
 	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/sync/semaphore"
-	googleapi "google.golang.org/api/googleapi"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -120,21 +120,11 @@ func TestCollectPollForTaskResult(t *testing.T) {
 	Convey(`Test fatal response`, t, func() {
 		service := &testService{
 			taskResult: func(c context.Context, _ string, _ bool) (*swarmingv2.TaskResultResponse, error) {
-				return nil, &googleapi.Error{Code: 404}
+				return nil, status.Errorf(codes.NotFound, "not found")
 			},
 		}
 		result := testCollectPollWithServer(&collectRun{taskOutput: taskOutputNone}, service)
-		So(result.err, ShouldErrLike, "404")
-	})
-
-	Convey(`Test timeout exceeded`, t, func() {
-		service := &testService{
-			taskResult: func(c context.Context, _ string, _ bool) (*swarmingv2.TaskResultResponse, error) {
-				return nil, &googleapi.Error{Code: 502}
-			},
-		}
-		result := testCollectPollWithServer(&collectRun{taskOutput: taskOutputNone}, service)
-		So(result.err, ShouldErrLike, "502")
+		So(result.err, ShouldErrLike, "not found")
 	})
 
 	Convey(`Test bot finished with outputs on CAS`, t, func() {
@@ -176,26 +166,6 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		So(writtenInstance, ShouldResemble, "test-instance")
 		So(writtenDigest, ShouldResemble, "aaaaaaaaa/111111")
 	})
-
-	Convey(`Test bot finished after failures`, t, func() {
-		i := 0
-		maxTries := 5
-		service := &testService{
-			taskResult: func(c context.Context, _ string, _ bool) (*swarmingv2.TaskResultResponse, error) {
-				if i < maxTries {
-					i++
-					return nil, &googleapi.Error{Code: http.StatusBadGateway}
-				}
-				return &swarmingv2.TaskResultResponse{State: swarmingv2.TaskState_COMPLETED}, nil
-			},
-		}
-		result := testCollectPollWithServer(&collectRun{taskOutput: taskOutputNone}, service)
-		So(i, ShouldEqual, maxTries)
-		So(result.err, ShouldBeNil)
-		So(result.result, ShouldNotBeNil)
-		So(result.result.State, ShouldEqual, swarmingv2.TaskState_COMPLETED)
-	})
-
 }
 
 // mockSemaphore is a thin wrapper around semaphore.Weighted that adds a
@@ -232,7 +202,7 @@ func TestCollectPollForTasks(t *testing.T) {
 					// task has already finished, downloaded its outputs, and
 					// canceled the context.
 					<-c.Done()
-					return nil, c.Err()
+					return nil, status.Errorf(codes.Canceled, "%s", c.Err())
 				}
 				return &swarmingv2.TaskResultResponse{
 					State: swarmingv2.TaskState_COMPLETED,
@@ -262,7 +232,7 @@ func TestCollectPollForTasks(t *testing.T) {
 		So(results[0].err, ShouldBeNil)
 		So(results[0].result, ShouldNotBeNil)
 		So(results[0].result.State, ShouldEqual, swarmingv2.TaskState_COMPLETED)
-		So(results[1].err, ShouldUnwrapTo, context.Canceled)
+		So(results[1].err, ShouldErrLike, context.Canceled)
 		So(results[1].result, ShouldBeNil)
 	})
 

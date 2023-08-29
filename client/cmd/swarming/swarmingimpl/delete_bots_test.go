@@ -19,7 +19,8 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	googleapi "google.golang.org/api/googleapi"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	. "go.chromium.org/luci/common/testing/assertions"
 	swarming "go.chromium.org/luci/swarming/proto/api_v2"
@@ -53,7 +54,7 @@ func TestDeleteBots(t *testing.T) {
 			deleteBot: func(ctx context.Context, botID string) (*swarming.DeleteResponse, error) {
 				givenbotID = append(givenbotID, botID)
 				if botID == failbotID {
-					return nil, &googleapi.Error{Code: 404}
+					return nil, status.Errorf(codes.NotFound, "no such bot")
 				}
 				if botID == "cannotdeletebotID" {
 					return &swarming.DeleteResponse{
@@ -80,13 +81,13 @@ func TestDeleteBots(t *testing.T) {
 
 		Convey(`Test when a bot can't be deleted`, func() {
 			err := b.deleteBotsInList(ctx, []string{failbotID}, service)
-			So(err, ShouldErrLike, "404")
+			So(err, ShouldErrLike, "no such bot")
 			So(givenbotID, ShouldResemble, []string{failbotID})
 		})
 
 		Convey(`stop deleting bots immediately when encounter a bot that can't be deleted`, func() {
 			err := b.deleteBotsInList(ctx, []string{"testbot123", "failingbotID", "testbot456", "testbot789"}, service)
-			So(err, ShouldErrLike, "404")
+			So(err, ShouldErrLike, "no such bot")
 			So(givenbotID, ShouldResemble, []string{"testbot123", "failingbotID"})
 		})
 

@@ -33,8 +33,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/system/signals"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
@@ -229,69 +227,73 @@ func (c *collectRun) Run(a subcommands.Application, args []string, env subcomman
 
 func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, service swarmingService, downloadSem weightedSemaphore) taskResult {
 	defer logging.Debugf(ctx, "Finished fetching task result: %s", taskID)
-	var result *swarmingv2.TaskResultResponse
-	var output string
-	var outputs []string
-	err := retry.Retry(ctx, transient.Only(retry.Default), func() error {
-		var err error
 
-		// Fetch the result details.
-		logging.Debugf(ctx, "Fetching task result: %s", taskID)
-		result, err = service.TaskResult(ctx, taskID, c.perf)
-		if err != nil {
-			return tagTransientGoogleAPIError(err)
-		}
-		// Signal that we want to start downloading outputs. We'll only proceed
-		// to download them if another task has not already finished and
-		// triggered an eager return.
-		if !downloadSem.TryAcquire(1) {
-			return errors.New("canceled by first task")
-		}
-		defer downloadSem.Release(1)
+	errorResult := func(stage string, err error) taskResult {
+		return taskResult{taskID: taskID, err: errors.Annotate(err, "when fetching %s", stage).Err()}
+	}
 
-		// TODO(mknyszek): Fetch output and outputs in parallel.
+	var output string    // task stdout as is
+	var outputs []string // names of output files downloaded from CAS
 
-		// If we got the result details, try to fetch stdout if the
-		// user asked for it.
-		if c.taskOutput != taskOutputNone {
-			logging.Debugf(ctx, "Fetching task output: %s", taskID)
-			taskOutput, err := service.TaskOutput(ctx, taskID)
-			if err != nil {
-				return tagTransientGoogleAPIError(err)
-			}
-			output = string(taskOutput.Output)
-		}
-		// Download the result files if available and if we have a place to put it.
-		if c.outputDir != "" {
-			logging.Debugf(ctx, "Fetching task outputs: %s", taskID)
-			outdir, err := prepareOutputDir(c.outputDir, taskID)
-			if err != nil {
-				return err
-			}
-			if result.CasOutputRoot != nil {
-				cascli, err := c.authFlags.NewRBEClient(ctx, c.casAddr, result.CasOutputRoot.CasInstance)
-				if err != nil {
-					return err
-				}
-				casOutputRoot := swarmingv2.CASReference{
-					CasInstance: result.CasOutputRoot.CasInstance,
-					Digest: &swarmingv2.Digest{
-						Hash:      result.CasOutputRoot.Digest.Hash,
-						SizeBytes: result.CasOutputRoot.Digest.SizeBytes,
-					},
-				}
-				outputs, err = service.FilesFromCAS(ctx, outdir, cascli, &casOutputRoot)
-				if err != nil {
-					return tagTransientGoogleAPIError(err)
-				}
-			}
-		}
-		return nil
-	}, func(err error, d time.Duration) {
-		logging.WithError(err).Warningf(ctx, "Transient error while making request, retrying in %s...", d)
-	})
+	// Fetch the result details.
+	logging.Debugf(ctx, "Fetching task result: %s", taskID)
+	result, err := service.TaskResult(ctx, taskID, c.perf)
 	if err != nil {
-		return taskResult{taskID: taskID, err: err}
+		return errorResult("task result", err)
+	}
+
+	// Signal that we want to start downloading outputs. We'll only proceed
+	// to download them if another task has not already finished and triggered
+	// an eager return.
+	//
+	// TODO(vadimsh): Semaphore is confusing and unnecessary here, this can be
+	// done via context cancellation.
+	if !downloadSem.TryAcquire(1) {
+		return errorResult("task output", errors.New("canceled by first task"))
+	}
+	defer downloadSem.Release(1)
+
+	// TODO(vadimsh): Fetch output and output files in parallel.
+
+	// If we got the result details, try to fetch stdout if the user asked for it.
+	//
+	// TODO(vadimsh): If c.wait is true, fetch this only if task has completed. If
+	// the task is still running, we'll make another call later anyway.
+	if c.taskOutput != taskOutputNone {
+		logging.Debugf(ctx, "Fetching task output: %s", taskID)
+		taskOutput, err := service.TaskOutput(ctx, taskID)
+		if err != nil {
+			return errorResult("task output", errors.New("canceled by first task"))
+		}
+		output = string(taskOutput.Output)
+	}
+
+	// Download the result files if available and if we have a place to put it.
+	//
+	// TODO(vadimsh): If c.wait is true, fetch this only if task has completed. If
+	// the task is still running, we'll make another call later anyway.
+	if c.outputDir != "" {
+		logging.Debugf(ctx, "Fetching task outputs: %s", taskID)
+		outdir, err := prepareOutputDir(c.outputDir, taskID)
+		if err != nil {
+			return errorResult("output files", err)
+		}
+		if result.CasOutputRoot != nil {
+			cascli, err := c.authFlags.NewRBEClient(ctx, c.casAddr, result.CasOutputRoot.CasInstance)
+			if err != nil {
+				return errorResult("output files", err)
+			}
+			outputs, err = service.FilesFromCAS(ctx, outdir, cascli, &swarmingv2.CASReference{
+				CasInstance: result.CasOutputRoot.CasInstance,
+				Digest: &swarmingv2.Digest{
+					Hash:      result.CasOutputRoot.Digest.Hash,
+					SizeBytes: result.CasOutputRoot.Digest.SizeBytes,
+				},
+			})
+			if err != nil {
+				return errorResult("output files", err)
+			}
+		}
 	}
 
 	return taskResult{
@@ -305,39 +307,35 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 func prepareOutputDir(outputDir, taskID string) (string, error) {
 	// Create a task-id-based subdirectory to house the outputs.
 	dir := filepath.Join(filepath.Clean(outputDir), taskID)
-
-	// This function can be retried when the RPC returned an HTTP 500. In this case,
-	// the directory will already exist and may contain partial results. Take no chance
-	// and restart from scratch.
+	// The call can theoretically be retried. In this case the directory will
+	// already exist and may contain partial results. Take no chance and restart
+	// from scratch.
 	if err := os.RemoveAll(dir); err != nil {
 		return "", errors.Annotate(err, "failed to remove directory: %s", dir).Err()
 	}
-
-	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+	if err := os.MkdirAll(dir, 0777); err != nil {
 		return "", errors.Annotate(err, "failed to create directory: %s", dir).Err()
 	}
-
 	return dir, nil
 }
 
 func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, service swarmingService, downloadSem weightedSemaphore) taskResult {
-	var result taskResult
 	startedTime := clock.Now(ctx)
 	for {
-		result = c.fetchTaskResults(ctx, taskID, service, downloadSem)
+		result := c.fetchTaskResults(ctx, taskID, service, downloadSem)
 		if result.err != nil {
 			// If we received an error from fetchTaskResults, it either hit a fatal
 			// failure, or it hit too many transient failures.
 			return result
 		}
 
-		// Only stop if the swarming bot is "dead" (i.e. not running).
-		if !Alive(result.result.State) {
-			logging.Debugf(ctx, "Task completed successfully: %s", taskID)
+		// Stop if the task is no longer pending or running.
+		if !TaskIsAlive(result.result.State) {
+			logging.Debugf(ctx, "Task completed: %s", taskID)
 			return result
 		}
 		if !c.wait {
-			logging.Debugf(ctx, "Task %s fetched", taskID)
+			logging.Debugf(ctx, "Task fetched: %s", taskID)
 			return result
 		}
 
@@ -356,11 +354,8 @@ func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, servi
 		// timerResult should have an error if the context's deadline was exceeded,
 		// or if the context was cancelled.
 		if timerResult.Err != nil {
-			err := timerResult.Err
-			if result.err != nil {
-				result.err = errors.Annotate(result.err, "%v", timerResult.Err).Err()
-			} else {
-				result.err = err
+			if result.err == nil {
+				result.err = timerResult.Err
 			}
 			return result
 		}
