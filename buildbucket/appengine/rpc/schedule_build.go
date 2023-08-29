@@ -1066,19 +1066,9 @@ func setTags(req *pb.ScheduleBuildRequest, build *pb.Build, pRunID string) {
 	build.Tags = protoutil.StringPairs(tags)
 }
 
-var (
-	// defExecutionTimeout is the default value for pb.Build.ExecutionTimeout.
-	// See setTimeouts.
-	defExecutionTimeout = durationpb.New(3 * time.Hour)
-
-	// defExecutionTimeout is the default value for pb.Build.GracePeriod.
-	// See setTimeouts.
-	defGracePeriod = durationpb.New(30 * time.Second)
-
-	// defExecutionTimeout is the default value for pb.Build.SchedulingTimeout.
-	// See setTimeouts.
-	defSchedulingTimeout = durationpb.New(6 * time.Hour)
-)
+// defGracePeriod is the default value for pb.Build.GracePeriod.
+// See setTimeouts.
+var defGracePeriod = durationpb.New(30 * time.Second)
 
 // setTimeouts computes the timeouts from the given request and builder config,
 // setting them in the proto. Mutates the given *pb.Build.
@@ -1093,7 +1083,7 @@ func setTimeouts(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.
 			Seconds: int64(cfg.ExecutionTimeoutSecs),
 		}
 	default:
-		build.ExecutionTimeout = defExecutionTimeout
+		build.ExecutionTimeout = durationpb.New(config.DefExecutionTimeout)
 	}
 
 	switch {
@@ -1113,7 +1103,7 @@ func setTimeouts(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.
 			Seconds: int64(cfg.ExpirationSecs),
 		}
 	default:
-		build.SchedulingTimeout = defSchedulingTimeout
+		build.SchedulingTimeout = durationpb.New(config.DefSchedulingTimeout)
 	}
 }
 

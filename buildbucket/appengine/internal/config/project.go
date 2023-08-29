@@ -78,6 +78,14 @@ var (
 	// cacheNameMaxLength cannot be added into the above cacheNameRegex as Golang
 	// regex expression can only specify a maximum repetition count below 1000.
 	cacheNameMaxLength = 4096
+
+	// DefExecutionTimeout is the default value for pb.Build.ExecutionTimeout.
+	// See setTimeouts.
+	DefExecutionTimeout = 3 * time.Hour
+
+	// DefSchedulingTimeout is the default value for pb.Build.SchedulingTimeout.
+	// See setTimeouts.
+	DefSchedulingTimeout = 6 * time.Hour
 )
 
 // changeLog is a temporary struct to track all changes in UpdateProjectCfg.
@@ -687,6 +695,31 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 	}
 
 	validateDimensions(ctx, b.Dimensions, false)
+
+	// timeouts
+	if b.ExecutionTimeoutSecs != 0 || b.ExpirationSecs != 0 {
+		exeTimeout := time.Duration(b.ExecutionTimeoutSecs) * time.Second
+		schedulingTimeout := time.Duration(b.ExpirationSecs) * time.Second
+		if exeTimeout == 0 {
+			exeTimeout = DefExecutionTimeout
+		}
+		if schedulingTimeout == 0 {
+			schedulingTimeout = DefSchedulingTimeout
+		}
+		if exeTimeout+schedulingTimeout > model.BuildMaxCompletionTime {
+			exeTimeoutSec := int(exeTimeout.Seconds())
+			schedulingTimeoutSec := int(schedulingTimeout.Seconds())
+			limitTimeoutSec := int(model.BuildMaxCompletionTime.Seconds())
+			switch {
+			case b.ExecutionTimeoutSecs == 0:
+				ctx.Errorf("(default) execution_timeout_secs %d + expiration_secs %d exceeds max build completion time %d", exeTimeoutSec, schedulingTimeoutSec, limitTimeoutSec)
+			case b.ExpirationSecs == 0:
+				ctx.Errorf("execution_timeout_secs %d + (default) expiration_secs %d exceeds max build completion time %d", exeTimeoutSec, schedulingTimeoutSec, limitTimeoutSec)
+			default:
+				ctx.Errorf("execution_timeout_secs %d + expiration_secs %d exceeds max build completion time %d", exeTimeoutSec, schedulingTimeoutSec, limitTimeoutSec)
+			}
+		}
+	}
 
 	// resultdb
 	if b.Resultdb.GetHistoryOptions().GetCommit() != nil {

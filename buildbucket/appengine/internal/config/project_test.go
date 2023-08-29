@@ -717,6 +717,92 @@ func TestValidateProject(t *testing.T) {
 			So(len(ve.Errors), ShouldEqual, 1)
 			So(ve.Errors[0].Error(), ShouldContainSubstring, "either swarming host or task backend must be set")
 		})
+
+		Convey("timeout", func() {
+			content := `
+				builders {
+					name: "both default"
+					swarming_host: "example.com"
+					dimensions: "os:Linux"
+					dimensions: "cpu:x86-64"
+					dimensions: "cores:8"
+					dimensions: "60:cores:64"
+					service_account: "robot@example.com"
+					caches {
+						name: "git_chromium"
+						path: "git_cache"
+					}
+					recipe {
+						name: "foo"
+						cipd_package: "infra/recipe_bundle"
+						cipd_version: "refs/heads/main"
+						properties: "a:b'"
+						properties_j: "x:true"
+					}
+				}
+				builders {
+					name: "only execution_timeout"
+					swarming_host: "example.com"
+					dimensions: "os:Linux"
+					service_account: "robot@example.com"
+					caches {
+						name: "git_chromium"
+						path: "git_cache"
+					}
+					exe {
+						cipd_package: "infra/executable/foo"
+						cipd_version: "refs/heads/main"
+					}
+					properties: '{"a":"b","x":true}'
+					resultdb {
+						enable: true
+						history_options {
+							use_invocation_timestamp: true
+						}
+					}
+					execution_timeout_secs: 172800
+				}
+				builders {
+					name: "only expiration_secs"
+					swarming_host: "example.com"
+					dimensions: "os:Linux"
+					service_account: "robot@example.com"
+					caches {
+						name: "git_chromium"
+						path: "git_cache"
+					}
+					exe {
+						cipd_package: "infra/executable/bar"
+						cipd_version: "refs/heads/main"
+					}
+					properties: "{}"
+					expiration_secs: 172800
+				}
+				builders {
+					name: "both specified"
+					swarming_host: "example.com"
+					recipe {
+						cipd_package: "some/package"
+						name: "foo"
+					}
+					shadow_builder_adjustments {
+						pool: "shadow_pool"
+						properties: '{"a":"b","x":true}'
+						dimensions: "pool:shadow_pool"
+						dimensions: "allowempty:"
+					}
+					expiration_secs: 172800
+					execution_timeout_secs: 172800
+				}
+			`
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+			ve, ok := vctx.Finalize().(*validation.Error)
+			So(ok, ShouldEqual, true)
+			So(len(ve.Errors), ShouldEqual, 3)
+			So(ve.Errors[0].Error(), ShouldContainSubstring, "execution_timeout_secs 172800 + (default) expiration_secs 21600 exceeds max build completion time 172800")
+			So(ve.Errors[1].Error(), ShouldContainSubstring, "(default) execution_timeout_secs 10800 + expiration_secs 172800 exceeds max build completion time 172800")
+			So(ve.Errors[2].Error(), ShouldContainSubstring, "execution_timeout_secs 172800 + expiration_secs 172800 exceeds max build completion time 172800")
+		})
 	})
 
 	Convey("validate dimensions", t, func() {
