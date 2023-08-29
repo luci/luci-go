@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 
-	"go.chromium.org/luci/config_service/internal/validation"
+	"go.chromium.org/luci/config_service/internal/common"
 )
 
 var globalConfigLocRegex = regexp.MustCompile(`^gitiles\((.*),(.*),(.*)\)$`)
@@ -76,7 +76,7 @@ func (l *GlobalConfigLoc) MarshalText() (text []byte, err error) {
 
 // Validate validates the GlobalConfigLoc
 func (l *GlobalConfigLoc) Validate() error {
-	return validation.ValidateGitilesLocation(l.GitilesLocation)
+	return common.ValidateGitilesLocation(l.GitilesLocation)
 }
 
 var globalConfigLocKey = "holds the global config location"

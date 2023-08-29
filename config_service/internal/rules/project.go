@@ -15,10 +15,82 @@
 package rules
 
 import (
+	"google.golang.org/protobuf/encoding/prototext"
+
+	"go.chromium.org/luci/common/data/stringset"
+	cfgcommonpb "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
+
+	"go.chromium.org/luci/config_service/internal/common"
 )
 
-func validateProjectsCfg(ctx *validation.Context, configSet, path string, content []byte) error {
+func validateProjectsCfg(vctx *validation.Context, configSet, path string, content []byte) error {
+	vctx.SetFile(path)
+	cfg := &cfgcommonpb.ProjectsCfg{}
+	if err := prototext.Unmarshal(content, cfg); err != nil {
+		vctx.Errorf("invalid projects proto: %s", err)
+		return nil
+	}
+	seenTeams := stringset.New(len(cfg.GetTeams()))
+	for i, team := range cfg.GetTeams() {
+		vctx.Enter("teams #%d", i)
+		vctx.Enter("name")
+		validateUniqueID(vctx, team.GetName(), seenTeams, nil)
+		vctx.Exit()
+		if len(team.GetMaintenanceContact()) == 0 {
+			vctx.Errorf("maintenance_contact is required")
+		}
+		for i, contact := range team.GetMaintenanceContact() {
+			vctx.Enter("maintenance_contact #%d", i)
+			validateEmail(vctx, contact)
+			vctx.Exit()
+		}
+		if len(team.GetEscalationContact()) == 0 {
+			vctx.Warningf("escalation_contact is recommended")
+		}
+		for i, contact := range team.GetEscalationContact() {
+			vctx.Enter("escalation_contact #%d", i)
+			validateEmail(vctx, contact)
+			vctx.Exit()
+		}
+		vctx.Exit()
+	}
+	validateSorted[*cfgcommonpb.Team](vctx, cfg.GetTeams(), "teams", func(t *cfgcommonpb.Team) string {
+		return t.GetName()
+	})
+
+	seenProjects := stringset.New(len(cfg.GetProjects()))
+	for i, project := range cfg.GetProjects() {
+		vctx.Enter("projects #%d", i)
+		vctx.Enter("id")
+		validateUniqueID(vctx, project.GetId(), seenProjects, func(vctx *validation.Context, id string) {
+			if _, err := config.ProjectSet(id); err != nil {
+				vctx.Errorf("invalid id: %s", err)
+			}
+		})
+		vctx.Exit()
+
+		vctx.Enter("gitiles_location")
+		if err := common.ValidateGitilesLocation(project.GetGitilesLocation()); err != nil {
+			vctx.Error(err)
+		}
+		vctx.Exit()
+
+		vctx.Enter("owned_by")
+		switch ownedBy := project.GetOwnedBy(); {
+		case ownedBy == "":
+			vctx.Errorf("not specified")
+		case !seenTeams.Has(ownedBy):
+			vctx.Errorf(`unknown team %q`, ownedBy)
+		}
+		vctx.Exit()
+
+		vctx.Exit()
+	}
+	validateSorted[*cfgcommonpb.Project](vctx, cfg.GetProjects(), "projects", func(project *cfgcommonpb.Project) string {
+		return project.GetId()
+	})
 	return nil
 }
 
