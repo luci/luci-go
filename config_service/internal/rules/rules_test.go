@@ -152,7 +152,7 @@ func TestValidateSchemaCfg(t *testing.T) {
 				url: "https://example.com/bar.proto"
 			}`)
 			So(validateSchemaCfg(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, `(schemas #1 / name): duplicate name: "projects:foo.cfg"`)
+			So(vctx.Finalize(), ShouldErrLike, `(schemas #1 / name): duplicate: "projects:foo.cfg"`)
 		})
 
 		Convey("invalid left hand side of colon", func() {
@@ -200,15 +200,6 @@ func TestValidateSchemaCfg(t *testing.T) {
 			So(vctx.Finalize(), ShouldErrLike, `(schemas #0 / name / right side of ":" (path)): must not contain "." or ".." components: "../foo.cfg"`)
 		})
 
-		Convey("url not specified", func() {
-			content := []byte(`schemas {
-				name: "projects:foo.cfg"
-				url: ""
-			}`)
-			So(validateSchemaCfg(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, `(schemas #0 / url): not specified`)
-		})
-
 		Convey("invalid url ", func() {
 			content := []byte(`schemas {
 				name: "projects:foo.cfg"
@@ -216,24 +207,6 @@ func TestValidateSchemaCfg(t *testing.T) {
 			}`)
 			So(validateSchemaCfg(vctx, string(cs), path, content), ShouldBeNil)
 			So(vctx.Finalize(), ShouldErrLike, `(schemas #0 / url): invalid url:`)
-		})
-
-		Convey("url has empty hostname ", func() {
-			content := []byte(`schemas {
-				name: "projects:foo.cfg"
-				url: "foo.proto"
-			}`)
-			So(validateSchemaCfg(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, `(schemas #0 / url): hostname must be specified `)
-		})
-
-		Convey("url not using https", func() {
-			content := []byte(`schemas {
-				name: "projects:foo.cfg"
-				url: "http://example.com/foo.proto"
-			}`)
-			So(validateSchemaCfg(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, `(schemas #0 / url): scheme must be "https"`)
 		})
 	})
 }

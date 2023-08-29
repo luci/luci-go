@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"path"
 	"strings"
 
@@ -81,39 +80,25 @@ func validateSchemaCfg(vctx *validation.Context, configSet, path string, content
 		vctx.Enter("schemas #%d", i)
 
 		vctx.Enter("name")
-		switch name := schema.GetName(); {
-		case name == "":
-			vctx.Errorf("not specified")
-		case !strings.Contains(name, ":"):
-			vctx.Errorf("must contain \":\"")
-		case seenNames.Has(name):
-			vctx.Errorf("duplicate name: %q", name)
-		default:
-			segs := strings.SplitN(name, ":", 2)
-			prefix, p := segs[0], segs[1] // guaranteed by the colon check before
-			if cs := config.Set(prefix); prefix != "projects" && (cs.Validate() != nil || cs.Service() == "") {
-				vctx.Errorf("left side of \":\" must be a service config set or \"projects\"")
+		validateUniqueID(vctx, schema.GetName(), seenNames, func(vctx *validation.Context, name string) {
+			switch {
+			case !strings.Contains(name, ":"):
+				vctx.Errorf("must contain \":\"")
+			default:
+				segs := strings.SplitN(name, ":", 2)
+				prefix, p := segs[0], segs[1] // guaranteed by the colon check before
+				if cs := config.Set(prefix); prefix != "projects" && (cs.Validate() != nil || cs.Service() == "") {
+					vctx.Errorf("left side of \":\" must be a service config set or \"projects\"")
+				}
+				vctx.Enter("right side of \":\" (path)")
+				validatePath(vctx, p)
+				vctx.Exit()
 			}
-			vctx.Enter("right side of \":\" (path)")
-			validatePath(vctx, p)
-			vctx.Exit()
-		}
-		seenNames.Add(schema.GetName())
+		})
 		vctx.Exit()
 
 		vctx.Enter("url")
-		if schema.GetUrl() == "" {
-			vctx.Errorf("not specified")
-		} else if u, err := url.Parse(schema.GetUrl()); err != nil {
-			vctx.Errorf("invalid url: %s", err)
-		} else {
-			if u.Hostname() == "" {
-				vctx.Errorf("hostname must be specified")
-			}
-			if u.Scheme != "https" {
-				vctx.Errorf("scheme must be \"https\"")
-			}
-		}
+		validateURL(vctx, schema.GetUrl())
 		vctx.Exit()
 		vctx.Exit()
 	}
