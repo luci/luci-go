@@ -94,6 +94,20 @@ func validateProjectsCfg(vctx *validation.Context, configSet, path string, conte
 	return nil
 }
 
-func validateProjectMetadata(ctx *validation.Context, configSet, path string, content []byte) error {
+func validateProjectMetadata(vctx *validation.Context, configSet, path string, content []byte) error {
+	vctx.SetFile(path)
+	cfg := &cfgcommonpb.ProjectCfg{}
+	if err := prototext.Unmarshal(content, cfg); err != nil {
+		vctx.Errorf("invalid project proto: %s", err)
+		return nil
+	}
+	if cfg.GetName() == "" {
+		vctx.Errorf("name is not specified")
+	}
+	for i, access := range cfg.GetAccess() {
+		vctx.Enter("access #%d", i)
+		validateAccess(vctx, access)
+		vctx.Exit()
+	}
 	return nil
 }

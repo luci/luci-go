@@ -228,3 +228,47 @@ func TestValidateProjectsCfg(t *testing.T) {
 		})
 	})
 }
+
+func TestValidateProjectMetadata(t *testing.T) {
+	t.Parallel()
+
+	Convey("Validate project.cfg", t, func() {
+		ctx := testutil.SetupContext()
+		vctx := &validation.Context{Context: ctx}
+		cs := config.MustServiceSet(testutil.AppID)
+		path := common.ProjMetadataFilePath
+
+		Convey("valid", func() {
+			content := []byte(`
+			name: "example-proj"
+			access: "group:all"
+			`)
+			So(validateProjectMetadata(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldBeNil)
+		})
+
+		Convey("invalid proto", func() {
+			content := []byte(`bad config`)
+			So(validateProjectMetadata(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `in "project.cfg"`, "invalid project proto:")
+		})
+
+		Convey("missing name", func() {
+			content := []byte(`
+			name: ""
+			access: "group:all"
+			`)
+			So(validateProjectMetadata(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, "name is not specified")
+		})
+
+		Convey("invalid access group", func() {
+			content := []byte(`
+				name: "example-proj"
+				access: "group:goo!"
+			`)
+			So(validateProjectMetadata(vctx, string(cs), path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, `(access #0): invalid auth group`)
+		})
+	})
+}
