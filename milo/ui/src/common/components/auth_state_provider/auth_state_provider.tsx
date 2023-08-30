@@ -16,7 +16,12 @@ import { useQuery } from '@tanstack/react-query';
 import { createContext, useContext, useEffect, useMemo, useRef } from 'react';
 import { useLatest } from 'react-use';
 
-import { AuthState, msToExpire, queryAuthState } from '@/common/api/auth_state';
+import {
+  AuthState,
+  msToExpire,
+  queryAuthState,
+  setAuthStateCache,
+} from '@/common/api/auth_state';
 import { useStore } from '@/common/store';
 import { deferred } from '@/generic_libs/tools/utils';
 
@@ -56,13 +61,11 @@ export function AuthStateProvider({
   // Because the initial value could be an outdated value retrieved from cache,
   // do not wait until the initial value expires before sending out the first
   // query.
-  const { data } = useQuery({
+  const { data, isPlaceholderData } = useQuery({
     queryKey: ['auth-state'],
     queryFn: () => queryAuthState(),
-    initialData: initialValue,
+    placeholderData: initialValue,
     refetchInterval(prevData) {
-      // This won't happen because `initialData` is provided.
-      // The check is useful for type narrowing.
       if (!prevData) {
         return MIN_QUERY_INTERVAL_MS;
       }
@@ -71,10 +74,22 @@ export function AuthStateProvider({
       return Math.max(msToExpire(prevData) - 60000, MIN_QUERY_INTERVAL_MS);
     },
   });
+  // Placeholder data is provided. Cannot be null.
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const authState = data!;
+
+  // Populate the auth state cache so it can be used by other browser tabs on
+  // start up.
+  useEffect(() => {
+    if (isPlaceholderData) {
+      return;
+    }
+    setAuthStateCache(authState);
+  }, [isPlaceholderData, authState]);
 
   // Sync the auth state with the store so it can be used in Lit components.
   const store = useStore();
-  useEffect(() => store.authState.setValue(data), [store, data]);
+  useEffect(() => store.authState.setValue(authState), [store, authState]);
 
   // A tuple where
   // 1. the first element is a promise that resolves when the next valid auth
@@ -86,22 +101,22 @@ export function AuthStateProvider({
     // Reset the handles since we will never get a valid auth state of the
     // previous user.
     nextValidAuthStateHandlesRef.current = deferred();
-  }, [data.identity]);
+  }, [authState.identity]);
   useEffect(() => {
-    if (msToExpire(data) < TOKEN_BUFFER_DURATION_MS) {
+    if (msToExpire(authState) < TOKEN_BUFFER_DURATION_MS) {
       return;
     }
     const [_, resolveNextAuthState] = nextValidAuthStateHandlesRef.current;
-    resolveNextAuthState(data);
+    resolveNextAuthState(authState);
     // Since a new auth state has been received, create new handles for the
     // next "next valid auth state".
     nextValidAuthStateHandlesRef.current = deferred();
-  }, [data]);
+  }, [authState]);
 
-  const dataRef = useLatest(data);
+  const authStateRef = useLatest(authState);
   const ctxValue = useMemo(
     () => ({
-      getAuthState: () => dataRef.current,
+      getAuthState: () => authStateRef.current,
 
       // Build a function that returns the next valid auth state with
       // `nextValidAuthStateHandlesRef`.
@@ -115,8 +130,8 @@ export function AuthStateProvider({
       //    which may cause problems if the query is cached with the user
       //    identity at call time as part of the cache key.
       getValidAuthState: async () => {
-        if (msToExpire(dataRef.current) >= TOKEN_BUFFER_DURATION_MS) {
-          return dataRef.current;
+        if (msToExpire(authStateRef.current) >= TOKEN_BUFFER_DURATION_MS) {
+          return authStateRef.current;
         }
         return nextValidAuthStateHandlesRef.current[0];
       },
@@ -124,7 +139,7 @@ export function AuthStateProvider({
     // Establish a dependency on user identity so the provided getter is
     // refreshed whenever the identity changed.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [data.identity],
+    [authState.identity],
   );
 
   return (

@@ -133,6 +133,7 @@ describe('AuthStateProvider', () => {
       'access-token-1',
     );
     expect(store.authState.value).toEqual(initialAuthState);
+    expect(authStateLib.getAuthStateCacheSync()).toBeNull();
 
     // Advance timer by 40s, after the initial query returns but before the
     // initial token expires.
@@ -151,6 +152,7 @@ describe('AuthStateProvider', () => {
       'access-token-2',
     );
     expect(store.authState.value).toEqual(firstQueryResponse);
+    expect(authStateLib.getAuthStateCacheSync()).toEqual(firstQueryResponse);
 
     const secondQueryResponse = {
       identity: 'identity-2',
@@ -187,6 +189,7 @@ describe('AuthStateProvider', () => {
       'access-token-3',
     );
     expect(store.authState.value).toEqual(secondQueryResponse);
+    expect(authStateLib.getAuthStateCacheSync()).toEqual(secondQueryResponse);
 
     const thirdQueryResponse = {
       identity: 'identity-2',
@@ -223,6 +226,7 @@ describe('AuthStateProvider', () => {
       'access-token-4',
     );
     expect(store.authState.value).toEqual(thirdQueryResponse);
+    expect(authStateLib.getAuthStateCacheSync()).toEqual(thirdQueryResponse);
   });
 
   it('should not return expired tokens', async () => {
