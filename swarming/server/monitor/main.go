@@ -63,7 +63,7 @@ func main() {
 		// Figure out where to flush metrics.
 		switch {
 		case srv.Options.Prod && srv.Options.TsMonAccount != "":
-			mon, err := tsmonsrv.NewProdXMonitor(srv.Context, 1024, srv.Options.TsMonAccount)
+			mon, err := tsmonsrv.NewProdXMonitor(srv.Context, 4096, srv.Options.TsMonAccount)
 			if err != nil {
 				return err
 			}
@@ -75,9 +75,6 @@ func main() {
 		}
 
 		cron.RegisterHandler("report-bots", func(ctx context.Context) error {
-			return reportBots(ctx, state, srv.Options.TsMonServiceName)
-		})
-		cron.RegisterHandler("report-rbe-bots", func(ctx context.Context) error {
 			return reportBots(ctx, state, srv.Options.TsMonServiceName)
 		})
 		return nil
@@ -159,7 +156,7 @@ func reportBots(ctx context.Context, state *tsmon.State, serviceName string) err
 
 	// Note: use `ctx` here (not `mctx`) to report monitor's gRPC stats into
 	// the regular process-global tsmon state.
-	if err := state.ParallelFlush(ctx, nil, 8); err != nil {
+	if err := state.ParallelFlush(ctx, nil, 32); err != nil {
 		return errors.Annotate(err, "failed to flush values to monitoring").Err()
 	}
 	logging.Infof(ctx, "Flushed to monitoring in %s.", clock.Since(ctx, flushTS))
