@@ -35,7 +35,6 @@ export function BuildTableRow({ build, children }: BuildTableRowProps) {
           whiteSpace: 'nowrap',
         },
       }}
-      hover
     >
       {/* Pass build to cells via context so composing a row require
        ** less boilerplate. */}

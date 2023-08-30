@@ -23,9 +23,7 @@ export function BuildTableBody({ children }: BuildTableBodyProps) {
   return (
     <TableBody
       sx={{
-        // Only apply when the table body is not on hover because the row is
-        // already highlighted with a similar color on hover
-        '&:not(:hover) > tr:nth-of-type(odd)': {
+        '& > tr:nth-of-type(odd)': {
           backgroundColor: 'var(--block-background-color)',
         },
       }}
