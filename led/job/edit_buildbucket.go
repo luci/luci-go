@@ -23,6 +23,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/buildbucket"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
@@ -450,19 +451,33 @@ func (bbe *buildbucketEditor) TaskName(name string) {
 
 func (bbe *buildbucketEditor) Experimental(isExperimental bool) {
 	bbe.tweak(func() error {
-		bbe.bb.BbagentArgs.Build.Input.Experimental = isExperimental
+		bbe.Experiments(map[string]bool{buildbucket.ExperimentNonProduction: isExperimental})
 		return nil
 	})
 }
 
 func (bbe *buildbucketEditor) Experiments(exps map[string]bool) {
 	bbe.tweak(func() error {
+		if len(exps) == 0 {
+			return nil
+		}
+
+		er := bbe.bb.BbagentArgs.Build.Infra.Buildbucket.ExperimentReasons
+		if er == nil {
+			er = make(map[string]bbpb.BuildInfra_Buildbucket_ExperimentReason)
+			bbe.bb.BbagentArgs.Build.Infra.Buildbucket.ExperimentReasons = er
+		}
 		enabled := stringset.NewFromSlice(bbe.bb.BbagentArgs.Build.Input.Experiments...)
 		for k, v := range exps {
+			if k == buildbucket.ExperimentNonProduction {
+				bbe.bb.BbagentArgs.Build.Input.Experimental = v
+			}
 			if v {
 				enabled.Add(k)
+				er[k] = bbpb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 			} else {
 				enabled.Del(k)
+				delete(er, k)
 			}
 		}
 		bbe.bb.BbagentArgs.Build.Input.Experiments = enabled.ToSortedSlice()

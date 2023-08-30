@@ -25,8 +25,10 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
@@ -361,6 +363,13 @@ func FromBuild(build *bbpb.Build, hostname, name string, priorityDiff int, extra
 		build.Infra.Buildbucket.Hostname = hostname
 	}
 
+	// Set build to be experimental.
+	build.Input.Experimental = true // Legacy field, set it for now.
+	enabled := stringset.NewFromSlice(build.Input.Experiments...)
+	enabled.Add(buildbucket.ExperimentNonProduction)
+	build.Input.Experiments = enabled.ToSortedSlice()
+
+	build.Infra.Buildbucket.ExperimentReasons[buildbucket.ExperimentNonProduction] = bbpb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 	ret.JobType = &job.Definition_Buildbucket{
 		Buildbucket: &job.Buildbucket{
 			Name:                name,

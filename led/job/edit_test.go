@@ -20,6 +20,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 
+	"go.chromium.org/luci/buildbucket"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
@@ -332,11 +333,13 @@ func TestExperimental(t *testing.T) {
 					je.Experimental(true)
 				})
 				So(jd.HighLevelInfo().Experimental(), ShouldBeTrue)
+				So(jd.HighLevelInfo().Experiments(), ShouldResemble, []string{buildbucket.ExperimentNonProduction})
 
 				SoHLEdit(jd, func(je HighLevelEditor) {
 					je.Experimental(false)
 				})
 				So(jd.HighLevelInfo().Experimental(), ShouldBeFalse)
+				So(jd.HighLevelInfo().Experiments(), ShouldHaveLength, 0)
 			},
 		},
 	})
@@ -359,14 +362,21 @@ func TestExperiments(t *testing.T) {
 						"delMissingOK": false,
 					})
 				})
+				er := jd.GetBuildbucket().BbagentArgs.Build.Infra.Buildbucket.ExperimentReasons
 				So(jd.HighLevelInfo().Experiments(), ShouldResemble, []string{"exp1", "exp2"})
-
+				So(er, ShouldResemble, map[string]bbpb.BuildInfra_Buildbucket_ExperimentReason{
+					"exp1": bbpb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
+					"exp2": bbpb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
+				})
 				SoHLEdit(jd, func(je HighLevelEditor) {
 					je.Experiments(map[string]bool{
 						"exp1": false,
 					})
 				})
 				So(jd.HighLevelInfo().Experiments(), ShouldResemble, []string{"exp2"})
+				So(er, ShouldResemble, map[string]bbpb.BuildInfra_Buildbucket_ExperimentReason{
+					"exp2": bbpb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
+				})
 			},
 		},
 	})
