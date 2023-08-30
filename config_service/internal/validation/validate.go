@@ -16,6 +16,7 @@ package validation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -80,7 +81,11 @@ func (v *Validator) Validate(ctx context.Context, cs config.Set, files []File) (
 				filePaths[i] = file.GetPath()
 			}
 			logging.Debugf(ctx, "sending files [%s] to service %q to validate", filePaths, sv.service.Name)
-			if results[i], err = sv.validate(ectx); err != nil {
+			switch results[i], err = sv.validate(ectx); {
+			case errors.Is(err, context.Canceled):
+				logging.Warningf(ctx, "validating configs against service %q for files [%s] is cancelled", sv.service.Name, filePaths)
+				return err
+			case err != nil:
 				err = fmt.Errorf("failed to validate configs against service %q for files [%s]: %w", sv.service.Name, filePaths, err)
 				logging.Errorf(ctx, "%s", err)
 				return err
