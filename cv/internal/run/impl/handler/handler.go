@@ -92,6 +92,9 @@ type Handler interface {
 
 	// Poke checks current Run state and takes actions to progress the Run.
 	Poke(context.Context, *state.RunState) (*Result, error)
+
+	// OnParentRunCompleted checks decides how to handle the run based on its completed parent run.
+	OnParentRunCompleted(context.Context, *state.RunState) (*Result, error)
 }
 
 // PM encapsulates interaction with Project Manager by the Run events handler.

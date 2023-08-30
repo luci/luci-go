@@ -314,7 +314,8 @@ type triageResult struct {
 		events  eventbox.Events
 		tryjobs common.TryjobIDs
 	}
-	nextReadyEventTime time.Time
+	parentCompletedEvents eventbox.Events
+	nextReadyEventTime    time.Time
 	// These events can be deleted even before the transaction starts.
 	garbage eventbox.Events
 }
@@ -381,6 +382,8 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event, eventLo
 		for _, evt := range e.GetTryjobsUpdated().GetEvents() {
 			tr.tryjobUpdatedEvents.tryjobs = append(tr.tryjobUpdatedEvents.tryjobs, common.TryjobID(evt.GetTryjobId()))
 		}
+	case *eventpb.Event_ParentRunCompleted:
+		tr.parentCompletedEvents = append(tr.parentCompletedEvents, item)
 	default:
 		panic(fmt.Errorf("unknown event: %T [id=%q]", e.GetEvent(), item.ID))
 	}
@@ -468,6 +471,13 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 			return nil, err
 		}
 		rs, transitions = applyResult(res, tr.pokeEvents, transitions)
+	}
+	if len(tr.parentCompletedEvents) > 0 {
+		res, err := rp.handler.OnParentRunCompleted(ctx, rs)
+		if err != nil {
+			return nil, err
+		}
+		rs, transitions = applyResult(res, tr.parentCompletedEvents, transitions)
 	}
 	// Submission runs as PostProcessFn after event handling/state transition
 	// is done. It is possible that submission never reports the result back

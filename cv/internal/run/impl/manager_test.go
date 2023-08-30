@@ -252,6 +252,21 @@ func TestRunManager(t *testing.T) {
 				},
 				"Poke",
 			},
+			{
+				&eventpb.Event{
+					Event: &eventpb.Event_ParentRunCompleted{
+						ParentRunCompleted: &eventpb.ParentRunCompleted{},
+					},
+				},
+				func(ctx context.Context) error {
+					return notifier.SendNow(ctx, runID, &eventpb.Event{
+						Event: &eventpb.Event_ParentRunCompleted{
+							ParentRunCompleted: &eventpb.ParentRunCompleted{},
+						},
+					})
+				},
+				"OnParentRunCompleted",
+			},
 		}
 		for _, et := range eventTestcases {
 			Convey(fmt.Sprintf("Can process Event %T", et.event.GetEvent()), func() {
@@ -572,4 +587,13 @@ func (fh *fakeHandler) UpdateConfig(ctx context.Context, rs *state.RunState, has
 
 func (fh *fakeHandler) addInvocation(method string) {
 	fh.invocations = append(fh.invocations, method)
+}
+
+func (fh *fakeHandler) OnParentRunCompleted(ctx context.Context, rs *state.RunState) (*handler.Result, error) {
+	fh.addInvocation("OnParentRunCompleted")
+	return &handler.Result{
+		State:          rs.ShallowCopy(),
+		PreserveEvents: fh.preserveEvents,
+		PostProcessFn:  fh.postProcessFn,
+	}, nil
 }

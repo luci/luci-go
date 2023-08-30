@@ -459,6 +459,16 @@ func (t *testHandler) Poke(ctx context.Context, rs *state.RunState) (*Result, er
 	return res, err
 }
 
+func (t *testHandler) OnParentRunCompleted(ctx context.Context, rs *state.RunState) (*Result, error) {
+	initialCopy := rs.DeepCopy()
+	res, err := t.inner.OnParentRunCompleted(ctx, rs)
+	if err != nil {
+		return nil, err
+	}
+	validateStateMutation(rs, initialCopy, res.State)
+	return res, err
+}
+
 func makeTestHandler(ct *cvtesting.Test) (Handler, dependencies) {
 	handler, dependencies := makeImpl(ct)
 	return &testHandler{inner: handler}, dependencies
