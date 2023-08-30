@@ -25,9 +25,10 @@ import (
 	configpb "go.chromium.org/luci/analysis/proto/config"
 )
 
-// createPlaceholderMonorailProject Creates a placeholder Monorail project
-// with default values.
-func createPlaceholderMonorailProject() *configpb.MonorailProject {
+// createPlaceholderLegacyMonorailProject creates a Monorail project config
+// with fake values. The returned proto is for use at
+// ProjectConfig.monorail (legacy monorail config path).
+func createPlaceholderLegacyMonorailProject() *configpb.MonorailProject {
 	return &configpb.MonorailProject{
 		Project:         "chromium",
 		PriorityFieldId: 10,
@@ -48,7 +49,42 @@ func createPlaceholderMonorailProject() *configpb.MonorailProject {
 	}
 }
 
-func createBuganizerPlaceholderProject() *configpb.BuganizerProject {
+// createPlaceholderMonorailProject creates a Monorail project config with
+// fake values. The returned proto is for use at
+// ProjectConfig.bug_management.monorail.
+func createPlaceholderMonorailProject() *configpb.MonorailProject {
+	return &configpb.MonorailProject{
+		Project:         "chromium",
+		PriorityFieldId: 10,
+		DefaultFieldValues: []*configpb.MonorailFieldValue{
+			{
+				FieldId: 1234,
+				Value:   "Bug",
+			},
+		},
+		Priorities: []*configpb.MonorailPriority{
+			{
+				Priority: "0",
+				Thresholds: []*configpb.ImpactMetricThreshold{
+					{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(1500)}},
+				},
+			},
+			{
+				Priority: "1",
+				Thresholds: []*configpb.ImpactMetricThreshold{
+					{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(500)}},
+				},
+			},
+		},
+		DisplayPrefix:    "crbug.com",
+		MonorailHostname: "bugs.chromium.org",
+	}
+}
+
+// createPlaceholderLegacyBuganizerProject creates a Buganizer project config
+// with fake values. The returned proto is for use at
+// ProjectConfig.buganizer (legacy buganizer config path).
+func createPlaceholderLegacyBuganizerProject() *configpb.BuganizerProject {
 	return &configpb.BuganizerProject{
 		DefaultComponent: &configpb.BuganizerComponent{
 			Id: 1,
@@ -67,6 +103,17 @@ func createBuganizerPlaceholderProject() *configpb.BuganizerProject {
 					{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(500)}},
 				},
 			},
+		},
+	}
+}
+
+// createPlaceholderBuganizerProject creates a Buganizer project config
+// with fake values. The returned proto is for use at
+// ProjectConfig.bug_management.buganizer.
+func createPlaceholderBuganizerProject() *configpb.BuganizerProject {
+	return &configpb.BuganizerProject{
+		DefaultComponent: &configpb.BuganizerComponent{
+			Id: 1,
 		},
 	}
 }
@@ -141,37 +188,99 @@ func createPlaceholderMetrics() *configpb.Metrics {
 	}
 }
 
-// Creates a placeholder project config with key "chromium".
+func createPlaceholderBugManagementPolicies() []*configpb.BugManagementPolicy {
+	return []*configpb.BugManagementPolicy{
+		createPlaceholderBugManagementPolicy(),
+	}
+}
+
+func createPlaceholderBugManagementPolicy() *configpb.BugManagementPolicy {
+	return &configpb.BugManagementPolicy{
+		Id:                "exoneration",
+		Owners:            []string{"username@google.com"},
+		HumanReadableName: "test variant(s) are being exonerated in presubmit",
+		Priority:          configpb.BuganizerPriority_P2,
+		Metrics: []*configpb.BugManagementPolicy_Metric{
+			{
+				MetricId: "critical-failures-exonerated",
+				ActivationThreshold: &configpb.MetricThreshold{
+					OneDay: proto.Int64(50),
+				},
+				DeactivationThreshold: &configpb.MetricThreshold{
+					ThreeDay: proto.Int64(20),
+				},
+			},
+		},
+		Explanation: &configpb.BugManagementPolicy_Explanation{
+			ProblemHtml: "Test variant(s) in the cluster are being exonerated because they are too flaky or failing.",
+			ActionHtml:  "<ul><li>View recent failures and fix them</li><li>Demote the test(s) from CQ</li></ul>",
+		},
+		BugTemplate: &configpb.BugManagementPolicy_BugTemplate{
+			CommentTemplate: `{{if .BugID.IsBuganizer }}Buganizer Bug ID: {{ .BugID.BuganizerBugID }}{{end}}` +
+				`{{if .BugID.IsMonorail }}Monorail Project: {{ .BugID.MonorailProject }}; ID: {{ .BugID.MonorailBugID }}{{end}}` +
+				`Rule URL: {{.RuleURL}}`,
+			Monorail: &configpb.BugManagementPolicy_BugTemplate_Monorail{
+				Labels: []string{"Test-Exonerated"},
+			},
+			Buganizer: &configpb.BugManagementPolicy_BugTemplate_Buganizer{
+				Hotlists: []int64{1234},
+			},
+		},
+	}
+}
+
+// CreateMonorailPlaceholderProjectConfig creates a placeholder config
+// for a project that just uses Monorail.
 func CreateMonorailPlaceholderProjectConfig() *configpb.ProjectConfig {
 	return &configpb.ProjectConfig{
-		Monorail:            createPlaceholderMonorailProject(),
+		Monorail:            createPlaceholderLegacyMonorailProject(),
 		BugSystem:           configpb.BugSystem_MONORAIL,
 		BugFilingThresholds: CreatePlaceholderImpactThreshold(),
 		Realms:              createPlaceholderRealms(),
 		Clustering:          createPlaceholderClustering(),
 		Metrics:             createPlaceholderMetrics(),
+		BugManagement: &configpb.BugManagement{
+			Policies:         createPlaceholderBugManagementPolicies(),
+			DefaultBugSystem: configpb.BugSystem_MONORAIL,
+			Monorail:         createPlaceholderMonorailProject(),
+		},
 	}
 }
 
+// CreateBuganizerPlaceholderProjectConfig creates a placeholder config
+// for a project that just uses Buganizer.
 func CreateBuganizerPlaceholderProjectConfig() *configpb.ProjectConfig {
 	return &configpb.ProjectConfig{
-		Buganizer:           createBuganizerPlaceholderProject(),
+		Buganizer:           createPlaceholderLegacyBuganizerProject(),
 		BugSystem:           configpb.BugSystem_BUGANIZER,
 		BugFilingThresholds: CreatePlaceholderImpactThreshold(),
 		Realms:              createPlaceholderRealms(),
 		Clustering:          createPlaceholderClustering(),
 		Metrics:             createPlaceholderMetrics(),
+		BugManagement: &configpb.BugManagement{
+			Policies:         createPlaceholderBugManagementPolicies(),
+			DefaultBugSystem: configpb.BugSystem_BUGANIZER,
+			Buganizer:        createPlaceholderBuganizerProject(),
+		},
 	}
 }
 
-func CreateConfigWithBothBuganizerAndMonorail(bugSystem configpb.BugSystem) *configpb.ProjectConfig {
+// CreateConfigWithBothBuganizerAndMonorail creates a placeholder config
+// for a project that uses both Monorail and Buganizer.
+func CreateConfigWithBothBuganizerAndMonorail(defaultBugSystem configpb.BugSystem) *configpb.ProjectConfig {
 	return &configpb.ProjectConfig{
-		Monorail:            createPlaceholderMonorailProject(),
-		Buganizer:           createBuganizerPlaceholderProject(),
-		BugSystem:           bugSystem,
+		Monorail:            createPlaceholderLegacyMonorailProject(),
+		Buganizer:           createPlaceholderLegacyBuganizerProject(),
+		BugSystem:           defaultBugSystem,
 		BugFilingThresholds: CreatePlaceholderImpactThreshold(),
 		Realms:              createPlaceholderRealms(),
 		Clustering:          createPlaceholderClustering(),
 		Metrics:             createPlaceholderMetrics(),
+		BugManagement: &configpb.BugManagement{
+			Policies:         createPlaceholderBugManagementPolicies(),
+			DefaultBugSystem: defaultBugSystem,
+			Monorail:         createPlaceholderMonorailProject(),
+			Buganizer:        createPlaceholderBuganizerProject(),
+		},
 	}
 }

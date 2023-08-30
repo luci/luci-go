@@ -56,7 +56,7 @@ type Evaluator func(testName string) (like string, ok bool)
 func Compile(rule *configpb.TestNameClusteringRule) (Evaluator, error) {
 	re, err := regexp.Compile(rule.Pattern)
 	if err != nil {
-		return nil, errors.Annotate(err, "parsing pattern").Err()
+		return nil, errors.Annotate(err, "pattern").Err()
 	}
 
 	// Segments defines portions of the output LIKE expression,
@@ -93,7 +93,7 @@ func Compile(rule *configpb.TestNameClusteringRule) (Evaluator, error) {
 
 		matchString := rule.LikeTemplate[match[0]:match[1]]
 		if matchString == "$" {
-			return nil, fmt.Errorf("invalid use of the $ operator at position %v in %q ('$' not followed by '{name}' or '$'), "+
+			return nil, fmt.Errorf("like_template: invalid use of the $ operator at position %v in %q ('$' not followed by '{name}' or '$'), "+
 				"if you meant to include a literal $ character, please use $$", match[0], rule.LikeTemplate)
 		}
 		if matchString == "$$" {
@@ -120,7 +120,7 @@ func Compile(rule *configpb.TestNameClusteringRule) (Evaluator, error) {
 				}
 			}
 			if submatchIndex == -1 {
-				return nil, fmt.Errorf("like template contains reference to non-existant capturing group with name %q", name)
+				return nil, fmt.Errorf("like_template: contains reference to non-existant capturing group with name %q", name)
 			}
 
 			// Indicate we should include the value of that capture group
@@ -135,7 +135,7 @@ func Compile(rule *configpb.TestNameClusteringRule) (Evaluator, error) {
 	if lastIndex < len(rule.LikeTemplate) {
 		literalText := rule.LikeTemplate[lastIndex:len(rule.LikeTemplate)]
 		if err := lang.ValidateLikePattern(literalText); err != nil {
-			return nil, errors.Annotate(err, "%q is not a valid standalone LIKE expression", literalText).Err()
+			return nil, errors.Annotate(err, "like_template: %q is not a valid standalone LIKE expression", literalText).Err()
 		}
 		// Some text after all substitution expressions. This is literal
 		// text that should be included in the output directly.

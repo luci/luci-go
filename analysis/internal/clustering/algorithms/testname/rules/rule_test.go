@@ -145,7 +145,7 @@ func TestRule(t *testing.T) {
 					LikeTemplate: `${myname}blah`,
 				}
 				_, err = Compile(rule)
-				So(err, ShouldErrLike, `like template contains reference to non-existant capturing group with name "myname"`)
+				So(err, ShouldErrLike, `like_template: contains reference to non-existant capturing group with name "myname"`)
 			})
 		})
 		Convey(`Invalid Pattern`, func() {
@@ -155,7 +155,7 @@ func TestRule(t *testing.T) {
 				LikeTemplate: ``,
 			}
 			_, err := Compile(rule)
-			So(err, ShouldErrLike, `parsing pattern: error parsing regexp`)
+			So(err, ShouldErrLike, `pattern: error parsing regexp`)
 		})
 	})
 }
