@@ -26,10 +26,12 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/run"
@@ -56,6 +58,30 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 	case status != run.Status_PENDING:
 		logging.Debugf(ctx, "Skip starting Run because this Run is %s", status)
 		return &Result{State: rs}, nil
+	}
+	if len(rs.DepRuns) > 0 {
+		runs, errs := run.LoadRunsFromIDs(rs.DepRuns...).Do(ctx)
+		for i, r := range runs {
+			switch err := errs[i]; {
+			case err == datastore.ErrNoSuchEntity:
+				panic(err)
+			case err != nil:
+				return nil, errors.Annotate(err, "failed to load run %s", r.ID).Tag(transient.Tag).Err()
+			default:
+				switch r.Status {
+				case run.Status_STATUS_UNSPECIFIED:
+					err := errors.Reason("CRITICAL: can't start a Run %q, parent Run %s has unspecified status", rs.ID, r.ID).Err()
+					common.LogError(ctx, err)
+					panic(err)
+				case run.Status_FAILED, run.Status_CANCELLED, run.Status_PENDING:
+					// If a parent run has FAILED or been CANCELLED, this run should not start.
+					//The parent run  will emit OnParentCompleted to handle cancelling this run.
+					// If the parent run is still PENDING, this run should not start. Once the
+					// parent run has started, it will emit a Start event for this run.
+					return &Result{State: rs}, nil
+				}
+			}
+		}
 	}
 
 	if reasons, isValid := validateRunOptions(rs); !isValid {
@@ -158,14 +184,31 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		},
 	})
 
-	return &Result{
-		State: rs,
-		SideEffectFn: func(ctx context.Context) error {
+	childRuns, err := run.LoadChildRuns(ctx, rs.ID)
+	if err != nil {
+		return nil, err
+	}
+	se := eventbox.Chain(
+		func(ctx context.Context) error {
 			txndefer.Defer(ctx, func(ctx context.Context) {
 				reportStartMetrics(ctx, rs, cg)
 			})
 			return nil
 		},
+		func(ctx context.Context) error {
+			for _, child := range childRuns {
+				if child.Status == run.Status_PENDING {
+					if err := impl.RM.Start(ctx, child.ID); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		},
+	)
+	return &Result{
+		State:        rs,
+		SideEffectFn: se,
 	}, nil
 }
 

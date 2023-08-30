@@ -113,6 +113,16 @@ func AssertInEventbox(ctx context.Context, runID common.RunID, targets ...*event
 	So(remaining, ShouldBeEmpty)
 }
 
+// AssertReceivedStart asserts Run has received Start event.
+func AssertReceivedStart(ctx context.Context, runID common.RunID) {
+	target := &eventpb.Event{
+		Event: &eventpb.Event_Start{
+			Start: &eventpb.Start{},
+		},
+	}
+	AssertInEventbox(ctx, runID, target)
+}
+
 // AssertReceivedPoke asserts Run has received Poke event that should be
 // processed at `eta`.
 //

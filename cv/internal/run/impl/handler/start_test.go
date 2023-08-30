@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/cv/internal/run/runtest"
 	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -177,6 +178,56 @@ func TestStart(t *testing.T) {
 				ShouldAlmostEqual, startLatency.Seconds())
 			So(ct.TSMonSentDistr(ctx, metricPickupLatencyAdjustedS, lProject).Sum(),
 				ShouldAlmostEqual, (startLatency - stabilizationDelay).Seconds())
+		})
+
+		Convey("Does not proceed if any parent RUN is still PENDING", func() {
+			const parentRun = common.RunID("parent/1-cow")
+			So(datastore.Put(ctx,
+				&run.Run{
+					ID:     parentRun,
+					Status: run.Status_PENDING,
+				},
+			), ShouldBeNil)
+			rs.DepRuns = common.RunIDs{parentRun}
+			res, err := h.Start(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res.SideEffectFn, ShouldBeNil)
+			So(res.State.Status, ShouldEqual, run.Status_PENDING)
+			ops := res.State.OngoingLongOps.GetOps()
+			So(len(ops), ShouldEqual, 0)
+		})
+
+		Convey("Does not proceed if parent RUN is CANCELLED/FAILED", func() {
+			const parentRun = common.RunID("parent/1-cow")
+			So(datastore.Put(ctx,
+				&run.Run{
+					ID:     parentRun,
+					Status: run.Status_CANCELLED,
+				},
+			), ShouldBeNil)
+
+			rs.DepRuns = common.RunIDs{parentRun}
+			res, err := h.Start(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res.SideEffectFn, ShouldBeNil)
+			So(res.State.Status, ShouldEqual, run.Status_PENDING)
+		})
+
+		Convey("Emits Start events for PENDING children", func() {
+			const child1 = common.RunID("child/1-cow")
+			So(datastore.Put(
+				ctx,
+				&run.Run{
+					ID:      child1,
+					Status:  run.Status_PENDING,
+					DepRuns: common.RunIDs{rs.ID},
+				},
+			), ShouldBeNil)
+			res, err := h.Start(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res.SideEffectFn, ShouldNotBeNil)
+			So(datastore.RunInTransaction(ctx, res.SideEffectFn, nil), ShouldBeNil)
+			runtest.AssertReceivedStart(ctx, child1)
 		})
 
 		Convey("Fail the Run if tryjob computation fails", func() {

@@ -107,6 +107,7 @@ type RM interface {
 	NotifyReadyForSubmission(ctx context.Context, runID common.RunID, eta time.Time) error
 	NotifyCLsSubmitted(ctx context.Context, runID common.RunID, clids common.CLIDs) error
 	NotifySubmissionCompleted(ctx context.Context, runID common.RunID, sc *eventpb.SubmissionCompleted, invokeRM bool) error
+	Start(ctx context.Context, runID common.RunID) error
 }
 
 // QM manages run and tryjob quotas.
