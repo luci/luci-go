@@ -196,7 +196,7 @@ func (b *BugUpdater) Run(ctx context.Context, progress *runs.ReclusteringProgres
 		// filing new bugs should be suspended.
 		blockedSourceClusterIDs := make(map[string]struct{})
 		for _, r := range rules {
-			if !progress.IncorporatesRulesVersion(r.CreationTime) {
+			if !progress.IncorporatesRulesVersion(r.CreateTime) {
 				// If a bug cluster was recently filed for a source cluster, and
 				// re-clustering and analysis is not yet complete (to move the
 				// impact from the source cluster to the bug cluster), do not file
@@ -231,7 +231,7 @@ func (b *BugUpdater) Run(ctx context.Context, progress *runs.ReclusteringProgres
 		// version of this failure association rule. This avoids bugs getting
 		// erroneous priority changes while impact information is incomplete.
 		ruleImpactValid := impactValid &&
-			progress.IncorporatesRulesVersion(rule.PredicateLastUpdated)
+			progress.IncorporatesRulesVersion(rule.PredicateLastUpdateTime)
 
 		if ruleImpactValid {
 			var ok bool
@@ -252,7 +252,7 @@ func (b *BugUpdater) Run(ctx context.Context, progress *runs.ReclusteringProgres
 			Impact:                           impact,
 			IsManagingBug:                    rule.IsManagingBug,
 			IsManagingBugPriority:            rule.IsManagingBugPriority,
-			IsManagingBugPriorityLastUpdated: rule.IsManagingBugPriorityLastUpdated,
+			IsManagingBugPriorityLastUpdated: rule.IsManagingBugPriorityLastUpdateTime,
 			RuleID:                           rule.RuleID,
 		})
 		bugUpdatesBySystem[rule.BugID.System] = bugUpdates

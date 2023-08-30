@@ -18,68 +18,82 @@ package luci.analysis.bq;
 
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
+import "go.chromium.org/luci/analysis/proto/v1/rules.proto";
 
 option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
 
-
+// BigQuery representation of a failure association rule.
+// NextID: 16.
 message FailureAssociationRulesHistoryRow {
-    // The LUCI Project this bug belongs to.
-    string project = 1;
+  // The resource name of the failure association rule.
+  // Can be used to refer to this rule, e.g. in Rules.Get RPC.
+  // Format: projects/{project}/rules/{rule_id}.
+  string name = 1;
 
-    // The unique identifier for the rule. This rule_id corresponds to the cluster_id
-    // in the clustered_failures table.
-    string rule_id = 2;
+  // The LUCI Project this bug belongs to.
+  string project = 2;
 
-    // The rule predicate, defining which failures are being associated.
-    string rule_definition = 3;
+  // The unique identifier for the rule. This rule_id corresponds to the cluster_id
+  // in the clustered_failures table.
+  string rule_id = 3;
 
-    // The time the rule was created.
-    google.protobuf.Timestamp creation_time = 4;
+  // The rule predicate, defining which failures are being associated.
+  string rule_definition = 4;
 
-    // The last time the rule was updated.
-    google.protobuf.Timestamp last_updated = 5;
+  // The last time either rule_definition or is_active is changed.
+  google.protobuf.Timestamp predicate_last_update_time = 5;
 
-    // The last time either rule_definition or is_active is changed.
-    google.protobuf.Timestamp predicate_last_updated = 6;
+  message Bug {
+    // system is the bug tracking system containing the bug the failures are
+    // associated with. The only supported values are 'monorail' and 'buganizer'.
+    string system = 1;
 
-    message Bug {
-        // system is the bug tracking system containing the bug the failures are
-        // associated with. The only supported values are 'monorail' and 'buganizer'.
-        string system = 1;
+    // id is the identifier of the bug the failures are associated with, as
+    // identified by the bug tracking system itself. For monorail, the scheme is
+    // {project}/{numeric_id}, for buganizer, the scheme is {numeric_id}.
+    string id = 2;
+  }
 
-        // id is the identifier of the bug the failures are associated with, as
-        // identified by the bug tracking system itself. For monorail, the scheme is
-        // {project}/{numeric_id}, for buganizer, the scheme is {numeric_id}.
-        string id = 2;
-    }
+  // The system and the id of where the bug is tracked.
+  Bug bug = 6;
 
-    // The system and the id of where the bug is tracked.
-    Bug bug = 7;
+  // Whether the bug must still be updated by LUCI Analysis, and whether
+  // failures should still be matched against this rule.
+  bool is_active = 7;
 
-    // Whether the bug must still be updated by LUCI Analysis, and whether
-    // failures should still be matched against this rule.
-    bool is_active = 8;
+  // Whether this rule should manage the priority and verified status
+  // of the associated bug based on the impact of the cluster defined
+  // by this rule.
+  bool is_managing_bug = 8;
 
-    // Whether this rule should manage the priority and verified status
-    // of the associated bug based on the impact of the cluster defined
-    // by this rule.
-    bool is_managing_bug = 9;
+  // Indicates whether we should update the priority of the bug
+  // that is associated with this rule based on the cluster's impact.
+  // This toggle has must have no effect if the is_managing_bug toggle is off.
+  bool is_managing_bug_priority = 9;
 
-    // Indicates whether we should update the priority of the bug
-    // that is associated with this rule based on the cluster's impact.
-    // This toggle has must have no effect if the is_managing_bug toggle is off.
-    bool is_managing_bug_priority = 10;
+  // Tracks when the field is_managing_bug_priority was last updated.
+  google.protobuf.Timestamp is_managing_bug_priority_last_update_time = 10;
 
-    // Tracks when the field is_managing_bug_priority was last updated.
-    google.protobuf.Timestamp is_managing_bug_priority_last_updated = 11;
+  // This suggested cluster this rule was created from.
+  // Until re-clustering is complete (and the residual impact of the source
+  // cluster has reduced to zero), source_cluster.algorithm and source_cluster.id
+  // tell bug filing to ignore the source suggested cluster when
+  // determining whether new bugs need to be filed.
+  luci.analysis.v1.ClusterId source_cluster = 11;
 
-    // This suggested cluster this rule was created from.
-    // Until re-clustering is complete (and the residual impact of the source
-    // cluster has reduced to zero), source_cluster.algorithm and source_cluster.id
-    // tell bug filing to ignore the source suggested cluster when
-    // determining whether new bugs need to be filed.
-    luci.analysis.v1.ClusterId source_cluster = 12;
+  // Bug management state. System controlled data.
+  luci.analysis.v1.BugManagementState bug_management_state = 12;
 
-    // The time the entry was ingested to this bigquery table.
-    google.protobuf.Timestamp exported_time = 13;
+  // The time the rule was created.
+  google.protobuf.Timestamp create_time = 13;
+
+	// The last time an auditable field was updated. An auditable field
+	// is any field other than a system controlled data field.
+  google.protobuf.Timestamp last_auditable_update_time = 14;
+
+  // The last time the rule was updated.
+  google.protobuf.Timestamp last_update_time = 15;
+
+  // The time the entry was exported to bigquery table.
+  google.protobuf.Timestamp exported_time = 16;
 }

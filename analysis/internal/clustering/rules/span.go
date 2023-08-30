@@ -106,7 +106,7 @@ type Entry struct {
 	// Compare with RulesVersion on ReclusteringRuns to identify
 	// reclustering state.
 	// Output only.
-	PredicateLastUpdated time.Time
+	PredicateLastUpdateTime time.Time
 
 	// Bug fields.
 
@@ -123,7 +123,7 @@ type Entry struct {
 	IsManagingBugPriority bool
 	// Tracks the last time the field `IsManagingBugPriority` was updated.
 	// Defaults to nil which means the field was never updated.
-	IsManagingBugPriorityLastUpdated time.Time
+	IsManagingBugPriorityLastUpdateTime time.Time
 
 	// Immutable data.
 
@@ -136,22 +136,23 @@ type Entry struct {
 	// System-controlled data.
 
 	// State used to control automatic bug management.
+	// Invariant: BugManagementState != nil
 	BugManagementState *bugspb.BugManagementState
 
 	// Audit fields.
 
 	// The time the rule was created. Output only.
-	CreationTime time.Time
+	CreateTime time.Time
 	// The user which created the rule. Output only.
-	CreationUser string
+	CreateUser string
 	// The last time an auditable field was updated. An auditable field
 	// is any field other than a system controlled data field. Output only.
-	LastAuditableUpdate time.Time
+	LastAuditableUpdateTime time.Time
 	// The last user who updated an auditable field. An auditable field
 	// is any field other than a system controlled data field. Output only.
 	LastAuditableUpdateUser string
 	// The time the rule was last updated. Output only.
-	LastUpdated time.Time
+	LastUpdateTime time.Time
 }
 
 // UpdateOptions are the options that are using during
@@ -383,25 +384,25 @@ func readWhere(ctx context.Context, whereClause string, params map[string]any) (
 		}
 
 		rule := &Entry{
-			Project:                          project,
-			RuleID:                           ruleID,
-			RuleDefinition:                   ruleDefinition,
-			IsActive:                         isActive.Valid && isActive.Bool,
-			PredicateLastUpdated:             predicateLastUpdated,
-			BugID:                            bugs.BugID{System: bugSystem, ID: bugID},
-			IsManagingBug:                    isManagingBug.Valid && isManagingBug.Bool,
-			IsManagingBugPriority:            isManagingBugPriority,
-			IsManagingBugPriorityLastUpdated: isManagingBugPriorityLastUpdated.Time,
+			Project:                             project,
+			RuleID:                              ruleID,
+			RuleDefinition:                      ruleDefinition,
+			IsActive:                            isActive.Valid && isActive.Bool,
+			PredicateLastUpdateTime:             predicateLastUpdated,
+			BugID:                               bugs.BugID{System: bugSystem, ID: bugID},
+			IsManagingBug:                       isManagingBug.Valid && isManagingBug.Bool,
+			IsManagingBugPriority:               isManagingBugPriority,
+			IsManagingBugPriorityLastUpdateTime: isManagingBugPriorityLastUpdated.Time,
 			SourceCluster: clustering.ClusterID{
 				Algorithm: sourceClusterAlgorithm,
 				ID:        sourceClusterID,
 			},
 			BugManagementState:      bugManagementState,
-			CreationTime:            creationTime,
-			CreationUser:            creationUser,
-			LastAuditableUpdate:     lastAuditableUpdateTime,
+			CreateTime:              creationTime,
+			CreateUser:              creationUser,
+			LastAuditableUpdateTime: lastAuditableUpdateTime,
 			LastAuditableUpdateUser: lastAuditableUpdateUser.StringVal,
-			LastUpdated:             lastUpdated,
+			LastUpdateTime:          lastUpdated,
 		}
 		rs = append(rs, rule)
 		return nil

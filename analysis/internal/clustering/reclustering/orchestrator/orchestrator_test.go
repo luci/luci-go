@@ -116,7 +116,7 @@ func TestOrchestrator(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			rulesVersionB := time.Date(2020, time.January, 10, 9, 8, 7, 0, time.UTC)
-			rule := rules.NewRule(1).WithProject("project-b").WithPredicateLastUpdated(rulesVersionB).Build()
+			rule := rules.NewRule(1).WithProject("project-b").WithPredicateLastUpdateTime(rulesVersionB).Build()
 			err = rules.SetForTesting(ctx, []*rules.Entry{rule})
 			So(err, ShouldBeNil)
 

@@ -181,7 +181,7 @@ func TestBuganizerUpdate(t *testing.T) {
 				IsManagingBug:           true,
 				IsManagingBugPriority:   true,
 				SourceCluster:           sourceClusterID,
-				CreationUser:            rules.LUCIAnalysisSystem,
+				CreateUser:              rules.LUCIAnalysisSystem,
 				LastAuditableUpdateUser: rules.LUCIAnalysisSystem,
 				BugManagementState:      &bugspb.BugManagementState{},
 			}
@@ -221,16 +221,16 @@ func TestBuganizerUpdate(t *testing.T) {
 				expectedRule.RuleID = rule.RuleID
 
 				// Accept creation and last updated times, as set by Spanner.
-				So(rule.CreationTime, ShouldNotBeZeroValue)
-				expectedRule.CreationTime = rule.CreationTime
-				So(rule.LastAuditableUpdate, ShouldNotBeZeroValue)
-				expectedRule.LastAuditableUpdate = rule.LastAuditableUpdate
-				So(rule.LastUpdated, ShouldNotBeZeroValue)
-				expectedRule.LastUpdated = rule.LastUpdated
-				So(rule.PredicateLastUpdated, ShouldNotBeZeroValue)
-				expectedRule.PredicateLastUpdated = rule.PredicateLastUpdated
-				So(rule.IsManagingBugPriorityLastUpdated, ShouldNotBeZeroValue)
-				expectedRule.IsManagingBugPriorityLastUpdated = rule.IsManagingBugPriorityLastUpdated
+				So(rule.CreateTime, ShouldNotBeZeroValue)
+				expectedRule.CreateTime = rule.CreateTime
+				So(rule.LastAuditableUpdateTime, ShouldNotBeZeroValue)
+				expectedRule.LastAuditableUpdateTime = rule.LastAuditableUpdateTime
+				So(rule.LastUpdateTime, ShouldNotBeZeroValue)
+				expectedRule.LastUpdateTime = rule.LastUpdateTime
+				So(rule.PredicateLastUpdateTime, ShouldNotBeZeroValue)
+				expectedRule.PredicateLastUpdateTime = rule.PredicateLastUpdateTime
+				So(rule.IsManagingBugPriorityLastUpdateTime, ShouldNotBeZeroValue)
+				expectedRule.IsManagingBugPriorityLastUpdateTime = rule.IsManagingBugPriorityLastUpdateTime
 				So(rule, ShouldResembleProto, expectedRule)
 
 				So(len(fakeStore.Issues), ShouldEqual, id)
@@ -336,12 +336,12 @@ func TestBuganizerUpdate(t *testing.T) {
 				rule := rules.NewRule(1).
 					WithBugSystem(bugs.BuganizerSystem).
 					WithProject(project).
-					WithCreationTime(createTime).
-					WithPredicateLastUpdated(createTime.Add(1 * time.Hour)).
-					WithLastAuditableUpdate(createTime.Add(2 * time.Hour)).
-					WithLastUpdated(createTime.Add(3 * time.Hour)).
+					WithCreateTime(createTime).
+					WithPredicateLastUpdateTime(createTime.Add(1 * time.Hour)).
+					WithLastAuditableUpdateTime(createTime.Add(2 * time.Hour)).
+					WithLastUpdateTime(createTime.Add(3 * time.Hour)).
 					WithBugPriorityManaged(true).
-					WithBugPriorityManagedLastUpdated(createTime.Add(1 * time.Hour)).
+					WithBugPriorityManagedLastUpdateTime(createTime.Add(1 * time.Hour)).
 					WithSourceCluster(sourceClusterID).Build()
 				err := rules.SetForTesting(ctx, []*rules.Entry{
 					rule,
@@ -521,7 +521,7 @@ func TestBuganizerUpdate(t *testing.T) {
 					IsActive:                true,
 					IsManagingBug:           true,
 					IsManagingBugPriority:   true,
-					CreationUser:            rules.LUCIAnalysisSystem,
+					CreateUser:              rules.LUCIAnalysisSystem,
 					LastAuditableUpdateUser: rules.LUCIAnalysisSystem,
 					BugManagementState:      &bugspb.BugManagementState{},
 				},
@@ -533,7 +533,7 @@ func TestBuganizerUpdate(t *testing.T) {
 					IsActive:                true,
 					IsManagingBug:           true,
 					IsManagingBugPriority:   true,
-					CreationUser:            rules.LUCIAnalysisSystem,
+					CreateUser:              rules.LUCIAnalysisSystem,
 					LastAuditableUpdateUser: rules.LUCIAnalysisSystem,
 					BugManagementState:      &bugspb.BugManagementState{},
 				},
@@ -545,7 +545,7 @@ func TestBuganizerUpdate(t *testing.T) {
 					IsActive:                true,
 					IsManagingBug:           true,
 					IsManagingBugPriority:   true,
-					CreationUser:            rules.LUCIAnalysisSystem,
+					CreateUser:              rules.LUCIAnalysisSystem,
 					LastAuditableUpdateUser: rules.LUCIAnalysisSystem,
 					BugManagementState:      &bugspb.BugManagementState{},
 				},
@@ -557,18 +557,18 @@ func TestBuganizerUpdate(t *testing.T) {
 				So(err, ShouldBeNil)
 				for _, r := range rs {
 					So(r.RuleID, ShouldNotBeEmpty)
-					So(r.CreationTime, ShouldNotBeZeroValue)
-					So(r.LastAuditableUpdate, ShouldNotBeZeroValue)
-					So(r.LastUpdated, ShouldNotBeZeroValue)
-					So(r.PredicateLastUpdated, ShouldNotBeZeroValue)
-					So(r.IsManagingBugPriorityLastUpdated, ShouldNotBeZeroValue)
+					So(r.CreateTime, ShouldNotBeZeroValue)
+					So(r.LastAuditableUpdateTime, ShouldNotBeZeroValue)
+					So(r.LastUpdateTime, ShouldNotBeZeroValue)
+					So(r.PredicateLastUpdateTime, ShouldNotBeZeroValue)
+					So(r.IsManagingBugPriorityLastUpdateTime, ShouldNotBeZeroValue)
 					// Accept whatever values the implementation has set.
 					r.RuleID = ""
-					r.CreationTime = time.Time{}
-					r.LastAuditableUpdate = time.Time{}
-					r.LastUpdated = time.Time{}
-					r.PredicateLastUpdated = time.Time{}
-					r.IsManagingBugPriorityLastUpdated = time.Time{}
+					r.CreateTime = time.Time{}
+					r.LastAuditableUpdateTime = time.Time{}
+					r.LastUpdateTime = time.Time{}
+					r.PredicateLastUpdateTime = time.Time{}
+					r.IsManagingBugPriorityLastUpdateTime = time.Time{}
 				}
 
 				sortedExpected := make([]*rules.Entry, len(expectedRules))
@@ -646,7 +646,7 @@ func TestBuganizerUpdate(t *testing.T) {
 						WithProject(project).
 						WithAlgorithmsVersion(algorithms.AlgorithmsVersion).
 						WithConfigVersion(projectCfg.LastUpdated.AsTime()).
-						WithRulesVersion(rs[2].PredicateLastUpdated).
+						WithRulesVersion(rs[2].PredicateLastUpdateTime).
 						WithCompletedProgress().Build(),
 				})
 				So(err, ShouldBeNil)

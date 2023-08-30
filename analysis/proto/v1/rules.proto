@@ -53,7 +53,8 @@ service Rules {
 
 // A rule associating failures with a bug.
 message Rule {
-  // Can be used to refer to this rule, e.g. in RulesService.Get RPC.
+  // The resource name of the failure association rule.
+  // Can be used to refer to this rule, e.g. in Rules.Get RPC.
   // Format: projects/{project}/rules/{rule_id}.
   // See also https://google.aip.dev/122.
   string name = 1;
@@ -95,7 +96,7 @@ message Rule {
   bool is_managing_bug_priority = 15;
 
   // Output Only. The time is_managing_bug_priority was last updated.
-  google.protobuf.Timestamp is_managing_bug_priority_last_updated = 16;
+  google.protobuf.Timestamp is_managing_bug_priority_last_update_time = 16;
 
   // The suggested cluster this rule was created from (if any).
   // Until re-clustering is complete and has reduced the residual impact
@@ -103,32 +104,6 @@ message Rule {
   // the source cluster when determining whether new bugs need to be filed.
   // Immutable after creation.
   luci.analysis.v1.ClusterId source_cluster = 7;
-
-  message BugManagementState {
-    // A mapping from bug management policy identifier to policy state.
-    map<string, PolicyState> policy_state = 1;
-
-    // The state of a bug management policy for a rule.
-    message PolicyState {
-      // Whether the given policy is active for the rule.
-      // Updated on every bug-filing run as follows:
-      // - Set to true if the policy activation criteria was met.
-      // - Set to false if the policy deactivation criteria was met.
-      bool is_active = 1;
-
-      // The last time the policy was made active.
-      // Allows detecting if policy is made active for the first time (as a
-      // zero last_activation_time indicates the policy was never active).
-      // Allows UI to filter to showing policies that were at least once active.
-      // Allows UI to sort which policy was most recently active.
-      // Allows UI to show when a policy last activated.
-      google.protobuf.Timestamp last_activation_time = 2;
-
-      // The last time the policy was made inactive.
-      // Allows UI to show when a policy last deactivated.
-      google.protobuf.Timestamp last_deactivation_time = 3;
-    }
-  }
 
   // Bug management state.
   // System controlled data, cannot be modified by the user.
@@ -182,6 +157,33 @@ message Rule {
   string etag = 12;
 
   // Next ID: 20
+}
+
+// BugManagementState is the state of bug management for a rule.
+message BugManagementState {
+  // A mapping from bug management policy identifier to policy state.
+  map<string, PolicyState> policy_state = 1;
+
+  // The state of a bug management policy for a rule.
+  message PolicyState {
+    // Whether the given policy is active for the rule.
+    // Updated on every bug-filing run as follows:
+    // - Set to true if the policy activation criteria was met.
+    // - Set to false if the policy deactivation criteria was met.
+    bool is_active = 1;
+
+    // The last time the policy was made active.
+    // Allows detecting if policy is made active for the first time (as a
+    // zero last_activation_time indicates the policy was never active).
+    // Allows UI to filter to showing policies that were at least once active.
+    // Allows UI to sort which policy was most recently active.
+    // Allows UI to show when a policy last activated.
+    google.protobuf.Timestamp last_activation_time = 2;
+
+    // The last time the policy was made inactive.
+    // Allows UI to show when a policy last deactivated.
+    google.protobuf.Timestamp last_deactivation_time = 3;
+  }
 }
 
 message GetRuleRequest {

@@ -221,13 +221,13 @@ func (*rulesServer) Create(ctx context.Context, req *pb.CreateRuleRequest) (*pb.
 	if err != nil {
 		return nil, err
 	}
-	r.CreationTime = commitTime.In(time.UTC)
-	r.CreationUser = user
-	r.LastAuditableUpdate = commitTime.In(time.UTC)
+	r.CreateTime = commitTime.In(time.UTC)
+	r.CreateUser = user
+	r.LastAuditableUpdateTime = commitTime.In(time.UTC)
 	r.LastAuditableUpdateUser = user
-	r.LastUpdated = commitTime.In(time.UTC)
-	r.PredicateLastUpdated = commitTime.In(time.UTC)
-	r.IsManagingBugPriorityLastUpdated = commitTime.In(time.UTC)
+	r.LastUpdateTime = commitTime.In(time.UTC)
+	r.PredicateLastUpdateTime = commitTime.In(time.UTC)
+	r.IsManagingBugPriorityLastUpdateTime = commitTime.In(time.UTC)
 
 	// Log rule changes to provide a way of recovering old system state
 	// if malicious or unintended updates occur.
@@ -369,14 +369,14 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 	if err != nil {
 		return nil, err
 	}
-	updatedRule.LastAuditableUpdate = commitTime.In(time.UTC)
+	updatedRule.LastAuditableUpdateTime = commitTime.In(time.UTC)
 	updatedRule.LastAuditableUpdateUser = user
-	updatedRule.LastUpdated = commitTime.In(time.UTC)
+	updatedRule.LastUpdateTime = commitTime.In(time.UTC)
 	if predicateUpdated {
-		updatedRule.PredicateLastUpdated = commitTime.In(time.UTC)
+		updatedRule.PredicateLastUpdateTime = commitTime.In(time.UTC)
 	}
 	if managingBugPriorityUpdated {
-		updatedRule.IsManagingBugPriorityLastUpdated = commitTime.In(time.UTC)
+		updatedRule.IsManagingBugPriorityLastUpdateTime = commitTime.In(time.UTC)
 	}
 	// Log rule changes to provide a way of recovering old system state
 	// if malicious or unintended updates occur.
@@ -401,8 +401,8 @@ func formatRule(r *rules.Entry) string {
 		"\tLastUpdated: %q\n"+
 		"}", r.RuleDefinition, r.BugID, r.IsActive, r.IsManagingBug,
 		r.IsManagingBugPriority, r.SourceCluster,
-		r.LastAuditableUpdate.Format(time.RFC3339Nano),
-		r.LastUpdated.Format(time.RFC3339Nano))
+		r.LastAuditableUpdateTime.Format(time.RFC3339Nano),
+		r.LastUpdateTime.Format(time.RFC3339Nano))
 }
 
 // LookupBug looks up the rule associated with the given bug.
@@ -442,49 +442,31 @@ func createRulePB(r *rules.Entry, cfg *configpb.ProjectConfig, mask ruleMask) *p
 	creationUser := ""
 	lastAuditableUpdateUser := ""
 	if mask.IncludeAuditUsers {
-		creationUser = r.CreationUser
+		creationUser = r.CreateUser
 		lastAuditableUpdateUser = r.LastAuditableUpdateUser
 	}
 	return &pb.Rule{
-		Name:                             ruleName(r.Project, r.RuleID),
-		Project:                          r.Project,
-		RuleId:                           r.RuleID,
-		RuleDefinition:                   definition,
-		Bug:                              createAssociatedBugPB(r.BugID, cfg),
-		IsActive:                         r.IsActive,
-		IsManagingBug:                    r.IsManagingBug,
-		IsManagingBugPriority:            r.IsManagingBugPriority,
-		IsManagingBugPriorityLastUpdated: timestamppb.New(r.IsManagingBugPriorityLastUpdated),
+		Name:                                ruleName(r.Project, r.RuleID),
+		Project:                             r.Project,
+		RuleId:                              r.RuleID,
+		RuleDefinition:                      definition,
+		Bug:                                 createAssociatedBugPB(r.BugID, cfg),
+		IsActive:                            r.IsActive,
+		IsManagingBug:                       r.IsManagingBug,
+		IsManagingBugPriority:               r.IsManagingBugPriority,
+		IsManagingBugPriorityLastUpdateTime: timestamppb.New(r.IsManagingBugPriorityLastUpdateTime),
 		SourceCluster: &pb.ClusterId{
 			Algorithm: r.SourceCluster.Algorithm,
 			Id:        r.SourceCluster.ID,
 		},
-		BugManagementState:      createBugManagementStatePB(r.BugManagementState),
-		CreateTime:              timestamppb.New(r.CreationTime),
+		BugManagementState:      rules.ToExternalBugManagementStatePB(r.BugManagementState),
+		CreateTime:              timestamppb.New(r.CreateTime),
 		CreateUser:              creationUser,
-		LastAuditableUpdateTime: timestamppb.New(r.LastAuditableUpdate),
+		LastAuditableUpdateTime: timestamppb.New(r.LastAuditableUpdateTime),
 		LastAuditableUpdateUser: lastAuditableUpdateUser,
-		LastUpdateTime:          timestamppb.New(r.LastUpdated),
-		PredicateLastUpdateTime: timestamppb.New(r.PredicateLastUpdated),
+		LastUpdateTime:          timestamppb.New(r.LastUpdateTime),
+		PredicateLastUpdateTime: timestamppb.New(r.PredicateLastUpdateTime),
 		Etag:                    ruleETag(r, mask),
-	}
-}
-
-func createBugManagementStatePB(r *bugspb.BugManagementState) *pb.Rule_BugManagementState {
-	policyState := make(map[string]*pb.Rule_BugManagementState_PolicyState, len(r.PolicyState))
-	for policy, state := range r.PolicyState {
-		policyState[policy] = createPolicyStatePB(state)
-	}
-	return &pb.Rule_BugManagementState{
-		PolicyState: policyState,
-	}
-}
-
-func createPolicyStatePB(s *bugspb.BugManagementState_PolicyState) *pb.Rule_BugManagementState_PolicyState {
-	return &pb.Rule_BugManagementState_PolicyState{
-		IsActive:             s.IsActive,
-		LastActivationTime:   s.LastActivationTime,
-		LastDeactivationTime: s.LastDeactivationTime,
 	}
 }
 
@@ -501,7 +483,7 @@ func ruleETag(rule *rules.Entry, mask ruleMask) string {
 	// Encode whether the definition and user were included,
 	// so that if the user is granted access to either of
 	// these fields, the browser cache is invalidated.
-	return fmt.Sprintf(`W/"%s%s/%s"`, definitionFilter, userFilter, rule.LastUpdated.UTC().Format(time.RFC3339Nano))
+	return fmt.Sprintf(`W/"%s%s/%s"`, definitionFilter, userFilter, rule.LastUpdateTime.UTC().Format(time.RFC3339Nano))
 }
 
 // etagRegexp extracts the rule last modified timestamp from a rule ETag.
@@ -514,7 +496,7 @@ func isETagMatching(rule *rules.Entry, etag string) bool {
 	if len(m) < 2 {
 		return false
 	}
-	return m[1] == rule.LastUpdated.UTC().Format(time.RFC3339Nano)
+	return m[1] == rule.LastUpdateTime.UTC().Format(time.RFC3339Nano)
 }
 
 // validateBugAgainstConfig validates the specified bug is consistent with

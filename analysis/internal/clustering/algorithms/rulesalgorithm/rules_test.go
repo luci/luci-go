@@ -121,12 +121,12 @@ func TestAlgorithm(t *testing.T) {
 		// should never happen in reality) to check it is never evaluated.
 		rule1, err := cache.NewCachedRule(
 			rules.NewRule(100).WithRuleDefinition(`FALSE`).
-				WithPredicateLastUpdated(originalRulesVersion).Build())
+				WithPredicateLastUpdateTime(originalRulesVersion).Build())
 		So(err, ShouldBeNil)
 		rule3, err := cache.NewCachedRule(
 			rules.NewRule(102).
 				WithRuleDefinition(`reason LIKE "failed to connect to %"`).
-				WithPredicateLastUpdated(originalRulesVersion.Add(time.Hour)).Build())
+				WithPredicateLastUpdateTime(originalRulesVersion.Add(time.Hour)).Build())
 		So(err, ShouldBeNil)
 
 		rs := []*cache.CachedRule{rule1, rule3}

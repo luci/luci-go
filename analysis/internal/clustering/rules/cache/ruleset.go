@@ -88,7 +88,7 @@ func (r *Ruleset) ActiveRulesWithPredicateUpdatedSince(t time.Time) []*CachedRul
 	// Use the property that ActiveRules is sorted by descending
 	// LastUpdated time.
 	for i, rule := range r.ActiveRulesSorted {
-		if !rule.Rule.PredicateLastUpdated.After(t) {
+		if !rule.Rule.PredicateLastUpdateTime.After(t) {
 			// This is the first rule that has not been updated since time t.
 			// Return all rules up to (but not including) this rule.
 			return r.ActiveRulesSorted[:i]
@@ -230,10 +230,10 @@ func sortByDescendingPredicateLastUpdated(rules []*CachedRule) []*CachedRule {
 	result := make([]*CachedRule, len(rules))
 	copy(result, rules)
 	sort.Slice(result, func(i, j int) bool {
-		if result[i].Rule.PredicateLastUpdated.Equal(result[j].Rule.PredicateLastUpdated) {
+		if result[i].Rule.PredicateLastUpdateTime.Equal(result[j].Rule.PredicateLastUpdateTime) {
 			return result[i].Rule.RuleID < result[j].Rule.RuleID
 		}
-		return result[i].Rule.PredicateLastUpdated.After(result[j].Rule.PredicateLastUpdated)
+		return result[i].Rule.PredicateLastUpdateTime.After(result[j].Rule.PredicateLastUpdateTime)
 	})
 	return result
 }

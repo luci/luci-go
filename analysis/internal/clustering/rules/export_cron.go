@@ -75,24 +75,26 @@ func exportRules(ctx context.Context, client exporterClient, exportTime time.Tim
 
 func toFailureAssociationRulesHistoryRow(rule *Entry, exportTime time.Time) *bqpb.FailureAssociationRulesHistoryRow {
 	return &bqpb.FailureAssociationRulesHistoryRow{
-		Project:              rule.Project,
-		RuleId:               rule.RuleID,
-		RuleDefinition:       rule.RuleDefinition,
-		CreationTime:         timestamppb.New(rule.CreationTime),
-		LastUpdated:          timestamppb.New(rule.LastUpdated),
-		PredicateLastUpdated: timestamppb.New(rule.PredicateLastUpdated),
+		Project:                 rule.Project,
+		RuleId:                  rule.RuleID,
+		RuleDefinition:          rule.RuleDefinition,
+		PredicateLastUpdateTime: timestamppb.New(rule.PredicateLastUpdateTime),
 		Bug: &bqpb.FailureAssociationRulesHistoryRow_Bug{
 			System: rule.BugID.System,
 			Id:     rule.BugID.ID,
 		},
-		IsActive:                         rule.IsActive,
-		IsManagingBug:                    rule.IsManagingBug,
-		IsManagingBugPriority:            rule.IsManagingBugPriority,
-		IsManagingBugPriorityLastUpdated: timestamppb.New(rule.IsManagingBugPriorityLastUpdated),
+		IsActive:                            rule.IsActive,
+		IsManagingBug:                       rule.IsManagingBug,
+		IsManagingBugPriority:               rule.IsManagingBugPriority,
+		IsManagingBugPriorityLastUpdateTime: timestamppb.New(rule.IsManagingBugPriorityLastUpdateTime),
 		SourceCluster: &analysispb.ClusterId{
 			Algorithm: rule.SourceCluster.Algorithm,
 			Id:        rule.SourceCluster.ID,
 		},
-		ExportedTime: timestamppb.New(exportTime),
+		BugManagementState:      ToExternalBugManagementStatePB(rule.BugManagementState),
+		CreateTime:              timestamppb.New(rule.CreateTime),
+		LastAuditableUpdateTime: timestamppb.New(rule.LastAuditableUpdateTime),
+		LastUpdateTime:          timestamppb.New(rule.LastUpdateTime),
+		ExportedTime:            timestamppb.New(exportTime),
 	}
 }

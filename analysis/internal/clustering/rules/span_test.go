@@ -52,7 +52,7 @@ func TestSpan(t *testing.T) {
 				So(rule, ShouldResembleProto, expectedRule)
 			})
 			Convey(`With null IsManagingBugPriorityLastUpdated`, func() {
-				expectedRule := NewRule(100).WithBugPriorityManagedLastUpdated(time.Time{}).Build()
+				expectedRule := NewRule(100).WithBugPriorityManagedLastUpdateTime(time.Time{}).Build()
 				err := SetForTesting(ctx, []*Entry{expectedRule})
 				So(err, ShouldBeNil)
 				_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
@@ -65,7 +65,7 @@ func TestSpan(t *testing.T) {
 				So(err, ShouldBeNil)
 				rule, err := Read(span.Single(ctx), testProject, expectedRule.RuleID)
 				So(err, ShouldBeNil)
-				So(rule.IsManagingBugPriorityLastUpdated.IsZero(), ShouldBeTrue)
+				So(rule.IsManagingBugPriorityLastUpdateTime.IsZero(), ShouldBeTrue)
 				So(rule, ShouldResembleProto, expectedRule)
 			})
 		})
@@ -139,10 +139,10 @@ func TestSpan(t *testing.T) {
 			Convey(`Multiple`, func() {
 				reference := time.Date(2020, 1, 2, 3, 4, 5, 6000, time.UTC)
 				rulesToCreate := []*Entry{
-					NewRule(0).WithLastUpdated(reference).Build(),
-					NewRule(1).WithProject("otherproject").WithLastUpdated(reference.Add(time.Minute)).Build(),
-					NewRule(2).WithActive(false).WithLastUpdated(reference.Add(time.Minute)).Build(),
-					NewRule(3).WithLastUpdated(reference.Add(time.Microsecond)).Build(),
+					NewRule(0).WithLastUpdateTime(reference).Build(),
+					NewRule(1).WithProject("otherproject").WithLastUpdateTime(reference.Add(time.Minute)).Build(),
+					NewRule(2).WithActive(false).WithLastUpdateTime(reference.Add(time.Minute)).Build(),
+					NewRule(3).WithLastUpdateTime(reference.Add(time.Microsecond)).Build(),
 				}
 				err := SetForTesting(ctx, rulesToCreate)
 				So(err, ShouldBeNil)
@@ -184,10 +184,10 @@ func TestSpan(t *testing.T) {
 			Convey(`Multiple`, func() {
 				reference := time.Date(2020, 1, 2, 3, 4, 5, 6000, time.UTC)
 				rulesToCreate := []*Entry{
-					NewRule(0).WithLastUpdated(reference).Build(),
-					NewRule(1).WithProject("otherproject").WithLastUpdated(reference.Add(time.Minute)).Build(),
-					NewRule(2).WithActive(false).WithLastUpdated(reference.Add(time.Minute)).Build(),
-					NewRule(3).WithLastUpdated(reference.Add(time.Microsecond)).Build(),
+					NewRule(0).WithLastUpdateTime(reference).Build(),
+					NewRule(1).WithProject("otherproject").WithLastUpdateTime(reference.Add(time.Minute)).Build(),
+					NewRule(2).WithActive(false).WithLastUpdateTime(reference.Add(time.Minute)).Build(),
+					NewRule(3).WithLastUpdateTime(reference.Add(time.Microsecond)).Build(),
 				}
 				err := SetForTesting(ctx, rulesToCreate)
 				So(err, ShouldBeNil)
@@ -272,20 +272,20 @@ func TestSpan(t *testing.T) {
 				reference := time.Date(2020, 1, 2, 3, 4, 5, 6000, time.UTC)
 				rulesToCreate := []*Entry{
 					NewRule(0).
-						WithPredicateLastUpdated(reference.Add(-1 * time.Hour)).
-						WithLastUpdated(reference.Add(-1 * time.Hour)).
+						WithPredicateLastUpdateTime(reference.Add(-1 * time.Hour)).
+						WithLastUpdateTime(reference.Add(-1 * time.Hour)).
 						Build(),
 					NewRule(1).WithProject("otherproject").
-						WithPredicateLastUpdated(reference.Add(time.Hour)).
-						WithLastUpdated(reference.Add(time.Hour)).
+						WithPredicateLastUpdateTime(reference.Add(time.Hour)).
+						WithLastUpdateTime(reference.Add(time.Hour)).
 						Build(),
 					NewRule(2).WithActive(false).
-						WithPredicateLastUpdated(reference.Add(-1 * time.Second)).
-						WithLastUpdated(reference).
+						WithPredicateLastUpdateTime(reference.Add(-1 * time.Second)).
+						WithLastUpdateTime(reference).
 						Build(),
 					NewRule(3).
-						WithPredicateLastUpdated(reference.Add(-2 * time.Hour)).
-						WithLastUpdated(reference.Add(-2 * time.Hour)).
+						WithPredicateLastUpdateTime(reference.Add(-2 * time.Hour)).
+						WithLastUpdateTime(reference.Add(-2 * time.Hour)).
 						Build(),
 				}
 				err := SetForTesting(ctx, rulesToCreate)
@@ -339,7 +339,7 @@ func TestSpan(t *testing.T) {
 				return commitTime.In(time.UTC), err
 			}
 			r := NewRule(100).Build()
-			r.CreationUser = LUCIAnalysisSystem
+			r.CreateUser = LUCIAnalysisSystem
 			r.LastAuditableUpdateUser = LUCIAnalysisSystem
 
 			Convey(`Valid`, func() {
@@ -362,27 +362,27 @@ func TestSpan(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					expectedRule := *r
-					expectedRule.LastUpdated = commitTime
-					expectedRule.LastAuditableUpdate = commitTime
-					expectedRule.PredicateLastUpdated = commitTime
-					expectedRule.IsManagingBugPriorityLastUpdated = commitTime
-					expectedRule.CreationTime = commitTime
+					expectedRule.LastUpdateTime = commitTime
+					expectedRule.LastAuditableUpdateTime = commitTime
+					expectedRule.PredicateLastUpdateTime = commitTime
+					expectedRule.IsManagingBugPriorityLastUpdateTime = commitTime
+					expectedRule.CreateTime = commitTime
 					testExists(expectedRule)
 				})
 				Convey(`Without Source Cluster`, func() {
 					// E.g. in case of a manually created rule.
 					r.SourceCluster = clustering.ClusterID{}
-					r.CreationUser = "user@google.com"
+					r.CreateUser = "user@google.com"
 					r.LastAuditableUpdateUser = "user@google.com"
 					commitTime, err := testCreate(r, "user@google.com")
 					So(err, ShouldBeNil)
 
 					expectedRule := *r
-					expectedRule.LastUpdated = commitTime
-					expectedRule.LastAuditableUpdate = commitTime
-					expectedRule.PredicateLastUpdated = commitTime
-					expectedRule.IsManagingBugPriorityLastUpdated = commitTime
-					expectedRule.CreationTime = commitTime
+					expectedRule.LastUpdateTime = commitTime
+					expectedRule.LastAuditableUpdateTime = commitTime
+					expectedRule.PredicateLastUpdateTime = commitTime
+					expectedRule.IsManagingBugPriorityLastUpdateTime = commitTime
+					expectedRule.CreateTime = commitTime
 					testExists(expectedRule)
 				})
 				Convey(`With Buganizer Bug`, func() {
@@ -391,11 +391,11 @@ func TestSpan(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					expectedRule := *r
-					expectedRule.LastUpdated = commitTime
-					expectedRule.LastAuditableUpdate = commitTime
-					expectedRule.PredicateLastUpdated = commitTime
-					expectedRule.IsManagingBugPriorityLastUpdated = commitTime
-					expectedRule.CreationTime = commitTime
+					expectedRule.LastUpdateTime = commitTime
+					expectedRule.LastAuditableUpdateTime = commitTime
+					expectedRule.PredicateLastUpdateTime = commitTime
+					expectedRule.IsManagingBugPriorityLastUpdateTime = commitTime
+					expectedRule.CreateTime = commitTime
 					testExists(expectedRule)
 				})
 				Convey(`With Monorail Bug`, func() {
@@ -404,11 +404,11 @@ func TestSpan(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					expectedRule := *r
-					expectedRule.LastUpdated = commitTime
-					expectedRule.LastAuditableUpdate = commitTime
-					expectedRule.PredicateLastUpdated = commitTime
-					expectedRule.IsManagingBugPriorityLastUpdated = commitTime
-					expectedRule.CreationTime = commitTime
+					expectedRule.LastUpdateTime = commitTime
+					expectedRule.LastAuditableUpdateTime = commitTime
+					expectedRule.PredicateLastUpdateTime = commitTime
+					expectedRule.IsManagingBugPriorityLastUpdateTime = commitTime
+					expectedRule.CreateTime = commitTime
 					testExists(expectedRule)
 				})
 			})
@@ -480,10 +480,10 @@ func TestSpan(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					expectedRule := *r
-					expectedRule.PredicateLastUpdated = commitTime
-					expectedRule.LastAuditableUpdate = commitTime
+					expectedRule.PredicateLastUpdateTime = commitTime
+					expectedRule.LastAuditableUpdateTime = commitTime
 					expectedRule.LastAuditableUpdateUser = "testuser@google.com"
-					expectedRule.LastUpdated = commitTime
+					expectedRule.LastUpdateTime = commitTime
 					testExists(&expectedRule)
 				})
 				Convey(`Update IsManagingBugPriority`, func() {
@@ -495,10 +495,10 @@ func TestSpan(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					expectedRule := *r
-					expectedRule.IsManagingBugPriorityLastUpdated = commitTime
-					expectedRule.LastAuditableUpdate = commitTime
+					expectedRule.IsManagingBugPriorityLastUpdateTime = commitTime
+					expectedRule.LastAuditableUpdateTime = commitTime
 					expectedRule.LastAuditableUpdateUser = "testuser@google.com"
-					expectedRule.LastUpdated = commitTime
+					expectedRule.LastUpdateTime = commitTime
 					testExists(&expectedRule)
 				})
 				Convey(`Standard auditable update`, func() {
@@ -509,9 +509,9 @@ func TestSpan(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					expectedRule := *r
-					expectedRule.LastAuditableUpdate = commitTime
+					expectedRule.LastAuditableUpdateTime = commitTime
 					expectedRule.LastAuditableUpdateUser = "testuser@google.com"
-					expectedRule.LastUpdated = commitTime
+					expectedRule.LastUpdateTime = commitTime
 					testExists(&expectedRule)
 				})
 				Convey(`SourceCluster is immutable`, func() {
@@ -524,9 +524,9 @@ func TestSpan(t *testing.T) {
 
 					expectedRule := *r
 					expectedRule.SourceCluster = originalSourceCluster
-					expectedRule.LastAuditableUpdate = commitTime
+					expectedRule.LastAuditableUpdateTime = commitTime
 					expectedRule.LastAuditableUpdateUser = "testuser@google.com"
-					expectedRule.LastUpdated = commitTime
+					expectedRule.LastUpdateTime = commitTime
 					testExists(&expectedRule)
 				})
 				Convey(`Non-auditable update`, func() {
@@ -545,7 +545,7 @@ func TestSpan(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					expectedRule := *r
-					expectedRule.LastUpdated = commitTime
+					expectedRule.LastUpdateTime = commitTime
 					testExists(&expectedRule)
 				})
 			})

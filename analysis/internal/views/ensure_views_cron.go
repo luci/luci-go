@@ -34,7 +34,7 @@ var schemaApplyer = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(50))
 const rulesViewBaseQuery = `
 	WITH items AS (
 		SELECT
-		ARRAY_AGG(rh1 ORDER BY rh1.last_updated DESC LIMIT 1)[OFFSET(0)] as row
+		ARRAY_AGG(rh1 ORDER BY rh1.last_update_time DESC LIMIT 1)[OFFSET(0)] as row
 		FROM internal.failure_association_rules_history rh1
 		GROUP BY rh1.project, rh1.rule_id
 	)

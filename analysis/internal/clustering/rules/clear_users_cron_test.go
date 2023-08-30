@@ -30,8 +30,8 @@ func TestClearRuleUsers(t *testing.T) {
 
 		Convey(`Rules older than 30 days should have their CreationUser cleared`, func() {
 			expectedRule := NewRule(101).
-				WithCreationTime(time.Now().AddDate(0, 0, -31)).
-				WithCreationUser("user@example.com").
+				WithCreateTime(time.Now().AddDate(0, 0, -31)).
+				WithCreateUser("user@example.com").
 				Build()
 			err := SetForTesting(ctx, []*Entry{expectedRule})
 			So(err, ShouldBeNil)
@@ -42,13 +42,13 @@ func TestClearRuleUsers(t *testing.T) {
 
 			rule, err := Read(span.Single(ctx), testProject, expectedRule.RuleID)
 			So(err, ShouldBeNil)
-			So(rule.CreationUser, ShouldEqual, "")
+			So(rule.CreateUser, ShouldEqual, "")
 		})
 
 		Convey(`Rules created less than 30 days ago should not change`, func() {
 			expectedRule := NewRule(101).
-				WithCreationTime(time.Now()).
-				WithCreationUser("user@example.com").
+				WithCreateTime(time.Now()).
+				WithCreateUser("user@example.com").
 				Build()
 			err := SetForTesting(ctx, []*Entry{expectedRule})
 			So(err, ShouldBeNil)
@@ -60,7 +60,7 @@ func TestClearRuleUsers(t *testing.T) {
 
 		Convey(`Rules with auditable updates more than 30 days ago have their LastAuditableUpdateUser cleared`, func() {
 			expectedRule := NewRule(101).
-				WithLastAuditableUpdate(time.Now().AddDate(0, 0, -31)).
+				WithLastAuditableUpdateTime(time.Now().AddDate(0, 0, -31)).
 				WithLastAuditableUpdateUser("user@example.com").
 				Build()
 			err := SetForTesting(ctx, []*Entry{expectedRule})
@@ -77,7 +77,7 @@ func TestClearRuleUsers(t *testing.T) {
 
 		Convey(`Rules with auditable updates less than 30 days ago should not change`, func() {
 			expectedRule := NewRule(101).
-				WithLastAuditableUpdate(time.Now().AddDate(0, 0, -29)).
+				WithLastAuditableUpdateTime(time.Now().AddDate(0, 0, -29)).
 				WithLastAuditableUpdateUser("user@example.com").
 				Build()
 			err := SetForTesting(ctx, []*Entry{expectedRule})
@@ -90,9 +90,9 @@ func TestClearRuleUsers(t *testing.T) {
 
 		Convey(`ClearRulesUsers clears both LastAuditableUpdateUser and CreationUser`, func() {
 			expectedRule := NewRule(101).
-				WithCreationTime(time.Now().AddDate(0, 0, -31)).
-				WithCreationUser("user@example.com").
-				WithLastAuditableUpdate(time.Now().AddDate(0, 0, -31)).
+				WithCreateTime(time.Now().AddDate(0, 0, -31)).
+				WithCreateUser("user@example.com").
+				WithLastAuditableUpdateTime(time.Now().AddDate(0, 0, -31)).
 				WithLastAuditableUpdateUser("user@example.com").
 				Build()
 			err := SetForTesting(ctx, []*Entry{expectedRule})
@@ -103,7 +103,7 @@ func TestClearRuleUsers(t *testing.T) {
 
 			rule, err := Read(span.Single(ctx), testProject, expectedRule.RuleID)
 			So(err, ShouldBeNil)
-			So(rule.CreationUser, ShouldEqual, "")
+			So(rule.CreateUser, ShouldEqual, "")
 			So(rule.LastAuditableUpdateUser, ShouldEqual, "")
 		})
 	})

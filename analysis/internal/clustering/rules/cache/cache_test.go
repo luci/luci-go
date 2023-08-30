@@ -105,12 +105,12 @@ func TestRulesCache(t *testing.T) {
 
 				rs := []*rules.Entry{
 					rules.NewRule(100).
-						WithLastUpdated(reference.Add(-1 * time.Hour)).
-						WithPredicateLastUpdated(reference.Add(-2 * time.Hour)).
+						WithLastUpdateTime(reference.Add(-1 * time.Hour)).
+						WithPredicateLastUpdateTime(reference.Add(-2 * time.Hour)).
 						Build(),
 					rules.NewRule(101).WithActive(false).
-						WithLastUpdated(reference.Add(1 * time.Hour)).
-						WithPredicateLastUpdated(reference).
+						WithLastUpdateTime(reference.Add(1 * time.Hour)).
+						WithPredicateLastUpdateTime(reference).
 						Build(),
 				}
 				err := rules.SetForTesting(ctx, rs)
@@ -144,14 +144,14 @@ func TestRulesCache(t *testing.T) {
 			reference := time.Date(2021, 1, 2, 3, 4, 5, 6000, time.UTC)
 
 			ruleOne := rules.NewRule(100).
-				WithLastUpdated(reference.Add(-2 * time.Hour)).
-				WithPredicateLastUpdated(reference.Add(-3 * time.Hour))
+				WithLastUpdateTime(reference.Add(-2 * time.Hour)).
+				WithPredicateLastUpdateTime(reference.Add(-3 * time.Hour))
 			ruleTwo := rules.NewRule(101).
-				WithLastUpdated(reference.Add(-2 * time.Hour)).
-				WithPredicateLastUpdated(reference.Add(-3 * time.Hour))
+				WithLastUpdateTime(reference.Add(-2 * time.Hour)).
+				WithPredicateLastUpdateTime(reference.Add(-3 * time.Hour))
 			ruleThree := rules.NewRule(102).WithActive(false).
-				WithLastUpdated(reference).
-				WithPredicateLastUpdated(reference.Add(-1 * time.Hour))
+				WithLastUpdateTime(reference).
+				WithPredicateLastUpdateTime(reference.Add(-1 * time.Hour))
 
 			rs := []*rules.Entry{
 				ruleOne.Build(),
@@ -171,16 +171,16 @@ func TestRulesCache(t *testing.T) {
 				// Mark all rules inactive.
 				newRules := []*rules.Entry{
 					ruleOne.WithActive(false).
-						WithLastUpdated(reference.Add(4 * time.Hour)).
-						WithPredicateLastUpdated(reference.Add(3 * time.Hour)).
+						WithLastUpdateTime(reference.Add(4 * time.Hour)).
+						WithPredicateLastUpdateTime(reference.Add(3 * time.Hour)).
 						Build(),
 					ruleTwo.WithActive(false).
-						WithLastUpdated(reference.Add(2 * time.Hour)).
-						WithPredicateLastUpdated(reference.Add(1 * time.Hour)).
+						WithLastUpdateTime(reference.Add(2 * time.Hour)).
+						WithPredicateLastUpdateTime(reference.Add(1 * time.Hour)).
 						Build(),
 					ruleThree.WithActive(false).
-						WithLastUpdated(reference.Add(2 * time.Hour)).
-						WithPredicateLastUpdated(reference.Add(1 * time.Hour)).
+						WithLastUpdateTime(reference.Add(2 * time.Hour)).
+						WithPredicateLastUpdateTime(reference.Add(1 * time.Hour)).
 						Build(),
 				}
 				err := rules.SetForTesting(ctx, newRules)
@@ -214,28 +214,28 @@ func TestRulesCache(t *testing.T) {
 				newRules := []*rules.Entry{
 					// Mark an existing rule inactive.
 					ruleOne.WithActive(false).
-						WithLastUpdated(reference.Add(time.Hour)).
-						WithPredicateLastUpdated(reference.Add(time.Hour)).
+						WithLastUpdateTime(reference.Add(time.Hour)).
+						WithPredicateLastUpdateTime(reference.Add(time.Hour)).
 						Build(),
 					// Make a non-predicate change on an active rule.
 					ruleTwo.
 						WithBug(bugs.BugID{System: "monorail", ID: "project/123"}).
-						WithLastUpdated(reference.Add(time.Hour)).
+						WithLastUpdateTime(reference.Add(time.Hour)).
 						Build(),
 					// Make an existing rule active.
 					ruleThree.WithActive(true).
-						WithLastUpdated(reference.Add(time.Hour)).
-						WithPredicateLastUpdated(reference.Add(time.Hour)).
+						WithLastUpdateTime(reference.Add(time.Hour)).
+						WithPredicateLastUpdateTime(reference.Add(time.Hour)).
 						Build(),
 					// Add a new active rule.
 					rules.NewRule(103).
-						WithPredicateLastUpdated(reference.Add(time.Hour)).
-						WithLastUpdated(reference.Add(time.Hour)).
+						WithPredicateLastUpdateTime(reference.Add(time.Hour)).
+						WithLastUpdateTime(reference.Add(time.Hour)).
 						Build(),
 					// Add a new inactive rule.
 					rules.NewRule(104).WithActive(false).
-						WithPredicateLastUpdated(reference.Add(2 * time.Hour)).
-						WithLastUpdated(reference.Add(3 * time.Hour)).
+						WithPredicateLastUpdateTime(reference.Add(2 * time.Hour)).
+						WithLastUpdateTime(reference.Add(3 * time.Hour)).
 						Build(),
 				}
 				err := rules.SetForTesting(ctx, newRules)
@@ -273,10 +273,10 @@ func sortRulesByPredicateLastUpdated(rs []*rules.Entry) []*rules.Entry {
 	result := make([]*rules.Entry, len(rs))
 	copy(result, rs)
 	sort.Slice(result, func(i, j int) bool {
-		if result[i].PredicateLastUpdated.Equal(result[j].PredicateLastUpdated) {
+		if result[i].PredicateLastUpdateTime.Equal(result[j].PredicateLastUpdateTime) {
 			return result[i].RuleID < result[j].RuleID
 		}
-		return result[i].PredicateLastUpdated.After(result[j].PredicateLastUpdated)
+		return result[i].PredicateLastUpdateTime.After(result[j].PredicateLastUpdateTime)
 	})
 	return result
 }

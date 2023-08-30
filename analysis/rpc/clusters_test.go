@@ -95,7 +95,7 @@ func TestClusters(t *testing.T) {
 			rules.NewRule(0).
 				WithProject("testproject").
 				WithRuleDefinition(`test LIKE "%TestSuite.TestName%"`).
-				WithPredicateLastUpdated(rulesVersion.Add(-1 * time.Hour)).
+				WithPredicateLastUpdateTime(rulesVersion.Add(-1 * time.Hour)).
 				WithBug(bugs.BugID{
 					System: "monorail",
 					ID:     "chromium/7654321",
@@ -103,7 +103,7 @@ func TestClusters(t *testing.T) {
 			rules.NewRule(1).
 				WithProject("testproject").
 				WithRuleDefinition(`reason LIKE "my_file.cc(%): Check failed: false."`).
-				WithPredicateLastUpdated(rulesVersion).
+				WithPredicateLastUpdateTime(rulesVersion).
 				WithBug(bugs.BugID{
 					System: "buganizer",
 					ID:     "82828282",
@@ -111,7 +111,7 @@ func TestClusters(t *testing.T) {
 			rules.NewRule(2).
 				WithProject("testproject").
 				WithRuleDefinition(`test LIKE "%Other%"`).
-				WithPredicateLastUpdated(rulesVersion.Add(-2 * time.Hour)).
+				WithPredicateLastUpdateTime(rulesVersion.Add(-2 * time.Hour)).
 				WithBug(bugs.BugID{
 					System: "monorail",
 					ID:     "chromium/912345",

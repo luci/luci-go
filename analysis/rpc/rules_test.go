@@ -359,7 +359,7 @@ func TestRules(t *testing.T) {
 					storedRule, err := rules.Read(span.Single(ctx), testProject, ruleManaged.RuleID)
 					So(err, ShouldBeNil)
 
-					So(storedRule.LastUpdated, ShouldNotEqual, ruleManaged.LastUpdated)
+					So(storedRule.LastUpdateTime, ShouldNotEqual, ruleManaged.LastUpdateTime)
 
 					expectedRule := ruleManagedBuilder.
 						WithRuleDefinition(`test = "updated"`).
@@ -367,16 +367,16 @@ func TestRules(t *testing.T) {
 						WithActive(false).
 						WithBugManaged(false).
 						WithBugPriorityManaged(false).
-						WithBugPriorityManagedLastUpdated(storedRule.LastUpdated).
+						WithBugPriorityManagedLastUpdateTime(storedRule.LastUpdateTime).
 						// Accept whatever the new last updated time is.
-						WithLastUpdated(storedRule.LastUpdated).
+						WithLastUpdateTime(storedRule.LastUpdateTime).
 						// The last auditable update time should be the same as
 						// the last updated time.
-						WithLastAuditableUpdate(storedRule.LastUpdated).
+						WithLastAuditableUpdateTime(storedRule.LastUpdateTime).
 						WithLastAuditableUpdateUser("someone@example.com").
 						// The predicate last updated time should be the same as
 						// the last updated time.
-						WithPredicateLastUpdated(storedRule.LastUpdated).
+						WithPredicateLastUpdateTime(storedRule.LastUpdateTime).
 						Build()
 
 					// Verify the rule was correctly updated in the database.
@@ -395,7 +395,7 @@ func TestRules(t *testing.T) {
 					storedRule, err := rules.Read(span.Single(ctx), testProject, ruleManaged.RuleID)
 					So(err, ShouldBeNil)
 
-					So(storedRule.LastUpdated, ShouldNotEqual, ruleManaged.LastUpdated)
+					So(storedRule.LastUpdateTime, ShouldNotEqual, ruleManaged.LastUpdateTime)
 
 					expectedRule := ruleManagedBuilder.
 						WithRuleDefinition(`test = "updated"`).
@@ -403,16 +403,16 @@ func TestRules(t *testing.T) {
 						WithActive(false).
 						WithBugManaged(false).
 						WithBugPriorityManaged(false).
-						WithBugPriorityManagedLastUpdated(storedRule.LastUpdated).
+						WithBugPriorityManagedLastUpdateTime(storedRule.LastUpdateTime).
 						// Accept whatever the new last updated time is.
-						WithLastUpdated(storedRule.LastUpdated).
+						WithLastUpdateTime(storedRule.LastUpdateTime).
 						// The last auditable update time should be the same as
 						// the last updated time.
-						WithLastAuditableUpdate(storedRule.LastUpdated).
+						WithLastAuditableUpdateTime(storedRule.LastUpdateTime).
 						WithLastAuditableUpdateUser("someone@example.com").
 						// The predicate last updated time should be the same as
 						// the last updated time.
-						WithPredicateLastUpdated(storedRule.LastUpdated).
+						WithPredicateLastUpdateTime(storedRule.LastUpdateTime).
 						Build()
 
 					// Verify the rule was correctly updated in the database.
@@ -437,15 +437,15 @@ func TestRules(t *testing.T) {
 
 					// Check the rule was updated, but that predicate last
 					// updated time was NOT updated.
-					So(storedRule.LastUpdated, ShouldNotEqual, ruleManaged.LastUpdated)
+					So(storedRule.LastUpdateTime, ShouldNotEqual, ruleManaged.LastUpdateTime)
 
 					expectedRule := ruleManagedBuilder.
 						WithBug(bugs.BugID{System: "buganizer", ID: "99999999"}).
 						// Accept whatever the new last updated time is.
-						WithLastUpdated(storedRule.LastUpdated).
+						WithLastUpdateTime(storedRule.LastUpdateTime).
 						// The last auditable update time should be the same as
 						// the last updated time.
-						WithLastAuditableUpdate(storedRule.LastUpdated).
+						WithLastAuditableUpdateTime(storedRule.LastUpdateTime).
 						WithLastAuditableUpdateUser("someone@example.com").
 						Build()
 
@@ -467,16 +467,16 @@ func TestRules(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					// Check the rule was updated.
-					So(storedRule.LastUpdated, ShouldNotEqual, ruleManaged.LastUpdated)
+					So(storedRule.LastUpdateTime, ShouldNotEqual, ruleManaged.LastUpdateTime)
 
 					expectedRule := ruleManagedBuilder.
 						WithBugPriorityManaged(false).
-						WithBugPriorityManagedLastUpdated(storedRule.LastUpdated).
+						WithBugPriorityManagedLastUpdateTime(storedRule.LastUpdateTime).
 						// Accept whatever the new last updated time is.
-						WithLastUpdated(storedRule.LastUpdated).
+						WithLastUpdateTime(storedRule.LastUpdateTime).
 						// The last auditable update time should be the same as
 						// the last updated time.
-						WithLastAuditableUpdate(storedRule.LastUpdated).
+						WithLastAuditableUpdateTime(storedRule.LastUpdateTime).
 						WithLastAuditableUpdateUser("someone@example.com").
 						Build()
 
@@ -501,7 +501,7 @@ func TestRules(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					// Check the rule was updated.
-					So(storedRule.LastUpdated, ShouldNotEqual, ruleManaged.LastUpdated)
+					So(storedRule.LastUpdateTime, ShouldNotEqual, ruleManaged.LastUpdateTime)
 
 					expectedRule := ruleManagedBuilder.
 						// Verify the bug was updated, but that IsManagingBug
@@ -510,10 +510,10 @@ func TestRules(t *testing.T) {
 						WithBug(ruleManagedOther.BugID).
 						WithBugManaged(false).
 						// Accept whatever the new last updated time is.
-						WithLastUpdated(storedRule.LastUpdated).
+						WithLastUpdateTime(storedRule.LastUpdateTime).
 						// The last auditable update time should be the same as
 						// the last updated time.
-						WithLastAuditableUpdate(storedRule.LastUpdated).
+						WithLastAuditableUpdateTime(storedRule.LastUpdateTime).
 						WithLastAuditableUpdateUser("someone@example.com").
 						Build()
 
@@ -642,7 +642,7 @@ func TestRules(t *testing.T) {
 					WithBug(bugs.BugID{System: "monorail", ID: "monorailproject/2"}).
 					WithBugManaged(true).
 					WithBugPriorityManaged(true).
-					WithCreationUser("someone@example.com").
+					WithCreateUser("someone@example.com").
 					WithLastAuditableUpdateUser("someone@example.com").
 					WithSourceCluster(clustering.ClusterID{
 						Algorithm: testname.AlgorithmName,
@@ -672,11 +672,11 @@ func TestRules(t *testing.T) {
 						// is determined by Spanner commit time.
 						// Rule spanner data access code tests already validate
 						// this is populated correctly.
-						WithCreationTime(storedRule.CreationTime).
-						WithLastAuditableUpdate(storedRule.CreationTime).
-						WithLastUpdated(storedRule.CreationTime).
-						WithPredicateLastUpdated(storedRule.CreationTime).
-						WithBugPriorityManagedLastUpdated(storedRule.CreationTime).
+						WithCreateTime(storedRule.CreateTime).
+						WithLastAuditableUpdateTime(storedRule.CreateTime).
+						WithLastUpdateTime(storedRule.CreateTime).
+						WithPredicateLastUpdateTime(storedRule.CreateTime).
+						WithBugPriorityManagedLastUpdateTime(storedRule.CreateTime).
 						Build()
 
 					// Verify the rule was correctly created in the database.
@@ -708,11 +708,11 @@ func TestRules(t *testing.T) {
 						// should be silenlty stopped from managing the bug.
 						WithBugManaged(false).
 						// Accept whatever CreationTime was assigned.
-						WithCreationTime(storedRule.CreationTime).
-						WithLastAuditableUpdate(storedRule.CreationTime).
-						WithLastUpdated(storedRule.CreationTime).
-						WithPredicateLastUpdated(storedRule.CreationTime).
-						WithBugPriorityManagedLastUpdated(storedRule.CreationTime).
+						WithCreateTime(storedRule.CreateTime).
+						WithLastAuditableUpdateTime(storedRule.CreateTime).
+						WithLastUpdateTime(storedRule.CreateTime).
+						WithPredicateLastUpdateTime(storedRule.CreateTime).
+						WithBugPriorityManagedLastUpdateTime(storedRule.CreateTime).
 						Build()
 
 					// Verify the rule was correctly created in the database.
@@ -742,11 +742,11 @@ func TestRules(t *testing.T) {
 						// is determined by Spanner commit time.
 						// Rule spanner data access code tests already validate
 						// this is populated correctly.
-						WithCreationTime(storedRule.CreationTime).
-						WithLastAuditableUpdate(storedRule.CreationTime).
-						WithLastUpdated(storedRule.CreationTime).
-						WithPredicateLastUpdated(storedRule.CreationTime).
-						WithBugPriorityManagedLastUpdated(storedRule.CreationTime).
+						WithCreateTime(storedRule.CreateTime).
+						WithLastAuditableUpdateTime(storedRule.CreateTime).
+						WithLastUpdateTime(storedRule.CreateTime).
+						WithPredicateLastUpdateTime(storedRule.CreateTime).
+						WithBugPriorityManagedLastUpdateTime(storedRule.CreateTime).
 						Build()
 
 					// Verify the rule was correctly created in the database.
@@ -772,11 +772,11 @@ func TestRules(t *testing.T) {
 						// is determined by Spanner commit time.
 						// Rule spanner data access code tests already validate
 						// this is populated correctly.
-						WithCreationTime(storedRule.CreationTime).
-						WithLastAuditableUpdate(storedRule.CreationTime).
-						WithLastUpdated(storedRule.CreationTime).
-						WithPredicateLastUpdated(storedRule.CreationTime).
-						WithBugPriorityManagedLastUpdated(storedRule.CreationTime).
+						WithCreateTime(storedRule.CreateTime).
+						WithLastAuditableUpdateTime(storedRule.CreateTime).
+						WithLastUpdateTime(storedRule.CreateTime).
+						WithPredicateLastUpdateTime(storedRule.CreateTime).
+						WithBugPriorityManagedLastUpdateTime(storedRule.CreateTime).
 						Build()
 
 					// Verify the rule was correctly created in the database.
@@ -924,15 +924,15 @@ func TestRules(t *testing.T) {
 				LinkText: "mybug.com/111",
 				Url:      "https://monorailhost.com/p/monorailproject/issues/detail?id=111",
 			},
-			IsManagingBug:                    true,
-			IsManagingBugPriority:            true,
-			IsManagingBugPriorityLastUpdated: timestamppb.New(time.Date(1905, 5, 5, 5, 5, 5, 1, time.UTC)),
+			IsManagingBug:                       true,
+			IsManagingBugPriority:               true,
+			IsManagingBugPriorityLastUpdateTime: timestamppb.New(time.Date(1905, 5, 5, 5, 5, 5, 1, time.UTC)),
 			SourceCluster: &pb.ClusterId{
 				Algorithm: "clusteralg1-v9",
 				Id:        "696431",
 			},
-			BugManagementState: &pb.Rule_BugManagementState{
-				PolicyState: map[string]*pb.Rule_BugManagementState_PolicyState{
+			BugManagementState: &pb.BugManagementState{
+				PolicyState: map[string]*pb.BugManagementState_PolicyState{
 					"policy-a": {
 						IsActive:           true,
 						LastActivationTime: timestamppb.New(time.Date(1908, 8, 8, 8, 8, 8, 1, time.UTC)),
@@ -994,7 +994,7 @@ func TestRules(t *testing.T) {
 			mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
 			etag := ruleETag(rule, mask)
 
-			rule.LastUpdated = time.Date(2021, 5, 4, 3, 2, 1, 0, time.UTC)
+			rule.LastUpdateTime = time.Date(2021, 5, 4, 3, 2, 1, 0, time.UTC)
 			So(isETagMatching(rule, etag), ShouldBeFalse)
 		})
 	})

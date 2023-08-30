@@ -177,7 +177,7 @@ func upToDateScenario(size int) *scenario {
 	rule1, err := cache.NewCachedRule(
 		rules.NewRule(100).
 			WithRuleDefinition(`test = "ninja://test_name/2"`).
-			WithPredicateLastUpdated(rulesVersion.Predicates.Add(-1 * time.Hour)).
+			WithPredicateLastUpdateTime(rulesVersion.Predicates.Add(-1 * time.Hour)).
 			Build())
 	if err != nil {
 		panic(err)
@@ -186,7 +186,7 @@ func upToDateScenario(size int) *scenario {
 	rule2, err := cache.NewCachedRule(
 		rules.NewRule(101).
 			WithRuleDefinition(`reason LIKE "failed to connect to %.%.%.%"`).
-			WithPredicateLastUpdated(rulesVersion.Predicates).Build())
+			WithPredicateLastUpdateTime(rulesVersion.Predicates).Build())
 	if err != nil {
 		panic(err)
 	}

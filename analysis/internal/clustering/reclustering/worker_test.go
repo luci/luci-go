@@ -860,8 +860,8 @@ func (b *scenarioBuilder) build() *scenario {
 	}
 	ruleOne := rules.NewRule(0).WithProject(b.project).
 		WithRuleDefinition(`test = "test_b"`).
-		WithPredicateLastUpdated(rulesVersion.Predicates).
-		WithLastUpdated(rulesVersion.Total).
+		WithPredicateLastUpdateTime(rulesVersion.Predicates).
+		WithLastUpdateTime(rulesVersion.Total).
 		Build()
 	rs = []*rules.Entry{ruleOne}
 	if !b.oldRules {
@@ -871,8 +871,8 @@ func (b *scenarioBuilder) build() *scenario {
 		}
 		ruleTwo := rules.NewRule(1).WithProject(b.project).
 			WithRuleDefinition(`reason = "reason_b"`).
-			WithPredicateLastUpdated(rulesVersion.Predicates).
-			WithLastUpdated(rulesVersion.Total).
+			WithPredicateLastUpdateTime(rulesVersion.Predicates).
+			WithLastUpdateTime(rulesVersion.Total).
 			Build()
 		rs = append(rs, ruleTwo)
 	}

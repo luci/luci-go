@@ -59,7 +59,9 @@ func init() {
 func generateRowSchema() (schema bigquery.Schema, err error) {
 	fd, _ := descriptor.MessageDescriptorProto(&bqpb.FailureAssociationRulesHistoryRow{})
 	fdci, _ := descriptor.MessageDescriptorProto(&pb.ClusterId{})
-	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdci}}
+	fdbms, _ := descriptor.MessageDescriptorProto(&pb.BugManagementState{})
+	fdps, _ := descriptor.MessageDescriptorProto(&pb.BugManagementState_PolicyState{})
+	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdci, fdbms, fdps}}
 	return bqutil.GenerateSchema(fdset, rowMessage)
 }
 
