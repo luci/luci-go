@@ -225,7 +225,7 @@ func TestRunBisector(t *testing.T) {
 		So(tf.TestName, ShouldEqual, "test_name_0")
 
 		// Check nthsection analysis.
-		q := datastore.NewQuery("TestNthSectionAnalysis").Ancestor(datastore.KeyForObj(ctx, tfa))
+		q := datastore.NewQuery("TestNthSectionAnalysis").Eq("parent_analysis_key", datastore.KeyForObj(ctx, tfa))
 		nthSectionAnalyses := []*model.TestNthSectionAnalysis{}
 		err = datastore.GetAll(ctx, q, &nthSectionAnalyses)
 		So(err, ShouldBeNil)
@@ -233,11 +233,11 @@ func TestRunBisector(t *testing.T) {
 		nsa := nthSectionAnalyses[0]
 
 		So(nsa, ShouldResembleProto, &model.TestNthSectionAnalysis{
-			ID:             nsa.ID,
-			ParentAnalysis: datastore.KeyForObj(ctx, tfa),
-			StartTime:      nsa.StartTime,
-			Status:         pb.AnalysisStatus_RUNNING,
-			RunStatus:      pb.AnalysisRunStatus_STARTED,
+			ID:                nsa.ID,
+			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
+			StartTime:         nsa.StartTime,
+			Status:            pb.AnalysisStatus_RUNNING,
+			RunStatus:         pb.AnalysisRunStatus_STARTED,
 			BlameList: &pb.BlameList{
 				Commits: []*pb.BlameListSingleCommit{
 					{
@@ -315,8 +315,8 @@ func TestCreateSnapshot(t *testing.T) {
 		datastore.GetTestable(c).CatchupIndexes()
 		blamelist := testutil.CreateBlamelist(5)
 		nsa := &model.TestNthSectionAnalysis{
-			BlameList:      blamelist,
-			ParentAnalysis: datastore.KeyForObj(c, tfa),
+			BlameList:         blamelist,
+			ParentAnalysisKey: datastore.KeyForObj(c, tfa),
 		}
 		So(datastore.Put(c, nsa), ShouldBeNil)
 

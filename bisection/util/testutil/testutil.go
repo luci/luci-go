@@ -224,11 +224,12 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 }
 
 type TestSingleRerunCreationOption struct {
-	ID          int64
-	Status      pb.RerunStatus
-	AnalysisKey *datastore.Key
-	Type        model.RerunBuildType
-	TestResult  model.RerunTestResults
+	ID                    int64
+	Status                pb.RerunStatus
+	AnalysisKey           *datastore.Key
+	Type                  model.RerunBuildType
+	TestResult            model.RerunTestResults
+	NthSectionAnalysisKey *datastore.Key
 }
 
 func CreateTestSingleRerun(ctx context.Context, option *TestSingleRerunCreationOption) *model.TestSingleRerun {
@@ -237,6 +238,7 @@ func CreateTestSingleRerun(ctx context.Context, option *TestSingleRerunCreationO
 	var analysisKey *datastore.Key
 	var rerunType model.RerunBuildType
 	testresult := model.RerunTestResults{}
+	var nthSectionAnalysisKey *datastore.Key
 
 	if option != nil {
 		if option.ID != 0 {
@@ -246,17 +248,47 @@ func CreateTestSingleRerun(ctx context.Context, option *TestSingleRerunCreationO
 		analysisKey = option.AnalysisKey
 		rerunType = option.Type
 		testresult = option.TestResult
+		nthSectionAnalysisKey = option.NthSectionAnalysisKey
 	}
 	rerun := &model.TestSingleRerun{
-		ID:          id,
-		Status:      status,
-		AnalysisKey: analysisKey,
-		Type:        rerunType,
-		TestResults: testresult,
+		ID:                    id,
+		Status:                status,
+		AnalysisKey:           analysisKey,
+		Type:                  rerunType,
+		TestResults:           testresult,
+		NthSectionAnalysisKey: nthSectionAnalysisKey,
 	}
 	So(datastore.Put(ctx, rerun), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()
 	return rerun
+}
+
+type TestNthSectionAnalysisCreationOption struct {
+	ID             int64
+	ParentAnalysis *datastore.Key
+	BlameList      *pb.BlameList
+}
+
+func CreateTestNthSectionAnalysis(ctx context.Context, option *TestNthSectionAnalysisCreationOption) *model.TestNthSectionAnalysis {
+	id := int64(1000)
+	var parentAnalysis *datastore.Key = nil
+	var blameList *pb.BlameList
+
+	if option != nil {
+		if option.ID != 0 {
+			id = option.ID
+		}
+		parentAnalysis = option.ParentAnalysis
+		blameList = option.BlameList
+	}
+	nsa := &model.TestNthSectionAnalysis{
+		ID:                id,
+		ParentAnalysisKey: parentAnalysis,
+		BlameList:         blameList,
+	}
+	So(datastore.Put(ctx, nsa), ShouldBeNil)
+	datastore.GetTestable(ctx).CatchupIndexes()
+	return nsa
 }
 
 func UpdateIndices(c context.Context) {

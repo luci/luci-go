@@ -371,3 +371,15 @@ func GetTestFailure(ctx context.Context, failureID int64) (*model.TestFailure, e
 	}
 	return failure, err
 }
+
+// GetTestNthSectionAnalysis gets test nthsection analysis by its ID.
+func GetTestNthSectionAnalysis(ctx context.Context, analysisID int64) (*model.TestNthSectionAnalysis, error) {
+	nsa := &model.TestNthSectionAnalysis{
+		ID: analysisID,
+	}
+	err := datastore.Get(ctx, nsa)
+	if err != nil {
+		return nil, errors.Annotate(err, "get Nthsection analysis with id %d", nsa.ID).Err()
+	}
+	return nsa, err
+}

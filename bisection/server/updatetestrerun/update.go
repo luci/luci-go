@@ -21,8 +21,10 @@ import (
 
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/testfailureanalysis/bisection"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -81,7 +83,7 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) erro
 		}
 	}
 	if rerun.Type == model.RerunBuildType_NthSection {
-		err := processNthSectionUpdate(ctx, rerun, tfa, req)
+		err := processNthSectionUpdate(ctx, rerun, tfa)
 		if err != nil {
 			return status.Errorf(codes.Internal, errors.Annotate(err, "process nthsection update").Err().Error())
 		}
@@ -94,9 +96,107 @@ func processCulpritVerificationUpdate(ctx context.Context, rerun *model.TestSing
 	return nil
 }
 
-func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.TestFailureAnalysis, req *pb.UpdateTestAnalysisProgressRequest) error {
-	// TODO (nqmtuan): implement this.
+func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.TestFailureAnalysis) error {
+	if rerun.NthSectionAnalysisKey == nil {
+		return errors.New("nthsection_analysis_key not found")
+	}
+	nsa, err := datastoreutil.GetTestNthSectionAnalysis(ctx, rerun.NthSectionAnalysisKey.IntID())
+	if err != nil {
+		return errors.Annotate(err, "get test nthsection analysis").Err()
+	}
+	snapshot, err := bisection.CreateSnapshot(ctx, nsa)
+	if err != nil {
+		return errors.Annotate(err, "create snapshot").Err()
+	}
+
+	// Check if we already found the culprit or not.
+	ok, cul := snapshot.GetCulprit()
+
+	// Found culprit -> Update the nthsection analysis
+	if ok {
+		// Save nthsection result to datastore.
+		_, err := saveSuspectAndUpdateNthSection(ctx, tfa, nsa, snapshot.BlameList.Commits[cul])
+		if err != nil {
+			return errors.Annotate(err, "store nthsection culprit to datastore").Err()
+		}
+		// TODO: Also set the status of TestFailureAnalysis here.
+		// TODO: Trigger culprit verification.
+		return nil
+	}
+	// Culprit not found yet. Still need to trigger more rerun.
+	enabled, err := bisection.IsEnabled(ctx)
+	if err != nil {
+		return errors.Annotate(err, "is enabled").Err()
+	}
+	if !enabled {
+		logging.Infof(ctx, "Bisection not enabled")
+		return nil
+	}
+
+	// Find the next commit to run.
+	commit, err := snapshot.FindNextSingleCommitToRun()
+	if err != nil {
+		return errors.Annotate(err, "find next nthsection commit to run").Err()
+	}
+	if commit == "" {
+		// We don't have more run to wait -> we've failed to find the suspect.
+		if snapshot.NumInProgress == 0 {
+			// TODO (nqmtuan): Update the status to not found.
+		}
+		return nil
+	}
+
+	projectBisector, err := bisection.GetProjectBisector(ctx, tfa)
+	if err != nil {
+		return errors.Annotate(err, "get project bisector").Err()
+	}
+	err = bisection.TriggerRerunBuildForCommits(ctx, tfa, nsa, projectBisector, []string{commit})
+	if err != nil {
+		return errors.Annotate(err, "trigger rerun build for commits").Err()
+	}
 	return nil
+}
+
+func saveSuspectAndUpdateNthSection(ctx context.Context, tfa *model.TestFailureAnalysis, nsa *model.TestNthSectionAnalysis, blCommit *pb.BlameListSingleCommit) (*model.Suspect, error) {
+	primary, err := datastoreutil.GetPrimaryTestFailure(ctx, tfa)
+	if err != nil {
+		return nil, errors.Annotate(err, "get primary test failure").Err()
+	}
+	suspect := &model.Suspect{
+		Type: model.SuspectType_NthSection,
+		GitilesCommit: bbpb.GitilesCommit{
+			Host:    primary.Ref.GetGitiles().GetHost(),
+			Project: primary.Ref.GetGitiles().GetProject(),
+			Ref:     primary.Ref.GetGitiles().GetRef(),
+			Id:      blCommit.Commit,
+		},
+		ParentAnalysis:     datastore.KeyForObj(ctx, nsa),
+		VerificationStatus: model.SuspectVerificationStatus_Unverified,
+		ReviewUrl:          blCommit.ReviewUrl,
+		ReviewTitle:        blCommit.ReviewTitle,
+		AnalysisType:       pb.AnalysisType_TEST_FAILURE_ANALYSIS,
+	}
+	err = datastore.Put(ctx, suspect)
+	if err != nil {
+		return nil, errors.Annotate(err, "save suspect").Err()
+	}
+
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		e := datastore.Get(ctx, nsa)
+		if e != nil {
+			return errors.Annotate(err, "get nthsection analysis").Err()
+		}
+		nsa.Status = pb.AnalysisStatus_SUSPECTFOUND
+		nsa.CulpritKey = datastore.KeyForObj(ctx, suspect)
+		nsa.RunStatus = pb.AnalysisRunStatus_ENDED
+		nsa.EndTime = clock.Now(ctx)
+		return datastore.Put(ctx, nsa)
+	}, nil)
+
+	if err != nil {
+		return nil, errors.Annotate(err, "save nthsection analysis").Err()
+	}
+	return suspect, nil
 }
 
 // updateRerun updates TestSingleRerun and TestFailure with the results from recipe.

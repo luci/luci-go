@@ -22,7 +22,6 @@ import (
 	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
 	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/model"
-	"go.chromium.org/luci/bisection/nthsectionsnapshot"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/server/updatetestrerun"
 	taskpb "go.chromium.org/luci/bisection/task/proto"
@@ -284,12 +283,12 @@ func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRe
 		return nsa, nil
 	}
 
-	shouldRun, commit, err := findNextNthSectionCommitToRun(c, snapshot)
+	commit, err := snapshot.FindNextSingleCommitToRun()
 	if err != nil {
 		// Perhaps not found here?
-		return nsa, errors.Annotate(err, "findNextNthSectionCommitToRun").Err()
+		return nsa, errors.Annotate(err, "find next single commit to run").Err()
 	}
-	if !shouldRun {
+	if commit == "" {
 		// We don't have more run to wait -> we've failed to find the suspect
 		if snapshot.NumInProgress == 0 {
 			return nsa, updateNthSectionModelNotFound(c, nsa)
@@ -366,24 +365,6 @@ func storeNthSectionResultToDatastore(c context.Context, nsa *model.CompileNthSe
 		return nil, errors.Annotate(err, "couldn't save nthsection analysis").Err()
 	}
 	return suspect, nil
-}
-
-// findNextNthSectionCommitToRun return true (and the commit) if it can find a nthsection commit to run next
-func findNextNthSectionCommitToRun(c context.Context, snapshot *nthsectionsnapshot.Snapshot) (bool, string, error) {
-	// We pass 1 as argument here because at this moment, we only have 1 "slot" left for nth section
-	commits, err := snapshot.FindNextCommitsToRun(1)
-	if err != nil {
-		return false, "", errors.Annotate(err, "couldn't find next commits to run").Err()
-	}
-	// There is no commit to run, perhaps we already found a culprit, or we
-	// have already scheduled the necessary build to be run.
-	if len(commits) == 0 {
-		return false, "", nil
-	}
-	if len(commits) != 1 {
-		return false, "", errors.Annotate(err, "expect only 1 commits to rerun. Got %d", len(commits)).Err()
-	}
-	return true, commits[0], nil
 }
 
 func updateSuspectWithRerunData(c context.Context, rerun *model.SingleRerun) error {

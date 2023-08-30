@@ -199,3 +199,12 @@ enum TestResultStatus {
   //   skipped.
   SKIP = 5;
 }
+
+// AnalysisType specifies type of the analysis.
+enum AnalysisType {
+  ANALYSIS_TYPE_UNSPECIFIED = 0;
+  // Compile analysis type.
+  COMPILE_FAILURE_ANALYSIS = 1;
+  // Test analysis type.
+  TEST_FAILURE_ANALYSIS = 2;
+}

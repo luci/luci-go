@@ -121,7 +121,7 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 	}()
 
 	// Checks if test failure analysis is enabled.
-	enabled, err := isEnabled(ctx)
+	enabled, err := IsEnabled(ctx)
 	if err != nil {
 		return errors.Annotate(err, "is enabled").Err()
 	}
@@ -161,12 +161,12 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 		return errors.Annotate(err, "create nth section model").Err()
 	}
 
-	projectBisector, err := getProjectBisector(ctx, tfa, luciAnalysis)
+	projectBisector, err := GetProjectBisector(ctx, tfa)
 	if err != nil {
 		return errors.Annotate(err, "get individual project bisector").Err()
 	}
 
-	err = projectBisector.Prepare(ctx, tfa)
+	err = projectBisector.Prepare(ctx, tfa, luciAnalysis)
 	if err != nil {
 		return errors.Annotate(err, "prepare").Err()
 	}
@@ -186,12 +186,22 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 		return errors.Annotate(err, "find next commits to run").Err()
 	}
 
+	if err = TriggerRerunBuildForCommits(ctx, tfa, nsa, projectBisector, commitHashes); err != nil {
+		return errors.Annotate(err, "trigger rerun build for commits").Err()
+	}
+	return nil
+}
+
+func TriggerRerunBuildForCommits(ctx context.Context, tfa *model.TestFailureAnalysis, nsa *model.TestNthSectionAnalysis, projectBisector projectbisector.ProjectBisector, commitHashes []string) error {
 	// Get test failure bundle
 	bundle, err := datastoreutil.GetTestFailureBundle(ctx, tfa)
 	if err != nil {
 		return errors.Annotate(err, "get test failure bundle").Err()
 	}
-	tfs := bundle.All()
+	// Only rerun the non-diverged test failures.
+	// At first rerun, all test failures are non-diverged, so all will be run.
+	tfs := bundle.NonDiverged()
+	primaryFailure := bundle.Primary()
 	for _, commitHash := range commitHashes {
 		gitilesCommit := &bbpb.GitilesCommit{
 			Host:    primaryFailure.Ref.GetGitiles().GetHost(),
@@ -298,12 +308,10 @@ func CreateSnapshot(ctx context.Context, nsa *model.TestNthSectionAnalysis) (*nt
 	return snapshot, nil
 }
 
-func getProjectBisector(ctx context.Context, tfa *model.TestFailureAnalysis, luciAnalysis analysis.AnalysisClient) (projectbisector.ProjectBisector, error) {
+func GetProjectBisector(ctx context.Context, tfa *model.TestFailureAnalysis) (projectbisector.ProjectBisector, error) {
 	switch tfa.Project {
 	case "chromium":
-		bisector := &chromium.Bisector{
-			LuciAnalysis: luciAnalysis,
-		}
+		bisector := &chromium.Bisector{}
 		return bisector, nil
 	default:
 		return nil, errors.Reason("no bisector for project %s", tfa.Project).Err()
@@ -337,11 +345,11 @@ func createNthSectionModel(ctx context.Context, tfa *model.TestFailureAnalysis, 
 	blameList := changelogutil.ChangeLogsToBlamelist(ctx, changeLogs)
 
 	nsa := &model.TestNthSectionAnalysis{
-		ParentAnalysis: datastore.KeyForObj(ctx, tfa),
-		StartTime:      clock.Now(ctx),
-		Status:         pb.AnalysisStatus_RUNNING,
-		RunStatus:      pb.AnalysisRunStatus_STARTED,
-		BlameList:      blameList,
+		ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
+		StartTime:         clock.Now(ctx),
+		Status:            pb.AnalysisStatus_RUNNING,
+		RunStatus:         pb.AnalysisRunStatus_STARTED,
+		BlameList:         blameList,
 	}
 
 	err = datastore.Put(ctx, nsa)
@@ -351,7 +359,7 @@ func createNthSectionModel(ctx context.Context, tfa *model.TestFailureAnalysis, 
 	return nsa, nil
 }
 
-func isEnabled(ctx context.Context) (bool, error) {
+func IsEnabled(ctx context.Context) (bool, error) {
 	cfg, err := config.Get(ctx)
 	if err != nil {
 		return false, err

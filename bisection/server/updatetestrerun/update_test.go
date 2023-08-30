@@ -20,14 +20,21 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/bisection/internal/buildbucket"
+	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/util/testutil"
 
+	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -38,11 +45,6 @@ import (
 func TestUpdate(t *testing.T) {
 	t.Parallel()
 	ctx := memory.Use(context.Background())
-	testutil.UpdateIndices(ctx)
-
-	cl := testclock.New(testclock.TestTimeUTC)
-	cl.Set(time.Unix(10000, 0).UTC())
-	ctx = clock.Set(ctx, cl)
 
 	Convey("Invalid request", t, func() {
 		req := &pb.UpdateTestAnalysisProgressRequest{}
@@ -63,6 +65,19 @@ func TestUpdate(t *testing.T) {
 	})
 
 	Convey("Update", t, func() {
+		ctx := memory.Use(context.Background())
+		testutil.UpdateIndices(ctx)
+
+		cl := testclock.New(testclock.TestTimeUTC)
+		cl.Set(time.Unix(10000, 0).UTC())
+		ctx = clock.Set(ctx, cl)
+
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := buildbucket.NewMockedClient(ctx, ctl)
+		ctx = mc.Ctx
+		mockBuildBucket(mc)
+
 		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
 			ID: 100,
 		})
@@ -127,16 +142,13 @@ func TestUpdate(t *testing.T) {
 		})
 
 		Convey("Tests did not run", func() {
+			enableBisection(ctx, true)
+			_, _, rerun, _ := setupTestAnalysisForTesting(ctx, 1)
 			req := &pb.UpdateTestAnalysisProgressRequest{
-				Bbid:  804,
-				BotId: "bot",
+				Bbid:         8000,
+				BotId:        "bot",
+				RunSucceeded: false,
 			}
-			rerun := testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
-				ID:          804,
-				Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
-				AnalysisKey: datastore.KeyForObj(ctx, tfa),
-				Type:        model.RerunBuildType_NthSection,
-			})
 
 			err := Update(ctx, req)
 			So(err, ShouldBeNil)
@@ -216,10 +228,11 @@ func TestUpdate(t *testing.T) {
 		})
 
 		Convey("Primary test failure skipped", func() {
-			_, tfs, rerun := setupTestAnalysisForTesting(ctx, 107, 1071, 807, 2)
+			enableBisection(ctx, false)
+			_, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, 2)
 
 			req := &pb.UpdateTestAnalysisProgressRequest{
-				Bbid:         807,
+				Bbid:         8000,
 				BotId:        "bot",
 				RunSucceeded: true,
 				Results: []*pb.TestResult{
@@ -259,13 +272,19 @@ func TestUpdate(t *testing.T) {
 			err = datastore.Get(ctx, tfs[1])
 			So(err, ShouldBeNil)
 			So(tfs[1].IsDiverged, ShouldBeFalse)
+			// Check that a new rerun is not scheduled, because primary test was skipped.
+			q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa))
+			reruns := []*model.TestSingleRerun{}
+			So(datastore.GetAll(ctx, q, &reruns), ShouldBeNil)
+			So(len(reruns), ShouldEqual, 1)
 		})
 
 		Convey("Primary test failure expected", func() {
-			_, tfs, rerun := setupTestAnalysisForTesting(ctx, 108, 1081, 808, 4)
+			enableBisection(ctx, true)
+			_, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, 4)
 
 			req := &pb.UpdateTestAnalysisProgressRequest{
-				Bbid:         808,
+				Bbid:         8000,
 				BotId:        "bot",
 				RunSucceeded: true,
 				Results: []*pb.TestResult{
@@ -332,13 +351,19 @@ func TestUpdate(t *testing.T) {
 			err = datastore.Get(ctx, tfs[3])
 			So(err, ShouldBeNil)
 			So(tfs[3].IsDiverged, ShouldBeTrue)
+			// Check that a new rerun is scheduled.
+			q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa))
+			reruns := []*model.TestSingleRerun{}
+			So(datastore.GetAll(ctx, q, &reruns), ShouldBeNil)
+			So(len(reruns), ShouldEqual, 2)
 		})
 
 		Convey("Primary test failure unexpected", func() {
-			_, tfs, rerun := setupTestAnalysisForTesting(ctx, 109, 1091, 809, 4)
+			enableBisection(ctx, true)
+			_, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, 4)
 
 			req := &pb.UpdateTestAnalysisProgressRequest{
-				Bbid:         809,
+				Bbid:         8000,
 				BotId:        "bot",
 				RunSucceeded: true,
 				Results: []*pb.TestResult{
@@ -405,14 +430,141 @@ func TestUpdate(t *testing.T) {
 			err = datastore.Get(ctx, tfs[3])
 			So(err, ShouldBeNil)
 			So(tfs[3].IsDiverged, ShouldBeTrue)
+			// Check that a new rerun is scheduled.
+			q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa))
+			reruns := []*model.TestSingleRerun{}
+			So(datastore.GetAll(ctx, q, &reruns), ShouldBeNil)
+			So(len(reruns), ShouldEqual, 2)
 		})
 	})
 }
 
-func setupTestAnalysisForTesting(ctx context.Context, analysisID int64, startTestFailureID int64, rerunID int64, numTest int) (*model.TestFailureAnalysis, []*model.TestFailure, *model.TestSingleRerun) {
+func TestScheduleNewRerun(t *testing.T) {
+	t.Parallel()
+	ctx := memory.Use(context.Background())
+	testutil.UpdateIndices(ctx)
+
+	cl := testclock.New(testclock.TestTimeUTC)
+	cl.Set(time.Unix(10000, 0).UTC())
+	ctx = clock.Set(ctx, cl)
+
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	mc := buildbucket.NewMockedClient(ctx, ctl)
+	ctx = mc.Ctx
+	mockBuildBucket(mc)
+
+	Convey("Nth section found culprit", t, func() {
+		tfa, _, rerun, nsa := setupTestAnalysisForTesting(ctx, 1)
+		// Commit 1 pass -> commit 0 is the culprit.
+		rerun.LUCIBuild.GitilesCommit = &bbpb.GitilesCommit{
+			Id:      "commit1",
+			Host:    "chromium.googlesource.com",
+			Project: "chromium/src",
+			Ref:     "ref",
+		}
+		rerun.Status = pb.RerunStatus_RERUN_STATUS_PASSED
+		So(datastore.Put(ctx, rerun), ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+		err := processNthSectionUpdate(ctx, rerun, tfa)
+		So(err, ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		// Check suspect being stored.
+		q := datastore.NewQuery("Suspect")
+		suspects := []*model.Suspect{}
+		So(datastore.GetAll(ctx, q, &suspects), ShouldBeNil)
+		So(len(suspects), ShouldEqual, 1)
+		// Check the field individually because ShouldResembleProto does not work here.
+		So(&suspects[0].GitilesCommit, ShouldResembleProto, &bbpb.GitilesCommit{
+			Id:      "commit0",
+			Host:    "chromium.googlesource.com",
+			Project: "chromium/src",
+			Ref:     "ref",
+		})
+		So(suspects[0].ParentAnalysis, ShouldEqual, datastore.KeyForObj(ctx, nsa))
+		So(suspects[0].Type, ShouldEqual, model.SuspectType_NthSection)
+		So(suspects[0].AnalysisType, ShouldEqual, pb.AnalysisType_TEST_FAILURE_ANALYSIS)
+
+		So(datastore.Get(ctx, nsa), ShouldBeNil)
+		So(nsa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
+		So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+		So(nsa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
+		So(nsa.CulpritKey, ShouldEqual, datastore.KeyForObj(ctx, suspects[0]))
+	})
+
+	Convey("Nth section should schedule another run", t, func() {
+		tfa, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, 1)
+		enableBisection(ctx, true)
+		// Commit 1 pass -> commit 0 is the culprit.
+		rerun.LUCIBuild.GitilesCommit = &bbpb.GitilesCommit{
+			Id:      "commit2",
+			Host:    "chromium.googlesource.com",
+			Project: "chromium/src",
+			Ref:     "ref",
+		}
+		rerun.Status = pb.RerunStatus_RERUN_STATUS_PASSED
+		So(datastore.Put(ctx, rerun), ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+		err := processNthSectionUpdate(ctx, rerun, tfa)
+		So(err, ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		// Check that a new rerun is scheduled.
+		q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa)).Eq("status", pb.RerunStatus_RERUN_STATUS_IN_PROGRESS)
+		reruns := []*model.TestSingleRerun{}
+		So(datastore.GetAll(ctx, q, &reruns), ShouldBeNil)
+		So(len(reruns), ShouldEqual, 1)
+		So(reruns[0], ShouldResembleProto, &model.TestSingleRerun{
+			ID:                    reruns[0].ID,
+			Type:                  model.RerunBuildType_NthSection,
+			AnalysisKey:           datastore.KeyForObj(ctx, tfa),
+			NthSectionAnalysisKey: datastore.KeyForObj(ctx, nsa),
+			Status:                pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+			LUCIBuild: model.LUCIBuild{
+				BuildID:     8765,
+				Project:     "chromium",
+				Bucket:      "findit",
+				Builder:     "test-single-revision",
+				BuildNumber: 10,
+				Status:      bbpb.Status_SCHEDULED,
+				GitilesCommit: &bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Ref:     "refs/heads/main",
+					Id:      "hash",
+				},
+				CreateTime: time.Unix(1000, 0),
+			},
+			Dimensions: &pb.Dimensions{
+				Dimensions: []*pb.Dimension{
+					{
+						Key:   "key",
+						Value: "val",
+					},
+				},
+			},
+			TestResults: model.RerunTestResults{
+				Results: []model.RerunSingleTestResult{
+					{
+						TestFailureKey: datastore.KeyForObj(ctx, tfs[0]),
+					},
+				},
+			},
+		})
+	})
+}
+
+func setupTestAnalysisForTesting(ctx context.Context, numTest int) (*model.TestFailureAnalysis, []*model.TestFailure, *model.TestSingleRerun, *model.TestNthSectionAnalysis) {
 	tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
-		ID:             analysisID,
-		TestFailureKey: datastore.MakeKey(ctx, "TestFailure", startTestFailureID),
+		ID:             100,
+		TestFailureKey: datastore.MakeKey(ctx, "TestFailure", 1000),
+	})
+
+	nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+		ID:             200,
+		ParentAnalysis: datastore.KeyForObj(ctx, tfa),
+		BlameList:      testutil.CreateBlamelist(4),
 	})
 
 	// Set up test failures
@@ -421,24 +573,101 @@ func setupTestAnalysisForTesting(ctx context.Context, analysisID int64, startTes
 	for i := 0; i < numTest; i++ {
 		isPrimary := (i == 0)
 		tfs[i] = testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
-			ID:          startTestFailureID + int64(i),
+			ID:          1000 + int64(i),
 			IsPrimary:   isPrimary,
 			TestID:      fmt.Sprintf("test%d", i),
 			VariantHash: fmt.Sprintf("hash%d", i),
 			Analysis:    tfa,
+			Ref: &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
+						Host:    "chromium.googlesource.com",
+						Project: "chromium/src",
+						Ref:     "ref",
+					},
+				},
+			},
 		})
 		results[i] = model.RerunSingleTestResult{
 			TestFailureKey: datastore.KeyForObj(ctx, tfs[i]),
 		}
 	}
 	rerun := testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
-		ID:          rerunID,
+		ID:          8000,
 		Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 		AnalysisKey: datastore.KeyForObj(ctx, tfa),
 		Type:        model.RerunBuildType_NthSection,
 		TestResult: model.RerunTestResults{
 			Results: results,
 		},
+		NthSectionAnalysisKey: datastore.KeyForObj(ctx, nsa),
 	})
-	return tfa, tfs, rerun
+	return tfa, tfs, rerun, nsa
+}
+
+func enableBisection(ctx context.Context, enabled bool) {
+	testCfg := &configpb.Config{
+		TestAnalysisConfig: &configpb.TestAnalysisConfig{
+			BisectorEnabled: enabled,
+		},
+	}
+	So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+}
+
+func mockBuildBucket(mc *buildbucket.MockedClient) {
+	bootstrapProperties := &structpb.Struct{
+		Fields: map[string]*structpb.Value{
+			"bs_key_1": structpb.NewStringValue("bs_val_1"),
+		},
+	}
+
+	getBuildRes := &bbpb.Build{
+		Builder: &bbpb.BuilderID{
+			Project: "chromium",
+			Bucket:  "ci",
+			Builder: "linux-test",
+		},
+		Input: &bbpb.Build_Input{
+			Properties: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"builder_group":         structpb.NewStringValue("buildergroup1"),
+					"$bootstrap/properties": structpb.NewStructValue(bootstrapProperties),
+					"another_prop":          structpb.NewStringValue("another_val"),
+				},
+			},
+		},
+		Infra: &bbpb.BuildInfra{
+			Swarming: &bbpb.BuildInfra_Swarming{
+				TaskDimensions: []*bbpb.RequestedDimension{
+					{
+						Key:   "key",
+						Value: "val",
+					},
+				},
+			},
+		},
+	}
+
+	scheduleBuildRes := &bbpb.Build{
+		Id: 8765,
+		Builder: &bbpb.BuilderID{
+			Project: "chromium",
+			Bucket:  "findit",
+			Builder: "test-single-revision",
+		},
+		Number:     10,
+		Status:     bbpb.Status_SCHEDULED,
+		CreateTime: timestamppb.New(time.Unix(1000, 0)),
+		Input: &bbpb.Build_Input{
+			GitilesCommit: &bbpb.GitilesCommit{
+				Host:    "chromium.googlesource.com",
+				Project: "chromium/src",
+				Ref:     "refs/heads/main",
+				Id:      "hash",
+			},
+		},
+	}
+
+	mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(getBuildRes, nil).AnyTimes()
+	mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(scheduleBuildRes, nil).AnyTimes()
 }

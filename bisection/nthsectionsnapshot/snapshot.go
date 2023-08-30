@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/common/errors"
 )
 
 // Snapshot contains the current snapshot of the nth-section run
@@ -286,4 +287,26 @@ func breakToSmallerChunks(chunk *NthSectionSnapshotChunk, nDivider int) []int {
 	}
 
 	return result
+}
+
+// FindNextSingleCommitToRun returns the next commit to run.
+// Used to get the new rerun when we get the update from recipe.
+// If we cannot find the next commit, we will return empty string.
+func (snapshot *Snapshot) FindNextSingleCommitToRun() (string, error) {
+	// We pass 1 as argument here because we only need to find one commit
+	// to replace the finishing one.
+	commits, err := snapshot.FindNextCommitsToRun(1)
+	if err != nil {
+		return "", errors.Annotate(err, "find next commits to run").Err()
+	}
+	// There is no commit to run, perhaps we already found a culprit, or we
+	// have already scheduled the necessary build to be run.
+	if len(commits) == 0 {
+		return "", nil
+	}
+	if len(commits) != 1 {
+		return "", errors.Annotate(err, "expect only 1 commits to rerun. Got %d", len(commits)).Err()
+	}
+	return commits[0], nil
+
 }

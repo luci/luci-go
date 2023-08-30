@@ -265,7 +265,7 @@ type Suspect struct {
 	Type SuspectType `gae:"type"`
 
 	// Key to the CompileFailureHeuristicAnalysis or CompileFailureNthSectionAnalysis
-	// that results in this suspect
+	// or TestNthSectionAnalysis that results in this suspect
 	ParentAnalysis *datastore.Key `gae:"$parent"`
 
 	// The commit of the suspect
@@ -300,6 +300,9 @@ type Suspect struct {
 
 	// Details of actions performed by LUCI Bisection for this suspect.
 	ActionDetails
+
+	// Type of the suspect.
+	AnalysisType pb.AnalysisType `gae:"analysis_type"`
 
 	// For backward compatibility due to removed fields.
 	// See https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/gae/service/datastore/pls.go;l=100
@@ -432,7 +435,7 @@ type TestFailureAnalysis struct {
 type TestNthSectionAnalysis struct {
 	ID int64 `gae:"$id"`
 	// Key to the parent TestFailureAnalysis.
-	ParentAnalysis *datastore.Key `gae:"$parent"`
+	ParentAnalysisKey *datastore.Key `gae:"parent_analysis_key"`
 	// Time when the analysis starts to run.
 	StartTime time.Time `gae:"start_time"`
 	// Time when the analysis ends, or canceled.

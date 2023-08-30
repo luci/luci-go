@@ -32,11 +32,9 @@ import (
 	"go.chromium.org/luci/gae/service/info"
 )
 
-type Bisector struct {
-	LuciAnalysis analysis.AnalysisClient
-}
+type Bisector struct{}
 
-func (b *Bisector) Prepare(ctx context.Context, tfa *model.TestFailureAnalysis) error {
+func (b *Bisector) Prepare(ctx context.Context, tfa *model.TestFailureAnalysis, luciAnalysis analysis.AnalysisClient) error {
 	logging.Infof(ctx, "Run chromium bisection")
 	bundle, err := datastoreutil.GetTestFailureBundle(ctx, tfa)
 	if err != nil {
@@ -48,7 +46,7 @@ func (b *Bisector) Prepare(ctx context.Context, tfa *model.TestFailureAnalysis) 
 		return errors.Annotate(err, "populate test suite name").Err()
 	}
 
-	err = b.populateTestNames(ctx, bundle)
+	err = b.populateTestNames(ctx, bundle, luciAnalysis)
 	if err != nil {
 		return errors.Annotate(err, "populate test names").Err()
 	}
@@ -125,7 +123,7 @@ func (b *Bisector) populateTestSuiteName(ctx context.Context, bundle *model.Test
 // the TestName for all TestFailure models in bundle.
 // This only triggered whenever we run a bisection (~20 times a day), so the
 // cost is manageable.
-func (b *Bisector) populateTestNames(ctx context.Context, bundle *model.TestFailureBundle) error {
+func (b *Bisector) populateTestNames(ctx context.Context, bundle *model.TestFailureBundle, luciAnalysis analysis.AnalysisClient) error {
 	tfs := bundle.All()
 	keys := make([]lucianalysis.TestVerdictKey, len(tfs))
 	for i, tf := range bundle.All() {
@@ -135,7 +133,7 @@ func (b *Bisector) populateTestNames(ctx context.Context, bundle *model.TestFail
 			RefHash:     tf.RefHash,
 		}
 	}
-	keyMap, err := b.LuciAnalysis.ReadTestNames(ctx, bundle.Primary().Project, keys)
+	keyMap, err := luciAnalysis.ReadTestNames(ctx, bundle.Primary().Project, keys)
 	if err != nil {
 		return errors.Annotate(err, "read test names").Err()
 	}
