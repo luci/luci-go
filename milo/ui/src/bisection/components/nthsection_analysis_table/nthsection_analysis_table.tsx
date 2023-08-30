@@ -56,7 +56,7 @@ export const NthSectionAnalysisTable = ({
   const sortedReruns = reruns.sort(
     // All reruns used in Nth section analysis should have indicies.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    (a, b) => parseInt(a.index!) - parseInt(b.index!)
+    (a, b) => parseInt(a.index!) - parseInt(b.index!),
   );
   return (
     <>

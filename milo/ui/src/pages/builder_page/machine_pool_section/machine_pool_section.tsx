@@ -105,7 +105,7 @@ export function MachinePoolSection({
         <Link
           href={getSwarmingBotListURL(
             swarmingHost,
-            dimensions.map((d) => `${d.key}:${d.value}`)
+            dimensions.map((d) => `${d.key}:${d.value}`),
           )}
         >
           Machine Pool

@@ -26,10 +26,10 @@ describe('resultdb', () => {
   test('should compute invocation ID from build number correctly', async () => {
     const invId = await getInvIdFromBuildNum(
       { project: 'chromium', bucket: 'ci', builder: 'ios-device' },
-      179945
+      179945,
     );
     expect(invId).toStrictEqual(
-      'build-135d246ed1a40cc3e77d8b1daacc7198fe344b1ac7b95c08cb12f1cc383867d7-179945'
+      'build-135d246ed1a40cc3e77d8b1daacc7198fe344b1ac7b95c08cb12f1cc383867d7-179945',
     );
   });
 

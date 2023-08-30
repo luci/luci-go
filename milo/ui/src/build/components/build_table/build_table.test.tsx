@@ -45,7 +45,7 @@ describe('BuildTable', () => {
             <></>
           </BuildTableBody>
         </BuildTable>
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
     await act(() => jest.runAllTimersAsync());
 

@@ -93,7 +93,7 @@ export class DotSpinnerElement extends LitElement {
     this.root.render(
       <CacheProvider value={this.cache}>
         <DotSpinner />
-      </CacheProvider>
+      </CacheProvider>,
     );
     return this.parent;
   }

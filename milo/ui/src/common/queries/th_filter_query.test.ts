@@ -63,7 +63,7 @@ describe('parseVariantFilter', () => {
 
     const filtered = variants
       .map(
-        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string]
+        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string],
       )
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
@@ -75,7 +75,7 @@ describe('parseVariantFilter', () => {
 
     const filtered = variants
       .map(
-        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string]
+        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string],
       )
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
@@ -87,7 +87,7 @@ describe('parseVariantFilter', () => {
 
     const filtered = variants
       .map(
-        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string]
+        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string],
       )
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
@@ -99,7 +99,7 @@ describe('parseVariantFilter', () => {
 
     const filtered = variants
       .map(
-        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string]
+        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string],
       )
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
@@ -115,12 +115,12 @@ describe('parseVariantFilter', () => {
 
   test('should work multiple queries', () => {
     const filter = parseVariantFilter(
-      '-v:key1=val1 STATUS:Unexpected v:key1=val2'
+      '-v:key1=val1 STATUS:Unexpected v:key1=val2',
     );
 
     const filtered = variants
       .map(
-        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string]
+        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string],
       )
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
@@ -138,7 +138,7 @@ describe('parseVariantFilter', () => {
 
     const filtered = variants
       .map(
-        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string]
+        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string],
       )
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
@@ -150,7 +150,7 @@ describe('parseVariantFilter', () => {
 
     const filtered = variants
       .map(
-        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string]
+        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string],
       )
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
@@ -183,7 +183,7 @@ describe('suggestTestHistoryFilterQuery', () => {
     const suggestions2 = suggestTestHistoryFilterQuery('-V:test_suite');
     // When user explicitly typed negative query, don't suggest positive query.
     expect(
-      suggestions2.find((s) => s.value === 'V:test_suite')
+      suggestions2.find((s) => s.value === 'V:test_suite'),
     ).toBeUndefined();
     expect(suggestions2.find((s) => s.value === '-V:test_suite')).toBeDefined();
   });
@@ -199,21 +199,21 @@ describe('parseVariantPredicate', () => {
 
   test('should ignore negative filters', () => {
     const predicate = parseVariantPredicate(
-      'v:key1=val1 -v:key2=val2 -vhash:902690735d13f8bd'
+      'v:key1=val1 -v:key2=val2 -vhash:902690735d13f8bd',
     );
     expect(predicate).toEqual({ contains: { def: { key1: 'val1' } } });
   });
 
   test('should prioritize variant hash filter', () => {
     const predicate = parseVariantPredicate(
-      'v:key1=val1 vhash:0123456789AbCdEf'
+      'v:key1=val1 vhash:0123456789AbCdEf',
     );
     expect(predicate).toEqual({ hashEquals: '0123456789abcdef' });
   });
 
   test('should ignore invalid filters', () => {
     const predicate = parseVariantPredicate(
-      'v:key1=val1 vhash:invalidhash other:hash'
+      'v:key1=val1 vhash:invalidhash other:hash',
     );
     expect(predicate).toEqual({ contains: { def: { key1: 'val1' } } });
   });

@@ -17,7 +17,7 @@
  */
 export function* take<T>(
   iter: Iterable<T>,
-  count: number
+  count: number,
 ): IterableIterator<T> {
   if (count <= 0) {
     return;
@@ -36,7 +36,7 @@ export function* take<T>(
  * item).
  */
 export function* withPrev<T>(
-  iter: Iterable<T>
+  iter: Iterable<T>,
 ): IterableIterator<[T, T | null]> {
   let prev: T | null = null;
   for (const item of iter) {
@@ -50,7 +50,7 @@ export function* withPrev<T>(
  */
 export function* map<V, T>(
   iter: Iterable<V>,
-  mapFn: (v: V) => T
+  mapFn: (v: V) => T,
 ): IterableIterator<T> {
   for (const item of iter) {
     yield mapFn(item);
@@ -62,7 +62,7 @@ export function* map<V, T>(
  */
 export async function* mapAsync<V, T>(
   iter: AsyncIterable<V>,
-  mapFn: (v: V) => T
+  mapFn: (v: V) => T,
 ): AsyncIterableIterator<T> {
   for await (const item of iter) {
     yield mapFn(item);
@@ -84,7 +84,7 @@ export function* flatten<T>(iter: Iterable<readonly T[]>): IterableIterator<T> {
  * iterator
  */
 export function teeAsync<T>(
-  iter: AsyncIterator<T>
+  iter: AsyncIterator<T>,
 ): () => AsyncIterableIterator<T> {
   // TODO(weiweilin): convert cache to T[] to reduce memory usage.
   const cache = [] as Array<Promise<IteratorResult<T>> | IteratorResult<T>>;
@@ -109,7 +109,7 @@ export function teeAsync<T>(
  * in addition to the item.
  */
 export function* enumerate<T>(
-  iter: Iterable<T>
+  iter: Iterable<T>,
 ): IterableIterator<[number, T]> {
   let i = 0;
   for (const item of iter) {

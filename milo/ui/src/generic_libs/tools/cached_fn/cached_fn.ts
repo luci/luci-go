@@ -60,7 +60,7 @@ export interface CacheOption {
  */
 export function cached<T extends unknown[], V>(
   fn: (...params: T) => V,
-  config: CacheConfig<T, V>
+  config: CacheConfig<T, V>,
 ): (opt: CacheOption, ...params: T) => V {
   const cache = new Map<unknown, [V]>();
 

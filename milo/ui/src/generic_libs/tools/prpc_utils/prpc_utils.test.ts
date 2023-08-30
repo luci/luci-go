@@ -21,7 +21,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
-      }
+      },
     );
     const client = new PrpcClient({ fetchImpl: fetchStub });
     client.call('service', 'method', { prop: 1 });
@@ -29,11 +29,11 @@ describe('genCacheKeyForPrpcRequest', () => {
 
     const key1 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[0])
+      new Request(...fetchStub.mock.calls[0]),
     );
     const key2 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[1])
+      new Request(...fetchStub.mock.calls[1]),
     );
     expect(key1).toStrictEqual(key2);
   });
@@ -42,7 +42,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
-      }
+      },
     );
     const client1 = new PrpcClient({ host: 'host1', fetchImpl: fetchStub });
     const client2 = new PrpcClient({ host: 'host2', fetchImpl: fetchStub });
@@ -51,11 +51,11 @@ describe('genCacheKeyForPrpcRequest', () => {
 
     const key1 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[0])
+      new Request(...fetchStub.mock.calls[0]),
     );
     const key2 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[1])
+      new Request(...fetchStub.mock.calls[1]),
     );
     expect(key1).not.toStrictEqual(key2);
   });
@@ -64,7 +64,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
-      }
+      },
     );
     const client1 = new PrpcClient({
       accessToken: 'token1',
@@ -79,11 +79,11 @@ describe('genCacheKeyForPrpcRequest', () => {
 
     const key1 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[0])
+      new Request(...fetchStub.mock.calls[0]),
     );
     const key2 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[1])
+      new Request(...fetchStub.mock.calls[1]),
     );
     expect(key1).not.toStrictEqual(key2);
   });
@@ -92,7 +92,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
-      }
+      },
     );
     const client1 = new PrpcClient({ insecure: true, fetchImpl: fetchStub });
     const client2 = new PrpcClient({ insecure: false, fetchImpl: fetchStub });
@@ -101,11 +101,11 @@ describe('genCacheKeyForPrpcRequest', () => {
 
     const key1 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[0])
+      new Request(...fetchStub.mock.calls[0]),
     );
     const key2 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[1])
+      new Request(...fetchStub.mock.calls[1]),
     );
     expect(key1).not.toStrictEqual(key2);
   });
@@ -114,7 +114,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
-      }
+      },
     );
     const client = new PrpcClient({ fetchImpl: fetchStub });
     client.call('service1', 'method', { prop: 1 });
@@ -122,11 +122,11 @@ describe('genCacheKeyForPrpcRequest', () => {
 
     const key1 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[0])
+      new Request(...fetchStub.mock.calls[0]),
     );
     const key2 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[1])
+      new Request(...fetchStub.mock.calls[1]),
     );
     expect(key1).not.toStrictEqual(key2);
   });
@@ -135,7 +135,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
-      }
+      },
     );
     const client = new PrpcClient({ fetchImpl: fetchStub });
     client.call('service', 'method1', { prop: 1 });
@@ -143,11 +143,11 @@ describe('genCacheKeyForPrpcRequest', () => {
 
     const key1 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[0])
+      new Request(...fetchStub.mock.calls[0]),
     );
     const key2 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[1])
+      new Request(...fetchStub.mock.calls[1]),
     );
     expect(key1).not.toStrictEqual(key2);
   });
@@ -156,7 +156,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
-      }
+      },
     );
     const client = new PrpcClient({ fetchImpl: fetchStub });
     client.call('service', 'method', { prop: 1 });
@@ -164,11 +164,11 @@ describe('genCacheKeyForPrpcRequest', () => {
 
     const key1 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[0])
+      new Request(...fetchStub.mock.calls[0]),
     );
     const key2 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[1])
+      new Request(...fetchStub.mock.calls[1]),
     );
     expect(key1).not.toStrictEqual(key2);
   });
@@ -177,31 +177,31 @@ describe('genCacheKeyForPrpcRequest', () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
-      }
+      },
     );
     const client = new PrpcClient({ fetchImpl: fetchStub });
     client.call(
       'service',
       'method',
       { prop: 1 },
-      { 'header-key': 'header-value1' }
+      { 'header-key': 'header-value1' },
     );
     client.call(
       'service',
       'method',
       { prop: 1 },
-      { 'header-key': 'header-value2' }
+      { 'header-key': 'header-value2' },
     );
 
     const key1 = await genCacheKeyForPrpcRequest(
       'prefix',
       new Request(...fetchStub.mock.calls[0]),
-      ['header-key']
+      ['header-key'],
     );
     const key2 = await genCacheKeyForPrpcRequest(
       'prefix',
       new Request(...fetchStub.mock.calls[1]),
-      ['header-key']
+      ['header-key'],
     );
     expect(key1).not.toStrictEqual(key2);
   });
@@ -210,7 +210,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
-      }
+      },
     );
     const client = new PrpcClient({ fetchImpl: fetchStub });
     client.call(
@@ -221,7 +221,7 @@ describe('genCacheKeyForPrpcRequest', () => {
         accept: 'accept',
         'content-type': 'content-type',
         authorization: 'token',
-      }
+      },
     );
     client.call(
       'service',
@@ -231,7 +231,7 @@ describe('genCacheKeyForPrpcRequest', () => {
         accept: 'accept1',
         'content-type': 'content-type',
         authorization: 'token',
-      }
+      },
     );
     client.call(
       'service',
@@ -241,7 +241,7 @@ describe('genCacheKeyForPrpcRequest', () => {
         accept: 'accept',
         'content-type': 'content-type1',
         authorization: 'token',
-      }
+      },
     );
     client.call(
       'service',
@@ -251,24 +251,24 @@ describe('genCacheKeyForPrpcRequest', () => {
         accept: 'accept',
         'content-type': 'content-type',
         authorization: 'token1',
-      }
+      },
     );
 
     const key1 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[0])
+      new Request(...fetchStub.mock.calls[0]),
     );
     const key2 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[1])
+      new Request(...fetchStub.mock.calls[1]),
     );
     const key3 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[2])
+      new Request(...fetchStub.mock.calls[2]),
     );
     const key4 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[3])
+      new Request(...fetchStub.mock.calls[3]),
     );
     expect(key1).not.toStrictEqual(key2);
     expect(key1).not.toStrictEqual(key3);
@@ -279,29 +279,29 @@ describe('genCacheKeyForPrpcRequest', () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
-      }
+      },
     );
     const client = new PrpcClient({ fetchImpl: fetchStub });
     client.call(
       'service',
       'method',
       { prop: 1 },
-      { 'header-key': 'header-value1' }
+      { 'header-key': 'header-value1' },
     );
     client.call(
       'service',
       'method',
       { prop: 1 },
-      { 'header-key': 'header-value2' }
+      { 'header-key': 'header-value2' },
     );
 
     const key1 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[0])
+      new Request(...fetchStub.mock.calls[0]),
     );
     const key2 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[1])
+      new Request(...fetchStub.mock.calls[1]),
     );
     expect(key1).toStrictEqual(key2);
   });
@@ -310,24 +310,24 @@ describe('genCacheKeyForPrpcRequest', () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
-      }
+      },
     );
     const client = new PrpcClient({ fetchImpl: fetchStub });
     client.call(
       'service',
       'method',
       { prop: 1 },
-      { 'HEADER-KEY': 'header-value' }
+      { 'HEADER-KEY': 'header-value' },
     );
     client.call('service', 'method', { prop: 1 });
 
     const key1 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[0])
+      new Request(...fetchStub.mock.calls[0]),
     );
     const key2 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[1])
+      new Request(...fetchStub.mock.calls[1]),
     );
     expect(key1).toStrictEqual(key2);
   });
@@ -336,7 +336,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
-      }
+      },
     );
     const client = new PrpcClient({ fetchImpl: fetchStub });
     client.call('service', 'method', { prop: 1 });
@@ -344,11 +344,11 @@ describe('genCacheKeyForPrpcRequest', () => {
 
     const key1 = await genCacheKeyForPrpcRequest(
       'prefix1',
-      new Request(...fetchStub.mock.calls[0])
+      new Request(...fetchStub.mock.calls[0]),
     );
     const key2 = await genCacheKeyForPrpcRequest(
       'prefix2',
-      new Request(...fetchStub.mock.calls[1])
+      new Request(...fetchStub.mock.calls[1]),
     );
     expect(key1).not.toStrictEqual(key2);
   });
@@ -357,7 +357,7 @@ describe('genCacheKeyForPrpcRequest', () => {
     const fetchStub = jest.fn(
       (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
         return Promise.race([]);
-      }
+      },
     );
     const client = new PrpcClient({ fetchImpl: fetchStub });
     client.call('service', 'method', {
@@ -369,11 +369,11 @@ describe('genCacheKeyForPrpcRequest', () => {
 
     const key1 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[0])
+      new Request(...fetchStub.mock.calls[0]),
     );
     const key2 = await genCacheKeyForPrpcRequest(
       'prefix',
-      new Request(...fetchStub.mock.calls[1])
+      new Request(...fetchStub.mock.calls[1]),
     );
     expect(key1).toStrictEqual(key2);
   });

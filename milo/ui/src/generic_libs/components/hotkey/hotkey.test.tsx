@@ -26,14 +26,14 @@ function simulateKeyStroke(target: EventTarget, key: string) {
       bubbles: true,
       composed: true,
       keyCode: key.toUpperCase().charCodeAt(0),
-    } as KeyboardEventInit)
+    } as KeyboardEventInit),
   );
   target.dispatchEvent(
     new KeyboardEvent('keyup', {
       bubbles: true,
       composed: true,
       keyCode: key.toUpperCase().charCodeAt(0),
-    } as KeyboardEventInit)
+    } as KeyboardEventInit),
   );
 }
 
@@ -77,10 +77,10 @@ describe('Hotkey', () => {
   beforeEach(async () => {
     jest.useFakeTimers();
     handlerSpy = jest.fn(
-      (_keyboardEvent: KeyboardEvent, _hotkeysEvent: HotkeysEvent) => {}
+      (_keyboardEvent: KeyboardEvent, _hotkeysEvent: HotkeysEvent) => {},
     );
     handlerSpy2 = jest.fn(
-      (_keyboardEvent: KeyboardEvent, _hotkeysEvent: HotkeysEvent) => {}
+      (_keyboardEvent: KeyboardEvent, _hotkeysEvent: HotkeysEvent) => {},
     );
 
     ele = render(
@@ -90,7 +90,7 @@ describe('Hotkey', () => {
         <select data-testid="select"></select>
         <textarea data-testid="textarea"></textarea>
         <milo-hotkey-test-wrapper data-testid="wrapped"></milo-hotkey-test-wrapper>
-      </Hotkey>
+      </Hotkey>,
     );
     await jest.runAllTimersAsync();
 
@@ -127,7 +127,7 @@ describe('Hotkey', () => {
         <select data-testid="select"></select>
         <textarea data-testid="textarea"></textarea>
         <milo-hotkey-test-wrapper data-testid="wrapped"></milo-hotkey-test-wrapper>
-      </Hotkey>
+      </Hotkey>,
     );
     await jest.runAllTimersAsync();
 
@@ -146,7 +146,7 @@ describe('Hotkey', () => {
         <select data-testid="select"></select>
         <textarea data-testid="textarea"></textarea>
         <milo-hotkey-test-wrapper data-testid="wrapped"></milo-hotkey-test-wrapper>
-      </Hotkey>
+      </Hotkey>,
     );
     await jest.runAllTimersAsync();
 

@@ -51,19 +51,19 @@ describe('RoutedTabs', () => {
           ],
         },
       ],
-      { initialEntries: ['/path/prefix/tab-a'] }
+      { initialEntries: ['/path/prefix/tab-a'] },
     );
     render(<RouterProvider router={router} />);
 
     expect(screen.getByText('tab A label')).toHaveAttribute(
       'aria-selected',
-      'true'
+      'true',
     );
     expect(screen.queryByText('tab A content')).toBeInTheDocument();
 
     expect(screen.getByText('tab B label')).not.toHaveAttribute(
       'aria-selected',
-      'true'
+      'true',
     );
     expect(screen.queryByText('tab B content')).not.toBeInTheDocument();
 
@@ -71,13 +71,13 @@ describe('RoutedTabs', () => {
 
     expect(screen.getByText('tab A label')).not.toHaveAttribute(
       'aria-selected',
-      'true'
+      'true',
     );
     expect(screen.queryByText('tab A content')).not.toBeInTheDocument();
 
     expect(screen.getByText('tab B label')).toHaveAttribute(
       'aria-selected',
-      'true'
+      'true',
     );
     expect(screen.queryByText('tab B content')).toBeInTheDocument();
   });
@@ -107,7 +107,7 @@ describe('RoutedTabs', () => {
           ],
         },
       ],
-      { initialEntries: ['/path/prefix/tab-a'] }
+      { initialEntries: ['/path/prefix/tab-a'] },
     );
     render(<RouterProvider router={router} />);
 
@@ -116,7 +116,7 @@ describe('RoutedTabs', () => {
     act(() => screen.getByText('direct link to tab B').click());
     expect(screen.getByText('tab B label')).not.toHaveStyleRule(
       'display',
-      'none'
+      'none',
     );
   });
 });

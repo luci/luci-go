@@ -64,7 +64,7 @@ export const TestHistoryPage = types
     filterText: '',
 
     selectedGroup: types.frozen<QueryTestHistoryStatsResponseGroup | null>(
-      null
+      null,
     ),
 
     graphType: types.frozen<GraphType>(GraphType.STATUS),
@@ -125,7 +125,7 @@ export const TestHistoryPage = types
         return [
           res.variants?.map(
             (v) =>
-              [v.variantHash, v.variant || { def: {} }] as [string, Variant]
+              [v.variantHash, v.variant || { def: {} }] as [string, Variant],
           ) || [],
           res.nextPageToken,
         ];
@@ -142,7 +142,7 @@ export const TestHistoryPage = types
         self.testId,
         self.latestDate,
         self.variantPredicate,
-        self.services.testHistory
+        self.services.testHistory,
       );
     });
 
@@ -169,7 +169,7 @@ export const TestHistoryPage = types
       const earliest = self.selectedGroup?.partitionTime;
       const testHistoryService = self.services.testHistory;
       const variant = varLoader.items.find(
-        ([vHash]) => vHash === variantHash
+        ([vHash]) => vHash === variantHash,
       )![1];
       const latest = DateTime.fromISO(earliest).minus({ days: -1 }).toISO();
 
@@ -213,16 +213,16 @@ export const TestHistoryPage = types
     const criticalVariantKeys = computed(
       () =>
         getCriticalVariantKeys(
-          self.variantsLoader?.items.map(([_, v]) => v) || []
+          self.variantsLoader?.items.map(([_, v]) => v) || [],
         ),
-      { equals: comparer.shallow }
+      { equals: comparer.shallow },
     );
 
     return {
       get filteredVariants() {
         return (
           self.variantsLoader?.items.filter(([hash, v]) =>
-            self.variantFilter(v, hash)
+            self.variantFilter(v, hash),
           ) || []
         );
       },
@@ -237,7 +237,7 @@ export const TestHistoryPage = types
       },
       get columnWidths(): readonly number[] {
         return this.columnKeys.map(
-          (col) => self.customColumnWidths[col] ?? 100
+          (col) => self.customColumnWidths[col] ?? 100,
         );
       },
       get sortingKeys(): readonly string[] {
@@ -338,7 +338,7 @@ export const TestHistoryPage = types
             // TODO(weiweilin): display the error to the user.
             logging.error(e);
           }
-        })
+        }),
       );
     },
   }));
@@ -361,7 +361,7 @@ export const TEST_VERDICT_STATUS_CMP_STRING = {
  * 2. '-{property_key}': sort by property_key in descending order.
  */
 export function createTVCmpFn(
-  sortingKeys: readonly string[]
+  sortingKeys: readonly string[],
 ): (v1: TestVerdictBundle, v2: TestVerdictBundle) => number {
   const sorters: Array<
     [number, (v: TestVerdictBundle) => { toString(): string }]
@@ -403,7 +403,7 @@ export function createTVCmpFn(
  * verdict (e.g. v.gpu).
  */
 export function createTVPropGetter(
-  propKey: string
+  propKey: string,
 ): (v: TestVerdictBundle) => ToString {
   if (propKey.match(/^v[.]/i)) {
     const variantKey = propKey.slice(2);

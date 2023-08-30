@@ -55,7 +55,7 @@ describe('ChangelistsBadge', () => {
 
     const anchorElement = screen.getByRole<HTMLAnchorElement>('link');
     expect(anchorElement.href).toStrictEqual(
-      'https://www.example.com/c/1234/1'
+      'https://www.example.com/c/1234/1',
     );
     expect(anchorElement.textContent).toStrictEqual('c/1234/1');
 
@@ -71,7 +71,7 @@ describe('ChangelistsBadge', () => {
 
     const anchorElement = screen.getByRole<HTMLAnchorElement>('link');
     expect(anchorElement.href).toStrictEqual(
-      'https://www.example.com/c/1234/1'
+      'https://www.example.com/c/1234/1',
     );
     expect(anchorElement.textContent).toStrictEqual('c/1234/1, ...');
 
@@ -83,11 +83,11 @@ describe('ChangelistsBadge', () => {
       .lastCall![0] as CustomEvent<ShowTooltipEventDetail>;
     expect(event.type).toStrictEqual('show-tooltip');
     const tooltip = event.detail.tooltip.getElementsByTagName(
-      'milo-changelists-tooltip'
+      'milo-changelists-tooltip',
     );
     expect(tooltip.length).toStrictEqual(1);
     expect((tooltip[0] as ChangelistsTooltipElement).changelists).toEqual(
-      changelists
+      changelists,
     );
   });
 });

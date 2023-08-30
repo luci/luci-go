@@ -55,7 +55,7 @@ export const ListAnalysesTable = () => {
   // index of the record to continue from
   // TODO: update the key once more query parameters are added
   const [pageTokens, setPageTokens] = useState<Map<number, string>>(
-    new Map<number, string>([[0, '']])
+    new Map<number, string>([[0, '']]),
   );
 
   const {
@@ -80,7 +80,7 @@ export const ListAnalysesTable = () => {
         if (response.nextPageToken != null) {
           const nextPageStartIndex = (page + 1) * pageSize;
           setPageTokens(
-            new Map(pageTokens.set(nextPageStartIndex, response.nextPageToken))
+            new Map(pageTokens.set(nextPageStartIndex, response.nextPageToken)),
           );
         }
       },
@@ -94,7 +94,7 @@ export const ListAnalysesTable = () => {
   };
 
   const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     // Set the new page size then reset to the first page of results
     setPageSize(parseInt(event.target.value, 10));

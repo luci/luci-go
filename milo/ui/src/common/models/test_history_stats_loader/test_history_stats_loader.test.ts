@@ -26,7 +26,7 @@ import { TestHistoryStatsLoader } from './test_history_stats_loader';
 
 function createGroup(
   timestamp: string,
-  variantHash: string
+  variantHash: string,
 ): QueryTestHistoryStatsResponseGroup {
   return {
     partitionTime: timestamp,
@@ -48,7 +48,7 @@ describe('TestHistoryStatsLoader', () => {
     const stub: jest.MockedFunction<
       (
         req: QueryTestHistoryStatsRequest,
-        cacheOpt?: CacheOption
+        cacheOpt?: CacheOption,
       ) => Promise<QueryTestHistoryStatsResponse>
     > = jest.fn();
     stub.mockResolvedValueOnce({
@@ -68,7 +68,7 @@ describe('TestHistoryStatsLoader', () => {
       { contains: { def: {} } },
       {
         queryStats: stub,
-      } as Partial<TestHistoryService> as TestHistoryService
+      } as Partial<TestHistoryService> as TestHistoryService,
     );
 
     // Before loading.

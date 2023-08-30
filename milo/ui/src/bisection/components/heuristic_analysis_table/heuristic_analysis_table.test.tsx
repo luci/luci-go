@@ -27,7 +27,7 @@ describe('Test HeuristicAnalysisTable component', () => {
 
     expect(screen.queryAllByRole('link')).toHaveLength(0);
     expect(
-      screen.getByText('There is no heuristic analysis')
+      screen.getByText('There is no heuristic analysis'),
     ).toBeInTheDocument();
   });
 
@@ -73,7 +73,7 @@ describe('Test HeuristicAnalysisTable component', () => {
 
     expect(screen.queryAllByRole('link')).toHaveLength(0);
     expect(
-      screen.getByText('Heuristic analysis is in progress')
+      screen.getByText('Heuristic analysis is in progress'),
     ).toBeInTheDocument();
     expect(screen.queryByText('No suspects found')).not.toBeInTheDocument();
   });

@@ -48,9 +48,9 @@ export class TextDiffArtifactElement extends MobxLitElement {
         urlSetSearchQueryParam(
           this.artifact.fetchUrl,
           'n',
-          ARTIFACT_LENGTH_LIMIT
-        )
-      ).then((res) => res.text())
+          ARTIFACT_LENGTH_LIMIT,
+        ),
+      ).then((res) => res.text()),
     );
   }
 
@@ -86,7 +86,7 @@ export class TextDiffArtifactElement extends MobxLitElement {
         </span>
         <div id="content" slot="content">
           ${unsafeHTML(
-            Diff2Html.html(this.content || '', { drawFileList: false })
+            Diff2Html.html(this.content || '', { drawFileList: false }),
           )}
         </div>
       </milo-expandable-entry>

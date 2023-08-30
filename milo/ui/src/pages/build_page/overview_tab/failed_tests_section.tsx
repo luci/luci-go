@@ -61,7 +61,7 @@ export const FailedTestSection = observer(() => {
   const testsTabUrl =
     getBuildURLPath(
       store.buildPage.builderIdParam,
-      store.buildPage.buildNumOrIdParam
+      store.buildPage.buildNumOrIdParam,
     ) + '/test-results';
 
   if (!testLoader?.firstPageLoaded || !store.buildPage.build) {
@@ -83,14 +83,14 @@ export const FailedTestSection = observer(() => {
     '24px ' + invState.columnWidths.map(() => '0').join(' ') + ' 1fr';
   const displayedTVCount = Math.min(
     testLoader.unfilteredUnexpectedVariantsCount,
-    MAX_DISPLAYED_UNEXPECTED_TESTS
+    MAX_DISPLAYED_UNEXPECTED_TESTS,
   );
 
   const groupDefs = invState.groupers
     .filter(([key]) => key !== 'status')
     .map(
       ([key, getter]) =>
-        [getPropKeyLabel(key), getter] as [string, typeof getter]
+        [getPropKeyLabel(key), getter] as [string, typeof getter],
     );
 
   const lists: JSX.Element[] = [];
@@ -106,7 +106,7 @@ export const FailedTestSection = observer(() => {
               {label}: {getter(group[0])}
             </>
           ))}
-        </h4>
+        </h4>,
       );
     }
 
@@ -114,7 +114,7 @@ export const FailedTestSection = observer(() => {
       const q = Object.entries(testVariant.variant?.def || {})
         .map(
           ([dimension, value]) =>
-            `V:${encodeURIComponent(dimension)}=${encodeURIComponent(value)}`
+            `V:${encodeURIComponent(dimension)}=${encodeURIComponent(value)}`,
         )
         .join(' ');
       lists.push(
@@ -125,12 +125,12 @@ export const FailedTestSection = observer(() => {
           historyUrl={urlSetSearchQueryParam(
             getTestHistoryURLPath(
               store.buildPage.build.data.builder.project,
-              testVariant.testId
+              testVariant.testId,
             ),
             'q',
-            q
+            q,
           )}
-        />
+        />,
       );
       remainingEntry--;
       if (remainingEntry === 0) {

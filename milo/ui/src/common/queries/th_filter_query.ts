@@ -155,7 +155,7 @@ const QUERY_TYPE_SUGGESTIONS = [
 ];
 
 export function suggestTestHistoryFilterQuery(
-  query: string
+  query: string,
 ): readonly Suggestion[] {
   if (query === '') {
     // Return some example queries when the query is empty.
@@ -215,7 +215,7 @@ export function suggestTestHistoryFilterQuery(
         }
 
         return [];
-      })
+      }),
     );
   }
 

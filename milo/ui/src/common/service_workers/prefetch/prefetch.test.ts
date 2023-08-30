@@ -46,7 +46,7 @@ describe('Prefetcher', () => {
 
     fetchStub = jest.fn(fetch);
     respondWithStub = jest.fn(
-      (_res: Response | ReturnType<typeof fetch>) => {}
+      (_res: Response | ReturnType<typeof fetch>) => {},
     );
     prefetcher = new Prefetcher(SETTINGS, fetchStub);
 
@@ -55,14 +55,14 @@ describe('Prefetcher', () => {
     buildsService = new BuildsService(
       new PrpcClientExt(
         { host: SETTINGS.buildbucket.host, fetchImpl: fetchInterceptor },
-        () => 'access-token'
-      )
+        () => 'access-token',
+      ),
     );
     resultdb = new ResultDb(
       new PrpcClientExt(
         { host: SETTINGS.resultdb.host, fetchImpl: fetchInterceptor },
-        () => 'access-token'
-      )
+        () => 'access-token',
+      ),
     );
   });
 
@@ -72,7 +72,7 @@ describe('Prefetcher', () => {
 
   test('prefetches build page resources', async () => {
     const authResponse = new Response(
-      JSON.stringify({ accessToken: 'access-token', identity: 'user:user-id' })
+      JSON.stringify({ accessToken: 'access-token', identity: 'user:user-id' }),
     );
     const buildResponse = new Response(JSON.stringify({}));
     const invResponse = new Response(JSON.stringify({}));
@@ -102,18 +102,18 @@ describe('Prefetcher', () => {
           bucket: 'ci',
           builder: 'Win7 Tests (1)',
         },
-        116372
+        116372,
       ));
 
     await prefetcher.prefetchResources(
-      '/ui/p/chromium/builders/ci/Win7%20Tests%20(1)/116372'
+      '/ui/p/chromium/builders/ci/Win7%20Tests%20(1)/116372',
     );
 
     await jest.advanceTimersByTimeAsync(100);
     await jest.advanceTimersByTimeAsync(100);
 
     const requestedUrls = fetchStub.mock.calls.map(
-      (c) => new Request(...c).url
+      (c) => new Request(...c).url,
     );
     expect(requestedUrls.length).toStrictEqual(4);
     expect(requestedUrls).toEqual(
@@ -122,7 +122,7 @@ describe('Prefetcher', () => {
         `https://${SETTINGS.buildbucket.host}/prpc/buildbucket.v2.Builds/GetBuild`,
         `https://${SETTINGS.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
         `https://${SETTINGS.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
-      ])
+      ]),
     );
 
     // Generate a fetch request.
@@ -192,7 +192,7 @@ describe('Prefetcher', () => {
 
   test('prefetches build page resources when visiting a short build page url', async () => {
     const authResponse = new Response(
-      JSON.stringify({ accessToken: 'access-token', identity: 'user:user-id' })
+      JSON.stringify({ accessToken: 'access-token', identity: 'user:user-id' }),
     );
     const buildResponse = new Response(JSON.stringify({}));
     const invResponse = new Response(JSON.stringify({}));
@@ -221,7 +221,7 @@ describe('Prefetcher', () => {
     await jest.advanceTimersByTimeAsync(100);
 
     const requestedUrls = fetchStub.mock.calls.map(
-      (c) => new Request(...c).url
+      (c) => new Request(...c).url,
     );
     expect(requestedUrls.length).toStrictEqual(4);
     expect(requestedUrls).toEqual(
@@ -230,7 +230,7 @@ describe('Prefetcher', () => {
         `https://${SETTINGS.buildbucket.host}/prpc/buildbucket.v2.Builds/GetBuild`,
         `https://${SETTINGS.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
         `https://${SETTINGS.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
-      ])
+      ]),
     );
 
     // Generate a fetch request.
@@ -295,13 +295,13 @@ describe('Prefetcher', () => {
 
   test('prefetches artifact page resources', async () => {
     const authResponse = new Response(
-      JSON.stringify({ accessToken: 'access-token', identity: 'user:user-id' })
+      JSON.stringify({ accessToken: 'access-token', identity: 'user:user-id' }),
     );
     const artifactResponse = new Response(
       JSON.stringify({
         name: 'invocations/inv-id/tests/test-id/results/result-id/artifacts/artifact-id',
         artifactId: 'artifact-id',
-      })
+      }),
     );
 
     fetchStub.mockImplementation(async (input, init) => {
@@ -317,20 +317,20 @@ describe('Prefetcher', () => {
     });
 
     await prefetcher.prefetchResources(
-      '/ui/artifact/raw/invocations/inv-id/tests/test-id/results/result-id/artifacts/artifact-id'
+      '/ui/artifact/raw/invocations/inv-id/tests/test-id/results/result-id/artifacts/artifact-id',
     );
 
     await jest.advanceTimersByTimeAsync(100);
 
     const requestedUrls = fetchStub.mock.calls.map(
-      (c) => new Request(...c).url
+      (c) => new Request(...c).url,
     );
     expect(requestedUrls.length).toStrictEqual(2);
     expect(requestedUrls).toEqual(
       expect.arrayContaining([
         self.origin + '/auth/openid/state',
         `https://${SETTINGS.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`,
-      ])
+      ]),
     );
 
     // Generate a fetch request.

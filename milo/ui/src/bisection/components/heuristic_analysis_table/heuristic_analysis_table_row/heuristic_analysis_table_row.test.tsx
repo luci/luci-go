@@ -30,7 +30,7 @@ describe('Test HeuristicAnalysisTableRow component', () => {
         <TableBody>
           <HeuristicAnalysisTableRow suspect={mockSuspect} />
         </TableBody>
-      </Table>
+      </Table>,
     );
 
     await screen.findByTestId('heuristic_analysis_table_row');

@@ -104,7 +104,7 @@ export class ResultEntryElement extends MobxLitElement {
     }
     // TODO(weiweilin): handle pagination.
     return fromPromise(
-      resultdb.listArtifacts({ parent: this.testResult.name })
+      resultdb.listArtifacts({ parent: this.testResult.name }),
     );
   }
 
@@ -117,7 +117,7 @@ export class ResultEntryElement extends MobxLitElement {
           logging.error(e);
         }
         return [];
-      }
+      },
     );
   }
 
@@ -129,7 +129,7 @@ export class ResultEntryElement extends MobxLitElement {
     }
     // TODO(weiweilin): handle pagination.
     return fromPromise(
-      resultdb.listArtifacts({ parent: 'invocations/' + this.parentInvId })
+      resultdb.listArtifacts({ parent: 'invocations/' + this.parentInvId }),
     );
   }
 
@@ -142,17 +142,17 @@ export class ResultEntryElement extends MobxLitElement {
           logging.error(e);
         }
         return [];
-      }
+      },
     );
   }
 
   @computed private get artifactsMapping() {
     return new Map([
       ...this.resultArtifacts.map(
-        (obj) => [obj.artifactId, obj] as [string, Artifact]
+        (obj) => [obj.artifactId, obj] as [string, Artifact],
       ),
       ...this.invArtifacts.map(
-        (obj) => ['inv-level/' + obj.artifactId, obj] as [string, Artifact]
+        (obj) => ['inv-level/' + obj.artifactId, obj] as [string, Artifact],
       ),
     ]);
   }
@@ -164,7 +164,7 @@ export class ResultEntryElement extends MobxLitElement {
   @computed private get testhausLogArtifact() {
     // Check for Testhaus logs at the test result level first.
     const log = this.resultArtifacts.find(
-      (a) => a.artifactId === 'testhaus_logs'
+      (a) => a.artifactId === 'testhaus_logs',
     );
     if (log) {
       return log;
@@ -181,7 +181,7 @@ export class ResultEntryElement extends MobxLitElement {
   @computed private get imageDiffArtifactGroup() {
     return {
       expected: this.resultArtifacts.find(
-        (a) => a.artifactId === 'expected_image'
+        (a) => a.artifactId === 'expected_image',
       ),
       actual: this.resultArtifacts.find((a) => a.artifactId === 'actual_image'),
       diff: this.resultArtifacts.find((a) => a.artifactId === 'image_diff'),
@@ -195,7 +195,7 @@ export class ResultEntryElement extends MobxLitElement {
 
     // There can be at most one failureReason cluster.
     const reasonCluster = this.clusters.filter((c) =>
-      c.clusterId.algorithm.startsWith('reason-')
+      c.clusterId.algorithm.startsWith('reason-'),
     )?.[0];
     if (!reasonCluster) {
       return null;
@@ -312,7 +312,7 @@ ${errMsg}</pre
       </div>
       <ul>
         ${this.invArtifacts.map(
-          (artifact) => html` <li>${this.renderArtifactLink(artifact)}</li> `
+          (artifact) => html` <li>${this.renderArtifactLink(artifact)}</li> `,
         )}
       </ul>
     `;
@@ -333,8 +333,9 @@ ${errMsg}</pre
         <div slot="content">
           <ul>
             ${this.resultArtifacts.map(
-              (artifact) =>
-                html` <li>${this.renderArtifactLink(artifact)}</li> `
+              (artifact) => html`
+                <li>${this.renderArtifactLink(artifact)}</li>
+              `,
             )}
           </ul>
           ${this.renderInvocationLevelArtifacts()}

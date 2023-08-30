@@ -60,7 +60,7 @@ export const GerritChangesContentCell = observer(() => {
           !build.input?.gerritChanges?.length || tableState.isExpanded(build.id)
         );
       }),
-    [build, tableState]
+    [build, tableState],
   );
   const expanded = expandedObservable.get();
 

@@ -26,7 +26,7 @@ const SPECIAL_QUERY_RE = /^(-?)([a-zA-Z]+):(.+)$/;
 export type TestVariantFilter = (v: TestVariant) => boolean;
 
 export function parseTestResultSearchQuery(
-  searchQuery: string
+  searchQuery: string,
 ): TestVariantFilter {
   const filters = searchQuery.split(' ').map((query) => {
     const match = query.match(SPECIAL_QUERY_RE);
@@ -100,8 +100,11 @@ export function parseTestResultSearchQuery(
         if (tValue) {
           return (v: TestVariant) =>
             negate ===
-            !v.results?.some((r) =>
-              r.result.tags?.some((t) => t.key === tKey && t.value === tValue)
+            !v.results?.some(
+              (r) =>
+                r.result.tags?.some(
+                  (t) => t.key === tKey && t.value === tValue,
+                ),
             );
         } else {
           return (v: TestVariant) =>
@@ -303,7 +306,7 @@ const QUERY_TYPE_SUGGESTIONS = [
 ];
 
 export function suggestTestResultSearchQuery(
-  query: string
+  query: string,
 ): readonly Suggestion[] {
   if (query === '') {
     // Return some example queries when the query is empty.
@@ -410,8 +413,8 @@ export function suggestTestResultSearchQuery(
   const subQueryUpper = subQuery.toUpperCase();
   suggestions.push(
     ...QUERY_SUGGESTIONS.filter(({ value }) =>
-      value.toUpperCase().includes(subQueryUpper)
-    )
+      value.toUpperCase().includes(subQueryUpper),
+    ),
   );
 
   // Suggest queries with arbitrary value.
@@ -430,7 +433,7 @@ export function suggestTestResultSearchQuery(
         }
 
         return [];
-      })
+      }),
     );
   }
 

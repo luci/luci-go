@@ -89,7 +89,7 @@ describe('BuilderSearch', () => {
               },
             ],
           });
-        }
+        },
       );
 
     render(
@@ -99,7 +99,7 @@ describe('BuilderSearch', () => {
         }}
       >
         <BuilderSearch />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
 
     fireEvent.change(screen.getByTestId('filter-input'), {

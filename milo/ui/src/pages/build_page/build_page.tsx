@@ -74,7 +74,7 @@ export const BuildPage = observer(() => {
 
   if (!project || !bucket || !builder || !buildNumOrId) {
     throw new Error(
-      'invariant violated: project, bucket, builder, buildNumOrId should be set'
+      'invariant violated: project, bucket, builder, buildNumOrId should be set',
     );
   }
 
@@ -101,7 +101,7 @@ export const BuildPage = observer(() => {
   }, [faviconUrl]);
 
   const handleSwitchVersion = (
-    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
   ) => {
     const switchVerTemporarily =
       e.metaKey || e.shiftKey || e.ctrlKey || e.altKey;
@@ -111,7 +111,7 @@ export const BuildPage = observer(() => {
     }
 
     const expires = new Date(
-      Date.now() + 365 * 24 * 60 * 60 * 1000
+      Date.now() + 365 * 24 * 60 * 60 * 1000,
     ).toUTCString();
     document.cookie = `showNewBuildPage=false; expires=${expires}; path=/`;
     store.redirectSw?.unregister();
@@ -165,7 +165,7 @@ export const BuildPage = observer(() => {
             onClick={handleSwitchVersion}
             href={getLegacyBuildURLPath(
               { project, bucket, builder },
-              buildNumOrId
+              buildNumOrId,
             )}
           >
             Switch to the legacy build page
@@ -190,21 +190,23 @@ export const BuildPage = observer(() => {
                   switch (build.data.status) {
                     case BuildbucketStatus.Scheduled:
                       return `since ${build.createTime.toFormat(
-                        LONG_TIME_FORMAT
+                        LONG_TIME_FORMAT,
                       )}`;
                     case BuildbucketStatus.Started:
                       return `since ${build.startTime!.toFormat(
-                        LONG_TIME_FORMAT
+                        LONG_TIME_FORMAT,
                       )}`;
                     case BuildbucketStatus.Canceled:
                       return `after ${displayDuration(
-                        build.endTime!.diff(build.createTime)
+                        build.endTime!.diff(build.createTime),
                       )} by ${build.data.canceledBy || 'unknown'}`;
                     case BuildbucketStatus.Failure:
                     case BuildbucketStatus.InfraFailure:
                     case BuildbucketStatus.Success:
                       return `after ${displayDuration(
-                        build.endTime!.diff(build.startTime || build.createTime)
+                        build.endTime!.diff(
+                          build.startTime || build.createTime,
+                        ),
                       )}`;
                     default:
                       return '';

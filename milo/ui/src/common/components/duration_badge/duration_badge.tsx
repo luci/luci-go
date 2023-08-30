@@ -52,7 +52,7 @@ const defaultColorScaleMs = scaleThreshold(
     { backgroundColor: 'hsl(206, 85%, 45%)', color: 'white' },
     { backgroundColor: 'hsl(206, 85%, 35%)', color: 'white' },
     { backgroundColor: 'hsl(206, 85%, 25%)', color: 'white' },
-  ]
+  ],
 );
 
 const defaultColorScale = (d: Duration) => defaultColorScaleMs(d.toMillis());
@@ -76,7 +76,7 @@ const durationBadge = css`
 function renderTooltip(
   duration: Duration,
   from?: DateTime | null,
-  to?: DateTime | null
+  to?: DateTime | null,
 ) {
   return html`
     <table>
@@ -140,7 +140,7 @@ export function DurationBadge({
           targetRect: target.getBoundingClientRect(),
           gapSize: 2,
         },
-      })
+      }),
     );
   }
 
@@ -148,7 +148,7 @@ export function DurationBadge({
     window.dispatchEvent(
       new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
         detail: { delay: 50 },
-      })
+      }),
     );
   }
 

@@ -79,7 +79,7 @@ export class TestHistoryDetailsTableElement extends MobxExtLitElement {
   toggleAllVariants(expand?: boolean) {
     this.allVariantsWereExpanded = expand ?? !this.allVariantsWereExpanded;
     this.shadowRoot!.querySelectorAll<TestHistoryDetailsEntryElement>(
-      'milo-test-history-details-entry'
+      'milo-test-history-details-entry',
     ).forEach((e) => (e.expanded = this.allVariantsWereExpanded));
   }
 
@@ -93,10 +93,10 @@ export class TestHistoryDetailsTableElement extends MobxExtLitElement {
         (entriesLoader) =>
           reportErrorAsync(
             this,
-            async () => await entriesLoader?.loadFirstPage()
+            async () => await entriesLoader?.loadFirstPage(),
           )(),
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
 
     // Sync column width from the user config.
@@ -104,14 +104,14 @@ export class TestHistoryDetailsTableElement extends MobxExtLitElement {
       reaction(
         () => this.store.userConfig.tests.columnWidths,
         (columnWidths) => this.pageState.setColumnWidths(columnWidths),
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
   }
 
   private loadMore = reportErrorAsync(
     this,
-    async () => await this.pageState.entriesLoader?.loadNextPage()
+    async () => await this.pageState.entriesLoader?.loadNextPage(),
   );
 
   private renderAllVariants() {
@@ -127,7 +127,7 @@ export class TestHistoryDetailsTableElement extends MobxExtLitElement {
             .columnGetters=${this.columnGetters}
             .expanded=${entryLoaders?.items.length === 1}
           ></milo-test-history-details-entry>
-        `
+        `,
       )}
       <div id="variant-list-tail">
         Showing ${entryLoaders?.items.length || 0} /
@@ -170,7 +170,7 @@ export class TestHistoryDetailsTableElement extends MobxExtLitElement {
   private tableHeaderEle?: HTMLElement;
   protected updated() {
     this.tableHeaderEle = assertNonNullable(
-      this.shadowRoot?.getElementById('table-header')
+      this.shadowRoot?.getElementById('table-header'),
     );
   }
 
@@ -181,7 +181,7 @@ export class TestHistoryDetailsTableElement extends MobxExtLitElement {
     return (ascending: boolean) => {
       const matchingKeys = [col, `-${col}`];
       const newKeys = this.pageState.sortingKeys.filter(
-        (key) => !matchingKeys.includes(key)
+        (key) => !matchingKeys.includes(key),
       );
       newKeys.unshift((ascending ? '' : '-') + col);
       this.pageState.setSortingKeys(newKeys);
@@ -211,40 +211,41 @@ export class TestHistoryDetailsTableElement extends MobxExtLitElement {
             .tooltip=${'changelists'}
           ></milo-column-header>
           ${this.pageState.columnKeys.map(
-            (col, i) => html`<milo-column-header
-              .label=${getPropKeyLabel(col)}
-              .tooltip=${col}
-              .resizeColumn=${
-                // Don't make the last column resizable.
-                this.pageState.columnKeys.length - 1 === i
-                  ? undefined
-                  : (delta: number, finalized: boolean) => {
-                      if (!finalized) {
-                        const newColWidths = this.columnWidths.slice();
-                        newColWidths[i] += delta;
-                        // Update the style directly so lit-element doesn't need to
-                        // re-render the component frequently.
-                        // Live updating the width of the entire column can cause a bit
-                        // of lag when there are many rows. Live updating just the
-                        // column header is good enough.
-                        this.tableHeaderEle?.style.setProperty(
-                          '--thdt-columns',
-                          this.getThdtColumns(newColWidths)
-                        );
-                        return;
-                      }
+            (col, i) =>
+              html`<milo-column-header
+                .label=${getPropKeyLabel(col)}
+                .tooltip=${col}
+                .resizeColumn=${
+                  // Don't make the last column resizable.
+                  this.pageState.columnKeys.length - 1 === i
+                    ? undefined
+                    : (delta: number, finalized: boolean) => {
+                        if (!finalized) {
+                          const newColWidths = this.columnWidths.slice();
+                          newColWidths[i] += delta;
+                          // Update the style directly so lit-element doesn't need to
+                          // re-render the component frequently.
+                          // Live updating the width of the entire column can cause a bit
+                          // of lag when there are many rows. Live updating just the
+                          // column header is good enough.
+                          this.tableHeaderEle?.style.setProperty(
+                            '--thdt-columns',
+                            this.getThdtColumns(newColWidths),
+                          );
+                          return;
+                        }
 
-                      this.tableHeaderEle?.style.removeProperty(
-                        '--thdt-columns'
-                      );
-                      this.store.userConfig.tests.setColumWidth(
-                        col,
-                        this.columnWidths[i] + delta
-                      );
-                    }
-              }
-              .sortByColumn=${this.sortByColumnFn(col)}
-            ></milo-column-header>`
+                        this.tableHeaderEle?.style.removeProperty(
+                          '--thdt-columns',
+                        );
+                        this.store.userConfig.tests.setColumWidth(
+                          col,
+                          this.columnWidths[i] + delta,
+                        );
+                      }
+                }
+                .sortByColumn=${this.sortByColumnFn(col)}
+              ></milo-column-header>`,
           )}
         </div>
         <div id="test-variant-list" tabindex="0">
@@ -319,11 +320,11 @@ export interface DetailsTableProps {
 export const DetailsTable = forwardRef(
   (
     props: DetailsTableProps,
-    ref: ForwardedRef<TestHistoryDetailsTableElement>
+    ref: ForwardedRef<TestHistoryDetailsTableElement>,
   ) => {
     return (
       <milo-th-details-table {...props} ref={ref} class={props.className} />
     );
-  }
+  },
 );
 DetailsTable.displayName = 'DetailsTable';

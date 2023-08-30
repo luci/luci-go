@@ -16,11 +16,11 @@ import { Build, BuilderID, GerritChange } from '@/common/services/buildbucket';
 import { TestLocation } from '@/common/services/resultdb';
 
 export function getBuildURLPathFromBuildData(
-  build: Pick<Build, 'builder' | 'number' | 'id'>
+  build: Pick<Build, 'builder' | 'number' | 'id'>,
 ): string {
   return getBuildURLPath(
     build.builder,
-    build.number ? build.number.toString() : `b${build.id}`
+    build.number ? build.number.toString() : `b${build.id}`,
   );
 }
 
@@ -30,7 +30,7 @@ export function getBuildURLPathFromBuildId(buildId: string): string {
 
 export function getBuildURLPath(
   builder: BuilderID,
-  buildIdOrNum: string
+  buildIdOrNum: string,
 ): string {
   return `/ui${getBuilderURLPath(builder)}/${buildIdOrNum}`;
 }
@@ -47,7 +47,7 @@ export function getProjectURLPath(proj: string): string {
 
 export function getLegacyBuildURLPath(
   builder: BuilderID,
-  buildNumOrId: string
+  buildNumOrId: string,
 ) {
   return `${getLegacyBuilderURLPath(builder)}/${buildNumOrId}`;
 }
@@ -66,10 +66,10 @@ export function getSwarmingTaskURL(hostname: string, taskId: string): string {
 
 export function getSwarmingBotListURL(
   hostname: string,
-  dimensions: readonly string[]
+  dimensions: readonly string[],
 ): string {
   return `https://${hostname}/botlist?${new URLSearchParams(
-    dimensions.map((d) => ['f', d])
+    dimensions.map((d) => ['f', d]),
   )}`;
 }
 
@@ -84,7 +84,7 @@ export function getRawArtifactURLPath(artifactName: string): string {
 export function getImageDiffArtifactURLPath(
   diffArtifactName: string,
   expectedArtifactId: string,
-  actualArtifactId: string
+  actualArtifactId: string,
 ) {
   const search = new URLSearchParams();
   search.set('actual_artifact_id', actualArtifactId);

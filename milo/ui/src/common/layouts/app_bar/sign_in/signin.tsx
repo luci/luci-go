@@ -53,7 +53,7 @@ export const SignIn = ({ identity, email, picture }: SignInProps) => {
           aria-label="Logout button"
           color="inherit"
           href={getLogoutUrl(
-            location.pathname + location.search + location.hash
+            location.pathname + location.search + location.hash,
           )}
         >
           <LogoutIcon />

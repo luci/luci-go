@@ -103,11 +103,11 @@ export class TestHistoryDurationLegendElement extends MobxExtLitElement {
 
   @computed private get durationAxisEle() {
     return d3Select(
-      document.createElementNS('http://www.w3.org/2000/svg', 'g')
+      document.createElementNS('http://www.w3.org/2000/svg', 'g'),
     ).call(
       axisRight(this.scaleDurationY)
         .ticks(this.tickInterval)
-        .tickFormat(this.tickFormat)
+        .tickFormat(this.tickFormat),
     );
   }
 
@@ -128,20 +128,20 @@ export class TestHistoryDurationLegendElement extends MobxExtLitElement {
             <stop
               offset="0%"
               stop-color=${this.pageState.scaleDurationColor(
-                this.pageState.maxDurationMs
+                this.pageState.maxDurationMs,
               )}
             ></stop>
             <stop
               offset="50%"
               stop-color=${this.pageState.scaleDurationColor(
                 (this.pageState.maxDurationMs + this.pageState.minDurationMs) /
-                  2
+                  2,
               )}
             ></stop>
             <stop
               offset="100%"
               stop-color=${this.pageState.scaleDurationColor(
-                this.pageState.minDurationMs
+                this.pageState.minDurationMs,
               )}
             ></stop>
           </linearGradient>

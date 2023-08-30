@@ -55,15 +55,15 @@ export class LinkArtifactElement extends MobxLitElement {
         urlSetSearchQueryParam(
           this.artifact.fetchUrl,
           'n',
-          ARTIFACT_LENGTH_LIMIT
-        )
+          ARTIFACT_LENGTH_LIMIT,
+        ),
       ).then((res) => {
         if (!res.ok) {
           this.loadError = true;
           return '';
         }
         return res.text();
-      })
+      }),
     );
   }
 
@@ -77,7 +77,7 @@ export class LinkArtifactElement extends MobxLitElement {
       if (!allowedProtocol || !allowedHost) {
         logging.warn(
           `Invalid target URL for link artifact ${this.artifact.name} - ` +
-            'returning the original fetch URL for the artifact instead'
+            'returning the original fetch URL for the artifact instead',
         );
         return this.artifact.fetchUrl;
       }

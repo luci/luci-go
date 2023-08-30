@@ -35,7 +35,9 @@ configure({ enforceActions: 'never' });
 const container = assertNonNullable(document.getElementById('app-root'));
 const root = createRoot(container);
 root.render(
-  <App initOpts={{ isDevEnv: import.meta.env.DEV, enableUiSW: ENABLE_UI_SW }} />
+  <App
+    initOpts={{ isDevEnv: import.meta.env.DEV, enableUiSW: ENABLE_UI_SW }}
+  />,
 );
 
 Settings.throwOnInvalid = true;

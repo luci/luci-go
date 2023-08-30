@@ -83,7 +83,7 @@ export const SummaryContentCell = observer(() => {
         // is updated.
         return !build.summaryMarkdown || tableState.isExpanded(build.id);
       }),
-    [build, tableState]
+    [build, tableState],
   );
   const expanded = expandedObservable.get();
 
@@ -92,7 +92,7 @@ export const SummaryContentCell = observer(() => {
       build.summaryMarkdown
         ? renderMarkdown(build.summaryMarkdown)
         : '<p style="color: var(--greyed-out-text-color);">No Summary.</p>',
-    [build.summaryMarkdown]
+    [build.summaryMarkdown],
   );
 
   return (

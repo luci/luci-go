@@ -17,7 +17,7 @@ import StackdriverErrorReporter from 'stackdriver-errors-js';
 const errorHandler = new StackdriverErrorReporter();
 if (
   ['luci-milo.appspot.com', 'ci.chromium.org'].includes(
-    window.location.hostname
+    window.location.hostname,
   )
 ) {
   errorHandler.start({

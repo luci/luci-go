@@ -66,8 +66,8 @@ export class ArtifactPageLayoutElement extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['artifactIdent', artifactIdent]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
   }
 
@@ -150,7 +150,7 @@ export function ArtifactPageLayout() {
       >
         ${container.current.children}
       </milo-artifact-page-layout>`,
-      container.current
+      container.current,
     );
   }, [invId, testId, resultId, artifactId]);
 

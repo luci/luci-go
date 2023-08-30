@@ -57,7 +57,7 @@ export class TestHistoryDurationGraphElement extends MobxExtLitElement {
               />
               ${this.renderRow(vHash)}
             </g>
-          `
+          `,
         )}
       </svg>
     `;
@@ -107,7 +107,7 @@ export class TestHistoryDurationGraphElement extends MobxExtLitElement {
         @click=${() => this.pageState.setSelectedGroup(group)}
       >
         <title>Average Duration: ${displayDuration(
-          Duration.fromMillis(averageDurationMs)
+          Duration.fromMillis(averageDurationMs),
         )}\nClick to view test run details.</title>
       </rect>
     `;

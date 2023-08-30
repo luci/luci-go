@@ -60,7 +60,7 @@ function getSuspectRange(analysis: Analysis): ExternalLink[] {
       return [
         linkToCommitRange(
           result.remainingNthSectionRange.lastPassed,
-          result.remainingNthSectionRange.firstFailed
+          result.remainingNthSectionRange.firstFailed,
         ),
       ];
     }

@@ -26,7 +26,7 @@ describe('URLExt', () => {
       .setSearchParam('key3', 'newVal3')
       .toString();
     expect(newUrlStr).toStrictEqual(
-      'https://example.com/path?key1=val1&key2=newVal2&key3=newVal3'
+      'https://example.com/path?key1=val1&key2=newVal2&key3=newVal3',
     );
   });
 
@@ -41,7 +41,7 @@ describe('URLExt', () => {
     const url = new URLExt('https://example.com/path?key1=val1&key1=val2');
     const newUrlStr = url.removeMatchedParams({ key1: 'val1' }).toString();
     expect(newUrlStr).toStrictEqual(
-      'https://example.com/path?key1=val1&key1=val2'
+      'https://example.com/path?key1=val1&key1=val2',
     );
   });
 });

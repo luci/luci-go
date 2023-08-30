@@ -44,7 +44,7 @@ describe('CancelBuildDialog', () => {
     render(
       <StoreProvider value={store}>
         <CancelBuildDialog open onClose={onCloseSpy} />
-      </StoreProvider>
+      </StoreProvider>,
     );
 
     fireEvent.click(screen.getByText('Confirm'));
@@ -62,7 +62,7 @@ describe('CancelBuildDialog', () => {
     render(
       <StoreProvider value={store}>
         <CancelBuildDialog open onClose={onCloseSpy} />
-      </StoreProvider>
+      </StoreProvider>,
     );
 
     fireEvent.change(screen.getByRole('textbox'), {
@@ -76,7 +76,7 @@ describe('CancelBuildDialog', () => {
     expect(screen.queryByText('Reason is required')).toBeNull();
     expect(cancelBuildStub.mock.calls.length).toStrictEqual(1);
     expect(cancelBuildStub.mock.lastCall?.[0]).toStrictEqual(
-      'need to stop build'
+      'need to stop build',
     );
   });
 });

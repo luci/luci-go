@@ -33,7 +33,7 @@ describe('Test AnalysisTableRow component', () => {
             <AnalysisTableRow analysis={mockAnalysis} />
           </TableBody>
         </Table>
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
 
     await screen.findByTestId('analysis_table_row');
@@ -48,7 +48,7 @@ describe('Test AnalysisTableRow component', () => {
     //    * 12:34:56 Dec, 03 2022 PDT
     //    * 12:34:56 Dec, 03 2022 GMT+10
     const startTimeFormat = new RegExp(
-      '^\\d{2}:[0-5]\\d:[0-5]\\d [A-Z][a-z]{2}, [A-Z][a-z]{2} [0-3]\\d \\d{4} [A-Z]+'
+      '^\\d{2}:[0-5]\\d:[0-5]\\d [A-Z][a-z]{2}, [A-Z][a-z]{2} [0-3]\\d \\d{4} [A-Z]+',
     );
     expect(screen.queryAllByText(startTimeFormat)).toHaveLength(1);
 
@@ -70,7 +70,7 @@ describe('Test AnalysisTableRow component', () => {
 
     // Check there is no link for culprits
     expect(
-      screen.queryAllByTestId('analysis_table_row_culprit_link')
+      screen.queryAllByTestId('analysis_table_row_culprit_link'),
     ).toHaveLength(0);
   });
 
@@ -85,7 +85,7 @@ describe('Test AnalysisTableRow component', () => {
             <AnalysisTableRow analysis={mockAnalysis} />
           </TableBody>
         </Table>
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
 
     await screen.findByTestId('analysis_table_row');
@@ -97,7 +97,7 @@ describe('Test AnalysisTableRow component', () => {
 
     // Check there is no link to a builder
     expect(
-      screen.queryAllByTestId('analysis_table_row_builder_link')
+      screen.queryAllByTestId('analysis_table_row_builder_link'),
     ).toHaveLength(0);
   });
 
@@ -150,19 +150,19 @@ describe('Test AnalysisTableRow component', () => {
             <AnalysisTableRow analysis={mockAnalysis} />
           </TableBody>
         </Table>
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
 
     await screen.findByTestId('analysis_table_row');
 
     // Check there is a link for each culprit
     expect(
-      screen.queryAllByTestId('analysis_table_row_culprit_link')
+      screen.queryAllByTestId('analysis_table_row_culprit_link'),
     ).toHaveLength(mockAnalysis.culprits.length);
 
     // Check there is an icon for the auto-revert action.
     expect(
-      screen.getByTestId('culprit-action-icon-auto-reverted')
+      screen.getByTestId('culprit-action-icon-auto-reverted'),
     ).toBeInTheDocument();
   });
 });

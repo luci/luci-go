@@ -47,7 +47,10 @@ export const enum LoadingStage {
 export class LoadTestVariantsError extends Error implements InnerTag {
   readonly [TAG_SOURCE]: Error;
 
-  constructor(readonly req: QueryTestVariantsRequest, source: Error) {
+  constructor(
+    readonly req: QueryTestVariantsRequest,
+    source: Error,
+  ) {
     super(source.message);
 
     this[TAG_SOURCE] = source;
@@ -101,7 +104,7 @@ export class TestLoader {
     let groups = [this.nonExpectedTestVariants];
     for (const [, propGetter] of this.groupers) {
       groups = groups.flatMap((group) =>
-        Object.values(groupBy(group, propGetter))
+        Object.values(groupBy(group, propGetter)),
       );
     }
     return groups.map((group) => group.sort(this.cmpFn));
@@ -119,7 +122,7 @@ export class TestLoader {
         continue;
       }
       groups = groups.flatMap((group) =>
-        Object.values(groupBy(group, propGetter))
+        Object.values(groupBy(group, propGetter)),
       );
     }
     return groups.map((group) => group.slice().sort(this.cmpFn));
@@ -181,7 +184,7 @@ export class TestLoader {
 
   constructor(
     private readonly req: QueryTestVariantsRequest,
-    private readonly resultDb: ResultDb
+    private readonly resultDb: ResultDb,
   ) {
     makeObservable(this);
   }
@@ -211,7 +214,7 @@ export class TestLoader {
       .then(
         action(() => {
           this.loadingReqCount--;
-        })
+        }),
       );
     if (!this.firstLoadPromise) {
       this.firstLoadPromise = this.loadPromise;

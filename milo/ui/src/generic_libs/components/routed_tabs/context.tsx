@@ -70,6 +70,6 @@ export function useTabId(id: string) {
   useEffect(
     () => () =>
       dispatch({ type: 'deactivateTab', id: latestIdRef.current, hookRef }),
-    [dispatch]
+    [dispatch],
   );
 }

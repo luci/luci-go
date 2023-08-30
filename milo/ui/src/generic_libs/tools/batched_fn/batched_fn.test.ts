@@ -24,7 +24,7 @@ describe('batched_fn', () => {
     opt: BatchOption,
     ns: string,
     itemKeys: number[],
-    shouldErr?: boolean
+    shouldErr?: boolean,
   ) => Promise<Item[]>;
   let rpcSpy: jest.MockedFunction<
     (ns: string, itemKeys: number[], shouldErr?: boolean) => Promise<Item[]>
@@ -43,13 +43,13 @@ describe('batched_fn', () => {
     function getItemsFromServer(
       ns: string,
       itemKeys: number[],
-      shouldErr = false
+      shouldErr = false,
     ): Promise<Item[]> {
       if (shouldErr) {
         return Promise.reject(new Error('RPC err'));
       }
       return Promise.resolve(
-        itemKeys.map((key) => ({ key, value: `${ns}-${key}` }))
+        itemKeys.map((key) => ({ key, value: `${ns}-${key}` })),
       );
     }
 
@@ -58,7 +58,7 @@ describe('batched_fn', () => {
       fn: rpcSpy,
       combineParamSets: (
         [ns1, itemKeys1, shouldErr1],
-        [ns2, itemKeys2, shouldErr2]
+        [ns2, itemKeys2, shouldErr2],
       ) => {
         // If we cannot combine the calls, return ResultErr.
         if (ns1 !== ns2) {

@@ -43,7 +43,7 @@ describe('Test AnalysesTable component', () => {
     render(
       <FakeContextProvider>
         <ListAnalysesTable />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
 
     await screen.findByTestId('list-analyses-table');
@@ -66,7 +66,7 @@ describe('Test AnalysesTable component', () => {
     render(
       <FakeContextProvider>
         <ListAnalysesTable />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
 
     await screen.findByTestId('list-analyses-table');
@@ -102,7 +102,7 @@ describe('Test AnalysesTable component', () => {
     render(
       <FakeContextProvider>
         <ListAnalysesTable />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
 
     await screen.findByTestId('list-analyses-table');
@@ -117,7 +117,7 @@ describe('Test AnalysesTable component', () => {
     render(
       <FakeContextProvider>
         <ListAnalysesTable />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
 
     await screen.findByTestId('list-analyses-table');

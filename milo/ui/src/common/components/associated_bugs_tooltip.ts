@@ -43,20 +43,19 @@ export class AssociatedBugsTooltipElement extends MobxLitElement {
             </td>
           </tr>
           ${bugClusters.map(
-            (c) =>
-              html`
-                <tr class="row">
-                  <td><a href=${c.bug!.url}>${c.bug!.linkText}</a></td>
-                  <td>
-                    <a
-                      href=${makeRuleLink(this.project, c.clusterId.id)}
-                      target="_blank"
-                    >
-                      Failures
-                    </a>
-                  </td>
-                </tr>
-              `
+            (c) => html`
+              <tr class="row">
+                <td><a href=${c.bug!.url}>${c.bug!.linkText}</a></td>
+                <td>
+                  <a
+                    href=${makeRuleLink(this.project, c.clusterId.id)}
+                    target="_blank"
+                  >
+                    Failures
+                  </a>
+                </td>
+              </tr>
+            `,
           )}
         </tbody>
       </table>

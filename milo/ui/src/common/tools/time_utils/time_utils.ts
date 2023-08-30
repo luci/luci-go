@@ -24,7 +24,7 @@ export function displayDuration(duration: Duration) {
     'hours',
     'minutes',
     'seconds',
-    'milliseconds'
+    'milliseconds',
   );
   const parts = [];
   if (shifted.days >= 1) {
@@ -36,13 +36,13 @@ export function displayDuration(duration: Duration) {
   // We only care about minutes if days and hours are not both present
   if (shifted.minutes >= 1 && parts.length <= 1) {
     parts.push(
-      shifted.minutes + ' ' + (shifted.minutes === 1 ? 'min' : 'mins')
+      shifted.minutes + ' ' + (shifted.minutes === 1 ? 'min' : 'mins'),
     );
   }
   // We only care about seconds if it is significant enough
   if (shifted.seconds >= 1 && parts.length <= 1) {
     parts.push(
-      shifted.seconds + ' ' + (shifted.seconds === 1 ? 'sec' : 'secs')
+      shifted.seconds + ' ' + (shifted.seconds === 1 ? 'sec' : 'secs'),
     );
   }
   // We only care about ms if there are no other part
@@ -53,7 +53,7 @@ export function displayDuration(duration: Duration) {
 }
 
 export function displayCompactDuration(
-  duration: Duration | null
+  duration: Duration | null,
 ): [string, string] {
   if (duration === null) {
     return ['N/A', ''];
@@ -64,7 +64,7 @@ export function displayCompactDuration(
     'hours',
     'minutes',
     'seconds',
-    'milliseconds'
+    'milliseconds',
   );
   if (shifted.days >= 1) {
     return [`${(shifted.days + shifted.hours / 24).toFixed(1)}d`, 'd'];

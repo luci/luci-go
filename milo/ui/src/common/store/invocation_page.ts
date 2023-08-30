@@ -49,8 +49,8 @@ export const InvocationPage = types
               services,
             });
           },
-          { fireImmediately: true }
-        )
+          { fireImmediately: true },
+        ),
       );
 
       self.invocation.setDependencies({

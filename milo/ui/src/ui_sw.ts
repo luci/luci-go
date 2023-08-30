@@ -73,7 +73,7 @@ self.addEventListener('fetch', async (e) => {
   if (e.request.url === self.origin + '/configs.js') {
     const res = new Response(
       `self.VERSION = '${VERSION}';\n` +
-        `self.SETTINGS = Object.freeze(${JSON.stringify(SETTINGS)});\n`
+        `self.SETTINGS = Object.freeze(${JSON.stringify(SETTINGS)});\n`,
     );
     res.headers.set('content-type', 'application/javascript');
     e.respondWith(res);
@@ -99,6 +99,6 @@ self.addEventListener('fetch', async (e) => {
   registerRoute(
     new NavigationRoute(createHandlerBoundToURL('/ui/index.html'), {
       allowlist: [/^\/ui\//],
-    })
+    }),
   );
 }

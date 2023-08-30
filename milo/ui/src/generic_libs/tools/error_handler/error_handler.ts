@@ -63,7 +63,7 @@ import { toError } from '@/generic_libs/tools/utils';
 export function reportError<T extends unknown[], V>(
   ele: Element,
   fn: (...params: T) => V,
-  fallbackFn?: (err: unknown, ...params: T) => V
+  fallbackFn?: (err: unknown, ...params: T) => V,
 ): (...params: T) => V {
   return (...params: T) => {
     try {
@@ -77,7 +77,7 @@ export function reportError<T extends unknown[], V>(
           composed: true,
           bubbles: true,
           cancelable: true,
-        })
+        }),
       );
       if (fallbackFn) {
         return fallbackFn(e, ...params);
@@ -96,7 +96,7 @@ export function reportError<T extends unknown[], V>(
 export function reportRenderError(
   ele: Element,
   fn: () => unknown,
-  fallbackFn = (_err: unknown): unknown => ''
+  fallbackFn = (_err: unknown): unknown => '',
 ): () => unknown {
   return reportError(ele, fn, fallbackFn);
 }
@@ -109,7 +109,7 @@ export function reportRenderError(
 export function reportErrorAsync<T extends unknown[], V>(
   ele: Element,
   fn: (...params: T) => Promise<V>,
-  fallbackFn?: (err: unknown, ...params: T) => Promise<V>
+  fallbackFn?: (err: unknown, ...params: T) => Promise<V>,
 ): (...params: T) => Promise<V> {
   return async (...params: T) => {
     try {
@@ -124,7 +124,7 @@ export function reportErrorAsync<T extends unknown[], V>(
           composed: true,
           bubbles: true,
           cancelable: true,
-        })
+        }),
       );
       if (fallbackFn) {
         return fallbackFn(e, ...params);
@@ -142,7 +142,7 @@ export function reportErrorAsync<T extends unknown[], V>(
  */
 export type OnError<T extends LitElement> = (
   err: ErrorEvent,
-  ele: T
+  ele: T,
 ) => boolean;
 
 /**
@@ -152,7 +152,7 @@ export type OnError<T extends LitElement> = (
  */
 export function handleLocally<T extends LitElement>(
   err: ErrorEvent,
-  _ele: T
+  _ele: T,
 ): boolean {
   err.stopPropagation();
   return err.message !== '';
@@ -168,7 +168,7 @@ export function handleLocally<T extends LitElement>(
  */
 export function forwardWithoutMsg<T extends LitElement>(
   err: ErrorEvent,
-  ele: T
+  ele: T,
 ): boolean {
   err.stopPropagation();
   const event = new ErrorEvent('error', {
@@ -194,7 +194,7 @@ export function forwardWithoutMsg<T extends LitElement>(
  */
 export type RenderErrorFn<T extends LitElement> = (
   err: ErrorEvent,
-  ele: T
+  ele: T,
 ) => unknown;
 
 /**
@@ -203,7 +203,7 @@ export type RenderErrorFn<T extends LitElement> = (
  */
 export function renderErrorInPre<T extends LitElement>(
   err: ErrorEvent,
-  _ele: T
+  _ele: T,
 ): unknown {
   return html`
     <pre
@@ -226,7 +226,7 @@ ${err.message}</pre
  */
 export function errorHandler<T extends LitElement>(
   onError: OnError<T> = handleLocally,
-  renderError: RenderErrorFn<T> = renderErrorInPre
+  renderError: RenderErrorFn<T> = renderErrorInPre,
 ) {
   return function consumerMixin<C extends Constructor<T>>(cls: C) {
     const errorSymbol = Symbol('error');

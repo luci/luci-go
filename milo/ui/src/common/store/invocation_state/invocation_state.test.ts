@@ -66,7 +66,7 @@ describe('InvocationState', () => {
     let queryTestVariantsStub: jest.SpiedFunction<
       (
         req: QueryTestVariantsRequest,
-        cacheOpt?: CacheOption
+        cacheOpt?: CacheOption,
       ) => Promise<QueryTestVariantsResponse>
     >;
     let logErrorMock: jest.SpyInstance;
@@ -79,7 +79,7 @@ describe('InvocationState', () => {
       unprotect(store);
       queryTestVariantsStub = jest.spyOn(
         store.services.resultDb!,
-        'queryTestVariants'
+        'queryTestVariants',
       );
       queryTestVariantsStub.mockResolvedValueOnce({
         testVariants: [variant1, variant2, variant3, variant4, variant5],
@@ -96,47 +96,47 @@ describe('InvocationState', () => {
     test('should not filter out anything when search text is empty', () => {
       store.invocationPage.invocation.setSearchText('');
       expect(
-        store.invocationPage.invocation.testLoader!.unexpectedTestVariants
+        store.invocationPage.invocation.testLoader!.unexpectedTestVariants,
       ).toEqual([variant1, variant2]);
       expect(
-        store.invocationPage.invocation.testLoader!.expectedTestVariants
+        store.invocationPage.invocation.testLoader!.expectedTestVariants,
       ).toEqual([variant5]);
     });
 
     test("should filter out variants whose test ID doesn't match the search text", () => {
       store.invocationPage.invocation.setSearchText('test-suite-a');
       expect(
-        store.invocationPage.invocation.testLoader!.unexpectedTestVariants
+        store.invocationPage.invocation.testLoader!.unexpectedTestVariants,
       ).toEqual([variant1, variant2]);
       expect(
-        store.invocationPage.invocation.testLoader!.expectedTestVariants
+        store.invocationPage.invocation.testLoader!.expectedTestVariants,
       ).toEqual([]);
     });
 
     test('search text should be case insensitive', () => {
       store.invocationPage.invocation.setSearchText('test-suite-b');
       expect(
-        store.invocationPage.invocation.testLoader!.unexpectedTestVariants
+        store.invocationPage.invocation.testLoader!.unexpectedTestVariants,
       ).toEqual([]);
       expect(
-        store.invocationPage.invocation.testLoader!.expectedTestVariants
+        store.invocationPage.invocation.testLoader!.expectedTestVariants,
       ).toEqual([variant5]);
     });
 
     test('should preserve the last known valid filter', () => {
       store.invocationPage.invocation.setSearchText('test-suite-b');
       expect(
-        store.invocationPage.invocation.testLoader!.unexpectedTestVariants
+        store.invocationPage.invocation.testLoader!.unexpectedTestVariants,
       ).toEqual([]);
       expect(
-        store.invocationPage.invocation.testLoader!.expectedTestVariants
+        store.invocationPage.invocation.testLoader!.expectedTestVariants,
       ).toEqual([variant5]);
       store.invocationPage.invocation.setSearchText('invalid:filter');
       expect(
-        store.invocationPage.invocation.testLoader!.unexpectedTestVariants
+        store.invocationPage.invocation.testLoader!.unexpectedTestVariants,
       ).toEqual([]);
       expect(
-        store.invocationPage.invocation.testLoader!.expectedTestVariants
+        store.invocationPage.invocation.testLoader!.expectedTestVariants,
       ).toEqual([variant5]);
     });
   });

@@ -29,7 +29,7 @@ export function InvocationDefaultTab() {
     // (e.g. search query update) before unmounting the component and
     // redirecting users to the new component.
     // This may cause infinite loops if the dependency isn't specified.
-    [navigate, newUrl]
+    [navigate, newUrl],
   );
 
   return <></>;

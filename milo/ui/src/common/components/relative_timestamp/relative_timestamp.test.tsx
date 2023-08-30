@@ -29,7 +29,7 @@ describe('RelativeTimestamp', () => {
 
   test('should display timestamp in the past correctly', async () => {
     const timestamp = DateTime.now().minus(
-      Duration.fromObject({ seconds: 20, millisecond: 500 })
+      Duration.fromObject({ seconds: 20, millisecond: 500 }),
     );
 
     render(<RelativeTimestamp timestamp={timestamp} />);
@@ -39,7 +39,7 @@ describe('RelativeTimestamp', () => {
 
   test('should display timestamp in the future correctly', async () => {
     const timestamp = DateTime.now().plus(
-      Duration.fromObject({ seconds: 20, millisecond: 500 })
+      Duration.fromObject({ seconds: 20, millisecond: 500 }),
     );
 
     render(<RelativeTimestamp timestamp={timestamp} />);
@@ -49,7 +49,7 @@ describe('RelativeTimestamp', () => {
 
   test('should update timestamp correctly', async () => {
     const timestamp = DateTime.now().plus(
-      Duration.fromObject({ seconds: 2, millisecond: 500 })
+      Duration.fromObject({ seconds: 2, millisecond: 500 }),
     );
 
     render(<RelativeTimestamp timestamp={timestamp} />);

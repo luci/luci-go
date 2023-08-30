@@ -40,7 +40,7 @@ export function BuilderPage() {
   const { project, bucket, builder } = useParams();
   if (!project || !bucket || !builder) {
     throw new Error(
-      'invariant violated: project, bucket, builder should be set'
+      'invariant violated: project, bucket, builder should be set',
     );
   }
 

@@ -55,19 +55,19 @@ export function BuilderList({ searchQuery }: BuilderListProps) {
             b.id,
           ] as const;
         }) || [],
-    [data]
+    [data],
   );
 
   // Filter & group builders.
   const groupedBuilders = useMemo(() => {
     const parts = searchQuery.toLowerCase().split(' ');
     const filteredBuilders = builders.filter(([_, lowerBuilderId]) =>
-      parts.every((part) => lowerBuilderId.includes(part))
+      parts.every((part) => lowerBuilderId.includes(part)),
     );
     return mapValues(
       groupBy(filteredBuilders, ([bucketId]) => bucketId),
       (builders) =>
-        builders.map(([_bucketId, _lowerBuilderId, builder]) => builder)
+        builders.map(([_bucketId, _lowerBuilderId, builder]) => builder),
     );
   }, [builders, searchQuery]);
 

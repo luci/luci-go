@@ -47,10 +47,10 @@ export class TestHistoryVariantDefTableElement extends MobxExtLitElement {
             ([_, v]) => html`
               <tr>
                 ${this.pageState.criticalVariantKeys.map(
-                  (k) => html`<td>${v.def[k] || ''}</td>`
+                  (k) => html`<td>${v.def[k] || ''}</td>`,
                 )}
               </tr>
-            `
+            `,
           )}
         </tbody>
       </table>

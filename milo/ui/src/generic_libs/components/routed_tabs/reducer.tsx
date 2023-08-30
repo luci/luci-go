@@ -37,7 +37,7 @@ export type Action = {
 
 export function reducer(
   state: RoutedTabsState,
-  action: Action
+  action: Action,
 ): RoutedTabsState {
   switch (action.type) {
     case 'activateTab': {
@@ -48,7 +48,7 @@ export function reducer(
         throw new Error(
           `cannot activate a tab when there's already an active tab; ` +
             `active: ${state.activeTab.id}}; ` +
-            `activating: ${action.id}`
+            `activating: ${action.id}`,
         );
       }
       return { activeTab: { id: action.id, hookRef: action.hookRef } };
@@ -58,7 +58,7 @@ export function reducer(
         throw new Error(
           `cannot deactivate an inactive tab; ` +
             `active: ${state.activeTab?.id ?? null}}; ` +
-            `deactivating: ${action.id}`
+            `deactivating: ${action.id}`,
         );
       }
       return { activeTab: null };

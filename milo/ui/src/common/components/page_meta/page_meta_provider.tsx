@@ -83,7 +83,7 @@ export const PageMetaProvider = ({
   initPage = UiPage.Builders,
 }: Props) => {
   const [selectedPage, setSelectedPage] = useState<UiPage | undefined>(
-    initPage
+    initPage,
   );
   const [project, setProject] = useState<string | undefined>(initProject);
   return (

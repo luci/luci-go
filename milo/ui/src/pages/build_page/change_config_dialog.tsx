@@ -52,7 +52,7 @@ export const ChangeConfigDialog = observer(
   ({ open, onClose, container }: ChangeConfigDialogProps) => {
     const buildConfig = useStore().userConfig.build;
     const [tab, setTabName] = useState(() =>
-      untracked(() => parseTab(buildConfig.defaultTab) || INITIAL_DEFAULT_TAB)
+      untracked(() => parseTab(buildConfig.defaultTab) || INITIAL_DEFAULT_TAB),
     );
 
     // Sync the local state with the global config whenever the dialog is
@@ -120,5 +120,5 @@ export const ChangeConfigDialog = observer(
         </DialogActions>
       </Dialog>
     );
-  }
+  },
 );

@@ -79,7 +79,7 @@ export class TooltipElement extends MobxLitElement {
     const e = event as CustomEvent<HideTooltipEventDetail>;
     this.hideTooltipTimeout = window.setTimeout(
       this.hideTooltip,
-      e.detail.delay || 0
+      e.detail.delay || 0,
     );
   };
 
@@ -94,7 +94,7 @@ export class TooltipElement extends MobxLitElement {
     super();
     makeObservable(this);
     this.addEventListener('mouseover', () =>
-      window.clearTimeout(this.hideTooltipTimeout)
+      window.clearTimeout(this.hideTooltipTimeout),
     );
     this.addEventListener('mouseout', this.hideTooltip);
   }
@@ -219,8 +219,10 @@ export class TooltipElement extends MobxLitElement {
       background: white;
       border-radius: 4px;
       padding: 5px;
-      box-shadow: rgb(0 0 0 / 20%) 0px 5px 5px -3px,
-        rgb(0 0 0 / 14%) 0px 8px 10px 1px, rgb(0 0 0 / 12%) 0px 3px 14px 2px;
+      box-shadow:
+        rgb(0 0 0 / 20%) 0px 5px 5px -3px,
+        rgb(0 0 0 / 14%) 0px 8px 10px 1px,
+        rgb(0 0 0 / 12%) 0px 3px 14px 2px;
       z-index: 999;
     }
   `;

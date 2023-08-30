@@ -26,14 +26,14 @@ hotkeys.filter = () => true;
 
 export type FilterFn = (
   keyboardEvent: KeyboardEvent,
-  hotkeysEvent: HotkeysEvent
+  hotkeysEvent: HotkeysEvent,
 ) => boolean;
 
 // By default, prevent hotkeys from reacting to events from input related elements
 // enclosed in shadow DOM.
 const DEFAULT_FILTER_FN = (
   keyboardEvent: KeyboardEvent,
-  _hotkeysEvent: HotkeysEvent
+  _hotkeysEvent: HotkeysEvent,
 ) => {
   const tagName =
     (keyboardEvent.composedPath()[0] as Partial<HTMLElement>).tagName || '';
@@ -101,7 +101,7 @@ export class HotkeyElement extends MobxLitElement {
     this.root.render(
       <Hotkey hotkey={this.key} handler={this.handlerFn} filter={this.filterFn}>
         <slot></slot>
-      </Hotkey>
+      </Hotkey>,
     );
     return this.parent;
   }

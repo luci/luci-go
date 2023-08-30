@@ -181,7 +181,7 @@ export class BuildPageStepDisplayConfigElement extends MobxLitElement {
         <StoreProvider value={this.store}>
           <StepDisplayConfig />
         </StoreProvider>
-      </CacheProvider>
+      </CacheProvider>,
     );
     return this.parent;
   }

@@ -174,7 +174,7 @@ export class MiloInternal {
   private readonly cachedCallFn: (
     opt: CacheOption,
     method: string,
-    message: object
+    message: object,
   ) => Promise<unknown>;
 
   constructor(client: PrpcClientExt) {
@@ -183,7 +183,7 @@ export class MiloInternal {
         client.call(MiloInternal.SERVICE, method, message),
       {
         key: (method, message) => `${method}-${stableStringify(message)}`,
-      }
+      },
     );
   }
 
@@ -191,7 +191,7 @@ export class MiloInternal {
     return (await this.cachedCallFn(
       cacheOpt,
       'QueryBlamelist',
-      req
+      req,
     )) as QueryBlamelistResponse;
   }
 
@@ -201,12 +201,12 @@ export class MiloInternal {
 
   async queryRecentBuilds(
     req: QueryRecentBuildsRequest,
-    cacheOpt: CacheOption = {}
+    cacheOpt: CacheOption = {},
   ) {
     return (await this.cachedCallFn(
       cacheOpt,
       'QueryRecentBuilds',
-      req
+      req,
     )) as QueryRecentBuildsResponse;
   }
 
@@ -214,29 +214,29 @@ export class MiloInternal {
     return (await this.cachedCallFn(
       cacheOpt,
       'ListBuilders',
-      req
+      req,
     )) as ListBuildersResponse;
   }
 
   async queryBuilderStats(
     req: QueryBuilderStatsRequest,
-    cacheOpt: CacheOption = {}
+    cacheOpt: CacheOption = {},
   ) {
     return (await this.cachedCallFn(
       cacheOpt,
       'QueryBuilderStats',
-      req
+      req,
     )) as BuilderStats;
   }
 
   async batchCheckPermissions(
     req: BatchCheckPermissionsRequest,
-    cacheOpt: CacheOption = {}
+    cacheOpt: CacheOption = {},
   ) {
     return (await this.cachedCallFn(
       cacheOpt,
       'BatchCheckPermissions',
-      req
+      req,
     )) as BatchCheckPermissionsResponse;
   }
 
@@ -244,7 +244,7 @@ export class MiloInternal {
     return (await this.cachedCallFn(
       cacheOpt,
       'QueryConsoles',
-      req
+      req,
     )) as QueryConsolesResponse;
   }
 }

@@ -38,7 +38,7 @@ describe('Test AnalysisOverview component', () => {
       const fieldLabel = screen.getByText(new RegExp(`^(${label})$`, 'i'));
       expect(fieldLabel).toBeInTheDocument();
       expect(fieldLabel.nextSibling?.textContent).toBe(
-        `${mockAnalysis[property as keyof Analysis]}`
+        `${mockAnalysis[property as keyof Analysis]}`,
       );
     });
 
@@ -51,7 +51,7 @@ describe('Test AnalysisOverview component', () => {
     //    * 12:34:56 Dec, 03 2022 PDT
     //    * 12:34:56 Dec, 03 2022 GMT+10
     const timeFormat = new RegExp(
-      '^\\d{2}:[0-5]\\d:[0-5]\\d [A-Z][a-z]{2}, [A-Z][a-z]{2} [0-3]\\d \\d{4} [A-Z]+'
+      '^\\d{2}:[0-5]\\d:[0-5]\\d [A-Z][a-z]{2}, [A-Z][a-z]{2} [0-3]\\d \\d{4} [A-Z]+',
     );
     timestampFields.forEach((field) => {
       const fieldLabel = screen.getByText(new RegExp(`^(${field})$`, 'i'));
@@ -75,7 +75,7 @@ describe('Test AnalysisOverview component', () => {
     // check there are no bug links; there are no culprits nor culprit actions
     expect(screen.queryByText('Related bugs')).not.toBeInTheDocument();
     expect(screen.queryAllByTestId('analysis_overview_bug_link')).toHaveLength(
-      0
+      0,
     );
   });
 
@@ -115,12 +115,12 @@ describe('Test AnalysisOverview component', () => {
 
     // check related bug links are displayed
     expect(
-      screen.getByText(new RegExp('^(related bugs)$', 'i'))
+      screen.getByText(new RegExp('^(related bugs)$', 'i')),
     ).toBeInTheDocument();
     mockAnalysis.culprits.forEach((culprit) => {
       culprit.culpritAction?.forEach((action) => {
         expect(screen.getByText(action.bugUrl!).getAttribute('href')).toBe(
-          action.bugUrl
+          action.bugUrl,
         );
       });
     });
@@ -172,13 +172,13 @@ describe('Test AnalysisOverview component', () => {
 function verifySuspectRangeLinks(analysis: Analysis) {
   // check the label for the suspect range has been rendered
   const suspectRangeLabel = screen.getByText(
-    new RegExp('^(suspect range)$', 'i')
+    new RegExp('^(suspect range)$', 'i'),
   );
   expect(suspectRangeLabel).toBeInTheDocument();
 
   // check the suspect range link element(s) have been rendered
   const suspectRangeLinks = screen.queryAllByTestId(
-    'analysis_overview_suspect_range'
+    'analysis_overview_suspect_range',
   );
 
   if (analysis.culprits && analysis.culprits.length > 0) {
@@ -193,7 +193,7 @@ function verifySuspectRangeLinks(analysis: Analysis) {
       expect(suspectRangeLinks).toHaveLength(1);
       const nthCulpritLink = suspectRangeLinks[0];
       expect(analysis.nthSectionResult.suspect.gitilesCommit.id).toContain(
-        nthCulpritLink.textContent
+        nthCulpritLink.textContent,
       );
       expect(nthCulpritLink.getAttribute('href')).not.toBe('');
       return;
@@ -201,7 +201,7 @@ function verifySuspectRangeLinks(analysis: Analysis) {
       expect(suspectRangeLinks).toHaveLength(1);
       const nthSectionRangeLink = suspectRangeLinks[0];
       expect(nthSectionRangeLink.textContent).toMatch(
-        new RegExp('^(.+) ... (.+)$')
+        new RegExp('^(.+) ... (.+)$'),
       );
       expect(nthSectionRangeLink.getAttribute('href')).not.toBe('');
       return;

@@ -56,7 +56,7 @@ describe('aliveFlow', () => {
     const [promise3, resolve3] = deferred<number>();
 
     const actionPromise = fromPromise(
-      store.aliveAction([promise1, promise2, promise3])
+      store.aliveAction([promise1, promise2, promise3]),
     );
 
     expect(store.prop).toStrictEqual(0);
@@ -83,7 +83,7 @@ describe('aliveFlow', () => {
     const [promise3, resolve3] = deferred<number>();
 
     const actionPromise = fromPromise(
-      store.aliveAction([promise1, promise2, promise3])
+      store.aliveAction([promise1, promise2, promise3]),
     );
 
     expect(store.prop).toStrictEqual(0);
@@ -122,7 +122,7 @@ describe('keepAliveComputed', () => {
     }))
     .views((self) => {
       const computedValue = keepAliveComputed(self, () =>
-        self.compute(self.prop)
+        self.compute(self.prop),
       );
       return {
         get computedValue() {
@@ -185,7 +185,7 @@ describe('keepAliveComputed', () => {
     // error.
     destroy(store);
     expect(() => store.computedValue).toThrowErrorMatchingInlineSnapshot(
-      `"the computed value is accessed when the target node is no longer alive"`
+      `"the computed value is accessed when the target node is no longer alive"`,
     );
   });
 });

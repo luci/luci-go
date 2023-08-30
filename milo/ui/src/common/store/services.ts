@@ -51,14 +51,14 @@ export const ServicesStore = types
         opts,
         () =>
           untracked(
-            () => (isAlive(self) && self.authState?.value?.accessToken) || ''
+            () => (isAlive(self) && self.authState?.value?.accessToken) || '',
           ),
         (e) => {
           if (POTENTIAL_PERM_ERROR_CODES.includes(e.code)) {
             attachTags(e, MAY_REQUIRE_SIGNIN);
           }
           throw e;
-        }
+        },
       );
     }
 
@@ -74,7 +74,7 @@ export const ServicesStore = types
           return null;
         }
         return new TestHistoryService(
-          makeClient({ host: SETTINGS.luciAnalysis.host })
+          makeClient({ host: SETTINGS.luciAnalysis.host }),
         );
       },
       get milo() {
@@ -82,7 +82,7 @@ export const ServicesStore = types
           return null;
         }
         return new MiloInternal(
-          makeClient({ host: '', insecure: location.protocol === 'http:' })
+          makeClient({ host: '', insecure: location.protocol === 'http:' }),
         );
       },
       get builds() {
@@ -90,7 +90,7 @@ export const ServicesStore = types
           return null;
         }
         return new BuildsService(
-          makeClient({ host: SETTINGS.buildbucket.host })
+          makeClient({ host: SETTINGS.buildbucket.host }),
         );
       },
       get clusters() {
@@ -98,7 +98,7 @@ export const ServicesStore = types
           return null;
         }
         return new ClustersService(
-          makeClient({ host: SETTINGS.luciAnalysis.host })
+          makeClient({ host: SETTINGS.luciAnalysis.host }),
         );
       },
     };

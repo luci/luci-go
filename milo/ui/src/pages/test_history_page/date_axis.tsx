@@ -41,7 +41,7 @@ export class TestHistoryDateAxisElement extends MobxExtLitElement {
 
   private readonly dayAdjuster = new ResizeObserver(() => {
     const days = Math.floor(
-      (this.getBoundingClientRect().width - 2) / CELL_SIZE
+      (this.getBoundingClientRect().width - 2) / CELL_SIZE,
     );
     this.pageState.setDays(days);
   });
@@ -72,13 +72,13 @@ export class TestHistoryDateAxisElement extends MobxExtLitElement {
 
   @computed private get axisTime() {
     const ret = d3Select(
-      document.createElementNS('http://www.w3.org/2000/svg', 'g')
+      document.createElementNS('http://www.w3.org/2000/svg', 'g'),
     )
       .attr('transform', `translate(1, ${X_AXIS_HEIGHT - 1})`)
       .call(
         axisTop(this.scaleTime)
           .tickFormat(timeFormat('%Y-%m-%d'))
-          .ticks(timeDay.every(1))
+          .ticks(timeDay.every(1)),
       );
 
     ret

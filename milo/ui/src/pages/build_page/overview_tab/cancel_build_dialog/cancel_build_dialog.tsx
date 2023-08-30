@@ -85,5 +85,5 @@ export const CancelBuildDialog = observer(
         </DialogActions>
       </Dialog>
     );
-  }
+  },
 );

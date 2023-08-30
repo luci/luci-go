@@ -92,7 +92,7 @@ export class ImageDiffViewerElement extends MobxExtLitElement {
     const hidePixelViewers = () => (this.showPixelViewers = false);
     window.addEventListener('click', hidePixelViewers);
     this.addDisposer(() =>
-      window.removeEventListener('click', hidePixelViewers)
+      window.removeEventListener('click', hidePixelViewers),
     );
     this.addDisposer(
       reaction(
@@ -101,8 +101,8 @@ export class ImageDiffViewerElement extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['coord', coord]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
   }
 

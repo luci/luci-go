@@ -27,7 +27,7 @@ const SCORE_COLOR_MAP: { [score: string]: string } = Object.freeze({
   ...Object.fromEntries(
     Array(8)
       .fill(0)
-      .map((_, i) => [`${i + 2}`, 'var(--warning-color)'])
+      .map((_, i) => [`${i + 2}`, 'var(--warning-color)']),
   ),
   '10': 'var(--success-color)',
 });
@@ -38,7 +38,7 @@ const TEXT_MAP: { [key: string]: string } = Object.freeze({
   ...Object.fromEntries(
     Array(8)
       .fill(0)
-      .map((_, i) => [`${i + 2}`, 'Partially unhealthy'])
+      .map((_, i) => [`${i + 2}`, 'Partially unhealthy']),
   ),
   '10': 'Healthy',
 });
@@ -84,7 +84,7 @@ export function BuilderHealthIndicator({
 
 function linkUrl(
   dataLinks?: { [key: string]: string },
-  authEmail?: string
+  authEmail?: string,
 ): string {
   if (!dataLinks) {
     return '';

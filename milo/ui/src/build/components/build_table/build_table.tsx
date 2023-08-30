@@ -38,7 +38,7 @@ export const BuildTable = observer(
     const [tableState] = useState(() =>
       ExpandableEntriesState.create({
         defaultExpanded: initDefaultExpanded,
-      })
+      }),
     );
 
     const onDefaultExpandedChangedRef = useLatest(onDefaultExpandedChanged);
@@ -66,5 +66,5 @@ export const BuildTable = observer(
         <TableStateProvider value={tableState}>{children}</TableStateProvider>
       </Table>
     );
-  }
+  },
 );

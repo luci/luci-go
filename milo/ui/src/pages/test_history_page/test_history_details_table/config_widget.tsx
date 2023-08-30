@@ -49,7 +49,7 @@ export class TestHistoryDetailsTableConfigWidgetElement extends MobxLitElement {
   private renderPropKeysConfigRow(
     label: string,
     keys: readonly string[],
-    updateKeys: (newKeys: string[]) => void
+    updateKeys: (newKeys: string[]) => void,
   ) {
     return html`
       <tr>
@@ -101,12 +101,12 @@ export class TestHistoryDetailsTableConfigWidgetElement extends MobxLitElement {
           ${this.renderPropKeysConfigRow(
             'Additional columns',
             this.uncommittedColumnKeys,
-            (newKeys) => (this.uncommittedColumnKeys = newKeys)
+            (newKeys) => (this.uncommittedColumnKeys = newKeys),
           )}
           ${this.renderPropKeysConfigRow(
             'Sort by',
             this.uncommittedSortingKeys,
-            (newKeys) => (this.uncommittedSortingKeys = newKeys)
+            (newKeys) => (this.uncommittedSortingKeys = newKeys),
           )}
           </tr>
         </table>
@@ -175,7 +175,9 @@ export class TestHistoryDetailsTableConfigWidgetElement extends MobxLitElement {
         background-clip: padding-box;
         border: 1px solid var(--divider-color);
         border-radius: 0.25rem;
-        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        transition:
+          border-color 0.15s ease-in-out,
+          box-shadow 0.15s ease-in-out;
         text-overflow: ellipsis;
       }
 

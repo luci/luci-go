@@ -177,6 +177,9 @@ module.exports = {
 
         // It's very common to use an empty mock implementation in tests.
         '@typescript-eslint/no-empty-function': 0,
+
+        // Don't need to restrict imports in test files.
+        'no-restricted-imports': 0,
       },
     },
   ],

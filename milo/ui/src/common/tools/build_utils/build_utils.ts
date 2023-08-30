@@ -52,7 +52,7 @@ export function getInvocationLink(invocationName: string): Link | null {
 // the given build.
 export function getBuildbucketLink(
   buildbucketHost: string,
-  buildId: string
+  buildId: string,
 ): Link {
   return {
     label: buildId,
@@ -64,7 +64,7 @@ export function getBuildbucketLink(
             id: buildId,
           }),
         ],
-      ]
+      ],
     ).toString()}`,
     ariaLabel: 'Buildbucket RPC explorer for build',
   };
@@ -82,7 +82,7 @@ export function getLogdogRawUrl(logdogURL: string): string | null {
 export function getSafeUrlFromTagValue(tagValue: string): string | null {
   {
     const match = tagValue.match(
-      /^patch\/gerrit\/([\w-]+\.googlesource\.com)\/(\d+\/\d+)$/
+      /^patch\/gerrit\/([\w-]+\.googlesource\.com)\/(\d+\/\d+)$/,
     );
     if (match) {
       const [, host, cl] = match as string[];
@@ -91,7 +91,7 @@ export function getSafeUrlFromTagValue(tagValue: string): string | null {
   }
   {
     const match = tagValue.match(
-      /^commit\/gitiles\/([\w-]+\.googlesource\.com\/.+)$/
+      /^commit\/gitiles\/([\w-]+\.googlesource\.com\/.+)$/,
     );
     if (match) {
       const [, url] = match as string[];
@@ -100,7 +100,7 @@ export function getSafeUrlFromTagValue(tagValue: string): string | null {
   }
   {
     const match = tagValue.match(
-      /^build\/milo\/([\w\-_ ]+)\/([\w\-_ ]+)\/([\w\-_ ]+)\/(\d+)$/
+      /^build\/milo\/([\w\-_ ]+)\/([\w\-_ ]+)\/([\w\-_ ]+)\/(\d+)$/,
     );
     if (match) {
       const [, project, bucket, builder, buildIdOrNum] = match as string[];
@@ -113,7 +113,7 @@ export function getSafeUrlFromTagValue(tagValue: string): string | null {
   }
   {
     const match = tagValue.match(
-      /^task\/swarming\/(chrome-swarming|chromium-swarm)\/(.+)$/
+      /^task\/swarming\/(chrome-swarming|chromium-swarm)\/(.+)$/,
     );
     if (match) {
       const [, instance, taskId] = match as string[];
@@ -134,7 +134,7 @@ const RE_BUG_URL =
 export function renderBugUrlTemplate(
   urlTemplate: string,
   build: Pick<Build, 'id' | 'builder'>,
-  miloOrigin = window.location.origin
+  miloOrigin = window.location.origin,
 ) {
   let bugUrl = '';
   try {
@@ -148,12 +148,12 @@ export function renderBugUrlTemplate(
       },
       milo_build_url: encodeURIComponent(miloOrigin + `/b/${build.id}`),
       milo_builder_url: encodeURIComponent(
-        miloOrigin + getBuilderURLPath(build.builder)
+        miloOrigin + getBuilderURLPath(build.builder),
       ),
     });
   } catch (_e) {
     logging.warn(
-      'failed to render the bug URL template. Please ensure the bug URL template is a valid mustache template.'
+      'failed to render the bug URL template. Please ensure the bug URL template is a valid mustache template.',
     );
     // Do nothing.
   }

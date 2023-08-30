@@ -33,22 +33,22 @@ describe('Test CulpritVerificationTable component', () => {
     expect(screen.getByText('Confirmed Culprit')).toBeInTheDocument();
     expect(screen.getByText('Failed')).toHaveAttribute(
       'href',
-      'https://ci.chromium.org/b/8877665544332211'
+      'https://ci.chromium.org/b/8877665544332211',
     );
     expect(screen.getByText('Passed')).toHaveAttribute(
       'href',
-      'https://ci.chromium.org/b/8765432187654321'
+      'https://ci.chromium.org/b/8765432187654321',
     );
     expect(screen.getByText('def4def: CL 2')).toBeInTheDocument();
     expect(screen.getByText('NthSection')).toBeInTheDocument();
     expect(screen.getByText('Error')).toBeInTheDocument();
     expect(screen.getByText('Infra failed')).toHaveAttribute(
       'href',
-      'https://ci.chromium.org/b/8877665544332216'
+      'https://ci.chromium.org/b/8877665544332216',
     );
     expect(screen.getByText('Canceled')).toHaveAttribute(
       'href',
-      'https://ci.chromium.org/b/8765432187654327'
+      'https://ci.chromium.org/b/8765432187654327',
     );
   });
 });

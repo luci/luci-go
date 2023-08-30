@@ -67,7 +67,7 @@ export const createMockAnalysis = (id: string): Analysis => {
 };
 
 const createMockQueryAnalysisResponse = (
-  analyses: Analysis[]
+  analyses: Analysis[],
 ): QueryAnalysisResponse => {
   return {
     analyses: analyses,
@@ -86,7 +86,7 @@ export const mockQueryAnalysis = (mockAnalyses: Analysis[]) => {
       body:
         ")]}'" + JSON.stringify(createMockQueryAnalysisResponse(mockAnalyses)),
     },
-    { overwriteRoutes: true }
+    { overwriteRoutes: true },
   );
 };
 
@@ -99,6 +99,6 @@ export const mockErrorQueryingAnalysis = () => {
       headers: {
         'X-Prpc-Grpc-Code': '2',
       },
-    }
+    },
   );
 };

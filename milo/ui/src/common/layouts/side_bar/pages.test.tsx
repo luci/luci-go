@@ -290,7 +290,7 @@ describe('pages', () => {
         appendSoM(project, pages);
         expect(pages.length).not.toBe(0);
         expect(pages[0].url).toEqual(url);
-      }
+      },
     );
   });
 });

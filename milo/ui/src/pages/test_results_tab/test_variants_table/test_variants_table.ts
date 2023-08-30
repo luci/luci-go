@@ -76,7 +76,7 @@ export class TestVariantsTableElement extends MobxExtLitElement {
     // `shadowRoot` is always defined with an open shadow root.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.shadowRoot!.querySelectorAll<TestVariantEntryElement>(
-      'milo-test-variant-entry'
+      'milo-test-variant-entry',
     ).forEach((e) => (e.expanded = expand));
   }
 
@@ -93,8 +93,8 @@ export class TestVariantsTableElement extends MobxExtLitElement {
           }
           reportErrorAsync(this, () => this.invState.loadFirstPage())();
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
 
     // Sync column width from the user config.
@@ -102,8 +102,8 @@ export class TestVariantsTableElement extends MobxExtLitElement {
       reaction(
         () => this.store.userConfig.tests.columnWidths,
         (columnWidths) => this.invState.setColumnWidths(columnWidths),
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
   }
 
@@ -112,7 +112,7 @@ export class TestVariantsTableElement extends MobxExtLitElement {
   private renderAllVariants() {
     return html`
       ${this.invState.variantGroups.map((group) =>
-        this.renderVariantGroup(group)
+        this.renderVariantGroup(group),
       )}
       <div id="variant-list-tail">
         ${this.invState.testVariantCount ===
@@ -192,7 +192,7 @@ export class TestVariantsTableElement extends MobxExtLitElement {
                     : ''}
                   >${v}</span
                 ></span
-              >`
+              >`,
           )}
           ${group.note || ''}
         </div>
@@ -205,8 +205,8 @@ export class TestVariantsTableElement extends MobxExtLitElement {
             .map(
               ([dimension, value]) =>
                 `V:${encodeURIComponent(dimension)}=${encodeURIComponent(
-                  value
-                )}`
+                  value,
+                )}`,
             )
             .join(' ');
           return html`
@@ -218,12 +218,12 @@ export class TestVariantsTableElement extends MobxExtLitElement {
                 ? urlSetSearchQueryParam(
                     getTestHistoryURLPath(this.project, v.testId),
                     'q',
-                    q
+                    q,
                   )
                 : ''}
             ></milo-test-variant-entry>
           `;
-        }
+        },
       )}
     `;
   }
@@ -261,7 +261,7 @@ export class TestVariantsTableElement extends MobxExtLitElement {
     return (ascending: boolean) => {
       const matchingKeys = [col, `-${col}`];
       const newKeys = this.invState.sortingKeys.filter(
-        (key) => !matchingKeys.includes(key)
+        (key) => !matchingKeys.includes(key),
       );
       newKeys.unshift((ascending ? '' : '-') + col);
       this.invState.setSortingKeys(newKeys);
@@ -274,7 +274,7 @@ export class TestVariantsTableElement extends MobxExtLitElement {
   private groupByColumnFn(col: string) {
     return () => {
       this.invState.setColumnKeys(
-        this.invState.columnKeys.filter((key) => key !== col)
+        this.invState.columnKeys.filter((key) => key !== col),
       );
       const newKeys = this.invState.groupingKeys.filter((key) => key !== col);
       newKeys.unshift(col);
@@ -296,39 +296,40 @@ export class TestVariantsTableElement extends MobxExtLitElement {
             .groupByColumn=${this.groupByColumnFn('status')}
           ></milo-column-header>
           ${this.invState.columnKeys.map(
-            (col, i) => html`<milo-column-header
-              .label=${getPropKeyLabel(col)}
-              .tooltip=${col}
-              .resizeColumn=${(delta: number, finalized: boolean) => {
-                if (!finalized) {
-                  const newColWidths = this.invState.columnWidths.slice();
-                  newColWidths[i] += delta;
-                  // Update the style directly so lit-element doesn't need to
-                  // re-render the component frequently.
-                  // Live updating the width of the entire column can cause a bit
-                  // of lag when there are many rows. Live updating just the
-                  // column header is good enough.
-                  this.tableHeaderEle?.style.setProperty(
-                    '--tvt-columns',
-                    this.getTvtColumns(newColWidths)
-                  );
-                  return;
-                }
+            (col, i) =>
+              html`<milo-column-header
+                .label=${getPropKeyLabel(col)}
+                .tooltip=${col}
+                .resizeColumn=${(delta: number, finalized: boolean) => {
+                  if (!finalized) {
+                    const newColWidths = this.invState.columnWidths.slice();
+                    newColWidths[i] += delta;
+                    // Update the style directly so lit-element doesn't need to
+                    // re-render the component frequently.
+                    // Live updating the width of the entire column can cause a bit
+                    // of lag when there are many rows. Live updating just the
+                    // column header is good enough.
+                    this.tableHeaderEle?.style.setProperty(
+                      '--tvt-columns',
+                      this.getTvtColumns(newColWidths),
+                    );
+                    return;
+                  }
 
-                this.tableHeaderEle?.style.removeProperty('--tvt-columns');
-                this.store.userConfig.tests.setColumWidth(
-                  col,
-                  this.invState.columnWidths[i] + delta
-                );
-              }}
-              .sortByColumn=${this.sortByColumnFn(col)}
-              .groupByColumn=${this.groupByColumnFn(col)}
-              .hideColumn=${() => {
-                this.invState.setColumnKeys(
-                  this.invState.columnKeys.filter((key) => key !== col)
-                );
-              }}
-            ></milo-column-header>`
+                  this.tableHeaderEle?.style.removeProperty('--tvt-columns');
+                  this.store.userConfig.tests.setColumWidth(
+                    col,
+                    this.invState.columnWidths[i] + delta,
+                  );
+                }}
+                .sortByColumn=${this.sortByColumnFn(col)}
+                .groupByColumn=${this.groupByColumnFn(col)}
+                .hideColumn=${() => {
+                  this.invState.setColumnKeys(
+                    this.invState.columnKeys.filter((key) => key !== col),
+                  );
+                }}
+              ></milo-column-header>`,
           )}
           <milo-column-header
             .label=${'Name'}

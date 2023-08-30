@@ -28,7 +28,7 @@ describe('Sidebar', () => {
         }}
       >
         <Sidebar open={true} />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
     await screen.findByRole('complementary');
     expect(screen.getByText('Builder search')).toBeInTheDocument();
@@ -44,7 +44,7 @@ describe('Sidebar', () => {
         }}
       >
         <Sidebar open={true} />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
     await screen.findByRole('complementary');
     expect(screen.getByText('Builder search')).toBeInTheDocument();

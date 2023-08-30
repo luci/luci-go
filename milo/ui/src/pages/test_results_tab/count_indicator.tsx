@@ -60,11 +60,12 @@ export class TestResultsTabCountIndicatorElement extends MobxExtLitElement {
       reaction(
         () => this.invState.testLoader,
         (testLoader) =>
-          reportErrorAsync(this, async () =>
-            testLoader?.loadFirstPageOfTestVariants()
+          reportErrorAsync(
+            this,
+            async () => testLoader?.loadFirstPageOfTestVariants(),
           )(),
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
   }
 
@@ -79,13 +80,13 @@ export class TestResultsTabCountIndicatorElement extends MobxExtLitElement {
         id="unexpected"
         title=${formatNum(
           testLoader.unfilteredUnexpectedVariantsCount,
-          !testLoader.loadedAllUnexpectedVariants
+          !testLoader.loadedAllUnexpectedVariants,
         ) + ' unexpected tests'}
       >
         ${formatNum(
           testLoader.unfilteredUnexpectedVariantsCount,
           !testLoader.loadedAllUnexpectedVariants,
-          99
+          99,
         )}
       </div>`;
     }
@@ -95,12 +96,12 @@ export class TestResultsTabCountIndicatorElement extends MobxExtLitElement {
         id="unexpectedly-skipped"
         title=${formatNum(
           testLoader.unfilteredUnexpectedlySkippedVariantsCount,
-          !testLoader.loadedAllUnexpectedVariants
+          !testLoader.loadedAllUnexpectedVariants,
         ) + ' unexpectedly skipped tests'}
       >
         ${formatNum(
           testLoader.unfilteredUnexpectedlySkippedVariantsCount,
-          testLoader.stage < LoadingStage.LoadingUnexpectedlySkipped
+          testLoader.stage < LoadingStage.LoadingUnexpectedlySkipped,
         )}
       </div>`;
     }
@@ -110,12 +111,12 @@ export class TestResultsTabCountIndicatorElement extends MobxExtLitElement {
         id="flaky"
         title=${formatNum(
           testLoader.unfilteredFlakyVariantsCount,
-          !testLoader.loadedAllUnexpectedVariants
+          !testLoader.loadedAllUnexpectedVariants,
         ) + ' flaky tests'}
       >
         ${formatNum(
           testLoader.unfilteredFlakyVariantsCount,
-          testLoader.stage < LoadingStage.LoadingFlaky
+          testLoader.stage < LoadingStage.LoadingFlaky,
         )}
       </div>`;
     }

@@ -58,7 +58,7 @@ describe('TestSearch', () => {
         }}
       >
         <TestSearch />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
 
     // Ensure that the filters are not overwritten after all event hooks are
@@ -73,7 +73,7 @@ describe('TestSearch', () => {
     render(
       <FakeContextProvider>
         <TestSearch />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
     fireEvent.change(screen.getByTestId('filter-input'), {
       target: { value: 'query' },
@@ -88,7 +88,7 @@ describe('TestSearch', () => {
       .spyOn(TestHistoryService.prototype, 'queryTests')
       .mockImplementation((req: QueryTestsRequest, _: CacheOption = {}) => {
         const result = ['test_id_1', 'test_id_2'].filter((id) =>
-          id.startsWith(req.testIdSubstring)
+          id.startsWith(req.testIdSubstring),
         );
         return Promise.resolve({
           testIds: result,
@@ -98,7 +98,7 @@ describe('TestSearch', () => {
     render(
       <FakeContextProvider>
         <TestSearch />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
     fireEvent.change(screen.getByTestId('filter-input'), {
       target: { value: 'test_id' },

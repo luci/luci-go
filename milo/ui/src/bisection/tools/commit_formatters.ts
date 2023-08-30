@@ -13,7 +13,7 @@
 // limitations under the License.
 
 export const getCommitShortHash = (
-  commitID: string | null | undefined
+  commitID: string | null | undefined,
 ): string => {
   if (commitID == null) {
     return '';

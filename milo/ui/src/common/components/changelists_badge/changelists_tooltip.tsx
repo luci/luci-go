@@ -71,7 +71,7 @@ export class ChangelistsTooltipElement extends MobxLitElement {
     this.root.render(
       <CacheProvider value={this.cache}>
         <ChangelistsTooltip changelists={this.changelists} />
-      </CacheProvider>
+      </CacheProvider>,
     );
     return this.parent;
   }

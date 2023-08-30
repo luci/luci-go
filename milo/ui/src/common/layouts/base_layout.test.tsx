@@ -52,7 +52,7 @@ describe('BaseLayout', () => {
         <FakeContextProvider>
           <BaseLayout />
         </FakeContextProvider>
-      </StoreProvider>
+      </StoreProvider>,
     );
 
     await screen.findByText('LUCI');
@@ -67,7 +67,7 @@ describe('BaseLayout', () => {
         <FakeContextProvider>
           <BaseLayout />
         </FakeContextProvider>
-      </StoreProvider>
+      </StoreProvider>,
     );
 
     await screen.getByText('LUCI');

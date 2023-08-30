@@ -84,7 +84,7 @@ export class BuildPageStepEntryElement
   toggleAllSteps(expand: boolean) {
     this.expanded = expand;
     this.shadowRoot!.querySelectorAll<BuildPageStepClusterElement>(
-      'milo-bp-step-cluster'
+      'milo-bp-step-cluster',
     ).forEach((e) => e.toggleAllSteps(expand));
   }
 
@@ -117,7 +117,7 @@ export class BuildPageStepEntryElement
               <milo-buildbucket-log-link
                 .log=${log}
               ></milo-buildbucket-log-link>
-            </li>`
+            </li>`,
         )}
       </ul>
       ${this.step.tags.length
@@ -125,7 +125,7 @@ export class BuildPageStepEntryElement
         : ''}
       ${this.step.clusteredChildren.map(
         (cluster) =>
-          html`<milo-bp-step-cluster .steps=${cluster}></milo-bp-step-cluster>`
+          html`<milo-bp-step-cluster .steps=${cluster}></milo-bp-step-cluster>`,
       ) || ''}
     `;
   }
@@ -136,7 +136,7 @@ export class BuildPageStepEntryElement
     }
 
     const [compactDuration, compactDurationUnits] = displayCompactDuration(
-      this.step.duration
+      this.step.duration,
     );
 
     return html`
@@ -153,14 +153,14 @@ export class BuildPageStepEntryElement
                 targetRect: (e.target as HTMLElement).getBoundingClientRect(),
                 gapSize: 5,
               },
-            })
+            }),
           );
         }}
         @mouseout=${() => {
           window.dispatchEvent(
             new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
               detail: { delay: 50 },
-            })
+            }),
           );
         }}
       >
@@ -216,8 +216,8 @@ export class BuildPageStepEntryElement
               break;
           }
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
   }
 

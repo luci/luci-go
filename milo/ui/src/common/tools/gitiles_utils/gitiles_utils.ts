@@ -15,7 +15,7 @@
 import { GitilesCommit } from '@/common/services/buildbucket';
 
 export function getGitilesRepoURL(
-  commit: Pick<GitilesCommit, 'host' | 'project'>
+  commit: Pick<GitilesCommit, 'host' | 'project'>,
 ) {
   return `https://${commit.host}/${commit.project}`;
 }
@@ -25,7 +25,7 @@ export function getGitilesCommitURL(commit: GitilesCommit): string {
 }
 
 export function getGitilesCommitLabel(
-  commit: Pick<GitilesCommit, 'id' | 'position' | 'ref'>
+  commit: Pick<GitilesCommit, 'id' | 'position' | 'ref'>,
 ): string {
   if (commit.position && commit.ref) {
     return `${commit.ref}@{#${commit.position}}`;

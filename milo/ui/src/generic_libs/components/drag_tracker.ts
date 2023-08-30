@@ -41,7 +41,7 @@ export class DragTrackerElement extends LitElement {
         const dx = e.pageX - x;
         const dy = e.pageY - y;
         this.dispatchEvent(
-          new CustomEvent<DragEventDetails>(type, { detail: { dx, dy } })
+          new CustomEvent<DragEventDetails>(type, { detail: { dx, dy } }),
         );
       };
 
@@ -57,7 +57,7 @@ export class DragTrackerElement extends LitElement {
           dispatchEvent(endEvent, 'dragend');
           document.removeEventListener('mousemove', onMouseMove);
         },
-        { once: true }
+        { once: true },
       );
 
       dispatchEvent(startEvent, 'dragstart');

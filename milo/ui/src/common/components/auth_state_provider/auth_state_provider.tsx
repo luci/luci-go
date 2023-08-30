@@ -41,7 +41,7 @@ interface AuthStateContextValue {
 }
 
 export const AuthStateContext = createContext<AuthStateContextValue | null>(
-  null
+  null,
 );
 
 export interface AuthStateProviderProps {
@@ -124,7 +124,7 @@ export function AuthStateProvider({
     // Establish a dependency on user identity so the provided getter is
     // refreshed whenever the identity changed.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [data.identity]
+    [data.identity],
   );
 
   return (

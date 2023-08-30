@@ -43,7 +43,7 @@ export function defaultTarget(md: MarkdownIt, defaultTarget: string) {
       anchor.setAttribute('target', target);
       token.content = anchor.outerHTML.substring(
         0,
-        anchor.outerHTML.length - CLOSING_ANCHOR_TAG.length
+        anchor.outerHTML.length - CLOSING_ANCHOR_TAG.length,
       );
     }
     return existingHTMLInlineRule(tokens, i, ...params);

@@ -60,8 +60,8 @@ export class TestResultsTabElement extends MobxExtLitElement {
     this.allVariantsWereExpanded = expand;
     assertNonNullable(
       this.shadowRoot?.querySelector<TestVariantsTableElement>(
-        'milo-test-variants-table'
-      )
+        'milo-test-variants-table',
+      ),
     ).toggleAllVariants(expand);
   }
   private readonly toggleAllVariantsByHotkey = () =>
@@ -88,14 +88,14 @@ export class TestResultsTabElement extends MobxExtLitElement {
     const sortBy = searchParams.get('sortby');
     if (sortBy !== null) {
       this.invState.setSortingKeys(
-        sortBy.split(',').filter((col) => col !== '')
+        sortBy.split(',').filter((col) => col !== ''),
       );
     }
     const groupBy = searchParams.get('groupby');
     if (groupBy !== null) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.invState.setGroupingKeys(
-        groupBy.split(',').filter((key) => key !== '')
+        groupBy.split(',').filter((key) => key !== ''),
       );
     }
 
@@ -120,8 +120,8 @@ export class TestResultsTabElement extends MobxExtLitElement {
         (newUrl) => {
           window.history.replaceState(null, '', newUrl);
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
   }
 

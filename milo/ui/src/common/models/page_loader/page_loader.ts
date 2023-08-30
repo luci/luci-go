@@ -45,8 +45,8 @@ export class PageLoader<T> {
 
   constructor(
     private readonly getNextPage: (
-      pageToken?: string
-    ) => Promise<[items: readonly T[], nextPageToken?: string]>
+      pageToken?: string,
+    ) => Promise<[items: readonly T[], nextPageToken?: string]>,
   ) {
     makeObservable(this);
   }
@@ -66,7 +66,7 @@ export class PageLoader<T> {
       .finally(
         action(() => {
           this.loadingReqCount--;
-        })
+        }),
       );
     if (!this.firstLoadPromise) {
       // Cast `readonly T[] | null` to `readonly T[]` because the first page

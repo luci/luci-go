@@ -39,11 +39,11 @@ export const BuilderSearch = () => {
       setSearchParams(searchParams);
     },
     300,
-    [pendingSearchQuery]
+    [pendingSearchQuery],
   );
 
   const handleSearchQueryChange = (
-    e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
+    e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
   ) => {
     setPendingSearchQuery(e.target.value);
   };

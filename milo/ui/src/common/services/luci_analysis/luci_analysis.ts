@@ -201,7 +201,7 @@ export class TestHistoryService {
   private readonly cachedCallFn: (
     opt: CacheOption,
     method: string,
-    message: object
+    message: object,
   ) => Promise<unknown>;
 
   constructor(client: PrpcClientExt) {
@@ -210,51 +210,51 @@ export class TestHistoryService {
         client.call(TestHistoryService.SERVICE, method, message),
       {
         key: (method, message) => `${method}-${stableStringify(message)}`,
-      }
+      },
     );
   }
 
   async query(
     req: QueryTestHistoryRequest,
-    cacheOpt: CacheOption = {}
+    cacheOpt: CacheOption = {},
   ): Promise<QueryTestHistoryResponse> {
     return (await this.cachedCallFn(
       cacheOpt,
       'Query',
-      req
+      req,
     )) as QueryTestHistoryResponse;
   }
 
   async queryStats(
     req: QueryTestHistoryStatsRequest,
-    cacheOpt: CacheOption = {}
+    cacheOpt: CacheOption = {},
   ): Promise<QueryTestHistoryStatsResponse> {
     return (await this.cachedCallFn(
       cacheOpt,
       'QueryStats',
-      req
+      req,
     )) as QueryTestHistoryStatsResponse;
   }
 
   async queryVariants(
     req: QueryVariantsRequest,
-    cacheOpt: CacheOption = {}
+    cacheOpt: CacheOption = {},
   ): Promise<QueryVariantsResponse> {
     return (await this.cachedCallFn(
       cacheOpt,
       'QueryVariants',
-      req
+      req,
     )) as QueryVariantsResponse;
   }
 
   async queryTests(
     req: QueryTestsRequest,
-    cacheOpt: CacheOption = {}
+    cacheOpt: CacheOption = {},
   ): Promise<QueryTestsResponse> {
     return (await this.cachedCallFn(
       cacheOpt,
       'QueryTests',
-      req
+      req,
     )) as QueryTestsResponse;
   }
 }
@@ -265,7 +265,7 @@ export class ClustersService {
   private readonly cachedBatchedCluster: (
     cacheOpt: CacheOption,
     batchOpt: BatchOption,
-    req: ClusterRequest
+    req: ClusterRequest,
   ) => Promise<ClusterResponse>;
 
   constructor(client: PrpcClientExt) {
@@ -299,7 +299,7 @@ export class ClustersService {
             clusteringVersion: ret.clusteringVersion,
             clusteredTestResults: ret.clusteredTestResults.slice(
               pivot,
-              pivot + req.testResults.length
+              pivot + req.testResults.length,
             ),
           });
           pivot += req.testResults.length;
@@ -314,19 +314,19 @@ export class ClustersService {
         batchedCluster(batchOpt, req),
       {
         key: (_batchOpt, req) => stableStringify(req),
-      }
+      },
     );
   }
 
   async cluster(
     req: ClusterRequest,
     batchOpt: BatchOption = {},
-    cacheOpt: CacheOption = {}
+    cacheOpt: CacheOption = {},
   ): Promise<ClusterResponse> {
     return (await this.cachedBatchedCluster(
       cacheOpt,
       batchOpt,
-      req
+      req,
     )) as ClusterResponse;
   }
 }

@@ -378,7 +378,7 @@ export class BuildsService {
   private readonly cachedCallFn: (
     opt: CacheOption,
     method: string,
-    message: object
+    message: object,
   ) => Promise<unknown>;
 
   constructor(client: PrpcClientExt) {
@@ -387,7 +387,7 @@ export class BuildsService {
         client.call(BuildsService.SERVICE, method, message),
       {
         key: (method, message) => `${method}-${stableStringify(message)}`,
-      }
+      },
     );
   }
 
@@ -399,7 +399,7 @@ export class BuildsService {
     return (await this.cachedCallFn(
       cacheOpt,
       'SearchBuilds',
-      req
+      req,
     )) as SearchBuildsResponse;
   }
 
@@ -407,7 +407,7 @@ export class BuildsService {
     return (await this.cachedCallFn(
       { acceptCache: false, skipUpdate: true },
       'CancelBuild',
-      req
+      req,
     )) as Build;
   }
 
@@ -415,7 +415,7 @@ export class BuildsService {
     return (await this.cachedCallFn(
       { acceptCache: false, skipUpdate: true },
       'ScheduleBuild',
-      req
+      req,
     )) as Build;
   }
 }
@@ -469,14 +469,14 @@ export class BuildersService {
   private readonly cachedCallFn: (
     opt: CacheOption,
     method: string,
-    message: object
+    message: object,
   ) => Promise<unknown>;
 
   constructor(client: PrpcClientExt) {
     this.cachedCallFn = cached(
       (method: string, message: object) =>
         client.call(BuildersService.SERVICE, method, message),
-      { key: (method, message) => `${method}-${stableStringify(message)}` }
+      { key: (method, message) => `${method}-${stableStringify(message)}` },
     );
   }
 
@@ -484,7 +484,7 @@ export class BuildersService {
     return (await this.cachedCallFn(
       cacheOpt,
       'GetBuilder',
-      req
+      req,
     )) as BuilderItem;
   }
 
@@ -492,7 +492,7 @@ export class BuildersService {
     return (await this.cachedCallFn(
       cacheOpt,
       'ListBuilders',
-      req
+      req,
     )) as ListBuildersResponse;
   }
 }

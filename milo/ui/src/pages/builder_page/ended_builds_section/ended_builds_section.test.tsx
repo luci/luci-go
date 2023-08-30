@@ -95,7 +95,7 @@ describe('EndedBuildsSection', () => {
       .spyOn(BuildsService.prototype, 'searchBuilds')
       .mockImplementation(
         async ({ pageToken, predicate }) =>
-          pages[predicate.createTime?.endTime || ''][pageToken || '']
+          pages[predicate.createTime?.endTime || ''][pageToken || ''],
       );
     endedBuildsTableMock = jest.mocked(EndedBuildTable);
   });
@@ -109,7 +109,7 @@ describe('EndedBuildsSection', () => {
     render(
       <FakeContextProvider>
         <EndedBuildsSection builderId={builderId} />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
     await act(() => jest.runAllTimersAsync());
 
@@ -124,7 +124,7 @@ describe('EndedBuildsSection', () => {
         endedBuilds: builds.slice(0, 2),
         isLoading: false,
       },
-      expect.anything()
+      expect.anything(),
     );
     endedBuildsTableMock.mockClear();
 
@@ -139,7 +139,7 @@ describe('EndedBuildsSection', () => {
         endedBuilds: builds.slice(2, 4),
         isLoading: false,
       },
-      expect.anything()
+      expect.anything(),
     );
     endedBuildsTableMock.mockClear();
 
@@ -153,7 +153,7 @@ describe('EndedBuildsSection', () => {
         endedBuilds: builds.slice(4, 6),
         isLoading: false,
       },
-      expect.anything()
+      expect.anything(),
     );
     endedBuildsTableMock.mockClear();
 
@@ -168,7 +168,7 @@ describe('EndedBuildsSection', () => {
         endedBuilds: builds.slice(2, 4),
         isLoading: false,
       },
-      expect.anything()
+      expect.anything(),
     );
     endedBuildsTableMock.mockClear();
 
@@ -182,7 +182,7 @@ describe('EndedBuildsSection', () => {
         endedBuilds: builds.slice(0, 2),
         isLoading: false,
       },
-      expect.anything()
+      expect.anything(),
     );
     endedBuildsTableMock.mockClear();
   });
@@ -191,7 +191,7 @@ describe('EndedBuildsSection', () => {
     render(
       <FakeContextProvider>
         <EndedBuildsSection builderId={builderId} />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
     await act(() => jest.runAllTimersAsync());
 
@@ -200,7 +200,7 @@ describe('EndedBuildsSection', () => {
         endedBuilds: builds.slice(0, 2),
         isLoading: false,
       },
-      expect.anything()
+      expect.anything(),
     );
     endedBuildsTableMock.mockClear();
 
@@ -215,12 +215,12 @@ describe('EndedBuildsSection', () => {
         endedBuilds: builds.slice(2, 4),
         isLoading: false,
       },
-      expect.anything()
+      expect.anything(),
     );
     endedBuildsTableMock.mockClear();
 
     jest.setSystemTime(
-      DateTime.fromISO('2020-02-02T02:02:02.000+00:00').toMillis()
+      DateTime.fromISO('2020-02-02T02:02:02.000+00:00').toMillis(),
     );
     fireEvent.click(screen.getByTestId('CalendarIcon'));
     fireEvent.click(screen.getByText('Today'));
@@ -233,7 +233,7 @@ describe('EndedBuildsSection', () => {
         endedBuilds: builds.slice(1, 3),
         isLoading: false,
       },
-      expect.anything()
+      expect.anything(),
     );
   });
 });

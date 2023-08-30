@@ -57,11 +57,11 @@ describe('errorHandler', () => {
         error: new Error(),
         message: 'error msg',
         bubbles: true,
-      })
+      }),
     );
     await aTimeout(0);
     expect(
-      errorHandlerEle.shadowRoot?.querySelector('pre')?.textContent
+      errorHandlerEle.shadowRoot?.querySelector('pre')?.textContent,
     ).toMatch('error msg');
   });
 
@@ -81,22 +81,22 @@ describe('errorHandler', () => {
         error: new Error(),
         message: 'error msg',
         bubbles: true,
-      })
+      }),
     );
     await aTimeout(0);
     expect(
-      errorHandlerEle.shadowRoot?.querySelector('pre')?.textContent
+      errorHandlerEle.shadowRoot?.querySelector('pre')?.textContent,
     ).toMatch('error msg');
     childEle.dispatchEvent(
       new ErrorEvent('error', {
         error: new Error(),
         message: 'error msg 2',
         bubbles: true,
-      })
+      }),
     );
     await aTimeout(0);
     expect(
-      errorHandlerEle.shadowRoot?.querySelector('pre')?.textContent
+      errorHandlerEle.shadowRoot?.querySelector('pre')?.textContent,
     ).toMatch('error msg 2');
   });
 
@@ -113,7 +113,7 @@ describe('errorHandler', () => {
         error: new Error(),
         message: '',
         bubbles: true,
-      })
+      }),
     );
     await aTimeout(0);
     expect(errorHandlerEle.shadowRoot!.querySelector('pre')).toBeNull();
@@ -130,7 +130,7 @@ describe('reportError', () => {
     expect(
       reportError(div, () => {
         throw err;
-      })
+      }),
     ).toThrow(err);
     expect(dispatchEventStub.mock.calls.length).toStrictEqual(1);
     const event = dispatchEventStub.mock.lastCall?.[0];
@@ -152,7 +152,7 @@ describe('reportError', () => {
       () => {
         throw err;
       },
-      () => {}
+      () => {},
     )();
     expect(dispatchEventStub.mock.calls.length).toStrictEqual(1);
     const event = dispatchEventStub.mock.lastCall?.[0];
@@ -179,8 +179,8 @@ describe('reportError', () => {
         },
         () => {
           throw fallbackErr;
-        }
-      )
+        },
+      ),
     ).toThrow(fallbackErr);
     expect(dispatchEventStub.mock.calls.length).toStrictEqual(1);
     const event = dispatchEventStub.mock.lastCall?.[0];
@@ -200,7 +200,7 @@ describe('reportErrorAsync', () => {
     await expect(
       reportErrorAsync(div, async () => {
         throw err;
-      })
+      }),
     ).rejects.toThrow(err);
     expect(dispatchEventStub.mock.calls.length).toStrictEqual(1);
     const event = dispatchEventStub.mock.lastCall?.[0];
@@ -218,7 +218,7 @@ describe('reportErrorAsync', () => {
     await expect(
       reportErrorAsync(div, () => {
         throw err;
-      })
+      }),
     ).rejects.toThrow(err);
     expect(dispatchEventStub.mock.calls.length).toStrictEqual(1);
     const event = dispatchEventStub.mock.lastCall?.[0];
@@ -240,7 +240,7 @@ describe('reportErrorAsync', () => {
       () => {
         throw err;
       },
-      async () => {}
+      async () => {},
     )();
     expect(dispatchEventStub.mock.calls.length).toStrictEqual(1);
     const event = dispatchEventStub.mock.lastCall?.[0];
@@ -265,8 +265,8 @@ describe('reportErrorAsync', () => {
         },
         async () => {
           throw fallbackErr;
-        }
-      )
+        },
+      ),
     ).rejects.toThrow(fallbackErr);
     expect(dispatchEventStub.mock.calls.length).toStrictEqual(1);
     const event = dispatchEventStub.mock.lastCall?.[0];
@@ -293,8 +293,8 @@ describe('reportErrorAsync', () => {
         },
         () => {
           throw fallbackErr;
-        }
-      )
+        },
+      ),
     ).rejects.toThrow(fallbackErr);
     expect(dispatchEventStub.mock.calls.length).toStrictEqual(1);
     const event = dispatchEventStub.mock.lastCall?.[0];
@@ -340,7 +340,7 @@ describe('forwardWithoutMsg', () => {
       .mockImplementation(() => true);
     const errorHandlerEle =
       parentEle.querySelector<ErrorHandlerTestForwardWithoutMsgElement>(
-        'milo-error-handler-test-forward-without-msg'
+        'milo-error-handler-test-forward-without-msg',
       )!;
     const err = new Error('error msg');
     const childEle = errorHandlerEle.querySelector('div')!;
@@ -349,11 +349,11 @@ describe('forwardWithoutMsg', () => {
         error: err,
         message: 'error msg',
         bubbles: true,
-      })
+      }),
     );
     await aTimeout(0);
     expect(
-      errorHandlerEle.shadowRoot?.querySelector('pre')?.textContent
+      errorHandlerEle.shadowRoot?.querySelector('pre')?.textContent,
     ).toMatch('error msg');
     expect(parentDispatchEventStub.mock.calls.length).toStrictEqual(1);
     const event = parentDispatchEventStub.mock.lastCall?.[0];
@@ -374,7 +374,7 @@ describe('forwardWithoutMsg', () => {
     `);
     const errorHandlerEle =
       parentEle.querySelector<ErrorHandlerTestForwardWithoutMsgElement>(
-        'milo-error-handler-test-forward-without-msg'
+        'milo-error-handler-test-forward-without-msg',
       )!;
     const err = new Error('error msg');
     const childEle = errorHandlerEle.querySelector('div')!;
@@ -384,7 +384,7 @@ describe('forwardWithoutMsg', () => {
         message: 'error msg',
         bubbles: true,
         cancelable: true,
-      })
+      }),
     );
     await aTimeout(0);
     expect(errorHandlerEle.shadowRoot?.querySelector('pre')).toBeNull();
@@ -404,11 +404,11 @@ describe('forwardWithoutMsg', () => {
     `);
     const outerErrorHandlerEle =
       parentEle.querySelector<ErrorHandlerTestForwardWithoutMsgElement>(
-        '#outer'
+        '#outer',
       )!;
     const innerErrorHandlerEle =
       parentEle.querySelector<ErrorHandlerTestForwardWithoutMsgElement>(
-        '#inner'
+        '#inner',
       )!;
     const err = new Error('error msg');
     const childEle = innerErrorHandlerEle.querySelector('#child')!;
@@ -418,7 +418,7 @@ describe('forwardWithoutMsg', () => {
         message: 'error msg',
         bubbles: true,
         cancelable: true,
-      })
+      }),
     );
     await aTimeout(0);
     expect(outerErrorHandlerEle.shadowRoot?.querySelector('pre')).toBeNull();

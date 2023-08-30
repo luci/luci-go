@@ -79,8 +79,8 @@ export class LitEnvProviderElement extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['store', store]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
   }
 

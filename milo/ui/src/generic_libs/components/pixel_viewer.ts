@@ -104,8 +104,8 @@ export class PixelViewerElement extends MobxExtLitElement {
           this.img.src = this.imgUrl;
           this.img.addEventListener('load', drawImg, { once: true });
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
   }
 
@@ -151,7 +151,7 @@ export class PixelViewerElement extends MobxExtLitElement {
           .tickSize(-this.rWidth)
           .tickFormat(() => '');
         gridGroup.append('g').call(hGridLines);
-      })
+      }),
     );
   }
 

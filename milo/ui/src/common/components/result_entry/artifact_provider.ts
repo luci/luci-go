@@ -54,8 +54,8 @@ export class ArtifactProvider extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['artifacts', artifacts]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
     this.addDisposer(
       reaction(
@@ -64,8 +64,8 @@ export class ArtifactProvider extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['finalized', finalized]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
   }
 

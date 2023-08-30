@@ -48,7 +48,7 @@ export const BuildPageShortLink = observer(() => {
       store.buildPage.setBuildId(
         build.data.builder,
         build.data.number,
-        build.data.id
+        build.data.id,
       );
     }
     const buildUrl = getBuildURLPath(build.data.builder, build.buildNumOrId);

@@ -102,7 +102,7 @@ export class IntersectionNotifier implements Notifier {
             (entry.target as ObserverElement).notify();
             this.unsubscribe(entry.target as ObserverElement);
           }),
-      this.options
+      this.options,
     );
   }
 
@@ -201,7 +201,7 @@ const connectedCBCalledSymbol = Symbol('connectedCBCalled');
  * See @fileoverview for examples.
  */
 export function observer<T extends ObserverElement, C extends Constructor<T>>(
-  cls: C
+  cls: C,
 ) {
   // TypeScript doesn't allow type parameter in extends or implements
   // position. Cast to Constructor<MobxLitElement> to stop tsc complaining.
@@ -213,7 +213,7 @@ export function observer<T extends ObserverElement, C extends Constructor<T>>(
         return;
       }
       this[privateNotifierSymbol].unsubscribe(
-        this as MobxLitElement as ObserverElement
+        this as MobxLitElement as ObserverElement,
       );
       this[privateNotifierSymbol] = newVal;
 
@@ -224,7 +224,7 @@ export function observer<T extends ObserverElement, C extends Constructor<T>>(
       // this.connectedCallback();
       if (this[connectedCBCalledSymbol]) {
         this[privateNotifierSymbol].subscribe(
-          this as MobxLitElement as ObserverElement
+          this as MobxLitElement as ObserverElement,
         );
       }
     }
@@ -245,7 +245,7 @@ export function observer<T extends ObserverElement, C extends Constructor<T>>(
       this[connectedCBCalledSymbol] = false;
       super.disconnectedCallback();
       this[notifierSymbol].unsubscribe(
-        this as MobxLitElement as ObserverElement
+        this as MobxLitElement as ObserverElement,
       );
     }
   }
@@ -256,7 +256,7 @@ export function observer<T extends ObserverElement, C extends Constructor<T>>(
   consumeNotifier()(EnterViewObserverElement.prototype, notifierSymbol);
   return consumer(
     // Recover the type information that lost in the down-casting above.
-    EnterViewObserverElement as Constructor<MobxLitElement> as C
+    EnterViewObserverElement as Constructor<MobxLitElement> as C,
   );
 }
 
@@ -276,7 +276,7 @@ const prerenderSymbol = Symbol('prerender');
  */
 export function lazyRendering<
   T extends RenderPlaceHolder,
-  C extends Constructor<T>
+  C extends Constructor<T>,
 >(cls: C) {
   // TypeScript doesn't allow type parameter in extends or implements
   // position. Cast to Constructor<MobxLitElement> to stop tsc complaining.
@@ -306,7 +306,7 @@ export function lazyRendering<
   // Apply the decorators manually instead.
   observable.ref(LazilyRenderedElement.prototype, prerenderSymbol);
   return observer(
-    LazilyRenderedElement
+    LazilyRenderedElement,
     // Recover the type information that lost in the down-casting above.
   ) as Constructor<MobxLitElement> as C;
 }

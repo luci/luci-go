@@ -62,8 +62,8 @@ export class TestResultTabSearchBoxElement extends MobxLitElement {
         .key=${'/'}
         .handler=${() => {
           // Set a tiny timeout to ensure '/' isn't recorded by the input box.
-          setTimeout(() =>
-            this.shadowRoot?.getElementById('search-box')!.focus()
+          setTimeout(
+            () => this.shadowRoot?.getElementById('search-box')!.focus(),
           );
         }}
       >
@@ -77,7 +77,7 @@ export class TestResultTabSearchBoxElement extends MobxLitElement {
             this.invState.setSearchText(newVal)}
           .onSuggestionSelected=${(suggestion: SuggestionEntry) => {
             this.invState.setSearchText(
-              this.queryPrefix + suggestion.value! + ' '
+              this.queryPrefix + suggestion.value! + ' ',
             );
           }}
         >

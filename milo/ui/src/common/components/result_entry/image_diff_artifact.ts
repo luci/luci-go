@@ -36,7 +36,7 @@ export class TextDiffArtifactElement extends MobxLitElement {
     return getImageDiffArtifactURLPath(
       this.diff.name,
       this.actual.artifactId,
-      this.expected.artifactId
+      this.expected.artifactId,
     );
   }
 

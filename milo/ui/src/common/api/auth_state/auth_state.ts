@@ -111,7 +111,7 @@ export async function obtainAuthState() {
 export function msToExpire(authState: AuthState) {
   const expiry = Math.min(
     authState.idTokenExpiry || Infinity,
-    authState.accessTokenExpiry || Infinity
+    authState.accessTokenExpiry || Infinity,
   );
   return expiry * 1000 - Date.now();
 }

@@ -116,7 +116,7 @@ export interface AppProps {
 export function App({ initOpts }: AppProps) {
   const firstInitOpts = useRef(initOpts);
   const [store] = useState(() =>
-    Store.create({}, { isDevEnv: firstInitOpts.current.isDevEnv })
+    Store.create({}, { isDevEnv: firstInitOpts.current.isDevEnv }),
   );
   const [queryClient] = useState(() => new QueryClient(QUERY_CLIENT_CONFIG));
 
@@ -140,7 +140,7 @@ export function App({ initOpts }: AppProps) {
         const uiSwUrl = isDevEnv ? '/ui/dev-sw.js?dev-sw' : '/ui/ui_sw.js';
         const workbox = new Workbox(
           createStaticTrustedURL('sw-js-static', uiSwUrl),
-          { type: isDevEnv ? 'module' : 'classic' }
+          { type: isDevEnv ? 'module' : 'classic' },
         );
         workbox.register();
       }
@@ -154,9 +154,9 @@ export function App({ initOpts }: AppProps) {
             // TrustedScriptURL here
             createStaticTrustedURL(
               'root-sw-js-static',
-              '/root_sw.js'
+              '/root_sw.js',
             ) as string,
-            { type: isDevEnv ? 'module' : 'classic' }
+            { type: isDevEnv ? 'module' : 'classic' },
           )
           .then((registration) => {
             store.setRedirectSw(registration);
@@ -169,7 +169,7 @@ export function App({ initOpts }: AppProps) {
     },
     // `store` will never change. But list it as a dependency to make eslint
     // happy.
-    [store]
+    [store],
   );
 
   const router = createBrowserRouter([

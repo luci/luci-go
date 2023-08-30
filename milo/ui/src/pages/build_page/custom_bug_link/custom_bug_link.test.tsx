@@ -46,7 +46,7 @@ describe('CustomBugLink', () => {
     const { rerender } = render(
       <FakeContextProvider>
         <CustomBugLink project="proj" />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
     await act(() => jest.runAllTimersAsync());
 
@@ -58,7 +58,7 @@ describe('CustomBugLink', () => {
         Service: MiloInternal,
         method: 'getProjectCfg',
         request: { project: 'proj' },
-      })
+      }),
     );
     expect(screen.queryByText('File a bug')).not.toBeInTheDocument();
 
@@ -71,7 +71,7 @@ describe('CustomBugLink', () => {
             builder: { project: 'proj', bucket: 'bucket', builder: 'builder' },
           }}
         />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
 
     // The bug link is only rendered when `build` is populated.

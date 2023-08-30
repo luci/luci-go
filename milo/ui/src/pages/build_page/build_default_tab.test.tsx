@@ -25,7 +25,7 @@ import { BuildPageTab } from './common';
 jest.mock('react-router-dom', () => {
   return createSelectiveMockFromModule<typeof import('react-router-dom')>(
     'react-router-dom',
-    ['useNavigate']
+    ['useNavigate'],
   );
 });
 
@@ -45,7 +45,7 @@ describe('BuildDefaultTab', () => {
       .mocked(
         // We will return a mocked `navigate` function so we can intercept the
         // `navigate` calls.
-        reactRouterDom.useNavigate as () => jest.MockedFunction<NavigateFunction>
+        reactRouterDom.useNavigate as () => jest.MockedFunction<NavigateFunction>,
       )
       .mockImplementation(() => {
         const navigate = (
@@ -56,7 +56,7 @@ describe('BuildDefaultTab', () => {
         const navigateSpy =
           navigateSpies.get(navigate) ||
           (jest.fn(
-            navigate
+            navigate,
             // `jest.fn` isn't smart enough to infer the function type when
             // mocking an overloaded function. Use manual casting instead.
           ) as unknown as jest.MockedFunction<NavigateFunction>);
@@ -84,13 +84,13 @@ describe('BuildDefaultTab', () => {
           ],
         },
       ],
-      { initialEntries: ['/path/prefix?param#hash'] }
+      { initialEntries: ['/path/prefix?param#hash'] },
     );
 
     render(
       <StoreProvider value={store}>
         <reactRouterDom.RouterProvider router={router} />
-      </StoreProvider>
+      </StoreProvider>,
     );
 
     expect(useNavigateSpy).toHaveBeenCalledTimes(1);
@@ -122,13 +122,13 @@ describe('BuildDefaultTab', () => {
           ],
         },
       ],
-      { initialEntries: ['/path/prefix/?param#hash'] }
+      { initialEntries: ['/path/prefix/?param#hash'] },
     );
 
     render(
       <StoreProvider value={store}>
         <reactRouterDom.RouterProvider router={router} />
-      </StoreProvider>
+      </StoreProvider>,
     );
 
     expect(useNavigateSpy).toHaveBeenCalledTimes(1);
@@ -166,13 +166,13 @@ describe('BuildDefaultTab', () => {
           ],
         },
       ],
-      { initialEntries: ['/path/prefix?param#hash'] }
+      { initialEntries: ['/path/prefix?param#hash'] },
     );
 
     render(
       <StoreProvider value={store}>
         <reactRouterDom.RouterProvider router={router} />
-      </StoreProvider>
+      </StoreProvider>,
     );
 
     expect(useNavigateSpy).toHaveBeenCalledTimes(1);
@@ -210,13 +210,13 @@ describe('BuildDefaultTab', () => {
           ],
         },
       ],
-      { initialEntries: ['/path/prefix?param#hash'] }
+      { initialEntries: ['/path/prefix?param#hash'] },
     );
 
     render(
       <StoreProvider value={store}>
         <reactRouterDom.RouterProvider router={router} />
-      </StoreProvider>
+      </StoreProvider>,
     );
 
     expect(useNavigateSpy).toHaveBeenCalledTimes(1);

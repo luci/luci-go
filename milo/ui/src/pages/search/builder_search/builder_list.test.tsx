@@ -103,7 +103,7 @@ describe('BuilderList', () => {
     const { rerender } = render(
       <FakeContextProvider>
         <BuilderList searchQuery="" />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
 
     await act(() => jest.runAllTimersAsync());
@@ -137,14 +137,14 @@ describe('BuilderList', () => {
         },
         isLoading: false,
       },
-      expect.anything()
+      expect.anything(),
     );
 
     // Filter builder.
     rerender(
       <FakeContextProvider>
         <BuilderList searchQuery="builder2" />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
     // Do not trigger more list builder calls.
     expect(listBuilderMock).toHaveBeenCalledTimes(3);
@@ -164,14 +164,14 @@ describe('BuilderList', () => {
         },
         isLoading: false,
       },
-      expect.anything()
+      expect.anything(),
     );
 
     // Fuzzy search builder.
     rerender(
       <FakeContextProvider>
         <BuilderList searchQuery="CkEt1/bU Oj2" />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
     // Do not trigger more list builder calls.
     expect(listBuilderMock).toHaveBeenCalledTimes(3);
@@ -186,7 +186,7 @@ describe('BuilderList', () => {
         },
         isLoading: false,
       },
-      expect.anything()
+      expect.anything(),
     );
   });
 });

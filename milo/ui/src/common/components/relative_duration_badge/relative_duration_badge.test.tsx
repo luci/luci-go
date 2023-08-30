@@ -28,7 +28,7 @@ describe('RelativeDurationBadge', () => {
 
   test('duration should update when `to` is not specified', async () => {
     render(
-      <RelativeDurationBadge from={DateTime.now().minus({ minutes: 10 })} />
+      <RelativeDurationBadge from={DateTime.now().minus({ minutes: 10 })} />,
     );
 
     expect(screen.getByTestId('duration')).toHaveTextContent('10m');
@@ -45,7 +45,7 @@ describe('RelativeDurationBadge', () => {
       <RelativeDurationBadge
         from={DateTime.now().minus({ minutes: 10 })}
         to={DateTime.now().minus({ minutes: 5 })}
-      />
+      />,
     );
 
     expect(screen.getByTestId('duration')).toHaveTextContent('5.0m');

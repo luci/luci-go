@@ -32,7 +32,7 @@ function resolveModuleInFile(moduleName: string, filename: string): string {
  */
 export function createSelectiveMockFromModule<T = unknown>(
   moduleName: string,
-  keysToMock: ReadonlyArray<keyof NoInfer<T>>
+  keysToMock: ReadonlyArray<keyof NoInfer<T>>,
 ): T {
   // Resolve the module at the caller site.
   // This allows the caller to mock a module with a relative path.
@@ -51,7 +51,7 @@ export function createSelectiveMockFromModule<T = unknown>(
  */
 export function createSelectiveSpiesFromModule<T = unknown>(
   moduleName: string,
-  keysToSpy: ReadonlyArray<FunctionKeys<NoInfer<T>>>
+  keysToSpy: ReadonlyArray<FunctionKeys<NoInfer<T>>>,
 ): T {
   // Resolve the module at the caller site.
   // This allows the caller to mock a module with a relative path.

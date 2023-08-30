@@ -18,7 +18,7 @@ import { defaultTarget } from './plugins/default_target';
 
 const md = markdownIt({ html: true, linkify: true }).use(
   defaultTarget,
-  '_blank'
+  '_blank',
 );
 
 export function renderMarkdown(markdown: string) {

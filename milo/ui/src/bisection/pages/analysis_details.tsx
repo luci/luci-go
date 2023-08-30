@@ -59,7 +59,7 @@ export const AnalysisDetailsPage = () => {
 
   const handleTabChange = (
     _: React.SyntheticEvent,
-    newTab: AnalysisComponentTabs
+    newTab: AnalysisComponentTabs,
   ) => {
     setCurrentTab(newTab);
   };

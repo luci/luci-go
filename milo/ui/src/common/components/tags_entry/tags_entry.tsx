@@ -101,7 +101,7 @@ export class TagsEntryElement extends MobxLitElement {
     this.root.render(
       <CacheProvider value={this.cache}>
         <TagsEntry tags={this.tags} />
-      </CacheProvider>
+      </CacheProvider>,
     );
     return this.parent;
   }

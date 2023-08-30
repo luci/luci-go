@@ -56,8 +56,8 @@ class EnterViewObserverNotifierProviderElement extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['notifier', notifier]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
   }
 
@@ -117,12 +117,12 @@ describe.skip('enterViewObserver', () => {
           .fill(0)
           .map(
             () =>
-              html`<milo-enter-view-observer-test-entry></milo-enter-view-observer-test-entry>`
+              html`<milo-enter-view-observer-test-entry></milo-enter-view-observer-test-entry>`,
           )}
       </milo-enter-view-observer-notifier-provider-test>
     `);
     entries = listView.querySelectorAll<EnterViewObserverTestEntryElement>(
-      'milo-enter-view-observer-test-entry'
+      'milo-enter-view-observer-test-entry',
     );
   });
 
@@ -174,10 +174,10 @@ describe.skip('enterViewObserver', () => {
     `);
 
     const entry1 = provider1.querySelector(
-      'milo-enter-view-observer-test-entry'
+      'milo-enter-view-observer-test-entry',
     ) as EnterViewObserverTestEntryElement;
     const entry2 = provider2.querySelector(
-      'milo-enter-view-observer-test-entry'
+      'milo-enter-view-observer-test-entry',
     ) as EnterViewObserverTestEntryElement;
 
     expect(notifier1SubscribeSpy.mock.calls.length).toStrictEqual(1);
@@ -201,14 +201,15 @@ describe.skip('enterViewObserver', () => {
     const notifier2SubscribeSpy = jest.spyOn(notifier2, 'subscribe');
     const notifier2UnsubscribeSpy = jest.spyOn(notifier2, 'unsubscribe');
 
-    const provider =
-      await fixture<EnterViewObserverNotifierProviderElement>(html`
+    const provider = await fixture<EnterViewObserverNotifierProviderElement>(
+      html`
         <milo-enter-view-observer-notifier-provider-test .notifier=${notifier1}>
           <milo-enter-view-observer-test-entry></milo-enter-view-observer-test-entry>
         </milo-enter-view-observer-notifier-provider-test>
-      `);
+      `,
+    );
     const entry = provider.querySelector(
-      'milo-enter-view-observer-test-entry'
+      'milo-enter-view-observer-test-entry',
     ) as EnterViewObserverTestEntryElement;
 
     expect(notifier1SubscribeSpy.mock.calls.length).toStrictEqual(1);
@@ -267,12 +268,12 @@ describe.skip('lazyRendering', () => {
           .fill(0)
           .map(
             () =>
-              html`<milo-lazy-rendering-test-entry></milo-lazy-rendering-test-entry>`
+              html`<milo-lazy-rendering-test-entry></milo-lazy-rendering-test-entry>`,
           )}
       </milo-enter-view-observer-notifier-provider-test>
     `);
     entries = listView.querySelectorAll<LazyRenderingElement>(
-      'milo-lazy-rendering-test-entry'
+      'milo-lazy-rendering-test-entry',
     );
   });
 
@@ -280,7 +281,7 @@ describe.skip('lazyRendering', () => {
     await aTimeout(20);
     entries.forEach((entry, i) => {
       expect(entry.shadowRoot!.textContent).toStrictEqual(
-        i <= 10 ? 'content' : 'placeholder'
+        i <= 10 ? 'content' : 'placeholder',
       );
     });
   });
@@ -292,7 +293,7 @@ describe.skip('lazyRendering', () => {
 
     entries.forEach((entry, i) => {
       expect(entry.shadowRoot!.textContent).toStrictEqual(
-        i <= 15 ? 'content' : 'placeholder'
+        i <= 15 ? 'content' : 'placeholder',
       );
     });
   });
@@ -361,12 +362,12 @@ describe.skip('progressiveNotifier', () => {
           .fill(0)
           .map(
             () =>
-              html`<milo-progressive-rendering-test-entry></milo-progressive-rendering-test-entry>`
+              html`<milo-progressive-rendering-test-entry></milo-progressive-rendering-test-entry>`,
           )}
       </milo-progressive-rendering-notifier-provider-test>
     `);
     entries = listView.querySelectorAll<ProgressiveRenderingElement>(
-      'milo-progressive-rendering-test-entry'
+      'milo-progressive-rendering-test-entry',
     );
   });
 
@@ -374,7 +375,7 @@ describe.skip('progressiveNotifier', () => {
     await aTimeout(20);
     entries.forEach((entry, i) => {
       expect(entry.shadowRoot!.textContent).toStrictEqual(
-        i <= 10 ? 'content' : 'placeholder'
+        i <= 10 ? 'content' : 'placeholder',
       );
     });
   });
@@ -386,7 +387,7 @@ describe.skip('progressiveNotifier', () => {
 
     entries.forEach((entry, i) => {
       expect(entry.shadowRoot!.textContent).toStrictEqual(
-        i <= 15 ? 'content' : 'placeholder'
+        i <= 15 ? 'content' : 'placeholder',
       );
     });
   });
@@ -395,14 +396,14 @@ describe.skip('progressiveNotifier', () => {
     await aTimeout(20);
     entries.forEach((entry, i) => {
       expect(entry.shadowRoot!.textContent).toStrictEqual(
-        i <= 10 ? 'content' : 'placeholder'
+        i <= 10 ? 'content' : 'placeholder',
       );
     });
 
     await aTimeout(150);
     entries.forEach((entry, i) => {
       expect(entry.shadowRoot!.textContent).toStrictEqual(
-        i <= 20 ? 'content' : 'placeholder'
+        i <= 20 ? 'content' : 'placeholder',
       );
     });
   });
@@ -411,7 +412,7 @@ describe.skip('progressiveNotifier', () => {
     await aTimeout(20);
     entries.forEach((entry, i) => {
       expect(entry.shadowRoot!.textContent).toStrictEqual(
-        i <= 10 ? 'content' : 'placeholder'
+        i <= 10 ? 'content' : 'placeholder',
       );
     });
 
@@ -421,14 +422,14 @@ describe.skip('progressiveNotifier', () => {
     await aTimeout(60);
     entries.forEach((entry, i) => {
       expect(entry.shadowRoot!.textContent).toStrictEqual(
-        i <= 15 ? 'content' : 'placeholder'
+        i <= 15 ? 'content' : 'placeholder',
       );
     });
 
     await aTimeout(50);
     entries.forEach((entry, i) => {
       expect(entry.shadowRoot!.textContent).toStrictEqual(
-        i <= 25 ? 'content' : 'placeholder'
+        i <= 25 ? 'content' : 'placeholder',
       );
     });
   });

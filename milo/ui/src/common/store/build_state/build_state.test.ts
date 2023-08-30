@@ -34,7 +34,7 @@ describe('StepExt', () => {
     name: string,
     status = BuildbucketStatus.Success,
     summaryMarkdown = '',
-    children: StepExt[] = []
+    children: StepExt[] = [],
   ) {
     const nameSegs = name.split('|');
     const step = new StepExt({
@@ -155,7 +155,7 @@ describe('StepExt', () => {
         0,
         'step',
         BuildbucketStatus.Success,
-        'this is some text'
+        'this is some text',
       );
       expect(step.header?.innerHTML).toStrictEqual('this is some text');
       expect(step.summary).toBeNull();
@@ -166,28 +166,38 @@ describe('StepExt', () => {
         0,
         'step',
         BuildbucketStatus.Success,
-        'header<br/>content'
+        'header<br/>content',
       );
       expect(step.header?.innerHTML).toStrictEqual(
-        getExpectedHeaderHTML('header')
+        getExpectedHeaderHTML('header'),
       );
       expect(step.summary?.innerHTML).toStrictEqual(
-        getExpectedBodyHTML('content')
+        getExpectedBodyHTML('content'),
       );
     });
 
     test('for header and content separated by <br/>, header is empty', async () => {
-      const step = createStep(0, 'step', BuildbucketStatus.Success, '<br/>body');
+      const step = createStep(
+        0,
+        'step',
+        BuildbucketStatus.Success,
+        '<br/>body',
+      );
       expect(step.header).toBeNull();
       expect(step.summary?.innerHTML).toStrictEqual(
-        getExpectedBodyHTML('body')
+        getExpectedBodyHTML('body'),
       );
     });
 
     test('for header and content separated by <br/>, body is empty', async () => {
-      const step = createStep(0, 'step', BuildbucketStatus.Success, 'header<br/>');
+      const step = createStep(
+        0,
+        'step',
+        BuildbucketStatus.Success,
+        'header<br/>',
+      );
       expect(step.header?.innerHTML).toStrictEqual(
-        getExpectedHeaderHTML('header')
+        getExpectedHeaderHTML('header'),
       );
       expect(step.summary).toBeNull();
     });
@@ -197,13 +207,13 @@ describe('StepExt', () => {
         0,
         'step',
         BuildbucketStatus.Success,
-        '<a href="http://google.com">Link</a><br/>content'
+        '<a href="http://google.com">Link</a><br/>content',
       );
       expect(step.header?.innerHTML).toStrictEqual(
-        getExpectedHeaderHTML('<a href="http://google.com">Link</a>')
+        getExpectedHeaderHTML('<a href="http://google.com">Link</a>'),
       );
       expect(step.summary?.innerHTML).toStrictEqual(
-        getExpectedBodyHTML('content')
+        getExpectedBodyHTML('content'),
       );
     });
 
@@ -212,15 +222,15 @@ describe('StepExt', () => {
         0,
         'step',
         BuildbucketStatus.Success,
-        '<span>span</span><i>i</i><b>b</b><strong>strong</strong><br/>content'
+        '<span>span</span><i>i</i><b>b</b><strong>strong</strong><br/>content',
       );
       expect(step.header?.innerHTML).toStrictEqual(
         getExpectedHeaderHTML(
-          '<span>span</span><i>i</i><b>b</b><strong>strong</strong>'
-        )
+          '<span>span</span><i>i</i><b>b</b><strong>strong</strong>',
+        ),
       );
       expect(step.summary?.innerHTML).toStrictEqual(
-        getExpectedBodyHTML('content')
+        getExpectedBodyHTML('content'),
       );
     });
 
@@ -229,11 +239,11 @@ describe('StepExt', () => {
         0,
         'step',
         BuildbucketStatus.Success,
-        '<ul><li>item</li></ul><br/>content'
+        '<ul><li>item</li></ul><br/>content',
       );
       expect(step.header).toBeNull();
       expect(step.summary?.innerHTML).toStrictEqual(
-        getExpectedBodyHTML('<ul><li>item</li></ul><br/>content')
+        getExpectedBodyHTML('<ul><li>item</li></ul><br/>content'),
       );
     });
 
@@ -242,11 +252,11 @@ describe('StepExt', () => {
         0,
         'step',
         BuildbucketStatus.Success,
-        '<ul><li>item1</li><li>item2</li></ul>'
+        '<ul><li>item1</li><li>item2</li></ul>',
       );
       expect(step.header).toBeNull();
       expect(step.summary?.innerHTML).toStrictEqual(
-        getExpectedBodyHTML('<ul><li>item1</li><li>item2</li></ul>')
+        getExpectedBodyHTML('<ul><li>item1</li><li>item2</li></ul>'),
       );
     });
 
@@ -255,13 +265,13 @@ describe('StepExt', () => {
         0,
         'step',
         BuildbucketStatus.Success,
-        '<div>header<br/>other</div>content'
+        '<div>header<br/>other</div>content',
       );
       expect(step.header?.innerHTML).toStrictEqual(
-        getExpectedHeaderHTML('header')
+        getExpectedHeaderHTML('header'),
       );
       expect(step.summary?.innerHTML).toStrictEqual(
-        getExpectedBodyHTML('<div>other</div>content')
+        getExpectedBodyHTML('<div>other</div>content'),
       );
     });
 
@@ -270,11 +280,11 @@ describe('StepExt', () => {
         0,
         'step',
         BuildbucketStatus.Success,
-        '<div><div>header<br/>other</div></div>content'
+        '<div><div>header<br/>other</div></div>content',
       );
       expect(step.header).toBeNull();
       expect(step.summary?.innerHTML).toStrictEqual(
-        getExpectedBodyHTML('<div><div>header<br/>other</div></div>content')
+        getExpectedBodyHTML('<div><div>header<br/>other</div></div>content'),
       );
     });
   });
@@ -329,7 +339,7 @@ describe('clusterBuildSteps', () => {
 
     const computedCluster = computed(
       () => clusterBuildSteps([step1, step2, step3]),
-      { keepAlive: true }
+      { keepAlive: true },
     );
 
     const clustersBeforeUpdate = clusterBuildSteps([step1, step2, step3]);

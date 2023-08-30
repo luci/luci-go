@@ -239,7 +239,7 @@ describe('parseTestResultSearchQuery', () => {
   describe('ExactID query', () => {
     test('should only keep tests with the same ID', () => {
       const filter = parseTestResultSearchQuery(
-        'ExactID:invocation-a/test-suite-b/test-5'
+        'ExactID:invocation-a/test-suite-b/test-5',
       );
       const filtered = variants.filter(filter);
       expect(filtered).toEqual([variant6]);
@@ -247,7 +247,7 @@ describe('parseTestResultSearchQuery', () => {
 
     test('should be case sensitive', () => {
       const filter = parseTestResultSearchQuery(
-        'ExactID:invocation-a/test-suite-B/test-5'
+        'ExactID:invocation-a/test-suite-B/test-5',
       );
       const filtered = variants.filter(filter);
       expect(filtered).toEqual([variant5]);
@@ -255,7 +255,7 @@ describe('parseTestResultSearchQuery', () => {
 
     test('should work with negation', () => {
       const filter = parseTestResultSearchQuery(
-        '-ExactID:invocation-a/test-suite-b/test-5'
+        '-ExactID:invocation-a/test-suite-b/test-5',
       );
       const filtered = variants.filter(filter);
       expect(filtered).toEqual([
@@ -357,7 +357,7 @@ describe('parseTestResultSearchQuery', () => {
 
     test('should support duplicated tag key', () => {
       const filter = parseTestResultSearchQuery(
-        '-tag:duplicated-tag-key=second-tag-val'
+        '-tag:duplicated-tag-key=second-tag-val',
       );
       const filtered = variants.filter(filter);
       expect(filtered).toEqual([
@@ -489,10 +489,10 @@ describe('suggestTestResultSearchQuery', () => {
     expect(suggestions1.find((s) => s.value === 'RStatus:Pass')).toBeDefined();
     expect(suggestions1.find((s) => s.value === '-RStatus:Pass')).toBeDefined();
     expect(
-      suggestions1.find((s) => s.value === 'Status:UNEXPECTED')
+      suggestions1.find((s) => s.value === 'Status:UNEXPECTED'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === '-Status:UNEXPECTED')
+      suggestions1.find((s) => s.value === '-Status:UNEXPECTED'),
     ).toBeUndefined();
   });
 
@@ -508,13 +508,13 @@ describe('suggestTestResultSearchQuery', () => {
     const suggestions3 = suggestTestResultSearchQuery('Crash');
     expect(suggestions3.find((s) => s.value === 'RStatus:Crash')).toBeDefined();
     expect(
-      suggestions3.find((s) => s.value === '-RStatus:Crash')
+      suggestions3.find((s) => s.value === '-RStatus:Crash'),
     ).toBeDefined();
 
     const suggestions4 = suggestTestResultSearchQuery('Abort');
     expect(suggestions4.find((s) => s.value === 'RStatus:Abort')).toBeDefined();
     expect(
-      suggestions4.find((s) => s.value === '-RStatus:Abort')
+      suggestions4.find((s) => s.value === '-RStatus:Abort'),
     ).toBeDefined();
 
     const suggestions5 = suggestTestResultSearchQuery('Skip');
@@ -525,38 +525,38 @@ describe('suggestTestResultSearchQuery', () => {
   test('should not suggest run status query with a different status', () => {
     const suggestions1 = suggestTestResultSearchQuery('Pass');
     expect(
-      suggestions1.find((s) => s.value === 'RStatus:Fail')
+      suggestions1.find((s) => s.value === 'RStatus:Fail'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === '-RStatus:Fail')
+      suggestions1.find((s) => s.value === '-RStatus:Fail'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === 'RStatus:Crash')
+      suggestions1.find((s) => s.value === 'RStatus:Crash'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === '-RStatus:Crash')
+      suggestions1.find((s) => s.value === '-RStatus:Crash'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === 'RStatus:Abort')
+      suggestions1.find((s) => s.value === 'RStatus:Abort'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === '-RStatus:Abort')
+      suggestions1.find((s) => s.value === '-RStatus:Abort'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === 'RStatus:Skip')
+      suggestions1.find((s) => s.value === 'RStatus:Skip'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === '-RStatus:Skip')
+      suggestions1.find((s) => s.value === '-RStatus:Skip'),
     ).toBeUndefined();
   });
 
   test('should suggest variant status query with matching status', () => {
     const suggestions1 = suggestTestResultSearchQuery('unexpected');
     expect(
-      suggestions1.find((s) => s.value === 'Status:UNEXPECTED')
+      suggestions1.find((s) => s.value === 'Status:UNEXPECTED'),
     ).toBeDefined();
     expect(
-      suggestions1.find((s) => s.value === '-Status:UNEXPECTED')
+      suggestions1.find((s) => s.value === '-Status:UNEXPECTED'),
     ).toBeDefined();
 
     const suggestions2 = suggestTestResultSearchQuery('flaky');
@@ -565,40 +565,40 @@ describe('suggestTestResultSearchQuery', () => {
 
     const suggestions3 = suggestTestResultSearchQuery('exonerated');
     expect(
-      suggestions3.find((s) => s.value === 'Status:EXONERATED')
+      suggestions3.find((s) => s.value === 'Status:EXONERATED'),
     ).toBeDefined();
     expect(
-      suggestions3.find((s) => s.value === '-Status:EXONERATED')
+      suggestions3.find((s) => s.value === '-Status:EXONERATED'),
     ).toBeDefined();
 
     const suggestions4 = suggestTestResultSearchQuery('expected');
     expect(
-      suggestions4.find((s) => s.value === 'Status:EXPECTED')
+      suggestions4.find((s) => s.value === 'Status:EXPECTED'),
     ).toBeDefined();
     expect(
-      suggestions4.find((s) => s.value === '-Status:EXPECTED')
+      suggestions4.find((s) => s.value === '-Status:EXPECTED'),
     ).toBeDefined();
   });
 
   test('should not suggest variant status query with a different status', () => {
     const suggestions1 = suggestTestResultSearchQuery('UNEXPECTED');
     expect(
-      suggestions1.find((s) => s.value === 'Status:FLAKY')
+      suggestions1.find((s) => s.value === 'Status:FLAKY'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === '-Status:FLAKY')
+      suggestions1.find((s) => s.value === '-Status:FLAKY'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === 'Status:EXONERATED')
+      suggestions1.find((s) => s.value === 'Status:EXONERATED'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === '-Status:EXONERATED')
+      suggestions1.find((s) => s.value === '-Status:EXONERATED'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === 'Status:EXPECTED')
+      suggestions1.find((s) => s.value === 'Status:EXPECTED'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === '-Status:EXPECTED')
+      suggestions1.find((s) => s.value === '-Status:EXPECTED'),
     ).toBeUndefined();
   });
 
@@ -614,13 +614,13 @@ describe('suggestTestResultSearchQuery', () => {
     const suggestions3 = suggestTestResultSearchQuery('CrAsH');
     expect(suggestions3.find((s) => s.value === 'RStatus:Crash')).toBeDefined();
     expect(
-      suggestions3.find((s) => s.value === '-RStatus:Crash')
+      suggestions3.find((s) => s.value === '-RStatus:Crash'),
     ).toBeDefined();
 
     const suggestions4 = suggestTestResultSearchQuery('Abort');
     expect(suggestions4.find((s) => s.value === 'RStatus:Abort')).toBeDefined();
     expect(
-      suggestions4.find((s) => s.value === '-RStatus:Abort')
+      suggestions4.find((s) => s.value === '-RStatus:Abort'),
     ).toBeDefined();
 
     const suggestions5 = suggestTestResultSearchQuery('sKIP');
@@ -667,7 +667,7 @@ describe('suggestTestResultSearchQuery', () => {
     const suggestions2 = suggestTestResultSearchQuery('-ExactID:pass');
     // When user explicitly typed negative query, don't suggest positive query.
     expect(
-      suggestions2.find((s) => s.value === 'ExactID:pass')
+      suggestions2.find((s) => s.value === 'ExactID:pass'),
     ).toBeUndefined();
     expect(suggestions2.find((s) => s.value === '-ExactID:pass')).toBeDefined();
   });
@@ -686,7 +686,7 @@ describe('suggestTestResultSearchQuery', () => {
     const suggestions2 = suggestTestResultSearchQuery('-V:test_suite');
     // When user explicitly typed negative query, don't suggest positive query.
     expect(
-      suggestions2.find((s) => s.value === 'V:test_suite')
+      suggestions2.find((s) => s.value === 'V:test_suite'),
     ).toBeUndefined();
     expect(suggestions2.find((s) => s.value === '-V:test_suite')).toBeDefined();
   });

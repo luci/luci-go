@@ -24,7 +24,7 @@ import {
 describe('Tooltip', () => {
   test('should only display one tooltip at a time', async () => {
     const tooltipContainer = await fixture<TooltipElement>(
-      html`<milo-tooltip></milo-tooltip>`
+      html`<milo-tooltip></milo-tooltip>`,
     );
 
     const tooltip1 = document.createElement('div');
@@ -37,7 +37,7 @@ describe('Tooltip', () => {
           targetRect: tooltipContainer.getBoundingClientRect(),
           gapSize: 5,
         },
-      })
+      }),
     );
 
     await aTimeout(0);
@@ -51,7 +51,7 @@ describe('Tooltip', () => {
           targetRect: tooltipContainer.getBoundingClientRect(),
           gapSize: 5,
         },
-      })
+      }),
     );
 
     await aTimeout(0);
@@ -61,7 +61,7 @@ describe('Tooltip', () => {
 
   test('should hide tooltip after specified delay', async () => {
     const tooltipContainer = await fixture<TooltipElement>(
-      html`<milo-tooltip></milo-tooltip>`
+      html`<milo-tooltip></milo-tooltip>`,
     );
 
     const tooltip = document.createElement('div');
@@ -73,7 +73,7 @@ describe('Tooltip', () => {
           targetRect: tooltipContainer.getBoundingClientRect(),
           gapSize: 5,
         },
-      })
+      }),
     );
 
     await aTimeout(0);
@@ -82,7 +82,7 @@ describe('Tooltip', () => {
     window.dispatchEvent(
       new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
         detail: { delay: 10 },
-      })
+      }),
     );
 
     await aTimeout(5);
@@ -94,7 +94,7 @@ describe('Tooltip', () => {
 
   test('should handle race condition correctly', async () => {
     const tooltipContainer = await fixture<TooltipElement>(
-      html`<milo-tooltip></milo-tooltip>`
+      html`<milo-tooltip></milo-tooltip>`,
     );
 
     const tooltip1 = document.createElement('div');
@@ -107,7 +107,7 @@ describe('Tooltip', () => {
           targetRect: tooltipContainer.getBoundingClientRect(),
           gapSize: 5,
         },
-      })
+      }),
     );
 
     await aTimeout(0);
@@ -116,7 +116,7 @@ describe('Tooltip', () => {
     window.dispatchEvent(
       new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
         detail: { delay: 10 },
-      })
+      }),
     );
 
     await aTimeout(0);
@@ -130,7 +130,7 @@ describe('Tooltip', () => {
           targetRect: tooltipContainer.getBoundingClientRect(),
           gapSize: 5,
         },
-      })
+      }),
     );
 
     await aTimeout(10);

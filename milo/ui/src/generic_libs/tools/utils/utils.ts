@@ -89,7 +89,7 @@ export function timeout(ms: number) {
 export function urlSetSearchQueryParam(
   url: string,
   key: string,
-  value: { toString(): string }
+  value: { toString(): string },
 ) {
   const urlObj = new URL(url, location.origin);
   urlObj.searchParams.set(key, value.toString());
@@ -154,7 +154,7 @@ export function roundDown(num: number, sortedRoundNumbers: readonly number[]) {
 export function deferred<T = void>(): [
   promise: Promise<T>,
   resolve: (value: T | PromiseLike<T>) => void,
-  reject: (reason?: unknown) => void
+  reject: (reason?: unknown) => void,
 ] {
   let resolvePromise: (value: T | PromiseLike<T>) => void;
   let rejectPromise: (reason?: unknown) => void;
@@ -179,7 +179,7 @@ export function createStaticTrustedURL<T extends string>(
   policy: string,
   // Force the URL to be a static string so the function can't be misused to
   // trust URLs from user input.
-  staticUrl: string extends T ? never : T
+  staticUrl: string extends T ? never : T,
 ) {
   return (
     self.trustedTypes
@@ -199,9 +199,13 @@ export function createStaticTrustedURL<T extends string>(
  */
 export function extractProperty(
   properties: { [key: string]: unknown },
-  path: string
-) {
+  path: string,
+): unknown {
   const pathTokens = path.split('.');
+  // We trust the object to have a valid (nested) property matching the `path`.
+  // If that's not the case, the triggered error is the exact same error we want
+  // anyway.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let cur: any = properties;
   for (const token of pathTokens) {
     if (!cur) {

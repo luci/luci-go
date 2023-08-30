@@ -65,7 +65,7 @@ export function ChangelistsBadge({ changelists }: ChangelistBadgeProps) {
               .changelists=${changelists}
             ></milo-changelists-tooltip>
           `,
-          tooltip
+          tooltip,
         );
         window.dispatchEvent(
           new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
@@ -74,7 +74,7 @@ export function ChangelistsBadge({ changelists }: ChangelistBadgeProps) {
               targetRect: badgeRef.current!.getBoundingClientRect(),
               gapSize: 2,
             },
-          })
+          }),
         );
       }}
       onMouseOut={() => {
@@ -84,7 +84,7 @@ export function ChangelistsBadge({ changelists }: ChangelistBadgeProps) {
         window.dispatchEvent(
           new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
             detail: { delay: 50 },
-          })
+          }),
         );
       }}
       onClick={(e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) =>
@@ -119,7 +119,7 @@ export class ChangelistsBadgeElement extends MobxLitElement {
     this.root.render(
       <CacheProvider value={this.cache}>
         <ChangelistsBadge changelists={this.changelists} />
-      </CacheProvider>
+      </CacheProvider>,
     );
     return this.parent;
   }

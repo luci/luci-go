@@ -44,9 +44,9 @@ export const ExpandableEntriesState = types
         types.model({
           id: types.identifier,
           expanded: types.boolean,
-        })
+        }),
       ),
-      {}
+      {},
     ),
   })
   .views((self) => ({

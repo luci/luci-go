@@ -44,18 +44,18 @@ describe('LoginPage', () => {
           ],
         },
       ],
-      { initialEntries: ['/path/prefix'] }
+      { initialEntries: ['/path/prefix'] },
     );
 
     render(
       <FakeAuthStateProvider value={{ identity: ANONYMOUS_IDENTITY }}>
         <RouterProvider router={router} />
-      </FakeAuthStateProvider>
+      </FakeAuthStateProvider>,
     );
 
     expect(screen.getByText('login')).toHaveAttribute(
       'href',
-      '/auth/openid/login?r=%2F'
+      '/auth/openid/login?r=%2F',
     );
   });
 
@@ -81,17 +81,17 @@ describe('LoginPage', () => {
           ],
         },
       ],
-      { initialEntries: ['/path/prefix?redirect=%2fto%2fhere'] }
+      { initialEntries: ['/path/prefix?redirect=%2fto%2fhere'] },
     );
     render(
       <FakeAuthStateProvider value={{ identity: ANONYMOUS_IDENTITY }}>
         <RouterProvider router={router} />
-      </FakeAuthStateProvider>
+      </FakeAuthStateProvider>,
     );
 
     expect(screen.getByText('login')).toHaveAttribute(
       'href',
-      '/auth/openid/login?r=%2Fto%2Fhere'
+      '/auth/openid/login?r=%2Fto%2Fhere',
     );
   });
 
@@ -116,19 +116,19 @@ describe('LoginPage', () => {
           ],
         },
       ],
-      { initialEntries: ['/path/prefix?redirect=%2fto%2fhere'] }
+      { initialEntries: ['/path/prefix?redirect=%2fto%2fhere'] },
     );
     const { rerender } = render(
       <FakeAuthStateProvider value={{ identity: ANONYMOUS_IDENTITY }}>
         <RouterProvider router={router} />
-      </FakeAuthStateProvider>
+      </FakeAuthStateProvider>,
     );
     expect(screen.queryByText('reached')).not.toBeInTheDocument();
 
     rerender(
       <FakeAuthStateProvider value={{ identity: 'signed-in-in-another-page' }}>
         <RouterProvider router={router} />
-      </FakeAuthStateProvider>
+      </FakeAuthStateProvider>,
     );
     expect(screen.getByText('reached')).toBeInTheDocument();
   });

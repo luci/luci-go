@@ -113,7 +113,7 @@ describe('TestLoader', () => {
     let stub: jest.MockedFunction<
       (
         req: QueryTestVariantsRequest,
-        cacheOpt?: CacheOption
+        cacheOpt?: CacheOption,
       ) => Promise<QueryTestVariantsResponse>
     >;
     const req = { invocations: ['invocation'], pageSize: 4 };
@@ -156,7 +156,7 @@ describe('TestLoader', () => {
       expect(testLoader.expectedTestVariants).toEqual([]);
       expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
       expect(
-        testLoader.unfilteredUnexpectedlySkippedVariantsCount
+        testLoader.unfilteredUnexpectedlySkippedVariantsCount,
       ).toStrictEqual(1);
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(1);
       expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingFlaky);
@@ -206,7 +206,7 @@ describe('TestLoader', () => {
       ]);
       expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
       expect(
-        testLoader.unfilteredUnexpectedlySkippedVariantsCount
+        testLoader.unfilteredUnexpectedlySkippedVariantsCount,
       ).toStrictEqual(1);
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
       expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingExpected);
@@ -237,7 +237,7 @@ describe('TestLoader', () => {
       ]);
       expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
       expect(
-        testLoader.unfilteredUnexpectedlySkippedVariantsCount
+        testLoader.unfilteredUnexpectedlySkippedVariantsCount,
       ).toStrictEqual(1);
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
       expect(testLoader.stage).toStrictEqual(LoadingStage.Done);
@@ -269,7 +269,7 @@ describe('TestLoader', () => {
       ]);
       expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
       expect(
-        testLoader.unfilteredUnexpectedlySkippedVariantsCount
+        testLoader.unfilteredUnexpectedlySkippedVariantsCount,
       ).toStrictEqual(1);
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
       expect(testLoader.stage).toStrictEqual(LoadingStage.Done);
@@ -300,7 +300,7 @@ describe('TestLoader', () => {
       expect(testLoader.isLoading).toBeTruthy();
       expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
       expect(
-        testLoader.unfilteredUnexpectedlySkippedVariantsCount
+        testLoader.unfilteredUnexpectedlySkippedVariantsCount,
       ).toStrictEqual(1);
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(1);
       expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingFlaky);
@@ -321,7 +321,7 @@ describe('TestLoader', () => {
       expect(testLoader.isLoading).toBeTruthy();
       expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
       expect(
-        testLoader.unfilteredUnexpectedlySkippedVariantsCount
+        testLoader.unfilteredUnexpectedlySkippedVariantsCount,
       ).toStrictEqual(1);
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
       expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingExpected);
@@ -347,7 +347,7 @@ describe('TestLoader', () => {
       expect(testLoader.isLoading).toBeTruthy();
       expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
       expect(
-        testLoader.unfilteredUnexpectedlySkippedVariantsCount
+        testLoader.unfilteredUnexpectedlySkippedVariantsCount,
       ).toStrictEqual(1);
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
       expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingExpected);
@@ -374,7 +374,7 @@ describe('TestLoader', () => {
       expect(testLoader.isLoading).toBeFalsy();
       expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
       expect(
-        testLoader.unfilteredUnexpectedlySkippedVariantsCount
+        testLoader.unfilteredUnexpectedlySkippedVariantsCount,
       ).toStrictEqual(1);
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
       expect(testLoader.stage).toStrictEqual(LoadingStage.Done);
@@ -400,7 +400,7 @@ describe('TestLoader', () => {
       expect(testLoader.isLoading).toBeFalsy();
       expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
       expect(
-        testLoader.unfilteredUnexpectedlySkippedVariantsCount
+        testLoader.unfilteredUnexpectedlySkippedVariantsCount,
       ).toStrictEqual(1);
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
       expect(testLoader.stage).toStrictEqual(LoadingStage.Done);
@@ -431,11 +431,11 @@ describe('TestLoader', () => {
     test('loadFirstPageOfTestVariants should work correctly', async () => {
       const firstLoadPromise = testLoader.loadNextTestVariants();
       expect(firstLoadPromise).toStrictEqual(
-        testLoader.loadFirstPageOfTestVariants()
+        testLoader.loadFirstPageOfTestVariants(),
       );
       const secondLoadPromise = testLoader.loadNextTestVariants();
       expect(secondLoadPromise).not.toBe(
-        testLoader.loadFirstPageOfTestVariants()
+        testLoader.loadFirstPageOfTestVariants(),
       );
     });
 
@@ -483,7 +483,7 @@ describe('TestLoader', () => {
     let stub: jest.MockedFunction<
       (
         req: QueryTestVariantsRequest,
-        cacheOpt?: CacheOption
+        cacheOpt?: CacheOption,
       ) => Promise<QueryTestVariantsResponse>
     >;
     const req = { invocations: ['invocation'], pageSize: 4 };
@@ -520,7 +520,7 @@ describe('TestLoader', () => {
     let stub: jest.MockedFunction<
       (
         req: QueryTestVariantsRequest,
-        cacheOpt?: CacheOption
+        cacheOpt?: CacheOption,
       ) => Promise<QueryTestVariantsResponse>
     >;
     const req = { invocations: ['invocation'], pageSize: 4 };

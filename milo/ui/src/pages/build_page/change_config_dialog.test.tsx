@@ -47,11 +47,11 @@ describe('ChangeConfigDialog', () => {
     const { rerender } = render(
       <StoreProvider value={store}>
         <ChangeConfigDialog open />
-      </StoreProvider>
+      </StoreProvider>,
     );
 
     expect(
-      screen.queryByRole('button', { name: 'Test Results' })
+      screen.queryByRole('button', { name: 'Test Results' }),
     ).not.toBeNull();
     expect(screen.queryByRole('button', { name: 'Timeline' })).toBeNull();
 
@@ -62,19 +62,19 @@ describe('ChangeConfigDialog', () => {
 
     // Updating the config while the dialog is still open has no effect.
     expect(
-      screen.queryByRole('button', { name: 'Test Results' })
+      screen.queryByRole('button', { name: 'Test Results' }),
     ).not.toBeNull();
     expect(screen.queryByRole('button', { name: 'Timeline' })).toBeNull();
 
     rerender(
       <StoreProvider value={store}>
         <ChangeConfigDialog open={false} />
-      </StoreProvider>
+      </StoreProvider>,
     );
     rerender(
       <StoreProvider value={store}>
         <ChangeConfigDialog open />
-      </StoreProvider>
+      </StoreProvider>,
     );
 
     expect(screen.queryByRole('button', { name: 'Test Results' })).toBeNull();
@@ -88,11 +88,11 @@ describe('ChangeConfigDialog', () => {
     render(
       <StoreProvider value={store}>
         <ChangeConfigDialog open onClose={onCloseSpy} />
-      </StoreProvider>
+      </StoreProvider>,
     );
 
     expect(
-      screen.queryByRole('button', { name: 'Test Results' })
+      screen.queryByRole('button', { name: 'Test Results' }),
     ).not.toBeNull();
     expect(screen.queryByRole('button', { name: 'Timeline' })).toBeNull();
     fireEvent.mouseDown(screen.getByRole('button', { name: 'Test Results' }));
@@ -128,11 +128,11 @@ describe('ChangeConfigDialog', () => {
     render(
       <StoreProvider value={store}>
         <ChangeConfigDialog open onClose={onCloseSpy} />
-      </StoreProvider>
+      </StoreProvider>,
     );
 
     expect(
-      screen.queryByRole('button', { name: 'Test Results' })
+      screen.queryByRole('button', { name: 'Test Results' }),
     ).not.toBeNull();
     expect(screen.queryByRole('button', { name: 'Timeline' })).toBeNull();
 

@@ -101,7 +101,7 @@ export class BuildPageStepClusterElement extends MobxExtLitElement {
     this.expandSteps = expand;
     this.setExpanded(expand);
     this.shadowRoot!.querySelectorAll<BuildPageStepEntryElement>(
-      'milo-bp-step-entry'
+      'milo-bp-step-entry',
     ).forEach((e) => e.toggleAllSteps(expand));
   }
 
@@ -111,8 +111,8 @@ export class BuildPageStepClusterElement extends MobxExtLitElement {
     this.addDisposer(
       reaction(
         () => this.store.userConfig.build.steps.elideSucceededSteps,
-        (elideSucceededSteps) => this.setExpanded(!elideSucceededSteps)
-      )
+        (elideSucceededSteps) => this.setExpanded(!elideSucceededSteps),
+      ),
     );
   }
 
@@ -144,7 +144,7 @@ export class BuildPageStepClusterElement extends MobxExtLitElement {
 
   private renderDuration() {
     const [compactDuration, compactDurationUnits] = displayCompactDuration(
-      this.duration
+      this.duration,
     );
 
     return html`
@@ -161,14 +161,14 @@ export class BuildPageStepClusterElement extends MobxExtLitElement {
                 targetRect: (e.target as HTMLElement).getBoundingClientRect(),
                 gapSize: 5,
               },
-            })
+            }),
           );
         }}
         @mouseout=${() => {
           window.dispatchEvent(
             new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
               detail: { delay: 50 },
-            })
+            }),
           );
         }}
       >
@@ -218,7 +218,7 @@ export class BuildPageStepClusterElement extends MobxExtLitElement {
             html`<milo-bp-step-entry
               .step=${step}
               .expanded=${this.expandSteps}
-            ></milo-bp-step-entry>`
+            ></milo-bp-step-entry>`,
         )}
       </div>
     `;

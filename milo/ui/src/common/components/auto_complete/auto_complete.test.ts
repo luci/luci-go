@@ -28,14 +28,14 @@ function simulateKeyStroke(target: EventTarget, code: string) {
       bubbles: true,
       composed: true,
       code,
-    } as KeyboardEventInit)
+    } as KeyboardEventInit),
   );
   target.dispatchEvent(
     new KeyboardEvent('keyup', {
       bubbles: true,
       composed: true,
       code,
-    } as KeyboardEventInit)
+    } as KeyboardEventInit),
   );
 }
 
@@ -125,7 +125,7 @@ describe('AuthComplete', () => {
       .reverse()
       .find((s) => !s.isHeader);
     expect(suggestionSpy.mock.lastCall?.[0]).toStrictEqual(
-      lastSelectableSuggestion
+      lastSelectableSuggestion,
     );
 
     const firstSelectableSuggestion = suggestions.find((s) => !s.isHeader);
@@ -135,7 +135,7 @@ describe('AuthComplete', () => {
     }
     simulateKeyStroke(inputEle, 'Enter');
     expect(suggestionSpy.mock.lastCall?.[0]).toStrictEqual(
-      firstSelectableSuggestion
+      firstSelectableSuggestion,
     );
 
     expect(completeSpy.mock.calls.length).toStrictEqual(0);

@@ -33,7 +33,7 @@ export function useTestMetadata(request: QueryTestMetadataRequest) {
         // is not found.
         return (
           res.testMetadata.find(
-            (m) => m.sourceRef.gitiles?.ref === MAIN_GIT_REF
+            (m) => m.sourceRef.gitiles?.ref === MAIN_GIT_REF,
           ) || res.testMetadata[0]
         );
       },

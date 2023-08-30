@@ -31,7 +31,7 @@ export interface TestIdLabelProps {
 
 function propertiesToDisplay(
   projectCfg: Project,
-  testMetadata: TestMetadata
+  testMetadata: TestMetadata,
 ): StringPair[] {
   const propertiesCfgs = projectCfg.metadataConfig?.testMetadataProperties;
   // Return empty if no test metadata properties or, test metadata properties schema or display config is unspecified.
@@ -44,7 +44,7 @@ function propertiesToDisplay(
   }
   // Find the right display rules to apply to the test metadata properties based on the schema name.
   const propertiesCfg = propertiesCfgs.find(
-    (t) => t.schema === testMetadata.propertiesSchema
+    (t) => t.schema === testMetadata.propertiesSchema,
   );
   if (!propertiesCfg) {
     return [];

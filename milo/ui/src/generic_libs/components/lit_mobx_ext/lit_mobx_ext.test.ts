@@ -39,7 +39,7 @@ describe('MobxLitExtElement', () => {
     }
 
     const testBaseElement = await fixture<TestBaseElement>(
-      html`<milo-test-base></milo-test-base>`
+      html`<milo-test-base></milo-test-base>`,
     );
 
     expect(records).toEqual([]);

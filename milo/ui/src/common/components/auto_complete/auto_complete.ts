@@ -118,8 +118,8 @@ export class AutoCompleteElement extends MobxExtLitElement {
           if (this.value !== '') {
             action(() => (this.showSuggestions = true))();
           }
-        }
-      )
+        },
+      ),
     );
 
     document.addEventListener('click', this.externalClickHandler);
@@ -163,7 +163,7 @@ export class AutoCompleteElement extends MobxExtLitElement {
         @mouseover=${() => (this.selectedIndex = suggestionIndex)}
         @click=${() => {
           this.onSuggestionSelected(
-            this.suggestions[this.selectedIndex] as SuggestionEntry
+            this.suggestions[this.selectedIndex] as SuggestionEntry,
           );
           this.focus();
         }}
@@ -223,7 +223,7 @@ export class AutoCompleteElement extends MobxExtLitElement {
               case 'Enter':
                 if (this.selectedIndex !== -1) {
                   this.onSuggestionSelected(
-                    this.suggestions[this.selectedIndex] as SuggestionEntry
+                    this.suggestions[this.selectedIndex] as SuggestionEntry,
                   );
                 } else {
                   if (this.value !== '' && !this.value.endsWith(' ')) {
@@ -250,7 +250,7 @@ export class AutoCompleteElement extends MobxExtLitElement {
         >
           <table id="dropdown">
             ${this.suggestions.map((suggestion, i) =>
-              this.renderSuggestion(suggestion, i)
+              this.renderSuggestion(suggestion, i),
             )}
           </table>
         </div>
@@ -272,7 +272,9 @@ export class AutoCompleteElement extends MobxExtLitElement {
       width: 100%;
       border: 1px solid var(--divider-color);
       border-radius: 0.25rem;
-      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+      transition:
+        border-color 0.15s ease-in-out,
+        box-shadow 0.15s ease-in-out;
     }
 
     :host > div:focus-within {

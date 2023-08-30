@@ -168,7 +168,7 @@ export const VerificationDetailsTable = ({
                 underline="always"
               >
                 {displayRerunStatus(
-                  details.suspectRerun.rerunResult.rerunStatus
+                  details.suspectRerun.rerunResult.rerunStatus,
                 )}
               </Link>
             )}
@@ -185,7 +185,7 @@ export const VerificationDetailsTable = ({
                 underline="always"
               >
                 {displayRerunStatus(
-                  details.parentRerun.rerunResult.rerunStatus
+                  details.parentRerun.rerunResult.rerunStatus,
                 )}
               </Link>
             )}

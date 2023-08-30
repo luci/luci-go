@@ -43,14 +43,14 @@ import {
 
 function retryWithoutComputedInvId(
   err: ErrorEvent,
-  ele: BuildLitEnvProviderElement
+  ele: BuildLitEnvProviderElement,
 ) {
   let recovered = false;
   if (err.error instanceof LoadTestVariantsError) {
     // Ignore request using the old invocation ID.
     if (
       !err.error.req.invocations.includes(
-        `invocations/${ele.store.buildPage.invocationId}`
+        `invocations/${ele.store.buildPage.invocationId}`,
       )
     ) {
       recovered = true;
@@ -142,7 +142,7 @@ export class BuildLitEnvProviderElement extends MobxExtLitElement {
     return (
       getBuildURLPath(
         this.store.buildPage.builderIdParam,
-        this.store.buildPage.buildNumOrIdParam
+        this.store.buildPage.buildNumOrIdParam,
       ) + '/test-results'
     );
   }
@@ -162,8 +162,8 @@ export class BuildLitEnvProviderElement extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['invState', invState]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
 
     this.addDisposer(
@@ -173,8 +173,8 @@ export class BuildLitEnvProviderElement extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['project', project]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
 
     this.addDisposer(
@@ -184,8 +184,8 @@ export class BuildLitEnvProviderElement extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['testTabUrl', testTabUrl]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
   }
 

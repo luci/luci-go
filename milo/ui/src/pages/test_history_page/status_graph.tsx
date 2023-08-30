@@ -78,7 +78,7 @@ export class TestHistoryStatusGraphElement extends MobxExtLitElement {
               />
               ${this.renderRow(vHash)}
             </g>
-          `
+          `,
         )}
       </svg>
     `;
@@ -121,7 +121,7 @@ export class TestHistoryStatusGraphElement extends MobxExtLitElement {
     };
     const totalCount = Object.values(counts).reduce(
       (sum, count) => sum + count,
-      0
+      0,
     );
 
     if (totalCount === 0) {
@@ -168,7 +168,7 @@ Click to view test details.</title>`;
 
     const nonEmptyStatusCount = STATUS_ORDER.reduce(
       (c, status) => (counts[status] ? c + 1 : c),
-      0
+      0,
     );
 
     return svg`

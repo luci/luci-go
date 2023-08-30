@@ -90,7 +90,7 @@ export class InvocationDetailsTabElement extends MobxExtLitElement {
               this.store.services.resultDb
                 ?.getInvocation(
                   { name: delayedInvs.pop()! },
-                  { skipUpdate: true }
+                  { skipUpdate: true },
                 )
                 .then(invocationReceivedCallback)
                 .catch((e) => {
@@ -112,7 +112,7 @@ export class InvocationDetailsTabElement extends MobxExtLitElement {
           // TODO(mwarton): display the error to the user.
           logging.error(e);
         }
-      })
+      }),
     );
   }
 
@@ -139,7 +139,7 @@ export class InvocationDetailsTabElement extends MobxExtLitElement {
     const syncWidth = () => {
       this.graphWidth = Math.max(
         window.innerWidth - 2 * MARGIN,
-        MIN_GRAPH_WIDTH
+        MIN_GRAPH_WIDTH,
       );
     };
     window.addEventListener('resize', syncWidth);
@@ -186,7 +186,7 @@ export class InvocationDetailsTabElement extends MobxExtLitElement {
                 <td>${tag.key}:</td>
                 <td>${tag.value}</td>
               </tr>
-            `
+            `,
           )}
         </table>
       </div>

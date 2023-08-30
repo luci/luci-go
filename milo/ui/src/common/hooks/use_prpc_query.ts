@@ -30,7 +30,7 @@ import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
 
 export type PrpcMethod<Req, Ret> = (
   req: Req,
-  opt?: CacheOption
+  opt?: CacheOption,
 ) => Promise<Ret>;
 
 export type PrpcServiceMethodKeys<S> = keyof {
@@ -75,7 +75,7 @@ export function usePrpcQuery<
   S extends object,
   MK extends PrpcServiceMethodKeys<S>,
   TError = unknown,
-  TData = PrpcMethodResponse<S[MK]>
+  TData = PrpcMethodResponse<S[MK]>,
 >(
   opts: UsePrpcQueryOptions<
     S,
@@ -84,7 +84,7 @@ export function usePrpcQuery<
     PrpcMethodResponse<S[MK]>,
     TError,
     TData
-  >
+  >,
 ): UseQueryResult<TData, TError> {
   const { host, insecure, Service, method, request, options } = opts;
 
@@ -111,7 +111,7 @@ export function usePrpcQuery<
     ],
     queryFn: async () => {
       const service = new Service(
-        new PrpcClientExt({ host, insecure }, getAccessToken)
+        new PrpcClientExt({ host, insecure }, getAccessToken),
       );
       // `method` is constrained to be a key that has an associated property of
       // type `PrpcMethod` in a `Service`. Therefore `service[method]` is
@@ -128,7 +128,7 @@ export function usePrpcQuery<
         {
           acceptCache: false,
           skipUpdate: true,
-        }
+        },
       );
     },
     ...options,
@@ -137,7 +137,7 @@ export function usePrpcQuery<
 
 export type PaginatedPrpcMethod<
   Req extends { pageToken?: string },
-  Ret extends { nextPageToken?: string }
+  Ret extends { nextPageToken?: string },
 > = PrpcMethod<Req, Ret>;
 
 export type PrpcServicePaginatedMethodKeys<S> = keyof {
@@ -203,7 +203,7 @@ export function useInfinitePrpcQuery<
   S extends object,
   MK extends PrpcServicePaginatedMethodKeys<S>,
   TError = unknown,
-  TData = PaginatedPrpcMethodResponse<S[MK]>
+  TData = PaginatedPrpcMethodResponse<S[MK]>,
 >(
   opts: UseInfinitePrpcQueryOptions<
     S,
@@ -212,7 +212,7 @@ export function useInfinitePrpcQuery<
     PaginatedPrpcMethodResponse<S[MK]>,
     TError,
     TData
-  >
+  >,
 ): UseInfiniteQueryResult<TData, TError> {
   const { host, insecure, Service, method, request, options } = opts;
 
@@ -239,7 +239,7 @@ export function useInfinitePrpcQuery<
     ],
     queryFn: async ({ pageParam }) => {
       const service = new Service(
-        new PrpcClientExt({ host, insecure }, getAccessToken)
+        new PrpcClientExt({ host, insecure }, getAccessToken),
       );
       // `method` is constrained to be a key that has an associated property of
       // type `PaginatedPrpcMethod` in a `Service`. Therefore `service[method]`
@@ -256,7 +256,7 @@ export function useInfinitePrpcQuery<
         {
           acceptCache: false,
           skipUpdate: true,
-        }
+        },
       );
     },
     getNextPageParam: (lastRes) => lastRes.nextPageToken,

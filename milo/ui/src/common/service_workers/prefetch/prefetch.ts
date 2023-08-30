@@ -70,12 +70,12 @@ export class Prefetcher {
       info: Parameters<typeof fetch>[0],
       init: Parameters<typeof fetch>[1],
       _cacheKey: unknown,
-      _expiresIn: number
+      _expiresIn: number,
     ) => this.fetchImpl(info, init),
     {
       key: (_info, _init, cacheKey) => cacheKey,
       expire: ([, , , expiresIn]) => timeout(expiresIn),
-    }
+    },
   );
 
   private readonly prefetchBuildsService: BuildsService;
@@ -83,7 +83,7 @@ export class Prefetcher {
 
   constructor(
     private readonly configs: typeof SETTINGS,
-    private readonly fetchImpl: typeof fetch
+    private readonly fetchImpl: typeof fetch,
   ) {
     this.cachedUrls = [
       this.authStateUrl,
@@ -93,10 +93,10 @@ export class Prefetcher {
       `https://${this.configs.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
     ];
     this.prefetchBuildsService = new BuildsService(
-      this.makePrpcClient(this.configs.buildbucket.host)
+      this.makePrpcClient(this.configs.buildbucket.host),
     );
     this.prefetchResultDBService = new ResultDb(
-      this.makePrpcClient(this.configs.resultdb.host)
+      this.makePrpcClient(this.configs.resultdb.host),
     );
   }
 
@@ -111,7 +111,7 @@ export class Prefetcher {
             req,
             undefined,
             await genCacheKeyForPrpcRequest(PRPC_CACHE_KEY_PREFIX, req.clone()),
-            CACHE_DURATION // See the documentation for CACHE_DURATION.
+            CACHE_DURATION, // See the documentation for CACHE_DURATION.
           );
 
           // Abort the function to prevent the response from being consumed.
@@ -119,7 +119,7 @@ export class Prefetcher {
         },
       },
 
-      () => getAuthStateCacheSync()?.accessToken || ''
+      () => getAuthStateCacheSync()?.accessToken || '',
     );
   }
 
@@ -139,8 +139,8 @@ export class Prefetcher {
         info,
         init,
         AUTH_STATE_CACHE_KEY,
-        CACHE_DURATION
-      ).then((res) => res.clone())
+        CACHE_DURATION,
+      ).then((res) => res.clone()),
     ).then(setAuthStateCache);
     if (!authState) {
       await queryAuthStatePromise;
@@ -160,7 +160,7 @@ export class Prefetcher {
     let invName: string | null = null;
 
     let match = pathname.match(
-      /^\/ui\/p\/([^/]+)\/builders\/([^/]+)\/([^/]+)\/(b?\d+)\/?/i
+      /^\/ui\/p\/([^/]+)\/builders\/([^/]+)\/([^/]+)\/(b?\d+)\/?/i,
     );
     if (match) {
       const [project, bucket, builder, buildIdOrNum] = match
@@ -210,7 +210,7 @@ export class Prefetcher {
       this.prefetchResultDBService
         .queryTestVariants(
           { invocations: [invName], resultLimit: RESULT_LIMIT },
-          CACHE_OPTION
+          CACHE_OPTION,
         )
         .catch((_e) => {
           // Ignore any error, let the consumer of the cache deal with it.
@@ -224,7 +224,7 @@ export class Prefetcher {
    */
   private async prefetchArtifactPageResources(pathname: string) {
     const match = pathname.match(
-      /^\/ui\/artifact\/(?:[^/]+)\/invocations\/([^/]+)(?:\/tests\/([^/]+)\/results\/([^/]+))?\/artifacts\/([^/]+)\/?/i
+      /^\/ui\/artifact\/(?:[^/]+)\/invocations\/([^/]+)(?:\/tests\/([^/]+)\/results\/([^/]+))?\/artifacts\/([^/]+)\/?/i,
     );
     if (!match) {
       return;
@@ -247,7 +247,7 @@ export class Prefetcher {
             artifactId: artifactId!,
           }),
         },
-        CACHE_OPTION
+        CACHE_OPTION,
       )
       .catch((_e) => {
         // Ignore any error, let the consumer of the cache deal with it.
@@ -272,7 +272,7 @@ export class Prefetcher {
             ? AUTH_STATE_CACHE_KEY
             : await genCacheKeyForPrpcRequest(
                 PRPC_CACHE_KEY_PREFIX,
-                e.request.clone()
+                e.request.clone(),
               );
 
         const res = await this.cachedFetch(
@@ -281,10 +281,10 @@ export class Prefetcher {
           e.request,
           undefined,
           cacheKey,
-          0
+          0,
         );
         return res;
-      })()
+      })(),
     );
 
     return true;

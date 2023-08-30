@@ -52,7 +52,10 @@ import { VariantGroup } from '@/pages/test_results_tab/test_variants_table/test_
 export class QueryInvocationError extends Error implements InnerTag {
   readonly [TAG_SOURCE]: Error;
 
-  constructor(readonly invId: string, readonly source: Error) {
+  constructor(
+    readonly invId: string,
+    readonly source: Error,
+  ) {
     super(source.message);
     this[TAG_SOURCE] = source;
   }
@@ -72,7 +75,7 @@ export const InvocationState = types
     // Use getters instead of plain values so the values can be derived from
     // the parent node (or whoever set the dependencies).
     invocationIdGetter: () => null as string | null,
-    presentationConfigGetter: () => ({} as TestPresentationConfig),
+    presentationConfigGetter: () => ({}) as TestPresentationConfig,
     warningGetter: () => '' as string,
 
     searchFilter: ((_v: TestVariant) => true) as TestVariantFilter,
@@ -91,35 +94,35 @@ export const InvocationState = types
   .views((self) => {
     const defaultColumnKeys = computed(
       () => self.presentationConfig.column_keys || [],
-      { equals: comparer.shallow }
+      { equals: comparer.shallow },
     );
     const columnKeys = computed(
       () => self.customColumnKeys || defaultColumnKeys.get(),
-      { equals: comparer.shallow }
+      { equals: comparer.shallow },
     );
     const defaultSortingKeys = computed(
       () => ['status', ...defaultColumnKeys.get(), 'name'],
       {
         equals: comparer.shallow,
-      }
+      },
     );
     const sortingKeys = computed(
       () => self.customSortingKeys || defaultSortingKeys.get(),
       {
         equals: comparer.shallow,
-      }
+      },
     );
     const defaultGroupingKeys = computed(
       () => self.presentationConfig.grouping_keys || ['status'],
       {
         equals: comparer.shallow,
-      }
+      },
     );
     const groupingKeys = computed(
       () => self.customGroupingKeys || defaultGroupingKeys.get(),
       {
         equals: comparer.shallow,
-      }
+      },
     );
 
     return {
@@ -146,12 +149,12 @@ export const InvocationState = types
       },
       get columnWidths() {
         return this.columnKeys.map(
-          (col) => self.customColumnWidths[col] ?? 100
+          (col) => self.customColumnWidths[col] ?? 100,
         );
       },
       get groupers() {
         return this.groupingKeys.map(
-          (key) => [key, createTVPropGetter(key)] as const
+          (key) => [key, createTVPropGetter(key)] as const,
         );
       },
       get invocationName() {
@@ -177,7 +180,7 @@ export const InvocationState = types
           .getInvocation({ name: self.invocationName })
           .catch((e) => {
             throw new QueryInvocationError(invId, e);
-          })
+          }),
       );
     });
 
@@ -187,7 +190,7 @@ export const InvocationState = types
       }
       return new TestLoader(
         { invocations: [self.invocationName], resultLimit: RESULT_LIMIT },
-        self.services.resultDb
+        self.services.resultDb,
       );
     });
 
@@ -219,7 +222,7 @@ export const InvocationState = types
         ret.push(
           ...this.testLoader.groupedNonExpectedVariants.map((group) => ({
             def: self.groupers.map(
-              ([key, getter]) => [key, getter(group[0])] as [string, unknown]
+              ([key, getter]) => [key, getter(group[0])] as [string, unknown],
             ),
             variants: group,
           })),
@@ -231,7 +234,7 @@ export const InvocationState = types
               : html`<b
                   >note: custom grouping doesn't apply to expected tests</b
                 >`,
-          }
+          },
         );
         return ret;
       },
@@ -265,7 +268,7 @@ export const InvocationState = types
           | 'presentationConfigGetter'
           | 'warningGetter'
         >
-      >
+      >,
     ) {
       Object.assign<typeof self, Partial<typeof self>>(self, deps);
     },
@@ -303,7 +306,7 @@ export const InvocationState = types
             // TODO(weiweilin): display the error to the user.
             logging.error(e);
           }
-        })
+        }),
       );
 
       addDisposer(
@@ -315,7 +318,7 @@ export const InvocationState = types
           self.testLoader.filter = self.searchFilter;
           self.testLoader.groupers = self.groupers;
           self.testLoader.cmpFn = createTVCmpFn(self.sortingKeys);
-        })
+        }),
       );
     },
   }));
@@ -328,7 +331,7 @@ export const [provideInvocationState, consumeInvocationState] =
   createContextLink<InvocationStateInstance>();
 
 export const InvocationContext = createContext<InvocationStateInstance | null>(
-  null
+  null,
 );
 export const InvocationProvider = InvocationContext.Provider;
 

@@ -100,13 +100,13 @@ describe('BuildPage', () => {
           bucket: 'wrong_bucket',
           builder: 'wrong_builder',
         },
-        'b123'
+        'b123',
       );
 
       const getBuildStub = jest.spyOn(store.services.builds!, 'getBuild');
       const batchCheckPermissionsStub = jest.spyOn(
         store.services.milo!,
-        'batchCheckPermissions'
+        'batchCheckPermissions',
       );
 
       const builderId = {
@@ -126,13 +126,13 @@ describe('BuildPage', () => {
         autorun(() => {
           store.buildPage.build;
           store.buildPage.canRetry;
-        })
+        }),
       );
       await jest.runAllTimersAsync();
 
       expect(getBuildStub.mock.calls[0][0].builder).toBeUndefined();
       expect(batchCheckPermissionsStub.mock.calls[0][0].realm).toStrictEqual(
-        `${builderId.project}:${builderId.bucket}`
+        `${builderId.project}:${builderId.bucket}`,
       );
     });
   });

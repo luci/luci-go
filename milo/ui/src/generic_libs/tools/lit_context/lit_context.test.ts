@@ -103,8 +103,8 @@ class OuterContextProvider extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['outerProviderKey', outerProviderKey]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
     this.addDisposer(
       reaction(
@@ -113,8 +113,8 @@ class OuterContextProvider extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['ignoredProviderKey', ignoredProviderKey]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
     this.addDisposer(
       reaction(
@@ -123,8 +123,8 @@ class OuterContextProvider extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['providerKey', providerKey]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
     this.addDisposer(
       reaction(
@@ -133,8 +133,8 @@ class OuterContextProvider extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['outerUnobservedKey', outerUnobservedKey]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
     this.addDisposer(
       reaction(
@@ -143,8 +143,8 @@ class OuterContextProvider extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['unprovidedKey', unprovidedKey]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
     this.addDisposer(
       reaction(
@@ -152,11 +152,11 @@ class OuterContextProvider extends MobxExtLitElement {
         (consumerOptionalPropKey) => {
           // Emulate @property() update.
           this.updated(
-            new Map([['consumerOptionalPropKey', consumerOptionalPropKey]])
+            new Map([['consumerOptionalPropKey', consumerOptionalPropKey]]),
           );
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
   }
 }
@@ -183,8 +183,8 @@ class InnerContextProvider extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['providerKey', providerKey]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
   }
 }
@@ -211,8 +211,8 @@ class GlobalContextProvider extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['providerKey', providerKey]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
   }
 }
@@ -289,8 +289,8 @@ class ContextConsumer extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['selfProvided', selfProvided]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
     this.addDisposer(
       reaction(
@@ -299,8 +299,8 @@ class ContextConsumer extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['selfProvided2', selfProvided2]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
   }
 }
@@ -331,7 +331,7 @@ describe('context', () => {
     `);
 
     const innerProvider = outerProvider.querySelector(
-      'milo-inner-context-provider-test'
+      'milo-inner-context-provider-test',
     )!.shadowRoot!.host as InnerContextProvider;
     const outerConsumer = outerProvider.querySelector('#outer-consumer')!
       .shadowRoot!.host as ContextConsumer;
@@ -339,16 +339,16 @@ describe('context', () => {
       .shadowRoot!.host as ContextConsumer;
 
     expect(outerConsumer.outerProviderInactiveKey).toStrictEqual(
-      'outer_provider-outer_provider_inactive-val0'
+      'outer_provider-outer_provider_inactive-val0',
     );
     expect(outerConsumer.outerProviderKey).toStrictEqual(
-      'outer_provider-outer_provider-val0'
+      'outer_provider-outer_provider-val0',
     );
     expect(outerConsumer.providerKey).toStrictEqual(
-      'outer_provider-provider-val0'
+      'outer_provider-provider-val0',
     );
     expect(outerConsumer.providerKeyWithAnotherName).toStrictEqual(
-      'outer_provider-provider-val0'
+      'outer_provider-provider-val0',
     );
     expect(outerConsumer.outerUnobservedKey).toStrictEqual('local-unobserved');
     expect(outerConsumer.unprovidedKey).toStrictEqual('local-unprovided');
@@ -356,16 +356,16 @@ describe('context', () => {
     expect(outerConsumer.setterCallCount).toStrictEqual(1);
 
     expect(innerConsumer.outerProviderInactiveKey).toStrictEqual(
-      'outer_provider-outer_provider_inactive-val0'
+      'outer_provider-outer_provider_inactive-val0',
     );
     expect(innerConsumer.outerProviderKey).toStrictEqual(
-      'outer_provider-outer_provider-val0'
+      'outer_provider-outer_provider-val0',
     );
     expect(innerConsumer.providerKey).toStrictEqual(
-      'inner_provider-provider-val0'
+      'inner_provider-provider-val0',
     );
     expect(innerConsumer.providerKeyWithAnotherName).toStrictEqual(
-      'inner_provider-provider-val0'
+      'inner_provider-provider-val0',
     );
     expect(innerConsumer.outerUnobservedKey).toStrictEqual('local-unobserved');
     expect(innerConsumer.unprovidedKey).toStrictEqual('local-unprovided');
@@ -382,16 +382,16 @@ describe('context', () => {
 
     // outerConsumer updated.
     expect(outerConsumer.outerProviderInactiveKey).toStrictEqual(
-      'outer_provider-outer_provider_inactive-val0'
+      'outer_provider-outer_provider_inactive-val0',
     );
     expect(outerConsumer.outerProviderKey).toStrictEqual(
-      'outer_provider-outer_provider-val1'
+      'outer_provider-outer_provider-val1',
     );
     expect(outerConsumer.providerKey).toStrictEqual(
-      'outer_provider-provider-val1'
+      'outer_provider-provider-val1',
     );
     expect(outerConsumer.providerKeyWithAnotherName).toStrictEqual(
-      'outer_provider-provider-val1'
+      'outer_provider-provider-val1',
     );
     expect(outerConsumer.outerUnobservedKey).toStrictEqual('local-unobserved');
     expect(outerConsumer.unprovidedKey).toStrictEqual('local-unprovided');
@@ -399,16 +399,16 @@ describe('context', () => {
 
     // innerConsumer.providerKey unchanged, other properties updated.
     expect(innerConsumer.outerProviderInactiveKey).toStrictEqual(
-      'outer_provider-outer_provider_inactive-val0'
+      'outer_provider-outer_provider_inactive-val0',
     );
     expect(innerConsumer.outerProviderKey).toStrictEqual(
-      'outer_provider-outer_provider-val1'
+      'outer_provider-outer_provider-val1',
     );
     expect(innerConsumer.providerKey).toStrictEqual(
-      'inner_provider-provider-val0'
+      'inner_provider-provider-val0',
     );
     expect(innerConsumer.providerKeyWithAnotherName).toStrictEqual(
-      'inner_provider-provider-val0'
+      'inner_provider-provider-val0',
     );
     expect(innerConsumer.unprovidedKey).toStrictEqual('local-unprovided');
     expect(innerConsumer.outerUnobservedKey).toStrictEqual('local-unobserved');
@@ -420,16 +420,16 @@ describe('context', () => {
 
     // outerConsumer unchanged.
     expect(outerConsumer.outerProviderInactiveKey).toStrictEqual(
-      'outer_provider-outer_provider_inactive-val0'
+      'outer_provider-outer_provider_inactive-val0',
     );
     expect(outerConsumer.outerProviderKey).toStrictEqual(
-      'outer_provider-outer_provider-val1'
+      'outer_provider-outer_provider-val1',
     );
     expect(outerConsumer.providerKey).toStrictEqual(
-      'outer_provider-provider-val1'
+      'outer_provider-provider-val1',
     );
     expect(outerConsumer.providerKeyWithAnotherName).toStrictEqual(
-      'outer_provider-provider-val1'
+      'outer_provider-provider-val1',
     );
     expect(outerConsumer.outerUnobservedKey).toStrictEqual('local-unobserved');
     expect(outerConsumer.unprovidedKey).toStrictEqual('local-unprovided');
@@ -437,16 +437,16 @@ describe('context', () => {
 
     // innerConsumer.providerKey updated, other properties unchanged.
     expect(innerConsumer.outerProviderInactiveKey).toStrictEqual(
-      'outer_provider-outer_provider_inactive-val0'
+      'outer_provider-outer_provider_inactive-val0',
     );
     expect(innerConsumer.outerProviderKey).toStrictEqual(
-      'outer_provider-outer_provider-val1'
+      'outer_provider-outer_provider-val1',
     );
     expect(innerConsumer.providerKey).toStrictEqual(
-      'inner_provider-provider-val1'
+      'inner_provider-provider-val1',
     );
     expect(innerConsumer.providerKeyWithAnotherName).toStrictEqual(
-      'inner_provider-provider-val1'
+      'inner_provider-provider-val1',
     );
     expect(innerConsumer.outerUnobservedKey).toStrictEqual('local-unobserved');
     expect(innerConsumer.unprovidedKey).toStrictEqual('local-unprovided');
@@ -462,7 +462,7 @@ describe('context', () => {
       </div>
     `);
     const globalProvider = rootEle.querySelector(
-      'milo-global-context-provider-test'
+      'milo-global-context-provider-test',
     )!.shadowRoot!.host as GlobalContextProvider;
     const consumer = rootEle
       .querySelector('milo-context-consumer-wrapper-test')!
@@ -489,7 +489,7 @@ describe('context', () => {
       </div>
     `);
     const globalProvider = rootEle.querySelector(
-      'milo-global-context-provider-test'
+      'milo-global-context-provider-test',
     )!.shadowRoot!.host as GlobalContextProvider;
     const consumer = rootEle
       .querySelector('milo-context-consumer-wrapper-test')!

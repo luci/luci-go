@@ -92,7 +92,7 @@ export function FakeContextProvider({
         ],
       },
     ],
-    routerOptions
+    routerOptions,
   );
 
   return (

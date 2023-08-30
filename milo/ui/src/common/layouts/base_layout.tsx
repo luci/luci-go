@@ -43,7 +43,7 @@ export const SIDE_BAR_OPEN_CACHE_KEY = 'side-bar-open';
 
 export const BaseLayout = () => {
   const [sidebarOpen = true, setSidebarOpen] = useLocalStorage<boolean>(
-    SIDE_BAR_OPEN_CACHE_KEY
+    SIDE_BAR_OPEN_CACHE_KEY,
   );
 
   return (

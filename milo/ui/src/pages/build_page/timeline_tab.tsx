@@ -125,7 +125,7 @@ export class TimelineTabElement extends MobxExtLitElement {
     const syncWidth = () => {
       this.totalWidth = Math.max(
         window.innerWidth - 2 * MARGIN,
-        MIN_GRAPH_WIDTH
+        MIN_GRAPH_WIDTH,
       );
       this.bodyWidth = this.totalWidth - SIDE_PANEL_WIDTH;
     };
@@ -181,7 +181,7 @@ export class TimelineTabElement extends MobxExtLitElement {
       (this.bodyWidth / V_GRID_LINE_MAX_GAP);
 
     this.timeInterval = timeMillisecond.every(
-      roundDown(maxInterval, PREDEFINED_TIME_INTERVALS)
+      roundDown(maxInterval, PREDEFINED_TIME_INTERVALS),
     )!;
 
     // Render each component.
@@ -206,14 +206,14 @@ export class TimelineTabElement extends MobxExtLitElement {
       .attr('y', TOP_AXIS_HEIGHT - TEXT_MARGIN / 2)
       .attr('font-weight', '500')
       .text(
-        'Build Start Time: ' + build.startTime!.toFormat(NUMERIC_TIME_FORMAT)
+        'Build Start Time: ' + build.startTime!.toFormat(NUMERIC_TIME_FORMAT),
       );
 
     const headerRootGroup = svg
       .append('g')
       .attr(
         'transform',
-        `translate(${SIDE_PANEL_WIDTH}, ${TOP_AXIS_HEIGHT - HALF_BORDER_SIZE})`
+        `translate(${SIDE_PANEL_WIDTH}, ${TOP_AXIS_HEIGHT - HALF_BORDER_SIZE})`,
       );
     const topAxis = axisTop(this.scaleTime).ticks(this.timeInterval);
     headerRootGroup.call(topAxis);
@@ -354,7 +354,7 @@ export class TimelineTabElement extends MobxExtLitElement {
 
     for (const [i, step] of enumerate(build.steps)) {
       const start = this.scaleTime(
-        step.startTime?.toMillis() || this.nowTimestamp
+        step.startTime?.toMillis() || this.nowTimestamp,
       );
       const end = this.scaleTime(step.endTime?.toMillis() || this.nowTimestamp);
 
@@ -381,7 +381,7 @@ export class TimelineTabElement extends MobxExtLitElement {
         .attr('text-anchor', isWide || !nearEnd ? 'start' : 'end')
         .attr(
           'x',
-          isWide ? TEXT_MARGIN : nearEnd ? -TEXT_MARGIN : width + TEXT_MARGIN
+          isWide ? TEXT_MARGIN : nearEnd ? -TEXT_MARGIN : width + TEXT_MARGIN,
         )
         .attr('y', STEP_TEXT_OFFSET)
         .text(step.listNumber + ' ' + step.selfName);
@@ -443,7 +443,7 @@ export class TimelineTabElement extends MobxExtLitElement {
       const duration = time.diff(build.startTime!);
       this.relativeTimeText.attr('x', x);
       this.relativeTimeText.text(
-        displayDuration(duration) + ' since build start'
+        displayDuration(duration) + ' since build start',
       );
     });
 
@@ -461,7 +461,7 @@ export class TimelineTabElement extends MobxExtLitElement {
    */
   private installStepInteractionHandlers<T extends BaseType>(
     ele: Selection<T, unknown, null, undefined>,
-    step: StepExt
+    step: StepExt,
   ) {
     const logUrl = step.logs[0]?.viewUrl;
     if (logUrl) {
@@ -492,8 +492,8 @@ export class TimelineTabElement extends MobxExtLitElement {
                   ${(step.startTime || this.now).toFormat(NUMERIC_TIME_FORMAT)}
                   (after ${displayDuration(
                     (step.startTime || this.now).diff(
-                      this.store.buildPage.build!.startTime!
-                    )
+                      this.store.buildPage.build!.startTime!,
+                    ),
                   )})
                 </td>
               </tr>
@@ -504,8 +504,8 @@ export class TimelineTabElement extends MobxExtLitElement {
                     ? step.endTime.toFormat(NUMERIC_TIME_FORMAT) +
                       ` (after ${displayDuration(
                         step.endTime.diff(
-                          this.store.buildPage.build!.startTime!
-                        )
+                          this.store.buildPage.build!.startTime!,
+                        ),
                       )})`
                     : 'N/A'
                 }</td>
@@ -516,7 +516,7 @@ export class TimelineTabElement extends MobxExtLitElement {
               </tr>
             </div>
           `,
-          tooltip
+          tooltip,
         );
 
         window.dispatchEvent(
@@ -526,14 +526,14 @@ export class TimelineTabElement extends MobxExtLitElement {
               targetRect: (e.target as HTMLElement).getBoundingClientRect(),
               gapSize: 5,
             },
-          })
+          }),
         );
       })
       .on('mouseout', () => {
         window.dispatchEvent(
           new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
             detail: { delay: 0 },
-          })
+          }),
         );
       });
   }

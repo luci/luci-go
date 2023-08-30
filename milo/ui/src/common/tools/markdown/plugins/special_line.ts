@@ -151,7 +151,7 @@ const processorMap = new Map<MarkdownIt, SpecialLineRulesProcessor>();
 export function specialLine(
   md: MarkdownIt,
   rePrefix: RegExp,
-  transformFn: TransformFn
+  transformFn: TransformFn,
 ) {
   let processor = processorMap.get(md);
 

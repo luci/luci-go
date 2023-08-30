@@ -45,7 +45,7 @@ export class StepsTabElement extends MobxExtLitElement {
   private toggleAllSteps(expand: boolean) {
     this.allStepsWereExpanded = expand;
     this.shadowRoot!.querySelector<BuildPageStepListElement>(
-      'milo-bp-step-list'
+      'milo-bp-step-list',
     )!.toggleAllSteps(expand);
   }
   private readonly toggleAllStepsByHotkey = () =>

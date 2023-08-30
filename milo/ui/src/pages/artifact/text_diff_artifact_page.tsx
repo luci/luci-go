@@ -59,7 +59,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
     return fromPromise(
       this.store.services.resultDb.getArtifact({
         name: constructArtifactName(this.artifactIdent),
-      })
+      }),
     );
   }
   @computed private get artifact() {
@@ -77,9 +77,9 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
         urlSetSearchQueryParam(
           this.artifact.fetchUrl,
           'n',
-          ARTIFACT_LENGTH_LIMIT
-        )
-      ).then((res) => res.text())
+          ARTIFACT_LENGTH_LIMIT,
+        ),
+      ).then((res) => res.text()),
     );
   }
   @computed private get content() {
@@ -114,7 +114,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
           Diff2Html.html(this.content || '', {
             drawFileList: false,
             outputFormat: 'side-by-side',
-          })
+          }),
         )}
       </div>
     `;

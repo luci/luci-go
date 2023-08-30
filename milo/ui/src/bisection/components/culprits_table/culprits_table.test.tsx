@@ -83,13 +83,13 @@ describe('Test CulpritsTable component', () => {
 
     // Check there is no misleading message about culprit actions
     expect(
-      screen.queryByText(new RegExp('no actions', 'i'))
+      screen.queryByText(new RegExp('no actions', 'i')),
     ).not.toBeInTheDocument();
 
     // Check the description and bug link are displayed
     const bugActionLabel = screen.getByText(
       'A comment was added on a related bug:',
-      { exact: false }
+      { exact: false },
     );
     expect(bugActionLabel).toBeInTheDocument();
     const bugActionLink = bugActionLabel.firstElementChild;
@@ -100,14 +100,14 @@ describe('Test CulpritsTable component', () => {
     // Check the description and revert CL link are displayed
     const revertActionLabel = screen.getByText(
       'This culprit has been auto-reverted:',
-      { exact: false }
+      { exact: false },
     );
     expect(revertActionLabel).toBeInTheDocument();
     const revertActionLink = revertActionLabel.firstElementChild;
     expect(revertActionLink).toBeInTheDocument();
     expect(revertActionLink?.textContent).toBe('revert CL');
     expect(revertActionLink?.getAttribute('href')).toBe(
-      autoRevertAction.revertClUrl
+      autoRevertAction.revertClUrl,
     );
   });
 
@@ -142,11 +142,11 @@ describe('Test CulpritsTable component', () => {
     // Check the description and inaction reason are displayed
     const inactionLabel = screen.getByText(
       'No actions have been performed by LUCI Bisection for this culprit',
-      { exact: false }
+      { exact: false },
     );
     expect(inactionLabel).toBeInTheDocument();
     expect(inactionLabel.textContent).toMatch(
-      'it has been reverted as the culprit of another LUCI Bisection analysis'
+      'it has been reverted as the culprit of another LUCI Bisection analysis',
     );
     const inactionRevertLink = inactionLabel.firstElementChild;
     expect(inactionRevertLink).toBeInTheDocument();
@@ -182,7 +182,7 @@ describe('Test CulpritsTable component', () => {
     // Check the description and inaction reason are displayed
     const inactionLabel = screen.getByText(
       'No actions have been performed by LUCI Bisection for this culprit.',
-      { exact: true }
+      { exact: true },
     );
     expect(inactionLabel).toBeInTheDocument();
   });

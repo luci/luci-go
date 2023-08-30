@@ -38,7 +38,7 @@ describe('Test SearchAnalysisTable component', () => {
     render(
       <FakeContextProvider>
         <SearchAnalysisTable bbid="123" />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
 
     await screen.findByTestId('search-analysis-table');
@@ -58,7 +58,7 @@ describe('Test SearchAnalysisTable component', () => {
     render(
       <FakeContextProvider>
         <SearchAnalysisTable bbid="124" />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
 
     await screen.findByTestId('search-analysis-table');
@@ -81,14 +81,14 @@ describe('Test SearchAnalysisTable component', () => {
     render(
       <FakeContextProvider>
         <SearchAnalysisTable bbid="123" />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
 
     await screen.findByTestId('search-analysis-table');
 
     expect(screen.queryAllByRole('link')).toHaveLength(0);
     expect(
-      screen.getByText('No analysis found for build 123')
+      screen.getByText('No analysis found for build 123'),
     ).toBeInTheDocument();
   });
 
@@ -98,7 +98,7 @@ describe('Test SearchAnalysisTable component', () => {
     render(
       <FakeContextProvider>
         <SearchAnalysisTable bbid="123" />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
 
     await screen.findByTestId('search-analysis-table');

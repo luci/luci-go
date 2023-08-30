@@ -88,7 +88,7 @@ export class SearchPageElement extends MobxLitElement {
     this.root.render(
       <CacheProvider value={this.cache}>
         <BuildbucketLogLink log={this.log} />
-      </CacheProvider>
+      </CacheProvider>,
     );
     return this.parent;
   }

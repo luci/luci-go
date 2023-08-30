@@ -306,7 +306,7 @@ export class ResultDb {
   private readonly cachedCallFn: (
     opt: CacheOption,
     method: string,
-    message: object
+    message: object,
   ) => Promise<unknown>;
 
   constructor(client: PrpcClientExt) {
@@ -315,40 +315,40 @@ export class ResultDb {
         client.call(ResultDb.SERVICE, method, message),
       {
         key: (method, message) => `${method}-${stableStringify(message)}`,
-      }
+      },
     );
   }
 
   async getInvocation(
     req: GetInvocationRequest,
-    cacheOpt: CacheOption = {}
+    cacheOpt: CacheOption = {},
   ): Promise<Invocation> {
     return (await this.cachedCallFn(
       cacheOpt,
       'GetInvocation',
-      req
+      req,
     )) as Invocation;
   }
 
   async queryTestResults(
     req: QueryTestResultsRequest,
-    cacheOpt: CacheOption = {}
+    cacheOpt: CacheOption = {},
   ) {
     return (await this.cachedCallFn(
       cacheOpt,
       'QueryTestResults',
-      req
+      req,
     )) as QueryTestResultsResponse;
   }
 
   async queryTestExonerations(
     req: QueryTestExonerationsRequest,
-    cacheOpt: CacheOption = {}
+    cacheOpt: CacheOption = {},
   ) {
     return (await this.cachedCallFn(
       cacheOpt,
       'QueryTestExonerations',
-      req
+      req,
     )) as QueryTestExonerationsResponse;
   }
 
@@ -356,7 +356,7 @@ export class ResultDb {
     return (await this.cachedCallFn(
       cacheOpt,
       'ListArtifacts',
-      req
+      req,
     )) as ListArtifactsResponse;
   }
 
@@ -364,7 +364,7 @@ export class ResultDb {
     return (await this.cachedCallFn(
       cacheOpt,
       'QueryArtifacts',
-      req
+      req,
     )) as QueryArtifactsResponse;
   }
 
@@ -374,34 +374,34 @@ export class ResultDb {
 
   async queryTestVariants(
     req: QueryTestVariantsRequest,
-    cacheOpt: CacheOption = {}
+    cacheOpt: CacheOption = {},
   ) {
     return (await this.cachedCallFn(
       cacheOpt,
       'QueryTestVariants',
-      req
+      req,
     )) as QueryTestVariantsResponse;
   }
 
   async batchGetTestVariants(
     req: BatchGetTestVariantsRequest,
-    cacheOpt: CacheOption = {}
+    cacheOpt: CacheOption = {},
   ) {
     return (await this.cachedCallFn(
       cacheOpt,
       'BatchGetTestVariants',
-      req
+      req,
     )) as BatchGetTestVariantsResponse;
   }
 
   async queryTestMetadata(
     req: QueryTestMetadataRequest,
-    cacheOpt: CacheOption = {}
+    cacheOpt: CacheOption = {},
   ) {
     return (await this.cachedCallFn(
       cacheOpt,
       'QueryTestMetadata',
-      req
+      req,
     )) as QueryTestMetadataResponse;
   }
 }
@@ -417,7 +417,7 @@ export interface TestResultIdentifier {
  */
 export function parseTestResultName(name: string) {
   const match = name.match(
-    /^invocations\/(.*?)\/tests\/(.*?)\/results\/(.*?)$/
+    /^invocations\/(.*?)\/tests\/(.*?)\/results\/(.*?)$/,
   );
   if (!match) {
     throw new Error(`invalid test result name: ${name}`);
@@ -436,7 +436,7 @@ export function parseTestResultName(name: string) {
  */
 export function parseArtifactName(artifactName: string): ArtifactIdentifier {
   const match = artifactName.match(
-    /^invocations\/(.*?)\/(?:tests\/(.*?)\/results\/(.*?)\/)?artifacts\/(.*)$/
+    /^invocations\/(.*?)\/(?:tests\/(.*?)\/results\/(.*?)\/)?artifacts\/(.*)$/,
   );
   if (!match) {
     throw new Error(`invalid artifact name: ${artifactName}`);
@@ -476,7 +476,7 @@ export interface TestResultArtifactIdentifier {
 export function constructArtifactName(identifier: ArtifactIdentifier) {
   if (identifier.testId && identifier.resultId) {
     return `invocations/${identifier.invocationId}/tests/${encodeURIComponent(
-      identifier.testId
+      identifier.testId,
     )}/results/${identifier.resultId}/artifacts/${identifier.artifactId}`;
   } else {
     return `invocations/${identifier.invocationId}/artifacts/${identifier.artifactId}`;
@@ -495,7 +495,7 @@ export function getInvIdFromBuildId(buildId: string): string {
  */
 export async function getInvIdFromBuildNum(
   builder: BuilderID,
-  buildNum: number
+  buildNum: number,
 ): Promise<string> {
   const builderId = `${builder.project}/${builder.bucket}/${builder.builder}`;
   return `build-${await sha256(builderId)}-${buildNum}`;
@@ -511,7 +511,7 @@ export async function getInvIdFromBuildNum(
  * v.gpu).
  */
 export function createTVPropGetter(
-  propKey: string
+  propKey: string,
 ): (v: TestVariant) => ToString {
   if (propKey.match(/^v[.]/i)) {
     const variantKey = propKey.slice(2);
@@ -537,7 +537,7 @@ export function createTVPropGetter(
  * 2. '-{property_key}': sort by property_key in descending order.
  */
 export function createTVCmpFn(
-  sortingKeys: readonly string[]
+  sortingKeys: readonly string[],
 ): (v1: TestVariant, v2: TestVariant) => number {
   const sorters: Array<[number, (v: TestVariant) => { toString(): string }]> =
     sortingKeys.map((key) => {

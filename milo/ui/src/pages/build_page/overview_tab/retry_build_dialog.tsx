@@ -70,5 +70,5 @@ export const RetryBuildDialog = observer(
         </DialogActions>
       </Dialog>
     );
-  }
+  },
 );

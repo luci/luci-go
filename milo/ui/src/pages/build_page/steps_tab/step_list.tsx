@@ -48,7 +48,7 @@ export class BuildPageStepListElement extends MobxExtLitElement {
   toggleAllSteps(expand: boolean) {
     this.expandSubSteps = expand;
     this.shadowRoot!.querySelectorAll<BuildPageStepClusterElement>(
-      'milo-bp-step-cluster'
+      'milo-bp-step-cluster',
     ).forEach((e) => e.toggleAllSteps(expand));
   }
 
@@ -72,7 +72,7 @@ export class BuildPageStepListElement extends MobxExtLitElement {
           html`<milo-bp-step-cluster
             .steps=${cluster}
             .expanded=${this.expandSubSteps}
-          ></milo-bp-step-cluster>`
+          ></milo-bp-step-cluster>`,
       )}
     `;
   });

@@ -24,14 +24,14 @@ describe('PrpcClientExt', () => {
         return Promise.resolve(
           new Response(")]}'\n{}", {
             headers: { 'X-Prpc-Grpc-Code': RpcCode.OK.toString() },
-          })
+          }),
         );
-      }
+      },
     );
 
     const client = new PrpcClientExt(
       { fetchImpl: fetchStub },
-      () => accessToken
+      () => accessToken,
     );
     await client.call('service', 'method', {});
     const req1 = new Request(...fetchStub.mock.lastCall!);
@@ -50,13 +50,13 @@ describe('PrpcClientExt', () => {
         return Promise.resolve(
           new Response(")]}'\n{}", {
             headers: { 'X-Prpc-Grpc-Code': RpcCode.OK.toString() },
-          })
+          }),
         );
-      }
+      },
     );
 
     const client = new PrpcClientExt({ fetchImpl: fetchStub }, () =>
-      Promise.resolve(accessToken)
+      Promise.resolve(accessToken),
     );
     await client.call('service', 'method', {});
     const req1 = new Request(...fetchStub.mock.lastCall!);
@@ -75,24 +75,24 @@ describe('PrpcClientExt', () => {
         return Promise.resolve(
           new Response(")]}'\n{}", {
             headers: { 'X-Prpc-Grpc-Code': RpcCode.OK.toString() },
-          })
+          }),
         );
-      }
+      },
     );
 
     const client = new PrpcClientExt(
       { fetchImpl: fetchStub },
-      () => accessToken
+      () => accessToken,
     );
     await client.call(
       'service',
       'method',
       {},
-      { Authorization: 'additional-header' }
+      { Authorization: 'additional-header' },
     );
     const req1 = new Request(...fetchStub.mock.lastCall!);
     expect(req1.headers.get('Authorization')).toStrictEqual(
-      'additional-header'
+      'additional-header',
     );
   });
 });

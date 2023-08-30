@@ -17,7 +17,11 @@ import { getGitilesCommitURL } from './gitiles_utils';
 describe('getGitilesCommitURL', () => {
   it('should work for commit with id', () => {
     expect(
-      getGitilesCommitURL({ host: 'gitiles.host', project: 'proj', id: '1234' })
+      getGitilesCommitURL({
+        host: 'gitiles.host',
+        project: 'proj',
+        id: '1234',
+      }),
     ).toStrictEqual('https://gitiles.host/proj/+/1234');
   });
 
@@ -27,7 +31,7 @@ describe('getGitilesCommitURL', () => {
         host: 'gitiles.host',
         project: 'proj',
         ref: 'ref/HEAD/1234',
-      })
+      }),
     ).toStrictEqual('https://gitiles.host/proj/+/ref/HEAD/1234');
   });
 });

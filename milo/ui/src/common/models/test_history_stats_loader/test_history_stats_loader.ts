@@ -68,7 +68,7 @@ export class TestHistoryStatsLoader {
     readonly testId: string,
     latestDate: DateTime,
     readonly variantPredicate: VariantPredicate,
-    readonly testHistoryService: TestHistoryService
+    readonly testHistoryService: TestHistoryService,
   ) {
     makeObservable(this);
 
@@ -106,7 +106,7 @@ export class TestHistoryStatsLoader {
       const groups = res.groups || [];
       for (const group of groups) {
         const dateIndex = this.getDateIndex(
-          DateTime.fromISO(group.partitionTime)
+          DateTime.fromISO(group.partitionTime),
         );
         this.cache.set(`${group.variantHash}/${dateIndex}`, group);
       }
@@ -120,7 +120,7 @@ export class TestHistoryStatsLoader {
 
       if (groups.length > 0) {
         this.unloadedDateIndex = this.getDateIndex(
-          DateTime.fromISO(groups[groups.length - 1].partitionTime)
+          DateTime.fromISO(groups[groups.length - 1].partitionTime),
         );
       }
     }
@@ -135,7 +135,7 @@ export class TestHistoryStatsLoader {
   getStats(
     variantHash: string,
     dateIndex: number,
-    noLoading = false
+    noLoading = false,
   ): QueryTestHistoryStatsResponseGroup | null {
     // If the dateIndex is not loaded, return null.
     // For simplicity, treat partially loaded date as not loaded. Even though

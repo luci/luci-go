@@ -30,36 +30,36 @@ import { MachinePoolSection } from './machine_pool_section';
 jest.mock('./machine_pool_section', () =>
   createSelectiveMockFromModule<typeof import('./machine_pool_section')>(
     './machine_pool_section',
-    ['MachinePoolSection']
-  )
+    ['MachinePoolSection'],
+  ),
 );
 
 jest.mock('./ended_builds_section', () =>
   createSelectiveMockFromModule<typeof import('./ended_builds_section')>(
     './ended_builds_section',
-    ['EndedBuildsSection']
-  )
+    ['EndedBuildsSection'],
+  ),
 );
 
 jest.mock('./started_builds_section', () =>
   createSelectiveMockFromModule<typeof import('./started_builds_section')>(
     './started_builds_section',
-    ['StartedBuildsSection']
-  )
+    ['StartedBuildsSection'],
+  ),
 );
 
 jest.mock('./pending_builds_section', () =>
   createSelectiveMockFromModule<typeof import('./pending_builds_section')>(
     './pending_builds_section',
-    ['PendingBuildsSection']
-  )
+    ['PendingBuildsSection'],
+  ),
 );
 
 jest.mock('./views_section', () =>
   createSelectiveMockFromModule<typeof import('./views_section')>(
     './views_section',
-    ['ViewsSection']
-  )
+    ['ViewsSection'],
+  ),
 );
 
 describe('BuilderPage', () => {
@@ -107,22 +107,22 @@ describe('BuilderPage', () => {
         }}
       >
         <BuilderPage />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
 
     await act(() => jest.runAllTimersAsync());
 
     expect(
       screen.queryByText(
-        'Failed to query the builder. If you can see recent builds, the builder might have been deleted recently.'
-      )
+        'Failed to query the builder. If you can see recent builds, the builder might have been deleted recently.',
+      ),
     ).not.toBeInTheDocument();
     expect(screen.getByText('some builder description')).toBeInTheDocument();
     expect(mockedEndedBuildsSection).toHaveBeenCalledWith(
       {
         builderId: { project: 'project', bucket: 'bucket', builder: 'builder' },
       },
-      expect.anything()
+      expect.anything(),
     );
     expect(mockedMachinePoolSection).toHaveBeenCalledWith(
       {
@@ -132,13 +132,13 @@ describe('BuilderPage', () => {
           { key: 'key2', value: 'val2' },
         ],
       },
-      expect.anything()
+      expect.anything(),
     );
   });
 
   test('failing to query builder should not break the builder page', async () => {
     getBuilderMock.mockRejectedValue(
-      new GrpcError(RpcCode.NOT_FOUND, 'builder was removed')
+      new GrpcError(RpcCode.NOT_FOUND, 'builder was removed'),
     );
     render(
       <FakeContextProvider
@@ -148,15 +148,15 @@ describe('BuilderPage', () => {
         }}
       >
         <BuilderPage />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
 
     await act(() => jest.runAllTimersAsync());
 
     expect(
       screen.getByText(
-        'Failed to query the builder. If you can see recent builds, the builder might have been deleted recently.'
-      )
+        'Failed to query the builder. If you can see recent builds, the builder might have been deleted recently.',
+      ),
     ).toBeInTheDocument();
     // The ended builds section should still be displayed.
     expect(screen.getByText('mocked ended builds section')).toBeInTheDocument();
@@ -164,7 +164,7 @@ describe('BuilderPage', () => {
       {
         builderId: { project: 'project', bucket: 'bucket', builder: 'builder' },
       },
-      expect.anything()
+      expect.anything(),
     );
     expect(mockedMachinePoolSection).not.toHaveBeenCalled();
   });

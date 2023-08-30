@@ -25,7 +25,7 @@ const pages: {
 describe('PageLoader', () => {
   test('e2e', async () => {
     const pageLoader = new PageLoader(
-      async (pageToken) => pages[pageToken || 'page1']
+      async (pageToken) => pages[pageToken || 'page1'],
     );
 
     expect(pageLoader.loadedFirstPage).toBeFalsy();
@@ -61,7 +61,7 @@ describe('PageLoader', () => {
   describe('loadFirstPage works', () => {
     test('when called first', async () => {
       const pageLoader = new PageLoader(
-        async (pageToken) => pages[pageToken || 'page1']
+        async (pageToken) => pages[pageToken || 'page1'],
       );
 
       const page1 = await pageLoader.loadFirstPage();
@@ -79,7 +79,7 @@ describe('PageLoader', () => {
 
     test('when called after loading other pages', async () => {
       const pageLoader = new PageLoader(
-        async (pageToken) => pages[pageToken || 'page1']
+        async (pageToken) => pages[pageToken || 'page1'],
       );
 
       const page1 = await pageLoader.loadNextPage();
@@ -99,7 +99,7 @@ describe('PageLoader', () => {
   describe('isLoading is populated correctly', () => {
     test('when loading pages sequentially', async () => {
       const pageLoader = new PageLoader(
-        async (pageToken) => pages[pageToken || 'page1']
+        async (pageToken) => pages[pageToken || 'page1'],
       );
 
       const page1Promise = pageLoader.loadNextPage();
@@ -126,7 +126,7 @@ describe('PageLoader', () => {
 
     test('when loading pages in parallel', async () => {
       const pageLoader = new PageLoader(
-        async (pageToken) => pages[pageToken || 'page1']
+        async (pageToken) => pages[pageToken || 'page1'],
       );
 
       const page1Promise = pageLoader.loadNextPage();

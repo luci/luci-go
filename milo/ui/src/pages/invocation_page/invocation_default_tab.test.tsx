@@ -21,7 +21,7 @@ import { InvocationDefaultTab } from './invocation_default_tab';
 jest.mock('react-router-dom', () => {
   return createSelectiveMockFromModule<typeof import('react-router-dom')>(
     'react-router-dom',
-    ['useNavigate']
+    ['useNavigate'],
   );
 });
 
@@ -40,7 +40,7 @@ describe('InvocationDefaultTab', () => {
       .mocked(
         // We will return a mocked `navigate` function so we can intercept the
         // `navigate` calls.
-        reactRouterDom.useNavigate as () => jest.MockedFunction<NavigateFunction>
+        reactRouterDom.useNavigate as () => jest.MockedFunction<NavigateFunction>,
       )
       .mockImplementation(() => {
         const navigate = (
@@ -51,7 +51,7 @@ describe('InvocationDefaultTab', () => {
         const navigateSpy =
           navigateSpies.get(navigate) ||
           (jest.fn(
-            navigate
+            navigate,
             // `jest.fn` isn't smart enough to infer the function type when
             // mocking an overloaded function. Use manual casting instead.
           ) as unknown as jest.MockedFunction<NavigateFunction>);
@@ -77,7 +77,7 @@ describe('InvocationDefaultTab', () => {
           ],
         },
       ],
-      { initialEntries: ['/path/prefix?param#hash'] }
+      { initialEntries: ['/path/prefix?param#hash'] },
     );
 
     render(<reactRouterDom.RouterProvider router={router} />);
@@ -111,7 +111,7 @@ describe('InvocationDefaultTab', () => {
           ],
         },
       ],
-      { initialEntries: ['/path/prefix/?param#hash'] }
+      { initialEntries: ['/path/prefix/?param#hash'] },
     );
 
     render(<reactRouterDom.RouterProvider router={router} />);

@@ -45,11 +45,11 @@ export const TestSearch = () => {
       });
     },
     600,
-    [pendingSearchQuery]
+    [pendingSearchQuery],
   );
 
   const handleSearchQueryChange = (
-    e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
+    e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
   ) => {
     setPendingSearchQuery(e.target.value);
   };

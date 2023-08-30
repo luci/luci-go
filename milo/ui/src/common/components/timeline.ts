@@ -140,7 +140,7 @@ export class Timeline extends MobxLitElement {
       (endTime - startTime + 2 * padding) / (bodyWidth / V_GRID_LINE_MAX_GAP);
 
     this.timeInterval = timeMillisecond.every(
-      roundDown(maxInterval, PREDEFINED_TIME_INTERVALS)
+      roundDown(maxInterval, PREDEFINED_TIME_INTERVALS),
     )!;
 
     // Render each component.
@@ -169,8 +169,8 @@ export class Timeline extends MobxLitElement {
         .attr('font-weight', '500')
         .text(
           `${this.startTimeLabel}: ${this.startTime.toFormat(
-            NUMERIC_TIME_FORMAT
-          )}`
+            NUMERIC_TIME_FORMAT,
+          )}`,
         );
     }
 
@@ -178,7 +178,7 @@ export class Timeline extends MobxLitElement {
       .append('g')
       .attr(
         'transform',
-        `translate(${SIDE_PANEL_WIDTH}, ${TOP_AXIS_HEIGHT - HALF_BORDER_SIZE})`
+        `translate(${SIDE_PANEL_WIDTH}, ${TOP_AXIS_HEIGHT - HALF_BORDER_SIZE})`,
       );
     const topAxis = axisTop(this.scaleTime).ticks(this.timeInterval);
     headerRootGroup.call(topAxis);
@@ -212,7 +212,7 @@ export class Timeline extends MobxLitElement {
         .attr('y', TEXT_HEIGHT + TEXT_MARGIN / 2)
         .attr('font-weight', '500')
         .text(
-          `${this.endTimeLabel}: ${this.endTime.toFormat(NUMERIC_TIME_FORMAT)}`
+          `${this.endTimeLabel}: ${this.endTime.toFormat(NUMERIC_TIME_FORMAT)}`,
         );
     }
 
@@ -313,10 +313,10 @@ export class Timeline extends MobxLitElement {
 
     for (const [i, block] of enumerate(this.blocks)) {
       const start = this.scaleTime(
-        block.start?.toMillis() || this.endTime.toMillis()
+        block.start?.toMillis() || this.endTime.toMillis(),
       );
       const end = this.scaleTime(
-        block.end?.toMillis() || this.endTime.toMillis()
+        block.end?.toMillis() || this.endTime.toMillis(),
       );
 
       const blockGroup = svg
@@ -359,7 +359,7 @@ export class Timeline extends MobxLitElement {
           const x1 = Math.min(textBBox.x, -BLOCK_EXTRA_WIDTH / 2);
           const x2 = Math.max(
             textBBox.x + textBBox.width,
-            BLOCK_MARGIN + width
+            BLOCK_MARGIN + width,
           );
 
           // This makes the inv text easier to interact with.
@@ -422,7 +422,7 @@ export class Timeline extends MobxLitElement {
    */
   private installBlockInteractionHandlers<T extends BaseType>(
     ele: Selection<T, unknown, null, undefined>,
-    block: TimelineBlock
+    block: TimelineBlock,
   ) {
     if (block.href) {
       ele
@@ -446,10 +446,10 @@ export class Timeline extends MobxLitElement {
                     <td>Started:</td>
                     <td>
                       ${(block.start || this.endTime).toFormat(
-                        NUMERIC_TIME_FORMAT
+                        NUMERIC_TIME_FORMAT,
                       )}
                       (after ${displayDuration(
-                        (block.start || this.endTime).diff(this.startTime)
+                        (block.start || this.endTime).diff(this.startTime),
                       )})
                     </td>
                   </tr>
@@ -460,7 +460,7 @@ export class Timeline extends MobxLitElement {
                         block.end
                           ? block.end.toFormat(NUMERIC_TIME_FORMAT) +
                             ` (after ${displayDuration(
-                              block.end.diff(this.startTime)
+                              block.end.diff(this.startTime),
                             )})`
                           : 'N/A'
                       }</td>
@@ -468,12 +468,12 @@ export class Timeline extends MobxLitElement {
                   <tr>
                     <td>Duration:</td>
                     <td>${displayDuration(
-                      (block.end || this.endTime).diff(this.startTime)
+                      (block.end || this.endTime).diff(this.startTime),
                     )}</td>
                   </tr>
                 </div>
               `,
-          tooltip
+          tooltip,
         );
 
         window.dispatchEvent(
@@ -483,14 +483,14 @@ export class Timeline extends MobxLitElement {
               targetRect: (e.target as HTMLElement).getBoundingClientRect(),
               gapSize: 5,
             },
-          })
+          }),
         );
       })
       .on('mouseout', () => {
         window.dispatchEvent(
           new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
             detail: { delay: 0 },
-          })
+          }),
         );
       });
   }

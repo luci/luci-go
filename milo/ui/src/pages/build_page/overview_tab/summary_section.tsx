@@ -42,7 +42,7 @@ export const SummarySection = observer(() => {
     <>
       {build?.isCanary &&
         [BuildbucketStatus.Failure, BuildbucketStatus.InfraFailure].includes(
-          build.data.status
+          build.data.status,
         ) && (
           <div
             css={{

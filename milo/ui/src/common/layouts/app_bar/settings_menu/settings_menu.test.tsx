@@ -36,7 +36,7 @@ describe('SettingsMenu', () => {
         <FakeContextProvider>
           <SettingsMenu />
         </FakeContextProvider>
-      </StoreProvider>
+      </StoreProvider>,
     );
     await screen.findAllByRole('button');
     expect(screen.getByLabelText('open settings menu')).toBeInTheDocument();

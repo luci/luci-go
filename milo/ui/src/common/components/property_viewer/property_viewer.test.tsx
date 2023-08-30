@@ -35,7 +35,7 @@ const TEST_PROPERTIES = {
 const TEST_PROPERTIES_LINES = JSON.stringify(
   TEST_PROPERTIES,
   undefined,
-  2
+  2,
 ).split('\n');
 
 // jsdom doesn't allow us to unit test a codemirror editor.
@@ -72,7 +72,7 @@ describe.skip('PropertyViewer', () => {
         onInit={(e) => {
           editor = e;
         }}
-      />
+      />,
     );
     await jest.runAllTimersAsync();
 
@@ -94,7 +94,7 @@ describe.skip('PropertyViewer', () => {
     editor!.foldCode(
       TEST_PROPERTIES_LINES.indexOf('  "key1": {'),
       undefined,
-      'unfold'
+      'unfold',
     );
     await jest.runAllTimersAsync();
 
@@ -106,7 +106,7 @@ describe.skip('PropertyViewer', () => {
     editor!.foldCode(
       TEST_PROPERTIES_LINES.indexOf('  "key2": {'),
       undefined,
-      'fold'
+      'fold',
     );
     await jest.runAllTimersAsync();
 

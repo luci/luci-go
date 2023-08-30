@@ -61,7 +61,7 @@ export const UserConfig = types
       } catch (e) {
         logging.error(e);
         logging.warn(
-          'encountered an error when restoring user configs from the cache, deleting it'
+          'encountered an error when restoring user configs from the cache, deleting it',
         );
         storage.removeItem(V2_CACHE_KEY);
       }
@@ -78,7 +78,7 @@ export const UserConfig = types
         () => storage.setItem(V2_CACHE_KEY, JSON.stringify(getSnapshot(self))),
         // Add a tiny delay so updates happened in the same event cycle will
         // only trigger one save event.
-        1
+        1,
       );
 
       addDisposer(
@@ -98,7 +98,7 @@ export const UserConfig = types
             persistConfig();
             return value;
           });
-        })
+        }),
       );
     },
   }));

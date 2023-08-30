@@ -20,7 +20,7 @@ import { html, TemplateResult } from 'lit';
  */
 export function highlight(
   fullString: string,
-  subString: string
+  subString: string,
 ): TemplateResult {
   const matchStart = fullString.toUpperCase().search(subString.toUpperCase());
   const prefix = fullString.slice(0, matchStart);

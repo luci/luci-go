@@ -99,7 +99,7 @@ export const TestHistoryPage = observer(() => {
         }
         return next;
       },
-      { replace: true }
+      { replace: true },
     );
   }, [pageState.filterText, setSearchParams]);
 

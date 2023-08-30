@@ -51,7 +51,7 @@ export class TestHistoryGraphConfigElement extends MobxExtLitElement {
         <select
           @input=${(e: InputEvent) => {
             this.pageState.setGraphType(
-              (e.target as HTMLOptionElement).value as GraphType
+              (e.target as HTMLOptionElement).value as GraphType,
             );
           }}
         >
@@ -92,7 +92,7 @@ export class TestHistoryGraphConfigElement extends MobxExtLitElement {
           disabled
           @input=${(e: InputEvent) => {
             this.pageState.setXAxisType(
-              (e.target as HTMLOptionElement).value as XAxisType
+              (e.target as HTMLOptionElement).value as XAxisType,
             );
           }}
         >
@@ -122,7 +122,7 @@ export class TestHistoryGraphConfigElement extends MobxExtLitElement {
             ?checked=${this.pageState.countUnexpected}
             @change=${(e: Event) =>
               this.pageState.setCountUnexpected(
-                (e.target as HTMLInputElement).checked
+                (e.target as HTMLInputElement).checked,
               )}
           />
           <label for="unexpected-toggle" style="color: var(--failure-color);"
@@ -136,7 +136,7 @@ export class TestHistoryGraphConfigElement extends MobxExtLitElement {
             ?checked=${this.pageState.countUnexpectedlySkipped}
             @change=${(e: Event) =>
               this.pageState.setCountUnexpectedlySkipped(
-                (e.target as HTMLInputElement).checked
+                (e.target as HTMLInputElement).checked,
               )}
           />
           <label
@@ -152,7 +152,7 @@ export class TestHistoryGraphConfigElement extends MobxExtLitElement {
             ?checked=${this.pageState.countFlaky}
             @change=${(e: Event) =>
               this.pageState.setCountFlaky(
-                (e.target as HTMLInputElement).checked
+                (e.target as HTMLInputElement).checked,
               )}
           />
           <label for="flaky-toggle" style="color: var(--warning-color);"
@@ -166,7 +166,7 @@ export class TestHistoryGraphConfigElement extends MobxExtLitElement {
             ?checked=${this.pageState.countExonerated}
             @change=${(e: Event) =>
               this.pageState.setCountExonerated(
-                (e.target as HTMLInputElement).checked
+                (e.target as HTMLInputElement).checked,
               )}
           />
           <label for="exonerated-toggle" style="color: var(--exonerated-color);"
@@ -196,7 +196,9 @@ export class TestHistoryGraphConfigElement extends MobxExtLitElement {
         background-clip: padding-box;
         border: 1px solid var(--divider-color);
         border-radius: 0.25rem;
-        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        transition:
+          border-color 0.15s ease-in-out,
+          box-shadow 0.15s ease-in-out;
         text-overflow: ellipsis;
       }
 

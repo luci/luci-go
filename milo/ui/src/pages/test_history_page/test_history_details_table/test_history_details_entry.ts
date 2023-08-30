@@ -205,7 +205,7 @@ export class TestHistoryDetailsEntryElement
                 <span class="kv-key">${k}</span>
                 <span class="kv-value">${v}</span>
               </span>
-            `
+            `,
           )}
         </span>
       </div>
@@ -216,10 +216,10 @@ export class TestHistoryDetailsEntryElement
           <div class="explanation-html">
             ${unsafeHTML(
               e.explanationHtml ||
-                'This test variant had unexpected results, but was exonerated (reason not provided).'
+                'This test variant had unexpected results, but was exonerated (reason not provided).',
             )}
           </div>
-        `
+        `,
       )}
       ${this.testVariant.results?.length === RESULT_LIMIT
         ? html`<div id="result-limit-warning">
@@ -236,7 +236,7 @@ export class TestHistoryDetailsEntryElement
             .project=${this.store.testHistoryPage.project || ''}
             .expanded=${i === this.expandedResultIndex}
           ></milo-result-entry>
-        `
+        `,
       )}
     `;
   }

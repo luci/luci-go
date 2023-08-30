@@ -65,7 +65,7 @@ export function batched<T extends unknown[], V>(
   config: BatchConfig<T, V>,
   setTimeout = self.setTimeout,
   clearTimeout = self.clearTimeout,
-  getTimestampMs = Date.now
+  getTimestampMs = Date.now,
 ): (opt: BatchOption, ...params: T) => Promise<V> {
   let currentBatch: BatchState<T, V> | null = null;
 
@@ -109,7 +109,7 @@ export function batched<T extends unknown[], V>(
       // Attempt to combine the new call with the current batch.
       const combineResult = config.combineParamSets(
         currentBatch.batchedParams,
-        params
+        params,
       );
       if (combineResult.ok) {
         currentBatch.batchedParams = combineResult.value;
@@ -139,7 +139,7 @@ export function batched<T extends unknown[], V>(
       clearTimeout(currentBatch.scheduleId);
       currentBatch.scheduleId = setTimeout(
         processCurrentBatch,
-        opt.maxPendingMs
+        opt.maxPendingMs,
       );
     }
 

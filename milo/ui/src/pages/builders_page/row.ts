@@ -59,7 +59,7 @@ export class BuildersPageRowElement extends MobxExtLitElement {
           builder: this.builder,
           pageSize: this.numOfBuilds,
         })
-        .then((res) => res.builds || [])
+        .then((res) => res.builds || []),
     );
   }
 
@@ -75,7 +75,7 @@ export class BuildersPageRowElement extends MobxExtLitElement {
     return fromPromise(
       this.store.services.milo.queryBuilderStats({
         builder: this.builder,
-      })
+      }),
     );
   }
 

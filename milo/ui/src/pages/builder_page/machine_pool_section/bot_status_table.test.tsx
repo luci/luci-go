@@ -33,7 +33,7 @@ describe('BotStatusTable', () => {
           [BotStatus.Deleted]: 0,
         }}
         totalBots={10}
-      />
+      />,
     );
 
     let statusRow: HTMLElement;
@@ -42,7 +42,7 @@ describe('BotStatusTable', () => {
     expect(statusRow.querySelector('td:nth-child(2)')).toHaveTextContent('2');
     expect(statusRow.querySelector('td:nth-child(3)>div')).toHaveStyleRule(
       'width',
-      '20%'
+      '20%',
     );
 
     statusRow = screen.getByText(BOT_STATUS_LABEL_MAP[BotStatus.Busy])
@@ -50,7 +50,7 @@ describe('BotStatusTable', () => {
     expect(statusRow.querySelector('td:nth-child(2)')).toHaveTextContent('4');
     expect(statusRow.querySelector('td:nth-child(3)>div')).toHaveStyleRule(
       'width',
-      '40%'
+      '40%',
     );
 
     statusRow = screen.getByText(BOT_STATUS_LABEL_MAP[BotStatus.Quarantined])
@@ -58,7 +58,7 @@ describe('BotStatusTable', () => {
     expect(statusRow.querySelector('td:nth-child(2)')).toHaveTextContent('1');
     expect(statusRow.querySelector('td:nth-child(3)>div')).toHaveStyleRule(
       'width',
-      '10%'
+      '10%',
     );
 
     statusRow = screen.getByText(BOT_STATUS_LABEL_MAP[BotStatus.Dead])
@@ -66,7 +66,7 @@ describe('BotStatusTable', () => {
     expect(statusRow.querySelector('td:nth-child(2)')).toHaveTextContent('3');
     expect(statusRow.querySelector('td:nth-child(3)>div')).toHaveStyleRule(
       'width',
-      '30%'
+      '30%',
     );
   });
 
@@ -83,7 +83,7 @@ describe('BotStatusTable', () => {
           [BotStatus.Deleted]: 0,
         }}
         totalBots={0}
-      />
+      />,
     );
 
     let statusRow: HTMLElement;
@@ -93,7 +93,7 @@ describe('BotStatusTable', () => {
     // Width should be 0% rather than NaN%.
     expect(statusRow.querySelector('td:nth-child(3)>div')).toHaveStyleRule(
       'width',
-      '0%'
+      '0%',
     );
 
     statusRow = screen.getByText(BOT_STATUS_LABEL_MAP[BotStatus.Busy])
@@ -102,7 +102,7 @@ describe('BotStatusTable', () => {
     // Width should be 0% rather than NaN%.
     expect(statusRow.querySelector('td:nth-child(3)>div')).toHaveStyleRule(
       'width',
-      '0%'
+      '0%',
     );
 
     statusRow = screen.getByText(BOT_STATUS_LABEL_MAP[BotStatus.Quarantined])
@@ -111,7 +111,7 @@ describe('BotStatusTable', () => {
     // Width should be 0% rather than NaN%.
     expect(statusRow.querySelector('td:nth-child(3)>div')).toHaveStyleRule(
       'width',
-      '0%'
+      '0%',
     );
 
     statusRow = screen.getByText(BOT_STATUS_LABEL_MAP[BotStatus.Dead])
@@ -120,7 +120,7 @@ describe('BotStatusTable', () => {
     // Width should be 0% rather than NaN%.
     expect(statusRow.querySelector('td:nth-child(3)>div')).toHaveStyleRule(
       'width',
-      '0%'
+      '0%',
     );
   });
 });

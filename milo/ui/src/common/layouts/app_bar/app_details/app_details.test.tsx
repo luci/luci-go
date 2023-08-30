@@ -30,7 +30,7 @@ describe('AppDetails', () => {
         }}
       >
         <AppDetails open={true} handleSidebarChanged={(_: boolean) => {}} />
-      </PageMetaContext.Provider>
+      </PageMetaContext.Provider>,
     );
     await screen.findByLabelText('menu');
     expect(screen.getByText('LUCI')).toBeInTheDocument();
@@ -44,7 +44,7 @@ describe('AppDetails', () => {
         }}
       >
         <AppDetails open={true} handleSidebarChanged={(_: boolean) => {}} />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
     await screen.findByLabelText('menu');
     expect(screen.getByText('LUCI')).toBeInTheDocument();
@@ -60,7 +60,7 @@ describe('AppDetails', () => {
         }}
       >
         <AppDetails open={true} handleSidebarChanged={(_: boolean) => {}} />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
     await screen.findByLabelText('menu');
     expect(screen.getByText('LUCI')).toBeInTheDocument();

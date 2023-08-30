@@ -40,7 +40,7 @@ export class FakeServiceWorkerRegistration
   constructor(public scope: string) {}
 
   getNotifications(
-    filter?: GetNotificationOptions | undefined
+    filter?: GetNotificationOptions | undefined,
   ): Promise<Notification[]>;
   getNotifications(_filter?: unknown): Promise<Notification[]> {
     throw new Error('Method not implemented.');
@@ -48,7 +48,7 @@ export class FakeServiceWorkerRegistration
 
   showNotification(
     title: string,
-    options?: NotificationOptions | undefined
+    options?: NotificationOptions | undefined,
   ): Promise<void>;
   showNotification(_title: unknown, _options?: unknown): Promise<void> {
     throw new Error('Method not implemented.');
@@ -68,19 +68,19 @@ export class FakeServiceWorkerRegistration
     type: K,
     listener: (
       this: ServiceWorkerRegistration,
-      ev: ServiceWorkerRegistrationEventMap[K]
+      ev: ServiceWorkerRegistrationEventMap[K],
     ) => any,
-    options?: boolean | AddEventListenerOptions | undefined
+    options?: boolean | AddEventListenerOptions | undefined,
   ): void;
   addEventListener(
     type: string,
     listener: EventListenerOrEventListenerObject,
-    options?: boolean | AddEventListenerOptions | undefined
+    options?: boolean | AddEventListenerOptions | undefined,
   ): void;
   addEventListener(
     _type: unknown,
     _listener: unknown,
-    _options?: unknown
+    _options?: unknown,
   ): void {
     throw new Error('Method not implemented.');
   }
@@ -89,19 +89,19 @@ export class FakeServiceWorkerRegistration
     type: K,
     listener: (
       this: ServiceWorkerRegistration,
-      ev: ServiceWorkerRegistrationEventMap[K]
+      ev: ServiceWorkerRegistrationEventMap[K],
     ) => any,
-    options?: boolean | EventListenerOptions | undefined
+    options?: boolean | EventListenerOptions | undefined,
   ): void;
   removeEventListener(
     type: string,
     listener: EventListenerOrEventListenerObject,
-    options?: boolean | EventListenerOptions | undefined
+    options?: boolean | EventListenerOptions | undefined,
   ): void;
   removeEventListener(
     _type: unknown,
     _listener: unknown,
-    _options?: unknown
+    _options?: unknown,
   ): void {
     throw new Error('Method not implemented.');
   }

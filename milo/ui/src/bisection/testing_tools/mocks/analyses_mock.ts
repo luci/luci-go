@@ -21,7 +21,7 @@ import {
 
 export const createMockListAnalysesResponse = (
   analyses: Analysis[],
-  nextPageToken: string
+  nextPageToken: string,
 ): ListAnalysesResponse => {
   return {
     analyses: analyses,
@@ -31,7 +31,7 @@ export const createMockListAnalysesResponse = (
 
 export const mockFetchAnalyses = (
   mockAnalyses: Analysis[],
-  nextPageToken: string
+  nextPageToken: string,
 ) => {
   fetchMock.post(
     'https://' +
@@ -44,10 +44,10 @@ export const mockFetchAnalyses = (
       body:
         ")]}'" +
         JSON.stringify(
-          createMockListAnalysesResponse(mockAnalyses, nextPageToken)
+          createMockListAnalysesResponse(mockAnalyses, nextPageToken),
         ),
     },
-    { overwriteRoutes: true }
+    { overwriteRoutes: true },
   );
 };
 
@@ -60,6 +60,6 @@ export const mockErrorFetchingAnalyses = () => {
       headers: {
         'X-Prpc-Grpc-Code': '2',
       },
-    }
+    },
   );
 };

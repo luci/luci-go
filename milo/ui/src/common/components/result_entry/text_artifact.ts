@@ -79,7 +79,7 @@ export class TextArtifactElement extends MobxLitElement {
   @computed
   private get fetchUrl(): string {
     const artifact = this.artifacts.get(
-      (this.invLevel ? 'inv-level/' : '') + this.artifactId
+      (this.invLevel ? 'inv-level/' : '') + this.artifactId,
     );
     // TODO(crbug/1206109): use permanent raw artifact URL.
     return artifact ? artifact.fetchUrl : '';
@@ -92,8 +92,8 @@ export class TextArtifactElement extends MobxLitElement {
     }
     return fromPromise(
       fetch(
-        urlSetSearchQueryParam(this.fetchUrl, 'n', ARTIFACT_LENGTH_LIMIT)
-      ).then((res) => res.text())
+        urlSetSearchQueryParam(this.fetchUrl, 'n', ARTIFACT_LENGTH_LIMIT),
+      ).then((res) => res.text()),
     );
   }
 

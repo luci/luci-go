@@ -237,7 +237,7 @@ export class LUCIBisectionService {
   private readonly cachedCallFn: (
     opt: CacheOption,
     method: string,
-    message: object
+    message: object,
   ) => Promise<unknown>;
 
   constructor(client: PrpcClientExt) {
@@ -246,7 +246,7 @@ export class LUCIBisectionService {
         client.call(LUCIBisectionService.SERVICE, method, message),
       {
         key: (method, message) => `${method}-${stableStringify(message)}`,
-      }
+      },
     );
   }
 
@@ -254,7 +254,7 @@ export class LUCIBisectionService {
     return (await this.cachedCallFn(
       cacheOpt,
       'QueryAnalysis',
-      req
+      req,
     )) as QueryAnalysisResponse;
   }
 
@@ -262,7 +262,7 @@ export class LUCIBisectionService {
     return (await this.cachedCallFn(
       cacheOpt,
       'ListAnalyses',
-      req
+      req,
     )) as ListAnalysesResponse;
   }
 }

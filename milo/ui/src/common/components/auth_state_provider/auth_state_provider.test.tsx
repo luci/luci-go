@@ -31,7 +31,7 @@ import {
 interface TokenConsumerProps {
   readonly renderCallback: (
     getIdToken: ReturnType<typeof useGetIdToken>,
-    getAccessToken: ReturnType<typeof useGetAccessToken>
+    getAccessToken: ReturnType<typeof useGetAccessToken>,
   ) => void;
 }
 
@@ -82,8 +82,8 @@ describe('AuthStateProvider', () => {
     const tokenConsumerCBSpy = jest.fn(
       (
         _getIdToken: ReturnType<typeof useGetIdToken>,
-        _getAccessToken: ReturnType<typeof useGetAccessToken>
-      ) => {}
+        _getAccessToken: ReturnType<typeof useGetAccessToken>,
+      ) => {},
     );
     const identityConsumerCBSpy = jest.fn((_identity: string) => {});
     const initialAuthState = {
@@ -100,7 +100,7 @@ describe('AuthStateProvider', () => {
     };
     queryAuthStateSpy.mockResolvedValue(
       // Resolve after 1s.
-      timeout(1000).then(() => firstQueryResponse)
+      timeout(1000).then(() => firstQueryResponse),
     );
 
     render(
@@ -111,7 +111,7 @@ describe('AuthStateProvider', () => {
             <TokenConsumer renderCallback={tokenConsumerCBSpy} />
           </AuthStateProvider>
         </StoreProvider>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     // Advance timer by 500ms, before the first query returns.
@@ -123,14 +123,14 @@ describe('AuthStateProvider', () => {
     expect(queryAuthStateSpy).toHaveBeenCalledTimes(1);
     expect(identityConsumerCBSpy.mock.calls.length).toStrictEqual(1);
     expect(identityConsumerCBSpy.mock.lastCall?.[0]).toStrictEqual(
-      'identity-1'
+      'identity-1',
     );
     expect(tokenConsumerCBSpy.mock.calls.length).toStrictEqual(1);
     expect(await tokenConsumerCBSpy.mock.lastCall?.[0]()).toStrictEqual(
-      'id-token-1'
+      'id-token-1',
     );
     expect(await tokenConsumerCBSpy.mock.lastCall?.[1]()).toStrictEqual(
-      'access-token-1'
+      'access-token-1',
     );
     expect(store.authState.value).toEqual(initialAuthState);
 
@@ -140,15 +140,15 @@ describe('AuthStateProvider', () => {
     // Update tokens should not trigger context updates.
     expect(identityConsumerCBSpy.mock.calls.length).toStrictEqual(1);
     expect(identityConsumerCBSpy.mock.lastCall?.[0]).toStrictEqual(
-      'identity-1'
+      'identity-1',
     );
     expect(tokenConsumerCBSpy.mock.calls.length).toStrictEqual(1);
     // The token getters can still return the latest tokens.
     expect(await tokenConsumerCBSpy.mock.lastCall?.[0]()).toStrictEqual(
-      'id-token-2'
+      'id-token-2',
     );
     expect(await tokenConsumerCBSpy.mock.lastCall?.[1]()).toStrictEqual(
-      'access-token-2'
+      'access-token-2',
     );
     expect(store.authState.value).toEqual(firstQueryResponse);
 
@@ -157,7 +157,7 @@ describe('AuthStateProvider', () => {
       idToken: 'id-token-3',
       accessToken: 'access-token-3',
       accessTokenExpiry: DateTime.fromSeconds(
-        firstQueryResponse.accessTokenExpiry
+        firstQueryResponse.accessTokenExpiry,
       )
         .plus({ minute: 29 })
         .toSeconds(),
@@ -168,23 +168,23 @@ describe('AuthStateProvider', () => {
     // expire.
     await act(() =>
       jest.advanceTimersByTimeAsync(
-        firstQueryResponse.accessTokenExpiry * 1000 - Date.now() - 10000
-      )
+        firstQueryResponse.accessTokenExpiry * 1000 - Date.now() - 10000,
+      ),
     );
 
     expect(queryAuthStateSpy).toHaveBeenCalledTimes(2);
     // Update identity should trigger context updates.
     expect(identityConsumerCBSpy.mock.calls.length).toStrictEqual(2);
     expect(identityConsumerCBSpy.mock.lastCall?.[0]).toStrictEqual(
-      'identity-2'
+      'identity-2',
     );
     expect(tokenConsumerCBSpy.mock.calls.length).toStrictEqual(2);
     // The token getters can still return the latest tokens.
     expect(await tokenConsumerCBSpy.mock.lastCall?.[0]()).toStrictEqual(
-      'id-token-3'
+      'id-token-3',
     );
     expect(await tokenConsumerCBSpy.mock.lastCall?.[1]()).toStrictEqual(
-      'access-token-3'
+      'access-token-3',
     );
     expect(store.authState.value).toEqual(secondQueryResponse);
 
@@ -193,7 +193,7 @@ describe('AuthStateProvider', () => {
       idToken: 'id-token-4',
       accessToken: 'access-token-4',
       accessTokenExpiry: DateTime.fromSeconds(
-        secondQueryResponse.accessTokenExpiry
+        secondQueryResponse.accessTokenExpiry,
       )
         .plus({ minute: 59 })
         .toSeconds(),
@@ -204,23 +204,23 @@ describe('AuthStateProvider', () => {
     // expire.
     await act(() =>
       jest.advanceTimersByTimeAsync(
-        secondQueryResponse.accessTokenExpiry * 1000 - Date.now() - 10000
-      )
+        secondQueryResponse.accessTokenExpiry * 1000 - Date.now() - 10000,
+      ),
     );
 
     expect(queryAuthStateSpy).toHaveBeenCalledTimes(3);
     // Update identity should trigger context updates.
     expect(identityConsumerCBSpy.mock.calls.length).toStrictEqual(2);
     expect(identityConsumerCBSpy.mock.lastCall?.[0]).toStrictEqual(
-      'identity-2'
+      'identity-2',
     );
     expect(tokenConsumerCBSpy.mock.calls.length).toStrictEqual(2);
     // The token getters can still return the latest tokens.
     expect(await tokenConsumerCBSpy.mock.lastCall?.[0]()).toStrictEqual(
-      'id-token-4'
+      'id-token-4',
     );
     expect(await tokenConsumerCBSpy.mock.lastCall?.[1]()).toStrictEqual(
-      'access-token-4'
+      'access-token-4',
     );
     expect(store.authState.value).toEqual(thirdQueryResponse);
   });
@@ -229,8 +229,8 @@ describe('AuthStateProvider', () => {
     const tokenConsumerCBSpy = jest.fn(
       (
         _getIdToken: ReturnType<typeof useGetIdToken>,
-        _getAccessToken: ReturnType<typeof useGetAccessToken>
-      ) => {}
+        _getAccessToken: ReturnType<typeof useGetAccessToken>,
+      ) => {},
     );
     const initialAuthState = {
       identity: 'identity-1',
@@ -258,7 +258,7 @@ describe('AuthStateProvider', () => {
             <TokenConsumer renderCallback={tokenConsumerCBSpy} />
           </AuthStateProvider>
         </StoreProvider>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     expect(tokenConsumerCBSpy.mock.calls.length).toStrictEqual(1);
@@ -279,8 +279,8 @@ describe('AuthStateProvider', () => {
     const tokenConsumerCBSpy = jest.fn(
       (
         _getIdToken: ReturnType<typeof useGetIdToken>,
-        _getAccessToken: ReturnType<typeof useGetAccessToken>
-      ) => {}
+        _getAccessToken: ReturnType<typeof useGetAccessToken>,
+      ) => {},
     );
     const initialAuthState = {
       identity: 'identity-1',
@@ -308,7 +308,7 @@ describe('AuthStateProvider', () => {
             <TokenConsumer renderCallback={tokenConsumerCBSpy} />
           </AuthStateProvider>
         </StoreProvider>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     expect(tokenConsumerCBSpy.mock.calls.length).toStrictEqual(1);
@@ -365,7 +365,7 @@ describe('AuthStateProvider', () => {
             <></>
           </AuthStateProvider>
         </StoreProvider>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     // In the first 3 seconds, there should only be one query.
@@ -411,7 +411,7 @@ describe('AuthStateProvider', () => {
             <></>
           </AuthStateProvider>
         </StoreProvider>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     // In the first 3 seconds, there should be only one query.

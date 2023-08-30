@@ -54,7 +54,7 @@ export function TestList({ project, searchQuery }: Props) {
                 <Link
                   href={`/ui/test/${encodeURIComponent(
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    project!
+                    project!,
                   )}/${encodeURIComponent(testId)}`}
                   target="_blank"
                   rel="noreferrer"

@@ -100,7 +100,7 @@ describe('cached_fn', () => {
     const res2 = cachedFn(
       { acceptCache: false, invalidateCache: true },
       1,
-      'a'
+      'a',
     );
     const res3 = cachedFn({}, 1, 'a');
     expect(res1).toStrictEqual('1-a-0');

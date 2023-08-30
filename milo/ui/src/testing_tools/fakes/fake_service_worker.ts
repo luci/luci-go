@@ -20,14 +20,17 @@
  * We cannot stub `ServiceWorker` because it doesn't have a legal constructor.
  */
 export class FakeServiceWorker implements ServiceWorker {
-  constructor(public state: ServiceWorkerState, public scriptURL: string) {}
+  constructor(
+    public state: ServiceWorkerState,
+    public scriptURL: string,
+  ) {}
 
   onstatechange: ((this: ServiceWorker, ev: Event) => any) | null = null;
 
   postMessage(message: any, transfer: Transferable[]): void;
   postMessage(
     message: any,
-    options?: StructuredSerializeOptions | undefined
+    options?: StructuredSerializeOptions | undefined,
   ): void;
   postMessage(_message: unknown, _options?: unknown): void {
     throw new Error('Method not implemented.');
@@ -36,17 +39,17 @@ export class FakeServiceWorker implements ServiceWorker {
   addEventListener<K extends keyof ServiceWorkerEventMap>(
     type: K,
     listener: (this: ServiceWorker, ev: ServiceWorkerEventMap[K]) => any,
-    options?: boolean | AddEventListenerOptions | undefined
+    options?: boolean | AddEventListenerOptions | undefined,
   ): void;
   addEventListener(
     type: string,
     listener: EventListenerOrEventListenerObject,
-    options?: boolean | AddEventListenerOptions | undefined
+    options?: boolean | AddEventListenerOptions | undefined,
   ): void;
   addEventListener(
     _type: string,
     _listener: unknown,
-    _options?: unknown
+    _options?: unknown,
   ): void {
     throw new Error('Method not implemented.');
   }
@@ -54,17 +57,17 @@ export class FakeServiceWorker implements ServiceWorker {
   removeEventListener<K extends keyof ServiceWorkerEventMap>(
     type: K,
     listener: (this: ServiceWorker, ev: ServiceWorkerEventMap[K]) => any,
-    options?: boolean | EventListenerOptions | undefined
+    options?: boolean | EventListenerOptions | undefined,
   ): void;
   removeEventListener(
     type: string,
     listener: EventListenerOrEventListenerObject,
-    options?: boolean | EventListenerOptions | undefined
+    options?: boolean | EventListenerOptions | undefined,
   ): void;
   removeEventListener(
     _type: string,
     _listener: unknown,
-    _options?: unknown
+    _options?: unknown,
   ): void {
     throw new Error('Method not implemented.');
   }

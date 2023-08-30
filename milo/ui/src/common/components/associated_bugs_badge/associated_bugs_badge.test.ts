@@ -71,7 +71,7 @@ describe('AssociatedBugsBadge', () => {
 
     expect(ele.shadowRoot!.textContent).toContain('crbug.com/1234');
     expect(ele.shadowRoot!.textContent).not.toMatch(
-      /crbug\.com\/1234(.*)crbug\.com\/1234/
+      /crbug\.com\/1234(.*)crbug\.com\/1234/,
     );
   });
 
@@ -89,7 +89,7 @@ describe('AssociatedBugsBadge', () => {
     const event: CustomEvent<ShowTooltipEventDetail> = await listener;
 
     const tooltip = event.detail.tooltip.querySelector(
-      'milo-associated-bugs-tooltip'
+      'milo-associated-bugs-tooltip',
     )! as AssociatedBugsTooltipElement;
 
     expect(tooltip.clusters).toEqual([cluster1, cluster2, cluster3]);

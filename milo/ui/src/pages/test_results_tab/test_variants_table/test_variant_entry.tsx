@@ -122,7 +122,7 @@ export class TestVariantEntryElement
     const results = this.variant.results?.filter(
       (r) =>
         !r.result.expected &&
-        ![TestStatus.Pass, TestStatus.Skip].includes(r.result.status)
+        ![TestStatus.Pass, TestStatus.Skip].includes(r.result.status),
     );
 
     if (!results?.length) {
@@ -142,7 +142,7 @@ export class TestVariantEntryElement
               },
             })),
           },
-          { maxPendingMs: 1000 }
+          { maxPendingMs: 1000 },
         )
         .catch((err) => {
           attachTags(err, OPTIONAL_RESOURCE);
@@ -153,10 +153,10 @@ export class TestVariantEntryElement
             (ctr, i) =>
               [results[i].result.resultId, ctr.clusters] as readonly [
                 string,
-                readonly Cluster[]
-              ]
+                readonly Cluster[],
+              ],
           );
-        })
+        }),
     );
   }
 
@@ -183,7 +183,7 @@ export class TestVariantEntryElement
   @computed
   private get uniqueClusters(): readonly Cluster[] {
     const clusters = this.clustersByResultId.flatMap(
-      ([_, clusters]) => clusters
+      ([_, clusters]) => clusters,
     );
     const seen = new Set<string>();
     const uniqueClusters: Cluster[] = [];
@@ -207,7 +207,7 @@ export class TestVariantEntryElement
     return urlSetSearchQueryParam(
       this.testTabUrl,
       'q',
-      `ExactID:${this.variant.testId} VHash:${this.variant.variantHash}`
+      `ExactID:${this.variant.testId} VHash:${this.variant.variantHash}`,
     );
   }
 
@@ -294,7 +294,7 @@ export class TestVariantEntryElement
                 <span class="kv-key">${k}</span>
                 <span class="kv-value">${v}</span>
               </span>
-            `
+            `,
           )}
         </span>
       </div>
@@ -310,10 +310,10 @@ export class TestVariantEntryElement
           <div class="explanation-html">
             ${unsafeHTML(
               e.explanationHtml ||
-                'This test variant had unexpected results, but was exonerated (reason not provided).'
+                'This test variant had unexpected results, but was exonerated (reason not provided).',
             )}
           </div>
-        `
+        `,
       )}
       ${repeat(
         this.variant.results || [],
@@ -326,7 +326,7 @@ export class TestVariantEntryElement
             .project=${this.project}
             .expanded=${i === this.expandedResultIndex}
           ></milo-result-entry>
-        `
+        `,
       )}
     `;
   }
@@ -509,7 +509,7 @@ export function TestVariantEntry({
         .columnGetters=${columnGetters}
         .historyUrl=${historyUrl}
       ></milo-test-variant-entry>`,
-      container.current
+      container.current,
     );
   }, [variant, columnGetters, historyUrl]);
 

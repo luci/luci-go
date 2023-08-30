@@ -144,7 +144,7 @@ describe('TestVariantEntry', () => {
       resultId: string,
       expected: boolean,
       status: TestStatus,
-      failureMsg: string
+      failureMsg: string,
     ): TestResultBundle {
       const ret: DeepMutable<TestResultBundle> = {
         result: {
@@ -209,7 +209,7 @@ describe('TestVariantEntry', () => {
   test('should work properly if failed to query clusters from luci-analysis', async () => {
     const clusterStub = jest.spyOn(store.services.clusters!, 'cluster');
     clusterStub.mockRejectedValueOnce(
-      new GrpcError(RpcCode.PERMISSION_DENIED, 'not allowed')
+      new GrpcError(RpcCode.PERMISSION_DENIED, 'not allowed'),
     );
 
     const tv: TestVariant = {
@@ -237,7 +237,7 @@ describe('TestVariantEntry', () => {
       </milo-test-variant-entry-test-context>
     `);
     const tvEntry = ele.querySelector<TestVariantEntryElement>(
-      'milo-test-variant-entry'
+      'milo-test-variant-entry',
     )!;
     await aTimeout(0);
 
@@ -255,8 +255,8 @@ describe('TestVariantEntry', () => {
     await tvEntry.updateComplete;
     expect(
       tvEntry.shadowRoot!.querySelector<ExpandableEntryElement>(
-        'milo-expandable-entry'
-      )!.expanded
+        'milo-expandable-entry',
+      )!.expanded,
     ).toBeTruthy();
   });
 
@@ -286,10 +286,10 @@ describe('TestVariantEntry', () => {
       </milo-test-variant-entry-test-context>
     `);
     const tvEntry = ele.querySelector<TestVariantEntryElement>(
-      'milo-test-variant-entry'
+      'milo-test-variant-entry',
     )!;
     expect(tvEntry.selfLink).toStrictEqual(
-      'https://test.com/test-results?q=ExactID%3Atest-id+VHash%3Avhash'
+      'https://test.com/test-results?q=ExactID%3Atest-id+VHash%3Avhash',
     );
   });
 });

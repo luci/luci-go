@@ -30,7 +30,7 @@ import { useLatest } from 'react-use';
 
 type SetURLSearchParams = (
   action: URLSearchParams | ((prev: URLSearchParams) => URLSearchParams),
-  navigateOpts?: NavigateOptions
+  navigateOpts?: NavigateOptions,
 ) => void;
 
 const SyncedSearchParamsContext = createContext<
@@ -56,12 +56,12 @@ export function SyncedSearchParamsProvider({ children }: ContextProviderProps) {
       depsRef.current.state = newState;
       setState(newState, navigateOpts);
     },
-    [depsRef]
+    [depsRef],
   );
 
   const ctxValue = useMemo(
     () => [state, setSearchParams] as const,
-    [state, setSearchParams]
+    [state, setSearchParams],
   );
 
   return (
@@ -87,7 +87,7 @@ export function useSyncedSearchParams() {
   const ctx = useContext(SyncedSearchParamsContext);
   if (!ctx) {
     throw new Error(
-      'useSyncedSearchParams must be used within SyncedSearchParamsProvider'
+      'useSyncedSearchParams must be used within SyncedSearchParamsProvider',
     );
   }
 

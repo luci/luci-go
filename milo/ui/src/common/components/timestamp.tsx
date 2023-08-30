@@ -40,7 +40,7 @@ export const DEFAULT_EXTRA_ZONE_CONFIGS = [
 function renderTooltip(
   datetime: DateTime,
   format: string,
-  extraZones: readonly TimeZoneConfig[]
+  extraZones: readonly TimeZoneConfig[],
 ) {
   const now = DateTime.now();
   return html`
@@ -54,7 +54,7 @@ function renderTooltip(
             <td>${tz.label}:</td>
             <td>${datetime.setZone(tz.zone).toFormat(format)}</td>
           </tr>
-        `
+        `,
       )}
     </table>
   `;
@@ -96,7 +96,7 @@ export function Timestamp(props: TimestampProps) {
           targetRect: target.getBoundingClientRect(),
           gapSize: 2,
         },
-      })
+      }),
     );
   }
 
@@ -104,7 +104,7 @@ export function Timestamp(props: TimestampProps) {
     window.dispatchEvent(
       new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
         detail: { delay: 50 },
-      })
+      }),
     );
   }
 

@@ -24,7 +24,7 @@ export const FakeAuthStateProvider = ({ value, children }: props) => {
       getValidAuthState: async () => valueRef.current,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [value.identity]
+    [value.identity],
   );
 
   return (

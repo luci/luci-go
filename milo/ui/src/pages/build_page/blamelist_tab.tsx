@@ -129,8 +129,8 @@ export class BlamelistTabElement extends MobxExtLitElement {
           this.commits = [];
           this.loadNextPage();
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
   }
 
@@ -152,7 +152,7 @@ export class BlamelistTabElement extends MobxExtLitElement {
   private toggleAllEntries(expand: boolean) {
     this.allEntriesWereExpanded = expand;
     this.shadowRoot!.querySelectorAll<CommitEntryElement>(
-      'milo-commit-entry'
+      'milo-commit-entry',
     ).forEach((e) => (e.expanded = expand));
   }
   private readonly toggleAllEntriesByHotkey = () =>
@@ -176,7 +176,7 @@ export class BlamelistTabElement extends MobxExtLitElement {
             id="repo-select"
             @input=${(e: InputEvent) =>
               this.store.buildPage.setSelectedBlamelist(
-                Number((e.target as HTMLOptionElement).value)
+                Number((e.target as HTMLOptionElement).value),
               )}
           >
             ${this.store.buildPage.build?.blamelistPins.map(
@@ -188,7 +188,7 @@ export class BlamelistTabElement extends MobxExtLitElement {
                 >
                   ${getGitilesRepoURL(pin)}
                 </option>
-              `
+              `,
             )}
           </select>
         </div>
@@ -259,7 +259,7 @@ export class BlamelistTabElement extends MobxExtLitElement {
               .commit=${commit}
               .expanded=${this.commits.length === 1}
             ></milo-commit-entry>
-          `
+          `,
         )}
         <div
           class="list-entry"
@@ -330,7 +330,9 @@ export class BlamelistTabElement extends MobxExtLitElement {
         background-clip: padding-box;
         border: 1px solid var(--divider-color);
         border-radius: 0.25rem;
-        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        transition:
+          border-color 0.15s ease-in-out,
+          box-shadow 0.15s ease-in-out;
         text-overflow: ellipsis;
       }
 

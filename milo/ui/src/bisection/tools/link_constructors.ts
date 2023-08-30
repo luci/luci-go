@@ -51,7 +51,7 @@ export const linkToCommit = (commit: GitilesCommit): ExternalLink => {
 
 export const linkToCommitRange = (
   lastPassed: GitilesCommit,
-  firstFailed: GitilesCommit
+  firstFailed: GitilesCommit,
 ): ExternalLink => {
   const host = lastPassed.host;
   const project = lastPassed.project;

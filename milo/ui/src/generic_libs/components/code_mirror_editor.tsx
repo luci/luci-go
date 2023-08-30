@@ -88,7 +88,7 @@ export function CodeMirrorEditor({
 
     const editor = CodeMirror.fromTextArea(
       textAreaRef.current,
-      firstInitOptions.current
+      firstInitOptions.current,
     );
     editorRef.current = editor;
     firstOnInit.current?.(editorRef.current);

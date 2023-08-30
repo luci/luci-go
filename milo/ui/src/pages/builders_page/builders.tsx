@@ -126,8 +126,8 @@ export class BuildersPageElement extends MobxExtLitElement {
           this.builders = [];
           this.loadAllPages();
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
   }
 
@@ -135,7 +135,7 @@ export class BuildersPageElement extends MobxExtLitElement {
     this.isLoading = true;
     for await (const buildersRes of this.listBuildersResIter) {
       this.builders = this.builders.concat(
-        buildersRes.builders?.map((v) => v.id) || []
+        buildersRes.builders?.map((v) => v.id) || [],
       );
     }
     this.isLoading = false;
@@ -171,7 +171,7 @@ export class BuildersPageElement extends MobxExtLitElement {
                 html`<milo-builders-page-row
                   .builder=${b}
                   .numOfBuilds=${this.numOfBuilds}
-                ></milo-builders-page-row>`
+                ></milo-builders-page-row>`,
             )}
           </tbody>
         </table>

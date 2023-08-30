@@ -80,7 +80,7 @@ export function BuilderIdBar({ builderId, healthStatus }: BuilderIdBarProps) {
 
           const expires = new Date(
             // 1 week from now.
-            Date.now() + 7 * 24 * 60 * 60 * 1000
+            Date.now() + 7 * 24 * 60 * 60 * 1000,
           ).toUTCString();
           document.cookie = `showNewBuilderPage=false; expires=${expires}; path=/`;
         }}

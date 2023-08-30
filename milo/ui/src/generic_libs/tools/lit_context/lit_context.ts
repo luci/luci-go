@@ -167,7 +167,7 @@ export function provider<Cls extends Constructor<MobxLitElement>>(cls: Cls) {
 
   class Provider extends (cls as Constructor<MobxLitElement>) {
     [onCtxUpdatesSymbol] = new Map<string, Set<(newCtx: unknown) => void>>(
-      eventTypes.map((eventType) => [eventType, new Set()])
+      eventTypes.map((eventType) => [eventType, new Set()]),
     );
     [disconnectedCBsSymbol]: Array<() => void> = [];
     [isFirstUpdatedSymbol] = true;
@@ -210,7 +210,7 @@ export function provider<Cls extends Constructor<MobxLitElement>>(cls: Cls) {
           const onCtxUpdate = event.detail.onCtxUpdate;
           onCtxUpdateSet.add(onCtxUpdate);
           event.detail.addDisconnectedEventCB(() =>
-            onCtxUpdateSet.delete(onCtxUpdate)
+            onCtxUpdateSet.delete(onCtxUpdate),
           );
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onCtxUpdate((this as any)[propKey]);
@@ -222,7 +222,7 @@ export function provider<Cls extends Constructor<MobxLitElement>>(cls: Cls) {
 
         this.addEventListener(eventType, eventCB);
         this[disconnectedCBsSymbol].push(() =>
-          this.removeEventListener(eventType, eventCB)
+          this.removeEventListener(eventType, eventCB),
         );
 
         if (opt.global) {
@@ -241,12 +241,12 @@ export function provider<Cls extends Constructor<MobxLitElement>>(cls: Cls) {
         } else {
           localContextProviderCounter.set(
             eventType,
-            (localContextProviderCounter.get(eventType) || 0) + 1
+            (localContextProviderCounter.get(eventType) || 0) + 1,
           );
           this[disconnectedCBsSymbol].push(() => {
             localContextProviderCounter.set(
               eventType,
-              localContextProviderCounter.get(eventType)! - 1
+              localContextProviderCounter.get(eventType)! - 1,
             );
           });
         }
@@ -365,14 +365,14 @@ export function createContextLink<Ctx>() {
     return function <
       K extends string | number | symbol,
       // Ctx must be assignable to T[K].
-      T extends MobxLitElement & Record<K, Ctx>
+      T extends MobxLitElement & Record<K, Ctx>,
     >(target: T, propKey: K) {
       if (!Reflect.hasMetadata(providerMetaSymbol, target)) {
         Reflect.defineMetadata(providerMetaSymbol, new Map(), target);
       }
       const meta = Reflect.getMetadata(
         providerMetaSymbol,
-        target
+        target,
       ) as ProviderContextMeta;
       meta.set(eventType, [propKey, opt]);
     };
@@ -382,18 +382,18 @@ export function createContextLink<Ctx>() {
     return function <
       K extends string | number | symbol,
       V,
-      T extends MobxLitElement & Partial<Record<K, V>>
+      T extends MobxLitElement & Partial<Record<K, V>>,
     >(
       // T[K] must be assignable to Ctx.
       target: Ctx extends T[K] ? T : never,
-      propKey: K
+      propKey: K,
     ) {
       if (!Reflect.hasMetadata(consumerMetaSymbol, target)) {
         Reflect.defineMetadata(consumerMetaSymbol, [], target);
       }
       const meta = Reflect.getMetadata(
         consumerMetaSymbol,
-        target
+        target,
       ) as ConsumerContextMeta;
       meta.push([eventType, propKey]);
     };
@@ -401,6 +401,6 @@ export function createContextLink<Ctx>() {
 
   return [provideContext, consumeContext] as [
     typeof provideContext,
-    typeof consumeContext
+    typeof consumeContext,
   ];
 }

@@ -109,7 +109,7 @@ export class StepExt {
     const bodyContainer = document.createElement('div');
     render(
       unsafeHTML(renderMarkdown(this.summaryMarkdown || '')),
-      bodyContainer
+      bodyContainer,
     );
     // The body has no content.
     // We don't need to check bodyContainer.firstChild because text are
@@ -133,7 +133,7 @@ export class StepExt {
       // Found some text, move them from the body to the header.
       if (firstParagraph.firstChild !== firstParagraph.firstElementChild) {
         headerContainer.appendChild(
-          firstParagraph.removeChild(firstParagraph.firstChild)
+          firstParagraph.removeChild(firstParagraph.firstChild),
         );
         continue;
       }
@@ -141,11 +141,11 @@ export class StepExt {
       // Found an inline element, move it from the body to the header.
       if (
         ['A', 'SPAN', 'I', 'B', 'STRONG', 'CODE'].includes(
-          firstParagraph.firstElementChild.tagName
+          firstParagraph.firstElementChild.tagName,
         )
       ) {
         headerContainer.appendChild(
-          firstParagraph.removeChild(firstParagraph.firstElementChild)
+          firstParagraph.removeChild(firstParagraph.firstElementChild),
         );
         continue;
       }
@@ -255,7 +255,7 @@ export class StepExt {
  * the step is pinned/unpinned) does not trigger a rerun of the function.
  */
 export function clusterBuildSteps(
-  steps: readonly StepExt[]
+  steps: readonly StepExt[],
 ): readonly (readonly StepExt[])[] {
   const clusters: StepExt[][] = [];
   for (const step of steps) {
@@ -266,7 +266,7 @@ export function clusterBuildSteps(
     // e.g. it can leads to the steps being re-clustered when users (un)pin a
     // step.
     const criticalityChanged = untracked(
-      () => step.isCritical !== lastCluster?.[0]?.isCritical
+      () => step.isCritical !== lastCluster?.[0]?.isCritical,
     );
 
     if (criticalityChanged) {
@@ -331,8 +331,8 @@ export const BuildState = types
     get isCanary() {
       return Boolean(
         self.data.input?.experiments?.includes(
-          'luci.buildbucket.canary_software'
-        )
+          'luci.buildbucket.canary_software',
+        ),
       );
     },
     get buildSets(): readonly string[] {
@@ -381,7 +381,7 @@ export const BuildState = types
     },
     get pendingDuration() {
       return (this.startTime || this.endTime || this._currentTime).diff(
-        this.createTime
+        this.createTime,
       );
     },
     get isPending() {
@@ -437,7 +437,7 @@ export const BuildState = types
   }))
   .views((self) => {
     const clusteredRootSteps = keepAliveComputed(self, () =>
-      clusterBuildSteps(self.rootSteps)
+      clusterBuildSteps(self.rootSteps),
     );
     return {
       get clusteredRootSteps() {

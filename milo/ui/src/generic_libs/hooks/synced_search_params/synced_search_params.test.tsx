@@ -54,7 +54,7 @@ describe('useSyncedSearchParams', () => {
     render(
       <FakeContextProvider>
         <TestComponent />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
 
     const updaterButton = screen.getByTestId('trigger-update');

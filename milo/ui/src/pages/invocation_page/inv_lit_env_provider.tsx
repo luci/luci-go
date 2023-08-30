@@ -78,8 +78,8 @@ export class InvLitEnvProviderElement extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['invState', invState]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
 
     this.addDisposer(
@@ -89,8 +89,8 @@ export class InvLitEnvProviderElement extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['project', project]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
 
     this.addDisposer(
@@ -100,8 +100,8 @@ export class InvLitEnvProviderElement extends MobxExtLitElement {
           // Emulate @property() update.
           this.updated(new Map([['testTabUrl', testTabUrl]]));
         },
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
   }
 

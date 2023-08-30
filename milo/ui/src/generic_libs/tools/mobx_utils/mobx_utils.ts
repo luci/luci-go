@@ -31,7 +31,7 @@ import { NEVER_PROMISE } from '@/common/constants';
  */
 export function unwrapObservable<T>(
   observable: IPromiseBasedObservable<T>,
-  defaultValue: T
+  defaultValue: T,
 ) {
   switch (observable.state) {
     case PENDING:
@@ -50,7 +50,7 @@ export function unwrapObservable<T>(
 export function keepAliveComputed<T>(
   target: IAnyStateTreeNode,
   func: () => T,
-  opts: IComputedValueOptions<T> = {}
+  opts: IComputedValueOptions<T> = {},
 ): IComputedValue<T> {
   const isAlive = observable.box(true);
   const ret = computed(
@@ -59,7 +59,7 @@ export function keepAliveComputed<T>(
       // `isAlive` when `target` is no longer alive.
       if (!isAlive.get()) {
         throw new Error(
-          'the computed value is accessed when the target node is no longer alive'
+          'the computed value is accessed when the target node is no longer alive',
         );
       }
       return func();
@@ -67,7 +67,7 @@ export function keepAliveComputed<T>(
     {
       ...opts,
       keepAlive: true,
-    }
+    },
   );
 
   addDisposer(target, () => {
@@ -96,7 +96,7 @@ export function keepAliveComputed<T>(
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function aliveFlow<R, Args extends any[]>(
   target: IAnyStateTreeNode,
-  generator: Parameters<typeof flow<R, Args>>[0]
+  generator: Parameters<typeof flow<R, Args>>[0],
 ): ReturnType<typeof flow<R, Args>> {
   return flow(function* (...args) {
     const gen = generator(...args);

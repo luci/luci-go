@@ -30,7 +30,7 @@ describe('ExpandableEntry', () => {
         <ExpandableEntryBody>
           <span>Content</span>
         </ExpandableEntryBody>
-      </ExpandableEntry>
+      </ExpandableEntry>,
     );
 
     expect(screen.findByTestId('ChevronRightIcon')).not.toBeNull();
@@ -47,7 +47,7 @@ describe('ExpandableEntry', () => {
         <ExpandableEntryBody>
           <span>Content</span>
         </ExpandableEntryBody>
-      </ExpandableEntry>
+      </ExpandableEntry>,
     );
 
     expect(screen.getByTestId('ExpandMoreIcon')).not.toBeNull();
@@ -65,7 +65,7 @@ describe('ExpandableEntry', () => {
         <ExpandableEntryBody>
           <span>Content</span>
         </ExpandableEntryBody>
-      </ExpandableEntry>
+      </ExpandableEntry>,
     );
 
     let headerIconEle = screen.getByTestId('ChevronRightIcon');
@@ -95,7 +95,7 @@ describe('ExpandableEntry', () => {
         <ExpandableEntryBody>
           <span>Content</span>
         </ExpandableEntryBody>
-      </ExpandableEntry>
+      </ExpandableEntry>,
     );
 
     headerIconEle = screen.getByTestId('ExpandMoreIcon');

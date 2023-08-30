@@ -26,7 +26,7 @@
  */
 declare function createSelectiveMockFromModule<T = unknown>(
   moduleName: string,
-  keysToMock: ReadonlyArray<keyof NoInfer<T>>
+  keysToMock: ReadonlyArray<keyof NoInfer<T>>,
 ): T;
 
 /**
@@ -49,5 +49,5 @@ declare function createSelectiveMockFromModule<T = unknown>(
  */
 declare function createSelectiveSpiesFromModule<T = unknown>(
   moduleName: string,
-  keysToSpy: ReadonlyArray<FunctionKeys<NoInfer<T>>>
+  keysToSpy: ReadonlyArray<FunctionKeys<NoInfer<T>>>,
 ): T;

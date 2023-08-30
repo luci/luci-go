@@ -99,7 +99,7 @@ export class ImageDiffArtifactPageElement extends MobxLitElement {
       return fromPromise(Promise.race([]));
     }
     return fromPromise(
-      this.store.services.resultDb.getArtifact({ name: this.diffArtifactName })
+      this.store.services.resultDb.getArtifact({ name: this.diffArtifactName }),
     );
   }
   @computed private get diffArtifact() {
@@ -114,7 +114,7 @@ export class ImageDiffArtifactPageElement extends MobxLitElement {
     return fromPromise(
       this.store.services.resultDb.getArtifact({
         name: this.expectedArtifactName,
-      })
+      }),
     );
   }
   @computed private get expectedArtifact() {
@@ -129,7 +129,7 @@ export class ImageDiffArtifactPageElement extends MobxLitElement {
     return fromPromise(
       this.store.services.resultDb.getArtifact({
         name: this.actualArtifactName,
-      })
+      }),
     );
   }
   @computed private get actualArtifact() {
@@ -194,7 +194,7 @@ export function ImageDiffArtifactPage() {
   const expectedArtifactId = search.get('expectedArtifactId');
   if (expectedArtifactId === null) {
     throw new Error(
-      'expectedArtifactId must be provided via the search params'
+      'expectedArtifactId must be provided via the search params',
     );
   }
 

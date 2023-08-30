@@ -208,7 +208,7 @@ export const BuildPage = types
           .then((b) => {
             self._setBuild(b);
             return self._build!;
-          })
+          }),
       );
     });
     return {
@@ -225,7 +225,7 @@ export const BuildPage = types
         }
         const invIdFromBuild =
           self.build?.data.infra?.resultdb?.invocation?.slice(
-            'invocations/'.length
+            'invocations/'.length,
           ) ?? null;
         return fromPromise(Promise.resolve(invIdFromBuild));
       } else if (self.buildId) {
@@ -234,7 +234,7 @@ export const BuildPage = types
         return fromPromise(Promise.resolve(getInvIdFromBuildId(self.buildId)));
       } else if (self.builderIdParam && self.buildNum) {
         return fromPromise(
-          getInvIdFromBuildNum(self.builderIdParam, self.buildNum)
+          getInvIdFromBuildNum(self.builderIdParam, self.buildNum),
         );
       } else {
         return null;
@@ -259,7 +259,7 @@ export const BuildPage = types
               fields: SEARCH_BUILD_FIELD_MASK,
               pageSize: 1000,
             })
-            .then((res) => res.builds || [])
+            .then((res) => res.builds || []),
         );
 
       return fromPromise(
@@ -274,10 +274,10 @@ export const BuildPage = types
           const builds = [...buildMap.values()].sort((b1, b2) =>
             b1.id.length === b2.id.length
               ? b1.id.localeCompare(b2.id)
-              : b1.id.length - b2.id.length
+              : b1.id.length - b2.id.length,
           );
           return builds;
-        })
+        }),
       );
     });
 
@@ -303,7 +303,7 @@ export const BuildPage = types
             PERM_TEST_EXONERATIONS_LIST_LIMITED,
             PERM_TEST_RESULTS_LIST_LIMITED,
           ],
-        })
+        }),
       );
     });
 
@@ -317,14 +317,14 @@ export const BuildPage = types
       get _permittedActions(): { readonly [key: string]: boolean | undefined } {
         const permittedActionRes = unwrapObservable(
           permittedActions.get() || NEVER_OBSERVABLE,
-          null
+          null,
         );
         return permittedActionRes?.results || {};
       },
       get canRetry() {
         return Boolean(
           self.build?.data.retriable !== Trinary.No &&
-            this._permittedActions[PERM_BUILDS_ADD]
+            this._permittedActions[PERM_BUILDS_ADD],
         );
       },
       get canCancel() {
@@ -350,7 +350,7 @@ export const BuildPage = types
   .views((self) => {
     const getQueryBlamelistResIterFn = (
       gitilesCommit: GitilesCommit,
-      multiProjectSupport = false
+      multiProjectSupport = false,
     ) => {
       if (!self.services?.milo || !self.build) {
         // eslint-disable-next-line require-yield
@@ -384,7 +384,7 @@ export const BuildPage = types
         const pinRepo = getGitilesRepoURL(pin);
         return getQueryBlamelistResIterFn(
           pin,
-          pinRepo !== self.gitilesCommitRepo
+          pinRepo !== self.gitilesCommitRepo,
         );
       });
     });
@@ -402,7 +402,7 @@ export const BuildPage = types
           typeof self,
           'currentTime' | 'refreshTime' | 'services' | 'userConfig'
         >
-      >
+      >,
     ) {
       Object.assign<typeof self, Partial<typeof self>>(self, deps);
     },
@@ -448,8 +448,8 @@ export const BuildPage = types
               services,
             });
           },
-          { fireImmediately: true }
-        )
+          { fireImmediately: true },
+        ),
       );
 
       self.invocation.setDependencies({

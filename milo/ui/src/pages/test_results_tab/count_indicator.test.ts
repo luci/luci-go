@@ -89,7 +89,7 @@ describe('CountIndicator', () => {
     unprotect(store);
     const queryTestVariantsStub = jest.spyOn(
       store.services.resultDb!,
-      'queryTestVariants'
+      'queryTestVariants',
     );
     protect(store);
 
@@ -110,7 +110,7 @@ describe('CountIndicator', () => {
     `);
     const indicator =
       provider.querySelector<TestResultsTabCountIndicatorElement>(
-        'milo-trt-count-indicator'
+        'milo-trt-count-indicator',
       )!;
 
     expect(queryTestVariantsStub.mock.calls.length).toStrictEqual(1);
@@ -120,7 +120,7 @@ describe('CountIndicator', () => {
 
     await aTimeout(0);
     expect(store.invocationPage.invocation.testLoader?.isLoading).toStrictEqual(
-      false
+      false,
     );
     expect(queryTestVariantsStub.mock.calls.length).toStrictEqual(1);
   });

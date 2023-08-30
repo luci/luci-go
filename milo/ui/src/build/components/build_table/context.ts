@@ -18,7 +18,7 @@ import { Build } from '@/common/services/buildbucket';
 import { ExpandableEntriesStateInstance } from '@/common/store/expandable_entries_state';
 
 const TableStateContext = createContext<ExpandableEntriesStateInstance | null>(
-  null
+  null,
 );
 
 export const TableStateProvider = TableStateContext.Provider;

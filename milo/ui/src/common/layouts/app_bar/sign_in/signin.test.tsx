@@ -24,14 +24,14 @@ describe('SignIn', () => {
     const { rerender } = render(
       <FakeContextProvider>
         <SignIn />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
     expect(screen.getByText('Login')).toBeInTheDocument();
 
     rerender(
       <FakeContextProvider>
         <SignIn identity={ANONYMOUS_IDENTITY} />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
     expect(screen.getByText('Login')).toBeInTheDocument();
   });
@@ -44,7 +44,7 @@ describe('SignIn', () => {
           identity="id:123456"
           picture="avatar_url"
         />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
     expect(screen.getByText('googler@google.com')).toBeInTheDocument();
     expect(screen.getByLabelText('avatar')).toBeInTheDocument();

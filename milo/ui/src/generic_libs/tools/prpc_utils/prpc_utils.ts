@@ -32,7 +32,7 @@ export const CRITICAL_HEADERS = Object.freeze([
 export async function genCacheKeyForPrpcRequest(
   prefix: string,
   req: Request,
-  additionalCriticalHeaderKeys: readonly string[] = []
+  additionalCriticalHeaderKeys: readonly string[] = [],
 ) {
   // We don't clone the req here so the caller can avoid cloning if they
   // don't need to reuse the request body.
@@ -74,7 +74,7 @@ export function removeDefaultProps(obj: unknown): unknown {
         } else {
           return [[key, removeDefaultProps(item)]] as Array<[string, unknown]>;
         }
-      })
+      }),
     );
   }
   return obj;

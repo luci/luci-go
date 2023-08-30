@@ -31,7 +31,7 @@ describe('TagsEntry', () => {
 
     // Tags not displayed in header when the entry is collapsed.
     expect(tagsEle.textContent).toStrictEqual(
-      'Tags: key1: val1, key2: https://www.example.com'
+      'Tags: key1: val1, key2: https://www.example.com',
     );
     expect(screen.queryByRole('table')).toBeNull();
 
@@ -43,10 +43,10 @@ describe('TagsEntry', () => {
     expect(tagsEle.textContent).toStrictEqual('Tags:');
     expect(screen.queryByRole('table')).not.toBeNull();
     expect(screen.getByText<HTMLElement>('val1').tagName).not.toStrictEqual(
-      'A'
+      'A',
     );
     expect(
-      screen.getByText<HTMLElement>('https://www.example.com').tagName
+      screen.getByText<HTMLElement>('https://www.example.com').tagName,
     ).toStrictEqual('A');
 
     // Collapse the tags entry.
@@ -55,7 +55,7 @@ describe('TagsEntry', () => {
 
     // Tags not displayed in header when the entry is collapsed.
     expect(tagsEle.textContent).toStrictEqual(
-      'Tags: key1: val1, key2: https://www.example.com'
+      'Tags: key1: val1, key2: https://www.example.com',
     );
     expect(screen.queryByRole('table')).toBeNull();
   });

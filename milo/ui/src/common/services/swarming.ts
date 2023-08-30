@@ -64,7 +64,7 @@ export class BotsService {
 
   private readonly callFn: (
     method: string,
-    message: object
+    message: object,
   ) => Promise<unknown>;
 
   constructor(client: PrpcClientExt) {
@@ -90,7 +90,7 @@ export class TasksServices {
 
   private readonly callFn: (
     method: string,
-    message: object
+    message: object,
   ) => Promise<unknown>;
 
   constructor(client: PrpcClientExt) {

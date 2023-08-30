@@ -50,7 +50,7 @@ describe('TestList', () => {
     render(
       <FakeContextProvider>
         <TestList project="chromium" searchQuery="" />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
 
     await act(() => jest.runAllTimersAsync());
@@ -71,7 +71,7 @@ describe('TestList', () => {
     render(
       <FakeContextProvider>
         <TestList project="chromium" searchQuery="test-id" />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
 
     await act(() => jest.runAllTimersAsync());

@@ -52,7 +52,7 @@ export function EndedBuildTable({
   // Don't need to declare the component as an observable.
   const config = useStore().userConfig.builderPage;
   const [initDefaultExpanded] = useState(
-    () => config.expandEndedBuildsEntryByDefault
+    () => config.expandEndedBuildsEntryByDefault,
   );
 
   const hasChanges = endedBuilds.some((b) => b.input?.gerritChanges?.length);

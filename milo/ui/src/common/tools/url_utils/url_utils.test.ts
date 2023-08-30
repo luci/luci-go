@@ -26,7 +26,7 @@ describe('getBuilderURLPath', () => {
       builder: 'test builder',
     });
     expect(url).toStrictEqual(
-      '/p/testproject/builders/testbucket/test%20builder'
+      '/p/testproject/builders/testbucket/test%20builder',
     );
   });
 });
@@ -45,7 +45,7 @@ describe('getSwarmingBotListURL', () => {
       'os:Windows-11',
     ]);
     expect(url).toStrictEqual(
-      'https://chromium-swarm-dev.appspot.com/botlist?f=cpu%3Ax86-64&f=os%3AWindows-11'
+      'https://chromium-swarm-dev.appspot.com/botlist?f=cpu%3Ax86-64&f=os%3AWindows-11',
     );
   });
 });

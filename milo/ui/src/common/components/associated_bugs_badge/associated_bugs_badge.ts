@@ -63,10 +63,10 @@ export class AssociatedBugsBadgeElement extends MobxExtLitElement {
         (shouldDisplay) =>
           this.style.setProperty(
             'display',
-            shouldDisplay ? 'inline-block' : 'none'
+            shouldDisplay ? 'inline-block' : 'none',
           ),
-        { fireImmediately: true }
-      )
+        { fireImmediately: true },
+      ),
     );
   }
 
@@ -94,14 +94,14 @@ export class AssociatedBugsBadgeElement extends MobxExtLitElement {
                 targetRect: this.getBoundingClientRect(),
                 gapSize: 2,
               },
-            })
+            }),
           );
         }}
         @mouseout=${() => {
           window.dispatchEvent(
             new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
               detail: { delay: 50 },
-            })
+            }),
           );
         }}
       >

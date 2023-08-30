@@ -57,7 +57,7 @@ describe('TestIdLabel', () => {
     render(
       <FakeContextProvider>
         <TestIdLabel projectOrRealm="testrealm" testId="testid" />
-      </FakeContextProvider>
+      </FakeContextProvider>,
     );
     expect(screen.queryByText('testrealm')).not.toBeNull();
     expect(screen.queryByText('testid')).not.toBeNull();
@@ -66,7 +66,7 @@ describe('TestIdLabel', () => {
   test('should load test source', async () => {
     const testMetadataStub = jest.spyOn(
       ResultDb.prototype,
-      'queryTestMetadata'
+      'queryTestMetadata',
     );
     testMetadataStub.mockResolvedValueOnce({
       testMetadata: [baseTestMetadata],
@@ -77,14 +77,14 @@ describe('TestIdLabel', () => {
     const expectedSource =
       'https://chromium.googlesource.com/chromium/src/+/refs/heads/main/testfile#440';
     expect(
-      (await screen.findByText('fakename')).getAttribute('href')
+      (await screen.findByText('fakename')).getAttribute('href'),
     ).toStrictEqual(expectedSource);
   });
 
   test('should not crash if no test metadata returned from the query', async () => {
     const testMetadataStub = jest.spyOn(
       ResultDb.prototype,
-      'queryTestMetadata'
+      'queryTestMetadata',
     );
     testMetadataStub.mockResolvedValueOnce({});
 
@@ -111,7 +111,7 @@ describe('TestIdLabel', () => {
     cfgStub.mockResolvedValueOnce(testProjectCfg);
     const testMetadataStub = jest.spyOn(
       ResultDb.prototype,
-      'queryTestMetadata'
+      'queryTestMetadata',
     );
     testMetadataStub.mockResolvedValueOnce({
       testMetadata: [baseTestMetadata],

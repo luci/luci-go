@@ -28,8 +28,8 @@ import { SummaryContentCell, SummaryHeadCell } from './summary_column';
 jest.mock('../context', () =>
   self.createSelectiveSpiesFromModule<typeof import('../context')>(
     '../context',
-    ['useRowState']
-  )
+    ['useRowState'],
+  ),
 );
 
 const buildWithSummary = {
@@ -69,7 +69,7 @@ describe('SummaryContentCell', () => {
               </BuildTableRow>
             </BuildTableBody>
           </BuildTable>
-        </FakeContextProvider>
+        </FakeContextProvider>,
       );
     });
 
@@ -86,48 +86,48 @@ describe('SummaryContentCell', () => {
       expect(toggleRowButton).not.toHaveStyleRule('visibility', 'hidden');
 
       expect(
-        toggleRowButton.querySelector("[data-testid='ChevronRightIcon']")
+        toggleRowButton.querySelector("[data-testid='ChevronRightIcon']"),
       ).toBeInTheDocument();
       expect(
-        toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']")
+        toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
       ).not.toBeInTheDocument();
 
       // Expand by clicking on toggle button.
       act(() => toggleRowButton.click());
       expect(
-        toggleRowButton.querySelector("[data-testid='ChevronRightIcon']")
+        toggleRowButton.querySelector("[data-testid='ChevronRightIcon']"),
       ).not.toBeInTheDocument();
       expect(
-        toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']")
+        toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
       ).toBeInTheDocument();
 
       // Collapse by clicking on toggle button.
       act(() => toggleRowButton.click());
       expect(
-        toggleRowButton.querySelector("[data-testid='ChevronRightIcon']")
+        toggleRowButton.querySelector("[data-testid='ChevronRightIcon']"),
       ).toBeInTheDocument();
       expect(
-        toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']")
+        toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
       ).not.toBeInTheDocument();
 
       // Expand again by changing the default state.
       act(() => toggleAllRowsButton.click());
       await act(() => jest.runAllTimersAsync());
       expect(
-        toggleRowButton.querySelector("[data-testid='ChevronRightIcon']")
+        toggleRowButton.querySelector("[data-testid='ChevronRightIcon']"),
       ).not.toBeInTheDocument();
       expect(
-        toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']")
+        toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
       ).toBeInTheDocument();
 
       // Collapse again by changing the default state.
       act(() => toggleAllRowsButton.click());
       await act(() => jest.runAllTimersAsync());
       expect(
-        toggleRowButton.querySelector("[data-testid='ChevronRightIcon']")
+        toggleRowButton.querySelector("[data-testid='ChevronRightIcon']"),
       ).toBeInTheDocument();
       expect(
-        toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']")
+        toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
       ).not.toBeInTheDocument();
     });
 
@@ -175,7 +175,7 @@ describe('SummaryContentCell', () => {
               </BuildTableRow>
             </BuildTableBody>
           </BuildTable>
-        </FakeContextProvider>
+        </FakeContextProvider>,
       );
     });
 

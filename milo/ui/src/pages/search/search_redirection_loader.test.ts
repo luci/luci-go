@@ -19,24 +19,24 @@ describe('searchLoader', () => {
     it('should redirect to builder-search when t param is missing', () => {
       const response = searchRedirectionLoader({
         request: new Request(
-          'https://luci-milo-dev.appspot.com/ui/search?q=query'
+          'https://luci-milo-dev.appspot.com/ui/search?q=query',
         ),
       });
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toEqual(
-        '/ui/builder-search?q=query'
+        '/ui/builder-search?q=query',
       );
     });
 
     it('should redirect to builder-search when query param t is BUILDERS', () => {
       const response = searchRedirectionLoader({
         request: new Request(
-          'https://luci-milo-dev.appspot.com/ui/search?q=query&t=BUILDERS'
+          'https://luci-milo-dev.appspot.com/ui/search?q=query&t=BUILDERS',
         ),
       });
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toEqual(
-        '/ui/builder-search?q=query'
+        '/ui/builder-search?q=query',
       );
     });
   });
@@ -45,24 +45,24 @@ describe('searchLoader', () => {
     it('should redirect to test-search if t param is TESTS', () => {
       const response = searchRedirectionLoader({
         request: new Request(
-          'https://luci-milo-dev.appspot.com/ui/search?q=query&t=TESTS&tp=chrome'
+          'https://luci-milo-dev.appspot.com/ui/search?q=query&t=TESTS&tp=chrome',
         ),
       });
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toEqual(
-        '/ui/p/chrome/test-search?q=query'
+        '/ui/p/chrome/test-search?q=query',
       );
     });
 
     it('empty project for tests search should default to chromium', () => {
       const response = searchRedirectionLoader({
         request: new Request(
-          'https://luci-milo-dev.appspot.com/ui/search?q=query&t=TESTS'
+          'https://luci-milo-dev.appspot.com/ui/search?q=query&t=TESTS',
         ),
       });
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toEqual(
-        '/ui/p/chromium/test-search?q=query'
+        '/ui/p/chromium/test-search?q=query',
       );
     });
   });

@@ -49,7 +49,7 @@ export function generateSidebarPages(project: string | undefined) {
 
   sidebarSections.push(
     generateTestsSection(project),
-    generateMonitoringSection(project)
+    generateMonitoringSection(project),
   );
 
   if (project.startsWith('chrom')) {
@@ -108,7 +108,7 @@ function generateTestsSection(project: string): SidebarSection {
       url: `https://${SETTINGS.luciAnalysis.host}/p/${project}/clusters`,
       icon: <SpokeIcon />,
       external: true,
-    }
+    },
   );
 
   // Add ChromeOS specific Test tools.
@@ -125,7 +125,7 @@ function generateTestsSection(project: string): SidebarSection {
         url: `https://healthmon.chromeos.goog/time_series`,
         icon: <SpeedIcon />,
         external: true,
-      }
+      },
     );
   }
   return {
