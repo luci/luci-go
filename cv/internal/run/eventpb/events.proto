@@ -69,6 +69,9 @@ message Event {
     // tryjobs (e.g. retry) and this Run (e.g. fail the Run for critical
     // tryjob failure).
     cv.internal.tryjob.TryjobUpdatedEvents tryjobs_updated = 11;
+    // On parent_run_completed event, Run Manager decides the next step for
+    // the child run.
+    ParentRunCompleted parent_run_completed = 13;
   }
 
   // Instructs Run Manager that this event can only be processed after
@@ -98,6 +101,9 @@ message NewConfig {
 }
 
 message ReadyForSubmission {
+}
+
+message ParentRunCompleted {
 }
 
 message CLsSubmitted {

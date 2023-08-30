@@ -210,6 +210,16 @@ func (n *Notifier) NotifyLongOpCompleted(ctx context.Context, runID common.RunID
 	})
 }
 
+// NotifyParentRunCompleted tells RunManager that a parent run has completed.
+func (n *Notifier) NotifyParentRunCompleted(ctx context.Context, runID common.RunID) error {
+	evt := &eventpb.Event{
+		Event: &eventpb.Event_ParentRunCompleted{
+			ParentRunCompleted: &eventpb.ParentRunCompleted{},
+		},
+	}
+	return n.sendWithoutDispatch(ctx, runID, evt)
+}
+
 // SendNow sends the event to Run's eventbox and invokes RunManager immediately.
 func (n *Notifier) SendNow(ctx context.Context, runID common.RunID, evt *eventpb.Event) error {
 	return n.Send(ctx, runID, evt, time.Time{})

@@ -205,7 +205,6 @@ func TestStart(t *testing.T) {
 					Status: run.Status_CANCELLED,
 				},
 			), ShouldBeNil)
-
 			rs.DepRuns = common.RunIDs{parentRun}
 			res, err := h.Start(ctx, rs)
 			So(err, ShouldBeNil)

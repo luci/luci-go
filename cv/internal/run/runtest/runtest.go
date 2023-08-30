@@ -201,6 +201,26 @@ func AssertReceivedLongOpCompleted(ctx context.Context, runID common.RunID, resu
 	AssertInEventbox(ctx, runID, target)
 }
 
+// AssertReceivedParentRunCompleted asserts Run has received ParentRunCompleted event.
+func AssertReceivedParentRunCompleted(ctx context.Context, runID common.RunID) {
+	target := &eventpb.Event{
+		Event: &eventpb.Event_ParentRunCompleted{
+			ParentRunCompleted: &eventpb.ParentRunCompleted{},
+		},
+	}
+	AssertInEventbox(ctx, runID, target)
+}
+
+// AssertNotReceivedParentRunCompleted asserts Run has not received ParentRunCompleted event.
+func AssertNotReceivedParentRunCompleted(ctx context.Context, runID common.RunID) {
+	target := &eventpb.Event{
+		Event: &eventpb.Event_ParentRunCompleted{
+			ParentRunCompleted: &eventpb.ParentRunCompleted{},
+		},
+	}
+	AssertNotInEventbox(ctx, runID, target)
+}
+
 // MockDispatch installs and returns MockDispatcher for Run Manager.
 func MockDispatch(ctx context.Context) (context.Context, MockDispatcher) {
 	m := MockDispatcher{&cvtesting.DispatchRecorder{}}

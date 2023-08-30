@@ -50,7 +50,11 @@ func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState, reasons []stri
 	uniqueReasons := stringset.NewFromSlice(reasons...)
 	uniqueReasons.Del("")
 	rs.CancellationReasons = uniqueReasons.ToSortedSlice()
-	se := impl.endRun(ctx, rs, run.Status_CANCELLED, cg)
+	childRuns, err := run.LoadChildRuns(ctx, rs.ID)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to load child runs").Err()
+	}
+	se := impl.endRun(ctx, rs, run.Status_CANCELLED, cg, childRuns)
 
 	return &Result{
 		State:        rs,

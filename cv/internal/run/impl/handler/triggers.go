@@ -77,8 +77,12 @@ func (impl *Impl) onCompletedResetTriggers(ctx context.Context, rs *state.RunSta
 	if err != nil {
 		return nil, errors.Annotate(err, "prjcfg.GetConfigGroup").Err()
 	}
+	childRuns, err := run.LoadChildRuns(ctx, rs.ID)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to load child runs").Err()
+	}
 	return &Result{
 		State:        rs,
-		SideEffectFn: impl.endRun(ctx, rs, runStatus, cg),
+		SideEffectFn: impl.endRun(ctx, rs, runStatus, cg, childRuns),
 	}, nil
 }

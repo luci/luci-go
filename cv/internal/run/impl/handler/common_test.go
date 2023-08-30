@@ -46,6 +46,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/pubsub"
 	"go.chromium.org/luci/cv/internal/run/rdb"
+	"go.chromium.org/luci/cv/internal/run/runtest"
 	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -99,6 +100,21 @@ func TestEndRun(t *testing.T) {
 			UpdateTime:     ct.Clock.Now().UTC(),
 		}
 		So(datastore.Put(ctx, &cl), ShouldBeNil)
+
+		// mock some child runs of rids[0]
+		childRunID := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("child"))
+		childRun := run.Run{
+			ID:      childRunID,
+			DepRuns: common.RunIDs{rids[0]},
+		}
+		finChildRunID := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("finchild"))
+		finChildRun := run.Run{
+			ID:      finChildRunID,
+			DepRuns: common.RunIDs{rids[0]},
+			Status:  run.Status_FAILED,
+		}
+		So(datastore.Put(ctx, &childRun, &finChildRun), ShouldBeNil)
+
 		rs := &state.RunState{
 			Run: run.Run{
 				ID:            rids[0],
@@ -120,7 +136,7 @@ func TestEndRun(t *testing.T) {
 		}
 
 		impl, deps := makeImpl(&ct)
-		se := impl.endRun(ctx, rs, run.Status_FAILED, cg)
+		se := impl.endRun(ctx, rs, run.Status_FAILED, cg, []*run.Run{&childRun, &finChildRun})
 		So(rs.Status, ShouldEqual, run.Status_FAILED)
 		So(rs.EndTime, ShouldEqual, ct.Clock.Now())
 		So(datastore.RunInTransaction(ctx, se, nil), ShouldBeNil)
@@ -144,6 +160,11 @@ func TestEndRun(t *testing.T) {
 				pmtest.AssertReceivedCLsNotified(ctx, rids[0].LUCIProject(), []*changelist.CL{&cl})
 				So(deps.clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))
 			})
+		})
+
+		Convey("child runs get ParentRunCompleted events.", func() {
+			runtest.AssertReceivedParentRunCompleted(ctx, childRunID)
+			runtest.AssertNotReceivedParentRunCompleted(ctx, finChildRunID)
 		})
 
 		Convey("cancel ongoing LongOps", func() {

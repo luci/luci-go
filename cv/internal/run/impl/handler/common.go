@@ -46,7 +46,7 @@ import (
 // Returns the side effect when Run is ended.
 //
 // Panics if the provided status is not ended status.
-func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status, cg *prjcfg.ConfigGroup) eventbox.SideEffectFn {
+func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status, cg *prjcfg.ConfigGroup, childRuns []*run.Run) eventbox.SideEffectFn {
 	if !run.IsEnded(st) {
 		panic(fmt.Errorf("can't end run with non-final status %s", st))
 	}
@@ -121,6 +121,16 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status,
 				}
 				metrics.Public.RunTotalDuration.Add(ctx, rs.EndTime.Sub(rs.CreateTime).Seconds(), startAwareFields...)
 			})
+			return nil
+		},
+		func(ctx context.Context) error {
+			for _, child := range childRuns {
+				if !run.IsEnded(child.Status) {
+					if err := impl.RM.NotifyParentRunCompleted(ctx, child.ID); err != nil {
+						return err
+					}
+				}
+			}
 			return nil
 		},
 	)

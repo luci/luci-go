@@ -254,7 +254,11 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 	}
 	switch sc.GetResult() {
 	case eventpb.SubmissionResult_SUCCEEDED:
-		se := impl.endRun(ctx, rs, run.Status_SUCCEEDED, cg)
+		childRuns, err := run.LoadChildRuns(ctx, rs.ID)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to load child runs").Err()
+		}
+		se := impl.endRun(ctx, rs, run.Status_SUCCEEDED, cg, childRuns)
 		// Only mark run submitted to ResultDB when submission run is successful.
 		se = eventbox.Chain(
 			se,
@@ -340,9 +344,13 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 			if err := releaseSubmitQueueIfTaken(ctx, rs, impl.RM); err != nil {
 				return nil, err
 			}
+			childRuns, err := run.LoadChildRuns(ctx, rs.ID)
+			if err != nil {
+				return nil, errors.Annotate(err, "failed to load child runs").Err()
+			}
 			return &Result{
 				State:        rs,
-				SideEffectFn: impl.endRun(ctx, rs, run.Status_SUCCEEDED, cg),
+				SideEffectFn: impl.endRun(ctx, rs, run.Status_SUCCEEDED, cg, childRuns),
 			}, nil
 		default: // None submitted or partially submitted
 			// Synthesize a submission completed event with permanent failure.
