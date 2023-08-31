@@ -166,6 +166,12 @@ message VM {
 
   // Whether to enable Confidential Compute for this VM.
   bool enable_confidential_compute = 15;
+
+  // Force_send_fields is the list of all fields to force send in the GCP API.
+  repeated string force_send_fields = 16;
+
+  // These are the fields associated with force_send_fields that are specifically null.
+  repeated string null_fields = 17;
 }
 
 // A length of time.
