@@ -26,6 +26,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/protobuf/proto"
@@ -66,6 +67,10 @@ const (
 	// maxRetryCount is the maximum number of retries allowed when importing
 	// a single config set hit non-fatal error.
 	maxRetryCount = 5
+
+	// importAllConfigsInterval is the interval between two import config cron
+	// jobs.
+	importAllConfigsInterval = 10 * time.Minute
 )
 
 var (
@@ -145,6 +150,7 @@ func importAllConfigs(ctx context.Context, dispatcher *tq.Dispatcher) error {
 				err := dispatcher.AddTask(ctx, &tq.Task{
 					Payload: &taskpb.ImportConfigs{ConfigSet: cs},
 					Title:   fmt.Sprintf("configset/%s", cs),
+					ETA:     clock.Now(ctx).Add(common.DistributeOffset(importAllConfigsInterval, "config_set", string(cs))),
 				})
 				return errors.Annotate(err, "failed to enqueue ImportConfigs task for %q: %s", cs, err).Err()
 			}
