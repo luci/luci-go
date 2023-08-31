@@ -83,10 +83,10 @@ func getExtraProperties(ctx context.Context, tfa *model.TestFailureAnalysis, tfs
 	var testsToRun []map[string]string
 	for _, tf := range tfs {
 		testsToRun = append(testsToRun, map[string]string{
-			"test_suite":   tf.TestSuiteName,
-			"test_name":    tf.TestName,
-			"test_id":      tf.TestID,
-			"variant_hash": tf.VariantHash,
+			"test_suite_name": tf.TestSuiteName,
+			"test_name":       tf.TestName,
+			"test_id":         tf.TestID,
+			"variant_hash":    tf.VariantHash,
 		})
 	}
 	return map[string]any{
