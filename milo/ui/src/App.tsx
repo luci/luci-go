@@ -67,6 +67,7 @@ import { NotFoundPage } from './pages/not_found_page';
 import { searchRedirectionLoader } from './pages/search';
 import { BuilderSearch } from './pages/search/builder_search';
 import { TestSearch } from './pages/search/test_search/test_search';
+import { ServerPage } from './pages/server_page';
 import { TestHistoryPage } from './pages/test_history_page/test_history_page';
 import { TestResultsTab } from './pages/test_results_tab/test_results_tab';
 
@@ -313,6 +314,13 @@ export function App({ initOpts }: AppProps) {
           ],
         },
       ],
+    },
+    {
+      // We don't have a basename to stop react-router from handling non-SPA
+      // routes (see the comments on the 'ui' route for rationale). We need to
+      // to capture those routes and make the server handles it.
+      path: '*',
+      element: <ServerPage />,
     },
   ]);
 
