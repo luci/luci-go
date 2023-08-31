@@ -418,7 +418,7 @@ type TestFailureAnalysis struct {
 	// Run status of the analysis
 	RunStatus pb.AnalysisRunStatus `gae:"run_status"`
 	// Key to the suspect that was verified by Culprit verification
-	VerifiedCulprit *datastore.Key `gae:"verified_culprit"`
+	VerifiedCulpritKey *datastore.Key `gae:"verified_culprit_key"`
 	// Priority of this run.
 	Priority int32 `gae:"priority"`
 	// The start commit hash (exclusive) of the regression range that this analysis analyses.

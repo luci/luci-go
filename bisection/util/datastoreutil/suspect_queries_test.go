@@ -298,3 +298,25 @@ func TestFetchSuspectsForAnalysis(t *testing.T) {
 		So(len(suspects), ShouldEqual, 2)
 	})
 }
+
+func TestGetSuspectForTestAnalysis(t *testing.T) {
+	ctx := memory.Use(context.Background())
+
+	Convey("GetSuspectForTestAnalysis", t, func() {
+		tfa := testutil.CreateTestFailureAnalysis(ctx, nil)
+		nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
+		})
+		s, err := GetSuspectForTestAnalysis(ctx, tfa)
+		So(err, ShouldBeNil)
+		So(s, ShouldBeNil)
+
+		testutil.CreateSuspect(ctx, &testutil.SuspectCreationOption{
+			ID:        300,
+			ParentKey: datastore.KeyForObj(ctx, nsa),
+		})
+		s, err = GetSuspectForTestAnalysis(ctx, tfa)
+		So(err, ShouldBeNil)
+		So(s.Id, ShouldEqual, 300)
+	})
+}

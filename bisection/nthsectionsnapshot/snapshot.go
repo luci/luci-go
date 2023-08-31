@@ -154,7 +154,7 @@ func (snapshot *Snapshot) FindNextIndicesToRun(n int) ([]int, error) {
 }
 
 // FindNextCommitsToRun is similar to FindNextIndicesToRun,
-// but it returns the commit hashes instead of indice
+// but it returns the commit hashes instead of indices.
 func (snapshot *Snapshot) FindNextCommitsToRun(n int) ([]string, error) {
 	indices, err := snapshot.FindNextIndicesToRun(n)
 	if err != nil {

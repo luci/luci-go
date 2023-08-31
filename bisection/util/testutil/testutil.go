@@ -264,9 +264,9 @@ func CreateTestSingleRerun(ctx context.Context, option *TestSingleRerunCreationO
 }
 
 type TestNthSectionAnalysisCreationOption struct {
-	ID             int64
-	ParentAnalysis *datastore.Key
-	BlameList      *pb.BlameList
+	ID                int64
+	ParentAnalysisKey *datastore.Key
+	BlameList         *pb.BlameList
 }
 
 func CreateTestNthSectionAnalysis(ctx context.Context, option *TestNthSectionAnalysisCreationOption) *model.TestNthSectionAnalysis {
@@ -278,7 +278,7 @@ func CreateTestNthSectionAnalysis(ctx context.Context, option *TestNthSectionAna
 		if option.ID != 0 {
 			id = option.ID
 		}
-		parentAnalysis = option.ParentAnalysis
+		parentAnalysis = option.ParentAnalysisKey
 		blameList = option.BlameList
 	}
 	nsa := &model.TestNthSectionAnalysis{
@@ -289,6 +289,31 @@ func CreateTestNthSectionAnalysis(ctx context.Context, option *TestNthSectionAna
 	So(datastore.Put(ctx, nsa), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()
 	return nsa
+}
+
+type SuspectCreationOption struct {
+	ID        int64
+	ParentKey *datastore.Key
+}
+
+func CreateSuspect(ctx context.Context, option *SuspectCreationOption) *model.Suspect {
+	var parentKey *datastore.Key
+	id := int64(500)
+
+	if option != nil {
+		if option.ID != 0 {
+			id = option.ID
+		}
+
+		parentKey = option.ParentKey
+	}
+	suspect := &model.Suspect{
+		Id:             id,
+		ParentAnalysis: parentKey,
+	}
+	So(datastore.Put(ctx, suspect), ShouldBeNil)
+	datastore.GetTestable(ctx).CatchupIndexes()
+	return suspect
 }
 
 func UpdateIndices(c context.Context) {

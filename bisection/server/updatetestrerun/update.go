@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/testfailureanalysis"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
@@ -85,6 +86,7 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) erro
 	if rerun.Type == model.RerunBuildType_NthSection {
 		err := processNthSectionUpdate(ctx, rerun, tfa)
 		if err != nil {
+			// TODO (nqmtuan): Update status of analysis.
 			return status.Errorf(codes.Internal, errors.Annotate(err, "process nthsection update").Err().Error())
 		}
 	}
@@ -96,7 +98,7 @@ func processCulpritVerificationUpdate(ctx context.Context, rerun *model.TestSing
 	return nil
 }
 
-func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.TestFailureAnalysis) error {
+func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.TestFailureAnalysis) (reterr error) {
 	if rerun.NthSectionAnalysisKey == nil {
 		return errors.New("nthsection_analysis_key not found")
 	}
@@ -119,7 +121,6 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 		if err != nil {
 			return errors.Annotate(err, "store nthsection culprit to datastore").Err()
 		}
-		// TODO: Also set the status of TestFailureAnalysis here.
 		// TODO: Trigger culprit verification.
 		return nil
 	}
@@ -141,7 +142,18 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 	if commit == "" {
 		// We don't have more run to wait -> we've failed to find the suspect.
 		if snapshot.NumInProgress == 0 {
-			// TODO (nqmtuan): Update the status to not found.
+			err = saveNthSectionAnalysis(ctx, nsa, func(nsa *model.TestNthSectionAnalysis) {
+				nsa.Status = pb.AnalysisStatus_NOTFOUND
+				nsa.RunStatus = pb.AnalysisRunStatus_ENDED
+				nsa.EndTime = clock.Now(ctx)
+			})
+			if err != nil {
+				return errors.Annotate(err, "save nthsection analysis").Err()
+			}
+			err = testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
+			if err != nil {
+				return errors.Annotate(err, "update analysis status").Err()
+			}
 		}
 		return nil
 	}
@@ -181,21 +193,23 @@ func saveSuspectAndUpdateNthSection(ctx context.Context, tfa *model.TestFailureA
 		return nil, errors.Annotate(err, "save suspect").Err()
 	}
 
-	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		e := datastore.Get(ctx, nsa)
-		if e != nil {
-			return errors.Annotate(err, "get nthsection analysis").Err()
-		}
+	err = saveNthSectionAnalysis(ctx, nsa, func(nsa *model.TestNthSectionAnalysis) {
 		nsa.Status = pb.AnalysisStatus_SUSPECTFOUND
 		nsa.CulpritKey = datastore.KeyForObj(ctx, suspect)
 		nsa.RunStatus = pb.AnalysisRunStatus_ENDED
 		nsa.EndTime = clock.Now(ctx)
-		return datastore.Put(ctx, nsa)
-	}, nil)
+	})
 
 	if err != nil {
 		return nil, errors.Annotate(err, "save nthsection analysis").Err()
 	}
+
+	// It is not ended because we still need to run suspect verification.
+	err = testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
+	if err != nil {
+		return nil, errors.Annotate(err, "update analysis status").Err()
+	}
+
 	return suspect, nil
 }
 
@@ -318,6 +332,23 @@ func saveRerun(ctx context.Context, rerun *model.TestSingleRerun, updateFunc fun
 		err = datastore.Put(ctx, rerun)
 		if err != nil {
 			return errors.Annotate(err, "save rerun").Err()
+		}
+		return nil
+	}, nil)
+}
+
+// saveNthSectionAnalysis updates nthsection analysis in a way that avoid race condition
+// if another thread also update the analysis.
+func saveNthSectionAnalysis(ctx context.Context, nsa *model.TestNthSectionAnalysis, updateFunc func(*model.TestNthSectionAnalysis)) error {
+	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		err := datastore.Get(ctx, nsa)
+		if err != nil {
+			return errors.Annotate(err, "get nthsection analysis").Err()
+		}
+		updateFunc(nsa)
+		err = datastore.Put(ctx, nsa)
+		if err != nil {
+			return errors.Annotate(err, "save nthsection analysis").Err()
 		}
 		return nil
 	}, nil)

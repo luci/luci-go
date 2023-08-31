@@ -38,7 +38,7 @@ func TestUpdateStatus(t *testing.T) {
 	Convey("UpdateStatus", t, func() {
 		Convey("Update status ended", func() {
 			tfa := createAnalysisModelWithStatus(ctx, 1000, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
-			err := UpdateStatus(ctx, tfa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
+			err := UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
 			So(err, ShouldBeNil)
 			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
 			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
@@ -47,7 +47,7 @@ func TestUpdateStatus(t *testing.T) {
 
 		Convey("Update status started", func() {
 			tfa := createAnalysisModelWithStatus(ctx, 1001, pb.AnalysisStatus_CREATED, pb.AnalysisRunStatus_ANALYSIS_RUN_STATUS_UNSPECIFIED)
-			err := UpdateStatus(ctx, tfa, pb.AnalysisStatus_CREATED, pb.AnalysisRunStatus_STARTED)
+			err := UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_CREATED, pb.AnalysisRunStatus_STARTED)
 			So(err, ShouldBeNil)
 			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_CREATED)
 			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_STARTED)
@@ -56,7 +56,7 @@ func TestUpdateStatus(t *testing.T) {
 
 		Convey("Ended analysis will not update", func() {
 			tfa := createAnalysisModelWithStatus(ctx, 1002, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
-			err := UpdateStatus(ctx, tfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
+			err := UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
 			So(err, ShouldBeNil)
 			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
 			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
@@ -64,7 +64,7 @@ func TestUpdateStatus(t *testing.T) {
 
 		Convey("Canceled analysis will not update", func() {
 			tfa := createAnalysisModelWithStatus(ctx, 1003, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
-			err := UpdateStatus(ctx, tfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			err := UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 			So(err, ShouldBeNil)
 			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
 			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_CANCELED)

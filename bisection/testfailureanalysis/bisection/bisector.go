@@ -111,7 +111,7 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 	defer func() {
 		if reterr != nil {
 			// If there is an error, mark the analysis as failing with error.
-			err := testfailureanalysis.UpdateStatus(ctx, tfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
+			err := testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
 			if err != nil {
 				// Just log the error if there is something wrong.
 				err = errors.Annotate(err, "update status").Err()
@@ -127,7 +127,7 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 	}
 	if !enabled {
 		logging.Infof(ctx, "Bisection is not enabled")
-		err = testfailureanalysis.UpdateStatus(ctx, tfa, pb.AnalysisStatus_DISABLED, pb.AnalysisRunStatus_ENDED)
+		err = testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_DISABLED, pb.AnalysisRunStatus_ENDED)
 		if err != nil {
 			return errors.Annotate(err, "update status disabled").Err()
 		}
@@ -138,7 +138,7 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 		// We don't support other projects for now, so mark the analysis as unsupported.
 		logging.Infof(ctx, "Unsupported project: %s", tfa.Project)
 		// TODO (nqmtuan): Also update the Nthsection analysis status.
-		err = testfailureanalysis.UpdateStatus(ctx, tfa, pb.AnalysisStatus_UNSUPPORTED, pb.AnalysisRunStatus_ENDED)
+		err = testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_UNSUPPORTED, pb.AnalysisRunStatus_ENDED)
 		if err != nil {
 			return errors.Annotate(err, "update status unsupported").Err()
 		}
@@ -146,7 +146,7 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 	}
 
 	// Update the analysis status.
-	err = testfailureanalysis.UpdateStatus(ctx, tfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+	err = testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 	if err != nil {
 		return errors.Annotate(err, "update status").Err()
 	}

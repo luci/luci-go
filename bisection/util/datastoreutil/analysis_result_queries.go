@@ -383,3 +383,21 @@ func GetTestNthSectionAnalysis(ctx context.Context, analysisID int64) (*model.Te
 	}
 	return nsa, err
 }
+
+// GetTestNthSectionForAnalysis gets test nthsection analysis for a test failure analysis.
+// This may return nil if the nthsection analysis has not been created yet.
+func GetTestNthSectionForAnalysis(ctx context.Context, tfa *model.TestFailureAnalysis) (*model.TestNthSectionAnalysis, error) {
+	q := datastore.NewQuery("TestNthSectionAnalysis").Eq("parent_analysis_key", datastore.KeyForObj(ctx, tfa))
+	analyses := []*model.TestNthSectionAnalysis{}
+	err := datastore.GetAll(ctx, q, &analyses)
+	if err != nil {
+		return nil, errors.Annotate(err, "get all").Err()
+	}
+	if len(analyses) == 0 {
+		return nil, nil
+	}
+	if len(analyses) > 1 {
+		return nil, errors.Annotate(err, "found more than 1 nthsection analysis: %d", len(analyses)).Err()
+	}
+	return analyses[0], nil
+}

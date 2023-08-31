@@ -24,8 +24,8 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
-// UpdateStatus updates status of a test failure analysis.
-func UpdateStatus(ctx context.Context, tfa *model.TestFailureAnalysis, status pb.AnalysisStatus, runStatus pb.AnalysisRunStatus) error {
+// UpdateAnalysisStatus updates status of a test failure analysis.
+func UpdateAnalysisStatus(ctx context.Context, tfa *model.TestFailureAnalysis, status pb.AnalysisStatus, runStatus pb.AnalysisRunStatus) error {
 	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		e := datastore.Get(ctx, tfa)
 		if e != nil {

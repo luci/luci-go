@@ -486,11 +486,47 @@ func TestScheduleNewRerun(t *testing.T) {
 		So(suspects[0].Type, ShouldEqual, model.SuspectType_NthSection)
 		So(suspects[0].AnalysisType, ShouldEqual, pb.AnalysisType_TEST_FAILURE_ANALYSIS)
 
+		// Check nsa.
 		So(datastore.Get(ctx, nsa), ShouldBeNil)
 		So(nsa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
 		So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
 		So(nsa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
 		So(nsa.CulpritKey, ShouldEqual, datastore.KeyForObj(ctx, suspects[0]))
+
+		// Check tfa.
+		So(datastore.Get(ctx, tfa), ShouldBeNil)
+		So(tfa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
+		So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_STARTED)
+	})
+
+	Convey("Nth section not found", t, func() {
+		enableBisection(ctx, true)
+		tfa, _, rerun, nsa := setupTestAnalysisForTesting(ctx, 1)
+		// Commit 1 pass -> commit 0 is the culprit.
+		rerun.LUCIBuild.GitilesCommit = &bbpb.GitilesCommit{
+			Id:      "commit1",
+			Host:    "chromium.googlesource.com",
+			Project: "chromium/src",
+			Ref:     "ref",
+		}
+		rerun.Status = pb.RerunStatus_RERUN_STATUS_TEST_SKIPPED
+		So(datastore.Put(ctx, rerun), ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+		err := processNthSectionUpdate(ctx, rerun, tfa)
+		So(err, ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		// Check nsa.
+		So(datastore.Get(ctx, nsa), ShouldBeNil)
+		So(nsa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
+		So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+		So(nsa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
+
+		// Check tfa.
+		So(datastore.Get(ctx, tfa), ShouldBeNil)
+		So(tfa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
+		So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+		So(tfa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
 	})
 
 	Convey("Nth section should schedule another run", t, func() {
@@ -562,9 +598,9 @@ func setupTestAnalysisForTesting(ctx context.Context, numTest int) (*model.TestF
 	})
 
 	nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
-		ID:             200,
-		ParentAnalysis: datastore.KeyForObj(ctx, tfa),
-		BlameList:      testutil.CreateBlamelist(4),
+		ID:                200,
+		ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
+		BlameList:         testutil.CreateBlamelist(4),
 	})
 
 	// Set up test failures

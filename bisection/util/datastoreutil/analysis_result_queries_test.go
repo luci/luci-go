@@ -714,3 +714,23 @@ func TestGetTestNthSectionAnalysis(t *testing.T) {
 		So(rerun.ID, ShouldEqual, 123)
 	})
 }
+
+func TestGetTestNthSectionForAnalysis(t *testing.T) {
+	t.Parallel()
+	ctx := memory.Use(context.Background())
+	testutil.UpdateIndices(ctx)
+
+	Convey("Get test nthsection analysis", t, func() {
+		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{})
+		nsa, err := GetTestNthSectionForAnalysis(ctx, tfa)
+		So(err, ShouldBeNil)
+		So(nsa, ShouldBeNil)
+		testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+			ID:                123,
+			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
+		})
+		nsa, err = GetTestNthSectionForAnalysis(ctx, tfa)
+		So(err, ShouldBeNil)
+		So(nsa.ID, ShouldEqual, 123)
+	})
+}
