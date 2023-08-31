@@ -18,6 +18,7 @@ package testutil
 import (
 	"context"
 	"fmt"
+	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 
@@ -178,6 +179,8 @@ type TestFailureAnalysisCreationOption struct {
 	EndCommitHash   string
 	FailedBuildID   int64
 	Priority        int32
+	Status          pb.AnalysisStatus
+	CreateTime      time.Time
 }
 
 func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisCreationOption) *model.TestFailureAnalysis {
@@ -188,6 +191,8 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 	endCommitHash := ""
 	failedBuildID := int64(8000)
 	var priority int32
+	var status pb.AnalysisStatus
+	var createTime time.Time
 
 	if option != nil {
 		if option.ID != 0 {
@@ -207,6 +212,8 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 		}
 		priority = option.Priority
 		tfKey = option.TestFailureKey
+		status = option.Status
+		createTime = option.CreateTime
 	}
 
 	tfa := &model.TestFailureAnalysis{
@@ -217,6 +224,8 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 		EndCommitHash:   endCommitHash,
 		FailedBuildID:   failedBuildID,
 		Priority:        int32(priority),
+		Status:          status,
+		CreateTime:      createTime,
 	}
 	So(datastore.Put(ctx, tfa), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()
@@ -427,6 +436,17 @@ func UpdateIndices(c context.Context) {
 				},
 				{
 					Property: "luci_build.create_time",
+				},
+			},
+		},
+		&datastore.IndexDefinition{
+			Kind: "TestFailureAnalysis",
+			SortBy: []datastore.IndexColumn{
+				{
+					Property: "project",
+				},
+				{
+					Property: "create_time",
 				},
 			},
 		},

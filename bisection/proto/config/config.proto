@@ -100,4 +100,10 @@ message TestAnalysisConfig {
   // up and running, it should be off for dev and on for prod, because we want
   // to save resources (running bisection on dev will be expensive).
   bool bisector_enabled = 3;
+  // The maximum number of test analyses to run in a day for each project.
+  // It only counts analyses that being created within 24 hours, with status different
+  // from "DISABLED" or "UNSUPPORTED".
+  // It allows us to slowly roll out bisection without consuming too much
+  // swarming capacity.
+  uint32 daily_limit = 4;
 }

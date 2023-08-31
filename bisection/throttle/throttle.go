@@ -19,6 +19,7 @@ import (
 	"context"
 	"time"
 
+	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	tpb "go.chromium.org/luci/bisection/task/proto"
@@ -46,7 +47,19 @@ const (
 var projectsToProcess = []string{"chromium"}
 
 func CronHandler(ctx context.Context) error {
+	dailyLimit, err := dailyLimit(ctx)
+	if err != nil {
+		return errors.Annotate(err, "daily limit").Err()
+	}
 	for _, project := range projectsToProcess {
+		count, err := dailyAnalysisCount(ctx, project)
+		if err != nil {
+			return errors.Annotate(err, "daily analysis count").Err()
+		}
+		if count >= dailyLimit {
+			logging.Warningf(ctx, "%d reached daily limit %d for project %s", count, dailyLimit, project)
+			return nil
+		}
 		rerunBuilds, err := congestedCompileReruns(ctx, project)
 		if err != nil {
 			return errors.Annotate(err, "obtain congested compile reruns").Err()
@@ -72,6 +85,23 @@ func CronHandler(ctx context.Context) error {
 		logging.Infof(ctx, "Test failure detection task scheduled %v", task)
 	}
 	return nil
+}
+
+func dailyAnalysisCount(ctx context.Context, project string) (int, error) {
+	cutoffTime := clock.Now(ctx).Add(-time.Hour * 24)
+	q := datastore.NewQuery("TestFailureAnalysis").Eq("project", project).Gt("create_time", cutoffTime)
+	analyses := []*model.TestFailureAnalysis{}
+	err := datastore.GetAll(ctx, q, &analyses)
+	if err != nil {
+		return 0, errors.Annotate(err, "get analyses").Err()
+	}
+	count := 0
+	for _, tfa := range analyses {
+		if tfa.Status != pb.AnalysisStatus_DISABLED && tfa.Status != pb.AnalysisStatus_UNSUPPORTED {
+			count++
+		}
+	}
+	return count, nil
 }
 
 func congestedCompileReruns(ctx context.Context, project string) ([]*model.SingleRerun, error) {
@@ -137,4 +167,12 @@ func getDimensionWithKey(dims *pb.Dimensions, key string) *pb.Dimension {
 		}
 	}
 	return nil
+}
+
+func dailyLimit(ctx context.Context) (int, error) {
+	cfg, err := config.Get(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return (int)(cfg.TestAnalysisConfig.GetDailyLimit()), nil
 }

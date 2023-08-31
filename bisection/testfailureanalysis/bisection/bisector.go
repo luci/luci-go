@@ -171,7 +171,6 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 		return errors.Annotate(err, "prepare").Err()
 	}
 
-	// TODO (nqmtuan): Run nthsection here
 	snapshot, err := CreateSnapshot(ctx, nsa)
 	if err != nil {
 		return errors.Annotate(err, "create snapshot").Err()

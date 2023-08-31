@@ -20,7 +20,9 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/model"
+	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	_ "go.chromium.org/luci/bisection/testfailuredetection"
@@ -44,8 +46,60 @@ func TestCronHandler(t *testing.T) {
 	ctx = clock.Set(ctx, cl)
 	testutil.UpdateIndices(ctx)
 
+	Convey("Check daily limit", t, func() {
+		setDailyLimit(ctx, 1)
+		Convey("no analysis", func() {
+			ctx, skdr := tq.TestingContext(ctx, nil)
+			err := CronHandler(ctx)
+			So(err, ShouldBeNil)
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+		})
+		Convey("analysis is disabled", func() {
+			ctx, skdr := tq.TestingContext(ctx, nil)
+			testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+				Status:     pb.AnalysisStatus_DISABLED,
+				CreateTime: clock.Now(ctx),
+			})
+			err := CronHandler(ctx)
+			So(err, ShouldBeNil)
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+		})
+		Convey("analysis is not supported", func() {
+			ctx, skdr := tq.TestingContext(ctx, nil)
+			testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+				Status:     pb.AnalysisStatus_UNSUPPORTED,
+				CreateTime: clock.Now(ctx),
+			})
+			err := CronHandler(ctx)
+			So(err, ShouldBeNil)
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+		})
+		Convey("analysis is not recent", func() {
+			ctx, skdr := tq.TestingContext(ctx, nil)
+			testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+				Status:     pb.AnalysisStatus_FOUND,
+				CreateTime: clock.Now(ctx).Add(-25 * time.Hour),
+			})
+			err := CronHandler(ctx)
+			So(err, ShouldBeNil)
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+		})
+		Convey("analysis is recent", func() {
+			ctx, skdr := tq.TestingContext(ctx, nil)
+			testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+				Status:     pb.AnalysisStatus_FOUND,
+				CreateTime: clock.Now(ctx).Add(-23 * time.Hour),
+			})
+			err := CronHandler(ctx)
+			So(err, ShouldBeNil)
+			// Should not schedule a task.
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
+		})
+	})
+
 	Convey("schedule test failure detection task", t, func() {
 		ctx, skdr := tq.TestingContext(ctx, nil)
+		setDailyLimit(ctx, 100)
 		Convey("no exclude dimensions", func() {
 			testRerun := createTestSingleRerun(ctx, buildbucketpb.Status_SCHEDULED, baseTime.Add(-6*time.Minute), "")
 			// No OS dimension.
@@ -68,6 +122,7 @@ func TestCronHandler(t *testing.T) {
 			})
 		})
 		Convey("exclude dimensions", func() {
+			setDailyLimit(ctx, 100)
 			// Scheduled test rerun - os excluded.
 			createTestSingleRerun(ctx, buildbucketpb.Status_SCHEDULED, baseTime.Add(-6*time.Minute), "test_os1")
 			// Started test rerun - os not excluded.
@@ -147,4 +202,13 @@ func createCompileReruns(ctx context.Context, status buildbucketpb.Status, creat
 	So(datastore.Put(ctx, sr), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()
 	return crb, sr
+}
+
+func setDailyLimit(ctx context.Context, limit int) {
+	testCfg := &configpb.Config{
+		TestAnalysisConfig: &configpb.TestAnalysisConfig{
+			DailyLimit: uint32(limit),
+		},
+	}
+	So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
 }

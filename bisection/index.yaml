@@ -56,3 +56,7 @@ indexes:
   - name: status
   - name: create_time
 
+- kind: TestFailureAnalysis
+  properties:
+  - name: project
+  - name: create_time
