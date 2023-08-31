@@ -52,13 +52,9 @@ def _bucket(
         It means that when triggering a led build for the listed buckets
         (shadowed buckets), Buildbucket will replace the bucket of the led
         build with this one (shadowing bucket).
-        Note that this is a part of the new led process (WIP) so it's not in use
-        at the moment.
       constraints: a luci.bucket_constraints(...) to add to the bucket.
       dynamic: a flag for if the bucket is a dynamic bucket.
         A dynamic bucket must not have pre-defined builders.
-         Note that this is a part of the new led process (WIP) so it's not in use
-        at the moment.
     """
     name = validate.string("name", name)
     if name.startswith("luci."):
