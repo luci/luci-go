@@ -209,6 +209,19 @@ export default defineConfig(({ mode }) => {
             res.setHeader('content-type', 'application/json');
             res.end(JSON.stringify(authState));
           });
+
+          // When VitePWA is enabled in -dev mode, the entry files are somehow
+          // resolved to the wrong paths. We need to remap them to the correct
+          // paths.
+          server.middlewares.use((req, _res, next) => {
+            if (req.url === '/ui/src/index.tsx') {
+              req.url = '/ui/src/main.tsx';
+            }
+            if (req.url === '/ui/src/styles/style.css') {
+              req.url = '/ui/src/common/styles/style.css';
+            }
+            return next();
+          });
         },
       },
       react({
@@ -219,6 +232,16 @@ export default defineConfig(({ mode }) => {
       tsconfigPaths(),
       vitePWA({
         injectRegister: null,
+        // We cannot use the simpler 'generateSW' mode because
+        // 1. we need to inject custom scripts that import other files, and
+        // 2. in 'generateSW' mode, custom scripts can only be injected via
+        //    `workbox.importScripts`, which doesn't support ES modules, and
+        // 3. in 'generateSW' mode, we need to build the custom script to be
+        //    imported by the service worker as an entry file, which means the
+        //    resulting bundle may contain ES import statements due to
+        //    [vite/rollup not supporting disabling code splitting][1].
+        //
+        // [1]: https://github.com/rollup/rollup/issues/2756
         strategies: 'injectManifest',
         srcDir: 'src',
         filename: 'ui_sw.ts',
@@ -227,8 +250,7 @@ export default defineConfig(({ mode }) => {
           enabled: true,
           // During development, the service worker script can only be a JS
           // module, because it runs through the same pipeline as the rest of
-          // the scripts. It cannot use the `importScripts`. So we inject the
-          // configs directly.
+          // the scripts, which produces ES modules.
           type: 'module',
           navigateFallback: 'index.html',
         },
