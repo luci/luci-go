@@ -17,6 +17,11 @@ npm ci
 ### Start a local AppEngine server
 TODO: add instructions
 
+For the simple case of testing an rpc using `/rpcexplorer`:
+```
+go run main.go -cloud-project luci-milo-dev -auth-service-host chrome-infra-auth-dev.appspot.com
+```
+
 ### Start a local UI server
 To start a [Vite](https://vitejs.dev) local dev server, run
 ```

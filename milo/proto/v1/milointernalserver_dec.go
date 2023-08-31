@@ -42,6 +42,23 @@ func (s *DecoratedMiloInternal) QueryBlamelist(ctx context.Context, req *QueryBl
 	return
 }
 
+func (s *DecoratedMiloInternal) ListProjects(ctx context.Context, req *ListProjectsRequest) (rsp *ListProjectsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "ListProjects", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.ListProjects(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "ListProjects", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedMiloInternal) GetProjectCfg(ctx context.Context, req *GetProjectCfgRequest) (rsp *projectconfig.Project, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context

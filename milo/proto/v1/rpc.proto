@@ -39,6 +39,9 @@ service MiloInternal {
   // is from the same builder and is not expired, cancelled, or infra-failed.
   rpc QueryBlamelist(QueryBlamelistRequest) returns (QueryBlamelistResponse) {};
 
+  // Retrieves a list of projects.
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse) {};
+
   // Gets the project config.
   //
   // Return the config of the project.
@@ -119,6 +122,51 @@ message QueryBlamelistResponse {
 message QueryBlamelistPageToken {
   // The first commit in the next page.
   string next_commit_id = 2;
+}
+
+// A request message for `ListProjects` RPC.
+message ListProjectsRequest {
+  // Optional. The maxium number of projects to return.
+  //
+  // The service may return fewer than this value.
+  // If unspecified, at most 100 projects will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 1;
+
+  // Optional. A page token, received from a previous `ListProjects`
+  // call. Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all parameters provided to `ListProjects`, with the
+  // exception of page_size and page_token, must match the call that provided
+  // the page token.
+  string page_token = 2;
+}
+
+// A response message for `ListProjects` RPC.
+message ListProjectsResponse {
+  // A list of matched projects.
+  //
+  // Projects are ordered by their string ID
+  repeated ProjectListItem projects = 1;
+
+  // A token that can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// A single project in a ListProjectsResponse.
+message ProjectListItem {
+  // The project id.
+  string id = 1;
+
+  // The url of the project logo.
+  string logo_url = 2;
+}
+
+// A stateless page token for `ListProjects` RPC.
+message ListProjectsPageToken {
+  // The index of the next project from all projects.
+  int32 next_project_index = 3;
 }
 
 message GetProjectCfgRequest {
