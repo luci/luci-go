@@ -932,8 +932,9 @@ func TestRules(t *testing.T) {
 				Id:        "696431",
 			},
 			BugManagementState: &pb.BugManagementState{
-				PolicyState: map[string]*pb.BugManagementState_PolicyState{
-					"policy-a": {
+				PolicyState: []*pb.BugManagementState_PolicyState{
+					{
+						PolicyId:           "policy-a",
 						IsActive:           true,
 						LastActivationTime: timestamppb.New(time.Date(1908, 8, 8, 8, 8, 8, 1, time.UTC)),
 					},

@@ -22,17 +22,18 @@ import (
 // ToExternalBugManagementStatePB converts the internal *bugspb.BugManagementState
 // to its external (filtered) representation.
 func ToExternalBugManagementStatePB(r *bugspb.BugManagementState) *pb.BugManagementState {
-	policyState := make(map[string]*pb.BugManagementState_PolicyState, len(r.PolicyState))
-	for policy, state := range r.PolicyState {
-		policyState[policy] = toExternalPolicyStatePB(state)
+	policyState := make([]*pb.BugManagementState_PolicyState, 0, len(r.PolicyState))
+	for policyID, state := range r.PolicyState {
+		policyState = append(policyState, toExternalPolicyStatePB(policyID, state))
 	}
 	return &pb.BugManagementState{
 		PolicyState: policyState,
 	}
 }
 
-func toExternalPolicyStatePB(s *bugspb.BugManagementState_PolicyState) *pb.BugManagementState_PolicyState {
+func toExternalPolicyStatePB(policyID string, s *bugspb.BugManagementState_PolicyState) *pb.BugManagementState_PolicyState {
 	return &pb.BugManagementState_PolicyState{
+		PolicyId:             policyID,
 		IsActive:             s.IsActive,
 		LastActivationTime:   s.LastActivationTime,
 		LastDeactivationTime: s.LastDeactivationTime,

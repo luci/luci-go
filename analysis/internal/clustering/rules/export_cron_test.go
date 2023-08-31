@@ -157,8 +157,9 @@ func TestExportRules(t *testing.T) {
 				Id:        "123456",
 			},
 			BugManagementState: &analysispb.BugManagementState{
-				PolicyState: map[string]*analysispb.BugManagementState_PolicyState{
-					"policy-a": {
+				PolicyState: []*analysispb.BugManagementState_PolicyState{
+					{
+						PolicyId:           "policy-a",
 						IsActive:           true,
 						LastActivationTime: timestamppb.New(time.Date(1911, 1, 1, 1, 1, 1, 1, time.UTC)),
 					},

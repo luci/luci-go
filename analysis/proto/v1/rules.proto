@@ -161,16 +161,19 @@ message Rule {
 
 // BugManagementState is the state of bug management for a rule.
 message BugManagementState {
-  // A mapping from bug management policy identifier to policy state.
-  map<string, PolicyState> policy_state = 1;
+  // The state of each bug management policy.
+  repeated PolicyState policy_state = 1;
 
   // The state of a bug management policy for a rule.
   message PolicyState {
+    // The identifier of the bug management policy.
+    string policy_id = 1;
+
     // Whether the given policy is active for the rule.
     // Updated on every bug-filing run as follows:
     // - Set to true if the policy activation criteria was met.
     // - Set to false if the policy deactivation criteria was met.
-    bool is_active = 1;
+    bool is_active = 2;
 
     // The last time the policy was made active.
     // Allows detecting if policy is made active for the first time (as a
@@ -178,11 +181,11 @@ message BugManagementState {
     // Allows UI to filter to showing policies that were at least once active.
     // Allows UI to sort which policy was most recently active.
     // Allows UI to show when a policy last activated.
-    google.protobuf.Timestamp last_activation_time = 2;
+    google.protobuf.Timestamp last_activation_time = 3;
 
     // The last time the policy was made inactive.
     // Allows UI to show when a policy last deactivated.
-    google.protobuf.Timestamp last_deactivation_time = 3;
+    google.protobuf.Timestamp last_deactivation_time = 4;
   }
 }
 
