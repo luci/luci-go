@@ -105,7 +105,7 @@ func (c *Client) NewestLastUpdated(ctx context.Context) (bigquery.NullTimestamp,
 		return bigquery.NullTimestamp{}, errors.Annotate(err, "ensure schema").Err()
 	}
 	q := c.bqClient.Query(`
-		SELECT MAX(last_updated) as LastUpdated
+		SELECT MAX(last_update_time) as LastUpdateTime
 		FROM failure_association_rules_history
 	`)
 	q.DefaultDatasetID = bqutil.InternalDatasetID
@@ -119,14 +119,14 @@ func (c *Client) NewestLastUpdated(ctx context.Context) (bigquery.NullTimestamp,
 		return bigquery.NullTimestamp{}, err
 	}
 	type result struct {
-		LastUpdated bigquery.NullTimestamp
+		LastUpdateTime bigquery.NullTimestamp
 	}
 	var lastUpdatedResult result
 	err = it.Next(&lastUpdatedResult)
 	if err != nil {
 		return bigquery.NullTimestamp{}, errors.Annotate(err, "obtain next row").Err()
 	}
-	return lastUpdatedResult.LastUpdated, nil
+	return lastUpdatedResult.LastUpdateTime, nil
 }
 
 // schemaApplier ensures BQ schema matches the row proto definitions.
