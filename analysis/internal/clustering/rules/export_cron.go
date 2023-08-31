@@ -16,6 +16,7 @@ package rules
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/bigquery"
@@ -75,6 +76,7 @@ func exportRules(ctx context.Context, client exporterClient, exportTime time.Tim
 
 func toFailureAssociationRulesHistoryRow(rule *Entry, exportTime time.Time) *bqpb.FailureAssociationRulesHistoryRow {
 	return &bqpb.FailureAssociationRulesHistoryRow{
+		Name:                    fmt.Sprintf("projects/%s/rules/%s", rule.Project, rule.RuleID),
 		Project:                 rule.Project,
 		RuleId:                  rule.RuleID,
 		RuleDefinition:          rule.RuleDefinition,

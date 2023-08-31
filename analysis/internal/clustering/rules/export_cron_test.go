@@ -140,6 +140,7 @@ func TestExportRules(t *testing.T) {
 
 		exportTime, _ := time.Parse(time.RFC3339Nano, "2023-02-06T08:11:22.139000000Z")
 		expected := &bqpb.FailureAssociationRulesHistoryRow{
+			Name:                    "projects/myproject/rules/11111111111111111111111111111111",
 			Project:                 "myproject",
 			RuleId:                  "11111111111111111111111111111111",
 			RuleDefinition:          `reason LIKE "%definition%"`,
