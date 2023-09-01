@@ -16,11 +16,15 @@ package lucicfg
 
 import (
 	"bytes"
+	"compress/gzip"
 	"compress/zlib"
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -29,10 +33,13 @@ import (
 	"sync"
 
 	"github.com/dustin/go-humanize"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 
 	legacy_config "go.chromium.org/luci/common/api/luci_config/config/v1"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/config"
@@ -96,7 +103,111 @@ func NewRemoteValidator(conn *grpc.ClientConn) ConfigSetValidator {
 
 // Validate implements ConfigSetValidator
 func (r *remoteValidator) Validate(ctx context.Context, cs ConfigSet) ([]*config.ValidationResult_Message, error) {
-	return nil, errors.New("not implemented")
+	if len(cs.Data) == 0 {
+		return nil, nil
+	}
+	validateReq := &configpb.ValidateConfigsRequest{
+		ConfigSet:  cs.Name,
+		FileHashes: make([]*configpb.ValidateConfigsRequest_FileHash, len(cs.Data)),
+	}
+	for i, file := range cs.Files() {
+		content := cs.Data[file]
+		h := sha256.New()
+		h.Write(content)
+		validateReq.FileHashes[i] = &configpb.ValidateConfigsRequest_FileHash{
+			Path:   file,
+			Sha256: hex.EncodeToString(h.Sum(nil)),
+		}
+	}
+	res, err := r.cfgClient.ValidateConfigs(ctx, validateReq)
+	switch fixInfo := findBadRequestFixInfo(err); {
+	case fixInfo != nil:
+		if err := uploadMissingFiles(ctx, cs, fixInfo.GetUploadFiles()); err != nil {
+			return nil, err
+		}
+		validateReq.FileHashes = filterOutUnvalidatableFiles(ctx, validateReq.GetFileHashes(), fixInfo.GetUnvalidatableFiles())
+		switch res, err := r.cfgClient.ValidateConfigs(ctx, validateReq); { // now try again
+		case err != nil:
+			return nil, errors.Annotate(err, "failed to call LUCI Config").Err()
+		default:
+			return res.GetMessages(), nil
+		}
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to call LUCI Config").Err()
+	default:
+		return res.GetMessages(), nil
+	}
+}
+
+func findBadRequestFixInfo(err error) *configpb.BadValidationRequestFixInfo {
+	for _, detail := range status.Convert(err).Details() {
+		switch t := detail.(type) {
+		case *configpb.BadValidationRequestFixInfo:
+			return t
+		}
+	}
+	return nil
+}
+
+func filterOutUnvalidatableFiles(ctx context.Context,
+	fileHashes []*configpb.ValidateConfigsRequest_FileHash,
+	unvalidatableFiles []string) []*configpb.ValidateConfigsRequest_FileHash {
+	if len(unvalidatableFiles) == 0 {
+		return fileHashes
+	}
+	logging.Debugf(ctx, "No services can validate following files:\n  - %s", strings.Join(unvalidatableFiles, "\n  - "))
+	unvalidatableFileSet := stringset.NewFromSlice(unvalidatableFiles...)
+	ret := make([]*configpb.ValidateConfigsRequest_FileHash, 0, len(fileHashes))
+	for _, fh := range fileHashes {
+		if !unvalidatableFileSet.Has(fh.Path) {
+			ret = append(ret, fh)
+		}
+	}
+	return ret
+}
+
+func uploadMissingFiles(ctx context.Context, cs ConfigSet, uploadFiles []*configpb.BadValidationRequestFixInfo_UploadFile) error {
+	if len(uploadFiles) == 0 {
+		return nil
+	}
+	eg, ectx := errgroup.WithContext(ctx)
+	for _, uf := range uploadFiles {
+		uf := uf
+		eg.Go(func() error {
+			logging.Debugf(ectx, "uploading file %q for validation", uf.GetPath())
+			var buf bytes.Buffer
+			zw := gzip.NewWriter(&buf)
+			if _, err := zw.Write(cs.Data[uf.GetPath()]); err != nil {
+				return errors.Annotate(err, "failed to write gzip data").Err()
+			}
+			if err := zw.Close(); err != nil {
+				return errors.Annotate(err, "failed to close gzip writer").Err()
+			}
+
+			req, err := http.NewRequestWithContext(ectx, http.MethodPut, uf.GetSignedUrl(), &buf)
+			if err != nil {
+				return errors.Annotate(err, "failed to create http request to upload file %q", uf.GetPath()).Err()
+			}
+			req.Header.Add("Content-Encoding", "gzip")
+			req.Header.Add("x-goog-content-length-range", fmt.Sprintf("0,%d", uf.GetMaxConfigSize()))
+			switch res, err := http.DefaultClient.Do(req); {
+			case err != nil:
+				return errors.Annotate(err, "failed to execute http request to upload file %q", uf.GetPath()).Err()
+			case res.StatusCode != http.StatusOK:
+				defer func() { _ = res.Body.Close() }()
+				body, err := io.ReadAll(res.Body)
+				if err != nil {
+					return errors.Annotate(err, "failed to read response body").Err()
+				}
+				return errors.Reason("failed to upload file %q;  got http response code: %d, body: %s", uf.GetPath(), res.StatusCode, string(body)).Err()
+			default:
+				defer func() { _ = res.Body.Close() }()
+				logging.Debugf(ectx, "successfully uploaded file %q for validation", uf.GetPath())
+				return nil
+			}
+		})
+	}
+	return eg.Wait()
 }
 
 type legacyRemoteValidator struct {

@@ -15,9 +15,14 @@
 package lucicfg
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"sort"
@@ -26,8 +31,13 @@ import (
 	"testing"
 
 	legacy_config "go.chromium.org/luci/common/api/luci_config/config/v1"
+	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/proto/config"
+	configpb "go.chromium.org/luci/config_service/proto"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
+	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -142,6 +152,178 @@ func TestConfigSet(t *testing.T) {
 		So(result(config.ValidationResult_INFO).OverallError(true), ShouldBeNil)
 		So(result(config.ValidationResult_INFO, config.ValidationResult_WARNING, config.ValidationResult_ERROR).OverallError(true), ShouldErrLike, "some files were invalid")
 		So(result(config.ValidationResult_INFO, config.ValidationResult_WARNING).OverallError(true), ShouldErrLike, "some files had validation warnings")
+	})
+}
+
+func TestRemoteValidator(t *testing.T) {
+	t.Parallel()
+
+	Convey("Remote Validator", t, func(c C) {
+		ctx := context.Background()
+		ctrl := gomock.NewController(t)
+		mockClient := configpb.NewMockConfigsClient(ctrl)
+
+		validator := &remoteValidator{
+			cfgClient: mockClient,
+		}
+
+		cs := ConfigSet{
+			Name: "example-proj",
+			Data: map[string][]byte{
+				"foo.cfg": []byte("This is the config content"),
+			},
+		}
+		validationMsgs := []*config.ValidationResult_Message{
+			{
+				Path:     "foo.cfg",
+				Severity: config.ValidationResult_ERROR,
+				Text:     "bad config syntax",
+			},
+		}
+
+		Convey("empty config set", func() {
+			cs.Data = nil
+			res, err := validator.Validate(ctx, cs)
+			So(err, ShouldBeNil)
+			So(res, ShouldBeEmpty)
+		})
+		Convey("successfully validated", func() {
+			mockClient.EXPECT().ValidateConfigs(gomock.Any(), proto.MatcherEqual(&configpb.ValidateConfigsRequest{
+				ConfigSet: cs.Name,
+				FileHashes: []*configpb.ValidateConfigsRequest_FileHash{
+					{
+						Path:   "foo.cfg",
+						Sha256: "fd243f0466e35bcc9146b012415e11c88627a2a7c31a7fb121c5a8e99401e417",
+					},
+				},
+			})).Return(&config.ValidationResult{
+				Messages: validationMsgs,
+			}, nil)
+			res, err := validator.Validate(ctx, cs)
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, validationMsgs)
+		})
+		Convey("unvalidatable files", func() {
+			cs.Data["unvalidatable.cfg"] = []byte("some content")
+			st, err := status.New(codes.InvalidArgument, "invalid validate config request").WithDetails(&configpb.BadValidationRequestFixInfo{
+				UnvalidatableFiles: []string{"unvalidatable.cfg"},
+			})
+			So(err, ShouldBeNil)
+			mockClient.EXPECT().ValidateConfigs(gomock.Any(), proto.MatcherEqual(&configpb.ValidateConfigsRequest{
+				ConfigSet: cs.Name,
+				FileHashes: []*configpb.ValidateConfigsRequest_FileHash{
+					{
+						Path:   "foo.cfg",
+						Sha256: "fd243f0466e35bcc9146b012415e11c88627a2a7c31a7fb121c5a8e99401e417",
+					},
+					{
+						Path:   "unvalidatable.cfg",
+						Sha256: "290f493c44f5d63d06b374d0a5abd292fae38b92cab2fae5efefe1b0e9347f56",
+					},
+				},
+			})).Return(nil, st.Err())
+			// Retry after stripping out `unvalidatable.cfg`
+			mockClient.EXPECT().ValidateConfigs(gomock.Any(), proto.MatcherEqual(&configpb.ValidateConfigsRequest{
+				ConfigSet: cs.Name,
+				FileHashes: []*configpb.ValidateConfigsRequest_FileHash{
+					{
+						Path:   "foo.cfg",
+						Sha256: "fd243f0466e35bcc9146b012415e11c88627a2a7c31a7fb121c5a8e99401e417",
+					},
+				},
+			})).Return(&config.ValidationResult{
+				Messages: validationMsgs,
+			}, nil)
+			res, err := validator.Validate(ctx, cs)
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, validationMsgs)
+		})
+		Convey("upload files", func(c C) {
+			Convey("succeed", func() {
+				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					c.So(r.Method, ShouldEqual, http.MethodPut)
+					c.So(r.Header.Get("Content-Encoding"), ShouldEqual, "gzip")
+					c.So(r.Header.Get("x-goog-content-length-range"), ShouldEqual, "0,10240")
+					compressed, err := io.ReadAll(r.Body)
+					c.So(err, ShouldBeNil)
+					reader, err := gzip.NewReader(bytes.NewBuffer(compressed))
+					c.So(err, ShouldBeNil)
+					config, err := io.ReadAll(reader)
+					c.So(err, ShouldBeNil)
+					c.So(string(config), ShouldEqual, "This is the config content")
+					w.WriteHeader(http.StatusOK)
+				}))
+				defer ts.Close()
+				st, err := status.New(codes.InvalidArgument, "invalid validate config request").WithDetails(&configpb.BadValidationRequestFixInfo{
+					UploadFiles: []*configpb.BadValidationRequestFixInfo_UploadFile{
+						{
+							Path:          "foo.cfg",
+							SignedUrl:     ts.URL,
+							MaxConfigSize: 10240,
+						},
+					},
+				})
+				So(err, ShouldBeNil)
+				mockClient.EXPECT().ValidateConfigs(gomock.Any(), proto.MatcherEqual(&configpb.ValidateConfigsRequest{
+					ConfigSet: cs.Name,
+					FileHashes: []*configpb.ValidateConfigsRequest_FileHash{
+						{
+							Path:   "foo.cfg",
+							Sha256: "fd243f0466e35bcc9146b012415e11c88627a2a7c31a7fb121c5a8e99401e417",
+						},
+					},
+				})).Return(nil, st.Err()).
+					Return(&config.ValidationResult{
+						Messages: validationMsgs,
+					}, nil)
+				res, err := validator.Validate(ctx, cs)
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, validationMsgs)
+			})
+			Convey("failed", func() {
+				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusBadRequest)
+					fmt.Fprintf(w, "config is too large")
+				}))
+				defer ts.Close()
+				st, err := status.New(codes.InvalidArgument, "invalid validate config request").WithDetails(&configpb.BadValidationRequestFixInfo{
+					UploadFiles: []*configpb.BadValidationRequestFixInfo_UploadFile{
+						{
+							Path:          "foo.cfg",
+							SignedUrl:     ts.URL,
+							MaxConfigSize: 10240,
+						},
+					},
+				})
+				So(err, ShouldBeNil)
+				mockClient.EXPECT().ValidateConfigs(gomock.Any(), proto.MatcherEqual(&configpb.ValidateConfigsRequest{
+					ConfigSet: cs.Name,
+					FileHashes: []*configpb.ValidateConfigsRequest_FileHash{
+						{
+							Path:   "foo.cfg",
+							Sha256: "fd243f0466e35bcc9146b012415e11c88627a2a7c31a7fb121c5a8e99401e417",
+						},
+					},
+				})).Return(nil, st.Err())
+				res, err := validator.Validate(ctx, cs)
+				So(err, ShouldErrLike, "failed to upload file")
+				So(res, ShouldBeEmpty)
+			})
+		})
+		Convey("failed to call LUCI Config", func() {
+			mockClient.EXPECT().ValidateConfigs(gomock.Any(), proto.MatcherEqual(&configpb.ValidateConfigsRequest{
+				ConfigSet: cs.Name,
+				FileHashes: []*configpb.ValidateConfigsRequest_FileHash{
+					{
+						Path:   "foo.cfg",
+						Sha256: "fd243f0466e35bcc9146b012415e11c88627a2a7c31a7fb121c5a8e99401e417",
+					},
+				},
+			})).Return(nil, status.Error(codes.InvalidArgument, "invalid validate config request"))
+			res, err := validator.Validate(ctx, cs)
+			So(err, ShouldErrLike, "failed to call LUCI Config")
+			So(res, ShouldBeEmpty)
+		})
 	})
 }
 
