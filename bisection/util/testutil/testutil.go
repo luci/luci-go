@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
@@ -303,22 +304,30 @@ func CreateTestNthSectionAnalysis(ctx context.Context, option *TestNthSectionAna
 type SuspectCreationOption struct {
 	ID        int64
 	ParentKey *datastore.Key
+	CommitID  string
 }
 
 func CreateSuspect(ctx context.Context, option *SuspectCreationOption) *model.Suspect {
 	var parentKey *datastore.Key
 	id := int64(500)
-
+	commitID := "1"
 	if option != nil {
 		if option.ID != 0 {
 			id = option.ID
 		}
-
+		if option.CommitID != "" {
+			commitID = option.CommitID
+		}
 		parentKey = option.ParentKey
 	}
 	suspect := &model.Suspect{
 		Id:             id,
 		ParentAnalysis: parentKey,
+		GitilesCommit: bbpb.GitilesCommit{
+			Host:    "chromium.googlesource.com",
+			Project: "chromium/src",
+			Id:      commitID,
+		},
 	}
 	So(datastore.Put(ctx, suspect), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()

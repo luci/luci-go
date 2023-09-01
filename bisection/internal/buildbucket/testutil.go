@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/golang/mock/gomock"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -36,4 +37,32 @@ func NewMockedClient(ctx context.Context, ctl *gomock.Controller) *MockedClient 
 		Client: mockClient,
 		Ctx:    context.WithValue(ctx, &mockedBBClientKey, mockClient),
 	}
+}
+
+func MockScheduleBuild(mc *MockedClient, buildID int64, commitID string) *bbpb.Build {
+	res := &bbpb.Build{
+		Builder: &bbpb.BuilderID{
+			Project: "chromium",
+			Bucket:  "findit",
+			Builder: "test-builder",
+		},
+		Input: &bbpb.Build_Input{
+			GitilesCommit: &bbpb.GitilesCommit{
+				Host:    "host",
+				Project: "proj",
+				Id:      commitID,
+				Ref:     "ref",
+			},
+		},
+		Id:         buildID,
+		Status:     bbpb.Status_STARTED,
+		CreateTime: &timestamppb.Timestamp{Seconds: 100},
+		StartTime:  &timestamppb.Timestamp{Seconds: 101},
+	}
+	mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).Times(1)
+	return res
+}
+
+func MockGetBuild(mc *MockedClient) {
+	mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).AnyTimes()
 }

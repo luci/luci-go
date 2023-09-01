@@ -208,11 +208,17 @@ func TriggerRerunBuildForCommits(ctx context.Context, tfa *model.TestFailureAnal
 			Ref:     primaryFailure.Ref.GetGitiles().GetRef(),
 			Id:      commitHash,
 		}
-		build, err := projectBisector.TriggerRerun(ctx, tfa, tfs, gitilesCommit)
+		build, err := projectBisector.TriggerRerun(ctx, tfa, tfs, gitilesCommit, false)
 		if err != nil {
 			return errors.Annotate(err, "trigger rerun for commit %s", commitHash).Err()
 		}
-		err = createTestRerunModel(ctx, tfa, nsa, tfs, build)
+		_, err = CreateTestRerunModel(ctx, CreateRerunModelOptions{
+			TestFailureAnalysis:   tfa,
+			NthSectionAnalysisKey: datastore.KeyForObj(ctx, nsa),
+			TestFailures:          tfs,
+			Build:                 build,
+			RerunType:             model.RerunBuildType_NthSection,
+		})
 		if err != nil {
 			return errors.Annotate(err, "create test rerun model for build %d", build.GetId()).Err()
 		}
@@ -220,13 +226,23 @@ func TriggerRerunBuildForCommits(ctx context.Context, tfa *model.TestFailureAnal
 	return nil
 }
 
-func createTestRerunModel(ctx context.Context, tfa *model.TestFailureAnalysis, nsa *model.TestNthSectionAnalysis, tfs []*model.TestFailure, build *bbpb.Build) error {
+type CreateRerunModelOptions struct {
+	TestFailureAnalysis   *model.TestFailureAnalysis
+	NthSectionAnalysisKey *datastore.Key
+	SuspectKey            *datastore.Key
+	TestFailures          []*model.TestFailure
+	Build                 *bbpb.Build
+	RerunType             model.RerunBuildType
+}
+
+func CreateTestRerunModel(ctx context.Context, options CreateRerunModelOptions) (*model.TestSingleRerun, error) {
+	build := options.Build
 	dimensions, err := buildbucket.GetBuildTaskDimension(ctx, build.GetId())
 	if err != nil {
-		return errors.Annotate(err, "get build task dimension bbid %v", build.GetId()).Err()
+		return nil, errors.Annotate(err, "get build task dimension bbid %v", build.GetId()).Err()
 	}
 	testResults := model.RerunTestResults{}
-	for _, tf := range tfs {
+	for _, tf := range options.TestFailures {
 		testResults.Results = append(testResults.Results, model.RerunSingleTestResult{
 			TestFailureKey: datastore.KeyForObj(ctx, tf),
 		})
@@ -251,15 +267,19 @@ func createTestRerunModel(ctx context.Context, tfa *model.TestFailureAnalysis, n
 			CreateTime: build.CreateTime.AsTime(),
 			StartTime:  build.StartTime.AsTime(),
 		},
-		Type:                  model.RerunBuildType_NthSection,
-		AnalysisKey:           datastore.KeyForObj(ctx, tfa),
-		NthSectionAnalysisKey: datastore.KeyForObj(ctx, nsa),
+		Type:                  options.RerunType,
+		AnalysisKey:           datastore.KeyForObj(ctx, options.TestFailureAnalysis),
+		CulpritKey:            options.SuspectKey,
+		NthSectionAnalysisKey: options.NthSectionAnalysisKey,
 		Status:                pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 		Dimensions:            dimensions,
-		Priority:              tfa.Priority,
+		Priority:              options.TestFailureAnalysis.Priority,
 		TestResults:           testResults,
 	}
-	return datastore.Put(ctx, rerun)
+	if err := datastore.Put(ctx, rerun); err != nil {
+		return nil, err
+	}
+	return rerun, nil
 }
 
 func CreateSnapshot(ctx context.Context, nsa *model.TestNthSectionAnalysis) (*nthsectionsnapshot.Snapshot, error) {

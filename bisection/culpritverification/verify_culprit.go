@@ -42,37 +42,48 @@ import (
 	"go.chromium.org/luci/gae/service/info"
 )
 
-const (
-	taskClass = "culprit-verification"
-	queue     = "culprit-verification"
-)
+// CompileFailureTasks describes how to route compile failure culprit verification tasks.
+var CompileFailureTasks = tq.RegisterTaskClass(tq.TaskClass{
+	ID:        "culprit-verification",
+	Prototype: (*taskpb.CulpritVerificationTask)(nil),
+	Queue:     "culprit-verification",
+	Kind:      tq.NonTransactional,
+})
+
+// TestFailureTasks describes how to route test failure culprit verification tasks.
+var TestFailureTasks = tq.RegisterTaskClass(tq.TaskClass{
+	ID:        "test-failure-culprit-verification",
+	Prototype: (*taskpb.TestFailureCulpritVerificationTask)(nil),
+	Queue:     "test-failure-culprit-verification",
+	Kind:      tq.NonTransactional,
+})
 
 // RegisterTaskClass registers the task class for tq dispatcher
 func RegisterTaskClass() {
-	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        taskClass,
-		Prototype: (*taskpb.CulpritVerificationTask)(nil),
-		Queue:     queue,
-		Kind:      tq.NonTransactional,
-		Handler: func(c context.Context, payload proto.Message) error {
-			task := payload.(*taskpb.CulpritVerificationTask)
-			analysisID := task.GetAnalysisId()
-			suspectID := task.GetSuspectId()
-			parentKey := task.GetParentKey()
-			logging.Infof(c, "Process CulpritVerificationTask with analysisID = %d suspectID = %d", analysisID, suspectID)
-			err := processCulpritVerificationTask(c, analysisID, suspectID, parentKey)
-			if err != nil {
-				err := errors.Annotate(err, "processCulpritVerificationTask analysisID=%d suspectID=%d", analysisID, suspectID).Err()
-				logging.Errorf(c, err.Error())
-				// If the error is transient, return err to retry
-				if transient.Tag.In(err) {
-					return err
-				}
-				return nil
-			}
-			return nil
-		},
+	CompileFailureTasks.AttachHandler(func(ctx context.Context, payload proto.Message) error {
+		task := payload.(*taskpb.CulpritVerificationTask)
+		analysisID := task.GetAnalysisId()
+		suspectID := task.GetSuspectId()
+		parentKey := task.GetParentKey()
+		return handleTQError(ctx, processCulpritVerificationTask(ctx, analysisID, suspectID, parentKey))
 	})
+	TestFailureTasks.AttachHandler(func(ctx context.Context, payload proto.Message) error {
+		task := payload.(*taskpb.TestFailureCulpritVerificationTask)
+		return handleTQError(ctx, processTestFailureTask(ctx, task))
+	})
+}
+
+func handleTQError(ctx context.Context, err error) error {
+	if err != nil {
+		err := errors.Annotate(err, "run culprit verification").Err()
+		logging.Errorf(ctx, err.Error())
+		// If the error is transient, return err to retry
+		if transient.Tag.In(err) {
+			return err
+		}
+		return nil
+	}
+	return nil
 }
 
 func processCulpritVerificationTask(c context.Context, analysisID int64, suspectID int64, parentKeyStr string) error {
@@ -242,23 +253,14 @@ func VerifySuspectCommit(c context.Context, project string, suspect *model.Suspe
 	commit := &suspect.GitilesCommit
 
 	// Query Gitiles to get parent commit
-	repoUrl := gitiles.GetRepoUrl(c, commit)
-	p, err := gitiles.GetParentCommit(c, repoUrl, commit.Id)
+	parentCommit, err := getParentCommit(c, commit)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Annotate(err, "get parent commit for commit %s", commit.Id).Err()
 	}
-	parentCommit := &buildbucketpb.GitilesCommit{
-		Host:    commit.Host,
-		Project: commit.Project,
-		Ref:     commit.Ref,
-		Id:      p,
-	}
-
 	builder, err := util.GetCompileRerunBuilder(project)
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "get compile rerun builder").Err()
 	}
-
 	options := &rerun.TriggerOptions{
 		Builder:         builder,
 		GitilesCommit:   commit,
@@ -362,4 +364,18 @@ func ShouldRunCulpritVerification(c context.Context) (bool, error) {
 		return false, err
 	}
 	return cfg.AnalysisConfig.CulpritVerificationEnabled, nil
+}
+
+func getParentCommit(ctx context.Context, commit *buildbucketpb.GitilesCommit) (*buildbucketpb.GitilesCommit, error) {
+	repoURL := gitiles.GetRepoUrl(ctx, commit)
+	p, err := gitiles.GetParentCommit(ctx, repoURL, commit.Id)
+	if err != nil {
+		return nil, err
+	}
+	return &buildbucketpb.GitilesCommit{
+		Host:    commit.Host,
+		Project: commit.Project,
+		Ref:     commit.Ref,
+		Id:      p,
+	}, nil
 }

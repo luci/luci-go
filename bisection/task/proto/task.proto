@@ -67,3 +67,9 @@ message TestFailureBisectionTask {
   // The ID of TestFailureAnalysis that the bisector should bisect.
   int64 analysis_id = 1;
 }
+
+// Payload for test failure culprit verification
+message TestFailureCulpritVerificationTask {
+  // The analysis ID
+  int64 analysis_id = 1;
+}

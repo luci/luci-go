@@ -54,13 +54,13 @@ func (b *Bisector) Prepare(ctx context.Context, tfa *model.TestFailureAnalysis, 
 	return nil
 }
 
-func (b *Bisector) TriggerRerun(ctx context.Context, tfa *model.TestFailureAnalysis, tfs []*model.TestFailure, gitilesCommit *bbpb.GitilesCommit) (*bbpb.Build, error) {
+func (b *Bisector) TriggerRerun(ctx context.Context, tfa *model.TestFailureAnalysis, tfs []*model.TestFailure, gitilesCommit *bbpb.GitilesCommit, fullRun bool) (*bbpb.Build, error) {
 	builder, err := util.GetTestRerunBuilder(tfa.Project)
 	if err != nil {
 		return nil, errors.Annotate(err, "get test rerun builder").Err()
 	}
 
-	extraProperties := getExtraProperties(ctx, tfa, tfs)
+	extraProperties := getExtraProperties(ctx, tfa, tfs, fullRun)
 
 	options := &rerun.TriggerOptions{
 		Builder:         builder,
@@ -78,7 +78,7 @@ func (b *Bisector) TriggerRerun(ctx context.Context, tfa *model.TestFailureAnaly
 	return build, nil
 }
 
-func getExtraProperties(ctx context.Context, tfa *model.TestFailureAnalysis, tfs []*model.TestFailure) map[string]any {
+func getExtraProperties(ctx context.Context, tfa *model.TestFailureAnalysis, tfs []*model.TestFailure, fullRun bool) map[string]any {
 	// This may change depending on what the recipe needs.
 	var testsToRun []map[string]string
 	for _, tf := range tfs {
@@ -89,11 +89,16 @@ func getExtraProperties(ctx context.Context, tfa *model.TestFailureAnalysis, tfs
 			"variant_hash":    tf.VariantHash,
 		})
 	}
-	return map[string]any{
+	props := map[string]any{
 		"analysis_id":    tfa.ID,
 		"bisection_host": fmt.Sprintf("%s.appspot.com", info.AppID(ctx)),
 		"tests_to_run":   testsToRun,
 	}
+	if fullRun {
+		props["should_clobber"] = true
+		props["run_all"] = true
+	}
+	return props
 }
 
 // populateTestSuiteName set the correct TestSuiteName for TestFailures.
