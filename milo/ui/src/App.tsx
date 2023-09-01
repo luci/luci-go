@@ -70,6 +70,7 @@ import { TestSearch } from './pages/search/test_search/test_search';
 import { ServerPage } from './pages/server_page';
 import { TestHistoryPage } from './pages/test_history_page/test_history_page';
 import { TestResultsTab } from './pages/test_results_tab/test_results_tab';
+import { SwarmingBuildPage } from './swarming/views/swarming_build_page';
 
 const isNonTransientError = (error: unknown) =>
   error instanceof GrpcError && NON_TRANSIENT_ERROR_CODES.includes(error.code);
@@ -308,6 +309,15 @@ export function App({ initOpts }: AppProps) {
                 {
                   path: 'analysis/b/:bbid',
                   element: <AnalysisDetailsPage />,
+                },
+              ],
+            },
+            {
+              path: 'swarming',
+              children: [
+                {
+                  path: 'task/:taskId',
+                  element: <SwarmingBuildPage />,
                 },
               ],
             },
