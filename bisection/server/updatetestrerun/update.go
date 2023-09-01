@@ -254,7 +254,7 @@ func updateRerun(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.T
 
 	recipeResults := req.Results
 	// We expect primary failure to have result.
-	primaryResult := findTestResult(recipeResults, primary.TestID, primary.VariantHash)
+	primaryResult := findTestResult(ctx, recipeResults, primary.TestID, primary.VariantHash)
 	if primaryResult == nil {
 		return errors.New("no result for primary failure")
 	}
@@ -278,7 +278,7 @@ func updateRerun(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.T
 		if err != nil {
 			return errors.Reason("could not find test failure %d", tf.ID).Err()
 		}
-		recipeTestResult := findTestResult(recipeResults, tf.TestID, tf.VariantHash)
+		recipeTestResult := findTestResult(ctx, recipeResults, tf.TestID, tf.VariantHash)
 		if divergedFromPrimary(recipeTestResult, primaryResult) {
 			tf.IsDiverged = true
 			divergedTestFailures = append(divergedTestFailures, tf)
@@ -375,13 +375,26 @@ func divergedFromPrimary(testResult *pb.TestResult, primaryResult *pb.TestResult
 }
 
 // findTestResult returns TestResult given testID and variantHash.
-func findTestResult(results []*pb.TestResult, testID string, variantHash string) *pb.TestResult {
-	for _, result := range results {
-		if result.TestId == testID && result.VariantHash == variantHash {
-			return result
+func findTestResult(ctx context.Context, results []*pb.TestResult, testID string, variantHash string) *pb.TestResult {
+	// TODO (nqmtuan): Bring back the variant hash comparison.
+	// We only do test id comparison here because variant hash is not set correctly,
+	// and it requires some effort to do so.
+	// Once the variant hash is set correctly, we should bring the variant hash
+	// comparision back.
+	var result *pb.TestResult = nil
+	for _, r := range results {
+		if r.TestId == testID {
+			if result != nil {
+				// If there are more than 1 test result with the same test ID,
+				// we will not know which one is the correct result.
+				// Return nil in this case.
+				logging.Warningf(ctx, "find more than 1 test result for test ID %s", r.TestId)
+				return nil
+			}
+			result = r
 		}
 	}
-	return nil
+	return result
 }
 
 func validateRequest(req *pb.UpdateTestAnalysisProgressRequest) error {
