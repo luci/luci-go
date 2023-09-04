@@ -334,7 +334,12 @@ func TestSpan(t *testing.T) {
 		Convey(`Create`, func() {
 			testCreate := func(bc *Entry, user string) (time.Time, error) {
 				commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-					return Create(ctx, bc, user)
+					ms, err := Create(bc, user)
+					if err != nil {
+						return err
+					}
+					span.BufferWrite(ctx, ms)
+					return nil
 				})
 				return commitTime.In(time.UTC), err
 			}
@@ -460,7 +465,12 @@ func TestSpan(t *testing.T) {
 			}
 			testUpdate := func(bc *Entry, options UpdateOptions, user string) (time.Time, error) {
 				commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-					return Update(ctx, bc, options, user)
+					ms, err := Update(bc, options, user)
+					if err != nil {
+						return err
+					}
+					span.BufferWrite(ctx, ms)
+					return nil
 				})
 				return commitTime.In(time.UTC), err
 			}
@@ -576,13 +586,23 @@ func TestSpan(t *testing.T) {
 		Convey(`One rule managing bug constraint is correctly enforced`, func() {
 			testCreate := func(r *Entry, user string) error {
 				_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-					return Create(ctx, r, user)
+					ms, err := Create(r, user)
+					if err != nil {
+						return err
+					}
+					span.BufferWrite(ctx, ms)
+					return nil
 				})
 				return err
 			}
 			testUpdate := func(r *Entry, options UpdateOptions, user string) error {
 				_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-					return Update(ctx, r, options, user)
+					ms, err := Update(r, options, user)
+					if err != nil {
+						return err
+					}
+					span.BufferWrite(ctx, ms)
+					return nil
 				})
 				return err
 			}

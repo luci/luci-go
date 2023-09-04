@@ -212,10 +212,11 @@ func (*rulesServer) Create(ctx context.Context, req *pb.CreateRuleRequest) (*pb.
 			}
 		}
 
-		err = rules.Create(ctx, r, user)
+		ms, err := rules.Create(r, user)
 		if err != nil {
 			return invalidArgumentError(err)
 		}
+		span.BufferWrite(ctx, ms)
 		return nil
 	})
 	if err != nil {
@@ -353,13 +354,15 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 			}
 		}
 
-		if err := rules.Update(ctx, rule, rules.UpdateOptions{
+		ms, err := rules.Update(rule, rules.UpdateOptions{
 			IsAuditableUpdate:            true,
 			PredicateUpdated:             updatePredicate,
 			IsManagingBugPriorityUpdated: updateIsManagingBugPriority,
-		}, user); err != nil {
+		}, user)
+		if err != nil {
 			return invalidArgumentError(err)
 		}
+		span.BufferWrite(ctx, ms)
 		updatedRule = rule
 		predicateUpdated = updatePredicate
 		managingBugPriorityUpdated = updateIsManagingBugPriority

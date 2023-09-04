@@ -144,8 +144,7 @@ type BugUpdater struct {
 	MaxBugsFiledPerRun int
 }
 
-// NewBugUpdater initialises a new BugUpdater. The specified impact thresholds are used
-// when determining whether to a file a bug.
+// NewBugUpdater initialises a new BugUpdater.
 func NewBugUpdater(project string, mgrs map[string]BugManager, ac AnalysisClient, projectCfg *compiledcfg.ProjectConfig) *BugUpdater {
 	return &BugUpdater{
 		project:            project,
@@ -161,20 +160,20 @@ func NewBugUpdater(project string, mgrs map[string]BugManager, ac AnalysisClient
 // rule.
 // The passed progress should reflect the progress of re-clustering as captured
 // in the latest analysis.
-func (b *BugUpdater) Run(ctx context.Context, progress *runs.ReclusteringProgress) error {
+func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.ReclusteringProgress) error {
 	// Verify we are not currently reclustering to a new version of
 	// algorithms or project configuration. If we are, we should
 	// suspend bug creation, priority updates and auto-closure
 	// as cluster impact is unreliable.
-	impactValid := b.verifyClusterImpactValid(ctx, progress)
+	metricsValid := b.verifyClusterImpactValid(ctx, reclusteringProgress)
 
-	rules, err := rules.ReadActive(span.Single(ctx), b.project)
+	activeRules, err := rules.ReadActive(span.Single(ctx), b.project)
 	if err != nil {
 		return errors.Annotate(err, "read active failure association rules").Err()
 	}
 
-	impactByRuleID := make(map[string]*bugs.ClusterImpact)
-	if impactValid {
+	metricsByRuleID := make(map[string]*bugs.ClusterImpact)
+	if metricsValid {
 		// We want to read analysis for two categories of clusters:
 		// - Bug Clusters: to update the priority of filed bugs.
 		// - Impactful Suggested Clusters: if any suggested clusters may be
@@ -195,8 +194,8 @@ func (b *BugUpdater) Run(ctx context.Context, progress *runs.ReclusteringProgres
 		// blockedSourceClusterIDs is the set of source cluster IDs for which
 		// filing new bugs should be suspended.
 		blockedSourceClusterIDs := make(map[string]struct{})
-		for _, r := range rules {
-			if !progress.IncorporatesRulesVersion(r.CreateTime) {
+		for _, r := range activeRules {
+			if !reclusteringProgress.IncorporatesRulesVersion(r.CreateTime) {
 				// If a bug cluster was recently filed for a source cluster, and
 				// re-clustering and analysis is not yet complete (to move the
 				// impact from the source cluster to the bug cluster), do not file
@@ -217,32 +216,32 @@ func (b *BugUpdater) Run(ctx context.Context, progress *runs.ReclusteringProgres
 			if cluster.ClusterID.Algorithm == rulesalgorithm.AlgorithmName {
 				// Use only impact from latest algorithm version.
 				ruleID := cluster.ClusterID.ID
-				impactByRuleID[ruleID] = ExtractResidualImpact(cluster)
+				metricsByRuleID[ruleID] = ExtractResidualImpact(cluster)
 			}
 		}
 	}
 
 	// Prepare bug update requests.
 	bugUpdatesBySystem := make(map[string][]bugs.BugUpdateRequest)
-	for _, rule := range rules {
+	for _, rule := range activeRules {
 		var impact *bugs.ClusterImpact
 
-		// Impact is valid if re-clustering and analysis ran on the latest
+		// Metrics are valid if re-clustering and analysis ran on the latest
 		// version of this failure association rule. This avoids bugs getting
 		// erroneous priority changes while impact information is incomplete.
-		ruleImpactValid := impactValid &&
-			progress.IncorporatesRulesVersion(rule.PredicateLastUpdateTime)
+		ruleMetricsValid := metricsValid &&
+			reclusteringProgress.IncorporatesRulesVersion(rule.PredicateLastUpdateTime)
 
-		if ruleImpactValid {
+		if ruleMetricsValid {
 			var ok bool
-			impact, ok = impactByRuleID[rule.RuleID]
+			impact, ok = metricsByRuleID[rule.RuleID]
 			if !ok {
 				// If there is no analysis, this means the cluster is
 				// empty. Use empty impact.
 				impact = &bugs.ClusterImpact{}
 			}
 		}
-		// Else leave impact as nil. Bug-updating code takes this as an
+		// Else leave metrics as nil. Bug-updating code takes this as an
 		// indication valid impact is not available and will not attempt
 		// priority updates/auto-closure.
 
@@ -260,8 +259,8 @@ func (b *BugUpdater) Run(ctx context.Context, progress *runs.ReclusteringProgres
 
 	// Perform bug updates.
 	var errs []error
-	for system, bugsToUpdate := range bugUpdatesBySystem {
-		err := b.updateBugsForSystem(ctx, system, bugsToUpdate)
+	for system, systemBugsToUpdate := range bugUpdatesBySystem {
+		err := b.updateBugsForSystem(ctx, system, systemBugsToUpdate)
 		if err != nil {
 			errs = append(errs, errors.Annotate(err, "updating bugs in %s", system).Err())
 		}
@@ -415,7 +414,7 @@ func (b *BugUpdater) fileNewBugs(ctx context.Context, clusters []*analysis.Clust
 				bugs.InflateThreshold(b.projectCfg.Config.BugFilingThresholds,
 					testnameThresholdInflationPercent)
 		}
-		if !impact.MeetsThreshold(bugFilingThresholds) {
+		if !impact.MeetsAnyOfThresholds(bugFilingThresholds) {
 			continue
 		}
 
@@ -459,14 +458,16 @@ func (b *BugUpdater) archiveRules(ctx context.Context, ruleIDs []string) error {
 		}
 		for _, r := range rs {
 			r.IsActive = false
-			if err := rules.Update(ctx, r, rules.UpdateOptions{
+			ms, err := rules.Update(r, rules.UpdateOptions{
 				IsAuditableUpdate: true,
 				PredicateUpdated:  true,
-			}, rules.LUCIAnalysisSystem); err != nil {
+			}, rules.LUCIAnalysisSystem)
+			if err != nil {
 				// Validation error. Actual save happens upon transaction
 				// commit.
 				return errors.Annotate(err, "update rules").Err()
 			}
+			span.BufferWrite(ctx, ms)
 		}
 		return nil
 	}
@@ -493,14 +494,16 @@ func (b *BugUpdater) disableBugUpdatesForRules(ctx context.Context, ruleIDs []st
 		}
 		for _, r := range rs {
 			r.IsManagingBugPriority = false
-			if err := rules.Update(ctx, r, rules.UpdateOptions{
+			ms, err := rules.Update(r, rules.UpdateOptions{
 				IsAuditableUpdate:            true,
 				IsManagingBugPriorityUpdated: true,
-			}, rules.LUCIAnalysisSystem); err != nil {
+			}, rules.LUCIAnalysisSystem)
+			if err != nil {
 				// Validation error. Actual save happens upon transaction
 				// commit.
 				return errors.Annotate(err, "update rules").Err()
 			}
+			span.BufferWrite(ctx, ms)
 		}
 		return nil
 	}
@@ -552,13 +555,14 @@ func (b *BugUpdater) handleDuplicateBug(ctx context.Context, duplicateDetails bu
 				sourceRule.IsManagingBug = false
 			}
 
-			err = rules.Update(ctx, sourceRule, rules.UpdateOptions{
+			ms, err := rules.Update(sourceRule, rules.UpdateOptions{
 				IsAuditableUpdate: true,
 			}, rules.LUCIAnalysisSystem)
 			if err != nil {
 				// Indicates validation error. Should never happen.
 				return err
 			}
+			span.BufferWrite(ctx, ms)
 
 			destinationBugRuleID = sourceRule.RuleID
 			return nil
@@ -583,7 +587,7 @@ func (b *BugUpdater) handleDuplicateBug(ctx context.Context, duplicateDetails bu
 
 			// Disable the source rule.
 			sourceRule.IsActive = false
-			err = rules.Update(ctx, sourceRule, rules.UpdateOptions{
+			ms, err := rules.Update(sourceRule, rules.UpdateOptions{
 				IsAuditableUpdate: true,
 				PredicateUpdated:  true,
 			}, rules.LUCIAnalysisSystem)
@@ -591,16 +595,18 @@ func (b *BugUpdater) handleDuplicateBug(ctx context.Context, duplicateDetails bu
 				// Indicates validation error. Should never happen.
 				return err
 			}
+			span.BufferWrite(ctx, ms)
 
 			// Update the rule on the destination rule.
 			destinationRule.IsActive = true
-			err = rules.Update(ctx, destinationRule, rules.UpdateOptions{
+			ms, err = rules.Update(destinationRule, rules.UpdateOptions{
 				IsAuditableUpdate: true,
 				PredicateUpdated:  true,
 			}, rules.LUCIAnalysisSystem)
 			if err != nil {
 				return err
 			}
+			span.BufferWrite(ctx, ms)
 
 			destinationBugRuleID = destinationRule.RuleID
 			return nil
@@ -874,7 +880,12 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 	}
 	create := func(ctx context.Context) error {
 		user := rules.LUCIAnalysisSystem
-		return rules.Create(ctx, newRule, user)
+		ms, err := rules.Create(newRule, user)
+		if err != nil {
+			return err
+		}
+		span.BufferWrite(ctx, ms)
+		return nil
 	}
 	if _, err := span.ReadWriteTransaction(ctx, create); err != nil {
 		return false, errors.Annotate(err, "create bug cluster").Err()

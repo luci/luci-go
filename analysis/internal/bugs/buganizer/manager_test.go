@@ -492,7 +492,7 @@ func TestBugManager(t *testing.T) {
 							// Verify repeated update has no effect.
 							updateDoesNothing()
 						})
-						Convey("Issue has no owner", func() {
+						Convey("Issue has no assignee", func() {
 							// Remove owner.
 							fakeStore.Issues[1].Issue.IssueState.Assignee = nil
 

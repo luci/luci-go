@@ -41,45 +41,45 @@ func TestThresholding(t *testing.T) {
 				SevenDay: 700,
 			},
 		}
-		Convey("MeetsThreshold", func() {
+		Convey("MeetsAnyOfThresholds", func() {
 			Convey("No cluster meets empty threshold", func() {
 				t := []*configpb.ImpactMetricThreshold{}
-				So(cl.MeetsThreshold(t), ShouldBeFalse)
+				So(cl.MeetsAnyOfThresholds(t), ShouldBeFalse)
 			})
 			Convey("Critical failures exonerated thresholding", func() {
 				t := setThresholdByID(metrics.CriticalFailuresExonerated.ID, &configpb.MetricThreshold{OneDay: proto.Int64(60)})
-				So(cl.MeetsThreshold(t), ShouldBeTrue)
+				So(cl.MeetsAnyOfThresholds(t), ShouldBeTrue)
 
 				t = setThresholdByID(metrics.CriticalFailuresExonerated.ID, &configpb.MetricThreshold{OneDay: proto.Int64(61)})
-				So(cl.MeetsThreshold(t), ShouldBeFalse)
+				So(cl.MeetsAnyOfThresholds(t), ShouldBeFalse)
 			})
 			Convey("Test results failed thresholding", func() {
 				t := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{OneDay: proto.Int64(100)})
-				So(cl.MeetsThreshold(t), ShouldBeTrue)
+				So(cl.MeetsAnyOfThresholds(t), ShouldBeTrue)
 
 				t = setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{OneDay: proto.Int64(101)})
-				So(cl.MeetsThreshold(t), ShouldBeFalse)
+				So(cl.MeetsAnyOfThresholds(t), ShouldBeFalse)
 			})
 			Convey("One day threshold", func() {
 				t := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{OneDay: proto.Int64(100)})
-				So(cl.MeetsThreshold(t), ShouldBeTrue)
+				So(cl.MeetsAnyOfThresholds(t), ShouldBeTrue)
 
 				t = setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{OneDay: proto.Int64(101)})
-				So(cl.MeetsThreshold(t), ShouldBeFalse)
+				So(cl.MeetsAnyOfThresholds(t), ShouldBeFalse)
 			})
 			Convey("Three day threshold", func() {
 				t := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{ThreeDay: proto.Int64(300)})
-				So(cl.MeetsThreshold(t), ShouldBeTrue)
+				So(cl.MeetsAnyOfThresholds(t), ShouldBeTrue)
 
 				t = setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{ThreeDay: proto.Int64(301)})
-				So(cl.MeetsThreshold(t), ShouldBeFalse)
+				So(cl.MeetsAnyOfThresholds(t), ShouldBeFalse)
 			})
 			Convey("Seven day threshold", func() {
 				t := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{SevenDay: proto.Int64(700)})
-				So(cl.MeetsThreshold(t), ShouldBeTrue)
+				So(cl.MeetsAnyOfThresholds(t), ShouldBeTrue)
 
 				t = setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{SevenDay: proto.Int64(701)})
-				So(cl.MeetsThreshold(t), ShouldBeFalse)
+				So(cl.MeetsAnyOfThresholds(t), ShouldBeFalse)
 			})
 		})
 		Convey("InflateThreshold", func() {

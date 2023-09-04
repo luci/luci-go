@@ -81,14 +81,23 @@ func inflateSingleThreshold(threshold *int64, inflationPercent int64) *int64 {
 	return &thresholdValue
 }
 
-// MeetsThreshold returns whether the nominal impact of the cluster meets
-// or exceeds the specified threshold.
-func (c *ClusterImpact) MeetsThreshold(ts []*configpb.ImpactMetricThreshold) bool {
+// MeetsAnyOfThresholds returns whether the cluster metrics meet or exceed
+// any of the specified thresholds.
+func (c *ClusterImpact) MeetsAnyOfThresholds(ts []*configpb.ImpactMetricThreshold) bool {
 	for _, t := range ts {
-		impact, ok := (*c)[metrics.ID(t.MetricId)]
-		if ok && impact.meetsThreshold(t.Threshold) {
+		if c.MeetsThreshold(metrics.ID(t.MetricId), t.Threshold) {
 			return true
 		}
+	}
+	return false
+}
+
+// MeetsThreshold returns whether the cluster metrics meet or exceed
+// the specified threshold.
+func (c *ClusterImpact) MeetsThreshold(metricID metrics.ID, t *configpb.MetricThreshold) bool {
+	impact, ok := (*c)[metricID]
+	if ok && impact.meetsThreshold(t) {
+		return true
 	}
 	return false
 }

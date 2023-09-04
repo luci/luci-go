@@ -569,12 +569,12 @@ func (g *Generator) isCompatibleWithVerified(impact *bugs.ClusterImpact, verifie
 		// The issue is verified. Only reopen if we satisfied the bug-filing
 		// criteria. Bug-filing criteria is guaranteed to imply the criteria
 		// of the lowest priority level.
-		return !impact.MeetsThreshold(g.bugFilingThresholds)
+		return !impact.MeetsAnyOfThresholds(g.bugFilingThresholds)
 	} else {
 		// The issue is not verified. Only close if the impact falls
 		// below the threshold with hysteresis.
 		deflatedThreshold := bugs.InflateThreshold(lowestPriority.Thresholds, -hysteresisPerc)
-		return impact.MeetsThreshold(deflatedThreshold)
+		return impact.MeetsAnyOfThresholds(deflatedThreshold)
 	}
 }
 
@@ -728,7 +728,7 @@ func (g *Generator) clusterPriorityWithInflatedThresholds(impact *bugs.ClusterIm
 	for i := len(g.monorailCfg.Priorities) - 2; i >= 0; i-- {
 		p := g.monorailCfg.Priorities[i]
 		adjustedThreshold := bugs.InflateThreshold(p.Thresholds, inflationPercent)
-		if !impact.MeetsThreshold(adjustedThreshold) {
+		if !impact.MeetsAnyOfThresholds(adjustedThreshold) {
 			// A cluster cannot reach a higher priority unless it has
 			// met the thresholds for all lower priorities.
 			break
@@ -742,5 +742,5 @@ func (g *Generator) clusterPriorityWithInflatedThresholds(impact *bugs.ClusterIm
 // verified, if no hysteresis has been applied.
 func (g *Generator) clusterResolved(impact *bugs.ClusterImpact) bool {
 	lowestPriority := g.monorailCfg.Priorities[len(g.monorailCfg.Priorities)-1]
-	return !impact.MeetsThreshold(lowestPriority.Thresholds)
+	return !impact.MeetsAnyOfThresholds(lowestPriority.Thresholds)
 }

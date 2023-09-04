@@ -155,24 +155,12 @@ type Entry struct {
 	LastUpdateTime time.Time
 }
 
-// UpdateOptions are the options that are using during
-// the update of a rule.
-type UpdateOptions struct {
-	// IsAuditableUpdate should be set if any auditable field
-	// (that is, any field other than a system-controlled data field)
-	// has been updated.
-	// If set, the values of these fields will be saved and
-	// LastAuditableUpdate and LastAuditableUpdateUser will be updated.
-	IsAuditableUpdate bool
-	// PredicateUpdated should be set if IsActive and/or RuleDefinition
-	// have been updated.
-	// If set, these new values of these fields will be saved and
-	// PredicateLastUpdated will be updated.
-	PredicateUpdated bool
-	// IsManagingBugPriorityUpdated should be set if IsManagingBugPriority
-	// has been updated.
-	// If set, the IsManagingBugPriorityLastUpdated will be updated.
-	IsManagingBugPriorityUpdated bool
+// Clone makes a deep copy of the rule.
+func (r Entry) Clone() *Entry {
+	result := &Entry{}
+	*result = r
+	result.BugManagementState = proto.Clone(result.BugManagementState).(*bugspb.BugManagementState)
+	return result
 }
 
 // Read reads the failure association rule with the given rule ID.
@@ -193,13 +181,11 @@ func Read(ctx context.Context, project string, id string) (*Entry, error) {
 	return rs[0], nil
 }
 
-// ReadAll reads all LUCI Analysis failure association rules in a given
-// project. This method is not expected to scale -- for testing use only.
-func ReadAll(ctx context.Context, project string) ([]*Entry, error) {
-	whereClause := `Project = @project`
-	params := map[string]any{
-		"project": project,
-	}
+// ReadAllForTesting reads all LUCI Analysis failure association rules.
+// This method is not expected to scale -- for testing use only.
+func ReadAllForTesting(ctx context.Context) ([]*Entry, error) {
+	whereClause := `TRUE`
+	params := map[string]any{}
 	rs, err := readWhere(ctx, whereClause, params)
 	if err != nil {
 		return nil, errors.Annotate(err, "query all rules").Err()
@@ -297,8 +283,7 @@ func ReadMany(ctx context.Context, project string, ids []string) ([]*Entry, erro
 			// Copy the rule to ensure the rules in the result
 			// are not aliased, even if the same rule ID is requested
 			// multiple times.
-			entry = new(Entry)
-			*entry = rule
+			entry = rule.Clone()
 		}
 		result = append(result, entry)
 	}
@@ -502,18 +487,18 @@ func ReadTotalActiveRules(ctx context.Context) (map[string]int64, error) {
 	return result, nil
 }
 
-// Create inserts a new failure association rule with the specified details.
-func Create(ctx context.Context, rule *Entry, user string) error {
+// Create creates a mutation to insert a new failure association rule.
+func Create(rule *Entry, user string) (*spanner.Mutation, error) {
 	if err := validateRule(rule); err != nil {
-		return err
+		return nil, err
 	}
 	if err := validateUser(user); err != nil {
-		return err
+		return nil, err
 	}
 
 	bugManagementStateBuf, err := proto.Marshal(rule.BugManagementState)
 	if err != nil {
-		return errors.Annotate(err, "marshal bug management state").Err()
+		return nil, errors.Annotate(err, "marshal bug management state").Err()
 	}
 
 	ms := spanutil.InsertMap("FailureAssociationRules", map[string]any{
@@ -538,30 +523,49 @@ func Create(ctx context.Context, rule *Entry, user string) error {
 		"LastAuditableUpdateUser":          user,
 		"LastUpdated":                      spanner.CommitTimestamp,
 	})
-	span.BufferWrite(ctx, ms)
-	return nil
+	return ms, nil
 }
 
-// Update updates an existing failure association rule to have the specified
-// details. Set updatePredicate to true if you changed RuleDefinition
-// or IsActive.
-func Update(ctx context.Context, rule *Entry, options UpdateOptions, user string) error {
+// UpdateOptions are the options that are using during
+// the update of a rule.
+type UpdateOptions struct {
+	// IsAuditableUpdate should be set if any auditable field
+	// (that is, any field other than a system-controlled data field)
+	// has been updated.
+	// If set, the values of these fields will be saved and
+	// LastAuditableUpdate and LastAuditableUpdateUser will be updated.
+	IsAuditableUpdate bool
+	// PredicateUpdated should be set if IsActive and/or RuleDefinition
+	// have been updated.
+	// If set, these new values of these fields will be saved and
+	// PredicateLastUpdated will be updated.
+	PredicateUpdated bool
+	// IsManagingBugPriorityUpdated should be set if IsManagingBugPriority
+	// has been updated.
+	// If set, the IsManagingBugPriorityLastUpdated will be updated.
+	IsManagingBugPriorityUpdated bool
+}
+
+// Update creates a mutation to update an existing failure association rule.
+// Correctly specify the nature of your changes in UpdateOptions to ensure
+// those changes are saved and that audit timestamps are updated.
+func Update(rule *Entry, options UpdateOptions, user string) (*spanner.Mutation, error) {
 	if err := validateRule(rule); err != nil {
-		return err
+		return nil, err
 	}
 	if err := validateUser(user); err != nil {
-		return err
+		return nil, err
 	}
 	if options.PredicateUpdated && !options.IsAuditableUpdate {
-		return errors.Reason("predicate updates are auditable updates, did you forget to set IsAuditableUpdate?").Err()
+		return nil, errors.Reason("predicate updates are auditable updates, did you forget to set IsAuditableUpdate?").Err()
 	}
 	if options.IsManagingBugPriorityUpdated && !options.IsAuditableUpdate {
-		return errors.Reason("is managing bug priority updates are auditable updates, did you forget to set IsAuditableUpdate?").Err()
+		return nil, errors.Reason("is managing bug priority updates are auditable updates, did you forget to set IsAuditableUpdate?").Err()
 	}
 
 	bugManagementStateBuf, err := proto.Marshal(rule.BugManagementState)
 	if err != nil {
-		return errors.Annotate(err, "marshal bug management state").Err()
+		return nil, errors.Annotate(err, "marshal bug management state").Err()
 	}
 
 	update := map[string]any{
@@ -590,8 +594,7 @@ func Update(ctx context.Context, rule *Entry, options UpdateOptions, user string
 		}
 	}
 	ms := spanutil.UpdateMap("FailureAssociationRules", update)
-	span.BufferWrite(ctx, ms)
-	return nil
+	return ms, nil
 }
 
 func validateRule(r *Entry) error {

@@ -126,11 +126,11 @@ func (h *Handler) CronHandler(ctx context.Context) error {
 
 // updateAnalysisAndBugs updates BigQuery analysis, and then updates bugs
 // to reflect this analysis.
-// Simulate, if true, avoids any changes being applied to monorail and logs
-// the changes which would be made instead. This must be set when running
-// on developer computers as LUCI Analysis-initiated monorail changes will
-// appear on monorail as the developer themselves rather than the
-// LUCI Analysis service.
+// Simulate, if true, avoids any changes being applied to bugs in the
+// issue tracker(s) themselves and logs the changes which would be made
+// instead. This must be set when running on developer computers as
+// LUCI Analysis-initiated monorail changes will appear on monorail
+// as the developer themselves rather than the LUCI Analysis service.
 // This leads to bugs errounously being detected as having manual priority
 // changes.
 func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string, simulate, enable bool) (retErr error) {

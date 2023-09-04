@@ -144,7 +144,7 @@ func (rg *RequestGenerator) clusterPriorityWithInflatedThresholds(impact *bugs.C
 	for i := len(mappings) - 2; i >= 0; i-- {
 		p := mappings[i]
 		adjustedThreshold := bugs.InflateThreshold(p.Thresholds, inflationPercent)
-		if !impact.MeetsThreshold(adjustedThreshold) {
+		if !impact.MeetsAnyOfThresholds(adjustedThreshold) {
 			// A cluster cannot reach a higher priority unless it has
 			// met the thresholds for all lower priorities.
 			break
@@ -595,12 +595,12 @@ func (rg *RequestGenerator) isCompatibleWithVerified(impact *bugs.ClusterImpact,
 		// The issue is verified. Only reopen if we satisfied the bug-filing
 		// criteria. Bug-filing criteria is guaranteed to imply the criteria
 		// of the lowest priority level.
-		return !impact.MeetsThreshold(rg.bugFilingThresholds)
+		return !impact.MeetsAnyOfThresholds(rg.bugFilingThresholds)
 	} else {
 		// The issue is not verified. Only close if the impact falls
 		// below the threshold with hysteresis.
 		deflatedThreshold := bugs.InflateThreshold(lowestPriority.Thresholds, -hysteresisPerc)
-		return impact.MeetsThreshold(deflatedThreshold)
+		return impact.MeetsAnyOfThresholds(deflatedThreshold)
 	}
 }
 
@@ -638,7 +638,7 @@ func (rg *RequestGenerator) isCompatibleWithPriority(impact *bugs.ClusterImpact,
 // verified, if no hysteresis has been applied.
 func (rg *RequestGenerator) clusterResolved(impact *bugs.ClusterImpact) bool {
 	lowestPriority := rg.buganizerCfg.PriorityMappings[len(rg.buganizerCfg.PriorityMappings)-1]
-	return !impact.MeetsThreshold(lowestPriority.Thresholds)
+	return !impact.MeetsAnyOfThresholds(lowestPriority.Thresholds)
 }
 
 func (rg *RequestGenerator) indexOfPriority(priority issuetracker.Issue_Priority) int {
