@@ -12,31 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import styled from '@emotion/styled';
-import { Alert, AlertTitle, Link } from '@mui/material';
-import { useRouteError } from 'react-router-dom';
+import { Alert, AlertTitle, Button } from '@mui/material';
 
 import { genFeedbackUrl } from '@/common/tools/utils';
 
-const ErrorDisplay = styled.pre({
-  whiteSpace: 'pre-wrap',
-  overflowWrap: 'break-word',
-});
+export interface ErrorDisplayProps {
+  readonly error: Error;
+  readonly onTryAgain?: () => void;
+}
 
-export function RouteErrorBoundary() {
-  const error = useRouteError() as Error;
-
+export function ErrorDisplay({ error, onTryAgain }: ErrorDisplayProps) {
   return (
     <Alert severity="error">
       <AlertTitle>Error</AlertTitle>
-      <ErrorDisplay>{error.message}</ErrorDisplay>
-      <Link
+      <pre
+        css={{
+          whiteSpace: 'pre-wrap',
+          overflowWrap: 'break-word',
+        }}
+      >
+        {error.message}
+      </pre>
+      <Button
         href={genFeedbackUrl(error.message, error.stack)}
         target="_blank"
         rel="noopener"
       >
         File a bug
-      </Link>
+      </Button>
+      {onTryAgain && <Button onClick={() => onTryAgain()}>Try Again</Button>}
     </Alert>
   );
 }

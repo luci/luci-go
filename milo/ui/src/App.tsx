@@ -23,7 +23,7 @@ import {
 } from '@tanstack/react-query';
 import { destroy } from 'mobx-state-tree';
 import { useEffect, useRef, useState } from 'react';
-import { createBrowserRouter, Outlet, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { Workbox } from 'workbox-window';
 
 import '@/common/styles/common_style.css';
@@ -40,8 +40,9 @@ import { theme } from '@/common/themes/base';
 import { createStaticTrustedURL } from '@/generic_libs/tools/utils';
 
 import { AuthStateInitializer } from './common/components/auth_state_provider';
+import { RecoverableErrorBoundary } from './common/components/error_handling';
+import { RouteErrorDisplay } from './common/components/error_handling/route_error_display';
 import { PageMetaProvider } from './common/components/page_meta/page_meta_provider';
-import { RouteErrorBoundary } from './common/components/route_error_boundary';
 import { NON_TRANSIENT_ERROR_CODES } from './common/constants';
 import { SyncedSearchParamsProvider } from './generic_libs/hooks/synced_search_params';
 import { ArtifactPageLayout } from './pages/artifact/artifact_page_layout';
@@ -184,142 +185,305 @@ export function App({ initOpts }: AppProps) {
       element: (
         <SyncedSearchParamsProvider>
           <AuthStateInitializer>
-            <BaseLayout />
+            <RecoverableErrorBoundary>
+              <BaseLayout />
+            </RecoverableErrorBoundary>
           </AuthStateInitializer>
         </SyncedSearchParamsProvider>
       ),
-      errorElement: <RouteErrorBoundary />,
+      // Catch the errors that may happen in various providers.
+      // Cannot use `<RecoverableErrorBoundary />` here because it requires the
+      // auth state provider.
+      errorElement: <RouteErrorDisplay />,
       children: [
         {
-          path: '*',
-          element: <Outlet />,
-          errorElement: <RouteErrorBoundary />,
+          path: 'login',
+          element: (
+            // We cannot use `errorElement` because it (react-router) doesn't
+            // support error recovery.
+            //
+            // We handle the error at child level rather than at the parent
+            // level because we want the error state to be reset when the user
+            // navigates to a sibling view, which does not happen if the error
+            // is handled by the parent (without additional logic).
+            // The downside of this model is that we do not have a central place
+            // for error handling, which is somewhat mitigated by applying the
+            // same error boundary on all child routes.
+            // The upside is that the error is naturally reset on route changes.
+            //
+            // A unique `key` is needed to ensure the boundary is not reused
+            // when the user navigates to a sibling view. The error will be
+            // naturally discarded as the route is unmounted.
+            <RecoverableErrorBoundary key="login">
+              <LoginPage />
+            </RecoverableErrorBoundary>
+          ),
+        },
+        { path: 'search', loader: searchRedirectionLoader },
+        {
+          path: 'builder-search',
+          element: (
+            <RecoverableErrorBoundary key="builder-search">
+              <BuilderSearch />
+            </RecoverableErrorBoundary>
+          ),
+        },
+        {
+          path: 'p/:project/test-search',
+          element: (
+            <RecoverableErrorBoundary key="test-search">
+              <TestSearch />
+            </RecoverableErrorBoundary>
+          ),
+        },
+        {
+          path: 'p/:project/builders',
+          element: (
+            <RecoverableErrorBoundary key="builders">
+              <BuildersPage />
+            </RecoverableErrorBoundary>
+          ),
+        },
+        {
+          path: 'p/:project/g/:group/builders',
+          element: (
+            <RecoverableErrorBoundary key="builder-groups">
+              <BuildersPage />
+            </RecoverableErrorBoundary>
+          ),
+        },
+        {
+          path: 'p/:project/builders/:bucket/:builder',
+          element: (
+            <RecoverableErrorBoundary key="builder">
+              <BuilderPage />
+            </RecoverableErrorBoundary>
+          ),
+        },
+        {
+          path: 'b/:buildId/*?',
+          element: (
+            <RecoverableErrorBoundary key="short-build">
+              <BuildPageShortLink />
+            </RecoverableErrorBoundary>
+          ),
+        },
+        {
+          path: 'p/:project/builders/:bucket/:builder/:buildNumOrId',
+          element: (
+            <RecoverableErrorBoundary key="long-build">
+              <BuildPage />
+            </RecoverableErrorBoundary>
+          ),
           children: [
-            { path: 'login', element: <LoginPage /> },
-            { path: 'search', loader: searchRedirectionLoader },
-            { path: 'builder-search', element: <BuilderSearch /> },
             {
-              path: 'p/:project/test-search',
-              element: <TestSearch />,
+              index: true,
+              element: (
+                <RecoverableErrorBoundary key="default">
+                  <BuildDefaultTab />
+                </RecoverableErrorBoundary>
+              ),
             },
-            { path: 'p/:project/builders', element: <BuildersPage /> },
-            { path: 'p/:project/g/:group/builders', element: <BuildersPage /> },
             {
-              path: 'p/:project/builders/:bucket/:builder',
-              element: <BuilderPage />,
+              path: BuildPageTab.Overview,
+              element: (
+                <RecoverableErrorBoundary key="overview">
+                  <OverviewTab />
+                </RecoverableErrorBoundary>
+              ),
             },
-            { path: 'b/:buildId/*?', element: <BuildPageShortLink /> },
             {
-              path: 'p/:project/builders/:bucket/:builder/:buildNumOrId',
-              element: <BuildPage />,
+              path: BuildPageTab.TestResults,
+              element: (
+                <RecoverableErrorBoundary key="test-results">
+                  <TestResultsTab />
+                </RecoverableErrorBoundary>
+              ),
+            },
+            {
+              path: BuildPageTab.Steps,
+              element: (
+                <RecoverableErrorBoundary key="steps">
+                  <StepsTab />
+                </RecoverableErrorBoundary>
+              ),
               children: [
-                {
-                  path: '*',
-                  element: <Outlet />,
-                  errorElement: <RouteErrorBoundary />,
-                  children: [
-                    { index: true, element: <BuildDefaultTab /> },
-                    { path: BuildPageTab.Overview, element: <OverviewTab /> },
-                    {
-                      path: BuildPageTab.TestResults,
-                      element: <TestResultsTab />,
-                    },
-                    {
-                      path: BuildPageTab.Steps,
-                      element: <StepsTab />,
-                      children: [
-                        // Some old systems generate links to a step by
-                        // appending suffix to /steps/ (crbug/1204954).
-                        // This allows those links to continue to work.
-                        { path: '*' },
-                      ],
-                    },
-                    {
-                      path: BuildPageTab.RelatedBuilds,
-                      element: <RelatedBuildsTab />,
-                    },
-                    { path: BuildPageTab.Timeline, element: <TimelineTab /> },
-                    { path: BuildPageTab.Blamelist, element: <BlamelistTab /> },
-                  ],
-                },
+                // Some old systems generate links to a step by
+                // appending suffix to /steps/ (crbug/1204954).
+                // This allows those links to continue to work.
+                { path: '*' },
               ],
             },
             {
-              path: 'inv/:invId',
-              element: <InvocationPage />,
-              children: [
-                {
-                  path: '*',
-                  element: <Outlet />,
-                  errorElement: <RouteErrorBoundary />,
-                  children: [
-                    { index: true, element: <InvocationDefaultTab /> },
-                    { path: 'test-results', element: <TestResultsTab /> },
-                    {
-                      path: 'invocation-details',
-                      element: <InvocationDetailsTab />,
-                    },
-                  ],
-                },
-              ],
+              path: BuildPageTab.RelatedBuilds,
+              element: (
+                <RecoverableErrorBoundary key="related-builds">
+                  <RelatedBuildsTab />
+                </RecoverableErrorBoundary>
+              ),
             },
             {
-              path: 'artifact',
-              element: <ArtifactPageLayout />,
-              children: [
-                {
-                  path: 'text-diff/invocations/:invId/artifacts/:artifactId',
-                  element: <TextDiffArtifactPage />,
-                },
-                {
-                  path: 'text-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
-                  element: <TextDiffArtifactPage />,
-                },
-                {
-                  path: 'image-diff/invocations/:invId/artifacts/:artifactId',
-                  element: <ImageDiffArtifactPage />,
-                },
-                {
-                  path: 'image-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
-                  element: <ImageDiffArtifactPage />,
-                },
-                {
-                  path: 'raw/invocations/:invId/artifacts/:artifactId',
-                  element: <RawArtifactPage />,
-                },
-                {
-                  path: 'raw/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
-                  element: <RawArtifactPage />,
-                },
-              ],
+              path: BuildPageTab.Timeline,
+              element: (
+                <RecoverableErrorBoundary key="timeline">
+                  <TimelineTab />
+                </RecoverableErrorBoundary>
+              ),
             },
             {
-              path: 'test/:projectOrRealm/:testId',
-              element: <TestHistoryPage />,
+              path: BuildPageTab.Blamelist,
+              element: (
+                <RecoverableErrorBoundary key="blamelist">
+                  <BlamelistTab />
+                </RecoverableErrorBoundary>
+              ),
             },
-            { path: '*', element: <NotFoundPage /> },
+          ],
+        },
+        {
+          path: 'inv/:invId',
+          element: (
+            <RecoverableErrorBoundary key="invocation">
+              <InvocationPage />
+            </RecoverableErrorBoundary>
+          ),
+          children: [
             {
-              path: 'bisection',
-              element: <BisectionLayout />,
-              children: [
-                {
-                  index: true,
-                  element: <FailureAnalysesPage />,
-                },
-                {
-                  path: 'analysis/b/:bbid',
-                  element: <AnalysisDetailsPage />,
-                },
-              ],
+              index: true,
+              element: (
+                <RecoverableErrorBoundary key="default">
+                  <InvocationDefaultTab />
+                </RecoverableErrorBoundary>
+              ),
             },
             {
-              path: 'swarming',
-              children: [
-                {
-                  path: 'task/:taskId',
-                  element: <SwarmingBuildPage />,
-                },
-              ],
+              path: 'test-results',
+              element: (
+                <RecoverableErrorBoundary key="test-results">
+                  <TestResultsTab />
+                </RecoverableErrorBoundary>
+              ),
+            },
+            {
+              path: 'invocation-details',
+              element: (
+                <RecoverableErrorBoundary key="invocation-details">
+                  <InvocationDetailsTab />
+                </RecoverableErrorBoundary>
+              ),
+            },
+          ],
+        },
+        {
+          path: 'artifact',
+          element: (
+            <RecoverableErrorBoundary key="artifact">
+              <ArtifactPageLayout />
+            </RecoverableErrorBoundary>
+          ),
+          children: [
+            {
+              path: 'text-diff/invocations/:invId/artifacts/:artifactId',
+              element: (
+                <RecoverableErrorBoundary key="test-text-diff">
+                  <TextDiffArtifactPage />
+                </RecoverableErrorBoundary>
+              ),
+            },
+            {
+              path: 'text-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
+              element: (
+                <RecoverableErrorBoundary key="result-text-diff">
+                  <TextDiffArtifactPage />
+                </RecoverableErrorBoundary>
+              ),
+            },
+            {
+              path: 'image-diff/invocations/:invId/artifacts/:artifactId',
+              element: (
+                <RecoverableErrorBoundary key="test-image-diff">
+                  <ImageDiffArtifactPage />
+                </RecoverableErrorBoundary>
+              ),
+            },
+            {
+              path: 'image-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
+              element: (
+                <RecoverableErrorBoundary key="result-image-diff">
+                  <ImageDiffArtifactPage />
+                </RecoverableErrorBoundary>
+              ),
+            },
+            {
+              path: 'raw/invocations/:invId/artifacts/:artifactId',
+              element: (
+                <RecoverableErrorBoundary key="test-raw">
+                  <RawArtifactPage />
+                </RecoverableErrorBoundary>
+              ),
+            },
+            {
+              path: 'raw/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
+              element: (
+                <RecoverableErrorBoundary key="result-raw">
+                  <RawArtifactPage />
+                </RecoverableErrorBoundary>
+              ),
+            },
+          ],
+        },
+        {
+          path: 'test/:projectOrRealm/:testId',
+          element: (
+            <RecoverableErrorBoundary key="test-history">
+              <TestHistoryPage />
+            </RecoverableErrorBoundary>
+          ),
+        },
+        {
+          path: '*',
+          element: (
+            <RecoverableErrorBoundary key="not-found">
+              <NotFoundPage />
+            </RecoverableErrorBoundary>
+          ),
+        },
+        {
+          path: 'bisection',
+          element: (
+            <RecoverableErrorBoundary key="bisection">
+              <BisectionLayout />
+            </RecoverableErrorBoundary>
+          ),
+          children: [
+            {
+              index: true,
+              element: (
+                <RecoverableErrorBoundary key="failure-analyses">
+                  <FailureAnalysesPage />
+                </RecoverableErrorBoundary>
+              ),
+            },
+            {
+              path: 'analysis/b/:bbid',
+              element: (
+                <RecoverableErrorBoundary key="analysis-details">
+                  <AnalysisDetailsPage />
+                </RecoverableErrorBoundary>
+              ),
+            },
+          ],
+        },
+        {
+          path: 'swarming',
+          children: [
+            {
+              path: 'task/:taskId',
+              element: (
+                <RecoverableErrorBoundary key="swarming-task">
+                  <SwarmingBuildPage />
+                </RecoverableErrorBoundary>
+              ),
             },
           ],
         },
@@ -331,6 +495,9 @@ export function App({ initOpts }: AppProps) {
       // to capture those routes and make the server handles it.
       path: '*',
       element: <ServerPage />,
+      // Cannot use `<RecoverableErrorBoundary />` here because it requires the
+      // auth state provider.
+      errorElement: <RouteErrorDisplay />,
     },
   ]);
 
