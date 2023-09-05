@@ -772,6 +772,7 @@ func verifyTestResults(ctx context.Context, expectedInvocation *testresults.Inge
 			WithStatus(pb.TestResultStatus_FAIL).
 			WithRunDuration(3*time.Second+1*time.Microsecond).
 			WithExonerationReasons(pb.ExonerationReason_OCCURS_ON_OTHER_CLS, pb.ExonerationReason_NOT_CRITICAL, pb.ExonerationReason_OCCURS_ON_MAINLINE).
+			WithIsFromBisection(false).
 			Build(),
 		trBuilder.WithTestID("ninja://test_expected").
 			WithVariantHash("hash").
@@ -781,6 +782,17 @@ func verifyTestResults(ctx context.Context, expectedInvocation *testresults.Inge
 			WithStatus(pb.TestResultStatus_PASS).
 			WithRunDuration(5 * time.Second).
 			WithoutExoneration().
+			WithIsFromBisection(false).
+			Build(),
+		trBuilder.WithTestID("ninja://test_from_luci_bisection").
+			WithVariantHash("hash").
+			WithRunIndex(0).
+			WithResultIndex(0).
+			WithIsUnexpected(true).
+			WithStatus(pb.TestResultStatus_PASS).
+			WithoutRunDuration().
+			WithoutExoneration().
+			WithIsFromBisection(true).
 			Build(),
 		trBuilder.WithTestID("ninja://test_has_unexpected").
 			WithVariantHash("hash").
@@ -790,6 +802,7 @@ func verifyTestResults(ctx context.Context, expectedInvocation *testresults.Inge
 			WithStatus(pb.TestResultStatus_FAIL).
 			WithoutRunDuration().
 			WithoutExoneration().
+			WithIsFromBisection(false).
 			Build(),
 		trBuilder.WithTestID("ninja://test_has_unexpected").
 			WithVariantHash("hash").
@@ -799,6 +812,7 @@ func verifyTestResults(ctx context.Context, expectedInvocation *testresults.Inge
 			WithStatus(pb.TestResultStatus_PASS).
 			WithoutRunDuration().
 			WithoutExoneration().
+			WithIsFromBisection(false).
 			Build(),
 		trBuilder.WithTestID("ninja://test_known_flake").
 			WithVariantHash("hash_2").
@@ -808,6 +822,7 @@ func verifyTestResults(ctx context.Context, expectedInvocation *testresults.Inge
 			WithStatus(pb.TestResultStatus_FAIL).
 			WithRunDuration(2 * time.Second).
 			WithoutExoneration().
+			WithIsFromBisection(false).
 			Build(),
 		trBuilder.WithTestID("ninja://test_new_failure").
 			WithVariantHash("hash_1").
@@ -817,6 +832,7 @@ func verifyTestResults(ctx context.Context, expectedInvocation *testresults.Inge
 			WithStatus(pb.TestResultStatus_FAIL).
 			WithRunDuration(1 * time.Second).
 			WithoutExoneration().
+			WithIsFromBisection(false).
 			Build(),
 		trBuilder.WithTestID("ninja://test_new_flake").
 			WithVariantHash("hash").
@@ -826,6 +842,7 @@ func verifyTestResults(ctx context.Context, expectedInvocation *testresults.Inge
 			WithStatus(pb.TestResultStatus_FAIL).
 			WithRunDuration(10 * time.Second).
 			WithoutExoneration().
+			WithIsFromBisection(false).
 			Build(),
 		trBuilder.WithTestID("ninja://test_new_flake").
 			WithVariantHash("hash").
@@ -835,6 +852,7 @@ func verifyTestResults(ctx context.Context, expectedInvocation *testresults.Inge
 			WithStatus(pb.TestResultStatus_FAIL).
 			WithRunDuration(11 * time.Second).
 			WithoutExoneration().
+			WithIsFromBisection(false).
 			Build(),
 		trBuilder.WithTestID("ninja://test_new_flake").
 			WithVariantHash("hash").
@@ -844,6 +862,7 @@ func verifyTestResults(ctx context.Context, expectedInvocation *testresults.Inge
 			WithStatus(pb.TestResultStatus_PASS).
 			WithRunDuration(12 * time.Second).
 			WithoutExoneration().
+			WithIsFromBisection(false).
 			Build(),
 		trBuilder.WithTestID("ninja://test_no_new_results").
 			WithVariantHash("hash").
@@ -853,6 +872,7 @@ func verifyTestResults(ctx context.Context, expectedInvocation *testresults.Inge
 			WithStatus(pb.TestResultStatus_FAIL).
 			WithRunDuration(4 * time.Second).
 			WithoutExoneration().
+			WithIsFromBisection(false).
 			Build(),
 		trBuilder.WithTestID("ninja://test_skip").
 			WithVariantHash("hash").
@@ -862,6 +882,7 @@ func verifyTestResults(ctx context.Context, expectedInvocation *testresults.Inge
 			WithStatus(pb.TestResultStatus_SKIP).
 			WithoutRunDuration().
 			WithoutExoneration().
+			WithIsFromBisection(false).
 			Build(),
 		trBuilder.WithTestID("ninja://test_unexpected_pass").
 			WithVariantHash("hash").
@@ -871,6 +892,7 @@ func verifyTestResults(ctx context.Context, expectedInvocation *testresults.Inge
 			WithStatus(pb.TestResultStatus_PASS).
 			WithoutRunDuration().
 			WithoutExoneration().
+			WithIsFromBisection(false).
 			Build(),
 	}
 
@@ -902,6 +924,13 @@ func verifyTestResults(ctx context.Context, expectedInvocation *testresults.Inge
 		{
 			Project:     "project",
 			TestID:      "ninja://test_expected",
+			VariantHash: "hash",
+			SubRealm:    "ci",
+			Variant:     nil,
+		},
+		{
+			Project:     "project",
+			TestID:      "ninja://test_from_luci_bisection",
 			VariantHash: "hash",
 			SubRealm:    "ci",
 			Variant:     nil,
@@ -982,6 +1011,11 @@ func verifyTestResults(ctx context.Context, expectedInvocation *testresults.Inge
 		{
 			Project:  "project",
 			TestID:   "ninja://test_expected",
+			SubRealm: "ci",
+		},
+		{
+			Project:  "project",
+			TestID:   "ninja://test_from_luci_bisection",
 			SubRealm: "ci",
 		},
 		{
@@ -1306,6 +1340,29 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			},
 			Counts: &bqpb.TestVerdictRow_Counts{
 				Total: 1, TotalNonSkipped: 1, Unexpected: 0, UnexpectedNonSkipped: 0, UnexpectedNonSkippedNonPassed: 0,
+			},
+			BuildbucketBuild:  buildbucketBuild,
+			ChangeVerifierRun: cvRun,
+		},
+		{
+			Project:       "project",
+			TestId:        "ninja://test_from_luci_bisection",
+			Variant:       "{}",
+			VariantHash:   "hash",
+			Invocation:    invocation,
+			PartitionTime: timestamppb.New(expectedPartitionTime),
+			Status:        pb.TestVerdictStatus_UNEXPECTED,
+			Results: []*bqpb.TestVerdictRow_TestResult{
+				{
+					ResultId:   "one",
+					Status:     pb.TestResultStatus_PASS,
+					Expected:   false,
+					Properties: "{}",
+					Tags:       []*pb.StringPair{{Key: "is_luci_bisection", Value: "true"}},
+				},
+			},
+			Counts: &bqpb.TestVerdictRow_Counts{
+				Total: 1, TotalNonSkipped: 1, Unexpected: 1, UnexpectedNonSkipped: 1, UnexpectedNonSkippedNonPassed: 0,
 			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,

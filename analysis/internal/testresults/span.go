@@ -252,6 +252,7 @@ type TestResult struct {
 	GitReferenceHash []byte
 	CommitPosition   int64
 	Changelists      []Changelist
+	IsFromBisection  bool
 }
 
 // ReadTestResults reads test results from the TestResults table.
@@ -267,6 +268,7 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 		"PresubmitRunMode",
 		"GitReferenceHash", "CommitPosition",
 		"ChangelistHosts", "ChangelistChanges", "ChangelistPatchsets", "ChangelistOwnerKinds",
+		"IsFromBisection",
 	}
 	return span.Read(ctx, "TestResults", keys, fields).Do(
 		func(row *spanner.Row) error {
@@ -280,6 +282,7 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 			var changelistChanges []int64
 			var changelistPatchsets []int64
 			var changelistOwnerKinds []string
+			var isFromBisection spanner.NullBool
 			err := b.FromSpanner(
 				row,
 				&tr.Project, &tr.TestID, &tr.PartitionTime, &tr.VariantHash, &tr.IngestedInvocationID,
@@ -290,6 +293,7 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 				&presubmitRunMode,
 				&gitReferenceHash, &commitPosition,
 				&changelistHosts, &changelistChanges, &changelistPatchsets, &changelistOwnerKinds,
+				&isFromBisection,
 			)
 			if err != nil {
 				return err
@@ -299,6 +303,7 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 				tr.RunDuration = &runDuration
 			}
 			tr.IsUnexpected = isUnexpected.Valid && isUnexpected.Bool
+			tr.IsFromBisection = isFromBisection.Valid && isFromBisection.Bool
 
 			if presubmitRunMode.Valid {
 				tr.PresubmitRun = &PresubmitRun{
@@ -354,7 +359,7 @@ var TestResultSaveCols = []string{
 	"PresubmitRunMode",
 	"GitReferenceHash", "CommitPosition",
 	"ChangelistHosts", "ChangelistChanges", "ChangelistPatchsets",
-	"ChangelistOwnerKinds",
+	"ChangelistOwnerKinds", "IsFromBisection",
 }
 
 // SaveUnverified prepare a mutation to insert the test result into the
@@ -390,6 +395,7 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 	}
 
 	isUnexpected := spanner.NullBool{Bool: tr.IsUnexpected, Valid: tr.IsUnexpected}
+	isFromBisection := spanner.NullBool{Bool: tr.IsFromBisection, Valid: tr.IsFromBisection}
 
 	exonerationReasons := tr.ExonerationReasons
 	if len(exonerationReasons) == 0 {
@@ -414,6 +420,7 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 		presubmitRunMode,
 		gitReferenceHash, commitPosition,
 		changelistHosts, changelistChanges, changelistPatchsets, changelistOwnerKinds,
+		isFromBisection,
 	}
 	return spanner.InsertOrUpdate("TestResults", TestResultSaveCols, vals)
 }

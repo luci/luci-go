@@ -221,6 +221,8 @@ func batchTestResults(inv *testresults.IngestedInvocation, tvs []*rdbpb.TestVari
 			exonerationReasons = append(exonerationReasons, pbutil.ExonerationReasonFromResultDB(ex.Reason))
 		}
 
+		isFromBisection := isFromLuciBisection(tv)
+
 		// Group results into test runs and order them by start time.
 		resultsByRun := resultdb.GroupAndOrderTestResults(tv.Results)
 		for runIndex, run := range resultsByRun {
@@ -242,6 +244,7 @@ func batchTestResults(inv *testresults.IngestedInvocation, tvs []*rdbpb.TestVari
 					GitReferenceHash:     inv.GitReferenceHash,
 					CommitPosition:       inv.CommitPosition,
 					Changelists:          inv.Changelists,
+					IsFromBisection:      isFromBisection,
 				}
 				if inputTR.Result.Duration != nil {
 					d := new(time.Duration)
@@ -310,4 +313,19 @@ func recordTestResults(ctx context.Context, inv *testresults.IngestedInvocation,
 			}
 		}
 	})
+}
+
+// isFromLuciBisection checks if the test variant was from LUCI Bisection.
+// LUCI Bisection test results will have the tag "is_luci_bisection" = "true".
+func isFromLuciBisection(tv *rdbpb.TestVariant) bool {
+	// This should not happen.
+	if len(tv.Results) == 0 {
+		panic("test variant has 0 results")
+	}
+	for _, tag := range tv.Results[0].Result.Tags {
+		if tag.Key == "is_luci_bisection" && tag.Value == "true" {
+			return true
+		}
+	}
+	return false
 }

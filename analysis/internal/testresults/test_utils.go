@@ -173,6 +173,11 @@ func (b *TestResultBuilder) WithChangelists(changelist []Changelist) *TestResult
 	return b
 }
 
+func (b *TestResultBuilder) WithIsFromBisection(value bool) *TestResultBuilder {
+	b.result.IsFromBisection = value
+	return b
+}
+
 func (b *TestResultBuilder) Build() *TestResult {
 	// Copy the result, so that calling further methods on the builder does
 	// not change the returned test verdict.

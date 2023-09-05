@@ -569,6 +569,12 @@ CREATE TABLE TestResults (
   -- 'U' corresponds to a User changelist, 'A' corresponds to an Automation
   -- changelist, and '' corresponds to a changelist of unspecified origin.
   ChangelistOwnerKinds ARRAY<STRING(1)>,
+
+  -- Indicate if this test result is from LUCI Bisection run.
+  -- Test results from LUCI Bisection will have an option to be filtered out
+  -- from test history endpoints so that they do not show in the test history page.
+  -- The value 'true' is used to encode true, and NULL encodes false.
+  IsFromBisection BOOL,
 ) PRIMARY KEY(Project, TestId, PartitionTime DESC, VariantHash, IngestedInvocationId, RunIndex, ResultIndex)
 , ROW DELETION POLICY (OLDER_THAN(PartitionTime, INTERVAL 90 DAY));
 

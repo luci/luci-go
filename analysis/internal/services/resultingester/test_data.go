@@ -126,6 +126,22 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
+				TestId:      "ninja://test_from_luci_bisection",
+				VariantHash: "hash",
+				Status:      rdbpb.TestVariantStatus_UNEXPECTED,
+				Results: []*rdbpb.TestResultBundle{
+					{
+						Result: &rdbpb.TestResult{
+							ResultId: "one",
+							Name:     "invocations/build-1234/tests/ninja%3A%2F%2Ftest_from_luci_bisection/results/one",
+							Status:   rdbpb.TestStatus_PASS,
+							Expected: false,
+							Tags:     pbutil.StringPairs("is_luci_bisection", "true"),
+						},
+					},
+				},
+			},
+			{
 				TestId:      "ninja://test_has_unexpected",
 				VariantHash: "hash",
 				Status:      rdbpb.TestVariantStatus_FLAKY,
