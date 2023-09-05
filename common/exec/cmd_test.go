@@ -55,6 +55,11 @@ func TestCmd(t *testing.T) {
 			data, err := cmd.Output()
 			So(err, ShouldBeNil)
 			So(bytes.TrimSpace(data), ShouldResemble, []byte("hello there"))
+
+			cmd = exec.Command(ctx, prog, args...)
+			data, err = cmd.CombinedOutput()
+			So(err, ShouldBeNil)
+			So(bytes.TrimSpace(data), ShouldResemble, []byte("hello there"))
 		})
 
 		Convey(`works with mocking`, func() {

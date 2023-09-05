@@ -289,7 +289,7 @@ func (c *Cmd) CombinedOutput() ([]byte, error) {
 	}
 	defer restore()
 
-	if mock != nil && !mock.chatty {
+	if mock == nil || !mock.chatty {
 		return c.Cmd.CombinedOutput()
 	}
 
