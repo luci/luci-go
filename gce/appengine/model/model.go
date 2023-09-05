@@ -264,11 +264,12 @@ func (vm *VM) getNullFields() []string {
 // scheduling options.
 func (vm *VM) getScheduling() *compute.Scheduling {
 	opts := vm.Attributes.GetScheduling()
-	if len(opts.GetNodeAffinity()) == 0 {
+	if len(opts.GetNodeAffinity()) == 0 && !vm.Attributes.EnableConfidentialCompute {
 		return nil
 	}
-	affinities := make([]*compute.SchedulingNodeAffinity, len(opts.NodeAffinity))
-	for i, na := range opts.NodeAffinity {
+	scheduling := &compute.Scheduling{}
+	affinities := make([]*compute.SchedulingNodeAffinity, len(opts.GetNodeAffinity()))
+	for i, na := range opts.GetNodeAffinity() {
 		affinities[i] = &compute.SchedulingNodeAffinity{
 			Key:      na.Key,
 			Operator: na.Operator.String(),
@@ -280,9 +281,11 @@ func (vm *VM) getScheduling() *compute.Scheduling {
 			}
 		}
 	}
-	return &compute.Scheduling{
-		NodeAffinities: affinities,
+	scheduling.NodeAffinities = affinities
+	if vm.Attributes.EnableConfidentialCompute {
+		scheduling.OnHostMaintenance = "TERMINATE"
 	}
+	return scheduling
 }
 
 // getShieldedInstanceConfig returns a *compute.ShieldedInstanceConfig

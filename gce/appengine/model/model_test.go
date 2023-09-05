@@ -174,6 +174,8 @@ func TestVM(t *testing.T) {
 				v := &VM{}
 				c := v.getConfidentialInstanceConfig()
 				So(c, ShouldBeNil)
+				s := v.getScheduling()
+				So(s, ShouldBeNil)
 			})
 		})
 		Convey("EnableConfidentialCompute", func() {
@@ -185,6 +187,11 @@ func TestVM(t *testing.T) {
 			c := v.getConfidentialInstanceConfig()
 			So(c, ShouldResemble, &compute.ConfidentialInstanceConfig{
 				EnableConfidentialCompute: true,
+			})
+			s := v.getScheduling()
+			So(s, ShouldResemble, &compute.Scheduling{
+				NodeAffinities:    []*compute.SchedulingNodeAffinity{},
+				OnHostMaintenance: "TERMINATE",
 			})
 		})
 	})
