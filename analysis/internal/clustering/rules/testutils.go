@@ -204,9 +204,7 @@ func (b *RuleBuilder) WithBugManagementState(state *bugspb.BugManagementState) *
 func (b *RuleBuilder) Build() *Entry {
 	// Copy the result, so that calling further methods on the builder does
 	// not change the returned rule.
-	result := new(Entry)
-	*result = b.rule
-	return result
+	return b.rule.Clone()
 }
 
 // SetForTesting replaces the set of stored rules to match the given set.

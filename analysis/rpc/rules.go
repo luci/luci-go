@@ -286,16 +286,31 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 			err := errors.New("etag mismatch")
 			return appstatus.Attach(err, status.New(codes.Aborted, "the rule was modified since it was last read; the update was not applied."))
 		}
+
+		// If we are updating the RuleDefinition or IsActive field.
 		updatePredicate := false
+
+		// If we are updating the Bug field
 		updatingBug := false
+
+		// If we are updating the IsManagingBug field.
 		updatingManaged := false
-		updateIsManagingBugPriority := false
+
+		// If we are updating the IsManagingBugPriority field.
+		updatingIsManagingBugPriority := false
+
+		// Tracks if the caller explicitly requested .IsManagingBug = true, even
+		// if this is a no-op.
+		requestedManagedTrue := false
+
 		for _, path := range req.UpdateMask.Paths {
 			// Only limited fields may be modified by the client.
 			switch path {
 			case "rule_definition":
-				rule.RuleDefinition = req.Rule.RuleDefinition
-				updatePredicate = true
+				if rule.RuleDefinition != req.Rule.RuleDefinition {
+					rule.RuleDefinition = req.Rule.RuleDefinition
+					updatePredicate = true
+				}
 			case "bug":
 				bugID := bugs.BugID{
 					System: req.Rule.Bug.GetSystem(),
@@ -304,18 +319,37 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 				if err := validateBugAgainstConfig(cfg, bugID); err != nil {
 					return invalidArgumentError(err)
 				}
+				if rule.BugID != bugID {
+					updatingBug = true // Triggers validation.
+					rule.BugID = bugID
 
-				updatingBug = true // Triggers validation.
-				rule.BugID = bugID
+					// Changing the associated bug requires us to reset flags
+					// tracking notifications sent to the associated bug.
+					rule.BugManagementState.RuleAssociationNotified = false
+					if rule.BugManagementState.PolicyState != nil {
+						for _, policyState := range rule.BugManagementState.PolicyState {
+							policyState.ActivationNotified = false
+						}
+					}
+				}
 			case "is_active":
-				rule.IsActive = req.Rule.IsActive
-				updatePredicate = true
+				if rule.IsActive != req.Rule.IsActive {
+					rule.IsActive = req.Rule.IsActive
+					updatePredicate = true
+				}
 			case "is_managing_bug":
-				updatingManaged = true // Triggers validation.
-				rule.IsManagingBug = req.Rule.IsManagingBug
+				if req.Rule.IsManagingBug {
+					requestedManagedTrue = true
+				}
+				if rule.IsManagingBug != req.Rule.IsManagingBug {
+					updatingManaged = true // Triggers validation.
+					rule.IsManagingBug = req.Rule.IsManagingBug
+				}
 			case "is_managing_bug_priority":
-				updateIsManagingBugPriority = true
-				rule.IsManagingBugPriority = req.Rule.IsManagingBugPriority
+				if rule.IsManagingBugPriority != req.Rule.IsManagingBugPriority {
+					updatingIsManagingBugPriority = true
+					rule.IsManagingBugPriority = req.Rule.IsManagingBugPriority
+				}
 			default:
 				return invalidArgumentError(fmt.Errorf("unsupported field mask: %s", path))
 			}
@@ -338,7 +372,7 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 			}
 			for _, otherRule := range bugRules {
 				if otherRule.Project != project && otherRule.IsManagingBug {
-					if updatingManaged && rule.IsManagingBug {
+					if requestedManagedTrue {
 						// The caller explicitly requested an update of
 						// IsManagingBug to true, but we cannot do this.
 						return invalidArgumentError(fmt.Errorf("bug already managed by a rule in another project (%s/%s)", otherRule.Project, otherRule.RuleID))
@@ -346,7 +380,7 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 					// If only changing the bug, avoid conflicts by silently
 					// making the bug not managed by this rule if there is
 					// another rule managing it.
-					// Note: this validation implicitly discloses the existence
+					// Note: this step implicitly discloses the existence
 					// of rules in projects other than those the user may have
 					// access to.
 					rule.IsManagingBug = false
@@ -357,7 +391,7 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 		ms, err := rules.Update(rule, rules.UpdateOptions{
 			IsAuditableUpdate:            true,
 			PredicateUpdated:             updatePredicate,
-			IsManagingBugPriorityUpdated: updateIsManagingBugPriority,
+			IsManagingBugPriorityUpdated: updatingIsManagingBugPriority,
 		}, user)
 		if err != nil {
 			return invalidArgumentError(err)
@@ -365,7 +399,7 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 		span.BufferWrite(ctx, ms)
 		updatedRule = rule
 		predicateUpdated = updatePredicate
-		managingBugPriorityUpdated = updateIsManagingBugPriority
+		managingBugPriorityUpdated = updatingIsManagingBugPriority
 		return nil
 	}
 	commitTime, err := span.ReadWriteTransaction(ctx, f)

@@ -20,6 +20,7 @@ import (
 	"sync"
 	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -134,6 +135,8 @@ func (h *Handler) CronHandler(ctx context.Context) error {
 // This leads to bugs errounously being detected as having manual priority
 // changes.
 func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string, simulate, enable bool) (retErr error) {
+	runTimestamp := clock.Now(ctx).Truncate(time.Minute)
+
 	projectCfg, err := config.Projects(ctx)
 	if err != nil {
 		return err
@@ -204,7 +207,9 @@ func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string,
 				buganizerClient:      buganizerClient,
 				simulateBugUpdates:   simulate,
 				maxBugsFiledPerRun:   1,
+				updateRuleBatchSize:  1000,
 				reclusteringProgress: projectProgress[project],
+				runTimestamp:         runTimestamp,
 			}
 
 			// Assign project to local variable to ensure it can be
@@ -271,7 +276,9 @@ type updateOptions struct {
 	buganizerClient      buganizer.Client
 	simulateBugUpdates   bool
 	maxBugsFiledPerRun   int
+	updateRuleBatchSize  int
 	reclusteringProgress *runs.ReclusteringProgress
+	runTimestamp         time.Time
 }
 
 // updateBugsForProject updates LUCI Analysis-managed bugs for a particular LUCI project.
@@ -326,7 +333,7 @@ func updateBugsForProject(ctx context.Context, opts updateOptions) (retErr error
 
 		mgrs[bugs.BuganizerSystem] = buganizerBugManager
 	}
-	bugUpdater := NewBugUpdater(opts.project, mgrs, opts.analysisClient, projectCfg)
+	bugUpdater := NewBugUpdater(opts.project, mgrs, opts.analysisClient, projectCfg, opts.runTimestamp)
 	bugUpdater.MaxBugsFiledPerRun = opts.maxBugsFiledPerRun
 	if err := bugUpdater.Run(ctx, opts.reclusteringProgress); err != nil {
 		return errors.Annotate(err, "update bugs").Err()

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package updater contains methods to orchestrate automatic bug management,
+// including automatic bug filing and automatic priority updates/auto-closure.
 package updater
 
 import (
@@ -20,6 +22,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -142,16 +145,24 @@ type BugUpdater struct {
 	// MaxBugsFiledPerRun is the maximum number of bugs to file each time
 	// BugUpdater runs. This throttles the rate of changes to the bug system.
 	MaxBugsFiledPerRun int
+	// UpdateRuleBatchSize is the maximum number of rules to update in one
+	// transaction, when updating rule bug management state.
+	UpdateRuleBatchSize int
+	// Timestamp of the cron job. Used to timestamp policy activations/deactivations
+	// that happen as a result of this run.
+	RunTimestamp time.Time
 }
 
 // NewBugUpdater initialises a new BugUpdater.
-func NewBugUpdater(project string, mgrs map[string]BugManager, ac AnalysisClient, projectCfg *compiledcfg.ProjectConfig) *BugUpdater {
+func NewBugUpdater(project string, mgrs map[string]BugManager, ac AnalysisClient, projectCfg *compiledcfg.ProjectConfig, runTimestamp time.Time) *BugUpdater {
 	return &BugUpdater{
-		project:            project,
-		managers:           mgrs,
-		analysisClient:     ac,
-		projectCfg:         projectCfg,
-		MaxBugsFiledPerRun: 1, // Default value.
+		project:             project,
+		managers:            mgrs,
+		analysisClient:      ac,
+		projectCfg:          projectCfg,
+		MaxBugsFiledPerRun:  1,    // Default value.
+		UpdateRuleBatchSize: 1000, // Default value.
+		RunTimestamp:        runTimestamp,
 	}
 }
 
@@ -174,6 +185,12 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 
 	metricsByRuleID := make(map[string]*bugs.ClusterImpact)
 	if metricsValid {
+		// Even if policy-based bug filing is disabled, we need to update
+		// policy state in the background. This means we need to query
+		// any cluster that results in a policy activation.
+		thresholds := PolicyActivationThresholds(b.projectCfg.Config.BugManagement.GetPolicies())
+		thresholds = append(thresholds, b.projectCfg.Config.BugFilingThresholds...)
+
 		// We want to read analysis for two categories of clusters:
 		// - Bug Clusters: to update the priority of filed bugs.
 		// - Impactful Suggested Clusters: if any suggested clusters may be
@@ -184,7 +201,7 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 		//    back all suggested clusters).
 		clusters, err := b.analysisClient.ReadImpactfulClusters(ctx, analysis.ImpactfulClusterReadOptions{
 			Project:                  b.project,
-			Thresholds:               b.projectCfg.Config.BugFilingThresholds,
+			Thresholds:               thresholds,
 			AlwaysIncludeBugClusters: true,
 		})
 		if err != nil {
@@ -221,40 +238,49 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 		}
 	}
 
-	// Prepare bug update requests.
-	bugUpdatesBySystem := make(map[string][]bugs.BugUpdateRequest)
+	var rms []ruleWithMetrics
 	for _, rule := range activeRules {
-		var impact *bugs.ClusterImpact
+		var metrics *bugs.ClusterImpact
 
 		// Metrics are valid if re-clustering and analysis ran on the latest
 		// version of this failure association rule. This avoids bugs getting
-		// erroneous priority changes while impact information is incomplete.
+		// erroneous priority changes while metrics information is incomplete.
 		ruleMetricsValid := metricsValid &&
 			reclusteringProgress.IncorporatesRulesVersion(rule.PredicateLastUpdateTime)
 
 		if ruleMetricsValid {
 			var ok bool
-			impact, ok = metricsByRuleID[rule.RuleID]
+			metrics, ok = metricsByRuleID[rule.RuleID]
 			if !ok {
 				// If there is no analysis, this means the cluster is
 				// empty. Use empty impact.
-				impact = &bugs.ClusterImpact{}
+				metrics = &bugs.ClusterImpact{}
 			}
 		}
 		// Else leave metrics as nil. Bug-updating code takes this as an
-		// indication valid impact is not available and will not attempt
+		// indication valid metrics are not available and will not attempt
 		// priority updates/auto-closure.
 
-		bugUpdates := bugUpdatesBySystem[rule.BugID.System]
-		bugUpdates = append(bugUpdates, bugs.BugUpdateRequest{
-			Bug:                              rule.BugID,
-			Impact:                           impact,
-			IsManagingBug:                    rule.IsManagingBug,
-			IsManagingBugPriority:            rule.IsManagingBugPriority,
-			IsManagingBugPriorityLastUpdated: rule.IsManagingBugPriorityLastUpdateTime,
-			RuleID:                           rule.RuleID,
+		rms = append(rms, ruleWithMetrics{
+			RuleID:  rule.RuleID,
+			Metrics: metrics,
 		})
-		bugUpdatesBySystem[rule.BugID.System] = bugUpdates
+	}
+
+	// Update bug management state (i.e. policy activations) for existing
+	// rules based on current cluster metrics. Prepare the bug update requests
+	// based on this state.
+	bugsToUpdate, err := b.updateBugManagementState(ctx, rms)
+	if err != nil {
+		return errors.Annotate(err, "update bug management state").Err()
+	}
+
+	// Break bug updates down by bug system.
+	bugUpdatesBySystem := make(map[string][]bugs.BugUpdateRequest)
+	for _, bug := range bugsToUpdate {
+		bugUpdates := bugUpdatesBySystem[bug.Bug.System]
+		bugUpdates = append(bugUpdates, bug)
+		bugUpdatesBySystem[bug.Bug.System] = bugUpdates
 	}
 
 	// Perform bug updates.
@@ -269,6 +295,129 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 		return errors.NewMultiError(errs...)
 	}
 	return nil
+}
+
+type ruleWithMetrics struct {
+	// Rule identifier.
+	RuleID string
+	// The bug cluster metrics. May be nil if no reliable metrics
+	// are available because reclustering is in progress.
+	Metrics *bugs.ClusterImpact
+}
+
+// updateBugManagementState updates policy activations for the
+// specified rules using the given current metric values.
+//
+// BugUpdateRequests then are created based on the read rules
+// and updated bug management state. The returned BugUpdateRequests
+// will be in 1:1 correspondance to the specified rules.
+func (b *BugUpdater) updateBugManagementState(ctx context.Context, rs []ruleWithMetrics) ([]bugs.BugUpdateRequest, error) {
+	// Read and update bug management state in batches.
+	// Batching is required as Spanner limits the number of mutations
+	// per transaction to 40,000 (as at August 2023):
+	// https://cloud.google.com/spanner/quotas#limits-for
+	batches := batch(rs, b.UpdateRuleBatchSize)
+
+	result := make([]bugs.BugUpdateRequest, 0, len(rs))
+	for _, ruleBatch := range batches {
+		var batchResult []bugs.BugUpdateRequest
+		batchResult, err := b.updateBugManagementStateBatch(ctx, ruleBatch)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, batchResult...)
+	}
+	return result, nil
+}
+
+func batch(ruleIDs []ruleWithMetrics, batchSize int) [][]ruleWithMetrics {
+	if batchSize < 1 {
+		panic("batch size must be greater than 0")
+	}
+
+	batchCount := (len(ruleIDs) + batchSize - 1) / batchSize
+	result := make([][]ruleWithMetrics, 0, batchCount)
+	for i := 0; i < batchCount; i++ {
+		batchStartIndex := i * batchSize             // inclusive
+		batchEndIndex := batchStartIndex + batchSize // exclusive
+		if batchEndIndex > len(ruleIDs) {
+			batchEndIndex = len(ruleIDs)
+		}
+		result = append(result, ruleIDs[batchStartIndex:batchEndIndex])
+	}
+	return result
+}
+
+// updateBugManagementStateBatch updates policy activations for the
+// specified rules using the given current metric values.
+//
+// BugUpdateRequests then are created based on the read rules
+// and updated bug management state. The returned BugUpdateRequests
+// will be in 1:1 correspondance to the specified rules.
+func (b *BugUpdater) updateBugManagementStateBatch(ctx context.Context, rulesAndMetrics []ruleWithMetrics) ([]bugs.BugUpdateRequest, error) {
+	ruleIDs := make([]string, 0, len(rulesAndMetrics))
+	for _, rule := range rulesAndMetrics {
+		ruleIDs = append(ruleIDs, rule.RuleID)
+	}
+
+	var result []bugs.BugUpdateRequest
+	f := func(ctx context.Context) error {
+		// This transaction may be retried. Reset the result each time
+		// the transaction runs to avoid data from previous aborted
+		// attempts leaking into subsequent attempts.
+		result = make([]bugs.BugUpdateRequest, 0, len(rulesAndMetrics))
+
+		// Read the rules in the transaction again to implement an
+		// atomic Read-Update transaction, which protects against
+		// update races. Subsequent bug-filing action will be based
+		// only on this second read.
+		// N.B.: ReadMany returns items in 1:1 correspondence to the request.
+		rs, err := rules.ReadMany(ctx, b.project, ruleIDs)
+		if err != nil {
+			return errors.Annotate(err, "read rules").Err()
+		}
+
+		for i, r := range rs {
+			// Fetches the corresponding metrics for a rule.
+			clusterMetrics := rulesAndMetrics[i].Metrics
+
+			// Update which policies are active.
+			if clusterMetrics != nil {
+				updatedBugManagementState, changed := updatePolicyActivations(r.BugManagementState, b.projectCfg.Config.BugManagement.GetPolicies(), clusterMetrics, b.RunTimestamp)
+				if changed {
+					// Only update the rule if a policy has activated or
+					// deactivated, to avoid unnecessary writes and rule
+					// cache invalidations.
+					r.BugManagementState = updatedBugManagementState
+
+					opts := rules.UpdateOptions{}
+					ms, err := rules.Update(r, opts, rules.LUCIAnalysisSystem)
+					if err != nil {
+						return errors.Annotate(err, "update rule").Err()
+					}
+					span.BufferWrite(ctx, ms)
+				}
+			}
+
+			// TODO(meiring): Identify the updates to bugs to make based
+			// on the bug management state and pass these into the request.
+
+			result = append(result, bugs.BugUpdateRequest{
+				Bug:                              r.BugID,
+				Impact:                           clusterMetrics,
+				IsManagingBug:                    r.IsManagingBug,
+				IsManagingBugPriority:            r.IsManagingBugPriority,
+				IsManagingBugPriorityLastUpdated: r.IsManagingBugPriorityLastUpdateTime,
+				RuleID:                           r.RuleID,
+			})
+		}
+		return nil
+	}
+	if _, err := span.ReadWriteTransaction(ctx, f); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bugsToUpdate []bugs.BugUpdateRequest) error {
@@ -545,15 +694,29 @@ func (b *BugUpdater) handleDuplicateBug(ctx context.Context, duplicateDetails bu
 			return errors.Annotate(err, "reading rule for destination bug").Err()
 		}
 		if destinationRule == nil {
+			// The destination bug does not have a rule in this project.
 			// Simply update the source rule to point to the new bug.
 			sourceRule.BugID = destBug
 
+			// As the bug has changed, flags tracking notification of policy
+			// activation must be reset.
+			if sourceRule.BugManagementState.PolicyState != nil {
+				for _, policyState := range sourceRule.BugManagementState.PolicyState {
+					policyState.ActivationNotified = false
+				}
+			}
+
 			// Only one rule can manage a bug at a given time.
-			// Even if there is no rule in this project which manages
-			// the destination bug, there could a rule in a different project.
+			// If there is a rule in another project already managing this bug,
+			// do not manage the bug from this rule.
 			if anyRuleManagingDestBug {
 				sourceRule.IsManagingBug = false
 			}
+
+			// We do not need to reset
+			// sourceRule.BugManagementState.RuleAssociationNotified
+			// despite the change of bug as we will perform the notification
+			// immediately after this transaction.
 
 			ms, err := rules.Update(sourceRule, rules.UpdateOptions{
 				IsAuditableUpdate: true,
@@ -866,6 +1029,11 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 		return false, errors.Annotate(err, "create issue in %v", system).Err()
 	}
 
+	// Set policy activations starting from a state where no policies
+	// are active.
+	impact := ExtractResidualImpact(cs)
+	bugManagementState, _ := updatePolicyActivations(&bugspb.BugManagementState{}, b.projectCfg.Config.BugManagement.GetPolicies(), impact, b.RunTimestamp)
+
 	// Create a failure association rule associating the failures with a bug.
 	newRule := &rules.Entry{
 		Project:               b.project,
@@ -876,7 +1044,7 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 		IsManagingBug:         true,
 		IsManagingBugPriority: true,
 		SourceCluster:         cs.ClusterID,
-		BugManagementState:    &bugspb.BugManagementState{},
+		BugManagementState:    bugManagementState,
 	}
 	create := func(ctx context.Context) error {
 		user := rules.LUCIAnalysisSystem

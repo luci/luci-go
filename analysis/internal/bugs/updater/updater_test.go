@@ -122,6 +122,7 @@ func TestUpdate(t *testing.T) {
 			monorailClient:       monorailClient,
 			maxBugsFiledPerRun:   1,
 			reclusteringProgress: progress,
+			runTimestamp:         time.Date(2100, 2, 2, 2, 2, 2, 2, time.UTC),
 		}
 
 		// Mock current time. This is needed to control behaviours like
@@ -157,7 +158,12 @@ func TestUpdate(t *testing.T) {
 				SourceCluster:           sourceClusterID,
 				CreateUser:              rules.LUCIAnalysisSystem,
 				LastAuditableUpdateUser: rules.LUCIAnalysisSystem,
-				BugManagementState:      &bugspb.BugManagementState{},
+				BugManagementState: &bugspb.BugManagementState{
+					PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
+						"exoneration-policy":  {},
+						"cls-rejected-policy": {},
+					},
+				},
 			}
 			expectedRules := []*rules.Entry{expectedRule}
 
@@ -309,6 +315,37 @@ func TestUpdate(t *testing.T) {
 					So(issueCount(), ShouldEqual, 1)
 
 					// Further updates do nothing.
+					err = updateBugsForProject(ctx, opts)
+
+					// Verify
+					So(err, ShouldBeNil)
+					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+					So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
+					So(issueCount(), ShouldEqual, 1)
+				})
+			})
+			Convey("policies are correctly activated when new bugs are filed", func() {
+				// Bug-filing threshold met.
+				suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
+
+				Convey("policy activation threshold not met", func() {
+					suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 49}}
+
+					// Act
+					err = updateBugsForProject(ctx, opts)
+
+					// Verify
+					So(err, ShouldBeNil)
+					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+					So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
+					So(issueCount(), ShouldEqual, 1)
+				})
+				Convey("policy activation threshold met", func() {
+					suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 50}}
+					expectedRule.BugManagementState.PolicyState["exoneration-policy"].IsActive = true
+					expectedRule.BugManagementState.PolicyState["exoneration-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+
+					// Act
 					err = updateBugsForProject(ctx, opts)
 
 					// Verify
@@ -727,7 +764,15 @@ func TestUpdate(t *testing.T) {
 					IsManagingBugPriority:   true,
 					CreateUser:              rules.LUCIAnalysisSystem,
 					LastAuditableUpdateUser: rules.LUCIAnalysisSystem,
-					BugManagementState:      &bugspb.BugManagementState{},
+					BugManagementState: &bugspb.BugManagementState{
+						PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
+							"exoneration-policy": {
+								IsActive:           true,
+								LastActivationTime: timestamppb.New(opts.runTimestamp),
+							},
+							"cls-rejected-policy": {},
+						},
+					},
 				},
 				{
 					Project:                 "chromeos",
@@ -739,7 +784,12 @@ func TestUpdate(t *testing.T) {
 					IsManagingBugPriority:   true,
 					CreateUser:              rules.LUCIAnalysisSystem,
 					LastAuditableUpdateUser: rules.LUCIAnalysisSystem,
-					BugManagementState:      &bugspb.BugManagementState{},
+					BugManagementState: &bugspb.BugManagementState{
+						PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
+							"exoneration-policy":  {},
+							"cls-rejected-policy": {},
+						},
+					},
 				},
 				{
 					Project:                 "chromeos",
@@ -751,7 +801,12 @@ func TestUpdate(t *testing.T) {
 					IsManagingBugPriority:   true,
 					CreateUser:              rules.LUCIAnalysisSystem,
 					LastAuditableUpdateUser: rules.LUCIAnalysisSystem,
-					BugManagementState:      &bugspb.BugManagementState{},
+					BugManagementState: &bugspb.BugManagementState{
+						PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
+							"exoneration-policy":  {},
+							"cls-rejected-policy": {},
+						},
+					},
 				},
 				{
 					Project:                 "chromeos",
@@ -763,7 +818,12 @@ func TestUpdate(t *testing.T) {
 					IsManagingBugPriority:   true,
 					CreateUser:              rules.LUCIAnalysisSystem,
 					LastAuditableUpdateUser: rules.LUCIAnalysisSystem,
-					BugManagementState:      &bugspb.BugManagementState{},
+					BugManagementState: &bugspb.BugManagementState{
+						PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
+							"exoneration-policy":  {},
+							"cls-rejected-policy": {},
+						},
+					},
 				},
 			}
 
@@ -822,6 +882,21 @@ func TestUpdate(t *testing.T) {
 					So(issue.Issue.IssueState.Status, ShouldEqual, originalStatus)
 					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 				})
+				Convey("policy activation is unchanged", func() {
+					// The policy should already be active from previous setup.
+					So(expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].IsActive, ShouldBeTrue)
+
+					// Update metrics so that policy should de-activate if
+					// reclustering was complete.
+					bugClusters[0].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{}
+
+					// Act
+					err = updateBugsForProject(ctx, opts)
+
+					// Verify.
+					So(err, ShouldBeNil)
+					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+				})
 			})
 			Convey("with re-clustering complete", func() {
 				analysisClient.clusters = append(suggestedClusters, bugClusters...)
@@ -854,6 +929,116 @@ func TestUpdate(t *testing.T) {
 				So(err, ShouldBeNil)
 				opts.reclusteringProgress = progress
 
+				opts.runTimestamp = opts.runTimestamp.Add(10 * time.Minute)
+
+				Convey("policy activation", func() {
+					// Verify updates work, even when rules are in later batches.
+					opts.updateRuleBatchSize = 1
+
+					Convey("policy remains inactive if activation threshold unmet", func() {
+						// The policy should be inactive from previous setup.
+						expectedPolicyState := expectedRules[1].BugManagementState.PolicyState["exoneration-policy"]
+						So(expectedPolicyState.IsActive, ShouldBeFalse)
+
+						// Set metrics just below the policy activation threshold.
+						bugClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
+							OneDay:   metrics.Counts{Residual: 49},
+							ThreeDay: metrics.Counts{Residual: 49},
+							SevenDay: metrics.Counts{Residual: 49},
+						}
+
+						// Act
+						err = updateBugsForProject(ctx, opts)
+
+						// Verify policy activation unchanged.
+						So(err, ShouldBeNil)
+						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+					})
+					Convey("policy activates if activation threshold met", func() {
+						// The policy should be inactive from previous setup.
+						expectedPolicyState := expectedRules[1].BugManagementState.PolicyState["exoneration-policy"]
+						So(expectedPolicyState.IsActive, ShouldBeFalse)
+
+						// Update metrics so that policy should activate.
+						bugClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
+							OneDay:   metrics.Counts{Residual: 50},
+							ThreeDay: metrics.Counts{Residual: 50},
+							SevenDay: metrics.Counts{Residual: 50},
+						}
+
+						// Act
+						err = updateBugsForProject(ctx, opts)
+
+						// Verify policy activates.
+						So(err, ShouldBeNil)
+						expectedPolicyState.IsActive = true
+						expectedPolicyState.LastActivationTime = timestamppb.New(opts.runTimestamp)
+						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+					})
+					Convey("policy remains active if deactivation threshold unmet", func() {
+						// The policy should already be active from previous setup.
+						expectedPolicyState := expectedRules[0].BugManagementState.PolicyState["exoneration-policy"]
+						So(expectedPolicyState.IsActive, ShouldBeTrue)
+
+						// Metrics still meet/exceed the deactivation threshold, so deactivation is inhibited.
+						bugClusters[0].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
+							OneDay:   metrics.Counts{Residual: 10},
+							ThreeDay: metrics.Counts{Residual: 10},
+							SevenDay: metrics.Counts{Residual: 10},
+						}
+
+						// Act
+						err = updateBugsForProject(ctx, opts)
+
+						// Verify policy activation should be unchanged.
+						So(err, ShouldBeNil)
+						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+					})
+					Convey("policy deactivates if deactivation threshold met", func() {
+						// The policy should already be active from previous setup.
+						expectedPolicyState := expectedRules[0].BugManagementState.PolicyState["exoneration-policy"]
+						So(expectedPolicyState.IsActive, ShouldBeTrue)
+
+						// Update metrics so that policy should de-activate.
+						bugClusters[0].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{}
+
+						// Act
+						err = updateBugsForProject(ctx, opts)
+
+						// Verify policy deactivated.
+						So(err, ShouldBeNil)
+						expectedPolicyState.IsActive = false
+						expectedPolicyState.LastDeactivationTime = timestamppb.New(opts.runTimestamp)
+						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+					})
+					Convey("policy configuration changes are handled", func() {
+						// Delete the existing policy named "exoneration-policy", and replace it with a new policy,
+						// "new-exoneration-policy". Activation and de-activation criteria remain the same.
+						projectCfg.BugManagement.Policies[0].Id = "new-exoneration-policy"
+
+						// Act
+						err = updateBugsForProject(ctx, opts)
+
+						// Verify state for the old policy is deleted, and state for the new policy is added.
+						So(err, ShouldBeNil)
+						expectedRules[0].BugManagementState.PolicyState = map[string]*bugspb.BugManagementState_PolicyState{
+							"new-exoneration-policy": {
+								// The new policy should activate, because the metrics justify its activation.
+								IsActive:           true,
+								LastActivationTime: timestamppb.New(opts.runTimestamp),
+							},
+							"cls-rejected-policy": {},
+						}
+						expectedRules[1].BugManagementState.PolicyState = map[string]*bugspb.BugManagementState_PolicyState{
+							"new-exoneration-policy": {},
+							"cls-rejected-policy":    {},
+						}
+						expectedRules[2].BugManagementState.PolicyState = map[string]*bugspb.BugManagementState_PolicyState{
+							"new-exoneration-policy": {},
+							"cls-rejected-policy":    {},
+						}
+					})
+				})
 				Convey("priority updates", func() {
 					Convey("buganizer", func() {
 						// Select a Buganizer issue.
@@ -990,6 +1175,8 @@ func TestUpdate(t *testing.T) {
 
 							// Verify
 							So(err, ShouldBeNil)
+							expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].IsActive = false
+							expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.runTimestamp)
 							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 							So(issue.Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_VERIFIED)
 
@@ -1138,6 +1325,19 @@ func TestUpdate(t *testing.T) {
 						issueOne.Issue.IssueState.Status = issuetracker.Issue_DUPLICATE
 						issueOne.Issue.IssueState.CanonicalIssueId = issueTwo.Issue.IssueId
 
+						// Ensure rule association and policy activation notified, so we
+						// can confirm whether notifications are correctly reset.
+						rs[0].BugManagementState.RuleAssociationNotified = true
+						for _, policyState := range rs[0].BugManagementState.PolicyState {
+							policyState.ActivationNotified = true
+						}
+						So(rules.SetForTesting(ctx, rs), ShouldBeNil)
+
+						expectedRules[0].BugManagementState.RuleAssociationNotified = true
+						for _, policyState := range expectedRules[0].BugManagementState.PolicyState {
+							policyState.ActivationNotified = true
+						}
+
 						Convey("happy path", func() {
 							// Act
 							err = updateBugsForProject(ctx, opts)
@@ -1212,7 +1412,11 @@ func TestUpdate(t *testing.T) {
 								// Verify
 								So(err, ShouldBeNil)
 								expectedRules[0].BugID = bugs.BugID{System: bugs.BuganizerSystem, ID: "1234"}
-								expectedRules[0].IsManagingBug = false // Let the other rule continue to manage the bug.
+								expectedRules[0].IsManagingBug = false // The other rule should continue to manage the bug.
+								for _, policyState := range expectedRules[0].BugManagementState.PolicyState {
+									// Should reset because of the change in associated bug.
+									policyState.ActivationNotified = false
+								}
 								expectedRules = append(expectedRules, extraRule)
 								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 
@@ -1230,6 +1434,10 @@ func TestUpdate(t *testing.T) {
 								So(err, ShouldBeNil)
 								expectedRules[0].BugID = bugs.BugID{System: bugs.BuganizerSystem, ID: "1234"}
 								expectedRules[0].IsManagingBug = true
+								for _, policyState := range expectedRules[0].BugManagementState.PolicyState {
+									// Should reset because of the change in associated bug.
+									policyState.ActivationNotified = false
+								}
 								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 
 								So(issueOne.Comments, ShouldHaveLength, 2)
@@ -1491,8 +1699,82 @@ func createProjectConfig() *configpb.ProjectConfig {
 		Buganizer:           buganizerCfg,
 		Monorail:            monorailCfg,
 		BugFilingThresholds: thres,
-		BugManagement:       &configpb.BugManagement{},
-		LastUpdated:         timestamppb.New(time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC)),
+
+		BugManagement: &configpb.BugManagement{
+			Policies: []*configpb.BugManagementPolicy{
+				createExonerationPolicy(),
+				createCLsRejectedPolicy(),
+			},
+		},
+		LastUpdated: timestamppb.New(time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC)),
+	}
+}
+
+func createExonerationPolicy() *configpb.BugManagementPolicy {
+	return &configpb.BugManagementPolicy{
+		Id:                "exoneration-policy",
+		Owners:            []string{"username@google.com"},
+		HumanReadableName: "test variant(s) are being exonerated in presubmit",
+		Priority:          configpb.BuganizerPriority_P2,
+		Metrics: []*configpb.BugManagementPolicy_Metric{
+			{
+				MetricId: metrics.CriticalFailuresExonerated.ID.String(),
+				ActivationThreshold: &configpb.MetricThreshold{
+					OneDay: proto.Int64(50),
+				},
+				DeactivationThreshold: &configpb.MetricThreshold{
+					OneDay: proto.Int64(10),
+				},
+			},
+		},
+		Explanation: &configpb.BugManagementPolicy_Explanation{
+			ProblemHtml: "problem",
+			ActionHtml:  "action",
+		},
+		BugTemplate: &configpb.BugManagementPolicy_BugTemplate{
+			CommentTemplate: `{{if .BugID.IsBuganizer }}Buganizer Bug ID: {{ .BugID.BuganizerBugID }}{{end}}` +
+				`{{if .BugID.IsMonorail }}Monorail Project: {{ .BugID.MonorailProject }}; ID: {{ .BugID.MonorailBugID }}{{end}}` +
+				`Rule URL: {{.RuleURL}}`,
+			Monorail: &configpb.BugManagementPolicy_BugTemplate_Monorail{
+				Labels: []string{"Test-Exonerated"},
+			},
+			Buganizer: &configpb.BugManagementPolicy_BugTemplate_Buganizer{
+				Hotlists: []int64{1234},
+			},
+		},
+	}
+}
+
+func createCLsRejectedPolicy() *configpb.BugManagementPolicy {
+	return &configpb.BugManagementPolicy{
+		Id:                "cls-rejected-policy",
+		Owners:            []string{"username@google.com"},
+		HumanReadableName: "many CL(s) are being falsely rejected in presubmit",
+		Priority:          configpb.BuganizerPriority_P1,
+		Metrics: []*configpb.BugManagementPolicy_Metric{
+			{
+				MetricId: metrics.HumanClsFailedPresubmit.ID.String(),
+				ActivationThreshold: &configpb.MetricThreshold{
+					SevenDay: proto.Int64(10),
+				},
+				DeactivationThreshold: &configpb.MetricThreshold{
+					SevenDay: proto.Int64(1),
+				},
+			},
+		},
+		Explanation: &configpb.BugManagementPolicy_Explanation{
+			ProblemHtml: "problem",
+			ActionHtml:  "action",
+		},
+		BugTemplate: &configpb.BugManagementPolicy_BugTemplate{
+			CommentTemplate: `Many CLs are failing presubmit. Policy text goes here.`,
+			Monorail: &configpb.BugManagementPolicy_BugTemplate_Monorail{
+				Labels: []string{"Test-Exonerated"},
+			},
+			Buganizer: &configpb.BugManagementPolicy_BugTemplate_Buganizer{
+				Hotlists: []int64{1234},
+			},
+		},
 	}
 }
 

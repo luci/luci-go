@@ -326,12 +326,14 @@ func TestRules(t *testing.T) {
 						System: "monorail",
 						Id:     "monorailproject/2",
 					},
-					IsManagingBug: false,
-					IsActive:      false,
+					IsManagingBug:         false,
+					IsManagingBugPriority: false,
+					IsActive:              false,
 				},
 				UpdateMask: &fieldmaskpb.FieldMask{
 					// On the client side, we use JSON equivalents, i.e. ruleDefinition,
-					// bug, isActive, isManagingBug.
+					// bug, isActive, isManagingBug. The pRPC layer handles the
+					// translation before the request hits our service.
 					Paths: []string{"rule_definition", "bug", "is_active", "is_managing_bug", "is_managing_bug_priority"},
 				},
 				Etag: ruleETag(ruleManaged, ruleMask{IncludeDefinition: true, IncludeAuditUsers: false}),
@@ -353,74 +355,71 @@ func TestRules(t *testing.T) {
 			})
 			Convey("Success", func() {
 				Convey("Predicate updated", func() {
-					rule, err := srv.Update(ctx, request)
-					So(err, ShouldBeNil)
+					// The requested updates should be applied.
+					expectedRule := ruleManagedBuilder.Build().Clone()
+					expectedRule.RuleDefinition = `test = "updated"`
+					expectedRule.BugID = bugs.BugID{System: "monorail", ID: "monorailproject/2"}
+					expectedRule.IsActive = false
+					expectedRule.IsManagingBug = false
+					expectedRule.IsManagingBugPriority = false
 
-					storedRule, err := rules.Read(span.Single(ctx), testProject, ruleManaged.RuleID)
-					So(err, ShouldBeNil)
+					// The notification flags should be reset as the bug was changed.
+					expectedRule.BugManagementState.RuleAssociationNotified = false
+					for _, policyState := range expectedRule.BugManagementState.PolicyState {
+						policyState.ActivationNotified = false
+					}
 
-					So(storedRule.LastUpdateTime, ShouldNotEqual, ruleManaged.LastUpdateTime)
+					Convey("baseline", func() {
+						// Act
+						rule, err := srv.Update(ctx, request)
 
-					expectedRule := ruleManagedBuilder.
-						WithRuleDefinition(`test = "updated"`).
-						WithBug(bugs.BugID{System: "monorail", ID: "monorailproject/2"}).
-						WithActive(false).
-						WithBugManaged(false).
-						WithBugPriorityManaged(false).
-						WithBugPriorityManagedLastUpdateTime(storedRule.LastUpdateTime).
-						// Accept whatever the new last updated time is.
-						WithLastUpdateTime(storedRule.LastUpdateTime).
-						// The last auditable update time should be the same as
-						// the last updated time.
-						WithLastAuditableUpdateTime(storedRule.LastUpdateTime).
-						WithLastAuditableUpdateUser("someone@example.com").
-						// The predicate last updated time should be the same as
-						// the last updated time.
-						WithPredicateLastUpdateTime(storedRule.LastUpdateTime).
-						Build()
+						// Verify
+						So(err, ShouldBeNil)
 
-					// Verify the rule was correctly updated in the database.
-					So(storedRule, ShouldResembleProto, expectedRule)
+						storedRule, err := rules.Read(span.Single(ctx), testProject, ruleManaged.RuleID)
+						So(err, ShouldBeNil)
+						So(storedRule.LastUpdateTime, ShouldNotEqual, ruleManaged.LastUpdateTime)
 
-					// Verify the returned rule matches what was expected.
-					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
-					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
-				})
-				Convey("No audit users permission", func() {
-					authState.IdentityGroups = removeGroup(authState.IdentityGroups, auditUsersAccessGroup)
+						// Accept the new last update time (this value is set non-deterministically).
+						expectedRule.LastUpdateTime = storedRule.LastUpdateTime
+						expectedRule.LastAuditableUpdateTime = storedRule.LastUpdateTime
+						expectedRule.IsManagingBugPriorityLastUpdateTime = storedRule.LastUpdateTime
+						expectedRule.PredicateLastUpdateTime = storedRule.LastUpdateTime
+						expectedRule.LastAuditableUpdateUser = "someone@example.com"
 
-					rule, err := srv.Update(ctx, request)
-					So(err, ShouldBeNil)
+						// Verify the rule was updated as expected.
+						So(storedRule, ShouldResembleProto, expectedRule)
 
-					storedRule, err := rules.Read(span.Single(ctx), testProject, ruleManaged.RuleID)
-					So(err, ShouldBeNil)
+						// Verify the returned rule matches what was expected.
+						mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
+						So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+					})
+					Convey("No audit users permission", func() {
+						authState.IdentityGroups = removeGroup(authState.IdentityGroups, auditUsersAccessGroup)
 
-					So(storedRule.LastUpdateTime, ShouldNotEqual, ruleManaged.LastUpdateTime)
+						// Act
+						rule, err := srv.Update(ctx, request)
 
-					expectedRule := ruleManagedBuilder.
-						WithRuleDefinition(`test = "updated"`).
-						WithBug(bugs.BugID{System: "monorail", ID: "monorailproject/2"}).
-						WithActive(false).
-						WithBugManaged(false).
-						WithBugPriorityManaged(false).
-						WithBugPriorityManagedLastUpdateTime(storedRule.LastUpdateTime).
-						// Accept whatever the new last updated time is.
-						WithLastUpdateTime(storedRule.LastUpdateTime).
-						// The last auditable update time should be the same as
-						// the last updated time.
-						WithLastAuditableUpdateTime(storedRule.LastUpdateTime).
-						WithLastAuditableUpdateUser("someone@example.com").
-						// The predicate last updated time should be the same as
-						// the last updated time.
-						WithPredicateLastUpdateTime(storedRule.LastUpdateTime).
-						Build()
+						// Verify
+						So(err, ShouldBeNil)
 
-					// Verify the rule was correctly updated in the database.
-					So(storedRule, ShouldResembleProto, expectedRule)
+						storedRule, err := rules.Read(span.Single(ctx), testProject, ruleManaged.RuleID)
+						So(err, ShouldBeNil)
+						So(storedRule.LastUpdateTime, ShouldNotEqual, ruleManaged.LastUpdateTime)
 
-					// Verify the returned rule matches what was expected.
-					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: false}
-					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+						// Accept the new last update time (this value is set non-deterministically).
+						expectedRule.LastUpdateTime = storedRule.LastUpdateTime
+						expectedRule.LastAuditableUpdateTime = storedRule.LastUpdateTime
+						expectedRule.PredicateLastUpdateTime = storedRule.LastUpdateTime
+						expectedRule.IsManagingBugPriorityLastUpdateTime = storedRule.LastUpdateTime
+						expectedRule.LastAuditableUpdateUser = "someone@example.com"
+
+						So(storedRule, ShouldResembleProto, expectedRule)
+
+						// Verify audit users are omitted from the result.
+						mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: false}
+						So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+					})
 				})
 				Convey("Predicate not updated", func() {
 					request.UpdateMask.Paths = []string{"bug"}
@@ -439,17 +438,22 @@ func TestRules(t *testing.T) {
 					// updated time was NOT updated.
 					So(storedRule.LastUpdateTime, ShouldNotEqual, ruleManaged.LastUpdateTime)
 
-					expectedRule := ruleManagedBuilder.
-						WithBug(bugs.BugID{System: "buganizer", ID: "99999999"}).
-						// Accept whatever the new last updated time is.
-						WithLastUpdateTime(storedRule.LastUpdateTime).
-						// The last auditable update time should be the same as
-						// the last updated time.
-						WithLastAuditableUpdateTime(storedRule.LastUpdateTime).
-						WithLastAuditableUpdateUser("someone@example.com").
-						Build()
+					// Verify the rule was correctly updated in the database:
+					// - The requested updates should be applied.
+					expectedRule := ruleManagedBuilder.Build()
+					expectedRule.BugID = bugs.BugID{System: "buganizer", ID: "99999999"}
 
-					// Verify the rule was correctly updated in the database.
+					// - The notification flags should be reset as the bug was changed.
+					expectedRule.BugManagementState.RuleAssociationNotified = false
+					for _, policyState := range expectedRule.BugManagementState.PolicyState {
+						policyState.ActivationNotified = false
+					}
+
+					// - Accept the new last update time (this value is set non-deterministically).
+					expectedRule.LastUpdateTime = storedRule.LastUpdateTime
+					expectedRule.LastAuditableUpdateTime = storedRule.LastUpdateTime
+					expectedRule.LastAuditableUpdateUser = "someone@example.com"
+
 					So(storedRule, ShouldResembleProto, expectedRule)
 
 					// Verify the returned rule matches what was expected.
@@ -469,18 +473,17 @@ func TestRules(t *testing.T) {
 					// Check the rule was updated.
 					So(storedRule.LastUpdateTime, ShouldNotEqual, ruleManaged.LastUpdateTime)
 
-					expectedRule := ruleManagedBuilder.
-						WithBugPriorityManaged(false).
-						WithBugPriorityManagedLastUpdateTime(storedRule.LastUpdateTime).
-						// Accept whatever the new last updated time is.
-						WithLastUpdateTime(storedRule.LastUpdateTime).
-						// The last auditable update time should be the same as
-						// the last updated time.
-						WithLastAuditableUpdateTime(storedRule.LastUpdateTime).
-						WithLastAuditableUpdateUser("someone@example.com").
-						Build()
+					// Verify the rule was correctly updated in the database:
+					// - The requested update should be applied.
+					expectedRule := ruleManagedBuilder.Build()
+					expectedRule.IsManagingBugPriority = false
 
-					// Verify the rule was correctly updated in the database.
+					// - Accept the new last update time (this value is set non-deterministically).
+					expectedRule.IsManagingBugPriorityLastUpdateTime = storedRule.LastUpdateTime
+					expectedRule.LastUpdateTime = storedRule.LastUpdateTime
+					expectedRule.LastAuditableUpdateTime = storedRule.LastUpdateTime
+					expectedRule.LastAuditableUpdateUser = "someone@example.com"
+
 					So(storedRule, ShouldResembleProto, expectedRule)
 
 					// Verify the returned rule matches what was expected.
@@ -503,21 +506,26 @@ func TestRules(t *testing.T) {
 					// Check the rule was updated.
 					So(storedRule.LastUpdateTime, ShouldNotEqual, ruleManaged.LastUpdateTime)
 
-					expectedRule := ruleManagedBuilder.
-						// Verify the bug was updated, but that IsManagingBug
-						// was silently set to false, because ruleManagedOther
-						// already controls the bug.
-						WithBug(ruleManagedOther.BugID).
-						WithBugManaged(false).
-						// Accept whatever the new last updated time is.
-						WithLastUpdateTime(storedRule.LastUpdateTime).
-						// The last auditable update time should be the same as
-						// the last updated time.
-						WithLastAuditableUpdateTime(storedRule.LastUpdateTime).
-						WithLastAuditableUpdateUser("someone@example.com").
-						Build()
+					// Verify the rule was correctly updated in the database:
+					// - The requested update should be applied.
+					expectedRule := ruleManagedBuilder.Build()
+					expectedRule.BugID = ruleManagedOther.BugID
 
-					// Verify the rule was correctly updated in the database.
+					// - The notification flags should be reset as the bug was changed.
+					expectedRule.BugManagementState.RuleAssociationNotified = false
+					for _, policyState := range expectedRule.BugManagementState.PolicyState {
+						policyState.ActivationNotified = false
+					}
+
+					// - IsManagingBug should be silently set to false, because ruleManagedOther
+					//  already controls the bug.
+					expectedRule.IsManagingBug = false
+
+					// - Accept the new last update time (this value is set non-deterministically).
+					expectedRule.LastUpdateTime = storedRule.LastUpdateTime
+					expectedRule.LastAuditableUpdateTime = storedRule.LastUpdateTime
+					expectedRule.LastAuditableUpdateUser = "someone@example.com"
+
 					So(storedRule, ShouldResembleProto, expectedRule)
 
 					// Verify the returned rule matches what was expected.
@@ -572,7 +580,6 @@ func TestRules(t *testing.T) {
 					}
 					// Request we manage this bug.
 					request.Rule.IsManagingBug = true
-					request.Rule.IsManagingBugPriority = true
 					request.UpdateMask.Paths = []string{"bug", "is_managing_bug"}
 
 					rule, err := srv.Update(ctx, request)
