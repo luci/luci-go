@@ -181,6 +181,7 @@ type TestFailureAnalysisCreationOption struct {
 	FailedBuildID   int64
 	Priority        int32
 	Status          pb.AnalysisStatus
+	RunStatus       pb.AnalysisRunStatus
 	CreateTime      time.Time
 }
 
@@ -193,6 +194,7 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 	failedBuildID := int64(8000)
 	var priority int32
 	var status pb.AnalysisStatus
+	var runStatus pb.AnalysisRunStatus
 	var createTime time.Time
 
 	if option != nil {
@@ -214,6 +216,7 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 		priority = option.Priority
 		tfKey = option.TestFailureKey
 		status = option.Status
+		runStatus = option.RunStatus
 		createTime = option.CreateTime
 	}
 
@@ -226,6 +229,7 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 		FailedBuildID:   failedBuildID,
 		Priority:        int32(priority),
 		Status:          status,
+		RunStatus:       runStatus,
 		CreateTime:      createTime,
 	}
 	So(datastore.Put(ctx, tfa), ShouldBeNil)
@@ -240,6 +244,7 @@ type TestSingleRerunCreationOption struct {
 	Type                  model.RerunBuildType
 	TestResult            model.RerunTestResults
 	NthSectionAnalysisKey *datastore.Key
+	CulpritKey            *datastore.Key
 }
 
 func CreateTestSingleRerun(ctx context.Context, option *TestSingleRerunCreationOption) *model.TestSingleRerun {
@@ -249,7 +254,7 @@ func CreateTestSingleRerun(ctx context.Context, option *TestSingleRerunCreationO
 	var rerunType model.RerunBuildType
 	testresult := model.RerunTestResults{}
 	var nthSectionAnalysisKey *datastore.Key
-
+	var culpritKey *datastore.Key
 	if option != nil {
 		if option.ID != 0 {
 			id = option.ID
@@ -259,6 +264,7 @@ func CreateTestSingleRerun(ctx context.Context, option *TestSingleRerunCreationO
 		rerunType = option.Type
 		testresult = option.TestResult
 		nthSectionAnalysisKey = option.NthSectionAnalysisKey
+		culpritKey = option.CulpritKey
 	}
 	rerun := &model.TestSingleRerun{
 		ID:                    id,
@@ -267,6 +273,7 @@ func CreateTestSingleRerun(ctx context.Context, option *TestSingleRerunCreationO
 		Type:                  rerunType,
 		TestResults:           testresult,
 		NthSectionAnalysisKey: nthSectionAnalysisKey,
+		CulpritKey:            culpritKey,
 	}
 	So(datastore.Put(ctx, rerun), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()

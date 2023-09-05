@@ -27,13 +27,16 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/util/testutil"
+	"go.chromium.org/luci/server/tq"
 
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
+	tpb "go.chromium.org/luci/bisection/task/proto"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -455,6 +458,124 @@ func TestUpdate(t *testing.T) {
 			So(len(reruns), ShouldEqual, 2)
 		})
 	})
+
+	Convey("process culprit verification update", t, func() {
+		cl := testclock.New(testclock.TestTimeUTC)
+		cl.Set(time.Unix(10000, 0).UTC())
+		ctx = clock.Set(ctx, cl)
+		// set up tfa, rerun, suspect
+		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+			ID:             100,
+			TestFailureKey: datastore.MakeKey(ctx, "TestFailure", 1000),
+			Status:         pb.AnalysisStatus_SUSPECTFOUND,
+			RunStatus:      pb.AnalysisRunStatus_STARTED,
+		})
+		testFailure := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+			ID:          1000,
+			IsPrimary:   true,
+			TestID:      "test0",
+			VariantHash: "hash0",
+			Analysis:    tfa,
+		})
+		suspect := testutil.CreateSuspect(ctx, nil)
+		suspectRerun := testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+			ID:          8000,
+			Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+			AnalysisKey: datastore.KeyForObj(ctx, tfa),
+			Type:        model.RerunBuildType_CulpritVerification,
+			TestResult: model.RerunTestResults{
+				Results: []model.RerunSingleTestResult{
+					{TestFailureKey: datastore.KeyForObj(ctx, testFailure)},
+				},
+			},
+			CulpritKey: datastore.KeyForObj(ctx, suspect),
+		})
+		parentRerun := testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+			ID:          8001,
+			Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+			AnalysisKey: datastore.KeyForObj(ctx, tfa),
+			Type:        model.RerunBuildType_CulpritVerification,
+			TestResult: model.RerunTestResults{
+				Results: []model.RerunSingleTestResult{
+					{TestFailureKey: datastore.KeyForObj(ctx, testFailure)},
+				},
+			},
+			CulpritKey: datastore.KeyForObj(ctx, suspect),
+		})
+		suspect.SuspectRerunBuild = datastore.KeyForObj(ctx, suspectRerun)
+		suspect.ParentRerunBuild = datastore.KeyForObj(ctx, parentRerun)
+		So(datastore.Put(ctx, suspect), ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		req := &pb.UpdateTestAnalysisProgressRequest{
+			Bbid:         8000,
+			BotId:        "bot",
+			RunSucceeded: true,
+			Results: []*pb.TestResult{
+				{
+					TestId:      "test0",
+					VariantHash: "hash0",
+					IsExpected:  false,
+					Status:      pb.TestResultStatus_FAIL,
+				},
+			},
+		}
+		Convey("suspect under verification", func() {
+			err := Update(ctx, req)
+			So(err, ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+			So(datastore.Get(ctx, suspectRerun), ShouldBeNil)
+			So(suspectRerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_FAILED)
+			// Check suspect status.
+			So(datastore.Get(ctx, suspect), ShouldBeNil)
+			So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_UnderVerification)
+			// Check analysis - no update.
+			So(datastore.Get(ctx, tfa), ShouldBeNil)
+			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
+			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_STARTED)
+			So(tfa.VerifiedCulpritKey, ShouldBeNil)
+		})
+
+		Convey("suspect verified", func() {
+			// ParentSuspect finished running.
+			parentRerun.Status = pb.RerunStatus_RERUN_STATUS_PASSED
+			So(datastore.Put(ctx, parentRerun), ShouldBeNil)
+
+			err := Update(ctx, req)
+			So(err, ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+			So(datastore.Get(ctx, suspectRerun), ShouldBeNil)
+			So(suspectRerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_FAILED)
+			// Check suspect status.
+			So(datastore.Get(ctx, suspect), ShouldBeNil)
+			So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_ConfirmedCulprit)
+			// Check analysis.
+			So(datastore.Get(ctx, tfa), ShouldBeNil)
+			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
+			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+			So(tfa.VerifiedCulpritKey, ShouldEqual, datastore.KeyForObj(ctx, suspect))
+		})
+
+		Convey("suspect not verified", func() {
+			// ParentSuspect finished running.
+			parentRerun.Status = pb.RerunStatus_RERUN_STATUS_FAILED
+			So(datastore.Put(ctx, parentRerun), ShouldBeNil)
+
+			err := Update(ctx, req)
+			So(err, ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+			So(datastore.Get(ctx, suspectRerun), ShouldBeNil)
+			So(suspectRerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_FAILED)
+			// Check suspect status.
+			So(datastore.Get(ctx, suspect), ShouldBeNil)
+			So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_Vindicated)
+			// Check analysis.
+			So(datastore.Get(ctx, tfa), ShouldBeNil)
+			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
+			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+			So(tfa.VerifiedCulpritKey, ShouldBeNil)
+		})
+	})
 }
 
 func TestScheduleNewRerun(t *testing.T) {
@@ -473,6 +594,9 @@ func TestScheduleNewRerun(t *testing.T) {
 	mockBuildBucket(mc)
 
 	Convey("Nth section found culprit", t, func() {
+		culpritverification.RegisterTaskClass()
+		ctx, skdr := tq.TestingContext(ctx, nil)
+		enableBisection(ctx, true)
 		tfa, _, rerun, nsa := setupTestAnalysisForTesting(ctx, 1)
 		// Commit 1 pass -> commit 0 is the culprit.
 		rerun.LUCIBuild.GitilesCommit = &bbpb.GitilesCommit{
@@ -515,6 +639,13 @@ func TestScheduleNewRerun(t *testing.T) {
 		So(datastore.Get(ctx, tfa), ShouldBeNil)
 		So(tfa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
 		So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_STARTED)
+
+		// Culprit verification task scheduled.
+		So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+		resultsTask := skdr.Tasks().Payloads()[0].(*tpb.TestFailureCulpritVerificationTask)
+		So(resultsTask, ShouldResembleProto, &tpb.TestFailureCulpritVerificationTask{
+			AnalysisId: tfa.ID,
+		})
 	})
 
 	Convey("Nth section not found", t, func() {

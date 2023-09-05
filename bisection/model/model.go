@@ -594,3 +594,22 @@ func (tfb *TestFailureBundle) NonDiverged() []*TestFailure {
 	}
 	return result
 }
+
+func SuspectStatus(rerunStatus pb.RerunStatus, parentRerunStatus pb.RerunStatus) SuspectVerificationStatus {
+	if rerunStatus == pb.RerunStatus_RERUN_STATUS_FAILED && parentRerunStatus == pb.RerunStatus_RERUN_STATUS_PASSED {
+		return SuspectVerificationStatus_ConfirmedCulprit
+	}
+	if rerunStatus == pb.RerunStatus_RERUN_STATUS_PASSED || parentRerunStatus == pb.RerunStatus_RERUN_STATUS_FAILED {
+		return SuspectVerificationStatus_Vindicated
+	}
+	if rerunStatus == pb.RerunStatus_RERUN_STATUS_INFRA_FAILED || parentRerunStatus == pb.RerunStatus_RERUN_STATUS_INFRA_FAILED {
+		return SuspectVerificationStatus_VerificationError
+	}
+	if rerunStatus == pb.RerunStatus_RERUN_STATUS_UNSPECIFIED || parentRerunStatus == pb.RerunStatus_RERUN_STATUS_UNSPECIFIED {
+		return SuspectVerificationStatus_Unverified
+	}
+	if rerunStatus == pb.RerunStatus_RERUN_STATUS_TEST_SKIPPED || parentRerunStatus == pb.RerunStatus_RERUN_STATUS_TEST_SKIPPED {
+		return SuspectVerificationStatus_VerificationError
+	}
+	return SuspectVerificationStatus_UnderVerification
+}

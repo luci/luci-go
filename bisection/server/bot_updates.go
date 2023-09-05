@@ -455,7 +455,7 @@ func updateSuspect(c context.Context, suspect *model.Suspect) error {
 	}
 
 	// Update suspect based on rerunStatus and parentRerunStatus
-	suspectStatus := getSuspectStatus(c, rerunStatus, parentRerunStatus)
+	suspectStatus := model.SuspectStatus(rerunStatus, parentRerunStatus)
 
 	return datastore.RunInTransaction(c, func(ctx context.Context) error {
 		e := datastore.Get(c, suspect)
@@ -496,22 +496,6 @@ func updateSuspectAsConfirmedCulprit(c context.Context, suspect *model.Suspect) 
 		return err
 	}
 	return statusupdater.UpdateAnalysisStatus(c, analysis)
-}
-
-func getSuspectStatus(c context.Context, rerunStatus pb.RerunStatus, parentRerunStatus pb.RerunStatus) model.SuspectVerificationStatus {
-	if rerunStatus == pb.RerunStatus_RERUN_STATUS_FAILED && parentRerunStatus == pb.RerunStatus_RERUN_STATUS_PASSED {
-		return model.SuspectVerificationStatus_ConfirmedCulprit
-	}
-	if rerunStatus == pb.RerunStatus_RERUN_STATUS_PASSED || parentRerunStatus == pb.RerunStatus_RERUN_STATUS_FAILED {
-		return model.SuspectVerificationStatus_Vindicated
-	}
-	if rerunStatus == pb.RerunStatus_RERUN_STATUS_INFRA_FAILED || parentRerunStatus == pb.RerunStatus_RERUN_STATUS_INFRA_FAILED {
-		return model.SuspectVerificationStatus_VerificationError
-	}
-	if rerunStatus == pb.RerunStatus_RERUN_STATUS_UNSPECIFIED || parentRerunStatus == pb.RerunStatus_RERUN_STATUS_UNSPECIFIED {
-		return model.SuspectVerificationStatus_Unverified
-	}
-	return model.SuspectVerificationStatus_UnderVerification
 }
 
 // updateRerun updates the last SingleRerun for rerunModel with the information from req.

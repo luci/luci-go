@@ -19,6 +19,7 @@ package updatetestrerun
 import (
 	"context"
 
+	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/testfailureanalysis"
@@ -78,7 +79,7 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) erro
 	}
 
 	if rerun.Type == model.RerunBuildType_CulpritVerification {
-		err := processCulpritVerificationUpdate(ctx, rerun, tfa, req)
+		err := processCulpritVerificationUpdate(ctx, rerun, tfa)
 		if err != nil {
 			return status.Errorf(codes.Internal, errors.Annotate(err, "process culprit verification update").Err().Error())
 		}
@@ -93,9 +94,55 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) erro
 	return nil
 }
 
-func processCulpritVerificationUpdate(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.TestFailureAnalysis, req *pb.UpdateTestAnalysisProgressRequest) error {
-	// TODO (nqmtuan): implement this.
-	return nil
+func processCulpritVerificationUpdate(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.TestFailureAnalysis) error {
+	// Retrieve suspect.
+	if rerun.CulpritKey == nil {
+		return errors.New("no suspect for rerun")
+	}
+	suspect, err := datastoreutil.GetSuspect(ctx, rerun.CulpritKey.IntID(), rerun.CulpritKey.Parent())
+	if err != nil {
+		return errors.Annotate(err, "get suspect for rerun").Err()
+	}
+	suspectRerun, err := datastoreutil.GetTestSingleRerun(ctx, suspect.SuspectRerunBuild.IntID())
+	if err != nil {
+		return errors.Annotate(err, "get suspect rerun %d", suspect.SuspectRerunBuild.IntID()).Err()
+	}
+	parentRerun, err := datastoreutil.GetTestSingleRerun(ctx, suspect.ParentRerunBuild.IntID())
+	if err != nil {
+		return errors.Annotate(err, "get parent rerun %d", suspect.ParentRerunBuild.IntID()).Err()
+	}
+	// Update suspect based on rerun status.
+	suspectStatus := model.SuspectStatus(suspectRerun.Status, parentRerun.Status)
+
+	if err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		e := datastore.Get(ctx, suspect)
+		if e != nil {
+			return e
+		}
+		suspect.VerificationStatus = suspectStatus
+		return datastore.Put(ctx, suspect)
+	}, nil); err != nil {
+		return errors.Annotate(err, "update suspect status %d", suspect.Id).Err()
+	}
+	if suspect.VerificationStatus == model.SuspectVerificationStatus_UnderVerification {
+		return nil
+	}
+	// Update test failure analysis.
+	if suspect.VerificationStatus == model.SuspectVerificationStatus_ConfirmedCulprit {
+		err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+			e := datastore.Get(ctx, tfa)
+			if e != nil {
+				return e
+			}
+			tfa.VerifiedCulpritKey = datastore.KeyForObj(ctx, suspect)
+			return datastore.Put(ctx, tfa)
+		}, nil)
+		if err != nil {
+			return errors.Annotate(err, "update VerifiedCulpritKey of analysis").Err()
+		}
+		return testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
+	}
+	return testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
 }
 
 func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.TestFailureAnalysis) (reterr error) {
@@ -121,9 +168,22 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 		if err != nil {
 			return errors.Annotate(err, "store nthsection culprit to datastore").Err()
 		}
-		// TODO: Trigger culprit verification.
+		enabled, err := bisection.IsEnabled(ctx)
+		if err != nil {
+			return errors.Annotate(err, "is enabled").Err()
+		}
+		if !enabled {
+			logging.Infof(ctx, "Bisection not enabled")
+			return nil
+		}
+		if err := culpritverification.ScheduleTestFailureTask(ctx, tfa.ID); err != nil {
+			// Non-critical, just log the error
+			err := errors.Annotate(err, "schedule culprit verification task %d", tfa.ID).Err()
+			logging.Errorf(ctx, err.Error())
+		}
 		return nil
 	}
+
 	// Culprit not found yet. Still need to trigger more rerun.
 	enabled, err := bisection.IsEnabled(ctx)
 	if err != nil {
