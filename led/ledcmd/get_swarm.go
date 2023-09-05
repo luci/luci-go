@@ -19,9 +19,10 @@ import (
 	"net/http"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 
 	"go.chromium.org/luci/led/job"
 	"go.chromium.org/luci/led/job/jobcreate"
@@ -65,15 +66,15 @@ func GetFromSwarmingTask(ctx context.Context, authClient *http.Client, bld *bbpb
 	}
 
 	logging.Infof(ctx, "getting task definition: %q %q", opts.SwarmingHost, opts.TaskID)
-	swarmTasksClient := newSwarmTasksClient(authClient, opts.SwarmingHost)
+	swarm := newSwarmClient(authClient, opts.SwarmingHost)
 
-	resp, err := swarmTasksClient.GetRequest(ctx, &swarmingpb.TaskIdRequest{TaskId: opts.TaskID})
+	req, err := swarm.Task.Request(opts.TaskID).Do()
 	if err != nil {
 		return nil, err
 	}
 
 	jd, err := jobcreate.FromNewTaskRequest(
-		ctx, taskRequestResponseToNewTaskRequest(resp), opts.Name,
+		ctx, taskRequestToNewTaskRequest(req), opts.Name,
 		opts.SwarmingHost, opts.KitchenSupport, opts.PriorityDiff, bld, nil, authClient)
 	if err != nil {
 		return nil, err
@@ -84,7 +85,7 @@ func GetFromSwarmingTask(ctx context.Context, authClient *http.Client, bld *bbpb
 	if opts.PinBotID {
 		logging.Infof(ctx, "pinning swarming bot id")
 
-		rslt, err := swarmTasksClient.GetResult(ctx, &swarmingpb.TaskIdWithPerfRequest{TaskId: opts.TaskID})
+		rslt, err := swarm.Task.Result(opts.TaskID).Do()
 		if err != nil {
 			return nil, err
 		}
@@ -107,7 +108,7 @@ func GetFromSwarmingTask(ctx context.Context, authClient *http.Client, bld *bbpb
 		pool := ""
 
 	poolfind:
-		for _, slc := range resp.TaskSlices {
+		for _, slc := range req.TaskSlices {
 			if slc.Properties == nil {
 				continue
 			}
@@ -157,19 +158,19 @@ func fillCasDefaults(jd *job.Definition) error {
 // swarming has two separate structs to represent a task request.
 //
 // Convert from 'TaskRequest' to 'NewTaskRequest'.
-func taskRequestResponseToNewTaskRequest(resp *swarmingpb.TaskRequestResponse) *swarmingpb.NewTaskRequest {
-	return &swarmingpb.NewTaskRequest{
-		Name:           resp.Name,
-		ExpirationSecs: resp.ExpirationSecs,
-		Priority:       resp.Priority,
-		Properties:     resp.Properties,
-		TaskSlices:     resp.TaskSlices,
+func taskRequestToNewTaskRequest(req *swarming.SwarmingRpcsTaskRequest) *swarming.SwarmingRpcsNewTaskRequest {
+	return &swarming.SwarmingRpcsNewTaskRequest{
+		Name:           req.Name,
+		ExpirationSecs: req.ExpirationSecs,
+		Priority:       req.Priority,
+		Properties:     req.Properties,
+		TaskSlices:     req.TaskSlices,
 		// don't want these or some random person/service will get notified :
 		//PubsubTopic:    req.PubsubTopic,
 		//PubsubUserdata: req.PubsubUserdata,
-		Tags:           resp.Tags,
-		User:           resp.User,
-		ServiceAccount: resp.ServiceAccount,
-		Realm:          resp.Realm,
+		Tags:           req.Tags,
+		User:           req.User,
+		ServiceAccount: req.ServiceAccount,
+		Realm:          req.Realm,
 	}
 }

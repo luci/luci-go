@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/errors"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+	api "go.chromium.org/luci/swarming/proto/api"
 )
 
 type swarmingEditor struct {
@@ -38,7 +38,7 @@ func newSwarmingEditor(jd *Definition) *swarmingEditor {
 		panic(errors.New("impossible: only supported for Swarming builds"))
 	}
 	if sw.Task == nil {
-		sw.Task = &swarmingpb.NewTaskRequest{}
+		sw.Task = &api.TaskRequest{}
 	}
 
 	return &swarmingEditor{jd, sw, nil}
@@ -54,11 +54,11 @@ func (swe *swarmingEditor) tweak(fn func() error) {
 	}
 }
 
-func (swe *swarmingEditor) tweakSlices(fn func(*swarmingpb.TaskSlice) error) {
+func (swe *swarmingEditor) tweakSlices(fn func(*api.TaskSlice) error) {
 	swe.tweak(func() error {
 		for _, slice := range swe.sw.GetTask().GetTaskSlices() {
 			if slice.Properties == nil {
-				slice.Properties = &swarmingpb.TaskProperties{}
+				slice.Properties = &api.TaskProperties{}
 			}
 
 			if err := fn(slice); err != nil {
@@ -75,14 +75,15 @@ func (swe *swarmingEditor) ClearCurrentIsolated() {
 
 		return nil
 	})
-	swe.tweakSlices(func(slc *swarmingpb.TaskSlice) error {
+	swe.tweakSlices(func(slc *api.TaskSlice) error {
+		slc.Properties.CasInputs = nil
 		slc.Properties.CasInputRoot = nil
 		return nil
 	})
 }
 
 func (swe *swarmingEditor) ClearDimensions() {
-	swe.tweakSlices(func(slc *swarmingpb.TaskSlice) error {
+	swe.tweakSlices(func(slc *api.TaskSlice) error {
 		slc.Properties.Dimensions = nil
 		return nil
 	})
@@ -118,11 +119,14 @@ func (swe *swarmingEditor) EditDimensions(dimEdits DimensionEditCommands) {
 		sliceByExp := make([]struct {
 			// seconds from start-of-task to expiration of this slice.
 			TotalExpiration time.Duration
-			*swarmingpb.TaskSlice
+			*api.TaskSlice
 		}, len(slices))
 
 		for i, slc := range slices {
-			sliceRelativeExpiration := time.Duration(float64(slc.GetExpirationSecs()) * float64(time.Second))
+			if err := slc.Expiration.CheckValid(); err != nil {
+				return err
+			}
+			sliceRelativeExpiration := slc.Expiration.AsDuration()
 			taskRelativeExpiration := sliceRelativeExpiration
 			if i > 0 {
 				taskRelativeExpiration += sliceByExp[i-1].TotalExpiration
@@ -168,20 +172,21 @@ func (swe *swarmingEditor) EditDimensions(dimEdits DimensionEditCommands) {
 		// apply them.
 		for _, slc := range sliceByExp {
 			if slc.Properties == nil {
-				slc.Properties = &swarmingpb.TaskProperties{}
+				slc.Properties = &api.TaskProperties{}
 			}
 			dimMap := logicalDimensions{}
 			for _, dim := range slc.Properties.Dimensions {
-				dimMap.updateDuration(dim.Key, dim.Value, slc.TotalExpiration)
+				for _, value := range dim.Values {
+					dimMap.updateDuration(dim.Key, value, slc.TotalExpiration)
+				}
 			}
 			dimEdits.apply(dimMap, slc.TotalExpiration)
-			newDims := make([]*swarmingpb.StringPair, 0, len(dimMap))
+			newDims := make([]*api.StringListPair, 0, len(dimMap))
 			for _, key := range keysOf(dimMap) {
-				for _, value := range keysOf(dimMap[key]) {
-					newDims = append(newDims, &swarmingpb.StringPair{
-						Key: key, Value: value,
-					})
-				}
+				values := dimMap[key]
+				newDims = append(newDims, &api.StringListPair{
+					Key: key, Values: values.toSlice(),
+				})
 			}
 			slc.Properties.Dimensions = newDims
 		}
@@ -195,7 +200,7 @@ func (swe *swarmingEditor) Env(env map[string]string) {
 		return
 	}
 
-	swe.tweakSlices(func(slc *swarmingpb.TaskSlice) error {
+	swe.tweakSlices(func(slc *api.TaskSlice) error {
 		updateStringPairList(&slc.Properties.Env, env)
 		return nil
 	})
@@ -207,7 +212,7 @@ func (swe *swarmingEditor) Priority(priority int32) {
 			return errors.Reason("negative Priority argument: %d", priority).Err()
 		}
 		if task := swe.sw.GetTask(); task == nil {
-			swe.sw.Task = &swarmingpb.NewTaskRequest{}
+			swe.sw.Task = &api.TaskRequest{}
 		}
 		swe.sw.Task.Priority = priority
 		return nil
@@ -215,11 +220,8 @@ func (swe *swarmingEditor) Priority(priority int32) {
 }
 
 func (swe *swarmingEditor) CIPDPkgs(cipdPkgs CIPDPkgs) {
-	swe.tweakSlices(func(slc *swarmingpb.TaskSlice) error {
-		if slc.Properties.CipdInput == nil {
-			slc.Properties.CipdInput = &swarmingpb.CipdInput{}
-		}
-		cipdPkgs.updateCipdPkgs(&slc.Properties.CipdInput.Packages)
+	swe.tweakSlices(func(slc *api.TaskSlice) error {
+		cipdPkgs.updateCipdPkgs(&slc.Properties.CipdInputs)
 		return nil
 	})
 }
@@ -241,26 +243,26 @@ func (swe *swarmingEditor) TaskName(name string) {
 	})
 }
 
-func updatePrefixPathEnv(values []string, prefixes *[]*swarmingpb.StringListPair) {
-	var pair *swarmingpb.StringListPair
+func updatePrefixPathEnv(values []string, prefixes *[]*api.StringListPair) {
+	var pair *api.StringListPair
 	for _, pair = range *prefixes {
 		if pair.Key == "PATH" {
-			newPath := make([]string, len(pair.Value))
-			copy(newPath, pair.Value)
-			pair.Value = newPath
+			newPath := make([]string, len(pair.Values))
+			copy(newPath, pair.Values)
+			pair.Values = newPath
 			break
 		}
 	}
 	if pair == nil {
-		pair = &swarmingpb.StringListPair{Key: "PATH"}
+		pair = &api.StringListPair{Key: "PATH"}
 		*prefixes = append(*prefixes, pair)
 	}
 
 	var newPath []string
 	for _, pair := range *prefixes {
 		if pair.Key == "PATH" {
-			newPath = make([]string, len(pair.Value))
-			copy(newPath, pair.Value)
+			newPath = make([]string, len(pair.Values))
+			copy(newPath, pair.Values)
 			break
 		}
 	}
@@ -280,7 +282,7 @@ func updatePrefixPathEnv(values []string, prefixes *[]*swarmingpb.StringListPair
 		}
 	}
 
-	pair.Value = newPath
+	pair.Values = newPath
 }
 
 func (swe *swarmingEditor) PrefixPathEnv(values []string) {
@@ -288,8 +290,8 @@ func (swe *swarmingEditor) PrefixPathEnv(values []string) {
 		return
 	}
 
-	swe.tweakSlices(func(slc *swarmingpb.TaskSlice) error {
-		updatePrefixPathEnv(values, &slc.Properties.EnvPrefixes)
+	swe.tweakSlices(func(slc *api.TaskSlice) error {
+		updatePrefixPathEnv(values, &slc.Properties.EnvPaths)
 		return nil
 	})
 }
@@ -310,7 +312,7 @@ func (swe *swarmingEditor) Tags(values []string) {
 	swe.tweak(func() (err error) {
 		if err = validateTags(values); err == nil {
 			if swe.sw.Task == nil {
-				swe.sw.Task = &swarmingpb.NewTaskRequest{}
+				swe.sw.Task = &api.TaskRequest{}
 			}
 			swe.sw.Task.Tags = append(swe.sw.Task.Tags, values...)
 			sort.Strings(swe.sw.Task.Tags)

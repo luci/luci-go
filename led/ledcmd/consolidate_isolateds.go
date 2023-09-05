@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/led/job"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+	api "go.chromium.org/luci/swarming/proto/api"
 )
 
 // ConsolidateRbeCasSources combines RBE-CAS inputs in slice.Properties.CasInputRoot
@@ -53,7 +53,7 @@ func ConsolidateRbeCasSources(ctx context.Context, authOpts auth.Options, jd *jo
 
 	for i, slc := range jd.GetSwarming().GetTask().GetTaskSlices() {
 		if slc.Properties == nil {
-			slc.Properties = &swarmingpb.TaskProperties{}
+			slc.Properties = &api.TaskProperties{}
 		}
 		props := slc.Properties
 		if props.CasInputRoot == nil || props.CasInputRoot.Digest.GetHash() == jd.GetSwarming().CasUserPayload.Digest.Hash {

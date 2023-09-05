@@ -15,16 +15,17 @@
 package job
 
 import (
-	"fmt"
+	fmt "fmt"
 	"testing"
 	"time"
 
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+	api "go.chromium.org/luci/swarming/proto/api"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -177,50 +178,22 @@ func TestSetDimensions(t *testing.T) {
 
 				if sw := jd.GetSwarming(); sw != nil {
 					// ensure dimensions show up in ALL slices which they ought to.
-					So(sw.Task.TaskSlices[0].Properties.Dimensions, ShouldResembleProto, []*swarmingpb.StringPair{
+					So(sw.Task.TaskSlices[0].Properties.Dimensions, ShouldResembleProto, []*api.StringListPair{
 						{
-							Key:   "key",
-							Value: "A",
-						},
-						{
-							Key:   "key",
-							Value: "AA",
-						},
-						{
-							Key:   "key",
-							Value: "B",
-						},
-						{
-							Key:   "key",
-							Value: "C",
-						},
-						{
-							Key:   "key",
-							Value: "Z",
+							Key:    "key",
+							Values: []string{"A", "AA", "B", "C", "Z"},
 						},
 					})
-					So(sw.Task.TaskSlices[1].Properties.Dimensions, ShouldResembleProto, []*swarmingpb.StringPair{
+					So(sw.Task.TaskSlices[1].Properties.Dimensions, ShouldResembleProto, []*api.StringListPair{
 						{
-							Key:   "key",
-							Value: "B",
-						},
-						{
-							Key:   "key",
-							Value: "C",
-						},
-						{
-							Key:   "key",
-							Value: "Z",
+							Key:    "key",
+							Values: []string{"B", "C", "Z"},
 						},
 					})
-					So(sw.Task.TaskSlices[2].Properties.Dimensions, ShouldResembleProto, []*swarmingpb.StringPair{
+					So(sw.Task.TaskSlices[2].Properties.Dimensions, ShouldResembleProto, []*api.StringListPair{
 						{
-							Key:   "key",
-							Value: "C",
-						},
-						{
-							Key:   "key",
-							Value: "Z",
+							Key:    "key",
+							Values: []string{"C", "Z"},
 						},
 					})
 				} else {
@@ -352,50 +325,34 @@ func TestEditDimensions(t *testing.T) {
 
 				if sw := jd.GetSwarming(); sw != nil {
 					// ensure dimensions show up in ALL slices which they ought to.
-					So(sw.Task.TaskSlices[0].Properties.Dimensions, ShouldResembleProto, []*swarmingpb.StringPair{
+					So(sw.Task.TaskSlices[0].Properties.Dimensions, ShouldResembleProto, []*api.StringListPair{
 						{
-							Key:   "key",
-							Value: "other_value",
+							Key:    "key",
+							Values: []string{"other_value", "value"},
 						},
 						{
-							Key:   "key",
-							Value: "value",
-						},
-						{
-							Key:   "reset",
-							Value: "else",
-						},
-						{
-							Key:   "reset",
-							Value: "everything",
+							Key:    "reset",
+							Values: []string{"else", "everything"},
 						},
 					})
-					So(sw.Task.TaskSlices[1].Properties.Dimensions, ShouldResembleProto, []*swarmingpb.StringPair{
+					So(sw.Task.TaskSlices[1].Properties.Dimensions, ShouldResembleProto, []*api.StringListPair{
 						{
-							Key:   "key",
-							Value: "other_value",
+							Key:    "key",
+							Values: []string{"other_value"},
 						},
 						{
-							Key:   "reset",
-							Value: "else",
-						},
-						{
-							Key:   "reset",
-							Value: "everything",
+							Key:    "reset",
+							Values: []string{"else", "everything"},
 						},
 					})
-					So(sw.Task.TaskSlices[2].Properties.Dimensions, ShouldResembleProto, []*swarmingpb.StringPair{
+					So(sw.Task.TaskSlices[2].Properties.Dimensions, ShouldResembleProto, []*api.StringListPair{
 						{
-							Key:   "key",
-							Value: "other_value",
+							Key:    "key",
+							Values: []string{"other_value"},
 						},
 						{
-							Key:   "reset",
-							Value: "else",
-						},
-						{
-							Key:   "reset",
-							Value: "everything",
+							Key:    "reset",
+							Values: []string{"else", "everything"},
 						},
 					})
 				} else {

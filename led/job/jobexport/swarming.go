@@ -15,36 +15,38 @@
 package jobexport
 
 import (
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/led/job"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+	apipb "go.chromium.org/luci/swarming/proto/api"
 )
 
 var (
 	// In order to have swarming service to upload output to RBE-CAS when no inputs.
-	dummyCasDigest = &swarmingpb.Digest{
-		Hash:      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-		SizeBytes: 0,
+	dummyCasDigest = &swarming.SwarmingRpcsDigest{
+		Hash:            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		SizeBytes:       0,
+		ForceSendFields: []string{"SizeBytes"},
 	}
 )
 
 // ToSwarmingNewTask renders a swarming proto task to a
-// NewTaskRequest.
-func ToSwarmingNewTask(sw *job.Swarming) (*swarmingpb.NewTaskRequest, error) {
+// SwarmingRpcsNewTaskRequest.
+func ToSwarmingNewTask(sw *job.Swarming) (*swarming.SwarmingRpcsNewTaskRequest, error) {
 	task := sw.Task
-	ret := &swarmingpb.NewTaskRequest{
-		BotPingToleranceSecs: task.GetBotPingToleranceSecs(),
+	ret := &swarming.SwarmingRpcsNewTaskRequest{
+		BotPingToleranceSecs: task.GetBotPingTolerance().GetSeconds(),
 		Name:                 task.Name,
 		User:                 task.User,
 		ParentTaskId:         task.ParentTaskId,
-		Priority:             task.Priority,
+		Priority:             int64(task.Priority),
 		ServiceAccount:       task.ServiceAccount,
 		Realm:                task.Realm,
 		Tags:                 task.Tags,
-		TaskSlices:           make([]*swarmingpb.TaskSlice, 0, len(task.TaskSlices)),
+		TaskSlices:           make([]*swarming.SwarmingRpcsTaskSlice, 0, len(task.TaskSlices)),
 	}
 	if rdbEnabled := task.GetResultdb().GetEnable(); rdbEnabled {
-		ret.Resultdb = &swarmingpb.ResultDBCfg{
+		ret.Resultdb = &swarming.SwarmingRpcsResultDBCfg{
 			Enable: true,
 		}
 	}
@@ -63,33 +65,33 @@ func ToSwarmingNewTask(sw *job.Swarming) (*swarmingpb.NewTaskRequest, error) {
 					"Call ConsolidateIsolateds before calling ToSwarmingNewTask.", i).Err()
 		}
 
-		toAdd := &swarmingpb.TaskSlice{
-			ExpirationSecs:  slice.ExpirationSecs,
+		toAdd := &swarming.SwarmingRpcsTaskSlice{
+			ExpirationSecs:  slice.Expiration.Seconds,
 			WaitForCapacity: slice.WaitForCapacity,
-			Properties: &swarmingpb.TaskProperties{
-				Caches: make([]*swarmingpb.CacheEntry, 0, len(props.Caches)),
+			Properties: &swarming.SwarmingRpcsTaskProperties{
+				Caches: make([]*swarming.SwarmingRpcsCacheEntry, 0, len(props.NamedCaches)),
 
-				Dimensions: make([]*swarmingpb.StringPair, 0, len(props.Dimensions)),
+				Dimensions: make([]*swarming.SwarmingRpcsStringPair, 0, len(props.Dimensions)),
 
-				ExecutionTimeoutSecs: props.GetExecutionTimeoutSecs(),
-				GracePeriodSecs:      props.GetGracePeriodSecs(),
-				IoTimeoutSecs:        props.GetIoTimeoutSecs(),
+				ExecutionTimeoutSecs: props.GetExecutionTimeout().GetSeconds(),
+				GracePeriodSecs:      props.GetGracePeriod().GetSeconds(),
+				IoTimeoutSecs:        props.GetIoTimeout().GetSeconds(),
 
-				CipdInput: &swarmingpb.CipdInput{
-					Packages: make([]*swarmingpb.CipdPackage, 0, len(props.CipdInput.Packages)),
+				CipdInput: &swarming.SwarmingRpcsCipdInput{
+					Packages: make([]*swarming.SwarmingRpcsCipdPackage, 0, len(props.CipdInputs)),
 				},
 
-				Env:         make([]*swarmingpb.StringPair, 0, len(props.Env)),
-				EnvPrefixes: make([]*swarmingpb.StringListPair, 0, len(props.EnvPrefixes)),
+				Env:         make([]*swarming.SwarmingRpcsStringPair, 0, len(props.Env)),
+				EnvPrefixes: make([]*swarming.SwarmingRpcsStringListPair, 0, len(props.EnvPaths)),
 
 				Command:     props.Command,
 				RelativeCwd: props.RelativeCwd,
 			},
 		}
 
-		if con := props.GetContainment(); con.GetContainmentType() != swarmingpb.ContainmentType_NOT_SPECIFIED {
-			toAdd.Properties.Containment = &swarmingpb.Containment{
-				ContainmentType: con.GetContainmentType(),
+		if con := props.GetContainment(); con.GetContainmentType() != apipb.Containment_NOT_SPECIFIED {
+			toAdd.Properties.Containment = &swarming.SwarmingRpcsContainment{
+				ContainmentType: con.GetContainmentType().String(),
 			}
 		}
 
@@ -101,7 +103,7 @@ func ToSwarmingNewTask(sw *job.Swarming) (*swarmingpb.NewTaskRequest, error) {
 		//
 		// (The twisted logic will look a little bit better, after completely getting rid of isolate.)
 
-		var casToUse *swarmingpb.CASReference
+		var casToUse *apipb.CASReference
 		sliceCas := props.CasInputRoot
 		jobCas := casUserPayload
 		switch {
@@ -116,11 +118,12 @@ func ToSwarmingNewTask(sw *job.Swarming) (*swarmingpb.NewTaskRequest, error) {
 		}
 
 		if casToUse != nil {
-			toAdd.Properties.CasInputRoot = &swarmingpb.CASReference{
+			toAdd.Properties.CasInputRoot = &swarming.SwarmingRpcsCASReference{
 				CasInstance: casToUse.CasInstance,
-				Digest: &swarmingpb.Digest{
-					Hash:      casToUse.Digest.GetHash(),
-					SizeBytes: casToUse.Digest.GetSizeBytes(),
+				Digest: &swarming.SwarmingRpcsDigest{
+					Hash:            casToUse.Digest.GetHash(),
+					SizeBytes:       casToUse.Digest.GetSizeBytes(),
+					ForceSendFields: []string{"SizeBytes"}, // in case SizeBytes value is 0.
 				},
 			}
 		} else {
@@ -129,7 +132,7 @@ func ToSwarmingNewTask(sw *job.Swarming) (*swarmingpb.NewTaskRequest, error) {
 			if err != nil {
 				return nil, err
 			}
-			toAdd.Properties.CasInputRoot = &swarmingpb.CASReference{
+			toAdd.Properties.CasInputRoot = &swarming.SwarmingRpcsCASReference{
 				CasInstance: casIns,
 				Digest:      dummyCasDigest,
 			}
@@ -139,39 +142,41 @@ func ToSwarmingNewTask(sw *job.Swarming) (*swarmingpb.NewTaskRequest, error) {
 		}
 
 		for _, env := range props.Env {
-			toAdd.Properties.Env = append(toAdd.Properties.Env, &swarmingpb.StringPair{
+			toAdd.Properties.Env = append(toAdd.Properties.Env, &swarming.SwarmingRpcsStringPair{
 				Key:   env.Key,
 				Value: env.Value,
 			})
 		}
 
-		for _, path := range props.EnvPrefixes {
-			toAdd.Properties.EnvPrefixes = append(toAdd.Properties.EnvPrefixes, &swarmingpb.StringListPair{
+		for _, path := range props.EnvPaths {
+			toAdd.Properties.EnvPrefixes = append(toAdd.Properties.EnvPrefixes, &swarming.SwarmingRpcsStringListPair{
 				Key:   path.Key,
-				Value: path.Value,
+				Value: path.Values,
 			})
 		}
 
-		for _, cache := range props.Caches {
-			toAdd.Properties.Caches = append(toAdd.Properties.Caches, &swarmingpb.CacheEntry{
+		for _, cache := range props.NamedCaches {
+			toAdd.Properties.Caches = append(toAdd.Properties.Caches, &swarming.SwarmingRpcsCacheEntry{
 				Name: cache.Name,
-				Path: cache.Path,
+				Path: cache.DestPath,
 			})
 		}
 
-		for _, pkg := range props.CipdInput.Packages {
-			toAdd.Properties.CipdInput.Packages = append(toAdd.Properties.CipdInput.Packages, &swarmingpb.CipdPackage{
+		for _, pkg := range props.CipdInputs {
+			toAdd.Properties.CipdInput.Packages = append(toAdd.Properties.CipdInput.Packages, &swarming.SwarmingRpcsCipdPackage{
 				PackageName: pkg.PackageName,
 				Version:     pkg.Version,
-				Path:        pkg.Path,
+				Path:        pkg.DestPath,
 			})
 		}
 
 		for _, dim := range props.Dimensions {
-			toAdd.Properties.Dimensions = append(toAdd.Properties.Dimensions, &swarmingpb.StringPair{
-				Key:   dim.Key,
-				Value: dim.Value,
-			})
+			for _, val := range dim.Values {
+				toAdd.Properties.Dimensions = append(toAdd.Properties.Dimensions, &swarming.SwarmingRpcsStringPair{
+					Key:   dim.Key,
+					Value: val,
+				})
+			}
 		}
 
 		ret.TaskSlices = append(ret.TaskSlices, toAdd)

@@ -25,15 +25,15 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	. "github.com/smartystreets/goconvey/convey"
 
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/led/job"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 var train = flag.Bool("train", false, "If set, write testdata/*.swarm.json")
 
-func readTestFixture(fixtureBaseName string) *swarmingpb.NewTaskRequest {
+func readTestFixture(fixtureBaseName string) *swarming.SwarmingRpcsNewTaskRequest {
 	jobFile, err := os.Open(fmt.Sprintf("testdata/%s.job.json", fixtureBaseName))
 	So(err, ShouldBeNil)
 	defer jobFile.Close()
@@ -47,7 +47,7 @@ func readTestFixture(fixtureBaseName string) *swarmingpb.NewTaskRequest {
 	So(jd.FlattenToSwarming(ctx, "testuser@example.com", "293109284abc", job.NoKitchenSupport(), "off"),
 		ShouldBeNil)
 
-	ret := jd.GetSwarming().GetTask()
+	ret, err := ToSwarmingNewTask(jd.GetSwarming())
 	So(err, ShouldBeNil)
 
 	outFile := fmt.Sprintf("testdata/%s.swarm.json", fixtureBaseName)

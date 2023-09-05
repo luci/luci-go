@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/luciexe/exe"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
 
 // WriteProperties writes an input property on this Buildbucket message.

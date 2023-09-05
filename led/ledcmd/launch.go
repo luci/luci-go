@@ -25,12 +25,11 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/buildbucket"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/googleoauth"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/led/job"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
-
 	"go.chromium.org/luci/led/job/jobexport"
 	"go.chromium.org/luci/lucictx"
 )
@@ -100,7 +99,7 @@ func GetUID(ctx context.Context, authenticator *auth.Authenticator) (string, err
 
 // LaunchSwarming launches the given job Definition on swarming, returning the
 // NewTaskRequest launched, as well as the launch metadata.
-func LaunchSwarming(ctx context.Context, authClient *http.Client, jd *job.Definition, opts LaunchSwarmingOpts) (*swarmingpb.NewTaskRequest, *swarmingpb.TaskRequestMetadataResponse, error) {
+func LaunchSwarming(ctx context.Context, authClient *http.Client, jd *job.Definition, opts LaunchSwarmingOpts) (*swarming.SwarmingRpcsNewTaskRequest, *swarming.SwarmingRpcsTaskRequestMetadata, error) {
 	if opts.KitchenSupport == nil {
 		opts.KitchenSupport = job.NoKitchenSupport()
 	}
@@ -126,19 +125,19 @@ func LaunchSwarming(ctx context.Context, authClient *http.Client, jd *job.Defini
 		return st, nil, nil
 	}
 
-	swarmTasksClient := newSwarmTasksClient(authClient, jd.Info().SwarmingHostname())
+	swarm := newSwarmClient(authClient, jd.Info().SwarmingHostname())
 
 	logging.Infof(ctx, "launching swarming task")
-	resp, err := swarmTasksClient.NewTask(ctx, st)
+	req, err := swarm.Tasks.New(st).Do()
 	if err != nil {
 		return nil, nil, err
 	}
 	logging.Infof(ctx, "launching swarming task: done")
 
-	return st, resp, nil
+	return st, req, nil
 }
 
-func addUserAgentTag(req *swarmingpb.NewTaskRequest) {
+func addUserAgentTag(req *swarming.SwarmingRpcsNewTaskRequest) {
 	for _, t := range req.Tags {
 		if t == UserAgentTag {
 			return

@@ -20,10 +20,11 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/buildbucket"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	api "go.chromium.org/luci/swarming/proto/api_v2"
+	api "go.chromium.org/luci/swarming/proto/api"
 )
 
 type testCase struct {
@@ -81,13 +82,13 @@ func testSWJob(sliceExps ...time.Duration) *Definition {
 	}}
 	if len(sliceExps) > 0 {
 		sw := ret.GetSwarming()
-		sw.Task = &api.NewTaskRequest{
+		sw.Task = &api.TaskRequest{
 			Name: "default-task-name",
 		}
 
 		for _, exp := range sliceExps {
 			sw.Task.TaskSlices = append(sw.Task.TaskSlices, &api.TaskSlice{
-				ExpirationSecs: int32(exp.Seconds()),
+				Expiration: durationpb.New(exp),
 			})
 		}
 	}

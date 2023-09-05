@@ -28,8 +28,8 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/led/job"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -41,7 +41,7 @@ func readTestFixture(fixtureBaseName string) *job.Definition {
 	data, err := os.ReadFile(fmt.Sprintf("testdata/%s.json", fixtureBaseName))
 	So(err, ShouldBeNil)
 
-	req := &swarmingpb.NewTaskRequest{}
+	req := &swarming.SwarmingRpcsNewTaskRequest{}
 	So(json.NewDecoder(bytes.NewReader(data)).Decode(req), ShouldBeNil)
 
 	jd, err := FromNewTaskRequest(
@@ -148,7 +148,7 @@ func TestCreateBBagent(t *testing.T) {
 		data, err := os.ReadFile(fmt.Sprintf("testdata/%s.json", "bbagent_cas"))
 		So(err, ShouldBeNil)
 
-		req := &swarmingpb.NewTaskRequest{}
+		req := &swarming.SwarmingRpcsNewTaskRequest{}
 		So(json.NewDecoder(bytes.NewReader(data)).Decode(req), ShouldBeNil)
 		req.TaskSlices[0].Properties.Command = []string{
 			"bbagent${EXECUTABLE_SUFFIX}",

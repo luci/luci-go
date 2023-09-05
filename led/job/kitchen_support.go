@@ -17,8 +17,8 @@ package job
 import (
 	"context"
 
+	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // KitchenSupport is the object for an interface to support 'LegacyKitchen' job
@@ -29,7 +29,7 @@ import (
 // This is abstracted out because 'kitchen' and its libraries live in infra, not
 // in luci-go. Once kitchen is deleted, this will go away as well.
 type KitchenSupport interface {
-	FromSwarmingV2(ctx context.Context, in *swarmingpb.NewTaskRequest, out *Buildbucket) error
+	FromSwarming(ctx context.Context, in *swarming.SwarmingRpcsNewTaskRequest, out *Buildbucket) error
 	GenerateCommand(ctx context.Context, bb *Buildbucket) ([]string, error)
 }
 
@@ -41,7 +41,7 @@ func NoKitchenSupport() KitchenSupport {
 
 type nullKitchenSupport struct{}
 
-func (nullKitchenSupport) FromSwarmingV2(context.Context, *swarmingpb.NewTaskRequest, *Buildbucket) error {
+func (nullKitchenSupport) FromSwarming(context.Context, *swarming.SwarmingRpcsNewTaskRequest, *Buildbucket) error {
 	return errors.New("kitchen job Definitions not supported by this binary")
 }
 

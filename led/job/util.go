@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+	api "go.chromium.org/luci/swarming/proto/api"
 )
 
 func keysOf(mapish any) []string {
@@ -42,7 +42,7 @@ func keysOf(mapish any) []string {
 	return keys
 }
 
-func updateStringPairList(list *[]*swarmingpb.StringPair, updates map[string]string) {
+func updateStringPairList(list *[]*api.StringPair, updates map[string]string) {
 	if len(updates) == 0 {
 		return
 	}
@@ -58,9 +58,9 @@ func updateStringPairList(list *[]*swarmingpb.StringPair, updates map[string]str
 			current[key] = value
 		}
 	}
-	newList := make([]*swarmingpb.StringPair, 0, len(current))
+	newList := make([]*api.StringPair, 0, len(current))
 	for key, value := range current {
-		newList = append(newList, &swarmingpb.StringPair{Key: key, Value: value})
+		newList = append(newList, &api.StringPair{Key: key, Value: value})
 	}
 	*list = newList
 }
@@ -77,14 +77,14 @@ var (
 func ToCasInstance(swarmingHost string) (string, error) {
 	match := swarmingHostRx.FindStringSubmatch(swarmingHost)
 	if match == nil {
-		return "", errors.New(fmt.Sprintf("invalid swarming host in job definition host=%s", swarmingHost))
+		return "", errors.New("invalid swarming host in job definition")
 	}
 	return fmt.Sprintf(casInstanceTemplate, match[1]), nil
 }
 
 // ToCasDigest converts a string (in the format of "hash/size", e.g. "dead...beef/1234") to cas digest.
-func ToCasDigest(str string) (*swarmingpb.Digest, error) {
-	digest := &swarmingpb.Digest{}
+func ToCasDigest(str string) (*api.Digest, error) {
+	digest := &api.Digest{}
 	var err error
 	switch strs := strings.Split(str, "/"); {
 	case len(strs) == 2:

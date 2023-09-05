@@ -1,9 +1,16 @@
 {
   "name": "led: test_name",
   "parent_task_id": "293109284abc",
-  "priority": 40,
+  "priority": "40",
+  "realm": "infra:ci",
+  "service_account": "adhoc-testing@luci-token-server-dev.iam.gserviceaccount.com",
+  "tags": [
+    "allow_milo:1",
+    "log_location:logdog://luci-logdog-dev.appspot.com/infra/led/testuser_example.com/fa12f92afbe00f8508d0e83bab9cf8cebf42e25e8b14eafc81eae0d00f2cade4/+/build.proto"
+  ],
   "task_slices": [
     {
+      "expiration_secs": "240",
       "properties": {
         "caches": [
           {
@@ -23,92 +30,99 @@
             "path": "cache/builder"
           }
         ],
+        "cas_input_root": {
+          "cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
+          "digest": {
+            "hash": "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
+            "size_bytes": "24"
+          }
+        },
         "cipd_input": {
           "packages": [
             {
               "package_name": "infra/tools/luci/bbagent/${platform}",
-              "version": "latest",
-              "path": "."
+              "path": ".",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/luci/kitchen/${platform}",
-              "version": "latest",
-              "path": "."
+              "path": ".",
+              "version": "latest"
             },
             {
               "package_name": "infra/git/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/bb/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/buildbucket/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/cloudtail/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/git/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/luci-auth/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/luci/docker-credential-luci/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/luci/git-credential-luci/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/luci/lucicfg/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/luci/vpython-native/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/luci/vpython/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/prpc/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/python/cpython/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages/cpython"
+              "path": "cipd_bin_packages/cpython",
+              "version": "latest"
             },
             {
               "package_name": "infra/python/cpython3/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages/cpython3"
+              "path": "cipd_bin_packages/cpython3",
+              "version": "latest"
             },
             {
               "package_name": "infra/recipe_bundles/chromium.googlesource.com/infra/luci/recipes-py",
-              "version": "HEAD",
-              "path": "kitchen-checkout"
+              "path": "kitchen-checkout",
+              "version": "HEAD"
             }
           ]
         },
@@ -165,19 +179,12 @@
             ]
           }
         ],
-        "execution_timeout_secs": 1800,
-        "grace_period_secs": 180,
-        "cas_input_root": {
-          "cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
-          "digest": {
-            "hash": "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
-            "size_bytes": 24
-          }
-        }
-      },
-      "expiration_secs": 240
+        "execution_timeout_secs": "1800",
+        "grace_period_secs": "180"
+      }
     },
     {
+      "expiration_secs": "21360",
       "properties": {
         "caches": [
           {
@@ -197,92 +204,99 @@
             "path": "cache/builder"
           }
         ],
+        "cas_input_root": {
+          "cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
+          "digest": {
+            "hash": "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
+            "size_bytes": "24"
+          }
+        },
         "cipd_input": {
           "packages": [
             {
               "package_name": "infra/tools/luci/bbagent/${platform}",
-              "version": "latest",
-              "path": "."
+              "path": ".",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/luci/kitchen/${platform}",
-              "version": "latest",
-              "path": "."
+              "path": ".",
+              "version": "latest"
             },
             {
               "package_name": "infra/git/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/bb/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/buildbucket/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/cloudtail/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/git/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/luci-auth/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/luci/docker-credential-luci/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/luci/git-credential-luci/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/luci/lucicfg/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/luci/vpython-native/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/luci/vpython/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/tools/prpc/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages"
+              "path": "cipd_bin_packages",
+              "version": "latest"
             },
             {
               "package_name": "infra/python/cpython/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages/cpython"
+              "path": "cipd_bin_packages/cpython",
+              "version": "latest"
             },
             {
               "package_name": "infra/python/cpython3/${platform}",
-              "version": "latest",
-              "path": "cipd_bin_packages/cpython3"
+              "path": "cipd_bin_packages/cpython3",
+              "version": "latest"
             },
             {
               "package_name": "infra/recipe_bundles/chromium.googlesource.com/infra/luci/recipes-py",
-              "version": "HEAD",
-              "path": "kitchen-checkout"
+              "path": "kitchen-checkout",
+              "version": "HEAD"
             }
           ]
         },
@@ -335,24 +349,10 @@
             ]
           }
         ],
-        "execution_timeout_secs": 1800,
-        "grace_period_secs": 180,
-        "cas_input_root": {
-          "cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
-          "digest": {
-            "hash": "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
-            "size_bytes": 24
-          }
-        }
-      },
-      "expiration_secs": 21360
+        "execution_timeout_secs": "1800",
+        "grace_period_secs": "180"
+      }
     }
   ],
-  "tags": [
-    "allow_milo:1",
-    "log_location:logdog://luci-logdog-dev.appspot.com/infra/led/testuser_example.com/fa12f92afbe00f8508d0e83bab9cf8cebf42e25e8b14eafc81eae0d00f2cade4/+/build.proto"
-  ],
-  "user": "testuser@example.com",
-  "service_account": "adhoc-testing@luci-token-server-dev.iam.gserviceaccount.com",
-  "realm": "infra:ci"
+  "user": "testuser@example.com"
 }

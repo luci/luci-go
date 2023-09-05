@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strings"
 
-	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
 
 // CIPDPkgs is a mapping of the CIPD packages within a Definition in the form
@@ -27,9 +27,9 @@ import (
 //	"subdir:name/of/package" -> "version"
 type CIPDPkgs map[string]string
 
-func (c CIPDPkgs) fromList(pkgs []*swarmingpb.CipdPackage) {
+func (c CIPDPkgs) fromList(pkgs []*swarmingpb.CIPDPackage) {
 	for _, pkg := range pkgs {
-		if path := pkg.Path; path == "" || path == "." {
+		if path := pkg.DestPath; path == "" || path == "." {
 			c[pkg.PackageName] = pkg.Version
 		} else {
 			c[fmt.Sprintf("%s:%s", path, pkg.PackageName)] = pkg.Version
@@ -49,7 +49,7 @@ func (c CIPDPkgs) equal(other CIPDPkgs) bool {
 	return true
 }
 
-func (c CIPDPkgs) updateCipdPkgs(pinSets *[]*swarmingpb.CipdPackage) {
+func (c CIPDPkgs) updateCipdPkgs(pinSets *[]*swarmingpb.CIPDPackage) {
 	if len(c) == 0 {
 		return
 	}
@@ -57,10 +57,10 @@ func (c CIPDPkgs) updateCipdPkgs(pinSets *[]*swarmingpb.CipdPackage) {
 	// subdir -> pkg -> version
 	currentMapping := map[string]map[string]string{}
 	for _, pin := range *pinSets {
-		subdirM, ok := currentMapping[pin.Path]
+		subdirM, ok := currentMapping[pin.DestPath]
 		if !ok {
 			subdirM = map[string]string{}
-			currentMapping[pin.Path] = subdirM
+			currentMapping[pin.DestPath] = subdirM
 		}
 		subdirM[pin.PackageName] = pin.Version
 	}
@@ -86,11 +86,11 @@ func (c CIPDPkgs) updateCipdPkgs(pinSets *[]*swarmingpb.CipdPackage) {
 		}
 	}
 
-	newPkgs := make([]*swarmingpb.CipdPackage, 0, len(*pinSets)+len(c))
+	newPkgs := make([]*swarmingpb.CIPDPackage, 0, len(*pinSets)+len(c))
 	for _, subdir := range keysOf(currentMapping) {
 		for _, pkg := range keysOf(currentMapping[subdir]) {
-			newPkgs = append(newPkgs, &swarmingpb.CipdPackage{
-				Path:        subdir,
+			newPkgs = append(newPkgs, &swarmingpb.CIPDPackage{
+				DestPath:    subdir,
 				PackageName: pkg,
 				Version:     currentMapping[subdir][pkg],
 			})

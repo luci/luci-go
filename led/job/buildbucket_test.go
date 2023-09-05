@@ -21,7 +21,7 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/luciexe/exe"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

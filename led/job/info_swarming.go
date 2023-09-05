@@ -21,7 +21,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
 
 type swInfo struct {
@@ -66,11 +66,16 @@ func (s swInfo) Dimensions() (ExpiringDimensions, error) {
 	ldims := logicalDimensions{}
 	var totalExpiration time.Duration
 	for _, slc := range s.GetTask().GetTaskSlices() {
-		exp := time.Duration(slc.ExpirationSecs) * time.Second
+		if err := slc.Expiration.CheckValid(); err != nil {
+			return nil, errors.Annotate(err, "malformed expiration").Err()
+		}
+		exp := slc.Expiration.AsDuration()
 		totalExpiration += exp
 
 		for _, dim := range slc.GetProperties().GetDimensions() {
-			ldims.updateDuration(dim.Key, dim.Value, totalExpiration)
+			for _, val := range dim.Values {
+				ldims.updateDuration(dim.Key, val, totalExpiration)
+			}
 		}
 	}
 	return ldims.toExpiringDimensions(), nil
@@ -79,7 +84,7 @@ func (s swInfo) Dimensions() (ExpiringDimensions, error) {
 func (s swInfo) CIPDPkgs() (ret CIPDPkgs, err error) {
 	slices := s.GetTask().GetTaskSlices()
 	if len(slices) >= 1 {
-		if pkgs := slices[0].GetProperties().GetCipdInput().GetPackages(); len(pkgs) > 0 {
+		if pkgs := slices[0].GetProperties().GetCipdInputs(); len(pkgs) > 0 {
 			ret = CIPDPkgs{}
 			ret.fromList(pkgs)
 		}
@@ -87,7 +92,7 @@ func (s swInfo) CIPDPkgs() (ret CIPDPkgs, err error) {
 	if len(slices) > 1 {
 		for idx, slc := range slices[1:] {
 			pkgDict := CIPDPkgs{}
-			pkgDict.fromList(slc.GetProperties().GetCipdInput().GetPackages())
+			pkgDict.fromList(slc.GetProperties().GetCipdInputs())
 			if !ret.equal(pkgDict) {
 				return nil, errors.Reason(
 					"slice %d has cipd pkgs which differ from slice 0: %v vs %v",
@@ -131,10 +136,10 @@ func (s swInfo) Priority() int32 {
 func (s swInfo) PrefixPathEnv() (ret []string, err error) {
 	slices := s.GetTask().GetTaskSlices()
 	if len(slices) >= 1 {
-		for _, keyVals := range slices[0].GetProperties().GetEnvPrefixes() {
+		for _, keyVals := range slices[0].GetProperties().GetEnvPaths() {
 			if keyVals.Key == "PATH" {
-				ret = make([]string, len(keyVals.Value))
-				copy(ret, keyVals.Value)
+				ret = make([]string, len(keyVals.Values))
+				copy(ret, keyVals.Values)
 				break
 			}
 		}
@@ -142,13 +147,13 @@ func (s swInfo) PrefixPathEnv() (ret []string, err error) {
 	if len(slices) > 1 {
 		for idx, slc := range slices[1:] {
 			foundIt := false
-			for _, keyVal := range slc.GetProperties().GetEnvPrefixes() {
+			for _, keyVal := range slc.GetProperties().GetEnvPaths() {
 				if keyVal.Key == "PATH" {
 					foundIt = true
-					if !reflect.DeepEqual(ret, keyVal.Value) {
+					if !reflect.DeepEqual(ret, keyVal.Values) {
 						return nil, errors.Reason(
 							"slice %d has $PATH env prefixes which differ from slice 0: %v vs %v",
-							idx+1, keyVal.Value, ret).Err()
+							idx+1, keyVal.Values, ret).Err()
 					}
 					break
 				}

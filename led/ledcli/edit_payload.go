@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+	apipb "go.chromium.org/luci/swarming/proto/api"
 
 	"go.chromium.org/luci/led/job"
 	"go.chromium.org/luci/led/ledcmd"
@@ -55,7 +55,7 @@ type cmdEditPayload struct {
 	propertyOnly bool
 
 	casRef    string
-	casDigest *swarmingpb.Digest
+	casDigest *apipb.Digest
 
 	cipdPkg string
 	cipdVer string

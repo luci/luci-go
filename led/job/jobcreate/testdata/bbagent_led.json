@@ -2,7 +2,7 @@
   "created_ts": "2019-11-04T17:20:22.705202",
   "task_slices": [
     {
-      "expiration_secs": 240,
+      "expiration_secs": "240",
       "wait_for_capacity": false,
       "properties": {
         "dimensions": [
@@ -156,17 +156,17 @@
         ],
         "containment": {
           "lower_priority": false,
-          "containment_type": 0
+          "containment_type": "NOT_SPECIFIED"
         },
-        "execution_timeout_secs": 1800,
+        "execution_timeout_secs": "1800",
         "cas_input_root": {
           "cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
           "digest": {
             "hash": "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
-            "size_bytes": 24
+            "size_bytes": "24"
           }
         },
-        "grace_period_secs": 30,
+        "grace_period_secs": "30",
         "caches": [
           {
             "path": "cache/builder",
@@ -188,7 +188,7 @@
       }
     },
     {
-      "expiration_secs": 21360,
+      "expiration_secs": "21360",
       "wait_for_capacity": false,
       "properties": {
         "dimensions": [
@@ -338,17 +338,17 @@
         ],
         "containment": {
           "lower_priority": false,
-          "containment_type": 0
+          "containment_type": "NOT_SPECIFIED"
         },
-        "execution_timeout_secs": 1800,
+        "execution_timeout_secs": "1800",
         "cas_input_root": {
           "cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
           "digest": {
             "hash": "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
-            "size_bytes": 24
+            "size_bytes": "24"
           }
         },
-        "grace_period_secs": 30,
+        "grace_period_secs": "30",
         "caches": [
           {
             "path": "cache/builder",
@@ -395,12 +395,12 @@
   ],
   "authenticated": "project:infra",
   "pubsub_topic": "projects/cr-buildbucket-dev/topics/swarming",
-  "priority": 30,
+  "priority": "30",
   "pubsub_userdata": "{\"build_id\": 8897701085383235760, \"created_ts\": 1572888022640606, \"swarming_hostname\": \"chromium-swarm-dev.appspot.com\"}",
   "user": "",
   "service_account": "adhoc-testing@luci-token-server-dev.iam.gserviceaccount.com",
-  "bot_ping_tolerance_secs": 1200,
-  "expiration_secs": 21600,
+  "bot_ping_tolerance_secs": "1200",
+  "expiration_secs": "21600",
   "properties": {
     "dimensions": [
       {
@@ -553,17 +553,17 @@
     ],
     "containment": {
       "lower_priority": false,
-      "containment_type": 0
+      "containment_type": "NOT_SPECIFIED"
     },
-    "execution_timeout_secs": 1800,
+    "execution_timeout_secs": "1800",
     "cas_input_root": {
       "cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
       "digest": {
         "hash": "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
-        "size_bytes": 24
+        "size_bytes": "24"
       }
     },
-    "grace_period_secs": 30,
+    "grace_period_secs": "30",
     "caches": [
       {
         "path": "cache/builder",

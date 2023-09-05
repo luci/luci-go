@@ -145,82 +145,82 @@
       {
         "package_name": "infra/tools/luci/bbagent/${platform}",
         "version": "latest",
-        "path": "."
+        "dest_path": "."
       },
       {
         "package_name": "infra/tools/luci/kitchen/${platform}",
         "version": "latest",
-        "path": "."
+        "dest_path": "."
       },
       {
         "package_name": "infra/git/${platform}",
         "version": "latest",
-        "path": "cipd_bin_packages"
+        "dest_path": "cipd_bin_packages"
       },
       {
         "package_name": "infra/tools/bb/${platform}",
         "version": "latest",
-        "path": "cipd_bin_packages"
+        "dest_path": "cipd_bin_packages"
       },
       {
         "package_name": "infra/tools/buildbucket/${platform}",
         "version": "latest",
-        "path": "cipd_bin_packages"
+        "dest_path": "cipd_bin_packages"
       },
       {
         "package_name": "infra/tools/cloudtail/${platform}",
         "version": "latest",
-        "path": "cipd_bin_packages"
+        "dest_path": "cipd_bin_packages"
       },
       {
         "package_name": "infra/tools/git/${platform}",
         "version": "latest",
-        "path": "cipd_bin_packages"
+        "dest_path": "cipd_bin_packages"
       },
       {
         "package_name": "infra/tools/luci-auth/${platform}",
         "version": "latest",
-        "path": "cipd_bin_packages"
+        "dest_path": "cipd_bin_packages"
       },
       {
         "package_name": "infra/tools/luci/docker-credential-luci/${platform}",
         "version": "latest",
-        "path": "cipd_bin_packages"
+        "dest_path": "cipd_bin_packages"
       },
       {
         "package_name": "infra/tools/luci/git-credential-luci/${platform}",
         "version": "latest",
-        "path": "cipd_bin_packages"
+        "dest_path": "cipd_bin_packages"
       },
       {
         "package_name": "infra/tools/luci/lucicfg/${platform}",
         "version": "latest",
-        "path": "cipd_bin_packages"
+        "dest_path": "cipd_bin_packages"
       },
       {
         "package_name": "infra/tools/luci/vpython-native/${platform}",
         "version": "latest",
-        "path": "cipd_bin_packages"
+        "dest_path": "cipd_bin_packages"
       },
       {
         "package_name": "infra/tools/luci/vpython/${platform}",
         "version": "latest",
-        "path": "cipd_bin_packages"
+        "dest_path": "cipd_bin_packages"
       },
       {
         "package_name": "infra/tools/prpc/${platform}",
         "version": "latest",
-        "path": "cipd_bin_packages"
+        "dest_path": "cipd_bin_packages"
       },
       {
         "package_name": "infra/python/cpython/${platform}",
         "version": "latest",
-        "path": "cipd_bin_packages/cpython"
+        "dest_path": "cipd_bin_packages/cpython"
       },
       {
         "package_name": "infra/python/cpython3/${platform}",
         "version": "latest",
-        "path": "cipd_bin_packages/cpython3"
+        "dest_path": "cipd_bin_packages/cpython3"
       }
     ],
     "env_vars": [
@@ -232,7 +232,7 @@
     "env_prefixes": [
       {
         "key": "PATH",
-        "value": [
+        "values": [
           "cipd_bin_packages",
           "cipd_bin_packages/bin",
           "cipd_bin_packages/cpython",
@@ -243,7 +243,7 @@
       },
       {
         "key": "VPYTHON_VIRTUALENV_ROOT",
-        "value": [
+        "values": [
           "cache/vpython"
         ]
       }
