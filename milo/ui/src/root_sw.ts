@@ -24,9 +24,12 @@ declare const self: ServiceWorkerGlobalScope;
 // Otherwise TSC won't allow us to re-declare `self`.
 export {};
 
-// TODO(crbug/1108198): we don't need this after removing the /ui prefix.
-self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
+self.addEventListener('fetch', (e) => {
+  if (e.request.mode !== 'navigate') {
+    return;
+  }
+
+  const url = new URL(e.request.url);
 
   const isResultUI =
     // Short build link.
@@ -44,7 +47,7 @@ self.addEventListener('fetch', (event) => {
 
   if (isResultUI) {
     url.pathname = '/ui' + url.pathname;
-    event.respondWith(Response.redirect(url.toString()));
+    e.respondWith(Response.redirect(url.toString()));
     return;
   }
 });
