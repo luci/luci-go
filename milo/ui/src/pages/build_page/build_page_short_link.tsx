@@ -16,6 +16,7 @@ import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useStore } from '@/common/store';
 import { getBuildURLPath } from '@/common/tools/url_utils';
 
@@ -63,3 +64,10 @@ export const BuildPageShortLink = observer(() => {
   // Don't need to render anything.
   return <></>;
 });
+
+export const element = (
+  // See the documentation for `<LoginPage />` for why we handle error this way.
+  <RecoverableErrorBoundary key="build-short-link">
+    <BuildPageShortLink />
+  </RecoverableErrorBoundary>
+);

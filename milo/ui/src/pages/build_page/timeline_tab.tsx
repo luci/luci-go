@@ -29,6 +29,7 @@ import { DateTime } from 'luxon';
 import { autorun, makeObservable, observable } from 'mobx';
 
 import '@/generic_libs/components/dot_spinner';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   HideTooltipEventDetail,
   ShowTooltipEventDetail,
@@ -660,6 +661,17 @@ declare global {
 }
 
 export function TimelineTab() {
-  useTabId('timeline');
   return <milo-timeline-tab />;
+}
+
+export function Component() {
+  useTabId('timeline');
+
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="timeline">
+      <TimelineTab />
+    </RecoverableErrorBoundary>
+  );
 }

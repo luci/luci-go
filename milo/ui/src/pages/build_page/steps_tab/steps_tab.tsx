@@ -20,6 +20,7 @@ import { makeObservable, observable } from 'mobx';
 import '@/generic_libs/components/hotkey';
 import './step_display_config';
 import './step_list';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
@@ -126,6 +127,17 @@ declare global {
 }
 
 export function StepsTab() {
-  useTabId('steps');
   return <milo-steps-tab />;
+}
+
+export function Component() {
+  useTabId('steps');
+
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="steps">
+      <StepsTab />
+    </RecoverableErrorBoundary>
+  );
 }

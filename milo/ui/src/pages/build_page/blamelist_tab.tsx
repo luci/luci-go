@@ -22,6 +22,7 @@ import '@/common/components/commit_entry';
 import '@/generic_libs/components/dot_spinner';
 import '@/generic_libs/components/hotkey';
 import { CommitEntryElement } from '@/common/components/commit_entry';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { GitCommit } from '@/common/services/milo_internal';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
@@ -377,6 +378,17 @@ declare global {
 }
 
 export function BlamelistTab() {
-  useTabId('blamelist');
   return <milo-blamelist-tab />;
+}
+
+export function Component() {
+  useTabId('blamelist');
+
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="blamelist">
+      <BlamelistTab />
+    </RecoverableErrorBoundary>
+  );
 }

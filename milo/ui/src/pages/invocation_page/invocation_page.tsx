@@ -17,6 +17,7 @@ import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta/page_meta';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import { INVOCATION_STATE_DISPLAY_MAP } from '@/common/constants';
@@ -134,3 +135,10 @@ export const InvocationPage = observer(() => {
     </InvLitEnvProvider>
   );
 });
+
+export const element = (
+  // See the documentation for `<LoginPage />` for why we handle error this way.
+  <RecoverableErrorBoundary key="invocation">
+    <InvocationPage />
+  </RecoverableErrorBoundary>
+);

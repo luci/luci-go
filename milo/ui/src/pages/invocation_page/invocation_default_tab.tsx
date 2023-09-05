@@ -15,6 +15,8 @@
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+
 export function InvocationDefaultTab() {
   const { pathname, search, hash } = useLocation();
   const navigate = useNavigate();
@@ -34,3 +36,10 @@ export function InvocationDefaultTab() {
 
   return <></>;
 }
+
+export const element = (
+  // See the documentation for `<LoginPage />` for why we handle error this way.
+  <RecoverableErrorBoundary key="default">
+    <InvocationDefaultTab />
+  </RecoverableErrorBoundary>
+);

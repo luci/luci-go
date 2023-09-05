@@ -20,6 +20,7 @@ import { DateTime } from 'luxon';
 import { autorun, computed, makeObservable, observable } from 'mobx';
 
 import '@/common/components/timeline';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { TimelineBlock } from '@/common/components/timeline';
 import { Invocation } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
@@ -240,6 +241,17 @@ declare global {
 }
 
 export function InvocationDetailsTab() {
-  useTabId('invocation-details');
   return <milo-invocation-details-tab />;
+}
+
+export function Component() {
+  useTabId('invocation-details');
+
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="invocation-details">
+      <InvocationDetailsTab />
+    </RecoverableErrorBoundary>
+  );
 }

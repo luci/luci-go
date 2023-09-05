@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Link } from '@mui/material';
 import { useRouteError } from 'react-router-dom';
 
 import { ErrorDisplay } from './error_display';
@@ -19,5 +20,41 @@ import { ErrorDisplay } from './error_display';
 export function RouteErrorDisplay() {
   const error = useRouteError() as Error;
 
-  return <ErrorDisplay error={error} />;
+  const isLazyLoadingAssetError = error.message.startsWith(
+    'Failed to fetch dynamically imported module: ',
+  );
+
+  return (
+    <ErrorDisplay
+      error={error}
+      errorDisplay={
+        // Do not refresh automatically to avoid an infinite refresh loop if
+        // something goes wrong.
+        isLazyLoadingAssetError ? (
+          <>
+            <b>
+              You are likely on an outdated version of LUCI UI. Try{' '}
+              <Link href={self.location.href}>reloading</Link> the page.
+            </b>
+            <h4>Original Error:</h4>
+            <div
+              css={{
+                backgroundColor: 'var(--block-background-color)',
+                padding: '5px 20px',
+              }}
+            >
+              <pre
+                css={{
+                  whiteSpace: 'pre-wrap',
+                  overflowWrap: 'break-word',
+                }}
+              >
+                {error.message}
+              </pre>
+            </div>
+          </>
+        ) : null
+      }
+    />
+  );
 }

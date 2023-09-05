@@ -16,6 +16,7 @@ import { untracked } from 'mobx';
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useStore } from '@/common/store';
 
 import { INITIAL_DEFAULT_TAB, parseTab } from './common';
@@ -46,3 +47,10 @@ export function BuildDefaultTab() {
 
   return <></>;
 }
+
+export const element = (
+  // See the documentation for `<LoginPage />` for why we handle error this way.
+  <RecoverableErrorBoundary key="default">
+    <BuildDefaultTab />
+  </RecoverableErrorBoundary>
+);

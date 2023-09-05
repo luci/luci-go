@@ -20,6 +20,7 @@ import { useState } from 'react';
 
 import { ListAnalysesTable } from '@/bisection/components/analyses_tables/list_analyses_table';
 import { SearchAnalysisTable } from '@/bisection/components/analyses_tables/search_analysis_table';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 
 export const FailureAnalysesPage = () => {
   const [bbid, setBbid] = useState<string>('');
@@ -99,3 +100,10 @@ export const FailureAnalysesPage = () => {
     </main>
   );
 };
+
+export const element = (
+  // See the documentation for `<LoginPage />` for why we handle error this way.
+  <RecoverableErrorBoundary key="failure-analyses">
+    <FailureAnalysesPage />
+  </RecoverableErrorBoundary>
+);

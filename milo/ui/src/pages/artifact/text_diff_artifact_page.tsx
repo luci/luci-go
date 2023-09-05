@@ -22,6 +22,7 @@ import { fromPromise } from 'mobx-utils';
 
 import '@/generic_libs/components/dot_spinner';
 import '@/common/components/status_bar';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants';
 import {
   ArtifactIdentifier,
@@ -153,3 +154,10 @@ declare global {
 export function TextDiffArtifactPage() {
   return <milo-text-diff-artifact-page></milo-text-diff-artifact-page>;
 }
+
+export const element = (
+  // See the documentation for `<LoginPage />` for why we handle error this way.
+  <RecoverableErrorBoundary key="text-diff">
+    <TextDiffArtifactPage />
+  </RecoverableErrorBoundary>
+);

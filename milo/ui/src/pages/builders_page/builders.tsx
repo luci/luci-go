@@ -22,6 +22,7 @@ import { useParams } from 'react-router-dom';
 import '@/common/components/status_bar';
 import '@/generic_libs/components/dot_spinner';
 import './row';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants';
 import { BuilderID } from '@/common/services/buildbucket';
@@ -269,3 +270,10 @@ export function BuildersPage() {
     </>
   );
 }
+
+export const element = (
+  // See the documentation for `<LoginPage />` for why we handle error this way.
+  <RecoverableErrorBoundary key="builders">
+    <BuildersPage />
+  </RecoverableErrorBoundary>
+);

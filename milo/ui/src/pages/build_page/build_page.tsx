@@ -25,6 +25,7 @@ import purpleFavicon from '@/common/assets/favicons/purple-32.png';
 import redFavicon from '@/common/assets/favicons/red-32.png';
 import tealFavicon from '@/common/assets/favicons/teal-32.png';
 import yellowFavicon from '@/common/assets/favicons/yellow-32.png';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta/page_meta';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import {
@@ -265,3 +266,10 @@ export const BuildPage = observer(() => {
     </InvocationProvider>
   );
 });
+
+export const element = (
+  // See the documentation for `<LoginPage />` for why we handle error this way.
+  <RecoverableErrorBoundary key="build-long-link">
+    <BuildPage />
+  </RecoverableErrorBoundary>
+);

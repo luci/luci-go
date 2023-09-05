@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { RouteErrorDisplay } from '@/common/components/error_handling';
+
 /**
  * Let the server handle the navigation request.
  */
@@ -23,3 +25,9 @@ export function ServerPage() {
 
   return <></>;
 }
+
+export const element = <ServerPage />;
+
+// Cannot use `<RecoverableErrorBoundary />` here because it requires the
+// auth state provider.
+export const errorElement = <RouteErrorDisplay />;

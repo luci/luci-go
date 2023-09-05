@@ -29,6 +29,7 @@ import { CulpritVerificationTable } from '@/bisection/components/culprit_verific
 import { CulpritsTable } from '@/bisection/components/culprits_table/culprits_table';
 import { HeuristicAnalysisTable } from '@/bisection/components/heuristic_analysis_table/heuristic_analysis_table';
 import { NthSectionAnalysisTable } from '@/bisection/components/nthsection_analysis_table/nthsection_analysis_table';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
 import { LUCIBisectionService } from '@/common/services/luci_bisection';
 
@@ -191,3 +192,10 @@ export const AnalysisDetailsPage = () => {
 
   return <></>;
 };
+
+export const element = (
+  // See the documentation for `<LoginPage />` for why we handle error this way.
+  <RecoverableErrorBoundary key="analysis-details">
+    <AnalysisDetailsPage />
+  </RecoverableErrorBoundary>
+);

@@ -13,26 +13,34 @@
 // limitations under the License.
 
 import { Alert, AlertTitle, Button } from '@mui/material';
+import { ReactNode } from 'react';
 
 import { genFeedbackUrl } from '@/common/tools/utils';
 
 export interface ErrorDisplayProps {
   readonly error: Error;
+  readonly errorDisplay?: ReactNode;
   readonly onTryAgain?: () => void;
 }
 
-export function ErrorDisplay({ error, onTryAgain }: ErrorDisplayProps) {
+export function ErrorDisplay({
+  error,
+  errorDisplay,
+  onTryAgain,
+}: ErrorDisplayProps) {
   return (
     <Alert severity="error">
       <AlertTitle>Error</AlertTitle>
-      <pre
-        css={{
-          whiteSpace: 'pre-wrap',
-          overflowWrap: 'break-word',
-        }}
-      >
-        {error.message}
-      </pre>
+      {errorDisplay || (
+        <pre
+          css={{
+            whiteSpace: 'pre-wrap',
+            overflowWrap: 'break-word',
+          }}
+        >
+          {error.message}
+        </pre>
+      )}
       <Button
         href={genFeedbackUrl(error.message, error.stack)}
         target="_blank"

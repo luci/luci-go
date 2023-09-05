@@ -32,17 +32,8 @@ declare const self: ServiceWorkerGlobalScope;
 // Unconditionally skip waiting so the clients can always get the newest version
 // when the page is refreshed. The only downside is that clients on an old
 // version may encounter errors when lazy loading cached static assets. This is
-// very rare because
-// 1. We only have a single JS/CSS bundle since we don't use code splitting
-//    anyway. Code splitting and lazy JS/CSS asset loading is unlikely to bring
-//    enough benefit to justify its complexity because
-//    1. most page views are not first time visit, which means all the static
-//       assets should already be cached by the service worker, and
-//    2. the time spent on parsing unused JS/CSS modules is almost always
-//       insignificant, and
-//    3. the time spent on initializing unused JS modules should be
-//       insignificant. If that's not the case, the initialization step should
-//       be extracted to a callable function.
+// not critical because
+// 1. This is unlikely to happen since all JS assets are prefetched.
 // 2. All lazy-loadable assets (i.e. excluding entry files) have content hashes
 //    in their filenames. This means in case of a cache miss,
 //    1. it's virtually impossible to lazy load an asset of an incompatible
@@ -50,10 +41,8 @@ declare const self: ServiceWorkerGlobalScope;
 //    2. they can have a much longer cache duration (currently configured to be
 //       4 weeks), the asset loading request can likely be fulfilled by other
 //       cache layers (e.g. AppEngine server cache, browser HTTP cache).
-//
-// Even if the client failed to lazy load an asset,
-// 1. the asset is most likely a non-critical asset (e.g. .png, .svg, etc), and
-// 2. a simple refresh will be able to fix the issue anyway.
+// 3. When the client failed to lazy load an asset, a simple refresh will be
+//    able to fix the issue anyway.
 self.skipWaiting();
 
 const prefetcher = new Prefetcher(SETTINGS, self.fetch.bind(self));

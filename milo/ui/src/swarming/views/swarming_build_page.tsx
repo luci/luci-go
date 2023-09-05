@@ -16,6 +16,7 @@ import { CircularProgress } from '@mui/material';
 import { useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
 import { TasksServices } from '@/common/services/swarming';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -78,3 +79,10 @@ export function SwarmingBuildPage() {
     </div>
   );
 }
+
+export const element = (
+  // See the documentation for `<LoginPage />` for why we handle error this way.
+  <RecoverableErrorBoundary key="swarming-build">
+    <SwarmingBuildPage />
+  </RecoverableErrorBoundary>
+);

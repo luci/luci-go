@@ -22,6 +22,7 @@ import '@/generic_libs/components/hotkey';
 import './test_variants_table/test_variants_table';
 import './test_variants_table/config_widget';
 import './search_box';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { consumeStore, StoreInstance } from '@/common/store';
 import {
   consumeInvocationState,
@@ -244,6 +245,17 @@ declare global {
 }
 
 export function TestResultsTab() {
-  useTabId('test-results');
   return <milo-test-results-tab />;
+}
+
+export function Component() {
+  useTabId('test-results');
+
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="test-results">
+      <TestResultsTab />
+    </RecoverableErrorBoundary>
+  );
 }

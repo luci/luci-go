@@ -16,6 +16,7 @@ import styled from '@emotion/styled';
 import { observer } from 'mobx-react-lite';
 import { useState } from 'react';
 
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useStore } from '@/common/store';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
@@ -68,7 +69,6 @@ const SecondColumn = styled.div({
 });
 
 export const OverviewTab = observer(() => {
-  useTabId('overview');
   const store = useStore();
 
   const [activeDialog, setActiveDialog] = useState(Dialog.None);
@@ -110,3 +110,15 @@ export const OverviewTab = observer(() => {
     </>
   );
 });
+
+export function Component() {
+  useTabId('overview');
+
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="overview">
+      <OverviewTab />
+    </RecoverableErrorBoundary>
+  );
+}

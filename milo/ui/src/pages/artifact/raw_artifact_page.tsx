@@ -15,6 +15,7 @@
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { constructArtifactName } from '@/common/services/resultdb';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
 
@@ -44,3 +45,10 @@ export function RawArtifactPage() {
 
   return <>Redirecting to the new raw artifact URL...</>;
 }
+
+export const element = (
+  // See the documentation for `<LoginPage />` for why we handle error this way.
+  <RecoverableErrorBoundary key="raw">
+    <RawArtifactPage />
+  </RecoverableErrorBoundary>
+);

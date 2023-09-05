@@ -18,6 +18,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { getLoginUrl } from '@/common/tools/url_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
@@ -59,3 +60,24 @@ export function LoginPage() {
     </div>
   );
 }
+
+export const element = (
+  // We cannot use `<RecoverableErrorBoundary />` in `errorElement` because it
+  // (react-router) doesn't support error recovery.
+  //
+  // We handle the error at child level rather than at the parent level because
+  // we want the error state to be reset when the user navigates to a sibling
+  // view, which does not happen if the error is handled by the parent (without
+  // additional logic).
+  // The downside of this model is that we do not have a central place for error
+  // handling, which is somewhat mitigated by applying the same error boundary
+  // on all child routes.
+  // The upside is that the error is naturally reset on route changes.
+  //
+  // A unique `key` is needed to ensure the boundary is not reused when the user
+  // navigates to a sibling view. The error will be naturally discarded as the
+  // route is unmounted.
+  <RecoverableErrorBoundary key="login">
+    <LoginPage />
+  </RecoverableErrorBoundary>
+);

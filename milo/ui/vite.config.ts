@@ -121,10 +121,12 @@ export default defineConfig(({ mode }) => {
           root_sw: './src/root_sw.ts',
         },
         output: {
+          // 'root_sw' needs to be referenced by URL therefore cannot have a
+          // hash in its filename.
           entryFileNames: (chunkInfo) =>
-            chunkInfo.name === 'index'
-              ? 'immutable/[name]-[hash:8].js'
-              : '[name].js',
+            chunkInfo.name === 'root_sw'
+              ? '[name].js'
+              : 'immutable/[name]-[hash:8].js',
         },
       },
       // Set to 8 MB to silence warnings. The files are cached by service worker
@@ -163,6 +165,31 @@ export default defineConfig(({ mode }) => {
             },
           ],
         }),
+      },
+      {
+        name: 'inject-prefetches-in-html',
+        transformIndexHtml: (html, ctx) => {
+          const jsChunks = Object.keys(ctx.bundle || {})
+            // Prefetch all JS files so users are less likely to run into errors
+            // when navigating between views after a new LUCI UI version is
+            // deployed.
+            .filter((name) => name.match(/^immutable\/.+\.js$/))
+            // Don't need to prefetch the entry file since it's loaded as a
+            // script tag already.
+            .filter((name) => name !== ctx.chunk?.fileName);
+          return {
+            html,
+            tags: jsChunks.map((chunkName) => ({
+              tag: 'link',
+              attrs: {
+                rel: 'prefetch',
+                href: `/ui/${chunkName}`,
+                as: 'script',
+              },
+              injectTo: 'head',
+            })),
+          };
+        },
       },
       {
         name: 'dev-server',
@@ -255,7 +282,7 @@ export default defineConfig(({ mode }) => {
           navigateFallback: 'index.html',
         },
         injectManifest: {
-          globPatterns: ['**/*.{js,css,html}'],
+          globPatterns: ['**/*.{js,css,html,svg,png}'],
           plugins: [virtualConfigJs, tsconfigPaths()],
           // Set to 8 MB. Some files might be larger than the default.
           maximumFileSizeToCacheInBytes: Math.pow(2, 23),

@@ -17,6 +17,7 @@ import { ChangeEvent, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useDebounce } from 'react-use';
 
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -74,3 +75,10 @@ export const TestSearch = () => {
     </Box>
   );
 };
+
+export const element = (
+  // See the documentation for `<LoginPage />` for why we handle error this way.
+  <RecoverableErrorBoundary key="test-search">
+    <TestSearch />
+  </RecoverableErrorBoundary>
+);

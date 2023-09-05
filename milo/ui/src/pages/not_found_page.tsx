@@ -19,3 +19,5 @@ export function NotFoundPage() {
     </div>
   );
 }
+
+export const element = <NotFoundPage />;

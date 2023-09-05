@@ -15,6 +15,7 @@
 import { Box, Typography } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useStore } from '@/common/store';
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
@@ -22,7 +23,6 @@ import { useTabId } from '@/generic_libs/components/routed_tabs';
 import { RelatedBuildTable } from './related_build_table';
 
 export const RelatedBuildsTab = observer(() => {
-  useTabId('related-builds');
   const store = useStore();
 
   if (!store.buildPage.build || !store.buildPage.relatedBuilds) {
@@ -55,3 +55,15 @@ export const RelatedBuildsTab = observer(() => {
     </Box>
   );
 });
+
+export function Component() {
+  useTabId('related-builds');
+
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="related-builds">
+      <RelatedBuildsTab />
+    </RecoverableErrorBoundary>
+  );
+}

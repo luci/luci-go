@@ -21,6 +21,7 @@ import { fromPromise } from 'mobx-utils';
 import '@/common/components/image_diff_viewer';
 import '@/common/components/status_bar';
 import '@/generic_libs/components/dot_spinner';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   ArtifactIdentifier,
   constructArtifactName,
@@ -210,3 +211,10 @@ export function ImageDiffArtifactPage() {
     ></milo-image-diff-artifact-page>
   );
 }
+
+export const element = (
+  // See the documentation for `<LoginPage />` for why we handle error this way.
+  <RecoverableErrorBoundary key="image-diff">
+    <ImageDiffArtifactPage />
+  </RecoverableErrorBoundary>
+);

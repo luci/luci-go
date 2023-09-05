@@ -17,6 +17,7 @@ import styled from '@emotion/styled';
 import { Alert, AlertTitle, Grid, LinearProgress } from '@mui/material';
 import { useParams } from 'react-router-dom';
 
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants';
 import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
@@ -139,3 +140,10 @@ export function BuilderPage() {
     </>
   );
 }
+
+export const element = (
+  // See the documentation for `<LoginPage />` for why we handle error this way.
+  <RecoverableErrorBoundary key="builder">
+    <BuilderPage />
+  </RecoverableErrorBoundary>
+);

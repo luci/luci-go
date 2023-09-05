@@ -20,6 +20,7 @@ import { Outlet, useParams } from 'react-router-dom';
 
 import '@/common/components/image_diff_viewer';
 import '@/common/components/status_bar';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { ArtifactIdentifier } from '@/common/services/resultdb';
 import { commonStyles } from '@/common/styles/stylesheets';
 import { getInvURLPath } from '@/common/tools/url_utils';
@@ -162,3 +163,10 @@ export function ArtifactPageLayout() {
     </div>
   );
 }
+
+export const element = (
+  // See the documentation for `<LoginPage />` for why we handle error this way.
+  <RecoverableErrorBoundary key="artifact">
+    <ArtifactPageLayout />
+  </RecoverableErrorBoundary>
+);

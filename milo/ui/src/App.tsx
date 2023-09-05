@@ -29,49 +29,21 @@ import { Workbox } from 'workbox-window';
 import '@/common/styles/common_style.css';
 import '@/common/styles/color_classes.css';
 import '@/common/components/tooltip';
-import { BisectionLayout } from '@/bisection/layouts/base';
-import { AnalysisDetailsPage } from '@/bisection/pages/analysis_details';
-import { FailureAnalysesPage } from '@/bisection/pages/failure_analyses';
 import { obtainAuthState } from '@/common/api/auth_state';
+import { AuthStateInitializer } from '@/common/components/auth_state_provider';
+import {
+  RecoverableErrorBoundary,
+  RouteErrorDisplay,
+} from '@/common/components/error_handling';
 import { LitEnvProvider } from '@/common/components/lit_env_provider';
+import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
+import { NON_TRANSIENT_ERROR_CODES } from '@/common/constants';
 import { BaseLayout } from '@/common/layouts/base_layout';
 import { Store, StoreProvider } from '@/common/store';
 import { theme } from '@/common/themes/base';
+import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_params';
 import { createStaticTrustedURL } from '@/generic_libs/tools/utils';
-
-import { AuthStateInitializer } from './common/components/auth_state_provider';
-import { RecoverableErrorBoundary } from './common/components/error_handling';
-import { RouteErrorDisplay } from './common/components/error_handling/route_error_display';
-import { PageMetaProvider } from './common/components/page_meta/page_meta_provider';
-import { NON_TRANSIENT_ERROR_CODES } from './common/constants';
-import { SyncedSearchParamsProvider } from './generic_libs/hooks/synced_search_params';
-import { ArtifactPageLayout } from './pages/artifact/artifact_page_layout';
-import { ImageDiffArtifactPage } from './pages/artifact/image_diff_artifact_page';
-import { RawArtifactPage } from './pages/artifact/raw_artifact_page';
-import { TextDiffArtifactPage } from './pages/artifact/text_diff_artifact_page';
-import { BuildPage } from './pages/build_page';
-import { BlamelistTab } from './pages/build_page/blamelist_tab';
-import { BuildDefaultTab } from './pages/build_page/build_default_tab';
-import { BuildPageShortLink } from './pages/build_page/build_page_short_link';
-import { BuildPageTab } from './pages/build_page/common';
-import { OverviewTab } from './pages/build_page/overview_tab/overview_tab';
-import { RelatedBuildsTab } from './pages/build_page/related_builds_tab';
-import { StepsTab } from './pages/build_page/steps_tab';
-import { TimelineTab } from './pages/build_page/timeline_tab';
-import { BuilderPage } from './pages/builder_page';
-import { BuildersPage } from './pages/builders_page/builders';
-import { InvocationDefaultTab } from './pages/invocation_page/invocation_default_tab';
-import { InvocationDetailsTab } from './pages/invocation_page/invocation_details_tab';
-import { InvocationPage } from './pages/invocation_page/invocation_page';
-import { LoginPage } from './pages/login_page';
-import { NotFoundPage } from './pages/not_found_page';
-import { searchRedirectionLoader } from './pages/search';
-import { BuilderSearch } from './pages/search/builder_search';
-import { TestSearch } from './pages/search/test_search/test_search';
-import { ServerPage } from './pages/server_page';
-import { TestHistoryPage } from './pages/test_history_page/test_history_page';
-import { TestResultsTab } from './pages/test_results_tab/test_results_tab';
-import { SwarmingBuildPage } from './swarming/views/swarming_build_page';
+import { BuildPageTab } from '@/pages/build_page/common';
 
 const isNonTransientError = (error: unknown) =>
   error instanceof GrpcError && NON_TRANSIENT_ERROR_CODES.includes(error.code);
@@ -198,115 +170,55 @@ export function App({ initOpts }: AppProps) {
       children: [
         {
           path: 'login',
-          element: (
-            // We cannot use `errorElement` because it (react-router) doesn't
-            // support error recovery.
-            //
-            // We handle the error at child level rather than at the parent
-            // level because we want the error state to be reset when the user
-            // navigates to a sibling view, which does not happen if the error
-            // is handled by the parent (without additional logic).
-            // The downside of this model is that we do not have a central place
-            // for error handling, which is somewhat mitigated by applying the
-            // same error boundary on all child routes.
-            // The upside is that the error is naturally reset on route changes.
-            //
-            // A unique `key` is needed to ensure the boundary is not reused
-            // when the user navigates to a sibling view. The error will be
-            // naturally discarded as the route is unmounted.
-            <RecoverableErrorBoundary key="login">
-              <LoginPage />
-            </RecoverableErrorBoundary>
-          ),
+          lazy: () => import('@/pages/login_page'),
         },
-        { path: 'search', loader: searchRedirectionLoader },
+        {
+          path: 'search',
+          lazy: () => import('@/pages/search/search_redirection_loader'),
+        },
         {
           path: 'builder-search',
-          element: (
-            <RecoverableErrorBoundary key="builder-search">
-              <BuilderSearch />
-            </RecoverableErrorBoundary>
-          ),
+          lazy: () => import('@/pages/search/builder_search'),
         },
         {
           path: 'p/:project/test-search',
-          element: (
-            <RecoverableErrorBoundary key="test-search">
-              <TestSearch />
-            </RecoverableErrorBoundary>
-          ),
+          lazy: () => import('@/pages/search/test_search'),
         },
         {
           path: 'p/:project/builders',
-          element: (
-            <RecoverableErrorBoundary key="builders">
-              <BuildersPage />
-            </RecoverableErrorBoundary>
-          ),
+          lazy: () => import('@/pages/builders_page'),
         },
         {
           path: 'p/:project/g/:group/builders',
-          element: (
-            <RecoverableErrorBoundary key="builder-groups">
-              <BuildersPage />
-            </RecoverableErrorBoundary>
-          ),
+          lazy: () => import('@/pages/builders_page'),
         },
         {
           path: 'p/:project/builders/:bucket/:builder',
-          element: (
-            <RecoverableErrorBoundary key="builder">
-              <BuilderPage />
-            </RecoverableErrorBoundary>
-          ),
+          lazy: () => import('@/pages/builder_page'),
         },
         {
           path: 'b/:buildId/*?',
-          element: (
-            <RecoverableErrorBoundary key="short-build">
-              <BuildPageShortLink />
-            </RecoverableErrorBoundary>
-          ),
+          lazy: () => import('@/pages/build_page/build_page_short_link'),
         },
         {
           path: 'p/:project/builders/:bucket/:builder/:buildNumOrId',
-          element: (
-            <RecoverableErrorBoundary key="long-build">
-              <BuildPage />
-            </RecoverableErrorBoundary>
-          ),
+          lazy: () => import('@/pages/build_page'),
           children: [
             {
               index: true,
-              element: (
-                <RecoverableErrorBoundary key="default">
-                  <BuildDefaultTab />
-                </RecoverableErrorBoundary>
-              ),
+              lazy: () => import('@/pages/build_page/build_default_tab'),
             },
             {
               path: BuildPageTab.Overview,
-              element: (
-                <RecoverableErrorBoundary key="overview">
-                  <OverviewTab />
-                </RecoverableErrorBoundary>
-              ),
+              lazy: () => import('@/pages/build_page/overview_tab'),
             },
             {
               path: BuildPageTab.TestResults,
-              element: (
-                <RecoverableErrorBoundary key="test-results">
-                  <TestResultsTab />
-                </RecoverableErrorBoundary>
-              ),
+              lazy: () => import('@/pages/test_results_tab'),
             },
             {
               path: BuildPageTab.Steps,
-              element: (
-                <RecoverableErrorBoundary key="steps">
-                  <StepsTab />
-                </RecoverableErrorBoundary>
-              ),
+              lazy: () => import('@/pages/build_page/steps_tab'),
               children: [
                 // Some old systems generate links to a step by
                 // appending suffix to /steps/ (crbug/1204954).
@@ -316,161 +228,83 @@ export function App({ initOpts }: AppProps) {
             },
             {
               path: BuildPageTab.RelatedBuilds,
-              element: (
-                <RecoverableErrorBoundary key="related-builds">
-                  <RelatedBuildsTab />
-                </RecoverableErrorBoundary>
-              ),
+              lazy: () => import('@/pages/build_page/related_builds_tab'),
             },
             {
               path: BuildPageTab.Timeline,
-              element: (
-                <RecoverableErrorBoundary key="timeline">
-                  <TimelineTab />
-                </RecoverableErrorBoundary>
-              ),
+              lazy: () => import('@/pages/build_page/timeline_tab'),
             },
             {
               path: BuildPageTab.Blamelist,
-              element: (
-                <RecoverableErrorBoundary key="blamelist">
-                  <BlamelistTab />
-                </RecoverableErrorBoundary>
-              ),
+              lazy: () => import('@/pages/build_page/blamelist_tab'),
             },
           ],
         },
         {
           path: 'inv/:invId',
-          element: (
-            <RecoverableErrorBoundary key="invocation">
-              <InvocationPage />
-            </RecoverableErrorBoundary>
-          ),
+          lazy: () => import('@/pages/invocation_page'),
           children: [
             {
               index: true,
-              element: (
-                <RecoverableErrorBoundary key="default">
-                  <InvocationDefaultTab />
-                </RecoverableErrorBoundary>
-              ),
+              lazy: () =>
+                import('@/pages/invocation_page/invocation_default_tab'),
             },
             {
               path: 'test-results',
-              element: (
-                <RecoverableErrorBoundary key="test-results">
-                  <TestResultsTab />
-                </RecoverableErrorBoundary>
-              ),
+              lazy: () => import('@/pages/test_results_tab'),
             },
             {
               path: 'invocation-details',
-              element: (
-                <RecoverableErrorBoundary key="invocation-details">
-                  <InvocationDetailsTab />
-                </RecoverableErrorBoundary>
-              ),
+              lazy: () =>
+                import('@/pages/invocation_page/invocation_details_tab'),
             },
           ],
         },
         {
           path: 'artifact',
-          element: (
-            <RecoverableErrorBoundary key="artifact">
-              <ArtifactPageLayout />
-            </RecoverableErrorBoundary>
-          ),
+          lazy: () => import('@/pages/artifact/artifact_page_layout'),
           children: [
             {
               path: 'text-diff/invocations/:invId/artifacts/:artifactId',
-              element: (
-                <RecoverableErrorBoundary key="test-text-diff">
-                  <TextDiffArtifactPage />
-                </RecoverableErrorBoundary>
-              ),
+              lazy: () => import('@/pages/artifact/text_diff_artifact_page'),
             },
             {
               path: 'text-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
-              element: (
-                <RecoverableErrorBoundary key="result-text-diff">
-                  <TextDiffArtifactPage />
-                </RecoverableErrorBoundary>
-              ),
+              lazy: () => import('@/pages/artifact/text_diff_artifact_page'),
             },
             {
               path: 'image-diff/invocations/:invId/artifacts/:artifactId',
-              element: (
-                <RecoverableErrorBoundary key="test-image-diff">
-                  <ImageDiffArtifactPage />
-                </RecoverableErrorBoundary>
-              ),
+              lazy: () => import('@/pages/artifact/image_diff_artifact_page'),
             },
             {
               path: 'image-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
-              element: (
-                <RecoverableErrorBoundary key="result-image-diff">
-                  <ImageDiffArtifactPage />
-                </RecoverableErrorBoundary>
-              ),
+              lazy: () => import('@/pages/artifact/image_diff_artifact_page'),
             },
             {
               path: 'raw/invocations/:invId/artifacts/:artifactId',
-              element: (
-                <RecoverableErrorBoundary key="test-raw">
-                  <RawArtifactPage />
-                </RecoverableErrorBoundary>
-              ),
+              lazy: () => import('@/pages/artifact/raw_artifact_page'),
             },
             {
               path: 'raw/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
-              element: (
-                <RecoverableErrorBoundary key="result-raw">
-                  <RawArtifactPage />
-                </RecoverableErrorBoundary>
-              ),
+              lazy: () => import('@/pages/artifact/raw_artifact_page'),
             },
           ],
         },
         {
           path: 'test/:projectOrRealm/:testId',
-          element: (
-            <RecoverableErrorBoundary key="test-history">
-              <TestHistoryPage />
-            </RecoverableErrorBoundary>
-          ),
-        },
-        {
-          path: '*',
-          element: (
-            <RecoverableErrorBoundary key="not-found">
-              <NotFoundPage />
-            </RecoverableErrorBoundary>
-          ),
+          lazy: () => import('@/pages/test_history_page'),
         },
         {
           path: 'bisection',
-          element: (
-            <RecoverableErrorBoundary key="bisection">
-              <BisectionLayout />
-            </RecoverableErrorBoundary>
-          ),
+          lazy: () => import('@/bisection/layouts/base'),
           children: [
             {
               index: true,
-              element: (
-                <RecoverableErrorBoundary key="failure-analyses">
-                  <FailureAnalysesPage />
-                </RecoverableErrorBoundary>
-              ),
+              lazy: () => import('@/bisection/pages/failure_analyses'),
             },
             {
               path: 'analysis/b/:bbid',
-              element: (
-                <RecoverableErrorBoundary key="analysis-details">
-                  <AnalysisDetailsPage />
-                </RecoverableErrorBoundary>
-              ),
+              lazy: () => import('@/bisection/pages/analysis_details'),
             },
           ],
         },
@@ -479,13 +313,13 @@ export function App({ initOpts }: AppProps) {
           children: [
             {
               path: 'task/:taskId',
-              element: (
-                <RecoverableErrorBoundary key="swarming-task">
-                  <SwarmingBuildPage />
-                </RecoverableErrorBoundary>
-              ),
+              lazy: () => import('@/swarming/views/swarming_build_page'),
             },
           ],
+        },
+        {
+          path: '*',
+          lazy: () => import('@/pages/not_found_page'),
         },
       ],
     },
@@ -494,10 +328,7 @@ export function App({ initOpts }: AppProps) {
       // routes (see the comments on the 'ui' route for rationale). We need to
       // to capture those routes and make the server handles it.
       path: '*',
-      element: <ServerPage />,
-      // Cannot use `<RecoverableErrorBoundary />` here because it requires the
-      // auth state provider.
-      errorElement: <RouteErrorDisplay />,
+      lazy: () => import('@/pages/server_page'),
     },
   ]);
 

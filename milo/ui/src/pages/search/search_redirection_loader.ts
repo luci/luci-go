@@ -44,3 +44,5 @@ export const searchRedirectionLoader = ({
     return redirect(`/ui/p/${testProject}/test-search?q=${searchQuery}`);
   }
 };
+
+export const loader = searchRedirectionLoader;
