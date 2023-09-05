@@ -252,6 +252,14 @@ func (vm *VM) getLabels() map[string]string {
 	return vm.Attributes.GetLabel()
 }
 
+func (vm *VM) getForceSendFields() []string {
+	return vm.Attributes.GetForceSendFields()
+}
+
+func (vm *VM) getNullFields() []string {
+	return vm.Attributes.GetNullFields()
+}
+
 // getScheduling returns a *compute.Scheduling representation of this VM's
 // scheduling options.
 func (vm *VM) getScheduling() *compute.Scheduling {
@@ -316,6 +324,8 @@ func (vm *VM) GetInstance() *compute.Instance {
 		ShieldedInstanceConfig:     vm.getShieldedInstanceConfig(),
 		Tags:                       vm.getTags(),
 		Labels:                     vm.getLabels(),
+		ForceSendFields:            vm.getForceSendFields(),
+		NullFields:                 vm.getNullFields(),
 	}
 	return inst
 }

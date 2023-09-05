@@ -777,6 +777,7 @@ func TestVM(t *testing.T) {
 			So(i.ShieldedInstanceConfig, ShouldBeNil)
 			So(i.Tags, ShouldBeNil)
 			So(i.Labels, ShouldBeNil)
+			So(i.ForceSendFields, ShouldBeNil)
 		})
 
 		Convey("non-empty", func() {
@@ -804,6 +805,14 @@ func TestVM(t *testing.T) {
 							{},
 						},
 					},
+					ForceSendFields: []string{
+						"a",
+						"b",
+						"c",
+					},
+					NullFields: []string{
+						"e",
+					},
 				},
 			}
 			i := v.GetInstance()
@@ -818,6 +827,8 @@ func TestVM(t *testing.T) {
 			So(i.ShieldedInstanceConfig, ShouldNotBeNil)
 			So(i.Tags, ShouldBeNil)
 			So(i.Labels, ShouldBeNil)
+			So(i.ForceSendFields, ShouldNotBeNil)
+			So(i.NullFields, ShouldNotBeNil)
 		})
 	})
 }
