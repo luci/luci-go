@@ -53,13 +53,14 @@ func prepareTemplates(opts *server.Options) *templates.Bundle {
 			}
 
 			return templates.Args{
-				"MonorailHostname": config.MonorailHostname,
-				"IsAnonymous":      auth.CurrentUser(ctx).Identity.Kind() == identity.Anonymous,
-				"UserName":         auth.CurrentUser(ctx).Name,
-				"UserEmail":        auth.CurrentUser(ctx).Email,
-				"UserAvatar":       auth.CurrentUser(ctx).Picture,
-				"LogoutURL":        logoutURL,
-				"LoginURL":         loginURL,
+				"MonorailHostname":                  config.MonorailHostname,
+				"IsAnonymous":                       auth.CurrentUser(ctx).Identity.Kind() == identity.Anonymous,
+				"UserName":                          auth.CurrentUser(ctx).Name,
+				"UserEmail":                         auth.CurrentUser(ctx).Email,
+				"UserAvatar":                        auth.CurrentUser(ctx).Picture,
+				"LogoutURL":                         logoutURL,
+				"LoginURL":                          loginURL,
+				"IsPolicyBasedBugManagementEnabled": config.BugManagement.GetPolicyBasedManagementEnabled(),
 			}, nil
 		},
 	}

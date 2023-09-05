@@ -53,6 +53,9 @@ message Config {
 
   // Configuration related to failure clustering.
   ClusteringSystem clustering = 9;
+
+  // Configuration related to automatic bug management.
+  BugManagementSystem bug_management = 10;
 }
 
 // TestVariantAnalysis controls how LUCI Analysis run test variant
@@ -68,9 +71,9 @@ message TestVariantAnalysis {
   bool bigquery_export_enabled = 2;
 }
 
-// ClusteringSystem controls failure clustering for a LUCI Analysis
-// system. For project-level clustering settings, see
-// `luci.analysis.config.Clustering` instead.
+// ClusteringSystem controls system-level settings related to LUCI Analysis
+// clustering. For project-level clustering settings, see the
+// `Clustering` message instead.
 message ClusteringSystem {
   // Controls whether test variant analysis may be queried when clustering
   // failures. If set, the test_variant_branch column will be populated
@@ -95,4 +98,13 @@ message TestVerdictExport {
   // Controls whether test verdicts are exported. Can be used to
   // contain damage during production incidents.
   bool enabled = 1;
+}
+
+// BugManagementSystem controls system-level settings related to
+// automatic bug management. For project-level clustering settings, see
+// the `BugManagement` message instead.
+message BugManagementSystem {
+  // Whether policy-based bug management is enabled. This is a feature
+  // flag intended to control the rollout of the new functionality.
+  bool policy_based_management_enabled = 1;
 }
