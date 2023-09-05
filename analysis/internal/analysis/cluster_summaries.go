@@ -94,7 +94,7 @@ type MetricValue struct {
 }
 
 // ClusterSummary represents a summary of the cluster's failures
-// and their impact.
+// and its metrics.
 type ClusterSummary struct {
 	ClusterID            clustering.ClusterID
 	ExampleFailureReason bigquery.NullString
@@ -114,14 +114,14 @@ type QueryClusterMetricBreakdownsOptions struct {
 	TimeRange *pb.TimeRange
 }
 
-// ClusterMetricBreakdown is the breakdown of impact metrics over time
+// ClusterMetricBreakdown is the breakdown of metrics over time
 // for a cluster's failures.
 type ClusterMetricBreakdown struct {
 	ClusterID        clustering.ClusterID
 	MetricBreakdowns map[metrics.ID]*MetricBreakdown
 }
 
-// MetricBreakdown is the breakdown of values over time for a single impact
+// MetricBreakdown is the breakdown of values over time for a single
 // metric.
 type MetricBreakdown struct {
 	DailyValues []int64

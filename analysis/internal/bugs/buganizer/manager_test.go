@@ -56,7 +56,7 @@ func TestBugManager(t *testing.T) {
 
 		Convey("Create", func() {
 			createRequest := newCreateRequest()
-			createRequest.Impact = bugs.LowP1Impact()
+			createRequest.Metrics = bugs.LowP1Impact()
 			expectedIssue := &issuetracker.Issue{
 				IssueId: 1,
 				IssueState: &issuetracker.IssueState{
@@ -205,7 +205,7 @@ func TestBugManager(t *testing.T) {
 
 		Convey("Update", func() {
 			c := newCreateRequest()
-			c.Impact = bugs.P2Impact()
+			c.Metrics = bugs.P2Impact()
 			bugID, err := bm.Create(ctx, c)
 			So(err, ShouldBeNil)
 			So(bugID, ShouldEqual, "1")
@@ -214,7 +214,7 @@ func TestBugManager(t *testing.T) {
 			bugsToUpdate := []bugs.BugUpdateRequest{
 				{
 					Bug:                              bugs.BugID{System: bugs.BuganizerSystem, ID: bugID},
-					Impact:                           c.Impact,
+					Metrics:                          c.Metrics,
 					IsManagingBug:                    true,
 					RuleID:                           "123",
 					IsManagingBugPriority:            true,
@@ -237,7 +237,7 @@ func TestBugManager(t *testing.T) {
 				bugsToUpdate := []bugs.BugUpdateRequest{
 					{
 						Bug:                              bugs.BugID{System: bugs.BuganizerSystem, ID: bugID},
-						Impact:                           c.Impact,
+						Metrics:                          c.Metrics,
 						RuleID:                           "123",
 						IsManagingBug:                    true,
 						IsManagingBugPriority:            true,
@@ -260,14 +260,14 @@ func TestBugManager(t *testing.T) {
 				updateDoesNothing()
 			})
 			Convey("If impact changed", func() {
-				bugsToUpdate[0].Impact = bugs.P3Impact()
+				bugsToUpdate[0].Metrics = bugs.P3Impact()
 				Convey("Does not reduce priority if impact within hysteresis range", func() {
-					bugsToUpdate[0].Impact = bugs.HighP3Impact()
+					bugsToUpdate[0].Metrics = bugs.HighP3Impact()
 
 					updateDoesNothing()
 				})
 				Convey("Does not update bug if IsManagingBug false", func() {
-					bugsToUpdate[0].Impact = bugs.ClosureImpact()
+					bugsToUpdate[0].Metrics = bugs.ClosureImpact()
 					bugsToUpdate[0].IsManagingBug = false
 
 					updateDoesNothing()
@@ -275,12 +275,12 @@ func TestBugManager(t *testing.T) {
 				Convey("Does not update bug if Impact unset", func() {
 					// Simulate valid impact not being available, e.g. due
 					// to ongoing reclustering.
-					bugsToUpdate[0].Impact = nil
+					bugsToUpdate[0].Metrics = nil
 
 					updateDoesNothing()
 				})
 				Convey("Reduces priority in response to reduced impact", func() {
-					bugsToUpdate[0].Impact = bugs.P3Impact()
+					bugsToUpdate[0].Metrics = bugs.P3Impact()
 					response, err := bm.Update(ctx, bugsToUpdate)
 					So(err, ShouldBeNil)
 					So(response, ShouldResemble, expectedResponse)
@@ -300,12 +300,12 @@ func TestBugManager(t *testing.T) {
 					updateDoesNothing()
 				})
 				Convey("Does not increase priority if impact within hysteresis range", func() {
-					bugsToUpdate[0].Impact = bugs.LowP1Impact()
+					bugsToUpdate[0].Metrics = bugs.LowP1Impact()
 
 					updateDoesNothing()
 				})
 				Convey("Increases priority in response to increased impact (single-step)", func() {
-					bugsToUpdate[0].Impact = bugs.P1Impact()
+					bugsToUpdate[0].Metrics = bugs.P1Impact()
 					response, err := bm.Update(ctx, bugsToUpdate)
 					So(err, ShouldBeNil)
 					So(response, ShouldResemble, expectedResponse)
@@ -326,7 +326,7 @@ func TestBugManager(t *testing.T) {
 				})
 				Convey("Increases priority in response to increased impact (multi-step)", func() {
 					ctx = context.WithValue(ctx, &BuganizerSelfEmailKey, "email@test.com")
-					bugsToUpdate[0].Impact = bugs.P0Impact()
+					bugsToUpdate[0].Metrics = bugs.P0Impact()
 
 					response, err := bm.Update(ctx, bugsToUpdate)
 					So(err, ShouldBeNil)
@@ -391,9 +391,9 @@ func TestBugManager(t *testing.T) {
 				})
 			})
 			Convey("If impact falls below lowest priority threshold", func() {
-				bugsToUpdate[0].Impact = bugs.ClosureImpact()
+				bugsToUpdate[0].Metrics = bugs.ClosureImpact()
 				Convey("Update leaves bug open if impact within hysteresis range", func() {
-					bugsToUpdate[0].Impact = bugs.P3LowestBeforeClosureImpact()
+					bugsToUpdate[0].Metrics = bugs.P3LowestBeforeClosureImpact()
 					// Update may reduce the priority from P2 to P3, but the
 					// issue should be left open. This is because hysteresis on
 					// priority and issue verified state is applied separately.
@@ -439,7 +439,7 @@ func TestBugManager(t *testing.T) {
 					updateDoesNothing()
 
 					Convey("Does not reopen bug if impact within hysteresis range", func() {
-						bugsToUpdate[0].Impact = bugs.HighestNotFiledImpact()
+						bugsToUpdate[0].Metrics = bugs.HighestNotFiledImpact()
 
 						updateDoesNothing()
 					})
@@ -461,7 +461,7 @@ func TestBugManager(t *testing.T) {
 					})
 
 					Convey("If impact increases, bug is re-opened with correct priority", func() {
-						bugsToUpdate[0].Impact = bugs.P3Impact()
+						bugsToUpdate[0].Metrics = bugs.P3Impact()
 						Convey("Issue has owner", func() {
 							// Update issue owner.
 							fakeStore.Issues[1].Issue.IssueState.Assignee = &issuetracker.User{
@@ -591,7 +591,7 @@ func TestBugManager(t *testing.T) {
 		})
 		Convey("GetMergedInto", func() {
 			c := newCreateRequest()
-			c.Impact = bugs.P2Impact()
+			c.Metrics = bugs.P2Impact()
 			bug, err := bm.Create(ctx, c)
 			So(err, ShouldBeNil)
 			So(bug, ShouldEqual, "1")
@@ -622,7 +622,7 @@ func TestBugManager(t *testing.T) {
 		})
 		Convey("UpdateDuplicateSource", func() {
 			c := newCreateRequest()
-			c.Impact = bugs.P2Impact()
+			c.Metrics = bugs.P2Impact()
 			bug, err := bm.Create(ctx, c)
 			So(err, ShouldBeNil)
 			So(bug, ShouldEqual, "1")
@@ -684,7 +684,7 @@ func TestBugManager(t *testing.T) {
 		})
 		Convey("UpdateDuplicateDestination", func() {
 			c := newCreateRequest()
-			c.Impact = bugs.P2Impact()
+			c.Metrics = bugs.P2Impact()
 			bug, err := bm.Create(ctx, c)
 			So(err, ShouldBeNil)
 			So(bug, ShouldEqual, "1")
@@ -704,8 +704,8 @@ func TestBugManager(t *testing.T) {
 	})
 }
 
-func newCreateRequest() *bugs.CreateRequest {
-	cluster := &bugs.CreateRequest{
+func newCreateRequest() *bugs.BugCreateRequest {
+	cluster := &bugs.BugCreateRequest{
 		Description: &clustering.ClusterDescription{
 			Title:       "ClusterID",
 			Description: "Tests are failing with reason: Some failure reason.",

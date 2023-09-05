@@ -85,14 +85,14 @@ func NewBugManager(client *Client, appID, project string, projectCfg *configpb.P
 
 // Create creates a new bug for the given request, returning its name, or
 // any encountered error.
-func (m *BugManager) Create(ctx context.Context, request *bugs.CreateRequest) (string, error) {
+func (m *BugManager) Create(ctx context.Context, request *bugs.BugCreateRequest) (string, error) {
 	components := request.MonorailComponents
 	components, err := m.filterToValidComponents(ctx, components)
 	if err != nil {
 		return "", errors.Annotate(err, "validate components").Err()
 	}
 
-	makeReq := m.generator.PrepareNew(request.Impact, request.Description, components)
+	makeReq := m.generator.PrepareNew(request.Metrics, request.Description, components)
 	var bugName string
 	if m.Simulate {
 		logging.Debugf(ctx, "Would create Monorail issue: %s", textPBMultiline.Format(makeReq))
@@ -172,14 +172,14 @@ func (m *BugManager) Update(ctx context.Context, request []bugs.BugUpdateRequest
 		shouldArchive := shouldArchiveRule(ctx, issue, req.IsManagingBug)
 		isAssigned := issue.Owner.GetUser() != ""
 		disableRulePriorityUpdates := false
-		if !isDuplicate && !shouldArchive && req.IsManagingBug && req.Impact != nil {
-			if m.generator.NeedsUpdate(req.Impact, issue, req.IsManagingBugPriority) {
+		if !isDuplicate && !shouldArchive && req.IsManagingBug && req.Metrics != nil {
+			if m.generator.NeedsUpdate(req.Metrics, issue, req.IsManagingBugPriority) {
 				comments, err := m.client.ListComments(ctx, issue.Name)
 				if err != nil {
 					return nil, err
 				}
 				mur := m.generator.MakeUpdate(MakeUpdateOptions{
-					impact:                           req.Impact,
+					metrics:                          req.Metrics,
 					issue:                            issue,
 					comments:                         comments,
 					IsManagingBugPriority:            req.IsManagingBugPriority,

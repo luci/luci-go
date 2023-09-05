@@ -126,7 +126,7 @@ func NewBugManager(client Client,
 }
 
 // Create creates an issue in Buganizer and returns the issue ID.
-func (bm *BugManager) Create(ctx context.Context, createRequest *bugs.CreateRequest) (string, error) {
+func (bm *BugManager) Create(ctx context.Context, createRequest *bugs.BugCreateRequest) (string, error) {
 	componentID := bm.projectCfg.Buganizer.DefaultComponent.Id
 	buganizerTestMode := ctx.Value(&BuganizerTestModeKey)
 	wantedComponentID := createRequest.BuganizerComponent
@@ -144,7 +144,7 @@ func (bm *BugManager) Create(ctx context.Context, createRequest *bugs.CreateRequ
 	}
 
 	createIssueRequest := bm.requestGenerator.PrepareNew(
-		createRequest.Impact,
+		createRequest.Metrics,
 		createRequest.Description,
 		createRequest.RuleID,
 		componentID,
@@ -164,7 +164,7 @@ func (bm *BugManager) Create(ctx context.Context, createRequest *bugs.CreateRequ
 	}
 
 	issueCommentReq := bm.requestGenerator.PrepareLinkIssueCommentUpdate(
-		createRequest.Impact,
+		createRequest.Metrics,
 		createRequest.Description,
 		issueId,
 	)
@@ -245,13 +245,10 @@ func (bm *BugManager) Update(ctx context.Context, requests []bugs.BugUpdateReque
 		if !updateResponse.IsDuplicate &&
 			!updateResponse.ShouldArchive &&
 			request.IsManagingBug &&
-			request.Impact != nil {
-			if bm.requestGenerator.NeedsUpdate(request.Impact, issue, request.IsManagingBugPriority) {
-				if err != nil {
-					return nil, errors.Annotate(err, "read impact rule").Err()
-				}
+			request.Metrics != nil {
+			if bm.requestGenerator.NeedsUpdate(request.Metrics, issue, request.IsManagingBugPriority) {
 				mur, err := bm.requestGenerator.MakeUpdate(ctx, MakeUpdateOptions{
-					impact:                           request.Impact,
+					metrics:                          request.Metrics,
 					issue:                            issue,
 					IsManagingBugPriority:            request.IsManagingBugPriority,
 					IsManagingBugPriorityLastUpdated: request.IsManagingBugPriorityLastUpdated,

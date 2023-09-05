@@ -29,13 +29,13 @@ func TestThresholding(t *testing.T) {
 	t.Parallel()
 
 	Convey("With Cluster", t, func() {
-		cl := &ClusterImpact{
-			metrics.CriticalFailuresExonerated.ID: MetricImpact{
+		cl := &ClusterMetrics{
+			metrics.CriticalFailuresExonerated.ID: MetricValues{
 				OneDay:   60,
 				ThreeDay: 180,
 				SevenDay: 420,
 			},
-			metrics.Failures.ID: MetricImpact{
+			metrics.Failures.ID: MetricValues{
 				OneDay:   100,
 				ThreeDay: 300,
 				SevenDay: 700,

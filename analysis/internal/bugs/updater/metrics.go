@@ -20,34 +20,37 @@ import (
 	"go.chromium.org/luci/analysis/internal/bugs"
 )
 
-// ExtractResidualImpact extracts the residual impact from a
-// cluster. For suggested clusters, residual impact
-// is the impact of the cluster after failures that are already
-// part of a bug cluster are removed.
-func ExtractResidualImpact(c *analysis.Cluster) *bugs.ClusterImpact {
-	residualImpact := bugs.ClusterImpact{}
+// ExtractResidualMetrics extracts the values of metrics
+// calculated based only on residual failures.
+// For suggested clusters, residual failures are the
+// failures left after failures that are already associated
+// with a bug are removed.
+func ExtractResidualMetrics(c *analysis.Cluster) *bugs.ClusterMetrics {
+	residualImpact := bugs.ClusterMetrics{}
 	for id, counts := range c.MetricValues {
-		residualImpact[id] = extractMetricImpact(counts)
+		residualImpact[id] = extractMetricValues(counts)
 	}
 	return &residualImpact
 }
 
-func extractMetricImpact(counts metrics.TimewiseCounts) bugs.MetricImpact {
-	return bugs.MetricImpact{
+func extractMetricValues(counts metrics.TimewiseCounts) bugs.MetricValues {
+	return bugs.MetricValues{
 		OneDay:   counts.OneDay.Residual,
 		ThreeDay: counts.ThreeDay.Residual,
 		SevenDay: counts.SevenDay.Residual,
 	}
 }
 
-// SetResidualImpact sets the residual impact on a cluster summary.
-func SetResidualImpact(cs *analysis.Cluster, impact *bugs.ClusterImpact) {
+// SetResidualMetrics sets the value of metrics calculated
+// on residual failures.
+// This method exists for testing purposes only.
+func SetResidualMetrics(cs *analysis.Cluster, impact *bugs.ClusterMetrics) {
 	for k, v := range *impact {
 		cs.MetricValues[k] = replaceResidualImpact(cs.MetricValues[k], v)
 	}
 }
 
-func replaceResidualImpact(counts metrics.TimewiseCounts, impact bugs.MetricImpact) metrics.TimewiseCounts {
+func replaceResidualImpact(counts metrics.TimewiseCounts, impact bugs.MetricValues) metrics.TimewiseCounts {
 	counts.OneDay.Residual = impact.OneDay
 	counts.ThreeDay.Residual = impact.ThreeDay
 	counts.SevenDay.Residual = impact.SevenDay

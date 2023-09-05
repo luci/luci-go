@@ -95,15 +95,15 @@ func NewRequestGenerator(
 
 // PrepareNew generates a CreateIssueRequest for a new issue.
 // It sets the default values on the bug.
-func (rg *RequestGenerator) PrepareNew(impact *bugs.ClusterImpact,
+func (rg *RequestGenerator) PrepareNew(metrics *bugs.ClusterMetrics,
 	description *clustering.ClusterDescription,
 	ruleID string,
 	componentID int64) *issuetracker.CreateIssueRequest {
 
-	issuePriority := rg.clusterPriority(impact)
+	issuePriority := rg.clusterPriority(metrics)
 
 	// Justify the priority for the bug.
-	thresholdComment := rg.priorityComment(impact, issuePriority)
+	thresholdComment := rg.priorityComment(metrics, issuePriority)
 
 	ruleLink := fmt.Sprintf("https://%s.appspot.com/p/%s/rules/%s", rg.appID, rg.project, ruleID)
 
@@ -129,15 +129,15 @@ func (rg *RequestGenerator) PrepareNew(impact *bugs.ClusterImpact,
 
 // clusterPriority returns the desired priority of the bug, if no hysteresis
 // is applied.
-func (rg *RequestGenerator) clusterPriority(impact *bugs.ClusterImpact) issuetracker.Issue_Priority {
-	return rg.clusterPriorityWithInflatedThresholds(impact, 0)
+func (rg *RequestGenerator) clusterPriority(metrics *bugs.ClusterMetrics) issuetracker.Issue_Priority {
+	return rg.clusterPriorityWithInflatedThresholds(metrics, 0)
 }
 
 // clusterPriorityWithInflatedThresholds returns the desired priority of the bug,
 // if thresholds are inflated or deflated with the given percentage.
 //
 // See bugs.InflateThreshold for the interpretation of inflationPercent.
-func (rg *RequestGenerator) clusterPriorityWithInflatedThresholds(impact *bugs.ClusterImpact, inflationPercent int64) issuetracker.Issue_Priority {
+func (rg *RequestGenerator) clusterPriorityWithInflatedThresholds(impact *bugs.ClusterMetrics, inflationPercent int64) issuetracker.Issue_Priority {
 	mappings := rg.buganizerCfg.PriorityMappings
 	// Default to using the lowest priorityMapping.
 	priorityMapping := mappings[len(mappings)-1]
@@ -165,14 +165,14 @@ func (rg *RequestGenerator) linkToRuleComment(issueId int64) string {
 
 // PrepareLinkIssueCommentUpdate prepares a request that adds links to LUCI Analysis to
 // a Buganizer bug by updating the issue description.
-func (rg *RequestGenerator) PrepareLinkIssueCommentUpdate(impact *bugs.ClusterImpact,
+func (rg *RequestGenerator) PrepareLinkIssueCommentUpdate(metrics *bugs.ClusterMetrics,
 	description *clustering.ClusterDescription,
 	issueID int64) *issuetracker.UpdateIssueCommentRequest {
 
 	// Regenerate the initial comment in the same way as PrepareNew, but use
 	// the link for the rule that uses the bug ID instead of the rule ID.
-	issuePriority := rg.clusterPriority(impact)
-	thresholdComment := rg.priorityComment(impact, issuePriority)
+	issuePriority := rg.clusterPriority(metrics)
+	thresholdComment := rg.priorityComment(metrics, issuePriority)
 	ruleLink := fmt.Sprintf("https://%s.appspot.com/b/%d", rg.appID, issueID)
 
 	return &issuetracker.UpdateIssueCommentRequest{
@@ -260,16 +260,16 @@ func (rg *RequestGenerator) UpdateDuplicateDestination(issueId int64) *issuetrac
 }
 
 // NeedsUpdate determines if the bug for the given cluster needs to be updated.
-func (rg *RequestGenerator) NeedsUpdate(impact *bugs.ClusterImpact,
+func (rg *RequestGenerator) NeedsUpdate(metrics *bugs.ClusterMetrics,
 	issue *issuetracker.Issue,
 	isManagingBugPriority bool) bool {
 	// Cases that a bug may be updated follow.
 	switch {
-	case !rg.isCompatibleWithVerified(impact, issue.IssueState.Status == issuetracker.Issue_VERIFIED):
+	case !rg.isCompatibleWithVerified(metrics, issue.IssueState.Status == issuetracker.Issue_VERIFIED):
 		return true
 	case isManagingBugPriority &&
 		issue.IssueState.Status != issuetracker.Issue_VERIFIED &&
-		!rg.isCompatibleWithPriority(impact, issue.IssueState.Priority):
+		!rg.isCompatibleWithPriority(metrics, issue.IssueState.Priority):
 		// The priority has changed on a cluster which is not verified as fixed
 		// and the user isn't manually controlling the priority.
 		return true
@@ -280,8 +280,8 @@ func (rg *RequestGenerator) NeedsUpdate(impact *bugs.ClusterImpact,
 
 // MakeUpdateOptions are the options for making a bug update.
 type MakeUpdateOptions struct {
-	// The cluster impact for the update.
-	impact *bugs.ClusterImpact
+	// The cluster metrics.
+	metrics *bugs.ClusterMetrics
 	// The issue to update.
 	issue *issuetracker.Issue
 	// Indicates whether the rule is managing bug priority or not.
@@ -290,7 +290,7 @@ type MakeUpdateOptions struct {
 	IsManagingBugPriorityLastUpdated time.Time
 }
 
-// MakeUpdate prepares an update for the bug associated with the given impact.
+// MakeUpdate prepares an update for the bug with the given metrics.
 // **Must** ONLY be called if NeedsUpdate(...) returns true.
 func (rg *RequestGenerator) MakeUpdate(
 	ctx context.Context,
@@ -308,19 +308,19 @@ func (rg *RequestGenerator) MakeUpdate(
 	var commentary []bugs.Commentary
 	result := MakeUpdateResult{}
 	issueVerified := options.issue.IssueState.Status == issuetracker.Issue_VERIFIED
-	if !rg.isCompatibleWithVerified(options.impact, issueVerified) {
+	if !rg.isCompatibleWithVerified(options.metrics, issueVerified) {
 		// Verify or reopen the issue.
-		comment, err := rg.prepareBugVerifiedUpdate(ctx, options.impact, options.issue, request)
+		comment, err := rg.prepareBugVerifiedUpdate(ctx, options.metrics, options.issue, request)
 		if err != nil {
 			return MakeUpdateResult{}, errors.Annotate(err, "prepare bug verified update ").Err()
 		}
 		commentary = append(commentary, comment)
 		// After the update, whether the issue was verified will have changed.
-		issueVerified = rg.clusterResolved(options.impact)
+		issueVerified = rg.clusterResolved(options.metrics)
 	}
 	if options.IsManagingBugPriority &&
 		!issueVerified &&
-		!rg.isCompatibleWithPriority(options.impact, options.issue.IssueState.Priority) {
+		!rg.isCompatibleWithPriority(options.metrics, options.issue.IssueState.Priority) {
 		hasManuallySetPriority, err := rg.hasManuallySetPriority(ctx, options)
 		if err != nil {
 			return MakeUpdateResult{}, errors.Annotate(err, "create issue update request").Err()
@@ -334,7 +334,7 @@ func (rg *RequestGenerator) MakeUpdate(
 		} else {
 			// We were the last to update the bug priority.
 			// Apply the priority update.
-			comment := rg.preparePriorityUpdate(options.impact, options.issue, request)
+			comment := rg.preparePriorityUpdate(options.metrics, options.issue, request)
 			commentary = append(commentary, comment)
 		}
 	}
@@ -401,10 +401,10 @@ func (rg *RequestGenerator) hasManuallySetPriority(ctx context.Context,
 // prepareBugVerifiedUpdate adds bug status update to the request.
 // Returns the commentary about this change.
 func (rg *RequestGenerator) prepareBugVerifiedUpdate(ctx context.Context,
-	impact *bugs.ClusterImpact,
+	metrics *bugs.ClusterMetrics,
 	issue *issuetracker.Issue,
 	request *issuetracker.ModifyIssueRequest) (bugs.Commentary, error) {
-	resolved := rg.clusterResolved(impact)
+	resolved := rg.clusterResolved(metrics)
 	priorityMappings := rg.buganizerCfg.PriorityMappings
 	var status issuetracker.Issue_Status
 	var body strings.Builder
@@ -446,7 +446,7 @@ func (rg *RequestGenerator) prepareBugVerifiedUpdate(ctx context.Context,
 		}
 
 		body.WriteString("Because:\n")
-		body.WriteString(bugs.ExplainThresholdsMet(impact, rg.bugFilingThresholds))
+		body.WriteString(bugs.ExplainThresholdsMet(metrics, rg.bugFilingThresholds))
 		body.WriteString("LUCI Analysis has re-opened the bug.")
 
 		trailer = fmt.Sprintf("Why issues are re-opened: https://%s.appspot.com/help#bug-reopened", rg.appID)
@@ -462,8 +462,8 @@ func (rg *RequestGenerator) prepareBugVerifiedUpdate(ctx context.Context,
 }
 
 // preparePriorityUpdate updates the issue's priority and creates a commentary for it.
-func (rg *RequestGenerator) preparePriorityUpdate(impact *bugs.ClusterImpact, issue *issuetracker.Issue, request *issuetracker.ModifyIssueRequest) bugs.Commentary {
-	newPriority := rg.clusterPriority(impact)
+func (rg *RequestGenerator) preparePriorityUpdate(metrics *bugs.ClusterMetrics, issue *issuetracker.Issue, request *issuetracker.ModifyIssueRequest) bugs.Commentary {
+	newPriority := rg.clusterPriority(metrics)
 	request.AddMask.Paths = append(request.AddMask.Paths, "priority")
 	request.Add.Priority = newPriority
 
@@ -472,7 +472,7 @@ func (rg *RequestGenerator) preparePriorityUpdate(impact *bugs.ClusterImpact, is
 	newPriorityIndex := rg.indexOfPriority(newPriority)
 	if newPriorityIndex < oldPriorityIndex {
 		body.WriteString("Because:\n")
-		body.WriteString(rg.priorityIncreaseJustification(impact, oldPriorityIndex, newPriorityIndex))
+		body.WriteString(rg.priorityIncreaseJustification(metrics, oldPriorityIndex, newPriorityIndex))
 		body.WriteString(fmt.Sprintf("LUCI Analysis has increased the bug priority from %v to %v.", issue.IssueState.Priority, newPriority))
 	} else {
 		body.WriteString("Because:\n")
@@ -487,13 +487,13 @@ func (rg *RequestGenerator) preparePriorityUpdate(impact *bugs.ClusterImpact, is
 }
 
 // priorityComment outputs a human-readable justification
-// explaining why the impact should be given the specified issue priority. It
+// explaining why the impact justify the specified issue priority. It
 // is intended to be used when bugs are initially filed.
 //
 // Example output:
 // "The priority was set to P0 because:
 // - Presubmit Runs Failed (1-day) >= 15"
-func (rg *RequestGenerator) priorityComment(impact *bugs.ClusterImpact, issuePriority issuetracker.Issue_Priority) string {
+func (rg *RequestGenerator) priorityComment(metrics *bugs.ClusterMetrics, issuePriority issuetracker.Issue_Priority) string {
 	priorityIndex := rg.indexOfPriority(issuePriority)
 	if priorityIndex >= len(rg.buganizerCfg.PriorityMappings) {
 		// Unknown priority - it should be one of the configured priorities.
@@ -501,7 +501,7 @@ func (rg *RequestGenerator) priorityComment(impact *bugs.ClusterImpact, issuePri
 	}
 
 	thresholdsMet := rg.buganizerCfg.PriorityMappings[priorityIndex].Thresholds
-	justification := bugs.ExplainThresholdsMet(impact, thresholdsMet)
+	justification := bugs.ExplainThresholdsMet(metrics, thresholdsMet)
 	if justification == "" {
 		return ""
 	}
@@ -523,7 +523,7 @@ func (rg *RequestGenerator) priorityComment(impact *bugs.ClusterImpact, issuePri
 //
 // Example output:
 // "- Presubmit Runs Failed (1-day) >= 15"
-func (rg *RequestGenerator) priorityIncreaseJustification(impact *bugs.ClusterImpact, oldPriorityIndex, newPriorityIndex int) string {
+func (rg *RequestGenerator) priorityIncreaseJustification(metrics *bugs.ClusterMetrics, oldPriorityIndex, newPriorityIndex int) string {
 	if newPriorityIndex >= oldPriorityIndex {
 		// Priority did not change or decreased.
 		return ""
@@ -545,7 +545,7 @@ func (rg *RequestGenerator) priorityIncreaseJustification(impact *bugs.ClusterIm
 		}
 		thresholdsMet = append(thresholdsMet, metThreshold)
 	}
-	return bugs.ExplainThresholdsMet(impact, thresholdsMet...)
+	return bugs.ExplainThresholdsMet(metrics, thresholdsMet...)
 }
 
 // priorityDecreaseJustification outputs a human-readable justification
@@ -585,35 +585,32 @@ func (rg *RequestGenerator) priorityDecreaseJustification(oldPriorityIndex, newP
 	return bugs.ExplainThresholdNotMetMessage(failedToMeetThreshold)
 }
 
-// isCompatibleWithVerified returns whether the impact of the current cluster
-// is compatible with the issue having the given verified status, based on
+// isCompatibleWithVerified returns whether the metrics of the current cluster
+// are compatible with the issue having the given verified status, based on
 // configured thresholds and hysteresis.
-func (rg *RequestGenerator) isCompatibleWithVerified(impact *bugs.ClusterImpact, verified bool) bool {
+func (rg *RequestGenerator) isCompatibleWithVerified(metrics *bugs.ClusterMetrics, verified bool) bool {
 	hysteresisPerc := rg.buganizerCfg.PriorityHysteresisPercent
 	lowestPriority := rg.buganizerCfg.PriorityMappings[len(rg.buganizerCfg.PriorityMappings)-1]
 	if verified {
 		// The issue is verified. Only reopen if we satisfied the bug-filing
 		// criteria. Bug-filing criteria is guaranteed to imply the criteria
 		// of the lowest priority level.
-		return !impact.MeetsAnyOfThresholds(rg.bugFilingThresholds)
+		return !metrics.MeetsAnyOfThresholds(rg.bugFilingThresholds)
 	} else {
-		// The issue is not verified. Only close if the impact falls
+		// The issue is not verified. Only close if the metrics fall
 		// below the threshold with hysteresis.
 		deflatedThreshold := bugs.InflateThreshold(lowestPriority.Thresholds, -hysteresisPerc)
-		return impact.MeetsAnyOfThresholds(deflatedThreshold)
+		return metrics.MeetsAnyOfThresholds(deflatedThreshold)
 	}
 }
 
-// isCompatibleWithPriority returns whether the impact of the current cluster
-// is compatible with the issue having the given priority, based on
+// isCompatibleWithPriority returns whether the metrics of the current cluster
+// are compatible with the issue having the given priority, based on
 // configured thresholds and hysteresis.
 //
 // If the issue's priority is not in the configuration, it is also
 // considered to be incompatible.
-//
-// impact is the degined cluster's impact.
-// priority is the issue's priority.
-func (rg *RequestGenerator) isCompatibleWithPriority(impact *bugs.ClusterImpact, priority issuetracker.Issue_Priority) bool {
+func (rg *RequestGenerator) isCompatibleWithPriority(metrics *bugs.ClusterMetrics, priority issuetracker.Issue_Priority) bool {
 	priorityIndex := rg.indexOfPriority(priority)
 	if priorityIndex >= len(rg.buganizerCfg.PriorityMappings) {
 		// Unknown priority in use. The priority should be updated to
@@ -622,8 +619,8 @@ func (rg *RequestGenerator) isCompatibleWithPriority(impact *bugs.ClusterImpact,
 	}
 
 	hysteresisPerc := rg.buganizerCfg.PriorityHysteresisPercent
-	lowestAllowedPriority := rg.clusterPriorityWithInflatedThresholds(impact, hysteresisPerc)
-	highestAllowedPriority := rg.clusterPriorityWithInflatedThresholds(impact, -hysteresisPerc)
+	lowestAllowedPriority := rg.clusterPriorityWithInflatedThresholds(metrics, hysteresisPerc)
+	highestAllowedPriority := rg.clusterPriorityWithInflatedThresholds(metrics, -hysteresisPerc)
 
 	// Check that the cluster has a priority no less than lowest priority
 	// and no greater than highest priority allowed by hysteresis.
@@ -636,9 +633,9 @@ func (rg *RequestGenerator) isCompatibleWithPriority(impact *bugs.ClusterImpact,
 
 // clusterResolved returns the desired state of whether the cluster has been
 // verified, if no hysteresis has been applied.
-func (rg *RequestGenerator) clusterResolved(impact *bugs.ClusterImpact) bool {
+func (rg *RequestGenerator) clusterResolved(metrics *bugs.ClusterMetrics) bool {
 	lowestPriority := rg.buganizerCfg.PriorityMappings[len(rg.buganizerCfg.PriorityMappings)-1]
-	return !impact.MeetsAnyOfThresholds(lowestPriority.Thresholds)
+	return !metrics.MeetsAnyOfThresholds(lowestPriority.Thresholds)
 }
 
 func (rg *RequestGenerator) indexOfPriority(priority issuetracker.Issue_Priority) int {

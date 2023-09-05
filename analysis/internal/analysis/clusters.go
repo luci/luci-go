@@ -36,7 +36,7 @@ import (
 )
 
 // Cluster contains detailed information about a cluster, including
-// a statistical summary of a cluster's failures, and their impact.
+// a statistical summary of a cluster's failures, and its metrics.
 type Cluster struct {
 	ClusterID clustering.ClusterID
 
@@ -370,7 +370,7 @@ type ImpactfulClusterReadOptions struct {
 	AlwaysIncludeBugClusters bool
 }
 
-// ReadImpactfulClusters reads clusters exceeding specified impact metrics, or are otherwise
+// ReadImpactfulClusters reads clusters exceeding specified metrics, or are otherwise
 // nominated to be read.
 func (c *Client) ReadImpactfulClusters(ctx context.Context, opts ImpactfulClusterReadOptions) (cs []*Cluster, err error) {
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/analysis.ReadImpactfulClusters",

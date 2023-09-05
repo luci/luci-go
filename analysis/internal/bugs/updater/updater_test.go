@@ -871,7 +871,7 @@ func TestUpdate(t *testing.T) {
 					originalStatus := issue.Issue.IssueState.Status
 					So(originalStatus, ShouldNotEqual, issuetracker.Issue_VERIFIED)
 
-					SetResidualImpact(bugClusters[1], bugs.ClosureImpact())
+					SetResidualMetrics(bugClusters[1], bugs.ClosureImpact())
 
 					// Act
 					err = updateBugsForProject(ctx, opts)
@@ -1053,7 +1053,7 @@ func TestUpdate(t *testing.T) {
 
 						// Increase cluster impact to P0.
 						So(originalPriority, ShouldNotEqual, issuetracker.Issue_P0)
-						SetResidualImpact(bugClusters[0], bugs.P0Impact())
+						SetResidualMetrics(bugClusters[0], bugs.P0Impact())
 
 						Convey("increasing cluster impact to P0 increases issue priority", func() {
 							// Act
@@ -1078,7 +1078,7 @@ func TestUpdate(t *testing.T) {
 						Convey("decreasing cluster impact to P3 decreases issue priority", func() {
 							// Reduce cluster impact to P3.
 							So(originalPriority, ShouldNotEqual, issuetracker.Issue_P3)
-							SetResidualImpact(bugClusters[0], bugs.P3Impact())
+							SetResidualMetrics(bugClusters[0], bugs.P3Impact())
 
 							// Act
 							err = updateBugsForProject(ctx, opts)
@@ -1209,7 +1209,7 @@ func TestUpdate(t *testing.T) {
 
 						// Increase cluster impact to P0.
 						So(originalPriority, ShouldNotEqual, "0")
-						SetResidualImpact(bugClusters[ruleIndex], bugs.P0Impact())
+						SetResidualMetrics(bugClusters[ruleIndex], bugs.P0Impact())
 
 						Convey("increasing cluster impact to P0 increases issue priority", func() {
 							// Act
@@ -1236,7 +1236,7 @@ func TestUpdate(t *testing.T) {
 						Convey("decreasing cluster impact to P3 decreases issue priority", func() {
 							// Reduce cluster impact to P3.
 							So(originalPriority, ShouldNotEqual, issuetracker.Issue_P3)
-							SetResidualImpact(bugClusters[ruleIndex], bugs.P3Impact())
+							SetResidualMetrics(bugClusters[ruleIndex], bugs.P3Impact())
 
 							// Act
 							err = updateBugsForProject(ctx, opts)

@@ -83,7 +83,7 @@ func inflateSingleThreshold(threshold *int64, inflationPercent int64) *int64 {
 
 // MeetsAnyOfThresholds returns whether the cluster metrics meet or exceed
 // any of the specified thresholds.
-func (c *ClusterImpact) MeetsAnyOfThresholds(ts []*configpb.ImpactMetricThreshold) bool {
+func (c *ClusterMetrics) MeetsAnyOfThresholds(ts []*configpb.ImpactMetricThreshold) bool {
 	for _, t := range ts {
 		if c.MeetsThreshold(metrics.ID(t.MetricId), t.Threshold) {
 			return true
@@ -94,7 +94,7 @@ func (c *ClusterImpact) MeetsAnyOfThresholds(ts []*configpb.ImpactMetricThreshol
 
 // MeetsThreshold returns whether the cluster metrics meet or exceed
 // the specified threshold.
-func (c *ClusterImpact) MeetsThreshold(metricID metrics.ID, t *configpb.MetricThreshold) bool {
+func (c *ClusterMetrics) MeetsThreshold(metricID metrics.ID, t *configpb.MetricThreshold) bool {
 	impact, ok := (*c)[metricID]
 	if ok && impact.meetsThreshold(t) {
 		return true
@@ -102,7 +102,7 @@ func (c *ClusterImpact) MeetsThreshold(metricID metrics.ID, t *configpb.MetricTh
 	return false
 }
 
-func (m MetricImpact) meetsThreshold(t *configpb.MetricThreshold) bool {
+func (m MetricValues) meetsThreshold(t *configpb.MetricThreshold) bool {
 	if t == nil {
 		t = &configpb.MetricThreshold{}
 	}
@@ -186,7 +186,7 @@ func explainMetricCriteriaNotMet(metric string, threshold *configpb.MetricThresh
 // met the given priority threshold. As the overall threshold is an 'OR' combination of
 // its underlying thresholds, this returns an example of a threshold which a metric
 // value exceeded.
-func (c *ClusterImpact) ExplainThresholdMet(thresholds []*configpb.ImpactMetricThreshold) ThresholdExplanation {
+func (c *ClusterMetrics) ExplainThresholdMet(thresholds []*configpb.ImpactMetricThreshold) ThresholdExplanation {
 	for _, t := range thresholds {
 		def := metrics.MustByID(metrics.ID(t.MetricId))
 		impact, ok := (*c)[metrics.ID(t.MetricId)]
@@ -202,7 +202,7 @@ func (c *ClusterImpact) ExplainThresholdMet(thresholds []*configpb.ImpactMetricT
 	return ThresholdExplanation{}
 }
 
-func explainMetricThresholdMet(metric string, impact MetricImpact, threshold *configpb.MetricThreshold) *ThresholdExplanation {
+func explainMetricThresholdMet(metric string, impact MetricValues, threshold *configpb.MetricThreshold) *ThresholdExplanation {
 	if threshold == nil {
 		return nil
 	}
@@ -278,7 +278,7 @@ func ExplainThresholdNotMetMessage(thresoldNotMet []*configpb.ImpactMetricThresh
 
 // ExplainThresholdsMet creates a threshold explanation of how the cluster's impact met
 // the threshold of a priority.
-func ExplainThresholdsMet(impact *ClusterImpact, thresholds ...[]*configpb.ImpactMetricThreshold) string {
+func ExplainThresholdsMet(impact *ClusterMetrics, thresholds ...[]*configpb.ImpactMetricThreshold) string {
 	var explanations []ThresholdExplanation
 	for _, t := range thresholds {
 		// There may be multiple ways in which we could have met the

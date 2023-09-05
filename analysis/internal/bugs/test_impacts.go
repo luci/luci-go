@@ -32,55 +32,55 @@ func TestBugFilingThresholds() []*configpb.ImpactMetricThreshold {
 }
 
 // P0Impact returns cluster impact that is consistent with a P0 bug.
-func P0Impact() *ClusterImpact {
-	return &ClusterImpact{metrics.Failures.ID: MetricImpact{OneDay: 1500}}
+func P0Impact() *ClusterMetrics {
+	return &ClusterMetrics{metrics.Failures.ID: MetricValues{OneDay: 1500}}
 }
 
 // P1Impact returns cluster impact that is consistent with a P1 bug.
-func P1Impact() *ClusterImpact {
-	return &ClusterImpact{metrics.Failures.ID: MetricImpact{OneDay: 750}}
+func P1Impact() *ClusterMetrics {
+	return &ClusterMetrics{metrics.Failures.ID: MetricValues{OneDay: 750}}
 }
 
 // LowP1Impact returns cluster impact that is consistent with a P1
 // bug, but if hysteresis is applied, could also be compatible with P2.
-func LowP1Impact() *ClusterImpact {
+func LowP1Impact() *ClusterMetrics {
 	// (500 * (1.0 + PriorityHysteresisPercent / 100.0)) - 1
-	return &ClusterImpact{metrics.Failures.ID: MetricImpact{OneDay: 549}}
+	return &ClusterMetrics{metrics.Failures.ID: MetricValues{OneDay: 549}}
 }
 
 // P2Impact returns cluster impact that is consistent with a P2 bug.
-func P2Impact() *ClusterImpact {
-	return &ClusterImpact{metrics.Failures.ID: MetricImpact{OneDay: 300}}
+func P2Impact() *ClusterMetrics {
+	return &ClusterMetrics{metrics.Failures.ID: MetricValues{OneDay: 300}}
 }
 
 // HighP3Impact returns cluster impact that is consistent with a P3
 // bug, but if hysteresis is applied, could also be compatible with P2.
-func HighP3Impact() *ClusterImpact {
+func HighP3Impact() *ClusterMetrics {
 	// (100 / (1.0 + PriorityHysteresisPercent / 100.0)) + 1
-	return &ClusterImpact{metrics.Failures.ID: MetricImpact{OneDay: 91}}
+	return &ClusterMetrics{metrics.Failures.ID: MetricValues{OneDay: 91}}
 }
 
 // P3Impact returns cluster impact that is consistent with a P3 bug.
-func P3Impact() *ClusterImpact {
-	return &ClusterImpact{metrics.Failures.ID: MetricImpact{OneDay: 75}}
+func P3Impact() *ClusterMetrics {
+	return &ClusterMetrics{metrics.Failures.ID: MetricValues{OneDay: 75}}
 }
 
 // HighestNotFiledImpact returns the highest cluster impact
 // that can be consistent with a bug not being filed.
-func HighestNotFiledImpact() *ClusterImpact {
-	return &ClusterImpact{metrics.Failures.ID: MetricImpact{OneDay: 74}} // 75 - 1
+func HighestNotFiledImpact() *ClusterMetrics {
+	return &ClusterMetrics{metrics.Failures.ID: MetricValues{OneDay: 74}} // 75 - 1
 }
 
 // P3LowestBeforeClosureImpact returns cluster impact that
 // is the lowest impact that can be compatible with a P3 bug,
 // after including hysteresis.
-func P3LowestBeforeClosureImpact() *ClusterImpact {
+func P3LowestBeforeClosureImpact() *ClusterMetrics {
 	// (50 / (1.0 + PriorityHysteresisPercent / 100.0)) + 1
-	return &ClusterImpact{metrics.Failures.ID: MetricImpact{OneDay: 46}}
+	return &ClusterMetrics{metrics.Failures.ID: MetricValues{OneDay: 46}}
 }
 
 // ClosureImpact returns cluster impact that is consistent with a
 // closed (verified) bug.
-func ClosureImpact() *ClusterImpact {
-	return &ClusterImpact{}
+func ClosureImpact() *ClusterMetrics {
+	return &ClusterMetrics{}
 }

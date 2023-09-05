@@ -25,11 +25,11 @@ import (
 type BugUpdateRequest struct {
 	// The bug to update.
 	Bug BugID
-	// Impact for the given bug. This is only set if valid impact is available,
-	// if re-clustering is currently ongoing for the failure association rule
-	// and impact is unreliable, this will be unset to avoid erroneous
+	// Metrics for the given bug. This is only set if valid metrics are available.
+	// If re-clustering is currently ongoing for the failure association rule
+	// and metrics are unreliable, this will be unset to avoid erroneous
 	// priority updates.
-	Impact *ClusterImpact
+	Metrics *ClusterMetrics
 	// Whether the user enabled priority updates and auto-closure for the bug.
 	// If this if false, the BugUpdateRequest is only made to determine if the
 	// bug is the duplicate of another bug and if the rule should be archived.
@@ -97,15 +97,15 @@ type UpdateDuplicateSourceRequest struct {
 
 var ErrCreateSimulated = errors.New("CreateNew did not create a bug as the bug manager is in simulation mode")
 
-// CreateRequest captures key details of a cluster and its impact,
-// as needed for filing new bugs.
-type CreateRequest struct {
+// BugCreateRequest captures a request to a bug filing system to
+// file a new bug for a suggested cluster.
+type BugCreateRequest struct {
 	// The ID of the rule that is in the process of being created.
 	RuleID string
 	// Description is the human-readable description of the cluster.
 	Description *clustering.ClusterDescription
-	// Impact describes the impact of cluster.
-	Impact *ClusterImpact
+	// Metrics contains metrics for the cluster.
+	Metrics *ClusterMetrics
 	// The monorail components (if any) to use.
 	// This value is ignored for Buganizer.
 	MonorailComponents []string
@@ -114,13 +114,14 @@ type CreateRequest struct {
 	BuganizerComponent int64
 }
 
-// ClusterImpact captures details of a cluster's impact, as needed
-// to control the priority and verified status of bugs.
-type ClusterImpact map[metrics.ID]MetricImpact
+// ClusterMetrics captures measurements of a cluster's impact and
+// other variables, as needed to control the priority and verified
+// status of bugs.
+type ClusterMetrics map[metrics.ID]MetricValues
 
-// MetricImpact captures impact measurements for one metric, over
+// MetricValues captures measurements for one metric, over
 // different timescales.
-type MetricImpact struct {
+type MetricValues struct {
 	OneDay   int64
 	ThreeDay int64
 	SevenDay int64

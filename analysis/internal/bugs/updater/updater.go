@@ -102,7 +102,7 @@ const ruleDefinitionTooLongMessage = "LUCI Analysis cannot merge the failure" +
 type BugManager interface {
 	// Create creates a new bug for the given request, returning its name,
 	// or any encountered error.
-	Create(ctx context.Context, cluster *bugs.CreateRequest) (string, error)
+	Create(ctx context.Context, cluster *bugs.BugCreateRequest) (string, error)
 	// Update updates the specified list of bugs.
 	Update(ctx context.Context, bugs []bugs.BugUpdateRequest) ([]bugs.BugUpdateResponse, error)
 	// GetMergedInto reads the bug the given bug is merged into (if any).
@@ -183,7 +183,7 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 		return errors.Annotate(err, "read active failure association rules").Err()
 	}
 
-	metricsByRuleID := make(map[string]*bugs.ClusterImpact)
+	metricsByRuleID := make(map[string]*bugs.ClusterMetrics)
 	if metricsValid {
 		// Even if policy-based bug filing is disabled, we need to update
 		// policy state in the background. This means we need to query
@@ -233,14 +233,14 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 			if cluster.ClusterID.Algorithm == rulesalgorithm.AlgorithmName {
 				// Use only impact from latest algorithm version.
 				ruleID := cluster.ClusterID.ID
-				metricsByRuleID[ruleID] = ExtractResidualImpact(cluster)
+				metricsByRuleID[ruleID] = ExtractResidualMetrics(cluster)
 			}
 		}
 	}
 
 	var rms []ruleWithMetrics
 	for _, rule := range activeRules {
-		var metrics *bugs.ClusterImpact
+		var metrics *bugs.ClusterMetrics
 
 		// Metrics are valid if re-clustering and analysis ran on the latest
 		// version of this failure association rule. This avoids bugs getting
@@ -254,7 +254,7 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 			if !ok {
 				// If there is no analysis, this means the cluster is
 				// empty. Use empty impact.
-				metrics = &bugs.ClusterImpact{}
+				metrics = &bugs.ClusterMetrics{}
 			}
 		}
 		// Else leave metrics as nil. Bug-updating code takes this as an
@@ -302,7 +302,7 @@ type ruleWithMetrics struct {
 	RuleID string
 	// The bug cluster metrics. May be nil if no reliable metrics
 	// are available because reclustering is in progress.
-	Metrics *bugs.ClusterImpact
+	Metrics *bugs.ClusterMetrics
 }
 
 // updateBugManagementState updates policy activations for the
@@ -405,7 +405,7 @@ func (b *BugUpdater) updateBugManagementStateBatch(ctx context.Context, rulesAnd
 
 			result = append(result, bugs.BugUpdateRequest{
 				Bug:                              r.BugID,
-				Impact:                           clusterMetrics,
+				Metrics:                          clusterMetrics,
 				IsManagingBug:                    r.IsManagingBug,
 				IsManagingBugPriority:            r.IsManagingBugPriority,
 				IsManagingBugPriorityLastUpdated: r.IsManagingBugPriorityLastUpdateTime,
@@ -554,7 +554,7 @@ func (b *BugUpdater) fileNewBugs(ctx context.Context, clusters []*analysis.Clust
 		}
 
 		// Only file a bug if the residual impact exceeds the threshold.
-		impact := ExtractResidualImpact(cluster)
+		impact := ExtractResidualMetrics(cluster)
 		bugFilingThresholds := b.projectCfg.Config.BugFilingThresholds
 		if cluster.ClusterID.IsTestNameCluster() {
 			// Use an inflated threshold for test name clusters to bias
@@ -997,10 +997,10 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 		return false, errors.Annotate(err, "prepare bug description").Err()
 	}
 
-	request := &bugs.CreateRequest{
+	request := &bugs.BugCreateRequest{
 		RuleID:      ruleID,
 		Description: description,
-		Impact:      ExtractResidualImpact(cs),
+		Metrics:     ExtractResidualMetrics(cs),
 	}
 
 	system, err := routeToBugSystem(b.projectCfg, cs)
@@ -1031,7 +1031,7 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 
 	// Set policy activations starting from a state where no policies
 	// are active.
-	impact := ExtractResidualImpact(cs)
+	impact := ExtractResidualMetrics(cs)
 	bugManagementState, _ := updatePolicyActivations(&bugspb.BugManagementState{}, b.projectCfg.Config.BugManagement.GetPolicies(), impact, b.RunTimestamp)
 
 	// Create a failure association rule associating the failures with a bug.

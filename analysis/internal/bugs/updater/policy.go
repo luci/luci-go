@@ -51,7 +51,7 @@ func PolicyActivationThresholds(policies []*configpb.BugManagementPolicy) []*con
 //
 // If any updates need to be made, a new *bugspb.BugManagementState
 // is returned. Otherwise, this method returns nil.
-func updatePolicyActivations(state *bugspb.BugManagementState, policies []*configpb.BugManagementPolicy, clusterMetrics *bugs.ClusterImpact, now time.Time) (updatedState *bugspb.BugManagementState, changed bool) {
+func updatePolicyActivations(state *bugspb.BugManagementState, policies []*configpb.BugManagementPolicy, clusterMetrics *bugs.ClusterMetrics, now time.Time) (updatedState *bugspb.BugManagementState, changed bool) {
 	evaluations := evaluatePolicyActivations(policies, clusterMetrics)
 
 	// Proto3 serializes nil and empty maps to exactly the same bytes.
@@ -123,7 +123,7 @@ const (
 	policyEvaluationActivate
 )
 
-func evaluatePolicyActivations(policies []*configpb.BugManagementPolicy, clusterMetrics *bugs.ClusterImpact) map[PolicyID]policyEvaluation {
+func evaluatePolicyActivations(policies []*configpb.BugManagementPolicy, clusterMetrics *bugs.ClusterMetrics) map[PolicyID]policyEvaluation {
 	result := make(map[PolicyID]policyEvaluation)
 	for _, policy := range policies {
 		result[PolicyID(policy.Id)] = evaluatePolicy(policy, clusterMetrics)
@@ -131,7 +131,7 @@ func evaluatePolicyActivations(policies []*configpb.BugManagementPolicy, cluster
 	return result
 }
 
-func evaluatePolicy(policy *configpb.BugManagementPolicy, clusterMetrics *bugs.ClusterImpact) policyEvaluation {
+func evaluatePolicy(policy *configpb.BugManagementPolicy, clusterMetrics *bugs.ClusterMetrics) policyEvaluation {
 	isDeactivationCriteriaMet := true
 	for _, metric := range policy.Metrics {
 		if clusterMetrics.MeetsThreshold(metrics.ID(metric.MetricId), metric.ActivationThreshold) {

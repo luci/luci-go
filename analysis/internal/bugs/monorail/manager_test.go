@@ -31,8 +31,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func NewCreateRequest() *bugs.CreateRequest {
-	cluster := &bugs.CreateRequest{
+func NewCreateRequest() *bugs.BugCreateRequest {
+	cluster := &bugs.BugCreateRequest{
 		Description: &clustering.ClusterDescription{
 			Title:       "ClusterID",
 			Description: "Tests are failing with reason: Some failure reason.",
@@ -78,7 +78,7 @@ func TestManager(t *testing.T) {
 
 		Convey("Create", func() {
 			createRequest := NewCreateRequest()
-			createRequest.Impact = bugs.LowP1Impact()
+			createRequest.Metrics = bugs.LowP1Impact()
 
 			expectedIssue := &mpb.Issue{
 				Name:             "projects/chromium/issues/100",
@@ -188,7 +188,7 @@ func TestManager(t *testing.T) {
 		})
 		Convey("Update", func() {
 			c := NewCreateRequest()
-			c.Impact = bugs.P2Impact()
+			c.Metrics = bugs.P2Impact()
 			bug, err := bm.Create(ctx, c)
 			So(err, ShouldBeNil)
 			So(bug, ShouldEqual, "chromium/100")
@@ -198,7 +198,7 @@ func TestManager(t *testing.T) {
 			bugsToUpdate := []bugs.BugUpdateRequest{
 				{
 					Bug:                              bugs.BugID{System: bugs.MonorailSystem, ID: bug},
-					Impact:                           c.Impact,
+					Metrics:                          c.Metrics,
 					IsManagingBug:                    true,
 					IsManagingBugPriority:            true,
 					IsManagingBugPriorityLastUpdated: tc.Now(),
@@ -225,14 +225,14 @@ func TestManager(t *testing.T) {
 				updateDoesNothing()
 			})
 			Convey("If impact changed", func() {
-				bugsToUpdate[0].Impact = bugs.P3Impact()
+				bugsToUpdate[0].Metrics = bugs.P3Impact()
 				Convey("Does not reduce priority if impact within hysteresis range", func() {
-					bugsToUpdate[0].Impact = bugs.HighP3Impact()
+					bugsToUpdate[0].Metrics = bugs.HighP3Impact()
 
 					updateDoesNothing()
 				})
 				Convey("Does not update bug if IsManagingBug false", func() {
-					bugsToUpdate[0].Impact = bugs.ClosureImpact()
+					bugsToUpdate[0].Metrics = bugs.ClosureImpact()
 					bugsToUpdate[0].IsManagingBug = false
 
 					updateDoesNothing()
@@ -240,12 +240,12 @@ func TestManager(t *testing.T) {
 				Convey("Does not update bug if Impact unset", func() {
 					// Simulate valid impact not being available, e.g. due
 					// to ongoing reclustering.
-					bugsToUpdate[0].Impact = nil
+					bugsToUpdate[0].Metrics = nil
 
 					updateDoesNothing()
 				})
 				Convey("Reduces priority in response to reduced impact", func() {
-					bugsToUpdate[0].Impact = bugs.P3Impact()
+					bugsToUpdate[0].Metrics = bugs.P3Impact()
 					originalNotifyCount := f.Issues[0].NotifyCount
 					response, err := bm.Update(ctx, bugsToUpdate)
 					So(err, ShouldBeNil)
@@ -270,12 +270,12 @@ func TestManager(t *testing.T) {
 					updateDoesNothing()
 				})
 				Convey("Does not increase priority if impact within hysteresis range", func() {
-					bugsToUpdate[0].Impact = bugs.LowP1Impact()
+					bugsToUpdate[0].Metrics = bugs.LowP1Impact()
 
 					updateDoesNothing()
 				})
 				Convey("Increases priority in response to increased impact (single-step)", func() {
-					bugsToUpdate[0].Impact = bugs.P1Impact()
+					bugsToUpdate[0].Metrics = bugs.P1Impact()
 
 					originalNotifyCount := f.Issues[0].NotifyCount
 					response, err := bm.Update(ctx, bugsToUpdate)
@@ -300,7 +300,7 @@ func TestManager(t *testing.T) {
 					updateDoesNothing()
 				})
 				Convey("Increases priority in response to increased impact (multi-step)", func() {
-					bugsToUpdate[0].Impact = bugs.P0Impact()
+					bugsToUpdate[0].Metrics = bugs.P0Impact()
 
 					originalNotifyCount := f.Issues[0].NotifyCount
 					response, err := bm.Update(ctx, bugsToUpdate)
@@ -366,9 +366,9 @@ func TestManager(t *testing.T) {
 				})
 			})
 			Convey("If impact falls below lowest priority threshold", func() {
-				bugsToUpdate[0].Impact = bugs.ClosureImpact()
+				bugsToUpdate[0].Metrics = bugs.ClosureImpact()
 				Convey("Update leaves bug open if impact within hysteresis range", func() {
-					bugsToUpdate[0].Impact = bugs.P3LowestBeforeClosureImpact()
+					bugsToUpdate[0].Metrics = bugs.P3LowestBeforeClosureImpact()
 
 					// Update may reduce the priority from P2 to P3, but the
 					// issue should be left open. This is because hysteresis on
@@ -400,7 +400,7 @@ func TestManager(t *testing.T) {
 					updateDoesNothing()
 
 					Convey("Does not reopen bug if impact within hysteresis range", func() {
-						bugsToUpdate[0].Impact = bugs.HighestNotFiledImpact()
+						bugsToUpdate[0].Metrics = bugs.HighestNotFiledImpact()
 
 						updateDoesNothing()
 					})
@@ -421,7 +421,7 @@ func TestManager(t *testing.T) {
 					})
 
 					Convey("If impact increases, bug is re-opened with correct priority", func() {
-						bugsToUpdate[0].Impact = bugs.P3Impact()
+						bugsToUpdate[0].Metrics = bugs.P3Impact()
 						Convey("Issue has owner", func() {
 							// Update issue owner.
 							updateReq := updateOwnerRequest(f.Issues[0].Issue.Name, "users/100")
@@ -553,7 +553,7 @@ func TestManager(t *testing.T) {
 		})
 		Convey("GetMergedInto", func() {
 			c := NewCreateRequest()
-			c.Impact = bugs.P2Impact()
+			c.Metrics = bugs.P2Impact()
 			bug, err := bm.Create(ctx, c)
 			So(err, ShouldBeNil)
 			So(bug, ShouldEqual, "chromium/100")
@@ -601,7 +601,7 @@ func TestManager(t *testing.T) {
 		})
 		Convey("UpdateDuplicateSource", func() {
 			c := NewCreateRequest()
-			c.Impact = bugs.P2Impact()
+			c.Metrics = bugs.P2Impact()
 			bug, err := bm.Create(ctx, c)
 			So(err, ShouldBeNil)
 			So(bug, ShouldEqual, "chromium/100")
@@ -648,7 +648,7 @@ func TestManager(t *testing.T) {
 		})
 		Convey("UpdateDuplicateDestination", func() {
 			c := NewCreateRequest()
-			c.Impact = bugs.P2Impact()
+			c.Metrics = bugs.P2Impact()
 			bug, err := bm.Create(ctx, c)
 			So(err, ShouldBeNil)
 			So(bug, ShouldEqual, "chromium/100")
