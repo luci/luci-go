@@ -530,7 +530,7 @@ type CommentRange struct {
 
 // Comment represents a comment on a Gerrit CL. Information about these fields
 // is in:
-// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-change-comments
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#comment-info
 //
 // Note that not all fields will be filled for all comments depending on the
 // way the comment was added to Gerrit, and not all fields exposed by Gerrit
@@ -539,7 +539,7 @@ type CommentRange struct {
 type Comment struct {
 	ID              string       `json:"id"`
 	Owner           AccountInfo  `json:"author"`
-	ChangeMessageId string       `json:"change_message_id"`
+	ChangeMessageID string       `json:"change_message_id"`
 	PatchSet        int          `json:"patch_set"`
 	Line            int          `json:"line"`
 	Range           CommentRange `json:"range"`
@@ -547,7 +547,22 @@ type Comment struct {
 	Message         string       `json:"message"`
 	Unresolved      bool         `json:"unresolved"`
 	InReplyTo       string       `json:"in_reply_to"`
-	CommitId        string       `json:"commit_id"`
+	CommitID        string       `json:"commit_id"`
+}
+
+// RobotComment represents a robot comment on a Gerrit CL. Information about
+// these fields is in:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#robot-comment-info
+//
+// RobotComment shares most of the same fields with Comment. Note that robot
+// comments do not have the `unresolved` field so it will always be false.
+type RobotComment struct {
+	Comment
+
+	RobotID    string      `json:"robot_id"`
+	RobotRunID string      `json:"robot_run_id"`
+	URL        string      `json:"url"`
+	Properties map[any]any `json:"properties"`
 }
 
 // ListChangeComments gets all comments on a single change.
@@ -561,9 +576,39 @@ type Comment struct {
 //   - etc. See the link below.
 //
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
-func (c *Client) ListChangeComments(ctx context.Context, changeID string) (map[string][]Comment, error) {
+func (c *Client) ListChangeComments(ctx context.Context, changeID string, revisionID string) (map[string][]Comment, error) {
 	var resp map[string][]Comment
-	path := fmt.Sprintf("a/changes/%s/comments", url.PathEscape(changeID))
+	var path string
+	if revisionID != "" {
+		path = fmt.Sprintf("a/changes/%s/revisions/%s/comments", url.PathEscape(changeID), url.PathEscape(revisionID))
+	} else {
+		path = fmt.Sprintf("a/changes/%s/comments", url.PathEscape(changeID))
+	}
+	if _, err := c.get(ctx, path, url.Values{}, &resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// ListRobotComments gets all robot comments on a single change.
+//
+// This method returns a list of robot comments for each file path (including
+// pseudo-files like '/PATCHSET_LEVEL' and '/COMMIT_MSG') and an error.
+//
+// The changeID parameter may be in any of the forms supported by Gerrit:
+//   - "4247"
+//   - "I8473b95934b5732ac55d26311a706c9c2bde9940"
+//   - etc. See the link below.
+//
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+func (c *Client) ListRobotComments(ctx context.Context, changeID string, revisionID string) (map[string][]RobotComment, error) {
+	var resp map[string][]RobotComment
+	var path string
+	if revisionID != "" {
+		path = fmt.Sprintf("a/changes/%s/revisions/%s/robotcomments", url.PathEscape(changeID), url.PathEscape(revisionID))
+	} else {
+		path = fmt.Sprintf("a/changes/%s/robotcomments", url.PathEscape(changeID))
+	}
 	if _, err := c.get(ctx, path, url.Values{}, &resp); err != nil {
 		return nil, err
 	}

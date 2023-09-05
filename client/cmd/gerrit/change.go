@@ -29,11 +29,11 @@ import (
 )
 
 type apiCallInput struct {
-	ChangeID   string      `json:"change_id,omitempty"`
-	ProjectID  string      `json:"project_id,omitempty"`
-	RevisionID string      `json:"revision_id,omitempty"`
-	JSONInput  any `json:"input,omitempty"`
-	QueryInput any `json:"params,omitempty"`
+	ChangeID   string `json:"change_id,omitempty"`
+	ProjectID  string `json:"project_id,omitempty"`
+	RevisionID string `json:"revision_id,omitempty"`
+	JSONInput  any    `json:"input,omitempty"`
+	QueryInput any    `json:"params,omitempty"`
 }
 
 type apiCall func(context.Context, *gerrit.Client, *apiCallInput) (any, error)
@@ -307,7 +307,7 @@ https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-
 
 func cmdListChangeComments(authOpts auth.Options) *subcommands.Command {
 	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (any, error) {
-		result, err := client.ListChangeComments(ctx, input.ChangeID)
+		result, err := client.ListChangeComments(ctx, input.ChangeID, input.RevisionID)
 		if err != nil {
 			return nil, err
 		}
@@ -317,6 +317,34 @@ func cmdListChangeComments(authOpts auth.Options) *subcommands.Command {
 		UsageLine: "list-change-comments <options>",
 		ShortDesc: "gets all comments on a single change",
 		LongDesc: `Gets all comments on a single change.
+
+Input should contain a change ID, e.g.
+{
+  "change_id": <change-id>,
+}
+
+For more information on change-id, see
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id`,
+		CommandRun: func() subcommands.CommandRun {
+			return newChangeRun(authOpts, changeRunOptions{
+				changeID: true,
+			}, runner)
+		},
+	}
+}
+
+func cmdListRobotComments(authOpts auth.Options) *subcommands.Command {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (any, error) {
+		result, err := client.ListRobotComments(ctx, input.ChangeID, input.RevisionID)
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
+	}
+	return &subcommands.Command{
+		UsageLine: "list-robot-comments <options>",
+		ShortDesc: "gets all robot comments on a single change",
+		LongDesc: `Gets all robot comments on a single change.
 
 Input should contain a change ID, e.g.
 {
