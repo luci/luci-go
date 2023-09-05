@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/maruel/subcommands"
 
@@ -54,6 +55,7 @@ type botsRun struct {
 	dimensions stringmapflag.Value
 	fields     []string
 	count      bool
+	botIDOnly  bool
 }
 
 func (b *botsRun) Init(authFlags AuthFlags) {
@@ -62,6 +64,7 @@ func (b *botsRun) Init(authFlags AuthFlags) {
 	b.Flags.Var(&b.dimensions, "dimension", "Dimension to select the right kind of bot. In the form of `key=value`")
 	b.Flags.Var(flag.StringSlice(&b.fields), "field", "This flag currently does nothing (https://crbug.com/1467263).")
 	b.Flags.BoolVar(&b.count, "count", false, "Report the count of bots instead of listing them.")
+	b.Flags.BoolVar(&b.botIDOnly, "bare", false, "Report the bot id only.")
 }
 
 func (b *botsRun) Parse() error {
@@ -77,6 +80,9 @@ func (b *botsRun) Parse() error {
 	if b.count && len(b.fields) > 0 {
 		return errors.Reason("-field cannot be used with -count").Err()
 	}
+	if b.count && b.botIDOnly {
+		return errors.Reason("-bare cannot be used with -count").Err()
+	}
 	return nil
 }
 
@@ -86,6 +92,14 @@ func showBots(bots []*swarmingv2.BotInfo) ([]byte, error) {
 		botInfos[i].Proto = bot
 	}
 	return json.MarshalIndent(botInfos, "", DefaultIndent)
+}
+
+func showBotsIDOnly(bots []*swarmingv2.BotInfo) ([]byte, error) {
+	botsID := make([]string, len(bots))
+	for i, bot := range bots {
+		botsID[i] = bot.GetBotId()
+	}
+	return []byte(strings.Join(botsID, "\n")), nil
 }
 
 func (b *botsRun) bots(ctx context.Context, service swarmingService, out io.Writer) error {
@@ -113,7 +127,11 @@ func (b *botsRun) bots(ctx context.Context, service swarmingService, out io.Writ
 		if err != nil {
 			return err
 		}
-		output, err = showBots(bots)
+		if b.botIDOnly {
+			output, err = showBotsIDOnly(bots)
+		} else {
+			output, err = showBots(bots)
+		}
 		if err != nil {
 			return err
 		}
