@@ -28,13 +28,18 @@ import (
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/cron"
+	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 
 	// Register validation rules for LUCI Config itself.
 	_ "go.chromium.org/luci/config_service/internal/rules"
+
+	// Store auth sessions in the datastore.
+	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/importer"
@@ -48,7 +53,9 @@ import (
 func main() {
 	mods := []module.Module{
 		cron.NewModuleFromFlags(),
+		encryptedcookies.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
+		secrets.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
 	}
 
