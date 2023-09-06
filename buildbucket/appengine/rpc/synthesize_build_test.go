@@ -151,6 +151,9 @@ func TestSynthesizeBuild(t *testing.T) {
 						ServiceAccount: "shadow@chops-service-accounts.iam.gserviceaccount.com",
 						Pool:           "pool2",
 						Properties:     `{"a":"b2","c":"c"}`,
+						Dimensions: []string{
+							"pool:pool2",
+						},
 					},
 				},
 			}), ShouldBeNil)

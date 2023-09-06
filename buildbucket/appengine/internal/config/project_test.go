@@ -251,8 +251,10 @@ func TestValidateProject(t *testing.T) {
 				}
 			`
 				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
-				_, ok := vctx.Finalize().(*validation.Error)
-				So(ok, ShouldEqual, false)
+				ve, ok := vctx.Finalize().(*validation.Error)
+				So(ok, ShouldEqual, true)
+				So(len(ve.Errors), ShouldEqual, 1)
+				So(ve.Errors[0].Error(), ShouldContainSubstring, "(swarming / builders #0 - release cipd / shadow_builder_adjustments): dimensions.pool must be consistent with pool")
 			})
 			Convey("set dimensions without setting pool", func() {
 				content := `

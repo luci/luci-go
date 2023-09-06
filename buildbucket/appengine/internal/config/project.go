@@ -788,18 +788,15 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 			}
 		}
 
-		// Validate dimensions and ensure pool and dimensions are consistent.
-		// In the coresponding lucicfg change, lucicfg will update the generated
-		// builder config so that:
-		// * setting shadow_pool would add the coresponding "pool:<shadow_pool>" dimension
+		// Ensure pool and dimensions are consistent.
+		// In builder config:
+		// * setting shadow_pool would add the corresponding "pool:<shadow_pool>" dimension
 		//   to shadow_dimensions;
 		// * setting shadow_dimensions with "pool:<shadow_pool>" would also set shadow_pool.
-		// Because we need to deploy buildbucket and lucicfg separately, to make sure
-		// the old lucicfg still work during release, we temporarily allow setting
-		// shadow_pool without setting shadow_dimensions.
-		// TODO(crbug.com/1469965): disallow setting shadow_pool without
-		// setting shadow_dimensions.
 		dims := b.ShadowBuilderAdjustments.GetDimensions()
+		if b.ShadowBuilderAdjustments.GetPool() != "" && len(dims) == 0 {
+			ctx.Errorf("dimensions.pool must be consistent with pool")
+		}
 		if len(dims) != 0 {
 			validateDimensions(ctx, dims, true)
 

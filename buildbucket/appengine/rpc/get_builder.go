@@ -82,10 +82,6 @@ func applyShadowAdjustment(cfg *pb.BuilderConfig) {
 		cfg.ServiceAccount = shadowBldrCfg.ServiceAccount
 	}
 
-	if shadowBldrCfg.Pool != "" && len(shadowBldrCfg.Dimensions) == 0 {
-		shadowBldrCfg.Dimensions = []string{fmt.Sprintf("pool:%s", shadowBldrCfg.Pool)}
-	}
-
 	if len(shadowBldrCfg.Dimensions) > 0 {
 		dims, _ := stringsToRequestedDimensions(cfg.Dimensions)
 		shadowDims, empty := stringsToRequestedDimensions(shadowBldrCfg.Dimensions)
