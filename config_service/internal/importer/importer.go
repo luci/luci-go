@@ -40,7 +40,6 @@ import (
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -118,7 +117,7 @@ func (i *Importer) registerTQTask(dispatcher *tq.Dispatcher) {
 					// set up to monitor the number of retries.
 					return tq.Ignore.Apply(err)
 				}
-				return transient.Tag.Apply(err) // make sure TQ retry the task.
+				return err // tq will retry the error
 			default:
 				return nil
 			}
