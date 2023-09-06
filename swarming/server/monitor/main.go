@@ -92,6 +92,7 @@ var (
 	)
 	botsStatus         = metric.NewString("executors/status", "Status of a job executor.", nil)
 	botsDimensionsPool = metric.NewString("executors/pool", "Pool name for a given job executor.", nil)
+	botsRBEInstance    = metric.NewString("executors/rbe", "RBE instance of a job executor.", nil)
 )
 
 //   - android_devices is a side effect of the health of each Android devices
@@ -236,11 +237,25 @@ func setExecutorMetrics(mctx context.Context, bot *model.BotInfo, serviceName st
 		ServiceName: serviceName + "-new",
 		HostName:    fmt.Sprintf("autogen:%s", bot.Parent.StringID()),
 	})
-
+	// Status.
 	status := bot.GetStatus()
 	botsStatus.Set(tctx, status)
+	// DimensionsPool.
 	dims := poolFromDimensions(bot.Dimensions)
 	botsDimensionsPool.Set(tctx, dims)
+	// RBEInstance.
+	rbeState := "none"
+	var botState struct {
+		RBEInstance string `json:"rbe_instance,omitempty"`
+	}
+	if err := json.Unmarshal(bot.State, &botState); err == nil {
+		if botState.RBEInstance != "" {
+			rbeState = botState.RBEInstance
+		}
+	} else {
+		logging.Warningf(mctx, "Bot %s: bad state:\n:%s", bot.Parent.StringID(), bot.State)
+	}
+	botsRBEInstance.Set(tctx, rbeState)
 }
 
 // poolFromDimensions serializes the bot's dimensions and trims out redundant prefixes.
@@ -271,4 +286,5 @@ func cleanUp(mctx context.Context, state *tsmon.State) {
 	state.Store().Reset(mctx, botsPerState)
 	state.Store().Reset(mctx, botsStatus)
 	state.Store().Reset(mctx, botsDimensionsPool)
+	state.Store().Reset(mctx, botsRBEInstance)
 }
