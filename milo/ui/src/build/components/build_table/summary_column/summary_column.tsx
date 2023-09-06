@@ -14,17 +14,21 @@
 
 import { ChevronRight, ExpandMore } from '@mui/icons-material';
 import { Box, IconButton, TableCell, styled } from '@mui/material';
-import { computed } from 'mobx';
-import { observer } from 'mobx-react-lite';
 import { useMemo } from 'react';
 
 import { BUILD_STATUS_CLASS_MAP } from '@/common/constants';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
 
-import { useRowState, useTableState } from '../context';
+import {
+  useBuild,
+  useDefaultExpanded,
+  useSetDefaultExpanded,
+  useSetRowExpanded,
+} from '../context';
 
-export const SummaryHeadCell = observer(() => {
-  const tableState = useTableState();
+export function SummaryHeadCell() {
+  const defaultExpanded = useDefaultExpanded();
+  const setDefaultExpanded = useSetDefaultExpanded();
 
   return (
     <TableCell>
@@ -37,17 +41,18 @@ export const SummaryHeadCell = observer(() => {
         <IconButton
           aria-label="toggle-all-rows"
           size="small"
-          onClick={() => tableState.toggleAll(!tableState.defaultExpanded)}
+          onClick={() => setDefaultExpanded(!defaultExpanded)}
         >
-          {tableState.defaultExpanded ? <ExpandMore /> : <ChevronRight />}
+          {defaultExpanded ? <ExpandMore /> : <ChevronRight />}
         </IconButton>
         <div css={{ lineHeight: '34px' }}>Summary</div>
       </div>
     </TableCell>
   );
-});
+}
 
 const MarkdownContainer = styled(Box)({
+  marginBottom: '2px',
   padding: '0 10px',
   clear: 'both',
   overflowWrap: 'break-word',
@@ -69,23 +74,26 @@ const MarkdownContainer = styled(Box)({
   '& > *': {
     marginBlock: '5px',
   },
+  '.BuildTableRow-collapsed &': {
+    // Cap the size of the markdown container to only show the
+    // first line.
+    height: '30px',
+    overflow: 'hidden',
+    // Ensure the 2nd line isn't partially rendered in the box
+    // causing visual noises.
+    fontSize: 0,
+    '&::first-line': {
+      fontSize: '0.875rem',
+    },
+    // Use dashed bottom border to hint that there could be
+    // more summary.
+    borderBottomStyle: 'dashed',
+  },
 });
 
-export const SummaryContentCell = observer(() => {
-  const tableState = useTableState();
-  const build = useRowState();
-
-  const expandedObservable = useMemo(
-    () =>
-      computed(() => {
-        // When there's no summary, always treat the cell as expanded so the
-        // component doesn't need to be updated when the default expansion state
-        // is updated.
-        return !build.summaryMarkdown || tableState.isExpanded(build.id);
-      }),
-    [build, tableState],
-  );
-  const expanded = expandedObservable.get();
+export function SummaryContentCell() {
+  const setExpanded = useSetRowExpanded();
+  const build = useBuild();
 
   const summaryHtml = useMemo(
     () =>
@@ -107,38 +115,23 @@ export const SummaryContentCell = observer(() => {
           <IconButton
             aria-label="toggle-row"
             size="small"
-            onClick={() => tableState.toggle(build.id, !expanded)}
+            onClick={() => setExpanded((expanded) => !expanded)}
             // Always render the button to DOM so we have a stable layout.
             // Hide it from users so it won't mislead users to think there
             // are more summary.
             disabled={!build.summaryMarkdown}
             sx={{ visibility: build.summaryMarkdown ? '' : 'hidden' }}
           >
-            {expanded ? <ExpandMore /> : <ChevronRight />}
+            <ExpandMore
+              sx={{ '.BuildTableRow-collapsed &': { display: 'none' } }}
+            />
+            <ChevronRight
+              sx={{ '.BuildTableRow-expanded &': { display: 'none' } }}
+            />
           </IconButton>
         </div>
         <MarkdownContainer
           className={`${BUILD_STATUS_CLASS_MAP[build.status]}-bg`}
-          css={{
-            marginBottom: '2px',
-            ...(expanded
-              ? {}
-              : {
-                  // Cap the size of the markdown container to only show the
-                  // first line.
-                  height: '30px',
-                  overflow: 'hidden',
-                  // Ensure the 2nd line isn't partially rendered in the box
-                  // causing visual noises.
-                  fontSize: 0,
-                  '&::first-line': {
-                    fontSize: '0.875rem',
-                  },
-                  // Use dashed bottom border to hint that there could be
-                  // more summary.
-                  borderBottomStyle: 'dashed',
-                }),
-          }}
           dangerouslySetInnerHTML={{
             __html: summaryHtml,
           }}
@@ -146,4 +139,4 @@ export const SummaryContentCell = observer(() => {
       </div>
     </TableCell>
   );
-});
+}

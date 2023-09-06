@@ -13,13 +13,10 @@
 // limitations under the License.
 
 import { Table } from '@mui/material';
-import { observer } from 'mobx-react-lite';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useLatest } from 'react-use';
 
-import { ExpandableEntriesState } from '@/common/store/expandable_entries_state';
-
-import { TableStateProvider } from './context';
+import { DefaultExpandedProvider, SetDefaultExpandedProvider } from './context';
 
 export interface BuildTableProps {
   readonly initDefaultExpanded?: boolean;
@@ -27,44 +24,42 @@ export interface BuildTableProps {
   readonly children: ReactNode;
 }
 
-export const BuildTable = observer(
-  ({
-    initDefaultExpanded = false,
-    onDefaultExpandedChanged = () => {
-      /* Noop by default. */
-    },
-    children,
-  }: BuildTableProps) => {
-    const [tableState] = useState(() =>
-      ExpandableEntriesState.create({
-        defaultExpanded: initDefaultExpanded,
-      }),
-    );
-
-    const onDefaultExpandedChangedRef = useLatest(onDefaultExpandedChanged);
-    const isFirstCall = useRef(true);
-    useEffect(() => {
-      // Skip the first call because the default state were not changed.
-      if (isFirstCall.current) {
-        isFirstCall.current = false;
-        return;
-      }
-      onDefaultExpandedChangedRef.current(tableState.defaultExpanded);
-    }, [onDefaultExpandedChangedRef, tableState.defaultExpanded]);
-
-    return (
-      <Table
-        size="small"
-        sx={{
-          borderCollapse: 'separate',
-          '& td, th': {
-            padding: '0px 8px',
-          },
-          minWidth: '1000px',
-        }}
-      >
-        <TableStateProvider value={tableState}>{children}</TableStateProvider>
-      </Table>
-    );
+export function BuildTable({
+  initDefaultExpanded = false,
+  onDefaultExpandedChanged = () => {
+    /* Noop by default. */
   },
-);
+  children,
+}: BuildTableProps) {
+  const [defaultExpanded, setDefaultExpanded] = useState(initDefaultExpanded);
+
+  const onDefaultExpandedChangedRef = useLatest(onDefaultExpandedChanged);
+  const isFirstCall = useRef(true);
+  useEffect(() => {
+    // Skip the first call because the default state were not changed.
+    if (isFirstCall.current) {
+      isFirstCall.current = false;
+      return;
+    }
+    onDefaultExpandedChangedRef.current(defaultExpanded);
+  }, [onDefaultExpandedChangedRef, defaultExpanded]);
+
+  return (
+    <Table
+      size="small"
+      sx={{
+        borderCollapse: 'separate',
+        '& td, th': {
+          padding: '0px 8px',
+        },
+        minWidth: '1000px',
+      }}
+    >
+      <SetDefaultExpandedProvider value={setDefaultExpanded}>
+        <DefaultExpandedProvider value={defaultExpanded}>
+          {children}
+        </DefaultExpandedProvider>
+      </SetDefaultExpandedProvider>
+    </Table>
+  );
+}

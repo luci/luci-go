@@ -17,7 +17,7 @@ import { DateTime } from 'luxon';
 
 import { DurationBadge } from '@/common/components/duration_badge';
 
-import { useRowState } from './context';
+import { useBuild } from './context';
 
 export function PendingDurationHeadCell() {
   return (
@@ -29,7 +29,7 @@ export function PendingDurationHeadCell() {
 }
 
 export function PendingDurationContentCell() {
-  const build = useRowState();
+  const build = useBuild();
   const createTime = DateTime.fromISO(build.createTime);
   const startTime = build.startTime ? DateTime.fromISO(build.startTime) : null;
   const pendingDuration = startTime ? startTime.diff(createTime) : null;

@@ -13,17 +13,21 @@
 // limitations under the License.
 
 import { ChevronRight, ExpandMore } from '@mui/icons-material';
-import { IconButton, TableCell } from '@mui/material';
-import { computed } from 'mobx';
-import { observer } from 'mobx-react-lite';
-import { Fragment, useMemo } from 'react';
+import { Box, IconButton, TableCell, styled } from '@mui/material';
+import { Fragment } from 'react';
 
 import { GerritClLink } from '@/common/components/gerrit_cl_link';
 
-import { useRowState, useTableState } from '../context';
+import {
+  useBuild,
+  useDefaultExpanded,
+  useSetDefaultExpanded,
+  useSetRowExpanded,
+} from '../context';
 
-export const GerritChangesHeadCell = observer(() => {
-  const tableState = useTableState();
+export function GerritChangesHeadCell() {
+  const defaultExpanded = useDefaultExpanded();
+  const setDefaultExpanded = useSetDefaultExpanded();
 
   return (
     <TableCell width="1px">
@@ -36,33 +40,34 @@ export const GerritChangesHeadCell = observer(() => {
         <IconButton
           aria-label="toggle-all-rows"
           size="small"
-          onClick={() => tableState.toggleAll(!tableState.defaultExpanded)}
+          onClick={() => setDefaultExpanded(!defaultExpanded)}
         >
-          {tableState.defaultExpanded ? <ExpandMore /> : <ChevronRight />}
+          {defaultExpanded ? <ExpandMore /> : <ChevronRight />}
         </IconButton>
         <div css={{ lineHeight: '34px' }}>Changes</div>
       </div>
     </TableCell>
   );
+}
+
+const ChangesContainer = styled(Box)({
+  width: '200px',
+  lineHeight: '32px',
+  '.BuildTableRow-expanded &': {
+    whiteSpace: 'pre',
+  },
+  '.BuildTableRow-collapsed &': {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    '& > br': {
+      display: 'none',
+    },
+  },
 });
 
-export const GerritChangesContentCell = observer(() => {
-  const tableState = useTableState();
-  const build = useRowState();
-
-  const expandedObservable = useMemo(
-    () =>
-      computed(() => {
-        // When there's no gerrit changes, always treat the cell as expanded so
-        // the component doesn't need to be updated when the default expansion
-        // state is updated.
-        return (
-          !build.input?.gerritChanges?.length || tableState.isExpanded(build.id)
-        );
-      }),
-    [build, tableState],
-  );
-  const expanded = expandedObservable.get();
+export function GerritChangesContentCell() {
+  const setExpanded = useSetRowExpanded();
+  const build = useBuild();
 
   const changes = build.input?.gerritChanges || [];
 
@@ -78,31 +83,22 @@ export const GerritChangesContentCell = observer(() => {
           <IconButton
             aria-label="toggle-row"
             size="small"
-            onClick={() => tableState.toggle(build.id, !expanded)}
+            onClick={() => setExpanded((expanded) => !expanded)}
             // Always render the button to DOM so we have a stable layout.
             // Hide it from users so it won't mislead users to think there
             // are more gerrit changes.
             disabled={changes.length <= 1}
             sx={{ visibility: changes.length > 1 ? '' : 'hidden' }}
           >
-            {expanded ? <ExpandMore /> : <ChevronRight />}
+            <ExpandMore
+              sx={{ '.BuildTableRow-collapsed &': { display: 'none' } }}
+            />
+            <ChevronRight
+              sx={{ '.BuildTableRow-expanded &': { display: 'none' } }}
+            />
           </IconButton>
         </div>
-        <div
-          css={{
-            width: '200px',
-            lineHeight: '32px',
-            ...(expanded
-              ? { whiteSpace: 'pre' }
-              : {
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  '& > br': {
-                    display: 'none',
-                  },
-                }),
-          }}
-        >
+        <ChangesContainer>
           {changes.map((c, i) => (
             <Fragment key={c.change}>
               {i !== 0 && (
@@ -113,8 +109,8 @@ export const GerritChangesContentCell = observer(() => {
               <GerritClLink cl={c} />
             </Fragment>
           ))}
-        </div>
+        </ChangesContainer>
       </div>
     </TableCell>
   );
-});
+}

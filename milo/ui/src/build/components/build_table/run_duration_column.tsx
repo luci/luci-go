@@ -17,7 +17,7 @@ import { DateTime } from 'luxon';
 
 import { DurationBadge } from '@/common/components/duration_badge';
 
-import { useRowState } from './context';
+import { useBuild } from './context';
 
 export function RunDurationHeadCell() {
   return (
@@ -29,7 +29,7 @@ export function RunDurationHeadCell() {
 }
 
 export function RunDurationContentCell() {
-  const build = useRowState();
+  const build = useBuild();
   const startTime = build.startTime ? DateTime.fromISO(build.startTime) : null;
   const endTime = build.endTime ? DateTime.fromISO(build.endTime) : null;
   const runDuration = startTime && endTime ? endTime.diff(startTime) : null;

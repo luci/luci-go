@@ -20,14 +20,14 @@ import {
   getGitilesCommitURL,
 } from '@/common/tools/gitiles_utils';
 
-import { useRowState } from './context';
+import { useBuild } from './context';
 
 export function CommitHeadCell() {
   return <TableCell width="1px">Commit</TableCell>;
 }
 
 export function CommitContentCell() {
-  const build = useRowState();
+  const build = useBuild();
   const commit = getAssociatedGitilesCommit(build);
 
   return (

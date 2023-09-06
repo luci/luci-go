@@ -13,11 +13,16 @@
 // limitations under the License.
 
 import { TableRow } from '@mui/material';
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 
 import { Build } from '@/common/services/buildbucket';
 
-import { RowStateProvider } from './context';
+import {
+  BuildProvider,
+  RowExpandedProvider,
+  SetRowExpandedProvider,
+  useDefaultExpanded,
+} from './context';
 
 export interface BuildTableRowProps {
   readonly build: Build;
@@ -25,8 +30,18 @@ export interface BuildTableRowProps {
 }
 
 export function BuildTableRow({ build, children }: BuildTableRowProps) {
+  const defaultExpanded = useDefaultExpanded();
+  const [expanded, setExpanded] = useState(() => defaultExpanded);
+  useEffect(() => {
+    setExpanded(defaultExpanded);
+  }, [defaultExpanded]);
+
   return (
     <TableRow
+      // Set a CSS class to support CSS-only toggle solution.
+      className={
+        expanded ? 'BuildTableRow-expanded' : 'BuildTableRow-collapsed'
+      }
       sx={{
         '& > td': {
           // Use `vertical-align: baseline` so the cell content (including the
@@ -36,9 +51,15 @@ export function BuildTableRow({ build, children }: BuildTableRowProps) {
         },
       }}
     >
-      {/* Pass build to cells via context so composing a row require
-       ** less boilerplate. */}
-      <RowStateProvider value={build}>{children}</RowStateProvider>
+      <SetRowExpandedProvider value={setExpanded}>
+        {/* Provide the expanded state via context in case a CSS-only toggle
+         ** solution can't be achieved. */}
+        <RowExpandedProvider value={expanded}>
+          {/* Pass build to cells via context so composing a row require less
+           ** boilerplate. */}
+          <BuildProvider value={build}>{children}</BuildProvider>
+        </RowExpandedProvider>
+      </SetRowExpandedProvider>
     </TableRow>
   );
 }

@@ -17,14 +17,14 @@ import { DateTime } from 'luxon';
 
 import { CompactTimestamp } from '@/build/components/build_table/compact_timestamp';
 
-import { useRowState } from './context';
+import { useBuild } from './context';
 
 export function EndTimeHeadCell() {
   return <TableCell width="1px">End Time</TableCell>;
 }
 
 export function EndTimeContentCell() {
-  const build = useRowState();
+  const build = useBuild();
   const endTime = build.endTime ? DateTime.fromISO(build.endTime) : null;
 
   return (

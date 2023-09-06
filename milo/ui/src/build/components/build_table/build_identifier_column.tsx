@@ -20,14 +20,14 @@ import {
   getProjectURLPath,
 } from '@/common/tools/url_utils';
 
-import { useRowState } from './context';
+import { useBuild } from './context';
 
 export function BuildIdentifierHeadCell() {
   return <TableCell width="1px">Build</TableCell>;
 }
 
 export function BuildIdentifierContentCell() {
-  const build = useRowState();
+  const build = useBuild();
 
   return (
     <TableCell>

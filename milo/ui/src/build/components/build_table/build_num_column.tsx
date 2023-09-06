@@ -16,14 +16,14 @@ import { Link, TableCell } from '@mui/material';
 
 import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
 
-import { useRowState } from './context';
+import { useBuild } from './context';
 
 export function BuildNumHeadCell() {
   return <TableCell width="1px">Build #</TableCell>;
 }
 
 export function BuildNumContentCell() {
-  const build = useRowState();
+  const build = useBuild();
 
   return (
     <TableCell>

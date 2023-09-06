@@ -12,37 +12,80 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createContext, useContext } from 'react';
+import { Dispatch, SetStateAction, createContext, useContext } from 'react';
 
 import { Build } from '@/common/services/buildbucket';
-import { ExpandableEntriesStateInstance } from '@/common/store/expandable_entries_state';
 
-const TableStateContext = createContext<ExpandableEntriesStateInstance | null>(
-  null,
-);
+const DefaultExpandedContext = createContext<boolean | null>(null);
 
-export const TableStateProvider = TableStateContext.Provider;
+export const DefaultExpandedProvider = DefaultExpandedContext.Provider;
 
-export function useTableState() {
-  const state = useContext(TableStateContext);
+export function useDefaultExpanded() {
+  const ctx = useContext(DefaultExpandedContext);
 
-  if (!state) {
-    throw new Error('useTableState must be used within TableStateProvider');
+  if (ctx === null) {
+    throw new Error('useDefaultExpanded must be used within BuildTable');
   }
 
-  return state;
+  return ctx;
 }
 
-const RowStateContext = createContext<Build | null>(null);
+const SetDefaultExpandedContext = createContext<Dispatch<
+  SetStateAction<boolean>
+> | null>(null);
 
-export const RowStateProvider = RowStateContext.Provider;
+export const SetDefaultExpandedProvider = SetDefaultExpandedContext.Provider;
 
-export function useRowState() {
-  const state = useContext(RowStateContext);
+export function useSetDefaultExpanded() {
+  const ctx = useContext(SetDefaultExpandedContext);
 
-  if (!state) {
-    throw new Error('useRowState must be used within RowStateProvider');
+  if (!ctx) {
+    throw new Error('useSetDefaultExpanded must be used within BuildTable');
   }
 
-  return state;
+  return ctx;
+}
+
+const BuildContext = createContext<Build | null>(null);
+
+export const BuildProvider = BuildContext.Provider;
+
+export function useBuild() {
+  const ctx = useContext(BuildContext);
+
+  if (!ctx) {
+    throw new Error('useBuild must be used within BuildTableRow');
+  }
+
+  return ctx;
+}
+
+const RowExpandedContext = createContext<boolean | null>(null);
+
+export const RowExpandedProvider = RowExpandedContext.Provider;
+
+export function useRowExpanded() {
+  const ctx = useContext(RowExpandedContext);
+
+  if (!ctx) {
+    throw new Error('useRowExpandedState must be used within BuildTableRow');
+  }
+
+  return ctx;
+}
+
+const SetRowExpandedContext = createContext<Dispatch<
+  SetStateAction<boolean>
+> | null>(null);
+
+export const SetRowExpandedProvider = SetRowExpandedContext.Provider;
+
+export function useSetRowExpanded() {
+  const ctx = useContext(SetRowExpandedContext);
+
+  if (!ctx) {
+    throw new Error('useSetRowExpanded must be used within BuildTableRow');
+  }
+
+  return ctx;
 }

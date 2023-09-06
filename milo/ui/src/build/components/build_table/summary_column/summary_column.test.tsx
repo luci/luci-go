@@ -21,14 +21,14 @@ import { BuildTable } from '../build_table';
 import { BuildTableBody } from '../build_table_body';
 import { BuildTableHead } from '../build_table_head';
 import { BuildTableRow } from '../build_table_row';
-import { useRowState } from '../context';
+import { useBuild } from '../context';
 
 import { SummaryContentCell, SummaryHeadCell } from './summary_column';
 
 jest.mock('../context', () =>
   self.createSelectiveSpiesFromModule<typeof import('../context')>(
     '../context',
-    ['useRowState'],
+    ['useBuild'],
   ),
 );
 
@@ -53,10 +53,10 @@ describe('SummaryContentCell', () => {
   });
 
   describe('when there is summary', () => {
-    let useRowStateSpy: jest.MockedFunctionDeep<typeof useRowState>;
+    let useBuildSpy: jest.MockedFunctionDeep<typeof useBuild>;
 
     beforeEach(() => {
-      useRowStateSpy = jest.mocked(useRowState);
+      useBuildSpy = jest.mocked(useBuild);
       render(
         <FakeContextProvider>
           <BuildTable>
@@ -74,7 +74,7 @@ describe('SummaryContentCell', () => {
     });
 
     afterEach(() => {
-      useRowStateSpy.mockClear();
+      useBuildSpy.mockClear();
       cleanup();
     });
 
@@ -87,82 +87,80 @@ describe('SummaryContentCell', () => {
 
       expect(
         toggleRowButton.querySelector("[data-testid='ChevronRightIcon']"),
-      ).toBeInTheDocument();
+      ).not.toHaveStyle({ display: 'none' });
       expect(
         toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
-      ).not.toBeInTheDocument();
+      ).toHaveStyle({ display: 'none' });
 
       // Expand by clicking on toggle button.
       act(() => toggleRowButton.click());
       expect(
         toggleRowButton.querySelector("[data-testid='ChevronRightIcon']"),
-      ).not.toBeInTheDocument();
+      ).toHaveStyle({ display: 'none' });
       expect(
         toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
-      ).toBeInTheDocument();
+      ).not.toHaveStyle({ display: 'none' });
 
       // Collapse by clicking on toggle button.
       act(() => toggleRowButton.click());
       expect(
         toggleRowButton.querySelector("[data-testid='ChevronRightIcon']"),
-      ).toBeInTheDocument();
+      ).not.toHaveStyle({ display: 'none' });
       expect(
         toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
-      ).not.toBeInTheDocument();
+      ).toHaveStyle({ display: 'none' });
 
       // Expand again by changing the default state.
       act(() => toggleAllRowsButton.click());
       await act(() => jest.runAllTimersAsync());
       expect(
         toggleRowButton.querySelector("[data-testid='ChevronRightIcon']"),
-      ).not.toBeInTheDocument();
+      ).toHaveStyle({ display: 'none' });
       expect(
         toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
-      ).toBeInTheDocument();
+      ).not.toHaveStyle({ display: 'none' });
 
       // Collapse again by changing the default state.
       act(() => toggleAllRowsButton.click());
       await act(() => jest.runAllTimersAsync());
       expect(
         toggleRowButton.querySelector("[data-testid='ChevronRightIcon']"),
-      ).toBeInTheDocument();
+      ).not.toHaveStyle({ display: 'none' });
       expect(
         toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
-      ).not.toBeInTheDocument();
+      ).toHaveStyle({ display: 'none' });
     });
 
     it('should avoid unnecessary rerendering', async () => {
       const toggleRowButton = screen.getByLabelText('toggle-row');
       const toggleAllRowsButton = screen.getByLabelText('toggle-all-rows');
-      expect(useRowStateSpy).toHaveBeenCalledTimes(1);
+      expect(useBuildSpy).toHaveBeenCalledTimes(1);
 
       // Expand by clicking on toggle button.
       act(() => toggleRowButton.click());
-      expect(useRowStateSpy).toHaveBeenCalledTimes(2);
+      expect(useBuildSpy).toHaveBeenCalledTimes(1);
 
       // Expand by changing the default state.
       act(() => toggleAllRowsButton.click());
       await act(() => jest.runAllTimersAsync());
-      // Not rerendered. The entry was expanded already.
-      expect(useRowStateSpy).toHaveBeenCalledTimes(2);
+      expect(useBuildSpy).toHaveBeenCalledTimes(1);
 
       // Collapse by clicking on toggle button.
       act(() => toggleRowButton.click());
-      expect(useRowStateSpy).toHaveBeenCalledTimes(3);
+      expect(useBuildSpy).toHaveBeenCalledTimes(1);
 
       // Collapse by changing the default state.
       act(() => toggleAllRowsButton.click());
       await act(() => jest.runAllTimersAsync());
-      // Not rerendered. The entry was collapsed already.
-      expect(useRowStateSpy).toHaveBeenCalledTimes(3);
+      expect(useBuildSpy).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('when there is no summary', () => {
-    let useRowStateSpy: jest.MockedFunctionDeep<typeof useRowState>;
+    let useBuildSpy: jest.MockedFunctionDeep<typeof useBuild>;
 
     beforeEach(() => {
-      useRowStateSpy = jest.mocked(useRowState);
+      useBuildSpy = jest.mocked(useBuild);
       render(
         <FakeContextProvider>
           <BuildTable>
@@ -180,7 +178,7 @@ describe('SummaryContentCell', () => {
     });
 
     afterEach(() => {
-      useRowStateSpy.mockClear();
+      useBuildSpy.mockClear();
       cleanup();
     });
 
@@ -193,19 +191,19 @@ describe('SummaryContentCell', () => {
 
     it('should avoid unnecessary rerendering', async () => {
       const toggleAllRowsButton = screen.getByLabelText('toggle-all-rows');
-      expect(useRowStateSpy).toHaveBeenCalledTimes(1);
+      expect(useBuildSpy).toHaveBeenCalledTimes(1);
 
       // Expand by changing the default state.
       act(() => toggleAllRowsButton.click());
       await act(() => jest.runAllTimersAsync());
       // Not rerendered. There is no summary anyway.
-      expect(useRowStateSpy).toHaveBeenCalledTimes(1);
+      expect(useBuildSpy).toHaveBeenCalledTimes(1);
 
       // Collapse by changing the default state.
       act(() => toggleAllRowsButton.click());
       await act(() => jest.runAllTimersAsync());
       // Not rerendered. There is no summary anyway.
-      expect(useRowStateSpy).toHaveBeenCalledTimes(1);
+      expect(useBuildSpy).toHaveBeenCalledTimes(1);
     });
   });
 });

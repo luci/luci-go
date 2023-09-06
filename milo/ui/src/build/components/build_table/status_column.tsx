@@ -20,7 +20,7 @@ import {
   BUILD_STATUS_ICON_MAP,
 } from '@/common/constants';
 
-import { useRowState } from './context';
+import { useBuild } from './context';
 
 export function StatusHeadCell() {
   return (
@@ -32,7 +32,7 @@ export function StatusHeadCell() {
 }
 
 export function StatusContentCell() {
-  const build = useRowState();
+  const build = useBuild();
 
   return (
     <TableCell>
