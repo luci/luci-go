@@ -56,63 +56,129 @@ func (*projectServer) GetConfig(ctx context.Context, req *pb.GetProjectConfigReq
 		return nil, err
 	}
 
-	response := &pb.ProjectConfig{
-		Name:      fmt.Sprintf("projects/%s/config", project),
-		BugSystem: pb.ProjectConfig_BugSystem(cfg.Config.BugSystem),
-	}
-	if cfg.Config.Monorail != nil {
-		response.Monorail = &pb.MonorailProject{
-			Project:       cfg.Config.Monorail.Project,
-			DisplayPrefix: cfg.Config.Monorail.DisplayPrefix,
-		}
-
-		thresholds := []*pb.MonorailPriority{}
-		for _, monorailPriorityThreshold := range cfg.Config.Monorail.GetPriorities() {
-			priorityThreshold := &pb.MonorailPriority{
-				Priority: monorailPriorityThreshold.GetPriority(),
-				Thresholds: convertImpactMetricThresholds(
-					monorailPriorityThreshold.GetThresholds(),
-				),
-			}
-			thresholds = append(thresholds, priorityThreshold)
-		}
-		response.Monorail.Priorities = thresholds
-	}
-
-	if cfg.Config.Buganizer != nil {
-		thresholds := []*pb.BuganizerProject_PriorityMapping{}
-		buganizerPriorities := cfg.Config.Buganizer.GetPriorityMappings()
-		for _, buganizerPriorityThreshold := range buganizerPriorities {
-			priorityThreshold := &pb.BuganizerProject_PriorityMapping{
-				Priority: pb.BuganizerPriority(buganizerPriorityThreshold.GetPriority()),
-				Thresholds: convertImpactMetricThresholds(
-					buganizerPriorityThreshold.GetThresholds(),
-				),
-			}
-			thresholds = append(thresholds, priorityThreshold)
-		}
-		response.Buganizer = &pb.BuganizerProject{
-			PriorityMappings: thresholds,
-		}
-	}
-
+	response := createProjectConfigPB(project, cfg.Config)
 	return response, nil
 }
 
-func convertImpactMetricThresholds(impactThresholds []*configpb.ImpactMetricThreshold) []*pb.ImpactMetricThreshold {
+func createProjectConfigPB(project string, cfg *configpb.ProjectConfig) *pb.ProjectConfig {
+	result := &pb.ProjectConfig{
+		Name:          fmt.Sprintf("projects/%s/config", project),
+		BugSystem:     pb.ProjectConfig_BugSystem(cfg.BugSystem),
+		Monorail:      toLegacyMonorailProjectPB(cfg.Monorail),
+		Buganizer:     toLegacyBuganizerProjectPB(cfg.Buganizer),
+		BugManagement: toBugManagementPB(cfg.BugManagement),
+	}
+	return result
+}
+
+func toBugManagementPB(bm *configpb.BugManagement) *pb.BugManagement {
+	if bm == nil {
+		// Always set BugManagement struct to avoid clients needing to
+		// do pointless nullness checks. Having an empty BugManagement struct
+		// is semantically identical to having an unset BugManagement struct.
+		return &pb.BugManagement{}
+	}
+	policies := make([]*pb.BugManagementPolicy, 0, len(bm.Policies))
+	for _, policy := range bm.Policies {
+		policies = append(policies, toBugManagementPolicyPB(policy))
+	}
+	return &pb.BugManagement{
+		Policies: policies,
+		Monorail: toMonorailProjectPB(bm.Monorail),
+	}
+}
+
+func toBugManagementPolicyPB(policy *configpb.BugManagementPolicy) *pb.BugManagementPolicy {
+	metrics := make([]*pb.BugManagementPolicy_Metric, 0, len(policy.Metrics))
+	for _, m := range policy.Metrics {
+		metrics = append(metrics, &pb.BugManagementPolicy_Metric{
+			MetricId:              m.MetricId,
+			ActivationThreshold:   toMetricThresholdPB(m.ActivationThreshold),
+			DeactivationThreshold: toMetricThresholdPB(m.DeactivationThreshold),
+		})
+	}
+
+	return &pb.BugManagementPolicy{
+		Id:                policy.Id,
+		HumanReadableName: policy.HumanReadableName,
+		Priority:          pb.BuganizerPriority(policy.Priority),
+		Metrics:           metrics,
+		Explanation: &pb.BugManagementPolicy_Explanation{
+			// Explanation should never be nil. Config validation enforces this.
+			ProblemHtml: policy.Explanation.ProblemHtml,
+			ActionHtml:  policy.Explanation.ActionHtml,
+		},
+	}
+}
+
+func toMonorailProjectPB(cfg *configpb.MonorailProject) *pb.MonorailProject {
+	if cfg == nil {
+		return nil
+	}
+	return &pb.MonorailProject{
+		Project:       cfg.Project,
+		DisplayPrefix: cfg.DisplayPrefix,
+	}
+}
+
+func toLegacyMonorailProjectPB(cfg *configpb.MonorailProject) *pb.MonorailProject {
+	if cfg == nil {
+		return nil
+	}
+	// Similar to toMetricProjectPB, but converts legacy fields as well.
+	thresholds := make([]*pb.MonorailPriority, 0, len(cfg.Priorities))
+	for _, monorailPriorityThreshold := range cfg.Priorities {
+		priorityThreshold := &pb.MonorailPriority{
+			Priority:   monorailPriorityThreshold.Priority,
+			Thresholds: toImpactMetricThresholdsPB(monorailPriorityThreshold.Thresholds),
+		}
+		thresholds = append(thresholds, priorityThreshold)
+	}
+
+	return &pb.MonorailProject{
+		Project:       cfg.Project,
+		DisplayPrefix: cfg.DisplayPrefix,
+		Priorities:    thresholds,
+	}
+}
+
+func toLegacyBuganizerProjectPB(cfg *configpb.BuganizerProject) *pb.BuganizerProject {
+	if cfg == nil {
+		return nil
+	}
+	thresholds := []*pb.BuganizerProject_PriorityMapping{}
+	for _, p := range cfg.PriorityMappings {
+		threshold := &pb.BuganizerProject_PriorityMapping{
+			Priority:   pb.BuganizerPriority(p.Priority),
+			Thresholds: toImpactMetricThresholdsPB(p.Thresholds),
+		}
+		thresholds = append(thresholds, threshold)
+	}
+	return &pb.BuganizerProject{
+		PriorityMappings: thresholds,
+	}
+}
+
+func toImpactMetricThresholdsPB(impactThresholds []*configpb.ImpactMetricThreshold) []*pb.ImpactMetricThreshold {
 	result := make([]*pb.ImpactMetricThreshold, len(impactThresholds))
 	for i, impactThreshold := range impactThresholds {
 		result[i] = &pb.ImpactMetricThreshold{
-			MetricId: impactThreshold.MetricId,
-			Threshold: &pb.MetricThreshold{
-				OneDay:   impactThreshold.Threshold.OneDay,
-				ThreeDay: impactThreshold.Threshold.ThreeDay,
-				SevenDay: impactThreshold.Threshold.SevenDay,
-			},
+			MetricId:  impactThreshold.MetricId,
+			Threshold: toMetricThresholdPB(impactThreshold.Threshold),
 		}
 	}
-
 	return result
+}
+
+func toMetricThresholdPB(threshold *configpb.MetricThreshold) *pb.MetricThreshold {
+	if threshold == nil {
+		return nil
+	}
+	return &pb.MetricThreshold{
+		OneDay:   threshold.OneDay,
+		ThreeDay: threshold.ThreeDay,
+		SevenDay: threshold.SevenDay,
+	}
 }
 
 func (*projectServer) List(ctx context.Context, request *pb.ListProjectsRequest) (*pb.ListProjectsResponse, error) {
@@ -131,11 +197,11 @@ func (*projectServer) List(ctx context.Context, request *pb.ListProjectsRequest)
 	sort.Strings(readableProjects)
 
 	return &pb.ListProjectsResponse{
-		Projects: createProjectPbs(readableProjects),
+		Projects: createProjectPBs(readableProjects),
 	}, nil
 }
 
-func createProjectPbs(projects []string) []*pb.Project {
+func createProjectPBs(projects []string) []*pb.Project {
 	projectsPbs := make([]*pb.Project, 0, len(projects))
 	for _, project := range projects {
 		projectsPbs = append(projectsPbs, &pb.Project{

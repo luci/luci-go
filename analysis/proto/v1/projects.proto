@@ -72,13 +72,151 @@ message ProjectConfig {
   string name = 1;
 
   // The bug system to use for filing bugs.
+  //
+  // TODO(meiring): Remove once policy-based bug filing in production.
   BugSystem bug_system = 3;
 
   // Details about the monorail project used for this LUCI project.
+  //
+  // TODO(meiring): Remove once policy-based bug filing in production.
   MonorailProject monorail = 4;
 
   // Details about the Buganizer configuration used for this LUCI Project.
+  //
+  // TODO(meiring): Remove once policy-based bug filing in production.
   BuganizerProject buganizer = 5;
+
+  // Configuration for automatic bug management.
+  BugManagement bug_management = 6;
+}
+
+// Settings related to bug management.
+message BugManagement {
+  // The set of policies which control the (re-)opening, closure and
+  // prioritization of bugs under the control of LUCI Analysis.
+  repeated BugManagementPolicy policies = 1;
+
+  // Monorail-specific bug filing configuration.
+  MonorailProject monorail = 2;
+}
+
+// A bug management policy in LUCI Analysis.
+//
+// Bug management policies control when and how bugs are automatically
+// opened, prioritised, and verified as fixed. Each policy has a user-visible
+// identity in the UI and can post custom instructions on the bug.
+//
+// LUCI Analysis avoids filing multiple bugs for the same failures by
+// allowing multiple policies to activate on the same failure association
+// rule. The bug associated with a rule will only be verified if all policies
+// have de-activated.
+message BugManagementPolicy {
+  // A unique identifier for the bug management policy.
+  //
+  // Policies are stateful in that LUCI Analysis tracks which bugs have met the
+  // activation condition on the policy (and not since met the deactivation
+  // condition).
+  //
+  // Changing this value changes the identity of the policy and hence results in
+  // the activation state for the policy being lost for all bugs.
+  //
+  // Valid syntax: ^[a-z]([a-z0-9-]{0,62}[a-z0-9])?$. (Syntax designed to comply
+  // with google.aip.dev/122 for resource IDs.)
+  string id = 1;
+
+  // A short one-line description for the problem the policy identifies, which
+  // will appear on the UI and in bugs comments. This is a sentence fragment
+  // and not a sentence, so please do NOT include a full stop and or starting
+  // capital letter.
+  //
+  // For example, "test variant(s) are being exonerated in presubmit".
+  string human_readable_name = 2;
+
+  // The priority of the problem this policy defines.
+  //
+  // If:
+  // - the priority of the bug associated with a rule
+  //   differs from this priority, and
+  // - the policy is activate on the rule (see `metrics`), and
+  // - LUCI Analysis is controlling the priority of the bug
+  //   (the "Update bug priority" switch on the rule is enabled),
+  // the priority of the bug will be updated to match this priority.
+  //
+  // Where are there multiple policies active on the same rule,
+  // the highest priority (of all active policies) will be used.
+  //
+  // For monorail projects, the buganizer priority will be converted to the
+  // equivalent monorail priority (P0 is converted to Pri-0, P1 to Pri-1,
+  // P2 to Pri-2, etc.) until monorail is turned down.
+  BuganizerPriority priority = 3;
+
+  // The set of metrics which will control activation of the bug-filing policy.
+  // If a policy activates on a suggested cluster, a new bug will be filed.
+  // If a policy activates on an existing rule cluster, the bug will be
+  // updated.
+  //
+  // The policy will activate if the activation threshold is met on *ANY*
+  // metric, and will de-activate only if the deactivation threshold is met
+  // on *ALL* metrics.
+  //
+  // Activation on suggested clusters will be based on the metric values after
+  // excluding failures for which a bug has already been filed. This is to
+  // avoid duplicate bug filing.
+  repeated Metric metrics = 4;
+
+  // A metric used to control activation of a bug-filing policy.
+  message Metric {
+    // The identifier of the metric.
+    //
+    // Full list of available metrics here:
+    // https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/internal/analysis/metrics/metrics.go
+    string metric_id = 1;
+
+    // The level at which the policy activates. Activation occurs if the
+    // cluster impact meets or exceeds this threshold.
+    // MUST imply deactivation_threshold.
+    MetricThreshold activation_threshold = 2;
+
+    // The minimum metric level at which the policy remains active.
+    // Deactivation occcurs if the cluster impact is below the de-activation
+    // threshold. Deactivation_threshold should be set significantly lower
+    // than activation_threshold to prevent policies repeatedly activating
+    // and deactivating due to noise in the data, e.g. less tests executed
+    // on weekends.
+    MetricThreshold deactivation_threshold = 3;
+  }
+
+  // Expanatory text of the problem the policy identified, shown on the
+  // user interface when the user requests more information. Required.
+  Explanation explanation = 5;
+
+  // Content displayed on the user interface, to explain the problem and
+  // guide a developer to fix it.
+  message Explanation {
+    // A longer human-readable description of the problem this policy
+    // has identified, in HTML.
+    //
+    // For example, "Test variant(s) in this cluster are being exonerated
+    // (ignored) in presubmit because they are too flaky or failing. This
+    // means they are no longer effective at preventing the breakage of
+    // the functionality the test(s) cover.".
+    //
+    // MUST be sanitised by UI before rendering. Sanitisation is only
+    // required to support simple uses of the following tags: ul, li, a.
+    string problem_html = 1;
+
+    // A description of how a human should go about trying to fix the
+    // problem, in HTML.
+    //
+    // For example, "<ul>
+    // <li>View recent failures</li>
+    // <li><a href="http://goto.google.com/demote-from-cq">Demote</a> the test from CQ</li>
+    // </ul>"
+    //
+    // MUST be sanitised by UI before rendering. Sanitisation is only
+    // required to support simple uses of the following tags: ul, li, a.
+    string action_html = 2;
+  }
 }
 
 // This enum represents the Buganizer priorities.
@@ -144,6 +282,8 @@ message MonorailProject {
   // matched, the bug is closed. Satisfying the threshold for filing bugs MUST
   // at least imply the threshold for the lowest priority, and MAY imply
   // the thresholds of higher priorities.
+  //
+  // TODO(meiring): Remove once policy-based bug filing in production.
   repeated MonorailPriority priorities = 3;
 }
 

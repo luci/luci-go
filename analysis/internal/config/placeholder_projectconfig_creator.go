@@ -31,6 +31,7 @@ import (
 func createPlaceholderLegacyMonorailProject() *configpb.MonorailProject {
 	return &configpb.MonorailProject{
 		Project:         "chromium",
+		DisplayPrefix:   "crbug.com",
 		PriorityFieldId: 10,
 		Priorities: []*configpb.MonorailPriority{
 			{

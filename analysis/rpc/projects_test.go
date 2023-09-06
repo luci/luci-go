@@ -73,50 +73,35 @@ func TestProjects(t *testing.T) {
 		Convey("GetConfig", func() {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
-					Realm:      "testprojectmonorail:@project",
-					Permission: perms.PermGetConfig,
-				},
-				{
-					Realm:      "testprojectbuganizer:@project",
+					Realm:      "testproject:@project",
 					Permission: perms.PermGetConfig,
 				},
 			}
 
 			// Setup.
 			configs := make(map[string]*configpb.ProjectConfig)
-			monorailProjectTest := config.CreateMonorailPlaceholderProjectConfig()
-			monorailProjectTest.Monorail.Project = "monorailproject"
-			monorailProjectTest.Monorail.DisplayPrefix = "displayprefix.com"
+			projectCfg := config.CreateConfigWithBothBuganizerAndMonorail(configpb.BugSystem_BUGANIZER)
 
-			buganizerProjectTest := config.CreateBuganizerPlaceholderProjectConfig()
+			configs["testproject"] = projectCfg
+			So(config.SetTestProjectConfig(ctx, configs), ShouldBeNil)
 
-			configs["testprojectmonorail"] = monorailProjectTest
-			configs["testprojectbuganizer"] = buganizerProjectTest
-			config.SetTestProjectConfig(ctx, configs)
-
-			requestMonorail := &pb.GetProjectConfigRequest{
-				Name: "projects/testprojectmonorail/config",
-			}
-
-			requestBuganizer := &pb.GetProjectConfigRequest{
-				Name: "projects/testprojectbuganizer/config",
+			request := &pb.GetProjectConfigRequest{
+				Name: "projects/testproject/config",
 			}
 
 			Convey("No permission to get project config", func() {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetConfig)
 
-				response, err := server.GetConfig(ctx, requestMonorail)
+				response, err := server.GetConfig(ctx, request)
 				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.config.get")
 				So(response, ShouldBeNil)
 			})
-			Convey("Valid request monorail", func() {
-				response, err := server.GetConfig(ctx, requestMonorail)
-				So(err, ShouldBeNil)
-				So(response, ShouldResembleProto, &pb.ProjectConfig{
-					Name: "projects/testprojectmonorail/config",
+			Convey("Valid request", func() {
+				expectedResponse := &pb.ProjectConfig{
+					Name: "projects/testproject/config",
 					Monorail: &pb.MonorailProject{
-						Project:       "monorailproject",
-						DisplayPrefix: "displayprefix.com",
+						Project:       "chromium",
+						DisplayPrefix: "crbug.com",
 						Priorities: []*pb.MonorailPriority{
 							{
 								Priority: "0",
@@ -142,14 +127,6 @@ func TestProjects(t *testing.T) {
 							},
 						},
 					},
-					BugSystem: pb.ProjectConfig_MONORAIL,
-				})
-			})
-			Convey("Valid request buganizer", func() {
-				response, err := server.GetConfig(ctx, requestBuganizer)
-				So(err, ShouldBeNil)
-				So(response, ShouldResembleProto, &pb.ProjectConfig{
-					Name: "projects/testprojectbuganizer/config",
 					Buganizer: &pb.BuganizerProject{
 						PriorityMappings: []*pb.BuganizerProject_PriorityMapping{
 							{
@@ -177,6 +154,81 @@ func TestProjects(t *testing.T) {
 						},
 					},
 					BugSystem: pb.ProjectConfig_BUGANIZER,
+					BugManagement: &pb.BugManagement{
+						Policies: []*pb.BugManagementPolicy{
+							{
+								Id:                "exoneration",
+								HumanReadableName: "test variant(s) are being exonerated in presubmit",
+								Priority:          pb.BuganizerPriority_P2,
+								Metrics: []*pb.BugManagementPolicy_Metric{
+									{
+										MetricId: metrics.CriticalFailuresExonerated.ID.String(),
+										ActivationThreshold: &pb.MetricThreshold{
+											OneDay: proto.Int64(50),
+										},
+										DeactivationThreshold: &pb.MetricThreshold{
+											ThreeDay: proto.Int64(20),
+										},
+									},
+								},
+								Explanation: &pb.BugManagementPolicy_Explanation{
+									ProblemHtml: "Test variant(s) in the cluster are being exonerated because they are too flaky or failing.",
+									ActionHtml:  "<ul><li>View recent failures and fix them</li><li>Demote the test(s) from CQ</li></ul>",
+								},
+							},
+						},
+						Monorail: &pb.MonorailProject{
+							Project:       "chromium",
+							DisplayPrefix: "crbug.com",
+						},
+					},
+				}
+
+				Convey("baseline", func() {
+					// Run
+					response, err := server.GetConfig(ctx, request)
+
+					// Verify
+					So(err, ShouldBeNil)
+					So(response, ShouldResembleProto, expectedResponse)
+				})
+				Convey("without buganizer config", func() {
+					projectCfg.Buganizer = nil
+					So(config.SetTestProjectConfig(ctx, configs), ShouldBeNil)
+
+					// Run
+					response, err := server.GetConfig(ctx, request)
+
+					// Verify
+					So(err, ShouldBeNil)
+					expectedResponse.Buganizer = nil
+					So(response, ShouldResembleProto, expectedResponse)
+				})
+				Convey("without monorail config", func() {
+					projectCfg.Monorail = nil
+					projectCfg.BugManagement.Monorail = nil
+					So(config.SetTestProjectConfig(ctx, configs), ShouldBeNil)
+
+					// Run
+					response, err := server.GetConfig(ctx, request)
+
+					// Verify
+					So(err, ShouldBeNil)
+					expectedResponse.Monorail = nil
+					expectedResponse.BugManagement.Monorail = nil
+					So(response, ShouldResembleProto, expectedResponse)
+				})
+				Convey("policy without activation threshold", func() {
+					projectCfg.BugManagement.Policies[0].Metrics[0].ActivationThreshold = nil
+					So(config.SetTestProjectConfig(ctx, configs), ShouldBeNil)
+
+					// Run
+					response, err := server.GetConfig(ctx, request)
+
+					// Verify
+					So(err, ShouldBeNil)
+					expectedResponse.BugManagement.Policies[0].Metrics[0].ActivationThreshold = nil
+					So(response, ShouldResembleProto, expectedResponse)
 				})
 			})
 			Convey("With project not configured", func() {
@@ -184,19 +236,20 @@ func TestProjects(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				// Run
-				response, err := server.GetConfig(ctx, requestMonorail)
+				response, err := server.GetConfig(ctx, request)
 
 				// Verify
 				So(err, ShouldBeNil)
 				So(response, ShouldResembleProto, &pb.ProjectConfig{
-					Name: "projects/testprojectmonorail/config",
+					Name:          "projects/testproject/config",
+					BugManagement: &pb.BugManagement{},
 				})
 			})
 			Convey("Invalid request", func() {
-				requestMonorail.Name = "blah"
+				request.Name = "blah"
 
 				// Run
-				response, err := server.GetConfig(ctx, requestMonorail)
+				response, err := server.GetConfig(ctx, request)
 
 				// Verify
 				So(err, ShouldBeRPCInvalidArgument, "name: invalid project config name, expected format: projects/{project}/config")
