@@ -123,7 +123,7 @@ func (r *ReexecRegistry) interceptWithArgs(ctx context.Context, env environ.Env,
 		r.sealed = true
 	}
 	r.mu.Unlock()
-	if _, ok := env.Lookup(envCipkgExec); !ok {
+	if !env.Remove(envCipkgExec) {
 		return
 	}
 

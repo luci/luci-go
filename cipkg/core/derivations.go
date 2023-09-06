@@ -33,10 +33,10 @@ func GetDerivationID(drv *Derivation) (string, error) {
 	}
 
 	// - "name-hash" for usual derivations.
-	// - "name-$hash" for derivations with fixed output.
+	// - "name+hash" for derivations with fixed output.
 	infix := "-"
 	if drv.FixedOutput != "" {
-		infix = "-$"
+		infix = "+"
 	}
 
 	// We want to keep the hash as short as possible to avoid reaching the path

@@ -34,6 +34,7 @@ import (
 // TODO(crbug/1323147): Replace direct call cipd binary with cipd sdk when it's
 // available.
 type CIPDExport struct {
+	Name     string
 	Metadata *core.Action_Metadata
 
 	Ensure   ensure.File
@@ -84,6 +85,7 @@ func (c *CIPDExport) Generate(ctx context.Context, plats Platforms) (*core.Actio
 	addEnv(cipd.EnvCIPDServiceURL, c.ServiceURL)
 
 	return &core.Action{
+		Name:     c.Name,
 		Metadata: c.Metadata,
 		Spec: &core.Action_Cipd{
 			Cipd: &core.ActionCIPDExport{

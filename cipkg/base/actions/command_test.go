@@ -25,7 +25,8 @@ import (
 
 func TestProcessCommand(t *testing.T) {
 	Convey("Test action processor for cipd", t, func() {
-		ap := NewActionProcessor("", testutils.NewMockPackageManage(""))
+		ap := NewActionProcessor()
+		pm := testutils.NewMockPackageManage("")
 
 		Convey("ok", func() {
 			cmd := &core.ActionCommand{
@@ -33,7 +34,7 @@ func TestProcessCommand(t *testing.T) {
 				Env:  []string{"env1=var1", "env2=var2", "env3={{.something}}"},
 			}
 
-			pkg, err := ap.Process(&core.Action{
+			pkg, err := ap.Process("", pm, &core.Action{
 				Name: "url",
 				Metadata: &core.Action_Metadata{
 					RuntimeDeps: []*core.Action{
@@ -62,7 +63,7 @@ func TestProcessCommand(t *testing.T) {
 				Args: []string{"bin", "arg1", "arg2", "{{something}}"},
 			}
 
-			_, err := ap.Process(&core.Action{
+			_, err := ap.Process("", pm, &core.Action{
 				Name: "url",
 				Deps: []*core.Action{
 					{Name: "something", Spec: &core.Action_Command{Command: &core.ActionCommand{}}},
@@ -77,7 +78,7 @@ func TestProcessCommand(t *testing.T) {
 				Env: []string{"{{.else}}"},
 			}
 
-			_, err := ap.Process(&core.Action{
+			_, err := ap.Process("", pm, &core.Action{
 				Name: "url",
 				Deps: []*core.Action{
 					{Name: "something", Spec: &core.Action_Command{Command: &core.ActionCommand{}}},

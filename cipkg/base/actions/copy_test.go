@@ -33,7 +33,8 @@ import (
 
 func TestProcessCopy(t *testing.T) {
 	Convey("Test action processor for copy", t, func() {
-		ap := NewActionProcessor("", testutils.NewMockPackageManage(""))
+		ap := NewActionProcessor()
+		pm := testutils.NewMockPackageManage("")
 
 		copy := &core.ActionFilesCopy{
 			Files: map[string]*core.ActionFilesCopy_Source{
@@ -46,7 +47,7 @@ func TestProcessCopy(t *testing.T) {
 			},
 		}
 
-		pkg, err := ap.Process(&core.Action{
+		pkg, err := ap.Process("", pm, &core.Action{
 			Name: "copy",
 			Deps: []*core.Action{
 				{Name: "something", Spec: &core.Action_Command{Command: &core.ActionCommand{}}},
@@ -319,11 +320,12 @@ func TestExecuteCopy(t *testing.T) {
 
 func TestReexecExecuteCopy(t *testing.T) {
 	Convey("Test re-execute action copy", t, func() {
-		ap := NewActionProcessor("", testutils.NewMockPackageManage(""))
+		ap := NewActionProcessor()
+		pm := testutils.NewMockPackageManage("")
 		ctx := context.Background()
 		out := t.TempDir()
 
-		pkg, err := ap.Process(&core.Action{
+		pkg, err := ap.Process("", pm, &core.Action{
 			Name: "copy",
 			Spec: &core.Action_Copy{Copy: &core.ActionFilesCopy{
 				Files: map[string]*core.ActionFilesCopy_Source{

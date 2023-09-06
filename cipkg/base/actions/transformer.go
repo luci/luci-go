@@ -57,19 +57,15 @@ type Transformer[M proto.Message] func(M, []Package) (*core.Derivation, error)
 
 // ActionProcessor processes and transforms actions into packages.
 type ActionProcessor struct {
-	buildPlatform string
-	packages      core.PackageManager
-	transformers  map[protoreflect.FullName]Transformer[proto.Message]
+	transformers map[protoreflect.FullName]Transformer[proto.Message]
 
 	mu     sync.Mutex
 	sealed bool
 }
 
-func NewActionProcessor(buildPlat string, pm core.PackageManager) *ActionProcessor {
+func NewActionProcessor() *ActionProcessor {
 	ap := &ActionProcessor{
-		buildPlatform: buildPlat,
-		packages:      pm,
-		transformers:  make(map[protoreflect.FullName]Transformer[proto.Message]),
+		transformers: make(map[protoreflect.FullName]Transformer[proto.Message]),
 	}
 	MustSetTransformer[*core.ActionCommand](ap, ActionCommandTransformer)
 	MustSetTransformer[*core.ActionURLFetch](ap, ActionURLFetchTransformer)
@@ -114,7 +110,7 @@ func MustSetTransformer[M proto.Message](ap *ActionProcessor, tf Transformer[M])
 
 // Process transforms a given *core.Action into a self-contained Package, which
 // includes all its dependencies also converted from *core.Action into Package.
-func (ap *ActionProcessor) Process(a *core.Action) (Package, error) {
+func (ap *ActionProcessor) Process(buildPlat string, pm core.PackageManager, a *core.Action) (Package, error) {
 	ap.mu.Lock()
 	if !ap.sealed {
 		ap.sealed = true
@@ -131,7 +127,7 @@ func (ap *ActionProcessor) Process(a *core.Action) (Package, error) {
 
 	// Recursivedly process all dependencies
 	for _, d := range a.Deps {
-		dpkg, err := ap.Process(d)
+		dpkg, err := ap.Process(buildPlat, pm, d)
 		if err != nil {
 			return Package{}, err
 		}
@@ -142,7 +138,7 @@ func (ap *ActionProcessor) Process(a *core.Action) (Package, error) {
 	// They won't be included in the derivation's input.
 	if a.Metadata != nil {
 		for _, d := range a.Metadata.RuntimeDeps {
-			dpkg, err := ap.Process(d)
+			dpkg, err := ap.Process(buildPlat, pm, d)
 			if err != nil {
 				return Package{}, err
 			}
@@ -183,7 +179,7 @@ func (ap *ActionProcessor) Process(a *core.Action) (Package, error) {
 
 	// Update common derivation fields
 	drv.Name = a.Name
-	drv.Platform = ap.buildPlatform
+	drv.Platform = buildPlat
 	for _, d := range pkg.BuildDependencies {
 		drv.Inputs = append(drv.Inputs, d.DerivationID)
 	}
@@ -195,7 +191,7 @@ func (ap *ActionProcessor) Process(a *core.Action) (Package, error) {
 		return Package{}, err
 	}
 	pkg.DerivationID = drvID
-	pkg.Handler = ap.packages.Get(drvID)
+	pkg.Handler = pm.Get(drvID)
 
 	return pkg, nil
 }

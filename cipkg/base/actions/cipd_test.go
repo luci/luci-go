@@ -27,13 +27,14 @@ import (
 
 func TestProcessCIPD(t *testing.T) {
 	Convey("Test action processor for cipd", t, func() {
-		ap := NewActionProcessor("", testutils.NewMockPackageManage(""))
+		ap := NewActionProcessor()
+		pm := testutils.NewMockPackageManage("")
 
 		cipd := &core.ActionCIPDExport{
 			EnsureFile: "infra/tools/luci/vpython/linux-amd64 git_revision:98782288dfc349541691a2a5dfc0e44327f22731",
 		}
 
-		pkg, err := ap.Process(&core.Action{
+		pkg, err := ap.Process("", pm, &core.Action{
 			Name: "url",
 			Spec: &core.Action_Cipd{Cipd: cipd},
 		})
@@ -70,10 +71,11 @@ func TestReexecCIPD(t *testing.T) {
 	Convey("Test re-execute action processor for cipd", t, func() {
 		ctx := execmock.Init(context.Background())
 		uses := execmock.Simple.Mock(ctx, execmock.SimpleInput{})
-		ap := NewActionProcessor("", testutils.NewMockPackageManage(""))
+		ap := NewActionProcessor()
+		pm := testutils.NewMockPackageManage("")
 		out := t.TempDir()
 
-		pkg, err := ap.Process(&core.Action{
+		pkg, err := ap.Process("", pm, &core.Action{
 			Name: "url",
 			Spec: &core.Action_Cipd{Cipd: &core.ActionCIPDExport{
 				EnsureFile: "",

@@ -33,7 +33,8 @@ import (
 
 func TestProcessURL(t *testing.T) {
 	Convey("Test action processor for url", t, func() {
-		ap := NewActionProcessor("", testutils.NewMockPackageManage(""))
+		ap := NewActionProcessor()
+		pm := testutils.NewMockPackageManage("")
 
 		url := &core.ActionURLFetch{
 			Url:           "https://host.not.exist/123",
@@ -41,7 +42,7 @@ func TestProcessURL(t *testing.T) {
 			HashValue:     "abcdef",
 		}
 
-		pkg, err := ap.Process(&core.Action{
+		pkg, err := ap.Process("", pm, &core.Action{
 			Name: "url",
 			Spec: &core.Action_Url{Url: url},
 		})
@@ -115,7 +116,8 @@ func TestExecuteURL(t *testing.T) {
 
 func TestReexecURL(t *testing.T) {
 	Convey("Test re-execute action processor for url", t, func() {
-		ap := NewActionProcessor("", testutils.NewMockPackageManage(""))
+		ap := NewActionProcessor()
+		pm := testutils.NewMockPackageManage("")
 		ctx := context.Background()
 		out := t.TempDir()
 
@@ -124,7 +126,7 @@ func TestReexecURL(t *testing.T) {
 		}))
 		defer s.Close()
 
-		pkg, err := ap.Process(&core.Action{
+		pkg, err := ap.Process("", pm, &core.Action{
 			Name: "url",
 			Spec: &core.Action_Url{Url: &core.ActionURLFetch{
 				Url:           s.URL,
