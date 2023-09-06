@@ -72,6 +72,15 @@ func TestReadTestHistory(t *testing.T) {
 			},
 			{
 				TestId:            "test_id",
+				VariantHash:       pbutil.VariantHash(testVariant4),
+				InvocationId:      "inv3",
+				Status:            pb.TestVerdictStatus_EXPECTED,
+				PartitionTime:     timestamppb.New(referenceTime.Add(-1 * time.Hour)),
+				PassedAvgDuration: durationpb.New(22222 * time.Microsecond),
+				Changelists:       expectedChangelists,
+			},
+			{
+				TestId:            "test_id",
 				VariantHash:       pbutil.VariantHash(testVariant1),
 				InvocationId:      "inv2",
 				Status:            pb.TestVerdictStatus_EXONERATED,
@@ -334,6 +343,15 @@ func TestReadTestHistory(t *testing.T) {
 			So(verdicts, ShouldResembleProto, []*pb.TestVerdict{
 				{
 					TestId:            "test_id",
+					VariantHash:       pbutil.VariantHash(testVariant4),
+					InvocationId:      "inv3",
+					Status:            pb.TestVerdictStatus_EXPECTED,
+					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * time.Hour)),
+					PassedAvgDuration: durationpb.New(22222 * time.Microsecond),
+					Changelists:       expectedChangelists,
+				},
+				{
+					TestId:            "test_id",
 					VariantHash:       pbutil.VariantHash(testVariant1),
 					InvocationId:      "inv2",
 					Status:            pb.TestVerdictStatus_UNEXPECTEDLY_SKIPPED,
@@ -400,6 +418,73 @@ func TestReadTestHistory(t *testing.T) {
 				},
 			})
 		})
+
+		Convey("with bisection filter", func() {
+			opts.ExcludeBisectionResults = true
+			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
+			So(err, ShouldBeNil)
+			So(nextPageToken, ShouldBeEmpty)
+			So(verdicts, ShouldResembleProto, []*pb.TestVerdict{
+				{
+					TestId:            "test_id",
+					VariantHash:       pbutil.VariantHash(testVariant1),
+					InvocationId:      "inv1",
+					Status:            pb.TestVerdictStatus_EXPECTED,
+					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * time.Hour)),
+					PassedAvgDuration: durationpb.New(22222 * time.Microsecond),
+				},
+				{
+					TestId:            "test_id",
+					VariantHash:       pbutil.VariantHash(testVariant1),
+					InvocationId:      "inv2",
+					Status:            pb.TestVerdictStatus_EXONERATED,
+					PartitionTime:     timestamppb.New(referenceTime.Add(-12 * time.Hour)),
+					PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
+				},
+				{
+					TestId:            "test_id",
+					VariantHash:       pbutil.VariantHash(testVariant2),
+					InvocationId:      "inv1",
+					Status:            pb.TestVerdictStatus_FLAKY,
+					PartitionTime:     timestamppb.New(referenceTime.Add(-24 * time.Hour)),
+					PassedAvgDuration: nil,
+				},
+				{
+					TestId:            "test_id",
+					VariantHash:       pbutil.VariantHash(testVariant1),
+					InvocationId:      "inv1",
+					Status:            pb.TestVerdictStatus_UNEXPECTED,
+					PartitionTime:     timestamppb.New(referenceTime.Add(-day - 1*time.Hour)),
+					PassedAvgDuration: durationpb.New(33333 * time.Microsecond),
+				},
+				{
+					TestId:            "test_id",
+					VariantHash:       pbutil.VariantHash(testVariant1),
+					InvocationId:      "inv2",
+					Status:            pb.TestVerdictStatus_UNEXPECTEDLY_SKIPPED,
+					PartitionTime:     timestamppb.New(referenceTime.Add(-day - 12*time.Hour)),
+					PassedAvgDuration: nil,
+					Changelists:       expectedChangelists,
+				}, {
+					TestId:            "test_id",
+					VariantHash:       pbutil.VariantHash(testVariant2),
+					InvocationId:      "inv1",
+					Status:            pb.TestVerdictStatus_EXPECTED,
+					PartitionTime:     timestamppb.New(referenceTime.Add(-day - 24*time.Hour)),
+					PassedAvgDuration: nil,
+					Changelists:       expectedChangelists,
+				},
+				{
+					TestId:            "test_id",
+					VariantHash:       pbutil.VariantHash(testVariant3),
+					InvocationId:      "inv1",
+					Status:            pb.TestVerdictStatus_EXONERATED,
+					PartitionTime:     timestamppb.New(referenceTime.Add(-2*day - 3*time.Hour)),
+					PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
+					Changelists:       expectedChangelists,
+				},
+			})
+		})
 	})
 }
 
@@ -427,6 +512,12 @@ func TestReadTestHistoryStats(t *testing.T) {
 				ExpectedCount:     1,
 				ExoneratedCount:   1,
 				PassedAvgDuration: durationpb.New(((22222 + 1234567890123456) / 2) * time.Microsecond),
+			},
+			{
+				PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
+				VariantHash:       pbutil.VariantHash(testVariant4),
+				ExpectedCount:     1,
+				PassedAvgDuration: durationpb.New(22222 * time.Microsecond),
 			},
 			{
 				PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
@@ -462,17 +553,17 @@ func TestReadTestHistoryStats(t *testing.T) {
 			So(verdicts, ShouldResembleProto, expectedGroups)
 		})
 		Convey("pagination works", func() {
-			opts.PageSize = 3
+			opts.PageSize = 4
 			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
 			So(err, ShouldBeNil)
 			So(nextPageToken, ShouldNotBeEmpty)
-			So(verdicts, ShouldResembleProto, expectedGroups[:3])
+			So(verdicts, ShouldResembleProto, expectedGroups[:4])
 
 			opts.PageToken = nextPageToken
 			verdicts, nextPageToken, err = ReadTestHistoryStats(span.Single(ctx), opts)
 			So(err, ShouldBeNil)
 			So(nextPageToken, ShouldBeEmpty)
-			So(verdicts, ShouldResembleProto, expectedGroups[3:])
+			So(verdicts, ShouldResembleProto, expectedGroups[4:])
 		})
 		Convey("with legacy test results data", func() {
 			// This test case can be deleted from March 2023. This should be
@@ -671,6 +762,12 @@ func TestReadTestHistoryStats(t *testing.T) {
 			So(nextPageToken, ShouldBeEmpty)
 			So(verdicts, ShouldResembleProto, []*pb.QueryTestHistoryStatsResponse_Group{
 				{
+					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
+					VariantHash:       pbutil.VariantHash(testVariant4),
+					ExpectedCount:     1,
+					PassedAvgDuration: durationpb.New(22222 * time.Microsecond),
+				},
+				{
 					PartitionTime:            timestamppb.New(referenceTime.Add(-2 * day)),
 					VariantHash:              pbutil.VariantHash(testVariant1),
 					UnexpectedlySkippedCount: 1,
@@ -713,6 +810,47 @@ func TestReadTestHistoryStats(t *testing.T) {
 					VariantHash:       pbutil.VariantHash(testVariant1),
 					UnexpectedCount:   1,
 					PassedAvgDuration: durationpb.New(33333 * time.Microsecond),
+				},
+			})
+		})
+
+		Convey("with bisection filter", func() {
+			opts.ExcludeBisectionResults = true
+			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
+			So(err, ShouldBeNil)
+			So(nextPageToken, ShouldBeEmpty)
+			So(verdicts, ShouldResembleProto, []*pb.QueryTestHistoryStatsResponse_Group{
+				{
+					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
+					VariantHash:       pbutil.VariantHash(testVariant1),
+					ExpectedCount:     1,
+					ExoneratedCount:   1,
+					PassedAvgDuration: durationpb.New(((22222 + 1234567890123456) / 2) * time.Microsecond),
+				},
+				{
+					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
+					VariantHash:       pbutil.VariantHash(testVariant2),
+					FlakyCount:        1,
+					PassedAvgDuration: nil,
+				},
+				{
+					PartitionTime:            timestamppb.New(referenceTime.Add(-2 * day)),
+					VariantHash:              pbutil.VariantHash(testVariant1),
+					UnexpectedCount:          1,
+					UnexpectedlySkippedCount: 1,
+					PassedAvgDuration:        durationpb.New(33333 * time.Microsecond),
+				},
+				{
+					PartitionTime:     timestamppb.New(referenceTime.Add(-2 * day)),
+					VariantHash:       pbutil.VariantHash(testVariant2),
+					ExpectedCount:     1,
+					PassedAvgDuration: nil,
+				},
+				{
+					PartitionTime:     timestamppb.New(referenceTime.Add(-3 * day)),
+					VariantHash:       pbutil.VariantHash(testVariant3),
+					ExoneratedCount:   1,
+					PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
 				},
 			})
 		})

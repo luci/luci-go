@@ -427,14 +427,15 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 
 // ReadTestHistoryOptions specifies options for ReadTestHistory().
 type ReadTestHistoryOptions struct {
-	Project          string
-	TestID           string
-	SubRealms        []string
-	VariantPredicate *pb.VariantPredicate
-	SubmittedFilter  pb.SubmittedFilter
-	TimeRange        *pb.TimeRange
-	PageSize         int
-	PageToken        string
+	Project                 string
+	TestID                  string
+	SubRealms               []string
+	VariantPredicate        *pb.VariantPredicate
+	SubmittedFilter         pb.SubmittedFilter
+	TimeRange               *pb.TimeRange
+	ExcludeBisectionResults bool
+	PageSize                int
+	PageToken               string
 }
 
 // statement generates a spanner statement for the specified query template.
@@ -461,10 +462,11 @@ func (opts ReadTestHistoryOptions) statement(ctx context.Context, tmpl string, p
 		"pass": int(pb.TestResultStatus_PASS),
 	}
 	input := map[string]any{
-		"hasLimit":           opts.PageSize > 0,
-		"hasSubmittedFilter": opts.SubmittedFilter != pb.SubmittedFilter_SUBMITTED_FILTER_UNSPECIFIED,
-		"pagination":         opts.PageToken != "",
-		"params":             params,
+		"hasLimit":                opts.PageSize > 0,
+		"hasSubmittedFilter":      opts.SubmittedFilter != pb.SubmittedFilter_SUBMITTED_FILTER_UNSPECIFIED,
+		"excludeBisectionResults": opts.ExcludeBisectionResults,
+		"pagination":              opts.PageToken != "",
+		"params":                  params,
 	}
 
 	if opts.TimeRange.GetEarliest() != nil {
@@ -960,6 +962,10 @@ var testHistoryQueryTmpl = template.Must(template.New("").Parse(`
 			{{end}}
 			{{if .hasSubmittedFilter}}
 				AND (ARRAY_LENGTH(ChangelistHosts) > 0) = @hasUnsubmittedChanges
+			{{end}}
+			{{if .excludeBisectionResults}}
+				-- IsFromBisection uses NULL to indicate false.
+				AND IsFromBisection IS NULL
 			{{end}}
 	{{end}}
 

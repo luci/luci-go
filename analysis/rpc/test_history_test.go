@@ -99,7 +99,7 @@ func TestTestHistoryServer(t *testing.T) {
 			insertTVR("other-realm", var4)
 			insertTVR("forbidden-realm", var5)
 
-			insertTV := func(partitionTime time.Time, variant *pb.Variant, invId string, hasUnsubmittedChanges bool, subRealm string) {
+			insertTV := func(partitionTime time.Time, variant *pb.Variant, invId string, hasUnsubmittedChanges bool, isFromBisection bool, subRealm string) {
 				baseTestResult := testresults.NewTestResult().
 					WithProject("project").
 					WithTestID("test_id").
@@ -108,6 +108,7 @@ func TestTestHistoryServer(t *testing.T) {
 					WithIngestedInvocationID(invId).
 					WithSubRealm(subRealm).
 					WithStatus(pb.TestResultStatus_PASS).
+					WithIsFromBisection(isFromBisection).
 					WithoutRunDuration()
 				if hasUnsubmittedChanges {
 					baseTestResult = baseTestResult.WithChangelists([]testresults.Changelist{
@@ -138,18 +139,19 @@ func TestTestHistoryServer(t *testing.T) {
 				}
 			}
 
-			insertTV(referenceTime.Add(-1*day), var1, "inv1", false, "realm")
-			insertTV(referenceTime.Add(-1*day), var1, "inv2", false, "realm")
-			insertTV(referenceTime.Add(-1*day), var2, "inv1", false, "realm")
+			insertTV(referenceTime.Add(-1*day), var1, "inv1", false, false, "realm")
+			insertTV(referenceTime.Add(-1*day), var1, "inv2", false, false, "realm")
+			insertTV(referenceTime.Add(-1*day), var2, "inv1", false, false, "realm")
+			insertTV(referenceTime.Add(-1*day), var2, "inv2", false, true, "realm")
 
-			insertTV(referenceTime.Add(-2*day), var1, "inv1", false, "realm")
-			insertTV(referenceTime.Add(-2*day), var1, "inv2", true, "realm")
-			insertTV(referenceTime.Add(-2*day), var2, "inv1", true, "realm")
+			insertTV(referenceTime.Add(-2*day), var1, "inv1", false, false, "realm")
+			insertTV(referenceTime.Add(-2*day), var1, "inv2", true, false, "realm")
+			insertTV(referenceTime.Add(-2*day), var2, "inv1", true, false, "realm")
 
-			insertTV(referenceTime.Add(-3*day), var3, "inv1", true, "realm")
+			insertTV(referenceTime.Add(-3*day), var3, "inv1", true, false, "realm")
 
-			insertTV(referenceTime.Add(-4*day), var4, "inv2", false, "other-realm")
-			insertTV(referenceTime.Add(-5*day), var5, "inv3", false, "forbidden-realm")
+			insertTV(referenceTime.Add(-4*day), var4, "inv2", false, false, "other-realm")
+			insertTV(referenceTime.Add(-5*day), var5, "inv3", false, false, "forbidden-realm")
 
 			return nil
 		})
@@ -337,6 +339,76 @@ func TestTestHistoryServer(t *testing.T) {
 					},
 				})
 			})
+
+			Convey("include bisection", func() {
+				req.PageSize = 10
+				req.Predicate.IncludeBisectionResults = true
+				res, err := server.Query(ctx, req)
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, &pb.QueryTestHistoryResponse{
+					Verdicts: []*pb.TestVerdict{
+						{
+							TestId:        "test_id",
+							VariantHash:   pbutil.VariantHash(var1),
+							InvocationId:  "inv1",
+							Status:        pb.TestVerdictStatus_EXPECTED,
+							PartitionTime: timestamppb.New(referenceTime.Add(-1 * day)),
+						},
+						{
+							TestId:        "test_id",
+							VariantHash:   pbutil.VariantHash(var1),
+							InvocationId:  "inv2",
+							Status:        pb.TestVerdictStatus_EXPECTED,
+							PartitionTime: timestamppb.New(referenceTime.Add(-1 * day)),
+						},
+						{
+							TestId:        "test_id",
+							VariantHash:   pbutil.VariantHash(var2),
+							InvocationId:  "inv1",
+							Status:        pb.TestVerdictStatus_EXPECTED,
+							PartitionTime: timestamppb.New(referenceTime.Add(-1 * day)),
+						},
+						{
+							TestId:        "test_id",
+							VariantHash:   pbutil.VariantHash(var2),
+							InvocationId:  "inv2",
+							Status:        pb.TestVerdictStatus_EXPECTED,
+							PartitionTime: timestamppb.New(referenceTime.Add(-1 * day)),
+						},
+						{
+							TestId:        "test_id",
+							VariantHash:   pbutil.VariantHash(var1),
+							InvocationId:  "inv1",
+							Status:        pb.TestVerdictStatus_EXPECTED,
+							PartitionTime: timestamppb.New(referenceTime.Add(-2 * day)),
+						},
+						{
+							TestId:        "test_id",
+							VariantHash:   pbutil.VariantHash(var1),
+							InvocationId:  "inv2",
+							Status:        pb.TestVerdictStatus_EXPECTED,
+							PartitionTime: timestamppb.New(referenceTime.Add(-2 * day)),
+							Changelists:   expectedChangelists,
+						},
+						{
+							TestId:        "test_id",
+							VariantHash:   pbutil.VariantHash(var2),
+							InvocationId:  "inv1",
+							Status:        pb.TestVerdictStatus_EXPECTED,
+							PartitionTime: timestamppb.New(referenceTime.Add(-2 * day)),
+							Changelists:   expectedChangelists,
+						},
+						{
+							TestId:        "test_id",
+							VariantHash:   pbutil.VariantHash(var3),
+							InvocationId:  "inv1",
+							Status:        pb.TestVerdictStatus_EXPECTED,
+							PartitionTime: timestamppb.New(referenceTime.Add(-3 * day)),
+							Changelists:   expectedChangelists,
+						},
+					},
+				})
+			})
 		})
 
 		Convey("QueryStats", func() {
@@ -459,6 +531,42 @@ func TestTestHistoryServer(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(res, ShouldResembleProto, &pb.QueryTestHistoryStatsResponse{
 					Groups: []*pb.QueryTestHistoryStatsResponse_Group{
+						{
+							PartitionTime: timestamppb.New(referenceTime.Add(-2 * day)),
+							VariantHash:   pbutil.VariantHash(var2),
+							ExpectedCount: 1,
+						},
+						{
+							PartitionTime: timestamppb.New(referenceTime.Add(-3 * day)),
+							VariantHash:   pbutil.VariantHash(var3),
+							ExpectedCount: 1,
+						},
+					},
+				})
+			})
+
+			Convey("include bisection", func() {
+				req.Predicate.IncludeBisectionResults = true
+				req.PageSize = 10
+				res, err := server.QueryStats(ctx, req)
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, &pb.QueryTestHistoryStatsResponse{
+					Groups: []*pb.QueryTestHistoryStatsResponse_Group{
+						{
+							PartitionTime: timestamppb.New(referenceTime.Add(-1 * day)),
+							VariantHash:   pbutil.VariantHash(var1),
+							ExpectedCount: 2,
+						},
+						{
+							PartitionTime: timestamppb.New(referenceTime.Add(-1 * day)),
+							VariantHash:   pbutil.VariantHash(var2),
+							ExpectedCount: 2,
+						},
+						{
+							PartitionTime: timestamppb.New(referenceTime.Add(-2 * day)),
+							VariantHash:   pbutil.VariantHash(var1),
+							ExpectedCount: 2,
+						},
 						{
 							PartitionTime: timestamppb.New(referenceTime.Add(-2 * day)),
 							VariantHash:   pbutil.VariantHash(var2),

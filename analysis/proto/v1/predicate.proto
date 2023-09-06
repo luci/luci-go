@@ -58,4 +58,9 @@ message TestVerdictPredicate {
   // Test history older than the configured TTL (90 days) will not be returned.
   // When omitted, return all available test history.
   TimeRange partition_time_range = 4;
+
+  // Optional. Whether to include the test results from LUCI Bisection.
+  // Results from LUCI Bisection are only return if this is true.
+  // LUCI Bisection results are excluded by default.
+  bool include_bisection_results = 5;
 }

@@ -70,14 +70,15 @@ func (s *testHistoryServer) Query(ctx context.Context, req *pb.QueryTestHistoryR
 
 	pageSize := int(pageSizeLimiter.Adjust(req.PageSize))
 	opts := testresults.ReadTestHistoryOptions{
-		Project:          req.Project,
-		TestID:           req.TestId,
-		SubRealms:        subRealms,
-		VariantPredicate: req.Predicate.VariantPredicate,
-		SubmittedFilter:  req.Predicate.SubmittedFilter,
-		TimeRange:        req.Predicate.PartitionTimeRange,
-		PageSize:         pageSize,
-		PageToken:        req.PageToken,
+		Project:                 req.Project,
+		TestID:                  req.TestId,
+		SubRealms:               subRealms,
+		VariantPredicate:        req.Predicate.VariantPredicate,
+		SubmittedFilter:         req.Predicate.SubmittedFilter,
+		TimeRange:               req.Predicate.PartitionTimeRange,
+		ExcludeBisectionResults: !req.Predicate.IncludeBisectionResults,
+		PageSize:                pageSize,
+		PageToken:               req.PageToken,
 	}
 
 	verdicts, nextPageToken, err := testresults.ReadTestHistory(span.Single(ctx), opts)
@@ -124,14 +125,15 @@ func (s *testHistoryServer) QueryStats(ctx context.Context, req *pb.QueryTestHis
 
 	pageSize := int(pageSizeLimiter.Adjust(req.PageSize))
 	opts := testresults.ReadTestHistoryOptions{
-		Project:          req.Project,
-		TestID:           req.TestId,
-		SubRealms:        subRealms,
-		VariantPredicate: req.Predicate.VariantPredicate,
-		SubmittedFilter:  req.Predicate.SubmittedFilter,
-		TimeRange:        req.Predicate.PartitionTimeRange,
-		PageSize:         pageSize,
-		PageToken:        req.PageToken,
+		Project:                 req.Project,
+		TestID:                  req.TestId,
+		SubRealms:               subRealms,
+		VariantPredicate:        req.Predicate.VariantPredicate,
+		SubmittedFilter:         req.Predicate.SubmittedFilter,
+		TimeRange:               req.Predicate.PartitionTimeRange,
+		ExcludeBisectionResults: !req.Predicate.IncludeBisectionResults,
+		PageSize:                pageSize,
+		PageToken:               req.PageToken,
 	}
 
 	groups, nextPageToken, err := testresults.ReadTestHistoryStats(span.Single(ctx), opts)
