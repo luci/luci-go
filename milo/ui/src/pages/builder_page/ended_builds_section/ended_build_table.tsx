@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useState } from 'react';
+import { memo } from 'react';
+import { useLocalStorage } from 'react-use';
 
 import {
   BuildNumContentCell,
@@ -37,7 +38,39 @@ import {
 } from '@/build/components/build_table';
 import { BuildTableBody } from '@/build/components/build_table/build_table_body';
 import { Build } from '@/common/services/buildbucket';
-import { useStore } from '@/common/store';
+
+const ENDED_BUILDS_TABLE_DEFAULT_EXPANDED =
+  'ended-builds-table-default-expanded';
+
+interface EndedBuildTableBodyProps {
+  readonly endedBuilds: readonly Build[];
+  readonly hasChanges: boolean;
+}
+
+// The table body can be large and expensive to render.
+// Use `memo` to stop it from rerendering when only the default expansion state
+// and/or the loading status were changed.
+const EndedBuildTableBody = memo(function EndedBuildTableBody({
+  endedBuilds,
+  hasChanges,
+}: EndedBuildTableBodyProps) {
+  return (
+    <BuildTableBody>
+      {endedBuilds.map((b) => (
+        <BuildTableRow key={b.id} build={b}>
+          <StatusContentCell />
+          <BuildNumContentCell />
+          <CreateTimeContentCell />
+          <EndTimeContentCell />
+          <RunDurationContentCell />
+          <CommitContentCell />
+          {hasChanges && <GerritChangesContentCell />}
+          <SummaryContentCell />
+        </BuildTableRow>
+      ))}
+    </BuildTableBody>
+  );
+});
 
 export interface EndedBuildTableProps {
   readonly endedBuilds: readonly Build[];
@@ -48,21 +81,16 @@ export function EndedBuildTable({
   endedBuilds,
   isLoading,
 }: EndedBuildTableProps) {
-  // The config is only used during initialization and in handlers.
-  // Don't need to declare the component as an observable.
-  const config = useStore().userConfig.builderPage;
-  const [initDefaultExpanded] = useState(
-    () => config.expandEndedBuildsEntryByDefault,
+  const [defaultExpanded = true, setDefaultExpanded] = useLocalStorage<boolean>(
+    ENDED_BUILDS_TABLE_DEFAULT_EXPANDED,
   );
 
   const hasChanges = endedBuilds.some((b) => b.input?.gerritChanges?.length);
 
   return (
     <BuildTable
-      initDefaultExpanded={initDefaultExpanded}
-      onDefaultExpandedChanged={(expand) =>
-        config.setExpandEndedBuildsEntryByDefault(expand)
-      }
+      initDefaultExpanded={defaultExpanded}
+      onDefaultExpandedChanged={(expand) => setDefaultExpanded(expand)}
     >
       <BuildTableHead showLoadingBar={isLoading}>
         <StatusHeadCell />
@@ -74,20 +102,7 @@ export function EndedBuildTable({
         {hasChanges && <GerritChangesHeadCell />}
         <SummaryHeadCell />
       </BuildTableHead>
-      <BuildTableBody>
-        {endedBuilds.map((b) => (
-          <BuildTableRow key={b.id} build={b}>
-            <StatusContentCell />
-            <BuildNumContentCell />
-            <CreateTimeContentCell />
-            <EndTimeContentCell />
-            <RunDurationContentCell />
-            <CommitContentCell />
-            {hasChanges && <GerritChangesContentCell />}
-            <SummaryContentCell />
-          </BuildTableRow>
-        ))}
-      </BuildTableBody>
+      <EndedBuildTableBody endedBuilds={endedBuilds} hasChanges={hasChanges} />
     </BuildTable>
   );
 }
