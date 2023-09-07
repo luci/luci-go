@@ -91,7 +91,7 @@ func TestConfigRefreshCron(t *testing.T) {
 					So(pcr.SubmitRefreshTasks(ctx), ShouldBeNil)
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
 					So(pm.updates, ShouldBeEmpty)
-					So(qm.writes, ShouldBeEmpty)
+					So(qm.writes, ShouldResemble, []string{"chromium"})
 					if len(pm.pokes) > 0 {
 						break
 					}

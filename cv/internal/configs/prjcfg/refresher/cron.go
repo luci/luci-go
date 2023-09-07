@@ -150,17 +150,19 @@ func (r *Refresher) refreshProject(ctx context.Context, project string, disable 
 		action, actionFn = "disable", DisableProject
 	}
 	err := actionFn(ctx, project, func(ctx context.Context) error {
-		// Refresh quota policies along with project config.
-		_, err := r.qm.WritePolicy(ctx, project)
-		if err != nil {
-			return err
-		}
-
 		return r.pm.UpdateConfig(ctx, project)
 	})
 	if err != nil {
 		return errors.Annotate(err, "failed to %s project %q", action, project).Err()
 	}
+
+	// Refresh quota policies when the config is refreshed. WritePolicy is idempotent and would return immediately if
+	// the policies exist within server/quota.
+	// TODO(crbug.com/1466346): Move WritePolicy into UpdateProject.
+	if _, err := r.qm.WritePolicy(ctx, project); err != nil {
+		return err
+	}
+
 	if !disable {
 		return r.maybePokePM(ctx, project)
 	}
