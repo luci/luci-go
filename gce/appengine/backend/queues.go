@@ -261,9 +261,10 @@ func expandConfig(c context.Context, payload proto.Message) error {
 	}
 	t := make([]*tq.Task, cfg.Config.CurrentAmount)
 	for i := int32(0); i < cfg.Config.CurrentAmount; i++ {
+		id := fmt.Sprintf("%s-%d", cfg.Config.Prefix, i)
 		t[i] = &tq.Task{
 			Payload: &tasks.CreateVM{
-				Id:         fmt.Sprintf("%s-%d", cfg.Config.Prefix, i),
+				Id:         id,
 				Attributes: cfg.Config.Attributes,
 				Config:     task.Id,
 				Created: &timestamppb.Timestamp{
@@ -276,6 +277,7 @@ func expandConfig(c context.Context, payload proto.Message) error {
 				Swarming: cfg.Config.Swarming,
 				Timeout:  cfg.Config.Timeout.GetSeconds(),
 			},
+			DeduplicationKey: id,
 		}
 	}
 	logging.Debugf(c, "for config %s, creating %d VMs", cfg.Config.Prefix, len(t))
