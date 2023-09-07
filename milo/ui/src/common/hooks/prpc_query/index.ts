@@ -13,4 +13,5 @@
 // limitations under the License.
 
 export * from './use_prpc_query';
+export * from './use_prpc_queries';
 export * from './use_infinite_prpc_query';
