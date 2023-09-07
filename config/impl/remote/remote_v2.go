@@ -29,7 +29,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	pb "go.chromium.org/luci/config_service/proto"
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
@@ -69,7 +68,6 @@ func NewV2(ctx context.Context, host string) (config.Interface, error) {
 		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
 		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
 		grpc.WithDefaultServiceConfig(retryPolicy),
-		grpc.WithUserAgent(info.AppID(ctx)),
 	)
 	if err != nil {
 		return nil, errors.Annotate(err, "cannot dial to %s", host).Err()
