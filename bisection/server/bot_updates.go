@@ -162,7 +162,6 @@ func (server *BotUpdatesServer) UpdateAnalysisProgress(c context.Context, req *p
 func (server *BotUpdatesServer) UpdateTestAnalysisProgress(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (*pb.UpdateTestAnalysisProgressResponse, error) {
 	err := updatetestrerun.Update(ctx, req)
 	if err != nil {
-		logging.Errorf(ctx, "UpdateTestAnalysisProgress got error: %v", err.Error())
 		return nil, err
 	}
 	return &pb.UpdateTestAnalysisProgressResponse{}, nil

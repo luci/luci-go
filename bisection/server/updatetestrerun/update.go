@@ -36,7 +36,14 @@ import (
 )
 
 // Update is for updating test failure analysis given the request from recipe.
-func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) error {
+func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (reterr error) {
+	defer func() {
+		if reterr != nil {
+			// We log here instead of UpdateTestAnalysisProgress to make sure the analysis ID
+			// and the rerun BBID correctly displayed in log.
+			logging.Errorf(ctx, "Update test analysis progress got error: %v", reterr.Error())
+		}
+	}()
 	err := validateRequest(req)
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, errors.Annotate(err, "validate request").Err().Error())
