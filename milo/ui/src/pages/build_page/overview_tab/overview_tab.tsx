@@ -90,9 +90,9 @@ export const OverviewTab = observer(() => {
           <StepsSection />
         </FirstColumn>
         <SecondColumn>
-          {store.buildPage.build?.data.builder && (
+          {store.buildPage.build?.data.builderInfo?.description && (
             <BuilderInfoSection
-              builderId={store.buildPage.build.data.builder}
+              description={store.buildPage.build.data.builderInfo.description}
             />
           )}
           <InputSection />

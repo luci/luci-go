@@ -37,9 +37,10 @@ export const TEST_PRESENTATION_KEY =
 export const BLAMELIST_PIN_KEY = '$recipe_engine/milo/blamelist_pins';
 
 export const BUILD_FIELD_MASK =
-  'id,builder,number,canceledBy,createTime,startTime,endTime,cancelTime,status,summaryMarkdown,input,output,steps,' +
-  'infra.buildbucket.agent,infra.swarming,infra.resultdb,infra.backend,tags,exe,schedulingTimeout,executionTimeout,' +
-  'gracePeriod,ancestorIds,retriable';
+  'id,builder,builderInfo,number,canceledBy,' +
+  'createTime,startTime,endTime,cancelTime,status,summaryMarkdown,input,output,steps,' +
+  'infra.buildbucket.agent,infra.swarming,infra.resultdb,infra.backend,' +
+  'tags,exe,schedulingTimeout,executionTimeout,gracePeriod,ancestorIds,retriable';
 
 // Includes: id, builder, number, createTime, startTime, endTime, status, summaryMarkdown.
 export const SEARCH_BUILD_FIELD_MASK =
@@ -113,6 +114,9 @@ export interface Timestamp {
 export interface Build {
   readonly id: string;
   readonly builder: BuilderID;
+  readonly builderInfo?: {
+    readonly description?: string;
+  };
   readonly number?: number;
   readonly canceledBy?: string;
   readonly createTime: string;

@@ -12,49 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GrpcError } from '@chopsui/prpc-client';
-
-import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants';
-import { usePrpcQuery } from '@/common/hooks/use_prpc_query';
-import { BuilderID, BuildersService } from '@/common/services/buildbucket';
-import { logging } from '@/common/tools/logging';
-
 export interface BuilderInfoSectionProps {
-  readonly builderId: BuilderID;
+  readonly description: string;
 }
 
-export function BuilderInfoSection({ builderId }: BuilderInfoSectionProps) {
-  const { data, error } = usePrpcQuery({
-    host: SETTINGS.buildbucket.host,
-    Service: BuildersService,
-    method: 'getBuilder',
-    request: {
-      id: builderId,
-    },
-  });
-
-  if (
-    error &&
-    !(
-      error instanceof GrpcError &&
-      POTENTIAL_PERM_ERROR_CODES.includes(error.code)
-    )
-  ) {
-    // Optional resource.
-    // Log the warning in case of an error.
-    logging.warn('failed to get builder description', error);
-  }
-
-  if (!data?.config.descriptionHtml) {
-    return <></>;
-  }
-
+export function BuilderInfoSection({ description }: BuilderInfoSectionProps) {
   return (
     <>
       <h3>Builder Info</h3>
       <div
-        id="builder-description"
-        dangerouslySetInnerHTML={{ __html: data.config.descriptionHtml }}
+        css={{
+          padding: '10px',
+          backgroundColor: 'var(--block-background-color)',
+        }}
+        dangerouslySetInnerHTML={{ __html: description }}
       />
     </>
   );
