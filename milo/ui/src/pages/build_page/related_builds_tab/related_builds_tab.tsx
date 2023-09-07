@@ -12,48 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Typography } from '@mui/material';
+import { CircularProgress } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useStore } from '@/common/store';
-import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
-import { RelatedBuildTable } from './related_build_table';
+import { RelatedBuildsDisplay } from './related_builds_display';
 
 export const RelatedBuildsTab = observer(() => {
   const store = useStore();
+  const build = store.buildPage.build?.data;
 
-  if (!store.buildPage.build || !store.buildPage.relatedBuilds) {
-    return (
-      <Box sx={{ p: 1, color: 'var(--active-text-color' }}>
-        Loading <DotSpinner />
-      </Box>
-    );
+  if (!build) {
+    return <CircularProgress sx={{ margin: '10px' }} />;
   }
 
-  if (!store.buildPage.relatedBuilds.length) {
-    return (
-      <Box sx={{ p: 1 }}>No other builds found with the same buildset</Box>
-    );
-  }
-
-  return (
-    <Box>
-      <Box sx={{ p: 2 }}>
-        <Typography variant="h6">
-          Other builds with the same buildset
-        </Typography>
-        <ul>
-          {store.buildPage.build.buildSets.map((bs) => (
-            <li key={bs}>{bs}</li>
-          ))}
-        </ul>
-      </Box>
-      <RelatedBuildTable relatedBuilds={store.buildPage.relatedBuilds} />
-    </Box>
-  );
+  return <RelatedBuildsDisplay build={build} />;
 });
 
 export function Component() {

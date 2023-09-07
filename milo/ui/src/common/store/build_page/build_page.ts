@@ -35,7 +35,6 @@ import {
   PERM_BUILDS_CANCEL,
   PERM_BUILDS_GET,
   PERM_BUILDS_GET_LIMITED,
-  SEARCH_BUILD_FIELD_MASK,
   TEST_PRESENTATION_KEY,
   Trinary,
 } from '@/common/services/buildbucket';
@@ -233,46 +232,6 @@ export const BuildPage = types
       }
     });
 
-    const relatedBuilds = keepAliveComputed(self, () => {
-      const buildsService = self.services?.builds;
-      if (!self.build || !buildsService) {
-        return null;
-      }
-
-      const buildsPromises = self.build.buildSets
-        // Remove the commit/git/ buildsets because we know they're redundant
-        // with the commit/gitiles/ buildsets, and we don't need to ask
-        // Buildbucket twice.
-        .filter((b) => !b.startsWith('commit/git/'))
-        .map((b) =>
-          buildsService
-            .searchBuilds({
-              predicate: { tags: [{ key: 'buildset', value: b }] },
-              fields: SEARCH_BUILD_FIELD_MASK,
-              pageSize: 1000,
-            })
-            .then((res) => res.builds || []),
-        );
-
-      return fromPromise(
-        Promise.all(buildsPromises).then((buildArrays) => {
-          const buildMap = new Map<string, Build>();
-          for (const builds of buildArrays) {
-            for (const build of builds) {
-              // Filter out duplicate builds by overwriting them.
-              buildMap.set(build.id, build);
-            }
-          }
-          const builds = [...buildMap.values()].sort((b1, b2) =>
-            b1.id.length === b2.id.length
-              ? b1.id.localeCompare(b2.id)
-              : b1.id.length - b2.id.length,
-          );
-          return builds;
-        }),
-      );
-    });
-
     const permittedActions = keepAliveComputed(self, () => {
       if (!self.services?.milo || !self.build?.data.builder) {
         return null;
@@ -302,9 +261,6 @@ export const BuildPage = types
     return {
       get invocationId() {
         return unwrapObservable(invocationId.get() || NEVER_OBSERVABLE, null);
-      },
-      get relatedBuilds(): readonly Build[] | null {
-        return unwrapObservable(relatedBuilds.get() || NEVER_OBSERVABLE, null);
       },
       get _permittedActions(): { readonly [key: string]: boolean | undefined } {
         const permittedActionRes = unwrapObservable(

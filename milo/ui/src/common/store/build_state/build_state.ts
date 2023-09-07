@@ -335,13 +335,6 @@ export const BuildState = types
         ),
       );
     },
-    get buildSets(): readonly string[] {
-      return (
-        self.data.tags
-          ?.filter((tag) => tag.key === 'buildset')
-          .map((tag) => tag.value || '') || []
-      );
-    },
     get associatedGitilesCommit() {
       return getAssociatedGitilesCommit(self.data);
     },

@@ -34,12 +34,16 @@ import { Build } from '@/common/services/buildbucket';
 
 export interface RelatedBuildTableProps {
   readonly relatedBuilds: readonly Build[];
+  readonly showLoadingBar?: boolean;
 }
 
-export function RelatedBuildTable({ relatedBuilds }: RelatedBuildTableProps) {
+export function RelatedBuildTable({
+  relatedBuilds,
+  showLoadingBar,
+}: RelatedBuildTableProps) {
   return (
     <BuildTable initDefaultExpanded>
-      <BuildTableHead>
+      <BuildTableHead showLoadingBar={showLoadingBar}>
         <StatusHeadCell />
         <BuildIdentifierHeadCell />
         <CreateTimeHeadCell />
