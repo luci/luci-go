@@ -559,10 +559,10 @@ type Comment struct {
 type RobotComment struct {
 	Comment
 
-	RobotID    string      `json:"robot_id"`
-	RobotRunID string      `json:"robot_run_id"`
-	URL        string      `json:"url"`
-	Properties map[any]any `json:"properties"`
+	RobotID    string            `json:"robot_id"`
+	RobotRunID string            `json:"robot_run_id"`
+	URL        string            `json:"url"`
+	Properties map[string]string `json:"properties"`
 }
 
 // ListChangeComments gets all comments on a single change.
