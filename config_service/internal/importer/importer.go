@@ -348,7 +348,6 @@ func (i *Importer) importConfigSet(ctx context.Context, cfgSet config.Set, loc *
 		err = errors.Annotate(err, "Failed to import %s revision %s", cfgSet, latestCommit.Id).Err()
 		return errors.Append(err, saveAttempt(false, err.Error(), latestCommit))
 	}
-	logging.Infof(ctx, "Successfully imported revision %s", latestCommit.Id)
 	return nil
 }
 
@@ -471,6 +470,10 @@ func (i *Importer) importRevision(ctx context.Context, cfgSet config.Set, loc *c
 		}
 		return errors.Annotate(datastore.Put(ctx, attempt), "saving attempt").Err()
 	}
+	// The rejection event rarely happen. Add by 0 to ensure the corresponding
+	// streamz counter can properly handle this metric.
+	metrics.RejectedCfgImportCounter.Add(ctx, 0, string(cfgSet), "", "")
+
 	logging.Infof(ctx, "Storing %d files, updating ConfigSet %s and ImportAttempt", len(files), cfgSet)
 	now := clock.Now(ctx).UTC()
 	for _, f := range files {
