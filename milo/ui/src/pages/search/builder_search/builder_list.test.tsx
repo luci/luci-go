@@ -14,7 +14,7 @@
 
 import { act, cleanup, render } from '@testing-library/react';
 
-import { useInfinitePrpcQuery } from '@/common/hooks/use_prpc_query';
+import { useInfinitePrpcQuery } from '@/common/hooks/prpc_query';
 import {
   ListBuildersResponse,
   MiloInternal,
@@ -24,10 +24,10 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 
 import { BuilderList } from './builder_list';
 
-jest.mock('@/common/hooks/use_prpc_query', () => {
+jest.mock('@/common/hooks/prpc_query', () => {
   return createSelectiveSpiesFromModule<
-    typeof import('@/common/hooks/use_prpc_query')
-  >('@/common/hooks/use_prpc_query', ['useInfinitePrpcQuery']);
+    typeof import('@/common/hooks/prpc_query')
+  >('@/common/hooks/prpc_query', ['useInfinitePrpcQuery']);
 });
 
 jest.mock('@/pages/search/builder_search/builder_list_display', () => {

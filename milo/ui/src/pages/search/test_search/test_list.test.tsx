@@ -14,16 +14,16 @@
 
 import { render, cleanup, act } from '@testing-library/react';
 
-import { useInfinitePrpcQuery } from '@/common/hooks/use_prpc_query';
+import { useInfinitePrpcQuery } from '@/common/hooks/prpc_query';
 import { TestHistoryService } from '@/common/services/luci_analysis';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { TestList } from './test_list';
 
-jest.mock('@/common/hooks/use_prpc_query', () => {
+jest.mock('@/common/hooks/prpc_query', () => {
   return createSelectiveSpiesFromModule<
-    typeof import('@/common/hooks/use_prpc_query')
-  >('@/common/hooks/use_prpc_query', ['useInfinitePrpcQuery']);
+    typeof import('@/common/hooks/prpc_query')
+  >('@/common/hooks/prpc_query', ['useInfinitePrpcQuery']);
 });
 
 describe('TestList', () => {
