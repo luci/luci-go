@@ -32,7 +32,6 @@ import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
 export interface QueryBlamelistRequest {
   readonly gitilesCommit: GitilesCommit;
   readonly builder: BuilderID;
-  readonly multiProjectSupport: boolean;
   readonly pageSize?: number;
   readonly pageToken?: string;
 }
@@ -72,7 +71,7 @@ export interface GitCommit {
 }
 
 export interface QueryBlamelistResponse {
-  readonly commits: GitCommit[];
+  readonly commits?: GitCommit[];
   readonly nextPageToken?: string;
   readonly precedingCommit?: GitCommit;
 }

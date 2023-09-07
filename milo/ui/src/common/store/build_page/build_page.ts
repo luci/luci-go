@@ -31,7 +31,6 @@ import {
   BUILD_FIELD_MASK,
   BuilderID,
   GetBuildRequest,
-  GitilesCommit,
   PERM_BUILDS_ADD,
   PERM_BUILDS_CANCEL,
   PERM_BUILDS_GET,
@@ -40,10 +39,6 @@ import {
   TEST_PRESENTATION_KEY,
   Trinary,
 } from '@/common/services/buildbucket';
-import {
-  QueryBlamelistRequest,
-  QueryBlamelistResponse,
-} from '@/common/services/milo_internal';
 import {
   getInvIdFromBuildId,
   getInvIdFromBuildNum,
@@ -59,7 +54,6 @@ import { ServicesStore } from '@/common/store/services';
 import { Timestamp } from '@/common/store/timestamp';
 import { UserConfig } from '@/common/store/user_config';
 import { getGitilesRepoURL } from '@/common/tools/gitiles_utils';
-import * as iter from '@/generic_libs/tools/iter_utils';
 import {
   aliveFlow,
   keepAliveComputed,
@@ -102,8 +96,6 @@ export const BuildPage = types
      */
     useComputedInvId: true,
     invocation: types.optional(InvocationState, {}),
-
-    selectedBlamelistPinIndex: 0,
 
     // Properties that provide a mounting point for computed models so they can
     // have references to some other properties in the tree.
@@ -347,54 +339,6 @@ export const BuildPage = types
       },
     };
   })
-  .views((self) => {
-    const getQueryBlamelistResIterFn = (
-      gitilesCommit: GitilesCommit,
-      multiProjectSupport = false,
-    ) => {
-      if (!self.services?.milo || !self.build) {
-        // eslint-disable-next-line require-yield
-        return async function* () {
-          await Promise.race([]);
-        };
-      }
-      let req: QueryBlamelistRequest = {
-        gitilesCommit,
-        builder: self.build.data.builder,
-        multiProjectSupport,
-      };
-      const milo = self.services.milo;
-      async function* streamBlamelist() {
-        let res: QueryBlamelistResponse;
-        do {
-          res = await milo.queryBlamelist(req);
-          req = { ...req, pageToken: res.nextPageToken };
-          yield res;
-        } while (res.nextPageToken);
-      }
-      return iter.teeAsync(streamBlamelist());
-    };
-
-    const queryBlamelistResIterFns = keepAliveComputed(self, () => {
-      if (!self.build) {
-        return [];
-      }
-
-      return self.build.blamelistPins.map((pin) => {
-        const pinRepo = getGitilesRepoURL(pin);
-        return getQueryBlamelistResIterFn(
-          pin,
-          pinRepo !== self.gitilesCommitRepo,
-        );
-      });
-    });
-
-    return {
-      get queryBlamelistResIterFns() {
-        return queryBlamelistResIterFns.get();
-      },
-    };
-  })
   .actions((self) => ({
     setDependencies(
       deps: Partial<
@@ -412,9 +356,6 @@ export const BuildPage = types
     setParams(builderId: BuilderID | undefined, buildNumOrId: string) {
       self.builderIdParam = builderId;
       self.buildNumOrIdParam = buildNumOrId;
-    },
-    setSelectedBlamelist(pinIndex: number) {
-      self.selectedBlamelistPinIndex = pinIndex;
     },
     retryBuild: aliveFlow(self, function* () {
       if (!self.build?.data.id || !self.services?.builds) {

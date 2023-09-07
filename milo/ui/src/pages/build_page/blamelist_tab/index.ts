@@ -12,20 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { TableCell } from '@mui/material';
-
-export function NumHeadCell() {
-  return <TableCell width="1px">#</TableCell>;
-}
-
-export interface NumContentCellProps {
-  readonly num: number;
-}
-
-export function NumContentCell({ num }: NumContentCellProps) {
-  return (
-    <TableCell data-testid="commit-num">
-      <b>{num}.</b>
-    </TableCell>
-  );
-}
+export * from './blamelist_tab';
