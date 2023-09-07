@@ -915,24 +915,6 @@ type GitilesTask struct {
 	//     TODO(tandrii): it's possible to improve this by examining diff
 	//     between ref's last and new tips, but one has to worry about gitiles
 	//     taking potentially very long time to compute it.
-	//
-	// Submodules:
-	// path_regexps and path_regexps_exclude can be applied to immediate submodule
-	// paths (i.e. only submodules directly set in the polled repo).
-	// A regexp "submodulePath/foo/*" will emit a trigger whenever the pinned
-	// commit of the submodule associated with "submodulePath" has been updated,
-	// and the commits between the previous and current commit have touched any
-	// files under foo/* in the submodule repo.
-	//
-	// With a path_regexps "submodulePath", a trigger will be emittted whenever
-	// the pinned commit for the submodule has been updated. This ignores any
-	// path_regexps_exclude "submodulePath/foo*".
-	//
-	// For any other submodule updates, adding, removing, changing the path,
-	// or changing the associated url, a trigger will ALWAYS be emitted. These
-	// cases are covered by checking if there was ANY change to the .gitmodules
-	// file. If you do not want these cases to trigger, add .gitmodules to
-	// `path_regexps_exclude`.
 	PathRegexps        []string `protobuf:"bytes,3,rep,name=path_regexps,json=pathRegexps,proto3" json:"path_regexps,omitempty"`
 	PathRegexpsExclude []string `protobuf:"bytes,4,rep,name=path_regexps_exclude,json=pathRegexpsExclude,proto3" json:"path_regexps_exclude,omitempty"`
 }

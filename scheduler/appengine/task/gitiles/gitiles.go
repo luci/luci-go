@@ -23,7 +23,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-git/go-git/v5/config"
 	"github.com/golang/protobuf/proto"
 
 	"google.golang.org/api/pubsub/v1"
@@ -60,9 +59,6 @@ const defaultMaxTriggersPerInvocation = 100
 // Must be smaller than defaultMaxTriggersPerInvocation, else these many
 // triggers could be emitted.
 const defaultMaxCommitsPerRefUpdate = 50
-
-// GitLinkFileMode is the file mode code for gitlink files.
-const GitLinkFileMode = 57344
 
 // TaskManager implements task.Manager interface for tasks defined with
 // GitilesTask proto message.
@@ -319,33 +315,13 @@ func (m TaskManager) emitTriggersRefAtATime(c context.Context, ctl task.Controll
 			// This ref counts as not yet examined.
 			return len(sortedRefs) - i, err
 		}
-		submodules, err := getGitmodules(c, ctl, refs.current[ref], g)
-		if err != nil {
-			return len(sortedRefs) - i, err
-		}
-		for ci := range commits {
+		for i := range commits {
 			// commit[0] is latest, so emit triggers in reverse order of commits.
-			commit := commits[len(commits)-ci-1]
-			if pathFilter.active() && !pathFilter.isInteresting(commit.TreeDiff, "") {
-				if submodules == nil {
-					ctl.DebugLog("skipping commit %q on %q because didn't match path filters", commit.Id, ref)
-					continue
-				}
-				// Try checking submodule paths
-				interesting := false
-				for i, d := range commit.TreeDiff {
-					interesting, err = pathFilter.isInterestingInSubmodules(c, ctl, m, d, maxCommitsPerRefUpdate, submodules)
-					if err != nil {
-						return len(sortedRefs) - i, err
-					}
-					if interesting {
-						break
-					}
-				}
-				if !interesting {
-					ctl.DebugLog("skipping commit %q on %q because didn't match path or submodule path filters", commit.Id, ref)
-					continue
-				}
+			commit := commits[len(commits)-i-1]
+
+			if pathFilter.active() && !pathFilter.isInteresting(commit.TreeDiff) {
+				ctl.DebugLog("skipping commit %q on %q because didn't match path filters", commit.Id, ref)
+				continue
 			}
 			ctl.EmitTrigger(c, &internal.Trigger{
 				Id:           fmt.Sprintf("%s/+/%s@%s", cfg.Repo, ref, commit.Id),
@@ -562,122 +538,25 @@ func (p *pathFilter) active() bool {
 }
 
 // isInteresting decides whether commit is interesting according to pathFilter
-// based on which files were touched in commits. Accepts an optional single path prefix
-// for processing submodule paths.
-func (p *pathFilter) isInteresting(diff []*git.Commit_TreeDiff, prefix string) bool {
+// based on which files were touched in commits.
+func (p *pathFilter) isInteresting(diff []*git.Commit_TreeDiff) (skip bool) {
 	isInterestingPath := func(path string) bool {
-		if prefix != "" {
-			path = strings.Join([]string{prefix, path}, "/")
-		}
 		switch {
 		case path == "":
 			return false
 		case p.pathExclude != nil && p.pathExclude.MatchString(path):
 			return false
-		// A .gitmodules change implies a submodule's was added/removed/updated or the
-		// associated url was changed. In these edge cases it is difficult to know if there
-		// has been a change to a submodule's path that we care  about, and because these
-		// cases are not expected to happen often, the  builder is triggered just to be safe,
-		// (unless .gitmodules is included in p.pathExclude).
-		case path == ".gitmodules":
-			return true
 		default:
 			return p.pathInclude.MatchString(path)
 		}
 	}
+
 	for _, d := range diff {
 		if isInterestingPath(d.GetOldPath()) || isInterestingPath(d.GetNewPath()) {
 			return true
 		}
 	}
 	return false
-}
-
-// isInterestingInSubmodules checks for submodule index updates and checks if any paths we are interested
-// in have been updated in the subdmoules. For each submodule that has been updated, we fetch committs
-// and check if any paths in the diffs (prepended with the submodules paht) match the path filters.
-// This handles the case where only the index was modified. All other cases of changes to submodules
-// are caught by the ".gitmodules" check in isInteresting().
-func (p *pathFilter) isInterestingInSubmodules(c context.Context, ctl task.ControllerReadOnly, m TaskManager, d *git.Commit_TreeDiff, maxCommits int, submodules map[string]*config.Submodule) (bool, error) {
-	if d.GetOldMode() == GitLinkFileMode && d.GetNewMode() == GitLinkFileMode && d.GetType() == git.Commit_TreeDiff_MODIFY {
-		submodulePath := d.GetNewPath()
-		submodule, ok := submodules[submodulePath]
-		if !ok {
-			ctl.DebugLog("Found gitlink update for %s but no matching entry in gitmodules file", submodulePath)
-			return false, nil
-		}
-		submoduleCommits, err := getSubmoduleCommits(c, ctl, m, submodule, d.GetNewId(), d.GetOldId(), maxCommits)
-		if err != nil {
-			ctl.DebugLog("Could not fetch logs for submodule %s", submodulePath)
-			return false, err
-		}
-		for i := range submoduleCommits {
-			// commit[0] is latest, so emit triggers in reverse order of commits.
-			commit := submoduleCommits[len(submoduleCommits)-i-1]
-			if p.isInteresting(commit.TreeDiff, submodulePath) {
-				return true, nil
-			}
-		}
-	}
-	return false, nil
-}
-
-func getSubmoduleCommits(c context.Context, ctl task.ControllerReadOnly, m TaskManager, submodule *config.Submodule, newID, oldID string, maxCommits int) (submoduleCommits []*git.Commit, err error) {
-	g, err := m.getGitilesClient(c, ctl, submodule.URL)
-	if err != nil {
-		ctl.DebugLog("Could not create GitilesClient for subdmodule %s:%s", submodule.Name, submodule.URL)
-		return
-	}
-	commitsCall := func(committish, exclude string) (commits []*git.Commit, err error) {
-		return gitiles.PagingLog(c, g, &gitilespb.LogRequest{
-			Project:            submodule.URL,
-			Committish:         committish,
-			ExcludeAncestorsOf: exclude,
-			PageSize:           int32(maxCommits),
-			TreeDiff:           true,
-		}, maxCommits)
-	}
-	submoduleCommits, err = commitsCall(newID, oldID)
-	switch status.Code(err) {
-	case codes.OK:
-		if len(submoduleCommits) == 0 {
-			// An empty submoduleCommits implies the gitiles log fetch was made with some newId..oldId, so
-			// there might have been a gitlink revert from a new pinned submodule commit to an old one.
-			// Try fetching commits again with reversed Ids.
-			submoduleCommits, err = commitsCall(oldID, newID)
-			if err != nil {
-				return
-			}
-		}
-		return submoduleCommits, nil
-	default:
-		return
-	}
-}
-
-func getGitmodules(c context.Context, ctl task.ControllerReadOnly, rev string, g *gitilesClient) (submodules map[string]*config.Submodule, err error) {
-	req := gitilespb.DownloadFileRequest{
-		Project:    g.project,
-		Committish: rev,
-		Path:       ".gitmodules",
-	}
-	resp, err := g.DownloadFile(c, &req)
-	switch status.Code(err) {
-	case codes.OK:
-		if resp.Contents != "" {
-			cfg, err := config.ReadConfig(strings.NewReader(resp.Contents))
-			if err != nil {
-				ctl.DebugLog("Invalid gitmodules file %s, could not parse: %s", resp.Contents, err)
-				return nil, nil
-			}
-			return cfg.Submodules, nil
-		}
-		return nil, nil
-	case codes.NotFound:
-		return nil, nil
-	default:
-		return nil, err
-	}
 }
 
 func disjunctiveOfRegexps(rs []string) string {
