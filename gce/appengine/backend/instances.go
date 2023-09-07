@@ -248,6 +248,7 @@ func destroyInstance(c context.Context, payload proto.Message) error {
 	srv := getCompute(c).Instances
 	call := srv.Delete(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.Hostname)
 	op, err := call.RequestId(rID.String()).Context(c).Do()
+	metrics.DestroyInstanceUnchecked.Add(c, 1, vm.Config, vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.Hostname)
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			if gerr.Code == http.StatusNotFound {

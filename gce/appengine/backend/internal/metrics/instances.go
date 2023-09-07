@@ -55,6 +55,16 @@ var (
 		field.String("instance"),
 	)
 
+	DestroyInstanceUnchecked = metric.NewCounter(
+		"gce/instance/destroy/unchecked",
+		"Cumulative number of GCE instances requested to destroy.",
+		nil,
+		field.String("prefix"),
+		field.String("project"),
+		field.String("zone"),
+		field.String("instance"),
+	)
+
 	connectedInstances = metric.NewInt(
 		"gce/instances/connected",
 		"The number of GCE instances connected to Swarming.",
