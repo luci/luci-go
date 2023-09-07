@@ -15,15 +15,25 @@
 import { ChevronRight, ExpandMore } from '@mui/icons-material';
 import { IconButton, TableCell, TableHead, TableRow } from '@mui/material';
 import { ReactNode } from 'react';
+import { useHotkeys } from 'react-hotkeys-hook';
 
 import { useDefaultExpandedState } from './context';
 
 export interface CommitTableHeadProps {
+  readonly toggleExpandHotkey?: string;
   readonly children: ReactNode;
 }
 
-export function CommitTableHead({ children }: CommitTableHeadProps) {
+export function CommitTableHead({
+  toggleExpandHotkey,
+  children,
+}: CommitTableHeadProps) {
   const [defaultExpanded, setDefaultExpanded] = useDefaultExpandedState();
+  useHotkeys(
+    toggleExpandHotkey ? [toggleExpandHotkey] : [],
+    () => setDefaultExpanded((expanded) => !expanded),
+    [setDefaultExpanded],
+  );
 
   return (
     <TableHead
@@ -46,6 +56,11 @@ export function CommitTableHead({ children }: CommitTableHeadProps) {
             aria-label="toggle-all-rows"
             size="small"
             onClick={() => setDefaultExpanded(!defaultExpanded)}
+            title={
+              toggleExpandHotkey
+                ? `Press "${toggleExpandHotkey}" to toggle all entries.`
+                : ''
+            }
           >
             {defaultExpanded ? <ExpandMore /> : <ChevronRight />}
           </IconButton>

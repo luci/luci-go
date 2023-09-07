@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { act, cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import {
   CommitTreeDiffChangeType,
@@ -125,6 +126,78 @@ describe('CommitTable', () => {
     // Collapse again by changing the default state.
     act(() => toggleAllRowsButton.click());
     await act(() => jest.runAllTimersAsync());
+    expect(
+      toggleRowButton.querySelector("[data-testid='ChevronRightIcon']"),
+    ).toBeInTheDocument();
+    expect(
+      toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
+    ).not.toBeInTheDocument();
+    expect(contentRow).toHaveStyle({ display: 'none' });
+  });
+
+  it('should expand/collapse correctly with hotkey', async () => {
+    render(
+      <FakeContextProvider>
+        <CommitTable repoUrl="https://repo.url">
+          <CommitTableHead toggleExpandHotkey="x">
+            <></>
+          </CommitTableHead>
+          <CommitTableBody>
+            <CommitTableRow commit={commit}>
+              <></>
+            </CommitTableRow>
+          </CommitTableBody>
+        </CommitTable>
+      </FakeContextProvider>,
+    );
+
+    const toggleRowButton = screen.getByLabelText('toggle-row');
+    const contentRow = screen.getByTestId('content-row');
+
+    expect(
+      toggleRowButton.querySelector("[data-testid='ChevronRightIcon']"),
+    ).toBeInTheDocument();
+    expect(
+      toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
+    ).not.toBeInTheDocument();
+    expect(contentRow).toHaveStyle({ display: 'none' });
+
+    // Expand by clicking on toggle button.
+    act(() => toggleRowButton.click());
+    expect(
+      toggleRowButton.querySelector("[data-testid='ChevronRightIcon']"),
+    ).not.toBeInTheDocument();
+    expect(
+      toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
+    ).toBeInTheDocument();
+    expect(contentRow).not.toHaveStyle({ display: 'none' });
+
+    // Collapse by clicking on toggle button.
+    act(() => toggleRowButton.click());
+    expect(
+      toggleRowButton.querySelector("[data-testid='ChevronRightIcon']"),
+    ).toBeInTheDocument();
+    expect(
+      toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
+    ).not.toBeInTheDocument();
+    expect(contentRow).toHaveStyle({ display: 'none' });
+
+    // Expand again by changing the default state.
+    await act(() =>
+      Promise.all([userEvent.keyboard('x'), jest.runAllTimersAsync()]),
+    );
+    expect(
+      toggleRowButton.querySelector("[data-testid='ChevronRightIcon']"),
+    ).not.toBeInTheDocument();
+    expect(
+      toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
+    ).toBeInTheDocument();
+    expect(contentRow).not.toHaveStyle({ display: 'none' });
+
+    // Collapse again by changing the default state.
+    await act(() =>
+      Promise.all([userEvent.keyboard('x'), jest.runAllTimersAsync()]),
+    );
     expect(
       toggleRowButton.querySelector("[data-testid='ChevronRightIcon']"),
     ).toBeInTheDocument();
