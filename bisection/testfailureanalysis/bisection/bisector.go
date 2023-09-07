@@ -72,7 +72,7 @@ func RegisterTaskClass(srv *server.Server, luciAnalysisProject string) error {
 	handler := func(ctx context.Context, payload proto.Message) error {
 		task := payload.(*tpb.TestFailureBisectionTask)
 		analysisID := task.GetAnalysisId()
-		loggingutil.SetAnalysisID(ctx, analysisID)
+		ctx = loggingutil.SetAnalysisID(ctx, analysisID)
 		logging.Infof(ctx, "Processing test failure bisection task with id = %d", analysisID)
 		err := Run(ctx, analysisID, client)
 		if err != nil {

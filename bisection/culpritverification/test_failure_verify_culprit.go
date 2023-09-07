@@ -32,7 +32,7 @@ import (
 
 func processTestFailureTask(ctx context.Context, task *tpb.TestFailureCulpritVerificationTask) error {
 	analysisID := task.AnalysisId
-	loggingutil.SetAnalysisID(ctx, analysisID)
+	ctx = loggingutil.SetAnalysisID(ctx, analysisID)
 	logging.Infof(ctx, "Processing culprit verification for test failure bisection task")
 	// TODO(beining@): set analysis status on error.
 	// Retrieves analysis from datastore.
