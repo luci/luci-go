@@ -222,8 +222,10 @@ func TestUpdateConfig(t *testing.T) {
 						ConfigGroupIndexes: []int32{0}, // g0
 						Status:             prjpb.PCL_OK,
 						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-							Mode: string(run.FullRun),
-							Time: triggerTS,
+							Mode:            string(run.FullRun),
+							Time:            triggerTS,
+							Email:           gf.U("user-1").GetEmail(),
+							GerritAccountId: gf.U("user-1").GetAccountId(),
 						}},
 					},
 					{
@@ -232,8 +234,10 @@ func TestUpdateConfig(t *testing.T) {
 						ConfigGroupIndexes: []int32{1}, // g1
 						Status:             prjpb.PCL_OK,
 						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-							Mode: string(run.DryRun),
-							Time: triggerTS,
+							Mode:            string(run.DryRun),
+							Time:            triggerTS,
+							Email:           gf.U("user-2").GetEmail(),
+							GerritAccountId: gf.U("user-2").GetAccountId(),
 						}},
 					},
 					{
@@ -242,8 +246,10 @@ func TestUpdateConfig(t *testing.T) {
 						ConfigGroupIndexes: []int32{1}, // g1
 						Status:             prjpb.PCL_OK,
 						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-							Mode: string(run.DryRun),
-							Time: triggerTS,
+							Mode:            string(run.DryRun),
+							Time:            triggerTS,
+							Email:           gf.U("user-2").GetEmail(),
+							GerritAccountId: gf.U("user-2").GetAccountId(),
 						}},
 						Deps: []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
 					},
@@ -296,8 +302,10 @@ func TestUpdateConfig(t *testing.T) {
 							ConfigGroupIndexes: []int32{0, 1}, // +g1, because g1 is no longer "fallback: YES"
 							Status:             prjpb.PCL_OK,
 							Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-								Mode: string(run.FullRun),
-								Time: triggerTS,
+								Mode:            string(run.FullRun),
+								Time:            triggerTS,
+								Email:           gf.U("user-1").GetEmail(),
+								GerritAccountId: gf.U("user-1").GetAccountId(),
 							}},
 						},
 						pb1.Pcls[1], // #202 didn't change.
@@ -410,8 +418,10 @@ func TestUpdateConfig(t *testing.T) {
 					Eversion:           cl101.EVersion,
 					ConfigGroupIndexes: []int32{0}, // g0
 					Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-						Mode: string(run.FullRun),
-						Time: triggerTS,
+						Mode:            string(run.FullRun),
+						Time:            triggerTS,
+						Email:           gf.U("user-1").GetEmail(),
+						GerritAccountId: gf.U("user-1").GetAccountId(),
 					}},
 				}
 				Convey("CL snapshotted with current config", func() {
@@ -479,8 +489,10 @@ func TestUpdateConfig(t *testing.T) {
 					Status:             prjpb.PCL_OK,
 					ConfigGroupIndexes: []int32{0}, // g0
 					Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-						Mode: string(run.FullRun),
-						Time: triggerTS,
+						Mode:            string(run.FullRun),
+						Time:            triggerTS,
+						Email:           gf.U("user-1").GetEmail(),
+						GerritAccountId: gf.U("user-1").GetAccountId(),
 					}},
 					PurgeReasons: []*prjpb.PurgeReason{{
 						ClError: &changelist.CLError{
@@ -509,8 +521,10 @@ func TestUpdateConfig(t *testing.T) {
 						},
 						ApplyTo: &prjpb.PurgeReason_Triggers{Triggers: &run.Triggers{
 							CqVoteTrigger: &run.Trigger{
-								Mode: string(run.FullRun),
-								Time: triggerTS,
+								Mode:            string(run.FullRun),
+								Time:            triggerTS,
+								Email:           gf.U("user-1").GetEmail(),
+								GerritAccountId: gf.U("user-1").GetAccountId(),
 							},
 						}},
 					},
@@ -525,8 +539,10 @@ func TestUpdateConfig(t *testing.T) {
 					},
 					ApplyTo: &prjpb.PurgeReason_Triggers{Triggers: &run.Triggers{
 						CqVoteTrigger: &run.Trigger{
-							Mode: string(run.FullRun),
-							Time: triggerTS,
+							Mode:            string(run.FullRun),
+							Time:            triggerTS,
+							Email:           gf.U("user-1").GetEmail(),
+							GerritAccountId: gf.U("user-1").GetAccountId(),
 						},
 					}},
 				}})
@@ -606,8 +622,10 @@ func TestOnCLsUpdated(t *testing.T) {
 					ConfigGroupIndexes: []int32{0}, // g0
 					Status:             prjpb.PCL_OK,
 					Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-						Mode: string(run.FullRun),
-						Time: triggerTS,
+						Mode:            string(run.FullRun),
+						Time:            triggerTS,
+						Email:           gf.U("user-1").GetEmail(),
+						GerritAccountId: gf.U("user-1").GetAccountId(),
 					}},
 				},
 			})
@@ -663,8 +681,10 @@ func TestOnCLsUpdated(t *testing.T) {
 						ConfigGroupIndexes: []int32{1}, // g1
 						Status:             prjpb.PCL_OK,
 						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-							Mode: string(run.DryRun),
-							Time: triggerTS,
+							Mode:            string(run.DryRun),
+							Time:            triggerTS,
+							Email:           gf.U("user-2").GetEmail(),
+							GerritAccountId: gf.U("user-2").GetAccountId(),
 						}},
 						Deps: []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
 					},
@@ -747,8 +767,10 @@ func TestOnCLsUpdated(t *testing.T) {
 						ConfigGroupIndexes: []int32{1}, // g1
 						Status:             prjpb.PCL_OK,
 						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-							Mode: string(run.DryRun),
-							Time: triggerTS,
+							Mode:            string(run.DryRun),
+							Time:            triggerTS,
+							Email:           gf.U("user-2").GetEmail(),
+							GerritAccountId: gf.U("user-2").GetAccountId(),
 						}},
 					},
 					{ // updated
@@ -757,8 +779,10 @@ func TestOnCLsUpdated(t *testing.T) {
 						ConfigGroupIndexes: []int32{1}, // g1
 						Status:             prjpb.PCL_OK,
 						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-							Mode: string(run.DryRun),
-							Time: triggerTS,
+							Mode:            string(run.DryRun),
+							Time:            triggerTS,
+							Email:           gf.U("user-2").GetEmail(),
+							GerritAccountId: gf.U("user-2").GetAccountId(),
 						}},
 						Deps: []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
 					},
@@ -1155,10 +1179,6 @@ func defaultPCL(cl *changelist.CL) *prjpb.PCL {
 	ci := cl.Snapshot.GetGerrit().GetInfo()
 	if ci != nil {
 		p.Triggers = trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: &cfgpb.ConfigGroup{}})
-		if p.Triggers.GetCqVoteTrigger() != nil {
-			p.Triggers.GetCqVoteTrigger().Email = ""
-			p.Triggers.GetCqVoteTrigger().GerritAccountId = 0
-		}
 	}
 	return p
 }

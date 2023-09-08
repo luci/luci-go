@@ -405,14 +405,6 @@ func (s *State) setTriggers(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL, latestPSRun
 		}
 	}
 
-	// Project Manager doesn't care about email or Gerrit account.
-	for _, t := range []*run.Trigger{ts.GetCqVoteTrigger(), ts.GetNewPatchsetRunTrigger()} {
-		if t == nil {
-			continue
-		}
-		t.Email = ""
-		t.GerritAccountId = 0
-	}
 	pcl.Triggers = ts
 }
 
