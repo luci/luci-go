@@ -13,6 +13,8 @@
 // limitations under the License.
 
 import LaunchIcon from '@mui/icons-material/Launch';
+import MenuIcon from '@mui/icons-material/Menu';
+import { Typography } from '@mui/material';
 import Drawer from '@mui/material/Drawer';
 import MaterialLink from '@mui/material/Link';
 import List from '@mui/material/List';
@@ -62,7 +64,7 @@ export const Sidebar = ({ open }: Props) => {
       role="complementary"
     >
       <Toolbar variant="dense" />
-      <List>
+      <List sx={{ mb: '40px' }}>
         {sidebarSections.map((sidebarSection) => (
           <Fragment key={sidebarSection.title}>
             <ListSubheader>{sidebarSection.title}</ListSubheader>
@@ -110,6 +112,23 @@ export const Sidebar = ({ open }: Props) => {
             ))}
           </Fragment>
         ))}
+        <div style={{ margin: '40px 20px', color: '#888' }}>
+          {!project && (
+            <div style={{ margin: '10px 0', color: '#888' }}>
+              <Typography variant="caption">
+                To see more options, <Link to="/ui/">choose a project</Link>.
+              </Typography>
+            </div>
+          )}
+          <Typography variant="caption">
+            Click{' '}
+            <MenuIcon
+              fontSize="small"
+              style={{ position: 'relative', top: '5px' }}
+            />{' '}
+            above to hide this menu.
+          </Typography>
+        </div>
       </List>
     </Drawer>
   );

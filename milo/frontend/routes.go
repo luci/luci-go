@@ -22,9 +22,12 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
+
 	"go.chromium.org/luci/auth/identity"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/milo/internal/buildsource/buildbucket"
+	"go.chromium.org/luci/milo/internal/buildsource/swarming"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
@@ -32,9 +35,6 @@ import (
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
-
-	"go.chromium.org/luci/milo/internal/buildsource/buildbucket"
-	"go.chromium.org/luci/milo/internal/buildsource/swarming"
 )
 
 // Run sets up all the routes and runs the server.
@@ -57,7 +57,7 @@ func Run(srv *server.Server, templatePath string) {
 	projectMW := htmlMW.Extend(buildProjectACLMiddleware(false))
 	optionalProjectMW := htmlMW.Extend(buildProjectACLMiddleware(true))
 
-	r.GET("/", htmlMW, frontpageHandler)
+	r.GET("/", htmlMW, redirect("/ui/", http.StatusFound))
 	r.GET("/p", baseMW, movedPermanently("/"))
 	r.GET("/search", htmlMW, redirect("/ui/search", http.StatusFound))
 	r.GET("/opensearch.xml", baseMW, searchXMLHandler)

@@ -22,10 +22,16 @@ import { ChangeEventHandler } from 'react';
 interface Props {
   placeholder: string;
   value: string;
+  autoFocus?: boolean;
   onInputChange: ChangeEventHandler<HTMLTextAreaElement | HTMLInputElement>;
 }
 
-export const SearchInput = ({ placeholder, value, onInputChange }: Props) => {
+export const SearchInput = ({
+  placeholder,
+  value,
+  autoFocus,
+  onInputChange,
+}: Props) => {
   return (
     <Box sx={{ display: 'grid', mx: 20, gridTemplateColumns: '1fr' }}>
       <FormControl>
@@ -33,6 +39,7 @@ export const SearchInput = ({ placeholder, value, onInputChange }: Props) => {
           value={value}
           placeholder={placeholder}
           onChange={onInputChange}
+          autoFocus={autoFocus}
           variant="outlined"
           size="small"
           inputProps={{

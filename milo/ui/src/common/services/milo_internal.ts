@@ -129,6 +129,25 @@ export interface ListBuildersResponse {
   readonly nextPageToken?: string;
 }
 
+export interface ProjectItem {
+  readonly id: string;
+}
+
+export interface ListProjectsRequest {
+  readonly pageSize?: number;
+  readonly pageToken?: string;
+}
+
+export interface ListProjectsResponse {
+  readonly projects?: readonly ProjectListItem[];
+  readonly nextPageToken?: string;
+}
+
+export interface ProjectListItem {
+  readonly id: string;
+  readonly logoUrl?: string;
+}
+
 export interface QueryBuilderStatsRequest {
   readonly builder: BuilderID;
 }
@@ -215,6 +234,14 @@ export class MiloInternal {
       'ListBuilders',
       req,
     )) as ListBuildersResponse;
+  }
+
+  async listProjects(req: ListProjectsRequest, cacheOpt: CacheOption = {}) {
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'ListProjects',
+      req,
+    )) as ListProjectsResponse;
   }
 
   async queryBuilderStats(

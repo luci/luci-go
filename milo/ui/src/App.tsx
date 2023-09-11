@@ -169,6 +169,10 @@ export function App({ initOpts }: AppProps) {
       errorElement: <RouteErrorDisplay />,
       children: [
         {
+          index: true,
+          lazy: () => import('@/pages/search/project_search'),
+        },
+        {
           path: 'login',
           lazy: () => import('@/pages/login_page'),
         },

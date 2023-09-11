@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { render, screen } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
 
 import { PageMetaContext } from '@/common/components/page_meta/page_meta_provider';
 import { UiPage } from '@/common/constants';
@@ -23,14 +24,17 @@ import { AppDetails } from './app_details';
 describe('AppDetails', () => {
   it('should display app name given no data', async () => {
     render(
-      <PageMetaContext.Provider
-        value={{
-          setProject: () => {},
-          setSelectedPage: () => {},
-        }}
-      >
-        <AppDetails open={true} handleSidebarChanged={(_: boolean) => {}} />
-      </PageMetaContext.Provider>,
+      <BrowserRouter>
+        <PageMetaContext.Provider
+          value={{
+            setProject: () => {},
+            setSelectedPage: () => {},
+          }}
+        >
+          <AppDetails open={true} handleSidebarChanged={(_: boolean) => {}} />
+        </PageMetaContext.Provider>
+        ,
+      </BrowserRouter>,
     );
     await screen.findByLabelText('menu');
     expect(screen.getByText('LUCI')).toBeInTheDocument();
