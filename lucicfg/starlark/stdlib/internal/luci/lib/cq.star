@@ -560,7 +560,7 @@ def _validate_tryjob_experiment(attr, val, *, default = None, required = False):
 #     This is to avoid adding more requests to an already overloaded system.
 #
 # `cq.COMMENT_LEVEL_*` constants define possible values for `result_visibility`
-# field of luci.cq_group(...):
+# field of luci.cq_tryjob_verifier(...):
 #   * **cq.COMMENT_LEVEL_UNSET**: Equivalent to cq.COMMENT_LEVEL_FULL for now.
 #   * **cq.COMMENT_LEVEL_FULL**: The CQ reports the summary markdown and a link
 #     to the buildbucket build id in Milo with the builder name in the URL in a
