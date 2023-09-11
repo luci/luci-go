@@ -70,7 +70,6 @@ func trigger(c context.Context, t tasks.Task, q *datastore.Query) error {
 	addTask := func(k *datastore.Key) {
 		tasks = append(tasks, &tq.Task{
 			Payload: newPayload(k.StringID()),
-			DeduplicationKey: k.StringID(),
 		})
 	}
 	if err := datastore.Run(c, q, addTask); err != nil {
