@@ -16,28 +16,33 @@ package swarmingimpl
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"io"
-	"os"
+	"flag"
 
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/flag"
-	"go.chromium.org/luci/common/system/signals"
+	luciflag "go.chromium.org/luci/common/flag"
+
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
 )
 
 // CmdBotTasks returns an object for the `bot-tasks` subcommand.
-func CmdBotTasks(authFlags AuthFlags) *subcommands.Command {
+func CmdBotTasks(authFlags base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "bot-tasks <options>",
-		ShortDesc: "List bot tasks.",
-		LongDesc:  "Read bot task details.",
+		UsageLine: "bot-tasks -S <server> -id <bot ID>",
+		ShortDesc: "lists tasks executed by a bot",
+		LongDesc:  "List details of tasks executed by a particular bot.",
 		CommandRun: func() subcommands.CommandRun {
-			r := &botTasksRun{}
-			r.Init(authFlags)
-			return r
+			return base.NewCommandRun(authFlags, &botTasksImpl{}, base.Features{
+				MinArgs: 0,
+				MaxArgs: 0,
+				OutputJSON: base.OutputJSON{
+					Enabled:             true,
+					DeprecatedAliasFlag: "json",
+					DefaultToStdout:     true,
+				},
+			})
 		},
 	}
 }
@@ -45,56 +50,40 @@ func CmdBotTasks(authFlags AuthFlags) *subcommands.Command {
 // TODO(crbug.com/1467263): `fields` do nothing currently. Used to be a set of
 // fields to include in a partial response.
 
-type botTasksRun struct {
-	commonFlags
-	botID   string
-	limit   int
-	state   string
-	outfile string
-	fields  []string
-	start   float64
+type botTasksImpl struct {
+	botID  string
+	limit  int
+	state  string
+	fields []string
+	start  float64
 }
 
-func (b *botTasksRun) Init(authFlags AuthFlags) {
-	b.commonFlags.Init(authFlags)
-	b.Flags.StringVar(&b.botID, "id", "", "Bot ID to query for.")
-	b.Flags.IntVar(&b.limit, "limit", defaultLimit, "Max number of tasks to return.")
-	b.Flags.StringVar(&b.state, "state", "ALL", "Bot task state to filter to.")
-	b.Flags.StringVar(&b.outfile, "json", "", "Path to output JSON results. Implies quiet.")
-	b.Flags.Var(flag.StringSlice(&b.fields), "field", "This flag currently does nothing (https://crbug.com/1467263).")
-	b.Flags.Float64Var(&b.start, "start", 0, "Start time (in seconds since the epoch) for counting tasks.")
+func (cmd *botTasksImpl) RegisterFlags(fs *flag.FlagSet) {
+	fs.StringVar(&cmd.botID, "id", "", "Bot ID to query tasks from.")
+	fs.IntVar(&cmd.limit, "limit", defaultLimit, "Max number of tasks to return.")
+	fs.StringVar(&cmd.state, "state", "ALL", "Task state to filter on.")
+	fs.Var(luciflag.StringSlice(&cmd.fields), "field", "This flag currently does nothing (https://crbug.com/1467263).")
+	fs.Float64Var(&cmd.start, "start", 0, "Start time (in seconds since the epoch) for counting tasks.")
 }
 
-func (b *botTasksRun) Parse() error {
-	if err := b.commonFlags.Parse(); err != nil {
-		return err
-	}
-	if b.botID == "" {
+func (cmd *botTasksImpl) ParseInputs(args []string, env subcommands.Env) error {
+	if cmd.botID == "" {
 		return errors.Reason("non-empty -id required").Err()
 	}
-	if b.defaultFlags.Quiet && b.outfile == "" {
-		return errors.Reason("specify -json when using -quiet").Err()
+	if cmd.limit < 1 {
+		return errors.Reason("invalid -limit %d, must be positive", cmd.limit).Err()
 	}
-	if b.outfile != "" {
-		b.defaultFlags.Quiet = true
-	}
-	if b.limit < 1 {
-		return errors.Reason("invalid -limit %d, must be positive", b.limit).Err()
-	}
-	if _, err := stateMap(b.state); err != nil {
+	if _, err := stateMap(cmd.state); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (b *botTasksRun) botTasks(ctx context.Context, service swarmingService, out io.Writer) error {
-	state, err := stateMap(b.state)
+func (cmd *botTasksImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
+	state, _ := stateMap(cmd.state)
+	data, err := svc.ListBotTasks(ctx, cmd.botID, int32(cmd.limit), cmd.start, state)
 	if err != nil {
-		return err
-	}
-	data, err := service.ListBotTasks(ctx, b.botID, int32(b.limit), b.start, state)
-	if err != nil {
-		return err
+		return nil, err
 	}
 	toOutput := make([]*taskResultResponse, len(data))
 	for idx, tr := range data {
@@ -102,39 +91,5 @@ func (b *botTasksRun) botTasks(ctx context.Context, service swarmingService, out
 			Proto: tr,
 		}
 	}
-	output, err := json.MarshalIndent(toOutput, "", DefaultIndent)
-	if err != nil {
-		return err
-	}
-	_, err = out.Write(append(output, '\n'))
-	return err
-}
-
-func (b *botTasksRun) main(_ subcommands.Application) error {
-	ctx, cancel := context.WithCancel(b.defaultFlags.MakeLoggingContext(os.Stderr))
-	defer cancel()
-	defer signals.HandleInterrupt(cancel)()
-	service, err := b.createSwarmingClient(ctx)
-	if err != nil {
-		return err
-	}
-	return writeOutput(b.outfile, b.defaultFlags.Quiet, func(out io.Writer) error {
-		return b.botTasks(ctx, service, out)
-	})
-}
-
-func (b *botTasksRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
-	if len(args) != 0 {
-		fmt.Fprintf(a.GetErr(), "%s: unknown args: %s\n", a.GetName(), args)
-		return 1
-	}
-	if err := b.Parse(); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	if err := b.main(a); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	return 0
+	return toOutput, nil
 }

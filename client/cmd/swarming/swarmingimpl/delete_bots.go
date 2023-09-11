@@ -16,106 +16,80 @@ package swarmingimpl
 
 import (
 	"context"
+	"flag"
 	"fmt"
-	"os"
 
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/system/signals"
+	"go.chromium.org/luci/common/logging"
+
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
 )
 
-// CmdDeleteBots returns an object for the `bots` subcommand.
-func CmdDeleteBots(authFlags AuthFlags) *subcommands.Command {
+// CmdDeleteBots returns an object for the `delete-bots` subcommand.
+func CmdDeleteBots(authFlags base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "delete-bots <options> <botID1 botID2 ...>",
-		ShortDesc: "delete bots",
-		LongDesc:  "delete bots specified by bot ID",
+		UsageLine: "delete-bots -S <server> <bot ID> <bot ID> ...",
+		ShortDesc: "deletes bots given their IDs",
+		LongDesc:  "Deletes bots given their IDs.",
 		CommandRun: func() subcommands.CommandRun {
-			r := &deletebotsRun{}
-			r.Init(authFlags)
-			return r
+			return base.NewCommandRun(authFlags, &deleteBotsImpl{}, base.Features{
+				MinArgs: 1,
+				MaxArgs: base.Unlimited,
+				OutputJSON: base.OutputJSON{
+					Enabled: false,
+				},
+			})
 		},
 	}
 }
 
-type deletebotsRun struct {
-	commonFlags
-	force bool
+type deleteBotsImpl struct {
+	force  bool
+	botIDs []string
 }
 
-func (b *deletebotsRun) Init(authFlags AuthFlags) {
-	b.commonFlags.Init(authFlags)
-	b.Flags.BoolVar(&b.force, "force", false, "Forcibly deletes bots")
-	b.Flags.BoolVar(&b.force, "f", false, "Alias for -force")
+func (cmd *deleteBotsImpl) RegisterFlags(fs *flag.FlagSet) {
+	fs.BoolVar(&cmd.force, "force", false, "If set, skip confirmation prompt.")
+	fs.BoolVar(&cmd.force, "f", false, "Alias for -force.")
 }
 
-func (b *deletebotsRun) parse(botIDs []string) error {
-	if err := b.commonFlags.Parse(); err != nil {
-		return err
-	}
-
-	if len(botIDs) == 0 {
-		return errors.New("must specify at least one swarming bot id")
-	}
-
+func (cmd *deleteBotsImpl) ParseInputs(args []string, env subcommands.Env) error {
+	cmd.botIDs = args
 	return nil
 }
 
-func (b *deletebotsRun) deleteBotsInList(ctx context.Context, botIDs []string, service swarmingService) error {
-	if !b.force {
+func (cmd *deleteBotsImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
+	if !cmd.force {
 		fmt.Println("Delete the following bots?")
-		for _, botID := range botIDs {
+		for _, botID := range cmd.botIDs {
 			fmt.Println(botID)
 		}
 		var res string
 		fmt.Println("Continue? [y/N] ")
 		_, err := fmt.Scan(&res)
 		if err != nil {
-			return errors.Annotate(err, "error recieving your response").Err()
+			return nil, errors.Annotate(err, "error receiving your response").Err()
 		}
 		if res != "y" && res != "Y" {
 			fmt.Println("canceled deleting bots, Goodbye")
-			return nil
+			return nil, nil
 		}
 	}
 
-	for _, botID := range botIDs {
-		res, err := service.DeleteBot(ctx, botID)
+	// TODO(vadimsh): Run in parallel.
+	for _, botID := range cmd.botIDs {
+		res, err := svc.DeleteBot(ctx, botID)
 		if err != nil {
-			fmt.Printf("Failed Deleting %s\n", botID)
-			return err
-		}
-		if res == nil {
-			return errors.Reason("no response from service when trying to delete botID %s", botID).Err()
+			logging.Errorf(ctx, "Failed deleting %s", botID)
+			return nil, err
 		}
 		if !res.Deleted {
-			return errors.Reason("bot %s was not deleted", botID).Err()
+			return nil, errors.Reason("bot %s was not deleted", botID).Err()
 		}
-		fmt.Printf("Successfully Deleted %s\n", botID)
+		logging.Infof(ctx, "Successfully deleted %s", botID)
 	}
-	return nil
-
-}
-
-func (b *deletebotsRun) main(_ subcommands.Application, botIDs []string) error {
-	ctx, cancel := context.WithCancel(b.defaultFlags.MakeLoggingContext(os.Stderr))
-	defer signals.HandleInterrupt(cancel)()
-	service, err := b.createSwarmingClient(ctx)
-	if err != nil {
-		return err
-	}
-	return b.deleteBotsInList(ctx, botIDs, service)
-}
-
-func (b *deletebotsRun) Run(a subcommands.Application, botIDs []string, _ subcommands.Env) int {
-	if err := b.parse(botIDs); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	if err := b.main(a, botIDs); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	return 0
+	return nil, nil
 }

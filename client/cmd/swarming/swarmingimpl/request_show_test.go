@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,13 +23,13 @@ import (
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
-func TestBotTasksParse(t *testing.T) {
+func TestRequestShowParse(t *testing.T) {
 	t.Parallel()
 
 	expectErr := func(argv []string, errLike string) {
 		_, _, code, _, stderr := SubcommandTest(
 			context.Background(),
-			CmdBotTasks,
+			CmdRequestShow,
 			append([]string{"-server", "example.com"}, argv...),
 			nil, nil,
 		)
@@ -37,52 +37,40 @@ func TestBotTasksParse(t *testing.T) {
 		So(stderr, ShouldContainSubstring, errLike)
 	}
 
-	Convey(`Make sure that Parse fails with invalid -id.`, t, func() {
-		expectErr([]string{"-id", ""}, "non-empty -id")
+	Convey(`Need an arg`, t, func() {
+		expectErr(nil, "expecting exactly 1 argument")
 	})
 
-	Convey(`Make sure that Parse fails with negative -limit.`, t, func() {
-		expectErr([]string{"-id", "device_id", "-limit", "-1"}, "invalid -limit")
-	})
-
-	Convey(`Make sure that Parse fails with invalid -state.`, t, func() {
-		expectErr([]string{"-id", "device_id", "-state", "invalid_state"}, "Invalid state invalid_state")
+	Convey(`At most one arg`, t, func() {
+		expectErr([]string{"aaaa", "bbbb"}, "expecting exactly 1 argument")
 	})
 }
 
-func TestListBotTasksOutput(t *testing.T) {
+func TestRequestShow(t *testing.T) {
 	t.Parallel()
 
-	botID := "bot1"
-
-	expectedTasks := []*swarmingv2.TaskResultResponse{
-		{TaskId: "task1"},
-		{TaskId: "task2"},
-	}
-
 	service := &testService{
-		listBotTasks: func(ctx context.Context, s string, i int32, f float64, sq swarmingv2.StateQuery) ([]*swarmingv2.TaskResultResponse, error) {
-			So(s, ShouldEqual, botID)
-			return expectedTasks, nil
+		taskRequest: func(ctx context.Context, s string) (*swarmingv2.TaskRequestResponse, error) {
+			So(s, ShouldEqual, "aaaa")
+			return &swarmingv2.TaskRequestResponse{
+				TaskId:       "aaaa",
+				ParentTaskId: "bbbb",
+			}, nil
 		},
 	}
 
-	Convey(`Expected tasks are outputted`, t, func() {
+	Convey(`Output is correct`, t, func() {
 		_, _, code, stdout, _ := SubcommandTest(
 			context.Background(),
-			CmdBotTasks,
-			[]string{"-server", "example.com", "-id", botID},
+			CmdRequestShow,
+			[]string{"-server", "example.com", "aaaa"},
 			nil, service,
 		)
 		So(code, ShouldEqual, 0)
-		So(stdout, ShouldEqual, `[
- {
-  "task_id": "task1"
- },
- {
-  "task_id": "task2"
- }
-]
+		So(stdout, ShouldEqual, `{
+ "task_id": "aaaa",
+ "parent_task_id": "bbbb"
+}
 `)
 	})
 }

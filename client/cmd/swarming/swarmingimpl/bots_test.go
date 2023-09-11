@@ -15,42 +15,42 @@
 package swarmingimpl
 
 import (
-	"bytes"
 	"context"
-	"regexp"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
-func botsExpectErr(argv []string, errLike string) {
-	b := botsRun{}
-	b.Init(&testAuthFlags{})
-	fullArgv := append([]string{"-server", "http://localhost:9050"}, argv...)
-	err := b.GetFlags().Parse(fullArgv)
-	So(err, ShouldBeNil)
-	So(b.Parse(), ShouldErrLike, errLike)
-}
-
 func TestBotsParse(t *testing.T) {
-	Convey(`Make sure that Parse fails with -quiet without -json.`, t, func() {
-		botsExpectErr([]string{"-quiet"}, "specify -json")
-	})
+	t.Parallel()
+
+	expectErr := func(argv []string, errLike string) {
+		_, _, code, _, stderr := SubcommandTest(
+			context.Background(),
+			CmdBots,
+			append([]string{"-server", "example.com"}, argv...),
+			nil, nil,
+		)
+		So(code, ShouldEqual, 1)
+		So(stderr, ShouldContainSubstring, errLike)
+	}
 
 	Convey(`Make sure that Parse fails with -count and -field.`, t, func() {
-		botsExpectErr([]string{"-count", "-field", "myField"}, "-field cannot")
+		expectErr([]string{"-count", "-field", "myField"}, "-field cannot")
 	})
 }
 
 func TestFileOutput(t *testing.T) {
+	t.Parallel()
+
 	expectedDims := []*swarmingv2.StringPair{
-		&swarmingv2.StringPair{
+		{
 			Key:   "a",
 			Value: "b",
 		},
-		&swarmingv2.StringPair{
+		{
 			Key:   "c",
 			Value: "d",
 		},
@@ -68,7 +68,7 @@ func TestFileOutput(t *testing.T) {
 			BotId: "bot2",
 		},
 	}
-	ctx := context.Background()
+
 	service := &testService{
 		countBots: func(ctx context.Context, dims []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error) {
 			for _, dim := range dims {
@@ -87,50 +87,39 @@ func TestFileOutput(t *testing.T) {
 			return expectedBots, nil
 		},
 	}
+
 	Convey(`Count is correctly written out when -count is specified`, t, func() {
-		b := botsRun{}
-		b.Init(&testAuthFlags{})
-		b.dimensions = map[string]string{"a": "b", "c": "d"}
-		expected, err := DefaultProtoMarshalOpts.Marshal(expectedCount)
-		expected = append(expected, '\n')
-		So(err, ShouldBeNil)
-		b.count = true
-		out := new(bytes.Buffer)
-		err = b.bots(ctx, service, out)
-		actual := out.Bytes()
-		So(err, ShouldBeNil)
-		So(actual, ShouldEqual, expected)
+		_, _, code, stdout, _ := SubcommandTest(
+			context.Background(),
+			CmdBots,
+			[]string{"-server", "example.com", "-count", "-dimension", "a=b", "-dimension", "c=d"},
+			nil, service,
+		)
+		So(code, ShouldEqual, 0)
+		So(stdout, ShouldEqual, `{
+ "count": 10,
+ "dead": 4,
+ "busy": 6
+}
+`)
 	})
 
 	Convey(`List bots is correctly outputted`, t, func() {
-		b := botsRun{}
-		b.Init(&testAuthFlags{})
-		b.dimensions = map[string]string{"a": "b", "c": "d"}
-		expected, err := showBots(expectedBots)
-		expected = append(expected, '\n')
-		So(err, ShouldBeNil)
-		out := new(bytes.Buffer)
-		b.count = false
-		err = b.bots(ctx, service, out)
-		So(err, ShouldBeNil)
-		actual := out.Bytes()
-		So(actual, ShouldEqual, expected)
-	})
-
-	Convey(`showBots creates a list of json bots`, t, func() {
-		actual, _ := showBots(expectedBots)
-		expected := `[
+		_, _, code, stdout, _ := SubcommandTest(
+			context.Background(),
+			CmdBots,
+			[]string{"-server", "example.com", "-dimension", "a=b", "-dimension", "c=d"},
+			nil, service,
+		)
+		So(code, ShouldEqual, 0)
+		So(stdout, ShouldEqual, `[
  {
   "bot_id": "bot1"
  },
  {
   "bot_id": "bot2"
  }
-]`
-		removeSpaces := regexp.MustCompile(`\s+`)
-		// MarshalOptions.Marshal (https://pkg.go.dev/google.golang.org/protobuf/encoding/protojson#MarshalOptions)
-		// sometimes adds one or two spaces after keys. Since test data is spaceless, rather compare the values
-		// after removing all whitespace to just test the unindented json
-		So(string(removeSpaces.ReplaceAll(actual, []byte(""))), ShouldEqual, removeSpaces.ReplaceAllString(expected, ""))
+]
+`)
 	})
 }

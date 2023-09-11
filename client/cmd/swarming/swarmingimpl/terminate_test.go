@@ -19,42 +19,39 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/errors"
 	. "go.chromium.org/luci/common/testing/assertions"
+
+	"go.chromium.org/luci/common/errors"
+
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func TestTerminateBotsParse(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Test TerminateBotsParse when there's no input or too many inputs`, t, func() {
+	expectErr := func(argv []string, errLike string) {
+		_, _, code, _, stderr := SubcommandTest(
+			context.Background(),
+			CmdTerminateBot,
+			append([]string{"-server", "example.com"}, argv...),
+			nil, nil,
+		)
+		So(code, ShouldEqual, 1)
+		So(stderr, ShouldContainSubstring, errLike)
+	}
 
-		t := terminateRun{}
-		t.Init(&testAuthFlags{})
+	Convey(`Wants a bot ID`, t, func() {
+		expectErr(nil, "expecting exactly 1 argument")
+	})
 
-		err := t.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
-		So(err, ShouldBeNil)
-
-		Convey(`Test when one bot ID is given.`, func() {
-			err = t.parse([]string{"onebotid111"})
-			So(err, ShouldBeNil)
-		})
-
-		Convey(`Make sure that Parse handles when no bot ID is given.`, func() {
-			err = t.parse([]string{})
-			So(err, ShouldErrLike, "must specify a")
-		})
-
-		Convey(`Make sure that Parse handles when too many bot ID is given.`, func() {
-			err = t.parse([]string{"toomany234", "botids567"})
-			So(err, ShouldErrLike, "specify only one")
-		})
+	Convey(`Wants only one bot ID`, t, func() {
+		expectErr([]string{"b1", "b2"}, "expecting exactly 1 argument")
 	})
 }
 
@@ -62,8 +59,6 @@ func TestTerminateBots(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Test terminate`, t, func() {
-		ctx := context.Background()
-		t := terminateRun{}
 		taskStillRunningBotID := "stillrunningbotid123"
 		failBotID := "failingbot123"
 		errorAtTaskBotID := "errorattaskbot123"
@@ -75,6 +70,11 @@ func TestTerminateBots(t *testing.T) {
 		givenBotID := ""
 		givenTaskID := ""
 		countLoop := 0
+
+		ctx, clk := testclock.UseTime(context.Background(), time.Now())
+		clk.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+			clk.Add(d)
+		})
 
 		service := &testService{
 			terminateBot: func(ctx context.Context, botID string, reason string) (*swarmingv2.TerminateResponse, error) {
@@ -126,53 +126,77 @@ func TestTerminateBots(t *testing.T) {
 		}
 
 		Convey(`Test terminating bot`, func() {
-			err := t.terminateBot(ctx, "testbot123", service)
-			So(err, ShouldBeNil)
+			_, _, code, _, _ := SubcommandTest(
+				ctx,
+				CmdTerminateBot,
+				[]string{"-server", "example.com", "testbot123"},
+				nil, service,
+			)
+			So(code, ShouldEqual, 0)
 			So(givenBotID, ShouldEqual, "testbot123")
 		})
 
 		Convey(`Test when terminating bot fails`, func() {
-			err := t.terminateBot(ctx, failBotID, service)
+			_, err, code, _, _ := SubcommandTest(
+				ctx,
+				CmdTerminateBot,
+				[]string{"-server", "example.com", failBotID},
+				nil, service,
+			)
+			So(code, ShouldEqual, 1)
 			So(err, ShouldErrLike, "no such bot")
 			So(givenBotID, ShouldEqual, failBotID)
 		})
 
-		Convey(`Test terminating bot when wait`, func() {
-			t.wait = true
-			err := t.terminateBot(ctx, "testbot123", service)
-			So(err, ShouldBeNil)
+		Convey(`Test terminating bot with waiting`, func() {
+			_, _, code, _, _ := SubcommandTest(
+				ctx,
+				CmdTerminateBot,
+				[]string{"-server", "example.com", "-wait", "testbot123"},
+				nil, service,
+			)
+			So(code, ShouldEqual, 0)
 			So(givenBotID, ShouldEqual, "testbot123")
 			So(givenTaskID, ShouldEqual, terminateTaskID)
 		})
 
-		Convey(`Test terminating bot when wait and bot doesn't stop running immediately`, func() {
-			ctx, clk := testclock.UseTime(ctx, time.Now())
-			clk.SetTimerCallback(func(d time.Duration, t clock.Timer) {
-				clk.Add(d)
-			})
-			t.wait = true
-			err := t.terminateBot(ctx, taskStillRunningBotID, service)
-			So(err, ShouldBeNil)
+		Convey(`Test terminating bot with waiting and bot doesn't stop running immediately`, func() {
+			_, _, code, _, _ := SubcommandTest(
+				ctx,
+				CmdTerminateBot,
+				[]string{"-server", "example.com", "-wait", taskStillRunningBotID},
+				nil, service,
+			)
+			So(code, ShouldEqual, 0)
 			So(countLoop, ShouldEqual, 2)
 			So(givenBotID, ShouldEqual, taskStillRunningBotID)
 			So(givenTaskID, ShouldEqual, stillRunningTaskID)
 		})
 
 		Convey(`Test terminating bot when wait fails with error`, func() {
-			t.wait = true
-			err := t.terminateBot(ctx, errorAtTaskBotID, service)
+			_, err, code, _, _ := SubcommandTest(
+				ctx,
+				CmdTerminateBot,
+				[]string{"-server", "example.com", "-wait", errorAtTaskBotID},
+				nil, service,
+			)
+			So(code, ShouldEqual, 1)
 			So(err, ShouldErrLike, "failed to call")
 			So(givenBotID, ShouldEqual, errorAtTaskBotID)
 			So(givenTaskID, ShouldEqual, failTaskID)
 		})
 
-		Convey(`other than status "complete" returned when terminating bot with wait`, func() {
-			t.wait = true
-			err := t.terminateBot(ctx, statusNotCompletedBotID, service)
+		Convey(`Other than status "complete" returned when terminating bot with wait`, func() {
+			_, err, code, _, _ := SubcommandTest(
+				ctx,
+				CmdTerminateBot,
+				[]string{"-server", "example.com", "-wait", statusNotCompletedBotID},
+				nil, service,
+			)
+			So(code, ShouldEqual, 1)
 			So(err, ShouldErrLike, "failed to terminate bot")
 			So(givenBotID, ShouldEqual, statusNotCompletedBotID)
 			So(givenTaskID, ShouldEqual, statusNotCompletedTaskID)
 		})
-
 	})
 }

@@ -22,9 +22,11 @@ import (
 	"testing"
 
 	"github.com/maruel/subcommands"
+
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
@@ -36,7 +38,7 @@ const IntegrationTestEnvVar = "INTEGRATION_TESTS"
 func init() {
 	// Unset SWARMING_TASK_ID environment variable, otherwise task trigger may
 	// fail for parent task association.
-	err := os.Unsetenv(swarmingimpl.TaskIDEnvVar)
+	err := os.Unsetenv(swarming.TaskIDEnvVar)
 	if err != nil {
 		log.Fatalf("Failed to unset env %v", err)
 	}

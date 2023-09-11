@@ -15,6 +15,7 @@
 package swarmingimpl
 
 import (
+	"context"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -29,20 +30,11 @@ import (
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
-func init() {
-	// So that this test works on swarming!
-	err := os.Unsetenv(ServerEnvVar)
-	if err != nil {
-		panic("Could not unset ServerEnv")
-	}
-	err = os.Unsetenv(TaskIDEnvVar)
-	if err != nil {
-		panic("Could not unset TaskIdEnvVar")
-	}
-}
+// TODO(vadimsh): Add a test for actually triggering stuff (calling NewTask).
 
-// Make sure that stringmapflag.Value are returned as sorted arrays.
 func TestMapToArray(t *testing.T) {
+	t.Parallel()
+
 	Convey(`Make sure that stringmapflag.Value are returned as sorted arrays.`, t, func() {
 		type item struct {
 			m stringmapflag.Value
@@ -93,6 +85,8 @@ func TestMapToArray(t *testing.T) {
 }
 
 func TestOptionalDimension(t *testing.T) {
+	t.Parallel()
+
 	Convey(`Make sure that stringmapflag.Value are returned as sorted arrays.`, t, func() {
 		type item struct {
 			s string
@@ -148,6 +142,8 @@ func TestOptionalDimension(t *testing.T) {
 }
 
 func TestListToStringListPairArray(t *testing.T) {
+	t.Parallel()
+
 	Convey(`TestListToStringListPairArray`, t, func() {
 		input := stringlistflag.Flag{
 			"x=a",
@@ -164,6 +160,8 @@ func TestListToStringListPairArray(t *testing.T) {
 }
 
 func TestNamePartFromDimensions(t *testing.T) {
+	t.Parallel()
+
 	Convey(`Make sure that a string name can be constructed from dimensions.`, t, func() {
 		type item struct {
 			m    stringmapflag.Value
@@ -204,71 +202,39 @@ func TestNamePartFromDimensions(t *testing.T) {
 	})
 }
 
-func TestTriggerParse_NoArgs(t *testing.T) {
-	Convey(`Make sure that Parse works with no arguments.`, t, func() {
-		c := triggerRun{}
-		c.Init(&testAuthFlags{})
+func TestTriggerParse(t *testing.T) {
+	t.Parallel()
 
-		err := c.Parse([]string(nil))
-		So(err, ShouldErrLike, "must provide -server")
+	expectErr := func(argv []string, errLike string) {
+		_, _, code, _, stderr := SubcommandTest(
+			context.Background(),
+			CmdTrigger,
+			append([]string{"-server", "example.com"}, argv...),
+			nil, nil,
+		)
+		So(code, ShouldEqual, 1)
+		So(stderr, ShouldContainSubstring, errLike)
+	}
+
+	Convey("Wants dimensions", t, func() {
+		expectErr(nil, "please specify at least one dimension")
 	})
-}
 
-func TestTriggerParse_NoDimension(t *testing.T) {
-	Convey(`Make sure that Parse fails with no dimensions.`, t, func() {
-		c := triggerRun{}
-		c.Init(&testAuthFlags{})
-
-		err := c.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
-		So(err, ShouldBeNil)
-
-		err = c.Parse([]string(nil))
-		So(err, ShouldErrLike, "dimension")
-	})
-}
-
-func TestTriggerParse_NoIsolated(t *testing.T) {
-	Convey(`Make sure that Parse handles a missing isolated flag.`, t, func() {
-		c := triggerRun{}
-		c.Init(&testAuthFlags{})
-
-		err := c.GetFlags().Parse([]string{
-			"-server", "http://localhost:9050",
-			"-dimension", "os=Ubuntu",
-		})
-		So(err, ShouldBeNil)
-
-		err = c.Parse([]string(nil))
-		So(err, ShouldErrLike, "please specify command after '--'")
-	})
-}
-
-func TestTriggerParse_RawArgs(t *testing.T) {
-	Convey(`Make sure that Parse allows both raw-cmd and -isolated`, t, func() {
-		c := triggerRun{}
-		c.Init(&testAuthFlags{})
-
-		err := c.GetFlags().Parse([]string{
-			"-server", "http://localhost:9050",
-			"-dimension", "os=Ubuntu",
-		})
-		So(err, ShouldBeNil)
-
-		err = c.Parse([]string{"arg1", "arg2"})
-		So(err, ShouldBeNil)
+	Convey("Wants a command", t, func() {
+		expectErr([]string{"-d", "k=v"}, "please specify command after '--'")
 	})
 }
 
 func TestProcessTriggerOptions_WithRawArgs(t *testing.T) {
+	t.Parallel()
+
 	Convey(`Make sure that processing trigger options handles raw-args.`, t, func() {
-		c := triggerRun{}
-		c.Init(&testAuthFlags{})
-		c.commonFlags.serverURL = &url.URL{
+		c := triggerImpl{}
+
+		result, err := c.processTriggerOptions([]string{"arg1", "arg2"}, &url.URL{
 			Scheme: "http",
 			Host:   "localhost:9050",
-		}
-
-		result, err := c.processTriggerOptions([]string{"arg1", "arg2"}, nil)
+		})
 		So(err, ShouldBeNil)
 		// Setting properties directly on the task is deprecated.
 		So(result.Properties, ShouldBeNil)
@@ -279,9 +245,10 @@ func TestProcessTriggerOptions_WithRawArgs(t *testing.T) {
 }
 
 func TestProcessTriggerOptions_CipdPackages(t *testing.T) {
+	t.Parallel()
+
 	Convey(`Make sure that processing trigger options handles cipd packages.`, t, func() {
-		c := triggerRun{}
-		c.Init(&testAuthFlags{})
+		c := triggerImpl{}
 		c.cipdPackage = map[string]string{
 			"path:name": "version",
 		}
@@ -303,14 +270,14 @@ func TestProcessTriggerOptions_CipdPackages(t *testing.T) {
 
 func TestProcessTriggerOptions_CAS(t *testing.T) {
 	t.Parallel()
+
 	Convey(`Make sure that processing trigger options handles cas digest.`, t, func() {
-		c := triggerRun{}
+		c := triggerImpl{}
 		c.digest = "1d1e14a2d0da6348f3f37312ef524a2cea1db4ead9ebc6c335f9948ad634cbfd/10430"
-		c.commonFlags.serverURL = &url.URL{
+		result, err := c.processTriggerOptions([]string(nil), &url.URL{
 			Scheme: "https",
 			Host:   "cas.appspot.com",
-		}
-		result, err := c.processTriggerOptions([]string(nil), nil)
+		})
 		So(err, ShouldBeNil)
 		// Setting properties directly on the task is deprecated.
 		So(result.Properties, ShouldBeNil)
@@ -329,9 +296,9 @@ func TestProcessTriggerOptions_CAS(t *testing.T) {
 
 func TestProcessTriggerOptions_OptionalDimension(t *testing.T) {
 	t.Parallel()
+
 	Convey(`Basic`, t, func() {
-		c := triggerRun{}
-		c.Init(&testAuthFlags{})
+		c := triggerImpl{}
 		So(c.dimensions.Set("foo=abc"), ShouldBeNil)
 		So(c.optionalDimension.Set("bar=def:60"), ShouldBeNil)
 
@@ -364,6 +331,8 @@ func TestProcessTriggerOptions_OptionalDimension(t *testing.T) {
 }
 
 func TestProcessTriggerOptions_SecretBytesPath(t *testing.T) {
+	t.Parallel()
+
 	Convey(`Read secret bytes from the file, and set the base64 encoded string.`, t, func() {
 		// prepare secret bytes file.
 		dir := t.TempDir()
@@ -372,8 +341,7 @@ func TestProcessTriggerOptions_SecretBytesPath(t *testing.T) {
 		err := os.WriteFile(secretBytesPath, secretBytes, 0600)
 		So(err, ShouldBeEmpty)
 
-		c := triggerRun{}
-		c.Init(&testAuthFlags{})
+		c := triggerImpl{}
 		c.secretBytesPath = secretBytesPath
 		result, err := c.processTriggerOptions(nil, nil)
 		So(err, ShouldBeNil)

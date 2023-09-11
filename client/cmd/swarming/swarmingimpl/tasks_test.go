@@ -15,77 +15,73 @@
 package swarmingimpl
 
 import (
-	"bytes"
 	"context"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
-func tasksExpectErr(argv []string, errLike string) {
-	t := tasksRun{}
-	t.Init(&testAuthFlags{})
-	fullArgv := append([]string{"-server", "http://localhost:9050"}, argv...)
-	err := t.GetFlags().Parse(fullArgv)
-	So(err, ShouldBeNil)
-	So(t.Parse(), ShouldErrLike, errLike)
-}
-
 func TestTasksParse(t *testing.T) {
+	t.Parallel()
+
+	expectErr := func(argv []string, errLike string) {
+		_, _, code, _, stderr := SubcommandTest(
+			context.Background(),
+			CmdTasks,
+			append([]string{"-server", "example.com"}, argv...),
+			nil, nil,
+		)
+		So(code, ShouldEqual, 1)
+		So(stderr, ShouldContainSubstring, errLike)
+	}
+
 	Convey(`Make sure that Parse fails with zero -limit.`, t, func() {
-		tasksExpectErr([]string{"-limit", "0"}, "must be positive")
-	})
-
-	Convey(`Make sure that Parse fails with negative -limit.`, t, func() {
-		tasksExpectErr([]string{"-limit", "-1"}, "must be positive")
-	})
-
-	Convey(`Make sure that Parse fails with -quiet without -json.`, t, func() {
-		tasksExpectErr([]string{"-quiet"}, "specify -json")
+		expectErr([]string{"-limit", "0"}, "must be positive")
+		expectErr([]string{"-limit", "-1"}, "must be positive")
 	})
 
 	Convey(`Make sure that Parse requires positive -start with -count.`, t, func() {
-		tasksExpectErr([]string{"-count"}, "provide -start")
-		tasksExpectErr([]string{"-count", "-start", "0"}, "provide -start")
-		tasksExpectErr([]string{"-count", "-start", "-1"}, "provide -start")
+		expectErr([]string{"-count"}, "provide -start")
+		expectErr([]string{"-count", "-start", "0"}, "provide -start")
+		expectErr([]string{"-count", "-start", "-1"}, "provide -start")
 	})
 
 	Convey(`Make sure that Parse forbids -field or -limit to be used with -count.`, t, func() {
-		tasksExpectErr([]string{"-count", "-start", "1337", "-field", "items/task_id"}, "-field cannot")
-		tasksExpectErr([]string{"-count", "-start", "1337", "-limit", "100"}, "-limit cannot")
+		expectErr([]string{"-count", "-start", "1337", "-field", "items/task_id"}, "-field cannot")
+		expectErr([]string{"-count", "-start", "1337", "-limit", "100"}, "-limit cannot")
 	})
 }
 
-func TestListTasksOutput(t *testing.T) {
-	tr := tasksRun{}
-	tags := []string{"t:1", "t:2"}
-	tr.tags = tags
-	tr.state = "pending"
-	expectedTasks := []*swarmingv2.TaskResultResponse{
-		&swarmingv2.TaskResultResponse{
-			TaskId: "task1",
-		},
-		&swarmingv2.TaskResultResponse{
-			TaskId: "task2",
-		},
-	}
+func TestTasksOutput(t *testing.T) {
+	t.Parallel()
+
 	service := &testService{
 		listTasks: func(ctx context.Context, i int32, f float64, sq swarmingv2.StateQuery, s []string) ([]*swarmingv2.TaskResultResponse, error) {
-			So(s, ShouldEqual, tags)
+			So(s, ShouldEqual, []string{"t:1", "t:2"})
 			So(swarmingv2.StateQuery_QUERY_PENDING, ShouldEqual, sq)
-			return expectedTasks, nil
+			return []*swarmingv2.TaskResultResponse{
+				{TaskId: "task1"},
+				{TaskId: "task2"},
+			}, nil
+		},
+		countTasks: func(ctx context.Context, f float64, sq swarmingv2.StateQuery, s ...string) (*swarmingv2.TasksCount, error) {
+			return &swarmingv2.TasksCount{
+				Count: 123,
+			}, nil
 		},
 	}
-	ctx := context.Background()
-	Convey(`Expected tasks are outputted to the filewriter`, t, func() {
-		out := new(bytes.Buffer)
-		err := tr.tasks(ctx, service, out)
-		So(err, ShouldBeNil)
-		actual := out.Bytes()
-		expected := `[
+
+	Convey(`Listing tasks`, t, func() {
+		_, _, code, stdout, _ := SubcommandTest(
+			context.Background(),
+			CmdTasks,
+			[]string{"-server", "example.com", "-state", "pending", "-tag", "t:1", "-tag", "t:2"},
+			nil, service,
+		)
+		So(code, ShouldEqual, 0)
+		So(stdout, ShouldEqual, `[
  {
   "task_id": "task1"
  },
@@ -93,7 +89,20 @@ func TestListTasksOutput(t *testing.T) {
   "task_id": "task2"
  }
 ]
-`
-		So(string(actual), ShouldEqual, expected)
+`)
+	})
+
+	Convey(`Counting tasks`, t, func() {
+		_, _, code, stdout, _ := SubcommandTest(
+			context.Background(),
+			CmdTasks,
+			[]string{"-server", "example.com", "-count", "-start", "12345"},
+			nil, service,
+		)
+		So(code, ShouldEqual, 0)
+		So(stdout, ShouldEqual, `{
+ "count": 123
+}
+`)
 	})
 }

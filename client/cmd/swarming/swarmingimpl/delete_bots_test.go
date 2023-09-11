@@ -18,35 +18,38 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+
 	swarming "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
-func TestDeleteBotsParse_NoInput(t *testing.T) {
+func TestDeleteBotsParse(t *testing.T) {
 	t.Parallel()
 
+	expectErr := func(argv []string, errLike string) {
+		_, _, code, _, stderr := SubcommandTest(
+			context.Background(),
+			CmdDeleteBots,
+			append([]string{"-server", "example.com"}, argv...),
+			nil, nil,
+		)
+		So(code, ShouldEqual, 1)
+		So(stderr, ShouldContainSubstring, errLike)
+	}
+
 	Convey(`Make sure that Parse handles when no bot ID is given.`, t, func() {
-		b := deletebotsRun{}
-		b.Init(&testAuthFlags{})
-
-		err := b.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
-		So(err, ShouldBeNil)
-
-		err = b.parse([]string{})
-		So(err, ShouldErrLike, "must specify at least one")
+		expectErr(nil, "expecting at least 1 argument")
 	})
 }
 
 func TestDeleteBots(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Test deleteBotsInList`, t, func() {
-		ctx := context.Background()
-		b := deletebotsRun{force: true}
+	Convey(`Test delete bots`, t, func() {
 		failbotID := "failingbotID"
 		givenbotID := []string{}
 
@@ -68,34 +71,61 @@ func TestDeleteBots(t *testing.T) {
 		}
 
 		Convey(`Test deleting one bot`, func() {
-			err := b.deleteBotsInList(ctx, []string{"testbot123"}, service)
-			So(err, ShouldBeNil)
+			_, _, code, _, _ := SubcommandTest(
+				context.Background(),
+				CmdDeleteBots,
+				[]string{"-server", "example.com", "-f", "testbot123"},
+				nil, service,
+			)
+			So(code, ShouldEqual, 0)
 			So(givenbotID, ShouldResemble, []string{"testbot123"})
 		})
 
 		Convey(`Test deleting few bots`, func() {
-			err := b.deleteBotsInList(ctx, []string{"testbot123", "testbot456", "testbot789"}, service)
-			So(err, ShouldBeNil)
-			So(givenbotID, ShouldResemble, []string{"testbot123", "testbot456", "testbot789"})
+			_, _, code, _, _ := SubcommandTest(
+				context.Background(),
+				CmdDeleteBots,
+				[]string{"-server", "example.com", "-f", "testbot123", "testbot456"},
+				nil, service,
+			)
+			So(code, ShouldEqual, 0)
+			So(givenbotID, ShouldResemble, []string{"testbot123", "testbot456"})
 		})
 
 		Convey(`Test when a bot can't be deleted`, func() {
-			err := b.deleteBotsInList(ctx, []string{failbotID}, service)
+			_, err, code, _, _ := SubcommandTest(
+				context.Background(),
+				CmdDeleteBots,
+				[]string{"-server", "example.com", "-f", failbotID},
+				nil, service,
+			)
+			So(code, ShouldEqual, 1)
 			So(err, ShouldErrLike, "no such bot")
 			So(givenbotID, ShouldResemble, []string{failbotID})
 		})
 
 		Convey(`stop deleting bots immediately when encounter a bot that can't be deleted`, func() {
-			err := b.deleteBotsInList(ctx, []string{"testbot123", "failingbotID", "testbot456", "testbot789"}, service)
+			_, err, code, _, _ := SubcommandTest(
+				context.Background(),
+				CmdDeleteBots,
+				[]string{"-server", "example.com", "-f", "testbot123", "failingbotID", "testbot456", "testbot789"},
+				nil, service,
+			)
+			So(code, ShouldEqual, 1)
 			So(err, ShouldErrLike, "no such bot")
 			So(givenbotID, ShouldResemble, []string{"testbot123", "failingbotID"})
 		})
 
 		Convey(`Test when bot wasn't deleted`, func() {
-			err := b.deleteBotsInList(ctx, []string{"testbot123", "cannotdeletebotID", "testbot456", "testbot789"}, service)
+			_, err, code, _, _ := SubcommandTest(
+				context.Background(),
+				CmdDeleteBots,
+				[]string{"-server", "example.com", "-f", "testbot123", "cannotdeletebotID", "testbot456", "testbot789"},
+				nil, service,
+			)
+			So(code, ShouldEqual, 1)
 			So(err, ShouldErrLike, "not deleted")
 			So(givenbotID, ShouldResemble, []string{"testbot123", "cannotdeletebotID"})
 		})
-
 	})
 }

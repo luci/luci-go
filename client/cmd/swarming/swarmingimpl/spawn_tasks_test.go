@@ -17,67 +17,49 @@ package swarmingimpl
 import (
 	"bytes"
 	"context"
-	"os"
 	"testing"
 
+	"github.com/maruel/subcommands"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 
-	. "github.com/smartystreets/goconvey/convey"
-
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
-func mockEnv(env map[string]string) func() {
-	unset := make([]string, 0, len(env))
-	fixup := make(map[string]string)
-	for k, v := range env {
-		if orig, ok := os.LookupEnv(k); ok {
-			fixup[k] = orig
-		} else {
-			unset = append(unset, k)
-		}
-		os.Setenv(k, v)
-	}
-	return func() {
-		for _, k := range unset {
-			os.Unsetenv(k)
-		}
-		for k, v := range fixup {
-			os.Setenv(k, v)
-		}
-	}
+var testSpawnEnv = subcommands.Env{
+	swarming.UserEnvVar:   {Value: "test", Exists: true},
+	swarming.TaskIDEnvVar: {Value: "293109284abc", Exists: true},
 }
 
-func TestSpawnTasksParse_NoArgs(t *testing.T) {
-	Convey(`Make sure that Parse works with no arguments.`, t, func() {
-		c := spawnTasksRun{}
-		c.Init(&testAuthFlags{})
+func TestSpawnTasksParse(t *testing.T) {
+	t.Parallel()
 
-		err := c.Parse([]string{})
-		So(err, ShouldErrLike, "must provide -server")
-	})
-}
+	expectErr := func(argv []string, errLike string) {
+		_, _, code, _, stderr := SubcommandTest(
+			context.Background(),
+			CmdSpawnTasks,
+			append([]string{"-server", "example.com"}, argv...),
+			nil, nil,
+		)
+		So(code, ShouldEqual, 1)
+		So(stderr, ShouldContainSubstring, errLike)
+	}
 
-func TestSpawnTasksParse_NoInput(t *testing.T) {
-	Convey(`Make sure that Parse handles no input JSON given.`, t, func() {
-		c := spawnTasksRun{}
-		c.Init(&testAuthFlags{})
-
-		err := c.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
-		So(err, ShouldBeNil)
-
-		err = c.Parse([]string{})
-		So(err, ShouldErrLike, "input JSON")
+	Convey(`Wants -json-input`, t, func() {
+		expectErr(nil, "input JSON file is required")
 	})
 }
 
 func TestProcessTasksStream(t *testing.T) {
+	t.Parallel()
+
 	Convey(`Test disallow unknown fields`, t, func() {
 		r := bytes.NewReader([]byte(`{"requests": [{"thing": "does not exist"}]}`))
-		_, err := processTasksStream(r)
+		_, err := processTasksStream(r, testSpawnEnv)
 		So(err, ShouldNotBeNil)
 	})
 
@@ -93,12 +75,9 @@ func TestProcessTasksStream(t *testing.T) {
 				}
 			]
 		}`))
+
 		// Set environment variables to ensure they get picked up.
-		defer mockEnv(map[string]string{
-			UserEnvVar:   "test",
-			TaskIDEnvVar: "293109284abc",
-		})()
-		result, err := processTasksStream(r)
+		result, err := processTasksStream(r, testSpawnEnv)
 		So(err, ShouldBeNil)
 		So(result, ShouldHaveLength, 1)
 		So(result[0], ShouldResembleProto, &swarmingv2.NewTaskRequest{
@@ -118,20 +97,20 @@ func TestCreateNewTasks(t *testing.T) {
 
 	req := &swarmingv2.NewTaskRequest{Name: "hello!"}
 	expectReq := &swarmingv2.TaskRequestResponse{Name: "hello!"}
-	c := context.Background()
+	ctx := context.Background()
 
 	Convey(`Test fatal response`, t, func() {
 		service := &testService{
-			newTask: func(c context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error) {
+			newTask: func(ctx context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error) {
 				return nil, status.Errorf(codes.NotFound, "not found")
 			},
 		}
-		_, err := createNewTasks(c, service, []*swarmingv2.NewTaskRequest{req})
+		_, err := createNewTasks(ctx, service, []*swarmingv2.NewTaskRequest{req})
 		So(err, ShouldErrLike, "not found")
 	})
 
 	goodService := &testService{
-		newTask: func(c context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error) {
+		newTask: func(ctx context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error) {
 			return &swarmingv2.TaskRequestMetadataResponse{
 				Request: &swarmingv2.TaskRequestResponse{
 					Name: req.Name,
@@ -141,7 +120,7 @@ func TestCreateNewTasks(t *testing.T) {
 	}
 
 	Convey(`Test single success`, t, func() {
-		results, err := createNewTasks(c, goodService, []*swarmingv2.NewTaskRequest{req})
+		results, err := createNewTasks(ctx, goodService, []*swarmingv2.NewTaskRequest{req})
 		So(err, ShouldBeNil)
 		So(results, ShouldHaveLength, 1)
 		So(results[0].Request, ShouldResemble, expectReq)
@@ -152,7 +131,7 @@ func TestCreateNewTasks(t *testing.T) {
 		for i := 0; i < 12; i++ {
 			reqs = append(reqs, req)
 		}
-		results, err := createNewTasks(c, goodService, reqs)
+		results, err := createNewTasks(ctx, goodService, reqs)
 		So(err, ShouldBeNil)
 		So(results, ShouldHaveLength, 12)
 		for i := 0; i < 12; i++ {

@@ -19,6 +19,7 @@ package swarmingimpl
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -34,148 +35,131 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/client/casclient"
-	clientswarming "go.chromium.org/luci/client/swarming"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
-	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/lucictx"
 	rdbcli "go.chromium.org/luci/resultdb/cli"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
+
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
+	clientswarming "go.chromium.org/luci/client/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
-// CmdReproduce returns an object fo the `reproduce` subcommand.
-func CmdReproduce(authFlags AuthFlags) *subcommands.Command {
+// CmdReproduce returns an object for the `reproduce` subcommand.
+func CmdReproduce(authFlags base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "reproduce -S <server> <task ID> ",
-		ShortDesc: "reproduces a task locally",
+		UsageLine: "reproduce -S <server> <task ID>",
+		ShortDesc: "fetches the task command and runs it locally",
 		LongDesc:  "Fetches a TaskRequest and runs the same commands that were run on the bot.",
 		CommandRun: func() subcommands.CommandRun {
-			r := &reproduceRun{}
-			r.init(authFlags)
-			return r
+			return base.NewCommandRun(authFlags, &reproduceImpl{
+				cipdDownloader:   downloadCIPDPackages,
+				createInvocation: createInvocation,
+			}, base.Features{
+				MinArgs: 1,
+				MaxArgs: 1,
+				OutputJSON: base.OutputJSON{
+					Enabled: false,
+				},
+			})
 		},
 	}
 }
 
-type reproduceRun struct {
-	commonFlags
-	work string
-	out  string
+type reproduceImpl struct {
+	work        string
+	out         string
+	realm       string
+	resultsHost string
+
+	taskID string
+
 	// cipdDownloader is used in testing to insert a mock CIPD downloader.
 	cipdDownloader func(context.Context, string, map[string]ensure.PackageSlice) error
 	// createInvocation is used in testing to insert a mock method.
 	createInvocation func(context.Context, *http.Client, string, string) (lucictx.Exported, func(), error)
-	realm            string
-	resultsHost      string
 }
 
-func (c *reproduceRun) init(authFlags AuthFlags) {
-	c.commonFlags.Init(authFlags)
-
-	c.Flags.StringVar(&c.work, "work", "work", "Directory to map the task input files into and execute the task.")
-	c.Flags.StringVar(&c.out, "out", "out", "Directory that will hold the task results.")
-	c.Flags.StringVar(&c.realm, "realm", "", "Realm to create invocation in if ResultDB is enabled.")
-	c.Flags.StringVar(&c.resultsHost, "results-host", chromeinfra.ResultDBHost, "Hostname of the ResultDB service to usse. e.g. 'results.api.cr.dev'")
-	c.cipdDownloader = downloadCIPDPackages
-	c.createInvocation = createInvocation
+func (cmd *reproduceImpl) RegisterFlags(fs *flag.FlagSet) {
+	fs.StringVar(&cmd.work, "work", "work", "Directory to map the task input files into and execute the task. Will be cleared!")
+	fs.StringVar(&cmd.out, "out", "out", "Directory that will hold the task results. Will be cleared!")
+	fs.StringVar(&cmd.realm, "realm", "", "Realm to create invocation in if ResultDB is enabled.")
+	fs.StringVar(&cmd.resultsHost, "results-host", chromeinfra.ResultDBHost, "Hostname of the ResultDB service to use. e.g. 'results.api.cr.dev'.")
 }
 
-func (c *reproduceRun) parse(args []string) error {
-	if err := c.commonFlags.Parse(); err != nil {
-		return err
-	}
-	if len(args) != 1 {
-		return errors.Reason("must specify exactly one task id.").Err()
-	}
+func (cmd *reproduceImpl) ParseInputs(args []string, env subcommands.Env) error {
 	var err error
-	if c.work, err = filepath.Abs(c.work); err != nil {
+	if cmd.work, err = filepath.Abs(cmd.work); err != nil {
 		return errors.Annotate(err, "failed to get absolute representation of work directory").Err()
 	}
-	if c.out, err = filepath.Abs(c.out); err != nil {
+	if cmd.out, err = filepath.Abs(cmd.out); err != nil {
 		return errors.Annotate(err, "failed to get absolute representation of out directory").Err()
 	}
+	cmd.taskID = args[0]
 	return nil
 }
 
-func (c *reproduceRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if err := c.parse(args); err != nil {
-		printError(a, err)
-		return 1
-	}
-	if err := c.main(a, args, env); err != nil {
-		printError(a, err)
-		return 1
-	}
-	return 0
-}
-
-func (c *reproduceRun) main(a subcommands.Application, args []string, env subcommands.Env) error {
-	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
-	defer cancel()
-	defer signals.HandleInterrupt(cancel)()
-
-	service, err := c.createSwarmingClient(ctx)
+func (cmd *reproduceImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
+	tr, err := svc.TaskRequest(ctx, cmd.taskID)
 	if err != nil {
-		return err
+		return nil, errors.Annotate(err, "failed to get task request: %s", cmd.taskID).Err()
 	}
 
-	tr, err := service.TaskRequest(ctx, args[0])
-	if err != nil {
-		return errors.Annotate(err, "failed to get task request: %s", args[0]).Err()
-	}
-	// In practice, later slices are less likely to assume that there is a named cache
-	// that is not available locally.
+	// In practice, later slices are less likely to assume that there is a named
+	// cache that is not available locally.
 	properties := tr.TaskSlices[len(tr.TaskSlices)-1].Properties
 
-	cmd, err := c.prepareTaskRequestEnvironment(ctx, properties, service)
+	execCmd, err := cmd.prepareTaskRequestEnvironment(ctx, properties, svc, extra.AuthFlags)
 	if err != nil {
-		return errors.Annotate(err, "failed to create command from task request").Err()
+		return nil, errors.Annotate(err, "failed to create command from task request").Err()
 	}
 
-	return c.executeTaskRequestCommand(ctx, tr, cmd)
+	return nil, cmd.executeTaskRequestCommand(ctx, tr, execCmd, extra.AuthFlags)
 }
 
-func (c *reproduceRun) executeTaskRequestCommand(ctx context.Context, tr *swarmingv2.TaskRequestResponse, cmd *exec.Cmd) error {
+func (cmd *reproduceImpl) executeTaskRequestCommand(ctx context.Context, tr *swarmingv2.TaskRequestResponse, execCmd *exec.Cmd, auth base.AuthFlags) error {
 	// Enable ResultDB if necessary.
 	if tr.Resultdb != nil && tr.Resultdb.Enable {
-		if c.realm == "" {
+		if cmd.realm == "" {
 			return errors.Reason("must provide -realm if task request has ResultDB enabled").Err()
 		}
-		authcli, err := c.authFlags.NewHTTPClient(ctx)
+		authcli, err := auth.NewHTTPClient(ctx)
 		if err != nil {
 			return errors.Annotate(err, "failed to create client").Err()
 		}
-		exported, invFinalizer, err := c.createInvocation(ctx, authcli, c.realm, c.resultsHost)
+		exported, invFinalizer, err := cmd.createInvocation(ctx, authcli, cmd.realm, cmd.resultsHost)
 		if err != nil {
 			return errors.Annotate(err, "failed to create Invocation").Err()
 		}
 		defer invFinalizer()
-		exported.SetInCmd(cmd)
-		defer exported.Close()
+		exported.SetInCmd(execCmd)
+		defer func() { _ = exported.Close() }()
 	}
 
-	if err := cmd.Start(); err != nil {
-		return errors.Annotate(err, "failed to start command: %v", cmd).Err()
+	if err := execCmd.Start(); err != nil {
+		return errors.Annotate(err, "failed to start command: %v", execCmd).Err()
 	}
-	if err := cmd.Wait(); err != nil {
-		return errors.Annotate(err, "failed to complete command: %v", cmd).Err()
+	if err := execCmd.Wait(); err != nil {
+		return errors.Annotate(err, "failed to complete command: %v", execCmd).Err()
 	}
 	return nil
 }
 
-func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, properties *swarmingv2.TaskProperties, service swarmingService) (*exec.Cmd, error) {
-	execDir := c.work
+func (cmd *reproduceImpl) prepareTaskRequestEnvironment(ctx context.Context, properties *swarmingv2.TaskProperties, svc swarming.Swarming, auth base.AuthFlags) (*exec.Cmd, error) {
+	execDir := cmd.work
 	if properties.RelativeCwd != "" {
+		// TODO(vadimsh): Forbid "..".
 		execDir = filepath.Join(execDir, properties.RelativeCwd)
 	}
 	if err := prepareDir(execDir); err != nil {
 		return nil, err
 	}
-	if err := prepareDir(c.out); err != nil {
+	if err := prepareDir(cmd.out); err != nil {
 		return nil, err
 	}
 
@@ -193,7 +177,7 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, proper
 	for _, prefix := range properties.EnvPrefixes {
 		paths := make([]string, 0, len(prefix.Value)+1)
 		for _, value := range prefix.Value {
-			paths = append(paths, filepath.Clean(filepath.Join(c.work, value)))
+			paths = append(paths, filepath.Clean(filepath.Join(cmd.work, value)))
 		}
 		cur, ok := cmdEnvMap.Lookup(prefix.Key)
 		if ok {
@@ -204,12 +188,12 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, proper
 
 	// Support RBE-CAS input in task request.
 	if properties.CasInputRoot != nil {
-		cascli, err := c.authFlags.NewRBEClient(ctx, casclient.AddrProd, properties.CasInputRoot.CasInstance)
+		cascli, err := auth.NewRBEClient(ctx, casclient.AddrProd, properties.CasInputRoot.CasInstance)
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to fetch RBE-CAS client").Err()
 		}
-		if _, err := service.FilesFromCAS(ctx, c.work, cascli, properties.CasInputRoot); err != nil {
-			return nil, errors.Annotate(err, "failed to fetched friles from RBE-CAS").Err()
+		if _, err := svc.FilesFromCAS(ctx, cmd.work, cascli, properties.CasInputRoot); err != nil {
+			return nil, errors.Annotate(err, "failed to fetch files from RBE-CAS").Err()
 		}
 	}
 
@@ -230,24 +214,24 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, proper
 				slicesByPath[path], ensure.PackageDef{UnresolvedVersion: pkg.Version, PackageTemplate: pkg.PackageName})
 		}
 
-		if err := c.cipdDownloader(ctx, c.work, slicesByPath); err != nil {
+		if err := cmd.cipdDownloader(ctx, cmd.work, slicesByPath); err != nil {
 			return nil, err
 		}
 	}
 
-	// Create a Comand that can run the task request.
-	processedCmds, err := clientswarming.ProcessCommand(ctx, properties.Command, c.out, "")
+	// Create a Command that can run the task request.
+	processedCmds, err := clientswarming.ProcessCommand(ctx, properties.Command, cmd.out, "")
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to process command in properties").Err()
 	}
 
-	cmd := exec.CommandContext(ctx, processedCmds[0], processedCmds[1:]...)
-	cmd.Env = cmdEnvMap.Sorted()
-	cmd.Dir = execDir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	execCmd := exec.CommandContext(ctx, processedCmds[0], processedCmds[1:]...)
+	execCmd.Env = cmdEnvMap.Sorted()
+	execCmd.Dir = execDir
+	execCmd.Stdout = os.Stdout
+	execCmd.Stderr = os.Stderr
 
-	return cmd, nil
+	return execCmd, nil
 }
 
 func downloadCIPDPackages(ctx context.Context, workdir string, slicesByPath map[string]ensure.PackageSlice) error {
@@ -289,6 +273,8 @@ func prepareDir(dir string) error {
 }
 
 func createInvocation(ctx context.Context, authcli *http.Client, realm string, resultsHost string) (lucictx.Exported, func(), error) {
+	// TODO(vadimsh): Construct prpc.Client centrally in cmdbase with correct
+	// user agent.
 	recorder := resultpb.NewRecorderPRPCClient(&prpc.Client{
 		C:       authcli,
 		Host:    resultsHost,

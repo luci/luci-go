@@ -19,8 +19,8 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
+
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 

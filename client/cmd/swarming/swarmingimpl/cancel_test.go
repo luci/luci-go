@@ -19,36 +19,31 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
+
 	swarming "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func TestCancelTaskParse(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Test CancelTaskParse when there's no input or too many inputs`, t, func() {
+	expectErr := func(argv []string, errLike string) {
+		_, _, code, _, stderr := SubcommandTest(
+			context.Background(),
+			CmdCancelTask,
+			append([]string{"-server", "example.com"}, argv...),
+			nil, nil,
+		)
+		So(code, ShouldEqual, 1)
+		So(stderr, ShouldContainSubstring, errLike)
+	}
 
-		t := cancelRun{}
-		t.Init(&testAuthFlags{})
+	Convey(`Make sure that Parse handles when no task ID is given.`, t, func() {
+		expectErr(nil, "expecting exactly 1 argument")
+	})
 
-		err := t.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
-		So(err, ShouldBeNil)
-
-		Convey(`Test when one task ID is given.`, func() {
-			err = t.parse([]string{"onetaskid111"})
-			So(err, ShouldBeNil)
-		})
-
-		Convey(`Make sure that Parse handles when no task ID is given.`, func() {
-			err = t.parse([]string{})
-			So(err, ShouldErrLike, "must specify a swarming task ID")
-		})
-
-		Convey(`Make sure that Parse handles when too many task ID is given.`, func() {
-			err = t.parse([]string{"toomany234", "taskids567"})
-			So(err, ShouldErrLike, "specify only one")
-		})
+	Convey(`Make sure that Parse handles when too many task ID is given.`, t, func() {
+		expectErr([]string{"toomany234", "taskids567"}, "expecting exactly 1 argument")
 	})
 }
 
@@ -56,9 +51,6 @@ func TestCancelTask(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Cancel`, t, func() {
-		ctx := context.Background()
-		t := cancelRun{}
-
 		var givenTaskID string
 		var givenKillRunning bool
 		failTaskID := "failtask"
@@ -80,21 +72,36 @@ func TestCancelTask(t *testing.T) {
 		}
 
 		Convey(`Cancel task`, func() {
-			err := t.cancelTask(ctx, "task", service)
-			So(err, ShouldBeNil)
+			_, _, code, _, _ := SubcommandTest(
+				context.Background(),
+				CmdCancelTask,
+				[]string{"-server", "example.com", "task"},
+				nil, service,
+			)
+			So(code, ShouldEqual, 0)
 			So(givenTaskID, ShouldEqual, "task")
 		})
 
 		Convey(`Cancel running task `, func() {
-			t.killRunning = true
-			err := t.cancelTask(ctx, "runningtask", service)
-			So(err, ShouldBeNil)
+			_, _, code, _, _ := SubcommandTest(
+				context.Background(),
+				CmdCancelTask,
+				[]string{"-server", "example.com", "-kill-running", "runningtask"},
+				nil, service,
+			)
+			So(code, ShouldEqual, 0)
 			So(givenTaskID, ShouldEqual, "runningtask")
 			So(givenKillRunning, ShouldEqual, true)
 		})
 
 		Convey(`Cancel task was not OK`, func() {
-			err := t.cancelTask(ctx, failTaskID, service)
+			_, err, code, _, _ := SubcommandTest(
+				context.Background(),
+				CmdCancelTask,
+				[]string{"-server", "example.com", failTaskID},
+				nil, service,
+			)
+			So(code, ShouldEqual, 1)
 			So(err, ShouldErrLike, "failed to cancel task")
 			So(givenTaskID, ShouldEqual, failTaskID)
 		})

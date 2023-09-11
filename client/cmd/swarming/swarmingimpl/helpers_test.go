@@ -15,16 +15,20 @@
 package swarmingimpl
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"net/http"
 
 	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
+	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
-var _ swarmingService = (*testService)(nil)
+var _ swarming.Swarming = (*testService)(nil)
 
 type testService struct {
 	newTask      func(context.Context, *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error)
@@ -98,7 +102,7 @@ func (s testService) ListBotTasks(ctx context.Context, botID string, limit int32
 	return s.listBotTasks(ctx, botID, limit, start, state)
 }
 
-var _ AuthFlags = (*testAuthFlags)(nil)
+var _ base.AuthFlags = (*testAuthFlags)(nil)
 
 type testAuthFlags struct{}
 
@@ -112,4 +116,32 @@ func (af *testAuthFlags) NewHTTPClient(_ context.Context) (*http.Client, error) 
 
 func (af *testAuthFlags) NewRBEClient(_ context.Context, _ string, _ string) (*rbeclient.Client, error) {
 	return nil, nil
+}
+
+// SubcommandTest runs the subcommand in a test mode, mocking dependencies.
+//
+// Returns its result (whatever Execute returns), an error, exit code, and
+// captured stdout and stderr.
+func SubcommandTest(ctx context.Context, cmd func(base.AuthFlags) *subcommands.Command, args []string, env subcommands.Env, svc swarming.Swarming) (res any, err error, code int, stdout, stderr string) {
+	var stdoutBuf bytes.Buffer
+	var stderrBuf bytes.Buffer
+
+	code = subcommands.Run(&subcommands.DefaultApplication{
+		Name: "testing-app",
+		Commands: []*subcommands.Command{
+			{
+				UsageLine: "testing-cmd",
+				CommandRun: func() subcommands.CommandRun {
+					if svc == nil {
+						svc = &testService{}
+					}
+					cr := cmd(&testAuthFlags{}).CommandRun().(*base.CommandRun)
+					cr.TestingMocks(ctx, svc, env, &res, &err, &stdoutBuf, &stderrBuf)
+					return cr
+				},
+			},
+		},
+	}, append([]string{"testing-cmd"}, args...))
+
+	return res, err, code, stdoutBuf.String(), stderrBuf.String()
 }

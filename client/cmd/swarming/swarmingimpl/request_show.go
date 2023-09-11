@@ -16,75 +16,53 @@ package swarmingimpl
 
 import (
 	"context"
-	"fmt"
-	"os"
+	"flag"
 
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/system/signals"
+
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
+	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // CmdRequestShow returns an object for the `request-show` subcommand.
-func CmdRequestShow(authFlags AuthFlags) *subcommands.Command {
+func CmdRequestShow(authFlags base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "request-show <task_id>",
-		ShortDesc: "returns properties of a request",
-		LongDesc:  "Returns the properties, what, when, by who, about a request on the Swarming server.",
+		UsageLine: "request-show -S <server> <task ID>",
+		ShortDesc: "shows task request details",
+		LongDesc:  "Shows the properties, what, when, by who, about a task request.",
 		CommandRun: func() subcommands.CommandRun {
-			r := &requestShowRun{}
-			r.commonFlags.Init(authFlags)
-			return r
+			return base.NewCommandRun(authFlags, &requestShowImpl{}, base.Features{
+				MinArgs: 1,
+				MaxArgs: 1,
+				OutputJSON: base.OutputJSON{
+					Enabled:         true,
+					DefaultToStdout: true,
+				},
+			})
 		},
 	}
 }
 
-type requestShowRun struct {
-	commonFlags
+type requestShowImpl struct {
+	taskID string
 }
 
-func (c *requestShowRun) Parse(_ subcommands.Application, args []string) error {
-	if err := c.commonFlags.Parse(); err != nil {
-		return err
-	}
-	if len(args) != 1 {
-		return errors.Reason("must only provide a task id").Err()
-	}
+func (cmd *requestShowImpl) RegisterFlags(fs *flag.FlagSet) {
+	// Nothing.
+}
+
+func (cmd *requestShowImpl) ParseInputs(args []string, env subcommands.Env) error {
+	cmd.taskID = args[0]
 	return nil
 }
 
-func (c *requestShowRun) main(_ subcommands.Application, taskID string) error {
-	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
-	defer cancel()
-	defer signals.HandleInterrupt(cancel)()
-
-	service, err := c.createSwarmingClient(ctx)
+func (cmd *requestShowImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
+	request, err := svc.TaskRequest(ctx, cmd.taskID)
 	if err != nil {
-		return err
+		return nil, errors.Annotate(err, "failed to get task request. task ID = %s", cmd.taskID).Err()
 	}
-
-	request, err := service.TaskRequest(ctx, taskID)
-	if err != nil {
-		return errors.Annotate(err, fmt.Sprintf("failed to get task request. task ID = %s", taskID)).Err()
-	}
-	b, err := DefaultProtoMarshalOpts.Marshal(request)
-	if err != nil {
-		return errors.Annotate(err, "faled to marshal task request").Err()
-	}
-
-	fmt.Println(string(b))
-
-	return nil
-}
-
-func (c *requestShowRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
-	if err := c.Parse(a, args); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	if err := c.main(a, args[0]); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	return 0
+	return &ProtoJSONAdapter[*swarmingv2.TaskRequestResponse]{Proto: request}, nil
 }

@@ -16,15 +16,13 @@ package swarmingimpl
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
+	"net/url"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/google/uuid"
@@ -35,27 +33,38 @@ import (
 	"go.chromium.org/luci/common/flag/flagenum"
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
-	"go.chromium.org/luci/common/system/signals"
+	"go.chromium.org/luci/common/logging"
 
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // CmdTrigger returns an object for the `trigger` subcommand.
-func CmdTrigger(authFlags AuthFlags) *subcommands.Command {
+func CmdTrigger(authFlags base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "trigger <options>",
-		ShortDesc: "Triggers a Swarming task",
-		LongDesc:  "Triggers a Swarming task.",
+		UsageLine: "trigger -S <server> <parameters>",
+		ShortDesc: "triggers a single Swarming task",
+		LongDesc:  "Triggers a single Swarming task.",
 		CommandRun: func() subcommands.CommandRun {
-			r := &triggerRun{}
-			r.Init(authFlags)
-			return r
+			return base.NewCommandRun(authFlags, &triggerImpl{}, base.Features{
+				MinArgs:         0,
+				MaxArgs:         base.Unlimited,
+				MeasureDuration: true,
+				OutputJSON: base.OutputJSON{
+					Enabled:             true,
+					DeprecatedAliasFlag: "dump-json",
+					DefaultToStdout:     false,
+				},
+			})
 		},
 	}
 }
 
 // mapToArray converts a stringmapflag.Value into an array of
 // swarmingv2.StringPair, sorted by key and then value.
+//
+// TODO(vadimsh): Move to utils.
 func mapToArray(m stringmapflag.Value) []*swarmingv2.StringPair {
 	a := make([]*swarmingv2.StringPair, 0, len(m))
 	for k, v := range m {
@@ -71,6 +80,8 @@ func mapToArray(m stringmapflag.Value) []*swarmingv2.StringPair {
 
 // listToStringListPairArray converts a stringlistflag.Flag into an array of
 // swarmingv2.StringListPair, sorted by key.
+//
+// TODO(vadimsh): Move to utils.
 func listToStringListPairArray(m stringlistflag.Flag) []*swarmingv2.StringListPair {
 	prefixes := make(map[string][]string)
 	for _, f := range m {
@@ -96,6 +107,8 @@ func listToStringListPairArray(m stringlistflag.Flag) []*swarmingv2.StringListPa
 // namePartFromDimensions creates a string from a map of dimensions that can
 // be used as part of the task name.  The dimensions are first sorted as
 // described in mapToArray().
+//
+// TODO(vadimsh): Move to utils.
 func namePartFromDimensions(m stringmapflag.Value) string {
 	a := mapToArray(m)
 	pairs := make([]string, 0, len(a))
@@ -134,7 +147,7 @@ func (f *optionalDimension) String() string {
 	if f == nil || f.isEmpty() {
 		return ""
 	}
-	return fmt.Sprintf("kv=%+v expiration=%d", *f.kv, f.expiration)
+	return fmt.Sprintf("%s=%s:%d", f.kv.Key, f.kv.Value, f.expiration)
 }
 
 // Set implements the flag.Value interface.
@@ -166,9 +179,7 @@ func (f *optionalDimension) isEmpty() bool {
 	return f.kv == nil
 }
 
-type triggerRun struct {
-	commonFlags
-
+type triggerImpl struct {
 	// Task properties.
 	casInstance       string
 	digest            string
@@ -196,159 +207,100 @@ type triggerRun struct {
 	expiration     int
 	enableResultDB bool
 	realm          string
+	cmd            []string
 
-	// Other.
-	dumpJSON string
+	// Env.
+	parentTaskID string
 }
 
-func (c *triggerRun) Init(authFlags AuthFlags) {
-	c.commonFlags.Init(authFlags)
+func (cmd *triggerImpl) RegisterFlags(fs *flag.FlagSet) {
 	// Task properties.
-	c.Flags.StringVar(&c.casInstance, "cas-instance", "", "CAS instance (GCP). Format is \"projects/<project_id>/instances/<instance_id>\". Default is constructed from -server.")
-	c.Flags.StringVar(&c.digest, "digest", "", "Digest of root directory uploaded to CAS `<Hash>/<Size>`.")
-	c.Flags.Var(&c.dimensions, "dimension", "Dimension to select the right kind of bot. In the form of `key=value`")
-	c.Flags.Var(&c.dimensions, "d", "Alias for -dimension.")
-	c.Flags.Var(&c.env, "env", "Environment variables to set.")
-	c.Flags.Var(&c.envPrefix, "env-prefix", "Environment prefixes to set.")
-	c.Flags.BoolVar(&c.idempotent, "idempotent", false, "When set, the server will actively try to find a previous task with the same parameter and return this result instead if possible.")
-	c.containmentType = "NONE"
-	c.Flags.Var(&c.containmentType, "containment-type", "Specify which type of process containment to use. Choices are: "+containmentChoices.Choices())
-	c.Flags.IntVar(&c.hardTimeout, "hard-timeout", 60*60, "Seconds to allow the task to complete.")
-	c.Flags.IntVar(&c.ioTimeout, "io-timeout", 20*60, "Seconds to allow the task to be silent.")
-	c.Flags.IntVar(&c.gracePeriod, "grace-period", 30, "Seconds to wait after sending SIGBREAK.")
-	c.Flags.Var(&c.cipdPackage, "cipd-package",
+	fs.StringVar(&cmd.casInstance, "cas-instance", "", "CAS instance (GCP). Format is \"projects/<project_id>/instances/<instance_id>\". Default is constructed from -server.")
+	fs.StringVar(&cmd.digest, "digest", "", "Digest of root directory uploaded to CAS `<Hash>/<Size>`.")
+	fs.Var(&cmd.dimensions, "dimension", "Dimension to select the right kind of bot. In the form of `key=value`")
+	fs.Var(&cmd.dimensions, "d", "Alias for -dimension.")
+	fs.Var(&cmd.env, "env", "Environment variables to set.")
+	fs.Var(&cmd.envPrefix, "env-prefix", "Environment prefixes to set.")
+	fs.BoolVar(&cmd.idempotent, "idempotent", false, "When set, the server will actively try to find a previous task with the same parameter and return this result instead if possible.")
+	cmd.containmentType = "NONE"
+	fs.Var(&cmd.containmentType, "containment-type", "Specify which type of process containment to use. Choices are: "+containmentChoices.Choices())
+	fs.IntVar(&cmd.hardTimeout, "hard-timeout", 60*60, "Seconds to allow the task to complete.")
+	fs.IntVar(&cmd.ioTimeout, "io-timeout", 20*60, "Seconds to allow the task to be silent.")
+	fs.IntVar(&cmd.gracePeriod, "grace-period", 30, "Seconds to wait after sending SIGBREAK.")
+	fs.Var(&cmd.cipdPackage, "cipd-package",
 		"(repeatable) CIPD packages to install on the swarming bot. This takes a parameter of `[installdir:]pkgname=version`. "+
 			"Using an empty version will remove the package. The installdir is optional and defaults to '.'.")
-	c.Flags.Var(&c.namedCache, "named-cache", "This takes a parameter of `name=cachedir`.")
-	c.Flags.Var(&c.outputs, "output", "(repeatable) Specify an output file or directory that can be retrieved via collect.")
-	c.Flags.Var(&c.optionalDimension, "optional-dimension", "Format: <key>=<value>:<expiration>. See -expiration for the requirement.")
-	c.Flags.StringVar(&c.relativeCwd, "relative-cwd", "", "Use this flag instead of the isolated 'relative_cwd'.")
-	c.Flags.StringVar(&c.serviceAccount, "service-account", "",
+	fs.Var(&cmd.namedCache, "named-cache", "This takes a parameter of `name=cachedir`.")
+	fs.Var(&cmd.outputs, "output", "(repeatable) Specify an output file or directory that can be retrieved via collect.")
+	fs.Var(&cmd.optionalDimension, "optional-dimension", "Format: <key>=<value>:<expiration>. See -expiration for the requirement.")
+	fs.StringVar(&cmd.relativeCwd, "relative-cwd", "", "Use this flag instead of the isolated 'relative_cwd'.")
+	fs.StringVar(&cmd.serviceAccount, "service-account", "",
 		`Email of a service account to run the task as, or literal "bot" string to indicate that the task should use the same account the bot itself is using to authenticate to Swarming. Don't use task service accounts if not given (default).`)
-	c.Flags.StringVar(&c.secretBytesPath, "secret-bytes-path", "", "Specify the secret bytes file path.")
+	fs.StringVar(&cmd.secretBytesPath, "secret-bytes-path", "", "Specify the secret bytes file path.")
 
 	// Task request.
-	c.Flags.StringVar(&c.taskName, "task-name", "", "Display name of the task. Defaults to <base_name>/<dimensions>/<isolated hash>/<timestamp> if an  isolated file is provided, if a hash is provided, it defaults to <user>/<dimensions>/<isolated hash>/<timestamp>")
-	c.Flags.IntVar(&c.priority, "priority", 200, "The lower value, the more important the task.")
-	c.Flags.Var(&c.tags, "tag", "Tags to assign to the task. In the form of `key:value`.")
-	c.Flags.StringVar(&c.user, "user", "", "User associated with the task. Defaults to authenticated user on the server.")
-	c.Flags.IntVar(&c.expiration, "expiration", 6*60*60, "Seconds to allow the task to be pending for a bot to run before this task request expires.")
-	c.Flags.BoolVar(&c.enableResultDB, "enable-resultdb", false, "Enable ResultDB for this task.")
-	c.Flags.StringVar(&c.realm, "realm", "", "Realm name for this task.")
-
-	// Other.
-	c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Dump details about the triggered task(s) to this file as json.")
+	fs.StringVar(&cmd.taskName, "task-name", "", "Display name of the task. Defaults to <base_name>/<dimensions>/<isolated hash>/<timestamp> if an  isolated file is provided, if a hash is provided, it defaults to <user>/<dimensions>/<isolated hash>/<timestamp>")
+	fs.IntVar(&cmd.priority, "priority", 200, "The lower value, the more important the task.")
+	fs.Var(&cmd.tags, "tag", "Tags to assign to the task. In the form of `key:value`.")
+	fs.StringVar(&cmd.user, "user", "", "User associated with the task. Defaults to authenticated user on the server.")
+	fs.IntVar(&cmd.expiration, "expiration", 6*60*60, "Seconds to allow the task to be pending for a bot to run before this task request expires.")
+	fs.BoolVar(&cmd.enableResultDB, "enable-resultdb", false, "Enable ResultDB for this task.")
+	fs.StringVar(&cmd.realm, "realm", "", "Realm name for this task.")
 }
 
-func (c *triggerRun) Parse(args []string) error {
-	var err error
-	if err := c.commonFlags.Parse(); err != nil {
-		return err
+func (cmd *triggerImpl) ParseInputs(args []string, env subcommands.Env) error {
+	if len(cmd.dimensions) == 0 {
+		return errors.Reason("please specify at least one dimension via -dimension").Err()
 	}
-
-	// Validate options and args.
-	if c.dimensions == nil {
-		return errors.Reason("please at least specify one dimension").Err()
-	}
-
 	if len(args) == 0 {
 		return errors.Reason("please specify command after '--'").Err()
 	}
-
-	if len(c.user) == 0 {
-		c.user = os.Getenv(UserEnvVar)
+	if len(cmd.user) == 0 {
+		cmd.user = env[swarming.UserEnvVar].Value
 	}
-
-	return err
-}
-
-func (c *triggerRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if err := c.Parse(args); err != nil {
-		printError(a, err)
-		return 1
-	}
-	if err := c.main(a, args, env); err != nil {
-		printError(a, err)
-		return 1
-	}
-	return 0
+	cmd.cmd = args
+	cmd.parentTaskID = env[swarming.TaskIDEnvVar].Value
+	return nil
 }
 
 type triggerResult = ProtoJSONAdapter[*swarmingv2.TaskRequestMetadataResponse]
 
-func (c *triggerRun) main(a subcommands.Application, args []string, env subcommands.Env) (rerr error) {
-	start := time.Now()
-	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
-	defer cancel()
-	defer signals.HandleInterrupt(cancel)()
-
-	request, err := c.processTriggerOptions(args, env)
+func (cmd *triggerImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
+	request, err := cmd.processTriggerOptions(cmd.cmd, extra.ServerURL)
 	if err != nil {
-		return errors.Annotate(err, "failed to process trigger options").Err()
+		return nil, errors.Annotate(err, "failed to process trigger options").Err()
 	}
 
-	service, err := c.createSwarmingClient(ctx)
+	result, err := svc.NewTask(ctx, request)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	result, err := service.NewTask(ctx, request)
-	if err != nil {
-		return err
+	if extra.OutputJSON != "" {
+		logging.Infof(ctx, "To collect results use:\n"+
+			"  %s collect -server %s -output-dir out -task-summary-json summary.json -requests-json %s",
+			os.Args[0], extra.ServerURL, extra.OutputJSON)
+	} else {
+		logging.Infof(ctx, "To collect results use:\n"+
+			"  %s collect -server %s -output-dir out -task-summary-json summary.json %s",
+			os.Args[0], extra.ServerURL, result.TaskId)
 	}
+	logging.Infof(ctx, "The task status:\n"+
+		"  %s/task?id=%s\n", extra.ServerURL, result.TaskId)
 
-	if c.dumpJSON != "" {
-		dump, err := os.Create(c.dumpJSON)
-		if err != nil {
-			return err
-		}
-		defer func() {
-			if err := dump.Close(); rerr == nil {
-				rerr = err
-			}
-		}()
-		tr := &triggerResult{
-			Proto: result,
-		}
-		data := TriggerResults{Tasks: []*triggerResult{tr}}
-		b, err := json.MarshalIndent(&data, "", DefaultIndent)
-		if err != nil {
-			return errors.Annotate(err, "marshalling trigger result").Err()
-		}
-
-		_, err = dump.Write(b)
-		if err != nil {
-			return errors.Annotate(err, "writing json dump").Err()
-		}
-
-		if !c.defaultFlags.Quiet {
-			fmt.Println("To collect results use:")
-			fmt.Printf("  %s collect -server %s -output-dir out -task-summary-json summary.json -requests-json %s\n", os.Args[0], c.serverURL, c.dumpJSON)
-		}
-	} else if !c.defaultFlags.Quiet {
-		fmt.Println("To collect results use:")
-		fmt.Printf("  swarming collect -server %s -output-dir out -task-summary-json summary.json %s", c.serverURL, result.TaskId)
-		fmt.Println()
-	}
-
-	if !c.defaultFlags.Quiet {
-		fmt.Println("You can also see the task status in")
-		fmt.Printf("  %s/task?id=%s\n", c.serverURL, result.TaskId)
-	}
-
-	duration := time.Since(start)
-	log.Printf("Duration: %s\n", duration.Round(time.Millisecond))
-	return nil
+	return TriggerResults{Tasks: []*triggerResult{{result}}}, nil
 }
 
-func (c *triggerRun) createTaskSliceForOptionalDimension(properties *swarmingv2.TaskProperties) (*swarmingv2.TaskSlice, error) {
-	if c.optionalDimension.isEmpty() {
+func (cmd *triggerImpl) createTaskSliceForOptionalDimension(properties *swarmingv2.TaskProperties) (*swarmingv2.TaskSlice, error) {
+	if cmd.optionalDimension.isEmpty() {
 		return nil, nil
 	}
-	optDim := c.optionalDimension.kv
-	exp := c.optionalDimension.expiration
+	optDim := cmd.optionalDimension.kv
+	exp := cmd.optionalDimension.expiration
 
 	// Deep copy properties
+	//
+	// TODO(vadimsh): Use proto.Clone.
 	pj, err := protojson.Marshal(properties)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to marshall properties").Err()
@@ -366,35 +318,35 @@ func (c *triggerRun) createTaskSliceForOptionalDimension(properties *swarmingv2.
 	}, nil
 }
 
-func (c *triggerRun) processTriggerOptions(commands []string, env subcommands.Env) (*swarmingv2.NewTaskRequest, error) {
-	if c.taskName == "" {
-		c.taskName = fmt.Sprintf("%s/%s", c.user, namePartFromDimensions(c.dimensions))
+func (cmd *triggerImpl) processTriggerOptions(commands []string, serverURL *url.URL) (*swarmingv2.NewTaskRequest, error) {
+	if cmd.taskName == "" {
+		cmd.taskName = fmt.Sprintf("%s/%s", cmd.user, namePartFromDimensions(cmd.dimensions))
 	}
 
 	var err error
 	var secretBytes []byte
-	if c.secretBytesPath != "" {
-		secretBytes, err = os.ReadFile(c.secretBytesPath)
+	if cmd.secretBytesPath != "" {
+		secretBytes, err = os.ReadFile(cmd.secretBytesPath)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to read secret bytes from %s", c.secretBytesPath).Err()
+			return nil, errors.Annotate(err, "failed to read secret bytes from %s", cmd.secretBytesPath).Err()
 		}
 	}
 
 	var CASRef *swarmingv2.CASReference
-	if c.digest != "" {
-		d, err := digest.NewFromString(c.digest)
+	if cmd.digest != "" {
+		d, err := digest.NewFromString(cmd.digest)
 		if err != nil {
-			return nil, errors.Annotate(err, "invalid digest: %s", c.digest).Err()
+			return nil, errors.Annotate(err, "invalid digest: %s", cmd.digest).Err()
 		}
 
-		casInstance := c.casInstance
+		casInstance := cmd.casInstance
 		if casInstance == "" {
-			// Infer cas instance from the swarming server URL.
+			// Infer CAS instance from the swarming server URL.
 			const appspot = ".appspot.com"
-			if !strings.HasSuffix(c.serverURL.Host, appspot) {
-				return nil, errors.Reason("server url should have '%s' suffix: %s", appspot, c.serverURL).Err()
+			if !strings.HasSuffix(serverURL.Host, appspot) {
+				return nil, errors.Reason("server url should have '%s' suffix: %s", appspot, serverURL).Err()
 			}
-			casInstance = "projects/" + strings.TrimSuffix(c.serverURL.Host, appspot) + "/instances/default_instance"
+			casInstance = "projects/" + strings.TrimSuffix(serverURL.Host, appspot) + "/instances/default_instance"
 		}
 
 		CASRef = &swarmingv2.CASReference{
@@ -408,25 +360,25 @@ func (c *triggerRun) processTriggerOptions(commands []string, env subcommands.En
 
 	properties := swarmingv2.TaskProperties{
 		Command:              commands,
-		RelativeCwd:          c.relativeCwd,
-		Dimensions:           mapToArray(c.dimensions),
-		Env:                  mapToArray(c.env),
-		EnvPrefixes:          listToStringListPairArray(c.envPrefix),
-		ExecutionTimeoutSecs: int32(c.hardTimeout),
-		GracePeriodSecs:      int32(c.gracePeriod),
-		Idempotent:           c.idempotent,
+		RelativeCwd:          cmd.relativeCwd,
+		Dimensions:           mapToArray(cmd.dimensions),
+		Env:                  mapToArray(cmd.env),
+		EnvPrefixes:          listToStringListPairArray(cmd.envPrefix),
+		ExecutionTimeoutSecs: int32(cmd.hardTimeout),
+		GracePeriodSecs:      int32(cmd.gracePeriod),
+		Idempotent:           cmd.idempotent,
 		CasInputRoot:         CASRef,
-		Outputs:              c.outputs,
-		IoTimeoutSecs:        int32(c.ioTimeout),
+		Outputs:              cmd.outputs,
+		IoTimeoutSecs:        int32(cmd.ioTimeout),
 		Containment: &swarmingv2.Containment{
-			ContainmentType: swarmingv2.ContainmentType(swarmingv2.ContainmentType_value[c.containmentType.String()]),
+			ContainmentType: swarmingv2.ContainmentType(swarmingv2.ContainmentType_value[cmd.containmentType.String()]),
 		},
 		SecretBytes: secretBytes,
 	}
 
-	if len(c.cipdPackage) > 0 {
+	if len(cmd.cipdPackage) > 0 {
 		var pkgs []*swarmingv2.CipdPackage
-		for k, v := range c.cipdPackage {
+		for k, v := range cmd.cipdPackage {
 			s := strings.SplitN(k, ":", 2)
 			pkg := swarmingv2.CipdPackage{
 				PackageName: s[len(s)-1],
@@ -452,7 +404,7 @@ func (c *triggerRun) processTriggerOptions(commands []string, env subcommands.En
 		properties.CipdInput = &swarmingv2.CipdInput{Packages: pkgs}
 	}
 
-	for name, path := range c.namedCache {
+	for name, path := range cmd.namedCache {
 		properties.Caches = append(properties.Caches,
 			&swarmingv2.CacheEntry{
 				Name: name,
@@ -475,11 +427,11 @@ func (c *triggerRun) processTriggerOptions(commands []string, env subcommands.En
 	}
 
 	var taskSlices []*swarmingv2.TaskSlice
-	taskSlice, err := c.createTaskSliceForOptionalDimension(&properties)
+	taskSlice, err := cmd.createTaskSliceForOptionalDimension(&properties)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to createTaskSliceForOptionalDimension").Err()
 	}
-	baseExpiration := int32(c.expiration)
+	baseExpiration := int32(cmd.expiration)
 	if taskSlice != nil {
 		taskSlices = append(taskSlices, taskSlice)
 
@@ -494,17 +446,17 @@ func (c *triggerRun) processTriggerOptions(commands []string, env subcommands.En
 	})
 
 	return &swarmingv2.NewTaskRequest{
-		Name:           c.taskName,
-		ParentTaskId:   env[TaskIDEnvVar].Value,
-		Priority:       int32(c.priority),
-		ServiceAccount: c.serviceAccount,
-		Tags:           c.tags,
+		Name:           cmd.taskName,
+		ParentTaskId:   cmd.parentTaskID,
+		Priority:       int32(cmd.priority),
+		ServiceAccount: cmd.serviceAccount,
+		Tags:           cmd.tags,
 		TaskSlices:     taskSlices,
-		User:           c.user,
+		User:           cmd.user,
 		RequestUuid:    randomUUID.String(),
 		Resultdb: &swarmingv2.ResultDBCfg{
-			Enable: c.enableResultDB,
+			Enable: cmd.enableResultDB,
 		},
-		Realm: c.realm,
+		Realm: cmd.realm,
 	}, nil
 }

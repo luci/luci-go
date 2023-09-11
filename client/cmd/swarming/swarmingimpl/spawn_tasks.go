@@ -17,126 +17,81 @@ package swarmingimpl
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"io"
-	"log"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/common/system/signals"
+
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // CmdSpawnTasks returns an object for the `spawn-tasks` subcommand.
-func CmdSpawnTasks(authFlags AuthFlags) *subcommands.Command {
+func CmdSpawnTasks(authFlags base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "spawn-tasks <options>",
-		ShortDesc: "Spawns a set of Swarming tasks",
-		LongDesc:  "Spawns a set of Swarming tasks given a JSON file.",
+		UsageLine: "spawn-tasks -S <server> -json-input <path>",
+		ShortDesc: "spawns a set of Swarming tasks defined in a JSON file",
+		LongDesc:  "Spawns a set of Swarming tasks defined in a JSON file.",
 		CommandRun: func() subcommands.CommandRun {
-			r := &spawnTasksRun{}
-			r.Init(authFlags)
-			return r
+			return base.NewCommandRun(authFlags, &spawnTasksImpl{}, base.Features{
+				MinArgs:         0,
+				MaxArgs:         0,
+				MeasureDuration: true,
+				OutputJSON: base.OutputJSON{
+					Enabled:         true,
+					DefaultToStdout: true,
+				},
+			})
 		},
 	}
 }
 
-type spawnTasksRun struct {
-	commonFlags
+type spawnTasksImpl struct {
 	jsonInput        string
-	jsonOutput       string
 	cancelExtraTasks bool
+
+	requests []*swarmingv2.NewTaskRequest
 }
 
-func (c *spawnTasksRun) Init(authFlags AuthFlags) {
-	c.commonFlags.Init(authFlags)
-	c.Flags.StringVar(&c.jsonInput, "json-input", "", "(required) Read Swarming task requests from this file.")
-	c.Flags.StringVar(&c.jsonOutput, "json-output", "", "Write details about the triggered task(s) to this file as json.")
+func (cmd *spawnTasksImpl) RegisterFlags(fs *flag.FlagSet) {
+	fs.StringVar(&cmd.jsonInput, "json-input", "", "(required) Read Swarming task requests from this file.")
 	// TODO(https://crbug.com/997221): Remove this option.
-	c.Flags.BoolVar(&c.cancelExtraTasks, "cancel-extra-tasks", false, "Cancel extra spawned tasks.")
+	fs.BoolVar(&cmd.cancelExtraTasks, "cancel-extra-tasks", false, "Legacy option that does absolutely nothing.")
 }
 
-func (c *spawnTasksRun) Parse(args []string) error {
-	if err := c.commonFlags.Parse(); err != nil {
-		return err
+func (cmd *spawnTasksImpl) ParseInputs(args []string, env subcommands.Env) error {
+	if cmd.jsonInput == "" {
+		return errors.Reason("input JSON file is required, pass it via -json-input").Err()
 	}
-	if c.jsonInput == "" {
-		return errors.Reason("input JSON file is required").Err()
-	}
-	return nil
-}
 
-func (c *spawnTasksRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if err := c.Parse(args); err != nil {
-		printError(a, err)
-		return 1
-	}
-	if err := c.main(a, args, env); err != nil {
-		printError(a, err)
-		return 1
-	}
-	return 0
-}
-
-func (c *spawnTasksRun) main(a subcommands.Application, args []string, env subcommands.Env) error {
-	start := time.Now()
-	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
-	defer cancel()
-	defer signals.HandleInterrupt(cancel)()
-
-	tasksFile, err := os.Open(c.jsonInput)
+	tasksFile, err := os.Open(cmd.jsonInput)
 	if err != nil {
-		return errors.Annotate(err, "failed to open tasks file").Err()
+		return errors.Annotate(err, "failed to open -json-input tasks file").Err()
 	}
 	defer tasksFile.Close()
-	requests, err := processTasksStream(tasksFile)
-	if err != nil {
-		return err
-	}
 
-	service, err := c.createSwarmingClient(ctx)
-	if err != nil {
-		return err
-	}
-	results, merr := createNewTasks(ctx, service, requests)
+	cmd.requests, err = processTasksStream(tasksFile, env)
+	return err
+}
 
-	var output io.Writer
-	if c.jsonOutput != "" {
-		file, err := os.Create(c.jsonOutput)
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-		output = file
-	} else {
-		output = os.Stdout
-	}
-
+func (cmd *spawnTasksImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
+	results, merr := createNewTasks(ctx, svc, cmd.requests)
 	trs := make([]*triggerResult, len(results))
 	for i, res := range results {
 		trs[i] = &triggerResult{
 			Proto: res,
 		}
 	}
-	data := TriggerResults{Tasks: trs}
-	b, err := json.MarshalIndent(&data, "", DefaultIndent)
-	if err != nil {
-		return errors.Annotate(err, "marshalling trigger result").Err()
-	}
-
-	if _, err = output.Write(b); err != nil {
-		return errors.Annotate(err, "writing json output").Err()
-	}
-
-	log.Printf("Duration: %s\n", time.Since(start).Round(time.Millisecond))
-	return merr
+	return TriggerResults{Tasks: trs}, merr
 }
 
-func processTasksStream(tasks io.Reader) ([]*swarmingv2.NewTaskRequest, error) {
+func processTasksStream(tasks io.Reader, env subcommands.Env) ([]*swarmingv2.NewTaskRequest, error) {
 	dec := json.NewDecoder(tasks)
 	dec.DisallowUnknownFields()
 
@@ -147,16 +102,14 @@ func processTasksStream(tasks io.Reader) ([]*swarmingv2.NewTaskRequest, error) {
 		return nil, errors.Annotate(err, "decoding tasks file").Err()
 	}
 
-	// Populate the tasks with information about the current envirornment
+	// Populate the tasks with information about the current environment
 	// if they're not already set.
-	currentUser := os.Getenv(UserEnvVar)
-	parentTaskID := os.Getenv(TaskIDEnvVar)
 	for _, ntr := range requests.Requests {
 		if ntr.Proto.User == "" {
-			ntr.Proto.User = currentUser
+			ntr.Proto.User = env[swarming.UserEnvVar].Value
 		}
 		if ntr.Proto.ParentTaskId == "" {
-			ntr.Proto.ParentTaskId = parentTaskID
+			ntr.Proto.ParentTaskId = env[swarming.TaskIDEnvVar].Value
 		}
 	}
 	ntrs := make([]*swarmingv2.NewTaskRequest, len(requests.Requests))
@@ -166,7 +119,7 @@ func processTasksStream(tasks io.Reader) ([]*swarmingv2.NewTaskRequest, error) {
 	return ntrs, nil
 }
 
-func createNewTasks(ctx context.Context, service swarmingService, requests []*swarmingv2.NewTaskRequest) ([]*swarmingv2.TaskRequestMetadataResponse, error) {
+func createNewTasks(ctx context.Context, service swarming.Swarming, requests []*swarmingv2.NewTaskRequest) ([]*swarmingv2.TaskRequestMetadataResponse, error) {
 	var mu sync.Mutex
 	results := make([]*swarmingv2.TaskRequestMetadataResponse, 0, len(requests))
 	err := parallel.WorkPool(8, func(gen chan<- func() error) {

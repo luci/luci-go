@@ -16,72 +16,50 @@ package swarmingimpl
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"testing"
 	"time"
 
 	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
-	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+
+	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
-func TestCollectParse_NoArgs(t *testing.T) {
-	Convey(`Make sure that Parse works with no arguments.`, t, func() {
-		c := collectRun{}
-		c.Init(&testAuthFlags{})
+func TestCollectParse(t *testing.T) {
+	t.Parallel()
 
-		err := c.Parse(&[]string{})
-		So(err, ShouldErrLike, "must provide -server")
-	})
-}
+	expectErr := func(argv []string, errLike string) {
+		_, _, code, _, stderr := SubcommandTest(
+			context.Background(),
+			CmdCollect,
+			append([]string{"-server", "example.com"}, argv...),
+			nil, nil,
+		)
+		So(code, ShouldEqual, 1)
+		So(stderr, ShouldContainSubstring, errLike)
+	}
 
-func TestCollectParse_NoInput(t *testing.T) {
 	Convey(`Make sure that Parse handles no task IDs given.`, t, func() {
-		c := collectRun{}
-		c.Init(&testAuthFlags{})
-
-		err := c.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
-		So(err, ShouldBeNil)
-
-		err = c.Parse(&[]string{})
-		So(err, ShouldErrLike, "must specify at least one")
+		expectErr(nil, "must specify at least one task id")
 	})
-}
 
-func TestCollectParse_BadTaskID(t *testing.T) {
 	Convey(`Make sure that Parse handles a malformed task ID.`, t, func() {
-		c := collectRun{}
-		c.Init(&testAuthFlags{})
-
-		err := c.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
-		So(err, ShouldBeNil)
-
-		err = c.Parse(&[]string{"$$$$$"})
-		So(err, ShouldErrLike, "task ID")
+		expectErr([]string{"$$$$$"}, "must be hex")
 	})
-}
 
-func TestCollectParse_BadTimeout(t *testing.T) {
 	Convey(`Make sure that Parse handles a negative timeout.`, t, func() {
-		c := collectRun{}
-		c.Init(&testAuthFlags{})
-
-		err := c.GetFlags().Parse([]string{
-			"-server", "http://localhost:9050",
-			"-timeout", "-30m",
-		})
-		So(err, ShouldBeNil)
-
-		err = c.Parse(&[]string{"x81n8xn1b684n"})
-		So(err, ShouldErrLike, "negative timeout")
+		expectErr([]string{"-timeout", "-30m", "aaaaaaaaa"}, "negative timeout")
 	})
 }
 
@@ -96,14 +74,14 @@ func setupClock() (context.Context, context.CancelFunc) {
 	return ctx, cancel
 }
 
-func testCollectPollWithServer(runner *collectRun, s *testService) taskResult {
+func testCollectPollWithServer(runner *collectImpl, s *testService) taskResult {
 	ctx, cancel := setupClock()
 	defer cancel()
 
-	return runner.pollForTaskResult(ctx, "10982374012938470", s, semaphore.NewWeighted(1))
+	return runner.pollForTaskResult(ctx, "10982374012938470", s, semaphore.NewWeighted(1), &testAuthFlags{})
 }
 
-func testCollectPollForTasks(runner *collectRun, taskIDs []string, s *testService, downloadSem weightedSemaphore) []taskResult {
+func testCollectPollForTasks(runner *collectImpl, taskIDs []string, s *testService, downloadSem weightedSemaphore) []taskResult {
 	ctx, cancel := setupClock()
 	defer cancel()
 
@@ -111,7 +89,7 @@ func testCollectPollForTasks(runner *collectRun, taskIDs []string, s *testServic
 		downloadSem = semaphore.NewWeighted(int64(len(taskIDs)))
 	}
 
-	return runner.pollForTasks(ctx, taskIDs, s, downloadSem)
+	return runner.pollForTasks(ctx, taskIDs, s, downloadSem, &testAuthFlags{})
 }
 
 func TestCollectPollForTaskResult(t *testing.T) {
@@ -123,7 +101,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 				return nil, status.Errorf(codes.NotFound, "not found")
 			},
 		}
-		result := testCollectPollWithServer(&collectRun{taskOutput: taskOutputNone}, service)
+		result := testCollectPollWithServer(&collectImpl{taskOutput: taskOutputNone}, service)
 		So(result.err, ShouldErrLike, "not found")
 	})
 
@@ -151,11 +129,10 @@ func TestCollectPollForTaskResult(t *testing.T) {
 				return []string{"hello"}, nil
 			},
 		}
-		runner := &collectRun{
+		runner := &collectImpl{
 			taskOutput: taskOutputAll,
 			outputDir:  "bah",
 		}
-		runner.authFlags = &testAuthFlags{}
 		result := testCollectPollWithServer(runner, service)
 		So(result.err, ShouldBeNil)
 		So(result.result, ShouldNotBeNil)
@@ -191,6 +168,9 @@ func (s *mockSemaphore) Acquire(ctx context.Context, n int64) error {
 func TestCollectPollForTasks(t *testing.T) {
 	t.Parallel()
 
+	// TODO(vadimsh): Refactor to test through SubcommandTest to test command line
+	// parsing.
+
 	Convey(`Test eager return cancels polling goroutines`, t, func() {
 		firstID, lastID := "1", "2"
 		outputFetched := sync.Map{}
@@ -217,7 +197,7 @@ func TestCollectPollForTasks(t *testing.T) {
 				return &swarmingv2.TaskOutputResponse{Output: []byte("yipeeee")}, nil
 			},
 		}
-		runner := &collectRun{
+		runner := &collectImpl{
 			taskOutput: taskOutputAll,
 			eager:      true,
 		}
@@ -240,7 +220,7 @@ func TestCollectPollForTasks(t *testing.T) {
 		firstID, lastID := "1", "2"
 		outputFetched := sync.Map{}
 
-		runner := &collectRun{
+		runner := &collectImpl{
 			taskOutput: taskOutputAll,
 			eager:      true,
 		}
@@ -317,7 +297,7 @@ func TestCollectPollForTasks(t *testing.T) {
 				return &swarmingv2.TaskOutputResponse{Output: []byte("yipeeee")}, nil
 			},
 		}
-		runner := &collectRun{
+		runner := &collectImpl{
 			taskOutput: taskOutputAll,
 			eager:      true,
 		}
@@ -334,7 +314,7 @@ func TestCollectPollForTasks(t *testing.T) {
 func TestCollectSummarizeResults(t *testing.T) {
 	t.Parallel()
 
-	runner := &collectRun{
+	runner := &collectImpl{
 		taskOutput: taskOutputAll,
 	}
 
@@ -445,7 +425,7 @@ func TestCollectSummarizeResults(t *testing.T) {
 				output: "Output",
 			},
 		}
-		json, err := runner.summarizeResults(results)
+		summary, err := runner.summarizeResults(results)
 		So(err, ShouldBeNil)
 		expected := `{
  "task1": {
@@ -543,8 +523,8 @@ func TestCollectSummarizeResults(t *testing.T) {
   }
  }
 }`
-		actual := string(json)
-		So(actual, ShouldEqual, expected)
+		actual, _ := json.MarshalIndent(summary, "", " ")
+		So(string(actual), ShouldEqual, expected)
 	})
 }
 
@@ -564,17 +544,18 @@ func TestCollectSummarizeResultsPython(t *testing.T) {
 			},
 			{},
 		}
-		json, err := summarizeResultsPython(results)
+		summary, err := summarizeResultsPython(results)
 		So(err, ShouldBeNil)
-		So(string(json), ShouldEqual, `{
-  "shards": [
-    {
-      "duration": 1,
-      "output": "Output",
-      "state": "COMPLETED"
-    },
-    null
-  ]
+		actual, _ := json.MarshalIndent(summary, "", " ")
+		So(string(actual), ShouldEqual, `{
+ "shards": [
+  {
+   "duration": 1,
+   "output": "Output",
+   "state": "COMPLETED"
+  },
+  null
+ ]
 }`)
 	})
 }

@@ -16,28 +16,34 @@ package swarmingimpl
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"io"
-	"os"
+	"flag"
 
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/flag"
-	"go.chromium.org/luci/common/system/signals"
+	luciflag "go.chromium.org/luci/common/flag"
+	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
 )
 
 // CmdTasks returns an object for the `tasks` subcommand.
-func CmdTasks(authFlags AuthFlags) *subcommands.Command {
+func CmdTasks(authFlags base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "tasks <options>",
-		ShortDesc: "lists tasks",
-		LongDesc:  "List tasks matching the given options.",
+		UsageLine: "tasks -S <server>",
+		ShortDesc: "lists or counts tasks matching a filter",
+		LongDesc:  "Lists or counts tasks matching a filter.",
 		CommandRun: func() subcommands.CommandRun {
-			r := &tasksRun{}
-			r.Init(authFlags)
-			return r
+			return base.NewCommandRun(authFlags, &tasksImpl{}, base.Features{
+				MinArgs: 0,
+				MaxArgs: 0,
+				OutputJSON: base.OutputJSON{
+					Enabled:             true,
+					DeprecatedAliasFlag: "json",
+					DefaultToStdout:     true,
+				},
+			})
 		},
 	}
 }
@@ -47,120 +53,65 @@ const defaultLimit = 200
 // TODO(crbug.com/1467263): `fields` do nothing currently. Used to be a set of
 // fields to include in a partial response.
 
-type tasksRun struct {
-	commonFlags
-	outfile string
-	limit   int64
-	state   string
-	tags    []string
-	fields  []string
-	count   bool
-	start   float64
+type tasksImpl struct {
+	limit  int64
+	state  string
+	tags   []string
+	fields []string
+	count  bool
+	start  float64
 }
 
-func (t *tasksRun) Init(authFlags AuthFlags) {
-	t.commonFlags.Init(authFlags)
-	t.Flags.StringVar(&t.outfile, "json", "", "Path to output JSON results. Implies quiet.")
-	t.Flags.Int64Var(&t.limit, "limit", defaultLimit, "Maximum number of tasks to retrieve.")
-	t.Flags.StringVar(&t.state, "state", "ALL", "Only include tasks in the specified state.")
-	t.Flags.Var(flag.StringSlice(&t.tags), "tag", "Tag attached to the task. May be repeated.")
-	t.Flags.Var(flag.StringSlice(&t.fields), "field", "This flag currently does nothing (https://crbug.com/1467263).")
-	t.Flags.BoolVar(&t.count, "count", false, "Report the count of tasks instead of listing them.")
-	t.Flags.Float64Var(&t.start, "start", 0, "Start time (in seconds since the epoch) for counting tasks.")
+func (cmd *tasksImpl) RegisterFlags(fs *flag.FlagSet) {
+	fs.Int64Var(&cmd.limit, "limit", defaultLimit, "Maximum number of tasks to retrieve.")
+	fs.StringVar(&cmd.state, "state", "ALL", "Only include tasks in the specified state.")
+	fs.Var(luciflag.StringSlice(&cmd.tags), "tag", "Tag attached to the task. May be repeated.")
+	fs.Var(luciflag.StringSlice(&cmd.fields), "field", "This flag currently does nothing (https://crbug.com/1467263).")
+	fs.BoolVar(&cmd.count, "count", false, "Report the count of tasks instead of listing them.")
+	fs.Float64Var(&cmd.start, "start", 0, "Start time (in seconds since the epoch) for counting tasks.")
 }
 
-func (t *tasksRun) Parse() error {
-	if err := t.commonFlags.Parse(); err != nil {
-		return err
+func (cmd *tasksImpl) ParseInputs(args []string, env subcommands.Env) error {
+	if cmd.limit < 1 {
+		return errors.Reason("invalid -limit %d, must be positive", cmd.limit).Err()
 	}
-	if t.defaultFlags.Quiet && t.outfile == "" {
-		return errors.Reason("specify -json when using -quiet").Err()
-	}
-	if t.limit < 1 {
-		return errors.Reason("invalid -limit %d, must be positive", t.limit).Err()
-	}
-	if t.outfile != "" {
-		t.defaultFlags.Quiet = true
-	}
-	if t.count {
-		if len(t.fields) > 0 {
+	if cmd.count {
+		if len(cmd.fields) > 0 {
 			return errors.Reason("-field cannot be used with -count").Err()
 		}
-		if t.limit != defaultLimit {
+		if cmd.limit != defaultLimit {
 			return errors.Reason("-limit cannot be used with -count").Err()
 		}
-		if t.start <= 0 {
+		if cmd.start <= 0 {
 			return errors.Reason("with -count, must provide -start >0").Err()
 		}
 	}
-	return nil
-}
-
-func (t *tasksRun) tasks(ctx context.Context, service swarmingService, out io.Writer) error {
-	var output []byte
-	state, err := stateMap(t.state)
-	if err != nil {
-		return err
-	}
-	if t.count {
-		data, err := service.CountTasks(ctx, t.start, state, t.tags...)
-		if err != nil {
-			return err
-		}
-		output, err = DefaultProtoMarshalOpts.Marshal(data)
-		if err != nil {
-			return err
-		}
-	} else {
-		if err != nil {
-			return err
-		}
-		data, err := service.ListTasks(ctx, int32(t.limit), t.start, state, t.tags)
-		if err != nil {
-			return err
-		}
-		toOutput := make([]*taskResultResponse, len(data))
-		for idx, tr := range data {
-			toOutput[idx] = &taskResultResponse{
-				Proto: tr,
-			}
-		}
-		output, err = json.MarshalIndent(toOutput, "", DefaultIndent)
-		if err != nil {
-			return err
-		}
-	}
-	_, err = out.Write(append(output, '\n'))
-	if err != nil {
-		return err
+	if _, err := stateMap(cmd.state); err != nil {
+		return errors.Annotate(err, "bad -state").Err()
 	}
 	return nil
 }
 
-func (t *tasksRun) main(_ subcommands.Application) error {
-	ctx, cancel := context.WithCancel(t.defaultFlags.MakeLoggingContext(os.Stderr))
-	signals.HandleInterrupt(cancel)
-	service, err := t.createSwarmingClient(ctx)
-	if err != nil {
-		return err
-	}
-	return writeOutput(t.outfile, t.defaultFlags.Quiet, func(out io.Writer) error {
-		return t.tasks(ctx, service, out)
-	})
-}
+func (cmd *tasksImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
+	state, _ := stateMap(cmd.state)
 
-func (t *tasksRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
-	if len(args) != 0 {
-		fmt.Fprintf(a.GetErr(), "%s: unknown args: %s\n", a.GetName(), args)
-		return 1
+	if cmd.count {
+		count, err := svc.CountTasks(ctx, cmd.start, state, cmd.tags...)
+		if err != nil {
+			return nil, err
+		}
+		return &ProtoJSONAdapter[*swarmingv2.TasksCount]{Proto: count}, nil
 	}
-	if err := t.Parse(); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
+
+	tasks, err := svc.ListTasks(ctx, int32(cmd.limit), cmd.start, state, cmd.tags)
+	if err != nil {
+		return nil, err
 	}
-	if err := t.main(a); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
+	toOutput := make([]*taskResultResponse, len(tasks))
+	for idx, tr := range tasks {
+		toOutput[idx] = &taskResultResponse{
+			Proto: tr,
+		}
 	}
-	return 0
+	return toOutput, nil
 }

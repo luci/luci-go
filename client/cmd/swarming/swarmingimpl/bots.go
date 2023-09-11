@@ -16,32 +16,35 @@ package swarmingimpl
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"io"
-	"os"
-	"strings"
+	"flag"
 
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/flag"
+	luciflag "go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
-	"go.chromium.org/luci/common/system/signals"
 
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // CmdBots returns an object for the `bots` subcommand.
-func CmdBots(authFlags AuthFlags) *subcommands.Command {
+func CmdBots(authFlags base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "bots <options>",
-		ShortDesc: "lists bots",
-		LongDesc:  "List bots matching the given options.",
+		UsageLine: "bots -S <server>",
+		ShortDesc: "lists or counts bots matching a filter",
+		LongDesc:  "Lists or counts bots matching a filter.",
 		CommandRun: func() subcommands.CommandRun {
-			r := &botsRun{}
-			r.Init(authFlags)
-			return r
+			return base.NewCommandRun(authFlags, &botsImpl{}, base.Features{
+				MinArgs: 0,
+				MaxArgs: 0,
+				OutputJSON: base.OutputJSON{
+					Enabled:             true,
+					DeprecatedAliasFlag: "json",
+					DefaultToStdout:     true,
+				},
+			})
 		},
 	}
 }
@@ -49,125 +52,65 @@ func CmdBots(authFlags AuthFlags) *subcommands.Command {
 // TODO(crbug.com/1467263): `fields` do nothing currently. Used to be a set of
 // fields to include in a partial response.
 
-type botsRun struct {
-	commonFlags
-	outfile    string
+type botsImpl struct {
 	dimensions stringmapflag.Value
 	fields     []string
 	count      bool
 	botIDOnly  bool
 }
 
-func (b *botsRun) Init(authFlags AuthFlags) {
-	b.commonFlags.Init(authFlags)
-	b.Flags.StringVar(&b.outfile, "json", "", "Path to output JSON results. Implies quiet.")
-	b.Flags.Var(&b.dimensions, "dimension", "Dimension to select the right kind of bot. In the form of `key=value`")
-	b.Flags.Var(flag.StringSlice(&b.fields), "field", "This flag currently does nothing (https://crbug.com/1467263).")
-	b.Flags.BoolVar(&b.count, "count", false, "Report the count of bots instead of listing them.")
-	b.Flags.BoolVar(&b.botIDOnly, "bare", false, "Report the bot id only.")
+func (cmd *botsImpl) RegisterFlags(fs *flag.FlagSet) {
+	fs.Var(&cmd.dimensions, "dimension", "Dimension to select the right kind of bot. In the form of `key=value`.")
+	fs.Var(luciflag.StringSlice(&cmd.fields), "field", "This flag currently does nothing (https://crbug.com/1467263).")
+	fs.BoolVar(&cmd.count, "count", false, "Report the count of bots instead of listing them.")
+	fs.BoolVar(&cmd.botIDOnly, "bare", false, "Print bot IDs to stdout as a list.")
 }
 
-func (b *botsRun) Parse() error {
-	if err := b.commonFlags.Parse(); err != nil {
-		return err
-	}
-	if b.defaultFlags.Quiet && b.outfile == "" {
-		return errors.Reason("specify -json when using -quiet").Err()
-	}
-	if b.outfile != "" {
-		b.defaultFlags.Quiet = true
-	}
-	if b.count && len(b.fields) > 0 {
+func (cmd *botsImpl) ParseInputs(args []string, env subcommands.Env) error {
+	if cmd.count && len(cmd.fields) > 0 {
 		return errors.Reason("-field cannot be used with -count").Err()
 	}
-	if b.count && b.botIDOnly {
+	if cmd.count && cmd.botIDOnly {
 		return errors.Reason("-bare cannot be used with -count").Err()
 	}
 	return nil
 }
 
-func showBots(bots []*swarmingv2.BotInfo) ([]byte, error) {
-	botInfos := make([]ProtoJSONAdapter[*swarmingv2.BotInfo], len(bots))
-	for i, bot := range bots {
-		botInfos[i].Proto = bot
-	}
-	return json.MarshalIndent(botInfos, "", DefaultIndent)
-}
-
-func showBotsIDOnly(bots []*swarmingv2.BotInfo) ([]byte, error) {
-	botsID := make([]string, len(bots))
-	for i, bot := range bots {
-		botsID[i] = bot.GetBotId()
-	}
-	return []byte(strings.Join(botsID, "\n")), nil
-}
-
-func (b *botsRun) bots(ctx context.Context, service swarmingService, out io.Writer) error {
-	dims := make([]*swarmingv2.StringPair, 0, len(b.dimensions))
-	for k, v := range b.dimensions {
+func (cmd *botsImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
+	// TODO(vadimsh): Reuse from utils.
+	dims := make([]*swarmingv2.StringPair, 0, len(cmd.dimensions))
+	for k, v := range cmd.dimensions {
 		dims = append(dims, &swarmingv2.StringPair{
 			Key:   k,
 			Value: v,
 		})
 	}
 
-	var output []byte
-	if b.count {
-		count, err := service.CountBots(ctx, dims)
+	if cmd.count {
+		count, err := svc.CountBots(ctx, dims)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		output, err = DefaultProtoMarshalOpts.Marshal(count)
-		if err != nil {
-			return err
-		}
-
-	} else {
-		bots, err := service.ListBots(ctx, dims)
-		if err != nil {
-			return err
-		}
-		if b.botIDOnly {
-			output, err = showBotsIDOnly(bots)
-		} else {
-			output, err = showBots(bots)
-		}
-		if err != nil {
-			return err
-		}
+		return &ProtoJSONAdapter[*swarmingv2.BotsCount]{Proto: count}, nil
 	}
-	_, err := out.Write(append(output, '\n'))
+
+	bots, err := svc.ListBots(ctx, dims)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
-}
 
-func (b *botsRun) main(_ subcommands.Application) (err error) {
-	ctx, cancel := context.WithCancel(b.defaultFlags.MakeLoggingContext(os.Stderr))
-	defer cancel()
-	defer signals.HandleInterrupt(cancel)()
-	service, err := b.createSwarmingClient(ctx)
-	if err != nil {
-		return err
+	if cmd.botIDOnly {
+		// TODO(vadimsh): Annotate that this is a raw string list, not JSON.
+		botIDs := make([]string, len(bots))
+		for i, bot := range bots {
+			botIDs[i] = bot.GetBotId()
+		}
+		return botIDs, nil
 	}
-	return writeOutput(b.outfile, b.defaultFlags.Quiet, func(out io.Writer) error {
-		return b.bots(ctx, service, out)
-	})
-}
 
-func (b *botsRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
-	if len(args) != 0 {
-		fmt.Fprintf(a.GetErr(), "%s: unknown args: %s\n", a.GetName(), args)
-		return 1
+	botInfos := make([]ProtoJSONAdapter[*swarmingv2.BotInfo], len(bots))
+	for i, bot := range bots {
+		botInfos[i].Proto = bot
 	}
-	if err := b.Parse(); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	if err := b.main(a); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	return 0
+	return botInfos, nil
 }

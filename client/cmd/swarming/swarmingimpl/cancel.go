@@ -16,87 +16,57 @@ package swarmingimpl
 
 import (
 	"context"
-	"fmt"
-	"os"
+	"flag"
 
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/system/signals"
+	"go.chromium.org/luci/common/logging"
+
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
 )
 
 // CmdCancelTask returns an object for the `cancel` subcommand.
-func CmdCancelTask(authFlags AuthFlags) *subcommands.Command {
+func CmdCancelTask(authFlags base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "cancel <options> <taskID>",
-		ShortDesc: "cancel a task",
-		LongDesc:  "Cancels the task specified by the taskID",
+		UsageLine: "cancel -S <server> <task ID>",
+		ShortDesc: "cancels a task",
+		LongDesc:  "Cancels a pending or running (if -kill-running is set) task.",
 		CommandRun: func() subcommands.CommandRun {
-			r := &cancelRun{}
-			r.Init(authFlags)
-			return r
+			return base.NewCommandRun(authFlags, &cancelImpl{}, base.Features{
+				MinArgs: 1,
+				MaxArgs: 1, // TODO(vadimsh): Support more, it is trivial.
+				OutputJSON: base.OutputJSON{
+					Enabled: false,
+				},
+			})
 		},
 	}
 }
 
-type cancelRun struct {
-	commonFlags
+type cancelImpl struct {
 	killRunning bool
+	taskID      string
 }
 
-func (t *cancelRun) Init(authFlags AuthFlags) {
-	t.commonFlags.Init(authFlags)
-	t.Flags.BoolVar(&t.killRunning, "kill-running", false, "Kill the task even if it's running")
+func (cmd *cancelImpl) RegisterFlags(fs *flag.FlagSet) {
+	fs.BoolVar(&cmd.killRunning, "kill-running", false, "Kill the task even if it's running.")
 }
 
-func (t *cancelRun) parse(taskIDs []string) error {
-	if err := t.commonFlags.Parse(); err != nil {
-		return err
-	}
-
-	if len(taskIDs) == 0 {
-		return errors.New("must specify a swarming task ID")
-	}
-
-	if len(taskIDs) > 1 {
-		return errors.New("please specify only one swarming task ID")
-	}
-
+func (cmd *cancelImpl) ParseInputs(args []string, env subcommands.Env) error {
+	cmd.taskID = args[0]
 	return nil
 }
 
-func (t *cancelRun) cancelTask(ctx context.Context, taskID string, service swarmingService) error {
-	res, err := service.CancelTask(ctx, taskID, t.killRunning)
+func (cmd *cancelImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
+	res, err := svc.CancelTask(ctx, cmd.taskID, cmd.killRunning)
 	if res != nil && !res.Canceled {
-		err = errors.Reason("Task was not canceled. running=%v\n", res.WasRunning).Err()
+		err = errors.Reason("task was not canceled. running=%v\n", res.WasRunning).Err()
 	}
 	if err != nil {
-		return errors.Annotate(err, "failed to cancel task %s\n", taskID).Err()
+		return nil, errors.Annotate(err, "failed to cancel task %s\n", cmd.taskID).Err()
 	}
-
-	fmt.Printf("Cancelled %s\n", taskID)
-	return nil
-
-}
-
-func (t *cancelRun) main(_ subcommands.Application, taskID string) error {
-	ctx, cancel := context.WithCancel(t.defaultFlags.MakeLoggingContext(os.Stderr))
-	defer signals.HandleInterrupt(cancel)()
-	service, err := t.createSwarmingClient(ctx)
-	if err != nil {
-		return err
-	}
-	return t.cancelTask(ctx, taskID, service)
-}
-
-func (t *cancelRun) Run(a subcommands.Application, taskIDs []string, _ subcommands.Env) int {
-	if err := t.parse(taskIDs); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	if err := t.main(a, taskIDs[0]); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	return 0
+	logging.Infof(ctx, "Canceled %s", cmd.taskID)
+	return nil, nil
 }

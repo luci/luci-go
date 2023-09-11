@@ -16,8 +16,7 @@ package swarmingimpl
 
 import (
 	"context"
-	"fmt"
-	"os"
+	"flag"
 	"time"
 
 	"github.com/maruel/subcommands"
@@ -25,53 +24,47 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/system/signals"
+
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // CmdTerminateBot returns an object for the `terminate` subcommand.
-func CmdTerminateBot(authFlags AuthFlags) *subcommands.Command {
+func CmdTerminateBot(authFlags base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "terminate <options> <botID>",
-		ShortDesc: "terminate a bot",
-		LongDesc:  "Asks the bot specified by the botID to terminate itself gracefully",
+		UsageLine: "terminate -S <server> <bot ID>",
+		ShortDesc: "asks a bot to gracefully terminate",
+		LongDesc:  "Asks a bot to gracefully terminate.",
 		CommandRun: func() subcommands.CommandRun {
-			r := &terminateRun{}
-			r.Init(authFlags)
-			return r
+			return base.NewCommandRun(authFlags, &terminateImpl{}, base.Features{
+				MinArgs: 1,
+				MaxArgs: 1, // TODO(vadimsh): Support more, it is trivial.
+				OutputJSON: base.OutputJSON{
+					Enabled: false,
+				},
+			})
 		},
 	}
 }
 
-type terminateRun struct {
-	commonFlags
+type terminateImpl struct {
 	wait   bool
 	reason string
+	botID  string
 }
 
-func (t *terminateRun) Init(authFlags AuthFlags) {
-	t.commonFlags.Init(authFlags)
-	t.Flags.BoolVar(&t.wait, "wait", false, "Wait for the bot to terminate")
-	t.Flags.StringVar(&t.reason, "reason", "", "A human defined reason given for terminating bot")
+func (cmd *terminateImpl) RegisterFlags(fs *flag.FlagSet) {
+	fs.BoolVar(&cmd.wait, "wait", false, "Wait for the bot to terminate.")
+	fs.StringVar(&cmd.reason, "reason", "", "A human defined reason given for terminating bot,")
 }
 
-func (t *terminateRun) parse(botIDs []string) error {
-	if err := t.commonFlags.Parse(); err != nil {
-		return err
-	}
-
-	if len(botIDs) == 0 {
-		return errors.New("must specify a swarming bot id")
-	}
-
-	if len(botIDs) > 1 {
-		return errors.New("please specify only one swarming bot id")
-	}
-
+func (cmd *terminateImpl) ParseInputs(args []string, env subcommands.Env) error {
+	cmd.botID = args[0]
 	return nil
 }
 
-func pollTask(ctx context.Context, taskID string, service swarmingService) (*swarmingv2.TaskResultResponse, error) {
+func pollTask(ctx context.Context, taskID string, service swarming.Swarming) (*swarmingv2.TaskResultResponse, error) {
 	for {
 		res, err := service.TaskResult(ctx, taskID, false)
 		if err != nil {
@@ -96,54 +89,22 @@ func pollTask(ctx context.Context, taskID string, service swarmingService) (*swa
 	}
 }
 
-func (t *terminateRun) terminateBot(ctx context.Context, botID string, service swarmingService) error {
-
-	res, err := service.TerminateBot(ctx, botID, t.reason)
-
+func (cmd *terminateImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
+	res, err := svc.TerminateBot(ctx, cmd.botID, cmd.reason)
 	if err != nil {
-		return errors.Annotate(err, "failed to terminate bot %s\n", botID).Err()
+		return nil, errors.Annotate(err, "failed to terminate bot %s", cmd.botID).Err()
 	}
 
-	if t.wait {
-		taskres, err := pollTask(ctx, res.TaskId, service)
+	if cmd.wait {
+		taskres, err := pollTask(ctx, res.TaskId, svc)
 		if err != nil {
-			return errors.Annotate(err, "failed when polling task %s\n", res.TaskId).Err()
+			return nil, errors.Annotate(err, "failed when polling task %s", res.TaskId).Err()
 		}
 		if !TaskIsCompleted(taskres.State) {
-			return errors.Reason("failed to terminate bot ID %s with task state %s", botID, taskres.State).Err()
+			return nil, errors.Reason("failed to terminate bot ID %s with task state %s", cmd.botID, taskres.State).Err()
 		}
 	}
 
-	return nil
-
-}
-
-func (t *terminateRun) main(a subcommands.Application, botID string) error {
-	ctx, cancel := context.WithCancel(t.defaultFlags.MakeLoggingContext(os.Stderr))
-	defer signals.HandleInterrupt(cancel)()
-	service, err := t.createSwarmingClient(ctx)
-	if err != nil {
-		return err
-	}
-	if err := t.terminateBot(ctx, botID, service); err != nil {
-		return err
-	}
-
-	if !t.defaultFlags.Quiet {
-		fmt.Fprintf(a.GetOut(), "Successfully terminated %s\n", botID)
-	}
-
-	return nil
-}
-
-func (t *terminateRun) Run(a subcommands.Application, botIDs []string, _ subcommands.Env) int {
-	if err := t.parse(botIDs); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	if err := t.main(a, botIDs[0]); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	return 0
+	logging.Infof(ctx, "Successfully terminated %s", cmd.botID)
+	return nil, nil
 }

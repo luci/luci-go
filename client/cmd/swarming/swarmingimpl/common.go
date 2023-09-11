@@ -17,12 +17,7 @@ package swarmingimpl
 import (
 	"bytes"
 	"context"
-	"flag"
-	"fmt"
-	"io"
-	"net/http"
 	"net/url"
-	"os"
 	"reflect"
 	"sort"
 	"strings"
@@ -31,37 +26,19 @@ import (
 	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
-	"github.com/maruel/subcommands"
-
-	"go.chromium.org/luci/client/internal/common"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/lhttp"
-	"go.chromium.org/luci/grpc/prpc"
-
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/prpc"
+
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 const (
-	// Define environment variables used in Swarming client.
-
-	// ServerEnvVar is Swarming server host to which a client connect.
-	// Example: "chromium-swarm.appspot.com"
-	ServerEnvVar = "SWARMING_SERVER"
-
-	// TaskIDEnvVar is Swarming task ID in which this task is running.
-	// The `swarming` command line tool uses this to populate `ParentTaskId`
-	// when being used to trigger new tasks from within a swarming task.
-	TaskIDEnvVar = "SWARMING_TASK_ID"
-
-	// UserEnvVar is user name.
-	// The `swarming` command line tool uses this to populate `User`
-	// when being used to trigger new tasks.
-	UserEnvVar = "USER"
-
 	// Number of tasks and bots to grab in List* requests
 	DefaultNumberToFetch = 1000
 )
@@ -111,26 +88,6 @@ type TriggerResults struct {
 	// Tasks is a list of successfully triggered tasks represented as
 	// TriggerResult values.
 	Tasks []*ProtoJSONAdapter[*swarmingv2.TaskRequestMetadataResponse] `json:"tasks"`
-}
-
-const swarmingAPISuffix = "/_ah/api/swarming/v1/"
-
-// swarmingService is an interface intended to stub out the swarming API
-// bindings for testing.
-type swarmingService interface {
-	NewTask(ctx context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error)
-	CountTasks(ctx context.Context, start float64, state swarmingv2.StateQuery, tags ...string) (*swarmingv2.TasksCount, error)
-	ListTasks(ctx context.Context, limit int32, start float64, state swarmingv2.StateQuery, tags []string) ([]*swarmingv2.TaskResultResponse, error)
-	CancelTask(ctx context.Context, taskID string, killRunning bool) (*swarmingv2.CancelResponse, error)
-	TaskRequest(ctx context.Context, taskID string) (*swarmingv2.TaskRequestResponse, error)
-	TaskOutput(ctx context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error)
-	TaskResult(ctx context.Context, taskID string, perf bool) (*swarmingv2.TaskResultResponse, error)
-	FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarmingv2.CASReference) ([]string, error)
-	CountBots(ctx context.Context, dimensions []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error)
-	ListBots(ctx context.Context, dimensions []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error)
-	DeleteBot(ctx context.Context, botID string) (*swarmingv2.DeleteResponse, error)
-	TerminateBot(ctx context.Context, botID string, reason string) (*swarmingv2.TerminateResponse, error)
-	ListBotTasks(ctx context.Context, botID string, limit int32, start float64, state swarmingv2.StateQuery) ([]*swarmingv2.TaskResultResponse, error)
 }
 
 type swarmingServiceImpl struct {
@@ -302,6 +259,7 @@ func (s *swarmingServiceImpl) TerminateBot(ctx context.Context, botID string, re
 	})
 }
 
+// TODO(vadimsh): Convert into flag.Value.
 func stateMap(value string) (state swarmingv2.StateQuery, err error) {
 	value = strings.ToLower(value)
 	switch value {
@@ -340,31 +298,6 @@ func stateMap(value string) (state swarmingv2.StateQuery, err error) {
 		err = errors.Reason("Invalid state %s", value).Err()
 	}
 	return state, err
-}
-
-func writeOutput(outfile string, quiet bool, writer func(io.Writer) error) (err error) {
-	writers := make([]io.Writer, 0, 2)
-	if !quiet {
-		writers = append(writers, os.Stdout)
-	}
-	if outfile != "" {
-		f, err := os.OpenFile(outfile, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			return err
-		}
-		defer func() {
-			if closeErr := f.Close(); closeErr != nil {
-				if err == nil {
-					err = closeErr
-				} else {
-					err = errors.Append(closeErr, err)
-				}
-			}
-		}()
-		writers = append(writers, f)
-	}
-	out := io.MultiWriter(writers...)
-	return writer(out)
 }
 
 func (s *swarmingServiceImpl) ListBotTasks(ctx context.Context, botID string, limit int32, start float64, state swarmingv2.StateQuery) (res []*swarmingv2.TaskResultResponse, err error) {
@@ -426,81 +359,30 @@ func TaskIsCompleted(t swarmingv2.TaskState) bool {
 	return t == swarmingv2.TaskState_COMPLETED
 }
 
-// AuthFlags is an interface to register auth flags and create http.Client and CAS Client.
-type AuthFlags interface {
-	// Register registers auth flags to the given flag set. e.g. -service-account-json.
-	Register(f *flag.FlagSet)
-
-	// Parse parses auth flags.
-	Parse() error
-
-	// NewHTTPClient creates an authroised http.Client.
-	NewHTTPClient(ctx context.Context) (*http.Client, error)
-
-	// NewRBEClient creates an authroised RBE Client.
-	NewRBEClient(ctx context.Context, addr string, instance string) (*rbeclient.Client, error)
-}
-
 type taskResultResponse = ProtoJSONAdapter[*swarmingv2.TaskResultResponse]
 
-type commonFlags struct {
-	subcommands.CommandRunBase
-	defaultFlags common.Flags
-	authFlags    AuthFlags
-	rawServerURL string
-	serverURL    *url.URL
-}
-
-// Init initializes common flags.
-func (c *commonFlags) Init(authFlags AuthFlags) {
-	c.defaultFlags.Init(&c.Flags)
-	c.authFlags = authFlags
-	c.authFlags.Register(&c.Flags)
-	c.Flags.StringVar(&c.rawServerURL, "server", os.Getenv(ServerEnvVar), fmt.Sprintf("Server URL; required. Set $%s to set a default.", ServerEnvVar))
-	c.Flags.StringVar(&c.rawServerURL, "S", os.Getenv(ServerEnvVar), "Alias for -server.")
-}
-
-// Parse parses the common flags.
-func (c *commonFlags) Parse() error {
-	if err := c.defaultFlags.Parse(); err != nil {
-		return err
+func init() {
+	// TODO(vadimsh): Move swarmingServiceImpl{} to a dedicate "swarming" package.
+	base.SwarmingFactory = func(ctx context.Context, serverURL *url.URL, auth base.AuthFlags) (swarming.Swarming, error) {
+		httpClient, err := auth.NewHTTPClient(ctx)
+		if err != nil {
+			return nil, err
+		}
+		prpcOpts := prpc.DefaultOptions()
+		// The swarming server has an internal 60-second deadline for responding to
+		// requests, so 90 seconds shouldn't cause any requests to fail that would
+		// otherwise succeed.
+		prpcOpts.PerRPCTimeout = 90 * time.Second
+		prpcOpts.UserAgent = SwarmingUserAgent
+		prpcOpts.Insecure = serverURL.Scheme == "http"
+		prpcClient := prpc.Client{
+			C:       httpClient,
+			Options: prpcOpts,
+			Host:    serverURL.Host,
+		}
+		return &swarmingServiceImpl{
+			botsClient:  swarmingv2.NewBotsClient(&prpcClient),
+			tasksClient: swarmingv2.NewTasksClient(&prpcClient),
+		}, nil
 	}
-	if err := c.authFlags.Parse(); err != nil {
-		return err
-	}
-	if c.rawServerURL == "" {
-		return errors.Reason("must provide -server").Err()
-	}
-	var err error
-	if c.serverURL, err = lhttp.ParseHostURL(c.rawServerURL); err != nil {
-		return errors.Annotate(err, "invalid -server %q", c.rawServerURL).Err()
-	}
-	return nil
-}
-
-func (c *commonFlags) createSwarmingClient(ctx context.Context) (swarmingService, error) {
-	httpClient, err := c.authFlags.NewHTTPClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-	prpcOpts := prpc.DefaultOptions()
-	// The swarming server has an internal 60-second deadline for responding to
-	// requests, so 90 seconds shouldn't cause any requests to fail that would
-	// otherwise succeed.
-	prpcOpts.PerRPCTimeout = 90 * time.Second
-	prpcOpts.UserAgent = SwarmingUserAgent
-	prpcOpts.Insecure = c.serverURL.Scheme == "http"
-	prpcClient := prpc.Client{
-		C:       httpClient,
-		Options: prpcOpts,
-		Host:    c.serverURL.Host,
-	}
-	return &swarmingServiceImpl{
-		botsClient:  swarmingv2.NewBotsClient(&prpcClient),
-		tasksClient: swarmingv2.NewTasksClient(&prpcClient),
-	}, nil
-}
-
-func printError(a subcommands.Application, err error) {
-	fmt.Fprintf(a.GetErr(), "%s: %s\n%s\n", a.GetName(), err, strings.Join(errors.RenderStack(err), "\n"))
 }

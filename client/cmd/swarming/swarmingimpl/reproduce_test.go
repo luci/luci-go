@@ -26,50 +26,45 @@ import (
 	"testing"
 
 	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
+
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/common/system/environ"
-	. "go.chromium.org/luci/common/testing/assertions"
-	swarming "go.chromium.org/luci/swarming/proto/api_v2"
+
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
+	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
-func init() {
-	// So that this test works on swarming!
-	os.Unsetenv(ServerEnvVar)
-	os.Unsetenv(TaskIDEnvVar)
-}
-
-func TestReproduceParse_NoArgs(t *testing.T) {
+func TestReproduceParse(t *testing.T) {
 	t.Parallel()
-	Convey(`Make sure Parse works with no arguments.`, t, func() {
-		c := reproduceRun{}
-		c.init(&testAuthFlags{})
 
-		err := c.parse([]string(nil))
-		So(err, ShouldErrLike, "must provide -server")
+	expectErr := func(argv []string, errLike string) {
+		_, _, code, _, stderr := SubcommandTest(
+			context.Background(),
+			CmdReproduce,
+			append([]string{"-server", "example.com"}, argv...),
+			nil, nil,
+		)
+		So(code, ShouldEqual, 1)
+		So(stderr, ShouldContainSubstring, errLike)
+	}
+
+	Convey(`Requires task ID.`, t, func() {
+		expectErr(nil, "expecting exactly 1 argument")
 	})
-}
 
-func TestReproduceParse_NoTaskID(t *testing.T) {
-	t.Parallel()
-	Convey(`Make sure Parse works with with no task ID.`, t, func() {
-		c := reproduceRun{}
-		c.init(&testAuthFlags{})
-
-		err := c.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
-		So(err, ShouldBeNil)
-
-		err = c.parse([]string(nil))
-		So(err, ShouldErrLike, "must specify exactly one task id.")
+	Convey(`Accepts only one task ID.`, t, func() {
+		expectErr([]string{"aaaa", "bbbb"}, "expecting exactly 1 argument")
 	})
 }
 
 func TestPrepareTaskRequestEnvironment(t *testing.T) {
 	t.Parallel()
+
 	Convey(`Make sure we can create the correct Cmd from a fetched task's properties.`, t, func() {
-		c := reproduceRun{}
-		c.init(&testAuthFlags{})
+		c := reproduceImpl{}
+
 		var cipdSlicesByPath map[string]ensure.PackageSlice
 		c.cipdDownloader = func(ctx context.Context, workdir string, slicesByPath map[string]ensure.PackageSlice) error {
 			cipdSlicesByPath = slicesByPath
@@ -86,6 +81,10 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 
 		ctxBaseEnvMap := environ.System()
 
+		// So that this test works on swarming!
+		ctxBaseEnvMap.Remove(swarming.ServerEnvVar)
+		ctxBaseEnvMap.Remove(swarming.TaskIDEnvVar)
+
 		// Set env values to be removed or replaced in prepareTaskRequestEnvironment().
 		ctxBaseEnvMap.Set("removeKey", "removeValue")
 		ctxBaseEnvMap.Set("replaceKey", "oldValue")
@@ -97,10 +96,10 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 
 		var fetchedCASFiles bool
 
-		properties := &swarming.TaskProperties{
+		properties := &swarmingv2.TaskProperties{
 			Command:     []string{"rbd", "stream", "-test-id-prefix", "--isolated-output=${ISOLATED_OUTDIR}/chicken-output.json"},
 			RelativeCwd: relativeCwd,
-			Env: []*swarming.StringPair{
+			Env: []*swarmingv2.StringPair{
 				{
 					Key:   "key",
 					Value: "value1",
@@ -114,7 +113,7 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 					Value: "",
 				},
 			},
-			EnvPrefixes: []*swarming.StringListPair{
+			EnvPrefixes: []*swarmingv2.StringListPair{
 				{
 					Key:   "PATH",
 					Value: []string{".task_template_packages", ".task_template_packages/zoo"},
@@ -124,11 +123,11 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 					Value: []string{"egg", "rooster"},
 				},
 			},
-			CasInputRoot: &swarming.CASReference{
+			CasInputRoot: &swarmingv2.CASReference{
 				CasInstance: "CAS-instance",
 			},
-			CipdInput: &swarming.CipdInput{
-				Packages: []*swarming.CipdPackage{
+			CipdInput: &swarmingv2.CipdInput{
+				Packages: []*swarmingv2.CipdPackage{
 					{
 						PackageName: "infra/tools/luci-auth/${platform}",
 						Path:        ".task_template_packages",
@@ -149,13 +148,13 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		}
 
 		service := &testService{
-			filesFromCAS: func(_ context.Context, _ string, _ *rbeclient.Client, _ *swarming.CASReference) ([]string, error) {
+			filesFromCAS: func(_ context.Context, _ string, _ *rbeclient.Client, _ *swarmingv2.CASReference) ([]string, error) {
 				fetchedCASFiles = true
 				return []string{}, nil
 			},
 		}
 
-		cmd, err := c.prepareTaskRequestEnvironment(ctx, properties, service)
+		cmd, err := c.prepareTaskRequestEnvironment(ctx, properties, service, &testAuthFlags{})
 		So(err, ShouldBeNil)
 
 		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix",
@@ -207,9 +206,10 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 
 func TestReproduceTaskRequestCommand(t *testing.T) {
 	t.Parallel()
+
 	Convey(`Make sure we can execute commands.`, t, func() {
-		c := reproduceRun{}
-		c.init(&testAuthFlags{})
+		c := reproduceImpl{}
+
 		ctx := context.Background()
 		var cmd *exec.Cmd
 		if runtime.GOOS == "windows" {
@@ -220,13 +220,12 @@ func TestReproduceTaskRequestCommand(t *testing.T) {
 
 		var stdout bytes.Buffer
 		cmd.Stdout = &stdout
-		err := c.executeTaskRequestCommand(ctx, &swarming.TaskRequestResponse{}, cmd)
+		err := c.executeTaskRequestCommand(ctx, &swarmingv2.TaskRequestResponse{}, cmd, &testAuthFlags{})
 		So(err, ShouldBeNil)
 		if runtime.GOOS == "windows" {
 			So(stdout.String(), ShouldEqual, "chicken\r\n")
 		} else {
 			So(stdout.String(), ShouldEqual, "chicken\n")
 		}
-
 	})
 }

@@ -16,15 +16,11 @@
 // +build !copybara
 
 // Package main is a client to a Swarming server.
-//
-// The reference server python implementation documentation can be found at
-// https://github.com/luci/luci-py/tree/master/appengine/swarming/doc
 package main
 
 import (
 	"context"
 	"flag"
-	"log"
 	"net/http"
 	"os"
 
@@ -34,9 +30,13 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/casclient"
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl"
 	"go.chromium.org/luci/client/versioncli"
+	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging/gologger"
+
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
@@ -74,16 +74,23 @@ func (af *authFlags) NewRBEClient(ctx context.Context, addr string, instance str
 	return casclient.NewLegacy(ctx, addr, instance, *af.parsedOpts, true)
 }
 
-func getApplication() *subcommands.DefaultApplication {
+func getApplication() *cli.Application {
 	authOpts := chromeinfra.DefaultAuthOptions()
 	af := &authFlags{defaultOpts: authOpts}
 
-	return &subcommands.DefaultApplication{
+	return &cli.Application{
 		Name:  "swarming",
 		Title: "Client tool to access a swarming server.",
+
+		// Note: this decouples logging implementation from subcommands
+		// implementation. Useful when reusing subcommands in g3.
+		Context: func(ctx context.Context) context.Context {
+			return gologger.StdConfig.Use(ctx)
+		},
+
 		// Keep in alphabetical order of their name.
 		Commands: []*subcommands.Command{
-			subcommands.Section("task related commands\n"),
+			subcommands.Section("Tasks\n"),
 			swarmingimpl.CmdCancelTask(af),
 			swarmingimpl.CmdCollect(af),
 			swarmingimpl.CmdReproduce(af),
@@ -91,12 +98,12 @@ func getApplication() *subcommands.DefaultApplication {
 			swarmingimpl.CmdSpawnTasks(af),
 			swarmingimpl.CmdTasks(af),
 			swarmingimpl.CmdTrigger(af),
-			subcommands.Section("bot related commands\n"),
+			subcommands.Section("Bots\n"),
 			swarmingimpl.CmdBots(af),
 			swarmingimpl.CmdDeleteBots(af),
 			swarmingimpl.CmdTerminateBot(af),
 			swarmingimpl.CmdBotTasks(af),
-			subcommands.Section("other commands\n"),
+			subcommands.Section("Other\n"),
 			subcommands.CmdHelp,
 			authcli.SubcommandInfo(authOpts, "whoami", false),
 			authcli.SubcommandLogin(authOpts, "login", false),
@@ -105,16 +112,21 @@ func getApplication() *subcommands.DefaultApplication {
 		},
 
 		EnvVars: map[string]subcommands.EnvVarDefinition{
-			swarmingimpl.TaskIDEnvVar: {
+			swarming.ServerEnvVar: {
+				ShortDesc: "URL or a hostname of a Swarming server to use by default when omitting -server or -S flag",
+			},
+			swarming.UserEnvVar: {
+				ShortDesc: "used as \"user\" field in spawned Swarming tasks",
+			},
+			swarming.TaskIDEnvVar: {
 				Advanced: true,
-				ShortDesc: ("Used when processing new triggered tasks. Is used as the " +
-					"parent task ID for the newly triggered tasks."),
+				ShortDesc: "set when running within a Swarming task to ID of that task; " +
+					"used as \"parent_task_id\" field in spawned Swarming tasks",
 			},
 		},
 	}
 }
 
 func main() {
-	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 	os.Exit(subcommands.Run(getApplication(), nil))
 }
