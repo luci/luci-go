@@ -18,6 +18,7 @@ package ui
 import (
 	"context"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -102,7 +103,7 @@ func routeToPage(c *router.Context) error {
 // In particular it includes a set of default arguments passed to all templates.
 func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bundle {
 	return &templates.Bundle{
-		Loader:          templates.FileSystemLoader(templatesPath),
+		Loader:          templates.FileSystemLoader(os.DirFS(templatesPath)),
 		DebugMode:       func(context.Context) bool { return !opts.Prod },
 		DefaultTemplate: "base",
 		DefaultArgs: func(ctx context.Context, e *templates.Extra) (templates.Args, error) {

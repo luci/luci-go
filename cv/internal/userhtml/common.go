@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"os"
 	"strings"
 	"time"
 
@@ -62,7 +63,7 @@ func InstallHandlers(srv *server.Server) {
 // In particular it includes a set of default arguments passed to all templates.
 func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bundle {
 	return &templates.Bundle{
-		Loader:          templates.FileSystemLoader(templatesPath),
+		Loader:          templates.FileSystemLoader(os.DirFS(templatesPath)),
 		DebugMode:       func(context.Context) bool { return !opts.Prod },
 		DefaultTemplate: "base",
 		FuncMap: template.FuncMap{

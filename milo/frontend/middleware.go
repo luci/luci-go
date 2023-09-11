@@ -21,6 +21,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -475,7 +476,7 @@ func faviconMIMEType(fileURL string) string {
 // to the path of the binary during runtime.
 func getTemplateBundle(templatePath string, appVersionID string, prod bool) *templates.Bundle {
 	return &templates.Bundle{
-		Loader:          templates.FileSystemLoader(templatePath),
+		Loader:          templates.FileSystemLoader(os.DirFS(templatePath)),
 		DebugMode:       func(c context.Context) bool { return !prod },
 		DefaultTemplate: "base",
 		DefaultArgs: func(c context.Context, e *templates.Extra) (templates.Args, error) {

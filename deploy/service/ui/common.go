@@ -18,6 +18,7 @@ package ui
 import (
 	"context"
 	"net/http"
+	"os"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -94,7 +95,7 @@ func RegisterRoutes(srv *server.Server, accessGroup string, assets *rpcs.Assets)
 // prepareTemplates loads HTML page templates.
 func (ui *UI) prepareTemplates() *templates.Bundle {
 	return &templates.Bundle{
-		Loader:          templates.FileSystemLoader("templates"),
+		Loader:          templates.FileSystemLoader(os.DirFS("templates")),
 		DebugMode:       func(context.Context) bool { return !ui.prod },
 		DefaultTemplate: "base",
 		DefaultArgs: func(ctx context.Context, e *templates.Extra) (templates.Args, error) {

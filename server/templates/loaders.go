@@ -16,8 +16,10 @@ package templates
 
 import (
 	"context"
+	"errors"
 	"html/template"
-	"os"
+	"io"
+	"io/fs"
 	"path/filepath"
 	"strings"
 )
@@ -82,36 +84,16 @@ func AssetsLoader(assets map[string]string) Loader {
 //   - 'widgets/' contain all standalone templates that will be loaded without templates from 'includes/'
 //
 // Only templates from 'pages/' and 'widgets/' are included in the output map.
-func FileSystemLoader(path string) Loader {
+func FileSystemLoader(fs fs.FS) Loader {
 	return func(c context.Context, funcMap template.FuncMap) (map[string]*template.Template, error) {
-		abs, err := filepath.Abs(path)
-		if err != nil {
-			return nil, err
-		}
-
 		// Read all relevant files into memory. It's ok, they are small.
 		files := map[string]string{}
-		if err = readFilesInDir(filepath.Join(abs, "includes"), files); err != nil {
-			return nil, err
-		}
-		if err = readFilesInDir(filepath.Join(abs, "pages"), files); err != nil {
-			return nil, err
-		}
-		if err = readFilesInDir(filepath.Join(abs, "widgets"), files); err != nil {
-			return nil, err
-		}
-
-		// Convert to assets map as consumed by AssetsLoader (relative slash
-		// separated paths) and reuse AssetsLoader.
-		assets := map[string]string{}
-		for k, v := range files {
-			rel, err := filepath.Rel(abs, k)
-			if err != nil {
+		for _, sub := range []string{"includes", "pages", "widgets"} {
+			if err := readFilesInDir(fs, sub, files); err != nil {
 				return nil, err
 			}
-			assets[filepath.ToSlash(rel)] = v
 		}
-		return AssetsLoader(assets)(c, funcMap)
+		return AssetsLoader(files)(c, funcMap)
 	}
 }
 
@@ -121,19 +103,28 @@ func FileSystemLoader(path string) Loader {
 // in memory.
 //
 // Does nothing is 'dir' is missing.
-func readFilesInDir(dir string, out map[string]string) error {
-	_, err := os.Stat(dir)
-	if os.IsNotExist(err) {
+func readFilesInDir(fileSystem fs.FS, dir string, out map[string]string) error {
+	if _, err := fs.Stat(fileSystem, dir); errors.Is(err, fs.ErrNotExist) {
 		return nil
 	}
-	return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() {
+	return fs.WalkDir(fileSystem, dir, func(path string, d fs.DirEntry, err error) error {
+		switch {
+		case err != nil:
 			return err
+		case d.IsDir():
+			return nil
+		default:
+			file, err := fileSystem.Open(path)
+			if err != nil {
+				return err
+			}
+			defer func() { _ = file.Close() }()
+			contents, err := io.ReadAll(file)
+			if err != nil {
+				return err
+			}
+			out[filepath.ToSlash(path)] = string(contents)
+			return nil
 		}
-		body, err := os.ReadFile(path)
-		if err == nil {
-			out[path] = string(body)
-		}
-		return err
 	})
 }

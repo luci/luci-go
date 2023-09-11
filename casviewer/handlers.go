@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
@@ -56,7 +57,7 @@ func InstallHandlers(r *router.Router, cc *ClientCache, appVersion string) {
 // getTemplateBundles returns template Bundle with base args.
 func getTemplateBundle(appVersion string) *templates.Bundle {
 	return &templates.Bundle{
-		Loader:          templates.FileSystemLoader(templatePath),
+		Loader:          templates.FileSystemLoader(os.DirFS(templatePath)),
 		DefaultTemplate: "base",
 		DefaultArgs: func(c context.Context, e *templates.Extra) (templates.Args, error) {
 			return templates.Args{

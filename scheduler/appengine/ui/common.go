@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"os"
 	"strings"
 	"time"
 
@@ -97,7 +98,7 @@ func startTime(c context.Context) time.Time {
 // In particular it includes a set of default arguments passed to all templates.
 func prepareTemplates(templatesPath string) *templates.Bundle {
 	return &templates.Bundle{
-		Loader:          templates.FileSystemLoader(templatesPath),
+		Loader:          templates.FileSystemLoader(os.DirFS(templatesPath)),
 		DebugMode:       info.IsDevAppServer,
 		DefaultTemplate: "base",
 		FuncMap: template.FuncMap{

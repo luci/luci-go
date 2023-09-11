@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	"google.golang.org/grpc/codes"
@@ -189,7 +190,7 @@ func (m *prpcCookieAuth) Authenticate(ctx context.Context, req auth.RequestMetad
 
 func prepareTemplates(opts *server.Options) *templates.Bundle {
 	return &templates.Bundle{
-		Loader:          templates.FileSystemLoader("templates"),
+		Loader:          templates.FileSystemLoader(os.DirFS("templates")),
 		DebugMode:       func(context.Context) bool { return !opts.Prod },
 		DefaultTemplate: "base",
 		DefaultArgs: func(ctx context.Context, e *templates.Extra) (templates.Args, error) {

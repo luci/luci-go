@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
@@ -155,7 +156,7 @@ func main() {
 
 		// An example of a site that uses encrypted cookies for authentication.
 		templatesBundle := &templates.Bundle{
-			Loader:    templates.FileSystemLoader("templates"),
+			Loader:    templates.FileSystemLoader(os.DirFS("templates")),
 			DebugMode: func(context.Context) bool { return !srv.Options.Prod },
 			DefaultArgs: func(ctx context.Context, e *templates.Extra) (templates.Args, error) {
 				loginURL, err := auth.LoginURL(ctx, e.Request.URL.RequestURI())
