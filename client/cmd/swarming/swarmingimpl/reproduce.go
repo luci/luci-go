@@ -34,7 +34,6 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/template"
-	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
@@ -63,6 +62,7 @@ func CmdReproduce(authFlags base.AuthFlags) *subcommands.Command {
 			}, base.Features{
 				MinArgs: 1,
 				MaxArgs: 1,
+				UsesCAS: true,
 				OutputJSON: base.OutputJSON{
 					Enabled: false,
 				},
@@ -188,11 +188,7 @@ func (cmd *reproduceImpl) prepareTaskRequestEnvironment(ctx context.Context, pro
 
 	// Support RBE-CAS input in task request.
 	if properties.CasInputRoot != nil {
-		cascli, err := auth.NewRBEClient(ctx, casclient.AddrProd, properties.CasInputRoot.CasInstance)
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to fetch RBE-CAS client").Err()
-		}
-		if _, err := svc.FilesFromCAS(ctx, cmd.work, cascli, properties.CasInputRoot); err != nil {
+		if _, err := svc.FilesFromCAS(ctx, cmd.work, properties.CasInputRoot); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch files from RBE-CAS").Err()
 		}
 	}

@@ -21,18 +21,17 @@ import (
 	"testing"
 	"time"
 
-	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
 	"go.chromium.org/luci/swarming/client/swarming"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
@@ -124,7 +123,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 			TaskOutputMock: func(c context.Context, _ string) (*swarmingv2.TaskOutputResponse, error) {
 				return &swarmingv2.TaskOutputResponse{Output: []byte("yipeeee")}, nil
 			},
-			FilesFromCASMock: func(c context.Context, outdir string, _ *rbeclient.Client, casRef *swarmingv2.CASReference) ([]string, error) {
+			FilesFromCASMock: func(c context.Context, outdir string, casRef *swarmingv2.CASReference) ([]string, error) {
 				writtenTo = outdir
 				writtenInstance = casRef.CasInstance
 				writtenDigest = fmt.Sprintf("%s/%d", casRef.Digest.Hash, casRef.Digest.SizeBytes)

@@ -25,8 +25,6 @@ import (
 	"strings"
 	"testing"
 
-	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
-
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
@@ -149,7 +147,7 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		}
 
 		service := &swarmingtest.Client{
-			FilesFromCASMock: func(_ context.Context, _ string, _ *rbeclient.Client, _ *swarmingv2.CASReference) ([]string, error) {
+			FilesFromCASMock: func(_ context.Context, _ string, _ *swarmingv2.CASReference) ([]string, error) {
 				fetchedCASFiles = true
 				return []string{}, nil
 			},

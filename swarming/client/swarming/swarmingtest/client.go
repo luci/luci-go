@@ -18,8 +18,6 @@ package swarmingtest
 import (
 	"context"
 
-	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
-
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
@@ -37,8 +35,10 @@ type Client struct {
 	DeleteBotMock    func(ctx context.Context, botID string) (*swarmingv2.DeleteResponse, error)
 	TerminateBotMock func(ctx context.Context, botID string, reason string) (*swarmingv2.TerminateResponse, error)
 	ListBotTasksMock func(ctx context.Context, botID string, limit int32, start float64, state swarmingv2.StateQuery) ([]*swarmingv2.TaskResultResponse, error)
-	FilesFromCASMock func(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarmingv2.CASReference) ([]string, error)
+	FilesFromCASMock func(ctx context.Context, outdir string, casRef *swarmingv2.CASReference) ([]string, error)
 }
+
+func (c *Client) Close(ctx context.Context) {}
 
 func (c *Client) NewTask(ctx context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error) {
 	return c.NewTaskMock(ctx, req)
@@ -88,6 +88,6 @@ func (c *Client) ListBotTasks(ctx context.Context, botID string, limit int32, st
 	return c.ListBotTasksMock(ctx, botID, limit, start, state)
 }
 
-func (c *Client) FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarmingv2.CASReference) ([]string, error) {
-	return c.FilesFromCASMock(ctx, outdir, cascli, casRef)
+func (c *Client) FilesFromCAS(ctx context.Context, outdir string, casRef *swarmingv2.CASReference) ([]string, error) {
+	return c.FilesFromCASMock(ctx, outdir, casRef)
 }

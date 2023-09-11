@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"sync"
 	"time"
 
 	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
@@ -27,9 +28,12 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/cipd/version"
+	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/lhttp"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/prpc"
 
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
@@ -67,20 +71,28 @@ func init() {
 
 // Client can make requests to Swarming, in particular launch tasks and wait
 // for their execution to finish.
+//
+// A client must be closed with Close when done working with it to avoid leaking
+// goroutines.
 type Client interface {
+	Close(ctx context.Context)
+
 	NewTask(ctx context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error)
 	CountTasks(ctx context.Context, start float64, state swarmingv2.StateQuery, tags []string) (*swarmingv2.TasksCount, error)
 	ListTasks(ctx context.Context, limit int32, start float64, state swarmingv2.StateQuery, tags []string) ([]*swarmingv2.TaskResultResponse, error)
 	CancelTask(ctx context.Context, taskID string, killRunning bool) (*swarmingv2.CancelResponse, error)
+
 	TaskRequest(ctx context.Context, taskID string) (*swarmingv2.TaskRequestResponse, error)
 	TaskOutput(ctx context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error)
 	TaskResult(ctx context.Context, taskID string, perf bool) (*swarmingv2.TaskResultResponse, error)
+
 	CountBots(ctx context.Context, dimensions []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error)
 	ListBots(ctx context.Context, dimensions []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error)
 	DeleteBot(ctx context.Context, botID string) (*swarmingv2.DeleteResponse, error)
 	TerminateBot(ctx context.Context, botID string, reason string) (*swarmingv2.TerminateResponse, error)
 	ListBotTasks(ctx context.Context, botID string, limit int32, start float64, state swarmingv2.StateQuery) ([]*swarmingv2.TaskResultResponse, error)
-	FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarmingv2.CASReference) ([]string, error)
+
+	FilesFromCAS(ctx context.Context, outdir string, casRef *swarmingv2.CASReference) ([]string, error)
 }
 
 // ClientOptions is passed to NewClient.
@@ -90,30 +102,64 @@ type ClientOptions struct {
 	// Required.
 	ServiceURL string
 
+	// RBEAddr is "host:port" of the RBE-CAS service to use.
+	//
+	// Default is the prod service.
+	RBEAddr string
+
 	// UserAgent is put into User-Agent HTTP header with each request.
 	//
 	// Default is UserAgent const.
 	UserAgent string
 
+	// Auth contains options for constructing authenticating clients.
+	//
+	// It is used only when AuthenticatedClient or RBEClientFactory are omitted.
+	Auth auth.Options
+
 	// AuthenticatedClient is http.Client that attaches authentication headers.
 	//
-	// Will be used when talking to the backend.
+	// Will be used when talking to the Swarming backend.
 	//
-	// Defaults to http.DefaultClient which will work only for publicly accessibly
-	// backends.
+	// Default is a client constructed using go.chromium.org/luci/auth based on
+	// the given Auth options.
 	AuthenticatedClient *http.Client
+
+	// RBEClientFactory can create RBE clients on demand.
+	//
+	// Will be used to fetch files from RBE-CAS.
+	//
+	// Default constructs a client using go.chromium.org/luci/auth based on
+	// the given Auth options. It calls LUCI Token Server to get per-instance RBE
+	// authentication tokens. This works only with LUCI RBE instances.
+	RBEClientFactory func(ctx context.Context, addr, instance string) (*rbeclient.Client, error)
 }
 
 // NewClient initializes Swarming client using given options.
-func NewClient(opts ClientOptions) (Client, error) {
+//
+// The passed context will become the root context for RBE client background
+// goroutines.
+func NewClient(ctx context.Context, opts ClientOptions) (Client, error) {
 	if opts.ServiceURL == "" {
 		return nil, errors.Reason("service URL is required").Err()
+	}
+	if opts.RBEAddr == "" {
+		opts.RBEAddr = casclient.AddrProd
 	}
 	if opts.UserAgent == "" {
 		opts.UserAgent = UserAgent
 	}
 	if opts.AuthenticatedClient == nil {
-		opts.AuthenticatedClient = http.DefaultClient
+		cl, err := auth.NewAuthenticator(ctx, auth.SilentLogin, opts.Auth).Client()
+		if err != nil {
+			return nil, err
+		}
+		opts.AuthenticatedClient = cl
+	}
+	if opts.RBEClientFactory == nil {
+		opts.RBEClientFactory = func(ctx context.Context, addr, instance string) (*rbeclient.Client, error) {
+			return casclient.NewLegacy(ctx, addr, instance, opts.Auth, true)
+		}
 	}
 
 	serverURL, err := lhttp.ParseHostURL(opts.ServiceURL)
@@ -134,18 +180,56 @@ func NewClient(opts ClientOptions) (Client, error) {
 		Host:    serverURL.Host,
 	}
 	return &swarmingServiceImpl{
+		ctx:         ctx,
 		opts:        opts,
 		botsClient:  swarmingv2.NewBotsClient(&prpcClient),
 		tasksClient: swarmingv2.NewTasksClient(&prpcClient),
+		rbe:         map[string]*rbeclient.Client{},
 	}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 type swarmingServiceImpl struct {
+	ctx         context.Context
 	opts        ClientOptions
 	botsClient  swarmingv2.BotsClient
 	tasksClient swarmingv2.TasksClient
+
+	m   sync.Mutex
+	rbe map[string]*rbeclient.Client // instance name => RBE client
+}
+
+// rbeClient constructs a new RBE client or returns the existing one.
+func (s *swarmingServiceImpl) rbeClient(inst string) (*rbeclient.Client, error) {
+	if inst == "" {
+		return nil, errors.Reason("no RBE instance name set").Err()
+	}
+	s.m.Lock()
+	defer s.m.Unlock()
+	if cl := s.rbe[inst]; cl != nil {
+		return cl, nil
+	}
+	cl, err := s.opts.RBEClientFactory(s.ctx, s.opts.RBEAddr, inst)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to create RBE client for %s", inst).Err()
+	}
+	s.rbe[inst] = cl
+	return cl, nil
+}
+
+func (s *swarmingServiceImpl) Close(ctx context.Context) {
+	s.m.Lock()
+	defer s.m.Unlock()
+	if len(s.rbe) != 0 {
+		for inst, rbe := range s.rbe {
+			logging.Debugf(ctx, "Closing RBE client for %s", inst)
+			if err := rbe.Close(); err != nil {
+				logging.Errorf(ctx, "Error closing RBE client for %s: %s", inst, err)
+			}
+		}
+		logging.Debugf(ctx, "All RBE clients closed")
+	}
 }
 
 func (s *swarmingServiceImpl) NewTask(ctx context.Context, req *swarmingv2.NewTaskRequest) (res *swarmingv2.TaskRequestMetadataResponse, err error) {
@@ -251,7 +335,11 @@ func (s *swarmingServiceImpl) TaskOutput(ctx context.Context, taskID string) (re
 }
 
 // FilesFromCAS downloads outputs from CAS.
-func (s *swarmingServiceImpl) FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarmingv2.CASReference) ([]string, error) {
+func (s *swarmingServiceImpl) FilesFromCAS(ctx context.Context, outdir string, casRef *swarmingv2.CASReference) ([]string, error) {
+	cascli, err := s.rbeClient(casRef.CasInstance)
+	if err != nil {
+		return nil, err
+	}
 	d := digest.Digest{
 		Hash: casRef.Digest.Hash,
 		Size: casRef.Digest.SizeBytes,

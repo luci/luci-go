@@ -31,6 +31,7 @@ import (
 	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -89,6 +90,8 @@ type Features struct {
 	MaxArgs int
 	// MeasureDuration indicates to measure and log how long the command took.
 	MeasureDuration bool
+	// UsesCAS indicates if `-cas-addr` flag should be exposed.
+	UsesCAS bool
 	// OutputJSON indicates if the command supports emitting JSON output.
 	OutputJSON OutputJSON
 }
@@ -134,6 +137,9 @@ func NewCommandRun(authFlags AuthFlags, impl Subcommand, feats Features) *Comman
 	cr.Flags.BoolVar(&cr.verbose, "verbose", false, "Log at Debug verbosity level.")
 	cr.Flags.StringVar(&cr.rawServerURL, "server", "", fmt.Sprintf("URL or a hostname of a swarming server to call. If not set defaults to $%s. Required.", swarming.ServerEnvVar))
 	cr.Flags.StringVar(&cr.rawServerURL, "S", "", "Alias for -server.")
+	if feats.UsesCAS {
+		cr.Flags.StringVar(&cr.casAddr, "cas-addr", casclient.AddrProd, "CAS service address.")
+	}
 
 	// Register the JSON output flag(s).
 	if feats.OutputJSON.Enabled {
@@ -169,6 +175,7 @@ type CommandRun struct {
 	verbose      bool      // -verbose
 	authFlags    AuthFlags // e.g. -service-account-json, depends on implementation
 	rawServerURL string    // -server
+	casAddr      string    // -cas-addr if UsesCAS is true
 	jsonOutput   string    // -json-output if feats.OutputJSON is enabled
 
 	// Not flags.
@@ -313,9 +320,11 @@ func (cr *CommandRun) execute(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		svc, err = swarming.NewClient(swarming.ClientOptions{
+		svc, err = swarming.NewClient(ctx, swarming.ClientOptions{
 			ServiceURL:          cr.serverURL.String(),
+			RBEAddr:             cr.casAddr,
 			AuthenticatedClient: cl,
+			RBEClientFactory:    cr.authFlags.NewRBEClient,
 		})
 		if err != nil {
 			return err
@@ -332,6 +341,7 @@ func (cr *CommandRun) execute(ctx context.Context) error {
 	if cr.testingResult != nil {
 		*cr.testingResult = out
 	}
+	svc.Close(ctx)
 
 	if cr.feats.MeasureDuration {
 		dt := clock.Since(ctx, started)

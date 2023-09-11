@@ -30,7 +30,6 @@ import (
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -143,6 +142,7 @@ func CmdCollect(authFlags base.AuthFlags) *subcommands.Command {
 				MinArgs:         0,
 				MaxArgs:         base.Unlimited,
 				MeasureDuration: true,
+				UsesCAS:         true,
 				OutputJSON: base.OutputJSON{
 					Enabled:             true,
 					DeprecatedAliasFlag: "task-summary-json",
@@ -164,7 +164,6 @@ type collectImpl struct {
 	eager             bool
 	perf              bool
 	jsonInput         string
-	casAddr           string
 }
 
 func (cmd *collectImpl) RegisterFlags(fs *flag.FlagSet) {
@@ -179,7 +178,6 @@ func (cmd *collectImpl) RegisterFlags(fs *flag.FlagSet) {
 	fs.Var(&cmd.taskOutput, "task-output-stdout", "Where to output each task's console output (stderr/stdout). (none|json|console|all)")
 	fs.StringVar(&cmd.outputDir, "output-dir", "", "Where to download isolated output to.")
 	fs.StringVar(&cmd.jsonInput, "requests-json", "", "Load the task IDs from a .json file as saved by \"trigger -json-output\".")
-	fs.StringVar(&cmd.casAddr, "cas-addr", casclient.AddrProd, "CAS service address.")
 }
 
 func (cmd *collectImpl) ParseInputs(args []string, env subcommands.Env) error {
@@ -275,12 +273,7 @@ func (cmd *collectImpl) fetchTaskResults(ctx context.Context, taskID string, ser
 			return errorResult("output files", err)
 		}
 		if result.CasOutputRoot != nil {
-			// TODO(vadimsh): Reuse CAS client instead of creating it all the time.
-			cascli, err := auth.NewRBEClient(ctx, cmd.casAddr, result.CasOutputRoot.CasInstance)
-			if err != nil {
-				return errorResult("output files", err)
-			}
-			outputs, err = service.FilesFromCAS(ctx, outdir, cascli, &swarmingv2.CASReference{
+			outputs, err = service.FilesFromCAS(ctx, outdir, &swarmingv2.CASReference{
 				CasInstance: result.CasOutputRoot.CasInstance,
 				Digest: &swarmingv2.Digest{
 					Hash:      result.CasOutputRoot.Digest.Hash,
