@@ -234,7 +234,7 @@ func setExecutorMetrics(mctx context.Context, bot *model.BotInfo, serviceName st
 	// HostName needs to be set per bot. Cannot use global target.
 	tctx := target.Set(mctx, &target.Task{
 		DataCenter:  "appengine",
-		ServiceName: serviceName + "-new",
+		ServiceName: serviceName,
 		HostName:    fmt.Sprintf("autogen:%s", bot.Parent.StringID()),
 	})
 	// Status.
