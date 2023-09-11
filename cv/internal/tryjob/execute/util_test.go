@@ -89,7 +89,7 @@ func TestComposeReason(t *testing.T) {
 							},
 						},
 					})
-					So(r, ShouldEqual, "Tryjob [test_proj/test_bucket/test_builder](https://test.com/build/123456790) has failed with summary:\n\n---\nA couple\nof lines\nwith public details")
+					So(r, ShouldEqual, "Tryjob [test_proj/test_bucket/test_builder](https://test.com/build/123456790) has failed with summary{{if .IsGerritCL}} {{.GerritChecksTabMDLink}}{{end}}:\n\n---\nA couple\nof lines\nwith public details")
 				})
 			})
 
@@ -160,7 +160,7 @@ func TestComposeReason(t *testing.T) {
 
 				Convey("all public visibility", func() {
 					r := composeReason(tjs[1:])
-					So(r, ShouldEqual, "Failed Tryjobs:\n* [test_proj/test_bucket/test_builder](https://test.com/build/123456791)\n* [test_proj/test_bucket/test_builder](https://test.com/build/123456792). Summary:\n\n---\nA couple\nof lines\nwith public details\n\n---")
+					So(r, ShouldEqual, "Failed Tryjobs:\n* [test_proj/test_bucket/test_builder](https://test.com/build/123456791)\n* [test_proj/test_bucket/test_builder](https://test.com/build/123456792). Summary{{if .IsGerritCL}} {{.GerritChecksTabMDLink}}{{end}}:\n\n---\nA couple\nof lines\nwith public details\n\n---")
 				})
 
 				Convey("with one restricted visibility", func() {

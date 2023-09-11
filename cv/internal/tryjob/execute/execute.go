@@ -313,7 +313,7 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 	case hasFailed:
 		if ok := e.canRetryAll(ctx, execState, failedIndices); !ok {
 			execState.Status = tryjob.ExecutionState_FAILED
-			execState.FailureReason = composeReason(failedTryjobs)
+			execState.FailureReasonTmpl = composeReason(failedTryjobs)
 			return execState, nil, nil
 		}
 		for _, idx := range failedIndices {
@@ -478,7 +478,7 @@ func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execSta
 
 		if len(criticalLaunchFailures) > 0 {
 			execState.Status = tryjob.ExecutionState_FAILED
-			execState.FailureReason = composeLaunchFailureReason(criticalLaunchFailures)
+			execState.FailureReasonTmpl = composeLaunchFailureReason(criticalLaunchFailures)
 			return execState, nil
 		}
 	}

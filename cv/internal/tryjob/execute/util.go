@@ -50,7 +50,7 @@ func composeReason(tryjobs []*tryjob.Tryjob) string {
 			writeMDLink(&sb, getBuilderName(tj.Definition, tj.Result), tj.ExternalID.MustURL())
 			sb.WriteString(" has failed")
 			if sm := tj.Result.GetBuildbucket().GetSummaryMarkdown(); sm != "" {
-				sb.WriteString(" with summary:\n\n")
+				sb.WriteString(" with summary{{if .IsGerritCL}} {{.GerritChecksTabMDLink}}{{end}}:\n\n")
 				sb.WriteString("---\n")
 				sb.WriteString(sm)
 			}
@@ -75,7 +75,7 @@ func composeReason(tryjobs []*tryjob.Tryjob) string {
 			} else {
 				writeMDLink(&sb, getBuilderName(tj.Definition, tj.Result), tj.ExternalID.MustURL())
 				if sm := tj.Result.GetBuildbucket().GetSummaryMarkdown(); sm != "" {
-					sb.WriteString(". Summary:\n\n")
+					sb.WriteString(". Summary{{if .IsGerritCL}} {{.GerritChecksTabMDLink}}{{end}}:\n\n")
 					sb.WriteString("---\n")
 					sb.WriteString(sm)
 					sb.WriteString("\n\n---")

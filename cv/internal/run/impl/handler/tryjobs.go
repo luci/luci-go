@@ -15,9 +15,11 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"sort"
+	"text/template"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -39,6 +41,24 @@ const (
 	// can process.
 	maxTryjobExecutorDuration = 8 * time.Minute
 )
+
+var (
+	LoadCLs = run.LoadRunCLs
+)
+
+type tmplInfo struct {
+	cl *run.RunCL
+}
+
+func (ti tmplInfo) IsGerritCL() bool {
+	return ti.cl.Detail.GetGerrit() != nil
+}
+
+func (ti tmplInfo) GerritChecksTabMDLink() string {
+	patchset := ti.cl.Detail.Patchset
+	gerritURL := ti.cl.ExternalID.MustURL()
+	return fmt.Sprintf("[(view all results)](%s?checksPatchset=%d&tab=checks)", gerritURL, patchset)
+}
 
 // OnTryjobsUpdated implements Handler interface.
 func (impl *Impl) OnTryjobsUpdated(ctx context.Context, rs *state.RunState, tryjobs common.TryjobIDs) (*Result, error) {
@@ -72,7 +92,7 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 	}
 	var (
 		runStatus       run.Status
-		msg             string
+		msgTmpl         string
 		attentionReason string
 	)
 	switch opCompleted.GetStatus() {
@@ -83,7 +103,7 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 		// normally indicates tryjob executor itself encounters error (e.g. failed
 		// to read from datastore).
 		runStatus = run.Status_FAILED
-		msg = "Unexpected error when processing Tryjobs. Please retry. If retry continues to fail, please contact LUCI team.\n\n" + cvBugLink
+		msgTmpl = "Unexpected error when processing Tryjobs. Please retry. If retry continues to fail, please contact LUCI team.\n\n" + cvBugLink
 		attentionReason = "Run failed"
 	case eventpb.LongOpCompleted_SUCCEEDED:
 		switch es, _, err := tryjob.LoadExecutionState(ctx, rs.ID); {
@@ -106,7 +126,7 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 				runStatus = run.Status_SUCCEEDED
 				switch rs.Mode {
 				case run.DryRun, run.FullRun, run.QuickDryRun:
-					msg = "This CL has passed the run"
+					msgTmpl = "This CL has passed the run"
 					attentionReason = "Run succeeded"
 				case run.NewPatchsetRun:
 				default:
@@ -114,7 +134,7 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 				}
 			case executionStatus == tryjob.ExecutionState_FAILED:
 				runStatus = run.Status_FAILED
-				msg = "This CL has failed the run. Reason:\n\n" + es.FailureReason
+				msgTmpl = "This CL has failed the run. Reason:\n\n" + es.FailureReasonTmpl
 				attentionReason = "Tryjobs failed"
 			case executionStatus == tryjob.ExecutionState_RUNNING:
 				// Tryjobs are still running. No change to run status.
@@ -129,19 +149,34 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 	}
 
 	if run.IsEnded(runStatus) {
-		var meta reviewInputMeta
-		if msg != "" && attentionReason != "" {
-			whoms := rs.Mode.GerritNotifyTargets()
-			meta = reviewInputMeta{
-				message:        msg,
-				notify:         whoms,
-				addToAttention: whoms,
-				reason:         attentionReason,
-			}
+		cls, err := LoadCLs(ctx, rs.ID, rs.CLs)
+		if err != nil {
+			return nil, err
 		}
+
 		metas := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
-		for _, cl := range rs.CLs {
-			metas[cl] = meta
+		for _, cl := range cls {
+			var meta reviewInputMeta
+			if msgTmpl != "" && attentionReason != "" {
+				whoms := rs.Mode.GerritNotifyTargets()
+				t, err := template.New("FailureReason").Parse(msgTmpl)
+				if err != nil {
+					return nil, errors.Annotate(err, "failed to parse FailureReason template").Err()
+				}
+
+				msg := bytes.Buffer{}
+				if err := t.Execute(&msg, tmplInfo{cl: cl}); err != nil {
+					return nil, errors.Annotate(err, "failed to execute FailureReason template").Err()
+				}
+
+				meta = reviewInputMeta{
+					message:        msg.String(),
+					notify:         whoms,
+					addToAttention: whoms,
+					reason:         attentionReason,
+				}
+			}
+			metas[cl.ID] = meta
 		}
 		scheduleTriggersReset(ctx, rs, metas, runStatus)
 	}

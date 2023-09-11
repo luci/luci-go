@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/errors"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -165,6 +166,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 								Info: proto.Clone(ci).(*gerritpb.ChangeInfo),
 							},
 						},
+						Patchset: 2,
 					},
 				},
 			), ShouldBeNil)
@@ -299,52 +301,134 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 
 			Convey("Tryjob execution failed", func() {
 				var whoms []run.OngoingLongOps_Op_ResetTriggers_Whom
-				Convey("On CQ Vote Run", func() {
-					rs.Mode = run.DryRun
-					whoms = []run.OngoingLongOps_Op_ResetTriggers_Whom{
-						run.OngoingLongOps_Op_ResetTriggers_OWNER,
-						run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
-					}
-				})
-				Convey("On New Patchset Run", func() {
-					rs.Mode = run.NewPatchsetRun
-					whoms = []run.OngoingLongOps_Op_ResetTriggers_Whom{
-						run.OngoingLongOps_Op_ResetTriggers_OWNER,
-						run.OngoingLongOps_Op_ResetTriggers_PS_UPLOADER,
-					}
-				})
-				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					return tryjob.SaveExecutionState(ctx, rs.ID, &tryjob.ExecutionState{
-						Status:        tryjob.ExecutionState_FAILED,
-						FailureReason: "build 12345 failed",
-					}, 0, nil)
-				}, nil)
-				So(err, ShouldBeNil)
-				res, err := h.OnLongOpCompleted(ctx, rs, result)
-				So(err, ShouldBeNil)
-				So(res.State.Status, ShouldEqual, run.Status_RUNNING)
-				So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
-					State: &tryjob.ExecutionState{
-						Status:        tryjob.ExecutionState_FAILED,
-						FailureReason: "build 12345 failed",
-					},
-				})
-				So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
-				for _, op := range res.State.OngoingLongOps.GetOps() {
-					So(op.GetResetTriggers(), ShouldNotBeNil)
-					So(op.GetResetTriggers().GetRequests(), ShouldResembleProto, []*run.OngoingLongOps_Op_ResetTriggers_Request{
-						{
-							Clid:                 int64(rs.CLs[0]),
-							Message:              "This CL has failed the run. Reason:\n\nbuild 12345 failed",
-							Notify:               whoms,
-							AddToAttention:       whoms,
-							AddToAttentionReason: "Tryjobs failed",
+				Convey("With no failure reason placeholders", func() {
+					Convey("On CQ Vote Run", func() {
+						rs.Mode = run.DryRun
+						whoms = []run.OngoingLongOps_Op_ResetTriggers_Whom{
+							run.OngoingLongOps_Op_ResetTriggers_OWNER,
+							run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
+						}
+					})
+					Convey("On New Patchset Run", func() {
+						rs.Mode = run.NewPatchsetRun
+						whoms = []run.OngoingLongOps_Op_ResetTriggers_Whom{
+							run.OngoingLongOps_Op_ResetTriggers_OWNER,
+							run.OngoingLongOps_Op_ResetTriggers_PS_UPLOADER,
+						}
+					})
+					err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+						return tryjob.SaveExecutionState(ctx, rs.ID, &tryjob.ExecutionState{
+							Status:            tryjob.ExecutionState_FAILED,
+							FailureReasonTmpl: "build 12345 failed",
+						}, 0, nil)
+					}, nil)
+					So(err, ShouldBeNil)
+					res, err := h.OnLongOpCompleted(ctx, rs, result)
+					So(err, ShouldBeNil)
+					So(res.State.Status, ShouldEqual, run.Status_RUNNING)
+					So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
+						State: &tryjob.ExecutionState{
+							Status:            tryjob.ExecutionState_FAILED,
+							FailureReasonTmpl: "build 12345 failed",
 						},
 					})
-					So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
-				}
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
+					So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+					for _, op := range res.State.OngoingLongOps.GetOps() {
+						So(op.GetResetTriggers(), ShouldNotBeNil)
+						So(op.GetResetTriggers().GetRequests(), ShouldResembleProto, []*run.OngoingLongOps_Op_ResetTriggers_Request{
+							{
+								Clid:                 int64(rs.CLs[0]),
+								Message:              "This CL has failed the run. Reason:\n\nbuild 12345 failed",
+								Notify:               whoms,
+								AddToAttention:       whoms,
+								AddToAttentionReason: "Tryjobs failed",
+							},
+						})
+						So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+					}
+					So(res.SideEffectFn, ShouldBeNil)
+					So(res.PreserveEvents, ShouldBeFalse)
+				})
+
+				Convey("With TryJob results URL failure reason placeholder", func() {
+					Convey("With LoadRunCLs success", func() {
+						Convey("On CQ Vote Run", func() {
+							rs.Mode = run.DryRun
+							whoms = []run.OngoingLongOps_Op_ResetTriggers_Whom{
+								run.OngoingLongOps_Op_ResetTriggers_OWNER,
+								run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
+							}
+						})
+						Convey("On New Patchset Run", func() {
+							rs.Mode = run.NewPatchsetRun
+							whoms = []run.OngoingLongOps_Op_ResetTriggers_Whom{
+								run.OngoingLongOps_Op_ResetTriggers_OWNER,
+								run.OngoingLongOps_Op_ResetTriggers_PS_UPLOADER,
+							}
+						})
+						err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+							return tryjob.SaveExecutionState(ctx, rs.ID, &tryjob.ExecutionState{
+								Status:            tryjob.ExecutionState_FAILED,
+								FailureReasonTmpl: "build 12345 failed{{if .IsGerritCL}} {{.GerritChecksTabMDLink}}{{end}}",
+							}, 0, nil)
+						}, nil)
+						So(err, ShouldBeNil)
+						res, err := h.OnLongOpCompleted(ctx, rs, result)
+						So(err, ShouldBeNil)
+						So(res.State.Status, ShouldEqual, run.Status_RUNNING)
+						So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
+							State: &tryjob.ExecutionState{
+								Status:            tryjob.ExecutionState_FAILED,
+								FailureReasonTmpl: "build 12345 failed{{if .IsGerritCL}} {{.GerritChecksTabMDLink}}{{end}}",
+							},
+						})
+						So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+						for _, op := range res.State.OngoingLongOps.GetOps() {
+							So(op.GetResetTriggers(), ShouldNotBeNil)
+							So(op.GetResetTriggers().GetRequests(), ShouldResembleProto, []*run.OngoingLongOps_Op_ResetTriggers_Request{
+								{
+									Clid:                 int64(rs.CLs[0]),
+									Message:              "This CL has failed the run. Reason:\n\nbuild 12345 failed [(view all results)](https://example-review.googlesource.com/c/101?checksPatchset=2&tab=checks)",
+									Notify:               whoms,
+									AddToAttention:       whoms,
+									AddToAttentionReason: "Tryjobs failed",
+								},
+							})
+							So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+						}
+						So(res.SideEffectFn, ShouldBeNil)
+						So(res.PreserveEvents, ShouldBeFalse)
+					})
+					Convey("With LoadRunCLs error", func() {
+						LoadCLs = func(ctx context.Context, runID common.RunID, clids common.CLIDs) ([]*run.RunCL, error) {
+							return nil, errors.New("Failed")
+						}
+						Convey("On CQ Vote Run", func() {
+							rs.Mode = run.DryRun
+							whoms = []run.OngoingLongOps_Op_ResetTriggers_Whom{
+								run.OngoingLongOps_Op_ResetTriggers_OWNER,
+								run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
+							}
+						})
+						Convey("On New Patchset Run", func() {
+							rs.Mode = run.NewPatchsetRun
+							whoms = []run.OngoingLongOps_Op_ResetTriggers_Whom{
+								run.OngoingLongOps_Op_ResetTriggers_OWNER,
+								run.OngoingLongOps_Op_ResetTriggers_PS_UPLOADER,
+							}
+						})
+						err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+							return tryjob.SaveExecutionState(ctx, rs.ID, &tryjob.ExecutionState{
+								Status:            tryjob.ExecutionState_FAILED,
+								FailureReasonTmpl: "build 12345 failed{{if .IsGerritCL}} {{.GerritChecksTabMDLink}}{{end}}",
+							}, 0, nil)
+						}, nil)
+						So(err, ShouldBeNil)
+						res, err := h.OnLongOpCompleted(ctx, rs, result)
+						So(res, ShouldBeNil)
+						So(err, ShouldNotBeNil)
+					})
+				})
 			})
 		})
 	})

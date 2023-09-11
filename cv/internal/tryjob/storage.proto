@@ -259,7 +259,10 @@ message ExecutionState {
   Status status = 3;
   // FailureReason provides a user-readable explanation of the
   // failure.
-  string failure_reason = 4;
+  string failure_reason = 4 [deprecated=true];
+  // FailureReasonTmpl provides a user-readable explanation of the
+  // failure, with template support.
+  string failure_reason_tmpl = 7;
   // The time when the executions end with a terminal status
   google.protobuf.Timestamp end_time = 6;
 }
