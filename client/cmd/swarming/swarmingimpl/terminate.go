@@ -17,11 +17,9 @@ package swarmingimpl
 import (
 	"context"
 	"flag"
-	"time"
 
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -64,31 +62,6 @@ func (cmd *terminateImpl) ParseInputs(args []string, env subcommands.Env) error 
 	return nil
 }
 
-func pollTask(ctx context.Context, taskID string, service swarming.Client) (*swarmingv2.TaskResultResponse, error) {
-	for {
-		res, err := service.TaskResult(ctx, taskID, false)
-		if err != nil {
-			return res, errors.Annotate(err, "failed to get task result").Err()
-		}
-
-		if err != nil {
-			return res, errors.Annotate(err, "failed to parse task state").Err()
-		}
-		if !TaskIsAlive(res.State) {
-			return res, nil
-		}
-
-		delay := 5 * time.Second
-
-		logging.Debugf(ctx, "Waiting %s for task: %s", delay, taskID)
-		timerResult := <-clock.After(ctx, delay)
-
-		if timerResult.Err != nil {
-			return res, errors.Annotate(err, "failed to wait for task").Err()
-		}
-	}
-}
-
 func (cmd *terminateImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
 	res, err := svc.TerminateBot(ctx, cmd.botID, cmd.reason)
 	if err != nil {
@@ -96,11 +69,12 @@ func (cmd *terminateImpl) Execute(ctx context.Context, svc swarming.Client, extr
 	}
 
 	if cmd.wait {
-		taskres, err := pollTask(ctx, res.TaskId, svc)
+		logging.Infof(ctx, "Waiting for the bot to terminate...")
+		taskres, err := swarming.GetOne(ctx, svc, res.TaskId, false, swarming.Wait)
 		if err != nil {
 			return nil, errors.Annotate(err, "failed when polling task %s", res.TaskId).Err()
 		}
-		if !TaskIsCompleted(taskres.State) {
+		if taskres.State != swarmingv2.TaskState_COMPLETED {
 			return nil, errors.Reason("failed to terminate bot ID %s with task state %s", cmd.botID, taskres.State).Err()
 		}
 	}
