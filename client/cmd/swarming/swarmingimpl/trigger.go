@@ -27,7 +27,7 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/google/uuid"
 	"github.com/maruel/subcommands"
-	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/flagenum"
@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/clipb"
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
@@ -263,8 +264,6 @@ func (cmd *triggerImpl) ParseInputs(args []string, env subcommands.Env) error {
 	return nil
 }
 
-type triggerResult = ProtoJSONAdapter[*swarmingv2.TaskRequestMetadataResponse]
-
 func (cmd *triggerImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
 	request, err := cmd.processTriggerOptions(cmd.cmd, extra.ServerURL)
 	if err != nil {
@@ -288,7 +287,9 @@ func (cmd *triggerImpl) Execute(ctx context.Context, svc swarming.Swarming, extr
 	logging.Infof(ctx, "The task status:\n"+
 		"  %s/task?id=%s\n", extra.ServerURL, result.TaskId)
 
-	return TriggerResults{Tasks: []*triggerResult{{result}}}, nil
+	return &clipb.SpawnTasksOutput{
+		Tasks: []*swarmingv2.TaskRequestMetadataResponse{result},
+	}, nil
 }
 
 func (cmd *triggerImpl) createTaskSliceForOptionalDimension(properties *swarmingv2.TaskProperties) (*swarmingv2.TaskSlice, error) {
@@ -298,18 +299,7 @@ func (cmd *triggerImpl) createTaskSliceForOptionalDimension(properties *swarming
 	optDim := cmd.optionalDimension.kv
 	exp := cmd.optionalDimension.expiration
 
-	// Deep copy properties
-	//
-	// TODO(vadimsh): Use proto.Clone.
-	pj, err := protojson.Marshal(properties)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to marshall properties").Err()
-	}
-
-	propsCpy := &swarmingv2.TaskProperties{}
-	if err = protojson.Unmarshal(pj, propsCpy); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshall properties").Err()
-	}
+	propsCpy := proto.Clone(properties).(*swarmingv2.TaskProperties)
 	propsCpy.Dimensions = append(propsCpy.Dimensions, optDim)
 
 	return &swarmingv2.TaskSlice{

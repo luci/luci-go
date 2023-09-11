@@ -16,7 +16,6 @@ package swarmingimpl
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"testing"
@@ -27,6 +26,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 
@@ -523,7 +523,7 @@ func TestCollectSummarizeResults(t *testing.T) {
   }
  }
 }`
-		actual, _ := json.MarshalIndent(summary, "", " ")
+		actual, _ := base.EncodeJSON(summary)
 		So(string(actual), ShouldEqual, expected)
 	})
 }
@@ -546,7 +546,7 @@ func TestCollectSummarizeResultsPython(t *testing.T) {
 		}
 		summary, err := summarizeResultsPython(results)
 		So(err, ShouldBeNil)
-		actual, _ := json.MarshalIndent(summary, "", " ")
+		actual, _ := base.EncodeJSON(summary)
 		So(string(actual), ShouldEqual, `{
  "shards": [
   {

@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
@@ -94,24 +93,8 @@ func (cmd *tasksImpl) ParseInputs(args []string, env subcommands.Env) error {
 
 func (cmd *tasksImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
 	state, _ := stateMap(cmd.state)
-
 	if cmd.count {
-		count, err := svc.CountTasks(ctx, cmd.start, state, cmd.tags...)
-		if err != nil {
-			return nil, err
-		}
-		return &ProtoJSONAdapter[*swarmingv2.TasksCount]{Proto: count}, nil
+		return svc.CountTasks(ctx, cmd.start, state, cmd.tags...)
 	}
-
-	tasks, err := svc.ListTasks(ctx, int32(cmd.limit), cmd.start, state, cmd.tags)
-	if err != nil {
-		return nil, err
-	}
-	toOutput := make([]*taskResultResponse, len(tasks))
-	for idx, tr := range tasks {
-		toOutput[idx] = &taskResultResponse{
-			Proto: tr,
-		}
-	}
-	return toOutput, nil
+	return svc.ListTasks(ctx, int32(cmd.limit), cmd.start, state, cmd.tags)
 }

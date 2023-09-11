@@ -16,18 +16,19 @@ package swarmingimpl
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"io"
 	"os"
 	"sync"
 
 	"github.com/maruel/subcommands"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/clipb"
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
@@ -82,41 +83,29 @@ func (cmd *spawnTasksImpl) ParseInputs(args []string, env subcommands.Env) error
 
 func (cmd *spawnTasksImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
 	results, merr := createNewTasks(ctx, svc, cmd.requests)
-	trs := make([]*triggerResult, len(results))
-	for i, res := range results {
-		trs[i] = &triggerResult{
-			Proto: res,
-		}
-	}
-	return TriggerResults{Tasks: trs}, merr
+	return &clipb.SpawnTasksOutput{Tasks: results}, merr
 }
 
 func processTasksStream(tasks io.Reader, env subcommands.Env) ([]*swarmingv2.NewTaskRequest, error) {
-	dec := json.NewDecoder(tasks)
-	dec.DisallowUnknownFields()
-
-	requests := struct {
-		Requests []ProtoJSONAdapter[*swarmingv2.NewTaskRequest] `json:"requests"`
-	}{}
-	if err := dec.Decode(&requests); err != nil {
+	blob, err := io.ReadAll(tasks)
+	if err != nil {
+		return nil, errors.Annotate(err, "reading tasks file").Err()
+	}
+	var requests clipb.SpawnTasksInput
+	if err := protojson.Unmarshal(blob, &requests); err != nil {
 		return nil, errors.Annotate(err, "decoding tasks file").Err()
 	}
-
 	// Populate the tasks with information about the current environment
 	// if they're not already set.
 	for _, ntr := range requests.Requests {
-		if ntr.Proto.User == "" {
-			ntr.Proto.User = env[swarming.UserEnvVar].Value
+		if ntr.User == "" {
+			ntr.User = env[swarming.UserEnvVar].Value
 		}
-		if ntr.Proto.ParentTaskId == "" {
-			ntr.Proto.ParentTaskId = env[swarming.TaskIDEnvVar].Value
+		if ntr.ParentTaskId == "" {
+			ntr.ParentTaskId = env[swarming.TaskIDEnvVar].Value
 		}
 	}
-	ntrs := make([]*swarmingv2.NewTaskRequest, len(requests.Requests))
-	for i, req := range requests.Requests {
-		ntrs[i] = req.Proto
-	}
-	return ntrs, nil
+	return requests.Requests, nil
 }
 
 func createNewTasks(ctx context.Context, service swarming.Swarming, requests []*swarmingv2.NewTaskRequest) ([]*swarmingv2.TaskRequestMetadataResponse, error) {

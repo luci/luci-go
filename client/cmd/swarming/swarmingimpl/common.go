@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"net/url"
-	"reflect"
 	"sort"
 	"strings"
 	"time"
@@ -26,8 +25,6 @@ import (
 	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
@@ -42,53 +39,6 @@ const (
 	// Number of tasks and bots to grab in List* requests
 	DefaultNumberToFetch = 1000
 )
-
-type ProtoJSONAdapter[T protoreflect.ProtoMessage] struct {
-	Proto T
-}
-
-func (pja *ProtoJSONAdapter[T]) MarshalJSON() ([]byte, error) {
-	return DefaultProtoMarshalOpts.Marshal(pja.Proto)
-}
-
-// createEmptyUnderlyingProto creates an empty proto for the given underlying ProtoJsonAdapter[T]
-// It is assumed that T is a pointer to a proto. This assumption is likely always valid as protos implement
-// protoreflect.Message as a pointer.
-func createEmptyUnderlyingProto[T protoreflect.ProtoMessage]() T {
-	// First, we allocate an empty pointer which will be *SomePBType
-	// But this will initially be a nil pointer, and so the program will crash
-	// So some reflection is required
-	var t T
-	// This will be *SomePBType
-	adapterType := reflect.TypeOf(t)
-	// From here we get SomePBType which is the base protobuf type
-	adapterPBType := adapterType.Elem()
-	// This will create an empty protobuf which started as T
-	pb := reflect.New(adapterPBType)
-	// Return pointer to underlying proto type
-	return pb.Interface().(T)
-}
-
-func (pja *ProtoJSONAdapter[T]) UnmarshalJSON(data []byte) error {
-	// pja will initially be allocated with a Nil pointer to its .Proto field
-	// This is guaranteed to panic protojson.Unmarshal
-	// And so we need to allocate it
-	pb := createEmptyUnderlyingProto[T]()
-	err := protojson.Unmarshal(data, pb)
-	if err != nil {
-		return err
-	}
-	pja.Proto = pb
-	return nil
-}
-
-// TriggerResults is a set of results from using the trigger subcommand,
-// describing all of the tasks that were triggered successfully.
-type TriggerResults struct {
-	// Tasks is a list of successfully triggered tasks represented as
-	// TriggerResult values.
-	Tasks []*ProtoJSONAdapter[*swarmingv2.TaskRequestMetadataResponse] `json:"tasks"`
-}
 
 type swarmingServiceImpl struct {
 	botsClient  swarmingv2.BotsClient
@@ -341,14 +291,6 @@ func (s *swarmingServiceImpl) ListBotTasks(ctx context.Context, botID string, li
 	return tasks, nil
 }
 
-const DefaultIndent = " "
-
-var DefaultProtoMarshalOpts = protojson.MarshalOptions{
-	UseProtoNames: true,
-	Multiline:     true,
-	Indent:        DefaultIndent,
-}
-
 // TaskIsAlive is true if the task is pending or running.
 func TaskIsAlive(t swarmingv2.TaskState) bool {
 	return t == swarmingv2.TaskState_PENDING || t == swarmingv2.TaskState_RUNNING
@@ -358,8 +300,6 @@ func TaskIsAlive(t swarmingv2.TaskState) bool {
 func TaskIsCompleted(t swarmingv2.TaskState) bool {
 	return t == swarmingv2.TaskState_COMPLETED
 }
-
-type taskResultResponse = ProtoJSONAdapter[*swarmingv2.TaskResultResponse]
 
 func init() {
 	// TODO(vadimsh): Move swarmingServiceImpl{} to a dedicate "swarming" package.

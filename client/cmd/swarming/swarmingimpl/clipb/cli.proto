@@ -1,0 +1,31 @@
+// Copyright 2023 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package swarming.cli;
+
+option go_package = "go.chromium.org/luci/client/cmd/swarming/swarmingimpl/clipb";
+
+import "go.chromium.org/luci/swarming/proto/api_v2/swarming.proto";
+
+// JSON input for `spawn-tasks`.
+message SpawnTasksInput {
+  repeated swarming.v2.NewTaskRequest requests = 1;
+}
+
+// JSON output of `spawn-tasks` and JSON input of `collect`.
+message SpawnTasksOutput {
+  repeated swarming.v2.TaskRequestMetadataResponse tasks = 1;
+}
+
+// One entry in a JSON output of `collect`.
+//
+// `collect` outputs a dict `{task ID: ResultSummaryEntry}`.
+message ResultSummaryEntry {
+  string error = 1;
+  string output = 2;
+  repeated string outputs = 3;
+  swarming.v2.TaskResultResponse results = 4;
+}

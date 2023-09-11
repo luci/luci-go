@@ -20,7 +20,6 @@ package base
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -342,23 +341,35 @@ func (cr *CommandRun) execute(ctx context.Context) error {
 		}
 	}
 
-	if err != nil || cr.jsonOutput == "" {
+	stdoutProjection, _ := out.(*listWithProjection)
+
+	if err != nil || (cr.jsonOutput == "" && stdoutProjection == nil) {
 		return err
 	}
 
-	asJSON, err := json.MarshalIndent(out, "", " ")
+	asJSON, err := EncodeJSON(out)
 	if err != nil {
 		return errors.Annotate(err, "the command succeeded but the result is not JSON-serializable").Err()
 	}
 
 	if cr.jsonOutput == "-" {
-		logging.Debugf(ctx, "Writing the output as JSON to stdout")
-		fmt.Fprintln(cr.stdout(), string(asJSON))
+		if stdoutProjection == nil {
+			logging.Debugf(ctx, "Writing the output as JSON to stdout")
+			fmt.Fprintln(cr.stdout(), string(asJSON))
+		}
 	} else {
 		logging.Debugf(ctx, "Writing the output as JSON to %s", cr.jsonOutput)
 		if err := os.WriteFile(cr.jsonOutput, asJSON, 0644); err != nil {
 			return errors.Annotate(err, "the command succeeded but the result could not be written to -json-output").Err()
 		}
 	}
+
+	// Write a list of strings to stdout as well if the command requested it.
+	if stdoutProjection != nil {
+		for i := 0; i < stdoutProjection.count; i++ {
+			fmt.Fprintln(cr.stdout(), stdoutProjection.stdoutLine(i))
+		}
+	}
+
 	return nil
 }

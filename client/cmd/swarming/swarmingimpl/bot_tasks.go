@@ -81,15 +81,5 @@ func (cmd *botTasksImpl) ParseInputs(args []string, env subcommands.Env) error {
 
 func (cmd *botTasksImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
 	state, _ := stateMap(cmd.state)
-	data, err := svc.ListBotTasks(ctx, cmd.botID, int32(cmd.limit), cmd.start, state)
-	if err != nil {
-		return nil, err
-	}
-	toOutput := make([]*taskResultResponse, len(data))
-	for idx, tr := range data {
-		toOutput[idx] = &taskResultResponse{
-			Proto: tr,
-		}
-	}
-	return toOutput, nil
+	return svc.ListBotTasks(ctx, cmd.botID, int32(cmd.limit), cmd.start, state)
 }

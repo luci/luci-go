@@ -15,17 +15,17 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/maruel/subcommands"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/clipb"
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
@@ -103,19 +103,19 @@ func triggerTask(t *testing.T, args []string) *swarmingv2.TaskRequestMetadataRes
 	results := readTriggerResults(jsonPath)
 	So(results.Tasks, ShouldHaveLength, 1)
 	task := results.Tasks[0]
-	slice := task.Proto.Request.TaskSlices[0]
+	slice := task.Request.TaskSlices[0]
 	redactedSb := []byte("<REDACTED>")
 	So(slice.Properties.SecretBytes, ShouldEqual, redactedSb)
-	return task.Proto
+	return task
 }
 
 // readTriggerResults reads TriggerResults from output json file.
-func readTriggerResults(jsonPath string) *swarmingimpl.TriggerResults {
+func readTriggerResults(jsonPath string) *clipb.SpawnTasksOutput {
 	resultsJSON, err := os.ReadFile(jsonPath)
 	So(err, ShouldBeNil)
 
-	results := &swarmingimpl.TriggerResults{}
-	err = json.Unmarshal(resultsJSON, results)
+	results := &clipb.SpawnTasksOutput{}
+	err = protojson.Unmarshal(resultsJSON, results)
 	So(err, ShouldBeNil)
 
 	return results

@@ -87,30 +87,16 @@ func (cmd *botsImpl) Execute(ctx context.Context, svc swarming.Swarming, extra b
 	}
 
 	if cmd.count {
-		count, err := svc.CountBots(ctx, dims)
-		if err != nil {
-			return nil, err
-		}
-		return &ProtoJSONAdapter[*swarmingv2.BotsCount]{Proto: count}, nil
+		return svc.CountBots(ctx, dims)
 	}
 
 	bots, err := svc.ListBots(ctx, dims)
-	if err != nil {
-		return nil, err
+	if err != nil || !cmd.botIDOnly {
+		return bots, err
 	}
 
-	if cmd.botIDOnly {
-		// TODO(vadimsh): Annotate that this is a raw string list, not JSON.
-		botIDs := make([]string, len(bots))
-		for i, bot := range bots {
-			botIDs[i] = bot.GetBotId()
-		}
-		return botIDs, nil
-	}
-
-	botInfos := make([]ProtoJSONAdapter[*swarmingv2.BotInfo], len(bots))
-	for i, bot := range bots {
-		botInfos[i].Proto = bot
-	}
-	return botInfos, nil
+	// Emit full JSON to -json-output and print only bot IDs to stdout.
+	return base.ListWithStdoutProjection(bots, func(bot *swarmingv2.BotInfo) string {
+		return bot.GetBotId()
+	}), nil
 }

@@ -28,6 +28,7 @@ import (
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/semaphore"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/common/clock"
@@ -35,6 +36,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/clipb"
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
@@ -195,12 +197,12 @@ func (cmd *collectImpl) ParseInputs(args []string, env subcommands.Env) error {
 		if err != nil {
 			return errors.Annotate(err, "reading json input").Err()
 		}
-		input := TriggerResults{}
-		if err := json.Unmarshal(data, &input); err != nil {
+		var tasks clipb.SpawnTasksOutput
+		if err := protojson.Unmarshal(data, &tasks); err != nil {
 			return errors.Annotate(err, "unmarshalling json input").Err()
 		}
-		for _, task := range input.Tasks {
-			cmd.taskIDs = append(cmd.taskIDs, task.Proto.TaskId)
+		for _, task := range tasks.Tasks {
+			cmd.taskIDs = append(cmd.taskIDs, task.TaskId)
 		}
 	}
 
@@ -362,16 +364,16 @@ func summarizeResultsPython(results []taskResult) (any, error) {
 	shards := make([]map[string]any, len(results))
 
 	for i, result := range results {
-		buf, err := DefaultProtoMarshalOpts.Marshal(result.result)
+		// Convert TaskResultResponse proto to a free-form map[string]any.
+		buf, err := (protojson.MarshalOptions{UseProtoNames: true}).Marshal(result.result)
 		if err != nil {
 			return nil, err
 		}
-
 		var jsonResult map[string]any
 		if err := json.Unmarshal(buf, &jsonResult); err != nil {
 			return nil, err
 		}
-
+		// Inject `output` as an extra field not present in the original proto.
 		if len(jsonResult) > 0 {
 			jsonResult["output"] = result.output
 		} else {
@@ -380,40 +382,27 @@ func summarizeResultsPython(results []taskResult) (any, error) {
 		shards[i] = jsonResult
 	}
 
-	return map[string]any{"shards": shards}, nil
-}
-
-type taskResultJSON struct {
-	Error   string          `json:"error,omitempty"`
-	Output  string          `json:"output,omitempty"`
-	Outputs []string        `json:"outputs,omitempty"`
-	Results json.RawMessage `json:"results"`
+	return base.LegacyJSON(map[string]any{"shards": shards}), nil
 }
 
 // summarizeResults generates a summary of the task results.
 func (cmd *collectImpl) summarizeResults(results []taskResult) (any, error) {
-	jsonResults := map[string]taskResultJSON{}
+	summary := map[string]*clipb.ResultSummaryEntry{}
 	for _, result := range results {
-		jsonResult := taskResultJSON{}
+		entry := &clipb.ResultSummaryEntry{}
 		if result.err != nil {
-			jsonResult.Error = result.err.Error()
+			entry.Error = result.err.Error()
 		}
 		if result.result != nil {
-			rawResult, err := DefaultProtoMarshalOpts.Marshal(result.result)
-			if err != nil {
-				return nil, err
-			}
-			// TODO(vadimsh): Use ProtoJSONAdapter.
-			jsonResult.Results = rawResult
 			if cmd.taskOutput.includesJSON() {
-				jsonResult.Output = result.output
+				entry.Output = result.output
 			}
-			jsonResult.Outputs = result.outputs
+			entry.Outputs = result.outputs
+			entry.Results = result.result
 		}
-		jsonResults[result.taskID] = jsonResult
+		summary[result.taskID] = entry
 	}
-
-	return jsonResults, nil
+	return summary, nil
 }
 
 func (cmd *collectImpl) pollForTasks(ctx context.Context, taskIDs []string, service swarming.Swarming, downloadSem weightedSemaphore, auth base.AuthFlags) []taskResult {

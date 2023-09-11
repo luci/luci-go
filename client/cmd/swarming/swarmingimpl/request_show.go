@@ -24,7 +24,6 @@ import (
 
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // CmdRequestShow returns an object for the `request-show` subcommand.
@@ -64,5 +63,5 @@ func (cmd *requestShowImpl) Execute(ctx context.Context, svc swarming.Swarming, 
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get task request. task ID = %s", cmd.taskID).Err()
 	}
-	return &ProtoJSONAdapter[*swarmingv2.TaskRequestResponse]{Proto: request}, nil
+	return request, nil
 }

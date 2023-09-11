@@ -12,4 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package swarmingimpl
+// Package clipb contains protobuf messages used by Swarming CLI.
+package clipb
+
+//go:generate cproto

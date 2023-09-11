@@ -122,4 +122,15 @@ func TestFileOutput(t *testing.T) {
 ]
 `)
 	})
+
+	Convey(`List bots is correctly outputted when -bare`, t, func() {
+		_, _, code, stdout, _ := SubcommandTest(
+			context.Background(),
+			CmdBots,
+			[]string{"-server", "example.com", "-dimension", "a=b", "-dimension", "c=d", "-bare"},
+			nil, service,
+		)
+		So(code, ShouldEqual, 0)
+		So(stdout, ShouldEqual, "bot1\nbot2\n")
+	})
 }
