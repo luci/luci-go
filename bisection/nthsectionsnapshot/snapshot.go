@@ -55,8 +55,7 @@ type Run struct {
 }
 
 func (snapshot *Snapshot) HasTooManyInfraFailure() bool {
-	// TODO (nqmtuan): Move the "2" into config.
-	return snapshot.NumInfraFailed > 2
+	return snapshot.NumInfraFailed > 1
 }
 
 // GetCurrentRegressionRange will return a pair of indices from the Snapshot
