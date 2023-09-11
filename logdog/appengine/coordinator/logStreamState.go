@@ -56,6 +56,10 @@ func (as ArchivalState) Archived() bool {
 // ArchivalStateKey is the name of the index key for the archival state.
 var ArchivalStateKey = "_ArchivalState"
 
+// LogStreamStateExpiry is the duration after creation that a LogStreamState
+// record should persist for.  After this duration it may be deleted.
+const LogStreamStateExpiry = 540 * 24 * time.Hour
+
 // LogStreamState contains the current state of a LogStream.
 //
 // This structure has additional datastore fields imposed by the
@@ -81,6 +85,8 @@ type LogStreamState struct {
 	Created time.Time `gae:",noindex"`
 	// Updated is the last time that this state has been updated.
 	Updated time.Time `gae:",noindex"`
+	// ExpireAt is time after which the state will be deleted.
+	ExpireAt time.Time `gae:",noindex"`
 
 	// Secret is the Butler secret value for this stream.
 	//

@@ -20,14 +20,14 @@ import (
 	"testing"
 	"time"
 
+	. "github.com/smartystreets/goconvey/convey"
+
 	"go.chromium.org/luci/common/clock/testclock"
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/common/types"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestLogStreamState(t *testing.T) {
@@ -53,6 +53,7 @@ func TestLogStreamState(t *testing.T) {
 		lst.Schema = CurrentSchemaVersion
 		lst.Created = now.UTC()
 		lst.Updated = now.UTC()
+		lst.ExpireAt = now.Add(LogStreamStateExpiry).UTC()
 		lst.Secret = bytes.Repeat([]byte{0x55}, types.PrefixSecretLength)
 		lst.TerminalIndex = -1
 

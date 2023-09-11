@@ -19,22 +19,21 @@ import (
 	"crypto/subtle"
 	"time"
 
-	ds "go.chromium.org/luci/gae/service/datastore"
+	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
+	ds "go.chromium.org/luci/gae/service/datastore"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/server/config"
-
-	"github.com/golang/protobuf/proto"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // Archival task delay for archiving gracefully terminated streams.
@@ -193,10 +192,12 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 			now := clock.Now(c).UTC()
 			lst.Created = now
 			lst.Updated = now
+			lst.ExpireAt = now.Add(coordinator.LogStreamStateExpiry)
 			lst.Secret = pfx.Secret // Copy Prefix Secret to reduce datastore Gets.
 
 			// Construct our LogStream.
 			ls.Created = now
+			ls.ExpireAt = now.Add(coordinator.LogStreamExpiry)
 			ls.ProtoVersion = req.ProtoVersion
 
 			if err := ls.LoadDescriptor(&desc); err != nil {

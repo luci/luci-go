@@ -23,7 +23,6 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
@@ -48,6 +47,10 @@ const CurrentSchemaVersion = "3"
 
 // ErrPathNotFound is the canonical error returned when a Log Stream Path is not found.
 var ErrPathNotFound = status.Error(codes.NotFound, "path not found")
+
+// LogStreamExpiry is the duration after creation that a LogStream
+// record should persist for.  After this duration it may be deleted.
+const LogStreamExpiry = 540 * 24 * time.Hour
 
 // LogStream is the primary datastore model containing information and state of
 // an individual log stream.
@@ -76,6 +79,8 @@ type LogStream struct {
 
 	// Created is the time when this stream was created.
 	Created time.Time `gae:",noindex"`
+	// ExpireAt is time after which the datastore entry for the stream will be deleted.
+	ExpireAt time.Time `gae:",noindex"`
 
 	// Purged, if true, indicates that this log stream has been marked as purged.
 	// Non-administrative queries and requests for this stream will operate as

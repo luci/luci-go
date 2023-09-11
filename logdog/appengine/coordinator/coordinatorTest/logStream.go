@@ -20,18 +20,16 @@ import (
 	"fmt"
 	"time"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/auth/realms"
-
-	ds "go.chromium.org/luci/gae/service/datastore"
-
-	"google.golang.org/protobuf/proto"
 )
 
 // TestSecret returns a testing types.StreamPrefix.
@@ -89,6 +87,7 @@ func MakeStream(c context.Context, project, realm string, path types.StreamPath)
 			Parent:        nil, // Filled in by Reload.
 			Created:       ds.RoundTime(now),
 			Updated:       time.Time{}, // Filled in by Reload.
+			ExpireAt:      ds.RoundTime(now.Add(coordinator.LogStreamStateExpiry)),
 			Secret:        secret,
 			TerminalIndex: -1,
 		},
@@ -96,6 +95,7 @@ func MakeStream(c context.Context, project, realm string, path types.StreamPath)
 			ID:           "", // Filled in by Reload.
 			ProtoVersion: logpb.Version,
 			Created:      ds.RoundTime(now),
+			ExpireAt:     ds.RoundTime(now.Add(coordinator.LogStreamExpiry)),
 			// Descriptor-derived fields filled in by Reload.
 		},
 	}

@@ -20,19 +20,17 @@ import (
 	"testing"
 	"time"
 
+	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func shouldHaveLogPaths(actual any, expected ...any) string {
@@ -77,10 +75,11 @@ func TestLogStream(t *testing.T) {
 		now := ds.RoundTime(tc.Now().UTC())
 
 		ls := LogStream{
-			ID:      LogStreamID("testing/+/log/stream"),
-			Prefix:  "testing",
-			Name:    "log/stream",
-			Created: now.UTC(),
+			ID:       LogStreamID("testing/+/log/stream"),
+			Prefix:   "testing",
+			Name:     "log/stream",
+			Created:  now.UTC(),
+			ExpireAt: now.Add(LogStreamExpiry).UTC(),
 		}
 
 		desc := &logpb.LogStreamDescriptor{
@@ -156,6 +155,7 @@ func TestLogStream(t *testing.T) {
 				lsCopy := ls
 				lsCopy.Name = name
 				lsCopy.Created = ds.RoundTime(now.Add(time.Duration(i) * time.Second))
+				lsCopy.ExpireAt = lsCopy.Created.Add(LogStreamExpiry)
 				updateLogStreamID(&lsCopy)
 
 				descCopy := proto.Clone(desc).(*logpb.LogStreamDescriptor)
@@ -244,7 +244,7 @@ func TestNewLogStreamGlob(t *testing.T) {
 
 	mkLS := func(path string, now time.Time) *LogStream {
 		prefix, name := types.StreamPath(path).Split()
-		ret := &LogStream{Created: now}
+		ret := &LogStream{Created: now, ExpireAt: now.Add(LogStreamExpiry)}
 		So(ret.LoadDescriptor(&logpb.LogStreamDescriptor{
 			Prefix:      string(prefix),
 			Name:        string(name),

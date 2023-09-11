@@ -21,20 +21,18 @@ import (
 	"testing"
 	"time"
 
+	. "github.com/smartystreets/goconvey/convey"
+
+	"go.chromium.org/luci/common/clock"
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/taskqueue"
-
-	"go.chromium.org/luci/common/clock"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 	"go.chromium.org/luci/logdog/common/types"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRegisterStream(t *testing.T) {
@@ -105,10 +103,12 @@ func TestRegisterStream(t *testing.T) {
 
 					// Registers the log stream.
 					So(tls.Stream.Created, ShouldResemble, created)
+					So(tls.Stream.ExpireAt, ShouldResemble, created.Add(coordinator.LogStreamExpiry))
 
 					// Registers the log stream state.
 					So(tls.State.Created, ShouldResemble, created)
 					So(tls.State.Updated, ShouldResemble, created)
+					So(tls.State.ExpireAt, ShouldResemble, created.Add(coordinator.LogStreamStateExpiry))
 					So(tls.State.Secret, ShouldResemble, req.Secret)
 					So(tls.State.TerminalIndex, ShouldEqual, -1)
 					So(tls.State.Terminated(), ShouldBeFalse)
@@ -130,7 +130,9 @@ func TestRegisterStream(t *testing.T) {
 							So(ds.Get(c, tls.Stream, tls.State), ShouldBeNil)
 						})
 						So(tls.State.Created, ShouldResemble, created)
+						So(tls.State.ExpireAt, ShouldResemble, created.Add(coordinator.LogStreamStateExpiry))
 						So(tls.Stream.Created, ShouldResemble, created)
+						So(tls.Stream.ExpireAt, ShouldResemble, created.Add(coordinator.LogStreamExpiry))
 
 						Convey(`Skips archival completely after 3 weeks`, func() {
 							// Three weeks and an hour later
@@ -174,9 +176,11 @@ func TestRegisterStream(t *testing.T) {
 
 					// Registers the log stream.
 					So(tls.Stream.Created, ShouldResemble, streamCreated)
+					So(tls.Stream.ExpireAt, ShouldResemble, streamCreated.Add(coordinator.LogStreamExpiry))
 
 					// Registers the log stream state.
 					So(tls.State.Created, ShouldResemble, streamCreated)
+					So(tls.State.ExpireAt, ShouldResemble, streamCreated.Add(coordinator.LogStreamStateExpiry))
 					// Tasking for archival should happen after creation.
 					So(tls.State.Updated.Before(streamCreated), ShouldBeFalse)
 					So(tls.State.Secret, ShouldResemble, req.Secret)
