@@ -3373,7 +3373,7 @@ func TestScheduleBuild(t *testing.T) {
 					Target: "swarming://chromium-swarm",
 				},
 				Experiments: map[string]int32{
-					"luci.buildbucket.backend_alt": 100,
+					bb.ExperimentBackendAlt: 100,
 				},
 			}
 			req := &pb.ScheduleBuildRequest{
@@ -4282,7 +4282,7 @@ func TestScheduleBuild(t *testing.T) {
 					Target: "swarming://chromium-swarm",
 				},
 				Experiments: map[string]int32{
-					"luci.buildbucket.backend_alt": 100,
+					bb.ExperimentBackendAlt: 100,
 				},
 			}
 
@@ -4398,13 +4398,78 @@ func TestScheduleBuild(t *testing.T) {
 				})
 			})
 
-			Convey("swarming is used, backend_alt exp is true", func() {
+			Convey("backend_alt exp is true, derive backend from swarming", func() {
 				bldrCfg := &pb.BuilderConfig{
 					ServiceAccount: "account",
 					Priority:       200,
 					Experiments: map[string]int32{
-						"luci.buildbucket.backend_alt": 100,
+						bb.ExperimentBackendAlt: 100,
 					},
+					SwarmingHost: "chromium-swarming.appspot.com",
+				}
+
+				s.SwarmingBackends = map[string]string{
+					"chromium-swarming.appspot.com": "swarming://chromium-swarm",
+				}
+				setSwarmingOrBackend(ctx, nil, bldrCfg, b, s)
+
+				expectedBackendConfig := &structpb.Struct{}
+				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
+				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
+				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
+
+				So(b.Infra.Swarming, ShouldBeNil)
+				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
+					Caches: []*pb.CacheEntry{
+						{
+							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path:             "builder",
+							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
+						},
+					},
+					Config: expectedBackendConfig,
+					Task: &pb.Task{
+						Id: &pb.TaskID{
+							Target: "swarming://chromium-swarm",
+						},
+					},
+				})
+			})
+
+			Convey("backend_alt exp is true but no swarming to backend mapping, so use swarming", func() {
+				bldrCfg := &pb.BuilderConfig{
+					ServiceAccount: "account",
+					Priority:       200,
+					Experiments: map[string]int32{
+						bb.ExperimentBackendAlt: 100,
+					},
+				}
+
+				setSwarmingOrBackend(ctx, nil, bldrCfg, b, s)
+
+				expectedBackendConfig := &structpb.Struct{}
+				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
+				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
+				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
+
+				So(b.Infra.Backend, ShouldBeNil)
+				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+					TaskServiceAccount: "account",
+					Priority:           200,
+					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+						{
+							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path:             "builder",
+							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
+						},
+					},
+				})
+			})
+
+			Convey("swarming is used", func() {
+				bldrCfg := &pb.BuilderConfig{
+					ServiceAccount: "account",
+					Priority:       200,
 				}
 
 				setSwarmingOrBackend(ctx, nil, bldrCfg, b, s)
@@ -7285,7 +7350,7 @@ func TestScheduleBuild(t *testing.T) {
 	})
 }
 
-func sortTasksByClassName (tasks tqtesting.TaskList) {
+func sortTasksByClassName(tasks tqtesting.TaskList) {
 	sort.Slice(tasks, func(i, j int) bool {
 		return tasks[i].Class < tasks[j].Class
 	})

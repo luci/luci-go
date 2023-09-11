@@ -40,8 +40,14 @@ message SettingsCfg {
   // be able to force authenticated access to them.
   repeated string known_public_gerrit_hosts = 3;
 
-  // List of known backend configufations.
+  // List of known backend configurations.
   repeated BackendSetting backends = 7;
+
+  // A swarming_host -> backend_target map.
+  // It's used during the raw swarming to swarming based backend migration to
+  // derive a backend config from swarming related configs.
+  // So we could control the migration process behind the scene.
+  map<string, string> swarming_backends = 8;
 }
 
 // Backend setting.

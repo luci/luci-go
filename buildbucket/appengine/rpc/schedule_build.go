@@ -952,7 +952,7 @@ func setSwarmingOrBackend(ctx context.Context, req *pb.ScheduleBuildRequest, cfg
 	})
 	// Need to configure build.Infra for a backend or swarming.
 	isTaskBackend := false
-	backendAltExpIsTrue := experiments.Has("luci.buildbucket.backend_alt")
+	backendAltExpIsTrue := experiments.Has(bb.ExperimentBackendAlt)
 	switch {
 	case backendAltExpIsTrue && (cfg.GetBackendAlt() != nil || cfg.GetBackend() != nil):
 		cfgToPass := cfg.GetBackend()
@@ -961,7 +961,20 @@ func setSwarmingOrBackend(ctx context.Context, req *pb.ScheduleBuildRequest, cfg
 		}
 		setInfraBackend(ctx, build, cfgToPass, taskCaches, taskServiceAccount, priority, req.GetPriority())
 		isTaskBackend = true
-	default:
+	case backendAltExpIsTrue:
+		// Derive backend settings using swarming info.
+		// This is a temporary solution for raw swarming -> task backend migration,
+		// which allows Buildbucket to do the migration behind the scene without
+		// any change on builder configs.
+		// TODO(crbug.com/1448926): Remove this after the migration is completed and
+		// all builder configs are updated with backend/backend_alt configs.
+		derivedBackendCfg := deriveBackendCfgFromSwarming(cfg, globalCfg)
+		if derivedBackendCfg != nil {
+			setInfraBackend(ctx, build, derivedBackendCfg, taskCaches, taskServiceAccount, priority, req.GetPriority())
+			isTaskBackend = true
+		}
+	}
+	if !isTaskBackend {
 		build.Infra.Swarming = &pb.BuildInfra_Swarming{
 			Caches:             commonCacheToSwarmingCache(taskCaches),
 			Hostname:           cfg.GetSwarmingHost(),
@@ -970,7 +983,25 @@ func setSwarmingOrBackend(ctx context.Context, req *pb.ScheduleBuildRequest, cfg
 			TaskServiceAccount: taskServiceAccount,
 		}
 	}
+
 	setDimensions(req, cfg, build, isTaskBackend)
+}
+
+func deriveBackendCfgFromSwarming(cfg *pb.BuilderConfig, globalCfg *pb.SettingsCfg) *pb.BuilderConfig_Backend {
+	var target string
+	for host, backend := range globalCfg.SwarmingBackends {
+		if host == cfg.GetSwarmingHost() {
+			target = backend
+			break
+		}
+	}
+	if target == "" {
+		return nil
+	}
+
+	return &pb.BuilderConfig_Backend{
+		Target: target,
+	}
 }
 
 // setInput computes the input values from the given request and builder config,
