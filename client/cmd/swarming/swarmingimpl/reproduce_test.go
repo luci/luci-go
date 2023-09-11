@@ -32,7 +32,8 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/common/system/environ"
 
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
+	"go.chromium.org/luci/swarming/client/swarming"
+	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
@@ -147,8 +148,8 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 			},
 		}
 
-		service := &testService{
-			filesFromCAS: func(_ context.Context, _ string, _ *rbeclient.Client, _ *swarmingv2.CASReference) ([]string, error) {
+		service := &swarmingtest.Client{
+			FilesFromCASMock: func(_ context.Context, _ string, _ *rbeclient.Client, _ *swarmingv2.CASReference) ([]string, error) {
 				fetchedCASFiles = true
 				return []string{}, nil
 			},

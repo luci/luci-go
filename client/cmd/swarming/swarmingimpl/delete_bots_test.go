@@ -24,6 +24,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 
+	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarming "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
@@ -53,8 +54,8 @@ func TestDeleteBots(t *testing.T) {
 		failbotID := "failingbotID"
 		givenbotID := []string{}
 
-		service := &testService{
-			deleteBot: func(ctx context.Context, botID string) (*swarming.DeleteResponse, error) {
+		service := &swarmingtest.Client{
+			DeleteBotMock: func(ctx context.Context, botID string) (*swarming.DeleteResponse, error) {
 				givenbotID = append(givenbotID, botID)
 				if botID == failbotID {
 					return nil, status.Errorf(codes.NotFound, "no such bot")

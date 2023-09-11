@@ -20,6 +20,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
+	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
@@ -57,8 +58,8 @@ func TestTasksParse(t *testing.T) {
 func TestTasksOutput(t *testing.T) {
 	t.Parallel()
 
-	service := &testService{
-		listTasks: func(ctx context.Context, i int32, f float64, sq swarmingv2.StateQuery, s []string) ([]*swarmingv2.TaskResultResponse, error) {
+	service := &swarmingtest.Client{
+		ListTasksMock: func(ctx context.Context, i int32, f float64, sq swarmingv2.StateQuery, s []string) ([]*swarmingv2.TaskResultResponse, error) {
 			So(s, ShouldEqual, []string{"t:1", "t:2"})
 			So(swarmingv2.StateQuery_QUERY_PENDING, ShouldEqual, sq)
 			return []*swarmingv2.TaskResultResponse{
@@ -66,7 +67,7 @@ func TestTasksOutput(t *testing.T) {
 				{TaskId: "task2"},
 			}, nil
 		},
-		countTasks: func(ctx context.Context, f float64, sq swarmingv2.StateQuery, s ...string) (*swarmingv2.TasksCount, error) {
+		CountTasksMock: func(ctx context.Context, f float64, sq swarmingv2.StateQuery, s []string) (*swarmingv2.TasksCount, error) {
 			return &swarmingv2.TasksCount{
 				Count: 123,
 			}, nil

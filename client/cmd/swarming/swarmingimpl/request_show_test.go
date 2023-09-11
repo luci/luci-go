@@ -20,6 +20,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
+	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
@@ -49,8 +50,8 @@ func TestRequestShowParse(t *testing.T) {
 func TestRequestShow(t *testing.T) {
 	t.Parallel()
 
-	service := &testService{
-		taskRequest: func(ctx context.Context, s string) (*swarmingv2.TaskRequestResponse, error) {
+	service := &swarmingtest.Client{
+		TaskRequestMock: func(ctx context.Context, s string) (*swarmingv2.TaskRequestResponse, error) {
 			So(s, ShouldEqual, "aaaa")
 			return &swarmingv2.TaskRequestResponse{
 				TaskId:       "aaaa",

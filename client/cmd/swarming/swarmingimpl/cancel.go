@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
+	"go.chromium.org/luci/swarming/client/swarming"
 )
 
 // CmdCancelTask returns an object for the `cancel` subcommand.
@@ -59,7 +59,7 @@ func (cmd *cancelImpl) ParseInputs(args []string, env subcommands.Env) error {
 	return nil
 }
 
-func (cmd *cancelImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
+func (cmd *cancelImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
 	res, err := svc.CancelTask(ctx, cmd.taskID, cmd.killRunning)
 	if res != nil && !res.Canceled {
 		err = errors.Reason("task was not canceled. running=%v\n", res.WasRunning).Err()

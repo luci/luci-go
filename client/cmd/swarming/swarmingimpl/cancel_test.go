@@ -21,6 +21,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 
+	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarming "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
@@ -55,8 +56,8 @@ func TestCancelTask(t *testing.T) {
 		var givenKillRunning bool
 		failTaskID := "failtask"
 
-		service := &testService{
-			cancelTask: func(ctx context.Context, taskID string, killRunning bool) (*swarming.CancelResponse, error) {
+		service := &swarmingtest.Client{
+			CancelTaskMock: func(ctx context.Context, taskID string, killRunning bool) (*swarming.CancelResponse, error) {
 				givenTaskID = taskID
 				givenKillRunning = killRunning
 				res := &swarming.CancelResponse{

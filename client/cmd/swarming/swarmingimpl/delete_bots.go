@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
+	"go.chromium.org/luci/swarming/client/swarming"
 )
 
 // CmdDeleteBots returns an object for the `delete-bots` subcommand.
@@ -61,7 +61,7 @@ func (cmd *deleteBotsImpl) ParseInputs(args []string, env subcommands.Env) error
 	return nil
 }
 
-func (cmd *deleteBotsImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
+func (cmd *deleteBotsImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
 	if !cmd.force {
 		fmt.Println("Delete the following bots?")
 		for _, botID := range cmd.botIDs {

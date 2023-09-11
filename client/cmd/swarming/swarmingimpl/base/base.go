@@ -38,14 +38,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/signals"
 
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
+	"go.chromium.org/luci/swarming/client/swarming"
 )
-
-// SwarmingFactory creates Swarming client implementation.
-//
-// TODO(vadimsh): This is used temporary during the client refactoring to avoid
-// moving too much code in a single CL.
-var SwarmingFactory func(ctx context.Context, serverURL *url.URL, auth AuthFlags) (swarming.Swarming, error)
 
 // Subcommand is implemented by individual Swarming subcommands.
 type Subcommand interface {
@@ -54,7 +48,7 @@ type Subcommand interface {
 	// ParseInputs extracts information from flags, CLI args and environ.
 	ParseInputs(args []string, env subcommands.Env) error
 	// Execute executes the subcommand and returns a JSON-serializable output.
-	Execute(ctx context.Context, svc swarming.Swarming, extra Extra) (any, error)
+	Execute(ctx context.Context, svc swarming.Client, extra Extra) (any, error)
 }
 
 // Extra is passed to an executing subcommand and it contains any additional
@@ -184,7 +178,7 @@ type CommandRun struct {
 
 	// Testing helpers.
 	testingContext  context.Context
-	testingSwarming swarming.Swarming
+	testingSwarming swarming.Client
 	testingStderr   io.Writer
 	testingStdout   io.Writer
 	testingEnv      subcommands.Env
@@ -193,7 +187,7 @@ type CommandRun struct {
 }
 
 // TestingMocks is used in tests to mock dependencies.
-func (cr *CommandRun) TestingMocks(ctx context.Context, svc swarming.Swarming, env subcommands.Env, res *any, err *error, stdout, stderr io.Writer) {
+func (cr *CommandRun) TestingMocks(ctx context.Context, svc swarming.Client, env subcommands.Env, res *any, err *error, stdout, stderr io.Writer) {
 	cr.testingContext = ctx
 	cr.testingSwarming = svc
 	cr.testingStdout = stdout
@@ -315,8 +309,15 @@ func (cr *CommandRun) parseCommonFlags(env subcommands.Env) error {
 func (cr *CommandRun) execute(ctx context.Context) error {
 	svc := cr.testingSwarming
 	if svc == nil {
-		var err error
-		if svc, err = SwarmingFactory(ctx, cr.serverURL, cr.authFlags); err != nil {
+		cl, err := cr.authFlags.NewHTTPClient(ctx)
+		if err != nil {
+			return err
+		}
+		svc, err = swarming.NewClient(swarming.ClientOptions{
+			ServiceURL:          cr.serverURL.String(),
+			AuthenticatedClient: cl,
+		})
+		if err != nil {
 			return err
 		}
 	}

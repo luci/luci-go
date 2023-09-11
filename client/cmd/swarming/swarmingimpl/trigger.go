@@ -37,7 +37,7 @@ import (
 
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/clipb"
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
+	"go.chromium.org/luci/swarming/client/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
@@ -264,7 +264,7 @@ func (cmd *triggerImpl) ParseInputs(args []string, env subcommands.Env) error {
 	return nil
 }
 
-func (cmd *triggerImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
+func (cmd *triggerImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
 	request, err := cmd.processTriggerOptions(cmd.cmd, extra.ServerURL)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to process trigger options").Err()

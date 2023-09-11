@@ -26,7 +26,8 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
+	"go.chromium.org/luci/swarming/client/swarming"
+	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
@@ -100,8 +101,8 @@ func TestCreateNewTasks(t *testing.T) {
 	ctx := context.Background()
 
 	Convey(`Test fatal response`, t, func() {
-		service := &testService{
-			newTask: func(ctx context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error) {
+		service := &swarmingtest.Client{
+			NewTaskMock: func(ctx context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error) {
 				return nil, status.Errorf(codes.NotFound, "not found")
 			},
 		}
@@ -109,8 +110,8 @@ func TestCreateNewTasks(t *testing.T) {
 		So(err, ShouldErrLike, "not found")
 	})
 
-	goodService := &testService{
-		newTask: func(ctx context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error) {
+	goodService := &swarmingtest.Client{
+		NewTaskMock: func(ctx context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error) {
 			return &swarmingv2.TaskRequestMetadataResponse{
 				Request: &swarmingv2.TaskRequestResponse{
 					Name: req.Name,

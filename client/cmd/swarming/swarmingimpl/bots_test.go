@@ -20,6 +20,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
+	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
@@ -69,15 +70,15 @@ func TestFileOutput(t *testing.T) {
 		},
 	}
 
-	service := &testService{
-		countBots: func(ctx context.Context, dims []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error) {
+	service := &swarmingtest.Client{
+		CountBotsMock: func(ctx context.Context, dims []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error) {
 			for _, dim := range dims {
 				So(dim, ShouldBeIn, expectedDims)
 			}
 			So(dims, ShouldHaveLength, len(expectedDims))
 			return expectedCount, nil
 		},
-		listBots: func(ctx context.Context, dims []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error) {
+		ListBotsMock: func(ctx context.Context, dims []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error) {
 			// Sometimes the argument parser ends up creating these arguments in
 			// different order. These two checks ensure that dims is equal to expected dims.
 			for _, dim := range dims {

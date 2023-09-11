@@ -45,9 +45,9 @@ import (
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
-	clientswarming "go.chromium.org/luci/client/swarming"
+	"go.chromium.org/luci/swarming/client/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	"go.chromium.org/luci/swarming/runner"
 )
 
 // CmdReproduce returns an object for the `reproduce` subcommand.
@@ -104,7 +104,7 @@ func (cmd *reproduceImpl) ParseInputs(args []string, env subcommands.Env) error 
 	return nil
 }
 
-func (cmd *reproduceImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
+func (cmd *reproduceImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
 	tr, err := svc.TaskRequest(ctx, cmd.taskID)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get task request: %s", cmd.taskID).Err()
@@ -150,7 +150,7 @@ func (cmd *reproduceImpl) executeTaskRequestCommand(ctx context.Context, tr *swa
 	return nil
 }
 
-func (cmd *reproduceImpl) prepareTaskRequestEnvironment(ctx context.Context, properties *swarmingv2.TaskProperties, svc swarming.Swarming, auth base.AuthFlags) (*exec.Cmd, error) {
+func (cmd *reproduceImpl) prepareTaskRequestEnvironment(ctx context.Context, properties *swarmingv2.TaskProperties, svc swarming.Client, auth base.AuthFlags) (*exec.Cmd, error) {
 	execDir := cmd.work
 	if properties.RelativeCwd != "" {
 		// TODO(vadimsh): Forbid "..".
@@ -220,7 +220,7 @@ func (cmd *reproduceImpl) prepareTaskRequestEnvironment(ctx context.Context, pro
 	}
 
 	// Create a Command that can run the task request.
-	processedCmds, err := clientswarming.ProcessCommand(ctx, properties.Command, cmd.out, "")
+	processedCmds, err := runner.ProcessCommand(ctx, properties.Command, cmd.out, "")
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to process command in properties").Err()
 	}

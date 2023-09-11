@@ -12,4 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package swarmingimpl
+// Package swarming contains the Swarming client.
+//
+// It is a "fat" client that does extra things on top of just wrapping the
+// server API.
+package swarming

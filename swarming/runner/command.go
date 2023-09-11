@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package swarming provides similar command modification with run_isolated.py.
-package swarming
+package runner
 
 import (
 	"context"

@@ -20,6 +20,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
+	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
@@ -60,8 +61,8 @@ func TestListBotTasksOutput(t *testing.T) {
 		{TaskId: "task2"},
 	}
 
-	service := &testService{
-		listBotTasks: func(ctx context.Context, s string, i int32, f float64, sq swarmingv2.StateQuery) ([]*swarmingv2.TaskResultResponse, error) {
+	service := &swarmingtest.Client{
+		ListBotTasksMock: func(ctx context.Context, s string, i int32, f float64, sq swarmingv2.StateQuery) ([]*swarmingv2.TaskResultResponse, error) {
 			So(s, ShouldEqual, botID)
 			return expectedTasks, nil
 		},

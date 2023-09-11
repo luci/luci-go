@@ -33,6 +33,8 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 
+	"go.chromium.org/luci/swarming/client/swarming"
+	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
@@ -74,14 +76,14 @@ func setupClock() (context.Context, context.CancelFunc) {
 	return ctx, cancel
 }
 
-func testCollectPollWithServer(runner *collectImpl, s *testService) taskResult {
+func testCollectPollWithServer(runner *collectImpl, s swarming.Client) taskResult {
 	ctx, cancel := setupClock()
 	defer cancel()
 
 	return runner.pollForTaskResult(ctx, "10982374012938470", s, semaphore.NewWeighted(1), &testAuthFlags{})
 }
 
-func testCollectPollForTasks(runner *collectImpl, taskIDs []string, s *testService, downloadSem weightedSemaphore) []taskResult {
+func testCollectPollForTasks(runner *collectImpl, taskIDs []string, s swarming.Client, downloadSem weightedSemaphore) []taskResult {
 	ctx, cancel := setupClock()
 	defer cancel()
 
@@ -96,8 +98,8 @@ func TestCollectPollForTaskResult(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Test fatal response`, t, func() {
-		service := &testService{
-			taskResult: func(c context.Context, _ string, _ bool) (*swarmingv2.TaskResultResponse, error) {
+		service := &swarmingtest.Client{
+			TaskResultMock: func(c context.Context, _ string, _ bool) (*swarmingv2.TaskResultResponse, error) {
 				return nil, status.Errorf(codes.NotFound, "not found")
 			},
 		}
@@ -109,8 +111,8 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		var writtenTo string
 		var writtenInstance string
 		var writtenDigest string
-		service := &testService{
-			taskResult: func(c context.Context, _ string, _ bool) (*swarmingv2.TaskResultResponse, error) {
+		service := &swarmingtest.Client{
+			TaskResultMock: func(c context.Context, _ string, _ bool) (*swarmingv2.TaskResultResponse, error) {
 				return &swarmingv2.TaskResultResponse{
 					State: swarmingv2.TaskState_COMPLETED,
 					CasOutputRoot: &swarmingv2.CASReference{
@@ -119,10 +121,10 @@ func TestCollectPollForTaskResult(t *testing.T) {
 					},
 				}, nil
 			},
-			taskOutput: func(c context.Context, _ string) (*swarmingv2.TaskOutputResponse, error) {
+			TaskOutputMock: func(c context.Context, _ string) (*swarmingv2.TaskOutputResponse, error) {
 				return &swarmingv2.TaskOutputResponse{Output: []byte("yipeeee")}, nil
 			},
-			filesFromCAS: func(c context.Context, outdir string, _ *rbeclient.Client, casRef *swarmingv2.CASReference) ([]string, error) {
+			FilesFromCASMock: func(c context.Context, outdir string, _ *rbeclient.Client, casRef *swarmingv2.CASReference) ([]string, error) {
 				writtenTo = outdir
 				writtenInstance = casRef.CasInstance
 				writtenDigest = fmt.Sprintf("%s/%d", casRef.Digest.Hash, casRef.Digest.SizeBytes)
@@ -175,8 +177,8 @@ func TestCollectPollForTasks(t *testing.T) {
 		firstID, lastID := "1", "2"
 		outputFetched := sync.Map{}
 
-		service := &testService{
-			taskResult: func(c context.Context, taskID string, _ bool) (*swarmingv2.TaskResultResponse, error) {
+		service := &swarmingtest.Client{
+			TaskResultMock: func(c context.Context, taskID string, _ bool) (*swarmingv2.TaskResultResponse, error) {
 				if taskID != firstID {
 					// Simulate the second task not finishing until the first
 					// task has already finished, downloaded its outputs, and
@@ -192,7 +194,7 @@ func TestCollectPollForTasks(t *testing.T) {
 					},
 				}, nil
 			},
-			taskOutput: func(c context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error) {
+			TaskOutputMock: func(c context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error) {
 				outputFetched.Store(taskID, true)
 				return &swarmingv2.TaskOutputResponse{Output: []byte("yipeeee")}, nil
 			},
@@ -226,8 +228,8 @@ func TestCollectPollForTasks(t *testing.T) {
 		}
 		firstTaskComplete := make(chan struct{})
 		lastTaskDownloading := make(chan struct{})
-		service := &testService{
-			taskResult: func(c context.Context, taskID string, _ bool) (*swarmingv2.TaskResultResponse, error) {
+		service := &swarmingtest.Client{
+			TaskResultMock: func(c context.Context, taskID string, _ bool) (*swarmingv2.TaskResultResponse, error) {
 				return &swarmingv2.TaskResultResponse{
 					State: swarmingv2.TaskState_COMPLETED,
 					CasOutputRoot: &swarmingv2.CASReference{
@@ -236,7 +238,7 @@ func TestCollectPollForTasks(t *testing.T) {
 					},
 				}, nil
 			},
-			taskOutput: func(c context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error) {
+			TaskOutputMock: func(c context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error) {
 				// Make sure that the two tasks are downloading outputs at the
 				// same time, but have the second task wait for the first task's
 				// download to complete before continuing the download.
@@ -282,8 +284,8 @@ func TestCollectPollForTasks(t *testing.T) {
 		taskID := "1"
 		outputFetched := false
 
-		service := &testService{
-			taskResult: func(c context.Context, taskID string, _ bool) (*swarmingv2.TaskResultResponse, error) {
+		service := &swarmingtest.Client{
+			TaskResultMock: func(c context.Context, taskID string, _ bool) (*swarmingv2.TaskResultResponse, error) {
 				return &swarmingv2.TaskResultResponse{
 					State: swarmingv2.TaskState_COMPLETED,
 					CasOutputRoot: &swarmingv2.CASReference{
@@ -292,7 +294,7 @@ func TestCollectPollForTasks(t *testing.T) {
 					},
 				}, nil
 			},
-			taskOutput: func(c context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error) {
+			TaskOutputMock: func(c context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error) {
 				outputFetched = true
 				return &swarmingv2.TaskOutputResponse{Output: []byte("yipeeee")}, nil
 			},

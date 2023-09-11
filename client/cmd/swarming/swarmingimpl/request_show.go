@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
+	"go.chromium.org/luci/swarming/client/swarming"
 )
 
 // CmdRequestShow returns an object for the `request-show` subcommand.
@@ -58,7 +58,7 @@ func (cmd *requestShowImpl) ParseInputs(args []string, env subcommands.Env) erro
 	return nil
 }
 
-func (cmd *requestShowImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
+func (cmd *requestShowImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
 	request, err := svc.TaskRequest(ctx, cmd.taskID)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get task request. task ID = %s", cmd.taskID).Err()

@@ -29,7 +29,7 @@ import (
 
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/clipb"
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
+	"go.chromium.org/luci/swarming/client/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
@@ -81,7 +81,7 @@ func (cmd *spawnTasksImpl) ParseInputs(args []string, env subcommands.Env) error
 	return err
 }
 
-func (cmd *spawnTasksImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
+func (cmd *spawnTasksImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
 	results, merr := createNewTasks(ctx, svc, cmd.requests)
 	return &clipb.SpawnTasksOutput{Tasks: results}, merr
 }
@@ -108,7 +108,7 @@ func processTasksStream(tasks io.Reader, env subcommands.Env) ([]*swarmingv2.New
 	return requests.Requests, nil
 }
 
-func createNewTasks(ctx context.Context, service swarming.Swarming, requests []*swarmingv2.NewTaskRequest) ([]*swarmingv2.TaskRequestMetadataResponse, error) {
+func createNewTasks(ctx context.Context, service swarming.Client, requests []*swarmingv2.NewTaskRequest) ([]*swarmingv2.TaskRequestMetadataResponse, error) {
 	var mu sync.Mutex
 	results := make([]*swarmingv2.TaskRequestMetadataResponse, 0, len(requests))
 	err := parallel.WorkPool(8, func(gen chan<- func() error) {

@@ -20,10 +20,10 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/lucictx"
+	"go.chromium.org/luci/swarming/client/swarming"
 )
 
 // readBuildSecrets reads BuildSecrets message from swarming secret bytes.

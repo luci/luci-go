@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/flag/stringmapflag"
 
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
+	"go.chromium.org/luci/swarming/client/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
@@ -76,7 +76,7 @@ func (cmd *botsImpl) ParseInputs(args []string, env subcommands.Env) error {
 	return nil
 }
 
-func (cmd *botsImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
+func (cmd *botsImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
 	// TODO(vadimsh): Reuse from utils.
 	dims := make([]*swarmingv2.StringPair, 0, len(cmd.dimensions))
 	for k, v := range cmd.dimensions {

@@ -1,0 +1,360 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package swarming
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"net/http"
+	"sort"
+	"time"
+
+	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/cipd/version"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/lhttp"
+	"go.chromium.org/luci/grpc/prpc"
+
+	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+)
+
+const (
+	// ServerEnvVar is Swarming server host to which a client connects.
+	ServerEnvVar = "SWARMING_SERVER"
+
+	// TaskIDEnvVar is a Swarming task ID in which this task is running.
+	//
+	// The `swarming` command line tool uses this to populate `ParentTaskId`
+	// when being used to trigger new tasks from within a swarming task.
+	TaskIDEnvVar = "SWARMING_TASK_ID"
+
+	// UserEnvVar is the OS user name (not Swarming specific).
+	//
+	// The `swarming` command line tool uses this to populate `User`
+	// when being used to trigger new tasks.
+	UserEnvVar = "USER"
+)
+
+// UserAgent identifies the version of the client.
+//
+// It is sent in all RPCs.
+var UserAgent = "swarming 0.4.0"
+
+func init() {
+	ver, err := version.GetStartupVersion()
+	if err != nil || ver.InstanceID == "" {
+		return
+	}
+	UserAgent += fmt.Sprintf(" (%s@%s)", ver.PackageName, ver.InstanceID)
+}
+
+// Client can make requests to Swarming, in particular launch tasks and wait
+// for their execution to finish.
+type Client interface {
+	NewTask(ctx context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error)
+	CountTasks(ctx context.Context, start float64, state swarmingv2.StateQuery, tags []string) (*swarmingv2.TasksCount, error)
+	ListTasks(ctx context.Context, limit int32, start float64, state swarmingv2.StateQuery, tags []string) ([]*swarmingv2.TaskResultResponse, error)
+	CancelTask(ctx context.Context, taskID string, killRunning bool) (*swarmingv2.CancelResponse, error)
+	TaskRequest(ctx context.Context, taskID string) (*swarmingv2.TaskRequestResponse, error)
+	TaskOutput(ctx context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error)
+	TaskResult(ctx context.Context, taskID string, perf bool) (*swarmingv2.TaskResultResponse, error)
+	CountBots(ctx context.Context, dimensions []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error)
+	ListBots(ctx context.Context, dimensions []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error)
+	DeleteBot(ctx context.Context, botID string) (*swarmingv2.DeleteResponse, error)
+	TerminateBot(ctx context.Context, botID string, reason string) (*swarmingv2.TerminateResponse, error)
+	ListBotTasks(ctx context.Context, botID string, limit int32, start float64, state swarmingv2.StateQuery) ([]*swarmingv2.TaskResultResponse, error)
+	FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarmingv2.CASReference) ([]string, error)
+}
+
+// ClientOptions is passed to NewClient.
+type ClientOptions struct {
+	// ServiceURL is root URL of the Swarming service.
+	//
+	// Required.
+	ServiceURL string
+
+	// UserAgent is put into User-Agent HTTP header with each request.
+	//
+	// Default is UserAgent const.
+	UserAgent string
+
+	// AuthenticatedClient is http.Client that attaches authentication headers.
+	//
+	// Will be used when talking to the backend.
+	//
+	// Defaults to http.DefaultClient which will work only for publicly accessibly
+	// backends.
+	AuthenticatedClient *http.Client
+}
+
+// NewClient initializes Swarming client using given options.
+func NewClient(opts ClientOptions) (Client, error) {
+	if opts.ServiceURL == "" {
+		return nil, errors.Reason("service URL is required").Err()
+	}
+	if opts.UserAgent == "" {
+		opts.UserAgent = UserAgent
+	}
+	if opts.AuthenticatedClient == nil {
+		opts.AuthenticatedClient = http.DefaultClient
+	}
+
+	serverURL, err := lhttp.ParseHostURL(opts.ServiceURL)
+	if err != nil {
+		return nil, errors.Annotate(err, "bad service URL %q", opts.ServiceURL).Err()
+	}
+
+	prpcOpts := prpc.DefaultOptions()
+	// The swarming server has an internal 60-second deadline for responding to
+	// requests, so 90 seconds shouldn't cause any requests to fail that would
+	// otherwise succeed.
+	prpcOpts.PerRPCTimeout = 90 * time.Second
+	prpcOpts.UserAgent = opts.UserAgent
+	prpcOpts.Insecure = serverURL.Scheme == "http"
+	prpcClient := prpc.Client{
+		C:       opts.AuthenticatedClient,
+		Options: prpcOpts,
+		Host:    serverURL.Host,
+	}
+	return &swarmingServiceImpl{
+		opts:        opts,
+		botsClient:  swarmingv2.NewBotsClient(&prpcClient),
+		tasksClient: swarmingv2.NewTasksClient(&prpcClient),
+	}, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+type swarmingServiceImpl struct {
+	opts        ClientOptions
+	botsClient  swarmingv2.BotsClient
+	tasksClient swarmingv2.TasksClient
+}
+
+func (s *swarmingServiceImpl) NewTask(ctx context.Context, req *swarmingv2.NewTaskRequest) (res *swarmingv2.TaskRequestMetadataResponse, err error) {
+	return s.tasksClient.NewTask(ctx, req)
+}
+
+func (s *swarmingServiceImpl) CountTasks(ctx context.Context, start float64, state swarmingv2.StateQuery, tags []string) (res *swarmingv2.TasksCount, err error) {
+	return s.tasksClient.CountTasks(ctx, &swarmingv2.TasksCountRequest{
+		Start: &timestamppb.Timestamp{
+			Seconds: int64(start),
+		},
+		Tags:  tags,
+		State: state,
+	})
+}
+
+func (s *swarmingServiceImpl) ListTasks(ctx context.Context, limit int32, start float64, state swarmingv2.StateQuery, tags []string) ([]*swarmingv2.TaskResultResponse, error) {
+	const defaultPageSize = 1000
+
+	// Create an empty array so that if serialized to JSON it's an empty list,
+	// not null.
+	tasks := make([]*swarmingv2.TaskResultResponse, 0, limit)
+	cursor := ""
+	// Keep calling as long as there's a cursor indicating more tasks to list.
+	for {
+		var pageSize int32
+		if limit < defaultPageSize {
+			pageSize = limit
+		} else {
+			pageSize = defaultPageSize
+		}
+		req := &swarmingv2.TasksWithPerfRequest{
+			Cursor:                  cursor,
+			Limit:                   pageSize,
+			Tags:                    tags,
+			IncludePerformanceStats: false,
+		}
+		if start > 0 {
+			req.Start = &timestamppb.Timestamp{
+				Seconds: int64(start),
+			}
+		}
+		tl, err := s.tasksClient.ListTasks(ctx, req)
+		if err != nil {
+			return tasks, err
+		}
+		limit -= int32(len(tl.Items))
+		tasks = append(tasks, tl.Items...)
+		cursor = tl.Cursor
+		if cursor == "" || limit <= 0 {
+			break
+		}
+	}
+
+	return tasks, nil
+}
+
+func (s *swarmingServiceImpl) CancelTask(ctx context.Context, taskID string, killRunning bool) (res *swarmingv2.CancelResponse, err error) {
+	return s.tasksClient.CancelTask(ctx, &swarmingv2.TaskCancelRequest{
+		KillRunning: killRunning,
+		TaskId:      taskID,
+	})
+}
+
+func (s *swarmingServiceImpl) TaskRequest(ctx context.Context, taskID string) (res *swarmingv2.TaskRequestResponse, err error) {
+	return s.tasksClient.GetRequest(ctx, &swarmingv2.TaskIdRequest{TaskId: taskID})
+}
+
+func (s *swarmingServiceImpl) TaskResult(ctx context.Context, taskID string, perf bool) (res *swarmingv2.TaskResultResponse, err error) {
+	return s.tasksClient.GetResult(ctx, &swarmingv2.TaskIdWithPerfRequest{
+		IncludePerformanceStats: perf,
+		TaskId:                  taskID,
+	})
+}
+
+func (s *swarmingServiceImpl) TaskOutput(ctx context.Context, taskID string) (res *swarmingv2.TaskOutputResponse, err error) {
+	// We fetch 160 chunks every time which amounts to a max of 16mb each time.
+	// Each chunk is 100kbs.
+	// See https://chromium.googlesource.com/infra/luci/luci-py/+/b517353c0df0b52b4bdda4231ff37e749dc627af/appengine/swarming/api_common.py#343
+	const outputLength = 160 * 100 * 1024
+
+	var output bytes.Buffer
+	for {
+		resp, err := s.tasksClient.GetStdout(ctx, &swarmingv2.TaskIdWithOffsetRequest{
+			Offset: int64(output.Len()),
+			Length: outputLength,
+			TaskId: taskID,
+		})
+		if err != nil {
+			return nil, err
+		}
+		output.Write(resp.Output)
+		// If there is less output bytes than length then we have reached the
+		// final output chunk and can stop looking for new data.
+		if len(resp.Output) < outputLength {
+			// Pass the final state we saw as the current output
+			return &swarmingv2.TaskOutputResponse{
+				State:  resp.State,
+				Output: output.Bytes(),
+			}, nil
+		}
+	}
+}
+
+// FilesFromCAS downloads outputs from CAS.
+func (s *swarmingServiceImpl) FilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarmingv2.CASReference) ([]string, error) {
+	d := digest.Digest{
+		Hash: casRef.Digest.Hash,
+		Size: casRef.Digest.SizeBytes,
+	}
+	outputs, _, err := cascli.DownloadDirectory(ctx, d, outdir, filemetadata.NewNoopCache())
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to download directory").Err()
+	}
+	files := make([]string, 0, len(outputs))
+	for path := range outputs {
+		files = append(files, path)
+	}
+	sort.Strings(files)
+	return files, nil
+}
+
+func (s *swarmingServiceImpl) CountBots(ctx context.Context, dimensions []*swarmingv2.StringPair) (res *swarmingv2.BotsCount, err error) {
+	return s.botsClient.CountBots(ctx, &swarmingv2.BotsCountRequest{
+		Dimensions: dimensions,
+	})
+}
+
+func (s *swarmingServiceImpl) ListBots(ctx context.Context, dimensions []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error) {
+	// TODO: Allow increasing the Limit past 1000. Ideally the server should treat
+	// a missing Limit as "as much as will fit within the RPC response" (e.g.
+	// 32MB). At the time of adding this Limit(1000) parameter, the server has
+	// a hard-coded maximum page size of 1000, and a default Limit of 200.
+	const defaultPageSize = 1000
+
+	cursor := ""
+	// Keep calling as long as there's a cursor indicating more bots to list.
+	bots := make([]*swarmingv2.BotInfo, 0, defaultPageSize)
+	for {
+		resp, err := s.botsClient.ListBots(ctx, &swarmingv2.BotsRequest{
+			Limit:      defaultPageSize,
+			Cursor:     cursor,
+			Dimensions: dimensions,
+		})
+		if err != nil {
+			return bots, err
+		}
+		bots = append(bots, resp.Items...)
+
+		cursor = resp.Cursor
+		if cursor == "" {
+			break
+		}
+	}
+	return bots, nil
+}
+
+func (s *swarmingServiceImpl) DeleteBot(ctx context.Context, botID string) (res *swarmingv2.DeleteResponse, err error) {
+	return s.botsClient.DeleteBot(ctx, &swarmingv2.BotRequest{
+		BotId: botID,
+	})
+}
+
+func (s *swarmingServiceImpl) TerminateBot(ctx context.Context, botID string, reason string) (res *swarmingv2.TerminateResponse, err error) {
+	return s.botsClient.TerminateBot(ctx, &swarmingv2.TerminateRequest{
+		BotId:  botID,
+		Reason: reason,
+	})
+}
+
+func (s *swarmingServiceImpl) ListBotTasks(ctx context.Context, botID string, limit int32, start float64, state swarmingv2.StateQuery) (res []*swarmingv2.TaskResultResponse, err error) {
+	const defaultPageSize = 1000
+
+	// Create an empty array so that if serialized to JSON it's an empty list,
+	// not null.
+	tasks := make([]*swarmingv2.TaskResultResponse, 0, limit)
+	cursor := ""
+
+	// Keep calling as long as there's a cursor indicating more tasks to list.
+	for {
+		var pageSize int32
+		if limit < defaultPageSize {
+			pageSize = limit
+		} else {
+			pageSize = defaultPageSize
+		}
+		req := &swarmingv2.BotTasksRequest{
+			BotId:                   botID,
+			Cursor:                  cursor,
+			Limit:                   pageSize,
+			State:                   state,
+			IncludePerformanceStats: false,
+		}
+		if start > 0 {
+			req.Start = &timestamppb.Timestamp{
+				Seconds: int64(start),
+			}
+		}
+		lbt, err := s.botsClient.ListBotTasks(ctx, req)
+		if err != nil {
+			return tasks, err
+		}
+		limit -= int32(len(lbt.Items))
+		tasks = append(tasks, lbt.Items...)
+		cursor = lbt.Cursor
+		if cursor == "" || limit <= 0 {
+			break
+		}
+	}
+
+	return tasks, nil
+}

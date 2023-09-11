@@ -36,7 +36,7 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl"
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
+	"go.chromium.org/luci/swarming/client/swarming"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
@@ -108,7 +108,7 @@ func getApplication() *cli.Application {
 			authcli.SubcommandInfo(authOpts, "whoami", false),
 			authcli.SubcommandLogin(authOpts, "login", false),
 			authcli.SubcommandLogout(authOpts, "logout", false),
-			versioncli.CmdVersion(swarmingimpl.SwarmingVersion),
+			versioncli.CmdVersion(swarming.UserAgent),
 		},
 
 		EnvVars: map[string]subcommands.EnvVarDefinition{

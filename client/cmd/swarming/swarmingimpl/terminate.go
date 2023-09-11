@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
+	"go.chromium.org/luci/swarming/client/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
@@ -64,7 +64,7 @@ func (cmd *terminateImpl) ParseInputs(args []string, env subcommands.Env) error 
 	return nil
 }
 
-func pollTask(ctx context.Context, taskID string, service swarming.Swarming) (*swarmingv2.TaskResultResponse, error) {
+func pollTask(ctx context.Context, taskID string, service swarming.Client) (*swarmingv2.TaskResultResponse, error) {
 	for {
 		res, err := service.TaskResult(ctx, taskID, false)
 		if err != nil {
@@ -89,7 +89,7 @@ func pollTask(ctx context.Context, taskID string, service swarming.Swarming) (*s
 	}
 }
 
-func (cmd *terminateImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
+func (cmd *terminateImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
 	res, err := svc.TerminateBot(ctx, cmd.botID, cmd.reason)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to terminate bot %s", cmd.botID).Err()

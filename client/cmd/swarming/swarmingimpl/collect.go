@@ -37,7 +37,7 @@ import (
 
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/clipb"
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/swarming"
+	"go.chromium.org/luci/swarming/client/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
@@ -221,7 +221,7 @@ func (cmd *collectImpl) ParseInputs(args []string, env subcommands.Env) error {
 	return nil
 }
 
-func (cmd *collectImpl) fetchTaskResults(ctx context.Context, taskID string, service swarming.Swarming, downloadSem weightedSemaphore, auth base.AuthFlags) taskResult {
+func (cmd *collectImpl) fetchTaskResults(ctx context.Context, taskID string, service swarming.Client, downloadSem weightedSemaphore, auth base.AuthFlags) taskResult {
 	defer logging.Debugf(ctx, "Finished fetching task result: %s", taskID)
 
 	errorResult := func(stage string, err error) taskResult {
@@ -316,7 +316,7 @@ func prepareOutputDir(outputDir, taskID string) (string, error) {
 	return dir, nil
 }
 
-func (cmd *collectImpl) pollForTaskResult(ctx context.Context, taskID string, service swarming.Swarming, downloadSem weightedSemaphore, auth base.AuthFlags) taskResult {
+func (cmd *collectImpl) pollForTaskResult(ctx context.Context, taskID string, service swarming.Client, downloadSem weightedSemaphore, auth base.AuthFlags) taskResult {
 	startedTime := clock.Now(ctx)
 	for {
 		result := cmd.fetchTaskResults(ctx, taskID, service, downloadSem, auth)
@@ -405,7 +405,7 @@ func (cmd *collectImpl) summarizeResults(results []taskResult) (any, error) {
 	return summary, nil
 }
 
-func (cmd *collectImpl) pollForTasks(ctx context.Context, taskIDs []string, service swarming.Swarming, downloadSem weightedSemaphore, auth base.AuthFlags) []taskResult {
+func (cmd *collectImpl) pollForTasks(ctx context.Context, taskIDs []string, service swarming.Client, downloadSem weightedSemaphore, auth base.AuthFlags) []taskResult {
 	if len(taskIDs) == 0 {
 		return nil
 	}
@@ -448,7 +448,7 @@ func (cmd *collectImpl) pollForTasks(ctx context.Context, taskIDs []string, serv
 	return results
 }
 
-func (cmd *collectImpl) Execute(ctx context.Context, svc swarming.Swarming, extra base.Extra) (any, error) {
+func (cmd *collectImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
 	downloadSem := semaphore.NewWeighted(int64(len(cmd.taskIDs)))
 	results := cmd.pollForTasks(ctx, cmd.taskIDs, svc, downloadSem, extra.AuthFlags)
 

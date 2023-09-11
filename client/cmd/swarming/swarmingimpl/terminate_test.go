@@ -29,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
+	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
@@ -76,8 +77,8 @@ func TestTerminateBots(t *testing.T) {
 			clk.Add(d)
 		})
 
-		service := &testService{
-			terminateBot: func(ctx context.Context, botID string, reason string) (*swarmingv2.TerminateResponse, error) {
+		service := &swarmingtest.Client{
+			TerminateBotMock: func(ctx context.Context, botID string, reason string) (*swarmingv2.TerminateResponse, error) {
 				givenBotID = botID
 				if botID == failBotID {
 					return nil, status.Errorf(codes.NotFound, "no such bot")
@@ -101,7 +102,7 @@ func TestTerminateBots(t *testing.T) {
 					TaskId: terminateTaskID,
 				}, nil
 			},
-			taskResult: func(ctx context.Context, taskID string, _ bool) (*swarmingv2.TaskResultResponse, error) {
+			TaskResultMock: func(ctx context.Context, taskID string, _ bool) (*swarmingv2.TaskResultResponse, error) {
 				givenTaskID = taskID
 				if taskID == stillRunningTaskID && countLoop < 2 {
 					countLoop += 1
