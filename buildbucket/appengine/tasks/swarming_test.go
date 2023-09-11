@@ -280,6 +280,7 @@ func TestTaskDef(t *testing.T) {
 					},
 					Bbagent: &pb.BuildInfra_BBAgent{},
 					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "app-id.appspot.com",
 						Agent: &pb.BuildInfra_Buildbucket_Agent{
 							Source: &pb.BuildInfra_Buildbucket_Agent_Source{
 								DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{

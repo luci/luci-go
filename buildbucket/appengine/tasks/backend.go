@@ -29,6 +29,7 @@ import (
 	grpc "google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -270,6 +271,21 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 	if err != nil {
 		return nil, err
 	}
+
+	build.Proto.Infra = infra.Proto
+	tags := computeTags(ctx, build)
+	tagsAny := make([]any, len(tags))
+	for i, t := range tags {
+		tagsAny[i] = t
+	}
+	tagsList, err := structpb.NewList(tagsAny)
+	if err != nil {
+		return nil, err
+	}
+	if taskReq.BackendConfig == nil {
+		taskReq.BackendConfig = &structpb.Struct{}
+	}
+	taskReq.BackendConfig.Fields["tags"] = structpb.NewListValue(tagsList)
 	return taskReq, nil
 }
 

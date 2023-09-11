@@ -390,7 +390,9 @@ func TestCreateBackendTask(t *testing.T) {
 
 		Convey("ok", func() {
 			build := &model.Build{
-				ID: 1,
+				ID:       1,
+				BucketID: "project/bucket",
+				Project:  "project",
 				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
@@ -474,6 +476,19 @@ func TestCreateBackendTask(t *testing.T) {
 					},
 					"bot_ping_tolerance": {
 						Kind: &structpb.Value_NumberValue{NumberValue: 2},
+					},
+					"tags": {
+						Kind: &structpb.Value_ListValue{
+							ListValue: &structpb.ListValue{
+								Values: []*structpb.Value{
+									{Kind: &structpb.Value_StringValue{StringValue: "buildbucket_bucket:project/bucket"}},
+									{Kind: &structpb.Value_StringValue{StringValue: "buildbucket_build_id:1"}},
+									{Kind: &structpb.Value_StringValue{StringValue: "buildbucket_hostname:some unique host name"}},
+									{Kind: &structpb.Value_StringValue{StringValue: "buildbucket_template_canary:0"}},
+									{Kind: &structpb.Value_StringValue{StringValue: "luci_project:project"}},
+								},
+							},
+						},
 					},
 				},
 			})

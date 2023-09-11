@@ -645,7 +645,7 @@ func computeTags(ctx context.Context, build *model.Build) []string {
 	tags := []string{
 		"buildbucket_bucket:" + build.BucketID,
 		fmt.Sprintf("buildbucket_build_id:%d", build.ID),
-		fmt.Sprintf("buildbucket_hostname:%s.appspot.com", info.AppID(ctx)),
+		fmt.Sprintf("buildbucket_hostname:%s", build.Proto.GetInfra().GetBuildbucket().GetHostname()),
 		"luci_project:" + build.Project,
 	}
 	if build.Canary {
