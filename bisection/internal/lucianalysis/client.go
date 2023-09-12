@@ -99,7 +99,7 @@ type TestVariant struct {
 	Variant     bigquery.NullJSON
 }
 
-func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask) ([]*BuilderRegressionGroup, error) {
+func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask, excludedBuckets []string) ([]*BuilderRegressionGroup, error) {
 	bbTableName, err := buildBucketBuildTableName(task.Project)
 	if err != nil {
 		return nil, errors.Annotate(err, "buildBucketBuildTableName").Err()
@@ -108,6 +108,7 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
 	if len(task.DimensionExcludes) > 0 {
 		dimensionExcludeFilter = "(NOT (SELECT LOGICAL_OR((SELECT count(*) > 0 FROM UNNEST(task_dimensions) WHERE KEY = kv.key and value = kv.value)) FROM UNNEST(@dimensionExcludes) kv))"
 	}
+
 	q := c.client.Query(`
 	WITH
   segments_with_failure_rate AS (
@@ -145,6 +146,7 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
       ANY_VALUE(g) AS regression_group,
       ANY_VALUE(v.buildbucket_build.id HAVING MAX v.partition_time) AS build_id,
       ANY_VALUE(b.infra.swarming.task_dimensions HAVING MAX v.partition_time) AS task_dimensions,
+      ANY_VALUE(b.builder.bucket HAVING MAX v.partition_time) AS bucket,
 		FROM builder_regression_groups g
 		-- Join with test_verdict table to get the build id of the lastest build for a test variant.
 		LEFT JOIN test_verdicts v
@@ -163,7 +165,7 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
   )
 	SELECT regression_group.*
 	FROM builder_regression_groups_with_latest_build
-	WHERE  ` + dimensionExcludeFilter + `
+	WHERE  ` + dimensionExcludeFilter + ` AND (bucket NOT IN UNNEST(@excludedBuckets))
 	ORDER BY regression_group.RegressionEndPosition DESC
 	LIMIT 5000
  `)
@@ -171,6 +173,7 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
 	q.DefaultProjectID = c.luciAnalysisProject
 	q.Parameters = []bigquery.QueryParameter{
 		{Name: "dimensionExcludes", Value: task.DimensionExcludes},
+		{Name: "excludedBuckets", Value: excludedBuckets},
 	}
 	job, err := q.Run(ctx)
 	if err != nil {

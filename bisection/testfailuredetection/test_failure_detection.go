@@ -86,7 +86,7 @@ func Schedule(ctx context.Context, task *tpb.TestFailureDetectionTask) error {
 }
 
 type analysisClient interface {
-	ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask) ([]*lucianalysis.BuilderRegressionGroup, error)
+	ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask, excludedBuckets []string) ([]*lucianalysis.BuilderRegressionGroup, error)
 	ReadBuildInfo(ctx context.Context, tf *model.TestFailure) (lucianalysis.BuildInfo, error)
 }
 
@@ -101,13 +101,13 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 		logging.Infof(ctx, "Dectection is not enabled")
 		return nil
 	}
-	groups, err := client.ReadTestFailures(ctx, task)
+	excludedBuckets, err := getExcludedBuckets(ctx)
+	if err != nil {
+		return errors.Annotate(err, "get excluded buckets").Err()
+	}
+	groups, err := client.ReadTestFailures(ctx, task, excludedBuckets)
 	if err != nil {
 		return errors.Annotate(err, "read test failures").Err()
-	}
-	if len(groups) == 0 {
-		logging.Infof(ctx, "No test failure is found for %s", task.Project)
-		return nil
 	}
 	bundles := []*model.TestFailureBundle{}
 	for _, g := range groups {
@@ -275,4 +275,12 @@ func isEnabled(ctx context.Context) (bool, error) {
 		return false, err
 	}
 	return cfg.TestAnalysisConfig.GetDetectorEnabled(), nil
+}
+
+func getExcludedBuckets(ctx context.Context) ([]string, error) {
+	cfg, err := config.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return cfg.TestAnalysisConfig.GetExcludedBuckets(), nil
 }

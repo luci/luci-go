@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
+	"go.chromium.org/luci/server/tq/tqtesting"
 )
 
 func TestRedundancyScore(t *testing.T) {
@@ -138,17 +139,7 @@ func TestFailureDetection(t *testing.T) {
 	t.Parallel()
 
 	Convey("Have bisection task to send", t, func() {
-		ctx := memory.Use(context.Background())
-		testCfg := &configpb.Config{
-			TestAnalysisConfig: &configpb.TestAnalysisConfig{
-				DetectorEnabled: true,
-			},
-		}
-		So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
-		cl := testclock.New(testclock.TestTimeUTC)
-		cl.Set(time.Unix(10000, 0).UTC())
-		ctx = clock.Set(ctx, cl)
-		ctx, skdr := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
+		ctx, skdr := setupTestingContext()
 		analysisClient := &fakeLUCIAnalysisClient{
 			testFailuresByProject: map[string][]*lucianalysis.BuilderRegressionGroup{},
 			buildInfoByProject: map[string]lucianalysis.BuildInfo{
@@ -235,17 +226,7 @@ func TestFailureDetection(t *testing.T) {
 	})
 
 	Convey("No bisection task to send", t, func() {
-		ctx := memory.Use(context.Background())
-		testCfg := &configpb.Config{
-			TestAnalysisConfig: &configpb.TestAnalysisConfig{
-				DetectorEnabled: true,
-			},
-		}
-		So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
-		cl := testclock.New(testclock.TestTimeUTC)
-		cl.Set(time.Unix(10000, 0).UTC())
-		ctx = clock.Set(ctx, cl)
-		ctx, skdr := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
+		ctx, skdr := setupTestingContext()
 		analysisClient := &fakeLUCIAnalysisClient{
 			testFailuresByProject: map[string][]*lucianalysis.BuilderRegressionGroup{},
 			buildInfoByProject: map[string]lucianalysis.BuildInfo{
@@ -290,7 +271,7 @@ type fakeLUCIAnalysisClient struct {
 	buildInfoByProject    map[string]lucianalysis.BuildInfo
 }
 
-func (f *fakeLUCIAnalysisClient) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask) ([]*lucianalysis.BuilderRegressionGroup, error) {
+func (f *fakeLUCIAnalysisClient) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask, excludedBuckets []string) ([]*lucianalysis.BuilderRegressionGroup, error) {
 	return f.testFailuresByProject[task.Project], nil
 }
 
@@ -341,4 +322,19 @@ func fakeTestFailure(ID int64, testID, variantHash string) *model.TestFailure {
 		RedundancyScore:          0,
 		StartHour:                time.Unix(1689343797, 0).UTC(),
 	}
+}
+
+func setupTestingContext() (context.Context, *tqtesting.Scheduler) {
+	ctx := memory.Use(context.Background())
+	cl := testclock.New(testclock.TestTimeUTC)
+	cl.Set(time.Unix(10000, 0).UTC())
+	ctx = clock.Set(ctx, cl)
+	testCfg := &configpb.Config{
+		TestAnalysisConfig: &configpb.TestAnalysisConfig{
+			DetectorEnabled: true,
+			ExcludedBuckets: []string{"try", "findit", "reviver"},
+		},
+	}
+	So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+	return tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 }

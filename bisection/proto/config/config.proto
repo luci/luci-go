@@ -106,4 +106,7 @@ message TestAnalysisConfig {
   // It allows us to slowly roll out bisection without consuming too much
   // swarming capacity.
   uint32 daily_limit = 4;
+  // The list of buildbucket buckets that we should not bisect on.
+  // For example, "reviver", "try", and "findit".
+  repeated string excluded_buckets = 5;
 }
