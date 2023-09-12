@@ -46,14 +46,10 @@ func TestGetOne(t *testing.T) {
 		const doneLaterID = "later"
 		const doneNever = "never"
 		const fatalTaskID = "fatal"
-		const transientTaskID = "transient"
 		const wrongTaskID = "wrong"
-
-		callAttempt := 0
 
 		client := swarmingtest.Client{
 			TaskResultMock: func(ctx context.Context, taskID string, perf bool) (*swarmingv2.TaskResultResponse, error) {
-				callAttempt += 1
 				state := swarmingv2.TaskState_PENDING
 				switch {
 				case taskID == doneTaskID:
@@ -62,11 +58,6 @@ func TestGetOne(t *testing.T) {
 					state = swarmingv2.TaskState_COMPLETED
 				case taskID == fatalTaskID:
 					return nil, status.Errorf(codes.PermissionDenied, "boo")
-				case taskID == transientTaskID:
-					if callAttempt <= 100 {
-						return nil, status.Errorf(codes.Internal, "boo")
-					}
-					state = swarmingv2.TaskState_COMPLETED
 				case taskID == wrongTaskID:
 					return &swarmingv2.TaskResultResponse{
 						TaskId: "incorrect",
@@ -122,20 +113,6 @@ func TestGetOne(t *testing.T) {
 			So(sleeps, ShouldEqual, 0)
 		})
 
-		Convey("Transient RPC failure: Wait", func() {
-			res, err := GetOne(ctx, &client, transientTaskID, false, Wait)
-			So(err, ShouldBeNil)
-			So(res.State, ShouldEqual, swarmingv2.TaskState_COMPLETED)
-			So(sleeps, ShouldEqual, 100)
-		})
-
-		Convey("Transient RPC failure: Poll", func() {
-			res, err := GetOne(ctx, &client, transientTaskID, false, Poll)
-			So(err, ShouldBeNil)
-			So(res.State, ShouldEqual, swarmingv2.TaskState_COMPLETED)
-			So(sleeps, ShouldEqual, 100) // retries just like in Wait mode
-		})
-
 		Convey("Wrong task ID", func() {
 			res, err := GetOne(ctx, &client, wrongTaskID, false, Wait)
 			So(status.Code(err), ShouldEqual, codes.FailedPrecondition)
@@ -177,55 +154,64 @@ func TestGetAll(t *testing.T) {
 			},
 		}
 
-		call := func(taskIDs []string, mode BlockMode) (map[string]swarmingv2.TaskState, error) {
-			out := map[string]swarmingv2.TaskState{}
+		call := func(taskIDs []string, mode BlockMode) map[string]string {
+			out := map[string]string{}
 			m := sync.Mutex{}
-			err := GetAll(ctx, &client, taskIDs, false, mode, func(resp *swarmingv2.TaskResultResponse) {
+			GetAll(ctx, &client, taskIDs, false, mode, func(taskID string, resp *swarmingv2.TaskResultResponse, err error) {
 				m.Lock()
 				defer m.Unlock()
-				if _, dup := out[resp.TaskId]; dup {
+				if _, dup := out[taskID]; dup {
 					panic("visited the same task twice!")
 				}
-				out[resp.TaskId] = resp.State
+				if resp != nil && resp.TaskId != taskID {
+					panic("wrong task ID in result")
+				}
+				if err == nil {
+					out[taskID] = resp.State.String()
+				} else {
+					out[taskID] = err.Error()
+				}
 			})
-			return out, err
+			return out
 		}
 
 		Convey("Success: Wait", func() {
-			out, err := call([]string{"0", "1", "2", "slow"}, Wait)
-			So(err, ShouldBeNil)
-			So(out, ShouldResemble, map[string]swarmingv2.TaskState{
-				"0":    swarmingv2.TaskState_COMPLETED,
-				"1":    swarmingv2.TaskState_COMPLETED,
-				"2":    swarmingv2.TaskState_COMPLETED,
-				"slow": swarmingv2.TaskState_COMPLETED,
+			out := call([]string{"0", "1", "2", "slow"}, Wait)
+			So(out, ShouldResemble, map[string]string{
+				"0":    "COMPLETED",
+				"1":    "COMPLETED",
+				"2":    "COMPLETED",
+				"slow": "COMPLETED",
 			})
 		})
 
 		Convey("Success: Poll", func() {
-			out, err := call([]string{"0", "1", "2", "slow"}, Poll)
-			So(err, ShouldBeNil)
-			So(out, ShouldResemble, map[string]swarmingv2.TaskState{
-				"0":    swarmingv2.TaskState_COMPLETED,
-				"1":    swarmingv2.TaskState_PENDING,
-				"2":    swarmingv2.TaskState_PENDING,
-				"slow": swarmingv2.TaskState_PENDING,
+			out := call([]string{"0", "1", "2", "slow"}, Poll)
+			So(out, ShouldResemble, map[string]string{
+				"0":    "COMPLETED",
+				"1":    "PENDING",
+				"2":    "PENDING",
+				"slow": "PENDING",
 			})
 		})
 
 		Convey("Timeout", func() {
 			contextTimeout = time.Hour + 30*time.Minute
-			out, err := call([]string{"0", "1", "2", "slow"}, Wait)
-			So(err, ShouldEqual, context.Canceled)
+			out := call([]string{"0", "1", "2", "slow"}, Wait)
 			// Note: due to race conditions in terminating concurrent goroutines, we
-			// can't reliably assert that both "0" and "1" have been visited. But "2"
-			// should **not** have been visited for sure.
-			So(out["2"], ShouldEqual, swarmingv2.TaskState_INVALID)
+			// can't reliably assert that both "0" and "1" have been completed. But
+			// "2" should **not** have been completed visited for sure.
+			So(out["2"], ShouldEqual, "context canceled")
 		})
 
 		Convey("RPC error", func() {
-			_, err := call([]string{"error", "0", "1", "slow"}, Wait)
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
+			out := call([]string{"error", "0", "1", "slow"}, Wait)
+			So(out, ShouldResemble, map[string]string{
+				"error": "rpc error: code = PermissionDenied desc = boo",
+				"0":     "COMPLETED",
+				"1":     "COMPLETED",
+				"slow":  "COMPLETED",
+			})
 		})
 	})
 }
@@ -237,19 +223,17 @@ func TestGetAnyCompleted(t *testing.T) {
 		completionTimes := map[string]time.Duration{
 			"0":     0,
 			"1":     time.Hour,
-			"2":     2 * time.Hour,
 			"error": 2 * time.Hour,
-			"slow":  5 * time.Hour,
 		}
 
 		// Advance mock time based on the longest living timer.
 		contextTimeout := 10 * time.Hour
-		ctx := mockContext("wait-slow", nil, &contextTimeout)
+		ctx := mockContext("wait-stuck", nil, &contextTimeout)
 
 		client := swarmingtest.Client{
 			TaskResultMock: func(ctx context.Context, taskID string, perf bool) (*swarmingv2.TaskResultResponse, error) {
 				state := swarmingv2.TaskState_PENDING
-				if clock.Since(ctx, testclock.TestRecentTimeUTC) >= completionTimes[taskID] {
+				if taskID != "stuck" && clock.Since(ctx, testclock.TestRecentTimeUTC) >= completionTimes[taskID] {
 					if taskID == "error" {
 						return nil, status.Errorf(codes.PermissionDenied, "boo")
 					}
@@ -263,35 +247,38 @@ func TestGetAnyCompleted(t *testing.T) {
 		}
 
 		Convey("Success: Wait", func() {
-			res, err := GetAnyCompleted(ctx, &client, []string{"slow", "1", "2"}, false, Wait)
+			taskID, res, err := GetAnyCompleted(ctx, &client, []string{"stuck", "1"}, false, Wait)
 			So(err, ShouldBeNil)
-			// TODO(vadimsh): Theoretically "2" can win the race too, but looks like
-			// it never happens.
+			So(taskID, ShouldEqual, "1")
 			So(res.TaskId, ShouldEqual, "1")
 		})
 
 		Convey("Success: Poll", func() {
-			res, err := GetAnyCompleted(ctx, &client, []string{"0", "slow", "1", "2"}, false, Poll)
+			taskID, res, err := GetAnyCompleted(ctx, &client, []string{"0", "stuck"}, false, Poll)
 			So(err, ShouldBeNil)
+			So(taskID, ShouldEqual, "0")
 			So(res.TaskId, ShouldEqual, "0")
 		})
 
 		Convey("Success: Poll with all pending", func() {
-			_, err := GetAnyCompleted(ctx, &client, []string{"slow", "1", "2"}, false, Poll)
+			taskID, _, err := GetAnyCompleted(ctx, &client, []string{"stuck", "1"}, false, Poll)
 			So(err, ShouldEqual, ErrAllPending)
+			So(taskID, ShouldEqual, "")
 		})
 
 		Convey("Timeout", func() {
 			contextTimeout = 30 * time.Minute
-			res, err := GetAnyCompleted(ctx, &client, []string{"slow", "1", "2"}, false, Wait)
+			taskID, res, err := GetAnyCompleted(ctx, &client, []string{"stuck", "1"}, false, Wait)
 			So(err, ShouldEqual, context.Canceled)
 			So(res, ShouldBeNil)
+			So(taskID, ShouldNotEqual, "") // can be either of them
 		})
 
 		Convey("RPC error", func() {
-			res, err := GetAnyCompleted(ctx, &client, []string{"slow", "error"}, false, Wait)
+			taskID, res, err := GetAnyCompleted(ctx, &client, []string{"stuck", "error"}, false, Wait)
 			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 			So(res, ShouldBeNil)
+			So(taskID, ShouldEqual, "error")
 		})
 	})
 }

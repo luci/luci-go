@@ -17,10 +17,9 @@ package swarming
 import (
 	"context"
 	"errors"
-	"sync/atomic"
+	"sync"
 	"time"
 
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -56,12 +55,16 @@ const (
 // be a non-final status (i.e. PENDING or RUNNING). If `mode` is Wait, this will
 // always be a final status.
 //
-// Exits early if the context expires or if Swarming replies with a fatal RPC
-// error. Returns a non-nil error in this case. It will either be a gRPC error
-// or a context error.
+// Exits early if the context expires or if RPCs to Swarming fail. Returns a
+// non-nil error in this case. It will either be a gRPC error or a context
+// error.
 //
-// In either BlockMode retries on transient errors until the context expiration.
+// Panics if `taskID` is an empty string.
 func GetOne(ctx context.Context, client Client, taskID string, withPerf bool, mode BlockMode) (*swarmingv2.TaskResultResponse, error) {
+	if taskID == "" {
+		panic("taskID should not be empty")
+	}
+
 	startedTime := clock.Now(ctx)
 	for {
 		res, err := client.TaskResult(ctx, taskID, withPerf)
@@ -75,17 +78,12 @@ func GetOne(ctx context.Context, client Client, taskID string, withPerf bool, mo
 				}
 				return res, nil
 			}
-		case codes.Internal, codes.Unknown, codes.Unavailable:
-			// Most likely a transient error, try again later. Note that gRPC client
-			// likely implements its own retry loop already, but we don't want to
-			// rely on its configuration: GetOne promises to retry transient errors
-			// "forever" (until the context expires).
 		case codes.DeadlineExceeded, codes.Canceled:
 			// This can be a server side or a client side error. If it is a client
 			// side error (e.g. our context has expired), we'll discover it soon
 			// enough when we try to sleep. If it is a server side error, we'll retry.
 		default:
-			// A fatal RPC error.
+			// Either a fatal RPC error or a transient error after many retries.
 			return nil, err
 		}
 
@@ -111,62 +109,38 @@ func GetOne(ctx context.Context, client Client, taskID string, withPerf bool, mo
 // GetAll queries status of all given tasks, optionally waiting for them to
 // complete.
 //
-// Calls the given callback as soon as any of given tasks' status is available,
-// perhaps waiting for tasks to complete first. If `mode` is Poll, it might be
-// a non-final status (i.e. PENDING or RUNNING). If `mode` is Wait, this will
-// always be a final status.
+// This is a batch variant of GetOne which essentially runs multiple queries
+// concurrently and calls the callback with result of each query as soon as it
+// is available. The advantage over calling GetOne in parallel is that GetAll
+// may schedule TaskResult calls in a more smart way to avoid QPS spikes (but
+// it currently doesn't).
 //
-// The callback may be called concurrently. The callback should not block. If it
-// needs to do further processing, it should do it asynchronously.
+// The callback may be called concurrently. It will always be called exactly
+// `len(taskIDs)` times, once per each task. The callback should not block. If
+// it needs to do further processing, it should do it asynchronously.
 //
-// Exits with no error if successfully queried statuses of all tasks (perhaps
-// after waiting for them to complete).
-//
-// Exits early if the context expires or if Swarming replies with a fatal RPC
-// error on any of sent RPCs. As soon as this happens all pending queries are
-// canceled and the callback is not called for them. Returns a non-nil error in
-// this case. It will either be a gRPC error or a context error.
-//
-// In either BlockMode retries on transient errors until the context expiration.
-//
-// Panics if `taskIDs` is empty.
-func GetAll(ctx context.Context, client Client, taskIDs []string, withPerf bool, mode BlockMode, sink func(*swarmingv2.TaskResultResponse)) error {
+// Panics if `taskIDs` is empty or any of given task IDs is an empty string.
+func GetAll(ctx context.Context, client Client, taskIDs []string, withPerf bool, mode BlockMode, sink func(taskID string, res *swarmingv2.TaskResultResponse, err error)) {
 	if len(taskIDs) == 0 {
 		panic("need at least one task to wait for")
 	}
 
-	eg, gctx := errgroup.WithContext(ctx)
+	// TODO(vadimsh): This implementation is not really worth a separate function
+	// right now, but GetAll abstraction by itself is still useful, since it
+	// allows to do something smarter in the future (e.g. limit TaskResult QPS).
 
-	var reported int32
+	wg := sync.WaitGroup{}
+	wg.Add(len(taskIDs))
+	defer wg.Wait()
+
 	for _, taskID := range taskIDs {
 		taskID := taskID
-		eg.Go(func() error {
-			res, err := GetOne(gctx, client, taskID, withPerf, mode)
-			if err == nil && gctx.Err() == nil {
-				sink(res)
-				atomic.AddInt32(&reported, 1)
-			}
-			return err
-		})
+		go func() {
+			defer wg.Done()
+			res, err := GetOne(ctx, client, taskID, withPerf, mode)
+			sink(taskID, res, err)
+		}()
 	}
-
-	if err := eg.Wait(); err != nil {
-		// If reported all tasks, then ignore any errors here. They can
-		// theoretically happen due to context cancellation racing with the
-		// successful completion. This should be super rare, but the check isn't
-		// difficult either.
-		if atomic.LoadInt32(&reported) == int32(len(taskIDs)) {
-			return nil
-		}
-		// Return a cleaner error if the root context expires (instead of
-		// "aborted RPC call" error).
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-		return err
-	}
-
-	return nil
 }
 
 // GetAnyCompleted queries status of given tasks and returns some completed one.
@@ -180,36 +154,36 @@ func GetAll(ctx context.Context, client Client, taskIDs []string, withPerf bool,
 // one of them randomly.
 //
 // Exits early if the context expires or if Swarming replies with a fatal error
-// on any of sent RPCs. Returns nil result and non-nil error in this case. It
-// will either be a gRPC error or a context error.
+// on any of sent RPCs. When this happens returns a task ID that triggered
+// the error, nil task result and the non-nil error itself. It will either be
+// a gRPC error or a context error.
 //
-// In either BlockMode retries on transient errors until the context expiration.
-//
-// Panics if `taskIDs` is empty.
-func GetAnyCompleted(ctx context.Context, client Client, taskIDs []string, withPerf bool, mode BlockMode) (*swarmingv2.TaskResultResponse, error) {
+// Panics if `taskIDs` is empty or any of given task IDs is an empty string.
+func GetAnyCompleted(ctx context.Context, client Client, taskIDs []string, withPerf bool, mode BlockMode) (taskID string, res *swarmingv2.TaskResultResponse, err error) {
 	ctx, done := context.WithCancel(ctx)
 	defer done()
 
-	var success *swarmingv2.TaskResultResponse
-	err := GetAll(ctx, client, taskIDs, withPerf, mode, func(res *swarmingv2.TaskResultResponse) {
-		if final(res) {
-			success = res
-			done() // got one result, abort waiting for the rest
+	m := sync.Mutex{}
+
+	GetAll(ctx, client, taskIDs, withPerf, mode, func(gotTaskID string, gotRes *swarmingv2.TaskResultResponse, gotErr error) {
+		if gotErr != nil || final(gotRes) {
+			m.Lock()
+			defer m.Unlock()
+			if taskID == "" {
+				taskID = gotTaskID
+				res = gotRes
+				err = gotErr
+				done() // got one result, abort waiting for the rest
+			}
 		}
 	})
 
-	switch {
-	case success != nil:
-		// If got a result, ignore any potential error (which most likely be
-		// "context was canceled", since we canceled the context ourselves).
-		return success, nil
-	case err == nil:
-		// This means we visited all tasks and none of them is complete.
-		return nil, ErrAllPending
-	default:
-		// Either a gRPC or a context error.
-		return nil, err
+	// This means we visited all tasks and none of them is complete.
+	if taskID == "" {
+		err = ErrAllPending
 	}
+
+	return
 }
 
 // final is true if the task is in some final state.
