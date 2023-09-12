@@ -19,7 +19,6 @@ package compilefailuredetection
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
@@ -413,18 +412,7 @@ func platformForBuild(c context.Context, build *buildbucketpb.Build) model.Platf
 	dimens := build.GetInfra().GetSwarming().GetTaskDimensions()
 	for _, d := range dimens {
 		if d.Key == "os" {
-			val := strings.ToLower(d.Value)
-			if strings.Contains(val, "linux") || strings.Contains(val, "ubuntu") {
-				return model.PlatformLinux
-			}
-			if strings.Contains(val, "win") {
-				return model.PlatformWindows
-			}
-			if strings.Contains(val, "mac") {
-				return model.PlatformMac
-			}
-			logging.Warningf(c, "Unknown OS platform: %s", val)
-			return model.PlatformUnknown
+			return model.PlatformFromOS(c, d.Value)
 		}
 	}
 	return model.PlatformUnspecified

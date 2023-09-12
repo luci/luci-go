@@ -465,6 +465,17 @@ func UpdateIndices(c context.Context) {
 			},
 		},
 		&datastore.IndexDefinition{
+			Kind: "TestSingleRerun",
+			SortBy: []datastore.IndexColumn{
+				{
+					Property: "status",
+				},
+				{
+					Property: "luci_build.create_time",
+				},
+			},
+		},
+		&datastore.IndexDefinition{
 			Kind: "TestFailureAnalysis",
 			SortBy: []datastore.IndexColumn{
 				{

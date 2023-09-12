@@ -29,3 +29,15 @@ func SortDimension(dimensions []*pb.Dimension) {
 		return dimensions[i].Key < dimensions[j].Key
 	})
 }
+
+func GetDimensionWithKey(dims *pb.Dimensions, key string) *pb.Dimension {
+	if dims == nil {
+		return nil
+	}
+	for _, d := range dims.GetDimensions() {
+		if d.Key == key {
+			return d
+		}
+	}
+	return nil
+}

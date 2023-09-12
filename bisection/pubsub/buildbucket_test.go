@@ -82,7 +82,7 @@ func TestBuildBucketPubsub(t *testing.T) {
 		r := &http.Request{Body: makeBBReq(buildPubsub)}
 		err := buildbucketPubSubHandlerImpl(c, r)
 		So(err, ShouldBeNil)
-		So(rerunCounter.Get(c, "chromium", "INFRA_FAILURE"), ShouldEqual, 1)
+		So(rerunCounter.Get(c, "chromium", "INFRA_FAILURE", "compile"), ShouldEqual, 1)
 
 		// Receiving a pubsub message for a terminal status should not increase counter.
 		buildPubsub = &buildbucketpb.BuildsV2PubSub{
@@ -99,7 +99,7 @@ func TestBuildBucketPubsub(t *testing.T) {
 		r = &http.Request{Body: makeBBReq(buildPubsub)}
 		err = buildbucketPubSubHandlerImpl(c, r)
 		So(err, ShouldBeNil)
-		So(rerunCounter.Get(c, "chromium", "SCHEDULED"), ShouldEqual, 0)
+		So(rerunCounter.Get(c, "chromium", "SCHEDULED", "compile"), ShouldEqual, 0)
 
 	})
 }

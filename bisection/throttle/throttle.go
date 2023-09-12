@@ -70,7 +70,7 @@ func CronHandler(ctx context.Context) error {
 		}
 		dimensionExcludes := []*pb.Dimension{}
 		for _, d := range allRerunDimensions(rerunBuilds, testReruns) {
-			if dim := getDimensionWithKey(d, "os"); dim != nil {
+			if dim := util.GetDimensionWithKey(d, "os"); dim != nil {
 				dimensionExcludes = append(dimensionExcludes, dim)
 			}
 		}
@@ -155,18 +155,6 @@ func allRerunDimensions(rerunBuilds []*model.SingleRerun, testReruns []*model.Te
 		dims = append(dims, r.Dimensions)
 	}
 	return dims
-}
-
-func getDimensionWithKey(dims *pb.Dimensions, key string) *pb.Dimension {
-	if dims == nil {
-		return nil
-	}
-	for _, d := range dims.GetDimensions() {
-		if d.Key == key {
-			return d
-		}
-	}
-	return nil
 }
 
 func dailyLimit(ctx context.Context) (int, error) {

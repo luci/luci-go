@@ -16,11 +16,14 @@
 package model
 
 import (
+	"context"
 	"errors"
+	"strings"
 	"time"
 
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
@@ -612,4 +615,19 @@ func SuspectStatus(rerunStatus pb.RerunStatus, parentRerunStatus pb.RerunStatus)
 		return SuspectVerificationStatus_VerificationError
 	}
 	return SuspectVerificationStatus_UnderVerification
+}
+
+func PlatformFromOS(ctx context.Context, os string) Platform {
+	val := strings.ToLower(os)
+	if strings.Contains(val, "linux") || strings.Contains(val, "ubuntu") {
+		return PlatformLinux
+	}
+	if strings.Contains(val, "win") {
+		return PlatformWindows
+	}
+	if strings.Contains(val, "mac") {
+		return PlatformMac
+	}
+	logging.Warningf(ctx, "Unknown OS platform: %s", val)
+	return PlatformUnknown
 }

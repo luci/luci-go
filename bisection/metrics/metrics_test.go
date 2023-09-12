@@ -36,14 +36,48 @@ func TestCollectGlobalMetrics(t *testing.T) {
 	c := memory.Use(context.Background())
 	c, _ = tsmon.WithDummyInMemory(c)
 
-	Convey("For running analyses", t, func() {
+	Convey("running compile analyses", t, func() {
 		createRunningAnalysis(c, 123, "chromium", model.PlatformLinux)
 		createRunningAnalysis(c, 456, "chromeos", model.PlatformLinux)
 		createRunningAnalysis(c, 789, "chromium", model.PlatformLinux)
 		err := collectMetricsForRunningAnalyses(c)
 		So(err, ShouldBeNil)
-		So(runningAnalysesGauge.Get(c, "chromium"), ShouldEqual, 2)
-		So(runningAnalysesGauge.Get(c, "chromeos"), ShouldEqual, 1)
+		So(runningAnalysesGauge.Get(c, "chromium", "compile"), ShouldEqual, 2)
+		So(runningAnalysesGauge.Get(c, "chromeos", "compile"), ShouldEqual, 1)
+
+		m, err := retrieveRunningAnalyses(c)
+		So(err, ShouldBeNil)
+		So(m, ShouldResemble, map[string]int{
+			"chromium": 2,
+			"chromeos": 1,
+		})
+	})
+
+	Convey("running test analyses", t, func() {
+		testutil.CreateTestFailureAnalysis(c, &testutil.TestFailureAnalysisCreationOption{
+			ID:        1000,
+			Project:   "chromium",
+			RunStatus: pb.AnalysisRunStatus_STARTED,
+		})
+		testutil.CreateTestFailureAnalysis(c, &testutil.TestFailureAnalysisCreationOption{
+			ID:        1001,
+			Project:   "chromium",
+			RunStatus: pb.AnalysisRunStatus_STARTED,
+		})
+		testutil.CreateTestFailureAnalysis(c, &testutil.TestFailureAnalysisCreationOption{
+			ID:        1002,
+			Project:   "chromeos",
+			RunStatus: pb.AnalysisRunStatus_STARTED,
+		})
+		testutil.CreateTestFailureAnalysis(c, &testutil.TestFailureAnalysisCreationOption{
+			ID:        1003,
+			Project:   "chromeos",
+			RunStatus: pb.AnalysisRunStatus_ENDED,
+		})
+		err := collectMetricsForRunningAnalyses(c)
+		So(err, ShouldBeNil)
+		So(runningAnalysesGauge.Get(c, "chromium", "test"), ShouldEqual, 2)
+		So(runningAnalysesGauge.Get(c, "chromeos", "test"), ShouldEqual, 1)
 
 		m, err := retrieveRunningAnalyses(c)
 		So(err, ShouldBeNil)
@@ -100,13 +134,51 @@ func TestCollectGlobalMetrics(t *testing.T) {
 
 		err := collectMetricsForRunningReruns(c)
 		So(err, ShouldBeNil)
-		So(runningRerunGauge.Get(c, "chromium", "pending", "linux"), ShouldEqual, 1)
-		So(runningRerunGauge.Get(c, "chromium", "running", "linux"), ShouldEqual, 0)
-		So(runningRerunGauge.Get(c, "chromeos", "pending", "mac"), ShouldEqual, 0)
-		So(runningRerunGauge.Get(c, "chromeos", "running", "mac"), ShouldEqual, 1)
-		dist := rerunAgeMetric.Get(c, "chromium", "pending", "linux")
+		So(runningRerunGauge.Get(c, "chromium", "pending", "linux", "compile"), ShouldEqual, 1)
+		So(runningRerunGauge.Get(c, "chromium", "running", "linux", "compile"), ShouldEqual, 0)
+		So(runningRerunGauge.Get(c, "chromeos", "pending", "mac", "compile"), ShouldEqual, 0)
+		So(runningRerunGauge.Get(c, "chromeos", "running", "mac", "compile"), ShouldEqual, 1)
+		dist := rerunAgeMetric.Get(c, "chromium", "pending", "linux", "compile")
 		So(dist.Count(), ShouldEqual, 1)
-		dist = rerunAgeMetric.Get(c, "chromeos", "running", "mac")
+		dist = rerunAgeMetric.Get(c, "chromeos", "running", "mac", "compile")
+		So(dist.Count(), ShouldEqual, 1)
+	})
+
+	Convey("running test reruns", t, func() {
+		cl := testclock.New(testclock.TestTimeUTC)
+		c = clock.Set(c, cl)
+		createRerun := func(ID int64, project, OS string, status buildbucketpb.Status) {
+			rerun := &model.TestSingleRerun{
+				ID:     ID,
+				Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+				LUCIBuild: model.LUCIBuild{
+					Project:    project,
+					Status:     status,
+					CreateTime: clock.Now(c).Add(-10 * time.Second),
+				},
+				Dimensions: &pb.Dimensions{Dimensions: []*pb.Dimension{{
+					Key:   "os",
+					Value: OS,
+				}}},
+			}
+			So(datastore.Put(c, rerun), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+		}
+		createRerun(100, "chromium", "Ubuntu-22.04", buildbucketpb.Status_SCHEDULED)
+		createRerun(101, "chromium", "Ubuntu-22.04", buildbucketpb.Status_STARTED)
+		createRerun(102, "chromium", "Ubuntu-22.04", buildbucketpb.Status_STARTED)
+		createRerun(103, "chromium", "Mac-12", buildbucketpb.Status_STARTED)
+		createRerun(104, "chromeos", "Ubuntu-22.04", buildbucketpb.Status_STARTED)
+
+		err := collectMetricsForRunningTestReruns(c)
+		So(err, ShouldBeNil)
+		So(runningRerunGauge.Get(c, "chromium", "running", "linux", "test"), ShouldEqual, 2)
+		So(runningRerunGauge.Get(c, "chromium", "pending", "linux", "test"), ShouldEqual, 1)
+		So(runningRerunGauge.Get(c, "chromium", "running", "mac", "test"), ShouldEqual, 1)
+		So(runningRerunGauge.Get(c, "chromeos", "running", "linux", "test"), ShouldEqual, 1)
+		dist := rerunAgeMetric.Get(c, "chromium", "pending", "linux", "test")
+		So(dist.Count(), ShouldEqual, 1)
+		dist = rerunAgeMetric.Get(c, "chromeos", "running", "linux", "test")
 		So(dist.Count(), ShouldEqual, 1)
 	})
 }

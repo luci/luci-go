@@ -50,6 +50,11 @@ indexes:
   - name: luci_build.status
   - name: luci_build.create_time
 
+- kind: TestSingleRerun
+  properties:
+  - name: status
+  - name: luci_build.create_time
+
 - kind: CompileRerunBuild
   properties:
   - name: project

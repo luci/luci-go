@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -39,15 +40,18 @@ import (
 var (
 	// Measure how many analyses are currently running
 	runningAnalysesGauge = metric.NewInt(
-		"bisection/compile/analysis/running_count",
+		"bisection/analysis/running_count",
 		"The total number running compile analysis, by LUCI project.",
 		&types.MetricMetadata{Units: "analyses"},
 		// The LUCI Project.
 		field.String("project"),
+		// The type of the analysis.
+		// The possible values are "compile", "test".
+		field.String("type"),
 	)
 	// Measure how many rerun builds are currently running
 	runningRerunGauge = metric.NewInt(
-		"bisection/compile/rerun/running_count",
+		"bisection/rerun/running_count",
 		"The number of running rerun builds, by LUCI project.",
 		&types.MetricMetadata{Units: "reruns"},
 		// The LUCI Project.
@@ -56,10 +60,13 @@ var (
 		field.String("status"),
 		// "mac", "windows", "linux"
 		field.String("platform"),
+		// The type of the analysis that rerun belongs to.
+		// The possible values are "compile", "test".
+		field.String("type"),
 	)
 	// Measure the "age" of running rerun builds
 	rerunAgeMetric = metric.NewNonCumulativeDistribution(
-		"bisection/compile/rerun/age",
+		"bisection/rerun/age",
 		"The age of running reruns, by LUCI project.",
 		&types.MetricMetadata{Units: "seconds"},
 		distribution.DefaultBucketer,
@@ -69,7 +76,18 @@ var (
 		field.String("status"),
 		// "mac", "windows", "linux"
 		field.String("platform"),
+		// The type of the analysis that rerun belongs to.
+		// The possible values are "compile", "test".
+		field.String("type"),
 	)
+)
+
+// AnalysisType is used for sending metrics to tsmon
+type AnalysisType string
+
+const (
+	AnalysisTypeCompile AnalysisType = "compile"
+	AnalysisTypeTest    AnalysisType = "test"
 )
 
 // rerunKey is keys for maps for runningRerunGauge and rerunAgeMetric
@@ -104,6 +122,12 @@ func CollectGlobalMetrics(c context.Context) error {
 		errs = append(errs, err)
 		logging.Errorf(c, err.Error())
 	}
+	err = collectMetricsForRunningTestReruns(c)
+	if err != nil {
+		err = errors.Annotate(err, "collectMetricsForRunningTestReruns").Err()
+		errs = append(errs, err)
+		logging.Errorf(c, err.Error())
+	}
 	if len(errs) > 0 {
 		return errors.NewMultiError(errs...)
 	}
@@ -111,16 +135,40 @@ func CollectGlobalMetrics(c context.Context) error {
 }
 
 func collectMetricsForRunningAnalyses(c context.Context) error {
-	runningCount, err := retrieveRunningAnalyses(c)
+	// Compile failure analysis running count.
+	compileRunningCount, err := retrieveRunningAnalyses(c)
 	if err != nil {
 		return err
 	}
-
+	// Test failure analysis running count.
+	testRunningCount, err := retrieveRunningTestAnalyses(c)
+	if err != nil {
+		return err
+	}
 	// Set the metric
-	for proj, count := range runningCount {
-		runningAnalysesGauge.Set(c, int64(count), proj)
+	for proj, count := range compileRunningCount {
+		runningAnalysesGauge.Set(c, int64(count), proj, string(AnalysisTypeCompile))
+	}
+	for proj, count := range testRunningCount {
+		runningAnalysesGauge.Set(c, int64(count), proj, string(AnalysisTypeTest))
 	}
 	return nil
+}
+
+func retrieveRunningTestAnalyses(c context.Context) (map[string]int, error) {
+	q := datastore.NewQuery("TestFailureAnalysis").Eq("run_status", pb.AnalysisRunStatus_STARTED)
+	analyses := []*model.TestFailureAnalysis{}
+	err := datastore.GetAll(c, q, &analyses)
+	if err != nil {
+		return nil, errors.Annotate(err, "get running test failure analyses").Err()
+	}
+
+	// To store the running analyses for each project
+	runningCount := map[string]int{}
+	for _, tfa := range analyses {
+		runningCount[tfa.Project] = runningCount[tfa.Project] + 1
+	}
+	return runningCount, nil
 }
 
 func retrieveRunningAnalyses(c context.Context) (map[string]int, error) {
@@ -200,11 +248,11 @@ func collectMetricsForRunningReruns(c context.Context) error {
 
 	// Send metrics to tsmon
 	for k, count := range rerunCountMap {
-		runningRerunGauge.Set(c, count, k.Project, k.Status, k.Platform)
+		runningRerunGauge.Set(c, count, k.Project, k.Status, k.Platform, string(AnalysisTypeCompile))
 	}
 
 	for k, dist := range rerunAgeMap {
-		rerunAgeMetric.Set(c, dist, k.Project, k.Status, k.Platform)
+		rerunAgeMetric.Set(c, dist, k.Project, k.Status, k.Platform, string(AnalysisTypeCompile))
 	}
 
 	return nil
@@ -223,6 +271,62 @@ func projectAndPlatformForRerun(c context.Context, rerun *model.SingleRerun) (st
 		return "", "", fmt.Errorf("build for analysis %d does not exist", cfa.Id)
 	}
 	return build.Project, string(build.Platform), nil
+}
+
+func collectMetricsForRunningTestReruns(c context.Context) error {
+	// Query all in-progress single reruns in the last 7 days.
+	// We set the limit to 7 days because there maybe cases that for some reasons
+	// (e.g. crashes) that a rerun status may not be updated.
+	// Any reruns more than 7 days are surely canceled by buildbucket, so it is
+	// safe to exclude them.
+	cutoffTime := clock.Now(c).Add(-time.Hour * 7 * 24)
+	q := datastore.NewQuery("TestSingleRerun").Eq("status", pb.RerunStatus_RERUN_STATUS_IN_PROGRESS).Gt("luci_build.create_time", cutoffTime)
+	reruns := []*model.TestSingleRerun{}
+	err := datastore.GetAll(c, q, &reruns)
+	if err != nil {
+		return errors.Annotate(err, "get running test reruns").Err()
+	}
+
+	// Get the metrics for rerun count and rerun age
+	// Maps where each key is one project-status-platform combination
+	rerunCountMap := map[rerunKey]int64{}
+	rerunAgeMap := map[rerunKey]*distribution.Distribution{}
+	for _, rerun := range reruns {
+		os := util.GetDimensionWithKey(rerun.Dimensions, "os")
+		if os == nil {
+			logging.Warningf(c, "rerun dimension has no OS %d", rerun.ID)
+			continue
+		}
+		var key = rerunKey{
+			Project:  rerun.Project,
+			Platform: string(model.PlatformFromOS(c, os.Value)),
+		}
+		if rerun.LUCIBuild.Status == buildbucketpb.Status_STATUS_UNSPECIFIED || rerun.LUCIBuild.Status == buildbucketpb.Status_SCHEDULED {
+			key.Status = "pending"
+		}
+		if rerun.LUCIBuild.Status == buildbucketpb.Status_STARTED {
+			key.Status = "running"
+		}
+		if key.Status != "" {
+			rerunCountMap[key] = rerunCountMap[key] + 1
+			if _, ok := rerunAgeMap[key]; !ok {
+				rerunAgeMap[key] = distribution.New(rerunAgeMetric.Bucketer())
+			}
+			dur := clock.Now(c).Sub(rerun.CreateTime)
+			rerunAgeMap[key].Add(dur.Seconds())
+		}
+	}
+
+	// Send metrics to tsmon
+	for k, count := range rerunCountMap {
+		runningRerunGauge.Set(c, count, k.Project, k.Status, k.Platform, string(AnalysisTypeTest))
+	}
+
+	for k, dist := range rerunAgeMap {
+		rerunAgeMetric.Set(c, dist, k.Project, k.Status, k.Platform, string(AnalysisTypeTest))
+	}
+
+	return nil
 }
 
 func rerunAgeInSeconds(c context.Context, rerun *model.SingleRerun) float64 {

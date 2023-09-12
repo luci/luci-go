@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"go.chromium.org/luci/bisection/compilefailuredetection"
+	"go.chromium.org/luci/bisection/metrics"
 	"go.chromium.org/luci/bisection/rerun"
 	taskpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util/loggingutil"
@@ -50,13 +51,16 @@ var (
 	)
 	rerunCounter = metric.NewCounter(
 		"bisection/ingestion/rerun",
-		"The number of rerun build result, by project and status",
+		"The number of rerun build result, by project, status and type.",
 		nil,
 		// The LUCI Project.
 		field.String("project"),
 		// The status of the rerun build.
 		// The possible values are "SUCCESS", "FAILURE", "INFRA_FAILURE", "CANCELED".
 		field.String("status"),
+		// The type of the analysis that rerun belongs to.
+		// The possible values are "compile", "test".
+		field.String("type"),
 	)
 )
 
@@ -132,7 +136,7 @@ func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
 			// We only update the rerun counter after the build finished.
 			// Status_ENDED_MASK is a union of all terminal statuses.
 			if status&buildbucketpb.Status_ENDED_MASK == buildbucketpb.Status_ENDED_MASK {
-				rerunCounter.Add(c, 1, project, status.String())
+				rerunCounter.Add(c, 1, project, status.String(), string(metrics.AnalysisTypeCompile))
 			}
 
 			if bbmsg.Build.Status != buildbucketpb.Status_SCHEDULED {
@@ -146,8 +150,14 @@ func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
 		// TODO (nqmtuan): Move this to config when we support other projects.
 		if project == "chromium" && bucket == "findit" && builder == "test-single-revision" {
 			logging.Infof(c, "Test bisection: received pubsub for rerun build %d status %s", bbid, buildbucketpb.Status_name[int32(status)])
+			bbCounter.Add(c, 1, project, string(OutcomeTypeUpdateRerun))
 
-			// TODO (nqmtuan): Update tsmon counter.
+			// We only update the rerun counter after the build finished.
+			// Status_ENDED_MASK is a union of all terminal statuses.
+			if status&buildbucketpb.Status_ENDED_MASK == buildbucketpb.Status_ENDED_MASK {
+				rerunCounter.Add(c, 1, project, status.String(), string(metrics.AnalysisTypeTest))
+			}
+
 			if bbmsg.Build.Status != buildbucketpb.Status_SCHEDULED {
 				return rerun.UpdateTestRerunStatus(c, bbmsg.GetBuild())
 			}
