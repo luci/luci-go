@@ -39,6 +39,8 @@ export const SearchInput = ({
           value={value}
           placeholder={placeholder}
           onChange={onInputChange}
+          // Let the caller decide whether `autoFocus` should be used or not.
+          // eslint-disable-next-line jsx-a11y/no-autofocus
           autoFocus={autoFocus}
           variant="outlined"
           size="small"

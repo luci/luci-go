@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, Typography } from '@mui/material';
+import { Alert, Link, Typography } from '@mui/material';
 import Box from '@mui/material/Box';
 import { ChangeEvent } from 'react';
 
+import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
@@ -54,21 +55,23 @@ export const ProjectSearch = () => {
         placeholder="Filter projects"
         onInputChange={handleSearchQueryChange}
         value={searchQuery}
+        // This is the sole purpose of the page. It's OK to autofocus.
+        // eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus
       />
-      <Box sx={{ mt: 5, mb: 10 }}>
+      <Box sx={{ m: 5 }}>
         <ProjectList searchQuery={searchQuery} />
       </Box>
-      {authState.identity == 'anonymous:anonymous' && (
+      {authState.identity == ANONYMOUS_IDENTITY && (
         <Alert severity="info">
-          Can&apos;t see the project you expected? Try{' '}
-          <a
+          {"Can't see the project you expected? Try "}
+          <Link
             href={getLoginUrl(
               location.pathname + location.search + location.hash,
             )}
           >
             logging in
-          </a>
+          </Link>
           .
         </Alert>
       )}
@@ -83,13 +86,13 @@ export const ProjectSearch = () => {
         </p>
         <p>
           If you are a Googler, you can find docs, on-boarding and more at{' '}
-          <a
+          <Link
             target="_blank"
             href="https://goto.google.com/luci"
             rel="noreferrer"
           >
             go/luci
-          </a>
+          </Link>
           .
         </p>
       </Typography>

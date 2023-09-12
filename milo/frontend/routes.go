@@ -57,7 +57,7 @@ func Run(srv *server.Server, templatePath string) {
 	projectMW := htmlMW.Extend(buildProjectACLMiddleware(false))
 	optionalProjectMW := htmlMW.Extend(buildProjectACLMiddleware(true))
 
-	r.GET("/", htmlMW, redirect("/ui/", http.StatusFound))
+	r.GET("/", htmlMW, frontpageHandler)
 	r.GET("/p", baseMW, movedPermanently("/"))
 	r.GET("/search", htmlMW, redirect("/ui/search", http.StatusFound))
 	r.GET("/opensearch.xml", baseMW, searchXMLHandler)

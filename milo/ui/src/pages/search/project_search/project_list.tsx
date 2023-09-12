@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Typography } from '@mui/material';
+import { Box, CircularProgress, Typography } from '@mui/material';
 import { useEffect, useMemo } from 'react';
 import { useLocalStorage } from 'react-use';
 
 import { useInfinitePrpcQuery } from '@/common/hooks/prpc_query/use_infinite_prpc_query';
 import { MiloInternal } from '@/common/services/milo_internal';
-import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 
 import { ProjectListDisplay } from './project_list_display';
 
@@ -44,6 +43,13 @@ export function ProjectList({ searchQuery }: ProjectListProps) {
     throw error;
   }
 
+  // Keep loading projects until all pages are loaded.
+  useEffect(() => {
+    if (!isLoading && hasNextPage) {
+      fetchNextPage();
+    }
+  }, [fetchNextPage, isLoading, hasNextPage]);
+
   // Computes `projects` separately so it's not re-computed when only
   // `searchQuery` is updated.
   const projects = useMemo(
@@ -63,22 +69,25 @@ export function ProjectList({ searchQuery }: ProjectListProps) {
   const [recentProjectIds = [], setRecentProjectIds] = useLocalStorage<
     readonly string[]
   >(RECENTLY_SELECTED_PROJECTS_KEY);
-  const recentProjects = recentProjectIds.map(
-    (id) =>
-      projects.filter(([project, _]) => project.id == id)?.[0]?.[0] || {
-        id,
-      },
-  );
   const saveRecentProject = (projectId: string) => {
-    const oldProjects = recentProjectIds.slice();
-    const index = oldProjects.indexOf(projectId);
-    if (index != -1) {
-      oldProjects.splice(index, 1);
-    }
-    setRecentProjectIds([projectId, ...oldProjects.slice(0, 3)]);
+    const newProjects = [
+      projectId,
+      ...recentProjectIds.filter((id) => id !== projectId).slice(0, 2),
+    ];
+    setRecentProjectIds(newProjects);
   };
 
-  // Filter & group builders.
+  // Get other project properties (e.g. `logoUrl`) once them become available.
+  const recentProjects = useMemo(
+    () =>
+      recentProjectIds.map(
+        (id) =>
+          projects.find(([project, _]) => project.id === id)?.[0] || { id },
+      ),
+    [projects, recentProjectIds],
+  );
+
+  // Filter projects.
   const filteredProjects = useMemo(() => {
     const parts = searchQuery.toLowerCase().split(' ');
     return projects
@@ -88,23 +97,15 @@ export function ProjectList({ searchQuery }: ProjectListProps) {
       .map(([project, _]) => project);
   }, [projects, searchQuery]);
 
-  // Keep loading builders until all pages are loaded.
-  useEffect(() => {
-    if (!isLoading && hasNextPage) {
-      fetchNextPage();
-    }
-  }, [fetchNextPage, isLoading, hasNextPage]);
-
   return (
     <>
-      {searchQuery == '' && recentProjects.length > 0 && (
+      {searchQuery === '' && recentProjects.length > 0 && (
         <>
           <Box sx={{ textAlign: 'center' }}>
             <Typography>Recent Projects</Typography>
           </Box>
           <ProjectListDisplay
             projects={recentProjects}
-            isLoading={false}
             onSelectProjectNotification={saveRecentProject}
             variant="large"
           />
@@ -113,23 +114,16 @@ export function ProjectList({ searchQuery }: ProjectListProps) {
           </Box>
         </>
       )}
-      {filteredProjects.length > 0 ? (
-        <ProjectListDisplay
-          projects={filteredProjects}
-          isLoading={isLoading}
-          onSelectProjectNotification={saveRecentProject}
-        />
-      ) : (
-        <Box sx={{ textAlign: 'center' }}>
-          {isLoading ? (
-            <>
-              Loading <DotSpinner />
-            </>
-          ) : (
-            <Typography>No projects match your filter.</Typography>
-          )}
-        </Box>
-      )}
+      <ProjectListDisplay
+        projects={filteredProjects}
+        onSelectProjectNotification={saveRecentProject}
+      />
+      <Box sx={{ textAlign: 'center', padding: '20px' }}>
+        {!isLoading && filteredProjects.length === 0 && (
+          <Typography>No projects match your filter.</Typography>
+        )}
+        {isLoading && <CircularProgress />}
+      </Box>
     </>
   );
 }
