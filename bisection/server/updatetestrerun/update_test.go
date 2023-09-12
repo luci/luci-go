@@ -69,6 +69,12 @@ func TestUpdate(t *testing.T) {
 
 	Convey("Update", t, func() {
 		ctx := memory.Use(context.Background())
+		// We need this because without this, updates on TestSingleRerun status
+		// will not be reflected in subsequent queries, due to the eventual
+		// consistency.
+		// LUCI Bisection is running on Firestore on Datastore mode in dev and prod,
+		// which uses strong consistency, so this should reflect the real world.
+		datastore.GetTestable(ctx).Consistent(true)
 		testutil.UpdateIndices(ctx)
 
 		cl := testclock.New(testclock.TestTimeUTC)
@@ -110,30 +116,13 @@ func TestUpdate(t *testing.T) {
 			So(err.Error(), ShouldContainSubstring, "rerun has ended")
 		})
 
-		Convey("No analysis", func() {
+		Convey("Invalid rerun type", func() {
 			req := &pb.UpdateTestAnalysisProgressRequest{
 				Bbid:  802,
 				BotId: "bot",
 			}
 			testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
 				ID:          802,
-				Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
-				AnalysisKey: datastore.MakeKey(ctx, "TestFailureAnalysis", 1),
-			})
-
-			err := Update(ctx, req)
-			So(err, ShouldNotBeNil)
-			So(status.Convert(err).Code(), ShouldEqual, codes.Internal)
-			So(err.Error(), ShouldContainSubstring, "get test failure analysis")
-		})
-
-		Convey("Invalid rerun type", func() {
-			req := &pb.UpdateTestAnalysisProgressRequest{
-				Bbid:  803,
-				BotId: "bot",
-			}
-			testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
-				ID:          803,
 				Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 				AnalysisKey: datastore.KeyForObj(ctx, tfa),
 			})
@@ -142,6 +131,24 @@ func TestUpdate(t *testing.T) {
 			So(err, ShouldNotBeNil)
 			So(status.Convert(err).Code(), ShouldEqual, codes.Internal)
 			So(err.Error(), ShouldContainSubstring, "invalid rerun type")
+		})
+
+		Convey("No analysis", func() {
+			req := &pb.UpdateTestAnalysisProgressRequest{
+				Bbid:  803,
+				BotId: "bot",
+			}
+			testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+				ID:          803,
+				Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+				AnalysisKey: datastore.MakeKey(ctx, "TestFailureAnalysis", 1),
+				Type:        model.RerunBuildType_CulpritVerification,
+			})
+
+			err := Update(ctx, req)
+			So(err, ShouldNotBeNil)
+			So(status.Convert(err).Code(), ShouldEqual, codes.Internal)
+			So(err.Error(), ShouldContainSubstring, "get test failure analysis")
 		})
 
 		Convey("Tests did not run", func() {
@@ -168,6 +175,9 @@ func TestUpdate(t *testing.T) {
 				BotId:        "bot",
 				RunSucceeded: true,
 			}
+			nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+				ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
+			})
 			rerun := testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
 				ID:          805,
 				Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
@@ -184,12 +194,25 @@ func TestUpdate(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(rerun.ReportTime, ShouldEqual, time.Unix(10000, 0).UTC())
 			So(rerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_INFRA_FAILED)
+
+			So(datastore.Get(ctx, nsa), ShouldBeNil)
+			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_ERROR)
+			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+			So(nsa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
+
+			So(datastore.Get(ctx, tfa), ShouldBeNil)
+			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_ERROR)
+			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+			So(tfa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
 		})
 
 		Convey("No result for primary failure", func() {
 			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
 				ID:             106,
 				TestFailureKey: datastore.MakeKey(ctx, "TestFailure", 1061),
+			})
+			nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+				ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
 			})
 
 			req := &pb.UpdateTestAnalysisProgressRequest{
@@ -228,6 +251,16 @@ func TestUpdate(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(rerun.ReportTime, ShouldEqual, time.Unix(10000, 0).UTC())
 			So(rerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_INFRA_FAILED)
+
+			So(datastore.Get(ctx, nsa), ShouldBeNil)
+			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_ERROR)
+			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+			So(nsa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
+
+			So(datastore.Get(ctx, tfa), ShouldBeNil)
+			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_ERROR)
+			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+			So(tfa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
 		})
 
 		Convey("Primary test failure skipped", func() {

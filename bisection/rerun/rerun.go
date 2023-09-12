@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/testfailureanalysis"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 )
 
@@ -333,20 +334,21 @@ func UpdateCompileRerunStatus(c context.Context, bbid int64) error {
 
 // UpdateTestRerunStatus is called when we receive updates from buildbucket
 // for test rerun build.
-func UpdateTestRerunStatus(c context.Context, build *buildbucketpb.Build) error {
+func UpdateTestRerunStatus(ctx context.Context, build *buildbucketpb.Build) error {
 	bbid := build.Id
-	logging.Infof(c, "UpdateTestRerunStatus for build %d", bbid)
-	return datastore.RunInTransaction(c, func(ctx context.Context) error {
-		singleRerun := &model.TestSingleRerun{
-			ID: bbid,
-		}
+	logging.Infof(ctx, "UpdateTestRerunStatus for build %d", bbid)
+	rerunFailed := false
+	singleRerun := &model.TestSingleRerun{
+		ID: bbid,
+	}
 
-		err := datastore.Get(c, singleRerun)
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		err := datastore.Get(ctx, singleRerun)
 		if err == datastore.ErrNoSuchEntity {
 			// There are cases where we cannot find datastore entries, like
 			// luci-bisection-dev receives pubsub message for a prod run.
 			// In this case, just log and return nil.
-			logging.Warningf(c, "Couldn't find test rerun to update status : %d", bbid)
+			logging.Warningf(ctx, "Couldn't find test rerun to update status : %d", bbid)
 			return nil
 		}
 		if err != nil {
@@ -357,20 +359,41 @@ func UpdateTestRerunStatus(c context.Context, build *buildbucketpb.Build) error 
 		singleRerun.LUCIBuild.EndTime = build.EndTime.AsTime()
 		singleRerun.LUCIBuild.Status = build.Status
 		buildEnded := build.Status&buildbucketpb.Status_ENDED_MASK == buildbucketpb.Status_ENDED_MASK
+
 		if buildEnded && !singleRerun.HasEnded() {
 			// Edge case: when the build ends but the rerun isn't ended,
 			// this suggests that there is a infra failure in the rerun build
 			// which prevent it from sending back the update via the UpdateTestAnalysisProgress RPC.
-			// TODO (nqmtuan): Perhaps we need to update Analysis and NthSection analysis status too?
 			singleRerun.Status = pb.RerunStatus_RERUN_STATUS_INFRA_FAILED
+			rerunFailed = true
 		}
 
-		err = datastore.Put(c, singleRerun)
+		err = datastore.Put(ctx, singleRerun)
 		if err != nil {
 			return errors.Annotate(err, "couldn't save single rerun %d", bbid).Err()
 		}
 		return nil
 	}, nil)
+
+	if err != nil {
+		return errors.Annotate(err, "saving test single rerun").Err()
+	}
+
+	if rerunFailed {
+		tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, singleRerun.AnalysisKey.IntID())
+		if err != nil {
+			return errors.Annotate(err, "get test failure analysis").Err()
+		}
+		// Update analysis and nthsection analysis if applicable.
+		// The reason why we put it here instead of the above transaction
+		// was because read-after-write within a transaction does not work.
+		// (https://cloud.google.com/datastore/docs/concepts/transactions#isolation_and_consistency)
+		err = testfailureanalysis.UpdateAnalysisStatusWhenError(ctx, tfa)
+		if err != nil {
+			return errors.Annotate(err, "update analysis status when error").Err()
+		}
+	}
+	return nil
 }
 
 // TODO (nqmtuan): Move this into a helper class if it turns out we need to use

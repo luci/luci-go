@@ -137,7 +137,6 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 	if tfa.Project != "chromium" {
 		// We don't support other projects for now, so mark the analysis as unsupported.
 		logging.Infof(ctx, "Unsupported project: %s", tfa.Project)
-		// TODO (nqmtuan): Also update the Nthsection analysis status.
 		err = testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_UNSUPPORTED, pb.AnalysisRunStatus_ENDED)
 		if err != nil {
 			return errors.Annotate(err, "update status unsupported").Err()

@@ -20,7 +20,9 @@ import (
 
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
@@ -52,4 +54,66 @@ func UpdateAnalysisStatus(ctx context.Context, tfa *model.TestFailureAnalysis, s
 		}
 		return datastore.Put(ctx, tfa)
 	}, nil)
+}
+
+// UpdateNthSectionAnalysisStatus updates status of a test failure analysis.
+func UpdateNthSectionAnalysisStatus(ctx context.Context, nsa *model.TestNthSectionAnalysis, status pb.AnalysisStatus, runStatus pb.AnalysisRunStatus) error {
+	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		e := datastore.Get(ctx, nsa)
+		if e != nil {
+			return e
+		}
+
+		// If the run has ended or canceled, we don't want to do anything.
+		if nsa.RunStatus == pb.AnalysisRunStatus_ENDED || nsa.RunStatus == pb.AnalysisRunStatus_CANCELED {
+			return nil
+		}
+
+		// All the same, no need to update.
+		if nsa.RunStatus == runStatus && nsa.Status == status {
+			return nil
+		}
+
+		nsa.Status = status
+		nsa.RunStatus = runStatus
+		if runStatus == pb.AnalysisRunStatus_ENDED || runStatus == pb.AnalysisRunStatus_CANCELED {
+			nsa.EndTime = clock.Now(ctx)
+		}
+		return datastore.Put(ctx, nsa)
+	}, nil)
+}
+
+// UpdateAnalysisStatusWhenError updates analysis and nthsection analysis
+// when an error occured.
+// As there still maybe reruns in progress, we should check if there are still
+// running reruns.
+func UpdateAnalysisStatusWhenError(ctx context.Context, tfa *model.TestFailureAnalysis) error {
+	reruns, err := datastoreutil.GetInProgressReruns(ctx, tfa)
+	if err != nil {
+		return errors.Annotate(err, "get in progress rerun").Err()
+	}
+	// Analysis still in progress, we don't need to do anything.
+	if len(reruns) > 0 {
+		return nil
+	}
+	// Otherwise, update status to error.
+	nsa, err := datastoreutil.GetTestNthSectionForAnalysis(ctx, tfa)
+	if err != nil {
+		return errors.Annotate(err, "get test nthsection for analysis").Err()
+	}
+	if nsa == nil {
+		return errors.New("no nthsection analysis")
+	}
+	// This will be a no-op if the nthsection analysis already ended or canceled.
+	err = UpdateNthSectionAnalysisStatus(ctx, nsa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
+	if err != nil {
+		return errors.Annotate(err, "update nthsection analysis status").Err()
+	}
+
+	// This will be a no-op if the analysis already ended or canceled.
+	err = UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
+	if err != nil {
+		return errors.Annotate(err, "update analysis status").Err()
+	}
+	return nil
 }

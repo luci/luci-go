@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -400,4 +401,18 @@ func GetTestNthSectionForAnalysis(ctx context.Context, tfa *model.TestFailureAna
 		return nil, errors.Annotate(err, "found more than 1 nthsection analysis: %d", len(analyses)).Err()
 	}
 	return analyses[0], nil
+}
+
+// GetInProgressReruns returns the reruns which are in progress.
+func GetInProgressReruns(ctx context.Context, tfa *model.TestFailureAnalysis) ([]*model.TestSingleRerun, error) {
+	q := datastore.NewQuery("TestSingleRerun").
+		Eq("analysis_key", datastore.KeyForObj(ctx, tfa)).
+		Eq("status", pb.RerunStatus_RERUN_STATUS_IN_PROGRESS)
+
+	reruns := []*model.TestSingleRerun{}
+	err := datastore.GetAll(ctx, q, &reruns)
+	if err != nil {
+		return nil, errors.Annotate(err, "get test reruns").Err()
+	}
+	return reruns, nil
 }

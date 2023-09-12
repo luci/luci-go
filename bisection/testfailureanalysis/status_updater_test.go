@@ -22,22 +22,26 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/util/testutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
-func TestUpdateStatus(t *testing.T) {
+func TestUpdateAnalysisStatus(t *testing.T) {
 	t.Parallel()
-	ctx := memory.Use(context.Background())
-	cl := testclock.New(testclock.TestTimeUTC)
-	cl.Set(time.Unix(10000, 0).UTC())
-	ctx = clock.Set(ctx, cl)
 
 	Convey("UpdateStatus", t, func() {
+		ctx := memory.Use(context.Background())
+		cl := testclock.New(testclock.TestTimeUTC)
+		cl.Set(time.Unix(10000, 0).UTC())
+		ctx = clock.Set(ctx, cl)
 		Convey("Update status ended", func() {
-			tfa := createAnalysisModelWithStatus(ctx, 1000, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+				Status:    pb.AnalysisStatus_RUNNING,
+				RunStatus: pb.AnalysisRunStatus_STARTED,
+			})
 			err := UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
 			So(err, ShouldBeNil)
 			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
@@ -46,7 +50,10 @@ func TestUpdateStatus(t *testing.T) {
 		})
 
 		Convey("Update status started", func() {
-			tfa := createAnalysisModelWithStatus(ctx, 1001, pb.AnalysisStatus_CREATED, pb.AnalysisRunStatus_ANALYSIS_RUN_STATUS_UNSPECIFIED)
+			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+				Status:    pb.AnalysisStatus_CREATED,
+				RunStatus: pb.AnalysisRunStatus_ANALYSIS_RUN_STATUS_UNSPECIFIED,
+			})
 			err := UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_CREATED, pb.AnalysisRunStatus_STARTED)
 			So(err, ShouldBeNil)
 			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_CREATED)
@@ -55,7 +62,10 @@ func TestUpdateStatus(t *testing.T) {
 		})
 
 		Convey("Ended analysis will not update", func() {
-			tfa := createAnalysisModelWithStatus(ctx, 1002, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
+			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+				Status:    pb.AnalysisStatus_FOUND,
+				RunStatus: pb.AnalysisRunStatus_ENDED,
+			})
 			err := UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
 			So(err, ShouldBeNil)
 			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
@@ -63,23 +73,107 @@ func TestUpdateStatus(t *testing.T) {
 		})
 
 		Convey("Canceled analysis will not update", func() {
-			tfa := createAnalysisModelWithStatus(ctx, 1003, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
+			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+				Status:    pb.AnalysisStatus_NOTFOUND,
+				RunStatus: pb.AnalysisRunStatus_CANCELED,
+			})
 			err := UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 			So(err, ShouldBeNil)
 			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
 			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_CANCELED)
 		})
-
 	})
 }
 
-func createAnalysisModelWithStatus(c context.Context, id int64, status pb.AnalysisStatus, runStatus pb.AnalysisRunStatus) *model.TestFailureAnalysis {
-	tfa := &model.TestFailureAnalysis{
-		ID:        id,
-		Status:    status,
-		RunStatus: runStatus,
-	}
-	So(datastore.Put(c, tfa), ShouldBeNil)
-	datastore.GetTestable(c).CatchupIndexes()
-	return tfa
+func TestUpdateNthSectionAnalysisStatus(t *testing.T) {
+	t.Parallel()
+
+	Convey("Update Nthsection Status", t, func() {
+		ctx := memory.Use(context.Background())
+		cl := testclock.New(testclock.TestTimeUTC)
+		cl.Set(time.Unix(10000, 0).UTC())
+		ctx = clock.Set(ctx, cl)
+		Convey("Update status ended", func() {
+			nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+				Status:    pb.AnalysisStatus_RUNNING,
+				RunStatus: pb.AnalysisRunStatus_STARTED,
+			})
+			err := UpdateNthSectionAnalysisStatus(ctx, nsa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
+			So(err, ShouldBeNil)
+			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
+			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+			So(nsa.EndTime.Unix(), ShouldEqual, 10000)
+		})
+
+		Convey("Ended analysis will not update", func() {
+			nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+				Status:    pb.AnalysisStatus_FOUND,
+				RunStatus: pb.AnalysisRunStatus_ENDED,
+			})
+			err := UpdateNthSectionAnalysisStatus(ctx, nsa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
+			So(err, ShouldBeNil)
+			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
+			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+		})
+
+		Convey("Canceled analysis will not update", func() {
+			nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+				Status:    pb.AnalysisStatus_NOTFOUND,
+				RunStatus: pb.AnalysisRunStatus_CANCELED,
+			})
+			err := UpdateNthSectionAnalysisStatus(ctx, nsa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			So(err, ShouldBeNil)
+			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
+			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_CANCELED)
+		})
+	})
+}
+
+func TestUpdateStatusWhenError(t *testing.T) {
+	t.Parallel()
+
+	Convey("Update Status When Error", t, func() {
+		ctx := memory.Use(context.Background())
+		cl := testclock.New(testclock.TestTimeUTC)
+		cl.Set(time.Unix(10000, 0).UTC())
+		ctx = clock.Set(ctx, cl)
+		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+			Status:    pb.AnalysisStatus_CREATED,
+			RunStatus: pb.AnalysisRunStatus_STARTED,
+		})
+		nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
+			Status:            pb.AnalysisStatus_CREATED,
+			RunStatus:         pb.AnalysisRunStatus_STARTED,
+		})
+
+		Convey("No in progress rerun", func() {
+			err := UpdateAnalysisStatusWhenError(ctx, tfa)
+			So(err, ShouldBeNil)
+			So(datastore.Get(ctx, nsa), ShouldBeNil)
+			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_ERROR)
+			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+			So(nsa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
+
+			So(datastore.Get(ctx, tfa), ShouldBeNil)
+			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_ERROR)
+			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+			So(tfa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
+		})
+
+		Convey("Have in progress rerun", func() {
+			testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+				AnalysisKey: datastore.KeyForObj(ctx, tfa),
+				Type:        model.RerunBuildType_NthSection,
+				Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+			})
+			err := UpdateAnalysisStatusWhenError(ctx, tfa)
+			So(err, ShouldBeNil)
+			So(datastore.Get(ctx, nsa), ShouldBeNil)
+			// No change.
+			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_CREATED)
+			So(datastore.Get(ctx, tfa), ShouldBeNil)
+			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_CREATED)
+		})
+	})
 }

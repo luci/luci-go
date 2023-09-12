@@ -22,6 +22,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/bisection/model"
+	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -732,5 +733,31 @@ func TestGetTestNthSectionForAnalysis(t *testing.T) {
 		nsa, err = GetTestNthSectionForAnalysis(ctx, tfa)
 		So(err, ShouldBeNil)
 		So(nsa.ID, ShouldEqual, 123)
+	})
+}
+
+func TestGetInProgressReruns(t *testing.T) {
+	t.Parallel()
+	ctx := memory.Use(context.Background())
+	testutil.UpdateIndices(ctx)
+
+	Convey("Get in progress rerun", t, func() {
+		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{})
+		testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+			ID:          100,
+			AnalysisKey: datastore.KeyForObj(ctx, tfa),
+			Type:        model.RerunBuildType_CulpritVerification,
+			Status:      bisectionpb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+		})
+		testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+			ID:          101,
+			AnalysisKey: datastore.KeyForObj(ctx, tfa),
+			Type:        model.RerunBuildType_NthSection,
+			Status:      bisectionpb.RerunStatus_RERUN_STATUS_FAILED,
+		})
+		reruns, err := GetInProgressReruns(ctx, tfa)
+		So(err, ShouldBeNil)
+		So(len(reruns), ShouldEqual, 1)
+		So(reruns[0].ID, ShouldEqual, 100)
 	})
 }

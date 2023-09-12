@@ -284,12 +284,17 @@ type TestNthSectionAnalysisCreationOption struct {
 	ID                int64
 	ParentAnalysisKey *datastore.Key
 	BlameList         *pb.BlameList
+	Status          pb.AnalysisStatus
+	RunStatus       pb.AnalysisRunStatus
 }
 
 func CreateTestNthSectionAnalysis(ctx context.Context, option *TestNthSectionAnalysisCreationOption) *model.TestNthSectionAnalysis {
 	id := int64(1000)
 	var parentAnalysis *datastore.Key = nil
 	var blameList *pb.BlameList
+	var status pb.AnalysisStatus
+	var runStatus pb.AnalysisRunStatus
+
 
 	if option != nil {
 		if option.ID != 0 {
@@ -297,11 +302,15 @@ func CreateTestNthSectionAnalysis(ctx context.Context, option *TestNthSectionAna
 		}
 		parentAnalysis = option.ParentAnalysisKey
 		blameList = option.BlameList
+		status = option.Status
+		runStatus = option.RunStatus
 	}
 	nsa := &model.TestNthSectionAnalysis{
 		ID:                id,
 		ParentAnalysisKey: parentAnalysis,
 		BlameList:         blameList,
+		Status: status,
+		RunStatus: runStatus,
 	}
 	So(datastore.Put(ctx, nsa), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()

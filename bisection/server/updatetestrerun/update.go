@@ -66,6 +66,11 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (ret
 		return status.Errorf(codes.Internal, "rerun has ended")
 	}
 
+	// Safeguard, we don't really expect any other type.
+	if rerun.Type != model.RerunBuildType_CulpritVerification && rerun.Type != model.RerunBuildType_NthSection {
+		return status.Errorf(codes.Internal, "invalid rerun type %v", rerun.Type)
+	}
+
 	// Fetch analysis
 	tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, rerun.AnalysisKey.IntID())
 	if err != nil {
@@ -75,26 +80,44 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (ret
 	}
 	ctx = loggingutil.SetAnalysisID(ctx, tfa.ID)
 
-	// Safeguard, we don't really expect any other type.
-	if rerun.Type != model.RerunBuildType_CulpritVerification && rerun.Type != model.RerunBuildType_NthSection {
-		return status.Errorf(codes.Internal, "invalid rerun type %v", rerun.Type)
-	}
-
 	err = updateRerun(ctx, rerun, tfa, req)
 	if err != nil {
+		// If there is any error, consider the rerun having infra failure.
+		e := saveRerun(ctx, rerun, func(rerun *model.TestSingleRerun) {
+			rerun.Status = pb.RerunStatus_RERUN_STATUS_INFRA_FAILED
+			rerun.ReportTime = clock.Now(ctx)
+		})
+		if e != nil {
+			// Nothing we can do now, just log the error.
+			logging.Errorf(ctx, "Error when saving rerun %s", e.Error())
+		}
+
+		e = testfailureanalysis.UpdateAnalysisStatusWhenError(ctx, tfa)
+		if e != nil {
+			logging.Errorf(ctx, "UpdateAnalysisStatusWhenRerunError %s", e.Error())
+		}
 		return status.Errorf(codes.Internal, errors.Annotate(err, "update rerun").Err().Error())
 	}
 
 	if rerun.Type == model.RerunBuildType_CulpritVerification {
 		err := processCulpritVerificationUpdate(ctx, rerun, tfa)
 		if err != nil {
+			e := testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
+			if e != nil {
+				// Just log.
+				logging.Errorf(ctx, "Update analysis status %s", e.Error())
+			}
 			return status.Errorf(codes.Internal, errors.Annotate(err, "process culprit verification update").Err().Error())
 		}
 	}
 	if rerun.Type == model.RerunBuildType_NthSection {
 		err := processNthSectionUpdate(ctx, rerun, tfa)
 		if err != nil {
-			// TODO (nqmtuan): Update status of analysis.
+			e := testfailureanalysis.UpdateAnalysisStatusWhenError(ctx, tfa)
+			if e != nil {
+				// Just log.
+				logging.Errorf(ctx, "UpdateAnalysisStatusWhenRerunError %s", e.Error())
+			}
 			return status.Errorf(codes.Internal, errors.Annotate(err, "process nthsection update").Err().Error())
 		}
 	}
@@ -282,20 +305,6 @@ func saveSuspectAndUpdateNthSection(ctx context.Context, tfa *model.TestFailureA
 
 // updateRerun updates TestSingleRerun and TestFailure with the results from recipe.
 func updateRerun(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.TestFailureAnalysis, req *pb.UpdateTestAnalysisProgressRequest) (reterr error) {
-	defer func() {
-		// If there is any error, consider the rerun having infra failure.
-		if reterr != nil {
-			err := saveRerun(ctx, rerun, func(rerun *model.TestSingleRerun) {
-				rerun.Status = pb.RerunStatus_RERUN_STATUS_INFRA_FAILED
-				rerun.ReportTime = clock.Now(ctx)
-			})
-			if err != nil {
-				// Nothing we can do now, just log the error.
-				logging.Errorf(ctx, "Error when saving rerun")
-			}
-		}
-	}()
-
 	if !req.RunSucceeded {
 		err := saveRerun(ctx, rerun, func(rerun *model.TestSingleRerun) {
 			rerun.Status = pb.RerunStatus_RERUN_STATUS_INFRA_FAILED

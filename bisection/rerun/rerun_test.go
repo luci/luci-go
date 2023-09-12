@@ -433,6 +433,9 @@ func TestUpdateTestRerunStatus(t *testing.T) {
 	Convey("TestUpdateRerunStatus", t, func() {
 		c := memory.Use(context.Background())
 		testutil.UpdateIndices(c)
+		cl := testclock.New(testclock.TestTimeUTC)
+		cl.Set(time.Unix(10000, 0).UTC())
+		c = clock.Set(c, cl)
 
 		build := &bbpb.Build{
 			Id: 1234,
@@ -465,10 +468,17 @@ func TestUpdateTestRerunStatus(t *testing.T) {
 		Convey("build ends", func() {
 			build.Status = bbpb.Status_SUCCESS
 			Convey("rerun didn't end", func() {
-				singleRerun := &model.TestSingleRerun{
-					ID:     1234,
-					Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
-				}
+				tfa := testutil.CreateTestFailureAnalysis(c, &testutil.TestFailureAnalysisCreationOption{
+					ID: 100,
+				})
+				nsa := testutil.CreateTestNthSectionAnalysis(c, &testutil.TestNthSectionAnalysisCreationOption{
+					ID:                1000,
+					ParentAnalysisKey: datastore.KeyForObj(c, tfa),
+				})
+				singleRerun := testutil.CreateTestSingleRerun(c, &testutil.TestSingleRerunCreationOption{
+					AnalysisKey: datastore.KeyForObj(c, tfa),
+					ID:          1234,
+				})
 				So(datastore.Put(c, singleRerun), ShouldBeNil)
 				datastore.GetTestable(c).CatchupIndexes()
 
@@ -480,6 +490,16 @@ func TestUpdateTestRerunStatus(t *testing.T) {
 				So(singleRerun.LUCIBuild.EndTime.Unix(), ShouldEqual, 200)
 				So(singleRerun.LUCIBuild.Status, ShouldEqual, bbpb.Status_SUCCESS)
 				So(singleRerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_INFRA_FAILED)
+
+				So(datastore.Get(c, nsa), ShouldBeNil)
+				So(nsa.Status, ShouldEqual, pb.AnalysisStatus_ERROR)
+				So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+				So(nsa.EndTime.Unix(), ShouldEqual, 10000)
+
+				So(datastore.Get(c, tfa), ShouldBeNil)
+				So(tfa.Status, ShouldEqual, pb.AnalysisStatus_ERROR)
+				So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+				So(tfa.EndTime.Unix(), ShouldEqual, 10000)
 			})
 
 			Convey("rerun ends", func() {
