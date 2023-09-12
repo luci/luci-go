@@ -452,25 +452,12 @@ func divergedFromPrimary(testResult *pb.TestResult, primaryResult *pb.TestResult
 
 // findTestResult returns TestResult given testID and variantHash.
 func findTestResult(ctx context.Context, results []*pb.TestResult, testID string, variantHash string) *pb.TestResult {
-	// TODO (nqmtuan): Bring back the variant hash comparison.
-	// We only do test id comparison here because variant hash is not set correctly,
-	// and it requires some effort to do so.
-	// Once the variant hash is set correctly, we should bring the variant hash
-	// comparision back.
-	var result *pb.TestResult = nil
 	for _, r := range results {
-		if r.TestId == testID {
-			if result != nil {
-				// If there are more than 1 test result with the same test ID,
-				// we will not know which one is the correct result.
-				// Return nil in this case.
-				logging.Warningf(ctx, "find more than 1 test result for test ID %s", r.TestId)
-				return nil
-			}
-			result = r
+		if r.TestId == testID && r.VariantHash == variantHash {
+			return r
 		}
 	}
-	return result
+	return nil
 }
 
 func validateRequest(req *pb.UpdateTestAnalysisProgressRequest) error {

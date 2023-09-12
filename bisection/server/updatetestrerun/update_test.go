@@ -396,7 +396,7 @@ func TestUpdate(t *testing.T) {
 
 		Convey("Primary test failure unexpected", func() {
 			enableBisection(ctx, true)
-			_, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, 5)
+			_, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, 4)
 
 			req := &pb.UpdateTestAnalysisProgressRequest{
 				Bbid:         8000,
@@ -427,18 +427,6 @@ func TestUpdate(t *testing.T) {
 						IsExpected:  false,
 						Status:      pb.TestResultStatus_SKIP,
 					},
-					{
-						TestId:      "test4",
-						VariantHash: "hash4_1",
-						IsExpected:  false,
-						Status:      pb.TestResultStatus_FAIL,
-					},
-					{
-						TestId:      "test4",
-						VariantHash: "hash4_2",
-						IsExpected:  false,
-						Status:      pb.TestResultStatus_FAIL,
-					},
 				},
 			}
 
@@ -467,9 +455,6 @@ func TestUpdate(t *testing.T) {
 					{
 						TestFailureKey: datastore.KeyForObj(ctx, tfs[3]),
 					},
-					{
-						TestFailureKey: datastore.KeyForObj(ctx, tfs[4]),
-					},
 				},
 			})
 			err = datastore.Get(ctx, tfs[1])
@@ -479,9 +464,6 @@ func TestUpdate(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(tfs[2].IsDiverged, ShouldBeFalse)
 			err = datastore.Get(ctx, tfs[3])
-			So(err, ShouldBeNil)
-			So(tfs[3].IsDiverged, ShouldBeTrue)
-			err = datastore.Get(ctx, tfs[4])
 			So(err, ShouldBeNil)
 			So(tfs[3].IsDiverged, ShouldBeTrue)
 			// Check that a new rerun is scheduled.
