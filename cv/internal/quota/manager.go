@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/server/auth"
@@ -51,16 +52,17 @@ type Manager struct {
 // SrvQuota manages quota
 type SrvQuota interface {
 	LoadPoliciesAuto(ctx context.Context, realm string, cfg *quotapb.PolicyConfig) (*quotapb.PolicyConfigID, error)
+	AccountID(realm, namespace, name, resourceType string) *quotapb.AccountID
 }
 
 // DebitRunQuota debits the run quota from a given user's account.
-func (qm *Manager) DebitRunQuota(ctx context.Context) (*quotapb.OpResult, error) {
-	return nil, nil
+func (qm *Manager) DebitRunQuota(ctx context.Context, rs *state.RunState) (*quotapb.OpResult, error) {
+	return qm.runQuotaOp(ctx, rs, requestID(rs.Run.ID, "debit"), -1)
 }
 
 // CreditRunQuota credits the run quota into a given user's account.
-func (qm *Manager) CreditRunQuota(ctx context.Context) (*quotapb.OpResult, error) {
-	return nil, nil
+func (qm *Manager) CreditRunQuota(ctx context.Context, rs *state.RunState) (*quotapb.OpResult, error) {
+	return qm.runQuotaOp(ctx, rs, requestID(rs.Run.ID, "credit"), 1)
 }
 
 // DebitTryjobQuota debits the tryjob quota from a given user's account.
@@ -71,6 +73,38 @@ func (qm *Manager) DebitTryjobQuota(ctx context.Context) (*quotapb.OpResult, err
 // CreditTryjobQuota credits the tryjob quota into a given user's account.
 func (qm *Manager) CreditTryjobQuota(ctx context.Context) (*quotapb.OpResult, error) {
 	return nil, nil
+}
+
+// runQuotaOp updates the run quota for the given run state by the given delta.
+func (qm *Manager) runQuotaOp(ctx context.Context, rs *state.RunState, requestID string, delta int64) (*quotapb.OpResult, error) {
+	policyID, err := qm.findRunPolicy(ctx, rs)
+
+	// policyID == nil when no policy limit is configured for this user.
+	if err != nil || policyID == nil {
+		return nil, err
+	}
+
+	res, err := srvquota.ApplyOps(ctx, requestID, []*quotapb.Op{
+		{
+			AccountId:  qm.qapp.AccountID(rs.Run.ID.LUCIProject(), rs.Run.ConfigGroupID.Name(), rs.Run.Owner.Email(), runResource),
+			PolicyId:   policyID,
+			RelativeTo: quotapb.Op_CURRENT_BALANCE,
+			Delta:      delta,
+			Options:    uint32(quotapb.Op_IGNORE_POLICY_BOUNDS),
+		},
+	})
+
+	// On ErrQuotaApply, OpResult.Status stores the reason for failure.
+	if err == nil || err == srvquota.ErrQuotaApply {
+		return res.Results[0], err
+	}
+
+	return nil, err
+}
+
+// requestID contructs the idempotent requestID for the quota operation.
+func requestID(runID common.RunID, op string) string {
+	return string(runID) + "/" + op
 }
 
 // findRunPolicy returns the PolicyID for the given run state.

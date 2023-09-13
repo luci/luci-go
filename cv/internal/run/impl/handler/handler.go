@@ -116,8 +116,8 @@ type RM interface {
 
 // QM manages run and tryjob quotas.
 type QM interface {
-	DebitRunQuota(ctx context.Context) (*quotapb.OpResult, error)
-	CreditRunQuota(ctx context.Context) (*quotapb.OpResult, error)
+	DebitRunQuota(ctx context.Context, rs *state.RunState) (*quotapb.OpResult, error)
+	CreditRunQuota(ctx context.Context, rs *state.RunState) (*quotapb.OpResult, error)
 	DebitTryjobQuota(ctx context.Context) (*quotapb.OpResult, error)
 	CreditTryjobQuota(ctx context.Context) (*quotapb.OpResult, error)
 	WritePolicy(ctx context.Context, project string) (*quotapb.PolicyConfigID, error)

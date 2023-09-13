@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/server/quota/quotapb"
+	_ "go.chromium.org/luci/server/quota/quotatestmonkeypatch"
 	"go.chromium.org/luci/server/redisconn"
 )
 
@@ -236,6 +237,141 @@ func TestManager(t *testing.T) {
 			res, err := qm.findRunPolicy(ctx, rs)
 			So(err, ShouldBeNil)
 			So(res, ShouldBeNil)
+		})
+
+		Convey("DebitRunQuota() debits quota for a given run state", func() {
+			cg.UserLimits = append(cg.UserLimits,
+				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
+				genUserLimit("googlers-limit", 5, []string{"group:googlers"}),
+				genUserLimit("partners-limit", 10, []string{"group:partners"}),
+			)
+			prjcfgtest.Update(ctx, lProject, cfg)
+
+			rs := &state.RunState{
+				Run: run.Run{
+					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+					Owner:         makeIdentity(tEmail),
+				},
+			}
+
+			res, err := qm.DebitRunQuota(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &quotapb.OpResult{
+				NewBalance:    4,
+				AccountStatus: quotapb.OpResult_CREATED,
+			})
+
+			cg.UserLimits = nil
+		})
+
+		Convey("CreditRunQuota() credits quota for a given run state", func() {
+			cg.UserLimits = append(cg.UserLimits,
+				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
+				genUserLimit("googlers-limit", 5, []string{"group:googlers"}),
+				genUserLimit("partners-limit", 10, []string{"group:partners"}),
+			)
+			prjcfgtest.Update(ctx, lProject, cfg)
+
+			rs := &state.RunState{
+				Run: run.Run{
+					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+					Owner:         makeIdentity(tEmail),
+				},
+			}
+
+			res, err := qm.CreditRunQuota(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &quotapb.OpResult{
+				NewBalance:    6,
+				AccountStatus: quotapb.OpResult_CREATED,
+			})
+
+			cg.UserLimits = nil
+		})
+
+		Convey("runQuotaOp() updates the same account on multiple ops", func() {
+			cg.UserLimits = append(cg.UserLimits,
+				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
+				genUserLimit("googlers-limit", 5, []string{"group:googlers"}),
+				genUserLimit("partners-limit", 10, []string{"group:partners"}),
+			)
+			prjcfgtest.Update(ctx, lProject, cfg)
+
+			rs := &state.RunState{
+				Run: run.Run{
+					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+					Owner:         makeIdentity(tEmail),
+				},
+			}
+
+			res, err := qm.runQuotaOp(ctx, rs, "foo1", 5)
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &quotapb.OpResult{
+				NewBalance:    10,
+				AccountStatus: quotapb.OpResult_CREATED,
+			})
+
+			res, err = qm.runQuotaOp(ctx, rs, "foo2", 5)
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &quotapb.OpResult{
+				NewBalance:      15,
+				PreviousBalance: 10,
+				AccountStatus:   quotapb.OpResult_ALREADY_EXISTS,
+			})
+
+			cg.UserLimits = nil
+		})
+
+		Convey("runQuotaOp() is idempotent", func() {
+			cg.UserLimits = append(cg.UserLimits,
+				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
+				genUserLimit("googlers-limit", 5, []string{"group:googlers"}),
+				genUserLimit("partners-limit", 10, []string{"group:partners"}),
+			)
+			prjcfgtest.Update(ctx, lProject, cfg)
+
+			rs := &state.RunState{
+				Run: run.Run{
+					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+					Owner:         makeIdentity(tEmail),
+				},
+			}
+
+			res, err := qm.runQuotaOp(ctx, rs, "foo", 5)
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &quotapb.OpResult{
+				NewBalance:    10,
+				AccountStatus: quotapb.OpResult_CREATED,
+			})
+
+			res, err = qm.runQuotaOp(ctx, rs, "foo", 5)
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &quotapb.OpResult{
+				NewBalance:    10,
+				AccountStatus: quotapb.OpResult_CREATED,
+			})
+
+			res, err = qm.runQuotaOp(ctx, rs, "foo2", 5)
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &quotapb.OpResult{
+				NewBalance:      15,
+				PreviousBalance: 10,
+				AccountStatus:   quotapb.OpResult_ALREADY_EXISTS,
+			})
+
+			res, err = qm.runQuotaOp(ctx, rs, "foo2", 5)
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &quotapb.OpResult{
+				NewBalance:      15,
+				PreviousBalance: 10,
+				AccountStatus:   quotapb.OpResult_ALREADY_EXISTS,
+			})
+
+			cg.UserLimits = nil
 		})
 	})
 }
