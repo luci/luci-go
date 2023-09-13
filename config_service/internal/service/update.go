@@ -133,9 +133,9 @@ func updateService(ctx context.Context, srvInfo *cfgcommonpb.Service) error {
 			updated.Metadata = metadata
 			return nil
 		})
-	case srvInfo.GetServiceEndpoint() != "":
+	case srvInfo.GetHostname() != "":
 		eg.Go(func() error {
-			metadata, err := fetchMetadata(ectx, srvInfo.GetServiceEndpoint())
+			metadata, err := fetchMetadata(ectx, srvInfo.GetHostname())
 			if err != nil {
 				return err
 			}

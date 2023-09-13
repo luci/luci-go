@@ -128,7 +128,7 @@ func TestValidateServicesCfg(t *testing.T) {
 			content := []byte(`services {
 				id: "luci-config-dev"
 				owners: "luci-config-dev@google.com"
-				service_endpoint: "https://example.com"
+				hostname: "luci-config-dev.example.com"
 				access: "group:googlers"
 				access: "user:user-a@example.com"
 				access: "user-b@example.com"
@@ -188,13 +188,13 @@ func TestValidateServicesCfg(t *testing.T) {
 			So(vctx.Finalize(), ShouldErrLike, `(services #0 / metadata_url): invalid url:`)
 		})
 
-		Convey("invalid service endpoint", func() {
+		Convey("invalid service hostname", func() {
 			content := []byte(`services {
 				id: "foo"
-				service_endpoint: "https://example.com\\api/"
+				hostname: "https://foo.example.com\\\\api/"
 			}`)
 			So(validateServicesCfg(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, `(services #0 / service_endpoint): invalid url:`)
+			So(vctx.Finalize(), ShouldErrLike, `(services #0 / hostname): hostname does not match regex`)
 		})
 
 		Convey("invalid access group", func() {

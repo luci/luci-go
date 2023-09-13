@@ -227,14 +227,14 @@ message Service {
   repeated string owners = 2;
   // An HTTPS endpoint that returns JSON-encoded ServiceDynamicMetadata in body.
   //
-  // TODO: crbug/1232565 - Deprecate this field in favor of `service_endpoint`
+  // TODO: crbug/1232565 - Deprecate this field in favor of `hostname`
   // after the new LUCI Config service has launched.
   string metadata_url = 4;
-  // The endpoint of the service.
+  // The hostname of the service.
   //
-  // LUCI Config will call this endpoint to interact with `config.Consumer`
+  // LUCI Config will call this host to interact with `config.Consumer`
   // prpc Service.
-  string service_endpoint = 7;
+  string hostname = 7;
   // A list of identities that have access to this service's configs.
   // of:
   // * "group:<group>", where group is defined on auth server.

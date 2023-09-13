@@ -56,12 +56,12 @@ func (sv *serviceValidator) validate(ctx context.Context) (*cfgcommonpb.Validati
 	switch {
 	case sv.service.Info.GetId() == info.AppID(ctx):
 		return sv.validateAgainstSelfRules(ctx)
-	case sv.service.Info.GetServiceEndpoint() != "":
+	case sv.service.Info.GetHostname() != "":
 		tr, err := auth.GetRPCTransport(ctx, auth.AsSelf)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create transport %w", err)
 		}
-		endpoint := sv.service.Info.GetServiceEndpoint()
+		endpoint := sv.service.Info.GetHostname()
 		prpcClient := &prpc.Client{
 			C:    &http.Client{Transport: tr},
 			Host: endpoint,
@@ -78,7 +78,7 @@ func (sv *serviceValidator) validate(ctx context.Context) (*cfgcommonpb.Validati
 	case sv.service.LegacyMetadata != nil:
 		return sv.validateInLegacyProtocol(ctx)
 	default:
-		return nil, fmt.Errorf("service is not %s; it also doesn't provide either service_endpoint or metadata_url for validation", sv.service.Info.GetId())
+		return nil, fmt.Errorf("service is not %s; it also doesn't provide either hostname or metadata_url for validation", sv.service.Info.GetId())
 	}
 }
 

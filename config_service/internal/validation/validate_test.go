@@ -155,8 +155,8 @@ func TestValidate(t *testing.T) {
 						{
 							Name: serviceName,
 							Info: &cfgcommonpb.Service{
-								Id:              serviceName,
-								ServiceEndpoint: ts.Host,
+								Id:       serviceName,
+								Hostname: ts.Host,
 							},
 						},
 					},
@@ -208,8 +208,8 @@ func TestValidate(t *testing.T) {
 						{
 							Name: testutil.AppID,
 							Info: &cfgcommonpb.Service{
-								Id:              testutil.AppID,
-								ServiceEndpoint: ts.Host,
+								Id:       testutil.AppID,
+								Hostname: ts.Host,
 							},
 						},
 					},
@@ -296,15 +296,15 @@ func TestValidate(t *testing.T) {
 			serviceFoo := &model.Service{
 				Name: "foo",
 				Info: &cfgcommonpb.Service{
-					Id:              "foo",
-					ServiceEndpoint: testServerFoo.Host,
+					Id:       "foo",
+					Hostname: testServerFoo.Host,
 				},
 			}
 			serviceBar := &model.Service{
 				Name: "bar",
 				Info: &cfgcommonpb.Service{
-					Id:              "bar",
-					ServiceEndpoint: testServerBar.Host,
+					Id:       "bar",
+					Hostname: testServerBar.Host,
 				},
 			}
 

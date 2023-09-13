@@ -73,8 +73,8 @@ func TestUpdateService(t *testing.T) {
 		}
 		srv.sm = serviceMetadata
 		serviceInfo := &cfgcommonpb.Service{
-			Id:              serviceName,
-			ServiceEndpoint: ts.Host,
+			Id:       serviceName,
+			Hostname: ts.Host,
 		}
 		testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
 			common.ServiceRegistryFilePath: &cfgcommonpb.ServicesCfg{
@@ -207,8 +207,8 @@ func TestUpdateService(t *testing.T) {
 
 		Convey("Update self", func() {
 			serviceInfo := &cfgcommonpb.Service{
-				Id:              testutil.AppID,
-				ServiceEndpoint: ts.Host,
+				Id:       testutil.AppID,
+				Hostname: ts.Host,
 				// Add the service endpoint to ensure LUCI Config update its own
 				// Service entity without making rpc call to itself.
 			}
@@ -371,7 +371,7 @@ func TestUpdateService(t *testing.T) {
 				So(service.LegacyMetadata, ShouldNotBeNil)
 
 				newInfo := proto.Clone(serviceInfo).(*cfgcommonpb.Service)
-				newInfo.ServiceEndpoint = ts.Host
+				newInfo.Hostname = ts.Host
 				newInfo.MetadataUrl = ""
 				testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
 					common.ServiceRegistryFilePath: &cfgcommonpb.ServicesCfg{

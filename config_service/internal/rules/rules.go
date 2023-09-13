@@ -112,9 +112,11 @@ func validateServicesCfg(vctx *validation.Context, configSet, path string, conte
 			vctx.Exit()
 		}
 
-		if endpoint := service.GetServiceEndpoint(); endpoint != "" {
-			vctx.Enter("service_endpoint")
-			validateURL(vctx, endpoint)
+		if hostname := service.GetHostname(); hostname != "" {
+			vctx.Enter("hostname")
+			if err := validation.ValidateHostname(hostname); err != nil {
+				vctx.Error(err)
+			}
 			vctx.Exit()
 		}
 
