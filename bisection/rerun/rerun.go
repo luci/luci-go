@@ -108,13 +108,15 @@ func getRerunTags(c context.Context, bbid int64) []*buildbucketpb.StringPair {
 	}
 }
 
-// getRerunProperty returns the properties and dimensions for a rerun of a buildID
+// getRerunPropertiesAndDimensions returns the properties and dimensions for a rerun of a buildID.
+// If the builder is a tester, the dimension will be derived from its parent build.
 func getRerunPropertiesAndDimensions(c context.Context, bbid int64, props map[string]any, dims map[string]string) (*structpb.Struct, []*buildbucketpb.RequestedDimension, error) {
-	build, err := buildbucket.GetBuild(c, bbid, &buildbucketpb.BuildMask{
+	mask := &buildbucketpb.BuildMask{
 		Fields: &fieldmaskpb.FieldMask{
 			Paths: []string{"input.properties", "builder", "infra.swarming.task_dimensions"},
 		},
-	})
+	}
+	build, err := buildbucket.GetBuild(c, bbid, mask)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get properties for build %d: %w", bbid, err)
 	}
@@ -122,7 +124,19 @@ func getRerunPropertiesAndDimensions(c context.Context, bbid int64, props map[st
 	if err != nil {
 		return nil, nil, err
 	}
-	dimens := getRerunDimensions(c, build, dims)
+	parentBuildID, found := build.GetInput().GetProperties().GetFields()["parent_build_id"]
+
+	// If builder is not a tester, return the dimension derived by this build.
+	if !found {
+		dimens := getRerunDimensions(c, build, dims)
+		return properties, dimens, nil
+	}
+	// If builder is a tester, return the dimension derived by the parent build.
+	parentBuild, err := buildbucket.GetBuild(c, int64(parentBuildID.GetNumberValue()), mask)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get properties for parent build %d: %w", int64(parentBuildID.GetNumberValue()), err)
+	}
+	dimens := getRerunDimensions(c, parentBuild, dims)
 	return properties, dimens, nil
 }
 

@@ -98,59 +98,88 @@ func TestRerun(t *testing.T) {
 				},
 			},
 		}
-		mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
-		extraProps := map[string]any{
-			"analysis_id":     4646418413256704,
-			"compile_targets": []string{"target"},
-			"bisection_host":  "luci-bisection.appspot.com",
-		}
-		extraDimens := map[string]string{
-			"id": "bot-12345",
-		}
-		props, dimens, err := getRerunPropertiesAndDimensions(c, 1234, extraProps, extraDimens)
-		So(err, ShouldBeNil)
-		So(props, ShouldResemble, &structpb.Struct{
-			Fields: map[string]*structpb.Value{
-				"builder_group":  structpb.NewStringValue("buildergroup1"),
-				"target_builder": structpb.NewStructValue(targetBuilder),
-				"$bootstrap/properties": structpb.NewStructValue(&structpb.Struct{
-					Fields: map[string]*structpb.Value{
-						"bs_key_1": structpb.NewStringValue("bs_val_1"),
-					},
-				}),
-				"analysis_id":     structpb.NewNumberValue(4646418413256704),
-				"compile_targets": structpb.NewListValue(&structpb.ListValue{Values: []*structpb.Value{structpb.NewStringValue("target")}}),
-				"bisection_host":  structpb.NewStringValue("luci-bisection.appspot.com"),
-			},
-		})
-		So(dimens, ShouldResemble, []*bbpb.RequestedDimension{
-			{
-				Key:   "os",
-				Value: "ubuntu",
-			},
-			{
-				Key:   "gpu",
-				Value: "Intel",
-			},
-			{
-				Key:   "id",
-				Value: "bot-12345",
-			},
+		Convey("has extra prop and dim", func() {
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
+			extraProps := map[string]any{
+				"analysis_id":     4646418413256704,
+				"compile_targets": []string{"target"},
+				"bisection_host":  "luci-bisection.appspot.com",
+			}
+			extraDimens := map[string]string{
+				"id": "bot-12345",
+			}
+
+			props, dimens, err := getRerunPropertiesAndDimensions(c, 1234, extraProps, extraDimens)
+			So(err, ShouldBeNil)
+			So(props, ShouldResemble, &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"builder_group":  structpb.NewStringValue("buildergroup1"),
+					"target_builder": structpb.NewStructValue(targetBuilder),
+					"$bootstrap/properties": structpb.NewStructValue(&structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"bs_key_1": structpb.NewStringValue("bs_val_1"),
+						},
+					}),
+					"analysis_id":     structpb.NewNumberValue(4646418413256704),
+					"compile_targets": structpb.NewListValue(&structpb.ListValue{Values: []*structpb.Value{structpb.NewStringValue("target")}}),
+					"bisection_host":  structpb.NewStringValue("luci-bisection.appspot.com"),
+				},
+			})
+			So(dimens, ShouldResemble, []*bbpb.RequestedDimension{
+				{
+					Key:   "os",
+					Value: "ubuntu",
+				},
+				{
+					Key:   "gpu",
+					Value: "Intel",
+				},
+				{
+					Key:   "id",
+					Value: "bot-12345",
+				},
+			})
 		})
 
-		_, dimens, err = getRerunPropertiesAndDimensions(c, 1234, extraProps, nil)
-		So(err, ShouldBeNil)
-		So(dimens, ShouldResemble, []*bbpb.RequestedDimension{
-			{
-				Key:   "os",
-				Value: "ubuntu",
-			},
-			{
-				Key:   "gpu",
-				Value: "Intel",
-			},
+		Convey("no extra dim", func() {
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
+
+			_, dimens, err := getRerunPropertiesAndDimensions(c, 1234, nil, nil)
+			So(err, ShouldBeNil)
+			So(dimens, ShouldResemble, []*bbpb.RequestedDimension{
+				{
+					Key:   "os",
+					Value: "ubuntu",
+				},
+				{
+					Key:   "gpu",
+					Value: "Intel",
+				},
+			})
+		})
+
+		Convey("builder is a tester", func() {
+			res.Input.Properties.Fields["parent_build_id"] = structpb.NewNumberValue(123)
+			parentBuild := &bbpb.Build{
+				Infra: &bbpb.BuildInfra{Swarming: &bbpb.BuildInfra_Swarming{
+					TaskDimensions: []*bbpb.RequestedDimension{{Key: "os", Value: "parent os"}}},
+				}}
+			gomock.InOrder(
+				mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil),
+				mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(parentBuild, nil),
+			)
+
+			_, dimens, err := getRerunPropertiesAndDimensions(c, 1234, nil, nil)
+			So(err, ShouldBeNil)
+			So(dimens, ShouldResemble, []*bbpb.RequestedDimension{
+				{
+					Key:   "os",
+					Value: "parent os",
+				},
+			})
 		})
 	})
+
 }
 
 func TestCreateRerunBuildModel(t *testing.T) {
