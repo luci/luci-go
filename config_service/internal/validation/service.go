@@ -259,15 +259,16 @@ func (sv *serviceValidator) validateFileLegacy(ctx context.Context, file File) (
 		httpReq.Header.Set(k, v)
 	}
 
-	var authOpts []auth.RPCOption
+	client := &http.Client{}
 	if jwtAud := sv.service.Info.GetJwtAuth().GetAudience(); jwtAud != "" {
-		authOpts = append(authOpts, auth.WithIDTokenAudience(jwtAud))
+		if client.Transport, err = common.GetSelfSignedJWTTransport(ctx, jwtAud); err != nil {
+			return nil, err
+		}
+	} else {
+		if client.Transport, err = auth.GetRPCTransport(ctx, auth.AsSelf); err != nil {
+			return nil, fmt.Errorf("failed to create transport %w", err)
+		}
 	}
-	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, authOpts...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create transport: %w", err)
-	}
-	client := &http.Client{Transport: tr}
 	logging.Debugf(ctx, "POST %s Content-Length: %d", url, buf.Len())
 	resp, err := client.Do(httpReq)
 	if err != nil {

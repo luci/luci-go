@@ -230,15 +230,16 @@ func fetchLegacyMetadata(ctx context.Context, metadataURL string, jwtAud string)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create http request due to %w", err)
 	}
-	var authOpts []auth.RPCOption
+	client := &http.Client{}
 	if jwtAud != "" {
-		authOpts = append(authOpts, auth.WithIDTokenAudience(jwtAud))
+		if client.Transport, err = common.GetSelfSignedJWTTransport(ctx, jwtAud); err != nil {
+			return nil, err
+		}
+	} else {
+		if client.Transport, err = auth.GetRPCTransport(ctx, auth.AsSelf); err != nil {
+			return nil, fmt.Errorf("failed to create transport %w", err)
+		}
 	}
-	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, authOpts...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create transport %w", err)
-	}
-	client := &http.Client{Transport: tr}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request to %s due to %w", metadataURL, err)
