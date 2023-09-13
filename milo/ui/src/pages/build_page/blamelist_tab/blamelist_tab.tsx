@@ -23,10 +23,6 @@ import {
 import { observer } from 'mobx-react-lite';
 import { useId, useState } from 'react';
 
-import '@/common/components/commit_entry';
-import '@/generic_libs/components/dot_spinner';
-import '@/generic_libs/components/hotkey';
-
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useStore } from '@/common/store';
 import { getGitilesRepoURL } from '@/common/tools/gitiles_utils';
