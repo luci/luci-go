@@ -35,7 +35,14 @@ export const TimingSection = observer(() => {
   return (
     <>
       <h3>Timing</h3>
-      <table>
+      <table
+        css={{
+          '& td:nth-of-type(2)': {
+            clear: 'both',
+            overflowWrap: 'anywhere',
+          },
+        }}
+      >
         <tbody>
           <tr>
             <td>Created:</td>

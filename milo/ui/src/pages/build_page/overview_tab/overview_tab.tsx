@@ -43,18 +43,8 @@ const ContainerDiv = styled.div({
     display: 'grid',
     gridTemplateColumns: '1fr 20px 40vw',
   },
-  '& h3': {
+  '& > h3': {
     marginBlock: '15px 10px',
-  },
-  '& h4': {
-    marginBlock: '10px 10px',
-  },
-  '& td:nth-of-type(2)': {
-    clear: 'both',
-    overflowWrap: 'anywhere',
-  },
-  '& h3:first-child': {
-    marginBlock: '5px 10px',
   },
 });
 

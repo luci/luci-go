@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { observer } from 'mobx-react-lite';
-import { useEffect } from 'react';
+import { Fragment, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 import { getPropKeyLabel } from '@/common/services/resultdb';
@@ -97,15 +97,18 @@ export const FailedTestSection = observer(() => {
 
   let remainingEntry = displayedTVCount;
 
-  renderTestList: for (const group of testLoader.groupedUnfilteredUnexpectedVariants) {
+  const groupEntries = testLoader.groupedUnfilteredUnexpectedVariants.entries();
+  renderTestList: for (const [i, group] of groupEntries) {
     if (groupDefs.length !== 0) {
       lists.push(
-        <h4>
-          {groupDefs.map(([label, getter]) => (
-            <>
-              {label}: {getter(group[0])}
-            </>
-          ))}
+        <h4 key={i} css={{ marginBlock: '10px 10px' }}>
+          {groupDefs.map(([label, getter]) => {
+            return (
+              <Fragment key={label}>
+                {label}: {getter(group[0]).toString()}
+              </Fragment>
+            );
+          })}
         </h4>,
       );
     }

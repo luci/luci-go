@@ -36,7 +36,14 @@ export const InfraSection = observer(() => {
   return (
     <>
       <h3>Infra</h3>
-      <table>
+      <table
+        css={{
+          '& td:nth-of-type(2)': {
+            clear: 'both',
+            overflowWrap: 'anywhere',
+          },
+        }}
+      >
         <tbody>
           <BuildbucketRow buildId={build.data.id} />
           {build.data.infra?.backend && (

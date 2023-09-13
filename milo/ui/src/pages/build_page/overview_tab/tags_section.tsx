@@ -28,7 +28,14 @@ export const TagsSection = observer(() => {
   return (
     <>
       <h3>Tags</h3>
-      <table>
+      <table
+        css={{
+          '& td:nth-of-type(2)': {
+            clear: 'both',
+            overflowWrap: 'anywhere',
+          },
+        }}
+      >
         <tbody>
           {tags.map((tag, i) => (
             <BuildTagRow key={i} tagKey={tag.key} tagValue={tag.value || ''} />
