@@ -54,7 +54,7 @@ export const AppDetails = ({ open, handleSidebarChanged }: Props) => {
           width: '2.5rem',
         }}
       >
-        <Link component={RouterLink} to="/ui/">
+        <Link component={RouterLink} to="/">
           <img
             style={{ width: '100%' }}
             alt="logo"
@@ -68,7 +68,7 @@ export const AppDetails = ({ open, handleSidebarChanged }: Props) => {
           underline="none"
           variant="h6"
           component={RouterLink}
-          to="/ui/"
+          to="/"
           sx={{ pr: 2, color: 'inherit' }}
         >
           LUCI

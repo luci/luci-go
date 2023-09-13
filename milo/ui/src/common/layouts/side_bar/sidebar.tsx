@@ -113,13 +113,6 @@ export const Sidebar = ({ open }: Props) => {
           </Fragment>
         ))}
         <div style={{ margin: '40px 20px', color: '#888' }}>
-          {!project && (
-            <div style={{ margin: '10px 0', color: '#888' }}>
-              <Typography variant="caption">
-                To see more options, <Link to="/ui/">choose a project</Link>.
-              </Typography>
-            </div>
-          )}
           <Typography variant="caption">
             Click{' '}
             <MenuIcon
