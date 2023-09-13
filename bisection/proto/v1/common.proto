@@ -41,6 +41,12 @@ enum AnalysisStatus {
   UNSUPPORTED = 7;
   // The analysis was disabled (e.g. from config).
   DISABLED = 8;
+  // This status is to mark for the case when an analysis was created,
+  // but was not sent to bisector, because we couldn't get sufficient data
+  // to proceed.
+  // One example is if we cannot get the commit ID for the regression range
+  // because the commit was too old.
+  INSUFFICENTDATA = 9;
 }
 
 enum RerunStatus {

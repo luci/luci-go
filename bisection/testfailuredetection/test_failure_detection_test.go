@@ -18,6 +18,7 @@ package testfailuredetection
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -33,6 +34,7 @@ import (
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -263,8 +265,68 @@ func TestFailureDetection(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 		})
+
+		Convey("insufficient data", func() {
+			analysisClient.testFailuresByProject["testProject"] = []*lucianalysis.BuilderRegressionGroup{
+				fakeBuilderRegressionGroup(insufficientDataTestID, "varianthash", 99, 100),
+			}
+
+			err := Run(ctx, analysisClient, task)
+			So(err, ShouldNotBeNil)
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
+			// Check test analysis is saved.
+			q := datastore.NewQuery("TestFailureAnalysis")
+			analyses := []*model.TestFailureAnalysis{}
+			So(datastore.GetAll(ctx, q, &analyses), ShouldBeNil)
+			So(len(analyses), ShouldEqual, 1)
+
+			q = datastore.NewQuery("TestFailure").Eq("test_id", insufficientDataTestID)
+			tfs := []*model.TestFailure{}
+			So(datastore.GetAll(ctx, q, &tfs), ShouldBeNil)
+			So(len(tfs), ShouldEqual, 1)
+
+			So(analyses[0], ShouldResemble, &model.TestFailureAnalysis{
+				ID:          analyses[0].ID,
+				Project:     "testProject",
+				CreateTime:  time.Unix(10000, 0).UTC(),
+				Status:      pb.AnalysisStatus_INSUFFICENTDATA,
+				RunStatus:   pb.AnalysisRunStatus_ENDED,
+				EndTime:     time.Unix(10000, 0).UTC(),
+				TestFailure: datastore.KeyForObj(ctx, tfs[0]),
+			})
+
+			So(tfs[0], ShouldResembleProto, &model.TestFailure{
+				ID:          tfs[0].ID,
+				Project:     "testProject",
+				TestID:      insufficientDataTestID,
+				VariantHash: "varianthash",
+				Variant: &pb.Variant{
+					Def: map[string]string{
+						"builder": "testbuilder",
+					},
+				},
+				RefHash: "testRefHash",
+				Ref: &pb.SourceRef{
+					System: &pb.SourceRef_Gitiles{
+						Gitiles: &pb.GitilesRef{
+							Host:    "testHost",
+							Project: "testProject",
+							Ref:     "testRef",
+						},
+					},
+				},
+				IsPrimary:               true,
+				AnalysisKey:             datastore.KeyForObj(ctx, analyses[0]),
+				RegressionStartPosition: 99,
+				RegressionEndPosition:   100,
+				EndPositionFailureRate:  1,
+				StartHour:               time.Unix(1689343797, 0).UTC(),
+			})
+		})
 	})
 }
+
+const insufficientDataTestID = "insufficientDataTestID"
 
 type fakeLUCIAnalysisClient struct {
 	testFailuresByProject map[string][]*lucianalysis.BuilderRegressionGroup
@@ -276,6 +338,9 @@ func (f *fakeLUCIAnalysisClient) ReadTestFailures(ctx context.Context, task *tpb
 }
 
 func (f *fakeLUCIAnalysisClient) ReadBuildInfo(ctx context.Context, tf *model.TestFailure) (lucianalysis.BuildInfo, error) {
+	if tf.TestID == insufficientDataTestID {
+		return lucianalysis.BuildInfo{}, errors.New("Insufficient data")
+	}
 	return f.buildInfoByProject[tf.Project], nil
 }
 
@@ -336,5 +401,6 @@ func setupTestingContext() (context.Context, *tqtesting.Scheduler) {
 		},
 	}
 	So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+	datastore.GetTestable(ctx).Consistent(true)
 	return tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 }

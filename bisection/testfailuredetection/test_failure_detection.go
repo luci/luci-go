@@ -138,9 +138,24 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 		bestBundle.Primary().TestID, bestBundle.Primary().VariantHash, bestBundle.Primary().RefHash)
 	testFailureAnalysis, err := prepareFailureAnalysis(ctx, client, bestBundle.Primary())
 	if err != nil {
+		// If there is a failure in preparing, in particular, in reading build info,
+		// we should store the analysis, so subsequent runs will not consider this
+		// test failure again.
+		testFailureAnalysis = &model.TestFailureAnalysis{
+			Project:    bestBundle.Primary().Project,
+			CreateTime: clock.Now(ctx),
+			Status:     pb.AnalysisStatus_INSUFFICENTDATA,
+			RunStatus:  pb.AnalysisRunStatus_ENDED,
+			EndTime:    clock.Now(ctx),
+		}
+		e := saveTestFailuresAndAnalysis(ctx, bestBundle, testFailureAnalysis, false)
+		if e != nil {
+			// Just log.
+			logging.Errorf(ctx, "save test failure and analysis when insufficient data %v", e.Error())
+		}
 		return errors.Annotate(err, "prepare failure analysis").Err()
 	}
-	if err := saveTestFailuresAndAnalysis(ctx, bestBundle, testFailureAnalysis); err != nil {
+	if err := saveTestFailuresAndAnalysis(ctx, bestBundle, testFailureAnalysis, true); err != nil {
 		return errors.Annotate(err, "save test failure and analysis").Err()
 	}
 	return nil
@@ -241,9 +256,9 @@ func prepareFailureAnalysis(ctx context.Context, client analysisClient, tf *mode
 	return testFailureAnalysis, nil
 }
 
-// SaveTestFailureAndAnalysis saves the test failures and a test failures analysis into datastore.
-// It also transactionally enqueue a task to bisector.
-func saveTestFailuresAndAnalysis(ctx context.Context, bundle *model.TestFailureBundle, testFailureAnalysis *model.TestFailureAnalysis) error {
+// saveTestFailuresAndAnalysis saves the test failures and a test failures analysis into datastore.
+// It also transactionally enqueue a task to bisector, if shouldTriggerBisection is set to true.
+func saveTestFailuresAndAnalysis(ctx context.Context, bundle *model.TestFailureBundle, testFailureAnalysis *model.TestFailureAnalysis, shouldTriggerBisection bool) error {
 	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		if err := datastore.AllocateIDs(ctx, testFailureAnalysis); err != nil {
 			return errors.Annotate(err, "allocate datastore ID for test failure analysis").Err()
@@ -262,8 +277,10 @@ func saveTestFailuresAndAnalysis(ctx context.Context, bundle *model.TestFailureB
 			return errors.Annotate(err, "save test failure analysis").Err()
 		}
 		// Send task to bisector transactionally.
-		if err := bisection.Schedule(ctx, testFailureAnalysis.ID); err != nil {
-			return errors.Annotate(err, "send task to bisector").Err()
+		if shouldTriggerBisection {
+			if err := bisection.Schedule(ctx, testFailureAnalysis.ID); err != nil {
+				return errors.Annotate(err, "send task to bisector").Err()
+			}
 		}
 		return nil
 	}, nil)
