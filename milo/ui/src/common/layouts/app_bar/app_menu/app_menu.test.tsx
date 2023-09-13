@@ -18,9 +18,9 @@ import { destroy } from 'mobx-state-tree';
 import { Store, StoreInstance, StoreProvider } from '@/common/store';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { SettingsMenu } from './settings_menu';
+import { AppMenu } from './app_menu';
 
-describe('SettingsMenu', () => {
+describe('AppMenu', () => {
   let store: StoreInstance;
 
   beforeEach(() => {
@@ -34,11 +34,11 @@ describe('SettingsMenu', () => {
     render(
       <StoreProvider value={store}>
         <FakeContextProvider>
-          <SettingsMenu />
+          <AppMenu />
         </FakeContextProvider>
       </StoreProvider>,
     );
     await screen.findAllByRole('button');
-    expect(screen.getByLabelText('open settings menu')).toBeInTheDocument();
+    expect(screen.getByLabelText('Open menu')).toBeInTheDocument();
   });
 });

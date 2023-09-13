@@ -19,7 +19,8 @@ import Toolbar from '@mui/material/Toolbar';
 import { useAuthState } from '@/common/components/auth_state_provider';
 
 import { AppDetails } from './app_details';
-import { SettingsMenu } from './settings_menu';
+import { AppMenu } from './app_menu';
+import { FeedbackButton } from './feedback';
 import { SignIn } from './sign_in';
 
 interface Props {
@@ -38,7 +39,8 @@ export const AppBar = ({ open, handleSidebarChanged }: Props) => {
       <Toolbar variant="dense">
         <AppDetails open={open} handleSidebarChanged={handleSidebarChanged} />
         <Box sx={{ flexGrow: 1 }}></Box>
-        <SettingsMenu />
+        <FeedbackButton />
+        <AppMenu />
         <SignIn
           identity={authState.identity}
           email={authState.email}

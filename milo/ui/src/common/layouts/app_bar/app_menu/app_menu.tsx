@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import FeedbackIcon from '@mui/icons-material/Feedback';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SettingsIcon from '@mui/icons-material/Settings';
 import IconButton from '@mui/material/IconButton';
@@ -24,39 +23,32 @@ import { observer } from 'mobx-react-lite';
 import { useState, MouseEvent } from 'react';
 
 import { useStore } from '@/common/store';
-import { genFeedbackUrl } from '@/common/tools/utils';
 
-export const SettingsMenu = observer(() => {
+export const AppMenu = observer(() => {
   const store = useStore();
 
-  const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
-
-  const handleOpenUserMenu = (event: MouseEvent<HTMLElement>) => {
-    setAnchorElUser(event.currentTarget);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const handleOpenMenu = (event: MouseEvent<HTMLElement>) => {
+    setMenuAnchorEl(event.currentTarget);
+  };
+  const handleCloseMenu = () => {
+    setMenuAnchorEl(null);
   };
 
-  const handleCloseUserMenu = () => {
-    setAnchorElUser(null);
-  };
   return (
     <>
       <IconButton
-        sx={{ color: 'white' }}
-        onClick={() => window.open(genFeedbackUrl())}
-        size="medium"
+        onClick={handleOpenMenu}
+        color="inherit"
         role="button"
-        aria-label="open settings menu"
+        aria-label="Open menu"
+        title="Open menu"
       >
-        <FeedbackIcon />
-      </IconButton>
-
-      <IconButton color="inherit" onClick={handleOpenUserMenu}>
         <MoreVertIcon />
       </IconButton>
       <Menu
         sx={{ mt: 4 }}
-        id="menu-appbar"
-        anchorEl={anchorElUser}
+        anchorEl={menuAnchorEl}
         anchorOrigin={{
           vertical: 'top',
           horizontal: 'right',
@@ -66,8 +58,8 @@ export const SettingsMenu = observer(() => {
           vertical: 'top',
           horizontal: 'right',
         }}
-        open={Boolean(anchorElUser)}
-        onClose={handleCloseUserMenu}
+        open={Boolean(menuAnchorEl)}
+        onClose={handleCloseMenu}
       >
         <MenuItem
           onClick={() => store.setShowSettingsDialog(true)}
