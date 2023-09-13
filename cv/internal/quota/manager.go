@@ -16,9 +16,14 @@ package quota
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"sync"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/server/auth"
 	srvquota "go.chromium.org/luci/server/quota"
 	"go.chromium.org/luci/server/quota/quotapb"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -68,8 +73,79 @@ func (qm *Manager) CreditTryjobQuota(ctx context.Context) (*quotapb.OpResult, er
 	return nil, nil
 }
 
+// findRunPolicy returns the PolicyID for the given run state.
+func (qm *Manager) findRunPolicy(ctx context.Context, rs *state.RunState) (*quotapb.PolicyID, error) {
+	project := rs.Run.ID.LUCIProject()
+	cfgGroup, err := prjcfg.GetConfigGroup(ctx, project, rs.Run.ConfigGroupID)
+	if err != nil {
+		return nil, err
+	}
+
+	config := cfgGroup.Content
+	if config == nil {
+		return nil, fmt.Errorf("cannot find cfgGroup content")
+	}
+
+	// loadPolicies loads cfgGroup into server/quota. This serves two purposes:
+	// 1. If policies for this cfgGroup is not loaded already, this loads it.
+	// 2. If they are loaded already, server/quota immediately returns &quotapb.PolicyConfigID which we use for our Ops.
+	policyConfigID, err := qm.loadPolicies(ctx, project, []*prjcfg.ConfigGroup{cfgGroup})
+	if err != nil {
+		return nil, errors.Annotate(err, "loadPolicies").Err()
+	}
+
+	user := rs.Run.Owner
+	for _, userLimit := range config.GetUserLimits() {
+		runLimit := userLimit.GetRun()
+		if runLimit == nil {
+			continue
+		}
+
+		var groups []string
+		for _, principal := range userLimit.GetPrincipals() {
+			switch parts := strings.SplitN(principal, ":", 2); {
+			case len(parts) != 2:
+				// Each entry can be either an identity string "user:<email>" or a LUCI group reference "group:<name>".
+				return nil, fmt.Errorf("improper format for principal: %s", principal)
+			case parts[0] == "user" && parts[1] == user.Email():
+				return &quotapb.PolicyID{
+					Config: policyConfigID,
+					Key:    runPolicyKey(config.GetName(), userLimit.GetName()),
+				}, nil
+			case parts[0] == "group":
+				groups = append(groups, parts[1])
+			}
+		}
+
+		if len(groups) == 0 {
+			continue
+		}
+
+		switch result, err := auth.GetState(ctx).DB().IsMember(ctx, user, groups); {
+		case err != nil:
+			return nil, err
+		case result:
+			return &quotapb.PolicyID{
+				Config: policyConfigID,
+				Key:    runPolicyKey(config.GetName(), userLimit.GetName()),
+			}, nil
+		}
+	}
+
+	// Check default run limit if user is not a part of any defined user limit groups.
+	if config.GetUserLimitDefault().GetRun() != nil {
+		return &quotapb.PolicyID{
+			Config: policyConfigID,
+			Key:    runPolicyKey(config.GetName(), defaultPolicy),
+		}, nil
+	}
+
+	// No limits configured for this user.
+	return nil, nil
+}
+
 // runPolicyKey is a helper to generate run quota policy key.
-func runPolicyKey(project, configName, name string) *quotapb.PolicyKey {
+func runPolicyKey(configName, name string) *quotapb.PolicyKey {
 	return &quotapb.PolicyKey{
 		Namespace:    configName,
 		Name:         name,
@@ -111,7 +187,7 @@ func makeRunQuotaPolicies(project string, configGroups []*prjcfg.ConfigGroup) []
 			// will be handled by setting `IGNORE_POLICY_BOUNDS` for each
 			// quota op.
 			runLimitVal := uint64(runLimit.GetMaxActive().GetValue())
-			polkey := runPolicyKey(project, config.GetName(), userLimit.Name)
+			polkey := runPolicyKey(config.GetName(), userLimit.GetName())
 
 			policies = append(policies, runPolicyEntry(polkey, runLimitVal))
 		}
@@ -126,12 +202,26 @@ func makeRunQuotaPolicies(project string, configGroups []*prjcfg.ConfigGroup) []
 		// Accounts using this policy will set `IGNORE_POLICY_BOUNDS` for each
 		// quota op.
 		defaultRunLimitVal := uint64(defaultRunLimit.GetMaxActive().GetValue())
-		defaultkey := runPolicyKey(project, config.GetName(), defaultPolicy)
+		defaultkey := runPolicyKey(config.GetName(), defaultPolicy)
 
 		policies = append(policies, runPolicyEntry(defaultkey, defaultRunLimitVal))
 	}
 
 	return policies
+}
+
+// loadPolicies loads the given configGroups into server/quota.
+// If the policy already exists within server/quota, this immediately returns the &quotapb.PolicyConfigID.
+func (qm *Manager) loadPolicies(ctx context.Context, project string, configGroups []*prjcfg.ConfigGroup) (*quotapb.PolicyConfigID, error) {
+	runQuotaPolicies := makeRunQuotaPolicies(project, configGroups)
+	if runQuotaPolicies == nil {
+		return nil, nil
+	}
+
+	// Load policies into server/quota.
+	return qm.qapp.LoadPoliciesAuto(ctx, project, &quotapb.PolicyConfig{
+		Policies: runQuotaPolicies,
+	})
 }
 
 // WritePolicy writes lucicfg updates to the srvquota policies.
@@ -147,15 +237,7 @@ func (qm *Manager) WritePolicy(ctx context.Context, project string) (*quotapb.Po
 		return nil, err
 	}
 
-	runQuotaPolicies := makeRunQuotaPolicies(project, configGroups)
-	if runQuotaPolicies == nil {
-		return nil, nil
-	}
-
-	// Load policies into server/quota.
-	return qm.qapp.LoadPoliciesAuto(ctx, project, &quotapb.PolicyConfig{
-		Policies: runQuotaPolicies,
-	})
+	return qm.loadPolicies(ctx, project, configGroups)
 }
 
 // NewManager creates a new quota manager.

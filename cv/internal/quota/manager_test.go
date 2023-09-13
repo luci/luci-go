@@ -15,18 +15,23 @@
 package quota
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gomodule/redigo/redis"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/server/quota/quotapb"
 	"go.chromium.org/luci/server/redisconn"
 )
@@ -42,10 +47,6 @@ func TestManager(t *testing.T) {
 		s, err := miniredis.Run()
 		So(err, ShouldBeNil)
 		defer s.Close()
-
-		tc := testclock.New(testclock.TestRecentTimeUTC.Round(time.Microsecond))
-		ctx = clock.Set(ctx, tc)
-
 		s.SetTime(clock.Now(ctx))
 
 		ctx = redisconn.UsePool(ctx, &redis.Pool{
@@ -53,6 +54,16 @@ func TestManager(t *testing.T) {
 				return redis.Dial("tcp", s.Addr())
 			},
 		})
+
+		makeIdentity := func(email string) identity.Identity {
+			id, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, email))
+			So(err, ShouldBeNil)
+			return id
+		}
+
+		const tEmail = "t@example.org"
+		ct.AddMember(tEmail, "googlers")
+		ct.AddMember(tEmail, "partners")
 
 		const lProject = "chromium"
 		cg := &cfgpb.ConfigGroup{Name: "infra"}
@@ -91,9 +102,9 @@ func TestManager(t *testing.T) {
 
 		Convey("WritePolicy() with run limit values", func() {
 			cg.UserLimits = append(cg.UserLimits,
-				genUserLimit("chromies-limit", 10, []string{"chromies", "chrome-infra"}),
-				genUserLimit("googlers-limit", 5, []string{"googlers"}),
-				genUserLimit("partners-limit", 10, []string{"partners"}),
+				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
+				genUserLimit("googlers-limit", 5, []string{"group:googlers"}),
+				genUserLimit("partners-limit", 10, []string{"group:partners"}),
 			)
 			prjcfgtest.Update(ctx, lProject, cfg)
 			pid, err := qm.WritePolicy(ctx, lProject)
@@ -105,15 +116,13 @@ func TestManager(t *testing.T) {
 				VersionScheme: 1,
 				Version:       pid.Version,
 			})
-
-			cg.UserLimits = nil
 		})
 
 		Convey("WritePolicy() with run limit defaults", func() {
 			cg.UserLimits = append(cg.UserLimits,
-				genUserLimit("chromies-limit", 10, []string{"chromies", "chrome-infra"}),
+				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
 			)
-			cg.UserLimitDefault = genUserLimit("chromies-limit", 5, []string{"chromies", "chrome-infra"})
+			cg.UserLimitDefault = genUserLimit("chromies-limit", 5, []string{"group:chromies", "group:chrome-infra"})
 			prjcfgtest.Update(ctx, lProject, cfg)
 			pid, err := qm.WritePolicy(ctx, lProject)
 
@@ -124,15 +133,12 @@ func TestManager(t *testing.T) {
 				VersionScheme: 1,
 				Version:       pid.Version,
 			})
-
-			cg.UserLimits = nil
-			cg.UserLimitDefault = nil
 		})
 
 		Convey("WritePolicy() with run limit set to unlimited", func() {
 			cg.UserLimits = append(cg.UserLimits,
-				genUserLimit("chromies-limit", 10, []string{"chromies", "chrome-infra"}),
-				genUserLimit("googlers-limit", 0, []string{"googlers"}),
+				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
+				genUserLimit("googlers-limit", 0, []string{"group:googlers"}),
 			)
 			prjcfgtest.Update(ctx, lProject, cfg)
 			pid, err := qm.WritePolicy(ctx, lProject)
@@ -144,8 +150,92 @@ func TestManager(t *testing.T) {
 				VersionScheme: 1,
 				Version:       pid.Version,
 			})
+		})
 
-			cg.UserLimits = nil
+		Convey("findRunPolicy() returns first valid run policy", func() {
+			cg.UserLimits = append(cg.UserLimits,
+				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
+				genUserLimit("googlers-limit", 5, []string{"group:googlers"}),
+				genUserLimit("partners-limit", 10, []string{"group:partners"}),
+			)
+			prjcfgtest.Update(ctx, lProject, cfg)
+
+			rs := &state.RunState{
+				Run: run.Run{
+					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+					Owner:         makeIdentity(tEmail),
+				},
+			}
+
+			res, err := qm.findRunPolicy(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res.Key, ShouldResembleProto, runPolicyKey("infra", "googlers-limit"))
+		})
+
+		Convey("findRunPolicy() works with user entry in principals", func() {
+			cg.UserLimits = append(cg.UserLimits,
+				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
+				genUserLimit("example-limit", 10, []string{"group:chromies", "user:t@example.org"}),
+				genUserLimit("googlers-limit", 5, []string{"group:googlers"}),
+				genUserLimit("partners-limit", 10, []string{"group:partners"}),
+			)
+			prjcfgtest.Update(ctx, lProject, cfg)
+
+			rs := &state.RunState{
+				Run: run.Run{
+					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+					Owner:         makeIdentity(tEmail),
+				},
+			}
+
+			res, err := qm.findRunPolicy(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res.Key, ShouldResembleProto, runPolicyKey("infra", "example-limit"))
+		})
+
+		Convey("findRunPolicy() returns default policy if no valid policy is found", func() {
+			cg.UserLimits = append(cg.UserLimits,
+				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
+				genUserLimit("googlers-limit", 5, []string{"group:invalid"}),
+				genUserLimit("partners-limit", 10, []string{"group:invalid"}),
+			)
+			cg.UserLimitDefault = genUserLimit("", 5, nil)
+			prjcfgtest.Update(ctx, lProject, cfg)
+
+			rs := &state.RunState{
+				Run: run.Run{
+					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+					Owner:         makeIdentity(tEmail),
+				},
+			}
+
+			res, err := qm.findRunPolicy(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res.Key, ShouldResembleProto, runPolicyKey("infra", "default"))
+		})
+
+		Convey("findRunPolicy() returns nil when no valid policy is found", func() {
+			cg.UserLimits = append(cg.UserLimits,
+				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
+				genUserLimit("googlers-limit", 5, []string{"group:invalid"}),
+				genUserLimit("partners-limit", 10, []string{"group:invalid"}),
+			)
+			prjcfgtest.Update(ctx, lProject, cfg)
+
+			rs := &state.RunState{
+				Run: run.Run{
+					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+					Owner:         makeIdentity(tEmail),
+				},
+			}
+
+			res, err := qm.findRunPolicy(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res, ShouldBeNil)
 		})
 	})
 }
