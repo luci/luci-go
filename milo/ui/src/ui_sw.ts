@@ -29,6 +29,11 @@ import { Prefetcher } from '@/common/service_workers/prefetch';
 // Tell TSC that this is a ServiceWorker script.
 declare const self: ServiceWorkerGlobalScope;
 
+/**
+ * A regex for the defined routes.
+ */
+declare const DEFINED_ROUTES_REGEXP: string;
+
 // Unconditionally skip waiting so the clients can always get the newest version
 // when the page is refreshed. The only downside is that clients on an old
 // version may encounter errors when lazy loading cached static assets. This is
@@ -87,7 +92,10 @@ self.addEventListener('fetch', async (e) => {
   precacheAndRoute(self.__WB_MANIFEST);
   registerRoute(
     new NavigationRoute(createHandlerBoundToURL('/ui/index.html'), {
-      allowlist: [/^\/ui\//],
+      // Only handle defined routes so when the user visits a newly added route,
+      // the service worker won't serve an old cache, causing the user to see a
+      // 404 page until the new version is activated.
+      allowlist: [new RegExp(DEFINED_ROUTES_REGEXP, 'i')],
     }),
   );
 }

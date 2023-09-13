@@ -22,6 +22,8 @@ import { VitePWA as vitePWA } from 'vite-plugin-pwa';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 import { AuthState, msToExpire } from './src/common/api/auth_state';
+import { regexpsForRoutes } from './src/generic_libs/tools/react_router_utils';
+import { routes } from './src/routes';
 
 /**
  * Get a boolean from the envDir.
@@ -139,7 +141,7 @@ export default defineConfig(({ mode }) => {
         // We have different building pipeline for dev/test/production builds.
         // Limits the impact of the pipeline-specific features to only the
         // entry files for better consistently across different builds.
-        include: ['./src/main.tsx', './src/ui_sw.ts'],
+        include: ['./src/main.tsx'],
         values: {
           ENABLE_UI_SW: JSON.stringify(
             getBoolEnv(env, 'VITE_ENABLE_UI_SW') ?? true,
@@ -283,7 +285,23 @@ export default defineConfig(({ mode }) => {
         },
         injectManifest: {
           globPatterns: ['**/*.{js,css,html,svg,png}'],
-          plugins: [virtualConfigJs, tsconfigPaths()],
+          plugins: [
+            replace({
+              preventAssignment: true,
+              include: ['./src/ui_sw.ts'],
+              values: {
+                // The build pipeline gets confused when the service worker
+                // depends on a lazy-loaded assets (which are used in `routes`).
+                // Computes the defined routes at build time to avoid polluting
+                // the service worker with unwanted dependencies.
+                DEFINED_ROUTES_REGEXP: JSON.stringify(
+                  regexpsForRoutes([{ path: 'ui', children: routes }]).source,
+                ),
+              },
+            }),
+            virtualConfigJs,
+            tsconfigPaths(),
+          ],
           // Set to 8 MB. Some files might be larger than the default.
           maximumFileSizeToCacheInBytes: Math.pow(2, 23),
         },
