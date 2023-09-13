@@ -115,7 +115,7 @@ export function App({ initOpts }: AppProps) {
         // See https://vite-pwa-org.netlify.app/guide/development.html#injectmanifest-strategy
         const uiSwUrl = isDevEnv ? '/ui/dev-sw.js?dev-sw' : '/ui/ui_sw.js';
         const workbox = new Workbox(
-          createStaticTrustedURL('sw-js-static', uiSwUrl),
+          createStaticTrustedURL('ui-sw-js-static', uiSwUrl),
           { type: isDevEnv ? 'module' : 'classic' },
         );
         workbox.register();

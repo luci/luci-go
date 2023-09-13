@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <head>
+  <meta http-equiv="Content-Security-Policy" content="require-trusted-types-for 'script';">
   <!-- The tag manager to inject a GA4 tag with a proper measurement ID base on
     the host. This allows us to differentiate prod and staging/dev traffics.
 
@@ -8,10 +9,16 @@
     container created under a corp organization associated account for better
     account ownership/ACL management. -->
   <!-- Google Tag Manager -->
-  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  <script>
+    const gtmJs = 'https://www.googletagmanager.com/gtm.js?id=GTM-5SMGXGB';
+    const trustedGtmJs = self.trustedTypes
+      ?.createPolicy('luci-ui-gtm-js', { createScriptURL: (_) => gtmJs })
+      .createScriptURL('') || gtmJs;
+
+  // The script is modified to support trusted types.
+  (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
   new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=trustedGtmJs;f.parentNode.insertBefore(j,f);
   })(window,document,'script','dataLayer','GTM-5SMGXGB');</script>
   <!-- End Google Tag Manager -->
 
