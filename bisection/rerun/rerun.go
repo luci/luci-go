@@ -118,23 +118,27 @@ func getRerunPropertiesAndDimensions(c context.Context, bbid int64, props map[st
 	}
 	build, err := buildbucket.GetBuild(c, bbid, mask)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get properties for build %d: %w", bbid, err)
+		return nil, nil, errors.Annotate(err, "failed to get properties for build %d", bbid).Err()
 	}
 	properties, err := getRerunProperties(c, build, props)
 	if err != nil {
 		return nil, nil, err
 	}
-	parentBuildID, found := build.GetInput().GetProperties().GetFields()["parent_build_id"]
+	parentBuildIDStr, found := build.GetInput().GetProperties().GetFields()["parent_build_id"]
 
 	// If builder is not a tester, return the dimension derived by this build.
 	if !found {
 		dimens := getRerunDimensions(c, build, dims)
 		return properties, dimens, nil
 	}
-	// If builder is a tester, return the dimension derived by the parent build.
-	parentBuild, err := buildbucket.GetBuild(c, int64(parentBuildID.GetNumberValue()), mask)
+	parentBuildID, err := strconv.Atoi(parentBuildIDStr.GetStringValue())
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get properties for parent build %d: %w", int64(parentBuildID.GetNumberValue()), err)
+		return nil, nil, errors.Annotate(err, "parse parent_build_id %s", parentBuildIDStr).Err()
+	}
+	// If builder is a tester, return the dimension derived by the parent build.
+	parentBuild, err := buildbucket.GetBuild(c, int64(parentBuildID), mask)
+	if err != nil {
+		return nil, nil, errors.Annotate(err, "failed to get properties for parent build %d", int64(parentBuildID)).Err()
 	}
 	dimens := getRerunDimensions(c, parentBuild, dims)
 	return properties, dimens, nil

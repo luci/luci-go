@@ -159,7 +159,7 @@ func TestRerun(t *testing.T) {
 		})
 
 		Convey("builder is a tester", func() {
-			res.Input.Properties.Fields["parent_build_id"] = structpb.NewNumberValue(123)
+			res.Input.Properties.Fields["parent_build_id"] = structpb.NewStringValue("123")
 			parentBuild := &bbpb.Build{
 				Infra: &bbpb.BuildInfra{Swarming: &bbpb.BuildInfra_Swarming{
 					TaskDimensions: []*bbpb.RequestedDimension{{Key: "os", Value: "parent os"}}},
