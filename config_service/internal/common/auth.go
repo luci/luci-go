@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/iam"
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -41,6 +40,15 @@ func GetSelfSignedJWTTransport(ctx context.Context, aud string) (http.RoundTripp
 	if err != nil {
 		return nil, fmt.Errorf("failed to create RPC transport: %w", err)
 	}
+	signer := auth.GetSigner(ctx)
+	info, err := signer.ServiceInfo(ctx)
+	switch {
+	case err != nil:
+		return nil, fmt.Errorf("failed to get service account for the service: %w", err)
+	case info.ServiceAccountName == "":
+		return nil, errors.New("the current service account is empty")
+	}
+	serviceAccount := info.ServiceAccountName
 	return luciauth.NewModifyingTransport(tr, func(req *http.Request) error {
 		ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 		if err != nil {
@@ -50,17 +58,11 @@ func GetSelfSignedJWTTransport(ctx context.Context, aud string) (http.RoundTripp
 		if err != nil {
 			return fmt.Errorf("failed to create IAM Credentials client: %w", err)
 		}
-		defer cc.Close()
-		sa, err := info.ServiceAccount(ctx)
-		switch {
-		case err != nil:
-			return fmt.Errorf("failed to get service account for the service: %w", err)
-		case sa == "":
-			return errors.New("the current service account is empty")
-		}
+		defer func() { _ = cc.Close() }()
+
 		now := clock.Now(ctx).UTC()
 		cs := &iam.ClaimSet{
-			Iss:   sa,
+			Iss:   serviceAccount,
 			Scope: strings.Join(auth.CloudOAuthScopes, " "),
 			Aud:   aud,
 			Exp:   now.Add(2 * time.Minute).Unix(),
@@ -71,7 +73,7 @@ func GetSelfSignedJWTTransport(ctx context.Context, aud string) (http.RoundTripp
 			return fmt.Errorf("failed to marshall claim set to JSON: %w", err)
 		}
 		res, err := cc.SignJwt(ctx, &credentialspb.SignJwtRequest{
-			Name:    fmt.Sprintf("projects/-/serviceAccounts/%s", sa),
+			Name:    fmt.Sprintf("projects/-/serviceAccounts/%s", serviceAccount),
 			Payload: string(payload),
 		})
 		if err != nil {
