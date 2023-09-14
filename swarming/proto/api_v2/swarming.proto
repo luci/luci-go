@@ -504,6 +504,10 @@ message SwarmingTaskBackendConfig {
 
   // Name of the CIPD server.
   string agent_binary_cipd_server = 9;
+
+  // Tags are 'key:value' strings that describes what the task is about.
+  // This can later be leveraged to search for kinds of tasks per tag.
+  repeated string tags = 10;
 }
 
 // Swarming:ResultDB integration configuration for a task.
