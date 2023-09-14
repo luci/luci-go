@@ -221,6 +221,8 @@ message ConfigSet {
     string url = 2;
     // Committer email who commit this revision
     string committer_email = 3;
+    // The commit author email.
+    string author_email = 5;
     // Time of this committed revision.
     google.protobuf.Timestamp timestamp = 4;
   }

@@ -47,6 +47,10 @@ const (
 
 	// ServiceKind is the Datastore entity kind for Service.
 	ServiceKind = "Service"
+
+	// CurrentCfgSetVersion is a global version for all ConfigSet entities. It can
+	// be used to force a global refresh.
+	CurrentCfgSetVersion = 1
 )
 
 // ConfigSet is a versioned collection of config files.
@@ -64,6 +68,20 @@ type ConfigSet struct {
 	// Version is the global version of the config set.
 	// It may be used to decide to force a refresh.
 	Version int64 `gae:"version,noindex"`
+}
+
+var _ datastore.PropertyLoadSaver = (*ConfigSet)(nil)
+
+// Save implements datastore.PropertyLoadSaver. It makes sure ConfigSet.Version
+// always set to CurrentCfgSetVersion when saving into Datastore.
+func (cs *ConfigSet) Save(withMeta bool) (datastore.PropertyMap, error) {
+	cs.Version = CurrentCfgSetVersion
+	return datastore.GetPLS(cs).Save(withMeta)
+}
+
+// Load implements datastore.PropertyLoadSaver.
+func (cs *ConfigSet) Load(p datastore.PropertyMap) error {
+	return datastore.GetPLS(cs).Load(p)
 }
 
 // File represents a single config file. Immutable
@@ -177,6 +195,8 @@ type RevisionInfo struct {
 	CommitTime time.Time `gae:"commit_time,noindex"`
 	// CommitterEmail is the committer's email.
 	CommitterEmail string `gae:"committer_email,noindex"`
+	// AuthorEmail is the email of the commit author.
+	AuthorEmail string `gae:"author_email,noindex"`
 }
 
 // Service contains information about a registered service.

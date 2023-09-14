@@ -198,11 +198,15 @@ func TestImportConfigSet(t *testing.T) {
 				Email: "user@gmail.com",
 				Time:  timestamppb.New(datastore.RoundTime(clock.Now(ctx).UTC())),
 			},
+			Author: &git.Commit_User{
+				Email: "author@gmail.com",
+			},
 		}
 		expectedLatestRevInfo := model.RevisionInfo{
 			ID:             latestCommit.Id,
 			CommitTime:     latestCommit.Committer.Time.AsTime(),
 			CommitterEmail: latestCommit.Committer.Email,
+			AuthorEmail:    latestCommit.Author.Email,
 		}
 		mockValidator := &mockValidator{}
 		importer := &Importer{
@@ -282,6 +286,7 @@ func TestImportConfigSet(t *testing.T) {
 				So(cfgSet, ShouldResemble, &model.ConfigSet{
 					ID:             "services/myservice",
 					LatestRevision: expectedLatestRevInfo,
+					Version:        model.CurrentCfgSetVersion,
 				})
 
 				So(files, ShouldHaveLength, 3)
@@ -471,6 +476,7 @@ func TestImportConfigSet(t *testing.T) {
 				So(cfgSet, ShouldResemble, &model.ConfigSet{
 					ID:             "services/myservice",
 					LatestRevision: expectedLatestRevInfo,
+					Version:        model.CurrentCfgSetVersion,
 				})
 
 				So(attempt.Success, ShouldBeTrue)

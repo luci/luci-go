@@ -81,6 +81,7 @@ func toConfigSetPb(cs *model.ConfigSet) *pb.ConfigSet {
 			Id:             cs.LatestRevision.ID,
 			Url:            common.GitilesURL(cs.LatestRevision.Location.GetGitilesLocation()),
 			CommitterEmail: cs.LatestRevision.CommitterEmail,
+			AuthorEmail:    cs.LatestRevision.AuthorEmail,
 			Timestamp:      timestamppb.New(cs.LatestRevision.CommitTime),
 		},
 	}
@@ -98,6 +99,7 @@ func toImportAttempt(attempt *model.ImportAttempt) *pb.ConfigSet_Attempt {
 			Id:             attempt.Revision.ID,
 			Url:            common.GitilesURL(attempt.Revision.Location.GetGitilesLocation()),
 			CommitterEmail: attempt.Revision.CommitterEmail,
+			AuthorEmail:    attempt.Revision.AuthorEmail,
 			Timestamp:      timestamppb.New(attempt.Revision.CommitTime),
 		},
 	}

@@ -337,7 +337,9 @@ func (i *Importer) importConfigSet(ctx context.Context, cfgSet config.Set, loc *
 	case err == datastore.ErrNoSuchEntity: // proceed with importing
 	case err != nil:
 		return errors.Annotate(err, "failed to load config set %q", cfgSet).Err()
-	case cfgSetInDB.LatestRevision.ID == latestCommit.Id && proto.Equal(cfgSetInDB.Location.GetGitilesLocation(), loc):
+	case cfgSetInDB.LatestRevision.ID == latestCommit.Id &&
+		proto.Equal(cfgSetInDB.Location.GetGitilesLocation(), loc) &&
+		cfgSetInDB.Version == model.CurrentCfgSetVersion:
 		logging.Debugf(ctx, "Already up-to-date")
 		return saveAttempt(true, "Up-to-date", nil)
 	}
@@ -371,6 +373,7 @@ func (i *Importer) importRevision(ctx context.Context, cfgSet config.Set, loc *c
 		ID:             commit.Id,
 		CommitTime:     commit.Committer.GetTime().AsTime(),
 		CommitterEmail: commit.Committer.GetEmail(),
+		AuthorEmail:    commit.Author.GetEmail(),
 		Location: &cfgcommonpb.Location{
 			Location: &cfgcommonpb.Location_GitilesLocation{
 				GitilesLocation: &cfgcommonpb.GitilesLocation{

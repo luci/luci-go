@@ -71,8 +71,10 @@ func TestGetConfigSet(t *testing.T) {
 			Success:   true,
 			Message:   "Up-to-date",
 			Revision: model.RevisionInfo{
-				ID:         "1",
-				CommitTime: commitTime,
+				ID:             "1",
+				CommitTime:     commitTime,
+				CommitterEmail: "committer@gmail.com",
+				AuthorEmail:    "author@gmail.com",
 			},
 		}), ShouldBeNil)
 
@@ -137,8 +139,10 @@ func TestGetConfigSet(t *testing.T) {
 					Message: "Up-to-date",
 					Success: true,
 					Revision: &pb.ConfigSet_Revision{
-						Id:        "1",
-						Timestamp: timestamppb.New(commitTime),
+						Id:             "1",
+						Timestamp:      timestamppb.New(commitTime),
+						CommitterEmail: "committer@gmail.com",
+						AuthorEmail:    "author@gmail.com",
 					},
 				},
 			})
