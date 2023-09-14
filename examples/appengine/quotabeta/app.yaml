@@ -1,4 +1,4 @@
-runtime: go120
+runtime: go121
 
 automatic_scaling:
   min_idle_instances: 1
