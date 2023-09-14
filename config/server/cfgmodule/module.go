@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
+	"google.golang.org/grpc/credentials"
 )
 
 // ModuleName can be used to refer to this module when declaring dependencies.
@@ -148,6 +149,17 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 			}
 			return &http.Client{Transport: t}, nil
 		},
+		GetPerRPCCredsFn: func(ctx context.Context) (credentials.PerRPCCredentials, error) {
+			creds, err := auth.GetPerRPCCredentials(ctx,
+				auth.AsSelf,
+				auth.WithIDTokenAudience("https://"+m.opts.ServiceHost),
+			)
+			if err != nil {
+				return nil, errors.Annotate(err, "failed to get credentials to access %s", host).Err()
+			}
+			return creds, nil
+		},
+		UserAgent: opts.CloudProject,
 	})
 	if err != nil {
 		return nil, err

@@ -21,6 +21,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"google.golang.org/grpc/credentials"
+
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth"
 
@@ -92,6 +95,17 @@ func newClientFromSettings(c context.Context, s *Settings) config.Interface {
 			}
 			return &http.Client{Transport: t}, nil
 		},
+		GetPerRPCCredsFn: func(ctx context.Context) (credentials.PerRPCCredentials, error) {
+			creds, err := auth.GetPerRPCCredentials(ctx,
+				auth.AsSelf,
+				auth.WithIDTokenAudience("https://"+s.ConfigServiceHost),
+			)
+			if err != nil {
+				return nil, errors.Annotate(err, "failed to get credentials to access %s", s.ConfigServiceHost).Err()
+			}
+			return creds, nil
+		},
+		UserAgent: info.AppID(c),
 	})
 	if err != nil {
 		return erroring.New(err)

@@ -20,6 +20,8 @@ import (
 	"net/http"
 	"strings"
 
+	"google.golang.org/grpc/credentials"
+
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/impl/erroring"
 	"go.chromium.org/luci/config/impl/filesystem"
@@ -60,6 +62,15 @@ type Options struct {
 	// It will be used to call LUCI Config service. Must be set if ServiceHost
 	// points to Config Service V1, ignored otherwise.
 	ClientFactory func(context.Context) (*http.Client, error)
+
+	// GetPerRPCCredsFn generates PerRPCCredentials for the gRPC connection.
+	//
+	// Must be set for calling Luci-Config v2, ignored otherwise.
+	GetPerRPCCredsFn func(context.Context) (credentials.PerRPCCredentials, error)
+
+	// UserAgent is the optional additional User-Agent fragment which will be
+	// appended to gRPC calls.
+	UserAgent string
 }
 
 // New instantiates a LUCI Config client based on the given options.
@@ -76,6 +87,8 @@ func New(ctx context.Context, opts Options) (config.Interface, error) {
 		return nil, errors.New("either a LUCI Config service or a local config directory should be used, not both")
 	case IsV1Host(opts.ServiceHost) && opts.ClientFactory == nil:
 		return nil, errors.New("need a client factory when using a LUCI Config service v1")
+	case opts.ServiceHost != "" && opts.GetPerRPCCredsFn == nil:
+		return nil, errors.New("GetPerRPCCredsFn must be set when using a LUCI Config service v2")
 	}
 
 	var base config.Interface
@@ -84,7 +97,14 @@ func New(ctx context.Context, opts Options) (config.Interface, error) {
 	case opts.ServiceHost != "" && IsV1Host(opts.ServiceHost):
 		base = remote.NewV1(opts.ServiceHost, false, opts.ClientFactory)
 	case opts.ServiceHost != "":
-		base, err = remote.NewV2(ctx, opts.ServiceHost)
+		var creds credentials.PerRPCCredentials
+		if creds, err = opts.GetPerRPCCredsFn(ctx); err == nil {
+			base, err = remote.NewV2(ctx, remote.V2Options{
+				Host:      opts.ServiceHost,
+				Creds:     creds,
+				UserAgent: opts.UserAgent,
+			})
+		}
 	case opts.ConfigsDir != "":
 		base, err = filesystem.New(opts.ConfigsDir)
 	default:

@@ -51,26 +51,61 @@ const retryPolicy = `{
 	}]
 }`
 
-// NewV2 returns an implementation of the config Interface which talks to the
-// real Luci-config service v2.
-func NewV2(ctx context.Context, host string) (config.Interface, error) {
-	creds, err := auth.GetPerRPCCredentials(ctx,
-		auth.AsSelf,
-		auth.WithIDTokenAudience("https://"+host),
-	)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to get credentials to access %s", host).Err()
-	}
-	conn, err := grpc.DialContext(ctx, host+":443",
+const defaultUserAgent = "Config Go Client 1.0"
+
+type V2Options struct {
+	// Host is the hostname of a LUCI Config service.
+	Host string
+
+	// Creds is the credential to use when creating the grpc connection.
+	Creds credentials.PerRPCCredentials
+
+	// UserAgent is the optional additional User-Agent fragment which will be
+	// appended to gRPC calls
+	//
+	// If empty, defaultUserAgent is used.
+	UserAgent string
+
+	// DialOpts are the options to use to dial.
+	//
+	// If nil, DefaultDialOptions() are used
+	DialOpts []grpc.DialOption
+}
+
+// DefaultDialOptions returns default grpc dial options to connect to Luci-config v2.
+func DefaultDialOptions() []grpc.DialOption {
+	return []grpc.DialOption{
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
-		grpc.WithPerRPCCredentials(creds),
 		grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{}),
 		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
 		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
 		grpc.WithDefaultServiceConfig(retryPolicy),
-	)
+	}
+}
+
+// NewV2 returns an implementation of the config Interface which talks to the
+// real Luci-config service v2.
+func NewV2(ctx context.Context, opts V2Options) (config.Interface, error) {
+	if opts.Host == "" {
+		return nil, errors.New("host is not specified")
+	}
+
+	dialOpts := opts.DialOpts
+	if dialOpts == nil {
+		dialOpts = DefaultDialOptions()
+	}
+	if opts.Creds != nil {
+		dialOpts = append(dialOpts, grpc.WithPerRPCCredentials(opts.Creds))
+	}
+	if opts.UserAgent != "" {
+		dialOpts = append(dialOpts, grpc.WithUserAgent(opts.UserAgent))
+	} else {
+		dialOpts = append(dialOpts, grpc.WithUserAgent(defaultUserAgent))
+	}
+
+	conn, err := grpc.DialContext(ctx, opts.Host+":443", dialOpts...)
 	if err != nil {
-		return nil, errors.Annotate(err, "cannot dial to %s", host).Err()
+		return nil, errors.Annotate(err, "cannot dial to %s", opts.Host).Err()
 	}
 
 	t, err := auth.GetRPCTransport(ctx, auth.NoAuth)
