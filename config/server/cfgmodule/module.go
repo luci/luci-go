@@ -190,6 +190,19 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 		ctx,
 		m.opts.Rules,
 		func(ctx context.Context) (string, error) {
+			// TODO(yiwzhang): Remove this after the service host pointing to the new
+			// LUCI Config service. For now, hardcode the expected service account
+			// name when the service is still using legacy LUCI Config service as
+			// config service host. However, it's possible for the service to
+			// receive the validation traffic from the new LUCI Config service.
+			// So the consumer server needs to allow corresponding new LUCI Config
+			// service account.
+			if strings.HasSuffix(m.opts.ServiceHost, "appspot.com") {
+				if strings.Contains(m.opts.ServiceHost, "dev") {
+					return "config-service@luci-config-dev.iam.gserviceaccount.com", nil
+				}
+				return "config-service@luci-config.iam.gserviceaccount.com", nil
+			}
 			// Grab the expected service account ID of the LUCI Config service we use.
 			info, err := m.configServiceInfo(ctx)
 			if err != nil {
