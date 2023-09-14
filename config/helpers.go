@@ -32,7 +32,7 @@ func DownloadConfigFromSignedURL(ctx context.Context, client *http.Client, signe
 		return nil, fmt.Errorf("empty signedURL")
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "GET", signedURL, http.NoBody)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, signedURL, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create http request to download file: %w", err)
 	}

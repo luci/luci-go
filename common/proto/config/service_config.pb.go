@@ -1933,7 +1933,7 @@ type ValidateConfigsRequest_File_RawContent struct {
 type ValidateConfigsRequest_File_SignedUrl struct {
 	// SignedURL is a GCS singed url to download full config content.
 	//
-	// The service MUST provide "Accept-Encoding: gzip" header to minimize
+	// The service SHOULD provide "Accept-Encoding: gzip" header to minimize
 	// the data on the wire and the service should also be able to
 	// handle the uncompressed data based on the presence of
 	// "Content-Encoding" header.

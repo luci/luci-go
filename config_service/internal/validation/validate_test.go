@@ -189,7 +189,7 @@ func TestValidate(t *testing.T) {
 						},
 					})
 					So(recordedOpts.Method, ShouldEqual, http.MethodGet)
-					So(recordedOpts.Headers, ShouldResemble, []string{"Accept-Encoding:gzip"})
+					So(recordedOpts.Headers, ShouldBeEmpty)
 				})
 				Convey("Error", func() {
 					srv.err = status.Errorf(codes.Internal, "internal server error")
