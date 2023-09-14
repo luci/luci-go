@@ -201,6 +201,72 @@ func (x *BBAgentArgs) GetBuild() *Build {
 	return nil
 }
 
+type BuildbucketAgentContext struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Should match the task_id that was sent to buildbucket in
+	// either RunTaskResposne.Task.Id.Id or in
+	// StartBuildTaskRequest.Task.Id.Id
+	TaskId string `protobuf:"bytes,1,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
+	// The secrets that was provided to the backend from
+	// RunTaskRequest or StartBuildTaskResponse.
+	//
+	// During the task backend migration, the BuildToken secret
+	// bytes sent to swarming will be populated here. Bbagent will
+	// read LUCI_CONTEXT provided by raw swarming tasks and convert it to
+	// BuildbucketAgentContext. All swarming tasks ran as task backend tasks
+	// will use BuildbucketAgentContext directly.
+	Secrets *BuildSecrets `protobuf:"bytes,2,opt,name=secrets,proto3" json:"secrets,omitempty"`
+}
+
+func (x *BuildbucketAgentContext) Reset() {
+	*x = BuildbucketAgentContext{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_buildbucket_proto_launcher_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BuildbucketAgentContext) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuildbucketAgentContext) ProtoMessage() {}
+
+func (x *BuildbucketAgentContext) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_buildbucket_proto_launcher_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BuildbucketAgentContext.ProtoReflect.Descriptor instead.
+func (*BuildbucketAgentContext) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_buildbucket_proto_launcher_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *BuildbucketAgentContext) GetTaskId() string {
+	if x != nil {
+		return x.TaskId
+	}
+	return ""
+}
+
+func (x *BuildbucketAgentContext) GetSecrets() *BuildSecrets {
+	if x != nil {
+		return x.Secrets
+	}
+	return nil
+}
+
 var File_go_chromium_org_luci_buildbucket_proto_launcher_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_buildbucket_proto_launcher_proto_rawDesc = []byte{
@@ -236,11 +302,17 @@ var file_go_chromium_org_luci_buildbucket_proto_launcher_proto_rawDesc = []byte{
 	0x74, 0x48, 0x6f, 0x73, 0x74, 0x73, 0x12, 0x2b, 0x0a, 0x05, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x18,
 	0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63,
 	0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x52, 0x05, 0x62, 0x75,
-	0x69, 0x6c, 0x64, 0x42, 0x36, 0x5a, 0x34, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69,
-	0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x75, 0x69, 0x6c,
-	0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x3b, 0x62, 0x75,
-	0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x69, 0x6c, 0x64, 0x22, 0x6a, 0x0a, 0x17, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b,
+	0x65, 0x74, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x12, 0x17,
+	0x0a, 0x07, 0x74, 0x61, 0x73, 0x6b, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x06, 0x74, 0x61, 0x73, 0x6b, 0x49, 0x64, 0x12, 0x36, 0x0a, 0x07, 0x73, 0x65, 0x63, 0x72, 0x65,
+	0x74, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64,
+	0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x53,
+	0x65, 0x63, 0x72, 0x65, 0x74, 0x73, 0x52, 0x07, 0x73, 0x65, 0x63, 0x72, 0x65, 0x74, 0x73, 0x42,
+	0x36, 0x5a, 0x34, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f,
+	0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63,
+	0x6b, 0x65, 0x74, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x3b, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62,
+	0x75, 0x63, 0x6b, 0x65, 0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -255,19 +327,21 @@ func file_go_chromium_org_luci_buildbucket_proto_launcher_proto_rawDescGZIP() []
 	return file_go_chromium_org_luci_buildbucket_proto_launcher_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_buildbucket_proto_launcher_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_go_chromium_org_luci_buildbucket_proto_launcher_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_go_chromium_org_luci_buildbucket_proto_launcher_proto_goTypes = []interface{}{
-	(*BuildSecrets)(nil), // 0: buildbucket.v2.BuildSecrets
-	(*BBAgentArgs)(nil),  // 1: buildbucket.v2.BBAgentArgs
-	(*Build)(nil),        // 2: buildbucket.v2.Build
+	(*BuildSecrets)(nil),            // 0: buildbucket.v2.BuildSecrets
+	(*BBAgentArgs)(nil),             // 1: buildbucket.v2.BBAgentArgs
+	(*BuildbucketAgentContext)(nil), // 2: buildbucket.v2.BuildbucketAgentContext
+	(*Build)(nil),                   // 3: buildbucket.v2.Build
 }
 var file_go_chromium_org_luci_buildbucket_proto_launcher_proto_depIdxs = []int32{
-	2, // 0: buildbucket.v2.BBAgentArgs.build:type_name -> buildbucket.v2.Build
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	3, // 0: buildbucket.v2.BBAgentArgs.build:type_name -> buildbucket.v2.Build
+	0, // 1: buildbucket.v2.BuildbucketAgentContext.secrets:type_name -> buildbucket.v2.BuildSecrets
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_buildbucket_proto_launcher_proto_init() }
@@ -301,6 +375,18 @@ func file_go_chromium_org_luci_buildbucket_proto_launcher_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_buildbucket_proto_launcher_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BuildbucketAgentContext); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -308,7 +394,7 @@ func file_go_chromium_org_luci_buildbucket_proto_launcher_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_buildbucket_proto_launcher_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

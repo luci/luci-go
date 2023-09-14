@@ -66,3 +66,21 @@ message BBAgentArgs {
   // properties.
   Build build = 4;
 }
+
+message BuildbucketAgentContext {
+  // Should match the task_id that was sent to buildbucket in
+  // either RunTaskResposne.Task.Id.Id or in
+  // StartBuildTaskRequest.Task.Id.Id
+  string task_id = 1;
+
+  // The secrets that was provided to the backend from
+  // RunTaskRequest or StartBuildTaskResponse.
+  //
+  // During the task backend migration, the BuildToken secret
+  // bytes sent to swarming will be populated here. Bbagent will
+  // read LUCI_CONTEXT provided by raw swarming tasks and convert it to
+  // BuildbucketAgentContext. All swarming tasks ran as task backend tasks
+  // will use BuildbucketAgentContext directly.
+  BuildSecrets secrets = 2;
+
+}
