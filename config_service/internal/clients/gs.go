@@ -45,6 +45,8 @@ type GsClient interface {
 	Touch(ctx context.Context, bucket, object string) error
 	// SignedURL is used to generate a signed url for a given GCS object.
 	SignedURL(bucket, object string, opts *storage.SignedURLOptions) (string, error)
+	// Delete deletes the give object.
+	Delete(ctx context.Context, bucket, object string) error
 }
 
 // prodClient implements GsClient and used in Prod env only.
@@ -131,4 +133,9 @@ func (p *prodClient) SignedURL(bucket, object string, opts *storage.SignedURLOpt
 		return "", err
 	}
 	return url, nil
+}
+
+// Delete deletes the give object.
+func (p *prodClient) Delete(ctx context.Context, bucket, object string) error {
+	return p.client.Bucket(bucket).Object(object).Delete(ctx)
 }
