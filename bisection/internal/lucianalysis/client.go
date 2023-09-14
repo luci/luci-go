@@ -144,7 +144,7 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
     SELECT
       ANY_VALUE(g) AS regression_group,
       ANY_VALUE(v.buildbucket_build.id HAVING MAX v.partition_time) AS build_id,
-      ANY_VALUE(b.infra.swarming.task_dimensions HAVING MAX v.partition_time) AS task_dimensions,
+      ANY_VALUE(COALESCE(b2.infra.swarming.task_dimensions, b.infra.swarming.task_dimensions) HAVING MAX v.partition_time) AS task_dimensions,
       ANY_VALUE(b.builder.bucket HAVING MAX v.partition_time) AS bucket,
 		FROM builder_regression_groups g
 		-- Join with test_verdict table to get the build id of the lastest build for a test variant.
@@ -152,14 +152,18 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
 		ON g.testVariants[0].TestId = v.test_id
 			AND g.testVariants[0].VariantHash = v.variant_hash
 			AND g.RefHash = v.source_ref_hash
-		-- Join with buildbucket builds table to get the build OS for tests.
+		-- Join with buildbucket builds table to get the task dimensions for tests.
 		LEFT JOIN ` + bbTableName + ` b
 		ON v.buildbucket_build.id  = b.id
+		-- JOIN with buildbucket builds table again to get task dimensions of parent builds.
+		LEFT JOIN ` + bbTableName + ` b2
+		ON JSON_VALUE(b.input.properties, "$.parent_build_id") = CAST(b2.id AS string)
 		-- Filter by test_verdict.partition_time to only return test failures that have test verdict recently.
 		-- 3 days is chosen as we expect tests run at least once every 3 days if they are not disabled.
 		-- If this is found to be too restricted, we can increase it later.
 		WHERE v.partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
 		      AND b.create_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
+		      AND b2.create_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
 		GROUP BY g.testVariants[0].TestId,  g.testVariants[0].VariantHash, g.RefHash
   )
 	SELECT regression_group.*
@@ -226,7 +230,7 @@ func (c *Client) ReadBuildInfo(ctx context.Context, tf *model.TestFailure) (Buil
 		ANY_VALUE(buildbucket_build.builder.bucket) AS Bucket,
 		ANY_VALUE(buildbucket_build.builder.builder) AS Builder,
 		ANY_VALUE(sources.gitiles_commit.commit_hash) AS CommitHash,
-		sources.gitiles_commit.position as Position
+		sources.gitiles_commit.position AS Position
 	FROM test_verdicts
 	WHERE test_id = @testID
 		AND variant_hash = @variantHash
@@ -317,14 +321,14 @@ func (c *Client) ReadTestNames(ctx context.Context, project string, keys []TestV
 	// Set the partition time to 3 days to reduce the cost.
 	query := `
 		SELECT
-			test_id as TestID,
-			variant_hash as VariantHash,
-			source_ref_hash as RefHash,
+			test_id AS TestID,
+			variant_hash AS VariantHash,
+			source_ref_hash AS RefHash,
 			ARRAY_AGG (
 				(	SELECT value FROM UNNEST(tv.results[0].tags) WHERE KEY = "test_name")
 					ORDER BY tv.partition_time DESC
 					LIMIT 1
-				)[OFFSET(0)] as TestName,
+				)[OFFSET(0)] AS TestName,
 		FROM test_verdicts tv
 		WHERE ` + whereClause + `
 		AND partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
