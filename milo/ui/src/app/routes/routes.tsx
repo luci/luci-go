@@ -17,59 +17,59 @@ import type { RouteObject } from 'react-router-dom';
 export const routes: RouteObject[] = [
   {
     index: true,
-    lazy: () => import('@/pages/search/project_search'),
+    lazy: () => import('@/app/pages/search/project_search'),
   },
   {
     path: 'login',
-    lazy: () => import('@/pages/login_page'),
+    lazy: () => import('@/app/pages/login_page'),
   },
   {
     path: 'search',
-    lazy: () => import('@/pages/search/search_redirection_loader'),
+    lazy: () => import('@/app/pages/search/search_redirection_loader'),
   },
   {
     path: 'builder-search',
-    lazy: () => import('@/pages/search/builder_search'),
+    lazy: () => import('@/app/pages/search/builder_search'),
   },
   {
     path: 'p/:project/test-search',
-    lazy: () => import('@/pages/search/test_search'),
+    lazy: () => import('@/app/pages/search/test_search'),
   },
   {
     path: 'p/:project/builders',
-    lazy: () => import('@/pages/builders_page'),
+    lazy: () => import('@/app/pages/builders_page'),
   },
   {
     path: 'p/:project/g/:group/builders',
-    lazy: () => import('@/pages/builders_page'),
+    lazy: () => import('@/app/pages/builders_page'),
   },
   {
     path: 'p/:project/builders/:bucket/:builder',
-    lazy: () => import('@/pages/builder_page'),
+    lazy: () => import('@/app/pages/builder_page'),
   },
   {
     path: 'b/:buildId/*?',
-    lazy: () => import('@/pages/build_page/build_page_short_link'),
+    lazy: () => import('@/app/pages/build_page/build_page_short_link'),
   },
   {
     path: 'p/:project/builders/:bucket/:builder/:buildNumOrId',
-    lazy: () => import('@/pages/build_page'),
+    lazy: () => import('@/app/pages/build_page'),
     children: [
       {
         index: true,
-        lazy: () => import('@/pages/build_page/build_default_tab'),
+        lazy: () => import('@/app/pages/build_page/build_default_tab'),
       },
       {
         path: 'overview',
-        lazy: () => import('@/pages/build_page/overview_tab'),
+        lazy: () => import('@/app/pages/build_page/overview_tab'),
       },
       {
         path: 'test-results',
-        lazy: () => import('@/pages/test_results_tab'),
+        lazy: () => import('@/app/pages/test_results_tab'),
       },
       {
         path: 'steps',
-        lazy: () => import('@/pages/build_page/steps_tab'),
+        lazy: () => import('@/app/pages/build_page/steps_tab'),
         children: [
           // Some old systems generate links to a step by
           // appending suffix to /steps/ (crbug/1204954).
@@ -79,69 +79,71 @@ export const routes: RouteObject[] = [
       },
       {
         path: 'related-builds',
-        lazy: () => import('@/pages/build_page/related_builds_tab'),
+        lazy: () => import('@/app/pages/build_page/related_builds_tab'),
       },
       {
         path: 'timeline',
-        lazy: () => import('@/pages/build_page/timeline_tab'),
+        lazy: () => import('@/app/pages/build_page/timeline_tab'),
       },
       {
         path: 'blamelist',
-        lazy: () => import('@/pages/build_page/blamelist_tab'),
+        lazy: () => import('@/app/pages/build_page/blamelist_tab'),
       },
     ],
   },
   {
     path: 'inv/:invId',
-    lazy: () => import('@/pages/invocation_page'),
+    lazy: () => import('@/app/pages/invocation_page'),
     children: [
       {
         index: true,
-        lazy: () => import('@/pages/invocation_page/invocation_default_tab'),
+        lazy: () =>
+          import('@/app/pages/invocation_page/invocation_default_tab'),
       },
       {
         path: 'test-results',
-        lazy: () => import('@/pages/test_results_tab'),
+        lazy: () => import('@/app/pages/test_results_tab'),
       },
       {
         path: 'invocation-details',
-        lazy: () => import('@/pages/invocation_page/invocation_details_tab'),
+        lazy: () =>
+          import('@/app/pages/invocation_page/invocation_details_tab'),
       },
     ],
   },
   {
     path: 'artifact',
-    lazy: () => import('@/pages/artifact/artifact_page_layout'),
+    lazy: () => import('@/app/pages/artifact/artifact_page_layout'),
     children: [
       {
         path: 'text-diff/invocations/:invId/artifacts/:artifactId',
-        lazy: () => import('@/pages/artifact/text_diff_artifact_page'),
+        lazy: () => import('@/app/pages/artifact/text_diff_artifact_page'),
       },
       {
         path: 'text-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
-        lazy: () => import('@/pages/artifact/text_diff_artifact_page'),
+        lazy: () => import('@/app/pages/artifact/text_diff_artifact_page'),
       },
       {
         path: 'image-diff/invocations/:invId/artifacts/:artifactId',
-        lazy: () => import('@/pages/artifact/image_diff_artifact_page'),
+        lazy: () => import('@/app/pages/artifact/image_diff_artifact_page'),
       },
       {
         path: 'image-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
-        lazy: () => import('@/pages/artifact/image_diff_artifact_page'),
+        lazy: () => import('@/app/pages/artifact/image_diff_artifact_page'),
       },
       {
         path: 'raw/invocations/:invId/artifacts/:artifactId',
-        lazy: () => import('@/pages/artifact/raw_artifact_page'),
+        lazy: () => import('@/app/pages/artifact/raw_artifact_page'),
       },
       {
         path: 'raw/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
-        lazy: () => import('@/pages/artifact/raw_artifact_page'),
+        lazy: () => import('@/app/pages/artifact/raw_artifact_page'),
       },
     ],
   },
   {
     path: 'test/:projectOrRealm/:testId',
-    lazy: () => import('@/pages/test_history_page'),
+    lazy: () => import('@/app/pages/test_history_page'),
   },
   {
     path: 'bisection',

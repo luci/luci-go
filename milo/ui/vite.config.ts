@@ -21,9 +21,9 @@ import { PluginOption, defineConfig, loadEnv } from 'vite';
 import { VitePWA as vitePWA } from 'vite-plugin-pwa';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
+import { routes } from './src/app/routes';
 import { AuthState, msToExpire } from './src/common/api/auth_state';
 import { regexpsForRoutes } from './src/generic_libs/tools/react_router_utils';
-import { routes } from './src/routes';
 
 /**
  * Get a boolean from the envDir.
@@ -85,7 +85,7 @@ export default defineConfig(({ mode }) => {
       // `importScripts` is only available in workers.
       // Ensure this module is only used by service workers.
       if (
-        !['src/root_sw.ts', 'src/ui_sw.ts']
+        !['src/app/root_sw.ts', 'src/app/ui_sw.ts']
           .map((p) => path.join(__dirname, p))
           .includes(importer || '')
       ) {
@@ -120,7 +120,7 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         input: {
           index: 'index.html',
-          root_sw: './src/root_sw.ts',
+          root_sw: './src/app/root_sw.ts',
         },
         output: {
           // 'root_sw' needs to be referenced by URL therefore cannot have a
@@ -141,7 +141,7 @@ export default defineConfig(({ mode }) => {
         // We have different building pipeline for dev/test/production builds.
         // Limits the impact of the pipeline-specific features to only the
         // entry files for better consistently across different builds.
-        include: ['./src/main.tsx'],
+        include: ['./src/app/main.tsx'],
         values: {
           ENABLE_UI_SW: JSON.stringify(
             getBoolEnv(env, 'VITE_ENABLE_UI_SW') ?? true,
@@ -199,7 +199,7 @@ export default defineConfig(({ mode }) => {
           // Serve `/root_sw.js`
           server.middlewares.use((req, _res, next) => {
             if (req.url === '/root_sw.js') {
-              req.url = '/ui/src/root_sw.ts';
+              req.url = '/ui/src/app/root_sw.ts';
             }
             return next();
           });
@@ -272,7 +272,7 @@ export default defineConfig(({ mode }) => {
         //
         // [1]: https://github.com/rollup/rollup/issues/2756
         strategies: 'injectManifest',
-        srcDir: 'src',
+        srcDir: 'src/app',
         filename: 'ui_sw.ts',
         outDir: 'out',
         devOptions: {
@@ -288,7 +288,7 @@ export default defineConfig(({ mode }) => {
           plugins: [
             replace({
               preventAssignment: true,
-              include: ['./src/ui_sw.ts'],
+              include: ['./src/app/ui_sw.ts'],
               values: {
                 // The build pipeline gets confused when the service worker
                 // depends on a lazy-loaded assets (which are used in `routes`).

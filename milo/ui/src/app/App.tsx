@@ -29,6 +29,7 @@ import { Workbox } from 'workbox-window';
 import '@/common/styles/common_style.css';
 import '@/common/styles/color_classes.css';
 import '@/common/components/tooltip';
+import { routes } from '@/app/routes';
 import { obtainAuthState } from '@/common/api/auth_state';
 import { AuthStateInitializer } from '@/common/components/auth_state_provider';
 import {
@@ -43,8 +44,6 @@ import { Store, StoreProvider } from '@/common/store';
 import { theme } from '@/common/themes/base';
 import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_params';
 import { createStaticTrustedURL } from '@/generic_libs/tools/utils';
-
-import { routes } from './routes';
 
 const isNonTransientError = (error: unknown) =>
   error instanceof GrpcError && NON_TRANSIENT_ERROR_CODES.includes(error.code);
@@ -172,7 +171,7 @@ export function App({ initOpts }: AppProps) {
         ...routes,
         {
           path: '*',
-          lazy: () => import('@/pages/not_found_page'),
+          lazy: () => import('@/app/pages/not_found_page'),
         },
       ],
     },
@@ -181,7 +180,7 @@ export function App({ initOpts }: AppProps) {
       // routes (see the comments on the 'ui' route for rationale). We need to
       // to capture those routes and make the server handles it.
       path: '*',
-      lazy: () => import('@/pages/server_page'),
+      lazy: () => import('@/app/pages/server_page'),
     },
   ]);
 

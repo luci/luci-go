@@ -14,12 +14,12 @@
 
 import { act, cleanup, render } from '@testing-library/react';
 
+import { BuilderListDisplay } from '@/app/pages/search/builder_search/builder_list_display';
 import { useInfinitePrpcQuery } from '@/common/hooks/prpc_query';
 import {
   ListBuildersResponse,
   MiloInternal,
 } from '@/common/services/milo_internal';
-import { BuilderListDisplay } from '@/pages/search/builder_search/builder_list_display';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { BuilderList } from './builder_list';
@@ -30,10 +30,10 @@ jest.mock('@/common/hooks/prpc_query', () => {
   >('@/common/hooks/prpc_query', ['useInfinitePrpcQuery']);
 });
 
-jest.mock('@/pages/search/builder_search/builder_list_display', () => {
+jest.mock('@/app/pages/search/builder_search/builder_list_display', () => {
   return createSelectiveSpiesFromModule<
-    typeof import('@/pages/search/builder_search/builder_list_display')
-  >('@/pages/search/builder_search/builder_list_display', [
+    typeof import('@/app/pages/search/builder_search/builder_list_display')
+  >('@/app/pages/search/builder_search/builder_list_display', [
     'BuilderListDisplay',
   ]);
 });
