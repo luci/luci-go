@@ -14,8 +14,6 @@
 
 // TODO(weiweilin): add integration tests to ensure the SW works properly.
 
-// This is injected by Vite.
-// eslint-disable-next-line import/no-unresolved
 import 'virtual:configs.js';
 import {
   cleanupOutdatedCaches,

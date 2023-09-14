@@ -75,6 +75,9 @@ module.exports = {
     // away by the bundler.
     'import/no-duplicates': 0,
 
+    // See https://vitejs.dev/guide/api-plugin.html#virtual-modules-convention.
+    'import/no-unresolved': ['error', { ignore: ['^virtual:'] }],
+
     // Group internal dependencies together.
     'import/order': [
       'error',
