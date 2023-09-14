@@ -249,7 +249,7 @@ func TestValidateImportCfg(t *testing.T) {
 func TestValidateSchemaCfg(t *testing.T) {
 	t.Parallel()
 
-	Convey("Validate schema.cfg", t, func() {
+	Convey("Validate schemas.cfg", t, func() {
 		ctx := testutil.SetupContext()
 		vctx := &validation.Context{Context: ctx}
 		cs := config.MustServiceSet(testutil.AppID)
@@ -271,7 +271,7 @@ func TestValidateSchemaCfg(t *testing.T) {
 		Convey("invalid proto", func() {
 			content := []byte(`bad config`)
 			So(validateSchemaCfg(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, `in "schema.cfg"`, "invalid schema proto")
+			So(vctx.Finalize(), ShouldErrLike, `in "schemas.cfg"`, "invalid schema proto")
 		})
 
 		Convey("missing name", func() {

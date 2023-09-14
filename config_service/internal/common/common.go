@@ -59,7 +59,7 @@ const (
 
 	// SchemaConfigFilePath is the path of luci-config self config file where
 	// it stores config to support schema redirection.
-	SchemaConfigFilePath = "schema.cfg"
+	SchemaConfigFilePath = "schemas.cfg"
 
 	// GSProdCfgFolder is the folder name where it stores all production configs
 	// in GCS bucket.
