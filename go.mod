@@ -1,6 +1,6 @@
 module go.chromium.org/luci
 
-go 1.20
+go 1.21
 
 require (
 	cloud.google.com/go/bigquery v1.53.0
