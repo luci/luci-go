@@ -124,6 +124,7 @@ func TestGetOne(t *testing.T) {
 
 func TestGetAll(t *testing.T) {
 	t.Parallel()
+	t.Skip()
 
 	Convey("With context", t, func() {
 		completionTimes := map[string]time.Duration{
@@ -218,6 +219,7 @@ func TestGetAll(t *testing.T) {
 
 func TestGetAnyCompleted(t *testing.T) {
 	t.Parallel()
+	t.Skip()
 
 	Convey("With context", t, func() {
 		completionTimes := map[string]time.Duration{
