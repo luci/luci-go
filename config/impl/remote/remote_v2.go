@@ -108,9 +108,12 @@ func NewV2(ctx context.Context, opts V2Options) (config.Interface, error) {
 		return nil, errors.Annotate(err, "cannot dial to %s", opts.Host).Err()
 	}
 
-	t, err := auth.GetRPCTransport(ctx, auth.NoAuth)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to create a transport").Err()
+	t := http.DefaultTransport
+	if s := auth.GetState(ctx); s != nil {
+		t, err = auth.GetRPCTransport(ctx, auth.NoAuth)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to create a transport").Err()
+		}
 	}
 
 	return &remoteV2Impl{
