@@ -541,13 +541,18 @@ func (d *dataStoreData) beginCommit(c context.Context, obj memContextObj) txnCom
 }
 
 func (d *dataStoreData) mkTxn(o *ds.TransactionOptions) memContextObj {
+	readOnly := false
+	if o != nil {
+		readOnly = o.ReadOnly
+	}
 	return &txnDataStoreData{
 		// alias to the main datastore's so that testing code can have primitive
 		// access to break features inside of transactions.
-		parent: d,
-		txn:    &transactionImpl{},
-		snap:   d.takeSnapshot(),
-		muts:   map[string][]txnMutation{},
+		parent:   d,
+		txn:      &transactionImpl{},
+		readOnly: readOnly,
+		snap:     d.takeSnapshot(),
+		muts:     map[string][]txnMutation{},
 	}
 }
 
@@ -564,6 +569,8 @@ type txnDataStoreData struct {
 	lock   sync.Mutex
 	parent *dataStoreData
 	txn    *transactionImpl
+
+	readOnly bool
 
 	snap memStore
 
@@ -614,6 +621,14 @@ func (td *txnDataStoreData) run(f func() error) error {
 // Returns an error if this key causes the transaction to cross too many entity
 // groups.
 func (td *txnDataStoreData) writeMutation(getOnly bool, key *ds.Key, data ds.PropertyMap) error {
+	if td.readOnly && !getOnly {
+		opName := "write"
+		if data == nil {
+			opName = "delete"
+		}
+		return errors.Reason("Attempting to %s %s during read-only transaction.", opName, key).Err()
+	}
+
 	rk := string(keyBytes(key.Root()))
 
 	td.lock.Lock()

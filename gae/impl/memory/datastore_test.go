@@ -535,6 +535,39 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 						So(calls, ShouldEqual, 1)
 					})
 				})
+
+				Convey("Read-only transactions reject writes", func() {
+					So(ds.Put(c, &Foo{ID: 1, Val: 100}), ShouldBeNil)
+					var val int
+
+					So(ds.RunInTransaction(c, func(c context.Context) error {
+						foo := &Foo{ID: 1}
+						So(ds.Get(c, foo), ShouldBeNil)
+						val = foo.Val
+
+						foo.Val = 1337
+						return ds.Put(c, foo)
+					}, &ds.TransactionOptions{ReadOnly: true}), ShouldErrLike, "Attempting to write")
+					So(val, ShouldResemble, 100)
+					foo := &Foo{ID: 1}
+					So(ds.Get(c, foo), ShouldBeNil)
+					So(foo.Val, ShouldResemble, 100)
+				})
+
+				Convey("Read-only transactions reject deletes", func() {
+					So(ds.Put(c, &Foo{ID: 1, Val: 100}), ShouldBeNil)
+					var val int
+
+					So(ds.RunInTransaction(c, func(c context.Context) error {
+						foo := &Foo{ID: 1}
+						So(ds.Get(c, foo), ShouldBeNil)
+						val = foo.Val
+
+						return ds.Delete(c, foo)
+					}, &ds.TransactionOptions{ReadOnly: true}), ShouldErrLike, "Attempting to delete")
+					So(val, ShouldResemble, 100)
+					So(ds.Get(c, &Foo{ID: 1}), ShouldBeNil)
+				})
 			})
 		})
 
