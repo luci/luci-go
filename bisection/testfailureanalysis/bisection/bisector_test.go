@@ -132,11 +132,32 @@ func TestRunBisector(t *testing.T) {
 		},
 	}
 
+	scheduleBuildRes1 := &bbpb.Build{
+		Id: 8766,
+		Builder: &bbpb.BuilderID{
+			Project: "chromium",
+			Bucket:  "findit",
+			Builder: "test-single-revision",
+		},
+		Number:     11,
+		Status:     bbpb.Status_SCHEDULED,
+		CreateTime: timestamppb.New(time.Unix(1001, 0)),
+		Input: &bbpb.Build_Input{
+			GitilesCommit: &bbpb.GitilesCommit{
+				Host:    "chromium.googlesource.com",
+				Project: "chromium/src",
+				Ref:     "refs/heads/main",
+				Id:      "hash1",
+			},
+		},
+	}
+
 	mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(getBuildRes, nil).AnyTimes()
-	mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(scheduleBuildRes, nil).AnyTimes()
+	mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(scheduleBuildRes, nil).Times(1)
+	mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(scheduleBuildRes1, nil).Times(1)
 
 	Convey("No analysis", t, func() {
-		err := Run(ctx, 123, luciAnalysisClient)
+		err := Run(ctx, 123, luciAnalysisClient, 1)
 		So(err, ShouldNotBeNil)
 	})
 
@@ -144,7 +165,7 @@ func TestRunBisector(t *testing.T) {
 		enableBisection(ctx, false)
 		tfa := testutil.CreateTestFailureAnalysis(ctx, nil)
 
-		err := Run(ctx, 1000, luciAnalysisClient)
+		err := Run(ctx, 1000, luciAnalysisClient, 1)
 		So(err, ShouldBeNil)
 		err = datastore.Get(ctx, tfa)
 		So(err, ShouldBeNil)
@@ -158,7 +179,7 @@ func TestRunBisector(t *testing.T) {
 			ID: 1001,
 		})
 
-		err := Run(ctx, 1001, luciAnalysisClient)
+		err := Run(ctx, 1001, luciAnalysisClient, 1)
 		So(err, ShouldNotBeNil)
 		err = datastore.Get(ctx, tfa)
 		So(err, ShouldBeNil)
@@ -173,7 +194,7 @@ func TestRunBisector(t *testing.T) {
 			Project: "chromeos",
 		})
 
-		err := Run(ctx, 1002, luciAnalysisClient)
+		err := Run(ctx, 1002, luciAnalysisClient, 1)
 		So(err, ShouldBeNil)
 		err = datastore.Get(ctx, tfa)
 		So(err, ShouldBeNil)
@@ -212,7 +233,7 @@ func TestRunBisector(t *testing.T) {
 		So(datastore.Put(ctx, tf), ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
-		err := Run(ctx, 1002, luciAnalysisClient)
+		err := Run(ctx, 1002, luciAnalysisClient, 2)
 		So(err, ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 		err = datastore.Get(ctx, tfa)
@@ -259,10 +280,9 @@ func TestRunBisector(t *testing.T) {
 		reruns := []*model.TestSingleRerun{}
 		err = datastore.GetAll(ctx, q, &reruns)
 		So(err, ShouldBeNil)
-		So(len(reruns), ShouldEqual, 1)
+		So(len(reruns), ShouldEqual, 2)
 
-		rerun := reruns[0]
-		So(rerun, ShouldResembleProto, &model.TestSingleRerun{
+		So(reruns[0], ShouldResembleProto, &model.TestSingleRerun{
 			ID:                    8765,
 			Type:                  model.RerunBuildType_NthSection,
 			AnalysisKey:           datastore.KeyForObj(ctx, tfa),
@@ -289,6 +309,46 @@ func TestRunBisector(t *testing.T) {
 					Project: "chromium/src",
 					Ref:     "refs/heads/main",
 					Id:      "hash",
+				},
+				Status: bbpb.Status_SCHEDULED,
+			},
+			TestResults: model.RerunTestResults{
+				IsFinalized: false,
+				Results: []model.RerunSingleTestResult{
+					{
+						TestFailureKey: datastore.KeyForObj(ctx, tf),
+					},
+				},
+			},
+		})
+
+		So(reruns[1], ShouldResembleProto, &model.TestSingleRerun{
+			ID:                    8766,
+			Type:                  model.RerunBuildType_NthSection,
+			AnalysisKey:           datastore.KeyForObj(ctx, tfa),
+			NthSectionAnalysisKey: datastore.KeyForObj(ctx, nsa),
+			Status:                pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+			Priority:              160,
+			Dimensions: &pb.Dimensions{
+				Dimensions: []*pb.Dimension{
+					{
+						Key:   "key",
+						Value: "val",
+					},
+				},
+			},
+			LUCIBuild: model.LUCIBuild{
+				BuildID:     8766,
+				Project:     "chromium",
+				Bucket:      "findit",
+				Builder:     "test-single-revision",
+				BuildNumber: 11,
+				CreateTime:  time.Unix(1001, 0),
+				GitilesCommit: &bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Ref:     "refs/heads/main",
+					Id:      "hash1",
 				},
 				Status: bbpb.Status_SCHEDULED,
 			},

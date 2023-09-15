@@ -74,7 +74,11 @@ func RegisterTaskClass(srv *server.Server, luciAnalysisProject string) error {
 		analysisID := task.GetAnalysisId()
 		ctx = loggingutil.SetAnalysisID(ctx, analysisID)
 		logging.Infof(ctx, "Processing test failure bisection task with id = %d", analysisID)
-		err := Run(ctx, analysisID, client)
+		// maxRerun controls how many rerun we can run at a time.
+		// For now, hard-code it to run trisection.
+		// TODO (nqmtuan): Tune it when we have information about bot availability.
+		maxRerun := 2
+		err := Run(ctx, analysisID, client, maxRerun)
 		if err != nil {
 			err = errors.Annotate(err, "run bisection").Err()
 			logging.Errorf(ctx, err.Error())
@@ -101,7 +105,9 @@ func Schedule(ctx context.Context, analysisID int64) error {
 }
 
 // Run runs bisection for the given analysisID.
-func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisClient) (reterr error) {
+// maxRerun controls how many reruns we can do at once.
+// maxRerun = 1 means bisection, maxRerun = 2 means trisection...
+func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisClient, maxRerun int) (reterr error) {
 	// Retrieves analysis from datastore.
 	tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, analysisID)
 	if err != nil {
@@ -175,10 +181,6 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 		return errors.Annotate(err, "create snapshot").Err()
 	}
 
-	// maxRerun controls how many rerun we can run at a time.
-	// For now, hard-code it to run bisection.
-	// TODO (nqmtuan): Tune it when we have information about bot availability.
-	maxRerun := 1 // bisection
 	commitHashes, err := snapshot.FindNextCommitsToRun(maxRerun)
 	if err != nil {
 		return errors.Annotate(err, "find next commits to run").Err()
