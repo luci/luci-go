@@ -73,6 +73,19 @@ func (b *BotInfo) IsDead() bool {
 	return false
 }
 
+// IsInMaintenance is true if this bot is in maintenance.
+func (b *BotInfo) IsInMaintenance() bool {
+	for _, v := range b.Composite {
+		switch v {
+		case 512:
+			return false
+		case 256:
+			return true
+		}
+	}
+	return false
+}
+
 // GetStatus returns the bot status.
 func (b *BotInfo) GetStatus() string {
 	for _, v := range b.Composite {

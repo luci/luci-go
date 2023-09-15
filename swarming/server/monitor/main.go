@@ -185,6 +185,8 @@ func (s *shardState) collect(ctx context.Context, bot *model.BotInfo) {
 
 	if bot.Quarantined {
 		migrationState = "QUARANTINED"
+	} else if bot.IsInMaintenance() {
+		migrationState = "MAINTENANCE"
 	} else {
 		var botState struct {
 			Handshaking   bool   `json:"handshaking,omitempty"`
