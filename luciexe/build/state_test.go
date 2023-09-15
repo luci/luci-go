@@ -96,6 +96,13 @@ func TestStateLogging(t *testing.T) {
 		scFake, lc := streamclient.NewUnregisteredFake("fakeNS")
 
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		buildInfra := &bbpb.BuildInfra{
+			Logdog: &bbpb.BuildInfra_LogDog{
+				Hostname: "logs.chromium.org",
+				Project:  "example",
+				Prefix:   "builds/8888888888",
+			},
+		}
 		st, ctx, err := Start(ctx, &bbpb.Build{
 			Output: &bbpb.Build_Output{
 				Logs: []*bbpb.Log{
@@ -103,6 +110,7 @@ func TestStateLogging(t *testing.T) {
 					{Name: "other"},
 				},
 			},
+			Infra: buildInfra,
 		}, OptLogsink(lc))
 		So(err, ShouldBeNil)
 		defer func() { st.End(nil) }()
@@ -118,7 +126,6 @@ func TestStateLogging(t *testing.T) {
 		Convey(`can open logs`, func() {
 			log := st.Log("some log")
 			fmt.Fprintln(log, "here's some stuff")
-
 			So(st.buildPb, ShouldResembleProto, &bbpb.Build{
 				StartTime: timestamppb.New(testclock.TestRecentTimeUTC),
 				Status:    bbpb.Status_STARTED,
@@ -130,9 +137,14 @@ func TestStateLogging(t *testing.T) {
 						{Name: "some log", Url: "log/2"},
 					},
 				},
+				Infra: buildInfra,
 			})
 
 			So(scFake.Data()["fakeNS/log/2"].GetStreamData(), ShouldContainSubstring, "here's some stuff")
+
+			// Check the link.
+			wantLink := fmt.Sprintf("https://logs.chromium.org/logs/example/builds/8888888888/+/%slog/2", st.logNamespace)
+			So(log.UILink(), ShouldEqual, wantLink)
 		})
 
 		Convey(`can open datagram logs`, func() {
@@ -150,6 +162,7 @@ func TestStateLogging(t *testing.T) {
 						{Name: "some log", Url: "log/2"},
 					},
 				},
+				Infra: buildInfra,
 			})
 
 			So(scFake.Data()["fakeNS/log/2"].GetDatagrams(), ShouldContain, "here's some stuff")

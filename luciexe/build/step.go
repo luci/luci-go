@@ -55,6 +55,7 @@ type Step struct {
 	logPrefix     string
 	relLogPrefix  string
 	logNames      nameTracker
+	logNamespace  ldTypes.StreamName
 	logClosers    map[string]func() error
 	loggingStream io.Closer
 }
@@ -189,9 +190,11 @@ func ScheduleStep(ctx context.Context, name string) (*Step, context.Context) {
 
 		// Each step gets its own logdog namespace "step/X/u". Any subprocesses
 		// running within this ctx SHOULD use environ.FromCtx to pick this up.
+		ldNamespace := ret.logPrefix + "/u"
 		env := environ.FromCtx(ctx)
-		env.Set(luciexe.LogdogNamespaceEnv, ret.logPrefix+"/u")
+		env.Set(luciexe.LogdogNamespaceEnv, ldNamespace)
 		ctx = env.SetInCtx(ctx)
+		ret.logNamespace = ldTypes.StreamName(ldNamespace).AsNamespace()
 	}
 	ret.ctx = ctx
 
@@ -262,26 +265,30 @@ func (s *Step) End(err error) {
 //   - `dedupedName` - the deduplicated version of `name`
 //   - `relLdName` - The logdog stream name, relative to this process'
 //     LOGDOG_NAMESPACE, suitable for use with s.state.logsink.
-func (s *Step) addLog(name string, openStream func(dedupedName string, relLdName ldTypes.StreamName) func() error) {
-	relLdName := ""
+func (s *Step) addLog(name string, openStream func(dedupedName string, relLdName ldTypes.StreamName) func() error) *bbpb.Log {
+	var logRef *bbpb.Log
 	s.mutate(func() bool {
 		name = s.logNames.resolveName(name)
-		relLdName = fmt.Sprintf("%s/log/%d", s.relLogPrefix, len(s.stepPb.Logs))
-		s.stepPb.Logs = append(s.stepPb.Logs, &bbpb.Log{
+		relLdName := fmt.Sprintf("%s/log/%d", s.relLogPrefix, len(s.stepPb.Logs))
+		logRef = &bbpb.Log{
 			Name: name,
 			Url:  relLdName,
-		})
+		}
+		s.stepPb.Logs = append(s.stepPb.Logs, logRef)
 		if closer := openStream(name, ldTypes.StreamName(relLdName)); closer != nil {
 			s.logClosers[relLdName] = closer
 		}
 		return true
 	})
+	return logRef
 }
 
 // Log creates a new step-level line-oriented text log stream with the given name.
+// Returns a Log value which can be written to directly, but also provides additional
+// information about the log itself.
 //
 // The stream will close when the step is End'd.
-func (s *Step) Log(name string, opts ...streamclient.Option) io.Writer {
+func (s *Step) Log(name string, opts ...streamclient.Option) *Log {
 	ls := s.logsink()
 	var ret io.WriteCloser
 	var openStream func(string, ldTypes.StreamName) func() error
@@ -308,9 +315,16 @@ func (s *Step) Log(name string, opts ...streamclient.Option) io.Writer {
 			return ret.Close
 		}
 	}
-
-	s.addLog(name, openStream)
-	return ret
+	var infra *bbpb.BuildInfra_LogDog
+	if s.state != nil && s.state.Build() != nil {
+		infra = s.state.Build().GetInfra().GetLogdog()
+	}
+	return &Log{
+		Writer:    ret,
+		ref:       s.addLog(name, openStream),
+		namespace: s.logNamespace,
+		infra:     infra,
+	}
 }
 
 // LogDatagram creates a new step-level datagram log stream with the given name.

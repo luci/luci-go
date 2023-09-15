@@ -186,6 +186,7 @@ func TestStepNoop(t *testing.T) {
 				So(err, ShouldBeNil)
 				step.End(nil)
 				So(logs, memlogger.ShouldHaveLog, logging.Info, "this is stuff")
+				So(log.UILink(), ShouldEqual, "")
 			})
 
 			Convey(`binary`, func() {
@@ -194,6 +195,7 @@ func TestStepNoop(t *testing.T) {
 				So(err, ShouldBeNil)
 				step.End(nil)
 				So(logs, memlogger.ShouldHaveLog, logging.Warning, "dropping BINARY log \"a log\"")
+				So(log.UILink(), ShouldEqual, "")
 			})
 
 			Convey(`datagram`, func() {
@@ -210,7 +212,16 @@ func TestStepLog(t *testing.T) {
 	Convey(`Step logging`, t, func() {
 		scFake, lc := streamclient.NewUnregisteredFake("fakeNS")
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
-		buildState, ctx, err := Start(ctx, &bbpb.Build{}, OptLogsink(lc))
+		build := &bbpb.Build{
+			Infra: &bbpb.BuildInfra{
+				Logdog: &bbpb.BuildInfra_LogDog{
+					Hostname: "logs.chromium.org",
+					Project:  "example",
+					Prefix:   "builds/8888888888",
+				},
+			},
+		}
+		buildState, ctx, err := Start(ctx, build, OptLogsink(lc))
 		So(err, ShouldBeNil)
 		defer func() { buildState.End(nil) }()
 		So(buildState, ShouldNotBeNil)
@@ -252,6 +263,10 @@ func TestStepLog(t *testing.T) {
 			})
 
 			So(scFake.Data()["fakeNS/step/0/log/1"].GetStreamData(), ShouldContainSubstring, "here's some stuff")
+
+			// Check the link.
+			wantLink := fmt.Sprintf("https://logs.chromium.org/logs/example/builds/8888888888/+/%sstep/0/log/1", step.logNamespace)
+			So(log.UILink(), ShouldEqual, wantLink)
 		})
 
 		Convey(`can open datagram logs`, func() {

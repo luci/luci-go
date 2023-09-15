@@ -75,9 +75,10 @@ type State struct {
 
 	sendCh dispatcher.Channel
 
-	logsink    *streamclient.Client
-	logNames   nameTracker
-	logClosers map[string]func() error
+	logsink      *streamclient.Client
+	logNames     nameTracker
+	logClosers   map[string]func() error
+	logNamespace ldTypes.StreamName
 
 	strictParse bool
 
@@ -165,30 +166,33 @@ func (s *State) End(err error) {
 //   - `dedupedName` - the deduplicated version of `name`
 //   - `relLdName` - The logdog stream name, relative to this process'
 //     LOGDOG_NAMESPACE, suitable for use with s.state.logsink.
-func (s *State) addLog(name string, openStream func(dedupedName string, relLdName ldTypes.StreamName) io.Closer) {
-	relLdName := ""
+func (s *State) addLog(name string, openStream func(dedupedName string, relLdName ldTypes.StreamName) io.Closer) *bbpb.Log {
+	var logRef *bbpb.Log
 	s.mutate(func() bool {
 		name = s.logNames.resolveName(name)
-		relLdName = fmt.Sprintf("log/%d", len(s.buildPb.Output.Logs))
-		s.buildPb.Output.Logs = append(s.buildPb.Output.Logs, &bbpb.Log{
+		relLdName := fmt.Sprintf("log/%d", len(s.buildPb.Output.Logs))
+		logRef = &bbpb.Log{
 			Name: name,
 			Url:  relLdName,
-		})
+		}
+		s.buildPb.Output.Logs = append(s.buildPb.Output.Logs, logRef)
 		if closer := openStream(name, ldTypes.StreamName(relLdName)); closer != nil {
 			s.logClosers[relLdName] = closer.Close
 		}
 		return true
 	})
+	return logRef
 }
 
-// Log creates a new build-level line-oriented text log stream with the given name.
+// Log creates a new step-level line-oriented text log stream with the given name.
+// Returns a Log value which can be written to directly, but also provides additional
+// information about the log itself.
 //
 // The stream will close when the state is End'd.
-func (s *State) Log(name string, opts ...streamclient.Option) io.Writer {
-	var ret io.WriteCloser
-
+func (s *State) Log(name string, opts ...streamclient.Option) *Log {
 	if ls := s.logsink; ls != nil {
-		s.addLog(name, func(name string, relLdName ldTypes.StreamName) io.Closer {
+		var ret io.WriteCloser
+		logRef := s.addLog(name, func(name string, relLdName ldTypes.StreamName) io.Closer {
 			var err error
 			ret, err = ls.NewStream(s.ctx, relLdName, opts...)
 			if err != nil {
@@ -196,9 +200,18 @@ func (s *State) Log(name string, opts ...streamclient.Option) io.Writer {
 			}
 			return ret
 		})
+		var infra *bbpb.BuildInfra_LogDog
+		if b := s.Build(); b != nil {
+			infra = b.GetInfra().GetLogdog()
+		}
+		return &Log{
+			Writer:    ret,
+			ref:       logRef,
+			namespace: s.logNamespace,
+			infra:     infra,
+		}
 	}
-
-	return ret
+	return nil
 }
 
 // LogDatagram creates a new build-level datagram log stream with the given name.

@@ -17,12 +17,15 @@ package build
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"strings"
 	"sync"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
+	"go.chromium.org/luci/logdog/common/types"
 )
 
 // Loggable is the common interface for build entities which have log data
@@ -48,9 +51,9 @@ type Loggable interface {
 	// options.
 	//
 	// The stream will close when the associated object (step or build) is End'd.
-	Log(name string, opts ...streamclient.Option) io.Writer
+	Log(name string, opts ...streamclient.Option) *Log
 
-	// Log creates a new datagram-oriented log stream with the given name.
+	// LogDatagram creates a new datagram-oriented log stream with the given name.
 	//
 	// To uphold the requirements of the Build proto message, duplicate log names
 	// will be deduplicated with the same algorithm used for deduplicating step
@@ -142,3 +145,29 @@ var _ streamclient.DatagramStream = nopDatagramStream{}
 
 func (n nopDatagramStream) WriteDatagram(dg []byte) error { return nil }
 func (n nopDatagramStream) Close() error                  { return nil }
+
+// Log represents a step or build log. It can be written to directly,
+// and also provides additional information about the log itself.
+//
+// The creator of the Log is responsible for cleaning up any resources
+// associated with it (e.g. the Step or State this was created from).
+type Log struct {
+	io.Writer
+
+	ref       *bbpb.Log
+	namespace types.StreamName
+	infra     *bbpb.BuildInfra_LogDog
+}
+
+// UILink returns a URL to this log fit for surfacing in the LUCI UI.
+//
+// This may return an empty string if there's no available LogDog infra being
+// logged to, for instance in testing or during local execution where logdog
+// streams are not sunk to the actual logdog service.
+func (l *Log) UILink() string {
+	if l.infra == nil {
+		return ""
+	}
+	stream := types.StreamName(l.ref.Url)
+	return fmt.Sprintf("https://%s/logs/%s/%s/+/%s%s", l.infra.Hostname, l.infra.Project, l.infra.Prefix, l.namespace, stream)
+}
