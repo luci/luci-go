@@ -46,6 +46,7 @@ import (
 	"go.chromium.org/luci/config_service/internal/retention"
 	"go.chromium.org/luci/config_service/internal/service"
 	"go.chromium.org/luci/config_service/internal/settings"
+	"go.chromium.org/luci/config_service/internal/ui"
 	"go.chromium.org/luci/config_service/internal/validation"
 	configpb "go.chromium.org/luci/config_service/proto"
 	"go.chromium.org/luci/config_service/rpc"
@@ -96,10 +97,6 @@ func main() {
 				AudienceCheck: openid.AudienceMatchesHost,
 			}),
 		}
-		// TODO(crbug.com/1444599): for debugging purpose.
-		srv.Routes.GET("/", mw, func(c *router.Context) {
-			c.Writer.Write([]byte("Hello world!"))
-		})
 		configpb.RegisterConfigsServer(srv, &rpc.Configs{
 			Validator:          validator,
 			GSValidationBucket: gsBucket,
@@ -110,6 +107,7 @@ func main() {
 		importer.RegisterImportConfigsCron(&tq.Default)
 		// Protect against CSRF attacks from the web.
 		srv.Routes.POST("/internal/reimport/:ConfigSet", mw.Extend(xsrf.WithTokenCheck), importer.Reimport)
+		ui.InstallHandlers(srv)
 		return nil
 	})
 }
