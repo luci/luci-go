@@ -166,7 +166,11 @@ func validateUpdate(ctx context.Context, req *pb.UpdateBuildRequest, bs *model.B
 
 	if hasOutputMask {
 		if err := validateOutput(req.Build.Output, outputSubMasks); err != nil {
-			return errors.Annotate(err, "build.output").Err()
+			// Only log the error for now. We should look for the current invalid
+			// updates on the field and work with customers to fix them.
+			// TODO(crbug.com/1110990): fail the request after all known invalid cases
+			// are fixed.
+			logging.Warningf(ctx, "encounter error when validating build.output as a whole: %s", err)
 		}
 	}
 	return nil
