@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
@@ -83,8 +84,22 @@ func (c *Cancellator) handleTask(ctx context.Context, task *tryjob.CancelStaleTr
 	if task.PreviousMinEquivPatchset >= task.CurrentMinEquivPatchset {
 		panic(fmt.Errorf("patchset numbers expected to increase monotonically"))
 	}
+	cl := &changelist.CL{ID: common.CLID(task.GetClid())}
+	if err := datastore.Get(ctx, cl); err != nil {
+		return errors.Annotate(err, "failed to load CL %d", cl.ID).Tag(transient.Tag).Err()
+	}
+	preserveTryjob := false
+	for _, metadata := range cl.Snapshot.GetMetadata() {
+		if metadata.Key == common.FooterCQDoNotCancelTryjobs && strings.ToLower(strings.TrimSpace(metadata.Value)) == "true" {
+			preserveTryjob = true
+		}
+	}
+	if preserveTryjob {
+		logging.Infof(ctx, "skipping cancelling Tryjob as the latest CL has specified %s footer", common.FooterCQDoNotCancelTryjobs)
+		return nil
+	}
 
-	candidates, err := c.fetchCandidates(ctx, common.CLID(task.GetClid()), task.GetPreviousMinEquivPatchset(), task.GetCurrentMinEquivPatchset())
+	candidates, err := c.fetchCandidates(ctx, cl.ID, task.GetPreviousMinEquivPatchset(), task.GetCurrentMinEquivPatchset())
 	switch {
 	case err != nil:
 		return err
@@ -107,7 +122,6 @@ func (c *Cancellator) fetchCandidates(ctx context.Context, clid common.CLID, pre
 	q := datastore.NewQuery(tryjob.TryjobKind).
 		Gte("CLPatchsets", tryjob.MakeCLPatchset(clid, prevMinEquiPS)).
 		Lt("CLPatchsets", tryjob.MakeCLPatchset(clid, curMinEquiPS))
-
 	var candidates []*tryjob.Tryjob
 	err := datastore.Run(ctx, q, func(tj *tryjob.Tryjob) error {
 		switch {

@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/common/git/footer"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 )
 
 // ExtractOptions computes the Run Options from 1 CL.
@@ -62,24 +63,26 @@ func ExtractOptions(snapshot *changelist.Snapshot) *Options {
 	isTrue := func(mkey, lkey string) bool { return has(mkey, lkey, "true") }
 
 	o := &Options{}
-	if isTrue("No-Equivalent-Builders", "NO_EQUIVALENT_BUILDERS") {
+	if isTrue(common.FooterNoEquivalentBuilders, common.FooterLegacyNoEquivalentBuilders) {
 		o.SkipEquivalentBuilders = true
 	}
-	if isTrue("Cq-Do-Not-Cancel-Tryjobs", "") {
+	if isTrue(common.FooterCQDoNotCancelTryjobs, "") {
 		o.AvoidCancellingTryjobs = true
 	}
-	if isTrue("No-Tree-Checks", "NOTREECHECKS") {
+	if isTrue(common.FooterNoTreeChecks, common.FooterLegacyNoTreeChecks) {
 		o.SkipTreeChecks = true
 	}
-	if isTrue("No-Try", "NOTRY") {
+	if isTrue(common.FooterNoTry, common.FooterLegacyNoTry) {
 		o.SkipTryjobs = true
 	}
-	if isTrue("No-Presubmit", "NOPRESUBMIT") {
+	if isTrue(common.FooterNoPresubmit, common.FooterLegacyPresubmit) {
 		o.SkipPresubmit = true
 	}
-	o.IncludedTryjobs = append(o.IncludedTryjobs, valuesOf("Cq-Include-Trybots", "CQ_INCLUDE_TRYBOTS")...)
-	o.OverriddenTryjobs = append(o.OverriddenTryjobs, valuesOf("Override-Tryjobs-For-Automation", "")...)
-	o.CustomTryjobTags = append(o.CustomTryjobTags, valuesOf("Cq-Cl-Tag", "")...)
+	o.IncludedTryjobs = append(o.IncludedTryjobs, valuesOf(
+		common.FooterCQIncludeTryjobs,
+		common.FooterLegacyCQIncludeTryjobs)...)
+	o.OverriddenTryjobs = append(o.OverriddenTryjobs, valuesOf(common.FooterOverrideTryjobsForAutomation, "")...)
+	o.CustomTryjobTags = append(o.CustomTryjobTags, valuesOf(common.FooterCQClTag, "")...)
 	return o
 }
 

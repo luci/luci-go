@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
@@ -54,9 +55,12 @@ func TestTaskHandler(t *testing.T) {
 			c := NewCancellator(n)
 			mb := &mockBackend{}
 			c.RegisterBackend(mb)
+			const clid = common.CLID(100)
+			cl := &changelist.CL{ID: clid}
+			So(datastore.Put(ctx, cl), ShouldBeNil)
 			Convey("no tryjobs", func() {
 				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
-					Clid:                     100,
+					Clid:                     int64(clid),
 					PreviousMinEquivPatchset: 2,
 					CurrentMinEquivPatchset:  5,
 				})
@@ -64,10 +68,10 @@ func TestTaskHandler(t *testing.T) {
 				So(mb.calledWith, ShouldHaveLength, 0)
 			})
 			Convey("all tryjobs ended", func() {
-				tj1 := putTryjob(ctx, 200, 2, tryjob.Status_ENDED, 1, run.Status_FAILED, nil)
-				tj2 := putTryjob(ctx, 200, 2, tryjob.Status_ENDED, 2, run.Status_CANCELLED, nil)
+				tj1 := putTryjob(ctx, clid, 2, tryjob.Status_ENDED, 1, run.Status_FAILED, nil)
+				tj2 := putTryjob(ctx, clid, 2, tryjob.Status_ENDED, 2, run.Status_CANCELLED, nil)
 				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
-					Clid:                     200,
+					Clid:                     int64(clid),
 					PreviousMinEquivPatchset: 2,
 					CurrentMinEquivPatchset:  5,
 				})
@@ -81,10 +85,10 @@ func TestTaskHandler(t *testing.T) {
 				So(tj2.EVersion, ShouldEqual, 1)
 			})
 			Convey("some tryjobs ended, others cancellable", func() {
-				tj11 := putTryjob(ctx, 300, 2, tryjob.Status_ENDED, 11, run.Status_FAILED, nil)
-				tj12 := putTryjob(ctx, 300, 2, tryjob.Status_TRIGGERED, 12, run.Status_CANCELLED, nil)
+				tj11 := putTryjob(ctx, clid, 2, tryjob.Status_ENDED, 11, run.Status_FAILED, nil)
+				tj12 := putTryjob(ctx, clid, 2, tryjob.Status_TRIGGERED, 12, run.Status_CANCELLED, nil)
 				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
-					Clid:                     300,
+					Clid:                     int64(clid),
 					PreviousMinEquivPatchset: 2,
 					CurrentMinEquivPatchset:  5,
 				})
@@ -100,9 +104,9 @@ func TestTaskHandler(t *testing.T) {
 				So(tj12.Status, ShouldEqual, tryjob.Status_CANCELLED)
 			})
 			Convey("tryjob still watched", func() {
-				tj21 := putTryjob(ctx, 400, 2, tryjob.Status_TRIGGERED, 21, run.Status_RUNNING, nil)
+				tj21 := putTryjob(ctx, clid, 2, tryjob.Status_TRIGGERED, 21, run.Status_RUNNING, nil)
 				task := &tryjob.CancelStaleTryjobsTask{
-					Clid:                     400,
+					Clid:                     int64(clid),
 					PreviousMinEquivPatchset: 2,
 					CurrentMinEquivPatchset:  5,
 				}
@@ -120,11 +124,11 @@ func TestTaskHandler(t *testing.T) {
 				So(cvt.TQ.Tasks()[0].ETA, ShouldEqual, cvt.Clock.Now().Add(cancelLaterDuration))
 			})
 			Convey("tryjob not triggered by cv", func() {
-				tj31 := putTryjob(ctx, 500, 2, tryjob.Status_TRIGGERED, 31, run.Status_CANCELLED, func(tj *tryjob.Tryjob) {
+				tj31 := putTryjob(ctx, clid, 2, tryjob.Status_TRIGGERED, 31, run.Status_CANCELLED, func(tj *tryjob.Tryjob) {
 					tj.LaunchedBy = ""
 				})
 				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
-					Clid:                     500,
+					Clid:                     int64(clid),
 					PreviousMinEquivPatchset: 2,
 					CurrentMinEquivPatchset:  5,
 				})
@@ -137,11 +141,11 @@ func TestTaskHandler(t *testing.T) {
 				So(tj31.Status, ShouldNotEqual, tryjob.Status_CANCELLED)
 			})
 			Convey("tryjob configured to skip stale check", func() {
-				tj41 := putTryjob(ctx, 600, 2, tryjob.Status_TRIGGERED, 41, run.Status_CANCELLED, func(tj *tryjob.Tryjob) {
+				tj41 := putTryjob(ctx, clid, 2, tryjob.Status_TRIGGERED, 41, run.Status_CANCELLED, func(tj *tryjob.Tryjob) {
 					tj.Definition.SkipStaleCheck = true
 				})
 				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
-					Clid:                     600,
+					Clid:                     int64(clid),
 					PreviousMinEquivPatchset: 2,
 					CurrentMinEquivPatchset:  5,
 				})
@@ -152,6 +156,30 @@ func TestTaskHandler(t *testing.T) {
 				// Should not modify the entity.
 				So(tj41.EVersion, ShouldEqual, 1)
 				So(tj41.Status, ShouldNotEqual, tryjob.Status_CANCELLED)
+			})
+			Convey("CL has Cq-Do-Not-Cancel-Tryjobs footer", func() {
+				tj51 := putTryjob(ctx, clid, 2, tryjob.Status_TRIGGERED, 12, run.Status_CANCELLED, nil)
+				cl.Snapshot = &changelist.Snapshot{
+					Metadata: []*changelist.StringPair{
+						{
+							Key:   common.FooterCQDoNotCancelTryjobs,
+							Value: "True",
+						},
+					},
+				}
+				So(datastore.Put(ctx, cl), ShouldBeNil)
+				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
+					Clid:                     int64(clid),
+					PreviousMinEquivPatchset: 2,
+					CurrentMinEquivPatchset:  5,
+				})
+				So(err, ShouldBeNil)
+				// Should not call backend.
+				So(mb.calledWith, ShouldHaveLength, 0)
+				So(datastore.Get(ctx, tj51), ShouldBeNil)
+				// Should not modify the entity.
+				So(tj51.EVersion, ShouldEqual, 1)
+				So(tj51.Status, ShouldNotEqual, tryjob.Status_CANCELLED)
 			})
 		})
 	})
