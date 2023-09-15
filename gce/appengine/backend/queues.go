@@ -17,6 +17,7 @@ package backend
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -270,7 +271,7 @@ func expandConfig(c context.Context, payload proto.Message) error {
 					Seconds: now.Unix(),
 				},
 				Index:    i,
-				Lifetime: cfg.Config.Lifetime.GetSeconds(),
+				Lifetime: randomizeLifetime(cfg.Config.Lifetime.GetSeconds()),
 				Prefix:   cfg.Config.Prefix,
 				Revision: cfg.Config.Revision,
 				Swarming: cfg.Config.Swarming,
@@ -283,6 +284,17 @@ func expandConfig(c context.Context, payload proto.Message) error {
 		return errors.Annotate(err, "failed to schedule tasks").Err()
 	}
 	return nil
+}
+
+// randomizeLifetime randomizes the specified lifetime within an interval.
+//
+// Randomized lifetime of VMs spreads the load of terminated/respawn VMs.
+func randomizeLifetime(lifetime int64) int64 {
+	interval := lifetime / 10
+	if interval <= 0 { // The lifetime is too short or invalid, so do nothing.
+		return lifetime
+	}
+	return lifetime + rand.Int63n(interval)
 }
 
 // reportQuotaQueue is the name of the report quota task handler queue.

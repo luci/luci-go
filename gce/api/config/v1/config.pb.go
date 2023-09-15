@@ -1129,7 +1129,9 @@ type Config struct {
 	// The attributes of these VMs.
 	Attributes *VM `protobuf:"bytes,2,opt,name=attributes,proto3" json:"attributes,omitempty"`
 	// The lifetime of these VMs.
-	// At the end of their lifetime, each VM is deleted and replaced.
+	// At the end of their lifetime, each VM is deleted and replaced. But it
+	// won't happen immediately becasuse of scheduling reasons. The delay varies
+	// based on the specified lifetime.
 	Lifetime *TimePeriod `protobuf:"bytes,3,opt,name=lifetime,proto3" json:"lifetime,omitempty"`
 	// The prefix to use when naming these VMs.
 	Prefix string `protobuf:"bytes,4,opt,name=prefix,proto3" json:"prefix,omitempty"`
