@@ -159,18 +159,20 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 			var meta reviewInputMeta
 			if msgTmpl != "" && attentionReason != "" {
 				whoms := rs.Mode.GerritNotifyTargets()
-				t, err := template.New("FailureReason").Parse(msgTmpl)
-				if err != nil {
-					return nil, errors.Annotate(err, "failed to parse FailureReason template").Err()
+				var msg string
+				switch t, err := template.New("FailureReason").Parse(msgTmpl); {
+				case err != nil:
+					logging.Errorf(ctx, "failed to parse FailureReason template %s", err)
+					msg = "This CL has failed the run. LUCI CV is having trouble with generating the reason. Please visit the check result tab for the failed Tryjobs."
+				default:
+					msgBuf := bytes.Buffer{}
+					if err := t.Execute(&msgBuf, tmplInfo{cl: cl}); err != nil {
+						return nil, errors.Annotate(err, "failed to execute FailureReason template").Err()
+					}
+					msg = msgBuf.String()
 				}
-
-				msg := bytes.Buffer{}
-				if err := t.Execute(&msg, tmplInfo{cl: cl}); err != nil {
-					return nil, errors.Annotate(err, "failed to execute FailureReason template").Err()
-				}
-
 				meta = reviewInputMeta{
-					message:        msg.String(),
+					message:        msg,
 					notify:         whoms,
 					addToAttention: whoms,
 					reason:         attentionReason,
