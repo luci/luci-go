@@ -549,6 +549,7 @@ func mainImpl() int {
 	useGCEAccount := flag.Bool("use-gce-account", false, "Use GCE metadata service account for all calls")
 	cacheBase := flag.String("cache-base", "", "Directory where all the named caches are mounted for the build")
 	taskID := flag.String("task-id", "", "ID of the task")
+	contextFile := flag.String("context-file", "", "Path to the BbagentContext file. Must be a .json file.")
 	outputFile := luciexe.AddOutputFlagToSet(flag.CommandLine)
 
 	flag.Parse()
@@ -561,7 +562,7 @@ func mainImpl() int {
 	var bbclientInput clientInput
 	var err error
 
-	bbagentCtx, err := getBuildbucketAgentContext(ctx, *taskID)
+	bbagentCtx, err := getBuildbucketAgentContext(ctx, *contextFile, *taskID)
 	if err != nil {
 		check(ctx, errors.Annotate(err, "BbagentContext could not be created").Err())
 	}

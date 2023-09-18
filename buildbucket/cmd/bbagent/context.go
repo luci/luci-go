@@ -17,6 +17,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
+	"os"
+
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/authctx"
@@ -102,12 +106,27 @@ func setLocalAuth(ctx context.Context) context.Context {
 	return authCtx.SetLocalAuth(ctx)
 }
 
-// getBuildbucketAgentContext takes the current LUCI_CONTEXT env and turns it into
-// a bbpb.BuildbucketAgentContext for use by bbagent.
-//
-// (TODO: randymaldonado) Have this function read in a file containing bbpb.BuildbucketAgentContext as jsonpb.
-// (TODO: randymaldonado) Remove usage of taskID once the taskID arg is removed from bbagent cli.
-func getBuildbucketAgentContext(ctx context.Context, taskID string) (*bbpb.BuildbucketAgentContext, error) {
+// getContextFromFile gets BuildbucketAgentContext from a json context file.
+func getContextFromFile(ctx context.Context, contextFile string) (*bbpb.BuildbucketAgentContext, error) {
+	bbagentCtx := &bbpb.BuildbucketAgentContext{}
+	file, err := os.Open(contextFile)
+	defer file.Close()
+	if err != nil {
+		return nil, err
+	}
+	contents, err := io.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
+	err = protojson.Unmarshal(contents, bbagentCtx)
+	if err != nil {
+		return nil, err
+	}
+	return bbagentCtx, nil
+}
+
+// getContextFromLuciContext generates BuildbucketAgentContext from taskID and Lucictx.
+func getContextFromLuciContext(ctx context.Context, taskID string) (*bbpb.BuildbucketAgentContext, error) {
 	bbagentCtx := &bbpb.BuildbucketAgentContext{}
 	if taskID != "" {
 		bbagentCtx.TaskId = taskID
@@ -120,4 +139,20 @@ func getBuildbucketAgentContext(ctx context.Context, taskID string) (*bbpb.Build
 	}
 	bbagentCtx.Secrets = secrets
 	return bbagentCtx, nil
+}
+
+// getBuildbucketAgentContext retrieves the bbpb.BuildbucketAgentContext from
+// the contextFile path provided as a bbagent arg.
+//
+// Since we are mid migration from hard coded swarming to task backend, it also
+// takes the current LUCI_CONTEXT env and taskID (provided by bbagent cli arg),
+// and turns it into a bbpb.BuildbucketAgentContext for use by bbagent.
+//
+// (TODO: randymaldonado) Remove usage of taskID once the taskID arg is removed from bbagent cli.
+// (TODO: randymaldonado) Have this function only pull from context file once the task backend migration is over.
+func getBuildbucketAgentContext(ctx context.Context, contextFile, taskID string) (*bbpb.BuildbucketAgentContext, error) {
+	if contextFile != "" {
+		return getContextFromFile(ctx, contextFile)
+	}
+	return getContextFromLuciContext(ctx, taskID)
 }
