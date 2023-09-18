@@ -101,3 +101,23 @@ func setLocalAuth(ctx context.Context) context.Context {
 	// Switch the default auth in the context to the one we just setup.
 	return authCtx.SetLocalAuth(ctx)
 }
+
+// getBuildbucketAgentContext takes the current LUCI_CONTEXT env and turns it into
+// a bbpb.BuildbucketAgentContext for use by bbagent.
+//
+// (TODO: randymaldonado) Have this function read in a file containing bbpb.BuildbucketAgentContext as jsonpb.
+// (TODO: randymaldonado) Remove usage of taskID once the taskID arg is removed from bbagent cli.
+func getBuildbucketAgentContext(ctx context.Context, taskID string) (*bbpb.BuildbucketAgentContext, error) {
+	bbagentCtx := &bbpb.BuildbucketAgentContext{}
+	if taskID != "" {
+		bbagentCtx.TaskId = taskID
+	} else {
+		bbagentCtx.TaskId = retrieveTaskIDFromContext(ctx)
+	}
+	secrets, err := readBuildSecrets(ctx)
+	if err != nil {
+		return nil, err
+	}
+	bbagentCtx.Secrets = secrets
+	return bbagentCtx, nil
+}

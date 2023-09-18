@@ -172,14 +172,14 @@ func cancelBuild(ctx context.Context, bbclient BuildsClient, bld *bbpb.Build) (r
 	return 0
 }
 
-func parseBbAgentArgs(ctx context.Context, arg string) (clientInput, *bbpb.BuildSecrets) {
+func parseBbAgentArgs(ctx context.Context, arg string, bbagentCtx *bbpb.BuildbucketAgentContext) clientInput {
 	// TODO(crbug/1219018): Remove CLI BBAgentArgs mode in favor of -host + -build-id.
 	logging.Debugf(ctx, "parsing BBAgentArgs")
 	input, err := bbinput.Parse(arg)
 	check(ctx, errors.Annotate(err, "could not unmarshal BBAgentArgs").Err())
-	bbclient, secrets, err := newBuildsClient(ctx, input.Build.Infra.Buildbucket.GetHostname(), retry.Default)
+	bbclient, err := newBuildsClient(ctx, bbagentCtx, input.Build.Infra.Buildbucket.GetHostname(), retry.Default)
 	check(ctx, errors.Annotate(err, "could not connect to Buildbucket").Err())
-	return clientInput{bbclient, input}, secrets
+	return clientInput{bbclient, input}
 }
 
 func startBuild(ctx context.Context, bbclient BuildsClient, buildID int64, taskID string) (*bbpb.StartBuildResponse, error) {
@@ -208,16 +208,13 @@ func retrieveTaskIDFromContext(ctx context.Context) string {
 //
 // Note: taskID may be updated if the swarming task id can be found from
 // swarming part of luci context.
-func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64, taskID *string) (clientInput, *bbpb.BuildSecrets) {
+func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64, bbagentCtx *bbpb.BuildbucketAgentContext) clientInput {
 	logging.Debugf(ctx, "fetching build %d", *buildID)
-	bbclient, secrets, err := newBuildsClient(ctx, *hostname, defaultRetryStrategy)
+	bbclient, err := newBuildsClient(ctx, bbagentCtx, *hostname, defaultRetryStrategy)
 	check(ctx, errors.Annotate(err, "could not connect to Buildbucket").Err())
 
 	var build *bbpb.Build
-	if *taskID == "" {
-		*taskID = retrieveTaskIDFromContext(ctx)
-	}
-	if *taskID == "" {
+	if bbagentCtx.TaskId == "" {
 		// Get everything from the build.
 		// Here we use UpdateBuild instead of GetBuild, so that
 		// * bbagent can always get the build because of the build token.
@@ -241,7 +238,7 @@ func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64, tas
 		check(ctx, errors.Annotate(err, "failed to fetch build").Err())
 	} else {
 		var res *bbpb.StartBuildResponse
-		res, err = startBuild(ctx, bbclient, *buildID, *taskID)
+		res, err = startBuild(ctx, bbclient, *buildID, bbagentCtx.TaskId)
 		if err != nil && buildbucket.DuplicateTask.In(err) {
 			// This task is a duplicate, bail out.
 			logging.Infof(ctx, err.Error())
@@ -249,7 +246,7 @@ func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64, tas
 		}
 		check(ctx, errors.Annotate(err, "failed to start build").Err())
 		build = res.Build
-		secrets.BuildToken = res.UpdateBuildToken
+		bbagentCtx.Secrets.BuildToken = res.UpdateBuildToken
 	}
 
 	input := &bbpb.BBAgentArgs{
@@ -258,7 +255,7 @@ func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64, tas
 		KnownPublicGerritHosts: build.Infra.Buildbucket.KnownPublicGerritHosts,
 		PayloadPath:            protoutil.ExePayloadPath(build),
 	}
-	return clientInput{bbclient, input}, secrets
+	return clientInput{bbclient, input}
 }
 
 // backendTaskInfoExists checks if the backend task info exists in build proto.
@@ -562,14 +559,18 @@ func mainImpl() int {
 	}
 
 	var bbclientInput clientInput
-	var secrets *bbpb.BuildSecrets
 	var err error
+
+	bbagentCtx, err := getBuildbucketAgentContext(ctx, *taskID)
+	if err != nil {
+		check(ctx, errors.Annotate(err, "BbagentContext could not be created").Err())
+	}
 
 	switch {
 	case len(args) == 1:
-		bbclientInput, secrets = parseBbAgentArgs(ctx, args[0])
+		bbclientInput = parseBbAgentArgs(ctx, args[0], bbagentCtx)
 	case *hostname != "" && *buildID > 0:
-		bbclientInput, secrets = parseHostBuildID(ctx, hostname, buildID, taskID)
+		bbclientInput = parseHostBuildID(ctx, hostname, buildID, bbagentCtx)
 	default:
 		check(ctx, errors.Reason("-host and -build-id are required").Err())
 	}
@@ -580,7 +581,7 @@ func mainImpl() int {
 	}
 
 	// Manipulate the context and obtain a context with cancel
-	ctx = setBuildbucketContext(ctx, hostname, secrets)
+	ctx = setBuildbucketContext(ctx, hostname, bbagentCtx.Secrets)
 	ctx = setRealmContext(ctx, bbclientInput.input)
 
 	logdogOutput, err := mkLogdogOutput(ctx, bbclientInput.input.Build.Infra.Logdog)
@@ -625,7 +626,7 @@ func mainImpl() int {
 
 	prepareInputBuild(cctx, bbclientInput.input.Build, updatedBuild)
 
-	cctx = setResultDBContext(cctx, bbclientInput.input.Build, secrets)
+	cctx = setResultDBContext(cctx, bbclientInput.input.Build, bbagentCtx.Secrets)
 
 	// TODO(crbug.com/1211789) - As part of adding 'dry_run' functionality
 	// to ScheduleBuild, it was necessary to start saving `tags` in the
@@ -687,7 +688,8 @@ func mainImpl() int {
 	// dispatcher.Channel will handle retries instead.
 	// Create the build client with a provided secrets, because secrets could have
 	// been updated with a build token from the response of the StartBuild call.
-	bbclientForDispatcher, err := newBuildsClientWithSecrets(cctx, bbclientInput.input.Build.Infra.Buildbucket.GetHostname(), func() retry.Iterator { return nil }, secrets)
+	bbclientForDispatcher, err := newBuildsClientWithSecrets(
+		cctx, bbclientInput.input.Build.Infra.Buildbucket.GetHostname(), func() retry.Iterator { return nil }, bbagentCtx.Secrets)
 	if err != nil {
 		checkReport(ctx, bbclientInput, errors.Annotate(err, "could not connect to Buildbucket").Err())
 	}

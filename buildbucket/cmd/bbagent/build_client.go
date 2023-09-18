@@ -128,22 +128,17 @@ func (bb *liveBBClient) StartBuild(ctx context.Context, in *bbpb.StartBuildReque
 // which can be used to update the build state.
 //
 // retryEnabled allows us to switch retries for this client on and off
-func newBuildsClient(ctx context.Context, hostname string, retryF retry.Factory) (BuildsClient, *bbpb.BuildSecrets, error) {
+func newBuildsClient(ctx context.Context, bbagentCtx *bbpb.BuildbucketAgentContext, hostname string, retryF retry.Factory) (BuildsClient, error) {
 	if hostname == "" {
 		logging.Infof(ctx, "No buildbucket hostname set; making dummy buildbucket client.")
-		return dummyBBClient{}, &bbpb.BuildSecrets{BuildToken: buildbucket.DummyBuildbucketToken}, nil
+		return dummyBBClient{}, nil
 	}
 
-	secrets, err := readBuildSecrets(ctx)
+	bc, err := newBuildsClientWithSecrets(ctx, hostname, retryF, bbagentCtx.Secrets)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-
-	bc, err := newBuildsClientWithSecrets(ctx, hostname, retryF, secrets)
-	if err != nil {
-		return nil, nil, err
-	}
-	return bc, secrets, nil
+	return bc, nil
 }
 
 // Reads the provided build secrets and constructs a BuildsClient
