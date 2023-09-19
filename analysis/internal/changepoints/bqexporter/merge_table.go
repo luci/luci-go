@@ -97,7 +97,7 @@ func runDMLMerge(ctx context.Context, client *bigquery.Client) error {
 		return errors.Annotate(err, "initiate merge query").Err()
 	}
 
-	waitCtx, cancel := context.WithTimeout(ctx, time.Minute*5)
+	waitCtx, cancel := context.WithTimeout(ctx, time.Minute*9)
 	defer cancel()
 
 	js, err := job.Wait(waitCtx)
