@@ -264,11 +264,6 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 									run.OngoingLongOps_Op_ResetTriggers_OWNER,
 									run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
 								},
-								AddToAttention: []run.OngoingLongOps_Op_ResetTriggers_Whom{
-									run.OngoingLongOps_Op_ResetTriggers_OWNER,
-									run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
-								},
-								AddToAttentionReason: "Run succeeded",
 							},
 						})
 						So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_SUCCEEDED)

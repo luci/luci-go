@@ -127,7 +127,6 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 				switch rs.Mode {
 				case run.DryRun, run.FullRun, run.QuickDryRun:
 					msgTmpl = "This CL has passed the run"
-					attentionReason = "Run succeeded"
 				case run.NewPatchsetRun:
 				default:
 					panic(fmt.Errorf("unsupported mode %s", rs.Mode))
@@ -157,7 +156,7 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 		metas := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
 		for _, cl := range cls {
 			var meta reviewInputMeta
-			if msgTmpl != "" && attentionReason != "" {
+			if msgTmpl != "" {
 				whoms := rs.Mode.GerritNotifyTargets()
 				var msg string
 				switch t, err := template.New("FailureReason").Parse(msgTmpl); {
@@ -174,8 +173,10 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 				meta = reviewInputMeta{
 					message:        msg,
 					notify:         whoms,
-					addToAttention: whoms,
-					reason:         attentionReason,
+				}
+				if attentionReason != "" {
+					meta.addToAttention = whoms
+					meta.reason = attentionReason
 				}
 			}
 			metas[cl.ID] = meta
