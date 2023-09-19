@@ -24,6 +24,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/quota/quotapb"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -140,6 +141,7 @@ func TestEndRun(t *testing.T) {
 		So(rs.Status, ShouldEqual, run.Status_FAILED)
 		So(rs.EndTime, ShouldEqual, ct.Clock.Now())
 		So(datastore.RunInTransaction(ctx, se, nil), ShouldBeNil)
+		So(deps.qm.creditRunQuotaCalls, ShouldEqual, 1)
 
 		Convey("removeRunFromCLs", func() {
 			// fetch the updated CL entity.
@@ -329,6 +331,7 @@ func TestCheckRunCreate(t *testing.T) {
 type dependencies struct {
 	pm         *prjmanager.Notifier
 	rm         *run.Notifier
+	qm         *quotaManagerMock
 	tjNotifier *tryjobNotifierMock
 	clUpdater  *clUpdaterMock
 }
@@ -480,6 +483,7 @@ func makeImpl(ct *cvtesting.Test) (*Impl, dependencies) {
 	deps := dependencies{
 		pm:         prjmanager.NewNotifier(ct.TQDispatcher),
 		rm:         run.NewNotifier(ct.TQDispatcher),
+		qm:         &quotaManagerMock{},
 		tjNotifier: &tryjobNotifierMock{},
 		clUpdater:  &clUpdaterMock{},
 	}
@@ -495,6 +499,7 @@ func makeImpl(ct *cvtesting.Test) (*Impl, dependencies) {
 		BQExporter:  bq.NewExporter(ct.TQDispatcher, ct.BQFake, ct.Env),
 		RdbNotifier: rdb.NewNotifier(ct.TQDispatcher, cf),
 		Publisher:   pubsub.NewPublisher(ct.TQDispatcher, ct.Env),
+		QM:          deps.qm,
 		Env:         ct.Env,
 	}
 	return impl, deps
@@ -524,4 +529,22 @@ func (t *tryjobNotifierMock) ScheduleUpdate(ctx context.Context, id common.Tryjo
 	t.updateScheduled = append(t.updateScheduled, id)
 	t.m.Unlock()
 	return nil
+}
+
+type quotaManagerMock struct {
+	runQuotaOp  *quotapb.OpResult
+	runQuotaErr error
+
+	debitRunQuotaCalls  int
+	creditRunQuotaCalls int
+}
+
+func (qm *quotaManagerMock) DebitRunQuota(ctx context.Context, rs *state.RunState) (*quotapb.OpResult, error) {
+	qm.debitRunQuotaCalls++
+	return qm.runQuotaOp, qm.runQuotaErr
+}
+
+func (qm *quotaManagerMock) CreditRunQuota(ctx context.Context, rs *state.RunState) (*quotapb.OpResult, error) {
+	qm.creditRunQuotaCalls++
+	return qm.runQuotaOp, qm.runQuotaErr
 }
