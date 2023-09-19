@@ -172,7 +172,11 @@ func fetchDeflated(ctx context.Context, id string) (blob []byte, code string, er
 		case transient.Tag.In(err):
 			return nil, "ERROR_SHARDS_TRANSIENT", err
 		case err != nil:
-			return nil, "ERROR_SHARDS_MISSING", err
+			// We apply the transient tag here to return Internal code
+			// instead of Unauthenticated code. The Unauthenticated code
+			// is misleading when we encountered an error in unshardAuthDB.
+			// https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/server/auth/auth.go;l=272
+			return nil, "ERROR_SHARDS_MISSING", transient.Tag.Apply(err)
 		}
 	}
 

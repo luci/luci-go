@@ -211,7 +211,7 @@ func TestSharding(t *testing.T) {
 				}))
 				_, code, err := fetchDeflated(ctx, "some-id")
 				So(err, ShouldNotBeNil)
-				So(transient.Tag.In(err), ShouldBeFalse)
+				So(transient.Tag.In(err), ShouldBeTrue)
 				So(code, ShouldEqual, "ERROR_SHARDS_MISSING")
 			})
 		})
