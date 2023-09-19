@@ -44,14 +44,16 @@ func UpdateAnalysisStatus(ctx context.Context, tfa *model.TestFailureAnalysis, s
 			return nil
 		}
 
-		tfa.Status = status
-		tfa.RunStatus = runStatus
 		if runStatus == pb.AnalysisRunStatus_ENDED || runStatus == pb.AnalysisRunStatus_CANCELED {
 			tfa.EndTime = clock.Now(ctx)
 		}
-		if runStatus == pb.AnalysisRunStatus_STARTED {
+		// Do not update start time again if it has started.
+		if runStatus == pb.AnalysisRunStatus_STARTED && tfa.RunStatus != pb.AnalysisRunStatus_STARTED {
 			tfa.StartTime = clock.Now(ctx)
 		}
+
+		tfa.Status = status
+		tfa.RunStatus = runStatus
 		return datastore.Put(ctx, tfa)
 	}, nil)
 }

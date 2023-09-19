@@ -61,6 +61,19 @@ func TestUpdateAnalysisStatus(t *testing.T) {
 			So(tfa.StartTime.Unix(), ShouldEqual, 10000)
 		})
 
+		Convey("Do not update the start time of a started analysis", func() {
+			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+				Status:    pb.AnalysisStatus_RUNNING,
+				RunStatus: pb.AnalysisRunStatus_STARTED,
+				StartTime: time.Unix(5000, 0).UTC(),
+			})
+			err := UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
+			So(err, ShouldBeNil)
+			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
+			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_STARTED)
+			So(tfa.StartTime.Unix(), ShouldEqual, 5000)
+		})
+
 		Convey("Ended analysis will not update", func() {
 			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
 				Status:    pb.AnalysisStatus_FOUND,

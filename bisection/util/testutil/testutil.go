@@ -183,6 +183,7 @@ type TestFailureAnalysisCreationOption struct {
 	Status          pb.AnalysisStatus
 	RunStatus       pb.AnalysisRunStatus
 	CreateTime      time.Time
+	StartTime       time.Time
 }
 
 func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisCreationOption) *model.TestFailureAnalysis {
@@ -196,6 +197,7 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 	var status pb.AnalysisStatus
 	var runStatus pb.AnalysisRunStatus
 	var createTime time.Time
+	var startTime time.Time
 
 	if option != nil {
 		if option.ID != 0 {
@@ -218,6 +220,7 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 		status = option.Status
 		runStatus = option.RunStatus
 		createTime = option.CreateTime
+		startTime = option.StartTime
 	}
 
 	tfa := &model.TestFailureAnalysis{
@@ -231,6 +234,7 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 		Status:          status,
 		RunStatus:       runStatus,
 		CreateTime:      createTime,
+		StartTime:       startTime,
 	}
 	So(datastore.Put(ctx, tfa), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()
@@ -284,8 +288,8 @@ type TestNthSectionAnalysisCreationOption struct {
 	ID                int64
 	ParentAnalysisKey *datastore.Key
 	BlameList         *pb.BlameList
-	Status          pb.AnalysisStatus
-	RunStatus       pb.AnalysisRunStatus
+	Status            pb.AnalysisStatus
+	RunStatus         pb.AnalysisRunStatus
 }
 
 func CreateTestNthSectionAnalysis(ctx context.Context, option *TestNthSectionAnalysisCreationOption) *model.TestNthSectionAnalysis {
@@ -294,7 +298,6 @@ func CreateTestNthSectionAnalysis(ctx context.Context, option *TestNthSectionAna
 	var blameList *pb.BlameList
 	var status pb.AnalysisStatus
 	var runStatus pb.AnalysisRunStatus
-
 
 	if option != nil {
 		if option.ID != 0 {
@@ -309,8 +312,8 @@ func CreateTestNthSectionAnalysis(ctx context.Context, option *TestNthSectionAna
 		ID:                id,
 		ParentAnalysisKey: parentAnalysis,
 		BlameList:         blameList,
-		Status: status,
-		RunStatus: runStatus,
+		Status:            status,
+		RunStatus:         runStatus,
 	}
 	So(datastore.Put(ctx, nsa), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()
