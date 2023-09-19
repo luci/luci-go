@@ -31,6 +31,17 @@ func validateConfig(ctx *validation.Context, cfg *configpb.Config) {
 		return
 	}
 	validateGerritConfig(ctx, cfg.GerritConfig)
+	// TODO(beining@): validate test analysis config.
+}
+
+func validateTestAnalysisConfig(ctx *validation.Context, testAnalysisConfig *configpb.TestAnalysisConfig) {
+	ctx.Enter("test_analysis_config")
+	defer ctx.Exit()
+	if testAnalysisConfig == nil {
+		ctx.Errorf("missing test analysis config")
+		return
+	}
+	validateGerritConfig(ctx, testAnalysisConfig.GerritConfig)
 }
 
 // Validates the settings in a GerritConfig

@@ -109,4 +109,6 @@ message TestAnalysisConfig {
   // The list of buildbucket buckets that we should not bisect on.
   // For example, "reviver", "try", and "findit".
   repeated string excluded_buckets = 5;
+  // Configuration data for Gerrit integration for test failures.
+  GerritConfig gerrit_config = 6;
 }
