@@ -107,3 +107,37 @@ func (s *DecoratedAnalyses) UpdateAnalysis(ctx context.Context, req *UpdateAnaly
 	}
 	return
 }
+
+func (s *DecoratedAnalyses) ListTestAnalyses(ctx context.Context, req *ListTestAnalysesRequest) (rsp *ListTestAnalysesResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "ListTestAnalyses", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.ListTestAnalyses(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "ListTestAnalyses", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedAnalyses) GetTestAnalysis(ctx context.Context, req *GetTestAnalysisRequest) (rsp *TestAnalysis, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "GetTestAnalysis", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.GetTestAnalysis(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "GetTestAnalysis", rsp, err)
+	}
+	return
+}

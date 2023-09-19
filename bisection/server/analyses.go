@@ -120,6 +120,14 @@ func (server *AnalysesServer) UpdateAnalysis(c context.Context, req *pb.UpdateAn
 	return nil, nil
 }
 
+func (server *AnalysesServer) ListTestAnalyses(c context.Context, req *pb.ListTestAnalysesRequest) (*pb.ListTestAnalysesResponse, error) {
+	return nil, nil
+}
+
+func (server *AnalysesServer) GetTestAnalysis(c context.Context, req *pb.GetTestAnalysisRequest) (*pb.TestAnalysis, error) {
+	return nil, nil
+}
+
 // GetAnalysisResult returns an analysis for pRPC from CompileFailureAnalysis
 func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis) (*pb.Analysis, error) {
 	result := &pb.Analysis{

@@ -23,6 +23,7 @@ import "go.chromium.org/luci/bisection/proto/v1/common.proto";
 import "go.chromium.org/luci/bisection/proto/v1/culprits.proto";
 import "go.chromium.org/luci/bisection/proto/v1/heuristic.proto";
 import "go.chromium.org/luci/bisection/proto/v1/nthsection.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
 
 option go_package = "go.chromium.org/luci/bisection/proto/v1;bisectionpb";
@@ -52,6 +53,13 @@ service Analyses {
   // Mainly used by SoM, since LUCI Bisection does not have any information
   // about bugs created by sheriffs.
   rpc UpdateAnalysis(UpdateAnalysisRequest) returns (Analysis);
+
+  // ListTestAnalyses is used to get existing test analyses.
+  // Most recently created test analyses are returned first.
+  rpc ListTestAnalyses(ListTestAnalysesRequest) returns (ListTestAnalysesResponse);
+
+  // GetTestAnalysis is used to get a test analysis by its ID.
+  rpc GetTestAnalysis(GetTestAnalysisRequest) returns (TestAnalysis);
 }
 
 message GetAnalysisRequest {
@@ -181,4 +189,169 @@ message BuildFailure {
   int64 bbid = 1;
   // failed_step_name should be 'compile' for compile failures.
   string failed_step_name = 2;
+}
+
+message ListTestAnalysesRequest {
+  // The project that the test analyses belong to.
+  string project = 1 [ (google.api.field_behavior) = REQUIRED ];
+  // Optional. The maximum number of analyses to be returned in the response.
+  // The service may return fewer than this value.
+  // If unspecified, at most 50 analyses will be returned.
+  // The maximum value is 200; values above 200 will be coerced to 200.
+  int32 page_size = 2;
+  // Optional. A page token, received from a previous `ListTestAnalyses` call.
+  // Provide this to retrieve the subsequent page.
+  // When paginating, all other parameters provided to `ListTestAnalyses` must
+  // match the call that provided the page token,
+  // with the exception of page_size and page_token.
+  string page_token = 3;
+}
+
+message ListTestAnalysesResponse {
+  // The test analyses corresponding to the ListTestAnalysesRequest.
+  repeated TestAnalysis analyses = 1;
+  // The token to send as `page_token` to retrieve the next page of analyses.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message GetTestAnalysisRequest {
+  // ID of the analysis.
+  int64 analysis_id = 1 [ (google.api.field_behavior) = REQUIRED ];
+}
+
+message TestAnalysis {
+  // ID to identify this analysis.
+  int64 analysis_id = 1;
+  // Timestamp for the create time of the analysis.
+  google.protobuf.Timestamp create_time = 2;
+  // Timestamp for the start time of the analysis.
+  google.protobuf.Timestamp start_time = 3;
+  // Timestamp for the end time of the analysis.
+  google.protobuf.Timestamp end_time = 4;
+  // Result status of the analysis.
+  AnalysisStatus status = 5;
+  // Run status of the analysis.
+  AnalysisRunStatus run_status = 6;
+  // The verified culprit for the analysis.
+  luci.bisection.v1.Culprit verified_culprit = 7;
+  // The builder that the analysis analyzed.
+  buildbucket.v2.BuilderID builder = 8;
+  // Test failures that the analysis analyzed.
+  // The first item will be the primary failure, followed by other failures.
+  // Bisection process will follow the path of the primary test failure.
+  TestFailure test_failures = 9;
+  // The start commit of the regression range (exclusive).
+  buildbucket.v2.GitilesCommit start_commit = 10;
+  // The end commit of the regression range (inclusive).
+  buildbucket.v2.GitilesCommit end_commit = 11;
+  // The start failure rate of the failures.
+  float start_failure_rate = 12;
+  // The end failure rate of the failures.
+  float end_failure_rate = 13;
+  // Sample build bucket ID where the primary test failure failed.
+  int64 sample_bbid = 14;
+  // Nthsection result.
+  TestNthSectionAnalysisResult nth_section_result = 15;
+}
+
+message TestFailure {
+  // The ID of the test.
+  string test_id = 1;
+  // The variant hash of the test.
+  string variant_hash = 2;
+  // Hash to identify the branch in the source control.
+  string ref_hash = 3;
+  // The variant of the test.
+  Variant variant = 4;
+  // Whether the test failure was diverged from the primary test failure
+  // during the bisection process.
+  bool is_diverged = 5;
+  // Whether the test failure is a primary failure or not.
+  bool is_primary = 6;
+  // Start hour of the test failure.
+  google.protobuf.Timestamp start_hour = 7;
+}
+
+message TestNthSectionAnalysisResult {
+  // The status of the nth-section analysis.
+  AnalysisStatus status = 1;
+  // The run status of the nth-section analysis.
+  AnalysisRunStatus run_status = 2;
+  // Timestamp for the start time of the nth-section analysis.
+  google.protobuf.Timestamp start_time = 3;
+  // Timestamp for the end time of the nth-section analysis.
+  google.protobuf.Timestamp end_time = 4;
+  // Optional, when status = RUNNING. This is the possible commit range of the
+  // culprit. This will be updated as the nth-section progress.
+  RegressionRange remaining_nth_section_range = 5;
+  // List of the reruns that have been run so far for the nth-section analysis.
+  // The runs are sorted by the start timestamp.
+  repeated TestSingleRerun reruns = 6;
+  // The blame list of commits to run the nth-section analysis on.
+  // The commits are sorted by recency, with the most recent commit first.
+  BlameList blame_list = 7;
+  // Optional, when nth-section has found a culprit.
+  TestNthSectionSuspect culprit = 8;
+}
+
+message TestSingleRerun {
+  // Buildbucket ID of the rerun build.
+  int64 bbid = 1;
+  // Timestamp for the create time of the rerun.
+  google.protobuf.Timestamp create_time = 2;
+  // Timestamp for the start time of the rerun.
+  google.protobuf.Timestamp start_time = 3;
+  // Timestamp for the end time of the rerun.
+  google.protobuf.Timestamp end_time = 4;
+  // Timestamp when the rerun send the result to bisection from recipe.
+  google.protobuf.Timestamp report_time = 5;
+  // ID of the bot that runs the rerun.
+  string bot_id = 6;
+  // Result of the rerun.
+  TestRerunResults results = 7;
+  // Status of the rerun.
+  RerunStatus status = 8;
+  // Gitiles commit to do the rerun with.
+  buildbucket.v2.GitilesCommit commit = 9;
+  // Index of the commit to rerun within the blamelist, if this is an
+  // nth-section rerun. We need to use a string instead of an int here because
+  // 0 is a possible valid value but would get lost due to the "omitempty" flag
+  // in the generated proto.
+  string index = 10;
+}
+
+message TestRerunResults {
+  repeated TestRerunSingleResult results = 1;
+}
+
+message TestRerunSingleResult {
+  // Test ID of the result.
+  string test_id = 1;
+  // Variant hash of the result.
+  string variant_hash = 2;
+  // Number of expected results.
+  int64 expected_count = 3;
+  // Number of unexpected results.
+  int64 unexpected_count = 4;
+}
+
+message TestNthSectionSuspect {
+  // A suspect revision of nth-section analysis.
+  buildbucket.v2.GitilesCommit gitiles_commit = 1;
+  // Review URL for the commit.
+  string review_url = 2;
+  // Title of the review for the commit.
+  string review_title = 3;
+  // The details of suspect verification for the suspect.
+  TestSuspectVerificationDetails verification_details = 4;
+}
+
+message TestSuspectVerificationDetails {
+  // The status of the suspect verification.
+  SuspectVerificationStatus status = 1;
+  // The verification rerun build for the suspect commit.
+  TestSingleRerun suspect_rerun = 2;
+  // The verification rerun build for the parent commit of the suspect.
+  TestSingleRerun parent_rerun = 3;
 }
