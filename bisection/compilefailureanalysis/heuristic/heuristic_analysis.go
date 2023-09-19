@@ -147,6 +147,7 @@ func saveResultsToDatastore(c context.Context, analysis *model.CompileHeuristicA
 			},
 			VerificationStatus: model.SuspectVerificationStatus_Unverified,
 			Type:               model.SuspectType_Heuristic,
+			AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 		}
 		suspects[i] = suspect
 	}

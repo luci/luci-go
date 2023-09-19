@@ -342,6 +342,7 @@ func storeNthSectionResultToDatastore(c context.Context, nsa *model.CompileNthSe
 		VerificationStatus: model.SuspectVerificationStatus_Unverified,
 		ReviewUrl:          blCommit.ReviewUrl,
 		ReviewTitle:        blCommit.ReviewTitle,
+		AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 	}
 	err := datastore.Put(c, suspect)
 	if err != nil {

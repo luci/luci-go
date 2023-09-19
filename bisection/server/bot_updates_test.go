@@ -39,7 +39,7 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/testing/assertions"
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -185,7 +185,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			AnalysisId: 1234,
 		}
 		expected := proto.Clone(task).(*tpb.CancelAnalysisTask)
-		So(scheduler.Tasks().Payloads()[0], assertions.ShouldResembleProto, expected)
+		So(scheduler.Tasks().Payloads()[0], ShouldResembleProto, expected)
 	})
 
 	Convey("UpdateAnalysisProgress NthSection", t, func() {
@@ -403,8 +403,19 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				ParentAnalysis: nsa.Suspect.Parent(),
 			}
 			So(datastore.Get(c, nsaSuspect), ShouldBeNil)
-			So(nsaSuspect.GitilesCommit.Id, ShouldEqual, "commit5")
-			So(nsaSuspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_VerificationScheduled)
+			So(nsaSuspect, ShouldResemble, &model.Suspect{
+				Id:             nsaSuspect.Id,
+				Type:           model.SuspectType_NthSection,
+				ParentAnalysis: nsaSuspect.ParentAnalysis,
+				GitilesCommit: bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Id:      "commit5",
+					Ref:     "ref",
+				},
+				VerificationStatus: model.SuspectVerificationStatus_VerificationScheduled,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
+			})
 			So(datastore.Get(c, cfa), ShouldBeNil)
 			So(cfa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
 			So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_STARTED)
@@ -416,7 +427,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				ParentKey:  datastore.KeyForObj(c, nsa).Encode(),
 			}
 			expected := proto.Clone(task).(*tpb.CulpritVerificationTask)
-			So(scheduler.Tasks().Payloads()[0], assertions.ShouldResembleProto, expected)
+			So(scheduler.Tasks().Payloads()[0], ShouldResembleProto, expected)
 		})
 
 		Convey("Nthsection couldn't find suspect", func() {
