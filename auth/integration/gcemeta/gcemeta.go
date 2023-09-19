@@ -36,6 +36,7 @@ import (
 	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/oauth2"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
@@ -209,7 +210,17 @@ func (s *Server) accountScopesHandler(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) accountTokenHandler(rw http.ResponseWriter, r *http.Request) {
-	tok, err := s.Generator.GenerateOAuthToken(r.Context(), s.Scopes, s.MinTokenLifetime)
+	scopesSet := stringset.New(0)
+	for _, scope := range strings.Split(r.URL.Query().Get("scopes"), ",") {
+		if scope = strings.TrimSpace(scope); scope != "" {
+			scopesSet.Add(scope)
+		}
+	}
+	scopes := s.Scopes
+	if len(scopesSet) > 0 {
+		scopes = scopesSet.ToSortedSlice()
+	}
+	tok, err := s.Generator.GenerateOAuthToken(r.Context(), scopes, s.MinTokenLifetime)
 	if err != nil {
 		http.Error(rw, fmt.Sprintf("Failed to mint the token - %s", err), http.StatusInternalServerError)
 		return

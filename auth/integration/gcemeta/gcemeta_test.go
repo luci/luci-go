@@ -31,9 +31,11 @@ import (
 type fakeGenerator struct {
 	accessToken *oauth2.Token
 	idToken     string
+	lastScopes  []string
 }
 
 func (f *fakeGenerator) GenerateOAuthToken(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
+	f.lastScopes = append([]string(nil), scopes...)
 	return f.accessToken, nil
 }
 
@@ -49,8 +51,9 @@ func TestServer(t *testing.T) {
 	fakeIDToken := "fake_id_token"
 
 	ctx := context.Background()
+	gen := &fakeGenerator{fakeAccessToken, fakeIDToken, nil}
 	srv := Server{
-		Generator:        &fakeGenerator{fakeAccessToken, fakeIDToken},
+		Generator:        gen,
 		Email:            "fake@example.com",
 		Scopes:           []string{"scope1", "scope2"},
 		MinTokenLifetime: 2 * time.Minute,
@@ -114,15 +117,31 @@ func TestServer(t *testing.T) {
 		})
 
 		Convey("OAuth2 token source works", func() {
-			ts := google.ComputeTokenSource("default", "ignored-scopes")
-			tok, err := ts.Token()
-			So(err, ShouldBeNil)
-			// Do not put tokens into logs, in case we somehow accidentally hit real
-			// metadata server with real tokens.
-			if tok.AccessToken != fakeAccessToken.AccessToken {
-				panic("Bad token")
-			}
-			So(time.Until(tok.Expiry), ShouldBeGreaterThan, 55*time.Minute)
+			Convey("Default scopes", func() {
+				ts := google.ComputeTokenSource("default")
+				tok, err := ts.Token()
+				So(err, ShouldBeNil)
+				// Do not put tokens into logs, in case we somehow accidentally hit real
+				// metadata server with real tokens.
+				if tok.AccessToken != fakeAccessToken.AccessToken {
+					panic("Bad token")
+				}
+				So(time.Until(tok.Expiry), ShouldBeGreaterThan, 55*time.Minute)
+				So(gen.lastScopes, ShouldResemble, []string{"scope1", "scope2"})
+			})
+
+			Convey("Custom scopes", func() {
+				ts := google.ComputeTokenSource("default", "custom1", "custom1", "custom2")
+				tok, err := ts.Token()
+				So(err, ShouldBeNil)
+				// Do not put tokens into logs, in case we somehow accidentally hit real
+				// metadata server with real tokens.
+				if tok.AccessToken != fakeAccessToken.AccessToken {
+					panic("Bad token")
+				}
+				So(time.Until(tok.Expiry), ShouldBeGreaterThan, 55*time.Minute)
+				So(gen.lastScopes, ShouldResemble, []string{"custom1", "custom2"})
+			})
 		})
 
 		Convey("ID token fetch works", func() {
