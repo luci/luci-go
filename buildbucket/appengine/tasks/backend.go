@@ -195,6 +195,10 @@ func computeAgentArgs(build *pb.Build, infra *pb.BuildInfra) (args []string) {
 	// cache-base arg
 	args = append(args, "-cache-base")
 	args = append(args, infra.Bbagent.GetCacheDir())
+
+	// context-file arg
+	args = append(args, "-context-file")
+	args = append(args, "${BUILDBUCKET_AGENT_CONTEXT_FILE}")
 	return
 }
 
