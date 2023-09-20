@@ -446,6 +446,7 @@ var Bots_ServiceDesc = grpc.ServiceDesc{
 
 const (
 	Tasks_GetResult_FullMethodName        = "/swarming.v2.Tasks/GetResult"
+	Tasks_BatchGetResult_FullMethodName   = "/swarming.v2.Tasks/BatchGetResult"
 	Tasks_GetRequest_FullMethodName       = "/swarming.v2.Tasks/GetRequest"
 	Tasks_CancelTask_FullMethodName       = "/swarming.v2.Tasks/CancelTask"
 	Tasks_GetStdout_FullMethodName        = "/swarming.v2.Tasks/GetStdout"
@@ -466,7 +467,11 @@ type TasksClient interface {
 	// the fact that a task may have been retried transparently, when a bot reports
 	// BOT_DIED.
 	// A summary ID ends with '0', a run ID ends with '1' or '2'.
+	//
+	// TODO(vadimsh): Require the summary ID ending with '0'.
 	GetResult(ctx context.Context, in *TaskIdWithPerfRequest, opts ...grpc.CallOption) (*TaskResultResponse, error)
+	// BatchGetResult returns results of many tasks at once.
+	BatchGetResult(ctx context.Context, in *BatchGetResultRequest, opts ...grpc.CallOption) (*BatchGetResultResponse, error)
 	// GetRequest returns the task request corresponding to a task ID.
 	GetRequest(ctx context.Context, in *TaskIdRequest, opts ...grpc.CallOption) (*TaskRequestResponse, error)
 	// CancelTask cancels a task. If a bot was running the task, the bot will forcibly cancel the task.
@@ -505,6 +510,15 @@ func NewTasksClient(cc grpc.ClientConnInterface) TasksClient {
 func (c *tasksClient) GetResult(ctx context.Context, in *TaskIdWithPerfRequest, opts ...grpc.CallOption) (*TaskResultResponse, error) {
 	out := new(TaskResultResponse)
 	err := c.cc.Invoke(ctx, Tasks_GetResult_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tasksClient) BatchGetResult(ctx context.Context, in *BatchGetResultRequest, opts ...grpc.CallOption) (*BatchGetResultResponse, error) {
+	out := new(BatchGetResultResponse)
+	err := c.cc.Invoke(ctx, Tasks_BatchGetResult_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -601,7 +615,11 @@ type TasksServer interface {
 	// the fact that a task may have been retried transparently, when a bot reports
 	// BOT_DIED.
 	// A summary ID ends with '0', a run ID ends with '1' or '2'.
+	//
+	// TODO(vadimsh): Require the summary ID ending with '0'.
 	GetResult(context.Context, *TaskIdWithPerfRequest) (*TaskResultResponse, error)
+	// BatchGetResult returns results of many tasks at once.
+	BatchGetResult(context.Context, *BatchGetResultRequest) (*BatchGetResultResponse, error)
 	// GetRequest returns the task request corresponding to a task ID.
 	GetRequest(context.Context, *TaskIdRequest) (*TaskRequestResponse, error)
 	// CancelTask cancels a task. If a bot was running the task, the bot will forcibly cancel the task.
@@ -636,6 +654,9 @@ type UnimplementedTasksServer struct {
 
 func (UnimplementedTasksServer) GetResult(context.Context, *TaskIdWithPerfRequest) (*TaskResultResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetResult not implemented")
+}
+func (UnimplementedTasksServer) BatchGetResult(context.Context, *BatchGetResultRequest) (*BatchGetResultResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BatchGetResult not implemented")
 }
 func (UnimplementedTasksServer) GetRequest(context.Context, *TaskIdRequest) (*TaskRequestResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRequest not implemented")
@@ -691,6 +712,24 @@ func _Tasks_GetResult_Handler(srv interface{}, ctx context.Context, dec func(int
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TasksServer).GetResult(ctx, req.(*TaskIdWithPerfRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Tasks_BatchGetResult_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchGetResultRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TasksServer).BatchGetResult(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Tasks_BatchGetResult_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TasksServer).BatchGetResult(ctx, req.(*BatchGetResultRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -867,6 +906,10 @@ var Tasks_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetResult",
 			Handler:    _Tasks_GetResult_Handler,
+		},
+		{
+			MethodName: "BatchGetResult",
+			Handler:    _Tasks_BatchGetResult_Handler,
 		},
 		{
 			MethodName: "GetRequest",

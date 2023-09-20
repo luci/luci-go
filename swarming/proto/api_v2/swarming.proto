@@ -9,7 +9,7 @@ option go_package = "go.chromium.org/luci/swarming/proto/api_v2;apipb";
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
-
+import "google/rpc/status.proto";
 
 
 service Bots {
@@ -65,7 +65,11 @@ service Tasks {
   // the fact that a task may have been retried transparently, when a bot reports
   // BOT_DIED.
   // A summary ID ends with '0', a run ID ends with '1' or '2'.
+  //
+  // TODO(vadimsh): Require the summary ID ending with '0'.
   rpc GetResult(TaskIdWithPerfRequest) returns (TaskResultResponse);
+  // BatchGetResult returns results of many tasks at once.
+  rpc BatchGetResult(BatchGetResultRequest) returns (BatchGetResultResponse);
   // GetRequest returns the task request corresponding to a task ID.
   rpc GetRequest(TaskIdRequest) returns (TaskRequestResponse);
   // CancelTask cancels a task. If a bot was running the task, the bot will forcibly cancel the task.
@@ -1142,3 +1146,22 @@ message TaskQueuesRequest {
   string cursor = 2;
 }
 
+message BatchGetResultRequest {
+  // One or more task IDs (ending with '0'), must have no duplicates.
+  repeated string task_ids = 1;
+  // If true, populate `performance_stats` in the output.
+  bool include_performance_stats = 2;
+}
+
+message BatchGetResultResponse {
+  // Outcome of fetching one task's result.
+  message ResultOrError {
+    string task_id = 1;
+    oneof outcome {
+      TaskResultResponse result = 2;
+      google.rpc.Status error = 3;
+    }
+  }
+  // Task results or errors, in the same order as `task_ids` in the request.
+  repeated ResultOrError results = 1;
+}

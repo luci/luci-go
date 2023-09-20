@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/swarming/internal/notifications"
+	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/hmactoken"
 	"go.chromium.org/luci/swarming/server/internals"
@@ -135,6 +136,13 @@ func main() {
 				tokenSecret,
 			))
 		}
+
+		// Register noop gRPC servers to make them available in RPC Explorer. Actual
+		// implementation still lives in Python and RPCs are routed there via
+		// dispatch.yaml.
+		apipb.RegisterBotsServer(srv, apipb.UnimplementedBotsServer{})
+		apipb.RegisterTasksServer(srv, apipb.UnimplementedTasksServer{})
+		apipb.RegisterSwarmingServer(srv, apipb.UnimplementedSwarmingServer{})
 
 		return nil
 	})
