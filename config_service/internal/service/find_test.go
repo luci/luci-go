@@ -22,6 +22,8 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -113,7 +115,7 @@ func TestFinder(t *testing.T) {
 				})
 			})
 
-			Convey("Don't match different service even though the pattern says so", func() {
+			Convey("Log warning if a service is interested in the config of another service", func() {
 				updateService(func(srv *model.Service) {
 					srv.Metadata = &cfgcommonpb.ServiceMetadata{
 						ConfigPatterns: []*cfgcommonpb.ConfigPattern{
@@ -124,12 +126,13 @@ func TestFinder(t *testing.T) {
 						},
 					}
 				})
+				ctx = memlogger.Use(ctx)
+				logs := logging.Get(ctx).(*memlogger.MemLogger)
 				finder, err := NewFinder(ctx)
 				So(err, ShouldBeNil)
-				services := finder.FindInterestedServices(ctx, config.MustServiceSet(serviceName), "settings-foo.cfg")
+				services := finder.FindInterestedServices(ctx, config.MustServiceSet("not-my-service"), "settings-foo.cfg")
 				So(services, ShouldNotBeEmpty)
-				services = finder.FindInterestedServices(ctx, config.MustServiceSet("not-my-service"), "settings-foo.cfg")
-				So(services, ShouldBeEmpty)
+				So(logs, memlogger.ShouldHaveLog, logging.Warning, fmt.Sprintf("crbug/1466976 - service %q declares it is interested in the config \"settings-foo.cfg\" of another service \"not-my-service\"", serviceName))
 			})
 		})
 

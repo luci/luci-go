@@ -81,22 +81,17 @@ func (m matcher) match(s string) bool {
 // matchConfig returns true if any of the pre-computed pattern matches the
 // provided config file.
 //
-// If the provided config set is a service, always returns false when the
-// service name is different from the service wrapped by serviceWrapper.
-// This is for tightening access control where service A doesn't get to
-// validate the service config for service B.
+// TODO: crbug/1466976 - If the provided config set is a service, returns
+// false when the service name is different from the service wrapped by
+// serviceWrapper. Otherwise, a compromised service A may obtain the config
+// of service B by declaring itself interested in a config file that service B
+// has. For now, only log a warning.
 func (sw *serviceWrapper) matchConfig(ctx context.Context, cs config.Set, filePath string) bool {
-	if domain, target := cs.Split(); domain == config.ServiceDomain && sw.service.Name != target {
-		for _, p := range sw.patterns {
-			if p.configSetMatcher.match(string(cs)) {
-				logging.Warningf(ctx, "service %q declares it is interested in the config of another service %q", sw.service.Name, target)
-				return false
-			}
-		}
-		return false
-	}
 	for _, p := range sw.patterns {
 		if p.configSetMatcher.match(string(cs)) && p.pathMatcher.match(filePath) {
+			if domain, target := cs.Split(); domain == config.ServiceDomain && sw.service.Name != target {
+				logging.Warningf(ctx, "crbug/1466976 - service %q declares it is interested in the config %q of another service %q", sw.service.Name, filePath, target)
+			}
 			return true
 		}
 	}
