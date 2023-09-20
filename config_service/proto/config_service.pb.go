@@ -86,11 +86,13 @@ type GetConfigRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Requires path. Mutually exclusive with content_sha256.
+	// ConfigSet where the requested config belongs to.
+	//
+	// Required.
 	ConfigSet string `protobuf:"bytes,1,opt,name=config_set,json=configSet,proto3" json:"config_set,omitempty"`
-	// Requires config_set. Mutually exclusive with content_sha256.
+	// Path of the config. Mutually exclusive with content_sha256.
 	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
-	// Mutually exclusive with config_set and path.
+	// Content SHA256 value of the config. Mutually exclusive with path.
 	ContentSha256 string `protobuf:"bytes,3,opt,name=content_sha256,json=contentSha256,proto3" json:"content_sha256,omitempty"`
 	// Fields of the Config proto to include.
 	//

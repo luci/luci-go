@@ -267,52 +267,49 @@ func GetLatestConfigFile(ctx context.Context, configSet config.Set, filePath str
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch ConfigSet %q", configSet).Err()
 	}
-	file := &File{
+	f := &File{
 		Path:     filePath,
 		Revision: datastore.MakeKey(ctx, ConfigSetKind, string(configSet), RevisionKind, cfgSet.LatestRevision.ID),
 	}
-	if err := file.Load(ctx); err != nil {
-		return nil, err
+	switch err := datastore.Get(ctx, f); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, &NoSuchConfigError{
+			unknownConfigFile: struct {
+				configSet, revision, file, hash string
+			}{
+				configSet: f.Revision.Root().StringID(),
+				revision:  f.Revision.StringID(),
+				file:      f.Path,
+			}}
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to fetch file %q", f.Path).Err()
 	}
-	return file, nil
+	return f, nil
 }
 
-// Load loads the file entity from Datastore.
+// GetConfigFileByHash fetches a file entity by content hash for the given
+// config set. If multiple file entities are found, the most recently created
+// one will be returned.
 //
 // Returns NoSuchConfigError when the matching file can not be found in the
 // storage.
-func (f *File) Load(ctx context.Context) error {
+func GetConfigFileByHash(ctx context.Context, configSet config.Set, contentSha256 string) (*File, error) {
+	var latestFile *File
+	err := datastore.Run(ctx, datastore.NewQuery(FileKind).Eq("content_sha256", contentSha256), func(file *File) error {
+		if file.Revision.Root().StringID() == string(configSet) &&
+			(latestFile == nil || file.CreateTime.After(latestFile.CreateTime)) {
+			latestFile = file
+		}
+		return nil
+	})
 	switch {
-	case f.Path != "" && f.Revision != nil:
-		switch err := datastore.Get(ctx, f); {
-		case err == datastore.ErrNoSuchEntity:
-			return &NoSuchConfigError{
-				unknownConfigFile: struct {
-					configSet, revision, file, hash string
-				}{
-					configSet: f.Revision.Root().StringID(),
-					revision:  f.Revision.StringID(),
-					file:      f.Path,
-				}}
-		case err != nil:
-			return errors.Annotate(err, "failed to fetch file %q", f.Path).Err()
-		}
-	case f.ContentSHA256 != "":
-		err := datastore.Run(ctx, datastore.NewQuery(FileKind).Eq("content_sha256", f.ContentSHA256), func(file *File) error {
-			*f = *file
-			return datastore.Stop
-		})
-		switch {
-		case err != nil:
-			return errors.Annotate(err, "failed to query file by sha256 hash %q", f.ContentSHA256).Err()
-		case f.Path == "":
-			return &NoSuchConfigError{
-				unknownConfigFile: struct {
-					configSet, revision, file, hash string
-				}{hash: f.ContentSHA256}}
-		}
-	default:
-		return errors.Reason("One of ContentSHA256 or (path and revision) is required").Err()
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to query file by sha256 hash %q", contentSha256).Err()
+	case latestFile == nil:
+		return nil, &NoSuchConfigError{
+			unknownConfigFile: struct {
+				configSet, revision, file, hash string
+			}{hash: contentSha256}}
 	}
-	return nil
+	return latestFile, nil
 }

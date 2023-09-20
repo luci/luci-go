@@ -39,21 +39,18 @@ import (
 // validateGetConfig validates the given request.
 func validateGetConfig(req *pb.GetConfigRequest) error {
 	switch {
-	case req.GetContentSha256() != "":
-		if req.ConfigSet != "" || req.Path != "" {
-			return errors.Reason("content_sha256 is mutually exclusive with (config_set and path)").Err()
-		}
-	case req.GetConfigSet() != "" && req.GetPath() != "":
-		if err := config.Set(req.ConfigSet).Validate(); err != nil {
-			return errors.Annotate(err, "config_set %q", req.ConfigSet).Err()
-		}
+	case req.GetConfigSet() == "":
+		return errors.Reason("config_set is not specified").Err()
+	case req.GetContentSha256() != "" && req.GetPath() != "":
+		return errors.Reason("content_sha256 and path are mutually exclusive").Err()
+	case req.GetContentSha256() == "" && req.GetPath() == "":
+		return errors.Reason("content_sha256 or path is required").Err()
+	case req.GetPath() != "":
 		if err := validatePath(req.Path); err != nil {
 			return errors.Annotate(err, "path %q", req.Path).Err()
 		}
-	default:
-		return errors.Reason("one of content_sha256 or (config_set and path) is required").Err()
 	}
-	return nil
+	return errors.Annotate(config.Set(req.ConfigSet).Validate(), "config_set %q", req.ConfigSet).Err()
 }
 
 // GetConfig handles a request to retrieve a config. Implements pb.ConfigsServer.
@@ -70,20 +67,6 @@ func (c Configs) GetConfig(ctx context.Context, req *pb.GetConfigRequest) (*pb.C
 	var noSuchCfgErr *model.NoSuchConfigError
 	cs := req.ConfigSet
 
-	// Fetch by ContentSha256
-	if req.ContentSha256 != "" {
-		f = &model.File{ContentSHA256: req.ContentSha256}
-		switch err := f.Load(ctx); {
-		case errors.As(err, &noSuchCfgErr):
-			logging.Infof(ctx, "no such config: %s", noSuchCfgErr.Error())
-			return nil, notFoundErr(auth.CurrentIdentity(ctx))
-		case err != nil:
-			logging.Errorf(ctx, "cannot fetch config (hash %s): %s", req.ContentSha256, err)
-			return nil, status.Errorf(codes.Internal, "error while fetching the config")
-		}
-		cs = f.Revision.Root().StringID()
-	}
-
 	// Check read access for the config set.
 	switch hasPerm, err := acl.CanReadConfigSet(ctx, config.Set(cs)); {
 	case err != nil:
@@ -94,8 +77,18 @@ func (c Configs) GetConfig(ctx context.Context, req *pb.GetConfigRequest) (*pb.C
 		return nil, notFoundErr(auth.CurrentIdentity(ctx))
 	}
 
-	// Fetch by config set + path.
-	if req.ContentSha256 == "" {
+	// Fetch by ContentSha256
+	if req.ContentSha256 != "" {
+		switch f, err = model.GetConfigFileByHash(ctx, config.Set(cs), req.ContentSha256); {
+		case errors.As(err, &noSuchCfgErr):
+			logging.Infof(ctx, "no such config: %s", noSuchCfgErr.Error())
+			return nil, notFoundErr(auth.CurrentIdentity(ctx))
+		case err != nil:
+			logging.Errorf(ctx, "cannot fetch config (hash %s): %s", req.ContentSha256, err)
+			return nil, status.Errorf(codes.Internal, "error while fetching the config")
+		}
+	} else {
+		// Fetch by config set + path.
 		switch f, err = model.GetLatestConfigFile(ctx, config.Set(cs), req.Path); {
 		case errors.As(err, &noSuchCfgErr):
 			logging.Infof(ctx, "no such config: %s", noSuchCfgErr.Error())

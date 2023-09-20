@@ -48,7 +48,10 @@ func TestGetConfig(t *testing.T) {
 
 	Convey("validateGetConfig", t, func() {
 		Convey("ok", func() {
-			So(validateGetConfig(&pb.GetConfigRequest{ContentSha256: "sha256"}), ShouldBeNil)
+			So(validateGetConfig(&pb.GetConfigRequest{
+				ConfigSet:     "services/abc",
+				ContentSha256: "sha256",
+			}), ShouldBeNil)
 
 			So(validateGetConfig(&pb.GetConfigRequest{
 				ConfigSet: "services/abc",
@@ -59,14 +62,23 @@ func TestGetConfig(t *testing.T) {
 		Convey("invalid", func() {
 			Convey("empty", func() {
 				err := validateGetConfig(&pb.GetConfigRequest{})
-				So(err, ShouldErrLike, "one of content_sha256 or (config_set and path) is required")
+				So(err, ShouldErrLike, "config_set is not specified")
+			})
+
+			Convey("path + content_sha256", func() {
+				err := validateGetConfig(&pb.GetConfigRequest{
+					ConfigSet:     "services/abc",
+					Path:          "path",
+					ContentSha256: "hash",
+				})
+				So(err, ShouldErrLike, "content_sha256 and path are mutually exclusive")
 			})
 
 			Convey("config_set", func() {
 				err := validateGetConfig(&pb.GetConfigRequest{
 					ConfigSet: "services/abc",
 				})
-				So(err, ShouldErrLike, "one of content_sha256 or (config_set and path) is required")
+				So(err, ShouldErrLike, "content_sha256 or path is required")
 
 				err = validateGetConfig(&pb.GetConfigRequest{
 					ConfigSet: "random/abc",
@@ -126,9 +138,9 @@ func TestGetConfig(t *testing.T) {
 
 		Convey("not ok", func() {
 			Convey("invalid req", func() {
-				res, err := srv.GetConfig(ctx, &pb.GetConfigRequest{})
+				res, err := srv.GetConfig(ctx, &pb.GetConfigRequest{ConfigSet: "services/myservice"})
 				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, "one of content_sha256 or (config_set and path) is required")
+				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, "content_sha256 or path is required")
 			})
 
 			Convey("bad field mask", func() {
@@ -178,6 +190,7 @@ func TestGetConfig(t *testing.T) {
 			Convey("not exist config sha256", func() {
 				testutil.InjectConfigSet(ctx, config.MustServiceSet("myservice"), map[string]proto.Message{})
 				res, err := srv.GetConfig(ctx, &pb.GetConfigRequest{
+					ConfigSet:     "services/myservice",
 					ContentSha256: "abc",
 				})
 				So(res, ShouldBeNil)
@@ -214,6 +227,7 @@ func TestGetConfig(t *testing.T) {
 
 			Convey("by content hash", func() {
 				res, err := srv.GetConfig(ctx, &pb.GetConfigRequest{
+					ConfigSet:     "services/myservice",
 					ContentSha256: contextShaStr,
 				})
 				So(err, ShouldBeNil)

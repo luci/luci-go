@@ -19,9 +19,11 @@ import (
 	"compress/gzip"
 	"context"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/config"
@@ -85,79 +87,52 @@ func TestModel(t *testing.T) {
 		})
 	})
 
-	Convey("File.Load", t, func() {
+	Convey("GetConfigFileByHash", t, func() {
 		ctx := memory.UseWithAppID(context.Background(), "dev~app-id")
-		ctl := gomock.NewController(t)
-		defer ctl.Finish()
-		mockGsClient := clients.NewMockGsClient(ctl)
-		ctx = clients.WithGsClient(ctx, mockGsClient)
 		datastore.GetTestable(ctx).Consistent(true)
-
-		Convey("by path and revision", func() {
-			content, err := gzipCompress([]byte("content"))
-			So(err, ShouldBeNil)
-			So(datastore.Put(ctx, &File{
-				Path:     "file",
-				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
-				Content:  content,
-				GcsURI:   gs.MakePath("bucket", "object"),
-			}), ShouldBeNil)
-
-			file := &File{
-				Path:     "file",
-				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
-			}
-			So(file.Load(ctx), ShouldBeNil)
-			So(file, ShouldResemble, &File{
-				Path:     "file",
-				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
-				Content:  content,
-				GcsURI:   gs.MakePath("bucket", "object"),
-			})
-		})
 
 		Convey("by content hash", func() {
 			content, err := gzipCompress([]byte("content"))
 			So(err, ShouldBeNil)
+			now := clock.Now(ctx).UTC()
 			So(datastore.Put(ctx, &File{
 				Path:          "file",
-				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
+				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev1"),
 				ContentSHA256: "hash",
 				Content:       content,
 				GcsURI:        gs.MakePath("bucket", "object"),
+				CreateTime:    datastore.RoundTime(now),
+			}, &File{
+				Path:          "file",
+				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev2"),
+				ContentSHA256: "hash",
+				Content:       content,
+				GcsURI:        gs.MakePath("bucket", "object"),
+				CreateTime:    datastore.RoundTime(now.Add(1 * time.Minute)),
+			}, &File{
+				Path:          "file",
+				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/another", RevisionKind, "rev"),
+				ContentSHA256: "hash",
+				Content:       content,
+				GcsURI:        gs.MakePath("bucket", "object"),
+				CreateTime:    datastore.RoundTime(now.Add(2 * time.Minute)),
 			}), ShouldBeNil)
 
-			file := &File{
-				ContentSHA256: "hash",
-			}
-			So(file.Load(ctx), ShouldBeNil)
+			file, err := GetConfigFileByHash(ctx, config.MustServiceSet("service"), "hash")
+			So(err, ShouldBeNil)
 			So(file, ShouldResemble, &File{
 				Path:          "file",
-				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
+				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev2"),
 				ContentSHA256: "hash",
 				Content:       content,
 				GcsURI:        gs.MakePath("bucket", "object"),
+				CreateTime:    datastore.RoundTime(now.Add(1 * time.Minute)),
 			})
 		})
 
-		Convey("miss required field", func() {
-			file := &File{}
-			So(file.Load(ctx), ShouldErrLike, "One of ContentSHA256 or (path and revision) is required")
-		})
-
-		Convey("not found (path+revision)", func() {
-			file := &File{
-				Path:     "file",
-				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
-			}
-			So(file.Load(ctx), ShouldErrLike, `can not find file entity "file" from datastore for config set: services/service, revision: rev`)
-		})
-
-		Convey("not found (hash)", func() {
-			file := &File{
-				ContentSHA256: "hash",
-			}
-			So(file.Load(ctx), ShouldErrLike, `can not find matching file entity from datastore with hash "hash"`)
+		Convey("not found", func() {
+			_, err := GetConfigFileByHash(ctx, config.MustServiceSet("service"), "hash")
+			So(err, ShouldErrLike, `can not find matching file entity from datastore with hash "hash"`)
 		})
 	})
 }
