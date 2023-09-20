@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { FileDescriptorSet, Descriptors } from './prpc';
+import { FileDescriptorSet, Descriptors, JSONType } from './prpc';
 import { TestDescriptor } from './testdata/descriptor';
 
 const descs = new Descriptors(
@@ -59,5 +59,51 @@ describe('Descriptors', () => {
       '\n\n' +
       'And something extra.',
     );
+  });
+
+  it('Fields', () => {
+    const msg = descs.message('rpcexplorer.M');
+    expect(msg!.fieldByJsonName('i')!.jsonName).toEqual('i');
+    expect(msg!.fieldByJsonName('m')!.repeated).toEqual(false);
+    expect(msg!.fieldByJsonName('mr')!.repeated).toEqual(true);
+  });
+
+  it('Fields types', () => {
+    let m = descs.message('rpcexplorer.M');
+    expect(m!.fieldByJsonName('i')!.type).toEqual('int32');
+    expect(m!.fieldByJsonName('s')!.type).toEqual('string');
+    expect(m!.fieldByJsonName('ri')!.type).toEqual('repeated int32');
+    expect(m!.fieldByJsonName('e')!.type).toEqual('rpcexplorer.E');
+    expect(m!.fieldByJsonName('m')!.type).toEqual('rpcexplorer.M2');
+
+    m = descs.message('rpcexplorer.MapContainer');
+    expect(m!.fieldByJsonName('im')!.type).toEqual('map<int32, rpcexplorer.M>');
+  });
+
+  it('Fields JSON types', () => {
+    let m = descs.message('rpcexplorer.M');
+    expect(m!.fieldByJsonName('i')!.jsonType).toEqual(JSONType.Scalar);
+    expect(m!.fieldByJsonName('s')!.jsonType).toEqual(JSONType.String);
+    expect(m!.fieldByJsonName('ri')!.jsonType).toEqual(JSONType.List);
+    expect(m!.fieldByJsonName('ri')!.jsonElementType).toEqual(JSONType.Scalar);
+    expect(m!.fieldByJsonName('e')!.jsonType).toEqual(JSONType.String);
+    expect(m!.fieldByJsonName('m')!.jsonType).toEqual(JSONType.Object);
+
+    m = descs.message('rpcexplorer.MapContainer');
+    expect(m!.fieldByJsonName('im')!.jsonType).toEqual(JSONType.Object);
+  });
+
+  it('Fields doc', () => {
+    const m = descs.message('rpcexplorer.M');
+    expect(m!.fieldByJsonName('i')!.doc).toEqual('i is integer');
+    expect(m!.fieldByJsonName('mr')!.doc).toEqual(
+        'mr is repeated message\nsecond line.',
+    );
+  });
+
+  it('Enums', () => {
+    const e = descs.message('rpcexplorer.M')!.fieldByJsonName('e')!.enum!;
+    expect(e.values[0].name).toEqual('V0');
+    expect(e.values[0].doc).toEqual('V0 comment.');
   });
 });

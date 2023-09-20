@@ -56,23 +56,234 @@ export class RPCError extends Error {
 export class Descriptors {
   // A list of RPC services exposed by a server.
   readonly services: Service[] = [];
+  // Helpers for visiting descriptors.
+  private readonly types: Types;
+  // A cache of visited message types.
+  private readonly messages: Cache<Message>;
+  // A cache of visited enum types.
+  private readonly enums: Cache<Enum>;
 
   constructor(desc: FileDescriptorSet, services: string[]) {
     for (const fileDesc of (desc.file ?? [])) {
       resolveSourceLocation(fileDesc); // mutates `fileDesc` in-place
     }
-    const types = new Types(desc);
+    this.types = new Types(desc);
     for (const serviceName of services) {
-      const desc = types.service(serviceName);
+      const desc = this.types.service(serviceName);
       if (desc) {
         this.services.push(new Service(serviceName, desc));
       }
     }
+    this.messages = new Cache();
+    this.enums = new Cache();
   }
 
   // Returns a service by its name or undefined if no such service.
   service(serviceName: string): Service | undefined {
     return this.services.find((service) => service.name == serviceName);
+  }
+
+  // Returns a message descriptor given its name or undefined if not found.
+  message(messageName: string): Message | undefined {
+    return this.messages.get(messageName, () => {
+      const desc = this.types.message(messageName);
+      return desc ? new Message(desc, this) : undefined;
+    });
+  }
+
+  // Returns an enum descriptor given its name or undefined if not found.
+  enum(enumName: string): Enum | undefined {
+    return this.enums.get(enumName, () => {
+      const desc = this.types.enum(enumName);
+      return desc ? new Enum(desc) : undefined;
+    });
+  }
+}
+
+
+// Describes a structure of a message.
+export class Message {
+  // True if this message represents some map<K,V> entry.
+  readonly mapEntry: boolean;
+  // The list of fields of this message.
+  readonly fields: Field[];
+
+  constructor(desc: DescriptorProto, root: Descriptors) {
+    this.mapEntry = desc.options?.mapEntry ?? false;
+    this.fields = [];
+    for (const field of (desc.field ?? [])) {
+      this.fields.push(new Field(field, root));
+    }
+  }
+
+  // Returns a field given its JSON name.
+  fieldByJsonName(name: string): Field | undefined {
+    for (const field of this.fields) {
+      if (field.jsonName == name) {
+        return field;
+      }
+    }
+    return undefined;
+  }
+}
+
+
+// Describes possible values of an enum.
+export class Enum {
+  // Possible values of an enum.
+  readonly values: EnumValue[];
+
+  constructor(desc: EnumDescriptorProto) {
+    this.values = [];
+    for (const val of (desc.value ?? [])) {
+      this.values.push(new EnumValue(val));
+    }
+  }
+}
+
+
+// A single possible value of an enum
+export class EnumValue {
+  // E.g. "SOME_VALUE";
+  readonly name: string;
+
+  private readonly desc: EnumValueDescriptorProto;
+  private cachedDoc: string | null;
+
+  constructor(desc: EnumValueDescriptorProto) {
+    this.name = desc.name;
+    this.desc = desc;
+    this.cachedDoc = null;
+  }
+
+  // Paragraphs with documentation extracted from comments in the proto file.
+  get doc(): string {
+    if (this.cachedDoc == null) {
+      this.cachedDoc = extractDoc(this.desc.resolvedSourceLocation);
+    }
+    return this.cachedDoc;
+  }
+}
+
+
+// How field value is encoded in JSON.
+export enum JSONType {
+  Object,
+  List,
+  String,
+  Scalar, // numbers, booleans, null
+}
+
+
+// Describes a structure of a single field.
+export class Field {
+  // Fields JSON name, e.g. `someField`.
+  readonly jsonName: string;
+  // True if this is a repeated field or a map field.
+  readonly repeated: boolean;
+
+  private readonly desc: FieldDescriptorProto;
+  private readonly root: Descriptors;
+  private cachedDoc: string | null;
+
+  static readonly scalarTypeNames = new Map([
+    ['TYPE_DOUBLE', 'double'],
+    ['TYPE_FLOAT', 'float'],
+    ['TYPE_INT64', 'int64'],
+    ['TYPE_UINT64', 'uint64'],
+    ['TYPE_INT32', 'int32'],
+    ['TYPE_FIXED64', 'fixed64'],
+    ['TYPE_FIXED32', 'fixed32'],
+    ['TYPE_BOOL', 'bool'],
+    ['TYPE_STRING', 'string'],
+    ['TYPE_BYTES', 'bytes'],
+    ['TYPE_UINT32', 'uint32'],
+    ['TYPE_SFIXED32', 'sfixed32'],
+    ['TYPE_SFIXED64', 'sfixed64'],
+    ['TYPE_SINT32', 'sint32'],
+    ['TYPE_SINT64', 'sint64'],
+  ]);
+
+  constructor(desc: FieldDescriptorProto, root: Descriptors) {
+    this.desc = desc;
+    this.root = root;
+    this.jsonName = desc.jsonName ?? '';
+    this.repeated = desc.label == 'LABEL_REPEATED';
+    this.cachedDoc = null;
+  }
+
+  // For message-valued fields, the type of the field value.
+  //
+  // Works for both singular and repeated fields.
+  get message(): Message | undefined {
+    if (this.desc.type == 'TYPE_MESSAGE') {
+      return this.root.message(this.desc.typeName ?? '');
+    }
+    return undefined;
+  }
+
+  // For enum-valued fields, the type of the field value.
+  //
+  // Works for both singular and repeated fields.
+  get enum(): Enum | undefined {
+    if (this.desc.type == 'TYPE_ENUM') {
+      return this.root.enum(this.desc.typeName ?? '');
+    }
+    return undefined;
+  }
+
+  // Field type name, approximately as it appears in the proto file.
+  //
+  // Recognizes repeated fields and maps.
+  get type(): string {
+    const pfx = this.repeated ? 'repeated ' : '';
+    const scalar = Field.scalarTypeNames.get(this.desc.type);
+    if (scalar) {
+      return pfx + scalar;
+    }
+    const message = this.message;
+    if (message && message.mapEntry) {
+      // Note: mapEntry fields are always implicitly repeated, omit `pfx`.
+      return `map<${message.fields[0].type}, ${message.fields[1].type}>`;
+    }
+    return pfx + trimDot(this.desc.typeName ?? 'unknown');
+  }
+
+  // Type of the field value in JSON representation.
+  //
+  // Recognizes repeated fields and maps.
+  get jsonType(): JSONType {
+    if (this.repeated) {
+      if (this.message?.mapEntry) {
+        return JSONType.Object;
+      }
+      return JSONType.List;
+    }
+    return this.jsonElementType;
+  }
+
+  // JSON type of the base element.
+  //
+  // For repeated fields it is the type inside the list.
+  get jsonElementType(): JSONType {
+    switch (this.desc.type) {
+      case 'TYPE_MESSAGE':
+        return JSONType.Object;
+      case 'TYPE_ENUM':
+      case 'TYPE_STRING':
+      case 'TYPE_BYTES':
+        return JSONType.String;
+      default:
+        return JSONType.Scalar;
+    }
+  }
+
+  // Paragraphs with documentation extracted from comments in the proto file.
+  get doc(): string {
+    if (this.cachedDoc == null) {
+      this.cachedDoc = extractDoc(this.desc.resolvedSourceLocation);
+    }
+    return this.cachedDoc;
   }
 }
 
@@ -119,12 +330,15 @@ export class Method {
   readonly help: string;
   // Paragraphs with full documentation.
   readonly doc: string;
+  // Name of the protobuf message type of the request.
+  readonly requestType: string;
 
   constructor(service: string, desc: MethodDescriptorProto) {
     this.service = service;
     this.name = desc.name;
     this.help = extractHelp(desc.resolvedSourceLocation, desc.name, 'method');
     this.doc = extractDoc(desc.resolvedSourceLocation);
+    this.requestType = desc.inputType;
   }
 
   // Invokes this method, returns prettified JSON response as a string.
@@ -148,8 +362,33 @@ export const loadDescriptors = async (): Promise<Descriptors> => {
 };
 
 
-// /////////////////////////////////////////////////////////////////////////////
 // Private guts.
+
+
+// A helper to cache visited types.
+class Cache<V> {
+  private cache: Map<string, V | 'none'>;
+
+  constructor() {
+    this.cache = new Map();
+  }
+
+  get(key: string, val: () => V | undefined): V | undefined {
+    let cached = this.cache.get(key);
+    switch (cached) {
+      case 'none':
+      // Cached "absence".
+        return undefined;
+      case undefined:
+      // Not in the cache yet.
+        cached = val();
+        this.cache.set(key, cached == undefined ? 'none' : cached);
+        return cached;
+      default:
+        return cached;
+    }
+  }
+}
 
 
 // Types knows how to look up proto descriptors given full proto type names.
@@ -179,6 +418,62 @@ class Types {
       }
       return undefined;
     });
+  }
+
+  // Given a full message name returns its descriptor or undefined.
+  message(fullName: string): DescriptorProto | undefined {
+    // Assume this is a top-level type defined in some package.
+    const [pkg, name] = splitFullName(fullName);
+    const found = this.visitPackage(pkg, (fileDesc) => {
+      for (const desc of (fileDesc.messageType ?? [])) {
+        if (desc.name == name) {
+          return desc;
+        }
+      }
+      return undefined;
+    });
+    if (found) {
+      return found;
+    }
+    // It might be a reference to a nested type, in which case `pkg` is actually
+    // some message name itself. Try to find it.
+    const parent = this.message(pkg);
+    if (parent) {
+      for (const desc of (parent.nestedType ?? [])) {
+        if (desc.name == name) {
+          return desc;
+        }
+      }
+    }
+    return undefined;
+  }
+
+  // Given a full enum name returns its descriptor or undefined.
+  enum(fullName: string): EnumDescriptorProto | undefined {
+    // Assume this is a top-level type defined in some package.
+    const [pkg, name] = splitFullName(fullName);
+    const found = this.visitPackage(pkg, (fileDesc) => {
+      for (const msg of (fileDesc.enumType ?? [])) {
+        if (msg.name == name) {
+          return msg;
+        }
+      }
+      return undefined;
+    });
+    if (found) {
+      return found;
+    }
+    // It might be a reference to a nested type, in which case `pkg` is actually
+    // some message name. Try to find it.
+    const parent = this.message(pkg);
+    if (parent) {
+      for (const msg of (parent.enumType ?? [])) {
+        if (msg.name == name) {
+          return msg;
+        }
+      }
+    }
+    return undefined;
   }
 
   // Visits all FileDescriptorProto that define a particular package.
@@ -301,7 +596,7 @@ const extractHelp = (
     }
   }
 
-  return comment;
+  return deindent(comment);
 };
 
 
@@ -312,7 +607,7 @@ const extractDoc = (loc: SourceCodeInfoLocation | undefined): string => {
   while (text) {
     const [p, remains] = splitParagraph(text);
     if (p) {
-      paragraphs.push(p);
+      paragraphs.push(deindent(p));
     }
     text = remains;
   }
@@ -336,12 +631,37 @@ const splitParagraph = (s: string): [string, string] => {
 };
 
 
+// deindent removes a leading space from all lines that have it.
+//
+// Protobuf docs are generated from comments not unlike this one. `protoc`
+// strips `//` but does nothing to spaces that follow `//`. As a result docs are
+// intended by one space.
+const deindent = (s: string): string => {
+  const lines = s.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith(' ')) {
+      lines[i] = lines[i].substring(1);
+    }
+  }
+  return lines.join('\n');
+};
+
+
 // trimWord removes a leading word from a sentence, kind of.
 const trimWord = (s: string, word: string): [string, boolean] => {
   if (s.startsWith(word + ' ')) {
     return [s.substring(word.length + 1).trimLeft(), true];
   }
   return [s, false];
+};
+
+
+// ".google.protobuf.Empty" => "google.protobuf.Empty";
+const trimDot = (name: string): string => {
+  if (name.startsWith('.')) {
+    return name.substring(1);
+  }
+  return name;
 };
 
 
@@ -445,6 +765,7 @@ interface DescriptorProto extends HasResolved {
   field?: FieldDescriptorProto[]; // = 2
   nestedType?: DescriptorProto[]; // = 3
   enumType?: EnumDescriptorProto[]; // = 4
+  options?: MessageOptions;
 }
 
 interface FieldDescriptorProto extends HasResolved {
@@ -452,6 +773,7 @@ interface FieldDescriptorProto extends HasResolved {
   jsonName?: string;
   type: string; // e.g. "TYPE_INT32"
   typeName?: string; // for message and enum types only
+  label: string; // e.g. "LABEL_REPEATED"
 }
 
 interface EnumDescriptorProto extends HasResolved {
@@ -474,6 +796,10 @@ interface MethodDescriptorProto extends HasResolved {
 
   inputType: string;
   outputType: string;
+}
+
+interface MessageOptions {
+  mapEntry?: boolean;
 }
 
 interface SourceCodeInfo {
