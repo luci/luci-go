@@ -234,13 +234,13 @@ message TestAnalysis {
   // Run status of the analysis.
   AnalysisRunStatus run_status = 6;
   // The verified culprit for the analysis.
-  luci.bisection.v1.Culprit verified_culprit = 7;
+  TestCulprit verified_culprit = 7;
   // The builder that the analysis analyzed.
   buildbucket.v2.BuilderID builder = 8;
   // Test failures that the analysis analyzed.
   // The first item will be the primary failure, followed by other failures.
   // Bisection process will follow the path of the primary test failure.
-  TestFailure test_failures = 9;
+  repeated TestFailure test_failures = 9;
   // The start commit of the regression range (exclusive).
   buildbucket.v2.GitilesCommit start_commit = 10;
   // The end commit of the regression range (inclusive).
@@ -354,4 +354,19 @@ message TestSuspectVerificationDetails {
   TestSingleRerun suspect_rerun = 2;
   // The verification rerun build for the parent commit of the suspect.
   TestSingleRerun parent_rerun = 3;
+}
+
+message TestCulprit {
+  // The gitiles commit for the culprit.
+  buildbucket.v2.GitilesCommit commit = 1;
+  // The review URL for the culprit.
+  string review_url = 2;
+  // The review title for the culprit.
+  string review_title = 3;
+  // Actions we have taken with the culprit.
+  // More than one action may be taken, for example, reverting the culprit and
+  // commenting on the bug.
+  repeated CulpritAction culprit_action = 4;
+  // The details of suspect verification for the culprit.
+  TestSuspectVerificationDetails verification_details = 5;
 }

@@ -40,10 +40,18 @@ import (
 )
 
 var listAnalysesPageTokenVault = dscursor.NewVault([]byte("luci.bisection.v1.ListAnalyses"))
+var listTestAnalysesPageTokenVault = dscursor.NewVault([]byte("luci.bisection.v1.ListTestAnalyses"))
 
 // Max and default page sizes for ListAnalyses - the proto should be updated
-// to reflect any changes to these values
+// to reflect any changes to these values.
 var listAnalysesPageSizeLimiter = PageSizeLimiter{
+	Max:     200,
+	Default: 50,
+}
+
+// Max and default page sizes for ListTestAnalyses - the proto should be updated
+// to reflect any changes to these values.
+var listTestAnalysesPageSizeLimiter = PageSizeLimiter{
 	Max:     200,
 	Default: 50,
 }
@@ -120,12 +128,104 @@ func (server *AnalysesServer) UpdateAnalysis(c context.Context, req *pb.UpdateAn
 	return nil, nil
 }
 
-func (server *AnalysesServer) ListTestAnalyses(c context.Context, req *pb.ListTestAnalysesRequest) (*pb.ListTestAnalysesResponse, error) {
-	return nil, nil
+func (server *AnalysesServer) ListTestAnalyses(ctx context.Context, req *pb.ListTestAnalysesRequest) (*pb.ListTestAnalysesResponse, error) {
+	logging.Infof(ctx, "ListTestAnalyses for project %s", req.Project)
+	// Validate the request.
+	if err := validateListTestAnalysesRequest(req); err != nil {
+		return nil, err
+	}
+
+	// Decode cursor from page token.
+	cursor, err := listTestAnalysesPageTokenVault.Cursor(ctx, req.PageToken)
+	switch err {
+	case pagination.ErrInvalidPageToken:
+		return nil, status.Errorf(codes.InvalidArgument, "invalid page token")
+	case nil:
+		// Continue
+	default:
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
+
+	// Override the page size if necessary.
+	pageSize := int(listTestAnalysesPageSizeLimiter.Adjust(req.PageSize))
+
+	// Query datastore for test analyses.
+	q := datastore.NewQuery("TestFailureAnalysis").Eq("project", req.Project).Order("-create_time").Start(cursor)
+	tfas := make([]*model.TestFailureAnalysis, 0, pageSize)
+	var nextCursor datastore.Cursor
+	err = datastore.Run(ctx, q, func(tfa *model.TestFailureAnalysis, getCursor datastore.CursorCB) error {
+		tfas = append(tfas, tfa)
+
+		// Check whether the page size limit has been reached
+		if len(tfas) == pageSize {
+			nextCursor, err = getCursor()
+			if err != nil {
+				return err
+			}
+			return datastore.Stop
+		}
+		return nil
+	})
+	if err != nil {
+		logging.Errorf(ctx, err.Error())
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
+
+	// Construct the next page token.
+	nextPageToken, err := listTestAnalysesPageTokenVault.PageToken(ctx, nextCursor)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
+
+	// Get the result for each test failure analysis.
+	analyses := make([]*pb.TestAnalysis, len(tfas))
+	err = parallel.FanOutIn(func(workC chan<- func() error) {
+		for i, tfa := range tfas {
+			// Assign to local variables.
+			i := i
+			tfa := tfa
+			workC <- func() error {
+				analysis, err := TestFailureAnalysisToPb(ctx, tfa)
+				if err != nil {
+					err = errors.Annotate(err, "test failure analysis to pb").Err()
+					logging.Errorf(ctx, "Could not get analysis data for analysis %d: %s", tfa.ID, err)
+					return err
+				}
+				analyses[i] = analysis
+				return nil
+			}
+		}
+	})
+	if err != nil {
+		logging.Errorf(ctx, err.Error())
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
+
+	return &pb.ListTestAnalysesResponse{
+		Analyses:      analyses,
+		NextPageToken: nextPageToken,
+	}, nil
 }
 
-func (server *AnalysesServer) GetTestAnalysis(c context.Context, req *pb.GetTestAnalysisRequest) (*pb.TestAnalysis, error) {
-	return nil, nil
+func (server *AnalysesServer) GetTestAnalysis(ctx context.Context, req *pb.GetTestAnalysisRequest) (*pb.TestAnalysis, error) {
+	ctx = loggingutil.SetAnalysisID(ctx, req.AnalysisId)
+	tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, req.AnalysisId)
+	if err != nil {
+		if errors.Is(err, datastore.ErrNoSuchEntity) {
+			logging.Errorf(ctx, err.Error())
+			return nil, status.Errorf(codes.NotFound, "analysis not found: %v", err)
+		}
+		err = errors.Annotate(err, "get test failure analysis").Err()
+		logging.Errorf(ctx, err.Error())
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
+	result, err := TestFailureAnalysisToPb(ctx, tfa)
+	if err != nil {
+		err = errors.Annotate(err, "test failure analysis to pb").Err()
+		logging.Errorf(ctx, err.Error())
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
+	return result, nil
 }
 
 // GetAnalysisResult returns an analysis for pRPC from CompileFailureAnalysis
@@ -555,5 +655,16 @@ func validateListAnalysesRequest(req *pb.ListAnalysesRequest) error {
 		return status.Errorf(codes.InvalidArgument, "Page size can't be negative")
 	}
 
+	return nil
+}
+
+// validateListTestAnalysesRequest checks if the ListTestAnalysesRequest is valid.
+func validateListTestAnalysesRequest(req *pb.ListTestAnalysesRequest) error {
+	if req.Project == "" {
+		return status.Errorf(codes.InvalidArgument, "project must not be empty")
+	}
+	if req.PageSize < 0 {
+		return status.Errorf(codes.InvalidArgument, "page size must not be negative")
+	}
 	return nil
 }

@@ -17,6 +17,7 @@ package server
 import (
 	"context"
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
@@ -633,6 +634,148 @@ func TestListAnalyses(t *testing.T) {
 					So(len(res.Analyses), ShouldEqual, 1)
 					So(res.Analyses[0].AnalysisId, ShouldEqual, 1)
 				})
+			})
+		})
+	})
+}
+
+func TestListTestAnalyses(t *testing.T) {
+	t.Parallel()
+	server := &AnalysesServer{}
+
+	Convey("List existing analyses", t, func() {
+		// Set up context and AEAD so that page tokens can be generated
+		ctx := memory.Use(context.Background())
+		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
+		testutil.UpdateIndices(ctx)
+
+		// Prepares datastore
+		for i := 1; i < 5; i++ {
+			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+				ID:             int64(i),
+				CreateTime:     time.Unix(int64(100+i), 0).UTC(),
+				TestFailureKey: datastore.MakeKey(ctx, "TestFailure", i),
+			})
+			testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+				ID:        int64(i),
+				Analysis:  tfa,
+				IsPrimary: true,
+			})
+		}
+
+		Convey("Empty project", func() {
+			req := &pb.ListTestAnalysesRequest{
+				PageSize: 3,
+			}
+			_, err := server.ListTestAnalyses(ctx, req)
+			So(err, ShouldNotBeNil)
+			So(status.Convert(err).Code(), ShouldEqual, codes.InvalidArgument)
+		})
+
+		Convey("Invalid page size", func() {
+			req := &pb.ListTestAnalysesRequest{
+				Project:  "chromium",
+				PageSize: -5,
+			}
+			_, err := server.ListTestAnalyses(ctx, req)
+			So(err, ShouldNotBeNil)
+			So(status.Convert(err).Code(), ShouldEqual, codes.InvalidArgument)
+		})
+
+		Convey("Specifying page size is optional", func() {
+			req := &pb.ListTestAnalysesRequest{
+				Project: "chromium",
+			}
+			res, err := server.ListTestAnalyses(ctx, req)
+			So(err, ShouldBeNil)
+			So(len(res.Analyses), ShouldEqual, 4)
+			So(res.NextPageToken, ShouldEqual, "")
+		})
+
+		Convey("Response is limited by the page size", func() {
+			req := &pb.ListTestAnalysesRequest{
+				Project:  "chromium",
+				PageSize: 3,
+			}
+			res, err := server.ListTestAnalyses(ctx, req)
+			So(err, ShouldBeNil)
+			So(len(res.Analyses), ShouldEqual, req.PageSize)
+			So(res.NextPageToken, ShouldNotEqual, "")
+			So(res.Analyses[0].AnalysisId, ShouldEqual, 4)
+			So(res.Analyses[1].AnalysisId, ShouldEqual, 3)
+			So(res.Analyses[2].AnalysisId, ShouldEqual, 2)
+
+			// Next page.
+			req = &pb.ListTestAnalysesRequest{
+				Project:   "chromium",
+				PageSize:  3,
+				PageToken: res.NextPageToken,
+			}
+			res, err = server.ListTestAnalyses(ctx, req)
+			So(err, ShouldBeNil)
+			So(len(res.Analyses), ShouldEqual, 1)
+			So(res.Analyses[0].AnalysisId, ShouldEqual, 1)
+		})
+	})
+}
+
+func TestGetTestAnalyses(t *testing.T) {
+	t.Parallel()
+	server := &AnalysesServer{}
+
+	Convey("List existing analyses", t, func() {
+		// Set up context and AEAD so that page tokens can be generated
+		ctx := memory.Use(context.Background())
+		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
+		testutil.UpdateIndices(ctx)
+
+		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+			ID:             int64(100),
+			CreateTime:     time.Unix(int64(100), 0).UTC(),
+			TestFailureKey: datastore.MakeKey(ctx, "TestFailure", 100),
+		})
+		testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+			ID:        int64(100),
+			Analysis:  tfa,
+			IsPrimary: true,
+			TestID:    "testID",
+			StartHour: time.Unix(int64(100), 0).UTC(),
+		})
+
+		Convey("Not found", func() {
+			req := &pb.GetTestAnalysisRequest{
+				AnalysisId: 101,
+			}
+			_, err := server.GetTestAnalysis(ctx, req)
+			So(err, ShouldNotBeNil)
+			So(status.Convert(err).Code(), ShouldEqual, codes.NotFound)
+		})
+
+		Convey("Found", func() {
+			req := &pb.GetTestAnalysisRequest{
+				AnalysisId: 100,
+			}
+			res, err := server.GetTestAnalysis(ctx, req)
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &pb.TestAnalysis{
+				AnalysisId: 100,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				SampleBbid:  8000,
+				CreateTime:  timestamppb.New(time.Unix(100, 0).UTC()),
+				StartCommit: &buildbucketpb.GitilesCommit{},
+				EndCommit:   &buildbucketpb.GitilesCommit{},
+				TestFailures: []*pb.TestFailure{
+					{
+						TestId:    "testID",
+						IsPrimary: true,
+						Variant:   &pb.Variant{},
+						StartHour: timestamppb.New(time.Unix(100, 0).UTC()),
+					},
+				},
 			})
 		})
 	})

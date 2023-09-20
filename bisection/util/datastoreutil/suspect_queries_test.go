@@ -377,3 +377,30 @@ func TestGetTestFailureAnalysisForSuspect(t *testing.T) {
 		So(res, ShouldResembleProto, tfa)
 	})
 }
+
+func TestGetVerifiedCulprit(t *testing.T) {
+	ctx := memory.Use(context.Background())
+
+	Convey("Get verified culprit", t, func() {
+		tfa := testutil.CreateTestFailureAnalysis(ctx, nil)
+		culprit, err := GetVerifiedCulpritForTestAnalysis(ctx, tfa)
+		So(err, ShouldBeNil)
+		So(culprit, ShouldBeNil)
+
+		nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
+		})
+
+		suspect := testutil.CreateSuspect(ctx, &testutil.SuspectCreationOption{
+			ID:        300,
+			ParentKey: datastore.KeyForObj(ctx, nsa),
+		})
+		tfa.VerifiedCulpritKey = datastore.KeyForObj(ctx, suspect)
+		So(datastore.Put(ctx, tfa), ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		culprit, err = GetVerifiedCulpritForTestAnalysis(ctx, tfa)
+		So(err, ShouldBeNil)
+		So(culprit.Id, ShouldEqual, 300)
+	})
+}

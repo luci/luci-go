@@ -117,14 +117,21 @@ func CreateNthSectionSuspect(c context.Context, nsa *model.CompileNthSectionAnal
 }
 
 type TestFailureCreationOption struct {
-	ID          int64
-	Project     string
-	Variant     map[string]string
-	IsPrimary   bool
-	Analysis    *model.TestFailureAnalysis
-	Ref         *pb.SourceRef
-	TestID      string
-	VariantHash string
+	ID               int64
+	Project          string
+	Variant          map[string]string
+	IsPrimary        bool
+	Analysis         *model.TestFailureAnalysis
+	Ref              *pb.SourceRef
+	TestID           string
+	VariantHash      string
+	StartHour        time.Time
+	RefHash          string
+	StartPosition    int64
+	EndPosition      int64
+	StartFailureRate float64
+	EndFailureRate   float64
+	IsDiverged       bool
 }
 
 func CreateTestFailure(ctx context.Context, option *TestFailureCreationOption) *model.TestFailure {
@@ -136,6 +143,13 @@ func CreateTestFailure(ctx context.Context, option *TestFailureCreationOption) *
 	var ref *pb.SourceRef = nil
 	var testID = ""
 	var variantHash = ""
+	var startHour time.Time
+	var refHash = ""
+	var startPosition int64
+	var endPosition int64
+	var startFailureRate float64
+	var endFailureRate float64
+	var isDiverged bool
 
 	if option != nil {
 		if option.ID != 0 {
@@ -152,6 +166,13 @@ func CreateTestFailure(ctx context.Context, option *TestFailureCreationOption) *
 		ref = option.Ref
 		testID = option.TestID
 		variantHash = option.VariantHash
+		startHour = option.StartHour
+		refHash = option.RefHash
+		startPosition = option.StartPosition
+		endPosition = option.EndPosition
+		startFailureRate = option.StartFailureRate
+		endFailureRate = option.EndFailureRate
+		isDiverged = option.IsDiverged
 	}
 
 	tf := &model.TestFailure{
@@ -160,11 +181,18 @@ func CreateTestFailure(ctx context.Context, option *TestFailureCreationOption) *
 		Variant: &pb.Variant{
 			Def: variant,
 		},
-		IsPrimary:   isPrimary,
-		AnalysisKey: analysisKey,
-		Ref:         ref,
-		TestID:      testID,
-		VariantHash: variantHash,
+		IsPrimary:                isPrimary,
+		AnalysisKey:              analysisKey,
+		Ref:                      ref,
+		TestID:                   testID,
+		VariantHash:              variantHash,
+		StartHour:                startHour,
+		RefHash:                  refHash,
+		RegressionStartPosition:  startPosition,
+		RegressionEndPosition:    endPosition,
+		StartPositionFailureRate: startFailureRate,
+		EndPositionFailureRate:   endFailureRate,
+		IsDiverged:               isDiverged,
 	}
 
 	So(datastore.Put(ctx, tf), ShouldBeNil)
@@ -173,22 +201,28 @@ func CreateTestFailure(ctx context.Context, option *TestFailureCreationOption) *
 }
 
 type TestFailureAnalysisCreationOption struct {
-	ID              int64
-	Project         string
-	TestFailureKey  *datastore.Key
-	StartCommitHash string
-	EndCommitHash   string
-	FailedBuildID   int64
-	Priority        int32
-	Status          pb.AnalysisStatus
-	RunStatus       pb.AnalysisRunStatus
-	CreateTime      time.Time
-	StartTime       time.Time
+	ID                 int64
+	Project            string
+	Bucket             string
+	Builder            string
+	TestFailureKey     *datastore.Key
+	StartCommitHash    string
+	EndCommitHash      string
+	FailedBuildID      int64
+	Priority           int32
+	Status             pb.AnalysisStatus
+	RunStatus          pb.AnalysisRunStatus
+	CreateTime         time.Time
+	StartTime          time.Time
+	EndTime            time.Time
+	VerifiedCulpritKey *datastore.Key
 }
 
 func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisCreationOption) *model.TestFailureAnalysis {
 	id := int64(1000)
 	project := "chromium"
+	bucket := "bucket"
+	builder := "builder"
 	var tfKey *datastore.Key = nil
 	startCommitHash := ""
 	endCommitHash := ""
@@ -198,6 +232,8 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 	var runStatus pb.AnalysisRunStatus
 	var createTime time.Time
 	var startTime time.Time
+	var endTime time.Time
+	var verifiedCulpritKey *datastore.Key = nil
 
 	if option != nil {
 		if option.ID != 0 {
@@ -205,6 +241,12 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 		}
 		if option.Project != "" {
 			project = option.Project
+		}
+		if option.Bucket != "" {
+			bucket = option.Bucket
+		}
+		if option.Builder != "" {
+			builder = option.Builder
 		}
 		if option.StartCommitHash != "" {
 			startCommitHash = option.StartCommitHash
@@ -221,20 +263,26 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 		runStatus = option.RunStatus
 		createTime = option.CreateTime
 		startTime = option.StartTime
+		endTime = option.EndTime
+		verifiedCulpritKey = option.VerifiedCulpritKey
 	}
 
 	tfa := &model.TestFailureAnalysis{
-		ID:              id,
-		Project:         project,
-		TestFailure:     tfKey,
-		StartCommitHash: startCommitHash,
-		EndCommitHash:   endCommitHash,
-		FailedBuildID:   failedBuildID,
-		Priority:        int32(priority),
-		Status:          status,
-		RunStatus:       runStatus,
-		CreateTime:      createTime,
-		StartTime:       startTime,
+		ID:                 id,
+		Project:            project,
+		Bucket:             bucket,
+		Builder:            builder,
+		TestFailure:        tfKey,
+		StartCommitHash:    startCommitHash,
+		EndCommitHash:      endCommitHash,
+		FailedBuildID:      failedBuildID,
+		Priority:           int32(priority),
+		Status:             status,
+		RunStatus:          runStatus,
+		CreateTime:         createTime,
+		StartTime:          startTime,
+		EndTime:            endTime,
+		VerifiedCulpritKey: verifiedCulpritKey,
 	}
 	So(datastore.Put(ctx, tfa), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()
@@ -290,6 +338,9 @@ type TestNthSectionAnalysisCreationOption struct {
 	BlameList         *pb.BlameList
 	Status            pb.AnalysisStatus
 	RunStatus         pb.AnalysisRunStatus
+	StartTime         time.Time
+	EndTime           time.Time
+	CulpritKey        *datastore.Key
 }
 
 func CreateTestNthSectionAnalysis(ctx context.Context, option *TestNthSectionAnalysisCreationOption) *model.TestNthSectionAnalysis {
@@ -298,6 +349,9 @@ func CreateTestNthSectionAnalysis(ctx context.Context, option *TestNthSectionAna
 	var blameList *pb.BlameList
 	var status pb.AnalysisStatus
 	var runStatus pb.AnalysisRunStatus
+	var startTime time.Time
+	var endTime time.Time
+	var culpritKey *datastore.Key
 
 	if option != nil {
 		if option.ID != 0 {
@@ -307,6 +361,9 @@ func CreateTestNthSectionAnalysis(ctx context.Context, option *TestNthSectionAna
 		blameList = option.BlameList
 		status = option.Status
 		runStatus = option.RunStatus
+		startTime = option.StartTime
+		endTime = option.EndTime
+		culpritKey = option.CulpritKey
 	}
 	nsa := &model.TestNthSectionAnalysis{
 		ID:                id,
@@ -314,6 +371,9 @@ func CreateTestNthSectionAnalysis(ctx context.Context, option *TestNthSectionAna
 		BlameList:         blameList,
 		Status:            status,
 		RunStatus:         runStatus,
+		StartTime:         startTime,
+		EndTime:           endTime,
+		CulpritKey:        culpritKey,
 	}
 	So(datastore.Put(ctx, nsa), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()
@@ -321,15 +381,19 @@ func CreateTestNthSectionAnalysis(ctx context.Context, option *TestNthSectionAna
 }
 
 type SuspectCreationOption struct {
-	ID        int64
-	ParentKey *datastore.Key
-	CommitID  string
+	ID          int64
+	ParentKey   *datastore.Key
+	CommitID    string
+	ReviewURL   string
+	ReviewTitle string
 }
 
 func CreateSuspect(ctx context.Context, option *SuspectCreationOption) *model.Suspect {
 	var parentKey *datastore.Key
 	id := int64(500)
 	commitID := "1"
+	reviewURL := ""
+	reviewTitle := ""
 	if option != nil {
 		if option.ID != 0 {
 			id = option.ID
@@ -338,6 +402,8 @@ func CreateSuspect(ctx context.Context, option *SuspectCreationOption) *model.Su
 			commitID = option.CommitID
 		}
 		parentKey = option.ParentKey
+		reviewURL = option.ReviewURL
+		reviewTitle = option.ReviewTitle
 	}
 	suspect := &model.Suspect{
 		Id:             id,
@@ -345,8 +411,11 @@ func CreateSuspect(ctx context.Context, option *SuspectCreationOption) *model.Su
 		GitilesCommit: bbpb.GitilesCommit{
 			Host:    "chromium.googlesource.com",
 			Project: "chromium/src",
+			Ref:     "ref",
 			Id:      commitID,
 		},
+		ReviewUrl:   reviewURL,
+		ReviewTitle: reviewTitle,
 	}
 	So(datastore.Put(ctx, suspect), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()
@@ -486,6 +555,18 @@ func UpdateIndices(c context.Context) {
 				},
 				{
 					Property: "create_time",
+				},
+			},
+		},
+		&datastore.IndexDefinition{
+			Kind: "TestFailureAnalysis",
+			SortBy: []datastore.IndexColumn{
+				{
+					Property: "project",
+				},
+				{
+					Property:   "create_time",
+					Descending: true,
 				},
 			},
 		},

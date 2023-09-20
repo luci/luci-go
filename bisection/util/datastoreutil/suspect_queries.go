@@ -206,3 +206,15 @@ func getTestNthSectionAnalysisForSuspect(c context.Context, suspect *model.Suspe
 	}
 	return nsa, nil
 }
+
+func GetVerifiedCulpritForTestAnalysis(ctx context.Context, tfa *model.TestFailureAnalysis) (*model.Suspect, error) {
+	culpritKey := tfa.VerifiedCulpritKey
+	if culpritKey == nil {
+		return nil, nil
+	}
+	suspect, err := GetSuspect(ctx, culpritKey.IntID(), culpritKey.Parent())
+	if err != nil {
+		return nil, errors.Annotate(err, "get suspect").Err()
+	}
+	return suspect, nil
+}

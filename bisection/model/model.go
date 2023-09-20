@@ -525,6 +525,14 @@ func (cfa *CompileFailureAnalysis) HasEnded() bool {
 	return cfa.RunStatus == pb.AnalysisRunStatus_ENDED || cfa.RunStatus == pb.AnalysisRunStatus_CANCELED
 }
 
+func (tfa *TestFailureAnalysis) HasEnded() bool {
+	return tfa.RunStatus == pb.AnalysisRunStatus_ENDED || tfa.RunStatus == pb.AnalysisRunStatus_CANCELED
+}
+
+func (tfa *TestFailureAnalysis) HasStarted() bool {
+	return tfa.RunStatus == pb.AnalysisRunStatus_ENDED || tfa.RunStatus == pb.AnalysisRunStatus_CANCELED || tfa.RunStatus == pb.AnalysisRunStatus_STARTED
+}
+
 func (ha *CompileHeuristicAnalysis) HasEnded() bool {
 	return ha.RunStatus == pb.AnalysisRunStatus_ENDED || ha.RunStatus == pb.AnalysisRunStatus_CANCELED
 }
@@ -539,6 +547,10 @@ func (rerun *SingleRerun) HasEnded() bool {
 
 func (rerun *TestSingleRerun) HasEnded() bool {
 	return rerun.Status == pb.RerunStatus_RERUN_STATUS_FAILED || rerun.Status == pb.RerunStatus_RERUN_STATUS_PASSED || rerun.Status == pb.RerunStatus_RERUN_STATUS_INFRA_FAILED || rerun.Status == pb.RerunStatus_RERUN_STATUS_CANCELED || rerun.Status == pb.RerunStatus_RERUN_STATUS_TEST_SKIPPED
+}
+
+func (nsa *TestNthSectionAnalysis) HasEnded() bool {
+	return nsa.RunStatus == pb.AnalysisRunStatus_ENDED || nsa.RunStatus == pb.AnalysisRunStatus_CANCELED
 }
 
 // TestFailureBundle contains TestFailure models that will be bisected together.
