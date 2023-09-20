@@ -416,10 +416,30 @@ func TestImportConfigSet(t *testing.T) {
 				cfgSetAfterImport.Location = nil
 				cfgSetBeforeImport.Location = nil
 				So(cfgSetAfterImport, ShouldResemble, cfgSetBeforeImport)
+
 				attempt := &model.ImportAttempt{ConfigSet: datastore.KeyForObj(ctx, cfgSetAfterImport)}
 				So(datastore.Get(ctx, attempt), ShouldBeNil)
-				So(attempt.Success, ShouldBeTrue)
-				So(attempt.Message, ShouldEqual, "Up-to-date")
+				So(attempt.Revision.Location, ShouldResembleProto, &cfgcommonpb.Location{
+					Location: &cfgcommonpb.Location_GitilesLocation{
+						GitilesLocation: &cfgcommonpb.GitilesLocation{
+							Repo: "https://a.googlesource.com/infradata/config",
+							Ref:  latestCommit.Id,
+							Path: "dev-configs/myservice",
+						},
+					},
+				})
+				attempt.Revision.Location = nil
+				So(attempt, ShouldResemble, &model.ImportAttempt{
+					ConfigSet: datastore.KeyForObj(ctx, cfgSetAfterImport),
+					Success:   true,
+					Message:   "Up-to-date",
+					Revision: model.RevisionInfo{
+						ID:             latestCommit.Id,
+						CommitTime:     latestCommit.Committer.Time.AsTime(),
+						CommitterEmail: latestCommit.Committer.Email,
+						AuthorEmail:    latestCommit.Author.Email,
+					},
+				})
 			})
 
 			Convey("empty archive", func() {

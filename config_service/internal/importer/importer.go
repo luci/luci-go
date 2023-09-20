@@ -301,6 +301,9 @@ func (i *Importer) importConfigSet(ctx context.Context, cfgSet config.Set, loc *
 		if commit != nil {
 			attempt.Revision.ID = commit.Id
 			attempt.Revision.Location.GetGitilesLocation().Ref = commit.Id
+			attempt.Revision.CommitTime = commit.Committer.GetTime().AsTime()
+			attempt.Revision.CommitterEmail = commit.Committer.GetEmail()
+			attempt.Revision.AuthorEmail = commit.Author.GetEmail()
 		}
 		return datastore.Put(ctx, attempt)
 	}
@@ -341,7 +344,7 @@ func (i *Importer) importConfigSet(ctx context.Context, cfgSet config.Set, loc *
 		proto.Equal(cfgSetInDB.Location.GetGitilesLocation(), loc) &&
 		cfgSetInDB.Version == model.CurrentCfgSetVersion:
 		logging.Debugf(ctx, "Already up-to-date")
-		return saveAttempt(true, "Up-to-date", nil)
+		return saveAttempt(true, "Up-to-date", latestCommit)
 	}
 
 	logging.Infof(ctx, "Rolling %s => %s", cfgSetInDB.LatestRevision.ID, latestCommit.Id)
