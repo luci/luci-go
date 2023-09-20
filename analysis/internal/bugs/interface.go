@@ -47,6 +47,12 @@ type BugUpdateRequest struct {
 }
 
 type BugUpdateResponse struct {
+	// Error is the error encountered updating this bug (if any).
+	// If this is set, IsDuplicate, IsAssigned, ShouldArchive and
+	// DisableRulePriorityUpdates should be ignored.
+	// This field is only used for errors specific to updating a particular bug.
+	Error error
+
 	// IsDuplicate is set if the bug is a duplicate of another.
 	IsDuplicate bool
 

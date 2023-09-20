@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"time"
 
 	"google.golang.org/protobuf/encoding/prototext"
 
@@ -168,42 +169,80 @@ func (m *BugManager) Update(ctx context.Context, request []bugs.BugUpdateRequest
 			continue
 		}
 
-		isDuplicate := issue.Status.Status == DuplicateStatus
-		shouldArchive := shouldArchiveRule(ctx, issue, req.IsManagingBug)
-		isAssigned := issue.Owner.GetUser() != ""
-		disableRulePriorityUpdates := false
-		if !isDuplicate && !shouldArchive && req.IsManagingBug && req.Metrics != nil {
-			if m.generator.NeedsUpdate(req.Metrics, issue, req.IsManagingBugPriority) {
-				comments, err := m.client.ListComments(ctx, issue.Name)
-				if err != nil {
-					return nil, err
-				}
-				mur := m.generator.MakeUpdate(MakeUpdateOptions{
-					metrics:                          req.Metrics,
-					issue:                            issue,
-					comments:                         comments,
-					IsManagingBugPriority:            req.IsManagingBugPriority,
-					IsManagingBugPriorityLastUpdated: req.IsManagingBugPriorityLastUpdated,
-				})
-				disableRulePriorityUpdates = mur.disableBugPriorityUpdates
-				if m.Simulate {
-					logging.Debugf(ctx, "Would update Monorail issue: %s", textPBMultiline.Format(mur.request))
-				} else {
-					if err := m.client.ModifyIssues(ctx, mur.request); err != nil {
-						return nil, errors.Annotate(err, "failed to update monorail issue %s", req.Bug.ID).Err()
-					}
-					bugs.BugsUpdatedCounter.Add(ctx, 1, m.project, "monorail")
-				}
-			}
-		}
-		responses = append(responses, bugs.BugUpdateResponse{
-			IsDuplicate:                isDuplicate,
-			IsAssigned:                 isAssigned,
-			ShouldArchive:              shouldArchive && !isDuplicate,
-			DisableRulePriorityUpdates: disableRulePriorityUpdates,
-		})
+		response := m.updateIssue(ctx, req, issue)
+		responses = append(responses, response)
 	}
 	return responses, nil
+}
+
+func (m *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateRequest, issue *mpb.Issue) bugs.BugUpdateResponse {
+	// If the context times out part way through an update, we do
+	// not know if our bug update succeeded (but we have not received the
+	// success response back from monorail yet) or the bug update failed.
+	//
+	// This is problematic for bug updates that require changes to the
+	// bug in tandem with updates to the rule, as we do not know if we
+	// need to make the rule update. For example:
+	// - Disabling IsManagingBugPriority in tandem with a comment on
+	//   the bug indicating the user has taken priority control of the
+	//   bug.
+	// - Notifying the bug is associated with a rule in tandem with
+	//   an update to the bug management state recording we send this
+	//   notification.
+	//
+	// If we incorrectly assume a bug comment was made when it was not,
+	// we may fail to deliver comments on bugs.
+	// If we incorrectly assume a bug comment was not delivered when it was,
+	// we may end up repeatedly making the same comment.
+	//
+	// We prefer the second over the first, but we try here to reduce the
+	// likelihood of either happening by ensuring we have at least one minute
+	// of time available.
+	if err := bugs.EnsureTimeToDeadline(ctx, time.Minute); err != nil {
+		return bugs.BugUpdateResponse{
+			Error: err,
+		}
+	}
+
+	isDuplicate := issue.Status.Status == DuplicateStatus
+	shouldArchive := shouldArchiveRule(ctx, issue, request.IsManagingBug)
+	isAssigned := issue.Owner.GetUser() != ""
+	disableRulePriorityUpdates := false
+
+	if !isDuplicate && !shouldArchive && request.IsManagingBug && request.Metrics != nil {
+		if m.generator.NeedsUpdate(request.Metrics, issue, request.IsManagingBugPriority) {
+			comments, err := m.client.ListComments(ctx, issue.Name)
+			if err != nil {
+				return bugs.BugUpdateResponse{
+					Error: errors.Annotate(err, "list comments").Err(),
+				}
+			}
+			mur := m.generator.MakeUpdate(MakeUpdateOptions{
+				metrics:                          request.Metrics,
+				issue:                            issue,
+				comments:                         comments,
+				IsManagingBugPriority:            request.IsManagingBugPriority,
+				IsManagingBugPriorityLastUpdated: request.IsManagingBugPriorityLastUpdated,
+			})
+			disableRulePriorityUpdates = mur.disableBugPriorityUpdates
+			if m.Simulate {
+				logging.Debugf(ctx, "Would update Monorail issue: %s", textPBMultiline.Format(mur.request))
+			} else {
+				if err := m.client.ModifyIssues(ctx, mur.request); err != nil {
+					return bugs.BugUpdateResponse{
+						Error: errors.Annotate(err, "update monorail issue").Err(),
+					}
+				}
+				bugs.BugsUpdatedCounter.Add(ctx, 1, m.project, "monorail")
+			}
+		}
+	}
+	return bugs.BugUpdateResponse{
+		IsDuplicate:                isDuplicate,
+		IsAssigned:                 isAssigned,
+		ShouldArchive:              shouldArchive && !isDuplicate,
+		DisableRulePriorityUpdates: disableRulePriorityUpdates,
+	}
 }
 
 // shouldArchiveRule determines if the rule managing the given issue should

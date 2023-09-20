@@ -18,6 +18,7 @@ import (
 	"context"
 	"strconv"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -219,6 +220,7 @@ func (bm *BugManager) Update(ctx context.Context, requests []bugs.BugUpdateReque
 	for _, request := range requests {
 		id, err := strconv.ParseInt(request.Bug.ID, 10, 64)
 		if err != nil {
+			// This should never occur here, as we do a similar conversion in fetchIssues.
 			return nil, errors.Annotate(err, "convert bug id to int").Err()
 		}
 		issue, ok := issuesByID[id]
@@ -235,42 +237,81 @@ func (bm *BugManager) Update(ctx context.Context, requests []bugs.BugUpdateReque
 			logging.Warningf(ctx, "Buganizer issue %s not found or we don't have permission to access it, skipping.", request.Bug.ID)
 			continue
 		}
-		updateResponse := bugs.BugUpdateResponse{
-			IsDuplicate:                issue.IssueState.Status == issuetracker.Issue_DUPLICATE,
-			IsAssigned:                 issue.IssueState.Assignee != nil,
-			ShouldArchive:              shouldArchiveRule(ctx, issue, request.IsManagingBug),
-			DisableRulePriorityUpdates: false,
-		}
-
-		if !updateResponse.IsDuplicate &&
-			!updateResponse.ShouldArchive &&
-			request.IsManagingBug &&
-			request.Metrics != nil {
-			if bm.requestGenerator.NeedsUpdate(request.Metrics, issue, request.IsManagingBugPriority) {
-				mur, err := bm.requestGenerator.MakeUpdate(ctx, MakeUpdateOptions{
-					metrics:                          request.Metrics,
-					issue:                            issue,
-					IsManagingBugPriority:            request.IsManagingBugPriority,
-					IsManagingBugPriorityLastUpdated: request.IsManagingBugPriorityLastUpdated,
-				})
-				if err != nil {
-					return nil, errors.Annotate(err, "create update request for issue").Err()
-				}
-				if bm.Simulate {
-					logging.Debugf(ctx, "Would update Buganizer issue: %s", textPBMultiline.Format(mur.request))
-				} else {
-					if _, err := bm.client.ModifyIssue(ctx, mur.request); err != nil {
-						return nil, errors.Annotate(err, "failed to update Buganizer issue %s", request.Bug.ID).Err()
-					}
-					bugs.BugsUpdatedCounter.Add(ctx, 1, bm.project, "buganizer")
-				}
-				updateResponse.DisableRulePriorityUpdates = mur.disablePriorityUpdates
-			}
-		}
+		updateResponse := bm.updateIssue(ctx, request, issue)
 		responses = append(responses, updateResponse)
 	}
 
 	return responses, nil
+}
+
+// updateIssue updates the given issue, adjusting its priority,
+// and verify or unverifying it.
+func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateRequest, issue *issuetracker.Issue) bugs.BugUpdateResponse {
+	// If the context times out part way through an update, we do
+	// not know if our bug update succeeded (but we have not received the
+	// success response back from Buganizer yet) or the bug update failed.
+	//
+	// This is problematic for bug updates that require changes to the
+	// bug in tandem with updates to the rule, as we do not know if we
+	// need to make the rule update. For example:
+	// - Disabling IsManagingBugPriority in tandem with a comment on
+	//   the bug indicating the user has taken priority control of the
+	//   bug.
+	// - Notifying the bug is associated with a rule in tandem with
+	//   an update to the bug management state recording we send this
+	//   notification.
+	//
+	// If we incorrectly assume a bug comment was made when it was not,
+	// we may fail to deliver comments on bugs.
+	// If we incorrectly assume a bug comment was not delivered when it was,
+	// we may end up repeatedly making the same comment.
+	//
+	// We prefer the second over the first, but we try here to reduce the
+	// likelihood of either happening by ensuring we have at least one minute
+	// of time available.
+	if err := bugs.EnsureTimeToDeadline(ctx, time.Minute); err != nil {
+		return bugs.BugUpdateResponse{
+			Error: err,
+		}
+	}
+
+	updateResponse := bugs.BugUpdateResponse{
+		IsDuplicate:                issue.IssueState.Status == issuetracker.Issue_DUPLICATE,
+		IsAssigned:                 issue.IssueState.Assignee != nil,
+		ShouldArchive:              shouldArchiveRule(ctx, issue, request.IsManagingBug),
+		DisableRulePriorityUpdates: false,
+	}
+
+	if !updateResponse.IsDuplicate &&
+		!updateResponse.ShouldArchive &&
+		request.IsManagingBug &&
+		request.Metrics != nil {
+		if bm.requestGenerator.NeedsUpdate(request.Metrics, issue, request.IsManagingBugPriority) {
+			mur, err := bm.requestGenerator.MakeUpdate(ctx, MakeUpdateOptions{
+				metrics:                          request.Metrics,
+				issue:                            issue,
+				IsManagingBugPriority:            request.IsManagingBugPriority,
+				IsManagingBugPriorityLastUpdated: request.IsManagingBugPriorityLastUpdated,
+			})
+			if err != nil {
+				return bugs.BugUpdateResponse{
+					Error: errors.Annotate(err, "create update request for issue").Err(),
+				}
+			}
+			if bm.Simulate {
+				logging.Debugf(ctx, "Would update Buganizer issue: %s", textPBMultiline.Format(mur.request))
+			} else {
+				if _, err := bm.client.ModifyIssue(ctx, mur.request); err != nil {
+					return bugs.BugUpdateResponse{
+						Error: errors.Annotate(err, "update Buganizer issue").Err(),
+					}
+				}
+				bugs.BugsUpdatedCounter.Add(ctx, 1, bm.project, "buganizer")
+			}
+			updateResponse.DisableRulePriorityUpdates = mur.disablePriorityUpdates
+		}
+	}
+	return updateResponse
 }
 
 func shouldArchiveRule(ctx context.Context, issue *issuetracker.Issue, isManaging bool) bool {

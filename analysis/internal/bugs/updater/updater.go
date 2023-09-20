@@ -104,6 +104,13 @@ type BugManager interface {
 	// or any encountered error.
 	Create(ctx context.Context, cluster *bugs.BugCreateRequest) (string, error)
 	// Update updates the specified list of bugs.
+	//
+	// Exactly one response item is returned for each request item.
+	// If an error is encountered on a specific bug, the error is recorded
+	// on the bug's response item and processing continues.
+	//
+	// If a catastrophic error occurs, the error is returned
+	// at the top-level and the responses slice should be ignored.
 	Update(ctx context.Context, bugs []bugs.BugUpdateRequest) ([]bugs.BugUpdateResponse, error)
 	// GetMergedInto reads the bug the given bug is merged into (if any).
 	// This is to allow step-wise discovery of the canonical bug a bug
@@ -331,20 +338,20 @@ func (b *BugUpdater) updateBugManagementState(ctx context.Context, rs []ruleWith
 	return result, nil
 }
 
-func batch(ruleIDs []ruleWithMetrics, batchSize int) [][]ruleWithMetrics {
+func batch[K interface{}](items []K, batchSize int) [][]K {
 	if batchSize < 1 {
 		panic("batch size must be greater than 0")
 	}
 
-	batchCount := (len(ruleIDs) + batchSize - 1) / batchSize
-	result := make([][]ruleWithMetrics, 0, batchCount)
+	batchCount := (len(items) + batchSize - 1) / batchSize
+	result := make([][]K, 0, batchCount)
 	for i := 0; i < batchCount; i++ {
 		batchStartIndex := i * batchSize             // inclusive
 		batchEndIndex := batchStartIndex + batchSize // exclusive
-		if batchEndIndex > len(ruleIDs) {
-			batchEndIndex = len(ruleIDs)
+		if batchEndIndex > len(items) {
+			batchEndIndex = len(items)
 		}
-		result = append(result, ruleIDs[batchStartIndex:batchEndIndex])
+		result = append(result, items[batchStartIndex:batchEndIndex])
 	}
 	return result
 }
@@ -382,8 +389,9 @@ func (b *BugUpdater) updateBugManagementStateBatch(ctx context.Context, rulesAnd
 			// Fetches the corresponding metrics for a rule.
 			clusterMetrics := rulesAndMetrics[i].Metrics
 
-			// Update which policies are active.
+			// If metrics data is valid (e.g. no reclustering in progress).
 			if clusterMetrics != nil {
+				// Update which policies are active.
 				updatedBugManagementState, changed := updatePolicyActivations(r.BugManagementState, b.projectCfg.Config.BugManagement.GetPolicies(), clusterMetrics, b.RunTimestamp)
 				if changed {
 					// Only update the rule if a policy has activated or
@@ -421,77 +429,76 @@ func (b *BugUpdater) updateBugManagementStateBatch(ctx context.Context, rulesAnd
 }
 
 func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bugsToUpdate []bugs.BugUpdateRequest) error {
-	var duplicateBugs []bugs.BugDetails
-	var ruleIDsToArchive []string
-	var ruleIDsToDisableBugPriorityUpdates []string
-
 	manager, ok := b.managers[system]
 	if !ok {
 		logging.Warningf(ctx, "Encountered bug(s) with an unrecognised manager: %q", system)
 		return nil
 	}
-	responses, err := manager.Update(ctx, bugsToUpdate)
+
+	// Keep a minute of time in reserve to update rules.
+	// It is important that we still update the rules for bugs we did
+	// successfully update as some bug behaviours rely on this as
+	// part of their control loop (we will keep posting the same
+	// comment on the bug until the rule is updated).
+	mgrCtx, cancel := bugs.Shorten(ctx, time.Minute)
+	defer cancel()
+
+	responses, err := manager.Update(mgrCtx, bugsToUpdate)
 	if err != nil {
-		return err
+		// Catastrophic error, exit immediately.
+		return errors.Annotate(err, "update bugs").Err()
 	}
 
+	// The set of non-catastrophic errors encountered so far.
+	var errs []error
+	// The set of bugs marked as duplicate encountered.
+	var duplicateBugs []bugs.BugDetails
+	// The updates to failure association rules required.
+	var updateRuleRequests []updateRuleRequest
+
 	for i, rsp := range responses {
+		if rsp.Error != nil {
+			// As above, even if an error is encountered updating
+			// one or more bugs, it is important we still update
+			// the rules for the bugs we did successfully update.
+			// Therefore, while we capture any errors here, we do
+			// not exit early.
+			err := errors.Annotate(rsp.Error, "updating bug (%s)", bugsToUpdate[i].Bug.String()).Err()
+			errs = append(errs, err)
+			logging.Errorf(ctx, "%s", err)
+			continue
+		}
 		if rsp.IsDuplicate {
 			duplicateBugs = append(duplicateBugs, bugs.BugDetails{
 				Bug:        bugsToUpdate[i].Bug,
 				IsAssigned: rsp.IsAssigned,
 			})
-		} else if rsp.ShouldArchive {
-			ruleIDsToArchive = append(ruleIDsToArchive, bugsToUpdate[i].RuleID)
-		}
-		if rsp.DisableRulePriorityUpdates {
-			ruleIDsToDisableBugPriorityUpdates = append(ruleIDsToDisableBugPriorityUpdates, bugsToUpdate[i].RuleID)
+		} else if rsp.ShouldArchive || rsp.DisableRulePriorityUpdates {
+			updateRuleRequests = append(updateRuleRequests, updateRuleRequest{
+				RuleID:                     bugsToUpdate[i].RuleID,
+				BugID:                      bugsToUpdate[i].Bug,
+				Archive:                    rsp.ShouldArchive,
+				DisableRulePriorityUpdates: rsp.DisableRulePriorityUpdates,
+			})
 		}
 	}
 
-	// Handle rules which need to be archived because the bugs were:
-	// - Verified for >30 days and managed by LUCI Analysis, OR
-	// - In any closed state for > 30 days and not managed by LUCI Analysis, OR
-	// -
-	if err := b.archiveRules(ctx, ruleIDsToArchive); err != nil {
-		return errors.Annotate(err, "archive rules").Err()
-	}
-
-	// Disable bug priority updates because the user manually updated the priority.
-	if err := b.disableBugUpdatesForRules(ctx, ruleIDsToDisableBugPriorityUpdates); err != nil {
-		return errors.Annotate(err, "disable bug priority for rules").Err()
+	if err := b.updateRules(ctx, updateRuleRequests); err != nil {
+		err = errors.Annotate(err, "updating rules after updating bugs").Err()
+		errs = append(errs, err)
+		logging.Errorf(ctx, "%s", err)
 	}
 
 	// Handle bugs marked as duplicate.
 	for _, duplicateDetails := range duplicateBugs {
-		err := b.handleDuplicateBug(ctx, duplicateDetails)
-		if errors.Is(err, mergeIntoCycleErr) {
-			request := bugs.UpdateDuplicateSourceRequest{
-				BugDetails:   duplicateDetails,
-				ErrorMessage: mergeIntoCycleMessage,
-			}
-			if err := b.updateDuplicateSource(ctx, request); err != nil {
-				return errors.Annotate(err, "update source bug after a cycle was found").Err()
-			}
-		} else if errors.Is(err, ruleDefinitionTooLongErr) {
-			request := bugs.UpdateDuplicateSourceRequest{
-				BugDetails:   duplicateDetails,
-				ErrorMessage: ruleDefinitionTooLongMessage,
-			}
-			if err := b.updateDuplicateSource(ctx, request); err != nil {
-				return errors.Annotate(err, "update source bug after merging rule definition was found too long").Err()
-			}
-		} else if errors.Is(err, mergeIntoPermissionErr) {
-			request := bugs.UpdateDuplicateSourceRequest{
-				BugDetails:   duplicateDetails,
-				ErrorMessage: mergeIntoPermissionMessage,
-			}
-			if err := b.updateDuplicateSource(ctx, request); err != nil {
-				return errors.Annotate(err, "update source bug after merging rule definition encountered a permission error").Err()
-			}
-		} else if err != nil {
-			return errors.Annotate(err, "handling bug (%s) marked as duplicate", duplicateDetails.Bug).Err()
+		if err := b.handleDuplicateBug(ctx, duplicateDetails); err != nil {
+			err = errors.Annotate(err, "handling duplicate bug (%s)", duplicateDetails.Bug.String()).Err()
+			errs = append(errs, err)
+			logging.Errorf(ctx, "%s", err)
 		}
+	}
+	if len(errs) > 0 {
+		return errors.NewMultiError(errs...)
 	}
 	return nil
 }
@@ -588,82 +595,132 @@ func (b *BugUpdater) fileNewBugs(ctx context.Context, clusters []*analysis.Clust
 	return nil
 }
 
-// archiveRules archives the given list of rules.
-func (b *BugUpdater) archiveRules(ctx context.Context, ruleIDs []string) error {
-	if len(ruleIDs) == 0 {
-		return nil
-	}
-	// Limit the number of rules that can be archived at once to stay
-	// well within Spanner mutation limits. The rest will be handled
-	// in the next bug-filing run.
-	if len(ruleIDs) > 100 {
-		ruleIDs = ruleIDs[:100]
-	}
-	f := func(ctx context.Context) error {
-		// Perform atomic read-update of rule.
-		rs, err := rules.ReadMany(ctx, b.project, ruleIDs)
-		if err != nil {
-			return errors.Annotate(err, "read rules to archive").Err()
-		}
-		for _, r := range rs {
-			r.IsActive = false
-			ms, err := rules.Update(r, rules.UpdateOptions{
-				IsAuditableUpdate: true,
-				PredicateUpdated:  true,
-			}, rules.LUCIAnalysisSystem)
-			if err != nil {
-				// Validation error. Actual save happens upon transaction
-				// commit.
-				return errors.Annotate(err, "update rules").Err()
-			}
-			span.BufferWrite(ctx, ms)
-		}
-		return nil
-	}
-	_, err := span.ReadWriteTransaction(ctx, f)
-	return err
+type updateRuleRequest struct {
+	// The identity of the rule.
+	RuleID string
+	// The bug that was updated and/or from which the updates were sourced.
+	// If the bug on the rule has changed from this value, rule updates will
+	// not be applied.
+	BugID bugs.BugID
+	// Whether the rule should be archived.
+	Archive bool
+	// Whether rule priority updates should be disabled.
+	DisableRulePriorityUpdates bool
 }
 
-// disableBugUpdatesForRules sets the flag IsManagingBugPriority to false for the given rules.
-func (b *BugUpdater) disableBugUpdatesForRules(ctx context.Context, ruleIDs []string) error {
-	if len(ruleIDs) == 0 {
-		return nil
+// updateRules applies updates to failure association rules
+// following a round of bug updates. This includes:
+//   - archiving rules if the bug was detected in an archived state
+//   - disabling automatic priority updates if it was detected that
+//     the user manually set the bug priority.
+//
+// requests and response slices should have 1:1 correspondance, i.e.
+// requests[i] corresponds to responses[i].
+func (b *BugUpdater) updateRules(ctx context.Context, requests []updateRuleRequest) error {
+	// Perform updates in batches to stay within mutation Spanner limits.
+	requestBatches := batch(requests, b.UpdateRuleBatchSize)
+	for _, batch := range requestBatches {
+		err := b.updateRulesBatch(ctx, batch)
+		if err != nil {
+			return err
+		}
 	}
-	// Limit the number of rules that will be updated at once to stay
-	// well within Spanner mutation limits. The rest will be handled
-	// in the next bug-filing run.
-	if len(ruleIDs) > 100 {
-		ruleIDs = ruleIDs[:100]
+	return nil
+}
+
+func (b *BugUpdater) updateRulesBatch(ctx context.Context, requests []updateRuleRequest) error {
+	ruleIDs := make([]string, 0, len(requests))
+	for _, req := range requests {
+		ruleIDs = append(ruleIDs, req.RuleID)
 	}
 	f := func(ctx context.Context) error {
-		// Perform atomic read-update of rules.
+		// Perform transactional read-update of rule to protect
+		// against update races.
 		rs, err := rules.ReadMany(ctx, b.project, ruleIDs)
 		if err != nil {
-			return errors.Annotate(err, "read rules to archive").Err()
+			return errors.Annotate(err, "read rules").Err()
 		}
-		for _, r := range rs {
-			r.IsManagingBugPriority = false
-			ms, err := rules.Update(r, rules.UpdateOptions{
-				IsAuditableUpdate:            true,
-				IsManagingBugPriorityUpdated: true,
-			}, rules.LUCIAnalysisSystem)
+		for i, rule := range rs {
+			updateRequest := requests[i]
+			if rule.RuleID != updateRequest.RuleID {
+				// ReadMany's response should be in 1:1 correspondance
+				// to the request.
+				panic("logic error")
+			}
+			if rule.BugID != updateRequest.BugID {
+				// A data race has occured: the rule has been modified while
+				// we were updating bugs, and now the update to the rule no
+				// longer makes sense. This should only occur rarely.
+				logging.Warningf(ctx, "Bug associated with rule %v changed during bug-filing run, skipping updates to rule.")
+				continue
+			}
+			updateOptions := rules.UpdateOptions{}
+			if updateRequest.Archive {
+				rule.IsActive = false
+				updateOptions.IsAuditableUpdate = true
+				updateOptions.PredicateUpdated = true
+			}
+			if updateRequest.DisableRulePriorityUpdates {
+				rule.IsManagingBugPriority = false
+				updateOptions.IsAuditableUpdate = true
+				updateOptions.IsManagingBugPriorityUpdated = true
+			}
+			ms, err := rules.Update(rule, updateOptions, rules.LUCIAnalysisSystem)
 			if err != nil {
-				// Validation error. Actual save happens upon transaction
-				// commit.
-				return errors.Annotate(err, "update rules").Err()
+				// Validation error; this should never happen here.
+				return errors.Annotate(err, "prepare rule update").Err()
 			}
 			span.BufferWrite(ctx, ms)
 		}
 		return nil
 	}
 	_, err := span.ReadWriteTransaction(ctx, f)
-	return err
+	if err != nil {
+		return errors.Annotate(err, "update rules").Err()
+	}
+	return nil
 }
 
 // handleDuplicateBug handles a duplicate bug, merging its failure association
 // rule with the bug it is ultimately merged into (creating the rule if it does
-// not exist). The original rule is archived.
+// not exist). In case of unhandleable errors, the source bug is kicked out of the
+// duplicate state and an error message is posted on the bug.
 func (b *BugUpdater) handleDuplicateBug(ctx context.Context, duplicateDetails bugs.BugDetails) error {
+	err := b.handleDuplicateBugHappyPath(ctx, duplicateDetails)
+	if errors.Is(err, mergeIntoCycleErr) {
+		request := bugs.UpdateDuplicateSourceRequest{
+			BugDetails:   duplicateDetails,
+			ErrorMessage: mergeIntoCycleMessage,
+		}
+		if err := b.updateDuplicateSource(ctx, request); err != nil {
+			return errors.Annotate(err, "update source bug after a cycle was found").Err()
+		}
+	} else if errors.Is(err, ruleDefinitionTooLongErr) {
+		request := bugs.UpdateDuplicateSourceRequest{
+			BugDetails:   duplicateDetails,
+			ErrorMessage: ruleDefinitionTooLongMessage,
+		}
+		if err := b.updateDuplicateSource(ctx, request); err != nil {
+			return errors.Annotate(err, "update source bug after merging rule definition was found too long").Err()
+		}
+	} else if errors.Is(err, mergeIntoPermissionErr) {
+		request := bugs.UpdateDuplicateSourceRequest{
+			BugDetails:   duplicateDetails,
+			ErrorMessage: mergeIntoPermissionMessage,
+		}
+		if err := b.updateDuplicateSource(ctx, request); err != nil {
+			return errors.Annotate(err, "update source bug after merging rule definition encountered a permission error").Err()
+		}
+	} else if err != nil {
+		return err
+	}
+	return nil
+}
+
+// handleDuplicateBugHappyPath handles a duplicate bug, merging its failure association
+// rule with the bug it is ultimately merged into (creating the rule if it does
+// not exist). The original rule is archived.
+func (b *BugUpdater) handleDuplicateBugHappyPath(ctx context.Context, duplicateDetails bugs.BugDetails) error {
 	// Chase the bug merged-into graph until we find the sink of the graph.
 	// (The canonical bug of the chain of duplicate bugs.)
 	destBug, err := b.resolveMergedIntoBug(ctx, duplicateDetails.Bug)
@@ -1029,10 +1086,15 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 		return false, errors.Annotate(err, "create issue in %v", system).Err()
 	}
 
+	impact := ExtractResidualMetrics(cs)
+
+	bugManagementState := &bugspb.BugManagementState{
+		// The creation of the bug was notify the association with the bug.
+		RuleAssociationNotified: true,
+	}
 	// Set policy activations starting from a state where no policies
 	// are active.
-	impact := ExtractResidualMetrics(cs)
-	bugManagementState, _ := updatePolicyActivations(&bugspb.BugManagementState{}, b.projectCfg.Config.BugManagement.GetPolicies(), impact, b.RunTimestamp)
+	bugManagementState, _ = updatePolicyActivations(bugManagementState, b.projectCfg.Config.BugManagement.GetPolicies(), impact, b.RunTimestamp)
 
 	// Create a failure association rule associating the failures with a bug.
 	newRule := &rules.Entry{

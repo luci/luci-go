@@ -159,6 +159,7 @@ func TestUpdate(t *testing.T) {
 				CreateUser:              rules.LUCIAnalysisSystem,
 				LastAuditableUpdateUser: rules.LUCIAnalysisSystem,
 				BugManagementState: &bugspb.BugManagementState{
+					RuleAssociationNotified: true,
 					PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
 						"exoneration-policy":  {},
 						"cls-rejected-policy": {},
@@ -765,6 +766,7 @@ func TestUpdate(t *testing.T) {
 					CreateUser:              rules.LUCIAnalysisSystem,
 					LastAuditableUpdateUser: rules.LUCIAnalysisSystem,
 					BugManagementState: &bugspb.BugManagementState{
+						RuleAssociationNotified: true,
 						PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
 							"exoneration-policy": {
 								IsActive:           true,
@@ -785,6 +787,7 @@ func TestUpdate(t *testing.T) {
 					CreateUser:              rules.LUCIAnalysisSystem,
 					LastAuditableUpdateUser: rules.LUCIAnalysisSystem,
 					BugManagementState: &bugspb.BugManagementState{
+						RuleAssociationNotified: true,
 						PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
 							"exoneration-policy":  {},
 							"cls-rejected-policy": {},
@@ -802,6 +805,7 @@ func TestUpdate(t *testing.T) {
 					CreateUser:              rules.LUCIAnalysisSystem,
 					LastAuditableUpdateUser: rules.LUCIAnalysisSystem,
 					BugManagementState: &bugspb.BugManagementState{
+						RuleAssociationNotified: true,
 						PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
 							"exoneration-policy":  {},
 							"cls-rejected-policy": {},
@@ -819,6 +823,7 @@ func TestUpdate(t *testing.T) {
 					CreateUser:              rules.LUCIAnalysisSystem,
 					LastAuditableUpdateUser: rules.LUCIAnalysisSystem,
 					BugManagementState: &bugspb.BugManagementState{
+						RuleAssociationNotified: true,
 						PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
 							"exoneration-policy":  {},
 							"cls-rejected-policy": {},
