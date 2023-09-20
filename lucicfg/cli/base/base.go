@@ -200,6 +200,7 @@ func (c *Subcommand) MakeConfigServiceConn(ctx context.Context, host string) (*g
 	conn, err := grpc.DialContext(ctx, host+":443",
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 		grpc.WithPerRPCCredentials(creds),
+		grpc.WithUserAgent("lucicfg v"+lucicfg.Version),
 	)
 	if err != nil {
 		return nil, errors.Annotate(err, "cannot dial to %s", host).Err()
