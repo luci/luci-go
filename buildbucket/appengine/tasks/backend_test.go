@@ -516,7 +516,6 @@ func TestCreateBackendTask(t *testing.T) {
 				"-build-id", "1",
 				"-host", "some unique host name",
 				"-cache-base", "cache",
-				"-context-file", "${BUILDBUCKET_AGENT_CONTEXT_FILE}",
 			})
 			So(req.Dimensions, ShouldResembleProto, []*pb.RequestedDimension{
 				{
