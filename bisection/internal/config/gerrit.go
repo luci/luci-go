@@ -18,9 +18,25 @@ import (
 	"context"
 	"fmt"
 
+	"go.chromium.org/luci/bisection/model"
 	configpb "go.chromium.org/luci/bisection/proto/config"
+	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 )
+
+func GetGerritCfgForSuspect(ctx context.Context, suspect *model.Suspect) (*configpb.GerritConfig, error) {
+	cfg, err := Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	switch suspect.AnalysisType {
+	case bisectionpb.AnalysisType_COMPILE_FAILURE_ANALYSIS:
+		return cfg.GerritConfig, nil
+	case bisectionpb.AnalysisType_TEST_FAILURE_ANALYSIS:
+		return cfg.TestAnalysisConfig.GerritConfig, nil
+	}
+	return nil, fmt.Errorf("unknown analysis type of suspect %s", suspect.AnalysisType.String())
+}
 
 // CanCreateRevert returns:
 //   - whether a revert can be created;

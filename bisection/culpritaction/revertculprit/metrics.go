@@ -18,9 +18,12 @@ import (
 	"context"
 	"fmt"
 
+	"go.chromium.org/luci/bisection/metrics"
 	"go.chromium.org/luci/bisection/model"
+	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 )
@@ -52,18 +55,35 @@ const (
 	ActionTypeCommentRevert = "comment_revert"
 )
 
-func updateCulpritActionCounter(c context.Context, suspect *model.Suspect, failureType string, actionType ActionType) error {
-	bbid, err := datastoreutil.GetAssociatedBuildID(c, suspect)
-	if err != nil {
-		return errors.Annotate(err, "GetAssociatedBuildID").Err()
+func updateCulpritActionCounter(c context.Context, suspect *model.Suspect, actionType ActionType) error {
+	var failureType string
+	var project string
+	switch suspect.AnalysisType {
+	case bisectionpb.AnalysisType_COMPILE_FAILURE_ANALYSIS:
+		bbid, err := datastoreutil.GetAssociatedBuildID(c, suspect)
+		if err != nil {
+			return errors.Annotate(err, "GetAssociatedBuildID").Err()
+		}
+		build, err := datastoreutil.GetBuild(c, bbid)
+		if err != nil {
+			return errors.Annotate(err, "getting build %d", bbid).Err()
+		}
+		if build == nil {
+			return fmt.Errorf("no build %d", bbid)
+		}
+		project = build.Project
+		failureType = string(metrics.AnalysisTypeCompile)
+	case bisectionpb.AnalysisType_TEST_FAILURE_ANALYSIS:
+		tfa, err := datastoreutil.GetTestFailureAnalysisForSuspect(c, suspect)
+		if err != nil {
+			return err
+		}
+		project = tfa.Project
+		failureType = string(metrics.AnalysisTypeTest)
+	default:
+		logging.Errorf(c, "unknown analysis type of suspect %s", suspect.AnalysisType.String())
+		return nil
 	}
-	build, err := datastoreutil.GetBuild(c, bbid)
-	if err != nil {
-		return errors.Annotate(err, "getting build %d", bbid).Err()
-	}
-	if build == nil {
-		return fmt.Errorf("no build %d", bbid)
-	}
-	culpritActionCounter.Add(c, 1, build.Project, failureType, string(actionType))
+	culpritActionCounter.Add(c, 1, project, failureType, string(actionType))
 	return nil
 }

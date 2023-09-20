@@ -73,3 +73,9 @@ message TestFailureCulpritVerificationTask {
   // The analysis ID
   int64 analysis_id = 1;
 }
+
+// Payload for test failure culprit action.
+message TestFailureCulpritActionTask {
+  // The analysis ID
+  int64 analysis_id = 1;
+}

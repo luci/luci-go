@@ -56,8 +56,28 @@ func ConstructLUCIBisectionBugURL(ctx context.Context, analysisURL string,
 	return "https://bugs.chromium.org/p/chromium/issues/entry?" + queryParams.Encode()
 }
 
+func ConstructBuganizerURLForTestAnalysis(commitReviewURL string, analysisID int64) string {
+	queryParams := url.Values{
+		"title":       {fmt.Sprintf("Wrongly blamed %s", commitReviewURL)},
+		"description": {fmt.Sprintf("Test analysis ID: %d", analysisID)},
+		"format":      {"PLAIN"},
+		"component":   {"1199205"},
+		"type":        {"BUG"},
+		"priority":    {"P3"},
+	}
+
+	return "http://b.corp.google.com/createIssue?" + queryParams.Encode()
+}
+
 func ConstructGerritCodeReviewURL(ctx context.Context,
 	gerritClient *gerrit.Client, change *gerritpb.ChangeInfo) string {
 	return fmt.Sprintf("https://%s/c/%s/+/%d", gerritClient.Host(ctx),
 		change.Project, change.Number)
+}
+
+func ConstructTestHistoryURL(project, testID, variantHash string) string {
+	queryParams := url.Values{
+		"q": {fmt.Sprintf("VHash:%s", variantHash)},
+	}
+	return fmt.Sprintf("https://ci.chromium.org/ui/test/%s/%s?", url.PathEscape(project), url.PathEscape(testID)) + queryParams.Encode()
 }

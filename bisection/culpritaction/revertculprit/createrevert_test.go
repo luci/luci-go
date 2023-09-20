@@ -21,6 +21,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/bisection/model"
+	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/testutil"
 
@@ -56,6 +57,7 @@ func TestGenerateRevertDescription(t *testing.T) {
 			},
 			ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
 			VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+			AnalysisType:       bisectionpb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 		}
 		So(datastore.Put(ctx, suspect), ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()

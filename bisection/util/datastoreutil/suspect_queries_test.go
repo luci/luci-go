@@ -20,6 +20,7 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
@@ -222,6 +223,7 @@ func TestGetAssociatedBuildID(t *testing.T) {
 			},
 			ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
 			VerificationStatus: model.SuspectVerificationStatus_UnderVerification,
+			AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 		}
 		So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
@@ -318,5 +320,60 @@ func TestGetSuspectForTestAnalysis(t *testing.T) {
 		s, err = GetSuspectForTestAnalysis(ctx, tfa)
 		So(err, ShouldBeNil)
 		So(s.Id, ShouldEqual, 300)
+	})
+}
+
+func TestFetchTestFailuresForSuspect(t *testing.T) {
+	ctx := memory.Use(context.Background())
+
+	Convey("FetchTestFailuresForSuspect", t, func() {
+		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+			Project:        "chromium",
+			TestFailureKey: datastore.NewKey(ctx, "TestFailure", "", 1, nil),
+		})
+		nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
+		})
+		suspect := &model.Suspect{
+			Id:             100,
+			Type:           model.SuspectType_NthSection,
+			ParentAnalysis: datastore.KeyForObj(ctx, nsa),
+			AnalysisType:   pb.AnalysisType_TEST_FAILURE_ANALYSIS,
+		}
+		So(datastore.Put(ctx, suspect), ShouldBeNil)
+		tf1 := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+			ID: 1, IsPrimary: true, Analysis: tfa,
+		})
+		tf2 := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{ID: 2, Analysis: tfa})
+
+		bundle, err := FetchTestFailuresForSuspect(ctx, suspect)
+		So(err, ShouldBeNil)
+		So(len(bundle.All()), ShouldEqual, 2)
+		So(bundle.Primary(), ShouldResembleProto, tf1)
+		So(bundle.Others()[0], ShouldResembleProto, tf2)
+	})
+}
+
+func TestGetTestFailureAnalysisForSuspect(t *testing.T) {
+	ctx := memory.Use(context.Background())
+
+	Convey("GetTestFailureAnalysisForSuspect", t, func() {
+		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+			Project:        "chromium",
+			TestFailureKey: datastore.NewKey(ctx, "TestFailure", "", 1, nil),
+		})
+		nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
+		})
+		suspect := &model.Suspect{
+			Id:             100,
+			Type:           model.SuspectType_NthSection,
+			ParentAnalysis: datastore.KeyForObj(ctx, nsa),
+			AnalysisType:   pb.AnalysisType_TEST_FAILURE_ANALYSIS,
+		}
+
+		res, err := GetTestFailureAnalysisForSuspect(ctx, suspect)
+		So(err, ShouldBeNil)
+		So(res, ShouldResembleProto, tfa)
 	})
 }

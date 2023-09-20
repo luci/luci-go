@@ -22,8 +22,6 @@ import (
 	"go.chromium.org/luci/bisection/internal/rotationproxy"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
-	"go.chromium.org/luci/bisection/util"
-	"go.chromium.org/luci/bisection/util/datastoreutil"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -59,31 +57,27 @@ func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Cl
 		saveInactionReason(ctx, culpritModel, pb.CulpritInactionReason_REVERT_HAS_COMMENT)
 		return nil
 	}
-
-	// If here, revert is not owned by LUCI Bisection and has no supporting comment
-
-	bbid, err := datastoreutil.GetAssociatedBuildID(ctx, culpritModel)
-	if err != nil {
-		return err
+	var message string
+	switch culpritModel.AnalysisType {
+	case pb.AnalysisType_COMPILE_FAILURE_ANALYSIS:
+		message, err = compileFailureComment(ctx, culpritModel, "", "supportComment")
+		if err != nil {
+			return errors.Annotate(err, "generate compile failure support comment").Err()
+		}
+	case pb.AnalysisType_TEST_FAILURE_ANALYSIS:
+		message, err = testFailureComment(ctx, culpritModel, "", "supportComment")
+		if err != nil {
+			return errors.Annotate(err, "generate test failure support comment").Err()
+		}
 	}
-	analysisURL := util.ConstructAnalysisURL(ctx, bbid)
-	buildURL := util.ConstructBuildURL(ctx, bbid)
-	bugURL := util.ConstructLUCIBisectionBugURL(ctx, analysisURL, culpritModel.ReviewUrl)
-
-	_, err = gerritClient.AddComment(ctx, revert,
-		fmt.Sprintf("LUCI Bisection recommends submitting this revert because"+
-			" it has confirmed the target of this revert is the culprit of a"+
-			" build failure. See the analysis: %s\n\n"+
-			"Sample failed build: %s\n\n"+
-			"If this is a false positive, please report it at %s",
-			analysisURL, buildURL, bugURL))
+	_, err = gerritClient.AddComment(ctx, revert, message)
 	if err != nil {
 		return errors.Annotate(err,
 			"error when adding supporting comment to existing revert").Err()
 	}
 
 	// Update tsmon metrics
-	err = updateCulpritActionCounter(ctx, culpritModel, "compile", ActionTypeCommentRevert)
+	err = updateCulpritActionCounter(ctx, culpritModel, ActionTypeCommentRevert)
 	if err != nil {
 		logging.Errorf(ctx, errors.Annotate(err, "updateCulpritActionCounter").Err().Error())
 	}
@@ -129,20 +123,19 @@ func commentReasonOnCulprit(ctx context.Context, gerritClient *gerrit.Client,
 		return nil
 	}
 
-	bbid, err := datastoreutil.GetAssociatedBuildID(ctx, culpritModel)
-	if err != nil {
-		return err
+	var message string
+	switch culpritModel.AnalysisType {
+	case pb.AnalysisType_COMPILE_FAILURE_ANALYSIS:
+		message, err = compileFailureComment(ctx, culpritModel, reason, "blameComment")
+		if err != nil {
+			return errors.Annotate(err, "generate compile failure blame comment").Err()
+		}
+	case pb.AnalysisType_TEST_FAILURE_ANALYSIS:
+		message, err = testFailureComment(ctx, culpritModel, reason, "blameComment")
+		if err != nil {
+			return errors.Annotate(err, "generate test failure blame comment").Err()
+		}
 	}
-	analysisURL := util.ConstructAnalysisURL(ctx, bbid)
-	buildURL := util.ConstructBuildURL(ctx, bbid)
-	bugURL := util.ConstructLUCIBisectionBugURL(ctx, analysisURL, culpritModel.ReviewUrl)
-
-	message := fmt.Sprintf("LUCI Bisection has identified this"+
-		" change as the culprit of a build failure. See the analysis: %s\n\n"+
-		"A revert for this change was not created because %s.\n\n"+
-		"Sample failed build: %s\n\n"+
-		"If this is a false positive, please report it at %s",
-		analysisURL, reason, buildURL, bugURL)
 
 	_, err = gerritClient.AddComment(ctx, culprit, message)
 	if err != nil {
@@ -150,7 +143,7 @@ func commentReasonOnCulprit(ctx context.Context, gerritClient *gerrit.Client,
 	}
 
 	// Update tsmon metrics
-	err = updateCulpritActionCounter(ctx, culpritModel, "compile", ActionTypeCommentCulprit)
+	err = updateCulpritActionCounter(ctx, culpritModel, ActionTypeCommentCulprit)
 	if err != nil {
 		logging.Errorf(ctx, errors.Annotate(err, "updateCulpritActionCounter").Err().Error())
 	}

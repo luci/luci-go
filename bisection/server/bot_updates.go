@@ -408,6 +408,9 @@ func updateSuspectWithRerunData(c context.Context, rerun *model.SingleRerun) err
 		}
 
 		// Add task to revert the heuristic confirmed culprit
+		// TODO(@beining): Schedule this task when suspect is VerificationError too.
+		// According to go/luci-bisection-integrating-gerrit,
+		// we want to also perform gerrit action when suspect is VerificationError.
 		err = tq.AddTask(c, &tq.Task{
 			Title: fmt.Sprintf("revert_culprit_%d_%d", suspect.Id, analysisID),
 			Payload: &taskpb.RevertCulpritTask{

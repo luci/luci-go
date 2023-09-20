@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/internal/rotationproxy"
 	"go.chromium.org/luci/bisection/model"
+	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -33,13 +34,18 @@ import (
 //   - the reason a revert should not be committed if applicable; and
 //   - the error if one occurred.
 func canCommit(ctx context.Context, culprit *gerritpb.ChangeInfo, culpritModel *model.Suspect) (bool, string, error) {
-	cfg, err := config.Get(ctx)
+	// TODO(beining@): remove this when revert CL support has been added for test failure.
+	if culpritModel.AnalysisType == bisectionpb.AnalysisType_TEST_FAILURE_ANALYSIS {
+		return false, "LUCI Bisection has not yet support revert CL for test failure", nil
+	}
+	// Get gerrit config.
+	gerritConfig, err := config.GetGerritCfgForSuspect(ctx, culpritModel)
 	if err != nil {
-		return false, "", errors.Annotate(err, "error fetching configs").Err()
+		return false, "", errors.Annotate(err, "error get gerrit config").Err()
 	}
 
 	// Check if the culprit was committed recently
-	maxAge := time.Duration(cfg.GerritConfig.MaxRevertibleCulpritAge) * time.Second
+	maxAge := time.Duration(gerritConfig.MaxRevertibleCulpritAge) * time.Second
 	if !gerrit.IsRecentSubmit(ctx, culprit, maxAge) {
 		// culprit was not submitted recently, so the revert should not be
 		// automatically submitted
@@ -47,7 +53,7 @@ func canCommit(ctx context.Context, culprit *gerritpb.ChangeInfo, culpritModel *
 	}
 
 	// Check if LUCI Bisection's Gerrit config allows revert submission
-	canSubmit, reason, err := config.CanSubmitRevert(ctx, cfg.GerritConfig)
+	canSubmit, reason, err := config.CanSubmitRevert(ctx, gerritConfig)
 	if err != nil {
 		return false, "", errors.Annotate(err, "error checking Submit Revert configs").Err()
 	}

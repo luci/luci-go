@@ -19,6 +19,7 @@ package updatetestrerun
 import (
 	"context"
 
+	"go.chromium.org/luci/bisection/culpritaction/revertculprit"
 	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
@@ -169,6 +170,14 @@ func processCulpritVerificationUpdate(ctx context.Context, rerun *model.TestSing
 		}, nil)
 		if err != nil {
 			return errors.Annotate(err, "update VerifiedCulpritKey of analysis").Err()
+		}
+		// TODO(@beining): Schedule this task when suspect is VerificationError too.
+		// According to go/luci-bisection-integrating-gerrit,
+		// we want to also perform gerrit action when suspect is VerificationError.
+		if err := revertculprit.ScheduleTestFailureTask(ctx, tfa.ID); err != nil {
+			// Non-critical, just log the error
+			err := errors.Annotate(err, "schedule culprit action task %d", tfa.ID).Err()
+			logging.Errorf(ctx, err.Error())
 		}
 		return testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
 	}

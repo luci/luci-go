@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/model"
+	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 
@@ -35,7 +36,11 @@ import (
 //   - the reason it should not be created if applicable; and
 //   - the error if one occurred.
 func isCulpritRevertible(ctx context.Context, gerritClient *gerrit.Client,
-	culprit *gerritpb.ChangeInfo) (bool, string, error) {
+	culprit *gerritpb.ChangeInfo, culpritModel *model.Suspect) (bool, string, error) {
+	// TODO(beining@): remove this when create CL support has been added for test failure.
+	if culpritModel.AnalysisType == bisectionpb.AnalysisType_TEST_FAILURE_ANALYSIS {
+		return false, "LUCI Bisection has not yet support create/revert CL for test failure", nil
+	}
 	// Check if the culprit's description has disabled autorevert
 	hasFlag, err := gerrit.HasAutoRevertOffFlagSet(ctx, culprit)
 	if err != nil {
@@ -62,20 +67,18 @@ func isCulpritRevertible(ctx context.Context, gerritClient *gerrit.Client,
 	if hasDep {
 		return false, "there are merged changes depending on it", nil
 	}
-
 	// Check if LUCI Bisection's Gerrit config allows revert creation
-	cfg, err := config.Get(ctx)
+	gerritCfg, err := config.GetGerritCfgForSuspect(ctx, culpritModel)
 	if err != nil {
 		return false, "", errors.Annotate(err, "error fetching configs").Err()
 	}
-	canCreate, reason, err := config.CanCreateRevert(ctx, cfg.GerritConfig)
+	canCreate, reason, err := config.CanCreateRevert(ctx, gerritCfg)
 	if err != nil {
 		return false, "", errors.Annotate(err, "error checking Create Revert configs").Err()
 	}
 	if !canCreate {
 		return false, reason, nil
 	}
-
 	return true, "", nil
 }
 

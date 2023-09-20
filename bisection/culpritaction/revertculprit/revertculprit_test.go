@@ -102,6 +102,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
 				VerificationStatus: model.SuspectVerificationStatus_UnderVerification,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -123,7 +124,7 @@ func TestRevertCulprit(t *testing.T) {
 			}
 			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
 
-			err := RevertCulprit(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, heuristicSuspect)
 			expectedErr := fmt.Sprintf("suspect (commit %s) has verification status"+
 				" %s and should not be reverted", heuristicSuspect.GitilesCommit.Id,
 				heuristicSuspect.VerificationStatus)
@@ -153,6 +154,7 @@ func TestRevertCulprit(t *testing.T) {
 					Project: "chromium/src",
 					Id:      "12ab34cd56ef",
 				},
+				AnalysisType: pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
 			So(datastore.Put(ctx, nthsectionSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -177,7 +179,7 @@ func TestRevertCulprit(t *testing.T) {
 			}
 			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
 
-			err := RevertCulprit(ctx, nthsectionSuspect)
+			err := TakeCulpritAction(ctx, nthsectionSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -205,6 +207,7 @@ func TestRevertCulprit(t *testing.T) {
 					Id:      "12ab34cd56ef",
 				},
 				VerificationStatus: model.SuspectVerificationStatus_VerificationError,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
 			So(datastore.Put(ctx, nthsectionSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -230,7 +233,7 @@ func TestRevertCulprit(t *testing.T) {
 			}
 			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
 
-			err := RevertCulprit(ctx, nthsectionSuspect)
+			err := TakeCulpritAction(ctx, nthsectionSuspect)
 			expectedErr := fmt.Sprintf("suspect (commit %s) has verification status"+
 				" %s and should not be reverted", nthsectionSuspect.GitilesCommit.Id,
 				nthsectionSuspect.VerificationStatus)
@@ -264,6 +267,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -285,7 +289,7 @@ func TestRevertCulprit(t *testing.T) {
 			}
 			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
 
-			err := RevertCulprit(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -317,6 +321,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -378,7 +383,7 @@ func TestRevertCulprit(t *testing.T) {
 			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
 				Return(revertRes, nil).Times(1)
 
-			err := RevertCulprit(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -410,6 +415,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -477,7 +483,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := RevertCulprit(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -510,6 +516,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -583,7 +590,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := RevertCulprit(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -616,6 +623,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -676,7 +684,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := RevertCulprit(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -709,6 +717,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -769,7 +778,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := RevertCulprit(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -802,6 +811,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -881,7 +891,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := RevertCulprit(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -914,6 +924,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -976,7 +987,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := RevertCulprit(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1009,6 +1020,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1090,7 +1102,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := RevertCulprit(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1123,6 +1135,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1204,7 +1217,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := RevertCulprit(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1237,6 +1250,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1327,7 +1341,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := RevertCulprit(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1362,6 +1376,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1428,7 +1443,7 @@ func TestRevertCulprit(t *testing.T) {
 					},
 				}, nil).Times(1)
 
-			err := RevertCulprit(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1461,6 +1476,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1532,7 +1548,7 @@ func TestRevertCulprit(t *testing.T) {
 					},
 				}, nil).Times(1)
 
-			err := RevertCulprit(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1565,6 +1581,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1696,7 +1713,7 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				},
 			)).Times(1)
 
-			err = RevertCulprit(ctx, heuristicSuspect)
+			err = TakeCulpritAction(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1731,6 +1748,7 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1784,7 +1802,7 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				Return(nil, status.Errorf(codes.Internal, "revert creation failed internally")).
 				Times(1)
 
-			err := RevertCulprit(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, heuristicSuspect)
 			So(err, ShouldNotBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1813,7 +1831,8 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 					Project: "chromium/src",
 					Id:      "12ab34cd56ef",
 				},
-				ReviewUrl: "https://test-review.googlesource.com/c/chromium/test/+/876543",
+				ReviewUrl:    "https://test-review.googlesource.com/c/chromium/test/+/876543",
+				AnalysisType: pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
 			So(datastore.Put(ctx, suspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1884,7 +1903,7 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 					},
 				}, nil).Times(1)
 
-			err := RevertCulprit(ctx, suspect)
+			err := TakeCulpritAction(ctx, suspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1916,6 +1935,7 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
 			So(datastore.Put(ctx, suspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -2010,7 +2030,7 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				},
 			)).Times(1)
 
-			err := RevertCulprit(ctx, suspect)
+			err := TakeCulpritAction(ctx, suspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()

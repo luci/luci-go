@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/bisection/model"
+	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -83,27 +84,35 @@ func GetAssociatedBuildID(ctx context.Context, suspect *model.Suspect) (int64, e
 		return 0, fmt.Errorf("suspect with ID '%d' had no parent analysis",
 			suspect.Id)
 	}
+	switch suspect.AnalysisType {
+	case bisectionpb.AnalysisType_COMPILE_FAILURE_ANALYSIS:
+		// Get failure analysis that the heuristic/nth section analysis relates to
+		analysisKey := suspect.ParentAnalysis.Parent()
+		if analysisKey == nil {
+			return 0, fmt.Errorf("suspect with ID '%d' had no parent failure analysis",
+				suspect.Id)
+		}
+		analysisID := analysisKey.IntID()
 
-	// Get failure analysis that the heuristic/nth section analysis relates to
-	analysisKey := suspect.ParentAnalysis.Parent()
-	if analysisKey == nil {
-		return 0, fmt.Errorf("suspect with ID '%d' had no parent failure analysis",
-			suspect.Id)
+		compileFailure, err := GetCompileFailureForAnalysisID(ctx, analysisID)
+		if err != nil {
+			return 0, fmt.Errorf("analysis with ID '%d' did not have a compile failure",
+				analysisID)
+		}
+
+		if compileFailure.Build == nil {
+			return 0, fmt.Errorf("compile failure with ID '%d' did not have a failed build",
+				compileFailure.Id)
+		}
+		return compileFailure.Build.IntID(), nil
+	case bisectionpb.AnalysisType_TEST_FAILURE_ANALYSIS:
+		tfa, err := GetTestFailureAnalysisForSuspect(ctx, suspect)
+		if err != nil {
+			return 0, errors.Annotate(err, "fetch test failure analysis for suspect").Err()
+		}
+		return tfa.FailedBuildID, nil
 	}
-	analysisID := analysisKey.IntID()
-
-	compileFailure, err := GetCompileFailureForAnalysisID(ctx, analysisID)
-	if err != nil {
-		return 0, fmt.Errorf("analysis with ID '%d' did not have a compile failure",
-			analysisID)
-	}
-
-	if compileFailure.Build == nil {
-		return 0, fmt.Errorf("compile failure with ID '%d' did not have a failed build",
-			compileFailure.Id)
-	}
-
-	return compileFailure.Build.IntID(), nil
+	return 0, fmt.Errorf("unknown analysis type of suspect %s", suspect.AnalysisType.String())
 }
 
 // GetSuspectsForAnalysis returns all suspects (from heuristic and nthsection) for an analysis
@@ -165,4 +174,35 @@ func fetchSuspectsForParentKey(c context.Context, parentKey *datastore.Key) ([]*
 		return nil, err
 	}
 	return suspects, nil
+}
+
+func FetchTestFailuresForSuspect(c context.Context, suspect *model.Suspect) (*model.TestFailureBundle, error) {
+	nsa, err := getTestNthSectionAnalysisForSuspect(c, suspect)
+	if err != nil {
+		return nil, err
+	}
+	return getTestFailureBundleWithAnalysisKey(c, nsa.ParentAnalysisKey)
+}
+
+func GetTestFailureAnalysisForSuspect(c context.Context, suspect *model.Suspect) (*model.TestFailureAnalysis, error) {
+	nsa, err := getTestNthSectionAnalysisForSuspect(c, suspect)
+	if err != nil {
+		return nil, err
+	}
+	tfa := &model.TestFailureAnalysis{ID: nsa.ParentAnalysisKey.IntID()}
+	if err := datastore.Get(c, tfa); err != nil {
+		return nil, err
+	}
+	return tfa, nil
+}
+
+func getTestNthSectionAnalysisForSuspect(c context.Context, suspect *model.Suspect) (*model.TestNthSectionAnalysis, error) {
+	if suspect.AnalysisType != bisectionpb.AnalysisType_TEST_FAILURE_ANALYSIS {
+		return nil, errors.New("invalid suspect analysis type")
+	}
+	nsa := &model.TestNthSectionAnalysis{ID: suspect.ParentAnalysis.IntID()}
+	if err := datastore.Get(c, nsa); err != nil {
+		return nil, errors.Annotate(err, "get test nthsection analysis").Err()
+	}
+	return nsa, nil
 }

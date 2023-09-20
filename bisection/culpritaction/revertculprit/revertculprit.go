@@ -43,19 +43,35 @@ import (
 	"go.chromium.org/luci/server/tq"
 )
 
-const (
-	taskClass = "revert-culprit-action"
-	queue     = "revert-culprit-action"
-)
+var CompileFailureTasks = tq.RegisterTaskClass(tq.TaskClass{
+	ID:        "revert-culprit-action",
+	Prototype: (*taskpb.RevertCulpritTask)(nil),
+	Queue:     "revert-culprit-action",
+	Kind:      tq.NonTransactional,
+})
+
+var TestFailureTasks = tq.RegisterTaskClass(tq.TaskClass{
+	ID:        "test-failure-culprit-action",
+	Prototype: (*taskpb.TestFailureCulpritActionTask)(nil),
+	Queue:     "test-failure-culprit-action",
+	Kind:      tq.NonTransactional,
+})
 
 // RegisterTaskClass registers the task class for tq dispatcher
 func RegisterTaskClass() {
-	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        taskClass,
-		Prototype: (*taskpb.RevertCulpritTask)(nil),
-		Queue:     queue,
-		Kind:      tq.NonTransactional,
-		Handler:   processRevertCulpritTask,
+	CompileFailureTasks.AttachHandler(processRevertCulpritTask)
+	TestFailureTasks.AttachHandler(func(ctx context.Context, payload proto.Message) error {
+		task := payload.(*taskpb.TestFailureCulpritVerificationTask)
+		if err := processTestFailureCulpritTask(ctx, task.AnalysisId); err != nil {
+			err := errors.Annotate(err, "run test failure culprit action").Err()
+			logging.Errorf(ctx, err.Error())
+			// If the error is transient, return err to retry
+			if transient.Tag.In(err) {
+				return err
+			}
+			return nil
+		}
+		return nil
 	})
 }
 
@@ -114,7 +130,7 @@ func processRevertCulpritTask(ctx context.Context, payload proto.Message) error 
 	}
 
 	// Revert culprit
-	err = RevertCulprit(ctx, culprit)
+	err = TakeCulpritAction(ctx, culprit)
 	if err != nil {
 		// If the error is transient, return err to retry
 		if transient.Tag.In(err) {
@@ -128,7 +144,7 @@ func processRevertCulpritTask(ctx context.Context, payload proto.Message) error 
 	return nil
 }
 
-func shouldCreateRevert(ctx context.Context, culpritModel *model.Suspect, cfg *configpb.Config) (bool, error) {
+func isSuspectGerritActionReady(ctx context.Context, culpritModel *model.Suspect, gerritConfig *configpb.GerritConfig) (bool, error) {
 	// We only proceed with heuristic culprit if it is a confirmed culprit
 	if culpritModel.Type == model.SuspectType_Heuristic {
 		if culpritModel.VerificationStatus == model.SuspectVerificationStatus_ConfirmedCulprit {
@@ -139,7 +155,7 @@ func shouldCreateRevert(ctx context.Context, culpritModel *model.Suspect, cfg *c
 	}
 	// Nthsection
 	if culpritModel.Type == model.SuspectType_NthSection {
-		settings := cfg.GerritConfig.NthsectionSettings
+		settings := gerritConfig.NthsectionSettings
 		if !settings.Enabled {
 			logging.Infof(ctx, "Nthsection settings is disabled")
 			return false, nil
@@ -153,25 +169,24 @@ func shouldCreateRevert(ctx context.Context, culpritModel *model.Suspect, cfg *c
 	return false, fmt.Errorf("unsupported suspect type: %s", culpritModel.Type)
 }
 
-// RevertCulprit attempts to automatically revert a culprit
-// identified as a result of a heuristic analysis or an nthsection analysis.
-// If an unexpected error occurs, it is logged and returned.
-func RevertCulprit(ctx context.Context, culpritModel *model.Suspect) error {
-	// Get config for LUCI Bisection
-	cfg, err := config.Get(ctx)
+// TakeCulpritAction attempts to comment culprit, comment revert, create revert and commit revert for a culprit
+// when the culprit satisfies the critieria of the action.
+// A culprit is identified as a result of a heuristic analysis or an nthsection analysis.
+func TakeCulpritAction(ctx context.Context, culpritModel *model.Suspect) error {
+	// Get gerrit config.
+	gerritConfig, err := config.GetGerritCfgForSuspect(ctx, culpritModel)
 	if err != nil {
 		return err
 	}
-
 	// Check if Gerrit actions are disabled
-	if !cfg.GerritConfig.ActionsEnabled {
+	if !gerritConfig.ActionsEnabled {
 		logging.Infof(ctx, "Gerrit actions have been disabled")
 		saveInactionReason(ctx, culpritModel, pb.CulpritInactionReason_ACTIONS_DISABLED)
 		return nil
 	}
 
 	// Check the culprit verification status
-	shouldTakeAction, err := shouldCreateRevert(ctx, culpritModel, cfg)
+	shouldTakeAction, err := isSuspectGerritActionReady(ctx, culpritModel, gerritConfig)
 	if err != nil {
 		return err
 	}
@@ -260,7 +275,7 @@ func RevertCulprit(ctx context.Context, culpritModel *model.Suspect) error {
 		return nil
 	}
 
-	shouldRevert, reason, err := isCulpritRevertible(ctx, gerritClient, culprit)
+	shouldRevert, reason, err := isCulpritRevertible(ctx, gerritClient, culprit, culpritModel)
 	if err != nil {
 		logging.Errorf(ctx, err.Error())
 		return err
@@ -555,7 +570,7 @@ func saveRevertURL(ctx context.Context, gerritClient *gerrit.Client,
 func saveCreationDetails(ctx context.Context, gerritClient *gerrit.Client,
 	culpritModel *model.Suspect, revert *gerritpb.ChangeInfo) error {
 	// Update tsmon metrics
-	err := updateCulpritActionCounter(ctx, culpritModel, "compile", ActionTypeCreateRevert)
+	err := updateCulpritActionCounter(ctx, culpritModel, ActionTypeCreateRevert)
 	if err != nil {
 		logging.Errorf(ctx, errors.Annotate(err, "updateCulpritActionCounter").Err().Error())
 	}
@@ -582,7 +597,7 @@ func saveCreationDetails(ctx context.Context, gerritClient *gerrit.Client,
 
 func saveCommitDetails(ctx context.Context, culpritModel *model.Suspect) error {
 	// Update tsmon metrics
-	err := updateCulpritActionCounter(ctx, culpritModel, "compile", ActionTypeSubmitRevert)
+	err := updateCulpritActionCounter(ctx, culpritModel, ActionTypeSubmitRevert)
 	if err != nil {
 		logging.Errorf(ctx, errors.Annotate(err, "updateCulpritActionCounter").Err().Error())
 	}
@@ -625,4 +640,13 @@ func saveInactionReason(ctx context.Context, culpritModel *model.Suspect,
 			"couldn't update suspect inaction reason").Err()
 		logging.Errorf(ctx, err.Error())
 	}
+}
+
+func ScheduleTestFailureTask(ctx context.Context, analysisID int64) error {
+	return tq.AddTask(ctx, &tq.Task{
+		Payload: &taskpb.TestFailureCulpritActionTask{
+			AnalysisId: analysisID,
+		},
+		Title: fmt.Sprintf("test_failure_culpri_action_%d", analysisID),
+	})
 }

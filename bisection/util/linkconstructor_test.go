@@ -87,3 +87,25 @@ func TestConstructGerritCodeReviewURL(t *testing.T) {
 			"https://chromium-test.googlesource.com/c/chromium/test/+/123456")
 	})
 }
+
+func TestConstructBuganizerURLForTestAnalysis(t *testing.T) {
+
+	commitReviewURL := "https://chromium-test-review.googlesource.com/c/chromium/test/src/+/1234567"
+
+	Convey("construct buganizer URL", t, func() {
+		bugURL := ConstructBuganizerURLForTestAnalysis(commitReviewURL, 123)
+		expectedBugURL := "http://b.corp.google.com/createIssue?component=1199205" +
+			"&description=Test+analysis+ID%3A+123&format=PLAIN&priority=P3&title=Wrongly+" +
+			"blamed+https%3A%2F%2Fchromium-test-review.googlesource.com%2Fc%2Fchromium%2F" +
+			"test%2Fsrc%2F%2B%2F1234567&type=BUG"
+		So(bugURL, ShouldEqual, expectedBugURL)
+	})
+}
+
+func TestConstructTestHistoryURL(t *testing.T) {
+	Convey("construct test history URL", t, func() {
+		testURL := ConstructTestHistoryURL("chromium", "testID", "6363b77a587c3046")
+		expectedTestURL := "https://ci.chromium.org/ui/test/chromium/testID?q=VHash%3A6363b77a587c3046"
+		So(testURL, ShouldEqual, expectedTestURL)
+	})
+}

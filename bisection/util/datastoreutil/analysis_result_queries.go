@@ -329,7 +329,11 @@ func GetPrimaryTestFailure(ctx context.Context, analysis *model.TestFailureAnaly
 
 // GetTestFailureBundle returns a TestFailureBundle for a TestFailureAnalysis.
 func GetTestFailureBundle(ctx context.Context, tfa *model.TestFailureAnalysis) (*model.TestFailureBundle, error) {
-	q := datastore.NewQuery("TestFailure").Eq("analysis_key", datastore.KeyForObj(ctx, tfa))
+	return getTestFailureBundleWithAnalysisKey(ctx, datastore.KeyForObj(ctx, tfa))
+}
+
+func getTestFailureBundleWithAnalysisKey(ctx context.Context, analysisKey *datastore.Key) (*model.TestFailureBundle, error) {
+	q := datastore.NewQuery("TestFailure").Eq("analysis_key", analysisKey)
 	tfs := []*model.TestFailure{}
 	err := datastore.GetAll(ctx, q, &tfs)
 	if err != nil {
