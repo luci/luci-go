@@ -71,6 +71,7 @@ def source_file_filter(input_api):
     r'.+\.pb\.validate\.go$',
     r'.+\.pb_test\.go$',
     r'.+_dec\.go$',
+    r'.+.mock\.go$',
     r'.+_mux\.go$',
     r'.+_string\.go$',
     r'.+gae\.py$',  # symlinks from outside

@@ -15,3 +15,4 @@
 package clients
 
 //go:generate mockgen -source swarming.go -destination swarming.mock.go -package clients -write_package_comment=false
+//go:generate mockgen -source backend.go -destination backend.mock.go -package clients -write_package_comment=false

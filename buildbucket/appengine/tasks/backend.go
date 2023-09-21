@@ -19,14 +19,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"google.golang.org/api/googleapi"
 
-	grpc "google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -40,12 +38,12 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching/layered"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/common"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
+	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -85,89 +83,14 @@ var cipdDescribeBootstrapBundleCache = layered.RegisterCache(layered.Parameters[
 	},
 })
 
-type MockTaskBackendClientKey struct{}
-
 type MockCipdClientKey struct{}
-
-// BackendClient is the client to communicate with TaskBackend.
-// It wraps a pb.TaskBackendClient.
-
-type BackendClient struct {
-	client TaskBackendClient
-}
-
-type TaskBackendClient interface {
-	RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*pb.RunTaskResponse, error)
-	FetchTasks(ctx context.Context, in *pb.FetchTasksRequest, opts ...grpc.CallOption) (*pb.FetchTasksResponse, error)
-}
-
-func createRawPrpcClient(ctx context.Context, host, project string) (client *prpc.Client, err error) {
-	t, err := auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(project))
-	if err != nil {
-		return nil, err
-	}
-	client = &prpc.Client{
-		C:       &http.Client{Transport: t},
-		Host:    host,
-		Options: prpc.DefaultOptions(),
-	}
-	return
-}
-
-func newRawTaskBackendClient(ctx context.Context, host string, project string) (TaskBackendClient, error) {
-	if mockClient, ok := ctx.Value(MockTaskBackendClientKey{}).(TaskBackendClient); ok {
-		return mockClient, nil
-	}
-	prpcClient, err := createRawPrpcClient(ctx, host, project)
-	if err != nil {
-		return nil, err
-	}
-	return pb.NewTaskBackendPRPCClient(prpcClient), nil
-}
-
-// NewBackendClient creates a client to communicate with Buildbucket.
-func NewBackendClient(ctx context.Context, project, target string, globalCfg *pb.SettingsCfg) (*BackendClient, error) {
-	hostname, err := computeHostnameFromTarget(target, globalCfg)
-	if err != nil {
-		return nil, err
-	}
-	client, err := newRawTaskBackendClient(ctx, hostname, project)
-	if err != nil {
-		return nil, err
-	}
-	return &BackendClient{
-		client: client,
-	}, nil
-}
-
-// RunTask returns for the requested task.
-func (c *BackendClient) RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*pb.RunTaskResponse, error) {
-	return c.client.RunTask(ctx, taskReq, opts...)
-}
-
-// FetchTasks returns the requested tasks.
-func (c *BackendClient) FetchTasks(ctx context.Context, taskReq *pb.FetchTasksRequest, opts ...grpc.CallOption) (*pb.FetchTasksResponse, error) {
-	return c.client.FetchTasks(ctx, taskReq, opts...)
-}
 
 func NewCipdClient(ctx context.Context, host string, project string) (client *prpc.Client, err error) {
 	if mockClient, ok := ctx.Value(MockCipdClientKey{}).(*prpc.Client); ok {
 		return mockClient, nil
 	}
-	client, err = createRawPrpcClient(ctx, host, project)
+	client, err = clients.CreateRawPrpcClient(ctx, host, project)
 	return
-}
-
-func computeHostnameFromTarget(target string, globalCfg *pb.SettingsCfg) (hostname string, err error) {
-	if globalCfg == nil {
-		return "", errors.Reason("could not get global settings config").Err()
-	}
-	for _, config := range globalCfg.Backends {
-		if config.Target == target {
-			return config.Hostname, nil
-		}
-	}
-	return "", errors.Reason("could not find target in global config settings").Err()
 }
 
 // computeTaskCaches computes the task caches.
@@ -365,7 +288,7 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 	}
 
 	// Create a backend task client
-	backend, err := NewBackendClient(ctx, bld.Proto.Builder.Project, infra.Proto.Backend.Task.Id.Target, globalCfg)
+	backend, err := clients.NewBackendClient(ctx, bld.Proto.Builder.Project, infra.Proto.Backend.Task.Id.Target, globalCfg)
 	if err != nil {
 		return tq.Fatal.Apply(errors.Annotate(err, "failed to connect to backend service").Err())
 	}

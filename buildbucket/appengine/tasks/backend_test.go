@@ -26,7 +26,8 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	grpc "google.golang.org/grpc"
+
+	"google.golang.org/api/googleapi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -35,7 +36,6 @@ import (
 
 	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -46,6 +46,7 @@ import (
 	"go.chromium.org/luci/server/secrets/testsecrets"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -54,91 +55,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
-
-const (
-	defaultUpdateID = 5
-	staleUpdateID   = 3
-	newUpdateID     = 10
-)
-
-type MockedClient struct {
-	Client *MockTaskBackendClient
-	Ctx    context.Context
-}
-
-// MockTaskBackendClient is a mock of TaskBackendClient interface.
-type MockTaskBackendClient struct {
-	ctrl     *gomock.Controller
-	recorder *MockTaskBackendClientMockRecorder
-}
-
-// MockTaskBackendClientMockRecorder is the mock recorder for MockTaskBackendClient.
-type MockTaskBackendClientMockRecorder struct {
-	mock *MockTaskBackendClient
-}
-
-// NewMockTaskBackendClient creates a new mock instance.
-func NewMockTaskBackendClient(ctrl *gomock.Controller) *MockTaskBackendClient {
-	mock := &MockTaskBackendClient{ctrl: ctrl}
-	mock.recorder = &MockTaskBackendClientMockRecorder{mock}
-	return mock
-}
-
-// NewMockedClient creates a MockedClient for testing.
-func NewMockedClient(ctx context.Context, ctl *gomock.Controller) *MockedClient {
-	mockClient := NewMockTaskBackendClient(ctl)
-	return &MockedClient{
-		Client: mockClient,
-		Ctx:    useTaskBackendClientForTesting(ctx, mockClient),
-	}
-}
-
-// RunTask mocks the RunTask RPC.
-func (mc *MockedClient) RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*pb.RunTaskResponse, error) {
-	if taskReq.Target == "fail_me" {
-		return nil, errors.Reason("idk, wanted to fail i guess :/").Err()
-	}
-	return &pb.RunTaskResponse{
-		Task: &pb.Task{
-			Id:       &pb.TaskID{Id: "abc123", Target: taskReq.Target},
-			Link:     "this_is_a_url_link",
-			UpdateId: 1,
-		},
-	}, nil
-}
-
-// FetchTasks mocks the FetchTasks RPC.
-func (mc *MockedClient) FetchTasks(ctx context.Context, taskReq *pb.FetchTasksRequest, opts ...grpc.CallOption) (*pb.FetchTasksResponse, error) {
-	tasks := make([]*pb.Task, 0, len(taskReq.TaskIds))
-	for _, tID := range taskReq.TaskIds {
-		status := pb.Status_STARTED
-		updateID := newUpdateID
-		switch {
-		case strings.HasSuffix(tID.Id, "all_fail"):
-			return nil, errors.Reason("idk, wanted to fail i guess :/").Err()
-		case strings.HasSuffix(tID.Id, "fail_me"):
-			continue
-		case strings.HasSuffix(tID.Id, "ended"):
-			status = pb.Status_SUCCESS
-		case strings.HasSuffix(tID.Id, "stale"):
-			updateID = staleUpdateID
-		case strings.HasSuffix(tID.Id, "unchanged"):
-			updateID = defaultUpdateID
-		}
-		tasks = append(tasks, &pb.Task{
-			Id:       tID,
-			Status:   status,
-			UpdateId: int64(updateID),
-		})
-	}
-	return &pb.FetchTasksResponse{Tasks: tasks}, nil
-}
-
-// useTaskBackendClientForTesting specifies that the given test double shall be used
-// instead of making calls to TaskBackend.
-func useTaskBackendClientForTesting(ctx context.Context, client *MockTaskBackendClient) context.Context {
-	return context.WithValue(ctx, MockTaskBackendClientKey{}, client)
-}
 
 // This will help track the number of times the cipd server is called to test if the cache is working as intended.
 var numCipdCalls int
@@ -182,78 +98,6 @@ func describeBootstrapBundle(c C) http.HandlerFunc {
 		_, err = w.Write(buf)
 		c.So(err, ShouldBeNil)
 	}
-}
-
-func TestBackendTaskClient(t *testing.T) {
-	t.Parallel()
-
-	Convey("assert NewBackendClient", t, func() {
-		ctl := gomock.NewController(t)
-		defer ctl.Finish()
-		mc := NewMockedClient(context.Background(), ctl)
-		now := testclock.TestRecentTimeUTC
-		ctx, _ := testclock.UseTime(context.Background(), now)
-		ctx = context.WithValue(ctx, MockTaskBackendClientKey{}, mc)
-		ctx = memory.UseWithAppID(ctx, "dev~app-id")
-		ctx = txndefer.FilterRDS(ctx)
-		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
-		datastore.GetTestable(ctx).AutoIndex(true)
-		datastore.GetTestable(ctx).Consistent(true)
-		ctx, _ = tq.TestingContext(ctx, nil)
-		store := &testsecrets.Store{
-			Secrets: map[string]secrets.Secret{
-				"key": {Active: []byte("stuff")},
-			},
-		}
-		ctx = secrets.Use(ctx, store)
-		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
-
-		build := &pb.Build{
-			Builder: &pb.BuilderID{
-				Builder: "builder",
-				Bucket:  "bucket",
-				Project: "project",
-			},
-			Id: 1,
-		}
-
-		infra := &pb.BuildInfra{
-			Backend: &pb.BuildInfra_Backend{
-				Task: &pb.Task{
-					Id: &pb.TaskID{
-						Id:     "1",
-						Target: "swarming://mytarget",
-					},
-				},
-			},
-			Buildbucket: &pb.BuildInfra_Buildbucket{
-				Hostname: "some unique host name",
-			},
-		}
-
-		Convey("global settings not defined", func() {
-			_, err := NewBackendClient(ctx, build.Builder.Project, infra.Backend.Task.Id.Target, nil)
-			So(err, ShouldErrLike, "could not get global settings config")
-		})
-
-		Convey("target not in global config", func() {
-			backendSetting := []*pb.BackendSetting{}
-			settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
-			_, err := NewBackendClient(ctx, build.Builder.Project, infra.Backend.Task.Id.Target, settingsCfg)
-			So(err, ShouldErrLike, "could not find target in global config settings")
-		})
-
-		Convey("target is in global config", func() {
-			backendSetting := []*pb.BackendSetting{}
-			backendSetting = append(backendSetting, &pb.BackendSetting{
-				Target:   "swarming://mytarget",
-				Hostname: "hostname",
-			})
-			settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
-			_, err := NewBackendClient(ctx, build.Builder.Project, infra.Backend.Task.Id.Target, settingsCfg)
-			So(err, ShouldBeNil)
-		})
-	})
 }
 
 func helpTestCipdCall(c C, ctx context.Context, infra *pb.BuildInfra) {
@@ -345,10 +189,10 @@ func TestCreateBackendTask(t *testing.T) {
 	Convey("computeBackendNewTaskReq", t, func(c C) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
-		mc := NewMockedClient(context.Background(), ctl)
+		mockBackend := clients.NewMockTaskBackendClient(ctl)
 		now := testclock.TestRecentTimeUTC
 		ctx, _ := testclock.UseTime(context.Background(), now)
-		ctx = context.WithValue(ctx, MockTaskBackendClientKey{}, mc)
+		ctx = context.WithValue(ctx, clients.MockTaskBackendClientKey, mockBackend)
 		ctx = caching.WithEmptyProcessCache(ctx)
 		ctx = memory.UseWithAppID(ctx, "dev~app-id")
 		ctx = txndefer.FilterRDS(ctx)
@@ -535,10 +379,10 @@ func TestCreateBackendTask(t *testing.T) {
 	Convey("RunTask", t, func(c C) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
-		mc := NewMockedClient(context.Background(), ctl)
+		mockBackend := clients.NewMockTaskBackendClient(ctl)
 		now := testclock.TestRecentTimeUTC
 		ctx, _ := testclock.UseTime(context.Background(), now)
-		ctx = context.WithValue(ctx, MockTaskBackendClientKey{}, mc)
+		ctx = context.WithValue(ctx, clients.MockTaskBackendClientKey, mockBackend)
 		ctx = caching.WithEmptyProcessCache(ctx)
 		ctx = memory.UseWithAppID(ctx, "dev~app-id")
 		ctx = txndefer.FilterRDS(ctx)
@@ -666,6 +510,13 @@ func TestCreateBackendTask(t *testing.T) {
 		So(datastore.Put(ctx, build, infra, bs), ShouldBeNil)
 
 		Convey("ok", func() {
+			mockBackend.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(&pb.RunTaskResponse{
+				Task: &pb.Task{
+					Id:       &pb.TaskID{Id: "abc123", Target: "swarming://chromium-swarm"},
+					Link:     "this_is_a_url_link",
+					UpdateId: 1,
+				},
+			}, nil)
 			err = CreateBackendTask(ctx, 1, "request_id")
 			So(err, ShouldBeNil)
 			eb := &model.Build{ID: build.ID}
@@ -695,7 +546,7 @@ func TestCreateBackendTask(t *testing.T) {
 		})
 
 		Convey("fail", func() {
-			infra.Proto.Backend.Task.Id.Target = "fail_me"
+			mockBackend.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(nil, &googleapi.Error{Code: 400})
 			So(datastore.Put(ctx, infra), ShouldBeNil)
 			err = CreateBackendTask(ctx, 1, "request_id")
 			expectedBuild := &model.Build{ID: 1}

@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -189,7 +190,7 @@ func updateEntities(ctx context.Context, bks []*datastore.Key, now time.Time, ta
 //
 // The task only retries if there's top level errors. In the case that a single
 // build is failed to update, we'll wait for the next task to update it again.
-func syncBuildsWithBackendTasks(ctx context.Context, mr parallel.MultiRunner, bc *BackendClient, bks []*datastore.Key, now time.Time) error {
+func syncBuildsWithBackendTasks(ctx context.Context, mr parallel.MultiRunner, bc *clients.BackendClient, bks []*datastore.Key, now time.Time) error {
 	if len(bks) == 0 {
 		return nil
 	}
@@ -282,7 +283,7 @@ func SyncBuildsWithBackendTasks(ctx context.Context, backend, project string) er
 		return tq.Fatal.Apply(errors.Reason("failed to find backend %s from global config", backend).Err())
 	}
 
-	bc, err := NewBackendClient(ctx, project, backend, globalCfg)
+	bc, err := clients.NewBackendClient(ctx, project, backend, globalCfg)
 	if err != nil {
 		return tq.Fatal.Apply(errors.Annotate(err, "failed to connect to backend service %s as project %s", backend, project).Err())
 	}

@@ -17,13 +17,17 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/golang/mock/gomock"
+
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -31,6 +35,7 @@ import (
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -41,6 +46,39 @@ import (
 )
 
 var shards int32 = 10
+
+const (
+	defaultUpdateID = 5
+	staleUpdateID   = 3
+	newUpdateID     = 10
+)
+
+// fakeFetchTasksResponse mocks the FetchTasks RPC.
+func fakeFetchTasksResponse(ctx context.Context, taskReq *pb.FetchTasksRequest, opts ...grpc.CallOption) (*pb.FetchTasksResponse, error) {
+	tasks := make([]*pb.Task, 0, len(taskReq.TaskIds))
+	for _, tID := range taskReq.TaskIds {
+		status := pb.Status_STARTED
+		updateID := newUpdateID
+		switch {
+		case strings.HasSuffix(tID.Id, "all_fail"):
+			return nil, errors.Reason("idk, wanted to fail i guess :/").Err()
+		case strings.HasSuffix(tID.Id, "fail_me"):
+			continue
+		case strings.HasSuffix(tID.Id, "ended"):
+			status = pb.Status_SUCCESS
+		case strings.HasSuffix(tID.Id, "stale"):
+			updateID = staleUpdateID
+		case strings.HasSuffix(tID.Id, "unchanged"):
+			updateID = defaultUpdateID
+		}
+		tasks = append(tasks, &pb.Task{
+			Id:       tID,
+			Status:   status,
+			UpdateId: int64(updateID),
+		})
+	}
+	return &pb.FetchTasksResponse{Tasks: tasks}, nil
+}
 
 func prepEntities(ctx context.Context, bID int64, status pb.Status, tIDSuffix string, updateTime time.Time) *datastore.Key {
 	tID := ""
@@ -168,10 +206,11 @@ func TestSyncBuildsWithBackendTasksOneFetchBatch(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
 	ctx := context.Background()
-	mc := NewMockedClient(ctx, ctl)
+	mockBackend := clients.NewMockTaskBackendClient(ctl)
+	mockBackend.EXPECT().FetchTasks(gomock.Any(), gomock.Any()).DoAndReturn(fakeFetchTasksResponse).AnyTimes()
 	now := testclock.TestRecentTimeUTC
 	ctx, _ = testclock.UseTime(ctx, now)
-	ctx = context.WithValue(ctx, MockTaskBackendClientKey{}, mc)
+	ctx = context.WithValue(ctx, clients.MockTaskBackendClientKey, mockBackend)
 	ctx = caching.WithEmptyProcessCache(ctx)
 	ctx = memory.UseWithAppID(ctx, "dev~app-id")
 	ctx = txndefer.FilterRDS(ctx)
@@ -198,7 +237,7 @@ func TestSyncBuildsWithBackendTasksOneFetchBatch(t *testing.T) {
 		}
 		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 
-		bc, err := NewBackendClient(ctx, "project", "swarming", settingsCfg)
+		bc, err := clients.NewBackendClient(ctx, "project", "swarming", settingsCfg)
 		So(err, ShouldBeNil)
 
 		sync := func(bks []*datastore.Key) error {
@@ -310,10 +349,11 @@ func TestSyncBuildsWithBackendTasks(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
 	ctx := context.Background()
-	mc := NewMockedClient(ctx, ctl)
+	mockBackend := clients.NewMockTaskBackendClient(ctl)
+	mockBackend.EXPECT().FetchTasks(gomock.Any(), gomock.Any()).DoAndReturn(fakeFetchTasksResponse).AnyTimes()
 	now := testclock.TestRecentTimeUTC
 	ctx, _ = testclock.UseTime(ctx, now)
-	ctx = context.WithValue(ctx, MockTaskBackendClientKey{}, mc)
+	ctx = context.WithValue(ctx, clients.MockTaskBackendClientKey, mockBackend)
 	ctx = caching.WithEmptyProcessCache(ctx)
 	ctx = memory.UseWithAppID(ctx, "dev~app-id")
 	ctx = txndefer.FilterRDS(ctx)
