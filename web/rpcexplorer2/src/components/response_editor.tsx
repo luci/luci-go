@@ -14,15 +14,7 @@
 
 import Box from '@mui/material/Box';
 
-import AceEditor from 'react-ace';
-
-// Note: these must be imported after AceEditor for some reason, otherwise the
-// final bundle ends up broken.
-import 'ace-builds/src-noconflict/ext-language_tools';
-import 'ace-builds/src-noconflict/ext-searchbox';
-import 'ace-builds/src-noconflict/ext-prompt';
-import 'ace-builds/src-noconflict/mode-json';
-import 'ace-builds/src-noconflict/theme-tomorrow';
+import * as ace from '../ace';
 
 export interface Props {
   value: string,
@@ -38,15 +30,18 @@ export const ResponseEditor = (props: Props) => {
         mb: 2,
       }}
     >
-      <AceEditor
-        mode='json'
-        theme='tomorrow'
+      <ace.AceEditor
+        mode={ace.mode}
+        theme={ace.theme}
         name='response-editor'
         width='100%'
         height='400px'
         value={props.value}
         setOptions={{
           readOnly: true,
+          tabSize: 2,
+          dragEnabled: false,
+          showPrintMargin: false,
           useWorker: false,
         }}
       />

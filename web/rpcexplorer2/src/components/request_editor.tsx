@@ -18,15 +18,7 @@ import {
 
 import Box from '@mui/material/Box';
 
-import AceEditor from 'react-ace';
-
-// Note: these must be imported after AceEditor for some reason, otherwise the
-// final bundle ends up broken.
-import 'ace-builds/src-noconflict/ext-language_tools';
-import 'ace-builds/src-noconflict/ext-searchbox';
-import 'ace-builds/src-noconflict/ext-prompt';
-import 'ace-builds/src-noconflict/mode-json';
-import 'ace-builds/src-noconflict/theme-tomorrow';
+import * as ace from '../ace';
 
 export interface Props {
   defaultValue: string;
@@ -40,7 +32,7 @@ export interface RequestEditorRef {
 
 export const RequestEditor = forwardRef((
     props: Props, ref: ForwardedRef<RequestEditorRef>) => {
-  const editorRef = useRef<AceEditor>(null);
+  const editorRef = useRef<ace.AceEditor>(null);
 
   // Configure the ACE editor on initial load.
   useEffect(() => {
@@ -70,7 +62,6 @@ export const RequestEditor = forwardRef((
       let requestBody = editor.getValue().trim();
       if (!requestBody) {
         requestBody = '{}';
-        editor.setValue(requestBody, -1);
       }
       // The request must be a valid JSON. Verify locally by parsing.
       return JSON.parse(requestBody);
@@ -82,18 +73,20 @@ export const RequestEditor = forwardRef((
       component='div'
       sx={{ border: '1px solid #e0e0e0', borderRadius: '2px' }}
     >
-      <AceEditor
+      <ace.AceEditor
         ref={editorRef}
-        mode='json'
-        defaultValue={props.defaultValue}
-        theme='tomorrow'
+        mode={ace.mode}
+        theme={ace.theme}
         name='request-editor'
         width='100%'
         height='200px'
+        defaultValue={props.defaultValue}
         setOptions={{
           readOnly: props.readOnly,
           useWorker: false,
           tabSize: 2,
+          dragEnabled: false,
+          showPrintMargin: false,
         }}
       />
     </Box>
