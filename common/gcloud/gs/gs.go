@@ -57,6 +57,9 @@ type Client interface {
 	// Objects retrieves all object attributes for a given path.
 	Objects(p Path) ([]*gs.ObjectAttrs, error)
 
+	// SignedURL generates a google storage signed url for a given path.
+	SignedURL(p Path, opts *gs.SignedURLOptions) (string, error)
+
 	// NewReader instantiates a new Reader instance for the named bucket/path.
 	//
 	// The supplied offset must be >= 0, or else this function will panic.
@@ -159,6 +162,14 @@ func (c *prodClient) Objects(p Path) ([]*gs.ObjectAttrs, error) {
 		attrs = append(attrs, attr)
 	}
 	return attrs, nil
+}
+
+func (c *prodClient) SignedURL(p Path, opts *gs.SignedURLOptions) (string, error) {
+	url, err := c.baseClient.Bucket(p.Bucket()).SignedURL(p.Filename(), opts)
+	if err != nil {
+		return "", err
+	}
+	return url, nil
 }
 
 func (c *prodClient) NewReader(p Path, offset, length int64) (io.ReadCloser, error) {

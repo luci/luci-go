@@ -41,6 +41,11 @@ func (c GSClient) Attrs(path gs.Path) (*storage.ObjectAttrs, error) { return nil
 // Objects implements gs.Client.
 func (c GSClient) Objects(path gs.Path) ([]*storage.ObjectAttrs, error) { return nil, nil }
 
+// SignedURL implements gs.Client.
+func (c GSClient) SignedURL(p gs.Path, opts *storage.SignedURLOptions) (string, error) {
+	return "", nil
+}
+
 // Close implements gs.Client.
 func (c GSClient) Close() error { return nil }
 
