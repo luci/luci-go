@@ -34,8 +34,9 @@ const config: Config = {
   setupFilesAfterEnv: ['./src/testing_tools/setup_after_env.ts'],
   moduleNameMapper: {
     '\\.(css|less)$': 'identity-obj-proxy',
-    '\\.svg$': '<rootDir>/src/testing_tools/asset_module_stub',
-    '@/(.*)': '<rootDir>/src/$1',
+    '\\.(svg|md)($|\\?)': '<rootDir>/src/testing_tools/asset_module_stub',
+    '^@/(.*)': '<rootDir>/src/$1',
+    '^@root/(.*)': '<rootDir>/$1',
   },
 };
 
