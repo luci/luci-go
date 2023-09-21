@@ -20,7 +20,6 @@ import {
   Typography,
   styled,
 } from '@mui/material';
-import { Link } from 'react-router-dom';
 
 import { ProjectListItem } from '@/common/services/milo_internal';
 
@@ -115,9 +114,9 @@ export function ProjectCard({
       className={`AppProjectCard-${variant}`}
     >
       <CardActionArea
-        component={Link}
         onClick={() => onSelectProjectNotification(project.id)}
-        to={`/ui/p/${project.id}/builders`}
+        // TODO: switch to router link once we migrated the project page to SPA.
+        href={`/p/${project.id}`}
       >
         <div className="AppProjectCard-logoContainer">
           {project.logoUrl ? (
