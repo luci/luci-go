@@ -1,4 +1,4 @@
-// Copyright 2019 The LUCI Authors.
+// Copyright 2022 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate ../../../web.py gulp-app rpcexplorer clean
-//go:generate ../../../web.py build rpcexplorer
-//go:generate assets -dest-pkg . ../../../dist/rpcexplorer
+//go:generate make -C ../../../rpcexplorer2/ release
+//go:generate assets -dest-pkg . ../../../rpcexplorer2/dist
 
 package internal

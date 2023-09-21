@@ -1,4 +1,4 @@
-// Copyright 2019 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package rpcexplorer contains complied RPCExplorer web app.
+// Package rpcexplorer contains complied RPC Explorer web app.
 //
-// Linking to this package will add 7MB to your binary.
+// Linking to this package will add ~1MB to your binary.
 package rpcexplorer
 
 import (
@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/web/gowrappers/rpcexplorer/internal"
 )
 
-// Install adds routes to serve RPCExplorer web app from "/rpcexplorer".
+// Install adds routes to serve RPC Explorer web app from "/rpcexplorer".
 func Install(r *router.Router) {
 	r.GET("/rpcexplorer", nil, func(c *router.Context) {
 		http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusMovedPermanently)
@@ -36,7 +36,7 @@ func Install(r *router.Router) {
 
 	// Everything under "services/" should load the main web app (it then itself
 	// routes the request based on its URL). Everything else is assumed to be
-	// a static resource loaded from assets bundle.
+	// a static resource loaded from the assets bundle.
 	r.GET("/rpcexplorer/*path", nil, func(c *router.Context) {
 		path := strings.TrimPrefix(c.Params.ByName("path"), "/")
 		if path == "" || path == "services" || strings.HasPrefix(path, "services/") {
