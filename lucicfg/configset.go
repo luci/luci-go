@@ -126,6 +126,10 @@ func (r *remoteValidator) Validate(ctx context.Context, cs ConfigSet) ([]*config
 			return nil, err
 		}
 		validateReq.FileHashes = filterOutUnvalidatableFiles(ctx, validateReq.GetFileHashes(), fixInfo.GetUnvalidatableFiles())
+		if len(validateReq.FileHashes) == 0 {
+			logging.Debugf(ctx, "no config file need to be validated by LUCI Config")
+			return nil, nil
+		}
 		switch res, err := r.cfgClient.ValidateConfigs(ctx, validateReq); { // now try again
 		case err != nil:
 			return nil, errors.Annotate(err, "failed to call LUCI Config").Err()

@@ -280,6 +280,28 @@ func TestRemoteValidator(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(res, ShouldResembleProto, validationMsgs)
 			})
+
+			Convey("no file unvalidatable", func() {
+				cs.Data = map[string][]byte{
+					"unvalidatable.cfg": []byte("some content"),
+				}
+				st, err := status.New(codes.InvalidArgument, "invalid validate config request").WithDetails(&configpb.BadValidationRequestFixInfo{
+					UnvalidatableFiles: []string{"unvalidatable.cfg"},
+				})
+				So(err, ShouldBeNil)
+				mockClient.EXPECT().ValidateConfigs(gomock.Any(), proto.MatcherEqual(&configpb.ValidateConfigsRequest{
+					ConfigSet: cs.Name,
+					FileHashes: []*configpb.ValidateConfigsRequest_FileHash{
+						{
+							Path:   "unvalidatable.cfg",
+							Sha256: "290f493c44f5d63d06b374d0a5abd292fae38b92cab2fae5efefe1b0e9347f56",
+						},
+					},
+				})).Return(nil, st.Err())
+				res, err := validator.Validate(ctx, cs)
+				So(err, ShouldBeNil)
+				So(res, ShouldBeEmpty)
+			})
 			Convey("failed", func() {
 				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusBadRequest)
