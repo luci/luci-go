@@ -13,9 +13,34 @@ luci_gae_vars:
     DS_CACHE: redis
 
 instance_class: ${VERIFICATION_INSTANCE_CLASS}
-basic_scaling:
-  max_instances: 10
-  idle_timeout: 10m
+
+# NOTE: Ideally this should be auto-scaled, but auto-scaled instances still
+# have a maximum request duration of 10 minutes, which is insufficient for
+# verification.
+#
+# So, we switched this to basic scaling, but AppEngine hard-codes a "10
+# concurrent requests" scale-up signal for basic scaling, which means that
+# verification backends will be trying to handle 10 very beefy verification
+# requests and timing out, but AppEngine will keep them all in one instance.
+#
+# Finally, we have arrived at the bottom of the barrel here - manual scaling.
+# Inconveniently, manually scaled instances are for EVERY uploaded version. This
+# means that our deployment tooling has to be set to keep a maximum of 1 extra
+# version around, or we will end up with hundreds of verification backend
+# instances sitting completely idle.
+#
+# Probably the right long term fix here would be to move the upload process to
+# go through e.g. CloudRun where the scaling characteristics are uncopuled from
+# maximum request duration. This would allow us to calculate the sha256 (or any
+# future hashes) on the fly during the upload process, which would also simplify
+# the `cipd` client code, since upload returning `200 OK` could be followed
+# immediately by other steps in the package registration process, rather than
+# waiting for the verification backend to do it's work asynchronously.
+#
+# Really ideally GCS could implement e.g. sha256 object hashing and then we
+# could completely delete the verification backend :/
+manual_scaling:
+  instances: 10
 
 vpc_access_connector:
   name: ${VPC_CONNECTOR}
