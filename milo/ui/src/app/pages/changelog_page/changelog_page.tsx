@@ -1,0 +1,69 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import { Box, Typography, styled } from '@mui/material';
+import { useMemo } from 'react';
+
+import changelogText from '@root/CHANGELOG.md?raw';
+
+import { parseChangelog, renderChangelog } from '@/app/components/changelog';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+
+const MarkdownContainer = styled(Box)({
+  '& *': {
+    fontSize: '20px',
+  },
+});
+
+export function ChangelogPage() {
+  const changelog = parseChangelog(changelogText);
+
+  const [latestHtml, pastHtml] = useMemo(
+    () => [renderChangelog(changelog.latest), renderChangelog(changelog.past)],
+    [changelog],
+  );
+
+  return (
+    <div
+      css={{
+        padding: '30px',
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        maxWidth: '1000px',
+      }}
+    >
+      <Typography variant="h4">{"What's new?"}</Typography>
+      <MarkdownContainer
+        dangerouslySetInnerHTML={{
+          __html: latestHtml,
+        }}
+      />
+      <Typography variant="h4" sx={{ mt: 15 }}>
+        {'Past changes'}
+      </Typography>
+      <MarkdownContainer
+        dangerouslySetInnerHTML={{
+          __html: pastHtml,
+        }}
+      />
+    </div>
+  );
+}
+
+export const element = (
+  // See the documentation for `<LoginPage />` for why we handle error this way.
+  <RecoverableErrorBoundary key="changelog">
+    <ChangelogPage />
+  </RecoverableErrorBoundary>
+);

@@ -168,4 +168,8 @@ export const routes: RouteObject[] = [
       },
     ],
   },
+  {
+    path: 'doc/changelog',
+    lazy: () => import('@/app/pages/changelog_page'),
+  },
 ];
