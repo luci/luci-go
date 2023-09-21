@@ -76,7 +76,7 @@ handlers:
   expiration: 0s
 
 # SPA frontend routes.
-- url: /ui/.*
+- url: /ui(/.*)?
   secure: always
   static_files: ui/out/index.html
   upload: ui/out/index.html

@@ -31,7 +31,9 @@ self.addEventListener('fetch', (e) => {
 
   const url = new URL(e.request.url);
 
-  const isResultUI =
+  const isSPA =
+    // Project selector.
+    url.pathname === '/' ||
     // Short build link.
     url.pathname.match(/^\/b\//) ||
     // Long build link.
@@ -45,7 +47,7 @@ self.addEventListener('fetch', (e) => {
     // Search page.
     url.pathname.match(/^\/search(\/|$)/);
 
-  if (isResultUI) {
+  if (isSPA) {
     url.pathname = '/ui' + url.pathname;
     e.respondWith(Response.redirect(url.toString()));
     return;

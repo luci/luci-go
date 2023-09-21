@@ -18,6 +18,7 @@ import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import { Link as RouterLink } from 'react-router-dom';
 
 import {
   useSelectedPage,
@@ -53,8 +54,7 @@ export const AppDetails = ({ open, handleSidebarChanged }: Props) => {
           width: '2.5rem',
         }}
       >
-        {/* TODO(weiweilin): use RouterLink when it links to /ui/. */}
-        <Link href="/">
+        <Link component={RouterLink} to="/ui/">
           <img
             style={{ width: '100%' }}
             alt="logo"
@@ -64,11 +64,11 @@ export const AppDetails = ({ open, handleSidebarChanged }: Props) => {
         </Link>
       </Box>
       <Box sx={{ display: 'flex' }}>
-        {/* TODO(weiweilin): use RouterLink when it links to /ui/. */}
         <Link
+          component={RouterLink}
+          to="/ui/"
           underline="none"
           variant="h6"
-          href="/"
           sx={{ pr: 2, color: 'inherit' }}
         >
           LUCI
