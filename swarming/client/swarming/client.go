@@ -264,6 +264,7 @@ func (s *swarmingServiceImpl) ListTasks(ctx context.Context, limit int32, start 
 		req := &swarmingv2.TasksWithPerfRequest{
 			Cursor:                  cursor,
 			Limit:                   pageSize,
+			State:                   state,
 			Tags:                    tags,
 			IncludePerformanceStats: false,
 		}
