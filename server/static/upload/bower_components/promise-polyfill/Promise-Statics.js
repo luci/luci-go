@@ -1,1 +1,0 @@
-../../../bower_components/promise-polyfill/Promise-Statics.js
