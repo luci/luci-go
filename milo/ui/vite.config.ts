@@ -312,7 +312,7 @@ export default defineConfig(({ mode }) => {
       port: 8080,
       strictPort: true,
       proxy: {
-        '^(?!/ui/).*$': {
+        '^(?!/ui(/.*)?$)': {
           target: env['VITE_MILO_URL'],
           changeOrigin: true,
           secure: false,
