@@ -29,8 +29,6 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/quota"
-	"go.chromium.org/luci/server/quota/quotapb"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
@@ -129,20 +127,6 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		return nil, err
 	case !ok:
 		return &Result{State: rs}, nil
-	}
-
-	// Run quota should be debited from the owner before the run is started.
-	// When run quota isn't available, the run is left in the pending state.
-	switch quotaOp, err := impl.QM.DebitRunQuota(ctx, rs); {
-	case err == nil && quotaOp != nil:
-		logging.Debugf(ctx, "Run quota debited from %s; new balance: %d", rs.Run.Owner.Email(), quotaOp.GetNewBalance())
-	case err == quota.ErrQuotaApply && quotaOp.GetStatus() == quotapb.OpResult_ERR_UNDERFLOW:
-		// run quota isn't currently available for the user; leave the run in pending.
-		return &Result{State: rs}, nil
-	case err == quota.ErrQuotaApply:
-		return nil, errors.Annotate(err, "QM.DebitRunQuota: unexpected quotaOp Status %s", quotaOp.GetStatus()).Tag(transient.Tag).Err()
-	case err != nil:
-		return nil, errors.Annotate(err, "QM.DebitRunQuota").Tag(transient.Tag).Err()
 	}
 
 	switch result, err := requirement.Compute(ctx, requirement.Input{
