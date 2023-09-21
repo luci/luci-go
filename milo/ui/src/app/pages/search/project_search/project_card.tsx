@@ -16,6 +16,7 @@ import {
   Card,
   CardActionArea,
   CardContent,
+  CardMedia,
   Typography,
   styled,
 } from '@mui/material';
@@ -24,36 +25,74 @@ import { Link } from 'react-router-dom';
 import { ProjectListItem } from '@/common/services/milo_internal';
 
 const ProjectCardContainer = styled(Card)({
-  '&.AppProjectCard-large': {
-    '.AppProjectCard-logo': {
-      width: '134px',
-      height: '134px',
+  '& .MuiCardActionArea-root': {
+    width: '100%',
+    height: '100%',
+    // Anchor the child's absolute position.
+    position: 'relative',
+  },
+  '& .AppProjectCard-logoContainer': {
+    // Fill the whole container with padding to get a square container.
+    width: '100%',
+    padding: '50%',
+    boxSizing: 'border-box',
+
+    // Anchor the child's absolute position.
+    position: 'relative',
+    '& > *': {
+      // Ensure the child don't interfere with the parent's size.
+      position: 'absolute',
+
+      // Vertically and horizontally center the content.
+      margin: '0',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+
+      // Make the content fill the parent.
+      maxWidth: '100%',
+      maxHeight: '100%',
+      objectFit: 'contain',
     },
-    '.AppProjectCard-logoText': {
+  },
+  '& .AppProjectCard-projectLabelContainer': {
+    // Position the container at the bottom with set width but unrestricted
+    // height. This allows the project label to grow upwards without overflowing
+    // or changing parent's size. This is useful for projects with long labels.
+    position: 'absolute',
+    bottom: '0%',
+    left: '0%',
+    width: '100%',
+  },
+  '.AppProjectCard-projectLabel': {
+    padding: '3px 1px',
+    textAlign: 'center',
+    color: '#fff',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+
+  '&.AppProjectCard-large': {
+    height: '206px',
+    width: '170px',
+    '.MuiCardMedia-root': {
       fontSize: '6rem',
       fontWeight: '300',
-      width: '134px',
-      lineHeight: '137px',
     },
     '.AppProjectCard-projectLabel': {
       fontSize: '1.25rem',
       fontWeight: '500',
-      lineHeight: '50px',
     },
   },
+
   '&.AppProjectCard-small': {
-    '.MuiCardContent-root': {
-      paddingBottom: 0,
-    },
-    '.AppProjectCard-logo': {
-      width: '84px',
-      height: '84px',
-    },
-    '.AppProjectCard-logoText': {
-      fontSize: '3.75rem',
+    height: '160px',
+    width: '130px',
+    '.MuiCardMedia-root': {
+      fontSize: '4rem',
       fontWeight: '300',
-      width: '84px',
-      lineHeight: '87px',
+    },
+    '.AppProjectCard-projectLabel': {
+      fontSize: '1rem',
     },
   },
 });
@@ -71,48 +110,37 @@ export function ProjectCard({
 }: ProjectCardProps) {
   return (
     <ProjectCardContainer
-      className={`AppProjectCard-${variant}`}
       elevation={variant === 'small' ? undefined : 5}
       variant={variant === 'small' ? 'outlined' : 'elevation'}
+      className={`AppProjectCard-${variant}`}
     >
       <CardActionArea
         component={Link}
         onClick={() => onSelectProjectNotification(project.id)}
         to={`/ui/p/${project.id}/builders`}
       >
-        <CardContent>
+        <div className="AppProjectCard-logoContainer">
           {project.logoUrl ? (
-            <img
-              src={project.logoUrl}
+            <CardMedia
+              component="img"
+              image={project.logoUrl}
               alt={project.id}
-              className="AppProjectCard-logo"
-              style={{
-                objectFit: 'cover',
-              }}
+              className="AppProjectCard-logoImage"
             />
           ) : (
-            <Typography
-              variant="h1"
-              className="AppProjectCard-logoText"
-              sx={{
-                textAlign: 'center',
-                objectFit: 'cover',
-              }}
-            >
+            <CardMedia component="h1" className="AppProjectCard-logoText">
               {project.id.slice(0, 2)}
-            </Typography>
+            </CardMedia>
           )}
-        </CardContent>
-        <Typography
-          className="AppProjectCard-projectLabel"
-          sx={{
-            textAlign: 'center',
-            color: '#fff',
-            backgroundColor: 'rgba(0,0,0,0.6)',
-          }}
+        </div>
+        <CardContent
+          sx={{ p: 0 }}
+          className="AppProjectCard-projectLabelContainer"
         >
-          {project.id}
-        </Typography>
+          <Typography component="h5" className="AppProjectCard-projectLabel">
+            {project.id}
+          </Typography>
+        </CardContent>
       </CardActionArea>
     </ProjectCardContainer>
   );
