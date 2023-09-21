@@ -151,6 +151,7 @@ const Method = () => {
       <Grid item xs={12}>
         <RequestEditor
           ref={requestEditor}
+          requestType={descriptors.message(method.requestType)}
           defaultValue={initialRequest}
           readOnly={running}
           onInvokeMethod={invokeMethod}
