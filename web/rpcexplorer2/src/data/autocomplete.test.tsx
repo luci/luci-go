@@ -13,8 +13,12 @@
 // limitations under the License.
 
 import {
-  State, getContext, Token, tokenizeJSON, TokenKind,
+  completionForPath, getContext, State, Token, tokenizeJSON, TokenKind,
 } from './autocomplete';
+import { Descriptors, FileDescriptorSet } from './prpc';
+import { TestDescriptor } from './testdata/descriptor';
+
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 describe('Autocomplete', () => {
   it('tokenizeJSON', () => {
@@ -148,5 +152,68 @@ describe('Autocomplete', () => {
     for (const str of broken) {
       expect(call(str)).toBeUndefined();
     }
+  });
+
+  it('completionForPath', () => {
+    const descs = new Descriptors(TestDescriptor as FileDescriptorSet, []);
+    const msg = descs.message('rpcexplorer.Autocomplete')!;
+
+    const fields = (path: string): string[] => {
+      const ctx = getContext(path);
+      if (!ctx) {
+        return [];
+      }
+      ctx.path.pop(); // the incomplete syntax element being edited
+      const completion = completionForPath(msg, ctx.path);
+      return completion ? completion.fields.map((f) => f.jsonName) : [];
+    };
+
+    const values = (path: string): string[] => {
+      const ctx = getContext(path);
+      if (!ctx) {
+        return [];
+      }
+      const last = ctx.path.pop()!;
+      const field = last.key?.val || '';
+      const completion = completionForPath(msg, ctx.path);
+      return completion ? completion.values(field).map((v) => v.value) : [];
+    };
+
+    expect(fields('{')).toEqual([
+      'singleInt',
+      'singleEnum',
+      'singleMsg',
+      'repeatedInt',
+      'repeatedEnum',
+      'repeatedMsg',
+      'mapInt',
+      'mapEnum',
+      'mapMsg',
+    ]);
+
+    expect(fields('{"singleMsg": {')).toEqual(['fooBar']);
+    expect(fields('{"repeatedMsg": [{')).toEqual(['fooBar']);
+    expect(fields('{"mapMsg": {0: {')).toEqual(['fooBar']);
+
+    expect(fields('{"singleMsg": [{')).toEqual([]);
+    expect(fields('{"repeatedMsg": {')).toEqual([]);
+    expect(fields('{"repeatedMsg": [')).toEqual([]);
+    expect(fields('{"mapMsg": [{')).toEqual([]);
+    expect(fields('{"mapMsg": {')).toEqual([]);
+
+    expect(fields('{"singleInt": {')).toEqual([]);
+    expect(fields('{"repeatedInt": [{')).toEqual([]);
+    expect(fields('{"mapInt": {0: {')).toEqual([]);
+
+    expect(fields('{"missing": {')).toEqual([]);
+    expect(fields('{"single_msg": {')).toEqual([]);
+
+    expect(values('{"singleEnum": ')).toEqual(['V0', 'V1']);
+    expect(values('{"repeatedEnum": [')).toEqual(['V0', 'V1']);
+    expect(values('{"mapEnum": {0: ')).toEqual(['V0', 'V1']);
+
+    expect(values('{"singleMsg": ')).toEqual([]);
+    expect(values('{"repeatedMsg": ')).toEqual([]);
+    expect(values('{"mapMsg": ')).toEqual([]);
   });
 });

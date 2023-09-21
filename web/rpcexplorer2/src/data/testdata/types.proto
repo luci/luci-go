@@ -49,3 +49,15 @@ enum E {
 message MultiWord {
   string foo_bar = 1;
 }
+
+message Autocomplete {
+  int32 single_int = 1;
+  E single_enum = 2;
+  MultiWord single_msg = 3;
+  repeated int32 repeated_int = 4;
+  repeated E repeated_enum = 5;
+  repeated MultiWord repeated_msg = 6;
+  map<int32, int32> map_int = 7;
+  map<int32, E> map_enum = 8;
+  map<int32, MultiWord> map_msg = 9;
+}

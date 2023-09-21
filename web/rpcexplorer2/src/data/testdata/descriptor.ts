@@ -169,6 +169,151 @@ export const TestDescriptor = {
               "jsonName":  "fooBar"
             }
           ]
+        },
+        {
+          "name":  "Autocomplete",
+          "field":  [
+            {
+              "name":  "single_int",
+              "number":  1,
+              "label":  "LABEL_OPTIONAL",
+              "type":  "TYPE_INT32",
+              "jsonName":  "singleInt"
+            },
+            {
+              "name":  "single_enum",
+              "number":  2,
+              "label":  "LABEL_OPTIONAL",
+              "type":  "TYPE_ENUM",
+              "typeName":  ".rpcexplorer.E",
+              "jsonName":  "singleEnum"
+            },
+            {
+              "name":  "single_msg",
+              "number":  3,
+              "label":  "LABEL_OPTIONAL",
+              "type":  "TYPE_MESSAGE",
+              "typeName":  ".rpcexplorer.MultiWord",
+              "jsonName":  "singleMsg"
+            },
+            {
+              "name":  "repeated_int",
+              "number":  4,
+              "label":  "LABEL_REPEATED",
+              "type":  "TYPE_INT32",
+              "jsonName":  "repeatedInt"
+            },
+            {
+              "name":  "repeated_enum",
+              "number":  5,
+              "label":  "LABEL_REPEATED",
+              "type":  "TYPE_ENUM",
+              "typeName":  ".rpcexplorer.E",
+              "jsonName":  "repeatedEnum"
+            },
+            {
+              "name":  "repeated_msg",
+              "number":  6,
+              "label":  "LABEL_REPEATED",
+              "type":  "TYPE_MESSAGE",
+              "typeName":  ".rpcexplorer.MultiWord",
+              "jsonName":  "repeatedMsg"
+            },
+            {
+              "name":  "map_int",
+              "number":  7,
+              "label":  "LABEL_REPEATED",
+              "type":  "TYPE_MESSAGE",
+              "typeName":  ".rpcexplorer.Autocomplete.MapIntEntry",
+              "jsonName":  "mapInt"
+            },
+            {
+              "name":  "map_enum",
+              "number":  8,
+              "label":  "LABEL_REPEATED",
+              "type":  "TYPE_MESSAGE",
+              "typeName":  ".rpcexplorer.Autocomplete.MapEnumEntry",
+              "jsonName":  "mapEnum"
+            },
+            {
+              "name":  "map_msg",
+              "number":  9,
+              "label":  "LABEL_REPEATED",
+              "type":  "TYPE_MESSAGE",
+              "typeName":  ".rpcexplorer.Autocomplete.MapMsgEntry",
+              "jsonName":  "mapMsg"
+            }
+          ],
+          "nestedType":  [
+            {
+              "name":  "MapIntEntry",
+              "field":  [
+                {
+                  "name":  "key",
+                  "number":  1,
+                  "label":  "LABEL_OPTIONAL",
+                  "type":  "TYPE_INT32",
+                  "jsonName":  "key"
+                },
+                {
+                  "name":  "value",
+                  "number":  2,
+                  "label":  "LABEL_OPTIONAL",
+                  "type":  "TYPE_INT32",
+                  "jsonName":  "value"
+                }
+              ],
+              "options":  {
+                "mapEntry":  true
+              }
+            },
+            {
+              "name":  "MapEnumEntry",
+              "field":  [
+                {
+                  "name":  "key",
+                  "number":  1,
+                  "label":  "LABEL_OPTIONAL",
+                  "type":  "TYPE_INT32",
+                  "jsonName":  "key"
+                },
+                {
+                  "name":  "value",
+                  "number":  2,
+                  "label":  "LABEL_OPTIONAL",
+                  "type":  "TYPE_ENUM",
+                  "typeName":  ".rpcexplorer.E",
+                  "jsonName":  "value"
+                }
+              ],
+              "options":  {
+                "mapEntry":  true
+              }
+            },
+            {
+              "name":  "MapMsgEntry",
+              "field":  [
+                {
+                  "name":  "key",
+                  "number":  1,
+                  "label":  "LABEL_OPTIONAL",
+                  "type":  "TYPE_INT32",
+                  "jsonName":  "key"
+                },
+                {
+                  "name":  "value",
+                  "number":  2,
+                  "label":  "LABEL_OPTIONAL",
+                  "type":  "TYPE_MESSAGE",
+                  "typeName":  ".rpcexplorer.MultiWord",
+                  "jsonName":  "value"
+                }
+              ],
+              "options":  {
+                "mapEntry":  true
+              }
+            }
+          ]
         }
       ],
       "enumType":  [
@@ -207,7 +352,7 @@ export const TestDescriptor = {
             "span":  [
               4,
               0,
-              50,
+              62,
               1
             ]
           },
@@ -1176,6 +1321,567 @@ export const TestDescriptor = {
               49,
               19,
               20
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4
+            ],
+            "span":  [
+              52,
+              0,
+              62,
+              1
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              1
+            ],
+            "span":  [
+              52,
+              8,
+              20
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              0
+            ],
+            "span":  [
+              53,
+              2,
+              23
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              0,
+              5
+            ],
+            "span":  [
+              53,
+              2,
+              7
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              0,
+              1
+            ],
+            "span":  [
+              53,
+              8,
+              18
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              0,
+              3
+            ],
+            "span":  [
+              53,
+              21,
+              22
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              1
+            ],
+            "span":  [
+              54,
+              2,
+              20
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              1,
+              6
+            ],
+            "span":  [
+              54,
+              2,
+              3
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              1,
+              1
+            ],
+            "span":  [
+              54,
+              4,
+              15
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              1,
+              3
+            ],
+            "span":  [
+              54,
+              18,
+              19
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              2
+            ],
+            "span":  [
+              55,
+              2,
+              27
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              2,
+              6
+            ],
+            "span":  [
+              55,
+              2,
+              11
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              2,
+              1
+            ],
+            "span":  [
+              55,
+              12,
+              22
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              2,
+              3
+            ],
+            "span":  [
+              55,
+              25,
+              26
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              3
+            ],
+            "span":  [
+              56,
+              2,
+              34
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              3,
+              4
+            ],
+            "span":  [
+              56,
+              2,
+              10
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              3,
+              5
+            ],
+            "span":  [
+              56,
+              11,
+              16
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              3,
+              1
+            ],
+            "span":  [
+              56,
+              17,
+              29
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              3,
+              3
+            ],
+            "span":  [
+              56,
+              32,
+              33
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              4
+            ],
+            "span":  [
+              57,
+              2,
+              31
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              4,
+              4
+            ],
+            "span":  [
+              57,
+              2,
+              10
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              4,
+              6
+            ],
+            "span":  [
+              57,
+              11,
+              12
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              4,
+              1
+            ],
+            "span":  [
+              57,
+              13,
+              26
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              4,
+              3
+            ],
+            "span":  [
+              57,
+              29,
+              30
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              5
+            ],
+            "span":  [
+              58,
+              2,
+              38
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              5,
+              4
+            ],
+            "span":  [
+              58,
+              2,
+              10
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              5,
+              6
+            ],
+            "span":  [
+              58,
+              11,
+              20
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              5,
+              1
+            ],
+            "span":  [
+              58,
+              21,
+              33
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              5,
+              3
+            ],
+            "span":  [
+              58,
+              36,
+              37
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              6
+            ],
+            "span":  [
+              59,
+              2,
+              32
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              6,
+              6
+            ],
+            "span":  [
+              59,
+              2,
+              19
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              6,
+              1
+            ],
+            "span":  [
+              59,
+              20,
+              27
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              6,
+              3
+            ],
+            "span":  [
+              59,
+              30,
+              31
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              7
+            ],
+            "span":  [
+              60,
+              2,
+              29
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              7,
+              6
+            ],
+            "span":  [
+              60,
+              2,
+              15
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              7,
+              1
+            ],
+            "span":  [
+              60,
+              16,
+              24
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              7,
+              3
+            ],
+            "span":  [
+              60,
+              27,
+              28
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              8
+            ],
+            "span":  [
+              61,
+              2,
+              36
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              8,
+              6
+            ],
+            "span":  [
+              61,
+              2,
+              23
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              8,
+              1
+            ],
+            "span":  [
+              61,
+              24,
+              31
+            ]
+          },
+          {
+            "path":  [
+              4,
+              4,
+              2,
+              8,
+              3
+            ],
+            "span":  [
+              61,
+              34,
+              35
             ]
           }
         ]

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as prpc from './prpc';
+
 
 // Defines the lexical meaning of a parsed token.
 export enum TokenKind {
@@ -291,4 +293,192 @@ export const getContext = (text: string): Context | undefined => {
   }
 
   return { state, path };
+};
+
+
+// Completion knows how to list fields and values of a particular JSON
+// object or a list based on a protobuf schema.
+//
+// It represents completion options at some point in a JSON document. Most often
+// it maps to a prpc.Message or a repeated field, but it also supports value
+// completion of `map<...>` fields, since they are represented as objects in
+// protobuf JSON encoding.
+export interface Completion {
+  // All known fields of the current object.
+  fields: prpc.Field[];
+  // Enumeration of *values* of a particular field or a list element.
+  values(field: string): Value[];
+}
+
+
+// A possible value of a string-typed JSON field.
+export interface Value {
+  // Actual value.
+  value: string;
+  // Documentation string for this value.
+  doc: string;
+}
+
+
+// TraversalContext is used internally by completionForPath.
+//
+// It is essentially a "cursor" inside a protobuf descriptor tree, with methods
+// to go deeper.
+interface TraversalContext {
+  // completion produces the Completion matching this context, if any.
+  completion(): Completion | undefined;
+  // visitField is used by completionForPath to descend into a field.
+  visitField(key: string): TraversalContext | undefined;
+  // visitIndex is used by completionForPath to descend into a list element.
+  visitIndex(): TraversalContext | undefined;
+}
+
+
+// MessageTraversal implements TraversalContext using prpc.Message as a source.
+//
+// It can descend into message fields.
+class MessageTraversal implements TraversalContext {
+  constructor(readonly msg: prpc.Message) {}
+
+  completion(): Completion {
+    return {
+      fields: this.msg.fields,
+      values: (field) => {
+        const fieldObj = this.msg.fieldByJsonName(field);
+        if (fieldObj && !fieldObj.repeated) {
+          return fieldValues(fieldObj);
+        }
+        return [];
+      },
+    };
+  }
+
+  visitField(key: string): TraversalContext | undefined {
+    const field = this.msg.fieldByJsonName(key);
+    if (!field) {
+      return undefined;
+    }
+    const inner = field.message;
+    if (field.repeated) {
+      if (inner?.mapEntry) {
+        return new MapTraversal(inner);
+      }
+      return new ListTraversal(field);
+    }
+    return inner ? new MessageTraversal(inner) : undefined;
+  }
+
+  visitIndex(): TraversalContext | undefined {
+    // Messages are not lists, can't descend into an indexed element.
+    return undefined;
+  }
+}
+
+
+// ListTraversal implements TraversalContext using a repeated field as a source.
+//
+// It can descend into the individual list element.
+class ListTraversal implements TraversalContext {
+  constructor(readonly field: prpc.Field) {}
+
+  completion(): Completion {
+    return {
+      fields: [],
+      values: () => fieldValues(this.field),
+    };
+  }
+
+  visitField(): TraversalContext | undefined {
+    // Lists have no fields.
+    return undefined;
+  }
+
+  visitIndex(): TraversalContext | undefined {
+    const inner = this.field.message;
+    return inner ? new MessageTraversal(inner) : undefined;
+  }
+}
+
+
+// MapTraversal implements TraversalContext using a map entry as a source.
+//
+// It can descend into individual map values.
+class MapTraversal implements TraversalContext {
+  constructor(readonly entry: prpc.Message) {}
+
+  completion(): Completion {
+    return {
+      // Can't enumerate map<...> keys, they are dynamic.
+      fields: [],
+      // All entries have the same type, can list possible values based on it.
+      values: () => {
+        // Note 'value' is a magical constant in map<...> descriptors.
+        const fieldObj = this.entry.fieldByJsonName('value');
+        if (fieldObj) {
+          return fieldValues(fieldObj);
+        }
+        return [];
+      },
+    };
+  }
+
+  visitField(): TraversalContext | undefined {
+    const field = this.entry.fieldByJsonName('value');
+    if (!field) {
+      return undefined;
+    }
+    const inner = field.message;
+    return inner ? new MessageTraversal(inner) : undefined;
+  }
+
+  visitIndex(): TraversalContext | undefined {
+    // Maps are not lists, can't descend into an indexed element.
+    return undefined;
+  }
+}
+
+
+// Helper for collecting possible values of a given field.
+//
+// Supports only enum-valued fields currently, since we can enumerate them.
+const fieldValues = (field: prpc.Field) : Value[] => {
+  const enumObj = field.enum;
+  if (!enumObj) {
+    return [];
+  }
+  return enumObj.values.map((val) => {
+    return {
+      value: val.name,
+      doc: val.doc,
+    };
+  });
+};
+
+
+// Traverses the protobuf descriptors starting from `root` by following the
+// given JSON field path, returning the resulting completion, if any.
+export const completionForPath = (
+    root: prpc.Message,
+    path: PathItem[]): Completion | undefined => {
+  let cur: TraversalContext | undefined;
+  for (const elem of path) {
+    switch (elem.kind) {
+      case 'root':
+        cur = new MessageTraversal(root);
+        break;
+      case 'obj':
+        if (!elem.key) {
+          return undefined;
+        }
+        cur = cur ? cur.visitField(elem.key.val) : undefined;
+        break;
+      case 'list':
+        cur = cur ? cur.visitIndex() : undefined;
+        break;
+    }
+    if (!cur) {
+      break;
+    }
+  }
+  return cur ? cur.completion() : undefined;
 };
