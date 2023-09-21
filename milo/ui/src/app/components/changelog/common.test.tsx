@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { parseChangelog } from './common';
+import {
+  bumpLastReadVersion,
+  getLastReadVersion,
+  parseChangelog,
+} from './common';
 
 const unreleased = `\
 * unreleased update 1
@@ -90,5 +94,36 @@ describe('parseChangelog', () => {
     expect(log.latestVersion).toEqual(-1);
     expect(log.latest).toEqual('');
     expect(log.past).toEqual('');
+  });
+});
+
+describe('get/bumpLastReadVersion', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('can read from nothing', () => {
+    expect(getLastReadVersion()).toEqual(-1);
+  });
+
+  it('can store last read version', () => {
+    expect(getLastReadVersion()).toEqual(-1);
+    bumpLastReadVersion(10);
+    expect(getLastReadVersion()).toEqual(10);
+  });
+
+  it('store version in persisted storage', () => {
+    expect(getLastReadVersion()).toEqual(-1);
+    bumpLastReadVersion(10);
+    expect(getLastReadVersion()).toEqual(10);
+    localStorage.clear();
+    expect(getLastReadVersion()).toEqual(-1);
+  });
+
+  it('does not decrease version', () => {
+    bumpLastReadVersion(10);
+    expect(getLastReadVersion()).toEqual(10);
+    bumpLastReadVersion(5);
+    expect(getLastReadVersion()).toEqual(10);
   });
 });

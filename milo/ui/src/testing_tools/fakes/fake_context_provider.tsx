@@ -19,6 +19,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { Outlet, RouterProvider, createMemoryRouter } from 'react-router-dom';
 
+import { ChangelogProvider } from '@/app/components/changelog';
 import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
 import { UiPage } from '@/common/constants';
 import { theme } from '@/common/themes/base';
@@ -104,7 +105,11 @@ export function FakeContextProvider({
               initPage={pageMeta?.selectedPage}
               initProject={pageMeta?.project}
             >
-              <RouterProvider router={router} />
+              <ChangelogProvider
+                initChangelog={{ latest: '', latestVersion: -1, past: '' }}
+              >
+                <RouterProvider router={router} />
+              </ChangelogProvider>
             </PageMetaProvider>
           </QueryClientProvider>
         </FakeAuthStateProvider>

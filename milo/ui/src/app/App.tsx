@@ -26,9 +26,9 @@ import { useEffect, useRef, useState } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { Workbox } from 'workbox-window';
 
-import '@/common/styles/common_style.css';
-import '@/common/styles/color_classes.css';
-import '@/common/components/tooltip';
+import changelog from '@root/CHANGELOG.md?raw';
+
+import { ChangelogProvider } from '@/app/components/changelog';
 import { routes } from '@/app/routes';
 import { obtainAuthState } from '@/common/api/auth_state';
 import { AuthStateInitializer } from '@/common/components/auth_state_provider';
@@ -44,6 +44,11 @@ import { Store, StoreProvider } from '@/common/store';
 import { theme } from '@/common/themes/base';
 import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_params';
 import { createStaticTrustedURL } from '@/generic_libs/tools/utils';
+
+import '@/common/styles/common_style.css';
+import '@/common/styles/color_classes.css';
+import '@/common/components/tooltip';
+import { parseChangelog } from './components/changelog/common';
 
 const isNonTransientError = (error: unknown) =>
   error instanceof GrpcError && NON_TRANSIENT_ERROR_CODES.includes(error.code);
@@ -196,8 +201,10 @@ export function App({ initOpts }: AppProps) {
           <StoreProvider value={store}>
             <LitEnvProvider>
               <PageMetaProvider>
-                <milo-tooltip />
-                <RouterProvider router={router} />
+                <ChangelogProvider initChangelog={parseChangelog(changelog)}>
+                  <milo-tooltip />
+                  <RouterProvider router={router} />
+                </ChangelogProvider>
               </PageMetaProvider>
             </LitEnvProvider>
           </StoreProvider>

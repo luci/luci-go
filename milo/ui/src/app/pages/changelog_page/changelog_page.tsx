@@ -13,11 +13,10 @@
 // limitations under the License.
 
 import { Box, Typography, styled } from '@mui/material';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 
-import changelogText from '@root/CHANGELOG.md?raw';
-
-import { parseChangelog, renderChangelog } from '@/app/components/changelog';
+import { renderChangelog, useChangelog } from '@/app/components/changelog';
+import { useMarkChangelogAsRead } from '@/app/components/changelog';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 
 const MarkdownContainer = styled(Box)({
@@ -27,7 +26,9 @@ const MarkdownContainer = styled(Box)({
 });
 
 export function ChangelogPage() {
-  const changelog = parseChangelog(changelogText);
+  const changelog = useChangelog();
+  const markChangelogAsRead = useMarkChangelogAsRead();
+  useEffect(() => markChangelogAsRead(), [markChangelogAsRead]);
 
   const [latestHtml, pastHtml] = useMemo(
     () => [renderChangelog(changelog.latest), renderChangelog(changelog.past)],

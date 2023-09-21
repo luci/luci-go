@@ -14,6 +14,7 @@
 
 import markdownIt from 'markdown-it';
 
+import { logging } from '@/common/tools/logging';
 import { defaultTarget } from '@/common/tools/markdown/plugins/default_target';
 
 export interface Changelog {
@@ -56,4 +57,43 @@ const md = markdownIt({ html: true, linkify: true }).use(
 
 export function renderChangelog(changelog: string) {
   return md.render(changelog);
+}
+
+const LAST_READ_CHANGELOG_VERSION_CACHE_KEY = 'last-read-changelog-version';
+
+/**
+ * Get the last read version from local storage. If it's not set or the value
+ * is invalid, return -1.
+ */
+export function getLastReadVersion() {
+  try {
+    const ver = JSON.parse(
+      localStorage.getItem(LAST_READ_CHANGELOG_VERSION_CACHE_KEY) || '-1',
+    );
+    return typeof ver === 'number' ? ver : -1;
+  } catch (e) {
+    logging.warn(e);
+    return -1;
+  }
+}
+
+/**
+ * Update the last read version. Noop if newVer is less than or equals to the
+ * stored last read version.
+ */
+// Do not use `useLocalStorage` from react-use. Otherwise we may risk
+// overwriting the version set by older versions of the UI, causing the popups
+// to constantly show up when user switch between pages of different versions.
+export function bumpLastReadVersion(newVer: number) {
+  // In case another tab has recorded a newer version, get a fresh copy from the
+  // local storage.
+  const prevVer = getLastReadVersion();
+  if (newVer < prevVer) {
+    return;
+  }
+
+  localStorage.setItem(
+    LAST_READ_CHANGELOG_VERSION_CACHE_KEY,
+    JSON.stringify(newVer),
+  );
 }

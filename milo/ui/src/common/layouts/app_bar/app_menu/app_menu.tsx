@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import DescriptionIcon from '@mui/icons-material/Description';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SettingsIcon from '@mui/icons-material/Settings';
 import IconButton from '@mui/material/IconButton';
@@ -21,6 +22,9 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { observer } from 'mobx-react-lite';
 import { useState, MouseEvent } from 'react';
+import { Link } from 'react-router-dom';
+
+import { ChangelogTooltip } from '@root/src/app/components/changelog';
 
 import { useStore } from '@/common/store';
 
@@ -37,15 +41,17 @@ export const AppMenu = observer(() => {
 
   return (
     <>
-      <IconButton
-        onClick={handleOpenMenu}
-        color="inherit"
-        role="button"
-        aria-label="Open menu"
-        title="Open menu"
-      >
-        <MoreVertIcon />
-      </IconButton>
+      <ChangelogTooltip>
+        <IconButton
+          onClick={handleOpenMenu}
+          color="inherit"
+          role="button"
+          aria-label="Open menu"
+          title="Open menu"
+        >
+          <MoreVertIcon />
+        </IconButton>
+      </ChangelogTooltip>
       <Menu
         sx={{ mt: 4 }}
         anchorEl={menuAnchorEl}
@@ -61,6 +67,17 @@ export const AppMenu = observer(() => {
         open={Boolean(menuAnchorEl)}
         onClose={handleCloseMenu}
       >
+        <MenuItem
+          component={Link}
+          to="/ui/doc/changelog"
+          title="View LUCI UI changelog"
+          onClick={handleCloseMenu}
+        >
+          <ListItemIcon>
+            <DescriptionIcon />
+          </ListItemIcon>
+          <ListItemText>{"What's new"}</ListItemText>
+        </MenuItem>
         <MenuItem
           onClick={() => store.setShowSettingsDialog(true)}
           disabled={store.hasSettingsDialog === 0}
