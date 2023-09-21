@@ -89,13 +89,7 @@ The LogDog platform consists of several components:
 * [Archivist](server/cmd/logdog_archivist), a microservice which compacts
   completed log streams and prepares them for long-term storage.
 
-LogDog offers several log stream clients to query and consume log data:
-
-* [LogDog](client/cmd/logdog), a CLI to query and view log streams.
-* [Web App](/web/apps/logdog-app), a heavy log stream navigation
-  application built in [Polymer](https://www.polymer-project.org).
-* [Web Viewer](/web/apps/logdog-view), a lightweight log stream viewer built in
-  [Polymer](https://www.polymer-project.org).
+LogDog offers a CLI client to query and view log streams.
 
 Additionally, LogDog is built on several abstract middleware technologies,
 including:
