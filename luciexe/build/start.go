@@ -25,9 +25,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/system/environ"
-	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/luciexe"
 )
 
 // Start is the 'inner' entrypoint to this library.
@@ -67,9 +64,6 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 	logClosers := map[string]func() error{}
 	outputProps := make(map[string]*outputPropertyState, len(outputReservationKeys))
 	ret := newState(initial, logClosers, outputProps)
-
-	// Get the LOGDOG_NAMESPACE for this build.
-	ret.logNamespace = types.StreamName(environ.FromCtx(ctx).Get(luciexe.LogdogNamespaceEnv)).AsNamespace()
 
 	for ns := range outputReservationKeys {
 		ret.outputProperties[ns] = &outputPropertyState{}

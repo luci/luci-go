@@ -75,10 +75,9 @@ type State struct {
 
 	sendCh dispatcher.Channel
 
-	logsink      *streamclient.Client
-	logNames     nameTracker
-	logClosers   map[string]func() error
-	logNamespace ldTypes.StreamName
+	logsink    *streamclient.Client
+	logNames   nameTracker
+	logClosers map[string]func() error
 
 	strictParse bool
 
@@ -207,7 +206,7 @@ func (s *State) Log(name string, opts ...streamclient.Option) *Log {
 		return &Log{
 			Writer:    ret,
 			ref:       logRef,
-			namespace: s.logNamespace,
+			namespace: s.logsink.GetNamespace().AsNamespace(),
 			infra:     infra,
 		}
 	}
@@ -327,7 +326,7 @@ func (s *State) mutate(cb func() bool) {
 	}
 }
 
-func (s *State) registerStep(step *bbpb.Step) (passthrough *bbpb.Step, relLogPrefix, logPrefix string) {
+func (s *State) registerStep(step *bbpb.Step) (passthrough *bbpb.Step, logNamespace, logSuffix string) {
 	passthrough = step
 	if s == nil {
 		return
@@ -336,15 +335,11 @@ func (s *State) registerStep(step *bbpb.Step) (passthrough *bbpb.Step, relLogPre
 	s.mutate(func() bool {
 		step.Name = s.stepNames.resolveName(step.Name)
 		s.buildPb.Steps = append(s.buildPb.Steps, step)
-		relLogPrefix = fmt.Sprintf("step/%d", len(s.buildPb.Steps)-1)
+		logSuffix = fmt.Sprintf("step/%d", len(s.buildPb.Steps)-1)
 
 		return true
 	})
-
-	logPrefix = relLogPrefix
-	if ns := string(s.logsink.GetNamespace()); ns != "" {
-		logPrefix = fmt.Sprintf("%s/%s", ns, relLogPrefix)
-	}
+	logNamespace = string(s.logsink.GetNamespace())
 
 	return
 }

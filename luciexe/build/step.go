@@ -52,10 +52,9 @@ type Step struct {
 	stepPbMu sync.Mutex
 	stepPb   *bbpb.Step
 
-	logPrefix     string
-	relLogPrefix  string
+	logNamespace  string
+	logSuffix     string
 	logNames      nameTracker
-	logNamespace  ldTypes.StreamName
 	logClosers    map[string]func() error
 	loggingStream io.Closer
 }
@@ -147,7 +146,7 @@ func ScheduleStep(ctx context.Context, name string) (*Step, context.Context) {
 
 		logClosers: map[string]func() error{},
 	}
-	ret.stepPb, ret.relLogPrefix, ret.logPrefix = cstate.state.registerStep(&bbpb.Step{
+	ret.stepPb, ret.logNamespace, ret.logSuffix = cstate.state.registerStep(&bbpb.Step{
 		Name:   cstate.stepNamePrefix() + name,
 		Status: bbpb.Status_SCHEDULED,
 	})
@@ -190,11 +189,13 @@ func ScheduleStep(ctx context.Context, name string) (*Step, context.Context) {
 
 		// Each step gets its own logdog namespace "step/X/u". Any subprocesses
 		// running within this ctx SHOULD use environ.FromCtx to pick this up.
-		ldNamespace := ret.logPrefix + "/u"
+		logPrefix := ret.logSuffix
+		if ret.logNamespace != "" {
+			logPrefix = fmt.Sprintf("%s/%s", ret.logNamespace, ret.logSuffix)
+		}
 		env := environ.FromCtx(ctx)
-		env.Set(luciexe.LogdogNamespaceEnv, ldNamespace)
+		env.Set(luciexe.LogdogNamespaceEnv, logPrefix+"/u")
 		ctx = env.SetInCtx(ctx)
-		ret.logNamespace = ldTypes.StreamName(ldNamespace).AsNamespace()
 	}
 	ret.ctx = ctx
 
@@ -269,7 +270,7 @@ func (s *Step) addLog(name string, openStream func(dedupedName string, relLdName
 	var logRef *bbpb.Log
 	s.mutate(func() bool {
 		name = s.logNames.resolveName(name)
-		relLdName := fmt.Sprintf("%s/log/%d", s.relLogPrefix, len(s.stepPb.Logs))
+		relLdName := fmt.Sprintf("%s/log/%d", s.logSuffix, len(s.stepPb.Logs))
 		logRef = &bbpb.Log{
 			Name: name,
 			Url:  relLdName,
@@ -322,7 +323,7 @@ func (s *Step) Log(name string, opts ...streamclient.Option) *Log {
 	return &Log{
 		Writer:    ret,
 		ref:       s.addLog(name, openStream),
-		namespace: s.logNamespace,
+		namespace: ldTypes.StreamName(s.logNamespace).AsNamespace(),
 		infra:     infra,
 	}
 }

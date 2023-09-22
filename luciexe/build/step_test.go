@@ -265,7 +265,7 @@ func TestStepLog(t *testing.T) {
 			So(scFake.Data()["fakeNS/step/0/log/1"].GetStreamData(), ShouldContainSubstring, "here's some stuff")
 
 			// Check the link.
-			wantLink := fmt.Sprintf("https://logs.chromium.org/logs/example/builds/8888888888/+/%sstep/0/log/1", step.logNamespace)
+			wantLink := "https://logs.chromium.org/logs/example/builds/8888888888/+/fakeNS/step/0/log/1"
 			So(log.UILink(), ShouldEqual, wantLink)
 		})
 
