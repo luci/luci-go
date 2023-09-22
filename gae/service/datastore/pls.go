@@ -50,12 +50,12 @@ import (
 //
 // GetPLS supports the following struct tag syntax:
 //
-//	`gae:"fieldName[,noindex]"` -- an alternate fieldname for an exportable
-//	   field.  When the struct is serialized or deserialized, fieldName will be
-//	   associated with the struct field instead of the field's Go name. This is
-//	   useful when writing Go code which interfaces with appengine code written
-//	   in other languages (like python) which use lowercase as their default
-//	   datastore field names.
+//	`gae:"[fieldName][,noindex]"` -- `fieldName`, if supplied, is an alternate
+//	   datastore property name for an exportable field. By default this library
+//	   uses the Go field name as the datastore property name, but sometimes
+//	   this is undesirable (e.g. for datastore compatibility with another,
+//	   likely python, application which named the field with a lowercase
+//	   first letter).
 //
 //	   A fieldName of "-" means that gae will ignore the field for all
 //	   serialization/deserialization.
@@ -66,9 +66,12 @@ import (
 //	   field's actual name. Note that by default, all fields (with indexable
 //	   types) are indexed.
 //
-//	`gae:"fieldName[,nocompress|zstd|legacy]"` -- for fields of type
+//	`gae:"[fieldName][,nocompress|zstd|legacy]"` -- for fields of type
 //	  `protobuf.Message`. Protobuf fields are _never_ indexed, but are stored
 //	  as encoded blobs.
+//
+//	  Like for other fields, `fieldName` is optional, and defaults to the Go
+//	  struct field name if omitted.
 //
 //	  By default (with no options), protos are stored with binary encoding
 //	  without compression. This is the same as "nocompress".
@@ -79,10 +82,11 @@ import (
 //	  knows how to decode and encode both, even when the in-datastore format
 //	  doesn't match the tag.
 //
-//	  The "legacy" option will store the protobuf without compression, BUT
-//	  this encoding doesn't have a "mode" bit. This is purely for
-//	  compatibilty with the deprecated `proto-gae` generator, and is not
-//	  recommended.
+//	  The "legacy" option will store the protobuf without compression, BUT this
+//	  encoding doesn't have a "mode" bit. This is purely for compatibilty with
+//	  the deprecated `proto-gae` generator, and is not recommended. The format
+//	  is a `[]byte` containing the binary serialization of the proto with no
+//	  other metadata.
 //
 //	`gae:"$metaKey[,<value>]` -- indicates a field is metadata. Metadata
 //	   can be used to control filter behavior, or to store key data when using
