@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	computealpha "google.golang.org/api/compute/v0.alpha"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/protobuf/testing/protocmp"
 
@@ -773,7 +774,7 @@ func TestVM(t *testing.T) {
 	Convey("GetInstance", t, func() {
 		Convey("empty", func() {
 			v := &VM{}
-			i := v.GetInstance()
+			i := v.GetInstance().Stable
 			So(i.Disks, ShouldHaveLength, 0)
 			So(i.MachineType, ShouldEqual, "")
 			So(i.Metadata, ShouldBeNil)
@@ -822,7 +823,7 @@ func TestVM(t *testing.T) {
 					},
 				},
 			}
-			i := v.GetInstance()
+			i := v.GetInstance().Stable
 			So(i.Disks, ShouldHaveLength, 1)
 			So(i.MachineType, ShouldEqual, "type")
 			So(i.Metadata, ShouldBeNil)
@@ -838,4 +839,39 @@ func TestVM(t *testing.T) {
 			So(i.NullFields, ShouldNotBeNil)
 		})
 	})
+}
+
+// TestGetInstanceReturnsAlpha tests the conversion of various input VMs to the
+// alpha GCP API.
+func TestGetInstanceReturnsAlpha(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name   string
+		input  *VM
+		output *computealpha.Instance
+	}{
+		{
+			name: "only alpha",
+			input: &VM{
+				Attributes: config.VM{
+					GcpChannel: config.GCPChannel_GCP_CHANNEL_ALPHA,
+				},
+			},
+			output: &computealpha.Instance{},
+		},
+	}
+
+	for _, tt := range cases {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			expected := tt.output
+			actual := tt.input.GetInstance().Alpha
+
+			if diff := cmp.Diff(expected, actual, protocmp.Transform()); diff != "" {
+				t.Errorf("unexpected diff (-want +got): %s", diff)
+			}
+		})
+	}
 }

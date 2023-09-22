@@ -19,7 +19,8 @@ import (
 	"fmt"
 	"strings"
 
-	"google.golang.org/api/compute/v1"
+	computealpha "google.golang.org/api/compute/v0.alpha"
+	compute "google.golang.org/api/compute/v1"
 
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -316,9 +317,18 @@ func (vm *VM) getConfidentialInstanceConfig() *compute.ConfidentialInstanceConfi
 	}
 }
 
-// GetInstance returns a *compute.Instance representation of this VM.
-func (vm *VM) GetInstance() *compute.Instance {
-	inst := &compute.Instance{
+// A ComputeInstance is a struct containing either a Stable or an Alpha compute instance.
+// Certain features require the use of the alpha GCP APIs.
+//
+// In a valid ComputeInstance instance, exactly one of the fields will be non-nil.
+type ComputeInstance struct {
+	Stable *compute.Instance
+	Alpha  *computealpha.Instance
+}
+
+// GetInstance returns a ComputeInstance representation of this VM.
+func (vm *VM) GetInstance() ComputeInstance {
+	stableInstance := &compute.Instance{
 		Name:                       vm.Hostname,
 		ConfidentialInstanceConfig: vm.getConfidentialInstanceConfig(),
 		Disks:                      vm.getDisks(),
@@ -334,5 +344,13 @@ func (vm *VM) GetInstance() *compute.Instance {
 		ForceSendFields:            vm.getForceSendFields(),
 		NullFields:                 vm.getNullFields(),
 	}
-	return inst
+	alphaInstance := &computealpha.Instance{}
+	out := ComputeInstance{}
+	switch vm.getGCPChannel() {
+	case config.GCPChannel_GCP_CHANNEL_ALPHA:
+		out.Alpha = alphaInstance
+	default:
+		out.Stable = stableInstance
+	}
+	return out
 }

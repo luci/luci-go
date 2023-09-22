@@ -166,7 +166,8 @@ func createInstance(c context.Context, payload proto.Message) error {
 	// Request IDs are valid for 24 hours.
 	rID := uuid.NewSHA1(uuid.Nil, []byte(fmt.Sprintf("create-%s", vm.Hostname)))
 	srv := getCompute(c).Instances
-	call := srv.Insert(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.GetInstance())
+	instance := vm.GetInstance().Stable
+	call := srv.Insert(vm.Attributes.GetProject(), vm.Attributes.GetZone(), instance)
 	op, err := call.RequestId(rID.String()).Context(c).Do()
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
