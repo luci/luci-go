@@ -116,6 +116,14 @@ message Scheduling {
   repeated NodeAffinity node_affinity = 1;
 }
 
+// GCPChannel is the version of the cloud API to use stable, beta, or alpha.
+enum GCPChannel {
+  GCP_CHANNEL_UNSPECIFIED = 0;
+  GCP_CHANNEL_STABLE = 1;
+  GCP_CHANNEL_BETA = 2;
+  GCP_CHANNEL_ALPHA = 3;
+}
+
 // A description of a VM.
 // https://cloud.google.com/compute/docs/reference/rest/v1/instances.
 message VM {
@@ -172,6 +180,9 @@ message VM {
 
   // These are the fields associated with force_send_fields that are specifically null.
   repeated string null_fields = 17;
+
+  // gcp_channel of the GCP api to use, e.g. stable or alpha.
+  GCPChannel gcp_channel = 18;
 }
 
 // A length of time.
@@ -262,6 +273,8 @@ message Config {
 
   // Chrome Infra Auth groups considered to own this config.
   repeated string owner = 9;
+
+
 
   // Fields below should only be set by the server.
 

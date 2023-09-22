@@ -260,6 +260,10 @@ func (vm *VM) getNullFields() []string {
 	return vm.Attributes.GetNullFields()
 }
 
+func (vm *VM) getGCPChannel() config.GCPChannel {
+	return vm.Attributes.GetGcpChannel()
+}
+
 // getScheduling returns a *compute.Scheduling representation of this VM's
 // scheduling options.
 func (vm *VM) getScheduling() *compute.Scheduling {
