@@ -2304,6 +2304,7 @@ luci.cq_group(
     acls = None,
     allow_submit_with_open_deps = None,
     allow_owner_if_submittable = None,
+    trust_dry_runner_deps = None,
     tree_status_host = None,
     retry_config = None,
     cancel_stale_tryjobs = None,
@@ -2338,6 +2339,7 @@ pub/sub integration is enabled for the Gerrit host.
 * **acls**: list of [acl.entry(...)](#acl.entry) objects with ACLs specific for this CQ group. Only `acl.CQ_*` roles are allowed here. By default ACLs are inherited from [luci.project(...)](#luci.project) definition. At least one `acl.CQ_COMMITTER` entry should be provided somewhere (either here or in [luci.project(...)](#luci.project)).
 * **allow_submit_with_open_deps**: controls how a CQ full run behaves when the current Gerrit CL has open dependencies (not yet submitted CLs on which *this* CL depends). If set to False (default), the CQ will abort a full run attempt immediately if open dependencies are detected. If set to True, then the CQ will not abort a full run, and upon passing all other verifiers, the CQ will attempt to submit the CL regardless of open dependencies and whether the CQ verified those open dependencies. In turn, if the Gerrit project config allows this, Gerrit will submit all dependent CLs first and then this CL.
 * **allow_owner_if_submittable**: allow CL owner to trigger CQ after getting `Code-Review` and other approvals regardless of `acl.CQ_COMMITTER` or `acl.CQ_DRY_RUNNER` roles. Only `cq.ACTION_*` are allowed here. Default is `cq.ACTION_NONE` which grants no additional permissions. CL owner is user owning a CL, i.e. its first patchset uploader, not to be confused with OWNERS files. **WARNING**: using this option is not recommended if you have sticky `Code-Review` label because this allows a malicious developer to upload a good looking patchset at first, get code review approval, and then upload a bad patchset and CQ it right away.
+* **trust_dry_runner_deps**: consider CL dependencies that are owned by members of the `acl.CQ_DRY_RUNNER` role as trusted, even if they are not approved. By default, unapproved dependencies are only trusted if they are owned by members of the `acl.CQ_COMMITER` role. This allows CQ dry run on CLs with unapproved dependencies owned by members of `acl.CQ_DRY_RUNNER` role.
 * **tree_status_host**: a hostname of the project tree status app (if any). It is used by the CQ to check the tree status before committing a CL. If the tree is closed, then the CQ will wait until it is reopened.
 * **retry_config**: a new [cq.retry_config(...)](#cq.retry-config) struct or one of `cq.RETRY_*` constants that define how CQ should retry failed builds. See [CQ](#cq-doc) for more info. Default is `cq.RETRY_TRANSIENT_FAILURES`.
 * **cancel_stale_tryjobs**: unused anymore, but kept for backward compatibility.

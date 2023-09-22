@@ -469,6 +469,7 @@ luci.cq_group(
     ],
     allow_submit_with_open_deps = True,
     allow_owner_if_submittable = cq.ACTION_COMMIT,
+    trust_dry_runner_deps = True,
     tree_status_host = "tree-status.example.com",
     verifiers = [
         luci.cq_tryjob_verifier(
@@ -621,6 +622,7 @@ lucicfg.emit(
 #       new_patchset_run_access_list: "new-patchset-runners"
 #       allow_submit_with_open_deps: true
 #       allow_owner_if_submittable: COMMIT
+#       trust_dry_runner_deps: true
 #     }
 #     tree_status {
 #       url: "https://tree-status.example.com"

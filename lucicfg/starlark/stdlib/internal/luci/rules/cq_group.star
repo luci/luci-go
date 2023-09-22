@@ -30,6 +30,7 @@ def _cq_group(
         acls = None,
         allow_submit_with_open_deps = None,
         allow_owner_if_submittable = None,
+        trust_dry_runner_deps = None,
         tree_status_host = None,
         retry_config = None,
         cancel_stale_tryjobs = None,  # @unused
@@ -82,6 +83,12 @@ def _cq_group(
         you have sticky `Code-Review` label because this allows a malicious
         developer to upload a good looking patchset at first, get code review
         approval, and then upload a bad patchset and CQ it right away.
+      trust_dry_runner_deps: consider CL dependencies that are owned by members
+        of the `acl.CQ_DRY_RUNNER` role as trusted, even if they are not
+        approved. By default, unapproved dependencies are only trusted if they
+        are owned by members of the `acl.CQ_COMMITER` role. This allows CQ dry
+        run on CLs with unapproved dependencies owned by members of
+        `acl.CQ_DRY_RUNNER` role.
       tree_status_host: a hostname of the project tree status app (if any). It
         is used by the CQ to check the tree status before committing a CL. If
         the tree is closed, then the CQ will wait until it is reopened.
@@ -197,6 +204,7 @@ def _cq_group(
             default = cq.ACTION_NONE,
             required = False,
         ),
+        "trust_dry_runner_deps": trust_dry_runner_deps,
         "tree_status_host": validate.hostname("tree_status_host", tree_status_host, required = False),
         "retry_config": cqimpl.validate_retry_config(
             "retry_config",
