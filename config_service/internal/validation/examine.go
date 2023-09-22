@@ -16,6 +16,7 @@ package validation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"sort"
@@ -68,7 +69,7 @@ func (v *Validator) Examine(ctx context.Context, cs config.Set, files []File) (*
 	for _, file := range files {
 		file := file
 		eg.Go(func() error {
-			services := v.Finder.FindInterestedServices(ctx, cs, file.GetPath())
+			services := v.Finder.FindInterestedServices(ectx, cs, file.GetPath())
 			if len(services) == 0 {
 				mu.Lock()
 				ret.UnvalidatableFiles = append(ret.UnvalidatableFiles, file)
@@ -77,11 +78,17 @@ func (v *Validator) Examine(ctx context.Context, cs config.Set, files []File) (*
 			}
 
 			bucket, object := file.GetGSPath().Split()
-			switch err := v.GsClient.Touch(ectx, bucket, object); err {
-			case nil: // file ready for validation.
-			case storage.ErrObjectNotExist:
+			switch err := v.GsClient.Touch(ectx, bucket, object); {
+			case errors.Is(err, context.Canceled):
+				logging.Warningf(ctx, "touching config file %q is cancelled", file.GetPath())
+				return err
+			case err == storage.ErrObjectNotExist:
 				urls, err := common.CreateSignedURLs(ectx, v.GsClient, []gs.Path{file.GetGSPath()}, http.MethodPut, signedPutHeaders)
-				if err != nil {
+				switch {
+				case errors.Is(err, context.Canceled):
+					logging.Warningf(ctx, "creating signed url for GS path %q is cancelled", file.GetGSPath())
+					return err
+				case err != nil:
 					logging.Errorf(ctx, "failed to create signed url for GS path %q: %s", file.GetGSPath(), err)
 					return err
 				}
@@ -91,11 +98,13 @@ func (v *Validator) Examine(ctx context.Context, cs config.Set, files []File) (*
 					SignedURL string
 				}{File: file, SignedURL: urls[0]})
 				mu.Unlock()
-			default:
+				return nil
+			case err != nil:
 				logging.Errorf(ctx, "failed to touch config file %q: %s", file.GetPath(), err)
 				return err
+			default:
+				return nil // file ready for validation.
 			}
-			return nil
 		})
 	}
 	if err := eg.Wait(); err != nil {
