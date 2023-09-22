@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/web/gowrappers/rpcexplorer"
+	"go.chromium.org/luci/web/rpcexplorer"
 
 	server "go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/instances/v1"

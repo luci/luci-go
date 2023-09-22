@@ -229,7 +229,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 
-	"go.chromium.org/luci/web/gowrappers/rpcexplorer"
+	"go.chromium.org/luci/web/rpcexplorer"
 
 	clientauth "go.chromium.org/luci/auth"
 

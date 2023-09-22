@@ -35,7 +35,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/web/gowrappers/rpcexplorer"
+	"go.chromium.org/luci/web/rpcexplorer"
 
 	gaeserver "go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware"
