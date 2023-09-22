@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build darwin || dragonfly || freebsd || linux || nacl || netbsd || openbsd || solaris
-// +build darwin dragonfly freebsd linux nacl netbsd openbsd solaris
+//go:build unix
+// +build unix
 
 package prober
 
