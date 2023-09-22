@@ -244,6 +244,18 @@ func updateCurrentAmount(c context.Context, id string) (cfg *model.Config, now t
 	return
 }
 
+// getCurrentVMsByPrefix returns all the VMs in the datastore by prefix
+func getCurrentVMsByPrefix(ctx context.Context, prefix string) ([]*model.VM, error) {
+	q := datastore.NewQuery(model.VMKind).Eq("prefix", prefix)
+	vms := make([]*model.VM, 0)
+	if err := datastore.Run(ctx, q, func(vm *model.VM) {
+		vms = append(vms, vm)
+	}); err != nil {
+		return nil, errors.Annotate(err, "failed to fetch vms for %s", prefix).Err()
+	}
+	return vms, nil
+}
+
 // expandConfigQueue is the name of the expand config task handler queue.
 const expandConfigQueue = "expand-config"
 
@@ -260,23 +272,38 @@ func expandConfig(c context.Context, payload proto.Message) error {
 	if err != nil {
 		return err
 	}
-	t := make([]*tq.Task, cfg.Config.CurrentAmount)
+	// Measure the time taken for this query, For debugging purposes
+	start := time.Now()
+	vms, err := getCurrentVMsByPrefix(c, cfg.Config.Prefix)
+	rt := time.Since(start)
+	logging.Debugf(c, "getCurrentVMsByPrefix[%s]: error - %v #VMs - %d", rt, err, len(vms))
+	if err != nil {
+		return err
+	}
+	existingVMs := stringset.New(len(vms))
+	for _, vm := range vms {
+		existingVMs.Add(vm.ID)
+	}
+	t := make([]*tq.Task, 0)
 	for i := int32(0); i < cfg.Config.CurrentAmount; i++ {
-		t[i] = &tq.Task{
-			Payload: &tasks.CreateVM{
-				Id:         fmt.Sprintf("%s-%d", cfg.Config.Prefix, i),
-				Attributes: cfg.Config.Attributes,
-				Config:     task.Id,
-				Created: &timestamppb.Timestamp{
-					Seconds: now.Unix(),
+		id := fmt.Sprintf("%s-%d", cfg.Config.Prefix, i)
+		if !existingVMs.Has(id) {
+			t = append(t, &tq.Task{
+				Payload: &tasks.CreateVM{
+					Id:         id,
+					Attributes: cfg.Config.Attributes,
+					Config:     task.Id,
+					Created: &timestamppb.Timestamp{
+						Seconds: now.Unix(),
+					},
+					Index:    i,
+					Lifetime: randomizeLifetime(cfg.Config.Lifetime.GetSeconds()),
+					Prefix:   cfg.Config.Prefix,
+					Revision: cfg.Config.Revision,
+					Swarming: cfg.Config.Swarming,
+					Timeout:  cfg.Config.Timeout.GetSeconds(),
 				},
-				Index:    i,
-				Lifetime: randomizeLifetime(cfg.Config.Lifetime.GetSeconds()),
-				Prefix:   cfg.Config.Prefix,
-				Revision: cfg.Config.Revision,
-				Swarming: cfg.Config.Swarming,
-				Timeout:  cfg.Config.Timeout.GetSeconds(),
-			},
+			})
 		}
 	}
 	logging.Debugf(c, "for config %s, creating %d VMs", cfg.Config.Prefix, len(t))

@@ -450,6 +450,78 @@ func TestQueues(t *testing.T) {
 					So(cfg.Config.CurrentAmount, ShouldEqual, 3)
 				})
 
+				Convey("default - skip existing vms", func() {
+					So(datastore.Put(c, &model.Config{
+						ID: "id",
+						Config: config.Config{
+							Attributes: &config.VM{
+								Project: "project",
+							},
+							Amount: &config.Amount{
+								Min: 3,
+								Max: 3,
+							},
+							Prefix: "prefix",
+						},
+					}), ShouldBeNil)
+					So(datastore.Put(c, &model.VM{
+						ID:     "prefix-1",
+						Config: "id",
+						Prefix: "prefix",
+					}), ShouldBeNil)
+					err := expandConfig(c, &tasks.ExpandConfig{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldHaveLength, 2)
+					cfg := &model.Config{
+						ID: "id",
+					}
+					So(datastore.Get(c, cfg), ShouldBeNil)
+					So(cfg.Config.CurrentAmount, ShouldEqual, 3)
+				})
+
+				Convey("default - skip all vms", func() {
+					So(datastore.Put(c, &model.Config{
+						ID: "id",
+						Config: config.Config{
+							Attributes: &config.VM{
+								Project: "project",
+							},
+							Amount: &config.Amount{
+								Min: 3,
+								Max: 3,
+							},
+							Prefix: "prefix",
+						},
+					}), ShouldBeNil)
+					So(datastore.Put(c, &model.VM{
+						ID:     "prefix-0",
+						Config: "id",
+						Prefix: "prefix",
+					}), ShouldBeNil)
+					So(datastore.Put(c, &model.VM{
+						ID:     "prefix-1",
+						Config: "id",
+						Prefix: "prefix",
+					}), ShouldBeNil)
+					So(datastore.Put(c, &model.VM{
+						ID:     "prefix-2",
+						Config: "id",
+						Prefix: "prefix",
+					}), ShouldBeNil)
+					err := expandConfig(c, &tasks.ExpandConfig{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldHaveLength, 0)
+					cfg := &model.Config{
+						ID: "id",
+					}
+					So(datastore.Get(c, cfg), ShouldBeNil)
+					So(cfg.Config.CurrentAmount, ShouldEqual, 3)
+				})
+
 				Convey("schedule", func() {
 					So(datastore.Put(c, &model.Config{
 						ID: "id",
