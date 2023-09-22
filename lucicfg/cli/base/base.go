@@ -183,6 +183,21 @@ func (c *Subcommand) LegacyConfigServiceClient(ctx context.Context) (*http.Clien
 	return auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
 }
 
+// luciConfigRetryPolicy is the default grpc retry policy for LUCI Config client
+const luciConfigRetryPolicy = `{
+	"methodConfig": [{
+		"name": [{ "service": "config.service.v2.Configs" }],
+		"timeout": "120s",
+		"retryPolicy": {
+		  "maxAttempts": 3,
+		  "initialBackoff": "100ms",
+		  "maxBackoff": "1s",
+		  "backoffMultiplier": 2,
+		  "retryableStatusCodes": ["UNAVAILABLE", "INTERNAL", "UNKNOWN"]
+		}
+	}]
+}`
+
 // MakeConfigServiceConn returns an authenticated grpc connection to call
 // call LUCI Config service.
 func (c *Subcommand) MakeConfigServiceConn(ctx context.Context, host string) (*grpc.ClientConn, error) {
@@ -200,7 +215,8 @@ func (c *Subcommand) MakeConfigServiceConn(ctx context.Context, host string) (*g
 	conn, err := grpc.DialContext(ctx, host+":443",
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 		grpc.WithPerRPCCredentials(creds),
-		grpc.WithUserAgent("lucicfg v"+lucicfg.Version),
+		grpc.WithUserAgent(lucicfg.UserAgent),
+		grpc.WithDefaultServiceConfig(luciConfigRetryPolicy),
 	)
 	if err != nil {
 		return nil, errors.Annotate(err, "cannot dial to %s", host).Err()
