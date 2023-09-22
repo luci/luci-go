@@ -10,7 +10,7 @@ cron:
 - url: /internal/cron/import-config
   schedule: every 1 minutes
 - url: /internal/cron/manage-bots
-  schedule: every 1 minutes
+  schedule: every 5 minutes
 - url: /internal/cron/report-quota
   schedule: every 1 minutes
 - url: /internal/cron/ts_mon/housekeeping
