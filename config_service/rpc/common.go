@@ -102,5 +102,6 @@ func toImportAttempt(attempt *model.ImportAttempt) *pb.ConfigSet_Attempt {
 			AuthorEmail:    attempt.Revision.AuthorEmail,
 			Timestamp:      timestamppb.New(attempt.Revision.CommitTime),
 		},
+		ValidationResult: attempt.ValidationResult,
 	}
 }

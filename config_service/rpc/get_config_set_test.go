@@ -76,6 +76,14 @@ func TestGetConfigSet(t *testing.T) {
 				CommitterEmail: "committer@gmail.com",
 				AuthorEmail:    "author@gmail.com",
 			},
+			ValidationResult: &cfgcommonpb.ValidationResult{
+				Messages: []*cfgcommonpb.ValidationResult_Message{
+					{
+						Severity: cfgcommonpb.ValidationResult_WARNING,
+						Text:     "There is a warning",
+					},
+				},
+			},
 		}), ShouldBeNil)
 
 		Convey("empty req", func() {
@@ -143,6 +151,14 @@ func TestGetConfigSet(t *testing.T) {
 						Timestamp:      timestamppb.New(commitTime),
 						CommitterEmail: "committer@gmail.com",
 						AuthorEmail:    "author@gmail.com",
+					},
+					ValidationResult: &cfgcommonpb.ValidationResult{
+						Messages: []*cfgcommonpb.ValidationResult_Message{
+							{
+								Severity: cfgcommonpb.ValidationResult_WARNING,
+								Text:     "There is a warning",
+							},
+						},
 					},
 				},
 			})

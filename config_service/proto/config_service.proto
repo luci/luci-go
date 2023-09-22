@@ -239,6 +239,8 @@ message ConfigSet {
     Revision revision = 3;
     // Time of this attempt.
     google.protobuf.Timestamp timestamp = 4;
+    // The validation result in this import attempt.
+    config.ValidationResult validationResult = 5;
   }
 
   // Name of the config set.

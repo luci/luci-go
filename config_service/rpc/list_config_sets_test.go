@@ -183,6 +183,14 @@ func TestListConfigSets(t *testing.T) {
 					ID:         "1",
 					CommitTime: commitTime,
 				},
+				ValidationResult: &cfgcommonpb.ValidationResult{
+					Messages: []*cfgcommonpb.ValidationResult_Message{
+						{
+							Severity: cfgcommonpb.ValidationResult_WARNING,
+							Text:     "There is a warning",
+						},
+					},
+				},
 			}), ShouldBeNil)
 			res, err := srv.ListConfigSets(ctx, &pb.ListConfigSetsRequest{
 				Domain: pb.ListConfigSetsRequest_PROJECT,
@@ -205,6 +213,14 @@ func TestListConfigSets(t *testing.T) {
 							Revision: &pb.ConfigSet_Revision{
 								Id:        "1",
 								Timestamp: timestamppb.New(commitTime),
+							},
+							ValidationResult: &cfgcommonpb.ValidationResult{
+								Messages: []*cfgcommonpb.ValidationResult_Message{
+									{
+										Severity: cfgcommonpb.ValidationResult_WARNING,
+										Text:     "There is a warning",
+									},
+								},
 							},
 						},
 					},
