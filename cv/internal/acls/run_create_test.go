@@ -156,6 +156,9 @@ func TestCheckRunCLs(t *testing.T) {
 		setAllowOwner := func(action cfgpb.Verifiers_GerritCQAbility_CQAction) {
 			cg.Content.Verifiers.GerritCqAbility.AllowOwnerIfSubmittable = action
 		}
+		setTrustDryRunnerDeps := func(trust bool) {
+			cg.Content.Verifiers.GerritCqAbility.TrustDryRunnerDeps = trust
+		}
 
 		addSubmitReq := func(cl *changelist.CL, name string, st gerritpb.SubmitRequirementResultInfo_Status) {
 			ci := cl.Snapshot.Kind.(*changelist.Snapshot_Gerrit).Gerrit.Info
@@ -244,6 +247,10 @@ func TestCheckRunCLs(t *testing.T) {
 					// AllowOwnerIfSubmittable doesn't change the decision, either.
 					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
 					mustFailWith(cl, "neither the CL owner nor a committer")
+
+					// TrustDryRunnerDeps doesn't change the decision, either.
+					setTrustDryRunnerDeps(true)
+					mustFailWith(cl, "neither the CL owner nor a committer")
 				})
 				Convey("triggerer is neither dry-runner nor committer", func() {
 					// Should fail always.
@@ -321,6 +328,9 @@ func TestCheckRunCLs(t *testing.T) {
 					mustFailWith(cl, "neither the CL owner nor a committer")
 					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_DRY_RUN)
 					mustFailWith(cl, "neither the CL owner nor a committer")
+					// TrustDryRunnerDeps doesn't change the decision, either.
+					setTrustDryRunnerDeps(true)
+					mustFailWith(cl, "neither the CL owner nor a committer")
 				})
 				Convey("triggerer is neither dry-runner nor committer", func() {
 					// Only committers can trigger a dry-run for someone else' CL.
@@ -354,6 +364,11 @@ func TestCheckRunCLs(t *testing.T) {
 					// if the deps have no submit requirements, the rejection message
 					// shouldn't contain a warning for suspicious CLs.
 					So(res.Failure(cl), ShouldNotContainSubstring, untrustedDepsSuspicious)
+
+					Convey("with TrustDryRunnerDeps", func() {
+						setTrustDryRunnerDeps(true)
+						mustFailWith(cl, untrustedDepsTrustDryRunnerDeps)
+					})
 
 					Convey("but dep2 satisfies all the SubmitRequirements", func() {
 						naReq(dep1, "Code-Review")
@@ -408,6 +423,18 @@ func TestCheckRunCLs(t *testing.T) {
 				Convey("trusted because the owner is a committer", func() {
 					addCommitter("dep_owner1@example.org")
 					addCommitter("dep_owner2@example.org")
+					mustOK()
+				})
+				Convey("trusted because the owner is a dry-runner", func() {
+					addDryRunner("dep_owner1@example.org")
+					addDryRunner("dep_owner2@example.org")
+
+					// Not allowed without TrustDryRunnerDeps.
+					res := mustFailWith(cl, untrustedDeps)
+					So(res.Failure(cl), ShouldContainSubstring, dep1URL)
+					So(res.Failure(cl), ShouldContainSubstring, dep2URL)
+
+					setTrustDryRunnerDeps(true)
 					mustOK()
 				})
 				Convey("a mix of untrusted and trusted deps", func() {

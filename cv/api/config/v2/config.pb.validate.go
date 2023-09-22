@@ -2589,6 +2589,8 @@ func (m *Verifiers_GerritCQAbility) validate(all bool) error {
 
 	// no validation rules for AllowOwnerIfSubmittable
 
+	// no validation rules for TrustDryRunnerDeps
+
 	if len(errors) > 0 {
 		return Verifiers_GerritCQAbilityMultiError(errors)
 	}

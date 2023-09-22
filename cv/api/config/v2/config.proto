@@ -430,7 +430,7 @@ message Verifiers {
   Fake fake = 5;
 
 
-  // Next tag: 6.
+  // Next tag: 7.
   message GerritCQAbility {
     // Required. List of chrome-infra-auth groups, whose members are authorized
     // to trigger full CQ runs.
@@ -485,6 +485,16 @@ message Verifiers {
     // CL owner is Gerrit user owning a CL, i.e., its first patchset uploader.
     // not to be confused with OWNERS files.
     CQAction allow_owner_if_submittable = 4;
+
+    // Optional. Consider CL dependencies that are owned by members of
+    // `dry_run_access_list` as trusted, even if they are not approved.
+    //
+    // By default, unapproved dependencies are only trusted if they are owned
+    // by members of `committer_list`.
+    //
+    // This allows CQ dry run on CLs with unapproved dependencies owned by
+    // members of `dry_run_access_list`.
+    bool trust_dry_runner_deps = 6;
   }
 
   message TreeStatus {

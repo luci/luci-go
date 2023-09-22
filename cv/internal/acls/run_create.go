@@ -50,6 +50,10 @@ const (
 		"CV cannot start a Run because of the following dependencies. " +
 		"They must be approved because their owners are not committers. " +
 		"Alternatively, you can ask the owner of this CL to trigger a dry-run."
+	untrustedDepsTrustDryRunnerDeps = "" +
+		"CV cannot start a Run because of the following dependencies. " +
+		"They must be approved because their owners are not committers or dry-runners. " +
+		"Alternatively, you can ask the owner of this CL to trigger a dry-run."
 	untrustedDepsSuspicious = "" +
 		"However, some or all of the dependencies appear to satisfy all the requirements. " +
 		"It's likely caused by an issue in Gerrit or Gerrit configuration. " +
@@ -62,6 +66,7 @@ type runCreateChecker struct {
 	cl                      *changelist.CL
 	runMode                 run.Mode
 	allowOwnerIfSubmittable cfgpb.Verifiers_GerritCQAbility_CQAction
+	trustDryRunnerDeps      bool
 	commGroups              []string // committer groups
 	dryGroups               []string // dry-runner groups
 	newPatchsetGroups       []string // new patchset run groups
@@ -98,7 +103,8 @@ func (ck runCreateChecker) canTrustDeps(ctx context.Context) (evalResult, error)
 	for _, d := range deps {
 		// Dep is trusted, if
 		// - it has been approved in Gerrit, OR
-		// - the owner is a committer
+		// - the owner is a committer, OR
+		// - config enables trust_dry_runner_deps and the owner is a dry runner
 		switch isApproved, err := checkApproval(d.Snapshot); {
 		case err != nil:
 			return no, errors.Annotate(err, "dep-CL(%d)", d.ID).Err()
@@ -111,6 +117,7 @@ func (ck runCreateChecker) canTrustDeps(ctx context.Context) (evalResult, error)
 		if err != nil {
 			return no, errors.Annotate(err, "dep-CL(%d)", d.ID).Err()
 		}
+
 		switch isCommitter, err := ck.isCommitter(ctx, depOwner); {
 		case err != nil:
 			return no, errors.Annotate(err,
@@ -119,12 +126,24 @@ func (ck runCreateChecker) canTrustDeps(ctx context.Context) (evalResult, error)
 			ck.trustedDeps.Add(d.ID)
 			continue
 		}
+
+		if ck.trustDryRunnerDeps {
+			switch isDryRunner, err := ck.isDryRunner(ctx, depOwner); {
+			case err != nil:
+				return no, errors.Annotate(err,
+				"dep-CL(%d): checking if owner %q is a dry-runner", d.ID, depOwner).Err()
+			case isDryRunner:
+				ck.trustedDeps.Add(d.ID)
+				continue
+			}
+		}
+
 		untrusted = append(untrusted, d)
 	}
 	if len(untrusted) == 0 {
 		return yes, nil
 	}
-	return noWithReason(untrustedDepsReason(ctx, untrusted)), nil
+	return noWithReason(untrustedDepsReason(ctx, untrusted, ck.trustDryRunnerDeps)), nil
 }
 
 func (ck runCreateChecker) canCreateRun(ctx context.Context) (evalResult, error) {
@@ -329,6 +348,7 @@ func evaluateCLs(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger
 			cl:                      cl,
 			runMode:                 run.Mode(tr.Mode),
 			allowOwnerIfSubmittable: gVerifier.GetAllowOwnerIfSubmittable(),
+			trustDryRunnerDeps:      gVerifier.GetTrustDryRunnerDeps(),
 			commGroups:              gVerifier.GetCommitterList(),
 			dryGroups:               gVerifier.GetDryRunAccessList(),
 			newPatchsetGroups:       gVerifier.GetNewPatchsetRunAccessList(),
@@ -345,10 +365,14 @@ func evaluateCLs(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger
 }
 
 // untrustedDepsReason generates a RunCreate rejection comment for untrusted deps.
-func untrustedDepsReason(ctx context.Context, udeps []*changelist.CL) string {
+func untrustedDepsReason(ctx context.Context, udeps []*changelist.CL, trustDryRunnerDeps bool) string {
 	var sb strings.Builder
 	anySuspicious := false
-	sb.WriteString(untrustedDeps)
+	if trustDryRunnerDeps {
+		sb.WriteString(untrustedDepsTrustDryRunnerDeps)
+	} else {
+		sb.WriteString(untrustedDeps)
+	}
 	for _, d := range udeps {
 		fmt.Fprintf(&sb, "\n- %s", d.ExternalID.MustURL())
 		if allSatisfied, msg := strSubmitReqsForUnapprovedCL(ctx, d); len(msg) > 0 {
