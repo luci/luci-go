@@ -78,7 +78,7 @@ queue:
   target: default
 
 - name: update-tryjob
-  rate: 30/s
+  rate: 150/s
   target: default
 
 - name: cancel-stale-tryjobs
