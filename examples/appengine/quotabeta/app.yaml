@@ -8,7 +8,7 @@ automatic_scaling:
 luci_gae_vars:
   luci-quota-library-sample:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
-    CONFIG_SERVICE_HOST: luci-config.appspot.com
+    CONFIG_SERVICE_HOST: config.luci.app
     FRONTEND_CLIENT_ID: 842253956169-64fagojnc1s14anho5f05c3nufer46nl.apps.googleusercontent.com
     REDIS_DATABASE_HOST: 10.249.61.228:6379
     VPC_CONNECTOR: projects/luci-quota-library-sample/locations/us-central1/connectors/connector
