@@ -1446,6 +1446,25 @@ func TestAuthRealmsConfig(t *testing.T) {
 		So(actual, ShouldResemble, projectRealms)
 	})
 
+	Convey("Testing DeleteAuthProjectRealms", t, func() {
+		ctx, ts := getCtx()
+
+		testProject := "testproject"
+		projectRealms := testAuthProjectRealms(ctx, testProject)
+		err := datastore.Put(ctx, projectRealms)
+		So(err, ShouldBeNil)
+
+		_, err = GetAuthProjectRealms(ctx, testProject)
+		So(err, ShouldBeNil)
+
+		err = DeleteAuthProjectRealms(ctx, testProject)
+		So(err, ShouldBeNil)
+		So(ts.Tasks(), ShouldHaveLength, 2)
+
+		err = DeleteAuthProjectRealms(ctx, testProject)
+		So(err, ShouldErrLike, datastore.ErrNoSuchEntity)
+	})
+
 	Convey("Testing GetAuthProjectRealmsMeta", t, func() {
 		ctx := memory.Use(context.Background())
 

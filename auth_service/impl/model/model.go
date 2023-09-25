@@ -1441,6 +1441,21 @@ func GetAuthProjectRealms(ctx context.Context, project string) (*AuthProjectReal
 	}
 }
 
+// DeleteAuthProjectRealms deletes an AuthProjectRealms entity from datastore.
+// The caller is expected to handle the error.
+//
+// Returns error if Get from datastore failed
+// Returns error if transaction delete failed
+func DeleteAuthProjectRealms(ctx context.Context, project string) error {
+	return runAuthDBChange(ctx, func(ctx context.Context, commitEntity commitAuthEntity) error {
+		authProjectRealms, err := GetAuthProjectRealms(ctx, project)
+		if err != nil {
+			return err
+		}
+		return commitEntity(authProjectRealms, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), true)
+	})
+}
+
 // RealmsCfgRev is information about fetched or previously processed realms.cfg.
 // Comes either from LUCI Config (then `config_body` is set, but `perms_rev`
 // isn't) or from the datastore (then `perms_rev` is set, but `config_body`

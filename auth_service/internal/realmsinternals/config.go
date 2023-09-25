@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
+	"google.golang.org/appengine/datastore"
 	"google.golang.org/protobuf/proto"
 
 	"golang.org/x/sync/errgroup"
@@ -101,6 +102,19 @@ func UpdateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*mo
 	}
 	logging.Infof(ctx, "transaction landed")
 	return nil
+}
+
+// DeleteRealms will try to delete the AuthProjectRealms for a given projectID.
+func DeleteRealms(ctx context.Context, projectID string) error {
+	switch err := model.DeleteAuthProjectRealms(ctx, projectID); {
+	case err == datastore.ErrNoSuchEntity:
+		return errors.Annotate(err, "realms for %s do not exist or have already been deleted", projectID).Err()
+	case err != nil:
+		return err
+	default:
+		logging.Infof(ctx, "deleted realms for %s", projectID)
+		return nil
+	}
 }
 
 // ExpandRealms expands a realmsconf.RealmsCfg into a flat protocol.Realms.
