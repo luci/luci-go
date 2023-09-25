@@ -12,17 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Used when the server doesn't report a client ID.
-const defaultOAuthClientId =
-  '446450136466-e77v49thuh5dculh78gumq3oncqe28m3.apps.googleusercontent.com';
-
 
 // OAuthError can be raised by accessToken().
 export class OAuthError extends Error {
   // If true, the user explicitly canceled the login flow.
   readonly cancelled: boolean;
 
-  constructor(msg: string, cancelled: boolean) {
+  constructor(msg: string, cancelled = false) {
     super(msg);
     Object.setPrototypeOf(this, OAuthError.prototype);
     this.cancelled = cancelled;
@@ -30,10 +26,34 @@ export class OAuthError extends Error {
 }
 
 
+// Account represents a logged in user account.
+export interface Account {
+  email: string;
+  picture?: string;
+}
+
+
 // Knows how to get and refresh OAuth access tokens.
+export interface TokenClient {
+  // The state of the session, if any. Affects Login/Logout UI.
+  sessionState: Account | 'loggedout' | 'stateless';
+  // URL to send the browser to to go through the login flow.
+  loginUrl: string | undefined;
+  // URL to send the browser to to go through the logout flow.
+  logoutUrl: string | undefined;
+  // Returns a fresh OAuth access token to use in a request.
+  accessToken: () => Promise<string>;
+}
+
+
+// A TokenClient that uses google.accounts.oauth2 to get and refresh tokens.
 export class OAuthClient {
-  // The configured OAuth client ID.
-  readonly clientId: string;
+  // This client doesn't use sessions.
+  readonly sessionState = 'stateless';
+  // Login is not supported.
+  readonly loginUrl = undefined;
+  // Logout is not supported.
+  readonly logoutUrl = undefined;
 
   private tokenClient: google.accounts.oauth2.TokenClient;
   private cachedToken: { token: string; expiry: number; } | null = null;
@@ -43,7 +63,6 @@ export class OAuthClient {
   }[] = [];
 
   constructor(clientId: string) {
-    this.clientId = clientId;
     this.tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: clientId,
       scope: 'https://www.googleapis.com/auth/userinfo.email',
@@ -122,13 +141,125 @@ export class OAuthClient {
 }
 
 
-// Loads the OAuth client ID from the server and initializes Google OAuth2
-// token client.
-export const loadOAuthClient = async (): Promise<OAuthClient> => {
-  const response = await fetch('/auth/api/v1/server/client_id', {
+// Response of the auth state endpoint, see StateEndpointResponse in auth.go.
+interface StateEndpointResponse {
+  identity?: string;
+  email?: string;
+  picture?: string;
+  accessToken?: string;
+  accessTokenExpiresIn?: number;
+}
+
+
+// A TokenClient that uses the server's auth state endpoint.
+export class StateEndpointClient {
+  // Either logged in or not.
+  sessionState: Account | 'loggedout' = 'loggedout';
+  // URL to send the browser to to go through the login flow.
+  loginUrl: string;
+  // URL to send the browser to to go through the logout flow.
+  logoutUrl: string;
+
+  private stateUrl: string;
+  private cachedToken: { token: string; expiry: number; } | null = null;
+
+  constructor(stateUrl: string, loginUrl: string, logoutUrl: string) {
+    this.stateUrl = stateUrl;
+    this.loginUrl = loginUrl;
+    this.logoutUrl = logoutUrl;
+  }
+
+  async fetchState() {
+    const response = await fetch(this.stateUrl, {
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json' },
+    });
+    const state = await response.json() as StateEndpointResponse;
+    if (state.identity == 'anonymous:anonymous') {
+      this.sessionState = 'loggedout';
+      this.cachedToken = null;
+      return;
+    }
+    if (!state.email) {
+      throw new OAuthError('Missing email in the auth state response');
+    }
+    if (!state.accessToken) {
+      throw new OAuthError('Missing token in the auth state response');
+    }
+    if (!state.accessTokenExpiresIn) {
+      throw new OAuthError('Missing expiry in the auth state response');
+    }
+    this.sessionState = {
+      email: state.email,
+      picture: state.picture,
+    };
+    // Remove 60s from the lifetime to make sure we never try to use a token
+    // which is very close to expiration.
+    this.cachedToken = {
+      token: state.accessToken,
+      expiry: Date.now() + (state.accessTokenExpiresIn - 60) * 1000,
+    };
+  }
+
+  // Returns an access token, refreshing it if necessary.
+  //
+  // Raises an OAuthError if the user is not logged in.
+  async accessToken(): Promise<string> {
+    // Need a session to get a token.
+    if (this.sessionState == 'loggedout') {
+      throw new OAuthError('Not logged in');
+    }
+    // If already have a fresh token, just use it.
+    if (this.cachedToken && Date.now() < this.cachedToken.expiry) {
+      return this.cachedToken.token;
+    }
+    // Need to refresh. This may raise OAuthError or change sessionState.
+    await this.fetchState();
+    // This will be nil if the session disappeared.
+    if (!this.cachedToken) {
+      throw new OAuthError('Not logged in');
+    }
+    return this.cachedToken.token;
+  }
+}
+
+
+// Loads the OAuth config from the server and initializes the token client.
+export const loadTokenClient = async (): Promise<TokenClient> => {
+  const response = await fetch('/rpcexplorer/config', {
     credentials: 'omit',
     headers: { 'Accept': 'application/json' },
   });
-  const json = await response.json();
-  return new OAuthClient(json.client_id || defaultOAuthClientId);
+
+  // See rpcexplorer.go for the Go side.
+  interface Config {
+    loginUrl?: string;
+    logoutUrl?: string;
+    authStateUrl?: string;
+    clientId?: string;
+  }
+  const cfg = await response.json() as Config;
+
+  // If authStateUrl is set, so should be loginUrl and logoutUrl. Use a client
+  // that knows how to grab tokens from the state URL.
+  if (cfg.authStateUrl) {
+    if (!cfg.loginUrl) {
+      throw new Error('loginUrl in the config is empty');
+    }
+    if (!cfg.logoutUrl) {
+      throw new Error('logoutUrl in the config is empty');
+    }
+    const client = new StateEndpointClient(
+        cfg.authStateUrl, cfg.loginUrl, cfg.logoutUrl,
+    );
+    // Check if there's a session already.
+    await client.fetchState();
+    return client;
+  }
+
+  // A client that uses google.accounts.oauth2 Javascript library.
+  if (!cfg.clientId) {
+    throw new Error('clientId in the config is empty');
+  }
+  return new OAuthClient(cfg.clientId);
 };

@@ -36,7 +36,7 @@ import { ResponseEditor } from '../components/response_editor';
 const Method = () => {
   const { serviceName, methodName } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { descriptors, oauthClient } = useGlobals();
+  const { descriptors, tokenClient } = useGlobals();
   const [authMethod, setAuthMethod] = useState(AuthMethod.load());
   const [running, setRunning] = useState(false);
   const [response, setResponse] = useState('');
@@ -119,8 +119,10 @@ const Method = () => {
     // Grabs the authentication header and invokes the method.
     const authAndInvoke = async () => {
       let authorization = '';
-      if (authMethod == AuthMethod.OAuth) {
-        authorization = `Bearer ${await oauthClient.accessToken()}`;
+      if (tokenClient.sessionState != 'loggedout') {
+        if (authMethod == AuthMethod.OAuth) {
+          authorization = `Bearer ${await tokenClient.accessToken()}`;
+        }
       }
       return await method.invoke(normalizedReq, authorization);
     };
@@ -173,8 +175,8 @@ const Method = () => {
           <AuthSelector
             selected={authMethod}
             onChange={setAuthMethod}
-            oauthClientId={oauthClient.clientId}
             disabled={running}
+            anonOnly={tokenClient.sessionState == 'loggedout'}
           />
         </Box>
       </Grid>

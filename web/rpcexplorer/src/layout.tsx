@@ -24,6 +24,7 @@ import Toolbar from '@mui/material/Toolbar';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
 import { GlobalsWaiter } from './context/globals';
+import { LoginState } from './components/login_state';
 
 
 const Layout = () => {
@@ -67,7 +68,7 @@ const Layout = () => {
           <Breadcrumbs
             separator={<NavigateNextIcon fontSize='small' />}
             aria-label='breadcrumb'
-            sx={{ pl: 2, color: 'white' }}
+            sx={{ pl: 2, color: 'white', flexGrow: 1 }}
           >
             {breadcrumbs.map((crumb) => (
               <Link
@@ -81,6 +82,9 @@ const Layout = () => {
               </Link>
             ))}
           </Breadcrumbs>
+          <GlobalsWaiter silent>
+            <LoginState />
+          </GlobalsWaiter>
         </Toolbar>
       </AppBar>
       <GlobalsWaiter>

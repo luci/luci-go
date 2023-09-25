@@ -22,7 +22,7 @@ import LinearProgress from '@mui/material/LinearProgress';
 
 import { ErrorAlert } from '../components/error_alert';
 
-import { loadOAuthClient, OAuthClient } from '../data/oauth';
+import { loadTokenClient, TokenClient } from '../data/oauth';
 import { Descriptors, loadDescriptors } from '../data/prpc';
 
 
@@ -30,19 +30,19 @@ import { Descriptors, loadDescriptors } from '../data/prpc';
 export interface Globals {
   // Type information with server's RPC APIs.
   descriptors: Descriptors;
-  // The OAuth client to use for getting an access token.
-  oauthClient: OAuthClient;
+  // The client to use for getting an access token.
+  tokenClient: TokenClient;
 }
 
 // loadGlobals loads the globals by querying the server.
 const loadGlobals = async (): Promise<Globals> => {
-  const [descriptors, oauthClient] = await Promise.all([
+  const [descriptors, tokenClient] = await Promise.all([
     loadDescriptors(),
-    loadOAuthClient(),
+    loadTokenClient(),
   ]);
   return {
     descriptors: descriptors,
-    oauthClient: oauthClient,
+    tokenClient: tokenClient,
   };
 };
 
@@ -90,16 +90,24 @@ export const GlobalsProvider = ({ children }: GlobalsProviderProps) => {
 
 
 export interface GlobalsWaiterProps {
+  silent?: boolean;
   children: React.ReactNode;
 }
 
 // GlobalsWaiter waits for globals to be loaded.
 //
 // On success, it renders the children. On error it renders the error message.
-export const GlobalsWaiter = ({ children }: GlobalsWaiterProps) => {
+//
+// If silent is true, it renders nothing when loading and on errors. Useful
+// when there are multiple GlobalsWaiter on a page: only on of them can be
+// showing the progress and the error.
+export const GlobalsWaiter = ({ silent, children }: GlobalsWaiterProps) => {
   const globalsData = useContext(GlobalsContext);
 
   if (globalsData.isLoading) {
+    if (silent) {
+      return <></>;
+    }
     return (
       <Box sx={{ width: '100%' }}>
         <LinearProgress />
@@ -108,6 +116,9 @@ export const GlobalsWaiter = ({ children }: GlobalsWaiterProps) => {
   }
 
   if (globalsData.error) {
+    if (silent) {
+      return <></>;
+    }
     return (
       <ErrorAlert
         title="Failed to initialize RPC Explorer"

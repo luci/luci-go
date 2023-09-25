@@ -48,8 +48,8 @@ export namespace AuthMethod {
 export interface Props {
   selected: AuthMethod;
   onChange: (method: AuthMethod) => void;
-  oauthClientId: string;
   disabled?: boolean,
+  anonOnly?: boolean,
 }
 
 // Allows to select an authentication method to use for sending RPCs.
@@ -58,9 +58,15 @@ export const AuthSelector = (props: Props) => {
     props.onChange((event.target as HTMLInputElement).value as AuthMethod);
   };
 
+  // If only anonymous method is supported, force the selection to it.
+  let selected = props.selected;
+  if (props.anonOnly) {
+    selected = AuthMethod.Anonymous;
+  }
+
   return (
     <FormControl disabled={props.disabled}>
-      <RadioGroup row value={props.selected} onChange={handleChange}>
+      <RadioGroup row value={selected} onChange={handleChange}>
         <FormControlLabel
           value={AuthMethod.Anonymous}
           control={<Radio />}
@@ -70,6 +76,7 @@ export const AuthSelector = (props: Props) => {
           value={AuthMethod.OAuth}
           control={<Radio />}
           label='Use OAuth access tokens'
+          disabled={props.anonOnly}
         />
       </RadioGroup>
     </FormControl>
