@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/projects/v1"
+	"go.chromium.org/luci/gce/appengine/convert/toalpha"
 )
 
 // ConfigKind is a config entity's kind in the datastore.
@@ -344,11 +345,10 @@ func (vm *VM) GetInstance() ComputeInstance {
 		ForceSendFields:            vm.getForceSendFields(),
 		NullFields:                 vm.getNullFields(),
 	}
-	alphaInstance := &computealpha.Instance{}
 	out := ComputeInstance{}
 	switch vm.getGCPChannel() {
 	case config.GCPChannel_GCP_CHANNEL_ALPHA:
-		out.Alpha = alphaInstance
+		out.Alpha = toalpha.Instance(stableInstance)
 	default:
 		out.Stable = stableInstance
 	}
