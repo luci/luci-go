@@ -114,7 +114,7 @@ func auditInstances(c context.Context) error {
 		return errors.Annotate(err, "failed to schedule audits").Err()
 	}
 	jobs := make([]*tq.Task, 0)
-	srv := getCompute(c).Zones
+	srv := getCompute(c).Stable.Zones
 	for _, proj := range projects {
 		zoneList, err := srv.List(proj).Context(c).Do()
 		if err != nil {

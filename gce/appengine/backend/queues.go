@@ -344,7 +344,7 @@ func reportQuota(c context.Context, payload proto.Message) error {
 	}
 	mets := stringset.NewFromSlice(p.Config.Metric...)
 	regs := stringset.NewFromSlice(p.Config.Region...)
-	rsp, err := getCompute(c).Regions.List(p.Config.Project).Context(c).Do()
+	rsp, err := getCompute(c).Stable.Regions.List(p.Config.Project).Context(c).Do()
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			logErrors(c, task.Id, gerr)

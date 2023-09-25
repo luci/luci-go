@@ -47,7 +47,7 @@ func TestCron(t *testing.T) {
 		c := context.Background()
 		gce, err := compute.NewService(c, option.WithHTTPClient(&http.Client{Transport: rt}))
 		So(err, ShouldBeNil)
-		c = withCompute(withDispatcher(memory.Use(c), dsp), gce)
+		c = withCompute(withDispatcher(memory.Use(c), dsp), ComputeService{Stable: gce})
 		datastore.GetTestable(c).Consistent(true)
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()

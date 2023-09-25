@@ -49,7 +49,7 @@ func TestCreate(t *testing.T) {
 		gce, err := compute.New(&http.Client{Transport: rt})
 		So(err, ShouldBeNil)
 		c, _ := tsmon.WithDummyInMemory(memory.Use(context.Background()))
-		c = withCompute(withDispatcher(c, dsp), gce)
+		c = withCompute(withDispatcher(c, dsp), ComputeService{Stable: gce})
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 		s := tsmon.Store(c)
@@ -292,7 +292,7 @@ func TestDestroyInstance(t *testing.T) {
 		rt := &roundtripper.JSONRoundTripper{}
 		gce, err := compute.New(&http.Client{Transport: rt})
 		So(err, ShouldBeNil)
-		c := withCompute(withDispatcher(memory.Use(context.Background()), dsp), gce)
+		c := withCompute(withDispatcher(memory.Use(context.Background()), dsp), ComputeService{Stable: gce})
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
@@ -463,7 +463,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 		c := context.Background()
 		gce, err := compute.NewService(c, option.WithHTTPClient(&http.Client{Transport: rt}))
 		So(err, ShouldBeNil)
-		c = withCompute(withDispatcher(memory.Use(c), dsp), gce)
+		c = withCompute(withDispatcher(memory.Use(c), dsp), ComputeService{Stable: gce})
 		datastore.GetTestable(c).Consistent(true)
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()

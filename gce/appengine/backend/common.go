@@ -20,7 +20,8 @@ import (
 	"net/http"
 	"time"
 
-	"google.golang.org/api/compute/v1"
+	computealpha "google.golang.org/api/compute/v0.alpha"
+	compute "google.golang.org/api/compute/v1"
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
@@ -29,6 +30,11 @@ import (
 
 	"go.chromium.org/luci/gce/api/tasks/v1"
 )
+
+type ComputeService struct {
+	Stable *compute.Service
+	Alpha  *computealpha.Service
+}
 
 // dspKey is the key to a *tq.Dispatcher in the context.
 var dspKey = "dsp"
@@ -61,26 +67,33 @@ func registerTasks(dsp *tq.Dispatcher) {
 var gceKey = "gce"
 
 // withCompute returns a new context with the given *compute.Service installed.
-func withCompute(c context.Context, gce *compute.Service) context.Context {
+func withCompute(c context.Context, gce ComputeService) context.Context {
 	return context.WithValue(c, &gceKey, gce)
 }
 
-// getCompute returns the *compute.Service installed in the current context.
-func getCompute(c context.Context) *compute.Service {
-	return c.Value(&gceKey).(*compute.Service)
+// getCompute returns the ComputeService installed in the current context.
+func getCompute(c context.Context) ComputeService {
+	return c.Value(&gceKey).(ComputeService)
 }
 
-// newCompute returns a new *compute.Service. Panics on error.
-func newCompute(c context.Context) *compute.Service {
+// newCompute returns a new ComputeService. Panics on error.
+func newCompute(c context.Context) ComputeService {
 	t, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(compute.ComputeScope))
 	if err != nil {
 		panic(err)
 	}
-	gce, err := compute.New(&http.Client{Transport: t})
+	stable, err := compute.New(&http.Client{Transport: t})
 	if err != nil {
 		panic(err)
 	}
-	return gce
+	alpha, err := computealpha.New(&http.Client{Transport: t})
+	if err != nil {
+		panic(err)
+	}
+	return ComputeService{
+		Stable: stable,
+		Alpha:  alpha,
+	}
 }
 
 // swrKey is the key to a *swarming.Service in the context.

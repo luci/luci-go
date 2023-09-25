@@ -117,7 +117,7 @@ func rateLimitExceeded(err *googleapi.Error) bool {
 // checkInstance fetches the GCE instance and either sets its creation details
 // or deletes the VM if the instance doesn't exist.
 func checkInstance(c context.Context, vm *model.VM) error {
-	srv := getCompute(c).Instances
+	srv := getCompute(c).Stable.Instances
 	call := srv.Get(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.Hostname)
 	inst, err := call.Context(c).Do()
 	if err != nil {
@@ -165,9 +165,9 @@ func createInstance(c context.Context, payload proto.Message) error {
 	// Ensures duplicate operations aren't created in GCE.
 	// Request IDs are valid for 24 hours.
 	rID := uuid.NewSHA1(uuid.Nil, []byte(fmt.Sprintf("create-%s", vm.Hostname)))
-	srv := getCompute(c).Instances
-	instance := vm.GetInstance().Stable
-	call := srv.Insert(vm.Attributes.GetProject(), vm.Attributes.GetZone(), instance)
+	srv := getCompute(c).Stable.Instances
+	instance := vm.GetInstance()
+	call := srv.Insert(vm.Attributes.GetProject(), vm.Attributes.GetZone(), instance.Stable)
 	op, err := call.RequestId(rID.String()).Context(c).Do()
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
@@ -246,7 +246,7 @@ func destroyInstance(c context.Context, payload proto.Message) error {
 	}
 	logging.Debugf(c, "destroying instance %q", vm.Hostname)
 	rID := uuid.NewSHA1(uuid.Nil, []byte(fmt.Sprintf("destroy-%s", vm.Hostname)))
-	srv := getCompute(c).Instances
+	srv := getCompute(c).Stable.Instances
 	call := srv.Delete(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.Hostname)
 	op, err := call.RequestId(rID.String()).Context(c).Do()
 	metrics.DestroyInstanceUnchecked.Add(c, 1, vm.Config, vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.Hostname)
@@ -297,7 +297,7 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 	zone := task.GetZone()
 	logging.Debugf(c, "Auditing %s in %s", proj, zone)
 	// List a bunch on instances and validate with the DB
-	srv := getCompute(c).Instances
+	srv := getCompute(c).Stable.Instances
 	call := srv.List(proj, zone).MaxResults(auditBatchSize)
 	if task.GetPageToken() != "" {
 		// Add the page token if given
