@@ -56,7 +56,7 @@ func main() {
 	r := router.New()
 
 	standard.InstallHandlers(r)
-	rpcexplorer.Install(r)
+	rpcexplorer.Install(r, nil)
 
 	mw := standard.Base()
 	api.InstallHandlers(r, mw.Extend(vmtoken.Middleware))

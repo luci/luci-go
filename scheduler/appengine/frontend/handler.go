@@ -169,7 +169,7 @@ func main() {
 
 	standard.InstallHandlersWithMiddleware(r, base)
 	globalDispatcher.InstallRoutes(r, base)
-	rpcexplorer.Install(r)
+	rpcexplorer.Install(r, nil)
 
 	ui.InstallHandlers(r, base, ui.Config{
 		Engine:        globalEngine.PublicAPI(),

@@ -137,7 +137,7 @@ type AuthMethod struct {
 	// ExposeStateEndpoint controls whether "/auth/openid/state" endpoint should
 	// be exposed.
 	//
-	// See AuthState struct for details.
+	// See auth.StateEndpointResponse struct for details.
 	//
 	// It is off by default since it can potentially make XSS vulnerabilities more
 	// severe by exposing OAuth and ID tokens to malicious injected code. It
@@ -151,6 +151,7 @@ var _ interface {
 	auth.UsersAPI
 	auth.Warmable
 	auth.HasHandlers
+	auth.HasStateEndpoint
 } = (*AuthMethod)(nil)
 
 const (
@@ -299,6 +300,16 @@ func (m *AuthMethod) LogoutURL(ctx context.Context, dest string) (string, error)
 		return "", err
 	}
 	return internal.MakeRedirectURL(logoutURL, dest)
+}
+
+// StateEndpointURL returns an URL that serves the authentication state.
+//
+// Implements auth.HasStateEndpoint.
+func (m *AuthMethod) StateEndpointURL(ctx context.Context) (string, error) {
+	if m.ExposeStateEndpoint {
+		return stateURL, nil
+	}
+	return "", auth.ErrNoStateEndpoint
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -680,7 +691,7 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 	})
 }
 
-// stateHandler serves JSON with the session state, see AuthState.
+// stateHandler serves JSON with the session state, see StateEndpointResponse.
 func (m *AuthMethod) stateHandler(ctx *router.Context) {
 	stateHandlerImpl(ctx, func(s auth.Session) bool {
 		impl, ok := s.(*authSessionImpl)

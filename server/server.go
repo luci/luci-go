@@ -1168,6 +1168,11 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 		}
 	}
 
+	// Install the RPC Explorer, using the registered auth method if it is
+	// compatible.
+	rpcExpAuth, _ := srv.CookieAuth.(rpcexplorer.AuthMethod)
+	rpcexplorer.Install(srv.Routes, rpcExpAuth)
+
 	return srv, nil
 }
 
@@ -2827,8 +2832,6 @@ func (s *Server) initMainPort() error {
 	discovery.Enable(s.prpc)
 	s.prpc.InstallHandlers(s.Routes, nil)
 
-	// Install RPCExplorer web app at "/rpcexplorer/".
-	rpcexplorer.Install(s.Routes)
 	return nil
 }
 

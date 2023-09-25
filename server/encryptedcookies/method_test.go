@@ -458,7 +458,7 @@ func TestMethod(t *testing.T) {
 			})
 			methodV1.InstallHandlers(r, nil)
 
-			callState := func(cookie *http.Cookie) (code int, state *AuthState) {
+			callState := func(cookie *http.Cookie) (code int, state *auth.StateEndpointResponse) {
 				rw := httptest.NewRecorder()
 				req := httptest.NewRequest("GET", stateURL, nil)
 				if cookie != nil {
@@ -469,7 +469,7 @@ func TestMethod(t *testing.T) {
 				res := rw.Result()
 				code = res.StatusCode
 				if code == 200 {
-					state = &AuthState{}
+					state = &auth.StateEndpointResponse{}
 					So(json.NewDecoder(res.Body).Decode(&state), ShouldBeNil)
 				}
 				return
@@ -482,13 +482,13 @@ func TestMethod(t *testing.T) {
 			Convey("No cookie", func() {
 				code, state := callState(nil)
 				So(code, ShouldEqual, 200)
-				So(state, ShouldResemble, &AuthState{Identity: "anonymous:anonymous"})
+				So(state, ShouldResemble, &auth.StateEndpointResponse{Identity: "anonymous:anonymous"})
 			})
 
 			Convey("Valid cookie", func() {
 				code, state := callState(goodCookie)
 				So(code, ShouldEqual, 200)
-				So(state, ShouldResemble, &AuthState{
+				So(state, ShouldResemble, &auth.StateEndpointResponse{
 					Identity:             "user:someone@example.com",
 					Email:                "someone@example.com",
 					Picture:              "https://example.com/picture",
@@ -510,7 +510,7 @@ func TestMethod(t *testing.T) {
 
 				code, state := callState(goodCookie)
 				So(code, ShouldEqual, 200)
-				So(state, ShouldResemble, &AuthState{
+				So(state, ShouldResemble, &auth.StateEndpointResponse{
 					Identity:             "user:someone@example.com",
 					Email:                "someone@example.com",
 					Picture:              "https://example.com/picture",

@@ -46,6 +46,8 @@ type AuthMethod struct {
 	//
 	// See the module documentation.
 	LimitCookieExposure bool
+	// ExposedStateEndpoint is a URL path of the state endpoint, if any.
+	ExposedStateEndpoint string
 
 	m              sync.Mutex
 	serverUser     *auth.User // see serverUserInfo
@@ -56,6 +58,7 @@ var _ interface {
 	auth.Method
 	auth.UsersAPI
 	auth.HasHandlers
+	auth.HasStateEndpoint
 } = (*AuthMethod)(nil)
 
 const (
@@ -143,6 +146,16 @@ func (m *AuthMethod) LoginURL(ctx context.Context, dest string) (string, error) 
 // Implements auth.UsersAPI.
 func (m *AuthMethod) LogoutURL(ctx context.Context, dest string) (string, error) {
 	return internal.MakeRedirectURL(logoutURL, dest)
+}
+
+// StateEndpointURL returns an URL that serves the authentication state.
+//
+// Implements auth.HasStateEndpoint.
+func (m *AuthMethod) StateEndpointURL(ctx context.Context) (string, error) {
+	if m.ExposedStateEndpoint != "" {
+		return m.ExposedStateEndpoint, nil
+	}
+	return "", auth.ErrNoStateEndpoint
 }
 
 // IsFakeCookiesSession returns true if the given auth.Session was produced by

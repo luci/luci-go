@@ -71,6 +71,10 @@ var (
 	// ErrNoForwardableCreds is returned by GetRPCTransport when attempting to
 	// forward credentials (via AsCredentialsForwarder) that are not forwardable.
 	ErrNoForwardableCreds = errors.New("auth: no forwardable credentials in the context")
+
+	// ErrNoStateEndpoint is returned by StateEndpointURL if the state endpoint is
+	// not exposed.
+	ErrNoStateEndpoint = errors.New("auth: the state endpoint is not available")
 )
 
 const (
@@ -180,6 +184,20 @@ type HasHandlers interface {
 	InstallHandlers(r *router.Router, base router.MiddlewareChain)
 }
 
+// HasStateEndpoint may be additionally implemented by Method if it exposes
+// an HTTP endpoints that returns the authentication state, OAuth and ID tokens
+// for frontend applications.
+type HasStateEndpoint interface {
+	// StateEndpointURL returns an URL that serves StateEndpointResponse JSON.
+	//
+	// See StateEndpointResponse for the format and meaning of the response.
+	//
+	// Returns ErrNoStateEndpoint if the endpoint is not actually exposed. This
+	// can happen if the method generally supports the state endpoint, but it is
+	// turned off in the method's configuration.
+	StateEndpointURL(ctx context.Context) (string, error)
+}
+
 // UserCredentialsGetter may be additionally implemented by Method if it knows
 // how to extract end-user credentials from the incoming request. Currently
 // understands only OAuth2 tokens.
@@ -238,6 +256,81 @@ type User struct {
 	// authentication method will have an accompanying getter function that knows
 	// how to interpret this field.
 	Extra any `json:"-"`
+}
+
+// StateEndpointResponse defines a JSON structure of a state endpoint response.
+//
+// It represents the state of the authentication session based on the session
+// cookie (or other ambient credential) in the request metadata.
+//
+// It is intended to be called via a same origin URL fetch request by the
+// frontend code that needs an OAuth access token or an ID token representing
+// the signed in user.
+//
+// If there's a valid authentication credential, the state endpoint replies with
+// HTTP 200 status code and the JSON-serialized StateEndpointResponse struct
+// with state details. The handler refreshes access and ID tokens if they expire
+// soon.
+//
+// If there is no authentication credential or it has expired or was revoked,
+// the state endpoint still replies with HTTP 200 code and the JSON-serialized
+// StateEndpointResponse struct, except its `identity` field is
+// `anonymous:anonymous` and no other fields are populated.
+//
+// On errors the state endpoint replies with a non-200 HTTP status code with a
+// `plain/text` body containing the error message. This is an exceptional
+// situation (usually internal transient errors caused by the session store
+// unavailability or some misconfiguration in code). Replies with HTTP code
+// equal or larger than 500 indicate transient errors and can be retried.
+//
+// The state endpoint is exposed only by auth methods that implement
+// HasStateEndpoint interface (e.g. `encryptedcookies`), and only if they are
+// configured to expose it.
+type StateEndpointResponse struct {
+	// Identity is a LUCI identity string of the user or `anonymous:anonymous` if
+	// the user is not logged in.
+	Identity string `json:"identity"`
+
+	// Email is the email of the user account if the user is logged in.
+	Email string `json:"email,omitempty"`
+
+	// Picture is the https URL of the user profile picture if available.
+	Picture string `json:"picture,omitempty"`
+
+	// AccessToken is an OAuth access token of the logged in user.
+	//
+	// See RequiredScopes and OptionalScopes in AuthMethod for what scopes this
+	// token can have.
+	AccessToken string `json:"accessToken,omitempty"`
+
+	// AccessTokenExpiry is an absolute expiration time (as a unix timestamp) of
+	// the access token.
+	//
+	// It is at least 10 min in the future.
+	AccessTokenExpiry int64 `json:"accessTokenExpiry,omitempty"`
+
+	// AccessTokenExpiresIn is approximately how long the access token will be
+	// valid since when the response was generated, in seconds.
+	//
+	// It is at least 600 sec.
+	AccessTokenExpiresIn int32 `json:"accessTokenExpiresIn,omitempty"`
+
+	// IDToken is an identity token of the logged in user.
+	//
+	// Its `aud` claim is equal to ClientID in OpenIDConfig passed to AuthMethod.
+	IDToken string `json:"idToken,omitempty"`
+
+	// IDTokenExpiry is an absolute expiration time (as a unix timestamp) of
+	// the identity token.
+	//
+	// It is at least 10 min in the future.
+	IDTokenExpiry int64 `json:"idTokenExpiry,omitempty"`
+
+	// IDTokenExpiresIn is approximately how long the identity token will be
+	// valid since when the response was generated, in seconds.
+	//
+	// It is at least 600 sec.
+	IDTokenExpiresIn int32 `json:"idTokenExpiresIn,omitempty"`
 }
 
 // Authenticator performs authentication of incoming requests.

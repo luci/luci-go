@@ -18,18 +18,34 @@
 package rpcexplorer
 
 import (
+	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
+	"go.chromium.org/luci/hardcoded/chromeinfra"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
+
 	"go.chromium.org/luci/web/rpcexplorer/internal"
 )
 
+// AuthMethod implements an authentication method that RPC Explorer will use.
+//
+// RPC Explorer needs login/logout URLs and a state endpoint that serves tokens.
+type AuthMethod interface {
+	auth.UsersAPI
+	auth.HasStateEndpoint
+}
+
 // Install adds routes to serve RPC Explorer web app from "/rpcexplorer".
-func Install(r *router.Router) {
+//
+// If auth is nil, a default config will be used which attempts to use the
+// server's frontend OAuth client ID in a Javascript-based login flow.
+func Install(r *router.Router, auth AuthMethod) {
 	r.GET("/rpcexplorer", nil, func(c *router.Context) {
 		http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusMovedPermanently)
 	})
@@ -39,6 +55,25 @@ func Install(r *router.Router) {
 	// a static resource loaded from the assets bundle.
 	r.GET("/rpcexplorer/*path", nil, func(c *router.Context) {
 		path := strings.TrimPrefix(c.Params.ByName("path"), "/")
+
+		// The config endpoint tells the RPC Explorer how to do authentication.
+		if path == "config" {
+			resp, err := getConfigResponse(c.Request.Context(), auth)
+			if err != nil {
+				http.Error(c.Writer, fmt.Sprintf("Configuration error: %s", err), http.StatusInternalServerError)
+			} else {
+				blob, err := json.Marshal(resp)
+				if err != nil {
+					panic(err)
+				}
+				c.Writer.Header().Set("Content-Type", "application/json")
+				c.Writer.Write(blob)
+			}
+			return
+		}
+
+		// Routes are interpreted by Javascript router, all routed paths should
+		// return the same index.html that will figure out what to do with them.
 		if path == "" || path == "services" || strings.HasPrefix(path, "services/") {
 			path = "index.html"
 		}
@@ -54,4 +89,48 @@ func Install(r *router.Router) {
 			c.Writer, c.Request, path, time.Time{},
 			strings.NewReader(internal.GetAssetString(path)))
 	})
+}
+
+type configResponse struct {
+	LoginURL     string `json:"loginUrl,omitempty"`
+	LogoutURL    string `json:"logoutUrl,omitempty"`
+	AuthStateURL string `json:"authStateUrl,omitempty"`
+	ClientID     string `json:"clientId,omitempty"`
+}
+
+func getConfigResponse(ctx context.Context, m AuthMethod) (*configResponse, error) {
+	var out configResponse
+	var err error
+
+	if m != nil {
+		out.AuthStateURL, err = m.StateEndpointURL(ctx)
+		switch err {
+		case nil:
+			out.LoginURL, err = m.LoginURL(ctx, "/rpcexplorer/")
+			if err != nil {
+				return nil, err
+			}
+			out.LogoutURL, err = m.LogoutURL(ctx, "/rpcexplorer/")
+			if err != nil {
+				return nil, err
+			}
+			// Note: we don't populate ClientID, since it is not needed when using
+			// an existing auth method.
+			return &out, nil
+		case auth.ErrNoStateEndpoint:
+			// This is fine, just ignore AuthMethod.
+		default:
+			return nil, err
+		}
+	}
+
+	// Use the server's client ID, but fallback to the default one.
+	out.ClientID, err = auth.GetFrontendClientID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if out.ClientID == "" {
+		out.ClientID = chromeinfra.RPCExplorerClientID
+	}
+	return &out, nil
 }

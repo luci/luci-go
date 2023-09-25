@@ -88,7 +88,7 @@ type ModuleOptions struct {
 	// ExposeStateEndpoint controls whether "/auth/openid/state" endpoint should
 	// be exposed.
 	//
-	// See AuthState struct for details.
+	// See auth.StateEndpointResponse struct for details.
 	//
 	// It is off by default since it can potentially make XSS vulnerabilities more
 	// severe by exposing OAuth and ID tokens to malicious injected code. It
@@ -369,7 +369,7 @@ func (m *serverModule) initInDevMode(ctx context.Context, host module.Host) erro
 	host.RegisterCookieAuth(method)
 	method.InstallHandlers(host.Routes(), nil)
 
-	// fakecookies.AuthMethod can't register AuthState handler itself since it
+	// fakecookies.AuthMethod can't register the state handler itself since it
 	// introduces module import cycle, so do it here instead. fakecookies is
 	// internal API of this package.
 	if m.opts.ExposeStateEndpoint {
@@ -377,6 +377,7 @@ func (m *serverModule) initInDevMode(ctx context.Context, host module.Host) erro
 		host.Routes().GET(stateURL, []router.Middleware{authenticator.GetMiddleware()}, func(ctx *router.Context) {
 			stateHandlerImpl(ctx, fakecookies.IsFakeCookiesSession)
 		})
+		method.ExposedStateEndpoint = stateURL
 	}
 
 	return nil

@@ -91,6 +91,9 @@ const (
 
 	// LoginSessionsHost is the host to use for CLI login UI by default.
 	LoginSessionsHost = "ci.chromium.org"
+
+	// RPCExplorerClientID is the default client ID used by RPC Explorer.
+	RPCExplorerClientID = "446450136466-e77v49thuh5dculh78gumq3oncqe28m3.apps.googleusercontent.com"
 )
 
 // DefaultAuthOptions returns auth.Options struct prefilled with chrome-infra
