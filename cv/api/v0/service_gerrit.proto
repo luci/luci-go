@@ -1,0 +1,82 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
+syntax = "proto3";
+
+package cv.v0;
+
+option go_package = "go.chromium.org/luci/cv/api/v0;cvpb";
+
+import "google/protobuf/timestamp.proto";
+
+import "go.chromium.org/luci/cv/api/v0/run.proto";
+
+
+// GerritIntegration exposes APIs that Gerrit will call when rendering CL pages.
+service GerritIntegration {
+  // GetCLRunInfo returns ongoing Run information for the given CL and the CLs
+  // that the given CL depends on.
+  rpc GetCLRunInfo(GetCLRunInfoRequest) returns (GetCLRunInfoResponse);
+}
+
+message GetCLRunInfoRequest {
+  // GerritChange is the change that Gerrit is currently rendering.
+  GerritChange gerrit_change = 1;
+}
+
+message GetCLRunInfoResponse {
+  message RunInfo {
+    // ID of the Run.
+    //
+    // The format of an ID is "projects/$luci-project/runs/$id", where
+    // - luci-project is the name of the LUCI project the Run belongs to
+    // - id is an opaque key unique in the LUCI project.
+    string id = 1;
+    // The time when the Run was created.
+    google.protobuf.Timestamp create_time = 2;
+    // The time when the Run was started.
+    google.protobuf.Timestamp start_time = 3;
+    // The change that receives the vote and triggers this Run.
+    GerritChange origin_change = 4;
+    // The mode of the Run.
+    string mode = 5;
+  }
+  // RunsAsOrigin are the ongoing runs originating from this CL.
+  //
+  // Typically, there would only be 1 that is the Run triggered by the
+  // CQ vote on this CL.
+  repeated RunInfo runs_as_origin = 1;
+
+  // RunsAsDep are the ongoing runs that involves this CL but not originates
+  // from the CL.
+  //
+  // Those Runs should be triggered by the CL that transitively depends on this
+  // CL.
+  repeated RunInfo runs_as_dep = 2;
+
+  message DepChangeInfo {
+    // GerritChange describes the dependency CL.
+    GerritChange gerrit_change = 1;
+    // Runs are ongoing Runs that involves the dependency CLs.
+    repeated RunInfo runs = 2;
+    // ChangeOwner is the owner of the dependency CL.
+    string change_owner = 3;
+  }
+  // DepChangeInfos are the information about the CLs that this CL depends on.
+  //
+  // If the developer ends up voting CQ+1/+2 on this CL, these would be all the
+  // CLs that will be involved in the Run.
+  repeated DepChangeInfo dep_change_infos = 3;
+}
