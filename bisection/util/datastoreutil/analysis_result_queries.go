@@ -420,3 +420,32 @@ func GetInProgressReruns(ctx context.Context, tfa *model.TestFailureAnalysis) ([
 	}
 	return reruns, nil
 }
+
+func GetVerificationRerunsForTestCulprit(ctx context.Context, culprit *model.Suspect) (culpritRerun *model.TestSingleRerun, parentRerun *model.TestSingleRerun, reterr error) {
+	var err error
+	if culprit.SuspectRerunBuild != nil {
+		culpritRerun, err = GetTestSingleRerun(ctx, culprit.SuspectRerunBuild.IntID())
+		if err != nil {
+			return nil, nil, errors.Annotate(err, "get suspect rerun").Err()
+		}
+	}
+	if culprit.ParentRerunBuild != nil {
+		parentRerun, err = GetTestSingleRerun(ctx, culprit.ParentRerunBuild.IntID())
+		if err != nil {
+			return nil, nil, errors.Annotate(err, "get parent rerun").Err()
+		}
+	}
+	return culpritRerun, parentRerun, nil
+}
+
+// GetTestNthSectionReruns returns the nthsection reruns.
+// The reruns are ordered by create time.
+func GetTestNthSectionReruns(ctx context.Context, nsa *model.TestNthSectionAnalysis) ([]*model.TestSingleRerun, error) {
+	q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa)).Order("luci_build.create_time")
+	reruns := []*model.TestSingleRerun{}
+	err := datastore.GetAll(ctx, q, &reruns)
+	if err != nil {
+		return nil, errors.Annotate(err, "get test reruns").Err()
+	}
+	return reruns, nil
+}

@@ -286,13 +286,13 @@ message TestNthSectionAnalysisResult {
   // culprit. This will be updated as the nth-section progress.
   RegressionRange remaining_nth_section_range = 5;
   // List of the reruns that have been run so far for the nth-section analysis.
-  // The runs are sorted by the start timestamp.
+  // The runs are sorted by the create timestamp.
   repeated TestSingleRerun reruns = 6;
   // The blame list of commits to run the nth-section analysis on.
   // The commits are sorted by recency, with the most recent commit first.
   BlameList blame_list = 7;
   // Optional, when nth-section has found a culprit.
-  TestNthSectionSuspect culprit = 8;
+  TestCulprit culprit = 8;
 }
 
 message TestSingleRerun {
@@ -309,7 +309,7 @@ message TestSingleRerun {
   // ID of the bot that runs the rerun.
   string bot_id = 6;
   // Result of the rerun.
-  TestRerunResults results = 7;
+  RerunTestResults results = 7;
   // Status of the rerun.
   RerunStatus status = 8;
   // Gitiles commit to do the rerun with.
@@ -318,14 +318,18 @@ message TestSingleRerun {
   // nth-section rerun. We need to use a string instead of an int here because
   // 0 is a possible valid value but would get lost due to the "omitempty" flag
   // in the generated proto.
+  // There is one case where the index is not populated (empty string). It is when
+  // the culprit is the (last pass + 1) position, and this rerun is for parent commit
+  // of the culprit verification. In such cases, the parent commit (last pass) is not found in the
+  // blamelist (this blamelist is (last pass, first fail]). In such case, index will be "".
   string index = 10;
 }
 
-message TestRerunResults {
-  repeated TestRerunSingleResult results = 1;
+message RerunTestResults {
+  repeated RerunTestSingleResult results = 1;
 }
 
-message TestRerunSingleResult {
+message RerunTestSingleResult {
   // Test ID of the result.
   string test_id = 1;
   // Variant hash of the result.
@@ -334,17 +338,6 @@ message TestRerunSingleResult {
   int64 expected_count = 3;
   // Number of unexpected results.
   int64 unexpected_count = 4;
-}
-
-message TestNthSectionSuspect {
-  // A suspect revision of nth-section analysis.
-  buildbucket.v2.GitilesCommit gitiles_commit = 1;
-  // Review URL for the commit.
-  string review_url = 2;
-  // Title of the review for the commit.
-  string review_title = 3;
-  // The details of suspect verification for the suspect.
-  TestSuspectVerificationDetails verification_details = 4;
 }
 
 message TestSuspectVerificationDetails {

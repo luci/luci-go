@@ -289,11 +289,9 @@ func CreateSnapshot(ctx context.Context, nsa *model.TestNthSectionAnalysis) (*nt
 	// is considered.
 	// If we retry INFRA_FAILURE rerun, we want to take the status of the retry,
 	// instead of the INFRA_FAILURE status.
-	q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa)).Order("luci_build.create_time")
-	reruns := []*model.TestSingleRerun{}
-	err := datastore.GetAll(ctx, q, &reruns)
+	reruns, err := datastoreutil.GetTestNthSectionReruns(ctx, nsa)
 	if err != nil {
-		return nil, errors.Annotate(err, "getting all reruns").Err()
+		return nil, errors.Annotate(err, "getting test nthsection rerun").Err()
 	}
 
 	snapshot := &nthsectionsnapshot.Snapshot{

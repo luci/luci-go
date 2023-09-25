@@ -297,6 +297,12 @@ type TestSingleRerunCreationOption struct {
 	TestResult            model.RerunTestResults
 	NthSectionAnalysisKey *datastore.Key
 	CulpritKey            *datastore.Key
+	CreateTime            time.Time
+	StartTime             time.Time
+	ReportTime            time.Time
+	EndTime               time.Time
+	BuildStatus           bbpb.Status
+	GitilesCommit         *bbpb.GitilesCommit
 }
 
 func CreateTestSingleRerun(ctx context.Context, option *TestSingleRerunCreationOption) *model.TestSingleRerun {
@@ -307,6 +313,13 @@ func CreateTestSingleRerun(ctx context.Context, option *TestSingleRerunCreationO
 	testresult := model.RerunTestResults{}
 	var nthSectionAnalysisKey *datastore.Key
 	var culpritKey *datastore.Key
+	var startTime time.Time
+	var createTime time.Time
+	var reportTime time.Time
+	var endTime time.Time
+	var buildStatus bbpb.Status
+	var gitilesCommit *bbpb.GitilesCommit
+
 	if option != nil {
 		if option.ID != 0 {
 			id = option.ID
@@ -317,6 +330,12 @@ func CreateTestSingleRerun(ctx context.Context, option *TestSingleRerunCreationO
 		testresult = option.TestResult
 		nthSectionAnalysisKey = option.NthSectionAnalysisKey
 		culpritKey = option.CulpritKey
+		startTime = option.StartTime
+		createTime = option.CreateTime
+		reportTime = option.ReportTime
+		endTime = option.EndTime
+		buildStatus = option.BuildStatus
+		gitilesCommit = option.GitilesCommit
 	}
 	rerun := &model.TestSingleRerun{
 		ID:                    id,
@@ -326,6 +345,14 @@ func CreateTestSingleRerun(ctx context.Context, option *TestSingleRerunCreationO
 		TestResults:           testresult,
 		NthSectionAnalysisKey: nthSectionAnalysisKey,
 		CulpritKey:            culpritKey,
+		ReportTime:            reportTime,
+		LUCIBuild: model.LUCIBuild{
+			CreateTime:    createTime,
+			StartTime:     startTime,
+			EndTime:       endTime,
+			Status:        buildStatus,
+			GitilesCommit: gitilesCommit,
+		},
 	}
 	So(datastore.Put(ctx, rerun), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()
@@ -381,11 +408,15 @@ func CreateTestNthSectionAnalysis(ctx context.Context, option *TestNthSectionAna
 }
 
 type SuspectCreationOption struct {
-	ID          int64
-	ParentKey   *datastore.Key
-	CommitID    string
-	ReviewURL   string
-	ReviewTitle string
+	ID                 int64
+	ParentKey          *datastore.Key
+	CommitID           string
+	ReviewURL          string
+	ReviewTitle        string
+	SuspectRerunKey    *datastore.Key
+	ParentRerunKey     *datastore.Key
+	VerificationStatus model.SuspectVerificationStatus
+	ActionDetails      model.ActionDetails
 }
 
 func CreateSuspect(ctx context.Context, option *SuspectCreationOption) *model.Suspect {
@@ -394,6 +425,11 @@ func CreateSuspect(ctx context.Context, option *SuspectCreationOption) *model.Su
 	commitID := "1"
 	reviewURL := ""
 	reviewTitle := ""
+	var suspectRerunKey *datastore.Key
+	var parentRerunKey *datastore.Key
+	var verificationStatus model.SuspectVerificationStatus
+	var actionDetails model.ActionDetails
+
 	if option != nil {
 		if option.ID != 0 {
 			id = option.ID
@@ -404,6 +440,10 @@ func CreateSuspect(ctx context.Context, option *SuspectCreationOption) *model.Su
 		parentKey = option.ParentKey
 		reviewURL = option.ReviewURL
 		reviewTitle = option.ReviewTitle
+		suspectRerunKey = option.SuspectRerunKey
+		parentRerunKey = option.ParentRerunKey
+		verificationStatus = option.VerificationStatus
+		actionDetails = option.ActionDetails
 	}
 	suspect := &model.Suspect{
 		Id:             id,
@@ -414,8 +454,12 @@ func CreateSuspect(ctx context.Context, option *SuspectCreationOption) *model.Su
 			Ref:     "ref",
 			Id:      commitID,
 		},
-		ReviewUrl:   reviewURL,
-		ReviewTitle: reviewTitle,
+		ReviewUrl:          reviewURL,
+		ReviewTitle:        reviewTitle,
+		SuspectRerunBuild:  suspectRerunKey,
+		ParentRerunBuild:   parentRerunKey,
+		VerificationStatus: verificationStatus,
+		ActionDetails:      actionDetails,
 	}
 	So(datastore.Put(ctx, suspect), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()

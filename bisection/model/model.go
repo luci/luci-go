@@ -295,10 +295,10 @@ type Suspect struct {
 	// Whether if a suspect has been verified
 	VerificationStatus SuspectVerificationStatus `gae:"verification_status"`
 
-	// Key to the CompileRerunBuild of the suspect, for culprit verification purpose.
+	// Key to the CompileRerunBuild or TestSingleRerun of the suspect, for culprit verification purpose.
 	SuspectRerunBuild *datastore.Key `gae:"suspect_rerun_build"`
 
-	// Key to the CompileRerunBuild of the parent commit of the suspect, for culprit verification purpose.
+	// Key to the CompileRerunBuild or TestSingleRerun of the parent commit of the suspect, for culprit verification purpose.
 	ParentRerunBuild *datastore.Key `gae:"parent_rerun_build"`
 
 	// Details of actions performed by LUCI Bisection for this suspect.
@@ -547,6 +547,10 @@ func (rerun *SingleRerun) HasEnded() bool {
 
 func (rerun *TestSingleRerun) HasEnded() bool {
 	return rerun.Status == pb.RerunStatus_RERUN_STATUS_FAILED || rerun.Status == pb.RerunStatus_RERUN_STATUS_PASSED || rerun.Status == pb.RerunStatus_RERUN_STATUS_INFRA_FAILED || rerun.Status == pb.RerunStatus_RERUN_STATUS_CANCELED || rerun.Status == pb.RerunStatus_RERUN_STATUS_TEST_SKIPPED
+}
+
+func (rerun *TestSingleRerun) HasStarted() bool {
+	return rerun.LUCIBuild.Status != buildbucketpb.Status_STATUS_UNSPECIFIED && rerun.LUCIBuild.Status != buildbucketpb.Status_SCHEDULED
 }
 
 func (nsa *TestNthSectionAnalysis) HasEnded() bool {

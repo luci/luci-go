@@ -761,3 +761,53 @@ func TestGetInProgressReruns(t *testing.T) {
 		So(reruns[0].ID, ShouldEqual, 100)
 	})
 }
+
+func TestGetVerificationRerunsForTestCulprit(t *testing.T) {
+	t.Parallel()
+	ctx := memory.Use(context.Background())
+	testutil.UpdateIndices(ctx)
+
+	Convey("Get verification reruns for test culprit", t, func() {
+		suspectRerun := testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+			ID: 100,
+		})
+		parentRerun := testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+			ID: 101,
+		})
+		suspect := testutil.CreateSuspect(ctx, &testutil.SuspectCreationOption{
+			SuspectRerunKey: datastore.KeyForObj(ctx, suspectRerun),
+			ParentRerunKey:  datastore.KeyForObj(ctx, parentRerun),
+		})
+		s, p, err := GetVerificationRerunsForTestCulprit(ctx, suspect)
+		So(err, ShouldBeNil)
+		So(s.ID, ShouldEqual, 100)
+		So(p.ID, ShouldEqual, 101)
+	})
+}
+
+func TestGetTestNthSectionReruns(t *testing.T) {
+	t.Parallel()
+	ctx := memory.Use(context.Background())
+	testutil.UpdateIndices(ctx)
+
+	Convey("Get test nthsection rerun", t, func() {
+		nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+			ID: 100,
+		})
+		testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+			ID:                    200,
+			NthSectionAnalysisKey: datastore.KeyForObj(ctx, nsa),
+			CreateTime:            time.Unix(100, 0).UTC(),
+		})
+		testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+			ID:                    201,
+			NthSectionAnalysisKey: datastore.KeyForObj(ctx, nsa),
+			CreateTime:            time.Unix(50, 0).UTC(),
+		})
+		reruns, err := GetTestNthSectionReruns(ctx, nsa)
+		So(err, ShouldBeNil)
+		So(len(reruns), ShouldEqual, 2)
+		So(reruns[0].ID, ShouldEqual, 201)
+		So(reruns[1].ID, ShouldEqual, 200)
+	})
+}
