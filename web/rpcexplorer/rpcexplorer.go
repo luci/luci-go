@@ -56,6 +56,10 @@ func Install(r *router.Router, auth AuthMethod) {
 	r.GET("/rpcexplorer/*path", nil, func(c *router.Context) {
 		path := strings.TrimPrefix(c.Params.ByName("path"), "/")
 
+		// Forbid loading RPC explorer in an iframe to avoid clickjacking.
+		c.Writer.Header().Set("X-Frame-Options", "deny")
+		c.Writer.Header().Set("Content-Security-Policy", "frame-ancestors 'none';")
+
 		// The config endpoint tells the RPC Explorer how to do authentication.
 		if path == "config" {
 			resp, err := getConfigResponse(c.Request.Context(), auth)
