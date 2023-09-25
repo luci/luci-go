@@ -190,7 +190,7 @@ const luciConfigRetryPolicy = `{
 		"timeout": "120s",
 		"retryPolicy": {
 		  "maxAttempts": 3,
-		  "initialBackoff": "100ms",
+		  "initialBackoff": "0.1s",
 		  "maxBackoff": "1s",
 		  "backoffMultiplier": 2,
 		  "retryableStatusCodes": ["UNAVAILABLE", "INTERNAL", "UNKNOWN"]
