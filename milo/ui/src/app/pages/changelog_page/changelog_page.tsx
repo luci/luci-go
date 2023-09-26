@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Typography, styled } from '@mui/material';
+import { Typography, styled } from '@mui/material';
 import { useEffect, useMemo } from 'react';
 
 import { renderChangelog, useChangelog } from '@/app/components/changelog';
 import { useMarkChangelogAsRead } from '@/app/components/changelog';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { SanitizedHtml } from '@/common/components/sanitized_html';
 
-const MarkdownContainer = styled(Box)({
+const ChangelogContainer = styled(SanitizedHtml)({
   '& *': {
     fontSize: '20px',
   },
@@ -45,19 +46,11 @@ export function ChangelogPage() {
       }}
     >
       <Typography variant="h4">{"What's new?"}</Typography>
-      <MarkdownContainer
-        dangerouslySetInnerHTML={{
-          __html: latestHtml,
-        }}
-      />
+      <ChangelogContainer html={latestHtml} />
       <Typography variant="h4" sx={{ mt: 15 }}>
         {'Past changes'}
       </Typography>
-      <MarkdownContainer
-        dangerouslySetInnerHTML={{
-          __html: pastHtml,
-        }}
-      />
+      <ChangelogContainer html={pastHtml} />
     </div>
   );
 }

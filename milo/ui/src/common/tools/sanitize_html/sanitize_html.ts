@@ -40,13 +40,35 @@ domPurify.addHook('afterSanitizeAttributes', (node) => {
 /**
  * Sanitizes the input HTML string.
  */
-export function sanitizeHTML(html: string) {
+export function sanitizeHTML(html: string): string;
+export function sanitizeHTML(
+  html: string,
+  opts: { RETURN_TRUSTED_TYPE: true },
+): TrustedHTML;
+export function sanitizeHTML(
+  html: string,
+  opts?: { RETURN_TRUSTED_TYPE: true },
+): string | TrustedHTML {
   return domPurify.sanitize(html, {
     ADD_ATTR: ['target', 'artifact-id', 'inv-level'],
     ADD_TAGS: ['text-artifact'],
+    RETURN_TRUSTED_TYPE: opts?.RETURN_TRUSTED_TYPE,
   });
 }
 
+/**
+ * Initialize a default trusted types policy.
+ *
+ * IMPORTANT:
+ * The default policy may fail to sanitize the HTML when the correct CSP (
+ * content security policy) is not set via a HTTP header or HTML meta tag. Given
+ * that the code for setting the CSP is often located far away from where the
+ * unsanitized HTMLs are used, it's hard to notice when the default policy
+ * failed to be applied automatically. To avoid this issue, HTML should still be
+ * sanitized before being injected to DOM (e.g. via React's
+ * `dangerouslySetInnerHTML`, or setting `ele.innerHTML`) even when the
+ * default trusted types policy is used.
+ */
 export function initDefaultTrustedTypesPolicy() {
   if (!window.trustedTypes || !window.trustedTypes.createPolicy) {
     window.trustedTypes = trustedTypes;

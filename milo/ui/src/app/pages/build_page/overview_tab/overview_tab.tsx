@@ -82,7 +82,9 @@ export const OverviewTab = observer(() => {
         <SecondColumn>
           {store.buildPage.build?.data.builderInfo?.description && (
             <BuilderInfoSection
-              description={store.buildPage.build.data.builderInfo.description}
+              descriptionHtml={
+                store.buildPage.build.data.builderInfo.description
+              }
             />
           )}
           <InputSection />

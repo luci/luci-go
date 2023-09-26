@@ -13,10 +13,11 @@
 // limitations under the License.
 
 import { ChevronRight, ExpandMore } from '@mui/icons-material';
-import { Box, IconButton, TableCell, TableRow, styled } from '@mui/material';
+import { IconButton, TableCell, TableRow, styled } from '@mui/material';
 import markdownIt from 'markdown-it';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 
+import { SanitizedHtml } from '@/common/components/sanitized_html';
 import { GitCommit } from '@/common/services/milo_internal';
 import { bugLine } from '@/common/tools/markdown/plugins/bug_line';
 import { bugnizerLink } from '@/common/tools/markdown/plugins/bugnizer_link';
@@ -34,7 +35,7 @@ const md = markdownIt('zero', { breaks: true, linkify: true })
   .use(bugnizerLink)
   .use(defaultTarget, '_blank');
 
-const SummaryContainer = styled(Box)({
+const SummaryContainer = styled(SanitizedHtml)({
   '& > p:first-of-type': {
     marginBlockStart: 0,
   },
@@ -101,9 +102,7 @@ export function CommitTableRow({ commit, children }: CommitTableRowProps) {
       >
         <TableCell colSpan={100} sx={{ 'tr > &': { padding: 0 } }}>
           <div css={{ padding: '10px 20px' }}>
-            <SummaryContainer
-              dangerouslySetInnerHTML={{ __html: descriptionHtml }}
-            />
+            <SummaryContainer html={descriptionHtml} />
             <h4 css={{ marginBlockEnd: '0px' }}>
               Changed files: {changedFiles.length}
             </h4>

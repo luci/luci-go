@@ -16,6 +16,7 @@ import { Box, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { Fragment, useState } from 'react';
 
 import { MiloLink } from '@/common/components/link';
+import { SanitizedHtml } from '@/common/components/sanitized_html';
 import {
   BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_DISPLAY_MAP,
@@ -48,7 +49,7 @@ export function BuildPackagesInfo({ build }: BuildPackagesInfoProps) {
   return (
     <>
       {agent.output?.summaryHtml && (
-        <Box
+        <SanitizedHtml
           sx={{
             padding: '10px',
             marginBottom: '10px',
@@ -56,7 +57,7 @@ export function BuildPackagesInfo({ build }: BuildPackagesInfoProps) {
             overlapWrap: 'break-word',
           }}
           className={`${BUILD_STATUS_CLASS_MAP[agent.output.status]}-bg`}
-          dangerouslySetInnerHTML={{ __html: agent.output.summaryHtml }}
+          html={agent.output.summaryHtml}
         />
       )}
       {/* Use table instead of MUI or CSS grid to be consistent with other

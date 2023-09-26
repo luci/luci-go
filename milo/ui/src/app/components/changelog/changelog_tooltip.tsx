@@ -24,6 +24,8 @@ import { forwardRef, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useClickAway, useTimeout } from 'react-use';
 
+import { SanitizedHtml } from '@/common/components/sanitized_html';
+
 import {
   useChangelog,
   useHasNewChangelog,
@@ -82,9 +84,9 @@ export function ChangelogTooltip({ children }: ChangelogTooltipProps) {
       title={
         <div ref={tooltipRef}>
           <Typography variant="h6">{"What's new?"}</Typography>
-          <div
-            css={{ '& ul': { margin: '5px' } }}
-            dangerouslySetInnerHTML={{ __html: changelogHtml }}
+          <SanitizedHtml
+            html={changelogHtml}
+            sx={{ '& ul': { margin: '5px' } }}
           />
           <div css={{ display: 'grid', gridTemplateColumns: '1fr auto' }}>
             <div css={{ paddingTop: '9px' }}>

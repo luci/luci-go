@@ -12,25 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { SanitizedHtml } from '@/common/components/sanitized_html';
-
-export interface BuilderInfoSectionProps {
-  readonly descriptionHtml: string;
-}
-
-export function BuilderInfoSection({
-  descriptionHtml,
-}: BuilderInfoSectionProps) {
-  return (
-    <>
-      <h3>Builder Info</h3>
-      <SanitizedHtml
-        html={descriptionHtml}
-        sx={{
-          padding: '10px',
-          backgroundColor: 'var(--block-background-color)',
-        }}
-      />
-    </>
-  );
-}
+export * from './sanitized_html';

@@ -151,6 +151,13 @@ module.exports = {
       },
     ],
 
+    // Ban the usage of `dangerouslySetInnerHTML`.
+    //
+    // Note that this rule does not catch the usage of `dangerouslySetInnerHTML`
+    // in non-native components [1].
+    // [1]: https://github.com/jsx-eslint/eslint-plugin-react/issues/3434
+    'react/no-danger': ['error'],
+
     // See https://emotion.sh/docs/eslint-plugin-react.
     'react/no-unknown-property': ['error', { ignore: ['css'] }],
 

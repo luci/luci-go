@@ -13,9 +13,10 @@
 // limitations under the License.
 
 import { ChevronRight, ExpandMore } from '@mui/icons-material';
-import { Box, IconButton, TableCell, styled } from '@mui/material';
+import { IconButton, TableCell, styled } from '@mui/material';
 import { useMemo } from 'react';
 
+import { SanitizedHtml } from '@/common/components/sanitized_html';
 import { BUILD_STATUS_CLASS_MAP } from '@/common/constants';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
 
@@ -51,7 +52,7 @@ export function SummaryHeadCell() {
   );
 }
 
-const MarkdownContainer = styled(Box)({
+const SummaryContainer = styled(SanitizedHtml)({
   marginBottom: '2px',
   padding: '0 10px',
   clear: 'both',
@@ -130,11 +131,9 @@ export function SummaryContentCell() {
             />
           </IconButton>
         </div>
-        <MarkdownContainer
+        <SummaryContainer
           className={`${BUILD_STATUS_CLASS_MAP[build.status]}-bg`}
-          dangerouslySetInnerHTML={{
-            __html: summaryHtml,
-          }}
+          html={summaryHtml}
         />
       </div>
     </TableCell>

@@ -14,6 +14,7 @@
 
 import { useLocalStorage } from 'react-use';
 
+import { SanitizedHtml } from '@/common/components/sanitized_html';
 import {
   ExpandableEntry,
   ExpandableEntryBody,
@@ -48,12 +49,12 @@ export function BuilderDescriptionSection({
         <h3>Builder Description</h3>
       </ExpandableEntryHeader>
       <ExpandableEntryBody ruler="none">
-        <div
-          css={{
+        <SanitizedHtml
+          html={descriptionHtml}
+          sx={{
             padding: '10px',
             backgroundColor: 'var(--block-background-color)',
           }}
-          dangerouslySetInnerHTML={{ __html: descriptionHtml }}
         />
       </ExpandableEntryBody>
     </ExpandableEntry>

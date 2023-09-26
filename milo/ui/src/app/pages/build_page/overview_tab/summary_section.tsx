@@ -13,8 +13,10 @@
 // limitations under the License.
 
 import { observer } from 'mobx-react-lite';
+import { useMemo } from 'react';
 
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
+import { SanitizedHtml } from '@/common/components/sanitized_html';
 import {
   BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_DISPLAY_MAP,
@@ -26,6 +28,15 @@ import { renderMarkdown } from '@/common/tools/markdown/utils';
 export const SummarySection = observer(() => {
   const store = useStore();
   const build = store.buildPage.build;
+
+  const summaryHtml = useMemo(
+    () =>
+      build?.data.summaryMarkdown
+        ? renderMarkdown(build?.data.summaryMarkdown)
+        : null,
+    [build?.data.summaryMarkdown],
+  );
+
   if (!build) {
     return <></>;
   }
@@ -85,12 +96,8 @@ export const SummarySection = observer(() => {
         }}
         className={`${BUILD_STATUS_CLASS_MAP[build.data.status]}-bg`}
       >
-        {build?.data.summaryMarkdown ? (
-          <div
-            dangerouslySetInnerHTML={{
-              __html: renderMarkdown(build.data.summaryMarkdown),
-            }}
-          />
+        {summaryHtml ? (
+          <SanitizedHtml html={summaryHtml} />
         ) : (
           <div css={{ fontWeight: 500 }}>
             Build{' '}
