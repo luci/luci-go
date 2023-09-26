@@ -92,6 +92,14 @@ func TestGetConfigSet(t *testing.T) {
 			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, "config_set is not specified")
 		})
 
+		Convey("invalid config set", func() {
+			res, err := srv.GetConfigSet(ctx, &pb.GetConfigSetRequest{
+				ConfigSet: "project/abc",
+			})
+			So(res, ShouldBeNil)
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `unknown domain "project" for config set "project/abc"; currently supported domains [projects, services]`)
+		})
+
 		Convey("invalid field mask", func() {
 			res, err := srv.GetConfigSet(ctx, &pb.GetConfigSetRequest{
 				ConfigSet: "projects/project",
@@ -113,6 +121,14 @@ func TestGetConfigSet(t *testing.T) {
 			})
 			So(res, ShouldBeNil)
 			So(err, ShouldHaveGRPCStatus, codes.NotFound, `requested resource not found or "user:random@example.com" dose not have permission to access it`)
+		})
+
+		Convey("non-existent configSet", func() {
+			res, err := srv.GetConfigSet(ctx, &pb.GetConfigSetRequest{
+				ConfigSet: "projects/random",
+			})
+			So(res, ShouldBeNil)
+			So(err, ShouldHaveGRPCStatus, codes.NotFound, `requested resource not found or "user:user@example.com" dose not have permission to access it`)
 		})
 
 		Convey("ok with default mask", func() {

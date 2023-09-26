@@ -35,10 +35,13 @@ import (
 // GetConfigSet fetches a single config set. Implements pb.ConfigsServer.
 func (c Configs) GetConfigSet(ctx context.Context, req *pb.GetConfigSetRequest) (*pb.ConfigSet, error) {
 	// Validate the request.
-	if req.ConfigSet == "" {
+	if req.GetConfigSet() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "config_set is not specified")
+	} else if err := config.Set(req.ConfigSet).Validate(); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
-	m, err := toConfigSetMask(req.GetFields())
+
+	m, err := toConfigSetMask(req.Fields)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid fields mask: %s", err)
 	}
