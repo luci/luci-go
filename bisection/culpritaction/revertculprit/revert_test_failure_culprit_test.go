@@ -306,6 +306,50 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				// Check counter incremented.
 				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
 			})
+
+			Convey("comment culprit with more than 5 test failures", func() {
+				for i := 1; i < 8; i++ {
+					testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+						ID:          int64(i),
+						Project:     "chromium",
+						IsPrimary:   i == 1,
+						Analysis:    tfa,
+						TestID:      fmt.Sprintf("testID%d", i),
+						VariantHash: fmt.Sprintf("varianthash%d", i),
+					})
+				}
+				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+					Return(culpritRes, nil).Times(1)
+				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+					Return(&gerritpb.ListChangesResponse{Changes: []*gerritpb.ChangeInfo{}}, nil).Times(1)
+				mockClient.Client.EXPECT().SetReview(gomock.Any(), proto.MatcherEqual(
+					&gerritpb.SetReviewRequest{
+						Project:    culpritRes.Changes[0].Project,
+						Number:     culpritRes.Changes[0].Number,
+						RevisionId: "current",
+						Message: fmt.Sprintf("LUCI Bisection has identified this"+
+							" change as the cause of a test failure.\n\n"+
+							"Sample build with failed test: %s\n"+
+							"Affected test(s):\n"+
+							"(testID1)[https://ci.chromium.org/ui/test/chromium/testID1?q=VHash%%3Avarianthash1]\n"+
+							"(testID2)[https://ci.chromium.org/ui/test/chromium/testID2?q=VHash%%3Avarianthash2]\n"+
+							"(testID3)[https://ci.chromium.org/ui/test/chromium/testID3?q=VHash%%3Avarianthash3]\n"+
+							"(testID4)[https://ci.chromium.org/ui/test/chromium/testID4?q=VHash%%3Avarianthash4]\n"+
+							"(testID5)[https://ci.chromium.org/ui/test/chromium/testID5?q=VHash%%3Avarianthash5]\n"+
+							"and 2 more ...\n\n"+
+							"If this is a false positive, please report it at %s", buildURL, bugURL),
+					},
+				)).Times(1)
+
+				err := processTestFailureCulpritTask(ctx, tfa.ID)
+				So(err, ShouldBeNil)
+				// Suspect action has been saved.
+				So(datastore.Get(ctx, suspect), ShouldBeNil)
+				So(suspect.HasCulpritComment, ShouldBeTrue)
+				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
+				// Check counter incremented.
+				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
+			})
 		})
 	})
 }

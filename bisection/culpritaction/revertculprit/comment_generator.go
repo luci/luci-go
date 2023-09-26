@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -76,6 +77,9 @@ var testCommentTemplate = template.Must(template.New("").Parse(
 Sample build with failed test: {{.BuildURL}}
 Affected test(s):
 {{.TestLinks}}
+{{- if gt .numTestLinksHidden 0}}
+and {{.numTestLinksHidden}} more ...
+{{- end}}
 
 If this is a false positive, please report it at {{.BugURL}}
 {{- end}}
@@ -91,6 +95,8 @@ LUCI Bisection has identified this change as the cause of a test failure.
 {{end}}
 	`))
 
+const maxTestLink = 5
+
 func testFailureComment(ctx context.Context, suspect *model.Suspect, reason, templateName string) (string, error) {
 	tfs, err := datastoreutil.FetchTestFailuresForSuspect(ctx, suspect)
 	if err != nil {
@@ -101,21 +107,33 @@ func testFailureComment(ctx context.Context, suspect *model.Suspect, reason, tem
 		return "", err
 	}
 	buildURL := util.ConstructBuildURL(ctx, bbid)
+	testFailures := tfs.NonDiverged()
+	sortTestFailures(testFailures)
 	testLinks := []string{}
-	for _, tf := range tfs.NonDiverged() {
+	for _, tf := range testFailures[:min(maxTestLink, len(testFailures))] {
 		testLinks = append(testLinks, fmt.Sprintf("(%s)[%s]", tf.TestID, util.ConstructTestHistoryURL(tf.Project, tf.TestID, tf.VariantHash)))
 	}
 	bugURL := util.ConstructBuganizerURLForTestAnalysis(suspect.ReviewUrl, tfs.Primary().AnalysisKey.IntID())
 	// TODO(beining@): add analysis URL when the bisection UI is ready.
 	var b bytes.Buffer
 	err = testCommentTemplate.ExecuteTemplate(&b, templateName, map[string]any{
-		"TestLinks": strings.Join(testLinks, "\n"),
-		"BugURL":    bugURL,
-		"BuildURL":  buildURL,
-		"Reason":    reason,
+		"TestLinks":          strings.Join(testLinks, "\n"),
+		"numTestLinksHidden": len(testFailures) - maxTestLink,
+		"BugURL":             bugURL,
+		"BuildURL":           buildURL,
+		"Reason":             reason,
 	})
 	if err != nil {
 		return "", err
 	}
 	return b.String(), nil
+}
+
+func sortTestFailures(tfs []*model.TestFailure) {
+	sort.Slice(tfs, func(i, j int) bool {
+		if tfs[i].TestID == tfs[j].TestID {
+			return tfs[i].VariantHash < tfs[j].VariantHash
+		}
+		return tfs[i].TestID < tfs[j].TestID
+	})
 }
