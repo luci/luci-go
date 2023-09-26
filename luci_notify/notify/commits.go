@@ -65,7 +65,7 @@ type Checkout map[string]string
 
 // NewCheckout creates a new Checkout populated with the repositories and revision
 // found in the GitilesCommits object.
-func NewCheckout(commits notifypb.GitilesCommits) Checkout {
+func NewCheckout(commits *notifypb.GitilesCommits) Checkout {
 	results := make(Checkout, len(commits.GetCommits()))
 	for _, gitilesCommit := range commits.GetCommits() {
 		results[protoutil.GitilesRepoURL(gitilesCommit)] = gitilesCommit.Id
@@ -75,8 +75,11 @@ func NewCheckout(commits notifypb.GitilesCommits) Checkout {
 
 // ToGitilesCommits converts the Checkout into a set of GitilesCommits which may
 // be stored as part of a config.Builder.
-func (c Checkout) ToGitilesCommits() notifypb.GitilesCommits {
-	result := notifypb.GitilesCommits{
+func (c Checkout) ToGitilesCommits() *notifypb.GitilesCommits {
+	if len(c) == 0 {
+		return nil
+	}
+	result := &notifypb.GitilesCommits{
 		Commits: make([]*buildbucketpb.GitilesCommit, 0, len(c)),
 	}
 	for repo, commit := range c {

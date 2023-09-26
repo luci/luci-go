@@ -61,7 +61,7 @@ type Builder struct {
 	// GitilesCommits are the gitiles commits checked out by the most recent build
 	// encountered that had a non-empty checkout. It can also be used to compute a
 	// blamelist.
-	GitilesCommits notifypb.GitilesCommits
+	GitilesCommits *notifypb.GitilesCommits `gae:",legacy"`
 
 	// Extra and unrecognized fields will be loaded without issue but not saved.
 	_ datastore.PropertyMap `gae:"-,extra"`

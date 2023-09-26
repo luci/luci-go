@@ -25,29 +25,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
-var _ datastore.PropertyConverter = (*GitilesCommits)(nil)
-
-// ToProperty implements datastore.PropertyConverter. It causes an embedded
-// 'GitilesCommits' to serialize to an unindexed '[]byte' when used with the
-// "go.chromium.org/luci/gae" library.
-func (p *GitilesCommits) ToProperty() (prop datastore.Property, err error) {
-	data, err := proto.Marshal(p)
-	if err == nil {
-		prop.SetValue(data, datastore.NoIndex)
-	}
-	return
-}
-
-// FromProperty implements datastore.PropertyConverter. It parses a '[]byte'
-// into an embedded 'GitilesCommits' when used with the "go.chromium.org/luci/gae" library.
-func (p *GitilesCommits) FromProperty(prop datastore.Property) error {
-	data, err := prop.Project(datastore.PTBytes)
-	if err != nil {
-		return err
-	}
-	return proto.Unmarshal(data.([]byte), p)
-}
-
 var _ datastore.PropertyConverter = (*Notifications)(nil)
 
 // ToProperty implements datastore.PropertyConverter. It causes an embedded

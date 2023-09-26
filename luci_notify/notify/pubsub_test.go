@@ -294,7 +294,7 @@ func TestHandleBuild(t *testing.T) {
 			So(builder.Revision, ShouldResemble, revision)
 			So(builder.Status, ShouldEqual, build.Status)
 			expectCommits := checkout.ToGitilesCommits()
-			So(&builder.GitilesCommits, ShouldResembleProto, &expectCommits)
+			So(builder.GitilesCommits, ShouldResembleProto, expectCommits)
 		}
 
 		propEmail := EmailNotify{

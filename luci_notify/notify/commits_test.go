@@ -74,7 +74,7 @@ var (
 )
 
 func TestCheckout(t *testing.T) {
-	gitilesCheckout := notifypb.GitilesCommits{
+	gitilesCheckout := &notifypb.GitilesCommits{
 		Commits: []*buildbucketpb.GitilesCommit{
 			{
 				Host:    defaultGitilesHost,
@@ -89,10 +89,10 @@ func TestCheckout(t *testing.T) {
 		},
 	}
 	Convey(`Conversion with GitilesCommits Empty`, t, func() {
-		checkout := NewCheckout(notifypb.GitilesCommits{})
+		checkout := NewCheckout(&notifypb.GitilesCommits{})
 		So(checkout, ShouldHaveLength, 0)
 		result := checkout.ToGitilesCommits()
-		So(&result, ShouldResembleProto, &notifypb.GitilesCommits{})
+		So(result, ShouldBeNil)
 	})
 
 	Convey(`Conversion with GitilesCommits Non-Empty`, t, func() {
@@ -102,7 +102,7 @@ func TestCheckout(t *testing.T) {
 			protoutil.GitilesRepoURL(gitilesCheckout.Commits[1]): rev2,
 		})
 		result := checkout.ToGitilesCommits()
-		So(&result, ShouldResembleProto, &gitilesCheckout)
+		So(result, ShouldResembleProto, gitilesCheckout)
 	})
 
 	Convey(`Filter repositories from allowlist`, t, func() {

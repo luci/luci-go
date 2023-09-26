@@ -233,7 +233,7 @@ func TestConfigIngestion(t *testing.T) {
 			chromiumBuilder := builders[0]
 			chromiumBuilder.Status = buildbucketpb.Status_FAILURE
 			chromiumBuilder.Revision = "abc123"
-			chromiumBuilder.GitilesCommits = notifypb.GitilesCommits{
+			chromiumBuilder.GitilesCommits = &notifypb.GitilesCommits{
 				Commits: []*buildbucketpb.GitilesCommit{
 					{
 						Host:    "chromium.googlesource.com",
@@ -268,7 +268,7 @@ func TestConfigIngestion(t *testing.T) {
 			// size caches which are updated.
 			So(newBuilders[0].Status, ShouldEqual, chromiumBuilder.Status)
 			So(newBuilders[0].Revision, ShouldResemble, chromiumBuilder.Revision)
-			So(&newBuilders[0].GitilesCommits, ShouldResembleProto, &chromiumBuilder.GitilesCommits)
+			So(newBuilders[0].GitilesCommits, ShouldResembleProto, chromiumBuilder.GitilesCommits)
 
 			var newTreeClosers []*TreeCloser
 			So(datastore.GetAll(c, datastore.NewQuery("TreeCloser").Ancestor(chromiumKey), &newTreeClosers), ShouldBeNil)

@@ -15,4 +15,4 @@
 package config
 
 //go:generate cproto -discovery=false
-//go:generate proto-gae -type GitilesCommits -type Notifications -type TreeCloser
+//go:generate proto-gae -type Notifications -type TreeCloser
