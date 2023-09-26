@@ -101,6 +101,7 @@ type Test struct {
 	TQ *tqtesting.Scheduler
 	// SucceededTQTasks is a list of the TQ tasks that were executed successfully.
 	SucceededTQTasks tqtesting.TaskList
+	FailedTQTasks    tqtesting.TaskList
 
 	// Clock allows to move time forward.
 	// By default, the time is moved automatically is something waits on it.
@@ -191,6 +192,7 @@ func (t *Test) SetUp(testingT *testing.T) (context.Context, func()) {
 	t.TQDispatcher = &tq.Dispatcher{}
 	ctx, t.TQ = tq.TestingContext(ctx, t.TQDispatcher)
 	t.TQ.TaskSucceeded = tqtesting.TasksCollector(&t.SucceededTQTasks)
+	t.TQ.TaskFailed = tqtesting.TasksCollector(&t.FailedTQTasks)
 
 	if t.GFake == nil {
 		t.GFake = &gf.Fake{}

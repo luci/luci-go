@@ -321,7 +321,7 @@ message Access {
 // The primary goal of the CLError is to transport via CV guts sufficient
 // information to generate a clear user-friendly error message.
 message CLError {
-  // Next tag is 10.
+  // Next tag is 11.
   oneof kind {
     bool owner_lacks_email = 1;
     WatchedByManyConfigGroups watched_by_many_config_groups = 2;
@@ -333,6 +333,7 @@ message CLError {
     ReusedTrigger reused_trigger = 7;
     // Set to true when the footer "Commit: false" is present.
     bool commit_blocked = 9;
+    TriggerDeps trigger_deps = 10;
   }
 
   message WatchedByManyConfigGroups {
@@ -381,6 +382,23 @@ message CLError {
   message ReusedTrigger {
     // ID of the finalized Run.
     string run = 1;
+  }
+
+  // TriggerDeps indicates failures for triggering deps.
+  message TriggerDeps {
+    message PermissionDenied {
+      int64 clid = 1;
+      // If set, the vote was attempted on behalf of the Gerrit user.
+      string email = 2;
+    }
+    // IDs of CLs for which trigger attempts failed due to permission denied.
+    repeated PermissionDenied permission_denied = 1;
+    // IDs of CLs for which trigger attempts failed because they were not found
+    // in Gerrit.
+    repeated int64 not_found = 2;
+    // IDs of CLs for which trigger attempts failed due to internal Gerrit
+    // error.
+    repeated int64 internal_gerrit_error = 3;
   }
 }
 

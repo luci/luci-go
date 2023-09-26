@@ -16,6 +16,7 @@
 package trigger
 
 import (
+	"fmt"
 	"time"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
@@ -224,4 +225,13 @@ func applyAdditionalMode(ci *gerritpb.ChangeInfo, mode *cfgpb.Mode, res *run.Tri
 		}
 	}
 	return false
+}
+
+// CQVoteByMode returns the numeric Commit-Queue value for a given Run mode.
+func CQVoteByMode(m run.Mode) int32 {
+	val, ok := modeToVote[m]
+	if !ok {
+		panic(fmt.Errorf("CQVoteByMode: invalid mode %q", m))
+	}
+	return val
 }

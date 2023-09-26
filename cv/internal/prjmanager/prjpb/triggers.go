@@ -20,13 +20,13 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/copyonwrite"
 )
 
-// MaxTriggeringCLDuration limits the time that a TQ task has to execute
+// MaxTriggeringCLsDuration limits the time that a TQ task has to execute
 // a given TrigggeringCL task.
 //
 // Once the deadline is exceeded, PM will will remove the task from PStat
 // to retriage the CL and see if it has to reschedule another TriggeringCL
 // for the CL (or its deps).
-const MaxTriggeringCLDuration = 10 * time.Minute
+const MaxTriggeringCLsDuration = 8 * time.Minute
 
 // COWTriggeringCLs copy-on-write modifies TriggeringCLs.
 func (p *PState) COWTriggeringCLs(m func(*TriggeringCL) *TriggeringCL, toAdd []*TriggeringCL) ([]*TriggeringCL, bool) {

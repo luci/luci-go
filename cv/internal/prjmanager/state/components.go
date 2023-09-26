@@ -408,7 +408,7 @@ func (h *Handler) addCLsToTrigger(ctx context.Context, s *State, ts []*prjpb.Tri
 	// deduplication. If TriggeringCLs are grouped by a TQ task, then PM would
 	// need to find a way to ensure that there is no duplicate across multiple
 	// TQ messages.
-	deadline := timestamppb.New(clock.Now(ctx).Add(prjpb.MaxTriggeringCLDuration))
+	deadline := timestamppb.New(clock.Now(ctx).Add(prjpb.MaxTriggeringCLsDuration))
 	opInt := deadline.AsTime().Unix()
 	tCLs := make([]*prjpb.TriggeringCL, 0, len(ts)*8)
 	for _, t := range ts {
