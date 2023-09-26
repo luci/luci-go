@@ -16,15 +16,20 @@ package clients
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -91,7 +96,8 @@ func (p *prodClient) UploadIfMissing(ctx context.Context, bucket, object string,
 		return false, err
 	}
 	if err := w.Close(); err != nil {
-		if e, ok := err.(*googleapi.Error); ok && e.Code == http.StatusPreconditionFailed {
+		var apiErr *googleapi.Error
+		if errors.As(err, &apiErr) && apiErr.Code == http.StatusPreconditionFailed {
 			// The provided condition has already meet, no uploads are done.
 			return false, nil
 		}
@@ -118,9 +124,36 @@ func (p *prodClient) Read(ctx context.Context, bucket, object string, decompress
 //
 // Returns storage.ErrObjectNotExist if object is not found.
 func (p *prodClient) Touch(ctx context.Context, bucket, object string) error {
-	_, err := p.client.Bucket(bucket).Object(object).Update(ctx, storage.ObjectAttrsToUpdate{
-		CustomTime: clock.Now(ctx).UTC(),
-	})
+	obj := p.client.Bucket(bucket).Object(object)
+	err := retry.Retry(ctx, transient.Only(retry.Default),
+		func() error {
+			attr, err := obj.Attrs(ctx)
+			switch {
+			case err != nil:
+				return err
+			case !attr.CustomTime.IsZero() && clock.Now(ctx).Sub(attr.CustomTime) < 10*time.Minute:
+				// If custom time is updated within last 10 minute, then skip updating.
+				return nil
+			}
+			// Conditionally update the storage metadata and retry on pre-condition
+			// failure. This is to mitigate the concurrent modification error occurs
+			// when the same requester sends multiple validation requests that contain
+			// the exact same config file. As a request, all the request processors
+			// will contend to update the metadata of the same object.
+			_, err = obj.
+				If(storage.Conditions{MetagenerationMatch: attr.Metageneration}).
+				Update(ctx, storage.ObjectAttrsToUpdate{
+					CustomTime: clock.Now(ctx).UTC(),
+				})
+			var apiErr *googleapi.Error
+			if errors.As(err, &apiErr) && apiErr.Code == http.StatusPreconditionFailed {
+				// Tag precondition fail as transient to trigger a retry.
+				return transient.Tag.Apply(err)
+			}
+			return err
+		}, func(err error, d time.Duration) {
+			logging.Warningf(ctx, "got err: %s when touching the object. Retrying in %s", err, d)
+		})
 	return err
 }
 

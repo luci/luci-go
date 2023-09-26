@@ -82,7 +82,7 @@ func (v *Validator) Examine(ctx context.Context, cs config.Set, files []File) (*
 			case errors.Is(err, context.Canceled):
 				logging.Warningf(ctx, "touching config file %q is cancelled", file.GetPath())
 				return err
-			case err == storage.ErrObjectNotExist:
+			case errors.Is(err, storage.ErrObjectNotExist):
 				urls, err := common.CreateSignedURLs(ectx, v.GsClient, []gs.Path{file.GetGSPath()}, http.MethodPut, signedPutHeaders)
 				switch {
 				case errors.Is(err, context.Canceled):
