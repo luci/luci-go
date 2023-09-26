@@ -903,7 +903,7 @@ func TestReImport(t *testing.T) {
 			}
 			importer.Reimport(rctx)
 			So(rsp.Code, ShouldEqual, http.StatusForbidden)
-			So(rsp.Body.String(), ShouldContainSubstring, `"user:random@example.com" is now allowed to reimport services/myservice`)
+			So(rsp.Body.String(), ShouldContainSubstring, `"user:random@example.com" is not allowed to reimport services/myservice`)
 		})
 
 		Convey("config set not found", func() {

@@ -24,14 +24,10 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/openid"
-	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
-	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 
@@ -92,11 +88,6 @@ func main() {
 			GSBucket:  gsBucket,
 		}
 
-		mw := router.MiddlewareChain{
-			auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
-				AudienceCheck: openid.AudienceMatchesHost,
-			}),
-		}
 		configsServer := &rpc.Configs{
 			Validator:          validator,
 			GSValidationBucket: gsBucket,
@@ -105,9 +96,7 @@ func main() {
 		cron.RegisterHandler("update-services", service.Update)
 		cron.RegisterHandler("delete-configs", retention.DeleteStaleConfigs)
 		importer.RegisterImportConfigsCron(&tq.Default)
-		// Protect against CSRF attacks from the web.
-		srv.Routes.POST("/internal/reimport/:ConfigSet", mw.Extend(xsrf.WithTokenCheck), importer.Reimport)
-		ui.InstallHandlers(srv, configsServer)
+		ui.InstallHandlers(srv, configsServer, importer)
 		return nil
 	})
 }

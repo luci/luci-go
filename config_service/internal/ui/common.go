@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/server/templates"
 	bootstrap "go.chromium.org/luci/web/third_party/bootstrap/v5"
 
+	"go.chromium.org/luci/config_service/internal/importer"
 	configpb "go.chromium.org/luci/config_service/proto"
 )
 
@@ -49,7 +50,7 @@ var pageStartTimeContextKey = "start time for the frontend page"
 var configsServerContextKey = "configsServer for the front page"
 
 // InstallHandlers adds HTTP handlers that render HTML pages.
-func InstallHandlers(srv *server.Server, configsSrv configpb.ConfigsServer) {
+func InstallHandlers(srv *server.Server, configsSrv configpb.ConfigsServer, importer importer.Importer) {
 	m := router.NewMiddlewareChain(
 		func(c *router.Context, next router.Handler) {
 			reqCtx := c.Request.Context()
@@ -73,6 +74,7 @@ func InstallHandlers(srv *server.Server, configsSrv configpb.ConfigsServer) {
 
 	srv.Routes.GET("/", m, renderErr(indexPage))
 	srv.Routes.GET("/config_set/*ConfigSet", m, renderErr(configSetPage))
+	srv.Routes.POST("/internal/frontend/reimport/*ConfigSet", m, importer.Reimport)
 }
 
 // prepareTemplates configures templates.Bundle used by all UI handlers.

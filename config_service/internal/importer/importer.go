@@ -540,7 +540,7 @@ func (i *Importer) validateAndPopulateAttempt(ctx context.Context, cfgSet config
 func (i *Importer) Reimport(c *router.Context) {
 	ctx := c.Request.Context()
 	caller := auth.CurrentIdentity(ctx)
-	cs := config.Set(c.Params.ByName("ConfigSet"))
+	cs := config.Set(strings.Trim(c.Params.ByName("ConfigSet"), "/"))
 
 	if cs == "" {
 		http.Error(c.Writer, "config set is not specified", http.StatusBadRequest)
@@ -557,7 +557,7 @@ func (i *Importer) Reimport(c *router.Context) {
 		return
 	case !hasPerm:
 		logging.Infof(ctx, "%q does not have access to %s", caller, cs)
-		http.Error(c.Writer, fmt.Sprintf("%q is now allowed to reimport %s", caller, cs), http.StatusForbidden)
+		http.Error(c.Writer, fmt.Sprintf("%q is not allowed to reimport %s", caller, cs), http.StatusForbidden)
 		return
 	}
 
