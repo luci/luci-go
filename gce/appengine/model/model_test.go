@@ -860,6 +860,18 @@ func TestGetInstanceReturnsAlpha(t *testing.T) {
 			},
 			output: &computealpha.Instance{},
 		},
+		{
+			name: "hostname",
+			input: &VM{
+				Hostname: "awesome-host",
+				Attributes: config.VM{
+					GcpChannel: config.GCPChannel_GCP_CHANNEL_ALPHA,
+				},
+			},
+			output: &computealpha.Instance{
+				Name: "awesome-host",
+			},
+		},
 	}
 
 	for _, tt := range cases {

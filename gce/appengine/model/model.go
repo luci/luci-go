@@ -348,7 +348,15 @@ func (vm *VM) GetInstance() ComputeInstance {
 	out := ComputeInstance{}
 	switch vm.getGCPChannel() {
 	case config.GCPChannel_GCP_CHANNEL_ALPHA:
-		out.Alpha = toalpha.Instance(stableInstance)
+		alphaInstance := toalpha.Instance(stableInstance)
+		// TODO(gregorynisbet): Add helper function to filter out default values for performance monitoring units.
+		if pmu := vm.Attributes.GetPerformanceMonitoringUnit(); pmu.Number() != 0 {
+			if alphaInstance.AdvancedMachineFeatures == nil {
+				alphaInstance.AdvancedMachineFeatures = &computealpha.AdvancedMachineFeatures{}
+			}
+			alphaInstance.AdvancedMachineFeatures.PerformanceMonitoringUnit = pmu.String()
+		}
+		out.Alpha = alphaInstance
 	default:
 		out.Stable = stableInstance
 	}
