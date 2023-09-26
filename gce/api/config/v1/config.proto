@@ -124,6 +124,14 @@ enum GCPChannel {
   GCP_CHANNEL_ALPHA = 3;
 }
 
+// PerformanceMonitoringUnit tracks the types of performance monitoring units to attach to a given instance.
+enum PerformanceMonitoringUnit {
+  PERFORMANCE_MONITORING_UNIT_UNSPECIFIED = 0; // This is not a mistake! The underlying cloud API expects the string "PERFORMANCE_MONITORING_UNIT_UNSPECIFIED".
+  ARCHITECTURAL = 1;
+  ENHANCED = 2;
+  STANDARD = 3;
+}
+
 // A description of a VM.
 // https://cloud.google.com/compute/docs/reference/rest/v1/instances.
 message VM {
@@ -183,6 +191,9 @@ message VM {
 
   // gcp_channel of the GCP api to use, e.g. stable or alpha.
   GCPChannel gcp_channel = 18;
+
+  // The performance monitoring unit is the type of performance monitoring unit.
+  PerformanceMonitoringUnit performance_monitoring_unit = 19;
 }
 
 // A length of time.
