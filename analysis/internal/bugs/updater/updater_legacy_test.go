@@ -17,14 +17,11 @@ package updater
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 	"testing"
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/analysis"
@@ -43,17 +40,16 @@ import (
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestUpdate(t *testing.T) {
+// Contains tests for old (non-policy based) bug management.
+func TestLegacyUpdate(t *testing.T) {
 	Convey("With bug updater", t, func() {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx = memory.Use(ctx)
@@ -121,15 +117,14 @@ func TestUpdate(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		opts := updateOptions{
-			uiBaseURL:                "https://luci-analysis-test.appspot.com",
-			project:                  project,
-			analysisClient:           analysisClient,
-			buganizerClient:          buganizerClient,
-			monorailClient:           monorailClient,
-			maxBugsFiledPerRun:       1,
-			reclusteringProgress:     progress,
-			runTimestamp:             time.Date(2100, 2, 2, 2, 2, 2, 2, time.UTC),
-			usePolicyBasedManagement: true,
+			uiBaseURL:            "https://luci-analysis-test.appspot.com",
+			project:              project,
+			analysisClient:       analysisClient,
+			buganizerClient:      buganizerClient,
+			monorailClient:       monorailClient,
+			maxBugsFiledPerRun:   1,
+			reclusteringProgress: progress,
+			runTimestamp:         time.Date(2100, 2, 2, 2, 2, 2, 2, time.UTC),
 		}
 
 		// Mock current time. This is needed to control behaviours like
@@ -190,112 +185,154 @@ func TestUpdate(t *testing.T) {
 				return len(buganizerStore.Issues) + len(monorailStore.Issues)
 			}
 
-			// Bug-filing threshold met.
-			suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
-				OneDay: metrics.Counts{Residual: 100},
-			}
-			expectedRule.BugManagementState.PolicyState["exoneration-policy"].IsActive = true
-			expectedRule.BugManagementState.PolicyState["exoneration-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
-
 			Convey("bug filing threshold must be met to file a new bug", func() {
-				Convey("Reason cluster", func() {
-					Convey("Above threshold", func() {
-						suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
+				Convey("threshold not met", func() {
+					err = updateBugsForProject(ctx, opts)
+					So(err, ShouldBeNil)
 
-						// Act
-						err = updateBugsForProject(ctx, opts)
+					// No failure association rules.
+					So(verifyRulesResemble(ctx, nil), ShouldBeNil)
 
-						// Verify
-						So(err, ShouldBeNil)
+					// No issues.
+					So(issueCount(), ShouldEqual, 0)
+				})
+				Convey("1d unexpected failures", func() {
+					Convey("Reason cluster", func() {
+						Convey("Above threshold", func() {
+							suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
 
-						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-						So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
-						So(issueCount(), ShouldEqual, 1)
+							// Act
+							err = updateBugsForProject(ctx, opts)
 
-						// Further updates do nothing.
-						err = updateBugsForProject(ctx, opts)
+							// Verify
+							So(err, ShouldBeNil)
 
-						// Verify
-						So(err, ShouldBeNil)
+							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+							So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
+							So(issueCount(), ShouldEqual, 1)
 
-						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-						So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
-						So(issueCount(), ShouldEqual, 1)
+							// Further updates do nothing.
+							err = updateBugsForProject(ctx, opts)
+
+							// Verify
+							So(err, ShouldBeNil)
+
+							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+							So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
+							So(issueCount(), ShouldEqual, 1)
+						})
+						Convey("Below threshold", func() {
+							suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 99}}
+
+							// Act
+							err = updateBugsForProject(ctx, opts)
+
+							// Verify
+							So(err, ShouldBeNil)
+
+							// No bug should be created.
+							So(verifyRulesResemble(ctx, nil), ShouldBeNil)
+							So(issueCount(), ShouldEqual, 0)
+						})
 					})
-					Convey("Below threshold", func() {
-						suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 99}}
-						expectedRule.BugManagementState.PolicyState["exoneration-policy"].IsActive = false
-						expectedRule.BugManagementState.PolicyState["exoneration-policy"].LastActivationTime = nil
+					Convey("Test name cluster", func() {
+						suggestedClusters[1].ClusterID = testIDClusterID(compiledCfg, "ui-test-1")
+						suggestedClusters[1].TopTestIDs = []analysis.TopCount{
+							{Value: "ui-test-1", Count: 10},
+						}
+						expectedRule.RuleDefinition = `test = "ui-test-1"`
+						expectedRule.SourceCluster = suggestedClusters[1].ClusterID
+						expectedBuganizerBug.ExpectedTitle = "ui-test-1"
+						expectedBuganizerBug.ExpectedContent = []string{"ui-test-1"}
 
-						// Act
-						err = updateBugsForProject(ctx, opts)
+						// 34% more impact is required for a test name cluster to
+						// be filed, compared to a failure reason cluster.
+						Convey("Above threshold", func() {
+							suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 134}}
 
-						// Verify
-						So(err, ShouldBeNil)
+							// Act
+							err = updateBugsForProject(ctx, opts)
 
-						// No bug should be created.
-						So(verifyRulesResemble(ctx, nil), ShouldBeNil)
-						So(issueCount(), ShouldEqual, 0)
+							// Verify
+							So(err, ShouldBeNil)
+							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+							So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
+							So(issueCount(), ShouldEqual, 1)
+
+							// Further updates do nothing.
+							err = updateBugsForProject(ctx, opts)
+
+							// Verify
+							So(err, ShouldBeNil)
+							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+							So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
+							So(issueCount(), ShouldEqual, 1)
+						})
+						Convey("Below threshold", func() {
+							suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 133}}
+
+							// Act
+							err = updateBugsForProject(ctx, opts)
+
+							// Verify
+							So(err, ShouldBeNil)
+
+							// No bug should be created.
+							So(verifyRulesResemble(ctx, nil), ShouldBeNil)
+							So(issueCount(), ShouldEqual, 0)
+						})
 					})
 				})
-				Convey("Test name cluster", func() {
-					suggestedClusters[1].ClusterID = testIDClusterID(compiledCfg, "ui-test-1")
-					suggestedClusters[1].TopTestIDs = []analysis.TopCount{
-						{Value: "ui-test-1", Count: 10},
-					}
-					expectedRule.RuleDefinition = `test = "ui-test-1"`
-					expectedRule.SourceCluster = suggestedClusters[1].ClusterID
-					expectedBuganizerBug.ExpectedTitle = "ui-test-1"
-					expectedBuganizerBug.ExpectedContent = []string{"ui-test-1"}
+				Convey("3d unexpected failures", func() {
+					suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{ThreeDay: metrics.Counts{Residual: 300}}
 
-					// 34% more impact is required for a test name cluster to
-					// be filed, compared to a failure reason cluster.
-					Convey("Above threshold", func() {
-						suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 134}}
+					// Act
+					err = updateBugsForProject(ctx, opts)
 
-						// Act
-						err = updateBugsForProject(ctx, opts)
+					// Verify
+					So(err, ShouldBeNil)
+					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+					So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
+					So(issueCount(), ShouldEqual, 1)
 
-						// Verify
-						So(err, ShouldBeNil)
-						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-						So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
-						So(issueCount(), ShouldEqual, 1)
+					// Further updates do nothing.
+					err = updateBugsForProject(ctx, opts)
 
-						// Further updates do nothing.
-						err = updateBugsForProject(ctx, opts)
+					// Verify
+					So(err, ShouldBeNil)
 
-						// Verify
-						So(err, ShouldBeNil)
-						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-						So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
-						So(issueCount(), ShouldEqual, 1)
-					})
-					Convey("Below threshold", func() {
-						suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 133}}
-						expectedRule.BugManagementState.PolicyState["exoneration-policy"].IsActive = false
-						expectedRule.BugManagementState.PolicyState["exoneration-policy"].LastActivationTime = nil
+					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+					So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
+					So(issueCount(), ShouldEqual, 1)
+				})
+				Convey("7d unexpected failures", func() {
+					suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{ThreeDay: metrics.Counts{Residual: 700}}
 
-						// Act
-						err = updateBugsForProject(ctx, opts)
+					// Act
+					err = updateBugsForProject(ctx, opts)
 
-						// Verify
-						So(err, ShouldBeNil)
+					// Verify
+					So(err, ShouldBeNil)
+					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+					So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
+					So(issueCount(), ShouldEqual, 1)
 
-						// No bug should be created.
-						So(verifyRulesResemble(ctx, nil), ShouldBeNil)
-						So(issueCount(), ShouldEqual, 0)
-					})
+					// Further updates do nothing.
+					err = updateBugsForProject(ctx, opts)
+
+					// Verify
+					So(err, ShouldBeNil)
+					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+					So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
+					So(issueCount(), ShouldEqual, 1)
 				})
 			})
 			Convey("policies are correctly activated when new bugs are filed", func() {
 				// Bug-filing threshold met.
-				suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
-				expectedRule.BugManagementState.PolicyState["exoneration-policy"].IsActive = true
-				expectedRule.BugManagementState.PolicyState["exoneration-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+				suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
 
-				Convey("other policy activation threshold not met", func() {
-					suggestedClusters[1].MetricValues[metrics.HumanClsFailedPresubmit.ID] = metrics.TimewiseCounts{SevenDay: metrics.Counts{Residual: 9}}
+				Convey("policy activation threshold not met", func() {
+					suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 99}}
 
 					// Act
 					err = updateBugsForProject(ctx, opts)
@@ -306,10 +343,10 @@ func TestUpdate(t *testing.T) {
 					So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
 					So(issueCount(), ShouldEqual, 1)
 				})
-				Convey("other policy activation threshold met", func() {
-					suggestedClusters[1].MetricValues[metrics.HumanClsFailedPresubmit.ID] = metrics.TimewiseCounts{SevenDay: metrics.Counts{Residual: 10}}
-					expectedRule.BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-					expectedRule.BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+				Convey("policy activation threshold met", func() {
+					suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
+					expectedRule.BugManagementState.PolicyState["exoneration-policy"].IsActive = true
+					expectedRule.BugManagementState.PolicyState["exoneration-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
 
 					// Act
 					err = updateBugsForProject(ctx, opts)
@@ -323,11 +360,9 @@ func TestUpdate(t *testing.T) {
 			})
 			Convey("dispersion criteria must be met to file a new bug", func() {
 				// Cluster meets bug-filing threshold.
-				suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
+				suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{
 					OneDay: metrics.Counts{Residual: 100},
 				}
-				expectedRule.BugManagementState.PolicyState["exoneration-policy"].IsActive = true
-				expectedRule.BugManagementState.PolicyState["exoneration-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
 
 				Convey("met via User CLs with failures", func() {
 					suggestedClusters[1].DistinctUserCLsWithFailures7d.Residual = 3
@@ -371,9 +406,7 @@ func TestUpdate(t *testing.T) {
 			})
 			Convey("duplicate bugs are suppressed", func() {
 				Convey("where a rule was recently filed for the same suggested cluster, and reclustering is pending", func() {
-					suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
-					expectedRule.BugManagementState.PolicyState["exoneration-policy"].IsActive = true
-					expectedRule.BugManagementState.PolicyState["exoneration-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+					suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
 
 					createTime := time.Date(2021, time.January, 5, 12, 30, 0, 0, time.UTC)
 					buganizerStore.StoreIssue(ctx, buganizer.NewFakeIssue(1))
@@ -429,9 +462,7 @@ func TestUpdate(t *testing.T) {
 					So(issueCount(), ShouldEqual, 2)
 				})
 				Convey("when re-clustering to new algorithms", func() {
-					suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
-					expectedRule.BugManagementState.PolicyState["exoneration-policy"].IsActive = true
-					expectedRule.BugManagementState.PolicyState["exoneration-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+					suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
 
 					err = runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{
 						runs.NewRun(0).
@@ -455,9 +486,7 @@ func TestUpdate(t *testing.T) {
 					So(issueCount(), ShouldEqual, 0)
 				})
 				Convey("when re-clustering to new config", func() {
-					suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
-					expectedRule.BugManagementState.PolicyState["exoneration-policy"].IsActive = true
-					expectedRule.BugManagementState.PolicyState["exoneration-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+					suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
 
 					err = runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{
 						runs.NewRun(0).
@@ -482,6 +511,9 @@ func TestUpdate(t *testing.T) {
 				})
 			})
 			Convey("bugs are routed to the correct issue tracker and component", func() {
+				suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{
+					OneDay: metrics.Counts{Residual: 100},
+				}
 
 				suggestedClusters[1].TopBuganizerComponents = []analysis.TopCount{
 					{Value: "77777", Count: 20},
@@ -625,21 +657,19 @@ func TestUpdate(t *testing.T) {
 			})
 		})
 		Convey("With both failure reason and test name clusters above bug-filing threshold", func() {
-			// Reason cluster above the 1-day exoneration threshold.
+			// Reason cluster above the 3-day failure threshold.
 			suggestedClusters[2] = makeReasonCluster(compiledCfg, 2)
-			suggestedClusters[2].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
-				OneDay:   metrics.Counts{Residual: 100},
-				ThreeDay: metrics.Counts{Residual: 100},
-				SevenDay: metrics.Counts{Residual: 100},
+			suggestedClusters[2].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{
+				ThreeDay: metrics.Counts{Residual: 400},
+				SevenDay: metrics.Counts{Residual: 400},
 			}
 			suggestedClusters[2].PostsubmitBuildsWithFailures7d.Residual = 1
 
 			// Test name cluster with 33% more impact.
 			suggestedClusters[1] = makeTestNameCluster(compiledCfg, 3)
-			suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
-				OneDay:   metrics.Counts{Residual: 133},
-				ThreeDay: metrics.Counts{Residual: 133},
-				SevenDay: metrics.Counts{Residual: 133},
+			suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{
+				ThreeDay: metrics.Counts{Residual: 532},
+				SevenDay: metrics.Counts{Residual: 532},
 			}
 			suggestedClusters[1].PostsubmitBuildsWithFailures7d.Residual = 1
 
@@ -662,13 +692,12 @@ func TestUpdate(t *testing.T) {
 				So(rs[0].SourceCluster.IsFailureReasonCluster(), ShouldBeTrue)
 			})
 			Convey("test name clusters can be filed if significantly more impact", func() {
-				// Increase impact of the test name cluster so that the
+				// Reduce impact of the reason-based cluster so that the
 				// test name cluster has >34% more impact than the reason
 				// cluster.
-				suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
-					OneDay:   metrics.Counts{Residual: 135},
-					ThreeDay: metrics.Counts{Residual: 135},
-					SevenDay: metrics.Counts{Residual: 135},
+				suggestedClusters[2].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{
+					ThreeDay: metrics.Counts{Residual: 390},
+					SevenDay: metrics.Counts{Residual: 390},
 				}
 
 				// Act
@@ -686,23 +715,27 @@ func TestUpdate(t *testing.T) {
 			// Use a mix of test name and failure reason clusters for
 			// code path coverage.
 			suggestedClusters[0] = makeTestNameCluster(compiledCfg, 0)
-			suggestedClusters[0].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
+			suggestedClusters[0].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{
 				OneDay:   metrics.Counts{Residual: 940},
 				ThreeDay: metrics.Counts{Residual: 940},
 				SevenDay: metrics.Counts{Residual: 940},
 			}
+			suggestedClusters[0].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
+				OneDay:   metrics.Counts{Residual: 100},
+				ThreeDay: metrics.Counts{Residual: 100},
+				SevenDay: metrics.Counts{Residual: 100},
+			}
 			suggestedClusters[0].PostsubmitBuildsWithFailures7d.Residual = 1
 
 			suggestedClusters[1] = makeReasonCluster(compiledCfg, 1)
-			suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
-				OneDay:   metrics.Counts{Residual: 300},
+			suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{
 				ThreeDay: metrics.Counts{Residual: 300},
 				SevenDay: metrics.Counts{Residual: 300},
 			}
 			suggestedClusters[1].PostsubmitBuildsWithFailures7d.Residual = 1
 
 			suggestedClusters[2] = makeReasonCluster(compiledCfg, 2)
-			suggestedClusters[2].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
+			suggestedClusters[2].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{
 				OneDay:   metrics.Counts{Residual: 250},
 				ThreeDay: metrics.Counts{Residual: 250},
 				SevenDay: metrics.Counts{Residual: 250},
@@ -713,7 +746,7 @@ func TestUpdate(t *testing.T) {
 			}
 
 			suggestedClusters[3] = makeReasonCluster(compiledCfg, 3)
-			suggestedClusters[3].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
+			suggestedClusters[3].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{
 				OneDay:   metrics.Counts{Residual: 200},
 				ThreeDay: metrics.Counts{Residual: 200},
 				SevenDay: metrics.Counts{Residual: 200},
@@ -758,10 +791,7 @@ func TestUpdate(t *testing.T) {
 					BugManagementState: &bugspb.BugManagementState{
 						RuleAssociationNotified: true,
 						PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
-							"exoneration-policy": {
-								IsActive:           true,
-								LastActivationTime: timestamppb.New(opts.runTimestamp),
-							},
+							"exoneration-policy":  {},
 							"cls-rejected-policy": {},
 						},
 					},
@@ -779,10 +809,7 @@ func TestUpdate(t *testing.T) {
 					BugManagementState: &bugspb.BugManagementState{
 						RuleAssociationNotified: true,
 						PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
-							"exoneration-policy": {
-								IsActive:           true,
-								LastActivationTime: timestamppb.New(opts.runTimestamp),
-							},
+							"exoneration-policy":  {},
 							"cls-rejected-policy": {},
 						},
 					},
@@ -800,10 +827,7 @@ func TestUpdate(t *testing.T) {
 					BugManagementState: &bugspb.BugManagementState{
 						RuleAssociationNotified: true,
 						PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
-							"exoneration-policy": {
-								IsActive:           true,
-								LastActivationTime: timestamppb.New(opts.runTimestamp),
-							},
+							"exoneration-policy":  {},
 							"cls-rejected-policy": {},
 						},
 					},
@@ -848,18 +872,13 @@ func TestUpdate(t *testing.T) {
 			Convey("if re-clustering in progress", func() {
 				analysisClient.clusters = append(suggestedClusters, bugClusters...)
 
-				Convey("negligable cluster metrics does not affect issue priority, status or active policies", func() {
-					// The policy should already be active from previous setup.
-					So(expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].IsActive, ShouldBeTrue)
-
+				Convey("negligable cluster impact does not affect issue priority or status", func() {
 					issue := buganizerStore.Issues[1]
 					originalPriority := issue.Issue.IssueState.Priority
 					originalStatus := issue.Issue.IssueState.Status
 					So(originalStatus, ShouldNotEqual, issuetracker.Issue_VERIFIED)
 
-					SetResidualMetrics(bugClusters[1], bugs.ClusterMetrics{
-						metrics.CriticalFailuresExonerated.ID: bugs.MetricValues{},
-					})
+					SetResidualMetrics(bugClusters[1], bugs.ClosureImpact())
 
 					// Act
 					err = updateBugsForProject(ctx, opts)
@@ -868,6 +887,21 @@ func TestUpdate(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(issue.Issue.IssueState.Priority, ShouldEqual, originalPriority)
 					So(issue.Issue.IssueState.Status, ShouldEqual, originalStatus)
+					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+				})
+				Convey("policy activation is unchanged", func() {
+					// The policy should already be active from previous setup.
+					So(expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].IsActive, ShouldBeTrue)
+
+					// Update metrics so that policy should de-activate if
+					// reclustering was complete.
+					bugClusters[0].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{}
+
+					// Act
+					err = updateBugsForProject(ctx, opts)
+
+					// Verify.
+					So(err, ShouldBeNil)
 					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 				})
 			})
@@ -893,7 +927,7 @@ func TestUpdate(t *testing.T) {
 						WithProject(project).
 						WithAlgorithmsVersion(algorithms.AlgorithmsVersion).
 						WithConfigVersion(projectCfg.LastUpdated.AsTime()).
-						WithRulesVersion(rs[3].PredicateLastUpdateTime).
+						WithRulesVersion(rs[2].PredicateLastUpdateTime).
 						WithCompletedProgress().Build(),
 				})
 				So(err, ShouldBeNil)
@@ -910,14 +944,14 @@ func TestUpdate(t *testing.T) {
 
 					Convey("policy remains inactive if activation threshold unmet", func() {
 						// The policy should be inactive from previous setup.
-						expectedPolicyState := expectedRules[1].BugManagementState.PolicyState["cls-rejected-policy"]
+						expectedPolicyState := expectedRules[1].BugManagementState.PolicyState["exoneration-policy"]
 						So(expectedPolicyState.IsActive, ShouldBeFalse)
 
 						// Set metrics just below the policy activation threshold.
-						bugClusters[1].MetricValues[metrics.HumanClsFailedPresubmit.ID] = metrics.TimewiseCounts{
-							OneDay:   metrics.Counts{Residual: 9},
-							ThreeDay: metrics.Counts{Residual: 9},
-							SevenDay: metrics.Counts{Residual: 9},
+						bugClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
+							OneDay:   metrics.Counts{Residual: 99},
+							ThreeDay: metrics.Counts{Residual: 99},
+							SevenDay: metrics.Counts{Residual: 99},
 						}
 
 						// Act
@@ -929,14 +963,14 @@ func TestUpdate(t *testing.T) {
 					})
 					Convey("policy activates if activation threshold met", func() {
 						// The policy should be inactive from previous setup.
-						expectedPolicyState := expectedRules[1].BugManagementState.PolicyState["cls-rejected-policy"]
+						expectedPolicyState := expectedRules[1].BugManagementState.PolicyState["exoneration-policy"]
 						So(expectedPolicyState.IsActive, ShouldBeFalse)
 
 						// Update metrics so that policy should activate.
-						bugClusters[1].MetricValues[metrics.HumanClsFailedPresubmit.ID] = metrics.TimewiseCounts{
-							OneDay:   metrics.Counts{Residual: 0},
-							ThreeDay: metrics.Counts{Residual: 0},
-							SevenDay: metrics.Counts{Residual: 10},
+						bugClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
+							OneDay:   metrics.Counts{Residual: 100},
+							ThreeDay: metrics.Counts{Residual: 100},
+							SevenDay: metrics.Counts{Residual: 100},
 						}
 
 						// Act
@@ -973,11 +1007,7 @@ func TestUpdate(t *testing.T) {
 						So(expectedPolicyState.IsActive, ShouldBeTrue)
 
 						// Update metrics so that policy should de-activate.
-						bugClusters[0].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
-							OneDay:   metrics.Counts{Residual: 9},
-							ThreeDay: metrics.Counts{Residual: 9},
-							SevenDay: metrics.Counts{Residual: 9},
-						}
+						bugClusters[0].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{}
 
 						// Act
 						err = updateBugsForProject(ctx, opts)
@@ -1016,7 +1046,7 @@ func TestUpdate(t *testing.T) {
 						}
 					})
 				})
-				Convey("priority updates and auto-closure", func() {
+				Convey("priority updates", func() {
 					Convey("buganizer", func() {
 						// Select a Buganizer issue.
 						issue := buganizerStore.Issues[1]
@@ -1028,30 +1058,64 @@ func TestUpdate(t *testing.T) {
 						rule := rs[0]
 						So(rule.BugID.ID, ShouldEqual, fmt.Sprintf("%v", issue.Issue.IssueId))
 
-						// Activate the cls-rejected-policy, which should raise the priority to P1.
-						So(originalPriority, ShouldNotEqual, issuetracker.Issue_P1)
-						SetResidualMetrics(bugClusters[0], bugs.ClusterMetrics{
-							metrics.CriticalFailuresExonerated.ID: bugs.MetricValues{OneDay: 100},
-							metrics.HumanClsFailedPresubmit.ID:    bugs.MetricValues{SevenDay: 10},
-						})
+						// Increase cluster impact to P0.
+						So(originalPriority, ShouldNotEqual, issuetracker.Issue_P0)
+						SetResidualMetrics(bugClusters[0], bugs.P0Impact())
 
-						Convey("priority updates to reflect active policies", func() {
-							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
-							So(originalPriority, ShouldNotEqual, issuetracker.Issue_P1)
+						Convey("increasing cluster impact to P0 increases issue priority", func() {
+							// Act
+							err = updateBugsForProject(ctx, opts)
+
+							// Verify
+							So(err, ShouldBeNil)
+							So(issue.Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P0)
+							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+						})
+						Convey("no bug filing thresholds, but still update existing bug priority", func() {
+							projectCfg.BugFilingThresholds = nil
 
 							// Act
 							err = updateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
-							So(issue.Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P1)
+							So(issue.Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P0)
+							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+						})
+						Convey("decreasing cluster impact to P3 decreases issue priority", func() {
+							// Reduce cluster impact to P3.
+							So(originalPriority, ShouldNotEqual, issuetracker.Issue_P3)
+							SetResidualMetrics(bugClusters[0], bugs.P3Impact())
+
+							// Act
+							err = updateBugsForProject(ctx, opts)
+
+							// Verify
+							So(err, ShouldBeNil)
+							So(issue.Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_NEW)
+							So(issue.Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P3)
+							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+						})
+						Convey("disabling IsManagingBug prevents priority updates", func() {
+							// Set IsManagingBug to false on the rule.
+							rule.IsManagingBug = false
+							So(rules.SetForTesting(ctx, rs), ShouldBeNil)
+
+							// Act
+							err = updateBugsForProject(ctx, opts)
+
+							// Verify
+							So(err, ShouldBeNil)
+
+							// Check that the bug priority and status has not changed.
+							So(issue.Issue.IssueState.Status, ShouldEqual, originalStatus)
+							So(issue.Issue.IssueState.Priority, ShouldEqual, originalPriority)
+
+							// Check the rules have not changed except for the IsManagingBug change.
+							expectedRules[0].IsManagingBug = false
 							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 						})
 						Convey("disabling IsManagingBugPriority prevents priority updates", func() {
-							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
-
 							// Set IsManagingBugPriority to false on the rule.
 							rule.IsManagingBugPriority = false
 							So(rules.SetForTesting(ctx, rs), ShouldBeNil)
@@ -1071,9 +1135,6 @@ func TestUpdate(t *testing.T) {
 							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 						})
 						Convey("manually setting a priority prevents bug updates", func() {
-							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
-
 							issue.IssueUpdates = append(issue.IssueUpdates, &issuetracker.IssueUpdate{
 								Author: &issuetracker.User{
 									EmailAddress: "testuser@google.com",
@@ -1110,49 +1171,6 @@ func TestUpdate(t *testing.T) {
 								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 							})
 						})
-						Convey("if all policies de-activate, bug is auto-closed", func() {
-							SetResidualMetrics(bugClusters[0], bugs.ClusterMetrics{
-								metrics.CriticalFailuresExonerated.ID: bugs.MetricValues{OneDay: 9},
-								metrics.HumanClsFailedPresubmit.ID:    bugs.MetricValues{},
-							})
-
-							// Act
-							err = updateBugsForProject(ctx, opts)
-
-							// Verify
-							So(err, ShouldBeNil)
-							expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].IsActive = false
-							expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.runTimestamp)
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-							So(issue.Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_VERIFIED)
-							So(issue.Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P2)
-						})
-						Convey("disabling IsManagingBug prevents bug closure", func() {
-							SetResidualMetrics(bugClusters[0], bugs.ClusterMetrics{
-								metrics.CriticalFailuresExonerated.ID: bugs.MetricValues{OneDay: 9},
-								metrics.HumanClsFailedPresubmit.ID:    bugs.MetricValues{},
-							})
-							expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].IsActive = false
-							expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.runTimestamp)
-
-							// Set IsManagingBug to false on the rule.
-							rule.IsManagingBug = false
-							So(rules.SetForTesting(ctx, rs), ShouldBeNil)
-
-							// Act
-							err = updateBugsForProject(ctx, opts)
-
-							// Verify
-							So(err, ShouldBeNil)
-
-							// Check the rules have not changed except for the IsManagingBug change.
-							expectedRules[0].IsManagingBug = false
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-
-							// Check that the bug priority and status has not changed.
-							So(issue.Issue.IssueState.Status, ShouldEqual, originalStatus)
-							So(issue.Issue.IssueState.Priority, ShouldEqual, originalPriority)
-						})
 						Convey("cluster disappearing closes issue", func() {
 							// Drop the corresponding bug cluster. This is consistent with
 							// no more failures in the cluster occuring.
@@ -1182,24 +1200,6 @@ func TestUpdate(t *testing.T) {
 								So(issue.Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_VERIFIED)
 							})
 						})
-						Convey("if all policies are removed, bug is auto-closed", func() {
-							projectCfg.BugManagement.Policies = nil
-							err := config.SetTestProjectConfig(ctx, projectsCfg)
-							So(err, ShouldBeNil)
-
-							for _, expectedRule := range expectedRules {
-								expectedRule.BugManagementState.PolicyState = nil
-							}
-
-							// Act
-							err = updateBugsForProject(ctx, opts)
-
-							// Verify
-							So(err, ShouldBeNil)
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-							So(issue.Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_VERIFIED)
-							So(issue.Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P2)
-						})
 					})
 					Convey("monorail", func() {
 						// Select a Monorail issue.
@@ -1214,129 +1214,47 @@ func TestUpdate(t *testing.T) {
 						So(rule.BugID.ID, ShouldEqual, "chromium/100")
 						So(issue.Issue.Name, ShouldEqual, "projects/chromium/issues/100")
 
-						// Activate the cls-rejected-policy, which should raise the priority to P1.
-						So(originalPriority, ShouldNotEqual, issuetracker.Issue_P1)
-						SetResidualMetrics(bugClusters[firstMonorailRuleIndex], bugs.ClusterMetrics{
-							metrics.CriticalFailuresExonerated.ID: bugs.MetricValues{OneDay: 100},
-							metrics.HumanClsFailedPresubmit.ID:    bugs.MetricValues{SevenDay: 10},
-						})
+						// Increase cluster impact to P0.
+						So(originalPriority, ShouldNotEqual, "0")
+						SetResidualMetrics(bugClusters[ruleIndex], bugs.P0Impact())
 
-						Convey("priority updates to reflect active policies", func() {
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
-							So(originalPriority, ShouldNotEqual, "1")
-
+						Convey("increasing cluster impact to P0 increases issue priority", func() {
 							// Act
 							err = updateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-							So(issue.Issue.Status.Status, ShouldEqual, originalStatus)
-							So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, "1")
-						})
-						Convey("disabling IsManagingBugPriority prevents priority updates", func() {
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
-
-							// Set IsManagingBugPriority to false on the rule.
-							rule.IsManagingBugPriority = false
-							So(rules.SetForTesting(ctx, rs), ShouldBeNil)
-
-							// Act
-							err = updateBugsForProject(ctx, opts)
-
-							// Verify
-							So(err, ShouldBeNil)
-
-							// Check the rules have not changed except for the IsManagingBugPriority change.
-							expectedRules[firstMonorailRuleIndex].IsManagingBugPriority = false
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-
-							// Check that the bug priority and status has not changed.
-							So(issue.Issue.Status.Status, ShouldEqual, originalStatus)
-							So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, originalPriority)
-						})
-						Convey("manually setting a priority prevents bug updates", func() {
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
-
-							// Create a fake client to interact with monorail as a user.
-							userClient, err := monorail.NewClient(monorail.UseFakeIssuesClient(ctx, monorailStore, "user@google.com"), "myhost")
-							So(err, ShouldBeNil)
-
-							// Set priority to P0 manually.
-							updateRequest := &mpb.ModifyIssuesRequest{
-								Deltas: []*mpb.IssueDelta{
-									{
-										Issue: &mpb.Issue{
-											Name: issue.Issue.Name,
-											FieldValues: []*mpb.FieldValue{
-												{
-													Field: "projects/chromium/fieldDefs/11",
-													Value: "0",
-												},
-											},
-										},
-										UpdateMask: &fieldmaskpb.FieldMask{
-											Paths: []string{"field_values"},
-										},
-									},
-								},
-								CommentContent: "User comment.",
-							}
-							err = userClient.ModifyIssues(ctx, updateRequest)
-							So(err, ShouldBeNil)
-
-							// Act
-							err = updateBugsForProject(ctx, opts)
-
-							// Verify
-							So(err, ShouldBeNil)
-							expectedRules[firstMonorailRuleIndex].IsManagingBugPriority = false
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 							So(issue.Issue.Status.Status, ShouldEqual, originalStatus)
 							So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, "0")
-
-							Convey("further updates leave no comments", func() {
-								initialComments := len(issue.Comments)
-
-								// Act
-								err = updateBugsForProject(ctx, opts)
-
-								// Verify
-								So(err, ShouldBeNil)
-								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-								So(len(issue.Comments), ShouldEqual, initialComments)
-								So(issue.Issue.Status.Status, ShouldEqual, originalStatus)
-								So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, "0")
-							})
+							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 						})
-						Convey("if all policies de-activate, bug is auto-closed", func() {
-							SetResidualMetrics(bugClusters[firstMonorailRuleIndex], bugs.ClusterMetrics{
-								metrics.CriticalFailuresExonerated.ID: bugs.MetricValues{OneDay: 9},
-								metrics.HumanClsFailedPresubmit.ID:    bugs.MetricValues{},
-							})
+						Convey("no bug filing thresholds, but still update existing bug priority", func() {
+							projectCfg.BugFilingThresholds = nil
 
 							// Act
 							err = updateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].IsActive = false
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.runTimestamp)
+							So(issue.Issue.Status.Status, ShouldEqual, originalStatus)
+							So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, "0")
 							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-							So(issue.Issue.Status.Status, ShouldEqual, monorail.VerifiedStatus)
-							So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, originalPriority)
 						})
-						Convey("disabling IsManagingBug prevents bug closure", func() {
-							SetResidualMetrics(bugClusters[firstMonorailRuleIndex], bugs.ClusterMetrics{
-								metrics.CriticalFailuresExonerated.ID: bugs.MetricValues{OneDay: 9},
-								metrics.HumanClsFailedPresubmit.ID:    bugs.MetricValues{},
-							})
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].IsActive = false
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.runTimestamp)
+						Convey("decreasing cluster impact to P3 decreases issue priority", func() {
+							// Reduce cluster impact to P3.
+							So(originalPriority, ShouldNotEqual, issuetracker.Issue_P3)
+							SetResidualMetrics(bugClusters[ruleIndex], bugs.P3Impact())
 
+							// Act
+							err = updateBugsForProject(ctx, opts)
+
+							// Verify
+							So(err, ShouldBeNil)
+							So(issue.Issue.Status.Status, ShouldEqual, originalStatus)
+							So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, "3")
+							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+						})
+						Convey("disabling IsManagingBug prevents priority updates", func() {
 							// Set IsManagingBug to false on the rule.
 							rule.IsManagingBug = false
 							So(rules.SetForTesting(ctx, rs), ShouldBeNil)
@@ -1347,32 +1265,49 @@ func TestUpdate(t *testing.T) {
 							// Verify
 							So(err, ShouldBeNil)
 
-							// Check the rules have not changed except for the IsManagingBug change.
-							expectedRules[firstMonorailRuleIndex].IsManagingBug = false
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-
 							// Check that the bug priority and status has not changed.
 							So(issue.Issue.Status.Status, ShouldEqual, originalStatus)
 							So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, originalPriority)
+
+							// Check the rules have not changed except for the IsManagingBug change.
+							expectedRules[ruleIndex].IsManagingBug = false
+							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 						})
-						Convey("cluster disappearing closes issue", func() {
-							// Drop the corresponding bug cluster. This is consistent with
-							// no more failures in the cluster occuring.
-							newBugClusters := []*analysis.Cluster{}
-							newBugClusters = append(newBugClusters, bugClusters[:firstMonorailRuleIndex]...)
-							newBugClusters = append(newBugClusters, bugClusters[firstMonorailRuleIndex+1:]...)
-							analysisClient.clusters = append(suggestedClusters, newBugClusters...)
+						Convey("disabling IsManagingBugPriority prevents priority updates", func() {
+							// Set IsManagingBugPriority to false on the rule.
+							rule.IsManagingBugPriority = false
+							So(rules.SetForTesting(ctx, rs), ShouldBeNil)
 
 							// Act
 							err = updateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].IsActive = false
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.runTimestamp)
+
+							// Check that the bug priority and status has not changed.
+							So(issue.Issue.Status.Status, ShouldEqual, originalStatus)
+							So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, originalPriority)
+
+							// Check the rules have not changed except for the IsManagingBugPriority change.
+							expectedRules[ruleIndex].IsManagingBugPriority = false
+							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+						})
+						Convey("cluster disappearing closes issue", func() {
+							// Drop the corresponding bug cluster. This is consistent with
+							// no more failures in the cluster occuring.
+							newBugClusters := []*analysis.Cluster{}
+							newBugClusters = append(newBugClusters, bugClusters[0:ruleIndex]...)
+							newBugClusters = append(newBugClusters, bugClusters[ruleIndex+1:]...)
+							bugClusters = newBugClusters
+							analysisClient.clusters = append(suggestedClusters, bugClusters...)
+
+							// Act
+							err = updateBugsForProject(ctx, opts)
+
+							// Verify
+							So(err, ShouldBeNil)
 							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 							So(issue.Issue.Status.Status, ShouldEqual, monorail.VerifiedStatus)
-							So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, originalPriority)
 
 							Convey("rule automatically archived after 30 days", func() {
 								tc.Add(time.Hour * 24 * 30)
@@ -1382,29 +1317,10 @@ func TestUpdate(t *testing.T) {
 
 								// Verify
 								So(err, ShouldBeNil)
-								expectedRules[firstMonorailRuleIndex].IsActive = false
+								expectedRules[ruleIndex].IsActive = false
 								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 								So(issue.Issue.Status.Status, ShouldEqual, monorail.VerifiedStatus)
-								So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, originalPriority)
 							})
-						})
-						Convey("if all policies are removed, bug is auto-closed", func() {
-							projectCfg.BugManagement.Policies = nil
-							err := config.SetTestProjectConfig(ctx, projectsCfg)
-							So(err, ShouldBeNil)
-
-							for _, expectedRule := range expectedRules {
-								expectedRule.BugManagementState.PolicyState = nil
-							}
-
-							// Act
-							err = updateBugsForProject(ctx, opts)
-
-							// Verify
-							So(err, ShouldBeNil)
-							So(issue.Issue.Status.Status, ShouldEqual, monorail.VerifiedStatus)
-							So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, originalPriority)
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 						})
 					})
 				})
@@ -1767,247 +1683,4 @@ func TestUpdate(t *testing.T) {
 			})
 		})
 	})
-}
-
-func createProjectConfig() *configpb.ProjectConfig {
-	buganizerCfg := buganizer.ChromeOSTestConfig()
-	monorailCfg := monorail.ChromiumTestConfig()
-	thres := []*configpb.ImpactMetricThreshold{
-		{
-			MetricId: "failures",
-			// Should be more onerous than the "keep-open" thresholds
-			// configured for each individual bug manager.
-			Threshold: &configpb.MetricThreshold{
-				OneDay:   proto.Int64(100),
-				ThreeDay: proto.Int64(300),
-				SevenDay: proto.Int64(700),
-			},
-		},
-	}
-	return &configpb.ProjectConfig{
-		// Need this for testing until fully migrated to policy-based bug filing.
-		BugSystem:           configpb.BugSystem_BUGANIZER,
-		Buganizer:           buganizerCfg,
-		Monorail:            monorailCfg,
-		BugFilingThresholds: thres,
-
-		BugManagement: &configpb.BugManagement{
-			Policies: []*configpb.BugManagementPolicy{
-				createExonerationPolicy(),
-				createCLsRejectedPolicy(),
-			},
-		},
-		LastUpdated: timestamppb.New(time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC)),
-	}
-}
-
-func createExonerationPolicy() *configpb.BugManagementPolicy {
-	return &configpb.BugManagementPolicy{
-		Id:                "exoneration-policy",
-		Owners:            []string{"username@google.com"},
-		HumanReadableName: "test variant(s) are being exonerated in presubmit",
-		Priority:          configpb.BuganizerPriority_P2,
-		Metrics: []*configpb.BugManagementPolicy_Metric{
-			{
-				MetricId: metrics.CriticalFailuresExonerated.ID.String(),
-				ActivationThreshold: &configpb.MetricThreshold{
-					OneDay: proto.Int64(100),
-				},
-				DeactivationThreshold: &configpb.MetricThreshold{
-					OneDay: proto.Int64(10),
-				},
-			},
-		},
-		Explanation: &configpb.BugManagementPolicy_Explanation{
-			ProblemHtml: "problem",
-			ActionHtml:  "action",
-		},
-		BugTemplate: &configpb.BugManagementPolicy_BugTemplate{
-			CommentTemplate: `{{if .BugID.IsBuganizer }}Buganizer Bug ID: {{ .BugID.BuganizerBugID }}{{end}}` +
-				`{{if .BugID.IsMonorail }}Monorail Project: {{ .BugID.MonorailProject }}; ID: {{ .BugID.MonorailBugID }}{{end}}` +
-				`Rule URL: {{.RuleURL}}`,
-			Monorail: &configpb.BugManagementPolicy_BugTemplate_Monorail{
-				Labels: []string{"Test-Exonerated"},
-			},
-			Buganizer: &configpb.BugManagementPolicy_BugTemplate_Buganizer{
-				Hotlists: []int64{1234},
-			},
-		},
-	}
-}
-
-func createCLsRejectedPolicy() *configpb.BugManagementPolicy {
-	return &configpb.BugManagementPolicy{
-		Id:                "cls-rejected-policy",
-		Owners:            []string{"username@google.com"},
-		HumanReadableName: "many CL(s) are being falsely rejected in presubmit",
-		Priority:          configpb.BuganizerPriority_P1,
-		Metrics: []*configpb.BugManagementPolicy_Metric{
-			{
-				MetricId: metrics.HumanClsFailedPresubmit.ID.String(),
-				ActivationThreshold: &configpb.MetricThreshold{
-					SevenDay: proto.Int64(10),
-				},
-				DeactivationThreshold: &configpb.MetricThreshold{
-					SevenDay: proto.Int64(1),
-				},
-			},
-		},
-		Explanation: &configpb.BugManagementPolicy_Explanation{
-			ProblemHtml: "problem",
-			ActionHtml:  "action",
-		},
-		BugTemplate: &configpb.BugManagementPolicy_BugTemplate{
-			CommentTemplate: `Many CLs are failing presubmit. Policy text goes here.`,
-			Monorail: &configpb.BugManagementPolicy_BugTemplate_Monorail{
-				Labels: []string{"Test-Exonerated"},
-			},
-			Buganizer: &configpb.BugManagementPolicy_BugTemplate_Buganizer{
-				Hotlists: []int64{1234},
-			},
-		},
-	}
-}
-
-// verifyRulesResemble verifies rules stored in Spanner resemble
-// the passed expectations, modulo assigned RuleIDs and
-// audit timestamps.
-func verifyRulesResemble(ctx context.Context, expectedRules []*rules.Entry) error {
-	// Read all rules. Sorted by BugSystem, BugId, Project.
-	rs, err := rules.ReadAllForTesting(span.Single(ctx))
-	if err != nil {
-		return err
-	}
-
-	// Sort expectations in the same order as rules.
-	sortedExpected := make([]*rules.Entry, len(expectedRules))
-	copy(sortedExpected, expectedRules)
-	sort.Slice(sortedExpected, func(i, j int) bool {
-		ruleI := sortedExpected[i]
-		ruleJ := sortedExpected[j]
-		if ruleI.BugID.System != ruleJ.BugID.System {
-			return ruleI.BugID.System < ruleJ.BugID.System
-		}
-		if ruleI.BugID.ID != ruleJ.BugID.ID {
-			return ruleI.BugID.ID < ruleJ.BugID.ID
-		}
-		return ruleI.Project < ruleJ.Project
-	})
-
-	for _, r := range rs {
-		// Accept whatever values the implementation has set
-		// (these values are assigned non-deterministically).
-		r.RuleID = ""
-		r.CreateTime = time.Time{}
-		r.LastAuditableUpdateTime = time.Time{}
-		r.LastUpdateTime = time.Time{}
-		r.PredicateLastUpdateTime = time.Time{}
-		r.IsManagingBugPriorityLastUpdateTime = time.Time{}
-	}
-	for i, rule := range sortedExpected {
-		expectationCopy := rule.Clone()
-		// Clear the fields on the expectations as well.
-		expectationCopy.RuleID = ""
-		expectationCopy.CreateTime = time.Time{}
-		expectationCopy.LastAuditableUpdateTime = time.Time{}
-		expectationCopy.LastUpdateTime = time.Time{}
-		expectationCopy.PredicateLastUpdateTime = time.Time{}
-		expectationCopy.IsManagingBugPriorityLastUpdateTime = time.Time{}
-		sortedExpected[i] = expectationCopy
-	}
-
-	if diff := ShouldResembleProto(rs, sortedExpected); diff != "" {
-		return errors.Reason("stored rules: %s", diff).Err()
-	}
-	return nil
-}
-
-type buganizerBug struct {
-	// Bug ID.
-	ID int64
-	// Expected buganizer component ID.
-	Component int64
-	// Content that is expected to appear in the bug title.
-	ExpectedTitle string
-	// Content that is expected to appear in the bug description.
-	ExpectedContent []string
-}
-
-func expectBuganizerBug(buganizerStore *buganizer.FakeIssueStore, bug buganizerBug) error {
-	issue := buganizerStore.Issues[bug.ID].Issue
-	if issue == nil {
-		return errors.Reason("buganizer issue %v not found", bug.ID).Err()
-	}
-	if issue.IssueId != bug.ID {
-		return errors.Reason("issue ID: got %v, want %v", issue.IssueId, bug.ID).Err()
-	}
-	if !strings.Contains(issue.IssueState.Title, bug.ExpectedTitle) {
-		return errors.Reason("issue title: got %q, expected it to contain %q", issue.IssueState.Title, bug.ExpectedTitle).Err()
-	}
-	if issue.IssueState.ComponentId != bug.Component {
-		return errors.Reason("component: got %v; want %v", issue.IssueState.ComponentId, bug.Component).Err()
-	}
-
-	// Expect a link to the bug and the rule.
-	expectedContent := []string{fmt.Sprintf("https://luci-analysis-test.appspot.com/b/%d", bug.ID)}
-	expectedContent = append(expectedContent, bug.ExpectedContent...)
-	for _, expectedContent := range expectedContent {
-		if !strings.Contains(issue.Description.Comment, expectedContent) {
-			return errors.Reason("issue description: got %q, expected it to contain %q", issue.Description.Comment, expectedContent).Err()
-		}
-	}
-	if len(buganizerStore.Issues[bug.ID].Comments) != 1 {
-		return errors.Reason("issue comments: got %v want %v", len(buganizerStore.Issues[bug.ID].Comments), 1).Err()
-	}
-	return nil
-}
-
-type monorailBug struct {
-	// The monorail project.
-	Project string
-	// The monorail bug ID.
-	ID int
-
-	ExpectedComponents []string
-	// Content that is expected to appear in the bug title.
-	ExpectedTitle string
-	// Content that is expected to appear in the bug description.
-	ExpectedContent []string
-}
-
-func expectMonorailBug(monorailStore *monorail.FakeIssuesStore, bug monorailBug) error {
-	var issue *monorail.IssueData
-	name := fmt.Sprintf("projects/%s/issues/%v", bug.Project, bug.ID)
-	for _, iss := range monorailStore.Issues {
-		if iss.Issue.Name == name {
-			issue = iss
-			break
-		}
-	}
-	if issue == nil {
-		return errors.Reason("monorail issue %q not found", name).Err()
-	}
-	if !strings.Contains(issue.Issue.Summary, bug.ExpectedTitle) {
-		return errors.Reason("issue title: got %q, expected it to contain %q", issue.Issue.Summary, bug.ExpectedTitle).Err()
-	}
-	var actualComponents []string
-	for _, component := range issue.Issue.Components {
-		actualComponents = append(actualComponents, component.Component)
-	}
-	if msg := ShouldResemble(actualComponents, bug.ExpectedComponents); msg != "" {
-		return errors.Reason("components: %s", msg).Err()
-	}
-	if len(issue.Comments) != 2 {
-		return errors.Reason("issue comments: got %v want %v", len(issue.Comments), 2).Err()
-	}
-	for _, expectedContent := range bug.ExpectedContent {
-		if !strings.Contains(issue.Comments[0].Content, expectedContent) {
-			return errors.Reason("issue description: got %q, expected it to contain %q", issue.Comments[0].Content, expectedContent).Err()
-		}
-	}
-	expectedLink := fmt.Sprintf("https://luci-analysis-test.appspot.com/b/%s/%v", bug.Project, bug.ID)
-	if !strings.Contains(issue.Comments[1].Content, expectedLink) {
-		return errors.Reason("issue comment #2: got %q, expected it to contain %q", issue.Comments[1].Content, expectedLink).Err()
-	}
-	return nil
 }

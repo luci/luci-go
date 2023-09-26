@@ -191,13 +191,13 @@ func createPlaceholderMetrics() *configpb.Metrics {
 
 func createPlaceholderBugManagementPolicies() []*configpb.BugManagementPolicy {
 	return []*configpb.BugManagementPolicy{
-		createPlaceholderBugManagementPolicy(),
+		CreatePlaceholderBugManagementPolicy("exoneration"),
 	}
 }
 
-func createPlaceholderBugManagementPolicy() *configpb.BugManagementPolicy {
+func CreatePlaceholderBugManagementPolicy(id string) *configpb.BugManagementPolicy {
 	return &configpb.BugManagementPolicy{
-		Id:                "exoneration",
+		Id:                id,
 		Owners:            []string{"username@google.com"},
 		HumanReadableName: "test variant(s) are being exonerated in presubmit",
 		Priority:          configpb.BuganizerPriority_P2,

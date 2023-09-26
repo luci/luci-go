@@ -16,6 +16,7 @@ package updater
 
 import (
 	"context"
+	"fmt"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -36,6 +37,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering/runs"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
+	configpb "go.chromium.org/luci/analysis/proto/config"
 )
 
 var (
@@ -117,8 +119,7 @@ func (h *Handler) CronHandler(ctx context.Context) error {
 		return errors.Annotate(err, "get config").Err()
 	}
 	simulate := !h.prod
-	enabled := cfg.BugUpdatesEnabled
-	err = updateAnalysisAndBugs(ctx, cfg.MonorailHostname, h.cloudProject, simulate, enabled)
+	err = updateAnalysisAndBugs(ctx, cfg.MonorailHostname, h.cloudProject, simulate, cfg)
 	if err != nil {
 		return errors.Annotate(err, "update bugs").Err()
 	}
@@ -134,7 +135,7 @@ func (h *Handler) CronHandler(ctx context.Context) error {
 // as the developer themselves rather than the LUCI Analysis service.
 // This leads to bugs errounously being detected as having manual priority
 // changes.
-func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string, simulate, enable bool) (retErr error) {
+func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string, simulate bool, cfg *configpb.Config) (retErr error) {
 	runTimestamp := clock.Now(ctx).Truncate(time.Minute)
 
 	projectCfg, err := config.Projects(ctx)
@@ -173,7 +174,6 @@ func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string,
 	}()
 
 	buganizerClient, err := createBuganizerClient(ctx)
-
 	if err != nil {
 		return errors.Annotate(err, "creating a buganizer client").Err()
 	}
@@ -197,19 +197,22 @@ func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string,
 		return errors.Annotate(err, "update cluster summary analysis").Err()
 	}
 
+	uiBaseURL := fmt.Sprintf("https://%s.appspot.com/", gcpProject)
+
 	taskGenerator := func(c chan<- func() error) {
 		for _, project := range projectCfg.Keys() {
 			opts := updateOptions{
-				appID:                gcpProject,
-				project:              project,
-				analysisClient:       analysisClient,
-				monorailClient:       monorailClient,
-				buganizerClient:      buganizerClient,
-				simulateBugUpdates:   simulate,
-				maxBugsFiledPerRun:   1,
-				updateRuleBatchSize:  1000,
-				reclusteringProgress: projectProgress[project],
-				runTimestamp:         runTimestamp,
+				uiBaseURL:                uiBaseURL,
+				project:                  project,
+				analysisClient:           analysisClient,
+				monorailClient:           monorailClient,
+				buganizerClient:          buganizerClient,
+				simulateBugUpdates:       simulate,
+				maxBugsFiledPerRun:       1,
+				updateRuleBatchSize:      1000,
+				reclusteringProgress:     projectProgress[project],
+				runTimestamp:             runTimestamp,
+				usePolicyBasedManagement: cfg.BugManagement.GetPolicyBasedManagementEnabled(),
 			}
 
 			// Assign project to local variable to ensure it can be
@@ -237,7 +240,7 @@ func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string,
 			}
 		}
 	}
-	if enable {
+	if cfg.BugUpdatesEnabled {
 		if err := parallel.WorkPool(workerCount, taskGenerator); err != nil {
 			return err
 		}
@@ -269,16 +272,17 @@ func createBuganizerClient(ctx context.Context) (buganizer.Client, error) {
 }
 
 type updateOptions struct {
-	appID                string
-	project              string
-	analysisClient       AnalysisClient
-	monorailClient       *monorail.Client
-	buganizerClient      buganizer.Client
-	simulateBugUpdates   bool
-	maxBugsFiledPerRun   int
-	updateRuleBatchSize  int
-	reclusteringProgress *runs.ReclusteringProgress
-	runTimestamp         time.Time
+	uiBaseURL                string
+	project                  string
+	analysisClient           AnalysisClient
+	monorailClient           *monorail.Client
+	buganizerClient          buganizer.Client
+	simulateBugUpdates       bool
+	maxBugsFiledPerRun       int
+	updateRuleBatchSize      int
+	reclusteringProgress     *runs.ReclusteringProgress
+	runTimestamp             time.Time
+	usePolicyBasedManagement bool
 }
 
 // updateBugsForProject updates LUCI Analysis-managed bugs for a particular LUCI project.
@@ -309,7 +313,7 @@ func updateBugsForProject(ctx context.Context, opts updateOptions) (retErr error
 
 	if projectCfg.Config.Monorail != nil {
 		// Create Monorail bug manager
-		monorailBugManager, err := monorail.NewBugManager(opts.monorailClient, opts.appID, opts.project, projectCfg.Config)
+		monorailBugManager, err := monorail.NewBugManager(opts.monorailClient, opts.uiBaseURL, opts.project, projectCfg.Config)
 		if err != nil {
 			return errors.Annotate(err, "create monorail bug manager").Err()
 		}
@@ -320,13 +324,20 @@ func updateBugsForProject(ctx context.Context, opts updateOptions) (retErr error
 	}
 	if projectCfg.Config.Buganizer != nil {
 		if opts.buganizerClient == nil {
-			return errors.New("buganizerClient cannot be nil.")
+			return errors.New("buganizerClient cannot be nil")
 		}
+
+		selfEmail, ok := ctx.Value(&buganizer.BuganizerSelfEmailKey).(string)
+		if !ok {
+			return errors.Reason("buganizer self email must be specified").Err()
+		}
+
 		// Create Buganizer bug manager
 		buganizerBugManager := buganizer.NewBugManager(
 			opts.buganizerClient,
-			opts.appID,
+			opts.uiBaseURL,
 			opts.project,
+			selfEmail,
 			projectCfg.Config,
 			opts.simulateBugUpdates,
 		)
@@ -335,6 +346,7 @@ func updateBugsForProject(ctx context.Context, opts updateOptions) (retErr error
 	}
 	bugUpdater := NewBugUpdater(opts.project, mgrs, opts.analysisClient, projectCfg, opts.runTimestamp)
 	bugUpdater.MaxBugsFiledPerRun = opts.maxBugsFiledPerRun
+	bugUpdater.UsePolicyBasedManagement = opts.usePolicyBasedManagement
 	if err := bugUpdater.Run(ctx, opts.reclusteringProgress); err != nil {
 		return errors.Annotate(err, "update bugs").Err()
 	}

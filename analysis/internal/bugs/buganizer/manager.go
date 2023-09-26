@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/prototext"
@@ -87,8 +88,9 @@ type IssueCommentIterator interface {
 
 type BugManager struct {
 	client Client
-	// The GAE APP ID, e.g. "luci-analysis".
-	appID string
+	// The email address of the LUCI Analysis instance. This is used to distinguish
+	// priority updates made by LUCI Analysis itself from those made by others.
+	selfEmail string
 	// The LUCI Project.
 	project string
 	// The snapshot of configuration to use for the project.
@@ -107,20 +109,21 @@ type BugManager struct {
 // Use the `simulate` flag to use the manager in simulation mode
 // while testing.
 func NewBugManager(client Client,
-	appID, project string,
+	uiBaseURL, project, selfEmail string,
 	projectCfg *configpb.ProjectConfig,
 	simulate bool) *BugManager {
 	requestGenerator := NewRequestGenerator(
 		client,
-		appID,
 		project,
+		uiBaseURL,
+		selfEmail,
 		projectCfg,
 	)
 	return &BugManager{
 		client:           client,
 		projectCfg:       projectCfg,
-		appID:            appID,
 		project:          project,
+		selfEmail:        selfEmail,
 		requestGenerator: *requestGenerator,
 		Simulate:         simulate,
 	}
@@ -144,12 +147,28 @@ func (bm *BugManager) Create(ctx context.Context, createRequest *bugs.BugCreateR
 		}
 	}
 
-	createIssueRequest := bm.requestGenerator.PrepareNew(
-		createRequest.Metrics,
-		createRequest.Description,
-		createRequest.RuleID,
-		componentID,
-	)
+	isUsingPolicyBasedManagement := createRequest.ActivePolicyIDs != nil
+
+	var createIssueRequest *issuetracker.CreateIssueRequest
+	if isUsingPolicyBasedManagement {
+		var err error
+		createIssueRequest, err = bm.requestGenerator.PrepareNew(
+			createRequest.Description,
+			createRequest.ActivePolicyIDs,
+			createRequest.RuleID,
+			componentID,
+		)
+		if err != nil {
+			return "", errors.Annotate(err, "prepare new issue").Err()
+		}
+	} else {
+		createIssueRequest = bm.requestGenerator.PrepareNewLegacy(
+			createRequest.Metrics,
+			createRequest.Description,
+			createRequest.RuleID,
+			componentID,
+		)
+	}
 	var issue *issuetracker.Issue
 	var issueId int64
 	var err error
@@ -164,11 +183,20 @@ func (bm *BugManager) Create(ctx context.Context, createRequest *bugs.BugCreateR
 		issueId = issue.IssueId
 	}
 
-	issueCommentReq := bm.requestGenerator.PrepareLinkIssueCommentUpdate(
-		createRequest.Metrics,
-		createRequest.Description,
-		issueId,
-	)
+	var issueCommentReq *issuetracker.UpdateIssueCommentRequest
+	if isUsingPolicyBasedManagement {
+		issueCommentReq = bm.requestGenerator.PrepareLinkIssueCommentUpdate(
+			createRequest.Description,
+			createRequest.ActivePolicyIDs,
+			issueId,
+		)
+	} else {
+		issueCommentReq = bm.requestGenerator.PrepareLinkIssueCommentUpdateLegacy(
+			createRequest.Metrics,
+			createRequest.Description,
+			issueId,
+		)
+	}
 	if bm.Simulate {
 		logging.Debugf(ctx, "Would update Buganizer issue comment: %s", textPBMultiline.Format(issueCommentReq))
 	} else {
@@ -209,14 +237,12 @@ func (bm *BugManager) Update(ctx context.Context, requests []bugs.BugUpdateReque
 		return nil, errors.Annotate(err, "fetch issues for update").Err()
 	}
 
-	var responses []bugs.BugUpdateResponse
-
 	issuesByID := make(map[int64]*issuetracker.Issue)
-
 	for _, fetchedIssue := range issues {
 		issuesByID[fetchedIssue.IssueId] = fetchedIssue
 	}
 
+	var responses []bugs.BugUpdateResponse
 	for _, request := range requests {
 		id, err := strconv.ParseInt(request.Bug.ID, 10, 64)
 		if err != nil {
@@ -228,19 +254,25 @@ func (bm *BugManager) Update(ctx context.Context, requests []bugs.BugUpdateReque
 			// The bug does not exist, or is in a different buganizer project
 			// to the buganizer project configured for this project
 			// or we have no permission to access it.
-			//Take no action.
+			// Take no action.
 			responses = append(responses, bugs.BugUpdateResponse{
-				IsDuplicate:   false,
-				IsAssigned:    false,
-				ShouldArchive: false,
+				IsDuplicate:            false,
+				IsDuplicateAndAssigned: false,
+				ShouldArchive:          false,
 			})
 			logging.Warningf(ctx, "Buganizer issue %s not found or we don't have permission to access it, skipping.", request.Bug.ID)
 			continue
 		}
-		updateResponse := bm.updateIssue(ctx, request, issue)
+		var updateResponse bugs.BugUpdateResponse
+		if request.BugManagementState != nil {
+			// Use policy-based bug management.
+			updateResponse = bm.updateIssue(ctx, request, issue)
+		} else {
+			// Use legacy bug management.
+			updateResponse = bm.updateIssueLegacy(ctx, request, issue)
+		}
 		responses = append(responses, updateResponse)
 	}
-
 	return responses, nil
 }
 
@@ -276,18 +308,78 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 	}
 
 	updateResponse := bugs.BugUpdateResponse{
-		IsDuplicate:                issue.IssueState.Status == issuetracker.Issue_DUPLICATE,
-		IsAssigned:                 issue.IssueState.Assignee != nil,
 		ShouldArchive:              shouldArchiveRule(ctx, issue, request.IsManagingBug),
 		DisableRulePriorityUpdates: false,
+	}
+	if issue.IssueState.Status == issuetracker.Issue_DUPLICATE {
+		updateResponse.IsDuplicate = true
+		updateResponse.IsDuplicateAndAssigned = issue.IssueState.Assignee != nil
+	}
+
+	if !updateResponse.IsDuplicate &&
+		!updateResponse.ShouldArchive &&
+		request.IsManagingBug {
+		if bm.requestGenerator.NeedsPriorityOrVerifiedUpdate(request.BugManagementState, issue, request.IsManagingBugPriority) {
+			// List issue updates.
+			listUpdatesRequest := &issuetracker.ListIssueUpdatesRequest{
+				IssueId: issue.IssueId,
+			}
+			it := bm.client.ListIssueUpdates(ctx, listUpdatesRequest)
+
+			// Determine if bug priority manually set. This involves listing issue comments.
+			hasManuallySetPriority, err := bm.hasManuallySetPriority(it, bm.selfEmail, request.IsManagingBugPriorityLastUpdated)
+			if err != nil {
+				return bugs.BugUpdateResponse{
+					Error: errors.Annotate(err, "determine if priority manually set").Err(),
+				}
+			}
+			mur, err := bm.requestGenerator.MakePriorityOrVerifiedUpdate(ctx, MakeUpdateOptions{
+				BugManagementState:     request.BugManagementState,
+				Issue:                  issue,
+				IsManagingBugPriority:  request.IsManagingBugPriority,
+				HasManuallySetPriority: hasManuallySetPriority,
+			})
+			if err != nil {
+				return bugs.BugUpdateResponse{
+					Error: errors.Annotate(err, "create update request for issue").Err(),
+				}
+			}
+			if bm.Simulate {
+				logging.Debugf(ctx, "Would update Buganizer issue: %s", textPBMultiline.Format(mur.request))
+			} else {
+				if _, err := bm.client.ModifyIssue(ctx, mur.request); err != nil {
+					return bugs.BugUpdateResponse{
+						Error: errors.Annotate(err, "update Buganizer issue").Err(),
+					}
+				}
+				bugs.BugsUpdatedCounter.Add(ctx, 1, bm.project, "buganizer")
+			}
+			updateResponse.DisableRulePriorityUpdates = mur.disablePriorityUpdates
+		}
+	}
+	return updateResponse
+}
+
+// updateIssueLegacy updates the given issue, adjusting its priority,
+// and verify or unverifying it.
+// TODO(meiring): Delete once we have migrated fully to policy-based
+// bug management.
+func (bm *BugManager) updateIssueLegacy(ctx context.Context, request bugs.BugUpdateRequest, issue *issuetracker.Issue) bugs.BugUpdateResponse {
+	updateResponse := bugs.BugUpdateResponse{
+		ShouldArchive:              shouldArchiveRule(ctx, issue, request.IsManagingBug),
+		DisableRulePriorityUpdates: false,
+	}
+	if issue.IssueState.Status == issuetracker.Issue_DUPLICATE {
+		updateResponse.IsDuplicate = true
+		updateResponse.IsDuplicateAndAssigned = issue.IssueState.Assignee != nil
 	}
 
 	if !updateResponse.IsDuplicate &&
 		!updateResponse.ShouldArchive &&
 		request.IsManagingBug &&
 		request.Metrics != nil {
-		if bm.requestGenerator.NeedsUpdate(request.Metrics, issue, request.IsManagingBugPriority) {
-			mur, err := bm.requestGenerator.MakeUpdate(ctx, MakeUpdateOptions{
+		if bm.requestGenerator.NeedsUpdateLegacy(request.Metrics, issue, request.IsManagingBugPriority) {
+			mur, err := bm.requestGenerator.MakeUpdateLegacy(ctx, MakeUpdateLegacyOptions{
 				metrics:                          request.Metrics,
 				issue:                            issue,
 				IsManagingBugPriority:            request.IsManagingBugPriority,
@@ -312,6 +404,46 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 		}
 	}
 	return updateResponse
+}
+
+// hasManuallySetPriority checks whether this issue's priority was last modified by
+// a user.
+func (bm *BugManager) hasManuallySetPriority(
+	it IssueUpdateIterator, selfEmail string, isManagingBugPriorityLastUpdated time.Time) (bool, error) {
+	var priorityUpdateTime time.Time
+	var foundUpdate bool
+	// Loops on the list of the issues updates, the updates are in time-descending
+	// order by default.
+	for {
+		update, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return false, errors.Annotate(err, "iterating through issue updates").Err()
+		}
+		if update.Author.EmailAddress != selfEmail {
+			// If the modification was done by a user, we check if
+			// the priority was updated in the list of updated fields.
+			for _, fieldUpdate := range update.FieldUpdates {
+				if fieldUpdate.Field == priorityField {
+					foundUpdate = true
+					priorityUpdateTime = update.Timestamp.AsTime()
+					break
+				}
+			}
+		}
+		if foundUpdate {
+			break
+		}
+	}
+	// We compare the last time the user modified the priority was after
+	// the last time the rule's priority management property was enabled.
+	if foundUpdate &&
+		priorityUpdateTime.After(isManagingBugPriorityLastUpdated) {
+		return true, nil
+	}
+	return false, nil
 }
 
 func shouldArchiveRule(ctx context.Context, issue *issuetracker.Issue, isManaging bool) bool {
@@ -516,7 +648,7 @@ func (bm *BugManager) checkSinglePermission(ctx context.Context, componentID int
 		resource = append(resource, "issueDefaults")
 	}
 	automationAccessRequest := &issuetracker.GetAutomationAccessRequest{
-		User:         &issuetracker.User{EmailAddress: ctx.Value(&BuganizerSelfEmailKey).(string)},
+		User:         &issuetracker.User{EmailAddress: bm.selfEmail},
 		Relation:     relation,
 		ResourceName: strings.Join(resource, "/"),
 	}

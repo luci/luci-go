@@ -24,6 +24,8 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
+	"go.chromium.org/luci/analysis/internal/bugs/policy"
+	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	"go.chromium.org/luci/common/errors"
@@ -52,50 +54,77 @@ var configPriorityToIssueTrackerPriority = map[configpb.BuganizerPriority]issuet
 // We use this to look for updates to issue priorities.
 const priorityField = "priority"
 
-// The result of a MakeUpdate request.
-type MakeUpdateResult struct {
-	// The generated request.
-	request *issuetracker.ModifyIssueRequest
-	// disablePriorityUpdates is set when the user has manually
-	// made a priority update since the last time automatic
-	// priority updates were enabled
-	disablePriorityUpdates bool
-}
-
 // RequestGenerator generates new bugs or prepares existing ones
 // for updates.
 type RequestGenerator struct {
 	// The issuetracker client that will be used to make RPCs to Buganizer.
 	client Client
-	// The GAE app id, e.g. "luci-analysis".
-	appID string
 	// The LUCI project for which we are generating bug updates. This
 	// is distinct from the Buganizer project.
 	project string
+	// The UI Base URL, e.g. "https://luci-analysis.appspot.com"
+	uiBaseURL string
+	// The email address the service uses to authenticate to Buganizer.
+	selfEmail string
 	// The Buganizer config of the LUCI project config.
 	buganizerCfg *configpb.BuganizerProject
 	// The threshold at which bugs are filed. Used here as the threshold
 	// at which to re-open verified bugs.
 	bugFilingThresholds []*configpb.ImpactMetricThreshold
+	// The policy applyer instance used to apply bug management policy.
+	policyApplyer policy.Applyer
 }
 
 // Initializes and returns a new buganizer request generator.
 func NewRequestGenerator(
 	client Client,
-	appID, project string,
+	project, uiBaseURL, selfEmail string,
 	projectCfg *configpb.ProjectConfig) *RequestGenerator {
 	return &RequestGenerator{
 		client:              client,
-		appID:               appID,
+		uiBaseURL:           uiBaseURL,
+		selfEmail:           selfEmail,
 		project:             project,
 		buganizerCfg:        projectCfg.Buganizer,
 		bugFilingThresholds: projectCfg.BugFilingThresholds,
+		// Buganizer supports all priority levels P4 and above.
+		policyApplyer: policy.NewApplyer(projectCfg.BugManagement.GetPolicies(), configpb.BuganizerPriority_P4),
 	}
 }
 
 // PrepareNew generates a CreateIssueRequest for a new issue.
+func (rg *RequestGenerator) PrepareNew(description *clustering.ClusterDescription, activePolicyIDs map[string]struct{},
+	ruleID string, componentID int64) (*issuetracker.CreateIssueRequest, error) {
+	priority, verified := rg.policyApplyer.RecommendedPriorityAndVerified(activePolicyIDs)
+	if verified {
+		return nil, errors.Reason("issue is recommended to be verified from time of creation; are no policies active?").Err()
+	}
+
+	ruleLink := policy.RuleURL(rg.uiBaseURL, rg.project, ruleID)
+
+	issue := &issuetracker.Issue{
+		IssueState: &issuetracker.IssueState{
+			ComponentId: componentID,
+			Type:        issuetracker.Issue_BUG,
+			Status:      issuetracker.Issue_NEW,
+			Priority:    toBuganizerPriority(priority),
+			Severity:    issuetracker.Issue_S2,
+			Title:       bugs.GenerateBugSummary(description.Title),
+		},
+		IssueComment: &issuetracker.IssueComment{
+			Comment: rg.policyApplyer.NewIssueDescription(
+				description, activePolicyIDs, rg.uiBaseURL, ruleLink),
+		},
+	}
+
+	return &issuetracker.CreateIssueRequest{
+		Issue: issue,
+	}, nil
+}
+
+// PrepareNewLegacy generates a CreateIssueRequest for a new issue.
 // It sets the default values on the bug.
-func (rg *RequestGenerator) PrepareNew(metrics *bugs.ClusterMetrics,
+func (rg *RequestGenerator) PrepareNewLegacy(metrics bugs.ClusterMetrics,
 	description *clustering.ClusterDescription,
 	ruleID string,
 	componentID int64) *issuetracker.CreateIssueRequest {
@@ -105,7 +134,7 @@ func (rg *RequestGenerator) PrepareNew(metrics *bugs.ClusterMetrics,
 	// Justify the priority for the bug.
 	thresholdComment := rg.priorityComment(metrics, issuePriority)
 
-	ruleLink := fmt.Sprintf("https://%s.appspot.com/p/%s/rules/%s", rg.appID, rg.project, ruleID)
+	ruleLink := policy.RuleURL(rg.uiBaseURL, rg.project, ruleID)
 
 	issue := &issuetracker.Issue{
 		IssueState: &issuetracker.IssueState{
@@ -117,8 +146,8 @@ func (rg *RequestGenerator) PrepareNew(metrics *bugs.ClusterMetrics,
 			Title:       bugs.GenerateBugSummary(description.Title),
 		},
 		IssueComment: &issuetracker.IssueComment{
-			Comment: bugs.GenerateInitialIssueDescription(
-				description, rg.appID, thresholdComment, ruleLink),
+			Comment: policy.NewIssueDescriptionLegacy(
+				description, rg.uiBaseURL, thresholdComment, ruleLink),
 		},
 	}
 
@@ -129,7 +158,7 @@ func (rg *RequestGenerator) PrepareNew(metrics *bugs.ClusterMetrics,
 
 // clusterPriority returns the desired priority of the bug, if no hysteresis
 // is applied.
-func (rg *RequestGenerator) clusterPriority(metrics *bugs.ClusterMetrics) issuetracker.Issue_Priority {
+func (rg *RequestGenerator) clusterPriority(metrics bugs.ClusterMetrics) issuetracker.Issue_Priority {
 	return rg.clusterPriorityWithInflatedThresholds(metrics, 0)
 }
 
@@ -137,7 +166,7 @@ func (rg *RequestGenerator) clusterPriority(metrics *bugs.ClusterMetrics) issuet
 // if thresholds are inflated or deflated with the given percentage.
 //
 // See bugs.InflateThreshold for the interpretation of inflationPercent.
-func (rg *RequestGenerator) clusterPriorityWithInflatedThresholds(impact *bugs.ClusterMetrics, inflationPercent int64) issuetracker.Issue_Priority {
+func (rg *RequestGenerator) clusterPriorityWithInflatedThresholds(impact bugs.ClusterMetrics, inflationPercent int64) issuetracker.Issue_Priority {
 	mappings := rg.buganizerCfg.PriorityMappings
 	// Default to using the lowest priorityMapping.
 	priorityMapping := mappings[len(mappings)-1]
@@ -157,15 +186,34 @@ func (rg *RequestGenerator) clusterPriorityWithInflatedThresholds(impact *bugs.C
 // linkToRuleComment returns a comment that links the user to the failure
 // association rule in LUCI Analysis.
 //
-// issueId is the Buganizer issueId.
-func (rg *RequestGenerator) linkToRuleComment(issueId int64) string {
-	issueLink := fmt.Sprintf("https://%s.appspot.com/b/%d", rg.appID, issueId)
-	return fmt.Sprintf(bugs.LinkTemplate, issueLink)
+// issueID is the Buganizer issue ID.
+func (rg *RequestGenerator) linkToRuleComment(issueID int64) string {
+	ruleLink := policy.BuganizerBugRuleURL(rg.uiBaseURL, issueID)
+	return fmt.Sprintf(bugs.LinkTemplate, ruleLink)
 }
 
 // PrepareLinkIssueCommentUpdate prepares a request that adds links to LUCI Analysis to
 // a Buganizer bug by updating the issue description.
-func (rg *RequestGenerator) PrepareLinkIssueCommentUpdate(metrics *bugs.ClusterMetrics,
+func (rg *RequestGenerator) PrepareLinkIssueCommentUpdate(description *clustering.ClusterDescription,
+	activePolicyIDs map[string]struct{}, issueID int64) *issuetracker.UpdateIssueCommentRequest {
+
+	// Regenerate the initial comment in the same way as PrepareNew, but use
+	// the link for the rule that uses the bug ID instead of the rule ID.
+	ruleLink := policy.BuganizerBugRuleURL(rg.uiBaseURL, issueID)
+
+	return &issuetracker.UpdateIssueCommentRequest{
+		IssueId:       issueID,
+		CommentNumber: 1,
+		Comment: &issuetracker.IssueComment{
+			Comment: rg.policyApplyer.NewIssueDescription(
+				description, activePolicyIDs, rg.uiBaseURL, ruleLink),
+		},
+	}
+}
+
+// PrepareLinkIssueCommentUpdateLegacy prepares a request that adds links to LUCI Analysis to
+// a Buganizer bug by updating the issue description.
+func (rg *RequestGenerator) PrepareLinkIssueCommentUpdateLegacy(metrics bugs.ClusterMetrics,
 	description *clustering.ClusterDescription,
 	issueID int64) *issuetracker.UpdateIssueCommentRequest {
 
@@ -173,14 +221,14 @@ func (rg *RequestGenerator) PrepareLinkIssueCommentUpdate(metrics *bugs.ClusterM
 	// the link for the rule that uses the bug ID instead of the rule ID.
 	issuePriority := rg.clusterPriority(metrics)
 	thresholdComment := rg.priorityComment(metrics, issuePriority)
-	ruleLink := fmt.Sprintf("https://%s.appspot.com/b/%d", rg.appID, issueID)
+	ruleLink := policy.BuganizerBugRuleURL(rg.uiBaseURL, issueID)
 
 	return &issuetracker.UpdateIssueCommentRequest{
 		IssueId:       issueID,
 		CommentNumber: 1,
 		Comment: &issuetracker.IssueComment{
-			Comment: bugs.GenerateInitialIssueDescription(
-				description, rg.appID, thresholdComment, ruleLink),
+			Comment: policy.NewIssueDescriptionLegacy(
+				description, rg.uiBaseURL, thresholdComment, ruleLink),
 		},
 	}
 }
@@ -230,9 +278,9 @@ func (rg *RequestGenerator) UpdateDuplicateSource(issueId int64, errorMessage, d
 			Comment: strings.Join([]string{errorMessage, rg.linkToRuleComment(issueId)}, "\n\n"),
 		}
 	} else {
-		bugLink := fmt.Sprintf("https://%s.appspot.com/p/%s/rules/%s", rg.appID, rg.project, destinationRuleID)
+		ruleLink := policy.RuleURL(rg.uiBaseURL, rg.project, destinationRuleID)
 		updateRequest.IssueComment = &issuetracker.IssueComment{
-			Comment: fmt.Sprintf(bugs.SourceBugRuleUpdatedTemplate, bugLink),
+			Comment: fmt.Sprintf(bugs.SourceBugRuleUpdatedTemplate, ruleLink),
 		}
 	}
 	return updateRequest
@@ -259,13 +307,40 @@ func (rg *RequestGenerator) UpdateDuplicateDestination(issueId int64) *issuetrac
 	}
 }
 
-// NeedsUpdate determines if the bug for the given cluster needs to be updated.
-func (rg *RequestGenerator) NeedsUpdate(metrics *bugs.ClusterMetrics,
+// NeedsPriorityOrVerifiedUpdate returns whether the bug priority and/or verified
+// status needs to be updated.
+func (rg *RequestGenerator) NeedsPriorityOrVerifiedUpdate(bms *bugspb.BugManagementState,
+	issue *issuetracker.Issue,
+	isManagingBugPriority bool) bool {
+	opts := policy.BugOptions{
+		State:              bms,
+		IsManagingPriority: isManagingBugPriority,
+		ExistingPriority:   fromBuganizerPriority(issue.IssueState.Priority),
+		ExistingVerified:   issue.IssueState.Status == issuetracker.Issue_VERIFIED,
+	}
+	return rg.policyApplyer.NeedsPriorityOrVerifiedUpdate(opts)
+}
+
+func toBuganizerPriority(priority configpb.BuganizerPriority) issuetracker.Issue_Priority {
+	return configPriorityToIssueTrackerPriority[priority]
+}
+
+func fromBuganizerPriority(priority issuetracker.Issue_Priority) configpb.BuganizerPriority {
+	for configPri, issuePri := range configPriorityToIssueTrackerPriority {
+		if issuePri == priority {
+			return configPri
+		}
+	}
+	panic(fmt.Sprintf("fromBuganizerPriority - should be unreachable (priority: %v)", priority))
+}
+
+// NeedsUpdateLegacy determines if the bug for the given cluster needs to be updated.
+func (rg *RequestGenerator) NeedsUpdateLegacy(metrics bugs.ClusterMetrics,
 	issue *issuetracker.Issue,
 	isManagingBugPriority bool) bool {
 	// Cases that a bug may be updated follow.
 	switch {
-	case !rg.isCompatibleWithVerified(metrics, issue.IssueState.Status == issuetracker.Issue_VERIFIED):
+	case !rg.isCompatibleWithVerifiedLegacy(metrics, issue.IssueState.Status == issuetracker.Issue_VERIFIED):
 		return true
 	case isManagingBugPriority &&
 		issue.IssueState.Status != issuetracker.Issue_VERIFIED &&
@@ -278,10 +353,126 @@ func (rg *RequestGenerator) NeedsUpdate(metrics *bugs.ClusterMetrics,
 	}
 }
 
-// MakeUpdateOptions are the options for making a bug update.
 type MakeUpdateOptions struct {
+	// The bug management state.
+	BugManagementState *bugspb.BugManagementState
+	// The Issue to update.
+	Issue *issuetracker.Issue
+	// Indicates whether the rule is managing bug priority or not.
+	// Use the value on the rule; do not yet set it to false if
+	// HasManuallySetPriority is true.
+	IsManagingBugPriority bool
+	// Whether the user has manually taken control of the bug priority.
+	HasManuallySetPriority bool
+}
+
+// MakeUpdateResult is the result of MakePriorityOrVerifiedUpdate.
+type MakeUpdateResult struct {
+	// The generated request.
+	request *issuetracker.ModifyIssueRequest
+	// disablePriorityUpdates is set when the user has manually
+	// made a priority update since the last time automatic
+	// priority updates were enabled
+	disablePriorityUpdates bool
+}
+
+// MakePriorityOrVerifiedUpdate prepares a priority and/or verified update for the
+// bug with the given bug management state.
+// **Must** ONLY be called if NeedsPriorityOrVerifiedUpdate(...) returns true.
+func (rg *RequestGenerator) MakePriorityOrVerifiedUpdate(
+	ctx context.Context,
+	options MakeUpdateOptions) (MakeUpdateResult, error) {
+
+	opts := policy.BugOptions{
+		State:              options.BugManagementState,
+		IsManagingPriority: options.IsManagingBugPriority && !options.HasManuallySetPriority,
+		ExistingPriority:   fromBuganizerPriority(options.Issue.IssueState.Priority),
+		ExistingVerified:   options.Issue.IssueState.Status == issuetracker.Issue_VERIFIED,
+	}
+
+	change, err := rg.policyApplyer.PreparePriorityAndVerifiedChange(opts, rg.uiBaseURL)
+	if err != nil {
+		return MakeUpdateResult{}, errors.Annotate(err, "prepare change").Err()
+	}
+
+	request := &issuetracker.ModifyIssueRequest{
+		IssueId:      options.Issue.IssueId,
+		AddMask:      &fieldmaskpb.FieldMask{},
+		Add:          &issuetracker.IssueState{},
+		RemoveMask:   &fieldmaskpb.FieldMask{},
+		Remove:       &issuetracker.IssueState{},
+		IssueComment: &issuetracker.IssueComment{},
+	}
+
+	if change.UpdatePriority {
+		request.AddMask.Paths = append(request.AddMask.Paths, "priority")
+		request.Add.Priority = toBuganizerPriority(change.Priority)
+	}
+	if change.UpdateVerified {
+		if change.ShouldBeVerified {
+			// If the issue is not already closed by the user.
+			if options.Issue.IssueState.Assignee != nil {
+				request.Add.Verifier = options.Issue.IssueState.Assignee
+				request.AddMask.Paths = append(request.AddMask.Paths, "verifier")
+			} else {
+				request.Add.Verifier = &issuetracker.User{
+					EmailAddress: rg.selfEmail,
+				}
+				request.AddMask.Paths = append(request.AddMask.Paths, "verifier")
+
+				request.Add.Assignee = &issuetracker.User{
+					EmailAddress: rg.selfEmail,
+				}
+				request.AddMask.Paths = append(request.AddMask.Paths, "assignee")
+			}
+
+			request.Add.Status = issuetracker.Issue_VERIFIED
+			request.AddMask.Paths = append(request.AddMask.Paths, "status")
+		} else {
+			var status issuetracker.Issue_Status
+
+			if options.Issue.IssueState.Assignee == nil {
+				status = issuetracker.Issue_NEW
+			} else {
+				if options.Issue.IssueState.Assignee.EmailAddress == rg.selfEmail {
+					// In case the current assignee is LUCI Analysis itself
+					// from an earlier bug verification.
+					status = issuetracker.Issue_NEW
+
+					request.Remove.Assignee = &issuetracker.User{}
+					request.RemoveMask.Paths = append(request.RemoveMask.Paths, "assignee")
+				} else {
+					status = issuetracker.Issue_ASSIGNED
+				}
+			}
+			request.Add.Status = status
+			request.AddMask.Paths = append(request.AddMask.Paths, "status")
+		}
+	}
+
+	var result MakeUpdateResult
+	var commentary bugs.Commentary
+	if change.UpdatePriority || change.UpdateVerified {
+		commentary = change.Justification
+	}
+	if options.HasManuallySetPriority {
+		commentary = bugs.MergeCommentary(commentary, policy.ManualPriorityUpdateCommentary())
+		result.disablePriorityUpdates = true
+	}
+	commentary.Footers = append(commentary.Footers, rg.linkToRuleComment(options.Issue.IssueId))
+
+	request.IssueComment = &issuetracker.IssueComment{
+		IssueId: options.Issue.IssueId,
+		Comment: commentary.ToComment(),
+	}
+	result.request = request
+	return result, nil
+}
+
+// MakeUpdateLegacyOptions are the options for making a bug update.
+type MakeUpdateLegacyOptions struct {
 	// The cluster metrics.
-	metrics *bugs.ClusterMetrics
+	metrics bugs.ClusterMetrics
 	// The issue to update.
 	issue *issuetracker.Issue
 	// Indicates whether the rule is managing bug priority or not.
@@ -290,11 +481,11 @@ type MakeUpdateOptions struct {
 	IsManagingBugPriorityLastUpdated time.Time
 }
 
-// MakeUpdate prepares an update for the bug with the given metrics.
-// **Must** ONLY be called if NeedsUpdate(...) returns true.
-func (rg *RequestGenerator) MakeUpdate(
+// MakeUpdateLegacy prepares an update for the bug with the given metrics.
+// **Must** ONLY be called if NeedsUpdateLegacy(...) returns true.
+func (rg *RequestGenerator) MakeUpdateLegacy(
 	ctx context.Context,
-	options MakeUpdateOptions) (MakeUpdateResult, error) {
+	options MakeUpdateLegacyOptions) (MakeUpdateResult, error) {
 
 	request := &issuetracker.ModifyIssueRequest{
 		IssueId:      options.issue.IssueId,
@@ -305,57 +496,56 @@ func (rg *RequestGenerator) MakeUpdate(
 		IssueComment: &issuetracker.IssueComment{},
 	}
 
-	var commentary []bugs.Commentary
+	var commentary bugs.Commentary
 	result := MakeUpdateResult{}
 	issueVerified := options.issue.IssueState.Status == issuetracker.Issue_VERIFIED
-	if !rg.isCompatibleWithVerified(options.metrics, issueVerified) {
+	if !rg.isCompatibleWithVerifiedLegacy(options.metrics, issueVerified) {
 		// Verify or reopen the issue.
-		comment, err := rg.prepareBugVerifiedUpdate(ctx, options.metrics, options.issue, request)
+		comment, err := rg.prepareBugVerifiedUpdateLegacy(ctx, options.metrics, options.issue, request)
 		if err != nil {
 			return MakeUpdateResult{}, errors.Annotate(err, "prepare bug verified update ").Err()
 		}
-		commentary = append(commentary, comment)
+		commentary = bugs.MergeCommentary(commentary, comment)
 		// After the update, whether the issue was verified will have changed.
 		issueVerified = rg.clusterResolved(options.metrics)
+
 	}
 	if options.IsManagingBugPriority &&
 		!issueVerified &&
 		!rg.isCompatibleWithPriority(options.metrics, options.issue.IssueState.Priority) {
-		hasManuallySetPriority, err := rg.hasManuallySetPriority(ctx, options)
+		hasManuallySetPriority, err := rg.hasManuallySetPriorityLegacy(ctx, options)
 		if err != nil {
 			return MakeUpdateResult{}, errors.Annotate(err, "create issue update request").Err()
 		}
 		if hasManuallySetPriority {
-			comment := bugs.Commentary{
-				Body: "The bug priority has been manually set. To re-enable automatic priority updates by LUCI Analysis, enable the update priority flag on the rule.",
-			}
-			commentary = append(commentary, comment)
+			comment := policy.ManualPriorityUpdateCommentary()
+			commentary = bugs.MergeCommentary(commentary, comment)
 			result.disablePriorityUpdates = true
 		} else {
 			// We were the last to update the bug priority.
 			// Apply the priority update.
 			comment := rg.preparePriorityUpdate(options.metrics, options.issue, request)
-			commentary = append(commentary, comment)
+			commentary = bugs.MergeCommentary(commentary, comment)
 		}
 	}
 
 	c := bugs.Commentary{
-		Footer: rg.linkToRuleComment(options.issue.IssueId),
+		Footers: []string{rg.linkToRuleComment(options.issue.IssueId)},
 	}
-	commentary = append(commentary, c)
+	commentary = bugs.MergeCommentary(commentary, c)
 
 	request.IssueComment = &issuetracker.IssueComment{
 		IssueId: options.issue.IssueId,
-		Comment: bugs.MergeCommentary(commentary...),
+		Comment: commentary.ToComment(),
 	}
 	result.request = request
 	return result, nil
 }
 
-// hasManuallySetPriority checks whether this issue's priority was last modified by
+// hasManuallySetPriorityLegacy checks whether this issue's priority was last modified by
 // a user.
-func (rg *RequestGenerator) hasManuallySetPriority(ctx context.Context,
-	options MakeUpdateOptions) (bool, error) {
+func (rg *RequestGenerator) hasManuallySetPriorityLegacy(ctx context.Context,
+	options MakeUpdateLegacyOptions) (bool, error) {
 	request := &issuetracker.ListIssueUpdatesRequest{
 		IssueId: options.issue.IssueId,
 	}
@@ -373,8 +563,7 @@ func (rg *RequestGenerator) hasManuallySetPriority(ctx context.Context,
 		if err != nil {
 			return false, errors.Annotate(err, "iterating through issue updates").Err()
 		}
-		luciAnalysisEmail := ctx.Value(&BuganizerSelfEmailKey)
-		if update.Author.EmailAddress != luciAnalysisEmail {
+		if update.Author.EmailAddress != rg.selfEmail {
 			// If the modification was done by a user, we check if
 			// the priority was updated in the list of updated fields.
 			for _, fieldUpdate := range update.FieldUpdates {
@@ -398,10 +587,10 @@ func (rg *RequestGenerator) hasManuallySetPriority(ctx context.Context,
 	return false, nil
 }
 
-// prepareBugVerifiedUpdate adds bug status update to the request.
+// prepareBugVerifiedUpdateLegacy adds bug status update to the request.
 // Returns the commentary about this change.
-func (rg *RequestGenerator) prepareBugVerifiedUpdate(ctx context.Context,
-	metrics *bugs.ClusterMetrics,
+func (rg *RequestGenerator) prepareBugVerifiedUpdateLegacy(ctx context.Context,
+	metrics bugs.ClusterMetrics,
 	issue *issuetracker.Issue,
 	request *issuetracker.ModifyIssueRequest) (bugs.Commentary, error) {
 	resolved := rg.clusterResolved(metrics)
@@ -414,14 +603,11 @@ func (rg *RequestGenerator) prepareBugVerifiedUpdate(ctx context.Context,
 		if issue.IssueState.Assignee != nil {
 			request.Add.Verifier = issue.IssueState.Assignee
 		} else {
-			if ctx.Value(&BuganizerSelfEmailKey) == nil {
-				return bugs.Commentary{}, errors.New("buganizer self email is required to file buganizer bugs.")
-			}
 			request.Add.Verifier = &issuetracker.User{
-				EmailAddress: ctx.Value(&BuganizerSelfEmailKey).(string),
+				EmailAddress: rg.selfEmail,
 			}
 			request.Add.Assignee = &issuetracker.User{
-				EmailAddress: ctx.Value(&BuganizerSelfEmailKey).(string),
+				EmailAddress: rg.selfEmail,
 			}
 			request.AddMask.Paths = append(request.AddMask.Paths, "assignee")
 		}
@@ -437,7 +623,7 @@ func (rg *RequestGenerator) prepareBugVerifiedUpdate(ctx context.Context,
 		body.WriteString(rg.priorityDecreaseJustification(oldPriorityIndex, newPriorityIndex))
 		body.WriteString("LUCI Analysis is marking the issue verified.")
 
-		trailer = fmt.Sprintf("Why issues are verified: https://%s.appspot.com/help#bug-verified", rg.appID)
+		trailer = fmt.Sprintf("Why issues are verified: %s", policy.BugVerifiedHelpURL(rg.uiBaseURL))
 	} else {
 		if issue.IssueState.Assignee != nil {
 			status = issuetracker.Issue_ASSIGNED
@@ -449,12 +635,12 @@ func (rg *RequestGenerator) prepareBugVerifiedUpdate(ctx context.Context,
 		body.WriteString(bugs.ExplainThresholdsMet(metrics, rg.bugFilingThresholds))
 		body.WriteString("LUCI Analysis has re-opened the bug.")
 
-		trailer = fmt.Sprintf("Why issues are re-opened: https://%s.appspot.com/help#bug-reopened", rg.appID)
+		trailer = fmt.Sprintf("Why issues are re-opened: %s", policy.BugReopenedHelpURL(rg.uiBaseURL))
 	}
 
 	commentary := bugs.Commentary{
-		Body:   body.String(),
-		Footer: trailer,
+		Bodies:  []string{body.String()},
+		Footers: []string{trailer},
 	}
 	request.AddMask.Paths = append(request.AddMask.Paths, "status")
 	request.Add.Status = status
@@ -462,7 +648,7 @@ func (rg *RequestGenerator) prepareBugVerifiedUpdate(ctx context.Context,
 }
 
 // preparePriorityUpdate updates the issue's priority and creates a commentary for it.
-func (rg *RequestGenerator) preparePriorityUpdate(metrics *bugs.ClusterMetrics, issue *issuetracker.Issue, request *issuetracker.ModifyIssueRequest) bugs.Commentary {
+func (rg *RequestGenerator) preparePriorityUpdate(metrics bugs.ClusterMetrics, issue *issuetracker.Issue, request *issuetracker.ModifyIssueRequest) bugs.Commentary {
 	newPriority := rg.clusterPriority(metrics)
 	request.AddMask.Paths = append(request.AddMask.Paths, "priority")
 	request.Add.Priority = newPriority
@@ -480,8 +666,8 @@ func (rg *RequestGenerator) preparePriorityUpdate(metrics *bugs.ClusterMetrics, 
 		body.WriteString(fmt.Sprintf("LUCI Analysis has decreased the bug priority from %v to %v.", issue.IssueState.Priority, newPriority))
 	}
 	c := bugs.Commentary{
-		Body:   body.String(),
-		Footer: fmt.Sprintf("Why priority is updated: https://%s.appspot.com/help#priority-updated", rg.appID),
+		Bodies:  []string{body.String()},
+		Footers: []string{fmt.Sprintf("Why priority is updated: %s", policy.PriorityUpdatedHelpURL(rg.uiBaseURL))},
 	}
 	return c
 }
@@ -493,7 +679,7 @@ func (rg *RequestGenerator) preparePriorityUpdate(metrics *bugs.ClusterMetrics, 
 // Example output:
 // "The priority was set to P0 because:
 // - Presubmit Runs Failed (1-day) >= 15"
-func (rg *RequestGenerator) priorityComment(metrics *bugs.ClusterMetrics, issuePriority issuetracker.Issue_Priority) string {
+func (rg *RequestGenerator) priorityComment(metrics bugs.ClusterMetrics, issuePriority issuetracker.Issue_Priority) string {
 	priorityIndex := rg.indexOfPriority(issuePriority)
 	if priorityIndex >= len(rg.buganizerCfg.PriorityMappings) {
 		// Unknown priority - it should be one of the configured priorities.
@@ -523,7 +709,7 @@ func (rg *RequestGenerator) priorityComment(metrics *bugs.ClusterMetrics, issueP
 //
 // Example output:
 // "- Presubmit Runs Failed (1-day) >= 15"
-func (rg *RequestGenerator) priorityIncreaseJustification(metrics *bugs.ClusterMetrics, oldPriorityIndex, newPriorityIndex int) string {
+func (rg *RequestGenerator) priorityIncreaseJustification(metrics bugs.ClusterMetrics, oldPriorityIndex, newPriorityIndex int) string {
 	if newPriorityIndex >= oldPriorityIndex {
 		// Priority did not change or decreased.
 		return ""
@@ -585,10 +771,10 @@ func (rg *RequestGenerator) priorityDecreaseJustification(oldPriorityIndex, newP
 	return bugs.ExplainThresholdNotMetMessage(failedToMeetThreshold)
 }
 
-// isCompatibleWithVerified returns whether the metrics of the current cluster
+// isCompatibleWithVerifiedLegacy returns whether the metrics of the current cluster
 // are compatible with the issue having the given verified status, based on
 // configured thresholds and hysteresis.
-func (rg *RequestGenerator) isCompatibleWithVerified(metrics *bugs.ClusterMetrics, verified bool) bool {
+func (rg *RequestGenerator) isCompatibleWithVerifiedLegacy(metrics bugs.ClusterMetrics, verified bool) bool {
 	hysteresisPerc := rg.buganizerCfg.PriorityHysteresisPercent
 	lowestPriority := rg.buganizerCfg.PriorityMappings[len(rg.buganizerCfg.PriorityMappings)-1]
 	if verified {
@@ -610,7 +796,7 @@ func (rg *RequestGenerator) isCompatibleWithVerified(metrics *bugs.ClusterMetric
 //
 // If the issue's priority is not in the configuration, it is also
 // considered to be incompatible.
-func (rg *RequestGenerator) isCompatibleWithPriority(metrics *bugs.ClusterMetrics, priority issuetracker.Issue_Priority) bool {
+func (rg *RequestGenerator) isCompatibleWithPriority(metrics bugs.ClusterMetrics, priority issuetracker.Issue_Priority) bool {
 	priorityIndex := rg.indexOfPriority(priority)
 	if priorityIndex >= len(rg.buganizerCfg.PriorityMappings) {
 		// Unknown priority in use. The priority should be updated to
@@ -633,7 +819,7 @@ func (rg *RequestGenerator) isCompatibleWithPriority(metrics *bugs.ClusterMetric
 
 // clusterResolved returns the desired state of whether the cluster has been
 // verified, if no hysteresis has been applied.
-func (rg *RequestGenerator) clusterResolved(metrics *bugs.ClusterMetrics) bool {
+func (rg *RequestGenerator) clusterResolved(metrics bugs.ClusterMetrics) bool {
 	lowestPriority := rg.buganizerCfg.PriorityMappings[len(rg.buganizerCfg.PriorityMappings)-1]
 	return !metrics.MeetsAnyOfThresholds(lowestPriority.Thresholds)
 }

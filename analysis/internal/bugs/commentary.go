@@ -15,40 +15,28 @@
 package bugs
 
 import (
-	"fmt"
 	"strings"
-
-	"go.chromium.org/luci/analysis/internal/clustering"
 )
 
 // Commentary represents part of a bug comment.
 type Commentary struct {
-	// The comment body. This should be the most important information to surface
+	// The comment bodies. This should be the most important information to surface
 	// to the user, and appears first. Do not include leading or trailing new line
 	// character.
-	Body string
+	Bodies []string
 	// Text to appear in the footer of the comment, such as links to more information.
 	// This information appears last. Do not include leading or trailing new line
 	// character.
-	Footer string
+	Footers []string
 }
 
-// MergeCommentary merges one or more commentary items into a bug comment.
-// All commentary bodies appear first, followed by all footers.
-func MergeCommentary(cs ...Commentary) string {
-	var bodies []string
-	var footers []string
-	for _, c := range cs {
-		if c.Body != "" {
-			bodies = append(bodies, c.Body)
-		}
-		if c.Footer != "" {
-			footers = append(footers, c.Footer)
-		}
-	}
-
+// ToComment prepares a comment from commentary.
+func (c Commentary) ToComment() string {
 	// Footer content is packed together tightly, without blank lines.
-	footer := strings.Join(footers, "\n")
+	footer := strings.Join(c.Footers, "\n")
+
+	var bodies []string
+	bodies = append(bodies, c.Bodies...)
 	if footer != "" {
 		bodies = append(bodies, footer)
 	}
@@ -57,41 +45,17 @@ func MergeCommentary(cs ...Commentary) string {
 	return strings.Join(bodies, "\n\n")
 }
 
-// GenerateInitialIssueDescription generates the description that should
-// be used when the issue is first created.
-// It includes the given threshold comment, which can justify:
-// * why the bug has its initial priority; or
-// * why the bug was automatically filed.
-// It adds information about actioning the bug and what to do
-// if the component is not correct.
-func GenerateInitialIssueDescription(description *clustering.ClusterDescription, appID, thresholdComment, ruleLink string) string {
-	var commentary []Commentary
-
-	commentary = append(commentary, Commentary{
-		Body: description.Description,
-	})
-
-	if ruleLink != "" {
-		commentary = append(commentary, Commentary{
-			Body: fmt.Sprintf("See failure impact and configure the failure association rule for this bug at: %s", ruleLink),
-		})
+// MergeCommentary merges one or more commentary items into a bug comment.
+// All commentary bodies appear first, followed by all footers.
+func MergeCommentary(cs ...Commentary) Commentary {
+	var bodies []string
+	var footers []string
+	for _, c := range cs {
+		bodies = append(bodies, c.Bodies...)
+		footers = append(footers, c.Footers...)
 	}
-
-	commentary = append(commentary, Commentary{
-		Body: thresholdComment,
-	})
-
-	commentary = append(commentary, Commentary{
-		Body:   NewBugTrailingDescription,
-		Footer: fmt.Sprintf("How to action this bug: https://%s.appspot.com/help#new-bug-filed", appID),
-	})
-	commentary = append(commentary, Commentary{
-		Footer: fmt.Sprintf("Provide feedback: https://%s.appspot.com/help#feedback", appID),
-	})
-	commentary = append(commentary, Commentary{
-		Footer: fmt.Sprintf("Was this bug filed in the wrong component? See: "+
-			"https://%s.appspot.com/help#component-selection", appID),
-	})
-
-	return MergeCommentary(commentary...)
+	return Commentary{
+		Bodies:  bodies,
+		Footers: footers,
+	}
 }

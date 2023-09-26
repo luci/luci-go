@@ -793,11 +793,9 @@ func TestProjectConfigValidator(t *testing.T) {
 			// but may have non-duplicate IDs.
 			Convey("may have multiple", func() {
 				bm.Policies = []*configpb.BugManagementPolicy{
-					createPlaceholderBugManagementPolicy(),
-					createPlaceholderBugManagementPolicy(),
+					CreatePlaceholderBugManagementPolicy("policy-a"),
+					CreatePlaceholderBugManagementPolicy("policy-b"),
 				}
-				bm.Policies[0].Id = "policy-a"
-				bm.Policies[1].Id = "policy-b"
 				So(validate(project, cfg), ShouldBeNil)
 
 				Convey("duplicate policy IDs", func() {
@@ -808,8 +806,7 @@ func TestProjectConfigValidator(t *testing.T) {
 			Convey("too many", func() {
 				bm.Policies = []*configpb.BugManagementPolicy{}
 				for i := 0; i < 51; i++ {
-					policy := createPlaceholderBugManagementPolicy()
-					policy.Id = fmt.Sprintf("extra-%v", i)
+					policy := CreatePlaceholderBugManagementPolicy(fmt.Sprintf("extra-%v", i))
 					bm.Policies = append(bm.Policies, policy)
 				}
 				So(validate(project, cfg), ShouldErrLike, `(`+path+`): exceeds maximum of 50 policies`)

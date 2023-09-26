@@ -16,6 +16,7 @@ package monorail
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -25,9 +26,12 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/bugs"
 	mpb "go.chromium.org/luci/analysis/internal/bugs/monorail/api_proto"
+	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
+	"go.chromium.org/luci/analysis/internal/config"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -64,21 +68,44 @@ func TestManager(t *testing.T) {
 		cl, err := NewClient(UseFakeIssuesClient(ctx, f, user), "myhost")
 		So(err, ShouldBeNil)
 		monorailCfgs := ChromiumTestConfig()
+
 		bugFilingThreshold := bugs.TestBugFilingThresholds()
+
+		policyA := config.CreatePlaceholderBugManagementPolicy("policy-a")
+		policyA.HumanReadableName = "Problem A"
+		policyA.Priority = configpb.BuganizerPriority_P4
+
+		policyB := config.CreatePlaceholderBugManagementPolicy("policy-b")
+		policyB.HumanReadableName = "Problem B"
+		policyB.Priority = configpb.BuganizerPriority_P0
+
+		policyC := config.CreatePlaceholderBugManagementPolicy("policy-c")
+		policyC.HumanReadableName = "Problem C"
+		policyC.Priority = configpb.BuganizerPriority_P1
+
 		projectCfg := &configpb.ProjectConfig{
 			Monorail:            monorailCfgs,
 			BugFilingThresholds: bugFilingThreshold,
 			BugSystem:           configpb.BugSystem_MONORAIL,
+			BugManagement: &configpb.BugManagement{
+				Policies: []*configpb.BugManagementPolicy{
+					policyA,
+					policyB,
+					policyC,
+				},
+			},
 		}
-		bm, err := NewBugManager(cl, "luci-analysis-test", "luciproject", projectCfg)
-		So(err, ShouldBeNil)
 
+		bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg)
+		So(err, ShouldBeNil)
 		now := time.Date(2040, time.January, 1, 2, 3, 4, 5, time.UTC)
 		ctx, tc := testclock.UseTime(ctx, now)
 
 		Convey("Create", func() {
 			createRequest := NewCreateRequest()
-			createRequest.Metrics = bugs.LowP1Impact()
+			createRequest.ActivePolicyIDs = map[string]struct{}{
+				"policy-a": {}, // P4
+			}
 
 			expectedIssue := &mpb.Issue{
 				Name:             "projects/chromium/issues/100",
@@ -96,7 +123,9 @@ func TestManager(t *testing.T) {
 					{
 						// Priority field.
 						Field: "projects/chromium/fieldDefs/11",
-						Value: "1",
+						// Monorail projects do not support priority level P4,
+						// so we use P3 for policies that require P4.
+						Value: "3",
 					},
 				},
 				Components: []*mpb.Issue_ComponentValue{
@@ -118,49 +147,90 @@ func TestManager(t *testing.T) {
 				createRequest.Description.Title = reason
 				createRequest.Description.Description = "A cluster of failures has been found with reason: " + reason
 
-				bug, err := bm.Create(ctx, createRequest)
-				So(err, ShouldBeNil)
-				So(bug, ShouldEqual, "chromium/100")
-				So(len(f.Issues), ShouldEqual, 1)
-				issue := f.Issues[0]
-
 				expectedIssue.Summary = "Tests are failing: Expected equality of these values: \"Expected_Value\" my_expr.evaluate(123) Which is: \"Unexpected_Value\""
+				expectedComment := "A cluster of failures has been found with reason: Expected equality " +
+					"of these values:\n\t\t\t\t\t\"Expected_Value\"\n\t\t\t\t\tmy_expr.evaluate(123)\n\t\t\t\t\t\t" +
+					"Which is: \"Unexpected_Value\"\n" +
+					"\n" +
+					"These test failures are causing problem(s) which require your attention, including:\n" +
+					"- Problem A\n" +
+					"\n" +
+					"\n" +
+					"How to action this bug: https://luci-analysis-test.appspot.com/help#new-bug-filed\n" +
+					"Provide feedback: https://luci-analysis-test.appspot.com/help#feedback\n" +
+					"Was this bug filed in the wrong component? See: https://luci-analysis-test.appspot.com/help#component-selection"
 
-				So(issue.Issue, ShouldResembleProto, expectedIssue)
-				So(len(issue.Comments), ShouldEqual, 2)
-				So(issue.Comments[0].Content, ShouldContainSubstring, reason)
-				So(issue.Comments[0].Content, ShouldNotContainSubstring, "ClusterIDShouldNotAppearInOutput")
-				// Priority justification should appear in the issue description.
-				So(issue.Comments[0].Content, ShouldContainSubstring,
-					"The priority was set to P1 because:\n- Test Results Failed (1-day) >= 500")
-				// Links to help should appear in the issue description.
-				So(issue.Comments[0].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/help#new-bug-filed")
-				So(issue.Comments[0].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/help#feedback")
-				// Link to cluster page should appear in output.
-				So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
-				So(issue.NotifyCount, ShouldEqual, 1)
+				Convey("Single policy activated", func() {
+					// Act
+					bug, err := bm.Create(ctx, createRequest)
+
+					// Verify
+					So(err, ShouldBeNil)
+					So(bug, ShouldEqual, "chromium/100")
+					So(len(f.Issues), ShouldEqual, 1)
+
+					issue := f.Issues[0]
+					So(issue.Issue, ShouldResembleProto, expectedIssue)
+					So(len(issue.Comments), ShouldEqual, 2)
+					So(issue.Comments[0].Content, ShouldEqual, expectedComment)
+					// Link to cluster page should appear in follow-up comment.
+					So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
+					So(issue.NotifyCount, ShouldEqual, 1)
+				})
+				Convey("Multiple policies activated", func() {
+					createRequest.ActivePolicyIDs = map[string]struct{}{
+						"policy-a": {}, // P4
+						"policy-b": {}, // P0
+						"policy-c": {}, // P1
+					}
+					expectedIssue.FieldValues[1].Value = "0"
+					expectedComment = strings.Replace(expectedComment, "- Problem A\n", "- Problem B\n- Problem C\n- Problem A\n", 1)
+
+					// Act
+					bug, err := bm.Create(ctx, createRequest)
+
+					// Verify
+					So(err, ShouldBeNil)
+					So(bug, ShouldEqual, "chromium/100")
+					So(len(f.Issues), ShouldEqual, 1)
+
+					issue := f.Issues[0]
+					So(issue.Issue, ShouldResembleProto, expectedIssue)
+					So(len(issue.Comments), ShouldEqual, 2)
+					So(issue.Comments[0].Content, ShouldEqual, expectedComment)
+					// Link to cluster page should appear in follow-up comment.
+					So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
+					So(issue.NotifyCount, ShouldEqual, 1)
+				})
 			})
 			Convey("With test name failure cluster", func() {
 				createRequest.Description.Title = "ninja://:blink_web_tests/media/my-suite/my-test.html"
 				createRequest.Description.Description = "A test is failing " + createRequest.Description.Title
 
+				expectedIssue.Summary = "Tests are failing: ninja://:blink_web_tests/media/my-suite/my-test.html"
+				expectedComment := "A test is failing ninja://:blink_web_tests/media/my-suite/my-test.html\n" +
+					"\n" +
+					"These test failures are causing problem(s) which require your attention, including:\n" +
+					"- Problem A\n" +
+					"\n" +
+					"\n" +
+					"How to action this bug: https://luci-analysis-test.appspot.com/help#new-bug-filed\n" +
+					"Provide feedback: https://luci-analysis-test.appspot.com/help#feedback\n" +
+					"Was this bug filed in the wrong component? See: https://luci-analysis-test.appspot.com/help#component-selection"
+
+				// Act
 				bug, err := bm.Create(ctx, createRequest)
+
+				// Verify
 				So(err, ShouldBeNil)
 				So(bug, ShouldEqual, "chromium/100")
 				So(len(f.Issues), ShouldEqual, 1)
-				issue := f.Issues[0]
 
-				expectedIssue.Summary = "Tests are failing: ninja://:blink_web_tests/media/my-suite/my-test.html"
+				issue := f.Issues[0]
 				So(issue.Issue, ShouldResembleProto, expectedIssue)
 				So(len(issue.Comments), ShouldEqual, 2)
-				So(issue.Comments[0].Content, ShouldContainSubstring, "ninja://:blink_web_tests/media/my-suite/my-test.html")
-				// Priority justification should appear in the issue description.
-				So(issue.Comments[0].Content, ShouldContainSubstring,
-					"The priority was set to P1 because:\n- Test Results Failed (1-day) >= 500")
-				// Links to help should appear in the issue description.
-				So(issue.Comments[0].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/help#new-bug-filed")
-				So(issue.Comments[0].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/help#feedback")
-				// Link to cluster page should appear in output.
+				So(issue.Comments[0].Content, ShouldEqual, expectedComment)
+				// Link to cluster page should appear in follow-up comment.
 				So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
 				So(issue.NotifyCount, ShouldEqual, 1)
 			})
@@ -188,18 +258,41 @@ func TestManager(t *testing.T) {
 		})
 		Convey("Update", func() {
 			c := NewCreateRequest()
-			c.Metrics = bugs.P2Impact()
+			c.ActivePolicyIDs = map[string]struct{}{
+				"policy-a": {}, // P4
+				"policy-c": {}, // P1
+			}
 			bug, err := bm.Create(ctx, c)
 			So(err, ShouldBeNil)
 			So(bug, ShouldEqual, "chromium/100")
 			So(len(f.Issues), ShouldEqual, 1)
-			So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "2")
+			So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "1")
+
+			activationTime := time.Date(2025, 1, 1, 1, 0, 0, 0, time.UTC)
+			state := &bugspb.BugManagementState{
+				PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
+					"policy-a": { // P4
+						IsActive:           true,
+						LastActivationTime: timestamppb.New(activationTime),
+					},
+					"policy-b": { // P0
+						IsActive:             false,
+						LastActivationTime:   timestamppb.New(activationTime.Add(-time.Hour)),
+						LastDeactivationTime: timestamppb.New(activationTime),
+					},
+					"policy-c": { // P1
+						IsActive:           true,
+						LastActivationTime: timestamppb.New(activationTime),
+					},
+				},
+			}
 
 			bugsToUpdate := []bugs.BugUpdateRequest{
 				{
 					Bug:                              bugs.BugID{System: bugs.MonorailSystem, ID: bug},
-					Metrics:                          c.Metrics,
+					BugManagementState:               state,
 					IsManagingBug:                    true,
+					RuleID:                           "123",
 					IsManagingBugPriority:            true,
 					IsManagingBugPriorityLastUpdated: tc.Now(),
 				},
@@ -207,12 +300,19 @@ func TestManager(t *testing.T) {
 			expectedResponse := []bugs.BugUpdateResponse{
 				{IsDuplicate: false},
 			}
-			updateDoesNothing := func() {
+			verifyUpdateDoesNothing := func() error {
 				originalIssues := CopyIssuesStore(f)
 				response, err := bm.Update(ctx, bugsToUpdate)
-				So(err, ShouldBeNil)
-				So(response, ShouldResemble, expectedResponse)
-				So(f, ShouldResembleIssuesStore, originalIssues)
+				if err != nil {
+					return errors.Annotate(err, "update bugs").Err()
+				}
+				if diff := ShouldResemble(response, expectedResponse); diff != "" {
+					return errors.Reason("response: %s", diff).Err()
+				}
+				if diff := ShouldResembleProto(f, originalIssues); diff != "" {
+					return errors.Reason("issues store: %s", diff).Err()
+				}
+				return nil
 			}
 			// Create a monorail client that interacts with monorail
 			// as an end-user. This is needed as we distinguish user
@@ -221,43 +321,34 @@ func TestManager(t *testing.T) {
 			usercl, err := NewClient(UseFakeIssuesClient(ctx, f, user), "myhost")
 			So(err, ShouldBeNil)
 
-			Convey("If impact unchanged, does nothing", func() {
-				updateDoesNothing()
+			Convey("If active policies unchanged, does nothing", func() {
+				So(verifyUpdateDoesNothing(), ShouldBeNil)
 			})
-			Convey("If impact changed", func() {
-				bugsToUpdate[0].Metrics = bugs.P3Impact()
-				Convey("Does not reduce priority if impact within hysteresis range", func() {
-					bugsToUpdate[0].Metrics = bugs.HighP3Impact()
+			Convey("If active policies changed", func() {
+				// De-activates policy-c (P1), leaving only policy-a (P4) active.
+				bugsToUpdate[0].BugManagementState.PolicyState["policy-c"].IsActive = false
+				bugsToUpdate[0].BugManagementState.PolicyState["policy-c"].LastDeactivationTime = timestamppb.New(activationTime.Add(time.Hour))
 
-					updateDoesNothing()
-				})
 				Convey("Does not update bug if IsManagingBug false", func() {
-					bugsToUpdate[0].Metrics = bugs.ClosureImpact()
 					bugsToUpdate[0].IsManagingBug = false
 
-					updateDoesNothing()
+					So(verifyUpdateDoesNothing(), ShouldBeNil)
 				})
-				Convey("Does not update bug if Impact unset", func() {
-					// Simulate valid impact not being available, e.g. due
-					// to ongoing reclustering.
-					bugsToUpdate[0].Metrics = nil
-
-					updateDoesNothing()
-				})
-				Convey("Reduces priority in response to reduced impact", func() {
-					bugsToUpdate[0].Metrics = bugs.P3Impact()
+				Convey("Reduces priority in response to policies de-activating", func() {
 					originalNotifyCount := f.Issues[0].NotifyCount
+
+					// Act
 					response, err := bm.Update(ctx, bugsToUpdate)
+
+					// Verify
 					So(err, ShouldBeNil)
 					So(response, ShouldResemble, expectedResponse)
 					So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "3")
-
 					So(f.Issues[0].Comments, ShouldHaveLength, 3)
 					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
-						"Because:\n"+
-							"- Test Runs Failed (1-day) < 9, and\n"+
-							"- Test Results Failed (1-day) < 90\n"+
-							"LUCI Analysis has decreased the bug priority from 2 to 3.")
+						"Because the following problem(s) have stopped:\n"+
+							"- Problem C (P1)\n"+
+							"The bug priority has been decreased from P1 to P3.")
 					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/help#priority-update")
 					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
@@ -267,52 +358,27 @@ func TestManager(t *testing.T) {
 					So(f.Issues[0].NotifyCount, ShouldEqual, originalNotifyCount)
 
 					// Verify repeated update has no effect.
-					updateDoesNothing()
+					So(verifyUpdateDoesNothing(), ShouldBeNil)
 				})
-				Convey("Does not increase priority if impact within hysteresis range", func() {
-					bugsToUpdate[0].Metrics = bugs.LowP1Impact()
-
-					updateDoesNothing()
-				})
-				Convey("Increases priority in response to increased impact (single-step)", func() {
-					bugsToUpdate[0].Metrics = bugs.P1Impact()
+				Convey("Increases priority in response to priority policies activating", func() {
+					// Activates policy B (P0).
+					bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].IsActive = true
+					bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].LastActivationTime = timestamppb.New(activationTime.Add(time.Hour))
 
 					originalNotifyCount := f.Issues[0].NotifyCount
+
+					// Act
 					response, err := bm.Update(ctx, bugsToUpdate)
-					So(err, ShouldBeNil)
-					So(response, ShouldResemble, expectedResponse)
-					So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "1")
 
-					So(f.Issues[0].Comments, ShouldHaveLength, 3)
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
-						"Because:\n"+
-							"- Test Results Failed (1-day) >= 550\n"+
-							"LUCI Analysis has increased the bug priority from 2 to 1.")
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
-						"https://luci-analysis-test.appspot.com/help#priority-update")
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
-						"https://luci-analysis-test.appspot.com/b/chromium/100")
-
-					// Notified the increase.
-					So(f.Issues[0].NotifyCount, ShouldEqual, originalNotifyCount+1)
-
-					// Verify repeated update has no effect.
-					updateDoesNothing()
-				})
-				Convey("Increases priority in response to increased impact (multi-step)", func() {
-					bugsToUpdate[0].Metrics = bugs.P0Impact()
-
-					originalNotifyCount := f.Issues[0].NotifyCount
-					response, err := bm.Update(ctx, bugsToUpdate)
+					// Verify
 					So(err, ShouldBeNil)
 					So(response, ShouldResemble, expectedResponse)
 					So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "0")
-
-					expectedComment := "Because:\n" +
-						"- Test Results Failed (1-day) >= 1000\n" +
-						"LUCI Analysis has increased the bug priority from 2 to 0."
 					So(f.Issues[0].Comments, ShouldHaveLength, 3)
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring, expectedComment)
+					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+						"Because the following problem(s) have started:\n"+
+							"- Problem B (P0)\n"+
+							"The bug priority has been increased from P1 to P0.")
 					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/help#priority-update")
 					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
@@ -322,73 +388,103 @@ func TestManager(t *testing.T) {
 					So(f.Issues[0].NotifyCount, ShouldEqual, originalNotifyCount+1)
 
 					// Verify repeated update has no effect.
-					updateDoesNothing()
+					So(verifyUpdateDoesNothing(), ShouldBeNil)
 				})
 				Convey("Does not adjust priority if priority manually set", func() {
 					updateReq := updateBugPriorityRequest(f.Issues[0].Issue.Name, "0")
 					err = usercl.ModifyIssues(ctx, updateReq)
 					So(err, ShouldBeNil)
 					So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "0")
-					// Check the update sets the label.
+
 					expectedIssue := CopyIssue(f.Issues[0].Issue)
-					SortLabels(expectedIssue.Labels)
-					So(f.Issues[0].NotifyCount, ShouldEqual, 1)
+					// SortLabels(expectedIssue.Labels)
+					originalNotifyCount := f.Issues[0].NotifyCount
+
+					// Act
 					response, err := bm.Update(ctx, bugsToUpdate)
+
+					// Verify
 					So(err, ShouldBeNil)
 					expectedResponse[0].DisableRulePriorityUpdates = true
 					So(response, ShouldResemble, expectedResponse)
 					So(f.Issues[0].Issue, ShouldResembleProto, expectedIssue)
+					So(f.Issues[0].Comments, ShouldHaveLength, 4)
+					So(f.Issues[0].Comments[3].Content, ShouldEqual,
+						"The bug priority has been manually set. To re-enable automatic priority updates by LUCI Analysis,"+
+							" enable the update priority flag on the rule.\n\nSee failure impact and configure the failure"+
+							" association rule for this bug at: https://luci-analysis-test.appspot.com/b/chromium/100")
 
 					// Does not notify.
-					So(f.Issues[0].NotifyCount, ShouldEqual, 1)
+					So(f.Issues[0].NotifyCount, ShouldEqual, originalNotifyCount)
 
-					// Priority updates should be off, but disabling it should return false as we should not check it anymore.
+					// Normally, the caller would update IsManagingBugPriority to false
+					// now, but as this is a test, we have to do it manually.
+					// As priority updates are now off, DisableRulePriorityUpdates
+					// should henceforth also return false (as they are already
+					// disabled).
 					bugsToUpdate[0].IsManagingBugPriority = false
+					bugsToUpdate[0].IsManagingBugPriorityLastUpdated = tc.Now().Add(1 * time.Minute)
 					expectedResponse[0].DisableRulePriorityUpdates = false
-					// Check repeated update does nothing more.
-					updateDoesNothing()
 
-					Convey("Unless update priority flag is re-enabled", func() {
+					// Check repeated update does nothing more.
+					So(verifyUpdateDoesNothing(), ShouldBeNil)
+
+					Convey("Unless IsManagingBugPriority manually updated", func() {
 						bugsToUpdate[0].IsManagingBugPriority = true
 						bugsToUpdate[0].IsManagingBugPriorityLastUpdated = tc.Now().Add(3 * time.Minute)
+
 						response, err := bm.Update(ctx, bugsToUpdate)
 						So(response, ShouldResemble, expectedResponse)
 						So(err, ShouldBeNil)
 						So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "3")
+						So(f.Issues[0].Comments, ShouldHaveLength, 5)
+						So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
+							"Because the following problem(s) are active:\n"+
+								"- Problem A (P3)\n"+
+								"\n"+
+								"The bug priority has been set to P3.")
+						So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
+							"https://luci-analysis-test.appspot.com/help#priority-update")
+						So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
+							"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 						// Verify repeated update has no effect.
-						updateDoesNothing()
+						So(verifyUpdateDoesNothing(), ShouldBeNil)
 					})
 				})
 				Convey("Does nothing if in simulation mode", func() {
+					// In simulation mode, changes should be logged but not made.
 					bm.Simulate = true
-					updateDoesNothing()
+					So(verifyUpdateDoesNothing(), ShouldBeNil)
 				})
 			})
-			Convey("If impact falls below lowest priority threshold", func() {
-				bugsToUpdate[0].Metrics = bugs.ClosureImpact()
-				Convey("Update leaves bug open if impact within hysteresis range", func() {
-					bugsToUpdate[0].Metrics = bugs.P3LowestBeforeClosureImpact()
+			Convey("If all policies deactivate", func() {
+				// De-activate all policies, so the bug would normally be marked verified.
+				for _, policyState := range bugsToUpdate[0].BugManagementState.PolicyState {
+					if policyState.IsActive {
+						policyState.IsActive = false
+						policyState.LastDeactivationTime = timestamppb.New(activationTime.Add(time.Hour))
+					}
+				}
 
-					// Update may reduce the priority from P2 to P3, but the
-					// issue should be left open. This is because hysteresis on
-					// priority and issue verified state is applied separately.
-					response, err := bm.Update(ctx, bugsToUpdate)
-					So(err, ShouldBeNil)
-					So(response, ShouldResemble, expectedResponse)
-					So(f.Issues[0].Issue.Status.Status, ShouldEqual, UntriagedStatus)
+				Convey("Does not update bug if IsManagingBug false", func() {
+					bugsToUpdate[0].IsManagingBug = false
+
+					So(verifyUpdateDoesNothing(), ShouldBeNil)
 				})
 				Convey("Update closes bug", func() {
+					// Act
 					response, err := bm.Update(ctx, bugsToUpdate)
+
+					// Verify
 					So(err, ShouldBeNil)
 					So(response, ShouldResemble, expectedResponse)
 					So(f.Issues[0].Issue.Status.Status, ShouldEqual, VerifiedStatus)
 
-					expectedComment := "Because:\n" +
-						"- Test Results Failed (1-day) < 45, and\n" +
-						"- Test Results Failed (3-day) < 272, and\n" +
-						"- Test Results Failed (7-day) < 1\n" +
-						"LUCI Analysis is marking the issue verified."
+					expectedComment := "Because the following problem(s) have stopped:\n" +
+						"- Problem A (P3)\n" +
+						"- Problem C (P1)\n" +
+						"The bug has been verified."
 					So(f.Issues[0].Comments, ShouldHaveLength, 3)
 					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring, expectedComment)
 					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
@@ -397,13 +493,7 @@ func TestManager(t *testing.T) {
 						"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 					// Verify repeated update has no effect.
-					updateDoesNothing()
-
-					Convey("Does not reopen bug if impact within hysteresis range", func() {
-						bugsToUpdate[0].Metrics = bugs.HighestNotFiledImpact()
-
-						updateDoesNothing()
-					})
+					So(verifyUpdateDoesNothing(), ShouldBeNil)
 
 					Convey("Rules for verified bugs archived after 30 days", func() {
 						tc.Add(time.Hour * 24 * 30)
@@ -414,36 +504,39 @@ func TestManager(t *testing.T) {
 							},
 						}
 						originalIssues := CopyIssuesStore(f)
+
+						// Act
 						response, err := bm.Update(ctx, bugsToUpdate)
+
+						// Verify
 						So(err, ShouldBeNil)
 						So(response, ShouldResemble, expectedResponse)
-						So(f, ShouldResembleIssuesStore, originalIssues)
+						So(f, ShouldResembleProto, originalIssues)
 					})
 
 					Convey("If impact increases, bug is re-opened with correct priority", func() {
-						bugsToUpdate[0].Metrics = bugs.P3Impact()
+						// policy-b has priority P0.
+						bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].IsActive = true
+						bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].LastActivationTime = timestamppb.New(activationTime.Add(2 * time.Hour))
+
 						Convey("Issue has owner", func() {
 							// Update issue owner.
 							updateReq := updateOwnerRequest(f.Issues[0].Issue.Name, "users/100")
 							err = usercl.ModifyIssues(ctx, updateReq)
 							So(err, ShouldBeNil)
 							So(f.Issues[0].Issue.Owner.GetUser(), ShouldEqual, "users/100")
-							expectedResponse[0].IsAssigned = true
+							expectedResponse[0].IsDuplicateAndAssigned = true
 
 							// Issue should return to "Assigned" status.
 							response, err := bm.Update(ctx, bugsToUpdate)
 							So(err, ShouldBeNil)
 							So(response, ShouldResemble, expectedResponse)
 							So(f.Issues[0].Issue.Status.Status, ShouldEqual, AssignedStatus)
-							So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "3")
+							So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "0")
 
-							expectedComment := "Because:\n" +
-								"- Test Results Failed (1-day) >= 75\n" +
-								"LUCI Analysis has re-opened the bug.\n\n" +
-								"Because:\n" +
-								"- Test Runs Failed (1-day) < 9, and\n" +
-								"- Test Results Failed (1-day) < 90\n" +
-								"LUCI Analysis has decreased the bug priority from 2 to 3."
+							expectedComment := "Because the following problem(s) have started:\n" +
+								"- Problem B (P0)\n" +
+								"The bug has been re-opened as P0."
 							So(f.Issues[0].Comments, ShouldHaveLength, 5)
 							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring, expectedComment)
 							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
@@ -452,7 +545,7 @@ func TestManager(t *testing.T) {
 								"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 							// Verify repeated update has no effect.
-							updateDoesNothing()
+							So(verifyUpdateDoesNothing(), ShouldBeNil)
 						})
 						Convey("Issue has no owner", func() {
 							// Remove owner.
@@ -466,15 +559,11 @@ func TestManager(t *testing.T) {
 							So(err, ShouldBeNil)
 							So(response, ShouldResemble, expectedResponse)
 							So(f.Issues[0].Issue.Status.Status, ShouldEqual, UntriagedStatus)
-							So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "3")
+							So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "0")
 
-							expectedComment := "Because:\n" +
-								"- Test Results Failed (1-day) >= 75\n" +
-								"LUCI Analysis has re-opened the bug.\n\n" +
-								"Because:\n" +
-								"- Test Runs Failed (1-day) < 9, and\n" +
-								"- Test Results Failed (1-day) < 90\n" +
-								"LUCI Analysis has decreased the bug priority from 2 to 3."
+							expectedComment := "Because the following problem(s) have started:\n" +
+								"- Problem B (P0)\n" +
+								"The bug has been re-opened as P0."
 							So(f.Issues[0].Comments, ShouldHaveLength, 5)
 							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring, expectedComment)
 							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
@@ -485,24 +574,27 @@ func TestManager(t *testing.T) {
 								"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 							// Verify repeated update has no effect.
-							updateDoesNothing()
+							So(verifyUpdateDoesNothing(), ShouldBeNil)
 						})
 					})
 				})
 			})
 			Convey("If bug duplicate", func() {
 				f.Issues[0].Issue.Status.Status = DuplicateStatus
-
 				expectedResponse := []bugs.BugUpdateResponse{
 					{
 						IsDuplicate: true,
 					},
 				}
 				originalIssues := CopyIssuesStore(f)
+
+				// Act
 				response, err := bm.Update(ctx, bugsToUpdate)
+
+				// Verify
 				So(err, ShouldBeNil)
 				So(response, ShouldResemble, expectedResponse)
-				So(f, ShouldResembleIssuesStore, originalIssues)
+				So(f, ShouldResembleProto, originalIssues)
 			})
 			Convey("Rule not managing a bug archived after 30 days of the bug being in any closed state", func() {
 				tc.Add(time.Hour * 24 * 30)
@@ -516,10 +608,14 @@ func TestManager(t *testing.T) {
 					},
 				}
 				originalIssues := CopyIssuesStore(f)
+
+				// Act
 				response, err := bm.Update(ctx, bugsToUpdate)
+
+				// Verify
 				So(err, ShouldBeNil)
 				So(response, ShouldResemble, expectedResponse)
-				So(f, ShouldResembleIssuesStore, originalIssues)
+				So(f, ShouldResembleProto, originalIssues)
 			})
 			Convey("Rule managing a bug not archived after 30 days of the bug being in fixed state", func() {
 				tc.Add(time.Hour * 24 * 30)
@@ -530,7 +626,7 @@ func TestManager(t *testing.T) {
 				bugsToUpdate[0].IsManagingBug = true
 				f.Issues[0].Issue.Status.Status = FixedStatus
 
-				updateDoesNothing()
+				So(verifyUpdateDoesNothing(), ShouldBeNil)
 			})
 			Convey("Rules archived immediately if bug archived", func() {
 				f.Issues[0].Issue.Status.Status = "Archived"
@@ -541,14 +637,18 @@ func TestManager(t *testing.T) {
 					},
 				}
 				originalIssues := CopyIssuesStore(f)
+
+				// Act
 				response, err := bm.Update(ctx, bugsToUpdate)
+
+				// Verify
 				So(err, ShouldBeNil)
 				So(response, ShouldResemble, expectedResponse)
-				So(f, ShouldResembleIssuesStore, originalIssues)
+				So(f, ShouldResembleProto, originalIssues)
 			})
 			Convey("If issue does not exist, does nothing", func() {
 				f.Issues = nil
-				updateDoesNothing()
+				So(verifyUpdateDoesNothing(), ShouldBeNil)
 			})
 		})
 		Convey("GetMergedInto", func() {

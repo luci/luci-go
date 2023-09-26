@@ -278,7 +278,7 @@ func ExplainThresholdNotMetMessage(thresoldNotMet []*configpb.ImpactMetricThresh
 
 // ExplainThresholdsMet creates a threshold explanation of how the cluster's impact met
 // the threshold of a priority.
-func ExplainThresholdsMet(impact *ClusterMetrics, thresholds ...[]*configpb.ImpactMetricThreshold) string {
+func ExplainThresholdsMet(impact ClusterMetrics, thresholds ...[]*configpb.ImpactMetricThreshold) string {
 	var explanations []ThresholdExplanation
 	for _, t := range thresholds {
 		// There may be multiple ways in which we could have met the

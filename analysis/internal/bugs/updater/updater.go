@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bugs"
+	"go.chromium.org/luci/analysis/internal/bugs/policy"
 	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms"
@@ -158,6 +159,10 @@ type BugUpdater struct {
 	// Timestamp of the cron job. Used to timestamp policy activations/deactivations
 	// that happen as a result of this run.
 	RunTimestamp time.Time
+	// UsePolicyBasedManagement controls whether policy-based bug
+	// management should be used. This flag is used to control rollout of
+	// this new functionality.
+	UsePolicyBasedManagement bool
 }
 
 // NewBugUpdater initialises a new BugUpdater.
@@ -190,13 +195,16 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 		return errors.Annotate(err, "read active failure association rules").Err()
 	}
 
-	metricsByRuleID := make(map[string]*bugs.ClusterMetrics)
+	metricsByRuleID := make(map[string]bugs.ClusterMetrics)
 	if metricsValid {
-		// Even if policy-based bug filing is disabled, we need to update
-		// policy state in the background. This means we need to query
-		// any cluster that results in a policy activation.
-		thresholds := PolicyActivationThresholds(b.projectCfg.Config.BugManagement.GetPolicies())
-		thresholds = append(thresholds, b.projectCfg.Config.BugFilingThresholds...)
+		var thresholds []*configpb.ImpactMetricThreshold
+		if b.UsePolicyBasedManagement {
+			for _, p := range b.projectCfg.Config.BugManagement.GetPolicies() {
+				thresholds = append(thresholds, policy.ActivationThresholds(p)...)
+			}
+		} else {
+			thresholds = append(thresholds, b.projectCfg.Config.BugFilingThresholds...)
+		}
 
 		// We want to read analysis for two categories of clusters:
 		// - Bug Clusters: to update the priority of filed bugs.
@@ -217,7 +225,7 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 
 		// blockedSourceClusterIDs is the set of source cluster IDs for which
 		// filing new bugs should be suspended.
-		blockedSourceClusterIDs := make(map[string]struct{})
+		blockedSourceClusterIDs := make(map[clustering.ClusterID]struct{})
 		for _, r := range activeRules {
 			if !reclusteringProgress.IncorporatesRulesVersion(r.CreateTime) {
 				// If a bug cluster was recently filed for a source cluster, and
@@ -228,12 +236,18 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 				// but the bug cluster's failure association rule was subsequently
 				// modified (e.g. narrowed), it is allowed to file another bug
 				// if the residual impact justifies it.)
-				blockedSourceClusterIDs[r.SourceCluster.Key()] = struct{}{}
+				blockedSourceClusterIDs[r.SourceCluster] = struct{}{}
 			}
 		}
 
-		if err := b.fileNewBugs(ctx, clusters, blockedSourceClusterIDs); err != nil {
-			return err
+		if b.UsePolicyBasedManagement {
+			if err := b.fileNewBugs(ctx, clusters, blockedSourceClusterIDs); err != nil {
+				return err
+			}
+		} else {
+			if err := b.fileNewBugsLegacy(ctx, clusters, blockedSourceClusterIDs); err != nil {
+				return err
+			}
 		}
 
 		for _, cluster := range clusters {
@@ -247,7 +261,7 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 
 	var rms []ruleWithMetrics
 	for _, rule := range activeRules {
-		var metrics *bugs.ClusterMetrics
+		var metrics bugs.ClusterMetrics
 
 		// Metrics are valid if re-clustering and analysis ran on the latest
 		// version of this failure association rule. This avoids bugs getting
@@ -261,7 +275,7 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 			if !ok {
 				// If there is no analysis, this means the cluster is
 				// empty. Use empty impact.
-				metrics = &bugs.ClusterMetrics{}
+				metrics = bugs.ClusterMetrics{}
 			}
 		}
 		// Else leave metrics as nil. Bug-updating code takes this as an
@@ -309,7 +323,7 @@ type ruleWithMetrics struct {
 	RuleID string
 	// The bug cluster metrics. May be nil if no reliable metrics
 	// are available because reclustering is in progress.
-	Metrics *bugs.ClusterMetrics
+	Metrics bugs.ClusterMetrics
 }
 
 // updateBugManagementState updates policy activations for the
@@ -392,7 +406,7 @@ func (b *BugUpdater) updateBugManagementStateBatch(ctx context.Context, rulesAnd
 			// If metrics data is valid (e.g. no reclustering in progress).
 			if clusterMetrics != nil {
 				// Update which policies are active.
-				updatedBugManagementState, changed := updatePolicyActivations(r.BugManagementState, b.projectCfg.Config.BugManagement.GetPolicies(), clusterMetrics, b.RunTimestamp)
+				updatedBugManagementState, changed := policy.UpdatePolicyActivations(r.BugManagementState, b.projectCfg.Config.BugManagement.GetPolicies(), clusterMetrics, b.RunTimestamp)
 				if changed {
 					// Only update the rule if a policy has activated or
 					// deactivated, to avoid unnecessary writes and rule
@@ -408,17 +422,19 @@ func (b *BugUpdater) updateBugManagementStateBatch(ctx context.Context, rulesAnd
 				}
 			}
 
-			// TODO(meiring): Identify the updates to bugs to make based
-			// on the bug management state and pass these into the request.
-
-			result = append(result, bugs.BugUpdateRequest{
+			updateRequest := bugs.BugUpdateRequest{
 				Bug:                              r.BugID,
-				Metrics:                          clusterMetrics,
 				IsManagingBug:                    r.IsManagingBug,
 				IsManagingBugPriority:            r.IsManagingBugPriority,
 				IsManagingBugPriorityLastUpdated: r.IsManagingBugPriorityLastUpdateTime,
 				RuleID:                           r.RuleID,
-			})
+			}
+			if b.UsePolicyBasedManagement {
+				updateRequest.BugManagementState = r.BugManagementState
+			} else {
+				updateRequest.Metrics = clusterMetrics
+			}
+			result = append(result, updateRequest)
 		}
 		return nil
 	}
@@ -471,14 +487,19 @@ func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bug
 		if rsp.IsDuplicate {
 			duplicateBugs = append(duplicateBugs, bugs.BugDetails{
 				Bug:        bugsToUpdate[i].Bug,
-				IsAssigned: rsp.IsAssigned,
+				IsAssigned: rsp.IsDuplicateAndAssigned,
 			})
-		} else if rsp.ShouldArchive || rsp.DisableRulePriorityUpdates {
+			// Inhibit archiving if rules are duplicates.
+			rsp.ShouldArchive = false
+		}
+		if rsp.ShouldArchive || rsp.DisableRulePriorityUpdates || rsp.RuleAssociationNotified || len(rsp.PolicyActivationsNotified) > 0 {
 			updateRuleRequests = append(updateRuleRequests, updateRuleRequest{
 				RuleID:                     bugsToUpdate[i].RuleID,
 				BugID:                      bugsToUpdate[i].Bug,
 				Archive:                    rsp.ShouldArchive,
 				DisableRulePriorityUpdates: rsp.DisableRulePriorityUpdates,
+				RuleAssociationNotified:    rsp.RuleAssociationNotified,
+				PolicyActivationsNotified:  rsp.PolicyActivationsNotified,
 			})
 		}
 	}
@@ -525,13 +546,100 @@ func (b *BugUpdater) verifyClusterImpactValid(ctx context.Context, progress *run
 	return true
 }
 
-// fileNewBugs files new bugs for suggested clusters whose residual impact
+func (b *BugUpdater) fileNewBugs(ctx context.Context, clusters []*analysis.Cluster, blockedClusterIDs map[clustering.ClusterID]struct{}) error {
+	// The set of clusters IDs to file bugs for. Used for deduplicating creation
+	// requests accross policies.
+	clusterIDsToCreateBugsFor := make(map[clustering.ClusterID]struct{})
+
+	// The list of clusters to file bugs for. Uses a list instead of a set to ensure
+	// the order that bugs are created is deterministic and matches the order that
+	// policies are configured, which simplifies testing.
+	var clustersToCreateBugsFor []*analysis.Cluster
+
+	for _, p := range b.projectCfg.Config.BugManagement.GetPolicies() {
+		sortByPolicyBugFilingPreference(clusters, p)
+
+		for _, cluster := range clusters {
+			if cluster.ClusterID.IsBugCluster() {
+				// Never file another bug for a bug cluster.
+				continue
+			}
+
+			// Was a bug recently filed for this suggested cluster?
+			// We want to avoid race conditions whereby we file multiple bug
+			// clusters for the same suggested cluster, because re-clustering and
+			// re-analysis has not yet run and moved residual impact from the
+			// suggested cluster to the bug cluster.
+			_, ok := blockedClusterIDs[cluster.ClusterID]
+			if ok {
+				// Do not file a bug.
+				continue
+			}
+
+			// Were the failures are confined to only automation CLs
+			// and/or 1-2 user CLs? In other words, are the failures in this
+			// clusters unlikely to be present in the tree?
+			if cluster.DistinctUserCLsWithFailures7d.Residual < 3 &&
+				cluster.PostsubmitBuildsWithFailures7d.Residual == 0 {
+				// Do not file a bug.
+				continue
+			}
+
+			// Only file a bug if the residual impact exceeds the threshold.
+			impact := ExtractResidualMetrics(cluster)
+			bugFilingThresholds := policy.ActivationThresholds(p)
+			if cluster.ClusterID.IsTestNameCluster() {
+				// Use an inflated threshold for test name clusters to bias
+				// bug creation towards failure reason clusters.
+				bugFilingThresholds =
+					bugs.InflateThreshold(bugFilingThresholds,
+						testnameThresholdInflationPercent)
+			}
+			if !impact.MeetsAnyOfThresholds(bugFilingThresholds) {
+				continue
+			}
+
+			// Create a bug for this cluster, deduplicating creation
+			// requests across policies.
+			if _, ok := clusterIDsToCreateBugsFor[cluster.ClusterID]; !ok {
+				clustersToCreateBugsFor = append(clustersToCreateBugsFor, cluster)
+				clusterIDsToCreateBugsFor[cluster.ClusterID] = struct{}{}
+			}
+
+			// The policy has picked the one cluster it wants to file a bug for.
+			// If this cluster is the same as another policy, the one bug is filed
+			// for both policies.
+			//
+			// This ensures if a top failure cluster clusters well by both reason
+			// and test name, we do not file bugs for both.
+			break
+		}
+	}
+
+	// File new bugs.
+	bugsFiled := 0
+	for _, cluster := range clustersToCreateBugsFor {
+		if bugsFiled >= b.MaxBugsFiledPerRun {
+			break
+		}
+		created, err := b.createBug(ctx, cluster)
+		if err != nil {
+			return err
+		}
+		if created {
+			bugsFiled++
+		}
+	}
+	return nil
+}
+
+// fileNewBugsLegacy files new bugs for suggested clusters whose residual impact
 // exceed the configured bug-filing threshold. Clusters specified in
 // blockedClusterIDs will not have a bug filed. This can be used to
 // suppress bug-filing for suggested clusters that have recently had a
 // bug filed for them and re-clustering is not yet complete.
-func (b *BugUpdater) fileNewBugs(ctx context.Context, clusters []*analysis.Cluster, blockedClusterIDs map[string]struct{}) error {
-	sortByBugFilingPreference(clusters)
+func (b *BugUpdater) fileNewBugsLegacy(ctx context.Context, clusters []*analysis.Cluster, blockedClusterIDs map[clustering.ClusterID]struct{}) error {
+	sortByBugFilingPreferenceLegacy(clusters)
 
 	var toCreateBugsFor []*analysis.Cluster
 	for _, cluster := range clusters {
@@ -545,7 +653,7 @@ func (b *BugUpdater) fileNewBugs(ctx context.Context, clusters []*analysis.Clust
 		// clusters for the same suggested cluster, because re-clustering and
 		// re-analysis has not yet run and moved residual impact from the
 		// suggested cluster to the bug cluster.
-		_, ok := blockedClusterIDs[cluster.ClusterID.Key()]
+		_, ok := blockedClusterIDs[cluster.ClusterID]
 		if ok {
 			// Do not file a bug.
 			continue
@@ -606,6 +714,12 @@ type updateRuleRequest struct {
 	Archive bool
 	// Whether rule priority updates should be disabled.
 	DisableRulePriorityUpdates bool
+	// Whether BugManagementState.RuleAssociationNotified should be set.
+	RuleAssociationNotified bool
+	// A map containing the IDs of policies for which
+	// BugManagementState.Policies[<policyID>].ActivationNotified should
+	// be set.
+	PolicyActivationsNotified map[string]struct{}
 }
 
 // updateRules applies updates to failure association rules
@@ -664,6 +778,18 @@ func (b *BugUpdater) updateRulesBatch(ctx context.Context, requests []updateRule
 				rule.IsManagingBugPriority = false
 				updateOptions.IsAuditableUpdate = true
 				updateOptions.IsManagingBugPriorityUpdated = true
+			}
+			if updateRequest.RuleAssociationNotified {
+				rule.BugManagementState.RuleAssociationNotified = true
+			}
+			for policyID := range updateRequest.PolicyActivationsNotified {
+				policyState, ok := rule.BugManagementState.PolicyState[policyID]
+				if !ok {
+					// The policy has been deleted during the bug-filing run.
+					logging.Warningf(ctx, "Policy activation notified for policy %v, which is now deleted.", policyID)
+					continue
+				}
+				policyState.ActivationNotified = true
 			}
 			ms, err := rules.Update(rule, updateOptions, rules.LUCIAnalysisSystem)
 			if err != nil {
@@ -966,9 +1092,40 @@ func readRuleForBugAndProject(ctx context.Context, bug bugs.BugID, project strin
 	return rule, anyRuleManaging, nil
 }
 
-// sortByBugFilingPreference sorts clusters based on our preference
+// sortByPolicyBugFilingPreference sorts clusters based on our preference
 // to file bugs for these clusters.
-func sortByBugFilingPreference(cs []*analysis.Cluster) {
+func sortByPolicyBugFilingPreference(cs []*analysis.Cluster, policy *configpb.BugManagementPolicy) {
+	// The current ranking approach prefers filing bugs for clusters
+	// which more strongly meet the bug-filing threshold, with a bias
+	// towards reason clusters.
+	//
+	// The order of this ranking is only important where there are
+	// multiple competing clusters which meet the bug-filing threshold.
+	// As bug filing runs relatively often, except in cases of contention,
+	// the first bug to meet the threshold will be filed.
+	sort.Slice(cs, func(i, j int) bool {
+		// N.B. This does not rank clusters perfectly where the policy has
+		// multiple metrics, as the first metric may only slightly the
+		// threshold, but the second metric strongly exceeds.
+		// Most policies have only one metric, however, so this should
+		// be pretty rare.
+		for _, metric := range policy.Metrics {
+			if equal, less := rankByMetric(cs[i], cs[j], metrics.ID(metric.MetricId)); !equal {
+				return less
+			}
+		}
+		// If all else fails, sort by cluster ID. This is mostly to ensure
+		// the code behaves deterministically when under unit testing.
+		if cs[i].ClusterID.Algorithm != cs[j].ClusterID.Algorithm {
+			return cs[i].ClusterID.Algorithm < cs[j].ClusterID.Algorithm
+		}
+		return cs[i].ClusterID.ID < cs[j].ClusterID.ID
+	})
+}
+
+// sortByBugFilingPreferenceLegacy sorts clusters based on our preference
+// to file bugs for these clusters.
+func sortByBugFilingPreferenceLegacy(cs []*analysis.Cluster) {
 	// The current ranking approach prefers filing bugs for clusters with more
 	// impact, with a bias towards reason clusters.
 	//
@@ -1054,10 +1211,29 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 		return false, errors.Annotate(err, "prepare bug description").Err()
 	}
 
+	bugManagementState := &bugspb.BugManagementState{
+		// The creation of the bug was notify the association with the bug.
+		RuleAssociationNotified: true,
+	}
+	// Set policy activations starting from a state where no policies
+	// are active.
+	impact := ExtractResidualMetrics(cs)
+	bugManagementState, _ = policy.UpdatePolicyActivations(bugManagementState, b.projectCfg.Config.BugManagement.GetPolicies(), impact, b.RunTimestamp)
+
 	request := &bugs.BugCreateRequest{
 		RuleID:      ruleID,
 		Description: description,
-		Metrics:     ExtractResidualMetrics(cs),
+	}
+	if b.UsePolicyBasedManagement {
+		activePolicyIDs := make(map[string]struct{})
+		for policyID, state := range bugManagementState.PolicyState {
+			if state.IsActive {
+				activePolicyIDs[policyID] = struct{}{}
+			}
+		}
+		request.ActivePolicyIDs = activePolicyIDs
+	} else {
+		request.Metrics = impact
 	}
 
 	system, err := routeToBugSystem(b.projectCfg, cs)
@@ -1085,16 +1261,6 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 	if err != nil {
 		return false, errors.Annotate(err, "create issue in %v", system).Err()
 	}
-
-	impact := ExtractResidualMetrics(cs)
-
-	bugManagementState := &bugspb.BugManagementState{
-		// The creation of the bug was notify the association with the bug.
-		RuleAssociationNotified: true,
-	}
-	// Set policy activations starting from a state where no policies
-	// are active.
-	bugManagementState, _ = updatePolicyActivations(bugManagementState, b.projectCfg.Config.BugManagement.GetPolicies(), impact, b.RunTimestamp)
 
 	// Create a failure association rule associating the failures with a bug.
 	newRule := &rules.Entry{

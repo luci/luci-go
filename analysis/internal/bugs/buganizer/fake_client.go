@@ -144,9 +144,23 @@ func (fic *FakeClient) ModifyIssue(ctx context.Context, in *issuetracker.ModifyI
 				issue.ModifiedTime = timestamppb.New(clock.Now(ctx))
 			}
 		default:
-			return nil, errors.New(fmt.Sprintf("unsupported issue field: %s", addPath))
+			return nil, errors.New(fmt.Sprintf("add_mask uses unsupported issue field: %s", addPath))
 		}
 	}
+	// The fields in the switch statement are the only
+	// fields supported by the method.
+	for _, removePath := range in.RemoveMask.Paths {
+		switch removePath {
+		case "assignee":
+			if in.Remove.Assignee != nil && in.Remove.Assignee.EmailAddress == "" {
+				issue.IssueState.Assignee = nil
+				issue.ModifiedTime = timestamppb.New(clock.Now(ctx))
+			}
+		default:
+			return nil, errors.New(fmt.Sprintf("remove_mask uses unsupported issue field: %s", removePath))
+		}
+	}
+
 	if in.IssueComment != nil {
 		issueData.Comments = append(issueData.Comments, in.IssueComment)
 	}

@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
+	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/common/errors"
 )
@@ -25,11 +26,6 @@ import (
 type BugUpdateRequest struct {
 	// The bug to update.
 	Bug BugID
-	// Metrics for the given bug. This is only set if valid metrics are available.
-	// If re-clustering is currently ongoing for the failure association rule
-	// and metrics are unreliable, this will be unset to avoid erroneous
-	// priority updates.
-	Metrics *ClusterMetrics
 	// Whether the user enabled priority updates and auto-closure for the bug.
 	// If this if false, the BugUpdateRequest is only made to determine if the
 	// bug is the duplicate of another bug and if the rule should be archived.
@@ -44,6 +40,20 @@ type BugUpdateRequest struct {
 	IsManagingBugPriorityLastUpdated time.Time
 	// The identity of the rule associated with the bug.
 	RuleID string
+
+	// Policy-based bug management fields.
+
+	// The bug management state of the rule. Only set if policy-based bug
+	// management should be used; see Metrics field otherwise.
+	BugManagementState *bugspb.BugManagementState
+
+	// Legacy bug management fields.
+
+	// Metrics for the given bug. This is only set if valid metrics are available.
+	// If re-clustering is currently ongoing for the failure association rule
+	// and metrics are unreliable, this will be unset to avoid erroneous
+	// priority updates.
+	Metrics ClusterMetrics
 }
 
 type BugUpdateResponse struct {
@@ -54,10 +64,12 @@ type BugUpdateResponse struct {
 	Error error
 
 	// IsDuplicate is set if the bug is a duplicate of another.
+	// Set to true to trigger updating/merging failure association rules.
 	IsDuplicate bool
 
-	// IsAssigned is set if the bug is assigned to a user.
-	IsAssigned bool
+	// IsDuplicateAndAssigned is set if the bug is assigned to a user.
+	// Only set if IsDuplicate is set.
+	IsDuplicateAndAssigned bool
 
 	// ShouldArchive indicates if the rule for this bug should be archived.
 	// This should be set if:
@@ -72,6 +84,14 @@ type BugUpdateResponse struct {
 	// field should be disabled.
 	// This is set when a user manually takes control of the priority of a bug.
 	DisableRulePriorityUpdates bool
+
+	// Whether the association between the rule and the bug was notified.
+	// Set to true to set BugManagementState.RuleAssociationNotified.
+	RuleAssociationNotified bool
+
+	// A map containing the IDs of policies for which activation was notified.
+	// Set to true to set BugManagementState.Policies[<policyID>].ActivationNotified.
+	PolicyActivationsNotified map[string]struct{}
 }
 
 // BugDetails holds the data of a duplicate bug, this includes it's bug id,
@@ -110,14 +130,22 @@ type BugCreateRequest struct {
 	RuleID string
 	// Description is the human-readable description of the cluster.
 	Description *clustering.ClusterDescription
-	// Metrics contains metrics for the cluster.
-	Metrics *ClusterMetrics
 	// The monorail components (if any) to use.
 	// This value is ignored for Buganizer.
 	MonorailComponents []string
 	// The buganizer component id (if any) to use.
 	// This value is ignored for Monorail.
 	BuganizerComponent int64
+
+	// Policy-based bug management fields.
+	// The bug management policies which activated for this
+	// cluster and are triggering the filing of this bug.
+	ActivePolicyIDs map[string]struct{}
+
+	// Legacy bug management fields.
+
+	// Metrics contains metrics for the cluster.
+	Metrics ClusterMetrics
 }
 
 // ClusterMetrics captures measurements of a cluster's impact and

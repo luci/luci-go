@@ -25,12 +25,12 @@ import (
 // For suggested clusters, residual failures are the
 // failures left after failures that are already associated
 // with a bug are removed.
-func ExtractResidualMetrics(c *analysis.Cluster) *bugs.ClusterMetrics {
+func ExtractResidualMetrics(c *analysis.Cluster) bugs.ClusterMetrics {
 	residualImpact := bugs.ClusterMetrics{}
 	for id, counts := range c.MetricValues {
 		residualImpact[id] = extractMetricValues(counts)
 	}
-	return &residualImpact
+	return residualImpact
 }
 
 func extractMetricValues(counts metrics.TimewiseCounts) bugs.MetricValues {
@@ -44,8 +44,8 @@ func extractMetricValues(counts metrics.TimewiseCounts) bugs.MetricValues {
 // SetResidualMetrics sets the value of metrics calculated
 // on residual failures.
 // This method exists for testing purposes only.
-func SetResidualMetrics(cs *analysis.Cluster, impact *bugs.ClusterMetrics) {
-	for k, v := range *impact {
+func SetResidualMetrics(cs *analysis.Cluster, impact bugs.ClusterMetrics) {
+	for k, v := range impact {
 		cs.MetricValues[k] = replaceResidualImpact(cs.MetricValues[k], v)
 	}
 }

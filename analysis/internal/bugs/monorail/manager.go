@@ -51,14 +51,12 @@ const monorailPageSize = 100
 // for clusters.
 type BugManager struct {
 	client *Client
-	// The GAE APP ID, e.g. "luci-analysis".
-	appID string
 	// The LUCI Project.
 	project string
 	// The snapshot of configuration to use for the project.
 	projectCfg *configpb.ProjectConfig
 	// The generator used to generate updates to monorail bugs.
-	generator *Generator
+	generator *RequestGenerator
 	// Simulate, if set, tells BugManager not to make mutating changes
 	// to monorail but only log the changes it would make. Must be set
 	// when running locally as RPCs made from developer systems will
@@ -69,14 +67,13 @@ type BugManager struct {
 
 // NewBugManager initialises a new bug manager, using the specified
 // monorail client.
-func NewBugManager(client *Client, appID, project string, projectCfg *configpb.ProjectConfig) (*BugManager, error) {
-	g, err := NewGenerator(appID, project, projectCfg)
+func NewBugManager(client *Client, uiBaseURL, project string, projectCfg *configpb.ProjectConfig) (*BugManager, error) {
+	g, err := NewGenerator(uiBaseURL, project, projectCfg)
 	if err != nil {
 		return nil, errors.Annotate(err, "create issue generator").Err()
 	}
 	return &BugManager{
 		client:     client,
-		appID:      appID,
 		project:    project,
 		projectCfg: projectCfg,
 		generator:  g,
@@ -93,7 +90,16 @@ func (m *BugManager) Create(ctx context.Context, request *bugs.BugCreateRequest)
 		return "", errors.Annotate(err, "validate components").Err()
 	}
 
-	makeReq := m.generator.PrepareNew(request.Metrics, request.Description, components)
+	var makeReq *mpb.MakeIssueRequest
+	if request.ActivePolicyIDs != nil {
+		var err error
+		makeReq, err = m.generator.PrepareNew(request.ActivePolicyIDs, request.Description, components)
+		if err != nil {
+			return "", errors.Annotate(err, "prepare new issue").Err()
+		}
+	} else {
+		makeReq = m.generator.PrepareNewLegacy(request.Metrics, request.Description, components)
+	}
 	var bugName string
 	if m.Simulate {
 		logging.Debugf(ctx, "Would create Monorail issue: %s", textPBMultiline.Format(makeReq))
@@ -161,15 +167,20 @@ func (m *BugManager) Update(ctx context.Context, request []bugs.BugUpdateRequest
 			// to the monorail project configured for this project. Take
 			// no action.
 			responses = append(responses, bugs.BugUpdateResponse{
-				IsDuplicate:   false,
-				IsAssigned:    false,
-				ShouldArchive: false,
+				IsDuplicate:            false,
+				IsDuplicateAndAssigned: false,
+				ShouldArchive:          false,
 			})
 			logging.Warningf(ctx, "Monorail issue %s not found, skipping.", req.Bug.ID)
 			continue
 		}
 
-		response := m.updateIssue(ctx, req, issue)
+		var response bugs.BugUpdateResponse
+		if req.BugManagementState != nil {
+			response = m.updateIssue(ctx, req, issue)
+		} else {
+			response = m.updateIssueLegacy(ctx, req, issue)
+		}
 		responses = append(responses, response)
 	}
 	return responses, nil
@@ -209,20 +220,75 @@ func (m *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateRequ
 	isAssigned := issue.Owner.GetUser() != ""
 	disableRulePriorityUpdates := false
 
-	if !isDuplicate && !shouldArchive && request.IsManagingBug && request.Metrics != nil {
-		if m.generator.NeedsUpdate(request.Metrics, issue, request.IsManagingBugPriority) {
+	if !isDuplicate && !shouldArchive && request.IsManagingBug {
+		needsUpdate, err := m.generator.NeedsPriorityOrVerifiedUpdate(request.BugManagementState, issue, request.IsManagingBugPriority)
+		if err != nil {
+			return bugs.BugUpdateResponse{
+				Error: errors.Annotate(err, "determine if priority/verified update required").Err(),
+			}
+		}
+		if needsUpdate {
 			comments, err := m.client.ListComments(ctx, issue.Name)
 			if err != nil {
 				return bugs.BugUpdateResponse{
 					Error: errors.Annotate(err, "list comments").Err(),
 				}
 			}
-			mur := m.generator.MakeUpdate(MakeUpdateOptions{
-				metrics:                          request.Metrics,
-				issue:                            issue,
-				comments:                         comments,
-				IsManagingBugPriority:            request.IsManagingBugPriority,
-				IsManagingBugPriorityLastUpdated: request.IsManagingBugPriorityLastUpdated,
+			hasManuallySetPriority := hasManuallySetPriority(comments, request.IsManagingBugPriorityLastUpdated)
+
+			mur, err := m.generator.MakePriorityOrVerifiedUpdate(MakeUpdateOptions{
+				BugManagementState:     request.BugManagementState,
+				Issue:                  issue,
+				IsManagingBugPriority:  request.IsManagingBugPriority,
+				HasManuallySetPriority: hasManuallySetPriority,
+			})
+			if err != nil {
+				return bugs.BugUpdateResponse{
+					Error: errors.Annotate(err, "prepare priority/verified update").Err(),
+				}
+			}
+			disableRulePriorityUpdates = mur.disableBugPriorityUpdates
+			if m.Simulate {
+				logging.Debugf(ctx, "Would update Monorail issue: %s", textPBMultiline.Format(mur.request))
+			} else {
+				if err := m.client.ModifyIssues(ctx, mur.request); err != nil {
+					return bugs.BugUpdateResponse{
+						Error: errors.Annotate(err, "update monorail issue").Err(),
+					}
+				}
+				bugs.BugsUpdatedCounter.Add(ctx, 1, m.project, "monorail")
+			}
+		}
+	}
+	return bugs.BugUpdateResponse{
+		IsDuplicate:                isDuplicate,
+		IsDuplicateAndAssigned:     isAssigned,
+		ShouldArchive:              shouldArchive && !isDuplicate,
+		DisableRulePriorityUpdates: disableRulePriorityUpdates,
+	}
+}
+
+func (m *BugManager) updateIssueLegacy(ctx context.Context, request bugs.BugUpdateRequest, issue *mpb.Issue) bugs.BugUpdateResponse {
+	isDuplicate := issue.Status.Status == DuplicateStatus
+	shouldArchive := shouldArchiveRule(ctx, issue, request.IsManagingBug)
+	isAssigned := issue.Owner.GetUser() != ""
+	disableRulePriorityUpdates := false
+
+	if !isDuplicate && !shouldArchive && request.IsManagingBug && request.Metrics != nil {
+		if m.generator.NeedsUpdateLegacy(request.Metrics, issue, request.IsManagingBugPriority) {
+			comments, err := m.client.ListComments(ctx, issue.Name)
+			if err != nil {
+				return bugs.BugUpdateResponse{
+					Error: errors.Annotate(err, "list comments").Err(),
+				}
+			}
+			hasManuallySetPriority := hasManuallySetPriority(comments, request.IsManagingBugPriorityLastUpdated)
+
+			mur := m.generator.MakeUpdateLegacy(MakeUpdateLegacyOptions{
+				metrics:                request.Metrics,
+				issue:                  issue,
+				IsManagingBugPriority:  request.IsManagingBugPriority,
+				HasManuallySetPriority: hasManuallySetPriority,
 			})
 			disableRulePriorityUpdates = mur.disableBugPriorityUpdates
 			if m.Simulate {
@@ -239,7 +305,7 @@ func (m *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateRequ
 	}
 	return bugs.BugUpdateResponse{
 		IsDuplicate:                isDuplicate,
-		IsAssigned:                 isAssigned,
+		IsDuplicateAndAssigned:     isAssigned,
 		ShouldArchive:              shouldArchive && !isDuplicate,
 		DisableRulePriorityUpdates: disableRulePriorityUpdates,
 	}
