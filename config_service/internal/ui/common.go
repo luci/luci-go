@@ -72,6 +72,7 @@ func InstallHandlers(srv *server.Server, configsSrv configpb.ConfigsServer) {
 	srv.Routes.Static("/third_party/bootstrap", nil, http.FS(bootstrap.FS))
 
 	srv.Routes.GET("/", m, renderErr(indexPage))
+	srv.Routes.GET("/config_set/*ConfigSet", m, renderErr(configSetPage))
 }
 
 // prepareTemplates configures templates.Bundle used by all UI handlers.

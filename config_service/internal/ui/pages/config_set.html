@@ -1,0 +1,128 @@
+{{define "title"}}
+LUCI Config - Config Set: {{.ConfigSet.Name}}
+{{end}}
+
+{{define "head"}}
+<style type="text/css">
+  .info-table-key {
+    width: 1px;
+    white-space: nowrap;
+    border-right: 1px solid #cccccc;
+  }
+</style>
+{{end}}
+
+{{define "content"}}
+<main role="main" class="container">
+  <div class="d-flex">
+    <h2>
+      {{.ConfigSet.Name}}
+    </h2>
+    <div>
+      <a href="{{.ConfigSet.Url}}" title="View Source">
+        <img src="/static/images/link.svg" alt="View Source" width="24" height="24">
+      </a>
+    </div>
+    <!-- TODO(yiwzhang): support reimport button -->
+  </div>
+
+  {{$Status := AttemptStatus .ConfigSet.LastImportAttempt}}
+  {{if eq $Status "success"}}
+  <div class="alert alert-success" role="alert">
+    <div class="d-flex align-items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+        class="bi bi-check-circle-fill flex-shrink-0 me-2" viewBox="0 0 16 16" role="img" aria-label="Success:">
+        <path
+          d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />
+      </svg>
+      <h5 class="alert-heading">{{.ConfigSet.LastImportAttempt.Message}}</h5>
+    </div>
+  </div>
+  {{else if eq $Status "warning"}}
+  <div class="alert alert-warning" role="alert">
+    <div class="d-flex align-items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+        class="bi bi bi-exclamation-circle-fill flex-shrink-0 me-2" viewBox="0 0 16 16" role="img"
+        aria-label="Warning:">
+        <path
+          d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
+      </svg>
+      <h5 class="alert-heading">{{.ConfigSet.LastImportAttempt.Message}}</h5>
+    </div>
+    {{if .ConfigSet.LastImportAttempt.ValidationResult.Messages}}
+    <hr>
+    <p class="mb-0">Config validation warnings</p>
+    {{range .ConfigSet.LastImportAttempt.ValidationResult.Messages}}
+    <p class="mb-0"> - in "{{.Path}}": {{.Text}}</p>
+    {{end}}
+    {{end}}
+  </div>
+  {{else if eq $Status "failed"}}
+  <div class="alert alert-danger" role="alert">
+    <div class="d-flex align-items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+        class="bi bi bi-exclamation-circle-fill flex-shrink-0 me-2" viewBox="0 0 16 16" role="img" aria-label="Danger:">
+        <path
+          d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
+      </svg>
+      <h5 class="alert-heading">{{.ConfigSet.LastImportAttempt.Message}}</h5>
+    </div>
+    {{if .ConfigSet.LastImportAttempt.ValidationResult.Messages}}
+    <hr>
+    <p class="mb-0">Has config validation failures:</p>
+    {{range .ConfigSet.LastImportAttempt.ValidationResult.Messages}}
+    <p class="mb-0"> - in "{{.Path}}": {{.Text}}</p>
+    {{end}}
+    {{end}}
+  </div>
+  {{end}}
+
+  <div class="row">
+    <div class="col-lg-6 border-end">
+      <h4 class="mb-3">Info</h4>
+      <table class="table table-striped table-lg">
+        <tbody>
+          <tr>
+            <td class="info-table-key"><b>Revision</b></td>
+            <td class="user-select-all">
+              {{.ConfigSet.Revision.Id}}
+              <a href="{{.ConfigSet.Revision.Url}}" title="View Source">
+                <img src="/static/images/link.svg" alt="View Source">
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td class="info-table-key"><b>Commit Time</b></td>
+            <td>{{.ConfigSet.Revision.Timestamp.AsTime}}</td>
+          </tr>
+          <tr>
+            <td class="info-table-key"><b>Author</b></td>
+            <td>{{.ConfigSet.Revision.AuthorEmail}}</td>
+          </tr>
+          <tr>
+            <td class="info-table-key"><b>Committer</b></td>
+            <td>{{.ConfigSet.Revision.CommitterEmail}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="col-lg-6">
+      <h4 class="mb-3">Files</h4>
+      <ul class="list-group">
+        {{range .Configs}}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <div class="ms-2 me-auto">
+            <div class="fw-bold">{{.Path}}</div>
+            <small class="text-muted">SHA256: {{.ContentSha256}}</small>
+            <!-- TODO(yiwzhang): support adding size information -->
+          </div>
+          <a href="{{.Url}}" title="View Source">
+            <img src="/static/images/link.svg" alt="View Source">
+          </a>
+        </li>
+        {{end}}
+      </ul>
+    </div>
+  </div>
+</main>
+{{end}}
