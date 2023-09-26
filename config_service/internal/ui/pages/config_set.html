@@ -12,9 +12,13 @@ LUCI Config - Config Set: {{.ConfigSet.Name}}
 </style>
 {{end}}
 
+{{define "scripts"}}
+<script type="text/javascript" src="/static/js/config_set.js"></script>
+{{end}}
+
 {{define "content"}}
 <main role="main" class="container">
-  <div class="d-flex">
+  <div class="d-flex flex-row">
     <h2>
       {{.ConfigSet.Name}}
     </h2>
@@ -23,7 +27,11 @@ LUCI Config - Config Set: {{.ConfigSet.Name}}
         <img src="/static/images/link.svg" alt="View Source" width="24" height="24">
       </a>
     </div>
-    <!-- TODO(yiwzhang): support reimport button -->
+    {{if .CanReimport}}
+    <div class="ms-auto">
+      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#reimport-modal" onclick="reimport({{.ConfigSet.Name}})">Reimport</button>
+    </div>
+    {{end}}
   </div>
 
   {{$Status := AttemptStatus .ConfigSet.GetLastImportAttempt}}
@@ -122,6 +130,25 @@ LUCI Config - Config Set: {{.ConfigSet.Name}}
         </li>
         {{end}}
       </ul>
+    </div>
+  </div>
+
+  <div class="modal fade" id="reimport-modal" tabindex="-1" aria-labelledby="reimport-modal-title" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="reimport-modal-title">Reimport</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="reimport-modal-body">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Reimporting...</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
     </div>
   </div>
 </main>

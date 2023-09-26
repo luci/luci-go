@@ -24,10 +24,12 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
+	"go.chromium.org/luci/config_service/internal/acl"
 	configpb "go.chromium.org/luci/config_service/proto"
 )
 
@@ -86,9 +88,15 @@ func configSetPage(c *router.Context) error {
 		}
 	}
 
+	var canReimport bool
+	if canReimport, err = acl.CanReimportConfigSet(ctx, csName); err != nil {
+		logging.Warningf(ctx, "failed to check reimport acl: %s. continue without rendering reimport button", err)
+	}
+
 	templates.MustRender(ctx, c.Writer, "pages/config_set.html", map[string]any{
-		"ConfigSet": cs,
-		"Configs":   configs,
+		"CanReimport": canReimport,
+		"ConfigSet":   cs,
+		"Configs":     configs,
 	})
 	return nil
 }
