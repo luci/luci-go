@@ -55,12 +55,16 @@ func TestRunBisector(t *testing.T) {
 	gitilesResponse := model.ChangeLogResponse{
 		Log: []*model.ChangeLog{
 			{
-				Commit:  "3424",
-				Message: "Use TestActivationManager for all page activations\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472129\nReviewed-by: blah blah\n",
+				Commit:  "3426",
+				Message: "Use TestActivationManager for all page activations\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472131\nReviewed-by: blah blah\n",
 			},
 			{
 				Commit:  "3425",
 				Message: "Second Commit\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472130\nReviewed-by: blah blah\n",
+			},
+			{
+				Commit:  "3424",
+				Message: "Third Commit\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472129\nReviewed-by: blah blah\n",
 			},
 		},
 	}
@@ -70,7 +74,7 @@ func TestRunBisector(t *testing.T) {
 	}
 
 	ctx = gitiles.MockedGitilesClientContext(ctx, map[string]string{
-		"https://chromium.googlesource.com/chromium/src/+log/12345..23456": string(gitilesResponseStr),
+		"https://chromium.googlesource.com/chromium/src/+log/12345^1..23456": string(gitilesResponseStr),
 	})
 
 	// Setup mock for buildbucket.
@@ -262,15 +266,20 @@ func TestRunBisector(t *testing.T) {
 			BlameList: &pb.BlameList{
 				Commits: []*pb.BlameListSingleCommit{
 					{
-						Commit:      "3424",
+						Commit:      "3426",
 						ReviewTitle: "Use TestActivationManager for all page activations",
-						ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472129",
+						ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472131",
 					},
 					{
 						Commit:      "3425",
 						ReviewTitle: "Second Commit",
 						ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472130",
 					},
+				},
+				LastPassCommit: &pb.BlameListSingleCommit{
+					Commit:      "3424",
+					ReviewTitle: "Third Commit",
+					ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472129",
 				},
 			},
 		})

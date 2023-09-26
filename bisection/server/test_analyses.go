@@ -136,32 +136,49 @@ func nthSectionAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis,
 	result.Reruns = pbReruns
 
 	// Populate remaining range.
-	snapshot, err := bisection.CreateSnapshot(ctx, nsa)
-	if err != nil {
-		return nil, errors.Annotate(err, "couldn't create snapshot").Err()
-	}
-	ff, lp, err := snapshot.GetCurrentRegressionRange()
-	// GetCurrentRegressionRange return error if the regression is invalid.
-	// It is not exactly an error, but just a state of the analysis.
-	if err == nil {
-		// GetCurrentRegressionRange returns a pair of indices from the Snapshot that contains the culprit.
-		// So to really get the last pass, we should add 1.
-		lp++
-		// TODO (nqmtuan): Handle the case where lp is len(blamelist).
-		if lp < len(nsa.BlameList.Commits) {
-			result.RemainingNthSectionRange = &pb.RegressionRange{
-				FirstFailed: &buildbucketpb.GitilesCommit{
-					Host:    sourceRef.GetGitiles().Host,
-					Project: sourceRef.GetGitiles().Project,
-					Ref:     sourceRef.GetGitiles().Ref,
-					Id:      nsa.BlameList.Commits[ff].Commit,
-				},
-				LastPassed: &buildbucketpb.GitilesCommit{
-					Host:    sourceRef.GetGitiles().Host,
-					Project: sourceRef.GetGitiles().Project,
-					Ref:     sourceRef.GetGitiles().Ref,
-					Id:      nsa.BlameList.Commits[lp].Commit,
-				},
+	if !nsa.HasEnded() {
+		snapshot, err := bisection.CreateSnapshot(ctx, nsa)
+		if err != nil {
+			return nil, errors.Annotate(err, "couldn't create snapshot").Err()
+		}
+		ff, lp, err := snapshot.GetCurrentRegressionRange()
+		// GetCurrentRegressionRange return error if the regression is invalid.
+		// It is not exactly an error, but just a state of the analysis.
+		if err == nil {
+			// GetCurrentRegressionRange returns a pair of indices from the Snapshot that contains the culprit.
+			// So to really get the last pass, we should add 1.
+			lp++
+			lpCommitID := ""
+
+			// Blamelist only contains the possible commits for culprit.
+			// So it may or may not contain last pass. It will contain
+			// last pass if the regression range has been narrowed down during bisection,
+			// and the original last pass has been updated.
+			// In case that the blamelist does not contain last pass, we should get it
+			// from LastPassCommit.
+			if lp < len(nsa.BlameList.Commits) {
+				lpCommitID = nsa.BlameList.Commits[lp].Commit
+			} else {
+				// Old data do not have LastPassCommit populated, so we will check here.
+				if nsa.BlameList.LastPassCommit != nil {
+					lpCommitID = nsa.BlameList.LastPassCommit.Commit
+				}
+			}
+			if lpCommitID != "" {
+				result.RemainingNthSectionRange = &pb.RegressionRange{
+					FirstFailed: &buildbucketpb.GitilesCommit{
+						Host:    sourceRef.GetGitiles().Host,
+						Project: sourceRef.GetGitiles().Project,
+						Ref:     sourceRef.GetGitiles().Ref,
+						Id:      nsa.BlameList.Commits[ff].Commit,
+					},
+					LastPassed: &buildbucketpb.GitilesCommit{
+						Host:    sourceRef.GetGitiles().Host,
+						Project: sourceRef.GetGitiles().Project,
+						Ref:     sourceRef.GetGitiles().Ref,
+						Id:      lpCommitID,
+					},
+				}
 			}
 		}
 	}

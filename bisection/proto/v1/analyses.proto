@@ -284,6 +284,7 @@ message TestNthSectionAnalysisResult {
   google.protobuf.Timestamp end_time = 4;
   // Optional, when status = RUNNING. This is the possible commit range of the
   // culprit. This will be updated as the nth-section progress.
+  // This will only be available if nthsection is still running (not ended).
   RegressionRange remaining_nth_section_range = 5;
   // List of the reruns that have been run so far for the nth-section analysis.
   // The runs are sorted by the create timestamp.

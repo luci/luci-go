@@ -35,6 +35,9 @@ func CreateBlamelist(nCommits int) *pb.BlameList {
 			Commit: fmt.Sprintf("commit%d", i),
 		})
 	}
+	blamelist.LastPassCommit = &pb.BlameListSingleCommit{
+		Commit: fmt.Sprintf("commit%d", nCommits),
+	}
 	return blamelist
 }
 

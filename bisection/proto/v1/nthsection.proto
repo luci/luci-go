@@ -52,6 +52,9 @@ message NthSectionAnalysisResult {
 message BlameList {
   // The commits in the blame list.
   repeated BlameListSingleCommit commits = 1;
+  // The last pass commit.
+  // It is the commit right before the least recent commit in the blamelist.
+  BlameListSingleCommit last_pass_commit = 2;
 }
 
 message BlameListSingleCommit {

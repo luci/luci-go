@@ -55,7 +55,7 @@ func Analyze(
 		return nil, errors.Annotate(err, "couldn't save nthsection model").Err()
 	}
 
-	changeLogs, err := changelogutil.GetChangeLogs(c, cfa.InitialRegressionRange)
+	changeLogs, err := changelogutil.GetChangeLogs(c, cfa.InitialRegressionRange, true)
 	if err != nil {
 		setStatusError(c, nsa)
 		return nil, errors.Annotate(err, "couldn't fetch changelog").Err()

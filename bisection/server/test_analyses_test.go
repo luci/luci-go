@@ -442,22 +442,82 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 				Reruns: []*pb.TestSingleRerun{
 					pbNthsectionRerun1, pbNthsectionRerun2,
 				},
-				RemainingNthSectionRange: &pb.RegressionRange{
-					LastPassed: &buildbucketpb.GitilesCommit{
-						Host:    "chromium.googlesource.com",
-						Project: "chromium/src",
-						Ref:     "ref",
-						Id:      "commit3",
-					},
-					FirstFailed: &buildbucketpb.GitilesCommit{
-						Host:    "chromium.googlesource.com",
-						Project: "chromium/src",
-						Ref:     "ref",
-						Id:      "commit2",
-					},
-				},
 			},
 			VerifiedCulprit: culpritPb,
+		})
+	})
+}
+
+func TestRegressionRange(t *testing.T) {
+	t.Parallel()
+	ctx := memory.Use(context.Background())
+	testutil.UpdateIndices(ctx)
+
+	Convey("TestRegressionRange", t, func() {
+		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{})
+		nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+			ID:                200,
+			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
+			BlameList:         testutil.CreateBlamelist(4),
+			Status:            pb.AnalysisStatus_RUNNING,
+			RunStatus:         pb.AnalysisRunStatus_STARTED,
+		})
+		sourceRef := &pb.SourceRef{
+			System: &pb.SourceRef_Gitiles{
+				Gitiles: &pb.GitilesRef{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Ref:     "ref",
+				},
+			},
+		}
+		pbNsa, err := nthSectionAnalysisToPb(ctx, tfa, nsa, sourceRef)
+		So(err, ShouldBeNil)
+		So(pbNsa.RemainingNthSectionRange, ShouldResembleProto, &pb.RegressionRange{
+			LastPassed: &buildbucketpb.GitilesCommit{
+				Host:    "chromium.googlesource.com",
+				Project: "chromium/src",
+				Ref:     "ref",
+				Id:      "commit4",
+			},
+			FirstFailed: &buildbucketpb.GitilesCommit{
+				Host:    "chromium.googlesource.com",
+				Project: "chromium/src",
+				Ref:     "ref",
+				Id:      "commit0",
+			},
+		})
+
+		// Add a rerun, regression should update.
+		testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+			AnalysisKey:           datastore.KeyForObj(ctx, tfa),
+			NthSectionAnalysisKey: datastore.KeyForObj(ctx, nsa),
+			Type:                  model.RerunBuildType_NthSection,
+			Status:                pb.RerunStatus_RERUN_STATUS_PASSED,
+			BuildStatus:           buildbucketpb.Status_SUCCESS,
+			GitilesCommit: &buildbucketpb.GitilesCommit{
+				Host:    "chromium.googlesource.com",
+				Project: "chromium/src",
+				Ref:     "ref",
+				Id:      "commit2",
+			},
+		})
+
+		pbNsa, err = nthSectionAnalysisToPb(ctx, tfa, nsa, sourceRef)
+		So(err, ShouldBeNil)
+		So(pbNsa.RemainingNthSectionRange, ShouldResembleProto, &pb.RegressionRange{
+			LastPassed: &buildbucketpb.GitilesCommit{
+				Host:    "chromium.googlesource.com",
+				Project: "chromium/src",
+				Ref:     "ref",
+				Id:      "commit2",
+			},
+			FirstFailed: &buildbucketpb.GitilesCommit{
+				Host:    "chromium.googlesource.com",
+				Project: "chromium/src",
+				Ref:     "ref",
+				Id:      "commit0",
+			},
 		})
 	})
 }

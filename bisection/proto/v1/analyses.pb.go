@@ -1300,6 +1300,7 @@ type TestNthSectionAnalysisResult struct {
 	EndTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	// Optional, when status = RUNNING. This is the possible commit range of the
 	// culprit. This will be updated as the nth-section progress.
+	// This will only be available if nthsection is still running (not ended).
 	RemainingNthSectionRange *RegressionRange `protobuf:"bytes,5,opt,name=remaining_nth_section_range,json=remainingNthSectionRange,proto3" json:"remaining_nth_section_range,omitempty"`
 	// List of the reruns that have been run so far for the nth-section analysis.
 	// The runs are sorted by the create timestamp.

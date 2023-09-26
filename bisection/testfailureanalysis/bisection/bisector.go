@@ -356,7 +356,7 @@ func createNthSectionModel(ctx context.Context, tfa *model.TestFailureAnalysis, 
 			Id:      tfa.EndCommitHash,
 		},
 	}
-	changeLogs, err := changelogutil.GetChangeLogs(ctx, regressionRange)
+	changeLogs, err := changelogutil.GetChangeLogs(ctx, regressionRange, true)
 	if err != nil {
 		return nil, errors.Annotate(err, "couldn't fetch changelog").Err()
 	}

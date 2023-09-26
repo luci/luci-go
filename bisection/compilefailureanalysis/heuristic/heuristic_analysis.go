@@ -49,7 +49,7 @@ func Analyze(
 	}
 
 	// Get changelogs for heuristic analysis
-	changelogs, err := changelogutil.GetChangeLogs(c, rr)
+	changelogs, err := changelogutil.GetChangeLogs(c, rr, false)
 	if err != nil {
 		setStatusError(c, heuristicAnalysis)
 		return nil, fmt.Errorf("failed getting changelogs %w", err)
