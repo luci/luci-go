@@ -19,5 +19,5 @@ import "embed"
 
 // FS is a file system that contains compiled bundled bootstrap js and css code
 //
-// go:embed css js
+//go:embed css js
 var FS embed.FS

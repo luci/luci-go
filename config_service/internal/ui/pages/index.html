@@ -1,0 +1,28 @@
+{{define "content"}}
+<main role="main" class="container">
+  <div class="row row-cols-1 row-cols-md-3 g-4">
+    {{$Now := .Now}}
+    {{range .ConfigSets}}
+    <div class="col">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">{{.Name}}</h5>
+          <a href="/config_set/{{.Name}}" class="btn btn-primary btn-sm">View Details</a>
+        </div>
+        <div class="card-footer d-flex">
+          <small class="text-body-secondary">Rev: {{slice .Revision.Id 0 7}} Last committed: {{RelTime .Revision.Timestamp.AsTime $Now}}</small>
+          {{$Status := AttemptStatus .LastImportAttempt}}
+          {{if eq $Status "success"}}
+          <span class="badge bg-success ms-auto">Success</span>
+          {{else if eq $Status "warning"}}
+          <span class="badge bg-warning ms-auto">Warning</span>
+          {{else if eq $Status "failed"}}
+          <span class="badge bg-danger ms-auto">Failed</span>
+          {{end}}
+        </div>
+      </div>
+    </div>
+    {{end}}
+  </div>
+</main>
+{{end}}

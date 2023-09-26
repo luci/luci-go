@@ -1,0 +1,57 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html lang="en">
+<!-- Copyright 2023 The LUCI Authors. All rights reserved.
+Use of this source code is governed under the Apache License, Version 2.0
+that can be found in the LICENSE file. -->
+
+<head>
+  <meta http-equiv="Content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{block "title" .}}LUCI Config{{end}}</title>
+  <link href="/third_party/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="icon" type="image/png" href="/static/images/luci-chromium.png">
+  <style>
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 14px;
+    }
+
+    a {
+      text-decoration: none !important;
+    }
+  </style>
+  {{block "head" .}}{{end}}
+</head>
+
+<body>
+  <div class="container">
+    <nav class="navbar navbar-expand-md navbar-light bg-light rounded border mb-2">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/">LUCI Config</a>
+        <span class="navbar-text">
+          {{if .IsAnonymous}}
+          <a href="{{.LoginURL}}">Login</a>
+          {{else}}
+          {{.User.Email}} | <a href="{{.LogoutURL}}">Logout</a>
+          {{end}}
+        </span>
+      </div>
+    </nav>
+
+    <div id="content-box">
+      {{block "content" .}}{{end}}
+    </div>
+
+    <footer style="color: #cccccc;">
+      <hr class="mt-1 mb-1">
+      <p class="float-end small">
+        Handled in {{call .HandlerDuration}}
+        <span class="ms-2">Image Version: {{.ImageVersion}}</span>
+      </p>
+    </footer>
+  </div>
+  <script src="/third_party/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+{{end}}

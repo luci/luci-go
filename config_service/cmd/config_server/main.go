@@ -97,17 +97,17 @@ func main() {
 				AudienceCheck: openid.AudienceMatchesHost,
 			}),
 		}
-		configpb.RegisterConfigsServer(srv, &rpc.Configs{
+		configsServer := &rpc.Configs{
 			Validator:          validator,
 			GSValidationBucket: gsBucket,
-		})
-
+		}
+		configpb.RegisterConfigsServer(srv, configsServer)
 		cron.RegisterHandler("update-services", service.Update)
 		cron.RegisterHandler("delete-configs", retention.DeleteStaleConfigs)
 		importer.RegisterImportConfigsCron(&tq.Default)
 		// Protect against CSRF attacks from the web.
 		srv.Routes.POST("/internal/reimport/:ConfigSet", mw.Extend(xsrf.WithTokenCheck), importer.Reimport)
-		ui.InstallHandlers(srv)
+		ui.InstallHandlers(srv, configsServer)
 		return nil
 	})
 }
