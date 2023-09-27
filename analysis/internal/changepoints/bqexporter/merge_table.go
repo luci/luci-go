@@ -99,13 +99,12 @@ func runDMLMerge(ctx context.Context, client *bigquery.Client) error {
 
 	waitCtx, cancel := context.WithTimeout(ctx, time.Minute*9)
 	defer cancel()
-
-	js, err := job.Wait(waitCtx)
+	js, err := bqutil.WaitForJob(waitCtx, job)
 	if err != nil {
 		return errors.Annotate(err, "waiting for merging to complete").Err()
 	}
 	if js.Err() != nil {
-		return errors.Annotate(err, "merge rows failed").Err()
+		return errors.Annotate(js.Err(), "merge rows failed").Err()
 	}
 	return nil
 }
