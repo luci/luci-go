@@ -25,7 +25,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
 
-	computealpha "google.golang.org/api/compute/v0.alpha"
 	compute "google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
 
@@ -164,25 +163,13 @@ func createInstance(ctx context.Context, payload proto.Message) error {
 	logging.Debugf(ctx, "creating instance %q", vm.Hostname)
 
 	instance := vm.GetInstance()
-	switch {
-	case instance.Stable != nil:
-		return createStableInstance(ctx, vm, instance.Stable, task)
-	case instance.Alpha != nil:
-		return createAlphaInstance(ctx, vm, instance.Alpha, task)
-	}
-	panic("internal error: control reached end of createInstance in .../appengine/backend/instance.go")
-}
 
-// createStableInstance creates an instance using the stable GCP API.
-// TODO(gregorynisbet): unify this function with createAlphaInstance which is textually nearly identical but has different types.
-func createStableInstance(ctx context.Context, vm *model.VM, instance *compute.Instance, task *tasks.CreateInstance) error {
 	// Generate a request ID based on the hostname.
 	// Ensures duplicate operations aren't created in GCE.
 	// Request IDs are valid for 24 hours.
 	rID := uuid.NewSHA1(uuid.Nil, []byte(fmt.Sprintf("create-%s", vm.Hostname)))
-	srv := getCompute(ctx).Stable.Instances
-	call := srv.Insert(vm.Attributes.GetProject(), vm.Attributes.GetZone(), instance)
-	op, err := call.RequestId(rID.String()).Context(ctx).Do()
+	srv := getCompute(ctx)
+	op, err := srv.InsertInstance(ctx, vm.Attributes.GetProject(), vm.Attributes.GetZone(), instance, rID.String())
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			logErrors(ctx, vm.Hostname, gerr)
@@ -200,8 +187,10 @@ func createStableInstance(ctx context.Context, vm *model.VM, instance *compute.I
 		}
 		return errors.Annotate(err, "failed to create instance %s", vm.Hostname).Err()
 	}
-	if op.Error != nil && len(op.Error.Errors) > 0 {
-		for _, err := range op.Error.Errors {
+	// TODO(gregorynisbet): I don't like this variable name.
+	errs := op.GetErrors()
+	if len(errs) > 0 {
+		for _, err := range errs {
 			logging.Errorf(ctx, "for vm %s, %s: %s", vm.Hostname, err.Code, err.Message)
 		}
 		metrics.UpdateFailures(ctx, 200, vm)
@@ -210,51 +199,7 @@ func createStableInstance(ctx context.Context, vm *model.VM, instance *compute.I
 		}
 		return errors.Reason("failed to create instance %s", vm.Hostname).Err()
 	}
-	if op.Status == "DONE" {
-		return checkInstance(ctx, vm)
-	}
-	// Instance creation is pending.
-	return nil
-}
-
-// createAlphaInstance creates an instance using the alpha GCP API.
-// TODO(gregorynisbet): unify this function with createStableInstance which is textually nearly identical but has different types.
-func createAlphaInstance(ctx context.Context, vm *model.VM, instance *computealpha.Instance, task *tasks.CreateInstance) error {
-	// Generate a request ID based on the hostname.
-	// Ensures duplicate operations aren't created in GCE.
-	// Request IDs are valid for 24 hours.
-	rID := uuid.NewSHA1(uuid.Nil, []byte(fmt.Sprintf("create-%s", vm.Hostname)))
-	srv := getCompute(ctx).Alpha.Instances
-	call := srv.Insert(vm.Attributes.GetProject(), vm.Attributes.GetZone(), instance)
-	op, err := call.RequestId(rID.String()).Context(ctx).Do()
-	if err != nil {
-		if gerr, ok := err.(*googleapi.Error); ok {
-			logErrors(ctx, vm.Hostname, gerr)
-			metrics.UpdateFailures(ctx, gerr.Code, vm)
-			// TODO(b/130826296): Remove this once rate limit returns a transient HTTP error code.
-			if rateLimitExceeded(gerr) {
-				return errors.Annotate(err, "rate limit exceeded creating instance %s", vm.Hostname).Err()
-			}
-			if gerr.Code == http.StatusTooManyRequests || gerr.Code >= 500 {
-				return errors.Annotate(err, "transiently failed to create instance %s", vm.Hostname).Err()
-			}
-			if err := deleteVM(ctx, task.Id, vm.Hostname); err != nil {
-				return errors.Annotate(err, "failed to create instance %s", vm.Hostname).Err()
-			}
-		}
-		return errors.Annotate(err, "failed to create instance %s", vm.Hostname).Err()
-	}
-	if op.Error != nil && len(op.Error.Errors) > 0 {
-		for _, err := range op.Error.Errors {
-			logging.Errorf(ctx, "for vm %s, %s: %s", vm.Hostname, err.Code, err.Message)
-		}
-		metrics.UpdateFailures(ctx, 200, vm)
-		if err := deleteVM(ctx, task.Id, vm.Hostname); err != nil {
-			return errors.Annotate(err, "failed to create instance %s", vm.Hostname).Err()
-		}
-		return errors.Reason("failed to create instance %s", vm.Hostname).Err()
-	}
-	if op.Status == "DONE" {
+	if op.GetStatus() == "DONE" {
 		return checkInstance(ctx, vm)
 	}
 	// Instance creation is pending.

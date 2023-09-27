@@ -25,15 +25,84 @@ import (
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/gce/api/tasks/v1"
+	"go.chromium.org/luci/gce/appengine/model"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
-
-	"go.chromium.org/luci/gce/api/tasks/v1"
 )
 
+// Operation is a wrapper type over operation results in alpha and stable GCP operations.
+type Operation struct {
+	Stable *compute.Operation
+	Alpha  *computealpha.Operation
+}
+
+// CommonOpError exposes just the subset of operation errors that are used
+type CommonOpError struct {
+	Code    string
+	Message string
+}
+
+// GetErrors gets the errors for a stable or alpha Operation.
+func (o Operation) GetErrors() []CommonOpError {
+	switch {
+	case o.Stable != nil:
+		if o.Stable.Error == nil {
+			return nil
+		}
+		errs := make([]CommonOpError, 0, len(o.Stable.Error.Errors))
+		for _, err := range o.Stable.Error.Errors {
+			errs = append(errs, CommonOpError{
+				Code:    err.Code,
+				Message: err.Message,
+			})
+		}
+		return errs
+	case o.Alpha != nil:
+		if o.Alpha.Error == nil {
+			return nil
+		}
+		errs := make([]CommonOpError, 0, len(o.Alpha.Error.Errors))
+		for _, err := range o.Alpha.Error.Errors {
+			errs = append(errs, CommonOpError{
+				Code:    err.Code,
+				Message: err.Message,
+			})
+		}
+		return errs
+	}
+	return nil
+}
+
+// GetStatus gets the status for a stable or alpha operation.
+func (o Operation) GetStatus() string {
+	switch {
+	case o.Stable != nil:
+		return o.Stable.Status
+	case o.Alpha != nil:
+		return o.Alpha.Status
+	}
+	return ""
+}
+
+// ComputeService is a wrapper over a stable or alpha compute service.
 type ComputeService struct {
 	Stable *compute.Service
 	Alpha  *computealpha.Service
+}
+
+// InsertInstance inserts a stable or beta compute instance, used to create instances that might use alpha features or might not.
+func (c ComputeService) InsertInstance(ctx context.Context, project string, zone string, instance model.ComputeInstance, requestID string) (Operation, error) {
+	switch {
+	case instance.Stable != nil:
+		call := c.Stable.Instances.Insert(project, zone, instance.Stable)
+		stable, err := call.RequestId(requestID).Context(ctx).Do()
+		return Operation{Stable: stable}, err
+	default:
+		call := c.Alpha.Instances.Insert(project, zone, instance.Alpha)
+		alpha, err := call.RequestId(requestID).Context(ctx).Do()
+		return Operation{Alpha: alpha}, err
+	}
 }
 
 // dspKey is the key to a *tq.Dispatcher in the context.
