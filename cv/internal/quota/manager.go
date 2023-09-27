@@ -19,8 +19,12 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -34,6 +38,9 @@ var qinit sync.Once
 var qapp SrvQuota
 
 const (
+	// appID to register with quota module.
+	appID = "cv"
+
 	// Resource types that the quota can use.
 	runResource    = "runs"
 	tryjobResource = "tryjobs"
@@ -51,7 +58,7 @@ type Manager struct {
 
 // SrvQuota manages quota
 type SrvQuota interface {
-	LoadPoliciesAuto(ctx context.Context, realm string, cfg *quotapb.PolicyConfig) (*quotapb.PolicyConfigID, error)
+	LoadPoliciesManual(ctx context.Context, realm string, version string, cfg *quotapb.PolicyConfig) (*quotapb.PolicyConfigID, error)
 	AccountID(realm, namespace, name, resourceType string) *quotapb.AccountID
 }
 
@@ -84,7 +91,7 @@ func (qm *Manager) runQuotaOp(ctx context.Context, rs *state.RunState, requestID
 		return nil, err
 	}
 
-	res, err := srvquota.ApplyOps(ctx, requestID, []*quotapb.Op{
+	quotaOp := []*quotapb.Op{
 		{
 			AccountId:  qm.qapp.AccountID(rs.Run.ID.LUCIProject(), rs.Run.ConfigGroupID.Name(), rs.Run.Owner.Email(), runResource),
 			PolicyId:   policyID,
@@ -92,14 +99,41 @@ func (qm *Manager) runQuotaOp(ctx context.Context, rs *state.RunState, requestID
 			Delta:      delta,
 			Options:    uint32(quotapb.Op_IGNORE_POLICY_BOUNDS),
 		},
-	})
+	}
+
+	// When server/quota does not have the policyId already, rewrite the policy and retry the op.
+	var opResponse *quotapb.ApplyOpsResponse
+	err = retry.Retry(clock.Tag(ctx, common.LaunchRetryClockTag), makeRetryFactory(), func() (err error) {
+		opResponse, err = srvquota.ApplyOps(ctx, requestID, quotaOp)
+		if errors.Unwrap(err) == srvquota.ErrQuotaApply && opResponse.Results[0].Status == quotapb.OpResult_ERR_UNKNOWN_POLICY {
+			if _, err := qm.WritePolicy(ctx, rs.Run.ID.LUCIProject()); err != nil {
+				return err
+			}
+
+			return errors.Annotate(err, "ApplyOps: ERR_UNKNOWN_POLICY").Tag(transient.Tag).Err()
+		}
+
+		return
+	}, nil)
 
 	// On ErrQuotaApply, OpResult.Status stores the reason for failure.
-	if err == nil || err == srvquota.ErrQuotaApply {
-		return res.Results[0], err
+	if err == nil || errors.Unwrap(err) == srvquota.ErrQuotaApply {
+		return opResponse.Results[0], err
 	}
 
 	return nil, err
+}
+
+func makeRetryFactory() retry.Factory {
+	return transient.Only(func() retry.Iterator {
+		return &retry.ExponentialBackoff{
+			Limited: retry.Limited{
+				Delay:   100 * time.Millisecond,
+				Retries: 3,
+			},
+			Multiplier: 2,
+		}
+	})
 }
 
 // requestID contructs the idempotent requestID for the quota operation.
@@ -120,14 +154,7 @@ func (qm *Manager) findRunPolicy(ctx context.Context, rs *state.RunState) (*quot
 		return nil, fmt.Errorf("cannot find cfgGroup content")
 	}
 
-	// loadPolicies loads cfgGroup into server/quota. This serves two purposes:
-	// 1. If policies for this cfgGroup is not loaded already, this loads it.
-	// 2. If they are loaded already, server/quota immediately returns &quotapb.PolicyConfigID which we use for our Ops.
-	policyConfigID, err := qm.loadPolicies(ctx, project, []*prjcfg.ConfigGroup{cfgGroup})
-	if err != nil {
-		return nil, errors.Annotate(err, "loadPolicies").Err()
-	}
-
+	policyConfigID := policyConfigID(project, rs.Run.ConfigGroupID.Hash())
 	user := rs.Run.Owner
 	for _, userLimit := range config.GetUserLimits() {
 		runLimit := userLimit.GetRun()
@@ -176,6 +203,15 @@ func (qm *Manager) findRunPolicy(ctx context.Context, rs *state.RunState) (*quot
 
 	// No limits configured for this user.
 	return nil, nil
+}
+
+// policyConfigID is a helper to generate quota policyConfigID.
+func policyConfigID(realm, version string) *quotapb.PolicyConfigID {
+	return &quotapb.PolicyConfigID{
+		AppId:   appID,
+		Realm:   realm,
+		Version: version,
+	}
 }
 
 // runPolicyKey is a helper to generate run quota policy key.
@@ -246,14 +282,14 @@ func makeRunQuotaPolicies(project string, configGroups []*prjcfg.ConfigGroup) []
 
 // loadPolicies loads the given configGroups into server/quota.
 // If the policy already exists within server/quota, this immediately returns the &quotapb.PolicyConfigID.
-func (qm *Manager) loadPolicies(ctx context.Context, project string, configGroups []*prjcfg.ConfigGroup) (*quotapb.PolicyConfigID, error) {
+func (qm *Manager) loadPolicies(ctx context.Context, project string, configGroups []*prjcfg.ConfigGroup, version string) (*quotapb.PolicyConfigID, error) {
 	runQuotaPolicies := makeRunQuotaPolicies(project, configGroups)
 	if runQuotaPolicies == nil {
 		return nil, nil
 	}
 
 	// Load policies into server/quota.
-	return qm.qapp.LoadPoliciesAuto(ctx, project, &quotapb.PolicyConfig{
+	return qm.qapp.LoadPoliciesManual(ctx, project, version, &quotapb.PolicyConfig{
 		Policies: runQuotaPolicies,
 	})
 }
@@ -271,13 +307,13 @@ func (qm *Manager) WritePolicy(ctx context.Context, project string) (*quotapb.Po
 		return nil, err
 	}
 
-	return qm.loadPolicies(ctx, project, configGroups)
+	return qm.loadPolicies(ctx, project, configGroups, meta.Hash())
 }
 
 // NewManager creates a new quota manager.
 func NewManager() *Manager {
 	qinit.Do(func() {
-		qapp = srvquota.Register("cv", &srvquota.ApplicationOptions{
+		qapp = srvquota.Register(appID, &srvquota.ApplicationOptions{
 			ResourceTypes: []string{runResource, tryjobResource},
 		})
 	})

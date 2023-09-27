@@ -112,10 +112,9 @@ func TestManager(t *testing.T) {
 
 			So(err, ShouldBeNil)
 			So(pid, ShouldResembleProto, &quotapb.PolicyConfigID{
-				AppId:         "cv",
-				Realm:         "chromium",
-				VersionScheme: 1,
-				Version:       pid.Version,
+				AppId:   "cv",
+				Realm:   "chromium",
+				Version: pid.Version,
 			})
 		})
 
@@ -129,10 +128,9 @@ func TestManager(t *testing.T) {
 
 			So(err, ShouldBeNil)
 			So(pid, ShouldResembleProto, &quotapb.PolicyConfigID{
-				AppId:         "cv",
-				Realm:         "chromium",
-				VersionScheme: 1,
-				Version:       pid.Version,
+				AppId:   "cv",
+				Realm:   "chromium",
+				Version: pid.Version,
 			})
 		})
 
@@ -146,10 +144,9 @@ func TestManager(t *testing.T) {
 
 			So(err, ShouldBeNil)
 			So(pid, ShouldResembleProto, &quotapb.PolicyConfigID{
-				AppId:         "cv",
-				Realm:         "chromium",
-				VersionScheme: 1,
-				Version:       pid.Version,
+				AppId:   "cv",
+				Realm:   "chromium",
+				Version: pid.Version,
 			})
 		})
 
