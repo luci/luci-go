@@ -61,7 +61,7 @@ var TestFailureTasks = tq.RegisterTaskClass(tq.TaskClass{
 func RegisterTaskClass() {
 	CompileFailureTasks.AttachHandler(processRevertCulpritTask)
 	TestFailureTasks.AttachHandler(func(ctx context.Context, payload proto.Message) error {
-		task := payload.(*taskpb.TestFailureCulpritVerificationTask)
+		task := payload.(*taskpb.TestFailureCulpritActionTask)
 		if err := processTestFailureCulpritTask(ctx, task.AnalysisId); err != nil {
 			err := errors.Annotate(err, "run test failure culprit action").Err()
 			logging.Errorf(ctx, err.Error())
@@ -647,6 +647,6 @@ func ScheduleTestFailureTask(ctx context.Context, analysisID int64) error {
 		Payload: &taskpb.TestFailureCulpritActionTask{
 			AnalysisId: analysisID,
 		},
-		Title: fmt.Sprintf("test_failure_culpri_action_%d", analysisID),
+		Title: fmt.Sprintf("test_failure_culprit_action_%d", analysisID),
 	})
 }
