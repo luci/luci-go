@@ -138,7 +138,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 		}
 		buildURL := util.ConstructBuildURL(ctx, tfa.FailedBuildID)
 		bugURL := util.ConstructBuganizerURLForTestAnalysis("https://test-review.googlesource.com/c/chromium/test/+/876543", tfa.ID)
-		testLinks := fmt.Sprintf("(%s)[%s]\n(%s)[%s]",
+		testLinks := fmt.Sprintf("[%s](%s)\n[%s](%s)",
 			tf1.TestID,
 			util.ConstructTestHistoryURL(tf1.Project, tf1.TestID, tf1.VariantHash),
 			tf2.TestID,
@@ -331,11 +331,11 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 							" change as the cause of a test failure.\n\n"+
 							"Sample build with failed test: %s\n"+
 							"Affected test(s):\n"+
-							"(testID1)[https://ci.chromium.org/ui/test/chromium/testID1?q=VHash%%3Avarianthash1]\n"+
-							"(testID2)[https://ci.chromium.org/ui/test/chromium/testID2?q=VHash%%3Avarianthash2]\n"+
-							"(testID3)[https://ci.chromium.org/ui/test/chromium/testID3?q=VHash%%3Avarianthash3]\n"+
-							"(testID4)[https://ci.chromium.org/ui/test/chromium/testID4?q=VHash%%3Avarianthash4]\n"+
-							"(testID5)[https://ci.chromium.org/ui/test/chromium/testID5?q=VHash%%3Avarianthash5]\n"+
+							"[testID1](https://ci.chromium.org/ui/test/chromium/testID1?q=VHash%%3Avarianthash1)\n"+
+							"[testID2](https://ci.chromium.org/ui/test/chromium/testID2?q=VHash%%3Avarianthash2)\n"+
+							"[testID3](https://ci.chromium.org/ui/test/chromium/testID3?q=VHash%%3Avarianthash3)\n"+
+							"[testID4](https://ci.chromium.org/ui/test/chromium/testID4?q=VHash%%3Avarianthash4)\n"+
+							"[testID5](https://ci.chromium.org/ui/test/chromium/testID5?q=VHash%%3Avarianthash5)\n"+
 							"and 2 more ...\n\n"+
 							"If this is a false positive, please report it at %s", buildURL, bugURL),
 					},

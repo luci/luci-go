@@ -111,7 +111,7 @@ func testFailureComment(ctx context.Context, suspect *model.Suspect, reason, tem
 	sortTestFailures(testFailures)
 	testLinks := []string{}
 	for _, tf := range testFailures[:min(maxTestLink, len(testFailures))] {
-		testLinks = append(testLinks, fmt.Sprintf("(%s)[%s]", tf.TestID, util.ConstructTestHistoryURL(tf.Project, tf.TestID, tf.VariantHash)))
+		testLinks = append(testLinks, fmt.Sprintf("[%s](%s)", tf.TestID, util.ConstructTestHistoryURL(tf.Project, tf.TestID, tf.VariantHash)))
 	}
 	bugURL := util.ConstructBuganizerURLForTestAnalysis(suspect.ReviewUrl, tfs.Primary().AnalysisKey.IntID())
 	// TODO(beining@): add analysis URL when the bisection UI is ready.
