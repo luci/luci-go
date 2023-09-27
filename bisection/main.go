@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/bisection/compilefailuredetection"
 	"go.chromium.org/luci/bisection/culpritaction/revertculprit"
 	"go.chromium.org/luci/bisection/culpritverification"
+	"go.chromium.org/luci/bisection/frontend/handlers"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/metrics"
 	pb "go.chromium.org/luci/bisection/proto/v1"
@@ -101,10 +102,7 @@ func main() {
 
 	luciserver.Main(nil, modules, func(srv *luciserver.Server) error {
 		// Redirect the frontend to Milo.
-		srv.Routes.NotFound(nil, func(ctx *router.Context) {
-			url := fmt.Sprintf("https://%s%s", uiRedirectURL, ctx.Request.URL.Path)
-			http.Redirect(ctx.Writer, ctx.Request, url, http.StatusFound)
-		})
+		srv.Routes.NotFound(nil, handlers.Redirect(uiRedirectURL))
 
 		// Pubsub handler
 		pubsubMwc := router.NewMiddlewareChain(
