@@ -47,9 +47,26 @@ func (s *MiloInternalService) QueryConsoles(ctx context.Context, req *milopb.Que
 		return nil, appstatus.BadRequest(err)
 	}
 
-	allowed, err := projectconfig.IsAllowed(ctx, req.Predicate.Builder.Project)
-	if err != nil {
-		return nil, err
+	allowed := true
+	// Theoretically, we don't need to protect against unauthorized access since
+	// we filters out forbidden projects in the datastore query below. Checking it
+	// here allows us to return 404 instead of 200 with an empty response, also
+	// prevents unnecessary datastore query.
+	if allowed && req.GetPredicate().GetProject() != "" {
+		allowed, err = projectconfig.IsAllowed(ctx, req.Predicate.Project)
+		if err != nil {
+			return nil, err
+		}
+	}
+	// Without this, user may be able to tell which accessible console contains an
+	// external builder that they don't have access to. This is not necessarily
+	// wrong as the access model around this is not well defined yet. But it's
+	// safer to use a stricter restriction.
+	if allowed && req.GetPredicate().GetBuilder() != nil {
+		allowed, err = projectconfig.IsAllowed(ctx, req.Predicate.Builder.Project)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if !allowed {
 		if auth.CurrentIdentity(ctx) == identity.AnonymousIdentity {
@@ -74,9 +91,14 @@ func (s *MiloInternalService) QueryConsoles(ctx context.Context, req *milopb.Que
 	isProjectAllowed := make(map[string]bool)
 
 	// Construct query.
-	q := datastore.NewQuery("Console").
-		Eq("Builders", utils.LegacyBuilderIDString(req.Predicate.Builder)).
-		Start(cur)
+	q := datastore.NewQuery("Console")
+	if req.GetPredicate().GetProject() != "" {
+		q = q.Ancestor(datastore.MakeKey(ctx, "Project", req.Predicate.Project))
+	}
+	if req.GetPredicate().GetBuilder() != nil {
+		q = q.Eq("Builders", utils.LegacyBuilderIDString(req.Predicate.Builder))
+	}
+	q = q.Start(cur)
 
 	// Query consoles.
 	consoles := make([]*projectconfigpb.Console, 0, pageSize)
@@ -100,7 +122,8 @@ func (s *MiloInternalService) QueryConsoles(ctx context.Context, req *milopb.Que
 		// Use the project:@root as realm if the realm is not yet defined for the
 		// console.
 		// TODO(crbug/1110314): remove this once all consoles have their realm
-		// populated.
+		// populated. Also implement realm based authentication (instead of project
+		// based).
 		realm := proj + ":@root"
 		if con.Realm != "" {
 			realm = con.Realm
@@ -151,13 +174,11 @@ func validatesQueryConsolesRequest(req *milopb.QueryConsolesRequest) error {
 }
 
 func validateConsolePredicate(predicate *milopb.ConsolePredicate) error {
-	if predicate.GetBuilder() == nil {
-		return errors.Reason("builder must be specified").Err()
-	}
-
-	err := bbprotoutil.ValidateRequiredBuilderID(predicate.Builder)
-	if err != nil {
-		return errors.Annotate(err, "builder").Err()
+	if predicate.GetBuilder() != nil {
+		err := bbprotoutil.ValidateRequiredBuilderID(predicate.Builder)
+		if err != nil {
+			return errors.Annotate(err, "builder").Err()
+		}
 	}
 
 	return nil

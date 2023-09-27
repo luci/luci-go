@@ -97,6 +97,11 @@ func TestQueryConsoles(t *testing.T) {
 					Bucket:  "bucket3",
 					Builder: "builder3",
 				},
+				{
+					Project: "forbidden-project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
 			},
 			{
 				{
@@ -215,7 +220,97 @@ func TestQueryConsoles(t *testing.T) {
 			So(res.NextPageToken, ShouldBeEmpty)
 		})
 
+		Convey(`query project`, func() {
+			ctx := auth.WithState(ctx, &authtest.FakeState{Identity: "user"})
+
+			res, err := srv.QueryConsoles(ctx, &milopb.QueryConsolesRequest{
+				Predicate: &milopb.ConsolePredicate{
+					Project: "allowed-project",
+				},
+			})
+			So(err, ShouldBeNil)
+			So(res.Consoles, ShouldResembleProto, []*projectconfigpb.Console{
+				{
+					Id:    "con1",
+					Realm: "allowed-project:@root",
+				},
+				{
+					Id:    "con2",
+					Realm: "allowed-project:@root",
+				},
+				{
+					Id:    "con3",
+					Realm: "allowed-project:@root",
+				},
+			})
+		})
+
+		Convey(`query project and builder`, func() {
+			ctx := auth.WithState(ctx, &authtest.FakeState{Identity: "user"})
+
+			res, err := srv.QueryConsoles(ctx, &milopb.QueryConsolesRequest{
+				Predicate: &milopb.ConsolePredicate{
+					Project: "allowed-project",
+					Builder: &buildbucketpb.BuilderID{
+						Project: "allowed-project",
+						Bucket:  "bucket1",
+						Builder: "builder1",
+					},
+				},
+			})
+			So(err, ShouldBeNil)
+			So(res.Consoles, ShouldResembleProto, []*projectconfigpb.Console{
+				{
+					Id:    "con1",
+					Realm: "allowed-project:@root",
+				},
+				{
+					Id:    "con2",
+					Realm: "allowed-project:@root",
+				},
+			})
+		})
+
+		Convey(`query all`, func() {
+			ctx := auth.WithState(ctx, &authtest.FakeState{Identity: "user"})
+
+			res, err := srv.QueryConsoles(ctx, &milopb.QueryConsolesRequest{})
+			So(err, ShouldBeNil)
+			So(res.Consoles, ShouldResembleProto, []*projectconfigpb.Console{
+				{
+					Id:    "con1",
+					Realm: "allowed-project:@root",
+				},
+				{
+					Id:    "con2",
+					Realm: "allowed-project:@root",
+				},
+				{
+					Id:    "con3",
+					Realm: "allowed-project:@root",
+				},
+				{
+					Id:    "con4",
+					Realm: "other-allowed-project:@root",
+				},
+			})
+		})
+
 		Convey(`query forbidden project`, func() {
+			ctx := auth.WithState(ctx, &authtest.FakeState{Identity: "user"})
+
+			res, err := srv.QueryConsoles(ctx, &milopb.QueryConsolesRequest{
+				Predicate: &milopb.ConsolePredicate{
+					Project: "forbidden-project",
+				},
+				PageSize: 2,
+			})
+			So(res, ShouldBeNil)
+			So(err, ShouldNotBeNil)
+			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+		})
+
+		Convey(`query forbidden project with builder predicate`, func() {
 			ctx := auth.WithState(ctx, &authtest.FakeState{Identity: "user"})
 
 			res, err := srv.QueryConsoles(ctx, &milopb.QueryConsolesRequest{
@@ -238,10 +333,18 @@ func TestQueryConsoles(t *testing.T) {
 func TestValidateQueryConsolesQuery(t *testing.T) {
 	t.Parallel()
 	Convey(`TestValidateQueryConsolesRequest`, t, func() {
-		Convey(`no predicate`, func() {
-			err := validatesQueryConsolesRequest(&milopb.QueryConsolesRequest{})
+		Convey(`partial builder`, func() {
+			err := validatesQueryConsolesRequest(&milopb.QueryConsolesRequest{
+				Predicate: &milopb.ConsolePredicate{
+					Project: "project",
+					Builder: &buildbucketpb.BuilderID{
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				},
+			})
 			So(err, ShouldNotBeNil)
-			So(err, ShouldErrLike, "predicate: builder must be specified")
+			So(err, ShouldErrLike, "predicate: builder: project must match")
 		})
 
 		Convey(`negative page size`, func() {
@@ -262,6 +365,7 @@ func TestValidateQueryConsolesQuery(t *testing.T) {
 		Convey(`valid`, func() {
 			err := validatesQueryConsolesRequest(&milopb.QueryConsolesRequest{
 				Predicate: &milopb.ConsolePredicate{
+					Project: "project",
 					Builder: &buildbucketpb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
@@ -269,6 +373,43 @@ func TestValidateQueryConsolesQuery(t *testing.T) {
 					},
 				},
 				PageSize: 10,
+			})
+			So(err, ShouldBeNil)
+		})
+
+		Convey(`valid with no predicate`, func() {
+			err := validatesQueryConsolesRequest(&milopb.QueryConsolesRequest{
+				Predicate: &milopb.ConsolePredicate{
+					Project: "project",
+					Builder: &buildbucketpb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				},
+				PageSize: 10,
+			})
+			So(err, ShouldBeNil)
+		})
+
+		Convey(`valid with only project`, func() {
+			err := validatesQueryConsolesRequest(&milopb.QueryConsolesRequest{
+				Predicate: &milopb.ConsolePredicate{
+					Project: "project",
+				},
+			})
+			So(err, ShouldBeNil)
+		})
+
+		Convey(`valid with only builder`, func() {
+			err := validatesQueryConsolesRequest(&milopb.QueryConsolesRequest{
+				Predicate: &milopb.ConsolePredicate{
+					Builder: &buildbucketpb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				},
 			})
 			So(err, ShouldBeNil)
 		})

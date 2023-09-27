@@ -307,14 +307,15 @@ message BatchCheckPermissionsResponse {
 // Represents a function Console -> bool.
 // Empty message matches all consoles.
 message ConsolePredicate {
+  // A console must belong to this project.
+  string project = 2;
+
   // A console must include this builder.
   buildbucket.v2.BuilderID builder = 1;
 }
 
 message QueryConsolesRequest {
   // A console in the response must satisfy this predicate.
-  //
-  // ConsolePredicate.builder is required.
   ConsolePredicate predicate = 1;
 
   // Optional. The maxium number of consoles to return.
