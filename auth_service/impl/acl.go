@@ -56,4 +56,10 @@ var AuthorizeRPCAccess = rpcacl.Interceptor(rpcacl.Map{
 
 	// Internals are used by the UI which is accessible only to authorized users.
 	"/auth.internals.Internals/*": authdb.AuthServiceAccessGroup,
+
+	// All methods that LUCI Config interacts to perform config validation.
+	//
+	// Allow all callers as the service itself will check whether the request
+	// is from LUCI Config service.
+	"/config.Consumer/*": rpcacl.All,
 })
