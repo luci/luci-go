@@ -155,6 +155,7 @@ func main() {
 			clUpdater, pmNotifier, runNotifier,
 		))
 		apiv0pb.RegisterRunsServer(srv, &rpcv0.RunsServer{})
+		apiv0pb.RegisterGerritIntegrationServer(srv, &rpcv0.GerritIntegrationServer{})
 
 		// Register cron.
 		pcr := refresher.NewRefresher(&tq.Default, pmNotifier, qm, env)
