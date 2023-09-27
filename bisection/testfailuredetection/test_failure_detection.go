@@ -18,7 +18,9 @@ package testfailuredetection
 
 import (
 	"context"
+	"fmt"
 	"math"
+	"strings"
 
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
@@ -110,6 +112,7 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 		return errors.Annotate(err, "read test failures").Err()
 	}
 	bundles := []*model.TestFailureBundle{}
+	skippedBundleLogLines := []string{}
 	for _, g := range groups {
 		bundle, err := newTestFailureBundle(task.Project, g)
 		if err != nil {
@@ -124,16 +127,19 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 		if rs == 1 {
 			// Test failures in this bundle are completely redundant.
 			// This bundle should be skipped.
+			line := fmt.Sprintf("primary test %s(%s)", bundle.Primary().TestID, bundle.Primary().VariantHash)
+			skippedBundleLogLines = append(skippedBundleLogLines, line)
 			continue
 		}
 		bundle.Primary().RedundancyScore = rs
 		bundles = append(bundles, bundle)
 	}
+	logging.Infof(ctx, fmt.Sprintf("skip completely redundant bundles\n%s", strings.Join(skippedBundleLogLines, "\n")))
 	if len(bundles) == 0 {
 		logging.Infof(ctx, "Cannot find new test failures to bisect for project %s", task.Project)
 		return nil
 	}
-	bestBundle := First(bundles)
+	bestBundle := First(ctx, bundles)
 	logging.Infof(ctx, "Selected test failure bundle with primary failure ID %s, variantHash %s, refHash %s",
 		bestBundle.Primary().TestID, bestBundle.Primary().VariantHash, bestBundle.Primary().RefHash)
 	testFailureAnalysis, err := prepareFailureAnalysis(ctx, client, bestBundle.Primary())

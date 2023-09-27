@@ -15,14 +15,26 @@
 package testfailuredetection
 
 import (
+	"context"
+	"fmt"
 	"sort"
+	"strings"
 
 	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/common/logging"
 )
 
 // First sorts the input slice and returns the first element in the sorted slice.
-func First(bundles []*model.TestFailureBundle) *model.TestFailureBundle {
+func First(ctx context.Context, bundles []*model.TestFailureBundle) *model.TestFailureBundle {
 	Sort(bundles)
+	// Log the sorted bundles for debugging purpose.
+	lines := []string{}
+	for i, b := range bundles {
+		tf := b.Primary()
+		line := fmt.Sprintf("%d. primary test %s(%s), redundancy score %f, regression end position %d", i, tf.TestID, tf.VariantHash, tf.RedundancyScore, tf.RegressionEndPosition)
+		lines = append(lines, line)
+	}
+	logging.Infof(ctx, fmt.Sprintf("sorted bundles\n%s", strings.Join(lines, "\n")))
 	return bundles[0]
 }
 
