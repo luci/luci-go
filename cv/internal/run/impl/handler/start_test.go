@@ -27,6 +27,8 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+	"go.chromium.org/luci/server/quota"
+	"go.chromium.org/luci/server/quota/quotapb"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -97,7 +99,7 @@ func TestStart(t *testing.T) {
 				Mode:          run.DryRun,
 			},
 		}
-		h, _ := makeTestHandler(&ct)
+		h, deps := makeTestHandler(&ct)
 
 		var clid common.CLID
 		addCL := func(triggerer, owner string) *changelist.CL {
@@ -143,6 +145,7 @@ func TestStart(t *testing.T) {
 			res, err := h.Start(ctx, rs)
 			So(err, ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
+			So(deps.qm.debitRunQuotaCalls, ShouldEqual, 1)
 
 			So(res.State.Status, ShouldEqual, run.Status_RUNNING)
 			So(res.State.StartTime, ShouldEqual, ct.Clock.Now().UTC())
@@ -178,6 +181,31 @@ func TestStart(t *testing.T) {
 				ShouldAlmostEqual, startLatency.Seconds())
 			So(ct.TSMonSentDistr(ctx, metricPickupLatencyAdjustedS, lProject).Sum(),
 				ShouldAlmostEqual, (startLatency - stabilizationDelay).Seconds())
+		})
+
+		Convey("Does not proceed if run quota is not available", func() {
+			deps.qm.runQuotaErr = quota.ErrQuotaApply
+			deps.qm.runQuotaOp = &quotapb.OpResult{
+				Status: quotapb.OpResult_ERR_UNDERFLOW,
+			}
+
+			res, err := h.Start(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res.SideEffectFn, ShouldBeNil)
+			So(res.State.Status, ShouldEqual, run.Status_PENDING)
+			ops := res.State.OngoingLongOps.GetOps()
+			So(len(ops), ShouldEqual, 0)
+		})
+
+		Convey("Throws error when quota manager fails with an unexpected error", func() {
+			deps.qm.runQuotaErr = quota.ErrQuotaApply
+			deps.qm.runQuotaOp = &quotapb.OpResult{
+				Status: quotapb.OpResult_ERR_UNKNOWN,
+			}
+
+			res, err := h.Start(ctx, rs)
+			So(res, ShouldBeNil)
+			So(err, ShouldErrLike, "QM.DebitRunQuota: unexpected quotaOp Status ERR_UNKNOWN")
 		})
 
 		Convey("Does not proceed if any parent RUN is still PENDING", func() {

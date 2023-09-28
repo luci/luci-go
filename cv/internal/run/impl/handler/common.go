@@ -26,8 +26,10 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/quota"
 
 	"go.chromium.org/luci/cv/internal/acls"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -76,6 +78,19 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status,
 	enqueueExecutePostActionTask(ctx, rs, cg)
 
 	return eventbox.Chain(
+		func(ctx context.Context) error {
+			// Credit back run quota when the run ends.
+			switch quotaOp, err := impl.QM.CreditRunQuota(ctx, rs); {
+			case err == nil && quotaOp != nil:
+				logging.Debugf(ctx, "Run quota credited back to %s; new balance: %d", rs.Run.Owner.Email(), quotaOp.GetNewBalance())
+			case err == quota.ErrQuotaApply:
+				return errors.Annotate(err, "QM.CreditRunQuota: unexpected quotaOp Status %s", quotaOp.GetStatus()).Tag(transient.Tag).Err()
+			case err != nil:
+				return errors.Annotate(err, "QM.CreditRunQuota").Tag(transient.Tag).Err()
+			}
+
+			return nil
+		},
 		func(ctx context.Context) error {
 			return impl.removeRunFromCLs(ctx, rs.ID, rs.CLs)
 		},
