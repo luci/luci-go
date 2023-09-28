@@ -312,10 +312,8 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 			errs = append(errs, errors.Annotate(err, "updating bugs in %s", system).Err())
 		}
 	}
-	if len(errs) > 0 {
-		return errors.NewMultiError(errs...)
-	}
-	return nil
+	// Returns nil if len(errs) == 0.
+	return errors.Append(errs...)
 }
 
 type ruleWithMetrics struct {
@@ -518,10 +516,8 @@ func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bug
 			logging.Errorf(ctx, "%s", err)
 		}
 	}
-	if len(errs) > 0 {
-		return errors.NewMultiError(errs...)
-	}
-	return nil
+	// Returns nil if len(errs) == 0.
+	return errors.Append(errs...)
 }
 
 func (b *BugUpdater) verifyClusterImpactValid(ctx context.Context, progress *runs.ReclusteringProgress) bool {

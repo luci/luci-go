@@ -112,8 +112,8 @@ func (fic *FakeClient) ModifyIssue(ctx context.Context, in *issuetracker.ModifyI
 	if err != nil {
 		return nil, errors.Annotate(err, "fake modify issue").Err()
 	}
-	if issueData.ShouldFailUpdates {
-		return nil, errors.New("issue is set to fail updates")
+	if issueData.UpdateError != nil {
+		return nil, issueData.UpdateError
 	}
 	if issueData.ShouldReturnAccessPermissionError {
 		return nil, status.Error(codes.PermissionDenied, "cannot access bug")

@@ -1086,28 +1086,70 @@ func TestUpdate(t *testing.T) {
 								},
 							})
 
-							// Act
-							err = updateBugsForProject(ctx, opts)
-
-							// Verify
-							So(err, ShouldBeNil)
-							So(issue.Issue.IssueState.Status, ShouldEqual, originalStatus)
-							So(issue.Issue.IssueState.Priority, ShouldEqual, originalPriority)
-							expectedRules[0].IsManagingBugPriority = false
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-
-							Convey("further updates leave no comments", func() {
-								initialComments := len(issue.Comments)
-
+							Convey("happy path", func() {
 								// Act
 								err = updateBugsForProject(ctx, opts)
 
 								// Verify
 								So(err, ShouldBeNil)
-								So(len(issue.Comments), ShouldEqual, initialComments)
 								So(issue.Issue.IssueState.Status, ShouldEqual, originalStatus)
 								So(issue.Issue.IssueState.Priority, ShouldEqual, originalPriority)
+								expectedRules[0].IsManagingBugPriority = false
 								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+
+								Convey("further updates leave no comments", func() {
+									initialComments := len(issue.Comments)
+
+									// Act
+									err = updateBugsForProject(ctx, opts)
+
+									// Verify
+									So(err, ShouldBeNil)
+									So(len(issue.Comments), ShouldEqual, initialComments)
+									So(issue.Issue.IssueState.Status, ShouldEqual, originalStatus)
+									So(issue.Issue.IssueState.Priority, ShouldEqual, originalPriority)
+									So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+								})
+							})
+
+							Convey("errors updating other bugs", func() {
+								// Check we handle partial success correctly:
+								// Even if there is an error updating another bug, if we comment on a bug
+								// to say the user took manual priority control, we must commit
+								// the rule update setting IsManagingBugPriority to false. Otherwise
+								// we may get stuck in a loop where we comment on the bug every
+								// time bug filing runs.
+
+								// Trigger a priority update for another bug in addition to the
+								// manual priority update.
+								SetResidualMetrics(bugClusters[1], bugs.ClusterMetrics{
+									metrics.CriticalFailuresExonerated.ID: bugs.MetricValues{OneDay: 100},
+									metrics.HumanClsFailedPresubmit.ID:    bugs.MetricValues{SevenDay: 10},
+								})
+								expectedRules[1].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
+								expectedRules[1].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+
+								// But prevent LUCI Analysis from applying that priority update, due to an error.
+								modifyError := errors.New("this issue may not be modified")
+								buganizerStore.Issues[2].UpdateError = modifyError
+
+								// Act
+								err = updateBugsForProject(ctx, opts)
+
+								// Verify
+								So(err, ShouldNotBeNil)
+
+								// The error modifying the other bug is bubbled up.
+								So(errors.Is(err, modifyError), ShouldBeTrue)
+
+								// Nonetheless, our bug was commented on updated and
+								// IsManagingBugPriority was set to false.
+								expectedRules[0].IsManagingBugPriority = false
+								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+								So(issue.Comments[len(issue.Comments)-1].Comment, ShouldContainSubstring,
+									"The bug priority has been manually set.")
+								So(issue.Issue.IssueState.Status, ShouldEqual, originalStatus)
+								So(issue.Issue.IssueState.Priority, ShouldEqual, originalPriority)
 							})
 						})
 						Convey("if all policies de-activate, bug is auto-closed", func() {
@@ -1288,26 +1330,73 @@ func TestUpdate(t *testing.T) {
 							err = userClient.ModifyIssues(ctx, updateRequest)
 							So(err, ShouldBeNil)
 
-							// Act
-							err = updateBugsForProject(ctx, opts)
-
-							// Verify
-							So(err, ShouldBeNil)
-							expectedRules[firstMonorailRuleIndex].IsManagingBugPriority = false
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-							So(issue.Issue.Status.Status, ShouldEqual, originalStatus)
-							So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, "0")
-
-							Convey("further updates leave no comments", func() {
-								initialComments := len(issue.Comments)
-
+							Convey("happy path", func() {
 								// Act
 								err = updateBugsForProject(ctx, opts)
 
 								// Verify
 								So(err, ShouldBeNil)
+
+								// Expect IsManagingBugPriority to get set to false.
+								expectedRules[firstMonorailRuleIndex].IsManagingBugPriority = false
 								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-								So(len(issue.Comments), ShouldEqual, initialComments)
+
+								// Expect a comment on the bug.
+								So(issue.Comments[len(issue.Comments)-1].Content, ShouldContainSubstring,
+									"The bug priority has been manually set.")
+								So(issue.Issue.Status.Status, ShouldEqual, originalStatus)
+								So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, "0")
+
+								Convey("further updates leave no comments", func() {
+									initialComments := len(issue.Comments)
+
+									// Act
+									err = updateBugsForProject(ctx, opts)
+
+									// Verify
+									So(err, ShouldBeNil)
+									So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+									So(len(issue.Comments), ShouldEqual, initialComments)
+									So(issue.Issue.Status.Status, ShouldEqual, originalStatus)
+									So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, "0")
+								})
+							})
+							Convey("errors updating other bugs", func() {
+								// Check we handle partial success correctly:
+								// Even if there is an error updating another bug, if we comment on a bug
+								// to say the user took manual priority control, we must commit
+								// the rule update setting IsManagingBugPriority to false. Otherwise
+								// we may get stuck in a loop where we comment on the bug every
+								// time bug filing runs.
+
+								// Trigger a priority update for another monorail bug in addition to the
+								// manual priority update.
+								SetResidualMetrics(bugClusters[firstMonorailRuleIndex+1], bugs.ClusterMetrics{
+									metrics.CriticalFailuresExonerated.ID: bugs.MetricValues{OneDay: 100},
+									metrics.HumanClsFailedPresubmit.ID:    bugs.MetricValues{SevenDay: 10},
+								})
+								expectedRules[firstMonorailRuleIndex+1].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
+								expectedRules[firstMonorailRuleIndex+1].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+
+								// But prevent LUCI Analysis from applying that priority update, due to an error.
+								modifyError := errors.New("this issue may not be modified")
+								monorailStore.Issues[1].UpdateError = modifyError
+
+								// Act
+								err = updateBugsForProject(ctx, opts)
+
+								// Verify
+								So(err, ShouldNotBeNil)
+
+								// The error modifying the other bug is bubbled up.
+								So(errors.Is(err, modifyError), ShouldBeTrue)
+
+								// Nonetheless, our bug was commented on updated and
+								// IsManagingBugPriority was set to false.
+								expectedRules[firstMonorailRuleIndex].IsManagingBugPriority = false
+								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+								So(issue.Comments[len(issue.Comments)-1].Content, ShouldContainSubstring,
+									"The bug priority has been manually set.")
 								So(issue.Issue.Status.Status, ShouldEqual, originalStatus)
 								So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, "0")
 							})

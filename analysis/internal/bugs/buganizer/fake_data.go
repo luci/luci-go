@@ -38,9 +38,9 @@ type IssueData struct {
 	// Use this field to set source and destination relationsships
 	// of duplicate issues.
 	IssueRelationships []*issuetracker.IssueRelationship
-	// Determines whether the issue should fail update requests.
-	// Use this flag to validate behaviours of failed updates.
-	ShouldFailUpdates bool
+	// Defines a custom error to return when attempting to update
+	// the issue. Use this to test failed updates.
+	UpdateError error
 	// Determines whether the issue should return grpc permission
 	// error when accessed or updated.
 	ShouldReturnAccessPermissionError bool

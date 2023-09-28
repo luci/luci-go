@@ -192,6 +192,10 @@ func (f *fakeIssuesClient) ModifyIssues(ctx context.Context, in *mpb.ModifyIssue
 		if issue == nil {
 			return nil, fmt.Errorf("issue %q not found", name)
 		}
+		if issue.UpdateError != nil {
+			// We have been configured to return an error on attempts to modify this issue.
+			return nil, issue.UpdateError
+		}
 		if !delta.UpdateMask.IsValid(issue.Issue) {
 			return nil, fmt.Errorf("update mask for issue %q not valid", name)
 		}

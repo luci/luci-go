@@ -30,6 +30,9 @@ type IssueData struct {
 	// NotifyCount is the number of times a notification has been generated
 	// for the issue.
 	NotifyCount int
+	// The error that should be returned if an attempt is made to modify the
+	// issue, if any.
+	UpdateError error
 }
 
 // FakeIssuesSystem stores the state of bugs for a fake implementation of monorail.
