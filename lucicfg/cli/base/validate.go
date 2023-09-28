@@ -27,7 +27,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/starlark/interpreter"
 
 	"go.chromium.org/luci/lucicfg"
@@ -170,12 +169,7 @@ func validateOutput(ctx context.Context, output lucicfg.Output,
 	}
 
 	var validator lucicfg.ConfigSetValidator
-	if shouldUseNewLUCIConfig(host, configSets) {
-		if strings.Contains(host, "dev") {
-			host = "config-dev.luci.app"
-		} else {
-			host = "config.luci.app"
-		}
+	if strings.HasSuffix(host, "luci.app") {
 		conn, err := clientConnFactory(ctx, host)
 		if err != nil {
 			return nil, err
@@ -187,6 +181,7 @@ func validateOutput(ctx context.Context, output lucicfg.Output,
 		}()
 		validator = lucicfg.NewRemoteValidator(conn)
 	} else {
+		logging.Warningf(ctx, "The legacy LUCI Config service is deprecated. Please use the new LUCI Config service host \"config.luci.app\" by passing it through -config-service-host.")
 		configClient, err := legacyClientFactory(ctx)
 		if err != nil {
 			return nil, err
@@ -219,20 +214,4 @@ func validateOutput(ctx context.Context, output lucicfg.Output,
 		return results, merr
 	}
 	return results, nil
-}
-
-// shouldUseNewLUCIConfig returns true if host explicitly point to the new
-// LUCI Config service or the provided config sets are either infra related
-// LUCI Projects or LUCI related service config.
-func shouldUseNewLUCIConfig(host string, sets []lucicfg.ConfigSet) bool {
-	switch host {
-	case "config.luci.app", "config-dev.luci.app":
-		return true
-	}
-	for _, set := range sets {
-		if !strings.HasPrefix(set.Name, fmt.Sprintf("%s/infra", config.ProjectDomain)) && !strings.HasPrefix(set.Name, fmt.Sprintf("%s/luci", config.ServiceDomain)) {
-			return false
-		}
-	}
-	return true
 }

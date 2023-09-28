@@ -43,7 +43,7 @@ const (
 	CIPDServiceURL = "https://chrome-infra-packages.appspot.com"
 
 	// ConfigServiceHost is the default host of LUCI config service.
-	ConfigServiceHost = "luci-config.appspot.com"
+	ConfigServiceHost = "config.luci.app"
 
 	// LogDogHost is the default host of the production LogDog service in Chrome
 	// Operations.
