@@ -56,7 +56,7 @@ func New(n *prjmanager.Notifier, gf gerrit.Factory) *Triggerer {
 		pmNotifier: n,
 		gFactory:   gf,
 	}
-	n.TasksBinding.TriggerProjectCL.AttachHandler(
+	n.TasksBinding.TriggerProjectCLs.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.TriggeringCLsTask)
 			ctx = logging.SetFields(ctx, logging.Fields{

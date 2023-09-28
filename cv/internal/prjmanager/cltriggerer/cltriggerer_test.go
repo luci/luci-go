@@ -155,7 +155,7 @@ func TestTriggerer(t *testing.T) {
 		)
 
 		Convey("Votes", func() {
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLTaskClass))
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLsTaskClass))
 			So(ct.FailedTQTasks, ShouldHaveLength, 0)
 
 			// change1 should have a CQ vote now by the voter,
@@ -189,7 +189,7 @@ func TestTriggerer(t *testing.T) {
 				refreshCL()
 			})
 
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLTaskClass))
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLsTaskClass))
 			So(ct.FailedTQTasks, ShouldHaveLength, 0)
 			// change1 and change2 should NOT have a CQ vote.
 			ci1 := ct.GFake.GetChange(gHost, int(change1)).Info
@@ -227,7 +227,7 @@ func TestTriggerer(t *testing.T) {
 			})
 			ct.Clock.Add(time.Minute)
 			refreshCL()
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLTaskClass))
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLsTaskClass))
 			So(ct.FailedTQTasks, ShouldHaveLength, 0)
 
 			// change1 and change2 should still have a CQ vote, but
@@ -263,7 +263,7 @@ func TestTriggerer(t *testing.T) {
 			})
 			ct.Clock.Add(time.Minute)
 			refreshCL()
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLTaskClass))
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLsTaskClass))
 			So(ct.FailedTQTasks, ShouldHaveLength, 0)
 			ci1 := ct.GFake.GetChange(gHost, int(change1)).Info
 			So(findCQVoteTrigger(ci1).GetMode(), ShouldEqual, string(run.FullRun))
@@ -290,7 +290,7 @@ func TestTriggerer(t *testing.T) {
 			})
 			ct.Clock.Add(time.Minute)
 			refreshCL()
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLTaskClass))
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLsTaskClass))
 			So(ct.FailedTQTasks, ShouldHaveLength, 0)
 			ci1 := ct.GFake.GetChange(gHost, int(change1)).Info
 			So(findCQVoteTrigger(ci1), ShouldBeNil)

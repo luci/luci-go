@@ -713,6 +713,8 @@ func (m *ExecutionState) validate(all bool) error {
 
 	// no validation rules for FailureReason
 
+	// no validation rules for FailureReasonTmpl
+
 	if all {
 		switch v := interface{}(m.GetEndTime()).(type) {
 		case interface{ ValidateAll() error }:

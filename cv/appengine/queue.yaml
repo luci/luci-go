@@ -85,6 +85,10 @@ queue:
   rate: 30/s
   target: default
 
+- name: trigger-project-cls
+  rate: 30/s
+  target: default
+
 ###############################################################################
 # Special queues not critical for production.
 # They aren't alerted upon.
