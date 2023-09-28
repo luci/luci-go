@@ -16,6 +16,7 @@ package usertext
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"text/template"
@@ -131,6 +132,35 @@ func FormatCLError(ctx context.Context, reason *changelist.CLError, cl *changeli
 
 	case *changelist.CLError_CommitBlocked:
 		return tmplCommitBlocked.Execute(sb, nil)
+
+	case *changelist.CLError_TriggerDeps_:
+		if v.TriggerDeps == nil {
+			return errors.New("trigger_deps must be set")
+		}
+		var msgs []string
+		var deps []*changelist.Dep
+		for _, denied := range v.TriggerDeps.GetPermissionDenied() {
+			var mb strings.Builder
+			fmt.Fprintf(&mb, "no permission to vote")
+			if denied.GetEmail() != "" {
+				fmt.Fprintf(&mb, " on behalf of %s", denied.GetEmail())
+			}
+			msgs = append(msgs, mb.String())
+			deps = append(deps, &changelist.Dep{Clid: denied.GetClid()})
+		}
+		for _, clid := range v.TriggerDeps.GetNotFound() {
+			msgs = append(msgs, "the CL no longer exists in Gerrit")
+			deps = append(deps, &changelist.Dep{Clid: clid})
+		}
+		for _, clid := range v.TriggerDeps.GetInternalGerritError() {
+			msgs = append(msgs, "internal Gerrit error")
+			deps = append(deps, &changelist.Dep{Clid: clid})
+		}
+		urls, err := depsURLs(ctx, deps)
+		if err != nil {
+			return err
+		}
+		return tmplTriggerDeps.Execute(sb, map[string]any{"urls": urls, "messages": msgs})
 
 	default:
 		return errors.Reason("unsupported purge reason %t: %s", v, reason).Err()
@@ -249,4 +279,10 @@ var tmplCommitBlocked = tmplMust(`
 {{CQ_OR_CV}} won't start a full run for the CL because it has a "Commit: false" footer.
 
 The "Commit: false" footer is used to prevent accidental submission of a CL. You may try a dry run; if you want to submit the CL, you must first remove the "Commit: false" footer from the CL description.
+`)
+
+var tmplTriggerDeps = tmplMust(`
+{{CQ_OR_CV}} failed to vote the CQ label on the following dependencies.
+{{range $i, $url := .urls}}  * {{$url}} - {{index $.messages $i}}
+{{end}}
 `)

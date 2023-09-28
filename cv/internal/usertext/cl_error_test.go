@@ -64,7 +64,6 @@ func TestFormatCLError(t *testing.T) {
 				So(s, ShouldNotContainSubstring, "<no value>")
 				return s
 			}
-
 			Convey("Lacks owner email", func() {
 				reason.Kind = &changelist.CLError_OwnerLacksEmail{
 					OwnerLacksEmail: true,
@@ -199,6 +198,46 @@ func TestFormatCLError(t *testing.T) {
 				}
 				So(mustFormat(), ShouldContainSubstring, `previously completed a Run ("some/123-1-run") triggered by the same vote(s)`)
 			})
+			Convey("TrighgerDeps", func() {
+				tdeps := &changelist.CLError_TriggerDeps{
+					PermissionDenied: []*changelist.CLError_TriggerDeps_PermissionDenied{
+						{Clid: 1, Email: "voter@example.org"},
+						{Clid: 2},
+					},
+					NotFound:            []int64{3, 4, 5},
+					InternalGerritError: []int64{6},
+				}
+				// Save a CL snapshot for each dep.
+				deps := make(map[int]*changelist.Dep, 6)
+				for i := 1; i <= 6; i++ {
+					depCL := changelist.MustGobID(gHost, int64(i)).MustCreateIfNotExists(ctx)
+					depCL.Snapshot = &changelist.Snapshot{
+						LuciProject:           "whatever",
+						MinEquivalentPatchset: 1,
+						Patchset:              2,
+						ExternalUpdateTime:    timestamppb.New(testclock.TestRecentTimeUTC),
+						Kind: &changelist.Snapshot_Gerrit{
+							Gerrit: &changelist.Gerrit{
+								Host: gHost,
+								Info: gf.CI(i),
+							},
+						},
+					}
+					So(datastore.Put(ctx, depCL), ShouldBeNil)
+					deps[i] = &changelist.Dep{Clid: int64(depCL.ID)}
+				}
+				reason.Kind = &changelist.CLError_TriggerDeps_{TriggerDeps: tdeps}
+				So(mustFormat(), ShouldContainSubstring, text.Doc(`
+					failed to vote the CQ label on the following dependencies.
+					  * https://x-review.googlesource.com/c/1 - no permission to vote on behalf of voter@example.org
+					  * https://x-review.googlesource.com/c/2 - no permission to vote
+					  * https://x-review.googlesource.com/c/3 - the CL no longer exists in Gerrit
+					  * https://x-review.googlesource.com/c/4 - the CL no longer exists in Gerrit
+					  * https://x-review.googlesource.com/c/5 - the CL no longer exists in Gerrit
+					  * https://x-review.googlesource.com/c/6 - internal Gerrit error
+				`))
+			})
+
 		})
 	})
 }
