@@ -53,8 +53,6 @@ func stageTriggerDeps(ctx context.Context, cls map[int64]*clInfo, pm pmState) ([
 				OriginClid: info.pcl.GetClid(),
 				Trigger:    cqTrigger,
 			}
-			// sets the clinfo.triggeringCL so that it will be tasked only once.
-			cls[dep.GetClid()].triggeringCL = tcl
 			depsToTrigger = append(depsToTrigger, tcl)
 			depsAdded[dep.GetClid()] = struct{}{}
 		}
@@ -62,14 +60,6 @@ func stageTriggerDeps(ctx context.Context, cls map[int64]*clInfo, pm pmState) ([
 	if len(depsToTrigger) == 0 {
 		return nil, nil
 	}
-	// A dep in needToTrigger is a CL that is known to and tracked in
-	// the Component.
-	// i.e., it has an entry in `cls`.
-	// Also, there is at least one CL that has a CQ vote and has the the dep
-	// in its depenencies.
-	//
-	// In other words, all the deps in depsToTrigger are within the same
-	// component and connected with each other either directly or indirectly.
 	return depsToTrigger, nil
 }
 
