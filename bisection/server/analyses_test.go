@@ -436,6 +436,11 @@ func TestQueryAnalysis(t *testing.T) {
 			VerificationDetails: &pb.SuspectVerificationDetails{
 				Status: string(model.SuspectVerificationStatus_Vindicated),
 			},
+			Commit: &buildbucketpb.GitilesCommit{
+				Host:    "host1",
+				Project: "proj1",
+				Id:      "commit6",
+			},
 		})
 
 		So(nthSectionResult.RemainingNthSectionRange, ShouldResembleProto, &pb.RegressionRange{
@@ -765,7 +770,7 @@ func TestGetTestAnalyses(t *testing.T) {
 					Builder: "builder",
 				},
 				SampleBbid:  8000,
-				CreateTime:  timestamppb.New(time.Unix(100, 0).UTC()),
+				CreatedTime: timestamppb.New(time.Unix(100, 0).UTC()),
 				StartCommit: &buildbucketpb.GitilesCommit{},
 				EndCommit:   &buildbucketpb.GitilesCommit{},
 				TestFailures: []*pb.TestFailure{

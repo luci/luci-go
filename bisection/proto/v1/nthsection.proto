@@ -68,6 +68,8 @@ message BlameListSingleCommit {
 
 message NthSectionSuspect {
   // A suspect revision of nth-section analysis.
+  // Deprecating: use commit instead.
+  // TODO(beining@): remove this field when frontend switch to use commit field.
   buildbucket.v2.GitilesCommit gitiles_commit = 1;
   // Review URL for the commit.
   string reviewUrl = 2;
@@ -75,6 +77,8 @@ message NthSectionSuspect {
   string reviewTitle = 3;
   // The details of suspect verification for the suspect.
   luci.bisection.v1.SuspectVerificationDetails verification_details = 4;
+  // A suspect revision of nth-section analysis.
+  buildbucket.v2.GitilesCommit commit = 5;
 }
 
 message RegressionRange {

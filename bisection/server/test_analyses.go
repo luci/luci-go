@@ -30,10 +30,10 @@ import (
 // testFailureAnalysisToPb converts model.TestFailureAnalysis to pb.TestAnalysis
 func testFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis) (*pb.TestAnalysis, error) {
 	result := &pb.TestAnalysis{
-		AnalysisId: tfa.ID,
-		CreateTime: timestamppb.New(tfa.CreateTime),
-		Status:     tfa.Status,
-		RunStatus:  tfa.RunStatus,
+		AnalysisId:  tfa.ID,
+		CreatedTime: timestamppb.New(tfa.CreateTime),
+		Status:      tfa.Status,
+		RunStatus:   tfa.RunStatus,
 		Builder: &buildbucketpb.BuilderID{
 			Project: tfa.Project,
 			Bucket:  tfa.Bucket,
@@ -91,7 +91,7 @@ func testFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis
 			if err != nil {
 				return nil, errors.Annotate(err, "culprit to pb").Err()
 			}
-			result.VerifiedCulprit = culpritPb
+			result.Culprit = culpritPb
 		}
 	}
 	return result, nil
@@ -117,7 +117,7 @@ func nthSectionAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis,
 		if err != nil {
 			return nil, errors.Annotate(err, "culprit to pb").Err()
 		}
-		result.Culprit = culpritPb
+		result.Suspect = culpritPb
 	}
 
 	// Populate reruns.
@@ -199,6 +199,7 @@ func culpritToPb(ctx context.Context, culprit *model.Suspect, nsa *model.TestNth
 		ReviewTitle:   culprit.ReviewTitle,
 		CulpritAction: culpritActionsForSuspect(culprit),
 	}
+
 	verificationDetails, err := testVerificationDetails(ctx, culprit, nsa)
 	if err != nil {
 		return nil, errors.Annotate(err, "test verification details").Err()
@@ -287,7 +288,6 @@ func testSingleRerunToPb(ctx context.Context, rerun *model.TestSingleRerun, nsa 
 			Id:       rerun.LUCIBuild.GitilesCommit.GetId(),
 			Position: rerun.LUCIBuild.GitilesCommit.GetPosition(),
 		},
-		Status: rerun.Status,
 	}
 	if rerun.HasStarted() {
 		result.StartTime = timestamppb.New(rerun.StartTime)
@@ -309,11 +309,11 @@ func testSingleRerunToPb(ctx context.Context, rerun *model.TestSingleRerun, nsa 
 	}
 
 	// Update rerun results.
-	pbRerunResults, err := rerunResultsToPb(ctx, rerun.TestResults)
+	pbRerunResults, err := rerunResultsToPb(ctx, rerun.TestResults, rerun.Status)
 	if err != nil {
 		return nil, errors.Annotate(err, "rerun results to pb").Err()
 	}
-	result.Results = pbRerunResults
+	result.RerunResult = pbRerunResults
 	return result, nil
 }
 
@@ -328,11 +328,13 @@ func findTestRerunIndexInBlameList(rerun *model.TestSingleRerun, blamelist *pb.B
 	return -1
 }
 
-func rerunResultsToPb(ctx context.Context, testResults model.RerunTestResults) (*pb.RerunTestResults, error) {
-	if !testResults.IsFinalized {
-		return nil, nil
+func rerunResultsToPb(ctx context.Context, testResults model.RerunTestResults, status pb.RerunStatus) (*pb.RerunTestResults, error) {
+	pb := &pb.RerunTestResults{
+		RerunStatus: status,
 	}
-	pb := &pb.RerunTestResults{}
+	if !testResults.IsFinalized {
+		return pb, nil
+	}
 	for _, singleResult := range testResults.Results {
 		pbSingleResult, err := rerunTestSingleResultToPb(ctx, singleResult)
 		if err != nil {

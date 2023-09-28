@@ -224,7 +224,7 @@ message TestAnalysis {
   // ID to identify this analysis.
   int64 analysis_id = 1;
   // Timestamp for the create time of the analysis.
-  google.protobuf.Timestamp create_time = 2;
+  google.protobuf.Timestamp created_time = 2;
   // Timestamp for the start time of the analysis.
   google.protobuf.Timestamp start_time = 3;
   // Timestamp for the end time of the analysis.
@@ -234,7 +234,7 @@ message TestAnalysis {
   // Run status of the analysis.
   AnalysisRunStatus run_status = 6;
   // The verified culprit for the analysis.
-  TestCulprit verified_culprit = 7;
+  TestCulprit culprit = 7;
   // The builder that the analysis analyzed.
   buildbucket.v2.BuilderID builder = 8;
   // Test failures that the analysis analyzed.
@@ -293,7 +293,7 @@ message TestNthSectionAnalysisResult {
   // The commits are sorted by recency, with the most recent commit first.
   BlameList blame_list = 7;
   // Optional, when nth-section has found a culprit.
-  TestCulprit culprit = 8;
+  TestCulprit suspect = 8;
 }
 
 message TestSingleRerun {
@@ -310,11 +310,9 @@ message TestSingleRerun {
   // ID of the bot that runs the rerun.
   string bot_id = 6;
   // Result of the rerun.
-  RerunTestResults results = 7;
-  // Status of the rerun.
-  RerunStatus status = 8;
+  RerunTestResults rerun_result = 7;
   // Gitiles commit to do the rerun with.
-  buildbucket.v2.GitilesCommit commit = 9;
+  buildbucket.v2.GitilesCommit commit = 8;
   // Index of the commit to rerun within the blamelist, if this is an
   // nth-section rerun. We need to use a string instead of an int here because
   // 0 is a possible valid value but would get lost due to the "omitempty" flag
@@ -323,11 +321,13 @@ message TestSingleRerun {
   // the culprit is the (last pass + 1) position, and this rerun is for parent commit
   // of the culprit verification. In such cases, the parent commit (last pass) is not found in the
   // blamelist (this blamelist is (last pass, first fail]). In such case, index will be "".
-  string index = 10;
+  string index = 9;
 }
 
 message RerunTestResults {
   repeated RerunTestSingleResult results = 1;
+  // Status of the rerun.
+  RerunStatus rerun_status = 2;
 }
 
 message RerunTestSingleResult {
@@ -364,3 +364,4 @@ message TestCulprit {
   // The details of suspect verification for the culprit.
   TestSuspectVerificationDetails verification_details = 5;
 }
+

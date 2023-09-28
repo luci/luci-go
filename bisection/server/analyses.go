@@ -432,6 +432,7 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 			GitilesCommit: &suspect.GitilesCommit,
 			ReviewUrl:     suspect.ReviewUrl,
 			ReviewTitle:   suspect.ReviewTitle,
+			Commit:        &suspect.GitilesCommit,
 		}
 
 		verificationDetails, err := constructSuspectVerificationDetails(c, suspect)

@@ -261,14 +261,14 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 			ReportTime: timestamppb.New(time.Unix(105, 0).UTC()),
 			EndTime:    timestamppb.New(time.Unix(106, 0).UTC()),
 			Index:      "2",
-			Status:     pb.RerunStatus_RERUN_STATUS_FAILED,
 			Commit: &buildbucketpb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "chromium/src",
 				Ref:     "ref",
 				Id:      "commit2",
 			},
-			Results: &pb.RerunTestResults{
+			RerunResult: &pb.RerunTestResults{
+				RerunStatus: pb.RerunStatus_RERUN_STATUS_FAILED,
 				Results: []*pb.RerunTestSingleResult{
 					{
 						TestId:          "testID1",
@@ -286,14 +286,14 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 			ReportTime: timestamppb.New(time.Unix(105, 0).UTC()),
 			EndTime:    timestamppb.New(time.Unix(106, 0).UTC()),
 			Index:      "3",
-			Status:     pb.RerunStatus_RERUN_STATUS_PASSED,
 			Commit: &buildbucketpb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "chromium/src",
 				Ref:     "ref",
 				Id:      "commit3",
 			},
-			Results: &pb.RerunTestResults{
+			RerunResult: &pb.RerunTestResults{
+				RerunStatus: pb.RerunStatus_RERUN_STATUS_PASSED,
 				Results: []*pb.RerunTestSingleResult{
 					{
 						TestId:        "testID1",
@@ -311,14 +311,14 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 			ReportTime: timestamppb.New(time.Unix(105, 0).UTC()),
 			EndTime:    timestamppb.New(time.Unix(106, 0).UTC()),
 			Index:      "2",
-			Status:     pb.RerunStatus_RERUN_STATUS_FAILED,
 			Commit: &buildbucketpb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "chromium/src",
 				Ref:     "ref",
 				Id:      "commit2",
 			},
-			Results: &pb.RerunTestResults{
+			RerunResult: &pb.RerunTestResults{
+				RerunStatus: pb.RerunStatus_RERUN_STATUS_FAILED,
 				Results: []*pb.RerunTestSingleResult{
 					{
 						TestId:          "testID1",
@@ -336,14 +336,14 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 			ReportTime: timestamppb.New(time.Unix(106, 0).UTC()),
 			EndTime:    timestamppb.New(time.Unix(107, 0).UTC()),
 			Index:      "3",
-			Status:     pb.RerunStatus_RERUN_STATUS_PASSED,
 			Commit: &buildbucketpb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "chromium/src",
 				Ref:     "ref",
 				Id:      "commit3",
 			},
-			Results: &pb.RerunTestResults{
+			RerunResult: &pb.RerunTestResults{
+				RerunStatus: pb.RerunStatus_RERUN_STATUS_PASSED,
 				Results: []*pb.RerunTestSingleResult{
 					{
 						TestId:        "testID1",
@@ -384,11 +384,11 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 				Bucket:  "ci",
 				Builder: "linux-rel",
 			},
-			CreateTime: timestamppb.New(time.Unix(int64(100), 0).UTC()),
-			StartTime:  timestamppb.New(time.Unix(int64(110), 0).UTC()),
-			EndTime:    timestamppb.New(time.Unix(int64(120), 0).UTC()),
-			Status:     pb.AnalysisStatus_FOUND,
-			RunStatus:  pb.AnalysisRunStatus_ENDED,
+			CreatedTime: timestamppb.New(time.Unix(int64(100), 0).UTC()),
+			StartTime:   timestamppb.New(time.Unix(int64(110), 0).UTC()),
+			EndTime:     timestamppb.New(time.Unix(int64(120), 0).UTC()),
+			Status:      pb.AnalysisStatus_FOUND,
+			RunStatus:   pb.AnalysisRunStatus_ENDED,
 			StartCommit: &buildbucketpb.GitilesCommit{
 				Host:     "chromium.googlesource.com",
 				Project:  "chromium/src",
@@ -438,12 +438,12 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 				StartTime: timestamppb.New(time.Unix(int64(100), 0).UTC()),
 				EndTime:   timestamppb.New(time.Unix(int64(109), 0).UTC()),
 				BlameList: testutil.CreateBlamelist(4),
-				Culprit:   culpritPb,
+				Suspect:   culpritPb,
 				Reruns: []*pb.TestSingleRerun{
 					pbNthsectionRerun1, pbNthsectionRerun2,
 				},
 			},
-			VerifiedCulprit: culpritPb,
+			Culprit: culpritPb,
 		})
 	})
 }
