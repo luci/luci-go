@@ -82,6 +82,7 @@ type BuilderRegressionGroup struct {
 	EndPositionFailureRate   float64
 	TestVariants             []*TestVariant
 	StartHour                bigquery.NullTimestamp
+	EndHour                  bigquery.NullTimestamp
 }
 
 type Ref struct {
@@ -131,13 +132,16 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
       ANY_VALUE(previous_failure_rate) AS StartPositionFailureRate,
       ANY_VALUE(current_failure_rate) AS EndPositionFailureRate,
       ARRAY_AGG(STRUCT(test_id AS TestId, variant_hash AS VariantHash,variant AS Variant) ORDER BY test_id, variant_hash) AS TestVariants,
-      ANY_VALUE(segments[0].start_hour) AS StartHour
+      ANY_VALUE(segments[0].start_hour) AS StartHour,
+      ANY_VALUE(segments[0].end_hour) AS EndHour
     FROM segments_with_failure_rate
     WHERE
       current_failure_rate = 1
       AND previous_failure_rate = 0
       AND segments[0].counts.unexpected_passed_results = 0
       AND segments[0].start_hour >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
+      -- We only consider test failures with non-skipped result in the last 24 hour.
+      AND segments[0].end_hour >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 24 HOUR)
     GROUP BY ref_hash, builder, nominal_lower, nominal_upper
   ),
   builder_regression_groups_with_latest_build AS (

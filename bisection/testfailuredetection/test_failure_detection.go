@@ -197,6 +197,7 @@ func newTestFailureBundle(project string, group *lucianalysis.BuilderRegressionG
 			AnalysisKey:              nil,
 			RedundancyScore:          0,
 			StartHour:                group.StartHour.Timestamp.UTC(),
+			EndHour:                  group.EndHour.Timestamp.UTC(),
 		}
 	}
 	bundle := &model.TestFailureBundle{}

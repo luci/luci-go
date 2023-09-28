@@ -321,6 +321,7 @@ func TestFailureDetection(t *testing.T) {
 				RegressionEndPosition:   100,
 				EndPositionFailureRate:  1,
 				StartHour:               time.Unix(1689343797, 0).UTC(),
+				EndHour:                 time.Unix(1689343798, 0).UTC(),
 			})
 		})
 	})
@@ -364,6 +365,7 @@ func fakeBuilderRegressionGroup(primaryTestID, primaryVariantHash string, start,
 			{TestID: bqString(primaryTestID + "2"), VariantHash: bqString(primaryVariantHash), Variant: bigquery.NullJSON{JSONVal: `{"builder":"testbuilder"}`, Valid: true}},
 		},
 		StartHour: bigquery.NullTimestamp{Timestamp: time.Unix(1689343797, 0), Valid: true},
+		EndHour:   bigquery.NullTimestamp{Timestamp: time.Unix(1689343798, 0), Valid: true},
 	}
 }
 
@@ -386,6 +388,7 @@ func fakeTestFailure(ID int64, testID, variantHash string) *model.TestFailure {
 		IsDiverged:               false,
 		RedundancyScore:          0,
 		StartHour:                time.Unix(1689343797, 0).UTC(),
+		EndHour:                  time.Unix(1689343798, 0).UTC(),
 	}
 }
 

@@ -395,6 +395,8 @@ type TestFailure struct {
 	RedundancyScore float64 `gae:"redundancy_score"`
 	// The time when the failure starts, truncated into hours.
 	StartHour time.Time `gae:"start_hour"`
+	// The time when we get last got the failure result, truncated into hours.
+	EndHour time.Time `gae:"end_hour"`
 }
 
 // TestFailureAnalysis is the analysis for test failure.
