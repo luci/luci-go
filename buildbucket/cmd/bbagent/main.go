@@ -548,7 +548,6 @@ func mainImpl() int {
 	buildID := flag.Int64("build-id", 0, "Buildbucket build ID")
 	useGCEAccount := flag.Bool("use-gce-account", false, "Use GCE metadata service account for all calls")
 	cacheBase := flag.String("cache-base", "", "Directory where all the named caches are mounted for the build")
-	taskID := flag.String("task-id", "", "ID of the task")
 	contextFile := flag.String("context-file", "", "Path to the BbagentContext file. Must be a .json file.")
 	outputFile := luciexe.AddOutputFlagToSet(flag.CommandLine)
 
@@ -562,7 +561,7 @@ func mainImpl() int {
 	var bbclientInput clientInput
 	var err error
 
-	bbagentCtx, err := getBuildbucketAgentContext(ctx, *contextFile, *taskID)
+	bbagentCtx, err := getBuildbucketAgentContext(ctx, *contextFile)
 	if err != nil {
 		check(ctx, errors.Annotate(err, "BbagentContext could not be created").Err())
 	}
@@ -602,7 +601,7 @@ func mainImpl() int {
 	defer cancel()
 
 	var updatedBuild *bbpb.Build
-	if *taskID == "" {
+	if bbagentCtx.TaskId == "" {
 		// We send a single status=STARTED here, and will send the final build status
 		// after the user executable completes.
 		// TODO(crbug.com/1416971): remove this UpdateBuild call, after it's fully

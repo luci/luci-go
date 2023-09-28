@@ -125,14 +125,10 @@ func getContextFromFile(ctx context.Context, contextFile string) (*bbpb.Buildbuc
 	return bbagentCtx, nil
 }
 
-// getContextFromLuciContext generates BuildbucketAgentContext from taskID and Lucictx.
-func getContextFromLuciContext(ctx context.Context, taskID string) (*bbpb.BuildbucketAgentContext, error) {
+// getContextFromLuciContext generates BuildbucketAgentContext from Lucictx.
+func getContextFromLuciContext(ctx context.Context) (*bbpb.BuildbucketAgentContext, error) {
 	bbagentCtx := &bbpb.BuildbucketAgentContext{}
-	if taskID != "" {
-		bbagentCtx.TaskId = taskID
-	} else {
-		bbagentCtx.TaskId = retrieveTaskIDFromContext(ctx)
-	}
+	bbagentCtx.TaskId = retrieveTaskIDFromContext(ctx)
 	secrets, err := readBuildSecrets(ctx)
 	if err != nil {
 		return nil, err
@@ -145,14 +141,13 @@ func getContextFromLuciContext(ctx context.Context, taskID string) (*bbpb.Buildb
 // the contextFile path provided as a bbagent arg.
 //
 // Since we are mid migration from hard coded swarming to task backend, it also
-// takes the current LUCI_CONTEXT env and taskID (provided by bbagent cli arg),
-// and turns it into a bbpb.BuildbucketAgentContext for use by bbagent.
+// takes the current LUCI_CONTEXT env and turns it into a
+// bbpb.BuildbucketAgentContext for use by bbagent.
 //
-// (TODO: randymaldonado) Remove usage of taskID once the taskID arg is removed from bbagent cli.
 // (TODO: randymaldonado) Have this function only pull from context file once the task backend migration is over.
-func getBuildbucketAgentContext(ctx context.Context, contextFile, taskID string) (*bbpb.BuildbucketAgentContext, error) {
+func getBuildbucketAgentContext(ctx context.Context, contextFile string) (*bbpb.BuildbucketAgentContext, error) {
 	if contextFile != "" {
 		return getContextFromFile(ctx, contextFile)
 	}
-	return getContextFromLuciContext(ctx, taskID)
+	return getContextFromLuciContext(ctx)
 }
