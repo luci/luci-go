@@ -192,6 +192,17 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 	if err != nil {
 		return errors.Annotate(err, "get test nthsection analysis").Err()
 	}
+	// This may happen during tri-section (or higher nth-section) analysis.
+	// Nthsection analysis may ended before a rerun result arrives (in such case,
+	// the rerun is considered redundant and should not affect the nthsection).
+	// For example, if the blamelist is [2,3,4] (1 is last pass, 4 is first fail),
+	// and we run tri-section reruns at position 2 and 3. If result for position 2 is
+	// "fail", then 2 should be the culprit, and we don't need to wait for 3.
+	// When the result of 3 comes in, it will be ignored.
+	if nsa.HasEnded() {
+		logging.Infof(ctx, "Nthsection analysis has ended. Rerun result will be ignored.")
+		return nil
+	}
 	snapshot, err := bisection.CreateSnapshot(ctx, nsa)
 	if err != nil {
 		return errors.Annotate(err, "create snapshot").Err()

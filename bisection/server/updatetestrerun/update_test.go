@@ -472,6 +472,47 @@ func TestUpdate(t *testing.T) {
 			So(datastore.GetAll(ctx, q, &reruns), ShouldBeNil)
 			So(len(reruns), ShouldEqual, 2)
 		})
+
+		Convey("Ended nthsection should not get updated", func() {
+			enableBisection(ctx, true)
+			_, _, _, nsa := setupTestAnalysisForTesting(ctx, 1)
+
+			// Set nthsection to end.
+			nsa.RunStatus = pb.AnalysisRunStatus_ENDED
+			So(datastore.Put(ctx, nsa), ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			req := &pb.UpdateTestAnalysisProgressRequest{
+				Bbid:         8000,
+				BotId:        "bot",
+				RunSucceeded: true,
+				Results: []*pb.TestResult{
+					{
+						TestId:      "test0",
+						VariantHash: "hash0",
+						IsExpected:  false,
+						Status:      pb.TestResultStatus_FAIL,
+					},
+				},
+			}
+
+			err := Update(ctx, req)
+			So(err, ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Check that a new rerun is not scheduled.
+			q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa))
+			reruns := []*model.TestSingleRerun{}
+			So(datastore.GetAll(ctx, q, &reruns), ShouldBeNil)
+			// 1 because of the rerun created in setupTestAnalysisForTesting.
+			So(len(reruns), ShouldEqual, 1)
+
+			// Check that no suspect is created.
+			q = datastore.NewQuery("Suspect")
+			suspects := []*model.Suspect{}
+			So(datastore.GetAll(ctx, q, &suspects), ShouldBeNil)
+			So(len(suspects), ShouldEqual, 0)
+		})
 	})
 
 	Convey("process culprit verification update", t, func() {
