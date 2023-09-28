@@ -493,6 +493,18 @@ func TestSessionServer(t *testing.T) {
 			So(err, ShouldErrLike, "missing session ID")
 		})
 
+		Convey("UpdateBotSession expired session token", func() {
+			resp, err := srv.UpdateBotSession(ctx, &UpdateBotSessionRequest{
+				Status: "OK",
+			}, &botsrv.Request{
+				SessionTokenExpired: true,
+			})
+			So(err, ShouldBeNil)
+			So(resp, ShouldResemble, &UpdateBotSessionResponse{
+				Status: "BOT_TERMINATING",
+			})
+		})
+
 		Convey("UpdateBotSession propagates RBE error", func() {
 			rbe.expectUpdateBotSession(func(r *remoteworkers.UpdateBotSessionRequest) (*remoteworkers.BotSession, error) {
 				return nil, status.Errorf(codes.FailedPrecondition, "boom")

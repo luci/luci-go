@@ -55,10 +55,11 @@ type RequestBody interface {
 
 // Request is extracted from an authenticated request from a bot.
 type Request struct {
-	BotID      string                 // validated bot ID
-	SessionID  string                 // validated RBE bot session ID, if present
-	PollState  *internalspb.PollState // validated poll state
-	Dimensions map[string][]string    // validated dimensions
+	BotID               string                 // validated bot ID
+	SessionID           string                 // validated RBE bot session ID, if present
+	SessionTokenExpired bool                   // true if the request has expired session token
+	PollState           *internalspb.PollState // validated poll state
+	Dimensions          map[string][]string    // validated dimensions
 }
 
 // Response is serialized as JSON and sent to the bot.
@@ -213,6 +214,7 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 			}
 		}
 		// If have a session token, validate and deserialize it as well.
+		sessionTokenExpired := false
 		if sessionToken := RB(body).ExtractSessionToken(); len(sessionToken) != 0 {
 			sessionState = &internalspb.BotSession{}
 			if err := s.hmacSecret.ValidateToken(sessionToken, sessionState); err != nil {
@@ -222,6 +224,7 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 			if exp := clock.Now(ctx).Sub(sessionState.Expiry.AsTime()); exp > 0 {
 				logging.Warningf(ctx, "Ignoring session token (expired %s ago):\n%s", exp, prettyProto(sessionState))
 				sessionState = nil
+				sessionTokenExpired = true
 			}
 		}
 
@@ -287,10 +290,11 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 
 		// The request is valid, dispatch it to the handler.
 		resp, err := h(ctx, body, &Request{
-			BotID:      botID,
-			SessionID:  sessionState.GetRbeBotSessionId(),
-			PollState:  pollState,
-			Dimensions: dims,
+			BotID:               botID,
+			SessionID:           sessionState.GetRbeBotSessionId(),
+			SessionTokenExpired: sessionTokenExpired,
+			PollState:           pollState,
+			Dimensions:          dims,
 		})
 		if err != nil {
 			writeErr(err)

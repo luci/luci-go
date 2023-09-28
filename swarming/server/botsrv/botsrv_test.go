@@ -145,6 +145,7 @@ func TestBotHandler(t *testing.T) {
 			So(body, ShouldResemble, &req)
 			So(seenReq.BotID, ShouldEqual, "bot-id")
 			So(seenReq.SessionID, ShouldEqual, "")
+			So(seenReq.SessionTokenExpired, ShouldBeFalse)
 			So(seenReq.PollState, ShouldResembleProto, pollState)
 		})
 
@@ -169,6 +170,7 @@ func TestBotHandler(t *testing.T) {
 			So(body, ShouldResemble, &req)
 			So(seenReq.BotID, ShouldEqual, "bot-id")
 			So(seenReq.SessionID, ShouldEqual, "bot-session-id")
+			So(seenReq.SessionTokenExpired, ShouldBeFalse)
 			So(seenReq.PollState, ShouldResembleProto, pollState)
 		})
 
@@ -195,6 +197,7 @@ func TestBotHandler(t *testing.T) {
 			So(body, ShouldResemble, &req)
 			So(seenReq.BotID, ShouldEqual, "bot-id")
 			So(seenReq.SessionID, ShouldEqual, "bot-session-id")
+			So(seenReq.SessionTokenExpired, ShouldBeFalse)
 			So(seenReq.PollState, ShouldResembleProto, pollStateInPollToken)
 		})
 
@@ -223,9 +226,41 @@ func TestBotHandler(t *testing.T) {
 			So(body, ShouldResemble, &req)
 			So(seenReq.BotID, ShouldEqual, "bot-id")
 			So(seenReq.SessionID, ShouldEqual, "bot-session-id")
+			So(seenReq.SessionTokenExpired, ShouldBeFalse)
 
 			// Used the session token.
 			So(seenReq.PollState, ShouldResembleProto, pollStateInSessionToken)
+		})
+
+		Convey("Happy path with poll token and expired session token", func() {
+			pollStateInPollToken := makePollState("in-poll-token")
+
+			pollStateInSessionToken := makePollState("in-session-token")
+			pollStateInSessionToken.Expiry = timestamppb.New(now.Add(-5 * time.Minute))
+
+			req := testRequest{
+				Dimensions: map[string][]string{
+					"id":   {"bot-id"},
+					"pool": {"pool"},
+				},
+				PollToken: genToken(pollStateInPollToken, []byte("also-secret")),
+				SessionToken: genToken(&internalspb.BotSession{
+					RbeBotSessionId: "bot-session-id",
+					PollState:       pollStateInSessionToken,
+					Expiry:          pollStateInSessionToken.Expiry,
+				}, []byte("also-secret")),
+			}
+
+			body, seenReq, status, resp := call(req, "some-response", nil)
+			So(status, ShouldEqual, http.StatusOK)
+			So(resp, ShouldEqual, "\"some-response\"\n")
+			So(body, ShouldResemble, &req)
+			So(seenReq.BotID, ShouldEqual, "bot-id")
+			So(seenReq.SessionID, ShouldEqual, "")
+			So(seenReq.SessionTokenExpired, ShouldBeTrue)
+
+			// Used the poll token.
+			So(seenReq.PollState, ShouldResembleProto, pollStateInPollToken)
 		})
 
 		Convey("Wrong bot credentials", func() {

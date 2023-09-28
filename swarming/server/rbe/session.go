@@ -241,16 +241,21 @@ func (r *UpdateBotSessionRequest) ExtractDebugRequest() any {
 
 // UpdateBotSessionResponse is a body of `/bot/rbe/session/update` response.
 type UpdateBotSessionResponse struct {
-	// SessionToken is a refreshed session token.
+	// SessionToken is a refreshed session token, if available.
 	//
 	// It carries the same RBE bot session ID inside as the incoming token. The
 	// bot must use it in the next `/bot/rbe/session/update` request.
-	SessionToken []byte `json:"session_token"`
+	//
+	// If the incoming token has expired already, this field will be empty, since
+	// it is not possible to refresh an expired token.
+	SessionToken []byte `json:"session_token,omitempty"`
 
 	// SessionExpiry is when this session expires, as Unix timestamp in seconds.
 	//
 	// The bot should call `/bot/rbe/session/update` again before that time.
-	SessionExpiry int64 `json:"session_expiry"`
+	//
+	// If the session token has expired already, this field will be empty.
+	SessionExpiry int64 `json:"session_expiry,omitempty"`
 
 	// The session status as seen by the server, as remoteworkers.BotStatus enum.
 	//
@@ -277,7 +282,21 @@ type UpdateBotSessionResponse struct {
 // UpdateBotSession is an RPC handler that updates a bot session.
 func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotSessionRequest, r *botsrv.Request) (botsrv.Response, error) {
 	if r.SessionID == "" {
-		// This can happen if the session token was omitted in the request.
+		// This can happen if the bot got stuck for a long time and its session
+		// token has expired. Its RBE session likely has expired as well. Return the
+		// corresponding response to let the bot know it needs to recreate
+		// the session.
+		if r.SessionTokenExpired {
+			logging.Warningf(ctx, "%s: expired session token", r.BotID)
+			logSession(ctx, "Input", body.Status, body.Lease)
+			resp := &UpdateBotSessionResponse{
+				Status: remoteworkers.BotStatus_name[int32(remoteworkers.BotStatus_BOT_TERMINATING)],
+			}
+			logSession(ctx, "Output", resp.Status, nil)
+			return resp, nil
+		}
+		// This can happen if the session token was omitted in the request. This is
+		// not allowed.
 		return nil, status.Errorf(codes.InvalidArgument, "missing session ID")
 	}
 
