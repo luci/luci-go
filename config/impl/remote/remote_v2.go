@@ -51,7 +51,14 @@ const retryPolicy = `{
 	}]
 }`
 
-const defaultUserAgent = "Config Go Client 1.0"
+const (
+	// defaultUserAgent is the default user-agent header value to use.
+	defaultUserAgent = "Config Go Client 1.0"
+
+	// grpcMaxRecvMsgSize is 32 MB to ensure it at least equal to the size limit
+	// in GAE to avoid any regression. (The default in grpc client side is 4MB).
+	grpcMaxRecvMsgSize = 1024 * 1024 * 32
+)
 
 type V2Options struct {
 	// Host is the hostname of a LUCI Config service.
@@ -80,6 +87,7 @@ func DefaultDialOptions() []grpc.DialOption {
 		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
 		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
 		grpc.WithDefaultServiceConfig(retryPolicy),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(grpcMaxRecvMsgSize)),
 	}
 }
 
@@ -148,7 +156,7 @@ func (r *remoteV2Impl) GetConfig(ctx context.Context, configSet config.Set, path
 		}
 	}
 
-	res, err := r.grpcClient.GetConfig(ctx, req)
+	res, err := r.grpcClient.GetConfig(ctx, req, grpc.UseCompressor(gzip.Name))
 	switch {
 	case grpcutil.Code(err) == codes.NotFound:
 		return nil, config.ErrNoConfig

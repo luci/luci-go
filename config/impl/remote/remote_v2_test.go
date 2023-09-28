@@ -57,7 +57,7 @@ func TestRemoteV2Calls(t *testing.T) {
 				mockClient.EXPECT().GetConfig(gomock.Any(), proto.MatcherEqual(&pb.GetConfigRequest{
 					ConfigSet: "projects/project1",
 					Path:      "config.cfg",
-				})).Return(&pb.Config{
+				}), grpc.UseCompressor(grpcGzip.Name)).Return(&pb.Config{
 					ConfigSet: "projects/project1",
 					Path:      "config.cfg",
 					Content: &pb.Config_RawContent{
@@ -99,7 +99,7 @@ func TestRemoteV2Calls(t *testing.T) {
 				mockClient.EXPECT().GetConfig(gomock.Any(), proto.MatcherEqual(&pb.GetConfigRequest{
 					ConfigSet: "projects/project1",
 					Path:      "config.cfg",
-				})).Return(&pb.Config{
+				}), grpc.UseCompressor(grpcGzip.Name)).Return(&pb.Config{
 					ConfigSet: "projects/project1",
 					Path:      "config.cfg",
 					Content: &pb.Config_SignedUrl{
@@ -132,7 +132,7 @@ func TestRemoteV2Calls(t *testing.T) {
 					Fields: &field_mask.FieldMask{
 						Paths: []string{"config_set", "path", "content_sha256", "revision", "url"},
 					},
-				})).Return(&pb.Config{
+				}), grpc.UseCompressor(grpcGzip.Name)).Return(&pb.Config{
 					ConfigSet:     "projects/project1",
 					Path:          "config.cfg",
 					Revision:      "revision",
@@ -155,7 +155,7 @@ func TestRemoteV2Calls(t *testing.T) {
 			})
 
 			Convey("error - not found", func() {
-				mockClient.EXPECT().GetConfig(gomock.Any(), gomock.Any()).Return(nil, status.Errorf(codes.NotFound, "not found"))
+				mockClient.EXPECT().GetConfig(gomock.Any(), gomock.Any(), grpc.UseCompressor(grpcGzip.Name)).Return(nil, status.Errorf(codes.NotFound, "not found"))
 
 				cfg, err := v2Impl.GetConfig(ctx, config.Set("projects/project1"), "config.cfg", true)
 
@@ -164,7 +164,7 @@ func TestRemoteV2Calls(t *testing.T) {
 			})
 
 			Convey("error - other", func() {
-				mockClient.EXPECT().GetConfig(gomock.Any(), gomock.Any()).Return(nil, status.Errorf(codes.Internal, "internal error"))
+				mockClient.EXPECT().GetConfig(gomock.Any(), gomock.Any(), grpc.UseCompressor(grpcGzip.Name)).Return(nil, status.Errorf(codes.Internal, "internal error"))
 
 				cfg, err := v2Impl.GetConfig(ctx, config.Set("projects/project1"), "config.cfg", true)
 
