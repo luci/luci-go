@@ -333,20 +333,6 @@ func TestQueryConsoles(t *testing.T) {
 func TestValidateQueryConsolesQuery(t *testing.T) {
 	t.Parallel()
 	Convey(`TestValidateQueryConsolesRequest`, t, func() {
-		Convey(`partial builder`, func() {
-			err := validatesQueryConsolesRequest(&milopb.QueryConsolesRequest{
-				Predicate: &milopb.ConsolePredicate{
-					Project: "project",
-					Builder: &buildbucketpb.BuilderID{
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-				},
-			})
-			So(err, ShouldNotBeNil)
-			So(err, ShouldErrLike, "predicate: builder: project must match")
-		})
-
 		Convey(`negative page size`, func() {
 			err := validatesQueryConsolesRequest(&milopb.QueryConsolesRequest{
 				Predicate: &milopb.ConsolePredicate{
@@ -379,14 +365,6 @@ func TestValidateQueryConsolesQuery(t *testing.T) {
 
 		Convey(`valid with no predicate`, func() {
 			err := validatesQueryConsolesRequest(&milopb.QueryConsolesRequest{
-				Predicate: &milopb.ConsolePredicate{
-					Project: "project",
-					Builder: &buildbucketpb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-				},
 				PageSize: 10,
 			})
 			So(err, ShouldBeNil)

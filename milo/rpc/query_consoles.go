@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"go.chromium.org/luci/auth/identity"
-	bbprotoutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/pagination"
 	"go.chromium.org/luci/common/pagination/dscursor"
@@ -28,6 +27,7 @@ import (
 	"go.chromium.org/luci/milo/internal/utils"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 	milopb "go.chromium.org/luci/milo/proto/v1"
+	"go.chromium.org/luci/milo/protoutil"
 	"go.chromium.org/luci/server/auth"
 	"google.golang.org/grpc/codes"
 )
@@ -161,24 +161,13 @@ func (s *MiloInternalService) QueryConsoles(ctx context.Context, req *milopb.Que
 }
 
 func validatesQueryConsolesRequest(req *milopb.QueryConsolesRequest) error {
-	err := validateConsolePredicate(req.Predicate)
+	err := protoutil.ValidateConsolePredicate(req.Predicate)
 	if err != nil {
 		return errors.Annotate(err, "predicate").Err()
 	}
 
 	if req.PageSize < 0 {
 		return errors.Reason("page_size can not be negative").Err()
-	}
-
-	return nil
-}
-
-func validateConsolePredicate(predicate *milopb.ConsolePredicate) error {
-	if predicate.GetBuilder() != nil {
-		err := bbprotoutil.ValidateRequiredBuilderID(predicate.Builder)
-		if err != nil {
-			return errors.Annotate(err, "builder").Err()
-		}
 	}
 
 	return nil
