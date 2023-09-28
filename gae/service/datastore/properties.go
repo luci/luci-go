@@ -38,7 +38,7 @@ var (
 type IndexSetting bool
 
 // ShouldIndex is the default, which is why it must assume the zero value,
-// even though it's werid :(.
+// even though it's weird :(.
 const (
 	ShouldIndex IndexSetting = false
 	NoIndex     IndexSetting = true
