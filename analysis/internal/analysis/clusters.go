@@ -207,13 +207,12 @@ func (c *Client) rebuildAnalysisForDataset(ctx context.Context, dataset *bigquer
 
 	waitCtx, cancel := context.WithTimeout(ctx, time.Minute*5)
 	defer cancel()
-
-	js, err := job.Wait(waitCtx)
+	js, err := bqutil.WaitForJob(waitCtx, job)
 	if err != nil {
 		return errors.Annotate(err, "waiting for cluster summary analysis to complete").Err()
 	}
 	if js.Err() != nil {
-		return errors.Annotate(err, "cluster summary analysis failed").Err()
+		return errors.Annotate(js.Err(), "cluster summary analysis failed").Err()
 	}
 	return nil
 }
