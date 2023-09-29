@@ -22,6 +22,8 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
@@ -120,9 +122,10 @@ func TestBugManager(t *testing.T) {
 				}
 
 				Convey("Happy path", func() {
-					bugID, err := bm.Create(ctx, createRequest)
-					So(err, ShouldBeNil)
-					So(bugID, ShouldEqual, "1")
+					response := bm.Create(ctx, createRequest)
+					So(response, ShouldResemble, bugs.BugCreateResponse{
+						ID: "1",
+					})
 					So(len(fakeStore.Issues), ShouldEqual, 1)
 
 					issueData := fakeStore.Issues[1]
@@ -139,22 +142,51 @@ func TestBugManager(t *testing.T) {
 					expectedIssue.IssueState.Priority = issuetracker.Issue_P0
 
 					// Act
-					bugID, err := bm.Create(ctx, createRequest)
+					response := bm.Create(ctx, createRequest)
 
 					// Verify
-					So(err, ShouldBeNil)
-					So(bugID, ShouldEqual, "1")
+					So(response, ShouldResemble, bugs.BugCreateResponse{
+						ID: "1",
+					})
 					So(len(fakeStore.Issues), ShouldEqual, 1)
 
 					issueData := fakeStore.Issues[1]
 					So(issueData.Issue, ShouldResembleProto, expectedIssue)
 					So(len(issueData.Comments), ShouldEqual, 1)
 				})
-				Convey("Failed to update issue comment", func() {
-					fakeClient.ShouldFailIssueCommentUpdates = true
-					bugID, err := bm.Create(ctx, createRequest)
-					So(err, ShouldBeNil)
-					So(bugID, ShouldEqual, "1")
+				Convey("Failed to update issue comment (permission denied)", func() {
+					fakeClient.UpdateCommentError = status.Errorf(codes.PermissionDenied, "modification not allowed")
+
+					// Act
+					response := bm.Create(ctx, createRequest)
+
+					// Verify
+					So(response, ShouldResemble, bugs.BugCreateResponse{
+						ID: "1",
+					})
+					So(len(fakeStore.Issues), ShouldEqual, 1)
+
+					expectedIssue.Description.Comment = strings.ReplaceAll(expectedIssue.Description.Comment,
+						"https://luci-analysis-test.appspot.com/b/1",
+						"https://luci-analysis-test.appspot.com/p/chromeos/rules/new-rule-id")
+
+					issueData := fakeStore.Issues[1]
+					So(issueData.Issue, ShouldResembleProto, expectedIssue)
+					So(len(issueData.Comments), ShouldEqual, 1)
+					So(issueData.Comments[0].Comment, ShouldNotContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
+				})
+				Convey("Failed to update issue comment (other error)", func() {
+					fakeClient.UpdateCommentError = status.Errorf(codes.Internal, "internal server error")
+
+					// Act
+					response := bm.Create(ctx, createRequest)
+
+					// Verify
+					// Both ID and Error set, reflecting partial success.
+					So(response.ID, ShouldEqual, "1")
+					So(response.Error, ShouldNotBeNil)
+					So(errors.Is(response.Error, fakeClient.UpdateCommentError), ShouldBeTrue)
+					So(response.Simulated, ShouldBeFalse)
 					So(len(fakeStore.Issues), ShouldEqual, 1)
 
 					expectedIssue.Description.Comment = strings.ReplaceAll(expectedIssue.Description.Comment,
@@ -185,9 +217,10 @@ func TestBugManager(t *testing.T) {
 				}
 				expectedIssue.IssueState.Title = "Tests are failing: ninja://:blink_web_tests/media/my-suite/my-test.html"
 
-				bugID, err := bm.Create(ctx, createRequest)
-				So(err, ShouldBeNil)
-				So(bugID, ShouldEqual, "1")
+				response := bm.Create(ctx, createRequest)
+				So(response, ShouldResemble, bugs.BugCreateResponse{
+					ID: "1",
+				})
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
 
@@ -198,16 +231,20 @@ func TestBugManager(t *testing.T) {
 
 			Convey("Does nothing if in simulation mode", func() {
 				bm.Simulate = true
-				_, err := bm.Create(ctx, createRequest)
-				So(err, ShouldEqual, bugs.ErrCreateSimulated)
+				response := bm.Create(ctx, createRequest)
+				So(response, ShouldResemble, bugs.BugCreateResponse{
+					ID:        "123456",
+					Simulated: true,
+				})
 				So(len(fakeStore.Issues), ShouldEqual, 0)
 			})
 
 			Convey("With provided component id", func() {
 				createRequest.BuganizerComponent = 7890
-				bugID, err := bm.Create(ctx, createRequest)
-				So(err, ShouldBeNil)
-				So(bugID, ShouldEqual, "1")
+				response := bm.Create(ctx, createRequest)
+				So(response, ShouldResemble, bugs.BugCreateResponse{
+					ID: "1",
+				})
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
 				So(issue.Issue.IssueState.ComponentId, ShouldEqual, 7890)
@@ -216,9 +253,10 @@ func TestBugManager(t *testing.T) {
 			Convey("With provided component id without permission", func() {
 				createRequest.BuganizerComponent = ComponentWithNoAccess
 				// TODO: Mock permission call to fail.
-				bugID, err := bm.Create(ctx, createRequest)
-				So(err, ShouldBeNil)
-				So(bugID, ShouldEqual, "1")
+				response := bm.Create(ctx, createRequest)
+				So(response, ShouldResemble, bugs.BugCreateResponse{
+					ID: "1",
+				})
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
 				// Should have fallback component ID because no permission to wanted component.
@@ -232,9 +270,10 @@ func TestBugManager(t *testing.T) {
 				createRequest.BuganizerComponent = 1234
 				// TODO: Mock permission call to fail.
 				ctx = context.WithValue(ctx, &BuganizerTestModeKey, true)
-				bugID, err := bm.Create(ctx, createRequest)
-				So(err, ShouldBeNil)
-				So(bugID, ShouldEqual, "1")
+				response := bm.Create(ctx, createRequest)
+				So(response, ShouldResemble, bugs.BugCreateResponse{
+					ID: "1",
+				})
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
 				// Should have fallback component ID because no permission to wanted component.
@@ -247,9 +286,10 @@ func TestBugManager(t *testing.T) {
 				"policy-a": {}, // P4
 				"policy-c": {}, // P1
 			}
-			bugID, err := bm.Create(ctx, c)
-			So(err, ShouldBeNil)
-			So(bugID, ShouldEqual, "1")
+			response := bm.Create(ctx, c)
+			So(response, ShouldResemble, bugs.BugCreateResponse{
+				ID: "1",
+			})
 			So(len(fakeStore.Issues), ShouldEqual, 1)
 			So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P1)
 
@@ -274,7 +314,7 @@ func TestBugManager(t *testing.T) {
 
 			bugsToUpdate := []bugs.BugUpdateRequest{
 				{
-					Bug:                              bugs.BugID{System: bugs.BuganizerSystem, ID: bugID},
+					Bug:                              bugs.BugID{System: bugs.BuganizerSystem, ID: response.ID},
 					BugManagementState:               state,
 					IsManagingBug:                    true,
 					RuleID:                           "123",
@@ -305,7 +345,7 @@ func TestBugManager(t *testing.T) {
 
 				bugsToUpdate := []bugs.BugUpdateRequest{
 					{
-						Bug:                              bugs.BugID{System: bugs.BuganizerSystem, ID: bugID},
+						Bug:                              bugs.BugID{System: bugs.BuganizerSystem, ID: response.ID},
 						Metrics:                          c.Metrics,
 						RuleID:                           "123",
 						IsManagingBug:                    true,
@@ -661,9 +701,10 @@ func TestBugManager(t *testing.T) {
 		Convey("GetMergedInto", func() {
 			c := newCreateRequest()
 			c.Metrics = bugs.P2Impact()
-			bug, err := bm.Create(ctx, c)
-			So(err, ShouldBeNil)
-			So(bug, ShouldEqual, "1")
+			response := bm.Create(ctx, c)
+			So(response, ShouldResemble, bugs.BugCreateResponse{
+				ID: "1",
+			})
 			So(len(fakeStore.Issues), ShouldEqual, 1)
 
 			bugID := bugs.BugID{System: bugs.BuganizerSystem, ID: "1"}
@@ -692,9 +733,10 @@ func TestBugManager(t *testing.T) {
 		Convey("UpdateDuplicateSource", func() {
 			c := newCreateRequest()
 			c.Metrics = bugs.P2Impact()
-			bug, err := bm.Create(ctx, c)
-			So(err, ShouldBeNil)
-			So(bug, ShouldEqual, "1")
+			response := bm.Create(ctx, c)
+			So(response, ShouldResemble, bugs.BugCreateResponse{
+				ID: "1",
+			})
 			So(fakeStore.Issues, ShouldHaveLength, 1)
 			So(fakeStore.Issues[1].Comments, ShouldHaveLength, 1)
 
@@ -703,12 +745,12 @@ func TestBugManager(t *testing.T) {
 
 			Convey("With ErrorMessage", func() {
 				request := bugs.UpdateDuplicateSourceRequest{
-					BugDetails: bugs.BugDetails{
+					BugDetails: bugs.DuplicateBugDetails{
 						Bug: bugs.BugID{System: bugs.BuganizerSystem, ID: "1"},
 					},
 					ErrorMessage: "Some error.",
 				}
-				err = bm.UpdateDuplicateSource(ctx, request)
+				err := bm.UpdateDuplicateSource(ctx, request)
 				So(err, ShouldBeNil)
 
 				So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_NEW)
@@ -719,13 +761,13 @@ func TestBugManager(t *testing.T) {
 			})
 			Convey("With ErrorMessage and IsAssigned is true", func() {
 				request := bugs.UpdateDuplicateSourceRequest{
-					BugDetails: bugs.BugDetails{
+					BugDetails: bugs.DuplicateBugDetails{
 						Bug:        bugs.BugID{System: bugs.BuganizerSystem, ID: "1"},
 						IsAssigned: true,
 					},
 					ErrorMessage: "Some error.",
 				}
-				err = bm.UpdateDuplicateSource(ctx, request)
+				err := bm.UpdateDuplicateSource(ctx, request)
 				So(err, ShouldBeNil)
 
 				So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_ASSIGNED)
@@ -736,12 +778,12 @@ func TestBugManager(t *testing.T) {
 			})
 			Convey("Without ErrorMessage", func() {
 				request := bugs.UpdateDuplicateSourceRequest{
-					BugDetails: bugs.BugDetails{
+					BugDetails: bugs.DuplicateBugDetails{
 						Bug: bugs.BugID{System: bugs.BuganizerSystem, ID: "1"},
 					},
 					DestinationRuleID: "12345abcdef",
 				}
-				err = bm.UpdateDuplicateSource(ctx, request)
+				err := bm.UpdateDuplicateSource(ctx, request)
 				So(err, ShouldBeNil)
 
 				So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_DUPLICATE)
@@ -754,14 +796,15 @@ func TestBugManager(t *testing.T) {
 		Convey("UpdateDuplicateDestination", func() {
 			c := newCreateRequest()
 			c.Metrics = bugs.P2Impact()
-			bug, err := bm.Create(ctx, c)
-			So(err, ShouldBeNil)
-			So(bug, ShouldEqual, "1")
+			response := bm.Create(ctx, c)
+			So(response, ShouldResemble, bugs.BugCreateResponse{
+				ID: "1",
+			})
 			So(fakeStore.Issues, ShouldHaveLength, 1)
 			So(fakeStore.Issues[1].Comments, ShouldHaveLength, 1)
 
 			bugID := bugs.BugID{System: bugs.BuganizerSystem, ID: "1"}
-			err = bm.UpdateDuplicateDestination(ctx, bugID)
+			err := bm.UpdateDuplicateDestination(ctx, bugID)
 			So(err, ShouldBeNil)
 
 			So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldNotEqual, issuetracker.Issue_DUPLICATE)
@@ -773,8 +816,8 @@ func TestBugManager(t *testing.T) {
 	})
 }
 
-func newCreateRequest() *bugs.BugCreateRequest {
-	cluster := &bugs.BugCreateRequest{
+func newCreateRequest() bugs.BugCreateRequest {
+	cluster := bugs.BugCreateRequest{
 		Description: &clustering.ClusterDescription{
 			Title:       "ClusterID",
 			Description: "Tests are failing with reason: Some failure reason.",

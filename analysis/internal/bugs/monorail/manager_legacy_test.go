@@ -106,9 +106,10 @@ func TestManagerLegacy(t *testing.T) {
 				createRequest.Description.Title = reason
 				createRequest.Description.Description = "A cluster of failures has been found with reason: " + reason
 
-				bug, err := bm.Create(ctx, createRequest)
-				So(err, ShouldBeNil)
-				So(bug, ShouldEqual, "chromium/100")
+				response := bm.Create(ctx, createRequest)
+				So(response, ShouldResembleProto, bugs.BugCreateResponse{
+					ID: "chromium/100",
+				})
 				So(len(f.Issues), ShouldEqual, 1)
 				issue := f.Issues[0]
 
@@ -132,9 +133,10 @@ func TestManagerLegacy(t *testing.T) {
 				createRequest.Description.Title = "ninja://:blink_web_tests/media/my-suite/my-test.html"
 				createRequest.Description.Description = "A test is failing " + createRequest.Description.Title
 
-				bug, err := bm.Create(ctx, createRequest)
-				So(err, ShouldBeNil)
-				So(bug, ShouldEqual, "chromium/100")
+				response := bm.Create(ctx, createRequest)
+				So(response, ShouldResembleProto, bugs.BugCreateResponse{
+					ID: "chromium/100",
+				})
 				So(len(f.Issues), ShouldEqual, 1)
 				issue := f.Issues[0]
 
@@ -155,9 +157,10 @@ func TestManagerLegacy(t *testing.T) {
 			Convey("Without Restrict-View-Google", func() {
 				monorailCfgs.FileWithoutRestrictViewGoogle = true
 
-				bug, err := bm.Create(ctx, createRequest)
-				So(err, ShouldBeNil)
-				So(bug, ShouldEqual, "chromium/100")
+				response := bm.Create(ctx, createRequest)
+				So(response, ShouldResembleProto, bugs.BugCreateResponse{
+					ID: "chromium/100",
+				})
 				So(len(f.Issues), ShouldEqual, 1)
 				issue := f.Issues[0]
 
@@ -169,23 +172,29 @@ func TestManagerLegacy(t *testing.T) {
 			})
 			Convey("Does nothing if in simulation mode", func() {
 				bm.Simulate = true
-				_, err := bm.Create(ctx, createRequest)
-				So(err, ShouldEqual, bugs.ErrCreateSimulated)
+
+				response := bm.Create(ctx, createRequest)
+				So(response, ShouldResembleProto, bugs.BugCreateResponse{
+					Simulated: true,
+					ID:        "chromium/12345678",
+				})
 				So(len(f.Issues), ShouldEqual, 0)
 			})
 		})
 		Convey("Update - Legacy", func() {
 			c := NewCreateRequest()
 			c.Metrics = bugs.P2Impact()
-			bug, err := bm.Create(ctx, c)
-			So(err, ShouldBeNil)
-			So(bug, ShouldEqual, "chromium/100")
+
+			response := bm.Create(ctx, c)
+			So(response, ShouldResembleProto, bugs.BugCreateResponse{
+				ID: "chromium/100",
+			})
 			So(len(f.Issues), ShouldEqual, 1)
 			So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "2")
 
 			bugsToUpdate := []bugs.BugUpdateRequest{
 				{
-					Bug:                              bugs.BugID{System: bugs.MonorailSystem, ID: bug},
+					Bug:                              bugs.BugID{System: bugs.MonorailSystem, ID: response.ID},
 					Metrics:                          c.Metrics,
 					IsManagingBug:                    true,
 					IsManagingBugPriority:            true,

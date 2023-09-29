@@ -176,6 +176,7 @@ func TestLegacyUpdate(t *testing.T) {
 				ExpectedTitle: "Failed to connect to 100.1.1.105.",
 				// Expect the bug description to contain the top tests.
 				ExpectedContent: []string{
+					"https://luci-analysis-test.appspot.com/b/1",
 					"network-test-1",
 					"network-test-2",
 				},
@@ -456,6 +457,7 @@ func TestLegacyUpdate(t *testing.T) {
 					// Verify
 					So(err, ShouldBeNil)
 					expectedBuganizerBug.ID = 2 // Because we already created a bug with ID 1 above.
+					expectedBuganizerBug.ExpectedContent[0] = "https://luci-analysis-test.appspot.com/b/2"
 					expectedRule.BugID.ID = "2"
 					So(verifyRulesResemble(ctx, []*rules.Entry{expectedRule, existingRule}), ShouldBeNil)
 					So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)

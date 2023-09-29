@@ -39,8 +39,9 @@ const ComponentWithNoAccess = 999999
 // actions performed using an in-memory store.
 type FakeClient struct {
 	FakeStore *FakeIssueStore
-	// Whether or not it should fail to update issue comments.
-	ShouldFailIssueCommentUpdates bool
+	// Defines a custom error to return when attempting to update
+	// an issue comment. Use this to test failed updates.
+	UpdateCommentError error
 }
 
 func NewFakeClient() *FakeClient {
@@ -191,8 +192,8 @@ func (fic *FakeClient) CreateIssueComment(ctx context.Context, in *issuetracker.
 
 func (fic *FakeClient) UpdateIssueComment(ctx context.Context, in *issuetracker.UpdateIssueCommentRequest) (*issuetracker.IssueComment, error) {
 	issueData, err := fic.FakeStore.GetIssue(in.IssueId)
-	if fic.ShouldFailIssueCommentUpdates {
-		return nil, status.Errorf(codes.PermissionDenied, "Modification not allowed")
+	if fic.UpdateCommentError != nil {
+		return nil, fic.UpdateCommentError
 	}
 	if err != nil {
 		return nil, errors.Annotate(err, "fake update issue comment").Err()

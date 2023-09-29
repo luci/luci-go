@@ -23,6 +23,8 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -181,6 +183,7 @@ func TestUpdate(t *testing.T) {
 				ExpectedTitle: "Failed to connect to 100.1.1.105.",
 				// Expect the bug description to contain the top tests.
 				ExpectedContent: []string{
+					"https://luci-analysis-test.appspot.com/b/1",
 					"network-test-1",
 					"network-test-2",
 				},
@@ -423,6 +426,7 @@ func TestUpdate(t *testing.T) {
 					// Verify
 					So(err, ShouldBeNil)
 					expectedBuganizerBug.ID = 2 // Because we already created a bug with ID 1 above.
+					expectedBuganizerBug.ExpectedContent[0] = "https://luci-analysis-test.appspot.com/b/2"
 					expectedRule.BugID.ID = "2"
 					So(verifyRulesResemble(ctx, []*rules.Entry{expectedRule, existingRule}), ShouldBeNil)
 					So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
@@ -618,10 +622,28 @@ func TestUpdate(t *testing.T) {
 					err = updateBugsForProject(ctx, opts)
 
 					// Verify we filed into Buganizer.
+					So(err, ShouldBeNil)
 					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 					So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
 					So(issueCount(), ShouldEqual, 1)
 				})
+			})
+			Convey("partial success creating bugs is correctly handled", func() {
+				buganizerClient.UpdateCommentError = status.Errorf(codes.Internal, "internal error updating comment")
+
+				// Act
+				err = updateBugsForProject(ctx, opts)
+
+				// Because the bug comment could not be updated, do not expect a link to the bug to be present.
+				So(expectedBuganizerBug.ExpectedContent[0], ShouldEqual, "https://luci-analysis-test.appspot.com/b/1")
+				// Instead expect a link to the rule.
+				expectedBuganizerBug.ExpectedContent[0] = "https://luci-analysis-test.appspot.com/p/chromeos/rules/"
+
+				// Verify we filed into Buganizer.
+				So(err, ShouldErrLike, "internal error updating comment")
+				So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+				So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
+				So(issueCount(), ShouldEqual, 1)
 			})
 		})
 		Convey("With both failure reason and test name clusters above bug-filing threshold", func() {
@@ -2037,10 +2059,7 @@ func expectBuganizerBug(buganizerStore *buganizer.FakeIssueStore, bug buganizerB
 		return errors.Reason("component: got %v; want %v", issue.IssueState.ComponentId, bug.Component).Err()
 	}
 
-	// Expect a link to the bug and the rule.
-	expectedContent := []string{fmt.Sprintf("https://luci-analysis-test.appspot.com/b/%d", bug.ID)}
-	expectedContent = append(expectedContent, bug.ExpectedContent...)
-	for _, expectedContent := range expectedContent {
+	for _, expectedContent := range bug.ExpectedContent {
 		if !strings.Contains(issue.Description.Comment, expectedContent) {
 			return errors.Reason("issue description: got %q, expected it to contain %q", issue.Description.Comment, expectedContent).Err()
 		}

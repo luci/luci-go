@@ -22,6 +22,8 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
@@ -35,8 +37,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func NewCreateRequest() *bugs.BugCreateRequest {
-	cluster := &bugs.BugCreateRequest{
+func NewCreateRequest() bugs.BugCreateRequest {
+	cluster := bugs.BugCreateRequest{
 		Description: &clustering.ClusterDescription{
 			Title:       "ClusterID",
 			Description: "Tests are failing with reason: Some failure reason.",
@@ -162,11 +164,12 @@ func TestManager(t *testing.T) {
 
 				Convey("Single policy activated", func() {
 					// Act
-					bug, err := bm.Create(ctx, createRequest)
+					response := bm.Create(ctx, createRequest)
 
 					// Verify
-					So(err, ShouldBeNil)
-					So(bug, ShouldEqual, "chromium/100")
+					So(response, ShouldResemble, bugs.BugCreateResponse{
+						ID: "chromium/100",
+					})
 					So(len(f.Issues), ShouldEqual, 1)
 
 					issue := f.Issues[0]
@@ -187,11 +190,12 @@ func TestManager(t *testing.T) {
 					expectedComment = strings.Replace(expectedComment, "- Problem A\n", "- Problem B\n- Problem C\n- Problem A\n", 1)
 
 					// Act
-					bug, err := bm.Create(ctx, createRequest)
+					response := bm.Create(ctx, createRequest)
 
 					// Verify
-					So(err, ShouldBeNil)
-					So(bug, ShouldEqual, "chromium/100")
+					So(response, ShouldResemble, bugs.BugCreateResponse{
+						ID: "chromium/100",
+					})
 					So(len(f.Issues), ShouldEqual, 1)
 
 					issue := f.Issues[0]
@@ -200,6 +204,26 @@ func TestManager(t *testing.T) {
 					So(issue.Comments[0].Content, ShouldEqual, expectedComment)
 					// Link to cluster page should appear in follow-up comment.
 					So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
+					So(issue.NotifyCount, ShouldEqual, 1)
+				})
+				Convey("Failed to post issue comment", func() {
+					f.UpdateError = status.Errorf(codes.Internal, "internal server error")
+
+					// Act
+					response := bm.Create(ctx, createRequest)
+
+					// Verify
+					// Both ID and Error set, reflecting partial success.
+					So(response.ID, ShouldEqual, "chromium/100")
+					So(response.Error, ShouldNotBeNil)
+					So(errors.Is(response.Error, f.UpdateError), ShouldBeTrue)
+					So(response.Simulated, ShouldBeFalse)
+					So(len(f.Issues), ShouldEqual, 1)
+
+					issue := f.Issues[0]
+					So(issue.Issue, ShouldResembleProto, expectedIssue)
+					So(len(issue.Comments), ShouldEqual, 1)
+					So(issue.Comments[0].Content, ShouldEqual, expectedComment)
 					So(issue.NotifyCount, ShouldEqual, 1)
 				})
 			})
@@ -219,11 +243,12 @@ func TestManager(t *testing.T) {
 					"Was this bug filed in the wrong component? See: https://luci-analysis-test.appspot.com/help#component-selection"
 
 				// Act
-				bug, err := bm.Create(ctx, createRequest)
+				response := bm.Create(ctx, createRequest)
 
 				// Verify
-				So(err, ShouldBeNil)
-				So(bug, ShouldEqual, "chromium/100")
+				So(response, ShouldResemble, bugs.BugCreateResponse{
+					ID: "chromium/100",
+				})
 				So(len(f.Issues), ShouldEqual, 1)
 
 				issue := f.Issues[0]
@@ -237,9 +262,10 @@ func TestManager(t *testing.T) {
 			Convey("Without Restrict-View-Google", func() {
 				monorailCfgs.FileWithoutRestrictViewGoogle = true
 
-				bug, err := bm.Create(ctx, createRequest)
-				So(err, ShouldBeNil)
-				So(bug, ShouldEqual, "chromium/100")
+				response := bm.Create(ctx, createRequest)
+				So(response, ShouldResemble, bugs.BugCreateResponse{
+					ID: "chromium/100",
+				})
 				So(len(f.Issues), ShouldEqual, 1)
 				issue := f.Issues[0]
 
@@ -251,8 +277,12 @@ func TestManager(t *testing.T) {
 			})
 			Convey("Does nothing if in simulation mode", func() {
 				bm.Simulate = true
-				_, err := bm.Create(ctx, createRequest)
-				So(err, ShouldEqual, bugs.ErrCreateSimulated)
+
+				response := bm.Create(ctx, createRequest)
+				So(response, ShouldResemble, bugs.BugCreateResponse{
+					ID:        "chromium/12345678",
+					Simulated: true,
+				})
 				So(len(f.Issues), ShouldEqual, 0)
 			})
 		})
@@ -262,9 +292,10 @@ func TestManager(t *testing.T) {
 				"policy-a": {}, // P4
 				"policy-c": {}, // P1
 			}
-			bug, err := bm.Create(ctx, c)
-			So(err, ShouldBeNil)
-			So(bug, ShouldEqual, "chromium/100")
+			response := bm.Create(ctx, c)
+			So(response, ShouldResemble, bugs.BugCreateResponse{
+				ID: "chromium/100",
+			})
 			So(len(f.Issues), ShouldEqual, 1)
 			So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "1")
 
@@ -289,7 +320,7 @@ func TestManager(t *testing.T) {
 
 			bugsToUpdate := []bugs.BugUpdateRequest{
 				{
-					Bug:                              bugs.BugID{System: bugs.MonorailSystem, ID: bug},
+					Bug:                              bugs.BugID{System: bugs.MonorailSystem, ID: response.ID},
 					BugManagementState:               state,
 					IsManagingBug:                    true,
 					RuleID:                           "123",
@@ -654,9 +685,10 @@ func TestManager(t *testing.T) {
 		Convey("GetMergedInto", func() {
 			c := NewCreateRequest()
 			c.Metrics = bugs.P2Impact()
-			bug, err := bm.Create(ctx, c)
-			So(err, ShouldBeNil)
-			So(bug, ShouldEqual, "chromium/100")
+			response := bm.Create(ctx, c)
+			So(response, ShouldResemble, bugs.BugCreateResponse{
+				ID: "chromium/100",
+			})
 			So(len(f.Issues), ShouldEqual, 1)
 
 			bugID := bugs.BugID{System: bugs.MonorailSystem, ID: "chromium/100"}
@@ -702,9 +734,10 @@ func TestManager(t *testing.T) {
 		Convey("UpdateDuplicateSource", func() {
 			c := NewCreateRequest()
 			c.Metrics = bugs.P2Impact()
-			bug, err := bm.Create(ctx, c)
-			So(err, ShouldBeNil)
-			So(bug, ShouldEqual, "chromium/100")
+			response := bm.Create(ctx, c)
+			So(response, ShouldResemble, bugs.BugCreateResponse{
+				ID: "chromium/100",
+			})
 			So(f.Issues, ShouldHaveLength, 1)
 			So(f.Issues[0].Comments, ShouldHaveLength, 2)
 
@@ -715,7 +748,7 @@ func TestManager(t *testing.T) {
 
 			Convey("With ErrorMessage", func() {
 				request := bugs.UpdateDuplicateSourceRequest{
-					BugDetails: bugs.BugDetails{
+					BugDetails: bugs.DuplicateBugDetails{
 						Bug: bugs.BugID{System: bugs.MonorailSystem, ID: "chromium/100"},
 					},
 					ErrorMessage: "Some error.",
@@ -731,7 +764,7 @@ func TestManager(t *testing.T) {
 			})
 			Convey("Without ErrorMessage", func() {
 				request := bugs.UpdateDuplicateSourceRequest{
-					BugDetails: bugs.BugDetails{
+					BugDetails: bugs.DuplicateBugDetails{
 						Bug: bugs.BugID{System: bugs.MonorailSystem, ID: "chromium/100"},
 					},
 					DestinationRuleID: "12345abcdef",
@@ -749,9 +782,10 @@ func TestManager(t *testing.T) {
 		Convey("UpdateDuplicateDestination", func() {
 			c := NewCreateRequest()
 			c.Metrics = bugs.P2Impact()
-			bug, err := bm.Create(ctx, c)
-			So(err, ShouldBeNil)
-			So(bug, ShouldEqual, "chromium/100")
+			response := bm.Create(ctx, c)
+			So(response, ShouldResemble, bugs.BugCreateResponse{
+				ID: "chromium/100",
+			})
 			So(f.Issues, ShouldHaveLength, 1)
 			So(f.Issues[0].Comments, ShouldHaveLength, 2)
 

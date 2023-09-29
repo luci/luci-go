@@ -185,6 +185,10 @@ func (f *fakeIssuesClient) ModifyIssues(ctx context.Context, in *mpb.ModifyIssue
 	if len(in.Deltas) > 1 {
 		return nil, errors.New("not implemented for more than one delta")
 	}
+	if f.store.UpdateError != nil {
+		// We have been configured to return an error on attempts to modify any issue.
+		return nil, f.store.UpdateError
+	}
 	var updatedIssues []*mpb.Issue
 	for _, delta := range in.Deltas {
 		name := delta.Issue.Name

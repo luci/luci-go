@@ -101,9 +101,9 @@ const ruleDefinitionTooLongMessage = "LUCI Analysis cannot merge the failure" +
 // system. The BugManager determines bug content and priority given a
 // cluster.
 type BugManager interface {
-	// Create creates a new bug for the given request, returning its name,
-	// or any encountered error.
-	Create(ctx context.Context, cluster *bugs.BugCreateRequest) (string, error)
+	// Create creates a new bug for the given request, returning its ID
+	// (if a bug was created) and any encountered error.
+	Create(ctx context.Context, request bugs.BugCreateRequest) bugs.BugCreateResponse
 	// Update updates the specified list of bugs.
 	//
 	// Exactly one response item is returned for each request item.
@@ -466,24 +466,22 @@ func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bug
 	// The set of non-catastrophic errors encountered so far.
 	var errs []error
 	// The set of bugs marked as duplicate encountered.
-	var duplicateBugs []bugs.BugDetails
+	var duplicateBugs []bugs.DuplicateBugDetails
 	// The updates to failure association rules required.
 	var updateRuleRequests []updateRuleRequest
 
 	for i, rsp := range responses {
 		if rsp.Error != nil {
-			// As above, even if an error is encountered updating
-			// one or more bugs, it is important we still update
-			// the rules for the bugs we did successfully update.
-			// Therefore, while we capture any errors here, we do
-			// not exit early.
+			// Capture the error, but continue processing this bug
+			// and other bugs, as partial success is possible
+			// and pending rule updates must be applied.
 			err := errors.Annotate(rsp.Error, "updating bug (%s)", bugsToUpdate[i].Bug.String()).Err()
 			errs = append(errs, err)
 			logging.Errorf(ctx, "%s", err)
-			continue
 		}
+
 		if rsp.IsDuplicate {
-			duplicateBugs = append(duplicateBugs, bugs.BugDetails{
+			duplicateBugs = append(duplicateBugs, bugs.DuplicateBugDetails{
 				Bug:        bugsToUpdate[i].Bug,
 				IsAssigned: rsp.IsDuplicateAndAssigned,
 			})
@@ -807,7 +805,7 @@ func (b *BugUpdater) updateRulesBatch(ctx context.Context, requests []updateRule
 // rule with the bug it is ultimately merged into (creating the rule if it does
 // not exist). In case of unhandleable errors, the source bug is kicked out of the
 // duplicate state and an error message is posted on the bug.
-func (b *BugUpdater) handleDuplicateBug(ctx context.Context, duplicateDetails bugs.BugDetails) error {
+func (b *BugUpdater) handleDuplicateBug(ctx context.Context, duplicateDetails bugs.DuplicateBugDetails) error {
 	err := b.handleDuplicateBugHappyPath(ctx, duplicateDetails)
 	if errors.Is(err, mergeIntoCycleErr) {
 		request := bugs.UpdateDuplicateSourceRequest{
@@ -842,7 +840,7 @@ func (b *BugUpdater) handleDuplicateBug(ctx context.Context, duplicateDetails bu
 // handleDuplicateBugHappyPath handles a duplicate bug, merging its failure association
 // rule with the bug it is ultimately merged into (creating the rule if it does
 // not exist). The original rule is archived.
-func (b *BugUpdater) handleDuplicateBugHappyPath(ctx context.Context, duplicateDetails bugs.BugDetails) error {
+func (b *BugUpdater) handleDuplicateBugHappyPath(ctx context.Context, duplicateDetails bugs.DuplicateBugDetails) error {
 	// Chase the bug merged-into graph until we find the sink of the graph.
 	// (The canonical bug of the chain of duplicate bugs.)
 	destBug, err := b.resolveMergedIntoBug(ctx, duplicateDetails.Bug)
@@ -1216,7 +1214,7 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 	impact := ExtractResidualMetrics(cs)
 	bugManagementState, _ = policy.UpdatePolicyActivations(bugManagementState, b.projectCfg.Config.BugManagement.GetPolicies(), impact, b.RunTimestamp)
 
-	request := &bugs.BugCreateRequest{
+	request := bugs.BugCreateRequest{
 		RuleID:      ruleID,
 		Description: description,
 	}
@@ -1248,39 +1246,42 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 	}
 
 	manager := b.managers[system]
-	name, err := manager.Create(ctx, request)
-	if err == bugs.ErrCreateSimulated {
-		// Create did not do anything because it is in simulation mode.
-		// This is expected.
-		return true, nil
-	}
-	if err != nil {
-		return false, errors.Annotate(err, "create issue in %v", system).Err()
+	response := manager.Create(ctx, request)
+
+	if !response.Simulated && response.ID != "" {
+		// We filed a bug.
+		// Create a failure association rule associating the failures with a bug.
+		newRule := &rules.Entry{
+			Project:               b.project,
+			RuleID:                ruleID,
+			RuleDefinition:        rule,
+			BugID:                 bugs.BugID{System: system, ID: response.ID},
+			IsActive:              true,
+			IsManagingBug:         true,
+			IsManagingBugPriority: true,
+			SourceCluster:         cs.ClusterID,
+			BugManagementState:    bugManagementState,
+		}
+		create := func(ctx context.Context) error {
+			user := rules.LUCIAnalysisSystem
+			ms, err := rules.Create(newRule, user)
+			if err != nil {
+				return err
+			}
+			span.BufferWrite(ctx, ms)
+			return nil
+		}
+		if _, err := span.ReadWriteTransaction(ctx, create); err != nil {
+			return false, errors.Annotate(err, "create rule").Err()
+		}
 	}
 
-	// Create a failure association rule associating the failures with a bug.
-	newRule := &rules.Entry{
-		Project:               b.project,
-		RuleID:                ruleID,
-		RuleDefinition:        rule,
-		BugID:                 bugs.BugID{System: system, ID: name},
-		IsActive:              true,
-		IsManagingBug:         true,
-		IsManagingBugPriority: true,
-		SourceCluster:         cs.ClusterID,
-		BugManagementState:    bugManagementState,
-	}
-	create := func(ctx context.Context) error {
-		user := rules.LUCIAnalysisSystem
-		ms, err := rules.Create(newRule, user)
-		if err != nil {
-			return err
-		}
-		span.BufferWrite(ctx, ms)
-		return nil
-	}
-	if _, err := span.ReadWriteTransaction(ctx, create); err != nil {
-		return false, errors.Annotate(err, "create bug cluster").Err()
+	if response.Error != nil {
+		// We encountered an error creating the bug. Note that this
+		// is not mutually exclusive with having filed a bug, as
+		// steps after creating the bug may have failed, and in
+		// this case a failure association rule should still be created.
+		return false, errors.Annotate(response.Error, "create issue in %v (created ID: %q)", system, response.ID).Err()
 	}
 
 	return true, nil

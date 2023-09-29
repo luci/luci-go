@@ -83,11 +83,13 @@ func NewBugManager(client *Client, uiBaseURL, project string, projectCfg *config
 
 // Create creates a new bug for the given request, returning its name, or
 // any encountered error.
-func (m *BugManager) Create(ctx context.Context, request *bugs.BugCreateRequest) (string, error) {
+func (m *BugManager) Create(ctx context.Context, request bugs.BugCreateRequest) bugs.BugCreateResponse {
 	components := request.MonorailComponents
 	components, err := m.filterToValidComponents(ctx, components)
 	if err != nil {
-		return "", errors.Annotate(err, "validate components").Err()
+		return bugs.BugCreateResponse{
+			Error: errors.Annotate(err, "validate components").Err(),
+		}
 	}
 
 	var makeReq *mpb.MakeIssueRequest
@@ -95,40 +97,59 @@ func (m *BugManager) Create(ctx context.Context, request *bugs.BugCreateRequest)
 		var err error
 		makeReq, err = m.generator.PrepareNew(request.ActivePolicyIDs, request.Description, components)
 		if err != nil {
-			return "", errors.Annotate(err, "prepare new issue").Err()
+			return bugs.BugCreateResponse{
+				Error: errors.Annotate(err, "prepare new issue").Err(),
+			}
 		}
 	} else {
 		makeReq = m.generator.PrepareNewLegacy(request.Metrics, request.Description, components)
 	}
-	var bugName string
+
+	var bugID string
+
 	if m.Simulate {
 		logging.Debugf(ctx, "Would create Monorail issue: %s", textPBMultiline.Format(makeReq))
-		bugName = fmt.Sprintf("%s/12345678", m.projectCfg.Monorail.Project)
+		bugID = fmt.Sprintf("%s/12345678", m.projectCfg.Monorail.Project)
 	} else {
 		// Save the issue in Monorail.
 		issue, err := m.client.MakeIssue(ctx, makeReq)
 		if err != nil {
-			return "", errors.Annotate(err, "create issue in monorail").Err()
+			return bugs.BugCreateResponse{
+				Error: errors.Annotate(err, "create issue in monorail").Err(),
+			}
 		}
-		bugName, err = fromMonorailIssueName(issue.Name)
+		bugID, err = fromMonorailIssueName(issue.Name)
 		if err != nil {
-			return "", errors.Annotate(err, "parsing monorail issue name").Err()
+			return bugs.BugCreateResponse{
+				Error: errors.Annotate(err, "parsing monorail issue name").Err(),
+			}
 		}
 	}
 
-	modifyReq, err := m.generator.PrepareLinkComment(bugName)
+	modifyReq, err := m.generator.PrepareLinkComment(bugID)
 	if err != nil {
-		return "", errors.Annotate(err, "prepare link comment").Err()
+		return bugs.BugCreateResponse{
+			Simulated: m.Simulate,
+			ID:        bugID,
+			Error:     errors.Annotate(err, "prepare link comment").Err(),
+		}
 	}
 	if m.Simulate {
 		logging.Debugf(ctx, "Would update Monorail issue: %s", textPBMultiline.Format(modifyReq))
-		return "", bugs.ErrCreateSimulated
-	}
-	if err := m.client.ModifyIssues(ctx, modifyReq); err != nil {
-		return "", errors.Annotate(err, "update issue").Err()
+	} else {
+		if err := m.client.ModifyIssues(ctx, modifyReq); err != nil {
+			return bugs.BugCreateResponse{
+				ID:        bugID,
+				Error:     errors.Annotate(err, "update issue").Err(),
+			}
+		}
 	}
 	bugs.BugsCreatedCounter.Add(ctx, 1, m.project, "monorail")
-	return bugName, nil
+
+	return bugs.BugCreateResponse{
+		Simulated: m.Simulate,
+		ID:        bugID,
+	}
 }
 
 // filterToValidComponents limits the given list of components to only those

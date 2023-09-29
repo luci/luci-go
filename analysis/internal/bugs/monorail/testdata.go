@@ -43,6 +43,11 @@ type FakeIssuesStore struct {
 	ComponentNames    []string
 	NextID            int
 	PriorityFieldName string
+
+	// The error to return on an attempt to update any issue.
+	// This is an alternative Issues[i].UpdateError for
+	// the case where the issue is not known.
+	UpdateError error
 }
 
 // NewIssueData creates new monorail issue data for testing.

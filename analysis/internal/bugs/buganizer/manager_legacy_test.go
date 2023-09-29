@@ -22,6 +22,8 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
@@ -100,9 +102,10 @@ func TestBugManagerLegacy(t *testing.T) {
 				}
 
 				Convey("Happy path", func() {
-					bugID, err := bm.Create(ctx, createRequest)
-					So(err, ShouldBeNil)
-					So(bugID, ShouldEqual, "1")
+					response := bm.Create(ctx, createRequest)
+					So(response, ShouldResemble, bugs.BugCreateResponse{
+						ID: "1",
+					})
 					So(len(fakeStore.Issues), ShouldEqual, 1)
 
 					issueData := fakeStore.Issues[1]
@@ -111,11 +114,12 @@ func TestBugManagerLegacy(t *testing.T) {
 					// Link to cluster page should appear in output.
 					So(issueData.Comments[0].Comment, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
 				})
-				Convey("Failed to update issue comment", func() {
-					fakeClient.ShouldFailIssueCommentUpdates = true
-					bugID, err := bm.Create(ctx, createRequest)
-					So(err, ShouldBeNil)
-					So(bugID, ShouldEqual, "1")
+				Convey("Failed to update issue comment (permission denied)", func() {
+					fakeClient.UpdateCommentError = status.Errorf(codes.PermissionDenied, "modification not allowed")
+					response := bm.Create(ctx, createRequest)
+					So(response, ShouldResemble, bugs.BugCreateResponse{
+						ID: "1",
+					})
 					So(len(fakeStore.Issues), ShouldEqual, 1)
 
 					expectedIssue.Description.Comment = strings.ReplaceAll(expectedIssue.Description.Comment,
@@ -148,9 +152,10 @@ func TestBugManagerLegacy(t *testing.T) {
 				}
 				expectedIssue.IssueState.Title = "Tests are failing: ninja://:blink_web_tests/media/my-suite/my-test.html"
 
-				bugID, err := bm.Create(ctx, createRequest)
-				So(err, ShouldBeNil)
-				So(bugID, ShouldEqual, "1")
+				response := bm.Create(ctx, createRequest)
+				So(response, ShouldResemble, bugs.BugCreateResponse{
+					ID: "1",
+				})
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
 
@@ -161,16 +166,20 @@ func TestBugManagerLegacy(t *testing.T) {
 
 			Convey("Does nothing if in simulation mode", func() {
 				bm.Simulate = true
-				_, err := bm.Create(ctx, createRequest)
-				So(err, ShouldEqual, bugs.ErrCreateSimulated)
+				response := bm.Create(ctx, createRequest)
+				So(response, ShouldResemble, bugs.BugCreateResponse{
+					ID:        "123456",
+					Simulated: true,
+				})
 				So(len(fakeStore.Issues), ShouldEqual, 0)
 			})
 
 			Convey("With provided component id", func() {
 				createRequest.BuganizerComponent = 7890
-				bugID, err := bm.Create(ctx, createRequest)
-				So(err, ShouldBeNil)
-				So(bugID, ShouldEqual, "1")
+				response := bm.Create(ctx, createRequest)
+				So(response, ShouldResemble, bugs.BugCreateResponse{
+					ID: "1",
+				})
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
 				So(issue.Issue.IssueState.ComponentId, ShouldEqual, 7890)
@@ -179,9 +188,10 @@ func TestBugManagerLegacy(t *testing.T) {
 			Convey("With provided component id without permission", func() {
 				createRequest.BuganizerComponent = ComponentWithNoAccess
 				// TODO: Mock permission call to fail.
-				bugID, err := bm.Create(ctx, createRequest)
-				So(err, ShouldBeNil)
-				So(bugID, ShouldEqual, "1")
+				response := bm.Create(ctx, createRequest)
+				So(response, ShouldResemble, bugs.BugCreateResponse{
+					ID: "1",
+				})
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
 				// Should have fallback component ID because no permission to wanted component.
@@ -195,9 +205,10 @@ func TestBugManagerLegacy(t *testing.T) {
 				createRequest.BuganizerComponent = 1234
 				// TODO: Mock permission call to fail.
 				ctx = context.WithValue(ctx, &BuganizerTestModeKey, true)
-				bugID, err := bm.Create(ctx, createRequest)
-				So(err, ShouldBeNil)
-				So(bugID, ShouldEqual, "1")
+				response := bm.Create(ctx, createRequest)
+				So(response, ShouldResemble, bugs.BugCreateResponse{
+					ID: "1",
+				})
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
 				// Should have fallback component ID because no permission to wanted component.
@@ -207,14 +218,15 @@ func TestBugManagerLegacy(t *testing.T) {
 		Convey("Update - Legacy", func() {
 			c := newCreateRequest()
 			c.Metrics = bugs.P2Impact()
-			bugID, err := bm.Create(ctx, c)
-			So(err, ShouldBeNil)
-			So(bugID, ShouldEqual, "1")
+			response := bm.Create(ctx, c)
+			So(response, ShouldResemble, bugs.BugCreateResponse{
+				ID: "1",
+			})
 			So(len(fakeStore.Issues), ShouldEqual, 1)
 			So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P2)
 			bugsToUpdate := []bugs.BugUpdateRequest{
 				{
-					Bug:                              bugs.BugID{System: bugs.BuganizerSystem, ID: bugID},
+					Bug:                              bugs.BugID{System: bugs.BuganizerSystem, ID: response.ID},
 					Metrics:                          c.Metrics,
 					IsManagingBug:                    true,
 					RuleID:                           "123",
@@ -237,7 +249,7 @@ func TestBugManagerLegacy(t *testing.T) {
 				fakeStore.Issues = map[int64]*IssueData{}
 				bugsToUpdate := []bugs.BugUpdateRequest{
 					{
-						Bug:                              bugs.BugID{System: bugs.BuganizerSystem, ID: bugID},
+						Bug:                              bugs.BugID{System: bugs.BuganizerSystem, ID: response.ID},
 						Metrics:                          c.Metrics,
 						RuleID:                           "123",
 						IsManagingBug:                    true,

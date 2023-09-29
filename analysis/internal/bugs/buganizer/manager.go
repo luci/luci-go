@@ -130,7 +130,7 @@ func NewBugManager(client Client,
 }
 
 // Create creates an issue in Buganizer and returns the issue ID.
-func (bm *BugManager) Create(ctx context.Context, createRequest *bugs.BugCreateRequest) (string, error) {
+func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRequest) bugs.BugCreateResponse {
 	componentID := bm.projectCfg.Buganizer.DefaultComponent.Id
 	buganizerTestMode := ctx.Value(&BuganizerTestModeKey)
 	wantedComponentID := createRequest.BuganizerComponent
@@ -139,7 +139,9 @@ func (bm *BugManager) Create(ctx context.Context, createRequest *bugs.BugCreateR
 		if wantedComponentID != componentID && wantedComponentID > 0 {
 			permissions, err := bm.checkComponentPermissions(ctx, wantedComponentID)
 			if err != nil {
-				return "", errors.Annotate(err, "check permissions to create Buganizer issue").Err()
+				return bugs.BugCreateResponse{
+					Error: errors.Annotate(err, "check permissions to create Buganizer issue").Err(),
+				}
 			}
 			if permissions.appender && permissions.issueDefaultsAppender {
 				componentID = createRequest.BuganizerComponent
@@ -159,7 +161,9 @@ func (bm *BugManager) Create(ctx context.Context, createRequest *bugs.BugCreateR
 			componentID,
 		)
 		if err != nil {
-			return "", errors.Annotate(err, "prepare new issue").Err()
+			return bugs.BugCreateResponse{
+				Error: errors.Annotate(err, "prepare new issue").Err(),
+			}
 		}
 	} else {
 		createIssueRequest = bm.requestGenerator.PrepareNewLegacy(
@@ -170,33 +174,39 @@ func (bm *BugManager) Create(ctx context.Context, createRequest *bugs.BugCreateR
 		)
 	}
 	var issue *issuetracker.Issue
-	var issueId int64
+
+	var issueID int64
 	var err error
 	if bm.Simulate {
 		logging.Debugf(ctx, "Would create Buganizer issue: %s", textPBMultiline.Format(createIssueRequest))
-		issueId = 123456
+		issueID = 123456
 	} else {
 		issue, err = bm.client.CreateIssue(ctx, createIssueRequest)
 		if err != nil {
-			return "", errors.Annotate(err, "create Buganizer issue").Err()
+			return bugs.BugCreateResponse{
+				Error: errors.Annotate(err, "create Buganizer issue").Err(),
+			}
 		}
-		issueId = issue.IssueId
+		issueID = issue.IssueId
 	}
+
+	bugID := strconv.Itoa(int(issueID))
 
 	var issueCommentReq *issuetracker.UpdateIssueCommentRequest
 	if isUsingPolicyBasedManagement {
 		issueCommentReq = bm.requestGenerator.PrepareLinkIssueCommentUpdate(
 			createRequest.Description,
 			createRequest.ActivePolicyIDs,
-			issueId,
+			issueID,
 		)
 	} else {
 		issueCommentReq = bm.requestGenerator.PrepareLinkIssueCommentUpdateLegacy(
 			createRequest.Metrics,
 			createRequest.Description,
-			issueId,
+			issueID,
 		)
 	}
+
 	if bm.Simulate {
 		logging.Debugf(ctx, "Would update Buganizer issue comment: %s", textPBMultiline.Format(issueCommentReq))
 	} else {
@@ -206,28 +216,33 @@ func (bm *BugManager) Create(ctx context.Context, createRequest *bugs.BugCreateR
 				// that uses the rule ID instead of the bug ID.
 				logging.Warningf(ctx, "Failed to update issue comment: %v", statusError)
 			} else {
-				return "", errors.Annotate(err, "add issue link to issue comment").Err()
+				return bugs.BugCreateResponse{
+					Error: errors.Annotate(err, "add issue link to issue comment").Err(),
+					ID:    bugID,
+				}
 			}
 		}
 	}
 
 	if wantedComponentID > 0 && wantedComponentID != componentID {
-		issueCommentReq := bm.requestGenerator.PrepareNoPermissionComment(issueId, wantedComponentID)
+		issueCommentReq := bm.requestGenerator.PrepareNoPermissionComment(issueID, wantedComponentID)
 		if bm.Simulate {
 			logging.Debugf(ctx, "Would update Buganizer issue: %s", textPBMultiline.Format(issueCommentReq))
 		} else {
 			if _, err := bm.client.CreateIssueComment(ctx, issueCommentReq); err != nil {
-				return "", errors.Annotate(err, "create issue link comment").Err()
+				return bugs.BugCreateResponse{
+					Error: errors.Annotate(err, "create issue link comment").Err(),
+					ID:    bugID,
+				}
 			}
 		}
 	}
 
-	if bm.Simulate {
-		return "", bugs.ErrCreateSimulated
-	}
-
 	bugs.BugsCreatedCounter.Add(ctx, 1, bm.project, "buganizer")
-	return strconv.Itoa(int(issueId)), nil
+	return bugs.BugCreateResponse{
+		Simulated: bm.Simulate,
+		ID:        bugID,
+	}
 }
 
 // Update updates the issues in Buganizer.

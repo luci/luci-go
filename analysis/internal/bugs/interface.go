@@ -20,7 +20,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
-	"go.chromium.org/luci/common/errors"
 )
 
 type BugUpdateRequest struct {
@@ -57,14 +56,29 @@ type BugUpdateRequest struct {
 }
 
 type BugUpdateResponse struct {
-	// Error is the error encountered updating this bug (if any).
-	// If this is set, IsDuplicate, IsAssigned, ShouldArchive and
-	// DisableRulePriorityUpdates should be ignored.
-	// This field is only used for errors specific to updating a particular bug.
+	// Error is the error encountered updating this specific bug (if any).
+	//
+	// Even if an error is set here, partial success is possible and
+	// actions may have been taken on the bug which require corresponding
+	// rule updates. As such, even if an error is set here, the consumer
+	// of this response must action the rule updates specified by
+	// DisableRulePriorityUpdates, RuleAssociationNotified and
+	// PolicyActivationsNotified to avoid us unnecessarily repeating
+	// these actions on the bug the next time bug management runs.
+	//
+	// Similarly, even when an error occurs, the producer of this response
+	// still has an an obligation to set DisableRulePriorityUpdates,
+	// RuleAssociationNotified and PolicyActivationsNotified correctly.
+	// In case of complete failures, leaving DisableRulePriorityUpdates
+	// and PolicyActivationsNotified set to false, and PolicyActivationsNotified
+	// empty will satisfy this requirement.
 	Error error
 
 	// IsDuplicate is set if the bug is a duplicate of another.
 	// Set to true to trigger updating/merging failure association rules.
+	//
+	// If we could not fetch the bug for some reason and cannot determine
+	// if the bug should be archived, this must be set to false.
 	IsDuplicate bool
 
 	// IsDuplicateAndAssigned is set if the bug is assigned to a user.
@@ -78,25 +92,35 @@ type BugUpdateResponse struct {
 	//   days.
 	// - The bug is managed by the user (IsManagingBug = false), and the
 	//   bug has been closed for the last 30 days.
+	//
+	// If we could not fetch the bug for some reason and cannot determine
+	// if the bug should be archived, this must be set to false.
 	ShouldArchive bool
 
 	// DisableRulePriorityUpdates indicates that the rules `IsManagingBugUpdates`
 	// field should be disabled.
 	// This is set when a user manually takes control of the priority of a bug.
+	//
+	// If we could not fetch the bug for some reason and cannot determine
+	// if the user has taken control of the bug, this must be set to false.
 	DisableRulePriorityUpdates bool
 
 	// Whether the association between the rule and the bug was notified.
 	// Set to true to set BugManagementState.RuleAssociationNotified.
 	RuleAssociationNotified bool
 
-	// A map containing the IDs of policies for which activation was notified.
-	// Set to true to set BugManagementState.Policies[<policyID>].ActivationNotified.
+	// The set of policy IDs for which activation was notified.
+	// This may differ from the set which is pending notification in the case of
+	// partial or total failure to update the bug.
+	// If a policy ID is included here,
+	// BugManagementState.Policies[<policyID>].ActivationNotified will be
+	// set to true on the rule.
 	PolicyActivationsNotified map[string]struct{}
 }
 
-// BugDetails holds the data of a duplicate bug, this includes it's bug id,
+// DuplicateBugDetails holds the data of a duplicate bug, this includes it's bug id,
 // and whether or not it is assigned to a user.
-type BugDetails struct {
+type DuplicateBugDetails struct {
 	// Bug is the source bug that was merged-into another bug.
 	Bug BugID
 	// IsAssigned indicated whether this bug is assigned or not.
@@ -110,7 +134,7 @@ type BugDetails struct {
 type UpdateDuplicateSourceRequest struct {
 	// BugDetails are details of the bug to be updated.
 	// This includes the bug ID and whether or not it is assigned.
-	BugDetails BugDetails
+	BugDetails DuplicateBugDetails
 	// ErrorMessage is the error that occured handling the duplicate bug.
 	// If this is set, it will be posted to the bug and bug will marked as
 	// no longer a duplicate to avoid repeately triggering the same error.
@@ -120,8 +144,6 @@ type UpdateDuplicateSourceRequest struct {
 	// Only populated if Error is unset.
 	DestinationRuleID string
 }
-
-var ErrCreateSimulated = errors.New("CreateNew did not create a bug as the bug manager is in simulation mode")
 
 // BugCreateRequest captures a request to a bug filing system to
 // file a new bug for a suggested cluster.
@@ -146,6 +168,39 @@ type BugCreateRequest struct {
 
 	// Metrics contains metrics for the cluster.
 	Metrics ClusterMetrics
+}
+
+type BugCreateResponse struct {
+	// The error encountered creating the bug. Note that this error
+	// may have occured after a partial success; for example, we may have
+	// successfully created a bug but failed on a subequent RPC to
+	// posting comments for the policies that have activated.
+	//
+	// In the case of partial success, ID shall still be set to allow
+	// creation of the rule. This avoids duplicate bugs being created
+	// from repeated failed attempts to completely create a bug.
+	// The policies for which comments could not be posted will
+	// not be set to true under BugManagementState.Policies[<policyID>].ActivationNotified
+	// so that these are retried as part of the bug update process.
+	Error error
+
+	// Simulated indicates whether the bug creation was simulated,
+	// i.e. did not actually occur. If this is set, the returned
+	// bug ID should be ignored.
+	Simulated bool
+
+	// The system-specific bug ID for the bug that was created.
+	// See BugID.ID.
+	// If we failed to create a bug, set to "" (empty).
+	ID string
+
+	// The set of policy IDs for which activation was successfully notified.
+	// This may differ from the list in the request in the case of
+	// partial or total failure to create the bug.
+	// If a policy ID is included here,
+	// BugManagementState.Policies[<policyID>].ActivationNotified will be
+	// set to true on the rule.
+	PolicyActivationsNotified map[string]struct{}
 }
 
 // ClusterMetrics captures measurements of a cluster's impact and
