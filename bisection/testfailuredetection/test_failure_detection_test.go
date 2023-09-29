@@ -173,6 +173,7 @@ func TestFailureDetection(t *testing.T) {
 				if i == 0 {
 					primaryFailureKey = datastore.KeyForObj(ctx, testFailureDB[0])
 					So(testFailureDB[0].IsPrimary, ShouldEqual, true)
+					So(testFailureDB[0].RedundancyScore, ShouldEqual, redundancyScore)
 				} else {
 					So(testFailureDB[0].IsPrimary, ShouldEqual, false)
 				}
@@ -198,30 +199,36 @@ func TestFailureDetection(t *testing.T) {
 			}
 			So(analysis, ShouldResemble, expected)
 		}
-		Convey("send the least redundant test failure group", func() {
-			selectedGroup := fakeBuilderRegressionGroup("testID", "varianthash3", 200, 201)
+		Convey("send the most recent test failure", func() {
+			selectedGroup := fakeBuilderRegressionGroup("testID", "varianthash3", 200, 201, time.Unix(3600*24*100, 0))
 			analysisClient.testFailuresByProject["testProject"] = []*lucianalysis.BuilderRegressionGroup{
-				fakeBuilderRegressionGroup("testID", "varianthash", 100, 101),
+				fakeBuilderRegressionGroup("testID", "varianthash", 100, 101, time.Unix(3600*24*99, 0)),
 				selectedGroup,
-				fakeBuilderRegressionGroup("testID", "varianthash2", 99, 101),
+				fakeBuilderRegressionGroup("testID", "varianthash2", 99, 101, time.Unix(3600*24*99, 0)),
 			}
 			// Existing test failure.
-			failureInDB := fakeTestFailure(101, "testID", "varianthash")
-			failureInDB.RegressionStartPosition = 100
-			failureInDB.RegressionEndPosition = 102
+			failureInDB := fakeTestFailure(101, "testID", "varianthash4")
+			failureInDB.RegressionStartPosition = 201
+			failureInDB.RegressionEndPosition = 202
 			So(datastore.Put(ctx, failureInDB), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			verify(selectedGroup, 0)
+			verify(selectedGroup, 0.25)
 		})
 
-		Convey("send the most recent test failure group when redundancy score are the same", func() {
-			selectedGroup := fakeBuilderRegressionGroup("testID", "variantHash3", 200, 201)
+		Convey("send the least redundant test failure when recency is the same", func() {
+			selectedGroup := fakeBuilderRegressionGroup("testID", "varianthash3", 200, 201, time.Unix(3600*24*100, 0))
 			analysisClient.testFailuresByProject["testProject"] = []*lucianalysis.BuilderRegressionGroup{
-				fakeBuilderRegressionGroup("testID", "variantHash", 100, 101),
+				fakeBuilderRegressionGroup("testID", "varianthash", 100, 101, time.Unix(3600*24*100, 0)),
 				selectedGroup,
-				fakeBuilderRegressionGroup("testID", "variantHash2", 99, 101),
+				fakeBuilderRegressionGroup("testID", "varianthash2", 99, 101, time.Unix(3600*24*100, 0)),
 			}
+			// Existing test failure.
+			failureInDB := fakeTestFailure(101, "testID", "varianthash4")
+			failureInDB.RegressionStartPosition = 99
+			failureInDB.RegressionEndPosition = 101
+			So(datastore.Put(ctx, failureInDB), ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
 
 			verify(selectedGroup, 0)
 		})
@@ -252,7 +259,7 @@ func TestFailureDetection(t *testing.T) {
 
 		Convey("all groups are redundant", func() {
 			analysisClient.testFailuresByProject["testProject"] = []*lucianalysis.BuilderRegressionGroup{
-				fakeBuilderRegressionGroup("testID", "varianthash", 99, 100),
+				fakeBuilderRegressionGroup("testID", "varianthash", 99, 100, time.Unix(0, 0)),
 			}
 			// Existing test failure.
 			failureInDB := fakeTestFailure(101, "testID", "varianthash")
@@ -268,7 +275,7 @@ func TestFailureDetection(t *testing.T) {
 
 		Convey("insufficient data", func() {
 			analysisClient.testFailuresByProject["testProject"] = []*lucianalysis.BuilderRegressionGroup{
-				fakeBuilderRegressionGroup(insufficientDataTestID, "varianthash", 99, 100),
+				fakeBuilderRegressionGroup(insufficientDataTestID, "varianthash", 99, 100, time.Unix(1689343797, 0)),
 			}
 
 			err := Run(ctx, analysisClient, task)
@@ -345,7 +352,7 @@ func (f *fakeLUCIAnalysisClient) ReadBuildInfo(ctx context.Context, tf *model.Te
 	return f.buildInfoByProject[tf.Project], nil
 }
 
-func fakeBuilderRegressionGroup(primaryTestID, primaryVariantHash string, start, end int64) *lucianalysis.BuilderRegressionGroup {
+func fakeBuilderRegressionGroup(primaryTestID, primaryVariantHash string, start, end int64, startHour time.Time) *lucianalysis.BuilderRegressionGroup {
 	return &lucianalysis.BuilderRegressionGroup{
 		RefHash: bqString("testRefHash"),
 		Ref: &lucianalysis.Ref{
@@ -364,7 +371,7 @@ func fakeBuilderRegressionGroup(primaryTestID, primaryVariantHash string, start,
 			{TestID: bqString(primaryTestID + "1"), VariantHash: bqString(primaryVariantHash), Variant: bigquery.NullJSON{JSONVal: `{"builder":"testbuilder"}`, Valid: true}},
 			{TestID: bqString(primaryTestID + "2"), VariantHash: bqString(primaryVariantHash), Variant: bigquery.NullJSON{JSONVal: `{"builder":"testbuilder"}`, Valid: true}},
 		},
-		StartHour: bigquery.NullTimestamp{Timestamp: time.Unix(1689343797, 0), Valid: true},
+		StartHour: bigquery.NullTimestamp{Timestamp: startHour, Valid: true},
 		EndHour:   bigquery.NullTimestamp{Timestamp: time.Unix(1689343798, 0), Valid: true},
 	}
 }

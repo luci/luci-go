@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/common/logging"
@@ -54,10 +55,10 @@ func (s sortableTestFailureBundles) Len() int {
 // Less reports whether the element with
 // index i should sort before the element with index j.
 func (s sortableTestFailureBundles) Less(i int, j int) bool {
-	if s[i].Primary().RedundancyScore != s[j].Primary().RedundancyScore {
-		return s[i].Primary().RedundancyScore < s[j].Primary().RedundancyScore
-	}
-	return s[i].Primary().RegressionEndPosition > s[j].Primary().RegressionEndPosition
+	// We sort test bundle by recency descendingly first (truncated to day), and by redundancy score ascendingly.
+	di := s[i].Primary().StartHour.Truncate(time.Hour * 24)
+	dj := s[j].Primary().StartHour.Truncate(time.Hour * 24)
+	return di.After(dj) || (di == dj && s[i].Primary().RedundancyScore < s[j].Primary().RedundancyScore)
 }
 
 // Swap swaps the elements with indexes i and j.
