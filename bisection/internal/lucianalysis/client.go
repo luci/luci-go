@@ -83,6 +83,7 @@ type BuilderRegressionGroup struct {
 	TestVariants             []*TestVariant
 	StartHour                bigquery.NullTimestamp
 	EndHour                  bigquery.NullTimestamp
+	SheriffRotations         []bigquery.NullString
 }
 
 type Ref struct {
@@ -150,6 +151,7 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
       ANY_VALUE(v.buildbucket_build.id HAVING MAX v.partition_time) AS build_id,
       ANY_VALUE(COALESCE(b2.infra.swarming.task_dimensions, b.infra.swarming.task_dimensions) HAVING MAX v.partition_time) AS task_dimensions,
       ANY_VALUE(b.builder.bucket HAVING MAX v.partition_time) AS bucket,
+			ANY_VALUE(JSON_VALUE_ARRAY(b.input.properties, "$.sheriff_rotations") HAVING MAX v.partition_time) AS SheriffRotations,
 		FROM builder_regression_groups g
 		-- Join with test_verdict table to get the build id of the lastest build for a test variant.
 		LEFT JOIN test_verdicts v
@@ -170,7 +172,9 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
 		      AND b2.create_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
 		GROUP BY g.testVariants[0].TestId,  g.testVariants[0].VariantHash, g.RefHash
   )
-	SELECT regression_group.*
+	SELECT regression_group.*,
+		-- use empty array instead of null so we can read into []NullString.
+		IFNULL(SheriffRotations, []) as SheriffRotations
 	FROM builder_regression_groups_with_latest_build
 	WHERE  ` + dimensionExcludeFilter + ` AND (bucket NOT IN UNNEST(@excludedBuckets))
 	ORDER BY regression_group.RegressionEndPosition DESC

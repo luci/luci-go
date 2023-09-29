@@ -434,6 +434,8 @@ type TestFailureAnalysis struct {
 	EndCommitHash string `gae:"end_commit_hash"`
 	// An example Buildbucket ID in which the test failed.
 	FailedBuildID int64 `gae:"failed_build_id"`
+	// The sheriff rotations that watch the builder.
+	SheriffRotations []string `gae:"sheriff_rotations"`
 }
 
 // TestNthSectionAnalysis is nth-section analysis for test failures.
@@ -565,6 +567,13 @@ type TestFailureBundle struct {
 	primaryFailure *TestFailure
 	// Non-primary test failures.
 	otherTestFailures []*TestFailure
+	// Contains metadata that is common for this bundle that
+	// is not suitable to put in TestFailure model.
+	Metadata *BundleMetaData
+}
+
+type BundleMetaData struct {
+	SheriffRotations []string
 }
 
 func (tfb *TestFailureBundle) Add(testFailures []*TestFailure) error {

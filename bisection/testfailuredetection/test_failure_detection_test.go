@@ -185,17 +185,18 @@ func TestFailureDetection(t *testing.T) {
 			analysis, err := datastoreutil.GetTestFailureAnalysis(ctx, resultsTask.AnalysisId)
 			So(err, ShouldBeNil)
 			expected := &model.TestFailureAnalysis{
-				ID:              resultsTask.AnalysisId,
-				Project:         "testProject",
-				Bucket:          "bucket",
-				Builder:         "builder",
-				TestFailure:     primaryFailureKey,
-				CreateTime:      clock.Now(ctx),
-				Status:          pb.AnalysisStatus_CREATED,
-				Priority:        rerun.PriorityTestFailure,
-				StartCommitHash: "startCommitHash",
-				EndCommitHash:   "endCommitHash",
-				FailedBuildID:   1,
+				ID:               resultsTask.AnalysisId,
+				Project:          "testProject",
+				Bucket:           "bucket",
+				Builder:          "builder",
+				TestFailure:      primaryFailureKey,
+				CreateTime:       clock.Now(ctx),
+				Status:           pb.AnalysisStatus_CREATED,
+				Priority:         rerun.PriorityTestFailure,
+				StartCommitHash:  "startCommitHash",
+				EndCommitHash:    "endCommitHash",
+				FailedBuildID:    1,
+				SheriffRotations: []string{"chromium"},
 			}
 			So(analysis, ShouldResemble, expected)
 		}
@@ -293,13 +294,14 @@ func TestFailureDetection(t *testing.T) {
 			So(len(tfs), ShouldEqual, 1)
 
 			So(analyses[0], ShouldResemble, &model.TestFailureAnalysis{
-				ID:          analyses[0].ID,
-				Project:     "testProject",
-				CreateTime:  time.Unix(10000, 0).UTC(),
-				Status:      pb.AnalysisStatus_INSUFFICENTDATA,
-				RunStatus:   pb.AnalysisRunStatus_ENDED,
-				EndTime:     time.Unix(10000, 0).UTC(),
-				TestFailure: datastore.KeyForObj(ctx, tfs[0]),
+				ID:               analyses[0].ID,
+				Project:          "testProject",
+				CreateTime:       time.Unix(10000, 0).UTC(),
+				Status:           pb.AnalysisStatus_INSUFFICENTDATA,
+				RunStatus:        pb.AnalysisRunStatus_ENDED,
+				EndTime:          time.Unix(10000, 0).UTC(),
+				TestFailure:      datastore.KeyForObj(ctx, tfs[0]),
+				SheriffRotations: []string{"chromium"},
 			})
 
 			So(tfs[0], ShouldResembleProto, &model.TestFailure{
@@ -373,6 +375,12 @@ func fakeBuilderRegressionGroup(primaryTestID, primaryVariantHash string, start,
 		},
 		StartHour: bigquery.NullTimestamp{Timestamp: startHour, Valid: true},
 		EndHour:   bigquery.NullTimestamp{Timestamp: time.Unix(1689343798, 0), Valid: true},
+		SheriffRotations: []bigquery.NullString{
+			{
+				StringVal: "chromium",
+				Valid:     true,
+			},
+		},
 	}
 }
 

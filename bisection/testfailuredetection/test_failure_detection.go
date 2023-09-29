@@ -142,17 +142,18 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 	bestBundle := First(ctx, bundles)
 	logging.Infof(ctx, "Selected test failure bundle with primary failure ID %s, variantHash %s, refHash %s",
 		bestBundle.Primary().TestID, bestBundle.Primary().VariantHash, bestBundle.Primary().RefHash)
-	testFailureAnalysis, err := prepareFailureAnalysis(ctx, client, bestBundle.Primary())
+	testFailureAnalysis, err := prepareFailureAnalysis(ctx, client, bestBundle)
 	if err != nil {
 		// If there is a failure in preparing, in particular, in reading build info,
 		// we should store the analysis, so subsequent runs will not consider this
 		// test failure again.
 		testFailureAnalysis = &model.TestFailureAnalysis{
-			Project:    bestBundle.Primary().Project,
-			CreateTime: clock.Now(ctx),
-			Status:     pb.AnalysisStatus_INSUFFICENTDATA,
-			RunStatus:  pb.AnalysisRunStatus_ENDED,
-			EndTime:    clock.Now(ctx),
+			Project:          bestBundle.Primary().Project,
+			CreateTime:       clock.Now(ctx),
+			Status:           pb.AnalysisStatus_INSUFFICENTDATA,
+			RunStatus:        pb.AnalysisRunStatus_ENDED,
+			EndTime:          clock.Now(ctx),
+			SheriffRotations: bestBundle.Metadata.SheriffRotations,
 		}
 		e := saveTestFailuresAndAnalysis(ctx, bestBundle, testFailureAnalysis, false)
 		if e != nil {
@@ -205,6 +206,15 @@ func newTestFailureBundle(project string, group *lucianalysis.BuilderRegressionG
 	if err != nil {
 		return nil, err
 	}
+	sheriffRotations := []string{}
+	for _, r := range group.SheriffRotations {
+		if r.String() != "" {
+			sheriffRotations = append(sheriffRotations, r.String())
+		}
+	}
+	bundle.Metadata = &model.BundleMetaData{
+		SheriffRotations: sheriffRotations,
+	}
 	return bundle, nil
 }
 
@@ -244,21 +254,23 @@ func regressionRangeOverlap(rl1, ru1, rl2, ru2 int64) float64 {
 	return math.Max(0, numberOfOverlapCommit(rl1, ru1, rl2, ru2)) / float64(ru1-rl1+ru2-rl2+2)
 }
 
-func prepareFailureAnalysis(ctx context.Context, client analysisClient, tf *model.TestFailure) (*model.TestFailureAnalysis, error) {
+func prepareFailureAnalysis(ctx context.Context, client analysisClient, bundle *model.TestFailureBundle) (*model.TestFailureAnalysis, error) {
+	tf := bundle.Primary()
 	buildInfo, err := client.ReadBuildInfo(ctx, tf)
 	if err != nil {
 		return nil, errors.Annotate(err, "read build info").Err()
 	}
 	testFailureAnalysis := &model.TestFailureAnalysis{
-		Project:         tf.Project,
-		Bucket:          buildInfo.Bucket,
-		Builder:         buildInfo.Builder,
-		CreateTime:      clock.Now(ctx),
-		Status:          pb.AnalysisStatus_CREATED,
-		Priority:        rerun.PriorityTestFailure,
-		StartCommitHash: buildInfo.StartCommitHash,
-		EndCommitHash:   buildInfo.EndCommitHash,
-		FailedBuildID:   buildInfo.BuildID,
+		Project:          tf.Project,
+		Bucket:           buildInfo.Bucket,
+		Builder:          buildInfo.Builder,
+		CreateTime:       clock.Now(ctx),
+		Status:           pb.AnalysisStatus_CREATED,
+		Priority:         rerun.PriorityTestFailure,
+		StartCommitHash:  buildInfo.StartCommitHash,
+		EndCommitHash:    buildInfo.EndCommitHash,
+		FailedBuildID:    buildInfo.BuildID,
+		SheriffRotations: bundle.Metadata.SheriffRotations,
 	}
 	return testFailureAnalysis, nil
 }
