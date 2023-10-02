@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/milo/internal/model"
 	"go.chromium.org/luci/milo/internal/projectconfig"
+	"go.chromium.org/luci/milo/internal/utils"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 )
 
@@ -60,7 +61,12 @@ func GetConsoleRows(c context.Context, project string, console *projectconfigpb.
 	// Maps all builderIDs to the indexes of the columns it appears in.
 	columnMap := map[string][]int{}
 	for columnIdx, b := range console.Builders {
-		columnMap[b.Name] = append(columnMap[b.Name], columnIdx)
+		bid, err := b.GetIdWithFallback()
+		if err != nil {
+			return nil, err
+		}
+		bidString := utils.LegacyBuilderIDString(bid)
+		columnMap[bidString] = append(columnMap[bidString], columnIdx)
 	}
 
 	ret := make([]*ConsoleRow, len(commits))

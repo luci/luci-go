@@ -18,6 +18,7 @@ import (
 	"regexp"
 	"strings"
 
+	bbprotoutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
 	protoutil "go.chromium.org/luci/common/proto"
@@ -137,9 +138,17 @@ func validateLocalConsole(ctx *validation.Context, knownHeaders *stringset.Set, 
 	}
 	for j, b := range console.Builders {
 		ctx.Enter("builders #%d", j+1)
-		if b.Name == "" {
-			ctx.Errorf("name must be non-empty")
-		} else {
+		if b.Name == "" && b.Id == nil {
+			ctx.Errorf("name must be non-empty or id must be set")
+		}
+
+		// `id` take precedence over `name`. If `id` is specified `name` is simply
+		// discarded.
+		if b.Id != nil {
+			if err := bbprotoutil.ValidateRequiredBuilderID(b.Id); err != nil {
+				ctx.Errorf(`id: %v`, err)
+			}
+		} else if b.Name != "" {
 			_, err := utils.ParseLegacyBuilderID(b.Name)
 			if err != nil {
 				ctx.Errorf(`name: %v`, err)

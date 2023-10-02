@@ -246,12 +246,20 @@ consoles: {
 	refs: "refs/heads/main"
 	manifest_name: "REVISION"
 	builders: {
-		name: "buildbucket/luci.foo.something/bar"
+		id: {
+			project: "foo"
+			bucket: "something"
+			builder: "bar"
+		}
 		category: "main|something"
 		short_name: "s"
 	}
 	builders: {
-		name: "buildbucket/luci.foo.other/baz"
+		id: {
+			project: "foo"
+			bucket: "other"
+			builder: "baz"
+		}
 		category: "main|other"
 		short_name: "o"
 	}
@@ -262,6 +270,11 @@ consoles: {
 	refs: "regexp:refs/heads/also-ok"
 	manifest_name: "REVISION"
 	builders: {
+		id: {
+			project: "foo"
+			bucket: "something"
+			builder: "bar"
+		}
 		name: "buildbucket/luci.foo.something/bar"
 		category: "main|something"
 		short_name: "s"
@@ -386,6 +399,13 @@ consoles: {
 	}
 	builders: {
 		name: "bad/scheme"
+	}
+	builders: {
+		id: {
+			project: ""
+			bucket: "bucket"
+			builder: "builder"
+		}
 	}
 }
 `

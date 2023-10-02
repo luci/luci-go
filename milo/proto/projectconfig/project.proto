@@ -8,6 +8,7 @@ package luci.milo.projectconfig;
 
 option go_package = "go.chromium.org/luci/milo/proto/projectconfig;projectconfigpb";
 
+import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
 import "go.chromium.org/luci/common/proto/options.proto";
 
 option (luci.file_metadata) = {
@@ -270,10 +271,16 @@ message Console {
 
 // Builder is a reference to a Milo builder.
 message Builder {
+  // Deprecated: use `id` instead.
+  //
   // Name is the BuilderID of the builders you wish to display for this column
   // in the console. e.g.
   //   * "buildbucket/luci.chromium.try/linux_chromium_rel_ng"
   string name = 1;
+
+  // Id is the ID of the builder.
+  // If not defined, fallbacks to parsing the ID from `name`.
+  buildbucket.v2.BuilderID id = 4;
 
   // Category describes the hierarchy of the builder on the header of the
   // console as a "|" delimited list.  Neighboring builders with common ancestors

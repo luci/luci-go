@@ -88,9 +88,10 @@ func TestValidation(t *testing.T) {
 				err := ctx.Finalize()
 				ve, ok := err.(*validation.Error)
 				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 2)
-				So(ve.Errors[0], ShouldErrLike, "name must be non-empty")
+				So(len(ve.Errors), ShouldEqual, 3)
+				So(ve.Errors[0], ShouldErrLike, "name must be non-empty or id must be set")
 				So(ve.Errors[1], ShouldErrLike, "the string is not a valid legacy builder ID")
+				So(ve.Errors[2], ShouldErrLike, "id: project must match")
 			})
 			Convey("Load bad config due to metadata config", func() {
 				content := []byte(badCfg5)
