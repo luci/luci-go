@@ -78,6 +78,7 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 	if ret.buildPb.StartTime == nil {
 		ret.buildPb.StartTime = timestamppb.New(clock.Now(ctx))
 		ret.buildPb.Status = bbpb.Status_STARTED
+		ret.buildPb.Output.Status = bbpb.Status_STARTED
 	}
 
 	// initialize all log names already in ret.buildPb; likely this includes

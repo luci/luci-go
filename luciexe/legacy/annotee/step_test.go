@@ -455,6 +455,8 @@ func TestConvertRootStep(t *testing.T) {
 						},
 					},
 				},
+				SummaryMarkdown: "\n\n<div>text one text two</div>\n\n",
+				Status:          pb.Status_SUCCESS,
 			},
 		}
 
@@ -475,6 +477,8 @@ func TestConvertRootStep(t *testing.T) {
 
 			expectedBuild.Status = pb.Status_INFRA_FAILURE
 			expectedBuild.SummaryMarkdown = "bad infra failure\n\n" + expectedBuild.SummaryMarkdown
+			expectedBuild.Output.Status = pb.Status_INFRA_FAILURE
+			expectedBuild.Output.SummaryMarkdown = expectedBuild.SummaryMarkdown
 			test()
 		})
 		Convey("worst step status", func() {
@@ -482,6 +486,7 @@ func TestConvertRootStep(t *testing.T) {
 
 			expectedBuild.Steps[0].Status = pb.Status_FAILURE
 			expectedBuild.Status = pb.Status_FAILURE
+			expectedBuild.Output.Status = pb.Status_FAILURE
 			test()
 		})
 		Convey("use largest step end time", func() {

@@ -269,6 +269,10 @@ func (t *buildStateTracker) finalize() {
 		state.build = &bbpb.Build{
 			SummaryMarkdown: "Never received any build data.",
 			Status:          bbpb.Status_INFRA_FAILURE,
+			Output: &bbpb.Build_Output{
+				Status:          bbpb.Status_INFRA_FAILURE,
+				SummaryMarkdown: "Never received any build data.",
+			},
 		}
 	}
 	processFinalBuild(t.merger.clockNow(), state.build)

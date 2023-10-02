@@ -112,6 +112,10 @@ func TestAgent(t *testing.T) {
 				UpdateTime:      now,
 				Status:          bbpb.Status_INFRA_FAILURE,
 				SummaryMarkdown: "\n\nError in build protocol: build proto stream \"u/build.proto\" has type \"TEXT\", expected \"DATAGRAM\"",
+				Output: &bbpb.Build_Output{
+					Status:          bbpb.Status_INFRA_FAILURE,
+					SummaryMarkdown: "\n\nError in build protocol: build proto stream \"u/build.proto\" has type \"TEXT\", expected \"DATAGRAM\"",
+				},
 			})
 		})
 
@@ -130,6 +134,10 @@ func TestAgent(t *testing.T) {
 				UpdateTime:      now,
 				Status:          bbpb.Status_INFRA_FAILURE,
 				SummaryMarkdown: fmt.Sprintf("\n\nError in build protocol: stream \"u/build.proto\" has content type \"i r bad\", expected one of %v", []string{luciexe.BuildProtoContentType, luciexe.BuildProtoZlibContentType}),
+				Output: &bbpb.Build_Output{
+					Status:          bbpb.Status_INFRA_FAILURE,
+					SummaryMarkdown: fmt.Sprintf("\n\nError in build protocol: stream \"u/build.proto\" has content type \"i r bad\", expected one of %v", []string{luciexe.BuildProtoContentType, luciexe.BuildProtoZlibContentType}),
+				},
 			})
 		})
 
@@ -148,6 +156,10 @@ func TestAgent(t *testing.T) {
 				UpdateTime:      now,
 				Status:          bbpb.Status_INFRA_FAILURE,
 				SummaryMarkdown: fmt.Sprintf("\n\nError in build protocol: build.proto stream \"u/build.proto\" has stream type \"TEXT\" and content type \"i r bad\", expected \"DATAGRAM\" and one of %v", []string{luciexe.BuildProtoContentType, luciexe.BuildProtoZlibContentType}),
+				Output: &bbpb.Build_Output{
+					Status:          bbpb.Status_INFRA_FAILURE,
+					SummaryMarkdown: fmt.Sprintf("\n\nError in build protocol: build.proto stream \"u/build.proto\" has stream type \"TEXT\" and content type \"i r bad\", expected \"DATAGRAM\" and one of %v", []string{luciexe.BuildProtoContentType, luciexe.BuildProtoZlibContentType}),
+				},
 			})
 		})
 
@@ -240,7 +252,9 @@ func TestAgent(t *testing.T) {
 				merger.Close()
 				expect.EndTime = now
 				expect.Status = bbpb.Status_INFRA_FAILURE
+				expect.Output.Status = bbpb.Status_INFRA_FAILURE
 				expect.SummaryMarkdown = "\n\nError in build protocol: Expected a terminal build status, got STATUS_UNSPECIFIED."
+				expect.Output.SummaryMarkdown = expect.SummaryMarkdown
 				for _, step := range expect.Steps {
 					step.EndTime = now
 					if step.Name != "Merge" {
@@ -292,7 +306,9 @@ func TestAgent(t *testing.T) {
 
 					expect.EndTime = now
 					expect.Status = bbpb.Status_INFRA_FAILURE
+					expect.Output.Status = bbpb.Status_INFRA_FAILURE
 					expect.SummaryMarkdown = "\n\nError in build protocol: Expected a terminal build status, got STATUS_UNSPECIFIED."
+					expect.Output.SummaryMarkdown = expect.SummaryMarkdown
 					for _, step := range expect.Steps {
 						step.EndTime = now
 						switch step.Name {
@@ -327,7 +343,9 @@ func TestAgent(t *testing.T) {
 
 					expect.EndTime = now
 					expect.Status = bbpb.Status_INFRA_FAILURE
+					expect.Output.Status = bbpb.Status_INFRA_FAILURE
 					expect.SummaryMarkdown = "\n\nError in build protocol: Expected a terminal build status, got STATUS_UNSPECIFIED."
+					expect.Output.SummaryMarkdown = expect.SummaryMarkdown
 					expect.Steps = nil
 					expect.Steps = append(expect.Steps,
 						&bbpb.Step{
@@ -449,6 +467,9 @@ func TestAgent(t *testing.T) {
 					Convey(`finally merge properly when sub-build stream is present`, func() {
 						subTrack.handleNewData(mkDgram(&bbpb.Build{
 							Status: bbpb.Status_SUCCESS,
+							Output: &bbpb.Build_Output{
+								Status: bbpb.Status_SUCCESS,
+							},
 							Steps: []*bbpb.Step{
 								{Name: "SubStep"},
 							},
@@ -532,6 +553,7 @@ func TestAgent(t *testing.T) {
 				subTrack.handleNewData(mkDgram(&bbpb.Build{
 					Output: &bbpb.Build_Output{
 						Properties: subProps,
+						Status:     bbpb.Status_STARTED,
 					},
 					Status: bbpb.Status_STARTED,
 					Steps: []*bbpb.Step{

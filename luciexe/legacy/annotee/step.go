@@ -117,6 +117,9 @@ func ConvertRootStep(c context.Context, rootStep *annotpb.Step) (*pb.Build, erro
 
 	ret.Output.Logs, ret.SummaryMarkdown = sc.calcLogsAndSummary(c, rootStep)
 
+	ret.Output.Status = ret.Status
+	ret.Output.SummaryMarkdown = ret.SummaryMarkdown
+
 	return ret, nil
 }
 

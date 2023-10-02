@@ -797,6 +797,8 @@ func mainImpl() int {
 	updateMask := []string{
 		"build.status",
 		"build.status_details",
+		"build.output.status",
+		"build.output.status_details",
 		"build.summary_markdown",
 	}
 	var retcode int

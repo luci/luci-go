@@ -52,8 +52,14 @@ func mkDgram(build *bbpb.Build) *logpb.LogEntry {
 func cleanupProtoError(builds ...*bbpb.Build) {
 	re := regexp.MustCompile(`Error in build protocol:.*\sproto:`)
 	for _, build := range builds {
+		if build.Output.GetSummaryMarkdown() != "" {
+			So(build.Output.SummaryMarkdown, ShouldEqual, build.SummaryMarkdown)
+		}
 		if loc := re.FindStringIndex(build.SummaryMarkdown); loc != nil {
 			build.SummaryMarkdown = build.SummaryMarkdown[:loc[1]]
+			if build.Output.GetSummaryMarkdown() != "" {
+				build.Output.SummaryMarkdown = build.SummaryMarkdown
+			}
 		}
 	}
 }
@@ -76,7 +82,7 @@ func TestBuildState(t *testing.T) {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		merger, err := New(ctx, "u/", &bbpb.Build{}, func(ns, stream types.StreamName) (url, viewURL string) {
+		merger, err := New(ctx, "u/", &bbpb.Build{Output: &bbpb.Build_Output{}}, func(ns, stream types.StreamName) (url, viewURL string) {
 			return fmt.Sprintf("url://%s%s", ns, stream), fmt.Sprintf("view://%s%s", ns, stream)
 		})
 		So(err, ShouldBeNil)
@@ -101,6 +107,10 @@ func TestBuildState(t *testing.T) {
 					Status:          bbpb.Status_INFRA_FAILURE,
 					UpdateTime:      now,
 					EndTime:         now,
+					Output: &bbpb.Build_Output{
+						Status:          bbpb.Status_INFRA_FAILURE,
+						SummaryMarkdown: "\n\nError in build protocol: nope",
+					},
 				},
 				closed: true,
 				final:  true,
@@ -136,6 +146,10 @@ func TestBuildState(t *testing.T) {
 						UpdateTime:      now,
 						Status:          bbpb.Status_INFRA_FAILURE,
 						SummaryMarkdown: "Never received any build data.",
+						Output: &bbpb.Build_Output{
+							Status:          bbpb.Status_INFRA_FAILURE,
+							SummaryMarkdown: "Never received any build data.",
+						},
 					},
 					closed: true,
 					final:  true,
@@ -152,6 +166,10 @@ func TestBuildState(t *testing.T) {
 							UpdateTime:      now,
 							Status:          bbpb.Status_INFRA_FAILURE,
 							SummaryMarkdown: "Never received any build data.",
+							Output: &bbpb.Build_Output{
+								Status:          bbpb.Status_INFRA_FAILURE,
+								SummaryMarkdown: "Never received any build data.",
+							},
 						},
 					})
 				})
@@ -170,6 +188,10 @@ func TestBuildState(t *testing.T) {
 							UpdateTime:      now,
 							Status:          bbpb.Status_INFRA_FAILURE,
 							SummaryMarkdown: "Never received any build data.",
+							Output: &bbpb.Build_Output{
+								Status:          bbpb.Status_INFRA_FAILURE,
+								SummaryMarkdown: "Never received any build data.",
+							},
 						}},
 					)
 
@@ -275,6 +297,9 @@ func TestBuildState(t *testing.T) {
 									Url:     "url://ns/stderr",
 									ViewUrl: "view://ns/stderr",
 								}},
+								Status: bbpb.Status_INFRA_FAILURE,
+								SummaryMarkdown: ("some stuff\n\n" +
+									"Error in build protocol: parsing Build: proto:"),
 							},
 						},
 					})
@@ -313,6 +338,10 @@ func TestBuildState(t *testing.T) {
 									Url:     "url://ns/stderr",
 									ViewUrl: "view://ns/stderr",
 								}},
+								Status: bbpb.Status_INFRA_FAILURE,
+								SummaryMarkdown: ("some stuff\n\nError in build protocol: " +
+									"Expected a terminal build status, " +
+									"got STATUS_UNSPECIFIED."),
 							},
 						},
 					})
@@ -337,6 +366,10 @@ func TestBuildState(t *testing.T) {
 						Status:          bbpb.Status_INFRA_FAILURE,
 						UpdateTime:      now,
 						EndTime:         now,
+						Output: &bbpb.Build_Output{
+							Status:          bbpb.Status_INFRA_FAILURE,
+							SummaryMarkdown: ("\n\nError in build protocol: parsing Build: proto:"),
+						},
 					},
 				})
 
@@ -352,6 +385,10 @@ func TestBuildState(t *testing.T) {
 							Status:          bbpb.Status_INFRA_FAILURE,
 							UpdateTime:      now,
 							EndTime:         now,
+							Output: &bbpb.Build_Output{
+								Status:          bbpb.Status_INFRA_FAILURE,
+								SummaryMarkdown: ("\n\nError in build protocol: parsing Build: proto:"),
+							},
 						},
 					})
 				})
@@ -469,6 +506,12 @@ func TestBuildState(t *testing.T) {
 							Status:     bbpb.Status_INFRA_FAILURE,
 							UpdateTime: now,
 							EndTime:    now,
+							Output: &bbpb.Build_Output{
+								Status: bbpb.Status_INFRA_FAILURE,
+								SummaryMarkdown: ("\n\nError in build protocol: " +
+									"step[\"hi\"].logs[\"log\"]: bad log url \"!!badnews!!\": " +
+									"segment (at 0) must begin with alphanumeric character"),
+							},
 						},
 					})
 				})
@@ -498,6 +541,10 @@ func TestBuildState(t *testing.T) {
 									Name: "log",
 									Url:  "!!badnews!!",
 								}},
+								Status: bbpb.Status_INFRA_FAILURE,
+								SummaryMarkdown: ("\n\nError in build protocol: " +
+									"build.output.logs[\"log\"]: bad log url \"!!badnews!!\": " +
+									"segment (at 0) must begin with alphanumeric character"),
 							},
 							Status:     bbpb.Status_INFRA_FAILURE,
 							UpdateTime: now,

@@ -51,6 +51,11 @@ func (s *State) Modify(cb func(*View)) {
 		modified := false
 		if v.SummaryMarkdown != s.buildPb.SummaryMarkdown {
 			modified = true
+			//summary := v.SummaryMarkdown
+			if s.buildPb.Output == nil {
+				s.buildPb.Output = &bbpb.Build_Output{}
+			}
+			s.buildPb.Output.SummaryMarkdown = v.SummaryMarkdown
 			s.buildPb.SummaryMarkdown = v.SummaryMarkdown
 		}
 		if v.Critical != s.buildPb.Critical {

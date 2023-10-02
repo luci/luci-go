@@ -37,7 +37,14 @@ func setErrorOnBuild(build *bbpb.Build, err error) {
 		build.SummaryMarkdown = build.SummaryMarkdown[:len(build.SummaryMarkdown)-over] + "..."
 	}
 	build.SummaryMarkdown += addon
+	// TODO(crbug.com/1450399): Only update build.Output.Status
+	// after recipe_engine change is fully rolled out.
 	build.Status = bbpb.Status_INFRA_FAILURE
+	if build.Output == nil {
+		build.Output = &bbpb.Build_Output{}
+	}
+	build.Output.Status = bbpb.Status_INFRA_FAILURE
+	build.Output.SummaryMarkdown = build.SummaryMarkdown
 }
 
 // processFinalBuild adjusts the final state of the build if needed.
@@ -51,10 +58,18 @@ func setErrorOnBuild(build *bbpb.Build, err error) {
 // If this needs to make adjustments to `build.Steps`, it will make shallow
 // copies of Steps, as well as the individual steps which need modification.
 func processFinalBuild(now *timestamppb.Timestamp, build *bbpb.Build) {
-	if !protoutil.IsEnded(build.Status) {
+	// TODO(crbug.com/1450399): directly check build.Output.Status
+	// after recipe_engine change is fully rolled out.
+	if !protoutil.IsEnded(build.Output.GetStatus()) && build.Output.GetStatus() != build.Status {
+		if build.Output == nil {
+			build.Output = &bbpb.Build_Output{}
+		}
+		build.Output.Status = build.Status
+	}
+	if !protoutil.IsEnded(build.Output.GetStatus()) {
 		setErrorOnBuild(build, errors.Reason(
 			"Expected a terminal build status, got %s.",
-			build.Status).Err())
+			build.Output.GetStatus()).Err())
 	}
 
 	// Mark incomplete steps as canceled and set EndTime for all steps missing it.
@@ -107,7 +122,11 @@ func updateStepFromBuild(step *bbpb.Step, build *bbpb.Build) {
 		return
 	}
 	step.SummaryMarkdown = build.SummaryMarkdown
-	step.Status = build.Status
+	step.Status = build.Output.GetStatus()
+	// TODO(crbug.com/1450399): remove after recipe_engine change is fully rolled out.
+	if step.Status != build.Status {
+		step.Status = build.Status
+	}
 	step.EndTime = build.EndTime
 	for _, log := range build.Output.GetLogs() {
 		step.Logs = append(step.Logs, log)

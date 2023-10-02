@@ -102,6 +102,7 @@ func TestExe(t *testing.T) {
 					Status: bbpb.Status_SUCCESS,
 					Output: &bbpb.Build_Output{
 						Properties: &structpb.Struct{},
+						Status:     bbpb.Status_SUCCESS,
 					},
 				})
 			})
@@ -115,7 +116,9 @@ func TestExe(t *testing.T) {
 					Status:          bbpb.Status_FAILURE,
 					SummaryMarkdown: "Final error: bad stuff",
 					Output: &bbpb.Build_Output{
-						Properties: &structpb.Struct{},
+						Properties:      &structpb.Struct{},
+						Status:          bbpb.Status_FAILURE,
+						SummaryMarkdown: "Final error: bad stuff",
 					},
 				})
 			})
@@ -129,7 +132,9 @@ func TestExe(t *testing.T) {
 					Status:          bbpb.Status_INFRA_FAILURE,
 					SummaryMarkdown: "Final infra error: bad stuff",
 					Output: &bbpb.Build_Output{
-						Properties: &structpb.Struct{},
+						Properties:      &structpb.Struct{},
+						Status:          bbpb.Status_INFRA_FAILURE,
+						SummaryMarkdown: "Final infra error: bad stuff",
 					},
 				})
 			})
@@ -143,7 +148,9 @@ func TestExe(t *testing.T) {
 					Status:          bbpb.Status_INFRA_FAILURE,
 					SummaryMarkdown: "Final panic: bad stuff",
 					Output: &bbpb.Build_Output{
-						Properties: &structpb.Struct{},
+						Properties:      &structpb.Struct{},
+						Status:          bbpb.Status_INFRA_FAILURE,
+						SummaryMarkdown: "Final panic: bad stuff",
 					},
 				})
 			})
@@ -159,7 +166,9 @@ func TestExe(t *testing.T) {
 					Status:          bbpb.Status_INFRA_FAILURE,
 					SummaryMarkdown: "status set inside",
 					Output: &bbpb.Build_Output{
-						Properties: &structpb.Struct{},
+						Properties:      &structpb.Struct{},
+						Status:          bbpb.Status_INFRA_FAILURE,
+						SummaryMarkdown: "status set inside",
 					},
 				})
 			})
@@ -184,7 +193,9 @@ func TestExe(t *testing.T) {
 				Status:          bbpb.Status_FAILURE,
 				SummaryMarkdown: "Hi. I did stuff.\n\nFinal error: oh no i failed",
 				Output: &bbpb.Build_Output{
-					Properties: &structpb.Struct{},
+					Properties:      &structpb.Struct{},
+					Status:          bbpb.Status_FAILURE,
+					SummaryMarkdown: "Hi. I did stuff.\n\nFinal error: oh no i failed",
 				},
 			})
 		})
@@ -208,7 +219,9 @@ func TestExe(t *testing.T) {
 				Status:          bbpb.Status_FAILURE,
 				SummaryMarkdown: "Hi. I did stuff.\n\nFinal error: oh no i failed",
 				Output: &bbpb.Build_Output{
-					Properties: &structpb.Struct{},
+					Properties:      &structpb.Struct{},
+					Status:          bbpb.Status_FAILURE,
+					SummaryMarkdown: "Hi. I did stuff.\n\nFinal error: oh no i failed",
 				},
 			})
 		})
@@ -244,12 +257,14 @@ func TestExe(t *testing.T) {
 								}},
 							},
 						},
+						Status:          bbpb.Status_SUCCESS,
+						SummaryMarkdown: "Hi.",
 					},
 				})
 				data, err := os.ReadFile(outFile)
 				So(err, ShouldBeNil)
 				So(string(data), ShouldResemble,
-					"`\f\x82\x01\x13\n\x11\n\x0f\n\x04some\x12\a\x1a\x05thing\xa2\x01\x03Hi.")
+					"`\f\x82\x01\x1a\n\x11\n\x0f\n\x04some\x12\a\x1a\x05thing\x12\x03Hi.0\f\xa2\x01\x03Hi.")
 			})
 
 			Convey(`textpb`, func() {
@@ -264,13 +279,15 @@ func TestExe(t *testing.T) {
 					Status:          bbpb.Status_SUCCESS,
 					SummaryMarkdown: "Hi.",
 					Output: &bbpb.Build_Output{
-						Properties: &structpb.Struct{},
+						Properties:      &structpb.Struct{},
+						Status:          bbpb.Status_SUCCESS,
+						SummaryMarkdown: "Hi.",
 					},
 				})
 				data, err := os.ReadFile(outFile)
 				So(err, ShouldBeNil)
 				So(string(data), ShouldResemble,
-					"status: SUCCESS\nsummary_markdown: \"Hi.\"\noutput: <\n  properties: <\n  >\n>\n")
+					"status: SUCCESS\nsummary_markdown: \"Hi.\"\noutput: <\n  properties: <\n  >\n  status: SUCCESS\n  summary_markdown: \"Hi.\"\n>\n")
 			})
 
 			Convey(`jsonpb`, func() {
@@ -285,13 +302,15 @@ func TestExe(t *testing.T) {
 					Status:          bbpb.Status_SUCCESS,
 					SummaryMarkdown: "Hi.",
 					Output: &bbpb.Build_Output{
-						Properties: &structpb.Struct{},
+						Properties:      &structpb.Struct{},
+						Status:          bbpb.Status_SUCCESS,
+						SummaryMarkdown: "Hi.",
 					},
 				})
 				data, err := os.ReadFile(outFile)
 				So(err, ShouldBeNil)
 				So(string(data), ShouldResemble,
-					"{\n  \"status\": \"SUCCESS\",\n  \"summary_markdown\": \"Hi.\",\n  \"output\": {\n    \"properties\": {\n      }\n  }\n}")
+					"{\n  \"status\": \"SUCCESS\",\n  \"summary_markdown\": \"Hi.\",\n  \"output\": {\n    \"properties\": {\n      },\n    \"status\": \"SUCCESS\",\n    \"summary_markdown\": \"Hi.\"\n  }\n}")
 			})
 
 			Convey(`pass through user args`, func() {
@@ -331,7 +350,7 @@ func TestExe(t *testing.T) {
 				data, err := os.ReadFile(outFile)
 				So(err, ShouldBeNil)
 				So(string(data), ShouldResemble,
-					"{\n  \"status\": \"FAILURE\",\n  \"summary_markdown\": \"Hi.\\n\\nFinal error: bad stuff\",\n  \"output\": {\n    \"properties\": {\n      }\n  }\n}")
+					"{\n  \"status\": \"FAILURE\",\n  \"summary_markdown\": \"Hi.\\n\\nFinal error: bad stuff\",\n  \"output\": {\n    \"properties\": {\n      },\n    \"status\": \"FAILURE\",\n    \"summary_markdown\": \"Hi.\\n\\nFinal error: bad stuff\"\n  }\n}")
 			})
 		})
 	})

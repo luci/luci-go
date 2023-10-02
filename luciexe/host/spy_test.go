@@ -64,6 +64,9 @@ func TestSpy(t *testing.T) {
 				data, err := proto.Marshal(&bbpb.Build{
 					SummaryMarkdown: "we did it",
 					Status:          bbpb.Status_SUCCESS,
+					Output: &bbpb.Build_Output{
+						Status: bbpb.Status_SUCCESS,
+					},
 				})
 				c.So(err, ShouldBeNil)
 
@@ -100,6 +103,9 @@ func TestSpy(t *testing.T) {
 					So(build, ShouldResembleProto, &bbpb.Build{
 						SummaryMarkdown: "we did it",
 						Status:          bbpb.Status_SUCCESS,
+						Output: &bbpb.Build_Output{
+							Status: bbpb.Status_SUCCESS,
+						},
 					})
 					close(sawBuildC)
 					sawBuild = true

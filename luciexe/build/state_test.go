@@ -136,6 +136,7 @@ func TestStateLogging(t *testing.T) {
 						{Name: "other"},
 						{Name: "some log", Url: "log/2"},
 					},
+					Status: bbpb.Status_STARTED,
 				},
 				Infra: buildInfra,
 			})
@@ -161,6 +162,7 @@ func TestStateLogging(t *testing.T) {
 						{Name: "other"},
 						{Name: "some log", Url: "log/2"},
 					},
+					Status: bbpb.Status_STARTED,
 				},
 				Infra: buildInfra,
 			})
@@ -229,7 +231,9 @@ func TestStateSend(t *testing.T) {
 				Status:    bbpb.Status_STARTED,
 				StartTime: ts,
 				Input:     &bbpb.Build_Input{},
-				Output:    &bbpb.Build_Output{},
+				Output: &bbpb.Build_Output{
+					Status: bbpb.Status_STARTED,
+				},
 				Steps: []*bbpb.Step{
 					{
 						Name:      "something",
@@ -245,7 +249,9 @@ func TestStateSend(t *testing.T) {
 					Status:    bbpb.Status_STARTED,
 					StartTime: ts,
 					Input:     &bbpb.Build_Input{},
-					Output:    &bbpb.Build_Output{},
+					Output: &bbpb.Build_Output{
+						Status: bbpb.Status_STARTED,
+					},
 					Steps: []*bbpb.Step{
 						{
 							Name:      "something",
@@ -263,7 +269,9 @@ func TestStateSend(t *testing.T) {
 					Status:    bbpb.Status_STARTED,
 					StartTime: ts,
 					Input:     &bbpb.Build_Input{},
-					Output:    &bbpb.Build_Output{},
+					Output: &bbpb.Build_Output{
+						Status: bbpb.Status_STARTED,
+					},
 					Steps: []*bbpb.Step{
 						{
 							Name:            "something",
@@ -284,7 +292,9 @@ func TestStateSend(t *testing.T) {
 				StartTime: ts,
 				EndTime:   ts,
 				Input:     &bbpb.Build_Input{},
-				Output:    &bbpb.Build_Output{},
+				Output: &bbpb.Build_Output{
+					Status: bbpb.Status_SUCCESS,
+				},
 			})
 		})
 

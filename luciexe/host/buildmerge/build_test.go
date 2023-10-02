@@ -35,24 +35,36 @@ func TestSetErrorOnBuild(t *testing.T) {
 	t.Parallel()
 	Convey(`setErrorOnBuild`, t, func() {
 		Convey(`basic`, func() {
-			build := &bbpb.Build{}
+			build := &bbpb.Build{
+				Output: &bbpb.Build_Output{},
+			}
 			setErrorOnBuild(build, errors.New("hi"))
 			So(build, ShouldResembleProto, &bbpb.Build{
 				SummaryMarkdown: "\n\nError in build protocol: hi",
 				Status:          bbpb.Status_INFRA_FAILURE,
+				Output: &bbpb.Build_Output{
+					Status:          bbpb.Status_INFRA_FAILURE,
+					SummaryMarkdown: "\n\nError in build protocol: hi",
+				},
 			})
 		})
 
 		Convey(`truncated message`, func() {
 			build := &bbpb.Build{
 				SummaryMarkdown: strings.Repeat("16 test pattern\n", 256),
+				Output:          &bbpb.Build_Output{},
 			}
 			setErrorOnBuild(build, errors.New("hi"))
 			So(build.SummaryMarkdown, ShouldHaveLength, 4096)
 			So(build.SummaryMarkdown, ShouldEndWith, "...\n\nError in build protocol: hi")
+			So(build.Output.SummaryMarkdown, ShouldEqual, build.SummaryMarkdown)
 			build.SummaryMarkdown = ""
+			build.Output.SummaryMarkdown = ""
 			So(build, ShouldResembleProto, &bbpb.Build{
 				Status: bbpb.Status_INFRA_FAILURE,
+				Output: &bbpb.Build_Output{
+					Status: bbpb.Status_INFRA_FAILURE,
+				},
 			})
 		})
 	})
@@ -65,7 +77,9 @@ func TestProcessFinalBuild(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		Convey(`empty`, func() {
-			build := &bbpb.Build{}
+			build := &bbpb.Build{
+				Output: &bbpb.Build_Output{},
+			}
 			processFinalBuild(now, build)
 			So(build, ShouldResembleProto, &bbpb.Build{
 				SummaryMarkdown: ("\n\nError in build protocol: " +
@@ -73,6 +87,11 @@ func TestProcessFinalBuild(t *testing.T) {
 				UpdateTime: now,
 				EndTime:    now,
 				Status:     bbpb.Status_INFRA_FAILURE,
+				Output: &bbpb.Build_Output{
+					Status: bbpb.Status_INFRA_FAILURE,
+					SummaryMarkdown: ("\n\nError in build protocol: " +
+						"Expected a terminal build status, got STATUS_UNSPECIFIED."),
+				},
 			})
 		})
 
@@ -81,6 +100,9 @@ func TestProcessFinalBuild(t *testing.T) {
 				Status: bbpb.Status_SUCCESS,
 				Steps: []*bbpb.Step{
 					{Status: bbpb.Status_SUCCESS},
+				},
+				Output: &bbpb.Build_Output{
+					Status: bbpb.Status_SUCCESS,
 				},
 			}
 			processFinalBuild(now, build)
@@ -91,6 +113,9 @@ func TestProcessFinalBuild(t *testing.T) {
 				Steps: []*bbpb.Step{
 					{Status: bbpb.Status_SUCCESS, EndTime: now},
 				},
+				Output: &bbpb.Build_Output{
+					Status: bbpb.Status_SUCCESS,
+				},
 			})
 		})
 
@@ -100,6 +125,9 @@ func TestProcessFinalBuild(t *testing.T) {
 				Steps: []*bbpb.Step{
 					{Status: bbpb.Status_SUCCESS},
 					{SummaryMarkdown: "hi"},
+				},
+				Output: &bbpb.Build_Output{
+					Status: bbpb.Status_SUCCESS,
 				},
 			}
 			processFinalBuild(now, build)
@@ -114,6 +142,9 @@ func TestProcessFinalBuild(t *testing.T) {
 						EndTime:         now,
 						SummaryMarkdown: "hi\nstep was never finalized; did the build crash?",
 					},
+				},
+				Output: &bbpb.Build_Output{
+					Status: bbpb.Status_SUCCESS,
 				},
 			})
 		})
@@ -134,7 +165,8 @@ func TestUpdateStepFromBuild(t *testing.T) {
 				Status:          bbpb.Status_FAILURE,
 				EndTime:         now,
 				Output: &bbpb.Build_Output{
-					Logs: []*bbpb.Log{{Name: "other"}},
+					Logs:   []*bbpb.Log{{Name: "other"}},
+					Status: bbpb.Status_FAILURE,
 				},
 			}
 			updateStepFromBuild(step, build)
@@ -159,7 +191,8 @@ func TestUpdateStepFromBuild(t *testing.T) {
 				SummaryMarkdown: "hi sub build",
 				Status:          bbpb.Status_FAILURE,
 				Output: &bbpb.Build_Output{
-					Logs: []*bbpb.Log{{Name: "build other"}},
+					Logs:   []*bbpb.Log{{Name: "build other"}},
+					Status: bbpb.Status_FAILURE,
 				},
 			}
 			updateStepFromBuild(step, build)
@@ -196,7 +229,11 @@ func TestUpdateBaseFromUserbuild(t *testing.T) {
 					{Key: "hi", Value: "there"},
 				},
 				Output: &bbpb.Build_Output{
-					Logs: []*bbpb.Log{{Name: "other"}},
+					Logs:   []*bbpb.Log{{Name: "other"}},
+					Status: bbpb.Status_CANCELED,
+					StatusDetails: &bbpb.StatusDetails{
+						Timeout: &bbpb.StatusDetails_Timeout{},
+					},
 				},
 			}
 			buildClone := proto.Clone(build).(*bbpb.Build)

@@ -128,7 +128,8 @@ var _ Loggable = (*State)(nil)
 func (s *State) End(err error) {
 	var message string
 	s.mutate(func() bool {
-		s.buildPb.Status, message = computePanicStatus(err)
+		s.buildPb.Output.Status, message = computePanicStatus(err)
+		s.buildPb.Status = s.buildPb.Output.Status
 		s.buildPb.EndTime = timestamppb.New(clock.Now(s.ctx))
 
 		for logName, closer := range s.logClosers {
@@ -147,11 +148,11 @@ func (s *State) End(err error) {
 		s.sendCh.CloseAndDrain(s.ctx)
 	}
 
-	if s.logsink == nil || s.buildPb.Status != bbpb.Status_SUCCESS {
+	if s.logsink == nil || s.buildPb.Output.Status != bbpb.Status_SUCCESS {
 		// If we're panicking, we need to log. In a situation where we have a log
 		// sink (i.e. a real build), all other information is already reflected via
 		// the Build message itself.
-		logStatus(s.ctx, s.buildPb.Status, message, s.buildPb.SummaryMarkdown)
+		logStatus(s.ctx, s.buildPb.Output.Status, message, s.buildPb.SummaryMarkdown)
 	}
 
 	s.ctxCloser()
@@ -298,7 +299,7 @@ func (s *State) excludeCopy(cb func() bool) {
 		s.buildPbMu.RLock()
 		defer s.buildPbMu.RUnlock()
 
-		if protoutil.IsEnded(s.buildPb.Status) {
+		if protoutil.IsEnded(s.buildPb.Output.Status) || protoutil.IsEnded(s.buildPb.Status) {
 			panic(errors.New("cannot mutate ended build"))
 		}
 	}
@@ -316,7 +317,7 @@ func (s *State) mutate(cb func() bool) {
 		s.buildPbMu.Lock()
 		defer s.buildPbMu.Unlock()
 
-		if protoutil.IsEnded(s.buildPb.Status) {
+		if protoutil.IsEnded(s.buildPb.Output.Status) || protoutil.IsEnded(s.buildPb.Status) {
 			panic(errors.New("cannot mutate ended build"))
 		}
 	}

@@ -1,3 +1,17 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package build
 
 import (
@@ -104,8 +118,10 @@ func TestMain(t *testing.T) {
 					StartTime: nowpb,
 					EndTime:   nowpb,
 					Status:    bbpb.Status_SUCCESS,
-					Output:    &bbpb.Build_Output{},
-					Input:     &bbpb.Build_Input{},
+					Output: &bbpb.Build_Output{
+						Status: bbpb.Status_SUCCESS,
+					},
+					Input: &bbpb.Build_Input{},
 				})
 			})
 
@@ -120,8 +136,10 @@ func TestMain(t *testing.T) {
 					StartTime: nowpb,
 					EndTime:   nowpb,
 					Status:    bbpb.Status_SUCCESS,
-					Output:    &bbpb.Build_Output{},
-					Input:     &bbpb.Build_Input{},
+					Output: &bbpb.Build_Output{
+						Status: bbpb.Status_SUCCESS,
+					},
+					Input: &bbpb.Build_Input{},
 				})
 			})
 
@@ -164,8 +182,10 @@ func TestMain(t *testing.T) {
 					StartTime: nowpb,
 					EndTime:   nowpb,
 					Status:    bbpb.Status_FAILURE,
-					Output:    &bbpb.Build_Output{},
-					Input:     &bbpb.Build_Input{},
+					Output: &bbpb.Build_Output{
+						Status: bbpb.Status_FAILURE,
+					},
+					Input: &bbpb.Build_Input{},
 				})
 				So(logs, memlogger.ShouldHaveLog, logging.Error, "set status: FAILURE: bad stuff")
 			})
@@ -180,8 +200,10 @@ func TestMain(t *testing.T) {
 					StartTime: nowpb,
 					EndTime:   nowpb,
 					Status:    bbpb.Status_INFRA_FAILURE,
-					Output:    &bbpb.Build_Output{},
-					Input:     &bbpb.Build_Input{},
+					Output: &bbpb.Build_Output{
+						Status: bbpb.Status_INFRA_FAILURE,
+					},
+					Input: &bbpb.Build_Input{},
 				})
 				So(logs, memlogger.ShouldHaveLog, logging.Error, "set status: INFRA_FAILURE: PANIC")
 				So(logs, memlogger.ShouldHaveLog, logging.Error, "recovered panic: BAD THINGS")
@@ -197,18 +219,14 @@ func TestMain(t *testing.T) {
 					return nil
 				})
 				So(err, ShouldErrLike, "parsing top-level properties")
-				So(getFinal(), ShouldResembleProto, &bbpb.Build{
-					StartTime:       nowpb,
-					EndTime:         nowpb,
-					Status:          bbpb.Status_INFRA_FAILURE,
-					Output:          &bbpb.Build_Output{},
-					SummaryMarkdown: "fatal error starting build: parsing top-level properties: proto: (line 1:2): unknown field \"bogus\"",
-					Input: &bbpb.Build_Input{
-						Properties: mkStruct(map[string]any{
-							"bogus": "something",
-						}),
-					},
-				})
+				summary := "fatal error starting build: parsing top-level properties: proto: (line 1:2): unknown field \"bogus\""
+				final := getFinal()
+				// protobuf package deliberately introduce random prefix:
+				// https://github.com/protocolbuffers/protobuf-go/blob/master/internal/errors/errors.go#L26
+				So(strings.ReplaceAll(final.SummaryMarkdown, "\u00a0", " "), ShouldEqual, summary)
+				So(strings.ReplaceAll(final.Output.SummaryMarkdown, "\u00a0", " "), ShouldEqual, summary)
+				So(final.Status, ShouldEqual, bbpb.Status_INFRA_FAILURE)
+				So(final.Output.Status, ShouldEqual, bbpb.Status_INFRA_FAILURE)
 			})
 
 		})

@@ -195,6 +195,10 @@ func appendError(build *bbpb.Build, flavor string, errlike any) {
 		build.SummaryMarkdown += "\n\n"
 	}
 	build.SummaryMarkdown += fmt.Sprintf("Final %s: %s", flavor, errlike)
+	if build.Output == nil {
+		build.Output = &bbpb.Build_Output{}
+	}
+	build.Output.SummaryMarkdown = build.SummaryMarkdown
 }
 
 func runCtx(ctx context.Context, args []string, opts []Option, main MainFn) int {
@@ -230,6 +234,7 @@ func runUserCode(ctx context.Context, build *bbpb.Build, userArgs []string, send
 		if errI := recover(); errI != nil {
 			retcode = 2
 			build.Status = bbpb.Status_INFRA_FAILURE
+			build.Output.Status = bbpb.Status_INFRA_FAILURE
 			appendError(build, "panic", errI)
 			logging.Errorf(ctx, "main function paniced: %s", errI)
 			if err, ok := errI.(error); ok {
@@ -241,12 +246,17 @@ func runUserCode(ctx context.Context, build *bbpb.Build, userArgs []string, send
 	cCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	signals.HandleInterrupt(cancel)
+	if build.Output == nil {
+		build.Output = &bbpb.Build_Output{}
+	}
 	if err := main(cCtx, build, userArgs, sendBuild); err != nil {
 		if InfraErrorTag.In(err) {
 			build.Status = bbpb.Status_INFRA_FAILURE
+			build.Output.Status = bbpb.Status_INFRA_FAILURE
 			appendError(build, "infra error", err)
 		} else {
 			build.Status = bbpb.Status_FAILURE
+			build.Output.Status = bbpb.Status_FAILURE
 			appendError(build, "error", err)
 		}
 		logging.Errorf(ctx, "main function failed: %s", err)
@@ -255,6 +265,12 @@ func runUserCode(ctx context.Context, build *bbpb.Build, userArgs []string, send
 	} else {
 		if !protoutil.IsEnded(build.Status) {
 			build.Status = bbpb.Status_SUCCESS
+		}
+		if !protoutil.IsEnded(build.Output.Status) {
+			build.Output.Status = build.Status
+		}
+		if build.Output.SummaryMarkdown == "" {
+			build.Output.SummaryMarkdown = build.SummaryMarkdown
 		}
 	}
 	return
