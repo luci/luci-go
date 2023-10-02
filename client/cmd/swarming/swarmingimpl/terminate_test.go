@@ -28,6 +28,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 
+	"go.chromium.org/luci/swarming/client/swarming"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
@@ -101,7 +102,7 @@ func TestTerminateBots(t *testing.T) {
 					TaskId: terminateTaskID,
 				}, nil
 			},
-			TaskResultMock: func(ctx context.Context, taskID string, _ bool) (*swarmingv2.TaskResultResponse, error) {
+			TaskResultMock: func(ctx context.Context, taskID string, _ *swarming.TaskResultFields) (*swarmingv2.TaskResultResponse, error) {
 				givenTaskID = taskID
 				if taskID == stillRunningTaskID && countLoop < 2 {
 					countLoop += 1

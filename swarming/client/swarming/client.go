@@ -26,6 +26,8 @@ import (
 	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth"
@@ -34,6 +36,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/grpc/prpc"
 
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
@@ -84,7 +87,8 @@ type Client interface {
 
 	TaskRequest(ctx context.Context, taskID string) (*swarmingv2.TaskRequestResponse, error)
 	TaskOutput(ctx context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error)
-	TaskResult(ctx context.Context, taskID string, perf bool) (*swarmingv2.TaskResultResponse, error)
+	TaskResult(ctx context.Context, taskID string, fields *TaskResultFields) (*swarmingv2.TaskResultResponse, error)
+	TaskResults(ctx context.Context, taskIDs []string, fields *TaskResultFields) ([]ResultOrErr, error)
 
 	CountBots(ctx context.Context, dimensions []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error)
 	ListBots(ctx context.Context, dimensions []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error)
@@ -93,6 +97,23 @@ type Client interface {
 	ListBotTasks(ctx context.Context, botID string, limit int32, start float64, state swarmingv2.StateQuery) ([]*swarmingv2.TaskResultResponse, error)
 
 	FilesFromCAS(ctx context.Context, outdir string, casRef *swarmingv2.CASReference) ([]string, error)
+}
+
+// TaskResultFields defines what optional parts of TaskResultResponse to get.
+//
+// Swarming doesn't support generic field masks yet, so this struct is kind of
+// ad-hoc right now.
+//
+// A nil value means to fetch the default set of fields.
+type TaskResultFields struct {
+	WithPerf bool // if true, fetch internal performance stats
+}
+
+// ResultOrErr is returned by TaskResults. It either carries a task result or
+// an error if it could not be obtained.
+type ResultOrErr struct {
+	Result *swarmingv2.TaskResultResponse
+	Err    error
 }
 
 // ClientOptions is passed to NewClient.
@@ -167,18 +188,28 @@ func NewClient(ctx context.Context, opts ClientOptions) (Client, error) {
 		return nil, errors.Annotate(err, "bad service URL %q", opts.ServiceURL).Err()
 	}
 
-	prpcOpts := prpc.DefaultOptions()
-	// The swarming server has an internal 60-second deadline for responding to
-	// requests, so 90 seconds shouldn't cause any requests to fail that would
-	// otherwise succeed.
-	prpcOpts.PerRPCTimeout = 90 * time.Second
-	prpcOpts.UserAgent = opts.UserAgent
-	prpcOpts.Insecure = serverURL.Scheme == "http"
 	prpcClient := prpc.Client{
-		C:       opts.AuthenticatedClient,
-		Options: prpcOpts,
-		Host:    serverURL.Host,
+		C:    opts.AuthenticatedClient,
+		Host: serverURL.Host,
+		Options: &prpc.Options{
+			Retry: func() retry.Iterator {
+				return &retry.ExponentialBackoff{
+					MaxDelay: time.Minute,
+					Limited: retry.Limited{
+						Delay:   time.Second,
+						Retries: 10,
+					},
+				}
+			},
+			// The swarming server has an internal 60-second deadline for responding to
+			// requests, so 90 seconds shouldn't cause any requests to fail that would
+			// otherwise succeed.
+			PerRPCTimeout: 90 * time.Second,
+			UserAgent:     opts.UserAgent,
+			Insecure:      serverURL.Scheme == "http",
+		},
 	}
+
 	return &swarmingServiceImpl{
 		ctx:         ctx,
 		opts:        opts,
@@ -299,11 +330,48 @@ func (s *swarmingServiceImpl) TaskRequest(ctx context.Context, taskID string) (r
 	return s.tasksClient.GetRequest(ctx, &swarmingv2.TaskIdRequest{TaskId: taskID})
 }
 
-func (s *swarmingServiceImpl) TaskResult(ctx context.Context, taskID string, perf bool) (res *swarmingv2.TaskResultResponse, err error) {
+func (s *swarmingServiceImpl) TaskResult(ctx context.Context, taskID string, fields *TaskResultFields) (res *swarmingv2.TaskResultResponse, err error) {
+	perf := false
+	if fields != nil {
+		perf = fields.WithPerf
+	}
 	return s.tasksClient.GetResult(ctx, &swarmingv2.TaskIdWithPerfRequest{
 		IncludePerformanceStats: perf,
 		TaskId:                  taskID,
 	})
+}
+
+func (s *swarmingServiceImpl) TaskResults(ctx context.Context, taskIDs []string, fields *TaskResultFields) ([]ResultOrErr, error) {
+	// TODO(vadimsh): Split large batches into multiple concurrent RPCs.
+	perf := false
+	if fields != nil {
+		perf = fields.WithPerf
+	}
+	res, err := s.tasksClient.BatchGetResult(ctx, &swarmingv2.BatchGetResultRequest{
+		TaskIds:                 taskIDs,
+		IncludePerformanceStats: perf,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(res.Results) != len(taskIDs) {
+		return nil, status.Errorf(codes.FailedPrecondition, "expecting %d items in the result, got %d", len(taskIDs), len(res.Results))
+	}
+	out := make([]ResultOrErr, len(taskIDs))
+	for i, taskID := range taskIDs {
+		if res.Results[i].TaskId != taskID {
+			return nil, status.Errorf(codes.FailedPrecondition, "unexpected response format: expecting outcome of task %q, but got %q", taskID, res.Results[i].TaskId)
+		}
+		switch x := res.Results[i].Outcome.(type) {
+		case *swarmingv2.BatchGetResultResponse_ResultOrError_Result:
+			out[i].Result = x.Result
+		case *swarmingv2.BatchGetResultResponse_ResultOrError_Error:
+			out[i].Err = status.FromProto(x.Error).Err()
+		default:
+			return nil, status.Errorf(codes.FailedPrecondition, "unexpected response format: unexpected outcome of task %q", taskID)
+		}
+	}
+	return out, nil
 }
 
 func (s *swarmingServiceImpl) TaskOutput(ctx context.Context, taskID string) (res *swarmingv2.TaskOutputResponse, err error) {

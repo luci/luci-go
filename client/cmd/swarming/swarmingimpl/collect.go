@@ -231,7 +231,9 @@ func (cmd *collectImpl) fetchTaskResults(ctx context.Context, taskID string, ser
 
 	// Fetch the result details.
 	logging.Debugf(ctx, "Fetching task result: %s", taskID)
-	result, err := service.TaskResult(ctx, taskID, cmd.perf)
+	result, err := service.TaskResult(ctx, taskID, &swarming.TaskResultFields{
+		WithPerf: cmd.perf,
+	})
 	if err != nil {
 		return errorResult("task result", err)
 	}

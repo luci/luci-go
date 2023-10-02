@@ -98,7 +98,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 
 	Convey(`Test fatal response`, t, func() {
 		service := &swarmingtest.Client{
-			TaskResultMock: func(c context.Context, _ string, _ bool) (*swarmingv2.TaskResultResponse, error) {
+			TaskResultMock: func(c context.Context, _ string, _ *swarming.TaskResultFields) (*swarmingv2.TaskResultResponse, error) {
 				return nil, status.Errorf(codes.NotFound, "not found")
 			},
 		}
@@ -111,7 +111,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		var writtenInstance string
 		var writtenDigest string
 		service := &swarmingtest.Client{
-			TaskResultMock: func(c context.Context, _ string, _ bool) (*swarmingv2.TaskResultResponse, error) {
+			TaskResultMock: func(c context.Context, _ string, _ *swarming.TaskResultFields) (*swarmingv2.TaskResultResponse, error) {
 				return &swarmingv2.TaskResultResponse{
 					State: swarmingv2.TaskState_COMPLETED,
 					CasOutputRoot: &swarmingv2.CASReference{
@@ -177,7 +177,7 @@ func TestCollectPollForTasks(t *testing.T) {
 		outputFetched := sync.Map{}
 
 		service := &swarmingtest.Client{
-			TaskResultMock: func(c context.Context, taskID string, _ bool) (*swarmingv2.TaskResultResponse, error) {
+			TaskResultMock: func(c context.Context, taskID string, _ *swarming.TaskResultFields) (*swarmingv2.TaskResultResponse, error) {
 				if taskID != firstID {
 					// Simulate the second task not finishing until the first
 					// task has already finished, downloaded its outputs, and
@@ -228,7 +228,7 @@ func TestCollectPollForTasks(t *testing.T) {
 		firstTaskComplete := make(chan struct{})
 		lastTaskDownloading := make(chan struct{})
 		service := &swarmingtest.Client{
-			TaskResultMock: func(c context.Context, taskID string, _ bool) (*swarmingv2.TaskResultResponse, error) {
+			TaskResultMock: func(c context.Context, taskID string, _ *swarming.TaskResultFields) (*swarmingv2.TaskResultResponse, error) {
 				return &swarmingv2.TaskResultResponse{
 					State: swarmingv2.TaskState_COMPLETED,
 					CasOutputRoot: &swarmingv2.CASReference{
@@ -284,7 +284,7 @@ func TestCollectPollForTasks(t *testing.T) {
 		outputFetched := false
 
 		service := &swarmingtest.Client{
-			TaskResultMock: func(c context.Context, taskID string, _ bool) (*swarmingv2.TaskResultResponse, error) {
+			TaskResultMock: func(c context.Context, taskID string, _ *swarming.TaskResultFields) (*swarmingv2.TaskResultResponse, error) {
 				return &swarmingv2.TaskResultResponse{
 					State: swarmingv2.TaskState_COMPLETED,
 					CasOutputRoot: &swarmingv2.CASReference{

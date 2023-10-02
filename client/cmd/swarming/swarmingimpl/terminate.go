@@ -70,7 +70,7 @@ func (cmd *terminateImpl) Execute(ctx context.Context, svc swarming.Client, extr
 
 	if cmd.wait {
 		logging.Infof(ctx, "Waiting for the bot to terminate...")
-		taskres, err := swarming.GetOne(ctx, svc, res.TaskId, false, swarming.Wait)
+		taskres, err := swarming.GetOne(ctx, svc, res.TaskId, nil, swarming.WaitAll)
 		if err != nil {
 			return nil, errors.Annotate(err, "failed when polling task %s", res.TaskId).Err()
 		}

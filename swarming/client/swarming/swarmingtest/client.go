@@ -18,24 +18,27 @@ package swarmingtest
 import (
 	"context"
 
+	"go.chromium.org/luci/swarming/client/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // Client is a mock of swarming.Client that just calls provided callbacks.
 type Client struct {
-	NewTaskMock      func(ctx context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error)
-	CountTasksMock   func(ctx context.Context, start float64, state swarmingv2.StateQuery, tags []string) (*swarmingv2.TasksCount, error)
-	ListTasksMock    func(ctx context.Context, limit int32, start float64, state swarmingv2.StateQuery, tags []string) ([]*swarmingv2.TaskResultResponse, error)
-	CancelTaskMock   func(ctx context.Context, taskID string, killRunning bool) (*swarmingv2.CancelResponse, error)
-	TaskRequestMock  func(ctx context.Context, taskID string) (*swarmingv2.TaskRequestResponse, error)
-	TaskOutputMock   func(ctx context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error)
-	TaskResultMock   func(ctx context.Context, taskID string, perf bool) (*swarmingv2.TaskResultResponse, error)
-	CountBotsMock    func(ctx context.Context, dimensions []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error)
-	ListBotsMock     func(ctx context.Context, dimensions []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error)
-	DeleteBotMock    func(ctx context.Context, botID string) (*swarmingv2.DeleteResponse, error)
-	TerminateBotMock func(ctx context.Context, botID string, reason string) (*swarmingv2.TerminateResponse, error)
-	ListBotTasksMock func(ctx context.Context, botID string, limit int32, start float64, state swarmingv2.StateQuery) ([]*swarmingv2.TaskResultResponse, error)
-	FilesFromCASMock func(ctx context.Context, outdir string, casRef *swarmingv2.CASReference) ([]string, error)
+	NewTaskMock        func(ctx context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error)
+	CountTasksMock     func(ctx context.Context, start float64, state swarmingv2.StateQuery, tags []string) (*swarmingv2.TasksCount, error)
+	ListTasksMock      func(ctx context.Context, limit int32, start float64, state swarmingv2.StateQuery, tags []string) ([]*swarmingv2.TaskResultResponse, error)
+	CancelTaskMock     func(ctx context.Context, taskID string, killRunning bool) (*swarmingv2.CancelResponse, error)
+	TaskRequestMock    func(ctx context.Context, taskID string) (*swarmingv2.TaskRequestResponse, error)
+	TaskOutputMock     func(ctx context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error)
+	TaskResultMock     func(ctx context.Context, taskID string, fields *swarming.TaskResultFields) (*swarmingv2.TaskResultResponse, error)
+	TaskResultsMock    func(ctx context.Context, taskIDs []string, fields *swarming.TaskResultFields) ([]swarming.ResultOrErr, error)
+	ListTaskStatesMock func(ctx context.Context, taskIDs []string) ([]swarmingv2.TaskState, error)
+	CountBotsMock      func(ctx context.Context, dimensions []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error)
+	ListBotsMock       func(ctx context.Context, dimensions []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error)
+	DeleteBotMock      func(ctx context.Context, botID string) (*swarmingv2.DeleteResponse, error)
+	TerminateBotMock   func(ctx context.Context, botID string, reason string) (*swarmingv2.TerminateResponse, error)
+	ListBotTasksMock   func(ctx context.Context, botID string, limit int32, start float64, state swarmingv2.StateQuery) ([]*swarmingv2.TaskResultResponse, error)
+	FilesFromCASMock   func(ctx context.Context, outdir string, casRef *swarmingv2.CASReference) ([]string, error)
 }
 
 func (c *Client) Close(ctx context.Context) {}
@@ -64,8 +67,16 @@ func (c *Client) TaskOutput(ctx context.Context, taskID string) (*swarmingv2.Tas
 	return c.TaskOutputMock(ctx, taskID)
 }
 
-func (c *Client) TaskResult(ctx context.Context, taskID string, perf bool) (*swarmingv2.TaskResultResponse, error) {
-	return c.TaskResultMock(ctx, taskID, perf)
+func (c *Client) TaskResult(ctx context.Context, taskID string, fields *swarming.TaskResultFields) (*swarmingv2.TaskResultResponse, error) {
+	return c.TaskResultMock(ctx, taskID, fields)
+}
+
+func (c *Client) TaskResults(ctx context.Context, taskIDs []string, fields *swarming.TaskResultFields) ([]swarming.ResultOrErr, error) {
+	return c.TaskResultsMock(ctx, taskIDs, fields)
+}
+
+func (c *Client) ListTaskStates(ctx context.Context, taskIDs []string) ([]swarmingv2.TaskState, error) {
+	return c.ListTaskStatesMock(ctx, taskIDs)
 }
 
 func (c *Client) CountBots(ctx context.Context, dimensions []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error) {
