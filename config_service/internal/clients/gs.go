@@ -146,10 +146,12 @@ func (p *prodClient) Touch(ctx context.Context, bucket, object string) error {
 					CustomTime: clock.Now(ctx).UTC(),
 				})
 			var apiErr *googleapi.Error
-			switch errors.As(err, &apiErr); apiErr.Code {
-			case http.StatusConflict, http.StatusPreconditionFailed:
-				// Tag precondition fail and conflict as transient to trigger a retry.
-				return transient.Tag.Apply(err)
+			if errors.As(err, &apiErr) {
+				switch apiErr.Code {
+				case http.StatusConflict, http.StatusPreconditionFailed:
+					// Tag precondition fail and conflict as transient to trigger a retry.
+					return transient.Tag.Apply(err)
+				}
 			}
 			return err
 		}, func(err error, d time.Duration) {
