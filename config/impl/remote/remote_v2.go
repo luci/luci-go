@@ -16,6 +16,7 @@ package remote
 
 import (
 	"context"
+	"math"
 	"net/http"
 	"net/url"
 
@@ -54,10 +55,6 @@ const retryPolicy = `{
 const (
 	// defaultUserAgent is the default user-agent header value to use.
 	defaultUserAgent = "Config Go Client 1.0"
-
-	// grpcMaxRecvMsgSize is 32 MB to ensure it at least equal to the size limit
-	// in GAE to avoid any regression. (The default in grpc client side is 4MB).
-	grpcMaxRecvMsgSize = 1024 * 1024 * 32
 )
 
 type V2Options struct {
@@ -87,7 +84,12 @@ func DefaultDialOptions() []grpc.DialOption {
 		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
 		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
 		grpc.WithDefaultServiceConfig(retryPolicy),
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(grpcMaxRecvMsgSize)),
+		// Luci-config V2 can return gzip-compressed msg. But the grpc client
+		// doesn't provide a way to check the pure compressed response size. It also
+		// checks size after decompression. It's hard to set a fixed size. And for
+		// very large size config, Luci-config already uses GCS to pass the file.
+		// So it's fine to not limit the received msg size.
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(math.MaxInt32)),
 	}
 }
 
