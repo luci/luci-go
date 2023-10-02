@@ -40,7 +40,7 @@ func InstallHandler(r *router.Router) {
 		case url == "":
 			http.Error(c.Writer, fmt.Sprintf("%q has no corresponding schema url", schemaName), http.StatusNotFound)
 		default:
-			http.Redirect(c.Writer, c.Request, "url", http.StatusFound)
+			http.Redirect(c.Writer, c.Request, url, http.StatusFound)
 		}
 	})
 }
