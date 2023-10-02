@@ -33,13 +33,13 @@ import (
 
 	// Register validation rules for LUCI Config itself.
 	_ "go.chromium.org/luci/config_service/internal/rules"
-
 	// Store auth sessions in the datastore.
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/importer"
 	"go.chromium.org/luci/config_service/internal/retention"
+	"go.chromium.org/luci/config_service/internal/schema"
 	"go.chromium.org/luci/config_service/internal/service"
 	"go.chromium.org/luci/config_service/internal/settings"
 	"go.chromium.org/luci/config_service/internal/ui"
@@ -97,6 +97,7 @@ func main() {
 		cron.RegisterHandler("delete-configs", retention.DeleteStaleConfigs)
 		importer.RegisterImportConfigsCron(&tq.Default)
 		ui.InstallHandlers(srv, configsServer, importer)
+		schema.InstallHandler(srv.Routes)
 		return nil
 	})
 }
