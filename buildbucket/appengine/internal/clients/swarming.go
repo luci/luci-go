@@ -23,7 +23,9 @@ import (
 	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
+	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // SwarmingClient is a Swarming API wrapper for buildbucket-specific usage.
@@ -36,11 +38,15 @@ type SwarmingClient interface {
 	CancelTask(ctx context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error)
 }
 
-// swarmingClientImpl for use in real production envs.
-type swarmingClientImpl swarming.Service
+// swarmingServiceImpl for use in real production envs.
+type swarmingServiceImpl struct {
+	// Needed for the time of the migration only.
+	SwarmingV1  swarming.Service
+	TasksClient apipb.TasksClient
+}
 
 // Ensure swarmingClientImpl implements SwarmingClient.
-var _ SwarmingClient = &swarmingClientImpl{}
+var _ SwarmingClient = &swarmingServiceImpl{}
 
 var MockSwarmingClientKey = "used in tests only for setting the mock SwarmingClient"
 
@@ -59,26 +65,33 @@ func NewSwarmingClient(ctx context.Context, host string, project string) (Swarmi
 		return nil, err
 	}
 	swarmingService.BasePath = fmt.Sprintf("https://%s/_ah/api/swarming/v1/", host)
-	spl := (*swarmingClientImpl)(swarmingService)
-	return spl, nil
+
+	prpcClient := prpc.Client{
+		C:    &http.Client{Transport: t},
+		Host: host,
+	}
+	return &swarmingServiceImpl{
+		SwarmingV1:  *swarmingService,
+		TasksClient: apipb.NewTasksClient(&prpcClient),
+	}, nil
 }
 
 // CreateTask calls `swarming.tasks.new` to create a task.
-func (s *swarmingClientImpl) CreateTask(ctx context.Context, createTaskReq *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
+func (s *swarmingServiceImpl) CreateTask(ctx context.Context, createTaskReq *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
 	subCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
-	return s.Tasks.New(createTaskReq).Context(subCtx).Do()
+	return s.SwarmingV1.Tasks.New(createTaskReq).Context(subCtx).Do()
 }
 
 // GetTaskResult calls `swarming.task.result` to get the result of a task via a task id.
-func (s *swarmingClientImpl) GetTaskResult(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskResult, error) {
+func (s *swarmingServiceImpl) GetTaskResult(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskResult, error) {
 	subCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
-	return s.Task.Result(taskID).Context(subCtx).Do()
+	return s.SwarmingV1.Task.Result(taskID).Context(subCtx).Do()
 }
 
-func (s *swarmingClientImpl) CancelTask(ctx context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error) {
+func (s *swarmingServiceImpl) CancelTask(ctx context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error) {
 	subCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
-	return s.Task.Cancel(taskID, req).Context(subCtx).Do()
+	return s.SwarmingV1.Task.Cancel(taskID, req).Context(subCtx).Do()
 }
