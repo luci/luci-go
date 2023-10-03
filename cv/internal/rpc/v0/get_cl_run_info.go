@@ -16,13 +16,19 @@ package rpc
 
 import (
 	"context"
+	"fmt"
+	"sync"
 
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -40,38 +46,113 @@ func (g *GerritIntegrationServer) GetCLRunInfo(ctx context.Context, req *apiv0pb
 		return nil, appstatus.Errorf(codes.InvalidArgument, "invalid GerritChange %v: %s", gc, err)
 	}
 
-	clids, err := changelist.Lookup(ctx, []changelist.ExternalID{eid})
-	if err != nil {
+	cl, err := eid.Load(ctx)
+	switch {
+	case err != nil:
 		return nil, err
-	}
-	clid := clids[0]
-	if clid == 0 {
-		// changelist.Lookup returns 0 for unknown external ID, i.e. CL not found.
-		// In that case, no change was found; return empty response.
+	case cl == nil:
 		return nil, appstatus.Errorf(codes.NotFound, "change %s not found", eid)
 	}
 
-	qb := run.CLQueryBuilder{CLID: clid}
+	qb := run.CLQueryBuilder{CLID: cl.ID}
 	runs, _, err := qb.LoadRuns(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// Filter out finished runs.
+	respRunInfo := populateRunInfo(ctx, filterOngoingRuns(runs))
+
+	depChangeInfos, err := queryDepChangeInfos(ctx, cl)
+	if err != nil {
+		return nil, err
+	}
+
+	return &apiv0pb.GetCLRunInfoResponse{
+		// TODO(crbug.com/1486976): Split RunInfo into RunsAsOrigin and RunsAsDep.
+		RunsAsOrigin:   respRunInfo,
+		RunsAsDep:      respRunInfo,
+		DepChangeInfos: depChangeInfos,
+	}, nil
+}
+
+// queryDepChangeInfos queries for dependent CLs.
+func queryDepChangeInfos(ctx context.Context, cl *changelist.CL) ([]*apiv0pb.GetCLRunInfoResponse_DepChangeInfo, error) {
+	if len(cl.Snapshot.Deps) == 0 {
+		return nil, nil
+	}
+
+	eg, ectx := errgroup.WithContext(ctx)
+	eg.SetLimit(8)
+	infos := make([]*apiv0pb.GetCLRunInfoResponse_DepChangeInfo, len(cl.Snapshot.Deps))
+	for i, dep := range cl.Snapshot.Deps {
+		i, dep := i, dep // See https://go.dev/blog/loopvar-preview for why this is needed before Go 1.22.
+
+		eg.Go(func() error {
+			var wg sync.WaitGroup
+			wg.Add(2)
+			depClid := common.CLID(dep.Clid)
+
+			// Query for runs.
+			var runs []*run.Run
+			var errs errors.MultiError
+			var errsMu sync.Mutex
+			go func() {
+				defer wg.Done()
+				qb := run.CLQueryBuilder{CLID: depClid}
+				var err error
+				runs, _, err = qb.LoadRuns(ectx)
+				errsMu.Lock()
+				errs.MaybeAdd(err)
+				errsMu.Unlock()
+			}()
+
+			// Query for Gerrit CL info.
+			var depCl *changelist.CL
+			go func() {
+				defer wg.Done()
+				depCl = &changelist.CL{ID: depClid}
+				err := datastore.Get(ectx, depCl)
+				errsMu.Lock()
+				errs.MaybeAdd(err)
+				errsMu.Unlock()
+			}()
+
+			wg.Wait()
+			if err := common.MostSevereError(errs); err != nil {
+				return err
+			}
+
+			gerrit := depCl.Snapshot.GetGerrit()
+			if gerrit == nil {
+				return fmt.Errorf("dep CL %d has non-Gerrit snapshot", depClid)
+			}
+
+			infos[i] = &apiv0pb.GetCLRunInfoResponse_DepChangeInfo{
+				GerritChange: &apiv0pb.GerritChange{
+					Host:     gerrit.Host,
+					Change:   gerrit.Info.Number,
+					Patchset: depCl.Snapshot.Patchset,
+				},
+				Runs:        populateRunInfo(ectx, filterOngoingRuns(runs)),
+				ChangeOwner: gerrit.Info.Owner.Email,
+			}
+			return nil
+		})
+	}
+
+	if err := eg.Wait(); err != nil {
+		return nil, appstatus.Errorf(codes.Internal, "%s", err)
+	}
+	return infos, nil
+}
+
+// filterOngoingRuns filters out ended runs.
+func filterOngoingRuns(runs []*run.Run) []*run.Run {
 	ongoingRuns := []*run.Run{}
 	for _, r := range runs {
 		if !run.IsEnded(r.Status) {
 			ongoingRuns = append(ongoingRuns, r)
 		}
 	}
-
-	respRunInfo := populateRunInfo(ctx, ongoingRuns)
-
-	// TODO(crbug.com/1486976): Query for dependency CLs.
-	return &apiv0pb.GetCLRunInfoResponse{
-		// TODO(crbug.com/1486976): Split RunInfo into RunsAsOrigin and RunsAsDep.
-		RunsAsOrigin:   respRunInfo,
-		RunsAsDep:      respRunInfo,
-		DepChangeInfos: nil,
-	}, nil
+	return ongoingRuns
 }
