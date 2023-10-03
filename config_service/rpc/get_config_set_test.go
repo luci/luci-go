@@ -120,7 +120,7 @@ func TestGetConfigSet(t *testing.T) {
 				ConfigSet: "projects/project",
 			})
 			So(res, ShouldBeNil)
-			So(err, ShouldHaveGRPCStatus, codes.NotFound, `requested resource not found or "user:random@example.com" dose not have permission to access it`)
+			So(err, ShouldHaveGRPCStatus, codes.NotFound, `requested resource not found or "user:random@example.com" does not have permission to access it`)
 		})
 
 		Convey("non-existent configSet", func() {
@@ -128,7 +128,7 @@ func TestGetConfigSet(t *testing.T) {
 				ConfigSet: "projects/random",
 			})
 			So(res, ShouldBeNil)
-			So(err, ShouldHaveGRPCStatus, codes.NotFound, `requested resource not found or "user:user@example.com" dose not have permission to access it`)
+			So(err, ShouldHaveGRPCStatus, codes.NotFound, `requested resource not found or "user:user@example.com" does not have permission to access it`)
 		})
 
 		Convey("ok with default mask", func() {

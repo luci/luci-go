@@ -165,7 +165,7 @@ func TestGetConfig(t *testing.T) {
 					Path:      "path",
 				})
 				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.NotFound, `requested resource not found or "user:random@example.com" dose not have permission to access it`)
+				So(err, ShouldHaveGRPCStatus, codes.NotFound, `requested resource not found or "user:random@example.com" does not have permission to access it`)
 			})
 
 			Convey("missing config set", func() {
@@ -174,7 +174,7 @@ func TestGetConfig(t *testing.T) {
 					Path:      "path",
 				})
 				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.NotFound, `requested resource not found or "user:user@example.com" dose not have permission to access it`)
+				So(err, ShouldHaveGRPCStatus, codes.NotFound, `requested resource not found or "user:user@example.com" does not have permission to access it`)
 			})
 
 			Convey("missing config", func() {
@@ -184,7 +184,7 @@ func TestGetConfig(t *testing.T) {
 					Path:      "path",
 				})
 				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.NotFound, `requested resource not found or "user:user@example.com" dose not have permission to access it`)
+				So(err, ShouldHaveGRPCStatus, codes.NotFound, `requested resource not found or "user:user@example.com" does not have permission to access it`)
 			})
 
 			Convey("not exist config sha256", func() {
@@ -194,7 +194,7 @@ func TestGetConfig(t *testing.T) {
 					ContentSha256: "abc",
 				})
 				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.NotFound, `requested resource not found or "user:user@example.com" dose not have permission to access it`)
+				So(err, ShouldHaveGRPCStatus, codes.NotFound, `requested resource not found or "user:user@example.com" does not have permission to access it`)
 			})
 		})
 

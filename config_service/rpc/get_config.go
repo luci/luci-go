@@ -133,5 +133,5 @@ func (c Configs) GetConfig(ctx context.Context, req *pb.GetConfigRequest) (*pb.C
 // obfuscates "not found" and "permission denied" intentionally to avoid
 // revealing accurate information to unauthorized users.
 func notFoundErr(id identity.Identity) error {
-	return status.Errorf(codes.NotFound, "requested resource not found or %q dose not have permission to access it", id)
+	return status.Errorf(codes.NotFound, "requested resource not found or %q does not have permission to access it", id)
 }
