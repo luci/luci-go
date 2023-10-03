@@ -17,7 +17,10 @@ package projectconfig
 import (
 	"testing"
 
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/service/datastore"
+	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
@@ -93,6 +96,33 @@ func TestConfig(t *testing.T) {
 				So(cs.ID, ShouldEqual, "realm_test_console")
 				So(cs.Ordinal, ShouldEqual, 2)
 				So(cs.Realm, ShouldEqual, "foo:fake_realm")
+			})
+
+			Convey("Check Console config updated with builder ID", func() {
+				cs, err := GetConsole(c, "foo", "default_header")
+				So(err, ShouldBeNil)
+				So(cs.Def.Builders, ShouldResembleProto, []*projectconfigpb.Builder{
+					{
+						Id: &buildbucketpb.BuilderID{
+							Project: "foo",
+							Bucket:  "something",
+							Builder: "bar",
+						},
+						Name:      "buildbucket/luci.foo.something/bar",
+						Category:  "main|something",
+						ShortName: "s",
+					},
+					{
+						Id: &buildbucketpb.BuilderID{
+							Project: "foo",
+							Bucket:  "other",
+							Builder: "baz",
+						},
+						Name:      "buildbucket/luci.foo.other/baz",
+						Category:  "main|other",
+						ShortName: "o",
+					},
+				})
 			})
 
 			Convey("Check external Console is resolved", func() {

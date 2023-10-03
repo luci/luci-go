@@ -394,8 +394,10 @@ func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[strin
 		case err != nil:
 			return nil, errors.Annotate(err, "checking %s", pc.Id).Err()
 		case con.Def.HasUnpopulatedBuilderId():
+			logging.Debugf(c, "continuing to back fill builder IDs")
 			// continue to populate builder IDs.
 		case con.ConfigRevision == meta.Revision && con.Ordinal == i:
+			logging.Debugf(c, "skipping updates")
 			// Check if revisions match; if so just skip it.
 			// TODO(jchinlee): remove Ordinal check when Version field is added to Console.
 			continue
@@ -410,7 +412,7 @@ func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[strin
 		// by lucicfg.
 		def := proto.Clone(pc).(*projectconfigpb.Console)
 		for _, builder := range def.Builders {
-			if builder.Id == nil {
+			if builder.Id != nil {
 				continue
 			}
 			bid, err := builder.GetIdWithFallback()
