@@ -41,7 +41,6 @@ import (
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/secrets/testsecrets"
 	"go.chromium.org/luci/server/tq"
-	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
@@ -104,11 +103,11 @@ func TestTaskDef(t *testing.T) {
 			slices, err := computeTaskSlice(b)
 			So(err, ShouldBeNil)
 			So(len(slices), ShouldEqual, 1)
-			So(slices[0].Properties.Caches, ShouldResemble, []*apipb.CacheEntry{{
+			So(slices[0].Properties.Caches, ShouldResemble, []*swarming.SwarmingRpcsCacheEntry{{
 				Path: filepath.Join("cache", "builder"),
 				Name: "shared_builder_cache",
 			}})
-			So(slices[0].Properties.Dimensions, ShouldResemble, []*apipb.StringPair{
+			So(slices[0].Properties.Dimensions, ShouldResemble, []*swarming.SwarmingRpcsStringPair{
 				{
 					Key:   "pool",
 					Value: "Chrome",
@@ -142,18 +141,18 @@ func TestTaskDef(t *testing.T) {
 			for _, tSlice := range slices {
 				So(tSlice.Properties.ExecutionTimeoutSecs, ShouldEqual, 4800)
 				So(tSlice.Properties.GracePeriodSecs, ShouldEqual, 240)
-				So(tSlice.Properties.Caches, ShouldResemble, []*apipb.CacheEntry{
+				So(tSlice.Properties.Caches, ShouldResemble, []*swarming.SwarmingRpcsCacheEntry{
 					{Path: filepath.Join("cache", "builder"), Name: "shared_builder_cache"},
 					{Path: filepath.Join("cache", "second"), Name: "second_cache"},
 				})
-				So(tSlice.Properties.Env, ShouldResemble, []*apipb.StringPair{
+				So(tSlice.Properties.Env, ShouldResemble, []*swarming.SwarmingRpcsStringPair{
 					{Key: "BUILDBUCKET_EXPERIMENTAL", Value: "FALSE"},
 				})
 			}
 
 			So(slices[0].ExpirationSecs, ShouldEqual, 60)
 			// The dimensions are different. 'a' and 'caches' are injected.
-			So(slices[0].Properties.Dimensions, ShouldResemble, []*apipb.StringPair{
+			So(slices[0].Properties.Dimensions, ShouldResemble, []*swarming.SwarmingRpcsStringPair{
 				{Key: "a", Value: "1"},
 				{Key: "a", Value: "2"},
 				{Key: "caches", Value: "second_cache"},
@@ -164,7 +163,7 @@ func TestTaskDef(t *testing.T) {
 			// 120 - 60
 			So(slices[1].ExpirationSecs, ShouldEqual, 60)
 			// The dimensions are different. 'a' and 'caches' are injected.
-			So(slices[1].Properties.Dimensions, ShouldResemble, []*apipb.StringPair{
+			So(slices[1].Properties.Dimensions, ShouldResemble, []*swarming.SwarmingRpcsStringPair{
 				{Key: "a", Value: "1"},
 				{Key: "a", Value: "2"},
 				{Key: "caches", Value: "second_cache"},
@@ -174,7 +173,7 @@ func TestTaskDef(t *testing.T) {
 			// 360 - 120
 			So(slices[2].ExpirationSecs, ShouldEqual, 240)
 			// 'a' expired, one 'caches' remains.
-			So(slices[2].Properties.Dimensions, ShouldResemble, []*apipb.StringPair{
+			So(slices[2].Properties.Dimensions, ShouldResemble, []*swarming.SwarmingRpcsStringPair{
 				{Key: "caches", Value: "second_cache"},
 				{Key: "pool", Value: "Chrome"},
 			})
@@ -182,7 +181,7 @@ func TestTaskDef(t *testing.T) {
 			// 3600-360
 			So(slices[3].ExpirationSecs, ShouldEqual, 3240)
 			// # The cold fallback; the last 'caches' expired.
-			So(slices[3].Properties.Dimensions, ShouldResemble, []*apipb.StringPair{
+			So(slices[3].Properties.Dimensions, ShouldResemble, []*swarming.SwarmingRpcsStringPair{
 				{Key: "pool", Value: "Chrome"},
 			})
 		})
@@ -241,7 +240,7 @@ func TestTaskDef(t *testing.T) {
 		}
 		Convey("empty swarming cache", func() {
 			prefixes := computeEnvPrefixes(b)
-			So(prefixes, ShouldResemble, []*apipb.StringListPair{})
+			So(prefixes, ShouldResemble, []*swarming.SwarmingRpcsStringListPair{})
 		})
 
 		Convey("normal", func() {
@@ -250,7 +249,7 @@ func TestTaskDef(t *testing.T) {
 				{Path: "abc", Name: "abc", EnvVar: "ABC"},
 			}
 			prefixes := computeEnvPrefixes(b)
-			So(prefixes, ShouldResemble, []*apipb.StringListPair{
+			So(prefixes, ShouldResemble, []*swarming.SwarmingRpcsStringListPair{
 				{Key: "ABC", Value: []string{filepath.Join("cache", "abc")}},
 				{Key: "VPYTHON_VIRTUALENV_ROOT", Value: []string{filepath.Join("cache", "vpython")}},
 			})
@@ -300,19 +299,19 @@ func TestTaskDef(t *testing.T) {
 
 		req, err := computeSwarmingNewTaskReq(ctx, b)
 		// Strip out TaskSlices. It has been tested in other tests
-		req.TaskSlices = []*apipb.TaskSlice(nil)
+		req.TaskSlices = []*swarming.SwarmingRpcsTaskSlice(nil)
 		So(err, ShouldBeNil)
 		ud, _ := json.Marshal(&userdata{
 			BuildID:          123,
 			CreatedTS:        1444945245000000,
 			SwarmingHostname: "swarm.com",
 		})
-		expected := &apipb.NewTaskRequest{
+		expected := &swarming.SwarmingRpcsNewTaskRequest{
 			RequestUuid:    "203882df-ce4b-5012-b32a-2c1d29c321a7",
 			Name:           "bb-123-builder-1",
 			Realm:          "project:bucket",
 			Tags:           []string{"buildbucket_bucket:bucket", "buildbucket_build_id:123", "buildbucket_hostname:app-id.appspot.com", "buildbucket_template_canary:0", "luci_project:project"},
-			Priority:       int32(20),
+			Priority:       int64(20),
 			PubsubTopic:    "projects/app-id/topics/swarming-go",
 			PubsubUserdata: string(ud),
 			ServiceAccount: "abc",
@@ -449,7 +448,7 @@ func TestSyncBuild(t *testing.T) {
 			})
 
 			Convey("create swarming success", func() {
-				mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Return(&apipb.TaskRequestMetadataResponse{
+				mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Return(&swarming.SwarmingRpcsTaskRequestMetadata{
 					TaskId: "task123",
 				}, nil)
 				err := SyncBuild(ctx, 123, 0)
@@ -501,11 +500,11 @@ func TestSyncBuild(t *testing.T) {
 			})
 
 			Convey("swarming task creation success but update build fail", func() {
-				mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, req *apipb.NewTaskRequest) (*apipb.TaskRequestMetadataResponse, error) {
+				mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
 					// Hack to make the build update fail when trying to update build with the new task ID.
 					inf.Proto.Swarming.TaskId = "old task ID"
 					So(datastore.Put(ctx, inf), ShouldBeNil)
-					return &apipb.TaskRequestMetadataResponse{TaskId: "new task ID"}, nil
+					return &swarming.SwarmingRpcsTaskRequestMetadata{TaskId: "new task ID"}, nil
 				})
 
 				err := SyncBuild(ctx, 123, 0)

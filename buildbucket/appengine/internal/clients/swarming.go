@@ -33,7 +33,7 @@ import (
 // In prod, a SwarmingClient for interacting with the Swarming service will be
 // used. Tests should use a fake implementation.
 type SwarmingClient interface {
-	CreateTask(ctx context.Context, createTaskReq *apipb.NewTaskRequest) (*apipb.TaskRequestMetadataResponse, error)
+	CreateTask(c context.Context, createTaskReq *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error)
 	GetTaskResult(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskResult, error)
 	CancelTask(ctx context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error)
 }
@@ -76,11 +76,11 @@ func NewSwarmingClient(ctx context.Context, host string, project string) (Swarmi
 	}, nil
 }
 
-// CreateTask calls `apipb.TasksClient.NewTask` to create a task.
-func (s *swarmingServiceImpl) CreateTask(ctx context.Context, createTaskReq *apipb.NewTaskRequest) (*apipb.TaskRequestMetadataResponse, error) {
+// CreateTask calls `swarming.tasks.new` to create a task.
+func (s *swarmingServiceImpl) CreateTask(ctx context.Context, createTaskReq *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
 	subCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
-	return s.TasksClient.NewTask(subCtx, createTaskReq, nil)
+	return s.SwarmingV1.Tasks.New(createTaskReq).Context(subCtx).Do()
 }
 
 // GetTaskResult calls `swarming.task.result` to get the result of a task via a task id.
