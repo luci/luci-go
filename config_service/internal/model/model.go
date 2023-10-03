@@ -50,7 +50,7 @@ const (
 
 	// CurrentCfgSetVersion is a global version for all ConfigSet entities. It can
 	// be used to force a global refresh.
-	CurrentCfgSetVersion = 1
+	CurrentCfgSetVersion = 2
 )
 
 // ConfigSet is a versioned collection of config files.
@@ -102,6 +102,8 @@ type File struct {
 	GcsURI gs.Path `gae:"gcs_uri,noindex"`
 	// ContentSHA256 is the SHA256 hash of the file content.
 	ContentSHA256 string `gae:"content_sha256"`
+	// Size is the raw file size in bytes.
+	Size int64 `gae:"size,noindex"`
 	// Location is a pinned, fully resolved source location to this file.
 	Location *cfgcommonpb.Location `gae:"location"`
 

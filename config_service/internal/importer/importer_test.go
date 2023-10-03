@@ -331,6 +331,7 @@ func TestImportConfigSet(t *testing.T) {
 					CreateTime:    datastore.RoundTime(clock.Now(ctx).UTC()),
 					Content:       expectedContent1,
 					ContentSHA256: expectedSha256,
+					Size:          int64(len("file1 content")),
 					GcsURI:        gs.MakePath(testGSBucket, fmt.Sprintf("%s/sha256/%s", common.GSProdCfgFolder, expectedSha256)),
 				})
 				So(files[2].Location, ShouldResembleProto, &cfgcommonpb.Location{
@@ -351,6 +352,7 @@ func TestImportConfigSet(t *testing.T) {
 					CreateTime:    datastore.RoundTime(clock.Now(ctx).UTC()),
 					Content:       expectedContent2,
 					ContentSHA256: expectedSha256,
+					Size:          int64(len("file2 content")),
 					GcsURI:        gs.MakePath(testGSBucket, fmt.Sprintf("%s/sha256/%s", common.GSProdCfgFolder, expectedSha256)),
 				})
 

@@ -437,6 +437,7 @@ func (i *Importer) importRevision(ctx context.Context, cfgSet config.Set, loc *c
 		file := &model.File{
 			Path:     filePath,
 			Revision: datastore.MakeKey(ctx, model.ConfigSetKind, string(cfgSet), model.RevisionKind, commit.Id),
+			Size:     header.Size,
 			Location: &cfgcommonpb.Location{
 				Location: &cfgcommonpb.Location_GitilesLocation{
 					GitilesLocation: &cfgcommonpb.GitilesLocation{
