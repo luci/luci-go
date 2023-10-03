@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/tq"
+	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
@@ -534,7 +535,7 @@ func createSwarmingTask(ctx context.Context, build *model.Build, swarm clients.S
 		return tq.Fatal.Apply(err)
 	}
 	for _, t := range taskReq.TaskSlices {
-		t.Properties.SecretBytes = base64.RawURLEncoding.EncodeToString(secretsBytes)
+		t.Properties.SecretBytes = secretsBytes
 	}
 
 	// Create a swarming task
@@ -550,7 +551,7 @@ func createSwarmingTask(ctx context.Context, build *model.Build, swarm clients.S
 		}
 		// Strip out secret bytes and dump the task definition to the log.
 		for _, t := range taskReq.TaskSlices {
-			t.Properties.SecretBytes = ""
+			t.Properties.SecretBytes = nil
 		}
 		logging.Errorf(ctx, "Swarming task creation failure:%s. CreateTask request: %+v\nResponse: %+v", err, taskReq, res)
 		return tq.Fatal.Apply(errors.Annotate(err, "failed to create a swarming task").Err())
@@ -583,18 +584,18 @@ func createSwarmingTask(ctx context.Context, build *model.Build, swarm clients.S
 	return nil
 }
 
-func computeSwarmingNewTaskReq(ctx context.Context, build *model.Build) (*swarming.SwarmingRpcsNewTaskRequest, error) {
+func computeSwarmingNewTaskReq(ctx context.Context, build *model.Build) (*apipb.NewTaskRequest, error) {
 	sw := build.Proto.GetInfra().GetSwarming()
 	if sw == nil {
 		return nil, errors.New("build.Proto.Infra.Swarming isn't set")
 	}
-	taskReq := &swarming.SwarmingRpcsNewTaskRequest{
+	taskReq := &apipb.NewTaskRequest{
 		// to prevent accidental multiple task creation
 		RequestUuid: uuid.NewSHA1(uuid.Nil, []byte(strconv.FormatInt(build.ID, 10))).String(),
 		Name:        fmt.Sprintf("bb-%d-%s", build.ID, build.BuilderID),
 		Realm:       build.Realm(),
 		Tags:        computeTags(ctx, build),
-		Priority:    int64(sw.Priority),
+		Priority:    int32(sw.Priority),
 	}
 
 	if build.Proto.Number > 0 {
@@ -661,18 +662,18 @@ func computeTags(ctx context.Context, build *model.Build) []string {
 
 // computeTaskSlice computes swarming task slices.
 // build.Proto.Infra must be set.
-func computeTaskSlice(build *model.Build) ([]*swarming.SwarmingRpcsTaskSlice, error) {
-	// expiration_secs -> []*SwarmingRpcsStringPair
-	dims := map[int64][]*swarming.SwarmingRpcsStringPair{}
+func computeTaskSlice(build *model.Build) ([]*apipb.TaskSlice, error) {
+	// expiration_secs -> []*StringPair
+	dims := map[int64][]*apipb.StringPair{}
 	for _, cache := range build.Proto.GetInfra().GetSwarming().GetCaches() {
 		expSecs := cache.WaitForWarmCache.GetSeconds()
 		if expSecs <= 0 {
 			continue
 		}
 		if _, ok := dims[expSecs]; !ok {
-			dims[expSecs] = []*swarming.SwarmingRpcsStringPair{}
+			dims[expSecs] = []*apipb.StringPair{}
 		}
-		dims[expSecs] = append(dims[expSecs], &swarming.SwarmingRpcsStringPair{
+		dims[expSecs] = append(dims[expSecs], &apipb.StringPair{
 			Key:   "caches",
 			Value: cache.Name,
 		})
@@ -680,9 +681,9 @@ func computeTaskSlice(build *model.Build) ([]*swarming.SwarmingRpcsTaskSlice, er
 	for _, dim := range build.Proto.GetInfra().GetSwarming().GetTaskDimensions() {
 		expSecs := dim.Expiration.GetSeconds()
 		if _, ok := dims[expSecs]; !ok {
-			dims[expSecs] = []*swarming.SwarmingRpcsStringPair{}
+			dims[expSecs] = []*apipb.StringPair{}
 		}
-		dims[expSecs] = append(dims[expSecs], &swarming.SwarmingRpcsStringPair{
+		dims[expSecs] = append(dims[expSecs], &apipb.StringPair{
 			Key:   dim.Key,
 			Value: dim.Value,
 		})
@@ -691,24 +692,24 @@ func computeTaskSlice(build *model.Build) ([]*swarming.SwarmingRpcsTaskSlice, er
 	// extract base dim and delete it from the map.
 	baseDim, ok := dims[0]
 	if !ok {
-		baseDim = []*swarming.SwarmingRpcsStringPair{}
+		baseDim = []*apipb.StringPair{}
 	}
 	delete(dims, 0)
 	if len(dims) > 6 {
 		return nil, errors.New("At most 6 different expiration_secs to be allowed in swarming")
 	}
 
-	baseSlice := &swarming.SwarmingRpcsTaskSlice{
-		ExpirationSecs:  build.Proto.GetSchedulingTimeout().GetSeconds(),
+	baseSlice := &apipb.TaskSlice{
+		ExpirationSecs:  int32(build.Proto.GetSchedulingTimeout().GetSeconds()),
 		WaitForCapacity: build.Proto.GetWaitForCapacity(),
-		Properties: &swarming.SwarmingRpcsTaskProperties{
+		Properties: &apipb.TaskProperties{
 			CipdInput:            computeCipdInput(build),
-			ExecutionTimeoutSecs: build.Proto.GetExecutionTimeout().GetSeconds(),
-			GracePeriodSecs:      build.Proto.GetGracePeriod().GetSeconds() + bbagentReservedGracePeriod,
+			ExecutionTimeoutSecs: int32(build.Proto.GetExecutionTimeout().GetSeconds()),
+			GracePeriodSecs:      int32(build.Proto.GetGracePeriod().GetSeconds() + bbagentReservedGracePeriod),
 			Caches:               computeTaskSliceCaches(build),
 			Dimensions:           baseDim,
 			EnvPrefixes:          computeEnvPrefixes(build),
-			Env: []*swarming.SwarmingRpcsStringPair{
+			Env: []*apipb.StringPair{
 				{Key: "BUILDBUCKET_EXPERIMENTAL", Value: strings.ToUpper(strconv.FormatBool(build.Experimental))},
 			},
 			Command: computeCommand(build),
@@ -730,15 +731,15 @@ func computeTaskSlice(build *model.Build) ([]*swarming.SwarmingRpcsTaskSlice, er
 	// Create extra task slices by copying the base task slice. Adding the
 	// corresponding expiration and desired dimensions
 	lastExp := 0
-	taskSlices := make([]*swarming.SwarmingRpcsTaskSlice, len(expSecs)+1)
+	taskSlices := make([]*apipb.TaskSlice, len(expSecs)+1)
 	for i, sec := range expSecs {
-		prop := &swarming.SwarmingRpcsTaskProperties{}
+		prop := &apipb.TaskProperties{}
 		if err := deepCopy(baseSlice.Properties, prop); err != nil {
 			return nil, err
 		}
-		taskSlices[i] = &swarming.SwarmingRpcsTaskSlice{
+		taskSlices[i] = &apipb.TaskSlice{
 			WaitForCapacity: sliceWaitForCapacity,
-			ExpirationSecs:  int64(sec - lastExp),
+			ExpirationSecs:  int32(sec - lastExp),
 			Properties:      prop,
 		}
 		// dims[i] should be added into all previous non-expired task slices.
@@ -750,10 +751,10 @@ func computeTaskSlice(build *model.Build) ([]*swarming.SwarmingRpcsTaskSlice, er
 
 	// Tweak expiration on the baseSlice, which is the last slice.
 	exp := max(int(baseSlice.ExpirationSecs)-lastExp, 60)
-	baseSlice.ExpirationSecs = int64(exp)
+	baseSlice.ExpirationSecs = int32(exp)
 	taskSlices[len(taskSlices)-1] = baseSlice
 
-	sortDim := func(strPairs []*swarming.SwarmingRpcsStringPair) {
+	sortDim := func(strPairs []*apipb.StringPair) {
 		sort.Slice(strPairs, func(i, j int) bool {
 			if strPairs[i].Key == strPairs[j].Key {
 				return strPairs[i].Value < strPairs[j].Value
@@ -769,10 +770,10 @@ func computeTaskSlice(build *model.Build) ([]*swarming.SwarmingRpcsTaskSlice, er
 }
 
 // computeTaskSliceCaches computes the task slice caches.
-func computeTaskSliceCaches(build *model.Build) []*swarming.SwarmingRpcsCacheEntry {
-	caches := make([]*swarming.SwarmingRpcsCacheEntry, len(build.Proto.Infra.Swarming.GetCaches()))
+func computeTaskSliceCaches(build *model.Build) []*apipb.CacheEntry {
+	caches := make([]*apipb.CacheEntry, len(build.Proto.Infra.Swarming.GetCaches()))
 	for i, c := range build.Proto.Infra.Swarming.GetCaches() {
-		caches[i] = &swarming.SwarmingRpcsCacheEntry{
+		caches[i] = &apipb.CacheEntry{
 			Name: c.Name,
 			Path: filepath.Join(cacheDir, c.Path),
 		}
@@ -783,9 +784,9 @@ func computeTaskSliceCaches(build *model.Build) []*swarming.SwarmingRpcsCacheEnt
 // computeCipdInput returns swarming task CIPD input.
 // Note: this function only considers v2 bbagent builds.
 // The build.Proto.Infra.Buildbucket.Agent.Source must be set
-func computeCipdInput(build *model.Build) *swarming.SwarmingRpcsCipdInput {
-	return &swarming.SwarmingRpcsCipdInput{
-		Packages: []*swarming.SwarmingRpcsCipdPackage{{
+func computeCipdInput(build *model.Build) *apipb.CipdInput {
+	return &apipb.CipdInput{
+		Packages: []*apipb.CipdPackage{{
 			PackageName: build.Proto.GetInfra().GetBuildbucket().GetAgent().GetSource().GetCipd().GetPackage(),
 			Version:     build.Proto.GetInfra().GetBuildbucket().GetAgent().GetSource().GetCipd().GetVersion(),
 			Path:        ".",
@@ -795,7 +796,7 @@ func computeCipdInput(build *model.Build) *swarming.SwarmingRpcsCipdInput {
 
 // computeEnvPrefixes returns env_prefixes key in swarming properties.
 // Note: this function only considers v2 bbagent builds.
-func computeEnvPrefixes(build *model.Build) []*swarming.SwarmingRpcsStringListPair {
+func computeEnvPrefixes(build *model.Build) []*apipb.StringListPair {
 	prefixesMap := map[string][]string{}
 	for _, c := range build.Proto.GetInfra().GetSwarming().GetCaches() {
 		if c.EnvVar != "" {
@@ -810,9 +811,9 @@ func computeEnvPrefixes(build *model.Build) []*swarming.SwarmingRpcsStringListPa
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
-	prefixes := make([]*swarming.SwarmingRpcsStringListPair, len(keys))
+	prefixes := make([]*apipb.StringListPair, len(keys))
 	for i, key := range keys {
-		prefixes[i] = &swarming.SwarmingRpcsStringListPair{
+		prefixes[i] = &apipb.StringListPair{
 			Key:   key,
 			Value: prefixesMap[key],
 		}
