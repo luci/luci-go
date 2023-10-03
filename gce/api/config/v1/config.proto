@@ -13,7 +13,7 @@ import "google/type/dayofweek.proto";
 import "go.chromium.org/luci/common/proto/options.proto";
 
 option (luci.file_metadata) = {
-  doc_url: "https://luci-config.appspot.com/schemas/services/gce-provider:vms.cfg";
+  doc_url: "https://config.luci.app/schemas/services/gce-provider:vms.cfg";
 };
 
 // A description of a service account.

@@ -14,7 +14,7 @@ package auth_service;
 import "go.chromium.org/luci/common/proto/options.proto";
 
 option (luci.file_metadata) = {
-  doc_url: "https://luci-config.appspot.com/schemas/projects:realms.cfg";
+  doc_url: "https://config.luci.app/schemas/projects:realms.cfg";
 };
 
 option go_package = "go.chromium.org/luci/common/proto/realms;realms";

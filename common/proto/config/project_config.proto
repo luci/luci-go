@@ -13,7 +13,7 @@ package config;
 import "go.chromium.org/luci/common/proto/options.proto";
 
 option (luci.file_metadata) = {
-  doc_url: "https://luci-config.appspot.com/schemas/projects:project.cfg";
+  doc_url: "https://config.luci.app/schemas/projects:project.cfg";
 };
 
 // Schema for project.cfg

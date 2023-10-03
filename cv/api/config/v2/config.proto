@@ -25,7 +25,7 @@ import "go.chromium.org/luci/common/proto/options.proto";
 import "go.chromium.org/luci/cv/api/v1/run.proto";
 
 option (luci.file_metadata) = {
-  doc_url: "https://luci-config.appspot.com/schemas/projects:commit-queue.cfg";
+  doc_url: "https://config.luci.app/schemas/projects:commit-queue.cfg";
 };
 
 

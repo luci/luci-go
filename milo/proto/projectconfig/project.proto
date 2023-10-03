@@ -12,7 +12,7 @@ import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
 import "go.chromium.org/luci/common/proto/options.proto";
 
 option (luci.file_metadata) = {
-  doc_url: "https://luci-config.appspot.com/schemas/projects:luci-milo.cfg";
+  doc_url: "https://config.luci.app/schemas/projects:luci-milo.cfg";
 };
 
 // Note that while the field names in the proto matches the proto

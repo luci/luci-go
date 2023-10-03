@@ -21,7 +21,7 @@ option go_package = "go.chromium.org/luci/scheduler/appengine/messages";
 import "go.chromium.org/luci/common/proto/options.proto";
 
 option (luci.file_metadata) = {
-  doc_url: "https://luci-config.appspot.com/schemas/projects:luci-scheduler.cfg";
+  doc_url: "https://config.luci.app/schemas/projects:luci-scheduler.cfg";
 };
 
 

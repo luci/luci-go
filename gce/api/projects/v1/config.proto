@@ -11,7 +11,7 @@ package projects;
 import "go.chromium.org/luci/common/proto/options.proto";
 
 option (luci.file_metadata) = {
-  doc_url: "https://luci-config.appspot.com/schemas/services/gce-provider:projects.cfg";
+  doc_url: "https://config.luci.app/schemas/services/gce-provider:projects.cfg";
 };
 
 // A config for a GCP project to report GCE quota utilization for.

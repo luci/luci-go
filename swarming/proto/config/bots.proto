@@ -11,7 +11,7 @@ option go_package = "go.chromium.org/luci/swarming/proto/config;configpb";
 import "go.chromium.org/luci/common/proto/options.proto";
 
 option (luci.file_metadata) = {
-  doc_url: "https://luci-config.appspot.com/schemas/services/swarming:bots.cfg";
+  doc_url: "https://config.luci.app/schemas/services/swarming:bots.cfg";
 };
 
 // Schema for bots.cfg service config file in luci-config.

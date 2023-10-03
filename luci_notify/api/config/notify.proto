@@ -19,7 +19,7 @@ import "go.chromium.org/luci/common/proto/options.proto";
 
 option go_package = "go.chromium.org/luci/luci_notify/api/config";
 option (luci.file_metadata) = {
-  doc_url: "https://luci-config.appspot.com/schemas/projects:luci-notify.cfg"
+  doc_url: "https://config.luci.app/schemas/projects:luci-notify.cfg"
 };
 
 // ProjectConfig is a luci-notify configuration for a particular project.

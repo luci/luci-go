@@ -28,7 +28,7 @@ import "go.chromium.org/luci/common/proto/options.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
 
 option (luci.file_metadata) = {
-  doc_url: "https://luci-config.appspot.com/schemas/projects:buildbucket.cfg";
+  doc_url: "https://config.luci.app/schemas/projects:buildbucket.cfg";
 };
 
 // Deprecated in favor of LUCI Realms. This proto is totally unused now, exists

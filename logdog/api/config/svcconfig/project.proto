@@ -15,7 +15,7 @@ import "go.chromium.org/luci/logdog/api/config/svcconfig/archival.proto";
 import "go.chromium.org/luci/logdog/api/config/svcconfig/cloud_logging.proto";
 
 option (luci.file_metadata) = {
-  doc_url: "https://luci-config.appspot.com/schemas/projects:luci-logdog.cfg";
+  doc_url: "https://config.luci.app/schemas/projects:luci-logdog.cfg";
 };
 
 // ProjectConfig is a set of per-project configuration parameters. Each
