@@ -304,6 +304,12 @@ type triageResult struct {
 		events eventbox.Events
 		purges []*prjpb.PurgeCompleted
 	}
+	triggeringCLsCompleted struct {
+		events    eventbox.Events
+		succeeded []*prjpb.TriggeringCLsCompleted_OpResult
+		failed    []*prjpb.TriggeringCLsCompleted_OpResult
+		skipped   []*prjpb.TriggeringCLsCompleted_OpResult
+	}
 }
 
 func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
@@ -335,6 +341,14 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 	case *prjpb.Event_PurgeCompleted:
 		tr.purgesCompleted.events = append(tr.purgesCompleted.events, item)
 		tr.purgesCompleted.purges = append(tr.purgesCompleted.purges, v.PurgeCompleted)
+	case *prjpb.Event_TriggeringClsCompleted:
+		tr.triggeringCLsCompleted.events = append(tr.triggeringCLsCompleted.events, item)
+		tr.triggeringCLsCompleted.succeeded = append(
+			tr.triggeringCLsCompleted.succeeded, v.TriggeringClsCompleted.GetSucceeded()...)
+		tr.triggeringCLsCompleted.failed = append(
+			tr.triggeringCLsCompleted.failed, v.TriggeringClsCompleted.GetFailed()...)
+		tr.triggeringCLsCompleted.skipped = append(
+			tr.triggeringCLsCompleted.skipped, v.TriggeringClsCompleted.GetSkipped()...)
 	default:
 		panic(fmt.Errorf("unknown event: %T [id=%q]", e.GetEvent(), item.ID))
 	}
@@ -467,6 +481,21 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 	}
 	ret = append(ret, eventbox.Transition{
 		Events:       tr.purgesCompleted.events,
+		SideEffectFn: state.SideEffectFn(se),
+		TransitionTo: s,
+	})
+
+	// OnTriggeringCLsCompleted may expire triggers even without incoming event.
+	s, se, err = proc.handler.OnTriggeringCLsCompleted(ctx, s,
+		tr.triggeringCLsCompleted.succeeded,
+		tr.triggeringCLsCompleted.failed,
+		tr.triggeringCLsCompleted.skipped,
+	)
+	if err != nil {
+		return nil, err
+	}
+	ret = append(ret, eventbox.Transition{
+		Events:       tr.triggeringCLsCompleted.events,
 		SideEffectFn: state.SideEffectFn(se),
 		TransitionTo: s,
 	})

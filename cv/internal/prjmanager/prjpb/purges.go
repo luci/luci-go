@@ -15,6 +15,8 @@
 package prjpb
 
 import (
+	"sort"
+
 	"go.chromium.org/luci/cv/internal/prjmanager/copyonwrite"
 )
 
@@ -23,6 +25,18 @@ func (p *PState) COWPurgingCLs(m func(*PurgingCL) *PurgingCL, toAdd []*PurgingCL
 	in := cowPurgingCLs(p.GetPurgingCls())
 	out, updated := copyonwrite.Update(in, purgingCLModifier(m), cowPurgingCLs(toAdd))
 	return []*PurgingCL(out.(cowPurgingCLs)), updated
+}
+
+// GetPurgingCL returns the PurgingCL of a given clid or nil, if not found.
+func (p *PState) GetPurgingCL(clid int64) *PurgingCL {
+	prcls := p.GetPurgingCls()
+	idx := sort.Search(len(prcls), func(i int) bool {
+		return prcls[i].GetClid() >= clid
+	})
+	if idx >= len(prcls) || prcls[idx].GetClid() != clid {
+		return nil
+	}
+	return prcls[idx]
 }
 
 func purgingCLModifier(f func(*PurgingCL) *PurgingCL) copyonwrite.Modifier {

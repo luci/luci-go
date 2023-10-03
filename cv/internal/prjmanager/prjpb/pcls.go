@@ -15,6 +15,8 @@
 package prjpb
 
 import (
+	"sort"
+
 	"go.chromium.org/luci/cv/internal/prjmanager/copyonwrite"
 )
 
@@ -32,6 +34,18 @@ func (p *PState) COWPCLs(m func(*PCL) *PCL, toAdd []*PCL) ([]*PCL, bool) {
 	in := cowPCLs(p.GetPcls())
 	out, updated := copyonwrite.Update(in, mf, cowPCLs(toAdd))
 	return []*PCL(out.(cowPCLs)), updated
+}
+
+// GetPCL returns the PCL of a given clid or nil, if not found.
+func (p *PState) GetPCL(clid int64) *PCL {
+	pcls := p.GetPcls()
+	idx := sort.Search(len(pcls), func(i int) bool {
+		return pcls[i].GetClid() >= clid
+	})
+	if idx >= len(pcls) || pcls[idx].GetClid() != clid {
+		return nil
+	}
+	return pcls[idx]
 }
 
 type cowPCLs []*PCL
