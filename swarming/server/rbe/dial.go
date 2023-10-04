@@ -27,6 +27,23 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
+// Instructs the gRPC client how to retry.
+const retryPolicy = `{
+  "methodConfig": [{
+    "waitForReady": true,
+    "retryPolicy": {
+      "MaxAttempts": 5,
+      "InitialBackoff": "0.01s",
+      "MaxBackoff": "1s",
+      "BackoffMultiplier": 2.0,
+      "RetryableStatusCodes": [
+        "INTERNAL",
+        "UNAVAILABLE"
+      ]
+    }
+  }]
+}`
+
 // Dial dials RBE backend with proper authentication.
 //
 // Returns multiple identical clients each representing a separate HTTP2
@@ -49,6 +66,7 @@ func Dial(ctx context.Context, count int) ([]grpc.ClientConnInterface, error) {
 			grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{}),
 			grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
 			grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+			grpc.WithDefaultServiceConfig(retryPolicy),
 		)
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to dial RBE backend").Err()
