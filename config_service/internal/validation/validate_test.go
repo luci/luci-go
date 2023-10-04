@@ -460,7 +460,7 @@ func TestValidateLegacy(t *testing.T) {
 		}
 
 		Convey("Works", func() {
-			srvResponse = []byte(`{"messages": [{"severity": "ERROR", "text": "bad config"}]}`)
+			srvResponse = []byte(`{"messages": [{"severity": 40, "text": "bad config"}]}`)
 			tf := testFile{
 				path:    filePath,
 				content: []byte("This is config content"),
@@ -534,16 +534,18 @@ func TestValidateLegacy(t *testing.T) {
 			So(capturedRequestHeader.Get("Content-Encoding"), ShouldEqual, "gzip")
 		})
 
-		Convey("Omit unknown severity", func() {
-			srvResponse = []byte(`{"messages": [{"severity": "TRACE", "text": "bad config"}]}`)
-			tf := testFile{
-				path:    filePath,
-				content: []byte("This is config content"),
-			}
-			res, err := v.Validate(ctx, cs, []File{tf})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &cfgcommonpb.ValidationResult{})
-		})
+		for _, sev := range []int32{0, 123} {
+			Convey(fmt.Sprintf("Omit unknown severity %d", sev), func() {
+				srvResponse = []byte(fmt.Sprintf(`{"messages": [{"severity": %d, "text": "bad config"}]}`, sev))
+				tf := testFile{
+					path:    filePath,
+					content: []byte("This is config content"),
+				}
+				res, err := v.Validate(ctx, cs, []File{tf})
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, &cfgcommonpb.ValidationResult{})
+			})
+		}
 
 		Convey("Server Error", func() {
 			srvErrMsg = "server encounter error"

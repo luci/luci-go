@@ -169,7 +169,7 @@ type legacyValidationRequest struct {
 
 type legacyValidationResponse struct {
 	Messages []struct {
-		Severity string `json:"severity"`
+		Severity int32  `json:"severity"`
 		Text     string `json:"text"`
 	} `json:"messages"`
 }
@@ -293,15 +293,16 @@ func (sv *serviceValidator) parseLegacyResponse(ctx context.Context, resp *http.
 		}
 		ret := make([]*cfgcommonpb.ValidationResult_Message, 0, len(validationResponse.Messages))
 		for _, msg := range validationResponse.Messages {
-			if val, ok := cfgcommonpb.ValidationResult_Severity_value[msg.Severity]; ok {
-				ret = append(ret, &cfgcommonpb.ValidationResult_Message{
-					Path:     file.GetPath(),
-					Severity: cfgcommonpb.ValidationResult_Severity(val),
-					Text:     msg.Text,
-				})
-			} else {
-				logging.Errorf(ctx, "unknown severity %q; full response from %s: %q", msg.Severity, url, body)
+			sev := cfgcommonpb.ValidationResult_Severity(msg.Severity)
+			if _, ok := cfgcommonpb.ValidationResult_Severity_name[msg.Severity]; !ok || sev == cfgcommonpb.ValidationResult_UNKNOWN {
+				logging.Errorf(ctx, "unknown severity %d; full response from %s: %q", msg.Severity, url, body)
+				continue
 			}
+			ret = append(ret, &cfgcommonpb.ValidationResult_Message{
+				Path:     file.GetPath(),
+				Severity: sev,
+				Text:     msg.Text,
+			})
 		}
 		return ret, nil
 	}
