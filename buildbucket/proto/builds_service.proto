@@ -304,7 +304,7 @@ message UpdateBuildRequest {
 
 // A request message for ScheduleBuild RPC.
 //
-// Next ID: 23.
+// Next ID: 24.
 message ScheduleBuildRequest {
   // ** STRONGLY RECOMMENDED **.
   // A unique string id used for detecting duplicate requests.
@@ -523,6 +523,11 @@ message ScheduleBuildRequest {
 
   // Value for Build.retriable.
   Trinary retriable = 22;
+
+  message ShadowInput {
+  }
+  // Input for scheduling a build in the shadow bucket.
+  ShadowInput shadow_input = 23;
 }
 
 // A request message for CancelBuild RPC.

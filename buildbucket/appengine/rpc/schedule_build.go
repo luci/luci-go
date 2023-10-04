@@ -418,12 +418,12 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 }
 
 // fetchBuilderConfigs returns the Builder configs referenced by the given
-// requests in a map of Bucket ID -> Builder name -> *pb.BuilderConfig and also
-// a set of dynamic buckets.
+// requests in a map of Bucket ID -> Builder name -> *pb.BuilderConfig,
+// a map of buckets to their shadow buckets and also a set of dynamic buckets.
 //
 // A single returned error means a global error which applies to every request.
 // Otherwise, it would be a MultiError where len(MultiError) equals to len(builderIDs).
-func fetchBuilderConfigs(ctx context.Context, builderIDs []*pb.BuilderID) (map[string]map[string]*pb.BuilderConfig, stringset.Set, error) {
+func fetchBuilderConfigs(ctx context.Context, builderIDs []*pb.BuilderID) (map[string]map[string]*pb.BuilderConfig, stringset.Set, map[string]string, error) {
 	merr := make(errors.MultiError, len(builderIDs))
 	var bcks []*model.Bucket
 
@@ -464,19 +464,22 @@ func fetchBuilderConfigs(ctx context.Context, builderIDs []*pb.BuilderID) (map[s
 
 	// Note; this will fill in bckCfgs and bldrCfgs.
 	if err := model.GetIgnoreMissing(ctx, bcks, bldrs); err != nil {
-		return nil, nil, errors.Annotate(err, "failed to fetch entities").Err()
+		return nil, nil, nil, errors.Annotate(err, "failed to fetch entities").Err()
 	}
 
 	dynamicBuckets := stringset.New(0)
+	shadowMap := make(map[string]string)
 	// Check buckets to see if they support dynamically scheduling builds for builders which are not pre-defined.
 	for _, b := range bcks {
+		bucket := protoutil.FormatBucketID(b.Parent.StringID(), b.ID)
 		if b.Proto.GetName() == "" {
-			bucket := protoutil.FormatBucketID(b.Parent.StringID(), b.ID)
 			for _, bldrIdx := range idxMap[bucket] {
 				for idx := range bldrIdx {
 					merr[idx] = appstatus.Errorf(codes.NotFound, "bucket not found: %q", b.ID)
 				}
 			}
+		} else {
+			shadowMap[bucket] = b.Proto.GetShadow()
 		}
 	}
 	for _, b := range bldrs {
@@ -513,9 +516,9 @@ func fetchBuilderConfigs(ctx context.Context, builderIDs []*pb.BuilderID) (map[s
 
 	// doesn't contain any errors.
 	if merr.First() == nil {
-		return ret, dynamicBuckets, nil
+		return ret, dynamicBuckets, shadowMap, nil
 	}
-	return ret, dynamicBuckets, merr.AsError()
+	return ret, dynamicBuckets, shadowMap, merr.AsError()
 }
 
 // builderMatches returns whether or not the given builder matches the given
@@ -1420,6 +1423,45 @@ func getParentInfo(ctx context.Context, pBld *model.Build) (ancestors []int64, p
 	return
 }
 
+// getShadowBuckets gets the shadow buckets.
+//
+// For the requests with `ShadowInput`, the build should be scheduled in the
+// shadow bucket of the requested bucket. So we need to get the shadow buckets
+// for validation.
+func getShadowBuckets(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (map[string]string, error) {
+	bcksWithShadow := stringset.New(0)
+	var buckets []*model.Bucket
+	for _, req := range reqs {
+		if req.GetShadowInput() == nil {
+			continue
+		}
+		k := protoutil.FormatBucketID(req.Builder.Project, req.Builder.Bucket)
+		if bcksWithShadow.Add(k) {
+			buckets = append(buckets, &model.Bucket{
+				Parent: model.ProjectKey(ctx, req.Builder.Project),
+				ID:     req.Builder.Bucket,
+			})
+		}
+	}
+	if len(bcksWithShadow) == 0 {
+		return nil, nil
+	}
+
+	if err := model.GetIgnoreMissing(ctx, buckets); err != nil {
+		return nil, errors.Annotate(err, "failed to fetch bucket entities").Err()
+	}
+
+	shadows := make(map[string]string)
+	for _, b := range buckets {
+		if b == nil {
+			continue
+		}
+		k := protoutil.FormatBucketID(b.Parent.StringID(), b.ID)
+		shadows[k] = b.Proto.GetShadow()
+	}
+	return shadows, nil
+}
+
 // scheduleBuilds handles requests to schedule builds. Requests must be validated and authorized.
 // The length of returned builds always equal to len(reqs).
 // A single returned error means a global error which applies to every request.
@@ -1442,7 +1484,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 	for _, req := range reqs {
 		bldrIDs = append(bldrIDs, req.Builder)
 	}
-	cfgs, dynamicBuckets, err := fetchBuilderConfigs(ctx, bldrIDs)
+	cfgs, dynamicBuckets, shadowMap, err := fetchBuilderConfigs(ctx, bldrIDs)
 	if me, ok := err.(errors.MultiError); ok {
 		merr = mergeErrs(merr, me, "error fetching builders", func(i int) int { return i })
 	} else if err != nil {
@@ -1467,8 +1509,21 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 		bucket := fmt.Sprintf("%s/%s", validReq[i].Builder.Project, validReq[i].Builder.Bucket)
 		cfg := cfgs[bucket][validReq[i].Builder.Builder]
 
-		// TODO(crbug.com/1042991): Parallelize build creation from requests if necessary.
-		build := buildFromScheduleRequest(ctx, reqs[origI], ancestors, pRunID, cfg, globalCfg)
+		var build *pb.Build
+		if reqs[origI].ShadowInput != nil {
+			// Schedule a build with shadow info.
+			if shadowMap[bucket] == "" || shadowMap[bucket] == validReq[i].Builder.Bucket {
+				// Scheduling a shadow build in the original bucket is prohibited.
+				merr[origI] = errors.Reason("scheduling a shadow build in the original bucket is not allowed").Err()
+				blds[i] = nil
+				continue
+			}
+			// Schedule a build with shadow info.
+			build, merr[origI] = scheduleShadowBuild(ctx, reqs[origI], shadowMap[bucket], globalCfg, cfg)
+		} else {
+			// TODO(crbug.com/1042991): Parallelize build creation from requests if necessary.
+			build = buildFromScheduleRequest(ctx, reqs[origI], ancestors, pRunID, cfg, globalCfg)
+		}
 
 		blds[i] = &model.Build{
 			Proto: build,
@@ -1543,7 +1598,7 @@ func normalizeSchedule(req *pb.ScheduleBuildRequest) {
 
 // validateScheduleBuild validates and authorizes the given request, returning
 // a normalized version of the request and field mask.
-func validateScheduleBuild(ctx context.Context, wellKnownExperiments stringset.Set, req *pb.ScheduleBuildRequest, parent *model.Build) (*pb.ScheduleBuildRequest, *model.BuildMask, error) {
+func validateScheduleBuild(ctx context.Context, wellKnownExperiments stringset.Set, req *pb.ScheduleBuildRequest, parent *model.Build, shadowBuckets map[string]string) (*pb.ScheduleBuildRequest, *model.BuildMask, error) {
 	var err error
 	if err = validateSchedule(ctx, req, wellKnownExperiments, parent); err != nil {
 		return nil, nil, appstatus.BadRequest(err)
@@ -1558,7 +1613,18 @@ func validateScheduleBuild(ctx context.Context, wellKnownExperiments stringset.S
 	if req, err = scheduleRequestFromTemplate(ctx, req); err != nil {
 		return nil, nil, err
 	}
-	if err = perm.HasInBucket(ctx, bbperms.BuildsAdd, req.Builder.Project, req.Builder.Bucket); err != nil {
+
+	bkt := req.Builder.Bucket
+	if req.GetShadowInput() != nil {
+		k := protoutil.FormatBucketID(req.Builder.Project, req.Builder.Bucket)
+		shadow := shadowBuckets[k]
+		if shadow == "" || shadow == req.Builder.Bucket {
+			return nil, nil, appstatus.BadRequest(errors.Reason("scheduling a shadow build in the original bucket is not allowed").Err())
+		}
+		bkt = shadow
+	}
+
+	if err = perm.HasInBucket(ctx, bbperms.BuildsAdd, req.Builder.Project, bkt); err != nil {
 		return nil, nil, err
 	}
 	return req, m, nil
@@ -1577,7 +1643,13 @@ func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) 
 		return nil, err
 	}
 
-	req, m, err := validateScheduleBuild(ctx, wellKnownExperiments, req, pBld)
+	// get shadow buckets.
+	shadowBuckets, err := getShadowBuckets(ctx, []*pb.ScheduleBuildRequest{req})
+	if err != nil {
+		return nil, errors.Annotate(err, "error in getting shadow buckets").Err()
+	}
+
+	req, m, err := validateScheduleBuild(ctx, wellKnownExperiments, req, pBld, shadowBuckets)
 	if err != nil {
 		return nil, err
 	}
@@ -1626,13 +1698,21 @@ func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, re
 		})
 	}
 
+	// get shadow buckets.
+	shadowBuckets, err := getShadowBuckets(ctx, reqs)
+	if err != nil {
+		return nil, errorInBatch(err, func(err error) error {
+			return appstatus.BadRequest(errors.Annotate(err, "error in schedule batch").Err())
+		})
+	}
+
 	// Validate requests.
 	_ = parallel.WorkPool(min(64, len(reqs)), func(work chan<- func() error) {
 		for i, req := range reqs {
 			i := i
 			req := req
 			work <- func() error {
-				reqs[i], masks[i], merr[i] = validateScheduleBuild(ctx, wellKnownExperiments, req, pBld)
+				reqs[i], masks[i], merr[i] = validateScheduleBuild(ctx, wellKnownExperiments, req, pBld, shadowBuckets)
 				return nil
 			}
 		}

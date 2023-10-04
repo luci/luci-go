@@ -546,6 +546,9 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 	var idxMapNums []int
 
 	for i := range bc.blds {
+		if bc.blds[i] == nil {
+			continue
+		}
 		bc.blds[i].ID = ids[i]
 		bc.blds[i].CreatedBy = user
 		bc.blds[i].CreateTime = now
@@ -678,7 +681,7 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 					case infra.GetSwarming().GetHostname() == "":
 						logging.Debugf(ctx, "skipped creating swarming task for build %d", b.ID)
 						return nil
-					default :
+					default:
 						if stringset.NewFromSlice(b.Proto.Input.Experiments...).Has(bb.ExperimentBackendGo) {
 							if err := tasks.CreateSwarmingBuildTask(ctx, &taskdefs.CreateSwarmingBuildTask{
 								BuildId: b.ID,

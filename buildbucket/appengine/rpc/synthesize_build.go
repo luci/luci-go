@@ -70,28 +70,34 @@ func synthesizeBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest) (*pb.
 	if err := datastore.Get(ctx, bktCfg, bldrCfg); err != nil {
 		return nil, errors.Annotate(err, "failed to get builder config").Err()
 	}
+	return scheduleShadowBuild(ctx, schReq, bktCfg.Proto.Shadow, globalCfg, bldrCfg.Config)
+}
 
-	if bktCfg.Proto.GetShadow() != "" && bktCfg.Proto.Shadow != builder.Bucket {
-		applyShadowAdjustment(bldrCfg.Config)
+func scheduleShadowBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest, shadowBucket string, globalCfg *pb.SettingsCfg, cfg *pb.BuilderConfig) (*pb.Build, error) {
+	origBucket := schReq.Builder.Bucket
+
+	cfgCopy := cfg
+	if shadowBucket != "" && shadowBucket != origBucket {
+		cfgCopy = applyShadowAdjustment(cfg)
 	}
 
-	bld := buildFromScheduleRequest(ctx, schReq, nil, "", bldrCfg.Config, globalCfg)
+	bld := buildFromScheduleRequest(ctx, schReq, nil, "", cfgCopy, globalCfg)
 
-	if bktCfg.Proto.GetShadow() != "" && bktCfg.Proto.Shadow != builder.Bucket {
+	if shadowBucket != "" && shadowBucket != origBucket {
 		bld.Input.Properties.Fields["$recipe_engine/led"] = &structpb.Value{
 			Kind: &structpb.Value_StructValue{
 				StructValue: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"shadowed_bucket": {
 							Kind: &structpb.Value_StringValue{
-								StringValue: bld.Builder.Bucket,
+								StringValue: origBucket,
 							},
 						},
 					},
 				},
 			},
 		}
-		bld.Builder.Bucket = bktCfg.Proto.Shadow
+		bld.Builder.Bucket = shadowBucket
 	}
 	return bld, nil
 }

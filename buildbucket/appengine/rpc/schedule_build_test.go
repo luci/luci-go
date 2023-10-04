@@ -137,6 +137,7 @@ func TestScheduleBuild(t *testing.T) {
 		testutil.PutBuilder(ctx, "project", "bucket 1", "builder 2", "")
 		testutil.PutBucket(ctx, "project", "bucket 1", &pb.Bucket{
 			Swarming: &pb.Swarming{},
+			Shadow:   "bucket 2",
 		})
 		testutil.PutBucket(ctx, "project", "bucket 2", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{}})
 
@@ -148,7 +149,7 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: "builder 1",
 				},
 			}
-			bldrs, _, err := fetchBuilderConfigs(ctx, bldrIDs)
+			bldrs, _, _, err := fetchBuilderConfigs(ctx, bldrIDs)
 			So(len(err.(errors.MultiError)), ShouldEqual, len(bldrIDs))
 			So(err, ShouldErrLike, "bucket not found")
 			So(bldrs["project/bucket 3"]["builder 1"], ShouldBeNil)
@@ -162,7 +163,7 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: "builder 3",
 				},
 			}
-			bldrs, _, err := fetchBuilderConfigs(ctx, bldrIDs)
+			bldrs, _, _, err := fetchBuilderConfigs(ctx, bldrIDs)
 			So(len(err.(errors.MultiError)), ShouldEqual, len(bldrIDs))
 			So(err, ShouldErrLike, "builder not found")
 			So(bldrs["project/bucket 3"]["builder 1"], ShouldBeNil)
@@ -181,13 +182,14 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: "builder 100",
 				},
 			}
-			bldrs, _, err := fetchBuilderConfigs(ctx, bldrIDs)
+			bldrs, _, shadowMap, err := fetchBuilderConfigs(ctx, bldrIDs)
 			So(err.(errors.MultiError)[1], ShouldErrLike, "builder not found")
 			So(bldrs["project/bucket 3"]["builder 1"], ShouldBeNil)
 			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.BuilderConfig{
 				Name:         "builder 1",
 				SwarmingHost: "host",
 			})
+			So(shadowMap, ShouldResemble, map[string]string{"project/bucket 1": "bucket 2"})
 		})
 
 		Convey("dynamic", func() {
@@ -198,10 +200,11 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: "builder 1",
 				},
 			}
-			bldrs, dynamicBuckets, err := fetchBuilderConfigs(ctx, bldrIDs)
+			bldrs, dynamicBuckets, shadowMap, err := fetchBuilderConfigs(ctx, bldrIDs)
 			So(err, ShouldBeNil)
 			So(bldrs["project/bucket 2"]["builder 1"], ShouldBeNil)
 			So(len(dynamicBuckets), ShouldEqual, 1)
+			So(shadowMap, ShouldResemble, map[string]string{"project/bucket 2": ""})
 		})
 
 		Convey("one", func() {
@@ -212,7 +215,7 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: "builder 1",
 				},
 			}
-			bldrs, _, err := fetchBuilderConfigs(ctx, bldrIDs)
+			bldrs, _, _, err := fetchBuilderConfigs(ctx, bldrIDs)
 			So(err, ShouldBeNil)
 			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.BuilderConfig{
 				Name:         "builder 1",
@@ -238,7 +241,7 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: "builder 1",
 				},
 			}
-			bldrs, _, err := fetchBuilderConfigs(ctx, bldrIDs)
+			bldrs, _, _, err := fetchBuilderConfigs(ctx, bldrIDs)
 			So(err, ShouldBeNil)
 			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.BuilderConfig{
 				Name:         "builder 1",
@@ -1496,6 +1499,252 @@ func TestScheduleBuild(t *testing.T) {
 			})
 			So(sch.Tasks(), ShouldHaveLength, 4)
 			So(datastore.Get(ctx, blds), ShouldBeNil)
+		})
+
+		Convey("one shadow, one original, and one with no shadow bucket", func() {
+			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{Swarming: &pb.Swarming{}, Shadow: "bucket.shadow"})
+			testutil.PutBucket(ctx, "project", "bucket.shadow", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{}})
+			So(datastore.Put(ctx, &model.Builder{
+				Parent: model.BucketKey(ctx, "project", "bucket"),
+				ID:     "builder",
+				Config: &pb.BuilderConfig{
+					Name:           "builder",
+					ServiceAccount: "sa@chops-service-accounts.iam.gserviceaccount.com",
+					Dimensions:     []string{"pool:pool1"},
+					Properties:     `{"a":"b","b":"b"}`,
+					ShadowBuilderAdjustments: &pb.BuilderConfig_ShadowBuilderAdjustments{
+						ServiceAccount: "shadow@chops-service-accounts.iam.gserviceaccount.com",
+						Pool:           "pool2",
+						Properties:     `{"a":"b2","c":"c"}`,
+						Dimensions: []string{
+							"pool:pool2",
+						},
+					},
+				},
+			}), ShouldBeNil)
+			reqs := []*pb.ScheduleBuildRequest{
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
+				},
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				},
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket.shadow",
+						Builder: "builder",
+					},
+					ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
+				},
+			}
+			blds, err := scheduleBuilds(ctx, globalCfg, reqs...)
+			So(err, ShouldNotBeNil)
+			So(err, ShouldErrLike, "scheduling a shadow build in the original bucket is not allowed")
+			So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket.shadow",
+						Builder: "builder",
+					},
+					CreatedBy:  "anonymous:anonymous",
+					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					Exe: &pb.Executable{
+						Cmd: []string{"recipes"},
+					},
+					ExecutionTimeout: &durationpb.Duration{
+						Seconds: 10800,
+					},
+					GracePeriod: &durationpb.Duration{
+						Seconds: 30,
+					},
+					Id: 9021868963221610337,
+					Infra: &pb.BuildInfra{
+						Bbagent: &pb.BuildInfra_BBAgent{
+							CacheDir:    "cache",
+							PayloadPath: "kitchen-checkout",
+						},
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
+							Agent: &pb.BuildInfra_Buildbucket_Agent{
+								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
+								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+								},
+							},
+						},
+						Logdog: &pb.BuildInfra_LogDog{
+							Prefix:  "buildbucket/app/9021868963221610337",
+							Project: "project",
+						},
+						Resultdb: &pb.BuildInfra_ResultDB{
+							Hostname: "rdbHost",
+						},
+						Swarming: &pb.BuildInfra_Swarming{
+							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+								{
+									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+									Path: "builder",
+									WaitForWarmCache: &durationpb.Duration{
+										Seconds: 240,
+									},
+								},
+							},
+							Priority:           30,
+							TaskServiceAccount: "shadow@chops-service-accounts.iam.gserviceaccount.com",
+							TaskDimensions: []*pb.RequestedDimension{
+								{
+									Key:   "pool",
+									Value: "pool2",
+								},
+							},
+						},
+					},
+					Input: &pb.Build_Input{
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"$recipe_engine/led": {
+									Kind: &structpb.Value_StructValue{
+										StructValue: &structpb.Struct{
+											Fields: map[string]*structpb.Value{
+												"shadowed_bucket": {
+													Kind: &structpb.Value_StringValue{
+														StringValue: "bucket",
+													},
+												},
+											},
+										},
+									},
+								},
+								"a": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "b2",
+									},
+								},
+								"b": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "b",
+									},
+								},
+								"c": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "c",
+									},
+								},
+							},
+						},
+					},
+					SchedulingTimeout: &durationpb.Duration{
+						Seconds: 21600,
+					},
+					Status: pb.Status_SCHEDULED,
+					Tags: []*pb.StringPair{
+						{
+							Key:   "builder",
+							Value: "builder",
+						},
+					},
+				},
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					CreatedBy:  "anonymous:anonymous",
+					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					Exe: &pb.Executable{
+						Cmd: []string{"recipes"},
+					},
+					ExecutionTimeout: &durationpb.Duration{
+						Seconds: 10800,
+					},
+					GracePeriod: &durationpb.Duration{
+						Seconds: 30,
+					},
+					Id: 9021868963221610321,
+					Infra: &pb.BuildInfra{
+						Bbagent: &pb.BuildInfra_BBAgent{
+							CacheDir:    "cache",
+							PayloadPath: "kitchen-checkout",
+						},
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
+							Agent: &pb.BuildInfra_Buildbucket_Agent{
+								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
+								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+								},
+							},
+						},
+						Logdog: &pb.BuildInfra_LogDog{
+							Prefix:  "buildbucket/app/9021868963221610321",
+							Project: "project",
+						},
+						Resultdb: &pb.BuildInfra_ResultDB{
+							Hostname: "rdbHost",
+						},
+						Swarming: &pb.BuildInfra_Swarming{
+							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+								{
+									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+									Path: "builder",
+									WaitForWarmCache: &durationpb.Duration{
+										Seconds: 240,
+									},
+								},
+							},
+							Priority:           30,
+							TaskServiceAccount: "sa@chops-service-accounts.iam.gserviceaccount.com",
+							TaskDimensions: []*pb.RequestedDimension{
+								{
+									Key:   "pool",
+									Value: "pool1",
+								},
+							},
+						},
+					},
+					Input: &pb.Build_Input{
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"a": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "b",
+									},
+								},
+								"b": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "b",
+									},
+								},
+							},
+						},
+					},
+					SchedulingTimeout: &durationpb.Duration{
+						Seconds: 21600,
+					},
+					Status: pb.Status_SCHEDULED,
+					Tags: []*pb.StringPair{
+						{
+							Key:   "builder",
+							Value: "builder",
+						},
+					},
+				},
+				nil,
+			})
 		})
 	})
 
@@ -6213,6 +6462,94 @@ func TestScheduleBuild(t *testing.T) {
 				})
 			})
 		})
+
+		Convey("schedule in shadow", func() {
+			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{Swarming: &pb.Swarming{}, Shadow: "bucket.shadow"})
+			testutil.PutBucket(ctx, "project", "bucket.shadow", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{}})
+			So(datastore.Put(ctx, &model.Builder{
+				Parent: model.BucketKey(ctx, "project", "bucket"),
+				ID:     "builder",
+				Config: &pb.BuilderConfig{
+					Name:           "builder",
+					ServiceAccount: "sa@chops-service-accounts.iam.gserviceaccount.com",
+					Dimensions:     []string{"pool:pool1"},
+					Properties:     `{"a":"b","b":"b"}`,
+					ShadowBuilderAdjustments: &pb.BuilderConfig_ShadowBuilderAdjustments{
+						ServiceAccount: "shadow@chops-service-accounts.iam.gserviceaccount.com",
+						Pool:           "pool2",
+						Properties:     `{"a":"b2","c":"c"}`,
+						Dimensions: []string{
+							"pool:pool2",
+						},
+					},
+				},
+			}), ShouldBeNil)
+			Convey("no permission", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: userID,
+					FakeDB: authtest.NewFakeDB(
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+						authtest.MockPermission(userID, "project:bucket.shadow", bbperms.BuildersGet),
+					),
+				})
+				reqs := []*pb.ScheduleBuildRequest{
+					{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
+					},
+				}
+				_, err := srv.scheduleBuilds(ctx, globalCfg, reqs)
+				So(err, ShouldErrLike, `does not have permission "buildbucket.builds.add"`)
+			})
+
+			Convey("one shadow, one original, and one with no shadow bucket", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: userID,
+					FakeDB: authtest.NewFakeDB(
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+						authtest.MockPermission(userID, "project:bucket.shadow", bbperms.BuildsGet),
+						authtest.MockPermission(userID, "project:bucket.shadow", bbperms.BuildsAdd),
+					),
+				})
+				reqs := []*pb.ScheduleBuildRequest{
+					{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
+					},
+					{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
+					{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket.shadow",
+							Builder: "builder",
+						},
+						ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
+					},
+				}
+				blds, err := srv.scheduleBuilds(ctx, globalCfg, reqs)
+				So(err, ShouldNotBeNil)
+				So(err, ShouldErrLike, "scheduling a shadow build in the original bucket is not allowed")
+				So(len(blds), ShouldEqual, 3)
+				So(blds[2], ShouldBeNil)
+			})
+		})
+
 	})
 
 	Convey("structContains", t, func() {

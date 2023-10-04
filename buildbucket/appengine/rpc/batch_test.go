@@ -92,6 +92,13 @@ func TestBatch(t *testing.T) {
 				Parent: model.ProjectKey(ctx, "project"),
 				Proto:  &pb.Bucket{},
 			},
+			&model.Bucket{
+				ID:     "bucket1",
+				Parent: model.ProjectKey(ctx, "project"),
+				Proto: &pb.Bucket{
+					Shadow: "bucket1",
+				},
+			},
 			&model.Build{
 				Proto: &pb.Build{
 					Id: 1,
@@ -354,6 +361,26 @@ func TestBatch(t *testing.T) {
 							},
 						},
 					}},
+					{Request: &pb.BatchRequest_Request_ScheduleBuild{
+						ScheduleBuild: &pb.ScheduleBuildRequest{
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+							ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
+						},
+					}},
+					{Request: &pb.BatchRequest_Request_ScheduleBuild{
+						ScheduleBuild: &pb.ScheduleBuildRequest{
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket1",
+								Builder: "builder",
+							},
+							ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
+						},
+					}},
 				},
 			}
 			res, err := srv.Batch(ctx, req)
@@ -375,6 +402,18 @@ func TestBatch(t *testing.T) {
 						Error: &spb.Status{
 							Code:    3,
 							Message: "bad request: builder: builder is required",
+						},
+					}},
+					{Response: &pb.BatchResponse_Response_Error{
+						Error: &spb.Status{
+							Code:    3,
+							Message: "bad request: scheduling a shadow build in the original bucket is not allowed",
+						},
+					}},
+					{Response: &pb.BatchResponse_Response_Error{
+						Error: &spb.Status{
+							Code:    3,
+							Message: "bad request: scheduling a shadow build in the original bucket is not allowed",
 						},
 					}},
 				},

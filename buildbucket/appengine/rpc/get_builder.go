@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/reflectutil"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
@@ -70,20 +71,20 @@ func stringsToRequestedDimensions(strDims []string) (map[string][]*pb.RequestedD
 	return dims, empty
 }
 
-// applyShadowAdjustment applies shadow builder adjustments to builder config.
-//
-// It will mutate the given cfg.
-func applyShadowAdjustment(cfg *pb.BuilderConfig) {
+// applyShadowAdjustment makes a copy of the builder config then applies shadow
+// builder adjustments to it.
+func applyShadowAdjustment(cfg *pb.BuilderConfig) *pb.BuilderConfig {
+	rtnCfg := reflectutil.ShallowCopy(cfg).(*pb.BuilderConfig)
 	shadowBldrCfg := cfg.GetShadowBuilderAdjustments()
 	if shadowBldrCfg == nil {
-		return
+		return rtnCfg
 	}
 	if shadowBldrCfg.ServiceAccount != "" {
-		cfg.ServiceAccount = shadowBldrCfg.ServiceAccount
+		rtnCfg.ServiceAccount = shadowBldrCfg.ServiceAccount
 	}
 
 	if len(shadowBldrCfg.Dimensions) > 0 {
-		dims, _ := stringsToRequestedDimensions(cfg.Dimensions)
+		dims, _ := stringsToRequestedDimensions(rtnCfg.Dimensions)
 		shadowDims, empty := stringsToRequestedDimensions(shadowBldrCfg.Dimensions)
 
 		for k, d := range shadowDims {
@@ -103,34 +104,35 @@ func applyShadowAdjustment(cfg *pb.BuilderConfig) {
 			}
 		}
 		sort.Strings(updatedDims)
-		cfg.Dimensions = updatedDims
+		rtnCfg.Dimensions = updatedDims
 	}
 
 	if shadowBldrCfg.Properties != "" {
-		if cfg.GetProperties() == "" {
-			cfg.Properties = shadowBldrCfg.Properties
+		if rtnCfg.GetProperties() == "" {
+			rtnCfg.Properties = shadowBldrCfg.Properties
 		} else {
 			origProp := &structpb.Struct{}
 			shadowProp := &structpb.Struct{}
-			if err := protojson.Unmarshal([]byte(cfg.Properties), origProp); err != nil {
+			if err := protojson.Unmarshal([]byte(rtnCfg.Properties), origProp); err != nil {
 				// Builder config should have been validated already.
-				panic(errors.Annotate(err, "error unmarshaling builder properties for %q", cfg.Name).Err())
+				panic(errors.Annotate(err, "error unmarshaling builder properties for %q", rtnCfg.Name).Err())
 			}
 			if err := protojson.Unmarshal([]byte(shadowBldrCfg.Properties), shadowProp); err != nil {
 				// Builder config should have been validated already.
-				panic(errors.Annotate(err, "error unmarshaling builder shadow properties for %q", cfg.Name).Err())
+				panic(errors.Annotate(err, "error unmarshaling builder shadow properties for %q", rtnCfg.Name).Err())
 			}
 			for k, v := range shadowProp.GetFields() {
 				origProp.Fields[k] = v
 			}
 			updatedProp, err := protojson.Marshal(origProp)
 			if err != nil {
-				panic(errors.Annotate(err, "error marshaling builder properties for %q", cfg.Name).Err())
+				panic(errors.Annotate(err, "error marshaling builder properties for %q", rtnCfg.Name).Err())
 			}
-			cfg.Properties = string(updatedProp)
+			rtnCfg.Properties = string(updatedProp)
 		}
 	}
-	cfg.ShadowBuilderAdjustments = nil
+	rtnCfg.ShadowBuilderAdjustments = nil
+	return rtnCfg
 }
 
 func trySynthesizeFromShadowedBuilder(ctx context.Context, req *pb.GetBuilderRequest) (*pb.BuilderItem, error) {
@@ -160,10 +162,10 @@ func trySynthesizeFromShadowedBuilder(ctx context.Context, req *pb.GetBuilderReq
 	}
 	for _, bldr := range builders {
 		if bldr.Config != nil {
-			applyShadowAdjustment(bldr.Config)
+			cfgCopy := applyShadowAdjustment(bldr.Config)
 			return &pb.BuilderItem{
 				Id:     req.Id,
-				Config: bldr.Config,
+				Config: cfgCopy,
 			}, nil
 		}
 	}
