@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -176,8 +177,14 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 			writeErr(status.Errorf(codes.InvalidArgument, "bad content type %q", ct))
 			return
 		}
+		raw, err := io.ReadAll(req.Body)
+		if err != nil {
+			writeErr(status.Errorf(codes.Internal, "error reading request body: %s", err))
+			return
+		}
 		body = new(B)
-		if err := json.NewDecoder(req.Body).Decode(body); err != nil {
+		if err := json.Unmarshal(raw, body); err != nil {
+			logging.Warningf(ctx, "Unrecognized request:\n%s", raw)
 			writeErr(status.Errorf(codes.InvalidArgument, "failed to deserialized the request: %s", err))
 			return
 		}
