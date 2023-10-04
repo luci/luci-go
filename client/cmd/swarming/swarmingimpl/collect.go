@@ -19,18 +19,17 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"regexp"
-	"sync"
 	"time"
 
 	"github.com/maruel/subcommands"
-	"golang.org/x/sync/semaphore"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -90,13 +89,6 @@ func (t *taskOutputOption) includesConsole() bool {
 
 var taskIDRe = regexp.MustCompile("^[a-f0-9]+$")
 
-// weightedSemaphore allows mocking semaphore.Weighted in tests.
-type weightedSemaphore interface {
-	Acquire(context.Context, int64) error
-	TryAcquire(int64) bool
-	Release(int64)
-}
-
 // taskResult is a consolidation of the results of packaging up swarming
 // task results from collect.
 type taskResult struct {
@@ -120,15 +112,15 @@ type taskResult struct {
 	err error
 }
 
-func (t *taskResult) Print(w io.Writer) {
+// SummaryLine is a short summary of task state for logs.
+func (t *taskResult) SummaryLine() string {
 	if t.err != nil {
-		fmt.Fprintf(w, "%s: %v\n", t.taskID, t.err)
-	} else {
-		fmt.Fprintf(w, "%s: exit %d\n", t.taskID, t.result.ExitCode)
-		if t.output != "" {
-			fmt.Fprintln(w, t.output)
-		}
+		return fmt.Sprintf("%s: %s", t.taskID, t.err)
 	}
+	if t.result.State == swarmingv2.TaskState_COMPLETED {
+		return fmt.Sprintf("%s: COMPLETED, exit code %d", t.taskID, t.result.ExitCode)
+	}
+	return fmt.Sprintf("%s: %s", t.taskID, t.result.State)
 }
 
 // CmdCollect returns an object for the `collect` subcommand.
@@ -136,7 +128,50 @@ func CmdCollect(authFlags base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "collect -S <server> -requests-json <path> [<task ID> <task ID> ...])",
 		ShortDesc: "waits on a set of Swarming tasks",
-		LongDesc:  "Waits on a set of Swarming tasks given either as task IDs or via a file produced by \"trigger\" subcommand.",
+		LongDesc: `Waits on a set of Swarming tasks given either as task IDs or via a file produced by \"trigger\" subcommand.
+
+Behavior depends on combination of -eager and -wait flags:
+  * -wait is set and -eager is unset (default): wait for all tasks to complete
+    and report their results.
+  * -wait is set and -eager is set: wait for at least one task to complete and
+    then report the current state of all tasks. It will be a mix of pending
+    and completed tasks (with at least one, but perhaps more, task completed).
+  * -wait is unset (regardless if -eager is set or not): report the current
+    state of all tasks, don't wait. It will be a mix of pending and completed
+    tasks with no other guarantees.
+
+The JSON output will always have entries for all requested tasks. Each entry
+contains the last known state of the task (in "results" field) if it was fetched
+at least once and, possibly, an error message (in "error" field) if there was
+an error fetching the state.
+
+Note that "error" field reports only local errors. If a task itself failed
+remotely, but this outcome was successfully fetched, then "error" field will be
+unset, and the task's failure will be communicated via "results" object (in
+particular its "state" field).
+
+If -wait is set, will wait for at most -timeout duration or until SIGTERM. Upon
+hitting the timeout the JSON entries of all still pending or running tasks will
+contain literal "rpc_timeout" value in their "error" fields. Similarly, if
+waiting was aborted by SIGTERM, the "error" field will contain "rpc_canceled"
+value.
+
+Flag -task-output-stdout controls where to dump the console log of completed
+tasks. Its possible values:
+  * "none" (default): don't fetch the console log at all.
+  * "console": dump the log only to stdout.
+  * "json": dump the log only into the JSON output (in "result.output" field).
+  * "all": dump the log to stdout and also into the JSON output.
+
+Flag -output-dir controls where to store isolated outputs of completed tasks.
+If it is unset (default), isolated outputs will not be fetched. Otherwise
+isolated outputs of a completed task with ID <task-ID> will be downloaded to
+<output-dir>/<task-ID> directory. If such directory already exists, it will be
+cleared first. If a task has no isolated outputs or it has not completed yet,
+its output directory will be empty. The JSON output will contain a list of
+downloaded files (relative to the task output directory) in "result.outputs"
+field.
+`,
 		CommandRun: func() subcommands.CommandRun {
 			return base.NewCommandRun(authFlags, &collectImpl{}, base.Features{
 				MinArgs:         0,
@@ -167,16 +202,17 @@ type collectImpl struct {
 }
 
 func (cmd *collectImpl) RegisterFlags(fs *flag.FlagSet) {
-	fs.BoolVar(&cmd.wait, "wait", true, "Wait task completion.")
-	fs.DurationVar(&cmd.timeout, "timeout", 0, "Timeout to wait for result. Set to 0 for no timeout.")
+	fs.BoolVar(&cmd.wait, "wait", true, "If set, wait for tasks to complete. Otherwise just poll their current state.")
+	fs.DurationVar(&cmd.timeout, "timeout", 0, "Timeout to wait for tasks to complete when -wait is set. Set to 0 for no timeout.")
+	fs.BoolVar(&cmd.eager, "eager", false, "If set, stop waiting whenever any task finishes, do not wait for all of them to finish.")
 
 	//TODO(tikuta): Remove this flag once crbug.com/894045 is fixed.
 	fs.BoolVar(&cmd.taskSummaryPython, "task-summary-python", false, "Generate python client compatible task summary json.")
 
-	fs.BoolVar(&cmd.eager, "eager", false, "Return after first task completion.")
-	fs.BoolVar(&cmd.perf, "perf", false, "Includes performance statistics.")
-	fs.Var(&cmd.taskOutput, "task-output-stdout", "Where to output each task's console output (stderr/stdout). (none|json|console|all)")
+	fs.BoolVar(&cmd.perf, "perf", false, "Include performance statistics.")
+	fs.Var(&cmd.taskOutput, "task-output-stdout", "Where to output each task's console output (combined stderr and stdout). (none|json|console|all)")
 	fs.StringVar(&cmd.outputDir, "output-dir", "", "Where to download isolated output to.")
+
 	fs.StringVar(&cmd.jsonInput, "requests-json", "", "Load the task IDs from a .json file as saved by \"trigger -json-output\".")
 }
 
@@ -203,6 +239,9 @@ func (cmd *collectImpl) ParseInputs(args []string, env subcommands.Env) error {
 			cmd.taskIDs = append(cmd.taskIDs, task.TaskId)
 		}
 	}
+	if len(cmd.taskIDs) == 0 {
+		return errors.Reason("must specify at least one task id, either directly or through -requests-json").Err()
+	}
 
 	// Verify they all look like Swarming task IDs.
 	//
@@ -212,91 +251,115 @@ func (cmd *collectImpl) ParseInputs(args []string, env subcommands.Env) error {
 			return errors.Reason("task ID %q must be hex ([a-f0-9])", taskID).Err()
 		}
 	}
-	if len(cmd.taskIDs) == 0 {
-		return errors.Reason("must specify at least one task id, either directly or through -requests-json").Err()
+
+	// Verify there are no duplicates. This may break some map look ups.
+	seen := stringset.New(len(cmd.taskIDs))
+	for _, taskID := range cmd.taskIDs {
+		if !seen.Add(taskID) {
+			return errors.Reason("task ID %s is given more than once", taskID).Err()
+		}
 	}
 
 	return nil
 }
 
-func (cmd *collectImpl) fetchTaskResults(ctx context.Context, taskID string, service swarming.Client, downloadSem weightedSemaphore, auth base.AuthFlags) taskResult {
-	defer logging.Debugf(ctx, "Finished fetching task result: %s", taskID)
-
-	errorResult := func(stage string, err error) taskResult {
-		return taskResult{taskID: taskID, err: errors.Annotate(err, "when fetching %s", stage).Err()}
-	}
-
-	var output string    // task stdout as is
-	var outputs []string // names of output files downloaded from CAS
-
-	// Fetch the result details.
-	logging.Debugf(ctx, "Fetching task result: %s", taskID)
-	result, err := service.TaskResult(ctx, taskID, &swarming.TaskResultFields{
-		WithPerf: cmd.perf,
-	})
-	if err != nil {
-		return errorResult("task result", err)
-	}
-
-	// Signal that we want to start downloading outputs. We'll only proceed
-	// to download them if another task has not already finished and triggered
-	// an eager return.
-	//
-	// TODO(vadimsh): Semaphore is confusing and unnecessary here, this can be
-	// done via context cancellation.
-	if !downloadSem.TryAcquire(1) {
-		return errorResult("task output", errors.New("canceled by first task"))
-	}
-	defer downloadSem.Release(1)
-
-	// TODO(vadimsh): Fetch output and output files in parallel.
-
-	// If we got the result details, try to fetch stdout if the user asked for it.
-	//
-	// TODO(vadimsh): If cmd.wait is true, fetch this only if task has completed.
-	// If the task is still running, we'll make another call later anyway.
-	if cmd.taskOutput != taskOutputNone {
-		logging.Debugf(ctx, "Fetching task output: %s", taskID)
-		taskOutput, err := service.TaskOutput(ctx, taskID)
-		if err != nil {
-			return errorResult("task output", errors.New("canceled by first task"))
-		}
-		output = string(taskOutput.Output)
-	}
-
-	// Download the result files if available and if we have a place to put it.
-	//
-	// TODO(vadimsh): If cmd.wait is true, fetch this only if task has completed.
-	// If the task is still running, we'll make another call later anyway.
+// fetchTaskResults updates `res` in-place with outputs of the task.
+func (cmd *collectImpl) fetchTaskResults(ctx context.Context, svc swarming.Client, res *taskResult) {
+	// Prepare the output directory, even if the task failed or is still running.
+	// It will be empty in this case, signifying the task produced no outputs.
+	outputDir := ""
 	if cmd.outputDir != "" {
-		logging.Debugf(ctx, "Fetching task outputs: %s", taskID)
-		outdir, err := prepareOutputDir(cmd.outputDir, taskID)
-		if err != nil {
-			return errorResult("output files", err)
+		var outErr error
+		outputDir, outErr = prepareOutputDir(cmd.outputDir, res.taskID)
+		if outErr != nil && res.err == nil {
+			res.err = outErr
 		}
-		if result.CasOutputRoot != nil {
-			outputs, err = service.FilesFromCAS(ctx, outdir, &swarmingv2.CASReference{
-				CasInstance: result.CasOutputRoot.CasInstance,
+	}
+
+	// If failed to fetch the task status (or create the output directory), don't
+	// even bother to fetch the results.
+	if res.err != nil {
+		res.err = normalizeCtxErr(res.err)
+		logging.Warningf(ctx, "%s", res.SummaryLine())
+		return
+	}
+
+	if res.result.State == swarmingv2.TaskState_PENDING || res.result.State == swarmingv2.TaskState_RUNNING {
+		logging.Infof(ctx, "%s", res.SummaryLine())
+		return
+	}
+
+	eg, ctx := errgroup.WithContext(ctx)
+
+	// Fetch combined stderr/stdout (aka console) output if asked for it.
+	wantConsoleOut := cmd.taskOutput != taskOutputNone
+	if wantConsoleOut {
+		eg.Go(func() error {
+			logging.Debugf(ctx, "%s: fetching console output", res.taskID)
+			output, err := svc.TaskOutput(ctx, res.taskID)
+			if err != nil {
+				return errors.Annotate(err, "fetching console output of %s", res.taskID).Err()
+			}
+			res.output = string(output.Output)
+			return nil
+		})
+	}
+
+	// Fetch isolated files if asked for them and the task has them.
+	wantIsolatedOut := outputDir != "" && res.result.CasOutputRoot != nil
+	if wantIsolatedOut {
+		eg.Go(func() error {
+			logging.Debugf(ctx, "%s: fetching isolated output", res.taskID)
+			output, err := svc.FilesFromCAS(ctx, outputDir, &swarmingv2.CASReference{
+				CasInstance: res.result.CasOutputRoot.CasInstance,
 				Digest: &swarmingv2.Digest{
-					Hash:      result.CasOutputRoot.Digest.Hash,
-					SizeBytes: result.CasOutputRoot.Digest.SizeBytes,
+					Hash:      res.result.CasOutputRoot.Digest.Hash,
+					SizeBytes: res.result.CasOutputRoot.Digest.SizeBytes,
 				},
 			})
 			if err != nil {
-				return errorResult("output files", err)
+				return errors.Annotate(err, "fetching isolated output of %s", res.taskID).Err()
 			}
+			res.outputs = output
+			return nil
+		})
+	}
+
+	if wantConsoleOut || wantIsolatedOut {
+		res.err = normalizeCtxErr(eg.Wait())
+		if res.err == nil {
+			logging.Debugf(ctx, "%s: finished fetching outputs", res.taskID)
 		}
 	}
 
-	return taskResult{
-		taskID:  taskID,
-		result:  result,
-		output:  output,
-		outputs: outputs,
+	// Log as soon as we are done with the task.
+	if res.err != nil {
+		logging.Warningf(ctx, "%s", res.SummaryLine())
+	} else {
+		logging.Infof(ctx, "%s", res.SummaryLine())
 	}
 }
 
+// normalizeCtxErr replaces context errors with ones that serialize to
+// documented values.
+func normalizeCtxErr(err error) error {
+	switch {
+	case errors.Is(err, context.DeadlineExceeded):
+		return errors.New("rpc_timeout")
+	case errors.Is(err, context.Canceled):
+		return errors.New("rpc_canceled")
+	default:
+		return err
+	}
+}
+
+// prepareOutputDir creates the directory for storing isolated outputs.
 func prepareOutputDir(outputDir, taskID string) (string, error) {
+	// This should never happen, but check anyway since we do not want to
+	// accidentally delete all of `outputDir`.
+	if taskID == "" {
+		panic("should never happen")
+	}
 	// Create a task-id-based subdirectory to house the outputs.
 	dir := filepath.Join(filepath.Clean(outputDir), taskID)
 	// The call can theoretically be retried. In this case the directory will
@@ -311,55 +374,22 @@ func prepareOutputDir(outputDir, taskID string) (string, error) {
 	return dir, nil
 }
 
-func (cmd *collectImpl) pollForTaskResult(ctx context.Context, taskID string, service swarming.Client, downloadSem weightedSemaphore, auth base.AuthFlags) taskResult {
-	startedTime := clock.Now(ctx)
-	for {
-		result := cmd.fetchTaskResults(ctx, taskID, service, downloadSem, auth)
-		if result.err != nil {
-			// If we received an error from fetchTaskResults, it either hit a fatal
-			// failure, or it hit too many transient failures.
-			return result
-		}
-
-		// Stop if the task is no longer pending or running.
-		if !TaskIsAlive(result.result.State) {
-			logging.Debugf(ctx, "Task completed: %s", taskID)
-			return result
-		}
-		if !cmd.wait {
-			logging.Debugf(ctx, "Task fetched: %s", taskID)
-			return result
-		}
-
-		currentTime := clock.Now(ctx)
-
-		// Start with a 1 second delay and for each 30 seconds of waiting
-		// add another second until hitting a 15 second ceiling.
-		delay := time.Second + (currentTime.Sub(startedTime) / 30)
-		if delay >= 15*time.Second {
-			delay = 15 * time.Second
-		}
-
-		logging.Debugf(ctx, "Waiting %s for task: %s", delay.Round(time.Millisecond), taskID)
-		timerResult := <-clock.After(ctx, delay)
-
-		// timerResult should have an error if the context's deadline was exceeded,
-		// or if the context was cancelled.
-		if timerResult.Err != nil {
-			if result.err == nil {
-				result.err = timerResult.Err
-			}
-			return result
-		}
-	}
-}
-
 // summarizeResultsPython generates a summary compatible with python's client.
-func summarizeResultsPython(results []taskResult) (any, error) {
-	shards := make([]map[string]any, len(results))
+func summarizeResultsPython(taskIDs []string, results map[string]taskResult) (any, error) {
+	shards := make([]map[string]any, 0, len(results))
 
-	for i, result := range results {
-		// Convert TaskResultResponse proto to a free-form map[string]any.
+	for _, taskID := range taskIDs {
+		result := results[taskID]
+		if result.result == nil {
+			// This means there was an error fetching the task. Note that python
+			// results format has no way to communicate errors. We just write `null`
+			// into the corresponding slot to indicate the task is not ready.
+			shards = append(shards, nil)
+			continue
+		}
+
+		// Convert TaskResultResponse proto to a free-form map[string]any to inject
+		// `output` as an extra field not present in the original proto.
 		buf, err := (protojson.MarshalOptions{UseProtoNames: true}).Marshal(result.result)
 		if err != nil {
 			return nil, err
@@ -368,88 +398,91 @@ func summarizeResultsPython(results []taskResult) (any, error) {
 		if err := json.Unmarshal(buf, &jsonResult); err != nil {
 			return nil, err
 		}
-		// Inject `output` as an extra field not present in the original proto.
-		if len(jsonResult) > 0 {
-			jsonResult["output"] = result.output
-		} else {
-			jsonResult = nil
-		}
-		shards[i] = jsonResult
+		jsonResult["output"] = result.output
+
+		// Report the completed task result.
+		shards = append(shards, jsonResult)
 	}
 
 	return base.LegacyJSON(map[string]any{"shards": shards}), nil
 }
 
 // summarizeResults generates a summary of the task results.
-func (cmd *collectImpl) summarizeResults(results []taskResult) (any, error) {
-	summary := map[string]*clipb.ResultSummaryEntry{}
-	for _, result := range results {
-		entry := &clipb.ResultSummaryEntry{}
+func (cmd *collectImpl) summarizeResults(results map[string]taskResult) (map[string]*clipb.ResultSummaryEntry, error) {
+	summary := make(map[string]*clipb.ResultSummaryEntry, len(results))
+	for taskID, result := range results {
+		entry := &clipb.ResultSummaryEntry{
+			Results: result.result,
+			Outputs: result.outputs,
+		}
 		if result.err != nil {
 			entry.Error = result.err.Error()
+			if entry.Error == "" {
+				entry.Error = "unknown"
+			}
 		}
 		if result.result != nil {
 			if cmd.taskOutput.includesJSON() {
 				entry.Output = result.output
 			}
-			entry.Outputs = result.outputs
-			entry.Results = result.result
 		}
-		summary[result.taskID] = entry
+		summary[taskID] = entry
 	}
 	return summary, nil
 }
 
-func (cmd *collectImpl) pollForTasks(ctx context.Context, taskIDs []string, service swarming.Client, downloadSem weightedSemaphore, auth base.AuthFlags) []taskResult {
-	if len(taskIDs) == 0 {
-		return nil
-	}
-
-	var cancel context.CancelFunc
-	if cmd.timeout > 0 {
-		ctx, cancel = clock.WithTimeout(ctx, cmd.timeout)
-	} else {
-		ctx, cancel = context.WithCancel(ctx)
-	}
-	defer cancel()
-
-	// Aggregate results by polling and fetching across multiple goroutines.
-	results := make([]taskResult, len(taskIDs))
-	var wg sync.WaitGroup
-	wg.Add(len(taskIDs))
-	taskFinished := make(chan int, len(taskIDs))
-	for i := range taskIDs {
-		go func(i int) {
-			defer func() {
-				taskFinished <- i
-				wg.Done()
-			}()
-			results[i] = cmd.pollForTaskResult(ctx, taskIDs[i], service, downloadSem, auth)
-		}(i)
-	}
-
-	if cmd.eager {
-		go func() {
-			<-taskFinished
-			// After the first task finishes, block any new tasks from starting
-			// to download outputs, but let any in-progress downloads complete.
-			downloadSem.Acquire(ctx, int64(len(taskIDs)))
-			cancel()
-		}()
-	}
-
-	wg.Wait()
-
-	return results
-}
-
 func (cmd *collectImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
-	downloadSem := semaphore.NewWeighted(int64(len(cmd.taskIDs)))
-	results := cmd.pollForTasks(ctx, cmd.taskIDs, svc, downloadSem, extra.AuthFlags)
+	// The context used for waiting for task completion.
+	var wctx context.Context
+	var wcancel context.CancelFunc
+	if cmd.timeout > 0 {
+		wctx, wcancel = clock.WithTimeout(ctx, cmd.timeout)
+	} else {
+		wctx, wcancel = context.WithCancel(ctx)
+	}
+	defer wcancel()
 
-	for _, result := range results {
-		if cmd.taskOutput.includesConsole() || result.err != nil {
-			result.Print(os.Stdout)
+	var mode swarming.WaitMode
+	switch {
+	case cmd.wait && cmd.eager:
+		mode = swarming.WaitAny
+	case cmd.wait && !cmd.eager:
+		mode = swarming.WaitAll
+	default:
+		mode = swarming.NoWait
+	}
+
+	fields := swarming.TaskResultFields{
+		WithPerf: cmd.perf,
+	}
+
+	// Collect statuses of all tasks and start fetching their results as soon
+	// as they are available, in parallel. Fetch results using the root `ctx`
+	// (to not be affected by -timeout, which is a *waiting* timeout).
+	resultsCh := make(chan taskResult, len(cmd.taskIDs))
+	swarming.GetMany(wctx, svc, cmd.taskIDs, &fields, mode, func(taskID string, res *swarmingv2.TaskResultResponse, err error) {
+		go func() {
+			taskRes := taskResult{taskID: taskID, result: res, err: err}
+			cmd.fetchTaskResults(ctx, svc, &taskRes)
+			resultsCh <- taskRes
+		}()
+	})
+
+	// Wait for all fetchTaskResults(...) calls to complete.
+	resultByID := make(map[string]taskResult, len(cmd.taskIDs))
+	for i := 0; i < len(cmd.taskIDs); i++ {
+		res := <-resultsCh
+		resultByID[res.taskID] = res
+	}
+
+	// Report results to stdout if requested. Preserve the order.
+	if cmd.taskOutput.includesConsole() {
+		for _, taskID := range cmd.taskIDs {
+			res := resultByID[taskID]
+			fmt.Fprintln(extra.Stdout, res.SummaryLine())
+			if res.output != "" {
+				fmt.Fprintln(extra.Stdout, res.output)
+			}
 		}
 	}
 
@@ -461,7 +494,7 @@ func (cmd *collectImpl) Execute(ctx context.Context, svc swarming.Client, extra 
 	// TODO(crbug.com/894045): Python-compatible summary is actually the most
 	// commonly used now (used by recipes).
 	if cmd.taskSummaryPython {
-		return summarizeResultsPython(results)
+		return summarizeResultsPython(cmd.taskIDs, resultByID)
 	}
-	return cmd.summarizeResults(results)
+	return cmd.summarizeResults(resultByID)
 }

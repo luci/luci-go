@@ -74,6 +74,12 @@ type Extra struct {
 	// will be written here automatically. This value is exposed to allow to
 	// reference it in logs.
 	OutputJSON string
+
+	// Standard output stream, perhaps redirected somewhere.
+	Stdout io.Writer
+
+	// Standard error stream, perhaps redirected somewhere.
+	Stderr io.Writer
 }
 
 // Unlimited can be passed as Features.MaxArgs to indicate no limit.
@@ -274,13 +280,13 @@ func (cr *CommandRun) Run(app subcommands.Application, args []string, env subcom
 	// Terminate everything on Ctrl+C.
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	defer signals.HandleInterrupt(cancel)()
+	defer signals.HandleInterrupt(func() {
+		logging.Warningf(ctx, "Canceled via Ctrl+C or SIGTERM!")
+		cancel()
+	})()
 
 	// Execute the subcommand and store the output.
 	if err := cr.execute(ctx); err != nil {
-		if ctx.Err() != nil {
-			logging.Warningf(ctx, "Canceled via Ctrl+C or SIGTERM!")
-		}
 		errors.Log(ctx, err)
 		if cr.testingErr != nil {
 			*cr.testingErr = err
@@ -337,6 +343,8 @@ func (cr *CommandRun) execute(ctx context.Context) error {
 		AuthFlags:  cr.authFlags,
 		ServerURL:  cr.serverURL,
 		OutputJSON: cr.jsonOutput,
+		Stdout:     cr.stdout(),
+		Stderr:     cr.stderr(),
 	})
 	if cr.testingResult != nil {
 		*cr.testingResult = out

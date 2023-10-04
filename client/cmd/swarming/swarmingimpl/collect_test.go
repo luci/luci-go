@@ -16,22 +16,22 @@ package swarmingimpl
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"sync"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
-	"golang.org/x/sync/semaphore"
+	. "github.com/smartystreets/goconvey/convey"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
-
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
 	"go.chromium.org/luci/swarming/client/swarming"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
@@ -59,256 +59,386 @@ func TestCollectParse(t *testing.T) {
 		expectErr([]string{"$$$$$"}, "must be hex")
 	})
 
+	Convey(`Make sure that Parse handles a dup task ID.`, t, func() {
+		expectErr([]string{"aaaaaaaaa", "aaaaaaaaa"}, "given more than once")
+	})
+
 	Convey(`Make sure that Parse handles a negative timeout.`, t, func() {
 		expectErr([]string{"-timeout", "-30m", "aaaaaaaaa"}, "negative timeout")
 	})
 }
 
-func setupClock() (context.Context, context.CancelFunc) {
-	ctx, clk := testclock.UseTime(context.Background(), testclock.TestRecentTimeLocal)
-	ctx, cancel := clock.WithTimeout(ctx, 100*time.Second)
-
-	// Set a callback to make the timer finish.
-	clk.SetTimerCallback(func(amt time.Duration, t clock.Timer) {
-		clk.Add(amt)
-	})
-	return ctx, cancel
-}
-
-func testCollectPollWithServer(runner *collectImpl, s swarming.Client) taskResult {
-	ctx, cancel := setupClock()
-	defer cancel()
-
-	return runner.pollForTaskResult(ctx, "10982374012938470", s, semaphore.NewWeighted(1), &testAuthFlags{})
-}
-
-func testCollectPollForTasks(runner *collectImpl, taskIDs []string, s swarming.Client, downloadSem weightedSemaphore) []taskResult {
-	ctx, cancel := setupClock()
-	defer cancel()
-
-	if downloadSem == nil {
-		downloadSem = semaphore.NewWeighted(int64(len(taskIDs)))
-	}
-
-	return runner.pollForTasks(ctx, taskIDs, s, downloadSem, &testAuthFlags{})
-}
-
-func TestCollectPollForTaskResult(t *testing.T) {
+func TestCollect(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Test fatal response`, t, func() {
-		service := &swarmingtest.Client{
-			TaskResultMock: func(c context.Context, _ string, _ *swarming.TaskResultFields) (*swarmingv2.TaskResultResponse, error) {
-				return nil, status.Errorf(codes.NotFound, "not found")
-			},
-		}
-		result := testCollectPollWithServer(&collectImpl{taskOutput: taskOutputNone}, service)
-		So(result.err, ShouldErrLike, "not found")
-	})
+	casOutputDir := t.TempDir()
 
-	Convey(`Test bot finished with outputs on CAS`, t, func() {
-		var writtenTo string
-		var writtenInstance string
-		var writtenDigest string
-		service := &swarmingtest.Client{
-			TaskResultMock: func(c context.Context, _ string, _ *swarming.TaskResultFields) (*swarmingv2.TaskResultResponse, error) {
-				return &swarmingv2.TaskResultResponse{
-					State: swarmingv2.TaskState_COMPLETED,
-					CasOutputRoot: &swarmingv2.CASReference{
-						CasInstance: "test-instance",
-						Digest:      &swarmingv2.Digest{Hash: "aaaaaaaaa", SizeBytes: 111111},
-					},
-				}, nil
-			},
-			TaskOutputMock: func(c context.Context, _ string) (*swarmingv2.TaskOutputResponse, error) {
-				return &swarmingv2.TaskOutputResponse{Output: []byte("yipeeee")}, nil
-			},
-			FilesFromCASMock: func(c context.Context, outdir string, casRef *swarmingv2.CASReference) ([]string, error) {
-				writtenTo = outdir
-				writtenInstance = casRef.CasInstance
-				writtenDigest = fmt.Sprintf("%s/%d", casRef.Digest.Hash, casRef.Digest.SizeBytes)
-				return []string{"hello"}, nil
-			},
-		}
-		runner := &collectImpl{
-			taskOutput: taskOutputAll,
-			outputDir:  "bah",
-		}
-		result := testCollectPollWithServer(runner, service)
-		So(result.err, ShouldBeNil)
-		So(result.result, ShouldNotBeNil)
-		So(result.result.State, ShouldEqual, swarmingv2.TaskState_COMPLETED)
-		So(result.output, ShouldResemble, "yipeeee")
-		So(result.outputs, ShouldResemble, []string{"hello"})
-		So(writtenTo, ShouldStartWith, "bah")
-		So(writtenInstance, ShouldResemble, "test-instance")
-		So(writtenDigest, ShouldResemble, "aaaaaaaaa/111111")
-	})
-}
+	Convey(`With mocks`, t, func() {
+		sleeps := 0
+		onSleep := func() {}
 
-// mockSemaphore is a thin wrapper around semaphore.Weighted that adds a
-// notification hook to Acquire().
-type mockSemaphore struct {
-	*semaphore.Weighted
+		ctx, clk := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		clk.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+			clk.Add(d)
+			sleeps += 1
+			onSleep()
+		})
 
-	acquireCalls chan int64
-}
-
-func newMockSemaphore(n int64) *mockSemaphore {
-	return &mockSemaphore{
-		Weighted:     semaphore.NewWeighted(n),
-		acquireCalls: make(chan int64),
-	}
-}
-
-func (s *mockSemaphore) Acquire(ctx context.Context, n int64) error {
-	s.acquireCalls <- n
-	return s.Weighted.Acquire(ctx, n)
-}
-
-func TestCollectPollForTasks(t *testing.T) {
-	t.Parallel()
-
-	// TODO(vadimsh): Refactor to test through SubcommandTest to test command line
-	// parsing.
-
-	Convey(`Test eager return cancels polling goroutines`, t, func() {
-		firstID, lastID := "1", "2"
-		outputFetched := sync.Map{}
+		mockedState := map[string]swarmingv2.TaskState{}
+		mockedHasCAS := map[string]bool{}
+		mockedErr := map[string]codes.Code{}
+		mockedStdoutErr := error(nil)
+		mockedCASErr := error(nil)
 
 		service := &swarmingtest.Client{
-			TaskResultMock: func(c context.Context, taskID string, _ *swarming.TaskResultFields) (*swarmingv2.TaskResultResponse, error) {
-				if taskID != firstID {
-					// Simulate the second task not finishing until the first
-					// task has already finished, downloaded its outputs, and
-					// canceled the context.
-					<-c.Done()
-					return nil, status.Errorf(codes.Canceled, "%s", c.Err())
+			TaskResultsMock: func(ctx context.Context, taskIDs []string, fields *swarming.TaskResultFields) ([]swarming.ResultOrErr, error) {
+				out := make([]swarming.ResultOrErr, len(taskIDs))
+				for i, taskID := range taskIDs {
+					if code, ok := mockedErr[taskID]; ok {
+						out[i] = swarming.ResultOrErr{Err: status.Errorf(code, "some error")}
+					} else if state, ok := mockedState[taskID]; ok {
+						out[i] = swarming.ResultOrErr{
+							Result: &swarmingv2.TaskResultResponse{
+								TaskId: taskID,
+								State:  state,
+							},
+						}
+						if mockedHasCAS[taskID] {
+							out[i].Result.CasOutputRoot = &swarmingv2.CASReference{
+								CasInstance: "cas-instance",
+								Digest: &swarmingv2.Digest{
+									Hash: "cas-" + taskID,
+								},
+							}
+						}
+					} else {
+						panic(fmt.Sprintf("unexpected task %q", taskID))
+					}
 				}
-				return &swarmingv2.TaskResultResponse{
-					State: swarmingv2.TaskState_COMPLETED,
-					CasOutputRoot: &swarmingv2.CASReference{
-						CasInstance: "test-instance",
-						Digest:      &swarmingv2.Digest{Hash: "aaaaaaaaa", SizeBytes: 111111},
-					},
-				}, nil
+				return out, nil
 			},
-			TaskOutputMock: func(c context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error) {
-				outputFetched.Store(taskID, true)
-				return &swarmingv2.TaskOutputResponse{Output: []byte("yipeeee")}, nil
+
+			TaskOutputMock: func(ctx context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error) {
+				return &swarmingv2.TaskOutputResponse{
+					Output: []byte(fmt.Sprintf("Output of %s", taskID)),
+				}, mockedStdoutErr
 			},
-		}
-		runner := &collectImpl{
-			taskOutput: taskOutputAll,
-			eager:      true,
-		}
 
-		taskIDs := []string{firstID, lastID}
-		results := testCollectPollForTasks(runner, taskIDs, service, nil)
-		So(results, ShouldHaveLength, len(taskIDs))
-		_, firstOutputFetched := outputFetched.Load(firstID)
-		_, lastOutputFetched := outputFetched.Load(lastID)
-		So(firstOutputFetched, ShouldBeTrue)
-		So(lastOutputFetched, ShouldBeFalse)
-		So(results[0].err, ShouldBeNil)
-		So(results[0].result, ShouldNotBeNil)
-		So(results[0].result.State, ShouldEqual, swarmingv2.TaskState_COMPLETED)
-		So(results[1].err, ShouldErrLike, context.Canceled)
-		So(results[1].result, ShouldBeNil)
-	})
-
-	Convey(`Test eager return lets downloading complete`, t, func() {
-		firstID, lastID := "1", "2"
-		outputFetched := sync.Map{}
-
-		runner := &collectImpl{
-			taskOutput: taskOutputAll,
-			eager:      true,
-		}
-		firstTaskComplete := make(chan struct{})
-		lastTaskDownloading := make(chan struct{})
-		service := &swarmingtest.Client{
-			TaskResultMock: func(c context.Context, taskID string, _ *swarming.TaskResultFields) (*swarmingv2.TaskResultResponse, error) {
-				return &swarmingv2.TaskResultResponse{
-					State: swarmingv2.TaskState_COMPLETED,
-					CasOutputRoot: &swarmingv2.CASReference{
-						CasInstance: "test-instance",
-						Digest:      &swarmingv2.Digest{Hash: "aaaaaaaaa", SizeBytes: 111111},
-					},
-				}, nil
-			},
-			TaskOutputMock: func(c context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error) {
-				// Make sure that the two tasks are downloading outputs at the
-				// same time, but have the second task wait for the first task's
-				// download to complete before continuing the download.
-				if taskID == firstID {
-					<-lastTaskDownloading
-				} else {
-					close(lastTaskDownloading)
-					<-firstTaskComplete
+			FilesFromCASMock: func(ctx context.Context, outdir string, casRef *swarmingv2.CASReference) ([]string, error) {
+				if casRef.CasInstance != "cas-instance" {
+					panic("unexpected CAS instance")
 				}
-				outputFetched.Store(taskID, true)
-				return &swarmingv2.TaskOutputResponse{Output: []byte("yipeeee")}, nil
+				if !strings.HasPrefix(casRef.Digest.Hash, "cas-") {
+					panic("unexpected fake digest")
+				}
+				taskID := casRef.Digest.Hash[len("cas-"):]
+				if want := filepath.Join(casOutputDir, taskID); want != outdir {
+					panic(fmt.Sprintf("expecting out dir %q, got %q", want, outdir))
+				}
+				return []string{"out-" + taskID}, mockedCASErr
 			},
 		}
 
-		taskIDs := []string{firstID, lastID}
-		downloadSem := newMockSemaphore(int64(len(taskIDs)))
-		defer close(downloadSem.acquireCalls)
-		go func() {
-			// When the semaphore is acquired with an argument equal to the
-			// number of tasks, that means the first task has finished
-			// downloading and is triggering the eager return mechanism.
-			for n := range downloadSem.acquireCalls {
-				if n == int64(len(taskIDs)) {
-					close(firstTaskComplete)
-				}
+		Convey(`Happy path`, func() {
+			mockedState["a0"] = swarmingv2.TaskState_PENDING
+			mockedHasCAS["a0"] = true
+
+			mockedState["a1"] = swarmingv2.TaskState_COMPLETED
+			mockedHasCAS["a1"] = true
+
+			mockedState["a2"] = swarmingv2.TaskState_COMPLETED
+			mockedHasCAS["a2"] = false
+
+			onSleep = func() {
+				mockedState["a0"] = swarmingv2.TaskState_COMPLETED
 			}
-		}()
 
-		results := testCollectPollForTasks(runner, taskIDs, service, downloadSem)
-		So(results, ShouldHaveLength, len(taskIDs))
-		_, firstOutputFetched := outputFetched.Load(firstID)
-		_, lastOutputFetched := outputFetched.Load(lastID)
-		So(firstOutputFetched, ShouldBeTrue)
-		So(lastOutputFetched, ShouldBeTrue)
-		So(results[0].err, ShouldBeNil)
-		So(results[0].result, ShouldNotBeNil)
-		So(results[0].result.State, ShouldResemble, swarmingv2.TaskState_COMPLETED)
-		So(results[0].err, ShouldBeNil)
-		So(results[0].result, ShouldNotBeNil)
-	})
+			res, _, code, _, _ := SubcommandTest(
+				ctx,
+				CmdCollect,
+				[]string{
+					"-server", "example.com",
+					"-json-output", "-",
+					"-task-output-stdout", "json",
+					"-output-dir", casOutputDir,
+					"a1", "a0", "a2",
+				},
+				nil, service,
+			)
+			So(code, ShouldEqual, 0)
 
-	Convey(`Test eager return with one task`, t, func() {
-		taskID := "1"
-		outputFetched := false
+			json, _ := base.EncodeJSON(res)
+			So(string(json), ShouldEqual, `{
+ "a0": {
+  "output": "Output of a0",
+  "outputs": [
+   "out-a0"
+  ],
+  "results": {
+   "task_id": "a0",
+   "cas_output_root": {
+    "cas_instance": "cas-instance",
+    "digest": {
+     "hash": "cas-a0"
+    }
+   },
+   "state": "COMPLETED"
+  }
+ },
+ "a1": {
+  "output": "Output of a1",
+  "outputs": [
+   "out-a1"
+  ],
+  "results": {
+   "task_id": "a1",
+   "cas_output_root": {
+    "cas_instance": "cas-instance",
+    "digest": {
+     "hash": "cas-a1"
+    }
+   },
+   "state": "COMPLETED"
+  }
+ },
+ "a2": {
+  "output": "Output of a2",
+  "results": {
+   "task_id": "a2",
+   "state": "COMPLETED"
+  }
+ }
+}`)
 
-		service := &swarmingtest.Client{
-			TaskResultMock: func(c context.Context, taskID string, _ *swarming.TaskResultFields) (*swarmingv2.TaskResultResponse, error) {
-				return &swarmingv2.TaskResultResponse{
-					State: swarmingv2.TaskState_COMPLETED,
-					CasOutputRoot: &swarmingv2.CASReference{
-						CasInstance: "test-instance",
-						Digest:      &swarmingv2.Digest{Hash: "aaaaaaaaa", SizeBytes: 111111},
-					},
-				}, nil
-			},
-			TaskOutputMock: func(c context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error) {
-				outputFetched = true
-				return &swarmingv2.TaskOutputResponse{Output: []byte("yipeeee")}, nil
-			},
-		}
-		runner := &collectImpl{
-			taskOutput: taskOutputAll,
-			eager:      true,
-		}
+			// Check actually created output directories, even for tasks with no
+			// outputs.
+			for _, taskID := range []string{"a0", "a1", "a2"} {
+				s, err := os.Stat(filepath.Join(casOutputDir, taskID))
+				So(err, ShouldBeNil)
+				So(s.IsDir(), ShouldBeTrue)
+			}
+		})
 
-		results := testCollectPollForTasks(runner, []string{taskID}, service, nil)
-		So(results, ShouldHaveLength, 1)
-		So(outputFetched, ShouldBeTrue)
-		So(results[0].err, ShouldBeNil)
-		So(results[0].result, ShouldNotBeNil)
-		So(results[0].result.State, ShouldEqual, swarmingv2.TaskState_COMPLETED)
+		Convey(`Collect error`, func() {
+			mockedState["a0"] = swarmingv2.TaskState_COMPLETED
+			mockedErr["a1"] = codes.PermissionDenied
+
+			res, _, code, _, _ := SubcommandTest(
+				ctx,
+				CmdCollect,
+				[]string{
+					"-server", "example.com",
+					"-json-output", "-",
+					"-task-output-stdout", "json",
+					"-output-dir", casOutputDir,
+					"a0", "a1",
+				},
+				nil, service,
+			)
+			So(code, ShouldEqual, 0)
+
+			json, _ := base.EncodeJSON(res)
+			So(string(json), ShouldEqual, `{
+ "a0": {
+  "output": "Output of a0",
+  "results": {
+   "task_id": "a0",
+   "state": "COMPLETED"
+  }
+ },
+ "a1": {
+  "error": "rpc error: code = PermissionDenied desc = some error"
+ }
+}`)
+		})
+
+		Convey(`Stdout fetch error`, func() {
+			mockedState["a0"] = swarmingv2.TaskState_COMPLETED
+			mockedStdoutErr = errors.New("boom")
+
+			res, _, code, _, _ := SubcommandTest(
+				ctx,
+				CmdCollect,
+				[]string{
+					"-server", "example.com",
+					"-json-output", "-",
+					"-task-output-stdout", "json",
+					"-output-dir", casOutputDir,
+					"a0",
+				},
+				nil, service,
+			)
+			So(code, ShouldEqual, 0)
+
+			json, _ := base.EncodeJSON(res)
+			So(string(json), ShouldEqual, `{
+ "a0": {
+  "error": "fetching console output of a0: boom",
+  "results": {
+   "task_id": "a0",
+   "state": "COMPLETED"
+  }
+ }
+}`)
+		})
+
+		Convey(`CAS fetch error`, func() {
+			mockedState["a0"] = swarmingv2.TaskState_COMPLETED
+			mockedHasCAS["a0"] = true
+			mockedCASErr = errors.New("boom")
+
+			res, _, code, _, _ := SubcommandTest(
+				ctx,
+				CmdCollect,
+				[]string{
+					"-server", "example.com",
+					"-json-output", "-",
+					"-task-output-stdout", "json",
+					"-output-dir", casOutputDir,
+					"a0",
+				},
+				nil, service,
+			)
+			So(code, ShouldEqual, 0)
+
+			json, _ := base.EncodeJSON(res)
+			So(string(json), ShouldEqual, `{
+ "a0": {
+  "error": "fetching isolated output of a0: boom",
+  "output": "Output of a0",
+  "results": {
+   "task_id": "a0",
+   "cas_output_root": {
+    "cas_instance": "cas-instance",
+    "digest": {
+     "hash": "cas-a0"
+    }
+   },
+   "state": "COMPLETED"
+  }
+ }
+}`)
+		})
+
+		Convey(`Timeout waiting`, func() {
+			mockedState["a0"] = swarmingv2.TaskState_PENDING
+
+			res, _, code, _, _ := SubcommandTest(
+				ctx,
+				CmdCollect,
+				[]string{
+					"-server", "example.com",
+					"-json-output", "-",
+					"-task-output-stdout", "json",
+					"-output-dir", casOutputDir,
+					"-timeout", "1h",
+					"a0",
+				},
+				nil, service,
+			)
+			So(code, ShouldEqual, 0)
+
+			json, _ := base.EncodeJSON(res)
+			So(string(json), ShouldEqual, `{
+ "a0": {
+  "error": "rpc_timeout",
+  "results": {
+   "task_id": "a0",
+   "state": "PENDING"
+  }
+ }
+}`)
+		})
+
+		Convey(`No waiting`, func() {
+			mockedState["a0"] = swarmingv2.TaskState_PENDING
+			mockedState["a1"] = swarmingv2.TaskState_PENDING
+
+			onSleep = func() {
+				panic("must not sleep")
+			}
+
+			res, _, code, _, _ := SubcommandTest(
+				ctx,
+				CmdCollect,
+				[]string{
+					"-server", "example.com",
+					"-json-output", "-",
+					"-task-output-stdout", "json",
+					"-output-dir", casOutputDir,
+					"-wait=false",
+					"a1", "a0",
+				},
+				nil, service,
+			)
+			So(code, ShouldEqual, 0)
+
+			json, _ := base.EncodeJSON(res)
+			So(string(json), ShouldEqual, `{
+ "a0": {
+  "results": {
+   "task_id": "a0",
+   "state": "PENDING"
+  }
+ },
+ "a1": {
+  "results": {
+   "task_id": "a1",
+   "state": "PENDING"
+  }
+ }
+}`)
+		})
+
+		Convey(`Waiting any`, func() {
+			mockedState["a0"] = swarmingv2.TaskState_PENDING
+			mockedState["a1"] = swarmingv2.TaskState_PENDING
+			mockedState["a2"] = swarmingv2.TaskState_PENDING
+
+			onSleep = func() {
+				mockedState["a1"] = swarmingv2.TaskState_COMPLETED
+				mockedState["a2"] = swarmingv2.TaskState_COMPLETED
+			}
+
+			res, _, code, _, _ := SubcommandTest(
+				ctx,
+				CmdCollect,
+				[]string{
+					"-server", "example.com",
+					"-json-output", "-",
+					"-task-output-stdout", "json",
+					"-output-dir", casOutputDir,
+					"-eager",
+					"a1", "a0", "a2",
+				},
+				nil, service,
+			)
+			So(code, ShouldEqual, 0)
+
+			json, _ := base.EncodeJSON(res)
+			So(string(json), ShouldEqual, `{
+ "a0": {
+  "results": {
+   "task_id": "a0",
+   "state": "PENDING"
+  }
+ },
+ "a1": {
+  "output": "Output of a1",
+  "results": {
+   "task_id": "a1",
+   "state": "COMPLETED"
+  }
+ },
+ "a2": {
+  "output": "Output of a2",
+  "results": {
+   "task_id": "a2",
+   "state": "COMPLETED"
+  }
+ }
+}`)
+		})
 	})
 }
 
@@ -404,23 +534,24 @@ func TestCollectSummarizeResults(t *testing.T) {
 			Duration:         1,
 			State:            swarmingv2.TaskState_RUNNING,
 		}
-		results := []taskResult{
-			{
+
+		results := map[string]taskResult{
+			"task1": {
 				taskID: "task1",
 				result: result1,
 				output: "Output",
 			},
-			{
+			"task2": {
 				taskID: "task2",
 				result: result2,
 				output: "Output",
 			},
-			{
+			"task3": {
 				taskID: "task3",
 				result: result3,
 				output: "Output",
 			},
-			{
+			"task4": {
 				taskID: "task4",
 				result: result4,
 				output: "Output",
@@ -533,23 +664,32 @@ func TestCollectSummarizeResultsPython(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Simple json.`, t, func() {
-		result := &swarmingv2.TaskResultResponse{
-			State:    swarmingv2.TaskState_COMPLETED,
-			Duration: 1,
-			ExitCode: 0,
-		}
-		results := []taskResult{
-			{
-				result: result,
+		taskIDs := []string{"failed1", "finished", "failed2"}
+
+		results := map[string]taskResult{
+			"failed1": {
+				err: errors.New("boom"),
+			},
+			"finished": {
+				result: &swarmingv2.TaskResultResponse{
+					State:    swarmingv2.TaskState_COMPLETED,
+					Duration: 1,
+					ExitCode: 0,
+				},
 				output: "Output",
 			},
-			{},
+			"failed2": {
+				err: errors.New("boom"),
+			},
 		}
-		summary, err := summarizeResultsPython(results)
+
+		summary, err := summarizeResultsPython(taskIDs, results)
 		So(err, ShouldBeNil)
+
 		actual, _ := base.EncodeJSON(summary)
 		So(string(actual), ShouldEqual, `{
  "shards": [
+  null,
   {
    "duration": 1,
    "output": "Output",
