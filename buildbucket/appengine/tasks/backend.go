@@ -139,7 +139,7 @@ func computeBackendPubsubTopic(ctx context.Context, target string, globalCfg *pb
 
 func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *model.BuildInfra, requestID string, globalCfg *pb.SettingsCfg) (*pb.RunTaskRequest, error) {
 	// Create task token and secrets.
-	registerTaskToken, err := buildtoken.GenerateToken(ctx, build.ID, pb.TokenBody_REGISTER_TASK)
+	registerTaskToken, err := buildtoken.GenerateToken(ctx, build.ID, pb.TokenBody_START_BUILD_TASK)
 	if err != nil {
 		return nil, err
 	}

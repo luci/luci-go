@@ -193,19 +193,19 @@ func (s *DecoratedBuilds) StartBuild(ctx context.Context, req *StartBuildRequest
 	return
 }
 
-func (s *DecoratedBuilds) RegisterBuildTask(ctx context.Context, req *RegisterBuildTaskRequest) (rsp *RegisterBuildTaskResponse, err error) {
+func (s *DecoratedBuilds) StartBuildTask(ctx context.Context, req *StartBuildTaskRequest) (rsp *StartBuildTaskResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "RegisterBuildTask", req)
+		newCtx, err = s.Prelude(ctx, "StartBuildTask", req)
 		if err == nil {
 			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.RegisterBuildTask(ctx, req)
+		rsp, err = s.Service.StartBuildTask(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(ctx, "RegisterBuildTask", rsp, err)
+		err = s.Postlude(ctx, "StartBuildTask", rsp, err)
 	}
 	return
 }

@@ -33,8 +33,9 @@ message TokenBody {
     TASK = 2 [deprecated = true];
     // The token is a token for starting a build.
     START_BUILD = 3;
-    // The token is a token for registering a backend task to the build it runs.
-    REGISTER_TASK = 4;
+    // The token is a token for starting and registering a backend task with the
+    // build it runs.
+    START_BUILD_TASK = 4;
   }
 
   // Purpose of the token.

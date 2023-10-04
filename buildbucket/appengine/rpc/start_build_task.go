@@ -37,12 +37,12 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
-type RegisterBuildTaskChecker struct{}
+type StartBuildTaskChecker struct{}
 
-var _ protowalk.FieldProcessor = (*RegisterBuildTaskChecker)(nil)
+var _ protowalk.FieldProcessor = (*StartBuildTaskChecker)(nil)
 
-func (*RegisterBuildTaskChecker) Process(field protoreflect.FieldDescriptor, _ protoreflect.Message) (data protowalk.ResultData, applied bool) {
-	cbfb := proto.GetExtension(field.Options().(*descriptorpb.FieldOptions), pb.E_RegisterBuildTaskFieldOption).(*pb.RegisterBuildTaskFieldOption)
+func (*StartBuildTaskChecker) Process(field protoreflect.FieldDescriptor, _ protoreflect.Message) (data protowalk.ResultData, applied bool) {
+	cbfb := proto.GetExtension(field.Options().(*descriptorpb.FieldOptions), pb.E_StartBuildTaskFieldOption).(*pb.StartBuildTaskFieldOption)
 	switch cbfb.FieldBehavior {
 	case annotations.FieldBehavior_REQUIRED:
 		return protowalk.ResultData{Message: "required", IsErr: true}, true
@@ -52,9 +52,9 @@ func (*RegisterBuildTaskChecker) Process(field protoreflect.FieldDescriptor, _ p
 }
 
 func init() {
-	protowalk.RegisterFieldProcessor(&RegisterBuildTaskChecker{}, func(field protoreflect.FieldDescriptor) protowalk.ProcessAttr {
+	protowalk.RegisterFieldProcessor(&StartBuildTaskChecker{}, func(field protoreflect.FieldDescriptor) protowalk.ProcessAttr {
 		if fo := field.Options().(*descriptorpb.FieldOptions); fo != nil {
-			if cbfb := proto.GetExtension(fo, pb.E_RegisterBuildTaskFieldOption).(*pb.RegisterBuildTaskFieldOption); cbfb != nil {
+			if cbfb := proto.GetExtension(fo, pb.E_StartBuildTaskFieldOption).(*pb.StartBuildTaskFieldOption); cbfb != nil {
 				switch cbfb.FieldBehavior {
 				case annotations.FieldBehavior_REQUIRED:
 					return protowalk.ProcessIfUnset
@@ -67,8 +67,8 @@ func init() {
 	})
 }
 
-func validateRegisterBuildTaskRequest(ctx context.Context, req *pb.RegisterBuildTaskRequest) error {
-	if procRes := protowalk.Fields(req, &protowalk.RequiredProcessor{}, &RegisterBuildTaskChecker{}); procRes != nil {
+func validateStartBuildTaskRequest(ctx context.Context, req *pb.StartBuildTaskRequest) error {
+	if procRes := protowalk.Fields(req, &protowalk.RequiredProcessor{}, &StartBuildTaskChecker{}); procRes != nil {
 		if resStrs := procRes.Strings(); len(resStrs) > 0 {
 			logging.Infof(ctx, strings.Join(resStrs, ". "))
 		}
@@ -77,51 +77,52 @@ func validateRegisterBuildTaskRequest(ctx context.Context, req *pb.RegisterBuild
 	return nil
 }
 
-func registerBuildTask(ctx context.Context, req *pb.RegisterBuildTaskRequest, b *model.Build, infra *model.BuildInfra) (string, error) {
+// startBuildTask implements the core logic of registering and/or starting a build task.
+// The startBuildToken is generated for the task here.
+func startBuildTask(ctx context.Context, req *pb.StartBuildTaskRequest, b *model.Build, infra *model.BuildInfra) (string, error) {
 	taskID := infra.Proto.Backend.Task.GetId()
 	if taskID.GetTarget() != req.Task.Id.Target {
 		return "", appstatus.BadRequest(errors.Reason("build %d requires task target %q, got %q", b.ID, taskID.GetTarget(), req.Task.Id.Target).Err())
 	}
 
 	if taskID.GetId() != "" && taskID.GetId() != req.Task.Id.Id {
-		// The build has been associated with another task, possible from a previous
-		// StartBuild call of the bbagent from a different task.
+		// The build has been associated with another task from the RunTaskResponse
+		// or another StartBuildTask call.
 		return "", buildbucket.DuplicateTask.Apply(appstatus.Errorf(codes.AlreadyExists, "build %d has associated with task %q", req.BuildId, taskID.Id))
 	}
 
 	// Either the build has not associated with any task yet, or it has associated
-	// with the same task as this request, possibly from a previous StartBuild
-	// call of the bbagent from the same task.
+	// with the same task as this request, possibly from a RunTaskResponse
 	// In either case,
 	// * set the build's backend task,
 	// * store the request_id,
-	// * generate a new TASK token, store it and return it to caller.
+	// * generate a new START_BUILD token, store it and return it to caller.
 	infra.Proto.Backend.Task = req.Task
-	b.RegisterTaskRequestID = req.RequestId
-	updateTaskToken, err := buildtoken.GenerateToken(ctx, b.ID, pb.TokenBody_TASK)
+	b.StartBuildTaskRequestID = req.RequestId
+	startBuildToken, err := buildtoken.GenerateToken(ctx, b.ID, pb.TokenBody_START_BUILD)
 	if err != nil {
-		return "", appstatus.Errorf(codes.Internal, "failed to generate TASK token for build %d: %s", b.ID, err)
+		return "", appstatus.Errorf(codes.Internal, "failed to generate START_BUILD token for build %d: %s", b.ID, err)
 	}
-	b.BackendTaskToken = updateTaskToken
+	b.StartBuildToken = startBuildToken
 	err = datastore.Put(ctx, []any{b, infra})
 	if err != nil {
-		return "", appstatus.Errorf(codes.Internal, "failed to register backend task to build %d: %s", b.ID, err)
+		return "", appstatus.Errorf(codes.Internal, "failed to start backend task to build %d: %s", b.ID, err)
 	}
-	return updateTaskToken, nil
+	return startBuildToken, nil
 }
 
-// RegisterBuildTask handles a request to register a TaskBackend task with the build it runs. Implements pb.BuildsServer.
-func (*Builds) RegisterBuildTask(ctx context.Context, req *pb.RegisterBuildTaskRequest) (*pb.RegisterBuildTaskResponse, error) {
-	if err := validateRegisterBuildTaskRequest(ctx, req); err != nil {
+// StartBuildTask handles a request to register a TaskBackend task with the build it runs. Implements pb.BuildsServer.
+func (*Builds) StartBuildTask(ctx context.Context, req *pb.StartBuildTaskRequest) (*pb.StartBuildTaskResponse, error) {
+	if err := validateStartBuildTaskRequest(ctx, req); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 
-	_, err := validateToken(ctx, req.BuildId, pb.TokenBody_REGISTER_TASK)
+	_, err := validateToken(ctx, req.BuildId, pb.TokenBody_START_BUILD_TASK)
 	if err != nil {
 		return nil, appstatus.BadRequest(errors.Annotate(err, "invalid register build task token").Err())
 	}
 
-	var updateTaskToken string
+	var startBuildToken string
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		entities, err := common.GetBuildEntities(ctx, req.BuildId, model.BuildKind, model.BuildInfraKind)
 		if err != nil {
@@ -137,29 +138,31 @@ func (*Builds) RegisterBuildTask(ctx context.Context, req *pb.RegisterBuildTaskR
 			return appstatus.Errorf(codes.Internal, "the build %d does not run on task backend", req.BuildId)
 		}
 
-		if b.RegisterTaskRequestID == "" {
-			// First RegisterBuildTask for the build.
+		if b.StartBuildTaskRequestID == "" {
+			// First StartBuildTask for the build.
 			// Update the build to register the task.
-			updateTaskToken, err = registerBuildTask(ctx, req, b, infra)
+			startBuildToken, err = startBuildTask(ctx, req, b, infra)
 			return err
 		}
 
-		if b.RegisterTaskRequestID != req.RequestId {
+		if b.StartBuildTaskRequestID != req.RequestId {
 			// Different request id, deduplicate.
-			return buildbucket.DuplicateTask.Apply(appstatus.Errorf(codes.AlreadyExists, "build %d has recorded another RegisterBuildTask with request id %q", req.BuildId, b.RegisterTaskRequestID))
+			return buildbucket.DuplicateTask.Apply(appstatus.Errorf(codes.AlreadyExists, "build %d has recorded another StartBuildTask with request id %q", req.BuildId, b.StartBuildTaskRequestID))
 		}
 
 		if infra.Proto.Backend.Task.GetId().GetTarget() == req.Task.Id.Target && infra.Proto.Backend.Task.GetId().GetId() == req.Task.Id.Id {
 			// Idempotent.
-			updateTaskToken = b.BackendTaskToken
+			startBuildToken = b.StartBuildToken
 			return nil
 		}
 
 		// Same request id, different task id.
-		return buildbucket.TaskWithCollidedRequestID.Apply(appstatus.Errorf(codes.Internal, "build %d has associated with task %q with RegisterBuildTask request id %q", req.BuildId, infra.Proto.Backend.Task.Id, b.RegisterTaskRequestID))
+		return buildbucket.TaskWithCollidedRequestID.Apply(appstatus.Errorf(codes.Internal, "build %d has associated with task %q with StartBuildTask request id %q", req.BuildId, infra.Proto.Backend.Task.Id, b.StartBuildTaskRequestID))
 	}, nil)
 	if txErr != nil {
 		return nil, txErr
 	}
-	return &pb.RegisterBuildTaskResponse{UpdateBuildTaskToken: updateTaskToken}, nil
+	return &pb.StartBuildTaskResponse{Secrets: &pb.BuildSecrets{
+		StartBuildToken: startBuildToken,
+	}}, nil
 }

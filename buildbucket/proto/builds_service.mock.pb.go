@@ -204,26 +204,6 @@ func (mr *MockBuildsClientMockRecorder) GetBuildStatus(ctx, in interface{}, opts
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBuildStatus", reflect.TypeOf((*MockBuildsClient)(nil).GetBuildStatus), varargs...)
 }
 
-// RegisterBuildTask mocks base method.
-func (m *MockBuildsClient) RegisterBuildTask(ctx context.Context, in *RegisterBuildTaskRequest, opts ...grpc.CallOption) (*RegisterBuildTaskResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, in}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "RegisterBuildTask", varargs...)
-	ret0, _ := ret[0].(*RegisterBuildTaskResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// RegisterBuildTask indicates an expected call of RegisterBuildTask.
-func (mr *MockBuildsClientMockRecorder) RegisterBuildTask(ctx, in interface{}, opts ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterBuildTask", reflect.TypeOf((*MockBuildsClient)(nil).RegisterBuildTask), varargs...)
-}
-
 // ScheduleBuild mocks base method.
 func (m *MockBuildsClient) ScheduleBuild(ctx context.Context, in *ScheduleBuildRequest, opts ...grpc.CallOption) (*Build, error) {
 	m.ctrl.T.Helper()
@@ -282,6 +262,26 @@ func (mr *MockBuildsClientMockRecorder) StartBuild(ctx, in interface{}, opts ...
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartBuild", reflect.TypeOf((*MockBuildsClient)(nil).StartBuild), varargs...)
+}
+
+// StartBuildTask mocks base method.
+func (m *MockBuildsClient) StartBuildTask(ctx context.Context, in *StartBuildTaskRequest, opts ...grpc.CallOption) (*StartBuildTaskResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "StartBuildTask", varargs...)
+	ret0, _ := ret[0].(*StartBuildTaskResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StartBuildTask indicates an expected call of StartBuildTask.
+func (mr *MockBuildsClientMockRecorder) StartBuildTask(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartBuildTask", reflect.TypeOf((*MockBuildsClient)(nil).StartBuildTask), varargs...)
 }
 
 // SynthesizeBuild mocks base method.
@@ -422,21 +422,6 @@ func (mr *MockBuildsServerMockRecorder) GetBuildStatus(arg0, arg1 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBuildStatus", reflect.TypeOf((*MockBuildsServer)(nil).GetBuildStatus), arg0, arg1)
 }
 
-// RegisterBuildTask mocks base method.
-func (m *MockBuildsServer) RegisterBuildTask(arg0 context.Context, arg1 *RegisterBuildTaskRequest) (*RegisterBuildTaskResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RegisterBuildTask", arg0, arg1)
-	ret0, _ := ret[0].(*RegisterBuildTaskResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// RegisterBuildTask indicates an expected call of RegisterBuildTask.
-func (mr *MockBuildsServerMockRecorder) RegisterBuildTask(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterBuildTask", reflect.TypeOf((*MockBuildsServer)(nil).RegisterBuildTask), arg0, arg1)
-}
-
 // ScheduleBuild mocks base method.
 func (m *MockBuildsServer) ScheduleBuild(arg0 context.Context, arg1 *ScheduleBuildRequest) (*Build, error) {
 	m.ctrl.T.Helper()
@@ -480,6 +465,21 @@ func (m *MockBuildsServer) StartBuild(arg0 context.Context, arg1 *StartBuildRequ
 func (mr *MockBuildsServerMockRecorder) StartBuild(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartBuild", reflect.TypeOf((*MockBuildsServer)(nil).StartBuild), arg0, arg1)
+}
+
+// StartBuildTask mocks base method.
+func (m *MockBuildsServer) StartBuildTask(arg0 context.Context, arg1 *StartBuildTaskRequest) (*StartBuildTaskResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StartBuildTask", arg0, arg1)
+	ret0, _ := ret[0].(*StartBuildTaskResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StartBuildTask indicates an expected call of StartBuildTask.
+func (mr *MockBuildsServerMockRecorder) StartBuildTask(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartBuildTask", reflect.TypeOf((*MockBuildsServer)(nil).StartBuildTask), arg0, arg1)
 }
 
 // SynthesizeBuild mocks base method.

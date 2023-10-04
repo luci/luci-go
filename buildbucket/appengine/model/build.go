@@ -147,6 +147,10 @@ type Build struct {
 	// to have it in the header.
 	UpdateToken string `gae:"update_token,noindex"`
 
+	// StartBuildToken is set when a backend task starts, and StartBuild requests are required
+	// to have it in the header.
+	StartBuildToken string `gae:"start_build_token,noindex"`
+
 	// PubSubCallback, if set, creates notifications for build status changes.
 	PubSubCallback PubSubCallback `gae:"pubsub_callback,noindex"`
 
@@ -161,13 +165,9 @@ type Build struct {
 	// the direct chain of ancestors from root to this build.
 	AncestorIds []int64 `gae:"ancestor_ids"`
 
-	// Id of the first RegisterBuildTask call Buildbucket receives for the build.
-	// Buildbucket uses this to deduplicate the other RegisterBuildTask calls.
-	RegisterTaskRequestID string `gae:"register_task_request_id,noindex"`
-
-	// BackendTaskToken is set at the first RegisterBuildTask, and UpdateBuildTask
-	// requests are required to have it in the header.
-	BackendTaskToken string `gae:"backend_task_token,noindex"`
+	// Id of the first StartBuildTask call Buildbucket receives for the build.
+	// Buildbucket uses this to deduplicate the other StartBuildTask calls.
+	StartBuildTaskRequestID string `gae:"start_task_request_id,noindex"`
 
 	// Id of the first StartBuild call Buildbucket receives for the build.
 	// Buildbucket uses this to deduplicate the other StartBuild calls.

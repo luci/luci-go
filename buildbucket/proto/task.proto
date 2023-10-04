@@ -24,7 +24,7 @@ option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
 // A backend task.
 message Task {
-  TaskID id = 1 [ (buildbucket.v2.register_build_task_field_option).field_behavior = REQUIRED ];
+  TaskID id = 1 [ (buildbucket.v2.start_build_task_field_option).field_behavior = REQUIRED ];
 
   // (optional) Human-clickable link to the status page for this task.
   // This should be populated as part of the Task response in RunTaskResponse.
@@ -33,7 +33,7 @@ message Task {
   string link = 2;
 
   // The backend's status for handling this task.
-  Status status = 3;
+  Status status = 3 [ (buildbucket.v2.start_build_task_field_option).field_behavior = REQUIRED ];
 
   // The 'status_details' around handling this task.
   StatusDetails status_details = 4;
@@ -59,7 +59,7 @@ message Task {
   // When RunTask is called and returns a task, this should not be 0 or nil.
   // Each UpdateBuildTask call will check this to ensure the latest task is
   // being stored in datastore.
-  int64 update_id = 7;
+  int64 update_id = 7 [ (buildbucket.v2.start_build_task_field_option).field_behavior = REQUIRED ];
 }
 
 // A unique identifier for tasks.
@@ -67,12 +67,12 @@ message TaskID {
   // Target backend. e.g. "swarming://chromium-swarm".
   string target = 1 [
     (buildbucket.v2.create_build_field_option).field_behavior = REQUIRED,
-    (buildbucket.v2.register_build_task_field_option).field_behavior = REQUIRED
+    (buildbucket.v2.start_build_task_field_option).field_behavior = REQUIRED
   ];
 
   // An ID unique to the target used to identify this task. e.g. Swarming task
   // ID.
-  string id = 2 [ (buildbucket.v2.register_build_task_field_option).field_behavior = REQUIRED ];
+  string id = 2 [ (buildbucket.v2.start_build_task_field_option).field_behavior = REQUIRED ];
 }
 
 // A message sent by task backends as part of the payload to a
