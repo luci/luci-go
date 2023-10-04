@@ -158,7 +158,7 @@ func TestEndRun(t *testing.T) {
 			})
 			Convey("schedule CLUpdate for the removed Run", func() {
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(changelist.BatchOnCLUpdatedTaskClass))
-				pmtest.AssertReceivedRunFinished(ctx, rids[0])
+				pmtest.AssertReceivedRunFinished(ctx, rids[0], rs.Status)
 				pmtest.AssertReceivedCLsNotified(ctx, rids[0].LUCIProject(), []*changelist.CL{&cl})
 				So(deps.clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))
 			})

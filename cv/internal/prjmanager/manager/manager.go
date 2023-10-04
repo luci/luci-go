@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/prjmanager/state"
 	"go.chromium.org/luci/cv/internal/prjmanager/triager"
+	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/runcreator"
 	"go.chromium.org/luci/cv/internal/tracing"
 )
@@ -296,9 +297,8 @@ type triageResult struct {
 		runs   common.RunIDs
 	}
 	runsFinished struct {
-		// events and runs are in random order.
 		events eventbox.Events
-		runs   common.RunIDs
+		runs   map[common.RunID]run.Status
 	}
 	purgesCompleted struct {
 		events eventbox.Events
@@ -337,7 +337,10 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 		tr.runsCreated.runs = append(tr.runsCreated.runs, common.RunID(v.RunCreated.GetRunId()))
 	case *prjpb.Event_RunFinished:
 		tr.runsFinished.events = append(tr.runsFinished.events, item)
-		tr.runsFinished.runs = append(tr.runsFinished.runs, common.RunID(v.RunFinished.GetRunId()))
+		if tr.runsFinished.runs == nil {
+			tr.runsFinished.runs = make(map[common.RunID]run.Status)
+		}
+		tr.runsFinished.runs[common.RunID(v.RunFinished.GetRunId())] = v.RunFinished.GetStatus()
 	case *prjpb.Event_PurgeCompleted:
 		tr.purgesCompleted.events = append(tr.purgesCompleted.events, item)
 		tr.purgesCompleted.purges = append(tr.purgesCompleted.purges, v.PurgeCompleted)

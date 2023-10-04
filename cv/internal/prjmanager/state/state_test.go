@@ -881,8 +881,10 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 		pb1 := backupPB(s1)
 
 		Convey("Noops", func() {
+			finished := make(map[common.RunID]run.Status)
 			Convey("OnRunsFinished on not tracked Run", func() {
-				s2, sideEffect, err := h.OnRunsFinished(ctx, s1, common.RunIDs{run1finished.ID})
+				finished[run1finished.ID] = run.Status_SUCCEEDED
+				s2, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
 				// although s2 is cloned, it must be exact same as s1.
@@ -976,10 +978,13 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 		Convey("OnRunsFinished", func() {
 			s1.PB.Status = prjpb.Status_STOPPING
 			pb1 := backupPB(s1)
+			finished := make(map[common.RunID]run.Status)
 
 			Convey("deletes from Components", func() {
 				pb1 := backupPB(s1)
-				s2, sideEffect, err := h.OnRunsFinished(ctx, s1, common.MakeRunIDs(ct.lProject+"/101-aaa"))
+				runIDs := common.MakeRunIDs(ct.lProject + "/101-aaa")
+				finished[runIDs[0]] = run.Status_CANCELLED
+				s2, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
 				So(err, ShouldBeNil)
 				So(pb1, ShouldResembleProto, s1.PB)
 				So(sideEffect, ShouldBeNil)
@@ -1002,7 +1007,9 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 			})
 
 			Convey("deletes from CreatedPruns", func() {
-				s2, sideEffect, err := h.OnRunsFinished(ctx, s1, common.MakeRunIDs(ct.lProject+"/789-efg"))
+				runIDs := common.MakeRunIDs(ct.lProject + "/789-efg")
+				finished[runIDs[0]] = run.Status_CANCELLED
+				s2, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
 				So(err, ShouldBeNil)
 				So(pb1, ShouldResembleProto, s1.PB)
 				So(sideEffect, ShouldBeNil)
@@ -1017,10 +1024,13 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 			})
 
 			Convey("stops PM iff all runs finished", func() {
-				s2, sideEffect, err := h.OnRunsFinished(ctx, s1, common.MakeRunIDs(
+				runIDs := common.MakeRunIDs(
 					ct.lProject+"/101-aaa",
 					ct.lProject+"/789-efg",
-				))
+				)
+				finished[runIDs[0]] = run.Status_SUCCEEDED
+				finished[runIDs[1]] = run.Status_SUCCEEDED
+				s2, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
 				So(err, ShouldBeNil)
 				So(pb1, ShouldResembleProto, s1.PB)
 				So(sideEffect, ShouldBeNil)

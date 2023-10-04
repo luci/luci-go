@@ -184,7 +184,7 @@ func TestProjectLifeCycle(t *testing.T) {
 					So(runNotifier.popCancel(), ShouldResemble, reqs)
 
 					Convey("wait for all IncompleteRuns to finish", func() {
-						So(pmNotifier.NotifyRunFinished(ctx, common.RunID(lProject+"/111-beef")), ShouldBeNil)
+						So(pmNotifier.NotifyRunFinished(ctx, common.RunID(lProject+"/111-beef"), run.Status_CANCELLED), ShouldBeNil)
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 
 						p, ps, plog := loadProjectEntities(ctx, lProject)
@@ -192,7 +192,7 @@ func TestProjectLifeCycle(t *testing.T) {
 						So(p.IncompleteRuns(), ShouldResemble, common.MakeRunIDs(lProject+"/222-cafe"))
 						So(plog, ShouldBeNil) // still STOPPING.
 
-						So(pmNotifier.NotifyRunFinished(ctx, common.RunID(lProject+"/222-cafe")), ShouldBeNil)
+						So(pmNotifier.NotifyRunFinished(ctx, common.RunID(lProject+"/222-cafe"), run.Status_CANCELLED), ShouldBeNil)
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 
 						p, ps, plog = loadProjectEntities(ctx, lProject)

@@ -217,7 +217,7 @@ func (h *Handler) OnRunsCreated(ctx context.Context, s *State, created common.Ru
 }
 
 // OnRunsFinished updates state after Runs were finished.
-func (h *Handler) OnRunsFinished(ctx context.Context, s *State, finished common.RunIDs) (_ *State, __ SideEffect, err error) {
+func (h *Handler) OnRunsFinished(ctx context.Context, s *State, finished map[common.RunID]run.Status) (_ *State, __ SideEffect, err error) {
 	s.ensureNotYetCloned()
 
 	_, span := tracing.Start(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/OnRunsFinished")
@@ -225,7 +225,7 @@ func (h *Handler) OnRunsFinished(ctx context.Context, s *State, finished common.
 
 	// This is rarely a noop, so assume state is modified for simplicity.
 	s = s.cloneShallow()
-	incompleteRunsCount := s.removeFinishedRuns(finished.Set())
+	incompleteRunsCount := s.removeFinishedRuns(finished)
 	if s.PB.GetStatus() == prjpb.Status_STOPPING && incompleteRunsCount == 0 {
 		s.LogReasons = append(s.LogReasons, prjpb.LogReason_STATUS_CHANGED)
 		s.PB.Status = prjpb.Status_STOPPED

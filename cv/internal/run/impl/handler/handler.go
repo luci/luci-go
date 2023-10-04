@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/gerrit"
+	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/bq"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -99,7 +100,7 @@ type Handler interface {
 
 // PM encapsulates interaction with Project Manager by the Run events handler.
 type PM interface {
-	NotifyRunFinished(ctx context.Context, runID common.RunID) error
+	NotifyRunFinished(ctx context.Context, runID common.RunID, status run.Status) error
 	NotifyCLsUpdated(ctx context.Context, luciProject string, cls *changelist.CLUpdatedEvents) error
 }
 

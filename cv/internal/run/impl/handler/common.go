@@ -98,7 +98,7 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status,
 			txndefer.Defer(ctx, func(postTransCtx context.Context) {
 				logging.Infof(postTransCtx, "finalized Run with status %s", st)
 			})
-			return impl.PM.NotifyRunFinished(ctx, rs.ID)
+			return impl.PM.NotifyRunFinished(ctx, rs.ID, rs.Status)
 		},
 		func(ctx context.Context) error {
 			switch rs.Mode {

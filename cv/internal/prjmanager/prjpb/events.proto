@@ -19,6 +19,8 @@ package cv.internal.prjmanager.prjpb;
 option go_package = "go.chromium.org/luci/cv/internal/prjmanager/prjpb;prjpb";
 
 import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
+import "go.chromium.org/luci/cv/internal/run/storage.proto";
+
 
 // Event is a container for all kinds of events a project manager can receive.
 message Event {
@@ -55,6 +57,8 @@ message RunCreated {
 // status to a final status.
 message RunFinished {
   string run_id = 1;
+  // the terminal status.
+  cv.internal.run.Status status = 2;
 }
 
 // PurgingCompleted is sent to PM by TQ task purging a CL.

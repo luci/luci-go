@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/run"
 )
 
 // EventboxRecipient returns eventbox.Recipient for a given LUCI project.
@@ -124,11 +125,12 @@ func (n *Notifier) NotifyRunCreated(ctx context.Context, runID common.RunID) err
 }
 
 // NotifyRunFinished tells Project Manager that a run has finalized its state.
-func (n *Notifier) NotifyRunFinished(ctx context.Context, runID common.RunID) error {
+func (n *Notifier) NotifyRunFinished(ctx context.Context, runID common.RunID, status run.Status) error {
 	return n.SendNow(ctx, runID.LUCIProject(), &prjpb.Event{
 		Event: &prjpb.Event_RunFinished{
 			RunFinished: &prjpb.RunFinished{
-				RunId: string(runID),
+				RunId:  string(runID),
+				Status: status,
 			},
 		},
 	})

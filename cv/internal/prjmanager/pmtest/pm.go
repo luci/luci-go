@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -133,11 +134,12 @@ func AssertInEventbox(ctx context.Context, project string, targets ...*prjpb.Eve
 
 // AssertReceivedRunFinished asserts a RunFinished event has been delivered
 // tor project's eventbox for the given Run.
-func AssertReceivedRunFinished(ctx context.Context, runID common.RunID) {
+func AssertReceivedRunFinished(ctx context.Context, runID common.RunID, status run.Status) {
 	AssertInEventbox(ctx, runID.LUCIProject(), &prjpb.Event{
 		Event: &prjpb.Event_RunFinished{
 			RunFinished: &prjpb.RunFinished{
-				RunId: string(runID),
+				RunId:  string(runID),
+				Status: status,
 			},
 		},
 	})

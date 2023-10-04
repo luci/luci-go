@@ -120,7 +120,7 @@ func (s *State) addCreatedRuns(ctx context.Context, ids map[common.RunID]struct{
 
 // removeFinishedRuns removes known runs and returns number of the still tracked
 // runs.
-func (s *State) removeFinishedRuns(ids map[common.RunID]struct{}) int {
+func (s *State) removeFinishedRuns(ids map[common.RunID]run.Status) int {
 	delIfFinished := func(r *prjpb.PRun) *prjpb.PRun {
 		id := common.RunID(r.GetId())
 		if _, ok := ids[id]; ok {
