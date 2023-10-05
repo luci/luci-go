@@ -162,6 +162,16 @@ func FormatCLError(ctx context.Context, reason *changelist.CLError, cl *changeli
 		}
 		return tmplTriggerDeps.Execute(sb, map[string]any{"urls": urls, "messages": msgs})
 
+	case *changelist.CLError_DepRunFailed:
+		if v.DepRunFailed == 0 {
+			return errors.New("dep_run_failed must be > 0")
+		}
+		urls, err := depsURLs(ctx, []*changelist.Dep{{Clid: v.DepRunFailed}})
+		if err != nil {
+			return err
+		}
+		return tmplDepRunFailed.Execute(sb, map[string]any{"url": urls[0]})
+
 	default:
 		return errors.Reason("unsupported purge reason %t: %s", v, reason).Err()
 	}
@@ -285,4 +295,8 @@ var tmplTriggerDeps = tmplMust(`
 {{CQ_OR_CV}} failed to vote the CQ label on the following dependencies.
 {{range $i, $url := .urls}}  * {{$url}} - {{index $.messages $i}}
 {{end}}
+`)
+
+var tmplDepRunFailed = tmplMust(`
+Revoking the CQ vote, because a Run failed on [CL]({{.url}}) that this CL depends on.
 `)

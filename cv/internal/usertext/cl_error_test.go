@@ -238,6 +238,33 @@ func TestFormatCLError(t *testing.T) {
 				`))
 			})
 
+			Convey("DepRunFailed", func() {
+				// Save a CL snapshot for each dep.
+				deps := make(map[int]*changelist.Dep, 2)
+				for i := 1; i <= 6; i++ {
+					depCL := changelist.MustGobID(gHost, int64(i)).MustCreateIfNotExists(ctx)
+					depCL.Snapshot = &changelist.Snapshot{
+						LuciProject:           "whatever",
+						MinEquivalentPatchset: 1,
+						Patchset:              2,
+						ExternalUpdateTime:    timestamppb.New(testclock.TestRecentTimeUTC),
+						Kind: &changelist.Snapshot_Gerrit{
+							Gerrit: &changelist.Gerrit{
+								Host: gHost,
+								Info: gf.CI(i),
+							},
+						},
+					}
+					So(datastore.Put(ctx, depCL), ShouldBeNil)
+					deps[i] = &changelist.Dep{Clid: int64(depCL.ID)}
+				}
+				reason.Kind = &changelist.CLError_DepRunFailed{
+					DepRunFailed: 2,
+				}
+				So(mustFormat(), ShouldContainSubstring, text.Doc(`
+					a Run failed on [CL](https://x-review.googlesource.com/c/2) that this CL depends on.
+				`))
+			})
 		})
 	})
 }
