@@ -17,6 +17,7 @@ package rpc
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -88,6 +89,7 @@ func TestGetProjectConfigs(t *testing.T) {
 			Revision:      datastore.MakeKey(ctx, model.ConfigSetKind, "projects/project2", model.RevisionKind, "1"),
 			ContentSHA256: "configsha256",
 			GcsURI:        "gs://bucket/configsha256",
+			Size:          1000,
 		}), ShouldBeNil)
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
@@ -139,20 +141,6 @@ func TestGetProjectConfigs(t *testing.T) {
 			So(res, ShouldResembleProto, &pb.GetProjectConfigsResponse{})
 		})
 
-		Convey("too many small configs to return", func() {
-			originalLimit := maxProjConfigsResSize
-			// Make the limit to 1 byte to avoid taking too much memory to test this
-			// use case.
-			maxProjConfigsResSize = 1
-			defer func() { maxProjConfigsResSize = originalLimit }()
-
-			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
-				Path: "config.cfg",
-			})
-			So(res, ShouldBeNil)
-			So(err, ShouldHaveGRPCStatus, codes.ResourceExhausted, "Too many small configs to return")
-		})
-
 		Convey("found", func() {
 			mockGsClient.EXPECT().SignedURL(
 				gomock.Eq("bucket"),
@@ -180,6 +168,87 @@ func TestGetProjectConfigs(t *testing.T) {
 						Path:      "config.cfg",
 						Content: &pb.Config_SignedUrl{
 							SignedUrl: "signed_url",
+						},
+						ContentSha256: "configsha256",
+						Revision:      "1",
+					},
+				},
+			})
+		})
+
+		Convey(" config size > maxRawContentSize", func() {
+			fooPb := &cfgcommonpb.ProjectCfg{Name: strings.Repeat("0123456789", maxRawContentSize/10)}
+			fooPbBytes, err := prototext.Marshal(fooPb)
+			So(err, ShouldBeNil)
+			fooPbSha := sha256.Sum256(fooPbBytes)
+			fooPbShaStr := hex.EncodeToString(fooPbSha[:])
+
+			testutil.InjectConfigSet(ctx, config.MustProjectSet("foo"), map[string]proto.Message{
+				"foo.cfg": fooPb,
+			})
+			mockGsClient.EXPECT().SignedURL(
+				gomock.Eq(testutil.TestGsBucket),
+				gomock.Eq("foo.cfg"),
+				gomock.Any(),
+			).Return("signed_url", nil)
+
+			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
+				Path: "foo.cfg",
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &pb.GetProjectConfigsResponse{
+				Configs: []*pb.Config{
+					{
+						ConfigSet: "projects/foo",
+						Path:      "foo.cfg",
+						Content: &pb.Config_SignedUrl{
+							SignedUrl: "signed_url",
+						},
+						ContentSha256: fooPbShaStr,
+						Revision:      "1",
+					},
+				},
+			})
+		})
+
+		Convey("total size > maxProjConfigsResSize", func() {
+			originalLimit := maxProjConfigsResSize
+			// Make the limit to 1 byte to avoid taking too much memory to test this
+			// use case.
+			maxProjConfigsResSize = 1
+			defer func() { maxProjConfigsResSize = originalLimit }()
+
+			mockGsClient.EXPECT().SignedURL(
+				gomock.Eq(testutil.TestGsBucket),
+				gomock.Eq("config.cfg"),
+				gomock.Any(),
+			).Return("signed_url1", nil)
+			mockGsClient.EXPECT().SignedURL(
+				gomock.Eq("bucket"),
+				gomock.Eq("configsha256"),
+				gomock.Any(),
+			).Return("signed_url2", nil)
+
+			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
+				Path: "config.cfg",
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &pb.GetProjectConfigsResponse{
+				Configs: []*pb.Config{
+					{
+						ConfigSet: "projects/project1",
+						Path:      "config.cfg",
+						Content: &pb.Config_SignedUrl{
+							SignedUrl: "signed_url1",
+						},
+						ContentSha256: configPbShaStr,
+						Revision:      "1",
+					},
+					{
+						ConfigSet: "projects/project2",
+						Path:      "config.cfg",
+						Content: &pb.Config_SignedUrl{
+							SignedUrl: "signed_url2",
 						},
 						ContentSha256: "configsha256",
 						Revision:      "1",

@@ -288,8 +288,9 @@ type isConfig_Content interface {
 }
 
 type Config_RawContent struct {
-	// For small content where the gzipped size is less than 800KB, raw and
-	// uncompressed content will be included directly.
+	// For small content where its raw content is less than 30MB and gzipped
+	// size is less than 800KB, the raw and uncompressed content will be
+	// included directly.
 	RawContent []byte `protobuf:"bytes,3,opt,name=raw_content,json=rawContent,proto3,oneof"`
 }
 
@@ -377,6 +378,9 @@ func (x *GetProjectConfigsRequest) GetFields() *fieldmaskpb.FieldMask {
 }
 
 // GetProjectConfigsResponse is the response of GetProjectConfigs rpc.
+//
+// Note: When the sum of the first ith config.Content size larger than 200MB,
+// the rest of config.Content will be always a signed url.
 type GetProjectConfigsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

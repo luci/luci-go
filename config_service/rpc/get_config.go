@@ -107,7 +107,7 @@ func (c Configs) GetConfig(ctx context.Context, req *pb.GetConfigRequest) (*pb.C
 		Revision:      f.Revision.StringID(),
 		Url:           common.GitilesURL(f.Location.GetGitilesLocation()),
 	}
-	if len(f.Content) != 0 {
+	if len(f.Content) != 0 && f.Size < int64(maxRawContentSize) {
 		rawContent, err := f.GetRawContent(ctx)
 		if err != nil {
 			logging.Errorf(ctx, "failed to get the raw content of the config for %s-%s: %s", cs, f.Path, err)

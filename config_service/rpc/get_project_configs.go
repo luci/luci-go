@@ -17,6 +17,7 @@ package rpc
 import (
 	"context"
 	"net/http"
+	"slices"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -92,7 +93,12 @@ func (c Configs) GetProjectConfigs(ctx context.Context, req *pb.GetProjectConfig
 		return nil, status.Errorf(codes.Internal, "error while fetching project configs")
 	}
 	var configs []*pb.Config
-	totalFileSize := 0
+	totalSize := 0
+	// Sort the files from smallest to largest so that the response will include
+	// as many smaller configs as possible.
+	slices.SortFunc(files, func(a, b *model.File) int {
+		return int(a.Size - b.Size)
+	})
 	for _, f := range files {
 		cfgPb := &pb.Config{
 			ConfigSet:     f.Revision.Root().StringID(),
@@ -101,19 +107,16 @@ func (c Configs) GetProjectConfigs(ctx context.Context, req *pb.GetProjectConfig
 			Revision:      f.Revision.StringID(),
 			Url:           common.GitilesURL(f.Location.GetGitilesLocation()),
 		}
+		totalSize += int(f.Size)
 		switch {
 		case len(f.Content) == 0 && f.GcsURI == "":
 			// This file is not found.
 			continue
-		case len(f.Content) != 0 && m.MustIncludes("raw_content") != mask.Exclude:
+		case len(f.Content) != 0 && f.Size < int64(maxRawContentSize) && totalSize < maxProjConfigsResSize && m.MustIncludes("raw_content") != mask.Exclude:
 			rawContent, err := f.GetRawContent(ctx)
 			if err != nil {
 				logging.Errorf(ctx, "failed to get the raw content of the config for %s-%s: %s", cfgPb.ConfigSet, cfgPb.Path, err)
 				return nil, status.Errorf(codes.Internal, "error while getting raw content")
-			}
-			totalFileSize += len(rawContent)
-			if totalFileSize > maxProjConfigsResSize {
-				return nil, status.Errorf(codes.ResourceExhausted, "Too many small configs to return (Total size > %d MiB). Use ListConfigSets + GetConfig as a substitute", maxProjConfigsResSize/1024/1024)
 			}
 			cfgPb.Content = &pb.Config_RawContent{RawContent: rawContent}
 		case f.GcsURI != "" && m.MustIncludes("signed_url") != mask.Exclude:

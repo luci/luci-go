@@ -350,6 +350,35 @@ func TestGetConfig(t *testing.T) {
 					So(res, ShouldBeNil)
 					So(err, ShouldHaveGRPCStatus, codes.Internal, "error while generating the config signed url")
 				})
+
+				Convey("content size > maxRawContentSize", func() {
+					originalMaxCntSize := maxRawContentSize
+					maxRawContentSize = 1
+					defer func() { maxRawContentSize = originalMaxCntSize }()
+
+					mockGsClient.EXPECT().SignedURL(
+						gomock.Eq(testutil.TestGsBucket),
+						gomock.Eq("file"),
+						gomock.Any(),
+					).Return("signed_url", nil)
+
+					res, err := srv.GetConfig(ctx, &pb.GetConfigRequest{
+						ConfigSet: "services/myservice",
+						Path:      "file",
+						Fields: &field_mask.FieldMask{
+							Paths: []string{"config_set", "path", "content", "revision"},
+						},
+					})
+					So(err, ShouldBeNil)
+					So(res, ShouldResembleProto, &pb.Config{
+						ConfigSet: "services/myservice",
+						Path:      "file",
+						Content: &pb.Config_SignedUrl{
+							SignedUrl: "signed_url",
+						},
+						Revision: "1",
+					})
+				})
 			})
 		})
 	})

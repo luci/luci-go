@@ -96,8 +96,9 @@ message Config {
 
   // Content of the config.
   oneof content {
-    // For small content where the gzipped size is less than 800KB, raw and
-    // uncompressed content will be included directly.
+    // For small content where its raw content is less than 30MB and gzipped
+    // size is less than 800KB, the raw and uncompressed content will be
+    // included directly.
     bytes raw_content = 3;
 
     // For large content, a sign_url which points the actual config content
@@ -140,6 +141,9 @@ message GetProjectConfigsRequest {
 }
 
 // GetProjectConfigsResponse is the response of GetProjectConfigs rpc.
+//
+// Note: When the sum of the first ith config.Content size larger than 200MB,
+// the rest of config.Content will be always a signed url.
 message GetProjectConfigsResponse {
   // The requested configs in each project.
   repeated Config configs = 1;

@@ -35,6 +35,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/config"
@@ -52,6 +53,7 @@ import (
 
 const AppID = "luci-config-dev"
 const ServiceAccount = "luci-config@luci-config-dev.iam.gserviceaccount.com"
+const TestGsBucket = "test-bucket"
 
 // SetupContext sets up testing common context for LUCI Config tests.
 func SetupContext() context.Context {
@@ -136,6 +138,8 @@ func InjectConfigSet(ctx context.Context, cfgSet config.Set, configs map[string]
 			Revision:      datastore.MakeKey(ctx, model.ConfigSetKind, string(cfgSet), model.RevisionKind, cs.LatestRevision.ID),
 			Content:       compressed.Bytes(),
 			ContentSHA256: hex.EncodeToString(sha.Sum(nil)),
+			Size:          int64(len(content)),
+			GcsURI:        gs.MakePath(TestGsBucket, filepath),
 		})
 	}
 	So(datastore.Put(ctx, cs, files), ShouldBeNil)
