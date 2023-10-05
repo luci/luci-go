@@ -197,7 +197,7 @@ func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string,
 		return errors.Annotate(err, "update cluster summary analysis").Err()
 	}
 
-	uiBaseURL := fmt.Sprintf("https://%s.appspot.com/", gcpProject)
+	uiBaseURL := fmt.Sprintf("https://%s.appspot.com", gcpProject)
 
 	taskGenerator := func(c chan<- func() error) {
 		for _, project := range projectCfg.Keys() {
