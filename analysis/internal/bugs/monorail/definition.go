@@ -265,6 +265,31 @@ func (rg *RequestGenerator) PrepareLinkComment(bugID string) (*mpb.ModifyIssuesR
 	return result, nil
 }
 
+// PrepareRuleAssociatedComment prepares a request that notifies the bug
+// it is associated with failures in LUCI Analysis.
+func (rg *RequestGenerator) PrepareRuleAssociatedComment(bugID string) (*mpb.ModifyIssuesRequest, error) {
+	issueName, err := toMonorailIssueName(bugID)
+	if err != nil {
+		return nil, err
+	}
+
+	ruleURL := bugs.RuleForMonorailBugURL(rg.uiBaseURL, bugID)
+
+	result := &mpb.ModifyIssuesRequest{
+		Deltas: []*mpb.IssueDelta{
+			{
+				Issue: &mpb.Issue{
+					Name: issueName,
+				},
+				UpdateMask: &field_mask.FieldMask{},
+			},
+		},
+		NotifyType:     mpb.NotifyType_NO_NOTIFICATION,
+		CommentContent: bugs.RuleAssociatedCommentary(ruleURL).ToComment(),
+	}
+	return result, nil
+}
+
 // SortPolicyIDsByPriorityDescending sorts policy IDs in descending
 // priority order (i.e. P0 policies first, then P1, then P2, ...).
 func (rg *RequestGenerator) SortPolicyIDsByPriorityDescending(policyIDs map[bugs.PolicyID]struct{}) []bugs.PolicyID {

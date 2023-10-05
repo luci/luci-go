@@ -258,6 +258,19 @@ func (rg *RequestGenerator) PrepareNoPermissionComment(issueID, componentID int6
 	}
 }
 
+// PrepareRuleAssociatedComment prepares a request that notifies the bug
+// it is associated with failures in LUCI Analysis.
+func (rg *RequestGenerator) PrepareRuleAssociatedComment(issueID int64) (*issuetracker.CreateIssueCommentRequest, error) {
+	ruleURL := bugs.RuleForBuganizerBugURL(rg.uiBaseURL, issueID)
+
+	return &issuetracker.CreateIssueCommentRequest{
+		IssueId: issueID,
+		Comment: &issuetracker.IssueComment{
+			Comment: bugs.RuleAssociatedCommentary(ruleURL).ToComment(),
+		},
+	}, nil
+}
+
 // SortPolicyIDsByPriorityDescending sorts policy IDs in descending
 // priority order (i.e. P0 policies first, then P1, then P2, ...).
 func (rg *RequestGenerator) SortPolicyIDsByPriorityDescending(policyIDs map[bugs.PolicyID]struct{}) []bugs.PolicyID {

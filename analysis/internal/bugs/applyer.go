@@ -430,6 +430,13 @@ func (p PolicyApplyer) PolicyActivatedComment(policyID PolicyID, uiBaseURL strin
 	return commentary.ToComment(), nil
 }
 
+func RuleAssociatedCommentary(ruleURL string) Commentary {
+	c := Commentary{
+		Bodies: []string{fmt.Sprintf("This bug has been associated with failures in LUCI Analysis. To view failure examples or update the association, go to LUCI Analysis at: %s", ruleURL)},
+	}
+	return c
+}
+
 func ManualPriorityUpdateCommentary() Commentary {
 	c := Commentary{
 		Bodies: []string{"The bug priority has been manually set. To re-enable automatic priority updates by LUCI Analysis, enable the update priority flag on the rule."},

@@ -468,7 +468,6 @@ func TestUpdate(t *testing.T) {
 				})
 			})
 			Convey("bugs are routed to the correct issue tracker and component", func() {
-
 				suggestedClusters[1].TopBuganizerComponents = []analysis.TopCount{
 					{Value: "77777", Count: 20},
 				}
@@ -1044,6 +1043,72 @@ func TestUpdate(t *testing.T) {
 							"new-exoneration-policy": {},
 							"cls-rejected-policy":    {},
 						}
+					})
+				})
+				Convey("rule associated notification", func() {
+					Convey("buganizer", func() {
+						// Select a Buganizer issue.
+						issue := buganizerStore.Issues[1]
+
+						// Get the corresponding rule, confirming we got the right one.
+						rule := rs[0]
+						So(rule.BugID.ID, ShouldEqual, fmt.Sprintf("%v", issue.Issue.IssueId))
+
+						// Reset RuleAssociationNotified on the rule.
+						rule.BugManagementState.RuleAssociationNotified = false
+						So(rules.SetForTesting(ctx, rs), ShouldBeNil)
+
+						originalCommentCount := len(issue.Comments)
+
+						// Act
+						err = updateBugsForProject(ctx, opts)
+
+						// Verify
+						So(err, ShouldBeNil)
+						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+						So(issue.Comments, ShouldHaveLength, originalCommentCount+1)
+						So(issue.Comments[originalCommentCount].Comment, ShouldEqual,
+							"This bug has been associated with failures in LUCI Analysis."+
+								" To view failure examples or update the association, go to LUCI Analysis at: https://luci-analysis-test.appspot.com/b/1")
+
+						// Further runs should not lead to repeated posting of the comment.
+						err = updateBugsForProject(ctx, opts)
+						So(err, ShouldBeNil)
+						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+						So(issue.Comments, ShouldHaveLength, originalCommentCount+1)
+					})
+					Convey("monorail", func() {
+						// Select a Monorail issue.
+						issue := monorailStore.Issues[0]
+
+						// Get the corresponding rule, and confirm we got the right one.
+						const ruleIndex = firstMonorailRuleIndex
+						rule := rs[ruleIndex]
+						So(rule.BugID.ID, ShouldEqual, "chromium/100")
+						So(issue.Issue.Name, ShouldEqual, "projects/chromium/issues/100")
+
+						// Reset RuleAssociationNotified on the rule.
+						rule.BugManagementState.RuleAssociationNotified = false
+						So(rules.SetForTesting(ctx, rs), ShouldBeNil)
+
+						originalCommentCount := len(issue.Comments)
+
+						// Act
+						err = updateBugsForProject(ctx, opts)
+
+						// Verify
+						So(err, ShouldBeNil)
+						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+						So(issue.Comments, ShouldHaveLength, originalCommentCount+1)
+						So(issue.Comments[originalCommentCount].Content, ShouldContainSubstring,
+							"This bug has been associated with failures in LUCI Analysis."+
+								" To view failure examples or update the association, go to LUCI Analysis at: https://luci-analysis-test.appspot.com/b/chromium/100")
+
+						// Further runs should not lead to repeated posting of the comment.
+						err = updateBugsForProject(ctx, opts)
+						So(err, ShouldBeNil)
+						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+						So(issue.Comments, ShouldHaveLength, originalCommentCount+1)
 					})
 				})
 				Convey("priority updates and auto-closure", func() {

@@ -176,24 +176,20 @@ func (m *BugManager) filterToValidComponents(ctx context.Context, components []s
 // This method supports partial success; it returns the set of policies
 // which were successfully notified even if an error is encountered and
 // returned.
-func (bm *BugManager) notifyPolicyActivation(ctx context.Context, bugID string, policyIDsToNotify map[bugs.PolicyID]struct{}) (map[bugs.PolicyID]struct{}, error) {
+func (m *BugManager) notifyPolicyActivation(ctx context.Context, bugID string, policyIDsToNotify map[bugs.PolicyID]struct{}) (map[bugs.PolicyID]struct{}, error) {
 	policiesNotified := make(map[bugs.PolicyID]struct{})
 
 	// Notify policies which have activated in descending priority order.
-	sortedPolicyIDToNotify := bm.generator.SortPolicyIDsByPriorityDescending(policyIDsToNotify)
+	sortedPolicyIDToNotify := m.generator.SortPolicyIDsByPriorityDescending(policyIDsToNotify)
 	for _, policyID := range sortedPolicyIDToNotify {
-		commentRequest, err := bm.generator.PreparePolicyActivatedComment(bugID, policyID)
+		commentRequest, err := m.generator.PreparePolicyActivatedComment(bugID, policyID)
 		if err != nil {
 			return policiesNotified, errors.Annotate(err, "prepare policy activated comment for policy %q", policyID).Err()
 		}
+		// Only post a comment if the policy has specified one.
 		if commentRequest != nil {
-			// Only post a comment if the policy has specified one.
-			if bm.Simulate {
-				logging.Debugf(ctx, "Would post comment on Monorail issue: %s", textPBMultiline.Format(commentRequest))
-			} else {
-				if err := bm.client.ModifyIssues(ctx, commentRequest); err != nil {
-					return policiesNotified, errors.Annotate(err, "post policy activated comment for policy %q", policyID).Err()
-				}
+			if err := m.applyModification(ctx, commentRequest); err != nil {
+				return policiesNotified, errors.Annotate(err, "post policy activated comment for policy %q", policyID).Err()
 			}
 		}
 		// Policy activation successfully notified.
@@ -277,7 +273,20 @@ func (m *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateRequ
 	response.DisableRulePriorityUpdates = false // Set below if necessary.
 
 	if !response.IsDuplicate && !response.ShouldArchive {
-		// Identify which policies have activated for the first time and notify them.
+		if !request.BugManagementState.RuleAssociationNotified {
+			updateRequest, err := m.generator.PrepareRuleAssociatedComment(request.Bug.ID)
+			if err != nil {
+				response.Error = errors.Annotate(err, "prepare rule associated comment").Err()
+				return response
+			}
+			if err := m.applyModification(ctx, updateRequest); err != nil {
+				response.Error = errors.Annotate(err, "create rule associated comment").Err()
+				return response
+			}
+			response.RuleAssociationNotified = true
+		}
+
+		// Identify which policies have activated for the first time and notify them (if any).
 		policyIDsToNotify := bugs.ActivePoliciesPendingNotification(request.BugManagementState)
 
 		var err error
@@ -310,20 +319,13 @@ func (m *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateRequ
 				HasManuallySetPriority: hasManuallySetPriority,
 			})
 			if err != nil {
-				return bugs.BugUpdateResponse{
-					Error: errors.Annotate(err, "prepare priority/verified update").Err(),
-				}
+				response.Error = errors.Annotate(err, "prepare priority/verified update").Err()
+				return response
 			}
 			response.DisableRulePriorityUpdates = mur.disableBugPriorityUpdates
-			if m.Simulate {
-				logging.Debugf(ctx, "Would update Monorail issue: %s", textPBMultiline.Format(mur.request))
-			} else {
-				if err := m.client.ModifyIssues(ctx, mur.request); err != nil {
-					return bugs.BugUpdateResponse{
-						Error: errors.Annotate(err, "update monorail issue").Err(),
-					}
-				}
-				bugs.BugsUpdatedCounter.Add(ctx, 1, m.project, "monorail")
+			if err := m.applyModification(ctx, mur.request); err != nil {
+				response.Error = errors.Annotate(err, "update monorail issue").Err()
+				return response
 			}
 		}
 	}
@@ -372,6 +374,18 @@ func (m *BugManager) updateIssueLegacy(ctx context.Context, request bugs.BugUpda
 		DisableRulePriorityUpdates: disableRulePriorityUpdates,
 		PolicyActivationsNotified:  map[bugs.PolicyID]struct{}{},
 	}
+}
+
+func (m *BugManager) applyModification(ctx context.Context, modifyRequest *mpb.ModifyIssuesRequest) error {
+	if m.Simulate {
+		logging.Debugf(ctx, "Would update Monorail issue: %s", textPBMultiline.Format(modifyRequest))
+	} else {
+		if err := m.client.ModifyIssues(ctx, modifyRequest); err != nil {
+			return errors.Annotate(err, "apply modificaton").Err()
+		}
+		bugs.BugsUpdatedCounter.Add(ctx, 1, m.project, "monorail")
+	}
+	return nil
 }
 
 // shouldArchiveRule determines if the rule managing the given issue should

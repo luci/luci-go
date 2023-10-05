@@ -264,14 +264,10 @@ func (bm *BugManager) notifyPolicyActivation(ctx context.Context, issueID int64,
 		if err != nil {
 			return policiesNotified, errors.Annotate(err, "prepare comment for policy %q", policyID).Err()
 		}
+		// Only post a comment if the policy has specified one.
 		if commentRequest != nil {
-			// Only post a comment if the policy has specified one.
-			if bm.Simulate {
-				logging.Debugf(ctx, "Would post comment on Buganizer issue: %s", textPBMultiline.Format(commentRequest))
-			} else {
-				if _, err := bm.client.CreateIssueComment(ctx, commentRequest); err != nil {
-					return policiesNotified, errors.Annotate(err, "post comment for policy %q", policyID).Err()
-				}
+			if err := bm.createIssueComment(ctx, commentRequest); err != nil {
+				return policiesNotified, errors.Annotate(err, "post comment for policy %q", policyID).Err()
 			}
 		}
 		// Policy activation successfully notified.
@@ -367,6 +363,19 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 	}
 
 	if !response.IsDuplicate && !response.ShouldArchive {
+		if !request.BugManagementState.RuleAssociationNotified {
+			commentRequest, err := bm.requestGenerator.PrepareRuleAssociatedComment(issue.IssueId)
+			if err != nil {
+				response.Error = errors.Annotate(err, "prepare rule associated comment").Err()
+				return response
+			}
+			if err := bm.createIssueComment(ctx, commentRequest); err != nil {
+				response.Error = errors.Annotate(err, "create rule associated comment").Err()
+				return response
+			}
+			response.RuleAssociationNotified = true
+		}
+
 		// Identify which policies have activated for the first time and notify them.
 		policyIDsToNotify := bugs.ActivePoliciesPendingNotification(request.BugManagementState)
 
@@ -462,6 +471,19 @@ func (bm *BugManager) updateIssueLegacy(ctx context.Context, request bugs.BugUpd
 		}
 	}
 	return updateResponse
+}
+
+func (bm *BugManager) createIssueComment(ctx context.Context, commentRequest *issuetracker.CreateIssueCommentRequest) error {
+	// Only post a comment if the policy has specified one.
+	if bm.Simulate {
+		logging.Debugf(ctx, "Would post comment on Buganizer issue: %s", textPBMultiline.Format(commentRequest))
+	} else {
+		if _, err := bm.client.CreateIssueComment(ctx, commentRequest); err != nil {
+			return errors.Annotate(err, "create comment").Err()
+		}
+		bugs.BugsUpdatedCounter.Add(ctx, 1, bm.project, "buganizer")
+	}
+	return nil
 }
 
 // hasManuallySetPriority checks whether this issue's priority was last modified by

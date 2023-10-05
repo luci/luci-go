@@ -362,6 +362,7 @@ func TestBugManager(t *testing.T) {
 
 			activationTime := time.Date(2025, 1, 1, 1, 0, 0, 0, time.UTC)
 			state := &bugspb.BugManagementState{
+				RuleAssociationNotified: true,
 				PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
 					"policy-a": { // P4
 						IsActive:           true,
@@ -439,8 +440,31 @@ func TestBugManager(t *testing.T) {
 				So(response, ShouldResemble, expectedResponse)
 			})
 
-			Convey("If active policies unchanged, does nothing", func() {
+			Convey("If active policies unchanged and no rule notification pending, does nothing", func() {
 				So(verifyUpdateDoesNothing(), ShouldBeNil)
+			})
+			Convey("Notifies association between bug and rule", func() {
+				// Setup
+				// When RuleAssociationNotified is false.
+				bugsToUpdate[0].BugManagementState.RuleAssociationNotified = false
+				// Even if ManagingBug is also false.
+				bugsToUpdate[0].IsManagingBug = false
+
+				// Act
+				response, err := bm.Update(ctx, bugsToUpdate)
+
+				// Verify
+				So(err, ShouldBeNil)
+
+				// RuleAssociationNotified is set.
+				expectedResponse[0].RuleAssociationNotified = true
+				So(response, ShouldResemble, expectedResponse)
+
+				// Expect a comment on the bug notifying us about the association.
+				So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
+				So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldEqual,
+					"This bug has been associated with failures in LUCI Analysis. "+
+						"To view failure examples or update the association, go to LUCI Analysis at: https://luci-analysis-test.appspot.com/b/1")
 			})
 			Convey("If active policies changed", func() {
 				// De-activates policy-c (P1), leaving only policy-a (P4) active.

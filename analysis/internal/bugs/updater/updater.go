@@ -1204,14 +1204,10 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 		return false, errors.Annotate(err, "prepare bug description").Err()
 	}
 
-	bugManagementState := &bugspb.BugManagementState{
-		// The creation of the bug notifies the association with the rule.
-		RuleAssociationNotified: true,
-	}
 	// Set policy activations starting from a state where no policies
 	// are active.
 	impact := ExtractResidualMetrics(cs)
-	bugManagementState, _ = bugs.UpdatePolicyActivations(bugManagementState, b.projectCfg.Config.BugManagement.GetPolicies(), impact, b.RunTimestamp)
+	bugManagementState, _ := bugs.UpdatePolicyActivations(&bugspb.BugManagementState{}, b.projectCfg.Config.BugManagement.GetPolicies(), impact, b.RunTimestamp)
 
 	request := bugs.BugCreateRequest{
 		RuleID:      ruleID,
@@ -1250,6 +1246,9 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 	if !response.Simulated && response.ID != "" {
 		// We filed a bug.
 		// Create a failure association rule associating the failures with a bug.
+
+		// In filing a bug, we notified the rule association.
+		bugManagementState.RuleAssociationNotified = true
 
 		// Record which policies we notified as activating.
 		for policyID := range response.PolicyActivationsNotified {
