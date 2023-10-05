@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/model"
@@ -44,6 +45,9 @@ type Validator struct {
 	GsClient clients.GsClient
 	// Finder is used to find the services that can validate a given config files.
 	Finder finder
+	// SelfRuleSet is the RuleSet that validates the configs against LUCI Config
+	// itself.
+	SelfRuleSet *validation.RuleSet
 }
 
 // File defines the interface of a config file in validation.
@@ -109,9 +113,10 @@ func (v *Validator) makeServiceValidators(ctx context.Context, cs config.Set, fi
 		for _, service := range services {
 			if _, ok := svs[service.Name]; !ok {
 				svs[service.Name] = &serviceValidator{
-					service:  service,
-					gsClient: v.GsClient,
-					cs:       cs,
+					service:     service,
+					gsClient:    v.GsClient,
+					selfRuleSet: v.SelfRuleSet,
+					cs:          cs,
 				}
 			}
 			svs[service.Name].files = append(svs[service.Name].files, file)

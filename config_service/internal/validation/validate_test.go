@@ -203,6 +203,7 @@ func TestValidate(t *testing.T) {
 			})
 
 			Convey("Validate against self", func() {
+				v.SelfRuleSet = validation.NewRuleSet()
 				finder.mapping = map[string][]*model.Service{
 					filePath: {
 						{
@@ -217,7 +218,7 @@ func TestValidate(t *testing.T) {
 				Convey("Succeeds", func() {
 					var validated bool
 					var recordedContent []byte
-					validation.Rules.Add(string(cs), filePath, func(vCtx *validation.Context, configSet, path string, content []byte) error {
+					v.SelfRuleSet.Add(string(cs), filePath, func(vCtx *validation.Context, configSet, path string, content []byte) error {
 						validated = true
 						recordedContent = content
 						vCtx.Errorf("bad config")
@@ -242,7 +243,7 @@ func TestValidate(t *testing.T) {
 					So(recordedContent, ShouldEqual, tf.content)
 				})
 				Convey("Error", func() {
-					validation.Rules.Add(string(cs), filePath, func(vCtx *validation.Context, configSet, path string, content []byte) error {
+					v.SelfRuleSet.Add(string(cs), filePath, func(vCtx *validation.Context, configSet, path string, content []byte) error {
 						return errors.New("something went wrong")
 					})
 					tf := testFile{

@@ -22,6 +22,7 @@ import (
 	_ "google.golang.org/grpc/encoding/gzip"
 
 	"go.chromium.org/luci/common/errors"
+	cfgValidation "go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
@@ -82,8 +83,9 @@ func main() {
 		}
 		srv.RunInBackground("refresh-service-finder", serviceFinder.RefreshPeriodically)
 		validator := &validation.Validator{
-			GsClient: gsClient,
-			Finder:   serviceFinder,
+			GsClient:    gsClient,
+			Finder:      serviceFinder,
+			SelfRuleSet: &cfgValidation.Rules,
 		}
 		importer := importer.Importer{
 			Validator: validator,

@@ -46,10 +46,11 @@ import (
 // serviceValidator calls external service to validate the config or
 // validate locally for config the service itself it is interested in.
 type serviceValidator struct {
-	service  *model.Service
-	gsClient clients.GsClient
-	cs       config.Set
-	files    []File
+	service     *model.Service
+	gsClient    clients.GsClient
+	selfRuleSet *validation.RuleSet
+	cs          config.Set
+	files       []File
 }
 
 func (sv *serviceValidator) validate(ctx context.Context) (*cfgcommonpb.ValidationResult, error) {
@@ -100,7 +101,7 @@ func (sv *serviceValidator) validateAgainstSelfRules(ctx context.Context) (*cfgc
 			}
 			vc := &validation.Context{Context: ectx}
 			vc.SetFile(path)
-			if err := validation.Rules.ValidateConfig(vc, string(sv.cs), path, content); err != nil {
+			if err := sv.selfRuleSet.ValidateConfig(vc, string(sv.cs), path, content); err != nil {
 				return err
 			}
 			var vErr *validation.Error
