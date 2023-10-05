@@ -27,7 +27,7 @@ import { nanoid } from 'nanoid';
 import { PlainTable } from '@/bisection/components/plain_table/plain_table';
 import { getCommitShortHash } from '@/bisection/tools/commit_formatters';
 import { displayRerunStatus } from '@/bisection/tools/info_display';
-import { EMPTY_LINK, linkToBuild } from '@/bisection/tools/link_constructors';
+import { linkToBuild } from '@/bisection/tools/link_constructors';
 import {
   Culprit,
   CulpritAction,
@@ -144,16 +144,6 @@ export const VerificationDetailsTable = ({
   if (!details.suspectRerun && !details.parentRerun) {
     return <>No rerun found</>;
   }
-  let culpritRerunBuildLink = EMPTY_LINK;
-  if (details.suspectRerun) {
-    culpritRerunBuildLink = linkToBuild(details.suspectRerun.bbid);
-  }
-
-  let parentRerunBuildLink = EMPTY_LINK;
-  if (details.parentRerun) {
-    parentRerunBuildLink = linkToBuild(details.parentRerun.bbid);
-  }
-
   return (
     <PlainTable>
       <TableBody>
@@ -162,13 +152,13 @@ export const VerificationDetailsTable = ({
             Culprit commit:{' '}
             {details.suspectRerun && (
               <Link
-                href={culpritRerunBuildLink.url}
+                href={linkToBuild(details.suspectRerun.bbid).url}
                 target="_blank"
                 rel="noreferrer"
                 underline="always"
               >
                 {displayRerunStatus(
-                  details.suspectRerun.rerunResult.rerunStatus,
+                  details.suspectRerun.rerunResult?.rerunStatus,
                 )}
               </Link>
             )}
@@ -179,13 +169,13 @@ export const VerificationDetailsTable = ({
             Parent commit:{' '}
             {details.parentRerun && (
               <Link
-                href={parentRerunBuildLink.url}
+                href={linkToBuild(details.parentRerun.bbid).url}
                 target="_blank"
                 rel="noreferrer"
                 underline="always"
               >
                 {displayRerunStatus(
-                  details.parentRerun.rerunResult.rerunStatus,
+                  details.parentRerun.rerunResult?.rerunStatus,
                 )}
               </Link>
             )}

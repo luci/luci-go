@@ -37,6 +37,10 @@ const RERUN_STATUS_LABELS: Record<RerunStatus, LabelProps> = {
     color: 'var(--critical-failure-color)',
   },
   RERUN_STATUS_CANCELED: { text: 'Canceled', color: 'var(--canceled-color)' },
+  RERUN_STATUS_TEST_SKIPPED: {
+    text: 'Test skipped',
+    color: 'var(--critical-failure-color)',
+  },
 };
 
 const ANALYSIS_STATUS_LABELS: Record<AnalysisStatus, LabelProps> = {
@@ -50,6 +54,8 @@ const ANALYSIS_STATUS_LABELS: Record<AnalysisStatus, LabelProps> = {
   NOTFOUND: { text: 'Suspect not found', color: 'var(--failure-color)' },
   SUSPECTFOUND: { text: 'Suspect found', color: 'var(--suspect-found-color)' },
   ERROR: { text: 'Error', color: 'var(--critical-failure-color)' },
+  UNSUPPORTED: { text: 'Unsupported', color: 'var(--canceled-color)' },
+  DISABLED: { text: 'Disabled', color: 'var(--canceled-color)' },
 };
 
 interface RerunStatusProps {

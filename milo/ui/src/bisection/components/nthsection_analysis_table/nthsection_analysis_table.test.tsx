@@ -45,7 +45,7 @@ function createMockAnalysis(): NthSectionAnalysisResult {
     endTime: '2022-09-06T07:13:16.893998Z',
     status: 'SUSPECTFOUND',
     suspect: {
-      gitilesCommit: {
+      commit: {
         host: 'testHost',
         project: 'testProject',
         ref: 'test/ref/dev',

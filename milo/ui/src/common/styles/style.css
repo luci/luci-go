@@ -61,4 +61,7 @@ html {
   --light-background-color-4: hsl(206, 85%, 74%);
 
   --expand-button-width: 155px;
+
+  /* These colors are for LUCI Bisection */
+  --suspect-found-color: #5468ce;
 }

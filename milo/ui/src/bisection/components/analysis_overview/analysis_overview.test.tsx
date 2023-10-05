@@ -133,7 +133,7 @@ describe('Test AnalysisOverview component', () => {
   test('if there is a culprit for only the nth section analysis, then it should be the suspect range', async () => {
     const mockAnalysis = createMockAnalysis('4');
     mockAnalysis.nthSectionResult!.suspect = {
-      gitilesCommit: {
+      commit: {
         host: 'testHost',
         project: 'testProject',
         ref: 'test/ref/dev',
@@ -192,7 +192,7 @@ function verifySuspectRangeLinks(analysis: Analysis) {
     if (analysis.nthSectionResult.suspect) {
       expect(suspectRangeLinks).toHaveLength(1);
       const nthCulpritLink = suspectRangeLinks[0];
-      expect(analysis.nthSectionResult.suspect.gitilesCommit.id).toContain(
+      expect(analysis.nthSectionResult.suspect.commit.id).toContain(
         nthCulpritLink.textContent,
       );
       expect(nthCulpritLink.getAttribute('href')).not.toBe('');

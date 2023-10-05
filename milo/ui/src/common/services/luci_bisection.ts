@@ -24,7 +24,9 @@ export type AnalysisStatus =
   | 'FOUND'
   | 'NOTFOUND'
   | 'ERROR'
-  | 'SUSPECTFOUND';
+  | 'SUSPECTFOUND'
+  | 'UNSUPPORTED'
+  | 'DISABLED';
 
 export type AnalysisRunStatus =
   | 'ANALYSIS_RUN_STATUS_UNSPECIFIED'
@@ -70,7 +72,8 @@ export type RerunStatus =
   | 'RERUN_STATUS_PASSED'
   | 'RERUN_STATUS_FAILED'
   | 'RERUN_STATUS_INFRA_FAILED'
-  | 'RERUN_STATUS_CANCELED';
+  | 'RERUN_STATUS_CANCELED'
+  | 'RERUN_STATUS_TEST_SKIPPED';
 
 export function isAnalysisComplete(status: AnalysisStatus) {
   const completeStatuses: Array<AnalysisStatus> = [
@@ -153,7 +156,7 @@ export interface NthSectionAnalysisResult {
 }
 
 export interface Suspect {
-  gitilesCommit: GitilesCommit;
+  commit: GitilesCommit;
   reviewUrl: string;
   reviewTitle?: string;
   verificationDetails: SuspectVerificationDetails;
@@ -230,6 +233,42 @@ export interface PrimeSuspect {
   accuseSource: string;
 }
 
+export interface ListTestAnalysesRequest {
+  project: string;
+  pageSize?: number;
+  pageToken?: string;
+}
+
+export interface ListTestAnalysesResponse {
+  analyses: TestAnalysis[];
+  nextPageToken?: string;
+}
+
+export interface GetTestAnalysisRequest {
+  analysisId: number;
+}
+
+export interface TestAnalysis {
+  analysisId: string;
+  status: AnalysisStatus;
+  runStatus: AnalysisRunStatus;
+  createdTime: string;
+  endTime: string;
+  nthSectionResult?: NthSectionAnalysisResult;
+  builder: BuilderID;
+  testFailures?: TestFailure[]
+  culprit?: Culprit;
+  sampleBbid: number;
+}
+
+export interface TestFailure {
+ testId: string;
+ variantHash: string;
+ isDiverged: boolean;
+ isPrimary: boolean;
+}
+
+
 // A service to handle LUCI Bisection-related pRPC requests.
 export class LUCIBisectionService {
   // The name of the pRPC service to connect to.
@@ -264,5 +303,21 @@ export class LUCIBisectionService {
       'ListAnalyses',
       req,
     )) as ListAnalysesResponse;
+  }
+
+  async listTestAnalyses(req: ListTestAnalysesRequest, cacheOpt: CacheOption = {}) {
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'ListTestAnalyses',
+      req,
+    )) as ListTestAnalysesResponse;
+  }
+
+  async getTestAnalysis(req: GetTestAnalysisRequest, cacheOpt: CacheOption = {}) {
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'GetTestAnalysis',
+      req,
+    )) as TestAnalysis;
   }
 }

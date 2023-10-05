@@ -27,14 +27,12 @@ interface Props {
 }
 
 export const CulpritVerificationTableRow = ({ suspect }: Props) => {
-  const { gitilesCommit, reviewUrl, reviewTitle, verificationDetails, type } =
-    suspect;
+  const { commit, reviewUrl, reviewTitle, verificationDetails, type } = suspect;
 
-  let suspectDescription = getCommitShortHash(gitilesCommit.id);
+  let suspectDescription = getCommitShortHash(commit.id);
   if (reviewTitle) {
     suspectDescription += `: ${reviewTitle}`;
   }
-
   return (
     <>
       <TableRow data-testid="culprit_verification_table_row">

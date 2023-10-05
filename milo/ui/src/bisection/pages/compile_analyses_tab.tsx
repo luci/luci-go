@@ -21,8 +21,9 @@ import { useState } from 'react';
 import { ListAnalysesTable } from '@/bisection/components/analyses_tables/list_analyses_table';
 import { SearchAnalysisTable } from '@/bisection/components/analyses_tables/search_analysis_table';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { useTabId } from '@/generic_libs/components/routed_tabs';
 
-export const FailureAnalysesPage = () => {
+export const CompileAnalysesTab = () => {
   const [bbid, setBbid] = useState<string>('');
   const [isValidBbid, setIsValidBbid] = useState<boolean>(true);
   const [bbidToSearch, setBbidToSearch] = useState<string>('');
@@ -101,9 +102,13 @@ export const FailureAnalysesPage = () => {
   );
 };
 
-export const element = (
-  // See the documentation for `<LoginPage />` for why we handle error this way.
-  <RecoverableErrorBoundary key="failure-analyses">
-    <FailureAnalysesPage />
-  </RecoverableErrorBoundary>
-);
+export function Component() {
+  useTabId('analysis');
+
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this way.
+    <RecoverableErrorBoundary key="compile-failure-analyses">
+      <CompileAnalysesTab />
+    </RecoverableErrorBoundary>
+  );
+}

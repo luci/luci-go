@@ -31,7 +31,11 @@ import { HeuristicAnalysisTable } from '@/bisection/components/heuristic_analysi
 import { NthSectionAnalysisTable } from '@/bisection/components/nthsection_analysis_table/nthsection_analysis_table';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { usePrpcQuery } from '@/common/hooks/prpc_query';
-import { LUCIBisectionService } from '@/common/services/luci_bisection';
+import {
+  Analysis,
+  LUCIBisectionService,
+  Suspect,
+} from '@/common/services/luci_bisection';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -39,7 +43,7 @@ interface TabPanelProps {
   value: string;
 }
 
-function TabPanel(props: TabPanelProps) {
+export function TabPanel(props: TabPanelProps) {
   const { children, value, name } = props;
 
   return (
@@ -49,11 +53,39 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+function getSuspects(analysis: Analysis): Suspect[] {
+  const heuristicSuspects = analysis.heuristicResult?.suspects || [];
+  const suspects = heuristicSuspects.map((s) => ({
+    commit: s.gitilesCommit,
+    reviewUrl: s.reviewUrl,
+    reviewTitle: s.reviewTitle,
+    verificationDetails: s.verificationDetails,
+    type: 'Heuristic',
+  }));
+  const nthSectionSuspect = analysis.nthSectionResult?.suspect;
+  if (nthSectionSuspect) {
+    suspects.push({
+      commit: nthSectionSuspect.commit,
+      reviewUrl: nthSectionSuspect.reviewUrl,
+      reviewTitle: nthSectionSuspect.reviewTitle,
+      verificationDetails: nthSectionSuspect.verificationDetails,
+      type: 'NthSection',
+    });
+  }
+  return suspects;
+}
+
+enum AnalysisComponentTabs {
+  HEURISTIC = 'Heuristic analysis',
+  NTH_SECTION = 'Nth section analysis',
+  CULPRIT_VERIFICATION = 'Culprit verification',
+}
+
 export const AnalysisDetailsPage = () => {
-  enum AnalysisComponentTabs {
-    HEURISTIC = 'Heuristic analysis',
-    NTH_SECTION = 'Nth section analysis',
-    CULPRIT_VERIFICATION = 'Culprit verification',
+  const { bbid } = useParams();
+  if (!bbid) {
+    // The page should always be mounted to a path where bbid is set.
+    throw new Error('invariant violated: bbid should be set');
   }
 
   const [currentTab, setCurrentTab] = useState(AnalysisComponentTabs.HEURISTIC);
@@ -65,11 +97,6 @@ export const AnalysisDetailsPage = () => {
     setCurrentTab(newTab);
   };
 
-  const { bbid } = useParams();
-  if (!bbid) {
-    // The page should always be mounted to a path where bbid is set.
-    throw new Error('invariant violated: bbid should be set');
-  }
   const {
     isLoading,
     isError,
@@ -183,7 +210,7 @@ export const AnalysisDetailsPage = () => {
             value={currentTab}
             name={AnalysisComponentTabs.CULPRIT_VERIFICATION}
           >
-            <CulpritVerificationTable result={analysis} />
+            <CulpritVerificationTable suspects={getSuspects(analysis)} />
           </TabPanel>
         </div>
       </>

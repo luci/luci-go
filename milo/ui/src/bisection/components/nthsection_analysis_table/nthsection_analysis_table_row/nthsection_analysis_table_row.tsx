@@ -27,8 +27,12 @@ interface Props {
   rerun: SingleRerun;
 }
 
+// Display the default rerun type when rerun type information in missing.
+// Test analysis rpc doesn't return the rerun type because all rerun are "Nthsection" type.
+const DEFAULT_RERUN_TYPE = 'Nthsection';
+
 export const NthSectionAnalysisTableRow = ({ rerun }: Props) => {
-  const { startTime, endTime, bbid, rerunResult, commit, index, type } = rerun;
+  const { startTime, endTime, bbid, commit, index, type } = rerun;
 
   const buildLink = linkToBuild(bbid);
   const commitLink = linkToCommit(commit);
@@ -48,7 +52,9 @@ export const NthSectionAnalysisTableRow = ({ rerun }: Props) => {
           </Link>
         </TableCell>
         <TableCell>
-          <RerunStatusInfo status={rerunResult.rerunStatus}></RerunStatusInfo>
+          <RerunStatusInfo
+            status={rerun.rerunResult.rerunStatus}
+          ></RerunStatusInfo>
         </TableCell>
         <TableCell>
           <Link
@@ -60,7 +66,7 @@ export const NthSectionAnalysisTableRow = ({ rerun }: Props) => {
             {buildLink.linkText}
           </Link>
         </TableCell>
-        <TableCell>{type}</TableCell>
+        <TableCell>{type || DEFAULT_RERUN_TYPE}</TableCell>
         <TableCell>{getFormattedTimestamp(startTime)}</TableCell>
         <TableCell>{getFormattedTimestamp(endTime)}</TableCell>
       </TableRow>

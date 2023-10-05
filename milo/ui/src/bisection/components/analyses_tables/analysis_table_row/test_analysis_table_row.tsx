@@ -22,15 +22,17 @@ import {
   getFormattedDuration,
   getFormattedTimestamp,
 } from '@/bisection/tools/timestamp_formatters';
-import { Analysis } from '@/common/services/luci_bisection';
+import { TestAnalysis } from '@/common/services/luci_bisection';
 
 import { CulpritsTableCell } from './culprit_table_cell';
 
-interface AnalysisTableProps {
-  analysis: Analysis;
+interface TestAnalysisTableRowProps {
+  analysis: TestAnalysis;
 }
 
-export const AnalysisTableRow = ({ analysis }: AnalysisTableProps) => {
+export const TestAnalysisTableRow = ({
+  analysis,
+}: TestAnalysisTableRowProps) => {
   const builderLink = analysis.builder ? linkToBuilder(analysis.builder) : null;
 
   return (
@@ -38,18 +40,15 @@ export const AnalysisTableRow = ({ analysis }: AnalysisTableProps) => {
       <TableCell>
         <Link
           component={RouterLink}
-          // TODO: handle the case where the first failed build does not exist
-          // in LUCI Bisection; currently, this link will navigate to a page
-          // that will display an error alert
-          to={`/ui/bisection/analysis/b/${analysis.firstFailedBbid}`}
+          to={`/ui/bisection/test-analysis/b/${analysis.analysisId}`}
           data-testid="analysis_table_row_analysis_link"
         >
-          {analysis.firstFailedBbid}
+          {analysis.analysisId}
         </Link>
       </TableCell>
       <TableCell>{getFormattedTimestamp(analysis.createdTime)}</TableCell>
       <TableCell>{analysis.status}</TableCell>
-      <TableCell>{analysis.buildFailureType}</TableCell>
+      <TableCell>Test</TableCell>
       <TableCell>
         {getFormattedDuration(analysis.createdTime, analysis.endTime)}
       </TableCell>
@@ -67,7 +66,7 @@ export const AnalysisTableRow = ({ analysis }: AnalysisTableProps) => {
         )}
       </TableCell>
       <CulpritsTableCell
-        culprits={analysis.culprits}
+        culprits={analysis.culprit ? [analysis.culprit] : []}
         status={analysis.status}
       />
     </TableRow>

@@ -76,11 +76,12 @@ export const NthSectionAnalysisDetail = ({
   result,
 }: NthSectionAnalysisDetailProps) => {
   const commitLink = EMPTY_LINK;
-  if (result?.suspect) {
-    commitLink.url = result.suspect.reviewUrl;
-    commitLink.linkText = getCommitShortHash(result.suspect.gitilesCommit.id);
-    if (result.suspect.reviewTitle) {
-      commitLink.linkText += `: ${result.suspect.reviewTitle}`;
+  const suspect = result.suspect;
+  if (suspect) {
+    commitLink.url = suspect.reviewUrl;
+    commitLink.linkText = getCommitShortHash(suspect.commit.id);
+    if (suspect.reviewTitle) {
+      commitLink.linkText += `: ${suspect.reviewTitle}`;
     }
   }
   return (
@@ -150,7 +151,7 @@ export const NthSectionAnalysisRerunsTable = ({ reruns }: RerunProps) => {
         <TableBody>
           {/* TODO (nqmtuan): Show the "anchors" (last passed, first failed, number of commits in between etc) */}
           {reruns.map((rerun) => (
-            <NthSectionAnalysisTableRow key={rerun.commit.id} rerun={rerun} />
+            <NthSectionAnalysisTableRow key={rerun.bbid} rerun={rerun} />
           ))}
         </TableBody>
       </Table>

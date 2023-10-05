@@ -22,15 +22,15 @@ import Typography from '@mui/material/Typography';
 import { PlainTable } from '@/bisection/components/plain_table/plain_table';
 import { AnalysisStatusInfo } from '@/bisection/components/status_info/status_info';
 import {
-  EMPTY_LINK,
   ExternalLink,
   linkToBuild,
   linkToBuilder,
   linkToCommit,
-  linkToCommitRange,
 } from '@/bisection/tools/link_constructors';
 import { getFormattedTimestamp } from '@/bisection/tools/timestamp_formatters';
 import { Analysis } from '@/common/services/luci_bisection';
+
+import { nthsectionSuspectRange } from './common';
 
 interface Props {
   analysis: Analysis;
@@ -44,28 +44,10 @@ function getSuspectRange(analysis: Analysis): ExternalLink[] {
     });
     return culpritLinks;
   }
-
   if (analysis.nthSectionResult) {
-    const result = analysis.nthSectionResult;
-
-    if (result.suspect) {
-      return [linkToCommit(result.suspect.gitilesCommit)];
-    }
-
-    if (
-      result.remainingNthSectionRange &&
-      result.remainingNthSectionRange.lastPassed &&
-      result.remainingNthSectionRange.firstFailed
-    ) {
-      return [
-        linkToCommitRange(
-          result.remainingNthSectionRange.lastPassed,
-          result.remainingNthSectionRange.firstFailed,
-        ),
-      ];
-    }
+    const link = nthsectionSuspectRange(analysis.nthSectionResult);
+    return link ? [link] : [];
   }
-
   return [];
 }
 
@@ -93,15 +75,8 @@ function getBugLinks(analysis: Analysis): ExternalLink[] {
 }
 
 export const AnalysisOverview = ({ analysis }: Props) => {
-  let buildLink = EMPTY_LINK;
-  if (analysis.firstFailedBbid) {
-    buildLink = linkToBuild(analysis.firstFailedBbid);
-  }
-
-  let builderLink = EMPTY_LINK;
-  if (analysis.builder) {
-    builderLink = linkToBuilder(analysis.builder);
-  }
+  const buildLink = linkToBuild(analysis.firstFailedBbid);
+  const builderLink = analysis.builder ? linkToBuilder(analysis.builder) : null;
 
   const suspectRange = getSuspectRange(analysis);
   const bugLinks = getBugLinks(analysis);
@@ -121,16 +96,14 @@ export const AnalysisOverview = ({ analysis }: Props) => {
             <TableCell>{analysis.analysisId}</TableCell>
             <TableCell variant="head">Buildbucket ID</TableCell>
             <TableCell>
-              {analysis.firstFailedBbid && (
-                <Link
-                  href={buildLink.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  underline="always"
-                >
-                  {buildLink.linkText}
-                </Link>
-              )}
+              <Link
+                href={buildLink.url}
+                target="_blank"
+                rel="noreferrer"
+                underline="always"
+              >
+                {buildLink.linkText}
+              </Link>
             </TableCell>
           </TableRow>
           <TableRow>
@@ -138,7 +111,7 @@ export const AnalysisOverview = ({ analysis }: Props) => {
             <TableCell>{getFormattedTimestamp(analysis.createdTime)}</TableCell>
             <TableCell variant="head">Builder</TableCell>
             <TableCell>
-              {analysis.builder && (
+              {builderLink && (
                 <Link
                   href={builderLink.url}
                   target="_blank"

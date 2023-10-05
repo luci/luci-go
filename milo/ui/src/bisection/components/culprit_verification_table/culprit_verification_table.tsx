@@ -22,48 +22,22 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
-import { Analysis, Suspect } from '@/common/services/luci_bisection';
+import { Suspect } from '@/common/services/luci_bisection';
 
 import { CulpritVerificationTableRow } from './culprit_verification_table_row/culprit_verification_table_row';
 
 interface Props {
-  result?: Analysis;
+  suspects: Suspect[];
 }
 
 function getRows(suspects: Suspect[]) {
   return suspects.map((suspect) => (
-    <CulpritVerificationTableRow
-      key={suspect.gitilesCommit.id}
-      suspect={suspect}
-    />
+    <CulpritVerificationTableRow key={suspect.commit.id} suspect={suspect} />
   ));
 }
 
-function getSuspects(result: Analysis | undefined): Suspect[] {
-  const heuristicSuspects = result?.heuristicResult?.suspects ?? [];
-  const suspects = heuristicSuspects.map((s) => ({
-    gitilesCommit: s.gitilesCommit,
-    reviewUrl: s.reviewUrl,
-    reviewTitle: s.reviewTitle,
-    verificationDetails: s.verificationDetails,
-    type: 'Heuristic',
-  }));
-  if (result?.nthSectionResult?.suspect) {
-    const s = result.nthSectionResult.suspect;
-    suspects.push({
-      gitilesCommit: s.gitilesCommit,
-      reviewUrl: s.reviewUrl,
-      reviewTitle: s.reviewTitle,
-      verificationDetails: s.verificationDetails,
-      type: 'NthSection',
-    });
-  }
-  return suspects;
-}
-
-export const CulpritVerificationTable = ({ result }: Props) => {
-  const suspects = getSuspects(result);
-  if (!suspects || suspects.length == 0) {
+export const CulpritVerificationTable = ({ suspects }: Props) => {
+  if (suspects.length == 0) {
     return (
       <span className="data-placeholder">No culprit verification results</span>
     );
