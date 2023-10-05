@@ -51,10 +51,10 @@ func (mr *MockSwarmingClientMockRecorder) CancelTask(ctx, req interface{}) *gomo
 }
 
 // CreateTask mocks base method.
-func (m *MockSwarmingClient) CreateTask(c context.Context, createTaskReq *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
+func (m *MockSwarmingClient) CreateTask(c context.Context, createTaskReq *apipb.NewTaskRequest) (*apipb.TaskRequestMetadataResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateTask", c, createTaskReq)
-	ret0, _ := ret[0].(*swarming.SwarmingRpcsTaskRequestMetadata)
+	ret0, _ := ret[0].(*apipb.TaskRequestMetadataResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
