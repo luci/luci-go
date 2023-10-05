@@ -84,12 +84,15 @@ func NewBugManager(client *Client, uiBaseURL, project string, projectCfg *config
 // Create creates a new bug for the given request, returning its name, or
 // any encountered error.
 func (m *BugManager) Create(ctx context.Context, request bugs.BugCreateRequest) bugs.BugCreateResponse {
+	var response bugs.BugCreateResponse
+	response.Simulated = m.Simulate
+	response.PolicyActivationsNotified = make(map[string]struct{})
+
 	components := request.MonorailComponents
 	components, err := m.filterToValidComponents(ctx, components)
 	if err != nil {
-		return bugs.BugCreateResponse{
-			Error: errors.Annotate(err, "validate components").Err(),
-		}
+		response.Error = errors.Annotate(err, "validate components").Err()
+		return response
 	}
 
 	var makeReq *mpb.MakeIssueRequest
@@ -97,16 +100,14 @@ func (m *BugManager) Create(ctx context.Context, request bugs.BugCreateRequest) 
 		var err error
 		makeReq, err = m.generator.PrepareNew(request.ActivePolicyIDs, request.Description, components)
 		if err != nil {
-			return bugs.BugCreateResponse{
-				Error: errors.Annotate(err, "prepare new issue").Err(),
-			}
+			response.Error = errors.Annotate(err, "prepare new issue").Err()
+			return response
 		}
 	} else {
 		makeReq = m.generator.PrepareNewLegacy(request.Metrics, request.Description, components)
 	}
 
 	var bugID string
-
 	if m.Simulate {
 		logging.Debugf(ctx, "Would create Monorail issue: %s", textPBMultiline.Format(makeReq))
 		bugID = fmt.Sprintf("%s/12345678", m.projectCfg.Monorail.Project)
@@ -114,42 +115,56 @@ func (m *BugManager) Create(ctx context.Context, request bugs.BugCreateRequest) 
 		// Save the issue in Monorail.
 		issue, err := m.client.MakeIssue(ctx, makeReq)
 		if err != nil {
-			return bugs.BugCreateResponse{
-				Error: errors.Annotate(err, "create issue in monorail").Err(),
-			}
+			response.Error = errors.Annotate(err, "create issue in monorail").Err()
+			return response
 		}
 		bugID, err = fromMonorailIssueName(issue.Name)
 		if err != nil {
-			return bugs.BugCreateResponse{
-				Error: errors.Annotate(err, "parsing monorail issue name").Err(),
-			}
+			response.Error = errors.Annotate(err, "parsing monorail issue name").Err()
+			return response
 		}
+		bugs.BugsCreatedCounter.Add(ctx, 1, m.project, "monorail")
 	}
+	// A bug was filed.
+	response.ID = bugID
 
 	modifyReq, err := m.generator.PrepareLinkComment(bugID)
 	if err != nil {
-		return bugs.BugCreateResponse{
-			Simulated: m.Simulate,
-			ID:        bugID,
-			Error:     errors.Annotate(err, "prepare link comment").Err(),
-		}
+		response.Error = errors.Annotate(err, "prepare link comment").Err()
+		return response
 	}
 	if m.Simulate {
 		logging.Debugf(ctx, "Would update Monorail issue: %s", textPBMultiline.Format(modifyReq))
 	} else {
 		if err := m.client.ModifyIssues(ctx, modifyReq); err != nil {
-			return bugs.BugCreateResponse{
-				ID:        bugID,
-				Error:     errors.Annotate(err, "update issue").Err(),
-			}
+			response.Error = errors.Annotate(err, "update issue").Err()
+			return response
 		}
 	}
-	bugs.BugsCreatedCounter.Add(ctx, 1, m.project, "monorail")
 
-	return bugs.BugCreateResponse{
-		Simulated: m.Simulate,
-		ID:        bugID,
+	// Notify policies which have activated, in descending priority order.
+	policyIDsToNotify := m.generator.SortPolicyIDsByPriorityDescending(request.ActivePolicyIDs)
+	for _, policyID := range policyIDsToNotify {
+		commentRequest, err := m.generator.PreparePolicyActivatedComment(bugID, policyID)
+		if err != nil {
+			response.Error = errors.Annotate(err, "prepare policy activated comment for policy %q", policyID).Err()
+			return response
+		}
+		if commentRequest != nil {
+			if m.Simulate {
+				logging.Debugf(ctx, "Would post comment on Buganizer issue: %s", textPBMultiline.Format(commentRequest))
+			} else {
+				if err := m.client.ModifyIssues(ctx, commentRequest); err != nil {
+					response.Error = errors.Annotate(err, "post policy activated comment for policy %q", policyID).Err()
+					return response
+				}
+			}
+		}
+		// Policy activation successfully notified.
+		response.PolicyActivationsNotified[policyID] = struct{}{}
 	}
+
+	return response
 }
 
 // filterToValidComponents limits the given list of components to only those

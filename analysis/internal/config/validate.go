@@ -24,7 +24,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
-	"go.chromium.org/luci/analysis/internal/bugs/template"
+	"go.chromium.org/luci/analysis/internal/bugs/policy"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/testname/rules"
 	"go.chromium.org/luci/analysis/pbutil"
 	configpb "go.chromium.org/luci/analysis/proto/config"
@@ -75,6 +75,10 @@ var (
 	// printableASCIIRE matches any input consisting only of printable ASCII
 	// characters.
 	printableASCIIRE = regexp.MustCompile(`^[[:print:]]+$`)
+
+	// commentTemplateRE matches valid issue comment template contents.
+	// This ensures all content is printable ASCII or new line characters.
+	commentTemplateRE = regexp.MustCompile("^[[:print:]\n]+$")
 
 	// Standard maximum lengths, in bytes. For fields, where there
 	// is no obvious maximum length for the input type.
@@ -978,12 +982,12 @@ func validateCommentTemplate(ctx *validation.Context, t string) {
 		ctx.Errorf("exceeds maximum allowed length of %v bytes", longMaxLengthBytes)
 		return
 	}
-	if !printableASCIIRE.MatchString(t) {
-		ctx.Errorf("does not match pattern %q", printableASCIIRE)
+	if !commentTemplateRE.MatchString(t) {
+		ctx.Errorf("does not match pattern %q", commentTemplateRE)
 		return
 	}
 
-	tmpl, err := template.Parse(t)
+	tmpl, err := policy.ParseTemplate(t)
 	if err != nil {
 		ctx.Errorf("parsing template: %s", err)
 		return

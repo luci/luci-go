@@ -217,7 +217,8 @@ func CreatePlaceholderBugManagementPolicy(id string) *configpb.BugManagementPoli
 			ActionHtml:  "<ul><li>View recent failures and fix them</li><li>Demote the test(s) from CQ</li></ul>",
 		},
 		BugTemplate: &configpb.BugManagementPolicy_BugTemplate{
-			CommentTemplate: `{{if .BugID.IsBuganizer }}Buganizer Bug ID: {{ .BugID.BuganizerBugID }}{{end}}` +
+			CommentTemplate: `Policy ID: ` + id + "\n" +
+				`{{if .BugID.IsBuganizer }}Buganizer Bug ID: {{ .BugID.BuganizerBugID }}{{end}}` +
 				`{{if .BugID.IsMonorail }}Monorail Project: {{ .BugID.MonorailProject }}; ID: {{ .BugID.MonorailBugID }}{{end}}` +
 				`Rule URL: {{.RuleURL}}`,
 			Monorail: &configpb.BugManagementPolicy_BugTemplate_Monorail{

@@ -111,14 +111,18 @@ type BugManager struct {
 func NewBugManager(client Client,
 	uiBaseURL, project, selfEmail string,
 	projectCfg *configpb.ProjectConfig,
-	simulate bool) *BugManager {
-	requestGenerator := NewRequestGenerator(
+	simulate bool) (*BugManager, error) {
+	requestGenerator, err := NewRequestGenerator(
 		client,
 		project,
 		uiBaseURL,
 		selfEmail,
 		projectCfg,
 	)
+	if err != nil {
+		return nil, errors.Annotate(err, "create request generator").Err()
+	}
+
 	return &BugManager{
 		client:           client,
 		projectCfg:       projectCfg,
@@ -126,11 +130,15 @@ func NewBugManager(client Client,
 		selfEmail:        selfEmail,
 		requestGenerator: *requestGenerator,
 		Simulate:         simulate,
-	}
+	}, nil
 }
 
 // Create creates an issue in Buganizer and returns the issue ID.
 func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRequest) bugs.BugCreateResponse {
+	var response bugs.BugCreateResponse
+	response.Simulated = bm.Simulate
+	response.PolicyActivationsNotified = make(map[string]struct{})
+
 	componentID := bm.projectCfg.Buganizer.DefaultComponent.Id
 	buganizerTestMode := ctx.Value(&BuganizerTestModeKey)
 	wantedComponentID := createRequest.BuganizerComponent
@@ -139,9 +147,8 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 		if wantedComponentID != componentID && wantedComponentID > 0 {
 			permissions, err := bm.checkComponentPermissions(ctx, wantedComponentID)
 			if err != nil {
-				return bugs.BugCreateResponse{
-					Error: errors.Annotate(err, "check permissions to create Buganizer issue").Err(),
-				}
+				response.Error = errors.Annotate(err, "check permissions to create Buganizer issue").Err()
+				return response
 			}
 			if permissions.appender && permissions.issueDefaultsAppender {
 				componentID = createRequest.BuganizerComponent
@@ -161,9 +168,8 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 			componentID,
 		)
 		if err != nil {
-			return bugs.BugCreateResponse{
-				Error: errors.Annotate(err, "prepare new issue").Err(),
-			}
+			response.Error = errors.Annotate(err, "prepare new issue").Err()
+			return response
 		}
 	} else {
 		createIssueRequest = bm.requestGenerator.PrepareNewLegacy(
@@ -183,14 +189,14 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 	} else {
 		issue, err = bm.client.CreateIssue(ctx, createIssueRequest)
 		if err != nil {
-			return bugs.BugCreateResponse{
-				Error: errors.Annotate(err, "create Buganizer issue").Err(),
-			}
+			response.Error = errors.Annotate(err, "create Buganizer issue").Err()
+			return response
 		}
 		issueID = issue.IssueId
+		bugs.BugsCreatedCounter.Add(ctx, 1, bm.project, "buganizer")
 	}
-
-	bugID := strconv.Itoa(int(issueID))
+	// A bug was filed.
+	response.ID = strconv.Itoa(int(issueID))
 
 	var issueCommentReq *issuetracker.UpdateIssueCommentRequest
 	if isUsingPolicyBasedManagement {
@@ -216,33 +222,48 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 				// that uses the rule ID instead of the bug ID.
 				logging.Warningf(ctx, "Failed to update issue comment: %v", statusError)
 			} else {
-				return bugs.BugCreateResponse{
-					Error: errors.Annotate(err, "add issue link to issue comment").Err(),
-					ID:    bugID,
-				}
+				response.Error = errors.Annotate(err, "add issue link to issue comment").Err()
+				return response
 			}
 		}
 	}
 
 	if wantedComponentID > 0 && wantedComponentID != componentID {
-		issueCommentReq := bm.requestGenerator.PrepareNoPermissionComment(issueID, wantedComponentID)
+		commentRequest := bm.requestGenerator.PrepareNoPermissionComment(issueID, wantedComponentID)
 		if bm.Simulate {
-			logging.Debugf(ctx, "Would update Buganizer issue: %s", textPBMultiline.Format(issueCommentReq))
+			logging.Debugf(ctx, "Would post comment on Buganizer issue: %s", textPBMultiline.Format(commentRequest))
 		} else {
-			if _, err := bm.client.CreateIssueComment(ctx, issueCommentReq); err != nil {
-				return bugs.BugCreateResponse{
-					Error: errors.Annotate(err, "create issue link comment").Err(),
-					ID:    bugID,
-				}
+			if _, err := bm.client.CreateIssueComment(ctx, commentRequest); err != nil {
+				response.Error = errors.Annotate(err, "create issue link comment").Err()
+				return response
 			}
 		}
 	}
 
-	bugs.BugsCreatedCounter.Add(ctx, 1, bm.project, "buganizer")
-	return bugs.BugCreateResponse{
-		Simulated: bm.Simulate,
-		ID:        bugID,
+	// Notify policies which have activated, in descending priority order.
+	policyIDsToNotify := bm.requestGenerator.SortPolicyIDsByPriorityDescending(createRequest.ActivePolicyIDs)
+	for _, policyID := range policyIDsToNotify {
+		commentRequest, err := bm.requestGenerator.PreparePolicyActivatedComment(issueID, policyID)
+		if err != nil {
+			response.Error = errors.Annotate(err, "prepare policy activated comment for policy %q", policyID).Err()
+			return response
+		}
+		if commentRequest != nil {
+			// Only post a comment if the policy has specified one.
+			if bm.Simulate {
+				logging.Debugf(ctx, "Would post comment on Buganizer issue: %s", textPBMultiline.Format(commentRequest))
+			} else {
+				if _, err := bm.client.CreateIssueComment(ctx, commentRequest); err != nil {
+					response.Error = errors.Annotate(err, "post policy activated comment for policy %q", policyID).Err()
+					return response
+				}
+			}
+		}
+		// Policy activation successfully notified.
+		response.PolicyActivationsNotified[policyID] = struct{}{}
 	}
+
+	return response
 }
 
 // Update updates the issues in Buganizer.

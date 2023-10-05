@@ -17,6 +17,7 @@ package buganizer
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -79,7 +80,13 @@ type RequestGenerator struct {
 func NewRequestGenerator(
 	client Client,
 	project, uiBaseURL, selfEmail string,
-	projectCfg *configpb.ProjectConfig) *RequestGenerator {
+	projectCfg *configpb.ProjectConfig) (*RequestGenerator, error) {
+
+	policyApplyer, err := policy.NewApplyer(projectCfg.BugManagement.GetPolicies(), configpb.BuganizerPriority_P4)
+	if err != nil {
+		return nil, errors.Annotate(err, "create policy applyer").Err()
+	}
+
 	return &RequestGenerator{
 		client:              client,
 		uiBaseURL:           uiBaseURL,
@@ -88,8 +95,8 @@ func NewRequestGenerator(
 		buganizerCfg:        projectCfg.Buganizer,
 		bugFilingThresholds: projectCfg.BugFilingThresholds,
 		// Buganizer supports all priority levels P4 and above.
-		policyApplyer: policy.NewApplyer(projectCfg.BugManagement.GetPolicies(), configpb.BuganizerPriority_P4),
-	}
+		policyApplyer: policyApplyer,
+	}, nil
 }
 
 // PrepareNew generates a CreateIssueRequest for a new issue.
@@ -188,7 +195,7 @@ func (rg *RequestGenerator) clusterPriorityWithInflatedThresholds(impact bugs.Cl
 //
 // issueID is the Buganizer issue ID.
 func (rg *RequestGenerator) linkToRuleComment(issueID int64) string {
-	ruleLink := policy.BuganizerBugRuleURL(rg.uiBaseURL, issueID)
+	ruleLink := policy.RuleForBuganizerBugURL(rg.uiBaseURL, issueID)
 	return fmt.Sprintf(bugs.LinkTemplate, ruleLink)
 }
 
@@ -199,7 +206,7 @@ func (rg *RequestGenerator) PrepareLinkIssueCommentUpdate(description *clusterin
 
 	// Regenerate the initial comment in the same way as PrepareNew, but use
 	// the link for the rule that uses the bug ID instead of the rule ID.
-	ruleLink := policy.BuganizerBugRuleURL(rg.uiBaseURL, issueID)
+	ruleLink := policy.RuleForBuganizerBugURL(rg.uiBaseURL, issueID)
 
 	return &issuetracker.UpdateIssueCommentRequest{
 		IssueId:       issueID,
@@ -221,7 +228,7 @@ func (rg *RequestGenerator) PrepareLinkIssueCommentUpdateLegacy(metrics bugs.Clu
 	// the link for the rule that uses the bug ID instead of the rule ID.
 	issuePriority := rg.clusterPriority(metrics)
 	thresholdComment := rg.priorityComment(metrics, issuePriority)
-	ruleLink := policy.BuganizerBugRuleURL(rg.uiBaseURL, issueID)
+	ruleLink := policy.RuleForBuganizerBugURL(rg.uiBaseURL, issueID)
 
 	return &issuetracker.UpdateIssueCommentRequest{
 		IssueId:       issueID,
@@ -250,6 +257,35 @@ func (rg *RequestGenerator) PrepareNoPermissionComment(issueID, componentID int6
 			Comment: rg.noPermissionComment(componentID),
 		},
 	}
+}
+
+// SortPolicyIDsByPriorityDescending sorts policy IDs in descending
+// priority order (i.e. P0 policies first, then P1, then P2, ...).
+func (rg *RequestGenerator) SortPolicyIDsByPriorityDescending(policyIDs map[string]struct{}) []string {
+	return rg.policyApplyer.SortPolicyIDsByPriorityDescending(policyIDs)
+}
+
+// PreparePolicyActivatedComment prepares a request that notifies a bug that a policy
+// has activated for the first time.
+// If the policy has not specified a comment to post, this method returns nil.
+func (rg *RequestGenerator) PreparePolicyActivatedComment(issueID int64, policyID string) (*issuetracker.CreateIssueCommentRequest, error) {
+	templateInput := policy.TemplateInput{
+		RuleURL: policy.RuleForBuganizerBugURL(rg.uiBaseURL, issueID),
+		BugID:   policy.NewBugID(bugs.BugID{System: bugs.BuganizerSystem, ID: strconv.FormatInt(issueID, 10)}),
+	}
+	comment, err := rg.policyApplyer.PolicyActivatedComment(policyID, rg.uiBaseURL, templateInput)
+	if err != nil {
+		return nil, err
+	}
+	if comment == "" {
+		return nil, nil
+	}
+	return &issuetracker.CreateIssueCommentRequest{
+		IssueId: issueID,
+		Comment: &issuetracker.IssueComment{
+			Comment: comment,
+		},
+	}, nil
 }
 
 // UpdateDuplicateSource updates the source bug of a (source, destination)

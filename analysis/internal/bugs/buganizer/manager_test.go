@@ -74,7 +74,8 @@ func TestBugManager(t *testing.T) {
 			},
 		}
 
-		bm := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false)
+		bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false)
+		So(err, ShouldBeNil)
 		now := time.Date(2044, time.April, 4, 4, 4, 4, 4, time.UTC)
 		ctx, tc := testclock.UseTime(ctx, now)
 
@@ -121,15 +122,39 @@ func TestBugManager(t *testing.T) {
 						"Was this bug filed in the wrong component? See: https://luci-analysis-test.appspot.com/help#component-selection",
 				}
 
-				Convey("Happy path", func() {
+				Convey("Base case", func() {
 					response := bm.Create(ctx, createRequest)
 					So(response, ShouldResemble, bugs.BugCreateResponse{
 						ID: "1",
+						PolicyActivationsNotified: map[string]struct{}{
+							"policy-a": {},
+						},
 					})
 					So(len(fakeStore.Issues), ShouldEqual, 1)
 
 					issueData := fakeStore.Issues[1]
 					So(issueData.Issue, ShouldResembleProto, expectedIssue)
+					So(len(issueData.Comments), ShouldEqual, 2)
+					So(issueData.Comments[1].Comment, ShouldStartWith, "Policy ID: policy-a")
+				})
+				Convey("Policy has no comment template", func() {
+					policyA.BugTemplate.CommentTemplate = ""
+
+					bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false)
+					So(err, ShouldBeNil)
+
+					response := bm.Create(ctx, createRequest)
+					So(response, ShouldResemble, bugs.BugCreateResponse{
+						ID: "1",
+						PolicyActivationsNotified: map[string]struct{}{
+							"policy-a": {},
+						},
+					})
+					So(len(fakeStore.Issues), ShouldEqual, 1)
+
+					issueData := fakeStore.Issues[1]
+					So(issueData.Issue, ShouldResembleProto, expectedIssue)
+					// Expect no comment for policy-a's activation, just the initial issue description.
 					So(len(issueData.Comments), ShouldEqual, 1)
 				})
 				Convey("Multiple policies activated", func() {
@@ -147,12 +172,21 @@ func TestBugManager(t *testing.T) {
 					// Verify
 					So(response, ShouldResemble, bugs.BugCreateResponse{
 						ID: "1",
+						PolicyActivationsNotified: map[string]struct{}{
+							"policy-a": {},
+							"policy-b": {},
+							"policy-c": {},
+						},
 					})
 					So(len(fakeStore.Issues), ShouldEqual, 1)
 
 					issueData := fakeStore.Issues[1]
 					So(issueData.Issue, ShouldResembleProto, expectedIssue)
-					So(len(issueData.Comments), ShouldEqual, 1)
+					So(len(issueData.Comments), ShouldEqual, 4)
+					// Policy notifications should be in order of priority.
+					So(issueData.Comments[1].Comment, ShouldStartWith, "Policy ID: policy-b")
+					So(issueData.Comments[2].Comment, ShouldStartWith, "Policy ID: policy-c")
+					So(issueData.Comments[3].Comment, ShouldStartWith, "Policy ID: policy-a")
 				})
 				Convey("Failed to update issue comment (permission denied)", func() {
 					fakeClient.UpdateCommentError = status.Errorf(codes.PermissionDenied, "modification not allowed")
@@ -163,6 +197,9 @@ func TestBugManager(t *testing.T) {
 					// Verify
 					So(response, ShouldResemble, bugs.BugCreateResponse{
 						ID: "1",
+						PolicyActivationsNotified: map[string]struct{}{
+							"policy-a": {},
+						},
 					})
 					So(len(fakeStore.Issues), ShouldEqual, 1)
 
@@ -172,8 +209,9 @@ func TestBugManager(t *testing.T) {
 
 					issueData := fakeStore.Issues[1]
 					So(issueData.Issue, ShouldResembleProto, expectedIssue)
-					So(len(issueData.Comments), ShouldEqual, 1)
+					So(len(issueData.Comments), ShouldEqual, 2)
 					So(issueData.Comments[0].Comment, ShouldNotContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
+					So(issueData.Comments[1].Comment, ShouldStartWith, "Policy ID: policy-a")
 				})
 				Convey("Failed to update issue comment (other error)", func() {
 					fakeClient.UpdateCommentError = status.Errorf(codes.Internal, "internal server error")
@@ -187,6 +225,7 @@ func TestBugManager(t *testing.T) {
 					So(response.Error, ShouldNotBeNil)
 					So(errors.Is(response.Error, fakeClient.UpdateCommentError), ShouldBeTrue)
 					So(response.Simulated, ShouldBeFalse)
+					So(response.PolicyActivationsNotified, ShouldHaveLength, 0)
 					So(len(fakeStore.Issues), ShouldEqual, 1)
 
 					expectedIssue.Description.Comment = strings.ReplaceAll(expectedIssue.Description.Comment,
@@ -220,21 +259,28 @@ func TestBugManager(t *testing.T) {
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
 					ID: "1",
+					PolicyActivationsNotified: map[string]struct{}{
+						"policy-a": {},
+					},
 				})
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
 
 				So(issue.Issue, ShouldResembleProto, expectedIssue)
-				So(len(issue.Comments), ShouldEqual, 1)
+				So(len(issue.Comments), ShouldEqual, 2)
 				So(issue.Comments[0].Comment, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
+				So(issue.Comments[1].Comment, ShouldStartWith, "Policy ID: policy-a")
 			})
 
 			Convey("Does nothing if in simulation mode", func() {
 				bm.Simulate = true
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
-					ID:        "123456",
 					Simulated: true,
+					ID:        "123456",
+					PolicyActivationsNotified: map[string]struct{}{
+						"policy-a": {},
+					},
 				})
 				So(len(fakeStore.Issues), ShouldEqual, 0)
 			})
@@ -244,6 +290,9 @@ func TestBugManager(t *testing.T) {
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
 					ID: "1",
+					PolicyActivationsNotified: map[string]struct{}{
+						"policy-a": {},
+					},
 				})
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
@@ -256,14 +305,18 @@ func TestBugManager(t *testing.T) {
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
 					ID: "1",
+					PolicyActivationsNotified: map[string]struct{}{
+						"policy-a": {},
+					},
 				})
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
 				// Should have fallback component ID because no permission to wanted component.
 				So(issue.Issue.IssueState.ComponentId, ShouldEqual, buganizerCfg.DefaultComponent.Id)
 				// No permission to component should appear in comments.
-				So(len(issue.Comments), ShouldEqual, 2)
+				So(len(issue.Comments), ShouldEqual, 3)
 				So(issue.Comments[1].Comment, ShouldContainSubstring, strconv.Itoa(ComponentWithNoAccess))
+				So(issue.Comments[2].Comment, ShouldStartWith, "Policy ID: policy-a")
 			})
 
 			Convey("With Buganizer test mode", func() {
@@ -273,11 +326,17 @@ func TestBugManager(t *testing.T) {
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
 					ID: "1",
+					PolicyActivationsNotified: map[string]struct{}{
+						"policy-a": {},
+					},
 				})
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
 				// Should have fallback component ID because no permission to wanted component.
 				So(issue.Issue.IssueState.ComponentId, ShouldEqual, buganizerCfg.DefaultComponent.Id)
+				So(len(issue.Comments), ShouldEqual, 3)
+				So(issue.Comments[1].Comment, ShouldContainSubstring, "This bug was filed in the fallback component")
+				So(issue.Comments[2].Comment, ShouldStartWith, "Policy ID: policy-a")
 			})
 		})
 		Convey("Update", func() {
@@ -289,9 +348,16 @@ func TestBugManager(t *testing.T) {
 			response := bm.Create(ctx, c)
 			So(response, ShouldResemble, bugs.BugCreateResponse{
 				ID: "1",
+				PolicyActivationsNotified: map[string]struct{}{
+					"policy-a": {},
+					"policy-c": {},
+				},
 			})
 			So(len(fakeStore.Issues), ShouldEqual, 1)
 			So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P1)
+			So(fakeStore.Issues[1].Comments, ShouldHaveLength, 3)
+
+			originalCommentCount := len(fakeStore.Issues[1].Comments)
 
 			activationTime := time.Date(2025, 1, 1, 1, 0, 0, 0, time.UTC)
 			state := &bugspb.BugManagementState{
@@ -385,14 +451,14 @@ func TestBugManager(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(response, ShouldResemble, expectedResponse)
 					So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P4)
-					So(fakeStore.Issues[1].Comments, ShouldHaveLength, 2)
-					So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring,
+					So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
+					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 						"Because the following problem(s) have stopped:\n"+
 							"- Problem C (P1)\n"+
 							"The bug priority has been decreased from P1 to P4.")
-					So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring,
+					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/help#priority-update")
-					So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring,
+					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/b/1")
 
 					// Verify repeated update has no effect.
@@ -410,14 +476,14 @@ func TestBugManager(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(response, ShouldResemble, expectedResponse)
 					So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P0)
-					So(fakeStore.Issues[1].Comments, ShouldHaveLength, 2)
-					So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring,
+					So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
+					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 						"Because the following problem(s) have started:\n"+
 							"- Problem B (P0)\n"+
 							"The bug priority has been increased from P1 to P0.")
-					So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring,
+					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/help#priority-update")
-					So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring,
+					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/b/1")
 
 					// Verify repeated update has no effect.
@@ -442,8 +508,8 @@ func TestBugManager(t *testing.T) {
 					So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P0)
 					expectedResponse[0].DisableRulePriorityUpdates = true
 					So(response[0].DisableRulePriorityUpdates, ShouldBeTrue)
-					So(fakeStore.Issues[1].Comments, ShouldHaveLength, 2)
-					So(fakeStore.Issues[1].Comments[1].Comment, ShouldEqual,
+					So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
+					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldEqual,
 						"The bug priority has been manually set. To re-enable automatic priority updates by LUCI Analysis,"+
 							" enable the update priority flag on the rule.\n\nSee failure impact and configure the failure"+
 							" association rule for this bug at: https://luci-analysis-test.appspot.com/b/1")
@@ -470,15 +536,15 @@ func TestBugManager(t *testing.T) {
 						So(response, ShouldResemble, expectedResponse)
 						So(err, ShouldBeNil)
 						So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P4)
-						So(fakeStore.Issues[1].Comments, ShouldHaveLength, 3)
-						So(fakeStore.Issues[1].Comments[2].Comment, ShouldContainSubstring,
+						So(fakeStore.Issues[1].Comments, ShouldHaveLength, initialComments+1)
+						So(fakeStore.Issues[1].Comments[initialComments].Comment, ShouldContainSubstring,
 							"Because the following problem(s) are active:\n"+
 								"- Problem A (P4)\n"+
 								"\n"+
 								"The bug priority has been set to P4.")
-						So(fakeStore.Issues[1].Comments[2].Comment, ShouldContainSubstring,
+						So(fakeStore.Issues[1].Comments[initialComments].Comment, ShouldContainSubstring,
 							"https://luci-analysis-test.appspot.com/help#priority-update")
-						So(fakeStore.Issues[1].Comments[2].Comment, ShouldContainSubstring,
+						So(fakeStore.Issues[1].Comments[initialComments].Comment, ShouldContainSubstring,
 							"https://luci-analysis-test.appspot.com/b/1")
 
 						// Verify repeated update has no effect.
@@ -539,14 +605,14 @@ func TestBugManager(t *testing.T) {
 					So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_VERIFIED)
 
 					expectedComment := "Because the following problem(s) have stopped:\n" +
-						"- Problem A (P4)\n" +
 						"- Problem C (P1)\n" +
+						"- Problem A (P4)\n" +
 						"The bug has been verified."
-					So(fakeStore.Issues[1].Comments, ShouldHaveLength, 2)
-					So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring, expectedComment)
-					So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring,
+					So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
+					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring, expectedComment)
+					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/help#bug-verified")
-					So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring,
+					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/b/1")
 
 					// Verify repeated update has no effect.
@@ -587,11 +653,11 @@ func TestBugManager(t *testing.T) {
 							expectedComment := "Because the following problem(s) have started:\n" +
 								"- Problem B (P0)\n" +
 								"The bug has been re-opened as P0."
-							So(fakeStore.Issues[1].Comments, ShouldHaveLength, 3)
-							So(fakeStore.Issues[1].Comments[2].Comment, ShouldContainSubstring, expectedComment)
-							So(fakeStore.Issues[1].Comments[2].Comment, ShouldContainSubstring,
+							So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+2)
+							So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring, expectedComment)
+							So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/help#bug-reopened")
-							So(fakeStore.Issues[1].Comments[2].Comment, ShouldContainSubstring,
+							So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/b/1")
 
 							// Verify repeated update has no effect.
@@ -610,13 +676,13 @@ func TestBugManager(t *testing.T) {
 							expectedComment := "Because the following problem(s) have started:\n" +
 								"- Problem B (P0)\n" +
 								"The bug has been re-opened as P0."
-							So(fakeStore.Issues[1].Comments, ShouldHaveLength, 3)
-							So(fakeStore.Issues[1].Comments[2].Comment, ShouldContainSubstring, expectedComment)
-							So(fakeStore.Issues[1].Comments[2].Comment, ShouldContainSubstring,
+							So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+2)
+							So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring, expectedComment)
+							So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/help#priority-update")
-							So(fakeStore.Issues[1].Comments[2].Comment, ShouldContainSubstring,
+							So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/help#bug-reopened")
-							So(fakeStore.Issues[1].Comments[2].Comment, ShouldContainSubstring,
+							So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/b/1")
 
 							// Verify repeated update has no effect.
@@ -701,9 +767,13 @@ func TestBugManager(t *testing.T) {
 		Convey("GetMergedInto", func() {
 			c := newCreateRequest()
 			c.Metrics = bugs.P2Impact()
+			c.ActivePolicyIDs = map[string]struct{}{"policy-a": {}}
 			response := bm.Create(ctx, c)
 			So(response, ShouldResemble, bugs.BugCreateResponse{
 				ID: "1",
+				PolicyActivationsNotified: map[string]struct{}{
+					"policy-a": {},
+				},
 			})
 			So(len(fakeStore.Issues), ShouldEqual, 1)
 
@@ -733,12 +803,17 @@ func TestBugManager(t *testing.T) {
 		Convey("UpdateDuplicateSource", func() {
 			c := newCreateRequest()
 			c.Metrics = bugs.P2Impact()
+			c.ActivePolicyIDs = map[string]struct{}{"policy-a": {}}
 			response := bm.Create(ctx, c)
 			So(response, ShouldResemble, bugs.BugCreateResponse{
 				ID: "1",
+				PolicyActivationsNotified: map[string]struct{}{
+					"policy-a": {},
+				},
 			})
 			So(fakeStore.Issues, ShouldHaveLength, 1)
-			So(fakeStore.Issues[1].Comments, ShouldHaveLength, 1)
+			So(fakeStore.Issues[1].Comments, ShouldHaveLength, 2)
+			originalCommentCount := len(fakeStore.Issues[1].Comments)
 
 			fakeStore.Issues[1].Issue.IssueState.Status = issuetracker.Issue_DUPLICATE
 			fakeStore.Issues[1].Issue.IssueState.CanonicalIssueId = 2
@@ -754,9 +829,9 @@ func TestBugManager(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_NEW)
-				So(fakeStore.Issues[1].Comments, ShouldHaveLength, 2)
-				So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring, "Some error.")
-				So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring,
+				So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
+				So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring, "Some error.")
+				So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 					"https://luci-analysis-test.appspot.com/b/1")
 			})
 			Convey("With ErrorMessage and IsAssigned is true", func() {
@@ -771,9 +846,9 @@ func TestBugManager(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_ASSIGNED)
-				So(fakeStore.Issues[1].Comments, ShouldHaveLength, 2)
-				So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring, "Some error.")
-				So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring,
+				So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
+				So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring, "Some error.")
+				So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 					"https://luci-analysis-test.appspot.com/b/1")
 			})
 			Convey("Without ErrorMessage", func() {
@@ -787,30 +862,37 @@ func TestBugManager(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_DUPLICATE)
-				So(fakeStore.Issues[1].Comments, ShouldHaveLength, 2)
-				So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring, "merged the failure association rule for this bug into the rule for the canonical bug.")
-				So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring,
+				So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
+				So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring, "merged the failure association rule for this bug into the rule for the canonical bug.")
+				So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 					"https://luci-analysis-test.appspot.com/p/chromeos/rules/12345abcdef")
 			})
 		})
 		Convey("UpdateDuplicateDestination", func() {
 			c := newCreateRequest()
 			c.Metrics = bugs.P2Impact()
+			c.ActivePolicyIDs = map[string]struct{}{
+				"policy-a": {},
+			}
 			response := bm.Create(ctx, c)
 			So(response, ShouldResemble, bugs.BugCreateResponse{
 				ID: "1",
+				PolicyActivationsNotified: map[string]struct{}{
+					"policy-a": {},
+				},
 			})
 			So(fakeStore.Issues, ShouldHaveLength, 1)
-			So(fakeStore.Issues[1].Comments, ShouldHaveLength, 1)
+			So(fakeStore.Issues[1].Comments, ShouldHaveLength, 2)
+			originalCommentCount := len(fakeStore.Issues[1].Comments)
 
 			bugID := bugs.BugID{System: bugs.BuganizerSystem, ID: "1"}
 			err := bm.UpdateDuplicateDestination(ctx, bugID)
 			So(err, ShouldBeNil)
 
 			So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldNotEqual, issuetracker.Issue_DUPLICATE)
-			So(fakeStore.Issues[1].Comments, ShouldHaveLength, 2)
-			So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring, "merged the failure association rule for that bug into the rule for this bug.")
-			So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring,
+			So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
+			So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring, "merged the failure association rule for that bug into the rule for this bug.")
+			So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 				"https://luci-analysis-test.appspot.com/b/1")
 		})
 	})

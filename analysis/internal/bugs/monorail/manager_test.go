@@ -162,13 +162,43 @@ func TestManager(t *testing.T) {
 					"Provide feedback: https://luci-analysis-test.appspot.com/help#feedback\n" +
 					"Was this bug filed in the wrong component? See: https://luci-analysis-test.appspot.com/help#component-selection"
 
-				Convey("Single policy activated", func() {
+				Convey("Base case", func() {
 					// Act
 					response := bm.Create(ctx, createRequest)
 
 					// Verify
 					So(response, ShouldResemble, bugs.BugCreateResponse{
 						ID: "chromium/100",
+						PolicyActivationsNotified: map[string]struct{}{
+							"policy-a": {},
+						},
+					})
+					So(len(f.Issues), ShouldEqual, 1)
+
+					issue := f.Issues[0]
+					So(issue.Issue, ShouldResembleProto, expectedIssue)
+					So(len(issue.Comments), ShouldEqual, 3)
+					So(issue.Comments[0].Content, ShouldEqual, expectedComment)
+					// Link to cluster page should appear in follow-up comment.
+					So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
+					So(issue.Comments[2].Content, ShouldStartWith, "Policy ID: policy-a")
+					So(issue.NotifyCount, ShouldEqual, 2)
+				})
+				Convey("Policy has no comment template", func() {
+					policyA.BugTemplate.CommentTemplate = ""
+
+					bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg)
+					So(err, ShouldBeNil)
+
+					// Act
+					response := bm.Create(ctx, createRequest)
+
+					// Verify
+					So(response, ShouldResemble, bugs.BugCreateResponse{
+						ID: "chromium/100",
+						PolicyActivationsNotified: map[string]struct{}{
+							"policy-a": {},
+						},
 					})
 					So(len(f.Issues), ShouldEqual, 1)
 
@@ -195,16 +225,25 @@ func TestManager(t *testing.T) {
 					// Verify
 					So(response, ShouldResemble, bugs.BugCreateResponse{
 						ID: "chromium/100",
+						PolicyActivationsNotified: map[string]struct{}{
+							"policy-a": {},
+							"policy-b": {},
+							"policy-c": {},
+						},
 					})
 					So(len(f.Issues), ShouldEqual, 1)
 
 					issue := f.Issues[0]
 					So(issue.Issue, ShouldResembleProto, expectedIssue)
-					So(len(issue.Comments), ShouldEqual, 2)
+					So(len(issue.Comments), ShouldEqual, 5)
 					So(issue.Comments[0].Content, ShouldEqual, expectedComment)
 					// Link to cluster page should appear in follow-up comment.
 					So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
-					So(issue.NotifyCount, ShouldEqual, 1)
+					// Policy activation comments should appear in descending priority order.
+					So(issue.Comments[2].Content, ShouldStartWith, "Policy ID: policy-b")
+					So(issue.Comments[3].Content, ShouldStartWith, "Policy ID: policy-c")
+					So(issue.Comments[4].Content, ShouldStartWith, "Policy ID: policy-a")
+					So(issue.NotifyCount, ShouldEqual, 4)
 				})
 				Convey("Failed to post issue comment", func() {
 					f.UpdateError = status.Errorf(codes.Internal, "internal server error")
@@ -248,16 +287,20 @@ func TestManager(t *testing.T) {
 				// Verify
 				So(response, ShouldResemble, bugs.BugCreateResponse{
 					ID: "chromium/100",
+					PolicyActivationsNotified: map[string]struct{}{
+						"policy-a": {},
+					},
 				})
 				So(len(f.Issues), ShouldEqual, 1)
 
 				issue := f.Issues[0]
 				So(issue.Issue, ShouldResembleProto, expectedIssue)
-				So(len(issue.Comments), ShouldEqual, 2)
+				So(len(issue.Comments), ShouldEqual, 3)
 				So(issue.Comments[0].Content, ShouldEqual, expectedComment)
 				// Link to cluster page should appear in follow-up comment.
 				So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
-				So(issue.NotifyCount, ShouldEqual, 1)
+				So(issue.Comments[2].Content, ShouldStartWith, "Policy ID: policy-a")
+				So(issue.NotifyCount, ShouldEqual, 2)
 			})
 			Convey("Without Restrict-View-Google", func() {
 				monorailCfgs.FileWithoutRestrictViewGoogle = true
@@ -265,6 +308,9 @@ func TestManager(t *testing.T) {
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
 					ID: "chromium/100",
+					PolicyActivationsNotified: map[string]struct{}{
+						"policy-a": {},
+					},
 				})
 				So(len(f.Issues), ShouldEqual, 1)
 				issue := f.Issues[0]
@@ -280,8 +326,11 @@ func TestManager(t *testing.T) {
 
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
-					ID:        "chromium/12345678",
 					Simulated: true,
+					ID:        "chromium/12345678",
+					PolicyActivationsNotified: map[string]struct{}{
+						"policy-a": {},
+					},
 				})
 				So(len(f.Issues), ShouldEqual, 0)
 			})
@@ -295,9 +344,16 @@ func TestManager(t *testing.T) {
 			response := bm.Create(ctx, c)
 			So(response, ShouldResemble, bugs.BugCreateResponse{
 				ID: "chromium/100",
+				PolicyActivationsNotified: map[string]struct{}{
+					"policy-a": {},
+					"policy-c": {},
+				},
 			})
 			So(len(f.Issues), ShouldEqual, 1)
 			So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "1")
+			So(f.Issues[0].Comments, ShouldHaveLength, 4)
+
+			originalCommentCount := len(f.Issues[0].Comments)
 
 			activationTime := time.Date(2025, 1, 1, 1, 0, 0, 0, time.UTC)
 			state := &bugspb.BugManagementState{
@@ -375,14 +431,14 @@ func TestManager(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(response, ShouldResemble, expectedResponse)
 					So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "3")
-					So(f.Issues[0].Comments, ShouldHaveLength, 3)
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments, ShouldHaveLength, originalCommentCount+1)
+					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 						"Because the following problem(s) have stopped:\n"+
 							"- Problem C (P1)\n"+
 							"The bug priority has been decreased from P1 to P3.")
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/help#priority-update")
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 					// Does not notify.
@@ -405,14 +461,14 @@ func TestManager(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(response, ShouldResemble, expectedResponse)
 					So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "0")
-					So(f.Issues[0].Comments, ShouldHaveLength, 3)
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments, ShouldHaveLength, originalCommentCount+1)
+					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 						"Because the following problem(s) have started:\n"+
 							"- Problem B (P0)\n"+
 							"The bug priority has been increased from P1 to P0.")
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/help#priority-update")
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 					// Notified the increase.
@@ -428,8 +484,8 @@ func TestManager(t *testing.T) {
 					So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "0")
 
 					expectedIssue := CopyIssue(f.Issues[0].Issue)
-					// SortLabels(expectedIssue.Labels)
 					originalNotifyCount := f.Issues[0].NotifyCount
+					originalCommentCount = len(f.Issues[0].Comments)
 
 					// Act
 					response, err := bm.Update(ctx, bugsToUpdate)
@@ -439,8 +495,8 @@ func TestManager(t *testing.T) {
 					expectedResponse[0].DisableRulePriorityUpdates = true
 					So(response, ShouldResemble, expectedResponse)
 					So(f.Issues[0].Issue, ShouldResembleProto, expectedIssue)
-					So(f.Issues[0].Comments, ShouldHaveLength, 4)
-					So(f.Issues[0].Comments[3].Content, ShouldEqual,
+					So(f.Issues[0].Comments, ShouldHaveLength, originalCommentCount+1)
+					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldEqual,
 						"The bug priority has been manually set. To re-enable automatic priority updates by LUCI Analysis,"+
 							" enable the update priority flag on the rule.\n\nSee failure impact and configure the failure"+
 							" association rule for this bug at: https://luci-analysis-test.appspot.com/b/chromium/100")
@@ -468,15 +524,15 @@ func TestManager(t *testing.T) {
 						So(response, ShouldResemble, expectedResponse)
 						So(err, ShouldBeNil)
 						So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "3")
-						So(f.Issues[0].Comments, ShouldHaveLength, 5)
-						So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
+						So(f.Issues[0].Comments, ShouldHaveLength, originalCommentCount+2)
+						So(f.Issues[0].Comments[originalCommentCount+1].Content, ShouldContainSubstring,
 							"Because the following problem(s) are active:\n"+
 								"- Problem A (P3)\n"+
 								"\n"+
 								"The bug priority has been set to P3.")
-						So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
+						So(f.Issues[0].Comments[originalCommentCount+1].Content, ShouldContainSubstring,
 							"https://luci-analysis-test.appspot.com/help#priority-update")
-						So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
+						So(f.Issues[0].Comments[originalCommentCount+1].Content, ShouldContainSubstring,
 							"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 						// Verify repeated update has no effect.
@@ -513,14 +569,14 @@ func TestManager(t *testing.T) {
 					So(f.Issues[0].Issue.Status.Status, ShouldEqual, VerifiedStatus)
 
 					expectedComment := "Because the following problem(s) have stopped:\n" +
-						"- Problem A (P3)\n" +
 						"- Problem C (P1)\n" +
+						"- Problem A (P3)\n" +
 						"The bug has been verified."
-					So(f.Issues[0].Comments, ShouldHaveLength, 3)
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring, expectedComment)
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments, ShouldHaveLength, originalCommentCount+1)
+					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring, expectedComment)
+					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/help#bug-verified")
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 					// Verify repeated update has no effect.
@@ -557,6 +613,7 @@ func TestManager(t *testing.T) {
 							So(err, ShouldBeNil)
 							So(f.Issues[0].Issue.Owner.GetUser(), ShouldEqual, "users/100")
 							expectedResponse[0].IsDuplicateAndAssigned = true
+							originalCommentCount = len(f.Issues[0].Comments)
 
 							// Issue should return to "Assigned" status.
 							response, err := bm.Update(ctx, bugsToUpdate)
@@ -568,11 +625,11 @@ func TestManager(t *testing.T) {
 							expectedComment := "Because the following problem(s) have started:\n" +
 								"- Problem B (P0)\n" +
 								"The bug has been re-opened as P0."
-							So(f.Issues[0].Comments, ShouldHaveLength, 5)
-							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring, expectedComment)
-							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
+							So(f.Issues[0].Comments, ShouldHaveLength, originalCommentCount+1)
+							So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring, expectedComment)
+							So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/help#bug-reopened")
-							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
+							So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 							// Verify repeated update has no effect.
@@ -584,6 +641,7 @@ func TestManager(t *testing.T) {
 							err = usercl.ModifyIssues(ctx, updateReq)
 							So(err, ShouldBeNil)
 							So(f.Issues[0].Issue.Owner.GetUser(), ShouldEqual, "")
+							originalCommentCount = len(f.Issues[0].Comments)
 
 							// Issue should return to "Untriaged" status.
 							response, err := bm.Update(ctx, bugsToUpdate)
@@ -595,13 +653,13 @@ func TestManager(t *testing.T) {
 							expectedComment := "Because the following problem(s) have started:\n" +
 								"- Problem B (P0)\n" +
 								"The bug has been re-opened as P0."
-							So(f.Issues[0].Comments, ShouldHaveLength, 5)
-							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring, expectedComment)
-							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
+							So(f.Issues[0].Comments, ShouldHaveLength, originalCommentCount+1)
+							So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring, expectedComment)
+							So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/help#priority-update")
-							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
+							So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/help#bug-reopened")
-							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
+							So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 							// Verify repeated update has no effect.
@@ -685,9 +743,15 @@ func TestManager(t *testing.T) {
 		Convey("GetMergedInto", func() {
 			c := NewCreateRequest()
 			c.Metrics = bugs.P2Impact()
+			c.ActivePolicyIDs = map[string]struct{}{
+				"policy-a": {},
+			}
 			response := bm.Create(ctx, c)
 			So(response, ShouldResemble, bugs.BugCreateResponse{
 				ID: "chromium/100",
+				PolicyActivationsNotified: map[string]struct{}{
+					"policy-a": {},
+				},
 			})
 			So(len(f.Issues), ShouldEqual, 1)
 
@@ -734,12 +798,19 @@ func TestManager(t *testing.T) {
 		Convey("UpdateDuplicateSource", func() {
 			c := NewCreateRequest()
 			c.Metrics = bugs.P2Impact()
+			c.ActivePolicyIDs = map[string]struct{}{
+				"policy-a": {},
+			}
 			response := bm.Create(ctx, c)
 			So(response, ShouldResemble, bugs.BugCreateResponse{
 				ID: "chromium/100",
+				PolicyActivationsNotified: map[string]struct{}{
+					"policy-a": {},
+				},
 			})
 			So(f.Issues, ShouldHaveLength, 1)
-			So(f.Issues[0].Comments, ShouldHaveLength, 2)
+			So(f.Issues[0].Comments, ShouldHaveLength, 3)
+			originalCommentCount := len(f.Issues[0].Comments)
 
 			f.Issues[0].Issue.Status.Status = DuplicateStatus
 			f.Issues[0].Issue.MergedIntoIssueRef = &mpb.IssueRef{
@@ -757,9 +828,9 @@ func TestManager(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				So(f.Issues[0].Issue.Status.Status, ShouldNotEqual, DuplicateStatus)
-				So(f.Issues[0].Comments, ShouldHaveLength, 3)
-				So(f.Issues[0].Comments[2].Content, ShouldContainSubstring, "Some error.")
-				So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+				So(f.Issues[0].Comments, ShouldHaveLength, originalCommentCount+1)
+				So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring, "Some error.")
+				So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 					"https://luci-analysis-test.appspot.com/b/chromium/100")
 			})
 			Convey("Without ErrorMessage", func() {
@@ -773,30 +844,37 @@ func TestManager(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				So(f.Issues[0].Issue.Status.Status, ShouldEqual, DuplicateStatus)
-				So(f.Issues[0].Comments, ShouldHaveLength, 3)
-				So(f.Issues[0].Comments[2].Content, ShouldContainSubstring, "merged the failure association rule for this bug into the rule for the canonical bug.")
-				So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+				So(f.Issues[0].Comments, ShouldHaveLength, originalCommentCount+1)
+				So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring, "merged the failure association rule for this bug into the rule for the canonical bug.")
+				So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 					"https://luci-analysis-test.appspot.com/p/luciproject/rules/12345abcdef")
 			})
 		})
 		Convey("UpdateDuplicateDestination", func() {
 			c := NewCreateRequest()
 			c.Metrics = bugs.P2Impact()
+			c.ActivePolicyIDs = map[string]struct{}{
+				"policy-a": {},
+			}
 			response := bm.Create(ctx, c)
 			So(response, ShouldResemble, bugs.BugCreateResponse{
 				ID: "chromium/100",
+				PolicyActivationsNotified: map[string]struct{}{
+					"policy-a": {},
+				},
 			})
 			So(f.Issues, ShouldHaveLength, 1)
-			So(f.Issues[0].Comments, ShouldHaveLength, 2)
+			So(f.Issues[0].Comments, ShouldHaveLength, 3)
+			originalCommentCount := len(f.Issues[0].Comments)
 
 			bugID := bugs.BugID{System: bugs.MonorailSystem, ID: "chromium/100"}
 			err = bm.UpdateDuplicateDestination(ctx, bugID)
 			So(err, ShouldBeNil)
 
 			So(f.Issues[0].Issue.Status, ShouldNotEqual, DuplicateStatus)
-			So(f.Issues[0].Comments, ShouldHaveLength, 3)
-			So(f.Issues[0].Comments[2].Content, ShouldContainSubstring, "merged the failure association rule for that bug into the rule for this bug.")
-			So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+			So(f.Issues[0].Comments, ShouldHaveLength, originalCommentCount+1)
+			So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring, "merged the failure association rule for that bug into the rule for this bug.")
+			So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 				"https://luci-analysis-test.appspot.com/b/chromium/100")
 		})
 	})

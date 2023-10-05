@@ -333,7 +333,7 @@ func updateBugsForProject(ctx context.Context, opts updateOptions) (retErr error
 		}
 
 		// Create Buganizer bug manager
-		buganizerBugManager := buganizer.NewBugManager(
+		buganizerBugManager, err := buganizer.NewBugManager(
 			opts.buganizerClient,
 			opts.uiBaseURL,
 			opts.project,
@@ -341,6 +341,9 @@ func updateBugsForProject(ctx context.Context, opts updateOptions) (retErr error
 			projectCfg.Config,
 			opts.simulateBugUpdates,
 		)
+		if err != nil {
+			return errors.Annotate(err, "create buganizer bug manager").Err()
+		}
 
 		mgrs[bugs.BuganizerSystem] = buganizerBugManager
 	}

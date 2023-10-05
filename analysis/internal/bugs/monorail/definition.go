@@ -109,13 +109,18 @@ func NewGenerator(uiBaseURL, project string, projectCfg *configpb.ProjectConfig)
 	if len(projectCfg.Monorail.Priorities) == 0 {
 		return nil, fmt.Errorf("invalid configuration for monorail project %q; no monorail priorities configured", projectCfg.Monorail.Project)
 	}
+	// Monorail projects have a floor priority of P3.
+	policyApplyer, err := policy.NewApplyer(projectCfg.BugManagement.GetPolicies(), configpb.BuganizerPriority_P3)
+	if err != nil {
+		return nil, err
+	}
+
 	return &RequestGenerator{
 		uiBaseURL:           uiBaseURL,
 		project:             project,
 		monorailCfg:         projectCfg.Monorail,
 		bugFilingThresholds: projectCfg.BugFilingThresholds,
-		// Monorail projects have a floor priority of P3.
-		policyApplyer: policy.NewApplyer(projectCfg.BugManagement.GetPolicies(), configpb.BuganizerPriority_P3),
+		policyApplyer:       policyApplyer,
 	}, nil
 }
 
@@ -235,14 +240,13 @@ func (rg *RequestGenerator) PrepareNewLegacy(metrics bugs.ClusterMetrics, descri
 // association rule in LUCI Analysis. bugName is the internal bug name,
 // e.g. "chromium/100".
 func (rg *RequestGenerator) linkToRuleComment(bugName string) string {
-	bugLink := fmt.Sprintf("%s/b/%s", rg.uiBaseURL, bugName)
-	return fmt.Sprintf(bugs.LinkTemplate, bugLink)
+	return fmt.Sprintf(bugs.LinkTemplate, policy.RuleForMonorailBugURL(rg.uiBaseURL, bugName))
 }
 
 // PrepareLinkComment prepares a request that adds links to LUCI Analysis to
 // a monorail bug.
-func (rg *RequestGenerator) PrepareLinkComment(bugName string) (*mpb.ModifyIssuesRequest, error) {
-	issueName, err := toMonorailIssueName(bugName)
+func (rg *RequestGenerator) PrepareLinkComment(bugID string) (*mpb.ModifyIssuesRequest, error) {
+	issueName, err := toMonorailIssueName(bugID)
 	if err != nil {
 		return nil, err
 	}
@@ -257,16 +261,64 @@ func (rg *RequestGenerator) PrepareLinkComment(bugName string) (*mpb.ModifyIssue
 			},
 		},
 		NotifyType:     mpb.NotifyType_NO_NOTIFICATION,
-		CommentContent: rg.linkToRuleComment(bugName),
+		CommentContent: rg.linkToRuleComment(bugID),
 	}
 	return result, nil
+}
+
+// SortPolicyIDsByPriorityDescending sorts policy IDs in descending
+// priority order (i.e. P0 policies first, then P1, then P2, ...).
+func (rg *RequestGenerator) SortPolicyIDsByPriorityDescending(policyIDs map[string]struct{}) []string {
+	return rg.policyApplyer.SortPolicyIDsByPriorityDescending(policyIDs)
+}
+
+// PreparePolicyActivatedComment prepares a request that notifies a bug that a policy
+// has activated for the first time.
+// This method returns nil if the policy has not specified any comment to post.
+func (rg *RequestGenerator) PreparePolicyActivatedComment(bugID string, policyID string) (*mpb.ModifyIssuesRequest, error) {
+	templateInput := policy.TemplateInput{
+		RuleURL: policy.RuleForMonorailBugURL(rg.uiBaseURL, bugID),
+		BugID:   policy.NewBugID(bugs.BugID{System: bugs.MonorailSystem, ID: bugID}),
+	}
+	comment, err := rg.policyApplyer.PolicyActivatedComment(policyID, rg.uiBaseURL, templateInput)
+	if err != nil {
+		return nil, err
+	}
+
+	if comment == "" {
+		// Policy has not specified a comment to post. This is fine.
+		return nil, nil
+	}
+
+	name, err := toMonorailIssueName(bugID)
+	if err != nil {
+		return nil, err
+	}
+
+	delta := &mpb.IssueDelta{
+		Issue: &mpb.Issue{
+			Name: name,
+		},
+		UpdateMask: &field_mask.FieldMask{
+			Paths: []string{},
+		},
+	}
+
+	req := &mpb.ModifyIssuesRequest{
+		Deltas: []*mpb.IssueDelta{
+			delta,
+		},
+		NotifyType:     mpb.NotifyType_EMAIL,
+		CommentContent: comment,
+	}
+	return req, nil
 }
 
 // UpdateDuplicateSource updates the source bug of a (source, destination)
 // duplicate bug pair, after LUCI Analysis has attempted to merge their
 // failure association rules.
-func (rg *RequestGenerator) UpdateDuplicateSource(bugName, errorMessage, destinationRuleID string) (*mpb.ModifyIssuesRequest, error) {
-	name, err := toMonorailIssueName(bugName)
+func (rg *RequestGenerator) UpdateDuplicateSource(bugID, errorMessage, destinationRuleID string) (*mpb.ModifyIssuesRequest, error) {
+	name, err := toMonorailIssueName(bugID)
 	if err != nil {
 		return nil, err
 	}
@@ -285,9 +337,9 @@ func (rg *RequestGenerator) UpdateDuplicateSource(bugName, errorMessage, destina
 			Status: "Available",
 		}
 		delta.UpdateMask.Paths = append(delta.UpdateMask.Paths, "status")
-		comment = strings.Join([]string{errorMessage, rg.linkToRuleComment(bugName)}, "\n\n")
+		comment = strings.Join([]string{errorMessage, rg.linkToRuleComment(bugID)}, "\n\n")
 	} else {
-		bugLink := fmt.Sprintf("%s/p/%s/rules/%s", rg.uiBaseURL, rg.project, destinationRuleID)
+		bugLink := policy.RuleURL(rg.uiBaseURL, rg.project, destinationRuleID)
 		comment = fmt.Sprintf(bugs.SourceBugRuleUpdatedTemplate, bugLink)
 	}
 

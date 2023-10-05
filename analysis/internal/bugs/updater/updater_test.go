@@ -64,10 +64,10 @@ func TestUpdate(t *testing.T) {
 		const project = "chromeos"
 
 		// Has two policies:
-		// exoneration-policy:
+		// exoneration-policy (P2):
 		// - activation threshold: 100 in one day
 		// - deactivation threshold: 10 in one day
-		// cls-rejected-policy:
+		// cls-rejected-policy (P1):
 		// - activation threshold: 10 in one week
 		// - deactivation threshold: 1 in one week
 		projectCfg := createProjectConfig()
@@ -170,7 +170,11 @@ func TestUpdate(t *testing.T) {
 				BugManagementState: &bugspb.BugManagementState{
 					RuleAssociationNotified: true,
 					PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
-						"exoneration-policy":  {},
+						"exoneration-policy": {
+							IsActive:           true,
+							LastActivationTime: timestamppb.New(opts.runTimestamp),
+							ActivationNotified: true,
+						},
 						"cls-rejected-policy": {},
 					},
 				},
@@ -187,6 +191,9 @@ func TestUpdate(t *testing.T) {
 					"network-test-1",
 					"network-test-2",
 				},
+				ExpectedPolicyIDsActivated: []string{
+					"exoneration-policy",
+				},
 			}
 
 			issueCount := func() int {
@@ -197,8 +204,6 @@ func TestUpdate(t *testing.T) {
 			suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
 				OneDay: metrics.Counts{Residual: 100},
 			}
-			expectedRule.BugManagementState.PolicyState["exoneration-policy"].IsActive = true
-			expectedRule.BugManagementState.PolicyState["exoneration-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
 
 			Convey("bug filing threshold must be met to file a new bug", func() {
 				Convey("Reason cluster", func() {
@@ -227,8 +232,6 @@ func TestUpdate(t *testing.T) {
 					})
 					Convey("Below threshold", func() {
 						suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 99}}
-						expectedRule.BugManagementState.PolicyState["exoneration-policy"].IsActive = false
-						expectedRule.BugManagementState.PolicyState["exoneration-policy"].LastActivationTime = nil
 
 						// Act
 						err = updateBugsForProject(ctx, opts)
@@ -276,8 +279,6 @@ func TestUpdate(t *testing.T) {
 					})
 					Convey("Below threshold", func() {
 						suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 133}}
-						expectedRule.BugManagementState.PolicyState["exoneration-policy"].IsActive = false
-						expectedRule.BugManagementState.PolicyState["exoneration-policy"].LastActivationTime = nil
 
 						// Act
 						err = updateBugsForProject(ctx, opts)
@@ -292,11 +293,6 @@ func TestUpdate(t *testing.T) {
 				})
 			})
 			Convey("policies are correctly activated when new bugs are filed", func() {
-				// Bug-filing threshold met.
-				suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
-				expectedRule.BugManagementState.PolicyState["exoneration-policy"].IsActive = true
-				expectedRule.BugManagementState.PolicyState["exoneration-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
-
 				Convey("other policy activation threshold not met", func() {
 					suggestedClusters[1].MetricValues[metrics.HumanClsFailedPresubmit.ID] = metrics.TimewiseCounts{SevenDay: metrics.Counts{Residual: 9}}
 
@@ -313,6 +309,11 @@ func TestUpdate(t *testing.T) {
 					suggestedClusters[1].MetricValues[metrics.HumanClsFailedPresubmit.ID] = metrics.TimewiseCounts{SevenDay: metrics.Counts{Residual: 10}}
 					expectedRule.BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
 					expectedRule.BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+					expectedRule.BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
+					expectedBuganizerBug.ExpectedPolicyIDsActivated = []string{
+						"cls-rejected-policy",
+						"exoneration-policy",
+					}
 
 					// Act
 					err = updateBugsForProject(ctx, opts)
@@ -325,13 +326,6 @@ func TestUpdate(t *testing.T) {
 				})
 			})
 			Convey("dispersion criteria must be met to file a new bug", func() {
-				// Cluster meets bug-filing threshold.
-				suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
-					OneDay: metrics.Counts{Residual: 100},
-				}
-				expectedRule.BugManagementState.PolicyState["exoneration-policy"].IsActive = true
-				expectedRule.BugManagementState.PolicyState["exoneration-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
-
 				Convey("met via User CLs with failures", func() {
 					suggestedClusters[1].DistinctUserCLsWithFailures7d.Residual = 3
 					suggestedClusters[1].PostsubmitBuildsWithFailures7d.Residual = 0
@@ -374,10 +368,6 @@ func TestUpdate(t *testing.T) {
 			})
 			Convey("duplicate bugs are suppressed", func() {
 				Convey("where a rule was recently filed for the same suggested cluster, and reclustering is pending", func() {
-					suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
-					expectedRule.BugManagementState.PolicyState["exoneration-policy"].IsActive = true
-					expectedRule.BugManagementState.PolicyState["exoneration-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
-
 					createTime := time.Date(2021, time.January, 5, 12, 30, 0, 0, time.UTC)
 					buganizerStore.StoreIssue(ctx, buganizer.NewFakeIssue(1))
 					existingRule := rules.NewRule(1).
@@ -433,10 +423,6 @@ func TestUpdate(t *testing.T) {
 					So(issueCount(), ShouldEqual, 2)
 				})
 				Convey("when re-clustering to new algorithms", func() {
-					suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
-					expectedRule.BugManagementState.PolicyState["exoneration-policy"].IsActive = true
-					expectedRule.BugManagementState.PolicyState["exoneration-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
-
 					err = runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{
 						runs.NewRun(0).
 							WithProject(project).
@@ -459,10 +445,6 @@ func TestUpdate(t *testing.T) {
 					So(issueCount(), ShouldEqual, 0)
 				})
 				Convey("when re-clustering to new config", func() {
-					suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
-					expectedRule.BugManagementState.PolicyState["exoneration-policy"].IsActive = true
-					expectedRule.BugManagementState.PolicyState["exoneration-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
-
 					err = runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{
 						runs.NewRun(0).
 							WithProject(project).
@@ -509,6 +491,9 @@ func TestUpdate(t *testing.T) {
 					ExpectedContent: []string{
 						"network-test-1",
 						"network-test-2",
+					},
+					ExpectedPolicyIDsActivated: []string{
+						"exoneration-policy",
 					},
 				}
 				expectedRule.BugID = bugs.BugID{
@@ -629,17 +614,23 @@ func TestUpdate(t *testing.T) {
 				})
 			})
 			Convey("partial success creating bugs is correctly handled", func() {
+				// Inject an error updating the bug after creation.
 				buganizerClient.UpdateCommentError = status.Errorf(codes.Internal, "internal error updating comment")
 
 				// Act
 				err = updateBugsForProject(ctx, opts)
 
-				// Because the bug comment could not be updated, do not expect a link to the bug to be present.
+				// Because the bug comment could not be updated, do not expect a link to the rule by bug ID
+				// to be present in the bug.
 				So(expectedBuganizerBug.ExpectedContent[0], ShouldEqual, "https://luci-analysis-test.appspot.com/b/1")
-				// Instead expect a link to the rule.
+				// Instead expect a link to the rule by rule ID.
 				expectedBuganizerBug.ExpectedContent[0] = "https://luci-analysis-test.appspot.com/p/chromeos/rules/"
 
-				// Verify we filed into Buganizer.
+				// Do not expect policy activations to have been notified.
+				expectedBuganizerBug.ExpectedPolicyIDsActivated = []string{}
+				expectedRule.BugManagementState.PolicyState["exoneration-policy"].ActivationNotified = false
+
+				// Verify the rule was still created.
 				So(err, ShouldErrLike, "internal error updating comment")
 				So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 				So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
@@ -762,6 +753,7 @@ func TestUpdate(t *testing.T) {
 							"exoneration-policy": {
 								IsActive:           true,
 								LastActivationTime: timestamppb.New(opts.runTimestamp),
+								ActivationNotified: true,
 							},
 							"cls-rejected-policy": {},
 						},
@@ -783,6 +775,7 @@ func TestUpdate(t *testing.T) {
 							"exoneration-policy": {
 								IsActive:           true,
 								LastActivationTime: timestamppb.New(opts.runTimestamp),
+								ActivationNotified: true,
 							},
 							"cls-rejected-policy": {},
 						},
@@ -804,6 +797,7 @@ func TestUpdate(t *testing.T) {
 							"exoneration-policy": {
 								IsActive:           true,
 								LastActivationTime: timestamppb.New(opts.runTimestamp),
+								ActivationNotified: true,
 							},
 							"cls-rejected-policy": {},
 						},
@@ -825,6 +819,7 @@ func TestUpdate(t *testing.T) {
 							"exoneration-policy": {
 								IsActive:           true,
 								LastActivationTime: timestamppb.New(opts.runTimestamp),
+								ActivationNotified: true,
 							},
 							"cls-rejected-policy": {},
 						},
@@ -1527,6 +1522,9 @@ func TestUpdate(t *testing.T) {
 						issueOne.Issue.IssueState.Status = issuetracker.Issue_DUPLICATE
 						issueOne.Issue.IssueState.CanonicalIssueId = issueTwo.Issue.IssueId
 
+						issueOneOriginalCommentCount := len(issueOne.Comments)
+						issueTwoOriginalCommentCount := len(issueTwo.Comments)
+
 						// Ensure rule association and policy activation notified, so we
 						// can confirm whether notifications are correctly reset.
 						rs[0].BugManagementState.RuleAssociationNotified = true
@@ -1550,12 +1548,12 @@ func TestUpdate(t *testing.T) {
 							expectedRules[1].RuleDefinition = "reason LIKE \"want foo, got bar\" OR\ntest = \"testname-0\""
 							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 
-							So(issueOne.Comments, ShouldHaveLength, 2)
-							So(issueOne.Comments[1].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
-							So(issueOne.Comments[1].Comment, ShouldContainSubstring, expectedRules[2].RuleID)
+							So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+1)
+							So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
+							So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, expectedRules[2].RuleID)
 
-							So(issueTwo.Comments, ShouldHaveLength, 2)
-							So(issueTwo.Comments[1].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
+							So(issueTwo.Comments, ShouldHaveLength, issueTwoOriginalCommentCount+1)
+							So(issueTwo.Comments[issueTwoOriginalCommentCount].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
 						})
 						Convey("happy path, with comments for duplicate bugs disabled", func() {
 							// Setup
@@ -1575,8 +1573,8 @@ func TestUpdate(t *testing.T) {
 							expectedRules[1].RuleDefinition = "reason LIKE \"want foo, got bar\" OR\ntest = \"testname-0\""
 							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 
-							So(issueOne.Comments, ShouldHaveLength, 1)
-							So(issueTwo.Comments, ShouldHaveLength, 1)
+							So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount)
+							So(issueTwo.Comments, ShouldHaveLength, issueTwoOriginalCommentCount)
 						})
 						Convey("happy path, bug marked as duplicate of bug without a rule in this project", func() {
 							// Setup
@@ -1622,9 +1620,9 @@ func TestUpdate(t *testing.T) {
 								expectedRules = append(expectedRules, extraRule)
 								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 
-								So(issueOne.Comments, ShouldHaveLength, 2)
-								So(issueOne.Comments[1].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
-								So(issueOne.Comments[1].Comment, ShouldContainSubstring, expectedRules[0].RuleID)
+								So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+1)
+								So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
+								So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, expectedRules[0].RuleID)
 							})
 							Convey("bug not managed by a rule in any project", func() {
 								buganizerStore.StoreIssue(ctx, buganizer.NewFakeIssue(1234))
@@ -1642,9 +1640,9 @@ func TestUpdate(t *testing.T) {
 								}
 								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 
-								So(issueOne.Comments, ShouldHaveLength, 2)
-								So(issueOne.Comments[1].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
-								So(issueOne.Comments[1].Comment, ShouldContainSubstring, expectedRules[1].RuleID)
+								So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+1)
+								So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
+								So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, expectedRules[1].RuleID)
 							})
 						})
 						Convey("error cases", func() {
@@ -1669,9 +1667,9 @@ func TestUpdate(t *testing.T) {
 								expectedRules[1].IsActive = false
 								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 
-								So(issueOne.Comments, ShouldHaveLength, 3)
-								So(issueOne.Comments[1].Comment, ShouldContainSubstring, "a cycle was detected in the bug merged-into graph")
-								So(issueOne.Comments[2].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
+								So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+2)
+								So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, "a cycle was detected in the bug merged-into graph")
+								So(issueOne.Comments[issueOneOriginalCommentCount+1].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
 							})
 							Convey("merged rule would be too long", func() {
 								// Setup
@@ -1712,8 +1710,8 @@ func TestUpdate(t *testing.T) {
 								So(issueOne.Issue.IssueState.Status, ShouldNotEqual, issuetracker.Issue_DUPLICATE)
 
 								// Comment should appear on the bug.
-								So(issueOne.Comments, ShouldHaveLength, 2)
-								So(issueOne.Comments[1].Comment, ShouldContainSubstring, "the merged failure association rule would be too long")
+								So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+1)
+								So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, "the merged failure association rule would be too long")
 							})
 							Convey("bug marked as duplicate of bug we cannot access", func() {
 								issueTwo.ShouldReturnAccessPermissionError = true
@@ -1724,8 +1722,8 @@ func TestUpdate(t *testing.T) {
 								// Verify issue one kicked out of duplicate status.
 								So(err, ShouldBeNil)
 								So(issueOne.Issue.IssueState.Status, ShouldNotEqual, issuetracker.Issue_DUPLICATE)
-								So(issueOne.Comments, ShouldHaveLength, 2)
-								So(issueOne.Comments[1].Comment, ShouldContainSubstring, "LUCI Analysis cannot merge the association rule for this bug into the rule")
+								So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+1)
+								So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, "LUCI Analysis cannot merge the association rule for this bug into the rule")
 							})
 							Convey("failed to handle duplicate bug - bug has an assignee", func() {
 								issueTwo.ShouldReturnAccessPermissionError = true
@@ -1773,6 +1771,9 @@ func TestUpdate(t *testing.T) {
 						issueOneRule := expectedRules[firstMonorailRuleIndex]
 						issueTwoRule := expectedRules[firstMonorailRuleIndex+1]
 
+						issueOneOriginalCommentCount := len(issueOne.Comments)
+						issueTwoOriginalCommentCount := len(issueTwo.Comments)
+
 						Convey("happy path", func() {
 							// Act
 							err = updateBugsForProject(ctx, opts)
@@ -1783,12 +1784,12 @@ func TestUpdate(t *testing.T) {
 							issueTwoRule.RuleDefinition = "reason LIKE \"want foofoo, got bar\" OR\nreason LIKE \"want foofoofoo, got bar\""
 							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 
-							So(issueOne.Comments, ShouldHaveLength, 3)
-							So(issueOne.Comments[2].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
-							So(issueOne.Comments[2].Content, ShouldContainSubstring, issueOneRule.RuleID)
+							So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+1)
+							So(issueOne.Comments[issueOneOriginalCommentCount].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
+							So(issueOne.Comments[issueOneOriginalCommentCount].Content, ShouldContainSubstring, issueOneRule.RuleID)
 
-							So(issueTwo.Comments, ShouldHaveLength, 3)
-							So(issueTwo.Comments[2].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
+							So(issueTwo.Comments, ShouldHaveLength, issueTwoOriginalCommentCount+1)
+							So(issueTwo.Comments[issueTwoOriginalCommentCount].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
 						})
 						Convey("error case", func() {
 							// Note that this is a simple cycle with only two bugs.
@@ -1813,9 +1814,9 @@ func TestUpdate(t *testing.T) {
 							issueTwoRule.IsActive = false
 							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 
-							So(issueOne.Comments, ShouldHaveLength, 4)
-							So(issueOne.Comments[2].Content, ShouldContainSubstring, "a cycle was detected in the bug merged-into graph")
-							So(issueOne.Comments[3].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
+							So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+2)
+							So(issueOne.Comments[issueOneOriginalCommentCount].Content, ShouldContainSubstring, "a cycle was detected in the bug merged-into graph")
+							So(issueOne.Comments[issueOneOriginalCommentCount+1].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
 						})
 					})
 					Convey("monorail to buganizer", func() {
@@ -1830,6 +1831,9 @@ func TestUpdate(t *testing.T) {
 						issueOneRule := expectedRules[firstMonorailRuleIndex]
 						issueTwoRule := expectedRules[0]
 
+						issueOneOriginalCommentCount := len(issueOne.Comments)
+						issueTwoOriginalCommentCount := len(issueTwo.Comments)
+
 						Convey("happy path", func() {
 							// Act
 							err = updateBugsForProject(ctx, opts)
@@ -1840,12 +1844,12 @@ func TestUpdate(t *testing.T) {
 							issueTwoRule.RuleDefinition = "reason LIKE \"want foofoo, got bar\" OR\ntest = \"testname-0\""
 							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 
-							So(issueOne.Comments, ShouldHaveLength, 3)
-							So(issueOne.Comments[2].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
-							So(issueOne.Comments[2].Content, ShouldContainSubstring, issueOneRule.RuleID)
+							So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+1)
+							So(issueOne.Comments[issueOneOriginalCommentCount].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
+							So(issueOne.Comments[issueOneOriginalCommentCount].Content, ShouldContainSubstring, issueOneRule.RuleID)
 
-							So(issueTwo.Comments, ShouldHaveLength, 2)
-							So(issueTwo.Comments[1].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
+							So(issueTwo.Comments, ShouldHaveLength, issueTwoOriginalCommentCount+1)
+							So(issueTwo.Comments[issueTwoOriginalCommentCount].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
 						})
 					})
 				})
@@ -2042,6 +2046,9 @@ type buganizerBug struct {
 	ExpectedTitle string
 	// Content that is expected to appear in the bug description.
 	ExpectedContent []string
+	// The policies which were expected to have activated, in the
+	// order they should have reported activation.
+	ExpectedPolicyIDsActivated []string
 }
 
 func expectBuganizerBug(buganizerStore *buganizer.FakeIssueStore, bug buganizerBug) error {
@@ -2064,8 +2071,15 @@ func expectBuganizerBug(buganizerStore *buganizer.FakeIssueStore, bug buganizerB
 			return errors.Reason("issue description: got %q, expected it to contain %q", issue.Description.Comment, expectedContent).Err()
 		}
 	}
-	if len(buganizerStore.Issues[bug.ID].Comments) != 1 {
-		return errors.Reason("issue comments: got %v want %v", len(buganizerStore.Issues[bug.ID].Comments), 1).Err()
+	comments := buganizerStore.Issues[bug.ID].Comments
+	if len(comments) != 1+len(bug.ExpectedPolicyIDsActivated) {
+		return errors.Reason("issue comments: got %v want %v", len(comments), 1+len(bug.ExpectedPolicyIDsActivated)).Err()
+	}
+	for i, activatedPolicyID := range bug.ExpectedPolicyIDsActivated {
+		expectedContent := fmt.Sprintf("(Policy ID: %s)", activatedPolicyID)
+		if !strings.Contains(comments[1+i].Comment, expectedContent) {
+			return errors.Reason("issue comment %v: got %q, expected it to contain %q", i+1, comments[i+1].Comment, expectedContent).Err()
+		}
 	}
 	return nil
 }
@@ -2081,6 +2095,9 @@ type monorailBug struct {
 	ExpectedTitle string
 	// Content that is expected to appear in the bug description.
 	ExpectedContent []string
+	// The policies which were expected to have activated, in the
+	// order they should have reported activation.
+	ExpectedPolicyIDsActivated []string
 }
 
 func expectMonorailBug(monorailStore *monorail.FakeIssuesStore, bug monorailBug) error {
@@ -2105,8 +2122,9 @@ func expectMonorailBug(monorailStore *monorail.FakeIssuesStore, bug monorailBug)
 	if msg := ShouldResemble(actualComponents, bug.ExpectedComponents); msg != "" {
 		return errors.Reason("components: %s", msg).Err()
 	}
-	if len(issue.Comments) != 2 {
-		return errors.Reason("issue comments: got %v want %v", len(issue.Comments), 2).Err()
+	comments := issue.Comments
+	if len(comments) != 2+len(bug.ExpectedPolicyIDsActivated) {
+		return errors.Reason("issue comments: got %v want %v", len(comments), 2+len(bug.ExpectedPolicyIDsActivated)).Err()
 	}
 	for _, expectedContent := range bug.ExpectedContent {
 		if !strings.Contains(issue.Comments[0].Content, expectedContent) {
@@ -2114,8 +2132,14 @@ func expectMonorailBug(monorailStore *monorail.FakeIssuesStore, bug monorailBug)
 		}
 	}
 	expectedLink := fmt.Sprintf("https://luci-analysis-test.appspot.com/b/%s/%v", bug.Project, bug.ID)
-	if !strings.Contains(issue.Comments[1].Content, expectedLink) {
+	if !strings.Contains(comments[1].Content, expectedLink) {
 		return errors.Reason("issue comment #2: got %q, expected it to contain %q", issue.Comments[1].Content, expectedLink).Err()
+	}
+	for i, activatedPolicyID := range bug.ExpectedPolicyIDsActivated {
+		expectedContent := fmt.Sprintf("(Policy ID: %s)", activatedPolicyID)
+		if !strings.Contains(comments[2+i].Content, expectedContent) {
+			return errors.Reason("issue comment %v: got %q, expected it to contain %q", i+1, comments[2+i].Content, expectedContent).Err()
+		}
 	}
 	return nil
 }

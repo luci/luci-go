@@ -12,41 +12,58 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package template constructs comments for bug filing policies.
-package template
+package policy
 
 import (
-	"bytes"
+	"strings"
 	"text/template"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
 	"go.chromium.org/luci/common/errors"
 )
 
+// templateMaxOutputBytes is the maximum number of bytes that a template should
+// produce. This limit is enforced strictly at config validation time and
+// loosely (actual size may be 2x larger) at runtime.
+const templateMaxOutputBytes = 10_000
+
 // Template is a template for bug comments.
 type Template struct {
 	template *template.Template
 }
 
-// Parse parses the given template source.
-func Parse(t string) (*Template, error) {
+// ParseTemplate parses the given template source.
+func ParseTemplate(t string) (Template, error) {
 	templ, err := template.New("comment_template").Parse(t)
 	if err != nil {
-		return nil, err
+		return Template{}, err
 	}
-	return &Template{templ}, nil
+	return Template{templ}, nil
+}
+
+// Execute executes the template.
+func (t *Template) Execute(input TemplateInput) (string, error) {
+	var b strings.Builder
+	err := t.template.Execute(&b, input)
+	if err != nil {
+		return "", errors.Annotate(err, "execute").Err()
+	}
+	if b.Len() > 2*templateMaxOutputBytes {
+		return "", errors.Reason("template produced %v bytes of output, which exceeds the limit of %v bytes", b.Len(), 2*templateMaxOutputBytes).Err()
+	}
+	return b.String(), nil
 }
 
 // Validate validates the template.
-func (t *Template) Validate() error {
+func (t Template) Validate() error {
 	type testCase struct {
 		name  string
-		input *TemplateInput
+		input TemplateInput
 	}
 	testCases := []testCase{
 		{
 			name: "buganizer",
-			input: &TemplateInput{
+			input: TemplateInput{
 				RuleURL: "https://luci-analysis-deployment/some/url",
 				BugID: BugID{
 					id: bugs.BugID{
@@ -57,7 +74,7 @@ func (t *Template) Validate() error {
 			},
 		}, {
 			name: "monorail",
-			input: &TemplateInput{
+			input: TemplateInput{
 				RuleURL: "https://luci-analysis-deployment/some/url",
 				BugID: BugID{
 					id: bugs.BugID{
@@ -71,7 +88,7 @@ func (t *Template) Validate() error {
 			// Reserve the ability to extend to other bug-filing systems; the
 			// template should handle this gracefully.
 			name: "neither buganizer nor monorail",
-			input: &TemplateInput{
+			input: TemplateInput{
 				RuleURL: "https://luci-analysis-deployment/some/url",
 				BugID: BugID{
 					id: bugs.BugID{
@@ -83,13 +100,13 @@ func (t *Template) Validate() error {
 		},
 	}
 	for _, tc := range testCases {
-		var b bytes.Buffer
+		var b strings.Builder
 		err := t.template.Execute(&b, tc.input)
 		if err != nil {
 			return errors.Annotate(err, "test case %q", tc.name).Err()
 		}
-		if b.Len() > 10000 {
-			return errors.Reason("test case %q: template produced more than 10,000 bytes of output", tc.name).Err()
+		if b.Len() > templateMaxOutputBytes {
+			return errors.Reason("test case %q: template produced %v bytes of output, which exceeds the limit of %v bytes", tc.name, b.Len(), templateMaxOutputBytes).Err()
 		}
 	}
 	return nil
@@ -104,6 +121,11 @@ type TemplateInput struct {
 	BugID BugID
 }
 
+// NewBugID initializes a new BugID.
+func NewBugID(id bugs.BugID) BugID {
+	return BugID{id: id}
+}
+
 // BugID wraps the bugs.BugID type so we do not couple the interface the
 // seen by a project's bug template to our implementation details.
 // We want full control over the interface the template sees to ensure
@@ -114,19 +136,19 @@ type BugID struct {
 }
 
 // IsBuganizer returns whether the bug is a Buganizer bug.
-func (b *BugID) IsBuganizer() bool {
+func (b BugID) IsBuganizer() bool {
 	return b.id.System == bugs.BuganizerSystem
 }
 
 // IsMonorail returns whether the bug is a monorail bug.
-func (b *BugID) IsMonorail() bool {
+func (b BugID) IsMonorail() bool {
 	return b.id.System == bugs.MonorailSystem
 }
 
 // MonorailProject returns the monorail project for a bug.
 // (e.g. "chromium" for crbug.com/123456).
 // Errors if the bug is not a monorail bug.
-func (b *BugID) MonorailProject() (string, error) {
+func (b BugID) MonorailProject() (string, error) {
 	project, _, err := b.id.MonorailProjectAndID()
 	return project, err
 }
@@ -134,7 +156,7 @@ func (b *BugID) MonorailProject() (string, error) {
 // MonorailBugID returns the monorail ID for a bug
 // (e.g. "123456" for crbug.com/123456).
 // Errors if the bug is not a monorail bug.
-func (b *BugID) MonorailBugID() (string, error) {
+func (b BugID) MonorailBugID() (string, error) {
 	_, id, err := b.id.MonorailProjectAndID()
 	return id, err
 }
@@ -142,7 +164,7 @@ func (b *BugID) MonorailBugID() (string, error) {
 // BuganizerBugID returns the buganizer ID for a bug.
 // E.g. "123456" for "b/123456".
 // Errors if the bug is not a buganizer bug.
-func (b *BugID) BuganizerBugID() (string, error) {
+func (b BugID) BuganizerBugID() (string, error) {
 	if b.id.System != bugs.BuganizerSystem {
 		return "", errors.New("not a buganizer bug")
 	}

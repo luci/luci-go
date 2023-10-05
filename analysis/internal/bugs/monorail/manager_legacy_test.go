@@ -108,7 +108,8 @@ func TestManagerLegacy(t *testing.T) {
 
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResembleProto, bugs.BugCreateResponse{
-					ID: "chromium/100",
+					ID:                        "chromium/100",
+					PolicyActivationsNotified: map[string]struct{}{},
 				})
 				So(len(f.Issues), ShouldEqual, 1)
 				issue := f.Issues[0]
@@ -135,7 +136,8 @@ func TestManagerLegacy(t *testing.T) {
 
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResembleProto, bugs.BugCreateResponse{
-					ID: "chromium/100",
+					ID:                        "chromium/100",
+					PolicyActivationsNotified: map[string]struct{}{},
 				})
 				So(len(f.Issues), ShouldEqual, 1)
 				issue := f.Issues[0]
@@ -159,7 +161,8 @@ func TestManagerLegacy(t *testing.T) {
 
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResembleProto, bugs.BugCreateResponse{
-					ID: "chromium/100",
+					ID:                        "chromium/100",
+					PolicyActivationsNotified: map[string]struct{}{},
 				})
 				So(len(f.Issues), ShouldEqual, 1)
 				issue := f.Issues[0]
@@ -175,8 +178,9 @@ func TestManagerLegacy(t *testing.T) {
 
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResembleProto, bugs.BugCreateResponse{
-					Simulated: true,
-					ID:        "chromium/12345678",
+					Simulated:                 true,
+					ID:                        "chromium/12345678",
+					PolicyActivationsNotified: map[string]struct{}{},
 				})
 				So(len(f.Issues), ShouldEqual, 0)
 			})
@@ -187,7 +191,8 @@ func TestManagerLegacy(t *testing.T) {
 
 			response := bm.Create(ctx, c)
 			So(response, ShouldResembleProto, bugs.BugCreateResponse{
-				ID: "chromium/100",
+				ID:                        "chromium/100",
+				PolicyActivationsNotified: map[string]struct{}{},
 			})
 			So(len(f.Issues), ShouldEqual, 1)
 			So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "2")

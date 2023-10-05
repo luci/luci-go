@@ -54,7 +54,8 @@ func TestBugManagerLegacy(t *testing.T) {
 			},
 		}
 
-		bm := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false)
+		bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false)
+		So(err, ShouldBeNil)
 		now := time.Date(2044, time.April, 4, 4, 4, 4, 4, time.UTC)
 		ctx, tc := testclock.UseTime(ctx, now)
 
@@ -104,7 +105,8 @@ func TestBugManagerLegacy(t *testing.T) {
 				Convey("Happy path", func() {
 					response := bm.Create(ctx, createRequest)
 					So(response, ShouldResemble, bugs.BugCreateResponse{
-						ID: "1",
+						ID:                        "1",
+						PolicyActivationsNotified: map[string]struct{}{},
 					})
 					So(len(fakeStore.Issues), ShouldEqual, 1)
 
@@ -118,7 +120,8 @@ func TestBugManagerLegacy(t *testing.T) {
 					fakeClient.UpdateCommentError = status.Errorf(codes.PermissionDenied, "modification not allowed")
 					response := bm.Create(ctx, createRequest)
 					So(response, ShouldResemble, bugs.BugCreateResponse{
-						ID: "1",
+						ID:                        "1",
+						PolicyActivationsNotified: map[string]struct{}{},
 					})
 					So(len(fakeStore.Issues), ShouldEqual, 1)
 
@@ -154,7 +157,8 @@ func TestBugManagerLegacy(t *testing.T) {
 
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
-					ID: "1",
+					ID:                        "1",
+					PolicyActivationsNotified: map[string]struct{}{},
 				})
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
@@ -168,8 +172,9 @@ func TestBugManagerLegacy(t *testing.T) {
 				bm.Simulate = true
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
-					ID:        "123456",
-					Simulated: true,
+					Simulated:                 true,
+					ID:                        "123456",
+					PolicyActivationsNotified: map[string]struct{}{},
 				})
 				So(len(fakeStore.Issues), ShouldEqual, 0)
 			})
@@ -178,7 +183,8 @@ func TestBugManagerLegacy(t *testing.T) {
 				createRequest.BuganizerComponent = 7890
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
-					ID: "1",
+					ID:                        "1",
+					PolicyActivationsNotified: map[string]struct{}{},
 				})
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
@@ -190,7 +196,8 @@ func TestBugManagerLegacy(t *testing.T) {
 				// TODO: Mock permission call to fail.
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
-					ID: "1",
+					ID:                        "1",
+					PolicyActivationsNotified: map[string]struct{}{},
 				})
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
@@ -207,7 +214,8 @@ func TestBugManagerLegacy(t *testing.T) {
 				ctx = context.WithValue(ctx, &BuganizerTestModeKey, true)
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
-					ID: "1",
+					ID:                        "1",
+					PolicyActivationsNotified: map[string]struct{}{},
 				})
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
@@ -220,7 +228,8 @@ func TestBugManagerLegacy(t *testing.T) {
 			c.Metrics = bugs.P2Impact()
 			response := bm.Create(ctx, c)
 			So(response, ShouldResemble, bugs.BugCreateResponse{
-				ID: "1",
+				ID:                        "1",
+				PolicyActivationsNotified: map[string]struct{}{},
 			})
 			So(len(fakeStore.Issues), ShouldEqual, 1)
 			So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P2)

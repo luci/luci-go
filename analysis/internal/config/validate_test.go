@@ -1046,7 +1046,7 @@ func TestProjectConfigValidator(t *testing.T) {
 					})
 					Convey("invalid - non-ASCII characters", func() {
 						bugTemplate.CommentTemplate = "\x00"
-						So(validate(project, cfg), ShouldErrLike, `(`+path+`): does not match pattern "^[[:print:]]+$"`)
+						So(validate(project, cfg), ShouldErrLike, `(`+path+`): does not match pattern "^[[:print:]\n]+$"`)
 					})
 					Convey("invalid - bad field reference", func() {
 						bugTemplate.CommentTemplate = "{{.FieldNotExisting}}"
@@ -1072,7 +1072,7 @@ func TestProjectConfigValidator(t *testing.T) {
 
 						err := validate(project, cfg)
 						So(err, ShouldErrLike, `(`+path+`): validate template: `)
-						So(err, ShouldErrLike, `template produced more than 10,000 bytes of output`)
+						So(err, ShouldErrLike, `template produced 10100 bytes of output, which exceeds the limit of 10000 bytes`)
 					})
 					Convey("invalid - does not handle monorail bug", func() {
 						// Unqualified access of Buganizer Bug ID without checking bug type.
