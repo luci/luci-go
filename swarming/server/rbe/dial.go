@@ -16,6 +16,7 @@ package rbe
 
 import (
 	"context"
+	"fmt"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
@@ -25,11 +26,17 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/server/auth"
+
+	"go.chromium.org/luci/swarming/internal/remoteworkers"
 )
 
 // Instructs the gRPC client how to retry.
-const retryPolicy = `{
+var retryPolicy = fmt.Sprintf(`{
   "methodConfig": [{
+    "name": [
+      {"service": "%s"},
+      {"service": "%s"}
+    ],
     "waitForReady": true,
     "retryPolicy": {
       "MaxAttempts": 5,
@@ -42,7 +49,10 @@ const retryPolicy = `{
       ]
     }
   }]
-}`
+}`,
+	remoteworkers.Bots_ServiceDesc.ServiceName,
+	remoteworkers.Reservations_ServiceDesc.ServiceName,
+)
 
 // Dial dials RBE backend with proper authentication.
 //
