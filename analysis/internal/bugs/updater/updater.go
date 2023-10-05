@@ -889,10 +889,7 @@ func (b *BugUpdater) handleDuplicateBugHappyPath(ctx context.Context, duplicateD
 				sourceRule.IsManagingBug = false
 			}
 
-			// We do not need to reset
-			// sourceRule.BugManagementState.RuleAssociationNotified
-			// despite the change of bug as we will perform the notification
-			// immediately after this transaction.
+			sourceRule.BugManagementState.RuleAssociationNotified = false
 
 			ms, err := rules.Update(sourceRule, rules.UpdateOptions{
 				IsAuditableUpdate: true,
@@ -967,8 +964,13 @@ func (b *BugUpdater) handleDuplicateBugHappyPath(ctx context.Context, duplicateD
 		if err := b.updateDuplicateSource(ctx, request); err != nil {
 			return errors.Annotate(err, "updating source bug").Err()
 		}
-		if err := b.updateDuplicateDestination(ctx, destBug); err != nil {
-			return errors.Annotate(err, "updating destination bug %s", destBug).Err()
+		if !b.UsePolicyBasedManagement {
+			// With policy-based bug management, we use the standard rule
+			// attachment notifications to notify the destination bug
+			// it is attached to a rule.
+			if err := b.updateDuplicateDestination(ctx, destBug); err != nil {
+				return errors.Annotate(err, "updating destination bug %s", destBug).Err()
+			}
 		}
 	}
 

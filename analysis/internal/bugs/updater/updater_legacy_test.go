@@ -1422,8 +1422,9 @@ func TestLegacyUpdate(t *testing.T) {
 								So(err, ShouldBeNil)
 								expectedRules[0].BugID = bugs.BugID{System: bugs.BuganizerSystem, ID: "1234"}
 								expectedRules[0].IsManagingBug = false // The other rule should continue to manage the bug.
+								// Should reset notifications because of the change in associated bug.
+								expectedRules[0].BugManagementState.RuleAssociationNotified = false
 								for _, policyState := range expectedRules[0].BugManagementState.PolicyState {
-									// Should reset because of the change in associated bug.
 									policyState.ActivationNotified = false
 								}
 								expectedRules = append(expectedRules, extraRule)
@@ -1443,8 +1444,9 @@ func TestLegacyUpdate(t *testing.T) {
 								So(err, ShouldBeNil)
 								expectedRules[0].BugID = bugs.BugID{System: bugs.BuganizerSystem, ID: "1234"}
 								expectedRules[0].IsManagingBug = true
+								// Should reset notifications because of the change in associated bug.
+								expectedRules[0].BugManagementState.RuleAssociationNotified = false
 								for _, policyState := range expectedRules[0].BugManagementState.PolicyState {
-									// Should reset because of the change in associated bug.
 									policyState.ActivationNotified = false
 								}
 								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)

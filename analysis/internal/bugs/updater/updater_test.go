@@ -1647,8 +1647,7 @@ func TestUpdate(t *testing.T) {
 							So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
 							So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, expectedRules[2].RuleID)
 
-							So(issueTwo.Comments, ShouldHaveLength, issueTwoOriginalCommentCount+1)
-							So(issueTwo.Comments[issueTwoOriginalCommentCount].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
+							So(issueTwo.Comments, ShouldHaveLength, issueTwoOriginalCommentCount)
 						})
 						Convey("happy path, with comments for duplicate bugs disabled", func() {
 							// Setup
@@ -1708,8 +1707,9 @@ func TestUpdate(t *testing.T) {
 								So(err, ShouldBeNil)
 								expectedRules[0].BugID = bugs.BugID{System: bugs.BuganizerSystem, ID: "1234"}
 								expectedRules[0].IsManagingBug = false // The other rule should continue to manage the bug.
+								// Should reset because of the change in associated bug.
+								expectedRules[0].BugManagementState.RuleAssociationNotified = false
 								for _, policyState := range expectedRules[0].BugManagementState.PolicyState {
-									// Should reset because of the change in associated bug.
 									policyState.ActivationNotified = false
 								}
 								expectedRules = append(expectedRules, extraRule)
@@ -1729,8 +1729,9 @@ func TestUpdate(t *testing.T) {
 								So(err, ShouldBeNil)
 								expectedRules[0].BugID = bugs.BugID{System: bugs.BuganizerSystem, ID: "1234"}
 								expectedRules[0].IsManagingBug = true
+								// Should reset because of the change in associated bug.
+								expectedRules[0].BugManagementState.RuleAssociationNotified = false
 								for _, policyState := range expectedRules[0].BugManagementState.PolicyState {
-									// Should reset because of the change in associated bug.
 									policyState.ActivationNotified = false
 								}
 								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
@@ -1762,9 +1763,8 @@ func TestUpdate(t *testing.T) {
 								expectedRules[1].IsActive = false
 								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 
-								So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+2)
+								So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+1)
 								So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, "a cycle was detected in the bug merged-into graph")
-								So(issueOne.Comments[issueOneOriginalCommentCount+1].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
 							})
 							Convey("merged rule would be too long", func() {
 								// Setup
@@ -1883,8 +1883,7 @@ func TestUpdate(t *testing.T) {
 							So(issueOne.Comments[issueOneOriginalCommentCount].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
 							So(issueOne.Comments[issueOneOriginalCommentCount].Content, ShouldContainSubstring, issueOneRule.RuleID)
 
-							So(issueTwo.Comments, ShouldHaveLength, issueTwoOriginalCommentCount+1)
-							So(issueTwo.Comments[issueTwoOriginalCommentCount].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
+							So(issueTwo.Comments, ShouldHaveLength, issueTwoOriginalCommentCount)
 						})
 						Convey("error case", func() {
 							// Note that this is a simple cycle with only two bugs.
@@ -1909,9 +1908,8 @@ func TestUpdate(t *testing.T) {
 							issueTwoRule.IsActive = false
 							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 
-							So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+2)
+							So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+1)
 							So(issueOne.Comments[issueOneOriginalCommentCount].Content, ShouldContainSubstring, "a cycle was detected in the bug merged-into graph")
-							So(issueOne.Comments[issueOneOriginalCommentCount+1].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
 						})
 					})
 					Convey("monorail to buganizer", func() {
@@ -1943,8 +1941,7 @@ func TestUpdate(t *testing.T) {
 							So(issueOne.Comments[issueOneOriginalCommentCount].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
 							So(issueOne.Comments[issueOneOriginalCommentCount].Content, ShouldContainSubstring, issueOneRule.RuleID)
 
-							So(issueTwo.Comments, ShouldHaveLength, issueTwoOriginalCommentCount+1)
-							So(issueTwo.Comments[issueTwoOriginalCommentCount].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
+							So(issueTwo.Comments, ShouldHaveLength, issueTwoOriginalCommentCount)
 						})
 					})
 				})
