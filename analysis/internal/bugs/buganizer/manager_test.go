@@ -81,7 +81,7 @@ func TestBugManager(t *testing.T) {
 
 		Convey("Create", func() {
 			createRequest := newCreateRequest()
-			createRequest.ActivePolicyIDs = map[string]struct{}{
+			createRequest.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
 				"policy-a": {}, // P4
 			}
 			expectedIssue := &issuetracker.Issue{
@@ -126,7 +126,7 @@ func TestBugManager(t *testing.T) {
 					response := bm.Create(ctx, createRequest)
 					So(response, ShouldResemble, bugs.BugCreateResponse{
 						ID: "1",
-						PolicyActivationsNotified: map[string]struct{}{
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 							"policy-a": {},
 						},
 					})
@@ -135,6 +135,7 @@ func TestBugManager(t *testing.T) {
 					issueData := fakeStore.Issues[1]
 					So(issueData.Issue, ShouldResembleProto, expectedIssue)
 					So(len(issueData.Comments), ShouldEqual, 2)
+					// Expect the policy A activation comment to appear.
 					So(issueData.Comments[1].Comment, ShouldStartWith, "Policy ID: policy-a")
 				})
 				Convey("Policy has no comment template", func() {
@@ -146,7 +147,7 @@ func TestBugManager(t *testing.T) {
 					response := bm.Create(ctx, createRequest)
 					So(response, ShouldResemble, bugs.BugCreateResponse{
 						ID: "1",
-						PolicyActivationsNotified: map[string]struct{}{
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 							"policy-a": {},
 						},
 					})
@@ -158,7 +159,7 @@ func TestBugManager(t *testing.T) {
 					So(len(issueData.Comments), ShouldEqual, 1)
 				})
 				Convey("Multiple policies activated", func() {
-					createRequest.ActivePolicyIDs = map[string]struct{}{
+					createRequest.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
 						"policy-a": {}, // P4
 						"policy-b": {}, // P0
 						"policy-c": {}, // P1
@@ -172,7 +173,7 @@ func TestBugManager(t *testing.T) {
 					// Verify
 					So(response, ShouldResemble, bugs.BugCreateResponse{
 						ID: "1",
-						PolicyActivationsNotified: map[string]struct{}{
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 							"policy-a": {},
 							"policy-b": {},
 							"policy-c": {},
@@ -197,7 +198,7 @@ func TestBugManager(t *testing.T) {
 					// Verify
 					So(response, ShouldResemble, bugs.BugCreateResponse{
 						ID: "1",
-						PolicyActivationsNotified: map[string]struct{}{
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 							"policy-a": {},
 						},
 					})
@@ -259,7 +260,7 @@ func TestBugManager(t *testing.T) {
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
 					ID: "1",
-					PolicyActivationsNotified: map[string]struct{}{
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 						"policy-a": {},
 					},
 				})
@@ -278,7 +279,7 @@ func TestBugManager(t *testing.T) {
 				So(response, ShouldResemble, bugs.BugCreateResponse{
 					Simulated: true,
 					ID:        "123456",
-					PolicyActivationsNotified: map[string]struct{}{
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 						"policy-a": {},
 					},
 				})
@@ -290,7 +291,7 @@ func TestBugManager(t *testing.T) {
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
 					ID: "1",
-					PolicyActivationsNotified: map[string]struct{}{
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 						"policy-a": {},
 					},
 				})
@@ -305,7 +306,7 @@ func TestBugManager(t *testing.T) {
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
 					ID: "1",
-					PolicyActivationsNotified: map[string]struct{}{
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 						"policy-a": {},
 					},
 				})
@@ -326,7 +327,7 @@ func TestBugManager(t *testing.T) {
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
 					ID: "1",
-					PolicyActivationsNotified: map[string]struct{}{
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 						"policy-a": {},
 					},
 				})
@@ -341,14 +342,14 @@ func TestBugManager(t *testing.T) {
 		})
 		Convey("Update", func() {
 			c := newCreateRequest()
-			c.ActivePolicyIDs = map[string]struct{}{
+			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
 				"policy-a": {}, // P4
 				"policy-c": {}, // P1
 			}
 			response := bm.Create(ctx, c)
 			So(response, ShouldResemble, bugs.BugCreateResponse{
 				ID: "1",
-				PolicyActivationsNotified: map[string]struct{}{
+				PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 					"policy-a": {},
 					"policy-c": {},
 				},
@@ -365,15 +366,18 @@ func TestBugManager(t *testing.T) {
 					"policy-a": { // P4
 						IsActive:           true,
 						LastActivationTime: timestamppb.New(activationTime),
+						ActivationNotified: true,
 					},
 					"policy-b": { // P0
 						IsActive:             false,
 						LastActivationTime:   timestamppb.New(activationTime.Add(-time.Hour)),
 						LastDeactivationTime: timestamppb.New(activationTime),
+						ActivationNotified:   false,
 					},
 					"policy-c": { // P1
 						IsActive:           true,
 						LastActivationTime: timestamppb.New(activationTime),
+						ActivationNotified: true,
 					},
 				},
 			}
@@ -389,7 +393,11 @@ func TestBugManager(t *testing.T) {
 				},
 			}
 			expectedResponse := []bugs.BugUpdateResponse{
-				{IsDuplicate: false},
+				{
+					IsDuplicate:               false,
+					ShouldArchive:             false,
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
+				},
 			}
 			verifyUpdateDoesNothing := func() error {
 				oldTime := timestamppb.New(fakeStore.Issues[1].Issue.ModifiedTime.AsTime())
@@ -421,8 +429,9 @@ func TestBugManager(t *testing.T) {
 				}
 				expectedResponse = []bugs.BugUpdateResponse{
 					{
-						IsDuplicate:   false,
-						ShouldArchive: false,
+						IsDuplicate:               false,
+						ShouldArchive:             false,
+						PolicyActivationsNotified: make(map[bugs.PolicyID]struct{}),
 					},
 				}
 				response, err := bm.Update(ctx, bugsToUpdate)
@@ -438,9 +447,40 @@ func TestBugManager(t *testing.T) {
 				bugsToUpdate[0].BugManagementState.PolicyState["policy-c"].IsActive = false
 				bugsToUpdate[0].BugManagementState.PolicyState["policy-c"].LastDeactivationTime = timestamppb.New(activationTime.Add(time.Hour))
 
-				Convey("Does not update bug if IsManagingBug false", func() {
+				Convey("Does not update bug priority/verified if IsManagingBug false", func() {
 					bugsToUpdate[0].IsManagingBug = false
 
+					So(verifyUpdateDoesNothing(), ShouldBeNil)
+				})
+				Convey("Notifies policy activation, even if IsManagingBug false", func() {
+					bugsToUpdate[0].IsManagingBug = false
+
+					// Activate policy B (P0).
+					bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].IsActive = true
+					bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].LastActivationTime = timestamppb.New(activationTime.Add(time.Hour))
+
+					expectedResponse[0].PolicyActivationsNotified = map[bugs.PolicyID]struct{}{
+						"policy-b": {},
+					}
+
+					// Act
+					response, err := bm.Update(ctx, bugsToUpdate)
+
+					// Verify
+					So(err, ShouldBeNil)
+					So(response, ShouldResemble, expectedResponse)
+
+					// Bug priority should NOT be increased to P0, because IsManagingBug is false.
+					So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldNotEqual, issuetracker.Issue_P0)
+
+					// Expect the policy B activation comment to appear.
+					So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
+					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
+						"Policy ID: policy-b")
+
+					// Verify repeated update has no effect.
+					bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].ActivationNotified = true
+					expectedResponse[0].PolicyActivationsNotified = map[bugs.PolicyID]struct{}{}
 					So(verifyUpdateDoesNothing(), ShouldBeNil)
 				})
 				Convey("Reduces priority in response to policies de-activating", func() {
@@ -465,9 +505,13 @@ func TestBugManager(t *testing.T) {
 					So(verifyUpdateDoesNothing(), ShouldBeNil)
 				})
 				Convey("Increases priority in response to priority policies activating", func() {
-					// Activates policy B (P0).
+					// Activate policy B (P0).
 					bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].IsActive = true
 					bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].LastActivationTime = timestamppb.New(activationTime.Add(time.Hour))
+
+					expectedResponse[0].PolicyActivationsNotified = map[bugs.PolicyID]struct{}{
+						"policy-b": {},
+					}
 
 					// Act
 					response, err := bm.Update(ctx, bugsToUpdate)
@@ -476,14 +520,17 @@ func TestBugManager(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(response, ShouldResemble, expectedResponse)
 					So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P0)
-					So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
+					So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+2)
+					// Expect the policy B activation comment to appear, followed by the priority update comment.
 					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
+						"Policy ID: policy-b")
+					So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring,
 						"Because the following problem(s) have started:\n"+
 							"- Problem B (P0)\n"+
 							"The bug priority has been increased from P1 to P0.")
-					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
+					So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/help#priority-update")
-					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
+					So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/b/1")
 
 					// Verify repeated update has no effect.
@@ -623,7 +670,8 @@ func TestBugManager(t *testing.T) {
 
 						expectedResponse := []bugs.BugUpdateResponse{
 							{
-								ShouldArchive: true,
+								ShouldArchive:             true,
+								PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 							},
 						}
 						tc.Add(time.Minute * 2)
@@ -637,6 +685,9 @@ func TestBugManager(t *testing.T) {
 						// policy-b has priority P0.
 						bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].IsActive = true
 						bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].LastActivationTime = timestamppb.New(activationTime.Add(2 * time.Hour))
+						bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].ActivationNotified = true
+
+						originalCommentCount := len(fakeStore.Issues[1].Comments)
 
 						Convey("Issue has owner", func() {
 							fakeStore.Issues[1].Issue.IssueState.Assignee = &issuetracker.User{
@@ -653,11 +704,11 @@ func TestBugManager(t *testing.T) {
 							expectedComment := "Because the following problem(s) have started:\n" +
 								"- Problem B (P0)\n" +
 								"The bug has been re-opened as P0."
-							So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+2)
-							So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring, expectedComment)
-							So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring,
+							So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
+							So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring, expectedComment)
+							So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/help#bug-reopened")
-							So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring,
+							So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/b/1")
 
 							// Verify repeated update has no effect.
@@ -676,13 +727,13 @@ func TestBugManager(t *testing.T) {
 							expectedComment := "Because the following problem(s) have started:\n" +
 								"- Problem B (P0)\n" +
 								"The bug has been re-opened as P0."
-							So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+2)
-							So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring, expectedComment)
-							So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring,
+							So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
+							So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring, expectedComment)
+							So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/help#priority-update")
-							So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring,
+							So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/help#bug-reopened")
-							So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring,
+							So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/b/1")
 
 							// Verify repeated update has no effect.
@@ -695,7 +746,8 @@ func TestBugManager(t *testing.T) {
 				fakeStore.Issues[1].Issue.IssueState.Status = issuetracker.Issue_DUPLICATE
 				expectedResponse := []bugs.BugUpdateResponse{
 					{
-						IsDuplicate: true,
+						IsDuplicate:               true,
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 					},
 				}
 
@@ -715,7 +767,8 @@ func TestBugManager(t *testing.T) {
 
 				expectedResponse := []bugs.BugUpdateResponse{
 					{
-						ShouldArchive: true,
+						ShouldArchive:             true,
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 					},
 				}
 				originalTime := timestamppb.New(fakeStore.Issues[1].Issue.ModifiedTime.AsTime())
@@ -745,7 +798,8 @@ func TestBugManager(t *testing.T) {
 
 				expectedResponse := []bugs.BugUpdateResponse{
 					{
-						ShouldArchive: true,
+						ShouldArchive:             true,
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 					},
 				}
 
@@ -767,11 +821,11 @@ func TestBugManager(t *testing.T) {
 		Convey("GetMergedInto", func() {
 			c := newCreateRequest()
 			c.Metrics = bugs.P2Impact()
-			c.ActivePolicyIDs = map[string]struct{}{"policy-a": {}}
+			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{"policy-a": {}}
 			response := bm.Create(ctx, c)
 			So(response, ShouldResemble, bugs.BugCreateResponse{
 				ID: "1",
-				PolicyActivationsNotified: map[string]struct{}{
+				PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 					"policy-a": {},
 				},
 			})
@@ -803,11 +857,11 @@ func TestBugManager(t *testing.T) {
 		Convey("UpdateDuplicateSource", func() {
 			c := newCreateRequest()
 			c.Metrics = bugs.P2Impact()
-			c.ActivePolicyIDs = map[string]struct{}{"policy-a": {}}
+			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{"policy-a": {}}
 			response := bm.Create(ctx, c)
 			So(response, ShouldResemble, bugs.BugCreateResponse{
 				ID: "1",
-				PolicyActivationsNotified: map[string]struct{}{
+				PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 					"policy-a": {},
 				},
 			})
@@ -871,13 +925,13 @@ func TestBugManager(t *testing.T) {
 		Convey("UpdateDuplicateDestination", func() {
 			c := newCreateRequest()
 			c.Metrics = bugs.P2Impact()
-			c.ActivePolicyIDs = map[string]struct{}{
+			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
 				"policy-a": {},
 			}
 			response := bm.Create(ctx, c)
 			So(response, ShouldResemble, bugs.BugCreateResponse{
 				ID: "1",
-				PolicyActivationsNotified: map[string]struct{}{
+				PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 					"policy-a": {},
 				},
 			})

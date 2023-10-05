@@ -948,6 +948,7 @@ func TestUpdate(t *testing.T) {
 						// The policy should be inactive from previous setup.
 						expectedPolicyState := expectedRules[1].BugManagementState.PolicyState["cls-rejected-policy"]
 						So(expectedPolicyState.IsActive, ShouldBeFalse)
+						So(expectedPolicyState.ActivationNotified, ShouldBeFalse)
 
 						// Update metrics so that policy should activate.
 						bugClusters[1].MetricValues[metrics.HumanClsFailedPresubmit.ID] = metrics.TimewiseCounts{
@@ -956,6 +957,10 @@ func TestUpdate(t *testing.T) {
 							SevenDay: metrics.Counts{Residual: 10},
 						}
 
+						issue := buganizerStore.Issues[2]
+						So(expectedRules[1].BugID, ShouldResemble, bugs.BugID{System: bugs.BuganizerSystem, ID: "2"})
+						existingCommentCount := len(issue.Comments)
+
 						// Act
 						err = updateBugsForProject(ctx, opts)
 
@@ -963,7 +968,15 @@ func TestUpdate(t *testing.T) {
 						So(err, ShouldBeNil)
 						expectedPolicyState.IsActive = true
 						expectedPolicyState.LastActivationTime = timestamppb.New(opts.runTimestamp)
+						expectedPolicyState.ActivationNotified = true
 						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+
+						// Expect comments to be posted.
+						So(issue.Comments, ShouldHaveLength, existingCommentCount+2)
+						So(issue.Comments[2].Comment, ShouldContainSubstring,
+							"Why LUCI Analysis posted this comment: https://luci-analysis-test.appspot.com/help#policy-activated (Policy ID: cls-rejected-policy)")
+						So(issue.Comments[3].Comment, ShouldContainSubstring,
+							"The bug priority has been increased from P2 to P1.")
 					})
 					Convey("policy remains active if deactivation threshold unmet", func() {
 						// The policy should already be active from previous setup.
@@ -1055,6 +1068,7 @@ func TestUpdate(t *testing.T) {
 						Convey("priority updates to reflect active policies", func() {
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
 							So(originalPriority, ShouldNotEqual, issuetracker.Issue_P1)
 
 							// Act
@@ -1068,6 +1082,7 @@ func TestUpdate(t *testing.T) {
 						Convey("disabling IsManagingBugPriority prevents priority updates", func() {
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
 
 							// Set IsManagingBugPriority to false on the rule.
 							rule.IsManagingBugPriority = false
@@ -1090,6 +1105,7 @@ func TestUpdate(t *testing.T) {
 						Convey("manually setting a priority prevents bug updates", func() {
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
 
 							issue.IssueUpdates = append(issue.IssueUpdates, &issuetracker.IssueUpdate{
 								Author: &issuetracker.User{
@@ -1137,14 +1153,12 @@ func TestUpdate(t *testing.T) {
 								// we may get stuck in a loop where we comment on the bug every
 								// time bug filing runs.
 
-								// Trigger a priority update for another bug in addition to the
+								// Trigger a priority update for bug 2 in addition to the
 								// manual priority update.
 								SetResidualMetrics(bugClusters[1], bugs.ClusterMetrics{
 									metrics.CriticalFailuresExonerated.ID: bugs.MetricValues{OneDay: 100},
 									metrics.HumanClsFailedPresubmit.ID:    bugs.MetricValues{SevenDay: 10},
 								})
-								expectedRules[1].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-								expectedRules[1].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
 
 								// But prevent LUCI Analysis from applying that priority update, due to an error.
 								modifyError := errors.New("this issue may not be modified")
@@ -1154,12 +1168,25 @@ func TestUpdate(t *testing.T) {
 								err = updateBugsForProject(ctx, opts)
 
 								// Verify
-								So(err, ShouldNotBeNil)
 
-								// The error modifying the other bug is bubbled up.
+								// The error modifying bug 2 is bubbled up.
+								So(err, ShouldNotBeNil)
 								So(errors.Is(err, modifyError), ShouldBeTrue)
 
-								// Nonetheless, our bug was commented on updated and
+								// The policy on the bug 2 was activated, and we notified
+								// bug 2 of the policy activation, even if we did
+								// not succeed then updating its priority.
+								// Furthermore, we record that we notified the policy
+								// activation, so repeated notifications do not occur.
+								expectedRules[1].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
+								expectedRules[1].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+								expectedRules[1].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
+
+								otherIssue := buganizerStore.Issues[2]
+								So(otherIssue.Comments[len(otherIssue.Comments)-1].Comment, ShouldContainSubstring,
+									"Why LUCI Analysis posted this comment: https://luci-analysis-test.appspot.com/help#policy-activated (Policy ID: cls-rejected-policy)")
+
+								// Despite the issue with bug 2, bug 1 was commented on updated and
 								// IsManagingBugPriority was set to false.
 								expectedRules[0].IsManagingBugPriority = false
 								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
@@ -1283,6 +1310,7 @@ func TestUpdate(t *testing.T) {
 						Convey("priority updates to reflect active policies", func() {
 							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
 							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
 							So(originalPriority, ShouldNotEqual, "1")
 
 							// Act
@@ -1297,6 +1325,7 @@ func TestUpdate(t *testing.T) {
 						Convey("disabling IsManagingBugPriority prevents priority updates", func() {
 							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
 							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
 
 							// Set IsManagingBugPriority to false on the rule.
 							rule.IsManagingBugPriority = false
@@ -1319,6 +1348,7 @@ func TestUpdate(t *testing.T) {
 						Convey("manually setting a priority prevents bug updates", func() {
 							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
 							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
 
 							// Create a fake client to interact with monorail as a user.
 							userClient, err := monorail.NewClient(monorail.UseFakeIssuesClient(ctx, monorailStore, "user@google.com"), "myhost")

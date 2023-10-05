@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package policy
+package bugs
 
 import (
 	"fmt"
 
-	"go.chromium.org/luci/analysis/internal/bugs"
 	"go.chromium.org/luci/analysis/internal/clustering"
 )
 
@@ -45,7 +44,7 @@ func NewIssueDescriptionLegacy(description *clustering.ClusterDescription, uiBas
 		fmt.Sprintf("Was this bug filed in the wrong component? See: %s", ComponentSelectionHelpURL(uiBaseURL)),
 	}
 
-	return bugs.Commentary{
+	return Commentary{
 		Bodies:  bodies,
 		Footers: footers,
 	}.ToComment()

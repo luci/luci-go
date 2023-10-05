@@ -137,7 +137,7 @@ func NewBugManager(client Client,
 func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRequest) bugs.BugCreateResponse {
 	var response bugs.BugCreateResponse
 	response.Simulated = bm.Simulate
-	response.PolicyActivationsNotified = make(map[string]struct{})
+	response.PolicyActivationsNotified = make(map[bugs.PolicyID]struct{})
 
 	componentID := bm.projectCfg.Buganizer.DefaultComponent.Id
 	buganizerTestMode := ctx.Value(&BuganizerTestModeKey)
@@ -240,13 +240,29 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 		}
 	}
 
-	// Notify policies which have activated, in descending priority order.
-	policyIDsToNotify := bm.requestGenerator.SortPolicyIDsByPriorityDescending(createRequest.ActivePolicyIDs)
-	for _, policyID := range policyIDsToNotify {
+	response.PolicyActivationsNotified, err = bm.notifyPolicyActivation(ctx, issueID, createRequest.ActivePolicyIDs)
+	if err != nil {
+		response.Error = errors.Annotate(err, "notify policy activations").Err()
+		return response
+	}
+
+	return response
+}
+
+// notifyPolicyActivation notifies that the given policies have activated.
+//
+// This method supports partial success; it returns the set of policies
+// which were successfully notified even if an error is encountered and
+// returned.
+func (bm *BugManager) notifyPolicyActivation(ctx context.Context, issueID int64, policyIDsToNotify map[bugs.PolicyID]struct{}) (map[bugs.PolicyID]struct{}, error) {
+	policiesNotified := make(map[bugs.PolicyID]struct{})
+
+	// Notify policies which have activated in descending priority order.
+	sortedPolicyIDToNotify := bm.requestGenerator.SortPolicyIDsByPriorityDescending(policyIDsToNotify)
+	for _, policyID := range sortedPolicyIDToNotify {
 		commentRequest, err := bm.requestGenerator.PreparePolicyActivatedComment(issueID, policyID)
 		if err != nil {
-			response.Error = errors.Annotate(err, "prepare policy activated comment for policy %q", policyID).Err()
-			return response
+			return policiesNotified, errors.Annotate(err, "prepare comment for policy %q", policyID).Err()
 		}
 		if commentRequest != nil {
 			// Only post a comment if the policy has specified one.
@@ -254,16 +270,14 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 				logging.Debugf(ctx, "Would post comment on Buganizer issue: %s", textPBMultiline.Format(commentRequest))
 			} else {
 				if _, err := bm.client.CreateIssueComment(ctx, commentRequest); err != nil {
-					response.Error = errors.Annotate(err, "post policy activated comment for policy %q", policyID).Err()
-					return response
+					return policiesNotified, errors.Annotate(err, "post comment for policy %q", policyID).Err()
 				}
 			}
 		}
 		// Policy activation successfully notified.
-		response.PolicyActivationsNotified[policyID] = struct{}{}
+		policiesNotified[policyID] = struct{}{}
 	}
-
-	return response
+	return policiesNotified, nil
 }
 
 // Update updates the issues in Buganizer.
@@ -292,9 +306,10 @@ func (bm *BugManager) Update(ctx context.Context, requests []bugs.BugUpdateReque
 			// or we have no permission to access it.
 			// Take no action.
 			responses = append(responses, bugs.BugUpdateResponse{
-				IsDuplicate:            false,
-				IsDuplicateAndAssigned: false,
-				ShouldArchive:          false,
+				IsDuplicate:               false,
+				IsDuplicateAndAssigned:    false,
+				ShouldArchive:             false,
+				PolicyActivationsNotified: make(map[bugs.PolicyID]struct{}),
 			})
 			logging.Warningf(ctx, "Buganizer issue %s not found or we don't have permission to access it, skipping.", request.Bug.ID)
 			continue
@@ -315,6 +330,9 @@ func (bm *BugManager) Update(ctx context.Context, requests []bugs.BugUpdateReque
 // updateIssue updates the given issue, adjusting its priority,
 // and verify or unverifying it.
 func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateRequest, issue *issuetracker.Issue) bugs.BugUpdateResponse {
+	var response bugs.BugUpdateResponse
+	response.PolicyActivationsNotified = map[bugs.PolicyID]struct{}{}
+
 	// If the context times out part way through an update, we do
 	// not know if our bug update succeeded (but we have not received the
 	// success response back from Buganizer yet) or the bug update failed.
@@ -338,24 +356,29 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 	// likelihood of either happening by ensuring we have at least one minute
 	// of time available.
 	if err := bugs.EnsureTimeToDeadline(ctx, time.Minute); err != nil {
-		return bugs.BugUpdateResponse{
-			Error: err,
-		}
+		response.Error = err
+		return response
 	}
 
-	updateResponse := bugs.BugUpdateResponse{
-		ShouldArchive:              shouldArchiveRule(ctx, issue, request.IsManagingBug),
-		DisableRulePriorityUpdates: false,
-	}
+	response.ShouldArchive = shouldArchiveRule(ctx, issue, request.IsManagingBug)
 	if issue.IssueState.Status == issuetracker.Issue_DUPLICATE {
-		updateResponse.IsDuplicate = true
-		updateResponse.IsDuplicateAndAssigned = issue.IssueState.Assignee != nil
+		response.IsDuplicate = true
+		response.IsDuplicateAndAssigned = issue.IssueState.Assignee != nil
 	}
 
-	if !updateResponse.IsDuplicate &&
-		!updateResponse.ShouldArchive &&
-		request.IsManagingBug {
-		if bm.requestGenerator.NeedsPriorityOrVerifiedUpdate(request.BugManagementState, issue, request.IsManagingBugPriority) {
+	if !response.IsDuplicate && !response.ShouldArchive {
+		// Identify which policies have activated for the first time and notify them.
+		policyIDsToNotify := bugs.ActivePoliciesPendingNotification(request.BugManagementState)
+
+		var err error
+		response.PolicyActivationsNotified, err = bm.notifyPolicyActivation(ctx, issue.IssueId, policyIDsToNotify)
+		if err != nil {
+			response.Error = errors.Annotate(err, "notify policy activations").Err()
+			return response
+		}
+
+		// Apply priority/verified updates.
+		if request.IsManagingBug && bm.requestGenerator.NeedsPriorityOrVerifiedUpdate(request.BugManagementState, issue, request.IsManagingBugPriority) {
 			// List issue updates.
 			listUpdatesRequest := &issuetracker.ListIssueUpdatesRequest{
 				IssueId: issue.IssueId,
@@ -365,9 +388,8 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 			// Determine if bug priority manually set. This involves listing issue comments.
 			hasManuallySetPriority, err := bm.hasManuallySetPriority(it, bm.selfEmail, request.IsManagingBugPriorityLastUpdated)
 			if err != nil {
-				return bugs.BugUpdateResponse{
-					Error: errors.Annotate(err, "determine if priority manually set").Err(),
-				}
+				response.Error = errors.Annotate(err, "determine if priority manually set").Err()
+				return response
 			}
 			mur, err := bm.requestGenerator.MakePriorityOrVerifiedUpdate(ctx, MakeUpdateOptions{
 				BugManagementState:     request.BugManagementState,
@@ -376,24 +398,23 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 				HasManuallySetPriority: hasManuallySetPriority,
 			})
 			if err != nil {
-				return bugs.BugUpdateResponse{
-					Error: errors.Annotate(err, "create update request for issue").Err(),
-				}
+				response.Error = errors.Annotate(err, "create update request for issue").Err()
+				return response
 			}
 			if bm.Simulate {
 				logging.Debugf(ctx, "Would update Buganizer issue: %s", textPBMultiline.Format(mur.request))
 			} else {
 				if _, err := bm.client.ModifyIssue(ctx, mur.request); err != nil {
-					return bugs.BugUpdateResponse{
-						Error: errors.Annotate(err, "update Buganizer issue").Err(),
-					}
+					response.Error = errors.Annotate(err, "update Buganizer issue").Err()
+					return response
 				}
 				bugs.BugsUpdatedCounter.Add(ctx, 1, bm.project, "buganizer")
 			}
-			updateResponse.DisableRulePriorityUpdates = mur.disablePriorityUpdates
+			response.DisableRulePriorityUpdates = mur.disablePriorityUpdates
 		}
 	}
-	return updateResponse
+
+	return response
 }
 
 // updateIssueLegacy updates the given issue, adjusting its priority,
@@ -404,6 +425,7 @@ func (bm *BugManager) updateIssueLegacy(ctx context.Context, request bugs.BugUpd
 	updateResponse := bugs.BugUpdateResponse{
 		ShouldArchive:              shouldArchiveRule(ctx, issue, request.IsManagingBug),
 		DisableRulePriorityUpdates: false,
+		PolicyActivationsNotified:  map[bugs.PolicyID]struct{}{},
 	}
 	if issue.IssueState.Status == issuetracker.Issue_DUPLICATE {
 		updateResponse.IsDuplicate = true

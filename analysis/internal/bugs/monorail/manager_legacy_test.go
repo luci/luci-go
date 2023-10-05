@@ -109,7 +109,7 @@ func TestManagerLegacy(t *testing.T) {
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResembleProto, bugs.BugCreateResponse{
 					ID:                        "chromium/100",
-					PolicyActivationsNotified: map[string]struct{}{},
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 				})
 				So(len(f.Issues), ShouldEqual, 1)
 				issue := f.Issues[0]
@@ -137,7 +137,7 @@ func TestManagerLegacy(t *testing.T) {
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResembleProto, bugs.BugCreateResponse{
 					ID:                        "chromium/100",
-					PolicyActivationsNotified: map[string]struct{}{},
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 				})
 				So(len(f.Issues), ShouldEqual, 1)
 				issue := f.Issues[0]
@@ -162,7 +162,7 @@ func TestManagerLegacy(t *testing.T) {
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResembleProto, bugs.BugCreateResponse{
 					ID:                        "chromium/100",
-					PolicyActivationsNotified: map[string]struct{}{},
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 				})
 				So(len(f.Issues), ShouldEqual, 1)
 				issue := f.Issues[0]
@@ -180,7 +180,7 @@ func TestManagerLegacy(t *testing.T) {
 				So(response, ShouldResembleProto, bugs.BugCreateResponse{
 					Simulated:                 true,
 					ID:                        "chromium/12345678",
-					PolicyActivationsNotified: map[string]struct{}{},
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 				})
 				So(len(f.Issues), ShouldEqual, 0)
 			})
@@ -192,7 +192,7 @@ func TestManagerLegacy(t *testing.T) {
 			response := bm.Create(ctx, c)
 			So(response, ShouldResembleProto, bugs.BugCreateResponse{
 				ID:                        "chromium/100",
-				PolicyActivationsNotified: map[string]struct{}{},
+				PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 			})
 			So(len(f.Issues), ShouldEqual, 1)
 			So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "2")
@@ -207,7 +207,10 @@ func TestManagerLegacy(t *testing.T) {
 				},
 			}
 			expectedResponse := []bugs.BugUpdateResponse{
-				{IsDuplicate: false},
+				{
+					IsDuplicate:               false,
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
+				},
 			}
 			updateDoesNothing := func() {
 				originalIssues := CopyIssuesStore(f)
@@ -412,7 +415,8 @@ func TestManagerLegacy(t *testing.T) {
 
 						expectedResponse := []bugs.BugUpdateResponse{
 							{
-								ShouldArchive: true,
+								ShouldArchive:             true,
+								PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 							},
 						}
 						originalIssues := CopyIssuesStore(f)
@@ -497,7 +501,8 @@ func TestManagerLegacy(t *testing.T) {
 
 				expectedResponse := []bugs.BugUpdateResponse{
 					{
-						IsDuplicate: true,
+						IsDuplicate:               true,
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 					},
 				}
 				originalIssues := CopyIssuesStore(f)
@@ -514,7 +519,8 @@ func TestManagerLegacy(t *testing.T) {
 
 				expectedResponse := []bugs.BugUpdateResponse{
 					{
-						ShouldArchive: true,
+						ShouldArchive:             true,
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 					},
 				}
 				originalIssues := CopyIssuesStore(f)
@@ -539,7 +545,8 @@ func TestManagerLegacy(t *testing.T) {
 
 				expectedResponse := []bugs.BugUpdateResponse{
 					{
-						ShouldArchive: true,
+						ShouldArchive:             true,
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 					},
 				}
 				originalIssues := CopyIssuesStore(f)

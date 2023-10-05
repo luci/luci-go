@@ -106,7 +106,7 @@ func TestBugManagerLegacy(t *testing.T) {
 					response := bm.Create(ctx, createRequest)
 					So(response, ShouldResemble, bugs.BugCreateResponse{
 						ID:                        "1",
-						PolicyActivationsNotified: map[string]struct{}{},
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 					})
 					So(len(fakeStore.Issues), ShouldEqual, 1)
 
@@ -121,7 +121,7 @@ func TestBugManagerLegacy(t *testing.T) {
 					response := bm.Create(ctx, createRequest)
 					So(response, ShouldResemble, bugs.BugCreateResponse{
 						ID:                        "1",
-						PolicyActivationsNotified: map[string]struct{}{},
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 					})
 					So(len(fakeStore.Issues), ShouldEqual, 1)
 
@@ -158,7 +158,7 @@ func TestBugManagerLegacy(t *testing.T) {
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
 					ID:                        "1",
-					PolicyActivationsNotified: map[string]struct{}{},
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 				})
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
@@ -174,7 +174,7 @@ func TestBugManagerLegacy(t *testing.T) {
 				So(response, ShouldResemble, bugs.BugCreateResponse{
 					Simulated:                 true,
 					ID:                        "123456",
-					PolicyActivationsNotified: map[string]struct{}{},
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 				})
 				So(len(fakeStore.Issues), ShouldEqual, 0)
 			})
@@ -184,7 +184,7 @@ func TestBugManagerLegacy(t *testing.T) {
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
 					ID:                        "1",
-					PolicyActivationsNotified: map[string]struct{}{},
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 				})
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
@@ -197,7 +197,7 @@ func TestBugManagerLegacy(t *testing.T) {
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
 					ID:                        "1",
-					PolicyActivationsNotified: map[string]struct{}{},
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 				})
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
@@ -215,7 +215,7 @@ func TestBugManagerLegacy(t *testing.T) {
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
 					ID:                        "1",
-					PolicyActivationsNotified: map[string]struct{}{},
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 				})
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
@@ -229,7 +229,7 @@ func TestBugManagerLegacy(t *testing.T) {
 			response := bm.Create(ctx, c)
 			So(response, ShouldResemble, bugs.BugCreateResponse{
 				ID:                        "1",
-				PolicyActivationsNotified: map[string]struct{}{},
+				PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 			})
 			So(len(fakeStore.Issues), ShouldEqual, 1)
 			So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P2)
@@ -244,7 +244,10 @@ func TestBugManagerLegacy(t *testing.T) {
 				},
 			}
 			expectedResponse := []bugs.BugUpdateResponse{
-				{IsDuplicate: false},
+				{
+					IsDuplicate:               false,
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
+				},
 			}
 			updateDoesNothing := func() {
 				oldTime := timestamppb.New(fakeStore.Issues[1].Issue.ModifiedTime.AsTime())
@@ -268,14 +271,14 @@ func TestBugManagerLegacy(t *testing.T) {
 				}
 				expectedResponse = []bugs.BugUpdateResponse{
 					{
-						IsDuplicate:   false,
-						ShouldArchive: false,
+						IsDuplicate:               false,
+						ShouldArchive:             false,
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 					},
 				}
 				response, err := bm.Update(ctx, bugsToUpdate)
 				So(err, ShouldBeNil)
 				So(response, ShouldResemble, expectedResponse)
-
 			})
 
 			Convey("If impact unchanged, does nothing", func() {
@@ -471,7 +474,8 @@ func TestBugManagerLegacy(t *testing.T) {
 
 						expectedResponse := []bugs.BugUpdateResponse{
 							{
-								ShouldArchive: true,
+								ShouldArchive:             true,
+								PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 							},
 						}
 						tc.Add(time.Minute * 2)
@@ -552,8 +556,9 @@ func TestBugManagerLegacy(t *testing.T) {
 				Convey("Unassigned", func() {
 					expectedResponse := []bugs.BugUpdateResponse{
 						{
-							IsDuplicate:            true,
-							IsDuplicateAndAssigned: false,
+							IsDuplicate:               true,
+							IsDuplicateAndAssigned:    false,
+							PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 						},
 					}
 					response, err := bm.Update(ctx, bugsToUpdate)
@@ -567,8 +572,9 @@ func TestBugManagerLegacy(t *testing.T) {
 					}
 					expectedResponse := []bugs.BugUpdateResponse{
 						{
-							IsDuplicate:            true,
-							IsDuplicateAndAssigned: true,
+							IsDuplicate:               true,
+							IsDuplicateAndAssigned:    true,
+							PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 						},
 					}
 					response, err := bm.Update(ctx, bugsToUpdate)
@@ -585,7 +591,8 @@ func TestBugManagerLegacy(t *testing.T) {
 
 				expectedResponse := []bugs.BugUpdateResponse{
 					{
-						ShouldArchive: true,
+						ShouldArchive:             true,
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 					},
 				}
 				originalTime := timestamppb.New(fakeStore.Issues[1].Issue.ModifiedTime.AsTime())
@@ -611,7 +618,8 @@ func TestBugManagerLegacy(t *testing.T) {
 
 				expectedResponse := []bugs.BugUpdateResponse{
 					{
-						ShouldArchive: true,
+						ShouldArchive:             true,
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 					},
 				}
 				response, err := bm.Update(ctx, bugsToUpdate)

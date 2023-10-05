@@ -105,7 +105,7 @@ func TestManager(t *testing.T) {
 
 		Convey("Create", func() {
 			createRequest := NewCreateRequest()
-			createRequest.ActivePolicyIDs = map[string]struct{}{
+			createRequest.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
 				"policy-a": {}, // P4
 			}
 
@@ -169,7 +169,7 @@ func TestManager(t *testing.T) {
 					// Verify
 					So(response, ShouldResemble, bugs.BugCreateResponse{
 						ID: "chromium/100",
-						PolicyActivationsNotified: map[string]struct{}{
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 							"policy-a": {},
 						},
 					})
@@ -196,7 +196,7 @@ func TestManager(t *testing.T) {
 					// Verify
 					So(response, ShouldResemble, bugs.BugCreateResponse{
 						ID: "chromium/100",
-						PolicyActivationsNotified: map[string]struct{}{
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 							"policy-a": {},
 						},
 					})
@@ -211,7 +211,7 @@ func TestManager(t *testing.T) {
 					So(issue.NotifyCount, ShouldEqual, 1)
 				})
 				Convey("Multiple policies activated", func() {
-					createRequest.ActivePolicyIDs = map[string]struct{}{
+					createRequest.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
 						"policy-a": {}, // P4
 						"policy-b": {}, // P0
 						"policy-c": {}, // P1
@@ -225,7 +225,7 @@ func TestManager(t *testing.T) {
 					// Verify
 					So(response, ShouldResemble, bugs.BugCreateResponse{
 						ID: "chromium/100",
-						PolicyActivationsNotified: map[string]struct{}{
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 							"policy-a": {},
 							"policy-b": {},
 							"policy-c": {},
@@ -287,7 +287,7 @@ func TestManager(t *testing.T) {
 				// Verify
 				So(response, ShouldResemble, bugs.BugCreateResponse{
 					ID: "chromium/100",
-					PolicyActivationsNotified: map[string]struct{}{
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 						"policy-a": {},
 					},
 				})
@@ -308,7 +308,7 @@ func TestManager(t *testing.T) {
 				response := bm.Create(ctx, createRequest)
 				So(response, ShouldResemble, bugs.BugCreateResponse{
 					ID: "chromium/100",
-					PolicyActivationsNotified: map[string]struct{}{
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 						"policy-a": {},
 					},
 				})
@@ -328,7 +328,7 @@ func TestManager(t *testing.T) {
 				So(response, ShouldResemble, bugs.BugCreateResponse{
 					Simulated: true,
 					ID:        "chromium/12345678",
-					PolicyActivationsNotified: map[string]struct{}{
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 						"policy-a": {},
 					},
 				})
@@ -337,14 +337,14 @@ func TestManager(t *testing.T) {
 		})
 		Convey("Update", func() {
 			c := NewCreateRequest()
-			c.ActivePolicyIDs = map[string]struct{}{
+			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
 				"policy-a": {}, // P4
 				"policy-c": {}, // P1
 			}
 			response := bm.Create(ctx, c)
 			So(response, ShouldResemble, bugs.BugCreateResponse{
 				ID: "chromium/100",
-				PolicyActivationsNotified: map[string]struct{}{
+				PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 					"policy-a": {},
 					"policy-c": {},
 				},
@@ -361,15 +361,18 @@ func TestManager(t *testing.T) {
 					"policy-a": { // P4
 						IsActive:           true,
 						LastActivationTime: timestamppb.New(activationTime),
+						ActivationNotified: true,
 					},
 					"policy-b": { // P0
 						IsActive:             false,
 						LastActivationTime:   timestamppb.New(activationTime.Add(-time.Hour)),
 						LastDeactivationTime: timestamppb.New(activationTime),
+						ActivationNotified:   false,
 					},
 					"policy-c": { // P1
 						IsActive:           true,
 						LastActivationTime: timestamppb.New(activationTime),
+						ActivationNotified: true,
 					},
 				},
 			}
@@ -385,7 +388,10 @@ func TestManager(t *testing.T) {
 				},
 			}
 			expectedResponse := []bugs.BugUpdateResponse{
-				{IsDuplicate: false},
+				{
+					IsDuplicate:               false,
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
+				},
 			}
 			verifyUpdateDoesNothing := func() error {
 				originalIssues := CopyIssuesStore(f)
@@ -416,9 +422,45 @@ func TestManager(t *testing.T) {
 				bugsToUpdate[0].BugManagementState.PolicyState["policy-c"].IsActive = false
 				bugsToUpdate[0].BugManagementState.PolicyState["policy-c"].LastDeactivationTime = timestamppb.New(activationTime.Add(time.Hour))
 
-				Convey("Does not update bug if IsManagingBug false", func() {
+				Convey("Does not update bug priority/verified if IsManagingBug false", func() {
 					bugsToUpdate[0].IsManagingBug = false
 
+					So(verifyUpdateDoesNothing(), ShouldBeNil)
+				})
+				Convey("Notifies policy activation, even if IsManagingBug false", func() {
+					bugsToUpdate[0].IsManagingBug = false
+
+					// Activates policy B (P0) for the first time.
+					bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].IsActive = true
+					bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].LastActivationTime = timestamppb.New(activationTime.Add(time.Hour))
+
+					expectedResponse[0].PolicyActivationsNotified = map[bugs.PolicyID]struct{}{
+						"policy-b": {},
+					}
+
+					originalNotifyCount := f.Issues[0].NotifyCount
+
+					// Act
+					response, err := bm.Update(ctx, bugsToUpdate)
+
+					// Verify
+					So(err, ShouldBeNil)
+					So(response, ShouldResemble, expectedResponse)
+
+					// Priority was NOT raised to P0, because IsManagingBug is false.
+					So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldNotEqual, "0")
+
+					// Expect the policy B activation comment to appear.
+					So(f.Issues[0].Comments, ShouldHaveLength, originalCommentCount+1)
+					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldStartWith,
+						"Policy ID: policy-b")
+
+					// The policy activation was notified.
+					So(f.Issues[0].NotifyCount, ShouldEqual, originalNotifyCount+1)
+
+					// Verify repeated update has no effect.
+					bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].ActivationNotified = true
+					expectedResponse[0].PolicyActivationsNotified = map[bugs.PolicyID]struct{}{}
 					So(verifyUpdateDoesNothing(), ShouldBeNil)
 				})
 				Convey("Reduces priority in response to policies de-activating", func() {
@@ -452,6 +494,10 @@ func TestManager(t *testing.T) {
 					bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].IsActive = true
 					bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].LastActivationTime = timestamppb.New(activationTime.Add(time.Hour))
 
+					expectedResponse[0].PolicyActivationsNotified = map[bugs.PolicyID]struct{}{
+						"policy-b": {},
+					}
+
 					originalNotifyCount := f.Issues[0].NotifyCount
 
 					// Act
@@ -461,20 +507,25 @@ func TestManager(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(response, ShouldResemble, expectedResponse)
 					So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "0")
-					So(f.Issues[0].Comments, ShouldHaveLength, originalCommentCount+1)
-					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments, ShouldHaveLength, originalCommentCount+2)
+					// Expect the policy B activation comment to appear, followed by the priority update comment.
+					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldStartWith,
+						"Policy ID: policy-b")
+					So(f.Issues[0].Comments[originalCommentCount+1].Content, ShouldContainSubstring,
 						"Because the following problem(s) have started:\n"+
 							"- Problem B (P0)\n"+
 							"The bug priority has been increased from P1 to P0.")
-					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments[originalCommentCount+1].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/help#priority-update")
-					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments[originalCommentCount+1].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/b/chromium/100")
 
-					// Notified the increase.
-					So(f.Issues[0].NotifyCount, ShouldEqual, originalNotifyCount+1)
+					// Notified the policy activation, and the priority increase.
+					So(f.Issues[0].NotifyCount, ShouldEqual, originalNotifyCount+2)
 
 					// Verify repeated update has no effect.
+					bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].ActivationNotified = true
+					expectedResponse[0].PolicyActivationsNotified = map[bugs.PolicyID]struct{}{}
 					So(verifyUpdateDoesNothing(), ShouldBeNil)
 				})
 				Convey("Does not adjust priority if priority manually set", func() {
@@ -587,7 +638,8 @@ func TestManager(t *testing.T) {
 
 						expectedResponse := []bugs.BugUpdateResponse{
 							{
-								ShouldArchive: true,
+								ShouldArchive:             true,
+								PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 							},
 						}
 						originalIssues := CopyIssuesStore(f)
@@ -605,6 +657,7 @@ func TestManager(t *testing.T) {
 						// policy-b has priority P0.
 						bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].IsActive = true
 						bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].LastActivationTime = timestamppb.New(activationTime.Add(2 * time.Hour))
+						bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].ActivationNotified = true
 
 						Convey("Issue has owner", func() {
 							// Update issue owner.
@@ -612,7 +665,6 @@ func TestManager(t *testing.T) {
 							err = usercl.ModifyIssues(ctx, updateReq)
 							So(err, ShouldBeNil)
 							So(f.Issues[0].Issue.Owner.GetUser(), ShouldEqual, "users/100")
-							expectedResponse[0].IsDuplicateAndAssigned = true
 							originalCommentCount = len(f.Issues[0].Comments)
 
 							// Issue should return to "Assigned" status.
@@ -672,18 +724,44 @@ func TestManager(t *testing.T) {
 				f.Issues[0].Issue.Status.Status = DuplicateStatus
 				expectedResponse := []bugs.BugUpdateResponse{
 					{
-						IsDuplicate: true,
+						IsDuplicate:               true,
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 					},
 				}
-				originalIssues := CopyIssuesStore(f)
+				Convey("Issue has no assignee", func() {
+					f.Issues[0].Issue.Owner = nil
 
-				// Act
-				response, err := bm.Update(ctx, bugsToUpdate)
+					// As there is no assignee.
+					expectedResponse[0].IsDuplicateAndAssigned = false
 
-				// Verify
-				So(err, ShouldBeNil)
-				So(response, ShouldResemble, expectedResponse)
-				So(f, ShouldResembleProto, originalIssues)
+					originalIssues := CopyIssuesStore(f)
+
+					// Act
+					response, err := bm.Update(ctx, bugsToUpdate)
+
+					// Verify
+					So(err, ShouldBeNil)
+					So(response, ShouldResemble, expectedResponse)
+					So(f, ShouldResembleProto, originalIssues)
+				})
+				Convey("Issue has owner", func() {
+					f.Issues[0].Issue.Owner = &mpb.Issue_UserValue{
+						User: "users/100",
+					}
+
+					// As we have an assignee.
+					expectedResponse[0].IsDuplicateAndAssigned = true
+
+					originalIssues := CopyIssuesStore(f)
+
+					// Act
+					response, err := bm.Update(ctx, bugsToUpdate)
+
+					// Verify
+					So(err, ShouldBeNil)
+					So(response, ShouldResemble, expectedResponse)
+					So(f, ShouldResembleProto, originalIssues)
+				})
 			})
 			Convey("Rule not managing a bug archived after 30 days of the bug being in any closed state", func() {
 				tc.Add(time.Hour * 24 * 30)
@@ -693,7 +771,8 @@ func TestManager(t *testing.T) {
 
 				expectedResponse := []bugs.BugUpdateResponse{
 					{
-						ShouldArchive: true,
+						ShouldArchive:             true,
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 					},
 				}
 				originalIssues := CopyIssuesStore(f)
@@ -722,7 +801,8 @@ func TestManager(t *testing.T) {
 
 				expectedResponse := []bugs.BugUpdateResponse{
 					{
-						ShouldArchive: true,
+						ShouldArchive:             true,
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 					},
 				}
 				originalIssues := CopyIssuesStore(f)
@@ -743,13 +823,13 @@ func TestManager(t *testing.T) {
 		Convey("GetMergedInto", func() {
 			c := NewCreateRequest()
 			c.Metrics = bugs.P2Impact()
-			c.ActivePolicyIDs = map[string]struct{}{
+			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
 				"policy-a": {},
 			}
 			response := bm.Create(ctx, c)
 			So(response, ShouldResemble, bugs.BugCreateResponse{
 				ID: "chromium/100",
-				PolicyActivationsNotified: map[string]struct{}{
+				PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 					"policy-a": {},
 				},
 			})
@@ -798,13 +878,13 @@ func TestManager(t *testing.T) {
 		Convey("UpdateDuplicateSource", func() {
 			c := NewCreateRequest()
 			c.Metrics = bugs.P2Impact()
-			c.ActivePolicyIDs = map[string]struct{}{
+			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
 				"policy-a": {},
 			}
 			response := bm.Create(ctx, c)
 			So(response, ShouldResemble, bugs.BugCreateResponse{
 				ID: "chromium/100",
-				PolicyActivationsNotified: map[string]struct{}{
+				PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 					"policy-a": {},
 				},
 			})
@@ -853,13 +933,13 @@ func TestManager(t *testing.T) {
 		Convey("UpdateDuplicateDestination", func() {
 			c := NewCreateRequest()
 			c.Metrics = bugs.P2Impact()
-			c.ActivePolicyIDs = map[string]struct{}{
+			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
 				"policy-a": {},
 			}
 			response := bm.Create(ctx, c)
 			So(response, ShouldResemble, bugs.BugCreateResponse{
 				ID: "chromium/100",
-				PolicyActivationsNotified: map[string]struct{}{
+				PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 					"policy-a": {},
 				},
 			})

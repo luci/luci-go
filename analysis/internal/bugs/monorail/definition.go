@@ -25,7 +25,6 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/bugs"
 	mpb "go.chromium.org/luci/analysis/internal/bugs/monorail/api_proto"
-	"go.chromium.org/luci/analysis/internal/bugs/policy"
 	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	configpb "go.chromium.org/luci/analysis/proto/config"
@@ -101,7 +100,7 @@ type RequestGenerator struct {
 	// at which to re-open verified bugs.
 	bugFilingThresholds []*configpb.ImpactMetricThreshold
 	// The policy applyer instance used to apply bug management policy.
-	policyApplyer policy.Applyer
+	policyApplyer bugs.PolicyApplyer
 }
 
 // NewGenerator initialises a new Generator.
@@ -110,7 +109,7 @@ func NewGenerator(uiBaseURL, project string, projectCfg *configpb.ProjectConfig)
 		return nil, fmt.Errorf("invalid configuration for monorail project %q; no monorail priorities configured", projectCfg.Monorail.Project)
 	}
 	// Monorail projects have a floor priority of P3.
-	policyApplyer, err := policy.NewApplyer(projectCfg.BugManagement.GetPolicies(), configpb.BuganizerPriority_P3)
+	policyApplyer, err := bugs.NewPolicyApplyer(projectCfg.BugManagement.GetPolicies(), configpb.BuganizerPriority_P3)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +123,7 @@ func NewGenerator(uiBaseURL, project string, projectCfg *configpb.ProjectConfig)
 	}, nil
 }
 
-func (rg *RequestGenerator) PrepareNew(activePolicyIDs map[string]struct{}, description *clustering.ClusterDescription,
+func (rg *RequestGenerator) PrepareNew(activePolicyIDs map[bugs.PolicyID]struct{}, description *clustering.ClusterDescription,
 	components []string) (*mpb.MakeIssueRequest, error) {
 
 	priority, verified := rg.policyApplyer.RecommendedPriorityAndVerified(activePolicyIDs)
@@ -230,7 +229,7 @@ func (rg *RequestGenerator) PrepareNewLegacy(metrics bugs.ClusterMetrics, descri
 		Issue:  issue,
 		// Do not include the link to the rule in monorail initial comments,
 		// as we will post it in a follow-up comment.
-		Description: policy.NewIssueDescriptionLegacy(
+		Description: bugs.NewIssueDescriptionLegacy(
 			description, rg.uiBaseURL, thresholdComment, "" /* ruleLink */),
 		NotifyType: mpb.NotifyType_EMAIL,
 	}
@@ -240,7 +239,7 @@ func (rg *RequestGenerator) PrepareNewLegacy(metrics bugs.ClusterMetrics, descri
 // association rule in LUCI Analysis. bugName is the internal bug name,
 // e.g. "chromium/100".
 func (rg *RequestGenerator) linkToRuleComment(bugName string) string {
-	return fmt.Sprintf(bugs.LinkTemplate, policy.RuleForMonorailBugURL(rg.uiBaseURL, bugName))
+	return fmt.Sprintf(bugs.LinkTemplate, bugs.RuleForMonorailBugURL(rg.uiBaseURL, bugName))
 }
 
 // PrepareLinkComment prepares a request that adds links to LUCI Analysis to
@@ -268,17 +267,17 @@ func (rg *RequestGenerator) PrepareLinkComment(bugID string) (*mpb.ModifyIssuesR
 
 // SortPolicyIDsByPriorityDescending sorts policy IDs in descending
 // priority order (i.e. P0 policies first, then P1, then P2, ...).
-func (rg *RequestGenerator) SortPolicyIDsByPriorityDescending(policyIDs map[string]struct{}) []string {
+func (rg *RequestGenerator) SortPolicyIDsByPriorityDescending(policyIDs map[bugs.PolicyID]struct{}) []bugs.PolicyID {
 	return rg.policyApplyer.SortPolicyIDsByPriorityDescending(policyIDs)
 }
 
 // PreparePolicyActivatedComment prepares a request that notifies a bug that a policy
 // has activated for the first time.
 // This method returns nil if the policy has not specified any comment to post.
-func (rg *RequestGenerator) PreparePolicyActivatedComment(bugID string, policyID string) (*mpb.ModifyIssuesRequest, error) {
-	templateInput := policy.TemplateInput{
-		RuleURL: policy.RuleForMonorailBugURL(rg.uiBaseURL, bugID),
-		BugID:   policy.NewBugID(bugs.BugID{System: bugs.MonorailSystem, ID: bugID}),
+func (rg *RequestGenerator) PreparePolicyActivatedComment(bugID string, policyID bugs.PolicyID) (*mpb.ModifyIssuesRequest, error) {
+	templateInput := bugs.TemplateInput{
+		RuleURL: bugs.RuleForMonorailBugURL(rg.uiBaseURL, bugID),
+		BugID:   bugs.NewTemplateBugID(bugs.BugID{System: bugs.MonorailSystem, ID: bugID}),
 	}
 	comment, err := rg.policyApplyer.PolicyActivatedComment(policyID, rg.uiBaseURL, templateInput)
 	if err != nil {
@@ -339,7 +338,7 @@ func (rg *RequestGenerator) UpdateDuplicateSource(bugID, errorMessage, destinati
 		delta.UpdateMask.Paths = append(delta.UpdateMask.Paths, "status")
 		comment = strings.Join([]string{errorMessage, rg.linkToRuleComment(bugID)}, "\n\n")
 	} else {
-		bugLink := policy.RuleURL(rg.uiBaseURL, rg.project, destinationRuleID)
+		bugLink := bugs.RuleURL(rg.uiBaseURL, rg.project, destinationRuleID)
 		comment = fmt.Sprintf(bugs.SourceBugRuleUpdatedTemplate, bugLink)
 	}
 
@@ -394,7 +393,7 @@ func (rg *RequestGenerator) NeedsPriorityOrVerifiedUpdate(bms *bugspb.BugManagem
 		return false, nil
 	}
 
-	opts := policy.BugOptions{
+	opts := bugs.BugOptions{
 		State:              bms,
 		IsManagingPriority: isManagingBugPriority,
 		ExistingPriority:   priority,
@@ -511,7 +510,7 @@ func (rg *RequestGenerator) MakePriorityOrVerifiedUpdate(options MakeUpdateOptio
 	if err != nil {
 		return MakeUpdateResult{}, nil
 	}
-	opts := policy.BugOptions{
+	opts := bugs.BugOptions{
 		State:              options.BugManagementState,
 		IsManagingPriority: options.IsManagingBugPriority && !options.HasManuallySetPriority,
 		ExistingPriority:   priority,
@@ -565,7 +564,7 @@ func (rg *RequestGenerator) MakePriorityOrVerifiedUpdate(options MakeUpdateOptio
 		commentary = change.Justification
 	}
 	if options.HasManuallySetPriority {
-		commentary = bugs.MergeCommentary(commentary, policy.ManualPriorityUpdateCommentary())
+		commentary = bugs.MergeCommentary(commentary, bugs.ManualPriorityUpdateCommentary())
 	}
 
 	bugName, err := fromMonorailIssueName(options.Issue.Name)
@@ -621,7 +620,7 @@ func (rg *RequestGenerator) MakeUpdateLegacy(options MakeUpdateLegacyOptions) Ma
 		if options.HasManuallySetPriority {
 			// We were not the last to update the priority of this issue.
 			// We need to turn the flag isManagingBugPriority off on the rule.
-			comment := policy.ManualPriorityUpdateCommentary()
+			comment := bugs.ManualPriorityUpdateCommentary()
 			commentary = bugs.MergeCommentary(commentary, comment)
 			disablePriorityUpdates = true
 		} else {
@@ -676,7 +675,7 @@ func (rg *RequestGenerator) prepareBugVerifiedUpdate(metrics bugs.ClusterMetrics
 		body.WriteString(rg.priorityDecreaseJustification(oldPriorityIndex, newPriorityIndex))
 		body.WriteString("LUCI Analysis is marking the issue verified.")
 
-		trailer = fmt.Sprintf("Why issues are verified and how to stop automatic verification: %s", policy.BugVerifiedHelpURL(rg.uiBaseURL))
+		trailer = fmt.Sprintf("Why issues are verified and how to stop automatic verification: %s", bugs.BugVerifiedHelpURL(rg.uiBaseURL))
 	} else {
 		if issue.GetOwner().GetUser() != "" {
 			status = AssignedStatus
@@ -688,7 +687,7 @@ func (rg *RequestGenerator) prepareBugVerifiedUpdate(metrics bugs.ClusterMetrics
 		body.WriteString(bugs.ExplainThresholdsMet(metrics, rg.bugFilingThresholds))
 		body.WriteString("LUCI Analysis has re-opened the bug.")
 
-		trailer = fmt.Sprintf("Why issues are re-opened: %s", policy.BugReopenedHelpURL(rg.uiBaseURL))
+		trailer = fmt.Sprintf("Why issues are re-opened: %s", bugs.BugReopenedHelpURL(rg.uiBaseURL))
 	}
 	update.Issue.Status = &mpb.Issue_StatusValue{Status: status}
 	update.UpdateMask.Paths = append(update.UpdateMask.Paths, "status")
@@ -727,7 +726,7 @@ func (rg *RequestGenerator) preparePriorityUpdate(metrics bugs.ClusterMetrics, i
 	}
 	c := bugs.Commentary{
 		Bodies:  []string{body.String()},
-		Footers: []string{fmt.Sprintf("Why priority is updated: %s", policy.PriorityUpdatedHelpURL(rg.uiBaseURL))},
+		Footers: []string{fmt.Sprintf("Why priority is updated: %s", bugs.PriorityUpdatedHelpURL(rg.uiBaseURL))},
 	}
 	return c
 }

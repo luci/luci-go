@@ -86,7 +86,7 @@ func NewBugManager(client *Client, uiBaseURL, project string, projectCfg *config
 func (m *BugManager) Create(ctx context.Context, request bugs.BugCreateRequest) bugs.BugCreateResponse {
 	var response bugs.BugCreateResponse
 	response.Simulated = m.Simulate
-	response.PolicyActivationsNotified = make(map[string]struct{})
+	response.PolicyActivationsNotified = make(map[bugs.PolicyID]struct{})
 
 	components := request.MonorailComponents
 	components, err := m.filterToValidComponents(ctx, components)
@@ -142,26 +142,10 @@ func (m *BugManager) Create(ctx context.Context, request bugs.BugCreateRequest) 
 		}
 	}
 
-	// Notify policies which have activated, in descending priority order.
-	policyIDsToNotify := m.generator.SortPolicyIDsByPriorityDescending(request.ActivePolicyIDs)
-	for _, policyID := range policyIDsToNotify {
-		commentRequest, err := m.generator.PreparePolicyActivatedComment(bugID, policyID)
-		if err != nil {
-			response.Error = errors.Annotate(err, "prepare policy activated comment for policy %q", policyID).Err()
-			return response
-		}
-		if commentRequest != nil {
-			if m.Simulate {
-				logging.Debugf(ctx, "Would post comment on Buganizer issue: %s", textPBMultiline.Format(commentRequest))
-			} else {
-				if err := m.client.ModifyIssues(ctx, commentRequest); err != nil {
-					response.Error = errors.Annotate(err, "post policy activated comment for policy %q", policyID).Err()
-					return response
-				}
-			}
-		}
-		// Policy activation successfully notified.
-		response.PolicyActivationsNotified[policyID] = struct{}{}
+	response.PolicyActivationsNotified, err = m.notifyPolicyActivation(ctx, bugID, request.ActivePolicyIDs)
+	if err != nil {
+		response.Error = errors.Annotate(err, "notify policy activations").Err()
+		return response
 	}
 
 	return response
@@ -187,6 +171,37 @@ func (m *BugManager) filterToValidComponents(ctx context.Context, components []s
 	return result, nil
 }
 
+// notifyPolicyActivation notifies that the given policies have activated.
+//
+// This method supports partial success; it returns the set of policies
+// which were successfully notified even if an error is encountered and
+// returned.
+func (bm *BugManager) notifyPolicyActivation(ctx context.Context, bugID string, policyIDsToNotify map[bugs.PolicyID]struct{}) (map[bugs.PolicyID]struct{}, error) {
+	policiesNotified := make(map[bugs.PolicyID]struct{})
+
+	// Notify policies which have activated in descending priority order.
+	sortedPolicyIDToNotify := bm.generator.SortPolicyIDsByPriorityDescending(policyIDsToNotify)
+	for _, policyID := range sortedPolicyIDToNotify {
+		commentRequest, err := bm.generator.PreparePolicyActivatedComment(bugID, policyID)
+		if err != nil {
+			return policiesNotified, errors.Annotate(err, "prepare policy activated comment for policy %q", policyID).Err()
+		}
+		if commentRequest != nil {
+			// Only post a comment if the policy has specified one.
+			if bm.Simulate {
+				logging.Debugf(ctx, "Would post comment on Monorail issue: %s", textPBMultiline.Format(commentRequest))
+			} else {
+				if err := bm.client.ModifyIssues(ctx, commentRequest); err != nil {
+					return policiesNotified, errors.Annotate(err, "post policy activated comment for policy %q", policyID).Err()
+				}
+			}
+		}
+		// Policy activation successfully notified.
+		policiesNotified[policyID] = struct{}{}
+	}
+	return policiesNotified, nil
+}
+
 // Update updates the specified list of bugs.
 func (m *BugManager) Update(ctx context.Context, request []bugs.BugUpdateRequest) ([]bugs.BugUpdateResponse, error) {
 	// Fetch issues for bugs to update.
@@ -203,9 +218,10 @@ func (m *BugManager) Update(ctx context.Context, request []bugs.BugUpdateRequest
 			// to the monorail project configured for this project. Take
 			// no action.
 			responses = append(responses, bugs.BugUpdateResponse{
-				IsDuplicate:            false,
-				IsDuplicateAndAssigned: false,
-				ShouldArchive:          false,
+				IsDuplicate:               false,
+				IsDuplicateAndAssigned:    false,
+				ShouldArchive:             false,
+				PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 			})
 			logging.Warningf(ctx, "Monorail issue %s not found, skipping.", req.Bug.ID)
 			continue
@@ -223,6 +239,9 @@ func (m *BugManager) Update(ctx context.Context, request []bugs.BugUpdateRequest
 }
 
 func (m *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateRequest, issue *mpb.Issue) bugs.BugUpdateResponse {
+	var response bugs.BugUpdateResponse
+	response.PolicyActivationsNotified = map[bugs.PolicyID]struct{}{}
+
 	// If the context times out part way through an update, we do
 	// not know if our bug update succeeded (but we have not received the
 	// success response back from monorail yet) or the bug update failed.
@@ -246,29 +265,41 @@ func (m *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateRequ
 	// likelihood of either happening by ensuring we have at least one minute
 	// of time available.
 	if err := bugs.EnsureTimeToDeadline(ctx, time.Minute); err != nil {
-		return bugs.BugUpdateResponse{
-			Error: err,
-		}
+		response.Error = err
+		return response
 	}
 
-	isDuplicate := issue.Status.Status == DuplicateStatus
-	shouldArchive := shouldArchiveRule(ctx, issue, request.IsManagingBug)
-	isAssigned := issue.Owner.GetUser() != ""
-	disableRulePriorityUpdates := false
+	if issue.Status.Status == DuplicateStatus {
+		response.IsDuplicate = true
+		response.IsDuplicateAndAssigned = issue.Owner.GetUser() != ""
+	}
+	response.ShouldArchive = shouldArchiveRule(issue, clock.Now(ctx), request.IsManagingBug)
+	response.DisableRulePriorityUpdates = false // Set below if necessary.
 
-	if !isDuplicate && !shouldArchive && request.IsManagingBug {
+	if !response.IsDuplicate && !response.ShouldArchive {
+		// Identify which policies have activated for the first time and notify them.
+		policyIDsToNotify := bugs.ActivePoliciesPendingNotification(request.BugManagementState)
+
+		var err error
+		response.PolicyActivationsNotified, err = m.notifyPolicyActivation(ctx, request.Bug.ID, policyIDsToNotify)
+		if err != nil {
+			response.Error = errors.Annotate(err, "notify policy activations").Err()
+			return response
+		}
+
+		// Apply priority and verified updates, as necessary. This should occur
+		// after we have notified about policy activation, as that is the more
+		// logical order for someone reading the bug.
 		needsUpdate, err := m.generator.NeedsPriorityOrVerifiedUpdate(request.BugManagementState, issue, request.IsManagingBugPriority)
 		if err != nil {
-			return bugs.BugUpdateResponse{
-				Error: errors.Annotate(err, "determine if priority/verified update required").Err(),
-			}
+			response.Error = errors.Annotate(err, "determine if priority/verified update required").Err()
+			return response
 		}
-		if needsUpdate {
+		if request.IsManagingBug && needsUpdate {
 			comments, err := m.client.ListComments(ctx, issue.Name)
 			if err != nil {
-				return bugs.BugUpdateResponse{
-					Error: errors.Annotate(err, "list comments").Err(),
-				}
+				response.Error = errors.Annotate(err, "list comments").Err()
+				return response
 			}
 			hasManuallySetPriority := hasManuallySetPriority(comments, request.IsManagingBugPriorityLastUpdated)
 
@@ -283,7 +314,7 @@ func (m *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateRequ
 					Error: errors.Annotate(err, "prepare priority/verified update").Err(),
 				}
 			}
-			disableRulePriorityUpdates = mur.disableBugPriorityUpdates
+			response.DisableRulePriorityUpdates = mur.disableBugPriorityUpdates
 			if m.Simulate {
 				logging.Debugf(ctx, "Would update Monorail issue: %s", textPBMultiline.Format(mur.request))
 			} else {
@@ -296,17 +327,12 @@ func (m *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateRequ
 			}
 		}
 	}
-	return bugs.BugUpdateResponse{
-		IsDuplicate:                isDuplicate,
-		IsDuplicateAndAssigned:     isAssigned,
-		ShouldArchive:              shouldArchive && !isDuplicate,
-		DisableRulePriorityUpdates: disableRulePriorityUpdates,
-	}
+	return response
 }
 
 func (m *BugManager) updateIssueLegacy(ctx context.Context, request bugs.BugUpdateRequest, issue *mpb.Issue) bugs.BugUpdateResponse {
 	isDuplicate := issue.Status.Status == DuplicateStatus
-	shouldArchive := shouldArchiveRule(ctx, issue, request.IsManagingBug)
+	shouldArchive := shouldArchiveRule(issue, clock.Now(ctx), request.IsManagingBug)
 	isAssigned := issue.Owner.GetUser() != ""
 	disableRulePriorityUpdates := false
 
@@ -344,18 +370,18 @@ func (m *BugManager) updateIssueLegacy(ctx context.Context, request bugs.BugUpda
 		IsDuplicateAndAssigned:     isAssigned,
 		ShouldArchive:              shouldArchive && !isDuplicate,
 		DisableRulePriorityUpdates: disableRulePriorityUpdates,
+		PolicyActivationsNotified:  map[bugs.PolicyID]struct{}{},
 	}
 }
 
 // shouldArchiveRule determines if the rule managing the given issue should
 // be archived.
-func shouldArchiveRule(ctx context.Context, issue *mpb.Issue, isManaging bool) bool {
+func shouldArchiveRule(issue *mpb.Issue, now time.Time, isManaging bool) bool {
 	// If the bug is set to a status like "Archived", immediately archive
 	// the rule as well. We should not re-open such a bug.
 	if _, ok := ArchivedStatuses[issue.Status.Status]; ok {
 		return true
 	}
-	now := clock.Now(ctx)
 	if isManaging {
 		// If LUCI Analysis is managing the bug,
 		// more than 30 days since the issue was verified.

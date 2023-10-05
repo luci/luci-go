@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bugs"
-	"go.chromium.org/luci/analysis/internal/bugs/policy"
 	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms"
@@ -200,7 +199,7 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 		var thresholds []*configpb.ImpactMetricThreshold
 		if b.UsePolicyBasedManagement {
 			for _, p := range b.projectCfg.Config.BugManagement.GetPolicies() {
-				thresholds = append(thresholds, policy.ActivationThresholds(p)...)
+				thresholds = append(thresholds, bugs.ActivationThresholds(p)...)
 			}
 		} else {
 			thresholds = append(thresholds, b.projectCfg.Config.BugFilingThresholds...)
@@ -404,7 +403,7 @@ func (b *BugUpdater) updateBugManagementStateBatch(ctx context.Context, rulesAnd
 			// If metrics data is valid (e.g. no reclustering in progress).
 			if clusterMetrics != nil {
 				// Update which policies are active.
-				updatedBugManagementState, changed := policy.UpdatePolicyActivations(r.BugManagementState, b.projectCfg.Config.BugManagement.GetPolicies(), clusterMetrics, b.RunTimestamp)
+				updatedBugManagementState, changed := bugs.UpdatePolicyActivations(r.BugManagementState, b.projectCfg.Config.BugManagement.GetPolicies(), clusterMetrics, b.RunTimestamp)
 				if changed {
 					// Only update the rule if a policy has activated or
 					// deactivated, to avoid unnecessary writes and rule
@@ -581,7 +580,7 @@ func (b *BugUpdater) fileNewBugs(ctx context.Context, clusters []*analysis.Clust
 
 			// Only file a bug if the residual impact exceeds the threshold.
 			impact := ExtractResidualMetrics(cluster)
-			bugFilingThresholds := policy.ActivationThresholds(p)
+			bugFilingThresholds := bugs.ActivationThresholds(p)
 			if cluster.ClusterID.IsTestNameCluster() {
 				// Use an inflated threshold for test name clusters to bias
 				// bug creation towards failure reason clusters.
@@ -713,7 +712,7 @@ type updateRuleRequest struct {
 	// A map containing the IDs of policies for which
 	// BugManagementState.Policies[<policyID>].ActivationNotified should
 	// be set.
-	PolicyActivationsNotified map[string]struct{}
+	PolicyActivationsNotified map[bugs.PolicyID]struct{}
 }
 
 // updateRules applies updates to failure association rules
@@ -777,7 +776,7 @@ func (b *BugUpdater) updateRulesBatch(ctx context.Context, requests []updateRule
 				rule.BugManagementState.RuleAssociationNotified = true
 			}
 			for policyID := range updateRequest.PolicyActivationsNotified {
-				policyState, ok := rule.BugManagementState.PolicyState[policyID]
+				policyState, ok := rule.BugManagementState.PolicyState[string(policyID)]
 				if !ok {
 					// The policy has been deleted during the bug-filing run.
 					logging.Warningf(ctx, "Policy activation notified for policy %v, which is now deleted.", policyID)
@@ -1212,17 +1211,17 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 	// Set policy activations starting from a state where no policies
 	// are active.
 	impact := ExtractResidualMetrics(cs)
-	bugManagementState, _ = policy.UpdatePolicyActivations(bugManagementState, b.projectCfg.Config.BugManagement.GetPolicies(), impact, b.RunTimestamp)
+	bugManagementState, _ = bugs.UpdatePolicyActivations(bugManagementState, b.projectCfg.Config.BugManagement.GetPolicies(), impact, b.RunTimestamp)
 
 	request := bugs.BugCreateRequest{
 		RuleID:      ruleID,
 		Description: description,
 	}
 	if b.UsePolicyBasedManagement {
-		activePolicyIDs := make(map[string]struct{})
+		activePolicyIDs := make(map[bugs.PolicyID]struct{})
 		for policyID, state := range bugManagementState.PolicyState {
 			if state.IsActive {
-				activePolicyIDs[policyID] = struct{}{}
+				activePolicyIDs[bugs.PolicyID(policyID)] = struct{}{}
 			}
 		}
 		request.ActivePolicyIDs = activePolicyIDs
@@ -1254,7 +1253,7 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 
 		// Record which policies we notified as activating.
 		for policyID := range response.PolicyActivationsNotified {
-			bugManagementState.PolicyState[policyID].ActivationNotified = true
+			bugManagementState.PolicyState[string(policyID)].ActivationNotified = true
 		}
 
 		newRule := &rules.Entry{

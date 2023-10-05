@@ -12,23 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package policy
+package bugs
 
 import (
 	"fmt"
 	"sort"
 	"strings"
 
-	"go.chromium.org/luci/analysis/internal/bugs"
 	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	"go.chromium.org/luci/common/errors"
 )
 
-// Applyer provides methods to apply bug managment policies
+// PolicyApplyer provides methods to apply bug managment policies
 // in a manner that is generic to the bug management system being used.
-type Applyer struct {
+type PolicyApplyer struct {
 	// policies are the configured bug management policies for the project.
 	policiesByDescendingPriority []*configpb.BugManagementPolicy
 
@@ -40,13 +39,14 @@ type Applyer struct {
 
 	// floorPriority is the lowest priority level supported by the
 	// bug system. Priorities below this will be rounded up to
-	// this floor level.
+	// this floor level. For example, if the priority floor is
+	// P3, the policy priority P4 and below will be rounded up to P3.
 	// Invariant: not BUGANIZER_PRIORITY_UNSPECIFIED.
 	floorPriority configpb.BuganizerPriority
 }
 
-// NewApplyer initialises a new Applyer.
-func NewApplyer(policies []*configpb.BugManagementPolicy, floorPriority configpb.BuganizerPriority) (Applyer, error) {
+// NewPolicyApplyer initialises a new PolicyApplyer.
+func NewPolicyApplyer(policies []*configpb.BugManagementPolicy, floorPriority configpb.BuganizerPriority) (PolicyApplyer, error) {
 	if floorPriority == configpb.BuganizerPriority_BUGANIZER_PRIORITY_UNSPECIFIED {
 		panic("floorPriority must be specified")
 	}
@@ -56,12 +56,12 @@ func NewApplyer(policies []*configpb.BugManagementPolicy, floorPriority configpb
 	for _, p := range policiesByDescendingPriority {
 		template, err := ParseTemplate(p.BugTemplate.CommentTemplate)
 		if err != nil {
-			return Applyer{}, errors.Annotate(err, "parsing comment template for policy %q", p.Id).Err()
+			return PolicyApplyer{}, errors.Annotate(err, "parsing comment template for policy %q", p.Id).Err()
 		}
 		templates = append(templates, template)
 	}
 
-	return Applyer{
+	return PolicyApplyer{
 		policiesByDescendingPriority: policiesByDescendingPriority,
 		templates:                    templates,
 		floorPriority:                floorPriority,
@@ -71,7 +71,7 @@ func NewApplyer(policies []*configpb.BugManagementPolicy, floorPriority configpb
 // applyPriorityFloor returns the maximum of the given priority
 // and the priority floor. For example, if the provided priority
 // is P4 and the floor is P3, this methods returns P3.
-func (p Applyer) applyPriorityFloor(priority configpb.BuganizerPriority) configpb.BuganizerPriority {
+func (p PolicyApplyer) applyPriorityFloor(priority configpb.BuganizerPriority) configpb.BuganizerPriority {
 	// A lower number indicates a higher priority.
 	if p.floorPriority < priority {
 		return p.floorPriority
@@ -81,10 +81,10 @@ func (p Applyer) applyPriorityFloor(priority configpb.BuganizerPriority) configp
 
 // RecommendedPriorityAndVerified identifies the priority and verification state
 // recommended for a bug with the given set of policies active.
-func (p Applyer) RecommendedPriorityAndVerified(activePolicyIDs map[string]struct{}) (priority configpb.BuganizerPriority, verified bool) {
+func (p PolicyApplyer) RecommendedPriorityAndVerified(activePolicyIDs map[PolicyID]struct{}) (priority configpb.BuganizerPriority, verified bool) {
 	result := configpb.BuganizerPriority_BUGANIZER_PRIORITY_UNSPECIFIED
 	for _, policy := range p.policiesByDescendingPriority {
-		_, ok := activePolicyIDs[policy.Id]
+		_, ok := activePolicyIDs[PolicyID(policy.Id)]
 		if !ok {
 			// Policy not active.
 			continue
@@ -116,7 +116,7 @@ type BugOptions struct {
 
 // NeedsPriorityOrVerifiedUpdate returns whether a bug needs to have its
 // priority or verified status updated, based on the current active policies.
-func (p Applyer) NeedsPriorityOrVerifiedUpdate(opts BugOptions) bool {
+func (p PolicyApplyer) NeedsPriorityOrVerifiedUpdate(opts BugOptions) bool {
 	recommendedPriority, recommendedVerified := p.RecommendedPriorityAndVerified(activePolicies(opts.State))
 
 	// Priority updates are only considered if:
@@ -131,7 +131,7 @@ func (p Applyer) NeedsPriorityOrVerifiedUpdate(opts BugOptions) bool {
 type BugChange struct {
 	// The human-readable justification of the change.
 	// This will be blank if no change is proposed.
-	Justification bugs.Commentary
+	Justification Commentary
 
 	// Whether the bug priority should be updated.
 	UpdatePriority bool
@@ -150,7 +150,7 @@ type BugChange struct {
 //
 // A human readable explanation of the changes to include in a comment
 // is also returned.
-func (p Applyer) PreparePriorityAndVerifiedChange(opts BugOptions, uiBaseURL string) (BugChange, error) {
+func (p PolicyApplyer) PreparePriorityAndVerifiedChange(opts BugOptions, uiBaseURL string) (BugChange, error) {
 	currentActive := activePolicies(opts.State)
 	changes := lastPolicyActivationChanges(opts.State)
 	previousActive := previouslyActivePolicies(opts.State)
@@ -164,7 +164,7 @@ func (p Applyer) PreparePriorityAndVerifiedChange(opts BugOptions, uiBaseURL str
 	if !isChangingPriority && !isChangingVerified {
 		// No change is required.
 		return BugChange{
-			Justification:    bugs.Commentary{},
+			Justification:    Commentary{},
 			UpdatePriority:   false,
 			Priority:         recommendedPriority,
 			UpdateVerified:   false,
@@ -209,7 +209,7 @@ func (p Applyer) PreparePriorityAndVerifiedChange(opts BugOptions, uiBaseURL str
 		if isPriorityIncreasing {
 			body.WriteString("Because the following problem(s) have started:\n")
 			for _, policy := range p.policiesByDescendingPriority {
-				_, isActivating := changes.activatedPolicyIDs[policy.Id]
+				_, isActivating := changes.activatedPolicyIDs[PolicyID(policy.Id)]
 				priority := p.applyPriorityFloor(policy.Priority)
 				// The policy is activating, and
 				// - We are changing the priority, and the priority of the policy is higher than the existing priority OR
@@ -222,7 +222,7 @@ func (p Applyer) PreparePriorityAndVerifiedChange(opts BugOptions, uiBaseURL str
 		} else {
 			body.WriteString("Because the following problem(s) have stopped:\n")
 			for _, policy := range p.policiesByDescendingPriority {
-				_, isDeactivating := changes.deactivatedPolicyIDs[policy.Id]
+				_, isDeactivating := changes.deactivatedPolicyIDs[PolicyID(policy.Id)]
 				priority := p.applyPriorityFloor(policy.Priority)
 				// The policy is deactivating, and
 				// - We are changing the priority, and the priority of the policy is higher than the priority we are recommending now OR
@@ -280,7 +280,7 @@ func (p Applyer) PreparePriorityAndVerifiedChange(opts BugOptions, uiBaseURL str
 			// We are not recommending verification, so some (non-empty) set of problems must be active.
 			body.WriteString("Because the following problem(s) are active:\n")
 			for _, policy := range p.policiesByDescendingPriority {
-				_, isActive := currentActive[policy.Id]
+				_, isActive := currentActive[PolicyID(policy.Id)]
 				if isActive {
 					priority := p.applyPriorityFloor(policy.Priority)
 					body.WriteString(fmt.Sprintf("- %s (%s)\n", policy.HumanReadableName, priority))
@@ -318,7 +318,7 @@ func (p Applyer) PreparePriorityAndVerifiedChange(opts BugOptions, uiBaseURL str
 	}
 
 	return BugChange{
-		Justification: bugs.Commentary{
+		Justification: Commentary{
 			Bodies:  []string{body.String()},
 			Footers: footers,
 		},
@@ -334,11 +334,11 @@ func (p Applyer) PreparePriorityAndVerifiedChange(opts BugOptions, uiBaseURL str
 // Where multiple policies have the same priority, they are sorted by
 // policy ID.
 // Only policies which are configured are returned.
-func (p Applyer) SortPolicyIDsByPriorityDescending(policyIDs map[string]struct{}) []string {
-	var result []string
+func (p PolicyApplyer) SortPolicyIDsByPriorityDescending(policyIDs map[PolicyID]struct{}) []PolicyID {
+	var result []PolicyID
 	for _, policy := range p.policiesByDescendingPriority {
-		if _, ok := policyIDs[policy.Id]; ok {
-			result = append(result, policy.Id)
+		if _, ok := policyIDs[PolicyID(policy.Id)]; ok {
+			result = append(result, PolicyID(policy.Id))
 		}
 	}
 	return result
@@ -360,11 +360,11 @@ func sortPoliciesByDescendingPriority(policies []*configpb.BugManagementPolicy) 
 	return sortedPolicies
 }
 
-func (p Applyer) problemsDescription(activatedPolicyIDs map[string]struct{}) string {
+func (p PolicyApplyer) problemsDescription(activatedPolicyIDs map[PolicyID]struct{}) string {
 
 	var policyHumanNames []string
 	for _, p := range p.policiesByDescendingPriority {
-		if _, isActive := activatedPolicyIDs[p.Id]; isActive {
+		if _, isActive := activatedPolicyIDs[PolicyID(p.Id)]; isActive {
 			policyHumanNames = append(policyHumanNames, p.HumanReadableName)
 		}
 	}
@@ -379,7 +379,7 @@ func (p Applyer) problemsDescription(activatedPolicyIDs map[string]struct{}) str
 
 // NewIssueDescription returns the issue description for a new bug.
 // uiBaseURL is the URL of the UI base, without trailing slash, e.g. "https://luci-analysis.appspot.com".
-func (p Applyer) NewIssueDescription(description *clustering.ClusterDescription, activatedPolicyIDs map[string]struct{}, uiBaseURL, ruleURL string) string {
+func (p PolicyApplyer) NewIssueDescription(description *clustering.ClusterDescription, activatedPolicyIDs map[PolicyID]struct{}, uiBaseURL, ruleURL string) string {
 	var problemDescription strings.Builder
 	problemDescription.WriteString(p.problemsDescription(activatedPolicyIDs))
 	if ruleURL != "" {
@@ -396,7 +396,7 @@ func (p Applyer) NewIssueDescription(description *clustering.ClusterDescription,
 		fmt.Sprintf("Provide feedback: %s", FeedbackURL(uiBaseURL)),
 		fmt.Sprintf("Was this bug filed in the wrong component? See: %s", ComponentSelectionHelpURL(uiBaseURL)),
 	}
-	return bugs.Commentary{
+	return Commentary{
 		Bodies:  bodies,
 		Footers: footers,
 	}.ToComment()
@@ -404,10 +404,10 @@ func (p Applyer) NewIssueDescription(description *clustering.ClusterDescription,
 
 // PolicyActivatedComment returns a comment used to notify a bug that a policy
 // has activated on a bug for the first time.
-func (p Applyer) PolicyActivatedComment(policyID, uiBaseURL string, input TemplateInput) (string, error) {
+func (p PolicyApplyer) PolicyActivatedComment(policyID PolicyID, uiBaseURL string, input TemplateInput) (string, error) {
 	var template *Template
 	for i, policy := range p.policiesByDescendingPriority {
-		if policy.Id == policyID {
+		if PolicyID(policy.Id) == policyID {
 			template = &p.templates[i]
 			break
 		}
@@ -422,7 +422,7 @@ func (p Applyer) PolicyActivatedComment(policyID, uiBaseURL string, input Templa
 	if templatedContent == "" {
 		return "", nil
 	}
-	commentary := bugs.Commentary{
+	commentary := Commentary{
 		Bodies:  []string{templatedContent},
 		Footers: []string{fmt.Sprintf("Why LUCI Analysis posted this comment: %s (Policy ID: %s)", PolicyActivatedHelpURL(uiBaseURL), policyID)},
 	}
@@ -430,8 +430,8 @@ func (p Applyer) PolicyActivatedComment(policyID, uiBaseURL string, input Templa
 	return commentary.ToComment(), nil
 }
 
-func ManualPriorityUpdateCommentary() bugs.Commentary {
-	c := bugs.Commentary{
+func ManualPriorityUpdateCommentary() Commentary {
+	c := Commentary{
 		Bodies: []string{"The bug priority has been manually set. To re-enable automatic priority updates by LUCI Analysis, enable the update priority flag on the rule."},
 	}
 	return c

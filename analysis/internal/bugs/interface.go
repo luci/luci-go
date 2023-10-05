@@ -115,7 +115,7 @@ type BugUpdateResponse struct {
 	// If a policy ID is included here,
 	// BugManagementState.Policies[<policyID>].ActivationNotified will be
 	// set to true on the rule.
-	PolicyActivationsNotified map[string]struct{}
+	PolicyActivationsNotified map[PolicyID]struct{}
 }
 
 // DuplicateBugDetails holds the data of a duplicate bug, this includes it's bug id,
@@ -162,7 +162,7 @@ type BugCreateRequest struct {
 	// Policy-based bug management fields.
 	// The bug management policies which activated for this
 	// cluster and are triggering the filing of this bug.
-	ActivePolicyIDs map[string]struct{}
+	ActivePolicyIDs map[PolicyID]struct{}
 
 	// Legacy bug management fields.
 
@@ -200,7 +200,7 @@ type BugCreateResponse struct {
 	// If a policy ID is included here,
 	// BugManagementState.Policies[<policyID>].ActivationNotified will be
 	// set to true on the rule.
-	PolicyActivationsNotified map[string]struct{}
+	PolicyActivationsNotified map[PolicyID]struct{}
 }
 
 // ClusterMetrics captures measurements of a cluster's impact and

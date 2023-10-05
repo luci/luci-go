@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package policy contains logic shared across bug management systems
-// for implementing policy-based bug management.
-package policy
+package bugs
 
 import (
 	"time"
@@ -23,7 +21,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
-	"go.chromium.org/luci/analysis/internal/bugs"
 	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 )
@@ -54,7 +51,7 @@ func ActivationThresholds(policy *configpb.BugManagementPolicy) []*configpb.Impa
 // If any updates need to be made, changed will be true and a new
 // *bugspb.BugManagementState is returned. Otherwise, the original
 // state is returned.
-func UpdatePolicyActivations(state *bugspb.BugManagementState, policies []*configpb.BugManagementPolicy, clusterMetrics bugs.ClusterMetrics, now time.Time) (updatedState *bugspb.BugManagementState, changed bool) {
+func UpdatePolicyActivations(state *bugspb.BugManagementState, policies []*configpb.BugManagementPolicy, clusterMetrics ClusterMetrics, now time.Time) (updatedState *bugspb.BugManagementState, changed bool) {
 	// Proto3 serializes nil and empty maps to exactly the same bytes.
 	// For the implementation here, we prefer to deal with the empty
 	// maps, so we coerce them, but it does not represent a semantic
@@ -115,7 +112,17 @@ func UpdatePolicyActivations(state *bugspb.BugManagementState, policies []*confi
 	return state, false
 }
 
-type PolicyID string
+// ActivePoliciesPendingNotification returns the set of policies which
+// are active but for which activation has not been notified to the bug.
+func ActivePoliciesPendingNotification(state *bugspb.BugManagementState) map[PolicyID]struct{} {
+	policyIDsToNotify := make(map[PolicyID]struct{})
+	for policyID, policyState := range state.PolicyState {
+		if policyState.IsActive && !policyState.ActivationNotified {
+			policyIDsToNotify[PolicyID(policyID)] = struct{}{}
+		}
+	}
+	return policyIDsToNotify
+}
 
 type policyEvaluation int
 
@@ -131,7 +138,7 @@ const (
 
 // evaluatePolicy determines whether the policy activation criteria, deactivation criteria or
 // neither are met. To use this method, clusterMetrics must be non-nil.
-func evaluatePolicy(policy *configpb.BugManagementPolicy, clusterMetrics bugs.ClusterMetrics) policyEvaluation {
+func evaluatePolicy(policy *configpb.BugManagementPolicy, clusterMetrics ClusterMetrics) policyEvaluation {
 	isDeactivationCriteriaMet := true
 	for _, metric := range policy.Metrics {
 		if clusterMetrics.MeetsThreshold(metrics.ID(metric.MetricId), metric.ActivationThreshold) {
@@ -156,22 +163,22 @@ func evaluatePolicy(policy *configpb.BugManagementPolicy, clusterMetrics bugs.Cl
 
 // activePolicies returns the set of policy IDs active in the given
 // bug management state.
-func activePolicies(state *bugspb.BugManagementState) map[string]struct{} {
-	result := make(map[string]struct{})
+func activePolicies(state *bugspb.BugManagementState) map[PolicyID]struct{} {
+	result := make(map[PolicyID]struct{})
 	for policyID, policyState := range state.PolicyState {
 		if !policyState.IsActive {
 			continue
 		}
-		result[policyID] = struct{}{}
+		result[PolicyID(policyID)] = struct{}{}
 	}
 	return result
 }
 
-func previouslyActivePolicies(state *bugspb.BugManagementState) map[string]struct{} {
+func previouslyActivePolicies(state *bugspb.BugManagementState) map[PolicyID]struct{} {
 	currentActive := activePolicies(state)
 	changes := lastPolicyActivationChanges(state)
 
-	result := make(map[string]struct{})
+	result := make(map[PolicyID]struct{})
 	for policy := range currentActive {
 		result[policy] = struct{}{}
 	}
@@ -187,36 +194,36 @@ func previouslyActivePolicies(state *bugspb.BugManagementState) map[string]struc
 }
 
 type activationChanges struct {
-	activatedPolicyIDs   map[string]struct{}
-	deactivatedPolicyIDs map[string]struct{}
+	activatedPolicyIDs   map[PolicyID]struct{}
+	deactivatedPolicyIDs map[PolicyID]struct{}
 }
 
 func lastPolicyActivationChanges(state *bugspb.BugManagementState) activationChanges {
 	var lastChangeTime time.Time
-	var lastActivations map[string]struct{}
-	var lastDeactivations map[string]struct{}
+	var lastActivations map[PolicyID]struct{}
+	var lastDeactivations map[PolicyID]struct{}
 
 	for policyID, policyState := range state.PolicyState {
 		if policyState.LastActivationTime != nil {
 			time := policyState.LastActivationTime.AsTime()
 			if time.After(lastChangeTime) {
 				lastChangeTime = time
-				lastActivations = make(map[string]struct{})
-				lastDeactivations = make(map[string]struct{})
-				lastActivations[policyID] = struct{}{}
+				lastActivations = make(map[PolicyID]struct{})
+				lastDeactivations = make(map[PolicyID]struct{})
+				lastActivations[PolicyID(policyID)] = struct{}{}
 			} else if time.Equal(lastChangeTime) {
-				lastActivations[policyID] = struct{}{}
+				lastActivations[PolicyID(policyID)] = struct{}{}
 			}
 		}
 		if policyState.LastDeactivationTime != nil {
 			time := policyState.LastDeactivationTime.AsTime()
 			if time.After(lastChangeTime) {
 				lastChangeTime = time
-				lastActivations = make(map[string]struct{})
-				lastDeactivations = make(map[string]struct{})
-				lastDeactivations[policyID] = struct{}{}
+				lastActivations = make(map[PolicyID]struct{})
+				lastDeactivations = make(map[PolicyID]struct{})
+				lastDeactivations[PolicyID(policyID)] = struct{}{}
 			} else if time.Equal(lastChangeTime) {
-				lastDeactivations[policyID] = struct{}{}
+				lastDeactivations[PolicyID(policyID)] = struct{}{}
 			}
 		}
 	}

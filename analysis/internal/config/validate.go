@@ -24,7 +24,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
-	"go.chromium.org/luci/analysis/internal/bugs/policy"
+	"go.chromium.org/luci/analysis/internal/bugs"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/testname/rules"
 	"go.chromium.org/luci/analysis/pbutil"
 	configpb "go.chromium.org/luci/analysis/proto/config"
@@ -987,7 +987,7 @@ func validateCommentTemplate(ctx *validation.Context, t string) {
 		return
 	}
 
-	tmpl, err := policy.ParseTemplate(t)
+	tmpl, err := bugs.ParseTemplate(t)
 	if err != nil {
 		ctx.Errorf("parsing template: %s", err)
 		return

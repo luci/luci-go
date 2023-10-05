@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package policy
+package bugs
 
 import (
 	"strings"
 	"text/template"
 
-	"go.chromium.org/luci/analysis/internal/bugs"
 	"go.chromium.org/luci/common/errors"
 )
 
@@ -65,9 +64,9 @@ func (t Template) Validate() error {
 			name: "buganizer",
 			input: TemplateInput{
 				RuleURL: "https://luci-analysis-deployment/some/url",
-				BugID: BugID{
-					id: bugs.BugID{
-						System: bugs.BuganizerSystem,
+				BugID: TemplateBugID{
+					id: BugID{
+						System: BuganizerSystem,
 						ID:     "1234567890123",
 					},
 				},
@@ -76,9 +75,9 @@ func (t Template) Validate() error {
 			name: "monorail",
 			input: TemplateInput{
 				RuleURL: "https://luci-analysis-deployment/some/url",
-				BugID: BugID{
-					id: bugs.BugID{
-						System: bugs.MonorailSystem,
+				BugID: TemplateBugID{
+					id: BugID{
+						System: MonorailSystem,
 						ID:     "monorailproject/1234567890123",
 					},
 				},
@@ -90,8 +89,8 @@ func (t Template) Validate() error {
 			name: "neither buganizer nor monorail",
 			input: TemplateInput{
 				RuleURL: "https://luci-analysis-deployment/some/url",
-				BugID: BugID{
-					id: bugs.BugID{
+				BugID: TemplateBugID{
+					id: BugID{
 						System: "reserved",
 						ID:     "reserved",
 					},
@@ -118,37 +117,37 @@ type TemplateInput struct {
 	// The link to the LUCI Analysis failure association rule.
 	RuleURL string
 	// The identifier of the bug on which we are commenting.
-	BugID BugID
+	BugID TemplateBugID
 }
 
-// NewBugID initializes a new BugID.
-func NewBugID(id bugs.BugID) BugID {
-	return BugID{id: id}
+// NewTemplateBugID initializes a new TemplateBugID.
+func NewTemplateBugID(id BugID) TemplateBugID {
+	return TemplateBugID{id: id}
 }
 
-// BugID wraps the bugs.BugID type so we do not couple the interface the
+// TemplateBugID wraps the BugID type so we do not couple the interface the
 // seen by a project's bug template to our implementation details.
 // We want full control over the interface the template sees to ensure
 // project configuration compatibility over time.
-type BugID struct {
+type TemplateBugID struct {
 	// must remain private.
-	id bugs.BugID
+	id BugID
 }
 
 // IsBuganizer returns whether the bug is a Buganizer bug.
-func (b BugID) IsBuganizer() bool {
-	return b.id.System == bugs.BuganizerSystem
+func (b TemplateBugID) IsBuganizer() bool {
+	return b.id.System == BuganizerSystem
 }
 
 // IsMonorail returns whether the bug is a monorail bug.
-func (b BugID) IsMonorail() bool {
-	return b.id.System == bugs.MonorailSystem
+func (b TemplateBugID) IsMonorail() bool {
+	return b.id.System == MonorailSystem
 }
 
 // MonorailProject returns the monorail project for a bug.
 // (e.g. "chromium" for crbug.com/123456).
 // Errors if the bug is not a monorail bug.
-func (b BugID) MonorailProject() (string, error) {
+func (b TemplateBugID) MonorailProject() (string, error) {
 	project, _, err := b.id.MonorailProjectAndID()
 	return project, err
 }
@@ -156,7 +155,7 @@ func (b BugID) MonorailProject() (string, error) {
 // MonorailBugID returns the monorail ID for a bug
 // (e.g. "123456" for crbug.com/123456).
 // Errors if the bug is not a monorail bug.
-func (b BugID) MonorailBugID() (string, error) {
+func (b TemplateBugID) MonorailBugID() (string, error) {
 	_, id, err := b.id.MonorailProjectAndID()
 	return id, err
 }
@@ -164,8 +163,8 @@ func (b BugID) MonorailBugID() (string, error) {
 // BuganizerBugID returns the buganizer ID for a bug.
 // E.g. "123456" for "b/123456".
 // Errors if the bug is not a buganizer bug.
-func (b BugID) BuganizerBugID() (string, error) {
-	if b.id.System != bugs.BuganizerSystem {
+func (b TemplateBugID) BuganizerBugID() (string, error) {
+	if b.id.System != BuganizerSystem {
 		return "", errors.New("not a buganizer bug")
 	}
 	return b.id.ID, nil
