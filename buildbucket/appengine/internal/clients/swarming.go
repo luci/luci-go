@@ -35,7 +35,7 @@ import (
 type SwarmingClient interface {
 	CreateTask(c context.Context, createTaskReq *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error)
 	GetTaskResult(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskResult, error)
-	CancelTask(ctx context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error)
+	CancelTask(ctx context.Context, req *apipb.TaskCancelRequest) (*apipb.CancelResponse, error)
 }
 
 // swarmingServiceImpl for use in real production envs.
@@ -90,8 +90,8 @@ func (s *swarmingServiceImpl) GetTaskResult(ctx context.Context, taskID string) 
 	return s.SwarmingV1.Task.Result(taskID).Context(subCtx).Do()
 }
 
-func (s *swarmingServiceImpl) CancelTask(ctx context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error) {
+func (s *swarmingServiceImpl) CancelTask(ctx context.Context, req *apipb.TaskCancelRequest) (*apipb.CancelResponse, error) {
 	subCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
-	return s.SwarmingV1.Task.Cancel(taskID, req).Context(subCtx).Do()
+	return s.TasksClient.CancelTask(subCtx, req)
 }

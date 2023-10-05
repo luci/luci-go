@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 )
 
@@ -35,18 +36,18 @@ func (m *MockSwarmingClient) EXPECT() *MockSwarmingClientMockRecorder {
 }
 
 // CancelTask mocks base method.
-func (m *MockSwarmingClient) CancelTask(ctx context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error) {
+func (m *MockSwarmingClient) CancelTask(ctx context.Context, req *apipb.TaskCancelRequest) (*apipb.CancelResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CancelTask", ctx, taskID, req)
-	ret0, _ := ret[0].(*swarming.SwarmingRpcsCancelResponse)
+	ret := m.ctrl.Call(m, "CancelTask", ctx, req)
+	ret0, _ := ret[0].(*apipb.CancelResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CancelTask indicates an expected call of CancelTask.
-func (mr *MockSwarmingClientMockRecorder) CancelTask(ctx, taskID, req interface{}) *gomock.Call {
+func (mr *MockSwarmingClientMockRecorder) CancelTask(ctx, req interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelTask", reflect.TypeOf((*MockSwarmingClient)(nil).CancelTask), ctx, taskID, req)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelTask", reflect.TypeOf((*MockSwarmingClient)(nil).CancelTask), ctx, req)
 }
 
 // CreateTask mocks base method.

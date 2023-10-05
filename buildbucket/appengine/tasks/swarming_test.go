@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/secrets/testsecrets"
 	"go.chromium.org/luci/server/tq"
+	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
@@ -856,7 +857,7 @@ func TestHandleCancelSwarmingTask(t *testing.T) {
 			})
 
 			Convey("swarming http 500", func() {
-				mockSwarm.EXPECT().CancelTask(ctx, "task123", gomock.Any()).Return(nil, &googleapi.Error{Code: 500, Message: "swarming internal error"})
+				mockSwarm.EXPECT().CancelTask(ctx, gomock.Any()).Return(nil, &googleapi.Error{Code: 500, Message: "swarming internal error"})
 				err := HandleCancelSwarmingTask(ctx, "hostname", "task123", "project:bucket")
 
 				So(err, ShouldErrLike, "transient error in cancelling the task task123")
@@ -864,7 +865,7 @@ func TestHandleCancelSwarmingTask(t *testing.T) {
 			})
 
 			Convey("swarming http <500", func() {
-				mockSwarm.EXPECT().CancelTask(ctx, "task123", gomock.Any()).Return(nil, &googleapi.Error{Code: 400, Message: "bad request"})
+				mockSwarm.EXPECT().CancelTask(ctx, gomock.Any()).Return(nil, &googleapi.Error{Code: 400, Message: "bad request"})
 				err := HandleCancelSwarmingTask(ctx, "hostname", "task123", "project:bucket")
 
 				So(err, ShouldErrLike, "fatal error in cancelling the task task123")
@@ -874,12 +875,12 @@ func TestHandleCancelSwarmingTask(t *testing.T) {
 
 		Convey("success", func() {
 			Convey("response.ok", func() {
-				mockSwarm.EXPECT().CancelTask(ctx, "task123", gomock.Any()).Return(&swarming.SwarmingRpcsCancelResponse{Ok: true}, nil)
+				mockSwarm.EXPECT().CancelTask(ctx, gomock.Any()).Return(&apipb.CancelResponse{Canceled: true}, nil)
 				So(HandleCancelSwarmingTask(ctx, "hostname", "task123", "project:bucket"), ShouldBeNil)
 			})
 
 			Convey("!response.ok", func() {
-				mockSwarm.EXPECT().CancelTask(ctx, "task123", gomock.Any()).Return(&swarming.SwarmingRpcsCancelResponse{Ok: false, WasRunning: false}, nil)
+				mockSwarm.EXPECT().CancelTask(ctx, gomock.Any()).Return(&apipb.CancelResponse{Canceled: false, WasRunning: false}, nil)
 				So(HandleCancelSwarmingTask(ctx, "hostname", "task123", "project:bucket"), ShouldBeNil)
 			})
 		})

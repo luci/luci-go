@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/tq"
+	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
@@ -232,7 +233,7 @@ func HandleCancelSwarmingTask(ctx context.Context, hostname string, taskID strin
 	if err != nil {
 		return errors.Annotate(err, "failed to create a swarming client for task %s in %s", taskID, hostname).Tag(tq.Fatal).Err()
 	}
-	res, err := swarm.CancelTask(ctx, taskID, &swarming.SwarmingRpcsTaskCancelRequest{KillRunning: true})
+	res, err := swarm.CancelTask(ctx, &apipb.TaskCancelRequest{KillRunning: true, TaskId: taskID})
 	if err != nil {
 		if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code >= 500 {
 			return errors.Annotate(err, "transient error in cancelling the task %s", taskID).Tag(transient.Tag).Err()
@@ -240,8 +241,8 @@ func HandleCancelSwarmingTask(ctx context.Context, hostname string, taskID strin
 		return errors.Annotate(err, "fatal error in cancelling the task %s", taskID).Tag(tq.Fatal).Err()
 	}
 
-	// Non-okay in the body indicates the task may have already ended. Hence, just logging it.
-	if !res.Ok {
+	// Non-Canceled in the body indicates the task may have already ended. Hence, just logging it.
+	if !res.Canceled {
 		logging.Warningf(ctx, "Swarming response for cancelling task %s: %+v", taskID, res)
 	}
 	return nil
