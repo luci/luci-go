@@ -60,7 +60,10 @@ func (g *GerritIntegrationServer) GetCLRunInfo(ctx context.Context, req *apiv0pb
 		return nil, err
 	}
 
-	respRunInfo := populateRunInfo(ctx, filterOngoingRuns(runs))
+	respRunInfo, err := populateRunInfo(ctx, filterOngoingRuns(runs))
+	if err != nil {
+		return nil, err
+	}
 
 	depChangeInfos, err := queryDepChangeInfos(ctx, cl)
 	if err != nil {
@@ -127,13 +130,18 @@ func queryDepChangeInfos(ctx context.Context, cl *changelist.CL) ([]*apiv0pb.Get
 				return fmt.Errorf("dep CL %d has non-Gerrit snapshot", depClid)
 			}
 
+			runInfo, err := populateRunInfo(ectx, filterOngoingRuns(runs))
+			if err != nil {
+				return err
+			}
+
 			infos[i] = &apiv0pb.GetCLRunInfoResponse_DepChangeInfo{
 				GerritChange: &apiv0pb.GerritChange{
 					Host:     gerrit.Host,
 					Change:   gerrit.Info.Number,
 					Patchset: depCl.Snapshot.Patchset,
 				},
-				Runs:        populateRunInfo(ectx, filterOngoingRuns(runs)),
+				Runs:        runInfo,
 				ChangeOwner: gerrit.Info.Owner.Email,
 			}
 			return nil

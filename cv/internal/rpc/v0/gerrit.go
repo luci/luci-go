@@ -16,10 +16,14 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 
+	"go.chromium.org/luci/common/sync/parallel"
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 // GerritIntegrationServer implements the v0 API.
@@ -28,21 +32,51 @@ type GerritIntegrationServer struct {
 }
 
 // populateRunInfo converts run.Runs to apiv0pb.GetCLRunInfoResponse_RunInfos for the response.
-func populateRunInfo(ctx context.Context, runs []*run.Run) []*apiv0pb.GetCLRunInfoResponse_RunInfo {
+func populateRunInfo(ctx context.Context, runs []*run.Run) ([]*apiv0pb.GetCLRunInfoResponse_RunInfo, error) {
 	respRuns := make([]*apiv0pb.GetCLRunInfoResponse_RunInfo, len(runs))
-	for i, r := range runs {
-		respRuns[i] = populateRunInfoResponse(ctx, r)
-	}
-	return respRuns
+	errs := parallel.WorkPool(min(len(runs), 16), func(work chan<- func() error) {
+		for i, r := range runs {
+			i, r := i, r
+			work <- func() (err error) {
+				respRuns[i], err = populateRunInfoResponse(ctx, r)
+				return err
+			}
+		}
+	})
+	return respRuns, common.MostSevereError(errs)
 }
 
-// populateRunInfoResponse constructs and populates a apiv0pb.GetCLRunInfoResponse_RunInfo to use in a response.
-func populateRunInfoResponse(ctx context.Context, r *run.Run) *apiv0pb.GetCLRunInfoResponse_RunInfo {
+// populateRunInfoResponse constructs and populates a
+// apiv0pb.GetCLRunInfoResponse_RunInfo to use in a response.
+//
+// This includes fetching and populating extra information, including CL info
+// to fill in details in each apiv0pb.GetCLRunInfoResponse_RunInfo.
+func populateRunInfoResponse(ctx context.Context, r *run.Run) (*apiv0pb.GetCLRunInfoResponse_RunInfo, error) {
+	var originChange *apiv0pb.GerritChange
+	if r.OriginCL != 0 {
+		// Fetch the origin CL.
+		originCL := &changelist.CL{ID: r.OriginCL}
+		if err := datastore.Get(ctx, originCL); err != nil {
+			return nil, err
+		}
+
+		originGerrit := originCL.Snapshot.GetGerrit()
+		if originGerrit == nil {
+			return nil, fmt.Errorf("origin CL %d has non-Gerrit snapshot", r.OriginCL)
+		}
+
+		originChange = &apiv0pb.GerritChange{
+			Host:     originGerrit.Host,
+			Change:   originGerrit.Info.Number,
+			Patchset: originCL.Snapshot.Patchset,
+		}
+	}
+
 	return &apiv0pb.GetCLRunInfoResponse_RunInfo{
 		Id:           r.ID.PublicID(),
 		CreateTime:   common.Time2PBNillable(r.CreateTime),
 		StartTime:    common.Time2PBNillable(r.StartTime),
-		OriginChange: nil, // TODO(crbug.com/1486976): Implement.
+		OriginChange: originChange,
 		Mode:         string(r.Mode),
-	}
+	}, nil
 }

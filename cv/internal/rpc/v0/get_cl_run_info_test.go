@@ -104,6 +104,7 @@ func TestGetCLRunInfo(t *testing.T) {
 				Owner:      "user:foo@example.org",
 				CLs:        common.MakeCLIDs(int64(cl.ID)),
 				Mode:       run.FullRun,
+				OriginCL:   cl.ID,
 			}
 			rcl := &run.RunCL{
 				Run: datastore.MakeKey(ctx, common.RunKind, string(r.ID)),
@@ -120,7 +121,7 @@ func TestGetCLRunInfo(t *testing.T) {
 				CreateTime:   timestamppb.New(r.CreateTime),
 				StartTime:    timestamppb.New(r.StartTime),
 				Mode:         string(r.Mode),
-				OriginChange: nil,
+				OriginChange: c,
 			}
 		}
 
