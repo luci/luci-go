@@ -168,13 +168,7 @@ func (c *Console) FilterBuilders(allowedRealms stringset.Set) {
 	c.Builders = okBuilderIDs
 	okBuilders := make([]*projectconfigpb.Builder, 0, len(c.Def.Builders))
 	for _, b := range c.Def.Builders {
-		bid, err := b.GetIdWithFallback()
-		if err != nil {
-			// The config is validated when ingested by milo, so this should never
-			// happen.
-			panic(err)
-		}
-		if !allowedRealms.Has(realms.Join(bid.Project, bid.Bucket)) {
+		if !allowedRealms.Has(realms.Join(b.Id.Project, b.Id.Bucket)) {
 			continue
 		}
 		okBuilders = append(okBuilders, b)
@@ -317,6 +311,22 @@ func fetchProject(c context.Context, cfg *configInterface.Config) (*Project, *pr
 		return nil, nil, nil, errors.Annotate(err, "when loading Milo config").Err()
 	}
 
+	// Backfill `id` if it's not defined.
+	// TODO(crbug.com/1263768): remove this once `id` field is always populated
+	// by lucicfg.
+	for _, c := range miloCfg.Consoles {
+		for _, b := range c.Builders {
+			if b.Id != nil {
+				continue
+			}
+			bid, err := utils.ParseLegacyBuilderID(b.Name)
+			if err != nil {
+				return nil, nil, nil, errors.Annotate(err, "when backfilling builder ID").Err()
+			}
+			b.Id = bid
+		}
+	}
+
 	// Have the Milo config! Use it to update the Project entity.
 	project.HasConfig = true
 	project.LogoURL = miloCfg.LogoUrl
@@ -329,10 +339,7 @@ func fetchProject(c context.Context, cfg *configInterface.Config) (*Project, *pr
 	// Populate project.ExternalBuilderIDs
 	for _, console := range miloCfg.Consoles {
 		for _, builder := range console.Builders {
-			bid, err := builder.GetIdWithFallback()
-			if err != nil {
-				return nil, nil, nil, errors.Annotate(err, "invalid legacy builder name").Err()
-			}
+			bid := builder.Id
 			if bid.Project != project.ID {
 				project.ExternalBuilderIDs = append(project.ExternalBuilderIDs, bid.Project+"/"+bid.Bucket+"/"+bid.Builder)
 			}
@@ -393,9 +400,6 @@ func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[strin
 			// continue
 		case err != nil:
 			return nil, errors.Annotate(err, "checking %s", pc.Id).Err()
-		case con.Def.HasUnpopulatedBuilderId():
-			logging.Debugf(c, "continuing to back fill builder IDs")
-			// continue to populate builder IDs.
 		case con.ConfigRevision == meta.Revision && con.Ordinal == i:
 			logging.Debugf(c, "skipping updates")
 			// Check if revisions match; if so just skip it.
@@ -407,20 +411,6 @@ func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[strin
 			return nil, err
 		}
 
-		// Backfill `id` if it's not defined.
-		// TODO(crbug.com/1263768): remove this once `id` field is always populated
-		// by lucicfg.
-		def := proto.Clone(pc).(*projectconfigpb.Console)
-		for _, builder := range def.Builders {
-			if builder.Id != nil {
-				continue
-			}
-			bid, err := builder.GetIdWithFallback()
-			if err != nil {
-				return nil, err
-			}
-			builder.Id = bid
-		}
 		toPut = append(toPut, &Console{
 			Parent:         datastore.KeyForObj(c, project),
 			ID:             pc.Id,
@@ -428,7 +418,7 @@ func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[strin
 			ConfigURL:      configURL(c, meta),
 			ConfigRevision: meta.Revision,
 			Builders:       builderIDs,
-			Def:            *def,
+			Def:            *pc,
 			Realm:          pc.Realm,
 		})
 	}

@@ -17,7 +17,6 @@ package projectconfigpb
 import (
 	"strings"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/milo/internal/utils"
 )
 
@@ -27,48 +26,12 @@ func (b *Builder) ParseCategory() []string {
 	return strings.Split(b.Category, "|")
 }
 
-// GetIdWithFallback returns `id` if its populated. Otherwise, tries to parse
-// builder ID from `name`. Returns an error if `name` is not a valid legacy
-// builder ID.
-//
-// TODO(crbug.com/1263768): remove this and use `GetId()` directly once `id`
-// field is always populated.
-func (b *Builder) GetIdWithFallback() (*buildbucketpb.BuilderID, error) {
-	if b.GetId() != nil {
-		return b.GetId(), nil
-	}
-	bid, err := utils.ParseLegacyBuilderID(b.Name)
-	if err != nil {
-		return nil, err
-	}
-	return bid, nil
-}
-
-// HasUnpopulatedBuilderId returns true if there's at least one builder not
-// having ID populated.
-//
-// TODO(crbug.com/1263768): remove this and use `GetId()` directly once `id
-// field is always populated.
-func (c *Console) HasUnpopulatedBuilderId() bool {
-	for _, b := range c.Builders {
-
-		if b.Id == nil {
-			return true
-		}
-	}
-	return false
-}
-
 // AllLegacyBuilderIDs returns all BuilderIDs in legacy format mentioned by this
 // Console.
 func (c *Console) AllLegacyBuilderIDs() ([]string, error) {
 	builders := make([]string, 0, len(c.Builders))
 	for _, b := range c.Builders {
-		bid, err := b.GetIdWithFallback()
-		if err != nil {
-			return nil, err
-		}
-		builders = append(builders, utils.LegacyBuilderIDString(bid))
+		builders = append(builders, utils.LegacyBuilderIDString(b.Id))
 	}
 	return builders, nil
 }

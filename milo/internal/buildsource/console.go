@@ -61,11 +61,7 @@ func GetConsoleRows(c context.Context, project string, console *projectconfigpb.
 	// Maps all builderIDs to the indexes of the columns it appears in.
 	columnMap := map[string][]int{}
 	for columnIdx, b := range console.Builders {
-		bid, err := b.GetIdWithFallback()
-		if err != nil {
-			return nil, err
-		}
-		bidString := utils.LegacyBuilderIDString(bid)
+		bidString := utils.LegacyBuilderIDString(b.Id)
 		columnMap[bidString] = append(columnMap[bidString], columnIdx)
 	}
 
