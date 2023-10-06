@@ -218,10 +218,16 @@ func (s *ReservationServer) reservationDenied(ctx context.Context, task *interna
 	var reasonCode internalspb.ExpireSliceRequest_Reason
 	switch grpcutil.Code(reason) {
 	case codes.FailedPrecondition:
+		// There are no bots alive matching the task.
 		reasonCode = internalspb.ExpireSliceRequest_NO_RESOURCE
+	case codes.ResourceExhausted:
+		// QueuingTimeout is 0 and there are no non-busy bots matching the task.
+		reasonCode = internalspb.ExpireSliceRequest_EXPIRED
 	case codes.PermissionDenied:
+		// Likely an RBE instance misconfiguration (i.e. should not happen).
 		reasonCode = internalspb.ExpireSliceRequest_PERMISSION_DENIED
 	case codes.InvalidArgument:
+		// RBE doesn't like format of dimensions (i.e. should not happen).
 		reasonCode = internalspb.ExpireSliceRequest_INVALID_ARGUMENT
 	default:
 		return errors.Reason("unexpected RBE gRPC status code in %s", reason).Err()
@@ -413,7 +419,8 @@ func newTaskToRunFromPayload(ctx context.Context, p *internalspb.TaskPayload) (*
 // isExpectedRBEError returns true for errors that are expected to happen during
 // normal code flow.
 func isExpectedRBEError(err error) bool {
-	return grpcutil.Code(err) == codes.FailedPrecondition
+	code := grpcutil.Code(err)
+	return code == codes.FailedPrecondition || code == codes.ResourceExhausted
 }
 
 // prettyProto formats a proto message for logs.
