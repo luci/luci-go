@@ -30,7 +30,6 @@ import (
 	"google.golang.org/api/googleapi"
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -334,7 +333,7 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 		if protoutil.IsEnded(bld.Status) {
 			return nil
 		}
-		if bld.Status == pb.Status_STARTED && taskResult.State == "PENDING" {
+		if bld.Status == pb.Status_STARTED && taskResult.State == apipb.TaskState_PENDING {
 			// Most probably, race between PubSub push handler and Cron job.
 			// With swarming, a build cannot go from STARTED back to PENDING,
 			// so ignore this.
@@ -383,7 +382,7 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 // updateBotDimensions mutates the infra entity to update the bot dimensions
 // according to the given task result.
 // Note, it will not write the entities into Datastore.
-func updateBotDimensions(infra *model.BuildInfra, taskResult *swarming.SwarmingRpcsTaskResult) bool {
+func updateBotDimensions(infra *model.BuildInfra, taskResult *apipb.TaskResultResponse) bool {
 	sw := infra.Proto.Swarming
 	botDimsChanged := false
 
@@ -415,7 +414,7 @@ func updateBotDimensions(infra *model.BuildInfra, taskResult *swarming.SwarmingR
 // updateBuildStatusFromTaskResult mutates the build entity to update the top
 // level status, and also the update time of the build.
 // Note, it will not write the entities into Datastore.
-func updateBuildStatusFromTaskResult(ctx context.Context, bld *model.Build, taskResult *swarming.SwarmingRpcsTaskResult) (bs *model.BuildStatus, steps *model.BuildSteps, err error) {
+func updateBuildStatusFromTaskResult(ctx context.Context, bld *model.Build, taskResult *apipb.TaskResultResponse) (bs *model.BuildStatus, steps *model.BuildSteps, err error) {
 	now := clock.Now(ctx)
 	oldStatus := bld.Status
 	// A helper function to correctly set Build ended status from taskResult. It
@@ -426,16 +425,16 @@ func updateBuildStatusFromTaskResult(ctx context.Context, bld *model.Build, task
 			return
 		}
 		if bld.Proto.StartTime == nil {
-			if startTime, err := time.Parse(swarmingTimeFormat, taskResult.StartedTs); err == nil {
-				// Backfill build start time.
-				protoutil.SetStatus(startTime, bld.Proto, pb.Status_STARTED)
-			}
+			startTime := taskResult.StartedTs.AsTime()
+			// Backfill build start time.
+			protoutil.SetStatus(startTime, bld.Proto, pb.Status_STARTED)
 		}
+
 		endTime := now
-		if t, err := time.Parse(swarmingTimeFormat, taskResult.CompletedTs); err == nil {
-			endTime = t
-		} else if t, err := time.Parse(swarmingTimeFormat, taskResult.AbandonedTs); err == nil {
-			endTime = t
+		if t := taskResult.CompletedTs; t != nil {
+			endTime = t.AsTime()
+		} else if t := taskResult.AbandonedTs; t != nil {
+			endTime = t.AsTime()
 		}
 		// It is possible that swarming task was marked as NO_RESOURCE the moment
 		// it was created. Swarming VM time is not synchronized with buildbucket VM
@@ -449,7 +448,7 @@ func updateBuildStatusFromTaskResult(ctx context.Context, bld *model.Build, task
 
 	// Update build status
 	switch taskResult.State {
-	case "PENDING":
+	case apipb.TaskState_PENDING:
 		if bld.Status == pb.Status_STATUS_UNSPECIFIED {
 			// Scheduled Build should have SCHEDULED status already, so in theory this
 			// should not happen.
@@ -462,35 +461,35 @@ func updateBuildStatusFromTaskResult(ctx context.Context, bld *model.Build, task
 			// so ignore this.
 			return
 		}
-	case "RUNNING":
+	case apipb.TaskState_RUNNING:
 		updateTime := now
-		if startTime, err := time.Parse(swarmingTimeFormat, taskResult.StartedTs); err == nil {
-			updateTime = startTime
+		if t := taskResult.StartedTs; t != nil {
+			updateTime = t.AsTime()
 		}
 		bs, steps, err = updateBuildStatusOnTaskStatusChange(ctx, bld, pb.Status_STARTED, pb.Status_STARTED, updateTime)
-	case "CANCELED", "KILLED":
+	case apipb.TaskState_CANCELED, apipb.TaskState_KILLED:
 		setEndStatus(pb.Status_CANCELED)
-	case "NO_RESOURCE":
+	case apipb.TaskState_NO_RESOURCE:
 		setEndStatus(pb.Status_INFRA_FAILURE)
 		bld.Proto.StatusDetails = &pb.StatusDetails{
 			ResourceExhaustion: &pb.StatusDetails_ResourceExhaustion{},
 		}
-	case "EXPIRED":
+	case apipb.TaskState_EXPIRED:
 		setEndStatus(pb.Status_INFRA_FAILURE)
 		bld.Proto.StatusDetails = &pb.StatusDetails{
 			ResourceExhaustion: &pb.StatusDetails_ResourceExhaustion{},
 			Timeout:            &pb.StatusDetails_Timeout{},
 		}
-	case "TIMED_OUT":
+	case apipb.TaskState_TIMED_OUT:
 		setEndStatus(pb.Status_INFRA_FAILURE)
 		bld.Proto.StatusDetails = &pb.StatusDetails{
 			Timeout: &pb.StatusDetails_Timeout{},
 		}
-	case "BOT_DIED", "CLIENT_ERROR":
+	case apipb.TaskState_BOT_DIED, apipb.TaskState_CLIENT_ERROR:
 		// BB only supplies bbagent CIPD packages in a task, no other user packages.
 		// So the CLIENT_ERROR task state should be treated as build INFRA_FAILURE.
 		setEndStatus(pb.Status_INFRA_FAILURE)
-	case "COMPLETED":
+	case apipb.TaskState_COMPLETED:
 		if taskResult.Failure {
 			// If this truly was a non-infra failure, bbagent would catch that and
 			// mark the build as FAILURE.

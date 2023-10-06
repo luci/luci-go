@@ -9,7 +9,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
-	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 )
 
 // MockSwarmingClient is a mock of SwarmingClient interface.
@@ -66,10 +65,10 @@ func (mr *MockSwarmingClientMockRecorder) CreateTask(c, createTaskReq interface{
 }
 
 // GetTaskResult mocks base method.
-func (m *MockSwarmingClient) GetTaskResult(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskResult, error) {
+func (m *MockSwarmingClient) GetTaskResult(ctx context.Context, taskID string) (*apipb.TaskResultResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTaskResult", ctx, taskID)
-	ret0, _ := ret[0].(*swarming.SwarmingRpcsTaskResult)
+	ret0, _ := ret[0].(*apipb.TaskResultResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -30,7 +30,6 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/filter/txndefer"
@@ -551,7 +550,7 @@ func TestSyncBuild(t *testing.T) {
 
 			Convey("invalid task result state", func() {
 				// syncBuildWithTaskResult should return Fatal error
-				mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Return(&swarming.SwarmingRpcsTaskResult{State: "INVALID"}, nil)
+				mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Return(&apipb.TaskResultResponse{State: apipb.TaskState_INVALID}, nil)
 				err := syncBuildWithTaskResult(ctx, 123, "task_id", mockSwarm)
 				So(tq.Fatal.In(err), ShouldBeTrue)
 				bb := &model.Build{ID: 123}
@@ -560,7 +559,7 @@ func TestSyncBuild(t *testing.T) {
 
 				// The swarming-build-sync flow shouldn't bubble up the Fatal error.
 				// It should ignore and enqueue the next generation of sync task.
-				mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Return(&swarming.SwarmingRpcsTaskResult{State: "INVALID"}, nil)
+				mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Return(&apipb.TaskResultResponse{State: apipb.TaskState_INVALID}, nil)
 				err = SyncBuild(ctx, 123, 1)
 				So(err, ShouldBeNil)
 				bb = &model.Build{ID: 123}
@@ -574,10 +573,11 @@ func TestSyncBuild(t *testing.T) {
 			})
 
 			Convey("cancel incomplete steps for an ended build", func() {
-				mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Return(&swarming.SwarmingRpcsTaskResult{
-					State:       "BOT_DIED",
-					StartedTs:   "2018-01-29T21:15:02.649750",
-					CompletedTs: "2018-01-30T00:15:18.162860"}, nil)
+				mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Return(&apipb.TaskResultResponse{
+					State:       apipb.TaskState_BOT_DIED,
+					StartedTs:   &timestamppb.Timestamp{Seconds: 1517260502, Nanos: 649750000},
+					CompletedTs: &timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000},
+				}, nil)
 				steps := model.BuildSteps{
 					ID:    1,
 					Build: datastore.KeyForObj(ctx, &model.Build{ID: 123}),
@@ -614,19 +614,19 @@ func TestSyncBuild(t *testing.T) {
 			})
 
 			var cases = []struct {
-				fakeTaskResult *swarming.SwarmingRpcsTaskResult
+				fakeTaskResult *apipb.TaskResultResponse
 				expected       *expectedBuildFields
 			}{
 				{
-					fakeTaskResult: &swarming.SwarmingRpcsTaskResult{State: "PENDING"},
+					fakeTaskResult: &apipb.TaskResultResponse{State: apipb.TaskState_PENDING},
 					expected: &expectedBuildFields{
 						status: pb.Status_SCHEDULED,
 					},
 				},
 				{
-					fakeTaskResult: &swarming.SwarmingRpcsTaskResult{
-						State:     "RUNNING",
-						StartedTs: "2018-01-29T21:15:02.649750",
+					fakeTaskResult: &apipb.TaskResultResponse{
+						State:     apipb.TaskState_RUNNING,
+						StartedTs: &timestamppb.Timestamp{Seconds: 1517260502, Nanos: 649750000},
 					},
 					expected: &expectedBuildFields{
 						status: pb.Status_STARTED,
@@ -634,10 +634,10 @@ func TestSyncBuild(t *testing.T) {
 					},
 				},
 				{
-					fakeTaskResult: &swarming.SwarmingRpcsTaskResult{
-						State:       "COMPLETED",
-						StartedTs:   "2018-01-29T21:15:02.649750",
-						CompletedTs: "2018-01-30T00:15:18.162860",
+					fakeTaskResult: &apipb.TaskResultResponse{
+						State:       apipb.TaskState_COMPLETED,
+						StartedTs:   &timestamppb.Timestamp{Seconds: 1517260502, Nanos: 649750000},
+						CompletedTs: &timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000},
 					},
 					expected: &expectedBuildFields{
 						status: pb.Status_SUCCESS,
@@ -646,11 +646,11 @@ func TestSyncBuild(t *testing.T) {
 					},
 				},
 				{
-					fakeTaskResult: &swarming.SwarmingRpcsTaskResult{
-						State:       "COMPLETED",
-						StartedTs:   "2018-01-29T21:15:02.649750",
-						CompletedTs: "2018-01-30T00:15:18.162860",
-						BotDimensions: []*swarming.SwarmingRpcsStringListPair{
+					fakeTaskResult: &apipb.TaskResultResponse{
+						State:       apipb.TaskState_COMPLETED,
+						StartedTs:   &timestamppb.Timestamp{Seconds: 1517260502, Nanos: 649750000},
+						CompletedTs: &timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000},
+						BotDimensions: []*apipb.StringListPair{
 							{
 								Key:   "os",
 								Value: []string{"Ubuntu", "Trusty"},
@@ -681,11 +681,11 @@ func TestSyncBuild(t *testing.T) {
 					},
 				},
 				{
-					fakeTaskResult: &swarming.SwarmingRpcsTaskResult{
-						State:       "COMPLETED",
+					fakeTaskResult: &apipb.TaskResultResponse{
+						State:       apipb.TaskState_COMPLETED,
 						Failure:     true,
-						StartedTs:   "2018-01-29T21:15:02.649750",
-						CompletedTs: "2018-01-30T00:15:18.162860",
+						StartedTs:   &timestamppb.Timestamp{Seconds: 1517260502, Nanos: 649750000},
+						CompletedTs: &timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000},
 					},
 					expected: &expectedBuildFields{
 						status: pb.Status_INFRA_FAILURE,
@@ -694,10 +694,10 @@ func TestSyncBuild(t *testing.T) {
 					},
 				},
 				{
-					fakeTaskResult: &swarming.SwarmingRpcsTaskResult{
-						State:       "BOT_DIED",
-						StartedTs:   "2018-01-29T21:15:02.649750",
-						CompletedTs: "2018-01-30T00:15:18.162860",
+					fakeTaskResult: &apipb.TaskResultResponse{
+						State:       apipb.TaskState_BOT_DIED,
+						StartedTs:   &timestamppb.Timestamp{Seconds: 1517260502, Nanos: 649750000},
+						CompletedTs: &timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000},
 					},
 					expected: &expectedBuildFields{
 						status: pb.Status_INFRA_FAILURE,
@@ -706,23 +706,10 @@ func TestSyncBuild(t *testing.T) {
 					},
 				},
 				{
-					fakeTaskResult: &swarming.SwarmingRpcsTaskResult{
-						State:       "BOT_DIED",
-						StartedTs:   "2018-01-29T21:15:02.649750",
-						CompletedTs: "2018-01-30T00:15:17Z07:00", // invalid format, So sync flow fallbacks to use AbandonedTs
-						AbandonedTs: "2018-01-30T00:15:18.162860",
-					},
-					expected: &expectedBuildFields{
-						status: pb.Status_INFRA_FAILURE,
-						startT: &timestamppb.Timestamp{Seconds: 1517260502, Nanos: 649750000},
-						endT:   &timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000},
-					},
-				},
-				{
-					fakeTaskResult: &swarming.SwarmingRpcsTaskResult{
-						State:       "TIMED_OUT",
-						StartedTs:   "2018-01-29T21:15:02.649750",
-						CompletedTs: "2018-01-30T00:15:18.162860",
+					fakeTaskResult: &apipb.TaskResultResponse{
+						State:       apipb.TaskState_TIMED_OUT,
+						StartedTs:   &timestamppb.Timestamp{Seconds: 1517260502, Nanos: 649750000},
+						CompletedTs: &timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000},
 					},
 					expected: &expectedBuildFields{
 						status:    pb.Status_INFRA_FAILURE,
@@ -732,9 +719,9 @@ func TestSyncBuild(t *testing.T) {
 					},
 				},
 				{
-					fakeTaskResult: &swarming.SwarmingRpcsTaskResult{
-						State:       "EXPIRED",
-						AbandonedTs: "2018-01-30T00:15:18.162860",
+					fakeTaskResult: &apipb.TaskResultResponse{
+						State:       apipb.TaskState_EXPIRED,
+						AbandonedTs: &timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000},
 					},
 					expected: &expectedBuildFields{
 						status:               pb.Status_INFRA_FAILURE,
@@ -744,9 +731,9 @@ func TestSyncBuild(t *testing.T) {
 					},
 				},
 				{
-					fakeTaskResult: &swarming.SwarmingRpcsTaskResult{
-						State:       "KILLED",
-						AbandonedTs: "2018-01-30T00:15:18.162860",
+					fakeTaskResult: &apipb.TaskResultResponse{
+						State:       apipb.TaskState_KILLED,
+						AbandonedTs: &timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000},
 					},
 					expected: &expectedBuildFields{
 						status: pb.Status_CANCELED,
@@ -754,9 +741,9 @@ func TestSyncBuild(t *testing.T) {
 					},
 				},
 				{
-					fakeTaskResult: &swarming.SwarmingRpcsTaskResult{
-						State:       "NO_RESOURCE",
-						AbandonedTs: "2018-01-30T00:15:18.162860",
+					fakeTaskResult: &apipb.TaskResultResponse{
+						State:       apipb.TaskState_NO_RESOURCE,
+						AbandonedTs: &timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000},
 					},
 					expected: &expectedBuildFields{
 						status:               pb.Status_INFRA_FAILURE,
@@ -765,9 +752,9 @@ func TestSyncBuild(t *testing.T) {
 					},
 				},
 				{
-					fakeTaskResult: &swarming.SwarmingRpcsTaskResult{
-						State:       "NO_RESOURCE",
-						AbandonedTs: "2015-11-29T00:15:18.162860",
+					fakeTaskResult: &apipb.TaskResultResponse{
+						State:       apipb.TaskState_NO_RESOURCE,
+						AbandonedTs: &timestamppb.Timestamp{Seconds: now.UnixNano() / 1000000000},
 					},
 					expected: &expectedBuildFields{
 						status:               pb.Status_INFRA_FAILURE,
@@ -1095,11 +1082,11 @@ func TestSubNotify(t *testing.T) {
 				CreatedTS:        1517260502000000,
 				SwarmingHostname: "swarm",
 			}, "task123", "msg1")
-			mockSwarm.EXPECT().GetTaskResult(ctx, "task123").Return(&swarming.SwarmingRpcsTaskResult{
-				State:       "COMPLETED",
-				StartedTs:   "2018-01-29T21:15:02.649750",
-				CompletedTs: "2018-01-30T00:15:18.162860",
-				BotDimensions: []*swarming.SwarmingRpcsStringListPair{
+			mockSwarm.EXPECT().GetTaskResult(ctx, "task123").Return(&apipb.TaskResultResponse{
+				State:       apipb.TaskState_COMPLETED,
+				StartedTs:   &timestamppb.Timestamp{Seconds: 1517260502, Nanos: 649750000},
+				CompletedTs: &timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000},
+				BotDimensions: []*apipb.StringListPair{
 					{
 						Key:   "new_key",
 						Value: []string{"new_val"},
@@ -1144,10 +1131,10 @@ func TestSubNotify(t *testing.T) {
 				CreatedTS:        1517260502000000,
 				SwarmingHostname: "swarm",
 			}, "task123", "msg1")
-			mockSwarm.EXPECT().GetTaskResult(ctx, "task123").Return(&swarming.SwarmingRpcsTaskResult{
-				State:     "RUNNING",
-				StartedTs: "2018-01-29T21:15:02.649750",
-				BotDimensions: []*swarming.SwarmingRpcsStringListPair{
+			mockSwarm.EXPECT().GetTaskResult(ctx, "task123").Return(&apipb.TaskResultResponse{
+				State:     apipb.TaskState_RUNNING,
+				StartedTs: &timestamppb.Timestamp{Seconds: 1517260502, Nanos: 649750000},
+				BotDimensions: []*apipb.StringListPair{
 					{
 						Key:   "new_key",
 						Value: []string{"new_val"},
@@ -1182,9 +1169,9 @@ func TestSubNotify(t *testing.T) {
 				CreatedTS:        1517260502000000,
 				SwarmingHostname: "swarm",
 			}, "task123", "msg1")
-			mockSwarm.EXPECT().GetTaskResult(ctx, "task123").Return(&swarming.SwarmingRpcsTaskResult{
-				State: "PENDING",
-				BotDimensions: []*swarming.SwarmingRpcsStringListPair{
+			mockSwarm.EXPECT().GetTaskResult(ctx, "task123").Return(&apipb.TaskResultResponse{
+				State: apipb.TaskState_PENDING,
+				BotDimensions: []*apipb.StringListPair{
 					{
 						Key:   "new_key",
 						Value: []string{"new_val"},
@@ -1218,7 +1205,7 @@ func TestSubNotify(t *testing.T) {
 				CreatedTS:        1517260502000000,
 				SwarmingHostname: "swarm",
 			}, "task123", "msg123")
-			mockSwarm.EXPECT().GetTaskResult(ctx, gomock.Any()).Times(0)
+			mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Times(0)
 			err = SubNotify(ctx, body)
 			So(err, ShouldBeNil)
 		})

@@ -16,13 +16,9 @@ package clients
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
-	"google.golang.org/api/option"
-
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
@@ -34,14 +30,12 @@ import (
 // used. Tests should use a fake implementation.
 type SwarmingClient interface {
 	CreateTask(ctx context.Context, createTaskReq *apipb.NewTaskRequest) (*apipb.TaskRequestMetadataResponse, error)
-	GetTaskResult(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskResult, error)
+	GetTaskResult(ctx context.Context, taskID string) (*apipb.TaskResultResponse, error)
 	CancelTask(ctx context.Context, req *apipb.TaskCancelRequest) (*apipb.CancelResponse, error)
 }
 
 // swarmingServiceImpl for use in real production envs.
 type swarmingServiceImpl struct {
-	// Needed for the time of the migration only.
-	SwarmingV1  swarming.Service
 	TasksClient apipb.TasksClient
 }
 
@@ -60,18 +54,12 @@ func NewSwarmingClient(ctx context.Context, host string, project string) (Swarmi
 	if err != nil {
 		return nil, err
 	}
-	swarmingService, err := swarming.NewService(ctx, option.WithHTTPClient(&http.Client{Transport: t}))
-	if err != nil {
-		return nil, err
-	}
-	swarmingService.BasePath = fmt.Sprintf("https://%s/_ah/api/swarming/v1/", host)
 
 	prpcClient := prpc.Client{
 		C:    &http.Client{Transport: t},
 		Host: host,
 	}
 	return &swarmingServiceImpl{
-		SwarmingV1:  *swarmingService,
 		TasksClient: apipb.NewTasksClient(&prpcClient),
 	}, nil
 }
@@ -83,11 +71,11 @@ func (s *swarmingServiceImpl) CreateTask(ctx context.Context, createTaskReq *api
 	return s.TasksClient.NewTask(subCtx, createTaskReq)
 }
 
-// GetTaskResult calls `swarming.task.result` to get the result of a task via a task id.
-func (s *swarmingServiceImpl) GetTaskResult(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskResult, error) {
+// GetTaskResult calls `apipb.TasksClient.GetResult` to get the result of a task via a task id.
+func (s *swarmingServiceImpl) GetTaskResult(ctx context.Context, taskID string) (*apipb.TaskResultResponse, error) {
 	subCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
-	return s.SwarmingV1.Task.Result(taskID).Context(subCtx).Do()
+	return s.TasksClient.GetResult(subCtx, &apipb.TaskIdWithPerfRequest{TaskId: taskID})
 }
 
 func (s *swarmingServiceImpl) CancelTask(ctx context.Context, req *apipb.TaskCancelRequest) (*apipb.CancelResponse, error) {
