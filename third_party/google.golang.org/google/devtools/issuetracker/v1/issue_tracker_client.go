@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math"
 	"net/http"
 	"net/url"
@@ -36,10 +36,8 @@ import (
 	issuetrackerpb "go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
-
 )
 
 var newClientHook clientHook
@@ -79,6 +77,7 @@ func defaultGRPCClientOptions() []option.ClientOption {
 func defaultCallOptions() *CallOptions {
 	return &CallOptions{
 		GetComponent: []gax.CallOption{
+			gax.WithTimeout(60000 * time.Millisecond),
 			gax.WithRetry(func() gax.Retryer {
 				return gax.OnCodes([]codes.Code{
 					codes.Unavailable,
@@ -90,6 +89,7 @@ func defaultCallOptions() *CallOptions {
 			}),
 		},
 		ListIssues: []gax.CallOption{
+			gax.WithTimeout(60000 * time.Millisecond),
 			gax.WithRetry(func() gax.Retryer {
 				return gax.OnCodes([]codes.Code{
 					codes.Unavailable,
@@ -101,6 +101,7 @@ func defaultCallOptions() *CallOptions {
 			}),
 		},
 		BatchGetIssues: []gax.CallOption{
+			gax.WithTimeout(60000 * time.Millisecond),
 			gax.WithRetry(func() gax.Retryer {
 				return gax.OnCodes([]codes.Code{
 					codes.Unavailable,
@@ -112,6 +113,7 @@ func defaultCallOptions() *CallOptions {
 			}),
 		},
 		GetIssue: []gax.CallOption{
+			gax.WithTimeout(60000 * time.Millisecond),
 			gax.WithRetry(func() gax.Retryer {
 				return gax.OnCodes([]codes.Code{
 					codes.Unavailable,
@@ -122,13 +124,20 @@ func defaultCallOptions() *CallOptions {
 				})
 			}),
 		},
-		CreateIssue:             []gax.CallOption{},
-		ModifyIssue:             []gax.CallOption{},
+		CreateIssue: []gax.CallOption{
+			gax.WithTimeout(60000 * time.Millisecond),
+		},
+		ModifyIssue: []gax.CallOption{
+			gax.WithTimeout(60000 * time.Millisecond),
+		},
 		CreateIssueRelationship: []gax.CallOption{},
 		ListIssueRelationships:  []gax.CallOption{},
 		ListIssueUpdates:        []gax.CallOption{},
-		CreateIssueComment:      []gax.CallOption{},
+		CreateIssueComment: []gax.CallOption{
+			gax.WithTimeout(60000 * time.Millisecond),
+		},
 		ListIssueComments: []gax.CallOption{
+			gax.WithTimeout(60000 * time.Millisecond),
 			gax.WithRetry(func() gax.Retryer {
 				return gax.OnCodes([]codes.Code{
 					codes.Unavailable,
@@ -141,6 +150,7 @@ func defaultCallOptions() *CallOptions {
 		},
 		UpdateIssueComment: []gax.CallOption{},
 		ListAttachments: []gax.CallOption{
+			gax.WithTimeout(60000 * time.Millisecond),
 			gax.WithRetry(func() gax.Retryer {
 				return gax.OnCodes([]codes.Code{
 					codes.Unavailable,
@@ -160,6 +170,7 @@ func defaultCallOptions() *CallOptions {
 func defaultRESTCallOptions() *CallOptions {
 	return &CallOptions{
 		GetComponent: []gax.CallOption{
+			gax.WithTimeout(60000 * time.Millisecond),
 			gax.WithRetry(func() gax.Retryer {
 				return gax.OnHTTPCodes(gax.Backoff{
 					Initial:    1000 * time.Millisecond,
@@ -170,6 +181,7 @@ func defaultRESTCallOptions() *CallOptions {
 			}),
 		},
 		ListIssues: []gax.CallOption{
+			gax.WithTimeout(60000 * time.Millisecond),
 			gax.WithRetry(func() gax.Retryer {
 				return gax.OnHTTPCodes(gax.Backoff{
 					Initial:    1000 * time.Millisecond,
@@ -180,6 +192,7 @@ func defaultRESTCallOptions() *CallOptions {
 			}),
 		},
 		BatchGetIssues: []gax.CallOption{
+			gax.WithTimeout(60000 * time.Millisecond),
 			gax.WithRetry(func() gax.Retryer {
 				return gax.OnHTTPCodes(gax.Backoff{
 					Initial:    1000 * time.Millisecond,
@@ -190,6 +203,7 @@ func defaultRESTCallOptions() *CallOptions {
 			}),
 		},
 		GetIssue: []gax.CallOption{
+			gax.WithTimeout(60000 * time.Millisecond),
 			gax.WithRetry(func() gax.Retryer {
 				return gax.OnHTTPCodes(gax.Backoff{
 					Initial:    1000 * time.Millisecond,
@@ -199,13 +213,20 @@ func defaultRESTCallOptions() *CallOptions {
 					http.StatusServiceUnavailable)
 			}),
 		},
-		CreateIssue:             []gax.CallOption{},
-		ModifyIssue:             []gax.CallOption{},
+		CreateIssue: []gax.CallOption{
+			gax.WithTimeout(60000 * time.Millisecond),
+		},
+		ModifyIssue: []gax.CallOption{
+			gax.WithTimeout(60000 * time.Millisecond),
+		},
 		CreateIssueRelationship: []gax.CallOption{},
 		ListIssueRelationships:  []gax.CallOption{},
 		ListIssueUpdates:        []gax.CallOption{},
-		CreateIssueComment:      []gax.CallOption{},
+		CreateIssueComment: []gax.CallOption{
+			gax.WithTimeout(60000 * time.Millisecond),
+		},
 		ListIssueComments: []gax.CallOption{
+			gax.WithTimeout(60000 * time.Millisecond),
 			gax.WithRetry(func() gax.Retryer {
 				return gax.OnHTTPCodes(gax.Backoff{
 					Initial:    1000 * time.Millisecond,
@@ -217,6 +238,7 @@ func defaultRESTCallOptions() *CallOptions {
 		},
 		UpdateIssueComment: []gax.CallOption{},
 		ListAttachments: []gax.CallOption{
+			gax.WithTimeout(60000 * time.Millisecond),
 			gax.WithRetry(func() gax.Retryer {
 				return gax.OnHTTPCodes(gax.Backoff{
 					Initial:    1000 * time.Millisecond,
@@ -357,9 +379,9 @@ func (c *Client) ListIssueComments(ctx context.Context, req *issuetrackerpb.List
 	return c.internalClient.ListIssueComments(ctx, req, opts...)
 }
 
-// UpdateIssueComment nB: The comment manipulation methods does not use the attachment field in
+// UpdateIssueComment updates an issue comment.
+// NB: The comment manipulation methods does not use the attachment field in
 // IssueComment.
-// Updates an issue comment
 func (c *Client) UpdateIssueComment(ctx context.Context, req *issuetrackerpb.UpdateIssueCommentRequest, opts ...gax.CallOption) (*issuetrackerpb.IssueComment, error) {
 	return c.internalClient.UpdateIssueComment(ctx, req, opts...)
 }
@@ -396,9 +418,6 @@ type gRPCClient struct {
 	// Connection pool of gRPC connections to the service.
 	connPool gtransport.ConnPool
 
-	// flag to opt out of default deadlines via GOOGLE_API_GO_EXPERIMENTAL_DISABLE_DEFAULT_DEADLINE
-	disableDeadlines bool
-
 	// Points back to the CallOptions field of the containing Client
 	CallOptions **CallOptions
 
@@ -406,7 +425,7 @@ type gRPCClient struct {
 	client issuetrackerpb.IssueTrackerClient
 
 	// The x-goog-* metadata to be sent with each request.
-	xGoogMetadata metadata.MD
+	xGoogHeaders []string
 }
 
 // NewClient creates a new issue tracker client based on gRPC.
@@ -423,11 +442,6 @@ func NewClient(ctx context.Context, opts ...option.ClientOption) (*Client, error
 		clientOpts = append(clientOpts, hookOpts...)
 	}
 
-	disableDeadlines, err := checkDisableDeadlines()
-	if err != nil {
-		return nil, err
-	}
-
 	connPool, err := gtransport.DialPool(ctx, append(clientOpts, opts...)...)
 	if err != nil {
 		return nil, err
@@ -435,10 +449,9 @@ func NewClient(ctx context.Context, opts ...option.ClientOption) (*Client, error
 	client := Client{CallOptions: defaultCallOptions()}
 
 	c := &gRPCClient{
-		connPool:         connPool,
-		disableDeadlines: disableDeadlines,
-		client:           issuetrackerpb.NewIssueTrackerClient(connPool),
-		CallOptions:      &client.CallOptions,
+		connPool:    connPool,
+		client:      issuetrackerpb.NewIssueTrackerClient(connPool),
+		CallOptions: &client.CallOptions,
 	}
 	c.setGoogleClientInfo()
 
@@ -459,9 +472,9 @@ func (c *gRPCClient) Connection() *grpc.ClientConn {
 // the `x-goog-api-client` header passed on each request. Intended for
 // use by Google-written clients.
 func (c *gRPCClient) setGoogleClientInfo(keyval ...string) {
-	kv := append([]string{"gl-go", versionGo()}, keyval...)
+	kv := append([]string{"gl-go", gax.GoVersion}, keyval...)
 	kv = append(kv, "gapic", getVersionClient(), "gax", gax.Version, "grpc", grpc.Version)
-	c.xGoogMetadata = metadata.Pairs("x-goog-api-client", gax.XGoogHeader(kv...))
+	c.xGoogHeaders = []string{"x-goog-api-client", gax.XGoogHeader(kv...)}
 }
 
 // Close closes the connection to the API service. The user should invoke this when
@@ -478,8 +491,8 @@ type restClient struct {
 	// The http client.
 	httpClient *http.Client
 
-	// The x-goog-* metadata to be sent with each request.
-	xGoogMetadata metadata.MD
+	// The x-goog-* headers to be sent with each request.
+	xGoogHeaders []string
 
 	// Points back to the CallOptions field of the containing Client
 	CallOptions **CallOptions
@@ -519,9 +532,9 @@ func defaultRESTClientOptions() []option.ClientOption {
 // the `x-goog-api-client` header passed on each request. Intended for
 // use by Google-written clients.
 func (c *restClient) setGoogleClientInfo(keyval ...string) {
-	kv := append([]string{"gl-go", versionGo()}, keyval...)
+	kv := append([]string{"gl-go", gax.GoVersion}, keyval...)
 	kv = append(kv, "gapic", getVersionClient(), "gax", gax.Version, "rest", "UNKNOWN")
-	c.xGoogMetadata = metadata.Pairs("x-goog-api-client", gax.XGoogHeader(kv...))
+	c.xGoogHeaders = []string{"x-goog-api-client", gax.XGoogHeader(kv...)}
 }
 
 // Close closes the connection to the API service. The user should invoke this when
@@ -539,14 +552,10 @@ func (c *restClient) Connection() *grpc.ClientConn {
 	return nil
 }
 func (c *gRPCClient) GetComponent(ctx context.Context, req *issuetrackerpb.GetComponentRequest, opts ...gax.CallOption) (*issuetrackerpb.Component, error) {
-	if _, ok := ctx.Deadline(); !ok && !c.disableDeadlines {
-		cctx, cancel := context.WithTimeout(ctx, 60000*time.Millisecond)
-		defer cancel()
-		ctx = cctx
-	}
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "component_id", req.GetComponentId()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "component_id", req.GetComponentId())}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).GetComponent[0:len((*c.CallOptions).GetComponent):len((*c.CallOptions).GetComponent)], opts...)
 	var resp *issuetrackerpb.Component
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
@@ -561,7 +570,7 @@ func (c *gRPCClient) GetComponent(ctx context.Context, req *issuetrackerpb.GetCo
 }
 
 func (c *gRPCClient) ListIssues(ctx context.Context, req *issuetrackerpb.ListIssuesRequest, opts ...gax.CallOption) *IssueIterator {
-	ctx = insertMetadata(ctx, c.xGoogMetadata)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, c.xGoogHeaders...)
 	opts = append((*c.CallOptions).ListIssues[0:len((*c.CallOptions).ListIssues):len((*c.CallOptions).ListIssues)], opts...)
 	it := &IssueIterator{}
 	req = proto.Clone(req).(*issuetrackerpb.ListIssuesRequest)
@@ -604,12 +613,7 @@ func (c *gRPCClient) ListIssues(ctx context.Context, req *issuetrackerpb.ListIss
 }
 
 func (c *gRPCClient) BatchGetIssues(ctx context.Context, req *issuetrackerpb.BatchGetIssuesRequest, opts ...gax.CallOption) (*issuetrackerpb.BatchGetIssuesResponse, error) {
-	if _, ok := ctx.Deadline(); !ok && !c.disableDeadlines {
-		cctx, cancel := context.WithTimeout(ctx, 60000*time.Millisecond)
-		defer cancel()
-		ctx = cctx
-	}
-	ctx = insertMetadata(ctx, c.xGoogMetadata)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, c.xGoogHeaders...)
 	opts = append((*c.CallOptions).BatchGetIssues[0:len((*c.CallOptions).BatchGetIssues):len((*c.CallOptions).BatchGetIssues)], opts...)
 	var resp *issuetrackerpb.BatchGetIssuesResponse
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
@@ -624,14 +628,10 @@ func (c *gRPCClient) BatchGetIssues(ctx context.Context, req *issuetrackerpb.Bat
 }
 
 func (c *gRPCClient) GetIssue(ctx context.Context, req *issuetrackerpb.GetIssueRequest, opts ...gax.CallOption) (*issuetrackerpb.Issue, error) {
-	if _, ok := ctx.Deadline(); !ok && !c.disableDeadlines {
-		cctx, cancel := context.WithTimeout(ctx, 60000*time.Millisecond)
-		defer cancel()
-		ctx = cctx
-	}
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId())}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).GetIssue[0:len((*c.CallOptions).GetIssue):len((*c.CallOptions).GetIssue)], opts...)
 	var resp *issuetrackerpb.Issue
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
@@ -646,12 +646,7 @@ func (c *gRPCClient) GetIssue(ctx context.Context, req *issuetrackerpb.GetIssueR
 }
 
 func (c *gRPCClient) CreateIssue(ctx context.Context, req *issuetrackerpb.CreateIssueRequest, opts ...gax.CallOption) (*issuetrackerpb.Issue, error) {
-	if _, ok := ctx.Deadline(); !ok && !c.disableDeadlines {
-		cctx, cancel := context.WithTimeout(ctx, 60000*time.Millisecond)
-		defer cancel()
-		ctx = cctx
-	}
-	ctx = insertMetadata(ctx, c.xGoogMetadata)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, c.xGoogHeaders...)
 	opts = append((*c.CallOptions).CreateIssue[0:len((*c.CallOptions).CreateIssue):len((*c.CallOptions).CreateIssue)], opts...)
 	var resp *issuetrackerpb.Issue
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
@@ -666,14 +661,10 @@ func (c *gRPCClient) CreateIssue(ctx context.Context, req *issuetrackerpb.Create
 }
 
 func (c *gRPCClient) ModifyIssue(ctx context.Context, req *issuetrackerpb.ModifyIssueRequest, opts ...gax.CallOption) (*issuetrackerpb.Issue, error) {
-	if _, ok := ctx.Deadline(); !ok && !c.disableDeadlines {
-		cctx, cancel := context.WithTimeout(ctx, 60000*time.Millisecond)
-		defer cancel()
-		ctx = cctx
-	}
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId())}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).ModifyIssue[0:len((*c.CallOptions).ModifyIssue):len((*c.CallOptions).ModifyIssue)], opts...)
 	var resp *issuetrackerpb.Issue
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
@@ -688,9 +679,10 @@ func (c *gRPCClient) ModifyIssue(ctx context.Context, req *issuetrackerpb.Modify
 }
 
 func (c *gRPCClient) CreateIssueRelationship(ctx context.Context, req *issuetrackerpb.CreateIssueRelationshipRequest, opts ...gax.CallOption) (*issuetrackerpb.IssueRelationship, error) {
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId())}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).CreateIssueRelationship[0:len((*c.CallOptions).CreateIssueRelationship):len((*c.CallOptions).CreateIssueRelationship)], opts...)
 	var resp *issuetrackerpb.IssueRelationship
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
@@ -705,9 +697,10 @@ func (c *gRPCClient) CreateIssueRelationship(ctx context.Context, req *issuetrac
 }
 
 func (c *gRPCClient) ListIssueRelationships(ctx context.Context, req *issuetrackerpb.ListIssueRelationshipsRequest, opts ...gax.CallOption) (*issuetrackerpb.ListIssueRelationshipsResponse, error) {
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId())}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).ListIssueRelationships[0:len((*c.CallOptions).ListIssueRelationships):len((*c.CallOptions).ListIssueRelationships)], opts...)
 	var resp *issuetrackerpb.ListIssueRelationshipsResponse
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
@@ -722,9 +715,10 @@ func (c *gRPCClient) ListIssueRelationships(ctx context.Context, req *issuetrack
 }
 
 func (c *gRPCClient) ListIssueUpdates(ctx context.Context, req *issuetrackerpb.ListIssueUpdatesRequest, opts ...gax.CallOption) *IssueUpdateIterator {
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId())}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).ListIssueUpdates[0:len((*c.CallOptions).ListIssueUpdates):len((*c.CallOptions).ListIssueUpdates)], opts...)
 	it := &IssueUpdateIterator{}
 	req = proto.Clone(req).(*issuetrackerpb.ListIssueUpdatesRequest)
@@ -767,14 +761,10 @@ func (c *gRPCClient) ListIssueUpdates(ctx context.Context, req *issuetrackerpb.L
 }
 
 func (c *gRPCClient) CreateIssueComment(ctx context.Context, req *issuetrackerpb.CreateIssueCommentRequest, opts ...gax.CallOption) (*issuetrackerpb.IssueComment, error) {
-	if _, ok := ctx.Deadline(); !ok && !c.disableDeadlines {
-		cctx, cancel := context.WithTimeout(ctx, 60000*time.Millisecond)
-		defer cancel()
-		ctx = cctx
-	}
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId())}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).CreateIssueComment[0:len((*c.CallOptions).CreateIssueComment):len((*c.CallOptions).CreateIssueComment)], opts...)
 	var resp *issuetrackerpb.IssueComment
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
@@ -789,9 +779,10 @@ func (c *gRPCClient) CreateIssueComment(ctx context.Context, req *issuetrackerpb
 }
 
 func (c *gRPCClient) ListIssueComments(ctx context.Context, req *issuetrackerpb.ListIssueCommentsRequest, opts ...gax.CallOption) *IssueCommentIterator {
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId())}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).ListIssueComments[0:len((*c.CallOptions).ListIssueComments):len((*c.CallOptions).ListIssueComments)], opts...)
 	it := &IssueCommentIterator{}
 	req = proto.Clone(req).(*issuetrackerpb.ListIssueCommentsRequest)
@@ -834,9 +825,10 @@ func (c *gRPCClient) ListIssueComments(ctx context.Context, req *issuetrackerpb.
 }
 
 func (c *gRPCClient) UpdateIssueComment(ctx context.Context, req *issuetrackerpb.UpdateIssueCommentRequest, opts ...gax.CallOption) (*issuetrackerpb.IssueComment, error) {
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v&%s=%v", "issue_id", req.GetIssueId(), "comment_number", req.GetCommentNumber()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v&%s=%v", "issue_id", req.GetIssueId(), "comment_number", req.GetCommentNumber())}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).UpdateIssueComment[0:len((*c.CallOptions).UpdateIssueComment):len((*c.CallOptions).UpdateIssueComment)], opts...)
 	var resp *issuetrackerpb.IssueComment
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
@@ -851,14 +843,10 @@ func (c *gRPCClient) UpdateIssueComment(ctx context.Context, req *issuetrackerpb
 }
 
 func (c *gRPCClient) ListAttachments(ctx context.Context, req *issuetrackerpb.ListAttachmentsRequest, opts ...gax.CallOption) (*issuetrackerpb.ListAttachmentsResponse, error) {
-	if _, ok := ctx.Deadline(); !ok && !c.disableDeadlines {
-		cctx, cancel := context.WithTimeout(ctx, 60000*time.Millisecond)
-		defer cancel()
-		ctx = cctx
-	}
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId())}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).ListAttachments[0:len((*c.CallOptions).ListAttachments):len((*c.CallOptions).ListAttachments)], opts...)
 	var resp *issuetrackerpb.ListAttachmentsResponse
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
@@ -873,9 +861,10 @@ func (c *gRPCClient) ListAttachments(ctx context.Context, req *issuetrackerpb.Li
 }
 
 func (c *gRPCClient) CreateHotlistEntry(ctx context.Context, req *issuetrackerpb.CreateHotlistEntryRequest, opts ...gax.CallOption) (*issuetrackerpb.HotlistEntry, error) {
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "hotlist_id", req.GetHotlistId()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "hotlist_id", req.GetHotlistId())}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).CreateHotlistEntry[0:len((*c.CallOptions).CreateHotlistEntry):len((*c.CallOptions).CreateHotlistEntry)], opts...)
 	var resp *issuetrackerpb.HotlistEntry
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
@@ -890,9 +879,10 @@ func (c *gRPCClient) CreateHotlistEntry(ctx context.Context, req *issuetrackerpb
 }
 
 func (c *gRPCClient) DeleteHotlistEntry(ctx context.Context, req *issuetrackerpb.DeleteHotlistEntryRequest, opts ...gax.CallOption) error {
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v&%s=%v", "hotlist_id", req.GetHotlistId(), "issue_id", req.GetIssueId()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v&%s=%v", "hotlist_id", req.GetHotlistId(), "issue_id", req.GetIssueId())}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).DeleteHotlistEntry[0:len((*c.CallOptions).DeleteHotlistEntry):len((*c.CallOptions).DeleteHotlistEntry)], opts...)
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
@@ -903,7 +893,7 @@ func (c *gRPCClient) DeleteHotlistEntry(ctx context.Context, req *issuetrackerpb
 }
 
 func (c *gRPCClient) GetAutomationAccess(ctx context.Context, req *issuetrackerpb.GetAutomationAccessRequest, opts ...gax.CallOption) (*issuetrackerpb.GetAutomationAccessResponse, error) {
-	ctx = insertMetadata(ctx, c.xGoogMetadata)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, c.xGoogHeaders...)
 	opts = append((*c.CallOptions).GetAutomationAccess[0:len((*c.CallOptions).GetAutomationAccess):len((*c.CallOptions).GetAutomationAccess)], opts...)
 	var resp *issuetrackerpb.GetAutomationAccessResponse
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
@@ -926,9 +916,11 @@ func (c *restClient) GetComponent(ctx context.Context, req *issuetrackerpb.GetCo
 	baseUrl.Path += fmt.Sprintf("/v1/components/%v", req.GetComponentId())
 
 	// Build HTTP headers from client and context metadata.
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "component_id", req.GetComponentId()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "component_id", req.GetComponentId())}
 
-	headers := buildHeaders(ctx, c.xGoogMetadata, md, metadata.Pairs("Content-Type", "application/json"))
+	hds = append(c.xGoogHeaders, hds...)
+	hds = append(hds, "Content-Type", "application/json")
+	headers := gax.BuildHeaders(ctx, hds...)
 	opts = append((*c.CallOptions).GetComponent[0:len((*c.CallOptions).GetComponent):len((*c.CallOptions).GetComponent)], opts...)
 	unm := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
 	resp := &issuetrackerpb.Component{}
@@ -953,13 +945,13 @@ func (c *restClient) GetComponent(ctx context.Context, req *issuetrackerpb.GetCo
 			return err
 		}
 
-		buf, err := ioutil.ReadAll(httpRsp.Body)
+		buf, err := io.ReadAll(httpRsp.Body)
 		if err != nil {
 			return err
 		}
 
 		if err := unm.Unmarshal(buf, resp); err != nil {
-			return maybeUnknownEnum(err)
+			return err
 		}
 
 		return nil
@@ -1004,9 +996,7 @@ func (c *restClient) ListIssues(ctx context.Context, req *issuetrackerpb.ListIss
 		if req.GetPageToken() != "" {
 			params.Add("pageToken", fmt.Sprintf("%v", req.GetPageToken()))
 		}
-		if req.GetQuery() != "" {
-			params.Add("query", fmt.Sprintf("%v", req.GetQuery()))
-		}
+		params.Add("query", fmt.Sprintf("%v", req.GetQuery()))
 		if req.GetView() != 0 {
 			params.Add("view", fmt.Sprintf("%v", req.GetView()))
 		}
@@ -1014,7 +1004,8 @@ func (c *restClient) ListIssues(ctx context.Context, req *issuetrackerpb.ListIss
 		baseUrl.RawQuery = params.Encode()
 
 		// Build HTTP headers from client and context metadata.
-		headers := buildHeaders(ctx, c.xGoogMetadata, metadata.Pairs("Content-Type", "application/json"))
+		hds := append(c.xGoogHeaders, "Content-Type", "application/json")
+		headers := gax.BuildHeaders(ctx, hds...)
 		e := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 			if settings.Path != "" {
 				baseUrl.Path = settings.Path
@@ -1035,13 +1026,13 @@ func (c *restClient) ListIssues(ctx context.Context, req *issuetrackerpb.ListIss
 				return err
 			}
 
-			buf, err := ioutil.ReadAll(httpRsp.Body)
+			buf, err := io.ReadAll(httpRsp.Body)
 			if err != nil {
 				return err
 			}
 
 			if err := unm.Unmarshal(buf, resp); err != nil {
-				return maybeUnknownEnum(err)
+				return err
 			}
 
 			return nil
@@ -1096,7 +1087,8 @@ func (c *restClient) BatchGetIssues(ctx context.Context, req *issuetrackerpb.Bat
 	baseUrl.RawQuery = params.Encode()
 
 	// Build HTTP headers from client and context metadata.
-	headers := buildHeaders(ctx, c.xGoogMetadata, metadata.Pairs("Content-Type", "application/json"))
+	hds := append(c.xGoogHeaders, "Content-Type", "application/json")
+	headers := gax.BuildHeaders(ctx, hds...)
 	opts = append((*c.CallOptions).BatchGetIssues[0:len((*c.CallOptions).BatchGetIssues):len((*c.CallOptions).BatchGetIssues)], opts...)
 	unm := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
 	resp := &issuetrackerpb.BatchGetIssuesResponse{}
@@ -1121,13 +1113,13 @@ func (c *restClient) BatchGetIssues(ctx context.Context, req *issuetrackerpb.Bat
 			return err
 		}
 
-		buf, err := ioutil.ReadAll(httpRsp.Body)
+		buf, err := io.ReadAll(httpRsp.Body)
 		if err != nil {
 			return err
 		}
 
 		if err := unm.Unmarshal(buf, resp); err != nil {
-			return maybeUnknownEnum(err)
+			return err
 		}
 
 		return nil
@@ -1157,9 +1149,11 @@ func (c *restClient) GetIssue(ctx context.Context, req *issuetrackerpb.GetIssueR
 	baseUrl.RawQuery = params.Encode()
 
 	// Build HTTP headers from client and context metadata.
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId())}
 
-	headers := buildHeaders(ctx, c.xGoogMetadata, md, metadata.Pairs("Content-Type", "application/json"))
+	hds = append(c.xGoogHeaders, hds...)
+	hds = append(hds, "Content-Type", "application/json")
+	headers := gax.BuildHeaders(ctx, hds...)
 	opts = append((*c.CallOptions).GetIssue[0:len((*c.CallOptions).GetIssue):len((*c.CallOptions).GetIssue)], opts...)
 	unm := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
 	resp := &issuetrackerpb.Issue{}
@@ -1184,13 +1178,13 @@ func (c *restClient) GetIssue(ctx context.Context, req *issuetrackerpb.GetIssueR
 			return err
 		}
 
-		buf, err := ioutil.ReadAll(httpRsp.Body)
+		buf, err := io.ReadAll(httpRsp.Body)
 		if err != nil {
 			return err
 		}
 
 		if err := unm.Unmarshal(buf, resp); err != nil {
-			return maybeUnknownEnum(err)
+			return err
 		}
 
 		return nil
@@ -1216,8 +1210,19 @@ func (c *restClient) CreateIssue(ctx context.Context, req *issuetrackerpb.Create
 	}
 	baseUrl.Path += fmt.Sprintf("/v1/issues")
 
+	params := url.Values{}
+	if req.GetTemplateOptions().GetApplyTemplate() {
+		params.Add("templateOptions.applyTemplate", fmt.Sprintf("%v", req.GetTemplateOptions().GetApplyTemplate()))
+	}
+	if req.GetTemplateOptions().GetTemplateId() != 0 {
+		params.Add("templateOptions.templateId", fmt.Sprintf("%v", req.GetTemplateOptions().GetTemplateId()))
+	}
+
+	baseUrl.RawQuery = params.Encode()
+
 	// Build HTTP headers from client and context metadata.
-	headers := buildHeaders(ctx, c.xGoogMetadata, metadata.Pairs("Content-Type", "application/json"))
+	hds := append(c.xGoogHeaders, "Content-Type", "application/json")
+	headers := gax.BuildHeaders(ctx, hds...)
 	opts = append((*c.CallOptions).CreateIssue[0:len((*c.CallOptions).CreateIssue):len((*c.CallOptions).CreateIssue)], opts...)
 	unm := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
 	resp := &issuetrackerpb.Issue{}
@@ -1242,13 +1247,13 @@ func (c *restClient) CreateIssue(ctx context.Context, req *issuetrackerpb.Create
 			return err
 		}
 
-		buf, err := ioutil.ReadAll(httpRsp.Body)
+		buf, err := io.ReadAll(httpRsp.Body)
 		if err != nil {
 			return err
 		}
 
 		if err := unm.Unmarshal(buf, resp); err != nil {
-			return maybeUnknownEnum(err)
+			return err
 		}
 
 		return nil
@@ -1275,9 +1280,11 @@ func (c *restClient) ModifyIssue(ctx context.Context, req *issuetrackerpb.Modify
 	baseUrl.Path += fmt.Sprintf("/v1/issues/%v:modify", req.GetIssueId())
 
 	// Build HTTP headers from client and context metadata.
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId())}
 
-	headers := buildHeaders(ctx, c.xGoogMetadata, md, metadata.Pairs("Content-Type", "application/json"))
+	hds = append(c.xGoogHeaders, hds...)
+	hds = append(hds, "Content-Type", "application/json")
+	headers := gax.BuildHeaders(ctx, hds...)
 	opts = append((*c.CallOptions).ModifyIssue[0:len((*c.CallOptions).ModifyIssue):len((*c.CallOptions).ModifyIssue)], opts...)
 	unm := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
 	resp := &issuetrackerpb.Issue{}
@@ -1302,13 +1309,13 @@ func (c *restClient) ModifyIssue(ctx context.Context, req *issuetrackerpb.Modify
 			return err
 		}
 
-		buf, err := ioutil.ReadAll(httpRsp.Body)
+		buf, err := io.ReadAll(httpRsp.Body)
 		if err != nil {
 			return err
 		}
 
 		if err := unm.Unmarshal(buf, resp); err != nil {
-			return maybeUnknownEnum(err)
+			return err
 		}
 
 		return nil
@@ -1345,9 +1352,11 @@ func (c *restClient) CreateIssueRelationship(ctx context.Context, req *issuetrac
 	baseUrl.RawQuery = params.Encode()
 
 	// Build HTTP headers from client and context metadata.
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId())}
 
-	headers := buildHeaders(ctx, c.xGoogMetadata, md, metadata.Pairs("Content-Type", "application/json"))
+	hds = append(c.xGoogHeaders, hds...)
+	hds = append(hds, "Content-Type", "application/json")
+	headers := gax.BuildHeaders(ctx, hds...)
 	opts = append((*c.CallOptions).CreateIssueRelationship[0:len((*c.CallOptions).CreateIssueRelationship):len((*c.CallOptions).CreateIssueRelationship)], opts...)
 	unm := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
 	resp := &issuetrackerpb.IssueRelationship{}
@@ -1372,13 +1381,13 @@ func (c *restClient) CreateIssueRelationship(ctx context.Context, req *issuetrac
 			return err
 		}
 
-		buf, err := ioutil.ReadAll(httpRsp.Body)
+		buf, err := io.ReadAll(httpRsp.Body)
 		if err != nil {
 			return err
 		}
 
 		if err := unm.Unmarshal(buf, resp); err != nil {
-			return maybeUnknownEnum(err)
+			return err
 		}
 
 		return nil
@@ -1418,9 +1427,11 @@ func (c *restClient) ListIssueRelationships(ctx context.Context, req *issuetrack
 	baseUrl.RawQuery = params.Encode()
 
 	// Build HTTP headers from client and context metadata.
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId())}
 
-	headers := buildHeaders(ctx, c.xGoogMetadata, md, metadata.Pairs("Content-Type", "application/json"))
+	hds = append(c.xGoogHeaders, hds...)
+	hds = append(hds, "Content-Type", "application/json")
+	headers := gax.BuildHeaders(ctx, hds...)
 	opts = append((*c.CallOptions).ListIssueRelationships[0:len((*c.CallOptions).ListIssueRelationships):len((*c.CallOptions).ListIssueRelationships)], opts...)
 	unm := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
 	resp := &issuetrackerpb.ListIssueRelationshipsResponse{}
@@ -1445,13 +1456,13 @@ func (c *restClient) ListIssueRelationships(ctx context.Context, req *issuetrack
 			return err
 		}
 
-		buf, err := ioutil.ReadAll(httpRsp.Body)
+		buf, err := io.ReadAll(httpRsp.Body)
 		if err != nil {
 			return err
 		}
 
 		if err := unm.Unmarshal(buf, resp); err != nil {
-			return maybeUnknownEnum(err)
+			return err
 		}
 
 		return nil
@@ -1501,7 +1512,8 @@ func (c *restClient) ListIssueUpdates(ctx context.Context, req *issuetrackerpb.L
 		baseUrl.RawQuery = params.Encode()
 
 		// Build HTTP headers from client and context metadata.
-		headers := buildHeaders(ctx, c.xGoogMetadata, metadata.Pairs("Content-Type", "application/json"))
+		hds := append(c.xGoogHeaders, "Content-Type", "application/json")
+		headers := gax.BuildHeaders(ctx, hds...)
 		e := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 			if settings.Path != "" {
 				baseUrl.Path = settings.Path
@@ -1522,13 +1534,13 @@ func (c *restClient) ListIssueUpdates(ctx context.Context, req *issuetrackerpb.L
 				return err
 			}
 
-			buf, err := ioutil.ReadAll(httpRsp.Body)
+			buf, err := io.ReadAll(httpRsp.Body)
 			if err != nil {
 				return err
 			}
 
 			if err := unm.Unmarshal(buf, resp); err != nil {
-				return maybeUnknownEnum(err)
+				return err
 			}
 
 			return nil
@@ -1572,9 +1584,11 @@ func (c *restClient) CreateIssueComment(ctx context.Context, req *issuetrackerpb
 	baseUrl.Path += fmt.Sprintf("/v1/issues/%v/comments", req.GetIssueId())
 
 	// Build HTTP headers from client and context metadata.
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId())}
 
-	headers := buildHeaders(ctx, c.xGoogMetadata, md, metadata.Pairs("Content-Type", "application/json"))
+	hds = append(c.xGoogHeaders, hds...)
+	hds = append(hds, "Content-Type", "application/json")
+	headers := gax.BuildHeaders(ctx, hds...)
 	opts = append((*c.CallOptions).CreateIssueComment[0:len((*c.CallOptions).CreateIssueComment):len((*c.CallOptions).CreateIssueComment)], opts...)
 	unm := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
 	resp := &issuetrackerpb.IssueComment{}
@@ -1599,13 +1613,13 @@ func (c *restClient) CreateIssueComment(ctx context.Context, req *issuetrackerpb
 			return err
 		}
 
-		buf, err := ioutil.ReadAll(httpRsp.Body)
+		buf, err := io.ReadAll(httpRsp.Body)
 		if err != nil {
 			return err
 		}
 
 		if err := unm.Unmarshal(buf, resp); err != nil {
-			return maybeUnknownEnum(err)
+			return err
 		}
 
 		return nil
@@ -1654,7 +1668,8 @@ func (c *restClient) ListIssueComments(ctx context.Context, req *issuetrackerpb.
 		baseUrl.RawQuery = params.Encode()
 
 		// Build HTTP headers from client and context metadata.
-		headers := buildHeaders(ctx, c.xGoogMetadata, metadata.Pairs("Content-Type", "application/json"))
+		hds := append(c.xGoogHeaders, "Content-Type", "application/json")
+		headers := gax.BuildHeaders(ctx, hds...)
 		e := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 			if settings.Path != "" {
 				baseUrl.Path = settings.Path
@@ -1675,13 +1690,13 @@ func (c *restClient) ListIssueComments(ctx context.Context, req *issuetrackerpb.
 				return err
 			}
 
-			buf, err := ioutil.ReadAll(httpRsp.Body)
+			buf, err := io.ReadAll(httpRsp.Body)
 			if err != nil {
 				return err
 			}
 
 			if err := unm.Unmarshal(buf, resp); err != nil {
-				return maybeUnknownEnum(err)
+				return err
 			}
 
 			return nil
@@ -1709,9 +1724,9 @@ func (c *restClient) ListIssueComments(ctx context.Context, req *issuetrackerpb.
 	return it
 }
 
-// UpdateIssueComment nB: The comment manipulation methods does not use the attachment field in
+// UpdateIssueComment updates an issue comment.
+// NB: The comment manipulation methods does not use the attachment field in
 // IssueComment.
-// Updates an issue comment
 func (c *restClient) UpdateIssueComment(ctx context.Context, req *issuetrackerpb.UpdateIssueCommentRequest, opts ...gax.CallOption) (*issuetrackerpb.IssueComment, error) {
 	m := protojson.MarshalOptions{AllowPartial: true, UseEnumNumbers: true}
 	body := req.GetComment()
@@ -1727,9 +1742,11 @@ func (c *restClient) UpdateIssueComment(ctx context.Context, req *issuetrackerpb
 	baseUrl.Path += fmt.Sprintf("/v1/issues/%v/comments/%v", req.GetIssueId(), req.GetCommentNumber())
 
 	// Build HTTP headers from client and context metadata.
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v&%s=%v", "issue_id", req.GetIssueId(), "comment_number", req.GetCommentNumber()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v&%s=%v", "issue_id", req.GetIssueId(), "comment_number", req.GetCommentNumber())}
 
-	headers := buildHeaders(ctx, c.xGoogMetadata, md, metadata.Pairs("Content-Type", "application/json"))
+	hds = append(c.xGoogHeaders, hds...)
+	hds = append(hds, "Content-Type", "application/json")
+	headers := gax.BuildHeaders(ctx, hds...)
 	opts = append((*c.CallOptions).UpdateIssueComment[0:len((*c.CallOptions).UpdateIssueComment):len((*c.CallOptions).UpdateIssueComment)], opts...)
 	unm := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
 	resp := &issuetrackerpb.IssueComment{}
@@ -1754,13 +1771,13 @@ func (c *restClient) UpdateIssueComment(ctx context.Context, req *issuetrackerpb
 			return err
 		}
 
-		buf, err := ioutil.ReadAll(httpRsp.Body)
+		buf, err := io.ReadAll(httpRsp.Body)
 		if err != nil {
 			return err
 		}
 
 		if err := unm.Unmarshal(buf, resp); err != nil {
-			return maybeUnknownEnum(err)
+			return err
 		}
 
 		return nil
@@ -1780,9 +1797,11 @@ func (c *restClient) ListAttachments(ctx context.Context, req *issuetrackerpb.Li
 	baseUrl.Path += fmt.Sprintf("/v1/issues/%v/attachments", req.GetIssueId())
 
 	// Build HTTP headers from client and context metadata.
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId())}
 
-	headers := buildHeaders(ctx, c.xGoogMetadata, md, metadata.Pairs("Content-Type", "application/json"))
+	hds = append(c.xGoogHeaders, hds...)
+	hds = append(hds, "Content-Type", "application/json")
+	headers := gax.BuildHeaders(ctx, hds...)
 	opts = append((*c.CallOptions).ListAttachments[0:len((*c.CallOptions).ListAttachments):len((*c.CallOptions).ListAttachments)], opts...)
 	unm := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
 	resp := &issuetrackerpb.ListAttachmentsResponse{}
@@ -1807,13 +1826,13 @@ func (c *restClient) ListAttachments(ctx context.Context, req *issuetrackerpb.Li
 			return err
 		}
 
-		buf, err := ioutil.ReadAll(httpRsp.Body)
+		buf, err := io.ReadAll(httpRsp.Body)
 		if err != nil {
 			return err
 		}
 
 		if err := unm.Unmarshal(buf, resp); err != nil {
-			return maybeUnknownEnum(err)
+			return err
 		}
 
 		return nil
@@ -1841,9 +1860,11 @@ func (c *restClient) CreateHotlistEntry(ctx context.Context, req *issuetrackerpb
 	baseUrl.Path += fmt.Sprintf("/v1/hotlists/%v/entries", req.GetHotlistId())
 
 	// Build HTTP headers from client and context metadata.
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "hotlist_id", req.GetHotlistId()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "hotlist_id", req.GetHotlistId())}
 
-	headers := buildHeaders(ctx, c.xGoogMetadata, md, metadata.Pairs("Content-Type", "application/json"))
+	hds = append(c.xGoogHeaders, hds...)
+	hds = append(hds, "Content-Type", "application/json")
+	headers := gax.BuildHeaders(ctx, hds...)
 	opts = append((*c.CallOptions).CreateHotlistEntry[0:len((*c.CallOptions).CreateHotlistEntry):len((*c.CallOptions).CreateHotlistEntry)], opts...)
 	unm := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
 	resp := &issuetrackerpb.HotlistEntry{}
@@ -1868,13 +1889,13 @@ func (c *restClient) CreateHotlistEntry(ctx context.Context, req *issuetrackerpb
 			return err
 		}
 
-		buf, err := ioutil.ReadAll(httpRsp.Body)
+		buf, err := io.ReadAll(httpRsp.Body)
 		if err != nil {
 			return err
 		}
 
 		if err := unm.Unmarshal(buf, resp); err != nil {
-			return maybeUnknownEnum(err)
+			return err
 		}
 
 		return nil
@@ -1896,9 +1917,11 @@ func (c *restClient) DeleteHotlistEntry(ctx context.Context, req *issuetrackerpb
 	baseUrl.Path += fmt.Sprintf("/v1/hotlists/%v/entries/%v", req.GetHotlistId(), req.GetIssueId())
 
 	// Build HTTP headers from client and context metadata.
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v&%s=%v", "hotlist_id", req.GetHotlistId(), "issue_id", req.GetIssueId()))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v&%s=%v", "hotlist_id", req.GetHotlistId(), "issue_id", req.GetIssueId())}
 
-	headers := buildHeaders(ctx, c.xGoogMetadata, md, metadata.Pairs("Content-Type", "application/json"))
+	hds = append(c.xGoogHeaders, hds...)
+	hds = append(hds, "Content-Type", "application/json")
+	headers := gax.BuildHeaders(ctx, hds...)
 	return gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		if settings.Path != "" {
 			baseUrl.Path = settings.Path
@@ -1948,7 +1971,8 @@ func (c *restClient) GetAutomationAccess(ctx context.Context, req *issuetrackerp
 	baseUrl.RawQuery = params.Encode()
 
 	// Build HTTP headers from client and context metadata.
-	headers := buildHeaders(ctx, c.xGoogMetadata, metadata.Pairs("Content-Type", "application/json"))
+	hds := append(c.xGoogHeaders, "Content-Type", "application/json")
+	headers := gax.BuildHeaders(ctx, hds...)
 	opts = append((*c.CallOptions).GetAutomationAccess[0:len((*c.CallOptions).GetAutomationAccess):len((*c.CallOptions).GetAutomationAccess)], opts...)
 	unm := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
 	resp := &issuetrackerpb.GetAutomationAccessResponse{}
@@ -1973,13 +1997,13 @@ func (c *restClient) GetAutomationAccess(ctx context.Context, req *issuetrackerp
 			return err
 		}
 
-		buf, err := ioutil.ReadAll(httpRsp.Body)
+		buf, err := io.ReadAll(httpRsp.Body)
 		if err != nil {
 			return err
 		}
 
 		if err := unm.Unmarshal(buf, resp); err != nil {
-			return maybeUnknownEnum(err)
+			return err
 		}
 
 		return nil

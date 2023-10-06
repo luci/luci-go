@@ -93,6 +93,14 @@ func TestBugManager(t *testing.T) {
 					Severity:    issuetracker.Issue_S2,
 					Priority:    issuetracker.Issue_P4,
 					Title:       "Tests are failing: Expected equality of these values: \"Expected_Value\" my_expr.evaluate(123) Which is: \"Unexpected_Value\"",
+					Ccs: []*issuetracker.User{
+						{
+							EmailAddress: "testcc1@google.com",
+						},
+						{
+							EmailAddress: "testcc2@google.com",
+						},
+					},
 				},
 				CreatedTime:  timestamppb.New(clock.Now(ctx)),
 				ModifiedTime: timestamppb.New(clock.Now(ctx)),

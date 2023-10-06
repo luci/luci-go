@@ -93,6 +93,17 @@ func (fic *FakeClient) CreateIssue(ctx context.Context, in *issuetracker.CreateI
 	}
 	issue.IssueComment = nil
 
+	if in.TemplateOptions != nil && in.TemplateOptions.ApplyTemplate {
+		issue.IssueState.Ccs = []*issuetracker.User{
+			{
+				EmailAddress: "testcc1@google.com",
+			},
+			{
+				EmailAddress: "testcc2@google.com",
+			},
+		}
+	}
+
 	return fic.FakeStore.StoreIssue(ctx, issue), nil
 }
 

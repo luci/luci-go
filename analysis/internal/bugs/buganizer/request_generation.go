@@ -125,6 +125,9 @@ func (rg *RequestGenerator) PrepareNew(description *clustering.ClusterDescriptio
 
 	return &issuetracker.CreateIssueRequest{
 		Issue: issue,
+		TemplateOptions: &issuetracker.CreateIssueRequest_TemplateOptions{
+			ApplyTemplate: true,
+		},
 	}, nil
 }
 
@@ -159,6 +162,9 @@ func (rg *RequestGenerator) PrepareNewLegacy(metrics bugs.ClusterMetrics,
 
 	return &issuetracker.CreateIssueRequest{
 		Issue: issue,
+		TemplateOptions: &issuetracker.CreateIssueRequest_TemplateOptions{
+			ApplyTemplate: true,
+		},
 	}
 }
 
