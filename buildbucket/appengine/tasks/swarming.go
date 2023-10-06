@@ -491,10 +491,14 @@ func updateBuildStatusFromTaskResult(ctx context.Context, bld *model.Build, task
 		setEndStatus(pb.Status_INFRA_FAILURE)
 	case apipb.TaskState_COMPLETED:
 		if taskResult.Failure {
-			// If this truly was a non-infra failure, bbagent would catch that and
-			// mark the build as FAILURE.
-			// That did not happen, so this is an infra failure.
-			setEndStatus(pb.Status_INFRA_FAILURE)
+			if bld.Proto.Output.GetStatus() == pb.Status_FAILURE {
+				setEndStatus(pb.Status_FAILURE)
+			} else {
+				//If this truly was a non-infra failure, bbagent would catch that and
+				//mark the build as FAILURE.
+				//That did not happen, so this is an infra failure.
+				setEndStatus(pb.Status_INFRA_FAILURE)
+			}
 		} else {
 			setEndStatus(pb.Status_SUCCESS)
 		}
