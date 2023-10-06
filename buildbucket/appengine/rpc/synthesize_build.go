@@ -70,10 +70,11 @@ func synthesizeBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest) (*pb.
 	if err := datastore.Get(ctx, bktCfg, bldrCfg); err != nil {
 		return nil, errors.Annotate(err, "failed to get builder config").Err()
 	}
-	return scheduleShadowBuild(ctx, schReq, bktCfg.Proto.Shadow, globalCfg, bldrCfg.Config)
+	bld := scheduleShadowBuild(ctx, schReq, nil, bktCfg.Proto.Shadow, globalCfg, bldrCfg.Config)
+	return bld, nil
 }
 
-func scheduleShadowBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest, shadowBucket string, globalCfg *pb.SettingsCfg, cfg *pb.BuilderConfig) (*pb.Build, error) {
+func scheduleShadowBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest, ancestors []int64, shadowBucket string, globalCfg *pb.SettingsCfg, cfg *pb.BuilderConfig) *pb.Build {
 	origBucket := schReq.Builder.Bucket
 
 	cfgCopy := cfg
@@ -81,7 +82,7 @@ func scheduleShadowBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest, s
 		cfgCopy = applyShadowAdjustment(cfg)
 	}
 
-	bld := buildFromScheduleRequest(ctx, schReq, nil, "", cfgCopy, globalCfg)
+	bld := buildFromScheduleRequest(ctx, schReq, ancestors, "", cfgCopy, globalCfg)
 
 	if shadowBucket != "" && shadowBucket != origBucket {
 		bld.Input.Properties.Fields["$recipe_engine/led"] = &structpb.Value{
@@ -99,7 +100,7 @@ func scheduleShadowBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest, s
 		}
 		bld.Builder.Bucket = shadowBucket
 	}
-	return bld, nil
+	return bld
 }
 
 // synthesizeBuildFromTemplate returns a request with fields populated by the

@@ -1522,6 +1522,70 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			}), ShouldBeNil)
+
+			tk, err := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_BUILD)
+			ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
+			So(err, ShouldBeNil)
+			So(datastore.Put(ctx, &model.Build{
+				Proto: &pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket.shadow",
+						Builder: "builder",
+					},
+					Status: pb.Status_STARTED,
+				},
+				UpdateToken: tk,
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.BuildInfra{
+				Build: datastore.MakeKey(ctx, "Build", 1),
+				Proto: &pb.BuildInfra{
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Agent: &pb.BuildInfra_Buildbucket_Agent{
+							Input: &pb.BuildInfra_Buildbucket_Agent_Input{
+								Data: map[string]*pb.InputDataRef{
+									"cipd_bin_packages": {
+										DataType: &pb.InputDataRef_Cipd{
+											Cipd: &pb.InputDataRef_CIPD{
+												Server: "cipd server",
+												Specs: []*pb.InputDataRef_CIPD_PkgSpec{
+													{Package: "include", Version: "canary-version"},
+													{Package: "include_experiment", Version: "version"},
+												},
+											},
+										},
+										OnPath: []string{"cipd_bin_packages", "cipd_bin_packages/bin"},
+									},
+									"kitchen-checkout": {
+										DataType: &pb.InputDataRef_Cas{
+											Cas: &pb.InputDataRef_CAS{
+												CasInstance: "projects/project/instances/instance",
+												Digest: &pb.InputDataRef_CAS_Digest{
+													Hash:      "hash",
+													SizeBytes: 1,
+												},
+											},
+										},
+									},
+								},
+							},
+							Source: &pb.BuildInfra_Buildbucket_Agent_Source{
+								DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
+									Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
+										Package: "infra/tools/luci/bbagent/${platform}",
+										Version: "canary-version",
+										Server:  "cipd server",
+									},
+								},
+							},
+							Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+								"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+							},
+						},
+					},
+				},
+			}), ShouldBeNil)
 			reqs := []*pb.ScheduleBuildRequest{
 				{
 					Builder: &pb.BuilderID{
@@ -1578,9 +1642,44 @@ func TestScheduleBuild(t *testing.T) {
 						Buildbucket: &pb.BuildInfra_Buildbucket{
 							Hostname: "app.appspot.com",
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
-								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
+								Input: &pb.BuildInfra_Buildbucket_Agent_Input{
+									Data: map[string]*pb.InputDataRef{
+										"cipd_bin_packages": {
+											DataType: &pb.InputDataRef_Cipd{
+												Cipd: &pb.InputDataRef_CIPD{
+													Server: "cipd server",
+													Specs: []*pb.InputDataRef_CIPD_PkgSpec{
+														{Package: "include", Version: "canary-version"},
+														{Package: "include_experiment", Version: "version"},
+													},
+												},
+											},
+											OnPath: []string{"cipd_bin_packages", "cipd_bin_packages/bin"},
+										},
+										"kitchen-checkout": {
+											DataType: &pb.InputDataRef_Cas{
+												Cas: &pb.InputDataRef_CAS{
+													CasInstance: "projects/project/instances/instance",
+													Digest: &pb.InputDataRef_CAS_Digest{
+														Hash:      "hash",
+														SizeBytes: 1,
+													},
+												},
+											},
+										},
+									},
+								},
 								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+								},
+								Source: &pb.BuildInfra_Buildbucket_Agent_Source{
+									DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
+										Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
+											Package: "infra/tools/luci/bbagent/${platform}",
+											Version: "canary-version",
+											Server:  "cipd server",
+										},
+									},
 								},
 							},
 						},
@@ -1655,6 +1754,8 @@ func TestScheduleBuild(t *testing.T) {
 							Value: "builder",
 						},
 					},
+					AncestorIds:      []int64{1},
+					CanOutliveParent: true,
 				},
 				{
 					Builder: &pb.BuilderID{
@@ -1742,6 +1843,8 @@ func TestScheduleBuild(t *testing.T) {
 							Value: "builder",
 						},
 					},
+					AncestorIds:      []int64{1},
+					CanOutliveParent: true,
 				},
 				nil,
 			})

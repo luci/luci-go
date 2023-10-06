@@ -521,9 +521,15 @@ message ScheduleBuildRequest {
   // Value for Build.retriable.
   Trinary retriable = 22;
 
+  // Information for scheduling a build as a shadow build.
   message ShadowInput {
   }
   // Input for scheduling a build in the shadow bucket.
+  //
+  // If this field is set, it means the build to be scheduled will
+  // * be scheduled in the shadow bucket of the requested bucket, with shadow
+  //   adjustments on service_account, dimensions and properties.
+  // * inherit its parent build's agent input and agent source if it has a parent.
   ShadowInput shadow_input = 23;
 }
 

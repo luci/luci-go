@@ -1504,6 +1504,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 		return nil, err
 	}
 
+	var pInfra *model.BuildInfra
 	for i := range blds {
 		origI := idxMapBlds[i]
 		bucket := fmt.Sprintf("%s/%s", validReq[i].Builder.Project, validReq[i].Builder.Bucket)
@@ -1514,12 +1515,30 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 			// Schedule a build with shadow info.
 			if shadowMap[bucket] == "" || shadowMap[bucket] == validReq[i].Builder.Bucket {
 				// Scheduling a shadow build in the original bucket is prohibited.
+				// In theory this part of code should not be reached, since validateScheduleBuild
+				// has checked.
+				// But still check here just in case a builder config happened to be
+				// updated between validateScheduleBuild and here.
 				merr[origI] = errors.Reason("scheduling a shadow build in the original bucket is not allowed").Err()
 				blds[i] = nil
 				continue
 			}
 			// Schedule a build with shadow info.
-			build, merr[origI] = scheduleShadowBuild(ctx, reqs[origI], shadowMap[bucket], globalCfg, cfg)
+			build = scheduleShadowBuild(ctx, reqs[origI], ancestors, shadowMap[bucket], globalCfg, cfg)
+			if pBld != nil {
+				if pInfra == nil {
+					entities, err := common.GetBuildEntities(ctx, pBld.ID, model.BuildInfraKind)
+					if err != nil {
+						merr[origI] = errors.Reason("failed to get BuildInfra for build %d", pBld.ID).Err()
+						blds[i] = nil
+						continue
+					}
+					pInfra = entities[0].(*model.BuildInfra)
+				}
+				// Inherit agent input and agent source from the parent build.
+				build.Infra.Buildbucket.Agent.Input = pInfra.Proto.Buildbucket.Agent.Input
+				build.Infra.Buildbucket.Agent.Source = pInfra.Proto.Buildbucket.Agent.Source
+			}
 		} else {
 			// TODO(crbug.com/1042991): Parallelize build creation from requests if necessary.
 			build = buildFromScheduleRequest(ctx, reqs[origI], ancestors, pRunID, cfg, globalCfg)

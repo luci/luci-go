@@ -698,6 +698,11 @@ type ScheduleBuildRequest struct {
 	// Value for Build.retriable.
 	Retriable Trinary `protobuf:"varint,22,opt,name=retriable,proto3,enum=buildbucket.v2.Trinary" json:"retriable,omitempty"`
 	// Input for scheduling a build in the shadow bucket.
+	//
+	// If this field is set, it means the build to be scheduled will
+	//   - be scheduled in the shadow bucket of the requested bucket, with shadow
+	//     adjustments on service_account, dimensions and properties.
+	//   - inherit its parent build's agent input and agent source if it has a parent.
 	ShadowInput *ScheduleBuildRequest_ShadowInput `protobuf:"bytes,23,opt,name=shadow_input,json=shadowInput,proto3" json:"shadow_input,omitempty"`
 }
 
@@ -2164,6 +2169,7 @@ func (x *ScheduleBuildRequest_Swarming) GetParentRunId() string {
 	return ""
 }
 
+// Information for scheduling a build as a shadow build.
 type ScheduleBuildRequest_ShadowInput struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
