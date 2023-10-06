@@ -42,7 +42,7 @@ func TestGetErrors(t *testing.T) {
 				Stable: &compute.Operation{
 					Error: &compute.OperationError{
 						Errors: []*compute.OperationErrorErrors{
-							&compute.OperationErrorErrors{
+							{
 								Code:    "hi",
 								Message: "bye",
 							},
@@ -51,7 +51,7 @@ func TestGetErrors(t *testing.T) {
 				},
 			},
 			output: []CommonOpError{
-				CommonOpError{
+				{
 					Code:    "hi",
 					Message: "bye",
 				},
@@ -63,7 +63,7 @@ func TestGetErrors(t *testing.T) {
 				Alpha: &computealpha.Operation{
 					Error: &computealpha.OperationError{
 						Errors: []*computealpha.OperationErrorErrors{
-							&computealpha.OperationErrorErrors{
+							{
 								Code:    "hi",
 								Message: "bye",
 							},
@@ -72,7 +72,7 @@ func TestGetErrors(t *testing.T) {
 				},
 			},
 			output: []CommonOpError{
-				CommonOpError{
+				{
 					Code:    "hi",
 					Message: "bye",
 				},

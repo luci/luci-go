@@ -34,7 +34,6 @@ func MapSlice[T any, U any](input []T, f func(T) U) []U {
 	return out
 }
 
-
 // Keep this functions in alphabetical order. They should be named after the type that they convert from stable to alpha. Thank you.
 
 // AcceleratorConfig converts a stable AcceleratorConfig to an alpha AcceleratorConfig.

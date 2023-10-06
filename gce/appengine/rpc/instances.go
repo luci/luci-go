@@ -20,7 +20,6 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -30,12 +29,11 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/paged"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/auth"
-
 	"go.chromium.org/luci/gce/api/instances/v1"
 	"go.chromium.org/luci/gce/appengine/model"
-	"go.chromium.org/luci/gce/vmtoken"
 	"go.chromium.org/luci/gce/appengine/rpc/internal/metrics"
+	"go.chromium.org/luci/gce/vmtoken"
+	"go.chromium.org/luci/server/auth"
 )
 
 // Instances implements instances.InstancesServer.
