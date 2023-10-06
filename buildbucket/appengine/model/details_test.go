@@ -315,7 +315,9 @@ func TestDetails(t *testing.T) {
 				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
 			}
 			So(outPropInDB.Get(ctx), ShouldBeNil)
-			So(outPropInDB.Proto, ShouldResembleProtoJSON, `{"key": "value"}`)
+			So(outPropInDB.Proto, ShouldResembleProto, mustStruct(map[string]interface{}{
+				"key": "value",
+			}))
 			So(outPropInDB.ChunkCount, ShouldEqual, 0)
 
 			Convey("normal -> larger", func() {
@@ -334,7 +336,10 @@ func TestDetails(t *testing.T) {
 					Build: outProp.Build,
 				}
 				So(outPropInDB.Get(ctx), ShouldBeNil)
-				So(outPropInDB.Proto, ShouldResembleProtoJSON, `{"key": "value", "new_key": "new_value"}`)
+				So(outPropInDB.Proto, ShouldResembleProto, mustStruct(map[string]interface{}{
+					"key":     "value",
+					"new_key": "new_value",
+				}))
 			})
 
 			Convey("normal -> extreme large", func() {

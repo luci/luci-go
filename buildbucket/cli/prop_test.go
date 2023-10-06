@@ -25,6 +25,14 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func mustStruct(data map[string]interface{}) *structpb.Struct {
+	ret, err := structpb.NewStruct(data)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 func TestPropertiesFlag(t *testing.T) {
 	t.Parallel()
 
@@ -45,45 +53,47 @@ func TestPropertiesFlag(t *testing.T) {
 
 			So(f.Set("@"+file.Name()), ShouldBeNil)
 
-			So(props, ShouldResembleProtoJSON, `{
+			So(props, ShouldResembleProto, mustStruct(map[string]interface{}{
 				"in-file-1": "orig",
-				"in-file-2": "orig"
-			}`)
+				"in-file-2": "orig",
+			}))
 
 			Convey("Override", func() {
 				So(f.Set("in-file-2=override"), ShouldBeNil)
-				So(props, ShouldResembleProtoJSON, `{
-					"in-file-1": "orig",
-					"in-file-2": "override"
-				}`)
-
-				So(f.Set("a=b"), ShouldBeNil)
-				So(props, ShouldResembleProtoJSON, `{
+				So(props, ShouldResembleProto, mustStruct(map[string]interface{}{
 					"in-file-1": "orig",
 					"in-file-2": "override",
-					"a": "b"
-				}`)
+				}))
+
+				So(f.Set("a=b"), ShouldBeNil)
+				So(props, ShouldResembleProto, mustStruct(map[string]interface{}{
+					"in-file-1": "orig",
+					"in-file-2": "override",
+					"a":         "b",
+				}))
 			})
 		})
 
 		Convey("Name=Value", func() {
 			So(f.Set("foo=bar"), ShouldBeNil)
-			So(props, ShouldResembleProtoJSON, `{"foo": "bar"}`)
+			So(props, ShouldResembleProto, mustStruct(map[string]interface{}{
+				"foo": "bar",
+			}))
 
 			Convey("JSON", func() {
 				So(f.Set("array=[1]"), ShouldBeNil)
-				So(props, ShouldResembleProtoJSON, `{
-					"foo": "bar",
-					"array": [1]}
-				`)
+				So(props, ShouldResembleProto, mustStruct(map[string]interface{}{
+					"foo":   "bar",
+					"array": []any{1},
+				}))
 			})
 
 			Convey("Trims spaces", func() {
 				So(f.Set("array = [1]"), ShouldBeNil)
-				So(props, ShouldResembleProtoJSON, `{
-					"foo": "bar",
-					"array": [1]}
-				`)
+				So(props, ShouldResembleProto, mustStruct(map[string]interface{}{
+					"foo":   "bar",
+					"array": []any{1},
+				}))
 			})
 
 			Convey("Dup", func() {

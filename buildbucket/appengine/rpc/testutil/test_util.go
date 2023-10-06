@@ -18,8 +18,6 @@ package testutil
 import (
 	"context"
 
-	"github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -44,7 +42,10 @@ func PutBuilder(ctx context.Context, project, bucket, builder string, backend st
 		}
 	}
 
-	convey.So(datastore.Put(ctx, bldr), convey.ShouldBeNil)
+	// TODO: pass in testing.TB and Assert this instead.
+	if err := datastore.Put(ctx, bldr); err != nil {
+		panic(err)
+	}
 }
 
 // PutBucket saves a *model.Bucket to datastore for test usage.
@@ -55,9 +56,14 @@ func PutBucket(ctx context.Context, project, bucket string, cfg *pb.Bucket) {
 	if cfg.Name == "" {
 		cfg.Name = bucket
 	}
-	convey.So(datastore.Put(ctx, &model.Bucket{
+
+	// TODO: pass in testing.TB and Assert this instead.
+	err := datastore.Put(ctx, &model.Bucket{
 		Parent: model.ProjectKey(ctx, project),
 		ID:     bucket,
 		Proto:  cfg,
-	}), convey.ShouldBeNil)
+	})
+	if err != nil {
+		panic(err)
+	}
 }

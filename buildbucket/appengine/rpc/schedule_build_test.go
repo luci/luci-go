@@ -5714,7 +5714,7 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					})
-					So(bInfra.Proto, ShouldNotBeEmpty)
+					So(bInfra.Proto, ShouldNotBeNil)
 					So(bs.BuildAddress, ShouldEqual, "project/bucket/builder/1")
 					So(bs.Status, ShouldEqual, pb.Status_SCHEDULED)
 
@@ -6187,7 +6187,6 @@ func TestScheduleBuild(t *testing.T) {
 
 				rsp, err := srv.scheduleBuilds(ctx, globalCfg, reqs)
 				So(err, ShouldNotBeNil)
-				So(err, ShouldHaveSameTypeAs, errors.MultiError{})
 				So(err[0], ShouldBeNil)
 				So(err[1], ShouldErrLike, `requested resource not found or "user:caller@example.com" does not have permission to view it`)
 				So(err[2], ShouldBeNil)
@@ -6255,7 +6254,6 @@ func TestScheduleBuild(t *testing.T) {
 
 				rsp, err := srv.scheduleBuilds(ctx, globalCfg, reqs)
 				So(err, ShouldNotBeNil)
-				So(err, ShouldHaveSameTypeAs, errors.MultiError{})
 				So(err[0], ShouldBeNil)
 				So(err[1], ShouldErrLike, `builder not found: "miss_builder_cfg"`)
 				So(err[2], ShouldBeNil)
@@ -6362,7 +6360,6 @@ func TestScheduleBuild(t *testing.T) {
 
 				rsp, err := srv.scheduleBuilds(ctx, globalCfg, reqs)
 				So(err, ShouldNotBeNil)
-				So(err, ShouldHaveSameTypeAs, errors.MultiError{})
 				So(err[0], ShouldBeNil)
 				So(err[1], ShouldErrLike, "failed to create the invocation for build id: 9021868963221610321: rpc error: code = Internal desc = internal error")
 				So(err[2], ShouldBeNil)

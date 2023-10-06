@@ -230,24 +230,24 @@ func TestValidateUpdate(t *testing.T) {
 	})
 
 	Convey("validate steps", t, func() {
-		t := timestamppb.New(testclock.TestRecentTimeUTC)
+		ts := timestamppb.New(testclock.TestRecentTimeUTC)
 		bs := &model.BuildSteps{ID: 1}
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.steps"}}
 
 		Convey("succeeds", func() {
 			req.Build.Steps = []*pb.Step{
-				{Name: "step1", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
-				{Name: "step2", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
+				{Name: "step1", Status: pb.Status_SUCCESS, StartTime: ts, EndTime: ts},
+				{Name: "step2", Status: pb.Status_SUCCESS, StartTime: ts, EndTime: ts},
 			}
 			So(validateUpdate(ctx, req, bs), ShouldBeNil)
 		})
 
 		Convey("fails with duplicates", func() {
-			t := timestamppb.New(testclock.TestRecentTimeUTC)
+			ts := timestamppb.New(testclock.TestRecentTimeUTC)
 			req.Build.Steps = []*pb.Step{
-				{Name: "step1", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
-				{Name: "step1", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
+				{Name: "step1", Status: pb.Status_SUCCESS, StartTime: ts, EndTime: ts},
+				{Name: "step1", Status: pb.Status_SUCCESS, StartTime: ts, EndTime: ts},
 			}
 			So(validateUpdate(ctx, req, bs), ShouldErrLike, `duplicate: "step1"`)
 		})
@@ -255,15 +255,15 @@ func TestValidateUpdate(t *testing.T) {
 		Convey("with a parent step", func() {
 			Convey("before child", func() {
 				req.Build.Steps = []*pb.Step{
-					{Name: "parent", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
-					{Name: "parent|child", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
+					{Name: "parent", Status: pb.Status_SUCCESS, StartTime: ts, EndTime: ts},
+					{Name: "parent|child", Status: pb.Status_SUCCESS, StartTime: ts, EndTime: ts},
 				}
 				So(validateUpdate(ctx, req, bs), ShouldBeNil)
 			})
 			Convey("after child", func() {
 				req.Build.Steps = []*pb.Step{
-					{Name: "parent|child", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
-					{Name: "parent", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
+					{Name: "parent|child", Status: pb.Status_SUCCESS, StartTime: ts, EndTime: ts},
+					{Name: "parent", Status: pb.Status_SUCCESS, StartTime: ts, EndTime: ts},
 				}
 				So(validateUpdate(ctx, req, bs), ShouldErrLike, `parent of "parent|child" must precede`)
 			})
@@ -406,7 +406,7 @@ func TestValidateStep(t *testing.T) {
 	t.Parallel()
 
 	Convey("validate", t, func() {
-		t := timestamppb.New(testclock.TestRecentTimeUTC)
+		ts := timestamppb.New(testclock.TestRecentTimeUTC)
 		step := &pb.Step{Name: "step1"}
 		bStatus := pb.Status_STARTED
 
@@ -428,7 +428,7 @@ func TestValidateStep(t *testing.T) {
 
 			Convey("with start_time, when should not have", func() {
 				step.Status = pb.Status_SCHEDULED
-				step.StartTime = t
+				step.StartTime = ts
 				So(validateStep(step, nil, bStatus), ShouldErrLike, `start_time: must not be specified for status "SCHEDULED"`)
 			})
 
@@ -444,26 +444,26 @@ func TestValidateStep(t *testing.T) {
 			step.Status = pb.Status_INFRA_FAILURE
 
 			Convey("missing start_time, but end_time", func() {
-				step.EndTime = t
+				step.EndTime = ts
 				So(validateStep(step, nil, bStatus), ShouldErrLike, `start_time: required by status "INFRA_FAILURE"`)
 			})
 
 			Convey("missing end_time", func() {
-				step.StartTime = t
+				step.StartTime = ts
 				So(validateStep(step, nil, bStatus), ShouldErrLike, "end_time: must have both or neither end_time and a terminal status")
 			})
 
 			Convey("end_time is before start_time", func() {
-				step.EndTime = t
-				st := timestamppb.New(testclock.TestRecentTimeUTC.AddDate(0, 0, 1))
-				step.StartTime = st
+				step.EndTime = ts
+				sts := timestamppb.New(testclock.TestRecentTimeUTC.AddDate(0, 0, 1))
+				step.StartTime = sts
 				So(validateStep(step, nil, bStatus), ShouldErrLike, "end_time: is before the start_time")
 			})
 		})
 
 		Convey("with logs", func() {
 			step.Status = pb.Status_STARTED
-			step.StartTime = t
+			step.StartTime = ts
 
 			Convey("missing name", func() {
 				step.Logs = []*pb.Log{{Url: "url", ViewUrl: "view_url"}}
@@ -491,7 +491,7 @@ func TestValidateStep(t *testing.T) {
 
 		Convey("with tags", func() {
 			step.Status = pb.Status_STARTED
-			step.StartTime = t
+			step.StartTime = ts
 
 			Convey("missing key", func() {
 				step.Tags = []*pb.StringPair{{Value: "hi"}}
@@ -768,7 +768,9 @@ func TestUpdateBuild(t *testing.T) {
 				req.UpdateMask.Paths[0] = "build.output.properties"
 				So(updateBuild(ctx, req), ShouldBeRPCOK)
 				b := getBuildWithDetails(ctx, req.Build.Id)
-				So(b.Proto.Output.Properties, ShouldResembleProtoJSON, `{"key": "value"}`)
+				m, err := structpb.NewStruct(map[string]interface{}{"key": "value"})
+				So(err, ShouldBeNil)
+				So(b.Proto.Output.Properties, ShouldResembleProto, m)
 			})
 
 			Convey("without mask", func() {

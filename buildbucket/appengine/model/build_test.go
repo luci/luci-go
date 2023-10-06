@@ -37,6 +37,14 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func mustStruct(data map[string]interface{}) *structpb.Struct {
+	ret, err := structpb.NewStruct(data)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 func TestBuild(t *testing.T) {
 	t.Parallel()
 
@@ -373,7 +381,9 @@ func TestBuild(t *testing.T) {
 			Convey("input properties", func() {
 				p, err := b.ToProto(ctx, m, nil)
 				So(err, ShouldBeNil)
-				So(p.Input.Properties, ShouldResembleProtoJSON, `{"input": "input value"}`)
+				So(p.Input.Properties, ShouldResembleProto, mustStruct(map[string]interface{}{
+					"input": "input value",
+				}))
 				So(b.Proto.Input, ShouldBeNil)
 			})
 
@@ -392,7 +402,9 @@ func TestBuild(t *testing.T) {
 				}), ShouldBeNil)
 				p, err := b.ToProto(ctx, m, nil)
 				So(err, ShouldBeNil)
-				So(p.Output.Properties, ShouldResembleProtoJSON, `{"output": "output value"}`)
+				So(p.Output.Properties, ShouldResembleProto, mustStruct(map[string]interface{}{
+					"output": "output value",
+				}))
 				So(b.Proto.Output, ShouldBeNil)
 
 				Convey("one missing, one found", func() {
@@ -404,7 +416,9 @@ func TestBuild(t *testing.T) {
 					}
 					m := HardcodedBuildMask("output.properties")
 					So(LoadBuildDetails(ctx, m, nil, b1, b2), ShouldBeNil)
-					So(b1.Output.Properties, ShouldResembleProtoJSON, `{"output": "output value"}`)
+					So(b1.Output.Properties, ShouldResembleProto, mustStruct(map[string]interface{}{
+						"output": "output value",
+					}))
 					So(b2.Output.GetProperties(), ShouldBeNil)
 				})
 			})
