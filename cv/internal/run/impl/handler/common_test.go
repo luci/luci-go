@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/metrics"
@@ -321,9 +322,9 @@ func TestCheckRunCreate(t *testing.T) {
 			reqs := rs.OngoingLongOps.Ops["1-1"].GetResetTriggers().GetRequests()
 			So(reqs, ShouldHaveLength, 1)
 			So(reqs[0].Message, ShouldEqual, "CV cannot start a Run for `user-1@example.com` because the user is neither the CL owner nor a committer.")
-			So(reqs[0].AddToAttention, ShouldResemble, []run.OngoingLongOps_Op_ResetTriggers_Whom{
-				run.OngoingLongOps_Op_ResetTriggers_OWNER,
-				run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS})
+			So(reqs[0].AddToAttention, ShouldResemble, []gerrit.Whom{
+				gerrit.Whom_OWNER,
+				gerrit.Whom_CQ_VOTERS})
 		})
 	})
 }

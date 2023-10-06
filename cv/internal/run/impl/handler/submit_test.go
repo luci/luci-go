@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
@@ -596,13 +597,13 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							expectedRequests[i] = &run.OngoingLongOps_Op_ResetTriggers_Request{
 								Clid:    expectedMsg.clid,
 								Message: expectedMsg.msg,
-								Notify: []run.OngoingLongOps_Op_ResetTriggers_Whom{
-									run.OngoingLongOps_Op_ResetTriggers_OWNER,
-									run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
+								Notify: gerrit.Whoms{
+									gerrit.Whom_OWNER,
+									gerrit.Whom_CQ_VOTERS,
 								},
-								AddToAttention: []run.OngoingLongOps_Op_ResetTriggers_Whom{
-									run.OngoingLongOps_Op_ResetTriggers_OWNER,
-									run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
+								AddToAttention: gerrit.Whoms{
+									gerrit.Whom_OWNER,
+									gerrit.Whom_CQ_VOTERS,
 								},
 								AddToAttentionReason: submissionFailureAttentionReason,
 							}
@@ -796,13 +797,13 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						expectedRequests[i] = &run.OngoingLongOps_Op_ResetTriggers_Request{
 							Clid:    expectedMsg.clid,
 							Message: expectedMsg.msg,
-							Notify: []run.OngoingLongOps_Op_ResetTriggers_Whom{
-								run.OngoingLongOps_Op_ResetTriggers_OWNER,
-								run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
+							Notify: gerrit.Whoms{
+								gerrit.Whom_OWNER,
+								gerrit.Whom_CQ_VOTERS,
 							},
-							AddToAttention: []run.OngoingLongOps_Op_ResetTriggers_Whom{
-								run.OngoingLongOps_Op_ResetTriggers_OWNER,
-								run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
+							AddToAttention: gerrit.Whoms{
+								gerrit.Whom_OWNER,
+								gerrit.Whom_CQ_VOTERS,
 							},
 							AddToAttentionReason: submissionFailureAttentionReason,
 						}

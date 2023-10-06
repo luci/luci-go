@@ -18,6 +18,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/anypb"
 
+	gerrit "go.chromium.org/luci/cv/internal/gerrit"
+
 	tryjob "go.chromium.org/luci/cv/internal/tryjob"
 )
 
@@ -35,6 +37,8 @@ var (
 	_ = (*mail.Address)(nil)
 	_ = anypb.Any{}
 	_ = sort.Sort
+
+	_ = gerrit.Whom(0)
 
 	_ = tryjob.Status(0)
 )

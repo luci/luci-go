@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/run"
@@ -312,13 +313,13 @@ func TestStart(t *testing.T) {
 					Message: fmt.Sprintf(
 						"CV cannot start a Run for `%s` because the user is not a dry-runner.", gf.U(triggerer).Email,
 					),
-					Notify: []run.OngoingLongOps_Op_ResetTriggers_Whom{
-						run.OngoingLongOps_Op_ResetTriggers_OWNER,
-						run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
+					Notify: gerrit.Whoms{
+						gerrit.Whom_OWNER,
+						gerrit.Whom_CQ_VOTERS,
 					},
-					AddToAttention: []run.OngoingLongOps_Op_ResetTriggers_Whom{
-						run.OngoingLongOps_Op_ResetTriggers_OWNER,
-						run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
+					AddToAttention: gerrit.Whoms{
+						gerrit.Whom_OWNER,
+						gerrit.Whom_CQ_VOTERS,
 					},
 					AddToAttentionReason: "CQ/CV Run failed",
 				},

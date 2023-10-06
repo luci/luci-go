@@ -193,10 +193,10 @@ func (op *ResetTriggersOp) loadInputs(ctx context.Context) error {
 			LUCIProject:       luciProject,
 			Message:           req.Message,
 			Requester:         "Trigger Reset",
-			Notify:            convertToGerritWhoms(req.Notify),
+			Notify:            req.Notify,
 			LeaseDuration:     time.Minute,
 			ConfigGroups:      []*prjcfg.ConfigGroup{cfg},
-			AddToAttentionSet: convertToGerritWhoms(req.AddToAttention),
+			AddToAttentionSet: req.AddToAttention,
 			AttentionReason:   req.AddToAttentionReason,
 			GFactory:          op.GFactory,
 			CLMutator:         op.CLMutator,
@@ -206,25 +206,6 @@ func (op *ResetTriggersOp) loadInputs(ctx context.Context) error {
 		}
 	}
 	return nil
-}
-
-func convertToGerritWhoms(whoms []run.OngoingLongOps_Op_ResetTriggers_Whom) gerrit.Whoms {
-	ret := make(gerrit.Whoms, len(whoms))
-	for i, whom := range whoms {
-		switch whom {
-		case run.OngoingLongOps_Op_ResetTriggers_OWNER:
-			ret[i] = gerrit.Whom_OWNER
-		case run.OngoingLongOps_Op_ResetTriggers_REVIEWERS:
-			ret[i] = gerrit.Whom_REVIEWERS
-		case run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS:
-			ret[i] = gerrit.Whom_CQ_VOTERS
-		case run.OngoingLongOps_Op_ResetTriggers_PS_UPLOADER:
-			ret[i] = gerrit.Whom_PS_UPLOADER
-		default:
-			panic(fmt.Errorf("unrecognized whom [%s] in trigger reset", whom))
-		}
-	}
-	return ret
 }
 
 type resetItem struct {

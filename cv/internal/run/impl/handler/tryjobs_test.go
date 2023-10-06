@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -260,9 +261,9 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 							{
 								Clid:    int64(rs.CLs[0]),
 								Message: "This CL has passed the run",
-								Notify: []run.OngoingLongOps_Op_ResetTriggers_Whom{
-									run.OngoingLongOps_Op_ResetTriggers_OWNER,
-									run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
+								Notify: gerrit.Whoms{
+									gerrit.Whom_OWNER,
+									gerrit.Whom_CQ_VOTERS,
 								},
 							},
 						})
@@ -295,20 +296,20 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 			})
 
 			Convey("Tryjob execution failed", func() {
-				var whoms []run.OngoingLongOps_Op_ResetTriggers_Whom
+				var whoms gerrit.Whoms
 				Convey("With no failure reason placeholders", func() {
 					Convey("On CQ Vote Run", func() {
 						rs.Mode = run.DryRun
-						whoms = []run.OngoingLongOps_Op_ResetTriggers_Whom{
-							run.OngoingLongOps_Op_ResetTriggers_OWNER,
-							run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
+						whoms = gerrit.Whoms{
+							gerrit.Whom_OWNER,
+							gerrit.Whom_CQ_VOTERS,
 						}
 					})
 					Convey("On New Patchset Run", func() {
 						rs.Mode = run.NewPatchsetRun
-						whoms = []run.OngoingLongOps_Op_ResetTriggers_Whom{
-							run.OngoingLongOps_Op_ResetTriggers_OWNER,
-							run.OngoingLongOps_Op_ResetTriggers_PS_UPLOADER,
+						whoms = gerrit.Whoms{
+							gerrit.Whom_OWNER,
+							gerrit.Whom_PS_UPLOADER,
 						}
 					})
 					err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
@@ -349,16 +350,16 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					Convey("With LoadRunCLs success", func() {
 						Convey("On CQ Vote Run", func() {
 							rs.Mode = run.DryRun
-							whoms = []run.OngoingLongOps_Op_ResetTriggers_Whom{
-								run.OngoingLongOps_Op_ResetTriggers_OWNER,
-								run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
+							whoms = gerrit.Whoms{
+								gerrit.Whom_OWNER,
+								gerrit.Whom_CQ_VOTERS,
 							}
 						})
 						Convey("On New Patchset Run", func() {
 							rs.Mode = run.NewPatchsetRun
-							whoms = []run.OngoingLongOps_Op_ResetTriggers_Whom{
-								run.OngoingLongOps_Op_ResetTriggers_OWNER,
-								run.OngoingLongOps_Op_ResetTriggers_PS_UPLOADER,
+							whoms = gerrit.Whoms{
+								gerrit.Whom_OWNER,
+								gerrit.Whom_PS_UPLOADER,
 							}
 						})
 						err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
@@ -400,16 +401,16 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 						}
 						Convey("On CQ Vote Run", func() {
 							rs.Mode = run.DryRun
-							whoms = []run.OngoingLongOps_Op_ResetTriggers_Whom{
-								run.OngoingLongOps_Op_ResetTriggers_OWNER,
-								run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
+							whoms = gerrit.Whoms{
+								gerrit.Whom_OWNER,
+								gerrit.Whom_CQ_VOTERS,
 							}
 						})
 						Convey("On New Patchset Run", func() {
 							rs.Mode = run.NewPatchsetRun
-							whoms = []run.OngoingLongOps_Op_ResetTriggers_Whom{
-								run.OngoingLongOps_Op_ResetTriggers_OWNER,
-								run.OngoingLongOps_Op_ResetTriggers_PS_UPLOADER,
+							whoms = gerrit.Whoms{
+								gerrit.Whom_OWNER,
+								gerrit.Whom_PS_UPLOADER,
 							}
 						})
 						err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {

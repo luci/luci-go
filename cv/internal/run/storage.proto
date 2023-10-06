@@ -21,9 +21,10 @@ option go_package = "go.chromium.org/luci/cv/internal/run;run";
 import "google/protobuf/timestamp.proto";
 
 import "go.chromium.org/luci/cv/api/config/v2/config.proto";
+import "go.chromium.org/luci/cv/internal/gerrit/storage.proto";
+import "go.chromium.org/luci/cv/internal/run/eventpb/submission.proto";
 import "go.chromium.org/luci/cv/internal/tryjob/storage.proto";
 import "go.chromium.org/luci/cv/internal/tryjob/task.proto";
-import "go.chromium.org/luci/cv/internal/run/eventpb/submission.proto";
 
 // Status describes the status of a CV Run.
 enum Status {
@@ -393,16 +394,6 @@ message OngoingLongOps {
     bool cancel_requested = 2;
 
     message ResetTriggers {
-      // Whom is a proto copy of
-      // https://pkg.go.dev/go.chromium.org/luci/cv/internal/gerrit#Whom
-      enum Whom {
-        NONE = 0;
-        OWNER = 1;
-        REVIEWERS = 2;
-        CQ_VOTERS = 3;
-        PS_UPLOADER = 4;
-      }
-
       // Request is to request resetting the trigger of a CL.
       message Request {
         // internal CLID.
@@ -410,9 +401,9 @@ message OngoingLongOps {
         // Message explains why trigger is reset. Will be posted to the CL.
         string message = 2;
         // Whom to notify.
-        repeated Whom notify = 3;
+        repeated gerrit.Whom notify = 3;
         // Whom to add to the attention set.
-        repeated Whom add_to_attention = 4;
+        repeated gerrit.Whom add_to_attention = 4;
         // Reason explains the reason of attention set change.
         string add_to_attention_reason = 5;
       }

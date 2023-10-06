@@ -204,9 +204,9 @@ func scheduleTriggersReset(ctx context.Context, rs *state.RunState, metas map[co
 	for clid, meta := range metas {
 		reqs = append(reqs, &run.OngoingLongOps_Op_ResetTriggers_Request{
 			Clid:                 int64(clid),
-			Notify:               fromGerritWhoms(meta.notify),
+			Notify:               meta.notify,
 			Message:              meta.message,
-			AddToAttention:       fromGerritWhoms(meta.addToAttention),
+			AddToAttention:       meta.addToAttention,
 			AddToAttentionReason: meta.reason,
 		})
 	}
@@ -229,28 +229,6 @@ func isCurrentlyResettingTriggers(rs *state.RunState) bool {
 		}
 	}
 	return false
-}
-
-func fromGerritWhoms(whoms gerrit.Whoms) []run.OngoingLongOps_Op_ResetTriggers_Whom {
-	if len(whoms) == 0 {
-		return nil
-	}
-	ret := make([]run.OngoingLongOps_Op_ResetTriggers_Whom, len(whoms))
-	for i, whom := range whoms {
-		switch whom {
-		case gerrit.Whom_OWNER:
-			ret[i] = run.OngoingLongOps_Op_ResetTriggers_OWNER
-		case gerrit.Whom_REVIEWERS:
-			ret[i] = run.OngoingLongOps_Op_ResetTriggers_REVIEWERS
-		case gerrit.Whom_CQ_VOTERS:
-			ret[i] = run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS
-		case gerrit.Whom_PS_UPLOADER:
-			ret[i] = run.OngoingLongOps_Op_ResetTriggers_PS_UPLOADER
-		default:
-			panic(fmt.Errorf("unknown gerrit.Whom; got %s", whom))
-		}
-	}
-	return ret
 }
 
 func min(i, j int) int {

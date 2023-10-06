@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common/lease"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/metrics"
@@ -112,13 +113,13 @@ func TestResetTriggers(t *testing.T) {
 				reqs[i] = &run.OngoingLongOps_Op_ResetTriggers_Request{
 					Clid:    int64(clid),
 					Message: fmt.Sprintf("reset message for CL %d", clid),
-					Notify: []run.OngoingLongOps_Op_ResetTriggers_Whom{
-						run.OngoingLongOps_Op_ResetTriggers_OWNER,
-						run.OngoingLongOps_Op_ResetTriggers_REVIEWERS,
+					Notify: gerrit.Whoms{
+						gerrit.Whom_OWNER,
+						gerrit.Whom_REVIEWERS,
 					},
-					AddToAttention: []run.OngoingLongOps_Op_ResetTriggers_Whom{
-						run.OngoingLongOps_Op_ResetTriggers_OWNER,
-						run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
+					AddToAttention: gerrit.Whoms{
+						gerrit.Whom_OWNER,
+						gerrit.Whom_CQ_VOTERS,
 					},
 					AddToAttentionReason: fmt.Sprintf("attention reason for CL %d", clid),
 				}
@@ -264,22 +265,5 @@ func TestResetTriggers(t *testing.T) {
 				So(result.GetSuccessInfo().GetResetAt(), ShouldNotBeNil)
 			}
 		})
-	})
-}
-
-func TestGerritWhoms(t *testing.T) {
-	Convey("Test gerrit whoms conversion", t, func() {
-		for name, v := range run.OngoingLongOps_Op_ResetTriggers_Whom_value {
-			switch name {
-			case "NONE":
-				So(func() {
-					_ = convertToGerritWhoms([]run.OngoingLongOps_Op_ResetTriggers_Whom{run.OngoingLongOps_Op_ResetTriggers_Whom(v)})
-				}, ShouldPanic)
-			default:
-				g := convertToGerritWhoms([]run.OngoingLongOps_Op_ResetTriggers_Whom{run.OngoingLongOps_Op_ResetTriggers_Whom(v)})
-				So(g, ShouldHaveLength, 1)
-				So(g[0], ShouldNotEqual, 0)
-			}
-		}
 	})
 }
