@@ -44,7 +44,7 @@ func init() {
 		panic(err)
 	}
 	getConfigMask, err = fieldmaskpb.New(&configpb.Config{},
-		"path", "content_sha256", "url")
+		"path", "content_sha256", "size", "url")
 	if err != nil {
 		panic(err)
 	}

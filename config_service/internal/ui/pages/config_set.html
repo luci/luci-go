@@ -121,8 +121,10 @@ LUCI Config - Config Set: {{.ConfigSet.Name}}
         <li class="list-group-item d-flex justify-content-between align-items-center">
           <div class="ms-2 me-auto">
             <div class="fw-bold">{{.Path}}</div>
-            <small class="text-muted">SHA256: {{.ContentSha256}}</small>
-            <!-- TODO(yiwzhang): support adding size information -->
+            <ul class="list-unstyled">
+              <li><small class="text-muted">SHA256: {{.ContentSha256}}</small></li>
+              <li><small class="text-muted">Size: {{HumanizeBytes .Size}}</small></li>
+            </ul>
           </div>
           <a href="{{.Url}}" title="View Source">
             <img src="/static/images/link.svg" alt="View Source">

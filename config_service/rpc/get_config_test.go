@@ -221,6 +221,7 @@ func TestGetConfig(t *testing.T) {
 						RawContent: fileBytes,
 					},
 					Revision:      "1",
+					Size:          int64(len(fileBytes)),
 					ContentSha256: contextShaStr,
 				})
 			})
@@ -238,6 +239,7 @@ func TestGetConfig(t *testing.T) {
 						RawContent: fileBytes,
 					},
 					Revision:      "1",
+					Size:          int64(len(fileBytes)),
 					ContentSha256: contextShaStr,
 				})
 			})

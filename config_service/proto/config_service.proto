@@ -112,6 +112,9 @@ message Config {
   // SHA256 value of the raw content.
   string content_sha256 = 5;
 
+  // Size of the raw config in bytes.
+  int64 size = 8;
+
   // Git revision
   string revision = 6;
 

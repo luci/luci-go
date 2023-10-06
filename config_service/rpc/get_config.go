@@ -104,6 +104,7 @@ func (c Configs) GetConfig(ctx context.Context, req *pb.GetConfigRequest) (*pb.C
 		ConfigSet:     cs,
 		Path:          f.Path,
 		ContentSha256: f.ContentSHA256,
+		Size:          f.Size,
 		Revision:      f.Revision.StringID(),
 		Url:           common.GitilesURL(f.Location.GetGitilesLocation()),
 	}

@@ -89,6 +89,9 @@ func prepareTemplates(opts *server.Options) *templates.Bundle {
 			"RelTime": func(ts, now time.Time) string {
 				return humanize.RelTime(ts, now, "ago", "from now")
 			},
+			"HumanizeBytes": func(size int64) string {
+				return humanize.Bytes(uint64(size))
+			},
 			"AttemptStatus": attemptStatus,
 		},
 		DefaultArgs: func(ctx context.Context, e *templates.Extra) (templates.Args, error) {

@@ -104,6 +104,7 @@ func (c Configs) GetProjectConfigs(ctx context.Context, req *pb.GetProjectConfig
 			ConfigSet:     f.Revision.Root().StringID(),
 			Path:          f.Path,
 			ContentSha256: f.ContentSHA256,
+			Size:          f.Size,
 			Revision:      f.Revision.StringID(),
 			Url:           common.GitilesURL(f.Location.GetGitilesLocation()),
 		}

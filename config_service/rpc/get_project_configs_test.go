@@ -162,6 +162,7 @@ func TestGetProjectConfigs(t *testing.T) {
 						},
 						ContentSha256: configPbShaStr,
 						Revision:      "1",
+						Size:          int64(len(configPbBytes)),
 					},
 					{
 						ConfigSet: "projects/project2",
@@ -171,6 +172,7 @@ func TestGetProjectConfigs(t *testing.T) {
 						},
 						ContentSha256: "configsha256",
 						Revision:      "1",
+						Size:          1000,
 					},
 				},
 			})
@@ -206,6 +208,7 @@ func TestGetProjectConfigs(t *testing.T) {
 						},
 						ContentSha256: fooPbShaStr,
 						Revision:      "1",
+						Size:          int64(len(fooPbBytes)),
 					},
 				},
 			})
@@ -243,6 +246,7 @@ func TestGetProjectConfigs(t *testing.T) {
 						},
 						ContentSha256: configPbShaStr,
 						Revision:      "1",
+						Size:          int64(len(configPbBytes)),
 					},
 					{
 						ConfigSet: "projects/project2",
@@ -252,6 +256,7 @@ func TestGetProjectConfigs(t *testing.T) {
 						},
 						ContentSha256: "configsha256",
 						Revision:      "1",
+						Size:          1000,
 					},
 				},
 			})
