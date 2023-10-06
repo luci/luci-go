@@ -1,0 +1,33 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cv.internal.gerrit;
+
+option go_package = "go.chromium.org/luci/cv/internal/gerrit";
+
+// Whom identifies one or a group of Gerrit users involved in the code review
+// workflow.
+enum Whom {
+  NONE = 0;
+  // CL owner.
+  OWNER = 1;
+  // CL Reviewers
+  REVIEWERS = 2;
+  // Who have voted on the CQ label.
+  CQ_VOTERS = 3;
+  // Uploader of the patchset that triggered a "New Patchset" Run.
+  PS_UPLOADER = 4;
+}

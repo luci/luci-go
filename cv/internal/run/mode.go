@@ -120,9 +120,9 @@ func (m Mode) GerritMessageTag() string {
 func (m Mode) GerritNotifyTargets() gerrit.Whoms {
 	switch m {
 	case NewPatchsetRun:
-		return gerrit.Whoms{gerrit.Owner, gerrit.PSUploader}
+		return gerrit.Whoms{gerrit.Whom_OWNER, gerrit.Whom_PS_UPLOADER}
 	case DryRun, FullRun, QuickDryRun:
-		return gerrit.Whoms{gerrit.Owner, gerrit.CQVoters}
+		return gerrit.Whoms{gerrit.Whom_OWNER, gerrit.Whom_CQ_VOTERS}
 	default:
 		panic(fmt.Errorf("unsupported mode %s", m))
 	}

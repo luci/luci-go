@@ -213,13 +213,13 @@ func convertToGerritWhoms(whoms []run.OngoingLongOps_Op_ResetTriggers_Whom) gerr
 	for i, whom := range whoms {
 		switch whom {
 		case run.OngoingLongOps_Op_ResetTriggers_OWNER:
-			ret[i] = gerrit.Owner
+			ret[i] = gerrit.Whom_OWNER
 		case run.OngoingLongOps_Op_ResetTriggers_REVIEWERS:
-			ret[i] = gerrit.Reviewers
+			ret[i] = gerrit.Whom_REVIEWERS
 		case run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS:
-			ret[i] = gerrit.CQVoters
+			ret[i] = gerrit.Whom_CQ_VOTERS
 		case run.OngoingLongOps_Op_ResetTriggers_PS_UPLOADER:
-			ret[i] = gerrit.PSUploader
+			ret[i] = gerrit.Whom_PS_UPLOADER
 		default:
 			panic(fmt.Errorf("unrecognized whom [%s] in trigger reset", whom))
 		}

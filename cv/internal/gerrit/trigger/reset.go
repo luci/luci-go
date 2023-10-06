@@ -139,11 +139,25 @@ func (in *ResetInput) panicIfInvalid() {
 	case in.LUCIProject != in.CL.Snapshot.GetLuciProject():
 		err = fmt.Errorf("mismatched LUCI Project: got %q in input and %q in CL snapshot", in.LUCIProject, in.CL.Snapshot.GetLuciProject())
 	case len(in.ConfigGroups) == 0:
-		err = fmt.Errorf("ConfigGroups must be given")
+		err = fmt.Errorf("config_groups must be given")
 	case in.GFactory == nil:
 		err = fmt.Errorf("gerrit factory must be non-nil")
 	case in.CLMutator == nil:
 		err = fmt.Errorf("mutator must be non-nil")
+	case len(in.Notify) > 0:
+		for _, enum := range in.Notify {
+			if _, ok := gerrit.Whom_name[int32(enum)]; !ok {
+				err = fmt.Errorf("notify: unknown Whom value %d", enum)
+				break
+			}
+		}
+	case len(in.AddToAttentionSet) > 0:
+		for _, enum := range in.AddToAttentionSet {
+			if _, ok := gerrit.Whom_name[int32(enum)]; !ok {
+				err = fmt.Errorf("add_to_attention: unknown Whom value %d", enum)
+				break
+			}
+		}
 	}
 	if err != nil {
 		panic(err)

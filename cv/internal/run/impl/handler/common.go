@@ -238,13 +238,13 @@ func fromGerritWhoms(whoms gerrit.Whoms) []run.OngoingLongOps_Op_ResetTriggers_W
 	ret := make([]run.OngoingLongOps_Op_ResetTriggers_Whom, len(whoms))
 	for i, whom := range whoms {
 		switch whom {
-		case gerrit.Owner:
+		case gerrit.Whom_OWNER:
 			ret[i] = run.OngoingLongOps_Op_ResetTriggers_OWNER
-		case gerrit.Reviewers:
+		case gerrit.Whom_REVIEWERS:
 			ret[i] = run.OngoingLongOps_Op_ResetTriggers_REVIEWERS
-		case gerrit.CQVoters:
+		case gerrit.Whom_CQ_VOTERS:
 			ret[i] = run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS
-		case gerrit.PSUploader:
+		case gerrit.Whom_PS_UPLOADER:
 			ret[i] = run.OngoingLongOps_Op_ResetTriggers_PS_UPLOADER
 		default:
 			panic(fmt.Errorf("unknown gerrit.Whom; got %s", whom))
@@ -328,8 +328,8 @@ func checkRunCreate(ctx context.Context, rs *state.RunState, cg *prjcfg.ConfigGr
 			case run.DryRun, run.QuickDryRun, run.FullRun:
 				metas[cl.ID] = reviewInputMeta{
 					message:        aclResult.Failure(cl),
-					notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-					addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+					notify:         gerrit.Whoms{gerrit.Whom_OWNER, gerrit.Whom_CQ_VOTERS},
+					addToAttention: gerrit.Whoms{gerrit.Whom_OWNER, gerrit.Whom_CQ_VOTERS},
 					reason:         "CQ/CV Run failed",
 				}
 			default:

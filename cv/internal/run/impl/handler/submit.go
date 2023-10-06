@@ -792,7 +792,7 @@ func postMsgForDependentFailures(ctx context.Context, gf gerrit.Factory, rcl *ru
 	}
 
 	ci := rcl.Detail.GetGerrit().GetInfo()
-	ownerAndVotersAccounts := gerrit.Whoms{gerrit.Owner, gerrit.CQVoters}.ToAccountIDsSorted(ci)
+	ownerAndVotersAccounts := gerrit.Whoms{gerrit.Whom_OWNER, gerrit.Whom_CQ_VOTERS}.ToAccountIDsSorted(ci)
 	req := &gerritpb.SetReviewRequest{
 		Number:     ci.GetNumber(),
 		Project:    ci.GetProject(),

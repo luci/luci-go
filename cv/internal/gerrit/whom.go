@@ -21,37 +21,6 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 )
 
-// Whom identifies one or a group of Gerrit users involved in the code review
-// workflow.
-type Whom int32
-
-const (
-	// Owner is the owner of the CL (user who uploaded the first patchset).
-	Owner Whom = 1
-	// Reviewers are the reviewers of the CL.
-	Reviewers Whom = 2
-	// CQVoters are the users who have voted on CQ label to trigger a CV Run.
-	CQVoters Whom = 3
-	// PSUploader is the user who uploaded the patch that triggered a
-	// "New Patchset" Run.
-	PSUploader Whom = 4
-)
-
-func (w Whom) String() string {
-	switch w {
-	case Owner:
-		return "owner"
-	case Reviewers:
-		return "reviewers"
-	case CQVoters:
-		return "CQ label voters"
-	case PSUploader:
-		return "patchset uploader"
-	default:
-		return fmt.Sprintf("whom[%d]", w)
-	}
-}
-
 // Whoms is a collection of `Whom`s.
 type Whoms []Whom
 
@@ -78,19 +47,19 @@ func (whoms Whoms) ToAccountIDsSorted(ci *gerritpb.ChangeInfo) []int64 {
 	accountSet := make(map[int64]struct{})
 	for _, whom := range whoms {
 		switch whom {
-		case Owner:
+		case Whom_OWNER:
 			accountSet[ci.GetOwner().GetAccountId()] = struct{}{}
-		case Reviewers:
+		case Whom_REVIEWERS:
 			for _, reviewer := range ci.GetReviewers().GetReviewers() {
 				accountSet[reviewer.GetAccountId()] = struct{}{}
 			}
-		case CQVoters:
+		case Whom_CQ_VOTERS:
 			for _, vote := range ci.GetLabels()["Commit-Queue"].GetAll() {
 				if vote.GetValue() > 0 {
 					accountSet[vote.GetUser().GetAccountId()] = struct{}{}
 				}
 			}
-		case PSUploader:
+		case Whom_PS_UPLOADER:
 			accountSet[ci.GetRevisions()[ci.GetCurrentRevision()].GetUploader().GetAccountId()] = struct{}{}
 		default:
 			panic(fmt.Sprintf("unknown whom: %s", whom))
