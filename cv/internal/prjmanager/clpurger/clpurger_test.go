@@ -21,6 +21,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
@@ -254,6 +255,55 @@ func TestPurgeCL(t *testing.T) {
 				assertPMNotified("op")
 				// The PM task should be ASAP.
 				So(pmDispatcher.LatestETAof(lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
+			})
+		})
+
+		Convey("Sets Notify and AddToAttentionSet", func() {
+			var reqs []*gerritpb.SetReviewRequest
+			findSetReviewReqs := func() {
+				for _, req := range ct.GFake.Requests() {
+					if r, ok := req.(*gerritpb.SetReviewRequest); ok {
+						reqs = append(reqs, r)
+					}
+				}
+			}
+
+			Convey("with the default NotifyTarget", func() {
+				task.PurgingCl.Notification = nil
+				So(schedule(), ShouldBeNil)
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
+				findSetReviewReqs()
+				So(reqs, ShouldHaveLength, 2)
+				postReq := reqs[0]
+				voteReq := reqs[1]
+				if reqs[1].GetMessage() != "" {
+					postReq, voteReq = reqs[1], reqs[0]
+				}
+				So(postReq.Notify, ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
+				So(voteReq.Notify, ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
+				So(postReq.GetNotifyDetails(), ShouldNotBeNil)
+				So(voteReq.GetNotifyDetails(), ShouldBeNil)
+				So(postReq.GetAddToAttentionSet(), ShouldNotBeNil)
+				So(voteReq.GetAddToAttentionSet(), ShouldBeNil)
+			})
+			Convey("with a custom Notification target", func() {
+				// 0 implies nobody
+				task.PurgingCl.Notification = &prjpb.PurgingCL_Notification{}
+				So(schedule(), ShouldBeNil)
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
+				findSetReviewReqs()
+				So(reqs, ShouldHaveLength, 2)
+				postReq := reqs[0]
+				voteReq := reqs[1]
+				if reqs[1].GetMessage() != "" {
+					postReq, voteReq = reqs[1], reqs[0]
+				}
+				So(postReq.Notify, ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
+				So(voteReq.Notify, ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
+				So(postReq.GetNotifyDetails(), ShouldBeNil)
+				So(voteReq.GetNotifyDetails(), ShouldBeNil)
+				So(postReq.GetAddToAttentionSet(), ShouldBeNil)
+				So(voteReq.GetAddToAttentionSet(), ShouldBeNil)
 			})
 		})
 	})

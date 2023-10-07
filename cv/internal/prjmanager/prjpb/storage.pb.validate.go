@@ -17,6 +17,8 @@ import (
 	"unicode/utf8"
 
 	"google.golang.org/protobuf/types/known/anypb"
+
+	gerrit "go.chromium.org/luci/cv/internal/gerrit"
 )
 
 // ensure the imports are used
@@ -33,6 +35,8 @@ var (
 	_ = (*mail.Address)(nil)
 	_ = anypb.Any{}
 	_ = sort.Sort
+
+	_ = gerrit.Whom(0)
 )
 
 // Validate checks the field values on PState with the rules defined in the
@@ -997,6 +1001,35 @@ func (m *PurgingCL) validate(all bool) error {
 		}
 	}
 
+	if all {
+		switch v := interface{}(m.GetNotification()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, PurgingCLValidationError{
+					field:  "Notification",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, PurgingCLValidationError{
+					field:  "Notification",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetNotification()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return PurgingCLValidationError{
+				field:  "Notification",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
 	switch v := m.ApplyTo.(type) {
 	case *PurgingCL_Triggers:
 		if v == nil {
@@ -1480,3 +1513,105 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = PurgeReasonValidationError{}
+
+// Validate checks the field values on PurgingCL_Notification with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *PurgingCL_Notification) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on PurgingCL_Notification with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// PurgingCL_NotificationMultiError, or nil if none found.
+func (m *PurgingCL_Notification) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *PurgingCL_Notification) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return PurgingCL_NotificationMultiError(errors)
+	}
+
+	return nil
+}
+
+// PurgingCL_NotificationMultiError is an error wrapping multiple validation
+// errors returned by PurgingCL_Notification.ValidateAll() if the designated
+// constraints aren't met.
+type PurgingCL_NotificationMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m PurgingCL_NotificationMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m PurgingCL_NotificationMultiError) AllErrors() []error { return m }
+
+// PurgingCL_NotificationValidationError is the validation error returned by
+// PurgingCL_Notification.Validate if the designated constraints aren't met.
+type PurgingCL_NotificationValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e PurgingCL_NotificationValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e PurgingCL_NotificationValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e PurgingCL_NotificationValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e PurgingCL_NotificationValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e PurgingCL_NotificationValidationError) ErrorName() string {
+	return "PurgingCL_NotificationValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e PurgingCL_NotificationValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sPurgingCL_Notification.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = PurgingCL_NotificationValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = PurgingCL_NotificationValidationError{}

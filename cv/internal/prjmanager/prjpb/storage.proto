@@ -21,8 +21,8 @@ option go_package = "go.chromium.org/luci/cv/internal/prjmanager/prjpb;prjpb";
 import "google/protobuf/timestamp.proto";
 
 import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
+import "go.chromium.org/luci/cv/internal/gerrit/storage.proto";
 import "go.chromium.org/luci/cv/internal/run/storage.proto";
-
 
 // This file keeps serializable state of PM (Project Manager).
 //
@@ -290,6 +290,19 @@ message PurgingCL {
     cv.internal.run.Triggers triggers = 4;
     bool all_active_triggers = 5;
   }
+  message Notification {
+    // Whom value(s) to set in Notify of the SetReview request.
+    //
+    // If omitted, no one will receive a notification.
+    repeated gerrit.Whom notify = 1;
+    // Whom value(s) to set in AddToAttentionSet of the SetReview request.
+    //
+    // If omitted, no one will be added into the attention set.
+    repeated gerrit.Whom attention = 2;
+  }
+  // If specified, the Gerrit request will be sent with the notify and
+  // attention.
+  Notification notification = 6;
 }
 
 // TriggeringCL represents CQ trigger of a CL.
