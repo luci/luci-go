@@ -17,6 +17,7 @@ package state
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -225,13 +226,21 @@ func (h *Handler) OnRunsFinished(ctx context.Context, s *State, finished map[com
 
 	// This is rarely a noop, so assume state is modified for simplicity.
 	s = s.cloneShallow()
-	incompleteRunsCount := s.removeFinishedRuns(finished)
+	var failedMaybeMCERuns []*prjpb.PRun
+	incompleteRunsCount := s.removeFinishedRuns(
+		finished, func(r *prjpb.PRun) {
+			rid := common.RunID(r.GetId())
+			if st, ok := finished[rid]; ok && st == run.Status_FAILED && maybeMCERun(ctx, s, r) {
+				failedMaybeMCERuns = append(failedMaybeMCERuns, r)
+			}
+		},
+	)
 	if s.PB.GetStatus() == prjpb.Status_STOPPING && incompleteRunsCount == 0 {
 		s.LogReasons = append(s.LogReasons, prjpb.LogReason_STATUS_CHANGED)
 		s.PB.Status = prjpb.Status_STOPPED
-		return s, nil, nil
 	}
-	return s, nil, nil
+	se := h.addCLsToPurge(ctx, s, makePurgeCLTasksForFailedMCERuns(ctx, s, failedMaybeMCERuns))
+	return s, se, nil
 }
 
 // OnCLsUpdated updates state as a result of new changes to CLs.
@@ -586,4 +595,94 @@ func makePurgeCLTasksForFailedTriggerDeps(ctx context.Context, s *State, failed 
 		ret = append(ret, t)
 	}
 	return ret
+}
+
+func makePurgeCLTasksForFailedMCERuns(ctx context.Context, s *State, failed []*prjpb.PRun) []*prjpb.PurgeCLTask {
+	if len(failed) == 0 {
+		return nil
+	}
+	reverseDeps := make(map[int64][]*prjpb.PCL, len(s.PB.GetPcls()))
+	for _, p := range s.PB.GetPcls() {
+		for _, dep := range p.GetDeps() {
+			if dep.GetKind() == changelist.DepKind_HARD {
+				reverseDeps[dep.GetClid()] = append(reverseDeps[dep.GetClid()], p)
+			}
+		}
+	}
+	incompleteRuns := make(map[int64]struct{})
+	s.PB.IterIncompleteRuns(func(r *prjpb.PRun, _ *prjpb.Component) bool {
+		if clids := r.GetClids(); len(clids) == 1 {
+			incompleteRuns[clids[0]] = struct{}{}
+		}
+		return false
+	})
+	tasks := make(map[int64]*prjpb.PurgeCLTask)
+	for _, r := range failed {
+		for _, child := range reverseDeps[r.GetClids()[0]] {
+			// skip if any of the following is true.
+			trigger := child.GetTriggers().GetCqVoteTrigger()
+			if trigger.GetMode() != r.GetMode() {
+				continue
+			}
+			if _, ok := incompleteRuns[child.GetClid()]; ok {
+				continue
+			}
+			if s.PB.GetPurgingCL(child.GetClid()) != nil {
+				continue
+			}
+			// At this stage, the current CL
+			// - depends on the failed MCE run
+			// - has no incomplete Run
+			// - has the same CQ vote as the CQ vote of the failed MCE Run.
+			tasks[child.GetClid()] = &prjpb.PurgeCLTask{
+				PurgeReasons: []*prjpb.PurgeReason{{
+					ClError: &changelist.CLError{Kind: &changelist.CLError_DepRunFailed{
+						DepRunFailed: r.GetClids()[0],
+					}},
+					ApplyTo: &prjpb.PurgeReason_Triggers{
+						Triggers: &run.Triggers{
+							CqVoteTrigger: trigger,
+						},
+					},
+				}},
+				PurgingCl: &prjpb.PurgingCL{
+					Clid: child.GetClid(),
+					// In case a parent Run fails in a huge stack, we want to
+					// minimize # of emails sent out by the Purge opertaions.
+					// One mail for the probably-top CL should be enough.
+					Notification: &prjpb.PurgingCL_Notification{},
+				},
+			}
+		}
+	}
+	if len(tasks) == 0 {
+		return nil
+	}
+	var foundCLToNotify bool
+	ret := make([]*prjpb.PurgeCLTask, 0, len(tasks))
+	for _, t := range tasks {
+		clid := t.GetPurgingCl().GetClid()
+		if !foundCLToNotify && shouldPurgeNotify(clid, reverseDeps[clid], tasks) {
+			// set nil to let clpurger decide the notification targets, based
+			// on the Run mode.
+			t.GetPurgingCl().Notification = nil
+			foundCLToNotify = true
+		}
+		ret = append(ret, t)
+	}
+	sort.Slice(ret, func(i, j int) bool {
+		return ret[i].GetPurgingCl().GetClid() < ret[j].GetPurgingCl().GetClid()
+	})
+	return ret
+}
+
+func shouldPurgeNotify(clid int64, children []*prjpb.PCL, tasks map[int64]*prjpb.PurgeCLTask) bool {
+	for _, child := range children {
+		// don't send an email if the CL has a child of which trigger is
+		// purge-requested.
+		if _, ok := tasks[child.GetClid()]; ok {
+			return false
+		}
+	}
+	return true
 }

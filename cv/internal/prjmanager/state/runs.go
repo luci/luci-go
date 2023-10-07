@@ -120,10 +120,11 @@ func (s *State) addCreatedRuns(ctx context.Context, ids map[common.RunID]struct{
 
 // removeFinishedRuns removes known runs and returns number of the still tracked
 // runs.
-func (s *State) removeFinishedRuns(ids map[common.RunID]run.Status) int {
+func (s *State) removeFinishedRuns(ids map[common.RunID]run.Status, removeCB func(r *prjpb.PRun)) int {
 	delIfFinished := func(r *prjpb.PRun) *prjpb.PRun {
 		id := common.RunID(r.GetId())
 		if _, ok := ids[id]; ok {
+			removeCB(r)
 			delete(ids, id)
 			return nil
 		}
@@ -199,4 +200,31 @@ func loadRuns(ctx context.Context, ids map[common.RunID]struct{}) ([]*run.Run, e
 	default:
 		return nil, nil, errors.Annotate(err, "failed to load %d Runs", len(runs)).Tag(transient.Tag).Err()
 	}
+}
+
+// maybeMCERun returns whether a given Run could be part of MCE Run.
+// That is, whether the Run was triggered by chained CQ votes.
+func maybeMCERun(ctx context.Context, s *State, r *prjpb.PRun) bool {
+	if run.Mode(r.GetMode()) != run.FullRun {
+		return false
+	}
+	pcl := s.PB.GetPCL(r.GetClids()[0])
+	if pcl == nil {
+		return false
+	}
+	switch idxs := pcl.GetConfigGroupIndexes(); {
+	case len(idxs) != 1:
+		// In case of misconfiguration, PCL may be involved with 0 or 2+
+		// applicable ConfigGroups, and evalcl uses an empty ConfigGroup
+		// to remove such CLs.
+		//
+		// Such PCL should not be a valid MCE run.
+		return false
+	case len(s.configGroups) == 0:
+		// This may be a bug in CV, but ok.
+		return false
+	case s.configGroups[idxs[0]].Content.GetCombineCls() != nil:
+		return false
+	}
+	return true
 }

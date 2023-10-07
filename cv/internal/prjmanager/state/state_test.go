@@ -868,7 +868,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 			Components: []*prjpb.Component{
 				{
 					Clids: []int64{101},
-					Pruns: []*prjpb.PRun{{Id: ct.lProject + "/101-aaa", Clids: []int64{1}}},
+					Pruns: []*prjpb.PRun{{Id: ct.lProject + "/101-aaa", Clids: []int64{101}}},
 				},
 				{
 					Clids: []int64{202, 203, 204},
@@ -878,6 +878,9 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				{Id: ct.lProject + "/789-efg", Clids: []int64{707, 708, 709}},
 			},
 		}}
+		var err error
+		s1.configGroups, err = meta.GetConfigGroups(ctx)
+		So(err, ShouldBeNil)
 		pb1 := backupPB(s1)
 
 		Convey("Noops", func() {
@@ -1048,6 +1051,119 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 					RepartitionRequired: true,
 				})
 				So(s2.LogReasons, ShouldResemble, []prjpb.LogReason{prjpb.LogReason_STATUS_CHANGED})
+			})
+
+			Convey("purges triggers of the child CLs", func() {
+				// Emulate an MCE run.
+				now := testclock.TestRecentTimeUTC
+				mceRun := &prjpb.PRun{
+					Id:    "202-deef",
+					Mode:  string(run.FullRun),
+					Clids: []int64{202},
+				}
+				s1.PB.Components = []*prjpb.Component{
+					{
+						Clids: []int64{202, 203, 204},
+						Pruns: []*prjpb.PRun{mceRun},
+					},
+				}
+				s1.PB.Pcls = []*prjpb.PCL{
+					{
+						Clid:               int64(202),
+						Eversion:           1,
+						Status:             prjpb.PCL_OK,
+						ConfigGroupIndexes: []int32{0},
+					},
+					{
+						Clid:     int64(203),
+						Eversion: 1,
+						Status:   prjpb.PCL_OK,
+						Deps: []*changelist.Dep{
+							{Clid: 202, Kind: changelist.DepKind_HARD},
+						},
+						ConfigGroupIndexes: []int32{0},
+						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
+							Mode: string(run.FullRun),
+							Time: timestamppb.New(now.Add(-10 * time.Minute)),
+						}},
+					},
+					{
+						Clid:     int64(204),
+						Eversion: 1,
+						Status:   prjpb.PCL_OK,
+						Deps: []*changelist.Dep{
+							{Clid: 202, Kind: changelist.DepKind_HARD},
+							{Clid: 203, Kind: changelist.DepKind_HARD},
+						},
+						ConfigGroupIndexes: []int32{0},
+						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
+							Mode: string(run.FullRun),
+							Time: timestamppb.New(now.Add(-10 * time.Minute)),
+						}},
+					},
+				}
+				checkPurgeTask := func(task *prjpb.PurgeCLTask, clToPurge, depRunCL int64) {
+					So(task.PurgingCl.Clid, ShouldEqual, clToPurge)
+					So(task.PurgeReasons, ShouldResembleProto, []*prjpb.PurgeReason{
+						{
+							ClError: &changelist.CLError{
+								Kind: &changelist.CLError_DepRunFailed{
+									DepRunFailed: depRunCL,
+								},
+							},
+							ApplyTo: &prjpb.PurgeReason_Triggers{
+								Triggers: &run.Triggers{
+									CqVoteTrigger: &run.Trigger{
+										Mode: string(run.FullRun),
+										Time: s1.PB.GetPCL(clToPurge).GetTriggers().GetCqVoteTrigger().GetTime(),
+									},
+								},
+							},
+						},
+					})
+				}
+
+				Convey("if they have CQ votes", func() {
+					finished[common.RunID(mceRun.Id)] = run.Status_FAILED
+					_, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
+					So(err, ShouldBeNil)
+					So(sideEffect, ShouldNotBeNil)
+					tasks := sideEffect.(*TriggerPurgeCLTasks)
+
+					// Should purge the vote on both 203 and 204.
+					So(tasks.payloads, ShouldHaveLength, 2)
+					checkPurgeTask(tasks.payloads[0], 203, 202)
+					checkPurgeTask(tasks.payloads[1], 204, 202)
+
+					// Only the top CL should be configured to send an email.
+					So(tasks.payloads[0].PurgingCl.Notification, ShouldResembleProto, &prjpb.PurgingCL_Notification{})
+					So(tasks.payloads[1].PurgingCl.Notification, ShouldBeNil)
+				})
+				Convey("unless the finished Run is failed", func() {
+					finished[common.RunID(mceRun.Id)] = run.Status_SUCCEEDED
+					_, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
+					So(err, ShouldBeNil)
+					So(sideEffect, ShouldBeNil)
+				})
+				Convey("unless they have ongoing Runs", func() {
+					finished[common.RunID(mceRun.Id)] = run.Status_FAILED
+					// create a run for the middle CL, not the top CL.
+					middleRun := &prjpb.PRun{
+						Id:    "203-deef",
+						Mode:  string(run.FullRun),
+						Clids: []int64{203},
+					}
+					s1.PB.Components[0].Pruns = append(s1.PB.Components[0].Pruns, middleRun)
+					_, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
+					So(err, ShouldBeNil)
+					So(sideEffect, ShouldNotBeNil)
+					tasks := sideEffect.(*TriggerPurgeCLTasks)
+
+					// Should purge the vote on 204 only
+					So(tasks.payloads, ShouldHaveLength, 1)
+					checkPurgeTask(tasks.payloads[0], 204, 202)
+					So(tasks.payloads[0].PurgingCl.Notification, ShouldBeNil)
+				})
 			})
 		})
 	})
