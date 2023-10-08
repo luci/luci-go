@@ -734,6 +734,36 @@ func TestScheduleNewRerun(t *testing.T) {
 		So(tfa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
 	})
 
+	Convey("regression range conflicts", t, func() {
+		enableBisection(ctx, true)
+		tfa, _, rerun, nsa := setupTestAnalysisForTesting(ctx, 1)
+		// Commit 0 pass -> no culprit.
+		rerun.LUCIBuild.GitilesCommit = &bbpb.GitilesCommit{
+			Id:      "commit0",
+			Host:    "chromium.googlesource.com",
+			Project: "chromium/src",
+			Ref:     "ref",
+		}
+		rerun.Status = pb.RerunStatus_RERUN_STATUS_PASSED
+		So(datastore.Put(ctx, rerun), ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+		err := processNthSectionUpdate(ctx, rerun, tfa)
+		So(err, ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		// Check nsa.
+		So(datastore.Get(ctx, nsa), ShouldBeNil)
+		So(nsa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
+		So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+		So(nsa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
+
+		// Check tfa.
+		So(datastore.Get(ctx, tfa), ShouldBeNil)
+		So(tfa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
+		So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+		So(tfa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
+	})
+
 	Convey("Nth section should schedule another run", t, func() {
 		tfa, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, 1)
 		enableBisection(ctx, true)

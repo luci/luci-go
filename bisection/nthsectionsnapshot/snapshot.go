@@ -58,12 +58,23 @@ func (snapshot *Snapshot) HasTooManyInfraFailure() bool {
 	return snapshot.NumInfraFailed > 1
 }
 
+// BadRangeError suggests the regression range is invalid.
+// For example, if a passed rerun is found that is more recent
+// than a failed rerun, the regression range is invalid.
+type BadRangeError struct {
+	FirstFailedIdx int
+	LastPassedIdx  int
+}
+
+func (b *BadRangeError) Error() string {
+	return fmt.Sprintf("invalid regression range - firstFailedIdx >= lastPassedIdx: (%d, %d)", b.FirstFailedIdx, b.LastPassedIdx)
+}
+
 // GetCurrentRegressionRange will return a pair of indices from the Snapshot
 // that contains the culprit, based on the results of the rerun.
 // Note: In the snapshot blamelist, index 0 refer to first failed,
-// and index (n-1) refer to the commit after last pass
-// This function will return an error if the regression range is invalid
-// (there was a passed rerun which is more recent that a failed rerun)
+// and index (n-1) refer to the commit after last pass.
+// This function will return an BadRangeError if the regression range is invalid.
 func (snapshot *Snapshot) GetCurrentRegressionRange() (int, int, error) {
 	firstFailedIdx := 0
 	lastPassedIdx := len(snapshot.BlameList.Commits)
@@ -79,7 +90,10 @@ func (snapshot *Snapshot) GetCurrentRegressionRange() (int, int, error) {
 		}
 	}
 	if firstFailedIdx >= lastPassedIdx {
-		return 0, 0, fmt.Errorf("invalid regression range - firstFailedIdx >= lastPassedIdx: (%d, %d)", firstFailedIdx, lastPassedIdx)
+		return 0, 0, &BadRangeError{
+			FirstFailedIdx: firstFailedIdx,
+			LastPassedIdx:  lastPassedIdx,
+		}
 	}
 	return firstFailedIdx, lastPassedIdx - 1, nil
 }

@@ -183,7 +183,21 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 
 	commitHashes, err := snapshot.FindNextCommitsToRun(maxRerun)
 	if err != nil {
-		return errors.Annotate(err, "find next commits to run").Err()
+		var badRangeError *nthsectionsnapshot.BadRangeError
+		if !errors.As(err, &badRangeError) {
+			return errors.Annotate(err, "find next commits to run").Err()
+		}
+		// BadRangeError suggests that the regression range is invalid.
+		// This is not really an error, but more of a indication of no suspect can be found
+		// in this regression range. So we end the analysis with NOTFOUND status here.
+		if err = testfailureanalysis.UpdateNthSectionAnalysisStatus(ctx, nsa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED); err != nil {
+			return errors.Annotate(err, "update nthsection analysis").Err()
+		}
+		if err = testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED); err != nil {
+			return errors.Annotate(err, "update analysis status").Err()
+		}
+		logging.Warningf(ctx, "find next single commit to run %s", err.Error())
+		return nil
 	}
 
 	if err = TriggerRerunBuildForCommits(ctx, tfa, nsa, projectBisector, commitHashes); err != nil {

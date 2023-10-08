@@ -537,7 +537,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
 		})
 
-		Convey("Nthsection error", func() {
+		Convey("Nthsection regression range conflicts", func() {
 			cf := &model.CompileFailure{}
 			So(datastore.Put(c, cf), ShouldBeNil)
 			datastore.GetTestable(c).CatchupIndexes()
@@ -614,17 +614,17 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).Times(0)
 			server := &BotUpdatesServer{}
 			_, err := server.UpdateAnalysisProgress(c, req)
-			So(err, ShouldNotBeNil)
+			So(err, ShouldBeNil)
 			So(datastore.Get(c, singleRerun2), ShouldBeNil)
 			So(singleRerun2.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_PASSED)
 
 			// Check analysis status
 			datastore.GetTestable(c).CatchupIndexes()
 			So(datastore.Get(c, nsa), ShouldBeNil)
-			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_ERROR)
+			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
 			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
 			So(datastore.Get(c, cfa), ShouldBeNil)
-			So(cfa.Status, ShouldEqual, pb.AnalysisStatus_ERROR)
+			So(cfa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
 			So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
 		})
 	})

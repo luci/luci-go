@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/bisection/culpritaction/revertculprit"
 	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/nthsectionsnapshot"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/testfailureanalysis"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection"
@@ -246,10 +247,17 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 
 	// Find the next commit to run.
 	commit, err := snapshot.FindNextSingleCommitToRun()
+	var badRangeError *nthsectionsnapshot.BadRangeError
 	if err != nil {
-		return errors.Annotate(err, "find next nthsection commit to run").Err()
+		if !errors.As(err, &badRangeError) {
+			return errors.Annotate(err, "find next single commit to run").Err()
+		}
+		// BadRangeError suggests the regression range is invalid.
+		// This is not really an error, but more of a indication of no suspect can be found
+		// in this regression range.
+		logging.Warningf(ctx, "find next single commit to run %s", err.Error())
 	}
-	if commit == "" {
+	if commit == "" || errors.As(err, &badRangeError) {
 		// We don't have more run to wait -> we've failed to find the suspect.
 		if snapshot.NumInProgress == 0 {
 			err = saveNthSectionAnalysis(ctx, nsa, func(nsa *model.TestNthSectionAnalysis) {
