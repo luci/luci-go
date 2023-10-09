@@ -24,14 +24,14 @@ import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
+import { TestAnalysisOverview } from '@/bisection/components/analysis_overview/test_analysis_overview';
 import { CulpritVerificationTable } from '@/bisection/components/culprit_verification_table/culprit_verification_table';
 import { CulpritsTable } from '@/bisection/components/culprits_table/culprits_table';
 import { NthSectionAnalysisTable } from '@/bisection/components/nthsection_analysis_table/nthsection_analysis_table';
+import { TestFailuresTable } from '@/bisection/components/test_table/test_failures_table';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { usePrpcQuery } from '@/common/hooks/prpc_query';
 import { LUCIBisectionService } from '@/common/services/luci_bisection';
-
-import { TestAnalysisOverview } from '../components/analysis_overview/test_analysis_overview';
 
 import { TabPanel } from './analysis_details';
 
@@ -149,6 +149,12 @@ export const TestAnalysisDetailsPage = () => {
         </TabPanel>
       </div>
       {/* TODO: list the test failures. */}
+      <div className="section">
+        <Typography variant="h5" gutterBottom>
+          Test failures
+        </Typography>
+        <TestFailuresTable testFailures={analysis.testFailures} />
+      </div>
     </>
   );
 };

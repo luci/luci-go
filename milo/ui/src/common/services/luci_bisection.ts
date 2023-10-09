@@ -16,6 +16,7 @@ import stableStringify from 'fast-json-stable-stringify';
 
 import { CacheOption, cached } from '@/generic_libs/tools/cached_fn';
 import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
+import { Variant } from './resultdb';
 
 export type AnalysisStatus =
   | 'ANALYSIS_STATUS_UNSPECIFIED'
@@ -263,9 +264,11 @@ export interface TestAnalysis {
 
 export interface TestFailure {
  testId: string;
+ variant: Variant;
  variantHash: string;
  isDiverged: boolean;
  isPrimary: boolean;
+ startHour: string;
 }
 
 
