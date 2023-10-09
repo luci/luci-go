@@ -424,7 +424,7 @@ func updateBuildStatusFromTaskResult(ctx context.Context, bld *model.Build, task
 		if !protoutil.IsEnded(st) {
 			return
 		}
-		if bld.Proto.StartTime == nil {
+		if bld.Proto.StartTime == nil && taskResult.StartedTs.AsTime().Unix() != 0 {
 			startTime := taskResult.StartedTs.AsTime()
 			// Backfill build start time.
 			protoutil.SetStatus(startTime, bld.Proto, pb.Status_STARTED)

@@ -655,6 +655,46 @@ func TestSyncBuild(t *testing.T) {
 				So(b.Proto.Status, ShouldEqual, pb.Status_FAILURE)
 			})
 
+			Convey("task has no resource", func() {
+				fakeTaskResult := &apipb.TaskResultResponse{
+					State:       apipb.TaskState_NO_RESOURCE,
+					AbandonedTs: &timestamppb.Timestamp{Seconds: now.UnixNano() / 1000000000},
+				}
+				mockSwarm.EXPECT().GetTaskResult(ctx, "task567").Return(fakeTaskResult, nil)
+				b := &model.Build{
+					ID: 567,
+					Proto: &pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "proj",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						CreateTime: &timestamppb.Timestamp{Seconds: now.UnixNano() / 1000000000},
+						Status:     pb.Status_SCHEDULED,
+					},
+				}
+				inf := &model.BuildInfra{
+					ID:    1,
+					Build: datastore.KeyForObj(ctx, &model.Build{ID: 567}),
+					Proto: &pb.BuildInfra{
+						Swarming: &pb.BuildInfra_Swarming{
+							Hostname: "swarm",
+							TaskId:   "task567",
+						},
+					},
+				}
+				bs := &model.BuildStatus{
+					Build:  datastore.KeyForObj(ctx, b),
+					Status: b.Proto.Status,
+				}
+				So(datastore.Put(ctx, b, inf, bs), ShouldBeNil)
+				err := SyncBuild(ctx, 567, 1)
+				So(err, ShouldBeNil)
+				So(datastore.Get(ctx, b), ShouldBeNil)
+				So(b.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+				So(b.Proto.StartTime, ShouldBeNil)
+			})
+
 			var cases = []struct {
 				fakeTaskResult *apipb.TaskResultResponse
 				expected       *expectedBuildFields
