@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import './analyses_page.css';
 import Search from '@mui/icons-material/Search';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -43,13 +44,11 @@ export const CompileAnalysesTab = () => {
   };
 
   return (
-    <main>
+    <div className="analyses-tab">
       <Box
         justifyContent="center"
         sx={{
-          paddingLeft: '1rem',
-          paddingRight: '1rem',
-          paddingBottom: '2rem',
+          paddingBottom: '1rem',
         }}
       >
         <TextField
@@ -98,7 +97,7 @@ export const CompileAnalysesTab = () => {
       ) : (
         <ListAnalysesTable />
       )}
-    </main>
+    </div>
   );
 };
 

@@ -151,7 +151,7 @@ export const TestAnalysisDetailsPage = () => {
       {/* TODO: list the test failures. */}
       <div className="section">
         <Typography variant="h5" gutterBottom>
-          Test failures
+          Test Failures
         </Typography>
         <TestFailuresTable testFailures={analysis.testFailures} />
       </div>

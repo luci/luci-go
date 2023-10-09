@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import './analyses_page.css';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
@@ -19,10 +20,10 @@ import { ListTestAnalysesTable } from '../components/analyses_tables/list_test_a
 
 export const TestAnalysesTab = () => {
   return (
-    <main>
+    <div className="analyses-tab">
       {/* TODO: implement searching. */}
       <ListTestAnalysesTable />
-    </main>
+    </div>
   );
 };
 
