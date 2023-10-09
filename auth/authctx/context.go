@@ -549,6 +549,7 @@ func (ac *Context) writeDockerConfig() error {
 			"marketplace.gcr.io":         "luci",
 			"eu.gcr.io":                  "luci",
 			"us-central1-docker.pkg.dev": "luci",
+			"us-docker.pkg.dev":          "luci",
 		},
 	}
 	if err := json.NewEncoder(f).Encode(&config); err != nil {
