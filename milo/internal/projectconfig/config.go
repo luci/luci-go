@@ -406,10 +406,6 @@ func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[strin
 			// TODO(jchinlee): remove Ordinal check when Version field is added to Console.
 			continue
 		}
-		builderIDs, err := pc.AllLegacyBuilderIDs()
-		if err != nil {
-			return nil, err
-		}
 
 		toPut = append(toPut, &Console{
 			Parent:         datastore.KeyForObj(c, project),
@@ -417,7 +413,7 @@ func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[strin
 			Ordinal:        i,
 			ConfigURL:      configURL(c, meta),
 			ConfigRevision: meta.Revision,
-			Builders:       builderIDs,
+			Builders:       pc.AllLegacyBuilderIDs(),
 			Def:            *pc,
 			Realm:          pc.Realm,
 		})

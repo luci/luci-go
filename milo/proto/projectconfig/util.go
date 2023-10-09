@@ -28,10 +28,10 @@ func (b *Builder) ParseCategory() []string {
 
 // AllLegacyBuilderIDs returns all BuilderIDs in legacy format mentioned by this
 // Console.
-func (c *Console) AllLegacyBuilderIDs() ([]string, error) {
+func (c *Console) AllLegacyBuilderIDs() []string {
 	builders := make([]string, 0, len(c.Builders))
 	for _, b := range c.Builders {
 		builders = append(builders, utils.LegacyBuilderIDString(b.Id))
 	}
-	return builders, nil
+	return builders
 }
