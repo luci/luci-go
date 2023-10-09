@@ -42,6 +42,7 @@ import (
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildstatus"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
@@ -420,7 +421,7 @@ func updateBuildStatusFromTaskResult(ctx context.Context, bld *model.Build, task
 	// A helper function to correctly set Build ended status from taskResult. It
 	// corrects the build start_time only if start_time is empty and taskResult
 	// has start_ts populated.
-	setEndStatus := func(st pb.Status) {
+	setEndStatus := func(st pb.Status, details *pb.StatusDetails) {
 		if !protoutil.IsEnded(st) {
 			return
 		}
@@ -443,7 +444,8 @@ func updateBuildStatusFromTaskResult(ctx context.Context, bld *model.Build, task
 			endTime = bld.Proto.CreateTime.AsTime()
 		}
 
-		bs, steps, err = updateBuildStatusOnTaskStatusChange(ctx, bld, st, st, endTime)
+		stWithDetails := &buildstatus.StatusWithDetails{Status: st, Details: details}
+		bs, steps, err = updateBuildStatusOnTaskStatusChange(ctx, bld, stWithDetails, stWithDetails, endTime)
 	}
 
 	// Update build status
@@ -466,41 +468,39 @@ func updateBuildStatusFromTaskResult(ctx context.Context, bld *model.Build, task
 		if t := taskResult.StartedTs; t != nil {
 			updateTime = t.AsTime()
 		}
-		bs, steps, err = updateBuildStatusOnTaskStatusChange(ctx, bld, pb.Status_STARTED, pb.Status_STARTED, updateTime)
+		stWithDetails := &buildstatus.StatusWithDetails{Status: pb.Status_STARTED}
+		bs, steps, err = updateBuildStatusOnTaskStatusChange(ctx, bld, stWithDetails, stWithDetails, updateTime)
 	case apipb.TaskState_CANCELED, apipb.TaskState_KILLED:
-		setEndStatus(pb.Status_CANCELED)
+		setEndStatus(pb.Status_CANCELED, nil)
 	case apipb.TaskState_NO_RESOURCE:
-		setEndStatus(pb.Status_INFRA_FAILURE)
-		bld.Proto.StatusDetails = &pb.StatusDetails{
+		setEndStatus(pb.Status_INFRA_FAILURE, &pb.StatusDetails{
 			ResourceExhaustion: &pb.StatusDetails_ResourceExhaustion{},
-		}
+		})
 	case apipb.TaskState_EXPIRED:
-		setEndStatus(pb.Status_INFRA_FAILURE)
-		bld.Proto.StatusDetails = &pb.StatusDetails{
+		setEndStatus(pb.Status_INFRA_FAILURE, &pb.StatusDetails{
 			ResourceExhaustion: &pb.StatusDetails_ResourceExhaustion{},
 			Timeout:            &pb.StatusDetails_Timeout{},
-		}
+		})
 	case apipb.TaskState_TIMED_OUT:
-		setEndStatus(pb.Status_INFRA_FAILURE)
-		bld.Proto.StatusDetails = &pb.StatusDetails{
+		setEndStatus(pb.Status_INFRA_FAILURE, &pb.StatusDetails{
 			Timeout: &pb.StatusDetails_Timeout{},
-		}
+		})
 	case apipb.TaskState_BOT_DIED, apipb.TaskState_CLIENT_ERROR:
 		// BB only supplies bbagent CIPD packages in a task, no other user packages.
 		// So the CLIENT_ERROR task state should be treated as build INFRA_FAILURE.
-		setEndStatus(pb.Status_INFRA_FAILURE)
+		setEndStatus(pb.Status_INFRA_FAILURE, nil)
 	case apipb.TaskState_COMPLETED:
 		if taskResult.Failure {
 			if bld.Proto.Output.GetStatus() == pb.Status_FAILURE {
-				setEndStatus(pb.Status_FAILURE)
+				setEndStatus(pb.Status_FAILURE, nil)
 			} else {
 				//If this truly was a non-infra failure, bbagent would catch that and
 				//mark the build as FAILURE.
 				//That did not happen, so this is an infra failure.
-				setEndStatus(pb.Status_INFRA_FAILURE)
+				setEndStatus(pb.Status_INFRA_FAILURE, nil)
 			}
 		} else {
-			setEndStatus(pb.Status_SUCCESS)
+			setEndStatus(pb.Status_SUCCESS, nil)
 		}
 	default:
 		err = errors.Reason("Unexpected task state: %s", taskResult.State).Err()

@@ -506,7 +506,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 			}
 			statusUpdater := buildstatus.Updater{
 				Build:       b,
-				BuildStatus: req.Build.Status,
+				BuildStatus: &buildstatus.StatusWithDetails{Status: req.Build.Status},
 				UpdateTime:  now,
 				PostProcess: tasks.SendOnBuildStatusChange,
 			}
@@ -523,7 +523,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 			}
 			statusUpdater := buildstatus.Updater{
 				Build:        b,
-				OutputStatus: req.Build.Output.GetStatus(),
+				OutputStatus: &buildstatus.StatusWithDetails{Status: req.Build.Output.GetStatus()},
 				UpdateTime:   now,
 				PostProcess:  tasks.SendOnBuildStatusChange,
 			}

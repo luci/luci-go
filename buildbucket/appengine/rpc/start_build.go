@@ -108,7 +108,7 @@ func startBuildOnSwarming(ctx context.Context, req *pb.StartBuildRequest, tok st
 			b.Proto.Output.Status = pb.Status_STARTED
 			statusUpdater := buildstatus.Updater{
 				Build:        b,
-				OutputStatus: pb.Status_STARTED,
+				OutputStatus: &buildstatus.StatusWithDetails{Status: pb.Status_STARTED},
 				UpdateTime:   clock.Now(ctx),
 				PostProcess:  tasks.SendOnBuildStatusChange,
 			}
@@ -170,7 +170,7 @@ func startBuildOnBackendOnFirstReq(ctx context.Context, req *pb.StartBuildReques
 	b.Proto.Output.Status = pb.Status_STARTED
 	statusUpdater := buildstatus.Updater{
 		Build:        b,
-		OutputStatus: pb.Status_STARTED,
+		OutputStatus: &buildstatus.StatusWithDetails{Status: pb.Status_STARTED},
 		UpdateTime:   clock.Now(ctx),
 		PostProcess:  tasks.SendOnBuildStatusChange,
 	}

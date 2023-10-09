@@ -72,7 +72,7 @@ func TestUpdate(t *testing.T) {
 				So(datastore.Put(ctx, b), ShouldBeNil)
 				u := &Updater{
 					Build:       b,
-					BuildStatus: pb.Status_SUCCESS,
+					BuildStatus: &StatusWithDetails{Status: pb.Status_SUCCESS},
 				}
 				_, err := update(ctx, u)
 				So(err, ShouldErrLike, "cannot update status for an ended build")
@@ -95,8 +95,8 @@ func TestUpdate(t *testing.T) {
 				So(datastore.Put(ctx, b), ShouldBeNil)
 				u := &Updater{
 					Build:        b,
-					OutputStatus: pb.Status_SUCCESS,
-					TaskStatus:   pb.Status_SUCCESS,
+					OutputStatus: &StatusWithDetails{Status: pb.Status_SUCCESS},
+					TaskStatus:   &StatusWithDetails{Status: pb.Status_SUCCESS},
 				}
 				_, err := update(ctx, u)
 				So(err, ShouldErrLike, "impossible: update build output status and task status at the same time")
@@ -141,7 +141,7 @@ func TestUpdate(t *testing.T) {
 				So(datastore.Put(ctx, b), ShouldBeNil)
 				u := &Updater{
 					Build:       b,
-					BuildStatus: pb.Status_SUCCESS,
+					BuildStatus: &StatusWithDetails{Status: pb.Status_SUCCESS},
 				}
 				_, err := update(ctx, u)
 				So(err, ShouldErrLike, "not found")
@@ -179,8 +179,8 @@ func TestUpdate(t *testing.T) {
 			}
 
 			Convey("direct update on build status ignore sub status", func() {
-				u.BuildStatus = pb.Status_STARTED
-				u.OutputStatus = pb.Status_SUCCESS // only for test, impossible in practice
+				u.BuildStatus = &StatusWithDetails{Status: pb.Status_STARTED}
+				u.OutputStatus = &StatusWithDetails{Status: pb.Status_SUCCESS} // only for test, impossible in practice
 				bs, err := update(ctx, u)
 				So(err, ShouldBeNil)
 				So(bs.Status, ShouldEqual, pb.Status_STARTED)
@@ -189,7 +189,7 @@ func TestUpdate(t *testing.T) {
 
 			Convey("update output status", func() {
 				Convey("start, so build status is updated", func() {
-					u.OutputStatus = pb.Status_STARTED
+					u.OutputStatus = &StatusWithDetails{Status: pb.Status_STARTED}
 					bs, err := update(ctx, u)
 					So(err, ShouldBeNil)
 					So(bs.Status, ShouldEqual, pb.Status_STARTED)
@@ -197,7 +197,7 @@ func TestUpdate(t *testing.T) {
 				})
 
 				Convey("end, so build status is unchanged", func() {
-					u.OutputStatus = pb.Status_SUCCESS
+					u.OutputStatus = &StatusWithDetails{Status: pb.Status_SUCCESS}
 					bs, err := update(ctx, u)
 					So(err, ShouldBeNil)
 					So(bs, ShouldBeNil)
@@ -207,7 +207,7 @@ func TestUpdate(t *testing.T) {
 
 			Convey("update task status", func() {
 				Convey("end, so build status is updated", func() {
-					u.TaskStatus = pb.Status_SUCCESS
+					u.TaskStatus = &StatusWithDetails{Status: pb.Status_SUCCESS}
 					bs, err := update(ctx, u)
 					So(err, ShouldBeNil)
 					So(bs.Status, ShouldEqual, pb.Status_SUCCESS)
@@ -215,7 +215,7 @@ func TestUpdate(t *testing.T) {
 				})
 
 				Convey("start, so build status is unchanged", func() {
-					u.TaskStatus = pb.Status_STARTED
+					u.TaskStatus = &StatusWithDetails{Status: pb.Status_STARTED}
 					bs, err := update(ctx, u)
 					So(err, ShouldBeNil)
 					So(bs, ShouldBeNil)

@@ -99,7 +99,8 @@ func failBuild(ctx context.Context, buildID int64, msg string) error {
 
 		statusUpdated = true
 		bld.Proto.SummaryMarkdown = msg
-		bs, steps, err := updateBuildStatusOnTaskStatusChange(ctx, bld, pb.Status_INFRA_FAILURE, pb.Status_INFRA_FAILURE, clock.Now(ctx))
+		st := &buildstatus.StatusWithDetails{Status: pb.Status_INFRA_FAILURE}
+		bs, steps, err := updateBuildStatusOnTaskStatusChange(ctx, bld, st, st, clock.Now(ctx))
 		if err != nil {
 			return err
 		}
@@ -124,7 +125,7 @@ func failBuild(ctx context.Context, buildID int64, msg string) error {
 
 // updateBuildStatusOnTaskStatusChange updates build's top level status based on
 // task status change.
-func updateBuildStatusOnTaskStatusChange(ctx context.Context, bld *model.Build, buildStatus, taskStatus pb.Status, updateTime time.Time) (*model.BuildStatus, *model.BuildSteps, error) {
+func updateBuildStatusOnTaskStatusChange(ctx context.Context, bld *model.Build, buildStatus, taskStatus *buildstatus.StatusWithDetails, updateTime time.Time) (*model.BuildStatus, *model.BuildSteps, error) {
 	var steps *model.BuildSteps
 	statusUpdater := buildstatus.Updater{
 		Build:       bld,

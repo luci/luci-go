@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/buildbucket/appengine/common"
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildstatus"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -187,7 +188,7 @@ func prepareUpdate(ctx context.Context, build *model.Build, infra *model.BuildIn
 
 	toSave := []any{build, infra}
 
-	bs, steps, err := updateBuildStatusOnTaskStatusChange(ctx, build, pb.Status_STATUS_UNSPECIFIED, task.Status, now)
+	bs, steps, err := updateBuildStatusOnTaskStatusChange(ctx, build, nil, &buildstatus.StatusWithDetails{Status: task.Status}, now)
 	if err != nil {
 		return nil, err
 	}

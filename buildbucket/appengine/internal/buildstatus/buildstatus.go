@@ -28,36 +28,44 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
+type StatusWithDetails struct {
+	Status  pb.Status
+	Details *pb.StatusDetails
+}
+
+func (sd *StatusWithDetails) isSet() bool {
+	return sd != nil && sd.Status != pb.Status_STATUS_UNSPECIFIED
+}
+
 type Updater struct {
 	Build *model.Build
 
-	BuildStatus  pb.Status
-	OutputStatus pb.Status
-	TaskStatus   pb.Status
+	BuildStatus  *StatusWithDetails
+	OutputStatus *StatusWithDetails
+	TaskStatus   *StatusWithDetails
 
 	UpdateTime time.Time
 
 	PostProcess func(c context.Context, bld *model.Build) error
 }
 
-func (u *Updater) calculateBuildStatus() pb.Status {
+func (u *Updater) calculateBuildStatus() *StatusWithDetails {
 	switch {
-	case u.BuildStatus != pb.Status_STATUS_UNSPECIFIED:
+	case u.BuildStatus != nil && u.BuildStatus.Status != pb.Status_STATUS_UNSPECIFIED:
 		// If top level status is provided, use that directly.
 		// TODO(crbug.com/1450399): remove this case after the callsites are updated
 		// to not set top level status directly.
 		return u.BuildStatus
-	case u.OutputStatus == pb.Status_STATUS_UNSPECIFIED && u.TaskStatus == pb.Status_STATUS_UNSPECIFIED:
-		return pb.Status_STATUS_UNSPECIFIED
-	case u.OutputStatus == pb.Status_STARTED:
-		return pb.Status_STARTED
-	case protoutil.IsEnded(u.TaskStatus):
+	case !u.OutputStatus.isSet() && !u.TaskStatus.isSet():
+		return &StatusWithDetails{Status: pb.Status_STATUS_UNSPECIFIED}
+	case u.OutputStatus.isSet() && u.OutputStatus.Status == pb.Status_STARTED:
+		return &StatusWithDetails{Status: pb.Status_STARTED}
+	case u.TaskStatus.isSet() && protoutil.IsEnded(u.TaskStatus.Status):
 		return u.TaskStatus
 	default:
 		// no change.
-		return u.Build.Proto.Status
+		return &StatusWithDetails{Status: u.Build.Proto.Status, Details: u.Build.Proto.StatusDetails}
 	}
-
 }
 
 // Do updates the top level build status, and performs actions
@@ -85,25 +93,26 @@ func (u *Updater) Do(ctx context.Context) (*model.BuildStatus, error) {
 	}
 
 	// Check the provided statuses.
-	if u.OutputStatus != pb.Status_STATUS_UNSPECIFIED && u.TaskStatus != pb.Status_STATUS_UNSPECIFIED {
+	if u.OutputStatus.isSet() && u.TaskStatus.isSet() {
 		return nil, errors.Reason("impossible: update build output status and task status at the same time").Err()
 	}
 
 	newBuildStatus := u.BuildStatus
-	if newBuildStatus == pb.Status_STATUS_UNSPECIFIED {
+	if !newBuildStatus.isSet() {
 		newBuildStatus = u.calculateBuildStatus()
 	}
-	if newBuildStatus == pb.Status_STATUS_UNSPECIFIED {
+	if !newBuildStatus.isSet() {
 		// Nothing provided to update.
 		return nil, errors.Reason("cannot set a build status to UNSPECIFIED").Err()
 	}
 
-	if newBuildStatus == u.Build.Proto.Status {
+	if newBuildStatus.Status == u.Build.Proto.Status {
 		// Nothing to update.
 		return nil, nil
 	}
 
-	protoutil.SetStatus(u.UpdateTime, u.Build.Proto, newBuildStatus)
+	protoutil.SetStatus(u.UpdateTime, u.Build.Proto, newBuildStatus.Status)
+	u.Build.Proto.StatusDetails = newBuildStatus.Details
 
 	// Update BuildStatus.
 	entities, err := common.GetBuildEntities(ctx, u.Build.ID, model.BuildStatusKind)
@@ -111,7 +120,7 @@ func (u *Updater) Do(ctx context.Context) (*model.BuildStatus, error) {
 		return nil, err
 	}
 	bs := entities[0].(*model.BuildStatus)
-	bs.Status = newBuildStatus
+	bs.Status = newBuildStatus.Status
 
 	// post process after build status change.
 	if err := u.PostProcess(ctx, u.Build); err != nil {
