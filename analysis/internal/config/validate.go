@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
-	luciproto "go.chromium.org/luci/common/proto"
-	"go.chromium.org/luci/config/validation"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
@@ -28,6 +28,9 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/testname/rules"
 	"go.chromium.org/luci/analysis/pbutil"
 	configpb "go.chromium.org/luci/analysis/proto/config"
+	"go.chromium.org/luci/common/errors"
+	luciproto "go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/config/validation"
 )
 
 const maxHysteresisPercent = 1000
@@ -75,10 +78,6 @@ var (
 	// printableASCIIRE matches any input consisting only of printable ASCII
 	// characters.
 	printableASCIIRE = regexp.MustCompile(`^[[:print:]]+$`)
-
-	// commentTemplateRE matches valid issue comment template contents.
-	// This ensures all content is printable ASCII or new line characters.
-	commentTemplateRE = regexp.MustCompile("^[[:print:]\n]+$")
 
 	// Standard maximum lengths, in bytes. For fields, where there
 	// is no obvious maximum length for the input type.
@@ -906,7 +905,7 @@ func validateBugManagementPolicyID(ctx *validation.Context, id string, seenIDs m
 	}
 	switch err := pbutil.ValidateWithRe(policyIDRE, id); err {
 	case pbutil.Unspecified:
-		ctx.Errorf("must be specified")
+		ctx.Errorf(unspecifiedMessage)
 		return
 	case pbutil.DoesNotMatch:
 		ctx.Errorf("does not match pattern %q", policyIDRE)
@@ -952,8 +951,16 @@ func validateBugManagementPolicyExplanation(ctx *validation.Context, e *configpb
 		return
 	}
 
-	validateStringConfig(ctx, "problem_html", e.ProblemHtml, printableASCIIRE, longMaxLengthBytes)
-	validateStringConfig(ctx, "action_html", e.ActionHtml, printableASCIIRE, longMaxLengthBytes)
+	if err := ValidateRunesGraphicOrNewline(e.ProblemHtml, longMaxLengthBytes); err != nil {
+		ctx.Enter("problem_html")
+		ctx.Error(err)
+		ctx.Exit()
+	}
+	if err := ValidateRunesGraphicOrNewline(e.ActionHtml, longMaxLengthBytes); err != nil {
+		ctx.Enter("action_html")
+		ctx.Error(err)
+		ctx.Exit()
+	}
 }
 
 func validateBugManagementPolicyBugTemplate(ctx *validation.Context, t *configpb.BugManagementPolicy_BugTemplate) {
@@ -978,12 +985,8 @@ func validateCommentTemplate(ctx *validation.Context, t string) {
 		// It is acceptable for a policy not to comment on a bug.
 		return
 	}
-	if len(t) > longMaxLengthBytes {
-		ctx.Errorf("exceeds maximum allowed length of %v bytes", longMaxLengthBytes)
-		return
-	}
-	if !commentTemplateRE.MatchString(t) {
-		ctx.Errorf("does not match pattern %q", commentTemplateRE)
+	if err := ValidateRunesGraphicOrNewline(t, longMaxLengthBytes); err != nil {
+		ctx.Error(err)
 		return
 	}
 
@@ -995,6 +998,29 @@ func validateCommentTemplate(ctx *validation.Context, t string) {
 	if err := tmpl.Validate(); err != nil {
 		ctx.Errorf("validate template: %s", err)
 	}
+}
+
+// ValidateRunesGraphicOrNewline validates a value:
+// - is non-empty
+// - is a valid UTF-8 string
+// - contains only runes matching unicode.IsGraphic or '\n', and
+// - has a specified maximum length.
+func ValidateRunesGraphicOrNewline(value string, maxLengthInBytes int) error {
+	if value == "" {
+		return errors.Reason(unspecifiedMessage).Err()
+	}
+	if len(value) > maxLengthInBytes {
+		return errors.Reason("exceeds maximum allowed length of %v bytes", maxLengthInBytes).Err()
+	}
+	if !utf8.ValidString(value) {
+		return errors.Reason("not a valid UTF-8 string").Err()
+	}
+	for i, r := range value {
+		if !unicode.IsGraphic(r) && r != rune('\n') {
+			return errors.Reason("unicode rune %q at index %v is not graphic or newline character", r, i).Err()
+		}
+	}
+	return nil
 }
 
 func validateBugManagementPolicyBugTemplateBuganizer(ctx *validation.Context, b *configpb.BugManagementPolicy_BugTemplate_Buganizer) {

@@ -1001,9 +1001,13 @@ func TestProjectConfigValidator(t *testing.T) {
 						explanation.ProblemHtml = ""
 						So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
 					})
-					Convey("invalid", func() {
-						explanation.ProblemHtml = "\x00"
-						So(validate(project, cfg), ShouldErrLike, `(`+path+`): does not match pattern "^[[:print:]]+$"`)
+					Convey("invalid UTF-8", func() {
+						explanation.ProblemHtml = "\xc3\x28"
+						So(validate(project, cfg), ShouldErrLike, `(`+path+`): not a valid UTF-8 string`)
+					})
+					Convey("invalid rune", func() {
+						explanation.ProblemHtml = "a\x00"
+						So(validate(project, cfg), ShouldErrLike, `(`+path+`): unicode rune '\x00' at index 1 is not graphic or newline character`)
 					})
 					Convey("too long", func() {
 						explanation.ProblemHtml = strings.Repeat("a", 10001)
@@ -1016,9 +1020,13 @@ func TestProjectConfigValidator(t *testing.T) {
 						explanation.ActionHtml = ""
 						So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
 					})
+					Convey("invalid UTF-8", func() {
+						explanation.ActionHtml = "\xc3\x28"
+						So(validate(project, cfg), ShouldErrLike, `(`+path+`): not a valid UTF-8 string`)
+					})
 					Convey("invalid", func() {
-						explanation.ActionHtml = "\x00"
-						So(validate(project, cfg), ShouldErrLike, `(`+path+`): does not match pattern "^[[:print:]]+$"`)
+						explanation.ActionHtml = "a\x00"
+						So(validate(project, cfg), ShouldErrLike, `(`+path+`): unicode rune '\x00' at index 1 is not graphic or newline character`)
 					})
 					Convey("too long", func() {
 						explanation.ActionHtml = strings.Repeat("a", 10001)
@@ -1044,9 +1052,13 @@ func TestProjectConfigValidator(t *testing.T) {
 						bugTemplate.CommentTemplate = strings.Repeat("a", 10001)
 						So(validate(project, cfg), ShouldErrLike, `(`+path+`): exceeds maximum allowed length of 10000 bytes`)
 					})
+					Convey("invalid - not valid UTF-8", func() {
+						bugTemplate.CommentTemplate = "\xc3\x28"
+						So(validate(project, cfg), ShouldErrLike, `(`+path+`): not a valid UTF-8 string`)
+					})
 					Convey("invalid - non-ASCII characters", func() {
-						bugTemplate.CommentTemplate = "\x00"
-						So(validate(project, cfg), ShouldErrLike, `(`+path+`): does not match pattern "^[[:print:]\n]+$"`)
+						bugTemplate.CommentTemplate = "a\x00"
+						So(validate(project, cfg), ShouldErrLike, `(`+path+`): unicode rune '\x00' at index 1 is not graphic or newline character`)
 					})
 					Convey("invalid - bad field reference", func() {
 						bugTemplate.CommentTemplate = "{{.FieldNotExisting}}"
