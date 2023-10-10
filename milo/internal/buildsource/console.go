@@ -135,11 +135,11 @@ func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*projectconfig
 
 		for i, column := range ent.Def.Builders {
 			s := &model.BuilderSummary{
-				BuilderID: column.Name,
+				BuilderID: utils.LegacyBuilderIDString(column.Id),
 				ProjectID: projectID,
 			}
 			summaries[cid].Builders[i] = s
-			name := BuilderID(column.Name)
+			name := BuilderID(utils.LegacyBuilderIDString(column.Id))
 			// Find/populate the BuilderID -> {console: summary}
 			colMap, ok := columns[name]
 			if !ok {
