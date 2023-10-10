@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"google.golang.org/genproto/googleapis/api/annotations"
@@ -28,11 +29,13 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/protowalk"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/common"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
+	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -75,6 +78,22 @@ func validateStartBuildTaskRequest(ctx context.Context, req *pb.StartBuildTaskRe
 		return procRes.Err()
 	}
 	return nil
+}
+
+func computeBackendPubsubTopic(ctx context.Context, target string) (string, error) {
+	globalCfg, err := config.GetSettingsCfg(ctx)
+	if err != nil {
+		return "", errors.Annotate(err, "could not get global settings config").Err()
+	}
+	if globalCfg == nil {
+		return "", errors.Reason("error fetching service config").Err()
+	}
+	for _, backend := range globalCfg.Backends {
+		if backend.Target == target {
+			return fmt.Sprintf("projects/%s/topics/%s", info.AppID(ctx), backend.PubsubId), nil
+		}
+	}
+	return "", errors.Reason("pubsub id not found").Err()
 }
 
 // startBuildTask implements the core logic of registering and/or starting a build task.
@@ -123,6 +142,8 @@ func (*Builds) StartBuildTask(ctx context.Context, req *pb.StartBuildTaskRequest
 	}
 
 	var startBuildToken string
+	var resultdbInvocationUpdateToken string
+	var pubsubTopic string
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		entities, err := common.GetBuildEntities(ctx, req.BuildId, model.BuildKind, model.BuildInfraKind)
 		if err != nil {
@@ -134,6 +155,8 @@ func (*Builds) StartBuildTask(ctx context.Context, req *pb.StartBuildTaskRequest
 		b := entities[0].(*model.Build)
 		infra := entities[1].(*model.BuildInfra)
 
+		resultdbInvocationUpdateToken = b.ResultDBUpdateToken
+
 		if infra.Proto.GetBackend().GetTask() == nil {
 			return appstatus.Errorf(codes.Internal, "the build %d does not run on task backend", req.BuildId)
 		}
@@ -142,6 +165,10 @@ func (*Builds) StartBuildTask(ctx context.Context, req *pb.StartBuildTaskRequest
 			// First StartBuildTask for the build.
 			// Update the build to register the task.
 			startBuildToken, err = startBuildTask(ctx, req, b, infra)
+			if err != nil {
+				return err
+			}
+			pubsubTopic, err = computeBackendPubsubTopic(ctx, infra.Proto.Backend.Task.Id.Target)
 			return err
 		}
 
@@ -151,9 +178,9 @@ func (*Builds) StartBuildTask(ctx context.Context, req *pb.StartBuildTaskRequest
 		}
 
 		if infra.Proto.Backend.Task.GetId().GetTarget() == req.Task.Id.Target && infra.Proto.Backend.Task.GetId().GetId() == req.Task.Id.Id {
-			// Idempotent.
 			startBuildToken = b.StartBuildToken
-			return nil
+			pubsubTopic, err = computeBackendPubsubTopic(ctx, infra.Proto.Backend.Task.Id.Target)
+			return err
 		}
 
 		// Same request id, different task id.
@@ -162,7 +189,12 @@ func (*Builds) StartBuildTask(ctx context.Context, req *pb.StartBuildTaskRequest
 	if txErr != nil {
 		return nil, txErr
 	}
-	return &pb.StartBuildTaskResponse{Secrets: &pb.BuildSecrets{
-		StartBuildToken: startBuildToken,
-	}}, nil
+
+	return &pb.StartBuildTaskResponse{
+		Secrets: &pb.BuildSecrets{
+			StartBuildToken:               startBuildToken,
+			ResultdbInvocationUpdateToken: resultdbInvocationUpdateToken,
+		},
+		PubsubTopic: pubsubTopic,
+	}, nil
 }

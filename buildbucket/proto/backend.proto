@@ -77,9 +77,12 @@ message RunTaskRequest {
   // of a single backend handling multiple different protocols.
   string target = 1;
 
+  // DEPRECATED. The startBuildTaskToken will be now be provided in
+  // RunTaskRequest.StartBuildTaskToken.
+  //
   // A REGISTER_TASK token that the backend can use to register the backend task
   // to Buildbucket via the RegisterBuildTask RPC.
-  string register_backend_task_token = 2;
+  string register_backend_task_token = 2 [deprecated = true];
 
   // The LUCI Realm that the created task should be associated with.
   string realm = 3;
@@ -142,14 +145,8 @@ message RunTaskRequest {
   // e.g. -task-id and -cache-base.
   repeated string agent_args = 5;
 
-  // Secrets contains key material for clients to call UpdateBuild.
-  // This can either be passed via LUCI_CONTEXT['secrets'] to the agent,
-  // or can be passed by adding a `-secrets=<binarypb>` CLI argument.
-  //
-  // NOTE: If passed via CLI, Backends SHOULD ensure that task
-  // command-lines are not widely readable, or the Backend risks tasks (or
-  // malicious actors) impersonating builds.
-  BuildSecrets secrets = 6;
+  // DEPRECATED. Do not use.
+  BuildSecrets secrets = 6 [deprecated = true];
 
   // The hostname of the buildbucket service to send RPCs back to.
   //
@@ -227,10 +224,15 @@ message RunTaskRequest {
   // Buildbucket will avoid raciness even in the face of duplicate tasks.
   string request_id = 16;
 
+  // DEPRECATED. Do not use. This has been moved to StartBuildTaskResponse.
   // The pubsub topic that the backend will use to send
   // UpdateBuildTask messages to buildbucket. It is set by buildbucket using
   // service_config and the current buildbucket host.
-  string pubsub_topic = 17;
+  string pubsub_topic = 17 [deprecated = true];
+
+  // A START_BUILD_TASK token that the backend can use to start and register the
+  // backend task with Buildbucket via the StartBuildTask RPC.
+  string start_build_task_token = 18;
 }
 
 message RunTaskResponse {

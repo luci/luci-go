@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/common"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
+	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -159,6 +160,24 @@ func TestStartBuildTask(t *testing.T) {
 		tk, _ := buildtoken.GenerateToken(ctx, 87654321, pb.TokenBody_START_BUILD_TASK)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk))
 
+		backendSetting := []*pb.BackendSetting{}
+		backendSetting = append(backendSetting, &pb.BackendSetting{
+			Target:   "fail_me",
+			Hostname: "hostname",
+		})
+		backendSetting = append(backendSetting, &pb.BackendSetting{
+			Target:   "swarming://swarming-host",
+			Hostname: "hostname2",
+			BuildSyncSetting: &pb.BackendSetting_BuildSyncSetting{
+				Shards:              5,
+				SyncIntervalSeconds: 300,
+			},
+			PubsubId: "swarming-host",
+		})
+		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
+		err := config.SetTestSettingsCfg(ctx, settingsCfg)
+		So(err, ShouldBeNil)
+
 		build := &model.Build{
 			ID: 87654321,
 			Proto: &pb.Build{
@@ -169,6 +188,7 @@ func TestStartBuildTask(t *testing.T) {
 					Builder: "builder",
 				},
 			},
+			ResultDBUpdateToken: "1234",
 		}
 		bk := datastore.KeyForObj(ctx, build)
 		infra := &model.BuildInfra{
@@ -211,7 +231,9 @@ func TestStartBuildTask(t *testing.T) {
 				build, err = common.GetBuild(ctx, 87654321)
 				So(err, ShouldBeNil)
 				So(build.StartBuildToken, ShouldEqual, res.Secrets.StartBuildToken)
+				So(build.ResultDBUpdateToken, ShouldEqual, res.Secrets.ResultdbInvocationUpdateToken)
 				So(build.StartBuildTaskRequestID, ShouldEqual, req.RequestId)
+				So(res.PubsubTopic, ShouldEqual, "projects/app/topics/swarming-host")
 
 				err = datastore.Get(ctx, infra)
 				So(err, ShouldBeNil)
@@ -316,7 +338,13 @@ func TestStartBuildTask(t *testing.T) {
 
 				res, err := srv.StartBuildTask(ctx, req)
 				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.StartBuildTaskResponse{Secrets: &pb.BuildSecrets{StartBuildToken: tok}})
+				So(res, ShouldResembleProto, &pb.StartBuildTaskResponse{
+					Secrets: &pb.BuildSecrets{
+						StartBuildToken:               tok,
+						ResultdbInvocationUpdateToken: "1234",
+					},
+					PubsubTopic: "projects/app/topics/swarming-host",
+				})
 			})
 		})
 	})
