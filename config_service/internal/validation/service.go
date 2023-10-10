@@ -169,10 +169,45 @@ type legacyValidationRequest struct {
 }
 
 type legacyValidationResponse struct {
-	Messages []struct {
-		Severity int32  `json:"severity"`
-		Text     string `json:"text"`
-	} `json:"messages"`
+	Messages []legacyValidationResponseMessage `json:"messages"`
+}
+
+type legacyValidationResponseMessage struct {
+	Severity cfgcommonpb.ValidationResult_Severity
+	Text     string
+}
+
+// UnmarshalJSON unmarshal json string to legacyValidationResponseMessage.
+func (msg *legacyValidationResponseMessage) UnmarshalJSON(b []byte) error {
+	var objMap map[string]*json.RawMessage
+	if err := json.Unmarshal(b, &objMap); err != nil {
+		return err
+	}
+	if text, ok := objMap["text"]; ok {
+		if err := json.Unmarshal(*text, &msg.Text); err != nil {
+			return err
+		}
+	}
+	if rawSev, ok := objMap["severity"]; ok {
+		var sevInt int32
+		var sevStr string
+		switch {
+		case json.Unmarshal(*rawSev, &sevInt) == nil:
+			if _, ok := cfgcommonpb.ValidationResult_Severity_name[sevInt]; !ok {
+				return fmt.Errorf("unrecognized severity integer %d", sevInt)
+			}
+			msg.Severity = cfgcommonpb.ValidationResult_Severity(sevInt)
+		case json.Unmarshal(*rawSev, &sevStr) == nil:
+			sevVal, ok := cfgcommonpb.ValidationResult_Severity_value[sevStr]
+			if !ok {
+				return fmt.Errorf("unrecognized severity string %q", sevStr)
+			}
+			msg.Severity = cfgcommonpb.ValidationResult_Severity(sevVal)
+		default:
+			return fmt.Errorf("unrecognized severity \"%s\"", *rawSev)
+		}
+	}
+	return nil
 }
 
 // validateInLegacyProtocol validates all files of the `serviceValidator`
@@ -294,14 +329,13 @@ func (sv *serviceValidator) parseLegacyResponse(ctx context.Context, resp *http.
 		}
 		ret := make([]*cfgcommonpb.ValidationResult_Message, 0, len(validationResponse.Messages))
 		for _, msg := range validationResponse.Messages {
-			sev := cfgcommonpb.ValidationResult_Severity(msg.Severity)
-			if _, ok := cfgcommonpb.ValidationResult_Severity_name[msg.Severity]; !ok || sev == cfgcommonpb.ValidationResult_UNKNOWN {
-				logging.Errorf(ctx, "unknown severity %d; full response from %s: %q", msg.Severity, url, body)
+			if msg.Severity == cfgcommonpb.ValidationResult_UNKNOWN {
+				logging.Errorf(ctx, "severity not provided; full response from %s: %q", url, body)
 				continue
 			}
 			ret = append(ret, &cfgcommonpb.ValidationResult_Message{
 				Path:     file.GetPath(),
-				Severity: sev,
+				Severity: msg.Severity,
 				Text:     msg.Text,
 			})
 		}

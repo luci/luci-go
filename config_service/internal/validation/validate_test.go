@@ -461,7 +461,12 @@ func TestValidateLegacy(t *testing.T) {
 		}
 
 		Convey("Works", func() {
-			srvResponse = []byte(`{"messages": [{"severity": 40, "text": "bad config"}]}`)
+			Convey("With int severity", func() {
+				srvResponse = []byte(`{"messages": [{"severity": 40, "text": "bad config"}]}`)
+			})
+			Convey("With string severity", func() {
+				srvResponse = []byte(`{"messages": [{"severity": "ERROR", "text": "bad config"}]}`)
+			})
 			tf := testFile{
 				path:    filePath,
 				content: []byte("This is config content"),
@@ -535,18 +540,41 @@ func TestValidateLegacy(t *testing.T) {
 			So(capturedRequestHeader.Get("Content-Encoding"), ShouldEqual, "gzip")
 		})
 
-		for _, sev := range []int32{0, 123} {
-			Convey(fmt.Sprintf("Omit unknown severity %d", sev), func() {
-				srvResponse = []byte(fmt.Sprintf(`{"messages": [{"severity": %d, "text": "bad config"}]}`, sev))
-				tf := testFile{
-					path:    filePath,
-					content: []byte("This is config content"),
-				}
-				res, err := v.Validate(ctx, cs, []File{tf})
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &cfgcommonpb.ValidationResult{})
+		Convey("Omit unknown severity", func() {
+			Convey("Not provided", func() {
+				srvResponse = []byte(`{"messages": [{"text": "bad config"}]}`)
 			})
-		}
+			Convey("Returns unknown", func() {
+				srvResponse = []byte(`{"messages": [{"severity": 0, "text": "bad config"}]}`)
+			})
+
+			tf := testFile{
+				path:    filePath,
+				content: []byte("This is config content"),
+			}
+			res, err := v.Validate(ctx, cs, []File{tf})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &cfgcommonpb.ValidationResult{})
+		})
+
+		Convey("Error on unrecognized severity", func() {
+			Convey("Int severity", func() {
+				srvResponse = []byte(`{"messages": [{"severity": 1234, "text": "bad config"}]}`)
+			})
+			Convey("String severity", func() {
+				srvResponse = []byte(`{"messages": [{"severity": "BAD", "text": "bad config"}]}`)
+			})
+			Convey("Not int not string", func() {
+				srvResponse = []byte(`{"messages": [{"severity": true, "text": "bad config"}]}`)
+			})
+			tf := testFile{
+				path:    filePath,
+				content: []byte("This is config content"),
+			}
+			res, err := v.Validate(ctx, cs, []File{tf})
+			So(err, ShouldErrLike, "unrecognized severity")
+			So(res, ShouldBeNil)
+		})
 
 		Convey("Server Error", func() {
 			srvErrMsg = "server encounter error"
