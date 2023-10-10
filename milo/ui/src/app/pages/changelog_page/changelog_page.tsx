@@ -18,7 +18,9 @@ import { useEffect, useMemo } from 'react';
 import { renderChangelog, useChangelog } from '@/app/components/changelog';
 import { useMarkChangelogAsRead } from '@/app/components/changelog';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { PageMeta } from '@/common/components/page_meta';
 import { SanitizedHtml } from '@/common/components/sanitized_html';
+import { UiPage } from '@/common/constants';
 
 const ChangelogContainer = styled(SanitizedHtml)({
   '& *': {
@@ -37,21 +39,24 @@ export function ChangelogPage() {
   );
 
   return (
-    <div
-      css={{
-        padding: '30px',
-        marginLeft: 'auto',
-        marginRight: 'auto',
-        maxWidth: '1000px',
-      }}
-    >
-      <Typography variant="h4">{"What's new?"}</Typography>
-      <ChangelogContainer html={latestHtml} />
-      <Typography variant="h4" sx={{ mt: 15 }}>
-        {'Past changes'}
-      </Typography>
-      <ChangelogContainer html={pastHtml} />
-    </div>
+    <>
+      <PageMeta title={UiPage.WHATS_NEW} />
+      <div
+        css={{
+          padding: '30px',
+          marginLeft: 'auto',
+          marginRight: 'auto',
+          maxWidth: '1000px',
+        }}
+      >
+        <Typography variant="h4">{"What's new?"}</Typography>
+        <ChangelogContainer html={latestHtml} />
+        <Typography variant="h4" sx={{ mt: 15 }}>
+          {'Past changes'}
+        </Typography>
+        <ChangelogContainer html={pastHtml} />
+      </div>
+    </>
   );
 }
 

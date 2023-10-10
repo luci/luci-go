@@ -18,6 +18,7 @@ import {
   ChangelogProvider,
   useHasNewChangelog,
 } from '@/app/components/changelog';
+import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
 
 import { ChangelogPage } from './changelog_page';
 
@@ -34,12 +35,14 @@ describe('ChangelogPage', () => {
 
   it('marks changelog as read', () => {
     render(
-      <ChangelogProvider
-        initChangelog={{ latest: '', latestVersion: 10, past: '' }}
-      >
-        <ShowUnreadChangelogComponent />
-        <ChangelogPage />
-      </ChangelogProvider>,
+      <PageMetaProvider>
+        <ChangelogProvider
+          initChangelog={{ latest: '', latestVersion: 10, past: '' }}
+        >
+          <ShowUnreadChangelogComponent />
+          <ChangelogPage />
+        </ChangelogProvider>
+      </PageMetaProvider>,
     );
     expect(screen.queryByText('has new changelog')).not.toBeInTheDocument();
   });

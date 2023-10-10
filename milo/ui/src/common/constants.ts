@@ -267,4 +267,5 @@ export enum UiPage {
   CQStatus = 'CQ Status Dashboard',
   Goldeneye = 'Goldeneye',
   ChromiumDash = 'ChromiumDash',
+  WHATS_NEW = "What's new",
 }
