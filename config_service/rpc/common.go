@@ -32,9 +32,7 @@ import (
 
 // maxRawContentSize is the max allowed raw content size per config in rpc
 // responses. Any size larger than it will be responded with a GCS signed url.
-//
-// Note: Use a var instead of a const to facilitate the unit test.
-var maxRawContentSize = 30 * 1024 * 1024
+const maxRawContentSize = 30 * 1024 * 1024
 
 // defaultConfigSetMask is the default mask used for ConfigSet related RPCs.
 var defaultConfigSetMask = mask.MustFromReadMask(&pb.ConfigSet{}, "name", "url", "revision")

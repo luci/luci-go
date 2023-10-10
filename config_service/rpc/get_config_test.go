@@ -17,6 +17,7 @@ package rpc
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -354,27 +355,29 @@ func TestGetConfig(t *testing.T) {
 				})
 
 				Convey("content size > maxRawContentSize", func() {
-					originalMaxCntSize := maxRawContentSize
-					maxRawContentSize = 1
-					defer func() { maxRawContentSize = originalMaxCntSize }()
+					fooPb := &cfgcommonpb.ProjectCfg{Name: strings.Repeat("0123456789", maxRawContentSize/10)}
+					So(err, ShouldBeNil)
+					testutil.InjectConfigSet(ctx, config.MustProjectSet("foo"), map[string]proto.Message{
+						"foo.cfg": fooPb,
+					})
 
 					mockGsClient.EXPECT().SignedURL(
 						gomock.Eq(testutil.TestGsBucket),
-						gomock.Eq("file"),
+						gomock.Eq("foo.cfg"),
 						gomock.Any(),
 					).Return("signed_url", nil)
 
 					res, err := srv.GetConfig(ctx, &pb.GetConfigRequest{
-						ConfigSet: "services/myservice",
-						Path:      "file",
+						ConfigSet: "projects/foo",
+						Path:      "foo.cfg",
 						Fields: &field_mask.FieldMask{
 							Paths: []string{"config_set", "path", "content", "revision"},
 						},
 					})
 					So(err, ShouldBeNil)
 					So(res, ShouldResembleProto, &pb.Config{
-						ConfigSet: "services/myservice",
-						Path:      "file",
+						ConfigSet: "projects/foo",
+						Path:      "foo.cfg",
 						Content: &pb.Config_SignedUrl{
 							SignedUrl: "signed_url",
 						},
