@@ -41,6 +41,12 @@ export function getBuilderURLPath(builder: BuilderID): string {
   }/${encodeURIComponent(builder.builder)}`;
 }
 
+export function getConsoleURLPath(proj: string, consoleId: string) {
+  return `${getProjectURLPath(proj)}/g/${encodeURIComponent(
+    consoleId,
+  )}/console`;
+}
+
 export function getProjectURLPath(proj: string): string {
   return `/p/${proj}`;
 }

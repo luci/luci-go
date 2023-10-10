@@ -168,7 +168,8 @@ export interface BatchCheckPermissionsResponse {
 }
 
 export interface ConsolePredicate {
-  readonly builder: BuilderID;
+  readonly project?: string;
+  readonly builder?: BuilderID;
 }
 
 export interface QueryConsolesRequest {
@@ -177,13 +178,43 @@ export interface QueryConsolesRequest {
   readonly pageToken?: string;
 }
 
+export interface Builder {
+  readonly id: BuilderID;
+  readonly category?: string;
+  readonly shortName?: string;
+}
+
 export interface Console {
   readonly id: string;
+  readonly name: string;
   readonly realm: string;
+  readonly repoUrl: string;
+  readonly builders?: readonly Builder[];
 }
 
 export interface QueryConsolesResponse {
   readonly consoles?: readonly Console[];
+  readonly nextPageToken?: string;
+}
+
+export interface QueryConsoleSnapshotsRequest {
+  readonly predicate: ConsolePredicate;
+  readonly pageSize?: number;
+  readonly pageToken?: string;
+}
+
+export interface BuilderSnapshot {
+  readonly builder: BuilderID;
+  readonly build?: Build;
+}
+
+export interface ConsoleSnapshot {
+  readonly console: Console;
+  readonly builderSnapshots?: readonly BuilderSnapshot[];
+}
+
+export interface QueryConsoleSnapshotsResponse {
+  readonly snapshots?: readonly ConsoleSnapshot[];
   readonly nextPageToken?: string;
 }
 
@@ -272,5 +303,16 @@ export class MiloInternal {
       'QueryConsoles',
       req,
     )) as QueryConsolesResponse;
+  }
+
+  async queryConsoleSnapshots(
+    req: QueryConsoleSnapshotsRequest,
+    cacheOpt: CacheOption = {},
+  ) {
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'QueryConsoleSnapshots',
+      req,
+    )) as QueryConsoleSnapshotsResponse;
   }
 }

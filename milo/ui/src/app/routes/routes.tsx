@@ -36,6 +36,10 @@ export const routes: RouteObject[] = [
     lazy: () => import('@/app/pages/search/test_search'),
   },
   {
+    path: 'p/:project',
+    lazy: () => import('@/build/pages/console_list_page'),
+  },
+  {
     path: 'p/:project/builders',
     lazy: () => import('@/app/pages/builders_page'),
   },
@@ -165,7 +169,8 @@ export const routes: RouteObject[] = [
             path: 'test-analysis',
             lazy: () => import('@/bisection/pages/test_analyses_tab'),
           },
-        ]},
+        ],
+      },
       {
         path: 'analysis/b/:bbid',
         lazy: () => import('@/bisection/pages/analysis_details'),

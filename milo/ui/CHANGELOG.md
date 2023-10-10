@@ -43,6 +43,8 @@ TODO: add a test case to ensure the newer release sections always have larger
 release tag numbers.
 -->
 
+ * Migrated the console list page (e.g. [chromium consoles](/ui/p/chromium)) to React.
+
 <!-- Add new changes here. See the instruction above for more details. -->
 
 <!-- __RELEASE__: 1 -->
