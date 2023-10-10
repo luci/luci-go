@@ -208,8 +208,44 @@ func TestTriage(t *testing.T) {
 				_, pcl32 := putPCL(cl32, singIdx, "", now.Add(-time.Second), cl31)
 				_, pcl33 := putPCL(cl33, singIdx, run.FullRun, now, cl31, cl32)
 				pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32, pcl33}
-				oldC := &prjpb.Component{Clids: []int64{cl31, cl32, cl33}, TriageRequired: true}
-				res := mustTriage(oldC)
+				var res itriager.Result
+
+				Convey("no deps have been triaged", func() {
+					oldC := &prjpb.Component{Clids: []int64{cl31, cl32, cl33}, TriageRequired: true}
+					res = mustTriage(oldC)
+					So(res.CLsToTrigger, ShouldResembleProto, []*prjpb.TriggeringCL{
+						&prjpb.TriggeringCL{
+							Clid:       cl31,
+							OriginClid: cl33,
+							Trigger:    pcl33.Triggers.GetCqVoteTrigger(),
+						},
+						&prjpb.TriggeringCL{
+							Clid:       cl32,
+							OriginClid: cl33,
+							Trigger:    pcl33.Triggers.GetCqVoteTrigger(),
+						},
+					})
+				})
+
+				Convey("a dep has been triaged", func() {
+					pm.pb.TriggeringCls, _ = pm.pb.COWTriggeringCLs(nil, []*prjpb.TriggeringCL{
+						&prjpb.TriggeringCL{
+							Clid:       cl32,
+							OriginClid: cl33,
+							Trigger:    pcl33.Triggers.GetCqVoteTrigger(),
+						},
+					})
+					oldC := &prjpb.Component{Clids: []int64{cl31, cl32, cl33}, TriageRequired: true}
+					res = mustTriage(oldC)
+					// should skip the dep that already has an inflight request.
+					So(res.CLsToTrigger, ShouldResembleProto, []*prjpb.TriggeringCL{
+						&prjpb.TriggeringCL{
+							Clid:       cl31,
+							OriginClid: cl33,
+							Trigger:    pcl33.Triggers.GetCqVoteTrigger(),
+						},
+					})
+				})
 
 				// No triage required, as the Component will be waken up
 				// by the vote completion event.
@@ -220,18 +256,6 @@ func TestTriage(t *testing.T) {
 				// CL31 and CL32 should be in CLsToTrigger.
 				So(res.RunsToCreate, ShouldBeEmpty)
 				So(res.CLsToPurge, ShouldBeEmpty)
-				So(res.CLsToTrigger, ShouldResembleProto, []*prjpb.TriggeringCL{
-					&prjpb.TriggeringCL{
-						Clid:       cl31,
-						OriginClid: cl33,
-						Trigger:    pcl33.Triggers.GetCqVoteTrigger(),
-					},
-					&prjpb.TriggeringCL{
-						Clid:       cl32,
-						OriginClid: cl33,
-						Trigger:    pcl33.Triggers.GetCqVoteTrigger(),
-					},
-				})
 			})
 			Convey("with CQ vote on multi CLs", func() {
 				_, pcl31 := putPCL(cl31, singIdx, run.FullRun, now.Add(-time.Second))

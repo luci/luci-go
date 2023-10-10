@@ -34,7 +34,12 @@ func stageTriggerDeps(ctx context.Context, cls map[int64]*clInfo, pm pmState) ([
 		if info.deps == nil {
 			continue
 		}
-		// this CL is a dep of another CL, and is being triggered.
+		// If the CL is currently being purged or triggered, don't schedule
+		// TriggeringCL tasks for its parents. The child of the current CL
+		// should have scheduled a triggeringCL task for all the ancestors.
+		if info.purgingCL != nil {
+			continue
+		}
 		if info.triggeringCL != nil {
 			continue
 		}
@@ -43,8 +48,14 @@ func stageTriggerDeps(ctx context.Context, cls map[int64]*clInfo, pm pmState) ([
 		if cqTrigger == nil {
 			continue
 		}
-
 		for _, dep := range info.deps.needToTrigger {
+			// is the dep currently being triggered?
+			if pm.TriggeringCL(dep.GetClid()) != nil {
+				continue
+			}
+			if pm.PurgingCL(dep.GetClid()) != nil {
+				continue
+			}
 			if _, ok := depsAdded[dep.GetClid()]; ok {
 				continue
 			}
