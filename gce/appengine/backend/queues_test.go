@@ -258,7 +258,7 @@ func TestQueues(t *testing.T) {
 					Convey("drained", func() {
 						datastore.Put(c, &model.Config{
 							ID: "config",
-							Config: config.Config{
+							Config: &config.Config{
 								CurrentAmount: 2,
 							},
 						})
@@ -306,7 +306,7 @@ func TestQueues(t *testing.T) {
 						Convey("lesser", func() {
 							datastore.Put(c, &model.Config{
 								ID: "config",
-								Config: config.Config{
+								Config: &config.Config{
 									CurrentAmount: 1,
 								},
 							})
@@ -325,7 +325,7 @@ func TestQueues(t *testing.T) {
 						Convey("equal", func() {
 							datastore.Put(c, &model.Config{
 								ID: "config",
-								Config: config.Config{
+								Config: &config.Config{
 									CurrentAmount: 2,
 								},
 							})
@@ -344,7 +344,7 @@ func TestQueues(t *testing.T) {
 						Convey("greater", func() {
 							datastore.Put(c, &model.Config{
 								ID: "config",
-								Config: config.Config{
+								Config: &config.Config{
 									CurrentAmount: 3,
 								},
 							})
@@ -405,7 +405,7 @@ func TestQueues(t *testing.T) {
 				Convey("none", func() {
 					So(datastore.Put(c, &model.Config{
 						ID: "id",
-						Config: config.Config{
+						Config: &config.Config{
 							Attributes: &config.VM{
 								Project: "project",
 							},
@@ -427,7 +427,7 @@ func TestQueues(t *testing.T) {
 				Convey("default", func() {
 					So(datastore.Put(c, &model.Config{
 						ID: "id",
-						Config: config.Config{
+						Config: &config.Config{
 							Attributes: &config.VM{
 								Project: "project",
 							},
@@ -453,7 +453,7 @@ func TestQueues(t *testing.T) {
 				Convey("default - skip existing vms", func() {
 					So(datastore.Put(c, &model.Config{
 						ID: "id",
-						Config: config.Config{
+						Config: &config.Config{
 							Attributes: &config.VM{
 								Project: "project",
 							},
@@ -484,7 +484,7 @@ func TestQueues(t *testing.T) {
 				Convey("default - skip all vms", func() {
 					So(datastore.Put(c, &model.Config{
 						ID: "id",
-						Config: config.Config{
+						Config: &config.Config{
 							Attributes: &config.VM{
 								Project: "project",
 							},
@@ -525,7 +525,7 @@ func TestQueues(t *testing.T) {
 				Convey("schedule", func() {
 					So(datastore.Put(c, &model.Config{
 						ID: "id",
-						Config: config.Config{
+						Config: &config.Config{
 							Attributes: &config.VM{
 								Project: "project",
 							},

@@ -44,7 +44,7 @@ func TestConfig(t *testing.T) {
 
 		err = datastore.Put(c, &Config{
 			ID: "id",
-			Config: config.Config{
+			Config: &config.Config{
 				Attributes: &config.VM{
 					Disk: []*config.Disk{
 						{
@@ -62,7 +62,7 @@ func TestConfig(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(cmp.Diff(cfg, &Config{
 			ID: "id",
-			Config: config.Config{
+			Config: &config.Config{
 				Attributes: &config.VM{
 					Disk: []*config.Disk{
 						{
@@ -145,7 +145,7 @@ func TestVM(t *testing.T) {
 			Attributes: config.VM{
 				Project: "project",
 			},
-		}, cmpopts.IgnoreUnexported(*v), protocmp.Transform()), ShouldBeEmpty)
+		}, cmpopts.IgnoreUnexported(VM{}), protocmp.Transform()), ShouldBeEmpty)
 
 		Convey("IndexAttributes", func() {
 			v.IndexAttributes()
@@ -885,5 +885,62 @@ func TestGetInstanceReturnsAlpha(t *testing.T) {
 				t.Errorf("unexpected diff (-want +got): %s", diff)
 			}
 		})
+	}
+}
+
+// LegacyConfigV1 is the type of an old Config struct.
+// This type is used to ensure that the current (as of 2023-09-25) struct and
+// the former version are compatible within datastore, i.e. records can be written
+// or read with the old or new schema.
+type LegacyConfigV1 struct {
+	_extra datastore.PropertyMap `gae:"-,extra"`
+	_kind  string                `gae:"$kind,Config"`
+	ID     string                `gae:"$id"`
+	Config config.Config         `gae:"binary_config,noindex"`
+}
+
+// TestReadLegacyConfigV1AsConfig tests writing a record to in-memory datastore as a
+// LegacyConfigV1 and reading it out as a Config.
+//
+// This test is more valuable than just being a leaf test.
+// Basically, the old Config field, which is a config.Config not a *config.Config,
+// copies mutex fields inside a proto. We are getting rid of this by changing the type
+// of the field to be a pointer and changing some of the annotations.
+//
+// This kind of schema change should be transparent and harmless, but I don't know that for sure.
+//
+// This test's purpose is to catch problems with updating datastore schemas in go projects, so
+// if we encounter a problem in prod, we will go back and update this test in such a way that it
+// would have caught the issue.
+func TestReadLegacyConfigV1AsConfig(t *testing.T) {
+	t.Parallel()
+	ctx := memory.Use(context.Background())
+	input := &LegacyConfigV1{
+		ID: "a",
+		Config: config.Config{
+			Swarming: "ed18ba13-bfe7-46bc-ae77-77ec70f2c22c",
+		},
+	}
+	output := &Config{
+		ID: "a",
+		Config: &config.Config{
+			Swarming: "ed18ba13-bfe7-46bc-ae77-77ec70f2c22c",
+		},
+	}
+
+	if err := datastore.Put(ctx, input); err != nil {
+		t.Errorf("error when inserting record to datastore: %s", err)
+	}
+
+	expected := output
+	actual := &Config{
+		ID: "a",
+	}
+	if err := datastore.Get(ctx, actual); err != nil {
+		t.Errorf("error when retrieving record from datastore: %s", err)
+	}
+
+	if diff := cmp.Diff(expected, actual, protocmp.Transform(), cmpopts.IgnoreUnexported(Config{})); diff != "" {
+		t.Errorf("unexpected diff (-want +got): %s", diff)
 	}
 }

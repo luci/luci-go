@@ -214,7 +214,7 @@ func TestManageBot(t *testing.T) {
 		Convey("valid", func() {
 			datastore.Put(c, &model.Config{
 				ID: "config",
-				Config: config.Config{
+				Config: &config.Config{
 					CurrentAmount: 1,
 				},
 			})

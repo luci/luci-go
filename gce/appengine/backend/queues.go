@@ -110,10 +110,10 @@ func drainVM(c context.Context, vm *model.VM) error {
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch config").Err()
 	}
-	if cfg.Config.CurrentAmount > vm.Index {
+	if cfg.Config.GetCurrentAmount() > vm.Index {
 		return nil
 	}
-	logging.Debugf(c, "config %q only specifies %d VMs", cfg.ID, cfg.Config.CurrentAmount)
+	logging.Debugf(c, "config %q only specifies %d VMs", cfg.ID, cfg.Config.GetCurrentAmount())
 	return datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, vm); {
 		case err == datastore.ErrNoSuchEntity:

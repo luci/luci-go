@@ -73,7 +73,7 @@ func (*Config) Ensure(c context.Context, req *config.EnsureRequest) (*config.Con
 		default:
 			return errors.Annotate(err, "failed to fetch config").Err()
 		}
-		cfg.Config = *req.Config
+		cfg.Config = req.Config
 		cfg.Config.CurrentAmount = priorAmount
 		if err := datastore.Put(c, cfg); err != nil {
 			return errors.Annotate(err, "failed to store config").Err()
@@ -82,7 +82,7 @@ func (*Config) Ensure(c context.Context, req *config.EnsureRequest) (*config.Con
 	}, nil); err != nil {
 		return nil, err
 	}
-	return &cfg.Config, nil
+	return cfg.Config, nil
 }
 
 // Get handles a request to get a config.
@@ -96,14 +96,14 @@ func (*Config) Get(c context.Context, req *config.GetRequest) (*config.Config, e
 		return nil, err
 	}
 
-	return &cfg.Config, nil
+	return cfg.Config, nil
 }
 
 // List handles a request to list all configs.
 func (*Config) List(c context.Context, req *config.ListRequest) (*config.ListResponse, error) {
 	rsp := &config.ListResponse{}
 	if err := paged.Query(c, req.GetPageSize(), req.GetPageToken(), rsp, datastore.NewQuery(model.ConfigKind), func(cfg *model.Config) error {
-		rsp.Configs = append(rsp.Configs, &cfg.Config)
+		rsp.Configs = append(rsp.Configs, cfg.Config)
 		return nil
 	}); err != nil {
 		return nil, err
@@ -133,7 +133,7 @@ func (*Config) Update(c context.Context, req *config.UpdateRequest) (*config.Con
 		if err != nil {
 			return err
 		}
-		ret = &cfg.Config
+		ret = cfg.Config
 
 		amt, err := cfg.Config.ComputeAmount(req.Config.GetCurrentAmount(), clock.Now(c))
 		switch {

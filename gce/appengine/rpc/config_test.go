@@ -145,7 +145,7 @@ func TestConfig(t *testing.T) {
 				Convey("update doesn't erase currentAmount", func() {
 					So(datastore.Put(c, &model.Config{
 						ID: "id",
-						Config: config.Config{
+						Config: &config.Config{
 							Amount: &config.Amount{
 								Max: 20,
 								Min: 10,
@@ -233,7 +233,7 @@ func TestConfig(t *testing.T) {
 					})
 					So(datastore.Put(c, &model.Config{
 						ID: "id",
-						Config: config.Config{
+						Config: &config.Config{
 							Prefix: "prefix",
 							Owner: []string{
 								"owners2",
@@ -263,7 +263,7 @@ func TestConfig(t *testing.T) {
 					})
 					So(datastore.Put(c, &model.Config{
 						ID: "id",
-						Config: config.Config{
+						Config: &config.Config{
 							Prefix: "prefix",
 							Owner: []string{
 								"owners",
@@ -400,7 +400,7 @@ func TestConfig(t *testing.T) {
 			})
 			So(datastore.Put(c, &model.Config{
 				ID: "id",
-				Config: config.Config{
+				Config: &config.Config{
 					Amount: &config.Amount{
 						Max: 3,
 						Min: 1,
