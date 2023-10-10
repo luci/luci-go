@@ -160,3 +160,20 @@ func (s *DecoratedMiloInternal) QueryConsoles(ctx context.Context, req *QueryCon
 	}
 	return
 }
+
+func (s *DecoratedMiloInternal) QueryConsoleSnapshots(ctx context.Context, req *QueryConsoleSnapshotsRequest) (rsp *QueryConsoleSnapshotsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryConsoleSnapshots", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryConsoleSnapshots(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryConsoleSnapshots", rsp, err)
+	}
+	return
+}

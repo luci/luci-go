@@ -151,6 +151,8 @@ func (c *Console) ProjectID() string {
 
 // FilterBuilders filters out builder IDs and builders with realms not listed
 // in `allowedRealms`.
+// Deprecated: use `projectconfigpb.Console.AllowedBuilders` instead. Favor
+// functional code over modifying the object in place.
 func (c *Console) FilterBuilders(allowedRealms stringset.Set) {
 	okBuilderIDs := make([]string, 0, len(c.Builders))
 	for _, id := range c.Builders {

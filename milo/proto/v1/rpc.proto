@@ -61,6 +61,9 @@ service MiloInternal {
 
   // Retrieves a list of consoles.
   rpc QueryConsoles(QueryConsolesRequest) returns (QueryConsolesResponse) {};
+
+  // Retrieves a list of consoles with latest snapshots.
+  rpc QueryConsoleSnapshots(QueryConsoleSnapshotsRequest) returns (QueryConsoleSnapshotsResponse) {};
 }
 
 // A request message for `QueryBlamelist` RPC.
@@ -337,6 +340,55 @@ message QueryConsolesRequest {
 message QueryConsolesResponse {
   // A list of matched consoles.
   repeated luci.milo.projectconfig.Console consoles = 1;
+
+  // A token that can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message QueryConsoleSnapshotsRequest {
+  // A console in the response must satisfy this predicate.
+  // `predicate.project` is required.
+  ConsolePredicate predicate = 1;
+
+  // Optional. The maximum number of consoles to return.
+  //
+  // The service may return fewer than this value.
+  // If unspecified, at most 25 consoles will be returned.
+  // The maximum value is 100; values above 100 will be coerced to 100.
+  int32 page_size = 2;
+
+  // Optional. A page token, received from a previous `QueryConsoleSnapshots`
+  // call. Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all parameters provided to `QueryConsoleSnapshots`, with
+  // the exception of page_size and page_token, must match the call that
+  // provided the page token.
+  string page_token = 3;
+}
+
+message BuilderSnapshot {
+  // The builder this snapshot belongs to.
+  buildbucket.v2.BuilderID builder = 1;
+
+  // The latest build associated with the builder at the time the snapshot is
+  // taken. Nil if there's no associated build.
+  buildbucket.v2.Build build = 2;
+}
+
+message ConsoleSnapshot {
+  // The console this snapshot belongs to.
+  luci.milo.projectconfig.Console console = 1;
+
+  // The snapshots of all the builders in the console.
+  // In the same order as `console.builders`.
+  repeated BuilderSnapshot builder_snapshots = 2;
+}
+
+
+message QueryConsoleSnapshotsResponse {
+  // A list of matched consoles.
+  repeated ConsoleSnapshot snapshots = 1;
 
   // A token that can be sent as `page_token` to retrieve the next page.
   // If this field is omitted, there are no subsequent pages.

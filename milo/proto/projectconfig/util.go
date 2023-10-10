@@ -17,7 +17,9 @@ package projectconfigpb
 import (
 	"strings"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/milo/internal/utils"
+	"go.chromium.org/luci/server/auth/realms"
 )
 
 // ParseCategory takes a Builder's Category and parses it into a list of
@@ -34,4 +36,17 @@ func (c *Console) AllLegacyBuilderIDs() []string {
 		builders = append(builders, utils.LegacyBuilderIDString(b.Id))
 	}
 	return builders
+}
+
+// AllowedBuilders returns all the builders with realms listed in
+// `allowedRealms`.
+func (c *Console) AllowedBuilders(allowedRealms stringset.Set) []*Builder {
+	okBuilders := make([]*Builder, 0, len(c.Builders))
+	for _, b := range c.Builders {
+		if !allowedRealms.Has(realms.Join(b.Id.Project, b.Id.Bucket)) {
+			continue
+		}
+		okBuilders = append(okBuilders, b)
+	}
+	return okBuilders
 }
