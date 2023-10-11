@@ -41,22 +41,17 @@ export interface SidebarSection {
   readonly pages: SidebarPage[];
 }
 
-export function generateSidebarPages(project: string | undefined) {
-  const sidebarSections: SidebarSection[] = [generateBuildsSection(project)];
-  if (!project) {
-    return sidebarSections;
-  }
-
-  sidebarSections.push(
-    generateTestsSection(project),
-    generateMonitoringSection(project),
+export function generateSidebarSections(project: string | undefined) {
+  return (
+    [
+      generateBuildsSection(project),
+      generateTestsSection(project),
+      generateMonitoringSection(project),
+      generateReleasesSection(project),
+    ]
+      // Remove empty sections.
+      .filter((sec) => sec.pages.length)
   );
-
-  if (project.startsWith('chrom')) {
-    sidebarSections.push(generateReleasesSection(project));
-  }
-
-  return sidebarSections;
 }
 
 function generateBuildsSection(project: string | undefined): SidebarSection {
@@ -95,24 +90,27 @@ function generateBuildsSection(project: string | undefined): SidebarSection {
   };
 }
 
-function generateTestsSection(project: string): SidebarSection {
+function generateTestsSection(project: string | undefined): SidebarSection {
   const pages: SidebarPage[] = [];
-  pages.push(
-    {
-      page: UiPage.TestHistory,
-      url: `/ui/p/${project}/test-search`,
-      icon: <AccessTimeIcon />,
-    },
-    {
-      page: UiPage.FailureClusters,
-      url: `https://${SETTINGS.luciAnalysis.host}/p/${project}/clusters`,
-      icon: <SpokeIcon />,
-      external: true,
-    },
-  );
+
+  if (project) {
+    pages.push(
+      {
+        page: UiPage.TestHistory,
+        url: `/ui/p/${project}/test-search`,
+        icon: <AccessTimeIcon />,
+      },
+      {
+        page: UiPage.FailureClusters,
+        url: `https://${SETTINGS.luciAnalysis.host}/p/${project}/clusters`,
+        icon: <SpokeIcon />,
+        external: true,
+      },
+    );
+  }
 
   // Add ChromeOS specific Test tools.
-  if (project.startsWith('chromeos')) {
+  if (project?.startsWith('chromeos')) {
     pages.push(
       {
         page: UiPage.Testhaus,
@@ -128,24 +126,38 @@ function generateTestsSection(project: string): SidebarSection {
       },
     );
   }
+
   return {
     title: 'Tests',
     pages,
   };
 }
 
-function generateMonitoringSection(project: string): SidebarSection {
+function generateMonitoringSection(
+  project: string | undefined,
+): SidebarSection {
   const pages: SidebarPage[] = [];
-  pages.push({
-    page: UiPage.Consoles,
-    url: `/p/${project}`,
-    icon: <TableViewIcon />,
-    external: true,
-  });
 
-  appendSoM(project, pages);
+  if (project) {
+    pages.push({
+      page: UiPage.Consoles,
+      url: `/p/${project}`,
+      icon: <TableViewIcon />,
+      external: true,
+    });
+  }
 
-  if (project.startsWith('chromeos')) {
+  const somProject = getSomProject(project);
+  if (somProject) {
+    pages.push({
+      page: UiPage.SoM,
+      url: `https://sheriff-o-matic.appspot.com/${somProject}`,
+      icon: <EngineeringIcon />,
+      external: true,
+    });
+  }
+
+  if (project?.startsWith('chromeos')) {
     pages.push({
       page: UiPage.CQStatus,
       url: `http://go/cros-cq-status`,
@@ -160,44 +172,35 @@ function generateMonitoringSection(project: string): SidebarSection {
   };
 }
 
-export function appendSoM(project: string, pages: SidebarPage[]) {
-  let soMURL = '';
-  // Add SoM
-  switch (true) {
-    case project.startsWith('chromeos'): {
-      soMURL = 'https://sheriff-o-matic.appspot.com/chromeos';
-      break;
-    }
-    case project.startsWith('chromium') || project.startsWith('chrome'): {
-      soMURL = 'https://sheriff-o-matic.appspot.com/chromium';
-      break;
-    }
-    case project === 'fuchsia' || project === 'turquoise': {
-      soMURL = 'https://sheriff-o-matic.appspot.com/fuchsia';
-      break;
-    }
+export function getSomProject(project: string | undefined): string | null {
+  if (!project) {
+    return null;
   }
 
-  if (soMURL !== '') {
-    pages.push({
-      page: UiPage.SoM,
-      url: soMURL,
-      icon: <EngineeringIcon />,
-      external: true,
-    });
+  if (project.startsWith('chromeos')) {
+    return 'chromeos';
   }
+  if (project.startsWith('chromium') || project.startsWith('chrome')) {
+    return 'chromium';
+  }
+  if (project === 'fuchsia' || project === 'turquoise') {
+    return 'fuchsia';
+  }
+
+  return null;
 }
 
-function generateReleasesSection(project: string): SidebarSection {
+function generateReleasesSection(project: string | undefined): SidebarSection {
   const pages: SidebarPage[] = [];
-  if (project.startsWith('chromeos')) {
+
+  if (project?.startsWith('chromeos')) {
     pages.push({
       page: UiPage.Goldeneye,
       url: 'https://cros-goldeneye.corp.google.com/',
       icon: <VisibilityIcon />,
       external: true,
     });
-  } else if (project.startsWith('chrome') || project.startsWith('chromium')) {
+  } else if (project?.startsWith('chrome') || project?.startsWith('chromium')) {
     pages.push({
       page: UiPage.ChromiumDash,
       url: 'https://chromiumdash.appspot.com/',

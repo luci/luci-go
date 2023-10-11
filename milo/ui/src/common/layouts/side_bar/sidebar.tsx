@@ -34,7 +34,7 @@ import {
 
 import { drawerWidth } from '../constants';
 
-import { generateSidebarPages as generateSidebarSections } from './pages';
+import { generateSidebarSections as generateSidebarSections } from './pages';
 
 interface Props {
   open: boolean;

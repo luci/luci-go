@@ -29,15 +29,14 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import { UiPage } from '@/common/constants';
 
 import {
-  SidebarPage,
   SidebarSection,
-  appendSoM,
-  generateSidebarPages,
+  generateSidebarSections,
+  getSomProject,
 } from './pages';
 
-describe('pages', () => {
+describe('generateSidebarSections', () => {
   it('should generate list with only builders search if there is no project', () => {
-    const sidebarItems = generateSidebarPages(undefined);
+    const sidebarItems = generateSidebarSections(undefined);
     expect(sidebarItems).toEqual<SidebarSection[]>([
       {
         title: `Builds`,
@@ -53,7 +52,7 @@ describe('pages', () => {
   });
 
   it('should generate basic items for all projects', () => {
-    const sidebarItems = generateSidebarPages('projecttest');
+    const sidebarItems = generateSidebarSections('projecttest');
     expect(sidebarItems).toEqual<SidebarSection[]>([
       {
         title: `Builds`,
@@ -107,7 +106,7 @@ describe('pages', () => {
   });
 
   it('should generate correct links for chromium', () => {
-    const sidebarItems = generateSidebarPages('chromium');
+    const sidebarItems = generateSidebarSections('chromium');
     expect(sidebarItems).toEqual<SidebarSection[]>([
       {
         title: `Builds`,
@@ -183,7 +182,7 @@ describe('pages', () => {
   });
 
   it('should generate correct links for chromeos', () => {
-    const sidebarItems = generateSidebarPages('chromeos');
+    const sidebarItems = generateSidebarSections('chromeos');
     expect(sidebarItems).toEqual<SidebarSection[]>([
       {
         title: `Builds`,
@@ -270,27 +269,23 @@ describe('pages', () => {
       },
     ]);
   });
-  describe('appendSoM', () => {
-    it('given unknown project, should not generate item', () => {
-      const pages: SidebarPage[] = [];
-      appendSoM('unknown', pages);
-      expect(pages.length).toBe(0);
-    });
+});
 
-    it.each([
-      ['chromeos', 'https://sheriff-o-matic.appspot.com/chromeos'],
-      ['chrome', 'https://sheriff-o-matic.appspot.com/chromium'],
-      ['chromium', 'https://sheriff-o-matic.appspot.com/chromium'],
-      ['fuchsia', 'https://sheriff-o-matic.appspot.com/fuchsia'],
-      ['turquoise', 'https://sheriff-o-matic.appspot.com/fuchsia'],
-    ])(
-      'given %p project, should generate matching link',
-      (project: string, url: string) => {
-        const pages: SidebarPage[] = [];
-        appendSoM(project, pages);
-        expect(pages.length).not.toBe(0);
-        expect(pages[0].url).toEqual(url);
-      },
-    );
+describe('getSomProject', () => {
+  it('given unknown project, should not generate item', () => {
+    expect(getSomProject('unknown')).toBeNull();
   });
+
+  it.each([
+    ['chromeos', 'chromeos'],
+    ['chrome', 'chromium'],
+    ['chromium', 'chromium'],
+    ['fuchsia', 'fuchsia'],
+    ['turquoise', 'fuchsia'],
+  ])(
+    'given %p project, should generate matching link',
+    (project: string, somProject: string) => {
+      expect(getSomProject(project)).toStrictEqual(somProject);
+    },
+  );
 });
