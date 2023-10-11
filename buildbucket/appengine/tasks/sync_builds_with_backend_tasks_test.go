@@ -80,7 +80,7 @@ func fakeFetchTasksResponse(ctx context.Context, taskReq *pb.FetchTasksRequest, 
 	return &pb.FetchTasksResponse{Tasks: tasks}, nil
 }
 
-func prepEntities(ctx context.Context, bID int64, status pb.Status, tIDSuffix string, updateTime time.Time) *datastore.Key {
+func prepEntities(ctx context.Context, bID int64, buildStatus, outputStatus, taskStatus pb.Status, tIDSuffix string, updateTime time.Time) *datastore.Key {
 	tID := ""
 	if tIDSuffix != "no_task" {
 		tID = fmt.Sprintf("task%d%s", bID, tIDSuffix)
@@ -94,10 +94,13 @@ func prepEntities(ctx context.Context, bID int64, status pb.Status, tIDSuffix st
 				Bucket:  "bucket",
 				Builder: "builder",
 			},
-			Status:     status,
+			Status:     buildStatus,
 			UpdateTime: timestamppb.New(updateTime),
+			Output: &pb.Build_Output{
+				Status: outputStatus,
+			},
 		},
-		Status:              status,
+		Status:              buildStatus,
 		BackendTarget:       "swarming",
 		BackendSyncInterval: 5 * time.Minute,
 		Project:             "project",
@@ -109,7 +112,7 @@ func prepEntities(ctx context.Context, bID int64, status pb.Status, tIDSuffix st
 		Proto: &pb.BuildInfra{
 			Backend: &pb.BuildInfra_Backend{
 				Task: &pb.Task{
-					Status: status,
+					Status: taskStatus,
 					Id: &pb.TaskID{
 						Id:     tID,
 						Target: "swarming",
@@ -122,7 +125,7 @@ func prepEntities(ctx context.Context, bID int64, status pb.Status, tIDSuffix st
 	}
 	bs := &model.BuildStatus{
 		Build:  bk,
-		Status: status,
+		Status: buildStatus,
 	}
 	So(datastore.Put(ctx, b, inf, bs), ShouldBeNil)
 	return bk
@@ -254,9 +257,9 @@ func TestSyncBuildsWithBackendTasksOneFetchBatch(t *testing.T) {
 			updateTime := now.Add(-2 * time.Minute)
 			bIDs := []int64{3, 4, 5}
 			var bks []*datastore.Key
-			bks = append(bks, prepEntities(ctx, 3, pb.Status_STARTED, "", updateTime))
-			bks = append(bks, prepEntities(ctx, 4, pb.Status_FAILURE, "", updateTime))
-			bks = append(bks, prepEntities(ctx, 5, pb.Status_SCHEDULED, "no_task", updateTime))
+			bks = append(bks, prepEntities(ctx, 3, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "", updateTime))
+			bks = append(bks, prepEntities(ctx, 4, pb.Status_FAILURE, pb.Status_FAILURE, pb.Status_FAILURE, "", updateTime))
+			bks = append(bks, prepEntities(ctx, 5, pb.Status_SCHEDULED, pb.Status_SCHEDULED, pb.Status_SCHEDULED, "no_task", updateTime))
 			err := sync(bks)
 			So(err, ShouldBeNil)
 			So(sch.Tasks(), ShouldBeEmpty)
@@ -270,7 +273,7 @@ func TestSyncBuildsWithBackendTasksOneFetchBatch(t *testing.T) {
 			bIDs := []int64{1, 2}
 			var bks []*datastore.Key
 			for _, id := range bIDs {
-				bks = append(bks, prepEntities(ctx, id, pb.Status_STARTED, "", now.Add(-time.Hour)))
+				bks = append(bks, prepEntities(ctx, id, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "", now.Add(-time.Hour)))
 			}
 			err = sync(bks)
 			So(err, ShouldBeNil)
@@ -285,7 +288,7 @@ func TestSyncBuildsWithBackendTasksOneFetchBatch(t *testing.T) {
 			bIDs := []int64{3, 4}
 			var bks []*datastore.Key
 			for _, id := range bIDs {
-				bks = append(bks, prepEntities(ctx, id, pb.Status_STARTED, "ended", now.Add(-time.Hour)))
+				bks = append(bks, prepEntities(ctx, id, pb.Status_STARTED, pb.Status_SUCCESS, pb.Status_STARTED, "ended", now.Add(-time.Hour)))
 			}
 			updateBatchSize = 1 // To test update in multiple batches.
 
@@ -304,13 +307,13 @@ func TestSyncBuildsWithBackendTasksOneFetchBatch(t *testing.T) {
 			updateTime := now.Add(-time.Hour)
 			bIDs := []int64{5, 6, 7, 8}
 			var bks []*datastore.Key
-			bks = append(bks, prepEntities(ctx, 5, pb.Status_STARTED, "", updateTime))
+			bks = append(bks, prepEntities(ctx, 5, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "", updateTime))
 			// failed to get the task for build 6.
-			bks = append(bks, prepEntities(ctx, 6, pb.Status_STARTED, "fail_me", updateTime))
+			bks = append(bks, prepEntities(ctx, 6, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "fail_me", updateTime))
 			// task for build 7 is stale.
-			bks = append(bks, prepEntities(ctx, 7, pb.Status_STARTED, "stale", updateTime))
+			bks = append(bks, prepEntities(ctx, 7, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "stale", updateTime))
 			// task for build 8 is unchanged.
-			bks = append(bks, prepEntities(ctx, 8, pb.Status_STARTED, "unchanged", updateTime))
+			bks = append(bks, prepEntities(ctx, 8, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "unchanged", updateTime))
 
 			blds := getEntities(bIDs)
 			nextSyncTimeBeforeSync := blds[3].NextBackendSyncTime
@@ -331,8 +334,8 @@ func TestSyncBuildsWithBackendTasksOneFetchBatch(t *testing.T) {
 			updateTime := now.Add(-time.Hour)
 			bIDs := []int64{5, 6}
 			var bks []*datastore.Key
-			bks = append(bks, prepEntities(ctx, 5, pb.Status_STARTED, "", updateTime))
-			bks = append(bks, prepEntities(ctx, 6, pb.Status_STARTED, "all_fail", updateTime))
+			bks = append(bks, prepEntities(ctx, 5, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "", updateTime))
+			bks = append(bks, prepEntities(ctx, 6, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "all_fail", updateTime))
 
 			err := sync(bks)
 			So(err, ShouldErrLike, "idk, wanted to fail i guess :/")
@@ -390,9 +393,9 @@ func TestSyncBuildsWithBackendTasks(t *testing.T) {
 			fetchBatchSize = 1
 			updateBatchSize = 1
 			for _, id := range bIDs {
-				prepEntities(ctx, id, pb.Status_STARTED, "", now.Add(-time.Hour))
+				prepEntities(ctx, id, pb.Status_STARTED, pb.Status_SUCCESS, pb.Status_STARTED, "", now.Add(-time.Hour))
 			}
-			prepEntities(ctx, 106, pb.Status_STARTED, "ended", now.Add(-time.Hour))
+			prepEntities(ctx, 106, pb.Status_STARTED, pb.Status_SUCCESS, pb.Status_STARTED, "ended", now.Add(-time.Hour))
 			bIDs = append(bIDs, 106)
 			err = SyncBuildsWithBackendTasks(ctx, "swarming", "project")
 			So(err, ShouldBeNil)

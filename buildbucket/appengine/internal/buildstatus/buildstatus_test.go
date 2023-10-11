@@ -159,6 +159,7 @@ func TestUpdate(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
+					Output: &pb.Build_Output{},
 					Status: pb.Status_SCHEDULED,
 				},
 				Status: pb.Status_SCHEDULED,
@@ -170,10 +171,12 @@ func TestUpdate(t *testing.T) {
 			}
 			So(datastore.Put(ctx, b, bs), ShouldBeNil)
 			updatedStatus := b.Proto.Status
+			updatedStatusDetails := b.Proto.StatusDetails
 			u := &Updater{
 				Build: b,
 				PostProcess: func(c context.Context, bld *model.Build) error {
 					updatedStatus = bld.Proto.Status
+					updatedStatusDetails = bld.Proto.StatusDetails
 					return nil
 				},
 			}
@@ -207,6 +210,8 @@ func TestUpdate(t *testing.T) {
 
 			Convey("update task status", func() {
 				Convey("end, so build status is updated", func() {
+					b.Proto.Output.Status = pb.Status_SUCCESS
+					So(datastore.Put(ctx, b), ShouldBeNil)
 					u.TaskStatus = &StatusWithDetails{Status: pb.Status_SUCCESS}
 					bs, err := update(ctx, u)
 					So(err, ShouldBeNil)
@@ -215,11 +220,101 @@ func TestUpdate(t *testing.T) {
 				})
 
 				Convey("start, so build status is unchanged", func() {
+					b.Proto.Output.Status = pb.Status_STARTED
+					So(datastore.Put(ctx, b), ShouldBeNil)
 					u.TaskStatus = &StatusWithDetails{Status: pb.Status_STARTED}
 					bs, err := update(ctx, u)
 					So(err, ShouldBeNil)
 					So(bs, ShouldBeNil)
 					So(updatedStatus, ShouldEqual, pb.Status_SCHEDULED)
+				})
+
+				Convey("final status based on both statuses", func() {
+					// output status is from the build entity.
+					Convey("output status not ended when task status success", func() {
+						b.Proto.Output.Status = pb.Status_STARTED
+						So(datastore.Put(ctx, b), ShouldBeNil)
+						u.TaskStatus = &StatusWithDetails{Status: pb.Status_SUCCESS}
+						bs, err := update(ctx, u)
+						So(err, ShouldBeNil)
+						So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+						So(updatedStatus, ShouldEqual, pb.Status_INFRA_FAILURE)
+					})
+					Convey("output status not ended when task status fail", func() {
+						b.Proto.Output.Status = pb.Status_STARTED
+						So(datastore.Put(ctx, b), ShouldBeNil)
+						u.TaskStatus = &StatusWithDetails{
+							Status: pb.Status_INFRA_FAILURE,
+							Details: &pb.StatusDetails{
+								ResourceExhaustion: &pb.StatusDetails_ResourceExhaustion{},
+							},
+						}
+						bs, err := update(ctx, u)
+						So(err, ShouldBeNil)
+						So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+						So(updatedStatus, ShouldEqual, pb.Status_INFRA_FAILURE)
+					})
+					Convey("output status SUCCESS, task status FAILURE", func() {
+						b.Proto.Output.Status = pb.Status_SUCCESS
+						So(datastore.Put(ctx, b), ShouldBeNil)
+						u.TaskStatus = &StatusWithDetails{Status: pb.Status_FAILURE}
+						bs, err := update(ctx, u)
+						So(err, ShouldBeNil)
+						So(bs.Status, ShouldEqual, pb.Status_FAILURE)
+						So(updatedStatus, ShouldEqual, pb.Status_FAILURE)
+					})
+					Convey("output status SUCCESS, task status Status_INFRA_FAILURE", func() {
+						b.Proto.Output.Status = pb.Status_SUCCESS
+						So(datastore.Put(ctx, b), ShouldBeNil)
+						u.TaskStatus = &StatusWithDetails{Status: pb.Status_INFRA_FAILURE}
+						bs, err := update(ctx, u)
+						So(err, ShouldBeNil)
+						So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+						So(updatedStatus, ShouldEqual, pb.Status_INFRA_FAILURE)
+					})
+					Convey("output status FAILURE, task status PASS", func() {
+						b.Proto.Output.Status = pb.Status_FAILURE
+						So(datastore.Put(ctx, b), ShouldBeNil)
+						u.TaskStatus = &StatusWithDetails{Status: pb.Status_SUCCESS}
+						bs, err := update(ctx, u)
+						So(err, ShouldBeNil)
+						So(bs.Status, ShouldEqual, pb.Status_FAILURE)
+						So(updatedStatus, ShouldEqual, pb.Status_FAILURE)
+					})
+					Convey("output status FAILURE, task status INFRA_FAILURE", func() {
+						b.Proto.Output.Status = pb.Status_FAILURE
+						So(datastore.Put(ctx, b), ShouldBeNil)
+						u.TaskStatus = &StatusWithDetails{
+							Status: pb.Status_INFRA_FAILURE,
+							Details: &pb.StatusDetails{
+								ResourceExhaustion: &pb.StatusDetails_ResourceExhaustion{},
+							},
+						}
+						bs, err := update(ctx, u)
+						So(err, ShouldBeNil)
+						So(bs.Status, ShouldEqual, pb.Status_FAILURE)
+						So(updatedStatus, ShouldEqual, pb.Status_FAILURE)
+					})
+					Convey("both infra_failure with different details", func() {
+						b.Proto.Output.Status = pb.Status_INFRA_FAILURE
+						b.Proto.Output.StatusDetails = &pb.StatusDetails{
+							Timeout: &pb.StatusDetails_Timeout{},
+						}
+						So(datastore.Put(ctx, b), ShouldBeNil)
+						u.TaskStatus = &StatusWithDetails{
+							Status: pb.Status_INFRA_FAILURE,
+							Details: &pb.StatusDetails{
+								ResourceExhaustion: &pb.StatusDetails_ResourceExhaustion{},
+							},
+						}
+						bs, err := update(ctx, u)
+						So(err, ShouldBeNil)
+						So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+						So(updatedStatus, ShouldEqual, pb.Status_INFRA_FAILURE)
+						So(updatedStatusDetails, ShouldResembleProto, &pb.StatusDetails{
+							Timeout: &pb.StatusDetails_Timeout{},
+						})
+					})
 				})
 			})
 		})
