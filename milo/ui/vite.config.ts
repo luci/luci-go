@@ -180,6 +180,11 @@ export default defineConfig(({ mode }) => {
             // Don't need to prefetch the entry file since it's loaded as a
             // script tag already.
             .filter((name) => name !== ctx.chunk?.fileName);
+
+          // Sort the chunks to ensure the generated prefetch tags are
+          // deterministic.
+          jsChunks.sort();
+
           return {
             html,
             tags: jsChunks.map((chunkName) => ({
