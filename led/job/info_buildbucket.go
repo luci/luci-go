@@ -15,6 +15,9 @@
 package job
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/golang/protobuf/jsonpb"
 	"google.golang.org/protobuf/proto"
 
@@ -31,7 +34,17 @@ type bbInfo struct {
 var _ Info = bbInfo{}
 
 func (b bbInfo) SwarmingHostname() string {
-	return b.GetBbagentArgs().GetBuild().GetInfra().GetSwarming().GetHostname()
+	if b.GetBbagentArgs().GetBuild().GetInfra().GetSwarming() != nil {
+		return b.GetBbagentArgs().GetBuild().GetInfra().GetSwarming().GetHostname()
+	}
+	backendTarget := b.GetBbagentArgs().GetBuild().GetInfra().GetBackend().GetTask().GetId().GetTarget()
+	if backendTarget == "" {
+		return ""
+	}
+	if strings.HasPrefix(backendTarget, "swarming://") {
+		return fmt.Sprintf("%s.appspot.com", strings.TrimPrefix(backendTarget, "swarming://"))
+	}
+	return ""
 }
 
 func (b bbInfo) TaskName() string {
