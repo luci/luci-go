@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
+	cpvt "go.chromium.org/luci/bisection/culpritverification/task"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/model"
@@ -31,7 +32,6 @@ import (
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
-	"go.chromium.org/luci/server/tq"
 
 	taskpb "go.chromium.org/luci/bisection/task/proto"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -42,35 +42,20 @@ import (
 	"go.chromium.org/luci/gae/service/info"
 )
 
-// CompileFailureTasks describes how to route compile failure culprit verification tasks.
-var CompileFailureTasks = tq.RegisterTaskClass(tq.TaskClass{
-	ID:        "culprit-verification",
-	Prototype: (*taskpb.CulpritVerificationTask)(nil),
-	Queue:     "culprit-verification",
-	Kind:      tq.NonTransactional,
-})
-
-// TestFailureTasks describes how to route test failure culprit verification tasks.
-var TestFailureTasks = tq.RegisterTaskClass(tq.TaskClass{
-	ID:        "test-failure-culprit-verification",
-	Prototype: (*taskpb.TestFailureCulpritVerificationTask)(nil),
-	Queue:     "test-failure-culprit-verification",
-	Kind:      tq.NonTransactional,
-})
-
 // RegisterTaskClass registers the task class for tq dispatcher
 func RegisterTaskClass() {
-	CompileFailureTasks.AttachHandler(func(ctx context.Context, payload proto.Message) error {
+	compileHandler := func(ctx context.Context, payload proto.Message) error {
 		task := payload.(*taskpb.CulpritVerificationTask)
 		analysisID := task.GetAnalysisId()
 		suspectID := task.GetSuspectId()
 		parentKey := task.GetParentKey()
 		return handleTQError(ctx, processCulpritVerificationTask(ctx, analysisID, suspectID, parentKey))
-	})
-	TestFailureTasks.AttachHandler(func(ctx context.Context, payload proto.Message) error {
+	}
+	testHandler := func(ctx context.Context, payload proto.Message) error {
 		task := payload.(*taskpb.TestFailureCulpritVerificationTask)
 		return handleTQError(ctx, processTestFailureTask(ctx, task))
-	})
+	}
+	cpvt.RegisterTaskClass(compileHandler, testHandler)
 }
 
 func handleTQError(ctx context.Context, err error) error {

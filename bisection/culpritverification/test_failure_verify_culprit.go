@@ -17,7 +17,6 @@ package culpritverification
 
 import (
 	"context"
-	"fmt"
 
 	"go.chromium.org/luci/bisection/model"
 	tpb "go.chromium.org/luci/bisection/task/proto"
@@ -27,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 )
 
 func processTestFailureTask(ctx context.Context, task *tpb.TestFailureCulpritVerificationTask) error {
@@ -106,13 +104,4 @@ func verifyTestFailureSuspect(ctx context.Context, tfa *model.TestFailureAnalysi
 		suspect.ParentRerunBuild = datastore.KeyForObj(ctx, parentRerun)
 		return datastore.Put(ctx, suspect)
 	}, nil)
-}
-
-func ScheduleTestFailureTask(ctx context.Context, analysisID int64) error {
-	return tq.AddTask(ctx, &tq.Task{
-		Payload: &tpb.TestFailureCulpritVerificationTask{
-			AnalysisId: analysisID,
-		},
-		Title: fmt.Sprintf("test_failure_culprit_verification_%d", analysisID),
-	})
 }

@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 
+	"go.chromium.org/luci/bisection/culpritverification/task"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
@@ -181,6 +182,20 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 		return errors.Annotate(err, "create snapshot").Err()
 	}
 
+	// The culprit may be found without any bisection rerun, it is the case
+	// where we have only 1 commit in the blame list.
+	// In such cases, we should save the culprit and trigger culprit verification.
+	ok, cul := snapshot.GetCulprit()
+
+	// Found culprit -> Update the nthsection analysis
+	if ok {
+		err := SaveSuspectAndTriggerCulpritVerification(ctx, tfa, nsa, snapshot.BlameList.Commits[cul])
+		if err != nil {
+			return errors.Annotate(err, "save suspect and trigger culprit verification").Err()
+		}
+		return nil
+	}
+
 	commitHashes, err := snapshot.FindNextCommitsToRun(maxRerun)
 	if err != nil {
 		var badRangeError *nthsectionsnapshot.BadRangeError
@@ -204,6 +219,94 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 		return errors.Annotate(err, "trigger rerun build for commits").Err()
 	}
 	return nil
+}
+
+func SaveSuspectAndTriggerCulpritVerification(ctx context.Context, tfa *model.TestFailureAnalysis, nsa *model.TestNthSectionAnalysis, commit *pb.BlameListSingleCommit) error {
+	// Save nthsection result to datastore.
+	_, err := saveSuspectAndUpdateNthSection(ctx, tfa, nsa, commit)
+	if err != nil {
+		return errors.Annotate(err, "store nthsection culprit to datastore").Err()
+	}
+	enabled, err := IsEnabled(ctx)
+	if err != nil {
+		return errors.Annotate(err, "is enabled").Err()
+	}
+	if !enabled {
+		logging.Infof(ctx, "Bisection not enabled")
+		// If not enabled, consider analysis ended.
+		err = testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+		if err != nil {
+			return errors.Annotate(err, "update analysis status").Err()
+		}
+		return nil
+	}
+	if err := task.ScheduleTestFailureTask(ctx, tfa.ID); err != nil {
+		// Non-critical, just log the error
+		err := errors.Annotate(err, "schedule culprit verification task %d", tfa.ID).Err()
+		logging.Errorf(ctx, err.Error())
+	}
+	return nil
+}
+
+func saveSuspectAndUpdateNthSection(ctx context.Context, tfa *model.TestFailureAnalysis, nsa *model.TestNthSectionAnalysis, blCommit *pb.BlameListSingleCommit) (*model.Suspect, error) {
+	primary, err := datastoreutil.GetPrimaryTestFailure(ctx, tfa)
+	if err != nil {
+		return nil, errors.Annotate(err, "get primary test failure").Err()
+	}
+	suspect := &model.Suspect{
+		Type: model.SuspectType_NthSection,
+		GitilesCommit: bbpb.GitilesCommit{
+			Host:    primary.Ref.GetGitiles().GetHost(),
+			Project: primary.Ref.GetGitiles().GetProject(),
+			Ref:     primary.Ref.GetGitiles().GetRef(),
+			Id:      blCommit.Commit,
+		},
+		ParentAnalysis:     datastore.KeyForObj(ctx, nsa),
+		VerificationStatus: model.SuspectVerificationStatus_Unverified,
+		ReviewUrl:          blCommit.ReviewUrl,
+		ReviewTitle:        blCommit.ReviewTitle,
+		AnalysisType:       pb.AnalysisType_TEST_FAILURE_ANALYSIS,
+	}
+	err = datastore.Put(ctx, suspect)
+	if err != nil {
+		return nil, errors.Annotate(err, "save suspect").Err()
+	}
+
+	err = SaveNthSectionAnalysis(ctx, nsa, func(nsa *model.TestNthSectionAnalysis) {
+		nsa.Status = pb.AnalysisStatus_SUSPECTFOUND
+		nsa.CulpritKey = datastore.KeyForObj(ctx, suspect)
+		nsa.RunStatus = pb.AnalysisRunStatus_ENDED
+		nsa.EndTime = clock.Now(ctx)
+	})
+
+	if err != nil {
+		return nil, errors.Annotate(err, "save nthsection analysis").Err()
+	}
+
+	// It is not ended because we still need to run suspect verification.
+	err = testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
+	if err != nil {
+		return nil, errors.Annotate(err, "update analysis status").Err()
+	}
+
+	return suspect, nil
+}
+
+// SaveNthSectionAnalysis updates nthsection analysis in a way that avoid race condition
+// if another thread also update the analysis.
+func SaveNthSectionAnalysis(ctx context.Context, nsa *model.TestNthSectionAnalysis, updateFunc func(*model.TestNthSectionAnalysis)) error {
+	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		err := datastore.Get(ctx, nsa)
+		if err != nil {
+			return errors.Annotate(err, "get nthsection analysis").Err()
+		}
+		updateFunc(nsa)
+		err = datastore.Put(ctx, nsa)
+		if err != nil {
+			return errors.Annotate(err, "save nthsection analysis").Err()
+		}
+		return nil
+	}, nil)
 }
 
 func TriggerRerunBuildForCommits(ctx context.Context, tfa *model.TestFailureAnalysis, nsa *model.TestNthSectionAnalysis, projectBisector projectbisector.ProjectBisector, commitHashes []string) error {

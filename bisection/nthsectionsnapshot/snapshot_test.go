@@ -395,6 +395,17 @@ func TestFindNextIndicesToRun(t *testing.T) {
 		So(indices, ShouldResemble, []int{2, 8})
 	})
 
+	Convey("FindNextIndicesToRun with a single commit should not return anything", t, func() {
+		blamelist := testutil.CreateBlamelist(1)
+		snapshot := &Snapshot{
+			BlameList: blamelist,
+			Runs:      []*Run{},
+		}
+		indices, err := snapshot.FindNextIndicesToRun(2)
+		So(err, ShouldBeNil)
+		So(indices, ShouldResemble, []int{})
+	})
+
 	Convey("FindNextIndicesToRun already found culprit", t, func() {
 		blamelist := testutil.CreateBlamelist(10)
 		snapshot := &Snapshot{

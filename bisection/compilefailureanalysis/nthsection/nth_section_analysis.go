@@ -83,6 +83,11 @@ func startAnalysis(c context.Context, nsa *model.CompileNthSectionAnalysis, cfa 
 		return err
 	}
 
+	// TODO (nqmtuan): When there is only 1 commit in the blamelist, no
+	// rerun is triggered.
+	// In this case, we should save the culprit and trigger
+	// culprit verification.
+
 	// maxRerun controls how many rerun we can run at a time
 	// Its value depends on the importance of the analysis, availability of bots etc...
 	// For now, hard-code it to run bisection

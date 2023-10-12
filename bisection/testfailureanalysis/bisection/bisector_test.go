@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/bisection/nthsectionsnapshot"
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
+	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util/testutil"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -38,6 +39,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -49,6 +51,7 @@ func TestRunBisector(t *testing.T) {
 	cl := testclock.New(testclock.TestTimeUTC)
 	cl.Set(time.Unix(10000, 0).UTC())
 	ctx = clock.Set(ctx, cl)
+	ctx, skdr := tq.TestingContext(ctx, nil)
 	luciAnalysisClient := &fakeLUCIAnalysisClient{}
 
 	// Mock gitiles response.
@@ -68,13 +71,34 @@ func TestRunBisector(t *testing.T) {
 			},
 		},
 	}
+
+	// To test the case there is only 1 commit in blame list.
+	gitilesResponseSingleCommit := model.ChangeLogResponse{
+		Log: []*model.ChangeLog{
+			{
+				Commit:  "3426",
+				Message: "Use TestActivationManager for all page activations\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472131\nReviewed-by: blah blah\n",
+			},
+			{
+				Commit:  "3425",
+				Message: "Second Commit\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472130\nReviewed-by: blah blah\n",
+			},
+		},
+	}
+
 	gitilesResponseStr, err := json.Marshal(gitilesResponse)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	gitilesResponseSingleCommitStr, err := json.Marshal(gitilesResponseSingleCommit)
 	if err != nil {
 		panic(err.Error())
 	}
 
 	ctx = gitiles.MockedGitilesClientContext(ctx, map[string]string{
 		"https://chromium.googlesource.com/chromium/src/+log/12345^1..23456": string(gitilesResponseStr),
+		"https://chromium.googlesource.com/chromium/src/+log/12346^1..23457": string(gitilesResponseSingleCommitStr),
 	})
 
 	// Setup mock for buildbucket.
@@ -369,6 +393,121 @@ func TestRunBisector(t *testing.T) {
 					},
 				},
 			},
+		})
+	})
+
+	Convey("Only 1 commit in blame list", t, func() {
+		enableBisection(ctx, true)
+		tf := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+			ID:        103,
+			IsPrimary: true,
+			Variant: map[string]string{
+				"test_suite": "test_suite",
+			},
+			Ref: &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
+						Host:    "chromium.googlesource.com",
+						Project: "chromium/src",
+						Ref:     "refs/heads/main",
+					},
+				},
+			},
+		})
+		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+			ID:              1003,
+			TestFailureKey:  datastore.KeyForObj(ctx, tf),
+			StartCommitHash: "12346",
+			EndCommitHash:   "23457",
+			Priority:        160,
+		})
+
+		// Link the test failure with test failure analysis.
+		tf.AnalysisKey = datastore.KeyForObj(ctx, tfa)
+		So(datastore.Put(ctx, tf), ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		err := Run(ctx, 1003, luciAnalysisClient, 2)
+		So(err, ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+		err = datastore.Get(ctx, tfa)
+		So(err, ShouldBeNil)
+		So(tfa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
+		So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_STARTED)
+		err = datastore.Get(ctx, tf)
+		So(err, ShouldBeNil)
+		So(tf.TestSuiteName, ShouldEqual, "test_suite")
+		So(tf.TestName, ShouldEqual, "test_name_0")
+
+		// Check suspect is created.
+		q := datastore.NewQuery("Suspect")
+		suspects := []*model.Suspect{}
+		err = datastore.GetAll(ctx, q, &suspects)
+		So(err, ShouldBeNil)
+		So(len(suspects), ShouldEqual, 1)
+		suspect := suspects[0]
+
+		// Check nthsection analysis.
+		q = datastore.NewQuery("TestNthSectionAnalysis").Eq("parent_analysis_key", datastore.KeyForObj(ctx, tfa))
+		nthSectionAnalyses := []*model.TestNthSectionAnalysis{}
+		err = datastore.GetAll(ctx, q, &nthSectionAnalyses)
+		So(err, ShouldBeNil)
+		So(len(nthSectionAnalyses), ShouldEqual, 1)
+		nsa := nthSectionAnalyses[0]
+
+		So(nsa, ShouldResembleProto, &model.TestNthSectionAnalysis{
+			ID:                nsa.ID,
+			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
+			StartTime:         nsa.StartTime,
+			EndTime:           time.Unix(10000, 0).UTC(),
+			Status:            pb.AnalysisStatus_SUSPECTFOUND,
+			RunStatus:         pb.AnalysisRunStatus_ENDED,
+			BlameList: &pb.BlameList{
+				Commits: []*pb.BlameListSingleCommit{
+					{
+						Commit:      "3426",
+						ReviewTitle: "Use TestActivationManager for all page activations",
+						ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472131",
+					},
+				},
+				LastPassCommit: &pb.BlameListSingleCommit{
+					Commit:      "3425",
+					ReviewTitle: "Second Commit",
+					ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472130",
+				},
+			},
+			CulpritKey: datastore.KeyForObj(ctx, suspect),
+		})
+
+		// Verify suspect.
+		So(suspect, ShouldResemble, &model.Suspect{
+			Id:             suspect.Id,
+			Type:           model.SuspectType_NthSection,
+			ParentAnalysis: datastore.KeyForObj(ctx, nsa),
+			ReviewUrl:      "https://chromium-review.googlesource.com/c/chromium/src/+/3472131",
+			ReviewTitle:    "Use TestActivationManager for all page activations",
+			GitilesCommit: bbpb.GitilesCommit{
+				Host:    "chromium.googlesource.com",
+				Project: "chromium/src",
+				Id:      "3426",
+				Ref:     "refs/heads/main",
+			},
+			AnalysisType:       pb.AnalysisType_TEST_FAILURE_ANALYSIS,
+			VerificationStatus: model.SuspectVerificationStatus_Unverified,
+		})
+
+		// Check that no rerun models were created.
+		q = datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa))
+		reruns := []*model.TestSingleRerun{}
+		err = datastore.GetAll(ctx, q, &reruns)
+		So(err, ShouldBeNil)
+		So(len(reruns), ShouldEqual, 0)
+
+		// Check that a task was created.
+		So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+		resultsTask := skdr.Tasks().Payloads()[0].(*tpb.TestFailureCulpritVerificationTask)
+		So(resultsTask, ShouldResembleProto, &tpb.TestFailureCulpritVerificationTask{
+			AnalysisId: tfa.ID,
 		})
 	})
 }
