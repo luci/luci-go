@@ -1538,6 +1538,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 				// Inherit agent input and agent source from the parent build.
 				build.Infra.Buildbucket.Agent.Input = pInfra.Proto.Buildbucket.Agent.Input
 				build.Infra.Buildbucket.Agent.Source = pInfra.Proto.Buildbucket.Agent.Source
+				build.Exe = pBld.Proto.Exe
 			}
 		} else {
 			// TODO(crbug.com/1042991): Parallelize build creation from requests if necessary.

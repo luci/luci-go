@@ -1535,6 +1535,9 @@ func TestScheduleBuild(t *testing.T) {
 						Builder: "builder",
 					},
 					Status: pb.Status_STARTED,
+					Exe: &pb.Executable{
+						Cmd: []string{"recipes"},
+					},
 				},
 				UpdateToken: tk,
 			}), ShouldBeNil)
