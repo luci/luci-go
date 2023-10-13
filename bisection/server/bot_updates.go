@@ -20,7 +20,6 @@ import (
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
-	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/nthsectionsnapshot"
 	pb "go.chromium.org/luci/bisection/proto/v1"
@@ -229,48 +228,9 @@ func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRe
 
 	// Found culprit -> Update the nthsection analysis
 	if ok {
-		suspect, err := storeNthSectionResultToDatastore(c, nsa, snapshot.BlameList.Commits[cul], req)
+		err := nthsection.SaveSuspectAndTriggerCulpritVerification(c, nsa, cfa, snapshot.BlameList.Commits[cul])
 		if err != nil {
-			return nsa, errors.Annotate(err, "storeNthSectionResultToDatastore").Err()
-		}
-
-		// Run culprit verification
-		shouldRunCulpritVerification, err := culpritverification.ShouldRunCulpritVerification(c)
-		if err != nil {
-			return nsa, errors.Annotate(err, "couldn't fetch shouldRunCulpritVerification config").Err()
-		}
-		if shouldRunCulpritVerification {
-			// We run culprit verification in a task queue here because this is inside the
-			// updateBotStatus endpoint. The culprit verification process may take some time,
-			// because it needs to schedule build, and we don't want it to block.
-			suspectID := nsa.Suspect.IntID()
-			err = tq.AddTask(c, &tq.Task{
-				Title: fmt.Sprintf("culprit_verification_%d_%d", req.AnalysisId, suspectID),
-				Payload: &taskpb.CulpritVerificationTask{
-					SuspectId:  suspectID,
-					AnalysisId: req.AnalysisId,
-					ParentKey:  nsa.Suspect.Parent().Encode(),
-				},
-			})
-			if err != nil {
-				// Non-critical, just log the error
-				err := errors.Annotate(err, "schedule culprit verification task %d_%d", req.AnalysisId, suspectID).Err()
-				logging.Errorf(c, err.Error())
-			}
-			// Update suspect verification status
-			err = datastore.RunInTransaction(c, func(c context.Context) error {
-				e := datastore.Get(c, suspect)
-				if e != nil {
-					return e
-				}
-				suspect.VerificationStatus = model.SuspectVerificationStatus_VerificationScheduled
-				return datastore.Put(c, suspect)
-			}, nil)
-			if err != nil {
-				// Non-critical, just log the error
-				err := errors.Annotate(err, "saving suspect").Err()
-				logging.Errorf(c, err.Error())
-			}
+			return nsa, errors.Annotate(err, "save suspect and trigger culprit verification").Err()
 		}
 		return nsa, nil
 	}
@@ -334,44 +294,6 @@ func updateNthSectionModelNotFound(c context.Context, nsa *model.CompileNthSecti
 		return errors.Annotate(err, "failed updating nthsectionModel").Err()
 	}
 	return nil
-}
-
-func storeNthSectionResultToDatastore(c context.Context, nsa *model.CompileNthSectionAnalysis, blCommit *pb.BlameListSingleCommit, req *pb.UpdateAnalysisProgressRequest) (*model.Suspect, error) {
-	suspect := &model.Suspect{
-		Type: model.SuspectType_NthSection,
-		GitilesCommit: bbpb.GitilesCommit{
-			Host:    req.GitilesCommit.Host,
-			Project: req.GitilesCommit.Project,
-			Ref:     req.GitilesCommit.Ref,
-			Id:      blCommit.Commit,
-		},
-		ParentAnalysis:     datastore.KeyForObj(c, nsa),
-		VerificationStatus: model.SuspectVerificationStatus_Unverified,
-		ReviewUrl:          blCommit.ReviewUrl,
-		ReviewTitle:        blCommit.ReviewTitle,
-		AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
-	}
-	err := datastore.Put(c, suspect)
-	if err != nil {
-		return nil, errors.Annotate(err, "couldn't save suspect").Err()
-	}
-
-	err = datastore.RunInTransaction(c, func(ctx context.Context) error {
-		e := datastore.Get(c, nsa)
-		if e != nil {
-			return e
-		}
-		nsa.Status = pb.AnalysisStatus_SUSPECTFOUND
-		nsa.Suspect = datastore.KeyForObj(c, suspect)
-		nsa.RunStatus = pb.AnalysisRunStatus_ENDED
-		nsa.EndTime = clock.Now(c)
-		return datastore.Put(c, nsa)
-	}, nil)
-
-	if err != nil {
-		return nil, errors.Annotate(err, "couldn't save nthsection analysis").Err()
-	}
-	return suspect, nil
 }
 
 func updateSuspectWithRerunData(c context.Context, rerun *model.SingleRerun) error {

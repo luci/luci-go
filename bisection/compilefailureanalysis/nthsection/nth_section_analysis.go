@@ -19,6 +19,8 @@ import (
 	"context"
 	"fmt"
 
+	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
+	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/nthsectionsnapshot"
@@ -27,8 +29,10 @@ import (
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/changelogutil"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
+	"go.chromium.org/luci/server/tq"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	taskpb "go.chromium.org/luci/bisection/task/proto"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -83,10 +87,17 @@ func startAnalysis(c context.Context, nsa *model.CompileNthSectionAnalysis, cfa 
 		return err
 	}
 
-	// TODO (nqmtuan): When there is only 1 commit in the blamelist, no
-	// rerun is triggered.
-	// In this case, we should save the culprit and trigger
-	// culprit verification.
+	// When there is only 1 commit in the blamelist, no reruns are triggered.
+	// In this case, we should save the culprit and trigger culprit verification.
+	ok, cul := snapshot.GetCulprit()
+
+	if ok {
+		err := SaveSuspectAndTriggerCulpritVerification(c, nsa, cfa, snapshot.BlameList.Commits[cul])
+		if err != nil {
+			return errors.Annotate(err, "save suspect and trigger culprit verification").Err()
+		}
+		return nil
+	}
 
 	// maxRerun controls how many rerun we can run at a time
 	// Its value depends on the importance of the analysis, availability of bots etc...
@@ -98,7 +109,7 @@ func startAnalysis(c context.Context, nsa *model.CompileNthSectionAnalysis, cfa 
 	}
 
 	for _, commit := range commits {
-		gitilesCommit := &buildbucketpb.GitilesCommit{
+		gitilesCommit := &bbpb.GitilesCommit{
 			Host:    cfa.InitialRegressionRange.FirstFailed.Host,
 			Project: cfa.InitialRegressionRange.FirstFailed.Project,
 			Ref:     cfa.InitialRegressionRange.FirstFailed.Ref,
@@ -113,7 +124,96 @@ func startAnalysis(c context.Context, nsa *model.CompileNthSectionAnalysis, cfa 
 	return nil
 }
 
-func RerunCommit(c context.Context, nsa *model.CompileNthSectionAnalysis, commit *buildbucketpb.GitilesCommit, failedBuildID int64, dims map[string]string) error {
+func SaveSuspectAndTriggerCulpritVerification(c context.Context, nsa *model.CompileNthSectionAnalysis, cfa *model.CompileFailureAnalysis, commit *pb.BlameListSingleCommit) error {
+	suspect, err := storeNthSectionResultToDatastore(c, cfa, nsa, commit)
+	if err != nil {
+		return errors.Annotate(err, "storeNthSectionResultToDatastore").Err()
+	}
+
+	// Run culprit verification
+	shouldRunCulpritVerification, err := culpritverification.ShouldRunCulpritVerification(c)
+	if err != nil {
+		return errors.Annotate(err, "couldn't fetch shouldRunCulpritVerification config").Err()
+	}
+	if shouldRunCulpritVerification {
+		suspectID := nsa.Suspect.IntID()
+		err = tq.AddTask(c, &tq.Task{
+			Title: fmt.Sprintf("culprit_verification_%d_%d", cfa.Id, suspectID),
+			Payload: &taskpb.CulpritVerificationTask{
+				SuspectId:  suspectID,
+				AnalysisId: cfa.Id,
+				ParentKey:  nsa.Suspect.Parent().Encode(),
+			},
+		})
+		if err != nil {
+			// Non-critical, just log the error
+			// TODO (nqmtuan): Update the analysis to ended, and update the suspect.
+			err := errors.Annotate(err, "schedule culprit verification task %d_%d", cfa.Id, suspectID).Err()
+			logging.Errorf(c, err.Error())
+		}
+		// Update suspect verification status
+		err = datastore.RunInTransaction(c, func(c context.Context) error {
+			e := datastore.Get(c, suspect)
+			if e != nil {
+				return e
+			}
+			suspect.VerificationStatus = model.SuspectVerificationStatus_VerificationScheduled
+			return datastore.Put(c, suspect)
+		}, nil)
+		if err != nil {
+			// Non-critical, just log the error
+			err := errors.Annotate(err, "saving suspect").Err()
+			logging.Errorf(c, err.Error())
+		}
+	}
+	return nil
+}
+
+func storeNthSectionResultToDatastore(c context.Context, cfa *model.CompileFailureAnalysis, nsa *model.CompileNthSectionAnalysis, blCommit *pb.BlameListSingleCommit) (*model.Suspect, error) {
+	suspect := &model.Suspect{
+		Type: model.SuspectType_NthSection,
+		GitilesCommit: bbpb.GitilesCommit{
+			Host:    cfa.InitialRegressionRange.FirstFailed.Host,
+			Project: cfa.InitialRegressionRange.FirstFailed.Project,
+			Ref:     cfa.InitialRegressionRange.FirstFailed.Ref,
+			Id:      blCommit.Commit,
+		},
+		ParentAnalysis:     datastore.KeyForObj(c, nsa),
+		VerificationStatus: model.SuspectVerificationStatus_Unverified,
+		ReviewUrl:          blCommit.ReviewUrl,
+		ReviewTitle:        blCommit.ReviewTitle,
+		AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
+	}
+	err := datastore.Put(c, suspect)
+	if err != nil {
+		return nil, errors.Annotate(err, "couldn't save suspect").Err()
+	}
+
+	err = datastore.RunInTransaction(c, func(ctx context.Context) error {
+		e := datastore.Get(c, nsa)
+		if e != nil {
+			return e
+		}
+		nsa.Status = pb.AnalysisStatus_SUSPECTFOUND
+		nsa.Suspect = datastore.KeyForObj(c, suspect)
+		nsa.RunStatus = pb.AnalysisRunStatus_ENDED
+		nsa.EndTime = clock.Now(c)
+		return datastore.Put(c, nsa)
+	}, nil)
+
+	if err != nil {
+		return nil, errors.Annotate(err, "couldn't save nthsection analysis").Err()
+	}
+
+	err = statusupdater.UpdateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
+	if err != nil {
+		return nil, errors.Annotate(err, "couldn't save analysis").Err()
+	}
+
+	return suspect, nil
+}
+
+func RerunCommit(c context.Context, nsa *model.CompileNthSectionAnalysis, commit *bbpb.GitilesCommit, failedBuildID int64, dims map[string]string) error {
 	props, err := getRerunProps(c, nsa)
 	if err != nil {
 		return errors.Annotate(err, "failed getting rerun props").Err()
@@ -151,7 +251,7 @@ func RerunCommit(c context.Context, nsa *model.CompileNthSectionAnalysis, commit
 	return nil
 }
 
-func getRerunPriority(c context.Context, nsa *model.CompileNthSectionAnalysis, commit *buildbucketpb.GitilesCommit, dims map[string]string) (int32, error) {
+func getRerunPriority(c context.Context, nsa *model.CompileNthSectionAnalysis, commit *bbpb.GitilesCommit, dims map[string]string) (int32, error) {
 	// TODO (nqmtuan): Add other priority offset
 	var pri int32 = rerun.PriorityNthSection
 	// If targetting a particular bot

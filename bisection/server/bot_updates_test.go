@@ -316,6 +316,13 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			cfa := &model.CompileFailureAnalysis{
 				Id:             3456,
 				CompileFailure: datastore.KeyForObj(c, cf),
+				InitialRegressionRange: &pb.RegressionRange{
+					FirstFailed: &bbpb.GitilesCommit{
+						Host:    "chromium.googlesource.com",
+						Project: "chromium/src",
+						Ref:     "ref",
+					},
+				},
 			}
 			So(datastore.Put(c, cfa), ShouldBeNil)
 			datastore.GetTestable(c).CatchupIndexes()
