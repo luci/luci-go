@@ -104,3 +104,31 @@ export const mockErrorListTestAnalyses = () => {
     },
   );
 };
+
+export const mockGetTestAnalysis = (mockAnalysis: TestAnalysis) => {
+  fetchMock.post(
+    'https://' +
+      SETTINGS.luciBisection.host +
+      '/prpc/luci.bisection.v1.Analyses/GetTestAnalysis',
+    {
+      headers: {
+        'X-Prpc-Grpc-Code': '0',
+      },
+      body: ")]}'" + JSON.stringify(mockAnalysis),
+    },
+    { overwriteRoutes: true },
+  );
+};
+
+export const mockErrorGetTestAnalysis = (rpcCode: number) => {
+  fetchMock.post(
+    'https://' +
+      SETTINGS.luciBisection.host +
+      '/prpc/luci.bisection.v1.Analyses/GetTestAnalysis',
+    {
+      headers: {
+        'X-Prpc-Grpc-Code': rpcCode,
+      },
+    },
+  );
+};

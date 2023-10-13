@@ -17,16 +17,9 @@ import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
-import Paper from '@mui/material/Paper';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
 import TablePagination, {
   LabelDisplayedRowsArgs,
 } from '@mui/material/TablePagination';
-import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
@@ -36,7 +29,7 @@ import {
   TestAnalysis,
 } from '@/common/services/luci_bisection';
 
-import { TestAnalysisTableRow } from './analysis_table_row/test_analysis_table_row';
+import { TestAnalysesTable } from './test_analyses_table';
 
 export const ListTestAnalysesTable = () => {
   // TODO: implement sorting & filtering for certain columns
@@ -133,29 +126,7 @@ export const ListTestAnalysesTable = () => {
   const isLastPage = !nextPageToken;
   return (
     <Box data-testid="list-analyses-table">
-      <TableContainer className="analyses-table-container" component={Paper}>
-        <Table className="analyses-table" size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>Analysis ID</TableCell>
-              <TableCell>Created time</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Failure type</TableCell>
-              <TableCell>Duration</TableCell>
-              <TableCell>Builder</TableCell>
-              <TableCell>Culprit CL</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {analyses.map((analysis) => (
-              <TestAnalysisTableRow
-                key={analysis.analysisId}
-                analysis={analysis}
-              />
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <TestAnalysesTable analyses={analyses} />
       <>
         {!isFetching || !isPreviousData ? (
           <TablePagination
