@@ -164,7 +164,7 @@ export default defineConfig(({ mode }) => {
               attrs: {
                 src: '/configs.js',
               },
-              injectTo: 'head',
+              injectTo: 'head-prepend',
             },
           ],
         }),
