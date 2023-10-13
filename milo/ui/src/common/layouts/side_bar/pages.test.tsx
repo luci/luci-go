@@ -68,6 +68,12 @@ describe('generateSidebarSections', () => {
             icon: <BuildIcon />,
           },
           {
+            page: UiPage.BuilderGroups,
+            url: '/p/projecttest',
+            icon: <TableViewIcon />,
+            external: true,
+          },
+          {
             page: UiPage.Scheduler,
             url: `https://luci-scheduler.appspot.com/jobs/projecttest`,
             icon: <ScheduleIcon />,
@@ -91,17 +97,6 @@ describe('generateSidebarSections', () => {
           },
         ],
       },
-      {
-        title: 'Monitoring',
-        pages: [
-          {
-            page: UiPage.Consoles,
-            url: '/p/projecttest',
-            icon: <TableViewIcon />,
-            external: true,
-          },
-        ],
-      },
     ]);
   });
 
@@ -120,6 +115,12 @@ describe('generateSidebarSections', () => {
             page: UiPage.Builders,
             url: `/ui/p/chromium/builders`,
             icon: <BuildIcon />,
+          },
+          {
+            page: UiPage.BuilderGroups,
+            url: '/p/chromium',
+            icon: <TableViewIcon />,
+            external: true,
           },
           {
             page: UiPage.Scheduler,
@@ -153,12 +154,6 @@ describe('generateSidebarSections', () => {
       {
         title: 'Monitoring',
         pages: [
-          {
-            page: UiPage.Consoles,
-            url: '/p/chromium',
-            icon: <TableViewIcon />,
-            external: true,
-          },
           {
             page: UiPage.SoM,
             url: 'https://sheriff-o-matic.appspot.com/chromium',
@@ -196,6 +191,12 @@ describe('generateSidebarSections', () => {
             page: UiPage.Builders,
             url: `/ui/p/chromeos/builders`,
             icon: <BuildIcon />,
+          },
+          {
+            page: UiPage.BuilderGroups,
+            url: '/p/chromeos',
+            icon: <TableViewIcon />,
+            external: true,
           },
           {
             page: UiPage.Scheduler,
@@ -236,12 +237,6 @@ describe('generateSidebarSections', () => {
       {
         title: 'Monitoring',
         pages: [
-          {
-            page: UiPage.Consoles,
-            url: '/p/chromeos',
-            icon: <TableViewIcon />,
-            external: true,
-          },
           {
             page: UiPage.SoM,
             url: 'https://sheriff-o-matic.appspot.com/chromeos',

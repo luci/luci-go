@@ -49,9 +49,9 @@ describe('Sidebar', () => {
     await screen.findByRole('complementary');
     expect(screen.getByText('Builder search')).toBeInTheDocument();
     expect(screen.getByText('Builders')).toBeInTheDocument();
+    expect(screen.getByText('Builder groups')).toBeInTheDocument();
     expect(screen.getByText('Test history')).toBeInTheDocument();
     expect(screen.getByText('Failure clusters')).toBeInTheDocument();
-    expect(screen.getByText('Consoles')).toBeInTheDocument();
     expect(screen.getByText('Sheriff-o-Matic')).toBeInTheDocument();
     expect(screen.getByText('ChromiumDash')).toBeInTheDocument();
   });

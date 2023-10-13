@@ -262,7 +262,7 @@ export enum UiPage {
   FailureClusters = 'Failure clusters',
   Testhaus = 'Testhaus',
   Crosbolt = 'Crosbolt',
-  Consoles = 'Consoles',
+  BuilderGroups = 'Builder groups',
   SoM = 'Sheriff-o-Matic',
   CQStatus = 'CQ Status Dashboard',
   Goldeneye = 'Goldeneye',

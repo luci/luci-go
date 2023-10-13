@@ -47,7 +47,7 @@ export function ConsoleListPage() {
     <>
       <PageMeta
         project={project}
-        selectedPage={UiPage.Consoles}
+        selectedPage={UiPage.BuilderGroups}
         title={`${project} | Builder Groups`}
       />
       <ProjectIdBar project={project} />

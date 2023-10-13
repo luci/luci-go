@@ -69,6 +69,13 @@ function generateBuildsSection(project: string | undefined): SidebarSection {
     });
 
     pages.push({
+      page: UiPage.BuilderGroups,
+      url: `/p/${project}`,
+      icon: <TableViewIcon />,
+      external: true,
+    });
+
+    pages.push({
       page: UiPage.Scheduler,
       url: `https://luci-scheduler.appspot.com/jobs/${project}`,
       icon: <ScheduleIcon />,
@@ -137,15 +144,6 @@ function generateMonitoringSection(
   project: string | undefined,
 ): SidebarSection {
   const pages: SidebarPage[] = [];
-
-  if (project) {
-    pages.push({
-      page: UiPage.Consoles,
-      url: `/p/${project}`,
-      icon: <TableViewIcon />,
-      external: true,
-    });
-  }
 
   const somProject = getSomProject(project);
   if (somProject) {
