@@ -134,7 +134,7 @@ var newBuilderPageOptInTemplate = template.Must(
 		Parse(`
 			<div id="opt-in-banner">
 				<div id="opt-in-link">
-					This page will be turned down on Aug 24, 2023. Switch to
+					This page will be turned down on Oct 24, 2023. Switch to
 					<a
 						id="new-builder-page-link"
 						href="/ui/p/{{.Builder.Id.Project}}/builders/{{.Builder.Id.Bucket}}/{{.Builder.Id.Builder}}"
