@@ -85,32 +85,3 @@ interface ResultErr<E> {
   ok: false;
   value: E;
 }
-
-/**
- * Version of the app.
- * Declared in the server generated file, /configs.js, included as a script tag.
- */
-declare const VERSION: string;
-
-/**
- * Settings of the app.
- * Declared in the server generated file, /configs.js, included as a script tag.
- */
-declare const SETTINGS: {
-  readonly buildbucket: {
-    readonly host: string;
-  };
-  readonly swarming: {
-    readonly defaultHost: string;
-    readonly allowedHosts?: readonly string[];
-  };
-  readonly resultdb: {
-    readonly host: string;
-  };
-  readonly luciAnalysis: {
-    readonly host: string;
-  };
-  readonly luciBisection: {
-    readonly host: string;
-  };
-};
