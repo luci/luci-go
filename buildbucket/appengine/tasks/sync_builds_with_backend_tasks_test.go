@@ -23,6 +23,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 
+	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -55,29 +56,41 @@ const (
 
 // fakeFetchTasksResponse mocks the FetchTasks RPC.
 func fakeFetchTasksResponse(ctx context.Context, taskReq *pb.FetchTasksRequest, opts ...grpc.CallOption) (*pb.FetchTasksResponse, error) {
-	tasks := make([]*pb.Task, 0, len(taskReq.TaskIds))
+	responses := make([]*pb.FetchTasksResponse_Response, 0, len(taskReq.TaskIds))
 	for _, tID := range taskReq.TaskIds {
-		status := pb.Status_STARTED
+		responseStatus := pb.Status_STARTED
 		updateID := newUpdateID
 		switch {
 		case strings.HasSuffix(tID.Id, "all_fail"):
 			return nil, errors.Reason("idk, wanted to fail i guess :/").Err()
 		case strings.HasSuffix(tID.Id, "fail_me"):
+			responses = append(responses, &pb.FetchTasksResponse_Response{
+				Response: &pb.FetchTasksResponse_Response_Error{
+					Error: &status.Status{
+						Code:    500,
+						Message: fmt.Sprintf("could not find task for taskId: %s", tID.Id),
+					},
+				},
+			})
 			continue
 		case strings.HasSuffix(tID.Id, "ended"):
-			status = pb.Status_SUCCESS
+			responseStatus = pb.Status_SUCCESS
 		case strings.HasSuffix(tID.Id, "stale"):
 			updateID = staleUpdateID
 		case strings.HasSuffix(tID.Id, "unchanged"):
 			updateID = defaultUpdateID
 		}
-		tasks = append(tasks, &pb.Task{
-			Id:       tID,
-			Status:   status,
-			UpdateId: int64(updateID),
+		responses = append(responses, &pb.FetchTasksResponse_Response{
+			Response: &pb.FetchTasksResponse_Response_Task{
+				Task: &pb.Task{
+					Id:       tID,
+					Status:   responseStatus,
+					UpdateId: int64(updateID),
+				},
+			},
 		})
 	}
-	return &pb.FetchTasksResponse{Tasks: tasks}, nil
+	return &pb.FetchTasksResponse{Responses: responses}, nil
 }
 
 func prepEntities(ctx context.Context, bID int64, buildStatus, outputStatus, taskStatus pb.Status, tIDSuffix string, updateTime time.Time) *datastore.Key {
@@ -304,16 +317,17 @@ func TestSyncBuildsWithBackendTasksOneFetchBatch(t *testing.T) {
 		})
 
 		Convey("partially ok", func() {
-			updateTime := now.Add(-time.Hour)
+			preSyncUpdateTime := now.Add(-time.Hour)
 			bIDs := []int64{5, 6, 7, 8}
 			var bks []*datastore.Key
-			bks = append(bks, prepEntities(ctx, 5, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "", updateTime))
+			// build 5 is ok.
+			bks = append(bks, prepEntities(ctx, 5, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "", preSyncUpdateTime))
 			// failed to get the task for build 6.
-			bks = append(bks, prepEntities(ctx, 6, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "fail_me", updateTime))
+			bks = append(bks, prepEntities(ctx, 6, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "fail_me", preSyncUpdateTime))
 			// task for build 7 is stale.
-			bks = append(bks, prepEntities(ctx, 7, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "stale", updateTime))
+			bks = append(bks, prepEntities(ctx, 7, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "stale", preSyncUpdateTime))
 			// task for build 8 is unchanged.
-			bks = append(bks, prepEntities(ctx, 8, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "unchanged", updateTime))
+			bks = append(bks, prepEntities(ctx, 8, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "unchanged", preSyncUpdateTime))
 
 			blds := getEntities(bIDs)
 			nextSyncTimeBeforeSync := blds[3].NextBackendSyncTime
@@ -322,27 +336,31 @@ func TestSyncBuildsWithBackendTasksOneFetchBatch(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(sch.Tasks(), ShouldBeEmpty)
 			blds = getEntities(bIDs)
+			// build 5 is updated with new update_id
 			So(blds[0].Proto.UpdateTime.AsTime(), ShouldEqual, now)
-			So(blds[1].Proto.UpdateTime.AsTime(), ShouldEqual, updateTime)
-			So(blds[2].Proto.UpdateTime.AsTime(), ShouldEqual, updateTime)
+			// build 6 is not updated due to failing to get the task
+			So(blds[1].Proto.UpdateTime.AsTime(), ShouldEqual, preSyncUpdateTime)
+			// build 7 has a stale updateID so it is not udpated
+			So(blds[2].Proto.UpdateTime.AsTime(), ShouldEqual, preSyncUpdateTime)
+			// build 8 is unchanged, but we still update the builds update time
 			So(blds[3].Proto.UpdateTime.AsTime(), ShouldEqual, now)
 			So(blds[3].NextBackendSyncTime, ShouldBeGreaterThan, nextSyncTimeBeforeSync)
 
 		})
 
 		Convey("all fail", func() {
-			updateTime := now.Add(-time.Hour)
+			preSyncUpdateTime := now.Add(-time.Hour)
 			bIDs := []int64{5, 6}
 			var bks []*datastore.Key
-			bks = append(bks, prepEntities(ctx, 5, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "", updateTime))
-			bks = append(bks, prepEntities(ctx, 6, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "all_fail", updateTime))
+			bks = append(bks, prepEntities(ctx, 5, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "", preSyncUpdateTime))
+			bks = append(bks, prepEntities(ctx, 6, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "all_fail", preSyncUpdateTime))
 
 			err := sync(bks)
 			So(err, ShouldErrLike, "idk, wanted to fail i guess :/")
 			So(sch.Tasks(), ShouldBeEmpty)
 			blds := getEntities(bIDs)
 			for _, b := range blds {
-				So(b.Proto.UpdateTime.AsTime(), ShouldEqual, updateTime)
+				So(b.Proto.UpdateTime.AsTime(), ShouldEqual, preSyncUpdateTime)
 			}
 		})
 	})

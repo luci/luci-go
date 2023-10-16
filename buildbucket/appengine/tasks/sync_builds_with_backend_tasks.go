@@ -185,6 +185,30 @@ func updateEntities(ctx context.Context, bks []*datastore.Key, now time.Time, ta
 	return endedBld, err
 }
 
+// validateResponses iterates through FetchTaskResponse.Responses and logs the
+// taskIDs that returned with errors and returns a map of taskIDs to valid tasks.
+func validateResponses(ctx context.Context, responses []*pb.FetchTasksResponse_Response, numTaskIDsRequsted int) (map[string]*pb.Task, errors.MultiError) {
+	if len(responses) != numTaskIDsRequsted {
+		return nil, errors.NewMultiError(errors.New(fmt.Sprintf("FetchTasksResponse returned with %d responses when %d were requested", len(responses), numTaskIDsRequsted)))
+	}
+	var err errors.MultiError
+	taskMap := map[string]*pb.Task{}
+	for idx, resp := range responses {
+		switch r := resp.Response.(type) {
+		case *pb.FetchTasksResponse_Response_Task:
+			if e := validateTask(r.Task); e != nil {
+				err.MaybeAdd(e)
+				continue
+			}
+			taskMap[resp.GetTask().Id.GetId()] = resp.GetTask()
+		case *pb.FetchTasksResponse_Response_Error:
+			status := resp.GetError()
+			err.MaybeAdd(errors.New(fmt.Sprintf("Error at index %d: %d-%s", idx, status.Code, status.Message)))
+		}
+	}
+	return taskMap, err
+}
+
 // syncBuildsWithBackendTasks fetches backend tasks for the builds of a project,
 // then updates the builds.
 //
@@ -214,14 +238,14 @@ func syncBuildsWithBackendTasks(ctx context.Context, mr parallel.MultiRunner, bc
 		return errors.Annotate(err, "failed to fetch backend tasks").Err()
 	}
 
-	// Validate fetched tasks.
-	taskMap := make(map[string]*pb.Task, len(resp.Tasks))
-	for _, t := range resp.Tasks {
-		if err := validateTask(t); err != nil {
-			logging.Errorf(ctx, "invalid task in FetchTasks response: %s", err)
-			continue
+	// Validate fetched tasks and create a task map with validated tasks.
+	taskMap, errs := validateResponses(ctx, resp.Responses, len(taskIDs))
+	if errs.First() != nil {
+		logging.Errorf(ctx, errs.AsError().Error())
+		// Return early since taskMap must be empty.
+		if len(errs) == len(taskIDs) {
+			return errs
 		}
-		taskMap[t.Id.GetId()] = t
 	}
 
 	// Update entities for the builds that need to sync.

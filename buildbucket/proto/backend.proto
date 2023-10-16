@@ -11,6 +11,7 @@ option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/struct.proto";
+import "google/rpc/status.proto";
 
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/buildbucket/proto/launcher.proto";
@@ -246,8 +247,17 @@ message FetchTasksRequest {
 }
 
 message FetchTasksResponse {
+  message Response {
+    oneof response {
+      // The backend task.
+      Task task = 1;
+
+      // Error code and details of the unsuccessful RPC.
+      google.rpc.Status error = 100;
+    }
+  }
   // These should represent the current state of the requested tasks.
-  repeated Task tasks = 1;
+  repeated Response responses = 1;
 }
 
 message CancelTasksRequest {
