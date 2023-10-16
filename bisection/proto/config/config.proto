@@ -111,4 +111,10 @@ message TestAnalysisConfig {
   repeated string excluded_buckets = 5;
   // Configuration data for Gerrit integration for test failures.
   GerritConfig gerrit_config = 6;
+  // The list of swarming test task pools that we want to exclude running bisection.
+  // For example, we want to exclude the "chromium.tests.gpu" pool (b/301523224)
+  // because there are limited resources in the pool.
+  // Note: this is not the pools that the builder run, but the swarming test task pool,
+  // which contains the bots that actually run the tests on swarming.
+  repeated string excluded_test_pools = 7;
 }
