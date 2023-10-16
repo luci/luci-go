@@ -46,7 +46,7 @@ func testGroupImporterConfig() *GroupImporterConfig {
 		ID:   "config",
 		ConfigProto: `
 			# Schema for this file:
-			# https://luci-config.appspot.com/schemas/services/chrome-infra-auth:imports.cfg
+			# https://config.luci.app/schemas/services/chrome-infra-auth:imports.cfg
 			# See GroupImporterConfig message.
 
 			# Groups pushed by //depot/google3/googleclient/chrome/infra/groups_push_cron/
