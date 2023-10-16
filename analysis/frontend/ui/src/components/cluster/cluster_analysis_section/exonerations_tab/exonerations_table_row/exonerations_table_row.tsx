@@ -15,6 +15,7 @@
 import dayjs from 'dayjs';
 import { useState } from 'react';
 
+import { styled } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -24,7 +25,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
-import TableCell from '@mui/material/TableCell';
+import TableCell, { tableCellClasses } from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 
@@ -40,6 +41,13 @@ import { variantAsPairs } from '@/services/shared_models';
 import { testHistoryLink } from '@/tools/urlHandling/links';
 
 import ExonerationExplanationSection from '../exoneration_explanation_section/exoneration_explanation_section';
+
+const WrappingTableCell = styled(TableCell)(() => ({
+  [`&.${tableCellClasses.root}`]: {
+    overflowWrap: 'anywhere',
+  },
+}));
+
 
 interface Props {
   criteria: ExonerationCriteria;
@@ -82,13 +90,13 @@ const ExonerationsTableRow = ({
 
   return (
     <TableRow>
-      <TableCell data-testid='exonerations_table_test_cell'>
+      <WrappingTableCell data-testid='exonerations_table_test_cell'>
         {testVariant.testId}
-      </TableCell>
-      <TableCell>
+      </WrappingTableCell>
+      <WrappingTableCell>
         {variantAsPairs(testVariant.variant).map((vp) => vp.key + ': ' + vp.value).join(', ')}
-      </TableCell>
-      <TableCell>
+      </WrappingTableCell>
+      <WrappingTableCell>
         <Link
           sx={{ display: 'inline-flex' }}
           aria-label='Test history link'
@@ -96,9 +104,11 @@ const ExonerationsTableRow = ({
           target="_blank">
           View
         </Link>
-      </TableCell>
-      <TableCell>
+      </WrappingTableCell>
+      <WrappingTableCell>
         {statusLabel()}
+      </WrappingTableCell>
+      <WrappingTableCell>
         <Chip
           variant='outlined'
           color='default'
@@ -106,7 +116,6 @@ const ExonerationsTableRow = ({
           label={
             <Typography variant="button">more info</Typography>
           }
-          size='small'
           sx={{ borderRadius: 1, float: 'right' }} />
         <Dialog open={open} onClose={handleClose} maxWidth='lg' fullWidth>
           <DialogTitle>
@@ -132,13 +141,13 @@ const ExonerationsTableRow = ({
             </Button>
           </DialogActions>
         </Dialog>
-      </TableCell>
-      <TableCell data-testid='exonerations_table_critical_failures_cell'>
+      </WrappingTableCell>
+      <WrappingTableCell data-testid='exonerations_table_critical_failures_cell'>
         {testVariant.criticalFailuresExonerated}
-      </TableCell>
-      <TableCell>
+      </WrappingTableCell>
+      <WrappingTableCell>
         {dayjs(testVariant.lastExoneration).fromNow()}
-      </TableCell>
+      </WrappingTableCell>
     </TableRow>
   );
 };

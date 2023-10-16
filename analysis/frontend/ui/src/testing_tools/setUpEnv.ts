@@ -17,7 +17,7 @@ import {
   TextDecoder,
   TextEncoder,
 } from 'util';
-import dayjs from 'dayjs';
+import { extend as dayjsextend } from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import UTC from 'dayjs/plugin/utc';
@@ -36,6 +36,6 @@ global.fetch = fetch;
 
 window.monorailHostname = 'crbug.com';
 
-dayjs.extend(relativeTime);
-dayjs.extend(UTC);
-dayjs.extend(localizedFormat);
+dayjsextend(relativeTime);
+dayjsextend(UTC);
+dayjsextend(localizedFormat);

@@ -28,7 +28,9 @@ describe('Test ClusterTableMetricSelection component', () => {
   it('given a list of metrics, should display select items', async () => {
     const metrics = getMockMetricsList('testproject');
     render(
-        <MetricsSelector metrics={metrics} selectedMetrics={[]} handleSelectedMetricsChanged={()=>{}}/>,
+        <MetricsSelector metrics={metrics} selectedMetrics={[]} handleSelectedMetricsChanged={()=>{
+          // do nothing.
+        }}/>,
     );
 
     await (screen.findAllByText('Metrics'));
@@ -44,7 +46,9 @@ describe('Test ClusterTableMetricSelection component', () => {
 
     const selectedMetrics = [metrics[0].metricId, metrics[1].metricId];
     render(
-        <MetricsSelector metrics={metrics} selectedMetrics={selectedMetrics} handleSelectedMetricsChanged={()=>{}}/>,
+        <MetricsSelector metrics={metrics} selectedMetrics={selectedMetrics} handleSelectedMetricsChanged={()=>{
+          // do nothing.
+        }}/>,
     );
 
     await (screen.findAllByText('Metrics'));

@@ -35,4 +35,3 @@ export const ExplanationChip = ({ value, threshold, text, testId }: ExplanationC
   />;
 };
 
-export default ExplanationChip;

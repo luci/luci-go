@@ -65,7 +65,7 @@ const NoPriorityCriteriaAlert = () => {
 const PriorityRecommendationDescription = () => {
   return <>
     <Typography>
-      To get the bug priority recommendation, the cluster's impact was compared to the thresholds specified in the <Link
+      To get the bug priority recommendation, the cluster&apos;s impact was compared to the thresholds specified in the <Link
         href="http://goto.google.com/luci-analysis-setup#project-configuration"
         target="_blank"
         rel="noreferrer"
@@ -191,7 +191,7 @@ const PriorityJustification = ({ recommendation }: Props) => {
       {!recommendation.recommendation && (
         <Box paddingTop={3}>
           <Alert severity="info">
-            A priority was not recommended because no priority's criteria was satisfied.
+            A priority was not recommended because no priority&apos;s criteria was satisfied.
           </Alert>
         </Box>
       )}

@@ -35,7 +35,7 @@ import {
   TestVariantFailureRateAnalysisRecentVerdict,
 } from '@/services/test_variants';
 import CLList from '@/components/cl_list/cl_list';
-import ExplanationChip from '../explanation_chip/explanation_chip';
+import { ExplanationChip } from '../explanation_chip/explanation_chip';
 
 interface Props {
   criteria: ExonerationCriteria;

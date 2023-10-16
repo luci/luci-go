@@ -24,13 +24,14 @@ import {
 } from 'recharts';
 
 import { Metric } from '@/services/metrics';
+import { ClusterHistoryDay } from '@/services/cluster';
 
 interface Props {
   height: number;
   color: string,
   isAnnotated: boolean,
   metric: Metric,
-  data: any[],
+  data: ClusterHistoryDay[],
 }
 
 export const SingleMetricChart = (

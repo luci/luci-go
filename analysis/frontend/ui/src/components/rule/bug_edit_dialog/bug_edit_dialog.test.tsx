@@ -39,7 +39,7 @@ describe('Test BugEditDialog component', () => {
   beforeEach(() => {
     mockFetchProjectConfig();
     mockFetchAuthState();
-    mockFetchRule();
+    mockFetchRule(createDefaultMockRule());
   });
 
   afterEach(() => {

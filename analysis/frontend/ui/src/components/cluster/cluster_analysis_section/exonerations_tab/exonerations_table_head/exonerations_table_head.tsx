@@ -50,7 +50,8 @@ const ExonerationsTableHead = ({
         </TableCell>
         <TableCell
           sortDirection={sortField === 'beingExonerated' ? (isAscending ? 'asc' : 'desc') : false}
-          sx={{ cursor: 'pointer' }}>
+          sx={{ cursor: 'pointer' }}
+          colSpan={2}>
           <TableSortLabel
             active={sortField === 'beingExonerated'}
             direction={isAscending ? 'asc' : 'desc'}

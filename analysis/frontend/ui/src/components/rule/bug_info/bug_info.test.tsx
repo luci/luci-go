@@ -44,7 +44,7 @@ describe('Test BugInfo component', () => {
     mockFetchAuthState();
     mockRule = createDefaultMockRule();
     mockIssue = createMockBug();
-    mockFetchRule();
+    mockFetchRule(createDefaultMockRule());
   });
 
   afterEach(() => {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import dayjs from 'dayjs';
+import dayjs, { extend as dayjsextend } from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 
 import {
@@ -22,7 +22,7 @@ import {
   ReclusteringProgress,
 } from '@/services/cluster';
 
-dayjs.extend(isSameOrAfter);
+dayjsextend(isSameOrAfter);
 
 export const fetchProgress = async (project: string): Promise<ReclusteringProgress> => {
   const clustersService = getClustersService();

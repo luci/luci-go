@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React from 'react';
+import { useState } from 'react';
 import {
   useLocation,
 } from 'react-router-dom';
@@ -29,7 +29,7 @@ import Tooltip from '@mui/material/Tooltip';
 import { logoutLink } from '@/tools/urlHandling/links';
 
 const UserProfileButton = () => {
-  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
+  const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
   const location = useLocation();
 
   const handleCloseUserMenu = () => {

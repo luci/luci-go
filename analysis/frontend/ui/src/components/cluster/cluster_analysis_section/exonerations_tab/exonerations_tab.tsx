@@ -108,7 +108,7 @@ const ExonerationsTab = ({
     if (unsortedTestVariants) {
       setTestVariants(sortTestVariants(criteria, unsortedTestVariants, sortField, isAscending));
     }
-  }, [unsortedTestVariants, sortField, isAscending]);
+  }, [criteria, unsortedTestVariants, sortField, isAscending]);
 
   const toggleSort = (field: SortableField) => {
     if (field === sortField) {
