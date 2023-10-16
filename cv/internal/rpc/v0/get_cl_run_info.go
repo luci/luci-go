@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/gerritauth"
 
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -35,15 +36,22 @@ import (
 // GetCLRunInfo implements GerritIntegrationServer; it returns ongoing Run information related to the given CL.
 func (g *GerritIntegrationServer) GetCLRunInfo(ctx context.Context, req *apiv0pb.GetCLRunInfoRequest) (resp *apiv0pb.GetCLRunInfoResponse, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
-	// TODO(crbug.com/1486976): Extend check to allow all requests from Gerrit.
-	if err := checkCanUseAPI(ctx, "GetCLRunInfo"); err != nil {
-		return nil, err
-	}
-
 	gc := req.GetGerritChange()
 	eid, err := changelist.GobID(gc.GetHost(), gc.GetChange())
 	if err != nil {
 		return nil, appstatus.Errorf(codes.InvalidArgument, "invalid GerritChange %v: %s", gc, err)
+	}
+
+	if gerritInfo := gerritauth.GetAssertedInfo(ctx); gerritInfo == nil {
+		if err := checkCanUseAPI(ctx, "GetCLRunInfo"); err != nil {
+			return nil, err
+		}
+	} else {
+		// If Gerrit JWT was provided, check that it matches the request change.
+		jwtChange := gerritInfo.Change
+		if jwtChange.Host != gc.GetHost() || jwtChange.ChangeNumber != gc.GetChange() {
+			return nil, appstatus.Errorf(codes.InvalidArgument, "invalid GerritChange %v: expected %s/%d", gc, jwtChange.Host, jwtChange.ChangeNumber)
+		}
 	}
 
 	cl, err := eid.Load(ctx)

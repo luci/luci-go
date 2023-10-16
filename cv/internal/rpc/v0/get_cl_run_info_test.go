@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/gerritauth"
 
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/acls"
@@ -59,6 +60,12 @@ func TestGetCLRunInfo(t *testing.T) {
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity:       "user:admin@example.com",
 			IdentityGroups: []string{acls.V0APIAllowGroup},
+			UserExtra: &gerritauth.AssertedInfo{
+				Change: gerritauth.AssertedChange{
+					Host:         gHost,
+					ChangeNumber: 1,
+				},
+			},
 		})
 
 		Convey("w/o access", func() {
@@ -67,6 +74,31 @@ func TestGetCLRunInfo(t *testing.T) {
 			})
 			_, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+		})
+
+		Convey("w/o access but with JWT", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "anonymous:anonymous",
+				UserExtra: &gerritauth.AssertedInfo{
+					Change: gerritauth.AssertedChange{
+						Host:         gHost,
+						ChangeNumber: 1,
+					},
+				},
+			})
+			_, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
+			// NotFound because we haven't put anything in the datastore yet.
+			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+		})
+
+		Convey("w/ access but no JWT", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity:       "user:admin@example.com",
+				IdentityGroups: []string{acls.V0APIAllowGroup},
+			})
+			_, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
+			// NotFound because we haven't put anything in the datastore yet.
+			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 		})
 
 		Convey("w/ an invalid Gerrit Change", func() {
@@ -82,6 +114,21 @@ func TestGetCLRunInfo(t *testing.T) {
 		Convey("w/ a Valid but missing Gerrit Change", func() {
 			_, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
 			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+		})
+
+		Convey("w/ JWT change differing from Gerrit Change", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity:       "user:admin@example.com",
+				IdentityGroups: []string{acls.V0APIAllowGroup},
+				UserExtra: &gerritauth.AssertedInfo{
+					Change: gerritauth.AssertedChange{
+						Host:         "other-host",
+						ChangeNumber: 1,
+					},
+				},
+			})
+			_, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
+			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
 		})
 
 		// Add example data for tests below.
