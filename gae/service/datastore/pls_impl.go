@@ -146,7 +146,8 @@ func (p *structPLS) resetBeforeLoad() {
 				// or not exported to Datastore (e.g. `gae:"-"`),
 				// or special $id or $parent, whose codec's tag.name is also "-".
 			case tag.substructCodec != nil && !tag.isSlice:
-				// Recurse.
+				// Recurse. Applies to flattened structs as well as "local structured
+				// properties", which are also represented by structs.
 				reset(tag.substructCodec, field)
 			default:
 				field.Set(reflect.Zero(field.Type()))
@@ -160,6 +161,8 @@ func (p *structPLS) resetBeforeLoad() {
 func loadInner(codec *structCodec, structValue reflect.Value, index int, name string, p Property, requireSlice bool) string {
 	var v reflect.Value
 	var protoOption protoOption
+	var convertMethod convertMethod
+
 	// Traverse a struct's struct-typed fields.
 	for {
 		fieldIndex, ok := codec.byName[name]
@@ -169,45 +172,59 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 		v = structValue.Field(fieldIndex)
 
 		st := codec.byIndex[fieldIndex]
-		if st.substructCodec == nil {
-			protoOption = st.protoOption
-			break
+
+		if st.convertMethod == convertDefault && st.substructCodec != nil {
+			// The property is a part of a nested struct or a slice of nested structs.
+			// By construction, `st` represents the struct field itself (let's call
+			// it "S"). Here the property name is something like "S.X.Y.Z" and
+			// `st.name` is "S." (since the codec constructor appends "." to struct
+			// fields). Recurse deeper to get "X.Y.Z" and the codec that has it as
+			// a field.
+			name = name[len(st.name):]
+			codec = st.substructCodec
+			// Move the reflection pointer accordingly as well. Here `requireSlice` is
+			// true if `p` came from a slice. It means it must map onto a repeated
+			// Go field at some point. In a chain of nested structs only one link is
+			// allowed to be repeated (because datastore doesn't support `[][]Type`).
+			// When we traverse such repeated link, we can "disarm" `requireSlice`
+			// check right away. Note that per `st` construction, this can happen only
+			// once (i.e. on the subsequent iterations of this loop `v` will never be
+			// a slice).
+			if v.Kind() == reflect.Slice {
+				for v.Len() <= index {
+					v.Set(reflect.Append(v, reflect.New(v.Type().Elem()).Elem()))
+				}
+				structValue = v.Index(index)
+				requireSlice = false
+			} else {
+				structValue = v
+			}
+			continue
 		}
 
-		if v.Kind() == reflect.Slice {
-			for v.Len() <= index {
-				v.Set(reflect.Append(v, reflect.New(v.Type().Elem()).Elem()))
-			}
-			structValue = v.Index(index)
-			requireSlice = false
-		} else {
-			structValue = v
-		}
-		// Strip the "I." from "I.X".
-		name = name[len(st.name):]
-		codec = st.substructCodec
+		// The property doesn't have any non-opaque internal structure. Can't go
+		// deeper. Extract relevant properties from `st` and proceed to loading
+		// the value.
+		convertMethod = st.convertMethod
+		protoOption = st.protoOption
+		break
 	}
 
-	doConversion := func(v reflect.Value) (string, bool) {
-		if _, ok := v.Interface().(proto.Message); ok {
-			if err := protoFromProperty(v, p, protoOption); err != nil {
-				return err.Error(), true
-			}
-			return "", true
-		}
+	// Try to apply a property converter codec if the field has any. Do it before
+	// the slice check, because a slice *may* itself implement PropertyConverter
+	// interface. Note that other convertMethod types don't directly apply to
+	// slice-valued fields, e.g. we don't need to check convertProto here.
+	if convertMethod == convertProp {
 		if conv, ok := v.Addr().Interface().(PropertyConverter); ok {
 			if err := conv.FromProperty(p); err != nil {
-				return err.Error(), true
+				return err.Error()
 			}
-			return "", true
+			return ""
 		}
-		return "", false
 	}
 
-	if ret, ok := doConversion(v); ok {
-		return ret
-	}
-
+	// If the field is slice-valued, we'll deserialize the property into a new
+	// variable and then append it to the slice in the end.
 	var slice reflect.Value
 	if v.Kind() == reflect.Slice && v.Type().Elem().Kind() != reflect.Uint8 {
 		slice = v
@@ -216,79 +233,132 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 		return "multiple-valued property requires a slice field type"
 	}
 
-	if ret, ok := doConversion(v); ok {
-		if ret != "" {
-			return ret
-		}
-	} else {
-		knd := v.Kind()
-
-		project := PTNull
-		overflow := (func(any) bool)(nil)
-		set := (func(any))(nil)
-
-		switch knd {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			project = PTInt
-			overflow = func(x any) bool { return v.OverflowInt(x.(int64)) }
-			set = func(x any) { v.SetInt(x.(int64)) }
-		case reflect.Uint8, reflect.Uint16, reflect.Uint32:
-			project = PTInt
-			overflow = func(x any) bool {
-				xi := x.(int64)
-				return xi < 0 || v.OverflowUint(uint64(xi))
-			}
-			set = func(x any) { v.SetUint(uint64(x.(int64))) }
-		case reflect.Bool:
-			project = PTBool
-			set = func(x any) { v.SetBool(x.(bool)) }
-		case reflect.String:
-			project = PTString
-			set = func(x any) { v.SetString(x.(string)) }
-		case reflect.Float32, reflect.Float64:
-			project = PTFloat
-			overflow = func(x any) bool { return v.OverflowFloat(x.(float64)) }
-			set = func(x any) { v.SetFloat(x.(float64)) }
-		case reflect.Ptr:
-			project = PTKey
-			set = func(x any) {
-				if k, ok := x.(*Key); ok {
-					v.Set(reflect.ValueOf(k))
-				}
-			}
-		case reflect.Struct:
-			switch v.Type() {
-			case typeOfTime:
-				project = PTTime
-				set = func(x any) { v.Set(reflect.ValueOf(x)) }
-			case typeOfGeoPoint:
-				project = PTGeoPoint
-				set = func(x any) { v.Set(reflect.ValueOf(x)) }
-			default:
-				panic(fmt.Errorf("helper: impossible: %s", typeMismatchReason(p.Value(), v)))
-			}
-		case reflect.Slice:
-			project = PTBytes
-			set = func(x any) {
-				v.SetBytes(reflect.ValueOf(x).Bytes())
-			}
-		default:
+	// Here `v` is a singular value. It is either some elementary type or
+	// something that needs a property deserializer of some sort.
+	switch convertMethod {
+	case convertDefault:
+		loader := elementaryLoader(v)
+		if loader.project == PTNull {
 			panic(fmt.Errorf("helper: impossible: %s", typeMismatchReason(p.Value(), v)))
 		}
-
-		pVal, err := p.Project(project)
+		pVal, err := p.Project(loader.project)
 		if err != nil {
 			return typeMismatchReason(p.Value(), v)
 		}
-		if overflow != nil && overflow(pVal) {
+		if loader.overflow != nil && loader.overflow(pVal) {
 			return fmt.Sprintf("value %v overflows struct field of type %v", pVal, v.Type())
 		}
-		set(pVal)
+		loader.set(pVal)
+
+	case convertProto:
+		if err := protoFromProperty(v, p, protoOption); err != nil {
+			return err.Error()
+		}
+
+	case convertProp:
+		// It *must* implement PropertyConverter at this point. This is the only way
+		// convertMethod can be convertProp.
+		conv := v.Addr().Interface().(PropertyConverter)
+		if err := conv.FromProperty(p); err != nil {
+			return err.Error()
+		}
+
+	case convertLSP:
+		panic("not implemented yet")
+
+	default:
+		panic(fmt.Errorf("helper: impossible method: %d", convertMethod))
 	}
+
+	// If this was an item of a repeated field, append it to the resulting slice.
 	if slice.IsValid() {
 		slice.Set(reflect.Append(slice, v))
 	}
+
 	return ""
+}
+
+// fieldLoader describes how to write a Property into a reflect.Value.
+//
+// Zero value (in particular project == PTNull) means the property type is
+// unrecognized.
+type fieldLoader struct {
+	// project is a type to cast Property into before reading it.
+	project PropertyType
+	// overflow checks if the value will overflow the target reflect.Value.
+	overflow func(any) bool
+	// set assigned the value to the target reflect.Value
+	set func(any)
+}
+
+// Understands how to convert properties into elementary values.
+func elementaryLoader(v reflect.Value) fieldLoader {
+	switch v.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return fieldLoader{
+			project:  PTInt,
+			overflow: func(x any) bool { return v.OverflowInt(x.(int64)) },
+			set:      func(x any) { v.SetInt(x.(int64)) },
+		}
+	case reflect.Uint8, reflect.Uint16, reflect.Uint32:
+		return fieldLoader{
+			project: PTInt,
+			overflow: func(x any) bool {
+				xi := x.(int64)
+				return xi < 0 || v.OverflowUint(uint64(xi))
+			},
+			set: func(x any) { v.SetUint(uint64(x.(int64))) },
+		}
+	case reflect.Bool:
+		return fieldLoader{
+			project: PTBool,
+			set:     func(x any) { v.SetBool(x.(bool)) },
+		}
+	case reflect.String:
+		return fieldLoader{
+			project: PTString,
+			set:     func(x any) { v.SetString(x.(string)) },
+		}
+	case reflect.Float32, reflect.Float64:
+		return fieldLoader{
+			project:  PTFloat,
+			overflow: func(x any) bool { return v.OverflowFloat(x.(float64)) },
+			set:      func(x any) { v.SetFloat(x.(float64)) },
+		}
+	case reflect.Ptr:
+		return fieldLoader{
+			project: PTKey,
+			set: func(x any) {
+				if k, ok := x.(*Key); ok {
+					v.Set(reflect.ValueOf(k))
+				}
+			},
+		}
+	case reflect.Struct:
+		switch v.Type() {
+		case typeOfTime:
+			return fieldLoader{
+				project: PTTime,
+				set:     func(x any) { v.Set(reflect.ValueOf(x)) },
+			}
+		case typeOfGeoPoint:
+			return fieldLoader{
+				project: PTGeoPoint,
+				set:     func(x any) { v.Set(reflect.ValueOf(x)) },
+			}
+		default:
+			return fieldLoader{} // will trigger an error
+		}
+	case reflect.Slice:
+		return fieldLoader{
+			project: PTBytes,
+			set: func(x any) {
+				v.SetBytes(reflect.ValueOf(x).Bytes())
+			},
+		}
+	default:
+		return fieldLoader{} // will trigger an error
+	}
 }
 
 func (p *structPLS) Save(withMeta bool) (PropertyMap, error) {
