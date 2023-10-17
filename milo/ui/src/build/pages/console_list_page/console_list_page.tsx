@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { LinearProgress } from '@mui/material';
-import { Fragment } from 'react';
+import { Fragment, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -31,17 +31,24 @@ export function ConsoleListPage() {
     throw new Error('invariant violated: project should be set');
   }
 
-  const { data, error, isError, isLoading } = useInfinitePrpcQuery({
-    host: '',
-    insecure: location.protocol === 'http:',
-    Service: MiloInternal,
-    method: 'queryConsoleSnapshots',
-    request: { predicate: { project } },
-  });
+  const { data, error, isError, isLoading, fetchNextPage, hasNextPage } =
+    useInfinitePrpcQuery({
+      host: '',
+      insecure: location.protocol === 'http:',
+      Service: MiloInternal,
+      method: 'queryConsoleSnapshots',
+      request: { predicate: { project }, pageSize: 100 },
+    });
 
   if (isError) {
     throw error;
   }
+
+  useEffect(() => {
+    if (!isLoading && hasNextPage) {
+      fetchNextPage();
+    }
+  }, [isLoading, fetchNextPage, hasNextPage, data?.pages.length]);
 
   return (
     <>
