@@ -23,13 +23,13 @@ import { useLocation } from 'react-router-dom';
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { getLoginUrl, getLogoutUrl } from '@/common/tools/url_utils';
 
-export interface SignInProps {
+export interface LoginStatusProps {
   readonly identity?: string;
   readonly email?: string;
   readonly picture?: string;
 }
 
-export const SignIn = ({ identity, email, picture }: SignInProps) => {
+export const LoginStatus = ({ identity, email, picture }: LoginStatusProps) => {
   const location = useLocation();
 
   if (!identity || identity === ANONYMOUS_IDENTITY) {

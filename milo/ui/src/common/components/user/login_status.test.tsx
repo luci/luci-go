@@ -17,20 +17,20 @@ import { render, screen } from '@testing-library/react';
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { SignIn } from './signin';
+import { LoginStatus } from './login_status';
 
-describe('SignIn', () => {
+describe('LoginStatus', () => {
   it('given no identity or anonymouse identity, should display login button', async () => {
     const { rerender } = render(
       <FakeContextProvider>
-        <SignIn />
+        <LoginStatus />
       </FakeContextProvider>,
     );
     expect(screen.getByText('Login')).toBeInTheDocument();
 
     rerender(
       <FakeContextProvider>
-        <SignIn identity={ANONYMOUS_IDENTITY} />
+        <LoginStatus identity={ANONYMOUS_IDENTITY} />
       </FakeContextProvider>,
     );
     expect(screen.getByText('Login')).toBeInTheDocument();
@@ -39,7 +39,7 @@ describe('SignIn', () => {
   it('given an identity, should display email and logout button', async () => {
     render(
       <FakeContextProvider>
-        <SignIn
+        <LoginStatus
           email="googler@google.com"
           identity="id:123456"
           picture="avatar_url"

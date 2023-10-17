@@ -17,11 +17,11 @@ import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
+import { LoginStatus } from '@/common/components/user';
 
 import { AppDetails } from './app_details';
 import { AppMenu } from './app_menu';
 import { FeedbackButton } from './feedback';
-import { SignIn } from './sign_in';
 
 interface Props {
   open: boolean;
@@ -41,7 +41,7 @@ export const AppBar = ({ open, handleSidebarChanged }: Props) => {
         <Box sx={{ flexGrow: 1 }}></Box>
         <FeedbackButton />
         <AppMenu />
-        <SignIn
+        <LoginStatus
           identity={authState.identity}
           email={authState.email}
           picture={authState.picture}
