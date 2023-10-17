@@ -19,28 +19,35 @@ import { genFeedbackUrl } from '@/common/tools/utils';
 
 export interface ErrorDisplayProps {
   readonly error: Error;
-  readonly errorDisplay?: ReactNode;
+  /**
+   * When specified, render a highlighted instruction section, in addition to
+   * the error message.
+   */
+  readonly instruction?: ReactNode;
   readonly onTryAgain?: () => void;
 }
 
 export function ErrorDisplay({
   error,
-  errorDisplay,
+  instruction,
   onTryAgain,
 }: ErrorDisplayProps) {
   return (
-    <Alert severity="error">
+    <Alert severity="error" sx={{ '& > .MuiAlert-message': { flexGrow: 1 } }}>
       <AlertTitle>Error</AlertTitle>
-      {errorDisplay || (
-        <pre
-          css={{
-            whiteSpace: 'pre-wrap',
-            overflowWrap: 'break-word',
-          }}
-        >
-          {error.message}
-        </pre>
+      {instruction && (
+        <div css={{ padding: '2px 5px', background: 'var(--warning-color)' }}>
+          {instruction}
+        </div>
       )}
+      <pre
+        css={{
+          whiteSpace: 'pre-wrap',
+          overflowWrap: 'break-word',
+        }}
+      >
+        {error.message}
+      </pre>
       <Button
         href={genFeedbackUrl(error.message, error.stack)}
         target="_blank"
