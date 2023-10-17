@@ -41,7 +41,7 @@ automatic_scaling:
 luci_gae_vars:
   luci-analysis-dev:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
-    CONFIG_SERVICE_HOST: luci-config.appspot.com
+    CONFIG_SERVICE_HOST: config.luci.app
     TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
     OAUTH_CLIENT_ID: 171536942974-su83vlacqnbccpm2h32ki6gs5a2hi7eo.apps.googleusercontent.com
     OAUTH_CLIENT_SECRET: sm://oauth-client-secret
