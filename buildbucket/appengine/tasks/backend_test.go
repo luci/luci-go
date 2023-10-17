@@ -214,6 +214,7 @@ func TestCreateBackendTask(t *testing.T) {
 			Hostname: "chromium-swarm-dev",
 			PubsubId: "chromium-swarm-dev-backend",
 		})
+		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 		server := httptest.NewServer(describeBootstrapBundle(c))
 		defer server.Close()
 		client := &prpc.Client{
@@ -310,7 +311,7 @@ func TestCreateBackendTask(t *testing.T) {
 					},
 				},
 			}
-			req, err := computeBackendNewTaskReq(ctx, build, infra, "request_id")
+			req, err := computeBackendNewTaskReq(ctx, build, infra, "request_id", settingsCfg)
 			So(err, ShouldBeNil)
 			So(req.BackendConfig, ShouldResembleProto, &structpb.Struct{
 				Fields: map[string]*structpb.Value{
@@ -372,6 +373,7 @@ func TestCreateBackendTask(t *testing.T) {
 				"cow_eggs_experiment",
 				"are_cow_eggs_real_experiment",
 			})
+			So(req.PubsubTopic, ShouldEqual, "projects/app-id/topics/chromium-swarm-dev-backend")
 		})
 	})
 
@@ -542,7 +544,6 @@ func TestCreateBackendTask(t *testing.T) {
 				Link:     "this_is_a_url_link",
 				UpdateId: 1,
 			})
-			So(eb.StartBuildToken, ShouldNotBeNil)
 		})
 
 		Convey("fail", func() {

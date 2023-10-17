@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -35,6 +36,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/caching/layered"
 	"go.chromium.org/luci/server/tq"
@@ -123,11 +125,32 @@ func computeAgentArgs(build *pb.Build, infra *pb.BuildInfra) (args []string) {
 	return
 }
 
-func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *model.BuildInfra, requestID string) (*pb.RunTaskRequest, error) {
+func computeBackendPubsubTopic(ctx context.Context, target string, globalCfg *pb.SettingsCfg) (string, error) {
+	if globalCfg == nil {
+		return "", errors.Reason("error fetching service config").Err()
+	}
+	for _, backend := range globalCfg.Backends {
+		if backend.Target == target {
+			return fmt.Sprintf("projects/%s/topics/%s", info.AppID(ctx), backend.PubsubId), nil
+		}
+	}
+	return "", errors.Reason("pubsub id not found").Err()
+}
+
+func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *model.BuildInfra, requestID string, globalCfg *pb.SettingsCfg) (*pb.RunTaskRequest, error) {
 	// Create task token and secrets.
-	startBuildTaskToken, err := buildtoken.GenerateToken(ctx, build.ID, pb.TokenBody_START_BUILD_TASK)
+	registerTaskToken, err := buildtoken.GenerateToken(ctx, build.ID, pb.TokenBody_START_BUILD_TASK)
 	if err != nil {
 		return nil, err
+	}
+	startBuildToken, err := buildtoken.GenerateToken(ctx, build.ID, pb.TokenBody_START_BUILD)
+	if err != nil {
+		return nil, err
+	}
+
+	secrets := &pb.BuildSecrets{
+		StartBuildToken:               startBuildToken,
+		ResultdbInvocationUpdateToken: build.ResultDBUpdateToken,
 	}
 	backend := infra.Proto.GetBackend()
 	if backend == nil {
@@ -145,21 +168,28 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 		Seconds: build.Proto.GetCreateTime().GetSeconds() + build.Proto.GetSchedulingTimeout().GetSeconds(),
 	}
 
+	pubsubTopic, err := computeBackendPubsubTopic(ctx, backend.Task.Id.Target, globalCfg)
+	if err != nil {
+		return nil, err
+	}
+
 	taskReq := &pb.RunTaskRequest{
-		BuildbucketHost:     infra.Proto.Buildbucket.Hostname,
-		StartBuildTaskToken: startBuildTaskToken,
-		Target:              backend.Task.Id.Target,
-		RequestId:           requestID,
-		BuildId:             strconv.FormatInt(build.Proto.Id, 10),
-		Realm:               build.Realm(),
-		BackendConfig:       backend.Config,
-		ExecutionTimeout:    build.Proto.GetExecutionTimeout(),
-		GracePeriod:         gracePeriod,
-		Caches:              caches,
-		AgentArgs:           computeAgentArgs(build.Proto, infra.Proto),
-		Dimensions:          infra.Proto.Backend.GetTaskDimensions(),
-		StartDeadline:       startDeadline,
-		Experiments:         build.Proto.Input.GetExperiments(),
+		BuildbucketHost:          infra.Proto.Buildbucket.Hostname,
+		RegisterBackendTaskToken: registerTaskToken,
+		Secrets:                  secrets,
+		Target:                   backend.Task.Id.Target,
+		RequestId:                requestID,
+		BuildId:                  strconv.FormatInt(build.Proto.Id, 10),
+		Realm:                    build.Realm(),
+		BackendConfig:            backend.Config,
+		ExecutionTimeout:         build.Proto.GetExecutionTimeout(),
+		GracePeriod:              gracePeriod,
+		Caches:                   caches,
+		AgentArgs:                computeAgentArgs(build.Proto, infra.Proto),
+		Dimensions:               infra.Proto.Backend.GetTaskDimensions(),
+		StartDeadline:            startDeadline,
+		Experiments:              build.Proto.Input.GetExperiments(),
+		PubsubTopic:              pubsubTopic,
 	}
 
 	project := build.Proto.Builder.Project
@@ -267,7 +297,7 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 		return tq.Fatal.Apply(errors.Annotate(err, "failed to connect to backend service").Err())
 	}
 
-	taskReq, err := computeBackendNewTaskReq(ctx, bld, infra, requestID)
+	taskReq, err := computeBackendNewTaskReq(ctx, bld, infra, requestID, globalCfg)
 	if err != nil {
 		return tq.Fatal.Apply(err)
 	}
@@ -301,11 +331,6 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 		}
 		bld = entities[0].(*model.Build)
 		infra = entities[1].(*model.BuildInfra)
-
-		// Task has already been associated with the build
-		if infra.Proto.Backend.Task.Id.Id != "" {
-			return nil
-		}
 
 		infra.Proto.Backend.Task = taskResp.Task
 
