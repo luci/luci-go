@@ -230,6 +230,42 @@ func TestRunBisector(t *testing.T) {
 		So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
 	})
 
+	Convey("unmatched number of the commit in the blamelist", t, func() {
+		enableBisection(ctx, true)
+		tf := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+			ID:        101,
+			IsPrimary: true,
+			Variant: map[string]string{
+				"test_suite": "test_suite",
+			},
+			Ref: &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
+						Host:    "chromium.googlesource.com",
+						Project: "chromium/src",
+						Ref:     "refs/heads/main",
+					},
+				},
+			},
+			StartPosition: 1,
+			EndPosition:   4,
+		})
+		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+			ID:              1002,
+			TestFailureKey:  datastore.KeyForObj(ctx, tf),
+			StartCommitHash: "12345",
+			EndCommitHash:   "23456",
+			Priority:        160,
+		})
+
+		err := Run(ctx, 1002, luciAnalysisClient, 1)
+		So(err, ShouldNotBeNil)
+		err = datastore.Get(ctx, tfa)
+		So(err, ShouldBeNil)
+		So(tfa.Status, ShouldEqual, pb.AnalysisStatus_ERROR)
+		So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+	})
+
 	Convey("Supported project", t, func() {
 		enableBisection(ctx, true)
 		tf := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
@@ -247,6 +283,8 @@ func TestRunBisector(t *testing.T) {
 					},
 				},
 			},
+			StartPosition: 1,
+			EndPosition:   3,
 		})
 		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
 			ID:              1002,
@@ -293,17 +331,20 @@ func TestRunBisector(t *testing.T) {
 						Commit:      "3426",
 						ReviewTitle: "Use TestActivationManager for all page activations",
 						ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472131",
+						Position:    3,
 					},
 					{
 						Commit:      "3425",
 						ReviewTitle: "Second Commit",
 						ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472130",
+						Position:    2,
 					},
 				},
 				LastPassCommit: &pb.BlameListSingleCommit{
 					Commit:      "3424",
 					ReviewTitle: "Third Commit",
 					ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472129",
+					Position:    1,
 				},
 			},
 		})
@@ -413,6 +454,8 @@ func TestRunBisector(t *testing.T) {
 					},
 				},
 			},
+			StartPosition: 1,
+			EndPosition:   2,
 		})
 		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
 			ID:              1003,
@@ -468,12 +511,14 @@ func TestRunBisector(t *testing.T) {
 						Commit:      "3426",
 						ReviewTitle: "Use TestActivationManager for all page activations",
 						ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472131",
+						Position:    2,
 					},
 				},
 				LastPassCommit: &pb.BlameListSingleCommit{
 					Commit:      "3425",
 					ReviewTitle: "Second Commit",
 					ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472130",
+					Position:    1,
 				},
 			},
 			CulpritKey: datastore.KeyForObj(ctx, suspect),

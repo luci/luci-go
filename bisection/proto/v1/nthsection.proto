@@ -64,6 +64,9 @@ message BlameListSingleCommit {
   string reviewUrl = 2;
   // Title of the review for the commit.
   string reviewTitle = 3;
+  // Commit position of this commit.
+  // This field is currently only set for test failure analysis blamelist.
+  int64 position = 4;
 }
 
 message NthSectionSuspect {

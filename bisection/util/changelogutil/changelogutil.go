@@ -17,11 +17,13 @@ package changelogutil
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
 )
 
@@ -73,4 +75,33 @@ func changelogToCommit(ctx context.Context, cl *model.ChangeLog) *pb.BlameListSi
 		ReviewUrl:   reviewURL,
 		ReviewTitle: reviewTitle,
 	}
+}
+
+// SetCommitPositionInBlamelist sets the position field in BlameListSingleCommits of this blamelist.
+// Commits in the blamelist are ordered by commit position in descending order.
+// Index 0 refers to the highest-position commit in the regression range, with has the commit position same as regression end position.
+// Index n-1 refers to the lowest-position commit in the regression range.
+// We can find the commit position of all commits in between.
+func SetCommitPositionInBlamelist(blamelist *pb.BlameList, regressionStartPosition, regressionEndPosition int64) error {
+	if int(regressionEndPosition-regressionStartPosition) != len(blamelist.Commits) {
+		msg := fmt.Sprintf("Number of changelog in the regression range (%d) doesn't match the regression commit position (%d)-(%d)",
+			len(blamelist.Commits), regressionStartPosition, regressionEndPosition)
+		return errors.New(msg)
+	}
+	for i, c := range blamelist.Commits {
+		c.Position = regressionEndPosition - int64(i)
+	}
+	blamelist.LastPassCommit.Position = regressionStartPosition
+	return nil
+}
+
+// FindCommitIndexInBlameList find the index of the gitiles commit in blamelist.
+// It returns -1 if it couldn't find.
+func FindCommitIndexInBlameList(gitilesCommit *bbpb.GitilesCommit, blamelist *pb.BlameList) int {
+	for i, commit := range blamelist.Commits {
+		if commit.Commit == gitilesCommit.Id {
+			return i
+		}
+	}
+	return -1
 }

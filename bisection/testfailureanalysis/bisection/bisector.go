@@ -375,11 +375,10 @@ func CreateTestRerunModel(ctx context.Context, options CreateRerunModelOptions) 
 			Builder:     build.Builder.Builder,
 			BuildNumber: int(build.Number),
 			GitilesCommit: &bbpb.GitilesCommit{
-				Host:     build.Input.GitilesCommit.Host,
-				Project:  build.Input.GitilesCommit.Project,
-				Id:       build.Input.GitilesCommit.Id,
-				Ref:      build.Input.GitilesCommit.Ref,
-				Position: build.Input.GitilesCommit.Position,
+				Host:    build.Input.GitilesCommit.Host,
+				Project: build.Input.GitilesCommit.Project,
+				Id:      build.Input.GitilesCommit.Id,
+				Ref:     build.Input.GitilesCommit.Ref,
 			},
 			Status:     build.Status,
 			CreateTime: build.CreateTime.AsTime(),
@@ -478,7 +477,9 @@ func createNthSectionModel(ctx context.Context, tfa *model.TestFailureAnalysis, 
 		return nil, errors.Annotate(err, "couldn't fetch changelog").Err()
 	}
 	blameList := changelogutil.ChangeLogsToBlamelist(ctx, changeLogs)
-
+	if err := changelogutil.SetCommitPositionInBlamelist(blameList, primaryTestFailure.RegressionStartPosition, primaryTestFailure.RegressionEndPosition); err != nil {
+		return nil, errors.Annotate(err, "set commit position in blamelist").Err()
+	}
 	nsa := &model.TestNthSectionAnalysis{
 		ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
 		StartTime:         clock.Now(ctx),

@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection"
+	"go.chromium.org/luci/bisection/util/changelogutil"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
@@ -282,11 +283,10 @@ func testSingleRerunToPb(ctx context.Context, rerun *model.TestSingleRerun, nsa 
 		Bbid:       rerun.ID,
 		CreateTime: timestamppb.New(rerun.CreateTime),
 		Commit: &buildbucketpb.GitilesCommit{
-			Host:     rerun.LUCIBuild.GitilesCommit.GetHost(),
-			Project:  rerun.LUCIBuild.GitilesCommit.GetProject(),
-			Ref:      rerun.LUCIBuild.GitilesCommit.GetRef(),
-			Id:       rerun.LUCIBuild.GitilesCommit.GetId(),
-			Position: rerun.LUCIBuild.GitilesCommit.GetPosition(),
+			Host:    rerun.LUCIBuild.GitilesCommit.GetHost(),
+			Project: rerun.LUCIBuild.GitilesCommit.GetProject(),
+			Ref:     rerun.LUCIBuild.GitilesCommit.GetRef(),
+			Id:      rerun.LUCIBuild.GitilesCommit.GetId(),
 		},
 	}
 	if rerun.HasStarted() {
@@ -299,13 +299,14 @@ func testSingleRerunToPb(ctx context.Context, rerun *model.TestSingleRerun, nsa 
 		result.ReportTime = timestamppb.New(rerun.ReportTime)
 	}
 
-	index := findTestRerunIndexInBlameList(rerun, nsa.BlameList)
+	index := changelogutil.FindCommitIndexInBlameList(rerun.GitilesCommit, nsa.BlameList)
 	// There is only one case where we cannot find the rerun in blamelist
 	// It is when the rerun is part of the culprit verification and is
 	// the "last pass" revision.
 	// In this case, we should continue.
 	if index != -1 {
 		result.Index = strconv.FormatInt(int64(index), 10)
+		result.Commit.Position = uint32(nsa.BlameList.Commits[index].Position)
 	}
 
 	// Update rerun results.
@@ -315,17 +316,6 @@ func testSingleRerunToPb(ctx context.Context, rerun *model.TestSingleRerun, nsa 
 	}
 	result.RerunResult = pbRerunResults
 	return result, nil
-}
-
-// findTestRerunIndexInBlameList find the index of TestSingleRerun in blamelist
-// It returns -1 if it couldn't find.
-func findTestRerunIndexInBlameList(rerun *model.TestSingleRerun, blamelist *pb.BlameList) int {
-	for i, commit := range blamelist.Commits {
-		if commit.Commit == rerun.GitilesCommit.Id {
-			return i
-		}
-	}
-	return -1
 }
 
 func rerunResultsToPb(ctx context.Context, testResults model.RerunTestResults, status pb.RerunStatus) (*pb.RerunTestResults, error) {
