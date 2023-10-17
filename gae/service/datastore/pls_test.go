@@ -763,6 +763,10 @@ type WithProtoIndirectSlice struct {
 	Inner []WithProtoDefault
 }
 
+type WithAnonymousProto struct {
+	*testprotos.Msg
+}
+
 func (*WithProtoDefault) embedsProtos()       {}
 func (*WithProtoCompress) embedsProtos()      {}
 func (*WithProtoLegacy) embedsProtos()        {}
@@ -770,6 +774,7 @@ func (*WithProtoOmitted) embedsProtos()       {}
 func (*WithProtoMeta) embedsProtos()          {}
 func (*WithProtoIndirect) embedsProtos()      {}
 func (*WithProtoIndirectSlice) embedsProtos() {}
+func (*WithAnonymousProto) embedsProtos()     {}
 
 type testCase struct {
 	desc       string
@@ -1224,7 +1229,7 @@ var testCases = []testCase{
 	{
 		desc:   "invalid tagged1",
 		src:    &InvalidTagged1{I: 1},
-		plsErr: `struct tag has invalid property name: "\t"`,
+		plsErr: `struct tag for field "I" has invalid property name: "\t"`,
 	},
 	{
 		desc:   "invalid tagged2",
@@ -1235,12 +1240,12 @@ var testCases = []testCase{
 	{
 		desc:   "invalid tagged3",
 		src:    &InvalidTagged3{I: 1},
-		plsErr: `struct tag has invalid property name: "a\t"`,
+		plsErr: `struct tag for field "I" has invalid property name: "a\t"`,
 	},
 	{
 		desc:   "invalid tagged4",
 		src:    &InvalidTagged4{I: 1},
-		plsErr: `struct tag has invalid property name: "a."`,
+		plsErr: `struct tag for field "I" has invalid property name: "a."`,
 	},
 	{
 		desc:   "invalid tagged5",
@@ -1913,7 +1918,7 @@ var testCases = []testCase{
 	{
 		desc:   "protos: slice not supported, use repeated instead",
 		src:    &struct{ Slice []*testprotos.Msg }{Slice: []*testprotos.Msg{{Str: "skipped"}}},
-		plsErr: `field "Slice" has invalid type: []*testprotos.Msg`,
+		plsErr: `repeated protobuf fields like "Slice" are not supported`,
 	},
 	{
 		desc: "protos: embed struct with protos",
@@ -1956,6 +1961,11 @@ var testCases = []testCase{
 			{Msg: &testprotos.Msg{Str: "abc"}},
 			{Msg: &testprotos.Msg{Str: "xyz"}},
 		}},
+	},
+	{
+		desc:   "protos: embedding anonymous proto is not allowed",
+		src:    &WithAnonymousProto{&testprotos.Msg{Str: "xyz"}},
+		plsErr: `non-struct embedded field: "Msg"`,
 	},
 	{
 		desc: "resets structs before loading",
@@ -2123,6 +2133,7 @@ func TestRoundTrip(t *testing.T) {
 							So(err, ShouldErrLike, tc.plsLoadErr)
 							return
 						}
+						So(err, ShouldBeNil)
 					}
 				}
 

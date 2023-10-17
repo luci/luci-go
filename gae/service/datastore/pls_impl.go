@@ -40,6 +40,8 @@ const (
 	convertProp
 	// field implements proto.Message
 	convertProto
+	// field is a "local structured property"
+	convertLSP
 )
 
 type structTag struct {
@@ -49,11 +51,12 @@ type structTag struct {
 	substructCodec *structCodec
 	convertMethod  convertMethod
 
-	metaVal any
-	isExtra bool
-	canSet  bool
+	metaVal  any
+	isExtra  bool
+	exported bool
 
-	protoOption protoOption
+	protoOption   protoOption
+	lspCompressed bool
 }
 
 type structCodec struct {
@@ -91,7 +94,7 @@ func (p *structPLS) Load(propMap PropertyMap) error {
 	if i, ok := p.c.bySpecial["extra"]; ok {
 		useExtra = true
 		f := p.c.byIndex[i]
-		if f.canSet {
+		if f.exported {
 			extra = p.o.Field(i).Addr().Interface().(*PropertyMap)
 		}
 	}
@@ -138,7 +141,7 @@ func (p *structPLS) resetBeforeLoad() {
 		for fieldIndex, tag := range codec.byIndex {
 			field := structValue.Field(fieldIndex)
 			switch {
-			case !tag.canSet || tag.name == "-":
+			case !tag.exported || tag.name == "-":
 				// Either not exported field of a struct,
 				// or not exported to Datastore (e.g. `gae:"-"`),
 				// or special $id or $parent, whose codec's tag.name is also "-".
@@ -428,7 +431,7 @@ func (p *structPLS) GetMeta(key string) (any, bool) {
 func (p *structPLS) getMetaFor(idx int) (any, bool) {
 	st := p.c.byIndex[idx]
 	val := st.metaVal
-	if st.canSet {
+	if st.exported {
 		f := p.o.Field(idx)
 		switch st.convertMethod {
 		case convertProp:
@@ -486,7 +489,7 @@ func (p *structPLS) SetMeta(key string, val any) bool {
 		return false
 	}
 	st := p.c.byIndex[idx]
-	if !st.canSet {
+	if !st.exported {
 		return false
 	}
 	switch st.convertMethod {
@@ -578,6 +581,10 @@ var (
 	errRecursiveStruct = fmt.Errorf("(internal): struct type is recursively defined")
 )
 
+func isStruct(t reflect.Type) bool {
+	return t.Kind() == reflect.Struct && t != typeOfTime && t != typeOfGeoPoint
+}
+
 func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 	if c, ok := structCodecs[t]; ok {
 		return c
@@ -610,8 +617,10 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 		f := t.Field(i)
 		ft := f.Type
 
-		name := f.Tag.Get("gae")
-		if t := string(f.Tag); name == "" && strings.Contains(t, `gae:`) && !strings.Contains(t, `gae:"`) {
+		st.exported = f.PkgPath == "" // true for UpperCasePublicFields
+
+		tag := f.Tag.Get("gae")
+		if t := string(f.Tag); tag == "" && strings.Contains(t, `gae:`) && !strings.Contains(t, `gae:"`) {
 			// Catch typos like
 			//   struct { F int `gae:f,noindex` }
 			// which should be
@@ -619,169 +628,262 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 			c.problem = me("struct tag is invalid: %q (did you mean `gae:\"...\"`?)", f.Tag)
 			return
 		}
-		opts := ""
-		if i := strings.Index(name, ","); i != -1 {
-			name, opts = name[:i], name[i+1:]
-		}
-		st.canSet = f.PkgPath == "" // blank == exported
+
+		opts := "" // statements like "noindex"
+		st.name, opts, _ = strings.Cut(tag, ",")
+
+		// The field tagged as "extra" is special, it must be a PropertyMap. It is
+		// representing a bunch of pre-serialized properties and thus it doesn't
+		// need its own codec.
 		if opts == "extra" {
 			if _, ok := c.bySpecial["extra"]; ok {
 				c.problem = me("struct has multiple fields tagged as 'extra'")
 				return
 			}
-			if name != "" && name != "-" {
-				c.problem = me("struct 'extra' field has invalid name %s, expecing `` or `-`", name)
+			if st.name != "" && st.name != "-" {
+				c.problem = me("struct 'extra' field has invalid name %s, expecting `` or `-`", st.name)
 				return
 			}
 			if ft != typeOfPropertyMap {
-				c.problem = me("struct 'extra' field has invalid type %s, expecing PropertyMap", ft)
+				c.problem = me("struct 'extra' field has invalid type %s, expecting PropertyMap", ft)
 				return
 			}
 			st.isExtra = true
-			st.name = name
 			c.bySpecial["extra"] = i
 			continue
 		}
 
+		// Default the property name to the struct field name. Note that we still
+		// may end up with an empty name in case this struct embeds a field. Such
+		// fields are `f.Anonymous == true` and this case is handled later, when
+		// recusing into substructs.
+		if st.name == "" {
+			if !f.Anonymous {
+				st.name = f.Name
+			}
+		}
+
+		// Only meta keys (like `$kind`) are allowed to be unexported. Skip the
+		// rest. Also skip explicitly omitted keys.
+		isMeta := strings.HasPrefix(st.name, "$")
+		if (!isMeta && !st.exported) || st.name == "-" {
+			st.name = "-"
+			continue
+		}
+
+		// Figure out how to convert this field into a property or a property slice
+		// based on its type and `gae:"..."` tag.
 		switch {
+		// A single value that implements PropertyConverter.
 		case reflect.PtrTo(ft).Implements(typeOfPropertyConverter):
 			st.convertMethod = convertProp
+
+		// A slice of values, where each implements PropertyConverter.
+		case ft.Kind() == reflect.Slice && reflect.PtrTo(ft.Elem()).Implements(typeOfPropertyConverter):
+			st.convertMethod = convertProp
+			st.isSlice = true
+
+		// A single protobuf message.
 		case ft.Implements(typeofProtoMessage):
 			st.convertMethod = convertProto
 			st.idxSetting = NoIndex
-			switch opts {
-			case "zstd", "nocompress", "legacy", "":
-				st.protoOption = protoOption(opts)
-			// This package historically ignored unsupported options. However, it is
-			// expected that some variations of compression algo will be added in the
-			// future. Therefore, explicitly disallow all other options.
-			case "noindex":
-				c.problem = me("noindex option is redundant and not allowed with proto.Message %q", f.Name)
-				return
-			default:
-				c.problem = me("unsupported option %q for proto.Message %q", opts, f.Name)
+			var err error
+			if st.protoOption, err = parseProtoOpts(opts); err != nil {
+				c.problem = me("%s %q", err, f.Name)
 				return
 			}
+
+		// A slice of protobuf messages.
+		case ft.Kind() == reflect.Slice && ft.Elem().Implements(typeofProtoMessage):
+			// TODO(vadimsh): Should we support them? It almost works.
+			c.problem = me("repeated protobuf fields like %q are not supported", f.Name)
+			return
+
+		// Something unrecognized we can't recurse into.
+		case ft.Kind() == reflect.Interface:
+			c.problem = me("field %q has non-concrete interface type %s", f.Name, ft)
+			return
+
+		// A single or repeated "local structure property" field.
+		case opts == "lsp" || opts == "lsp,compressed":
+			st.convertMethod = convertLSP
+			st.idxSetting = NoIndex
+			st.lspCompressed = opts == "lsp,compressed"
+			// Values must be represented by structs.
+			switch {
+			case isStruct(ft):
+				st.substructCodec = getStructCodecLocked(ft)
+			case ft.Kind() == reflect.Slice && isStruct(ft.Elem()):
+				st.substructCodec = getStructCodecLocked(ft.Elem())
+				st.isSlice = true
+			default:
+				c.problem = me("lsp fields like %q must be structs or slices of structs", f.Name)
+				return
+			}
+
+		// A single nested (perhaps anonymous) struct.
+		case isStruct(ft):
+			st.convertMethod = convertDefault
+			st.substructCodec = getStructCodecLocked(ft)
+
+		// A slice of structs.
+		case ft.Kind() == reflect.Slice && isStruct(ft.Elem()):
+			st.convertMethod = convertDefault
+			st.isSlice = true
+			st.substructCodec = getStructCodecLocked(ft.Elem())
+
+		// A []byte field. This is a special case, since it is a slice in Go.
+		case ft.Kind() == reflect.Slice && ft.Elem().Kind() == reflect.Uint8:
+			st.convertMethod = convertDefault
+
+		// A slice of elementary values.
+		case ft.Kind() == reflect.Slice:
+			st.convertMethod = convertDefault
+			st.isSlice = true
+
 		default:
+			// A singular elementary value.
 			st.convertMethod = convertDefault
 		}
 
-		switch {
-		case name == "":
-			if !f.Anonymous {
-				name = f.Name
-			}
-		case name[0] == '$':
-			name = name[1:]
-			if _, ok := c.byMeta[name]; ok {
-				c.problem = me("meta field %q set multiple times", "$"+name)
+		// Verify recursion into the substruct worked.
+		if st.substructCodec != nil {
+			switch {
+			case st.substructCodec.problem == errRecursiveStruct:
+				c.problem = me("field %q is recursively defined", f.Name)
+				return
+			case st.substructCodec.problem != nil:
+				c.problem = me("field %q has problem: %s", f.Name, st.substructCodec.problem)
 				return
 			}
-			c.byMeta[name] = i
-			if st.convertMethod == convertDefault {
+		}
+
+		// Keep track if the struct has slice-valued fields. Checked to forbid
+		// nested types that result in `[][]Type` properties not allowed by the
+		// datastore.
+		c.hasSlice = c.hasSlice || st.isSlice
+
+		// Deal with meta fields.
+		if isMeta {
+			metaName := st.name[1:]
+			if _, ok := c.byMeta[metaName]; ok {
+				c.problem = me("meta field %q set multiple times", st.name)
+				return
+			}
+			c.byMeta[metaName] = i
+			switch st.convertMethod {
+			case convertDefault:
+				// If this is some elementary type, parse the default value. This also
+				// verifies the field has expected type for a meta (e.g. not a slice).
 				mv, err := convertMeta(opts, ft)
 				if err != nil {
-					c.problem = me("meta field %q has bad type: %s", "$"+name, err)
+					c.problem = me("meta field %q has bad type: %s", f.Name, err)
 					return
 				}
 				st.metaVal = mv
+			case convertProp, convertProto:
+				// Repeated fields aren't allowed as meta fields.
+				if st.isSlice {
+					c.problem = me("meta field %q is a slice, this is not supported", f.Name)
+					return
+				}
+				// This is a singular field that can be serialized into a property. This
+				// is weird, but fine.
+			default:
+				// All other kinds of fields can't be used as meta properties. This is
+				// unnecessary and just adds complexity.
+				c.problem = me("meta field %q has unsupported serialization format", f.Name)
+				return
 			}
-			fallthrough
-		case name == "-":
-			st.name = "-"
+			st.name = "-" // not exported as a real property
 			continue
-		default:
-			if !validPropertyName(name) {
-				c.problem = me("struct tag has invalid property name: %q", name)
-				return
-			}
-		}
-		if !st.canSet {
-			st.name = "-"
-			continue
 		}
 
-		substructType := reflect.Type(nil)
-		if st.convertMethod == convertDefault {
-			switch ft.Kind() {
-			case reflect.Struct:
-				if ft != typeOfTime && ft != typeOfGeoPoint {
-					substructType = ft
-				}
-			case reflect.Slice:
-				if reflect.PtrTo(ft.Elem()).Implements(typeOfPropertyConverter) {
-					st.convertMethod = convertProp
-				} else if ft.Elem().Kind() == reflect.Struct && ft.Elem() != typeOfTime && ft.Elem() != typeOfGeoPoint {
-					substructType = ft.Elem()
-				}
-				st.isSlice = ft.Elem().Kind() != reflect.Uint8
-				c.hasSlice = c.hasSlice || st.isSlice
-
-			case reflect.Interface:
-				c.problem = me("field %q has non-concrete interface type %s",
-					f.Name, ft)
-				return
-			}
+		// This must be a valid property name by now.
+		if st.name != "" && !validPropertyName(st.name) {
+			c.problem = me("struct tag for field %q has invalid property name: %q", f.Name, st.name)
+			return
 		}
 
-		if substructType != nil {
-			sub := getStructCodecLocked(substructType)
-			if sub.problem != nil {
-				if sub.problem == errRecursiveStruct {
-					c.problem = me("field %q is recursively defined", f.Name)
-				} else {
-					c.problem = me("field %q has problem: %s", f.Name, sub.problem)
-				}
+		// Recognize index opt-out. Note this applies only to elementary properties.
+		if opts == "noindex" {
+			st.idxSetting = NoIndex
+		}
+
+		// Finish dealing with the nested structs (either a singular or repeated).
+		if st.convertMethod == convertDefault && st.substructCodec != nil {
+			// Check the nested field can be flattened. `[][]Type` is forbidden.
+			if st.isSlice && st.substructCodec.hasSlice {
+				c.problem = me("flattening nested structs leads to a slice of slices: field %q", f.Name)
 				return
 			}
-			st.substructCodec = sub
-			if st.isSlice && sub.hasSlice {
-				c.problem = me(
-					"flattening nested structs leads to a slice of slices: field %q",
-					f.Name)
-				return
+			// Flatten the struct-valued field.
+			c.hasSlice = c.hasSlice || st.substructCodec.hasSlice
+			// Here st.name is empty if `f` is embedded into the parent struct. Its
+			// fields will end up nested directly under `f`.
+			if st.name != "" {
+				st.name += "."
 			}
-			c.hasSlice = c.hasSlice || sub.hasSlice
-			if name != "" {
-				name += "."
-			}
-			for relName := range sub.byName {
-				absName := name + relName
+			for relName := range st.substructCodec.byName {
+				absName := st.name + relName
 				if _, ok := c.byName[absName]; ok {
 					c.problem = me("struct tag has repeated property name: %q", absName)
 					return
 				}
 				c.byName[absName] = i
 			}
-		} else {
-			if st.convertMethod == convertDefault { // check the underlying static type of the field
-				t := ft
-				if st.isSlice {
-					t = t.Elem()
-				}
-				v := UpconvertUnderlyingType(reflect.New(t).Elem().Interface())
-				if _, err := PropertyTypeOf(v, false); err != nil {
-					c.problem = me("field %q has invalid type: %s", name, ft)
-					return
-				}
-			}
+			// We are done with this field.
+			continue
+		}
 
-			if _, ok := c.byName[name]; ok {
-				c.problem = me("struct tag has repeated property name: %q", name)
+		// This field will be represented by a single (perhaps repeated) property.
+		// It must have a name.
+		if st.name == "" {
+			c.problem = me("non-struct embedded field: %q", f.Name)
+			return
+		}
+
+		// If this is a scalar or a slice of scalars. Check the underlying static
+		// type. This is just a type assertion, we don't store the resolved type
+		// anywhere.
+		if st.convertMethod == convertDefault {
+			t := ft
+			if st.isSlice {
+				t = t.Elem()
+			}
+			v := UpconvertUnderlyingType(reflect.New(t).Elem().Interface())
+			if _, err := PropertyTypeOf(v, false); err != nil {
+				c.problem = me("field %q has invalid type: %s", f.Name, ft)
 				return
 			}
-			c.byName[name] = i
 		}
-		st.name = name
 
-		if opts == "noindex" {
-			st.idxSetting = NoIndex
+		// We are done with this field.
+		if _, ok := c.byName[st.name]; ok {
+			c.problem = me("struct tag has repeated property name: %q", st.name)
+			return
 		}
+		c.byName[st.name] = i
 	}
+
 	if c.problem == errRecursiveStruct {
 		c.problem = nil
 	}
 	return
+}
+
+func parseProtoOpts(opts string) (protoOption, error) {
+	switch opts {
+	case "zstd", "nocompress", "legacy", "":
+		return protoOption(opts), nil
+	// This package historically ignored unsupported options. However, it is
+	// expected that some variations of compression algo will be added in the
+	// future. Therefore, explicitly disallow all other options.
+	case "noindex":
+		return "", fmt.Errorf("noindex option is redundant and not allowed with proto.Message")
+	default:
+		return "", fmt.Errorf("unsupported option %q for proto.Message", opts)
+	}
 }
 
 func convertMeta(val string, t reflect.Type) (any, error) {
