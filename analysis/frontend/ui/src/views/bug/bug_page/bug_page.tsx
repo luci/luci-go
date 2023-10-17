@@ -128,9 +128,9 @@ const BugPage = () => {
                 ) : (
                   <Grid item xs={12}>
                     <Alert
-                      severity="error"
+                      severity="info"
                       sx={{ mb: 2 }}>
-                      <AlertTitle>Failed to load rule</AlertTitle>
+                      <AlertTitle>Could not find a rule for this bug (or you may not have permission to see it)</AlertTitle>
                       {
                           window.isAnonymous ? (
                             // Because of the design of the RPC, it cannot tell us if there are
@@ -140,7 +140,10 @@ const BugPage = () => {
                               Please <Link data-testid="error_login_link" href={loginLink(location.pathname + location.search + location.hash)}>log in</Link> to view this information.
                             </>
                           ) : (
-                            `No rule found matching the specified bug (${bugSystem}:${bugId}), or you do not have permission to view it.`
+                            <>
+                              <strong>If you came here from a bug, please check if the bug has been duplicated into another bug and use that bug instead.</strong>&nbsp;
+                              It is also possible a rule exists, but you do not have permission to view it.
+                            </>
                           )
                       }
                     </Alert>

@@ -27,7 +27,7 @@ const RuleArchivedMessage = () => {
       sx={{ pt: 2, pb: 2, mt: 1, mb: 3 }}
     >
       <Container maxWidth={false}>
-        <Typography>
+        <Typography component="div">
           <PanelHeading>This Rule is Archived</PanelHeading>
           <p><strong>If you came here from a bug, please check if the bug has been duplicated into another bug and use that bug instead.</strong></p>
           <p>As an archived rule:</p>

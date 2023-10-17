@@ -55,7 +55,7 @@ luci_gae_vars:
     BUGANIZER_TEST_COMPONENT_ID: 12345
     BUGANIZER_TEST_MODE: false
     BUGANIZER_SELF_EMAIL: email@google.com
-    SERVICE_ACCOUNT: luci-analysis-dev@appspot.gserviceaccount.com
+    SERVICE_ACCOUNT: luci-analysis-dev-service@luci-analysis-dev.iam.gserviceaccount.com
     PROFILING_PROBABILITY: "0.25"
 
 # IMPORTANT: Except for /static, keep in sync between app.yaml and service-result-ingestion.yaml.

@@ -56,6 +56,9 @@ func Update(ctx context.Context) error {
 // Get returns the service-level config.
 func Get(ctx context.Context) (*configpb.Config, error) {
 	cfg, err := cachedCfg.Get(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
 	return cfg.(*configpb.Config), err
 }
 
