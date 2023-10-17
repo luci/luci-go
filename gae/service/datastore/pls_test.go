@@ -324,6 +324,18 @@ type DottedB struct {
 	C int `gae:"C4.C5"`
 }
 
+type DeeperSlice struct {
+	A []DeeperA
+}
+
+type DeeperA struct {
+	B DeeperB
+}
+
+type DeeperB struct {
+	C string
+}
+
 type SliceOfSlices struct {
 	I int
 	S []struct {
@@ -1692,6 +1704,29 @@ var testCases = []testCase{
 					{S: "blau0", I: 20},
 					{S: "blau1", I: 21},
 					{S: "blau2"},
+				},
+			},
+		},
+	},
+	{
+		desc: "deeper slices",
+		src: &DeeperSlice{
+			A: []DeeperA{
+				{
+					B: DeeperB{"v1"},
+				},
+				{
+					B: DeeperB{"v2"},
+				},
+			},
+		},
+		want: &DeeperSlice{
+			A: []DeeperA{
+				{
+					B: DeeperB{"v1"},
+				},
+				{
+					B: DeeperB{"v2"},
 				},
 			},
 		},

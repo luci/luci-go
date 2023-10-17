@@ -372,7 +372,7 @@ func (p *structPLS) Save(withMeta bool) (PropertyMap, error) {
 	} else {
 		ret = make(PropertyMap, len(p.c.byName))
 	}
-	if _, err := p.save(ret, "", nil, ShouldIndex); err != nil {
+	if _, err := p.save(ret, "", false, ShouldIndex); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -385,10 +385,13 @@ func (p *structPLS) getDefaultKind() string {
 	return p.o.Type().Name()
 }
 
-func (p *structPLS) save(propMap PropertyMap, prefix string, parentST *structTag, is IndexSetting) (idxCount int, err error) {
+func (p *structPLS) save(propMap PropertyMap, prefix string, inSlice bool, is IndexSetting) (idxCount int, err error) {
 	saveProp := func(name string, si IndexSetting, v reflect.Value, st *structTag) (err error) {
-		if st.substructCodec != nil {
-			count, err := (&structPLS{v, st.substructCodec, nil}).save(propMap, name, st, si)
+		prop := Property{}
+		switch {
+		case st.convertMethod == convertDefault && st.substructCodec != nil:
+			// This is a nested struct.
+			count, err := (&structPLS{v, st.substructCodec, nil}).save(propMap, name, inSlice || st.isSlice, si)
 			if err == nil {
 				idxCount += count
 				if idxCount > maxIndexedProperties {
@@ -396,35 +399,45 @@ func (p *structPLS) save(propMap PropertyMap, prefix string, parentST *structTag
 				}
 			}
 			return err
-		}
 
-		prop := Property{}
-		omit := false
-		switch st.convertMethod {
-		case convertProp:
-			prop, err = v.Addr().Interface().(PropertyConverter).ToProperty()
-		case convertProto:
-			if v.IsNil() {
-				// Don't emit a property for a nil proto message, such that load won't
-				// set proto field value to an empty message.
-				omit = true
-			} else {
-				prop, err = protoToProperty(v.Interface().(proto.Message), st.protoOption)
-			}
-		case convertDefault:
+		case st.convertMethod == convertDefault && st.substructCodec == nil:
+			// This is some elementary value.
 			err = prop.SetValue(v.Interface(), si)
+			if err != nil {
+				return err
+			}
+
+		case st.convertMethod == convertLSP:
+			// This is a "local structured property".
+			panic("not implemented yet")
+
+		case st.convertMethod == convertProp:
+			// The field knows how to convert itself into a property.
+			prop, err = v.Addr().Interface().(PropertyConverter).ToProperty()
+			if err != nil {
+				return err
+			}
+
+		case st.convertMethod == convertProto:
+			// Don't emit a property for a nil proto message, such that load won't
+			// set proto field value to an empty message.
+			if v.IsNil() {
+				return nil
+			}
+			prop, err = protoToProperty(v.Interface().(proto.Message), st.protoOption)
+			if err != nil {
+				return err
+			}
+
 		default:
 			panic(fmt.Errorf("unknown convertMethod: %d", st.convertMethod))
 		}
-		switch {
-		case err != nil:
-			return err
-		case omit:
-			return nil
-		}
 
-		// If we're a slice, or we are members in a slice, then use a PropertySlice.
-		if st.isSlice || (parentST != nil && parentST.isSlice) {
+		// If we're a slice, or we are members in a slice (perhaps recursively),
+		// then append to a PropertySlice with the corresponding name. That way
+		// visiting a repeated nested struct will populate all flattened property
+		// slices correctly.
+		if st.isSlice || inSlice {
 			var pslice PropertySlice
 			if pdata := propMap[name]; pdata != nil {
 				pslice = pdata.(PropertySlice)
