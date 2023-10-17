@@ -20,11 +20,40 @@ import "go.chromium.org/luci/server/auth/service/protocol/components/auth/proto/
 
 option go_package = "go.chromium.org/luci/auth_service/api/configspb";
 
-// NOTE: There is another copy of this message, please be sure to keep both in
-// sync.
+// NOTE: This file is replicated in luci-py here: https://chromium.googlesource.com/infra/luci/luci-py/+/refs/heads/main/appengine/auth_service/proto/config.proto
+// Be sure to use the respective import_luci_go.sh when making changes here to reflect those changes in luci-py.
+
+// Auth service configuration that applies specifically to the service, not to
+// any linked services.
 //
-// https://chromium.googlesource.com/infra/luci/luci-py/+/refs/heads/main/appengine/auth_service/proto/config.proto#51
-//
+// Provided via 'settings.cfg' config file.
+message SettingsCfg {
+  // Enable ts_mon based monitoring.
+  bool enable_ts_monitoring = 1;
+
+  // If set, store the latest AuthDB snapshot in Google Storage.
+  //
+  // Should have format "<bucket>/<prefix>".
+  //
+  // Auth service will take ownership of two objects there:
+  //   1. latest.json: JSON-serialized AuthDBRevision proto.
+  //   2. latest.db: binary-serialized SignedAuthDB with actual AuthDB data.
+  //
+  // When AuthDB changes, Auth service updates latest.db, then latest.json, and
+  // finally sends a PubSub notification.
+  //
+  // Consumers can either poll latest.json for changes, or they can setup
+  // a PubSub subscription via /auth_service/api/v1/authdb/subscription/ to get
+  // notified.
+  //
+  // Requires at least one AuthDB change (e.g. a group update) for the files
+  // to appear after setting or changing auth_db_gs_path.
+  //
+  // When changing or removing auth_db_gs_path, files at the old location are
+  // not automatically cleaned up.
+  string auth_db_gs_path = 2;
+}
+
 // Configuration of groups imported from external sources.
 //
 // Provided via 'imports.cfg' config file.
@@ -84,11 +113,6 @@ message GroupImporterConfig {
   repeated TarballUploadEntry tarball_upload = 3;
 }
 
-// NOTE: There is another copy of this message, please be sure to keep both in
-// sync.
-//
-// https://chromium.googlesource.com/infra/luci/luci-py/+/refs/heads/main/appengine/auth_service/proto/config.proto#130
-//
 // IP allowlists config: a set of named IP allowlists and a mapping between
 // identity name -> IP allowlist to restrict it to.
 message IPAllowlistConfig {
@@ -114,11 +138,6 @@ message IPAllowlistConfig {
   repeated Assignment assignments = 2;
 }
 
-// NOTE: There is another copy of this message, please be sure to keep both in
-// sync.
-//
-// https://chromium.googlesource.com/infra/luci/luci-py/+/refs/heads/main/appengine/auth_service/proto/config.proto#114
-//
 // Legacy config, this is maintained to support clients still utilizing
 // https://crsrc.org/i/luci/client/utils/oauth.py;l=419;drc=173496da114efb94dceedb58e588b9c58dabc5e9
 //

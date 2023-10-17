@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +15,3 @@
 //go:generate cproto -disable-grpc components/auth/proto
 
 package protocol
-
-// Files copied from https://chromium.googlesource.com/infra/luci/luci-py:
-//   appengine/components/components/auth/proto/realms.proto
-//   appengine/components/components/auth/proto/replication.proto
-//   appengine/components/components/auth/proto/security_config.proto
-//
-// Commit: ac88a1823845bd0601b94d250495dd3c4b7e28ea
-// Modifications: see import_luci_py.sh
