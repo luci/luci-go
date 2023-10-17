@@ -41,7 +41,12 @@ describe('Test AnalysesTable component', () => {
     mockListTestAnalyses(mockAnalyses, '');
 
     render(
-      <FakeContextProvider>
+      <FakeContextProvider
+        mountedPath="/p/:project/bisection/test_analysis"
+        routerOptions={{
+          initialEntries: ['/p/testproject/bisection/test_analysis'],
+        }}
+      >
         <ListTestAnalysesTable />
       </FakeContextProvider>,
     );
@@ -66,7 +71,12 @@ describe('Test AnalysesTable component', () => {
     mockListTestAnalyses(firstPageMockAnalyses, 'test-token');
 
     render(
-      <FakeContextProvider>
+      <FakeContextProvider
+        mountedPath="/p/:project/bisection/test_analysis"
+        routerOptions={{
+          initialEntries: ['/p/testproject/bisection/test_analysis'],
+        }}
+      >
         <ListTestAnalysesTable />
       </FakeContextProvider>,
     );
@@ -102,7 +112,12 @@ describe('Test AnalysesTable component', () => {
     mockListTestAnalyses(mockAnalyses, '');
 
     render(
-      <FakeContextProvider>
+      <FakeContextProvider
+        mountedPath="/p/:project/bisection/test_analysis"
+        routerOptions={{
+          initialEntries: ['/p/testproject/bisection/test_analysis'],
+        }}
+      >
         <ListTestAnalysesTable />
       </FakeContextProvider>,
     );
@@ -117,7 +132,12 @@ describe('Test AnalysesTable component', () => {
     mockErrorListTestAnalyses();
 
     render(
-      <FakeContextProvider>
+      <FakeContextProvider
+        mountedPath="/p/:project/bisection/test_analysis"
+        routerOptions={{
+          initialEntries: ['/p/testproject/bisection/test_analysis'],
+        }}
+      >
         <ListTestAnalysesTable />
       </FakeContextProvider>,
     );

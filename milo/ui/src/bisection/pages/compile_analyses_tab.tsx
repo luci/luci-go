@@ -102,7 +102,7 @@ export const CompileAnalysesTab = () => {
 };
 
 export function Component() {
-  useTabId('analysis');
+  useTabId('compile-analysis');
 
   return (
     // See the documentation for `<LoginPage />` for why we handle error this way.

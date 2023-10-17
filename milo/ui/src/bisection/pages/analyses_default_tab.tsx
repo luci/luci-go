@@ -23,7 +23,7 @@ export function AnalysesDefaultTab() {
 
   // Remove any trailing '/' so the new URL won't contain '//'.
   const basePath = pathname.replace(/\/*$/, '');
-  const newUrl = `${basePath}/analysis`;
+  const newUrl = `${basePath}/compile-analysis`;
 
   useEffect(
     () => navigate(newUrl, { replace: true }),

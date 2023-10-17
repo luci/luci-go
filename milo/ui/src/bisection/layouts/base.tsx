@@ -12,17 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Outlet } from 'react-router-dom';
+import { Outlet, useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants';
 
 export const BisectionLayout = () => {
+  const { project } = useParams();
+
+  if (!project) {
+    throw new Error('invariant violated: project should be set');
+  }
   return (
     <>
       <PageMeta
-        project="chromium"
+        project={project}
         title="Bisection"
         selectedPage={UiPage.Bisection}
       />

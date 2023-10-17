@@ -85,7 +85,7 @@ function generateBuildsSection(project: string | undefined): SidebarSection {
     if (project === 'chromium') {
       pages.push({
         page: UiPage.Bisection,
-        url: `/ui/bisection`,
+        url: `/ui/p/${project}/bisection`,
         icon: <GrainTwoToneIcon />,
       });
     }

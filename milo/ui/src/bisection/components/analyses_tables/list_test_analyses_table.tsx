@@ -22,6 +22,7 @@ import TablePagination, {
 } from '@mui/material/TablePagination';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 
 import { usePrpcQuery } from '@/common/hooks/prpc_query';
 import {
@@ -32,6 +33,11 @@ import {
 import { TestAnalysesTable } from './test_analyses_table';
 
 export const ListTestAnalysesTable = () => {
+  const { project } = useParams();
+  if (!project) {
+    // The page should always be mounted to a path where project is set.
+    throw new Error('invariant violated: project should be set');
+  }
   // TODO: implement sorting & filtering for certain columns
 
   // The current page of analyses
@@ -60,7 +66,7 @@ export const ListTestAnalysesTable = () => {
     Service: LUCIBisectionService,
     method: 'listTestAnalyses',
     request: {
-      project: 'chromium',
+      project: project,
       pageSize: pageSize,
       pageToken: pageTokens.get(page * pageSize) || '',
     },

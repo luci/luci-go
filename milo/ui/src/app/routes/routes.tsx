@@ -150,7 +150,11 @@ export const routes: RouteObject[] = [
     lazy: () => import('@/app/pages/test_history_page'),
   },
   {
-    path: 'bisection',
+    path: 'bisection/*',
+    lazy: () => import('@/bisection/pages/redirection_loader'),
+  },
+  {
+    path: 'p/:project/bisection',
     lazy: () => import('@/bisection/layouts/base'),
     children: [
       {
@@ -162,7 +166,7 @@ export const routes: RouteObject[] = [
             lazy: () => import('@/bisection/pages/analyses_default_tab'),
           },
           {
-            path: 'analysis',
+            path: 'compile-analysis',
             lazy: () => import('@/bisection/pages/compile_analyses_tab'),
           },
           {
@@ -172,7 +176,7 @@ export const routes: RouteObject[] = [
         ],
       },
       {
-        path: 'analysis/b/:bbid',
+        path: 'compile-analysis/b/:bbid',
         lazy: () => import('@/bisection/pages/analysis_details'),
       },
       {

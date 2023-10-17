@@ -130,7 +130,7 @@ describe('generateSidebarSections', () => {
           },
           {
             page: UiPage.Bisection,
-            url: `/ui/bisection`,
+            url: `/ui/p/chromium/bisection`,
             icon: <GrainTwoToneIcon />,
           },
         ],

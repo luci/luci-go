@@ -17,7 +17,11 @@ import { AppRoutedTabs, AppRoutedTab } from '@/common/components/routed_tabs';
 
 export const AnalysesPage = () => (
   <AppRoutedTabs>
-    <AppRoutedTab label="Compile Analysis" value="analysis" to="analysis" />
+    <AppRoutedTab
+      label="Compile Analysis"
+      value="compile-analysis"
+      to="compile-analysis"
+    />
     <AppRoutedTab
       label="Test Analysis"
       value="test-analysis"
