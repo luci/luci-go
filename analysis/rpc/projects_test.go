@@ -158,6 +158,7 @@ func TestProjects(t *testing.T) {
 						Policies: []*pb.BugManagementPolicy{
 							{
 								Id:                "exoneration",
+								Owners:            []string{"username@google.com"},
 								HumanReadableName: "test variant(s) are being exonerated in presubmit",
 								Priority:          pb.BuganizerPriority_P2,
 								Metrics: []*pb.BugManagementPolicy_Metric{

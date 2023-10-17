@@ -124,6 +124,11 @@ message BugManagementPolicy {
   // with google.aip.dev/122 for resource IDs.)
   string id = 1;
 
+  // The owners of the policy, who can be contacted if there are issues/concerns
+  // about the policy. Each item in the list should be an @google.com email
+  // address. At least one owner (preferably a group) is required.
+  repeated string owners = 6;
+
   // A short one-line description for the problem the policy identifies, which
   // will appear on the UI and in bugs comments. This is a sentence fragment
   // and not a sentence, so please do NOT include a full stop and or starting

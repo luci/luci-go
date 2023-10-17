@@ -100,6 +100,7 @@ func toBugManagementPolicyPB(policy *configpb.BugManagementPolicy) *pb.BugManage
 
 	return &pb.BugManagementPolicy{
 		Id:                policy.Id,
+		Owners:            policy.Owners,
 		HumanReadableName: policy.HumanReadableName,
 		Priority:          pb.BuganizerPriority(policy.Priority),
 		Metrics:           metrics,
