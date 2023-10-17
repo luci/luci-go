@@ -106,13 +106,16 @@ message TestVerdictRow {
   // UNEXPECTEDLY_SKIPPED, EXONERATED.
   luci.analysis.v1.TestVerdictStatus status = 7;
 
+  // ParentInvocationRecord for a test result is the immediate parent invocation
+  // that directly contains the test result.
+  message ParentInvocationRecord {
+    // The ID of the invocation.
+    string id = 1;
+  }
+
   message TestResult {
     // Parent contains info of the result's immediate parent invocation.
-    //
-    // The implementation of this field is deferred until a later date,
-    // as it will require additional plumbing from ResultDB.
-    // InvocationRecord parent = 1;
-    reserved 1;
+    ParentInvocationRecord parent = 1;
 
     // Identifies a test result in a given invocation and test id.
     string result_id = 2;

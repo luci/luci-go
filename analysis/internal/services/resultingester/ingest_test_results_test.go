@@ -1269,6 +1269,9 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			Status:        pb.TestVerdictStatus_EXONERATED,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
+					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
+						Id: "build-1234",
+					},
 					ResultId:    "one",
 					Expected:    false,
 					Status:      pb.TestResultStatus_FAIL,
@@ -1330,6 +1333,9 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			Status:        pb.TestVerdictStatus_EXPECTED,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
+					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
+						Id: "build-1234",
+					},
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.May, 1, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_PASS,
@@ -1354,6 +1360,9 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			Status:        pb.TestVerdictStatus_UNEXPECTED,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
+					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
+						Id: "build-1234",
+					},
 					ResultId:   "one",
 					Status:     pb.TestResultStatus_PASS,
 					Expected:   false,
@@ -1377,6 +1386,9 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			Status:        pb.TestVerdictStatus_FLAKY,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
+					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
+						Id: "invocation-0b",
+					},
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 10, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -1384,6 +1396,9 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					Properties: "{}",
 				},
 				{
+					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
+						Id: "invocation-0a",
+					},
 					ResultId:   "two",
 					StartTime:  timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 20, 0, time.UTC)),
 					Status:     pb.TestResultStatus_PASS,
@@ -1408,6 +1423,9 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			TestMetadata:  testMetadata,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
+					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
+						Id: "build-1234",
+					},
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -1434,6 +1452,9 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			TestMetadata:  testMetadata,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
+					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
+						Id: "build-1234",
+					},
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -1459,6 +1480,9 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			Status:        pb.TestVerdictStatus_FLAKY,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
+					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
+						Id: "invocation-1234",
+					},
 					ResultId:   "two",
 					StartTime:  timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 20, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -1467,6 +1491,9 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					Properties: "{}",
 				},
 				{
+					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
+						Id: "invocation-1234",
+					},
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 10, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -1475,6 +1502,9 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					Properties: "{}",
 				},
 				{
+					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
+						Id: "invocation-4567",
+					},
 					ResultId:   "three",
 					StartTime:  timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 15, 0, time.UTC)),
 					Status:     pb.TestResultStatus_PASS,
@@ -1499,6 +1529,9 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			Status:        pb.TestVerdictStatus_UNEXPECTED,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
+					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
+						Id: "build-1234",
+					},
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.April, 1, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -1523,6 +1556,9 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			Status:        pb.TestVerdictStatus_UNEXPECTEDLY_SKIPPED,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
+					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
+						Id: "build-1234",
+					},
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.February, 2, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_SKIP,
@@ -1546,6 +1582,9 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			Status:        pb.TestVerdictStatus_UNEXPECTED,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
+					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
+						Id: "build-1234",
+					},
 					ResultId:   "one",
 					Status:     pb.TestResultStatus_PASS,
 					Expected:   false,

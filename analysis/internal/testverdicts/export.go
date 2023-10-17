@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/analysis"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
+	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
 	"go.chromium.org/luci/analysis/internal/perms"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/pbutil"
@@ -222,7 +223,14 @@ func result(result *rdbpb.TestResult) (*bqpb.TestVerdictRow_TestResult, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "marshal properties").Err()
 	}
+	invID, err := resultdb.InvocationFromTestResultName(result.Name)
+	if err != nil {
+		return nil, errors.Annotate(err, "invocation from test result name").Err()
+	}
 	return &bqpb.TestVerdictRow_TestResult{
+		Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
+			Id: invID,
+		},
 		ResultId:    result.ResultId,
 		Expected:    result.Expected,
 		Status:      pbutil.TestResultStatusFromResultDB(result.Status),
