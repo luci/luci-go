@@ -58,7 +58,7 @@ func MissingFlagError(flag string) error {
 // Parameters can be used to customize CLI defaults.
 type Parameters struct {
 	AuthOptions       auth.Options // mostly for client ID and client secret
-	ConfigServiceHost string       // e.g. "luci-config.appspot.com"
+	ConfigServiceHost string       // e.g. "config.luci.app"
 }
 
 // Subcommand is a base of all subcommands.

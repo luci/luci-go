@@ -45,7 +45,7 @@ function add_luci_file_metadata() {
     "import \"go.chromium.org/luci/common/proto/options.proto\";\n"
     "\n"
     "option (luci.file_metadata) = {\n"
-    "  doc_url: \"https://luci-config.appspot.com/schemas/services/swarming:${cfg_file}\";\n"
+    "  doc_url: \"https://config.luci.app/schemas/services/swarming:${cfg_file}\";\n"
     "};"
   )
   local joined=`printf '%s' "${fragment[@]}"`

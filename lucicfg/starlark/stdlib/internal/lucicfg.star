@@ -87,7 +87,7 @@ def _config(
     Args:
       config_service_host: a hostname of a LUCI Config Service to send
         validation requests to. Default is whatever is hardcoded in `lucicfg`
-        binary, usually `luci-config.appspot.com`.
+        binary, usually `config.luci.app`.
       config_dir: a directory to place generated configs into, relative to the
         directory that contains the entry point \*.star file. `..` is allowed.
         If set via `-config-dir` command line flag, it is relative to the

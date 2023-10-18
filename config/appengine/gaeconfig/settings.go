@@ -109,7 +109,7 @@ func (settingsPage) Overview(c context.Context) (template.HTML, error) {
 	}
 	return template.HTML(fmt.Sprintf(`
 <p>This service may fetch configuration files stored centrally in an instance of
-<a href="https://chromium.googlesource.com/infra/luci/luci-py/+/master/appengine/config_service">luci-config</a>
+<a href="https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/config_service">luci-config</a>
 service. This page can be used to configure the location of the config service
 as well as parameters of the local cache that holds the fetched configuration
 files.</p>
@@ -143,7 +143,7 @@ func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
 				}
 				return nil
 			},
-			Help: `<p>Host name (e.g., "luci-config.appspot.com") of a config service to fetch configuration files from.</p>`,
+			Help: `<p>Host name (e.g., "config.luci.app") of a config service to fetch configuration files from.</p>`,
 		},
 		{
 			ID:    "AdministratorsGroup",

@@ -82,7 +82,7 @@ func validateCanIssueTokenForIdentity(ctx *validation.Context, identity string) 
 		Opinion:
 		This actually will require some careful approach:
 			1. We probably do not want to mint tokens for all projects on all validation calls (this is a lot of RPCs). Only for accounts we haven't seen before. So we may need some cache.
-			2. If the account had invalid ACLs, and they were fixed, there's currently no way to retrigger the validation. LUCI Config uses contents of the config as sole input. If config body didn't change, it would think the config is still broken. The workaround is either a whitespace change in the config, or manually "Reimport config" button in https://luci-config.appspot.com UI.
+			2. If the account had invalid ACLs, and they were fixed, there's currently no way to retrigger the validation. LUCI Config uses contents of the config as sole input. If config body didn't change, it would think the config is still broken. The workaround is either a whitespace change in the config, or manually "Reimport config" button in https://config.luci.app UI.
 
 		Opinion:
 		this is one of my use-cases for validation context warning instead of Error.
