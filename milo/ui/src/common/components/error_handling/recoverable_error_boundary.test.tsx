@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { useQuery } from '@tanstack/react-query';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { ReactNode } from 'react';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
@@ -43,6 +45,20 @@ function IdentityTestComponent() {
   }
 
   return <>{data}</>;
+}
+
+function PermissionErrorComponent(): ReactNode {
+  throw new GrpcError(
+    RpcCode.PERMISSION_DENIED,
+    'error display' + SILENCED_ERROR_MAGIC_STRING,
+  );
+}
+
+function InternalErrorComponent(): ReactNode {
+  throw new GrpcError(
+    RpcCode.INTERNAL,
+    'error display' + SILENCED_ERROR_MAGIC_STRING,
+  );
 }
 
 describe('RecoverableErrorBoundary', () => {
@@ -164,5 +180,71 @@ describe('RecoverableErrorBoundary', () => {
 
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.getByText('No error')).toBeInTheDocument();
+  });
+
+  it('displays login instruction when needed', async () => {
+    render(
+      <FakeContextProvider
+        mountedPath="/ui/*"
+        routerOptions={{ initialEntries: ['/ui/link/to/current/page'] }}
+      >
+        <FakeAuthStateProvider value={{ identity: ANONYMOUS_IDENTITY }}>
+          <RecoverableErrorBoundary>
+            <PermissionErrorComponent />
+          </RecoverableErrorBoundary>
+        </FakeAuthStateProvider>
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('error display');
+    expect(screen.getByText('login')).toHaveAttribute(
+      'href',
+      '/auth/openid/login?r=%2Fui%2Flink%2Fto%2Fcurrent%2Fpage',
+    );
+  });
+
+  it('does not displays login instruction when user has signed in', async () => {
+    render(
+      <FakeContextProvider
+        mountedPath="/ui/*"
+        routerOptions={{ initialEntries: ['/ui/link/to/current/page'] }}
+      >
+        <FakeAuthStateProvider value={{ identity: 'user:user@google.com' }}>
+          <RecoverableErrorBoundary>
+            <PermissionErrorComponent />
+          </RecoverableErrorBoundary>
+        </FakeAuthStateProvider>
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('error display');
+    expect(screen.queryByText('login')).not.toBeInTheDocument();
+  });
+
+  it('does not displays login instruction when its not permission error', async () => {
+    render(
+      <FakeContextProvider
+        mountedPath="/ui/*"
+        routerOptions={{ initialEntries: ['/ui/link/to/current/page'] }}
+      >
+        <FakeAuthStateProvider value={{ identity: ANONYMOUS_IDENTITY }}>
+          <RecoverableErrorBoundary>
+            <InternalErrorComponent />
+          </RecoverableErrorBoundary>
+        </FakeAuthStateProvider>
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('error display');
+    expect(screen.queryByText('login')).not.toBeInTheDocument();
   });
 });

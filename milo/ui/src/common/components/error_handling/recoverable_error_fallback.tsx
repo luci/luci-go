@@ -12,11 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { GrpcError } from '@chopsui/prpc-client';
+import { Link } from '@mui/material';
 import { useEffect, useRef } from 'react';
 import { FallbackProps } from 'react-error-boundary';
+import { useLocation } from 'react-router-dom';
 import { useLatest } from 'react-use';
 
+import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
+import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants';
+import { getLoginUrl } from '@/common/tools/url_utils';
 
 import { ErrorDisplay } from './error_display';
 
@@ -28,8 +34,7 @@ export function RecoverableErrorFallback({
   error,
   resetErrorBoundary,
 }: FallbackProps) {
-  const err = error instanceof Error ? error : new Error(`${error}`);
-
+  const location = useLocation();
   const resetRef = useLatest(resetErrorBoundary);
 
   // A lot of the errors are caused by users lacking permissions. Reset the
@@ -46,5 +51,31 @@ export function RecoverableErrorFallback({
     resetRef.current();
   }, [authState.identity, resetRef]);
 
-  return <ErrorDisplay error={err} onTryAgain={() => resetErrorBoundary()} />;
+  const err = error instanceof Error ? error : new Error(`${error}`);
+  const shouldAskToLogin =
+    initialIdentity.current === ANONYMOUS_IDENTITY &&
+    err instanceof GrpcError &&
+    POTENTIAL_PERM_ERROR_CODES.includes(err.code);
+
+  return (
+    <ErrorDisplay
+      error={err}
+      instruction={
+        shouldAskToLogin && (
+          <b>
+            You may need to{' '}
+            <Link
+              href={getLoginUrl(
+                location.pathname + location.search + location.hash,
+              )}
+            >
+              login
+            </Link>{' '}
+            to view the page.
+          </b>
+        )
+      }
+      onTryAgain={() => resetErrorBoundary()}
+    />
+  );
 }
