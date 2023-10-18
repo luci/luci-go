@@ -96,6 +96,20 @@ func (s *MiloInternalService) QueryConsoleSnapshots(ctx context.Context, req *mi
 	pageSize := int(queryConsoleSnapshotsPageSize.Adjust(req.PageSize))
 
 	isProjectAllowed := make(map[string]bool)
+	checkProjectIsAllowed := func(proj string) (bool, error) {
+		isAllowed, ok := isProjectAllowed[proj]
+		if !ok {
+			var err error
+			isAllowed, err = projectconfig.IsAllowed(ctx, proj)
+			if err != nil {
+				return isAllowed, err
+			}
+			isProjectAllowed[proj] = isAllowed
+		}
+
+		return isAllowed, nil
+	}
+
 	allowedRealms, err := auth.QueryRealms(ctx, bbperms.BuildsList, "", nil)
 	if err != nil {
 		return nil, err
@@ -113,19 +127,25 @@ func (s *MiloInternalService) QueryConsoleSnapshots(ctx context.Context, req *mi
 	consoles := make([]*projectconfigpb.Console, 0, pageSize)
 	var nextCursor datastore.Cursor
 	err = datastore.Run(ctx, q, func(con *projectconfig.Console, getCursor datastore.CursorCB) error {
-		proj := con.ProjectID()
-
-		isAllowed, ok := isProjectAllowed[proj]
-		if !ok {
-			var err error
-			isAllowed, err = projectconfig.IsAllowed(ctx, proj)
-			if err != nil {
+		// Resolve external console.
+		if con.Def.ExternalId != "" {
+			// If the user doesn't have access to the original project, skip the
+			// external console.
+			sourceProj := con.ProjectID()
+			if allowed, err := checkProjectIsAllowed(sourceProj); err != nil || !allowed {
 				return err
 			}
-			isProjectAllowed[proj] = isAllowed
+
+			con.Parent = datastore.MakeKey(ctx, "Project", con.Def.ExternalProject)
+			con.ID = con.Def.ExternalId
+			if err = datastore.Get(ctx, con); err != nil {
+				return errors.Annotate(err, "failed to resolve external console").Err()
+			}
 		}
-		if !isAllowed {
-			return nil
+
+		proj := con.ProjectID()
+		if allowed, err := checkProjectIsAllowed(proj); err != nil || !allowed {
+			return err
 		}
 
 		// Use the project:@root as realm if the realm is not yet defined for the

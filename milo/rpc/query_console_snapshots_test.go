@@ -50,6 +50,10 @@ var projects = []*projectconfig.Project{
 		ID:  "other-allowed-project",
 		ACL: projectconfig.ACL{Identities: []identity.Identity{"user"}},
 	},
+	{
+		ID:  "project-with-external-ref",
+		ACL: projectconfig.ACL{Identities: []identity.Identity{"user"}},
+	},
 }
 
 var consoleDefs = []*projectconfigpb.Console{
@@ -139,6 +143,31 @@ var consoleDefs = []*projectconfigpb.Console{
 			},
 		},
 	},
+	{
+		Realm:           "project-with-external-ref:@root",
+		Id:              "con1",
+		ExternalProject: "allowed-project",
+		ExternalId:      "con1",
+	},
+	{
+		Realm:           "project-with-external-ref:@root",
+		Id:              "con2",
+		ExternalProject: "forbidden-project",
+		ExternalId:      "con1",
+	},
+	{
+		Realm: "project-with-external-ref:@root",
+		Id:    "con3",
+		Builders: []*projectconfigpb.Builder{
+			{
+				Id: &buildbucketpb.BuilderID{
+					Project: "project-with-external-ref",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+			},
+		},
+	},
 }
 
 var builderSummaries = []*model.BuilderSummary{
@@ -160,6 +189,12 @@ var builderSummaries = []*model.BuilderSummary{
 		LastFinishedBuildID: "buildbucket/111113",
 		LastFinishedStatus:  milostatus.Canceled,
 	},
+	{
+		BuilderID:           "buildbucket/luci.project-with-external-ref.bucket/builder",
+		ProjectID:           "project-with-external-ref",
+		LastFinishedBuildID: "buildbucket/111114",
+		LastFinishedStatus:  milostatus.Failure,
+	},
 }
 
 var perms = []authtest.RealmPermission{
@@ -169,6 +204,10 @@ var perms = []authtest.RealmPermission{
 	},
 	{
 		Realm:      "other-allowed-project:bucket",
+		Permission: bbperms.BuildsList,
+	},
+	{
+		Realm:      "project-with-external-ref:bucket",
 		Permission: bbperms.BuildsList,
 	},
 }
@@ -511,6 +550,109 @@ func TestQueryConsoleSnapshots(t *testing.T) {
 			So(err, ShouldNotBeNil)
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 			So(res, ShouldBeNil)
+		})
+
+		Convey(`resolve external consoles`, func() {
+			ctx := auth.WithState(ctx, &authtest.FakeState{Identity: "user", IdentityPermissions: perms})
+
+			res, err := srv.QueryConsoleSnapshots(ctx, &milopb.QueryConsoleSnapshotsRequest{
+				Predicate: &milopb.ConsolePredicate{
+					Project: "project-with-external-ref",
+				},
+			})
+			So(err, ShouldBeNil)
+			So(res.Snapshots, ShouldResembleProto, []*milopb.ConsoleSnapshot{
+				{
+					Console: &projectconfigpb.Console{
+						Realm: "allowed-project:@root",
+						Id:    "con1",
+						Builders: []*projectconfigpb.Builder{
+							{
+								Id: &buildbucketpb.BuilderID{
+									Project: "allowed-project",
+									Bucket:  "bucket",
+									Builder: "builder",
+								},
+							},
+							{
+								Id: &buildbucketpb.BuilderID{
+									Project: "other-allowed-project",
+									Bucket:  "bucket",
+									Builder: "builder",
+								},
+							},
+						},
+					},
+					BuilderSnapshots: []*milopb.BuilderSnapshot{
+						{
+							Builder: &buildbucketpb.BuilderID{
+								Project: "allowed-project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+							Build: &buildbucketpb.Build{
+								Id: 111111,
+								Builder: &buildbucketpb.BuilderID{
+									Project: "allowed-project",
+									Bucket:  "bucket",
+									Builder: "builder",
+								},
+								Status: buildbucketpb.Status_INFRA_FAILURE,
+							},
+						},
+						{
+							Builder: &buildbucketpb.BuilderID{
+								Project: "other-allowed-project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+							Build: &buildbucketpb.Build{
+								Id: 111112,
+								Builder: &buildbucketpb.BuilderID{
+									Project: "other-allowed-project",
+									Bucket:  "bucket",
+									Builder: "builder",
+								},
+								Status: buildbucketpb.Status_SUCCESS,
+							},
+						},
+					},
+				},
+				{
+					Console: &projectconfigpb.Console{
+						Realm: "project-with-external-ref:@root",
+						Id:    "con3",
+						Builders: []*projectconfigpb.Builder{
+							{
+								Id: &buildbucketpb.BuilderID{
+									Project: "project-with-external-ref",
+									Bucket:  "bucket",
+									Builder: "builder",
+								},
+							},
+						},
+					},
+					BuilderSnapshots: []*milopb.BuilderSnapshot{
+						{
+							Builder: &buildbucketpb.BuilderID{
+								Project: "project-with-external-ref",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+							Build: &buildbucketpb.Build{
+								Id: 111114,
+								Builder: &buildbucketpb.BuilderID{
+									Project: "project-with-external-ref",
+									Bucket:  "bucket",
+									Builder: "builder",
+								},
+								Status: buildbucketpb.Status_FAILURE,
+							},
+						},
+					},
+				},
+			})
+			So(res.NextPageToken, ShouldBeEmpty)
 		})
 	})
 }
