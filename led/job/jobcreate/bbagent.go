@@ -19,28 +19,25 @@ import (
 
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/led/job"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
-func bbCommonFromTaskRequest(bb *job.Buildbucket, r *swarming.SwarmingRpcsNewTaskRequest) {
+func bbCommonFromTaskRequest(bb *job.Buildbucket, r *swarmingpb.NewTaskRequest) {
 	ts := r.TaskSlices[0]
 
 	bb.EnsureBasics()
 
-	bb.CipdPackages = cipdPins(ts.Properties.CipdInput)
+	bb.CipdPackages = ts.Properties.GetCipdInput().GetPackages()
 	bb.EnvVars = strPairs(ts.Properties.Env, func(key string) bool {
-		if key == "BUILDBUCKET_EXPERIMENTAL" {
-			return false
-		}
-		return true
+		return key != "BUILDBUCKET_EXPERIMENTAL"
 	})
-	bb.EnvPrefixes = strListPairs(ts.Properties.EnvPrefixes)
+	bb.EnvPrefixes = ts.Properties.EnvPrefixes
 
 	bb.BbagentArgs.Build.SchedulingTimeout = durationpb.New(
 		time.Second * time.Duration(r.ExpirationSecs))
 	bb.BotPingTolerance = durationpb.New(
 		time.Second * time.Duration(r.BotPingToleranceSecs))
 
-	bb.Containment = containmentFromSwarming(ts.Properties.Containment)
+	bb.Containment = ts.Properties.Containment
 }

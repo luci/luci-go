@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/led/job"
-	apipb "go.chromium.org/luci/swarming/proto/api"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func editCmd(opts cmdBaseOptions) *subcommands.Command {
@@ -172,11 +172,11 @@ func (c *cmdEdit) execute(ctx context.Context, _ *http.Client, _ auth.Options, i
 				} else {
 					pkg = ""
 					ver = ""
-					var digest *apipb.Digest
+					var digest *swarmingpb.Digest
 					if digest, err = job.ToCasDigest(c.recipeIsolate); err != nil {
 						return
 					}
-					je.CASTaskPayload("", &apipb.CASReference{Digest: digest})
+					je.CASTaskPayload("", &swarmingpb.CASReference{Digest: digest})
 				}
 				je.TaskPayloadSource(pkg, ver)
 			}

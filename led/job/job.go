@@ -25,7 +25,6 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/durationpb"
 	durpb "google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
@@ -36,7 +35,7 @@ import (
 	"go.chromium.org/luci/common/flag/flagenum"
 	"go.chromium.org/luci/led/job/experiments"
 	logdog_types "go.chromium.org/luci/logdog/common/types"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 type cipdInput struct {
@@ -183,10 +182,12 @@ func (ed *expiringDims) createWith(template *swarmingpb.TaskProperties) *swarmin
 
 	ret := proto.Clone(template).(*swarmingpb.TaskProperties)
 
-	newDims := make([]*swarmingpb.StringListPair, 0, len(ed.dimensions))
+	newDims := make([]*swarmingpb.StringPair, 0, len(ed.dimensions))
 	for _, key := range keysOf(ed.dimensions) {
-		newDims = append(newDims, &swarmingpb.StringListPair{
-			Key: key, Values: ed.dimensions[key].ToSortedSlice()})
+		for _, value := range ed.dimensions[key].ToSortedSlice() {
+			newDims = append(newDims, &swarmingpb.StringPair{
+				Key: key, Value: value})
+		}
 	}
 	ret.Dimensions = newDims
 
@@ -313,18 +314,18 @@ func (jd *Definition) generateCommand(ctx context.Context, ks KitchenSupport) ([
 	return append(ret, bbinput.Encode(bb.BbagentArgs)), nil
 }
 
-func (jd *Definition) generateCIPDInputs() (cipdInputs []*swarmingpb.CIPDPackage) {
-	cipdInputs = ([]*swarmingpb.CIPDPackage)(nil)
+func (jd *Definition) generateCIPDPackages() (cipdPackages []*swarmingpb.CipdPackage) {
+	cipdPackages = ([]*swarmingpb.CipdPackage)(nil)
 	bb := jd.GetBuildbucket()
 	if !bb.BbagentDownloadCIPDPkgs() {
-		cipdInputs = append(cipdInputs, bb.CipdPackages...)
+		cipdPackages = append(cipdPackages, bb.CipdPackages...)
 		return
 	}
 
 	if agentSrc := bb.BbagentArgs.GetBuild().GetInfra().GetBuildbucket().GetAgent().GetSource(); agentSrc != nil {
 		if cipdSource := agentSrc.GetCipd(); cipdSource != nil {
-			cipdInputs = append(cipdInputs, &swarmingpb.CIPDPackage{
-				DestPath:    ".",
+			cipdPackages = append(cipdPackages, &swarmingpb.CipdPackage{
+				Path:        ".",
 				PackageName: cipdSource.Package,
 				Version:     cipdSource.Version,
 			})
@@ -383,7 +384,7 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 	}
 	sw := &Swarming{
 		Hostname: jd.Info().SwarmingHostname(),
-		Task: &swarmingpb.TaskRequest{
+		Task: &swarmingpb.NewTaskRequest{
 			Name:           jd.Info().TaskName(),
 			Realm:          fmt.Sprintf("%s:%s", project, bucket),
 			ParentTaskId:   parentTaskId,
@@ -414,19 +415,21 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 		}
 	}
 	baseProperties := &swarmingpb.TaskProperties{
-		CipdInputs:   jd.generateCIPDInputs(),
+		CipdInput: &swarmingpb.CipdInput{
+			Packages: jd.generateCIPDPackages(),
+		},
 		CasInputRoot: casUserPayload,
 
-		EnvPaths:         bb.EnvPrefixes,
-		ExecutionTimeout: bb.BbagentArgs.Build.ExecutionTimeout,
+		EnvPrefixes:          bb.EnvPrefixes,
+		ExecutionTimeoutSecs: int32(bb.BbagentArgs.Build.ExecutionTimeout.GetSeconds()),
 
 		// TODO(iannucci): When build creation is done in Go, share this 3 minute
 		// constant between here and there.  Or, better, implement CreateBuild so we
 		// don't have to do this at all.
-		GracePeriod: durationpb.New(bb.BbagentArgs.Build.GracePeriod.AsDuration() + (3 * time.Minute)),
+		GracePeriodSecs: int32(bb.BbagentArgs.Build.GracePeriod.GetSeconds()) + 180,
 	}
 
-	if bb.Containment.GetContainmentType() != swarmingpb.Containment_NOT_SPECIFIED {
+	if bb.Containment.GetContainmentType() != swarmingpb.ContainmentType_NOT_SPECIFIED {
 		baseProperties.Containment = bb.Containment
 	}
 
@@ -442,11 +445,11 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 	}
 
 	if caches := bb.BbagentArgs.Build.Infra.Swarming.GetCaches(); len(caches) > 0 {
-		baseProperties.NamedCaches = make([]*swarmingpb.NamedCacheEntry, len(caches))
+		baseProperties.Caches = make([]*swarmingpb.CacheEntry, len(caches))
 		for i, cache := range caches {
-			baseProperties.NamedCaches[i] = &swarmingpb.NamedCacheEntry{
-				Name:     cache.Name,
-				DestPath: path.Join(bb.CacheDir(), cache.Path),
+			baseProperties.Caches[i] = &swarmingpb.CacheEntry{
+				Name: cache.Name,
+				Path: path.Join(bb.CacheDir(), cache.Path),
 			}
 		}
 	}
@@ -457,17 +460,17 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 	}
 
 	if exe := bb.BbagentArgs.Build.Exe; exe.GetCipdPackage() != "" && !bb.BbagentDownloadCIPDPkgs() {
-		baseProperties.CipdInputs = append(baseProperties.CipdInputs, &swarmingpb.CIPDPackage{
+		baseProperties.CipdInput.Packages = append(baseProperties.CipdInput.Packages, &swarmingpb.CipdPackage{
 			PackageName: exe.CipdPackage,
 			Version:     exe.CipdVersion,
-			DestPath:    bb.PayloadPath(),
+			Path:        bb.PayloadPath(),
 		})
 	}
 
 	for i, dat := range expiringDims {
 		sw.Task.TaskSlices[i] = &swarmingpb.TaskSlice{
-			Expiration: durationpb.New(dat.relative),
-			Properties: dat.createWith(baseProperties),
+			ExpirationSecs: int32(dat.relative.Seconds()),
+			Properties:     dat.createWith(baseProperties),
 		}
 	}
 

@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	api "go.chromium.org/luci/swarming/proto/api"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -64,52 +64,52 @@ func TestGetCurrentIsolated(t *testing.T) {
 			}
 			current, err := jd.Info().CurrentIsolated()
 			So(err, ShouldBeNil)
-			So(current, ShouldResembleProto, &api.CASReference{Digest: &api.Digest{Hash: "hash"}})
+			So(current, ShouldResembleProto, &swarmingpb.CASReference{Digest: &swarmingpb.Digest{Hash: "hash"}})
 		})
 
 		Convey(`Swarming`, func() {
 			Convey(`rbe-cas`, func() {
 				Convey(`one slice`, func() {
 					jd := testSWJob()
-					jd.GetSwarming().Task = &api.TaskRequest{
-						TaskSlices: []*api.TaskSlice{
+					jd.GetSwarming().Task = &swarmingpb.NewTaskRequest{
+						TaskSlices: []*swarmingpb.TaskSlice{
 							{
-								Properties: &api.TaskProperties{CasInputRoot: &api.CASReference{
-									Digest: &api.Digest{Hash: "hash"},
+								Properties: &swarmingpb.TaskProperties{CasInputRoot: &swarmingpb.CASReference{
+									Digest: &swarmingpb.Digest{Hash: "hash"},
 								}},
 							},
 						},
 					}
 					current, err := jd.Info().CurrentIsolated()
 					So(err, ShouldBeNil)
-					So(current, ShouldResembleProto, &api.CASReference{Digest: &api.Digest{Hash: "hash"}})
+					So(current, ShouldResembleProto, &swarmingpb.CASReference{Digest: &swarmingpb.Digest{Hash: "hash"}})
 				})
 
 				Convey(`slice+CasUserPayload (match)`, func() {
 					jd := testSWJob()
-					jd.GetSwarming().CasUserPayload = &api.CASReference{CasInstance: "instance"}
-					jd.GetSwarming().Task = &api.TaskRequest{
-						TaskSlices: []*api.TaskSlice{
+					jd.GetSwarming().CasUserPayload = &swarmingpb.CASReference{CasInstance: "instance"}
+					jd.GetSwarming().Task = &swarmingpb.NewTaskRequest{
+						TaskSlices: []*swarmingpb.TaskSlice{
 							{
-								Properties: &api.TaskProperties{CasInputRoot: &api.CASReference{
-									Digest: &api.Digest{Hash: "hash"},
+								Properties: &swarmingpb.TaskProperties{CasInputRoot: &swarmingpb.CASReference{
+									Digest: &swarmingpb.Digest{Hash: "hash"},
 								}},
 							},
 						},
 					}
 					current, err := jd.Info().CurrentIsolated()
 					So(err, ShouldBeNil)
-					So(current, ShouldResembleProto, &api.CASReference{Digest: &api.Digest{Hash: "hash"}})
+					So(current, ShouldResembleProto, &swarmingpb.CASReference{Digest: &swarmingpb.Digest{Hash: "hash"}})
 				})
 
 				Convey(`slice+CasUserPayload (mismatch)`, func() {
 					jd := testSWJob()
-					jd.GetSwarming().CasUserPayload = &api.CASReference{Digest: &api.Digest{Hash: "new hash"}}
-					jd.GetSwarming().Task = &api.TaskRequest{
-						TaskSlices: []*api.TaskSlice{
+					jd.GetSwarming().CasUserPayload = &swarmingpb.CASReference{Digest: &swarmingpb.Digest{Hash: "new hash"}}
+					jd.GetSwarming().Task = &swarmingpb.NewTaskRequest{
+						TaskSlices: []*swarmingpb.TaskSlice{
 							{
-								Properties: &api.TaskProperties{CasInputRoot: &api.CASReference{
-									Digest: &api.Digest{Hash: "hash"},
+								Properties: &swarmingpb.TaskProperties{CasInputRoot: &swarmingpb.CASReference{
+									Digest: &swarmingpb.Digest{Hash: "hash"},
 								}},
 							},
 						},

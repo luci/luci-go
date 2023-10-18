@@ -17,7 +17,7 @@ package job
 import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // Editor represents low-level mutations you can make on a job.Definition.

@@ -20,17 +20,15 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	swarmbucket "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
-	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/grpc/prpc"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
-func newSwarmClient(authClient *http.Client, host string) *swarming.Service {
-	swarm, err := swarming.New(authClient)
-	if err != nil {
-		panic(err)
-	}
-	swarm.BasePath = fmt.Sprintf("https://%s/_ah/api/swarming/v1/", host)
-	return swarm
+func newSwarmTasksClient(authClient *http.Client, host string) swarmingpb.TasksClient {
+	return swarmingpb.NewTasksClient(&prpc.Client{
+		C:    authClient,
+		Host: host,
+	})
 }
 
 func newSwarmbucketClient(authClient *http.Client, host string) *swarmbucket.Service {

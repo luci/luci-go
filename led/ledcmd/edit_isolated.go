@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	apipb "go.chromium.org/luci/swarming/proto/api"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 
 	"go.chromium.org/luci/led/job"
 )
@@ -157,7 +157,7 @@ func newCASClient(ctx context.Context, authOpts auth.Options, jd *job.Definition
 	return casclient.NewLegacy(ctx, casclient.AddrProd, casInstance, authOpts, false)
 }
 
-func downloadFromCas(ctx context.Context, casRef *apipb.CASReference, casClient *client.Client, tdir string) error {
+func downloadFromCas(ctx context.Context, casRef *swarmingpb.CASReference, casClient *client.Client, tdir string) error {
 	if casRef.GetDigest().GetHash() == "" {
 		return nil
 	}
@@ -173,7 +173,7 @@ func downloadFromCas(ctx context.Context, casRef *apipb.CASReference, casClient 
 	return nil
 }
 
-func uploadToCas(ctx context.Context, client *client.Client, dir string) (*apipb.CASReference, error) {
+func uploadToCas(ctx context.Context, client *client.Client, dir string) (*swarmingpb.CASReference, error) {
 	is := command.InputSpec{
 		Inputs: []string{"."}, // entire dir
 	}
@@ -186,9 +186,9 @@ func uploadToCas(ctx context.Context, client *client.Client, dir string) (*apipb
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to upload items").Err()
 	}
-	return &apipb.CASReference{
+	return &swarmingpb.CASReference{
 		CasInstance: client.InstanceName,
-		Digest: &apipb.Digest{
+		Digest: &swarmingpb.Digest{
 			Hash:      rootDg.Hash,
 			SizeBytes: rootDg.Size,
 		},
