@@ -52,5 +52,5 @@
       "@root/*": ["./*"],
     }
   },
-  "exclude": ["node_modules", "cypress.config.ts", "out"]
+  "exclude": ["node_modules", "out"]
 }

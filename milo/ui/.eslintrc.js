@@ -174,17 +174,7 @@ module.exports = {
       extends: ['plugin:jest/recommended'],
     },
     {
-      files: ['cypress/**'],
-      plugins: ['cypress'],
-      extends: ['plugin:cypress/recommended'],
-    },
-    {
-      files: [
-        'src/**/*.test.ts',
-        'src/**/*.test.tsx',
-        'cypress/**',
-        '**/testing_tools/**',
-      ],
+      files: ['src/**/*.test.ts', 'src/**/*.test.tsx', '**/testing_tools/**'],
       rules: {
         // Allow assertion to make it easier to write test cases.
         // All incorrect assertion will be caught during test execution anyway.
