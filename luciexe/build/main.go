@@ -181,9 +181,7 @@ func main(ctx context.Context, args []string, stdin io.Reader, inputMsg proto.Me
 	}
 
 	runUserCb(ictx, userArgs, state, cb)
-	// TODO(crbug.com/1450399): Only check state.buildPb.Output.Status
-	// after recipe_engine change is fully rolled out.
-	if state.buildPb.Output.Status != bbpb.Status_SUCCESS || state.buildPb.Status != bbpb.Status_SUCCESS {
+	if state.buildPb.Output.Status != bbpb.Status_SUCCESS {
 		return errNonSuccess
 	}
 	return nil

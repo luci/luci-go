@@ -299,7 +299,7 @@ func (s *State) excludeCopy(cb func() bool) {
 		s.buildPbMu.RLock()
 		defer s.buildPbMu.RUnlock()
 
-		if protoutil.IsEnded(s.buildPb.Output.Status) || protoutil.IsEnded(s.buildPb.Status) {
+		if protoutil.IsEnded(s.buildPb.Output.Status) {
 			panic(errors.New("cannot mutate ended build"))
 		}
 	}
@@ -317,7 +317,7 @@ func (s *State) mutate(cb func() bool) {
 		s.buildPbMu.Lock()
 		defer s.buildPbMu.Unlock()
 
-		if protoutil.IsEnded(s.buildPb.Output.Status) || protoutil.IsEnded(s.buildPb.Status) {
+		if protoutil.IsEnded(s.buildPb.Output.Status) {
 			panic(errors.New("cannot mutate ended build"))
 		}
 	}

@@ -83,14 +83,14 @@ func TestProcessFinalBuild(t *testing.T) {
 			processFinalBuild(now, build)
 			So(build, ShouldResembleProto, &bbpb.Build{
 				SummaryMarkdown: ("\n\nError in build protocol: " +
-					"Expected a terminal build status, got STATUS_UNSPECIFIED."),
+					"Expected a terminal build status, got STATUS_UNSPECIFIED, while top level status is STATUS_UNSPECIFIED."),
 				UpdateTime: now,
 				EndTime:    now,
 				Status:     bbpb.Status_INFRA_FAILURE,
 				Output: &bbpb.Build_Output{
 					Status: bbpb.Status_INFRA_FAILURE,
 					SummaryMarkdown: ("\n\nError in build protocol: " +
-						"Expected a terminal build status, got STATUS_UNSPECIFIED."),
+						"Expected a terminal build status, got STATUS_UNSPECIFIED, while top level status is STATUS_UNSPECIFIED."),
 				},
 			})
 		})

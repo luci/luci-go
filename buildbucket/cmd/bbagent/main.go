@@ -142,14 +142,13 @@ func checkReport(ctx context.Context, c clientInput, err error) {
 			ctx,
 			&bbpb.UpdateBuildRequest{
 				Build: &bbpb.Build{
-					Id:     c.input.Build.Id,
-					Status: bbpb.Status_INFRA_FAILURE,
+					Id: c.input.Build.Id,
 					Output: &bbpb.Build_Output{
 						Status:          bbpb.Status_INFRA_FAILURE,
 						SummaryMarkdown: fmt.Sprintf("fatal error in startup: %s", err),
 					},
 				},
-				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status", "build.output.status", "build.output.summary_markdown"}},
+				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.output.status", "build.output.summary_markdown"}},
 			}); bbErr != nil {
 			logging.Errorf(ctx, "Failed to report INFRA_FAILURE status to Buildbucket: %s", bbErr)
 		}
@@ -163,13 +162,12 @@ func cancelBuild(ctx context.Context, bbclient BuildsClient, bld *bbpb.Build) (r
 		ctx,
 		&bbpb.UpdateBuildRequest{
 			Build: &bbpb.Build{
-				Id:     bld.Id,
-				Status: bbpb.Status_CANCELED,
+				Id: bld.Id,
 				Output: &bbpb.Build_Output{
 					Status: bbpb.Status_CANCELED,
 				},
 			},
-			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status", "build.output.status"}},
+			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.output.status"}},
 		})
 	if err != nil {
 		logging.Errorf(ctx, "failed to actually cancel the build: %s", err)
@@ -390,12 +388,11 @@ func downloadInputs(ctx context.Context, cwd string, c clientInput) int {
 		logging.Errorf(ctx, "Failure in installing user packages: %s", err)
 		agent.Output.Status = bbpb.Status_FAILURE
 		agent.Output.SummaryHtml = err.Error()
-		updateReq.Build.Status = bbpb.Status_INFRA_FAILURE
 		updateReq.Build.Output = &bbpb.Build_Output{
 			Status:          bbpb.Status_INFRA_FAILURE,
 			SummaryMarkdown: "Failed to install user packages for this build",
 		}
-		updateReq.UpdateMask.Paths = append(updateReq.UpdateMask.Paths, "build.status", "build.output.status", "build.output.summary_markdown")
+		updateReq.UpdateMask.Paths = append(updateReq.UpdateMask.Paths, "build.output.status", "build.output.summary_markdown")
 	} else {
 		agent.Output.Status = bbpb.Status_SUCCESS
 		if c.input.Build.Exe != nil {
@@ -620,13 +617,12 @@ func mainImpl() int {
 			cctx,
 			&bbpb.UpdateBuildRequest{
 				Build: &bbpb.Build{
-					Id:     bbclientInput.input.Build.Id,
-					Status: bbpb.Status_STARTED,
+					Id: bbclientInput.input.Build.Id,
 					Output: &bbpb.Build_Output{
 						Status: bbpb.Status_STARTED,
 					},
 				},
-				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status", "build.output.status"}},
+				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.output.status"}},
 				Mask:       readMask,
 			})
 		check(ctx, errors.Annotate(err, "failed to report status STARTED to Buildbucket").Err())
@@ -792,11 +788,7 @@ func mainImpl() int {
 	buildsCh.CloseAndDrain(cctx)
 
 	// Now that the builds channel has been closed, update bb directly.
-	// TODO(crbug.com/4698582): use build.output.status instead when changing
-	// luciexe to update Build.Output.Status instead of Build.Status.
 	updateMask := []string{
-		"build.status",
-		"build.status_details",
 		"build.output.status",
 		"build.output.status_details",
 		"build.summary_markdown",

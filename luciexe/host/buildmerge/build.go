@@ -58,18 +58,10 @@ func setErrorOnBuild(build *bbpb.Build, err error) {
 // If this needs to make adjustments to `build.Steps`, it will make shallow
 // copies of Steps, as well as the individual steps which need modification.
 func processFinalBuild(now *timestamppb.Timestamp, build *bbpb.Build) {
-	// TODO(crbug.com/1450399): directly check build.Output.Status
-	// after recipe_engine change is fully rolled out.
-	if !protoutil.IsEnded(build.Output.GetStatus()) && build.Output.GetStatus() != build.Status {
-		if build.Output == nil {
-			build.Output = &bbpb.Build_Output{}
-		}
-		build.Output.Status = build.Status
-	}
 	if !protoutil.IsEnded(build.Output.GetStatus()) {
 		setErrorOnBuild(build, errors.Reason(
-			"Expected a terminal build status, got %s.",
-			build.Output.GetStatus()).Err())
+			"Expected a terminal build status, got %s, while top level status is %s.",
+			build.Output.GetStatus(), build.Status).Err())
 	}
 
 	// Mark incomplete steps as canceled and set EndTime for all steps missing it.

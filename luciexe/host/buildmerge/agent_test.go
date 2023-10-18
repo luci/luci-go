@@ -253,7 +253,7 @@ func TestAgent(t *testing.T) {
 				expect.EndTime = now
 				expect.Status = bbpb.Status_INFRA_FAILURE
 				expect.Output.Status = bbpb.Status_INFRA_FAILURE
-				expect.SummaryMarkdown = "\n\nError in build protocol: Expected a terminal build status, got STATUS_UNSPECIFIED."
+				expect.SummaryMarkdown = "\n\nError in build protocol: Expected a terminal build status, got STATUS_UNSPECIFIED, while top level status is STATUS_UNSPECIFIED."
 				expect.Output.SummaryMarkdown = expect.SummaryMarkdown
 				for _, step := range expect.Steps {
 					step.EndTime = now
@@ -262,7 +262,7 @@ func TestAgent(t *testing.T) {
 						step.SummaryMarkdown = "step was never finalized; did the build crash?"
 					} else {
 						step.Status = bbpb.Status_INFRA_FAILURE
-						step.SummaryMarkdown = "\n\nError in build protocol: Expected a terminal build status, got STATUS_UNSPECIFIED."
+						step.SummaryMarkdown = "\n\nError in build protocol: Expected a terminal build status, got STATUS_UNSPECIFIED, while top level status is STATUS_UNSPECIFIED."
 					}
 				}
 				So(getFinal(), ShouldResembleProto, expect)
@@ -307,14 +307,14 @@ func TestAgent(t *testing.T) {
 					expect.EndTime = now
 					expect.Status = bbpb.Status_INFRA_FAILURE
 					expect.Output.Status = bbpb.Status_INFRA_FAILURE
-					expect.SummaryMarkdown = "\n\nError in build protocol: Expected a terminal build status, got STATUS_UNSPECIFIED."
+					expect.SummaryMarkdown = "\n\nError in build protocol: Expected a terminal build status, got STATUS_UNSPECIFIED, while top level status is STATUS_UNSPECIFIED."
 					expect.Output.SummaryMarkdown = expect.SummaryMarkdown
 					for _, step := range expect.Steps {
 						step.EndTime = now
 						switch step.Name {
 						case "Merge", "Merge|SuperDeep":
 							step.Status = bbpb.Status_INFRA_FAILURE
-							step.SummaryMarkdown = "\n\nError in build protocol: Expected a terminal build status, got STATUS_UNSPECIFIED."
+							step.SummaryMarkdown = "\n\nError in build protocol: Expected a terminal build status, got STATUS_UNSPECIFIED, while top level status is STATUS_UNSPECIFIED."
 						default:
 							step.Status = bbpb.Status_CANCELED
 							step.SummaryMarkdown = "step was never finalized; did the build crash?"
@@ -344,7 +344,7 @@ func TestAgent(t *testing.T) {
 					expect.EndTime = now
 					expect.Status = bbpb.Status_INFRA_FAILURE
 					expect.Output.Status = bbpb.Status_INFRA_FAILURE
-					expect.SummaryMarkdown = "\n\nError in build protocol: Expected a terminal build status, got STATUS_UNSPECIFIED."
+					expect.SummaryMarkdown = "\n\nError in build protocol: Expected a terminal build status, got STATUS_UNSPECIFIED, while top level status is STATUS_UNSPECIFIED."
 					expect.Output.SummaryMarkdown = expect.SummaryMarkdown
 					expect.Steps = nil
 					expect.Steps = append(expect.Steps,

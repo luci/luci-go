@@ -315,7 +315,7 @@ func TestBuildState(t *testing.T) {
 						build: &bbpb.Build{
 							SummaryMarkdown: ("some stuff\n\nError in build protocol: " +
 								"Expected a terminal build status, " +
-								"got STATUS_UNSPECIFIED."),
+								"got STATUS_UNSPECIFIED, while top level status is STATUS_UNSPECIFIED."),
 							Status: bbpb.Status_INFRA_FAILURE,
 							Steps: []*bbpb.Step{
 								{Name: "Parent", EndTime: now, Status: bbpb.Status_CANCELED,
@@ -341,7 +341,7 @@ func TestBuildState(t *testing.T) {
 								Status: bbpb.Status_INFRA_FAILURE,
 								SummaryMarkdown: ("some stuff\n\nError in build protocol: " +
 									"Expected a terminal build status, " +
-									"got STATUS_UNSPECIFIED."),
+									"got STATUS_UNSPECIFIED, while top level status is STATUS_UNSPECIFIED."),
 							},
 						},
 					})
