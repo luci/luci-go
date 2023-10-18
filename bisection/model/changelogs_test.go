@@ -16,8 +16,10 @@ package model
 
 import (
 	"testing"
+	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestChangeLogs(t *testing.T) {
@@ -49,5 +51,22 @@ func TestChangeLogs(t *testing.T) {
 		reviewTitle, err = cl.GetReviewTitle()
 		So(err, ShouldBeNil)
 		So(reviewTitle, ShouldEqual, "Use TestActivationManager for all page activations")
+	})
+
+	Convey("Get commit time", t, func() {
+		cl := &ChangeLog{
+			Message: "",
+		}
+		_, err := cl.GetCommitTime()
+		So(err, ShouldNotBeNil)
+
+		cl = &ChangeLog{
+			Committer: ChangeLogActor{
+				Time: "Tue Oct 17 07:06:57 2023",
+			},
+		}
+		commitTime, err := cl.GetCommitTime()
+		So(err, ShouldBeNil)
+		So(commitTime, ShouldEqual, timestamppb.New(time.Date(2023, time.October, 17, 7, 6, 57, 0, time.UTC)))
 	})
 }

@@ -60,14 +60,23 @@ func TestRunBisector(t *testing.T) {
 			{
 				Commit:  "3426",
 				Message: "Use TestActivationManager for all page activations\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472131\nReviewed-by: blah blah\n",
+				Committer: model.ChangeLogActor{
+					Time: "Tue Oct 17 07:06:57 2023",
+				},
 			},
 			{
 				Commit:  "3425",
 				Message: "Second Commit\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472130\nReviewed-by: blah blah\n",
+				Committer: model.ChangeLogActor{
+					Time: "Tue Oct 17 07:06:57 2023",
+				},
 			},
 			{
 				Commit:  "3424",
 				Message: "Third Commit\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472129\nReviewed-by: blah blah\n",
+				Committer: model.ChangeLogActor{
+					Time: "Tue Oct 17 07:06:57 2023",
+				},
 			},
 		},
 	}
@@ -78,10 +87,16 @@ func TestRunBisector(t *testing.T) {
 			{
 				Commit:  "3426",
 				Message: "Use TestActivationManager for all page activations\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472131\nReviewed-by: blah blah\n",
+				Committer: model.ChangeLogActor{
+					Time: "Tue Oct 17 07:06:57 2023",
+				},
 			},
 			{
 				Commit:  "3425",
 				Message: "Second Commit\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472130\nReviewed-by: blah blah\n",
+				Committer: model.ChangeLogActor{
+					Time: "Tue Oct 17 07:06:57 2023",
+				},
 			},
 		},
 	}
@@ -332,12 +347,14 @@ func TestRunBisector(t *testing.T) {
 						ReviewTitle: "Use TestActivationManager for all page activations",
 						ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472131",
 						Position:    3,
+						CommitTime:  timestamppb.New(time.Date(2023, time.October, 17, 7, 6, 57, 0, time.UTC)),
 					},
 					{
 						Commit:      "3425",
 						ReviewTitle: "Second Commit",
 						ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472130",
 						Position:    2,
+						CommitTime:  timestamppb.New(time.Date(2023, time.October, 17, 7, 6, 57, 0, time.UTC)),
 					},
 				},
 				LastPassCommit: &pb.BlameListSingleCommit{
@@ -345,6 +362,7 @@ func TestRunBisector(t *testing.T) {
 					ReviewTitle: "Third Commit",
 					ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472129",
 					Position:    1,
+					CommitTime:  timestamppb.New(time.Date(2023, time.October, 17, 7, 6, 57, 0, time.UTC)),
 				},
 			},
 		})
@@ -512,6 +530,7 @@ func TestRunBisector(t *testing.T) {
 						ReviewTitle: "Use TestActivationManager for all page activations",
 						ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472131",
 						Position:    2,
+						CommitTime:  timestamppb.New(time.Date(2023, time.October, 17, 7, 6, 57, 0, time.UTC)),
 					},
 				},
 				LastPassCommit: &pb.BlameListSingleCommit{
@@ -519,6 +538,7 @@ func TestRunBisector(t *testing.T) {
 					ReviewTitle: "Second Commit",
 					ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472130",
 					Position:    1,
+					CommitTime:  timestamppb.New(time.Date(2023, time.October, 17, 7, 6, 57, 0, time.UTC)),
 				},
 			},
 			CulpritKey: datastore.KeyForObj(ctx, suspect),
@@ -539,6 +559,7 @@ func TestRunBisector(t *testing.T) {
 			},
 			AnalysisType:       pb.AnalysisType_TEST_FAILURE_ANALYSIS,
 			VerificationStatus: model.SuspectVerificationStatus_Unverified,
+			CommitTime:         time.Date(2023, time.October, 17, 7, 6, 57, 0, time.UTC),
 		})
 
 		// Check that no rerun models were created.

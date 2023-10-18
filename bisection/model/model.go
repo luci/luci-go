@@ -307,6 +307,10 @@ type Suspect struct {
 	// Type of the suspect.
 	AnalysisType pb.AnalysisType `gae:"analysis_type"`
 
+	// The time that this suspect was committed.
+	// For now, it is only populated for test failure suspects.
+	CommitTime time.Time `gae:"commit_time"`
+
 	// For backward compatibility due to removed fields.
 	// See https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/gae/service/datastore/pls.go;l=100
 	_ datastore.PropertyMap `gae:"-,extra"`

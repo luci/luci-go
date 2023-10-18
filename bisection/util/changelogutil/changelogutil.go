@@ -70,10 +70,17 @@ func changelogToCommit(ctx context.Context, cl *model.ChangeLog) *pb.BlameListSi
 		logging.Errorf(ctx, "Error getting review title: %s", err)
 	}
 
+	commitTime, err := cl.GetCommitTime()
+	if err != nil {
+		// Just log, this is informational.
+		logging.Errorf(ctx, "Error getting commit time: %s", err)
+	}
+
 	return &pb.BlameListSingleCommit{
 		Commit:      cl.Commit,
 		ReviewUrl:   reviewURL,
 		ReviewTitle: reviewTitle,
+		CommitTime:  commitTime,
 	}
 }
 

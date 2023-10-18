@@ -17,6 +17,10 @@ package model
 import (
 	"fmt"
 	"regexp"
+	"time"
+
+	"go.chromium.org/luci/common/errors"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // ChangeLog represents the changes of a revision
@@ -80,4 +84,14 @@ func (cl *ChangeLog) GetReviewTitle() (string, error) {
 		return "", fmt.Errorf("Could not find review title. Message: %s", cl.Message)
 	}
 	return matches[1], nil
+}
+
+func (cl *ChangeLog) GetCommitTime() (*timestamppb.Timestamp, error) {
+	timeStr := cl.Committer.Time
+	layout := "Mon Jan 02 15:04:05 2006"
+	parsedTime, err := time.ParseInLocation(layout, timeStr, time.UTC)
+	if err != nil {
+		return nil, errors.Annotate(err, "parse time %s", timeStr).Err()
+	}
+	return timestamppb.New(parsedTime), nil
 }

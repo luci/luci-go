@@ -67,6 +67,8 @@ message BlameListSingleCommit {
   // Commit position of this commit.
   // This field is currently only set for test failure analysis blamelist.
   int64 position = 4;
+  // Commit time of this commit.
+  google.protobuf.Timestamp commit_time = 5;
 }
 
 message NthSectionSuspect {

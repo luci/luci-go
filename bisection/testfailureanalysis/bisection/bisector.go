@@ -266,6 +266,7 @@ func saveSuspectAndUpdateNthSection(ctx context.Context, tfa *model.TestFailureA
 		ReviewUrl:          blCommit.ReviewUrl,
 		ReviewTitle:        blCommit.ReviewTitle,
 		AnalysisType:       pb.AnalysisType_TEST_FAILURE_ANALYSIS,
+		CommitTime:         blCommit.GetCommitTime().AsTime(),
 	}
 	err = datastore.Put(ctx, suspect)
 	if err != nil {

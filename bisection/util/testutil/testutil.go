@@ -21,6 +21,7 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
@@ -32,7 +33,8 @@ func CreateBlamelist(nCommits int) *pb.BlameList {
 	blamelist := &pb.BlameList{}
 	for i := 0; i < nCommits; i++ {
 		blamelist.Commits = append(blamelist.Commits, &pb.BlameListSingleCommit{
-			Commit: fmt.Sprintf("commit%d", i),
+			Commit:     fmt.Sprintf("commit%d", i),
+			CommitTime: timestamppb.New(time.Unix(int64(i+1000), 0)),
 		})
 	}
 	blamelist.LastPassCommit = &pb.BlameListSingleCommit{
