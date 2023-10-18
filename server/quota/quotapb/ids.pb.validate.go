@@ -637,6 +637,17 @@ func (m *AccountID) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	if strings.Contains(m.GetIdentity(), "~") {
+		err := AccountIDValidationError{
+			field:  "Identity",
+			reason: "value contains substring \"~\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if strings.Contains(m.GetNamespace(), "~") {
 		err := AccountIDValidationError{
 			field:  "Namespace",

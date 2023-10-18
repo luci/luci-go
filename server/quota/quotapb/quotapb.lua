@@ -231,31 +231,40 @@ PB.M = {
         acc[2] = val
       end
 
-      val = obj["namespace"] -- 3: string
+      val = obj["identity"] -- 3: string
+      if val ~= "" then
+        local T = type(val)
+        if T ~= "string" then
+          error("field identity: expected string, but got "..T)
+        end
+        acc[3] = val
+      end
+
+      val = obj["namespace"] -- 4: string
       if val ~= "" then
         local T = type(val)
         if T ~= "string" then
           error("field namespace: expected string, but got "..T)
         end
-        acc[3] = val
+        acc[4] = val
       end
 
-      val = obj["name"] -- 4: string
+      val = obj["name"] -- 5: string
       if val ~= "" then
         local T = type(val)
         if T ~= "string" then
           error("field name: expected string, but got "..T)
         end
-        acc[4] = val
+        acc[5] = val
       end
 
-      val = obj["resource_type"] -- 5: string
+      val = obj["resource_type"] -- 6: string
       if val ~= "" then
         local T = type(val)
         if T ~= "string" then
           error("field resource_type: expected string, but got "..T)
         end
-        acc[5] = val
+        acc[6] = val
       end
 
       local unknown = obj["$unknown"]
@@ -272,6 +281,7 @@ PB.M = {
         ["$type"] = "go.chromium.org.luci.server.quota.quotapb.AccountID",
         ["app_id"] = "",
         ["realm"] = "",
+        ["identity"] = "",
         ["namespace"] = "",
         ["name"] = "",
         ["resource_type"] = "",
@@ -315,7 +325,26 @@ PB.M = {
           end
           ret["realm"] = val
         end,
-        [3] = function(val) -- namespace: string
+        [3] = function(val) -- identity: string
+          local T = type(val)
+          if T == "number" then
+            if not PB.internUnmarshalTable then
+              error("field identity: failed to look up interned string: intern table not set")
+            end
+            local origval = val
+            local newval = PB.internUnmarshalTable[val]
+            if newval == nil then
+              error("field identity: failed to look up interned string: "..origval)
+            end
+            val = newval
+            T = type(val)
+          end
+          if T ~= "string" then
+            error("field identity: expected string, but got "..T)
+          end
+          ret["identity"] = val
+        end,
+        [4] = function(val) -- namespace: string
           local T = type(val)
           if T == "number" then
             if not PB.internUnmarshalTable then
@@ -334,7 +363,7 @@ PB.M = {
           end
           ret["namespace"] = val
         end,
-        [4] = function(val) -- name: string
+        [5] = function(val) -- name: string
           local T = type(val)
           if T == "number" then
             if not PB.internUnmarshalTable then
@@ -353,7 +382,7 @@ PB.M = {
           end
           ret["name"] = val
         end,
-        [5] = function(val) -- resource_type: string
+        [6] = function(val) -- resource_type: string
           local T = type(val)
           if T == "number" then
             if not PB.internUnmarshalTable then
@@ -386,6 +415,7 @@ PB.M = {
     keys = {
       ["app_id"] = true,
       ["realm"] = true,
+      ["identity"] = true,
       ["namespace"] = true,
       ["name"] = true,
       ["resource_type"] = true,

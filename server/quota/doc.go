@@ -278,14 +278,17 @@
 // be used for debugging or manual intervention (rather than directly poking the
 // underlying Redis data).
 //
+// The `self` binding context attribute has the value "1" if the Account ID's
+// identity field matches the current auth identity, "0" otherwise.
+//
 // Access via this service is granted via realm permissions:
 //   - quota.accounts.read - Allows reading single accounts within a realm.
-//     Binding context: {app_id, resource_type, namespace}
+//     Binding context: {app_id, resource_type, namespace, self}
 //   - quota.accounts.list - Allows listing accounts
 //     Binding context: {app_id, resource_type, namespace}
 //   - quota.accounts.write - Allows modifying accounts. Note that this only
 //     applies to accounts which do not have the option ABSOLUTE_RESOURCE.
-//     Binding context: {app_id, resource_type, namespace}
+//     Binding context: {app_id, resource_type, namespace, self}
 //   - quota.policies.read - Allows reading policy contents.
 //     Binding context: {app_id}
 //   - quota.policies.write - Allows writing new content-addressed policy

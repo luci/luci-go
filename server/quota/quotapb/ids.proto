@@ -149,6 +149,19 @@ message AccountID {
     (validate.rules).string.not_contains = "~"
   ];
 
+  // The LUCI Auth identity that this Account belongs to, or "" if the account
+  // is not owned by a specific identity.
+  //
+  // Identities look like:
+  //   * anonymous:anonymous
+  //   * bot:...
+  //   * project:...
+  //   * service:...
+  //   * user:...
+  string identity = 3 [
+    (validate.rules).string.not_contains = "~"
+  ];
+
   // The namespace of the Account (ASI).
   //
   // Used by the application to logically separate multiple account groups
@@ -157,16 +170,19 @@ message AccountID {
   // Examples:
   //   cqGroupName
   //   RPCService.RPCName
-  string namespace = 3 [
+  string namespace = 4 [
     (validate.rules).string.not_contains = "~"
   ];
 
-  // The name of the Account (ASI)
+  // The name of the Account (ASI).
+  //
+  // This may be empty (e.g. if the account is sufficiently identitified by
+  // realm/identity/namespace, etc).
   //
   // Examples:
-  //   account|user:identity
-  //   sharedQuota|sharedAccountName
-  string name = 4 [
+  //   "sharedAccountName"
+  //   ""
+  string name = 5 [
     (validate.rules).string.not_contains = "~"
   ];
 
@@ -175,7 +191,7 @@ message AccountID {
   // Examples:
   //   qps
   //   runningBuilds
-  string resource_type = 5 [
+  string resource_type = 6 [
     (validate.rules).string.not_contains = "~"
   ];
 }

@@ -29,12 +29,13 @@ func TestAccountKey(t *testing.T) {
 		id := &quotapb.AccountID{
 			AppId:        "app",
 			Realm:        "proj:@project",
+			Identity:     "user:joe@example.com",
 			Namespace:    "namespace",
 			Name:         "name",
 			ResourceType: "things",
 		}
 		key := AccountKey(id)
-		So(key, ShouldResemble, `"a~a~app~proj:@project~namespace~name~things`)
+		So(key, ShouldResemble, `"a~a~app~proj:@project~user:joe@example.com~namespace~name~things`)
 
 		newID, err := ParseAccountKey(key)
 		So(err, ShouldBeNil)
