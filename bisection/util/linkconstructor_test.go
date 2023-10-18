@@ -16,7 +16,6 @@ package util
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -25,17 +24,17 @@ import (
 	"go.chromium.org/luci/bisection/internal/gerrit"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/gae/service/info"
 )
 
 func TestConstructAnalysisURL(t *testing.T) {
-	ctx := memory.Use(context.Background())
-	appID := info.AppID(ctx)
+	Convey("construct compile analysis URL", t, func() {
+		So(ConstructCompileAnalysisURL("testproject", 123456789876543), ShouldEqual,
+			"https://ci.chromium.org/ui/p/testproject/bisection/compile-analysis/b/123456789876543")
+	})
 
-	Convey("construct analysis URL", t, func() {
-		So(ConstructAnalysisURL(ctx, 123456789876543), ShouldEqual,
-			fmt.Sprintf("https://%s.appspot.com/analysis/b/123456789876543", appID))
+	Convey("construct test analysis URL", t, func() {
+		So(ConstructTestAnalysisURL("testproject", 123456789876543), ShouldEqual,
+			"https://ci.chromium.org/ui/p/testproject/bisection/test-analysis/b/123456789876543")
 	})
 }
 
@@ -93,9 +92,11 @@ func TestConstructBuganizerURLForTestAnalysis(t *testing.T) {
 	commitReviewURL := "https://chromium-test-review.googlesource.com/c/chromium/test/src/+/1234567"
 
 	Convey("construct buganizer URL", t, func() {
-		bugURL := ConstructBuganizerURLForTestAnalysis(commitReviewURL, 123)
+		analysisURL := "https://ci.chromium.org/ui/p/chromium/bisection/compile-analysis/b/8766961581788295857"
+		bugURL := ConstructBuganizerURLForAnalysis(commitReviewURL, analysisURL)
 		expectedBugURL := "http://b.corp.google.com/createIssue?component=1199205" +
-			"&description=Test+analysis+ID%3A+123&format=PLAIN&priority=P3&title=Wrongly+" +
+			"&description=Analysis%3A+https%3A%2F%2Fci.chromium.org%2Fui%2Fp%2Fchromium%2Fbi" +
+			"section%2Fcompile-analysis%2Fb%2F8766961581788295857&format=PLAIN&priority=P3&title=Wrongly+" +
 			"blamed+https%3A%2F%2Fchromium-test-review.googlesource.com%2Fc%2Fchromium%2F" +
 			"test%2Fsrc%2F%2B%2F1234567&type=BUG"
 		So(bugURL, ShouldEqual, expectedBugURL)

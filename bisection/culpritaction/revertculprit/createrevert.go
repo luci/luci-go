@@ -125,7 +125,8 @@ func generateRevertDescription(ctx context.Context, culpritModel *model.Suspect,
 	if err != nil {
 		return "", err
 	}
-	analysisURL := util.ConstructAnalysisURL(ctx, bbid)
+	// TODO(beining@): remove the hardcoded project name to support multiple LUCI projects.
+	analysisURL := util.ConstructCompileAnalysisURL("chromium", bbid)
 	buildURL := util.ConstructBuildURL(ctx, bbid)
 
 	paragraphs = append(paragraphs, fmt.Sprintf("Reason for revert:\n"+

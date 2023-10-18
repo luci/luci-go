@@ -136,8 +136,9 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				},
 			}},
 		}
+		analysisURL := util.ConstructTestAnalysisURL("chromium", tfa.ID)
 		buildURL := util.ConstructBuildURL(ctx, tfa.FailedBuildID)
-		bugURL := util.ConstructBuganizerURLForTestAnalysis("https://test-review.googlesource.com/c/chromium/test/+/876543", tfa.ID)
+		bugURL := util.ConstructBuganizerURLForAnalysis("https://test-review.googlesource.com/c/chromium/test/+/876543", analysisURL)
 		testLinks := fmt.Sprintf("[%s](%s)\n[%s](%s)",
 			tf1.TestID,
 			util.ConstructTestHistoryURL(tf1.Project, tf1.TestID, tf1.VariantHash),
@@ -205,10 +206,10 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 						RevisionId: "current",
 						Message: fmt.Sprintf("LUCI Bisection recommends submitting this"+
 							" revert because it has confirmed the target of this revert is"+
-							" the cause of a test failure.\n\n"+
+							" the cause of a test failure. See the analysis: %s\n\n"+
 							"Sample build with failed test: %s\n"+
 							"Affected test(s):\n%s\n\n"+
-							"If this is a false positive, please report it at %s", buildURL, testLinks, bugURL),
+							"If this is a false positive, please report it at %s", analysisURL, buildURL, testLinks, bugURL),
 					},
 				)).Times(1)
 
@@ -242,10 +243,10 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 						Number:     culpritRes.Changes[0].Number,
 						RevisionId: "current",
 						Message: fmt.Sprintf("LUCI Bisection has identified this"+
-							" change as the cause of a test failure.\n\n"+
+							" change as the cause of a test failure. See the analysis: %s\n\n"+
 							"Sample build with failed test: %s\n"+
 							"Affected test(s):\n%s\n\n"+
-							"If this is a false positive, please report it at %s", buildURL, testLinks, bugURL),
+							"If this is a false positive, please report it at %s", analysisURL, buildURL, testLinks, bugURL),
 					},
 				)).Times(1)
 
@@ -290,10 +291,10 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 						Number:     culpritRes.Changes[0].Number,
 						RevisionId: "current",
 						Message: fmt.Sprintf("LUCI Bisection has identified this"+
-							" change as the cause of a test failure.\n\n"+
+							" change as the cause of a test failure. See the analysis: %s\n\n"+
 							"Sample build with failed test: %s\n"+
 							"Affected test(s):\n%s\n\n"+
-							"If this is a false positive, please report it at %s", buildURL, testLinks, bugURL),
+							"If this is a false positive, please report it at %s", analysisURL, buildURL, testLinks, bugURL),
 					},
 				)).Times(1)
 
@@ -328,7 +329,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 						Number:     culpritRes.Changes[0].Number,
 						RevisionId: "current",
 						Message: fmt.Sprintf("LUCI Bisection has identified this"+
-							" change as the cause of a test failure.\n\n"+
+							" change as the cause of a test failure. See the analysis: %s\n\n"+
 							"Sample build with failed test: %s\n"+
 							"Affected test(s):\n"+
 							"[testID1](https://ci.chromium.org/ui/test/chromium/testID1?q=VHash%%3Avarianthash1)\n"+
@@ -337,7 +338,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 							"[testID4](https://ci.chromium.org/ui/test/chromium/testID4?q=VHash%%3Avarianthash4)\n"+
 							"[testID5](https://ci.chromium.org/ui/test/chromium/testID5?q=VHash%%3Avarianthash5)\n"+
 							"and 2 more ...\n\n"+
-							"If this is a false positive, please report it at %s", buildURL, bugURL),
+							"If this is a false positive, please report it at %s", analysisURL, buildURL, bugURL),
 					},
 				)).Times(1)
 

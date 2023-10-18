@@ -55,7 +55,8 @@ func compileFailureComment(ctx context.Context, suspect *model.Suspect, reason, 
 	if err != nil {
 		return "", err
 	}
-	analysisURL := util.ConstructAnalysisURL(ctx, bbid)
+	// TODO(beining@): remove the hardcoded project name to support multiple LUCI projects.
+	analysisURL := util.ConstructCompileAnalysisURL("chromium", bbid)
 	buildURL := util.ConstructBuildURL(ctx, bbid)
 	bugURL := util.ConstructLUCIBisectionBugURL(ctx, analysisURL, suspect.ReviewUrl)
 	var b bytes.Buffer
@@ -73,7 +74,8 @@ func compileFailureComment(ctx context.Context, suspect *model.Suspect, reason, 
 
 var testCommentTemplate = template.Must(template.New("").Parse(
 	`
-{{ define "basic"}}
+{{define "basic"}} See the analysis: {{.AnalysisURL}}
+
 Sample build with failed test: {{.BuildURL}}
 Affected test(s):
 {{.TestLinks}}
@@ -86,12 +88,12 @@ If this is a false positive, please report it at {{.BugURL}}
 
 {{ define "supportComment" -}}
 LUCI Bisection recommends submitting this revert because it has confirmed the target of this revert is the cause of a test failure.
-{{ template "basic" . -}}
+{{- template "basic" . -}}
 {{end}}
 
 {{ define "blameComment" -}}
 LUCI Bisection has identified this change as the cause of a test failure.
-{{ template "basic" . -}}
+{{- template "basic" . -}}
 {{end}}
 	`))
 
@@ -113,10 +115,13 @@ func testFailureComment(ctx context.Context, suspect *model.Suspect, reason, tem
 	for _, tf := range testFailures[:min(maxTestLink, len(testFailures))] {
 		testLinks = append(testLinks, fmt.Sprintf("[%s](%s)", tf.TestID, util.ConstructTestHistoryURL(tf.Project, tf.TestID, tf.VariantHash)))
 	}
-	bugURL := util.ConstructBuganizerURLForTestAnalysis(suspect.ReviewUrl, tfs.Primary().AnalysisKey.IntID())
-	// TODO(beining@): add analysis URL when the bisection UI is ready.
+	analysisID := tfs.Primary().AnalysisKey.IntID()
+	// TODO(beining@): remove the hardcoded project name to support multiple LUCI projects.
+	analysisURL := util.ConstructTestAnalysisURL("chromium", analysisID)
+	bugURL := util.ConstructBuganizerURLForAnalysis(suspect.ReviewUrl, analysisURL)
 	var b bytes.Buffer
 	err = testCommentTemplate.ExecuteTemplate(&b, templateName, map[string]any{
+		"AnalysisURL":        analysisURL,
 		"TestLinks":          strings.Join(testLinks, "\n"),
 		"numTestLinksHidden": len(testFailures) - maxTestLink,
 		"BugURL":             bugURL,

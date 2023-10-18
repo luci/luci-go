@@ -22,14 +22,18 @@ import (
 	"go.chromium.org/luci/bisection/internal/gerrit"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"go.chromium.org/luci/gae/service/info"
 )
 
-// ConstructAnalysisURL returns a link to the analysis page in LUCI Bisection
+// ConstructCompileAnalysisURL returns a link to the analysis page in LUCI Bisection
 // given a Buildbucket ID
-func ConstructAnalysisURL(ctx context.Context, bbid int64) string {
-	return fmt.Sprintf("https://%s.appspot.com/analysis/b/%d",
-		info.AppID(ctx), bbid)
+func ConstructCompileAnalysisURL(project string, bbid int64) string {
+	return fmt.Sprintf("https://ci.chromium.org/ui/p/%s/bisection/compile-analysis/b/%d", project, bbid)
+}
+
+// ConstructTestAnalysisURL returns a link to the analysis page in LUCI Bisection
+// given a Buildbucket ID
+func ConstructTestAnalysisURL(project string, analysisID int64) string {
+	return fmt.Sprintf("https://ci.chromium.org/ui/p/%s/bisection/test-analysis/b/%d", project, analysisID)
 }
 
 // ConstructBuildURL returns a link to the build page in Milo given a
@@ -56,10 +60,10 @@ func ConstructLUCIBisectionBugURL(ctx context.Context, analysisURL string,
 	return "https://bugs.chromium.org/p/chromium/issues/entry?" + queryParams.Encode()
 }
 
-func ConstructBuganizerURLForTestAnalysis(commitReviewURL string, analysisID int64) string {
+func ConstructBuganizerURLForAnalysis(commitReviewURL string, analysisURL string) string {
 	queryParams := url.Values{
 		"title":       {fmt.Sprintf("Wrongly blamed %s", commitReviewURL)},
-		"description": {fmt.Sprintf("Test analysis ID: %d", analysisID)},
+		"description": {fmt.Sprintf("Analysis: %s", analysisURL)},
 		"format":      {"PLAIN"},
 		"component":   {"1199205"},
 		"type":        {"BUG"},

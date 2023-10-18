@@ -62,7 +62,7 @@ func TestGenerateRevertDescription(t *testing.T) {
 		So(datastore.Put(ctx, suspect), ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
-		analysisURL := util.ConstructAnalysisURL(ctx, failedBuild.Id)
+		analysisURL := util.ConstructCompileAnalysisURL("chromium", failedBuild.Id)
 		buildURL := util.ConstructBuildURL(ctx, failedBuild.Id)
 		bugURL := util.ConstructLUCIBisectionBugURL(ctx, analysisURL,
 			"https://test-review.googlesource.com/c/chromium/test/+/876543")
