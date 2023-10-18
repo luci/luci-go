@@ -89,7 +89,7 @@ describe('Test OverviewTab component', () => {
           project={project}
           clusterAlgorithm={algorithm}
           clusterId={id} >
-          <OverviewTab value='test' />
+          <OverviewTab value='test' policyBasedBugManagementEnabled={false} />
         </ClusterContextProvider>,
     );
 

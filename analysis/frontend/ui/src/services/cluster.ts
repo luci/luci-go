@@ -67,7 +67,7 @@ export interface GetClusterRequest {
   name: string;
 }
 
-export type ClusterMetrics = { [metricId: string]: TimewiseCounts; };
+export type ClusterMetrics = { [metricId: string]: TimewiseCounts | undefined; };
 
 export interface Cluster {
   // The resource name of the cluster.

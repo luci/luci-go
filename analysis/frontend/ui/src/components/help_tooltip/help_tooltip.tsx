@@ -23,7 +23,7 @@ interface Props {
 const HelpTooltip= ({ text }: Props) => {
   return (
     <Tooltip arrow title={text}>
-      <IconButton aria-label='What is this?'>
+      <IconButton aria-label='What is this?' sx={{ verticalAlign: 'middle', marginTop: '-8px', marginBottom: '-8px' }}>
         <HelpOutline></HelpOutline>
       </IconButton>
     </Tooltip>

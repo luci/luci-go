@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,29 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Outlet } from 'react-router-dom';
+import Chip from '@mui/material/Chip';
 
-import TopBar from '@/components/top_bar/top_bar';
-
-declare global {
-    interface Window {
-      isAnonymous: boolean;
-      isPolicyBasedBugManagementEnabled: boolean;
-      avatar: string;
-      fullName: string;
-      email: string;
-      logoutUrl: string;
-      loginUrl: string;
-    }
+interface Props {
+  isActive?: boolean;
 }
 
-const BaseLayout = () => {
-  return (
-    <>
-      <TopBar />
-      <Outlet />
-    </>
-  );
+export const StatusChip = ({ isActive }: Props) => {
+  return <Chip
+    color={isActive ? 'primary' : 'default'}
+    label={isActive ? 'Active' : 'Resolved'}
+    size="medium"
+    data-testid="problem_status_chip"
+  />;
 };
-
-export default BaseLayout;

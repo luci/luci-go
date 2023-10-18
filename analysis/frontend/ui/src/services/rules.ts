@@ -57,94 +57,106 @@ export class RulesService {
 }
 
 export interface GetRuleRequest {
-    // The name of the rule to retrieve.
-    // Format: projects/{project}/rules/{rule_id}.
-    name: string;
+  // The name of the rule to retrieve.
+  // Format: projects/{project}/rules/{rule_id}.
+  name: string;
 }
 
 export interface Rule {
-    name: string;
-    project: string;
-    ruleId: string;
-    ruleDefinition?: string;
-    bug: AssociatedBug;
-    isActive: boolean;
-    isManagingBug: boolean;
-    isManagingBugPriority: boolean;
-    sourceCluster: ClusterId;
-    createTime: string; // RFC 3339 encoded date/time.
-    createUser?: string;
-    lastAuditableUpdateTime: string; // RFC 3339 encoded date/time.
-    lastAuditableUpdateUser?: string;
-    lastUpdateTime: string; // RFC 3339 encoded date/time.
-    predicateLastUpdateTime: string; // RFC 3339 encoded date/time.
-    etag: string;
+  name: string;
+  project: string;
+  ruleId: string;
+  ruleDefinition?: string;
+  bug: AssociatedBug;
+  isActive: boolean;
+  isManagingBug: boolean;
+  isManagingBugPriority: boolean;
+  sourceCluster: ClusterId;
+  bugManagementState: BugManagementState;
+  createTime: string; // RFC 3339 encoded date/time.
+  createUser?: string;
+  lastAuditableUpdateTime: string; // RFC 3339 encoded date/time.
+  lastAuditableUpdateUser?: string;
+  lastUpdateTime: string; // RFC 3339 encoded date/time.
+  predicateLastUpdateTime: string; // RFC 3339 encoded date/time.
+  etag: string;
+}
+
+export interface BugManagementState {
+  policyState?: PolicyState[];
+}
+
+export interface PolicyState {
+  policyId: string;
+  isActive?: boolean;
+  lastActivationTime?: string; // RFC 3339 encoded date/time.
+  lastDeactivationTime?: string; // RFC 3339 encoded date/time.
 }
 
 export interface ListRulesRequest {
-    // The parent, which owns this collection of rules.
-    // Format: projects/{project}.
-    parent: string;
+  // The parent, which owns this collection of rules.
+  // Format: projects/{project}.
+  parent: string;
 }
 
 export interface ListRulesResponse {
-    rules?: Rule[];
+  rules?: Rule[];
 }
 
 export interface CreateRuleRequest {
-    parent: string;
-    rule: RuleToCreate;
+  parent: string;
+  rule: RuleToCreate;
 }
 
 export interface RuleToCreate {
-    ruleDefinition: string;
-    bug: AssociatedBugToUpdate;
-    isActive?: boolean;
-    isManagingBug?: boolean;
-    isManagingBugPriority?: boolean;
-    sourceCluster?: ClusterId;
+  ruleDefinition: string;
+  bug: AssociatedBugToUpdate;
+  isActive?: boolean;
+  isManagingBug?: boolean;
+  isManagingBugPriority?: boolean;
+  sourceCluster?: ClusterId;
 }
 
 export interface AssociatedBugToUpdate {
-    system: string;
-    id: string;
+  system: string;
+  id: string;
 }
 
 export interface UpdateRuleRequest {
-    rule: RuleToUpdate;
-    // Comma separated list of fields to be updated.
-    // e.g. ruleDefinition,bug,isActive.
-    updateMask: string;
-    etag?: string;
+  rule: RuleToUpdate;
+  // Comma separated list of fields to be updated.
+  // e.g. ruleDefinition,bug,isActive.
+  updateMask: string;
+  etag?: string;
 }
 
 export interface RuleToUpdate {
-    name: string;
-    ruleDefinition?: string;
-    bug?: AssociatedBugToUpdate;
-    isActive?: boolean;
-    isManagingBug?: boolean;
-    isManagingBugPriority?: boolean;
-    sourceCluster?: ClusterId;
+  name: string;
+  ruleDefinition?: string;
+  bug?: AssociatedBugToUpdate;
+  isActive?: boolean;
+  isManagingBug?: boolean;
+  isManagingBugPriority?: boolean;
+  sourceCluster?: ClusterId;
 }
 
 export interface LookupBugRequest {
-    system: string;
-    id: string;
+  system: string;
+  id: string;
 }
 
 export interface LookupBugResponse {
-    // The looked up rules.
-    // Format: projects/{project}/rules/{rule_id}.
-    rules?: string[];
+  // The looked up rules.
+  // Format: projects/{project}/rules/{rule_id}.
+  rules?: string[];
 }
 
 const ruleNameRE = /^projects\/(.*)\/rules\/(.*)$/;
 
 // RuleKey represents the key parts of a rule resource name.
 export interface RuleKey {
-    project: string;
-    ruleId: string;
+  project: string;
+  ruleId: string;
 }
 
 // parseRuleName parses a rule resource name into its key parts.

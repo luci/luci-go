@@ -134,6 +134,32 @@ export interface MonorailProject {
   priorities?: MonorailPriority[];
 }
 
+export interface BugManagementPolicyMetric {
+  metricId: string;
+  activationThreshold: MetricThreshold;
+  deactivationThreshold: MetricThreshold;
+}
+
+export interface BugManagementPolicyExplanation {
+  // Must be sanitized by UI before rendering.
+  problemHtml: string;
+  // Must be sanitized by UI before rendering.
+  actionHtml: string;
+}
+
+export interface BugManagementPolicy {
+  id: string;
+  owners: string[];
+  humanReadableName: string;
+  priority: BuganizerPriority;
+  metrics: BugManagementPolicyMetric[];
+  explanation: BugManagementPolicyExplanation;
+}
+
+export interface BugManagement {
+  policies?: BugManagementPolicy[];
+}
+
 // See luci.analysis.v1.Projects.ProjectConfig for documentation.
 export interface ProjectConfig {
   // The format is: `projects/{project}/config`.
@@ -147,4 +173,7 @@ export interface ProjectConfig {
 
   // Details about the Buganizer configuration used for this LUCI project.
   buganizer?: BuganizerProject;
+
+  // Configuration for automatic bug management.
+  bugManagement?: BugManagement;
 }

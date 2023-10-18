@@ -89,7 +89,7 @@ const ClusterAnalysisSection = () => {
               }
             </TabList>
           </Box>
-          <OverviewTab value='overview'/>
+          <OverviewTab value='overview' policyBasedBugManagementEnabled={window.isPolicyBasedBugManagementEnabled}/>
           <FailuresTab value='recent-failures'/>
           {
             exonerationsAvailable && (

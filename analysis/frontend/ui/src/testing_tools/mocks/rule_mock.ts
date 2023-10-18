@@ -36,6 +36,18 @@ export const createDefaultMockRule = (): Rule => {
       algorithm: 'testname-v3',
       id: '78ff0812026b30570ca730b1541125ea',
     },
+    bugManagementState: {
+      policyState: [{
+        policyId: 'exonerations',
+        isActive: true,
+        lastActivationTime: '2022-02-01T02:34:56.123456Z',
+      }, {
+        policyId: 'cls-rejected',
+        isActive: false,
+        lastActivationTime: '2022-02-01T01:34:56.123456Z',
+        lastDeactivationTime: '2022-02-01T02:04:56.123456Z',
+      }],
+    },
     createTime: dayjs().toISOString(),
     createUser: 'system',
     lastAuditableUpdateTime: dayjs().toISOString(),

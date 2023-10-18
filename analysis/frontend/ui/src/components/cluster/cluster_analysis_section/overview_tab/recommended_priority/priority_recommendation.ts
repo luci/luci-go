@@ -66,7 +66,7 @@ export function createPriorityRecommendation(
     const priorityThresholds = priorities[i].thresholds || [];
     priorityThresholds.forEach((impactMetricThreshold) => {
       const metricId = impactMetricThreshold.metricId;
-      const metricValue = metricValues[metricId] || {};
+      const metricValue = metricValues[metricId];
       const metricThreshold: MetricThreshold = impactMetricThreshold.threshold || {};
 
       // Preferably use the human readable name from the metric definition.
@@ -75,7 +75,7 @@ export function createPriorityRecommendation(
       const metricDescription = metric?.description || '(metric description unavailable)';
 
       if (metricThreshold.oneDay !== undefined) {
-        const actual = metricValue.oneDay?.nominal || '0';
+        const actual = metricValue?.oneDay?.nominal || '0';
         criteria.push({
           metricName: metricName,
           metricDescription: metricDescription,
@@ -86,7 +86,7 @@ export function createPriorityRecommendation(
         });
       }
       if (metricThreshold.threeDay !== undefined) {
-        const actual = metricValue.threeDay?.nominal || '0';
+        const actual = metricValue?.threeDay?.nominal || '0';
         criteria.push({
           metricName: metricName,
           metricDescription: metricDescription,
@@ -97,7 +97,7 @@ export function createPriorityRecommendation(
         });
       }
       if (metricThreshold.sevenDay !== undefined) {
-        const actual = metricValue.sevenDay?.nominal || '0';
+        const actual = metricValue?.sevenDay?.nominal || '0';
         criteria.push({
           metricName: metricName,
           metricDescription: metricDescription,
