@@ -39,7 +39,9 @@ export const NthSectionAnalysisTableRow = ({ rerun }: Props) => {
   return (
     <>
       <TableRow data-testid="nthsection_analysis_table_row">
-        <TableCell>{index}</TableCell>
+        {/* Commit position is filled either for all reruns or no reruns of an analysis.
+            If no commit position is available, rerun index is used instead. */}
+        <TableCell>{commit.position || index}</TableCell>
         <TableCell>
           {/* TODO (nqmtuan): Show review title instead */}
           <Link

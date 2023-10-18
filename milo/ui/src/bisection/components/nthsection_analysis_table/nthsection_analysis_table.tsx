@@ -139,7 +139,13 @@ export const NthSectionAnalysisRerunsTable = ({ reruns }: RerunProps) => {
       >
         <TableHead>
           <TableRow>
-            <TableCell>Index</TableCell>
+            {/* Commit position is filled either for all reruns or no reruns of an analysis.
+            If no commit position is available, rerun index is used instead. */}
+            {reruns[0].commit.position ? (
+              <TableCell>Commit position</TableCell>
+            ) : (
+              <TableCell>Index</TableCell>
+            )}
             <TableCell>Commit</TableCell>
             <TableCell>Status</TableCell>
             <TableCell>Run</TableCell>
