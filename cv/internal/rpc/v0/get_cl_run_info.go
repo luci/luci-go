@@ -48,9 +48,10 @@ func (g *GerritIntegrationServer) GetCLRunInfo(ctx context.Context, req *apiv0pb
 		}
 	} else {
 		// If Gerrit JWT was provided, check that it matches the request change.
+		// The JWT-provided host does not include the "-review" prefix.
 		jwtChange := gerritInfo.Change
-		if jwtChange.Host != gc.GetHost() || jwtChange.ChangeNumber != gc.GetChange() {
-			return nil, appstatus.Errorf(codes.InvalidArgument, "invalid GerritChange %v: expected %s/%d", gc, jwtChange.Host, jwtChange.ChangeNumber)
+		if jwtChange.Host+"-review.googlesource.com" != gc.GetHost() || jwtChange.ChangeNumber != gc.GetChange() {
+			return nil, appstatus.Errorf(codes.InvalidArgument, "JWT change does not match GerritChange %v: got %s/%d", gc, jwtChange.Host, jwtChange.ChangeNumber)
 		}
 	}
 

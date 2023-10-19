@@ -50,9 +50,10 @@ func TestGetCLRunInfo(t *testing.T) {
 
 		gis := GerritIntegrationServer{}
 
-		const gHost = "g-review.example.com"
+		const host = "chromium"
+		const hostReview = host + "-review.googlesource.com"
 		gc := &apiv0pb.GerritChange{
-			Host:     gHost,
+			Host:     hostReview,
 			Change:   1,
 			Patchset: 39,
 		}
@@ -62,7 +63,7 @@ func TestGetCLRunInfo(t *testing.T) {
 			IdentityGroups: []string{acls.V0APIAllowGroup},
 			UserExtra: &gerritauth.AssertedInfo{
 				Change: gerritauth.AssertedChange{
-					Host:         gHost,
+					Host:         host,
 					ChangeNumber: 1,
 				},
 			},
@@ -81,7 +82,7 @@ func TestGetCLRunInfo(t *testing.T) {
 				Identity: "anonymous:anonymous",
 				UserExtra: &gerritauth.AssertedInfo{
 					Change: gerritauth.AssertedChange{
-						Host:         gHost,
+						Host:         host,
 						ChangeNumber: 1,
 					},
 				},
@@ -223,12 +224,12 @@ func TestGetCLRunInfo(t *testing.T) {
 		Convey("DepChangeInfos w/ valid Gerrit Change and deps", func() {
 			deps := []*apiv0pb.GerritChange{
 				{
-					Host:     gHost,
+					Host:     hostReview,
 					Change:   2,
 					Patchset: 1,
 				},
 				{
-					Host:     gHost,
+					Host:     hostReview,
 					Change:   3,
 					Patchset: 1,
 				},
