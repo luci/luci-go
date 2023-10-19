@@ -70,6 +70,7 @@ describe('Test BugPicker component', () => {
   it('handles project config missing monorail details', async () => {
     const bareProjectConfig: ProjectConfig = {
       name: 'projects/chromium/config',
+      bugManagement: {},
     };
     mockFetchProjectConfig(bareProjectConfig);
 

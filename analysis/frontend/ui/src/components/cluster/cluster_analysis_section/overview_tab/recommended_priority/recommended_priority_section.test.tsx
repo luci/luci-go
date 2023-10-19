@@ -128,6 +128,7 @@ describe('test RecommendedPrioritySection component', () => {
 
     const mockConfig: ProjectConfig = {
       name: 'projects/chromium/config',
+      bugManagement: {},
     };
     mockFetchProjectConfig(mockConfig);
 

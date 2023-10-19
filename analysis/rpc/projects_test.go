@@ -219,6 +219,17 @@ func TestProjects(t *testing.T) {
 					expectedResponse.BugManagement.Monorail = nil
 					So(response, ShouldResembleProto, expectedResponse)
 				})
+				Convey("with only legacy monorail config", func() {
+					projectCfg.BugManagement.Monorail = nil
+					So(config.SetTestProjectConfig(ctx, configs), ShouldBeNil)
+
+					// Run
+					response, err := server.GetConfig(ctx, request)
+
+					// Verify
+					So(err, ShouldBeNil)
+					So(response, ShouldResembleProto, expectedResponse)
+				})
 				Convey("policy without activation threshold", func() {
 					projectCfg.BugManagement.Policies[0].Metrics[0].ActivationThreshold = nil
 					So(config.SetTestProjectConfig(ctx, configs), ShouldBeNil)

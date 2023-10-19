@@ -65,6 +65,10 @@ export const createMockProjectConfig = (): ProjectConfig => {
           actionHtml: '<ul><li>Consider disabling the test(s) while you investigate the root cause, to immediately unblock developers.</li><li>View recent failures to help you debug the problem.</li></ul>',
         },
       }],
+      monorail: {
+        project: 'chromium',
+        displayPrefix: 'crbug.com',
+      }
     },
   };
 };
@@ -98,6 +102,7 @@ export const createMockProjectConfigWithBuganizerThresholds = (): ProjectConfig 
         },
       ],
     },
+    bugManagement: {},
   };
 };
 
@@ -132,6 +137,7 @@ export const createMockProjectConfigWithMonorailThresholds = (): ProjectConfig =
         },
       ],
     },
+    bugManagement: {},
   };
 };
 

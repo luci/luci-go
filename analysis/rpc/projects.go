@@ -66,26 +66,31 @@ func createProjectConfigPB(project string, cfg *configpb.ProjectConfig) *pb.Proj
 		BugSystem:     pb.ProjectConfig_BugSystem(cfg.BugSystem),
 		Monorail:      toLegacyMonorailProjectPB(cfg.Monorail),
 		Buganizer:     toLegacyBuganizerProjectPB(cfg.Buganizer),
-		BugManagement: toBugManagementPB(cfg.BugManagement),
+		BugManagement: toBugManagementPB(cfg.BugManagement, cfg.Monorail),
 	}
 	return result
 }
 
-func toBugManagementPB(bm *configpb.BugManagement) *pb.BugManagement {
-	if bm == nil {
-		// Always set BugManagement struct to avoid clients needing to
-		// do pointless nullness checks. Having an empty BugManagement struct
-		// is semantically identical to having an unset BugManagement struct.
-		return &pb.BugManagement{}
+func toBugManagementPB(bm *configpb.BugManagement, legacyMonorailCfg *configpb.MonorailProject) *pb.BugManagement {
+	// Always set BugManagement struct to avoid clients needing to
+	// do pointless nullness checks. Having an empty BugManagement struct
+	// is semantically identical to having an unset BugManagement struct.
+	result := &pb.BugManagement{}
+
+	if bm != nil {
+		policies := make([]*pb.BugManagementPolicy, 0, len(bm.Policies))
+		for _, policy := range bm.Policies {
+			policies = append(policies, toBugManagementPolicyPB(policy))
+		}
+		result.Policies = policies
+		result.Monorail = toMonorailProjectPB(bm.Monorail)
 	}
-	policies := make([]*pb.BugManagementPolicy, 0, len(bm.Policies))
-	for _, policy := range bm.Policies {
-		policies = append(policies, toBugManagementPolicyPB(policy))
+	// If the monorail block is not set in the new config,
+	// try to set it from the old config.
+	if result.Monorail == nil {
+		result.Monorail = toMonorailProjectPB(legacyMonorailCfg)
 	}
-	return &pb.BugManagement{
-		Policies: policies,
-		Monorail: toMonorailProjectPB(bm.Monorail),
-	}
+	return result
 }
 
 func toBugManagementPolicyPB(policy *configpb.BugManagementPolicy) *pb.BugManagementPolicy {

@@ -148,7 +148,7 @@ describe('Test ProblemSection component', () => {
     mockFetchRule(mockRule);
 
     const mockConfig = createMockProjectConfig();
-    mockConfig.bugManagement = undefined;
+    mockConfig.bugManagement.policies = undefined;
     mockFetchProjectConfig(mockConfig);
 
     renderTabWithRouterAndClient(
