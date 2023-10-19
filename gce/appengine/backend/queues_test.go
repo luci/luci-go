@@ -638,7 +638,7 @@ func TestQueues(t *testing.T) {
 				}
 				datastore.Put(c, &model.Project{
 					ID: "id",
-					Config: projects.Config{
+					Config: &projects.Config{
 						Metric:  []string{"metric"},
 						Project: "project",
 						Region:  []string{"region"},

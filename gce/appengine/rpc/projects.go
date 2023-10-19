@@ -58,12 +58,12 @@ func (*Projects) Ensure(c context.Context, req *projects.EnsureRequest) (*projec
 	}
 	p := &model.Project{
 		ID:     req.Id,
-		Config: *req.Project,
+		Config: req.Project,
 	}
 	if err := datastore.Put(c, p); err != nil {
 		return nil, errors.Annotate(err, "failed to store project").Err()
 	}
-	return &p.Config, nil
+	return p.Config, nil
 }
 
 // Get handles a request to get a project.
@@ -76,7 +76,7 @@ func (*Projects) Get(c context.Context, req *projects.GetRequest) (*projects.Con
 	}
 	switch err := datastore.Get(c, p); err {
 	case nil:
-		return &p.Config, nil
+		return p.Config, nil
 	case datastore.ErrNoSuchEntity:
 		return nil, status.Errorf(codes.NotFound, "no project found with ID %q", req.Id)
 	default:
@@ -88,7 +88,7 @@ func (*Projects) Get(c context.Context, req *projects.GetRequest) (*projects.Con
 func (*Projects) List(c context.Context, req *projects.ListRequest) (*projects.ListResponse, error) {
 	rsp := &projects.ListResponse{}
 	if err := paged.Query(c, req.GetPageSize(), req.GetPageToken(), rsp, datastore.NewQuery(model.ProjectKind), func(p *model.Project) error {
-		rsp.Projects = append(rsp.Projects, &p.Config)
+		rsp.Projects = append(rsp.Projects, p.Config)
 		return nil
 	}); err != nil {
 		return nil, err

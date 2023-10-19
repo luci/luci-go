@@ -88,7 +88,7 @@ func TestProject(t *testing.T) {
 
 		err = datastore.Put(c, &Project{
 			ID: "id",
-			Config: projects.Config{
+			Config: &projects.Config{
 				Metric: []string{
 					"metric-1",
 					"metric-2",
@@ -105,7 +105,7 @@ func TestProject(t *testing.T) {
 		err = datastore.Get(c, p)
 		So(err, ShouldBeNil)
 
-		So(&p.Config, ShouldResembleProto, &projects.Config{
+		So(p.Config, ShouldResembleProto, &projects.Config{
 			Metric: []string{
 				"metric-1",
 				"metric-2",

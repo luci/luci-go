@@ -214,7 +214,7 @@ func TestCron(t *testing.T) {
 				}
 				err := datastore.Put(c, &model.Project{
 					ID: "id",
-					Config: projects.Config{
+					Config: &projects.Config{
 						Project: "gnu-hurd",
 					},
 				})
@@ -243,7 +243,7 @@ func TestCron(t *testing.T) {
 				}
 				err := datastore.Put(c, &model.Project{
 					ID: "id",
-					Config: projects.Config{
+					Config: &projects.Config{
 						Project: "gnu-hurd",
 					},
 				})
@@ -279,14 +279,14 @@ func TestCron(t *testing.T) {
 				}
 				err := datastore.Put(c, &model.Project{
 					ID: "id",
-					Config: projects.Config{
+					Config: &projects.Config{
 						Project: "gnu-hurd",
 					},
 				})
 				So(err, ShouldBeNil)
 				err = datastore.Put(c, &model.Project{
 					ID: "id2",
-					Config: projects.Config{
+					Config: &projects.Config{
 						Project: "libreboot",
 					},
 				})

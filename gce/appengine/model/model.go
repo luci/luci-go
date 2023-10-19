@@ -64,7 +64,7 @@ type Project struct {
 	ID string `gae:"$id"`
 	// Config is the projects.Config representation of this entity.
 	// noindex is not respected here. See projects.Config.ToProperty.
-	Config projects.Config `gae:"binary_config,noindex"`
+	Config *projects.Config `gae:"binary_config,legacy"`
 }
 
 // VMKind is a VM entity's kind in the datastore.
