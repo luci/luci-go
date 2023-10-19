@@ -150,3 +150,9 @@ func (w *RPCClient) ListIssueComments(ctx context.Context, in *issuetracker.List
 func (w *RPCClient) GetAutomationAccess(ctx context.Context, in *issuetracker.GetAutomationAccessRequest) (*issuetracker.GetAutomationAccessResponse, error) {
 	return w.Client.GetAutomationAccess(ctx, in)
 }
+
+// CreateHotlistEntry delegates a call to Client.CreateHotlistEntry and returns the created
+// hotlist entry or the error that occured.
+func (w *RPCClient) CreateHotlistEntry(ctx context.Context, in *issuetracker.CreateHotlistEntryRequest) (*issuetracker.HotlistEntry, error) {
+	return w.Client.CreateHotlistEntry(ctx, in)
+}

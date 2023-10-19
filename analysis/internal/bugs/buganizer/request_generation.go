@@ -15,7 +15,6 @@
 package buganizer
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -325,9 +324,7 @@ type MakeUpdateResult struct {
 // MakePriorityOrVerifiedUpdate prepares a priority and/or verified update for the
 // bug with the given bug management state.
 // **Must** ONLY be called if NeedsPriorityOrVerifiedUpdate(...) returns true.
-func (rg *RequestGenerator) MakePriorityOrVerifiedUpdate(
-	ctx context.Context,
-	options MakeUpdateOptions) (MakeUpdateResult, error) {
+func (rg *RequestGenerator) MakePriorityOrVerifiedUpdate(options MakeUpdateOptions) (MakeUpdateResult, error) {
 
 	opts := bugs.BugOptions{
 		State:              options.BugManagementState,
@@ -413,4 +410,36 @@ func (rg *RequestGenerator) MakePriorityOrVerifiedUpdate(
 	}
 	result.request = request
 	return result, nil
+}
+
+func (rg *RequestGenerator) ExpectedHotlistIDs(activePolicyIDs map[bugs.PolicyID]struct{}) map[int64]struct{} {
+	expectedHotlistIDs := make(map[int64]struct{})
+
+	policies := rg.policyApplyer.PoliciesByIDs(activePolicyIDs)
+	for _, policy := range policies {
+		buganizerTemplate := policy.BugTemplate.GetBuganizer()
+		if buganizerTemplate != nil {
+			for _, id := range buganizerTemplate.Hotlists {
+				expectedHotlistIDs[id] = struct{}{}
+			}
+		}
+	}
+	return expectedHotlistIDs
+}
+
+// PrepareHotlistInsertions returns the CreateHotlistEntry requests
+// necessary to insert the issue in the hotlists specified by its
+// bug managment policies.
+func PrepareHotlistInsertions(hotlistIDs map[int64]struct{}, issueID int64) []*issuetracker.CreateHotlistEntryRequest {
+	var result []*issuetracker.CreateHotlistEntryRequest
+	for hotlistID := range hotlistIDs {
+		request := &issuetracker.CreateHotlistEntryRequest{
+			HotlistId: hotlistID,
+			HotlistEntry: &issuetracker.HotlistEntry{
+				IssueId: issueID,
+			},
+		}
+		result = append(result, request)
+	}
+	return result
 }

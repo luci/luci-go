@@ -161,9 +161,9 @@ func evaluatePolicy(policy *configpb.BugManagementPolicy, clusterMetrics Cluster
 	}
 }
 
-// activePolicies returns the set of policy IDs active in the given
+// ActivePolicies returns the set of policy IDs active in the given
 // bug management state.
-func activePolicies(state *bugspb.BugManagementState) map[PolicyID]struct{} {
+func ActivePolicies(state *bugspb.BugManagementState) map[PolicyID]struct{} {
 	result := make(map[PolicyID]struct{})
 	for policyID, policyState := range state.PolicyState {
 		if !policyState.IsActive {
@@ -175,7 +175,7 @@ func activePolicies(state *bugspb.BugManagementState) map[PolicyID]struct{} {
 }
 
 func previouslyActivePolicies(state *bugspb.BugManagementState) map[PolicyID]struct{} {
-	currentActive := activePolicies(state)
+	currentActive := ActivePolicies(state)
 	changes := lastPolicyActivationChanges(state)
 
 	result := make(map[PolicyID]struct{})

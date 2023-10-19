@@ -68,6 +68,8 @@ type Client interface {
 	// GetAutomationAccess checks that automation has permission on a resource.
 	// Does not require any permission on the resource
 	GetAutomationAccess(ctx context.Context, in *issuetracker.GetAutomationAccessRequest) (*issuetracker.GetAutomationAccessResponse, error)
+	// CreateHotlistEntry adds an issue to a hotlist.
+	CreateHotlistEntry(ctx context.Context, in *issuetracker.CreateHotlistEntryRequest) (*issuetracker.HotlistEntry, error)
 }
 
 // An interface for an IssueUpdateIterator.
@@ -206,15 +208,13 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 			componentID,
 		)
 	}
-	var issue *issuetracker.Issue
 
 	var issueID int64
-	var err error
 	if bm.Simulate {
 		logging.Debugf(ctx, "Would create Buganizer issue: %s", textPBMultiline.Format(createIssueRequest))
 		issueID = 123456
 	} else {
-		issue, err = bm.client.CreateIssue(ctx, createIssueRequest)
+		issue, err := bm.client.CreateIssue(ctx, createIssueRequest)
 		if err != nil {
 			response.Error = errors.Annotate(err, "create Buganizer issue").Err()
 			return response
@@ -273,9 +273,16 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 	}
 
 	if bm.usePolicyBasedManagement {
+		var err error
 		response.PolicyActivationsNotified, err = bm.notifyPolicyActivation(ctx, issueID, createRequest.ActivePolicyIDs)
 		if err != nil {
 			response.Error = errors.Annotate(err, "notify policy activations").Err()
+			return response
+		}
+
+		hotlistIDs := bm.requestGenerator.ExpectedHotlistIDs(createRequest.ActivePolicyIDs)
+		if err := bm.insertIntoHotlists(ctx, hotlistIDs, issueID); err != nil {
+			response.Error = errors.Annotate(err, "insert into hotlists").Err()
 			return response
 		}
 	}
@@ -308,6 +315,23 @@ func (bm *BugManager) notifyPolicyActivation(ctx context.Context, issueID int64,
 		policiesNotified[policyID] = struct{}{}
 	}
 	return policiesNotified, nil
+}
+
+// maintainHotlists ensures the has been inserted into the hotlists
+// configured by the active policies. Note: The issue is not removed
+// from the hotlist when a policy de-activates on a rule.
+func (bm *BugManager) insertIntoHotlists(ctx context.Context, hotlistIDs map[int64]struct{}, issueID int64) error {
+	hotlistInsertionRequests := PrepareHotlistInsertions(hotlistIDs, issueID)
+	for _, req := range hotlistInsertionRequests {
+		if bm.Simulate {
+			logging.Debugf(ctx, "Would create hotlist entry: %s", textPBMultiline.Format(req))
+		} else {
+			if _, err := bm.client.CreateHotlistEntry(ctx, req); err != nil {
+				return errors.Annotate(err, "insert into hotlist %d", req.HotlistId).Err()
+			}
+		}
+	}
+	return nil
 }
 
 // Update updates the issues in Buganizer.
@@ -434,7 +458,7 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 				response.Error = errors.Annotate(err, "determine if priority manually set").Err()
 				return response
 			}
-			mur, err := bm.requestGenerator.MakePriorityOrVerifiedUpdate(ctx, MakeUpdateOptions{
+			mur, err := bm.requestGenerator.MakePriorityOrVerifiedUpdate(MakeUpdateOptions{
 				BugManagementState:     request.BugManagementState,
 				Issue:                  issue,
 				IsManagingBugPriority:  request.IsManagingBugPriority,
@@ -454,6 +478,20 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 				bugs.BugsUpdatedCounter.Add(ctx, 1, bm.project, "buganizer")
 			}
 			response.DisableRulePriorityUpdates = mur.disablePriorityUpdates
+		}
+
+		// Hotlists
+		// Find all hotlists specified on active policies.
+		hotlistsIDsToAdd := bm.requestGenerator.ExpectedHotlistIDs(bugs.ActivePolicies(request.BugManagementState))
+
+		// Subtract the hotlists already on the bug.
+		for _, hotlistID := range issue.IssueState.HotlistIds {
+			delete(hotlistsIDsToAdd, hotlistID)
+		}
+
+		if err := bm.insertIntoHotlists(ctx, hotlistsIDsToAdd, issue.IssueId); err != nil {
+			response.Error = errors.Annotate(err, "insert issue into hotlists").Err()
+			return response
 		}
 	}
 

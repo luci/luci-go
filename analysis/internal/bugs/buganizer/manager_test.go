@@ -24,6 +24,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
@@ -50,14 +51,17 @@ func TestBugManager(t *testing.T) {
 		policyA := config.CreatePlaceholderBugManagementPolicy("policy-a")
 		policyA.HumanReadableName = "Problem A"
 		policyA.Priority = configpb.BuganizerPriority_P4
+		policyA.BugTemplate.Buganizer.Hotlists = []int64{1001}
 
 		policyB := config.CreatePlaceholderBugManagementPolicy("policy-b")
 		policyB.HumanReadableName = "Problem B"
 		policyB.Priority = configpb.BuganizerPriority_P0
+		policyB.BugTemplate.Buganizer.Hotlists = []int64{1002}
 
 		policyC := config.CreatePlaceholderBugManagementPolicy("policy-c")
 		policyC.HumanReadableName = "Problem C"
 		policyC.Priority = configpb.BuganizerPriority_P1
+		policyC.BugTemplate.Buganizer.Hotlists = []int64{1003}
 
 		projectCfg := &configpb.ProjectConfig{
 			BugManagement: &configpb.BugManagement{
@@ -98,6 +102,7 @@ func TestBugManager(t *testing.T) {
 							EmailAddress: "testcc2@google.com",
 						},
 					},
+					HotlistIds: []int64{1001},
 				},
 				CreatedTime:  timestamppb.New(clock.Now(ctx)),
 				ModifiedTime: timestamppb.New(clock.Now(ctx)),
@@ -171,6 +176,7 @@ func TestBugManager(t *testing.T) {
 					}
 					expectedIssue.Description.Comment = strings.Replace(expectedIssue.Description.Comment, "- Problem A\n", "- Problem B\n- Problem C\n- Problem A\n", 1)
 					expectedIssue.IssueState.Priority = issuetracker.Issue_P0
+					expectedIssue.IssueState.HotlistIds = []int64{1001, 1002, 1003}
 
 					// Act
 					response := bm.Create(ctx, createRequest)
@@ -237,6 +243,8 @@ func TestBugManager(t *testing.T) {
 					expectedIssue.Description.Comment = strings.ReplaceAll(expectedIssue.Description.Comment,
 						"https://luci-analysis-test.appspot.com/b/1",
 						"https://luci-analysis-test.appspot.com/p/chromeos/rules/new-rule-id")
+					// We didn't get so far as to insert the issue in hotlists.
+					expectedIssue.IssueState.HotlistIds = []int64{}
 
 					issueData := fakeStore.Issues[1]
 					So(issueData.Issue, ShouldResembleProto, expectedIssue)
@@ -406,7 +414,7 @@ func TestBugManager(t *testing.T) {
 				},
 			}
 			verifyUpdateDoesNothing := func() error {
-				oldTime := timestamppb.New(fakeStore.Issues[1].Issue.ModifiedTime.AsTime())
+				originalIssue := proto.Clone(fakeStore.Issues[1].Issue).(*issuetracker.Issue)
 				response, err := bm.Update(ctx, bugsToUpdate)
 				if err != nil {
 					return errors.Annotate(err, "update bugs").Err()
@@ -414,8 +422,8 @@ func TestBugManager(t *testing.T) {
 				if diff := ShouldResemble(response, expectedResponse); diff != "" {
 					return errors.Reason("response: %s", diff).Err()
 				}
-				if diff := ShouldResembleProto(fakeStore.Issues[1].Issue.ModifiedTime, oldTime); diff != "" {
-					return errors.Reason("modifed time: %s", diff).Err()
+				if diff := ShouldResembleProto(fakeStore.Issues[1].Issue, originalIssue); diff != "" {
+					return errors.Reason("issue 1: %s", diff).Err()
 				}
 				return nil
 			}
@@ -506,6 +514,9 @@ func TestBugManager(t *testing.T) {
 					So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
 					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 						"Policy ID: policy-b")
+
+					// Expect policy B's hotlist to be added to the bug.
+					So(fakeStore.Issues[1].Issue.IssueState.HotlistIds, ShouldResemble, []int64{1001, 1002, 1003})
 
 					// Verify repeated update has no effect.
 					bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].ActivationNotified = true

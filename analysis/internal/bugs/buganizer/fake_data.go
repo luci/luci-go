@@ -16,8 +16,8 @@ package buganizer
 
 import (
 	"context"
-	"fmt"
 
+	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -130,7 +130,7 @@ func (fis *FakeIssueStore) BatchGetIssues(issueIds []int64) ([]*issuetracker.Iss
 func (fis *FakeIssueStore) GetIssue(id int64) (*IssueData, error) {
 	issueData, ok := fis.Issues[id]
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("Issue does not exist: %d", id))
+		return nil, errors.Reason("issue %d does not exist", id).Err()
 	}
 	return issueData, nil
 }
@@ -138,7 +138,22 @@ func (fis *FakeIssueStore) GetIssue(id int64) (*IssueData, error) {
 func (fis *FakeIssueStore) ListIssueUpdates(id int64) ([]*issuetracker.IssueUpdate, error) {
 	issueData, ok := fis.Issues[id]
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("Issue does not exist: %d", id))
+		return nil, errors.Reason("issue %d does not exist", id).Err()
 	}
 	return issueData.IssueUpdates, nil
+}
+
+func (fis *FakeIssueStore) CreateHotlistEntry(issueID int64, hotlistID int64) error {
+	issueData, ok := fis.Issues[issueID]
+	if !ok {
+		return errors.Reason("issue %d does not exist", issueID).Err()
+	}
+	for _, existingHotlistID := range issueData.Issue.IssueState.HotlistIds {
+		if existingHotlistID == hotlistID {
+			return errors.Reason("hotlist %v already contains issue %v", hotlistID, issueID).Err()
+		}
+	}
+	issueData.Issue.IssueState.HotlistIds = append(issueData.Issue.IssueState.HotlistIds, hotlistID)
+	slices.Sort(issueData.Issue.IssueState.HotlistIds)
+	return nil
 }

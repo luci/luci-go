@@ -231,6 +231,17 @@ func (fic *FakeClient) ListIssueComments(ctx context.Context, in *issuetracker.L
 	}
 }
 
+func (fic *FakeClient) CreateHotlistEntry(ctx context.Context, in *issuetracker.CreateHotlistEntryRequest) (*issuetracker.HotlistEntry, error) {
+	err := fic.FakeStore.CreateHotlistEntry(in.HotlistEntry.IssueId, in.HotlistId)
+	if err != nil {
+		return nil, errors.Annotate(err, "fake create hotlist entry").Err()
+	}
+	return &issuetracker.HotlistEntry{
+		IssueId:  in.HotlistEntry.IssueId,
+		Position: 0, // Not currently populated by fake implementation.
+	}, nil
+}
+
 type fakeIssueUpdateIterator struct {
 	pointer int
 	err     error

@@ -79,6 +79,21 @@ func (p PolicyApplyer) applyPriorityFloor(priority configpb.BuganizerPriority) c
 	return priority
 }
 
+// PoliciesByIDs returns the policies with the given IDs, to
+// the extent that they are still configured.
+func (p PolicyApplyer) PoliciesByIDs(activePolicyIDs map[PolicyID]struct{}) []*configpb.BugManagementPolicy {
+	var result []*configpb.BugManagementPolicy
+	for _, policy := range p.policiesByDescendingPriority {
+		_, ok := activePolicyIDs[PolicyID(policy.Id)]
+		if !ok {
+			// Policy not active.
+			continue
+		}
+		result = append(result, policy)
+	}
+	return result
+}
+
 // RecommendedPriorityAndVerified identifies the priority and verification state
 // recommended for a bug with the given set of policies active.
 func (p PolicyApplyer) RecommendedPriorityAndVerified(activePolicyIDs map[PolicyID]struct{}) (priority configpb.BuganizerPriority, verified bool) {
@@ -117,7 +132,7 @@ type BugOptions struct {
 // NeedsPriorityOrVerifiedUpdate returns whether a bug needs to have its
 // priority or verified status updated, based on the current active policies.
 func (p PolicyApplyer) NeedsPriorityOrVerifiedUpdate(opts BugOptions) bool {
-	recommendedPriority, recommendedVerified := p.RecommendedPriorityAndVerified(activePolicies(opts.State))
+	recommendedPriority, recommendedVerified := p.RecommendedPriorityAndVerified(ActivePolicies(opts.State))
 
 	// Priority updates are only considered if:
 	// - We are managing the bug priority
@@ -151,7 +166,7 @@ type BugChange struct {
 // A human readable explanation of the changes to include in a comment
 // is also returned.
 func (p PolicyApplyer) PreparePriorityAndVerifiedChange(opts BugOptions, uiBaseURL string) (BugChange, error) {
-	currentActive := activePolicies(opts.State)
+	currentActive := ActivePolicies(opts.State)
 	changes := lastPolicyActivationChanges(opts.State)
 	previousActive := previouslyActivePolicies(opts.State)
 
