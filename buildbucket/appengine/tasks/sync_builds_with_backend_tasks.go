@@ -233,6 +233,10 @@ func syncBuildsWithBackendTasks(ctx context.Context, mr parallel.MultiRunner, bc
 	for _, ent := range entities {
 		taskIDs = append(taskIDs, ent.infra.Proto.Backend.Task.Id)
 	}
+	if len(taskIDs) == 0 {
+		return nil
+	}
+	logging.Infof(ctx, "Fetching %d backend tasks, example:%s", len(taskIDs), taskIDs[0])
 	resp, err := bc.FetchTasks(ctx, &pb.FetchTasksRequest{TaskIds: taskIDs})
 	if err != nil {
 		return errors.Annotate(err, "failed to fetch backend tasks").Err()
