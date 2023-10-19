@@ -49,7 +49,7 @@ export const routes: RouteObject[] = [
   },
   {
     path: 'p/:project/builders/:bucket/:builder',
-    lazy: () => import('@/app/pages/builder_page'),
+    lazy: () => import('@/build/pages/builder_page'),
   },
   {
     path: 'b/:buildId/*?',
