@@ -46,7 +46,7 @@ func TestManagerLegacy(t *testing.T) {
 		user := AutomationUsers[0]
 		cl, err := NewClient(UseFakeIssuesClient(ctx, f, user), "myhost")
 		So(err, ShouldBeNil)
-		monorailCfgs := ChromiumTestConfig()
+		monorailCfgs := ChromiumLegacyTestConfig()
 
 		bugFilingThreshold := bugs.TestBugFilingThresholds()
 
@@ -59,7 +59,7 @@ func TestManagerLegacy(t *testing.T) {
 			},
 		}
 
-		bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg)
+		bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg, false /* usePolicyBasedManagement */)
 		So(err, ShouldBeNil)
 		now := time.Date(2040, time.January, 1, 2, 3, 4, 5, time.UTC)
 		ctx, tc := testclock.UseTime(ctx, now)

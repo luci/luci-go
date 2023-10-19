@@ -160,6 +160,7 @@ type BugCreateRequest struct {
 	BuganizerComponent int64
 
 	// Policy-based bug management fields.
+
 	// The bug management policies which activated for this
 	// cluster and are triggering the filing of this bug.
 	ActivePolicyIDs map[PolicyID]struct{}

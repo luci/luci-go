@@ -42,44 +42,53 @@ func ChromiumTestConfig() *configpb.MonorailProject {
 				Value:   "Bug",
 			},
 		},
-		PriorityFieldId: 11,
-		Priorities: []*configpb.MonorailPriority{
-			{
-				Priority: "0",
-				Thresholds: []*configpb.ImpactMetricThreshold{
-					{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(1000)}},
-					{MetricId: metrics.TestRunsFailed.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(100)}},
-				},
-			},
-			{
-				Priority: "1",
-				Thresholds: []*configpb.ImpactMetricThreshold{
-					{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(500)}},
-					{MetricId: metrics.TestRunsFailed.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(50)}},
-				}},
-			{
-				Priority: "2",
-				Thresholds: []*configpb.ImpactMetricThreshold{
-					{MetricId: metrics.TestRunsFailed.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(10)}},
-					{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(100)}},
-				},
-			},
-			{
-				Priority: "3",
-				// Should be less onerous than the bug-filing thresholds
-				// used in BugUpdater tests, to avoid bugs that were filed
-				// from being immediately closed.
-				Thresholds: []*configpb.ImpactMetricThreshold{
-					{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{
-						OneDay:   proto.Int64(50),
-						ThreeDay: proto.Int64(300),
-						SevenDay: proto.Int64(1), // Set to 1 so that we check hysteresis never rounds down to 0 and prevents bugs from closing.
-					}}},
-			},
-		},
+		PriorityFieldId:           11,
 		PriorityHysteresisPercent: 10,
+		DisplayPrefix:             "crbug.com",
+		MonorailHostname:          "bugs.chromium.org",
 	}
 	return projectCfg
+}
+
+// ChromiumLegacyTestConfig provides chromium-like legacy
+// configuration for tests to use.
+func ChromiumLegacyTestConfig() *configpb.MonorailProject {
+	result := ChromiumTestConfig()
+	result.Priorities = []*configpb.MonorailPriority{
+		{
+			Priority: "0",
+			Thresholds: []*configpb.ImpactMetricThreshold{
+				{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(1000)}},
+				{MetricId: metrics.TestRunsFailed.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(100)}},
+			},
+		},
+		{
+			Priority: "1",
+			Thresholds: []*configpb.ImpactMetricThreshold{
+				{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(500)}},
+				{MetricId: metrics.TestRunsFailed.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(50)}},
+			}},
+		{
+			Priority: "2",
+			Thresholds: []*configpb.ImpactMetricThreshold{
+				{MetricId: metrics.TestRunsFailed.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(10)}},
+				{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(100)}},
+			},
+		},
+		{
+			Priority: "3",
+			// Should be less onerous than the bug-filing thresholds
+			// used in BugUpdater tests, to avoid bugs that were filed
+			// from being immediately closed.
+			Thresholds: []*configpb.ImpactMetricThreshold{
+				{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{
+					OneDay:   proto.Int64(50),
+					ThreeDay: proto.Int64(300),
+					SevenDay: proto.Int64(1), // Set to 1 so that we check hysteresis never rounds down to 0 and prevents bugs from closing.
+				}}},
+		},
+	}
+	return result
 }
 
 // ChromiumTestIssuePriority returns the priority of an issue, assuming

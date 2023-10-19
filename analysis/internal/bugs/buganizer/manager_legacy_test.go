@@ -41,7 +41,7 @@ func TestBugManagerLegacy(t *testing.T) {
 		ctx := context.Background()
 		fakeClient := NewFakeClient()
 		fakeStore := fakeClient.FakeStore
-		buganizerCfg := ChromeOSTestConfig()
+		buganizerCfg := ChromeOSLegacyTestConfig()
 
 		bugFilingThreshold := bugs.TestBugFilingThresholds()
 
@@ -54,7 +54,7 @@ func TestBugManagerLegacy(t *testing.T) {
 			},
 		}
 
-		bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false)
+		bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false, false /* usePolicyBasedManagement */)
 		So(err, ShouldBeNil)
 		now := time.Date(2044, time.April, 4, 4, 4, 4, 4, time.UTC)
 		ctx, tc := testclock.UseTime(ctx, now)

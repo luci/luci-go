@@ -93,11 +93,17 @@ type BugManager struct {
 	selfEmail string
 	// The LUCI Project.
 	project string
-	// The snapshot of configuration to use for the project.
-	projectCfg *configpb.ProjectConfig
+	// The default buganizer component to file into.
+	defaultComponent *configpb.BuganizerComponent
+	// Whether we are using policy-based bug management (or legacy
+	// bug management).
+	usePolicyBasedManagement bool
 	// The generator used to generate updates to Buganizer bugs.
-	requestGenerator RequestGenerator
-
+	// Set if and only if usePolicyBasedManagement.
+	requestGenerator *RequestGenerator
+	// The legacy generator used to generate updates to Buganizer bugs.
+	// Set if and only if !usePolicyBasedManagement.
+	legacyRequestGenerator *LegacyRequestGenerator
 	// This flags toggles the bug manager to stub the calls to
 	// Buganizer and mock the responses and behaviour of issue manipluation.
 	// Use this flag for testing purposes ONLY.
@@ -111,25 +117,48 @@ type BugManager struct {
 func NewBugManager(client Client,
 	uiBaseURL, project, selfEmail string,
 	projectCfg *configpb.ProjectConfig,
-	simulate bool) (*BugManager, error) {
-	requestGenerator, err := NewRequestGenerator(
-		client,
-		project,
-		uiBaseURL,
-		selfEmail,
-		projectCfg,
-	)
-	if err != nil {
-		return nil, errors.Annotate(err, "create request generator").Err()
+	simulate, usePolicyBasedManagement bool) (*BugManager, error) {
+
+	var generator *RequestGenerator
+	var legacyGenerator *LegacyRequestGenerator
+	var defaultComponent *configpb.BuganizerComponent
+	if usePolicyBasedManagement {
+		var err error
+		generator, err = NewRequestGenerator(
+			client,
+			project,
+			uiBaseURL,
+			selfEmail,
+			projectCfg,
+		)
+		if err != nil {
+			return nil, errors.Annotate(err, "create request generator").Err()
+		}
+		defaultComponent = projectCfg.BugManagement.Buganizer.DefaultComponent
+	} else {
+		var err error
+		legacyGenerator, err = NewLegacyRequestGenerator(
+			client,
+			project,
+			uiBaseURL,
+			selfEmail,
+			projectCfg,
+		)
+		if err != nil {
+			return nil, errors.Annotate(err, "create request generator").Err()
+		}
+		defaultComponent = projectCfg.Buganizer.DefaultComponent
 	}
 
 	return &BugManager{
-		client:           client,
-		projectCfg:       projectCfg,
-		project:          project,
-		selfEmail:        selfEmail,
-		requestGenerator: *requestGenerator,
-		Simulate:         simulate,
+		client:                   client,
+		defaultComponent:         defaultComponent,
+		project:                  project,
+		selfEmail:                selfEmail,
+		usePolicyBasedManagement: usePolicyBasedManagement,
+		requestGenerator:         generator,
+		legacyRequestGenerator:   legacyGenerator,
+		Simulate:                 simulate,
 	}, nil
 }
 
@@ -139,7 +168,7 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 	response.Simulated = bm.Simulate
 	response.PolicyActivationsNotified = make(map[bugs.PolicyID]struct{})
 
-	componentID := bm.projectCfg.Buganizer.DefaultComponent.Id
+	componentID := bm.defaultComponent.Id
 	buganizerTestMode := ctx.Value(&BuganizerTestModeKey)
 	wantedComponentID := createRequest.BuganizerComponent
 	// Use wanted component if not in test mode.
@@ -156,10 +185,8 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 		}
 	}
 
-	isUsingPolicyBasedManagement := createRequest.ActivePolicyIDs != nil
-
 	var createIssueRequest *issuetracker.CreateIssueRequest
-	if isUsingPolicyBasedManagement {
+	if bm.usePolicyBasedManagement {
 		var err error
 		createIssueRequest, err = bm.requestGenerator.PrepareNew(
 			createRequest.Description,
@@ -172,7 +199,7 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 			return response
 		}
 	} else {
-		createIssueRequest = bm.requestGenerator.PrepareNewLegacy(
+		createIssueRequest = bm.legacyRequestGenerator.PrepareNewLegacy(
 			createRequest.Metrics,
 			createRequest.Description,
 			createRequest.RuleID,
@@ -199,14 +226,14 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 	response.ID = strconv.Itoa(int(issueID))
 
 	var issueCommentReq *issuetracker.UpdateIssueCommentRequest
-	if isUsingPolicyBasedManagement {
+	if bm.usePolicyBasedManagement {
 		issueCommentReq = bm.requestGenerator.PrepareLinkIssueCommentUpdate(
 			createRequest.Description,
 			createRequest.ActivePolicyIDs,
 			issueID,
 		)
 	} else {
-		issueCommentReq = bm.requestGenerator.PrepareLinkIssueCommentUpdateLegacy(
+		issueCommentReq = bm.legacyRequestGenerator.PrepareLinkIssueCommentUpdateLegacy(
 			createRequest.Metrics,
 			createRequest.Description,
 			issueID,
@@ -229,7 +256,12 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 	}
 
 	if wantedComponentID > 0 && wantedComponentID != componentID {
-		commentRequest := bm.requestGenerator.PrepareNoPermissionComment(issueID, wantedComponentID)
+		var commentRequest *issuetracker.CreateIssueCommentRequest
+		if bm.usePolicyBasedManagement {
+			commentRequest = bm.requestGenerator.PrepareNoPermissionComment(issueID, wantedComponentID)
+		} else {
+			commentRequest = bm.legacyRequestGenerator.PrepareNoPermissionComment(issueID, wantedComponentID)
+		}
 		if bm.Simulate {
 			logging.Debugf(ctx, "Would post comment on Buganizer issue: %s", textPBMultiline.Format(commentRequest))
 		} else {
@@ -240,10 +272,12 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 		}
 	}
 
-	response.PolicyActivationsNotified, err = bm.notifyPolicyActivation(ctx, issueID, createRequest.ActivePolicyIDs)
-	if err != nil {
-		response.Error = errors.Annotate(err, "notify policy activations").Err()
-		return response
+	if bm.usePolicyBasedManagement {
+		response.PolicyActivationsNotified, err = bm.notifyPolicyActivation(ctx, issueID, createRequest.ActivePolicyIDs)
+		if err != nil {
+			response.Error = errors.Annotate(err, "notify policy activations").Err()
+			return response
+		}
 	}
 
 	return response
@@ -445,8 +479,8 @@ func (bm *BugManager) updateIssueLegacy(ctx context.Context, request bugs.BugUpd
 		!updateResponse.ShouldArchive &&
 		request.IsManagingBug &&
 		request.Metrics != nil {
-		if bm.requestGenerator.NeedsUpdateLegacy(request.Metrics, issue, request.IsManagingBugPriority) {
-			mur, err := bm.requestGenerator.MakeUpdateLegacy(ctx, MakeUpdateLegacyOptions{
+		if bm.legacyRequestGenerator.NeedsUpdateLegacy(request.Metrics, issue, request.IsManagingBugPriority) {
+			mur, err := bm.legacyRequestGenerator.MakeUpdateLegacy(ctx, MakeUpdateLegacyOptions{
 				metrics:                          request.Metrics,
 				issue:                            issue,
 				IsManagingBugPriority:            request.IsManagingBugPriority,
@@ -653,7 +687,12 @@ func (bm *BugManager) UpdateDuplicateSource(ctx context.Context, request bugs.Up
 	if err != nil {
 		return errors.Annotate(err, "update duplicate source").Err()
 	}
-	req := bm.requestGenerator.UpdateDuplicateSource(int64(issueId), request.ErrorMessage, request.DestinationRuleID, request.BugDetails.IsAssigned)
+	var req *issuetracker.ModifyIssueRequest
+	if bm.usePolicyBasedManagement {
+		req = bm.requestGenerator.UpdateDuplicateSource(int64(issueId), request.ErrorMessage, request.DestinationRuleID, request.BugDetails.IsAssigned)
+	} else {
+		req = bm.legacyRequestGenerator.UpdateDuplicateSource(int64(issueId), request.ErrorMessage, request.DestinationRuleID, request.BugDetails.IsAssigned)
+	}
 	if bm.Simulate {
 		logging.Debugf(ctx, "Would update Buganizer issue: %s", textPBMultiline.Format(req))
 	} else {
@@ -679,7 +718,12 @@ func (bm *BugManager) UpdateDuplicateDestination(ctx context.Context, destinatio
 	if err != nil {
 		return errors.Annotate(err, "update duplicate destination").Err()
 	}
-	req := bm.requestGenerator.UpdateDuplicateDestination(int64(issueId))
+	var req *issuetracker.ModifyIssueRequest
+	if bm.usePolicyBasedManagement {
+		req = bm.requestGenerator.UpdateDuplicateDestination(int64(issueId))
+	} else {
+		req = bm.legacyRequestGenerator.UpdateDuplicateDestination(int64(issueId))
+	}
 	if err != nil {
 		return errors.Annotate(err, "mark issue as available").Err()
 	}

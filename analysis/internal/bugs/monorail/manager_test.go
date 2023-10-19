@@ -71,8 +71,6 @@ func TestManager(t *testing.T) {
 		So(err, ShouldBeNil)
 		monorailCfgs := ChromiumTestConfig()
 
-		bugFilingThreshold := bugs.TestBugFilingThresholds()
-
 		policyA := config.CreatePlaceholderBugManagementPolicy("policy-a")
 		policyA.HumanReadableName = "Problem A"
 		policyA.Priority = configpb.BuganizerPriority_P4
@@ -86,10 +84,9 @@ func TestManager(t *testing.T) {
 		policyC.Priority = configpb.BuganizerPriority_P1
 
 		projectCfg := &configpb.ProjectConfig{
-			Monorail:            monorailCfgs,
-			BugFilingThresholds: bugFilingThreshold,
-			BugSystem:           configpb.BugSystem_MONORAIL,
 			BugManagement: &configpb.BugManagement{
+				DefaultBugSystem: configpb.BugSystem_MONORAIL,
+				Monorail:         monorailCfgs,
 				Policies: []*configpb.BugManagementPolicy{
 					policyA,
 					policyB,
@@ -98,7 +95,7 @@ func TestManager(t *testing.T) {
 			},
 		}
 
-		bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg)
+		bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg, true /* usePolicyBasedManagement */)
 		So(err, ShouldBeNil)
 		now := time.Date(2040, time.January, 1, 2, 3, 4, 5, time.UTC)
 		ctx, tc := testclock.UseTime(ctx, now)
@@ -187,7 +184,7 @@ func TestManager(t *testing.T) {
 				Convey("Policy has no comment template", func() {
 					policyA.BugTemplate.CommentTemplate = ""
 
-					bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg)
+					bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg, true /* usePolicyBasedManagement */)
 					So(err, ShouldBeNil)
 
 					// Act

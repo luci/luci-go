@@ -183,7 +183,7 @@ func TestUpdate(t *testing.T) {
 
 			expectedBuganizerBug := buganizerBug{
 				ID:            1,
-				Component:     projectCfg.Buganizer.DefaultComponent.Id,
+				Component:     projectCfg.BugManagement.Buganizer.DefaultComponent.Id,
 				ExpectedTitle: "Failed to connect to 100.1.1.105.",
 				// Expect the bug description to contain the top tests.
 				ExpectedContent: []string{
@@ -547,7 +547,7 @@ func TestUpdate(t *testing.T) {
 					}}
 
 					// But buganizer is not configured, so we should file into monorail.
-					projectCfg.Buganizer = nil
+					projectCfg.BugManagement.Buganizer = nil
 					err = config.SetTestProjectConfig(ctx, projectsCfg)
 					So(err, ShouldBeNil)
 
@@ -568,7 +568,7 @@ func TestUpdate(t *testing.T) {
 					}}
 
 					// But monorail is not configured, so we should file into Buganizer.
-					projectCfg.Monorail = nil
+					projectCfg.BugManagement.Monorail = nil
 					err = config.SetTestProjectConfig(ctx, projectsCfg)
 					So(err, ShouldBeNil)
 
@@ -587,7 +587,7 @@ func TestUpdate(t *testing.T) {
 				})
 				Convey("in case of tied failure count between monorail/buganizer, should use default bug system", func() {
 					// The default bug system is buganizer.
-					So(projectCfg.BugSystem, ShouldEqual, configpb.BugSystem_BUGANIZER)
+					So(projectCfg.BugManagement.DefaultBugSystem, ShouldEqual, configpb.BugSystem_BUGANIZER)
 
 					suggestedClusters[1].TopBuganizerComponents = []analysis.TopCount{{
 						Value: "",
@@ -1977,28 +1977,11 @@ func TestUpdate(t *testing.T) {
 }
 
 func createProjectConfig() *configpb.ProjectConfig {
-	buganizerCfg := buganizer.ChromeOSTestConfig()
-	monorailCfg := monorail.ChromiumTestConfig()
-	thres := []*configpb.ImpactMetricThreshold{
-		{
-			MetricId: "failures",
-			// Should be more onerous than the "keep-open" thresholds
-			// configured for each individual bug manager.
-			Threshold: &configpb.MetricThreshold{
-				OneDay:   proto.Int64(100),
-				ThreeDay: proto.Int64(300),
-				SevenDay: proto.Int64(700),
-			},
-		},
-	}
 	return &configpb.ProjectConfig{
-		// Need this for testing until fully migrated to policy-based bug filing.
-		BugSystem:           configpb.BugSystem_BUGANIZER,
-		Buganizer:           buganizerCfg,
-		Monorail:            monorailCfg,
-		BugFilingThresholds: thres,
-
 		BugManagement: &configpb.BugManagement{
+			DefaultBugSystem: configpb.BugSystem_BUGANIZER,
+			Buganizer:        buganizer.ChromeOSTestConfig(),
+			Monorail:         monorail.ChromiumTestConfig(),
 			Policies: []*configpb.BugManagementPolicy{
 				createExonerationPolicy(),
 				createCLsRejectedPolicy(),

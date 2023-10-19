@@ -1227,7 +1227,7 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 		request.Metrics = impact
 	}
 
-	system, err := routeToBugSystem(b.projectCfg, cs)
+	system, err := b.routeToBugSystem(cs)
 	if err != nil {
 		return false, errors.Annotate(err, "extracting bug system").Err()
 	}
@@ -1293,18 +1293,29 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 	return true, nil
 }
 
-func routeToBugSystem(projectCfg *compiledcfg.ProjectConfig, cs *analysis.Cluster) (string, error) {
-	if projectCfg.Config.Monorail == nil && projectCfg.Config.Buganizer == nil {
+func (b *BugUpdater) routeToBugSystem(cs *analysis.Cluster) (string, error) {
+	var hasMonorail, hasBuganizer bool
+	var defaultSystem configpb.BugSystem
+	if b.UsePolicyBasedManagement {
+		hasMonorail = b.projectCfg.Config.BugManagement.GetMonorail() != nil
+		hasBuganizer = b.projectCfg.Config.BugManagement.GetBuganizer() != nil
+		defaultSystem = b.projectCfg.Config.BugManagement.GetDefaultBugSystem()
+	} else {
+		hasMonorail = b.projectCfg.Config.Monorail != nil
+		hasBuganizer = b.projectCfg.Config.Buganizer != nil
+		defaultSystem = b.projectCfg.Config.BugSystem
+	}
+	if !hasMonorail && !hasBuganizer {
 		return "", errors.New("at least one bug filing system need to be configured")
 	}
-
-	if projectCfg.Config.Monorail == nil {
+	// If only one bug system configured, pick that system.
+	if !hasMonorail {
 		return bugs.BuganizerSystem, nil
 	}
-
-	if projectCfg.Config.Buganizer == nil {
+	if !hasBuganizer {
 		return bugs.MonorailSystem, nil
 	}
+	// When both bug systems are configured, pick the most suitable one.
 
 	// The most impactful monorail component.
 	var topMonorailComponent analysis.TopCount
@@ -1337,7 +1348,7 @@ func routeToBugSystem(projectCfg *compiledcfg.ProjectConfig, cs *analysis.Cluste
 	}
 
 	if topMonorailComponent.Value == "" && topBuganizerComponent.Value == "" {
-		return findDefaultBugSystem(projectCfg), nil
+		return defaultBugSystemName(defaultSystem), nil
 	} else if topMonorailComponent.Value != "" && topBuganizerComponent.Value == "" {
 		return bugs.MonorailSystem, nil
 	} else if topMonorailComponent.Value == "" && topBuganizerComponent.Value != "" {
@@ -1348,7 +1359,7 @@ func routeToBugSystem(projectCfg *compiledcfg.ProjectConfig, cs *analysis.Cluste
 			return bugs.MonorailSystem, nil
 		} else if topMonorailComponent.Count == topBuganizerComponent.Count {
 			// If top components have equal impact, use the configured default system.
-			return findDefaultBugSystem(projectCfg), nil
+			return defaultBugSystemName(defaultSystem), nil
 		} else {
 			return bugs.BuganizerSystem, nil
 		}
@@ -1382,8 +1393,8 @@ func extractMonorailComponents(cs *analysis.Cluster) []string {
 	return monorailComponents
 }
 
-func findDefaultBugSystem(projectCfg *compiledcfg.ProjectConfig) string {
-	if projectCfg.Config.BugSystem == configpb.BugSystem_BUGANIZER {
+func defaultBugSystemName(defaultSystem configpb.BugSystem) string {
+	if defaultSystem == configpb.BugSystem_BUGANIZER {
 		return bugs.BuganizerSystem
 	} else {
 		return bugs.MonorailSystem

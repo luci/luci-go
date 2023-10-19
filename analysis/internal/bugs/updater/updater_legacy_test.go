@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/analysis"
@@ -64,7 +65,7 @@ func TestLegacyUpdate(t *testing.T) {
 		// cls-rejected-policy:
 		// - activation threshold: 10 in one week
 		// - deactivation threshold: 1 in one week
-		projectCfg := createProjectConfig()
+		projectCfg := createLegacyProjectConfig()
 		projectsCfg := map[string]*configpb.ProjectConfig{
 			project: projectCfg,
 		}
@@ -1687,4 +1688,36 @@ func TestLegacyUpdate(t *testing.T) {
 			})
 		})
 	})
+}
+
+func createLegacyProjectConfig() *configpb.ProjectConfig {
+	buganizerCfg := buganizer.ChromeOSLegacyTestConfig()
+	monorailCfg := monorail.ChromiumLegacyTestConfig()
+	thres := []*configpb.ImpactMetricThreshold{
+		{
+			MetricId: "failures",
+			// Should be more onerous than the "keep-open" thresholds
+			// configured for each individual bug manager.
+			Threshold: &configpb.MetricThreshold{
+				OneDay:   proto.Int64(100),
+				ThreeDay: proto.Int64(300),
+				SevenDay: proto.Int64(700),
+			},
+		},
+	}
+	return &configpb.ProjectConfig{
+		// Need this for testing until fully migrated to policy-based bug filing.
+		BugSystem:           configpb.BugSystem_BUGANIZER,
+		Buganizer:           buganizerCfg,
+		Monorail:            monorailCfg,
+		BugFilingThresholds: thres,
+		BugManagement: &configpb.BugManagement{
+			Policies: []*configpb.BugManagementPolicy{
+				createExonerationPolicy(),
+				createCLsRejectedPolicy(),
+			},
+		},
+
+		LastUpdated: timestamppb.New(time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC)),
+	}
 }

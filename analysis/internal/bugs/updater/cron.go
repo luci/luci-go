@@ -305,24 +305,23 @@ func updateBugsForProject(ctx context.Context, opts updateOptions) (retErr error
 	if err != nil {
 		return errors.Annotate(err, "read project config").Err()
 	}
-	hasBugSystem := projectCfg.Config.Monorail != nil || projectCfg.Config.Buganizer != nil
-	if !hasBugSystem {
-		return nil
-	}
+
 	mgrs := make(map[string]BugManager)
 
-	if projectCfg.Config.Monorail != nil {
-		// Create Monorail bug manager
-		monorailBugManager, err := monorail.NewBugManager(opts.monorailClient, opts.uiBaseURL, opts.project, projectCfg.Config)
+	if (opts.usePolicyBasedManagement && projectCfg.Config.BugManagement.GetMonorail() != nil) ||
+		(!opts.usePolicyBasedManagement && projectCfg.Config.Monorail != nil) {
+		// Create Monorail bug manager.
+		monorailBugManager, err := monorail.NewBugManager(opts.monorailClient, opts.uiBaseURL, opts.project, projectCfg.Config, opts.usePolicyBasedManagement)
 		if err != nil {
 			return errors.Annotate(err, "create monorail bug manager").Err()
 		}
 
 		monorailBugManager.Simulate = opts.simulateBugUpdates
 		mgrs[bugs.MonorailSystem] = monorailBugManager
-
 	}
-	if projectCfg.Config.Buganizer != nil {
+
+	if (opts.usePolicyBasedManagement && projectCfg.Config.BugManagement.GetBuganizer() != nil) ||
+		(!opts.usePolicyBasedManagement && projectCfg.Config.Buganizer != nil) {
 		if opts.buganizerClient == nil {
 			return errors.New("buganizerClient cannot be nil")
 		}
@@ -340,6 +339,7 @@ func updateBugsForProject(ctx context.Context, opts updateOptions) (retErr error
 			selfEmail,
 			projectCfg.Config,
 			opts.simulateBugUpdates,
+			opts.usePolicyBasedManagement,
 		)
 		if err != nil {
 			return errors.Annotate(err, "create buganizer bug manager").Err()
@@ -347,6 +347,12 @@ func updateBugsForProject(ctx context.Context, opts updateOptions) (retErr error
 
 		mgrs[bugs.BuganizerSystem] = buganizerBugManager
 	}
+
+	if len(mgrs) == 0 {
+		// No bug managers configured.
+		return nil
+	}
+
 	bugUpdater := NewBugUpdater(opts.project, mgrs, opts.analysisClient, projectCfg, opts.runTimestamp)
 	bugUpdater.MaxBugsFiledPerRun = opts.maxBugsFiledPerRun
 	bugUpdater.UsePolicyBasedManagement = opts.usePolicyBasedManagement

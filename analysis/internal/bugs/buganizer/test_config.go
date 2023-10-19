@@ -26,9 +26,14 @@ func ChromeOSTestConfig() *configpb.BuganizerProject {
 		DefaultComponent: &configpb.BuganizerComponent{
 			Id: 1234567,
 		},
-		PriorityMappings:          createPriorityMappings(),
 		PriorityHysteresisPercent: 10,
 	}
+}
+
+func ChromeOSLegacyTestConfig() *configpb.BuganizerProject {
+	result := ChromeOSTestConfig()
+	result.PriorityMappings = createPriorityMappings()
+	return result
 }
 
 func createPriorityMappings() []*configpb.BuganizerProject_PriorityMapping {

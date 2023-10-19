@@ -47,8 +47,6 @@ func TestBugManager(t *testing.T) {
 		fakeStore := fakeClient.FakeStore
 		buganizerCfg := ChromeOSTestConfig()
 
-		bugFilingThreshold := bugs.TestBugFilingThresholds()
-
 		policyA := config.CreatePlaceholderBugManagementPolicy("policy-a")
 		policyA.HumanReadableName = "Problem A"
 		policyA.Priority = configpb.BuganizerPriority_P4
@@ -62,10 +60,9 @@ func TestBugManager(t *testing.T) {
 		policyC.Priority = configpb.BuganizerPriority_P1
 
 		projectCfg := &configpb.ProjectConfig{
-			Buganizer:           buganizerCfg,
-			BugFilingThresholds: bugFilingThreshold,
-			BugSystem:           configpb.BugSystem_BUGANIZER,
 			BugManagement: &configpb.BugManagement{
+				DefaultBugSystem: configpb.BugSystem_BUGANIZER,
+				Buganizer:        buganizerCfg,
 				Policies: []*configpb.BugManagementPolicy{
 					policyA,
 					policyB,
@@ -74,7 +71,7 @@ func TestBugManager(t *testing.T) {
 			},
 		}
 
-		bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false)
+		bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false, true /* usePolicyBasedManagement */)
 		So(err, ShouldBeNil)
 		now := time.Date(2044, time.April, 4, 4, 4, 4, 4, time.UTC)
 		ctx, tc := testclock.UseTime(ctx, now)
@@ -149,7 +146,7 @@ func TestBugManager(t *testing.T) {
 				Convey("Policy has no comment template", func() {
 					policyA.BugTemplate.CommentTemplate = ""
 
-					bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false)
+					bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false, true /* usePolicyBasedManagement */)
 					So(err, ShouldBeNil)
 
 					response := bm.Create(ctx, createRequest)
