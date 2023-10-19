@@ -127,5 +127,52 @@ func TestFullFlow(t *testing.T) {
 			})
 		})
 
+		Convey(`GetAccounts`, func() {
+			existingAccountID := &quotapb.AccountID{
+				AppId:        "foo",
+				Realm:        "bar",
+				Namespace:    "baz",
+				Name:         "qux",
+				ResourceType: "quux",
+			}
+
+			nonExistingAccountID := &quotapb.AccountID{
+				AppId:        "foo1",
+				Realm:        "bar1",
+				Namespace:    "baz1",
+				Name:         "qux1",
+				ResourceType: "quux1",
+			}
+
+			// Add test value to retrieve.
+			_, err := quota.ApplyOps(ctx, "", []*quotapb.Op{
+				{
+					AccountId:  existingAccountID,
+					RelativeTo: quotapb.Op_ZERO,
+					Delta:      1,
+					Options:    uint32(quotapb.Op_IGNORE_POLICY_BOUNDS),
+				},
+			})
+			So(err, ShouldBeNil)
+
+			res, err := quota.GetAccounts(ctx, []*quotapb.AccountID{existingAccountID, nonExistingAccountID})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &quotapb.GetAccountsResponse{
+				Accounts: []*quotapb.GetAccountsResponse_AccountState{
+					{
+						Id: existingAccountID,
+						Account: &quotapb.Account{
+							Balance:   1,
+							UpdatedTs: timestamppb.New(clock.Now(ctx)),
+						},
+						ProjectedBalance: 1,
+					},
+					{
+						Id: nonExistingAccountID,
+					},
+				},
+			})
+		})
+
 	})
 }

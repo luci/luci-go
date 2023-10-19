@@ -169,3 +169,51 @@ func ApplyOps(ctx context.Context, requestID string, ops []*quotapb.Op) (*quotap
 	})
 	return resp, err
 }
+
+// GetAccounts fetches the list of requested accounts. If the account does not
+// exist, GetAccountsResponse.Account[i].Account is left unset.
+func GetAccounts(ctx context.Context, accounts []*quotapb.AccountID) (*quotapb.GetAccountsResponse, error) {
+	resp := &quotapb.GetAccountsResponse{}
+	if len(accounts) == 0 {
+		return resp, nil
+	}
+
+	args := make(redis.Args, 0, len(accounts))
+	for _, accountID := range accounts {
+		args = append(args, quotakeys.AccountKey(accountID))
+
+		// rsp contains an entry for all the requested accounts, in spite of their existence.
+		resp.Accounts = append(resp.Accounts, &quotapb.GetAccountsResponse_AccountState{
+			Id: accountID,
+		})
+	}
+
+	err := withRedisConn(ctx, func(conn redis.Conn) error {
+		accountsRaw, err := redis.Strings(conn.Do("MGET", args...))
+		if err != nil {
+			return errors.Annotate(err, "running MGET").Err()
+		}
+
+		for i, accountRaw := range accountsRaw {
+			if accountRaw == "" {
+				continue
+			}
+
+			account := &quotapb.Account{}
+			if err := msgpackpb.Unmarshal(msgpack.RawMessage(accountRaw), account); err != nil {
+				return err
+			}
+
+			resp.Accounts[i].Account = account
+			resp.Accounts[i].ProjectedBalance = account.GetBalance()
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to query accounts").Err()
+	}
+
+	return resp, nil
+}
