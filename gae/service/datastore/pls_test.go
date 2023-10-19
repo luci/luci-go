@@ -284,6 +284,10 @@ type InvalidTagged6 struct {
 	I int `json:"f" gae:f,noindex`
 }
 
+type Unexported struct {
+	private string `gae:"Private"`
+}
+
 type Inner1 struct {
 	W int32
 	X string
@@ -1732,6 +1736,14 @@ var testCases = []testCase{
 		},
 	},
 	{
+		desc: "load into unexported fields",
+		src: PropertyMap{
+			"Private": mp("s"),
+		},
+		want:    &Unexported{private: "str"},
+		loadErr: "no such struct field",
+	},
+	{
 		desc: "save structs with noindex tags",
 		src: &struct {
 			A struct {
@@ -2244,7 +2256,6 @@ func TestMeta(t *testing.T) {
 			mgs := getMGS(o)
 			So(mgs.SetMeta("id", int64(200)), ShouldBeTrue)
 			So(o.ID, ShouldEqual, 200)
-
 		})
 
 		Convey("assigning to unsassiagnable fields returns !ok", func() {
@@ -2252,6 +2263,15 @@ func TestMeta(t *testing.T) {
 			mgs := getMGS(o)
 			So(mgs.SetMeta("kind", "hi"), ShouldBeFalse)
 			So(mgs.SetMeta("noob", "hi"), ShouldBeFalse)
+		})
+
+		Convey("getting unexported meta", func() {
+			o := &N0{ID: 100, _kind: "Override"}
+			mgs := getMGS(o)
+			val, ok := mgs.GetMeta("kind")
+			So(ok, ShouldBeTrue)
+			// TODO(vadimsh): This is potentially a bug.
+			So(val, ShouldResemble, "whatnow")
 		})
 
 		Convey("protos get/set", func() {

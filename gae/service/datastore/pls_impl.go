@@ -514,40 +514,46 @@ func (p *structPLS) GetMeta(key string) (any, bool) {
 func (p *structPLS) getMetaFor(idx int) (any, bool) {
 	st := p.c.byIndex[idx]
 	val := st.metaVal
-	if st.exported {
-		f := p.o.Field(idx)
-		switch st.convertMethod {
-		case convertProp:
-			prop, err := f.Addr().Interface().(PropertyConverter).ToProperty()
-			if err != nil {
-				return nil, false
-			}
-			return prop.Value(), true
-		case convertProto:
-			if f.IsNil() {
-				return nil, false
-			}
-			prop, err := protoToProperty(f.Interface().(proto.Message), st.protoOption)
-			if err != nil {
-				return nil, false
-			}
-			return prop.Value(), true
-		}
 
-		if !reflect.DeepEqual(reflect.Zero(f.Type()).Interface(), f.Interface()) {
-			val = f.Interface()
-			if bf, ok := val.(Toggle); ok {
-				val = bf == On // true if On, otherwise false
-			} else {
-				val = UpconvertUnderlyingType(val)
-			}
+	if !st.exported {
+		return val, true
+	}
+
+	f := p.o.Field(idx)
+	switch st.convertMethod {
+	case convertDefault:
+		// Carry on.
+	case convertProp:
+		prop, err := f.Addr().Interface().(PropertyConverter).ToProperty()
+		if err != nil {
+			return nil, false
+		}
+		return prop.Value(), true
+	case convertProto:
+		if f.IsNil() {
+			return nil, false
+		}
+		prop, err := protoToProperty(f.Interface().(proto.Message), st.protoOption)
+		if err != nil {
+			return nil, false
+		}
+		return prop.Value(), true
+	default:
+		panic(fmt.Errorf("impossible convertMethod: %d", st.convertMethod))
+	}
+
+	if !reflect.DeepEqual(reflect.Zero(f.Type()).Interface(), f.Interface()) {
+		val = f.Interface()
+		if bf, ok := val.(Toggle); ok {
+			val = bf == On // true if On, otherwise false
+		} else {
+			val = UpconvertUnderlyingType(val)
 		}
 	}
 	return val, true
 }
 
 func (p *structPLS) GetAllMeta() PropertyMap {
-	needKind := true
 	ret := make(PropertyMap, len(p.c.byMeta)+1)
 	for k, idx := range p.c.byMeta {
 		if val, ok := p.getMetaFor(idx); ok {
@@ -558,10 +564,8 @@ func (p *structPLS) GetAllMeta() PropertyMap {
 			ret["$"+k] = p
 		}
 	}
-	if needKind {
-		if _, ok := p.c.byMeta["kind"]; !ok {
-			ret["$kind"] = MkPropertyNI(p.getDefaultKind())
-		}
+	if _, ok := p.c.byMeta["kind"]; !ok {
+		ret["$kind"] = MkPropertyNI(p.getDefaultKind())
 	}
 	return ret
 }
@@ -575,7 +579,10 @@ func (p *structPLS) SetMeta(key string, val any) bool {
 	if !st.exported {
 		return false
 	}
+
 	switch st.convertMethod {
+	case convertDefault:
+		// Carry on.
 	case convertProp:
 		err := p.o.Field(idx).Addr().Interface().(PropertyConverter).FromProperty(
 			MkPropertyNI(val))
@@ -583,6 +590,8 @@ func (p *structPLS) SetMeta(key string, val any) bool {
 	case convertProto:
 		err := protoFromProperty(p.o.Field(idx), MkPropertyNI(val), st.protoOption)
 		return err == nil
+	default:
+		panic(fmt.Errorf("impossible convertMethod: %d", st.convertMethod))
 	}
 
 	val = UpconvertUnderlyingType(val)
