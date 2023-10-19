@@ -172,6 +172,7 @@ func ApplyOps(ctx context.Context, requestID string, ops []*quotapb.Op) (*quotap
 
 // GetAccounts fetches the list of requested accounts. If the account does not
 // exist, GetAccountsResponse.Account[i].Account is left unset.
+// TODO(aravindvasudev): Implement logic to compute Account.ProjectedBalance.
 func GetAccounts(ctx context.Context, accounts []*quotapb.AccountID) (*quotapb.GetAccountsResponse, error) {
 	resp := &quotapb.GetAccountsResponse{}
 	if len(accounts) == 0 {
@@ -205,7 +206,6 @@ func GetAccounts(ctx context.Context, accounts []*quotapb.AccountID) (*quotapb.G
 			}
 
 			resp.Accounts[i].Account = account
-			resp.Accounts[i].ProjectedBalance = account.GetBalance()
 		}
 
 		return nil

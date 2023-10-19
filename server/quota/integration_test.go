@@ -165,7 +165,6 @@ func TestFullFlow(t *testing.T) {
 							Balance:   1,
 							UpdatedTs: timestamppb.New(clock.Now(ctx)),
 						},
-						ProjectedBalance: 1,
 					},
 					{
 						Id: nonExistingAccountID,
