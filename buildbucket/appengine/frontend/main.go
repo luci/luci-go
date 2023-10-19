@@ -108,10 +108,31 @@ func main() {
 		})
 
 		srv.SetRPCAuthMethods([]auth.Method{
-			// The default method used by majority of clients.
+			// OpenID Connect tokens are the prefered auth method.
+			//
+			// However, this method must be first because GoogleOAuth2Method doesn't
+			// know how to ignore a JWT in the Authorization header.
+			//
+			// This method does not interfere with gerritauth, however, because
+			// gerritauth looks at a separate header (usually "X-Gerrit-Auth").
+			&openid.GoogleIDTokenAuthMethod{
+				AudienceCheck: openid.AudienceMatchesHost,
+
+				// This is true to also allow GoogleOAuth2Method - if GoogleOAuth2Method
+				// is removed then this should be removed as well.
+				SkipNonJWT: true,
+			},
+
+			// This method is ~deprecated, but is still used by the majority of
+			// clients as of this CL.
+			//
+			// This is because the OAuth2/OpenID split complicates clients because
+			// they need to know when to use OAuth2 vs OpenID. See additional details:
+			// https://pkg.go.dev/go.chromium.org/luci/server/auth#GoogleOAuth2Method
 			&auth.GoogleOAuth2Method{
 				Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
 			},
+
 			// For authenticating calls from Gerrit plugins.
 			&gerritauth.Method,
 		})
