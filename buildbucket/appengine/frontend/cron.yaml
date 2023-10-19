@@ -76,3 +76,9 @@ cron:
   target: backend
   url: /internal/cron/ts_mon/send
   schedule: every 1 minutes
+
+### trigger cloud tasks to sync builds with backend tasks
+- description: trigger cloud tasks to sync builds with backend tasks
+  target: default-go
+  url: /internal/cron/sync_backend_tasks
+  schedule: every 1 minutes
