@@ -1648,7 +1648,7 @@ Change-Id: I100deadbeef`,
 This reverts commit 12ab34cd56ef.
 
 Reason for revert:
-LUCI Bisection identified this CL as the culprit of a build failure. See the analysis: %s
+LUCI Bisection has identified this change as the culprit of a build failure. See the analysis: %s
 
 Sample failed build: %s
 

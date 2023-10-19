@@ -36,7 +36,7 @@ import (
 func canCommit(ctx context.Context, culprit *gerritpb.ChangeInfo, culpritModel *model.Suspect) (bool, string, error) {
 	// TODO(beining@): remove this when revert CL support has been added for test failure.
 	if culpritModel.AnalysisType == bisectionpb.AnalysisType_TEST_FAILURE_ANALYSIS {
-		return false, "LUCI Bisection has not yet support revert CL for test failure", nil
+		return false, "LUCI Bisection has not yet support auto-commit of revert CL for test failure", nil
 	}
 	// Get gerrit config.
 	gerritConfig, err := config.GetGerritCfgForSuspect(ctx, culpritModel)

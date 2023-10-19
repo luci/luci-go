@@ -245,7 +245,8 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 						Message: fmt.Sprintf("LUCI Bisection has identified this"+
 							" change as the cause of a test failure. See the analysis: %s\n\n"+
 							"Sample build with failed test: %s\n"+
-							"Affected test(s):\n%s\n\n"+
+							"Affected test(s):\n%s\n"+
+							"A revert for this change was not created because an abandoned revert already exists.\n\n"+
 							"If this is a false positive, please report it at %s", analysisURL, buildURL, testLinks, bugURL),
 					},
 				)).Times(1)
@@ -293,7 +294,8 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 						Message: fmt.Sprintf("LUCI Bisection has identified this"+
 							" change as the cause of a test failure. See the analysis: %s\n\n"+
 							"Sample build with failed test: %s\n"+
-							"Affected test(s):\n%s\n\n"+
+							"Affected test(s):\n%s\n"+
+							"A revert for this change was not created because the builder of the failed test(s) is not being watched by gardeners.\n\n"+
 							"If this is a false positive, please report it at %s", analysisURL, buildURL, testLinks, bugURL),
 					},
 				)).Times(1)
@@ -337,7 +339,8 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 							"[testID3](https://ci.chromium.org/ui/test/chromium/testID3?q=VHash%%3Avarianthash3)\n"+
 							"[testID4](https://ci.chromium.org/ui/test/chromium/testID4?q=VHash%%3Avarianthash4)\n"+
 							"[testID5](https://ci.chromium.org/ui/test/chromium/testID5?q=VHash%%3Avarianthash5)\n"+
-							"and 2 more ...\n\n"+
+							"and 2 more ...\n"+
+							"A revert for this change was not created because the builder of the failed test(s) is not being watched by gardeners.\n\n"+
 							"If this is a false positive, please report it at %s", analysisURL, buildURL, bugURL),
 					},
 				)).Times(1)
@@ -350,6 +353,282 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
 				// Check counter incremented.
 				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
+			})
+		})
+
+		Convey("revert creation", func() {
+			tfa.SheriffRotations = []string{"chromium"}
+			So(datastore.Put(ctx, tfa), ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			Convey("revert has auto-revert off flag set", func() {
+				culpritRes.Changes[0].Revisions["deadbeef"].Commit.Message = "Title.\n\nBody is here.\n\nNOAUTOREVERT=true\n\nChange-Id: I100deadbeef"
+				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+					Return(culpritRes, nil).Times(1)
+				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+					Return(&gerritpb.ListChangesResponse{}, nil).Times(1)
+				mockClient.Client.EXPECT().SetReview(gomock.Any(), proto.MatcherEqual(
+					&gerritpb.SetReviewRequest{
+						Project:    culpritRes.Changes[0].Project,
+						Number:     culpritRes.Changes[0].Number,
+						RevisionId: "current",
+						Message: fmt.Sprintf("LUCI Bisection has identified this"+
+							" change as the cause of a test failure. See the analysis: %s\n\n"+
+							"Sample build with failed test: %s\n"+
+							"Affected test(s):\n%s\n"+
+							"A revert for this change was not created because auto-revert has been disabled for this CL by its description.\n\n"+
+							"If this is a false positive, please report it at %s", analysisURL, buildURL, testLinks, bugURL),
+					},
+				)).Times(1)
+
+				err := processTestFailureCulpritTask(ctx, tfa.ID)
+				So(err, ShouldBeNil)
+
+				datastore.GetTestable(ctx).CatchupIndexes()
+				// Suspect action has been saved.
+				So(datastore.Get(ctx, suspect), ShouldBeNil)
+				So(suspect.HasCulpritComment, ShouldBeTrue)
+				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
+				// Check counter incremented.
+				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
+			})
+
+			Convey("revert was from an irrevertible author", func() {
+				culpritRes.Changes[0].Revisions["deadbeef"].Commit.Author = &gerritpb.GitPersonInfo{
+					Name:  "ChromeOS Commit Bot",
+					Email: "chromeos-commit-bot@chromium.org",
+				}
+
+				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+					Return(culpritRes, nil).Times(1)
+				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+					Return(&gerritpb.ListChangesResponse{}, nil).Times(1)
+				mockClient.Client.EXPECT().SetReview(gomock.Any(), proto.MatcherEqual(
+					&gerritpb.SetReviewRequest{
+						Project:    culpritRes.Changes[0].Project,
+						Number:     culpritRes.Changes[0].Number,
+						RevisionId: "current",
+						Message: fmt.Sprintf("LUCI Bisection has identified this"+
+							" change as the cause of a test failure. See the analysis: %s\n\n"+
+							"Sample build with failed test: %s\n"+
+							"Affected test(s):\n%s\n"+
+							"A revert for this change was not created because LUCI Bisection cannot revert changes from this CL's author.\n\n"+
+							"If this is a false positive, please report it at %s", analysisURL, buildURL, testLinks, bugURL),
+					},
+				)).Times(1)
+
+				err := processTestFailureCulpritTask(ctx, tfa.ID)
+				So(err, ShouldBeNil)
+
+				datastore.GetTestable(ctx).CatchupIndexes()
+				// Suspect action has been saved.
+				So(datastore.Get(ctx, suspect), ShouldBeNil)
+				So(suspect.HasCulpritComment, ShouldBeTrue)
+				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
+				// Check counter incremented.
+				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
+			})
+
+			Convey("culprit has a downstream dependency", func() {
+				revertRes := &gerritpb.ListChangesResponse{
+					Changes: []*gerritpb.ChangeInfo{},
+				}
+				relatedChanges := &gerritpb.GetRelatedChangesResponse{
+					Changes: []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
+						{
+							Project: "chromium/src",
+							Number:  876544,
+							Status:  gerritpb.ChangeStatus_MERGED,
+						},
+						{
+							Project: "chromium/src",
+							Number:  876543,
+							Status:  gerritpb.ChangeStatus_MERGED,
+						},
+					},
+				}
+				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+					Return(culpritRes, nil).Times(1)
+				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+					Return(revertRes, nil).Times(1)
+				mockClient.Client.EXPECT().GetRelatedChanges(gomock.Any(), gomock.Any()).
+					Return(relatedChanges, nil).Times(1)
+				mockClient.Client.EXPECT().SetReview(gomock.Any(), proto.MatcherEqual(
+					&gerritpb.SetReviewRequest{
+						Project:    culpritRes.Changes[0].Project,
+						Number:     culpritRes.Changes[0].Number,
+						RevisionId: "current",
+						Message: fmt.Sprintf("LUCI Bisection has identified this"+
+							" change as the cause of a test failure. See the analysis: %s\n\n"+
+							"Sample build with failed test: %s\n"+
+							"Affected test(s):\n%s\n"+
+							"A revert for this change was not created because there are merged changes depending on it.\n\n"+
+							"If this is a false positive, please report it at %s", analysisURL, buildURL, testLinks, bugURL),
+					},
+				)).Times(1)
+
+				err := processTestFailureCulpritTask(ctx, tfa.ID)
+				So(err, ShouldBeNil)
+
+				datastore.GetTestable(ctx).CatchupIndexes()
+				// Suspect action has been saved.
+				So(datastore.Get(ctx, suspect), ShouldBeNil)
+				So(suspect.HasCulpritComment, ShouldBeTrue)
+				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
+				// Check counter incremented.
+				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
+			})
+
+			Convey("revert creation is disabled", func() {
+				testCfg.TestAnalysisConfig.GerritConfig.CreateRevertSettings = &configpb.GerritConfig_RevertActionSettings{
+					Enabled: false,
+				}
+				So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+					Return(culpritRes, nil).Times(1)
+				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+					Return(&gerritpb.ListChangesResponse{}, nil).Times(1)
+				mockClient.Client.EXPECT().GetRelatedChanges(gomock.Any(), gomock.Any()).
+					Return(&gerritpb.GetRelatedChangesResponse{}, nil).Times(1)
+				mockClient.Client.EXPECT().SetReview(gomock.Any(), proto.MatcherEqual(
+					&gerritpb.SetReviewRequest{
+						Project:    culpritRes.Changes[0].Project,
+						Number:     culpritRes.Changes[0].Number,
+						RevisionId: "current",
+						Message: fmt.Sprintf("LUCI Bisection has identified this"+
+							" change as the cause of a test failure. See the analysis: %s\n\n"+
+							"Sample build with failed test: %s\n"+
+							"Affected test(s):\n%s\n"+
+							"A revert for this change was not created because LUCI Bisection's revert creation has been disabled.\n\n"+
+							"If this is a false positive, please report it at %s", analysisURL, buildURL, testLinks, bugURL),
+					},
+				)).Times(1)
+
+				err := processTestFailureCulpritTask(ctx, tfa.ID)
+				So(err, ShouldBeNil)
+
+				datastore.GetTestable(ctx).CatchupIndexes()
+				// Suspect action has been saved.
+				So(datastore.Get(ctx, suspect), ShouldBeNil)
+				So(suspect.HasCulpritComment, ShouldBeTrue)
+				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
+				// Check counter incremented.
+				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
+			})
+
+			Convey("exceed daily limit", func() {
+				// Set up config.
+				testCfg.TestAnalysisConfig.GerritConfig.CreateRevertSettings = &configpb.GerritConfig_RevertActionSettings{
+					DailyLimit: 1,
+					Enabled:    true,
+				}
+				So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+
+				// Add existing revert.
+				testutil.CreateSuspect(ctx, &testutil.SuspectCreationOption{
+					AnalysisType: pb.AnalysisType_TEST_FAILURE_ANALYSIS,
+					ActionDetails: model.ActionDetails{
+						IsRevertCreated:  true,
+						RevertCreateTime: clock.Now(ctx).Add(-time.Hour),
+					},
+				})
+				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+					Return(culpritRes, nil).Times(1)
+				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+					Return(&gerritpb.ListChangesResponse{}, nil).Times(1)
+				mockClient.Client.EXPECT().GetRelatedChanges(gomock.Any(), gomock.Any()).
+					Return(&gerritpb.GetRelatedChangesResponse{}, nil).Times(1)
+				mockClient.Client.EXPECT().SetReview(gomock.Any(), proto.MatcherEqual(
+					&gerritpb.SetReviewRequest{
+						Project:    culpritRes.Changes[0].Project,
+						Number:     culpritRes.Changes[0].Number,
+						RevisionId: "current",
+						Message: fmt.Sprintf("LUCI Bisection has identified this"+
+							" change as the cause of a test failure. See the analysis: %s\n\n"+
+							"Sample build with failed test: %s\n"+
+							"Affected test(s):\n%s\n"+
+							"A revert for this change was not created because LUCI Bisection's daily limit for revert creation (1) has been reached; 1 reverts have already been created.\n\n"+
+							"If this is a false positive, please report it at %s", analysisURL, buildURL, testLinks, bugURL),
+					},
+				)).Times(1)
+
+				err := processTestFailureCulpritTask(ctx, tfa.ID)
+				So(err, ShouldBeNil)
+
+				datastore.GetTestable(ctx).CatchupIndexes()
+				// Suspect action has been saved.
+				So(datastore.Get(ctx, suspect), ShouldBeNil)
+				So(suspect.HasCulpritComment, ShouldBeTrue)
+				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
+				// Check counter incremented.
+				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
+			})
+
+			Convey("revert created", func() {
+				// Set up config.
+				testCfg.TestAnalysisConfig.GerritConfig.CreateRevertSettings = &configpb.GerritConfig_RevertActionSettings{
+					DailyLimit: 10,
+					Enabled:    true,
+				}
+				So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+
+				revertRes := &gerritpb.ChangeInfo{
+					Number:  876549,
+					Project: "chromium/src",
+					Status:  gerritpb.ChangeStatus_NEW,
+				}
+
+				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+					Return(culpritRes, nil).Times(1)
+				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+					Return(&gerritpb.ListChangesResponse{}, nil).Times(1)
+				mockClient.Client.EXPECT().GetRelatedChanges(gomock.Any(), gomock.Any()).
+					Return(&gerritpb.GetRelatedChangesResponse{}, nil).Times(1)
+				mockClient.Client.EXPECT().RevertChange(gomock.Any(), proto.MatcherEqual(
+					&gerritpb.RevertChangeRequest{
+						Project: culpritRes.Changes[0].Project,
+						Number:  culpritRes.Changes[0].Number,
+						Message: fmt.Sprintf("Revert \"chromium/src~876543\"\n\n"+
+							"This reverts commit 12ab34cd56ef.\n\n"+
+							"Reason for revert:\n"+
+							"LUCI Bisection has identified this"+
+							" change as the cause of a test failure. See the analysis: %s\n\n"+
+							"Sample build with failed test: %s\n"+
+							"Affected test(s):\n%s\n\n"+
+							"If this is a false positive, please report it at %s\n\n"+
+							"Original change's description:\n"+
+							"> Title.\n"+
+							">\n"+
+							"> Body is here.\n"+
+							">\n"+
+							"> Change-Id: I100deadbeef\n\n"+
+							"No-Presubmit: true\n"+
+							"No-Tree-Checks: true\n"+
+							"No-Try: true", analysisURL, buildURL, testLinks, bugURL),
+					},
+				)).
+					Return(revertRes, nil).Times(1)
+				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+					Return(&gerritpb.ListChangesResponse{
+						Changes: []*gerritpb.ChangeInfo{
+							{
+								Number:  876549,
+								Project: "chromium/src",
+								Status:  gerritpb.ChangeStatus_MERGED,
+							},
+						},
+					}, nil).Times(1)
+
+				err := processTestFailureCulpritTask(ctx, tfa.ID)
+				So(err, ShouldBeNil)
+
+				datastore.GetTestable(ctx).CatchupIndexes()
+				// Suspect action has been saved.
+				So(datastore.Get(ctx, suspect), ShouldBeNil)
+				So(suspect.IsRevertCreated, ShouldBeTrue)
+				So(suspect.RevertCreateTime, ShouldEqual, time.Unix(10000, 0).UTC())
+				// Check counter incremented.
+				So(culpritActionCounter.Get(ctx, "chromium", "test", "create_revert"), ShouldEqual, 1)
 			})
 		})
 	})

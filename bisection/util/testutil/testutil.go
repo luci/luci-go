@@ -422,6 +422,7 @@ type SuspectCreationOption struct {
 	ParentRerunKey     *datastore.Key
 	VerificationStatus model.SuspectVerificationStatus
 	ActionDetails      model.ActionDetails
+	AnalysisType       pb.AnalysisType
 }
 
 func CreateSuspect(ctx context.Context, option *SuspectCreationOption) *model.Suspect {
@@ -434,6 +435,7 @@ func CreateSuspect(ctx context.Context, option *SuspectCreationOption) *model.Su
 	var parentRerunKey *datastore.Key
 	var verificationStatus model.SuspectVerificationStatus
 	var actionDetails model.ActionDetails
+	var analysisType pb.AnalysisType
 
 	if option != nil {
 		if option.ID != 0 {
@@ -449,6 +451,7 @@ func CreateSuspect(ctx context.Context, option *SuspectCreationOption) *model.Su
 		parentRerunKey = option.ParentRerunKey
 		verificationStatus = option.VerificationStatus
 		actionDetails = option.ActionDetails
+		analysisType = option.AnalysisType
 	}
 	suspect := &model.Suspect{
 		Id:             id,
@@ -465,6 +468,7 @@ func CreateSuspect(ctx context.Context, option *SuspectCreationOption) *model.Su
 		ParentRerunBuild:   parentRerunKey,
 		VerificationStatus: verificationStatus,
 		ActionDetails:      actionDetails,
+		AnalysisType:       analysisType,
 	}
 	So(datastore.Put(ctx, suspect), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()
@@ -487,6 +491,9 @@ func UpdateIndices(c context.Context) {
 		&datastore.IndexDefinition{
 			Kind: "Suspect",
 			SortBy: []datastore.IndexColumn{
+				{
+					Property: "analysis_type",
+				},
 				{
 					Property: "is_revert_created",
 				},

@@ -8,6 +8,7 @@ indexes:
 
 - kind: Suspect
   properties:
+  - name: analysis_type
   - name: is_revert_created
   - name: revert_create_time
 

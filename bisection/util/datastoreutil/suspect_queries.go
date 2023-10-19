@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/bisection/model"
-	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -29,11 +29,12 @@ import (
 
 // CountLatestRevertsCreated returns the number of reverts created within
 // the last number of hours
-func CountLatestRevertsCreated(c context.Context, hours int64) (int64, error) {
+func CountLatestRevertsCreated(c context.Context, hours int64, analysisType pb.AnalysisType) (int64, error) {
 	cutoffTime := clock.Now(c).Add(-time.Hour * time.Duration(hours))
 	q := datastore.NewQuery("Suspect").
 		Gt("revert_create_time", cutoffTime).
-		Eq("is_revert_created", true)
+		Eq("is_revert_created", true).
+		Eq("analysis_type", analysisType)
 
 	count, err := datastore.Count(c, q)
 	if err != nil {
@@ -85,7 +86,7 @@ func GetAssociatedBuildID(ctx context.Context, suspect *model.Suspect) (int64, e
 			suspect.Id)
 	}
 	switch suspect.AnalysisType {
-	case bisectionpb.AnalysisType_COMPILE_FAILURE_ANALYSIS:
+	case pb.AnalysisType_COMPILE_FAILURE_ANALYSIS:
 		// Get failure analysis that the heuristic/nth section analysis relates to
 		analysisKey := suspect.ParentAnalysis.Parent()
 		if analysisKey == nil {
@@ -105,7 +106,7 @@ func GetAssociatedBuildID(ctx context.Context, suspect *model.Suspect) (int64, e
 				compileFailure.Id)
 		}
 		return compileFailure.Build.IntID(), nil
-	case bisectionpb.AnalysisType_TEST_FAILURE_ANALYSIS:
+	case pb.AnalysisType_TEST_FAILURE_ANALYSIS:
 		tfa, err := GetTestFailureAnalysisForSuspect(ctx, suspect)
 		if err != nil {
 			return 0, errors.Annotate(err, "fetch test failure analysis for suspect").Err()
@@ -197,7 +198,7 @@ func GetTestFailureAnalysisForSuspect(c context.Context, suspect *model.Suspect)
 }
 
 func getTestNthSectionAnalysisForSuspect(c context.Context, suspect *model.Suspect) (*model.TestNthSectionAnalysis, error) {
-	if suspect.AnalysisType != bisectionpb.AnalysisType_TEST_FAILURE_ANALYSIS {
+	if suspect.AnalysisType != pb.AnalysisType_TEST_FAILURE_ANALYSIS {
 		return nil, errors.New("invalid suspect analysis type")
 	}
 	nsa := &model.TestNthSectionAnalysis{ID: suspect.ParentAnalysis.IntID()}

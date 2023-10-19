@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/model"
 	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
-	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 
 	"go.chromium.org/luci/common/errors"
@@ -37,10 +36,18 @@ import (
 //   - the error if one occurred.
 func isCulpritRevertible(ctx context.Context, gerritClient *gerrit.Client,
 	culprit *gerritpb.ChangeInfo, culpritModel *model.Suspect) (bool, string, error) {
-	// TODO(beining@): remove this when create CL support has been added for test failure.
+	// If it is test failure, we only create revert if it belongs to a builder being watched
+	// by sheriffs.
 	if culpritModel.AnalysisType == bisectionpb.AnalysisType_TEST_FAILURE_ANALYSIS {
-		return false, "LUCI Bisection has not yet support create/revert CL for test failure", nil
+		tfa, err := datastoreutil.GetTestFailureAnalysisForSuspect(ctx, culpritModel)
+		if err != nil {
+			return false, "", errors.Annotate(err, "get test failure analysis for suspect").Err()
+		}
+		if len(tfa.SheriffRotations) == 0 {
+			return false, "the builder of the failed test(s) is not being watched by gardeners", nil
+		}
 	}
+
 	// Check if the culprit's description has disabled autorevert
 	hasFlag, err := gerrit.HasAutoRevertOffFlagSet(ctx, culprit)
 	if err != nil {
@@ -72,7 +79,7 @@ func isCulpritRevertible(ctx context.Context, gerritClient *gerrit.Client,
 	if err != nil {
 		return false, "", errors.Annotate(err, "error fetching configs").Err()
 	}
-	canCreate, reason, err := config.CanCreateRevert(ctx, gerritCfg)
+	canCreate, reason, err := config.CanCreateRevert(ctx, gerritCfg, culpritModel.AnalysisType)
 	if err != nil {
 		return false, "", errors.Annotate(err, "error checking Create Revert configs").Err()
 	}
@@ -120,25 +127,22 @@ func generateRevertDescription(ctx context.Context, culpritModel *model.Suspect,
 	paragraphs = append(paragraphs,
 		fmt.Sprintf("This reverts commit %s.", culpritModel.GitilesCommit.Id))
 
-	// Add link to LUCI Bisection failure analysis details and failed build
-	bbid, err := datastoreutil.GetAssociatedBuildID(ctx, culpritModel)
-	if err != nil {
-		return "", err
+	var message string
+	var err error
+	switch culpritModel.AnalysisType {
+	case bisectionpb.AnalysisType_COMPILE_FAILURE_ANALYSIS:
+		message, err = compileFailureComment(ctx, culpritModel, "", "blameComment")
+		if err != nil {
+			return "", errors.Annotate(err, "compile failure comment").Err()
+		}
+	case bisectionpb.AnalysisType_TEST_FAILURE_ANALYSIS:
+		message, err = testFailureComment(ctx, culpritModel, "", "blameComment")
+		if err != nil {
+			return "", errors.Annotate(err, "test failure comment").Err()
+		}
 	}
-	// TODO(beining@): remove the hardcoded project name to support multiple LUCI projects.
-	analysisURL := util.ConstructCompileAnalysisURL("chromium", bbid)
-	buildURL := util.ConstructBuildURL(ctx, bbid)
-
-	paragraphs = append(paragraphs, fmt.Sprintf("Reason for revert:\n"+
-		"LUCI Bisection identified this CL as the culprit of a build failure."+
-		" See the analysis: %s", analysisURL))
-
-	paragraphs = append(paragraphs, fmt.Sprintf("Sample failed build: %s",
-		buildURL))
-
-	paragraphs = append(paragraphs,
-		fmt.Sprintf("If this is a false positive, please report it at %s",
-			util.ConstructLUCIBisectionBugURL(ctx, analysisURL, culpritModel.ReviewUrl)))
+	message = "Reason for revert:\n" + message
+	paragraphs = append(paragraphs, message)
 
 	// Lines in the footer of the description, such as related bugs
 	footerLines := []string{}

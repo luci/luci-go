@@ -42,7 +42,7 @@ func GetGerritCfgForSuspect(ctx context.Context, suspect *model.Suspect) (*confi
 //   - whether a revert can be created;
 //   - the reason it cannot be created if applicable; and
 //   - the error if one occurred.
-func CanCreateRevert(ctx context.Context, gerritCfg *configpb.GerritConfig) (bool, string, error) {
+func CanCreateRevert(ctx context.Context, gerritCfg *configpb.GerritConfig, analysisType bisectionpb.AnalysisType) (bool, string, error) {
 	// Check if Gerrit actions are enabled
 	if !gerritCfg.ActionsEnabled {
 		reason := "all Gerrit actions are disabled"
@@ -56,7 +56,7 @@ func CanCreateRevert(ctx context.Context, gerritCfg *configpb.GerritConfig) (boo
 	}
 
 	// Check the daily limit for revert creations has not been reached
-	createdCount, err := datastoreutil.CountLatestRevertsCreated(ctx, 24)
+	createdCount, err := datastoreutil.CountLatestRevertsCreated(ctx, 24, analysisType)
 	if err != nil {
 		return false, "", err
 	}

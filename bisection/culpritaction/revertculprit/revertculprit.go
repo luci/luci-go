@@ -275,12 +275,12 @@ func TakeCulpritAction(ctx context.Context, culpritModel *model.Suspect) error {
 		return nil
 	}
 
-	shouldRevert, reason, err := isCulpritRevertible(ctx, gerritClient, culprit, culpritModel)
+	shouldCreateRevert, reason, err := isCulpritRevertible(ctx, gerritClient, culprit, culpritModel)
 	if err != nil {
 		logging.Errorf(ctx, err.Error())
 		return err
 	}
-	if !shouldRevert {
+	if !shouldCreateRevert {
 		// Add a comment on the culprit CL to explain why a revert was not created
 		err = commentReasonOnCulprit(ctx, gerritClient, culpritModel, culprit,
 			reason)

@@ -43,7 +43,7 @@ func TestCountLatestRevertsCreated(t *testing.T) {
 	c = clock.Set(c, cl)
 
 	Convey("No suspects at all", t, func() {
-		count, err := CountLatestRevertsCreated(c, 24)
+		count, err := CountLatestRevertsCreated(c, 24, pb.AnalysisType_COMPILE_FAILURE_ANALYSIS)
 		So(err, ShouldBeNil)
 		So(count, ShouldEqual, 0)
 	})
@@ -57,6 +57,7 @@ func TestCountLatestRevertsCreated(t *testing.T) {
 				IsRevertCreated:  true,
 				RevertCreateTime: clock.Now(c),
 			},
+			AnalysisType: pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 		}
 		suspect3 := &model.Suspect{
 			ActionDetails: model.ActionDetails{
@@ -64,6 +65,7 @@ func TestCountLatestRevertsCreated(t *testing.T) {
 				IsRevertCreated:  true,
 				RevertCreateTime: clock.Now(c).Add(-time.Hour * 72),
 			},
+			AnalysisType: pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 		}
 		suspect4 := &model.Suspect{
 			ActionDetails: model.ActionDetails{
@@ -71,6 +73,7 @@ func TestCountLatestRevertsCreated(t *testing.T) {
 				IsRevertCreated:  true,
 				RevertCreateTime: clock.Now(c).Add(-time.Hour * 4),
 			},
+			AnalysisType: pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 		}
 		suspect5 := &model.Suspect{
 			ActionDetails: model.ActionDetails{
@@ -78,6 +81,7 @@ func TestCountLatestRevertsCreated(t *testing.T) {
 				IsRevertCreated:  true,
 				RevertCreateTime: clock.Now(c).Add(-time.Minute * 10),
 			},
+			AnalysisType: pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 		}
 		suspect6 := &model.Suspect{
 			ActionDetails: model.ActionDetails{
@@ -85,6 +89,7 @@ func TestCountLatestRevertsCreated(t *testing.T) {
 				IsRevertCreated:  true,
 				RevertCreateTime: clock.Now(c).Add(-time.Hour * 24),
 			},
+			AnalysisType: pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 		}
 		suspect7 := &model.Suspect{
 			ActionDetails: model.ActionDetails{
@@ -92,7 +97,17 @@ func TestCountLatestRevertsCreated(t *testing.T) {
 				IsRevertCreated:  false,
 				RevertCreateTime: clock.Now(c).Add(-time.Minute * 10),
 			},
+			AnalysisType: pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 		}
+		suspect8 := &model.Suspect{
+			ActionDetails: model.ActionDetails{
+				RevertURL:        "",
+				IsRevertCreated:  true,
+				RevertCreateTime: clock.Now(c).Add(-time.Minute * 10),
+			},
+			AnalysisType: pb.AnalysisType_TEST_FAILURE_ANALYSIS,
+		}
+
 		So(datastore.Put(c, suspect1), ShouldBeNil)
 		So(datastore.Put(c, suspect2), ShouldBeNil)
 		So(datastore.Put(c, suspect3), ShouldBeNil)
@@ -100,11 +115,15 @@ func TestCountLatestRevertsCreated(t *testing.T) {
 		So(datastore.Put(c, suspect5), ShouldBeNil)
 		So(datastore.Put(c, suspect6), ShouldBeNil)
 		So(datastore.Put(c, suspect7), ShouldBeNil)
+		So(datastore.Put(c, suspect8), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		count, err := CountLatestRevertsCreated(c, 24)
+		count, err := CountLatestRevertsCreated(c, 24, pb.AnalysisType_COMPILE_FAILURE_ANALYSIS)
 		So(err, ShouldBeNil)
 		So(count, ShouldEqual, 3)
+		count, err = CountLatestRevertsCreated(c, 24, pb.AnalysisType_TEST_FAILURE_ANALYSIS)
+		So(err, ShouldBeNil)
+		So(count, ShouldEqual, 1)
 	})
 }
 

@@ -21,6 +21,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	configpb "go.chromium.org/luci/bisection/proto/config"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
 
 	"go.chromium.org/luci/common/clock"
@@ -49,7 +50,7 @@ func TestCanCreateRevert(t *testing.T) {
 			},
 			MaxRevertibleCulpritAge: 21600, // 6 hours
 		}
-		canCreate, reason, err := CanCreateRevert(ctx, gerritCfg)
+		canCreate, reason, err := CanCreateRevert(ctx, gerritCfg, pb.AnalysisType_COMPILE_FAILURE_ANALYSIS)
 		So(err, ShouldBeNil)
 		So(canCreate, ShouldEqual, false)
 		So(reason, ShouldEqual, "all Gerrit actions are disabled")
@@ -68,7 +69,7 @@ func TestCanCreateRevert(t *testing.T) {
 			},
 			MaxRevertibleCulpritAge: 21600, // 6 hours
 		}
-		canCreate, reason, err := CanCreateRevert(ctx, gerritCfg)
+		canCreate, reason, err := CanCreateRevert(ctx, gerritCfg, pb.AnalysisType_COMPILE_FAILURE_ANALYSIS)
 		So(err, ShouldBeNil)
 		So(canCreate, ShouldEqual, false)
 		So(reason, ShouldEqual, "LUCI Bisection's revert creation has been disabled")
@@ -87,7 +88,7 @@ func TestCanCreateRevert(t *testing.T) {
 			},
 			MaxRevertibleCulpritAge: 21600, // 6 hours
 		}
-		canCreate, reason, err := CanCreateRevert(ctx, gerritCfg)
+		canCreate, reason, err := CanCreateRevert(ctx, gerritCfg, pb.AnalysisType_COMPILE_FAILURE_ANALYSIS)
 		So(err, ShouldBeNil)
 		So(canCreate, ShouldEqual, true)
 		So(reason, ShouldEqual, "")
@@ -106,7 +107,7 @@ func TestCanCreateRevert(t *testing.T) {
 			},
 			MaxRevertibleCulpritAge: 21600, // 6 hours
 		}
-		canCreate, reason, err := CanCreateRevert(ctx, gerritCfg)
+		canCreate, reason, err := CanCreateRevert(ctx, gerritCfg, pb.AnalysisType_COMPILE_FAILURE_ANALYSIS)
 		So(err, ShouldBeNil)
 		So(canCreate, ShouldEqual, false)
 		So(reason, ShouldEqual, "LUCI Bisection's daily limit for revert creation"+

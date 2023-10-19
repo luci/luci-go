@@ -82,6 +82,9 @@ Affected test(s):
 {{- if gt .numTestLinksHidden 0}}
 and {{.numTestLinksHidden}} more ...
 {{- end}}
+{{- if .Reason}}
+A revert for this change was not created because {{.Reason}}.
+{{- end}}
 
 If this is a false positive, please report it at {{.BugURL}}
 {{- end}}
