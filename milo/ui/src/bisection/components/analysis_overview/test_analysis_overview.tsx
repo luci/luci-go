@@ -17,6 +17,7 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
+import { DateTime } from 'luxon';
 
 import { PlainTable } from '@/bisection/components/plain_table/plain_table';
 import { AnalysisStatusInfo } from '@/bisection/components/status_info/status_info';
@@ -25,7 +26,8 @@ import {
   linkToBuilder,
   linkToCommit,
 } from '@/bisection/tools/link_constructors';
-import { getFormattedTimestamp } from '@/bisection/tools/timestamp_formatters';
+import { DurationBadge } from '@/common/components/duration_badge';
+import { Timestamp } from '@/common/components/timestamp';
 import { TestAnalysis } from '@/common/services/luci_bisection';
 
 import { nthsectionSuspectRange } from './common';
@@ -46,14 +48,23 @@ interface Props {
 export const TestAnalysisOverview = ({ analysis }: Props) => {
   const builderLink = linkToBuilder(analysis.builder);
   const suspectRange = getSuspectRange(analysis);
+  const failureStartHour = analysis.testFailures[0]
+    ? DateTime.fromISO(analysis.testFailures[0].startHour)
+    : null;
+  const createTime = analysis.createdTime
+    ? DateTime.fromISO(analysis.createdTime)
+    : null;
+  const endTime = analysis.endTime ? DateTime.fromISO(analysis.endTime) : null;
+  const totalDuration =
+    endTime && failureStartHour ? endTime.diff(failureStartHour) : null;
   return (
     <TableContainer>
       <PlainTable>
         <colgroup>
-          <col style={{ width: '15%' }} />
-          <col style={{ width: '35%' }} />
-          <col style={{ width: '15%' }} />
-          <col style={{ width: '35%' }} />
+          <col style={{ width: '20%' }} />
+          <col style={{ width: '30%' }} />
+          <col style={{ width: '20%' }} />
+          <col style={{ width: '30%' }} />
         </colgroup>
         <TableBody data-testid="analysis_overview_table_body">
           <TableRow>
@@ -62,7 +73,9 @@ export const TestAnalysisOverview = ({ analysis }: Props) => {
           </TableRow>
           <TableRow>
             <TableCell variant="head">Created time</TableCell>
-            <TableCell>{getFormattedTimestamp(analysis.createdTime)}</TableCell>
+            <TableCell>
+              {createTime && <Timestamp datetime={createTime} />}
+            </TableCell>
             <TableCell variant="head">Builder</TableCell>
             <TableCell>
               <Link
@@ -77,7 +90,7 @@ export const TestAnalysisOverview = ({ analysis }: Props) => {
           </TableRow>
           <TableRow>
             <TableCell variant="head">End time</TableCell>
-            <TableCell>{getFormattedTimestamp(analysis.endTime)}</TableCell>
+            <TableCell>{endTime && <Timestamp datetime={endTime} />}</TableCell>
             <TableCell variant="head">Failure type</TableCell>
             <TableCell>TEST</TableCell>
           </TableRow>
@@ -85,6 +98,16 @@ export const TestAnalysisOverview = ({ analysis }: Props) => {
             <TableCell variant="head">Status</TableCell>
             <TableCell>
               <AnalysisStatusInfo status={analysis.status}></AnalysisStatusInfo>
+            </TableCell>
+            <TableCell variant="head">Duration since failure start</TableCell>
+            <TableCell>
+              {totalDuration && (
+                <DurationBadge
+                  duration={totalDuration}
+                  from={failureStartHour}
+                  to={endTime}
+                />
+              )}
             </TableCell>
           </TableRow>
           <TableRow>

@@ -23,7 +23,7 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(advancedFormat);
 
-export function getFormattedDuration(start: string, end: string): string {
+export function getFormattedDuration(start?: string, end?: string): string {
   if (!start || !end) {
     return '';
   }
@@ -39,7 +39,7 @@ export function getFormattedDuration(start: string, end: string): string {
   return diff.format('HH:mm:ss');
 }
 
-export function getFormattedTimestamp(datetime: string): string {
+export function getFormattedTimestamp(datetime?: string): string {
   if (!datetime) {
     return '';
   }

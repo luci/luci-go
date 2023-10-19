@@ -58,8 +58,7 @@ describe('Test TestAnalysisTableRow component', () => {
     expect(screen.getByText(mockAnalysis.status)).toBeInTheDocument();
 
     // Check the duration is displayed
-    const durationFormat = new RegExp('^\\d{2}:[0-5]\\d:[0-5]\\d$');
-    expect(screen.queryAllByText(durationFormat)).toHaveLength(1);
+    expect(screen.queryAllByTestId('duration')).toHaveLength(2);
 
     // Check there is a link to the builder
     const builderLink = screen.getByTestId('analysis_table_row_builder_link');

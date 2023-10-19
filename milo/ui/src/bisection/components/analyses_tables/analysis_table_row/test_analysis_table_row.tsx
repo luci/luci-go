@@ -15,13 +15,12 @@
 import Link from '@mui/material/Link';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
+import { DateTime } from 'luxon';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { linkToBuilder } from '@/bisection/tools/link_constructors';
-import {
-  getFormattedDuration,
-  getFormattedTimestamp,
-} from '@/bisection/tools/timestamp_formatters';
+import { DurationBadge } from '@/common/components/duration_badge';
+import { Timestamp } from '@/common/components/timestamp';
 import { TestAnalysis } from '@/common/services/luci_bisection';
 
 import { CulpritsTableCell } from './culprit_table_cell';
@@ -35,6 +34,17 @@ export const TestAnalysisTableRow = ({
 }: TestAnalysisTableRowProps) => {
   const builderLink = analysis.builder ? linkToBuilder(analysis.builder) : null;
 
+  const failureStartHour = analysis.testFailures[0]
+    ? DateTime.fromISO(analysis.testFailures[0].startHour)
+    : null;
+  const createTime = analysis.createdTime
+    ? DateTime.fromISO(analysis.createdTime)
+    : null;
+  const endTime = analysis.endTime ? DateTime.fromISO(analysis.endTime) : null;
+  const totalDuration =
+    endTime && failureStartHour ? endTime.diff(failureStartHour) : null;
+  const runDuration = createTime && endTime ? endTime.diff(createTime) : null;
+
   return (
     <TableRow hover data-testid="analysis_table_row">
       <TableCell>
@@ -46,11 +56,25 @@ export const TestAnalysisTableRow = ({
           {analysis.analysisId}
         </Link>
       </TableCell>
-      <TableCell>{getFormattedTimestamp(analysis.createdTime)}</TableCell>
-      <TableCell>{analysis.status}</TableCell>
-      <TableCell>Test</TableCell>
+      <TableCell>{createTime && <Timestamp datetime={createTime} />}</TableCell>
       <TableCell>
-        {getFormattedDuration(analysis.createdTime, analysis.endTime)}
+        {runDuration && (
+          <DurationBadge
+            duration={runDuration}
+            from={createTime}
+            to={endTime}
+          />
+        )}
+      </TableCell>
+      <TableCell>{analysis.status}</TableCell>
+      <TableCell>
+        {totalDuration && (
+          <DurationBadge
+            duration={totalDuration}
+            from={failureStartHour}
+            to={endTime}
+          />
+        )}
       </TableCell>
       <TableCell>
         {builderLink && (

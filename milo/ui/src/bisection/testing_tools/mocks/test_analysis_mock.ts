@@ -31,6 +31,18 @@ export const createMockTestAnalysis = (id: string): TestAnalysis => {
       bucket: 'ci',
       builder: 'mock-builder-cc64',
     },
+    testFailures: [
+      {
+        testId: 'test1',
+        variant: {
+          def: { os: 'linux' },
+        },
+        variantHash: 'variant1',
+        isDiverged: false,
+        isPrimary: true,
+        startHour: '2022-09-06T03:00:00Z',
+      },
+    ],
     sampleBbid: 1234,
     nthSectionResult: {
       status: 'RUNNING',

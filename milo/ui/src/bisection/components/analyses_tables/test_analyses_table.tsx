@@ -36,11 +36,12 @@ export const TestAnalysesTable = ({ analyses }: TestAnalysesTableProps) => (
         <TableRow>
           <TableCell>Analysis ID</TableCell>
           <TableCell>Created time</TableCell>
-          <TableCell>Status</TableCell>
-          {/* TODO(beining@): remove this failure type column
-          as this table only contains test failure bisection. */}
-          <TableCell>Failure type</TableCell>
           <TableCell>Duration</TableCell>
+          <TableCell>Status</TableCell>
+          <TableCell>
+            Duration since <br />
+            failure start
+          </TableCell>
           <TableCell>Builder</TableCell>
           <TableCell>Culprit CL</TableCell>
         </TableRow>

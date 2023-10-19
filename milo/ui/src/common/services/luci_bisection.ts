@@ -16,6 +16,7 @@ import stableStringify from 'fast-json-stable-stringify';
 
 import { CacheOption, cached } from '@/generic_libs/tools/cached_fn';
 import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
+
 import { Variant } from './resultdb';
 
 export type AnalysisStatus =
@@ -254,23 +255,22 @@ export interface TestAnalysis {
   status: AnalysisStatus;
   runStatus: AnalysisRunStatus;
   createdTime: string;
-  endTime: string;
+  endTime?: string;
   nthSectionResult?: NthSectionAnalysisResult;
   builder: BuilderID;
-  testFailures?: TestFailure[]
+  testFailures: TestFailure[];
   culprit?: Culprit;
   sampleBbid: number;
 }
 
 export interface TestFailure {
- testId: string;
- variant: Variant;
- variantHash: string;
- isDiverged: boolean;
- isPrimary: boolean;
- startHour: string;
+  testId: string;
+  variant: Variant;
+  variantHash: string;
+  isDiverged: boolean;
+  isPrimary: boolean;
+  startHour: string;
 }
-
 
 // A service to handle LUCI Bisection-related pRPC requests.
 export class LUCIBisectionService {
@@ -308,7 +308,10 @@ export class LUCIBisectionService {
     )) as ListAnalysesResponse;
   }
 
-  async listTestAnalyses(req: ListTestAnalysesRequest, cacheOpt: CacheOption = {}) {
+  async listTestAnalyses(
+    req: ListTestAnalysesRequest,
+    cacheOpt: CacheOption = {},
+  ) {
     return (await this.cachedCallFn(
       cacheOpt,
       'ListTestAnalyses',
@@ -316,7 +319,10 @@ export class LUCIBisectionService {
     )) as ListTestAnalysesResponse;
   }
 
-  async getTestAnalysis(req: GetTestAnalysisRequest, cacheOpt: CacheOption = {}) {
+  async getTestAnalysis(
+    req: GetTestAnalysisRequest,
+    cacheOpt: CacheOption = {},
+  ) {
     return (await this.cachedCallFn(
       cacheOpt,
       'GetTestAnalysis',
