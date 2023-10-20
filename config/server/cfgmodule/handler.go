@@ -48,37 +48,23 @@ const (
 	adminGroup            = "administrators"
 )
 
-// consumerServer implements `cfgpb.Consumer` interface that will be called
+// ConsumerServer implements `cfgpb.Consumer` interface that will be called
 // by LUCI Config.
-type consumerServer struct {
+type ConsumerServer struct {
 	cfgpb.UnimplementedConsumerServer
-
 	// Rules is a rule set to use for the config validation.
-	rules *validation.RuleSet
-
-	getConfigServiceAccountFn func(context.Context) (string, error)
-
-	httpClient *http.Client
-}
-
-func makeConsumerServer(ctx context.Context, rules *validation.RuleSet, getConfigServiceAccountFn func(context.Context) (string, error)) consumerServer {
-	tr, err := auth.GetRPCTransport(ctx, auth.NoAuth)
-	if err != nil {
-		panic(fmt.Errorf("failed to get the RPC transport: %w", err))
-	}
-	return consumerServer{
-		rules:                     rules,
-		getConfigServiceAccountFn: getConfigServiceAccountFn,
-		httpClient:                &http.Client{Transport: tr},
-	}
+	Rules *validation.RuleSet
+	// GetConfigServiceAccountFn returns a function that can fetch the service
+	// account of the LUCI Config service. It is used by ACL checking.
+	GetConfigServiceAccountFn func(context.Context) (string, error)
 }
 
 // GetMetadata implements cfgpb.Consumer.GetMetadata.
-func (srv consumerServer) GetMetadata(ctx context.Context, _ *emptypb.Empty) (*cfgpb.ServiceMetadata, error) {
+func (srv *ConsumerServer) GetMetadata(ctx context.Context, _ *emptypb.Empty) (*cfgpb.ServiceMetadata, error) {
 	if err := srv.checkCaller(ctx); err != nil {
 		return nil, err
 	}
-	patterns, err := srv.rules.ConfigPatterns(ctx)
+	patterns, err := srv.Rules.ConfigPatterns(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to collect the list of validation patterns: %s", err)
 	}
@@ -96,7 +82,7 @@ func (srv consumerServer) GetMetadata(ctx context.Context, _ *emptypb.Empty) (*c
 }
 
 // ValidateConfigs implements cfgpb.Consumer.ValidateConfigs.
-func (srv consumerServer) ValidateConfigs(ctx context.Context, req *cfgpb.ValidateConfigsRequest) (*cfgpb.ValidationResult, error) {
+func (srv *ConsumerServer) ValidateConfigs(ctx context.Context, req *cfgpb.ValidateConfigsRequest) (*cfgpb.ValidationResult, error) {
 	if err := srv.checkCaller(ctx); err != nil {
 		return nil, err
 	}
@@ -115,9 +101,12 @@ func (srv consumerServer) ValidateConfigs(ctx context.Context, req *cfgpb.Valida
 			case *cfgpb.ValidateConfigsRequest_File_RawContent:
 				content = file.GetRawContent()
 			case *cfgpb.ValidateConfigsRequest_File_SignedUrl:
-				var err error
-				if content, err = config.DownloadConfigFromSignedURL(ectx, srv.httpClient, file.GetSignedUrl()); err != nil {
-					return fmt.Errorf("failed to download file %s from the signed url: %s", file.Path, err)
+				tr, err := auth.GetRPCTransport(ctx, auth.NoAuth)
+				if err != nil {
+					return fmt.Errorf("failed to get the RPC transport: %w", err)
+				}
+				if content, err = config.DownloadConfigFromSignedURL(ectx, &http.Client{Transport: tr}, file.GetSignedUrl()); err != nil {
+					return fmt.Errorf("failed to download file %s from the signed url: %w", file.Path, err)
 				}
 			default:
 				panic(fmt.Errorf("unrecognized file content type: %T", file.GetContent()))
@@ -141,8 +130,8 @@ func (srv consumerServer) ValidateConfigs(ctx context.Context, req *cfgpb.Valida
 }
 
 // only LUCI Config and identity in admin group is allowed to call.
-func (srv consumerServer) checkCaller(ctx context.Context) error {
-	configServiceAccount, err := srv.getConfigServiceAccountFn(ctx)
+func (srv *ConsumerServer) checkCaller(ctx context.Context) error {
+	configServiceAccount, err := srv.GetConfigServiceAccountFn(ctx)
 	if err != nil {
 		logging.Errorf(ctx, "Failed to get LUCI Config service account: %s", err)
 		return status.Errorf(codes.Internal, "failed to get LUCI Config service account")
@@ -179,10 +168,10 @@ func checkValidateInput(req *cfgpb.ValidateConfigsRequest) error {
 	return nil
 }
 
-func (srv consumerServer) validateOneFile(ctx context.Context, configSet, path string, content []byte) ([]*cfgpb.ValidationResult_Message, error) {
+func (srv *ConsumerServer) validateOneFile(ctx context.Context, configSet, path string, content []byte) ([]*cfgpb.ValidationResult_Message, error) {
 	vc := &validation.Context{Context: ctx}
 	vc.SetFile(path)
-	if err := srv.rules.ValidateConfig(vc, configSet, path, content); err != nil {
+	if err := srv.Rules.ValidateConfig(vc, configSet, path, content); err != nil {
 		return nil, err
 	}
 	var vErr *validation.Error

@@ -198,10 +198,9 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 
 	// Register the prpc `config.Consumer` service that handles configs
 	// validation.
-	config.RegisterConsumerServer(host, makeConsumerServer(
-		ctx,
-		m.opts.Rules,
-		func(ctx context.Context) (string, error) {
+	config.RegisterConsumerServer(host, &ConsumerServer{
+		Rules: m.opts.Rules,
+		GetConfigServiceAccountFn: func(ctx context.Context) (string, error) {
 			// TODO(yiwzhang): Remove this after the service host pointing to the new
 			// LUCI Config service. For now, hardcode the expected service account
 			// name when the service is still using legacy LUCI Config service as
@@ -221,8 +220,8 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 				return "", err
 			}
 			return info.ServiceAccountName, nil
-		}),
-	)
+		},
+	})
 	return ctx, nil
 }
 

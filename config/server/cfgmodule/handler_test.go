@@ -157,11 +157,12 @@ func TestConsumerServer(t *testing.T) {
 		authState := &authtest.FakeState{
 			Identity: "user:" + configSA,
 		}
-		ctx := auth.WithState(context.Background(), authState)
+		ctx := authtest.MockAuthConfig(context.Background())
+		ctx = auth.WithState(ctx, authState)
 		rules := validation.NewRuleSet()
-		srv := consumerServer{
-			rules: rules,
-			getConfigServiceAccountFn: func(ctx context.Context) (string, error) {
+		srv := ConsumerServer{
+			Rules: rules,
+			GetConfigServiceAccountFn: func(ctx context.Context) (string, error) {
 				return configSA, nil
 			},
 		}
@@ -176,7 +177,7 @@ func TestConsumerServer(t *testing.T) {
 					Identity:       "user:someone@example.com",
 					IdentityGroups: []string{adminGroup},
 				}
-				ctx = auth.WithState(context.Background(), authState)
+				ctx = auth.WithState(ctx, authState)
 				_, err := srv.GetMetadata(ctx, &emptypb.Empty{})
 				So(err, ShouldBeNil)
 			})
@@ -191,7 +192,7 @@ func TestConsumerServer(t *testing.T) {
 						Identity: identity.AnonymousIdentity,
 					}
 				})
-				ctx = auth.WithState(context.Background(), authState)
+				ctx = auth.WithState(ctx, authState)
 				_, err := srv.GetMetadata(ctx, &emptypb.Empty{})
 				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
 			})
@@ -280,7 +281,6 @@ func TestConsumerServer(t *testing.T) {
 				}
 			}))
 			defer ts.Close()
-			srv.httpClient = ts.Client()
 
 			Convey("Single file", func() {
 				const path = "some_file.cfg"
