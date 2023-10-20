@@ -248,8 +248,10 @@ func (rg *RequestGenerator) PreparePolicyActivatedComment(bugID string, policyID
 		return nil, err
 	}
 
-	if comment == "" {
-		// Policy has not specified a comment to post. This is fine.
+	labelsToAdd := rg.labelsForPolicy(policyID)
+
+	if comment == "" && len(labelsToAdd) == 0 {
+		// Policy has not specified a comment to post or label to add. This is fine.
 		return nil, nil
 	}
 
@@ -266,13 +268,24 @@ func (rg *RequestGenerator) PreparePolicyActivatedComment(bugID string, policyID
 			Paths: []string{},
 		},
 	}
+	if len(labelsToAdd) > 0 {
+		// Note: labels specified here are interpreted by monorail
+		// as requests to add labels. The absence of a label already
+		// on the issue does not results in its deletion.
+		//
+		// To remove a label, we must specify it on delta.LabelsRemove.
+		delta.Issue.Labels = labelsToAdd
+		delta.UpdateMask.Paths = append(delta.UpdateMask.Paths, "labels")
+	}
 
 	req := &mpb.ModifyIssuesRequest{
 		Deltas: []*mpb.IssueDelta{
 			delta,
 		},
-		NotifyType:     mpb.NotifyType_EMAIL,
-		CommentContent: comment,
+	}
+	if comment != "" {
+		req.CommentContent = comment
+		req.NotifyType = mpb.NotifyType_EMAIL
 	}
 	return req, nil
 }
@@ -594,4 +607,26 @@ func (rg *RequestGenerator) IssuePriorityLegacy(issue *mpb.Issue) string {
 
 func issueVerified(issue *mpb.Issue) bool {
 	return issue.Status.Status == VerifiedStatus
+}
+
+func (rg *RequestGenerator) labelsForPolicy(policyID bugs.PolicyID) []*mpb.Issue_LabelValue {
+	policy := rg.policyApplyer.PolicyByID(policyID)
+	if policy == nil {
+		// Policy no longer configured.
+		return nil
+	}
+	if policy.BugTemplate.GetMonorail() == nil {
+		// Monorail bug template not configured.
+		return nil
+	}
+
+	// Config validation ensures that the labels specified
+	// on the policy are distinct values.
+	var result []*mpb.Issue_LabelValue
+	for _, label := range policy.BugTemplate.Monorail.Labels {
+		result = append(result, &mpb.Issue_LabelValue{
+			Label: label,
+		})
+	}
+	return result
 }

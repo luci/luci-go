@@ -79,14 +79,25 @@ func (p PolicyApplyer) applyPriorityFloor(priority configpb.BuganizerPriority) c
 	return priority
 }
 
+// PolicyByID returns the policy with the given ID, if
+// it is still configured.
+func (p PolicyApplyer) PolicyByID(policyID PolicyID) *configpb.BugManagementPolicy {
+	for _, policy := range p.policiesByDescendingPriority {
+		if policy.Id == string(policyID) {
+			return policy
+		}
+	}
+	return nil
+}
+
 // PoliciesByIDs returns the policies with the given IDs, to
 // the extent that they are still configured.
-func (p PolicyApplyer) PoliciesByIDs(activePolicyIDs map[PolicyID]struct{}) []*configpb.BugManagementPolicy {
+func (p PolicyApplyer) PoliciesByIDs(policyIDs map[PolicyID]struct{}) []*configpb.BugManagementPolicy {
 	var result []*configpb.BugManagementPolicy
 	for _, policy := range p.policiesByDescendingPriority {
-		_, ok := activePolicyIDs[PolicyID(policy.Id)]
+		_, ok := policyIDs[PolicyID(policy.Id)]
 		if !ok {
-			// Policy not active.
+			// Policy not selected.
 			continue
 		}
 		result = append(result, policy)

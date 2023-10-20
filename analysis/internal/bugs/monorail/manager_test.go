@@ -74,14 +74,17 @@ func TestManager(t *testing.T) {
 		policyA := config.CreatePlaceholderBugManagementPolicy("policy-a")
 		policyA.HumanReadableName = "Problem A"
 		policyA.Priority = configpb.BuganizerPriority_P4
+		policyA.BugTemplate.Monorail.Labels = []string{"Policy-A-Label"}
 
 		policyB := config.CreatePlaceholderBugManagementPolicy("policy-b")
 		policyB.HumanReadableName = "Problem B"
 		policyB.Priority = configpb.BuganizerPriority_P0
+		policyB.BugTemplate.Monorail.Labels = []string{"Policy-B-Label"}
 
 		policyC := config.CreatePlaceholderBugManagementPolicy("policy-c")
 		policyC.HumanReadableName = "Problem C"
 		policyC.Priority = configpb.BuganizerPriority_P1
+		policyC.BugTemplate.Monorail.Labels = []string{"Policy-C-Label"}
 
 		projectCfg := &configpb.ProjectConfig{
 			BugManagement: &configpb.BugManagement{
@@ -133,6 +136,8 @@ func TestManager(t *testing.T) {
 				},
 				Labels: []*mpb.Issue_LabelValue{{
 					Label: "LUCI-Analysis-Auto-Filed",
+				}, {
+					Label: "Policy-A-Label",
 				}, {
 					Label: "Restrict-View-Google",
 				}},
@@ -201,11 +206,64 @@ func TestManager(t *testing.T) {
 
 					issue := f.Issues[0]
 					So(issue.Issue, ShouldResembleProto, expectedIssue)
+					So(len(issue.Comments), ShouldEqual, 3)
+					So(issue.Comments[0].Content, ShouldEqual, expectedComment)
+					// Link to cluster page should appear in follow-up comment.
+					So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
+					So(issue.Comments[2].Content, ShouldBeEmpty)
+					So(issue.NotifyCount, ShouldEqual, 1)
+				})
+				Convey("Policy has no comment template or labels", func() {
+					policyA.BugTemplate.CommentTemplate = ""
+					policyA.BugTemplate.Monorail = nil
+
+					bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg, true /* usePolicyBasedManagement */)
+					So(err, ShouldBeNil)
+
+					expectedIssue.Labels = removeLabel(expectedIssue.Labels, "Policy-A-Label")
+
+					// Act
+					response := bm.Create(ctx, createRequest)
+
+					// Verify
+					So(response, ShouldResemble, bugs.BugCreateResponse{
+						ID: "chromium/100",
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
+							"policy-a": {},
+						},
+					})
+					So(len(f.Issues), ShouldEqual, 1)
+
+					issue := f.Issues[0]
+					So(issue.Issue, ShouldResembleProto, expectedIssue)
 					So(len(issue.Comments), ShouldEqual, 2)
 					So(issue.Comments[0].Content, ShouldEqual, expectedComment)
 					// Link to cluster page should appear in follow-up comment.
 					So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
 					So(issue.NotifyCount, ShouldEqual, 1)
+				})
+				Convey("Policy has no monorail template", func() {
+					policyA.BugTemplate.Monorail = nil
+
+					bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg, true /* usePolicyBasedManagement */)
+					So(err, ShouldBeNil)
+
+					expectedIssue.Labels = removeLabel(expectedIssue.Labels, "Policy-A-Label")
+
+					// Act
+					response := bm.Create(ctx, createRequest)
+
+					// Verify
+					So(response, ShouldResemble, bugs.BugCreateResponse{
+						ID: "chromium/100",
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
+							"policy-a": {},
+						},
+					})
+					So(len(f.Issues), ShouldEqual, 1)
+
+					issue := f.Issues[0]
+					So(issue.Issue, ShouldResembleProto, expectedIssue)
 				})
 				Convey("Multiple policies activated", func() {
 					createRequest.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
@@ -214,6 +272,8 @@ func TestManager(t *testing.T) {
 						"policy-c": {}, // P1
 					}
 					expectedIssue.FieldValues[1].Value = "0"
+					expectedIssue.Labels = addLabel(expectedIssue.Labels, "Policy-B-Label")
+					expectedIssue.Labels = addLabel(expectedIssue.Labels, "Policy-C-Label")
 					expectedComment = strings.Replace(expectedComment, "- Problem A\n", "- Problem B\n- Problem C\n- Problem A\n", 1)
 
 					// Act
@@ -255,6 +315,10 @@ func TestManager(t *testing.T) {
 					So(errors.Is(response.Error, f.UpdateError), ShouldBeTrue)
 					So(response.Simulated, ShouldBeFalse)
 					So(len(f.Issues), ShouldEqual, 1)
+
+					// Do not expect label to be populated as policy activation comment
+					// did not get a chance to post yet.
+					expectedIssue.Labels = removeLabel(expectedIssue.Labels, "Policy-A-Label")
 
 					issue := f.Issues[0]
 					So(issue.Issue, ShouldResembleProto, expectedIssue)
@@ -312,10 +376,7 @@ func TestManager(t *testing.T) {
 				So(len(f.Issues), ShouldEqual, 1)
 				issue := f.Issues[0]
 
-				// No Restrict-View-Google label.
-				expectedIssue.Labels = []*mpb.Issue_LabelValue{{
-					Label: "LUCI-Analysis-Auto-Filed",
-				}}
+				expectedIssue.Labels = removeLabel(expectedIssue.Labels, "Restrict-View-Google")
 				So(issue.Issue, ShouldResembleProto, expectedIssue)
 			})
 			Convey("Does nothing if in simulation mode", func() {
@@ -475,6 +536,9 @@ func TestManager(t *testing.T) {
 					So(f.Issues[0].Comments, ShouldHaveLength, originalCommentCount+1)
 					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldStartWith,
 						"Policy ID: policy-b")
+
+					// Expect the policy B label to appear.
+					So(containsLabel(f.Issues[0].Issue.Labels, "Policy-B-Label"), ShouldBeTrue)
 
 					// The policy activation was notified.
 					So(f.Issues[0].NotifyCount, ShouldEqual, originalNotifyCount+1)
@@ -1020,4 +1084,30 @@ func updateBugPriorityRequest(name string, priority string) *mpb.ModifyIssuesReq
 		},
 		CommentContent: "User comment.",
 	}
+}
+
+func addLabel(labels []*mpb.Issue_LabelValue, label string) []*mpb.Issue_LabelValue {
+	result := append(labels, &mpb.Issue_LabelValue{Label: label})
+	SortLabels(result)
+	return result
+}
+
+func removeLabel(labels []*mpb.Issue_LabelValue, label string) []*mpb.Issue_LabelValue {
+	var result []*mpb.Issue_LabelValue
+	for _, item := range labels {
+		if item.Label != label {
+			result = append(result, item)
+		}
+	}
+	SortLabels(result)
+	return result
+}
+
+func containsLabel(labels []*mpb.Issue_LabelValue, label string) bool {
+	for _, item := range labels {
+		if item.Label == label {
+			return true
+		}
+	}
+	return false
 }
