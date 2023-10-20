@@ -28,12 +28,15 @@ import (
 
 	"go.chromium.org/luci/gae/service/info"
 
+	"go.chromium.org/luci/config/appengine/gaeconfig"
+	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/web/rpcexplorer"
 
@@ -42,7 +45,9 @@ import (
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/appengine/tq"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/scheduler/api/scheduler/v1"
@@ -203,6 +208,23 @@ func main() {
 		Engine:     globalEngine,
 		Catalog:    globalCatalog,
 		AdminGroup: adminGroup,
+	})
+	config.RegisterConsumerServer(&api, &cfgmodule.ConsumerServer{
+		Rules: &validation.Rules,
+		GetConfigServiceAccountFn: func(ctx context.Context) (string, error) {
+			settings, err := gaeconfig.FetchCachedSettings(ctx)
+			switch {
+			case err != nil:
+				return "", err
+			case settings.ConfigServiceHost == "":
+				return "", errors.New("can not find config service host from settings")
+			}
+			info, err := signing.FetchServiceInfoFromLUCIService(ctx, "https://"+settings.ConfigServiceHost)
+			if err != nil {
+				return "", err
+			}
+			return info.ServiceAccountName, nil
+		},
 	})
 	discovery.Enable(&api)
 	api.InstallHandlers(r, base)
