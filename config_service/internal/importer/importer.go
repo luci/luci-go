@@ -344,7 +344,7 @@ func (i *Importer) importConfigSet(ctx context.Context, cfgSet config.Set, loc *
 		proto.Equal(cfgSetInDB.Location.GetGitilesLocation(), loc) &&
 		cfgSetInDB.Version == model.CurrentCfgSetVersion:
 		logging.Debugf(ctx, "Already up-to-date")
-		return saveAttempt(true, "Up-to-date", latestCommit)
+		return nil
 	}
 
 	logging.Infof(ctx, "Rolling %s => %s", cfgSetInDB.LatestRevision.ID, latestCommit.Id)
