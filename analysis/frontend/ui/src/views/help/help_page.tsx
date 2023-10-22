@@ -26,8 +26,10 @@ import MuiAccordionSummary, {
 import AccordionDetails from '@mui/material/AccordionDetails';
 import Container from '@mui/material/Container';
 import EditIcon from '@mui/icons-material/Edit';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FeedbackIcon from '@mui/icons-material/Feedback';
+import HistoryIcon from '@mui/icons-material/History';
 import Link from '@mui/material/Link';
 import Typography, {
   TypographyProps,
@@ -77,7 +79,7 @@ const HelpPage = () => {
             Failure association rules define an association between a bug and a set of failures.
             <ul>
               <li><strong>To create a rule</strong>, use the <em>new rule</em> button on the rules page.</li>
-              <li><strong>To modify a rule</strong>, from the page of that rule, click the edit button (<EditIcon />) next to the rule definition.</li>
+              <li><strong>To modify a rule</strong>, from the page of that rule, click the edit button (<EditIcon sx={{ verticalAlign: 'middle' }} />) next to the rule definition.</li>
             </ul>
           </Typography>
           <Typography paragraph>
@@ -95,16 +97,17 @@ const HelpPage = () => {
           <Typography paragraph>
             The information queriable via the <em>test</em> and <em>reason</em> identifiers is shown below. (The
             diagram shows a ci.chromium.org build page).
-            <img src={ruleIdentifiersImageUrl} alt="Test is the fully-qualified test ID. It appears under the MILO Test Results tab
+            <img src={ruleIdentifiersImageUrl} alt="Test is the fully-qualified test ID. It appears under tFhe MILO Test Results tab
                     under the heading ID. The reason is the failure reason, which appears in the MILO Test Results tab under the heading Failure Reason."></img>
           </Typography>
           <Typography paragraph>
             If you do not see the failure reason section shown in the diagram, it means the test harness did not upload a&nbsp;
             <Link href="https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/resultdb/proto/v1/test_result.proto?q=FailureReason">failure reason</Link>.
-            If you are interested in making a test harness upload failure reasons, please reach out using the send feedback (<FeedbackIcon />) button.
+            If you are interested in making a test harness upload failure reasons, please reach out using the send feedback (<FeedbackIcon sx={{ verticalAlign: 'middle' }} />) button
+            and we can provide instructions.
           </Typography>
           <Typography paragraph>
-            We recommend associating failures with bugs using <em>failure reasons</em>, if possible. This is for two reasons:
+            We recommend associating failures with bugs using <em>failure reasons</em> instead of <em>tests</em>, if possible. This is for two reasons:
             <ul>
               <li>
                 Associating failures to bugs using <em>tests</em> usually leads to bugs that are more difficult to manage,
@@ -119,7 +122,28 @@ const HelpPage = () => {
           </Typography>
         </AccordionDetails>
       </Accordion>
-
+      <Accordion expanded={location.hash === '#find-rule'} onChange={handleChange('find-rule')}> 
+        <AccordionSummary>
+          <AccordionHeading>
+            How do I find the failure association rule for a bug?
+          </AccordionHeading>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Typography paragraph>
+            For LUCI Analysis auto-filed bugs, the easiest way to get to the rule is by following the link to it in the issue description or first comment.
+          </Typography>
+          <Typography paragraph>
+            For other bugs, a link to the rule (if it exists) should appear in a comment further down the bug.
+          </Typography>
+          <Typography paragraph>
+            The following URL schemes can also be used:
+            <ul>
+              <li><strong>Buganizer bugs:</strong> https://luci-analysis.appspot.com/b/<code>BUGANIZER_ID</code>, where BUGANIZER_ID is substituted for the buganizer bug ID, e.g. <code>1234</code>.</li>
+              <li><strong>Monorail:</strong> https://luci-analysis.appspot.com/b/<code>MONORAIL_PROJECT</code>/<code>MONORAIL_ID</code>, where MONORAIL_PROJECT is the monorail project (e.g. <code>chromium</code>) and MONORAIL_ID is the monorail bug ID, e.g. <code>5678</code>.</li>
+            </ul>
+          </Typography>
+        </AccordionDetails>
+      </Accordion>
       <Accordion expanded={location.hash === '#archive-rule'} onChange={handleChange('archive-rule')}>
         <AccordionSummary>
           <AccordionHeading>
@@ -128,7 +152,7 @@ const HelpPage = () => {
         </AccordionSummary>
         <AccordionDetails>
           <Typography paragraph>
-            Yes! If you no longer need a rule, click the <em>Archive</em> button on the rule page.
+            Yes! If you no longer need a rule, click the <em>Archive</em> button on the <Link component={RouterLink} to='#find-rule'>rule page</Link>.
           </Typography>
         </AccordionDetails>
       </Accordion>
@@ -140,31 +164,63 @@ const HelpPage = () => {
           </AccordionHeading>
         </AccordionSummary>
         <AccordionDetails>
-          <Typography paragraph>
-            LUCI Analysis files bugs for clusters when their impact exceeds the&nbsp;
-            <Link href="https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/config/project_config.proto?q=bug_filing_threshold">
-              threshold configured by the project
-            </Link>.
-            When you receive a LUCI Analysis bug, the objective should be to reduce the impact by fixing the problematic test(s).
-          </Typography>
-          <Typography paragraph>
-            <strong>Key point:</strong> the bug is for <em>impact</em>, not <em>failures</em>. To resolve the impact,
-            you may not need to fix all failures. For example, failures occuring on experimental builders or tests
-            with no impact would be irrelevant.
-          </Typography>
+          {
+            window.isPolicyBasedBugManagementEnabled && (
+              <>
+                <Typography paragraph>
+                  LUCI Analysis files bugs for <strong>problems</strong> identified by <Link href="http://goto.google.com/luci-analysis-setup#project-configuration">policies configured by your project</Link>
+                  &nbsp;(<Link href="https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/config/project_config.proto?q=%22BugManagementPolicy%20policies%22">
+                    schema
+                  </Link>).
+                  When you receive a LUCI Analysis bug, the objective should be to fix these problems.
+                  Problem(s) can always be resolved by fixing the problematic test(s), but there may be other ways too.
+                  Click the <em>more info</em> button next to the problem on the <Link component={RouterLink} to='#find-rule'>rule page</Link> to
+                  view its suggested resolution steps and resolution criteria.
+                </Typography>
+                <Typography paragraph>
+                  <strong>Key point:</strong> the bug is for <strong>problems</strong>, not <strong>failures</strong>. To fix the problems,
+                  you may not need to fix all failures. For example, depending on the problem, failures occuring on experimental
+                  builders or tests having no impact would be irrelevant.
+                </Typography>
+                <Typography paragraph>
+                  Once all problems have been resolved and verified as such by LUCI Analysis, the bug will
+                  be <Link component={RouterLink} to='#bug-verified'>automatically be marked as verified by LUCI Analysis</Link>.
+                </Typography>
+              </>
+            )
+          }
+          {
+            !window.isPolicyBasedBugManagementEnabled && (
+              <>
+                <Typography paragraph>
+                  LUCI Analysis files bugs for clusters when their impact exceeds the&nbsp;
+                  <Link href="https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/config/project_config.proto?q=bug_filing_threshold">
+                    threshold configured by the project
+                  </Link>.
+                  When you receive a LUCI Analysis bug, the objective should be to reduce the impact by fixing the problematic test(s).
+                </Typography>
+                <Typography paragraph>
+                  <strong>Key point:</strong> the bug is for <em>impact</em>, not <em>failures</em>. To resolve the impact,
+                  you may not need to fix all failures. For example, failures occuring on experimental builders or tests
+                  with no impact would be irrelevant.
+                </Typography>
+              </>
+            )
+          }
           <Typography paragraph>
             To investigate a bug:
             <ul>
-              <li>Navigate to the rule page for the bug (this link will be in the first comment on the bug after the issue description).</li>
+              <li>Navigate to the <Link component={RouterLink} to='#find-rule'>rule page</Link> for the bug.</li>
               <li>Review the <em>Impact</em> panel to verify the impact is still occuring.</li>
               <li>
-                Use the <em>Recent failures</em> panel to identify the tests which have impactful failures. Note that only some test variants
+                Use the <em>Recent failures</em> tab to identify the tests which have impactful failures. Note that only some test variants
                 (ways of running the test) may be broken. For example, the failure may only be happening on one device or operating system.
                 You can sort the table and use the <em>group by</em> feature to help you.
               </li>
               <li>
-                Review the history of the problematic test variants using the <em>History</em> link. Alternatively, look at examples by
-                expanding the node for the test and clicking on the build- link in each row.
+                Review the history of the problematic test variants using the history (<HistoryIcon sx={{verticalAlign: 'middle'}}/>) button.
+                Alternatively, look at examples by expanding the node for the test with the expand (<ChevronRightIcon sx={{verticalAlign: 'middle'}} />) button
+                and clicking on the build link in each row.<br/>
                 <img src={recentFailuresImageUrl} alt="The recent failures panel has links to test history and failure examples."></img>
               </li>
             </ul>
@@ -183,18 +239,37 @@ const HelpPage = () => {
           </AccordionHeading>
         </AccordionSummary>
         <AccordionDetails>
-          <Typography paragraph>
-          LUCI Analysis automatically adjusts the bug priority according to the impact of the bug&apos;s failures.
-          The bug priority thresholds are specified your project&apos;s&nbsp;
-            <Link href="https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/config/project_config.proto?q=priorities">LUCI Analysis configuration</Link>.
-          </Typography>
+          {
+            window.isPolicyBasedBugManagementEnabled && (
+              <>
+                <Typography paragraph>
+                  LUCI Analysis automatically adjusts the bug priority to match the priority of the problems identified by your project.
+                  Problems can be viewed on the <Link component={RouterLink} to='#find-rule'>rule page</Link>, under the heading <em>Problems</em>.
+                </Typography>
+                <Typography paragraph>
+                  Problems and their associated priority are controlled by <Link href="http://goto.google.com/luci-analysis-setup#project-configuration">policies configured by your project</Link>
+                  &nbsp;(<Link href="https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/config/project_config.proto?q=%22BugManagementPolicy%20policies%22">
+                  schema
+                  </Link>).
+                </Typography>
+              </>
+            )
+          }
+          {
+            !window.isPolicyBasedBugManagementEnabled && (
+              <Typography paragraph>
+                LUCI Analysis automatically adjusts the bug priority according to the impact of the bug&apos;s failures.
+                The bug priority thresholds are specified your project&apos;s&nbsp;
+                <Link href="https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/config/project_config.proto?q=priorities">LUCI Analysis configuration</Link>.
+              </Typography>
+            )
+          }
           <Typography paragraph>
             <strong>If the priority update is erroneous,</strong> manually set the bug priority to the correct value.
             LUCI Analysis will respect the priority you have set and will not change it.
           </Typography>
         </AccordionDetails>
       </Accordion>
-
       <Accordion expanded={location.hash === '#bug-verified'} onChange={handleChange('bug-verified')}>
         <AccordionSummary>
           <AccordionHeading>
@@ -202,13 +277,32 @@ const HelpPage = () => {
           </AccordionHeading>
         </AccordionSummary>
         <AccordionDetails>
+          {
+            window.isPolicyBasedBugManagementEnabled && (
+              <>
+                <Typography paragraph>
+                  LUCI Analysis automatically verifies bugs once all problems identified by your project have been resolved.
+                  Problems can be viewed on the <Link component={RouterLink} to='#find-rule'>rule page</Link>, under the heading <em>Problems</em>.
+                </Typography>
+                <Typography paragraph>
+                  Problems are identified according to <Link href="http://goto.google.com/luci-analysis-setup#project-configuration">policies configured by your project</Link>
+                  &nbsp;(<Link href="https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/config/project_config.proto?q=%22BugManagementPolicy%20policies%22">
+                  schema
+                  </Link>).
+                </Typography>
+              </>
+            )
+          }
+          {
+            !window.isPolicyBasedBugManagementEnabled && (
+              <Typography paragraph>
+                LUCI Analysis automatically verifies bugs once the impact of the remaining failures falls below a&nbsp;
+                <Link href="https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/config/project_config.proto?q=%22closure%20threshold%22">project-specific threshold</Link>.
+              </Typography>
+            )
+          }
           <Typography paragraph>
-            LUCI Analysis automatically closes bugs once the impact of the remaining failures falls below a&nbsp;
-            <Link href="https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/config/project_config.proto?q=%22closure%20threshold%22">project-specific threshold</Link>.
-          </Typography>
-          <Typography paragraph>
-            <strong>If the bug closure is erroneous,</strong> go to the rule page (a link to this page is in the comment accompanying
-            the closure), and turn the <em>Update bug</em> switch in the <em>Associated bug</em> panel to off.
+            <strong>If the bug closure is erroneous,</strong> go to the <Link component={RouterLink} to='#find-rule'>rule page</Link>, and turn the <em>Update bug</em> switch in the <em>Associated bug</em> panel to off.
             Then manually set the bug state you desire.
           </Typography>
         </AccordionDetails>
@@ -234,7 +328,7 @@ const HelpPage = () => {
                 let LUCI Analysis verify the fix (this could take up to 7 days).</li>
               <li>
                 Alternatively, you can stop LUCI Analysis overriding the bug by turning off the <em>Update bug</em>
-                &nbsp;switch on the rule page.
+                &nbsp;switch on the <Link component={RouterLink} to='#find-rule'>rule page</Link>.
               </li>
             </ul>
           </Typography>
@@ -332,7 +426,7 @@ const HelpPage = () => {
         </AccordionSummary>
         <AccordionDetails>
           <Typography paragraph>
-            First, check if your issue is addressed here. If not, please use the send feedback (<FeedbackIcon />) button at the top-right of this page to send a report.
+            First, check if your issue is addressed here. If not, please use the send feedback (<FeedbackIcon sx={{ verticalAlign: 'middle' }} />) button at the top-right of this page to send a report.
           </Typography>
         </AccordionDetails>
       </Accordion>
