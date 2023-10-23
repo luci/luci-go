@@ -128,9 +128,6 @@ func validateServicesCfg(vctx *validation.Context, configSet, path string, conte
 
 		vctx.Exit()
 	}
-	validateSorted[*cfgcommonpb.Service](vctx, cfg.GetServices(), "services", func(srv *cfgcommonpb.Service) string {
-		return srv.GetId()
-	})
 	return nil
 }
 

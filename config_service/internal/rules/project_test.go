@@ -192,40 +192,6 @@ func TestValidateProjectsCfg(t *testing.T) {
 			So(validateProjectsCfg(vctx, string(cs), path, content), ShouldBeNil)
 			So(vctx.Finalize(), ShouldErrLike, `(projects #0 / owned_by): unknown team "Example Team`)
 		})
-
-		Convey("not sorted projects", func() {
-			content := []byte(`teams {
-				name: "Example Team"
-				maintenance_contact: "team-maintenance@example.com"
-				escalation_contact: "team-escalation@google.com"
-			}
-			projects {
-				id: "example-proj-b"
-				owned_by: "Example Team"
-				gitiles_location {
-					repo: "https://example.googlesource.com/example-b"
-					ref:  "refs/heads/main"
-					path: "infra/config/generated"
-				}
-				identity_config {
-					service_account_email: "example-sa@example.com"
-				}
-			}
-			projects {
-				id: "example-proj-a"
-				owned_by: "Example Team"
-				gitiles_location {
-					repo: "https://example.googlesource.com/example-a"
-					ref:  "refs/heads/main"
-					path: "infra/config/generated"
-				}
-				identity_config {
-					service_account_email: "example-sa@example.com"
-				}
-			}`)
-			So(validateProjectsCfg(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, `projects are not sorted by id. First offending id: "example-proj-a"`)
-		})
 	})
 }
 

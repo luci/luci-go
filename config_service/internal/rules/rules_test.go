@@ -205,17 +205,6 @@ func TestValidateServicesCfg(t *testing.T) {
 			So(validateServicesCfg(vctx, string(cs), path, content), ShouldBeNil)
 			So(vctx.Finalize(), ShouldErrLike, `(services #0 / access #0): invalid auth group: "goo!"`)
 		})
-
-		Convey("not sorted", func() {
-			content := []byte(`services {
-				id: "foo"
-			}
-			services {
-				id: "bar"
-			}`)
-			So(validateServicesCfg(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, `services are not sorted by id. First offending id: "bar"`)
-		})
 	})
 }
 

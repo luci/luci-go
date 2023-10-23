@@ -88,9 +88,6 @@ func validateProjectsCfg(vctx *validation.Context, configSet, path string, conte
 
 		vctx.Exit()
 	}
-	validateSorted[*cfgcommonpb.Project](vctx, cfg.GetProjects(), "projects", func(project *cfgcommonpb.Project) string {
-		return project.GetId()
-	})
 	return nil
 }
 
