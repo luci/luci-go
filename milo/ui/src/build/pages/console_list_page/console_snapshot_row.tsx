@@ -19,7 +19,7 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import { formatBuilderId } from '@/build/tools/utils';
 import { BUILD_STATUS_CLASS_MAP } from '@/common/constants';
-import { ConsoleSnapshot as SnapshotData } from '@/common/services/milo_internal';
+import { ConsoleSnapshot } from '@/common/services/milo_internal';
 import {
   getBuildURLPathFromBuildData,
   getOldBuilderURLPath,
@@ -27,15 +27,15 @@ import {
 } from '@/common/tools/url_utils';
 import { extractProject } from '@/common/tools/utils';
 
-const Container = styled.div({
-  display: 'grid',
-  alignItems: 'center',
-  gridTemplateColumns: 'auto auto 1fr',
-  gridColumnGap: '5px',
-  margin: '10px 20px',
+const Row = styled.tr({
+  // Shrink-to-fit on all but the last column.
+  '& > td:not(:last-of-type)': { width: 1 },
+  '& > td': {
+    padding: '5px 2px',
+  },
 });
 
-const BuildersContainer = styled.div({
+const BuildersCell = styled.td({
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fit, minmax(2em, 1fr))',
   gap: '1px',
@@ -69,11 +69,11 @@ const BuildersContainer = styled.div({
   },
 });
 
-export interface ConsoleSnapshotProps {
-  readonly snapshot: SnapshotData;
+export interface ConsoleSnapshotRowProps {
+  readonly snapshot: ConsoleSnapshot;
 }
 
-export function ConsoleSnapshot({ snapshot }: ConsoleSnapshotProps) {
+export function ConsoleSnapshotRow({ snapshot }: ConsoleSnapshotRowProps) {
   const project = extractProject(snapshot.console.realm);
 
   // Sort builder snapshots by builder categories.
@@ -98,26 +98,30 @@ export function ConsoleSnapshot({ snapshot }: ConsoleSnapshotProps) {
   }, [snapshot]);
 
   return (
-    <Container>
-      <Link
-        href={getOldConsoleURLPath(project, snapshot.console.id)}
-        data-testid="console-url"
-      >
-        <b>{snapshot.console.name}</b>
-      </Link>
-      <div>
-        (
+    <Row>
+      <td>
         <Link
-          href={snapshot.console.repoUrl}
-          target="_blank"
-          rel="noreferrer"
-          data-testid="repo-url"
+          href={getOldConsoleURLPath(project, snapshot.console.id)}
+          data-testid="console-url"
         >
-          repo
+          <b>{snapshot.console.name}</b>
         </Link>
-        )
-      </div>
-      <BuildersContainer data-testid="builder-snapshots">
+      </td>
+      <td>
+        <div>
+          (
+          <Link
+            href={snapshot.console.repoUrl}
+            target="_blank"
+            rel="noreferrer"
+            data-testid="repo-url"
+          >
+            repo
+          </Link>
+          )
+        </div>
+      </td>
+      <BuildersCell data-testid="builder-snapshots">
         {sortedBuilderSnapshots.map((s) => {
           const builderId = formatBuilderId(s.builder);
           const link = s.build
@@ -137,7 +141,7 @@ export function ConsoleSnapshot({ snapshot }: ConsoleSnapshotProps) {
             />
           );
         })}
-      </BuildersContainer>
-    </Container>
+      </BuildersCell>
+    </Row>
   );
 }

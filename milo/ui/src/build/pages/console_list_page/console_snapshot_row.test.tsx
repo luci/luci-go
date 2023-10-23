@@ -17,7 +17,7 @@ import { render, screen } from '@testing-library/react';
 import { BuildbucketStatus } from '@/common/services/buildbucket';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { ConsoleSnapshot } from './console_snapshot';
+import { ConsoleSnapshotRow } from './console_snapshot_row';
 
 const consoleSnapshot = {
   console: {
@@ -101,11 +101,15 @@ const consoleSnapshot = {
   ],
 };
 
-describe('ConsoleSnapshot', () => {
+describe('ConsoleSnapshotRow', () => {
   it('should render correctly', async () => {
     render(
       <FakeContextProvider>
-        <ConsoleSnapshot snapshot={consoleSnapshot} />
+        <table>
+          <tbody>
+            <ConsoleSnapshotRow snapshot={consoleSnapshot} />
+          </tbody>
+        </table>
       </FakeContextProvider>,
     );
 

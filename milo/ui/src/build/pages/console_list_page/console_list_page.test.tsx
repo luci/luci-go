@@ -22,12 +22,12 @@ import {
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ConsoleListPage } from './console_list_page';
-import { ConsoleSnapshot } from './console_snapshot';
+import { ConsoleSnapshotRow } from './console_snapshot_row';
 
-jest.mock('./console_snapshot', () => {
+jest.mock('./console_snapshot_row', () => {
   return self.createSelectiveSpiesFromModule<
-    typeof import('./console_snapshot')
-  >('./console_snapshot', ['ConsoleSnapshot']);
+    typeof import('./console_snapshot_row')
+  >('./console_snapshot_row', ['ConsoleSnapshotRow']);
 });
 
 function makeFakeConsoleSnapshot(id: string): ConsoleSnapshotData {
@@ -85,11 +85,11 @@ const mockSnapshots: { [key: string]: QueryConsoleSnapshotsResponse } = {
 };
 
 describe('ConsoleListPage', () => {
-  let consoleSnapshotSpy: jest.MockedFunctionDeep<typeof ConsoleSnapshot>;
+  let consoleSnapshotRowSpy: jest.MockedFunctionDeep<typeof ConsoleSnapshotRow>;
 
   beforeEach(() => {
     jest.useFakeTimers();
-    consoleSnapshotSpy = jest.mocked(ConsoleSnapshot);
+    consoleSnapshotRowSpy = jest.mocked(ConsoleSnapshotRow);
     jest
       .spyOn(MiloInternal.prototype, 'queryConsoleSnapshots')
       .mockImplementation(async (req) => {
@@ -116,49 +116,49 @@ describe('ConsoleListPage', () => {
     await act(() => jest.runAllTimersAsync());
     await act(() => jest.runAllTimersAsync());
 
-    expect(consoleSnapshotSpy).toHaveBeenCalledWith(
+    expect(consoleSnapshotRowSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         snapshot: makeFakeConsoleSnapshot('console-1'),
       }),
       expect.anything(),
     );
-    expect(consoleSnapshotSpy).toHaveBeenCalledWith(
+    expect(consoleSnapshotRowSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         snapshot: makeFakeConsoleSnapshot('console-2'),
       }),
       expect.anything(),
     );
-    expect(consoleSnapshotSpy).toHaveBeenCalledWith(
+    expect(consoleSnapshotRowSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         snapshot: makeFakeConsoleSnapshot('console-3'),
       }),
       expect.anything(),
     );
-    expect(consoleSnapshotSpy).toHaveBeenCalledWith(
+    expect(consoleSnapshotRowSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         snapshot: makeFakeConsoleSnapshot('console-4'),
       }),
       expect.anything(),
     );
-    expect(consoleSnapshotSpy).toHaveBeenCalledWith(
+    expect(consoleSnapshotRowSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         snapshot: makeFakeConsoleSnapshot('console-5'),
       }),
       expect.anything(),
     );
-    expect(consoleSnapshotSpy).toHaveBeenCalledWith(
+    expect(consoleSnapshotRowSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         snapshot: makeFakeConsoleSnapshot('console-6'),
       }),
       expect.anything(),
     );
-    expect(consoleSnapshotSpy).toHaveBeenCalledWith(
+    expect(consoleSnapshotRowSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         snapshot: makeFakeConsoleSnapshot('console-7'),
       }),
       expect.anything(),
     );
-    expect(consoleSnapshotSpy).toHaveBeenCalledWith(
+    expect(consoleSnapshotRowSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         snapshot: makeFakeConsoleSnapshot('console-8'),
       }),

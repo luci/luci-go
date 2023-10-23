@@ -22,7 +22,7 @@ import { UiPage } from '@/common/constants';
 import { useInfinitePrpcQuery } from '@/common/hooks/prpc_query';
 import { MiloInternal } from '@/common/services/milo_internal';
 
-import { ConsoleSnapshot } from './console_snapshot';
+import { ConsoleSnapshotRow } from './console_snapshot_row';
 import { ProjectIdBar } from './project_id_bar';
 
 export function ConsoleListPage() {
@@ -63,13 +63,20 @@ export function ConsoleListPage() {
         variant={isLoading ? 'indeterminate' : 'determinate'}
         color="primary"
       />
-      {data?.pages.map((page, i) => (
-        <Fragment key={i}>
-          {page.snapshots?.map((snapshot) => (
-            <ConsoleSnapshot key={snapshot.console.id} snapshot={snapshot} />
+      <table css={{ width: '100%' }}>
+        <tbody>
+          {data?.pages.map((page, i) => (
+            <Fragment key={i}>
+              {page.snapshots?.map((snapshot) => (
+                <ConsoleSnapshotRow
+                  key={snapshot.console.id}
+                  snapshot={snapshot}
+                />
+              ))}
+            </Fragment>
           ))}
-        </Fragment>
-      ))}
+        </tbody>
+      </table>
     </>
   );
 }
