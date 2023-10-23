@@ -13,14 +13,14 @@
 // limitations under the License.
 
 import {
-  getBuilderURLPath,
+  getOldBuilderURLPath,
   getSwarmingBotListURL,
   getTestHistoryURLPath,
 } from './url_utils';
 
 describe('getBuilderURLPath', () => {
   test('should encode the builder', () => {
-    const url = getBuilderURLPath({
+    const url = getOldBuilderURLPath({
       project: 'testproject',
       bucket: 'testbucket',
       builder: 'test builder',

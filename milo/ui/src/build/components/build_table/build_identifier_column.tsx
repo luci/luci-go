@@ -13,10 +13,11 @@
 // limitations under the License.
 
 import { Link, TableCell } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 
 import {
   getBuildURLPathFromBuildData,
-  getBuilderURLPath,
+  getOldBuilderURLPath,
   getProjectURLPath,
 } from '@/common/tools/url_utils';
 
@@ -31,15 +32,18 @@ export function BuildIdentifierContentCell() {
 
   return (
     <TableCell>
-      <Link href={getProjectURLPath(build.builder.project)}>
+      <Link
+        component={RouterLink}
+        to={getProjectURLPath(build.builder.project)}
+      >
         {build.builder.project}
       </Link>
       /{build.builder.bucket}/
-      <Link href={getBuilderURLPath(build.builder)}>
+      <Link href={getOldBuilderURLPath(build.builder)}>
         {build.builder.builder}
       </Link>
       /
-      <Link href={getBuildURLPathFromBuildData(build)}>
+      <Link component={RouterLink} to={getBuildURLPathFromBuildData(build)}>
         {build.number ?? 'b' + build.id}
       </Link>
     </TableCell>

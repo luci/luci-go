@@ -32,23 +32,21 @@ export function getBuildURLPath(
   builder: BuilderID,
   buildIdOrNum: string,
 ): string {
-  return `/ui${getBuilderURLPath(builder)}/${buildIdOrNum}`;
+  return `/ui${getOldBuilderURLPath(builder)}/${buildIdOrNum}`;
 }
 
-export function getBuilderURLPath(builder: BuilderID): string {
-  return `${getProjectURLPath(builder.project)}/builders/${
-    builder.bucket
-  }/${encodeURIComponent(builder.builder)}`;
+export function getOldBuilderURLPath(builder: BuilderID): string {
+  return `/p/${builder.project}/builders/${builder.bucket}/${encodeURIComponent(
+    builder.builder,
+  )}`;
 }
 
-export function getConsoleURLPath(proj: string, consoleId: string) {
-  return `${getProjectURLPath(proj)}/g/${encodeURIComponent(
-    consoleId,
-  )}/console`;
+export function getOldConsoleURLPath(proj: string, consoleId: string) {
+  return `/p/${proj}/g/${encodeURIComponent(consoleId)}/console`;
 }
 
-export function getProjectURLPath(proj: string): string {
-  return `/p/${proj}`;
+export function getProjectURLPath(proj: string) {
+  return `/ui/p/${proj}`;
 }
 
 export function getLegacyBuildURLPath(
@@ -59,7 +57,7 @@ export function getLegacyBuildURLPath(
 }
 
 export function getLegacyBuilderURLPath(builder: BuilderID) {
-  return `/old${getBuilderURLPath(builder)}`;
+  return `/old${getOldBuilderURLPath(builder)}`;
 }
 
 export function getGerritChangeURL(change: GerritChange): string {

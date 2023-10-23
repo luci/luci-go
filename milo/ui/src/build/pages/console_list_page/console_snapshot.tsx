@@ -22,8 +22,8 @@ import { BUILD_STATUS_CLASS_MAP } from '@/common/constants';
 import { ConsoleSnapshot as SnapshotData } from '@/common/services/milo_internal';
 import {
   getBuildURLPathFromBuildData,
-  getBuilderURLPath,
-  getConsoleURLPath,
+  getOldBuilderURLPath,
+  getOldConsoleURLPath,
 } from '@/common/tools/url_utils';
 import { extractProject } from '@/common/tools/utils';
 
@@ -100,7 +100,7 @@ export function ConsoleSnapshot({ snapshot }: ConsoleSnapshotProps) {
   return (
     <Container>
       <Link
-        href={getConsoleURLPath(project, snapshot.console.id)}
+        href={getOldConsoleURLPath(project, snapshot.console.id)}
         data-testid="console-url"
       >
         <b>{snapshot.console.name}</b>
@@ -122,7 +122,7 @@ export function ConsoleSnapshot({ snapshot }: ConsoleSnapshotProps) {
           const builderId = formatBuilderId(s.builder);
           const link = s.build
             ? getBuildURLPathFromBuildData(s.build)
-            : getBuilderURLPath(s.builder);
+            : getOldBuilderURLPath(s.builder);
           const className = s.build
             ? BUILD_STATUS_CLASS_MAP[s.build.status] + '-cell'
             : 'no-build-cell';

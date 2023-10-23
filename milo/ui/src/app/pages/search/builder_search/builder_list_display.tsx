@@ -15,7 +15,7 @@
 import { Box, Typography } from '@mui/material';
 
 import { BuilderID } from '@/common/services/buildbucket';
-import { getBuilderURLPath } from '@/common/tools/url_utils';
+import { getOldBuilderURLPath } from '@/common/tools/url_utils';
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 
 interface BuilderListDisplayProps {
@@ -37,7 +37,7 @@ export function BuilderListDisplay({
           <ul>
             {builders?.map((builder) => (
               <li key={builder.builder}>
-                <a href={getBuilderURLPath(builder)}>{builder.builder}</a>
+                <a href={getOldBuilderURLPath(builder)}>{builder.builder}</a>
               </li>
             ))}
           </ul>

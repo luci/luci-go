@@ -38,6 +38,8 @@ self.addEventListener('fetch', (e) => {
     url.pathname.match(/^\/b\//) ||
     // Long build link.
     url.pathname.match(/^\/p\/[^/]+\/builders\/[^/]+\/[^/]+\//) ||
+    // Consoles link.
+    url.pathname.match(/^\/p\/[^/]+(\/)?$/) ||
     // Builders link.
     url.pathname.match(/^\/p\/[^/]+(\/g\/[^/]+)?\/builders(\/)?$/) ||
     // Invocation link.

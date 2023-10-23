@@ -13,10 +13,10 @@
 // limitations under the License.
 
 import { css } from '@emotion/react';
-import { LinearProgress } from '@mui/material';
+import { LinearProgress, Link } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import grayFavicon from '@/common/assets/favicons/gray-32.png';
 import greenFavicon from '@/common/assets/favicons/green-32.png';
@@ -39,7 +39,7 @@ import { useStore } from '@/common/store';
 import { InvocationProvider } from '@/common/store/invocation_state';
 import { displayDuration, LONG_TIME_FORMAT } from '@/common/tools/time_utils';
 import {
-  getBuilderURLPath,
+  getOldBuilderURLPath,
   getLegacyBuildURLPath,
   getProjectURLPath,
 } from '@/common/tools/url_utils';
@@ -149,20 +149,22 @@ export const BuildPage = observer(() => {
             }}
           >
             <span css={{ color: 'var(--light-text-color)' }}>Build </span>
-            <a href={getProjectURLPath(project)}>{project}</a>
+            <Link component={RouterLink} to={getProjectURLPath(project)}>
+              {project}
+            </Link>
             <span>&nbsp;/&nbsp;</span>
             <span>{bucket}</span>
             <span>&nbsp;/&nbsp;</span>
-            <a href={getBuilderURLPath({ project, bucket, builder })}>
+            <Link href={getOldBuilderURLPath({ project, bucket, builder })}>
               {builder}
-            </a>
+            </Link>
             <span>&nbsp;/&nbsp;</span>
             <span>{buildNumOrId}</span>
           </div>
           <div css={delimiter}></div>
           <CustomBugLink project={project} build={build?.data} />
           <div css={delimiter}></div>
-          <a
+          <Link
             onClick={handleSwitchVersion}
             href={getLegacyBuildURLPath(
               { project, bucket, builder },
@@ -170,7 +172,7 @@ export const BuildPage = observer(() => {
             )}
           >
             Switch to the legacy build page
-          </a>
+          </Link>
           <div
             css={{
               marginLeft: 'auto',

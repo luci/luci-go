@@ -69,9 +69,8 @@ describe('generateSidebarSections', () => {
           },
           {
             page: UiPage.BuilderGroups,
-            url: '/p/projecttest',
+            url: '/ui/p/projecttest',
             icon: <TableViewIcon />,
-            external: true,
           },
           {
             page: UiPage.Scheduler,
@@ -118,9 +117,8 @@ describe('generateSidebarSections', () => {
           },
           {
             page: UiPage.BuilderGroups,
-            url: '/p/chromium',
+            url: '/ui/p/chromium',
             icon: <TableViewIcon />,
-            external: true,
           },
           {
             page: UiPage.Scheduler,
@@ -194,9 +192,8 @@ describe('generateSidebarSections', () => {
           },
           {
             page: UiPage.BuilderGroups,
-            url: '/p/chromeos',
+            url: '/ui/p/chromeos',
             icon: <TableViewIcon />,
-            external: true,
           },
           {
             page: UiPage.Scheduler,

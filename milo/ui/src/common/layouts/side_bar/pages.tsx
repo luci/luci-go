@@ -28,6 +28,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import React from 'react';
 
 import { UiPage } from '@/common/constants';
+import { getProjectURLPath } from '@/common/tools/url_utils';
 
 export interface SidebarPage {
   readonly page: UiPage;
@@ -70,9 +71,8 @@ function generateBuildsSection(project: string | undefined): SidebarSection {
 
     pages.push({
       page: UiPage.BuilderGroups,
-      url: `/p/${project}`,
+      url: getProjectURLPath(project),
       icon: <TableViewIcon />,
-      external: true,
     });
 
     pages.push({

@@ -90,9 +90,7 @@ func Run(srv *server.Server, templatePath string) {
 	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId/*path", baseMW, redirect("/ui/p/:project/builders/:bucket/:builder/:numberOrId/*path", http.StatusFound))
 
 	// Console
-	r.GET("/p/:project", projectMW, handleError(func(c *router.Context) error {
-		return ConsolesHandler(c, c.Params.ByName("project"))
-	}))
+	r.GET("/p/:project", projectMW, redirect("/ui/p/:project", http.StatusFound))
 	r.GET("/p/:project/", baseMW, movedPermanently("/p/:project"))
 	r.GET("/p/:project/g", baseMW, movedPermanently("/p/:project"))
 	r.GET("/p/:project/g/:group/console", projectMW, handleError(ConsoleHandler))

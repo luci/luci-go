@@ -20,8 +20,10 @@ import {
   Typography,
   styled,
 } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 
 import { ProjectListItem } from '@/common/services/milo_internal';
+import { getProjectURLPath } from '@/common/tools/url_utils';
 
 const ProjectCardContainer = styled(Card)({
   '& .MuiCardActionArea-root': {
@@ -115,8 +117,8 @@ export function ProjectCard({
     >
       <CardActionArea
         onClick={() => onSelectProjectNotification(project.id)}
-        // TODO: switch to router link once we migrated the project page to SPA.
-        href={`/p/${project.id}`}
+        component={RouterLink}
+        to={getProjectURLPath(project.id)}
       >
         <div className="AppProjectCard-logoContainer">
           {project.logoUrl ? (
