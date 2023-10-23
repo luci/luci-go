@@ -172,11 +172,10 @@ func TestBoundDatastore(t *testing.T) {
 // TestDatastore tests the cloud datastore implementation.
 //
 // Run the emulator:
-// $ gcloud beta emulators datastore start
+// $ gcloud beta emulators datastore start --use-firestore-in-datastore-mode
 //
 // Export the DATASTORE_EMULATOR_HOST environment variable, which the above
-// command printed. By default:
-// $ export DATASTORE_EMULATOR_HOST=localhost:8080
+// command printed.
 //
 // If the emulator environment is not detected, this test will be skipped.
 func TestDatastore(t *testing.T) {
@@ -186,7 +185,7 @@ func TestDatastore(t *testing.T) {
 	// test suite.
 	emulatorHost := os.Getenv("DATASTORE_EMULATOR_HOST")
 	if emulatorHost == "" {
-		t.Logf("No emulator detected (DATASTORE_EMULATOR_HOST). Skipping test suite.")
+		t.Skip("No emulator detected (DATASTORE_EMULATOR_HOST). Skipping test suite.")
 		return
 	}
 
@@ -332,6 +331,17 @@ func TestDatastore(t *testing.T) {
 					"Single":      mkp("single"),
 					"SingleSlice": mkProperties(true, true, "single"), // Force a single "multi" value.
 					"EmptySlice":  ds.PropertySlice(nil),
+
+					"SingleEntity": mkp(ds.PropertyMap{
+						"$id":    mkpNI("inner"),
+						"$kind":  mkpNI("Inner"),
+						"prop":   mkp(1),
+						"deeper": mkp(ds.PropertyMap{"deep": mkp(123)}),
+					}),
+					"SliceOfEntities": mkp(
+						ds.PropertyMap{"prop": mkp(2)},
+						ds.PropertyMap{"prop": mkp(3)},
+					),
 				}
 				So(ds.Put(c, put), ShouldBeNil)
 				delete(put, "$key")

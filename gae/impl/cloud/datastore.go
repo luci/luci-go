@@ -17,7 +17,6 @@ package cloud
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"sort"
 	"strings"
 	"sync"
@@ -442,7 +441,7 @@ func (bds *boundDatastore) nativePropertyToGAE(nativeProp datastore.Property) (
 		case []byte:
 			if len(nvt) == 0 {
 				// Cloud datastore library returns []byte{} if it is empty.
-				// Make it nil as more convinient to deal with in tests.
+				// Make it nil as more convenient to deal with in tests.
 				nv = []byte(nil)
 			}
 
@@ -471,14 +470,10 @@ func (bds *boundDatastore) nativePropertyToGAE(nativeProp datastore.Property) (
 		return nil
 	}
 
-	// Slice of supported native type. Break this into a slice of datastore
-	// properties.
+	// Slice of supported native type. Convert this into PropertySlice.
 	//
 	// It must be an []any.
-	if rv := reflect.ValueOf(nativeProp.Value); rv.Kind() == reflect.Slice && rv.Type().Elem().Kind() == reflect.Interface {
-		// []any, which is a multi-valued property with a single name.
-		// Convert to a PropertySlice.
-		nativeValues := rv.Interface().([]any)
+	if nativeValues, ok := nativeProp.Value.([]any); ok {
 		pslice := make(ds.PropertySlice, len(nativeValues))
 		for i, nv := range nativeValues {
 			if err = convert(nv, &pslice[i]); err != nil {
