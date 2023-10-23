@@ -193,7 +193,7 @@ const FailuresTable = ({
               variantGroups={variantGroups}
               selectedVariantGroups={selectedVariantGroups}
               handleVariantGroupsChange={handleVariantsChange}/>
-            <Table size="small">
+            <Table size="small" sx={{tableLayout: 'fixed'}}>
               <FailuresTableHead
                 toggleSort={toggleSort}
                 sortMetric={sortMetric}

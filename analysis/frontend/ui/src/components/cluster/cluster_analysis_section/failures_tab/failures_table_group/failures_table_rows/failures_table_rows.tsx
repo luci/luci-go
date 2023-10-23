@@ -22,7 +22,6 @@ import { styled } from '@mui/material/styles';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import Chip from '@mui/material/Chip';
-import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import TableCell, { tableCellClasses } from '@mui/material/TableCell';
@@ -31,6 +30,7 @@ import DoneIcon from '@mui/icons-material/Done';
 import RampLeftIcon from '@mui/icons-material/RampLeft';
 import CloseIcon from '@mui/icons-material/Close';
 import RemoveIcon from '@mui/icons-material/Remove';
+import HistoryIcon from '@mui/icons-material/History';
 
 import {
   DistinctClusterFailure,
@@ -49,6 +49,7 @@ import {
 } from '@/tools/urlHandling/links';
 
 import CLList from '@/components/cl_list/cl_list';
+import { Tooltip } from '@mui/material';
 
 interface Props {
   project: string;
@@ -83,9 +84,9 @@ const FailuresTableRows = ({
 
   const ungroupedVariants = (failure: DistinctClusterFailure): VariantPair[] => {
     const unselectedVariants = variantGroups
-        .filter((v) => !v.isSelected)
-        .map((v) => v.key);
-    const unselectedVariantPairs: (VariantPair|null)[] =
+      .filter((v) => !v.isSelected)
+      .map((v) => v.key);
+    const unselectedVariantPairs: (VariantPair | null)[] =
       unselectedVariants.map((key) => {
         const value = failure.variant?.def[key];
         if (value !== undefined) {
@@ -100,14 +101,14 @@ const FailuresTableRows = ({
   const presubmitRunIcon = (run: PresubmitRun) => {
     if (run.status == 'PRESUBMIT_RUN_STATUS_SUCCEEDED') {
       if (run.mode == 'FULL_RUN') {
-        return <RampLeftIcon/>;
+        return <RampLeftIcon />;
       } else {
-        return <DoneIcon/>;
+        return <DoneIcon />;
       }
     } else if (run.status == 'PRESUBMIT_RUN_STATUS_FAILED') {
-      return <CloseIcon/>;
+      return <CloseIcon />;
     } else {
-      return <RemoveIcon/>;
+      return <RemoveIcon />;
     }
   };
 
@@ -185,9 +186,9 @@ const FailuresTableRows = ({
             >
               <small data-testid="ungrouped_variants">
                 {ungroupedVariants(group.failure)
-                    .map((v) => v && `${v.key}: ${v.value}`)
-                    .filter((v) => v)
-                    .join(', ')}
+                  .map((v) => v && `${v.key}: ${v.value}`)
+                  .filter((v) => v)
+                  .join(', ')}
               </small>
             </NarrowTableCell>
             <NarrowTableCell
@@ -213,47 +214,41 @@ const FailuresTableRows = ({
               )}
             </NarrowTableCell>
           </>
-          ) : (
+        ) : (
           <NarrowTableCell
             key={group.id}
-            sx={{
-              paddingLeft: `${20 * group.level}px`,
-              width: '60%',
-            }}
             data-testid="failures_table_group_cell"
             colSpan={6}
           >
-            <Grid
-              container
-              justifyContent="start"
-              alignItems="baseline"
-              columnGap={2}
-              flexWrap="nowrap"
-            >
-              <Grid item>
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "nowrap",
+              width: '100%',
+            }}>
+              <div style={{ flex: '0 0 auto', width: `${20 * group.level}px`, height: '20px' }}></div>
+              <div style={{ flex: '0 0 auto', width: '40px' }}>
                 <IconButton
                   aria-label="Expand group"
                   onClick={() => toggleExpand()}
                 >
                   {expanded ? <ExpandMoreIcon /> : <ChevronRightIcon />}
                 </IconButton>
-              </Grid>
-              <Grid item sx={{ overflowWrap: 'anywhere' }}>
-                {/** Place test name or variant value in a separate span to allow better testability */}
-                <span>{group.key.value || 'none'}</span>
-                {group.key.type == 'test' ? (
-                <>
-                  &nbsp;-&nbsp;
-                  <Link
-                    sx={{ display: 'inline-flex' }}
-                    aria-label='Test history link'
-                    href={testHistoryLink(project, group.key.value, group.commonVariant)}
-                    target="_blank">
-                      History
-                  </Link>
-                </>) : null}
-              </Grid>
-            </Grid>
+              </div>
+              {/** Place test name or variant value in a separate span to allow better testability */}
+              <div style={{ flex: '1 1 auto', cursor: 'pointer', wordBreak: 'break-word' }} onClick={e => { e.preventDefault(); toggleExpand(); }}>{group.key.value || 'none'}</div>
+              <div style={{ flex: '0 0 auto', width: '40px', textAlign: 'center' }}>
+                {group.key.type == 'test' ?
+                  <Tooltip title={<><b>Test History</b><br />View all recent results of this test including passes and failures in other clusters. Results are filtered by the selected 'Group By' fields.</>}>
+                    <Link
+                      aria-label='Test history link'
+                      href={testHistoryLink(project, group.key.value, group.commonVariant)}
+                      target="_blank">
+                      <HistoryIcon />
+                    </Link>
+                  </Tooltip> : <>&nbsp;</>}
+              </div>
+            </div>
           </NarrowTableCell>
         )}
         <NarrowTableCell data-testid="failure_table_group_presubmitrejects">

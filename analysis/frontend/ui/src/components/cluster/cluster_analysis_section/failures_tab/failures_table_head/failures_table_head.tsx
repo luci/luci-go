@@ -27,9 +27,9 @@ const NarrowTableCell = styled(TableCell)(() => ({
 }));
 
 interface Props {
-    toggleSort: (metric: MetricName) => void,
-    sortMetric: MetricName,
-    isAscending: boolean,
+  toggleSort: (metric: MetricName) => void,
+  sortMetric: MetricName,
+  isAscending: boolean,
 }
 
 const FailuresTableHead = ({
@@ -41,63 +41,63 @@ const FailuresTableHead = ({
     <TableHead data-testid="failure_table_head">
       <TableRow>
         <NarrowTableCell
-          sx={{ padding: '10px' }}
+          sx={{ padding: '10px', width: '40px' }}
         >
         </NarrowTableCell>
         <NarrowTableCell sx={{ width: '160px' }}>Build</NarrowTableCell>
-        <NarrowTableCell sx={{ width: '80px' }}>Verdict</NarrowTableCell>
-        <NarrowTableCell sx={{ width: '40%' }}>Variant</NarrowTableCell>
-        <NarrowTableCell>CL(s)</NarrowTableCell>
-        <NarrowTableCell>Presubmit Run</NarrowTableCell>
+        <NarrowTableCell sx={{ width: '100px' }}>Verdict</NarrowTableCell>
+        <NarrowTableCell>Variant</NarrowTableCell>
+        <NarrowTableCell sx={{ width: '80px' }}>CL(s)</NarrowTableCell>
+        <NarrowTableCell sx={{ width: '100px' }}>Presubmit Run</NarrowTableCell>
         <NarrowTableCell
           sortDirection={sortMetric === 'presubmitRejects' ? (isAscending ? 'asc' : 'desc') : false}
-          sx={{ cursor: 'pointer' }}>
+          sx={{ cursor: 'pointer', width: '80px' }}>
           <TableSortLabel
             aria-label="Sort by User CLs failed Presubmit"
             active={sortMetric === 'presubmitRejects'}
             direction={isAscending ? 'asc' : 'desc'}
             onClick={() => toggleSort('presubmitRejects')}>
-              User CLs Failed Presubmit
+            User CLs Failed Presubmit
           </TableSortLabel>
         </NarrowTableCell>
         <NarrowTableCell
           sortDirection={sortMetric === 'invocationFailures' ? (isAscending ? 'asc' : 'desc') : false}
-          sx={{ cursor: 'pointer' }}>
+          sx={{ cursor: 'pointer', width: '80px' }}>
           <TableSortLabel
             active={sortMetric === 'invocationFailures'}
             direction={isAscending ? 'asc' : 'desc'}
             onClick={() => toggleSort('invocationFailures')}>
-              Builds Failed
+            Builds Failed
           </TableSortLabel>
         </NarrowTableCell>
         <NarrowTableCell
           sortDirection={sortMetric === 'criticalFailuresExonerated' ? (isAscending ? 'asc' : 'desc') : false}
-          sx={{ cursor: 'pointer' }}>
+          sx={{ cursor: 'pointer', width: '80px' }}>
           <TableSortLabel
             active={sortMetric === 'criticalFailuresExonerated'}
             direction={isAscending ? 'asc' : 'desc'}
             onClick={() => toggleSort('criticalFailuresExonerated')}>
-              Presubmit-Blocking Failures Exonerated
+            Presubmit-Blocking Failures Exonerated
           </TableSortLabel>
         </NarrowTableCell>
         <NarrowTableCell
           sortDirection={sortMetric === 'failures' ? (isAscending ? 'asc' : 'desc') : false}
-          sx={{ cursor: 'pointer' }}>
+          sx={{ cursor: 'pointer', width: '80px' }}>
           <TableSortLabel
             active={sortMetric === 'failures'}
             direction={isAscending ? 'asc' : 'desc'}
             onClick={() => toggleSort('failures')}>
-              Total Failures
+            Total Failures
           </TableSortLabel>
         </NarrowTableCell>
         <NarrowTableCell
           sortDirection={sortMetric === 'latestFailureTime' ? (isAscending ? 'asc' : 'desc') : false}
-          sx={{ cursor: 'pointer' }}>
+          sx={{ cursor: 'pointer', width: '100px' }}>
           <TableSortLabel
             active={sortMetric === 'latestFailureTime'}
             direction={isAscending ? 'asc' : 'desc'}
             onClick={() => toggleSort('latestFailureTime')}>
-              Latest Failure Time
+            Latest Failure Time
           </TableSortLabel>
         </NarrowTableCell>
       </TableRow>
