@@ -340,6 +340,17 @@ type DeeperB struct {
 	C string
 }
 
+type LSPOutter struct {
+	One   LSPInner   `gae:",lsp"`
+	Slice []LSPInner `gae:",lsp"`
+}
+
+type LSPInner struct {
+	Ints    []int64
+	Deeper1 DeeperB   `gae:",lsp"`
+	Deeper2 []DeeperB `gae:",lsp"`
+}
+
 type SliceOfSlices struct {
 	I int
 	S []struct {
@@ -1732,6 +1743,39 @@ var testCases = []testCase{
 				{
 					B: DeeperB{"v2"},
 				},
+			},
+		},
+	},
+	{
+		desc: "lsp round trip",
+		src: &LSPOutter{
+			One: LSPInner{Ints: []int64{1, 2, 3}},
+			Slice: []LSPInner{
+				{
+					Ints:    []int64{4, 5},
+					Deeper1: DeeperB{C: "s1"},
+					Deeper2: []DeeperB{{C: "s2"}, {C: "s3"}},
+				},
+				{
+					Ints:    []int64{6},
+					Deeper2: []DeeperB{{C: "s4"}},
+				},
+				{},
+			},
+		},
+		want: &LSPOutter{
+			One: LSPInner{Ints: []int64{1, 2, 3}},
+			Slice: []LSPInner{
+				{
+					Ints:    []int64{4, 5},
+					Deeper1: DeeperB{C: "s1"},
+					Deeper2: []DeeperB{{C: "s2"}, {C: "s3"}},
+				},
+				{
+					Ints:    []int64{6},
+					Deeper2: []DeeperB{{C: "s4"}},
+				},
+				{},
 			},
 		},
 	},

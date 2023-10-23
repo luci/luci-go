@@ -55,8 +55,7 @@ type structTag struct {
 	isExtra  bool
 	exported bool
 
-	protoOption   protoOption
-	lspCompressed bool
+	protoOption protoOption
 }
 
 type structCodec struct {
@@ -160,8 +159,9 @@ func (p *structPLS) resetBeforeLoad() {
 
 func loadInner(codec *structCodec, structValue reflect.Value, index int, name string, p Property, requireSlice bool) string {
 	var v reflect.Value
-	var protoOption protoOption
 	var convertMethod convertMethod
+	var substructCodec *structCodec
+	var protoOption protoOption
 
 	// Traverse a struct's struct-typed fields.
 	for {
@@ -206,6 +206,7 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 		// deeper. Extract relevant properties from `st` and proceed to loading
 		// the value.
 		convertMethod = st.convertMethod
+		substructCodec = st.substructCodec
 		protoOption = st.protoOption
 		break
 	}
@@ -264,7 +265,15 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 		}
 
 	case convertLSP:
-		panic("not implemented yet")
+		// TODO(vadimsh): Recognize zlib-compressed blobs produced by legacy Python
+		// GAE code, decompress and deserialize them into a property map.
+		if pmap, ok := p.Value().(PropertyMap); ok {
+			if err := (&structPLS{o: v, c: substructCodec}).Load(pmap); err != nil {
+				return fmt.Sprintf("loading LSP: %s", err)
+			}
+		} else {
+			return fmt.Sprintf("expecting a property map, but got %s", p.Type())
+		}
 
 	default:
 		panic(fmt.Errorf("helper: impossible method: %d", convertMethod))
@@ -409,7 +418,14 @@ func (p *structPLS) save(propMap PropertyMap, prefix string, inSlice bool, is In
 
 		case st.convertMethod == convertLSP:
 			// This is a "local structured property".
-			panic("not implemented yet")
+			pmap, err := (&structPLS{o: v, c: st.substructCodec}).Save(false)
+			if err != nil {
+				return fmt.Errorf("saving LSP: %w", err)
+			}
+			err = prop.SetValue(pmap, NoIndex)
+			if err != nil {
+				return err
+			}
 
 		case st.convertMethod == convertProp:
 			// The field knows how to convert itself into a property.
@@ -797,10 +813,9 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 			return
 
 		// A single or repeated "local structure property" field.
-		case opts == "lsp" || opts == "lsp,compressed":
+		case opts == "lsp":
 			st.convertMethod = convertLSP
 			st.idxSetting = NoIndex
-			st.lspCompressed = opts == "lsp,compressed"
 			// Values must be represented by structs.
 			switch {
 			case isStruct(ft):
