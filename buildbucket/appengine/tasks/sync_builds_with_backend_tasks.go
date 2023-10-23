@@ -156,7 +156,7 @@ func updateEntities(ctx context.Context, bks []*datastore.Key, now time.Time, ta
 			fetchedTask := taskMap[taskID]
 			switch {
 			case fetchedTask == nil:
-				logging.Errorf(ctx, "failed to fetch backend task %s:%s", t.GetId().GetTarget(), taskID)
+				logging.Errorf(ctx, "backend task %s:%s is not in valid fetched tasks", t.GetId().GetTarget(), taskID)
 				continue
 			case fetchedTask.UpdateId < t.UpdateId:
 				logging.Errorf(ctx, "FetchTasks returns stale task for %s:%s with update_id %d, which task in datastore has update_id %d", t.GetId().GetTarget(), taskID, fetchedTask.UpdateId, t.UpdateId)
@@ -193,18 +193,27 @@ func validateResponses(ctx context.Context, responses []*pb.FetchTasksResponse_R
 	}
 	var err errors.MultiError
 	taskMap := map[string]*pb.Task{}
+	var validTaskIDs []string
+	fetchedCount := 0
 	for idx, resp := range responses {
 		switch r := resp.Response.(type) {
 		case *pb.FetchTasksResponse_Response_Task:
-			if e := validateTask(r.Task); e != nil {
+			fetchedCount += 1
+			if e := validateTask(r.Task, true); e != nil {
 				err.MaybeAdd(e)
 				continue
 			}
 			taskMap[resp.GetTask().Id.GetId()] = resp.GetTask()
+			validTaskIDs = append(validTaskIDs, resp.GetTask().Id.GetId())
 		case *pb.FetchTasksResponse_Response_Error:
 			status := resp.GetError()
 			err.MaybeAdd(errors.New(fmt.Sprintf("Error at index %d: %d-%s", idx, status.Code, status.Message)))
 		}
+	}
+	// TODO(crbug.com/1472896): Remove the log after confirming the build task
+	// sync cron WAI.
+	if len(validTaskIDs) > 0 {
+		logging.Infof(ctx, "requested %d tasks, fetched %d, valid %d: %q", len(responses), fetchedCount, len(validTaskIDs), validTaskIDs)
 	}
 	return taskMap, err
 }
@@ -236,7 +245,9 @@ func syncBuildsWithBackendTasks(ctx context.Context, mr parallel.MultiRunner, bc
 	if len(taskIDs) == 0 {
 		return nil
 	}
-	logging.Infof(ctx, "Fetching %d backend tasks, example:%s", len(taskIDs), taskIDs[0])
+	// TODO(crbug.com/1472896): Simplify the log after confirming the build task
+	// sync cron WAI.
+	logging.Infof(ctx, "Fetching %d backend tasks %q", len(taskIDs), taskIDs)
 	resp, err := bc.FetchTasks(ctx, &pb.FetchTasksRequest{TaskIds: taskIDs})
 	if err != nil {
 		return errors.Annotate(err, "failed to fetch backend tasks").Err()

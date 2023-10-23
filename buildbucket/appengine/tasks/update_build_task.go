@@ -90,11 +90,14 @@ func unpackUpdateBuildTaskMsg(ctx context.Context, body io.Reader) (req buildTas
 	return req, nil
 }
 
-func validateTaskStatus(taskStatus pb.Status) error {
+func validateTaskStatus(taskStatus pb.Status, allowPending bool) error {
 	switch taskStatus {
-	case pb.Status_SCHEDULED,
-		pb.Status_ENDED_MASK,
+	case pb.Status_ENDED_MASK,
 		pb.Status_STATUS_UNSPECIFIED:
+		return errors.Reason("task.status: invalid status %s for UpdateBuildTask", taskStatus).Err()
+	}
+
+	if !allowPending && taskStatus == pb.Status_SCHEDULED {
 		return errors.Reason("task.status: invalid status %s for UpdateBuildTask", taskStatus).Err()
 	}
 
@@ -130,14 +133,14 @@ func validatePubsubSubscription(ctx context.Context, req buildTaskUpdate) error 
 	return nil
 }
 
-func validateTask(task *pb.Task) error {
+func validateTask(task *pb.Task, allowPending bool) error {
 	if task.GetId().GetId() == "" {
 		return errors.Reason("task.id: required").Err()
 	}
 	if task.GetUpdateId() == 0 {
 		return errors.Reason("task.UpdateId: required").Err()
 	}
-	if err := validateTaskStatus(task.Status); err != nil {
+	if err := validateTaskStatus(task.Status, allowPending); err != nil {
 		return errors.Annotate(err, "task.Status").Err()
 	}
 	detailsInKb := float64(len(task.GetDetails().String()) / 1024)
@@ -153,7 +156,7 @@ func validateBuildTaskUpdate(ctx context.Context, req *pb.BuildTaskUpdate) error
 	if req.BuildId == "" {
 		return errors.Reason("build_id required").Err()
 	}
-	return validateTask(req.Task)
+	return validateTask(req.Task, false)
 }
 
 // validateBuildTask ensures that the taskID provided in the request matches
