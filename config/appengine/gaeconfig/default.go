@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth"
 
@@ -55,8 +56,16 @@ const devCfgDir = "devcfg"
 //
 // Panics if it can't load the settings (should not happen since they are in
 // the local memory cache usually).
-func Use(c context.Context) context.Context {
-	return cfgclient.Use(c, newClientFromSettings(c, mustFetchCachedSettings(c)))
+func Use(ctx context.Context) context.Context {
+	client := newClientFromSettings(ctx, mustFetchCachedSettings(ctx))
+	// Register a goroutine to close the client after context is cancelled
+	go func() {
+		<-ctx.Done()
+		if err := client.Close(); err != nil {
+			logging.Errorf(ctx, "failed to close config client: %s", err)
+		}
+	}()
+	return cfgclient.Use(ctx, client)
 }
 
 // devServerConfigsDir finds a directory with configs to use on the dev server.
