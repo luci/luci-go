@@ -36,6 +36,7 @@ import "go.chromium.org/luci/cv/internal/run/bq/tasks.proto";
 import "go.chromium.org/luci/cv/internal/run/eventpb/events.proto";
 import "go.chromium.org/luci/cv/internal/run/eventpb/tasks.proto";
 import "go.chromium.org/luci/cv/internal/run/storage.proto";
+import "go.chromium.org/luci/server/quota/quotapb/service.proto";
 
 
 // Admin is for CV maintainers only.
@@ -123,6 +124,16 @@ service Admin {
   // shouldn't be scheduled willy-nilly. However, this API is indispensable when
   // a bunch of BQ rows failed to be exported, say due to a misconfiguration.
   rpc ScheduleTask(ScheduleTaskRequest) returns (google.protobuf.Empty);
+
+  /////////////////////////////////////////////////////////////////////////////
+  // API to observe and modify server/quota.
+  /////////////////////////////////////////////////////////////////////////////
+
+  // GetAccounts returns the indicated Accounts.
+  rpc GetQuotaAccounts(go.chromium.org.luci.server.quota.quotapb.GetAccountsRequest) returns (go.chromium.org.luci.server.quota.quotapb.GetAccountsResponse);
+
+  // ApplyOps updates the available resources with the provided operations.
+  rpc ApplyQuotaOps(go.chromium.org.luci.server.quota.quotapb.ApplyOpsRequest) returns (go.chromium.org.luci.server.quota.quotapb.ApplyOpsResponse);
 }
 
 message GetProjectRequest {

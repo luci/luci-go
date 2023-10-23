@@ -35,6 +35,8 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/dsmapper"
+	"go.chromium.org/luci/server/quota"
+	"go.chromium.org/luci/server/quota/quotapb"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -570,6 +572,32 @@ func (a *AdminServer) ScheduleTask(ctx context.Context, req *adminpb.ScheduleTas
 		return nil, errors.Annotate(err, "failed to schedule task").Err()
 	}
 	return &emptypb.Empty{}, nil
+}
+
+func (a *AdminServer) GetQuotaAccounts(ctx context.Context, req *quotapb.GetAccountsRequest) (resp *quotapb.GetAccountsResponse, err error) {
+	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
+	if err := checkAllowed(ctx, "GetQuotaAccounts"); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, appstatus.Errorf(codes.InvalidArgument, "request validation error: %s", err)
+	}
+
+	return quota.GetAccounts(ctx, req.Account)
+}
+
+func (a *AdminServer) ApplyQuotaOps(ctx context.Context, req *quotapb.ApplyOpsRequest) (resp *quotapb.ApplyOpsResponse, err error) {
+	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
+	if err := checkAllowed(ctx, "ApplyQuotaOps"); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, appstatus.Errorf(codes.InvalidArgument, "request validation error: %s", err)
+	}
+
+	return quota.ApplyOps(ctx, req.RequestId, req.Ops)
 }
 
 func checkAllowed(ctx context.Context, name string) error {
