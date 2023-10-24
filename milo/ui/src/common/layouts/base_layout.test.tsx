@@ -21,6 +21,7 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 
 import { SIDE_BAR_OPEN_CACHE_KEY } from './base_layout';
 import { BaseLayout } from './base_layout';
+import { PAGE_LABEL_MAP } from './constants';
 
 describe('BaseLayout', () => {
   const storageList = new Map<string, string>();
@@ -57,7 +58,9 @@ describe('BaseLayout', () => {
 
     await screen.findByText('LUCI');
 
-    expect(screen.getByText(UiPage.BuilderSearch)).toBeVisible();
+    expect(
+      screen.getByText(PAGE_LABEL_MAP[UiPage.BuilderSearch]),
+    ).toBeVisible();
   });
 
   it('should hide sidebar if the local storage value is false', async () => {
@@ -70,8 +73,10 @@ describe('BaseLayout', () => {
       </StoreProvider>,
     );
 
-    await screen.getByText('LUCI');
+    await screen.findByText('LUCI');
 
-    expect(screen.getByText(UiPage.BuilderSearch)).not.toBeVisible();
+    expect(
+      screen.getByText(PAGE_LABEL_MAP[UiPage.BuilderSearch]),
+    ).not.toBeVisible();
   });
 });

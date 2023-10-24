@@ -51,7 +51,7 @@ describe('AppDetails', () => {
     );
     await screen.findByLabelText('menu');
     expect(screen.getByText('LUCI')).toBeInTheDocument();
-    expect(screen.getByText(UiPage.Builders)).toBeInTheDocument();
+    expect(screen.getByText('Builders')).toBeInTheDocument();
   });
 
   it('should display project', async () => {
@@ -67,7 +67,7 @@ describe('AppDetails', () => {
     );
     await screen.findByLabelText('menu');
     expect(screen.getByText('LUCI')).toBeInTheDocument();
-    expect(screen.getByText(UiPage.Builders)).toBeInTheDocument();
+    expect(screen.getByText('Builders')).toBeInTheDocument();
     expect(screen.getByText('chrome')).toBeInTheDocument();
   });
 });

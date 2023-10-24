@@ -51,10 +51,7 @@ export const BuilderSearch = () => {
 
   return (
     <Box sx={{ px: 6, py: 5 }}>
-      <PageMeta
-        title={UiPage.BuilderSearch}
-        selectedPage={UiPage.BuilderSearch}
-      />
+      <PageMeta title="Builder search" selectedPage={UiPage.BuilderSearch} />
       <SearchInput
         placeholder="Search builders"
         onInputChange={handleSearchQueryChange}

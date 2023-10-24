@@ -120,7 +120,7 @@ export const TestHistoryPage = observer(() => {
     <PageContainer>
       <PageMeta
         project={project}
-        title={UiPage.TestHistory}
+        title="Test history"
         selectedPage={UiPage.TestHistory}
       />
       <div

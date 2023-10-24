@@ -25,6 +25,8 @@ import {
   useProject,
 } from '@/common/components/page_meta/page_meta_provider';
 
+import { PAGE_LABEL_MAP } from '../../constants';
+
 interface Props {
   open: boolean;
   handleSidebarChanged: (isOpen: boolean) => void;
@@ -85,7 +87,7 @@ export const AppDetails = ({ open, handleSidebarChanged }: Props) => {
           <>
             <Divider flexItem orientation="vertical" sx={{ mr: 2 }} />
             <Typography variant="h6" component="div" sx={{ pr: 2 }}>
-              {selectedPage}
+              {PAGE_LABEL_MAP[selectedPage]}
             </Typography>
           </>
         )}

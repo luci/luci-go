@@ -20,7 +20,6 @@ import { useMarkChangelogAsRead } from '@/app/components/changelog';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { SanitizedHtml } from '@/common/components/sanitized_html';
-import { UiPage } from '@/common/constants';
 
 const ChangelogContainer = styled(SanitizedHtml)({
   '& *': {
@@ -44,7 +43,7 @@ export function ChangelogPage() {
 
   return (
     <>
-      <PageMeta title={UiPage.WHATS_NEW} />
+      <PageMeta title="What's new" />
       <div
         css={{
           padding: '30px',

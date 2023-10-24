@@ -47,10 +47,7 @@ export const ProjectSearch = () => {
 
   return (
     <Box sx={{ px: 6, py: 5, maxWidth: '950px', margin: '0 auto' }}>
-      <PageMeta
-        title={UiPage.ProjectSearch}
-        selectedPage={UiPage.ProjectSearch}
-      />
+      <PageMeta title="Projects" selectedPage={UiPage.ProjectSearch} />
       <SearchInput
         placeholder="Filter projects"
         onInputChange={handleSearchQueryChange}

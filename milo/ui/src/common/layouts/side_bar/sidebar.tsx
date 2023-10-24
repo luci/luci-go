@@ -32,9 +32,9 @@ import {
   useProject,
 } from '@/common/components/page_meta/page_meta_provider';
 
-import { drawerWidth } from '../constants';
+import { PAGE_LABEL_MAP, drawerWidth } from '../constants';
 
-import { generateSidebarSections as generateSidebarSections } from './pages';
+import { generateSidebarSections } from './pages';
 
 interface Props {
   open: boolean;
@@ -94,7 +94,7 @@ export const Sidebar = ({ open }: Props) => {
                   >
                     {sidebarPage.icon}
                   </ListItemIcon>
-                  <ListItemText primary={sidebarPage.page} />
+                  <ListItemText primary={PAGE_LABEL_MAP[sidebarPage.page]} />
 
                   {sidebarPage.external && (
                     <ListItemIcon
