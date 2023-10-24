@@ -85,5 +85,8 @@ func (r *resolvingInterface) ListFiles(ctx context.Context, configSet config.Set
 }
 
 func (r *resolvingInterface) Close() error {
+	if r.next != nil {
+		return r.next.Close()
+	}
 	return nil
 }
