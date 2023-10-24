@@ -45,12 +45,25 @@ release tag numbers.
 
 <!-- Add new changes here. See the instruction above for more details. -->
 
+<!-- __RELEASE__: 4 -->
+## 2023-10-25
+ LUCI is now [finding and bisecting test failures](/ui/p/chromium/bisection/test-analysis).
+<!-- __RELEASE__: 3 -->
+ If your CL is found to have caused test failures, LUCI may comment on your CL or create a revert CL
+(but, unlike compile failures, the revert will not be submitted automatically).  If you see one of these comments, please investigate and revert or fix your CL.
+
+You can see all of the bisections that LUCI is performing on the [Bisection Test Analysis page](/ui/p/chromium/bisection/test-analysis).
+
+(Bisection is currently only running on Chromium.  If you want to explore enabling Bisection for your project, please feel free to send feedback from the titlebar)
+<br/><br/><br/>
+
+
 <!-- __RELEASE__: 2 -->
+# Past changes
 ## 2023-10-24
  * Migrated the builder groups page (e.g. [chromium consoles](/ui/p/chromium)) to React.
 
 <!-- __RELEASE__: 1 -->
-# Past changes
 ## 2023-09-20
  * A brand new [project selector page](/ui/).
  * A changelog page.

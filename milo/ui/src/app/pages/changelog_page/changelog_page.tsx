@@ -63,7 +63,7 @@ export function ChangelogPage() {
         {/* <Typography variant="h4" sx={{ mt: 15 }}>
           {'Past changes'}
         </Typography> */}
-        <ChangelogContainer sx={{ mt: 15 }} html={pastHtml} />
+        <ChangelogContainer html={pastHtml} />
       </div>
     </>
   );
