@@ -26,6 +26,10 @@ const ChangelogContainer = styled(SanitizedHtml)({
   '& *': {
     fontSize: '20px',
   },
+  '& h1': {
+    fontSize: '30px',
+    fontWeight: 400,
+  },
 });
 
 export function ChangelogPage() {
@@ -51,10 +55,16 @@ export function ChangelogPage() {
       >
         <Typography variant="h4">{"What's new?"}</Typography>
         <ChangelogContainer html={latestHtml} />
-        <Typography variant="h4" sx={{ mt: 15 }}>
+        {/* Temporarily move the "Past changes" heading to CHANGELOG.md itself
+         ** so we can create dummy release tag to divide summary and details.
+         **
+         ** TODO: move the "Past changes" heading back once we have a formal
+         ** mechanism for annotating highlights.
+         **/}
+        {/* <Typography variant="h4" sx={{ mt: 15 }}>
           {'Past changes'}
-        </Typography>
-        <ChangelogContainer html={pastHtml} />
+        </Typography> */}
+        <ChangelogContainer sx={{ mt: 15 }} html={pastHtml} />
       </div>
     </>
   );

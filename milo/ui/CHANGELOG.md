@@ -43,11 +43,14 @@ TODO: add a test case to ensure the newer release sections always have larger
 release tag numbers.
 -->
 
- * Migrated the console list page (e.g. [chromium consoles](/ui/p/chromium)) to React.
-
 <!-- Add new changes here. See the instruction above for more details. -->
 
+<!-- __RELEASE__: 2 -->
+## 2023-10-24
+ * Migrated the builder groups page (e.g. [chromium consoles](/ui/p/chromium)) to React.
+
 <!-- __RELEASE__: 1 -->
+# Past changes
 ## 2023-09-20
  * A brand new [project selector page](/ui/).
  * A changelog page.
