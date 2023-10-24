@@ -24,7 +24,6 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth"
 
@@ -37,6 +36,12 @@ import (
 // devCfgDir is a name of the directory with config files when running in
 // local dev appserver model. See Use for details.
 const devCfgDir = "devcfg"
+
+// defaultLazyConfigClient is the lazyConfigClient that will be shared by
+// all requests.
+var defaultLazyConfigClient = newLazyConfigClient(func(ctx context.Context) config.Interface {
+	return newClientFromSettings(ctx, mustFetchCachedSettings(ctx))
+})
 
 // Use installs the default luci-config client.
 //
@@ -57,15 +62,7 @@ const devCfgDir = "devcfg"
 // Panics if it can't load the settings (should not happen since they are in
 // the local memory cache usually).
 func Use(ctx context.Context) context.Context {
-	client := newClientFromSettings(ctx, mustFetchCachedSettings(ctx))
-	// Register a goroutine to close the client after context is cancelled
-	go func() {
-		<-ctx.Done()
-		if err := client.Close(); err != nil {
-			logging.Errorf(ctx, "failed to close config client: %s", err)
-		}
-	}()
-	return cfgclient.Use(ctx, client)
+	return cfgclient.Use(ctx, defaultLazyConfigClient)
 }
 
 // devServerConfigsDir finds a directory with configs to use on the dev server.
