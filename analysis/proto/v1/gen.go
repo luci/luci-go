@@ -16,7 +16,6 @@ package analysispb
 
 //go:generate cproto
 //go:generate svcdec -type ClustersServer
-//go:generate svcdec -type InitDataGeneratorServer
 //go:generate svcdec -type MetricsServer
 //go:generate svcdec -type ProjectsServer
 //go:generate svcdec -type RulesServer

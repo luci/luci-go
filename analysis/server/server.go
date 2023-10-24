@@ -96,7 +96,6 @@ func Main(init func(srv *luciserver.Server) error) {
 
 		adminpb.RegisterAdminServer(srv, admin.CreateServer())
 		analysispb.RegisterClustersServer(srv, rpc.NewClustersServer(ac))
-		analysispb.RegisterInitDataGeneratorServer(srv, rpc.NewInitDataGeneratorServer())
 		analysispb.RegisterMetricsServer(srv, rpc.NewMetricsServer())
 		analysispb.RegisterProjectsServer(srv, rpc.NewProjectsServer())
 		analysispb.RegisterRulesServer(srv, rpc.NewRulesSever())
