@@ -31,6 +31,7 @@ import {
   useSelectedPage,
   useProject,
 } from '@/common/components/page_meta/page_meta_provider';
+import { UiPage } from '@/common/constants';
 
 import { PAGE_LABEL_MAP, drawerWidth } from '../constants';
 
@@ -94,7 +95,19 @@ export const Sidebar = ({ open }: Props) => {
                   >
                     {sidebarPage.icon}
                   </ListItemIcon>
-                  <ListItemText primary={PAGE_LABEL_MAP[sidebarPage.page]} />
+                  <ListItemText
+                    primary={
+                      // Add "(Consoles)" to "Builder groups" to let help users
+                      // find the link if they are looking for "Consoles" page,
+                      // which is the old name of the builder groups page.
+                      //
+                      // TODO: remove this once most users are aware of the name
+                      // change.
+                      sidebarPage.page === UiPage.BuilderGroups
+                        ? 'Builder groups (Consoles)'
+                        : PAGE_LABEL_MAP[sidebarPage.page]
+                    }
+                  />
 
                   {sidebarPage.external && (
                     <ListItemIcon
