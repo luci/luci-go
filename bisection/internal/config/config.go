@@ -40,8 +40,18 @@ var cachedCfg = cfgcache.Register(&cfgcache.Entry{
 // Update is called from a cron periodically; it fetches the latest config
 // from the LUCI Config service and caches it into the datastore
 func Update(ctx context.Context) error {
-	_, err := cachedCfg.Update(ctx, nil)
-	return err
+	var errs []error
+	// TODO(beining@): remove update service-level config.
+	if _, err := cachedCfg.Update(ctx, nil); err != nil {
+		errs = append(errs, err)
+	}
+	if err := updateProjects(ctx); err != nil {
+		errs = append(errs, err)
+	}
+	if len(errs) > 0 {
+		return errors.NewMultiError(errs...)
+	}
+	return nil
 }
 
 // Get returns the cached service-level config

@@ -16,9 +16,12 @@ syntax = "proto3";
 
 package luci.bisection.config;
 
+import "go.chromium.org/luci/bisection/proto/config/project_config.proto";
+
 option go_package = "go.chromium.org/luci/bisection/proto/config;configpb";
 
 // Config is the service-wide configuration data for LUCI Bisection
+// TODO(beining): Remove this global config, use the project_config.proto for project-specific config.
 message Config {
   // Configuration data for Gerrit integration for compile failures.
   // TODO (nqmtuan): Rename this to make clear that this is only used for
@@ -31,46 +34,6 @@ message Config {
   TestAnalysisConfig test_analysis_config = 3;
 }
 
-// GerritConfig is the configuration data for Gerrit integration
-message GerritConfig {
-  // Whether Gerrit API actions are enabled
-  bool actions_enabled = 1;
-
-  // Settings for revert-related actions
-  message RevertActionSettings {
-    // Whether the action is enabled
-    bool enabled = 1;
-
-    // The maximum number of times the action can be performed per day
-    uint32 daily_limit = 2;
-  }
-
-  // Settings for creating reverts for culprit CLs
-  RevertActionSettings create_revert_settings = 2;
-
-  // Settings for submitting reverts for culprit CLs
-  RevertActionSettings submit_revert_settings = 3;
-
-  // Maximum age of a culprit (sec) for its revert to be eligible
-  // for the submit action.
-  //
-  // The age of a culprit is based on the time since the culprit was merged.
-  // If a culprit is older than this limit, LUCI Bisection will skip
-  // submitting its corresponding revert.
-  int64 max_revertible_culprit_age = 4;
-
-  // Settings for culprit actions for nthsection
-  message NthSectionSettings {
-    // Whether culprit action for nthsection culprit is enabled
-    bool enabled = 1;
-    // Whether we should perform actions on nthsection culprits even when
-    // culprit verification errored
-    bool action_when_verification_error = 2;
-  }
-
-  NthSectionSettings nthsection_settings = 5;
-}
-
 // GerritConfig is the configuration data for running analysis
 message AnalysisConfig {
   // Whether we should run culprit verification
@@ -78,43 +41,4 @@ message AnalysisConfig {
 
   // Whether we should run nthsection analysis
   bool nthsection_enabled = 2;
-}
-
-// TestAnalysisConfig is the configuration data for test failure bisection.
-message TestAnalysisConfig {
-  // Global flag of whether test failure detector is enabled.
-  // Although individual projects may have their own config, if this flag
-  // flag is off, then the detector is off for every project.
-  // Usually the flag is on for both dev and prod, but we may want to turn
-  // it off for the cases when the bisector is down and we don't want to
-  // create tasks when the bisector cannot run (in which case, the bisector
-  // will just mark the analysis as "DISABLED").
-  // So in prod, if we need to turn the bisector off, we generally should turn
-  // the detector off as well.
-  bool detector_enabled = 2;
-  // Global flag of whether test failure bisector is enabled.
-  // Although individual projects may have their own config, if this flag
-  // flag is off, then the bisector is off for every project.
-  // During the development of the test failure bisection feature, it should
-  // be on for dev and off for prod (as we are testing). When everything is
-  // up and running, it should be off for dev and on for prod, because we want
-  // to save resources (running bisection on dev will be expensive).
-  bool bisector_enabled = 3;
-  // The maximum number of test analyses to run in a day for each project.
-  // It only counts analyses that being created within 24 hours, with status different
-  // from "DISABLED" or "UNSUPPORTED".
-  // It allows us to slowly roll out bisection without consuming too much
-  // swarming capacity.
-  uint32 daily_limit = 4;
-  // The list of buildbucket buckets that we should not bisect on.
-  // For example, "reviver", "try", and "findit".
-  repeated string excluded_buckets = 5;
-  // Configuration data for Gerrit integration for test failures.
-  GerritConfig gerrit_config = 6;
-  // The list of swarming test task pools that we want to exclude running bisection.
-  // For example, we want to exclude the "chromium.tests.gpu" pool (b/301523224)
-  // because there are limited resources in the pool.
-  // Note: this is not the pools that the builder run, but the swarming test task pool,
-  // which contains the bots that actually run the tests on swarming.
-  repeated string excluded_test_pools = 7;
 }

@@ -17,6 +17,7 @@ package config
 
 import (
 	configpb "go.chromium.org/luci/bisection/proto/config"
+	luciproto "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/config/validation"
 )
 
@@ -44,6 +45,16 @@ func validateTestAnalysisConfig(ctx *validation.Context, testAnalysisConfig *con
 	validateGerritConfig(ctx, testAnalysisConfig.GerritConfig)
 }
 
+func validateCompileAnalysisConfig(ctx *validation.Context, compileAnalysisConfig *configpb.CompileAnalysisConfig) {
+	ctx.Enter("compile_analysis_config")
+	defer ctx.Exit()
+	if compileAnalysisConfig == nil {
+		ctx.Errorf("missing compile analysis config")
+		return
+	}
+	validateGerritConfig(ctx, compileAnalysisConfig.GerritConfig)
+}
+
 // Validates the settings in a GerritConfig
 func validateGerritConfig(ctx *validation.Context, cfg *configpb.GerritConfig) {
 	ctx.Enter("gerrit_config")
@@ -68,5 +79,27 @@ func validateCulpritAge(ctx *validation.Context, age int64) {
 
 	if age <= 0 {
 		ctx.Errorf("invalid - must be positive number of seconds")
+	}
+}
+
+// validateProjectConfigRaw deserializes the project-level config message
+// and passes it through the validator.
+func validateProjectConfigRaw(ctx *validation.Context, content string) *configpb.ProjectConfig {
+	msg := &configpb.ProjectConfig{}
+	if err := luciproto.UnmarshalTextML(content, msg); err != nil {
+		ctx.Errorf("failed to unmarshal as text proto: %s", err)
+		return nil
+	}
+	validateProjectConfig(ctx, msg)
+	return msg
+}
+
+func validateProjectConfig(ctx *validation.Context, cfg *configpb.ProjectConfig) {
+	// TODO(beining@): invalidate empty test analysis config and compile analysis config.
+	if cfg.TestAnalysisConfig != nil {
+		validateTestAnalysisConfig(ctx, cfg.TestAnalysisConfig)
+	}
+	if cfg.CompileAnalysisConfig != nil {
+		validateCompileAnalysisConfig(ctx, cfg.CompileAnalysisConfig)
 	}
 }
