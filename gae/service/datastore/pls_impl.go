@@ -84,6 +84,20 @@ func typeMismatchReason(val any, v reflect.Value) string {
 }
 
 func (p *structPLS) Load(propMap PropertyMap) error {
+	return p.loadWithMeta(propMap, false)
+}
+
+// loadWithMeta loads PropertyMap into the struct fields.
+//
+// `hasMeta` controls what to do with property map fields that carry meta
+// properties like `$key`. If `hasMeta` is true, they will be loaded into
+// corresponding meta fields using SetMeta(...). If `hasMeta` is false, no
+// meta fields are expected (their presence will result in an error).
+//
+// `hasMeta` true is used when loading nested entities that may have their keys
+// populated. For top-level entities meta fields are set by the caller using
+// a different mechanism.
+func (p *structPLS) loadWithMeta(propMap PropertyMap, hasMeta bool) error {
 	convFailures := errors.MultiError(nil)
 
 	p.resetBeforeLoad()
@@ -99,6 +113,18 @@ func (p *structPLS) Load(propMap PropertyMap) error {
 	}
 	t := reflect.Type(nil)
 	for name, pdata := range propMap {
+		if hasMeta && name[0] == '$' {
+			if prop, ok := pdata.(Property); ok {
+				p.SetMeta(name[1:], prop.Value())
+			} else {
+				convFailures = append(convFailures, &ErrFieldMismatch{
+					StructType: t,
+					FieldName:  name,
+					Reason:     "trying to load a property slice into a meta field",
+				})
+			}
+			continue
+		}
 		pslice := pdata.Slice()
 		requireSlice := len(pslice) > 1
 		for i, prop := range pslice {
@@ -268,7 +294,7 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 		// TODO(vadimsh): Recognize zlib-compressed blobs produced by legacy Python
 		// GAE code, decompress and deserialize them into a property map.
 		if pmap, ok := p.Value().(PropertyMap); ok {
-			if err := (&structPLS{o: v, c: substructCodec}).Load(pmap); err != nil {
+			if err := (&structPLS{o: v, c: substructCodec}).loadWithMeta(pmap, true); err != nil {
 				return fmt.Sprintf("loading LSP: %s", err)
 			}
 		} else {
@@ -418,7 +444,7 @@ func (p *structPLS) save(propMap PropertyMap, prefix string, inSlice bool, is In
 
 		case st.convertMethod == convertLSP:
 			// This is a "local structured property".
-			pmap, err := (&structPLS{o: v, c: st.substructCodec}).Save(false)
+			pmap, err := (&structPLS{o: v, c: st.substructCodec}).Save(true)
 			if err != nil {
 				return fmt.Errorf("saving LSP: %w", err)
 			}

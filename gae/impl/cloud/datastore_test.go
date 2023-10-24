@@ -75,7 +75,11 @@ func TestBoundDatastore(t *testing.T) {
 			ent := &datastore.Entity{
 				Key: &datastore.Key{
 					ID:   1,
-					Kind: "kind",
+					Kind: "Kind",
+					Parent: &datastore.Key{
+						Name: "p",
+						Kind: "Parent",
+					},
 				},
 				Properties: []datastore.Property{
 					{
@@ -133,8 +137,14 @@ func TestBoundDatastore(t *testing.T) {
 				},
 			}
 
+			parent := bds.kc.NewKey("Parent", "p", 0, nil)
+			key := bds.kc.NewKey("Kind", "", 1, parent)
+
 			pm := ds.PropertyMap{
-				"__key__": ds.MkProperty(bds.kc.NewKey("kind", "", 1, nil)),
+				"$key":    ds.MkPropertyNI(key),
+				"$parent": ds.MkPropertyNI(parent),
+				"$kind":   ds.MkPropertyNI("Kind"),
+				"$id":     ds.MkPropertyNI(1),
 				"bool":    ds.MkProperty(true),
 				"entity": ds.MkProperty(ds.PropertyMap{
 					"[]byte": ds.MkPropertyNI([]byte("byte")),
@@ -335,6 +345,7 @@ func TestDatastore(t *testing.T) {
 					"SingleEntity": mkp(ds.PropertyMap{
 						"$id":    mkpNI("inner"),
 						"$kind":  mkpNI("Inner"),
+						"$key":   mkpNI(ds.MakeKey(c, "Inner", "inner")),
 						"prop":   mkp(1),
 						"deeper": mkp(ds.PropertyMap{"deep": mkp(123)}),
 					}),
@@ -344,7 +355,6 @@ func TestDatastore(t *testing.T) {
 					),
 				}
 				So(ds.Put(c, put), ShouldBeNil)
-				delete(put, "$key")
 
 				get := ds.PropertyMap{
 					"$id":   mkpNI("foo"),

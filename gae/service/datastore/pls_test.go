@@ -346,9 +346,15 @@ type LSPOutter struct {
 }
 
 type LSPInner struct {
+	ID      string `gae:"$id"`
+	Kind    string `gae:"$kind"`
 	Ints    []int64
-	Deeper1 DeeperB   `gae:",lsp"`
-	Deeper2 []DeeperB `gae:",lsp"`
+	Deeper1 LSPDeeper   `gae:",lsp"`
+	Deeper2 []LSPDeeper `gae:",lsp"`
+}
+
+type LSPDeeper struct {
+	ID int64 `gae:"$id"`
 }
 
 type SliceOfSlices struct {
@@ -1749,31 +1755,39 @@ var testCases = []testCase{
 	{
 		desc: "lsp round trip",
 		src: &LSPOutter{
-			One: LSPInner{Ints: []int64{1, 2, 3}},
+			One: LSPInner{
+				Kind: "Test",
+				ID:   "test",
+				Ints: []int64{1, 2, 3},
+			},
 			Slice: []LSPInner{
 				{
 					Ints:    []int64{4, 5},
-					Deeper1: DeeperB{C: "s1"},
-					Deeper2: []DeeperB{{C: "s2"}, {C: "s3"}},
+					Deeper1: LSPDeeper{ID: 1},
+					Deeper2: []LSPDeeper{{ID: 2}, {ID: 3}},
 				},
 				{
 					Ints:    []int64{6},
-					Deeper2: []DeeperB{{C: "s4"}},
+					Deeper2: []LSPDeeper{{ID: 4}},
 				},
 				{},
 			},
 		},
 		want: &LSPOutter{
-			One: LSPInner{Ints: []int64{1, 2, 3}},
+			One: LSPInner{
+				Kind: "Test",
+				ID:   "test",
+				Ints: []int64{1, 2, 3},
+			},
 			Slice: []LSPInner{
 				{
 					Ints:    []int64{4, 5},
-					Deeper1: DeeperB{C: "s1"},
-					Deeper2: []DeeperB{{C: "s2"}, {C: "s3"}},
+					Deeper1: LSPDeeper{ID: 1},
+					Deeper2: []LSPDeeper{{ID: 2}, {ID: 3}},
 				},
 				{
 					Ints:    []int64{6},
-					Deeper2: []DeeperB{{C: "s4"}},
+					Deeper2: []LSPDeeper{{ID: 4}},
 				},
 				{},
 			},

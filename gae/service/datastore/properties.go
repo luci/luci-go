@@ -945,9 +945,14 @@ func (pm PropertyMap) Save(withMeta bool) (PropertyMap, error) {
 	return ret, nil
 }
 
-// Clone returns a copy of this PropertyMap.
+// Clone returns a deep copy of this PropertyMap.
+//
+// If `pm` is nil, returns nil as well.
 func (pm PropertyMap) Clone() PropertyMap {
-	ret := PropertyMap{}
+	if pm == nil {
+		return nil
+	}
+	ret := make(PropertyMap, len(pm))
 	for k, v := range pm {
 		ret[k] = v.Clone()
 	}
@@ -1113,11 +1118,11 @@ func cmpByteSequence(a, b byteSequence) int {
 // bytesByteSequence is a byteSequence implementation for a byte slice.
 type bytesByteSequence []byte
 
-func (s bytesByteSequence) len() int           { return len(s) }
-func (s bytesByteSequence) get(i int) byte     { return s[i] }
-func (s bytesByteSequence) value() any { return []byte(s) }
-func (s bytesByteSequence) string() string     { return string(s) }
-func (s bytesByteSequence) bytes() []byte      { return []byte(s) }
+func (s bytesByteSequence) len() int       { return len(s) }
+func (s bytesByteSequence) get(i int) byte { return s[i] }
+func (s bytesByteSequence) value() any     { return []byte(s) }
+func (s bytesByteSequence) string() string { return string(s) }
+func (s bytesByteSequence) bytes() []byte  { return []byte(s) }
 func (s bytesByteSequence) fastCmp(o byteSequence) (int, bool) {
 	if t, ok := o.(bytesByteSequence); ok {
 		return bytes.Compare([]byte(s), []byte(t)), true
@@ -1128,11 +1133,11 @@ func (s bytesByteSequence) fastCmp(o byteSequence) (int, bool) {
 // stringByteSequence is a byteSequence implementation for a string.
 type stringByteSequence string
 
-func (s stringByteSequence) len() int           { return len(s) }
-func (s stringByteSequence) get(i int) byte     { return s[i] }
-func (s stringByteSequence) value() any { return string(s) }
-func (s stringByteSequence) string() string     { return string(s) }
-func (s stringByteSequence) bytes() []byte      { return []byte(s) }
+func (s stringByteSequence) len() int       { return len(s) }
+func (s stringByteSequence) get(i int) byte { return s[i] }
+func (s stringByteSequence) value() any     { return string(s) }
+func (s stringByteSequence) string() string { return string(s) }
+func (s stringByteSequence) bytes() []byte  { return []byte(s) }
 func (s stringByteSequence) fastCmp(o byteSequence) (int, bool) {
 	if t, ok := o.(stringByteSequence); ok {
 		// This pattern is used for string comparison in strings.Compare.

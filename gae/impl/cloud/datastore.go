@@ -363,7 +363,7 @@ func (bds *boundDatastore) prepareNativeQuery(fq *ds.FinalizedQuery) *datastore.
 func (bds *boundDatastore) mkNPLS(base ds.PropertyMap) *nativePropertyLoadSaver {
 	return &nativePropertyLoadSaver{
 		bds:  bds,
-		pmap: clonePropertyMap(base),
+		pmap: base.Clone(), // TODO(vadimsh): Why clone it?
 	}
 }
 
@@ -546,9 +546,23 @@ func (bds *boundDatastore) nativeEntityToGAE(ent *datastore.Entity) ds.PropertyM
 	if ent == nil {
 		return nil
 	}
-	pm := ds.PropertyMap{}
+	pm := make(ds.PropertyMap, len(ent.Properties)+4)
 	if ent.Key != nil {
-		pm["__key__"] = ds.MkProperty(bds.nativeKeysToGAE(ent.Key)[0])
+		// Populate all potentially supported meta properties. Whatever consumes
+		// the property map (usually the default struct PLS) will choose properties
+		// it cares about and ignore the rest.
+		key := bds.nativeKeysToGAE(ent.Key)[0]
+		pm["$key"] = ds.MkPropertyNI(key)
+		if p := key.Parent(); p != nil {
+			pm["$parent"] = ds.MkPropertyNI(p)
+		}
+		lst := key.LastTok()
+		pm["$kind"] = ds.MkPropertyNI(lst.Kind)
+		if lst.StringID != "" {
+			pm["$id"] = ds.MkPropertyNI(lst.StringID)
+		} else {
+			pm["$id"] = ds.MkPropertyNI(lst.IntID)
+		}
 	}
 	// Property ordering is lost since it's encoded to a map, but *datastore.Entity is
 	// sourced from https://godoc.org/google.golang.org/genproto/googleapis/datastore/v1#Entity
@@ -567,22 +581,29 @@ func (bds *boundDatastore) nativeEntityToGAE(ent *datastore.Entity) ds.PropertyM
 // gaeEntityToNative returns a *datastore.Entity representation of the given
 // PropertyMap (assumed to have been produced by nativeEntityToGAE).
 func (bds *boundDatastore) gaeEntityToNative(pm ds.PropertyMap) *datastore.Entity {
-	ent := &datastore.Entity{
-		Properties: []datastore.Property{},
-	}
-	// Ensure stable order.
+	// Ensure stable order. Skip meta fields, they'll be used in extractKeyFromPM.
 	keys := make([]string, 0, len(pm))
 	for name := range pm {
-		keys = append(keys, name)
+		if !strings.HasPrefix(name, "$") {
+			keys = append(keys, name)
+		}
 	}
 	sort.Strings(keys)
+
+	ent := &datastore.Entity{
+		Properties: make([]datastore.Property, 0, len(keys)),
+	}
+
+	// Try to extract the entity key from available meta fields. Ignore incomplete
+	// keys. This actually happens for structs that don't have any explicitly
+	// defined meta properties (because `$kind` is implicitly defined, so they end
+	// up with an incomplete key, since they have no `$id`).
+	if key := bds.extractKeyFromPM(pm); key != nil && !key.IsIncomplete() {
+		ent.Key = bds.gaeKeysToNative(key)[0]
+	}
+
+	// Convert non-meta fields.
 	for _, name := range keys {
-		// nativeEntityToGAE stores *datastore.Entity.Key as __key__.
-		if name == "__key__" {
-			prop := pm[name].(ds.Property)
-			ent.Key = bds.gaeKeysToNative(prop.Value().(*ds.Key))[0]
-			continue
-		}
 		p, err := bds.gaePropertyToNative(name, pm[name])
 		if err != nil {
 			// Shouldn't happen. It means nativeEntityToGAE encoded an unsupported type.
@@ -591,6 +612,31 @@ func (bds *boundDatastore) gaeEntityToNative(pm ds.PropertyMap) *datastore.Entit
 		ent.Properties = append(ent.Properties, p)
 	}
 	return ent
+}
+
+// extractKeyFromPM constructs a ds.Key (perhaps incomplete) from meta fields or
+// returns nil if there's no key there.
+//
+// It is essentially the same logic as ds.KeyForObjErr, except adapted to use
+// the KeyContext bound in `bds` and handle missing properties differently.
+//
+// It is used only for nested entities, their keys are optional.
+func (bds *boundDatastore) extractKeyFromPM(mgs ds.MetaGetterSetter) *ds.Key {
+	if key, _ := ds.GetMetaDefault(mgs, "key", nil).(*ds.Key); key != nil {
+		return key
+	}
+
+	kind := ds.GetMetaDefault(mgs, "kind", "").(string)
+	if kind == "" {
+		return nil
+	}
+
+	sid := ds.GetMetaDefault(mgs, "id", "").(string)
+	iid := ds.GetMetaDefault(mgs, "id", 0).(int64)
+
+	par, _ := ds.GetMetaDefault(mgs, "parent", nil).(*ds.Key)
+
+	return bds.kc.NewKey(kind, sid, iid, par)
 }
 
 // nativePropertyLoadSaver is a ds.PropertyMap which implements
@@ -606,7 +652,6 @@ var _ datastore.PropertyLoadSaver = (*nativePropertyLoadSaver)(nil)
 
 func (npls *nativePropertyLoadSaver) Load(props []datastore.Property) error {
 	if npls.pmap == nil {
-		// Allocate for common case: one property per property name.
 		npls.pmap = make(ds.PropertyMap, len(props))
 	}
 
@@ -687,18 +732,6 @@ func datastoreTransaction(c context.Context) *transactionWrapper {
 		return tw
 	}
 	return nil
-}
-
-func clonePropertyMap(pmap ds.PropertyMap) ds.PropertyMap {
-	if pmap == nil {
-		return nil
-	}
-
-	clone := make(ds.PropertyMap, len(pmap))
-	for k, pdata := range pmap {
-		clone[k] = pdata.Clone()
-	}
-	return clone
 }
 
 func normalizeError(err error) error {
