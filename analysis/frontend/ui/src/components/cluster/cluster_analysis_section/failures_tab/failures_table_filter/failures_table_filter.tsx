@@ -22,16 +22,16 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 
 import {
-  FailureFilter,
-  FailureFilters,
   ImpactFilter,
   ImpactFilters,
   VariantGroup,
 } from '@/tools/failures_tools';
+import { Metric } from '@/services/metrics';
 
 interface Props {
-    failureFilter: FailureFilter,
-    onFailureFilterChanged: (event: SelectChangeEvent) => void,
+    metrics: Metric[],
+    metricFilter: Metric | undefined,
+    onMetricFilterChanged: (event: SelectChangeEvent) => void,
     impactFilter: ImpactFilter,
     onImpactFilterChanged: (event: SelectChangeEvent) => void,
     variantGroups: VariantGroup[],
@@ -40,8 +40,9 @@ interface Props {
 }
 
 const FailuresTableFilter = ({
-  failureFilter,
-  onFailureFilterChanged,
+  metrics,
+  metricFilter,
+  onMetricFilterChanged,
   impactFilter,
   onImpactFilterChanged,
   variantGroups,
@@ -50,38 +51,41 @@ const FailuresTableFilter = ({
 }: Props) => {
   return (
     <>
-      <Grid container columnGap={2} data-testid="failure_table_filter" sx={{ paddingTop: '8px', paddingBottom: '12px' }}>
-        <Grid item xs={2}>
+      <Grid container data-testid="failure_table_filter" sx={{ paddingTop: '8px', paddingBottom: '12px' }}>
+        <Grid item xs={3} sx={{ paddingRight: '1rem' }}>
           <FormControl fullWidth data-testid="failure_filter">
             <InputLabel id="failure_filter_label">Failure filter</InputLabel>
             <Select
               labelId="failure_filter_label"
               id="failure_filter"
-              value={failureFilter}
+              value={metricFilter?.metricId || ''}
               label="Failure filter"
-              onChange={onFailureFilterChanged}
-              inputProps={{ 'data-testid': 'failure_filter_input' }}>
+              onChange={onMetricFilterChanged}
+              inputProps={{ 'data-testid': 'failure_filter_input' }}
+              renderValue={(value) => <strong>Only {metrics.find((m) => m.metricId == value)?.humanReadableName}</strong>}
+            >
+              <MenuItem value="">None</MenuItem>
               {
-                FailureFilters.map((filter) => (
-                  <MenuItem key={filter} value={filter}>{filter}</MenuItem>
+                metrics.map((metric) => (
+                  <MenuItem key={metric.metricId} value={metric.metricId}>Only {metric.humanReadableName}</MenuItem>
                 ))
               }
             </Select>
           </FormControl>
         </Grid>
-        <Grid item xs={2}>
+        <Grid item xs={3} sx={{ paddingRight: '1rem' }}>
           <FormControl fullWidth data-testid="impact_filter">
             <InputLabel id="impact_filter_label">Impact filter</InputLabel>
             <Select
               labelId="impact_filter_label"
               id="impact_filter"
-              value={impactFilter.name}
+              value={impactFilter.id}
               label="Impact filter"
               onChange={onImpactFilterChanged}
               inputProps={{ 'data-testid': 'impact_filter_input' }}>
               {
                 ImpactFilters.map((filter) => (
-                  <MenuItem key={filter.name} value={filter.name}>{filter.name}</MenuItem>
+                  <MenuItem key={filter.id} value={filter.id}>{filter.name}</MenuItem>
                 ))
               }
             </Select>
@@ -94,7 +98,8 @@ const FailuresTableFilter = ({
               labelId="group_by_label"
               id="group_by"
               multiple
-              value={selectedVariantGroups}
+              // Limit to showing variant groups that actually exist.
+              value={selectedVariantGroups.filter((key) => variantGroups.some((vg) => vg.key == key))}
               onChange={handleVariantGroupsChange}
               input={<OutlinedInput id="group_by_select" label="Group by" />}
               renderValue={(selected) => (

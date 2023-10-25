@@ -19,9 +19,13 @@ import Typography from '@mui/material/Typography';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 
+import { useSearchParams } from 'react-router-dom';
+import Tooltip from '@mui/material/Tooltip';
+import { useContext } from 'react';
 import { Problem } from '../problems';
 import { PriorityChip } from '../priority_chip/priority_chip';
 import { StatusChip } from '../status_chip/status_chip';
+import { OverviewTabContextData } from '../../overview_tab_context';
 
 interface Props {
   problem: Problem;
@@ -29,8 +33,25 @@ interface Props {
 }
 
 export const ProblemRow = ({ problem, openProblemDialog }: Props) => {
+  const { metrics } = useContext(OverviewTabContextData);
+  const [, setSearchParams] = useSearchParams();
+
+  const problemMetricID = problem.policy.metrics[0].metricId;
+
   const handleOpenClicked = () => {
     openProblemDialog(problem);
+  };
+  const handleShowFailures = () => {
+    // TODO: The data model allows each policy to have multiple metrics.
+    // At time of implementation, nobody is using this feature so we are not
+    // bothering to supporting it here. In future, we should update the button
+    // to display a dropdown so the user can select which metric they
+    // want to drill into.
+    setSearchParams((params) => {
+      params.set('tab', 'recent-failures');
+      params.set('filterToMetric', problemMetricID);
+      return params;
+    });
   };
   return <TableRow key={problem.policy.id} data-testid={'policy-row-' + problem.policy.id}>
     <TableCell sx={{ fontSize: '1rem', paddingLeft: '0px', textDecoration: problem.state.isActive ? 'none' : 'line-through' }}>{problem.policy.humanReadableName}</TableCell>
@@ -46,7 +67,19 @@ export const ProblemRow = ({ problem, openProblemDialog }: Props) => {
         label={
           <Typography variant="button">more info</Typography>
         }
-        sx={{ borderRadius: 1 }} />
+        sx={{ borderRadius: 1, marginRight: '0.5rem' }} />
+
+      <Tooltip title={<>View recent failures, filtered to those which contribute to the problem metric, <strong>{metrics.find((m) => m.metricId == problemMetricID)?.humanReadableName || '(unavailable)'}</strong>.</>}>
+        <Chip
+          aria-label="View failures related to problem"
+          variant="outlined"
+          color="default"
+          onClick={handleShowFailures}
+          label={
+            <Typography variant="button">show failures</Typography>
+          }
+          sx={{ borderRadius: 1 }} />
+      </Tooltip>
     </TableCell>
   </TableRow>;
 };

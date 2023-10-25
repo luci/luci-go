@@ -22,7 +22,7 @@ import {
 } from '@testing-library/react';
 
 import {
-  createMockVariantGroups,
+  createMockSelectedVariantGroups,
   newMockFailure,
   newMockGroup,
 } from '@/testing_tools/mocks/failures_mock';
@@ -43,7 +43,7 @@ describe('Test FailureTableRows component', () => {
             <FailuresTableRows
               project='testproject'
               group={mockGroup}
-              variantGroups={createMockVariantGroups()}/>
+              selectedVariantGroups={createMockSelectedVariantGroups()}/>
           </tbody>
         </table>,
     );
@@ -72,7 +72,7 @@ describe('Test FailureTableRows component', () => {
             <FailuresTableRows
               project='testproject'
               group={mockGroup}
-              variantGroups={createMockVariantGroups()}/>
+              selectedVariantGroups={createMockSelectedVariantGroups()}/>
           </tbody>
         </table>,
     );
@@ -106,7 +106,7 @@ describe('Test FailureTableRows component', () => {
             <FailuresTableRows
               project='testproject'
               group={mockGroup}
-              variantGroups={createMockVariantGroups()}/>
+              selectedVariantGroups={createMockSelectedVariantGroups()}/>
           </tbody>
         </table>,
     );

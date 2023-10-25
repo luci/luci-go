@@ -1315,12 +1315,29 @@ func TestClusters(t *testing.T) {
 					},
 				}
 
-				// Run
-				response, err := server.QueryClusterFailures(ctx, request)
+				Convey("Without metric filter", func() {
+					// Run
+					response, err := server.QueryClusterFailures(ctx, request)
 
-				// Verify.
-				So(err, ShouldBeNil)
-				So(response, ShouldResembleProto, expectedResponse)
+					// Verify.
+					So(err, ShouldBeNil)
+					So(response, ShouldResembleProto, expectedResponse)
+				})
+				Convey("With metric filter", func() {
+					request.MetricFilter = "projects/testproject/metrics/human-cls-failed-presubmit"
+					metric, err := metrics.ByID(metrics.HumanClsFailedPresubmit.ID)
+					So(err, ShouldBeNil)
+					analysisClient.expectedMetricFilter = &metrics.Definition{}
+					*analysisClient.expectedMetricFilter = metric.AdaptToProject("testproject", projectCfg.Metrics)
+
+					// Run
+					response, err := server.QueryClusterFailures(ctx, request)
+
+					// Verify.
+					So(err, ShouldBeNil)
+					So(response, ShouldResembleProto, expectedResponse)
+
+				})
 			})
 			Convey("With an invalid request", func() {
 				Convey("Invalid parent", func() {
@@ -1352,6 +1369,26 @@ func TestClusters(t *testing.T) {
 					// Verify
 					So(response, ShouldBeNil)
 					So(err, ShouldBeRPCInvalidArgument, "parent: invalid cluster identity: ID is not valid lowercase hexadecimal bytes")
+				})
+				Convey("Invalid metric ID format", func() {
+					request.MetricFilter = "metrics/human-cls-failed-presubmit"
+
+					// Run
+					response, err := server.QueryClusterFailures(ctx, request)
+
+					// Verify
+					So(response, ShouldBeNil)
+					So(err, ShouldBeRPCInvalidArgument, "filter_metric: invalid project metric name, expected format: projects/{project}/metrics/{metric_id}")
+				})
+				Convey("Filter metric references non-existant metric", func() {
+					request.MetricFilter = "projects/testproject/metrics/not-exists"
+
+					// Run
+					response, err := server.QueryClusterFailures(ctx, request)
+
+					// Verify
+					So(response, ShouldBeNil)
+					So(err, ShouldBeRPCInvalidArgument, `filter_metric: no metric with ID "not-exists"`)
 				})
 				Convey("Dataset does not exist", func() {
 					delete(analysisClient.clustersByProject, "testproject")
@@ -1606,6 +1643,7 @@ type fakeAnalysisClient struct {
 	clusterMetricsByProject          map[string][]*analysis.ClusterSummary
 	clusterMetricBreakdownsByProject map[string][]*analysis.ClusterMetricBreakdown
 	expectedRealmsQueried            []string
+	expectedMetricFilter             *metrics.Definition
 }
 
 func newFakeAnalysisClient() *fakeAnalysisClient {
@@ -1688,6 +1726,10 @@ func (f *fakeAnalysisClient) ReadClusterFailures(ctx context.Context, options an
 	failuresByCluster, ok := f.failuresByProjectAndCluster[options.Project]
 	if !ok {
 		return nil, analysis.ProjectNotExistsErr
+	}
+	if f.expectedMetricFilter != nil && (options.MetricFilter == nil || *options.MetricFilter != *f.expectedMetricFilter) ||
+		f.expectedMetricFilter == nil && options.MetricFilter != nil {
+		panic("filter metric passed to ReadClusterFailures does not match expected")
 	}
 
 	set := stringset.NewFromSlice(options.Realms...)

@@ -21,6 +21,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/api/iterator"
 
+	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/tracing"
@@ -73,6 +74,9 @@ type ReadClusterFailuresOptions struct {
 	Project   string
 	ClusterID clustering.ClusterID
 	Realms    []string
+	// The metric to show failures related to.
+	// If this is empty, all failures can be returned.
+	MetricFilter *metrics.Definition
 }
 
 // ReadClusterFailures reads the latest 2000 groups of failures for a single cluster for the last 7 days.
@@ -84,6 +88,14 @@ func (c *Client) ReadClusterFailures(ctx context.Context, opts ReadClusterFailur
 	)
 	defer func() { tracing.End(s, err, attribute.Int("outcome", len(cfs))) }()
 
+	var metricFilterSQL string
+	if opts.MetricFilter != nil && opts.MetricFilter.FilterSQL != "" {
+		metricFilterSQL = opts.MetricFilter.FilterSQL
+	} else {
+		// If the is no filter, include all failures.
+		metricFilterSQL = "TRUE"
+	}
+
 	q := c.client.Query(`
 		WITH latest_failures_7d AS (
 			SELECT
@@ -92,7 +104,7 @@ func (c *Client) ReadClusterFailures(ctx context.Context, opts ReadClusterFailur
 				cluster_id,
 				test_result_system,
 				test_result_id,
-				ARRAY_AGG(cf ORDER BY cf.last_updated DESC LIMIT 1)[OFFSET(0)] as r
+				ARRAY_AGG(cf ORDER BY cf.last_updated DESC LIMIT 1)[OFFSET(0)] as f
 			FROM clustered_failures cf
 			WHERE cf.partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
 			  AND project = @project
@@ -100,32 +112,33 @@ func (c *Client) ReadClusterFailures(ctx context.Context, opts ReadClusterFailur
 			  AND cluster_id = @clusterID
 			  AND realm IN UNNEST(@realms)
 			GROUP BY project, cluster_algorithm, cluster_id, test_result_system, test_result_id
-			HAVING r.is_included
+			HAVING f.is_included
 		)
 		SELECT
-			r.realm as Realm,
-			r.test_id as TestID,
-			ANY_VALUE(r.variant) as Variant,
-			ANY_VALUE(r.presubmit_run_id) as PresubmitRunID,
-			ANY_VALUE(r.presubmit_run_owner) as PresubmitRunOwner,
-			ANY_VALUE(r.presubmit_run_mode) as PresubmitRunMode,
-			ANY_VALUE(r.presubmit_run_status) as PresubmitRunStatus,
-			ANY_VALUE(r.changelists) as Changelists,
-			r.partition_time as PartitionTime,
-			ANY_VALUE(r.exonerations) as Exonerations,
-			ANY_VALUE(r.build_status) as BuildStatus,
-			ANY_VALUE(r.build_critical) as IsBuildCritical,
-			r.ingested_invocation_id as IngestedInvocationID,
-			ANY_VALUE(r.is_ingested_invocation_blocked) as IsIngestedInvocationBlocked,
+			f.realm as Realm,
+			f.test_id as TestID,
+			ANY_VALUE(f.variant) as Variant,
+			ANY_VALUE(f.presubmit_run_id) as PresubmitRunID,
+			ANY_VALUE(f.presubmit_run_owner) as PresubmitRunOwner,
+			ANY_VALUE(f.presubmit_run_mode) as PresubmitRunMode,
+			ANY_VALUE(f.presubmit_run_status) as PresubmitRunStatus,
+			ANY_VALUE(f.changelists) as Changelists,
+			f.partition_time as PartitionTime,
+			ANY_VALUE(f.exonerations) as Exonerations,
+			ANY_VALUE(f.build_status) as BuildStatus,
+			ANY_VALUE(f.build_critical) as IsBuildCritical,
+			f.ingested_invocation_id as IngestedInvocationID,
+			ANY_VALUE(f.is_ingested_invocation_blocked) as IsIngestedInvocationBlocked,
 			count(*) as Count
 		FROM latest_failures_7d
+		WHERE (` + metricFilterSQL + `)
 		GROUP BY
-			r.realm,
-			r.ingested_invocation_id,
-			r.test_id,
-			r.variant_hash,
-			r.partition_time
-		ORDER BY r.partition_time DESC
+			f.realm,
+			f.ingested_invocation_id,
+			f.test_id,
+			f.variant_hash,
+			f.partition_time
+		ORDER BY f.partition_time DESC
 		LIMIT 2000
 	`)
 	q.DefaultDatasetID = bqutil.InternalDatasetID

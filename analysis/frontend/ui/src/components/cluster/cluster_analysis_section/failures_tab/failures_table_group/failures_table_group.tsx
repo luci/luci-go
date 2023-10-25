@@ -20,7 +20,6 @@ import {
 
 import {
   FailureGroup,
-  VariantGroup,
 } from '@/tools/failures_tools';
 
 import FailuresTableRows from './failures_table_rows/failures_table_rows';
@@ -28,18 +27,18 @@ import FailuresTableRows from './failures_table_rows/failures_table_rows';
 const renderGroup = (
     project: string,
     group: FailureGroup,
-    variantGroups: VariantGroup[],
+    selectedVariantGroups: string[],
 ): ReactNode => {
   return (
     <Fragment>
       <FailuresTableRows
         project={project}
         group={group}
-        variantGroups={variantGroups}>
+        selectedVariantGroups={selectedVariantGroups}>
         {
           group.children.map((childGroup) => (
             <Fragment key={childGroup.id}>
-              {renderGroup(project, childGroup, variantGroups)}
+              {renderGroup(project, childGroup, selectedVariantGroups)}
             </Fragment>
           ))
         }
@@ -51,16 +50,16 @@ const renderGroup = (
 interface Props {
   project: string;
   group: FailureGroup;
-  variantGroups: VariantGroup[];
+  selectedVariantGroups: string[];
 }
 
 const FailuresTableGroup = ({
   project,
   group,
-  variantGroups,
+  selectedVariantGroups,
 }: Props) => {
   return (
-    <>{renderGroup(project, group, variantGroups)}</>
+    <>{renderGroup(project, group, selectedVariantGroups)}</>
   );
 };
 

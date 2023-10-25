@@ -67,7 +67,7 @@ const orderByClause = (orderBy?: OrderBy): string => {
 
 // metricsKey returns a unique key to represent the given
 // set of metrics.
-const metricsKey = (metrics: Metric[]): string => {
+export const metricsKey = (metrics: Metric[]): string => {
   const metricNames = metrics.map((m) => m.name);
   // Sort to ensure we treat the input as a set instead
   // of a list.

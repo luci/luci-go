@@ -199,6 +199,14 @@ export interface QueryClusterFailuresRequest {
   // The resource name of the cluster failures to retrieve.
   // Format: projects/{project}/clusters/{cluster_algorithm}/{cluster_id}/failures.
   parent: string;
+
+  // The resource name(s) of the metric for which failures should
+  // be displayed.
+  // Format: projects/{project}/metrics/{metric_id}.
+  //
+  // If no metric is specified here, then no filtering is performed
+  // and all failures can be returned.
+  metricFilter?: string;
 }
 
 export interface QueryClusterFailuresResponse {

@@ -202,10 +202,7 @@ export const mockGetCluster = (
   }, { overwriteRoutes: true });
 };
 
-export const mockQueryClusterFailures = (parent: string, failures: DistinctClusterFailure[] | undefined) => {
-  const request: QueryClusterFailuresRequest = {
-    parent: parent,
-  };
+export const mockQueryClusterFailures = (request: QueryClusterFailuresRequest, failures: DistinctClusterFailure[] | undefined) => {
   const response: QueryClusterFailuresResponse = {
     failures: failures,
   };

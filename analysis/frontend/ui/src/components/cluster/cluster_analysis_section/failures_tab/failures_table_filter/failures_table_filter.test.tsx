@@ -23,14 +23,17 @@ import { identityFunction } from '@/testing_tools/functions';
 import { createMockVariantGroups } from '@/testing_tools/mocks/failures_mock';
 import { defaultImpactFilter } from '@/tools/failures_tools';
 
+import { getMockMetricsList } from '@/testing_tools/mocks/metrics_mock';
 import FailuresTableFilter from './failures_table_filter';
 
 describe('Test FailureTableFilter component', () => {
   it('should display 3 filters.', async () => {
+    const metrics = getMockMetricsList('testproject');
     render(
         <FailuresTableFilter
-          failureFilter="All Failures"
-          onFailureFilterChanged={identityFunction}
+          metrics={metrics}
+          metricFilter={undefined}
+          onMetricFilterChanged={identityFunction}
           impactFilter={defaultImpactFilter}
           onImpactFilterChanged={identityFunction}
           variantGroups={createMockVariantGroups()}
@@ -46,10 +49,12 @@ describe('Test FailureTableFilter component', () => {
   });
 
   it('given non default selected values then should display them', async () => {
+    const metrics = getMockMetricsList('testproject');
     render(
         <FailuresTableFilter
-          failureFilter="All Failures"
-          onFailureFilterChanged={identityFunction}
+          metrics={metrics}
+          metricFilter={metrics[1]}
+          onMetricFilterChanged={identityFunction}
           impactFilter={defaultImpactFilter}
           onImpactFilterChanged={identityFunction}
           variantGroups={createMockVariantGroups()}
@@ -59,8 +64,8 @@ describe('Test FailureTableFilter component', () => {
 
     await screen.findByTestId('failure_table_filter');
 
-    expect(screen.getByTestId('failure_filter_input')).toHaveValue('All Failures');
-    expect(screen.getByTestId('impact_filter_input')).toHaveValue(defaultImpactFilter.name);
+    expect(screen.getByTestId('failure_filter_input')).toHaveValue(metrics[1].metricId);
+    expect(screen.getByTestId('impact_filter_input')).toHaveValue(defaultImpactFilter.id);
     expect(screen.getByTestId('group_by_input')).toHaveValue('v1,v2');
   });
 });

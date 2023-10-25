@@ -44,7 +44,7 @@ export const countDistictVariantValues = (failures: DistinctClusterFailure[]): V
       const value = def[key] || '';
       const variant = variantGroups.filter((e) => e.key === key)?.[0];
       if (!variant) {
-        variantGroups.push({ key: key, values: [value], isSelected: false });
+        variantGroups.push({ key: key, values: [value] });
       } else {
         if (variant.values.indexOf(value) === -1) {
           variant.values.push(value);
@@ -335,23 +335,15 @@ export const sortFailureGroups = (
  *
  * @param {DistinctClusterFailure} failures The list of failures to group.
  * @param {VariantGroup} variantGroups The list of variant groups to use for grouping.
- * @param {FailureFilter} failureFilter The failure filter to filter out the failures.
  * @return {FailureGroup[]} The list of failures grouped by the variants.
  */
 export const groupAndCountFailures = (
     failures: DistinctClusterFailure[],
     variantGroups: VariantGroup[],
-    failureFilter: FailureFilter,
 ): FailureGroup[] => {
   if (failures) {
-    let currentFailures = failures;
-    if (failureFilter == 'Presubmit Failures') {
-      currentFailures = failures.filter((f) => f.changelists);
-    } else if (failureFilter == 'Postsubmit Failures') {
-      currentFailures = failures.filter((f) => !f.changelists);
-    }
-    const groups = groupFailures(currentFailures, (failure) => {
-      const variantValues = variantGroups.filter((v) => v.isSelected)
+    const groups = groupFailures(failures, (failure) => {
+      const variantValues = variantGroups
           .map((v) => {
             const key: GroupKey = { type: 'variant', key: v.key, value: failure.variant?.def[v.key] || '' };
             return key;
@@ -363,7 +355,7 @@ export const groupAndCountFailures = (
   return [];
 };
 
-export const countAndSortFailures = (groups: FailureGroup[], impactFilter: ImpactFilter): FailureGroup[] => {
+export const countFailures = (groups: FailureGroup[], impactFilter: ImpactFilter): FailureGroup[] => {
   const groupsClone = [...groups];
   groupsClone.forEach((group) => {
     treeDistinctValues(
@@ -385,6 +377,7 @@ export const countAndSortFailures = (groups: FailureGroup[], impactFilter: Impac
 // ImpactFilter represents what kind of impact should be counted or ignored in
 // calculating impact for failures.
 export interface ImpactFilter {
+    id: string;
     name: string;
     ignoreLUCIAnalysisExoneration: boolean;
     ignoreAllExoneration: boolean;
@@ -392,21 +385,25 @@ export interface ImpactFilter {
 }
 export const ImpactFilters: ImpactFilter[] = [
   {
-    name: 'Actual Impact',
+    id: '',
+    name: 'None (Actual Impact)',
     ignoreLUCIAnalysisExoneration: false,
     ignoreAllExoneration: false,
     ignoreIngestedInvocationBlocked: false,
   }, {
+    id: 'without-luci-exoneration',
     name: 'Without LUCI Analysis Exoneration',
     ignoreLUCIAnalysisExoneration: true,
     ignoreAllExoneration: false,
     ignoreIngestedInvocationBlocked: false,
   }, {
+    id: 'without-exoneration',
     name: 'Without All Exoneration',
     ignoreLUCIAnalysisExoneration: true,
     ignoreAllExoneration: true,
     ignoreIngestedInvocationBlocked: false,
   }, {
+    id: 'without-retries',
     name: 'Without Any Retries',
     ignoreLUCIAnalysisExoneration: true,
     ignoreAllExoneration: true,
@@ -471,9 +468,4 @@ export interface FailureGroup {
 export interface VariantGroup {
     key: string;
     values: string[];
-    isSelected: boolean;
 }
-
-export const FailureFilters = ['All Failures', 'Presubmit Failures', 'Postsubmit Failures'] as const;
-export type FailureFilter = typeof FailureFilters[number];
-export const defaultFailureFilter: FailureFilter = FailureFilters[0];

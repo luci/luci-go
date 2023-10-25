@@ -29,21 +29,28 @@ import {
   createDefaultMockFailures,
   newMockFailure,
 } from '@/testing_tools/mocks/failures_mock';
-import { FailureFilters } from '@/tools/failures_tools';
 
+import { QueryClusterFailuresRequest } from '@/services/cluster';
+import { mockFetchMetrics } from '@/testing_tools/mocks/metrics_mock';
 import { ClusterContextProvider } from '../../cluster_context';
 import FailuresTab from './failures_tab';
 
 describe('Test FailureTable component', () => {
+  beforeEach(() => {
+    mockFetchAuthState();
+    mockFetchMetrics('chrome');
+  });
   afterEach(() => {
     fetchMock.mockClear();
     fetchMock.reset();
   });
 
   it('given cluster failures, should group and display them', async () => {
-    mockFetchAuthState();
+    const failuresRequest: QueryClusterFailuresRequest = {
+      parent: 'projects/chrome/clusters/rules/rule-123345/failures',
+    };
     const mockFailures = createDefaultMockFailures();
-    mockQueryClusterFailures('projects/chrome/clusters/rules/rule-123345/failures', mockFailures);
+    mockQueryClusterFailures(failuresRequest, mockFailures);
 
     renderTabWithRouterAndClient(
         <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='rule-123345'>
@@ -57,7 +64,9 @@ describe('Test FailureTable component', () => {
   });
 
   it('when clicking a sortable column then should modify groups order', async () => {
-    mockFetchAuthState();
+    const failuresRequest: QueryClusterFailuresRequest = {
+      parent: 'projects/chrome/clusters/rules/rule-123345/failures',
+    };
     const mockFailures = [
       newMockFailure().withTestId('group1').build(),
       newMockFailure().withTestId('group1').build(),
@@ -68,7 +77,7 @@ describe('Test FailureTable component', () => {
       newMockFailure().withTestId('group3').build(),
       newMockFailure().withTestId('group3').build(),
     ];
-    mockQueryClusterFailures('projects/chrome/clusters/rules/rule-123345/failures', mockFailures);
+    mockQueryClusterFailures(failuresRequest, mockFailures);
 
     renderTabWithRouterAndClient(
         <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='rule-123345'>
@@ -95,13 +104,15 @@ describe('Test FailureTable component', () => {
   });
 
   it('when expanding then should show child groups', async () => {
-    mockFetchAuthState();
+    const failuresRequest: QueryClusterFailuresRequest = {
+      parent: 'projects/chrome/clusters/rules/rule-123345/failures',
+    };
     const mockFailures = [
       newMockFailure().withTestId('group1').build(),
       newMockFailure().withTestId('group1').build(),
       newMockFailure().withTestId('group1').build(),
     ];
-    mockQueryClusterFailures('projects/chrome/clusters/rules/rule-123345/failures', mockFailures);
+    mockQueryClusterFailures(failuresRequest, mockFailures);
 
     renderTabWithRouterAndClient(
         <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='rule-123345'>
@@ -123,13 +134,15 @@ describe('Test FailureTable component', () => {
   });
 
   it('when filtering by failure type then should display matching groups', async () => {
-    mockFetchAuthState();
+    const failuresRequest: QueryClusterFailuresRequest = {
+      parent: 'projects/chrome/clusters/rules/rule-123345/failures',
+    };
     const mockFailures = [
       newMockFailure().withoutPresubmit().withTestId('group1').build(),
       newMockFailure().withTestId('group2').build(),
       newMockFailure().withTestId('group3').build(),
     ];
-    mockQueryClusterFailures('projects/chrome/clusters/rules/rule-123345/failures', mockFailures);
+    mockQueryClusterFailures(failuresRequest, mockFailures);
 
     renderTabWithRouterAndClient(
         <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='rule-123345'>
@@ -146,21 +159,36 @@ describe('Test FailureTable component', () => {
     expect(allGroupCells[1]).toHaveTextContent('group2');
     expect(allGroupCells[2]).toHaveTextContent('group3');
 
-    await fireEvent.change(screen.getByTestId('failure_filter_input'), { target: { value: FailureFilters[1] } });
+    const failuresWithFilterRequest: QueryClusterFailuresRequest = {
+      parent: 'projects/chrome/clusters/rules/rule-123345/failures',
+      metricFilter: 'projects/chrome/metrics/critical-failures-exonerated',
+    };
+    const mockFailuresWithFilter = [
+      newMockFailure().withTestId('group4').build(),
+      newMockFailure().withTestId('group5').build(),
+    ];
+    mockQueryClusterFailures(failuresWithFilterRequest, mockFailuresWithFilter);
+
+    await fireEvent.change(screen.getByTestId('failure_filter_input'), { target: { value: 'critical-failures-exonerated' } });
+
+    await screen.findByRole('table');
+    await screen.findAllByTestId('failures_table_group_cell');
 
     allGroupCells = screen.getAllByTestId('failures_table_group_cell');
     expect(allGroupCells.length).toBe(2);
-    expect(allGroupCells[0]).toHaveTextContent('group2');
-    expect(allGroupCells[1]).toHaveTextContent('group3');
+    expect(allGroupCells[0]).toHaveTextContent('group4');
+    expect(allGroupCells[1]).toHaveTextContent('group5');
   });
 
   it('when filtering with impact then should recalculate impact', async () => {
-    mockFetchAuthState();
+    const failuresRequest: QueryClusterFailuresRequest = {
+      parent: 'projects/chrome/clusters/rules/rule-123345/failures',
+    };
     const mockFailures = [
       newMockFailure().withoutPresubmit().withTestId('group1').build(),
       newMockFailure().withTestId('group1').build(),
     ];
-    mockQueryClusterFailures('projects/chrome/clusters/rules/rule-123345/failures', mockFailures);
+    mockQueryClusterFailures(failuresRequest, mockFailures);
 
     renderTabWithRouterAndClient(
         <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='rule-123345'>
@@ -171,27 +199,29 @@ describe('Test FailureTable component', () => {
     await screen.findByRole('table');
     await screen.findByTestId('failure_table_group_presubmitrejects');
 
-    await fireEvent.change(screen.getByTestId('impact_filter_input'), { target: { value: 'Without Any Retries' } });
+    await fireEvent.change(screen.getByTestId('impact_filter_input'), { target: { value: 'without-retries' } });
 
 
     let presubmitRejects = screen.getByTestId('failure_table_group_presubmitrejects');
     expect(presubmitRejects).toHaveTextContent('1');
 
-    await fireEvent.change(screen.getByTestId('impact_filter_input'), { target: { value: 'Actual Impact' } });
+    await fireEvent.change(screen.getByTestId('impact_filter_input'), { target: { value: '' } });
 
     presubmitRejects = screen.getByTestId('failure_table_group_presubmitrejects');
     expect(presubmitRejects).toHaveTextContent('0');
   });
 
   it('when grouping by variants then should modify displayed tree', async () => {
-    mockFetchAuthState();
+    const failuresRequest: QueryClusterFailuresRequest = {
+      parent: 'projects/chrome/clusters/rules/rule-123345/failures',
+    };
     const mockFailures = [
       newMockFailure().withVariantGroups('v1', 'a').withTestId('group1').build(),
       newMockFailure().withVariantGroups('v1', 'a').withTestId('group1').build(),
       newMockFailure().withVariantGroups('v1', 'b').withTestId('group1').build(),
       newMockFailure().withVariantGroups('v1', 'b').withTestId('group1').build(),
     ];
-    mockQueryClusterFailures('projects/chrome/clusters/rules/rule-123345/failures', mockFailures);
+    mockQueryClusterFailures(failuresRequest, mockFailures);
 
     renderTabWithRouterAndClient(
         <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='rule-123345'>

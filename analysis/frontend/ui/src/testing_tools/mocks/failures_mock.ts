@@ -176,6 +176,9 @@ export const createDefaultMockFailures = (num = 5): Array<DistinctClusterFailure
       .map(() => createDefaultMockFailure());
 };
 
+export const createMockSelectedVariantGroups = (): string[] => {
+  return Array.from(Array(4).keys()).map((k) =>`v${k}`);
+};
 
 export const createMockVariantGroups = (): VariantGroup[] => {
   return Array.from(Array(4).keys())

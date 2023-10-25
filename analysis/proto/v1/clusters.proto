@@ -400,7 +400,7 @@ message QueryClusterSummariesRequest {
     string order_by = 3;
 
     // The resource name(s) of the metrics to include in the cluster summaries.
-    // Format: metrics/{metric_id}.
+    // Format: projects/{project}/metrics/{metric_id}.
     // See the metrics field on the luci.analysis.v1.Cluster message for details
     // about valid metric identifiers.
     repeated string metrics = 4;
@@ -461,6 +461,16 @@ message QueryClusterFailuresRequest {
     // The resource name of the cluster failures to retrieve.
     // Format: projects/{project}/clusters/{cluster_algorithm}/{cluster_id}/failures.
     string parent = 1;
+
+    // Optional. The resource name of the metric for which failures should
+    // be displayed.
+    // Format: projects/{project}/metrics/{metric_id}.
+    //
+    // If no metrics is specified here, then no filtering is performed
+    // and all failures are eligible to be returned. Over time, we may wish
+    // to migrate this to an AIP-160 filter clause, e.g. "in_metric(`metric-id`)"
+    // where in_metric is a function.
+    string metric_filter = 2;
 }
 
 message QueryClusterFailuresResponse {
@@ -623,7 +633,7 @@ message QueryClusterHistoryRequest {
     int32 days = 3;
 
     // The resource name(s) of the metrics to include in the cluster histories.
-    // Format: metrics/{metric_id}.
+    // Format: projects/{project}/metrics/{metric_id}.
     // See the metrics field on the luci.analysis.v1.Cluster message for details
     // about valid metric identifiers.
     repeated string metrics = 4;

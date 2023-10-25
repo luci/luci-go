@@ -23,7 +23,7 @@ import {
 import {
   createDefaultMockFailureGroup,
   createDefaultMockFailureGroupWithChildren,
-  createMockVariantGroups,
+  createMockSelectedVariantGroups,
 } from '@/testing_tools/mocks/failures_mock';
 
 import FailuresTableGroup from './failures_table_group';
@@ -37,7 +37,7 @@ describe('Test FailureTableGroup component', () => {
             <FailuresTableGroup
               project='testproject'
               group={mockGroup}
-              variantGroups={createMockVariantGroups()}/>
+              selectedVariantGroups={createMockSelectedVariantGroups()}/>
           </tbody>
         </table>,
     );
@@ -55,7 +55,7 @@ describe('Test FailureTableGroup component', () => {
             <FailuresTableGroup
               project='testproject'
               group={mockGroup}
-              variantGroups={createMockVariantGroups()}/>
+              selectedVariantGroups={createMockSelectedVariantGroups()}/>
           </tbody>
         </table>,
     );
@@ -81,7 +81,7 @@ describe('Test FailureTableGroup component', () => {
             <FailuresTableGroup
               project='testproject'
               group={mockGroup}
-              variantGroups={createMockVariantGroups()}/>
+              selectedVariantGroups={createMockSelectedVariantGroups()}/>
           </tbody>
         </table>,
     );
@@ -102,7 +102,7 @@ describe('Test FailureTableGroup component', () => {
             <FailuresTableGroup
               project='testproject'
               group={mockGroup}
-              variantGroups={createMockVariantGroups()}/>
+              selectedVariantGroups={createMockSelectedVariantGroups()}/>
           </tbody>
         </table>,
     );

@@ -545,25 +545,35 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 	return &pb.QueryClusterSummariesResponse{ClusterSummaries: result}, nil
 }
 
+// metricsByName retrieves the metrics with the given name from a
+// given LUCI Project and configuration. If the metric is not
+// from the given LUCI Project, an error will be returned.
+func metricByName(project string, cfg *compiledcfg.ProjectConfig, name string) (metrics.Definition, error) {
+	metricProject, id, err := parseProjectMetricName(name)
+	if err != nil {
+		return metrics.Definition{}, err
+	}
+	if metricProject != project {
+		return metrics.Definition{}, errors.Reason("metric %s cannot be used as it is from a different LUCI Project", name).Err()
+	}
+	metric, err := metrics.ByID(id)
+	if err != nil {
+		return metrics.Definition{}, err
+	}
+	return metric.AdaptToProject(project, cfg.Config.Metrics), nil
+}
+
 // metricsByName retrieves the metrics with the given names from a
 // given LUCI Project and configuration. If the metrics are not
 // from the given LUCI Project, an error will be returned.
 func metricsByName(project string, cfg *compiledcfg.ProjectConfig, names []string) ([]metrics.Definition, error) {
 	results := make([]metrics.Definition, 0, len(names))
 	for _, name := range names {
-		metricProject, id, err := parseProjectMetricName(name)
+		metric, err := metricByName(project, cfg, name)
 		if err != nil {
 			return nil, err
 		}
-		if metricProject != project {
-			return nil, errors.Reason("metric %s cannot be used as it is from a different LUCI Project", name).Err()
-		}
-		metric, err := metrics.ByID(id)
-		if err != nil {
-			return nil, err
-		}
-		projectMetric := metric.AdaptToProject(project, cfg.Config.Metrics)
-		results = append(results, projectMetric)
+		results = append(results, metric)
 	}
 	return results, nil
 }
@@ -575,6 +585,13 @@ func (c *clustersServer) QueryClusterFailures(ctx context.Context, req *pb.Query
 	}
 
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster, perms.PermExpensiveClusterQueries); err != nil {
+		return nil, err
+	}
+
+	// Fetch a recent project configuration.
+	// (May be a recent value that was cached.)
+	cfg, err := readProjectConfig(ctx, project)
+	if err != nil {
 		return nil, err
 	}
 
@@ -590,6 +607,13 @@ func (c *clustersServer) QueryClusterFailures(ctx context.Context, req *pb.Query
 		// not be an appstatus error and the client will get an internal
 		// server error.
 		return nil, err
+	}
+	if req.MetricFilter != "" {
+		metric, err := metricByName(project, cfg, req.MetricFilter)
+		if err != nil {
+			return nil, invalidArgumentError(errors.Annotate(err, "filter_metric").Err())
+		}
+		opts.MetricFilter = &metric
 	}
 
 	failures, err := c.analysisClient.ReadClusterFailures(ctx, opts)

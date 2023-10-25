@@ -32,14 +32,13 @@ import CloseIcon from '@mui/icons-material/Close';
 import RemoveIcon from '@mui/icons-material/Remove';
 import HistoryIcon from '@mui/icons-material/History';
 
+import { Tooltip } from '@mui/material';
 import {
   DistinctClusterFailure,
   PresubmitRun,
 } from '@/services/cluster';
 import {
   FailureGroup,
-  GroupKey,
-  VariantGroup,
 } from '@/tools/failures_tools';
 import {
   invocationName,
@@ -49,13 +48,11 @@ import {
 } from '@/tools/urlHandling/links';
 
 import CLList from '@/components/cl_list/cl_list';
-import { Tooltip } from '@mui/material';
 
 interface Props {
   project: string;
-  parentKeys?: GroupKey[];
   group: FailureGroup;
-  variantGroups: VariantGroup[];
+  selectedVariantGroups: string[];
   children?: ReactNode;
 }
 
@@ -73,7 +70,7 @@ const NarrowTableCell = styled(TableCell)(() => ({
 const FailuresTableRows = ({
   project,
   group,
-  variantGroups,
+  selectedVariantGroups,
   children = null,
 }: Props) => {
   const [expanded, setExpanded] = useState(false);
@@ -83,19 +80,19 @@ const FailuresTableRows = ({
   };
 
   const ungroupedVariants = (failure: DistinctClusterFailure): VariantPair[] => {
-    const unselectedVariants = variantGroups
-      .filter((v) => !v.isSelected)
-      .map((v) => v.key);
-    const unselectedVariantPairs: (VariantPair | null)[] =
-      unselectedVariants.map((key) => {
-        const value = failure.variant?.def[key];
-        if (value !== undefined) {
-          return { key: key, value: value };
-        }
-        return null;
-      });
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return unselectedVariantPairs.filter((vp) => vp != null).map((vp) => vp!);
+    const def = failure.variant?.def;
+    const unselectedVariantPairs: VariantPair[] = [];
+    for (const key in def) {
+      if (!Object.prototype.hasOwnProperty.call(def, key)) {
+        continue;
+      }
+      if (selectedVariantGroups.includes(key)) {
+        continue;
+      }
+      const value = def[key] || '';
+      unselectedVariantPairs.push({ key: key, value: value });
+    }
+    return unselectedVariantPairs;
   };
 
   const presubmitRunIcon = (run: PresubmitRun) => {
@@ -148,7 +145,9 @@ const FailuresTableRows = ({
 
   return (
     <>
-      <TableRow hover={true}>
+      <TableRow hover={true}
+        style={{ cursor: group.failure ? undefined : 'pointer' }}
+        onClick={() => !group.failure && toggleExpand()}>
         {group.failure ? (
           <>
             <NarrowTableCell
@@ -186,9 +185,9 @@ const FailuresTableRows = ({
             >
               <small data-testid="ungrouped_variants">
                 {ungroupedVariants(group.failure)
-                  .map((v) => v && `${v.key}: ${v.value}`)
-                  .filter((v) => v)
-                  .join(', ')}
+                    .map((v) => v && `${v.key}: ${v.value}`)
+                    .filter((v) => v)
+                    .join(', ')}
               </small>
             </NarrowTableCell>
             <NarrowTableCell
@@ -221,28 +220,33 @@ const FailuresTableRows = ({
             colSpan={6}
           >
             <div style={{
-              display: "flex",
-              alignItems: "center",
-              flexWrap: "nowrap",
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'nowrap',
               width: '100%',
             }}>
               <div style={{ flex: '0 0 auto', width: `${20 * group.level}px`, height: '20px' }}></div>
               <div style={{ flex: '0 0 auto', width: '40px' }}>
                 <IconButton
                   aria-label="Expand group"
-                  onClick={() => toggleExpand()}
                 >
                   {expanded ? <ExpandMoreIcon /> : <ChevronRightIcon />}
                 </IconButton>
               </div>
               {/** Place test name or variant value in a separate span to allow better testability */}
-              <div style={{ flex: '1 1 auto', cursor: 'pointer', wordBreak: 'break-word' }} onClick={() => toggleExpand()}>{group.key.value || 'none'}</div>
+              <div style={{ flex: '0 0 auto' }}>
+                <Chip label={group.key.key || 'Test'} sx={{ cursor: 'pointer' }} />&nbsp;
+              </div>
+              <div style={{ flex: '1 1 auto', wordBreak: 'break-word' }}>
+                {group.key.value || 'none'}
+              </div>
               <div style={{ flex: '0 0 auto', width: '40px', textAlign: 'center' }}>
                 {group.key.type == 'test' ?
-                  <Tooltip title={<><b>Test History</b><br />View all recent results of this test including passes and failures in other clusters. Results are filtered by the selected 'Group By' fields.</>}>
+                  <Tooltip title={<><b>Test History</b><br />View all recent results of this test including passes and failures in other clusters. Results are filtered by the selected &lsquo;Group By&rsquo; fields.</>}>
                     <Link
                       aria-label='Test history link'
                       href={testHistoryLink(project, group.key.value, group.commonVariant)}
+                      onClick={(e) => e.stopPropagation() /* prevent toggling group expansion */ }
                       target="_blank">
                       <HistoryIcon />
                     </Link>
@@ -251,9 +255,7 @@ const FailuresTableRows = ({
             </div>
           </NarrowTableCell>
         )}
-        <NarrowTableCell data-testid="failure_table_group_presubmitrejects"
-          style={{ cursor: group.failure ? undefined : 'pointer' }}
-          onClick={() => !group.failure && toggleExpand()}>
+        <NarrowTableCell data-testid="failure_table_group_presubmitrejects">
           {group.failure ? (
             <>
               {group.failure.presubmitRun ? (
@@ -266,24 +268,16 @@ const FailuresTableRows = ({
             group.presubmitRejects
           )}
         </NarrowTableCell>
-        <NarrowTableCell className="number"
-          style={{ cursor: group.failure ? undefined : 'pointer' }}
-          onClick={() => !group.failure && toggleExpand()}>
+        <NarrowTableCell className="number">
           {group.invocationFailures}
         </NarrowTableCell>
-        <NarrowTableCell className="number"
-          style={{ cursor: group.failure ? undefined : 'pointer' }}
-          onClick={() => !group.failure && toggleExpand()}>
+        <NarrowTableCell className="number">
           {group.criticalFailuresExonerated}
         </NarrowTableCell>
-        <NarrowTableCell className="number"
-          style={{ cursor: group.failure ? undefined : 'pointer' }}
-          onClick={() => !group.failure && toggleExpand()}>
+        <NarrowTableCell className="number">
           {group.failures}
         </NarrowTableCell>
-        <NarrowTableCell
-          style={{ cursor: group.failure ? undefined : 'pointer' }}
-          onClick={() => !group.failure && toggleExpand()}>
+        <NarrowTableCell>
           {dayjs(group.latestFailureTime).fromNow()}
         </NarrowTableCell>
       </TableRow>

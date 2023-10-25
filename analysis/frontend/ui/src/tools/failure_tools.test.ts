@@ -38,57 +38,57 @@ interface ExtractorTestCase {
 
 describe.each<ExtractorTestCase>([{
   failure: newMockFailure().build(),
-  filter: 'Actual Impact',
+  filter: 'None (Actual Impact)',
   shouldExtractIngestedInvocationId: false,
   shouldExtractPresubmitRunId: false,
 }, {
   failure: newMockFailure().exonerateNotCritical().build(),
-  filter: 'Actual Impact',
+  filter: 'None (Actual Impact)',
   shouldExtractIngestedInvocationId: false,
   shouldExtractPresubmitRunId: false,
 }, {
   failure: newMockFailure().exonerateOccursOnOtherCLs().build(),
-  filter: 'Actual Impact',
+  filter: 'None (Actual Impact)',
   shouldExtractIngestedInvocationId: false,
   shouldExtractPresubmitRunId: false,
 }, {
   failure: newMockFailure().exonerateNotCritical().build(),
-  filter: 'Actual Impact',
+  filter: 'None (Actual Impact)',
   shouldExtractIngestedInvocationId: false,
   shouldExtractPresubmitRunId: false,
 }, {
   failure: newMockFailure().ingestedInvocationBlocked().build(),
-  filter: 'Actual Impact',
+  filter: 'None (Actual Impact)',
   shouldExtractIngestedInvocationId: false,
   shouldExtractPresubmitRunId: false,
 }, {
   failure: newMockFailure().ingestedInvocationBlocked().buildFailed().build(),
-  filter: 'Actual Impact',
+  filter: 'None (Actual Impact)',
   shouldExtractIngestedInvocationId: true,
   shouldExtractPresubmitRunId: true,
 }, {
   failure: newMockFailure().ingestedInvocationBlocked().buildFailed().notPresubmitCritical().build(),
-  filter: 'Actual Impact',
+  filter: 'None (Actual Impact)',
   shouldExtractIngestedInvocationId: true,
   shouldExtractPresubmitRunId: false,
 }, {
   failure: newMockFailure().ingestedInvocationBlocked().buildFailed().dryRun().build(),
-  filter: 'Actual Impact',
+  filter: 'None (Actual Impact)',
   shouldExtractIngestedInvocationId: true,
   shouldExtractPresubmitRunId: false,
 }, {
   failure: newMockFailure().ingestedInvocationBlocked().buildFailed().exonerateOccursOnOtherCLs().build(),
-  filter: 'Actual Impact',
+  filter: 'None (Actual Impact)',
   shouldExtractIngestedInvocationId: false,
   shouldExtractPresubmitRunId: false,
 }, {
   failure: newMockFailure().ingestedInvocationBlocked().buildFailed().exonerateNotCritical().build(),
-  filter: 'Actual Impact',
+  filter: 'None (Actual Impact)',
   shouldExtractIngestedInvocationId: false,
   shouldExtractPresubmitRunId: false,
 }, {
   failure: newMockFailure().exonerateOccursOnOtherCLs().build(),
-  filter: 'Actual Impact',
+  filter: 'None (Actual Impact)',
   shouldExtractIngestedInvocationId: false,
   shouldExtractPresubmitRunId: false,
 }, {
