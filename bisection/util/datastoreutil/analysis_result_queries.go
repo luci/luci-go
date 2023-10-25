@@ -449,3 +449,23 @@ func GetTestNthSectionReruns(ctx context.Context, nsa *model.TestNthSectionAnaly
 	}
 	return reruns, nil
 }
+
+func GetProjectForCompileFailureAnalysisID(ctx context.Context, analysisID int64) (string, error) {
+	cfa, err := GetCompileFailureAnalysis(ctx, analysisID)
+	if err != nil {
+		return "", errors.Annotate(err, "get compile failure analysis").Err()
+	}
+	return GetProjectForCompileFailureAnalysis(ctx, cfa)
+}
+
+func GetProjectForCompileFailureAnalysis(ctx context.Context, cfa *model.CompileFailureAnalysis) (string, error) {
+	cf, err := GetCompileFailureForAnalysis(ctx, cfa)
+	if err != nil {
+		return "", errors.Annotate(err, "get compile failure for analysis").Err()
+	}
+	build, err := GetBuild(ctx, cf.Build.IntID())
+	if err != nil {
+		return "", errors.Annotate(err, "get build").Err()
+	}
+	return build.Project, nil
+}

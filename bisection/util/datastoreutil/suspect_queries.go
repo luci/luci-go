@@ -219,3 +219,17 @@ func GetVerifiedCulpritForTestAnalysis(ctx context.Context, tfa *model.TestFailu
 	}
 	return suspect, nil
 }
+
+func GetProjectForSuspect(ctx context.Context, suspect *model.Suspect) (string, error) {
+	switch suspect.AnalysisType {
+	case pb.AnalysisType_COMPILE_FAILURE_ANALYSIS:
+		return GetProjectForCompileFailureAnalysisID(ctx, suspect.ParentAnalysis.Parent().IntID())
+	case pb.AnalysisType_TEST_FAILURE_ANALYSIS:
+		tfa, err := GetTestFailureAnalysisForSuspect(ctx, suspect)
+		if err != nil {
+			return "", errors.Annotate(err, "get test failure analysis for suspect").Err()
+		}
+		return tfa.Project, nil
+	}
+	return "", fmt.Errorf("unknown analysis type of suspect %s", suspect.AnalysisType.String())
+}

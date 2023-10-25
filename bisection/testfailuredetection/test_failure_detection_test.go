@@ -412,13 +412,11 @@ func setupTestingContext() (context.Context, *tqtesting.Scheduler) {
 	cl := testclock.New(testclock.TestTimeUTC)
 	cl.Set(time.Unix(10000, 0).UTC())
 	ctx = clock.Set(ctx, cl)
-	testCfg := &configpb.Config{
-		TestAnalysisConfig: &configpb.TestAnalysisConfig{
-			DetectorEnabled: true,
-			ExcludedBuckets: []string{"try", "findit", "reviver"},
-		},
-	}
-	So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+	projectCfg := config.CreatePlaceholderProjectConfig()
+	projectCfg.TestAnalysisConfig.DetectorEnabled = true
+	projectCfg.TestAnalysisConfig.ExcludedBuckets = []string{"try", "findit", "reviver"}
+	cfg := map[string]*configpb.ProjectConfig{"testProject": projectCfg}
+	So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 	datastore.GetTestable(ctx).Consistent(true)
 	return tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 }

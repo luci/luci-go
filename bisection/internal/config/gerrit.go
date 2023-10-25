@@ -24,14 +24,14 @@ import (
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 )
 
-func GetGerritCfgForSuspect(ctx context.Context, suspect *model.Suspect) (*configpb.GerritConfig, error) {
-	cfg, err := Get(ctx)
+func GetGerritCfgForSuspect(ctx context.Context, suspect *model.Suspect, project string) (*configpb.GerritConfig, error) {
+	cfg, err := Project(ctx, project)
 	if err != nil {
 		return nil, err
 	}
 	switch suspect.AnalysisType {
 	case bisectionpb.AnalysisType_COMPILE_FAILURE_ANALYSIS:
-		return cfg.GerritConfig, nil
+		return cfg.CompileAnalysisConfig.GerritConfig, nil
 	case bisectionpb.AnalysisType_TEST_FAILURE_ANALYSIS:
 		return cfg.TestAnalysisConfig.GerritConfig, nil
 	}

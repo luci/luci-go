@@ -56,19 +56,18 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 		// Setup tsmon
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
-		// Set the service-level config for this test
-		testCfg := &configpb.Config{
-			TestAnalysisConfig: &configpb.TestAnalysisConfig{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: true,
-					NthsectionSettings: &configpb.GerritConfig_NthSectionSettings{
-						Enabled:                     true,
-						ActionWhenVerificationError: false,
-					},
-				},
+		// Set the project-level config for this test
+		gerritConfig := &configpb.GerritConfig{
+			ActionsEnabled: true,
+			NthsectionSettings: &configpb.GerritConfig_NthSectionSettings{
+				Enabled:                     true,
+				ActionWhenVerificationError: false,
 			},
 		}
-		So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+		projectCfg := config.CreatePlaceholderProjectConfig()
+		projectCfg.TestAnalysisConfig.GerritConfig = gerritConfig
+		cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
+		So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 
 		// Setup datastore
 		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
@@ -146,14 +145,9 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 			util.ConstructTestHistoryURL(tf2.Project, tf2.TestID, tf2.VariantHash))
 
 		Convey("gerrit action disabled", func() {
-			testCfg := &configpb.Config{
-				TestAnalysisConfig: &configpb.TestAnalysisConfig{
-					GerritConfig: &configpb.GerritConfig{
-						ActionsEnabled: false,
-					},
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+			projectCfg.TestAnalysisConfig.GerritConfig.ActionsEnabled = false
+			cfg := map[string]*configpb.ProjectConfig{tfa.Project: projectCfg}
+			So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 
 			err := processTestFailureCulpritTask(ctx, tfa.ID)
 			So(err, ShouldBeNil)
@@ -480,10 +474,11 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 			})
 
 			Convey("revert creation is disabled", func() {
-				testCfg.TestAnalysisConfig.GerritConfig.CreateRevertSettings = &configpb.GerritConfig_RevertActionSettings{
+				projectCfg.TestAnalysisConfig.GerritConfig.CreateRevertSettings = &configpb.GerritConfig_RevertActionSettings{
 					Enabled: false,
 				}
-				So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+				cfg := map[string]*configpb.ProjectConfig{tfa.Project: projectCfg}
+				So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
 					Return(culpritRes, nil).Times(1)
 				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
@@ -518,11 +513,12 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 
 			Convey("exceed daily limit", func() {
 				// Set up config.
-				testCfg.TestAnalysisConfig.GerritConfig.CreateRevertSettings = &configpb.GerritConfig_RevertActionSettings{
+				projectCfg.TestAnalysisConfig.GerritConfig.CreateRevertSettings = &configpb.GerritConfig_RevertActionSettings{
 					DailyLimit: 1,
 					Enabled:    true,
 				}
-				So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+				cfg := map[string]*configpb.ProjectConfig{tfa.Project: projectCfg}
+				So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 
 				// Add existing revert.
 				testutil.CreateSuspect(ctx, &testutil.SuspectCreationOption{
@@ -566,11 +562,12 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 
 			Convey("revert created", func() {
 				// Set up config.
-				testCfg.TestAnalysisConfig.GerritConfig.CreateRevertSettings = &configpb.GerritConfig_RevertActionSettings{
+				projectCfg.TestAnalysisConfig.GerritConfig.CreateRevertSettings = &configpb.GerritConfig_RevertActionSettings{
 					DailyLimit: 10,
 					Enabled:    true,
 				}
-				So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+				cfg := map[string]*configpb.ProjectConfig{tfa.Project: projectCfg}
+				So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 
 				revertRes := &gerritpb.ChangeInfo{
 					Number:  876549,

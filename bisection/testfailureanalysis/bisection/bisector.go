@@ -128,7 +128,7 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 	}()
 
 	// Checks if test failure analysis is enabled.
-	enabled, err := IsEnabled(ctx)
+	enabled, err := IsEnabled(ctx, tfa.Project)
 	if err != nil {
 		return errors.Annotate(err, "is enabled").Err()
 	}
@@ -227,7 +227,7 @@ func SaveSuspectAndTriggerCulpritVerification(ctx context.Context, tfa *model.Te
 	if err != nil {
 		return errors.Annotate(err, "store nthsection culprit to datastore").Err()
 	}
-	enabled, err := IsEnabled(ctx)
+	enabled, err := IsEnabled(ctx, tfa.Project)
 	if err != nil {
 		return errors.Annotate(err, "is enabled").Err()
 	}
@@ -496,8 +496,8 @@ func createNthSectionModel(ctx context.Context, tfa *model.TestFailureAnalysis, 
 	return nsa, nil
 }
 
-func IsEnabled(ctx context.Context) (bool, error) {
-	cfg, err := config.Get(ctx)
+func IsEnabled(ctx context.Context, project string) (bool, error) {
+	cfg, err := config.Project(ctx, project)
 	if err != nil {
 		return false, err
 	}

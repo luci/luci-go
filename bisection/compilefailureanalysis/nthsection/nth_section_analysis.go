@@ -131,7 +131,7 @@ func SaveSuspectAndTriggerCulpritVerification(c context.Context, nsa *model.Comp
 	}
 
 	// Run culprit verification
-	shouldRunCulpritVerification, err := culpritverification.ShouldRunCulpritVerification(c)
+	shouldRunCulpritVerification, err := culpritverification.ShouldRunCulpritVerification(c, cfa)
 	if err != nil {
 		return errors.Annotate(err, "couldn't fetch shouldRunCulpritVerification config").Err()
 	}
@@ -306,12 +306,16 @@ func updateBlameList(c context.Context, nthSectionAnalysis *model.CompileNthSect
 	return datastore.Put(c, nthSectionAnalysis)
 }
 
-func ShouldRunNthSectionAnalysis(c context.Context) (bool, error) {
-	cfg, err := config.Get(c)
+func ShouldRunNthSectionAnalysis(c context.Context, cfa *model.CompileFailureAnalysis) (bool, error) {
+	project, err := datastoreutil.GetProjectForCompileFailureAnalysis(c, cfa)
 	if err != nil {
-		return false, err
+		return false, errors.Annotate(err, "get project for compile failure analysis").Err()
 	}
-	return cfg.AnalysisConfig.NthsectionEnabled, nil
+	cfg, err := config.Project(c, project)
+	if err != nil {
+		return false, errors.Annotate(err, "config project").Err()
+	}
+	return cfg.CompileAnalysisConfig.NthsectionEnabled, nil
 }
 
 func setStatusError(c context.Context, nsa *model.CompileNthSectionAnalysis) {

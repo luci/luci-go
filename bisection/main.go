@@ -142,7 +142,7 @@ func main() {
 		})
 
 		// GAE crons
-		cron.RegisterHandler("update-config", config.Update)
+		cron.RegisterHandler("update-config", config.UpdateProjects)
 		cron.RegisterHandler("collect-global-metrics", metrics.CollectGlobalMetrics)
 		cron.RegisterHandler("throttle-bisection", throttle.CronHandler)
 

@@ -107,12 +107,10 @@ func TestAnalyzeFailure(t *testing.T) {
 
 	Convey("AnalyzeFailure analysis is created", t, func() {
 		// Set up the config
-		testCfg := &configpb.Config{
-			AnalysisConfig: &configpb.AnalysisConfig{
-				CulpritVerificationEnabled: false,
-			},
-		}
-		So(config.SetTestConfig(c, testCfg), ShouldBeNil)
+		projectCfg := config.CreatePlaceholderProjectConfig()
+		projectCfg.CompileAnalysisConfig.CulpritVerificationEnabled = false
+		cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
+		So(config.SetTestProjectConfig(c, cfg), ShouldBeNil)
 
 		fb := &model.LuciFailedBuild{
 			Id: 88128398584903,

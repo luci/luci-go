@@ -343,12 +343,16 @@ func updateSuspectStatus(c context.Context, suspect *model.Suspect, cfa *model.C
 	}
 }
 
-func ShouldRunCulpritVerification(c context.Context) (bool, error) {
-	cfg, err := config.Get(c)
+func ShouldRunCulpritVerification(c context.Context, cfa *model.CompileFailureAnalysis) (bool, error) {
+	project, err := datastoreutil.GetProjectForCompileFailureAnalysis(c, cfa)
 	if err != nil {
-		return false, err
+		return false, errors.Annotate(err, "get project for compile failure analysis").Err()
 	}
-	return cfg.AnalysisConfig.CulpritVerificationEnabled, nil
+	cfg, err := config.Project(c, project)
+	if err != nil {
+		return false, errors.Annotate(err, "config project").Err()
+	}
+	return cfg.CompileAnalysisConfig.CulpritVerificationEnabled, nil
 }
 
 func getParentCommit(ctx context.Context, commit *buildbucketpb.GitilesCommit) (*buildbucketpb.GitilesCommit, error) {

@@ -197,13 +197,11 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).AnyTimes()
 
 		// Set up the config
-		testCfg := &configpb.Config{
-			AnalysisConfig: &configpb.AnalysisConfig{
-				NthsectionEnabled:          true,
-				CulpritVerificationEnabled: true,
-			},
-		}
-		So(config.SetTestConfig(c, testCfg), ShouldBeNil)
+		projectCfg := config.CreatePlaceholderProjectConfig()
+		projectCfg.CompileAnalysisConfig.NthsectionEnabled = true
+		projectCfg.CompileAnalysisConfig.CulpritVerificationEnabled = true
+		cfg := map[string]*configpb.ProjectConfig{"testProject": projectCfg}
+		So(config.SetTestProjectConfig(c, cfg), ShouldBeNil)
 
 		Convey("Schedule run for next commit", func() {
 			bbres := &bbpb.Build{
@@ -227,7 +225,9 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			}
 			mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(bbres, nil).Times(1)
 
-			fb := &model.LuciFailedBuild{}
+			fb := &model.LuciFailedBuild{
+				LuciBuild: model.LuciBuild{Project: "testProject"},
+			}
 			So(datastore.Put(c, fb), ShouldBeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
@@ -309,7 +309,15 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		Convey("Culprit found", func() {
 			c, scheduler := tq.TestingContext(c, nil)
 
-			cf := &model.CompileFailure{}
+			fb := &model.LuciFailedBuild{
+				LuciBuild: model.LuciBuild{Project: "testProject"},
+			}
+			So(datastore.Put(c, fb), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			cf := &model.CompileFailure{
+				Build: datastore.KeyForObj(c, fb),
+			}
 			So(datastore.Put(c, cf), ShouldBeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
@@ -438,7 +446,15 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		})
 
 		Convey("Nthsection couldn't find suspect", func() {
-			cf := &model.CompileFailure{}
+			fb := &model.LuciFailedBuild{
+				LuciBuild: model.LuciBuild{Project: "testProject"},
+			}
+			So(datastore.Put(c, fb), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			cf := &model.CompileFailure{
+				Build: datastore.KeyForObj(c, fb),
+			}
 			So(datastore.Put(c, cf), ShouldBeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
@@ -545,7 +561,15 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		})
 
 		Convey("Nthsection regression range conflicts", func() {
-			cf := &model.CompileFailure{}
+			fb := &model.LuciFailedBuild{
+				LuciBuild: model.LuciBuild{Project: "testProject"},
+			}
+			So(datastore.Put(c, fb), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			cf := &model.CompileFailure{
+				Build: datastore.KeyForObj(c, fb),
+			}
 			So(datastore.Put(c, cf), ShouldBeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 

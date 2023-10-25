@@ -87,6 +87,27 @@ func TestRevertCulprit(t *testing.T) {
 		ctx = rotationproxy.MockedRotationProxyClientContext(mockClient.Ctx, map[string]string{
 			"oncallator:chrome-build-sheriff": `{"emails":["jdoe@example.com", "esmith@example.com"],"updated_unix_timestamp":1669331526}`,
 		})
+		// Set the project-level config for this test
+		gerritConfig := &configpb.GerritConfig{
+			ActionsEnabled: true,
+			CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
+				Enabled:    true,
+				DailyLimit: 10,
+			},
+			SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
+				Enabled:    true,
+				DailyLimit: 4,
+			},
+			MaxRevertibleCulpritAge: 21600, // 6 hours
+			NthsectionSettings: &configpb.GerritConfig_NthSectionSettings{
+				Enabled:                     true,
+				ActionWhenVerificationError: false,
+			},
+		}
+		projectCfg := config.CreatePlaceholderProjectConfig()
+		projectCfg.CompileAnalysisConfig.GerritConfig = gerritConfig
+		cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
+		So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 
 		Convey("must be confirmed culprit", func() {
 			// Setup suspect in datastore
@@ -106,23 +127,6 @@ func TestRevertCulprit(t *testing.T) {
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
-
-			// Set the service-level config for this test
-			testCfg := &configpb.Config{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: true,
-					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 10,
-					},
-					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 4,
-					},
-					MaxRevertibleCulpritAge: 21600, // 6 hours
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
 
 			err := TakeCulpritAction(ctx, heuristicSuspect)
 			expectedErr := fmt.Sprintf("suspect (commit %s) has verification status"+
@@ -159,25 +163,12 @@ func TestRevertCulprit(t *testing.T) {
 			So(datastore.Put(ctx, nthsectionSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			// Set the service-level config for this test
-			testCfg := &configpb.Config{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: true,
-					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 10,
-					},
-					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 4,
-					},
-					MaxRevertibleCulpritAge: 21600, // 6 hours
-					NthsectionSettings: &configpb.GerritConfig_NthSectionSettings{
-						Enabled: false,
-					},
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+			// Set the project-level config for this test
+			gerritConfig.NthsectionSettings.Enabled = false
+			projectCfg := config.CreatePlaceholderProjectConfig()
+			projectCfg.CompileAnalysisConfig.GerritConfig = gerritConfig
+			cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
+			So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 
 			err := TakeCulpritAction(ctx, nthsectionSuspect)
 			So(err, ShouldBeNil)
@@ -211,27 +202,6 @@ func TestRevertCulprit(t *testing.T) {
 			}
 			So(datastore.Put(ctx, nthsectionSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
-
-			// Set the service-level config for this test
-			testCfg := &configpb.Config{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: true,
-					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 10,
-					},
-					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 4,
-					},
-					MaxRevertibleCulpritAge: 21600, // 6 hours
-					NthsectionSettings: &configpb.GerritConfig_NthSectionSettings{
-						Enabled:                     true,
-						ActionWhenVerificationError: false,
-					},
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
 
 			err := TakeCulpritAction(ctx, nthsectionSuspect)
 			expectedErr := fmt.Sprintf("suspect (commit %s) has verification status"+
@@ -272,22 +242,12 @@ func TestRevertCulprit(t *testing.T) {
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			// Set the service-level config for this test
-			testCfg := &configpb.Config{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: false,
-					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 10,
-					},
-					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 4,
-					},
-					MaxRevertibleCulpritAge: 21600, // 6 hours
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+			// Set the project-level config for this test
+			gerritConfig.ActionsEnabled = false
+			projectCfg := config.CreatePlaceholderProjectConfig()
+			projectCfg.CompileAnalysisConfig.GerritConfig = gerritConfig
+			cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
+			So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 
 			err := TakeCulpritAction(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
@@ -325,23 +285,6 @@ func TestRevertCulprit(t *testing.T) {
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
-
-			// Set the service-level config for this test
-			testCfg := &configpb.Config{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: true,
-					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 10,
-					},
-					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 4,
-					},
-					MaxRevertibleCulpritAge: 21600, // 6 hours
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
 
 			// Set up mock responses
 			culpritRes := &gerritpb.ListChangesResponse{
@@ -419,23 +362,6 @@ func TestRevertCulprit(t *testing.T) {
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
-
-			// Set the service-level config for this test
-			testCfg := &configpb.Config{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: true,
-					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 10,
-					},
-					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 4,
-					},
-					MaxRevertibleCulpritAge: 21600, // 6 hours
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
 
 			// Set up mock responses
 			culpritRes := &gerritpb.ListChangesResponse{
@@ -520,23 +446,6 @@ func TestRevertCulprit(t *testing.T) {
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
-
-			// Set the service-level config for this test
-			testCfg := &configpb.Config{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: true,
-					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 10,
-					},
-					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 4,
-					},
-					MaxRevertibleCulpritAge: 21600, // 6 hours
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
 
 			// Set up mock responses
 			culpritRes := &gerritpb.ListChangesResponse{
@@ -628,23 +537,6 @@ func TestRevertCulprit(t *testing.T) {
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			// Set the service-level config for this test
-			testCfg := &configpb.Config{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: true,
-					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 10,
-					},
-					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 4,
-					},
-					MaxRevertibleCulpritAge: 21600, // 6 hours
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
-
 			// Set up mock responses
 			culpritRes := &gerritpb.ListChangesResponse{
 				Changes: []*gerritpb.ChangeInfo{{
@@ -722,23 +614,6 @@ func TestRevertCulprit(t *testing.T) {
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			// Set the service-level config for this test
-			testCfg := &configpb.Config{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: true,
-					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 10,
-					},
-					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 4,
-					},
-					MaxRevertibleCulpritAge: 21600, // 6 hours
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
-
 			// Set up mock responses
 			culpritRes := &gerritpb.ListChangesResponse{
 				Changes: []*gerritpb.ChangeInfo{{
@@ -815,23 +690,6 @@ func TestRevertCulprit(t *testing.T) {
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
-
-			// Set the service-level config for this test
-			testCfg := &configpb.Config{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: true,
-					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 10,
-					},
-					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 4,
-					},
-					MaxRevertibleCulpritAge: 21600, // 6 hours
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
 
 			// Set up mock responses
 			culpritRes := &gerritpb.ListChangesResponse{
@@ -929,22 +787,12 @@ func TestRevertCulprit(t *testing.T) {
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			// Set the service-level config for this test
-			testCfg := &configpb.Config{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: true,
-					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    false,
-						DailyLimit: 10,
-					},
-					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 4,
-					},
-					MaxRevertibleCulpritAge: 21600, // 6 hours
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+			// Set the project-level config for this test
+			gerritConfig.CreateRevertSettings.Enabled = false
+			projectCfg := config.CreatePlaceholderProjectConfig()
+			projectCfg.CompileAnalysisConfig.GerritConfig = gerritConfig
+			cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
+			So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 
 			// Set up mock responses
 			culpritRes := &gerritpb.ListChangesResponse{
@@ -1024,23 +872,6 @@ func TestRevertCulprit(t *testing.T) {
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
-
-			// Set the service-level config for this test
-			testCfg := &configpb.Config{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: true,
-					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 10,
-					},
-					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 4,
-					},
-					MaxRevertibleCulpritAge: 21600, // 6 hours
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
 
 			// Set up mock responses
 			culpritRes := &gerritpb.ListChangesResponse{
@@ -1140,22 +971,12 @@ func TestRevertCulprit(t *testing.T) {
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			// Set the service-level config for this test
-			testCfg := &configpb.Config{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: true,
-					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 10,
-					},
-					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    false,
-						DailyLimit: 4,
-					},
-					MaxRevertibleCulpritAge: 21600, // 6 hours
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+			// Set the project-level config for this test
+			gerritConfig.SubmitRevertSettings.Enabled = false
+			projectCfg := config.CreatePlaceholderProjectConfig()
+			projectCfg.CompileAnalysisConfig.GerritConfig = gerritConfig
+			cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
+			So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 
 			// Set up mock responses
 			culpritRes := &gerritpb.ListChangesResponse{
@@ -1254,23 +1075,6 @@ func TestRevertCulprit(t *testing.T) {
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
-
-			// Set the service-level config for this test
-			testCfg := &configpb.Config{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: true,
-					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 10,
-					},
-					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 4,
-					},
-					MaxRevertibleCulpritAge: 21600, // 6 hours
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
 
 			// Set up mock responses
 			culpritRes := &gerritpb.ListChangesResponse{
@@ -1381,23 +1185,6 @@ func TestRevertCulprit(t *testing.T) {
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			// Set the service-level config for this test
-			testCfg := &configpb.Config{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: true,
-					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 10,
-					},
-					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 4,
-					},
-					MaxRevertibleCulpritAge: 21600, // 6 hours
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
-
 			// Set up mock responses
 			culpritRes := &gerritpb.ListChangesResponse{
 				Changes: []*gerritpb.ChangeInfo{{
@@ -1480,23 +1267,6 @@ func TestRevertCulprit(t *testing.T) {
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
-
-			// Set the service-level config for this test
-			testCfg := &configpb.Config{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: true,
-					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 10,
-					},
-					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 4,
-					},
-					MaxRevertibleCulpritAge: 21600, // 6 hours
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
 
 			// Set up mock responses
 			culpritRes := &gerritpb.ListChangesResponse{
@@ -1585,23 +1355,6 @@ func TestRevertCulprit(t *testing.T) {
 			}
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
-
-			// Set the service-level config for this test
-			testCfg := &configpb.Config{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: true,
-					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 10,
-					},
-					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 4,
-					},
-					MaxRevertibleCulpritAge: 21600, // 6 hours
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
 
 			// Set up mock responses
 			culpritRes := &gerritpb.ListChangesResponse{
@@ -1753,23 +1506,6 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			// Set the service-level config for this test
-			testCfg := &configpb.Config{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: true,
-					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 10,
-					},
-					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 4,
-					},
-					MaxRevertibleCulpritAge: 21600, // 6 hours
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
-
 			// Set up mock responses
 			culpritRes := &gerritpb.ListChangesResponse{
 				Changes: []*gerritpb.ChangeInfo{{
@@ -1837,26 +1573,11 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 			So(datastore.Put(ctx, suspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			// Set the service-level config for this test
-			testCfg := &configpb.Config{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: true,
-					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 10,
-					},
-					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 4,
-					},
-					MaxRevertibleCulpritAge: 21600, // 6 hours
-					NthsectionSettings: &configpb.GerritConfig_NthSectionSettings{
-						Enabled:                     true,
-						ActionWhenVerificationError: true,
-					},
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+			gerritConfig.NthsectionSettings.ActionWhenVerificationError = true
+			projectCfg := config.CreatePlaceholderProjectConfig()
+			projectCfg.CompileAnalysisConfig.GerritConfig = gerritConfig
+			cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
+			So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 
 			// Set up mock responses
 			culpritRes := &gerritpb.ListChangesResponse{
@@ -1940,26 +1661,12 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 			So(datastore.Put(ctx, suspect), ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			// Set the service-level config for this test
-			testCfg := &configpb.Config{
-				GerritConfig: &configpb.GerritConfig{
-					ActionsEnabled: true,
-					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 10,
-					},
-					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-						Enabled:    true,
-						DailyLimit: 4,
-					},
-					MaxRevertibleCulpritAge: 21600, // 6 hours
-					NthsectionSettings: &configpb.GerritConfig_NthSectionSettings{
-						Enabled:                     true,
-						ActionWhenVerificationError: true,
-					},
-				},
-			}
-			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+			// Set the project-level config for this test
+			gerritConfig.NthsectionSettings.ActionWhenVerificationError = true
+			projectCfg := config.CreatePlaceholderProjectConfig()
+			projectCfg.CompileAnalysisConfig.GerritConfig = gerritConfig
+			cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
+			So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 
 			// Set up mock responses
 			culpritRes := &gerritpb.ListChangesResponse{

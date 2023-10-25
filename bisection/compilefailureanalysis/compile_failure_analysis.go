@@ -110,7 +110,7 @@ func AnalyzeFailure(
 
 	// If heuristic analysis does not return error, we proceed to verify its results (if any)
 	if e == nil {
-		shouldRunCulpritVerification, err := culpritverification.ShouldRunCulpritVerification(c)
+		shouldRunCulpritVerification, err := culpritverification.ShouldRunCulpritVerification(c, analysis)
 		if err != nil {
 			return nil, errors.Annotate(err, "couldn't fetch config for culprit verification. Build %d", firstFailedBuildID).Err()
 		}
@@ -125,7 +125,7 @@ func AnalyzeFailure(
 	}
 
 	// Nth-section analysis
-	shouldRunNthSection, err := nthsection.ShouldRunNthSectionAnalysis(c)
+	shouldRunNthSection, err := nthsection.ShouldRunNthSectionAnalysis(c, analysis)
 	if err != nil {
 		return nil, errors.Annotate(err, "couldn't fetch config for nthsection. Build %d", firstFailedBuildID).Err()
 	}

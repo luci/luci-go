@@ -73,9 +73,9 @@ func init() {
 	})
 }
 
-// updateProjects fetches fresh project-level configuration from LUCI Config
+// UpdateProjects fetches fresh project-level configuration from LUCI Config
 // service and stores it in datastore.
-func updateProjects(ctx context.Context) error {
+func UpdateProjects(ctx context.Context) error {
 	// Fetch freshest configs from the LUCI Config.
 	fetchedConfigs, err := fetchLatestProjectConfigs(ctx)
 	if err != nil {

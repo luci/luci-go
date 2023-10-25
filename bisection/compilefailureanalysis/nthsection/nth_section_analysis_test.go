@@ -140,243 +140,247 @@ func TestCreateSnapshot(t *testing.T) {
 
 func TestAnalyze(t *testing.T) {
 	t.Parallel()
-	c := memory.Use(context.Background())
-	testutil.UpdateIndices(c)
-	cl := testclock.New(testclock.TestTimeUTC)
-	c = clock.Set(c, cl)
+	Convey("TestAnalyze", t, func() {
+		c := memory.Use(context.Background())
+		testutil.UpdateIndices(c)
+		cl := testclock.New(testclock.TestTimeUTC)
+		c = clock.Set(c, cl)
 
-	// Set up the config
-	testCfg := &configpb.Config{
-		AnalysisConfig: &configpb.AnalysisConfig{
-			NthsectionEnabled:          true,
-			CulpritVerificationEnabled: true,
-		},
-	}
-	config.SetTestConfig(c, testCfg)
+		// Set up the config
+		projectCfg := config.CreatePlaceholderProjectConfig()
+		projectCfg.CompileAnalysisConfig.CulpritVerificationEnabled = true
+		projectCfg.CompileAnalysisConfig.NthsectionEnabled = true
+		cfg := map[string]*configpb.ProjectConfig{"testProject": projectCfg}
+		So(config.SetTestProjectConfig(c, cfg), ShouldBeNil)
 
-	gitilesResponse := model.ChangeLogResponse{
-		Log: []*model.ChangeLog{
-			{
-				Commit:  "3426",
-				Message: "Use TestActivationManager for all page activations\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472131\nReviewed-by: blah blah\n",
-			},
-			{
-				Commit:  "3425",
-				Message: "Second Commit\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472130\nReviewed-by: blah blah\n",
-			},
-			{
-				Commit:  "3424",
-				Message: "Third Commit\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472129\nReviewed-by: blah blah\n",
-			},
-		},
-	}
-	gitilesResponseStr, err := json.Marshal(gitilesResponse)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	// To test the case there is only 1 commit in blame list.
-	gitilesResponseSingleCommit := model.ChangeLogResponse{
-		Log: []*model.ChangeLog{
-			{
-				Commit:  "3426",
-				Message: "Use TestActivationManager for all page activations\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472131\nReviewed-by: blah blah\n",
-			},
-			{
-				Commit:  "3425",
-				Message: "Second Commit\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472130\nReviewed-by: blah blah\n",
-			},
-		},
-	}
-	gitilesResponseSingleCommitStr, err := json.Marshal(gitilesResponseSingleCommit)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	c = gitiles.MockedGitilesClientContext(c, map[string]string{
-		"https://chromium.googlesource.com/chromium/src/+log/12345^1..23456": string(gitilesResponseStr),
-		"https://chromium.googlesource.com/chromium/src/+log/12346^1..23457": string(gitilesResponseSingleCommitStr),
-	})
-
-	// Setup mock for buildbucket
-	ctl := gomock.NewController(t)
-	defer ctl.Finish()
-	mc := buildbucket.NewMockedClient(c, ctl)
-	c = mc.Ctx
-	res := &bbpb.Build{
-		Builder: &bbpb.BuilderID{
-			Project: "chromium",
-			Bucket:  "findit",
-			Builder: "single-revision",
-		},
-		Input: &bbpb.Build_Input{
-			GitilesCommit: &bbpb.GitilesCommit{
-				Host:    "host",
-				Project: "proj",
-				Id:      "id1",
-				Ref:     "ref",
-			},
-		},
-		Id:         123,
-		Status:     bbpb.Status_STARTED,
-		CreateTime: &timestamppb.Timestamp{Seconds: 100},
-		StartTime:  &timestamppb.Timestamp{Seconds: 101},
-	}
-	mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
-	mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).AnyTimes()
-
-	Convey("CheckBlameList", t, func() {
-		rr := &pb.RegressionRange{
-			LastPassed: &bbpb.GitilesCommit{
-				Host:    "chromium.googlesource.com",
-				Project: "chromium/src",
-				Id:      "12345",
-			},
-			FirstFailed: &bbpb.GitilesCommit{
-				Host:    "chromium.googlesource.com",
-				Project: "chromium/src",
-				Id:      "23456",
-			},
-		}
-
-		fb := &model.LuciFailedBuild{}
-		So(datastore.Put(c, fb), ShouldBeNil)
-		datastore.GetTestable(c).CatchupIndexes()
-
-		cf := &model.CompileFailure{
-			Build:         datastore.KeyForObj(c, fb),
-			OutputTargets: []string{"abc.xyz"},
-		}
-		So(datastore.Put(c, cf), ShouldBeNil)
-		datastore.GetTestable(c).CatchupIndexes()
-
-		cfa := &model.CompileFailureAnalysis{
-			Id:                     123,
-			CompileFailure:         datastore.KeyForObj(c, cf),
-			InitialRegressionRange: rr,
-			FirstFailedBuildId:     1000,
-		}
-		So(datastore.Put(c, cfa), ShouldBeNil)
-		datastore.GetTestable(c).CatchupIndexes()
-
-		nsa, err := Analyze(c, cfa)
-		So(err, ShouldBeNil)
-		So(nsa, ShouldNotBeNil)
-		datastore.GetTestable(c).CatchupIndexes()
-
-		// Fetch the nth section analysis
-		q := datastore.NewQuery("CompileNthSectionAnalysis")
-		nthsectionAnalyses := []*model.CompileNthSectionAnalysis{}
-		err = datastore.GetAll(c, q, &nthsectionAnalyses)
-		So(err, ShouldBeNil)
-		So(len(nthsectionAnalyses), ShouldEqual, 1)
-		nsa = nthsectionAnalyses[0]
-
-		So(nsa.BlameList, ShouldResembleProto, &pb.BlameList{
-			Commits: []*pb.BlameListSingleCommit{
+		gitilesResponse := model.ChangeLogResponse{
+			Log: []*model.ChangeLog{
 				{
-					Commit:      "3426",
-					ReviewTitle: "Use TestActivationManager for all page activations",
-					ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472131",
+					Commit:  "3426",
+					Message: "Use TestActivationManager for all page activations\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472131\nReviewed-by: blah blah\n",
 				},
 				{
-					Commit:      "3425",
-					ReviewTitle: "Second Commit",
-					ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472130",
+					Commit:  "3425",
+					Message: "Second Commit\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472130\nReviewed-by: blah blah\n",
+				},
+				{
+					Commit:  "3424",
+					Message: "Third Commit\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472129\nReviewed-by: blah blah\n",
 				},
 			},
-			LastPassCommit: &pb.BlameListSingleCommit{
-				Commit:      "3424",
-				ReviewTitle: "Third Commit",
-				ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472129",
-			},
-		})
-	})
-
-	Convey("Only 1 commit in blamelist", t, func() {
-		c, skdr := tq.TestingContext(c, nil)
-		rr := &pb.RegressionRange{
-			LastPassed: &bbpb.GitilesCommit{
-				Host:    "chromium.googlesource.com",
-				Project: "chromium/src",
-				Ref:     "refs/heads/main",
-				Id:      "12346",
-			},
-			FirstFailed: &bbpb.GitilesCommit{
-				Host:    "chromium.googlesource.com",
-				Project: "chromium/src",
-				Ref:     "refs/heads/main",
-				Id:      "23457",
-			},
+		}
+		gitilesResponseStr, err := json.Marshal(gitilesResponse)
+		if err != nil {
+			panic(err.Error())
 		}
 
-		fb := &model.LuciFailedBuild{}
-		So(datastore.Put(c, fb), ShouldBeNil)
-		datastore.GetTestable(c).CatchupIndexes()
-
-		cf := &model.CompileFailure{
-			Build:         datastore.KeyForObj(c, fb),
-			OutputTargets: []string{"abc.xyz"},
-		}
-		So(datastore.Put(c, cf), ShouldBeNil)
-		datastore.GetTestable(c).CatchupIndexes()
-
-		cfa := &model.CompileFailureAnalysis{
-			Id:                     124,
-			CompileFailure:         datastore.KeyForObj(c, cf),
-			InitialRegressionRange: rr,
-			FirstFailedBuildId:     1000,
-		}
-		So(datastore.Put(c, cfa), ShouldBeNil)
-		datastore.GetTestable(c).CatchupIndexes()
-
-		nsa, err := Analyze(c, cfa)
-		So(err, ShouldBeNil)
-		So(nsa, ShouldNotBeNil)
-		datastore.GetTestable(c).CatchupIndexes()
-
-		// Fetch the nth section analysis
-		q := datastore.NewQuery("CompileNthSectionAnalysis").Ancestor(datastore.KeyForObj(c, cfa))
-		nthsectionAnalyses := []*model.CompileNthSectionAnalysis{}
-		err = datastore.GetAll(c, q, &nthsectionAnalyses)
-		So(err, ShouldBeNil)
-		So(len(nthsectionAnalyses), ShouldEqual, 1)
-		nsa = nthsectionAnalyses[0]
-		So(nsa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
-		So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-		So(cfa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
-		So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_STARTED)
-
-		// Check that suspect was created.
-		q = datastore.NewQuery("Suspect")
-		suspects := []*model.Suspect{}
-		err = datastore.GetAll(c, q, &suspects)
-		So(err, ShouldBeNil)
-		So(len(suspects), ShouldEqual, 1)
-		suspect := suspects[0]
-		So(suspect, ShouldResemble, &model.Suspect{
-			Id:             suspect.Id,
-			Type:           model.SuspectType_NthSection,
-			ParentAnalysis: datastore.KeyForObj(c, nsa),
-			ReviewUrl:      "https://chromium-review.googlesource.com/c/chromium/src/+/3472131",
-			ReviewTitle:    "Use TestActivationManager for all page activations",
-			GitilesCommit: bbpb.GitilesCommit{
-				Host:    "chromium.googlesource.com",
-				Project: "chromium/src",
-				Id:      "3426",
-				Ref:     "refs/heads/main",
+		// To test the case there is only 1 commit in blame list.
+		gitilesResponseSingleCommit := model.ChangeLogResponse{
+			Log: []*model.ChangeLog{
+				{
+					Commit:  "3426",
+					Message: "Use TestActivationManager for all page activations\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472131\nReviewed-by: blah blah\n",
+				},
+				{
+					Commit:  "3425",
+					Message: "Second Commit\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472130\nReviewed-by: blah blah\n",
+				},
 			},
-			AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
-			VerificationStatus: model.SuspectVerificationStatus_VerificationScheduled,
+		}
+		gitilesResponseSingleCommitStr, err := json.Marshal(gitilesResponseSingleCommit)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		c = gitiles.MockedGitilesClientContext(c, map[string]string{
+			"https://chromium.googlesource.com/chromium/src/+log/12345^1..23456": string(gitilesResponseStr),
+			"https://chromium.googlesource.com/chromium/src/+log/12346^1..23457": string(gitilesResponseSingleCommitStr),
 		})
 
-		// Check that a task was created.
-		So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
-		resultsTask := skdr.Tasks().Payloads()[0].(*tpb.CulpritVerificationTask)
-		So(resultsTask, ShouldResembleProto, &tpb.CulpritVerificationTask{
-			AnalysisId: cfa.Id,
-			SuspectId:  suspect.Id,
-			ParentKey:  nsa.Suspect.Parent().Encode(),
+		// Setup mock for buildbucket
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := buildbucket.NewMockedClient(c, ctl)
+		c = mc.Ctx
+		res := &bbpb.Build{
+			Builder: &bbpb.BuilderID{
+				Project: "chromium",
+				Bucket:  "findit",
+				Builder: "single-revision",
+			},
+			Input: &bbpb.Build_Input{
+				GitilesCommit: &bbpb.GitilesCommit{
+					Host:    "host",
+					Project: "proj",
+					Id:      "id1",
+					Ref:     "ref",
+				},
+			},
+			Id:         123,
+			Status:     bbpb.Status_STARTED,
+			CreateTime: &timestamppb.Timestamp{Seconds: 100},
+			StartTime:  &timestamppb.Timestamp{Seconds: 101},
+		}
+		mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
+		mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).AnyTimes()
+
+		Convey("CheckBlameList", func() {
+			rr := &pb.RegressionRange{
+				LastPassed: &bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Id:      "12345",
+				},
+				FirstFailed: &bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Id:      "23456",
+				},
+			}
+
+			fb := &model.LuciFailedBuild{
+				LuciBuild: model.LuciBuild{Project: "testProject"},
+			}
+			So(datastore.Put(c, fb), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			cf := &model.CompileFailure{
+				Build:         datastore.KeyForObj(c, fb),
+				OutputTargets: []string{"abc.xyz"},
+			}
+			So(datastore.Put(c, cf), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			cfa := &model.CompileFailureAnalysis{
+				Id:                     123,
+				CompileFailure:         datastore.KeyForObj(c, cf),
+				InitialRegressionRange: rr,
+				FirstFailedBuildId:     1000,
+			}
+			So(datastore.Put(c, cfa), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			nsa, err := Analyze(c, cfa)
+			So(err, ShouldBeNil)
+			So(nsa, ShouldNotBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			// Fetch the nth section analysis
+			q := datastore.NewQuery("CompileNthSectionAnalysis")
+			nthsectionAnalyses := []*model.CompileNthSectionAnalysis{}
+			err = datastore.GetAll(c, q, &nthsectionAnalyses)
+			So(err, ShouldBeNil)
+			So(len(nthsectionAnalyses), ShouldEqual, 1)
+			nsa = nthsectionAnalyses[0]
+
+			So(nsa.BlameList, ShouldResembleProto, &pb.BlameList{
+				Commits: []*pb.BlameListSingleCommit{
+					{
+						Commit:      "3426",
+						ReviewTitle: "Use TestActivationManager for all page activations",
+						ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472131",
+					},
+					{
+						Commit:      "3425",
+						ReviewTitle: "Second Commit",
+						ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472130",
+					},
+				},
+				LastPassCommit: &pb.BlameListSingleCommit{
+					Commit:      "3424",
+					ReviewTitle: "Third Commit",
+					ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472129",
+				},
+			})
+		})
+
+		Convey("Only 1 commit in blamelist", func() {
+			c, skdr := tq.TestingContext(c, nil)
+			rr := &pb.RegressionRange{
+				LastPassed: &bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Ref:     "refs/heads/main",
+					Id:      "12346",
+				},
+				FirstFailed: &bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Ref:     "refs/heads/main",
+					Id:      "23457",
+				},
+			}
+
+			fb := &model.LuciFailedBuild{
+				LuciBuild: model.LuciBuild{Project: "testProject"},
+			}
+			So(datastore.Put(c, fb), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			cf := &model.CompileFailure{
+				Build:         datastore.KeyForObj(c, fb),
+				OutputTargets: []string{"abc.xyz"},
+			}
+			So(datastore.Put(c, cf), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			cfa := &model.CompileFailureAnalysis{
+				Id:                     124,
+				CompileFailure:         datastore.KeyForObj(c, cf),
+				InitialRegressionRange: rr,
+				FirstFailedBuildId:     1000,
+			}
+			So(datastore.Put(c, cfa), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			nsa, err := Analyze(c, cfa)
+			So(err, ShouldBeNil)
+			So(nsa, ShouldNotBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			// Fetch the nth section analysis
+			q := datastore.NewQuery("CompileNthSectionAnalysis").Ancestor(datastore.KeyForObj(c, cfa))
+			nthsectionAnalyses := []*model.CompileNthSectionAnalysis{}
+			err = datastore.GetAll(c, q, &nthsectionAnalyses)
+			So(err, ShouldBeNil)
+			So(len(nthsectionAnalyses), ShouldEqual, 1)
+			nsa = nthsectionAnalyses[0]
+			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
+			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+			So(cfa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
+			So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_STARTED)
+
+			// Check that suspect was created.
+			q = datastore.NewQuery("Suspect")
+			suspects := []*model.Suspect{}
+			err = datastore.GetAll(c, q, &suspects)
+			So(err, ShouldBeNil)
+			So(len(suspects), ShouldEqual, 1)
+			suspect := suspects[0]
+			So(suspect, ShouldResemble, &model.Suspect{
+				Id:             suspect.Id,
+				Type:           model.SuspectType_NthSection,
+				ParentAnalysis: datastore.KeyForObj(c, nsa),
+				ReviewUrl:      "https://chromium-review.googlesource.com/c/chromium/src/+/3472131",
+				ReviewTitle:    "Use TestActivationManager for all page activations",
+				GitilesCommit: bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Id:      "3426",
+					Ref:     "refs/heads/main",
+				},
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
+				VerificationStatus: model.SuspectVerificationStatus_VerificationScheduled,
+			})
+
+			// Check that a task was created.
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+			resultsTask := skdr.Tasks().Payloads()[0].(*tpb.CulpritVerificationTask)
+			So(resultsTask, ShouldResembleProto, &tpb.CulpritVerificationTask{
+				AnalysisId: cfa.Id,
+				SuspectId:  suspect.Id,
+				ParentKey:  nsa.Suspect.Parent().Encode(),
+			})
 		})
 	})
 }

@@ -25,18 +25,27 @@ import (
 	"go.chromium.org/luci/config/validation"
 )
 
-func TestValidateConfig(t *testing.T) {
+func TestValidateProjectConfig(t *testing.T) {
 	t.Parallel()
 
-	validate := func(cfg *configpb.Config) error {
+	validate := func(cfg *configpb.ProjectConfig) error {
 		ctx := validation.Context{Context: context.Background()}
-		validateConfig(&ctx, cfg)
+		validateProjectConfig(&ctx, cfg)
 		return ctx.Finalize()
 	}
 
-	Convey("Incomplete config is invalid", t, func() {
-		cfg := &configpb.Config{}
-		So(validate(cfg), ShouldErrLike, "missing Gerrit config")
+	Convey("missing compile analysis config", t, func() {
+		cfg := &configpb.ProjectConfig{CompileAnalysisConfig: &configpb.CompileAnalysisConfig{
+			GerritConfig: createPlaceHolderGerritConfig(),
+		}}
+		So(validate(cfg), ShouldErrLike, "missing test analysis config")
+	})
+
+	Convey("missing test analysis config", t, func() {
+		cfg := &configpb.ProjectConfig{TestAnalysisConfig: &configpb.TestAnalysisConfig{
+			GerritConfig: createPlaceHolderGerritConfig(),
+		}}
+		So(validate(cfg), ShouldErrLike, "missing compile analysis config")
 	})
 }
 

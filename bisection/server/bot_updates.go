@@ -235,7 +235,7 @@ func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRe
 		return nsa, nil
 	}
 
-	shouldRunNthSection, err := nthsection.ShouldRunNthSectionAnalysis(c)
+	shouldRunNthSection, err := nthsection.ShouldRunNthSectionAnalysis(c, cfa)
 	if err != nil {
 		return nsa, errors.Annotate(err, "couldn't fetch config for nthsection").Err()
 	}

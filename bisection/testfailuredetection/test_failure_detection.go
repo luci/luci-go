@@ -95,7 +95,7 @@ type analysisClient interface {
 // Run finds and group test failures to send to bisector.
 func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetectionTask) error {
 	// Checks if test failure detection is enabled.
-	enabled, err := isEnabled(ctx)
+	enabled, err := isEnabled(ctx, task.Project)
 	if err != nil {
 		return errors.Annotate(err, "is enabled").Err()
 	}
@@ -103,7 +103,7 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 		logging.Infof(ctx, "Dectection is not enabled")
 		return nil
 	}
-	excludedBuckets, err := getExcludedBuckets(ctx)
+	excludedBuckets, err := getExcludedBuckets(ctx, task.Project)
 	if err != nil {
 		return errors.Annotate(err, "get excluded buckets").Err()
 	}
@@ -305,16 +305,16 @@ func saveTestFailuresAndAnalysis(ctx context.Context, bundle *model.TestFailureB
 	}, nil)
 }
 
-func isEnabled(ctx context.Context) (bool, error) {
-	cfg, err := config.Get(ctx)
+func isEnabled(ctx context.Context, project string) (bool, error) {
+	cfg, err := config.Project(ctx, project)
 	if err != nil {
 		return false, err
 	}
 	return cfg.TestAnalysisConfig.GetDetectorEnabled(), nil
 }
 
-func getExcludedBuckets(ctx context.Context) ([]string, error) {
-	cfg, err := config.Get(ctx)
+func getExcludedBuckets(ctx context.Context, project string) ([]string, error) {
+	cfg, err := config.Project(ctx, project)
 	if err != nil {
 		return nil, err
 	}

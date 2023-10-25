@@ -205,10 +205,8 @@ func createCompileReruns(ctx context.Context, status buildbucketpb.Status, creat
 }
 
 func setDailyLimit(ctx context.Context, limit int) {
-	testCfg := &configpb.Config{
-		TestAnalysisConfig: &configpb.TestAnalysisConfig{
-			DailyLimit: uint32(limit),
-		},
-	}
-	So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+	projectCfg := config.CreatePlaceholderProjectConfig()
+	projectCfg.TestAnalysisConfig.DailyLimit = uint32(limit)
+	cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
+	So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 }

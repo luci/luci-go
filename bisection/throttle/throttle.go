@@ -47,14 +47,14 @@ const (
 var projectsToProcess = []string{"chromium"}
 
 func CronHandler(ctx context.Context) error {
-	dailyLimit, err := dailyLimit(ctx)
-	if err != nil {
-		return errors.Annotate(err, "daily limit").Err()
-	}
 	for _, project := range projectsToProcess {
 		count, err := dailyAnalysisCount(ctx, project)
 		if err != nil {
 			return errors.Annotate(err, "daily analysis count").Err()
+		}
+		dailyLimit, err := dailyLimit(ctx, project)
+		if err != nil {
+			return errors.Annotate(err, "daily limit").Err()
 		}
 		if count >= dailyLimit {
 			logging.Warningf(ctx, "%d reached daily limit %d for project %s", count, dailyLimit, project)
@@ -157,8 +157,8 @@ func allRerunDimensions(rerunBuilds []*model.SingleRerun, testReruns []*model.Te
 	return dims
 }
 
-func dailyLimit(ctx context.Context) (int, error) {
-	cfg, err := config.Get(ctx)
+func dailyLimit(ctx context.Context, project string) (int, error) {
+	cfg, err := config.Project(ctx, project)
 	if err != nil {
 		return 0, err
 	}

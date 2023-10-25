@@ -220,7 +220,7 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 	}
 
 	// Culprit not found yet. Still need to trigger more rerun.
-	enabled, err := bisection.IsEnabled(ctx)
+	enabled, err := bisection.IsEnabled(ctx, tfa.Project)
 	if err != nil {
 		return errors.Annotate(err, "is enabled").Err()
 	}

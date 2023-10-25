@@ -40,7 +40,7 @@ func TestProjectConfig(t *testing.T) {
 	t.Parallel()
 
 	Convey("SetTestProjectConfig updates context config", t, func() {
-		projectA := createPlaceholderProjectConfig()
+		projectA := CreatePlaceholderProjectConfig()
 		configs := make(map[string]*configpb.ProjectConfig)
 		configs["a"] = projectA
 
@@ -55,8 +55,8 @@ func TestProjectConfig(t *testing.T) {
 	})
 
 	Convey("With mocks", t, func() {
-		projectA := createPlaceholderProjectConfig()
-		projectB := createPlaceholderProjectConfig()
+		projectA := CreatePlaceholderProjectConfig()
+		projectB := CreatePlaceholderProjectConfig()
 		projectB.TestAnalysisConfig.ExcludedBuckets = []string{"try"}
 
 		configs := map[config.Set]cfgmem.Files{
@@ -71,7 +71,7 @@ func TestProjectConfig(t *testing.T) {
 
 		Convey("Update works", func() {
 			// Initial update.
-			err := updateProjects(ctx)
+			err := UpdateProjects(ctx)
 			So(err, ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
@@ -83,20 +83,20 @@ func TestProjectConfig(t *testing.T) {
 			So(projects["b"], ShouldResembleProto, projectB)
 
 			// Noop update.
-			err = updateProjects(ctx)
+			err = UpdateProjects(ctx)
 			So(err, ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Real update.
-			projectC := createPlaceholderProjectConfig()
-			newProjectB := createPlaceholderProjectConfig()
+			projectC := CreatePlaceholderProjectConfig()
+			newProjectB := CreatePlaceholderProjectConfig()
 			newProjectB.TestAnalysisConfig.ExcludedBuckets = []string{"try2"}
 			delete(configs, "projects/a")
 			configs["projects/b"]["${appid}.cfg"] = textPBMultiline.Format(newProjectB)
 			configs["projects/c"] = cfgmem.Files{
 				"${appid}.cfg": textPBMultiline.Format(projectC),
 			}
-			err = updateProjects(ctx)
+			err = UpdateProjects(ctx)
 			So(err, ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
@@ -137,7 +137,7 @@ func TestProjectConfig(t *testing.T) {
 
 		Convey("Validation works", func() {
 			configs["projects/b"]["${appid}.cfg"] = `bad data`
-			err := updateProjects(ctx)
+			err := UpdateProjects(ctx)
 			datastore.GetTestable(ctx).CatchupIndexes()
 			So(err, ShouldErrLike, "validation errors")
 
@@ -152,7 +152,7 @@ func TestProjectConfig(t *testing.T) {
 
 		Convey("Update retains existing config if new config is invalid", func() {
 			// Initial update.
-			err := updateProjects(ctx)
+			err := UpdateProjects(ctx)
 			So(err, ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
@@ -164,15 +164,15 @@ func TestProjectConfig(t *testing.T) {
 			So(projects["b"], ShouldResembleProto, projectB)
 
 			// Attempt to update with an invalid config for project B.
-			newProjectA := createPlaceholderProjectConfig()
+			newProjectA := CreatePlaceholderProjectConfig()
 			So(newProjectA.GetTestAnalysisConfig().GerritConfig.ActionsEnabled, ShouldBeTrue)
 			newProjectA.GetTestAnalysisConfig().GerritConfig.ActionsEnabled = false
-			newProjectB := createPlaceholderProjectConfig()
+			newProjectB := CreatePlaceholderProjectConfig()
 			So(newProjectB.GetTestAnalysisConfig().GerritConfig.MaxRevertibleCulpritAge, ShouldEqual, 1)
 			newProjectB.GetTestAnalysisConfig().GerritConfig.MaxRevertibleCulpritAge = 0
 			configs["projects/a"]["${appid}.cfg"] = textPBMultiline.Format(newProjectA)
 			configs["projects/b"]["${appid}.cfg"] = textPBMultiline.Format(newProjectB)
-			err = updateProjects(ctx)
+			err = UpdateProjects(ctx)
 			So(err, ShouldErrLike, "validation errors")
 			datastore.GetTestable(ctx).CatchupIndexes()
 
@@ -195,7 +195,7 @@ func TestProject(t *testing.T) {
 	t.Parallel()
 
 	Convey("Project", t, func() {
-		pjChromium := createPlaceholderProjectConfig()
+		pjChromium := CreatePlaceholderProjectConfig()
 		configs := map[string]*configpb.ProjectConfig{
 			"chromium": pjChromium,
 		}
@@ -215,39 +215,4 @@ func TestProject(t *testing.T) {
 			So(pj, ShouldBeNil)
 		})
 	})
-}
-
-func createPlaceholderProjectConfig() *configpb.ProjectConfig {
-	return &configpb.ProjectConfig{
-		CompileAnalysisConfig: &configpb.CompileAnalysisConfig{
-			CulpritVerificationEnabled: true,
-			NthsectionEnabled:          true,
-			GerritConfig:               createPlaceHolderGerritConfig(),
-		},
-		TestAnalysisConfig: &configpb.TestAnalysisConfig{
-			DetectorEnabled: true,
-			BisectorEnabled: true,
-			DailyLimit:      10,
-			GerritConfig:    createPlaceHolderGerritConfig(),
-		},
-	}
-}
-
-func createPlaceHolderGerritConfig() *configpb.GerritConfig {
-	return &configpb.GerritConfig{
-		ActionsEnabled: true,
-		CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-			Enabled:    true,
-			DailyLimit: 1,
-		},
-		SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
-			Enabled:    true,
-			DailyLimit: 1,
-		},
-		MaxRevertibleCulpritAge: 1,
-		NthsectionSettings: &configpb.GerritConfig_NthSectionSettings{
-			Enabled:                     true,
-			ActionWhenVerificationError: false,
-		},
-	}
 }

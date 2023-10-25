@@ -205,8 +205,8 @@ func TestRunBisector(t *testing.T) {
 	})
 
 	Convey("Bisection is not enabled", t, func() {
-		enableBisection(ctx, false)
 		tfa := testutil.CreateTestFailureAnalysis(ctx, nil)
+		enableBisection(ctx, false, tfa.Project)
 
 		err := Run(ctx, 1000, luciAnalysisClient, 1)
 		So(err, ShouldBeNil)
@@ -217,10 +217,10 @@ func TestRunBisector(t *testing.T) {
 	})
 
 	Convey("No primary failure", t, func() {
-		enableBisection(ctx, true)
 		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
 			ID: 1001,
 		})
+		enableBisection(ctx, true, tfa.Project)
 
 		err := Run(ctx, 1001, luciAnalysisClient, 1)
 		So(err, ShouldNotBeNil)
@@ -231,11 +231,11 @@ func TestRunBisector(t *testing.T) {
 	})
 
 	Convey("Unsupported project", t, func() {
-		enableBisection(ctx, true)
 		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
 			ID:      1002,
 			Project: "chromeos",
 		})
+		enableBisection(ctx, true, tfa.Project)
 
 		err := Run(ctx, 1002, luciAnalysisClient, 1)
 		So(err, ShouldBeNil)
@@ -246,7 +246,6 @@ func TestRunBisector(t *testing.T) {
 	})
 
 	Convey("unmatched number of the commit in the blamelist", t, func() {
-		enableBisection(ctx, true)
 		tf := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
 			ID:        101,
 			IsPrimary: true,
@@ -272,6 +271,7 @@ func TestRunBisector(t *testing.T) {
 			EndCommitHash:   "23456",
 			Priority:        160,
 		})
+		enableBisection(ctx, true, tfa.Project)
 
 		err := Run(ctx, 1002, luciAnalysisClient, 1)
 		So(err, ShouldNotBeNil)
@@ -282,7 +282,6 @@ func TestRunBisector(t *testing.T) {
 	})
 
 	Convey("Supported project", t, func() {
-		enableBisection(ctx, true)
 		tf := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
 			ID:        101,
 			IsPrimary: true,
@@ -308,6 +307,7 @@ func TestRunBisector(t *testing.T) {
 			EndCommitHash:   "23456",
 			Priority:        160,
 		})
+		enableBisection(ctx, true, tfa.Project)
 
 		// Link the test failure with test failure analysis.
 		tf.AnalysisKey = datastore.KeyForObj(ctx, tfa)
@@ -456,7 +456,6 @@ func TestRunBisector(t *testing.T) {
 	})
 
 	Convey("Only 1 commit in blame list", t, func() {
-		enableBisection(ctx, true)
 		tf := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
 			ID:        103,
 			IsPrimary: true,
@@ -482,6 +481,7 @@ func TestRunBisector(t *testing.T) {
 			EndCommitHash:   "23457",
 			Priority:        160,
 		})
+		enableBisection(ctx, true, tfa.Project)
 
 		// Link the test failure with test failure analysis.
 		tf.AnalysisKey = datastore.KeyForObj(ctx, tfa)
@@ -694,13 +694,11 @@ func TestCreateSnapshot(t *testing.T) {
 	})
 }
 
-func enableBisection(ctx context.Context, enabled bool) {
-	testCfg := &configpb.Config{
-		TestAnalysisConfig: &configpb.TestAnalysisConfig{
-			BisectorEnabled: enabled,
-		},
-	}
-	So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+func enableBisection(ctx context.Context, enabled bool, project string) {
+	projectCfg := config.CreatePlaceholderProjectConfig()
+	projectCfg.TestAnalysisConfig.BisectorEnabled = enabled
+	cfg := map[string]*configpb.ProjectConfig{project: projectCfg}
+	So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 }
 
 type fakeLUCIAnalysisClient struct {

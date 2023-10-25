@@ -152,13 +152,13 @@ func TestUpdate(t *testing.T) {
 		})
 
 		Convey("Tests did not run", func() {
-			enableBisection(ctx, true)
-			_, _, rerun, _ := setupTestAnalysisForTesting(ctx, 1)
+			tfa, _, rerun, _ := setupTestAnalysisForTesting(ctx, 1)
 			req := &pb.UpdateTestAnalysisProgressRequest{
 				Bbid:         8000,
 				BotId:        "bot",
 				RunSucceeded: false,
 			}
+			enableBisection(ctx, true, tfa.Project)
 
 			err := Update(ctx, req)
 			So(err, ShouldBeNil)
@@ -264,8 +264,8 @@ func TestUpdate(t *testing.T) {
 		})
 
 		Convey("Primary test failure skipped", func() {
-			enableBisection(ctx, false)
-			_, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, 2)
+			tfa, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, 2)
+			enableBisection(ctx, false, tfa.Project)
 
 			req := &pb.UpdateTestAnalysisProgressRequest{
 				Bbid:         8000,
@@ -316,8 +316,8 @@ func TestUpdate(t *testing.T) {
 		})
 
 		Convey("Primary test failure expected", func() {
-			enableBisection(ctx, true)
-			_, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, 4)
+			tfa, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, 4)
+			enableBisection(ctx, true, tfa.Project)
 
 			req := &pb.UpdateTestAnalysisProgressRequest{
 				Bbid:         8000,
@@ -395,8 +395,8 @@ func TestUpdate(t *testing.T) {
 		})
 
 		Convey("Primary test failure unexpected", func() {
-			enableBisection(ctx, true)
-			_, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, 4)
+			tfa, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, 4)
+			enableBisection(ctx, true, tfa.Project)
 
 			req := &pb.UpdateTestAnalysisProgressRequest{
 				Bbid:         8000,
@@ -474,8 +474,8 @@ func TestUpdate(t *testing.T) {
 		})
 
 		Convey("Ended nthsection should not get updated", func() {
-			enableBisection(ctx, true)
-			_, _, _, nsa := setupTestAnalysisForTesting(ctx, 1)
+			tfa, _, _, nsa := setupTestAnalysisForTesting(ctx, 1)
+			enableBisection(ctx, true, tfa.Project)
 
 			// Set nthsection to end.
 			nsa.RunStatus = pb.AnalysisRunStatus_ENDED
@@ -652,8 +652,8 @@ func TestScheduleNewRerun(t *testing.T) {
 	Convey("Nth section found culprit", t, func() {
 		culpritverification.RegisterTaskClass()
 		ctx, skdr := tq.TestingContext(ctx, nil)
-		enableBisection(ctx, true)
 		tfa, _, rerun, nsa := setupTestAnalysisForTesting(ctx, 1)
+		enableBisection(ctx, true, tfa.Project)
 		// Commit 1 pass -> commit 0 is the culprit.
 		rerun.LUCIBuild.GitilesCommit = &bbpb.GitilesCommit{
 			Id:      "commit1",
@@ -705,8 +705,8 @@ func TestScheduleNewRerun(t *testing.T) {
 	})
 
 	Convey("Nth section not found", t, func() {
-		enableBisection(ctx, true)
 		tfa, _, rerun, nsa := setupTestAnalysisForTesting(ctx, 1)
+		enableBisection(ctx, true, tfa.Project)
 		// Commit 1 pass -> commit 0 is the culprit.
 		rerun.LUCIBuild.GitilesCommit = &bbpb.GitilesCommit{
 			Id:      "commit1",
@@ -735,8 +735,8 @@ func TestScheduleNewRerun(t *testing.T) {
 	})
 
 	Convey("regression range conflicts", t, func() {
-		enableBisection(ctx, true)
 		tfa, _, rerun, nsa := setupTestAnalysisForTesting(ctx, 1)
+		enableBisection(ctx, true, tfa.Project)
 		// Commit 0 pass -> no culprit.
 		rerun.LUCIBuild.GitilesCommit = &bbpb.GitilesCommit{
 			Id:      "commit0",
@@ -766,7 +766,7 @@ func TestScheduleNewRerun(t *testing.T) {
 
 	Convey("Nth section should schedule another run", t, func() {
 		tfa, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, 1)
-		enableBisection(ctx, true)
+		enableBisection(ctx, true, tfa.Project)
 		// Commit 1 pass -> commit 0 is the culprit.
 		rerun.LUCIBuild.GitilesCommit = &bbpb.GitilesCommit{
 			Id:      "commit2",
@@ -876,13 +876,11 @@ func setupTestAnalysisForTesting(ctx context.Context, numTest int) (*model.TestF
 	return tfa, tfs, rerun, nsa
 }
 
-func enableBisection(ctx context.Context, enabled bool) {
-	testCfg := &configpb.Config{
-		TestAnalysisConfig: &configpb.TestAnalysisConfig{
-			BisectorEnabled: enabled,
-		},
-	}
-	So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+func enableBisection(ctx context.Context, enabled bool, project string) {
+	projectCfg := config.CreatePlaceholderProjectConfig()
+	projectCfg.TestAnalysisConfig.BisectorEnabled = enabled
+	cfg := map[string]*configpb.ProjectConfig{project: projectCfg}
+	So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 }
 
 func mockBuildBucket(mc *buildbucket.MockedClient) {

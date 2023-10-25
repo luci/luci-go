@@ -35,7 +35,7 @@ import (
 //   - the reason it should not be created if applicable; and
 //   - the error if one occurred.
 func isCulpritRevertible(ctx context.Context, gerritClient *gerrit.Client,
-	culprit *gerritpb.ChangeInfo, culpritModel *model.Suspect) (bool, string, error) {
+	culprit *gerritpb.ChangeInfo, culpritModel *model.Suspect, project string) (bool, string, error) {
 	// If it is test failure, we only create revert if it belongs to a builder being watched
 	// by sheriffs.
 	if culpritModel.AnalysisType == bisectionpb.AnalysisType_TEST_FAILURE_ANALYSIS {
@@ -75,7 +75,7 @@ func isCulpritRevertible(ctx context.Context, gerritClient *gerrit.Client,
 		return false, "there are merged changes depending on it", nil
 	}
 	// Check if LUCI Bisection's Gerrit config allows revert creation
-	gerritCfg, err := config.GetGerritCfgForSuspect(ctx, culpritModel)
+	gerritCfg, err := config.GetGerritCfgForSuspect(ctx, culpritModel, project)
 	if err != nil {
 		return false, "", errors.Annotate(err, "error fetching configs").Err()
 	}

@@ -21,20 +21,6 @@ import (
 	"go.chromium.org/luci/config/validation"
 )
 
-// Validates the service-wide configuration for LUCI Bisection
-func validateConfig(ctx *validation.Context, cfg *configpb.Config) {
-	if cfg.GerritConfig == nil {
-		ctx.Errorf("missing Gerrit config")
-		return
-	}
-	if cfg.AnalysisConfig == nil {
-		ctx.Errorf("missing Analysis config")
-		return
-	}
-	validateGerritConfig(ctx, cfg.GerritConfig)
-	// TODO(beining@): validate test analysis config.
-}
-
 func validateTestAnalysisConfig(ctx *validation.Context, testAnalysisConfig *configpb.TestAnalysisConfig) {
 	ctx.Enter("test_analysis_config")
 	defer ctx.Exit()
@@ -95,11 +81,6 @@ func validateProjectConfigRaw(ctx *validation.Context, content string) *configpb
 }
 
 func validateProjectConfig(ctx *validation.Context, cfg *configpb.ProjectConfig) {
-	// TODO(beining@): invalidate empty test analysis config and compile analysis config.
-	if cfg.TestAnalysisConfig != nil {
-		validateTestAnalysisConfig(ctx, cfg.TestAnalysisConfig)
-	}
-	if cfg.CompileAnalysisConfig != nil {
-		validateCompileAnalysisConfig(ctx, cfg.CompileAnalysisConfig)
-	}
+	validateTestAnalysisConfig(ctx, cfg.TestAnalysisConfig)
+	validateCompileAnalysisConfig(ctx, cfg.CompileAnalysisConfig)
 }

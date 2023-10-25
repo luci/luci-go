@@ -173,10 +173,14 @@ func isSuspectGerritActionReady(ctx context.Context, culpritModel *model.Suspect
 // when the culprit satisfies the critieria of the action.
 // A culprit is identified as a result of a heuristic analysis or an nthsection analysis.
 func TakeCulpritAction(ctx context.Context, culpritModel *model.Suspect) error {
-	// Get gerrit config.
-	gerritConfig, err := config.GetGerritCfgForSuspect(ctx, culpritModel)
+	project, err := datastoreutil.GetProjectForSuspect(ctx, culpritModel)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "get project for suspect").Err()
+	}
+	// Get gerrit config.
+	gerritConfig, err := config.GetGerritCfgForSuspect(ctx, culpritModel, project)
+	if err != nil {
+		return errors.Annotate(err, "get gerrit config for suspect").Err()
 	}
 	// Check if Gerrit actions are disabled
 	if !gerritConfig.ActionsEnabled {
@@ -275,7 +279,7 @@ func TakeCulpritAction(ctx context.Context, culpritModel *model.Suspect) error {
 		return nil
 	}
 
-	shouldCreateRevert, reason, err := isCulpritRevertible(ctx, gerritClient, culprit, culpritModel)
+	shouldCreateRevert, reason, err := isCulpritRevertible(ctx, gerritClient, culprit, culpritModel, project)
 	if err != nil {
 		logging.Errorf(ctx, err.Error())
 		return err
@@ -378,7 +382,7 @@ func TakeCulpritAction(ctx context.Context, culpritModel *model.Suspect) error {
 		return nil
 	}
 
-	shouldCommit, reason, err := canCommit(ctx, culprit, culpritModel)
+	shouldCommit, reason, err := canCommit(ctx, culprit, culpritModel, project)
 	if err != nil {
 		logging.Errorf(ctx, err.Error())
 		return err
