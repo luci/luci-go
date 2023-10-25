@@ -37,7 +37,8 @@ message Event {
     RunFinished run_finished = 5;
 
     PurgeCompleted purge_completed = 6;
-    TriggeringCLsCompleted triggering_cls_completed = 8;
+    TriggeringCLsCompleted triggering_cls_completed = 8 [deprecated = true];
+    TriggeringCLDepsCompleted triggering_cl_deps_completed = 9;
   }
 }
 
@@ -86,3 +87,22 @@ message TriggeringCLsCompleted {
   repeated OpResult failed = 2;
   repeated OpResult skipped = 3;
 }
+
+message TriggeringCLDepsCompleted {
+  // Operational ID, uniquely identifying a given TriggeringCLDepsCompleted
+  // event in the LUCI project.
+  string operation_id = 1;
+  // ID of the Originating CL that issued the TriggeringCLDeps task.
+  int64 origin = 2;
+  // IDs of the dependent CLs that cltriggerer successfully triggered.
+  repeated int64 succeeded = 3;
+  // CLs that cltriggerer failed to trigger.
+  repeated cv.internal.changelist.CLError.TriggerDeps failed = 4;
+  // CLs that cltriggerer couldn't trigger.
+  //
+  // It's either cltriggerer couldn't even attempt the trigger, or
+  // attempted but the request failed transiently.
+  repeated int64 incompleted = 5;
+}
+
+

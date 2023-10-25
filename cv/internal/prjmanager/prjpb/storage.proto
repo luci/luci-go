@@ -89,7 +89,13 @@ message PState {
   // A TriggeringCL is kept in PState until the triggering process stops.
   //
   // Sorted by CL ID.
-  repeated TriggeringCL triggering_cls = 14;
+  repeated TriggeringCL triggering_cls = 14 [deprecated = true];
+  // TriggeringCLDeps are the CLs of which deps are being triggered.
+  //
+  // They are tracked in PState to avoid creating duplicate triggering tasks.
+  //
+  // Sorted by the origin ID.
+  repeated TriggeringCLDeps triggering_cl_deps = 15;
 
   // If true, components partition must be redone as soon as possible.
   bool repartition_required = 21;
@@ -333,6 +339,27 @@ message TriggeringCL {
   // TQ task for the triggering operation for the CL.
   google.protobuf.Timestamp deadline = 4;
   // trigger is the trigger information of the original CL.
+  cv.internal.run.Trigger trigger = 5;
+}
+
+// TriggeringCLDeps propagates the trigger to the deps of a given CL.
+message TriggeringCLDeps {
+  // Origin CL of which dep CLs are to propagate the trigger to.
+  int64 origin_clid = 1;
+  // Dep CLs to propagate the trigger to.
+  repeated int64 dep_clids = 2;
+  // Operation ID uniquely identifies this op within the project.
+  string operation_id = 3;
+  // Deadline is obeyed by the TQ task handler.
+  //
+  // TQ task SHOULD NOT modify a CL (e.g., via Gerrit RPCs) beyond this point.
+  // If PM doesn't receive TriggerCLDepsCompleted event before
+  // this deadline + grace period, PM will consider the task expired and
+  // the task will be removed from PState, so that the deps will be re-triaged
+  // and PM may schedule another TQ task for the triggering operation
+  // for the CL.
+  google.protobuf.Timestamp deadline = 4;
+  // Trigger to propagate.
   cv.internal.run.Trigger trigger = 5;
 }
 

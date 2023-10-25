@@ -71,3 +71,11 @@ message TriggeringCLsTask {
   // CLs to trigger.
   repeated TriggeringCL triggering_cls = 2;
 }
+
+// TriggeringDepsTask starts a task to trigger the deps of a CL.
+//
+// Queue: "trigger-project-cl-deps"
+message TriggeringCLDepsTask {
+  string luci_project = 1;
+  TriggeringCLDeps triggering_cl_deps = 2;
+}

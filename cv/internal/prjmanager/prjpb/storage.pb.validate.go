@@ -202,6 +202,40 @@ func (m *PState) validate(all bool) error {
 
 	}
 
+	for idx, item := range m.GetTriggeringClDeps() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, PStateValidationError{
+						field:  fmt.Sprintf("TriggeringClDeps[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, PStateValidationError{
+						field:  fmt.Sprintf("TriggeringClDeps[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return PStateValidationError{
+					field:  fmt.Sprintf("TriggeringClDeps[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
 	// no validation rules for RepartitionRequired
 
 	for idx, item := range m.GetCreatedPruns() {
@@ -1327,6 +1361,168 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = TriggeringCLValidationError{}
+
+// Validate checks the field values on TriggeringCLDeps with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *TriggeringCLDeps) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on TriggeringCLDeps with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// TriggeringCLDepsMultiError, or nil if none found.
+func (m *TriggeringCLDeps) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *TriggeringCLDeps) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for OriginClid
+
+	// no validation rules for OperationId
+
+	if all {
+		switch v := interface{}(m.GetDeadline()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, TriggeringCLDepsValidationError{
+					field:  "Deadline",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, TriggeringCLDepsValidationError{
+					field:  "Deadline",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetDeadline()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return TriggeringCLDepsValidationError{
+				field:  "Deadline",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetTrigger()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, TriggeringCLDepsValidationError{
+					field:  "Trigger",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, TriggeringCLDepsValidationError{
+					field:  "Trigger",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetTrigger()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return TriggeringCLDepsValidationError{
+				field:  "Trigger",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return TriggeringCLDepsMultiError(errors)
+	}
+
+	return nil
+}
+
+// TriggeringCLDepsMultiError is an error wrapping multiple validation errors
+// returned by TriggeringCLDeps.ValidateAll() if the designated constraints
+// aren't met.
+type TriggeringCLDepsMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m TriggeringCLDepsMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m TriggeringCLDepsMultiError) AllErrors() []error { return m }
+
+// TriggeringCLDepsValidationError is the validation error returned by
+// TriggeringCLDeps.Validate if the designated constraints aren't met.
+type TriggeringCLDepsValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e TriggeringCLDepsValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e TriggeringCLDepsValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e TriggeringCLDepsValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e TriggeringCLDepsValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e TriggeringCLDepsValidationError) ErrorName() string { return "TriggeringCLDepsValidationError" }
+
+// Error satisfies the builtin error interface
+func (e TriggeringCLDepsValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sTriggeringCLDeps.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = TriggeringCLDepsValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = TriggeringCLDepsValidationError{}
 
 // Validate checks the field values on PurgeReason with the rules defined in
 // the proto definition for this message. If any rules are violated, the first

@@ -42,10 +42,11 @@ const (
 	// all if the TQ is overloaded.
 	MaxAcceptableDelay = 60 * time.Second
 
-	ManageProjectTaskClass     = "manage-project"
-	KickManageProjectTaskClass = "kick-" + ManageProjectTaskClass
-	PurgeProjectCLTaskClass    = "purge-project-cl"
-	TriggerProjectCLsTaskClass = "trigger-project-cls"
+	ManageProjectTaskClass        = "manage-project"
+	KickManageProjectTaskClass    = "kick-" + ManageProjectTaskClass
+	PurgeProjectCLTaskClass       = "purge-project-cl"
+	TriggerProjectCLsTaskClass    = "trigger-project-cls"
+	TriggerProjectCLDepsTaskClass = "trigger-project-cl-deps"
 )
 
 // TasksBinding binds Project Manager tasks to a TQ Dispatcher.
@@ -53,11 +54,12 @@ const (
 // This struct exists to separate task creation and handling,
 // which in turns avoids circular dependency.
 type TasksBinding struct {
-	ManageProject     tq.TaskClassRef
-	KickManageProject tq.TaskClassRef
-	PurgeProjectCL    tq.TaskClassRef
-	TriggerProjectCLs tq.TaskClassRef
-	TQDispatcher      *tq.Dispatcher
+	ManageProject        tq.TaskClassRef
+	KickManageProject    tq.TaskClassRef
+	PurgeProjectCL       tq.TaskClassRef
+	TriggerProjectCLs    tq.TaskClassRef
+	TriggerProjectCLDeps tq.TaskClassRef
+	TQDispatcher         *tq.Dispatcher
 }
 
 func Register(tqd *tq.Dispatcher) TasksBinding {
@@ -92,6 +94,14 @@ func Register(tqd *tq.Dispatcher) TasksBinding {
 			ID:           TriggerProjectCLsTaskClass,
 			Prototype:    &TriggeringCLsTask{},
 			Queue:        "trigger-project-cls",
+			Kind:         tq.Transactional,
+			Quiet:        true,
+			QuietOnError: true,
+		}),
+		TriggerProjectCLDeps: tqd.RegisterTaskClass(tq.TaskClass{
+			ID:           TriggerProjectCLDepsTaskClass,
+			Prototype:    &TriggeringCLDepsTask{},
+			Queue:        "trigger-project-cl-deps",
 			Kind:         tq.Transactional,
 			Quiet:        true,
 			QuietOnError: true,

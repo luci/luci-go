@@ -602,3 +602,136 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = TriggeringCLsTaskValidationError{}
+
+// Validate checks the field values on TriggeringCLDepsTask with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *TriggeringCLDepsTask) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on TriggeringCLDepsTask with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// TriggeringCLDepsTaskMultiError, or nil if none found.
+func (m *TriggeringCLDepsTask) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *TriggeringCLDepsTask) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for LuciProject
+
+	if all {
+		switch v := interface{}(m.GetTriggeringClDeps()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, TriggeringCLDepsTaskValidationError{
+					field:  "TriggeringClDeps",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, TriggeringCLDepsTaskValidationError{
+					field:  "TriggeringClDeps",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetTriggeringClDeps()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return TriggeringCLDepsTaskValidationError{
+				field:  "TriggeringClDeps",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return TriggeringCLDepsTaskMultiError(errors)
+	}
+
+	return nil
+}
+
+// TriggeringCLDepsTaskMultiError is an error wrapping multiple validation
+// errors returned by TriggeringCLDepsTask.ValidateAll() if the designated
+// constraints aren't met.
+type TriggeringCLDepsTaskMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m TriggeringCLDepsTaskMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m TriggeringCLDepsTaskMultiError) AllErrors() []error { return m }
+
+// TriggeringCLDepsTaskValidationError is the validation error returned by
+// TriggeringCLDepsTask.Validate if the designated constraints aren't met.
+type TriggeringCLDepsTaskValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e TriggeringCLDepsTaskValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e TriggeringCLDepsTaskValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e TriggeringCLDepsTaskValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e TriggeringCLDepsTaskValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e TriggeringCLDepsTaskValidationError) ErrorName() string {
+	return "TriggeringCLDepsTaskValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e TriggeringCLDepsTaskValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sTriggeringCLDepsTask.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = TriggeringCLDepsTaskValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = TriggeringCLDepsTaskValidationError{}
