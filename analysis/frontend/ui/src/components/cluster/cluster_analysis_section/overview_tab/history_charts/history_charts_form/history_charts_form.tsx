@@ -49,11 +49,6 @@ const MenuProps = {
 
 export const HISTORY_TIME_RANGE_OPTIONS: HistoryTimeRange[] = [
   {
-    id: '7d',
-    label: '7 days',
-    value: 7,
-  },
-  {
     id: '30d',
     label: '30 days',
     value: 30,
