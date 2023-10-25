@@ -1437,11 +1437,18 @@ func TestOnTriggeringCLsCompleted(t *testing.T) {
 			opID := dl.AsTime().Unix()
 
 			So(tasks.payloads, ShouldHaveLength, 1)
+			tr := &run.Triggers{
+				CqVoteTrigger: &run.Trigger{
+					Mode: string(run.FullRun),
+					Time: s1.PB.GetPCL(clid2).GetTriggers().GetCqVoteTrigger().GetTime(),
+				},
+			}
 			So(tasks.payloads[0], ShouldResembleProto, &prjpb.PurgeCLTask{
 				PurgingCl: &prjpb.PurgingCL{
 					Clid:        clid2,
 					Deadline:    dl,
 					OperationId: fmt.Sprintf("%d-%d", opID, clid2),
+					ApplyTo:     &prjpb.PurgingCL_Triggers{Triggers: tr},
 				},
 				PurgeReasons: []*prjpb.PurgeReason{
 					{
@@ -1455,14 +1462,7 @@ func TestOnTriggeringCLsCompleted(t *testing.T) {
 								},
 							},
 						},
-						ApplyTo: &prjpb.PurgeReason_Triggers{
-							Triggers: &run.Triggers{
-								CqVoteTrigger: &run.Trigger{
-									Mode: string(run.FullRun),
-									Time: s1.PB.GetPCL(clid2).GetTriggers().GetCqVoteTrigger().GetTime(),
-								},
-							},
-						},
+						ApplyTo: &prjpb.PurgeReason_Triggers{Triggers: tr},
 					},
 				},
 			})

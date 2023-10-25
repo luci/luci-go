@@ -221,8 +221,8 @@ func maybeMCERun(ctx context.Context, s *State, r *prjpb.PRun) bool {
 		// Such PCL should not be a valid MCE run.
 		return false
 	case len(s.configGroups) == 0:
-		// This may be a bug in CV, but ok.
-		return false
+		// This may be a bug in CV, but ok. It is not CombineCl.
+		return true
 	case s.configGroups[idxs[0]].Content.GetCombineCls() != nil:
 		return false
 	}

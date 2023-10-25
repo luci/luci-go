@@ -583,7 +583,14 @@ func makePurgeCLTasksForFailedTriggerDeps(ctx context.Context, s *State, failed 
 						},
 					},
 				}},
-				PurgingCl: &prjpb.PurgingCL{Clid: origin},
+				PurgingCl: &prjpb.PurgingCL{
+					Clid: origin,
+					ApplyTo: &prjpb.PurgingCL_Triggers{
+						Triggers: &run.Triggers{
+							CqVoteTrigger: triggerToPurge,
+						},
+					},
+				},
 			}
 		}
 	}
@@ -651,6 +658,11 @@ func makePurgeCLTasksForFailedMCERuns(ctx context.Context, s *State, failed []*p
 					// minimize # of emails sent out by the Purge opertaions.
 					// One mail for the probably-top CL should be enough.
 					Notification: &prjpb.PurgingCL_Notification{},
+					ApplyTo: &prjpb.PurgingCL_Triggers{
+						Triggers: &run.Triggers{
+							CqVoteTrigger: trigger,
+						},
+					},
 				},
 			}
 		}
