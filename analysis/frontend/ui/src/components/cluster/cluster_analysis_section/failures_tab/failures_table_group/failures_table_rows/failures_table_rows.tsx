@@ -236,7 +236,7 @@ const FailuresTableRows = ({
                 </IconButton>
               </div>
               {/** Place test name or variant value in a separate span to allow better testability */}
-              <div style={{ flex: '1 1 auto', cursor: 'pointer', wordBreak: 'break-word' }} onClick={e => { e.preventDefault(); toggleExpand(); }}>{group.key.value || 'none'}</div>
+              <div style={{ flex: '1 1 auto', cursor: 'pointer', wordBreak: 'break-word' }} onClick={() => toggleExpand()}>{group.key.value || 'none'}</div>
               <div style={{ flex: '0 0 auto', width: '40px', textAlign: 'center' }}>
                 {group.key.type == 'test' ?
                   <Tooltip title={<><b>Test History</b><br />View all recent results of this test including passes and failures in other clusters. Results are filtered by the selected 'Group By' fields.</>}>
@@ -251,7 +251,9 @@ const FailuresTableRows = ({
             </div>
           </NarrowTableCell>
         )}
-        <NarrowTableCell data-testid="failure_table_group_presubmitrejects">
+        <NarrowTableCell data-testid="failure_table_group_presubmitrejects"
+          style={{ cursor: group.failure ? undefined : 'pointer' }}
+          onClick={() => !group.failure && toggleExpand()}>
           {group.failure ? (
             <>
               {group.failure.presubmitRun ? (
@@ -264,10 +266,26 @@ const FailuresTableRows = ({
             group.presubmitRejects
           )}
         </NarrowTableCell>
-        <NarrowTableCell className="number">{group.invocationFailures}</NarrowTableCell>
-        <NarrowTableCell className="number">{group.criticalFailuresExonerated}</NarrowTableCell>
-        <NarrowTableCell className="number">{group.failures}</NarrowTableCell>
-        <NarrowTableCell>{dayjs(group.latestFailureTime).fromNow()}</NarrowTableCell>
+        <NarrowTableCell className="number"
+          style={{ cursor: group.failure ? undefined : 'pointer' }}
+          onClick={() => !group.failure && toggleExpand()}>
+          {group.invocationFailures}
+        </NarrowTableCell>
+        <NarrowTableCell className="number"
+          style={{ cursor: group.failure ? undefined : 'pointer' }}
+          onClick={() => !group.failure && toggleExpand()}>
+          {group.criticalFailuresExonerated}
+        </NarrowTableCell>
+        <NarrowTableCell className="number"
+          style={{ cursor: group.failure ? undefined : 'pointer' }}
+          onClick={() => !group.failure && toggleExpand()}>
+          {group.failures}
+        </NarrowTableCell>
+        <NarrowTableCell
+          style={{ cursor: group.failure ? undefined : 'pointer' }}
+          onClick={() => !group.failure && toggleExpand()}>
+          {dayjs(group.latestFailureTime).fromNow()}
+        </NarrowTableCell>
       </TableRow>
       {/** Render the remaining rows in the group */}
       {expanded && children}
