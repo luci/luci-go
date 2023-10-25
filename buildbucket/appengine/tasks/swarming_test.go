@@ -32,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -332,6 +333,7 @@ func TestSyncBuild(t *testing.T) {
 		ctx = memory.UseWithAppID(ctx, "dev~app-id")
 		ctx = txndefer.FilterRDS(ctx)
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		ctx = metrics.WithBuilder(ctx, "proj", "bucket", "builder")
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, sch := tq.TestingContext(ctx, nil)
@@ -342,6 +344,8 @@ func TestSyncBuild(t *testing.T) {
 		}
 		ctx = secrets.Use(ctx, store)
 		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+		metricsStore := tsmon.Store(ctx)
 
 		b := &model.Build{
 			ID: 123,
@@ -919,9 +923,14 @@ func TestSyncBuild(t *testing.T) {
 					if protoutil.IsEnded(syncedBuild.Status) {
 						// FinalizeResultDB, ExportBigQuery, NotifyPubSub, NotifyPubSubGoProxy and a continuation sync task.
 						So(sch.Tasks(), ShouldHaveLength, 5)
+
+						v2fs := []any{pb.Status_name[int32(syncedBuild.Status)], "None"}
+						So(metricsStore.Get(ctx, metrics.V2.BuildCountCompleted, time.Time{}, v2fs), ShouldEqual, 1)
+
 					} else if syncedBuild.Status == pb.Status_STARTED {
 						// NotifyPubSub, NotifyPubSubGoProxy and a continuation sync task.
 						So(sch.Tasks(), ShouldHaveLength, 3)
+						So(metricsStore.Get(ctx, metrics.V2.BuildCountStarted, time.Time{}, []any{"None"}), ShouldEqual, 1)
 					}
 					syncedBuildStatus := &model.BuildStatus{Build: datastore.KeyForObj(ctx, syncedBuild)}
 					So(datastore.Get(ctx, syncedBuildStatus), ShouldBeNil)
@@ -1010,8 +1019,11 @@ func TestSubNotify(t *testing.T) {
 		ctx = memory.UseWithAppID(ctx, "dev~app-id")
 		ctx = txndefer.FilterRDS(ctx)
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		ctx = metrics.WithBuilder(ctx, "proj", "bucket", "builder")
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+		store := tsmon.Store(ctx)
 		ctx, _ = tq.TestingContext(ctx, nil)
 		ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
 			"swarming-pubsub-msg-id": cachingtest.NewBlobCache(),
@@ -1244,6 +1256,10 @@ func TestSubNotify(t *testing.T) {
 
 			// FinalizeResultDB, ExportBigQuery, NotifyPubSub, NotifyPubSubGoProxy tasks.
 			So(sch.Tasks(), ShouldHaveLength, 4)
+
+			// BuildCompleted metric should be set to 1 with SUCCESS.
+			v2fs := []any{pb.Status_name[int32(syncedBuild.Status)], "None"}
+			So(store.Get(ctx, metrics.V2.BuildCountCompleted, time.Time{}, v2fs), ShouldEqual, 1)
 		})
 
 		Convey("status unchanged(in STARTED) while bot dimensions changed", func() {

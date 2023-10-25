@@ -351,6 +351,7 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 		shouldUpdate := false
 		if bs != nil {
 			shouldUpdate = true
+			statusChanged = true
 		}
 		if bs == nil && botDimsChanged && bld.Proto.Status == pb.Status_STARTED {
 			shouldUpdate = true
