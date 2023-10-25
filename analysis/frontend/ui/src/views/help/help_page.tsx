@@ -122,7 +122,7 @@ const HelpPage = () => {
           </Typography>
         </AccordionDetails>
       </Accordion>
-      <Accordion expanded={location.hash === '#find-rule'} onChange={handleChange('find-rule')}> 
+      <Accordion expanded={location.hash === '#find-rule'} onChange={handleChange('find-rule')}>
         <AccordionSummary>
           <AccordionHeading>
             How do I find the failure association rule for a bug?
@@ -218,8 +218,8 @@ const HelpPage = () => {
                 You can sort the table and use the <em>group by</em> feature to help you.
               </li>
               <li>
-                Review the history of the problematic test variants using the history (<HistoryIcon sx={{verticalAlign: 'middle'}}/>) button.
-                Alternatively, look at examples by expanding the node for the test with the expand (<ChevronRightIcon sx={{verticalAlign: 'middle'}} />) button
+                Review the history of the problematic test variants using the history (<HistoryIcon sx={{ verticalAlign: 'middle' }}/>) button.
+                Alternatively, look at examples by expanding the node for the test with the expand (<ChevronRightIcon sx={{ verticalAlign: 'middle' }} />) button
                 and clicking on the build link in each row.<br/>
                 <img src={recentFailuresImageUrl} alt="The recent failures panel has links to test history and failure examples."></img>
               </li>

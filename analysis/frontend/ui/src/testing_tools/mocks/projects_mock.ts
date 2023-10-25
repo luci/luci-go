@@ -68,7 +68,7 @@ export const createMockProjectConfig = (): ProjectConfig => {
       monorail: {
         project: 'chromium',
         displayPrefix: 'crbug.com',
-      }
+      },
     },
   };
 };

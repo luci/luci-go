@@ -126,7 +126,6 @@ const FailuresTable = ({
 
   useEffect(() => {
     if (failures) {
-      console.log('effect')
       const variantGroups = countDistictVariantValues(failures);
       setVariantGroups(variantGroups);
 
