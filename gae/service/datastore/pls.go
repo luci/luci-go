@@ -45,6 +45,7 @@ import (
 //   - *Key
 //   - any Type whose underlying type is one of the above types
 //   - Types which implement PropertyConverter on (*Type)
+//   - Types which implement proto.Message
 //   - A struct composed of the above types (except for nested slices)
 //   - A slice of any of the above types
 //
@@ -67,26 +68,61 @@ import (
 //	   types) are indexed.
 //
 //	`gae:"[fieldName][,nocompress|zstd|legacy]"` -- for fields of type
-//	  `protobuf.Message`. Protobuf fields are _never_ indexed, but are stored
-//	  as encoded blobs.
+//	   `proto.Message`. Protobuf fields are _never_ indexed, but are stored
+//	   as encoded blobs.
 //
-//	  Like for other fields, `fieldName` is optional, and defaults to the Go
-//	  struct field name if omitted.
+//	   Like for other fields, `fieldName` is optional, and defaults to the Go
+//	   struct field name if omitted.
 //
-//	  By default (with no options), protos are stored with binary encoding
-//	  without compression. This is the same as "nocompress".
+//	   By default (with no options), protos are stored with binary encoding
+//	   without compression. This is the same as "nocompress".
 //
-//	  You may optionally use "zstd" compression by specifying this option.
+//	   You may optionally use "zstd" compression by specifying this option.
 //
-//	  It is valid to switch between "nocompress" and "zstd"; the library
-//	  knows how to decode and encode both, even when the in-datastore format
-//	  doesn't match the tag.
+//	   It is valid to switch between "nocompress" and "zstd"; the library
+//	   knows how to decode and encode both, even when the in-datastore format
+//	   doesn't match the tag.
 //
-//	  The "legacy" option will store the protobuf without compression, BUT this
-//	  encoding doesn't have a "mode" bit. This is purely for compatibilty with
-//	  the deprecated `proto-gae` generator, and is not recommended. The format
-//	  is a `[]byte` containing the binary serialization of the proto with no
-//	  other metadata.
+//	   The "legacy" option will store the protobuf without compression, BUT this
+//	   encoding doesn't have a "mode" bit. This is purely for compatibilty with
+//	   the deprecated `proto-gae` generator, and is not recommended. The format
+//	   is a `[]byte` containing the binary serialization of the proto with no
+//	   other metadata.
+//
+//	`gae:"[fieldName],lsp[,noindex]` -- for nested struct-valued fields (structs
+//	   specifically, not pointers to structs). "lsp" stands for "local
+//	   structured property", since this feature is primarily used for
+//	   compatibility with Python's ndb.LocalStructuredProperty. Fields that use
+//	   this option are stored as nested entities inside the larger outer entity.
+//
+//	   By default fields of nested entities are indexed. E.g. if an entity
+//	   property `nested` contains a nested entity with a property `prop`,
+//	   there's a datastore index on a field called `nested.prop` that can be
+//	   used to e.g. query for all entities that have a nested entity with `prop`
+//	   property set to some value.
+//
+//	   Use "noindex" option to suppress indexing of *all* fields of the nested
+//	   entity (recursively). Without "noindex" the indexing decision is done
+//	   based on options set on the inner fields.
+//
+//	   NOTE: Python's ndb.LocalStructuredProperty doesn't support indexes, so
+//	   any nested entities written from Python will be unindexed.
+//
+//	   Finally, nested entities can have keys (defined as usual via meta
+//	   fields, see below). Semantically they are just indexed key-valued
+//	   properties internally named `__key__`. In particular to query based on
+//	   a nested property key use e.g. `nested.__key__` field name. "noindex"
+//	   option on the "lsp" field will turn of indexing of the nested key.
+//	   There's no way to index some inner property, and *not* index the inner
+//	   key at the same time. Only complete keys are stored, e.g. if an inner
+//	   entity has `$id` meta-field, but its value is 0 (indicating an incomplete
+//	   key), this key won't be stored at all. This can have observable
+//	   consequences when using `$id` and `$parent` meta fields together or just
+//	   using partially populated key in `$key` meta field.
+//
+//	   Keys are round-tripped correctly when using Cloud Datastore APIs, but
+//	   Python's ndb.LocalStructuredProperty would drop them, so better not to
+//	   depend on them when doing interop with Python.
 //
 //	`gae:"$metaKey[,<value>]` -- indicates a field is metadata. Metadata
 //	   can be used to control filter behavior, or to store key data when using
@@ -96,6 +132,7 @@ import (
 //	     - string
 //	     - Toggle (GetMeta and SetMeta treat the field as if it were bool)
 //	     - Any type which implements PropertyConverter
+//	     - Any type which implements proto.Message
 //	   Additionally, numeric, string and Toggle types allow setting a default
 //	   value in the struct field tag (the "<value>" portion).
 //
@@ -179,7 +216,7 @@ import (
 //	}
 //
 // A pointer-to-struct may also implement MetaGetterSetter to provide more
-// sophistocated metadata values. Explicitly defined fields (as shown above)
+// sophisticated metadata values. Explicitly defined fields (as shown above)
 // always take precedence over fields manipulated by the MetaGetterSetter
 // methods. So if your GetMeta handles "kind", but you explicitly have a
 // $kind field, the $kind field will take precedence and your GetMeta

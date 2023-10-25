@@ -345,16 +345,23 @@ type LSPOutter struct {
 	Slice []LSPInner `gae:",lsp"`
 }
 
+type LSPOutterUnindexed struct {
+	One   LSPInner   `gae:",lsp,noindex"`
+	Slice []LSPInner `gae:",lsp,noindex"`
+}
+
 type LSPInner struct {
-	ID      string `gae:"$id"`
-	Kind    string `gae:"$kind"`
-	Ints    []int64
-	Deeper1 LSPDeeper   `gae:",lsp"`
-	Deeper2 []LSPDeeper `gae:",lsp"`
+	ID          string `gae:"$id"`
+	Kind        string `gae:"$kind"`
+	Ints        []int64
+	IntsNoIndex []int64     `gae:",noindex"`
+	Deeper1     LSPDeeper   `gae:",lsp"`
+	Deeper2     []LSPDeeper `gae:",lsp"`
 }
 
 type LSPDeeper struct {
-	ID int64 `gae:"$id"`
+	ID    int64 `gae:"$id"`
+	Field int64
 }
 
 type SliceOfSlices struct {
@@ -1750,6 +1757,62 @@ var testCases = []testCase{
 					B: DeeperB{"v2"},
 				},
 			},
+		},
+	},
+	{
+		desc: "lsp indexed",
+		src: &LSPOutter{
+			One: LSPInner{
+				Kind:        "Test",
+				ID:          "test",
+				Ints:        []int64{1, 2},
+				IntsNoIndex: []int64{3, 4},
+				Deeper1: LSPDeeper{
+					ID:    123,
+					Field: 5,
+				},
+			},
+		},
+		want: PropertyMap{
+			"One": mp(PropertyMap{
+				"$kind":       mpNI("Test"),
+				"$id":         mpNI("test"),
+				"Ints":        PropertySlice{mp(1), mp(2)},
+				"IntsNoIndex": PropertySlice{mpNI(3), mpNI(4)},
+				"Deeper1": mp(PropertyMap{
+					"$kind": mpNI("LSPDeeper"),
+					"$id":   mpNI(123),
+					"Field": mp(5),
+				}),
+			}),
+		},
+	},
+	{
+		desc: "lsp unindexed",
+		src: &LSPOutterUnindexed{
+			One: LSPInner{
+				Kind:        "Test",
+				ID:          "test",
+				Ints:        []int64{1, 2},
+				IntsNoIndex: []int64{3, 4},
+				Deeper1: LSPDeeper{
+					ID:    123,
+					Field: 5,
+				},
+			},
+		},
+		want: PropertyMap{
+			"One": mpNI(PropertyMap{
+				"$kind":       mpNI("Test"),
+				"$id":         mpNI("test"),
+				"Ints":        PropertySlice{mpNI(1), mpNI(2)},
+				"IntsNoIndex": PropertySlice{mpNI(3), mpNI(4)},
+				"Deeper1": mpNI(PropertyMap{
+					"$kind": mpNI("LSPDeeper"),
+					"$id":   mpNI(123),
+					"Field": mpNI(5),
+				}),
+			}),
 		},
 	},
 	{

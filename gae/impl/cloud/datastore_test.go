@@ -108,6 +108,10 @@ func TestBoundDatastore(t *testing.T) {
 										Lng: 1,
 									},
 								},
+								{
+									Name:  "indexed",
+									Value: "hi",
+								},
 							},
 						},
 					},
@@ -134,6 +138,19 @@ func TestBoundDatastore(t *testing.T) {
 						Name:  "time",
 						Value: ds.RoundTime(testclock.TestRecentTimeUTC),
 					},
+					{
+						Name:    "unindexed_entity",
+						NoIndex: true,
+						Value: &datastore.Entity{
+							Properties: []datastore.Property{
+								{
+									Name:    "field",
+									NoIndex: true,
+									Value:   "ho",
+								},
+							},
+						},
+					},
 				},
 			}
 
@@ -152,6 +169,10 @@ func TestBoundDatastore(t *testing.T) {
 						ds.MkPropertyNI("interface"),
 					},
 					"geopoint": ds.MkPropertyNI(ds.GeoPoint{Lat: 1, Lng: 1}),
+					"indexed":  ds.MkProperty("hi"),
+				}),
+				"unindexed_entity": ds.MkPropertyNI(ds.PropertyMap{
+					"field": ds.MkPropertyNI("ho"),
 				}),
 				"float64": ds.MkProperty(1.0),
 				"int64":   ds.MkProperty(int64(1)),

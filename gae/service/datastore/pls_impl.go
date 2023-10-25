@@ -443,12 +443,20 @@ func (p *structPLS) save(propMap PropertyMap, prefix string, inSlice bool, is In
 			}
 
 		case st.convertMethod == convertLSP:
-			// This is a "local structured property".
-			pmap, err := (&structPLS{o: v, c: st.substructCodec}).Save(true)
-			if err != nil {
+			// This is a "local structured property". Need to save it into its own
+			// property map, with meta fields populated (in case it has a `$key` or
+			// similar). If this field opted out of indexing, avoid indexing nested
+			// properties as well.
+			is1 := is
+			if st.idxSetting == NoIndex {
+				is1 = NoIndex
+			}
+			innerPLS := &structPLS{o: v, c: st.substructCodec}
+			pmap := innerPLS.GetAllMeta()
+			if _, err := innerPLS.save(pmap, "", false, is1); err != nil {
 				return fmt.Errorf("saving LSP: %w", err)
 			}
-			err = prop.SetValue(pmap, NoIndex)
+			err = prop.SetValue(pmap, is1)
 			if err != nil {
 				return err
 			}
@@ -493,6 +501,10 @@ func (p *structPLS) save(propMap PropertyMap, prefix string, inSlice bool, is In
 		}
 
 		if prop.IndexSetting() == ShouldIndex {
+			// TODO(vadimsh): This check is probably broken or makes no sense when
+			// using nested indexed entities. It will count `1` for them instead of
+			// `NumberOfFieldsInside`. But it is not clear how datastore itself counts
+			// indexes of nested entities.
 			idxCount++
 			if idxCount > maxIndexedProperties {
 				return errors.New("gae: too many indexed properties")
@@ -839,9 +851,8 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 			return
 
 		// A single or repeated "local structure property" field.
-		case opts == "lsp":
+		case opts == "lsp" || opts == "lsp,noindex":
 			st.convertMethod = convertLSP
-			st.idxSetting = NoIndex
 			// Values must be represented by structs.
 			switch {
 			case isStruct(ft):
@@ -938,8 +949,12 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 			return
 		}
 
-		// Recognize index opt-out. Note this applies only to elementary properties.
-		if opts == "noindex" {
+		// Recognize index opt-out. This applies to elementary properties and, if
+		// set, to nested structs, i.e. if a nested struct field has `noindex`, its
+		// inner properties will be unindexed regardless of their individual
+		// indexing settings. It has no effect on protobuf field and fields that
+		// implement PropertyConverter.
+		if opts == "noindex" || strings.HasSuffix(opts, ",noindex") {
 			st.idxSetting = NoIndex
 		}
 
