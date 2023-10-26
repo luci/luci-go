@@ -88,7 +88,7 @@ func Schedule(ctx context.Context, task *tpb.TestFailureDetectionTask) error {
 }
 
 type analysisClient interface {
-	ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask, excludedBuckets []string) ([]*lucianalysis.BuilderRegressionGroup, error)
+	ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask, excludedBuckets []string, excludedPools []string) ([]*lucianalysis.BuilderRegressionGroup, error)
 	ReadBuildInfo(ctx context.Context, tf *model.TestFailure) (lucianalysis.BuildInfo, error)
 }
 
@@ -107,7 +107,12 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 	if err != nil {
 		return errors.Annotate(err, "get excluded buckets").Err()
 	}
-	groups, err := client.ReadTestFailures(ctx, task, excludedBuckets)
+	excludedPools, err := getExcludedPools(ctx, task.Project)
+	if err != nil {
+		return errors.Annotate(err, "get excluded pools").Err()
+	}
+
+	groups, err := client.ReadTestFailures(ctx, task, excludedBuckets, excludedPools)
 	if err != nil {
 		return errors.Annotate(err, "read test failures").Err()
 	}
@@ -319,4 +324,12 @@ func getExcludedBuckets(ctx context.Context, project string) ([]string, error) {
 		return nil, err
 	}
 	return cfg.TestAnalysisConfig.GetExcludedBuckets(), nil
+}
+
+func getExcludedPools(ctx context.Context, project string) ([]string, error) {
+	cfg, err := config.Project(ctx, project)
+	if err != nil {
+		return nil, err
+	}
+	return cfg.TestAnalysisConfig.GetExcludedTestPools(), nil
 }

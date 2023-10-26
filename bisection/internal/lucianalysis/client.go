@@ -16,8 +16,10 @@
 package lucianalysis
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strings"
 
@@ -32,6 +34,100 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
+
+var readFailureTemplate = template.Must(template.New("").Parse(
+	`
+{{define "basic" -}}
+WITH
+  segments_with_failure_rate AS (
+    SELECT
+      *,
+      ( segments[0].counts.unexpected_results / segments[0].counts.total_results) AS current_failure_rate,
+      ( segments[1].counts.unexpected_results / segments[1].counts.total_results) AS previous_failure_rate,
+      segments[0].start_position AS nominal_upper,
+      segments[1].end_position AS nominal_lower,
+      STRING(variant.builder) AS builder
+    FROM test_variant_segments_unexpected_realtime
+    WHERE ARRAY_LENGTH(segments) > 1
+  ),
+  builder_regression_groups AS (
+    SELECT
+      ref_hash AS RefHash,
+      ANY_VALUE(ref) AS Ref,
+      nominal_lower AS RegressionStartPosition,
+      nominal_upper AS RegressionEndPosition,
+      ANY_VALUE(previous_failure_rate) AS StartPositionFailureRate,
+      ANY_VALUE(current_failure_rate) AS EndPositionFailureRate,
+      ARRAY_AGG(STRUCT(test_id AS TestId, variant_hash AS VariantHash,variant AS Variant) ORDER BY test_id, variant_hash) AS TestVariants,
+      ANY_VALUE(segments[0].start_hour) AS StartHour,
+      ANY_VALUE(segments[0].end_hour) AS EndHour
+    FROM segments_with_failure_rate
+    WHERE
+      current_failure_rate = 1
+      AND previous_failure_rate = 0
+      AND segments[0].counts.unexpected_passed_results = 0
+      AND segments[0].start_hour >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
+      -- We only consider test failures with non-skipped result in the last 24 hour.
+      AND segments[0].end_hour >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 24 HOUR)
+    GROUP BY ref_hash, builder, nominal_lower, nominal_upper
+  ),
+  builder_regression_groups_with_latest_build AS (
+    SELECT
+      ANY_VALUE(g) AS regression_group,
+      ANY_VALUE(v.buildbucket_build.id HAVING MAX v.partition_time) AS build_id,
+      ANY_VALUE(REGEXP_EXTRACT(v.results[0].parent.id, r'^task-{{.SwarmingProject}}.appspot.com-([0-9a-f]+)$') HAVING MAX v.partition_time) AS swarming_run_id,
+      ANY_VALUE(COALESCE(b2.infra.swarming.task_dimensions, b.infra.swarming.task_dimensions) HAVING MAX v.partition_time) AS task_dimensions,
+      ANY_VALUE(b.builder.bucket HAVING MAX v.partition_time) AS bucket,
+      ANY_VALUE(JSON_VALUE_ARRAY(b.input.properties, "$.sheriff_rotations") HAVING MAX v.partition_time) AS SheriffRotations,
+    FROM builder_regression_groups g
+    -- Join with test_verdict table to get the build id of the lastest build for a test variant.
+    LEFT JOIN test_verdicts v
+    ON g.testVariants[0].TestId = v.test_id
+      AND g.testVariants[0].VariantHash = v.variant_hash
+      AND g.RefHash = v.source_ref_hash
+    -- Join with buildbucket builds table to get the task dimensions for tests.
+    LEFT JOIN {{.BBTableName}} b
+    ON v.buildbucket_build.id  = b.id
+    -- JOIN with buildbucket builds table again to get task dimensions of parent builds.
+    LEFT JOIN {{.BBTableName}} b2
+    ON JSON_VALUE(b.input.properties, "$.parent_build_id") = CAST(b2.id AS string)
+    -- Filter by test_verdict.partition_time to only return test failures that have test verdict recently.
+    -- 3 days is chosen as we expect tests run at least once every 3 days if they are not disabled.
+    -- If this is found to be too restricted, we can increase it later.
+    WHERE v.partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
+      AND b.create_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
+      AND b2.create_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
+    GROUP BY g.testVariants[0].TestId,  g.testVariants[0].VariantHash, g.RefHash
+  )
+{{- if .ExcludedPools}}
+{{- template "withExcludedPools" .}}
+{{- else}}
+{{- template "withoutExcludedPools" .}}
+{{- end -}}
+ORDER BY regression_group.RegressionEndPosition DESC
+LIMIT 5000
+{{- end}}
+
+{{- define "withoutExcludedPools"}}
+SELECT regression_group.*,
+  -- use empty array instead of null so we can read into []NullString.
+  IFNULL(SheriffRotations, []) as SheriffRotations
+FROM builder_regression_groups_with_latest_build
+WHERE {{.DimensionExcludeFilter}} AND (bucket NOT IN UNNEST(@excludedBuckets))
+{{end}}
+
+{{define "withExcludedPools"}}
+SELECT regression_group.*,
+  -- use empty array instead of null so we can read into []NullString.
+  IFNULL(SheriffRotations, []) as SheriffRotations
+FROM builder_regression_groups_with_latest_build g
+LEFT JOIN {{.SwarmingProject}}.swarming.task_results_run s
+ON g.swarming_run_id = s.run_id
+WHERE s.end_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
+  AND {{.DimensionExcludeFilter}} AND (bucket NOT IN UNNEST(@excludedBuckets))
+  AND (s.bot.pools[0] NOT IN UNNEST(@excludedPools))
+{{end}}
+	`))
 
 // NewClient creates a new client for reading test failures from LUCI Analysis.
 // Close() MUST be called after you have finished using this client.
@@ -101,90 +197,23 @@ type TestVariant struct {
 	Variant     bigquery.NullJSON
 }
 
-func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask, excludedBuckets []string) ([]*BuilderRegressionGroup, error) {
-	bbTableName, err := buildBucketBuildTableName(task.Project)
-	if err != nil {
-		return nil, errors.Annotate(err, "buildBucketBuildTableName").Err()
-	}
+func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask, excludedBuckets []string, excludedPools []string) ([]*BuilderRegressionGroup, error) {
 	dimensionExcludeFilter := "(TRUE)"
 	if len(task.DimensionExcludes) > 0 {
 		dimensionExcludeFilter = "(NOT (SELECT LOGICAL_OR((SELECT count(*) > 0 FROM UNNEST(task_dimensions) WHERE KEY = kv.key and value = kv.value)) FROM UNNEST(@dimensionExcludes) kv))"
 	}
 
-	q := c.client.Query(`
-	WITH
-  segments_with_failure_rate AS (
-    SELECT
-      *,
-      ( segments[0].counts.unexpected_results / segments[0].counts.total_results) AS current_failure_rate,
-      ( segments[1].counts.unexpected_results / segments[1].counts.total_results) AS previous_failure_rate,
-      segments[0].start_position AS nominal_upper,
-      segments[1].end_position AS nominal_lower,
-      STRING(variant.builder) AS builder
-    FROM test_variant_segments_unexpected_realtime
-    WHERE ARRAY_LENGTH(segments) > 1
-  ),
-  builder_regression_groups AS (
-    SELECT
-      ref_hash AS RefHash,
-      ANY_VALUE(ref) AS Ref,
-      nominal_lower AS RegressionStartPosition,
-      nominal_upper AS RegressionEndPosition,
-      ANY_VALUE(previous_failure_rate) AS StartPositionFailureRate,
-      ANY_VALUE(current_failure_rate) AS EndPositionFailureRate,
-      ARRAY_AGG(STRUCT(test_id AS TestId, variant_hash AS VariantHash,variant AS Variant) ORDER BY test_id, variant_hash) AS TestVariants,
-      ANY_VALUE(segments[0].start_hour) AS StartHour,
-      ANY_VALUE(segments[0].end_hour) AS EndHour
-    FROM segments_with_failure_rate
-    WHERE
-      current_failure_rate = 1
-      AND previous_failure_rate = 0
-      AND segments[0].counts.unexpected_passed_results = 0
-      AND segments[0].start_hour >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
-      -- We only consider test failures with non-skipped result in the last 24 hour.
-      AND segments[0].end_hour >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 24 HOUR)
-    GROUP BY ref_hash, builder, nominal_lower, nominal_upper
-  ),
-  builder_regression_groups_with_latest_build AS (
-    SELECT
-      ANY_VALUE(g) AS regression_group,
-      ANY_VALUE(v.buildbucket_build.id HAVING MAX v.partition_time) AS build_id,
-      ANY_VALUE(COALESCE(b2.infra.swarming.task_dimensions, b.infra.swarming.task_dimensions) HAVING MAX v.partition_time) AS task_dimensions,
-      ANY_VALUE(b.builder.bucket HAVING MAX v.partition_time) AS bucket,
-			ANY_VALUE(JSON_VALUE_ARRAY(b.input.properties, "$.sheriff_rotations") HAVING MAX v.partition_time) AS SheriffRotations,
-		FROM builder_regression_groups g
-		-- Join with test_verdict table to get the build id of the lastest build for a test variant.
-		LEFT JOIN test_verdicts v
-		ON g.testVariants[0].TestId = v.test_id
-			AND g.testVariants[0].VariantHash = v.variant_hash
-			AND g.RefHash = v.source_ref_hash
-		-- Join with buildbucket builds table to get the task dimensions for tests.
-		LEFT JOIN ` + bbTableName + ` b
-		ON v.buildbucket_build.id  = b.id
-		-- JOIN with buildbucket builds table again to get task dimensions of parent builds.
-		LEFT JOIN ` + bbTableName + ` b2
-		ON JSON_VALUE(b.input.properties, "$.parent_build_id") = CAST(b2.id AS string)
-		-- Filter by test_verdict.partition_time to only return test failures that have test verdict recently.
-		-- 3 days is chosen as we expect tests run at least once every 3 days if they are not disabled.
-		-- If this is found to be too restricted, we can increase it later.
-		WHERE v.partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
-		      AND b.create_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
-		      AND b2.create_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
-		GROUP BY g.testVariants[0].TestId,  g.testVariants[0].VariantHash, g.RefHash
-  )
-	SELECT regression_group.*,
-		-- use empty array instead of null so we can read into []NullString.
-		IFNULL(SheriffRotations, []) as SheriffRotations
-	FROM builder_regression_groups_with_latest_build
-	WHERE  ` + dimensionExcludeFilter + ` AND (bucket NOT IN UNNEST(@excludedBuckets))
-	ORDER BY regression_group.RegressionEndPosition DESC
-	LIMIT 5000
- `)
+	queryStm, err := generateTestFailuresQuery(task, dimensionExcludeFilter, excludedPools)
+	if err != nil {
+		return nil, errors.Annotate(err, "generate test failures query").Err()
+	}
+	q := c.client.Query(queryStm)
 	q.DefaultDatasetID = task.Project
 	q.DefaultProjectID = c.luciAnalysisProject
 	q.Parameters = []bigquery.QueryParameter{
 		{Name: "dimensionExcludes", Value: task.DimensionExcludes},
 		{Name: "excludedBuckets", Value: excludedBuckets},
+		{Name: "excludedPools", Value: excludedPools},
 	}
 	job, err := q.Run(ctx)
 	if err != nil {
@@ -207,6 +236,35 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
 		groups = append(groups, row)
 	}
 	return groups, nil
+}
+
+func generateTestFailuresQuery(task *tpb.TestFailureDetectionTask, dimensionExcludeFilter string, excludedPools []string) (string, error) {
+	bbTableName, err := buildBucketBuildTableName(task.Project)
+	if err != nil {
+		return "", errors.Annotate(err, "buildBucketBuildTableName").Err()
+	}
+
+	swarmingProject := ""
+	switch task.Project {
+	case "chromium":
+		swarmingProject = "chromium-swarm"
+	case "chrome":
+		swarmingProject = "chrome-swarming"
+	default:
+		return "", errors.Reason("couldn't get swarming project for project %s", task.Project).Err()
+	}
+
+	var b bytes.Buffer
+	err = readFailureTemplate.ExecuteTemplate(&b, "basic", map[string]any{
+		"SwarmingProject":        swarmingProject,
+		"DimensionExcludeFilter": dimensionExcludeFilter,
+		"BBTableName":            bbTableName,
+		"ExcludedPools":          excludedPools,
+	})
+	if err != nil {
+		return "", errors.Annotate(err, "execute template").Err()
+	}
+	return b.String(), nil
 }
 
 const BuildBucketProject = "cr-buildbucket"

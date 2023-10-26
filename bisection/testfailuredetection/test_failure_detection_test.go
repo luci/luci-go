@@ -343,7 +343,7 @@ type fakeLUCIAnalysisClient struct {
 	buildInfoByProject    map[string]lucianalysis.BuildInfo
 }
 
-func (f *fakeLUCIAnalysisClient) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask, excludedBuckets []string) ([]*lucianalysis.BuilderRegressionGroup, error) {
+func (f *fakeLUCIAnalysisClient) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask, excludedBuckets []string, excludedPools []string) ([]*lucianalysis.BuilderRegressionGroup, error) {
 	return f.testFailuresByProject[task.Project], nil
 }
 
