@@ -13,13 +13,9 @@
 // limitations under the License.
 
 import styled from '@emotion/styled';
-import { Link } from '@mui/material';
 
 import { BuilderID, HealthStatus } from '@/common/services/buildbucket';
-import {
-  getLegacyBuilderURLPath,
-  getProjectURLPath,
-} from '@/common/tools/url_utils';
+import { getProjectURLPath } from '@/common/tools/url_utils';
 
 import { BuilderHealthIndicator } from './builder_health_indicator';
 
@@ -62,32 +58,12 @@ export function BuilderIdBar({ builderId, healthStatus }: BuilderIdBarProps) {
         <span> / </span>
         <span>{builderId.builder}</span>
       </div>
-      <Divider />
       {healthStatus && (
         <>
-          <BuilderHealthIndicator healthStatus={healthStatus} />
           <Divider />
+          <BuilderHealthIndicator healthStatus={healthStatus} />
         </>
       )}
-      <Link
-        onClick={(e) => {
-          const switchVerTemporarily =
-            e.metaKey || e.shiftKey || e.ctrlKey || e.altKey;
-
-          if (switchVerTemporarily) {
-            return;
-          }
-
-          const expires = new Date(
-            // 1 week from now.
-            Date.now() + 7 * 24 * 60 * 60 * 1000,
-          ).toUTCString();
-          document.cookie = `showNewBuilderPage=false; expires=${expires}; path=/`;
-        }}
-        href={getLegacyBuilderURLPath(builderId)}
-      >
-        Switch to the legacy builder page
-      </Link>
     </div>
   );
 }

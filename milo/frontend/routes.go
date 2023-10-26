@@ -107,22 +107,11 @@ func Run(srv *server.Server, templatePath string) {
 	// Backward-compatible URLs for Swarming:
 	r.GET("/swarming/prod/:id", htmlMW, handleError(handleSwarmingBuild))
 
-	builderPageMW := router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
-		shouldShowNewBuilderPage := getShowNewBuilderPageCookie(c)
-		if shouldShowNewBuilderPage {
-			redirect("/ui/p/:project/builders/:bucket/:builder", http.StatusFound)(c)
-		} else {
-			next(c)
-		}
-	}).Extend(optionalProjectMW...)
-
 	// Buildbucket
 	// If these routes change, also change links in
 	// common/model/builder_summary.go:SelfLink.
 	// Redirects to the SPA implementation.
-	r.GET("/p/:project/builders/:bucket/:builder", builderPageMW, handleError(BuilderHandler))
-	// TODO(weiweilin): remove this once we turned down the old builder page.
-	r.GET("/old/p/:project/builders/:bucket/:builder", optionalProjectMW, handleError(BuilderHandler))
+	r.GET("/p/:project/builders/:bucket/:builder", baseMW, redirect("/ui/p/:project/builders/:bucket/:builder", http.StatusFound))
 
 	r.GET("/buildbucket/:bucket/:builder", baseMW, redirectFromProjectlessBuilder)
 
