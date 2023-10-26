@@ -117,7 +117,7 @@ func TestManagerLegacy(t *testing.T) {
 				expectedIssue.Summary = "Tests are failing: Expected equality of these values: \"Expected_Value\" my_expr.evaluate(123) Which is: \"Unexpected_Value\""
 
 				So(issue.Issue, ShouldResembleProto, expectedIssue)
-				So(len(issue.Comments), ShouldEqual, 2)
+				So(len(issue.Comments), ShouldEqual, 1)
 				So(issue.Comments[0].Content, ShouldContainSubstring, reason)
 				So(issue.Comments[0].Content, ShouldNotContainSubstring, "ClusterIDShouldNotAppearInOutput")
 				// Priority justification should appear in the issue description.
@@ -126,8 +126,7 @@ func TestManagerLegacy(t *testing.T) {
 				// Links to help should appear in the issue description.
 				So(issue.Comments[0].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/help#new-bug-filed")
 				So(issue.Comments[0].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/help#feedback")
-				// Link to cluster page should appear in output.
-				So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
+				So(issue.Comments[0].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/p/luciproject/rules/new-rule-id")
 				So(issue.NotifyCount, ShouldEqual, 1)
 			})
 			Convey("With test name failure cluster", func() {
@@ -144,7 +143,7 @@ func TestManagerLegacy(t *testing.T) {
 
 				expectedIssue.Summary = "Tests are failing: ninja://:blink_web_tests/media/my-suite/my-test.html"
 				So(issue.Issue, ShouldResembleProto, expectedIssue)
-				So(len(issue.Comments), ShouldEqual, 2)
+				So(len(issue.Comments), ShouldEqual, 1)
 				So(issue.Comments[0].Content, ShouldContainSubstring, "ninja://:blink_web_tests/media/my-suite/my-test.html")
 				// Priority justification should appear in the issue description.
 				So(issue.Comments[0].Content, ShouldContainSubstring,
@@ -152,8 +151,7 @@ func TestManagerLegacy(t *testing.T) {
 				// Links to help should appear in the issue description.
 				So(issue.Comments[0].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/help#new-bug-filed")
 				So(issue.Comments[0].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/help#feedback")
-				// Link to cluster page should appear in output.
-				So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
+				So(issue.Comments[0].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/p/luciproject/rules/new-rule-id")
 				So(issue.NotifyCount, ShouldEqual, 1)
 			})
 			Convey("Without Restrict-View-Google", func() {
@@ -257,15 +255,15 @@ func TestManagerLegacy(t *testing.T) {
 					So(response, ShouldResemble, expectedResponse)
 					So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "3")
 
-					So(f.Issues[0].Comments, ShouldHaveLength, 3)
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments, ShouldHaveLength, 2)
+					So(f.Issues[0].Comments[1].Content, ShouldContainSubstring,
 						"Because:\n"+
 							"- Test Runs Failed (1-day) < 9, and\n"+
 							"- Test Results Failed (1-day) < 90\n"+
 							"LUCI Analysis has decreased the bug priority from 2 to 3.")
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments[1].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/help#priority-update")
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments[1].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 					// Does not notify.
@@ -288,14 +286,14 @@ func TestManagerLegacy(t *testing.T) {
 					So(response, ShouldResemble, expectedResponse)
 					So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "1")
 
-					So(f.Issues[0].Comments, ShouldHaveLength, 3)
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments, ShouldHaveLength, 2)
+					So(f.Issues[0].Comments[1].Content, ShouldContainSubstring,
 						"Because:\n"+
 							"- Test Results Failed (1-day) >= 550\n"+
 							"LUCI Analysis has increased the bug priority from 2 to 1.")
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments[1].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/help#priority-update")
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments[1].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 					// Notified the increase.
@@ -316,11 +314,11 @@ func TestManagerLegacy(t *testing.T) {
 					expectedComment := "Because:\n" +
 						"- Test Results Failed (1-day) >= 1000\n" +
 						"LUCI Analysis has increased the bug priority from 2 to 0."
-					So(f.Issues[0].Comments, ShouldHaveLength, 3)
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring, expectedComment)
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments, ShouldHaveLength, 2)
+					So(f.Issues[0].Comments[1].Content, ShouldContainSubstring, expectedComment)
+					So(f.Issues[0].Comments[1].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/help#priority-update")
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments[1].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 					// Notified the increase.
@@ -394,11 +392,11 @@ func TestManagerLegacy(t *testing.T) {
 						"- Test Results Failed (3-day) < 272, and\n" +
 						"- Test Results Failed (7-day) < 1\n" +
 						"LUCI Analysis is marking the issue verified."
-					So(f.Issues[0].Comments, ShouldHaveLength, 3)
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring, expectedComment)
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments, ShouldHaveLength, 2)
+					So(f.Issues[0].Comments[1].Content, ShouldContainSubstring, expectedComment)
+					So(f.Issues[0].Comments[1].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/help#bug-verified")
-					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+					So(f.Issues[0].Comments[1].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 					// Verify repeated update has no effect.
@@ -450,11 +448,11 @@ func TestManagerLegacy(t *testing.T) {
 								"- Test Runs Failed (1-day) < 9, and\n" +
 								"- Test Results Failed (1-day) < 90\n" +
 								"LUCI Analysis has decreased the bug priority from 2 to 3."
-							So(f.Issues[0].Comments, ShouldHaveLength, 5)
-							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring, expectedComment)
-							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
+							So(f.Issues[0].Comments, ShouldHaveLength, 4)
+							So(f.Issues[0].Comments[3].Content, ShouldContainSubstring, expectedComment)
+							So(f.Issues[0].Comments[3].Content, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/help#bug-reopened")
-							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
+							So(f.Issues[0].Comments[3].Content, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 							// Verify repeated update has no effect.
@@ -481,13 +479,13 @@ func TestManagerLegacy(t *testing.T) {
 								"- Test Runs Failed (1-day) < 9, and\n" +
 								"- Test Results Failed (1-day) < 90\n" +
 								"LUCI Analysis has decreased the bug priority from 2 to 3."
-							So(f.Issues[0].Comments, ShouldHaveLength, 5)
-							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring, expectedComment)
-							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
+							So(f.Issues[0].Comments, ShouldHaveLength, 4)
+							So(f.Issues[0].Comments[3].Content, ShouldContainSubstring, expectedComment)
+							So(f.Issues[0].Comments[3].Content, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/help#priority-update")
-							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
+							So(f.Issues[0].Comments[3].Content, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/help#bug-reopened")
-							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
+							So(f.Issues[0].Comments[3].Content, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 							// Verify repeated update has no effect.

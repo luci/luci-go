@@ -130,29 +130,10 @@ func (rg *RequestGenerator) PrepareNew(description *clustering.ClusterDescriptio
 // linkToRuleComment returns a comment that links the user to the failure
 // association rule in LUCI Analysis.
 //
-// issueID is the Buganizer issue ID.
-func (rg *RequestGenerator) linkToRuleComment(issueID int64) string {
-	ruleLink := bugs.RuleForBuganizerBugURL(rg.uiBaseURL, issueID)
+// ruleID is the LUCI Analysis Rule ID.
+func (rg *RequestGenerator) linkToRuleComment(ruleID string) string {
+	ruleLink := bugs.RuleURL(rg.uiBaseURL, rg.project, ruleID)
 	return fmt.Sprintf(bugs.LinkTemplate, ruleLink)
-}
-
-// PrepareLinkIssueCommentUpdate prepares a request that adds links to LUCI Analysis to
-// a Buganizer bug by updating the issue description.
-func (rg *RequestGenerator) PrepareLinkIssueCommentUpdate(description *clustering.ClusterDescription,
-	activePolicyIDs map[bugs.PolicyID]struct{}, issueID int64) *issuetracker.UpdateIssueCommentRequest {
-
-	// Regenerate the initial comment in the same way as PrepareNew, but use
-	// the link for the rule that uses the bug ID instead of the rule ID.
-	ruleLink := bugs.RuleForBuganizerBugURL(rg.uiBaseURL, issueID)
-
-	return &issuetracker.UpdateIssueCommentRequest{
-		IssueId:       issueID,
-		CommentNumber: 1,
-		Comment: &issuetracker.IssueComment{
-			Comment: rg.policyApplyer.NewIssueDescription(
-				description, activePolicyIDs, rg.uiBaseURL, ruleLink),
-		},
-	}
 }
 
 // noPermissionComment returns a comment that explains why a bug was filed in
@@ -176,8 +157,8 @@ func (rg *RequestGenerator) PrepareNoPermissionComment(issueID, componentID int6
 
 // PrepareRuleAssociatedComment prepares a request that notifies the bug
 // it is associated with failures in LUCI Analysis.
-func (rg *RequestGenerator) PrepareRuleAssociatedComment(issueID int64) (*issuetracker.CreateIssueCommentRequest, error) {
-	ruleURL := bugs.RuleForBuganizerBugURL(rg.uiBaseURL, issueID)
+func (rg *RequestGenerator) PrepareRuleAssociatedComment(issueID int64, ruleID string) (*issuetracker.CreateIssueCommentRequest, error) {
+	ruleURL := bugs.RuleURL(rg.uiBaseURL, rg.project, ruleID)
 
 	return &issuetracker.CreateIssueCommentRequest{
 		IssueId: issueID,
@@ -196,9 +177,9 @@ func (rg *RequestGenerator) SortPolicyIDsByPriorityDescending(policyIDs map[bugs
 // PreparePolicyActivatedComment prepares a request that notifies a bug that a policy
 // has activated for the first time.
 // If the policy has not specified a comment to post, this method returns nil.
-func (rg *RequestGenerator) PreparePolicyActivatedComment(issueID int64, policyID bugs.PolicyID) (*issuetracker.CreateIssueCommentRequest, error) {
+func (rg *RequestGenerator) PreparePolicyActivatedComment(ruleID string, issueID int64, policyID bugs.PolicyID) (*issuetracker.CreateIssueCommentRequest, error) {
 	templateInput := bugs.TemplateInput{
-		RuleURL: bugs.RuleForBuganizerBugURL(rg.uiBaseURL, issueID),
+		RuleURL: bugs.RuleURL(rg.uiBaseURL, rg.project, ruleID),
 		BugID:   bugs.NewTemplateBugID(bugs.BugID{System: bugs.BuganizerSystem, ID: strconv.FormatInt(issueID, 10)}),
 	}
 	comment, err := rg.policyApplyer.PolicyActivatedComment(policyID, rg.uiBaseURL, templateInput)
@@ -219,9 +200,9 @@ func (rg *RequestGenerator) PreparePolicyActivatedComment(issueID int64, policyI
 // UpdateDuplicateSource updates the source bug of a (source, destination)
 // duplicate bug pair, after LUCI Analysis has attempted to merge their
 // failure association rules.
-func (rg *RequestGenerator) UpdateDuplicateSource(issueId int64, errorMessage, destinationRuleID string, isAssigned bool) *issuetracker.ModifyIssueRequest {
+func (rg *RequestGenerator) UpdateDuplicateSource(issueID int64, errorMessage, sourceRuleID, destinationRuleID string, isAssigned bool) *issuetracker.ModifyIssueRequest {
 	updateRequest := &issuetracker.ModifyIssueRequest{
-		IssueId: issueId,
+		IssueId: issueID,
 		AddMask: &fieldmaskpb.FieldMask{
 			Paths: []string{},
 		},
@@ -239,7 +220,7 @@ func (rg *RequestGenerator) UpdateDuplicateSource(issueId int64, errorMessage, d
 		}
 		updateRequest.AddMask.Paths = append(updateRequest.AddMask.Paths, "status")
 		updateRequest.IssueComment = &issuetracker.IssueComment{
-			Comment: strings.Join([]string{errorMessage, rg.linkToRuleComment(issueId)}, "\n\n"),
+			Comment: strings.Join([]string{errorMessage, rg.linkToRuleComment(sourceRuleID)}, "\n\n"),
 		}
 	} else {
 		ruleLink := bugs.RuleURL(rg.uiBaseURL, rg.project, destinationRuleID)
@@ -253,10 +234,10 @@ func (rg *RequestGenerator) UpdateDuplicateSource(issueId int64, errorMessage, d
 // UpdateDuplicateDestination updates the destination bug of a
 // (source, destination) duplicate bug pair, after LUCI Analysis has attempted
 // to merge their failure association rules.
-func (rg *RequestGenerator) UpdateDuplicateDestination(issueId int64) *issuetracker.ModifyIssueRequest {
-	comment := strings.Join([]string{bugs.DestinationBugRuleUpdatedMessage, rg.linkToRuleComment(issueId)}, "\n\n")
+func (rg *RequestGenerator) UpdateDuplicateDestination(issueID int64, destinationRuleID string) *issuetracker.ModifyIssueRequest {
+	comment := strings.Join([]string{bugs.DestinationBugRuleUpdatedMessage, rg.linkToRuleComment(destinationRuleID)}, "\n\n")
 	return &issuetracker.ModifyIssueRequest{
-		IssueId: issueId,
+		IssueId: issueID,
 		IssueComment: &issuetracker.IssueComment{
 			Comment: comment,
 		},
@@ -299,6 +280,8 @@ func fromBuganizerPriority(priority issuetracker.Issue_Priority) configpb.Bugani
 }
 
 type MakeUpdateOptions struct {
+	// The identifier of the rule making the update.
+	RuleID string
 	// The bug management state.
 	BugManagementState *bugspb.BugManagementState
 	// The Issue to update.
@@ -402,7 +385,7 @@ func (rg *RequestGenerator) MakePriorityOrVerifiedUpdate(options MakeUpdateOptio
 		commentary = bugs.MergeCommentary(commentary, bugs.ManualPriorityUpdateCommentary())
 		result.disablePriorityUpdates = true
 	}
-	commentary.Footers = append(commentary.Footers, rg.linkToRuleComment(options.Issue.IssueId))
+	commentary.Footers = append(commentary.Footers, rg.linkToRuleComment(options.RuleID))
 
 	request.IssueComment = &issuetracker.IssueComment{
 		IssueId: options.Issue.IssueId,

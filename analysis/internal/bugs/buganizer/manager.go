@@ -21,8 +21,6 @@ import (
 	"time"
 
 	"google.golang.org/api/iterator"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
@@ -225,36 +223,6 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 	// A bug was filed.
 	response.ID = strconv.Itoa(int(issueID))
 
-	var issueCommentReq *issuetracker.UpdateIssueCommentRequest
-	if bm.usePolicyBasedManagement {
-		issueCommentReq = bm.requestGenerator.PrepareLinkIssueCommentUpdate(
-			createRequest.Description,
-			createRequest.ActivePolicyIDs,
-			issueID,
-		)
-	} else {
-		issueCommentReq = bm.legacyRequestGenerator.PrepareLinkIssueCommentUpdateLegacy(
-			createRequest.Metrics,
-			createRequest.Description,
-			issueID,
-		)
-	}
-
-	if bm.Simulate {
-		logging.Debugf(ctx, "Would update Buganizer issue comment: %s", textPBMultiline.Format(issueCommentReq))
-	} else {
-		if _, err := bm.client.UpdateIssueComment(ctx, issueCommentReq); err != nil {
-			if statusError, ok := status.FromError(err); ok && statusError.Code() == codes.PermissionDenied {
-				// If we fail to update the issue comment, then we leave the link to the rule
-				// that uses the rule ID instead of the bug ID.
-				logging.Warningf(ctx, "Failed to update issue comment: %v", statusError)
-			} else {
-				response.Error = errors.Annotate(err, "add issue link to issue comment").Err()
-				return response
-			}
-		}
-	}
-
 	if wantedComponentID > 0 && wantedComponentID != componentID {
 		var commentRequest *issuetracker.CreateIssueCommentRequest
 		if bm.usePolicyBasedManagement {
@@ -274,7 +242,7 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 
 	if bm.usePolicyBasedManagement {
 		var err error
-		response.PolicyActivationsNotified, err = bm.notifyPolicyActivation(ctx, issueID, createRequest.ActivePolicyIDs)
+		response.PolicyActivationsNotified, err = bm.notifyPolicyActivation(ctx, createRequest.RuleID, issueID, createRequest.ActivePolicyIDs)
 		if err != nil {
 			response.Error = errors.Annotate(err, "notify policy activations").Err()
 			return response
@@ -295,13 +263,13 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 // This method supports partial success; it returns the set of policies
 // which were successfully notified even if an error is encountered and
 // returned.
-func (bm *BugManager) notifyPolicyActivation(ctx context.Context, issueID int64, policyIDsToNotify map[bugs.PolicyID]struct{}) (map[bugs.PolicyID]struct{}, error) {
+func (bm *BugManager) notifyPolicyActivation(ctx context.Context, ruleID string, issueID int64, policyIDsToNotify map[bugs.PolicyID]struct{}) (map[bugs.PolicyID]struct{}, error) {
 	policiesNotified := make(map[bugs.PolicyID]struct{})
 
 	// Notify policies which have activated in descending priority order.
 	sortedPolicyIDToNotify := bm.requestGenerator.SortPolicyIDsByPriorityDescending(policyIDsToNotify)
 	for _, policyID := range sortedPolicyIDToNotify {
-		commentRequest, err := bm.requestGenerator.PreparePolicyActivatedComment(issueID, policyID)
+		commentRequest, err := bm.requestGenerator.PreparePolicyActivatedComment(ruleID, issueID, policyID)
 		if err != nil {
 			return policiesNotified, errors.Annotate(err, "prepare comment for policy %q", policyID).Err()
 		}
@@ -422,7 +390,7 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 
 	if !response.IsDuplicate && !response.ShouldArchive {
 		if !request.BugManagementState.RuleAssociationNotified {
-			commentRequest, err := bm.requestGenerator.PrepareRuleAssociatedComment(issue.IssueId)
+			commentRequest, err := bm.requestGenerator.PrepareRuleAssociatedComment(issue.IssueId, request.RuleID)
 			if err != nil {
 				response.Error = errors.Annotate(err, "prepare rule associated comment").Err()
 				return response
@@ -438,7 +406,7 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 		policyIDsToNotify := bugs.ActivePoliciesPendingNotification(request.BugManagementState)
 
 		var err error
-		response.PolicyActivationsNotified, err = bm.notifyPolicyActivation(ctx, issue.IssueId, policyIDsToNotify)
+		response.PolicyActivationsNotified, err = bm.notifyPolicyActivation(ctx, request.RuleID, issue.IssueId, policyIDsToNotify)
 		if err != nil {
 			response.Error = errors.Annotate(err, "notify policy activations").Err()
 			return response
@@ -459,6 +427,7 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 				return response
 			}
 			mur, err := bm.requestGenerator.MakePriorityOrVerifiedUpdate(MakeUpdateOptions{
+				RuleID:                 request.RuleID,
 				BugManagementState:     request.BugManagementState,
 				Issue:                  issue,
 				IsManagingBugPriority:  request.IsManagingBugPriority,
@@ -727,7 +696,7 @@ func (bm *BugManager) UpdateDuplicateSource(ctx context.Context, request bugs.Up
 	}
 	var req *issuetracker.ModifyIssueRequest
 	if bm.usePolicyBasedManagement {
-		req = bm.requestGenerator.UpdateDuplicateSource(int64(issueId), request.ErrorMessage, request.DestinationRuleID, request.BugDetails.IsAssigned)
+		req = bm.requestGenerator.UpdateDuplicateSource(int64(issueId), request.ErrorMessage, request.BugDetails.RuleID, request.DestinationRuleID, request.BugDetails.IsAssigned)
 	} else {
 		req = bm.legacyRequestGenerator.UpdateDuplicateSource(int64(issueId), request.ErrorMessage, request.DestinationRuleID, request.BugDetails.IsAssigned)
 	}
@@ -747,7 +716,7 @@ func (bm *BugManager) UpdateDuplicateSource(ctx context.Context, request bugs.Up
 // has merged the rule for the source bug to the destination
 // (merged-into) bug, and provides a link to the failure
 // association rule.
-func (bm *BugManager) UpdateDuplicateDestination(ctx context.Context, destinationBug bugs.BugID) error {
+func (bm *BugManager) UpdateDuplicateDestination(ctx context.Context, destinationBug bugs.BugID, destinationRuleID string) error {
 	if destinationBug.System != bugs.BuganizerSystem {
 		// Indicates an implementation error with the caller.
 		panic("Buganizer bug manager can only deal with Buganizer bugs")
@@ -758,7 +727,7 @@ func (bm *BugManager) UpdateDuplicateDestination(ctx context.Context, destinatio
 	}
 	var req *issuetracker.ModifyIssueRequest
 	if bm.usePolicyBasedManagement {
-		req = bm.requestGenerator.UpdateDuplicateDestination(int64(issueId))
+		req = bm.requestGenerator.UpdateDuplicateDestination(int64(issueId), destinationRuleID)
 	} else {
 		req = bm.legacyRequestGenerator.UpdateDuplicateDestination(int64(issueId))
 	}

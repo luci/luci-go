@@ -138,28 +138,6 @@ func (rg *LegacyRequestGenerator) linkToRuleComment(issueID int64) string {
 	return fmt.Sprintf(bugs.LinkTemplate, ruleLink)
 }
 
-// PrepareLinkIssueCommentUpdateLegacy prepares a request that adds links to LUCI Analysis to
-// a Buganizer bug by updating the issue description.
-func (rg *LegacyRequestGenerator) PrepareLinkIssueCommentUpdateLegacy(metrics bugs.ClusterMetrics,
-	description *clustering.ClusterDescription,
-	issueID int64) *issuetracker.UpdateIssueCommentRequest {
-
-	// Regenerate the initial comment in the same way as PrepareNew, but use
-	// the link for the rule that uses the bug ID instead of the rule ID.
-	issuePriority := rg.clusterPriority(metrics)
-	thresholdComment := rg.priorityComment(metrics, issuePriority)
-	ruleLink := bugs.RuleForBuganizerBugURL(rg.uiBaseURL, issueID)
-
-	return &issuetracker.UpdateIssueCommentRequest{
-		IssueId:       issueID,
-		CommentNumber: 1,
-		Comment: &issuetracker.IssueComment{
-			Comment: bugs.NewIssueDescriptionLegacy(
-				description, rg.uiBaseURL, thresholdComment, ruleLink),
-		},
-	}
-}
-
 // noPermissionComment returns a comment that explains why a bug was filed in
 // the fallback component incorrectly.
 //

@@ -48,6 +48,7 @@ func NewCreateRequest() bugs.BugCreateRequest {
 			"Blink>Network",
 			"Blink>Invalid",
 		},
+		RuleID: "new-rule-id",
 	}
 	return cluster
 }
@@ -159,6 +160,7 @@ func TestManager(t *testing.T) {
 					"These test failures are causing problem(s) which require your attention, including:\n" +
 					"- Problem A\n" +
 					"\n" +
+					"See current problems, failure examples and more in LUCI Analysis at: https://luci-analysis-test.appspot.com/p/luciproject/rules/new-rule-id\n" +
 					"\n" +
 					"How to action this bug: https://luci-analysis-test.appspot.com/help#new-bug-filed\n" +
 					"Provide feedback: https://luci-analysis-test.appspot.com/help#feedback\n" +
@@ -179,11 +181,9 @@ func TestManager(t *testing.T) {
 
 					issue := f.Issues[0]
 					So(issue.Issue, ShouldResembleProto, expectedIssue)
-					So(len(issue.Comments), ShouldEqual, 3)
+					So(len(issue.Comments), ShouldEqual, 2)
 					So(issue.Comments[0].Content, ShouldEqual, expectedComment)
-					// Link to cluster page should appear in follow-up comment.
-					So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
-					So(issue.Comments[2].Content, ShouldStartWith, "Policy ID: policy-a")
+					So(issue.Comments[1].Content, ShouldStartWith, "Policy ID: policy-a")
 					So(issue.NotifyCount, ShouldEqual, 2)
 				})
 				Convey("Policy has no comment template", func() {
@@ -206,11 +206,9 @@ func TestManager(t *testing.T) {
 
 					issue := f.Issues[0]
 					So(issue.Issue, ShouldResembleProto, expectedIssue)
-					So(len(issue.Comments), ShouldEqual, 3)
+					So(len(issue.Comments), ShouldEqual, 2)
 					So(issue.Comments[0].Content, ShouldEqual, expectedComment)
-					// Link to cluster page should appear in follow-up comment.
-					So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
-					So(issue.Comments[2].Content, ShouldBeEmpty)
+					So(issue.Comments[1].Content, ShouldBeEmpty)
 					So(issue.NotifyCount, ShouldEqual, 1)
 				})
 				Convey("Policy has no comment template or labels", func() {
@@ -236,10 +234,8 @@ func TestManager(t *testing.T) {
 
 					issue := f.Issues[0]
 					So(issue.Issue, ShouldResembleProto, expectedIssue)
-					So(len(issue.Comments), ShouldEqual, 2)
+					So(len(issue.Comments), ShouldEqual, 1)
 					So(issue.Comments[0].Content, ShouldEqual, expectedComment)
-					// Link to cluster page should appear in follow-up comment.
-					So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
 					So(issue.NotifyCount, ShouldEqual, 1)
 				})
 				Convey("Policy has no monorail template", func() {
@@ -292,14 +288,12 @@ func TestManager(t *testing.T) {
 
 					issue := f.Issues[0]
 					So(issue.Issue, ShouldResembleProto, expectedIssue)
-					So(len(issue.Comments), ShouldEqual, 5)
+					So(len(issue.Comments), ShouldEqual, 4)
 					So(issue.Comments[0].Content, ShouldEqual, expectedComment)
-					// Link to cluster page should appear in follow-up comment.
-					So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
 					// Policy activation comments should appear in descending priority order.
-					So(issue.Comments[2].Content, ShouldStartWith, "Policy ID: policy-b")
-					So(issue.Comments[3].Content, ShouldStartWith, "Policy ID: policy-c")
-					So(issue.Comments[4].Content, ShouldStartWith, "Policy ID: policy-a")
+					So(issue.Comments[1].Content, ShouldStartWith, "Policy ID: policy-b")
+					So(issue.Comments[2].Content, ShouldStartWith, "Policy ID: policy-c")
+					So(issue.Comments[3].Content, ShouldStartWith, "Policy ID: policy-a")
 					So(issue.NotifyCount, ShouldEqual, 4)
 				})
 				Convey("Failed to post issue comment", func() {
@@ -317,7 +311,7 @@ func TestManager(t *testing.T) {
 					So(len(f.Issues), ShouldEqual, 1)
 
 					// Do not expect label to be populated as policy activation comment
-					// did not get a chance to post yet.
+					// did not get a chance to post.
 					expectedIssue.Labels = removeLabel(expectedIssue.Labels, "Policy-A-Label")
 
 					issue := f.Issues[0]
@@ -337,6 +331,7 @@ func TestManager(t *testing.T) {
 					"These test failures are causing problem(s) which require your attention, including:\n" +
 					"- Problem A\n" +
 					"\n" +
+					"See current problems, failure examples and more in LUCI Analysis at: https://luci-analysis-test.appspot.com/p/luciproject/rules/new-rule-id\n" +
 					"\n" +
 					"How to action this bug: https://luci-analysis-test.appspot.com/help#new-bug-filed\n" +
 					"Provide feedback: https://luci-analysis-test.appspot.com/help#feedback\n" +
@@ -356,11 +351,9 @@ func TestManager(t *testing.T) {
 
 				issue := f.Issues[0]
 				So(issue.Issue, ShouldResembleProto, expectedIssue)
-				So(len(issue.Comments), ShouldEqual, 3)
+				So(len(issue.Comments), ShouldEqual, 2)
 				So(issue.Comments[0].Content, ShouldEqual, expectedComment)
-				// Link to cluster page should appear in follow-up comment.
-				So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
-				So(issue.Comments[2].Content, ShouldStartWith, "Policy ID: policy-a")
+				So(issue.Comments[1].Content, ShouldStartWith, "Policy ID: policy-a")
 				So(issue.NotifyCount, ShouldEqual, 2)
 			})
 			Convey("Without Restrict-View-Google", func() {
@@ -409,7 +402,7 @@ func TestManager(t *testing.T) {
 			})
 			So(len(f.Issues), ShouldEqual, 1)
 			So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "1")
-			So(f.Issues[0].Comments, ShouldHaveLength, 4)
+			So(f.Issues[0].Comments, ShouldHaveLength, 3)
 
 			originalCommentCount := len(f.Issues[0].Comments)
 
@@ -441,7 +434,7 @@ func TestManager(t *testing.T) {
 					Bug:                              bugs.BugID{System: bugs.MonorailSystem, ID: response.ID},
 					BugManagementState:               state,
 					IsManagingBug:                    true,
-					RuleID:                           "123",
+					RuleID:                           "rule-id",
 					IsManagingBugPriority:            true,
 					IsManagingBugPriorityLastUpdated: tc.Now(),
 				},
@@ -497,7 +490,7 @@ func TestManager(t *testing.T) {
 				So(f.Issues[0].Comments, ShouldHaveLength, originalCommentCount+1)
 				So(f.Issues[0].Comments[originalCommentCount].Content, ShouldEqual,
 					"This bug has been associated with failures in LUCI Analysis. "+
-						"To view failure examples or update the association, go to LUCI Analysis at: https://luci-analysis-test.appspot.com/b/chromium/100")
+						"To view failure examples or update the association, go to LUCI Analysis at: https://luci-analysis-test.appspot.com/p/luciproject/rules/rule-id")
 			})
 			Convey("If active policies changed", func() {
 				// De-activates policy-c (P1), leaving only policy-a (P4) active.
@@ -566,7 +559,7 @@ func TestManager(t *testing.T) {
 					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/help#priority-update")
 					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
-						"https://luci-analysis-test.appspot.com/b/chromium/100")
+						"https://luci-analysis-test.appspot.com/p/luciproject/rules/rule-id")
 
 					// Does not notify.
 					So(f.Issues[0].NotifyCount, ShouldEqual, originalNotifyCount)
@@ -603,7 +596,7 @@ func TestManager(t *testing.T) {
 					So(f.Issues[0].Comments[originalCommentCount+1].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/help#priority-update")
 					So(f.Issues[0].Comments[originalCommentCount+1].Content, ShouldContainSubstring,
-						"https://luci-analysis-test.appspot.com/b/chromium/100")
+						"https://luci-analysis-test.appspot.com/p/luciproject/rules/rule-id")
 
 					// Notified the policy activation, and the priority increase.
 					So(f.Issues[0].NotifyCount, ShouldEqual, originalNotifyCount+2)
@@ -635,8 +628,7 @@ func TestManager(t *testing.T) {
 					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldEqual,
 						"The bug priority has been manually set. To re-enable automatic priority updates by LUCI Analysis,"+
 							" enable the update priority flag on the rule.\n\nSee failure impact and configure the failure"+
-							" association rule for this bug at: https://luci-analysis-test.appspot.com/b/chromium/100")
-
+							" association rule for this bug at: https://luci-analysis-test.appspot.com/p/luciproject/rules/rule-id")
 					// Does not notify.
 					So(f.Issues[0].NotifyCount, ShouldEqual, originalNotifyCount)
 
@@ -669,7 +661,7 @@ func TestManager(t *testing.T) {
 						So(f.Issues[0].Comments[originalCommentCount+1].Content, ShouldContainSubstring,
 							"https://luci-analysis-test.appspot.com/help#priority-update")
 						So(f.Issues[0].Comments[originalCommentCount+1].Content, ShouldContainSubstring,
-							"https://luci-analysis-test.appspot.com/b/chromium/100")
+							"https://luci-analysis-test.appspot.com/p/luciproject/rules/rule-id")
 
 						// Verify repeated update has no effect.
 						So(verifyUpdateDoesNothing(), ShouldBeNil)
@@ -713,7 +705,7 @@ func TestManager(t *testing.T) {
 					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/help#bug-verified")
 					So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
-						"https://luci-analysis-test.appspot.com/b/chromium/100")
+						"https://luci-analysis-test.appspot.com/p/luciproject/rules/rule-id")
 
 					// Verify repeated update has no effect.
 					So(verifyUpdateDoesNothing(), ShouldBeNil)
@@ -767,7 +759,7 @@ func TestManager(t *testing.T) {
 							So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/help#bug-reopened")
 							So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
-								"https://luci-analysis-test.appspot.com/b/chromium/100")
+								"https://luci-analysis-test.appspot.com/p/luciproject/rules/rule-id")
 
 							// Verify repeated update has no effect.
 							So(verifyUpdateDoesNothing(), ShouldBeNil)
@@ -797,7 +789,7 @@ func TestManager(t *testing.T) {
 							So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/help#bug-reopened")
 							So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
-								"https://luci-analysis-test.appspot.com/b/chromium/100")
+								"https://luci-analysis-test.appspot.com/p/luciproject/rules/rule-id")
 
 							// Verify repeated update has no effect.
 							So(verifyUpdateDoesNothing(), ShouldBeNil)
@@ -974,7 +966,7 @@ func TestManager(t *testing.T) {
 				},
 			})
 			So(f.Issues, ShouldHaveLength, 1)
-			So(f.Issues[0].Comments, ShouldHaveLength, 3)
+			So(f.Issues[0].Comments, ShouldHaveLength, 2)
 			originalCommentCount := len(f.Issues[0].Comments)
 
 			f.Issues[0].Issue.Status.Status = DuplicateStatus
@@ -985,7 +977,8 @@ func TestManager(t *testing.T) {
 			Convey("With ErrorMessage", func() {
 				request := bugs.UpdateDuplicateSourceRequest{
 					BugDetails: bugs.DuplicateBugDetails{
-						Bug: bugs.BugID{System: bugs.MonorailSystem, ID: "chromium/100"},
+						RuleID: "source-rule-id",
+						Bug:    bugs.BugID{System: bugs.MonorailSystem, ID: "chromium/100"},
 					},
 					ErrorMessage: "Some error.",
 				}
@@ -996,12 +989,13 @@ func TestManager(t *testing.T) {
 				So(f.Issues[0].Comments, ShouldHaveLength, originalCommentCount+1)
 				So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring, "Some error.")
 				So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
-					"https://luci-analysis-test.appspot.com/b/chromium/100")
+					"https://luci-analysis-test.appspot.com/p/luciproject/rules/source-rule-id")
 			})
 			Convey("Without ErrorMessage", func() {
 				request := bugs.UpdateDuplicateSourceRequest{
 					BugDetails: bugs.DuplicateBugDetails{
-						Bug: bugs.BugID{System: bugs.MonorailSystem, ID: "chromium/100"},
+						RuleID: "source-rule-id",
+						Bug:    bugs.BugID{System: bugs.MonorailSystem, ID: "chromium/100"},
 					},
 					DestinationRuleID: "12345abcdef",
 				}
@@ -1029,18 +1023,19 @@ func TestManager(t *testing.T) {
 				},
 			})
 			So(f.Issues, ShouldHaveLength, 1)
-			So(f.Issues[0].Comments, ShouldHaveLength, 3)
+			So(f.Issues[0].Comments, ShouldHaveLength, 2)
 			originalCommentCount := len(f.Issues[0].Comments)
 
 			bugID := bugs.BugID{System: bugs.MonorailSystem, ID: "chromium/100"}
-			err = bm.UpdateDuplicateDestination(ctx, bugID)
+			ruleID := "destination-rule-id"
+			err = bm.UpdateDuplicateDestination(ctx, bugID, ruleID)
 			So(err, ShouldBeNil)
 
 			So(f.Issues[0].Issue.Status, ShouldNotEqual, DuplicateStatus)
 			So(f.Issues[0].Comments, ShouldHaveLength, originalCommentCount+1)
 			So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring, "merged the failure association rule for that bug into the rule for this bug.")
 			So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
-				"https://luci-analysis-test.appspot.com/b/chromium/100")
+				"https://luci-analysis-test.appspot.com/p/luciproject/rules/destination-rule-id")
 		})
 	})
 }

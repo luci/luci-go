@@ -121,6 +121,8 @@ type BugUpdateResponse struct {
 // DuplicateBugDetails holds the data of a duplicate bug, this includes it's bug id,
 // and whether or not it is assigned to a user.
 type DuplicateBugDetails struct {
+	// The rule ID.
+	RuleID string
 	// Bug is the source bug that was merged-into another bug.
 	Bug BugID
 	// IsAssigned indicated whether this bug is assigned or not.

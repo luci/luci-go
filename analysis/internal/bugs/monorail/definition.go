@@ -119,7 +119,7 @@ func NewGenerator(uiBaseURL, project string, projectCfg *configpb.ProjectConfig)
 	}, nil
 }
 
-func (rg *RequestGenerator) PrepareNew(activePolicyIDs map[bugs.PolicyID]struct{}, description *clustering.ClusterDescription,
+func (rg *RequestGenerator) PrepareNew(ruleID string, activePolicyIDs map[bugs.PolicyID]struct{}, description *clustering.ClusterDescription,
 	components []string) (*mpb.MakeIssueRequest, error) {
 	priority, verified := rg.policyApplyer.RecommendedPriorityAndVerified(activePolicyIDs)
 	if verified {
@@ -163,56 +163,34 @@ func (rg *RequestGenerator) PrepareNew(activePolicyIDs map[bugs.PolicyID]struct{
 		})
 	}
 
+	ruleLink := bugs.RuleURL(rg.uiBaseURL, rg.project, ruleID)
+
 	return &mpb.MakeIssueRequest{
 		Parent: fmt.Sprintf("projects/%s", rg.monorailCfg.Project),
 		Issue:  issue,
-		// Do not include the link to the rule in monorail initial comments,
-		// as we will post it in a follow-up comment.
 		Description: rg.policyApplyer.NewIssueDescription(
-			description, activePolicyIDs, rg.uiBaseURL, "" /* ruleLink */),
+			description, activePolicyIDs, rg.uiBaseURL, ruleLink),
 		NotifyType: mpb.NotifyType_EMAIL,
 	}, nil
 }
 
 // linkToRuleComment returns a comment that links the user to the failure
-// association rule in LUCI Analysis. bugName is the internal bug name,
-// e.g. "chromium/100".
-func (rg *RequestGenerator) linkToRuleComment(bugName string) string {
-	return fmt.Sprintf(bugs.LinkTemplate, bugs.RuleForMonorailBugURL(rg.uiBaseURL, bugName))
-}
-
-// PrepareLinkComment prepares a request that adds links to LUCI Analysis to
-// a monorail bug.
-func (rg *RequestGenerator) PrepareLinkComment(bugID string) (*mpb.ModifyIssuesRequest, error) {
-	issueName, err := toMonorailIssueName(bugID)
-	if err != nil {
-		return nil, err
-	}
-
-	result := &mpb.ModifyIssuesRequest{
-		Deltas: []*mpb.IssueDelta{
-			{
-				Issue: &mpb.Issue{
-					Name: issueName,
-				},
-				UpdateMask: &field_mask.FieldMask{},
-			},
-		},
-		NotifyType:     mpb.NotifyType_NO_NOTIFICATION,
-		CommentContent: rg.linkToRuleComment(bugID),
-	}
-	return result, nil
+// association rule in LUCI Analysis.
+//
+// ruleID is the LUCI Analysis Rule ID.
+func (rg *RequestGenerator) linkToRuleComment(ruleID string) string {
+	return fmt.Sprintf(bugs.LinkTemplate, bugs.RuleURL(rg.uiBaseURL, rg.project, ruleID))
 }
 
 // PrepareRuleAssociatedComment prepares a request that notifies the bug
 // it is associated with failures in LUCI Analysis.
-func (rg *RequestGenerator) PrepareRuleAssociatedComment(bugID string) (*mpb.ModifyIssuesRequest, error) {
+func (rg *RequestGenerator) PrepareRuleAssociatedComment(bugID, ruleID string) (*mpb.ModifyIssuesRequest, error) {
 	issueName, err := toMonorailIssueName(bugID)
 	if err != nil {
 		return nil, err
 	}
 
-	ruleURL := bugs.RuleForMonorailBugURL(rg.uiBaseURL, bugID)
+	ruleURL := bugs.RuleURL(rg.uiBaseURL, rg.project, ruleID)
 
 	result := &mpb.ModifyIssuesRequest{
 		Deltas: []*mpb.IssueDelta{
@@ -293,7 +271,7 @@ func (rg *RequestGenerator) PreparePolicyActivatedComment(bugID string, policyID
 // UpdateDuplicateSource updates the source bug of a (source, destination)
 // duplicate bug pair, after LUCI Analysis has attempted to merge their
 // failure association rules.
-func (rg *RequestGenerator) UpdateDuplicateSource(bugID, errorMessage, destinationRuleID string) (*mpb.ModifyIssuesRequest, error) {
+func (rg *RequestGenerator) UpdateDuplicateSource(bugID, errorMessage, sourceRuleID, destinationRuleID string) (*mpb.ModifyIssuesRequest, error) {
 	name, err := toMonorailIssueName(bugID)
 	if err != nil {
 		return nil, err
@@ -313,7 +291,7 @@ func (rg *RequestGenerator) UpdateDuplicateSource(bugID, errorMessage, destinati
 			Status: "Available",
 		}
 		delta.UpdateMask.Paths = append(delta.UpdateMask.Paths, "status")
-		comment = strings.Join([]string{errorMessage, rg.linkToRuleComment(bugID)}, "\n\n")
+		comment = strings.Join([]string{errorMessage, rg.linkToRuleComment(sourceRuleID)}, "\n\n")
 	} else {
 		bugLink := bugs.RuleURL(rg.uiBaseURL, rg.project, destinationRuleID)
 		comment = fmt.Sprintf(bugs.SourceBugRuleUpdatedTemplate, bugLink)
@@ -332,7 +310,7 @@ func (rg *RequestGenerator) UpdateDuplicateSource(bugID, errorMessage, destinati
 // UpdateDuplicateDestination updates the destination bug of a
 // (source, destination) duplicate bug pair, after LUCI Analysis has attempted
 // to merge their failure association rules.
-func (rg *RequestGenerator) UpdateDuplicateDestination(bugName string) (*mpb.ModifyIssuesRequest, error) {
+func (rg *RequestGenerator) UpdateDuplicateDestination(bugName string, ruleID string) (*mpb.ModifyIssuesRequest, error) {
 	name, err := toMonorailIssueName(bugName)
 	if err != nil {
 		return nil, err
@@ -347,7 +325,7 @@ func (rg *RequestGenerator) UpdateDuplicateDestination(bugName string) (*mpb.Mod
 		},
 	}
 
-	comment := strings.Join([]string{bugs.DestinationBugRuleUpdatedMessage, rg.linkToRuleComment(bugName)}, "\n\n")
+	comment := strings.Join([]string{bugs.DestinationBugRuleUpdatedMessage, rg.linkToRuleComment(ruleID)}, "\n\n")
 	req := &mpb.ModifyIssuesRequest{
 		Deltas: []*mpb.IssueDelta{
 			delta,
@@ -424,6 +402,8 @@ func fromMonorailPriority(priority string) (configpb.BuganizerPriority, error) {
 }
 
 type MakeUpdateOptions struct {
+	// The LUCI Analysis Rule ID.
+	RuleID string
 	// The bug management state.
 	BugManagementState *bugspb.BugManagementState
 	// The issue to update.
@@ -513,13 +493,7 @@ func (rg *RequestGenerator) MakePriorityOrVerifiedUpdate(options MakeUpdateOptio
 		commentary = bugs.MergeCommentary(commentary, bugs.ManualPriorityUpdateCommentary())
 	}
 
-	bugName, err := fromMonorailIssueName(options.Issue.Name)
-	if err != nil {
-		// This should never happen. It would mean monorail is feeding us
-		// invalid data.
-		return MakeUpdateResult{}, errors.Reason("invalid monorail issue name: %q", options.Issue.Name).Err()
-	}
-	commentary.Footers = append(commentary.Footers, rg.linkToRuleComment(bugName))
+	commentary.Footers = append(commentary.Footers, rg.linkToRuleComment(options.RuleID))
 
 	update := &mpb.ModifyIssuesRequest{
 		Deltas: []*mpb.IssueDelta{

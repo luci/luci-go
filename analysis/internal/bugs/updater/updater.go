@@ -133,7 +133,7 @@ type BugManager interface {
 	// has merged the rule for the source bug to the destination
 	// (merged-into) bug, and provides a link to the failure
 	// association rule.
-	UpdateDuplicateDestination(ctx context.Context, destinationBug bugs.BugID) error
+	UpdateDuplicateDestination(ctx context.Context, destinationBug bugs.BugID, destinationRuleID string) error
 }
 
 // BugUpdater performs updates to bugs and failure association
@@ -481,6 +481,7 @@ func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bug
 
 		if rsp.IsDuplicate {
 			duplicateBugs = append(duplicateBugs, bugs.DuplicateBugDetails{
+				RuleID:     bugsToUpdate[i].RuleID,
 				Bug:        bugsToUpdate[i].Bug,
 				IsAssigned: rsp.IsDuplicateAndAssigned,
 			})
@@ -968,7 +969,7 @@ func (b *BugUpdater) handleDuplicateBugHappyPath(ctx context.Context, duplicateD
 			// With policy-based bug management, we use the standard rule
 			// attachment notifications to notify the destination bug
 			// it is attached to a rule.
-			if err := b.updateDuplicateDestination(ctx, destBug); err != nil {
+			if err := b.updateDuplicateDestination(ctx, destBug, destinationBugRuleID); err != nil {
 				return errors.Annotate(err, "updating destination bug %s", destBug).Err()
 			}
 		}
@@ -1049,7 +1050,7 @@ func (b *BugUpdater) updateDuplicateSource(ctx context.Context, request bugs.Upd
 // bug pair (source bug, destination bug).
 // It posts a message notifying the user the rule was successfully
 // merged to the destination.
-func (b *BugUpdater) updateDuplicateDestination(ctx context.Context, destinationBug bugs.BugID) error {
+func (b *BugUpdater) updateDuplicateDestination(ctx context.Context, destinationBug bugs.BugID, destinationRuleID string) error {
 	manager, ok := b.managers[destinationBug.System]
 	if !ok {
 		// Not all destination bug systems need to be supported
@@ -1057,7 +1058,7 @@ func (b *BugUpdater) updateDuplicateDestination(ctx context.Context, destination
 		// won't be able to post an update there.
 		return nil
 	}
-	err := manager.UpdateDuplicateDestination(ctx, destinationBug)
+	err := manager.UpdateDuplicateDestination(ctx, destinationBug, destinationRuleID)
 	if err != nil {
 		return err
 	}

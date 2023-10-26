@@ -187,7 +187,7 @@ func TestUpdate(t *testing.T) {
 				ExpectedTitle: "Failed to connect to 100.1.1.105.",
 				// Expect the bug description to contain the top tests.
 				ExpectedContent: []string{
-					"https://luci-analysis-test.appspot.com/b/1",
+					"https://luci-analysis-test.appspot.com/p/chromeos/rules/", // Rule ID randomly generated.
 					"network-test-1",
 					"network-test-2",
 				},
@@ -416,7 +416,6 @@ func TestUpdate(t *testing.T) {
 					// Verify
 					So(err, ShouldBeNil)
 					expectedBuganizerBug.ID = 2 // Because we already created a bug with ID 1 above.
-					expectedBuganizerBug.ExpectedContent[0] = "https://luci-analysis-test.appspot.com/b/2"
 					expectedRule.BugID.ID = "2"
 					So(verifyRulesResemble(ctx, []*rules.Entry{expectedRule, existingRule}), ShouldBeNil)
 					So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
@@ -614,23 +613,17 @@ func TestUpdate(t *testing.T) {
 			})
 			Convey("partial success creating bugs is correctly handled", func() {
 				// Inject an error updating the bug after creation.
-				buganizerClient.UpdateCommentError = status.Errorf(codes.Internal, "internal error updating comment")
+				buganizerClient.CreateCommentError = status.Errorf(codes.Internal, "internal error creating comment")
 
 				// Act
 				err = updateBugsForProject(ctx, opts)
-
-				// Because the bug comment could not be updated, do not expect a link to the rule by bug ID
-				// to be present in the bug.
-				So(expectedBuganizerBug.ExpectedContent[0], ShouldEqual, "https://luci-analysis-test.appspot.com/b/1")
-				// Instead expect a link to the rule by rule ID.
-				expectedBuganizerBug.ExpectedContent[0] = "https://luci-analysis-test.appspot.com/p/chromeos/rules/"
 
 				// Do not expect policy activations to have been notified.
 				expectedBuganizerBug.ExpectedPolicyIDsActivated = []string{}
 				expectedRule.BugManagementState.PolicyState["exoneration-policy"].ActivationNotified = false
 
 				// Verify the rule was still created.
-				So(err, ShouldErrLike, "internal error updating comment")
+				So(err, ShouldErrLike, "internal error creating comment")
 				So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 				So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
 				So(issueCount(), ShouldEqual, 1)
@@ -1069,7 +1062,7 @@ func TestUpdate(t *testing.T) {
 						So(issue.Comments, ShouldHaveLength, originalCommentCount+1)
 						So(issue.Comments[originalCommentCount].Comment, ShouldEqual,
 							"This bug has been associated with failures in LUCI Analysis."+
-								" To view failure examples or update the association, go to LUCI Analysis at: https://luci-analysis-test.appspot.com/b/1")
+								" To view failure examples or update the association, go to LUCI Analysis at: https://luci-analysis-test.appspot.com/p/chromeos/rules/"+rule.RuleID)
 
 						// Further runs should not lead to repeated posting of the comment.
 						err = updateBugsForProject(ctx, opts)
@@ -1102,7 +1095,7 @@ func TestUpdate(t *testing.T) {
 						So(issue.Comments, ShouldHaveLength, originalCommentCount+1)
 						So(issue.Comments[originalCommentCount].Content, ShouldContainSubstring,
 							"This bug has been associated with failures in LUCI Analysis."+
-								" To view failure examples or update the association, go to LUCI Analysis at: https://luci-analysis-test.appspot.com/b/chromium/100")
+								" To view failure examples or update the association, go to LUCI Analysis at: https://luci-analysis-test.appspot.com/p/chromeos/rules/"+rule.RuleID)
 
 						// Further runs should not lead to repeated posting of the comment.
 						err = updateBugsForProject(ctx, opts)
@@ -2198,22 +2191,22 @@ func expectMonorailBug(monorailStore *monorail.FakeIssuesStore, bug monorailBug)
 		return errors.Reason("components: %s", msg).Err()
 	}
 	comments := issue.Comments
-	if len(comments) != 2+len(bug.ExpectedPolicyIDsActivated) {
-		return errors.Reason("issue comments: got %v want %v", len(comments), 2+len(bug.ExpectedPolicyIDsActivated)).Err()
+	if len(comments) != 1+len(bug.ExpectedPolicyIDsActivated) {
+		return errors.Reason("issue comments: got %v want %v", len(comments), 1+len(bug.ExpectedPolicyIDsActivated)).Err()
 	}
 	for _, expectedContent := range bug.ExpectedContent {
 		if !strings.Contains(issue.Comments[0].Content, expectedContent) {
 			return errors.Reason("issue description: got %q, expected it to contain %q", issue.Comments[0].Content, expectedContent).Err()
 		}
 	}
-	expectedLink := fmt.Sprintf("https://luci-analysis-test.appspot.com/b/%s/%v", bug.Project, bug.ID)
-	if !strings.Contains(comments[1].Content, expectedLink) {
-		return errors.Reason("issue comment #2: got %q, expected it to contain %q", issue.Comments[1].Content, expectedLink).Err()
+	expectedLink := "https://luci-analysis-test.appspot.com/p/chromeos/rules/"
+	if !strings.Contains(comments[0].Content, expectedLink) {
+		return errors.Reason("issue comment #1: got %q, expected it to contain %q", issue.Comments[0].Content, expectedLink).Err()
 	}
 	for i, activatedPolicyID := range bug.ExpectedPolicyIDsActivated {
 		expectedContent := fmt.Sprintf("(Policy ID: %s)", activatedPolicyID)
-		if !strings.Contains(comments[2+i].Content, expectedContent) {
-			return errors.Reason("issue comment %v: got %q, expected it to contain %q", i+1, comments[2+i].Content, expectedContent).Err()
+		if !strings.Contains(comments[i+1].Content, expectedContent) {
+			return errors.Reason("issue comment %v: got %q, expected it to contain %q", i+2, comments[i+1].Content, expectedContent).Err()
 		}
 	}
 	return nil

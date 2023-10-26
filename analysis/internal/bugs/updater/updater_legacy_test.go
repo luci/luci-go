@@ -177,7 +177,7 @@ func TestLegacyUpdate(t *testing.T) {
 				ExpectedTitle: "Failed to connect to 100.1.1.105.",
 				// Expect the bug description to contain the top tests.
 				ExpectedContent: []string{
-					"https://luci-analysis-test.appspot.com/b/1",
+					"https://luci-analysis-test.appspot.com/p/chromeos/rules/", // Rule ID randomly generated.
 					"network-test-1",
 					"network-test-2",
 				},
@@ -458,7 +458,6 @@ func TestLegacyUpdate(t *testing.T) {
 					// Verify
 					So(err, ShouldBeNil)
 					expectedBuganizerBug.ID = 2 // Because we already created a bug with ID 1 above.
-					expectedBuganizerBug.ExpectedContent[0] = "https://luci-analysis-test.appspot.com/b/2"
 					expectedRule.BugID.ID = "2"
 					So(verifyRulesResemble(ctx, []*rules.Entry{expectedRule, existingRule}), ShouldBeNil)
 					So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
@@ -1593,12 +1592,12 @@ func TestLegacyUpdate(t *testing.T) {
 							issueTwoRule.RuleDefinition = "reason LIKE \"want foofoo, got bar\" OR\nreason LIKE \"want foofoofoo, got bar\""
 							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 
-							So(issueOne.Comments, ShouldHaveLength, 3)
-							So(issueOne.Comments[2].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
-							So(issueOne.Comments[2].Content, ShouldContainSubstring, issueOneRule.RuleID)
+							So(issueOne.Comments, ShouldHaveLength, 2)
+							So(issueOne.Comments[1].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
+							So(issueOne.Comments[1].Content, ShouldContainSubstring, issueOneRule.RuleID)
 
-							So(issueTwo.Comments, ShouldHaveLength, 3)
-							So(issueTwo.Comments[2].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
+							So(issueTwo.Comments, ShouldHaveLength, 2)
+							So(issueTwo.Comments[1].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
 						})
 						Convey("error case", func() {
 							// Note that this is a simple cycle with only two bugs.
@@ -1623,9 +1622,9 @@ func TestLegacyUpdate(t *testing.T) {
 							issueTwoRule.IsActive = false
 							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 
-							So(issueOne.Comments, ShouldHaveLength, 4)
-							So(issueOne.Comments[2].Content, ShouldContainSubstring, "a cycle was detected in the bug merged-into graph")
-							So(issueOne.Comments[3].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
+							So(issueOne.Comments, ShouldHaveLength, 3)
+							So(issueOne.Comments[1].Content, ShouldContainSubstring, "a cycle was detected in the bug merged-into graph")
+							So(issueOne.Comments[2].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
 						})
 					})
 					Convey("monorail to buganizer", func() {
@@ -1650,9 +1649,9 @@ func TestLegacyUpdate(t *testing.T) {
 							issueTwoRule.RuleDefinition = "reason LIKE \"want foofoo, got bar\" OR\ntest = \"testname-0\""
 							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 
-							So(issueOne.Comments, ShouldHaveLength, 3)
-							So(issueOne.Comments[2].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
-							So(issueOne.Comments[2].Content, ShouldContainSubstring, issueOneRule.RuleID)
+							So(issueOne.Comments, ShouldHaveLength, 2)
+							So(issueOne.Comments[1].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
+							So(issueOne.Comments[1].Content, ShouldContainSubstring, issueOneRule.RuleID)
 
 							So(issueTwo.Comments, ShouldHaveLength, 2)
 							So(issueTwo.Comments[1].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")

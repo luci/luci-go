@@ -17,13 +17,10 @@ package buganizer
 import (
 	"context"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
@@ -98,7 +95,7 @@ func TestBugManagerLegacy(t *testing.T) {
 						"of these values:\n\t\t\t\t\t\"Expected_Value\"\n\t\t\t\t\tmy_expr.evaluate(123)\n\t\t\t\t\t\t" +
 						"Which is: \"Unexpected_Value\"\n" +
 						"\n" +
-						"See failure impact and configure the failure association rule for this bug at: https://luci-analysis-test.appspot.com/b/1\n" +
+						"See failure impact and configure the failure association rule for this bug at: https://luci-analysis-test.appspot.com/p/chromeos/rules/new-rule-id\n" +
 						"\n" +
 						"The priority was set to P1 because:\n" +
 						"- Test Results Failed (1-day) >= 500\n" +
@@ -110,38 +107,18 @@ func TestBugManagerLegacy(t *testing.T) {
 						"Was this bug filed in the wrong component? See: https://luci-analysis-test.appspot.com/help#component-selection",
 				}
 
-				Convey("Happy path", func() {
-					response := bm.Create(ctx, createRequest)
-					So(response, ShouldResemble, bugs.BugCreateResponse{
-						ID:                        "1",
-						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
-					})
-					So(len(fakeStore.Issues), ShouldEqual, 1)
-
-					issueData := fakeStore.Issues[1]
-					So(issueData.Issue, ShouldResembleProto, expectedIssue)
-					So(len(issueData.Comments), ShouldEqual, 1)
-					// Link to cluster page should appear in output.
-					So(issueData.Comments[0].Comment, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
+				response := bm.Create(ctx, createRequest)
+				So(response, ShouldResemble, bugs.BugCreateResponse{
+					ID:                        "1",
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 				})
-				Convey("Failed to update issue comment (permission denied)", func() {
-					fakeClient.UpdateCommentError = status.Errorf(codes.PermissionDenied, "modification not allowed")
-					response := bm.Create(ctx, createRequest)
-					So(response, ShouldResemble, bugs.BugCreateResponse{
-						ID:                        "1",
-						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
-					})
-					So(len(fakeStore.Issues), ShouldEqual, 1)
+				So(len(fakeStore.Issues), ShouldEqual, 1)
 
-					expectedIssue.Description.Comment = strings.ReplaceAll(expectedIssue.Description.Comment,
-						"https://luci-analysis-test.appspot.com/b/1",
-						"https://luci-analysis-test.appspot.com/p/chromeos/rules/new-rule-id")
-
-					issueData := fakeStore.Issues[1]
-					So(issueData.Issue, ShouldResembleProto, expectedIssue)
-					So(len(issueData.Comments), ShouldEqual, 1)
-					So(issueData.Comments[0].Comment, ShouldNotContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
-				})
+				issueData := fakeStore.Issues[1]
+				So(issueData.Issue, ShouldResembleProto, expectedIssue)
+				So(len(issueData.Comments), ShouldEqual, 1)
+				// Link to cluster page should appear in output.
+				So(issueData.Comments[0].Comment, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/p/chromeos/rules/new-rule-id")
 			})
 			Convey("With test name failure cluster", func() {
 				createRequest.Description.Title = "ninja://:blink_web_tests/media/my-suite/my-test.html"
@@ -150,7 +127,7 @@ func TestBugManagerLegacy(t *testing.T) {
 					CommentNumber: 1,
 					Comment: "A test is failing ninja://:blink_web_tests/media/my-suite/my-test.html\n" +
 						"\n" +
-						"See failure impact and configure the failure association rule for this bug at: https://luci-analysis-test.appspot.com/b/1\n" +
+						"See failure impact and configure the failure association rule for this bug at: https://luci-analysis-test.appspot.com/p/chromeos/rules/new-rule-id\n" +
 						"\n" +
 						"The priority was set to P1 because:\n" +
 						"- Test Results Failed (1-day) >= 500\n" +
@@ -173,7 +150,7 @@ func TestBugManagerLegacy(t *testing.T) {
 
 				So(issue.Issue, ShouldResembleProto, expectedIssue)
 				So(len(issue.Comments), ShouldEqual, 1)
-				So(issue.Comments[0].Comment, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
+				So(issue.Comments[0].Comment, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/p/chromeos/rules/new-rule-id")
 			})
 
 			Convey("Does nothing if in simulation mode", func() {

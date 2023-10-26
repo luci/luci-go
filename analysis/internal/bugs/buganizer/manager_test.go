@@ -22,8 +22,6 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -125,7 +123,7 @@ func TestBugManager(t *testing.T) {
 						"These test failures are causing problem(s) which require your attention, including:\n" +
 						"- Problem A\n" +
 						"\n" +
-						"See current problems, failure examples and more in LUCI Analysis at: https://luci-analysis-test.appspot.com/b/1\n" +
+						"See current problems, failure examples and more in LUCI Analysis at: https://luci-analysis-test.appspot.com/p/chromeos/rules/new-rule-id\n" +
 						"\n" +
 						"How to action this bug: https://luci-analysis-test.appspot.com/help#new-bug-filed\n" +
 						"Provide feedback: https://luci-analysis-test.appspot.com/help#feedback\n" +
@@ -200,57 +198,6 @@ func TestBugManager(t *testing.T) {
 					So(issueData.Comments[2].Comment, ShouldStartWith, "Policy ID: policy-c")
 					So(issueData.Comments[3].Comment, ShouldStartWith, "Policy ID: policy-a")
 				})
-				Convey("Failed to update issue comment (permission denied)", func() {
-					fakeClient.UpdateCommentError = status.Errorf(codes.PermissionDenied, "modification not allowed")
-
-					// Act
-					response := bm.Create(ctx, createRequest)
-
-					// Verify
-					So(response, ShouldResemble, bugs.BugCreateResponse{
-						ID: "1",
-						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
-							"policy-a": {},
-						},
-					})
-					So(len(fakeStore.Issues), ShouldEqual, 1)
-
-					expectedIssue.Description.Comment = strings.ReplaceAll(expectedIssue.Description.Comment,
-						"https://luci-analysis-test.appspot.com/b/1",
-						"https://luci-analysis-test.appspot.com/p/chromeos/rules/new-rule-id")
-
-					issueData := fakeStore.Issues[1]
-					So(issueData.Issue, ShouldResembleProto, expectedIssue)
-					So(len(issueData.Comments), ShouldEqual, 2)
-					So(issueData.Comments[0].Comment, ShouldNotContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
-					So(issueData.Comments[1].Comment, ShouldStartWith, "Policy ID: policy-a")
-				})
-				Convey("Failed to update issue comment (other error)", func() {
-					fakeClient.UpdateCommentError = status.Errorf(codes.Internal, "internal server error")
-
-					// Act
-					response := bm.Create(ctx, createRequest)
-
-					// Verify
-					// Both ID and Error set, reflecting partial success.
-					So(response.ID, ShouldEqual, "1")
-					So(response.Error, ShouldNotBeNil)
-					So(errors.Is(response.Error, fakeClient.UpdateCommentError), ShouldBeTrue)
-					So(response.Simulated, ShouldBeFalse)
-					So(response.PolicyActivationsNotified, ShouldHaveLength, 0)
-					So(len(fakeStore.Issues), ShouldEqual, 1)
-
-					expectedIssue.Description.Comment = strings.ReplaceAll(expectedIssue.Description.Comment,
-						"https://luci-analysis-test.appspot.com/b/1",
-						"https://luci-analysis-test.appspot.com/p/chromeos/rules/new-rule-id")
-					// We didn't get so far as to insert the issue in hotlists.
-					expectedIssue.IssueState.HotlistIds = []int64{}
-
-					issueData := fakeStore.Issues[1]
-					So(issueData.Issue, ShouldResembleProto, expectedIssue)
-					So(len(issueData.Comments), ShouldEqual, 1)
-					So(issueData.Comments[0].Comment, ShouldNotContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
-				})
 			})
 			Convey("With test name failure cluster", func() {
 				createRequest.Description.Title = "ninja://:blink_web_tests/media/my-suite/my-test.html"
@@ -262,7 +209,7 @@ func TestBugManager(t *testing.T) {
 						"These test failures are causing problem(s) which require your attention, including:\n" +
 						"- Problem A\n" +
 						"\n" +
-						"See current problems, failure examples and more in LUCI Analysis at: https://luci-analysis-test.appspot.com/b/1\n" +
+						"See current problems, failure examples and more in LUCI Analysis at: https://luci-analysis-test.appspot.com/p/chromeos/rules/new-rule-id\n" +
 						"\n" +
 						"How to action this bug: https://luci-analysis-test.appspot.com/help#new-bug-filed\n" +
 						"Provide feedback: https://luci-analysis-test.appspot.com/help#feedback\n" +
@@ -282,7 +229,7 @@ func TestBugManager(t *testing.T) {
 
 				So(issue.Issue, ShouldResembleProto, expectedIssue)
 				So(len(issue.Comments), ShouldEqual, 2)
-				So(issue.Comments[0].Comment, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
+				So(issue.Comments[0].Comment, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/p/chromeos/rules/new-rule-id")
 				So(issue.Comments[1].Comment, ShouldStartWith, "Policy ID: policy-a")
 			})
 
@@ -401,7 +348,7 @@ func TestBugManager(t *testing.T) {
 					Bug:                              bugs.BugID{System: bugs.BuganizerSystem, ID: response.ID},
 					BugManagementState:               state,
 					IsManagingBug:                    true,
-					RuleID:                           "123",
+					RuleID:                           "rule-id",
 					IsManagingBugPriority:            true,
 					IsManagingBugPriorityLastUpdated: clock.Now(ctx),
 				},
@@ -435,7 +382,7 @@ func TestBugManager(t *testing.T) {
 					{
 						Bug:                              bugs.BugID{System: bugs.BuganizerSystem, ID: response.ID},
 						Metrics:                          c.Metrics,
-						RuleID:                           "123",
+						RuleID:                           "rule-id",
 						IsManagingBug:                    true,
 						IsManagingBugPriority:            true,
 						IsManagingBugPriorityLastUpdated: clock.Now(ctx),
@@ -477,7 +424,7 @@ func TestBugManager(t *testing.T) {
 				So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
 				So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldEqual,
 					"This bug has been associated with failures in LUCI Analysis. "+
-						"To view failure examples or update the association, go to LUCI Analysis at: https://luci-analysis-test.appspot.com/b/1")
+						"To view failure examples or update the association, go to LUCI Analysis at: https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id")
 			})
 			Convey("If active policies changed", func() {
 				// De-activates policy-c (P1), leaving only policy-a (P4) active.
@@ -539,7 +486,7 @@ func TestBugManager(t *testing.T) {
 					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/help#priority-update")
 					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-						"https://luci-analysis-test.appspot.com/b/1")
+						"https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id")
 
 					// Verify repeated update has no effect.
 					So(verifyUpdateDoesNothing(), ShouldBeNil)
@@ -571,7 +518,7 @@ func TestBugManager(t *testing.T) {
 					So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/help#priority-update")
 					So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring,
-						"https://luci-analysis-test.appspot.com/b/1")
+						"https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id")
 
 					// Verify repeated update has no effect.
 					So(verifyUpdateDoesNothing(), ShouldBeNil)
@@ -599,7 +546,7 @@ func TestBugManager(t *testing.T) {
 					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldEqual,
 						"The bug priority has been manually set. To re-enable automatic priority updates by LUCI Analysis,"+
 							" enable the update priority flag on the rule.\n\nSee failure impact and configure the failure"+
-							" association rule for this bug at: https://luci-analysis-test.appspot.com/b/1")
+							" association rule for this bug at: https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id")
 
 					// Normally, the caller would update IsManagingBugPriority to false
 					// now, but as this is a test, we have to do it manually.
@@ -632,7 +579,7 @@ func TestBugManager(t *testing.T) {
 						So(fakeStore.Issues[1].Comments[initialComments].Comment, ShouldContainSubstring,
 							"https://luci-analysis-test.appspot.com/help#priority-update")
 						So(fakeStore.Issues[1].Comments[initialComments].Comment, ShouldContainSubstring,
-							"https://luci-analysis-test.appspot.com/b/1")
+							"https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id")
 
 						// Verify repeated update has no effect.
 						So(verifyUpdateDoesNothing(), ShouldBeNil)
@@ -700,7 +647,7 @@ func TestBugManager(t *testing.T) {
 					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/help#bug-verified")
 					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-						"https://luci-analysis-test.appspot.com/b/1")
+						"https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id")
 
 					// Verify repeated update has no effect.
 					So(verifyUpdateDoesNothing(), ShouldBeNil)
@@ -749,7 +696,7 @@ func TestBugManager(t *testing.T) {
 							So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/help#bug-reopened")
 							So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-								"https://luci-analysis-test.appspot.com/b/1")
+								"https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id")
 
 							// Verify repeated update has no effect.
 							So(verifyUpdateDoesNothing(), ShouldBeNil)
@@ -774,7 +721,7 @@ func TestBugManager(t *testing.T) {
 							So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/help#bug-reopened")
 							So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-								"https://luci-analysis-test.appspot.com/b/1")
+								"https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id")
 
 							// Verify repeated update has no effect.
 							So(verifyUpdateDoesNothing(), ShouldBeNil)
@@ -915,7 +862,8 @@ func TestBugManager(t *testing.T) {
 			Convey("With ErrorMessage", func() {
 				request := bugs.UpdateDuplicateSourceRequest{
 					BugDetails: bugs.DuplicateBugDetails{
-						Bug: bugs.BugID{System: bugs.BuganizerSystem, ID: "1"},
+						RuleID: "source-rule-id",
+						Bug:    bugs.BugID{System: bugs.BuganizerSystem, ID: "1"},
 					},
 					ErrorMessage: "Some error.",
 				}
@@ -926,11 +874,12 @@ func TestBugManager(t *testing.T) {
 				So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
 				So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring, "Some error.")
 				So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-					"https://luci-analysis-test.appspot.com/b/1")
+					"https://luci-analysis-test.appspot.com/p/chromeos/rules/source-rule-id")
 			})
 			Convey("With ErrorMessage and IsAssigned is true", func() {
 				request := bugs.UpdateDuplicateSourceRequest{
 					BugDetails: bugs.DuplicateBugDetails{
+						RuleID:     "source-rule-id",
 						Bug:        bugs.BugID{System: bugs.BuganizerSystem, ID: "1"},
 						IsAssigned: true,
 					},
@@ -943,12 +892,13 @@ func TestBugManager(t *testing.T) {
 				So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
 				So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring, "Some error.")
 				So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-					"https://luci-analysis-test.appspot.com/b/1")
+					"https://luci-analysis-test.appspot.com/p/chromeos/rules/source-rule-id")
 			})
 			Convey("Without ErrorMessage", func() {
 				request := bugs.UpdateDuplicateSourceRequest{
 					BugDetails: bugs.DuplicateBugDetails{
-						Bug: bugs.BugID{System: bugs.BuganizerSystem, ID: "1"},
+						RuleID: "source-bug-rule-id",
+						Bug:    bugs.BugID{System: bugs.BuganizerSystem, ID: "1"},
 					},
 					DestinationRuleID: "12345abcdef",
 				}
@@ -980,14 +930,15 @@ func TestBugManager(t *testing.T) {
 			originalCommentCount := len(fakeStore.Issues[1].Comments)
 
 			bugID := bugs.BugID{System: bugs.BuganizerSystem, ID: "1"}
-			err := bm.UpdateDuplicateDestination(ctx, bugID)
+			destinationRuleID := "destination-rule-id"
+			err := bm.UpdateDuplicateDestination(ctx, bugID, destinationRuleID)
 			So(err, ShouldBeNil)
 
 			So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldNotEqual, issuetracker.Issue_DUPLICATE)
 			So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
 			So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring, "merged the failure association rule for that bug into the rule for this bug.")
 			So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-				"https://luci-analysis-test.appspot.com/b/1")
+				"https://luci-analysis-test.appspot.com/p/chromeos/rules/destination-rule-id")
 		})
 	})
 }

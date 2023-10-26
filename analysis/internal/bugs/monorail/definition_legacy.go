@@ -58,7 +58,7 @@ func NewLegacyGenerator(uiBaseURL, project string, projectCfg *configpb.ProjectC
 
 // PrepareNew prepares a new bug from the given cluster. Title and description
 // are the cluster-specific bug title and description.
-func (rg *LegacyRequestGenerator) PrepareNew(metrics bugs.ClusterMetrics, description *clustering.ClusterDescription, components []string) *mpb.MakeIssueRequest {
+func (rg *LegacyRequestGenerator) PrepareNew(ruleID string, metrics bugs.ClusterMetrics, description *clustering.ClusterDescription, components []string) *mpb.MakeIssueRequest {
 	issuePriority := rg.clusterPriority(metrics)
 	issue := &mpb.Issue{
 		Summary: bugs.GenerateBugSummary(description.Title),
@@ -101,13 +101,15 @@ func (rg *LegacyRequestGenerator) PrepareNew(metrics bugs.ClusterMetrics, descri
 	// Justify the priority for the bug.
 	thresholdComment := rg.priorityComment(metrics, issuePriority)
 
+	ruleLink := bugs.RuleURL(rg.uiBaseURL, rg.project, ruleID)
+
 	return &mpb.MakeIssueRequest{
 		Parent: fmt.Sprintf("projects/%s", rg.monorailCfg.Project),
 		Issue:  issue,
 		// Do not include the link to the rule in monorail initial comments,
 		// as we will post it in a follow-up comment.
 		Description: bugs.NewIssueDescriptionLegacy(
-			description, rg.uiBaseURL, thresholdComment, "" /* ruleLink */),
+			description, rg.uiBaseURL, thresholdComment, ruleLink),
 		NotifyType: mpb.NotifyType_EMAIL,
 	}
 }
@@ -117,29 +119,6 @@ func (rg *LegacyRequestGenerator) PrepareNew(metrics bugs.ClusterMetrics, descri
 // e.g. "chromium/100".
 func (rg *LegacyRequestGenerator) linkToRuleComment(bugName string) string {
 	return fmt.Sprintf(bugs.LinkTemplate, bugs.RuleForMonorailBugURL(rg.uiBaseURL, bugName))
-}
-
-// PrepareLinkComment prepares a request that adds links to LUCI Analysis to
-// a monorail bug.
-func (rg *LegacyRequestGenerator) PrepareLinkComment(bugID string) (*mpb.ModifyIssuesRequest, error) {
-	issueName, err := toMonorailIssueName(bugID)
-	if err != nil {
-		return nil, err
-	}
-
-	result := &mpb.ModifyIssuesRequest{
-		Deltas: []*mpb.IssueDelta{
-			{
-				Issue: &mpb.Issue{
-					Name: issueName,
-				},
-				UpdateMask: &field_mask.FieldMask{},
-			},
-		},
-		NotifyType:     mpb.NotifyType_NO_NOTIFICATION,
-		CommentContent: rg.linkToRuleComment(bugID),
-	}
-	return result, nil
 }
 
 // UpdateDuplicateSource updates the source bug of a (source, destination)

@@ -121,13 +121,13 @@ func (m *BugManager) Create(ctx context.Context, request bugs.BugCreateRequest) 
 	var makeReq *mpb.MakeIssueRequest
 	if m.usePolicyBasedManagement {
 		var err error
-		makeReq, err = m.generator.PrepareNew(request.ActivePolicyIDs, request.Description, components)
+		makeReq, err = m.generator.PrepareNew(request.RuleID, request.ActivePolicyIDs, request.Description, components)
 		if err != nil {
 			response.Error = errors.Annotate(err, "prepare new issue").Err()
 			return response
 		}
 	} else {
-		makeReq = m.legacyGenerator.PrepareNew(request.Metrics, request.Description, components)
+		makeReq = m.legacyGenerator.PrepareNew(request.RuleID, request.Metrics, request.Description, components)
 	}
 
 	var bugID string
@@ -150,25 +150,6 @@ func (m *BugManager) Create(ctx context.Context, request bugs.BugCreateRequest) 
 	}
 	// A bug was filed.
 	response.ID = bugID
-
-	var modifyReq *mpb.ModifyIssuesRequest
-	if m.usePolicyBasedManagement {
-		modifyReq, err = m.generator.PrepareLinkComment(bugID)
-	} else {
-		modifyReq, err = m.legacyGenerator.PrepareLinkComment(bugID)
-	}
-	if err != nil {
-		response.Error = errors.Annotate(err, "prepare link comment").Err()
-		return response
-	}
-	if m.Simulate {
-		logging.Debugf(ctx, "Would update Monorail issue: %s", textPBMultiline.Format(modifyReq))
-	} else {
-		if err := m.client.ModifyIssues(ctx, modifyReq); err != nil {
-			response.Error = errors.Annotate(err, "update issue").Err()
-			return response
-		}
-	}
 
 	if m.usePolicyBasedManagement {
 		response.PolicyActivationsNotified, err = m.notifyPolicyActivation(ctx, bugID, request.ActivePolicyIDs)
@@ -304,7 +285,7 @@ func (m *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateRequ
 
 	if !response.IsDuplicate && !response.ShouldArchive {
 		if !request.BugManagementState.RuleAssociationNotified {
-			updateRequest, err := m.generator.PrepareRuleAssociatedComment(request.Bug.ID)
+			updateRequest, err := m.generator.PrepareRuleAssociatedComment(request.Bug.ID, request.RuleID)
 			if err != nil {
 				response.Error = errors.Annotate(err, "prepare rule associated comment").Err()
 				return response
@@ -343,6 +324,7 @@ func (m *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateRequ
 			hasManuallySetPriority := hasManuallySetPriority(comments, request.IsManagingBugPriorityLastUpdated)
 
 			mur, err := m.generator.MakePriorityOrVerifiedUpdate(MakeUpdateOptions{
+				RuleID:                 request.RuleID,
 				BugManagementState:     request.BugManagementState,
 				Issue:                  issue,
 				IsManagingBugPriority:  request.IsManagingBugPriority,
@@ -472,7 +454,7 @@ func (m *BugManager) UpdateDuplicateSource(ctx context.Context, request bugs.Upd
 	var req *mpb.ModifyIssuesRequest
 	var err error
 	if m.usePolicyBasedManagement {
-		req, err = m.generator.UpdateDuplicateSource(request.BugDetails.Bug.ID, request.ErrorMessage, request.DestinationRuleID)
+		req, err = m.generator.UpdateDuplicateSource(request.BugDetails.Bug.ID, request.ErrorMessage, request.BugDetails.RuleID, request.DestinationRuleID)
 	} else {
 		req, err = m.legacyGenerator.UpdateDuplicateSource(request.BugDetails.Bug.ID, request.ErrorMessage, request.DestinationRuleID)
 	}
@@ -489,7 +471,7 @@ func (m *BugManager) UpdateDuplicateSource(ctx context.Context, request bugs.Upd
 	return nil
 }
 
-func (m *BugManager) UpdateDuplicateDestination(ctx context.Context, destinationBug bugs.BugID) error {
+func (m *BugManager) UpdateDuplicateDestination(ctx context.Context, destinationBug bugs.BugID, ruleID string) error {
 	if destinationBug.System != bugs.MonorailSystem {
 		// Indicates an implementation error with the caller.
 		panic("monorail bug manager can only deal with monorail bugs")
@@ -497,7 +479,7 @@ func (m *BugManager) UpdateDuplicateDestination(ctx context.Context, destination
 	var req *mpb.ModifyIssuesRequest
 	var err error
 	if m.usePolicyBasedManagement {
-		req, err = m.generator.UpdateDuplicateDestination(destinationBug.ID)
+		req, err = m.generator.UpdateDuplicateDestination(destinationBug.ID, ruleID)
 	} else {
 		req, err = m.legacyGenerator.UpdateDuplicateDestination(destinationBug.ID)
 	}
