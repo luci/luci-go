@@ -60,14 +60,12 @@ type boundDatastore struct {
 }
 
 func (bds *boundDatastore) AllocateIDs(keys []*ds.Key, cb ds.NewKeyCB) error {
-	nativeKeys, err := bds.client.AllocateIDs(bds, bds.gaeKeysToNative(keys...))
+	nativeKeys, err := bds.client.AllocateIDs(bds, gaeKeysToNative(keys))
 	if err != nil {
 		return normalizeError(err)
 	}
-
-	keys = bds.nativeKeysToGAE(nativeKeys...)
-	for i, key := range keys {
-		cb(i, key, nil)
+	for i, key := range nativeKeys {
+		cb(i, nativeKeyToGAE(bds.kc, key), nil)
 	}
 	return nil
 }
@@ -105,11 +103,11 @@ func (bds *boundDatastore) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
 	}
 
 	for {
-		var npls *nativePropertyLoadSaver
+		var npl *nativePropertyLoader
 		if !q.KeysOnly() {
-			npls = bds.mkNPLS(nil)
+			npl = &nativePropertyLoader{kc: bds.kc}
 		}
-		nativeKey, err := it.Next(npls)
+		nativeKey, err := it.Next(npl)
 		if err != nil {
 			if err == iterator.Done {
 				return nil
@@ -118,10 +116,10 @@ func (bds *boundDatastore) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
 		}
 
 		var pmap ds.PropertyMap
-		if npls != nil {
-			pmap = npls.pmap
+		if npl != nil {
+			pmap = npl.pmap
 		}
-		if err := cb(bds.nativeKeysToGAE(nativeKey)[0], pmap, cursorFn); err != nil {
+		if err := cb(nativeKeyToGAE(bds.kc, nativeKey), pmap, cursorFn); err != nil {
 			if err == ds.Stop {
 				return nil
 			}
@@ -167,10 +165,10 @@ func idxCallbacker(err error, amt int, cb func(idx int, err error)) error {
 }
 
 func (bds *boundDatastore) GetMulti(keys []*ds.Key, _meta ds.MultiMetaGetter, cb ds.GetMultiCB) error {
-	nativeKeys := bds.gaeKeysToNative(keys...)
-	nativePLS := make([]*nativePropertyLoadSaver, len(nativeKeys))
+	nativeKeys := gaeKeysToNative(keys)
+	nativePLS := make([]*nativePropertyLoader, len(nativeKeys))
 	for i := range nativePLS {
-		nativePLS[i] = bds.mkNPLS(nil)
+		nativePLS[i] = &nativePropertyLoader{kc: bds.kc}
 	}
 
 	var err error
@@ -188,10 +186,10 @@ func (bds *boundDatastore) GetMulti(keys []*ds.Key, _meta ds.MultiMetaGetter, cb
 }
 
 func (bds *boundDatastore) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB) error {
-	nativeKeys := bds.gaeKeysToNative(keys...)
-	nativePLS := make([]*nativePropertyLoadSaver, len(vals))
+	nativeKeys := gaeKeysToNative(keys)
+	nativePLS := make([]*nativePropertySaver, len(vals))
 	for i := range nativePLS {
-		nativePLS[i] = bds.mkNPLS(vals[i])
+		nativePLS[i] = &nativePropertySaver{kc: bds.kc, pmap: vals[i]}
 	}
 
 	var err error
@@ -235,7 +233,7 @@ func (bds *boundDatastore) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds
 
 	return idxCallbacker(err, len(nativeKeys), func(idx int, err error) {
 		if err == nil {
-			cb(idx, bds.nativeKeysToGAE(nativeKeys[idx])[0], nil)
+			cb(idx, nativeKeyToGAE(bds.kc, nativeKeys[idx]), nil)
 			return
 		}
 		cb(idx, nil, err)
@@ -243,7 +241,7 @@ func (bds *boundDatastore) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds
 }
 
 func (bds *boundDatastore) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
-	nativeKeys := bds.gaeKeysToNative(keys...)
+	nativeKeys := gaeKeysToNative(keys)
 
 	var err error
 	if bds.transaction != nil {
@@ -293,7 +291,7 @@ func (bds *boundDatastore) prepareNativeQuery(fq *ds.FinalizedQuery) *datastore.
 	// pass the result through to the underlying datastore and allow it to
 	// reject it.
 	nativeFilter := func(prop ds.Property) any {
-		if np, err := bds.gaePropertyToNative("", prop); err == nil {
+		if np, err := gaePropertyToNative(bds.kc, "", prop); err == nil {
 			return np.Value
 		}
 		return prop.Value()
@@ -343,7 +341,7 @@ func (bds *boundDatastore) prepareNativeQuery(fq *ds.FinalizedQuery) *datastore.
 		nq = nq.Project(proj...)
 	}
 	if ancestor := fq.Ancestor(); ancestor != nil {
-		nq = nq.Ancestor(bds.gaeKeysToNative(ancestor)[0])
+		nq = nq.Ancestor(gaeKeyToNative(ancestor))
 	}
 	if fq.EventuallyConsistent() {
 		nq = nq.EventualConsistency()
@@ -360,16 +358,7 @@ func (bds *boundDatastore) prepareNativeQuery(fq *ds.FinalizedQuery) *datastore.
 	return nq
 }
 
-func (bds *boundDatastore) mkNPLS(base ds.PropertyMap) *nativePropertyLoadSaver {
-	return &nativePropertyLoadSaver{
-		bds:  bds,
-		pmap: base.Clone(), // TODO(vadimsh): Why clone it?
-	}
-}
-
-func (bds *boundDatastore) gaePropertyToNative(name string, pdata ds.PropertyData) (
-	nativeProp datastore.Property, err error) {
-
+func gaePropertyToNative(kc ds.KeyContext, name string, pdata ds.PropertyData) (nativeProp datastore.Property, err error) {
 	nativeProp.Name = name
 
 	convert := func(prop *ds.Property) (any, error) {
@@ -382,10 +371,10 @@ func (bds *boundDatastore) gaePropertyToNative(name string, pdata ds.PropertyDat
 			return datastore.GeoPoint{Lat: gp.Lat, Lng: gp.Lng}, nil
 
 		case ds.PTKey:
-			return bds.gaeKeysToNative(prop.Value().(*ds.Key))[0], nil
+			return gaeKeyToNative(prop.Value().(*ds.Key)), nil
 
 		case ds.PTPropertyMap:
-			return bds.gaeEntityToNative(prop.Value().(ds.PropertyMap)), nil
+			return gaeEntityToNative(kc, prop.Value().(ds.PropertyMap)), nil
 
 		default:
 			return nil, fmt.Errorf("unsupported property type: %v", pt)
@@ -425,9 +414,7 @@ func (bds *boundDatastore) gaePropertyToNative(name string, pdata ds.PropertyDat
 	return
 }
 
-func (bds *boundDatastore) nativePropertyToGAE(nativeProp datastore.Property) (
-	name string, pdata ds.PropertyData, err error) {
-
+func nativePropertyToGAE(kc ds.KeyContext, nativeProp datastore.Property) (name string, pdata ds.PropertyData, err error) {
 	name = nativeProp.Name
 
 	convert := func(nv any, prop *ds.Property) error {
@@ -453,10 +440,10 @@ func (bds *boundDatastore) nativePropertyToGAE(nativeProp datastore.Property) (
 			nv = ds.GeoPoint{Lat: nvt.Lat, Lng: nvt.Lng}
 
 		case *datastore.Key:
-			nv = bds.nativeKeysToGAE(nvt)[0]
+			nv = nativeKeyToGAE(kc, nvt)
 
 		case *datastore.Entity:
-			nv = bds.nativeEntityToGAE(nvt)
+			nv = nativeEntityToGAE(kc, nvt)
 
 		default:
 			return fmt.Errorf("unsupported datastore.Value type for %q: %T", name, nvt)
@@ -492,57 +479,57 @@ func (bds *boundDatastore) nativePropertyToGAE(nativeProp datastore.Property) (
 	return
 }
 
-func (bds *boundDatastore) gaeKeysToNative(keys ...*ds.Key) []*datastore.Key {
+func gaeKeyToNative(key *ds.Key) *datastore.Key {
+	var nativeKey *datastore.Key
+
+	_, _, toks := key.Split()
+	for _, tok := range toks {
+		nativeKey = &datastore.Key{
+			Kind:      tok.Kind,
+			ID:        tok.IntID,
+			Name:      tok.StringID,
+			Parent:    nativeKey,
+			Namespace: key.Namespace(),
+		}
+	}
+
+	return nativeKey
+}
+
+func gaeKeysToNative(keys []*ds.Key) []*datastore.Key {
 	nativeKeys := make([]*datastore.Key, len(keys))
 	for i, key := range keys {
-		_, _, toks := key.Split()
-
-		var nativeKey *datastore.Key
-		for _, tok := range toks {
-			nativeKey = &datastore.Key{
-				Kind:      tok.Kind,
-				ID:        tok.IntID,
-				Name:      tok.StringID,
-				Parent:    nativeKey,
-				Namespace: key.Namespace(),
-			}
-		}
-		nativeKeys[i] = nativeKey
+		nativeKeys[i] = gaeKeyToNative(key)
 	}
 	return nativeKeys
 }
 
-func (bds *boundDatastore) nativeKeysToGAE(nativeKeys ...*datastore.Key) []*ds.Key {
-	keys := make([]*ds.Key, len(nativeKeys))
-	toks := make([]ds.KeyTok, 1)
+func nativeKeyToGAE(kc ds.KeyContext, nativeKey *datastore.Key) *ds.Key {
+	toks := make([]ds.KeyTok, 0, 2)
 
-	kc := bds.kc
-	for i, nativeKey := range nativeKeys {
-		toks = toks[:0]
-		cur := nativeKey
-		for {
-			toks = append(toks, ds.KeyTok{Kind: cur.Kind, IntID: cur.ID, StringID: cur.Name})
-			cur = cur.Parent
-			if cur == nil {
-				break
-			}
+	cur := nativeKey
+	for {
+		toks = append(toks, ds.KeyTok{Kind: cur.Kind, IntID: cur.ID, StringID: cur.Name})
+		cur = cur.Parent
+		if cur == nil {
+			break
 		}
-
-		// Reverse "toks" so we have ancestor-to-child lineage.
-		for i := 0; i < len(toks)/2; i++ {
-			ri := len(toks) - i - 1
-			toks[i], toks[ri] = toks[ri], toks[i]
-		}
-		kc.Namespace = nativeKey.Namespace
-		keys[i] = kc.NewKeyToks(toks)
 	}
-	return keys
+
+	// Reverse "toks" so we have ancestor-to-child lineage.
+	for i := 0; i < len(toks)/2; i++ {
+		ri := len(toks) - i - 1
+		toks[i], toks[ri] = toks[ri], toks[i]
+	}
+
+	kc.Namespace = nativeKey.Namespace
+	return kc.NewKeyToks(toks)
 }
 
 // nativeEntityToGAE returns a ds.PropertyMap representation of the given
 // *datastore.Entity. Since properties can themselves be *datastore.Entities,
 // the caller is responsible for ensuring there are no reference cycles.
-func (bds *boundDatastore) nativeEntityToGAE(ent *datastore.Entity) ds.PropertyMap {
+func nativeEntityToGAE(kc ds.KeyContext, ent *datastore.Entity) ds.PropertyMap {
 	if ent == nil {
 		return nil
 	}
@@ -551,7 +538,7 @@ func (bds *boundDatastore) nativeEntityToGAE(ent *datastore.Entity) ds.PropertyM
 		// Populate all potentially supported meta properties. Whatever consumes
 		// the property map (usually the default struct PLS) will choose properties
 		// it cares about and ignore the rest.
-		key := bds.nativeKeysToGAE(ent.Key)[0]
+		key := nativeKeyToGAE(kc, ent.Key)
 		pm["$key"] = ds.MkPropertyNI(key)
 		if p := key.Parent(); p != nil {
 			pm["$parent"] = ds.MkPropertyNI(p)
@@ -568,7 +555,7 @@ func (bds *boundDatastore) nativeEntityToGAE(ent *datastore.Entity) ds.PropertyM
 	// sourced from https://godoc.org/google.golang.org/genproto/googleapis/datastore/v1#Entity
 	// which originally held properties in a map to begin with, meaning order is irrelevant.
 	for _, p := range ent.Properties {
-		_, prop, err := bds.nativePropertyToGAE(p)
+		_, prop, err := nativePropertyToGAE(kc, p)
 		if err != nil {
 			// Shouldn't happen. It means the *datastore.Entity contained an unsupported type.
 			panic(err)
@@ -580,7 +567,7 @@ func (bds *boundDatastore) nativeEntityToGAE(ent *datastore.Entity) ds.PropertyM
 
 // gaeEntityToNative returns a *datastore.Entity representation of the given
 // PropertyMap (assumed to have been produced by nativeEntityToGAE).
-func (bds *boundDatastore) gaeEntityToNative(pm ds.PropertyMap) *datastore.Entity {
+func gaeEntityToNative(kc ds.KeyContext, pm ds.PropertyMap) *datastore.Entity {
 	// Ensure stable order. Skip meta fields, they'll be used in extractKeyFromPM.
 	keys := make([]string, 0, len(pm))
 	for name := range pm {
@@ -598,13 +585,13 @@ func (bds *boundDatastore) gaeEntityToNative(pm ds.PropertyMap) *datastore.Entit
 	// keys. This actually happens for structs that don't have any explicitly
 	// defined meta properties (because `$kind` is implicitly defined, so they end
 	// up with an incomplete key, since they have no `$id`).
-	if key := bds.extractKeyFromPM(pm); key != nil && !key.IsIncomplete() {
-		ent.Key = bds.gaeKeysToNative(key)[0]
+	if key := extractKeyFromPM(kc, pm); key != nil && !key.IsIncomplete() {
+		ent.Key = gaeKeyToNative(key)
 	}
 
 	// Convert non-meta fields.
 	for _, name := range keys {
-		p, err := bds.gaePropertyToNative(name, pm[name])
+		p, err := gaePropertyToNative(kc, name, pm[name])
 		if err != nil {
 			// Shouldn't happen. It means nativeEntityToGAE encoded an unsupported type.
 			panic(err)
@@ -618,10 +605,10 @@ func (bds *boundDatastore) gaeEntityToNative(pm ds.PropertyMap) *datastore.Entit
 // returns nil if there's no key there.
 //
 // It is essentially the same logic as ds.KeyForObjErr, except adapted to use
-// the KeyContext bound in `bds` and handle missing properties differently.
+// the given KeyContext and handle missing properties differently.
 //
 // It is used only for nested entities, their keys are optional.
-func (bds *boundDatastore) extractKeyFromPM(mgs ds.MetaGetterSetter) *ds.Key {
+func extractKeyFromPM(kc ds.KeyContext, mgs ds.MetaGetterSetter) *ds.Key {
 	if key, _ := ds.GetMetaDefault(mgs, "key", nil).(*ds.Key); key != nil {
 		return key
 	}
@@ -636,51 +623,66 @@ func (bds *boundDatastore) extractKeyFromPM(mgs ds.MetaGetterSetter) *ds.Key {
 
 	par, _ := ds.GetMetaDefault(mgs, "parent", nil).(*ds.Key)
 
-	return bds.kc.NewKey(kind, sid, iid, par)
+	return kc.NewKey(kind, sid, iid, par)
 }
 
-// nativePropertyLoadSaver is a ds.PropertyMap which implements
-// datastore.PropertyLoadSaver.
-//
-// It naturally converts between native and GAE properties and values.
-type nativePropertyLoadSaver struct {
-	bds  *boundDatastore
-	pmap ds.PropertyMap
+// nativePropertyLoader is a datastore.PropertyLoadSaver that implement Load
+// by writing properties into a ds.PropertyMap.
+type nativePropertyLoader struct {
+	kc   ds.KeyContext
+	pmap ds.PropertyMap // starts as nil, gets created and populated in Load
 }
 
-var _ datastore.PropertyLoadSaver = (*nativePropertyLoadSaver)(nil)
+var _ datastore.PropertyLoadSaver = (*nativePropertyLoader)(nil)
 
-func (npls *nativePropertyLoadSaver) Load(props []datastore.Property) error {
-	if npls.pmap == nil {
-		npls.pmap = make(ds.PropertyMap, len(props))
+func (npl *nativePropertyLoader) Load(props []datastore.Property) error {
+	if npl.pmap == nil {
+		npl.pmap = make(ds.PropertyMap, len(props))
 	}
 
 	for _, nativeProp := range props {
-		name, pdata, err := npls.bds.nativePropertyToGAE(nativeProp)
+		name, pdata, err := nativePropertyToGAE(npl.kc, nativeProp)
 		if err != nil {
 			return err
 		}
-		if _, ok := npls.pmap[name]; ok {
+		if _, ok := npl.pmap[name]; ok {
 			return fmt.Errorf("duplicate properties for %q", name)
 		}
-		npls.pmap[name] = pdata
+		npl.pmap[name] = pdata
 	}
 	return nil
 }
 
-func (npls *nativePropertyLoadSaver) Save() ([]datastore.Property, error) {
-	if len(npls.pmap) == 0 {
+func (npl *nativePropertyLoader) Save() ([]datastore.Property, error) {
+	panic("must not be called")
+}
+
+// nativePropertySaver is a datastore.PropertyLoadSaver that implement Save
+// by reading properties from a ds.PropertyMap.
+type nativePropertySaver struct {
+	kc   ds.KeyContext
+	pmap ds.PropertyMap // must be set by the caller
+}
+
+var _ datastore.PropertyLoadSaver = (*nativePropertySaver)(nil)
+
+func (nps *nativePropertySaver) Load(props []datastore.Property) error {
+	panic("must not be called")
+}
+
+func (nps *nativePropertySaver) Save() ([]datastore.Property, error) {
+	if len(nps.pmap) == 0 {
 		return nil, nil
 	}
 
-	props := make([]datastore.Property, 0, len(npls.pmap))
-	for name, pdata := range npls.pmap {
+	props := make([]datastore.Property, 0, len(nps.pmap))
+	for name, pdata := range nps.pmap {
 		// Strip meta.
 		if strings.HasPrefix(name, "$") {
 			continue
 		}
 
-		nativeProp, err := npls.bds.gaePropertyToNative(name, pdata)
+		nativeProp, err := gaePropertyToNative(nps.kc, name, pdata)
 		if err != nil {
 			return nil, err
 		}

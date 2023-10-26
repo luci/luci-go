@@ -69,16 +69,21 @@ func TestBoundDatastore(t *testing.T) {
 	t.Parallel()
 
 	Convey("boundDatastore", t, func() {
-		bds := &boundDatastore{}
+		kc := ds.KeyContext{
+			AppID:     "app-id",
+			Namespace: "ns",
+		}
 
 		Convey("*datastore.Entity", func() {
 			ent := &datastore.Entity{
 				Key: &datastore.Key{
-					ID:   1,
-					Kind: "Kind",
+					ID:        1,
+					Kind:      "Kind",
+					Namespace: "ns",
 					Parent: &datastore.Key{
-						Name: "p",
-						Kind: "Parent",
+						Name:      "p",
+						Kind:      "Parent",
+						Namespace: "ns",
 					},
 				},
 				Properties: []datastore.Property{
@@ -126,8 +131,9 @@ func TestBoundDatastore(t *testing.T) {
 					{
 						Name: "key",
 						Value: &datastore.Key{
-							ID:   2,
-							Kind: "kind",
+							ID:        2,
+							Kind:      "kind",
+							Namespace: "ns",
 						},
 					},
 					{
@@ -154,8 +160,8 @@ func TestBoundDatastore(t *testing.T) {
 				},
 			}
 
-			parent := bds.kc.NewKey("Parent", "p", 0, nil)
-			key := bds.kc.NewKey("Kind", "", 1, parent)
+			parent := kc.NewKey("Parent", "p", 0, nil)
+			key := kc.NewKey("Kind", "", 1, parent)
 
 			pm := ds.PropertyMap{
 				"$key":    ds.MkPropertyNI(key),
@@ -176,25 +182,25 @@ func TestBoundDatastore(t *testing.T) {
 				}),
 				"float64": ds.MkProperty(1.0),
 				"int64":   ds.MkProperty(int64(1)),
-				"key":     ds.MkProperty(bds.kc.NewKey("kind", "", 2, nil)),
+				"key":     ds.MkProperty(kc.NewKey("kind", "", 2, nil)),
 				"string":  ds.MkProperty("string"),
 				"time":    ds.MkProperty(ds.RoundTime(testclock.TestRecentTimeUTC)),
 			}
 
 			Convey("gaeEntityToNative", func() {
-				So(bds.gaeEntityToNative(pm), ShouldResemble, ent)
+				So(gaeEntityToNative(kc, pm), ShouldResemble, ent)
 			})
 
 			Convey("nativeEntityToGAE", func() {
-				So(bds.nativeEntityToGAE(ent), ShouldResemble, pm)
+				So(nativeEntityToGAE(kc, ent), ShouldResemble, pm)
 			})
 
 			Convey("gaeEntityToNative, nativeEntityToGAE", func() {
-				So(bds.nativeEntityToGAE(bds.gaeEntityToNative(pm)), ShouldResemble, pm)
+				So(nativeEntityToGAE(kc, gaeEntityToNative(kc, pm)), ShouldResemble, pm)
 			})
 
 			Convey("nativeEntityToGAE, gaeEntityToNative", func() {
-				So(bds.gaeEntityToNative(bds.nativeEntityToGAE(ent)), ShouldResemble, ent)
+				So(gaeEntityToNative(kc, nativeEntityToGAE(kc, ent)), ShouldResemble, ent)
 			})
 		})
 	})
@@ -314,9 +320,6 @@ func TestDatastore(t *testing.T) {
 					{"$kind": mkp("test"), "$id": mkp("baz"), "Value": mkp(0xd065)},
 				}
 				So(ds.Put(c, put), ShouldBeNil)
-				delete(put[0], "$key")
-				delete(put[1], "$key")
-				delete(put[2], "$key")
 
 				// Delete: "bar".
 				So(ds.Delete(c, ds.MakeKey(c, "test", "bar")), ShouldBeNil)
