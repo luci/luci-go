@@ -32,7 +32,7 @@ const consoleSnapshot = {
           bucket: 'the_bucket',
           builder: 'the_builder_1',
         },
-        category: 'parent-a|child-1',
+        category: 'parent-b|child-1',
       },
       {
         id: {
@@ -40,7 +40,7 @@ const consoleSnapshot = {
           bucket: 'the_bucket',
           builder: 'the_builder_2',
         },
-        category: 'parent-b|child',
+        category: 'parent-a|child',
       },
       {
         id: {
@@ -48,7 +48,7 @@ const consoleSnapshot = {
           bucket: 'the_bucket',
           builder: 'the_builder_3',
         },
-        category: 'parent-a|child-2',
+        category: 'parent-b|child-2',
       },
     ],
   },
@@ -137,7 +137,8 @@ describe('ConsoleSnapshotRow', () => {
       '/ui/p/the_project/builders/the_bucket/the_builder_3/2',
     );
 
-    // The second builder should be rendered last due to category sorting.
+    // The second builder should be rendered last because its category is
+    // discovered last.
     expect(builderSnapshots.childNodes.item(2)).toHaveClass('no-build-cell');
     expect(builderSnapshots.childNodes.item(2)).toHaveAttribute(
       'href',

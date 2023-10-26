@@ -17,6 +17,7 @@ import { Link } from '@mui/material';
 import { useMemo } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { buildCategoryTree } from '@/build/tools/category_tree';
 import { formatBuilderId } from '@/build/tools/utils';
 import { BUILD_STATUS_CLASS_MAP } from '@/common/constants';
 import { ConsoleSnapshot } from '@/common/services/milo_internal';
@@ -79,22 +80,21 @@ export function ConsoleSnapshotRow({ snapshot }: ConsoleSnapshotRowProps) {
   // Sort builder snapshots by builder categories.
   const sortedBuilderSnapshots = useMemo(() => {
     const items =
-      snapshot.console.builders?.map(
-        (b, i) =>
-          [
-            // Replace the divider with the largest UTF-8 character so sorting
-            // the builders by category has the same effect as building a
-            // category tree then traversing the leaves.
-            (b.category || '').replace('|', '\uFFFF'),
-            // The number of builder snapshots always match the number of
-            // builders.
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            snapshot.builderSnapshots![i],
-          ] as const,
-      ) || [];
-    return items
-      .sort(([cat1], [cat2]) => cat1.localeCompare(cat2))
-      .map(([_, snapshot]) => snapshot);
+      snapshot.console.builders?.map((b, i) => ({
+        category: (b.category || '').split('|'),
+        // The number of builder snapshots always match the number of builders.
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        value: snapshot.builderSnapshots![i],
+      })) || [];
+
+    // Builders are sorted in a weird way. Items (could be builders,
+    // subcategories, or a mix of both) under the same category are closely
+    // located. Within each category, items are sorted by the order they are
+    // first discovered (when iterating over Console.builders). We need to keep
+    // this behavior because some users rely on this order to quickly tell the
+    // builder each cell represents (see crbug.com/1495253).
+    const tree = buildCategoryTree(items);
+    return [...tree.items()].map((l) => l.value);
   }, [snapshot]);
 
   return (
