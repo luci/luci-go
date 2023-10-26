@@ -78,8 +78,9 @@ func TestClusters(t *testing.T) {
 		configVersion := time.Date(2025, time.August, 12, 0, 1, 2, 3, time.UTC)
 		projectCfg := config.CreateConfigWithBothBuganizerAndMonorail(configpb.BugSystem_MONORAIL)
 		projectCfg.LastUpdated = timestamppb.New(configVersion)
-		projectCfg.Monorail.DisplayPrefix = "crbug.com"
-		projectCfg.Monorail.MonorailHostname = "bugs.chromium.org"
+		projectCfg.Monorail = nil
+		projectCfg.BugManagement.Monorail.DisplayPrefix = "crbug.com"
+		projectCfg.BugManagement.Monorail.MonorailHostname = "bugs.chromium.org"
 		configs := make(map[string]*configpb.ProjectConfig)
 		configs["testproject"] = projectCfg
 		err := config.SetTestProjectConfig(ctx, configs)
@@ -247,6 +248,7 @@ func TestClusters(t *testing.T) {
 			Convey("With no monorail configuration", func() {
 				//Setup
 				projectCfg.Monorail = nil
+				projectCfg.BugManagement.Monorail = nil
 				configs := make(map[string]*configpb.ProjectConfig)
 				configs["testproject"] = projectCfg
 				err := config.SetTestProjectConfig(ctx, configs)

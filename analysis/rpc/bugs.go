@@ -29,7 +29,12 @@ func createAssociatedBugPB(b bugs.BugID, cfg *configpb.ProjectConfig) *pb.Associ
 
 	switch b.System {
 	case bugs.MonorailSystem:
-		if cfg.Monorail == nil {
+		monorailCfg := cfg.BugManagement.GetMonorail()
+		if monorailCfg == nil {
+			// Try fetching from legacy config location.
+			monorailCfg = cfg.Monorail
+		}
+		if monorailCfg == nil {
 			break
 		}
 		project, id, err := b.MonorailProjectAndID()
@@ -37,15 +42,15 @@ func createAssociatedBugPB(b bugs.BugID, cfg *configpb.ProjectConfig) *pb.Associ
 			// Fallback to basic name and blank URL.
 			break
 		}
-		if project == cfg.Monorail.Project {
-			if cfg.Monorail.DisplayPrefix != "" {
-				linkText = fmt.Sprintf("%s/%s", cfg.Monorail.DisplayPrefix, id)
+		if project == monorailCfg.Project {
+			if monorailCfg.DisplayPrefix != "" {
+				linkText = fmt.Sprintf("%s/%s", monorailCfg.DisplayPrefix, id)
 			} else {
 				linkText = id
 			}
 		}
-		if cfg.Monorail.MonorailHostname != "" {
-			url = fmt.Sprintf("https://%s/p/%s/issues/detail?id=%s", cfg.Monorail.MonorailHostname, project, id)
+		if monorailCfg.MonorailHostname != "" {
+			url = fmt.Sprintf("https://%s/p/%s/issues/detail?id=%s", monorailCfg.MonorailHostname, project, id)
 		}
 	case bugs.BuganizerSystem:
 		linkText = fmt.Sprintf("b/%s", b.ID)

@@ -102,10 +102,12 @@ func TestRules(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		cfg := &configpb.ProjectConfig{
-			Monorail: &configpb.MonorailProject{
-				Project:          "monorailproject",
-				DisplayPrefix:    "mybug.com",
-				MonorailHostname: "monorailhost.com",
+			BugManagement: &configpb.BugManagement{
+				Monorail: &configpb.MonorailProject{
+					Project:          "monorailproject",
+					DisplayPrefix:    "mybug.com",
+					MonorailHostname: "monorailhost.com",
+				},
 			},
 		}
 		err = config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{
@@ -420,6 +422,49 @@ func TestRules(t *testing.T) {
 						mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: false}
 						So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
 					})
+					Convey("With legacy monorail config", func() {
+						cfg := &configpb.ProjectConfig{
+							Monorail: &configpb.MonorailProject{
+								Project:          "legacymonorailproject",
+								DisplayPrefix:    "mylegacybug.com",
+								MonorailHostname: "legacymonorailhost.com",
+							},
+						}
+						err = config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{
+							"testproject": cfg,
+						})
+						So(err, ShouldBeNil)
+
+						request.Rule.Bug = &pb.AssociatedBug{
+							System: "monorail",
+							Id:     "legacymonorailproject/2",
+						}
+						expectedRule.BugID = bugs.BugID{System: "monorail", ID: "legacymonorailproject/2"}
+
+						// Act
+						rule, err := srv.Update(ctx, request)
+
+						// Verify
+						So(err, ShouldBeNil)
+
+						storedRule, err := rules.Read(span.Single(ctx), testProject, ruleManaged.RuleID)
+						So(err, ShouldBeNil)
+						So(storedRule.LastUpdateTime, ShouldNotEqual, ruleManaged.LastUpdateTime)
+
+						// Accept the new last update time (this value is set non-deterministically).
+						expectedRule.LastUpdateTime = storedRule.LastUpdateTime
+						expectedRule.LastAuditableUpdateTime = storedRule.LastUpdateTime
+						expectedRule.IsManagingBugPriorityLastUpdateTime = storedRule.LastUpdateTime
+						expectedRule.PredicateLastUpdateTime = storedRule.LastUpdateTime
+						expectedRule.LastAuditableUpdateUser = "someone@example.com"
+
+						// Verify the rule was updated as expected.
+						So(storedRule, ShouldResembleProto, expectedRule)
+
+						// Verify the returned rule matches what was expected.
+						mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
+						So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+					})
 				})
 				Convey("Predicate not updated", func() {
 					request.UpdateMask.Paths = []string{"bug"}
@@ -558,6 +603,18 @@ func TestRules(t *testing.T) {
 					rule, err := srv.Update(ctx, request)
 					So(rule, ShouldBeNil)
 					So(err, ShouldBeRPCInvalidArgument, "bug not in expected monorail project (monorailproject)")
+				})
+				Convey("Monorail bug on project that does not support it", func() {
+					cfg.BugManagement.Monorail = nil
+					cfg.Monorail = nil
+
+					err = config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{
+						"testproject": cfg,
+					})
+
+					rule, err := srv.Update(ctx, request)
+					So(rule, ShouldBeNil)
+					So(err, ShouldBeRPCInvalidArgument, "monorail bug system not enabled for this LUCI project")
 				})
 				Convey("Re-use of same bug in same project", func() {
 					// Use the same bug as another rule.
@@ -952,12 +1009,15 @@ func TestRules(t *testing.T) {
 			LastAuditableUpdateTime: timestamppb.New(time.Date(1907, 7, 7, 7, 7, 7, 1, time.UTC)), //FIX ME
 			LastAuditableUpdateUser: "user@google.com",
 			LastUpdateTime:          timestamppb.New(time.Date(1909, 9, 9, 9, 9, 9, 1, time.UTC)),
+			Etag:                    `W/"+d+u/1909-09-09T09:09:09.000000001Z"`,
 		}
 		cfg := &configpb.ProjectConfig{
-			Monorail: &configpb.MonorailProject{
-				Project:          "monorailproject",
-				DisplayPrefix:    "mybug.com",
-				MonorailHostname: "monorailhost.com",
+			BugManagement: &configpb.BugManagement{
+				Monorail: &configpb.MonorailProject{
+					Project:          "monorailproject",
+					DisplayPrefix:    "mybug.com",
+					MonorailHostname: "monorailhost.com",
+				},
 			},
 		}
 		mask := ruleMask{
@@ -965,7 +1025,6 @@ func TestRules(t *testing.T) {
 			IncludeAuditUsers: true,
 		}
 		Convey("With all fields", func() {
-			expectedRule.Etag = `W/"+d+u/1909-09-09T09:09:09.000000001Z"`
 			So(createRulePB(rule, cfg, mask), ShouldResembleProto, expectedRule)
 		})
 		Convey("Without definition field", func() {
@@ -979,6 +1038,16 @@ func TestRules(t *testing.T) {
 			expectedRule.CreateUser = ""
 			expectedRule.LastAuditableUpdateUser = ""
 			expectedRule.Etag = `W/"+d/1909-09-09T09:09:09.000000001Z"`
+			So(createRulePB(rule, cfg, mask), ShouldResembleProto, expectedRule)
+		})
+		Convey("With legacy config", func() {
+			cfg := &configpb.ProjectConfig{
+				Monorail: &configpb.MonorailProject{
+					Project:          "monorailproject",
+					DisplayPrefix:    "mybug.com",
+					MonorailHostname: "monorailhost.com",
+				},
+			}
 			So(createRulePB(rule, cfg, mask), ShouldResembleProto, expectedRule)
 		})
 	})
