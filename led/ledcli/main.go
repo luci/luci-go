@@ -144,6 +144,7 @@ The spec (as it is) for JobDefinition is at:
 			editRecipeBundleCmd(defaults),
 			editGerritCLCmd(defaults),
 			editCrCLCmd(defaults),
+			editGitilesCommitCmd(defaults),
 			editPayloadCmd(defaults),
 
 			// commands to edit the raw isolated files.

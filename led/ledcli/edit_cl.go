@@ -232,23 +232,6 @@ func (c *cmdEditCl) execute(ctx context.Context, _ *http.Client, _ auth.Options,
 			}
 			je.AddGerritChange(c.gerritChange)
 		}
-
-		// wipe out all the old properties
-		je.Properties(map[string]string{
-			"blamelist":            "",
-			"buildbucket":          "",
-			"issue":                "",
-			"patch_gerrit_url":     "",
-			"patch_issue":          "",
-			"patch_project":        "",
-			"patch_ref":            "",
-			"patch_repository_url": "",
-			"patch_set":            "",
-			"patch_storage":        "",
-			"patchset":             "",
-			"repository":           "",
-			"rietveld":             "",
-		}, true)
 	})
 }
 
