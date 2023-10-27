@@ -18,11 +18,9 @@ import Typography from '@mui/material/Typography';
 import { SanitizedHtml } from '@/components/sanitized_html/sanitized_html';
 import HelpTooltip from '@/components/help_tooltip/help_tooltip';
 
+import { Problem } from '@/tools/problems';
 import { StatusChip } from '../status_chip/status_chip';
 import { PriorityChip } from '../priority_chip/priority_chip';
-import {
-  Problem,
-} from '../problems';
 import { CriteriaSection } from './criteria_section/criteria_section';
 
 const problemDescriptionTooltipText = 'Information about the problem and why it should be fixed. Supplied by the policy owner.';

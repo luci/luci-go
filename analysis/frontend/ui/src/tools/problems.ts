@@ -20,10 +20,10 @@ export interface Problem {
   state: PolicyState;
 }
 
-// problemsByDescendingActiveAndPriority combines the bug management state with
-// configured policies to return details about active and resolved problems.
-// Problems are sorted active first, then by descending priority.
-export const problemsByDescendingActiveAndPriority = (config: BugManagement | undefined, state: BugManagementState) : Problem[] => {
+// identifyProblems combines the bug management state with configured
+// policies to return details about active and resolved problems.
+// Problems are returned in no particular order.
+export const identifyProblems = (config: BugManagement | undefined, state: BugManagementState) : Problem[] => {
   if (!state.policyState || !config || !config.policies) {
     return [];
   }
@@ -44,7 +44,19 @@ export const problemsByDescendingActiveAndPriority = (config: BugManagement | un
       state: policyState,
     });
   });
-  result.sort((a, b) => {
+  return result;
+};
+
+// sortProblemsByDescendingActiveAndPriority sorts problems in place.
+// The sort is active first, then by descending priority, then by ID.
+// If focusPolicyID is set, a problem for that policy always appears first,
+// regardless of any other sort preference.
+export const sortProblemsByDescendingActiveAndPriority = (problems : Problem[], focusPolicyID? : string): void => {
+  problems.sort((a, b) => {
+    if ((a.policy.id === focusPolicyID) != (b.policy.id === focusPolicyID)) {
+      // Focused policy (if any) goes first.
+      return a.policy.id === focusPolicyID ? -1 : 1;
+    }
     // The active policy goes first.
     if (a.state.isActive != b.state.isActive) {
       return a.state.isActive ? -1 : 1;
@@ -60,5 +72,4 @@ export const problemsByDescendingActiveAndPriority = (config: BugManagement | un
     // Problems are the same.
     return 0;
   });
-  return result;
 };

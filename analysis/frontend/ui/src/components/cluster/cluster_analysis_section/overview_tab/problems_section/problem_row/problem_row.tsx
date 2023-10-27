@@ -22,7 +22,7 @@ import TableCell from '@mui/material/TableCell';
 import { useSearchParams } from 'react-router-dom';
 import Tooltip from '@mui/material/Tooltip';
 import { useContext } from 'react';
-import { Problem } from '../problems';
+import { Problem } from '@/tools/problems';
 import { PriorityChip } from '../priority_chip/priority_chip';
 import { StatusChip } from '../status_chip/status_chip';
 import { OverviewTabContextData } from '../../overview_tab_context';

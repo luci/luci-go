@@ -20,7 +20,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 
-import { Problem } from '../problems';
+import { Problem } from '@/tools/problems';
 import { ProblemExplanationSection } from '../problem_explanation_section/problem_explanation_section';
 
 interface Props {

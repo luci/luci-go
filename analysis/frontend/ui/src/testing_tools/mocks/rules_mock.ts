@@ -29,6 +29,14 @@ export const createDefaultMockListRulesResponse = (): ListRulesResponse => {
     url: 'https://monorail-staging.appspot.com/p/chromium/issues/detail?id=90001',
   };
   rule1.ruleDefinition = 'test LIKE "rule1%"';
+  rule1.bugManagementState = {
+    policyState: [{
+      policyId: 'exonerations',
+      isActive: true,
+      lastActivationTime: '2022-02-01T01:34:56.123456Z',
+    }],
+  };
+
   const rule2 = createDefaultMockRule();
   rule2.name = 'projects/chromium/rules/ce83f8395178a0f2edad59fc1a160002';
   rule2.ruleId = 'ce83f8395178a0f2edad59fc1a160002';
@@ -39,6 +47,14 @@ export const createDefaultMockListRulesResponse = (): ListRulesResponse => {
     url: 'https://monorail-staging.appspot.com/p/chromium/issues/detail?id=90002',
   };
   rule2.ruleDefinition = 'reason LIKE "rule2%"';
+  rule2.bugManagementState = {
+    policyState: [{
+      policyId: 'cls-rejected',
+      isActive: false,
+      lastActivationTime: '2022-02-01T01:34:56.123456Z',
+      lastDeactivationTime: '2022-02-01T02:04:56.123456Z',
+    }],
+  };
   return {
     rules: [rule1, rule2],
   };

@@ -35,7 +35,7 @@ import { BugManagement } from '@/services/project';
 import useFetchRule from '@/hooks/use_fetch_rule';
 import { BugManagementState } from '@/services/rules';
 
-import { Problem, problemsByDescendingActiveAndPriority } from './problems';
+import { Problem, identifyProblems, sortProblemsByDescendingActiveAndPriority } from '@/tools/problems';
 import { ProblemExplanationDialog } from './problem_explanation_dialog/problem_explanation_dialog';
 import { ProblemRow } from './problem_row/problem_row';
 
@@ -97,7 +97,8 @@ const ProblemsSummary = ({ bugManagementState, config }: Props) => {
     setOpenProblem(undefined);
   };
 
-  const problems = problemsByDescendingActiveAndPriority(config, bugManagementState);
+  const problems = identifyProblems(config, bugManagementState);
+  sortProblemsByDescendingActiveAndPriority(problems);
 
   return (
     <Box data-testid="problem-summary">

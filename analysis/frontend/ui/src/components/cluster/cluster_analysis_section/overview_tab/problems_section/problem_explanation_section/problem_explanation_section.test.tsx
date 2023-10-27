@@ -25,8 +25,8 @@ import { renderTabWithRouterAndClient } from '@/testing_tools/libs/render_tab';
 import { getMockCluster, mockGetCluster } from '@/testing_tools/mocks/cluster_mock';
 import { createMockExonerationsPolicy } from '@/testing_tools/mocks/projects_mock';
 
+import { Problem } from '@/tools/problems';
 import { OverviewTabContextProvider } from '../../overview_tab_context';
-import { Problem } from '../problems';
 import { ProblemExplanationSection } from './problem_explanation_section';
 
 describe('Test ProblemExplanationSection component', () => {
