@@ -79,7 +79,12 @@ func pmap(stuff ...any) ds.PropertyMap {
 		}
 
 		if len(toks) == 1 && !multi {
-			ret[pname] = mp(toks[0])
+			if pname == "$key" {
+				// This will also populate $kind, $id and $parent.
+				ds.PopulateKey(ret, toks[0].(*ds.Key))
+			} else {
+				ret[pname] = mp(toks[0])
+			}
 		} else {
 			pslice := make(ds.PropertySlice, len(toks))
 			for i, tok := range toks {

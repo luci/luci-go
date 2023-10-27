@@ -171,6 +171,29 @@ func (kc KeyContext) MakeKey(elems ...any) *Key {
 	return kc.NewKeyToks(toks)
 }
 
+// NewKeyFromMeta constructs a key (potentially partial) based on meta fields.
+//
+// Looks at `$key`, `$kind`, `$id`, `$parent`. Returns an error if necessary
+// fields are missing.
+func (kc KeyContext) NewKeyFromMeta(mgs MetaGetterSetter) (*Key, error) {
+	if key, _ := GetMetaDefault(mgs, "key", nil).(*Key); key != nil {
+		return key, nil
+	}
+
+	kind := GetMetaDefault(mgs, "kind", "").(string)
+	if kind == "" {
+		return nil, errors.New("unable to extract $kind")
+	}
+
+	// get id - allow both to be default for default keys
+	sid := GetMetaDefault(mgs, "id", "").(string)
+	iid := GetMetaDefault(mgs, "id", 0).(int64)
+
+	par, _ := GetMetaDefault(mgs, "parent", nil).(*Key)
+
+	return kc.NewKey(kind, sid, iid, par), nil
+}
+
 // Key is the type used for all datastore operations.
 type Key struct {
 	kc   KeyContext

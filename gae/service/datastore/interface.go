@@ -236,7 +236,7 @@ func KeyForObj(c context.Context, src any) *Key {
 // If a required metadata item is missing or of the wrong type, then this will
 // return an error.
 func KeyForObjErr(c context.Context, src any) (*Key, error) {
-	return newKeyObjErr(GetKeyContext(c), getMGS(src))
+	return GetKeyContext(c).NewKeyFromMeta(getMGS(src))
 }
 
 // MakeKey is a convenience method for manufacturing a *Key. It should only be
@@ -292,33 +292,25 @@ func NewKeyToks(c context.Context, toks []KeyTok) *Key {
 // Upon successful application, this method will return true. If the key could
 // not be applied to the object, this method will return false. It will panic if
 // obj is an invalid datastore model.
-//
-// This method will panic if obj is an invalid datastore model. If the key could
-// not be applied to the object, nothing will happen.
 func PopulateKey(obj any, key *Key) bool {
 	return populateKeyMGS(getMGS(obj), key)
 }
 
 func populateKeyMGS(mgs MetaGetterSetter, key *Key) bool {
-	if mgs.SetMeta("key", key) {
-		return true
-	}
+	setViaKey := mgs.SetMeta("key", key)
 
 	lst := key.LastTok()
 	mgs.SetMeta("kind", lst.Kind)
 	mgs.SetMeta("parent", key.Parent())
 
+	setViaID := false
 	if lst.StringID != "" {
-		if !mgs.SetMeta("id", lst.StringID) {
-			return false
-		}
+		setViaID = mgs.SetMeta("id", lst.StringID)
 	} else {
-		if !mgs.SetMeta("id", lst.IntID) {
-			return false
-		}
+		setViaID = mgs.SetMeta("id", lst.IntID)
 	}
 
-	return true
+	return setViaKey || setViaID
 }
 
 // RunInTransaction runs f inside of a transaction. See the appengine SDK's

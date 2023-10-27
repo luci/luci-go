@@ -538,18 +538,7 @@ func nativeEntityToGAE(kc ds.KeyContext, ent *datastore.Entity) ds.PropertyMap {
 		// Populate all potentially supported meta properties. Whatever consumes
 		// the property map (usually the default struct PLS) will choose properties
 		// it cares about and ignore the rest.
-		key := nativeKeyToGAE(kc, ent.Key)
-		pm["$key"] = ds.MkPropertyNI(key)
-		if p := key.Parent(); p != nil {
-			pm["$parent"] = ds.MkPropertyNI(p)
-		}
-		lst := key.LastTok()
-		pm["$kind"] = ds.MkPropertyNI(lst.Kind)
-		if lst.StringID != "" {
-			pm["$id"] = ds.MkPropertyNI(lst.StringID)
-		} else {
-			pm["$id"] = ds.MkPropertyNI(lst.IntID)
-		}
+		ds.PopulateKey(pm, nativeKeyToGAE(kc, ent.Key))
 	}
 	// Property ordering is lost since it's encoded to a map, but *datastore.Entity is
 	// sourced from https://godoc.org/google.golang.org/genproto/googleapis/datastore/v1#Entity
@@ -568,7 +557,7 @@ func nativeEntityToGAE(kc ds.KeyContext, ent *datastore.Entity) ds.PropertyMap {
 // gaeEntityToNative returns a *datastore.Entity representation of the given
 // PropertyMap (assumed to have been produced by nativeEntityToGAE).
 func gaeEntityToNative(kc ds.KeyContext, pm ds.PropertyMap) *datastore.Entity {
-	// Ensure stable order. Skip meta fields, they'll be used in extractKeyFromPM.
+	// Ensure stable order. Skip meta fields, they'll be used in NewKeyFromMeta.
 	keys := make([]string, 0, len(pm))
 	for name := range pm {
 		if !strings.HasPrefix(name, "$") {
@@ -585,7 +574,7 @@ func gaeEntityToNative(kc ds.KeyContext, pm ds.PropertyMap) *datastore.Entity {
 	// keys. This actually happens for structs that don't have any explicitly
 	// defined meta properties (because `$kind` is implicitly defined, so they end
 	// up with an incomplete key, since they have no `$id`).
-	if key := extractKeyFromPM(kc, pm); key != nil && !key.IsIncomplete() {
+	if key, _ := kc.NewKeyFromMeta(pm); key != nil && !key.IsIncomplete() {
 		ent.Key = gaeKeyToNative(key)
 	}
 
@@ -599,31 +588,6 @@ func gaeEntityToNative(kc ds.KeyContext, pm ds.PropertyMap) *datastore.Entity {
 		ent.Properties = append(ent.Properties, p)
 	}
 	return ent
-}
-
-// extractKeyFromPM constructs a ds.Key (perhaps incomplete) from meta fields or
-// returns nil if there's no key there.
-//
-// It is essentially the same logic as ds.KeyForObjErr, except adapted to use
-// the given KeyContext and handle missing properties differently.
-//
-// It is used only for nested entities, their keys are optional.
-func extractKeyFromPM(kc ds.KeyContext, mgs ds.MetaGetterSetter) *ds.Key {
-	if key, _ := ds.GetMetaDefault(mgs, "key", nil).(*ds.Key); key != nil {
-		return key
-	}
-
-	kind := ds.GetMetaDefault(mgs, "kind", "").(string)
-	if kind == "" {
-		return nil
-	}
-
-	sid := ds.GetMetaDefault(mgs, "id", "").(string)
-	iid := ds.GetMetaDefault(mgs, "id", 0).(int64)
-
-	par, _ := ds.GetMetaDefault(mgs, "parent", nil).(*ds.Key)
-
-	return kc.NewKey(kind, sid, iid, par)
 }
 
 // nativePropertyLoader is a datastore.PropertyLoadSaver that implement Load

@@ -54,7 +54,7 @@ type multiArgType struct {
 }
 
 func (mat *multiArgType) getKey(kc KeyContext, slot reflect.Value) (*Key, error) {
-	return newKeyObjErr(kc, mat.getMGS(slot))
+	return kc.NewKeyFromMeta(mat.getMGS(slot))
 }
 
 func (mat *multiArgType) getPM(slot reflect.Value) (PropertyMap, error) {
@@ -247,27 +247,6 @@ func mustParseArg(et reflect.Type, sliceArg bool) *multiArgType {
 		return mat
 	}
 	panic(fmt.Errorf("invalid argument type: %s is not a PLS or pointer-to-struct", et))
-}
-
-func newKeyObjErr(kc KeyContext, mgs MetaGetterSetter) (*Key, error) {
-	if key, _ := GetMetaDefault(mgs, "key", nil).(*Key); key != nil {
-		return key, nil
-	}
-
-	// get kind
-	kind := GetMetaDefault(mgs, "kind", "").(string)
-	if kind == "" {
-		return nil, errors.New("unable to extract $kind")
-	}
-
-	// get id - allow both to be default for default keys
-	sid := GetMetaDefault(mgs, "id", "").(string)
-	iid := GetMetaDefault(mgs, "id", 0).(int64)
-
-	// get parent
-	par, _ := GetMetaDefault(mgs, "parent", nil).(*Key)
-
-	return kc.NewKey(kind, sid, iid, par), nil
 }
 
 func isOKSingleType(t reflect.Type, allowKey bool) error {
