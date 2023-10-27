@@ -71,8 +71,12 @@ func TestPropertyMapSerialization(t *testing.T) {
 			"property map",
 			PropertyMap{
 				"pm": PropertySlice{
-					mpNI(PropertyMap{
-						"k": mpNI(mkKeyCtx("entity", "id")),
+					mp(PropertyMap{
+						"$key":    mpNI(mkKeyCtx("app", "ns", "entity", "id")),
+						"$kind":   mpNI("entity"),
+						"$id":     mpNI("id"),
+						"$parent": mpNI(nil),
+						"indexed": mp("indexed"),
 						"map": mpNI(PropertyMap{
 							"b": mpNI([]byte("byte")),
 						}),

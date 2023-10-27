@@ -177,7 +177,15 @@ func (s Serializer) indexValue(buf cmpbin.WriteableBytesBuffer, v any) (err erro
 	case GeoPoint:
 		err = s.GeoPoint(buf, t)
 	case PropertyMap:
-		err = s.PropertyMap(buf, t)
+		// This is a property map representing a nested entity. Cloud Datastore can
+		// store their keys, but only if they are non-partial. Do the same here. If
+		// `t` has `$key`, its key context will be used, otherwise there will be
+		// no key context at all (it will be populated when deserializing).
+		key, _ := (KeyContext{}).NewKeyFromMeta(t)
+		if key != nil && key.IsIncomplete() {
+			key = nil
+		}
+		err = s.propertyMap(buf, t, key)
 	case *Key:
 		err = s.Key(buf, t)
 
@@ -193,14 +201,20 @@ func (s Serializer) indexValue(buf cmpbin.WriteableBytesBuffer, v any) (err erro
 // If WritePropertyMapDeterministic is true, then the rows will be sorted by
 // property name before they're serialized to buf (mostly useful for testing,
 // but also potentially useful if you need to make a hash of the property data).
+func (s Serializer) PropertyMap(buf cmpbin.WriteableBytesBuffer, pm PropertyMap) error {
+	return s.propertyMap(buf, pm, nil)
+}
+
+// propertyMap writes an entire PropertyMap to the buffer.
 //
-// Write skips metadata keys.
-func (s Serializer) PropertyMap(buf cmpbin.WriteableBytesBuffer, pm PropertyMap) (err error) {
+// If `key` is given, it will be serialized as a `$key` meta property. All other
+// meta properties are skipped.
+func (s Serializer) propertyMap(buf cmpbin.WriteableBytesBuffer, pm PropertyMap, key *Key) (err error) {
 	defer recoverTo(&err)
-	rows := make(sort.StringSlice, 0, len(pm))
+	rows := make(sort.StringSlice, 0, len(pm)+1)
 	tmpBuf := &bytes.Buffer{}
-	pm, _ = pm.Save(false)
-	for name, pdata := range pm {
+
+	writeProp := func(name string, pdata PropertyData) {
 		tmpBuf.Reset()
 		_, e := cmpbin.WriteString(tmpBuf, name)
 		panicIf(e)
@@ -219,16 +233,27 @@ func (s Serializer) PropertyMap(buf cmpbin.WriteableBytesBuffer, pm PropertyMap)
 			}
 
 		default:
-			return fmt.Errorf("unknown PropertyData type %T", t)
+			panicIf(fmt.Errorf("unknown PropertyData type %T", t))
 		}
+
 		rows = append(rows, tmpBuf.String())
+	}
+
+	if key != nil {
+		writeProp("$key", MkPropertyNI(key))
+	}
+
+	for name, pdata := range pm {
+		if !isMetaKey(name) {
+			writeProp(name, pdata)
+		}
 	}
 
 	if WritePropertyMapDeterministic {
 		rows.Sort()
 	}
 
-	_, e := cmpbin.WriteUint(buf, uint64(len(pm)))
+	_, e := cmpbin.WriteUint(buf, uint64(len(rows)))
 	panicIf(e)
 	for _, r := range rows {
 		_, e := buf.WriteString(r)

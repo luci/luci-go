@@ -188,7 +188,7 @@ func (d Deserializer) Property(buf cmpbin.ReadableBytesBuffer) (p Property, err 
 	case PTGeoPoint:
 		val, err = d.GeoPoint(buf)
 	case PTPropertyMap:
-		val, err = d.PropertyMap(buf)
+		val, err = d.propertyMap(buf, true)
 	case PTKey:
 		val, err = d.Key(buf)
 	case PTBlobKey:
@@ -206,9 +206,23 @@ func (d Deserializer) Property(buf cmpbin.ReadableBytesBuffer) (p Property, err 
 	return
 }
 
+// PropertyMap reads a top-level PropertyMap from the buffer. `context` and
+// friends behave the same way that they do for ReadKey.
+func (d Deserializer) PropertyMap(buf cmpbin.ReadableBytesBuffer) (PropertyMap, error) {
+	return d.propertyMap(buf, false)
+}
+
 // PropertyMap reads a PropertyMap from the buffer. `context` and
 // friends behave the same way that they do for ReadKey.
-func (d Deserializer) PropertyMap(buf cmpbin.ReadableBytesBuffer) (pm PropertyMap, err error) {
+//
+// If `populateKey` is true, will recognize meta properties representing a key
+// (skipping any other meta property) and convert them into the same format as
+// produced by PopulateKey. That way property map consumers can pick properties
+// they care about. This is used when loading nested property maps. The key of
+// a top-level property map is propagated using another mechanism.
+//
+// If `populateKey` is false meta properties are ignored.
+func (d Deserializer) propertyMap(buf cmpbin.ReadableBytesBuffer, populateKey bool) (pm PropertyMap, err error) {
 	defer recoverTo(&err)
 
 	numRows := uint64(0)
@@ -219,12 +233,26 @@ func (d Deserializer) PropertyMap(buf cmpbin.ReadableBytesBuffer) (pm PropertyMa
 		return
 	}
 
-	pm = make(PropertyMap, numRows)
+	capacity := numRows
+	if populateKey {
+		capacity += 3 // extra for storing `$id`, `$kind` and `$parent`
+	}
+
+	var meta PropertyMap
+	pm = make(PropertyMap, capacity)
 
 	name, prop := "", Property{}
 	for i := uint64(0); i < numRows; i++ {
 		name, _, e = cmpbin.ReadString(buf)
 		panicIf(e)
+
+		dest := pm
+		if isMetaKey(name) {
+			if meta == nil {
+				meta = make(PropertyMap, 1)
+			}
+			dest = meta
+		}
 
 		numProps, _, e := cmpbin.ReadInt(buf)
 		panicIf(e)
@@ -233,7 +261,7 @@ func (d Deserializer) PropertyMap(buf cmpbin.ReadableBytesBuffer) (pm PropertyMa
 			// Single property.
 			prop, err = d.Property(buf)
 			panicIf(err)
-			pm[name] = prop
+			dest[name] = prop
 
 		case uint64(numProps) > readPropertyMapReasonableLimit:
 			err = fmt.Errorf("helper: tried to decode map with huge number of properties %d", numProps)
@@ -246,9 +274,19 @@ func (d Deserializer) PropertyMap(buf cmpbin.ReadableBytesBuffer) (pm PropertyMa
 				panicIf(err)
 				props = append(props, prop)
 			}
-			pm[name] = props
+			dest[name] = props
 		}
 	}
+
+	// This basically "normalizes" how a key is represented in meta fields, e.g.
+	// a single `$key` is expanded into `$id`, `$kind`, etc. We don't know how
+	// the caller wants their meta properties populated, so need to set them all.
+	if populateKey {
+		if key, _ := d.KeyContext.NewKeyFromMeta(meta); key != nil {
+			PopulateKey(pm, key)
+		}
+	}
+
 	return
 }
 
