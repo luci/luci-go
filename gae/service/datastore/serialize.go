@@ -127,15 +127,14 @@ func (s Serializer) Property(buf cmpbin.WriteableBytesBuffer, p Property) error 
 	return s.propertyImpl(buf, &p, false)
 }
 
-// IndexProperty writes a Property to the buffer as its native index type.
+// IndexedProperty writes a Property to the buffer as its native index type.
 // `context` behaves the same way that it does for WriteKey, but only has an
 // effect if `p` contains a Key as its IndexValue.
-func (s Serializer) IndexProperty(buf cmpbin.WriteableBytesBuffer, p Property) error {
+func (s Serializer) IndexedProperty(buf cmpbin.WriteableBytesBuffer, p Property) error {
 	return s.propertyImpl(buf, &p, true)
 }
 
-// propertyImpl is an implementation of WriteProperty and
-// WriteIndexProperty.
+// propertyImpl is an implementation of Property and IndexedProperty.
 func (s Serializer) propertyImpl(buf cmpbin.WriteableBytesBuffer, p *Property, index bool) (err error) {
 	defer recoverTo(&err)
 
@@ -314,51 +313,48 @@ func (s Serializer) IndexDefinition(buf cmpbin.WriteableBytesBuffer, i IndexDefi
 	return buf.WriteByte(0)
 }
 
-// SerializedPslice is all of the serialized DSProperty values in ASC order.
-type SerializedPslice [][]byte
+// IndexedPropertySlice is a slice of properties serialized to their comparable
+// index representations via Serializer.IndexedProperty(...).
+type IndexedPropertySlice [][]byte
 
-func (s SerializedPslice) Len() int           { return len(s) }
-func (s SerializedPslice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-func (s SerializedPslice) Less(i, j int) bool { return bytes.Compare(s[i], s[j]) < 0 }
+func (s IndexedPropertySlice) Len() int           { return len(s) }
+func (s IndexedPropertySlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s IndexedPropertySlice) Less(i, j int) bool { return bytes.Compare(s[i], s[j]) < 0 }
 
-// PropertySlicePartially serializes a single row of a DSProperty map.
+// IndexedPropertySlice serializes a slice of possible values of some property
+// into its indexed representation.
 //
-// It does not differentiate between single- and multi- properties.
-//
-// This is "partial" because it returns something other than `[]byte`
-func (s Serializer) PropertySlicePartially(vals PropertySlice) SerializedPslice {
-	dups := stringset.New(0)
-	ret := make(SerializedPslice, 0, len(vals))
+// It does not differentiate between single- and multi- properties. Unindexed
+// and non-comparable values are discarded. Duplicates are discarded.
+func (s Serializer) IndexedPropertySlice(vals PropertySlice) IndexedPropertySlice {
+	dups := stringset.New(len(vals))
+	ret := make(IndexedPropertySlice, 0, len(vals))
 	for _, v := range vals {
-		if v.IndexSetting() == NoIndex {
+		if v.IndexSetting() == NoIndex || !v.Type().Comparable() {
 			continue
 		}
-
 		data := Serialize.ToBytes(v)
-		dataS := string(data)
-		if !dups.Add(dataS) {
-			continue
+		if dups.Add(string(data)) {
+			ret = append(ret, data)
 		}
-		ret = append(ret, data)
 	}
 	return ret
 }
 
-// SerializedPmap maps from
+// IndexedProperties maps from a property name to a slice of its indexed values.
 //
-//	prop name -> [<serialized DSProperty>, ...]
-//
-// includes special values '__key__' and '__ancestor__' which contains all of
+// It includes special values '__key__' and '__ancestor__' which contains all of
 // the ancestor entries for this key.
-type SerializedPmap map[string]SerializedPslice
+type IndexedProperties map[string]IndexedPropertySlice
 
-// PropertyMapPartially turns a regular PropertyMap into a SerializedPmap.
-// Essentially all the []Property's become SerializedPslice, using cmpbin and
-// Serializer's encodings.
+// IndexedProperties turns a regular PropertyMap into a IndexedProperties.
 //
-// This is "partial" because it returns something other than `[]byte`
-func (s Serializer) PropertyMapPartially(k *Key, pm PropertyMap) (ret SerializedPmap) {
-	ret = make(SerializedPmap, len(pm)+2)
+// Essentially all the []Property's become IndexedPropertySlice, using cmpbin
+// and Serializer's encodings.
+//
+// Keys are serialized without their context.
+func (s Serializer) IndexedProperties(k *Key, pm PropertyMap) (ret IndexedProperties) {
+	ret = make(IndexedProperties, len(pm)+2)
 	if k != nil {
 		ret["__key__"] = [][]byte{Serialize.ToBytes(MkProperty(k))}
 		for k != nil {
@@ -367,7 +363,7 @@ func (s Serializer) PropertyMapPartially(k *Key, pm PropertyMap) (ret Serialized
 		}
 	}
 	for k := range pm {
-		newVals := s.PropertySlicePartially(pm.Slice(k))
+		newVals := s.IndexedPropertySlice(pm.Slice(k))
 		if len(newVals) > 0 {
 			ret[k] = newVals
 		}
@@ -377,9 +373,6 @@ func (s Serializer) PropertyMapPartially(k *Key, pm PropertyMap) (ret Serialized
 
 // ToBytesErr serializes i to a byte slice, if it's one of the type supported
 // by this library, otherwise it returns an error.
-//
-// Key types will be serialized using the 'WithoutContext' option (e.g. their
-// encoded forms will not contain AppID or Namespace).
 func (s Serializer) ToBytesErr(i any) (ret []byte, err error) {
 	buf := bytes.Buffer{}
 
@@ -394,7 +387,7 @@ func (s Serializer) ToBytesErr(i any) (ret []byte, err error) {
 		err = s.KeyTok(&buf, t)
 
 	case Property:
-		err = s.IndexProperty(&buf, t)
+		err = s.IndexedProperty(&buf, t)
 
 	case PropertyMap:
 		err = s.PropertyMap(&buf, t)
@@ -419,9 +412,6 @@ func (s Serializer) ToBytesErr(i any) (ret []byte, err error) {
 // ToBytes serializes i to a byte slice, if it's one of the type supported
 // by this library. If an error is encountered (e.g. `i` is not a supported
 // type), this method panics.
-//
-// Key types will be serialized using the 'WithoutContext' option (e.g. their
-// encoded forms will not contain AppID or Namespace).
 func (s Serializer) ToBytes(i any) []byte {
 	ret, err := s.ToBytesErr(i)
 	if err != nil {

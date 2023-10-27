@@ -502,12 +502,12 @@ func TestPartialSerialization(t *testing.T) {
 				"nerd": mp(103.7),
 				"spaz": mpNI(false),
 			}
-			sip := Serialize.PropertyMapPartially(fakeKey, pm)
+			sip := Serialize.IndexedProperties(fakeKey, pm)
 			So(len(sip), ShouldEqual, 4)
 
 			Convey("single collated", func() {
 				Convey("indexableMap", func() {
-					So(sip, ShouldResemble, SerializedPmap{
+					So(sip, ShouldResemble, IndexedProperties{
 						"wat": {
 							Serialize.ToBytes(mp("hat")),
 							Serialize.ToBytes(mp(100)),
