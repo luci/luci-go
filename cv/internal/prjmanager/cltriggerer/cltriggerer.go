@@ -17,30 +17,30 @@ package cltriggerer
 import (
 	"context"
 	"fmt"
-	"strings"
+	"sync/atomic"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/common/sync/dispatcher"
+	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/common/lease"
 	"go.chromium.org/luci/cv/internal/gerrit"
-	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 )
+
+const maxConcurrency = 16
 
 // Triggerer triggers given CLs.
 type Triggerer struct {
@@ -48,225 +48,130 @@ type Triggerer struct {
 	gFactory   gerrit.Factory
 }
 
-var errOriginVote = errors.New("The origin CL no longer has CQ+2")
-
 // New creates a Triggerer.
 func New(n *prjmanager.Notifier, gf gerrit.Factory) *Triggerer {
 	v := &Triggerer{
 		pmNotifier: n,
 		gFactory:   gf,
 	}
-	n.TasksBinding.TriggerProjectCLs.AttachHandler(
+	n.TasksBinding.TriggerProjectCLDeps.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*prjpb.TriggeringCLsTask)
-			ctx = logging.SetFields(ctx, logging.Fields{
-				"project": task.GetLuciProject(),
-			})
+			task := payload.(*prjpb.TriggeringCLDepsTask)
+			ctx = logging.SetField(ctx, "project", task.GetLuciProject())
 			return common.TQifyError(ctx,
-				errors.Annotate(v.trigger(ctx, task), "triggerer.trigger").Err())
+				errors.Annotate(v.process(ctx, task), "triggerer.process").Err())
 		},
 	)
 	return v
 }
 
 // Schedule schedules a task for CQVoteTask.
-func (tr *Triggerer) Schedule(ctx context.Context, t *prjpb.TriggeringCLsTask) error {
-	cls := t.GetTriggeringCls()
-	if len(cls) == 0 {
+func (tr *Triggerer) Schedule(ctx context.Context, t *prjpb.TriggeringCLDepsTask) error {
+	payload := t.GetTriggeringClDeps()
+	if len(payload.GetDepClids()) == 0 {
 		return nil
 	}
-	var title strings.Builder
-	fmt.Fprintf(&title, "%s/%s/%d-%d", t.GetLuciProject(), cls[0].GetOperationId(), len(cls), cls[0].GetClid())
-	for _, cl := range cls[1:] {
-		fmt.Fprintf(&title, ".%d", cl.GetClid())
-	}
-
 	return tr.pmNotifier.TasksBinding.TQDispatcher.AddTask(ctx, &tq.Task{
 		Payload: t,
-		Title:   title.String(),
+		Title: fmt.Sprintf("%s/%s/%d-%d",
+			t.GetLuciProject(), payload.GetOperationId(),
+			payload.GetOriginClid(), len(payload.GetDepClids())),
 		// Not allowed in a transaction
 		DeduplicationKey: "",
 	})
 }
 
-// trigger triggers the CLs.
-func (tr *Triggerer) trigger(ctx context.Context, task *prjpb.TriggeringCLsTask) error {
-	luciPrj := task.GetLuciProject()
-	tcls := task.GetTriggeringCls()
-	var lastCLErr error
-	var nSuccess int
-	// This procesor retries on transient failures as many times as possible
-	// until the task deadline gets exceeded.
-	//
-	// If any request exceeds the deadline before this loop votes all the CLs,
-	// it's likely that the CL has too many dep CLs to vote all within
-	// MaxTriggeringCLDuration. Or, there is an outage in Gerrit or CV.
-	// In any cases, this returns nil to clear the TQ message, and notify PM
-	// with a list of the succeede/failed/skipped votes.
-	//
-	// Then, PM will re-examine all the PCL statuses, and retriage the CLs
-	// to either stop the vote process and schedule a new TQ task to continue
-	// the vote process.
-	for _, tcl := range tcls {
-		// TODO: if tcl.GetOriginClid() is 0, the task will fail.
-		// It's fine now because trigger task is always enqueued with
-		// origin_clid. However, if this assumption changes, then this logic
-		// should be updated.
-		if lastCLErr = tr.triggerCL(ctx, luciPrj, tcl); lastCLErr != nil {
-			switch errors.Unwrap(lastCLErr) {
-			case errOriginVote, context.DeadlineExceeded:
-				// Consider these as cancellation event, not failure event.
-				lastCLErr = nil
-			}
-			break
+func (tr *Triggerer) makeDispatcherChannel(ctx context.Context, task *prjpb.TriggeringCLDepsTask) dispatcher.Channel {
+	concurrency := min(len(task.GetTriggeringClDeps().GetDepClids()), maxConcurrency)
+	prj := task.GetLuciProject()
+	dc, err := dispatcher.NewChannel(ctx, &dispatcher.Options{
+		ErrorFn: func(failedBatch *buffer.Batch, err error) (retry bool) {
+			_, isLeaseErr := lease.IsAlreadyInLeaseErr(err)
+			return isLeaseErr || transient.Tag.In(err)
+		},
+		DropFn: dispatcher.DropFnQuiet,
+		Buffer: buffer.Options{
+			MaxLeases:     concurrency,
+			BatchItemsMax: 1,
+			FullBehavior: &buffer.BlockNewItems{
+				MaxItems: concurrency,
+			},
+			Retry: makeRetryFactory(),
+		},
+	}, func(data *buffer.Batch) error {
+		op, ok := data.Data[0].Item.(*triggerDepOp)
+		if !ok {
+			panic(fmt.Errorf("unexpected batch data item type %T", data.Data[0].Item))
 		}
-		nSuccess++
+		ctx := logging.SetFields(ctx, logging.Fields{"cl": op.depCLID})
+		return op.execute(ctx, tr.gFactory, prj)
+	})
+	if err != nil {
+		panic(fmt.Errorf("cltriggerer: unexpected failure in dispatcher creation"))
 	}
-
-	completed := &prjpb.TriggeringCLsCompleted{}
-	if nSuccess > 0 {
-		completed.Succeeded = make([]*prjpb.TriggeringCLsCompleted_OpResult, nSuccess)
-		for i := 0; i < nSuccess; i++ {
-			completed.Succeeded[i] = &prjpb.TriggeringCLsCompleted_OpResult{
-				OperationId: tcls[i].GetOperationId(),
-				OriginClid:  tcls[i].GetOriginClid(),
-			}
-		}
-	}
-	skippedAt := nSuccess
-	if code := grpcutil.Code(lastCLErr); code != codes.OK {
-		skippedAt++
-		failedAt := nSuccess
-		reason := &changelist.CLError_TriggerDeps{}
-		clid := tcls[failedAt].GetClid()
-		switch code {
-		case codes.PermissionDenied:
-			reason.PermissionDenied = append(reason.PermissionDenied,
-				&changelist.CLError_TriggerDeps_PermissionDenied{
-					Clid:  clid,
-					Email: tcls[failedAt].GetTrigger().GetEmail(),
-				},
-			)
-		case codes.NotFound:
-			reason.NotFound = append(reason.NotFound, clid)
-		default:
-			reason.InternalGerritError = append(reason.InternalGerritError, clid)
-		}
-		completed.Failed = append(completed.Failed, &prjpb.TriggeringCLsCompleted_OpResult{
-			OperationId: tcls[failedAt].GetOperationId(),
-			OriginClid:  tcls[failedAt].GetOriginClid(),
-			Reason:      reason,
-		})
-	}
-	if skippedAt < len(tcls) {
-		completed.Skipped = make([]*prjpb.TriggeringCLsCompleted_OpResult, 0, len(tcls)-skippedAt)
-		for i := skippedAt; i < len(tcls); i++ {
-			completed.Skipped = append(completed.Skipped, &prjpb.TriggeringCLsCompleted_OpResult{
-				OperationId: tcls[i].GetOperationId(),
-				OriginClid:  tcls[i].GetOriginClid(),
-			})
-		}
-	}
-	return tr.pmNotifier.NotifyTriggeringCLsCompleted(ctx, luciPrj, completed)
+	return dc
 }
 
-func (tr *Triggerer) triggerCL(ctx context.Context, luciPrj string, tcl *prjpb.TriggeringCL) error {
-	ctx = logging.SetFields(ctx, logging.Fields{"cl": tcl.GetClid()})
-	ctx, cancel := clock.WithDeadline(ctx, tcl.GetDeadline().AsTime())
+func (tr *Triggerer) process(ctx context.Context, task *prjpb.TriggeringCLDepsTask) error {
+	payload := task.GetTriggeringClDeps()
+	evt := &prjpb.TriggeringCLDepsCompleted{
+		OperationId: payload.GetOperationId(),
+		Origin:      payload.GetOriginClid(),
+	}
+	taskCtx, cancel := clock.WithDeadline(ctx, payload.GetDeadline().AsTime())
 	defer cancel()
 
-	return retry.Retry(ctx, makeTriggerCLRetryFactory(), func() error {
-		cl, origin, err := loadCLs(ctx, tcl)
-		if err != nil {
-			return err
+	// It's necessary to find the originating CL before executing any ops.
+	originCL := &changelist.CL{ID: common.CLID(payload.GetOriginClid())}
+	switch err := changelist.LoadCLs(taskCtx, []*changelist.CL{originCL}); errors.Unwrap(err) {
+	case nil:
+	case context.Canceled, context.DeadlineExceeded:
+		evt.Incompleted = append(evt.Incompleted, payload.GetDepClids()...)
+		// ctx instead of taskCtx.
+		return tr.pmNotifier.NotifyTriggeringCLDepsCompleted(ctx, task.GetLuciProject(), evt)
+	default:
+		// always return a transient to retry fetching the originating CL
+		// until the deadline exceeds.
+		return transient.Tag.Apply(err)
+	}
+
+	// trigger votes in parallel while constantly checking the vote status
+	// of the originating CL.
+	var isCanceled atomic.Bool
+	ops := makeTriggerDepOps(originCL.ExternalID.MustURL(), payload, &isCanceled)
+	if ensureOriginCLVote(taskCtx, originCL) {
+		go checkVoteStatus(taskCtx, payload.GetOriginClid(), &isCanceled)
+		dc := tr.makeDispatcherChannel(taskCtx, task)
+		for _, item := range ops {
+			dc.C <- item
 		}
-		// CL may have already have a CQ vote. For example, it could be voted
-		// manually after this task was created.
-		switch mode := findCQTriggerMode(cl); mode {
-		case "":
-		case string(run.FullRun):
-			logging.Debugf(ctx, "the CL is voted already; skip triggering")
-			return nil
+		dc.Close()
+		<-dc.DrainC
+	} else {
+		// no need, but just for the sake.
+		isCanceled.Store(true)
+	}
+
+	for _, op := range ops {
+		switch {
+		case op.isSucceeded():
+			// It's possible that the origin CQ vote no longer exists.
+			// If so, OnTriggeringCLDepsCompleted() will check the origin vote
+			// status, and schedule PurgingCLTask for the successfully voted
+			// deps.
+			evt.Succeeded = append(evt.Succeeded, op.depCLID)
+		case op.isPermanentlyFailed():
+			evt.Failed = append(evt.Failed, op.getCLError())
 		default:
-			logging.Infof(ctx, "the CL is voted for %q; overriding", mode)
+			evt.Incompleted = append(evt.Incompleted, op.depCLID)
 		}
-		// Check the originating CL. Maybe, it's unvoted to stop the vote chain.
-		switch mode := findCQTriggerMode(origin); mode {
-		case string(run.FullRun):
-			// Happy path
-		case "":
-			logging.Infof(ctx, "the origin CL %d no longer has a CQ vote; stop voting", origin.ID)
-			return errOriginVote
-		default:
-			// The originating CL now has CQ+1? This can only happen in
-			// the following scenario.
-			// - At t1, the originating CL got CQ+2 and the deps triager created
-			// the TriggeringCLs.
-			// - At t2, the originating CL got CQ+1.
-			//
-			// This should be considered as cancelling the CQ vote chain
-			// process. It's OK to skip all the vote ops for the dep CLs.
-			// Then, PM will retriage the originating CL, as necessary.
-			logging.Infof(ctx, "the origin CL %d now has a CQ vote for %q; stop voting", mode)
-			return errOriginVote
-		}
-		gc, err := tr.gFactory.MakeClient(ctx, cl.Snapshot.GetGerrit().GetHost(), luciPrj)
-		if err != nil {
-			return errors.Annotate(err, "gFactory.MakeClient").Err()
-		}
-		req := makeSetReviewRequest(tcl, cl, origin)
-		return tr.gFactory.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
-			_, err := gc.SetReview(ctx, req, opt)
-			switch grpcutil.Code(err) {
-			case codes.OK:
-				return nil
-			case codes.PermissionDenied:
-				return err
-			case codes.NotFound:
-				// This is known to happen on new CLs or on recently created
-				// revisions.
-				return grpcutil.NotFoundTag.Apply(gerrit.ErrStaleData)
-			default:
-				return gerrit.UnhandledError(ctx, err, "Gerrit.SetReview")
-			}
-		})
-	}, nil)
+	}
+	// ctx instead of taskCtx to send a notification even if the deadline
+	// exceeds.
+	return tr.pmNotifier.NotifyTriggeringCLDepsCompleted(ctx, task.GetLuciProject(), evt)
 }
 
-func findCQTriggerMode(cl *changelist.CL) string {
-	trs := trigger.Find(&trigger.FindInput{
-		ChangeInfo: cl.Snapshot.GetGerrit().GetInfo(),
-	})
-	if trs == nil {
-		return ""
-	}
-	return trs.CqVoteTrigger.GetMode()
-}
-
-func makeSetReviewRequest(tcl *prjpb.TriggeringCL, cl, origin *changelist.CL) *gerritpb.SetReviewRequest {
-	var msg string
-	if origin != nil {
-		mode := tcl.GetTrigger().GetMode()
-		msg = fmt.Sprintf("Triggering %s, because %s is triggered on %s, which depends on this CL",
-			mode, mode, origin.ExternalID.MustURL())
-	}
-	// TODO(crbug.com/1470341) - ideally, this should send two requests.
-	// - one for label vote on behalf of the original triggerer.
-	// - one for posting a message to indicate the reason of the vote.
-	return &gerritpb.SetReviewRequest{
-		Project:    cl.Snapshot.GetGerrit().GetInfo().GetProject(),
-		Number:     cl.Snapshot.GetGerrit().GetInfo().GetNumber(),
-		OnBehalfOf: tcl.GetTrigger().GetGerritAccountId(),
-		RevisionId: "current",
-		// The author will be notified by the run start message, anyways.
-		Notify: gerritpb.Notify_NOTIFY_NONE,
-		Labels: map[string]int32{
-			trigger.CQLabelName: trigger.CQVoteByMode(run.Mode(tcl.GetTrigger().GetMode())),
-		},
-		Message: msg,
-	}
-}
-func makeTriggerCLRetryFactory() retry.Factory {
+func makeRetryFactory() retry.Factory {
 	return transient.Only(func() retry.Iterator {
 		return &retry.ExponentialBackoff{
 			Limited: retry.Limited{
@@ -279,17 +184,40 @@ func makeTriggerCLRetryFactory() retry.Factory {
 	})
 }
 
-func loadCLs(ctx context.Context, tcl *prjpb.TriggeringCL) (cl, origin *changelist.CL, err error) {
-	cls := []*changelist.CL{
-		{ID: common.CLID(tcl.GetClid())},
-		{ID: common.CLID(tcl.GetOriginClid())},
+func ensureOriginCLVote(ctx context.Context, originCL *changelist.CL) bool {
+	switch mode := findCQTriggerMode(originCL); mode {
+	case string(run.FullRun):
+		return true
+	case "":
+		logging.Infof(ctx, "the origin CL %d no longer has CQ vote; stop voting", originCL.ID)
+		return false
+	default:
+		// The originating CL now has CQ+1. This can only happen in the
+		// following scenario.
+		// - at t1, the origin CL gets CQ+2 and TriggeringCLDepsTask is created.
+		// - at t2, the origin CL gets CQ+1, while or before the task process.
+		//
+		// This should be considered as cancelling the CQ vote chain
+		// process. It's OK to skip all the vote ops for the dep CLs.
+		// Then, PM will retriage the originating CL, as necessary.
+		logging.Infof(ctx, "the origin CL %d now has a CQ vote for %q; stop voting", mode)
+		return false
 	}
-	if err := changelist.LoadCLs(ctx, cls); err != nil {
-		return nil, nil, err
+}
+
+func checkVoteStatus(ctx context.Context, originCLID int64, isCanceled *atomic.Bool) {
+	originCL := &changelist.CL{ID: common.CLID(originCLID)}
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case tr := <-clock.After(ctx, 4*time.Second):
+			if tr.Err != nil {
+				return
+			}
+		}
+		if err := changelist.LoadCLs(ctx, []*changelist.CL{originCL}); err == nil {
+			isCanceled.Store(ensureOriginCLVote(ctx, originCL))
+		}
 	}
-	cl = cls[0]
-	if len(cls) > 1 {
-		origin = cls[1]
-	}
-	return
 }

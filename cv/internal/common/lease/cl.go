@@ -53,7 +53,7 @@ func ApplyOnCL(ctx context.Context, clid common.CLID, duration time.Duration, re
 		return nil, nil, err
 	}
 
-	dctx, cancel := context.WithDeadline(ctx, leaseExpireTime)
+	dctx, cancel := clock.WithDeadline(ctx, leaseExpireTime)
 	terminate := func() {
 		cancel()
 		if err := l.Terminate(ctx); err != nil {

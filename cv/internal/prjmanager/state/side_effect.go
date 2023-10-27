@@ -158,8 +158,10 @@ func (t *ScheduleTriggeringCLsTasks) Do(ctx context.Context) error {
 	err := parallel.WorkPool(concurrency, func(work chan<- func() error) {
 		for _, p := range t.payloads {
 			p := p
+			// TODO(ddoman): remove the below
+			_ = p
 			work <- func() error {
-				return t.clTriggerer.Schedule(ctx, p)
+				return t.clTriggerer.Schedule(ctx, nil)
 			}
 		}
 	})

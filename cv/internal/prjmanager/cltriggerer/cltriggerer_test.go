@@ -79,9 +79,6 @@ func TestTriggerer(t *testing.T) {
 				Info: ci,
 			})
 		}
-		mockCI(change1)
-		mockCI(change2)
-		mockCI(change3, gf.CQ(2, now.Add(-1*time.Minute), voter))
 
 		cfg := makeConfig(gHost, gRepo)
 		prjcfgtest.Create(ctx, project, cfg)
@@ -103,37 +100,35 @@ func TestTriggerer(t *testing.T) {
 				}), ShouldBeNil)
 			}
 		}
-		refreshCL()
 		loadCL := func(change int64) *changelist.CL {
 			cl, err := changelist.MustGobID(gHost, change).Load(ctx)
 			So(err, ShouldBeNil)
 			So(cl, ShouldNotBeNil)
 			return cl
 		}
-		schedule := func(origin int64, changes ...int64) *prjpb.TriggeringCLsTask {
-			task := &prjpb.TriggeringCLsTask{LuciProject: project}
+		schedule := func(origin int64, deps ...int64) string {
+			task := &prjpb.TriggeringCLDepsTask{LuciProject: project}
 			dl := timestamppb.New(now.Add(prjpb.MaxTriggeringCLsDuration))
-			task.TriggeringCls = nil
 			originCL := loadCL(origin)
-			for _, change := range changes {
-				cl := loadCL(change)
-				task.TriggeringCls = append(task.TriggeringCls, &prjpb.TriggeringCL{
-					Clid:        int64(cl.ID),
-					OriginClid:  int64(originCL.ID),
-					OperationId: fmt.Sprintf("cl-%d-123", change),
-					Deadline:    dl,
-					Trigger: &run.Trigger{
-						Email:           voter,
-						Mode:            string(run.FullRun),
-						GerritAccountId: voterAccountID,
-					},
-				})
+			task.TriggeringClDeps = &prjpb.TriggeringCLDeps{
+				OriginClid:  int64(originCL.ID),
+				OperationId: fmt.Sprintf("cl-%d-123", origin),
+				Deadline:    dl,
+				Trigger: &run.Trigger{
+					Email:           voter,
+					Mode:            string(run.FullRun),
+					GerritAccountId: voterAccountID,
+				},
+			}
+			for _, dep := range deps {
+				cl := loadCL(dep)
+				task.TriggeringClDeps.DepClids = append(task.TriggeringClDeps.DepClids, int64(cl.ID))
 			}
 
 			So(datastore.RunInTransaction(ctx, func(tctx context.Context) error {
 				return triggerer.Schedule(tctx, task)
 			}, nil), ShouldBeNil)
-			return task
+			return task.GetTriggeringClDeps().GetOperationId()
 		}
 		findCQVoteTrigger := func(info *gerritpb.ChangeInfo) *run.Trigger {
 			trs := trigger.Find(&trigger.FindInput{ChangeInfo: info})
@@ -142,45 +137,53 @@ func TestTriggerer(t *testing.T) {
 			}
 			return trs.CqVoteTrigger
 		}
-		assertPMNotified := func(completed *prjpb.TriggeringCLsCompleted) {
+		assertPMNotified := func(evt *prjpb.TriggeringCLDepsCompleted) {
 			pmtest.AssertInEventbox(ctx, project, &prjpb.Event{
-				Event: &prjpb.Event_TriggeringClsCompleted{
-					TriggeringClsCompleted: completed,
+				Event: &prjpb.Event_TriggeringClDepsCompleted{
+					TriggeringClDepsCompleted: evt,
 				},
 			})
 		}
-		task := schedule(
-			change3,          // origin
-			change1, change2, // changes to vote,
-		)
 
-		Convey("Votes", func() {
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLsTaskClass))
+		mockCI(change1)
+		mockCI(change2)
+		mockCI(change3, gf.CQ(2, now.Add(-1*time.Minute), voter))
+		refreshCL()
+		clid1 := int64(loadCL(change1).ID)
+		clid2 := int64(loadCL(change2).ID)
+		clid3 := int64(loadCL(change3).ID)
+
+		opID := schedule(change3 /* origin */, change1, change2)
+
+		Convey("votes deps", func() {
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLDepsTaskClass))
 			So(ct.FailedTQTasks, ShouldHaveLength, 0)
 
-			// change1 should have a CQ vote now by the voter,
+			// Verify that change 1 and 2 now have a CQ vote.
+			expectedMsg := func(mode string) string {
+				return fmt.Sprintf("Triggering %s, because %s is triggered on %s",
+					mode, mode, loadCL(change3).ExternalID.MustURL())
+			}
+
 			ci1 := ct.GFake.GetChange(gHost, int(change1)).Info
 			v1 := findCQVoteTrigger(ci1)
 			So(v1.GetMode(), ShouldEqual, string(run.FullRun))
 			So(v1.GetGerritAccountId(), ShouldEqual, voterAccountID)
-			expectedMsg := "Triggering %s, because %s is triggered on %s"
-			So(ci1, gf.ShouldLastMessageContain,
-				fmt.Sprintf(expectedMsg, v1.GetMode(), v1.GetMode(), loadCL(change3).ExternalID.MustURL()))
+			So(ci1, gf.ShouldLastMessageContain, expectedMsg(v1.GetMode()))
 
 			// So change2 does.
 			ci2 := ct.GFake.GetChange(gHost, int(change2)).Info
 			v2 := findCQVoteTrigger(ci2)
 			So(v2.GetMode(), ShouldEqual, string(run.FullRun))
 			So(v2.GetGerritAccountId(), ShouldEqual, voterAccountID)
-			So(ci1, gf.ShouldLastMessageContain,
-				fmt.Sprintf(expectedMsg, v2.GetMode(), v2.GetMode(), loadCL(change3).ExternalID.MustURL()))
+			So(ci2, gf.ShouldLastMessageContain, expectedMsg(v2.GetMode()))
 		})
-		Convey("skips processing TriggeringCL", func() {
+
+		Convey("skips voting, if deadline exceeded", func() {
 			Convey("if deadline exceeded", func() {
 				ct.Clock.Add(prjpb.MaxTriggeringCLsDuration + time.Minute)
 			})
-			Convey("if already have a CQ+2 vote", func() {
-				// remove the CQ vote from CL3.
+			Convey("if origin no longer has CQ+2", func() {
 				ct.GFake.MutateChange(gHost, change3, func(c *gf.Change) {
 					gf.CQ(0, ct.Clock.Now(), voter)(c.Info)
 					gf.Updated(ct.Clock.Now())(c.Info)
@@ -189,29 +192,20 @@ func TestTriggerer(t *testing.T) {
 				refreshCL()
 			})
 
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLsTaskClass))
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLDepsTaskClass))
 			So(ct.FailedTQTasks, ShouldHaveLength, 0)
-			// change1 and change2 should NOT have a CQ vote.
 			ci1 := ct.GFake.GetChange(gHost, int(change1)).Info
 			So(findCQVoteTrigger(ci1), ShouldBeNil)
 			ci2 := ct.GFake.GetChange(gHost, int(change2)).Info
 			So(findCQVoteTrigger(ci2), ShouldBeNil)
 
-			assertPMNotified(&prjpb.TriggeringCLsCompleted{
-				Succeeded: nil,
-				Failed:    nil,
-				Skipped: []*prjpb.TriggeringCLsCompleted_OpResult{
-					{
-						OperationId: task.TriggeringCls[0].GetOperationId(),
-						OriginClid:  task.TriggeringCls[0].GetOriginClid(),
-					},
-					{
-						OperationId: task.TriggeringCls[1].GetOperationId(),
-						OriginClid:  task.TriggeringCls[1].GetOriginClid(),
-					},
-				},
+			assertPMNotified(&prjpb.TriggeringCLDepsCompleted{
+				OperationId: opID,
+				Origin:      clid3,
+				Incompleted: []int64{clid1, clid2},
 			})
 		})
+
 		Convey("noop if already voted", func() {
 			// This is the case where
 			// - the deps didn't have CQ+2 at the time of triageDeps(), but
@@ -227,7 +221,7 @@ func TestTriggerer(t *testing.T) {
 			})
 			ct.Clock.Add(time.Minute)
 			refreshCL()
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLsTaskClass))
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLDepsTaskClass))
 			So(ct.FailedTQTasks, ShouldHaveLength, 0)
 
 			// change1 and change2 should still have a CQ vote, but
@@ -236,25 +230,17 @@ func TestTriggerer(t *testing.T) {
 			So(findCQVoteTrigger(ci1).GetMode(), ShouldEqual, string(run.FullRun))
 			ci2 := ct.GFake.GetChange(gHost, int(change2)).Info
 			So(findCQVoteTrigger(ci2).GetMode(), ShouldEqual, string(run.FullRun))
-			assertPMNotified(&prjpb.TriggeringCLsCompleted{
-				Succeeded: []*prjpb.TriggeringCLsCompleted_OpResult{
-					{
-						OperationId: task.TriggeringCls[0].GetOperationId(),
-						OriginClid:  task.TriggeringCls[0].GetOriginClid(),
-					},
-					{
-						OperationId: task.TriggeringCls[1].GetOperationId(),
-						OriginClid:  task.TriggeringCls[1].GetOriginClid(),
-					},
-				},
-				Failed:  nil,
-				Skipped: nil,
+			assertPMNotified(&prjpb.TriggeringCLDepsCompleted{
+				OperationId: opID,
+				Origin:      clid3,
+				Succeeded:   []int64{clid1, clid2},
 			})
 			for _, req := range ct.GFake.Requests() {
 				_, ok := req.(*gerritpb.SetReviewRequest)
 				So(ok, ShouldBeFalse)
 			}
 		})
+
 		Convey("overrides CQ+1", func() {
 			// if a dep has a CQ+1, overrides it.
 			ct.GFake.MutateChange(gHost, change1, func(c *gf.Change) {
@@ -263,57 +249,48 @@ func TestTriggerer(t *testing.T) {
 			})
 			ct.Clock.Add(time.Minute)
 			refreshCL()
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLsTaskClass))
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLDepsTaskClass))
 			So(ct.FailedTQTasks, ShouldHaveLength, 0)
 			ci1 := ct.GFake.GetChange(gHost, int(change1)).Info
 			So(findCQVoteTrigger(ci1).GetMode(), ShouldEqual, string(run.FullRun))
 			ci2 := ct.GFake.GetChange(gHost, int(change2)).Info
 			So(findCQVoteTrigger(ci2).GetMode(), ShouldEqual, string(run.FullRun))
-			assertPMNotified(&prjpb.TriggeringCLsCompleted{
-				Succeeded: []*prjpb.TriggeringCLsCompleted_OpResult{
-					{
-						OperationId: task.TriggeringCls[0].GetOperationId(),
-						OriginClid:  task.TriggeringCls[0].GetOriginClid(),
-					},
-					{
-						OperationId: task.TriggeringCls[1].GetOperationId(),
-						OriginClid:  task.TriggeringCls[1].GetOriginClid(),
-					},
-				},
-				Failed:  nil,
-				Skipped: nil,
+			assertPMNotified(&prjpb.TriggeringCLDepsCompleted{
+				OperationId: opID,
+				Origin:      clid3,
+				Succeeded:   []int64{clid1, clid2},
 			})
 		})
 		Convey("handle permanent errors", func() {
 			ct.GFake.MutateChange(gHost, change1, func(c *gf.Change) {
 				c.ACLs = gf.ACLPublic()
 			})
+			ct.GFake.MutateChange(gHost, change2, func(c *gf.Change) {
+				c.ACLs = gf.ACLPublic()
+			})
 			ct.Clock.Add(time.Minute)
 			refreshCL()
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLsTaskClass))
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLDepsTaskClass))
 			So(ct.FailedTQTasks, ShouldHaveLength, 0)
 			ci1 := ct.GFake.GetChange(gHost, int(change1)).Info
 			So(findCQVoteTrigger(ci1), ShouldBeNil)
 			ci2 := ct.GFake.GetChange(gHost, int(change2)).Info
 			So(findCQVoteTrigger(ci2), ShouldBeNil)
-			assertPMNotified(&prjpb.TriggeringCLsCompleted{
-				Succeeded: nil,
-				Failed: []*prjpb.TriggeringCLsCompleted_OpResult{
+			assertPMNotified(&prjpb.TriggeringCLDepsCompleted{
+				OperationId: opID,
+				Origin:      clid3,
+				Failed: []*changelist.CLError_TriggerDeps{
 					{
-						OperationId: task.TriggeringCls[0].GetOperationId(),
-						OriginClid:  task.TriggeringCls[0].GetOriginClid(),
-						Reason: &changelist.CLError_TriggerDeps{
-							PermissionDenied: []*changelist.CLError_TriggerDeps_PermissionDenied{{
-								Clid:  task.TriggeringCls[0].GetClid(),
-								Email: voter,
-							}},
-						},
+						PermissionDenied: []*changelist.CLError_TriggerDeps_PermissionDenied{{
+							Clid:  clid1,
+							Email: voter,
+						}},
 					},
-				},
-				Skipped: []*prjpb.TriggeringCLsCompleted_OpResult{
 					{
-						OperationId: task.TriggeringCls[1].GetOperationId(),
-						OriginClid:  task.TriggeringCls[1].GetOriginClid(),
+						PermissionDenied: []*changelist.CLError_TriggerDeps_PermissionDenied{{
+							Clid:  clid2,
+							Email: voter,
+						}},
 					},
 				},
 			})

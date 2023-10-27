@@ -163,3 +163,12 @@ func (n *Notifier) NotifyTriggeringCLsCompleted(ctx context.Context, luciProject
 		},
 	})
 }
+
+// NotifyTriggeringCLDepsCompleted tells Project Manager CL deps trigger completion.
+func (n *Notifier) NotifyTriggeringCLDepsCompleted(ctx context.Context, luciProject string, event *prjpb.TriggeringCLDepsCompleted) error {
+	return n.SendNow(ctx, luciProject, &prjpb.Event{
+		Event: &prjpb.Event_TriggeringClDepsCompleted{
+			TriggeringClDepsCompleted: event,
+		},
+	})
+}
