@@ -107,6 +107,20 @@ type PropertyConverter interface {
 // automatically, using the type of the destination field to cast.
 type PropertyType byte
 
+// Comparable is true if properties of this type can be compared to one another.
+//
+// Only comparable properties can be used in query filters. Non-comparable
+// properties have no datastore indexes.
+//
+// Comparison operations include: Compare, Less, Equal. They must not be called
+// with properties of non-comparable types.
+//
+// Additionally IndexTypeAndValue must not be called either, since
+// non-comparable types have no index representation.
+func (pt PropertyType) Comparable() bool {
+	return pt != PTPropertyMap
+}
+
 //go:generate stringer -type=PropertyType
 
 // These constants are in the order described by
@@ -425,6 +439,7 @@ func (p *Property) Type() PropertyType { return p.propType }
 //   - float64
 //   - *Key
 //   - GeoPoint
+//   - PropertyMap
 //
 // This set is smaller than the set of valid struct field types that the
 // datastore can load and save. A Property Value cannot be a slice (apart
@@ -439,6 +454,9 @@ func (p *Property) Type() PropertyType { return p.propType }
 // Python's None but not directly representable by a Go struct. Loading
 // a nil-valued property into a struct will set that field to the zero
 // value.
+//
+// Values represented by references to mutable memory (such as []byte, *Key and
+// PropertyMap) are stored as references: the referenced memory is *not* copied.
 func (p *Property) SetValue(value any, is IndexSetting) (err error) {
 	pt := PTNull
 	if value != nil {
@@ -458,8 +476,6 @@ func (p *Property) SetValue(value any, is IndexSetting) (err error) {
 		value = bytesByteSequence(t)
 	case time.Time:
 		value = RoundTime(t)
-	case PropertyMap:
-		value = t.Clone()
 	}
 
 	p.propType = pt
@@ -474,19 +490,34 @@ func (p *Property) SetValue(value any, is IndexSetting) (err error) {
 // This is used to operate on the Property as it would be stored in a datastore
 // index, specifically for serialization and comparison.
 //
-// The returned type will be the PropertyType used in the index. The returned
-// value will be one of:
+// Panics if the property has a non-Comparable() type. Check for this in
+// advance.
+//
+// The returned type will be the PropertyType used in the index, in particular:
+//   - PTNull
+//   - PTInt
+//   - PTBool
+//   - PTFloat
+//   - PTGeoPoint
+//   - PTKey
+//   - PTString
+//
+// The returned value will be one of:
+//   - nil
 //   - bool
 //   - int64
 //   - float64
 //   - string
 //   - []byte
 //   - GeoPoint
-//   - PropertyMap
 //   - *Key
 func (p Property) IndexTypeAndValue() (PropertyType, any) {
+	if !p.propType.Comparable() {
+		panic(fmt.Errorf("uncomparable property type %s", p.propType))
+	}
+
 	switch t := p.propType; t {
-	case PTNull, PTInt, PTBool, PTFloat, PTGeoPoint, PTPropertyMap, PTKey:
+	case PTNull, PTInt, PTBool, PTFloat, PTGeoPoint, PTKey:
 		return t, p.Value()
 
 	case PTTime:
@@ -586,14 +617,16 @@ func cmpFloat(a, b float64) int {
 
 // Less returns true iff p would sort before other.
 //
-// This uses datastore's index rules for sorting (see GetIndexTypeAndValue).
+// This uses datastore's index rules for sorting (see IndexTypeAndValue). Panics
+// if either of property types is non-Comparable(). Check for this in advance.
 func (p *Property) Less(other *Property) bool {
 	return p.Compare(other) < 0
 }
 
 // Equal returns true iff p and other have identical index representations.
 //
-// This uses datastore's index rules for sorting (see GetIndexTypeAndValue).
+// This uses datastore's index rules for sorting (see IndexTypeAndValue). Panics
+// if either of property types is non-Comparable(). Check for this in advance.
 func (p *Property) Equal(other *Property) bool {
 	return p.Compare(other) == 0
 }
@@ -607,7 +640,8 @@ func (p *Property) Equal(other *Property) bool {
 //	>0 if the Property would after before `other`.
 //	0 if the Property equals `other`.
 //
-// This uses datastore's index rules for sorting (see GetIndexTypeAndValue).
+// This uses datastore's index rules for sorting (see IndexTypeAndValue). Panics
+// if either of property types is non-Comparable(). Check for this in advance.
 func (p *Property) Compare(other *Property) int {
 	if p.indexSetting && !other.indexSetting {
 		return 1
@@ -659,16 +693,6 @@ func (p *Property) Compare(other *Property) int {
 		}
 		return cmpFloat(a.Lng, b.Lng)
 
-	case PTTime:
-		a, b := av.(time.Time), bv.(time.Time)
-		if a.Equal(b) {
-			return 0
-		}
-		if a.Before(b) {
-			return 1
-		}
-		return -1
-
 	case PTKey:
 		a, b := av.(*Key), bv.(*Key)
 		if a.Equal(b) {
@@ -680,7 +704,7 @@ func (p *Property) Compare(other *Property) int {
 		return -1
 
 	default:
-		panic(fmt.Errorf("uncomparable type: %s", t))
+		panic(fmt.Errorf("unexpected type: %s", t))
 	}
 }
 
@@ -689,6 +713,8 @@ func (p *Property) Compare(other *Property) int {
 //
 // It uses https://cloud.google.com/appengine/articles/storage_breakdown?csw=1
 // as a guide for these values.
+//
+// TODO(vadimsh): Recurse into PTPropertyMap.
 func (p *Property) EstimateSize() int64 {
 	switch p.Type() {
 	case PTNull:
@@ -1014,6 +1040,8 @@ func (pm PropertyMap) Slice(key string) PropertySlice {
 //
 // It uses https://cloud.google.com/appengine/articles/storage_breakdown?csw=1
 // as a guide for sizes.
+//
+// TODO(vadimsh): Optionally recognize meta fields if this is an inner entity.
 func (pm PropertyMap) EstimateSize() int64 {
 	ret := int64(0)
 	for k, vals := range pm {
@@ -1027,6 +1055,8 @@ func (pm PropertyMap) EstimateSize() int64 {
 
 // TurnOffIdx sets NoIndex for all properties in the map.
 // This method modifies the map in-place.
+//
+// TODO(vadimsh): Recurse into PTPropertyMap.
 func (pm PropertyMap) TurnOffIdx() {
 	for key, val := range pm {
 		switch d := val.(type) {

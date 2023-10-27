@@ -64,6 +64,8 @@ type Query struct {
 }
 
 // queryFields are the Query's read-only fields.
+//
+// All Property and PropertySlice inside must have comparable types.
 type queryFields struct {
 	kind string
 
@@ -307,6 +309,9 @@ func (q *Query) Eq(field string, values ...any) *Query {
 				if q.err = p.SetValue(value, ShouldIndex); q.err != nil {
 					return
 				}
+				if q.err = checkComparable(field, p.Type()); q.err != nil {
+					return
+				}
 				idx := sort.Search(len(s), func(i int) bool {
 					// s[i] >= p is the same as:
 					return s[i].Equal(&p) || p.Less(&s[i])
@@ -374,6 +379,9 @@ func (q *Query) ineqOK(field string, value Property) bool {
 func (q *Query) Lt(field string, value any) *Query {
 	p := Property{}
 	err := p.SetValue(value, ShouldIndex)
+	if err == nil {
+		err = checkComparable(field, p.Type())
+	}
 
 	if err == nil && q.ineqFiltHighSet {
 		if q.ineqFiltHigh.Less(&p) {
@@ -407,6 +415,9 @@ func (q *Query) Lt(field string, value any) *Query {
 func (q *Query) Lte(field string, value any) *Query {
 	p := Property{}
 	err := p.SetValue(value, ShouldIndex)
+	if err == nil {
+		err = checkComparable(field, p.Type())
+	}
 
 	if err == nil && q.ineqFiltHighSet {
 		if q.ineqFiltHigh.Less(&p) {
@@ -440,6 +451,9 @@ func (q *Query) Lte(field string, value any) *Query {
 func (q *Query) Gt(field string, value any) *Query {
 	p := Property{}
 	err := p.SetValue(value, ShouldIndex)
+	if err == nil {
+		err = checkComparable(field, p.Type())
+	}
 
 	if err == nil && q.ineqFiltLowSet {
 		if p.Less(&q.ineqFiltLow) {
@@ -473,6 +487,9 @@ func (q *Query) Gt(field string, value any) *Query {
 func (q *Query) Gte(field string, value any) *Query {
 	p := Property{}
 	err := p.SetValue(value, ShouldIndex)
+	if err == nil {
+		err = checkComparable(field, p.Type())
+	}
 
 	if err == nil && q.ineqFiltLowSet {
 		if p.Less(&q.ineqFiltLow) {
@@ -821,6 +838,14 @@ func (q *Query) getEventualConsistency(ancestor *Key) bool {
 		return false
 	}
 	return q.eventualConsistency || ancestor == nil
+}
+
+// checkComparable returns an error if this property type is not comparable.
+func checkComparable(field string, pt PropertyType) error {
+	if !pt.Comparable() {
+		return fmt.Errorf("a non-comparable value in a filter on field %q", field)
+	}
+	return nil
 }
 
 // min returns the minimum of two ints

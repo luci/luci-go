@@ -139,25 +139,46 @@ func (s Serializer) IndexProperty(buf cmpbin.WriteableBytesBuffer, p Property) e
 func (s Serializer) propertyImpl(buf cmpbin.WriteableBytesBuffer, p *Property, index bool) (err error) {
 	defer recoverTo(&err)
 
-	it, v := p.IndexTypeAndValue()
-	if !index {
-		it = p.Type()
+	var it PropertyType
+	var v any
+
+	if !p.Type().Comparable() {
+		// Non-comparable types are stored as is and can't be used in indexes.
+		it, v = p.Type(), p.Value()
+		if index {
+			return fmt.Errorf("serializing uncomparable type %s as indexed property", p.Type())
+		}
+	} else {
+		// For comparable indexable types do type coercion to an indexed value. Note
+		// that this means that e.g. PTTime is *always* stored as int64. If `index`
+		// is true (meaning we are going to compare the final byte blob to other
+		// byte blobs in the index), the property is also tagged by PTInt type
+		// (instead of its native PTTime). That way all properties represented by
+		// e.g. int64 are comparable to one another as raw byte blobs, regardless of
+		// their "public" type.
+		it, v = p.IndexTypeAndValue()
+		if !index {
+			it = p.Type()
+		}
 	}
+
+	// Note: non-comparable properties still can have "indexed" flag set. It is
+	// just interpreted differently (in PTPropertyMap case it means to index
+	// the inner properties).
 	typb := byte(it)
 	if p.IndexSetting() != NoIndex {
 		typb |= 0x80
 	}
 	panicIf(buf.WriteByte(typb))
-
-	err = s.indexValue(buf, v)
+	err = s.rawPropValue(buf, v)
 	return
 }
 
-// indexValue writes the index value of v to buf.
+// rawPropValue writes the value of v to buf.
 //
-// v may be one of the return types from Property's GetIndexTypeAndValue
-// method.
-func (s Serializer) indexValue(buf cmpbin.WriteableBytesBuffer, v any) (err error) {
+// `v` is either a type produced by IndexTypeAndValue() or some uncomparable
+// type (e.g. PropertyMap).
+func (s Serializer) rawPropValue(buf cmpbin.WriteableBytesBuffer, v any) (err error) {
 	switch t := v.(type) {
 	case nil:
 	case bool:
@@ -379,8 +400,14 @@ func (s Serializer) ToBytesErr(i any) (ret []byte, err error) {
 		err = s.PropertyMap(&buf, t)
 
 	default:
-		_, v := MkProperty(i).IndexTypeAndValue()
-		err = s.indexValue(&buf, v)
+		// Do the same as Property(...), except do not write the type tag.
+		prop := MkProperty(i)
+		if prop.Type().Comparable() {
+			_, v := prop.IndexTypeAndValue()
+			err = s.rawPropValue(&buf, v)
+		} else {
+			err = s.rawPropValue(&buf, prop.Value())
+		}
 	}
 
 	if err == nil {

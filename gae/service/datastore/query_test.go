@@ -545,6 +545,11 @@ var queryTests = []queryTest{
 		"",
 		errString("bad type complex"), nil},
 
+	{"filter with non-comparable type",
+		nq().Eq("something", PropertyMap{}),
+		"",
+		errString("a non-comparable value"), nil},
+
 	{"sort orders used for equality are ignored",
 		nq().Order("a", "b", "c").Eq("b", 2, 2),
 		"SELECT * FROM `Foo` WHERE `b` = 2 ORDER BY `a`, `c`, `__key__`",
