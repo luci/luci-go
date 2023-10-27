@@ -47,6 +47,10 @@ load("@proto//google/protobuf/wrappers.proto", wrappers_pb = "google.protobuf")
 # succeeding experiment "crbug.com/1182002".
 _drop_legacy_shed_bb_acls = experiments.register("crbug.com/1347252", "1.32.0")
 
+# If set, do not populate the deprecated task_template_canary_percentage field
+# of BuilderConfig, but instead add the canary_software experiment.
+_use_experiment_for_task_template_canary_percentage = experiments.register("crbug.com/1496969", "1.41.0")
+
 def _legacy_acls():
     """True to generate legacy Scheduler and Buildbucket ACLs."""
     return not _drop_legacy_shed_bb_acls.is_enabled()
@@ -439,6 +443,14 @@ def _buildbucket_builders(bucket):
         exe, recipe, properties, experiments = _handle_executable(node)
         combined_experiments = dict(node.props.experiments)
         combined_experiments.update(experiments)
+        task_template_canary_percentage = None
+        if _use_experiment_for_task_template_canary_percentage.is_enabled():
+          if node.props.task_template_canary_percentage:
+            combined_experiments['luci.buildbucket.canary_software'] = node.props.task_template_canary_percentage
+        else:
+          task_template_canary_percentage = optional_UInt32Value(
+            node.props.task_template_canary_percentage,
+          )
         bldr_config = buildbucket_pb.BuilderConfig(
             name = node.props.name,
             description_html = node.props.description_html,
@@ -458,9 +470,7 @@ def _buildbucket_builders(bucket):
             build_numbers = _buildbucket_toggle(node.props.build_numbers),
             experimental = _buildbucket_toggle(node.props.experimental),
             experiments = combined_experiments,
-            task_template_canary_percentage = optional_UInt32Value(
-                node.props.task_template_canary_percentage,
-            ),
+            task_template_canary_percentage = task_template_canary_percentage,
             resultdb = node.props.resultdb,
             contact_team_email = node.props.contact_team_email,
         )

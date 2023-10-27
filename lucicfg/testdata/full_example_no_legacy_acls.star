@@ -1,4 +1,5 @@
 lucicfg.enable_experiment("crbug.com/1347252")
+lucicfg.enable_experiment("crbug.com/1496969")
 
 lucicfg.config(config_dir = ".output")
 lucicfg.config(tracked_files = ["*.cfg"])
@@ -137,6 +138,8 @@ luci.builder(
         max_concurrent_invocations = 5,
         max_batch_size = 10,
     ),
+    # This will be replaced with a proper experiment entry.
+    task_template_canary_percentage=17,
     resultdb_settings = resultdb.settings(
         enable = True,
         bq_exports = [
@@ -854,6 +857,10 @@ lucicfg.emit(
 #       }
 #       build_numbers: YES
 #       service_account: "builder@example.com"
+#       experiments {
+#         key: "luci.buildbucket.canary_software"
+#         value: 17
+#       }
 #       experiments {
 #         key: "luci.recipes.use_python3"
 #         value: 100
