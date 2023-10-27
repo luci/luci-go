@@ -95,10 +95,3 @@ func ComputeCLGroupKey(cls []*RunCL, isEquivalent bool) string {
 	}
 	return hex.EncodeToString(h.Sum(nil)[:8])
 }
-
-func min(i, j int) int {
-	if i < j {
-		return i
-	}
-	return j
-}

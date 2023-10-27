@@ -741,10 +741,3 @@ func loadCL(ctx context.Context, req *adminpb.GetCLRequest) (*changelist.CL, err
 	}
 	return cl, nil
 }
-
-func min(i, j int) int {
-	if i < j {
-		return i
-	}
-	return j
-}

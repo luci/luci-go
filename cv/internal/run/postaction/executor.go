@@ -170,10 +170,3 @@ func (exe *Executor) voteSummary(ctx context.Context, rcls []*run.RunCL, errs er
 	}
 	return s.String()
 }
-
-func min(i, j int) int {
-	if i < j {
-		return i
-	}
-	return j
-}

@@ -130,10 +130,3 @@ func makeRands(in Input, n int) []*rand.Rand {
 	}
 	return ret
 }
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

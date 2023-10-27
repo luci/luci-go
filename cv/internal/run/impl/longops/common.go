@@ -23,10 +23,3 @@ import (
 //
 // It must never be returned outside this package.
 var errCancelHonored = errors.New("cancel request was honored")
-
-func min(i, j int) int {
-	if i < j {
-		return i
-	}
-	return j
-}

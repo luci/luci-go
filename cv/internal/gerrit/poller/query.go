@@ -273,10 +273,3 @@ func uniqueSortedIDsOf(changes []*gerritpb.ChangeInfo) []int64 {
 	}
 	return common.UniqueSorted(out)
 }
-
-func min(i, j int) int {
-	if i < j {
-		return i
-	}
-	return j
-}

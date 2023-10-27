@@ -15,11 +15,9 @@
 package run
 
 import (
-	"context"
 	"time"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -131,21 +129,6 @@ type Run struct {
 	// - will be canceled if any of the deps is canceled or failed.
 	// - will be submitted only after all the deps are submitted.
 	DepRuns common.RunIDs
-}
-
-// Mutate mutates the Run by executing `mut`.
-//
-// It ensures EVersion and UpdateTime are correctly updated if `mut` has
-// changed the Run.
-func (r *Run) Mutate(ctx context.Context, mut func(*Run) (updated bool)) (updated bool) {
-	prevEV := r.EVersion
-	updated = mut(r)
-	if !updated {
-		return false
-	}
-	r.EVersion = prevEV + 1
-	r.UpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
-	return true
 }
 
 // RunOwner keeps tracks of all open (active or pending) Runs for a user.

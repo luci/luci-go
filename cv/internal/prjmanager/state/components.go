@@ -571,10 +571,3 @@ func earlierDeadline(ctx context.Context, reserve time.Duration) (context.Contex
 	}
 	return clock.WithDeadline(ctx, deadline.Add(-reserve))
 }
-
-func min(i, j int) int {
-	if i < j {
-		return i
-	}
-	return j
-}

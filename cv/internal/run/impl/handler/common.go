@@ -231,13 +231,6 @@ func isCurrentlyResettingTriggers(rs *state.RunState) bool {
 	return false
 }
 
-func min(i, j int) int {
-	if i < j {
-		return i
-	}
-	return j
-}
-
 func loadCLsAndConfig(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*prjcfg.ConfigGroup, []*run.RunCL, []*changelist.CL, error) {
 	var cg *prjcfg.ConfigGroup
 	var runCLs []*run.RunCL

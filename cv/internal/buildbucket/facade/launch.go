@@ -282,10 +282,3 @@ func sortTags(tags []*bbpb.StringPair) {
 		}
 	})
 }
-
-func min(i, j int) int {
-	if i < j {
-		return i
-	}
-	return j
-}

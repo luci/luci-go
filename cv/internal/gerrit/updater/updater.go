@@ -117,10 +117,3 @@ func (u *updaterBackend) TQErrorSpec() common.TQIfy {
 		KnownRetry: []error{gerrit.ErrStaleData, gerrit.ErrOutOfQuota, gerrit.ErrGerritDeadlineExceeded},
 	}
 }
-
-func min(i, j int) int {
-	if i < j {
-		return i
-	}
-	return j
-}

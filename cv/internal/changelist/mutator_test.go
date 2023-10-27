@@ -622,10 +622,3 @@ func (t *tjMock) ScheduleCancelStale(ctx context.Context, clid common.CLID, prev
 	t.clsNotified = append(t.clsNotified, clid)
 	return nil
 }
-
-func max(i, j int64) int64 {
-	if i < j {
-		return j
-	}
-	return i
-}

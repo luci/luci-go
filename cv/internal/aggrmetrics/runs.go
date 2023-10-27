@@ -304,10 +304,3 @@ func iterRuns(ctx context.Context, keys []*datastore.Key, bufSize int, clbk func
 	}
 	return nil
 }
-
-func min(i, j int) int {
-	if i < j {
-		return i
-	}
-	return j
-}

@@ -486,10 +486,3 @@ func (b *CLUpdatedEvents) append(e *CLUpdatedEvent) *CLUpdatedEvents {
 	b.Events = append(b.Events, e)
 	return b
 }
-
-func min(i, j int) int {
-	if i < j {
-		return i
-	}
-	return j
-}

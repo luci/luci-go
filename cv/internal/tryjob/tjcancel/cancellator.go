@@ -265,10 +265,3 @@ func (c *Cancellator) backendFor(t *tryjob.Tryjob) (cancellatorBackend, error) {
 	}
 	return nil, errors.Reason("%q backend is not supported", kind).Err()
 }
-
-func min(x, y int) int {
-	if x <= y {
-		return x
-	}
-	return y
-}
