@@ -713,8 +713,6 @@ func (p *Property) Compare(other *Property) int {
 //
 // It uses https://cloud.google.com/appengine/articles/storage_breakdown?csw=1
 // as a guide for these values.
-//
-// TODO(vadimsh): Recurse into PTPropertyMap.
 func (p *Property) EstimateSize() int64 {
 	switch p.Type() {
 	case PTNull:
@@ -733,6 +731,16 @@ func (p *Property) EstimateSize() int64 {
 		return 1 + int64(len(p.Value().([]byte)))
 	case PTKey:
 		return 1 + p.Value().(*Key).EstimateSize()
+	case PTPropertyMap:
+		// Nested property maps are stored together with their keys, if keys are
+		// complete. pm.EstimateSize() will not count meta fields, so we need to
+		// count the key explicitly here.
+		pm := p.Value().(PropertyMap)
+		sz := 1 + pm.EstimateSize()
+		if key, _ := (KeyContext{}).NewKeyFromMeta(pm); key != nil && !key.IsIncomplete() {
+			sz += key.EstimateSize()
+		}
+		return sz
 	}
 	panic(fmt.Errorf("Unknown property type: %s", p.Type().String()))
 }
@@ -777,7 +785,13 @@ func (p *Property) GQL() string {
 		// it.
 		v := v.(GeoPoint)
 		return fmt.Sprintf("GEOPOINT(%v, %v)", v.Lat, v.Lng)
+
+	case PTPropertyMap:
+		// This is a placeholder for tests. Nested properties are not expressible
+		// in GQL.
+		return "ENTITY(...)"
 	}
+
 	panic(fmt.Errorf("bad type: %s", p.propType))
 }
 
@@ -1040,8 +1054,6 @@ func (pm PropertyMap) Slice(key string) PropertySlice {
 //
 // It uses https://cloud.google.com/appengine/articles/storage_breakdown?csw=1
 // as a guide for sizes.
-//
-// TODO(vadimsh): Optionally recognize meta fields if this is an inner entity.
 func (pm PropertyMap) EstimateSize() int64 {
 	ret := int64(0)
 	for k, vals := range pm {
@@ -1055,8 +1067,6 @@ func (pm PropertyMap) EstimateSize() int64 {
 
 // TurnOffIdx sets NoIndex for all properties in the map.
 // This method modifies the map in-place.
-//
-// TODO(vadimsh): Recurse into PTPropertyMap.
 func (pm PropertyMap) TurnOffIdx() {
 	for key, val := range pm {
 		switch d := val.(type) {

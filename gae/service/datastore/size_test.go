@@ -50,7 +50,11 @@ var estimateSizeTests = []struct {
 		"GP":     mps(GeoPoint{23.2, 122.1}),
 		"bskey":  mps(blobstore.Key("hello")),
 		"[]byte": mps([]byte("sup")),
-	}, 59},
+		"Inner": mp(PropertyMap{
+			"$id":   mp(12),
+			"$kind": mp("Kind"),
+		}),
+	}, 77},
 }
 
 func stablePmString(pm PropertyMap) string {
