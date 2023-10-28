@@ -313,39 +313,87 @@ func (s Serializer) IndexDefinition(buf cmpbin.WriteableBytesBuffer, i IndexDefi
 	return buf.WriteByte(0)
 }
 
-// IndexedPropertySlice is a slice of properties serialized to their comparable
-// index representations via Serializer.IndexedProperty(...).
+// IndexedPropertySlice is a set of properties serialized to their comparable
+// index representations via Serializer.IndexedProperties(...).
+//
+// Values are in some arbitrary order. If you need them sorted, call sort.Sort
+// explicitly.
 type IndexedPropertySlice [][]byte
 
 func (s IndexedPropertySlice) Len() int           { return len(s) }
 func (s IndexedPropertySlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s IndexedPropertySlice) Less(i, j int) bool { return bytes.Compare(s[i], s[j]) < 0 }
 
-// IndexedPropertySlice serializes a slice of possible values of some property
-// into its indexed representation.
-//
-// It does not differentiate between single- and multi- properties. Unindexed
-// and non-comparable values are discarded. Duplicates are discarded.
-func (s Serializer) IndexedPropertySlice(vals PropertySlice) IndexedPropertySlice {
-	dups := stringset.New(len(vals))
-	ret := make(IndexedPropertySlice, 0, len(vals))
-	for _, v := range vals {
-		if v.IndexSetting() == NoIndex || !v.Type().Comparable() {
-			continue
-		}
-		data := Serialize.ToBytes(v)
-		if dups.Add(string(data)) {
-			ret = append(ret, data)
-		}
-	}
-	return ret
-}
-
-// IndexedProperties maps from a property name to a slice of its indexed values.
+// IndexedProperties maps from a property name to a set of its indexed values.
 //
 // It includes special values '__key__' and '__ancestor__' which contains all of
 // the ancestor entries for this key.
+//
+// Map values are in some arbitrary order. If you need them sorted, call Sort
+// explicitly.
 type IndexedProperties map[string]IndexedPropertySlice
+
+// Sort sorts all values (useful in tests).
+func (sip IndexedProperties) Sort() {
+	for _, v := range sip {
+		sort.Sort(v)
+	}
+}
+
+// indexedPropsBuilder is used to construct IndexedProperties.
+type indexedPropsBuilder map[string]stringset.Set
+
+// add adds an entry to the set under the given key.
+func (b indexedPropsBuilder) add(key string, val []byte) {
+	if vals := b[key]; vals != nil {
+		vals.Add(string(val))
+	} else {
+		b[key] = stringset.Set{string(val): struct{}{}}
+	}
+}
+
+// visit recursively traverses a property map, adding all indexed properties.
+func (b indexedPropsBuilder) visit(propNamePfx string, pm PropertyMap) {
+	for k := range pm {
+		if isMetaKey(k) {
+			continue
+		}
+		for _, v := range pm.Slice(k) {
+			if v.IndexSetting() == NoIndex {
+				continue
+			}
+			switch {
+			case v.Type() == PTPropertyMap:
+				// Nested property maps are indexed recursively per-field, together with
+				// a special `__key__` property representing the embedded key, as long
+				// as it is a complete key.
+				nested := v.Value().(PropertyMap)
+				if key, _ := (KeyContext{}).NewKeyFromMeta(nested); key != nil && !key.IsIncomplete() {
+					b.add(propNamePfx+k+".__key__", Serialize.ToBytes(MkProperty(key)))
+				}
+				b.visit(propNamePfx+k+".", nested)
+			case v.Type().Comparable():
+				// Regular indexed properties that can be converted to byte blobs.
+				b.add(propNamePfx+k, Serialize.ToBytes(v))
+			default:
+				panic(fmt.Sprintf("uncomparable type %q being indexed as %q", v.Type(), propNamePfx+k))
+			}
+		}
+	}
+}
+
+// collect converts all added properties into the final IndexedProperties map.
+func (b indexedPropsBuilder) collect() IndexedProperties {
+	res := make(IndexedProperties, len(b))
+	for k, v := range b {
+		blobs := make([][]byte, 0, v.Len())
+		for str := range v {
+			blobs = append(blobs, []byte(str))
+		}
+		res[k] = blobs
+	}
+	return res
+}
 
 // IndexedProperties turns a regular PropertyMap into a IndexedProperties.
 //
@@ -353,22 +401,45 @@ type IndexedProperties map[string]IndexedPropertySlice
 // and Serializer's encodings.
 //
 // Keys are serialized without their context.
-func (s Serializer) IndexedProperties(k *Key, pm PropertyMap) (ret IndexedProperties) {
-	ret = make(IndexedProperties, len(pm)+2)
+func (s Serializer) IndexedProperties(k *Key, pm PropertyMap) IndexedProperties {
+	builder := make(indexedPropsBuilder, len(pm)+2)
 	if k != nil {
-		ret["__key__"] = [][]byte{Serialize.ToBytes(MkProperty(k))}
+		builder.add("__key__", Serialize.ToBytes(MkProperty(k)))
 		for k != nil {
-			ret["__ancestor__"] = append(ret["__ancestor__"], Serialize.ToBytes(MkProperty(k)))
+			builder.add("__ancestor__", Serialize.ToBytes(MkProperty(k)))
 			k = k.Parent()
 		}
 	}
-	for k := range pm {
-		newVals := s.IndexedPropertySlice(pm.Slice(k))
-		if len(newVals) > 0 {
-			ret[k] = newVals
+	builder.visit("", pm)
+	return builder.collect()
+}
+
+// IndexedPropertiesForIndicies is like IndexedProperties, but it returns only
+// properties mentioned in the given indices as well as special '__key__' and
+// '__ancestor__' properties.
+//
+// It is just an optimization to avoid serializing indices that will never be
+// checked.
+func (s Serializer) IndexedPropertiesForIndicies(k *Key, pm PropertyMap, idx []IndexColumn) (ret IndexedProperties) {
+	// TODO(vadimsh): Really make it an optimization. This function is only used
+	// in txnbuf, which is currently essentially dead code.
+
+	res := make(IndexedProperties, len(idx)+2)
+	sip := s.IndexedProperties(k, pm)
+
+	move := func(key string) {
+		if v := sip[key]; len(v) > 0 {
+			res[key] = v
 		}
 	}
-	return
+
+	move("__key__")
+	move("__ancestor__")
+	for _, col := range idx {
+		move(col.Property)
+	}
+
+	return res
 }
 
 // ToBytesErr serializes i to a byte slice, if it's one of the type supported

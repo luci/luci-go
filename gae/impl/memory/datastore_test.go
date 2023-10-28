@@ -47,14 +47,19 @@ func testGetMeta(c context.Context, k *ds.Key) int64 {
 	return mg.Version
 }
 
+type Nested struct {
+	Inner int
+}
+
 type Foo struct {
 	ID     int64   `gae:"$id"`
 	Parent *ds.Key `gae:"$parent"`
 
-	Val   int
-	Name  string
-	Multi []string
-	Key   *ds.Key
+	Val    int
+	Name   string
+	Multi  []string
+	Key    *ds.Key
+	Nested Nested `gae:",lsp"`
 
 	Scatter []byte `gae:"__scatter__"` // this is normally invisible
 }
@@ -77,7 +82,14 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 		Convey("Can Put stuff", func() {
 			// with an incomplete key!
-			f := &Foo{Val: 10, Multi: []string{"foo", "bar"}, Key: ds.MakeKey(c, "Bar", "Baz")}
+			f := &Foo{
+				Val:   10,
+				Multi: []string{"foo", "bar"},
+				Key:   ds.MakeKey(c, "Bar", "Baz"),
+				Nested: Nested{
+					Inner: 456,
+				},
+			}
 			So(ds.Put(c, f), ShouldBeNil)
 			k := ds.KeyForObj(c, f)
 			So(k.String(), ShouldEqual, "dev~app::/Foo,1")
@@ -112,12 +124,15 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					"Val":   prop(10),
 					"Multi": ds.PropertySlice{prop("foo"), prop("bar")},
 					"Key":   prop(ds.MkKeyContext("dev~app", "").MakeKey("Bar", "Baz")),
+					"Nested": prop(ds.PropertyMap{
+						"Inner": prop(456),
+					}),
 				})
 			})
-			Convey("Deleteing with a bogus key is bad", func() {
+			Convey("Deleting with a bogus key is bad", func() {
 				So(ds.IsErrInvalidKey(ds.Delete(c, ds.NewKey(c, "Foo", "wat", 100, nil))), ShouldBeTrue)
 			})
-			Convey("Deleteing a DNE entity is fine", func() {
+			Convey("Deleting a DNE entity is fine", func() {
 				So(ds.Delete(c, ds.NewKey(c, "Foo", "wat", 0, nil)), ShouldBeNil)
 			})
 
@@ -185,6 +200,9 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 							"Name": ds.MkProperty(""),
 							"$key": ds.MkPropertyNI(keys[i]),
 							"Key":  ds.MkProperty(nil),
+							"Nested": ds.MkProperty(ds.PropertyMap{
+								"Inner": ds.MkProperty(0),
+							}),
 						})
 					}
 				})

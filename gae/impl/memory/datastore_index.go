@@ -29,19 +29,12 @@ func (s qIndexSlice) Len() int           { return len(s) }
 func (s qIndexSlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s qIndexSlice) Less(i, j int) bool { return s[i].Less(s[j]) }
 
-func defaultIndexes(kind string, pmap ds.PropertyMap) []*ds.IndexDefinition {
-	ret := make(qIndexSlice, 0, 2*len(pmap)+1)
+func defaultIndexes(kind string, sip ds.IndexedProperties) []*ds.IndexDefinition {
+	ret := make(qIndexSlice, 0, 2*len(sip)+1)
 	ret = append(ret, &ds.IndexDefinition{Kind: kind})
-	for name := range pmap {
-		pvals := pmap.Slice(name)
-		needsIndex := false
-		for _, v := range pvals {
-			if v.IndexSetting() == ds.ShouldIndex {
-				needsIndex = true
-				break
-			}
-		}
-		if !needsIndex {
+	for name := range sip {
+		// Skip top-level magical properties. But keep "nested_entity.__key__".
+		if name == "__key__" || name == "__ancestor__" {
 			continue
 		}
 		ret = append(ret, &ds.IndexDefinition{Kind: kind, SortBy: []ds.IndexColumn{{Property: name}}})
@@ -64,7 +57,7 @@ func indexEntriesWithBuiltins(k *ds.Key, pm ds.PropertyMap, complexIdxs []*ds.In
 		return newMemStore()
 	}
 	sip = ds.Serialize.IndexedProperties(k, pm)
-	return indexEntries(k, sip, append(defaultIndexes(k.Kind(), pm), complexIdxs...))
+	return indexEntries(k, sip, append(defaultIndexes(k.Kind(), sip), complexIdxs...))
 }
 
 // indexRowGen contains enough information to generate all of the index rows which
@@ -74,7 +67,7 @@ type indexRowGen struct {
 	decending []bool
 }
 
-// permute calls cb for each index row, in the sorted order of the rows.
+// permute calls cb for each index row, in some arbitrary order.
 func (s indexRowGen) permute(collSetFn func(k, v []byte)) {
 	iVec := make([]int, len(s.propVec))
 	iVecLim := make([]int, len(s.propVec))

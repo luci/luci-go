@@ -268,14 +268,9 @@ func runMergedQueries(fq *ds.FinalizedQuery, sizes *sizeTracker,
 func toComparableString(start, end []byte, order []ds.IndexColumn, k *ds.Key, pm ds.PropertyMap) (row, key []byte) {
 	doCmp := true
 	soFar := []byte{}
-	ps := ds.Serialize.IndexedProperties(k, nil)
+	ps := ds.Serialize.IndexedPropertiesForIndicies(k, pm, order)
 	for _, ord := range order {
-		row, ok := ps[ord.Property]
-		if !ok {
-			if pslice := pm.Slice(ord.Property); len(pslice) > 0 {
-				row = ds.Serialize.IndexedPropertySlice(pslice)
-			}
-		}
+		row := ps[ord.Property]
 		sort.Sort(row)
 		foundOne := false
 		for _, serialized := range row {

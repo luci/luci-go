@@ -174,7 +174,7 @@ func TestIndexRowGen(t *testing.T) {
 				mvals := ds.Serialize.IndexedProperties(fakeKey, tc.pmap)
 				idxs := []*ds.IndexDefinition(nil)
 				if tc.withBuiltin {
-					idxs = append(defaultIndexes("coolKind", tc.pmap), tc.idxs...)
+					idxs = append(defaultIndexes("coolKind", mvals), tc.idxs...)
 				} else {
 					idxs = tc.idxs
 				}
@@ -206,14 +206,14 @@ func TestIndexRowGen(t *testing.T) {
 	Convey("default indexes", t, func() {
 		Convey("nil collated", func() {
 			Convey("defaultIndexes (nil)", func() {
-				idxs := defaultIndexes("knd", ds.PropertyMap(nil))
+				idxs := defaultIndexes("knd", nil)
 				So(len(idxs), ShouldEqual, 1)
 				So(idxs[0].String(), ShouldEqual, "B:knd")
 			})
 
 			Convey("indexEntries", func() {
 				sip := ds.Serialize.IndexedProperties(fakeKey, nil)
-				s := indexEntries(fakeKey, sip, defaultIndexes("knd", ds.PropertyMap(nil)))
+				s := indexEntries(fakeKey, sip, defaultIndexes("knd", nil))
 				So(countItems(s.Snapshot().GetCollection("idx")), ShouldEqual, 1)
 				itm := s.GetCollection("idx").MinItem()
 				So(itm.key, ShouldResemble, cat(indx("knd").PrepForIdxTable()))
@@ -226,7 +226,7 @@ func TestIndexRowGen(t *testing.T) {
 					"nerd": prop(103.7),
 					"spaz": propNI(false),
 				}
-				idxs := defaultIndexes("knd", pm)
+				idxs := defaultIndexes("knd", ds.Serialize.IndexedProperties(fakeKey, pm))
 				So(len(idxs), ShouldEqual, 5)
 				So(idxs[0].String(), ShouldEqual, "B:knd")
 				So(idxs[1].String(), ShouldEqual, "B:knd/nerd")

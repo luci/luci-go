@@ -490,41 +490,116 @@ func TestSerializationReadMisc(t *testing.T) {
 	})
 }
 
-func TestPartialSerialization(t *testing.T) {
+func TestIndexedProperties(t *testing.T) {
 	t.Parallel()
 
 	fakeKey := mkKeyCtx("dev~app", "ns", "parentKind", "sid", "knd", 10)
 
-	Convey("TestPartialSerialization", t, func() {
-		Convey("list", func() {
-			pm := PropertyMap{
-				"wat":  PropertySlice{mpNI("thing"), mp("hat"), mp(100)},
-				"nerd": mp(103.7),
-				"spaz": mpNI(false),
-			}
-			sip := Serialize.IndexedProperties(fakeKey, pm)
-			So(len(sip), ShouldEqual, 4)
+	innerKey1 := mkKeyCtx("dev~app", "ns", "parentKind", "sid", "innerKey", 1)
+	innerKey2 := mkKeyCtx("dev~app", "ns", "parentKind", "sid", "innerKey", 2)
+	innerKey3 := mkKeyCtx("dev~app", "ns", "parentKind", "sid", "innerKey", 3)
 
-			Convey("single collated", func() {
-				Convey("indexableMap", func() {
-					So(sip, ShouldResemble, IndexedProperties{
-						"wat": {
-							Serialize.ToBytes(mp("hat")),
-							Serialize.ToBytes(mp(100)),
-							// 'thing' is skipped, because it's not NoIndex
-						},
-						"nerd": {
-							Serialize.ToBytes(mp(103.7)),
-						},
-						"__key__": {
-							Serialize.ToBytes(mp(fakeKey)),
-						},
-						"__ancestor__": {
-							Serialize.ToBytes(mp(fakeKey)),
-							Serialize.ToBytes(mp(fakeKey.Parent())),
-						},
-					})
-				})
+	Convey("TestIndexedProperties", t, func() {
+		pm := PropertyMap{
+			"wat":  PropertySlice{mpNI("thing"), mp("hat"), mp(100)},
+			"nerd": mp(103.7),
+			"spaz": mpNI(false),
+			"nested": PropertySlice{
+				mp(PropertyMap{
+					"$key":  mpNI(innerKey1),
+					"prop":  mp(123),
+					"slice": PropertySlice{mp(123), mp(456)},
+					"ni":    mpNI(666),
+				}),
+				mpNI(PropertyMap{ // will be skipped, not indexed
+					"$key":  mpNI(innerKey2),
+					"prop":  mp(123),
+					"slice": PropertySlice{mp(123), mp(456)},
+				}),
+				mp(PropertyMap{
+					"$kind":   mpNI("innerKey"),
+					"$id":     mpNI(3),
+					"$parent": mpNI(innerKey3.Parent()),
+					"prop":    mp(456),
+					"slice":   PropertySlice{mp(456), mp(789)},
+					"ni":      mpNI(666),
+				}),
+				mp(PropertyMap{ // key is optional
+					"prop": mp(777),
+					"deeper": mp(PropertyMap{
+						"deep": mp(888),
+					}),
+				}),
+			},
+		}
+
+		Convey("IndexedProperties", func() {
+			sip := Serialize.IndexedProperties(fakeKey, pm)
+			So(len(sip), ShouldEqual, 8)
+			sip.Sort()
+
+			So(sip, ShouldResemble, IndexedProperties{
+				"wat": {
+					Serialize.ToBytes(mp(100)),
+					Serialize.ToBytes(mp("hat")),
+					// 'thing' is skipped, because it's not NoIndex
+				},
+				"nerd": {
+					Serialize.ToBytes(mp(103.7)),
+				},
+				"nested.__key__": {
+					Serialize.ToBytes(mp(innerKey1)),
+					Serialize.ToBytes(mp(innerKey3)),
+				},
+				"nested.deeper.deep": {
+					Serialize.ToBytes(mp(888)),
+				},
+				"nested.prop": {
+					Serialize.ToBytes(mp(123)),
+					Serialize.ToBytes(mp(456)),
+					Serialize.ToBytes(mp(777)),
+				},
+				"nested.slice": {
+					Serialize.ToBytes(mp(123)),
+					Serialize.ToBytes(mp(456)),
+					Serialize.ToBytes(mp(789)),
+				},
+				"__key__": {
+					Serialize.ToBytes(mp(fakeKey)),
+				},
+				"__ancestor__": {
+					Serialize.ToBytes(mp(fakeKey.Parent())),
+					Serialize.ToBytes(mp(fakeKey)),
+				},
+			})
+		})
+
+		Convey("IndexedPropertiesForIndicies", func() {
+			sip := Serialize.IndexedPropertiesForIndicies(fakeKey, pm, []IndexColumn{
+				{Property: "wat"},
+				{Property: "wat", Descending: true},
+				{Property: "unknown"},
+				{Property: "nested.__key__"},
+			})
+			So(len(sip), ShouldEqual, 4)
+			sip.Sort()
+
+			So(sip, ShouldResemble, IndexedProperties{
+				"wat": {
+					Serialize.ToBytes(mp(100)),
+					Serialize.ToBytes(mp("hat")),
+				},
+				"nested.__key__": {
+					Serialize.ToBytes(mp(innerKey1)),
+					Serialize.ToBytes(mp(innerKey3)),
+				},
+				"__key__": {
+					Serialize.ToBytes(mp(fakeKey)),
+				},
+				"__ancestor__": {
+					Serialize.ToBytes(mp(fakeKey.Parent())),
+					Serialize.ToBytes(mp(fakeKey)),
+				},
 			})
 		})
 	})

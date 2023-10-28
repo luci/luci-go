@@ -84,6 +84,14 @@ var stage1Data = []ds.PropertyMap{
 	pmap("$key", key("Unique", 1), Next,
 		"Derp", 39,
 	),
+	pmap("$key", key("A", 1), Next,
+		"Inner", pmap("$key", key("Inner", 2), Next,
+			"Prop", 1,
+		),
+	),
+	pmap("$key", key("A", 2), Next,
+		"Inner", pmap("Prop", 2),
+	),
 }
 
 var stage2Data = []ds.PropertyMap{
@@ -370,6 +378,14 @@ var queryExecutionTests = []qExTest{
 				{q: nq("Unique").Gt("__key__", key("AKind", 5)).Lte("__key__", key("Zeta", "prime")),
 					keys: []*ds.Key{key("Unique", 1)},
 					get:  []ds.PropertyMap{}},
+
+				// Filtering on nested entity properties.
+				{q: nq("A").Eq("Inner.Prop", 2), get: []ds.PropertyMap{
+					stage1Data[7],
+				}},
+				{q: nq("A").Eq("Inner.__key__", key("Inner", 2)), get: []ds.PropertyMap{
+					stage1Data[6],
+				}},
 			},
 
 			extraFns: []func(context.Context){
