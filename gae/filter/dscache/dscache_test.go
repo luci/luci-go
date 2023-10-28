@@ -40,6 +40,14 @@ type object struct {
 
 	Value   string
 	BigData []byte
+
+	Nested nested `gae:",lsp"`
+}
+
+type nested struct {
+	Kind  string `gae:"$kind,NestedKind"`
+	ID    string `gae:"$id"`
+	Value int64
 }
 
 type shardObj struct {
@@ -104,22 +112,29 @@ func TestDSCache(t *testing.T) {
 			pm := ds.PropertyMap{
 				"BigData": ds.MkProperty([]byte("")),
 				"Value":   ds.MkProperty("hi"),
+				"Nested": ds.MkProperty(ds.PropertyMap{
+					"$key":  ds.MkProperty(ds.NewKey(c, "NestedKind", "ho", 0, nil)),
+					"Value": ds.MkProperty(123),
+				}),
 			}
 			encoded := append([]byte{0}, ds.Serialize.ToBytes(pm)...)
 
-			o := object{ID: 1, Value: "hi"}
+			o := object{ID: 1, Value: "hi", Nested: nested{ID: "ho", Value: 123}}
 			So(ds.Put(c, &o), ShouldBeNil)
+
+			expected := o
+			expected.Nested.Kind = "NestedKind"
 
 			o = object{ID: 1}
 			So(ds.Get(underCtx, &o), ShouldBeNil)
-			So(o.Value, ShouldEqual, "hi")
+			So(o, ShouldResemble, expected)
 
 			itm, err := mc.GetKey(c, makeMemcacheKey(0, ds.KeyForObj(c, &o)))
 			So(err, ShouldEqual, mc.ErrCacheMiss)
 
 			o = object{ID: 1}
 			So(ds.Get(c, &o), ShouldBeNil)
-			So(o.Value, ShouldEqual, "hi")
+			So(o, ShouldResemble, expected)
 
 			itm, err = mc.GetKey(c, itm.Key())
 			So(err, ShouldBeNil)
@@ -137,7 +152,7 @@ func TestDSCache(t *testing.T) {
 				So(itm.Value(), ShouldResemble, encoded)
 
 				So(ds.Get(c, &o), ShouldBeNil)
-				So(o.Value, ShouldEqual, "hi")
+				So(o, ShouldResemble, expected)
 			})
 
 			Convey("deleting it properly records that fact, however", func() {
