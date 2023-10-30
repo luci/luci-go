@@ -105,6 +105,7 @@ func TestGetRun(t *testing.T) {
 				UpdateTime: epoch.Add(time.Minute),
 				EndTime:    epoch.Add(time.Hour),
 				Owner:      "user:foo@example.org",
+				CreatedBy:  "user:bar@example.org",
 				CLs:        common.MakeCLIDs(int64(cl1.ID), int64(cl2.ID), int64(cl3.ID)),
 			}
 			So(datastore.Put(
@@ -143,6 +144,7 @@ func TestGetRun(t *testing.T) {
 				UpdateTime: timestamppb.New(epoch.Add(time.Minute)),
 				EndTime:    timestamppb.New(epoch.Add(time.Hour)),
 				Owner:      "user:foo@example.org",
+				CreatedBy:  "user:bar@example.org",
 				Cls: []*apiv0pb.GerritChange{
 					{Host: gHost, Change: int64(cl1.ID), Patchset: 39},
 					{Host: gHost, Change: int64(cl2.ID), Patchset: 40},

@@ -29,7 +29,7 @@ import "go.chromium.org/luci/cv/api/v0/tryjob.proto";
 // - No backward compatibility guaranteed.
 // - Please contact CV maintainers at luci-eng@ before using this message.
 message Run {
-  // Next tag: 11.
+  // Next tag: 14.
 
   // ID of the Run.
   //
@@ -45,7 +45,7 @@ message Run {
     // Run is pending to start.
     //
     // It is either because Run Manager hasn't processed the StartEvent yet or
-    // the RunOwner has exhausted all the quota and waiting for new quota to
+    // the Run creator has exhausted all the quota and waiting for new quota to
     // be available.
     PENDING = 1;
     // Run is running.
@@ -116,7 +116,7 @@ message Run {
 
   // Owner of the Run.
   //
-  // For a single-CL Run, this is the preferred email of the owner of
+  // For a single-CL Run, this is the identity string of the owner of
   // the Gerrit CL (whoever authenticated to Gerrit to upload the first
   // patchset of the CL). Note that Gerrit CL owner may differ from author and
   // committer encoded in the Git commit. Also, depending on Gerrit
@@ -126,6 +126,13 @@ message Run {
   // For a multi-CL Run, this is the owner of the Gerrit CL which has the latest
   // triggering timestamp (e.g. latest CQ+2 vote).
   string owner = 9;
+  // Creator of the Run.
+  //
+  // This is the identity string of the user that triggers the run (i.e. first
+  // user who votes CQ+1 or CQ+2). For multi-CL Run, the will be the triggerer
+  // of the Gerrit CL which has the latest triggering timestamp (e.g. latest
+  // CQ+2 vote).
+  string created_by = 13;
   // The Gerrit changes involved in this Run.
   repeated GerritChange cls = 10;
 
