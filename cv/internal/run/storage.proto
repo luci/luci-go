@@ -418,7 +418,23 @@ message OngoingLongOps {
     // ExecutePostActionPayload is the payload of a long-op task that executes
     // a given post action.
     message ExecutePostActionPayload {
-      cv.config.ConfigGroup.PostAction action = 1;
+      cv.config.ConfigGroup.PostAction action = 1 [deprecated=true];
+
+      // Name of the post action.
+      //
+      // For config action, it should be the same as the name in the config
+      // action.
+      string name = 2;
+
+      message CreditRunQuota {}
+
+      oneof kind {
+        // ConfigAction is the post action defined in the config group.
+        cv.config.ConfigGroup.PostAction config_action = 3;
+        // CreditRunQuota credits the quota back to the run creator and ask
+        // next run that is blocked on the quota to start.
+        CreditRunQuota credit_run_quota = 4;
+      }
     }
 
     oneof work {

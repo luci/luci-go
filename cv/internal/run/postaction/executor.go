@@ -60,14 +60,33 @@ func (exe *Executor) Do(ctx context.Context) (string, error) {
 			errors.Reason("CancelRequested for Run %q", exe.Run.ID).Err()
 	}
 
-	// determine the action handler.
-	switch w := exe.Payload.GetAction().GetAction().(type) {
-	case *cfgpb.ConfigGroup_PostAction_VoteGerritLabels_:
-		return exe.voteGerritLabels(ctx, w.VoteGerritLabels.GetVotes())
-	case nil:
-		panic(errors.New("action == nil"))
+	if exe.Payload.GetAction() != nil { // TODO(yiwzhang):remove
+		// determine the action handler.
+		switch w := exe.Payload.GetAction().GetAction().(type) {
+		case *cfgpb.ConfigGroup_PostAction_VoteGerritLabels_:
+			return exe.voteGerritLabels(ctx, w.VoteGerritLabels.GetVotes())
+		case nil:
+			panic(errors.New("action == nil"))
+		default:
+			panic(errors.Reason("unknown action type %q", w).Err())
+		}
+	}
+
+	switch k := exe.Payload.Kind.(type) {
+	case *run.OngoingLongOps_Op_ExecutePostActionPayload_ConfigAction:
+		// determine the action handler.
+		switch a := k.ConfigAction.GetAction().(type) {
+		case *cfgpb.ConfigGroup_PostAction_VoteGerritLabels_:
+			return exe.voteGerritLabels(ctx, a.VoteGerritLabels.GetVotes())
+		case nil:
+			panic(errors.New("action == nil"))
+		default:
+			panic(fmt.Errorf("unknown action type %T", a))
+		}
+	case *run.OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota_:
+		return exe.creditQuota(ctx)
 	default:
-		panic(errors.Reason("unknown action type %q", w).Err())
+		panic(fmt.Errorf("unknown post action payload kind %T", k))
 	}
 }
 

@@ -3892,6 +3892,95 @@ func (m *OngoingLongOps_Op_ExecutePostActionPayload) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for Name
+
+	switch v := m.Kind.(type) {
+	case *OngoingLongOps_Op_ExecutePostActionPayload_ConfigAction:
+		if v == nil {
+			err := OngoingLongOps_Op_ExecutePostActionPayloadValidationError{
+				field:  "Kind",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetConfigAction()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, OngoingLongOps_Op_ExecutePostActionPayloadValidationError{
+						field:  "ConfigAction",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, OngoingLongOps_Op_ExecutePostActionPayloadValidationError{
+						field:  "ConfigAction",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetConfigAction()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return OngoingLongOps_Op_ExecutePostActionPayloadValidationError{
+					field:  "ConfigAction",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota_:
+		if v == nil {
+			err := OngoingLongOps_Op_ExecutePostActionPayloadValidationError{
+				field:  "Kind",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetCreditRunQuota()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, OngoingLongOps_Op_ExecutePostActionPayloadValidationError{
+						field:  "CreditRunQuota",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, OngoingLongOps_Op_ExecutePostActionPayloadValidationError{
+						field:  "CreditRunQuota",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetCreditRunQuota()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return OngoingLongOps_Op_ExecutePostActionPayloadValidationError{
+					field:  "CreditRunQuota",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	default:
+		_ = v // ensures v is used
+	}
+
 	if len(errors) > 0 {
 		return OngoingLongOps_Op_ExecutePostActionPayloadMultiError(errors)
 	}
@@ -4085,3 +4174,121 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = OngoingLongOps_Op_ResetTriggers_RequestValidationError{}
+
+// Validate checks the field values on
+// OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on
+// OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuotaMultiError, or nil
+// if none found.
+func (m *OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuotaMultiError(errors)
+	}
+
+	return nil
+}
+
+// OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuotaMultiError is an
+// error wrapping multiple validation errors returned by
+// OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota.ValidateAll() if
+// the designated constraints aren't met.
+type OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuotaMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuotaMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuotaMultiError) AllErrors() []error {
+	return m
+}
+
+// OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuotaValidationError is
+// the validation error returned by
+// OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota.Validate if the
+// designated constraints aren't met.
+type OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuotaValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuotaValidationError) Field() string {
+	return e.field
+}
+
+// Reason function returns reason value.
+func (e OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuotaValidationError) Reason() string {
+	return e.reason
+}
+
+// Cause function returns cause value.
+func (e OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuotaValidationError) Cause() error {
+	return e.cause
+}
+
+// Key function returns key value.
+func (e OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuotaValidationError) Key() bool {
+	return e.key
+}
+
+// ErrorName returns error name.
+func (e OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuotaValidationError) ErrorName() string {
+	return "OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuotaValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuotaValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sOngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuotaValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuotaValidationError{}
