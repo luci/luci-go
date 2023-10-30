@@ -119,16 +119,16 @@ func TestTriage(t *testing.T) {
 			c.TriageRequired = false
 			return c
 		}
-		voter := "user-1@example.org"
+		owner := gf.U("user-1")
+		voter := gf.U("user-2")
 		depKind := changelist.DepKind_SOFT
 		putPCL := func(clid int, grpIndex int32, mode run.Mode, triggerTime time.Time, depsCLIDs ...int) (*changelist.CL, *prjpb.PCL) {
-			mods := []gf.CIModifier{gf.PS(1), gf.Updated(triggerTime)}
-			u := gf.U(voter)
+			mods := []gf.CIModifier{gf.PS(1), gf.Owner("user-1"), gf.Updated(triggerTime)}
 			switch mode {
 			case run.FullRun:
-				mods = append(mods, gf.CQ(+2, triggerTime, u))
+				mods = append(mods, gf.CQ(+2, triggerTime, voter))
 			case run.DryRun:
-				mods = append(mods, gf.CQ(+1, triggerTime, u))
+				mods = append(mods, gf.CQ(+1, triggerTime, voter))
 			case run.NewPatchsetRun:
 			case "":
 				// skip
@@ -165,12 +165,12 @@ func TestTriage(t *testing.T) {
 			So(datastore.Put(ctx, cl), ShouldBeNil)
 			pclTriggers := proto.Clone(trs).(*run.Triggers)
 			if pclTriggers.GetNewPatchsetRunTrigger() != nil {
-				pclTriggers.NewPatchsetRunTrigger.Email = ""
-				pclTriggers.NewPatchsetRunTrigger.GerritAccountId = 0
+				pclTriggers.NewPatchsetRunTrigger.Email = owner.GetEmail()
+				pclTriggers.NewPatchsetRunTrigger.GerritAccountId = owner.GetAccountId()
 			}
 			if pclTriggers.GetCqVoteTrigger() != nil {
-				pclTriggers.CqVoteTrigger.Email = voter
-				pclTriggers.CqVoteTrigger.GerritAccountId = 0
+				pclTriggers.CqVoteTrigger.Email = voter.GetEmail()
+				pclTriggers.CqVoteTrigger.GerritAccountId = voter.GetAccountId()
 			}
 			return cl, &prjpb.PCL{
 				Clid:               int64(clid),
@@ -199,7 +199,7 @@ func TestTriage(t *testing.T) {
 
 		Convey("Chained CQ votes", func() {
 			now := ct.Clock.Now()
-			ct.AddMember(voter, common.MCEDogfooderGroup)
+			ct.AddMember(voter.GetEmail(), common.MCEDogfooderGroup)
 			depKind = changelist.DepKind_HARD
 			const cl31, cl32, cl33, cl34 = 31, 32, 33, 34
 
@@ -421,7 +421,7 @@ func TestTriage(t *testing.T) {
 				pm.pb.Pcls = []*prjpb.PCL{pcl32, pcl33}
 				oldC := &prjpb.Component{Clids: []int64{32, 33}, TriageRequired: true}
 				ct.Clock.Add(stabilizationDelay)
-				const expectedRunID = "v8/9042327596854-1-690d9e2cc74b34aa"
+				const expectedRunID = "v8/9042327596854-1-42e0a59099a0f673"
 
 				Convey("wait a bit if Run is RUNNING", func() {
 					So(datastore.Put(ctx, &run.Run{ID: expectedRunID, Status: run.Status_RUNNING}), ShouldBeNil)

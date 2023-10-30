@@ -84,6 +84,15 @@ type Run struct {
 	// enabled for the ConfigGroup used by this Run, the owner is the CL which
 	// has the latest triggering timestamp.
 	Owner identity.Identity `gae:",noindex"`
+	// CreatedBy is the identity that creates this Run.
+	//
+	// For dry run and full run, it is the identity of the user who *first* makes
+	// the Gerrit vote that triggers this run.  If the Run contains multiple CLs
+	// (i.e. `combine_cls` is enabled), it is the identity of the user who
+	// triggers the CL which has the latest triggering timestamp. For new
+	// patchset run, it is the  the identity of the user who uploads the new
+	// patchset.
+	CreatedBy identity.Identity `gae:",noindex"`
 	// ConfigGroupID is ID of the ConfigGroup that is used by this Run.
 	//
 	// RunManager may update the ConfigGroup in the middle of the Run if it is

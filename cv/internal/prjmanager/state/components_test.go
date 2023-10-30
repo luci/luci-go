@@ -382,7 +382,7 @@ func TestComponentsActions(t *testing.T) {
 				if err != nil {
 					panic(err)
 				}
-				ci := gf.CI(int(clid), gf.PS(1), gf.CQ(+1, ct.Clock.Now(), gf.U("user-1")))
+				ci := gf.CI(int(clid), gf.PS(1), gf.Owner("user-1"), gf.CQ(+1, ct.Clock.Now(), gf.U("user-2")))
 				cl := &changelist.CL{
 					ID:       common.CLID(clid),
 					EVersion: 1,
@@ -406,6 +406,7 @@ func TestComponentsActions(t *testing.T) {
 					Mode:          run.DryRun,
 					OperationID:   fmt.Sprintf("op-%d-%t", clid, fail),
 					Owner:         identity.Identity("user:user-1@example.com"),
+					CreatedBy:     identity.Identity("user:user-2@example.com"),
 					Options:       &run.Options{},
 					InputCLs: []runcreator.CL{{
 						ID:               common.CLID(clid),

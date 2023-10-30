@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
@@ -393,6 +394,10 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 		}
 	}
 	t := chooseTrigger(combo.latestTriggered.pcl.GetTriggers())
+	triggererIdentity, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, t.GetEmail()))
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to construct triggerer identity of %s", t.GetEmail()).Err()
+	}
 	sort.Sort(incompleteRuns)
 	return &runcreator.Creator{
 		ConfigGroupID:            cg.ID,
@@ -400,6 +405,7 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 		Mode:                     run.Mode(t.GetMode()),
 		CreateTime:               t.GetTime().AsTime(),
 		Owner:                    owner,
+		CreatedBy:                triggererIdentity,
 		Options:                  opts,
 		ExpectedIncompleteRunIDs: incompleteRuns,
 		OperationID:              fmt.Sprintf("PM-%d", mathrand.Int63(ctx)),

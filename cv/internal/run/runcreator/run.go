@@ -64,6 +64,8 @@ type Creator struct {
 	Mode run.Mode
 	// Owner is the Run Owner. Required.
 	Owner identity.Identity
+	// CreatedBy is the creator of the Run. Required.
+	CreatedBy identity.Identity
 	// Options is metadata of the Run. Required.
 	Options *run.Options
 	// ExpectedIncompleteRunIDs are a sorted slice of Run IDs which may be associated with
@@ -202,6 +204,8 @@ func (rb *Creator) prepare(now time.Time) {
 		panic("Mode is required")
 	case rb.Owner == "":
 		panic("Owner is required")
+	case rb.CreatedBy == "":
+		panic("CreatedBy is required")
 	case rb.Options == nil:
 		panic("Options is required")
 	case rb.OperationID == "":
@@ -396,6 +400,7 @@ func (rb *Creator) saveRun(ctx context.Context, now time.Time) error {
 		Mode:          rb.Mode,
 		Status:        run.Status_PENDING,
 		Owner:         rb.Owner,
+		CreatedBy:     rb.CreatedBy,
 		Options:       rb.Options,
 	}
 	if err := datastore.Put(ctx, rb.run); err != nil {

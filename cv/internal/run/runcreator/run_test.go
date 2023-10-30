@@ -110,11 +110,12 @@ func TestRunBuilder(t *testing.T) {
 		const gHost = "x-review.example.com"
 		const gProject = "infra/luci/luci-go"
 
+		triggerer := gf.U("user-1")
 		makeCI := func(n int) *gerritpb.ChangeInfo {
 			votedAt := ct.Clock.Now()
 			return gf.CI(n,
 				gf.Project(gProject),
-				gf.CQ(1, votedAt, gf.U("user-1")),
+				gf.CQ(1, votedAt, triggerer),
 				gf.Updated(votedAt),
 			)
 		}
@@ -164,6 +165,7 @@ func TestRunBuilder(t *testing.T) {
 			OperationID:              "this-operation-id",
 			Mode:                     run.DryRun,
 			Owner:                    owner,
+			CreatedBy:                identity.Identity(fmt.Sprintf("%s:%s", identity.User, triggerer.Email)),
 			Options:                  &run.Options{},
 			ExpectedIncompleteRunIDs: common.MakeRunIDs("expected/000-run"),
 			InputCLs: []CL{
@@ -314,6 +316,7 @@ func TestRunBuilder(t *testing.T) {
 				ConfigGroupID:       rb.ConfigGroupID,
 				Mode:                rb.Mode,
 				Owner:               rb.Owner,
+				CreatedBy:           rb.CreatedBy,
 				Options:             &run.Options{},
 			}
 			So(r, runtest.ShouldResembleRun, expectedRun)
