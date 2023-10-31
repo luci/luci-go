@@ -3616,6 +3616,47 @@ func (m *OngoingLongOps_Op) validate(all bool) error {
 			}
 		}
 
+	case *OngoingLongOps_Op_PostGerritMessage_:
+		if v == nil {
+			err := OngoingLongOps_OpValidationError{
+				field:  "Work",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetPostGerritMessage()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, OngoingLongOps_OpValidationError{
+						field:  "PostGerritMessage",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, OngoingLongOps_OpValidationError{
+						field:  "PostGerritMessage",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetPostGerritMessage()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return OngoingLongOps_OpValidationError{
+					field:  "PostGerritMessage",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -4062,6 +4103,113 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = OngoingLongOps_Op_ExecutePostActionPayloadValidationError{}
+
+// Validate checks the field values on OngoingLongOps_Op_PostGerritMessage with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the first error encountered is returned, or nil if there are
+// no violations.
+func (m *OngoingLongOps_Op_PostGerritMessage) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on OngoingLongOps_Op_PostGerritMessage
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the result is a list of violation errors wrapped in
+// OngoingLongOps_Op_PostGerritMessageMultiError, or nil if none found.
+func (m *OngoingLongOps_Op_PostGerritMessage) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *OngoingLongOps_Op_PostGerritMessage) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Message
+
+	if len(errors) > 0 {
+		return OngoingLongOps_Op_PostGerritMessageMultiError(errors)
+	}
+
+	return nil
+}
+
+// OngoingLongOps_Op_PostGerritMessageMultiError is an error wrapping multiple
+// validation errors returned by
+// OngoingLongOps_Op_PostGerritMessage.ValidateAll() if the designated
+// constraints aren't met.
+type OngoingLongOps_Op_PostGerritMessageMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m OngoingLongOps_Op_PostGerritMessageMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m OngoingLongOps_Op_PostGerritMessageMultiError) AllErrors() []error { return m }
+
+// OngoingLongOps_Op_PostGerritMessageValidationError is the validation error
+// returned by OngoingLongOps_Op_PostGerritMessage.Validate if the designated
+// constraints aren't met.
+type OngoingLongOps_Op_PostGerritMessageValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e OngoingLongOps_Op_PostGerritMessageValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e OngoingLongOps_Op_PostGerritMessageValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e OngoingLongOps_Op_PostGerritMessageValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e OngoingLongOps_Op_PostGerritMessageValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e OngoingLongOps_Op_PostGerritMessageValidationError) ErrorName() string {
+	return "OngoingLongOps_Op_PostGerritMessageValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e OngoingLongOps_Op_PostGerritMessageValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sOngoingLongOps_Op_PostGerritMessage.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = OngoingLongOps_Op_PostGerritMessageValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = OngoingLongOps_Op_PostGerritMessageValidationError{}
 
 // Validate checks the field values on OngoingLongOps_Op_ResetTriggers_Request
 // with the rules defined in the proto definition for this message. If any

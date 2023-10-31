@@ -226,6 +226,47 @@ func (m *LongOpCompleted) validate(all bool) error {
 			}
 		}
 
+	case *LongOpCompleted_PostGerritMessage_:
+		if v == nil {
+			err := LongOpCompletedValidationError{
+				field:  "Result",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetPostGerritMessage()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, LongOpCompletedValidationError{
+						field:  "PostGerritMessage",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, LongOpCompletedValidationError{
+						field:  "PostGerritMessage",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetPostGerritMessage()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return LongOpCompletedValidationError{
+					field:  "PostGerritMessage",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -441,6 +482,140 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = LongOpCompleted_PostStartMessageValidationError{}
+
+// Validate checks the field values on LongOpCompleted_PostGerritMessage with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the first error encountered is returned, or nil if there are
+// no violations.
+func (m *LongOpCompleted_PostGerritMessage) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on LongOpCompleted_PostGerritMessage
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the result is a list of violation errors wrapped in
+// LongOpCompleted_PostGerritMessageMultiError, or nil if none found.
+func (m *LongOpCompleted_PostGerritMessage) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *LongOpCompleted_PostGerritMessage) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetTime()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, LongOpCompleted_PostGerritMessageValidationError{
+					field:  "Time",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, LongOpCompleted_PostGerritMessageValidationError{
+					field:  "Time",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetTime()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return LongOpCompleted_PostGerritMessageValidationError{
+				field:  "Time",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return LongOpCompleted_PostGerritMessageMultiError(errors)
+	}
+
+	return nil
+}
+
+// LongOpCompleted_PostGerritMessageMultiError is an error wrapping multiple
+// validation errors returned by
+// LongOpCompleted_PostGerritMessage.ValidateAll() if the designated
+// constraints aren't met.
+type LongOpCompleted_PostGerritMessageMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m LongOpCompleted_PostGerritMessageMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m LongOpCompleted_PostGerritMessageMultiError) AllErrors() []error { return m }
+
+// LongOpCompleted_PostGerritMessageValidationError is the validation error
+// returned by LongOpCompleted_PostGerritMessage.Validate if the designated
+// constraints aren't met.
+type LongOpCompleted_PostGerritMessageValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e LongOpCompleted_PostGerritMessageValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e LongOpCompleted_PostGerritMessageValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e LongOpCompleted_PostGerritMessageValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e LongOpCompleted_PostGerritMessageValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e LongOpCompleted_PostGerritMessageValidationError) ErrorName() string {
+	return "LongOpCompleted_PostGerritMessageValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e LongOpCompleted_PostGerritMessageValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sLongOpCompleted_PostGerritMessage.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = LongOpCompleted_PostGerritMessageValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = LongOpCompleted_PostGerritMessageValidationError{}
 
 // Validate checks the field values on LongOpCompleted_ResetTriggers with the
 // rules defined in the proto definition for this message. If any rules are

@@ -51,6 +51,7 @@ message LongOpCompleted {
     ResetTriggers reset_triggers = 6;
     cv.internal.tryjob.ExecuteTryjobsResult execute_tryjobs = 5;
     ExecutePostActionResult execute_post_action = 7;
+    PostGerritMessage post_gerrit_message = 8;
   }
 
   message PostStartMessage {
@@ -59,6 +60,12 @@ message LongOpCompleted {
     // Approximate time when CV became certain that the message was posted on
     // the last CL.
     google.protobuf.Timestamp time = 3;
+  }
+
+  message PostGerritMessage {
+    // Approximate time when CV became certain that the message was posted on
+    // the last CL.
+    google.protobuf.Timestamp time = 1;
   }
 
   message ResetTriggers {

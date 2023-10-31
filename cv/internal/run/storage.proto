@@ -437,6 +437,16 @@ message OngoingLongOps {
       }
     }
 
+    // PostGerritMessage is the payload for posting a bot message within
+    // a run's gerrit CLs.
+    message PostGerritMessage {
+      // Message to post to gerrit. The current implementation treats the
+      // message as a unique key to achieve idempotency. If multiple payloads
+      // with the same message is triggered for the same run, only one would
+      // be posted.
+      string message = 1;
+    }
+
     oneof work {
       // If true, posts a start message.
       bool post_start_message = 3;
@@ -456,6 +466,9 @@ message OngoingLongOps {
       // of the long-op processing time, and skip the action, if the patchset
       // is no longer the latest.
       ExecutePostActionPayload execute_post_action = 7;
+
+      // Post a custom message to all the CLs linked to a run.
+      PostGerritMessage post_gerrit_message = 8;
     }
   }
   // Ops map operation ID to details.
