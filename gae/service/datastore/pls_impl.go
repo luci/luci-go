@@ -27,6 +27,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/internal/zlib"
 )
 
 // Entities with more than this many indexed properties will not be saved.
@@ -291,14 +292,36 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 		}
 
 	case convertLSP:
-		// TODO(vadimsh): Recognize zlib-compressed blobs produced by legacy Python
-		// GAE code, decompress and deserialize them into a property map.
-		if pmap, ok := p.Value().(PropertyMap); ok {
-			if err := (&structPLS{o: v, c: substructCodec}).loadWithMeta(pmap, true); err != nil {
-				return fmt.Sprintf("loading LSP: %s", err)
+		// It is possible we get a blob here produced by Python. It is either
+		// a compressed blob when using LocalStructuredProperty(compressed=True), or
+		// an uncompressed one when using LocalStructuredProperty(compressed=False),
+		// but inside *some other* LocalStructuredProperty(compressed=True).
+		//
+		// Top-level uncompressed LSPs are stored as nested property maps, even when
+		// written from Python: there appears to be some compatibility layer in
+		// Cloud Datastore backend that converts blobs produced by Python into
+		// properly expanded property maps (aka entity-valued properties). But this
+		// magic doesn't know how look inside compressed blobs.
+		var pm PropertyMap
+		var hasMeta bool
+		if blob, ok := p.Value().([]byte); ok {
+			var err error
+			if zlib.HasZlibHeader(blob) {
+				if blob, err = zlib.DecodeAll(blob, nil); err != nil {
+					return fmt.Sprintf("decompressing legacy LSP: %s", err)
+				}
 			}
+			if pm, err = loadLegacyLSP(blob); err != nil {
+				return fmt.Sprintf("loading legacy LSP: %s", err)
+			}
+		} else if pmap, ok := p.Value().(PropertyMap); ok {
+			pm = pmap
+			hasMeta = true
 		} else {
 			return fmt.Sprintf("expecting a property map, but got %s", p.Type())
+		}
+		if err := (&structPLS{o: v, c: substructCodec}).loadWithMeta(pm, hasMeta); err != nil {
+			return fmt.Sprintf("loading LSP: %s", err)
 		}
 
 	default:

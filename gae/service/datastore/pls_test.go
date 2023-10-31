@@ -18,6 +18,7 @@ package datastore
 
 import (
 	"bytes"
+	"compress/zlib"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -27,9 +28,11 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/gae/service/blobstore"
+	pb "go.chromium.org/luci/gae/service/datastore/internal/protos/datastore"
 	"go.chromium.org/luci/gae/service/datastore/internal/testprotos"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -340,12 +343,12 @@ type DeeperB struct {
 	C string
 }
 
-type LSPOutter struct {
+type LSPOuter struct {
 	One   LSPInner   `gae:",lsp"`
 	Slice []LSPInner `gae:",lsp"`
 }
 
-type LSPOutterUnindexed struct {
+type LSPOuterUnindexed struct {
 	One   LSPInner   `gae:",lsp,noindex"`
 	Slice []LSPInner `gae:",lsp,noindex"`
 }
@@ -357,6 +360,10 @@ type LSPInner struct {
 	IntsNoIndex []int64     `gae:",noindex"`
 	Deeper1     LSPDeeper   `gae:",lsp"`
 	Deeper2     []LSPDeeper `gae:",lsp"`
+	Bool        bool
+	Blob        []byte
+	String      string
+	Double      float64
 }
 
 type LSPDeeper struct {
@@ -815,6 +822,57 @@ func (*WithProtoMeta) embedsProtos()          {}
 func (*WithProtoIndirect) embedsProtos()      {}
 func (*WithProtoIndirectSlice) embedsProtos() {}
 func (*WithAnonymousProto) embedsProtos()     {}
+
+func legacyLSP(props ...*pb.Property) []byte {
+	blob, err := (proto.MarshalOptions{AllowPartial: true}).Marshal(&pb.EntityProto{
+		Property: props,
+	})
+	if err != nil {
+		panic(err)
+	}
+	return blob
+}
+
+func legacyProp(name string, val any) *pb.Property {
+	switch v := val.(type) {
+	case int64:
+		return &pb.Property{Name: &name, Value: &pb.PropertyValue{
+			Int64Value: &v,
+		}}
+	case bool:
+		return &pb.Property{Name: &name, Value: &pb.PropertyValue{
+			BooleanValue: &v,
+		}}
+	case string:
+		return &pb.Property{Name: &name, Value: &pb.PropertyValue{
+			StringValue: &v,
+		}}
+	case []byte:
+		str := string(v)
+		meaning := pb.Property_BYTESTRING
+		return &pb.Property{Name: &name, Meaning: &meaning, Value: &pb.PropertyValue{
+			StringValue: &str,
+		}}
+	case float64:
+		return &pb.Property{Name: &name, Value: &pb.PropertyValue{
+			DoubleValue: &v,
+		}}
+	default:
+		panic(fmt.Sprintf("unexpected type %T", val))
+	}
+}
+
+func deflate(blob []byte) []byte {
+	out := bytes.NewBuffer(nil)
+	w := zlib.NewWriter(out)
+	if _, err := w.Write(blob); err != nil {
+		panic(err)
+	}
+	if err := w.Close(); err != nil {
+		panic(err)
+	}
+	return out.Bytes()
+}
 
 type testCase struct {
 	desc       string
@@ -1761,7 +1819,7 @@ var testCases = []testCase{
 	},
 	{
 		desc: "lsp indexed",
-		src: &LSPOutter{
+		src: &LSPOuter{
 			One: LSPInner{
 				Kind:        "Test",
 				ID:          "test",
@@ -1779,6 +1837,10 @@ var testCases = []testCase{
 				"$id":         mpNI("test"),
 				"Ints":        PropertySlice{mp(1), mp(2)},
 				"IntsNoIndex": PropertySlice{mpNI(3), mpNI(4)},
+				"Bool":        mp(false),
+				"Blob":        mp([]byte(nil)),
+				"String":      mp(""),
+				"Double":      mp(0.0),
 				"Deeper1": mp(PropertyMap{
 					"$kind": mpNI("LSPDeeper"),
 					"$id":   mpNI(123),
@@ -1789,7 +1851,7 @@ var testCases = []testCase{
 	},
 	{
 		desc: "lsp unindexed",
-		src: &LSPOutterUnindexed{
+		src: &LSPOuterUnindexed{
 			One: LSPInner{
 				Kind:        "Test",
 				ID:          "test",
@@ -1807,6 +1869,10 @@ var testCases = []testCase{
 				"$id":         mpNI("test"),
 				"Ints":        PropertySlice{mpNI(1), mpNI(2)},
 				"IntsNoIndex": PropertySlice{mpNI(3), mpNI(4)},
+				"Bool":        mpNI(false),
+				"Blob":        mpNI([]byte(nil)),
+				"String":      mpNI(""),
+				"Double":      mpNI(0.0),
 				"Deeper1": mpNI(PropertyMap{
 					"$kind": mpNI("LSPDeeper"),
 					"$id":   mpNI(123),
@@ -1817,7 +1883,7 @@ var testCases = []testCase{
 	},
 	{
 		desc: "lsp round trip",
-		src: &LSPOutter{
+		src: &LSPOuter{
 			One: LSPInner{
 				Kind: "Test",
 				ID:   "test",
@@ -1836,7 +1902,7 @@ var testCases = []testCase{
 				{},
 			},
 		},
-		want: &LSPOutter{
+		want: &LSPOuter{
 			One: LSPInner{
 				Kind: "Test",
 				ID:   "test",
@@ -1853,6 +1919,42 @@ var testCases = []testCase{
 					Deeper2: []LSPDeeper{{ID: 4}},
 				},
 				{},
+			},
+		},
+	},
+	{
+		desc: "legacy LSP",
+		src: PropertyMap{
+			"Slice": PropertySlice{
+				mp(deflate(legacyLSP(
+					legacyProp("Ints", int64(1)),
+					legacyProp("Ints", int64(2)),
+					legacyProp("Bool", true),
+					legacyProp("Blob", []byte("hi")),
+					legacyProp("String", "str"),
+					legacyProp("Double", float64(12.34)),
+					legacyProp("Deeper2", legacyLSP(
+						legacyProp("Field", int64(111)),
+					)),
+					legacyProp("Deeper2", deflate(legacyLSP(
+						legacyProp("Field", int64(222)),
+					))),
+				))),
+			},
+		},
+		want: &LSPOuter{
+			Slice: []LSPInner{
+				{
+					Ints:   []int64{1, 2},
+					Bool:   true,
+					Blob:   []byte("hi"),
+					String: "str",
+					Double: 12.34,
+					Deeper2: []LSPDeeper{
+						{Field: 111},
+						{Field: 222},
+					},
+				},
 			},
 		},
 	},
