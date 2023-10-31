@@ -30,7 +30,7 @@ func TestUpdateAnalysisStatus(t *testing.T) {
 		task := &tpb.TestFailureDetectionTask{
 			Project: "chromium",
 		}
-		dimensionExcludeFilter := "(TRUE)"
+		dimensionExcludeFilter := "(NOT (SELECT LOGICAL_OR((SELECT count(*) > 0 FROM UNNEST(task_dimensions) WHERE KEY = kv.key and value = kv.value)) FROM UNNEST(@dimensionExcludes) kv))"
 		Convey("no excluded pools", func() {
 			q, err := generateTestFailuresQuery(task, dimensionExcludeFilter, []string{})
 			So(err, ShouldBeNil)
@@ -99,7 +99,7 @@ SELECT regression_group.*,
   -- use empty array instead of null so we can read into []NullString.
   IFNULL(SheriffRotations, []) as SheriffRotations
 FROM builder_regression_groups_with_latest_build
-WHERE (TRUE) AND (bucket NOT IN UNNEST(@excludedBuckets))
+WHERE (NOT (SELECT LOGICAL_OR((SELECT count(*) > 0 FROM UNNEST(task_dimensions) WHERE KEY = kv.key and value = kv.value)) FROM UNNEST(@dimensionExcludes) kv)) AND (bucket NOT IN UNNEST(@excludedBuckets))
 ORDER BY regression_group.RegressionEndPosition DESC
 LIMIT 5000`)
 		})
@@ -175,7 +175,7 @@ FROM builder_regression_groups_with_latest_build g
 LEFT JOIN chromium-swarm.swarming.task_results_run s
 ON g.swarming_run_id = s.run_id
 WHERE s.end_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
-  AND (TRUE) AND (bucket NOT IN UNNEST(@excludedBuckets))
+  AND (NOT (SELECT LOGICAL_OR((SELECT count(*) > 0 FROM UNNEST(task_dimensions) WHERE KEY = kv.key and value = kv.value)) FROM UNNEST(@dimensionExcludes) kv)) AND (bucket NOT IN UNNEST(@excludedBuckets))
   AND (s.bot.pools[0] NOT IN UNNEST(@excludedPools))
 ORDER BY regression_group.RegressionEndPosition DESC
 LIMIT 5000`)

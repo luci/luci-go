@@ -19,9 +19,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strings"
+	"text/template"
 
 	"cloud.google.com/go/bigquery"
 	"go.chromium.org/luci/bisection/model"
