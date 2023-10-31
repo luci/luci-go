@@ -37,6 +37,7 @@ message CompileAnalysisConfig {
 }
 
 // TestAnalysisConfig is the configuration data for test failure bisection.
+// Next available tag: 9.
 message TestAnalysisConfig {
   // Flag of whether test failure detector is enabled.
   // Usually the flag is on for both dev and prod, but we may want to turn
@@ -60,6 +61,7 @@ message TestAnalysisConfig {
   uint32 daily_limit = 4;
   // The list of buildbucket buckets that we should not bisect on.
   // For example, "reviver", "try", and "findit".
+  // TODO(beining@): deprecating, use failure_ingestion_filter.excluded_buckets instead.
   repeated string excluded_buckets = 5;
   // Configuration data for Gerrit integration for test failures.
   GerritConfig gerrit_config = 6;
@@ -68,7 +70,28 @@ message TestAnalysisConfig {
   // because there are limited resources in the pool.
   // Note: this is not the pools that the builder run, but the swarming test task pool,
   // which contains the bots that actually run the tests on swarming.
+  // TODO(beining@): deprecating, use failure_ingestion_filter.excluded_test_pools instead.
   repeated string excluded_test_pools = 7;
+  // Only test failure which satisfies this filter will be ingested.
+  FailureIngestionFilter failure_ingestion_filter = 8;
+}
+
+// FailureIngestionFilter defines filtering rules for failures to be ingested.
+// A failure needs to fulfill ALL rules.
+message FailureIngestionFilter {
+  // The list of buildbucket buckets that we should not bisect on.
+  // For example, "reviver", "try", and "findit".
+  repeated string excluded_buckets = 1;
+  // The list of swarming test task pools that we want to exclude running bisection.
+  // For example, we want to exclude the "chromium.tests.gpu" pool (b/301523224)
+  // because there are limited resources in the pool.
+  // Note: this is not the pools that the builder run, but the swarming test task pool,
+  // which contains the bots that actually run the tests on swarming.
+  repeated string excluded_test_pools = 2;
+  // If this is specified, bisection will only run on failures
+  // from the builder groups in the list.
+  // An empty list means that failures from all builder groups can be ingested.
+  repeated string allowed_builder_groups = 3;
 }
 
 // GerritConfig is the configuration data for Gerrit integration
