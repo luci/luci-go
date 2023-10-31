@@ -202,13 +202,23 @@ func (SortQuery) EnumDescriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_swarming_proto_api_v2_swarming_proto_rawDescGZIP(), []int{1}
 }
 
+// This flag is only relevant to windows swarming bots.
+// It determines whether or not the task process will use a win32 JobObject.
 type ContainmentType int32
 
 const (
+	// Do not specify a containment type. For tasks which don't run like
+	// Termination task.
 	ContainmentType_NOT_SPECIFIED ContainmentType = 0
-	ContainmentType_NONE          ContainmentType = 1
-	ContainmentType_AUTO          ContainmentType = 2
-	ContainmentType_JOB_OBJECT    ContainmentType = 3
+	// Do not use JOB_OBJECT to create new tasks. Has same effect as NOT_SPECIFIED
+	ContainmentType_NONE ContainmentType = 1
+	// On windows, this will start a process using win32 JobObject.
+	// On other platforms this will default to python standard POpen to create
+	// task process.
+	// See https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects
+	ContainmentType_AUTO ContainmentType = 2
+	// Use JOB_OBJECTS on windows. Will auto-fail tasks on non-win32 platforms.
+	ContainmentType_JOB_OBJECT ContainmentType = 3
 )
 
 // Enum value maps for ContainmentType.
