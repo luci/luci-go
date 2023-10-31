@@ -522,9 +522,12 @@ func RunMulti(c context.Context, queries []*Query, cb any) error {
 // Count executes the given query and returns the number of entries which
 // match it.
 //
-// By default, datastore applies a short (~5s) timeout to queries. This can be
-// increased, usually to around several minutes, by explicitly setting a
-// deadline on the supplied Context.
+// If the query is marked as eventually consistent via EventualConsistency(true)
+// will use a fast server-side aggregation, with the downside that such queries
+// may return slightly stale results and can't be used inside transactions.
+//
+// If the query is strongly consistent, will essentially do a full keys-only
+// query and count the number of matches locally.
 func Count(c context.Context, q *Query) (int64, error) {
 	fq, err := q.Finalize()
 	if err != nil {

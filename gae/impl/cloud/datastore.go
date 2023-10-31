@@ -29,6 +29,7 @@ import (
 
 	"cloud.google.com/go/datastore"
 	"google.golang.org/api/iterator"
+	pb "google.golang.org/genproto/googleapis/datastore/v1"
 )
 
 type cloudDatastore struct {
@@ -129,6 +130,24 @@ func (bds *boundDatastore) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
 }
 
 func (bds *boundDatastore) Count(q *ds.FinalizedQuery) (int64, error) {
+	// If the query is eventually consistent, use faster server-side aggregation.
+	// For strongly-consistent queries we'll have to do local counting.
+	if q.EventuallyConsistent() {
+		res, err := bds.client.RunAggregationQuery(bds,
+			bds.prepareNativeQuery(q).
+				NewAggregationQuery().
+				WithCount("total"),
+		)
+		if err != nil {
+			return -1, normalizeError(err)
+		}
+		total, _ := res["total"].(*pb.Value)
+		if total == nil {
+			return -1, fmt.Errorf("aggregation result is unexpectedly missing")
+		}
+		return int64(total.GetIntegerValue()), nil
+	}
+	// Local counting. It is the only strongly-consistent method.
 	v, err := bds.client.Count(bds, bds.prepareNativeQuery(q))
 	if err != nil {
 		return -1, normalizeError(err)

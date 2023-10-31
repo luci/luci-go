@@ -162,8 +162,6 @@ func (q *Query) Ancestor(ancestor *Key) *Query {
 }
 
 // EventualConsistency changes the EventualConsistency setting for this query.
-//
-// It only has an effect on Ancestor queries and is otherwise ignored.
 func (q *Query) EventualConsistency(on bool) *Query {
 	return q.mod(func(q *Query) {
 		q.eventualConsistency = on
@@ -793,7 +791,7 @@ func (q *Query) String() string {
 		p("End(%q)", q.end.String())
 	}
 
-	// Modifiiers
+	// Modifiers
 	if q.limit != nil {
 		p("Limit=%d", *q.limit)
 	}
@@ -816,10 +814,13 @@ func (q *Query) String() string {
 
 // FirestoreMode set the firestore mode. It removes internal checks for
 // this Query which don't apply when using Firestore-in-Datastore mode.
-// All Datastore queries become strongly consistent if firestoreMode is set
-// as True. The eventualConsistency flag will be ignored.
 //
-// In particular, it allows non-ancestor queries within a transaction.
+// In firestore mode all Datastore queries become strongly consistent by
+// default, but still can be made eventually consistent via a call to
+// EventualConsistency(true). In particular this is useful for aggregation
+// queries like Count().
+//
+// Note that firestore mode allows non-ancestor queries within a transaction.
 func (q *Query) FirestoreMode(on bool) *Query {
 	return q.mod(func(q *Query) {
 		q.firestoreMode = on
@@ -832,12 +833,7 @@ func (q *Query) GetFirestoreMode() bool {
 }
 
 func (q *Query) getEventualConsistency(ancestor *Key) bool {
-	if q.firestoreMode {
-		// eventualConsistency won't be true anyway in firestore mode.
-		// So user input of eventualConsistency will be ignored
-		return false
-	}
-	return q.eventualConsistency || ancestor == nil
+	return q.eventualConsistency || (!q.firestoreMode && ancestor == nil)
 }
 
 // checkComparable returns an error if this property type is not comparable.
