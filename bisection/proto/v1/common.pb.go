@@ -394,6 +394,74 @@ func (SuspectVerificationStatus) EnumDescriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_bisection_proto_v1_common_proto_rawDescGZIP(), []int{4}
 }
 
+// Status of a test verdict.
+// It is a mirror of luci.resultdb.v1.TestVariantStatus.
+type TestVerdictStatus int32
+
+const (
+	// a test verdict must not have this status.
+	// This is only used when filtering verdicts.
+	TestVerdictStatus_TEST_VERDICT_STATUS_UNSPECIFIED TestVerdictStatus = 0
+	// The test verdict has no exonerations, and all results are unexpected.
+	TestVerdictStatus_UNEXPECTED TestVerdictStatus = 10
+	// The test verdict has no exonerations, and all results are unexpectedly skipped.
+	TestVerdictStatus_UNEXPECTEDLY_SKIPPED TestVerdictStatus = 20
+	// The test verdict has no exonerations, and has both expected and unexpected
+	// results.
+	TestVerdictStatus_FLAKY TestVerdictStatus = 30
+	// The test verdict has one or more test exonerations.
+	TestVerdictStatus_EXONERATED TestVerdictStatus = 40
+	// The test verdict has no exonerations, and all results are expected.
+	TestVerdictStatus_EXPECTED TestVerdictStatus = 50
+)
+
+// Enum value maps for TestVerdictStatus.
+var (
+	TestVerdictStatus_name = map[int32]string{
+		0:  "TEST_VERDICT_STATUS_UNSPECIFIED",
+		10: "UNEXPECTED",
+		20: "UNEXPECTEDLY_SKIPPED",
+		30: "FLAKY",
+		40: "EXONERATED",
+		50: "EXPECTED",
+	}
+	TestVerdictStatus_value = map[string]int32{
+		"TEST_VERDICT_STATUS_UNSPECIFIED": 0,
+		"UNEXPECTED":                      10,
+		"UNEXPECTEDLY_SKIPPED":            20,
+		"FLAKY":                           30,
+		"EXONERATED":                      40,
+		"EXPECTED":                        50,
+	}
+)
+
+func (x TestVerdictStatus) Enum() *TestVerdictStatus {
+	p := new(TestVerdictStatus)
+	*p = x
+	return p
+}
+
+func (x TestVerdictStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TestVerdictStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_go_chromium_org_luci_bisection_proto_v1_common_proto_enumTypes[5].Descriptor()
+}
+
+func (TestVerdictStatus) Type() protoreflect.EnumType {
+	return &file_go_chromium_org_luci_bisection_proto_v1_common_proto_enumTypes[5]
+}
+
+func (x TestVerdictStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TestVerdictStatus.Descriptor instead.
+func (TestVerdictStatus) EnumDescriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_bisection_proto_v1_common_proto_rawDescGZIP(), []int{5}
+}
+
 // RerunResult contains the result of one rerun.
 // It is for the bots to update result back to LUCI Bisection.
 type RerunResult struct {
@@ -1092,11 +1160,20 @@ var file_go_chromium_org_luci_bisection_proto_v1_common_proto_rawDesc = []byte{
 	0x49, 0x4e, 0x44, 0x49, 0x43, 0x41, 0x54, 0x45, 0x44, 0x10, 0x05, 0x12, 0x16, 0x0a, 0x12, 0x56,
 	0x45, 0x52, 0x49, 0x46, 0x49, 0x43, 0x41, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x45, 0x52, 0x52, 0x4f,
 	0x52, 0x10, 0x06, 0x12, 0x19, 0x0a, 0x15, 0x56, 0x45, 0x52, 0x49, 0x46, 0x49, 0x43, 0x41, 0x54,
-	0x49, 0x4f, 0x4e, 0x5f, 0x43, 0x41, 0x4e, 0x43, 0x45, 0x4c, 0x45, 0x44, 0x10, 0x07, 0x42, 0x35,
-	0x5a, 0x33, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72,
-	0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e,
-	0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74,
-	0x69, 0x6f, 0x6e, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x49, 0x4f, 0x4e, 0x5f, 0x43, 0x41, 0x4e, 0x43, 0x45, 0x4c, 0x45, 0x44, 0x10, 0x07, 0x2a, 0x8b,
+	0x01, 0x0a, 0x11, 0x54, 0x65, 0x73, 0x74, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x53, 0x74,
+	0x61, 0x74, 0x75, 0x73, 0x12, 0x23, 0x0a, 0x1f, 0x54, 0x45, 0x53, 0x54, 0x5f, 0x56, 0x45, 0x52,
+	0x44, 0x49, 0x43, 0x54, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x55, 0x4e, 0x53, 0x50,
+	0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0e, 0x0a, 0x0a, 0x55, 0x4e, 0x45,
+	0x58, 0x50, 0x45, 0x43, 0x54, 0x45, 0x44, 0x10, 0x0a, 0x12, 0x18, 0x0a, 0x14, 0x55, 0x4e, 0x45,
+	0x58, 0x50, 0x45, 0x43, 0x54, 0x45, 0x44, 0x4c, 0x59, 0x5f, 0x53, 0x4b, 0x49, 0x50, 0x50, 0x45,
+	0x44, 0x10, 0x14, 0x12, 0x09, 0x0a, 0x05, 0x46, 0x4c, 0x41, 0x4b, 0x59, 0x10, 0x1e, 0x12, 0x0e,
+	0x0a, 0x0a, 0x45, 0x58, 0x4f, 0x4e, 0x45, 0x52, 0x41, 0x54, 0x45, 0x44, 0x10, 0x28, 0x12, 0x0c,
+	0x0a, 0x08, 0x45, 0x58, 0x50, 0x45, 0x43, 0x54, 0x45, 0x44, 0x10, 0x32, 0x42, 0x35, 0x5a, 0x33,
+	0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f,
+	0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f,
+	0x6e, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1111,7 +1188,7 @@ func file_go_chromium_org_luci_bisection_proto_v1_common_proto_rawDescGZIP() []b
 	return file_go_chromium_org_luci_bisection_proto_v1_common_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_bisection_proto_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
+var file_go_chromium_org_luci_bisection_proto_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
 var file_go_chromium_org_luci_bisection_proto_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_go_chromium_org_luci_bisection_proto_v1_common_proto_goTypes = []interface{}{
 	(AnalysisStatus)(0),                // 0: luci.bisection.v1.AnalysisStatus
@@ -1119,30 +1196,31 @@ var file_go_chromium_org_luci_bisection_proto_v1_common_proto_goTypes = []interf
 	(TestResultStatus)(0),              // 2: luci.bisection.v1.TestResultStatus
 	(AnalysisType)(0),                  // 3: luci.bisection.v1.AnalysisType
 	(SuspectVerificationStatus)(0),     // 4: luci.bisection.v1.SuspectVerificationStatus
-	(*RerunResult)(nil),                // 5: luci.bisection.v1.RerunResult
-	(*SingleRerun)(nil),                // 6: luci.bisection.v1.SingleRerun
-	(*SuspectVerificationDetails)(nil), // 7: luci.bisection.v1.SuspectVerificationDetails
-	(*Variant)(nil),                    // 8: luci.bisection.v1.Variant
-	(*SourceRef)(nil),                  // 9: luci.bisection.v1.SourceRef
-	(*GitilesRef)(nil),                 // 10: luci.bisection.v1.GitilesRef
-	(*Dimensions)(nil),                 // 11: luci.bisection.v1.Dimensions
-	(*Dimension)(nil),                  // 12: luci.bisection.v1.Dimension
-	nil,                                // 13: luci.bisection.v1.Variant.DefEntry
-	(*timestamppb.Timestamp)(nil),      // 14: google.protobuf.Timestamp
-	(*proto.GitilesCommit)(nil),        // 15: buildbucket.v2.GitilesCommit
+	(TestVerdictStatus)(0),             // 5: luci.bisection.v1.TestVerdictStatus
+	(*RerunResult)(nil),                // 6: luci.bisection.v1.RerunResult
+	(*SingleRerun)(nil),                // 7: luci.bisection.v1.SingleRerun
+	(*SuspectVerificationDetails)(nil), // 8: luci.bisection.v1.SuspectVerificationDetails
+	(*Variant)(nil),                    // 9: luci.bisection.v1.Variant
+	(*SourceRef)(nil),                  // 10: luci.bisection.v1.SourceRef
+	(*GitilesRef)(nil),                 // 11: luci.bisection.v1.GitilesRef
+	(*Dimensions)(nil),                 // 12: luci.bisection.v1.Dimensions
+	(*Dimension)(nil),                  // 13: luci.bisection.v1.Dimension
+	nil,                                // 14: luci.bisection.v1.Variant.DefEntry
+	(*timestamppb.Timestamp)(nil),      // 15: google.protobuf.Timestamp
+	(*proto.GitilesCommit)(nil),        // 16: buildbucket.v2.GitilesCommit
 }
 var file_go_chromium_org_luci_bisection_proto_v1_common_proto_depIdxs = []int32{
 	1,  // 0: luci.bisection.v1.RerunResult.rerun_status:type_name -> luci.bisection.v1.RerunStatus
-	14, // 1: luci.bisection.v1.SingleRerun.start_time:type_name -> google.protobuf.Timestamp
-	14, // 2: luci.bisection.v1.SingleRerun.last_updated_time:type_name -> google.protobuf.Timestamp
-	14, // 3: luci.bisection.v1.SingleRerun.end_time:type_name -> google.protobuf.Timestamp
-	5,  // 4: luci.bisection.v1.SingleRerun.rerun_result:type_name -> luci.bisection.v1.RerunResult
-	15, // 5: luci.bisection.v1.SingleRerun.commit:type_name -> buildbucket.v2.GitilesCommit
-	6,  // 6: luci.bisection.v1.SuspectVerificationDetails.suspect_rerun:type_name -> luci.bisection.v1.SingleRerun
-	6,  // 7: luci.bisection.v1.SuspectVerificationDetails.parent_rerun:type_name -> luci.bisection.v1.SingleRerun
-	13, // 8: luci.bisection.v1.Variant.def:type_name -> luci.bisection.v1.Variant.DefEntry
-	10, // 9: luci.bisection.v1.SourceRef.gitiles:type_name -> luci.bisection.v1.GitilesRef
-	12, // 10: luci.bisection.v1.Dimensions.dimensions:type_name -> luci.bisection.v1.Dimension
+	15, // 1: luci.bisection.v1.SingleRerun.start_time:type_name -> google.protobuf.Timestamp
+	15, // 2: luci.bisection.v1.SingleRerun.last_updated_time:type_name -> google.protobuf.Timestamp
+	15, // 3: luci.bisection.v1.SingleRerun.end_time:type_name -> google.protobuf.Timestamp
+	6,  // 4: luci.bisection.v1.SingleRerun.rerun_result:type_name -> luci.bisection.v1.RerunResult
+	16, // 5: luci.bisection.v1.SingleRerun.commit:type_name -> buildbucket.v2.GitilesCommit
+	7,  // 6: luci.bisection.v1.SuspectVerificationDetails.suspect_rerun:type_name -> luci.bisection.v1.SingleRerun
+	7,  // 7: luci.bisection.v1.SuspectVerificationDetails.parent_rerun:type_name -> luci.bisection.v1.SingleRerun
+	14, // 8: luci.bisection.v1.Variant.def:type_name -> luci.bisection.v1.Variant.DefEntry
+	11, // 9: luci.bisection.v1.SourceRef.gitiles:type_name -> luci.bisection.v1.GitilesRef
+	13, // 10: luci.bisection.v1.Dimensions.dimensions:type_name -> luci.bisection.v1.Dimension
 	11, // [11:11] is the sub-list for method output_type
 	11, // [11:11] is the sub-list for method input_type
 	11, // [11:11] is the sub-list for extension type_name
@@ -1261,7 +1339,7 @@ func file_go_chromium_org_luci_bisection_proto_v1_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_bisection_proto_v1_common_proto_rawDesc,
-			NumEnums:      5,
+			NumEnums:      6,
 			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,

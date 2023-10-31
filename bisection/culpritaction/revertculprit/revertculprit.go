@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gerrit"
+	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	"go.chromium.org/luci/bisection/model"
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
@@ -33,6 +34,7 @@ import (
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
+	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -58,11 +60,16 @@ var TestFailureTasks = tq.RegisterTaskClass(tq.TaskClass{
 })
 
 // RegisterTaskClass registers the task class for tq dispatcher
-func RegisterTaskClass() {
+func RegisterTaskClass(srv *server.Server, luciAnalysisProject string) error {
+	client, err := lucianalysis.NewClient(srv.Context, srv.Options.CloudProject, luciAnalysisProject)
+	if err != nil {
+		return err
+	}
+
 	CompileFailureTasks.AttachHandler(processRevertCulpritTask)
 	TestFailureTasks.AttachHandler(func(ctx context.Context, payload proto.Message) error {
 		task := payload.(*taskpb.TestFailureCulpritActionTask)
-		if err := processTestFailureCulpritTask(ctx, task.AnalysisId); err != nil {
+		if err := processTestFailureCulpritTask(ctx, task.AnalysisId, client); err != nil {
 			err := errors.Annotate(err, "run test failure culprit action").Err()
 			logging.Errorf(ctx, err.Error())
 			// If the error is transient, return err to retry
@@ -73,6 +80,7 @@ func RegisterTaskClass() {
 		}
 		return nil
 	})
+	return nil
 }
 
 func processRevertCulpritTask(ctx context.Context, payload proto.Message) error {

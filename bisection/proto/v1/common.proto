@@ -225,3 +225,22 @@ enum SuspectVerificationStatus {
   VERIFICATION_ERROR = 6;
   VERIFICATION_CANCELED = 7;
 }
+
+// Status of a test verdict.
+// It is a mirror of luci.resultdb.v1.TestVariantStatus.
+enum TestVerdictStatus {
+  // a test verdict must not have this status.
+  // This is only used when filtering verdicts.
+  TEST_VERDICT_STATUS_UNSPECIFIED = 0;
+  // The test verdict has no exonerations, and all results are unexpected.
+  UNEXPECTED = 10;
+  // The test verdict has no exonerations, and all results are unexpectedly skipped.
+  UNEXPECTEDLY_SKIPPED = 20;
+  // The test verdict has no exonerations, and has both expected and unexpected
+  // results.
+  FLAKY = 30;
+  // The test verdict has one or more test exonerations.
+  EXONERATED = 40;
+  // The test verdict has no exonerations, and all results are expected.
+  EXPECTED = 50;
+}

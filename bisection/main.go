@@ -148,7 +148,9 @@ func main() {
 
 		// Task queues
 		compilefailuredetection.RegisterTaskClass()
-		revertculprit.RegisterTaskClass()
+		if err := revertculprit.RegisterTaskClass(srv, luciAnalysisProject); err != nil {
+			return errors.Annotate(err, "register revert culprit").Err()
+		}
 		cancelanalysis.RegisterTaskClass()
 		culpritverification.RegisterTaskClass()
 		if err := testfailuredetection.RegisterTaskClass(srv, luciAnalysisProject); err != nil {

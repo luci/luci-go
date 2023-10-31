@@ -22,5 +22,5 @@ import (
 )
 
 type AnalysisClient interface {
-	ReadTestNames(ctx context.Context, project string, keys []lucianalysis.TestVerdictKey) (map[lucianalysis.TestVerdictKey]string, error)
+	ReadLatestVerdict(ctx context.Context, project string, keys []lucianalysis.TestVerdictKey) (map[lucianalysis.TestVerdictKey]lucianalysis.TestVerdictResult, error)
 }

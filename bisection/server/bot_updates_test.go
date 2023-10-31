@@ -25,7 +25,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/cancelanalysis"
-	"go.chromium.org/luci/bisection/culpritaction/revertculprit"
+	_ "go.chromium.org/luci/bisection/culpritaction/revertculprit"
 	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
@@ -56,7 +56,6 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		c, scheduler := tq.TestingContext(c, nil)
 		cancelanalysis.RegisterTaskClass()
 		culpritverification.RegisterTaskClass()
-		revertculprit.RegisterTaskClass()
 
 		// Setup the models
 		// Set up suspects

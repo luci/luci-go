@@ -74,6 +74,8 @@ enum CulpritInactionReason {
   ANALYSIS_CANCELED = 6;
   // Culprit actions have been disabled via configs.
   ACTIONS_DISABLED = 7;
+  // The test being analysed is no longer having unexpected status.
+  TEST_NO_LONGER_UNEXPECTED = 8;
 }
 
 // An action that LUCI Bisection has taken with the culprit.

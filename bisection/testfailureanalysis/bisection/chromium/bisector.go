@@ -138,9 +138,9 @@ func (b *Bisector) populateTestNames(ctx context.Context, bundle *model.TestFail
 			RefHash:     tf.RefHash,
 		}
 	}
-	keyMap, err := luciAnalysis.ReadTestNames(ctx, bundle.Primary().Project, keys)
+	keyMap, err := luciAnalysis.ReadLatestVerdict(ctx, bundle.Primary().Project, keys)
 	if err != nil {
-		return errors.Annotate(err, "read test names").Err()
+		return errors.Annotate(err, "read latest verdict").Err()
 	}
 
 	// Store in datastore.
@@ -151,11 +151,11 @@ func (b *Bisector) populateTestNames(ctx context.Context, bundle *model.TestFail
 				VariantHash: tf.VariantHash,
 				RefHash:     tf.RefHash,
 			}
-			testName, ok := keyMap[key]
+			verdictResult, ok := keyMap[key]
 			if !ok {
-				return fmt.Errorf("couldn't find test name for test (%s, %s, %s)", tf.TestID, tf.VariantHash, tf.RefHash)
+				return fmt.Errorf("couldn't find verdict result for test (%s, %s, %s)", tf.TestID, tf.VariantHash, tf.RefHash)
 			}
-			tf.TestName = testName
+			tf.TestName = verdictResult.TestName
 			err := datastore.Put(ctx, tf)
 			if err != nil {
 				return errors.Annotate(err, "save test failure %d", tf.ID).Err()

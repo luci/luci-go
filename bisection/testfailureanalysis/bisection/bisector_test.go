@@ -704,10 +704,13 @@ func enableBisection(ctx context.Context, enabled bool, project string) {
 type fakeLUCIAnalysisClient struct {
 }
 
-func (cl *fakeLUCIAnalysisClient) ReadTestNames(ctx context.Context, project string, keys []lucianalysis.TestVerdictKey) (map[lucianalysis.TestVerdictKey]string, error) {
-	results := map[lucianalysis.TestVerdictKey]string{}
+func (cl *fakeLUCIAnalysisClient) ReadLatestVerdict(ctx context.Context, project string, keys []lucianalysis.TestVerdictKey) (map[lucianalysis.TestVerdictKey]lucianalysis.TestVerdictResult, error) {
+	results := map[lucianalysis.TestVerdictKey]lucianalysis.TestVerdictResult{}
 	for i, key := range keys {
-		results[key] = fmt.Sprintf("test_name_%d", i)
+		results[key] = lucianalysis.TestVerdictResult{
+			TestName: fmt.Sprintf("test_name_%d", i),
+			Status:   pb.TestVerdictStatus_EXPECTED,
+		}
 	}
 	return results, nil
 }

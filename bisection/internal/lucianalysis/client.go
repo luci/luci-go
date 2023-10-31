@@ -25,6 +25,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/common/errors"
@@ -359,17 +360,23 @@ type TestVerdictKey struct {
 	RefHash     string
 }
 
-type TestNameResult struct {
+type TestVerdictResultRow struct {
 	TestID      bigquery.NullString
 	VariantHash bigquery.NullString
 	RefHash     bigquery.NullString
 	TestName    bigquery.NullString
+	Status      bigquery.NullString
 }
 
-// ReadTestNames queries LUCI Analysis for test names.
+type TestVerdictResult struct {
+	TestName string
+	Status   pb.TestVerdictStatus
+}
+
+// ReadLatestVerdict queries LUCI Analysis for latest verdict.
 // It supports querying for multiple keys at a time to save time and resources.
-// Returns a map of TestVerdictKey -> test name.
-func (c *Client) ReadTestNames(ctx context.Context, project string, keys []TestVerdictKey) (map[TestVerdictKey]string, error) {
+// Returns a map of TestVerdictKey -> latest verdict.
+func (c *Client) ReadLatestVerdict(ctx context.Context, project string, keys []TestVerdictKey) (map[TestVerdictKey]TestVerdictResult, error) {
 	if len(keys) == 0 {
 		return nil, errors.New("no key specified")
 	}
@@ -395,6 +402,7 @@ func (c *Client) ReadTestNames(ctx context.Context, project string, keys []TestV
 					ORDER BY tv.partition_time DESC
 					LIMIT 1
 				)[OFFSET(0)] AS TestName,
+			ANY_VALUE(status HAVING MAX tv.partition_time) AS Status
 		FROM test_verdicts tv
 		WHERE ` + whereClause + `
 		AND partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
@@ -412,9 +420,9 @@ func (c *Client) ReadTestNames(ctx context.Context, project string, keys []TestV
 	if err != nil {
 		return nil, errors.Annotate(err, "read").Err()
 	}
-	results := map[TestVerdictKey]string{}
+	results := map[TestVerdictKey]TestVerdictResult{}
 	for {
-		row := &TestNameResult{}
+		row := &TestVerdictResultRow{}
 		err := it.Next(row)
 		if err == iterator.Done {
 			break
@@ -427,9 +435,66 @@ func (c *Client) ReadTestNames(ctx context.Context, project string, keys []TestV
 			VariantHash: row.VariantHash.String(),
 			RefHash:     row.RefHash.String(),
 		}
-		results[key] = row.TestName.String()
+		results[key] = TestVerdictResult{
+			TestName: row.TestName.String(),
+			Status:   pb.TestVerdictStatus(pb.TestVerdictStatus_value[row.Status.String()]),
+		}
 	}
 	return results, nil
+}
+
+type CountRow struct {
+	Count bigquery.NullInt64
+}
+
+// TestIsUnexpectedConsistently queries LUCI Analysis to see if a test is
+// still unexpected deterministically since a commit position.
+// This is to be called before we take a culprit action, in case a test
+// status has changed.
+func (c *Client) TestIsUnexpectedConsistently(ctx context.Context, project string, key TestVerdictKey, sinceCommitPosition int64) (bool, error) {
+	err := validateTestVerdictKeys([]TestVerdictKey{key})
+	if err != nil {
+		return false, errors.Annotate(err, "validate keys").Err()
+	}
+	// If there is a row with counts.total_non_skipped > counts.unexpected_non_skipped,
+	// It means there are some expected non skipped results.
+	query := `
+		SELECT
+			COUNT(*) as count
+		FROM test_verdicts
+		WHERE test_id = @testID AND variant_hash = @variantHash AND source_ref_hash = @refHash
+		AND counts.total_non_skipped > counts.unexpected_non_skipped
+		AND sources.gitiles_commit.position > @sinceCommitPosition
+		AND partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
+ 	`
+	logging.Infof(ctx, "Running query %s", query)
+	q := c.client.Query(query)
+	q.DefaultDatasetID = project
+	q.DefaultProjectID = c.luciAnalysisProject
+	q.Parameters = []bigquery.QueryParameter{
+		{Name: "testID", Value: key.TestID},
+		{Name: "variantHash", Value: key.VariantHash},
+		{Name: "refHash", Value: key.RefHash},
+		{Name: "sinceCommitPosition", Value: sinceCommitPosition},
+	}
+
+	job, err := q.Run(ctx)
+	if err != nil {
+		return false, errors.Annotate(err, "running query").Err()
+	}
+	it, err := job.Read(ctx)
+	if err != nil {
+		return false, errors.Annotate(err, "read").Err()
+	}
+	row := &CountRow{}
+	err = it.Next(row)
+	if err == iterator.Done {
+		return false, errors.New("cannot get count")
+	}
+	if err != nil {
+		return false, errors.Annotate(err, "obtain next row").Err()
+	}
+	return row.Count.Int64 == 0, nil
 }
 
 func validateTestVerdictKeys(keys []TestVerdictKey) error {

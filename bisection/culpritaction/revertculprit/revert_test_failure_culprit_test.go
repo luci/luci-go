@@ -25,6 +25,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gerrit"
+	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	"go.chromium.org/luci/bisection/model"
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
@@ -43,6 +44,9 @@ import (
 
 func TestProcessTestFailureCulpritTask(t *testing.T) {
 	t.Parallel()
+	client := &fakeLUCIAnalysisClient{
+		FailedConsistently: true,
+	}
 
 	Convey("processTestFailureCulpritTask", t, func() {
 		ctx := memory.Use(context.Background())
@@ -144,12 +148,22 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 			tf2.TestID,
 			util.ConstructTestHistoryURL(tf2.Project, tf2.TestID, tf2.VariantHash))
 
+		Convey("test no longer unexpected", func() {
+			err := processTestFailureCulpritTask(ctx, tfa.ID, &fakeLUCIAnalysisClient{
+				FailedConsistently: false,
+			})
+			So(err, ShouldBeNil)
+			// Suspect action has been saved.
+			So(datastore.Get(ctx, suspect), ShouldBeNil)
+			So(suspect.InactionReason, ShouldEqual, pb.CulpritInactionReason_TEST_NO_LONGER_UNEXPECTED)
+		})
+
 		Convey("gerrit action disabled", func() {
 			projectCfg.TestAnalysisConfig.GerritConfig.ActionsEnabled = false
 			cfg := map[string]*configpb.ProjectConfig{tfa.Project: projectCfg}
 			So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 
-			err := processTestFailureCulpritTask(ctx, tfa.ID)
+			err := processTestFailureCulpritTask(ctx, tfa.ID, client)
 			So(err, ShouldBeNil)
 			// Suspect action has been saved.
 			So(datastore.Get(ctx, suspect), ShouldBeNil)
@@ -172,7 +186,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
 					Return(revertRes, nil).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
 				So(err, ShouldBeNil)
 				// Suspect action has been saved.
 				So(datastore.Get(ctx, suspect), ShouldBeNil)
@@ -207,7 +221,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					},
 				)).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
 				So(err, ShouldBeNil)
 				// Suspect action has been saved.
 				So(datastore.Get(ctx, suspect), ShouldBeNil)
@@ -245,7 +259,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					},
 				)).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
 				So(err, ShouldBeNil)
 				// Suspect action has been saved.
 				So(datastore.Get(ctx, suspect), ShouldBeNil)
@@ -268,7 +282,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
 					Return(&gerritpb.ListChangesResponse{Changes: []*gerritpb.ChangeInfo{}}, nil).Times(1)
 
-				err = processTestFailureCulpritTask(ctx, tfa.ID)
+				err = processTestFailureCulpritTask(ctx, tfa.ID, client)
 				So(err, ShouldBeNil)
 				// Suspect action has been saved.
 				So(datastore.Get(ctx, suspect), ShouldBeNil)
@@ -294,7 +308,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					},
 				)).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
 				So(err, ShouldBeNil)
 				// Suspect action has been saved.
 				So(datastore.Get(ctx, suspect), ShouldBeNil)
@@ -339,7 +353,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					},
 				)).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
 				So(err, ShouldBeNil)
 				// Suspect action has been saved.
 				So(datastore.Get(ctx, suspect), ShouldBeNil)
@@ -375,7 +389,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					},
 				)).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
 				So(err, ShouldBeNil)
 
 				datastore.GetTestable(ctx).CatchupIndexes()
@@ -411,7 +425,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					},
 				)).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
 				So(err, ShouldBeNil)
 
 				datastore.GetTestable(ctx).CatchupIndexes()
@@ -461,7 +475,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					},
 				)).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
 				So(err, ShouldBeNil)
 
 				datastore.GetTestable(ctx).CatchupIndexes()
@@ -499,7 +513,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					},
 				)).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
 				So(err, ShouldBeNil)
 
 				datastore.GetTestable(ctx).CatchupIndexes()
@@ -548,7 +562,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					},
 				)).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
 				So(err, ShouldBeNil)
 
 				datastore.GetTestable(ctx).CatchupIndexes()
@@ -616,7 +630,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 						},
 					}, nil).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
 				So(err, ShouldBeNil)
 
 				datastore.GetTestable(ctx).CatchupIndexes()
@@ -629,4 +643,12 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 			})
 		})
 	})
+}
+
+type fakeLUCIAnalysisClient struct {
+	FailedConsistently bool
+}
+
+func (cl *fakeLUCIAnalysisClient) TestIsUnexpectedConsistently(ctx context.Context, project string, key lucianalysis.TestVerdictKey, sinceCommitPosition int64) (bool, error) {
+	return cl.FailedConsistently, nil
 }

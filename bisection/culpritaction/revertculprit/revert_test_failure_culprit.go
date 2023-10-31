@@ -18,13 +18,19 @@ package revertculprit
 import (
 	"context"
 
+	"go.chromium.org/luci/bisection/internal/lucianalysis"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 )
 
-func processTestFailureCulpritTask(ctx context.Context, analysisID int64) error {
+type AnalysisClient interface {
+	TestIsUnexpectedConsistently(ctx context.Context, project string, key lucianalysis.TestVerdictKey, sinceCommitPosition int64) (bool, error)
+}
+
+func processTestFailureCulpritTask(ctx context.Context, analysisID int64, luciAnalysis AnalysisClient) error {
 	ctx = loggingutil.SetAnalysisID(ctx, analysisID)
 	logging.Infof(ctx, "Processing test failure culprit action")
 
@@ -38,6 +44,28 @@ func processTestFailureCulpritTask(ctx context.Context, analysisID int64) error 
 	if err != nil {
 		return errors.Annotate(err, "get suspect").Err()
 	}
+
+	// Check if primary test is still failing.
+	primaryTestFailure, err := datastoreutil.GetPrimaryTestFailure(ctx, tfa)
+	if err != nil {
+		return errors.Annotate(err, "get primary test failure").Err()
+	}
+	key := lucianalysis.TestVerdictKey{
+		TestID:      primaryTestFailure.TestID,
+		VariantHash: primaryTestFailure.VariantHash,
+		RefHash:     primaryTestFailure.RefHash,
+	}
+	stillFail, err := luciAnalysis.TestIsUnexpectedConsistently(ctx, tfa.Project, key, primaryTestFailure.RegressionEndPosition)
+	if err != nil {
+		return errors.Annotate(err, "test is unexpected consistently").Err()
+	}
+
+	// If the latest verdict is not unexpected anymore, do not perform any action.
+	if !stillFail {
+		saveInactionReason(ctx, culpritModel, pb.CulpritInactionReason_TEST_NO_LONGER_UNEXPECTED)
+		return nil
+	}
+
 	if err := TakeCulpritAction(ctx, culpritModel); err != nil {
 		return errors.Annotate(err, "revert culprit suspect_id %d", culpritModel.Id).Err()
 	}
