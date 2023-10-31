@@ -22,11 +22,13 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gomodule/redigo/redis"
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/quota"
 	"go.chromium.org/luci/server/redisconn"
 
@@ -103,7 +105,8 @@ func TestFullFlow(t *testing.T) {
 				}))
 
 				Convey(`account`, func() {
-					rsp, err := quota.ApplyOps(ctx, "somereq", []*quotapb.Op{
+					requestId := "somereq"
+					rsp, err := quota.ApplyOps(ctx, requestId, durationpb.New(time.Hour), []*quotapb.Op{
 						{
 							AccountId:  integrationTestApp.AccountID("project:realm", "cvgroup1", "username", "qps"),
 							PolicyId:   &quotapb.PolicyID{Config: policyConfigID, Key: polKey},
@@ -117,6 +120,10 @@ func TestFullFlow(t *testing.T) {
 						},
 						OriginallySet: timestamppb.New(clock.Now(ctx)),
 					})
+					So(s.TTL(quotakeys.RequestDedupKey(&quotapb.RequestDedupKey{
+						Ident:     string(auth.CurrentIdentity(ctx)),
+						RequestId: requestId,
+					})), ShouldEqual, time.Hour)
 				})
 			})
 
@@ -145,7 +152,7 @@ func TestFullFlow(t *testing.T) {
 			}
 
 			// Add test value to retrieve.
-			_, err := quota.ApplyOps(ctx, "", []*quotapb.Op{
+			_, err := quota.ApplyOps(ctx, "", nil, []*quotapb.Op{
 				{
 					AccountId:  existingAccountID,
 					RelativeTo: quotapb.Op_ZERO,

@@ -597,7 +597,7 @@ func (a *AdminServer) ApplyQuotaOps(ctx context.Context, req *quotapb.ApplyOpsRe
 		return nil, appstatus.Errorf(codes.InvalidArgument, "request validation error: %s", err)
 	}
 
-	return quota.ApplyOps(ctx, req.RequestId, req.Ops)
+	return quota.ApplyOps(ctx, req.RequestId, req.RequestIdTtl, req.Ops)
 }
 
 func checkAllowed(ctx context.Context, name string) error {

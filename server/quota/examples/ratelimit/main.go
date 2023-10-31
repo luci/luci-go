@@ -80,7 +80,7 @@ func main() {
 		// Returns an error if enough resources aren't available.
 		srv.Routes.GET("/global-rate-limit-endpoint", nil, func(c *router.Context) {
 			now := time.Now()
-			resp, err := quota.ApplyOps(c.Request.Context(), "", []*quotapb.Op{
+			resp, err := quota.ApplyOps(c.Request.Context(), "", nil, []*quotapb.Op{
 				{
 					AccountId:  account,
 					PolicyId:   policy,
@@ -104,7 +104,7 @@ func main() {
 		// Set up a quota reset endpoint by restoring 60 resources every time.
 		// The total resources cap at 60, so repeated calls are fine.
 		srv.Routes.GET("/global-rate-limit-reset", nil, func(c *router.Context) {
-			_, err := quota.ApplyOps(c.Request.Context(), "", []*quotapb.Op{
+			_, err := quota.ApplyOps(c.Request.Context(), "", nil, []*quotapb.Op{
 				{
 					AccountId:  account,
 					PolicyId:   policy,

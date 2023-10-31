@@ -104,7 +104,7 @@ func (qm *Manager) runQuotaOp(ctx context.Context, rs *state.RunState, requestID
 	// When server/quota does not have the policyId already, rewrite the policy and retry the op.
 	var opResponse *quotapb.ApplyOpsResponse
 	err = retry.Retry(clock.Tag(ctx, common.LaunchRetryClockTag), makeRetryFactory(), func() (err error) {
-		opResponse, err = srvquota.ApplyOps(ctx, requestID, quotaOp)
+		opResponse, err = srvquota.ApplyOps(ctx, requestID, durationpb.New(time.Second*accountLifeTimeSeconds), quotaOp)
 		if errors.Unwrap(err) == srvquota.ErrQuotaApply && opResponse.Results[0].Status == quotapb.OpResult_ERR_UNKNOWN_POLICY {
 			if _, err := qm.WritePolicy(ctx, rs.Run.ID.LUCIProject()); err != nil {
 				return err

@@ -63,7 +63,7 @@ func init() {
 	invalidOptionsMask = ^invalidOptionsMask
 }
 
-func convertToInput(ctx context.Context, requestID string, ops []*quotapb.Op) (*quotapb.UpdateAccountsInput, []string, error) {
+func convertToInput(ctx context.Context, requestID string, requestTTL *durationpb.Duration, ops []*quotapb.Op) (*quotapb.UpdateAccountsInput, []string, error) {
 	ret := &quotapb.UpdateAccountsInput{Ops: make([]*quotapb.RawOp, len(ops))}
 	// KEYS will be fed directly as KEYS to the redis script.
 	KEYS := stringset.New(len(ops))
@@ -115,7 +115,12 @@ func convertToInput(ctx context.Context, requestID string, ops []*quotapb.Op) (*
 			Ident:     string(auth.CurrentIdentity(ctx)),
 			RequestId: requestID,
 		})
+
 		ret.RequestKeyTtl = updateAccountsRequestTTL
+		if requestTTL != nil {
+			ret.RequestKeyTtl = requestTTL
+		}
+
 		KEYS.Add(ret.RequestKey)
 	}
 	ret.HashScheme = currentHashScheme
@@ -129,12 +134,13 @@ func convertToInput(ctx context.Context, requestID string, ops []*quotapb.Op) (*
 //
 // The requestID won't be consumed until this returns success, and once it's
 // successful, it will continue to return success without any quota changes for
-// 2 hours. The requestID is tied to auth.CurrentIdentity. If requestID is
-// empty, this operation is not idempotent.
+// requestTTL. If requestTTL is not set, the TTL defaults to 2 hours. The
+// requestID is tied to auth.CurrentIdentity. If requestID is empty, this
+// operation is not idempotent.
 //
 // Policies must already be loaded with LoadPolicies.
-func ApplyOps(ctx context.Context, requestID string, ops []*quotapb.Op) (*quotapb.ApplyOpsResponse, error) {
-	inputMsg, keys, err := convertToInput(ctx, requestID, ops)
+func ApplyOps(ctx context.Context, requestID string, requestTTL *durationpb.Duration, ops []*quotapb.Op) (*quotapb.ApplyOpsResponse, error) {
+	inputMsg, keys, err := convertToInput(ctx, requestID, requestTTL, ops)
 	if err != nil {
 		return nil, err
 	}
