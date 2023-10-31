@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/logging"
@@ -54,16 +55,23 @@ func DeleteStaleConfigs(ctx context.Context) error {
 	}
 
 	var toDel []*model.File
-	var toDelGsFiles []gs.Path
+	toDelGsFiles := make(stringset.Set, len(files))
+	GsFilesInUse := make(stringset.Set, len(files))
 	for _, f := range files {
 		if cfgsetToRev[f.Revision.Root().StringID()] == f.Revision.StringID() {
+			GsFilesInUse.Add(string(f.GcsURI))
 			continue
 		}
 		if f.CreateTime.Before(clock.Now(ctx).Add(-configRetention)) {
 			toDel = append(toDel, f)
-			toDelGsFiles = append(toDelGsFiles, f.GcsURI)
+			toDelGsFiles.Add(string(f.GcsURI))
 		}
 	}
+	// GS file's name consist of sha256 value, so they may be referred by multiple
+	// File entities. Don't delete the GS files which are referred by latest
+	// revision File entities.
+	toDelGsFiles.DelAll(GsFilesInUse.ToSlice())
+
 	logging.Infof(ctx, "Deleting %d stale config files", len(toDel))
 	if err := datastore.Delete(ctx, toDel); err != nil {
 		return errors.Annotate(err, "failed to delete File entities").Err()
@@ -72,8 +80,8 @@ func DeleteStaleConfigs(ctx context.Context) error {
 	// Best effort to delete GCS files. No need to put into the same transaction
 	// with the above File entities deletion.
 	err := parallel.WorkPool(8, func(workCh chan<- func() error) {
-		for _, f := range toDelGsFiles {
-			f := f
+		for _, f := range toDelGsFiles.ToSlice() {
+			f := gs.Path(f)
 			if !f.IsFullPath() {
 				continue
 			}

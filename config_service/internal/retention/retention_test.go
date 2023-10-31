@@ -51,22 +51,45 @@ func TestRetention(t *testing.T) {
 			Path:       "config.cfg",
 			Revision:   datastore.MakeKey(ctx, model.ConfigSetKind, "projects/foo", model.RevisionKind, "latest"),
 			CreateTime: now,
+			GcsURI:     gs.MakePath("bucket", "latestCfg_sha256"),
 		}
-		oldCfg := &model.File{
+		oldCfg1 := &model.File{
 			Path:       "config.cfg",
-			Revision:   datastore.MakeKey(ctx, model.ConfigSetKind, "projects/foo", model.RevisionKind, "old"),
+			Revision:   datastore.MakeKey(ctx, model.ConfigSetKind, "projects/foo", model.RevisionKind, "old1"),
 			CreateTime: now.Add(-configRetention - 1*time.Minute),
-			GcsURI:     gs.MakePath("bucket", "file"),
+			GcsURI:     gs.MakePath("bucket", "oldCfg1_sha256"),
+		}
+		oldCfg2 := &model.File{
+			Path:       "config.cfg",
+			Revision:   datastore.MakeKey(ctx, model.ConfigSetKind, "projects/foo", model.RevisionKind, "old2"),
+			CreateTime: now.Add(-configRetention - 2*time.Minute),
+			GcsURI:     gs.MakePath("bucket", "oldCfg2_sha256"),
 		}
 
-		mockGsClient.EXPECT().Delete(gomock.Any(), gomock.Eq("bucket"), gomock.Eq("file")).Return(nil)
-		So(datastore.Put(ctx, cfgset, latestCfg, oldCfg), ShouldBeNil)
+		anotherCfgset := &model.ConfigSet{
+			ID:             config.MustProjectSet("bar"),
+			LatestRevision: model.RevisionInfo{ID: "latest"},
+		}
+		barCfg := &model.File{
+			Path:       "config.cfg",
+			Revision:   datastore.MakeKey(ctx, model.ConfigSetKind, "projects/bar", model.RevisionKind, "latest"),
+			CreateTime: now,
+			GcsURI:     gs.MakePath("bucket", "oldCfg2_sha256"),
+		}
+
+		mockGsClient.EXPECT().Delete(gomock.Any(), gomock.Eq("bucket"), gomock.Eq("oldCfg1_sha256")).Return(nil)
+		// Don't expect oldCfg2's Gcs file to be deleted as it's referred by another in use File entity.
+		mockGsClient.EXPECT().Delete(gomock.Any(), gomock.Eq("bucket"), gomock.Eq("oldCfg2_sha256")).Times(0)
+		So(datastore.Put(ctx, cfgset, latestCfg, oldCfg1, oldCfg2, anotherCfgset, barCfg), ShouldBeNil)
 
 		So(DeleteStaleConfigs(ctx), ShouldBeNil)
-		exists, err := datastore.Exists(ctx, cfgset, latestCfg, oldCfg)
+		exists, err := datastore.Exists(ctx, cfgset, latestCfg, oldCfg1, oldCfg2, anotherCfgset, barCfg)
 		So(err, ShouldBeNil)
-		So(exists.Get(0), ShouldBeTrue)
-		So(exists.Get(1), ShouldBeTrue)
-		So(exists.Get(2), ShouldBeFalse)
+		So(exists.Get(0), ShouldBeTrue)  // cfgset
+		So(exists.Get(1), ShouldBeTrue)  // latestCfg
+		So(exists.Get(2), ShouldBeFalse) // oldCfg1
+		So(exists.Get(3), ShouldBeFalse) // oldCfg2
+		So(exists.Get(4), ShouldBeTrue)  // anotherCfgset
+		So(exists.Get(5), ShouldBeTrue)  // barCfg
 	})
 }
