@@ -16,6 +16,7 @@ package testvariantupdator
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"time"
@@ -26,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/resultdb/pbutil"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
@@ -77,7 +79,15 @@ func RegisterTaskClass() {
 				return err
 			}
 
-			return updateTestVariant(ctx, task)
+			err = updateTestVariant(ctx, task)
+			// If the error is transient, return err to retry.
+			if transient.Tag.In(err) {
+				return err
+			}
+			// If the error is not transient, just return nil. The task
+			// will not be retried.
+			logging.Errorf(ctx, "updateTestVariant error: %v", err.Error())
+			return nil
 		},
 	})
 }
@@ -133,14 +143,23 @@ func checkTask(ctx context.Context, task *taskspb.UpdateTestVariant) (*analyzedt
 
 func updateTestVariant(ctx context.Context, task *taskspb.UpdateTestVariant) error {
 	rc, err := configs(ctx, task.TestVariantKey.Realm)
-	if err != nil {
+
+	// We don't want to retry RealmNotExistsErr.
+	if errors.Is(err, config.RealmNotExistsErr) {
 		return err
+	}
+	if err != nil {
+		return transient.Tag.Apply(err)
 	}
 	status, err := verdicts.ComputeTestVariantStatusFromVerdicts(span.Single(ctx), task.TestVariantKey, rc.TestVariantStatusUpdateDuration)
 	if err != nil {
-		return err
+		return transient.Tag.Apply(err)
 	}
-	return updateTestVariantStatus(ctx, task, status)
+	err = updateTestVariantStatus(ctx, task, status)
+	if err != nil {
+		return transient.Tag.Apply(err)
+	}
+	return nil
 }
 
 // updateTestVariantStatus updates the Status and StatusUpdateTime of the

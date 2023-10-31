@@ -37,6 +37,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/retry/transient"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -200,5 +201,22 @@ func TestUpdateTestVariantStatus(t *testing.T) {
 
 		test(tID1, []atvpb.Status{}, []time.Time{}, 0)
 		test(tID2, statuses, times, 1)
+	})
+
+	Convey(`realm not exists should return non-transient error`, t, func() {
+		ctx := memory.Use(testutil.IntegrationTestContext(t))
+		So(config.SetTestProjectConfig(ctx, createProjectsConfig()), ShouldBeNil)
+		realm := "chrome:ci"
+		now := clock.Now(ctx).UTC()
+
+		task := &taskspb.UpdateTestVariant{
+			TestVariantKey: &taskspb.TestVariantKey{
+				Realm: realm,
+			},
+			EnqueueTime: pbutil.MustTimestampProto(now),
+		}
+		err := updateTestVariant(ctx, task)
+		So(err, ShouldEqual, config.RealmNotExistsErr)
+		So(transient.Tag.In(err), ShouldBeFalse)
 	})
 }
