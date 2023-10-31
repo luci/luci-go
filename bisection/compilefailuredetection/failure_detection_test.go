@@ -32,6 +32,7 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -389,6 +390,17 @@ func TestFailureDetection(t *testing.T) {
 					Id:      "refs/heads/gfiTest",
 					Ref:     "1",
 				},
+				Properties: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"sheriff_rotations": structpb.NewListValue(
+							&structpb.ListValue{
+								Values: []*structpb.Value{
+									structpb.NewStringValue("chromium"),
+								},
+							},
+						),
+					},
+				},
 			},
 			Output: &buildbucketpb.Build_Output{
 				GitilesCommit: &buildbucketpb.GitilesCommit{
@@ -444,6 +456,7 @@ func TestFailureDetection(t *testing.T) {
 				},
 				BuildFailureType: pb.BuildFailureType_COMPILE,
 				Platform:         model.PlatformMac,
+				SheriffRotations: []string{"chromium"},
 			})
 		})
 	})

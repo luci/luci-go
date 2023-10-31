@@ -49,6 +49,7 @@ func CreateLUCIFailedBuild(c context.Context, id int64, project string) *model.L
 		LuciBuild: model.LuciBuild{
 			Project: project,
 		},
+		SheriffRotations: []string{"chromium"},
 	}
 	So(datastore.Put(c, fb), ShouldBeNil)
 	datastore.GetTestable(c).CatchupIndexes()

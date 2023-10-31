@@ -58,3 +58,25 @@ func ToDimensionsPB(dimensions []*bbpb.RequestedDimension) *pb.Dimensions {
 	}
 	return &pb.Dimensions{Dimensions: dims}
 }
+
+// GetSheriffRotationsForBuild returns the sheriff rotations for a build.
+// If there is no sheriff rotation set, return empty list.
+func GetSheriffRotationsForBuild(build *bbpb.Build) []string {
+	fields := build.GetInput().GetProperties().GetFields()
+	value, found := fields["sheriff_rotations"]
+	if !found {
+		return []string{}
+	}
+	listValue := value.GetListValue()
+	if listValue == nil {
+		return []string{}
+	}
+	var rotations []string
+	for _, value := range listValue.Values {
+		rotation := value.GetStringValue()
+		if rotation != "" {
+			rotations = append(rotations, rotation)
+		}
+	}
+	return rotations
+}

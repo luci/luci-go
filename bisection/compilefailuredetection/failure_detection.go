@@ -357,6 +357,7 @@ func createCompileFailureModel(c context.Context, failedBuild *buildbucketpb.Bui
 			},
 			BuildFailureType: pb.BuildFailureType_COMPILE,
 			Platform:         platformForBuild(c, failedBuild),
+			SheriffRotations: util.GetSheriffRotationsForBuild(failedBuild),
 		}
 		proto.Merge(&buildModel.GitilesCommit, gitilesCommit)
 		e := datastore.Put(c, buildModel)

@@ -87,25 +87,11 @@ func GetAssociatedBuildID(ctx context.Context, suspect *model.Suspect) (int64, e
 	}
 	switch suspect.AnalysisType {
 	case pb.AnalysisType_COMPILE_FAILURE_ANALYSIS:
-		// Get failure analysis that the heuristic/nth section analysis relates to
-		analysisKey := suspect.ParentAnalysis.Parent()
-		if analysisKey == nil {
-			return 0, fmt.Errorf("suspect with ID '%d' had no parent failure analysis",
-				suspect.Id)
-		}
-		analysisID := analysisKey.IntID()
-
-		compileFailure, err := GetCompileFailureForAnalysisID(ctx, analysisID)
+		buildID, err := GetBuildIDForCompileSuspect(ctx, suspect)
 		if err != nil {
-			return 0, fmt.Errorf("analysis with ID '%d' did not have a compile failure",
-				analysisID)
+			return 0, errors.Annotate(err, "get build id for suspect").Err()
 		}
-
-		if compileFailure.Build == nil {
-			return 0, fmt.Errorf("compile failure with ID '%d' did not have a failed build",
-				compileFailure.Id)
-		}
-		return compileFailure.Build.IntID(), nil
+		return buildID, nil
 	case pb.AnalysisType_TEST_FAILURE_ANALYSIS:
 		tfa, err := GetTestFailureAnalysisForSuspect(ctx, suspect)
 		if err != nil {
@@ -116,7 +102,31 @@ func GetAssociatedBuildID(ctx context.Context, suspect *model.Suspect) (int64, e
 	return 0, fmt.Errorf("unknown analysis type of suspect %s", suspect.AnalysisType.String())
 }
 
-// GetSuspectsForAnalysis returns all suspects (from heuristic and nthsection) for an analysis
+func GetBuildIDForCompileSuspect(ctx context.Context, suspect *model.Suspect) (int64, error) {
+	if suspect.AnalysisType != pb.AnalysisType_COMPILE_FAILURE_ANALYSIS {
+		return 0, errors.Reason("Invalid suspect type %v", suspect.AnalysisType).Err()
+	}
+	// Get failure analysis that the heuristic/nth section analysis relates to
+	analysisKey := suspect.ParentAnalysis.Parent()
+	if analysisKey == nil {
+		return 0, fmt.Errorf("suspect with ID '%d' had no parent failure analysis",
+			suspect.Id)
+	}
+	analysisID := analysisKey.IntID()
+
+	compileFailure, err := GetCompileFailureForAnalysisID(ctx, analysisID)
+	if err != nil {
+		return 0, errors.Annotate(err, "get compile failure for analysis id").Err()
+	}
+	if compileFailure.Build == nil {
+		return 0, fmt.Errorf("compile failure with ID '%d' did not have a failed build",
+			compileFailure.Id)
+	}
+	return compileFailure.Build.IntID(), nil
+
+}
+
+// FetchSuspectsForAnalysis returns all suspects (from heuristic and nthsection) for an analysis
 func FetchSuspectsForAnalysis(c context.Context, cfa *model.CompileFailureAnalysis) ([]*model.Suspect, error) {
 	suspects := []*model.Suspect{}
 	ha, err := GetHeuristicAnalysis(c, cfa)

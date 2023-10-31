@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -102,4 +103,31 @@ func TestGetGitilesCommitForBuild(t *testing.T) {
 			Ref:     "1",
 		})
 	})
+}
+
+func TestGetSheriffRotationsForBuild(t *testing.T) {
+	Convey("No sheriff rotation", t, func() {
+		build := &bbpb.Build{}
+		rotations := GetSheriffRotationsForBuild(build)
+		So(rotations, ShouldResemble, []string{})
+	})
+
+	Convey("Has sheriff rotation", t, func() {
+		build := &bbpb.Build{
+			Input: &bbpb.Build_Input{
+				Properties: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"sheriff_rotations": structpb.NewListValue(&structpb.ListValue{
+							Values: []*structpb.Value{
+								structpb.NewStringValue("chromium"),
+							},
+						}),
+					},
+				},
+			},
+		}
+		rotations := GetSheriffRotationsForBuild(build)
+		So(rotations, ShouldResemble, []string{"chromium"})
+	})
+
 }

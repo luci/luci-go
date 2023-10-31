@@ -111,6 +111,8 @@ type LuciFailedBuild struct {
 	BuildFailureType pb.BuildFailureType `gae:"build_failure_type"`
 	// The platform of the failure
 	Platform Platform `gae:"platform"`
+	// The sheriff rotations that watch the builder.
+	SheriffRotations []string `gae:"sheriff_rotations"`
 }
 
 // CompileFailure represents a compile failure in one or more targets.

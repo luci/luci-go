@@ -518,6 +518,86 @@ func TestRevertCulprit(t *testing.T) {
 			So(culpritActionCounter.Get(ctx, "chromium", "compile", "comment_revert"), ShouldEqual, 1)
 		})
 
+		Convey("non-sheriffable builder", func() {
+			failedBuild.SheriffRotations = []string{}
+			So(datastore.Put(ctx, failedBuild), ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+			// Setup suspect in datastore
+			heuristicSuspect := &model.Suspect{
+				Id:             6,
+				Type:           model.SuspectType_Heuristic,
+				Score:          10,
+				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "test.googlesource.com",
+					Project: "chromium/src",
+					Id:      "12ab34cd56ef",
+				},
+				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
+				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
+			}
+			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Set up mock responses
+			culpritRes := &gerritpb.ListChangesResponse{
+				Changes: []*gerritpb.ChangeInfo{{
+					Number:          876543,
+					Project:         "chromium/src",
+					Status:          gerritpb.ChangeStatus_MERGED,
+					Submitted:       timestamppb.New(clock.Now(ctx).Add(-time.Hour * 3)),
+					CurrentRevision: "deadbeef",
+					Revisions: map[string]*gerritpb.RevisionInfo{
+						"deadbeef": {
+							Commit: &gerritpb.CommitInfo{
+								Message: "Title.\n\nBody is here.\n\nNOAUTOREVERT=true\n\nChange-Id: I100deadbeef",
+								Author: &gerritpb.GitPersonInfo{
+									Name:  "John Doe",
+									Email: "jdoe@example.com",
+								},
+							},
+						},
+					},
+				}},
+			}
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(culpritRes, nil).Times(1)
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(&gerritpb.ListChangesResponse{}, nil).Times(1)
+			mockClient.Client.EXPECT().SetReview(gomock.Any(), proto.MatcherEqual(
+				&gerritpb.SetReviewRequest{
+					Project:    culpritRes.Changes[0].Project,
+					Number:     culpritRes.Changes[0].Number,
+					RevisionId: "current",
+					Message: fmt.Sprintf("LUCI Bisection has identified this"+
+						" change as the culprit of a build failure. See the analysis: %s\n\n"+
+						"A revert for this change was not created because"+
+						" the associated builder is not being watched by gardeners.\n\n"+
+						"Sample failed build: %s\n\nIf this is a false positive, please report"+
+						" it at %s", analysisURL, buildURL, bugURL),
+				},
+			)).Times(1)
+
+			err := TakeCulpritAction(ctx, heuristicSuspect)
+			So(err, ShouldBeNil)
+
+			datastore.GetTestable(ctx).CatchupIndexes()
+			suspect, err := datastoreutil.GetSuspect(ctx,
+				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+			So(err, ShouldBeNil)
+			So(suspect, ShouldNotBeNil)
+			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+				RevertURL:               "",
+				IsRevertCreated:         false,
+				IsRevertCommitted:       false,
+				HasSupportRevertComment: false,
+				HasCulpritComment:       true,
+				CulpritCommentTime:      testclock.TestTimeUTC.Round(time.Second),
+			})
+			So(culpritActionCounter.Get(ctx, "chromium", "compile", "comment_culprit"), ShouldEqual, 1)
+		})
+
 		Convey("revert has auto-revert off flag set", func() {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{

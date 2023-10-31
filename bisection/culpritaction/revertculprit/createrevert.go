@@ -36,7 +36,7 @@ import (
 //   - the error if one occurred.
 func isCulpritRevertible(ctx context.Context, gerritClient *gerrit.Client,
 	culprit *gerritpb.ChangeInfo, culpritModel *model.Suspect, project string) (bool, string, error) {
-	// If it is test failure, we only create revert if it belongs to a builder being watched
+	// We only create revert if it belongs to a builder being watched
 	// by sheriffs.
 	if culpritModel.AnalysisType == bisectionpb.AnalysisType_TEST_FAILURE_ANALYSIS {
 		tfa, err := datastoreutil.GetTestFailureAnalysisForSuspect(ctx, culpritModel)
@@ -45,6 +45,21 @@ func isCulpritRevertible(ctx context.Context, gerritClient *gerrit.Client,
 		}
 		if len(tfa.SheriffRotations) == 0 {
 			return false, "the builder of the failed test(s) is not being watched by gardeners", nil
+		}
+	} else if culpritModel.AnalysisType == bisectionpb.AnalysisType_COMPILE_FAILURE_ANALYSIS {
+		buildID, err := datastoreutil.GetBuildIDForCompileSuspect(ctx, culpritModel)
+		if err != nil {
+			return false, "", errors.Annotate(err, "get build id for suspect").Err()
+		}
+		build, err := datastoreutil.GetBuild(ctx, buildID)
+		if err != nil {
+			return false, "", errors.Annotate(err, "get build").Err()
+		}
+		if build == nil {
+			return false, "", errors.Reason("no build found: %d", buildID).Err()
+		}
+		if len(build.SheriffRotations) == 0 {
+			return false, "the associated builder is not being watched by gardeners", nil
 		}
 	}
 
