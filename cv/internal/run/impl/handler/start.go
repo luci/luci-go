@@ -43,10 +43,6 @@ import (
 )
 
 const (
-	// maxPostStartMessageDuration is the max time that a Run will be waiting for
-	// the starting message to be posted on every CL.
-	maxPostStartMessageDuration = 8 * time.Minute
-
 	logEntryLabelPostStartMessage = "Posting Starting Message"
 )
 
@@ -133,13 +129,36 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 
 	// Run quota should be debited from the owner before the run is started.
 	// When run quota isn't available, the run is left in the pending state.
+	pendingMsg := fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.", rs.Run.Owner.Email())
 	switch quotaOp, err := impl.QM.DebitRunQuota(ctx, rs); {
 	case err == nil && quotaOp != nil:
 		logging.Debugf(ctx, "Run quota debited from %s; new balance: %d", rs.Run.Owner.Email(), quotaOp.GetNewBalance())
 	case err == quota.ErrQuotaApply && quotaOp.GetStatus() == quotapb.OpResult_ERR_UNDERFLOW:
 		// run quota isn't currently available for the user; leave the run in pending.
 		logging.Debugf(ctx, "Run quota underflow for %s; leaving the run %s pending", rs.Run.Owner.Email(), rs.Run.ID)
-		return &Result{State: rs}, nil
+
+		// Post pending message to all gerrit CLs for this run if not enqueued already.
+		shouldEnqueue := true
+		for _, op := range rs.OngoingLongOps.GetOps() {
+			if op.GetPostGerritMessage().GetMessage() == pendingMsg {
+				shouldEnqueue = false
+				break
+			}
+		}
+
+		// Only enqueue once.
+		if shouldEnqueue {
+			rs.EnqueueLongOp(&run.OngoingLongOps_Op{
+				Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxPostMessageDuration)),
+				Work: &run.OngoingLongOps_Op_PostGerritMessage_{
+					PostGerritMessage: &run.OngoingLongOps_Op_PostGerritMessage{
+						Message: pendingMsg,
+					},
+				},
+			})
+		}
+
+		return &Result{State: rs, PreserveEvents: true}, nil
 	case err == quota.ErrQuotaApply:
 		return nil, errors.Annotate(err, "QM.DebitRunQuota: unexpected quotaOp Status %s", quotaOp.GetStatus()).Tag(transient.Tag).Err()
 	case err != nil:
@@ -183,7 +202,7 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 	// New patchset runs should be quiet.
 	if rs.Mode != run.NewPatchsetRun {
 		rs.EnqueueLongOp(&run.OngoingLongOps_Op{
-			Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxPostStartMessageDuration)),
+			Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxPostMessageDuration)),
 			Work: &run.OngoingLongOps_Op_PostStartMessage{
 				PostStartMessage: true,
 			},
@@ -247,7 +266,7 @@ func (impl *Impl) onCompletedPostStartMessage(ctx context.Context, rs *state.Run
 		// post starting message.
 		rs.LogInfo(ctx, logEntryLabelPostStartMessage, "Failed to post the starting message")
 	case eventpb.LongOpCompleted_EXPIRED:
-		rs.LogInfo(ctx, logEntryLabelPostStartMessage, fmt.Sprintf("Failed to post the starting message within the %s deadline", maxPostStartMessageDuration))
+		rs.LogInfo(ctx, logEntryLabelPostStartMessage, fmt.Sprintf("Failed to post the starting message within the %s deadline", maxPostMessageDuration))
 	case eventpb.LongOpCompleted_SUCCEEDED:
 		// TODO(tandrii): simplify once all such events have timestamp.
 		if t := result.GetPostStartMessage().GetTime(); t != nil {

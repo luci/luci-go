@@ -19,17 +19,14 @@ import (
 	"testing"
 	"time"
 
+	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/hardcoded/chromeinfra"
-	"go.chromium.org/luci/server/quota"
-	"go.chromium.org/luci/server/quota/quotapb"
-
+	. "go.chromium.org/luci/common/testing/assertions"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -43,9 +40,10 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
+	"go.chromium.org/luci/server/quota"
+	"go.chromium.org/luci/server/quota/quotapb"
 )
 
 func TestStart(t *testing.T) {
@@ -192,10 +190,25 @@ func TestStart(t *testing.T) {
 
 			res, err := h.Start(ctx, rs)
 			So(err, ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeTrue)
 			So(res.SideEffectFn, ShouldBeNil)
 			So(res.State.Status, ShouldEqual, run.Status_PENDING)
 			ops := res.State.OngoingLongOps.GetOps()
-			So(len(ops), ShouldEqual, 0)
+			So(len(ops), ShouldEqual, 1)
+			So(ops, ShouldContainKey, "1-1")
+			So(ops["1-1"].GetPostGerritMessage(), ShouldResembleProto, &run.OngoingLongOps_Op_PostGerritMessage{
+				Message: fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.", rs.Run.Owner.Email()),
+			})
+
+			Convey("Enqueue pending message only once when quota is exhausted", func() {
+				res, err := h.Start(ctx, rs)
+				So(err, ShouldBeNil)
+				ops := res.State.OngoingLongOps.GetOps()
+				So(ops, ShouldContainKey, "1-1")
+				So(ops["1-1"].GetPostGerritMessage(), ShouldResembleProto, &run.OngoingLongOps_Op_PostGerritMessage{
+					Message: fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.", rs.Run.Owner.Email()),
+				})
+			})
 		})
 
 		Convey("Throws error when quota manager fails with an unexpected error", func() {
