@@ -264,18 +264,6 @@ func console(c context.Context, project, id string, limit int, con *projectconfi
 	}, nil
 }
 
-func consolePreview(c context.Context, summaries *ui.BuilderSummaryGroup, def *projectconfigpb.Console) (*ui.Console, error) {
-	categoryTree, depth := buildTreeFromDef(def, func(columnIdx int) (*model.BuilderSummary, []*model.BuildSummary) {
-		return summaries.Builders[columnIdx], nil
-	})
-	return &ui.Console{
-		Name:       def.Name,
-		Table:      *categoryTree,
-		MaxDepth:   depth + 1,
-		FaviconURL: getFaviconURL(c, def),
-	}, nil
-}
-
 var treeStatusCache = layered.RegisterCache(layered.Parameters[*ui.TreeStatus]{
 	ProcessCacheCapacity: 256,
 	GlobalNamespace:      "tree-status",
@@ -612,62 +600,6 @@ func ConsoleHandler(c *router.Context) error {
 	templates.MustRender(c.Request.Context(), c.Writer, "pages/console.html", templates.Args{
 		"Console": consoleRenderer{result},
 		"Expand":  con.Def.DefaultExpand,
-	})
-	return nil
-}
-
-// ConsolesHandler is responsible for taking a project name and rendering the
-// console list page (defined in ./appengine/templates/pages/builder_groups.html).
-func ConsolesHandler(c *router.Context, projectID string) error {
-	// Get consoles related to this project and filter out all builders.
-	cons, err := projectconfig.GetProjectConsoles(c.Request.Context(), projectID)
-	if err != nil {
-		return err
-	}
-	if err := filterUnauthorizedBuildersFromConsoles(c.Request.Context(), cons); err != nil {
-		return errors.Annotate(err, "error authorizing user").Err()
-	}
-
-	type fullConsole struct {
-		ID        string
-		ProjectID string
-		Def       *projectconfigpb.Console
-		Render    consoleRenderer
-	}
-	var consoles []fullConsole
-	summaryMap, err := buildsource.GetConsoleSummariesFromDefs(c.Request.Context(), cons, projectID)
-	if err != nil {
-		return err
-	}
-	for _, con := range cons {
-		summary, ok := summaryMap[con.ConsoleID()]
-		if !ok {
-			logging.Errorf(c.Request.Context(), "console summary for %s not found", con.ConsoleID())
-			continue
-		}
-		respConsole, err := consolePreview(c.Request.Context(), summary, &con.Def)
-		if err != nil {
-			logging.WithError(err).Errorf(c.Request.Context(), "failed to generate resp console")
-			continue
-		}
-		resolvedProjectID := con.ProjectID()
-		resolvedConsoleID := con.Def.Id
-		if con.Def.ExternalProject != "" {
-			resolvedProjectID = con.Def.ExternalProject
-			resolvedConsoleID = con.Def.ExternalId
-		}
-		full := fullConsole{
-			ID:        resolvedConsoleID,
-			ProjectID: resolvedProjectID,
-			Def:       &con.Def,
-			Render:    consoleRenderer{respConsole},
-		}
-		consoles = append(consoles, full)
-	}
-
-	templates.MustRender(c.Request.Context(), c.Writer, "pages/builder_groups.html", templates.Args{
-		"ProjectID": projectID,
-		"Consoles":  consoles,
 	})
 	return nil
 }
