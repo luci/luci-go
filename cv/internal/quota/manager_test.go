@@ -281,8 +281,8 @@ func TestManager(t *testing.T) {
 			res, err := qm.CreditRunQuota(ctx, rs)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
-				NewBalance:    6,
-				AccountStatus: quotapb.OpResult_CREATED,
+				NewBalance:      5,
+				PreviousBalance: 4, // credit reapplies debit beforehand.
 			})
 
 			cg.UserLimits = nil
