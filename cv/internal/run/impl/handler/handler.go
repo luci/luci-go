@@ -119,6 +119,7 @@ type RM interface {
 type QM interface {
 	DebitRunQuota(ctx context.Context, rs *state.RunState) (*quotapb.OpResult, error)
 	CreditRunQuota(ctx context.Context, rs *state.RunState) (*quotapb.OpResult, error)
+	RunQuotaAccountID(r *run.Run) *quotapb.AccountID
 }
 
 // CLUpdater encapsulates interaction with CL Updater by the Run events handler.

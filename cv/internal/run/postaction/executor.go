@@ -26,9 +26,11 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/server/quota/quotapb"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/lease"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/run"
@@ -42,12 +44,24 @@ type Executor struct {
 	GFactory          gerrit.Factory
 	Run               *run.Run
 	Payload           *run.OngoingLongOps_Op_ExecutePostActionPayload
+	RM                rm
+	QM                qm
 	IsCancelRequested func() bool
 
 	// test function for unit test.
 	//
 	// Called before CL mutation.
 	testBeforeCLMutation func(ctx context.Context, rcl *run.RunCL, req *gerritpb.SetReviewRequest)
+}
+
+// qm encapsulates interaction with Quota Manager by the post action executor.
+type qm interface {
+	RunQuotaAccountID(r *run.Run) *quotapb.AccountID
+}
+
+// rm encapsulates interaction with Run Manager by the post action executor.
+type rm interface {
+	Start(ctx context.Context, runID common.RunID) error
 }
 
 // Do executes the payload.

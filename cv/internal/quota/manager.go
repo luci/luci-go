@@ -21,17 +21,20 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/configs/prjcfg"
-	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/server/auth"
 	srvquota "go.chromium.org/luci/server/quota"
 	"go.chromium.org/luci/server/quota/quotapb"
-	"google.golang.org/protobuf/types/known/durationpb"
+
+	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
 
 var qinit sync.Once
@@ -92,6 +95,11 @@ func (qm *Manager) CreditTryjobQuota(ctx context.Context) (*quotapb.OpResult, er
 	return nil, nil
 }
 
+// RunQuotaAccountID returns the account id of the run quota for the given run.
+func (qm *Manager) RunQuotaAccountID(r *run.Run) *quotapb.AccountID {
+	return qm.qapp.AccountID(r.ID.LUCIProject(), r.ConfigGroupID.Name(), r.Owner.Email(), runResource)
+}
+
 // runQuotaOp updates the run quota for the given run state by the given delta.
 func (qm *Manager) runQuotaOp(ctx context.Context, rs *state.RunState, requestID string, delta int64) (*quotapb.OpResult, error) {
 	policyID, err := qm.findRunPolicy(ctx, rs)
@@ -103,7 +111,7 @@ func (qm *Manager) runQuotaOp(ctx context.Context, rs *state.RunState, requestID
 
 	quotaOp := []*quotapb.Op{
 		{
-			AccountId:  qm.qapp.AccountID(rs.Run.ID.LUCIProject(), rs.Run.ConfigGroupID.Name(), rs.Run.Owner.Email(), runResource),
+			AccountId:  qm.RunQuotaAccountID(&rs.Run),
 			PolicyId:   policyID,
 			RelativeTo: quotapb.Op_CURRENT_BALANCE,
 			Delta:      delta,

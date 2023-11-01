@@ -71,6 +71,7 @@ type RunManager struct {
 	env          *common.Env
 	gFactory     gerrit.Factory
 	bbFactory    buildbucket.ClientFactory
+	qm           *quota.Manager
 	handler      handler.Handler
 
 	testDoLongOperationWithDeadline func(context.Context, *longops.Base) (*eventpb.LongOpCompleted, error)
@@ -99,6 +100,7 @@ func New(
 		env:          env,
 		gFactory:     g,
 		bbFactory:    bb,
+		qm:           qm,
 		handler: &handler.Impl{
 			PM:          pm,
 			RM:          n,

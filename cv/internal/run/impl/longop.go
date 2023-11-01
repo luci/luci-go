@@ -165,8 +165,10 @@ func (rm *RunManager) doLongOperationWithDeadline(ctx context.Context, opBase *l
 		}
 	case *run.OngoingLongOps_Op_ExecutePostAction:
 		op = &longops.ExecutePostActionOp{
-			Base:     opBase,
-			GFactory: rm.gFactory,
+			Base:        opBase,
+			GFactory:    rm.gFactory,
+			RunNotifier: rm.runNotifier,
+			QM:          rm.qm,
 		}
 	default:
 		logging.Errorf(ctx, "unknown LongOp work %T", w)

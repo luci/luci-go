@@ -16,6 +16,17 @@ package postaction
 
 import (
 	"context"
+	"fmt"
+	"slices"
+	"sort"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
+	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/run"
 )
 
 // CreditRunQuotaPostActionName is the name of the internal post action that
@@ -23,5 +34,103 @@ import (
 const CreditRunQuotaPostActionName = "credit-run-quota"
 
 func (exe *Executor) creditQuota(ctx context.Context) (string, error) {
+	// TODO(yiwzhang): move the credit quota operation here.
+
+	switch nextRun, err := exe.pickNextRunToStart(ctx); {
+	case err != nil:
+		return "", err
+	case nextRun != nil:
+		if err := exe.RM.Start(ctx, nextRun.ID); err != nil {
+			return "", errors.Annotate(err, "failed to notify run %q to start", nextRun.ID).Tag(transient.Tag).Err()
+		}
+		return fmt.Sprintf("notified next Run %q to start", nextRun.ID), nil
+	}
 	return "", nil
+}
+
+// pickNextRunToStart search against all eligible pending runs and try to
+// find the earliest one.
+func (exe *Executor) pickNextRunToStart(ctx context.Context) (*run.Run, error) {
+	curRun := exe.Run
+	account := exe.QM.RunQuotaAccountID(curRun)
+	var tok *run.PageToken
+	var candidates []*run.Run
+	var knownPendingRuns common.RunIDs
+	for {
+		// process 25 runs at a time.
+		qb := run.ProjectQueryBuilder{
+			Project: curRun.ID.LUCIProject(),
+			Status:  run.Status_PENDING,
+			Limit:   25,
+		}.PageToken(tok)
+
+		runs, token, err := qb.LoadRuns(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, r := range runs {
+			knownPendingRuns = append(knownPendingRuns, r.ID)
+			if proto.Equal(exe.QM.RunQuotaAccountID(r), account) {
+				// only consider the runs that belong to the same quota account
+				candidates = append(candidates, r)
+			}
+		}
+		if token == nil {
+			break
+		}
+		tok = token
+	}
+
+	if len(candidates) == 0 {
+		return nil, nil
+	}
+	sort.Sort(knownPendingRuns)
+	// Sort the candidates chronically from earliest to latest and return the
+	// earliest run that has not pending dep runs.
+	slices.SortFunc(candidates, func(a, b *run.Run) int {
+		switch {
+		case a.CreateTime.Before(b.CreateTime):
+			return -1
+		case a.CreateTime.Equal(b.CreateTime):
+			return 0
+		default:
+			return 1
+		}
+	})
+	for _, candidate := range candidates {
+		switch hasNoPendingDepRun, err := hasNoPendingDepRun(ctx, candidate, knownPendingRuns); {
+		case err != nil:
+			return nil, err
+		case hasNoPendingDepRun:
+			return candidate, nil
+		}
+	}
+	return nil, nil
+}
+
+// hasNoPendingDepRun returns true the provided run has *no* dep Run that is in
+// PENDING status.
+func hasNoPendingDepRun(ctx context.Context, r *run.Run, knownPendingRuns common.RunIDs) (bool, error) {
+	if len(r.DepRuns) == 0 { // no deps at all
+		return true, nil
+	}
+	depRuns := make([]*run.Run, len(r.DepRuns))
+	for i, depRunID := range r.DepRuns {
+		if knownPendingRuns.ContainsSorted(depRunID) {
+			return false, nil
+		}
+		depRuns[i] = &run.Run{ID: depRunID}
+	}
+	if err := datastore.Get(ctx, depRuns); err != nil {
+		return false, errors.Annotate(err, "failed to load depRuns %s", r.DepRuns).Tag(transient.Tag).Err()
+	}
+	for _, depRun := range depRuns {
+		switch depRun.Status {
+		case run.Status_STATUS_UNSPECIFIED:
+			panic(fmt.Errorf("the status of run %q is not specified", depRun.ID))
+		case run.Status_PENDING:
+			return false, nil
+		}
+	}
+	return true, nil
 }

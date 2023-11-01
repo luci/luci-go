@@ -20,6 +20,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/cv/internal/gerrit"
+	"go.chromium.org/luci/cv/internal/quota"
+	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/postaction"
 )
@@ -27,7 +29,9 @@ import (
 // ExecutePostActionOp executes a PostAction.
 type ExecutePostActionOp struct {
 	*Base
-	GFactory gerrit.Factory
+	GFactory    gerrit.Factory
+	RunNotifier *run.Notifier
+	QM          *quota.Manager
 }
 
 // Do implements Operation interface.
@@ -39,6 +43,8 @@ func (op *ExecutePostActionOp) Do(ctx context.Context) (*eventpb.LongOpCompleted
 		GFactory:          op.GFactory,
 		Run:               op.Run,
 		Payload:           op.Op.GetExecutePostAction(),
+		RM:                op.RunNotifier,
+		QM:                op.QM,
 		IsCancelRequested: op.IsCancelRequested,
 	}
 	summary, err := exe.Do(ctx)

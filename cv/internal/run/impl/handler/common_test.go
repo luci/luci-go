@@ -569,3 +569,13 @@ func (qm *quotaManagerMock) CreditRunQuota(ctx context.Context, rs *state.RunSta
 	qm.creditRunQuotaCalls++
 	return qm.runQuotaOp, qm.runQuotaErr
 }
+
+func (qm *quotaManagerMock) RunQuotaAccountID(r *run.Run) *quotapb.AccountID {
+	return &quotapb.AccountID{
+		AppId:        "cv",
+		Realm:        r.ID.LUCIProject(),
+		Namespace:    r.ConfigGroupID.Name(),
+		Name:         r.Owner.Email(),
+		ResourceType: "runs",
+	}
+}
