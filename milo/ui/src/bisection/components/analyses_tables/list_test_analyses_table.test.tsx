@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { act, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import fetchMock from 'fetch-mock-jest';
 
 import {
@@ -97,7 +96,7 @@ describe('Test AnalysesTable component', () => {
     }
     mockListTestAnalyses(secondPageMockAnalyses, '');
 
-    await act(() => userEvent.click(nextButton));
+    act(() => nextButton.click());
     await screen.findByText('Rows per page:');
 
     // Check the displayed rows label is correct
