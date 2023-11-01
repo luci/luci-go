@@ -402,22 +402,116 @@ func TestImportConfigSet(t *testing.T) {
 					Location:       loc,
 					LatestRevision: model.RevisionInfo{ID: latestCommit.Id},
 				}
+
 				So(datastore.Put(ctx, cfgSetBeforeImport), ShouldBeNil)
 				mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(&gitilespb.LogResponse{
 					Log: []*git.Commit{latestCommit},
 				}, nil)
 
-				err := importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+				Convey("last attempt succeeded", func() {
+					lastAttempt := &model.ImportAttempt{
+						ConfigSet: datastore.KeyForObj(ctx, cfgSetBeforeImport),
+						Success:   true,
+						Message:   "imported",
+					}
+					So(datastore.Put(ctx, cfgSetBeforeImport, lastAttempt), ShouldBeNil)
 
-				So(err, ShouldBeNil)
-				cfgSetAfterImport := &model.ConfigSet{
-					ID: config.MustServiceSet("myservice"),
-				}
-				So(datastore.Get(ctx, cfgSetAfterImport), ShouldBeNil)
-				So(cfgSetAfterImport.Location, ShouldResembleProto, loc)
-				cfgSetAfterImport.Location = nil
-				cfgSetBeforeImport.Location = nil
-				So(cfgSetAfterImport, ShouldResemble, cfgSetBeforeImport)
+					err := importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+
+					So(err, ShouldBeNil)
+					cfgSetAfterImport := &model.ConfigSet{
+						ID: config.MustServiceSet("myservice"),
+					}
+					So(datastore.Get(ctx, cfgSetAfterImport), ShouldBeNil)
+					So(cfgSetAfterImport.Location, ShouldResembleProto, loc)
+					cfgSetAfterImport.Location = nil
+					cfgSetBeforeImport.Location = nil
+					So(cfgSetAfterImport, ShouldResemble, cfgSetBeforeImport)
+					attempt := &model.ImportAttempt{ConfigSet: datastore.KeyForObj(ctx, cfgSetAfterImport)}
+					So(datastore.Get(ctx, attempt), ShouldBeNil)
+					So(attempt.Revision.Location, ShouldResembleProto, &cfgcommonpb.Location{
+						Location: &cfgcommonpb.Location_GitilesLocation{
+							GitilesLocation: &cfgcommonpb.GitilesLocation{
+								Repo: "https://a.googlesource.com/infradata/config",
+								Ref:  latestCommit.Id,
+								Path: "dev-configs/myservice",
+							},
+						},
+					})
+					attempt.Revision.Location = nil
+					So(attempt, ShouldResemble, &model.ImportAttempt{
+						ConfigSet: datastore.KeyForObj(ctx, cfgSetAfterImport),
+						Success:   true,
+						Message:   "Up-to-date",
+						Revision: model.RevisionInfo{
+							ID:             latestCommit.Id,
+							CommitTime:     latestCommit.Committer.Time.AsTime(),
+							CommitterEmail: latestCommit.Committer.Email,
+							AuthorEmail:    latestCommit.Author.Email,
+						},
+					})
+				})
+
+				Convey("last attempt succeeded but with validation msg", func() {
+					lastAttempt := &model.ImportAttempt{
+						ConfigSet: datastore.KeyForObj(ctx, cfgSetBeforeImport),
+						Success:   true,
+						Message:   "imported with warnings",
+						ValidationResult: &cfgcommonpb.ValidationResult{
+							Messages: []*cfgcommonpb.ValidationResult_Message{
+								{
+									Path:     "foo.cfg",
+									Severity: cfgcommonpb.ValidationResult_WARNING,
+									Text:     "there is a warning",
+								},
+							},
+						},
+					}
+					So(datastore.Put(ctx, lastAttempt), ShouldBeNil)
+
+					tarGzContent, err := buildTarGz(map[string]any{"foo.cfg": "content"})
+					So(err, ShouldBeNil)
+					mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{
+						Contents: tarGzContent,
+					}, nil)
+					mockGsClient.EXPECT().UploadIfMissing(
+						gomock.Any(), gomock.Eq(testGSBucket),
+						gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+					mockValidator.result = lastAttempt.ValidationResult
+
+					err = importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+
+					So(err, ShouldBeNil)
+					currentAttempt := &model.ImportAttempt{ConfigSet: datastore.KeyForObj(ctx, cfgSetBeforeImport)}
+					So(datastore.Get(ctx, currentAttempt), ShouldBeNil)
+					So(currentAttempt.ValidationResult, ShouldResembleProto, lastAttempt.ValidationResult)
+					So(currentAttempt.Success, ShouldBeTrue)
+				})
+
+				Convey("last attempt not succeeded", func() {
+					lastAttempt := &model.ImportAttempt{
+						ConfigSet: datastore.KeyForObj(ctx, cfgSetBeforeImport),
+						Success:   false,
+						Message:   "transient gitilies error",
+					}
+					So(datastore.Put(ctx, lastAttempt), ShouldBeNil)
+
+					tarGzContent, err := buildTarGz(map[string]any{"foo.cfg": "content"})
+					So(err, ShouldBeNil)
+					mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{
+						Contents: tarGzContent,
+					}, nil)
+					mockGsClient.EXPECT().UploadIfMissing(
+						gomock.Any(), gomock.Eq(testGSBucket),
+						gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+
+					err = importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
+
+					So(err, ShouldBeNil)
+					currentAttempt := &model.ImportAttempt{ConfigSet: datastore.KeyForObj(ctx, cfgSetBeforeImport)}
+					So(datastore.Get(ctx, currentAttempt), ShouldBeNil)
+					So(currentAttempt.Success, ShouldBeTrue)
+				})
 			})
 
 			Convey("empty archive", func() {

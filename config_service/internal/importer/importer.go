@@ -336,15 +336,19 @@ func (i *Importer) importConfigSet(ctx context.Context, cfgSet config.Set, loc *
 	latestCommit := logRes.Log[0]
 
 	cfgSetInDB := &model.ConfigSet{ID: cfgSet}
-	switch err := datastore.Get(ctx, cfgSetInDB); {
-	case err == datastore.ErrNoSuchEntity: // proceed with importing
+	lastAttempt := &model.ImportAttempt{ConfigSet: datastore.KeyForObj(ctx, cfgSetInDB)}
+	switch err := datastore.Get(ctx, cfgSetInDB, lastAttempt); {
+	case errors.Contains(err, datastore.ErrNoSuchEntity): // proceed with importing
 	case err != nil:
-		return errors.Annotate(err, "failed to load config set %q", cfgSet).Err()
+		err = errors.Annotate(err, "failed to load config set %q or its last attempt", cfgSet).Err()
+		return errors.Append(err, saveAttempt(false, err.Error(), latestCommit))
 	case cfgSetInDB.LatestRevision.ID == latestCommit.Id &&
 		proto.Equal(cfgSetInDB.Location.GetGitilesLocation(), loc) &&
-		cfgSetInDB.Version == model.CurrentCfgSetVersion:
+		cfgSetInDB.Version == model.CurrentCfgSetVersion &&
+		lastAttempt.Success && // otherwise, something wrong with lastAttempt, better to import again.
+		len(lastAttempt.ValidationResult.GetMessages()) == 0: // avoid overriding lastAttempt's validationResult.
 		logging.Debugf(ctx, "Already up-to-date")
-		return nil
+		return saveAttempt(true, "Up-to-date", latestCommit)
 	}
 
 	logging.Infof(ctx, "Rolling %s => %s", cfgSetInDB.LatestRevision.ID, latestCommit.Id)
