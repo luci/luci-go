@@ -80,13 +80,15 @@ func RegisterTaskClass() {
 			}
 
 			err = updateTestVariant(ctx, task)
-			// If the error is transient, return err to retry.
-			if transient.Tag.In(err) {
-				return err
+			if err != nil {
+				// If the error is transient, return err to retry.
+				if transient.Tag.In(err) {
+					return err
+				}
+				// If the error is not transient, just return nil. The task
+				// will not be retried.
+				logging.Errorf(ctx, "updateTestVariant error: %v", err.Error())
 			}
-			// If the error is not transient, just return nil. The task
-			// will not be retried.
-			logging.Errorf(ctx, "updateTestVariant error: %v", err.Error())
 			return nil
 		},
 	})
