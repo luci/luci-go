@@ -51,7 +51,10 @@ func TestExecutePostActionOp(t *testing.T) {
 					CancelRequested: false,
 					Work: &run.OngoingLongOps_Op_ExecutePostAction{
 						ExecutePostAction: &run.OngoingLongOps_Op_ExecutePostActionPayload{
-							Action: postActionCfg,
+							Name: postActionCfg.GetName(),
+							Kind: &run.OngoingLongOps_Op_ExecutePostActionPayload_ConfigAction{
+								ConfigAction: postActionCfg,
+							},
 						},
 					},
 				},

@@ -39,12 +39,12 @@ func TestHandleLargeCLStack(t *testing.T) {
 		const gRepo = "re/po"
 		const gRef = "refs/heads/main"
 		const gChangeFirst = 1001
-		// TODO(tandrii): bump max entities limit in datastore in-memory emulation to
-		// from 25 to ~500 and then bump this limit to 200.
+		// TODO(tandrii): bump max entities limit in datastore in-memory emulation
+		// to from 25 to ~500 and then bump this limit to 200.
 		// NOTE: current datastore in-memory emulates classic Datastore, not the
 		// Firestore used by CV, and as such its limit of 25 counts entity *groups*,
 		// thus Run and all its CLs count as 1 such group.
-		const N = 16
+		const N = 15
 
 		cfg := MakeCfgCombinable("cg0", gHost, gRepo, gRef)
 		prjcfgtest.Create(ctx, lProject, cfg)

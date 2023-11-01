@@ -43,7 +43,7 @@ func (op *ExecutePostActionOp) Do(ctx context.Context) (*eventpb.LongOpCompleted
 	}
 	summary, err := exe.Do(ctx)
 	return op.report(ctx, err, summary), errors.Annotate(
-		err, "post-action-%s", exe.Payload.GetAction().GetName()).Err()
+		err, "post-action-%s", exe.Payload.GetName()).Err()
 }
 
 func (op *ExecutePostActionOp) report(ctx context.Context, err error, summary string) *eventpb.LongOpCompleted {

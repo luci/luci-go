@@ -16,7 +16,9 @@ package handler
 
 import (
 	"context"
+	"slices"
 	"sort"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -46,6 +48,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/bq"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/cv/internal/run/postaction"
 	"go.chromium.org/luci/cv/internal/run/pubsub"
 	"go.chromium.org/luci/cv/internal/run/rdb"
 	"go.chromium.org/luci/cv/internal/run/runtest"
@@ -203,25 +206,42 @@ func TestEndRun(t *testing.T) {
 			})
 		})
 
-		Convey("enqueue a long-op for PostAction", func() {
+		Convey("enqueue long-ops for PostAction", func() {
+			postActions := make([]*run.OngoingLongOps_Op_ExecutePostActionPayload, 0, len(rs.OngoingLongOps.GetOps()))
 			for _, op := range rs.OngoingLongOps.GetOps() {
 				if act := op.GetExecutePostAction(); act != nil {
 					d := timestamppb.New(ct.Clock.Now().UTC().Add(maxPostActionExecutionDuration))
 					So(op.GetDeadline(), ShouldResembleProto, d)
 					So(op.GetCancelRequested(), ShouldBeFalse)
-					So(act.Action, ShouldResembleProto, &cfgpb.ConfigGroup_PostAction{
-						Name: "run-verification-label",
-						Conditions: []*cfgpb.ConfigGroup_PostAction_TriggeringCondition{
-							{
-								Mode:     string(run.DryRun),
-								Statuses: []apipb.Run_Status{apipb.Run_FAILED},
-							},
-						},
-					})
-					return
+					postActions = append(postActions, act)
 				}
 			}
-			So(errors.New("failed to find a long op for PostAction"), ShouldBeNil)
+			slices.SortFunc(postActions, func(a, b *run.OngoingLongOps_Op_ExecutePostActionPayload) int {
+				return strings.Compare(a.GetName(), b.GetName())
+			})
+
+			So(postActions, ShouldResembleProto, []*run.OngoingLongOps_Op_ExecutePostActionPayload{
+				{
+					Name: postaction.CreditRunQuotaPostActionName,
+					Kind: &run.OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota_{
+						CreditRunQuota: &run.OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota{},
+					},
+				},
+				{
+					Name: "run-verification-label",
+					Kind: &run.OngoingLongOps_Op_ExecutePostActionPayload_ConfigAction{
+						ConfigAction: &cfgpb.ConfigGroup_PostAction{
+							Name: "run-verification-label",
+							Conditions: []*cfgpb.ConfigGroup_PostAction_TriggeringCondition{
+								{
+									Mode:     string(run.DryRun),
+									Statuses: []apipb.Run_Status{apipb.Run_FAILED},
+								},
+							},
+						},
+					},
+				},
+			})
 		})
 	})
 }

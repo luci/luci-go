@@ -42,10 +42,13 @@ func TestOnCompletedPostAction(t *testing.T) {
 		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{
 			ConfigGroups: []*cfgpb.ConfigGroup{{Name: "single"}}})
 		opPayload := &run.OngoingLongOps_Op_ExecutePostActionPayload{
-			Action: &cfgpb.ConfigGroup_PostAction{
-				Name: "label-vote",
-				Action: &cfgpb.ConfigGroup_PostAction_VoteGerritLabels_{
-					VoteGerritLabels: &cfgpb.ConfigGroup_PostAction_VoteGerritLabels{},
+			Name: "label-vote",
+			Kind: &run.OngoingLongOps_Op_ExecutePostActionPayload_ConfigAction{
+				ConfigAction: &cfgpb.ConfigGroup_PostAction{
+					Name: "label-vote",
+					Action: &cfgpb.ConfigGroup_PostAction_VoteGerritLabels_{
+						VoteGerritLabels: &cfgpb.ConfigGroup_PostAction_VoteGerritLabels{},
+					},
 				},
 			},
 		}
@@ -87,7 +90,7 @@ func TestOnCompletedPostAction(t *testing.T) {
 		})
 		Convey("execution summary is not set", func() {
 			var expected string
-			Convey("the op suceeded", func() {
+			Convey("the op succeeded", func() {
 				opResult.Status = eventpb.LongOpCompleted_SUCCEEDED
 				expected = "the execution succeeded"
 			})

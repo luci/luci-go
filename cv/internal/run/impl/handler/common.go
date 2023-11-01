@@ -68,8 +68,7 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status,
 		case pa != nil:
 			// Must be a bug. Non terminal Runs should never have ongoing
 			// PostAction(s).
-			logging.Errorf(ctx, "BUG: Run with status(%s) has ongoing PostActions (%s, %s)",
-				origSt, id, pa.Action.Name)
+			logging.Errorf(ctx, "BUG: Run with status(%s) has ongoing PostActions (%s, %s)", origSt, id, pa.GetName())
 		case !op.GetCancelRequested():
 			logging.Warningf(ctx, "Requesting best-effort cancellation of long op %q %T", id, op.GetWork())
 			op.CancelRequested = true

@@ -653,7 +653,11 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(res.State.Status, ShouldEqual, run.Status_SUCCEEDED)
 						So(res.State.EndTime, ShouldEqual, ct.Clock.Now())
-						So(res.State.OngoingLongOps.GetOps(), ShouldBeEmpty)
+						for _, op := range res.State.OngoingLongOps.GetOps() {
+							if op.GetExecutePostAction() == nil {
+								SoMsg("should not contain any long op other than post action", op.GetWork(), ShouldBeNil)
+							}
+						}
 						So(res.SideEffectFn, ShouldNotBeNil)
 						So(res.PreserveEvents, ShouldBeFalse)
 						So(res.PostProcessFn, ShouldBeNil)

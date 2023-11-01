@@ -91,7 +91,11 @@ func TestOnCompletedResetTriggers(t *testing.T) {
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
 			So(err, ShouldBeNil)
 			So(res.State.Status, ShouldEqual, run.Status_FAILED)
-			So(res.State.OngoingLongOps, ShouldBeNil)
+			for _, op := range res.State.OngoingLongOps.GetOps() {
+				if op.GetExecutePostAction() == nil {
+					SoMsg("should not contain any long op other than post action", op.GetWork(), ShouldBeNil)
+				}
+			}
 			assertHasLogEntry(res.State, &run.LogEntry{
 				Time: timestamppb.New(now),
 				Kind: &run.LogEntry_Info_{
@@ -125,7 +129,11 @@ func TestOnCompletedResetTriggers(t *testing.T) {
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
 			So(err, ShouldBeNil)
 			So(res.State.Status, ShouldEqual, run.Status_FAILED)
-			So(res.State.OngoingLongOps, ShouldBeNil)
+			for _, op := range res.State.OngoingLongOps.GetOps() {
+				if op.GetExecutePostAction() == nil {
+					SoMsg("should not contain any long op other than post action", op.GetWork(), ShouldBeNil)
+				}
+			}
 			assertHasLogEntry(res.State, &run.LogEntry{
 				Time: timestamppb.New(now),
 				Kind: &run.LogEntry_Info_{
@@ -159,7 +167,11 @@ func TestOnCompletedResetTriggers(t *testing.T) {
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
 			So(err, ShouldBeNil)
 			So(res.State.Status, ShouldEqual, run.Status_SUCCEEDED)
-			So(res.State.OngoingLongOps, ShouldBeNil)
+			for _, op := range res.State.OngoingLongOps.GetOps() {
+				if op.GetExecutePostAction() == nil {
+					SoMsg("should not contain any long op other than post action", op.GetWork(), ShouldBeNil)
+				}
+			}
 			assertHasLogEntry(res.State, &run.LogEntry{
 				Time: timestamppb.New(now.Add(-1 * time.Minute)),
 				Kind: &run.LogEntry_Info_{
@@ -207,7 +219,11 @@ func TestOnCompletedResetTriggers(t *testing.T) {
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
 			So(err, ShouldBeNil)
 			So(res.State.Status, ShouldEqual, run.Status_FAILED)
-			So(res.State.OngoingLongOps, ShouldBeNil)
+			for _, op := range res.State.OngoingLongOps.GetOps() {
+				if op.GetExecutePostAction() == nil {
+					SoMsg("should not contain any long op other than post action", op.GetWork(), ShouldBeNil)
+				}
+			}
 			assertHasLogEntry(res.State, &run.LogEntry{
 				Time: timestamppb.New(now.Add(-1 * time.Minute)),
 				Kind: &run.LogEntry_Info_{

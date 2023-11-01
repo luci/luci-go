@@ -37,7 +37,7 @@ func (impl *Impl) onCompletedPostAction(ctx context.Context, rs *state.RunState,
 	rs = rs.ShallowCopy()
 	rs.RemoveCompletedLongOp(opID)
 	summary := opResult.GetExecutePostAction().GetSummary()
-	label := fmt.Sprintf("PostAction[%s]", op.GetExecutePostAction().GetAction().GetName())
+	label := fmt.Sprintf("PostAction[%s]", op.GetExecutePostAction().GetName())
 
 	switch st := opResult.GetStatus(); {
 	// If there is a summary reported by the executor, add it to the run log,
@@ -65,8 +65,9 @@ func (impl *Impl) onCompletedPostAction(ctx context.Context, rs *state.RunState,
 	return &Result{State: rs}, nil
 }
 
-// enqueueExecutePostActionTask enqueus long-ops for the PostActions, of which
-// triggering conditions are met.
+// enqueueExecutePostActionTask enqueues internal long ops for post action and
+// the post action defined in the config, of which triggering conditions are
+// met.
 //
 // The payload is made of the project config associated with the Run
 // at the time of this call. Even if a new project config is pushed with new
@@ -76,13 +77,29 @@ func (impl *Impl) onCompletedPostAction(ctx context.Context, rs *state.RunState,
 // on ended Runs, and new project configs with PostAction shouldn't affect
 // already ended Runs and their ongoing PostActions, either.
 func enqueueExecutePostActionTask(ctx context.Context, rs *state.RunState, cg *prjcfg.ConfigGroup) {
+	// enqueue internal post actions.
+	rs.EnqueueLongOp(&run.OngoingLongOps_Op{
+		Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxPostActionExecutionDuration)),
+		Work: &run.OngoingLongOps_Op_ExecutePostAction{
+			ExecutePostAction: &run.OngoingLongOps_Op_ExecutePostActionPayload{
+				Name: postaction.CreditRunQuotaPostActionName,
+				Kind: &run.OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota_{
+					CreditRunQuota: &run.OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota{},
+				},
+			},
+		},
+	})
+	// enqueue actions defined in the configuration.
 	for _, pacfg := range cg.Content.GetPostActions() {
 		if postaction.IsTriggeringConditionMet(pacfg, &rs.Run) {
 			rs.EnqueueLongOp(&run.OngoingLongOps_Op{
 				Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxPostActionExecutionDuration)),
 				Work: &run.OngoingLongOps_Op_ExecutePostAction{
 					ExecutePostAction: &run.OngoingLongOps_Op_ExecutePostActionPayload{
-						Action: pacfg,
+						Name: pacfg.GetName(),
+						Kind: &run.OngoingLongOps_Op_ExecutePostActionPayload_ConfigAction{
+							ConfigAction: pacfg,
+						},
 					},
 				},
 			})

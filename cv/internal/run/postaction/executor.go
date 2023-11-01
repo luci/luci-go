@@ -140,7 +140,7 @@ func (exe *Executor) voteGerritLabels(ctx context.Context, votes []*cfgpb.Config
 						return errOpCancel
 					}
 					return util.MutateGerritCL(ctx, exe.GFactory, rcl, req, 2*time.Minute,
-						fmt.Sprintf("post-action-%s", exe.Payload.GetAction().GetName()))
+						fmt.Sprintf("post-action-%s", exe.Payload.GetName()))
 				}, nil)
 				return nil
 			}
