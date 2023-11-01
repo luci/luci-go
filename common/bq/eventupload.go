@@ -71,7 +71,7 @@ const batchDefault = 500
 
 // Uploader contains the necessary data for streaming data to BigQuery.
 type Uploader struct {
-	*bigquery.Uploader
+	*bigquery.Inserter
 	// Uploader is bound to a specific table. DatasetID and Table ID are
 	// provided for reference.
 	DatasetID string
@@ -98,7 +98,7 @@ type Row struct {
 	InsertID string
 }
 
-// Save is used by bigquery.Uploader.Put when inserting values into a table.
+// Save is used by bigquery.Inserter.Put when inserting values into a table.
 func (r *Row) Save() (map[string]bigquery.Value, string, error) {
 	m, err := mapFromMessage(r.Message, nil)
 	return m, r.InsertID, err
@@ -357,7 +357,7 @@ func getValue(value any, path []string, prop *proto.Properties) (any, error) {
 // DatasetID and TableID are provided to the BigQuery client to
 // gain access to a particular table.
 //
-// You may want to change the default configuration of the bigquery.Uploader.
+// You may want to change the default configuration of the bigquery.Inserter.
 // Check the documentation for more details.
 //
 // Set UploadsMetricName on the resulting Uploader to use the default counter
@@ -368,7 +368,7 @@ func NewUploader(ctx context.Context, c *bigquery.Client, datasetID, tableID str
 	return &Uploader{
 		DatasetID: datasetID,
 		TableID:   tableID,
-		Uploader:  c.Dataset(datasetID).Table(tableID).Uploader(),
+		Inserter:  c.Dataset(datasetID).Table(tableID).Inserter(),
 	}
 }
 
@@ -434,7 +434,7 @@ func (u *Uploader) Put(ctx context.Context, messages ...proto.Message) error {
 			rowSet := rowSet
 			workC <- func() error {
 				var failed int
-				err := u.Uploader.Put(ctx, rowSet)
+				err := u.Inserter.Put(ctx, rowSet)
 				if err != nil {
 					logging.WithError(err).Errorf(ctx, "eventupload: Uploader.Put failed")
 					if merr, ok := err.(bigquery.PutMultiError); ok {
