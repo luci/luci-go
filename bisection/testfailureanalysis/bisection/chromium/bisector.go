@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/rerun"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/analysis"
+	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/projectbisector"
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -54,13 +55,13 @@ func (b *Bisector) Prepare(ctx context.Context, tfa *model.TestFailureAnalysis, 
 	return nil
 }
 
-func (b *Bisector) TriggerRerun(ctx context.Context, tfa *model.TestFailureAnalysis, tfs []*model.TestFailure, gitilesCommit *bbpb.GitilesCommit, fullRun bool) (*bbpb.Build, error) {
+func (b *Bisector) TriggerRerun(ctx context.Context, tfa *model.TestFailureAnalysis, tfs []*model.TestFailure, gitilesCommit *bbpb.GitilesCommit, option projectbisector.RerunOption) (*bbpb.Build, error) {
 	builder, err := util.GetTestRerunBuilder(tfa.Project)
 	if err != nil {
 		return nil, errors.Annotate(err, "get test rerun builder").Err()
 	}
 
-	extraProperties := getExtraProperties(ctx, tfa, tfs, fullRun)
+	extraProperties := getExtraProperties(ctx, tfa, tfs, option)
 
 	options := &rerun.TriggerOptions{
 		Builder:         builder,
@@ -78,7 +79,7 @@ func (b *Bisector) TriggerRerun(ctx context.Context, tfa *model.TestFailureAnaly
 	return build, nil
 }
 
-func getExtraProperties(ctx context.Context, tfa *model.TestFailureAnalysis, tfs []*model.TestFailure, fullRun bool) map[string]any {
+func getExtraProperties(ctx context.Context, tfa *model.TestFailureAnalysis, tfs []*model.TestFailure, option projectbisector.RerunOption) map[string]any {
 	// This may change depending on what the recipe needs.
 	var testsToRun []map[string]string
 	for _, tf := range tfs {
@@ -94,9 +95,12 @@ func getExtraProperties(ctx context.Context, tfa *model.TestFailureAnalysis, tfs
 		"bisection_host": fmt.Sprintf("%s.appspot.com", info.AppID(ctx)),
 		"tests_to_run":   testsToRun,
 	}
-	if fullRun {
+	if option.FullRun {
 		props["should_clobber"] = true
 		props["run_all"] = true
+	}
+	if option.BotID != "" {
+		props["id"] = option.BotID
 	}
 	return props
 }

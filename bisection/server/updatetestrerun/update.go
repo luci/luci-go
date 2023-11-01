@@ -25,6 +25,7 @@ import (
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/testfailureanalysis"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection"
+	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/projectbisector"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
 	"go.chromium.org/luci/common/clock"
@@ -111,7 +112,7 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (ret
 		}
 	}
 	if rerun.Type == model.RerunBuildType_NthSection {
-		err := processNthSectionUpdate(ctx, rerun, tfa)
+		err := processNthSectionUpdate(ctx, rerun, tfa, req)
 		if err != nil {
 			e := testfailureanalysis.UpdateAnalysisStatusWhenError(ctx, tfa)
 			if e != nil {
@@ -183,7 +184,7 @@ func processCulpritVerificationUpdate(ctx context.Context, rerun *model.TestSing
 	return testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
 }
 
-func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.TestFailureAnalysis) (reterr error) {
+func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.TestFailureAnalysis, req *pb.UpdateTestAnalysisProgressRequest) (reterr error) {
 	if rerun.NthSectionAnalysisKey == nil {
 		return errors.New("nthsection_analysis_key not found")
 	}
@@ -264,7 +265,10 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 	if err != nil {
 		return errors.Annotate(err, "get project bisector").Err()
 	}
-	err = bisection.TriggerRerunBuildForCommits(ctx, tfa, nsa, projectBisector, []string{commit})
+	option := projectbisector.RerunOption{
+		BotID: req.BotId,
+	}
+	err = bisection.TriggerRerunBuildForCommits(ctx, tfa, nsa, projectBisector, []string{commit}, option)
 	if err != nil {
 		return errors.Annotate(err, "trigger rerun build for commits").Err()
 	}

@@ -664,7 +664,7 @@ func TestScheduleNewRerun(t *testing.T) {
 		rerun.Status = pb.RerunStatus_RERUN_STATUS_PASSED
 		So(datastore.Put(ctx, rerun), ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
-		err := processNthSectionUpdate(ctx, rerun, tfa)
+		err := processNthSectionUpdate(ctx, rerun, tfa, &pb.UpdateTestAnalysisProgressRequest{})
 		So(err, ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
@@ -717,7 +717,7 @@ func TestScheduleNewRerun(t *testing.T) {
 		rerun.Status = pb.RerunStatus_RERUN_STATUS_TEST_SKIPPED
 		So(datastore.Put(ctx, rerun), ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
-		err := processNthSectionUpdate(ctx, rerun, tfa)
+		err := processNthSectionUpdate(ctx, rerun, tfa, &pb.UpdateTestAnalysisProgressRequest{})
 		So(err, ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
@@ -747,7 +747,7 @@ func TestScheduleNewRerun(t *testing.T) {
 		rerun.Status = pb.RerunStatus_RERUN_STATUS_PASSED
 		So(datastore.Put(ctx, rerun), ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
-		err := processNthSectionUpdate(ctx, rerun, tfa)
+		err := processNthSectionUpdate(ctx, rerun, tfa, &pb.UpdateTestAnalysisProgressRequest{})
 		So(err, ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
@@ -777,7 +777,13 @@ func TestScheduleNewRerun(t *testing.T) {
 		rerun.Status = pb.RerunStatus_RERUN_STATUS_PASSED
 		So(datastore.Put(ctx, rerun), ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
-		err := processNthSectionUpdate(ctx, rerun, tfa)
+		// TODO (nqmtuan): Write a test to check the ScheduleBuild request
+		// to verify the "id" field is check.
+		// Somehow proto.MatcherEqual cannot compare ScheduleBuildRequest.
+		req := &pb.UpdateTestAnalysisProgressRequest{
+			BotId: "bot",
+		}
+		err := processNthSectionUpdate(ctx, rerun, tfa, req)
 		So(err, ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 

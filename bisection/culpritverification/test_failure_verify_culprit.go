@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/bisection/model"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection"
+	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/projectbisector"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
 	"go.chromium.org/luci/common/errors"
@@ -61,7 +62,10 @@ func verifyTestFailureSuspect(ctx context.Context, tfa *model.TestFailureAnalysi
 	// Only rerun the non-diverged test failures.
 	tfs := bundle.NonDiverged()
 	commit := &suspect.GitilesCommit
-	suspectBuild, err := projectBisector.TriggerRerun(ctx, tfa, tfs, commit, true)
+	option := projectbisector.RerunOption{
+		FullRun: true,
+	}
+	suspectBuild, err := projectBisector.TriggerRerun(ctx, tfa, tfs, commit, option)
 	if err != nil {
 		return errors.Annotate(err, "trigger suspect rerun for commit %s", commit.Id).Err()
 	}
@@ -70,7 +74,7 @@ func verifyTestFailureSuspect(ctx context.Context, tfa *model.TestFailureAnalysi
 	if err != nil {
 		return errors.Annotate(err, "get parent commit for commit %s", commit.Id).Err()
 	}
-	parentBuild, err := projectBisector.TriggerRerun(ctx, tfa, tfs, parentCommit, true)
+	parentBuild, err := projectBisector.TriggerRerun(ctx, tfa, tfs, parentCommit, option)
 	if err != nil {
 		return errors.Annotate(err, "trigger parent rerun for commit %s", parentCommit.Id).Err()
 	}

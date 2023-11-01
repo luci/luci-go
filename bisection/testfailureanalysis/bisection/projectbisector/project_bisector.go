@@ -24,9 +24,14 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 )
 
+type RerunOption struct {
+	FullRun bool
+	BotID   string
+}
+
 type ProjectBisector interface {
 	// Prepares data for bisection. This may involve populating models with data.
 	Prepare(ctx context.Context, tfa *model.TestFailureAnalysis, luciAnalysis analysis.AnalysisClient) error
 	// TriggerRerun triggers a rerun build bucket build on a specific commit.
-	TriggerRerun(ctx context.Context, tfa *model.TestFailureAnalysis, tfs []*model.TestFailure, gitilesCommit *bbpb.GitilesCommit, fullRun bool) (*bbpb.Build, error)
+	TriggerRerun(ctx context.Context, tfa *model.TestFailureAnalysis, tfs []*model.TestFailure, gitilesCommit *bbpb.GitilesCommit, option RerunOption) (*bbpb.Build, error)
 }

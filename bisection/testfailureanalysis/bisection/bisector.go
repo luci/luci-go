@@ -215,7 +215,8 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 		return nil
 	}
 
-	if err = TriggerRerunBuildForCommits(ctx, tfa, nsa, projectBisector, commitHashes); err != nil {
+	option := projectbisector.RerunOption{}
+	if err = TriggerRerunBuildForCommits(ctx, tfa, nsa, projectBisector, commitHashes, option); err != nil {
 		return errors.Annotate(err, "trigger rerun build for commits").Err()
 	}
 	return nil
@@ -310,7 +311,7 @@ func SaveNthSectionAnalysis(ctx context.Context, nsa *model.TestNthSectionAnalys
 	}, nil)
 }
 
-func TriggerRerunBuildForCommits(ctx context.Context, tfa *model.TestFailureAnalysis, nsa *model.TestNthSectionAnalysis, projectBisector projectbisector.ProjectBisector, commitHashes []string) error {
+func TriggerRerunBuildForCommits(ctx context.Context, tfa *model.TestFailureAnalysis, nsa *model.TestNthSectionAnalysis, projectBisector projectbisector.ProjectBisector, commitHashes []string, option projectbisector.RerunOption) error {
 	// Get test failure bundle
 	bundle, err := datastoreutil.GetTestFailureBundle(ctx, tfa)
 	if err != nil {
@@ -327,7 +328,7 @@ func TriggerRerunBuildForCommits(ctx context.Context, tfa *model.TestFailureAnal
 			Ref:     primaryFailure.Ref.GetGitiles().GetRef(),
 			Id:      commitHash,
 		}
-		build, err := projectBisector.TriggerRerun(ctx, tfa, tfs, gitilesCommit, false)
+		build, err := projectBisector.TriggerRerun(ctx, tfa, tfs, gitilesCommit, option)
 		if err != nil {
 			return errors.Annotate(err, "trigger rerun for commit %s", commitHash).Err()
 		}
