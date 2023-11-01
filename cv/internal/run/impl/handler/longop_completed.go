@@ -41,6 +41,8 @@ func (impl *Impl) OnLongOpCompleted(ctx context.Context, rs *state.RunState, res
 	switch w := op.GetWork().(type) {
 	case *run.OngoingLongOps_Op_PostStartMessage:
 		return impl.onCompletedPostStartMessage(ctx, rs, op, result)
+	case *run.OngoingLongOps_Op_PostGerritMessage_:
+		return impl.onCompletedPostGerritMessage(ctx, rs, op, result)
 	case *run.OngoingLongOps_Op_ResetTriggers_:
 		return impl.onCompletedResetTriggers(ctx, rs, op, result)
 	case *run.OngoingLongOps_Op_ExecuteTryjobs:

@@ -141,6 +141,12 @@ func (rm *RunManager) doLongOperationWithDeadline(ctx context.Context, opBase *l
 			Env:      rm.env,
 			GFactory: rm.gFactory,
 		}
+	case *run.OngoingLongOps_Op_PostGerritMessage_:
+		op = &longops.PostGerritMessageOp{
+			Base:     opBase,
+			Env:      rm.env,
+			GFactory: rm.gFactory,
+		}
 	case *run.OngoingLongOps_Op_ResetTriggers_:
 		op = &longops.ResetTriggersOp{
 			Base:        opBase,
