@@ -31,5 +31,5 @@ export const PAGE_LABEL_MAP = Object.freeze({
   [UiPage.CQStatus]: 'CQ Status Dashboard',
   [UiPage.Goldeneye]: 'Goldeneye',
   [UiPage.ChromiumDash]: 'ChromiumDash',
-  [UiPage.WHATS_NEW]: "What's new",
+  [UiPage.ReleaseNotes]: "What's new",
 });
