@@ -184,7 +184,7 @@ func (rg *RequestGenerator) linkToRuleComment(ruleID string) string {
 
 // PrepareRuleAssociatedComment prepares a request that notifies the bug
 // it is associated with failures in LUCI Analysis.
-func (rg *RequestGenerator) PrepareRuleAssociatedComment(bugID, ruleID string) (*mpb.ModifyIssuesRequest, error) {
+func (rg *RequestGenerator) PrepareRuleAssociatedComment(ruleID, bugID string) (*mpb.ModifyIssuesRequest, error) {
 	issueName, err := toMonorailIssueName(bugID)
 	if err != nil {
 		return nil, err
@@ -216,9 +216,9 @@ func (rg *RequestGenerator) SortPolicyIDsByPriorityDescending(policyIDs map[bugs
 // PreparePolicyActivatedComment prepares a request that notifies a bug that a policy
 // has activated for the first time.
 // This method returns nil if the policy has not specified any comment to post.
-func (rg *RequestGenerator) PreparePolicyActivatedComment(bugID string, policyID bugs.PolicyID) (*mpb.ModifyIssuesRequest, error) {
+func (rg *RequestGenerator) PreparePolicyActivatedComment(ruleID, bugID string, policyID bugs.PolicyID) (*mpb.ModifyIssuesRequest, error) {
 	templateInput := bugs.TemplateInput{
-		RuleURL: bugs.RuleForMonorailBugURL(rg.uiBaseURL, bugID),
+		RuleURL: bugs.RuleURL(rg.uiBaseURL, rg.project, ruleID),
 		BugID:   bugs.NewTemplateBugID(bugs.BugID{System: bugs.MonorailSystem, ID: bugID}),
 	}
 	comment, err := rg.policyApplyer.PolicyActivatedComment(policyID, rg.uiBaseURL, templateInput)

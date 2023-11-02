@@ -152,7 +152,7 @@ func (m *BugManager) Create(ctx context.Context, request bugs.BugCreateRequest) 
 	response.ID = bugID
 
 	if m.usePolicyBasedManagement {
-		response.PolicyActivationsNotified, err = m.notifyPolicyActivation(ctx, bugID, request.ActivePolicyIDs)
+		response.PolicyActivationsNotified, err = m.notifyPolicyActivation(ctx, request.RuleID, bugID, request.ActivePolicyIDs)
 		if err != nil {
 			response.Error = errors.Annotate(err, "notify policy activations").Err()
 			return response
@@ -187,13 +187,13 @@ func (m *BugManager) filterToValidComponents(ctx context.Context, components []s
 // This method supports partial success; it returns the set of policies
 // which were successfully notified even if an error is encountered and
 // returned.
-func (m *BugManager) notifyPolicyActivation(ctx context.Context, bugID string, policyIDsToNotify map[bugs.PolicyID]struct{}) (map[bugs.PolicyID]struct{}, error) {
+func (m *BugManager) notifyPolicyActivation(ctx context.Context, ruleID, bugID string, policyIDsToNotify map[bugs.PolicyID]struct{}) (map[bugs.PolicyID]struct{}, error) {
 	policiesNotified := make(map[bugs.PolicyID]struct{})
 
 	// Notify policies which have activated in descending priority order.
 	sortedPolicyIDToNotify := m.generator.SortPolicyIDsByPriorityDescending(policyIDsToNotify)
 	for _, policyID := range sortedPolicyIDToNotify {
-		commentRequest, err := m.generator.PreparePolicyActivatedComment(bugID, policyID)
+		commentRequest, err := m.generator.PreparePolicyActivatedComment(ruleID, bugID, policyID)
 		if err != nil {
 			return policiesNotified, errors.Annotate(err, "prepare policy activated comment for policy %q", policyID).Err()
 		}
@@ -285,7 +285,7 @@ func (m *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateRequ
 
 	if !response.IsDuplicate && !response.ShouldArchive {
 		if !request.BugManagementState.RuleAssociationNotified {
-			updateRequest, err := m.generator.PrepareRuleAssociatedComment(request.Bug.ID, request.RuleID)
+			updateRequest, err := m.generator.PrepareRuleAssociatedComment(request.RuleID, request.Bug.ID)
 			if err != nil {
 				response.Error = errors.Annotate(err, "prepare rule associated comment").Err()
 				return response
@@ -301,7 +301,7 @@ func (m *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateRequ
 		policyIDsToNotify := bugs.ActivePoliciesPendingNotification(request.BugManagementState)
 
 		var err error
-		response.PolicyActivationsNotified, err = m.notifyPolicyActivation(ctx, request.Bug.ID, policyIDsToNotify)
+		response.PolicyActivationsNotified, err = m.notifyPolicyActivation(ctx, request.RuleID, request.Bug.ID, policyIDsToNotify)
 		if err != nil {
 			response.Error = errors.Annotate(err, "notify policy activations").Err()
 			return response

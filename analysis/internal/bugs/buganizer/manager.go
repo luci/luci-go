@@ -390,7 +390,7 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 
 	if !response.IsDuplicate && !response.ShouldArchive {
 		if !request.BugManagementState.RuleAssociationNotified {
-			commentRequest, err := bm.requestGenerator.PrepareRuleAssociatedComment(issue.IssueId, request.RuleID)
+			commentRequest, err := bm.requestGenerator.PrepareRuleAssociatedComment(request.RuleID, issue.IssueId)
 			if err != nil {
 				response.Error = errors.Annotate(err, "prepare rule associated comment").Err()
 				return response

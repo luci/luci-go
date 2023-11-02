@@ -142,9 +142,29 @@ func TestBugManager(t *testing.T) {
 
 					issueData := fakeStore.Issues[1]
 					So(issueData.Issue, ShouldResembleProto, expectedIssue)
+				})
+
+				Convey("Policy with comment template", func() {
+					policyA.BugTemplate.CommentTemplate = "RuleURL:{{.RuleURL}},BugID:{{if .BugID.IsBuganizer}}{{.BugID.BuganizerBugID}}{{end}}"
+
+					bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false, true /* usePolicyBasedManagement */)
+					So(err, ShouldBeNil)
+
+					response := bm.Create(ctx, createRequest)
+					So(response, ShouldResemble, bugs.BugCreateResponse{
+						ID: "1",
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
+							"policy-a": {},
+						},
+					})
+					So(len(fakeStore.Issues), ShouldEqual, 1)
+
+					issueData := fakeStore.Issues[1]
+					So(issueData.Issue, ShouldResembleProto, expectedIssue)
+					// Expect no comment for policy-a's activation, just the initial issue description.
 					So(len(issueData.Comments), ShouldEqual, 2)
-					// Expect the policy A activation comment to appear.
-					So(issueData.Comments[1].Comment, ShouldStartWith, "Policy ID: policy-a")
+					So(issueData.Comments[1].Comment, ShouldEqual, "RuleURL:https://luci-analysis-test.appspot.com/p/chromeos/rules/new-rule-id,BugID:1\n\n"+
+						"Why LUCI Analysis posted this comment: https://luci-analysis-test.appspot.com/help#policy-activated (Policy ID: policy-a)")
 				})
 				Convey("Policy has no comment template", func() {
 					policyA.BugTemplate.CommentTemplate = ""

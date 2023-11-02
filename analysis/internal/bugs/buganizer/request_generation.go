@@ -157,7 +157,7 @@ func (rg *RequestGenerator) PrepareNoPermissionComment(issueID, componentID int6
 
 // PrepareRuleAssociatedComment prepares a request that notifies the bug
 // it is associated with failures in LUCI Analysis.
-func (rg *RequestGenerator) PrepareRuleAssociatedComment(issueID int64, ruleID string) (*issuetracker.CreateIssueCommentRequest, error) {
+func (rg *RequestGenerator) PrepareRuleAssociatedComment(ruleID string, issueID int64) (*issuetracker.CreateIssueCommentRequest, error) {
 	ruleURL := bugs.RuleURL(rg.uiBaseURL, rg.project, ruleID)
 
 	return &issuetracker.CreateIssueCommentRequest{

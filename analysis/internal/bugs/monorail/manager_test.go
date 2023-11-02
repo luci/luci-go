@@ -183,7 +183,31 @@ func TestManager(t *testing.T) {
 					So(issue.Issue, ShouldResembleProto, expectedIssue)
 					So(len(issue.Comments), ShouldEqual, 2)
 					So(issue.Comments[0].Content, ShouldEqual, expectedComment)
-					So(issue.Comments[1].Content, ShouldStartWith, "Policy ID: policy-a")
+				})
+				Convey("Policy with comment template", func() {
+					policyA.BugTemplate.CommentTemplate = "RuleURL:{{.RuleURL}},BugID:{{if .BugID.IsMonorail}}{{.BugID.MonorailProject}}/{{.BugID.MonorailBugID}}{{end}}"
+
+					bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg, true /* usePolicyBasedManagement */)
+					So(err, ShouldBeNil)
+
+					// Act
+					response := bm.Create(ctx, createRequest)
+
+					// Verify
+					So(response, ShouldResemble, bugs.BugCreateResponse{
+						ID: "chromium/100",
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
+							"policy-a": {},
+						},
+					})
+					So(len(f.Issues), ShouldEqual, 1)
+
+					issue := f.Issues[0]
+					So(issue.Issue, ShouldResembleProto, expectedIssue)
+					So(len(issue.Comments), ShouldEqual, 2)
+					So(issue.Comments[0].Content, ShouldEqual, expectedComment)
+					So(issue.Comments[1].Content, ShouldEqual, "RuleURL:https://luci-analysis-test.appspot.com/p/luciproject/rules/new-rule-id,BugID:chromium/100\n\n"+
+						"Why LUCI Analysis posted this comment: https://luci-analysis-test.appspot.com/help#policy-activated (Policy ID: policy-a)")
 					So(issue.NotifyCount, ShouldEqual, 2)
 				})
 				Convey("Policy has no comment template", func() {
