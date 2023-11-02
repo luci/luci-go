@@ -45,8 +45,14 @@ var (
 			IsDefault:    true,
 		},
 		// Human presubmit full-runs failed due to a failure in the cluster.
+		//
+		// TODO(meiring): Remove `f.presubmit_run_status = 'FAILED'` criteria
+		// and filter to latest LUCI CV tryjob tries once LUCI CV exposes
+		// try data. Current criteria captures critical failing tryjobs in
+		// failing CV runs even if those tryjobs were later retried and passed
+		// (and hence not the cause of CV run failure).
 		FilterSQL: `f.is_ingested_invocation_blocked AND COALESCE(ARRAY_LENGTH(f.exonerations) = 0, TRUE) AND f.build_status = 'FAILURE' ` +
-			`AND f.build_critical AND f.presubmit_run_mode = 'FULL_RUN' AND f.presubmit_run_owner='user'`,
+			`AND f.build_critical AND f.presubmit_run_mode = 'FULL_RUN' AND f.presubmit_run_owner='user' AND f.presubmit_run_status = 'FAILED'`,
 		// Distinct CLs. Note that indexing with SAFE_OFFSET returns
 		// NULL if there is no such element, and CONCAT returns NULL
 		// if any argument is NULL.
