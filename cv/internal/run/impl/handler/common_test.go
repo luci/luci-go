@@ -16,7 +16,6 @@ package handler
 
 import (
 	"context"
-	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -216,8 +215,8 @@ func TestEndRun(t *testing.T) {
 					postActions = append(postActions, act)
 				}
 			}
-			slices.SortFunc(postActions, func(a, b *run.OngoingLongOps_Op_ExecutePostActionPayload) int {
-				return strings.Compare(a.GetName(), b.GetName())
+			sort.Slice(postActions, func(i, j int) bool {
+				return strings.Compare(postActions[i].GetName(), postActions[j].GetName()) < 0
 			})
 
 			So(postActions, ShouldResembleProto, []*run.OngoingLongOps_Op_ExecutePostActionPayload{

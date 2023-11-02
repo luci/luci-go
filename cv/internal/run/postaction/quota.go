@@ -17,7 +17,6 @@ package postaction
 import (
 	"context"
 	"fmt"
-	"slices"
 	"sort"
 
 	"go.chromium.org/luci/common/errors"
@@ -87,15 +86,8 @@ func (exe *Executor) pickNextRunToStart(ctx context.Context) (*run.Run, error) {
 	sort.Sort(knownPendingRuns)
 	// Sort the candidates chronically from earliest to latest and return the
 	// earliest run that has not pending dep runs.
-	slices.SortFunc(candidates, func(a, b *run.Run) int {
-		switch {
-		case a.CreateTime.Before(b.CreateTime):
-			return -1
-		case a.CreateTime.Equal(b.CreateTime):
-			return 0
-		default:
-			return 1
-		}
+	sort.Slice(candidates, func(i, j int) bool {
+		return candidates[i].CreateTime.Before(candidates[j].CreateTime)
 	})
 	for _, candidate := range candidates {
 		switch hasNoPendingDepRun, err := hasNoPendingDepRun(ctx, candidate, knownPendingRuns); {

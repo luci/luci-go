@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"slices"
 	"testing"
 	"time"
 
@@ -198,9 +197,12 @@ func TestCreditQuotaOp(t *testing.T) {
 				}
 			}
 			So(datastore.Put(ctx, runs), ShouldBeNil)
-			earliestRun := slices.MinFunc(runs, func(a, b *run.Run) int {
-				return a.CreateTime.Compare(b.CreateTime)
-			})
+			var earliestRun *run.Run
+			for _, r := range runs {
+				if earliestRun == nil || r.CreateTime.Before(earliestRun.CreateTime) {
+					earliestRun = r
+				}
+			}
 			summary, err := executor.Do(ctx)
 			So(err, ShouldBeNil)
 			So(summary, ShouldEqual, fmt.Sprintf("notified next Run %q to start", earliestRun.ID))

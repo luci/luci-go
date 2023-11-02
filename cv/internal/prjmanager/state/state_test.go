@@ -17,7 +17,6 @@ package state
 import (
 	"context"
 	"fmt"
-	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -1332,13 +1331,12 @@ func TestOnTriggeringCLsCompleted(t *testing.T) {
 			return s1.PB.TriggeringCls[len(s1.PB.TriggeringCls)-1]
 		}
 		findTriggeringCL := func(s *State, clid int64) *prjpb.TriggeringCL {
-			idx := slices.IndexFunc(s.PB.TriggeringCls, func(tcl *prjpb.TriggeringCL) bool {
-				return tcl.GetClid() == clid
-			})
-			if idx == -1 {
-				return nil
+			for _, tcl := range s.PB.TriggeringCls {
+				if tcl.GetClid() == clid {
+					return tcl
+				}
 			}
-			return s.PB.TriggeringCls[idx]
+			return nil
 		}
 
 		Convey("noop if empty", func() {
