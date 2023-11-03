@@ -16,6 +16,7 @@ package ledcli
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"os"
 	"strings"
@@ -76,8 +77,10 @@ func (c *cmdLaunch) initFlags(opts cmdBaseOptions) {
 		 If "on", resultdb will be forcefully enabled.
 		 If "off", resultdb will be forcefully disabled.
 		 If unspecified, resultdb will be enabled if the original build had resultdb enabled.`))
-	c.Flags.BoolVar(&c.realBuild, "real-build", false,
-		"Launch a real Buildbucket build instead of a raw swarming task.")
+	c.Flags.BoolVar(&c.realBuild, "real-build", false, text.Doc(`
+		DEPRECATED: Launch a real Buildbucket build instead of a raw swarming task.
+		 If the job definition is for a real build, led will launch a real build regardless of this flag.
+		 If the job definition is for a raw swarming task but this flag is set, led launch will fail.`))
 	c.Flags.BoolVar(&c.boundToParent, "bound-to-parent", false, text.Doc(`
 		If the launched job is bound to its parent or not.
 		If true, the launched job CANNOT outlive its parent.
@@ -96,6 +99,20 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, _ auth
 	uid, err := ledcmd.GetUID(ctx, c.authenticator)
 	if err != nil {
 		return nil, err
+	}
+
+	switch {
+	case c.realBuild == inJob.GetBuildbucket().GetRealBuild():
+	case !c.realBuild && inJob.GetBuildbucket().GetRealBuild():
+		// Likely for `led get-* -real-build | led launch`.
+		// We should allow it and treat it as
+		// `led get-* -real-build | led launch -real-build`
+		logging.Infof(ctx, "Launching the led job as a real build")
+		c.realBuild = true
+	case c.realBuild && !inJob.GetBuildbucket().GetRealBuild():
+		// Likely for `led get-* | led launch -real-build`.
+		// Fail it.
+		return nil, errors.New("cannot launch a led real build from a legacy job definition")
 	}
 
 	opts := ledcmd.LaunchSwarmingOpts{
