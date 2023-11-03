@@ -17,14 +17,18 @@ package model
 import (
 	"context"
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
+
+	configpb "go.chromium.org/luci/swarming/proto/config"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestTaskRequest(t *testing.T) {
+func TestTaskRequestKey(t *testing.T) {
 	t.Parallel()
 
 	Convey("With datastore", t, func() {
@@ -56,5 +60,119 @@ func TestTaskRequest(t *testing.T) {
 			_, err := TaskRequestKey(ctx, "ff60b2ed0a4302311f")
 			So(err, ShouldErrLike, "value out of range")
 		})
+	})
+}
+
+func TestTaskRequest(t *testing.T) {
+	t.Parallel()
+
+	var testTime = time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
+
+	Convey("With datastore", t, func() {
+		ctx := memory.Use(context.Background())
+
+		taskSlice := func(val string, exp time.Time) TaskSlice {
+			return TaskSlice{
+				Properties: TaskProperties{
+					Idempotent: true,
+					Dimensions: TaskDimensions{
+						"d1": {"v1", "v2"},
+						"d2": {val},
+					},
+					ExecutionTimeoutSecs: 123,
+					GracePeriodSecs:      456,
+					IOTimeoutSecs:        789,
+					Command:              []string{"run", val},
+					RelativeCwd:          "./rel/cwd",
+					Env: Env{
+						"k1": "v1",
+						"k2": val,
+					},
+					EnvPrefixes: EnvPrefixes{
+						"p1": {"v1", "v2"},
+						"p2": {val},
+					},
+					Caches: []CacheEntry{
+						{Name: "n1", Path: "p1"},
+						{Name: "n2", Path: "p2"},
+					},
+					CASInputRoot: CASReference{
+						CASInstance: "cas-inst",
+						Digest: CASDigest{
+							Hash:      "cas-hash",
+							SizeBytes: 1234,
+						},
+					},
+					CIPDInput: CIPDInput{
+						Server: "server",
+						ClientPackage: CIPDPackage{
+							PackageName: "client-package",
+							Version:     "client-version",
+						},
+						Packages: []CIPDPackage{
+							{
+								PackageName: "pkg1",
+								Version:     "ver1",
+								Path:        "path1",
+							},
+							{
+								PackageName: "pkg2",
+								Version:     "ver2",
+								Path:        "path2",
+							},
+						},
+					},
+					Outputs:        []string{"o1", "o2"},
+					HasSecretBytes: true,
+					Containment: Containment{
+						LowerPriority:             true,
+						ContainmentType:           123,
+						LimitProcesses:            456,
+						LimitTotalCommittedMemory: 789,
+					},
+				},
+				ExpirationSecs:  int64(exp.Sub(testTime).Seconds()),
+				WaitForCapacity: true,
+			}
+		}
+
+		key, err := TaskRequestKey(ctx, "65aba3a3e6b99310")
+		So(err, ShouldBeNil)
+
+		fullyPopulated := TaskRequest{
+			Key:     key,
+			TxnUUID: "txn-uuid",
+			TaskSlices: []TaskSlice{
+				taskSlice("a", testTime.Add(10*time.Minute)),
+				taskSlice("b", testTime.Add(20*time.Minute)),
+			},
+			CreatedTS:            testTime,
+			ExpirationTS:         testTime.Add(20 * time.Minute),
+			Name:                 "name",
+			ParentTaskID:         "parent-task-id",
+			Authenticated:        "authenticated",
+			User:                 "user",
+			Tags:                 []string{"tag1", "tag2"},
+			ManualTags:           []string{"tag1"},
+			ServiceAccount:       "service-account",
+			Realm:                "realm",
+			RealmsEnabled:        true,
+			SchedulingAlgorithm:  configpb.Pool_SCHEDULING_ALGORITHM_FIFO,
+			Priority:             123,
+			BotPingToleranceSecs: 456,
+			RBEInstance:          "rbe-instance",
+			PubSubTopic:          "pubsub-topic",
+			PubSubAuthToken:      "pubsub-auth-token",
+			PubSubUserData:       "pubsub-user-data",
+			ResultDBUpdateToken:  "resultdb-update-token",
+			ResultDB:             ResultDBConfig{Enable: true},
+			HasBuildTask:         true,
+		}
+
+		// Can round-trip.
+		So(datastore.Put(ctx, &fullyPopulated), ShouldBeNil)
+		loaded := TaskRequest{Key: key}
+		So(datastore.Get(ctx, &loaded), ShouldBeNil)
+		So(loaded, ShouldResemble, fullyPopulated)
 	})
 }
