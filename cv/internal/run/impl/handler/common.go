@@ -81,7 +81,7 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status,
 			// Credit back run quota when the run ends.
 			switch quotaOp, err := impl.QM.CreditRunQuota(ctx, rs); {
 			case err == nil && quotaOp != nil:
-				logging.Debugf(ctx, "Run quota credited back to %s; new balance: %d", rs.Run.Owner.Email(), quotaOp.GetNewBalance())
+				logging.Debugf(ctx, "Run quota credited back to %s; new balance: %d", rs.Run.CreatedBy.Email(), quotaOp.GetNewBalance())
 			case err == quota.ErrQuotaApply:
 				return errors.Annotate(err, "QM.CreditRunQuota: unexpected quotaOp Status %s", quotaOp.GetStatus()).Tag(transient.Tag).Err()
 			case err != nil:

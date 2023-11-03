@@ -162,7 +162,7 @@ func TestManager(t *testing.T) {
 				Run: run.Run{
 					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
 					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-					Owner:         makeIdentity(tEmail),
+					CreatedBy:     makeIdentity(tEmail),
 				},
 			}
 
@@ -184,7 +184,7 @@ func TestManager(t *testing.T) {
 				Run: run.Run{
 					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
 					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-					Owner:         makeIdentity(tEmail),
+					CreatedBy:     makeIdentity(tEmail),
 				},
 			}
 
@@ -206,7 +206,7 @@ func TestManager(t *testing.T) {
 				Run: run.Run{
 					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
 					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-					Owner:         makeIdentity(tEmail),
+					CreatedBy:     makeIdentity(tEmail),
 				},
 			}
 
@@ -227,7 +227,7 @@ func TestManager(t *testing.T) {
 				Run: run.Run{
 					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
 					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-					Owner:         makeIdentity(tEmail),
+					CreatedBy:     makeIdentity(tEmail),
 				},
 			}
 
@@ -248,7 +248,7 @@ func TestManager(t *testing.T) {
 				Run: run.Run{
 					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
 					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-					Owner:         makeIdentity(tEmail),
+					CreatedBy:     makeIdentity(tEmail),
 				},
 			}
 
@@ -274,7 +274,7 @@ func TestManager(t *testing.T) {
 				Run: run.Run{
 					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
 					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-					Owner:         makeIdentity(tEmail),
+					CreatedBy:     makeIdentity(tEmail),
 				},
 			}
 
@@ -300,7 +300,7 @@ func TestManager(t *testing.T) {
 				Run: run.Run{
 					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
 					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-					Owner:         makeIdentity(tEmail),
+					CreatedBy:     makeIdentity(tEmail),
 				},
 			}
 
@@ -334,7 +334,7 @@ func TestManager(t *testing.T) {
 				Run: run.Run{
 					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
 					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-					Owner:         makeIdentity(tEmail),
+					CreatedBy:     makeIdentity(tEmail),
 				},
 			}
 

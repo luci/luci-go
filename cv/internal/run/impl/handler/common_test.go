@@ -574,7 +574,7 @@ func (qm *quotaManagerMock) RunQuotaAccountID(r *run.Run) *quotapb.AccountID {
 		AppId:        "cv",
 		Realm:        r.ID.LUCIProject(),
 		Namespace:    r.ConfigGroupID.Name(),
-		Name:         r.Owner.Email(),
+		Name:         r.CreatedBy.Email(),
 		ResourceType: "runs",
 	}
 }

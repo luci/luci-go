@@ -127,15 +127,15 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		return &Result{State: rs}, nil
 	}
 
-	// Run quota should be debited from the owner before the run is started.
+	// Run quota should be debited from the creator before the run is started.
 	// When run quota isn't available, the run is left in the pending state.
-	pendingMsg := fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.", rs.Run.Owner.Email())
+	pendingMsg := fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.", rs.Run.CreatedBy.Email())
 	switch quotaOp, err := impl.QM.DebitRunQuota(ctx, rs); {
 	case err == nil && quotaOp != nil:
-		logging.Debugf(ctx, "Run quota debited from %s; new balance: %d", rs.Run.Owner.Email(), quotaOp.GetNewBalance())
+		logging.Debugf(ctx, "Run quota debited from %s; new balance: %d", rs.Run.CreatedBy.Email(), quotaOp.GetNewBalance())
 	case err == quota.ErrQuotaApply && quotaOp.GetStatus() == quotapb.OpResult_ERR_UNDERFLOW:
 		// run quota isn't currently available for the user; leave the run in pending.
-		logging.Debugf(ctx, "Run quota underflow for %s; leaving the run %s pending", rs.Run.Owner.Email(), rs.Run.ID)
+		logging.Debugf(ctx, "Run quota underflow for %s; leaving the run %s pending", rs.Run.CreatedBy.Email(), rs.Run.ID)
 
 		// Post pending message to all gerrit CLs for this run if not enqueued already.
 		shouldEnqueue := true

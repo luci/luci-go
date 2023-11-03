@@ -82,7 +82,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			Run: &run.Run{
 				ID:            common.MakeRunID(lProject, clock.Now(ctx).Add(-1*time.Hour), 1, []byte("deadbeef")),
 				Status:        run.Status_SUCCEEDED,
-				Owner:         userIdentity,
+				CreatedBy:     userIdentity,
 				Mode:          run.FullRun,
 				ConfigGroupID: configGroupID,
 			},
@@ -101,7 +101,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, runCreateTime, 1, []byte("deadbeef")),
 				Status:        run.Status_PENDING,
-				Owner:         userIdentity,
+				CreatedBy:     userIdentity,
 				Mode:          run.FullRun,
 				CreateTime:    runCreateTime,
 				ConfigGroupID: configGroupID,
@@ -116,7 +116,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID("another-proj", runCreateTime, 1, []byte("deadbeef")),
 				Status:        run.Status_PENDING,
-				Owner:         userIdentity,
+				CreatedBy:     userIdentity,
 				Mode:          run.FullRun,
 				CreateTime:    runCreateTime,
 				ConfigGroupID: configGroupID,
@@ -131,7 +131,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, runCreateTime, 1, []byte("deadbeef")),
 				Status:        run.Status_PENDING,
-				Owner:         userIdentity,
+				CreatedBy:     userIdentity,
 				Mode:          run.FullRun,
 				CreateTime:    runCreateTime,
 				ConfigGroupID: prjcfg.MakeConfigGroupID("another-config-group", "hash"),
@@ -142,11 +142,11 @@ func TestCreditQuotaOp(t *testing.T) {
 			So(summary, ShouldBeEmpty)
 			So(rm.notifyStarted, ShouldBeEmpty)
 		})
-		Convey("do not notify pending run from different owner", func() {
+		Convey("do not notify pending run from different triggerer", func() {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, runCreateTime, 1, []byte("deadbeef")),
 				Status:        run.Status_PENDING,
-				Owner:         identity.Identity(fmt.Sprintf("%s:%s", identity.User, "another-user@example.com")),
+				CreatedBy:     identity.Identity(fmt.Sprintf("%s:%s", identity.User, "another-user@example.com")),
 				Mode:          run.FullRun,
 				CreateTime:    runCreateTime,
 				ConfigGroupID: configGroupID,
@@ -161,7 +161,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			depRun := &run.Run{
 				ID:            common.MakeRunID(lProject, runCreateTime.Add(-1*time.Minute), 1, []byte("deadbeef")),
 				Status:        run.Status_PENDING,
-				Owner:         identity.Identity(fmt.Sprintf("%s:%s", identity.User, "another-user@example.com")),
+				CreatedBy:     identity.Identity(fmt.Sprintf("%s:%s", identity.User, "another-user@example.com")),
 				Mode:          run.FullRun,
 				CreateTime:    runCreateTime,
 				ConfigGroupID: configGroupID,
@@ -169,7 +169,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, runCreateTime, 1, []byte("deadbeef")),
 				Status:        run.Status_PENDING,
-				Owner:         userIdentity,
+				CreatedBy:     userIdentity,
 				Mode:          run.FullRun,
 				CreateTime:    runCreateTime,
 				ConfigGroupID: configGroupID,
@@ -190,7 +190,7 @@ func TestCreditQuotaOp(t *testing.T) {
 				runs[i] = &run.Run{
 					ID:            common.MakeRunID(lProject, runCreateTime, 1, []byte("deadbeef")),
 					Status:        run.Status_PENDING,
-					Owner:         userIdentity,
+					CreatedBy:     userIdentity,
 					Mode:          run.FullRun,
 					CreateTime:    runCreateTime,
 					ConfigGroupID: configGroupID,
@@ -227,7 +227,7 @@ func (qm *mockQM) RunQuotaAccountID(r *run.Run) *quotapb.AccountID {
 		AppId:        "cv",
 		Realm:        r.ID.LUCIProject(),
 		Namespace:    r.ConfigGroupID.Name(),
-		Name:         r.Owner.Email(),
+		Name:         r.CreatedBy.Email(),
 		ResourceType: "mock-runs",
 	}
 }
