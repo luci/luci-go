@@ -109,13 +109,16 @@ func (qm *Manager) runQuotaOp(ctx context.Context, rs *state.RunState, requestID
 		return nil, err
 	}
 
+	// TODO(crbug/1466346): When policy changes, server/quota should replenish
+	// the account with the difference in balance. Say, for example, if account
+	// Foo has a balance of 3 and a limit of 5. If Foo's policy is updated with
+	// a limit of 10, Foo's balance should be updated to 8.
 	quotaOp := []*quotapb.Op{
 		{
 			AccountId:  qm.RunQuotaAccountID(&rs.Run),
 			PolicyId:   policyID,
 			RelativeTo: quotapb.Op_CURRENT_BALANCE,
 			Delta:      delta,
-			Options:    uint32(quotapb.Op_IGNORE_POLICY_BOUNDS),
 		},
 	}
 

@@ -32,6 +32,9 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/quota"
 	"go.chromium.org/luci/server/quota/quotapb"
 	_ "go.chromium.org/luci/server/quota/quotatestmonkeypatch"
 	"go.chromium.org/luci/server/redisconn"
@@ -258,8 +261,6 @@ func TestManager(t *testing.T) {
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
 			})
-
-			cg.UserLimits = nil
 		})
 
 		Convey("CreditRunQuota() credits quota for a given run state", func() {
@@ -284,8 +285,6 @@ func TestManager(t *testing.T) {
 				NewBalance:      5,
 				PreviousBalance: 4, // credit reapplies debit beforehand.
 			})
-
-			cg.UserLimits = nil
 		})
 
 		Convey("runQuotaOp() updates the same account on multiple ops", func() {
@@ -304,22 +303,111 @@ func TestManager(t *testing.T) {
 				},
 			}
 
-			res, err := qm.runQuotaOp(ctx, rs, "foo1", 5)
+			res, err := qm.runQuotaOp(ctx, rs, "foo1", -1)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
-				NewBalance:    10,
+				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
 			})
 
-			res, err = qm.runQuotaOp(ctx, rs, "foo2", 5)
+			res, err = qm.runQuotaOp(ctx, rs, "foo2", -2)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
-				NewBalance:      15,
-				PreviousBalance: 10,
+				NewBalance:      2,
+				PreviousBalance: 4,
 				AccountStatus:   quotapb.OpResult_ALREADY_EXISTS,
 			})
+		})
 
-			cg.UserLimits = nil
+		Convey("runQuotaOp() bound checks", func() {
+			cg.UserLimits = append(cg.UserLimits,
+				genUserLimit("googlers-limit", 1, []string{"group:googlers"}),
+			)
+			prjcfgtest.Update(ctx, lProject, cfg)
+
+			rs := &state.RunState{
+				Run: run.Run{
+					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+					CreatedBy:     makeIdentity(tEmail),
+				},
+			}
+
+			Convey("quota underflow", func() {
+				res, err := qm.runQuotaOp(ctx, rs, "", -2)
+				So(err, ShouldEqual, quota.ErrQuotaApply)
+				So(res, ShouldResembleProto, &quotapb.OpResult{
+					AccountStatus: quotapb.OpResult_CREATED,
+					Status:        quotapb.OpResult_ERR_UNDERFLOW,
+				})
+			})
+
+			Convey("quota overflow", func() {
+				// overflow doesn't err but gets capped.
+				res, err := qm.runQuotaOp(ctx, rs, "", 10)
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, &quotapb.OpResult{
+					AccountStatus: quotapb.OpResult_CREATED,
+					NewBalance:    1,
+				})
+			})
+		})
+
+		Convey("runQuotaOp() on policy change", func() {
+			cg.UserLimits = append(cg.UserLimits,
+				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
+				genUserLimit("googlers-limit", 5, []string{"group:googlers"}),
+				genUserLimit("partners-limit", 2, []string{"group:partners"}),
+			)
+			prjcfgtest.Update(ctx, lProject, cfg)
+
+			rs := &state.RunState{
+				Run: run.Run{
+					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+					CreatedBy:     makeIdentity(tEmail),
+				},
+			}
+
+			res, err := qm.runQuotaOp(ctx, rs, "", -1)
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &quotapb.OpResult{
+				NewBalance:    4,
+				AccountStatus: quotapb.OpResult_CREATED,
+			})
+
+			Convey("decrease in quota allowance", func() {
+				// Update policy
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity:       makeIdentity(tEmail),
+					IdentityGroups: []string{"partners"},
+				})
+
+				res, err = qm.runQuotaOp(ctx, rs, "", -2)
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, &quotapb.OpResult{
+					NewBalance:      2,
+					PreviousBalance: 4,
+					AccountStatus:   quotapb.OpResult_ALREADY_EXISTS,
+				})
+			})
+
+			Convey("increase in quota allowance", func() {
+				// Update policy
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity:       makeIdentity(tEmail),
+					IdentityGroups: []string{"chromies"},
+				})
+
+				res, err = qm.runQuotaOp(ctx, rs, "", 2)
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, &quotapb.OpResult{
+					NewBalance:      6,
+					PreviousBalance: 4,
+					AccountStatus:   quotapb.OpResult_ALREADY_EXISTS,
+				})
+			})
+
 		})
 
 		Convey("runQuotaOp() is idempotent", func() {
@@ -338,37 +426,35 @@ func TestManager(t *testing.T) {
 				},
 			}
 
-			res, err := qm.runQuotaOp(ctx, rs, "foo", 5)
+			res, err := qm.runQuotaOp(ctx, rs, "foo", -1)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
-				NewBalance:    10,
+				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
 			})
 
-			res, err = qm.runQuotaOp(ctx, rs, "foo", 5)
+			res, err = qm.runQuotaOp(ctx, rs, "foo", -1)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
-				NewBalance:    10,
+				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
 			})
 
-			res, err = qm.runQuotaOp(ctx, rs, "foo2", 5)
+			res, err = qm.runQuotaOp(ctx, rs, "foo2", -2)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
-				NewBalance:      15,
-				PreviousBalance: 10,
+				NewBalance:      2,
+				PreviousBalance: 4,
 				AccountStatus:   quotapb.OpResult_ALREADY_EXISTS,
 			})
 
-			res, err = qm.runQuotaOp(ctx, rs, "foo2", 5)
+			res, err = qm.runQuotaOp(ctx, rs, "foo2", -2)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
-				NewBalance:      15,
-				PreviousBalance: 10,
+				NewBalance:      2,
+				PreviousBalance: 4,
 				AccountStatus:   quotapb.OpResult_ALREADY_EXISTS,
 			})
-
-			cg.UserLimits = nil
 		})
 	})
 }
