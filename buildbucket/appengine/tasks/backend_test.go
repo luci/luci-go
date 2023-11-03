@@ -36,6 +36,8 @@ import (
 
 	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -398,6 +400,8 @@ func TestCreateBackendTask(t *testing.T) {
 		}
 		ctx = secrets.Use(ctx, store)
 		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
+		ctx = memlogger.Use(ctx)
+		logs := logging.Get(ctx).(*memlogger.MemLogger)
 
 		backendSetting := []*pb.BackendSetting{}
 		backendSetting = append(backendSetting, &pb.BackendSetting{
@@ -555,6 +559,18 @@ func TestCreateBackendTask(t *testing.T) {
 			So(err, ShouldErrLike, "failed to create a backend task")
 			So(expectedBuild.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 			So(expectedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "Backend task creation failure.")
+		})
+
+		Convey("bail out if the build has a task associated", func() {
+			infra.Proto.Backend.Task.Id.Id = "task"
+			So(datastore.Put(ctx, infra), ShouldBeNil)
+			err = CreateBackendTask(ctx, 1, "request_id")
+			So(err, ShouldBeNil)
+			expectedBuildInfra := &model.BuildInfra{Build: key}
+			So(datastore.Get(ctx, expectedBuildInfra), ShouldBeNil)
+			So(expectedBuildInfra.Proto.Backend.Task.Id.Id, ShouldEqual, "task")
+			So(logs, memlogger.ShouldHaveLog,
+				logging.Info, "build 1 has associated with task")
 		})
 	})
 }

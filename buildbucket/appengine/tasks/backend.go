@@ -286,6 +286,16 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 	bld := entities[0].(*model.Build)
 	infra := entities[1].(*model.BuildInfra)
 
+	if infra.Proto.GetBackend().GetTask().GetId().GetId() != "" {
+		// This task is likely a retry.
+		// It could happen if the previous RunTask attempt(s) failed, but a backend
+		// task was actually created and associated with the build in the backup
+		// flow.
+		// Bail out.
+		logging.Infof(ctx, "build %d has associated with task %q", buildID, infra.Proto.Backend.Task.Id)
+		return nil
+	}
+
 	globalCfg, err := config.GetSettingsCfg(ctx)
 	if err != nil {
 		return errors.Annotate(err, "could not get global settings config").Err()
