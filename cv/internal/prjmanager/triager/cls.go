@@ -29,15 +29,17 @@ func triageCLs(ctx context.Context, c *prjpb.Component, pm pmState) map[int64]*c
 	cls := make(map[int64]*clInfo, len(c.GetClids()))
 	for _, clid := range c.GetClids() {
 		cls[clid] = &clInfo{
-			pcl:          pm.MustPCL(clid),
-			purgingCL:    pm.PurgingCL(clid),    // may be nil
-			triggeringCL: pm.TriggeringCL(clid), // may be nil
+			pcl:              pm.MustPCL(clid),
+			purgingCL:        pm.PurgingCL(clid),        // may be nil
+			triggeringCLDeps: pm.TriggeringCLDeps(clid), // may be nil
+			runCountByMode:   make(map[run.Mode]int),
 		}
 	}
 	for index, r := range c.GetPruns() {
 		for _, clid := range r.GetClids() {
 			info := cls[clid]
 			info.runIndexes = append(info.runIndexes, int32(index))
+			info.runCountByMode[run.Mode(r.GetMode())]++
 		}
 	}
 	for _, info := range cls {
@@ -51,10 +53,14 @@ type clInfo struct {
 	pcl *prjpb.PCL
 	// runIndexes are indexes of Component.PRuns which references this CL.
 	runIndexes []int32
+	// runCountByMode is # of Component.PRuns, referencing this CL,
+	// by the Run mode.
+	runCountByMode map[run.Mode]int
+
 	// purgingCL is set if CL is already being purged.
 	purgingCL *prjpb.PurgingCL
-	// triggeringCL is set if CL is being triggered.
-	triggeringCL *prjpb.TriggeringCL
+	// triggeringCLDeps is set if the deps of the CL is being triggered.
+	triggeringCLDeps *prjpb.TriggeringCLDeps
 
 	triagedCL
 }
@@ -340,4 +346,8 @@ func (info *clInfo) triageNewTriggers(ctx context.Context, pm pmState, triageCQT
 			},
 		})
 	}
+}
+
+func (info *clInfo) hasIncompleteRun(m run.Mode) bool {
+	return info.runCountByMode[m] > 0
 }

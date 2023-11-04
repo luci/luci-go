@@ -210,50 +210,39 @@ func TestTriage(t *testing.T) {
 				pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32, pcl33}
 				var res itriager.Result
 
-				Convey("no deps have been triaged", func() {
+				Convey("no deps have CQ+2", func() {
 					oldC := &prjpb.Component{Clids: []int64{cl31, cl32, cl33}, TriageRequired: true}
 					res = mustTriage(oldC)
-					So(res.CLsToTrigger, ShouldResembleProto, []*prjpb.TriggeringCL{
-						&prjpb.TriggeringCL{
-							Clid:       cl31,
+					So(res.CLsToTriggerDeps, ShouldResembleProto, []*prjpb.TriggeringCLDeps{
+						&prjpb.TriggeringCLDeps{
 							OriginClid: cl33,
-							Trigger:    pcl33.Triggers.GetCqVoteTrigger(),
-						},
-						&prjpb.TriggeringCL{
-							Clid:       cl32,
-							OriginClid: cl33,
+							DepClids:   []int64{cl31, cl32},
 							Trigger:    pcl33.Triggers.GetCqVoteTrigger(),
 						},
 					})
 				})
 
-				Convey("a dep has been triaged", func() {
-					pm.pb.TriggeringCls, _ = pm.pb.COWTriggeringCLs(nil, []*prjpb.TriggeringCL{
-						&prjpb.TriggeringCL{
-							Clid:       cl32,
-							OriginClid: cl33,
-							Trigger:    pcl33.Triggers.GetCqVoteTrigger(),
+				Convey("a dep has TriggeringCLDeps already", func() {
+					pm.pb.TriggeringClDeps, _ = pm.pb.COWTriggeringCLDeps(nil, []*prjpb.TriggeringCLDeps{
+						&prjpb.TriggeringCLDeps{
+							OriginClid: cl32,
+							DepClids:   []int64{cl31},
+							Trigger:    pcl32.Triggers.GetCqVoteTrigger(),
 						},
 					})
 					oldC := &prjpb.Component{Clids: []int64{cl31, cl32, cl33}, TriageRequired: true}
 					res = mustTriage(oldC)
-					// should skip the dep that already has an inflight request.
-					So(res.CLsToTrigger, ShouldResembleProto, []*prjpb.TriggeringCL{
-						&prjpb.TriggeringCL{
-							Clid:       cl31,
-							OriginClid: cl33,
-							Trigger:    pcl33.Triggers.GetCqVoteTrigger(),
-						},
-					})
+					// should skip triaging cl33, because its dep already has
+					// an inflight TriggeringCLDeps.
+					So(res.CLsToTriggerDeps, ShouldBeNil)
 				})
-
 				// No triage required, as the Component will be waken up
 				// by the vote completion event.
 				So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
 				So(res.NewValue.GetDecisionTime(), ShouldBeNil)
 				// No runs should be created.
 				// No CLs should be purged.
-				// CL31 and CL32 should be in CLsToTrigger.
+				// CL31 and CL32 should be in CLsToTriggerDeps.
 				So(res.RunsToCreate, ShouldBeEmpty)
 				So(res.CLsToPurge, ShouldBeEmpty)
 			})
@@ -278,14 +267,14 @@ func TestTriage(t *testing.T) {
 				So(res.RunsToCreate[0].InputCLs, ShouldHaveLength, 1)
 				So(res.RunsToCreate[0].InputCLs[0].ID, ShouldEqual, cl31)
 
-				// CL32 should be put in CLsToTrigger, and CLsToPurge should be
-				// empty
+				// a single TriggeringCLDeps{} should be created for CL34 to
+				// trigger CL32.
 				So(res.CLsToPurge, ShouldBeEmpty)
-				So(res.CLsToTrigger, ShouldResembleProto, []*prjpb.TriggeringCL{
-					&prjpb.TriggeringCL{
-						Clid:       cl32,
+				So(res.CLsToTriggerDeps, ShouldResembleProto, []*prjpb.TriggeringCLDeps{
+					&prjpb.TriggeringCLDeps{
 						OriginClid: cl34,
-						Trigger:    pcl33.Triggers.GetCqVoteTrigger(),
+						DepClids:   []int64{cl32},
+						Trigger:    pcl34.Triggers.GetCqVoteTrigger(),
 					},
 				})
 			})

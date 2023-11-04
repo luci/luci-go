@@ -49,9 +49,9 @@ func (s *simplePMState) PurgingCL(clid int64) *prjpb.PurgingCL {
 	return nil
 }
 
-func (s *simplePMState) TriggeringCL(clid int64) *prjpb.TriggeringCL {
-	for _, p := range s.pb.GetTriggeringCls() {
-		if p.GetClid() == clid {
+func (s *simplePMState) TriggeringCLDeps(clid int64) *prjpb.TriggeringCLDeps {
+	for _, p := range s.pb.GetTriggeringClDeps() {
+		if p.GetOriginClid() == clid {
 			return p
 		}
 	}

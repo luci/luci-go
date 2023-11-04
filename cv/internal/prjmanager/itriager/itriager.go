@@ -77,6 +77,8 @@ type Result struct {
 
 	// CLsToTrigger are CLs that shoul be triggered with CQ votes.
 	CLsToTrigger []*prjpb.TriggeringCL
+	// CLsToTriggerDeps are CLs to propagate the CQ votes to the deps of.
+	CLsToTriggerDeps []*prjpb.TriggeringCLDeps
 }
 
 // PMState provides limited access to resources of Project Manager (PM) state for
@@ -99,10 +101,10 @@ type PMState interface {
 	// (from the view point of PM) LUCI project config version.
 	ConfigGroup(index int32) *prjcfg.ConfigGroup
 
-	// TriggeringCL provides access to CLs being triggered.
+	// TriggeringCLDeps provides access to CLs being triggered.
 	//
 	// Returns nil if given CL isn't being triggered.
-	TriggeringCL(clid int64) *prjpb.TriggeringCL
+	TriggeringCLDeps(clid int64) *prjpb.TriggeringCLDeps
 }
 
 // ErrOutdatedPMState signals that PMState is out dated.

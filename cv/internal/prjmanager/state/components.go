@@ -465,17 +465,17 @@ func (s *State) makeTriageSupporter(ctx context.Context) (*triageSupporter, erro
 	for _, p := range s.PB.GetPurgingCls() {
 		purging[p.GetClid()] = p
 	}
-	triggering := make(map[int64]*prjpb.TriggeringCL, len(s.PB.GetTriggeringCls()))
-	for _, t := range s.PB.GetTriggeringCls() {
-		triggering[t.GetClid()] = t
+	triggering := make(map[int64]*prjpb.TriggeringCLDeps, len(s.PB.GetTriggeringClDeps()))
+	for _, t := range s.PB.GetTriggeringClDeps() {
+		triggering[t.GetOriginClid()] = t
 	}
 
 	return &triageSupporter{
-		pcls:         s.PB.GetPcls(),
-		pclIndex:     s.pclIndex,
-		purging:      purging,
-		triggering:   triggering,
-		configGroups: s.configGroups,
+		pcls:             s.PB.GetPcls(),
+		pclIndex:         s.pclIndex,
+		purging:          purging,
+		triggeringCLDeps: triggering,
+		configGroups:     s.configGroups,
 	}, nil
 }
 
@@ -483,11 +483,11 @@ func (s *State) makeTriageSupporter(ctx context.Context) (*triageSupporter, erro
 //
 // Implements itriager.PMState.
 type triageSupporter struct {
-	pcls         []*prjpb.PCL
-	pclIndex     map[common.CLID]int
-	purging      map[int64]*prjpb.PurgingCL
-	triggering   map[int64]*prjpb.TriggeringCL
-	configGroups []*prjcfg.ConfigGroup
+	pcls             []*prjpb.PCL
+	pclIndex         map[common.CLID]int
+	purging          map[int64]*prjpb.PurgingCL
+	triggeringCLDeps map[int64]*prjpb.TriggeringCLDeps
+	configGroups     []*prjcfg.ConfigGroup
 }
 
 var _ itriager.PMState = (*triageSupporter)(nil)
@@ -508,8 +508,8 @@ func (a *triageSupporter) ConfigGroup(index int32) *prjcfg.ConfigGroup {
 	return a.configGroups[index]
 }
 
-func (a *triageSupporter) TriggeringCL(clid int64) *prjpb.TriggeringCL {
-	return a.triggering[clid]
+func (a *triageSupporter) TriggeringCLDeps(clid int64) *prjpb.TriggeringCLDeps {
+	return a.triggeringCLDeps[clid]
 }
 
 func markForTriage(in []*prjpb.Component) []*prjpb.Component {

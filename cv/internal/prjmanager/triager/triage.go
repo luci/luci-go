@@ -21,8 +21,6 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/common/errors"
-
 	"go.chromium.org/luci/cv/internal/prjmanager/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
@@ -43,12 +41,9 @@ func Triage(ctx context.Context, c *prjpb.Component, s itriager.PMState) (itriag
 		return res, err
 	}
 	res.CLsToPurge, nextPurge = stagePurges(ctx, cls, pm)
-	res.CLsToTrigger, err = stageTriggerDeps(ctx, cls, pm)
-	if err != nil {
-		return res, errors.Annotate(err, "stageTriggerDeps").Err()
-	}
+	res.CLsToTriggerDeps = stageTriggerCLDeps(ctx, cls)
 
-	if len(res.RunsToCreate) > 0 || len(res.CLsToPurge) > 0 || len(res.CLsToTrigger) > 0 {
+	if len(res.RunsToCreate) > 0 || len(res.CLsToPurge) > 0 || len(res.CLsToTriggerDeps) > 0 {
 		res.NewValue = c.CloneShallow()
 		res.NewValue.TriageRequired = false
 		// Wait for any of Run creation, CL purging, or CL triggering to finish,

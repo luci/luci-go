@@ -68,7 +68,7 @@ func shouldResembleTriagedCL(actual any, expected ...any) string {
 		ShouldResembleProto(a.pcl, b.pcl),
 		ShouldResembleProto(a.purgingCL, b.purgingCL),
 		ShouldResembleProto(a.purgeReasons, b.purgeReasons),
-		ShouldResembleProto(a.triggeringCL, b.triggeringCL),
+		ShouldResembleProto(a.triggeringCLDeps, b.triggeringCLDeps),
 	} {
 		if err != "" {
 			buf.WriteRune(' ')
