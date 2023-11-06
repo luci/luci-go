@@ -45,8 +45,8 @@ func findSiteRoot(p string) string {
 		if isSiteRoot(p) {
 			return p
 		}
-		// Dir returns "/" (or C:\\) when it encounters the root directory. It is
-		// the only case when Dir(...) return value ends with separator.
+		// Dir returns "/" (or C:\\) when it encounters the root directory. This is
+		// the only case when the return value of Dir(...) ends with separator.
 		parent := filepath.Dir(p)
 		if parent[len(parent)-1] == filepath.Separator {
 			// It is possible disk root has .cipd directory, check it.
