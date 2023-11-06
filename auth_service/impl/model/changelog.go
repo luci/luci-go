@@ -17,7 +17,6 @@ package model
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -452,47 +451,27 @@ func diffLists(old, new []string) ([]string, []string) {
 	return newss.Difference(oldss).ToSortedSlice(), oldss.Difference(newss).ToSortedSlice()
 }
 
-func makeChange(ctx context.Context, ct ChangeType, target string, authDBRev int64, class string, kwargs ...string) *AuthDBChange {
+// Populates the fields common to all AuthDBChanges; returns the populated AuthDBChange for convenience.
+func populateCommonFields(ctx context.Context, ct ChangeType, target string, authDBRev int64, class string, a *AuthDBChange) *AuthDBChange {
 	var ancestor *datastore.Key
 	if authDBRev != 0 {
 		ancestor = ChangeLogRevisionKey(ctx, authDBRev)
 	} else {
 		ancestor = ChangeLogRootKey(ctx)
 	}
-	a := &AuthDBChange{
-		Kind:       "AuthDBChange",
-		ID:         fmt.Sprintf("%s!%d", target, ct),
-		Parent:     ancestor,
-		Class:      []string{"AuthDBChange", class},
-		ChangeType: ct,
-		Target:     target,
-		AuthDBRev:  authDBRev,
-		Who:        string(auth.CurrentIdentity(ctx)),
-		When:       clock.Now(ctx).UTC(),
-	}
 
-	jsonMap := make(map[string]interface{})
-
-	for _, kwarg := range kwargs {
-		k, v, ok := strings.Cut(kwarg, "=")
-		if !ok {
-			logging.Warningf(ctx, "kwarg has incorrect format: %s, should be k=v, where k is a string, v can be any value", kwarg)
-		}
-		jsonMap[k] = v
-	}
-	b, err := json.Marshal(jsonMap)
-	if err != nil {
-		logging.Errorf(ctx, "failed trying to marshal json map for AuthChange: %s", err.Error())
-	}
-	if err = json.Unmarshal(b, a); err != nil {
-		logging.Errorf(ctx, "failed trying to unmarshal json for AuthChange: %s", err.Error())
-	}
+	// Set fields common to all changes.
+	a.Parent = ancestor
+	a.Kind = "AuthDBChange"
+	a.ID = fmt.Sprintf("%s!%d", target, ct)
+	a.Class = []string{"AuthDBChange", class}
+	a.ChangeType = ct
+	a.Target = target
+	a.AuthDBRev = authDBRev
+	a.Who = string(auth.CurrentIdentity(ctx))
+	a.When = clock.Now(ctx).UTC()
 
 	return a
-}
-
-func kvPair(k string, v any) string {
-	return fmt.Sprintf("%s=%v", k, v)
 }
 
 func diffGroups(ctx context.Context, target string, old, new datastore.PropertyMap) ([]*AuthDBChange, error) {
@@ -502,20 +481,20 @@ func diffGroups(ctx context.Context, target string, old, new datastore.PropertyM
 
 	if getBoolProp(new, "auth_db_deleted") {
 		if mems := getStringSliceProp(new, "members"); mems != nil {
-			changes = append(changes, makeChange(ctx, ChangeGroupMembersRemoved, target, authDBRev, class, kvPair("members", mems)))
+			changes = append(changes, populateCommonFields(ctx, ChangeGroupMembersRemoved, target, authDBRev, class, &AuthDBChange{Members: mems}))
 		}
 		if globs := getStringSliceProp(new, "globs"); globs != nil {
-			changes = append(changes, makeChange(ctx, ChangeGroupGlobsRemoved, target, authDBRev, class, kvPair("globs", globs)))
+			changes = append(changes, populateCommonFields(ctx, ChangeGroupGlobsRemoved, target, authDBRev, class, &AuthDBChange{Globs: globs}))
 		}
 		if nested := getStringSliceProp(new, "nested"); nested != nil {
-			changes = append(changes, makeChange(ctx, ChangeGroupNestedRemoved, target, authDBRev, class, kvPair("nested", nested)))
+			changes = append(changes, populateCommonFields(ctx, ChangeGroupNestedRemoved, target, authDBRev, class, &AuthDBChange{Nested: nested}))
 		}
 		desc := getDescription(new)
 		owners := AdminGroup
 		if getProp(new, "owners") != nil {
 			owners = getStringProp(new, "owners")
 		}
-		changes = append(changes, makeChange(ctx, ChangeGroupDeleted, target, authDBRev, class, kvPair("old_description", desc), kvPair("owners", owners)))
+		changes = append(changes, populateCommonFields(ctx, ChangeGroupDeleted, target, authDBRev, class, &AuthDBChange{OldDescription: desc, Owners: owners}))
 		return changes, nil
 	}
 
@@ -526,21 +505,21 @@ func diffGroups(ctx context.Context, target string, old, new datastore.PropertyM
 			owners = getStringProp(new, "owners")
 		}
 
-		changes = append(changes, makeChange(ctx, ChangeGroupCreated, target, authDBRev, class, kvPair("description", desc), kvPair("owners", owners)))
+		changes = append(changes, populateCommonFields(ctx, ChangeGroupCreated, target, authDBRev, class, &AuthDBChange{Description: desc, Owners: owners}))
 		if mems := getStringSliceProp(new, "members"); mems != nil {
-			changes = append(changes, makeChange(ctx, ChangeGroupMembersAdded, target, authDBRev, class, kvPair("members", mems)))
+			changes = append(changes, populateCommonFields(ctx, ChangeGroupMembersAdded, target, authDBRev, class, &AuthDBChange{Members: mems}))
 		}
 		if globs := getStringSliceProp(new, "globs"); globs != nil {
-			changes = append(changes, makeChange(ctx, ChangeGroupGlobsAdded, target, authDBRev, class, kvPair("globs", globs)))
+			changes = append(changes, populateCommonFields(ctx, ChangeGroupGlobsAdded, target, authDBRev, class, &AuthDBChange{Globs: globs}))
 		}
 		if nested := getStringSliceProp(new, "nested"); nested != nil {
-			changes = append(changes, makeChange(ctx, ChangeGroupNestedAdded, target, authDBRev, class, kvPair("nested", nested)))
+			changes = append(changes, populateCommonFields(ctx, ChangeGroupNestedAdded, target, authDBRev, class, &AuthDBChange{Nested: nested}))
 		}
 		return changes, nil
 	}
 
 	if oldDesc, newDesc := getDescription(old), getDescription(new); oldDesc != newDesc {
-		changes = append(changes, makeChange(ctx, ChangeGroupDescriptionChanged, target, authDBRev, class, kvPair("description", newDesc), kvPair("old_description", oldDesc)))
+		changes = append(changes, populateCommonFields(ctx, ChangeGroupDescriptionChanged, target, authDBRev, class, &AuthDBChange{Description: newDesc, OldDescription: oldDesc}))
 	}
 
 	oldOwners := AdminGroup
@@ -549,31 +528,31 @@ func diffGroups(ctx context.Context, target string, old, new datastore.PropertyM
 	}
 	newOwners := getStringProp(new, "owners")
 	if oldOwners != newOwners {
-		changes = append(changes, makeChange(ctx, ChangeGroupOwnersChanged, target, authDBRev, class, kvPair("old_owners", oldOwners), kvPair("owners", newOwners)))
+		changes = append(changes, populateCommonFields(ctx, ChangeGroupOwnersChanged, target, authDBRev, class, &AuthDBChange{Owners: newOwners, OldOwners: oldOwners}))
 	}
 
 	added, removed := diffLists(getStringSliceProp(old, "members"), getStringSliceProp(new, "members"))
 	if len(added) > 0 {
-		changes = append(changes, makeChange(ctx, ChangeGroupMembersAdded, target, authDBRev, class, kvPair("members", added)))
+		changes = append(changes, populateCommonFields(ctx, ChangeGroupMembersAdded, target, authDBRev, class, &AuthDBChange{Members: added}))
 	}
 	if len(removed) > 0 {
-		changes = append(changes, makeChange(ctx, ChangeGroupMembersRemoved, target, authDBRev, class, kvPair("members", removed)))
+		changes = append(changes, populateCommonFields(ctx, ChangeGroupMembersRemoved, target, authDBRev, class, &AuthDBChange{Members: removed}))
 	}
 
 	added, removed = diffLists(getStringSliceProp(old, "globs"), getStringSliceProp(new, "globs"))
 	if len(added) > 0 {
-		changes = append(changes, makeChange(ctx, ChangeGroupGlobsAdded, target, authDBRev, class, kvPair("globs", added)))
+		changes = append(changes, populateCommonFields(ctx, ChangeGroupGlobsAdded, target, authDBRev, class, &AuthDBChange{Globs: added}))
 	}
 	if len(removed) > 0 {
-		changes = append(changes, makeChange(ctx, ChangeGroupGlobsRemoved, target, authDBRev, class, kvPair("globs", removed)))
+		changes = append(changes, populateCommonFields(ctx, ChangeGroupGlobsRemoved, target, authDBRev, class, &AuthDBChange{Globs: removed}))
 	}
 
 	added, removed = diffLists(getStringSliceProp(old, "nested"), getStringSliceProp(new, "nested"))
 	if len(added) > 0 {
-		changes = append(changes, makeChange(ctx, ChangeGroupNestedAdded, target, authDBRev, class, kvPair("nested", added)))
+		changes = append(changes, populateCommonFields(ctx, ChangeGroupNestedAdded, target, authDBRev, class, &AuthDBChange{Nested: added}))
 	}
 	if len(removed) > 0 {
-		changes = append(changes, makeChange(ctx, ChangeGroupNestedRemoved, target, authDBRev, class, kvPair("nested", removed)))
+		changes = append(changes, populateCommonFields(ctx, ChangeGroupNestedRemoved, target, authDBRev, class, &AuthDBChange{Nested: removed}))
 	}
 
 	return changes, nil
@@ -585,40 +564,32 @@ func diffIPAllowlists(ctx context.Context, target string, old, new datastore.Pro
 	class := "AuthDBIPWhitelistChange"
 	if getBoolProp(new, "auth_db_deleted") {
 		d := getDescription(new)
-		changes = append(changes, makeChange(ctx,
-			ChangeIPALDeleted, target, authDBRev, class, kvPair("old_description", d)))
+		changes = append(changes, populateCommonFields(ctx, ChangeIPALDeleted, target, authDBRev, class, &AuthDBChange{OldDescription: d}))
 		if subnets := getStringSliceProp(new, "subnets"); subnets != nil {
-			changes = append(changes, makeChange(ctx,
-				ChangeIPALSubnetsRemoved, target, authDBRev, class, kvPair("subnets", subnets)))
+			changes = append(changes, populateCommonFields(ctx, ChangeIPALSubnetsRemoved, target, authDBRev, class, &AuthDBChange{Subnets: subnets}))
 		}
 		return changes, nil
 	}
 
 	if old == nil {
 		d := getDescription(new)
-		changes = append(changes, makeChange(ctx,
-			ChangeIPALCreated, target, authDBRev, class, kvPair("description", d)))
+		changes = append(changes, populateCommonFields(ctx, ChangeIPALCreated, target, authDBRev, class, &AuthDBChange{Description: d}))
 		if subnets := getStringSliceProp(new, "subnets"); subnets != nil {
-			changes = append(changes, makeChange(ctx,
-				ChangeIPALSubnetsAdded, target, authDBRev, class, kvPair("subnets", subnets)))
+			changes = append(changes, populateCommonFields(ctx, ChangeIPALSubnetsAdded, target, authDBRev, class, &AuthDBChange{Subnets: subnets}))
 		}
 		return changes, nil
 	}
 
 	if getDescription(old) != getDescription(new) {
-		changes = append(changes, makeChange(ctx,
-			ChangeIPALDescriptionChanged, target, authDBRev, class,
-			kvPair("description", getDescription(new)), kvPair("old_description", getDescription(old))))
+		changes = append(changes, populateCommonFields(ctx, ChangeIPALDescriptionChanged, target, authDBRev, class, &AuthDBChange{Description: getDescription(new), OldDescription: getDescription(old)}))
 	}
 
 	added, removed := diffLists(getStringSliceProp(old, "subnets"), getStringSliceProp(new, "subnets"))
 	if len(added) > 0 {
-		changes = append(changes, makeChange(ctx,
-			ChangeIPALSubnetsAdded, target, authDBRev, class, kvPair("subnets", added)))
+		changes = append(changes, populateCommonFields(ctx, ChangeIPALSubnetsAdded, target, authDBRev, class, &AuthDBChange{Subnets: added}))
 	}
 	if len(removed) > 0 {
-		changes = append(changes, makeChange(ctx,
-			ChangeIPALSubnetsRemoved, target, authDBRev, class, kvPair("subnets", removed)))
+		changes = append(changes, populateCommonFields(ctx, ChangeIPALSubnetsRemoved, target, authDBRev, class, &AuthDBChange{Subnets: removed}))
 	}
 	return changes, nil
 }
@@ -643,7 +614,7 @@ func diffGlobalConfig(ctx context.Context, target string, old, new datastore.Pro
 	prevClientSecret := ""
 	prevClientIDs := []string{}
 	prevTokenServerURL := ""
-	prevSecurityConfig := []byte{}
+	prevSecurityConfig := []byte(nil)
 	if old != nil {
 		prevClientID = getStringProp(old, OAuthClientID)
 		prevClientSecret = getStringProp(old, OAuthClientSecret)
@@ -659,26 +630,23 @@ func diffGlobalConfig(ctx context.Context, target string, old, new datastore.Pro
 	newSecurityConfig := getByteSliceProp(new, SecurityConfig)
 
 	if prevClientID != newClientID || prevClientSecret != newClientSecret {
-		changes = append(changes, makeChange(ctx, ChangeConfOauthClientChanged, target, authDBRev, class,
-			kvPair(OAuthClientID, newClientID), kvPair(OAuthClientSecret, newClientSecret)))
+		changes = append(changes, populateCommonFields(ctx, ChangeConfOauthClientChanged, target, authDBRev, class, &AuthDBChange{OauthClientID: newClientID, OauthClientSecret: newClientSecret}))
 	}
 
 	added, removed := diffLists(prevClientIDs, newClientIDs)
 	if len(added) > 0 {
-		changes = append(changes, makeChange(ctx, ChangeConfClientIDsAdded, target, authDBRev, class, kvPair(OAuthAddClientIDs, added)))
+		changes = append(changes, populateCommonFields(ctx, ChangeConfClientIDsAdded, target, authDBRev, class, &AuthDBChange{OauthAdditionalClientIDs: added}))
 	}
 	if len(removed) > 0 {
-		changes = append(changes, makeChange(ctx, ChangeConfClientIDsRemoved, target, authDBRev, class, kvPair(OAuthAddClientIDs, removed)))
+		changes = append(changes, populateCommonFields(ctx, ChangeConfClientIDsRemoved, target, authDBRev, class, &AuthDBChange{OauthAdditionalClientIDs: removed}))
 	}
 
 	if prevTokenServerURL != newTokenServerURL {
-		changes = append(changes, makeChange(ctx, ChangeConfTokenServerURLChanged, target, authDBRev, class,
-			kvPair(TokenServerURL+"_old", prevTokenServerURL), kvPair(TokenServerURL+"_new", newTokenServerURL)))
+		changes = append(changes, populateCommonFields(ctx, ChangeConfTokenServerURLChanged, target, authDBRev, class, &AuthDBChange{TokenServerURLNew: newTokenServerURL, TokenServerURLOld: prevTokenServerURL}))
 	}
 
 	if !bytes.Equal(prevSecurityConfig, newSecurityConfig) {
-		changes = append(changes, makeChange(ctx, ChangeConfSecurityConfigChanged, target, authDBRev, class,
-			kvPair(SecurityConfig+"_old", prevSecurityConfig), kvPair(SecurityConfig+"_new", newSecurityConfig)))
+		changes = append(changes, populateCommonFields(ctx, ChangeConfSecurityConfigChanged, target, authDBRev, class, &AuthDBChange{SecurityConfigNew: newSecurityConfig, SecurityConfigOld: prevSecurityConfig}))
 	}
 
 	return changes, nil

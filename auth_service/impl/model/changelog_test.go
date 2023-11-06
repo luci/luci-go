@@ -20,7 +20,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/common/clock"
@@ -258,15 +262,31 @@ func TestGenerateChanges(t *testing.T) {
 			return changes
 		}
 
-		validateChanges := func(ctx context.Context, msg string, actualChanges []*AuthDBChange, authDBRev int64, cts ...ChangeType) {
-			SoMsg(msg, actualChanges, ShouldHaveLength, len(cts))
-			for i, ct := range actualChanges {
-				SoMsg(msg, ct.ChangeType, ShouldEqual, cts[i])
+		// The fields in AuthDBChange to ignore when comparing results;
+		// these fields are not signficant to the test cases below.
+		ignoredAuthDBChangeFields := cmpopts.IgnoreFields(AuthDBChange{},
+			"Kind", "ID", "Parent", "Class", "Target", "Who", "When")
+
+		validateChanges := func(ctx context.Context, msg string, authDBRev int64, actualChanges []*AuthDBChange, expectedChanges []*AuthDBChange) {
+			changeCount := len(expectedChanges)
+			SoMsg(msg, actualChanges, ShouldHaveLength, changeCount)
+
+			// Check each actual and exxpected changes are similar.
+			for i := 0; i < changeCount; i++ {
+				// Set the expected AuthDB revision to the given value.
+				expectedChanges[i].AuthDBRev = authDBRev
+
+				diff := cmp.Diff(actualChanges[i], expectedChanges[i], ignoredAuthDBChangeFields)
+				if diff != "" {
+					t.Errorf("%s - difference at index %d: %s", msg, i, diff)
+				}
 			}
+
+			// Check AuthDBChange records are in datastore.
 			sort.Slice(actualChanges, func(i, j int) bool {
 				return actualChanges[i].ChangeType < actualChanges[j].ChangeType
 			})
-			SoMsg(msg, actualChanges, ShouldResemble, getChanges(ctx, authDBRev))
+			SoMsg(msg, getChanges(ctx, authDBRev), ShouldResemble, actualChanges)
 		}
 		//////////////////////////////////////////////////////////
 
@@ -278,13 +298,19 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "create group", actualChanges, 1, ChangeGroupCreated)
+				validateChanges(ctx, "create group", 1, actualChanges, []*AuthDBChange{{
+					ChangeType: ChangeGroupCreated,
+					Owners:     AdminGroup,
+				}})
 
 				So(DeleteAuthGroup(ctx, ag1.ID, "", false), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
 				actualChanges, err = generateChanges(ctx, 2, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "delete group", actualChanges, 2, ChangeGroupDeleted)
+				validateChanges(ctx, "delete group", 2, actualChanges, []*AuthDBChange{{
+					ChangeType: ChangeGroupDeleted,
+					Owners:     AdminGroup,
+				}})
 			})
 
 			Convey("AuthGroup Owners / Description changed", func() {
@@ -297,7 +323,10 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "create group no owners", actualChanges, 1, ChangeGroupCreated)
+				validateChanges(ctx, "create group no owners", 1, actualChanges, []*AuthDBChange{{
+					ChangeType: ChangeGroupCreated,
+					Owners:     AdminGroup,
+				}})
 
 				ag1.Owners = og.ID
 				ag1.Description = "test-desc"
@@ -306,7 +335,14 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
 				actualChanges, err = generateChanges(ctx, 2, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "update group owners & desc", actualChanges, 2, ChangeGroupDescriptionChanged, ChangeGroupOwnersChanged)
+				validateChanges(ctx, "update group owners & desc", 2, actualChanges, []*AuthDBChange{{
+					ChangeType:  ChangeGroupDescriptionChanged,
+					Description: "test-desc",
+				}, {
+					ChangeType: ChangeGroupOwnersChanged,
+					Owners:     "owning-group",
+					OldOwners:  AdminGroup,
+				}})
 
 				ag1.Description = "new-desc"
 				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false)
@@ -314,7 +350,11 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 6)
 				actualChanges, err = generateChanges(ctx, 3, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "update group desc", actualChanges, 3, ChangeGroupDescriptionChanged)
+				validateChanges(ctx, "update group desc", 3, actualChanges, []*AuthDBChange{{
+					ChangeType:     ChangeGroupDescriptionChanged,
+					Description:    "new-desc",
+					OldDescription: "test-desc",
+				}})
 			})
 
 			Convey("AuthGroup add/remove Members", func() {
@@ -326,7 +366,13 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "create group +mems", actualChanges, 1, ChangeGroupCreated, ChangeGroupMembersAdded)
+				validateChanges(ctx, "create group +mems", 1, actualChanges, []*AuthDBChange{{
+					ChangeType: ChangeGroupCreated,
+					Owners:     AdminGroup,
+				}, {
+					ChangeType: ChangeGroupMembersAdded,
+					Members:    []string{"user:someone@example.com"},
+				}})
 
 				// Add members to already existing group
 				ag1.Members = append(ag1.Members, "user:another-one@example.com")
@@ -335,7 +381,10 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
 				actualChanges, err = generateChanges(ctx, 2, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "update group +mems", actualChanges, 2, ChangeGroupMembersAdded)
+				validateChanges(ctx, "update group +mems", 2, actualChanges, []*AuthDBChange{{
+					ChangeType: ChangeGroupMembersAdded,
+					Members:    []string{"user:another-one@example.com"},
+				}})
 
 				// Remove members from existing group
 				ag1.Members = []string{"user:someone@example.com"}
@@ -344,14 +393,23 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 6)
 				actualChanges, err = generateChanges(ctx, 3, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "update group -mems", actualChanges, 3, ChangeGroupMembersRemoved)
+				validateChanges(ctx, "update group -mems", 3, actualChanges, []*AuthDBChange{{
+					ChangeType: ChangeGroupMembersRemoved,
+					Members:    []string{"user:another-one@example.com"},
+				}})
 
 				// Remove members when deleting group
 				So(DeleteAuthGroup(ctx, ag1.ID, "", false), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 8)
 				actualChanges, err = generateChanges(ctx, 4, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "delete group -mems", actualChanges, 4, ChangeGroupMembersRemoved, ChangeGroupDeleted)
+				validateChanges(ctx, "delete group -mems", 4, actualChanges, []*AuthDBChange{{
+					ChangeType: ChangeGroupMembersRemoved,
+					Members:    []string{"user:someone@example.com"},
+				}, {
+					ChangeType: ChangeGroupDeleted,
+					Owners:     AdminGroup,
+				}})
 			})
 
 			Convey("AuthGroup add/remove globs", func() {
@@ -363,7 +421,13 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "create group +globs", actualChanges, 1, ChangeGroupCreated, ChangeGroupGlobsAdded)
+				validateChanges(ctx, "create group +globs", 1, actualChanges, []*AuthDBChange{{
+					ChangeType: ChangeGroupCreated,
+					Owners:     AdminGroup,
+				}, {
+					ChangeType: ChangeGroupGlobsAdded,
+					Globs:      []string{"user:*@example.com"},
+				}})
 
 				// Add globs to already existing group
 				ag1.Globs = append(ag1.Globs, "user:test-*@test.com")
@@ -372,7 +436,10 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
 				actualChanges, err = generateChanges(ctx, 2, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "update group +globs", actualChanges, 2, ChangeGroupGlobsAdded)
+				validateChanges(ctx, "update group +globs", 2, actualChanges, []*AuthDBChange{{
+					ChangeType: ChangeGroupGlobsAdded,
+					Globs:      []string{"user:test-*@test.com"},
+				}})
 
 				ag1.Globs = []string{"user:test-*@test.com"}
 				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false)
@@ -381,13 +448,22 @@ func TestGenerateChanges(t *testing.T) {
 				So(err, ShouldBeNil)
 				actualChanges, err = generateChanges(ctx, 3, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "update group -globs", actualChanges, 3, ChangeGroupGlobsRemoved)
+				validateChanges(ctx, "update group -globs", 3, actualChanges, []*AuthDBChange{{
+					ChangeType: ChangeGroupGlobsRemoved,
+					Globs:      []string{"user:*@example.com"},
+				}})
 
 				So(DeleteAuthGroup(ctx, ag1.ID, "", false), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 8)
 				actualChanges, err = generateChanges(ctx, 4, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "delete group -globs", actualChanges, 4, ChangeGroupGlobsRemoved, ChangeGroupDeleted)
+				validateChanges(ctx, "delete group -globs", 4, actualChanges, []*AuthDBChange{{
+					ChangeType: ChangeGroupGlobsRemoved,
+					Globs:      []string{"user:test-*@test.com"},
+				}, {
+					ChangeType: ChangeGroupDeleted,
+					Owners:     AdminGroup,
+				}})
 			})
 
 			Convey("AuthGroup add/remove nested", func() {
@@ -403,7 +479,13 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "create group +nested", actualChanges, 1, ChangeGroupCreated, ChangeGroupNestedAdded)
+				validateChanges(ctx, "create group +nested", 1, actualChanges, []*AuthDBChange{{
+					ChangeType: ChangeGroupCreated,
+					Owners:     AdminGroup,
+				}, {
+					ChangeType: ChangeGroupNestedAdded,
+					Nested:     []string{"group-2"},
+				}})
 
 				// Add globs to already existing group
 				ag1.Nested = append(ag1.Nested, ag3.ID)
@@ -412,7 +494,10 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
 				actualChanges, err = generateChanges(ctx, 2, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "update group +nested", actualChanges, 2, ChangeGroupNestedAdded)
+				validateChanges(ctx, "update group +nested", 2, actualChanges, []*AuthDBChange{{
+					ChangeType: ChangeGroupNestedAdded,
+					Nested:     []string{"group-3"},
+				}})
 
 				ag1.Nested = []string{"group-2"}
 				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false)
@@ -421,13 +506,22 @@ func TestGenerateChanges(t *testing.T) {
 				So(err, ShouldBeNil)
 				actualChanges, err = generateChanges(ctx, 3, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "update group -nested", actualChanges, 3, ChangeGroupNestedRemoved)
+				validateChanges(ctx, "update group -nested", 3, actualChanges, []*AuthDBChange{{
+					ChangeType: ChangeGroupNestedRemoved,
+					Nested:     []string{"group-3"},
+				}})
 
 				So(DeleteAuthGroup(ctx, ag1.ID, "", false), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 8)
 				actualChanges, err = generateChanges(ctx, 4, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "delete group -nested", actualChanges, 4, ChangeGroupNestedRemoved, ChangeGroupDeleted)
+				validateChanges(ctx, "delete group -nested", 4, actualChanges, []*AuthDBChange{{
+					ChangeType: ChangeGroupNestedRemoved,
+					Nested:     []string{"group-2"},
+				}, {
+					ChangeType: ChangeGroupDeleted,
+					Owners:     AdminGroup,
+				}})
 			})
 		})
 
@@ -440,7 +534,10 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "create allowlist", actualChanges, 1, ChangeIPALCreated)
+				validateChanges(ctx, "create allowlist", 1, actualChanges, []*AuthDBChange{{
+					ChangeType:  ChangeIPALCreated,
+					Description: "Imported from ip_allowlist.cfg",
+				}})
 
 				// Deletion with no subnet
 				baseSubnetMap = map[string][]string{}
@@ -448,7 +545,10 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
 				actualChanges, err = generateChanges(ctx, 2, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "delete allowlist", actualChanges, 2, ChangeIPALDeleted)
+				validateChanges(ctx, "delete allowlist", 2, actualChanges, []*AuthDBChange{{
+					ChangeType:     ChangeIPALDeleted,
+					OldDescription: "Imported from ip_allowlist.cfg",
+				}})
 
 				// Creation with subnets
 				baseSubnetMap["test-allowlist-1"] = []string{"123.4.5.6"}
@@ -456,7 +556,13 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 6)
 				actualChanges, err = generateChanges(ctx, 3, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "create allowlist w/ subnet", actualChanges, 3, ChangeIPALCreated, ChangeIPALSubnetsAdded)
+				validateChanges(ctx, "create allowlist w/ subnet", 3, actualChanges, []*AuthDBChange{{
+					ChangeType:  ChangeIPALCreated,
+					Description: "Imported from ip_allowlist.cfg",
+				}, {
+					ChangeType: ChangeIPALSubnetsAdded,
+					Subnets:    []string{"123.4.5.6"},
+				}})
 
 				// Add subnet
 				baseSubnetMap["test-allowlist-1"] = append(baseSubnetMap["test-allowlist-1"], "567.8.9.10")
@@ -464,7 +570,10 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 8)
 				actualChanges, err = generateChanges(ctx, 4, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "add subnet", actualChanges, 4, ChangeIPALSubnetsAdded)
+				validateChanges(ctx, "add subnet", 4, actualChanges, []*AuthDBChange{{
+					ChangeType: ChangeIPALSubnetsAdded,
+					Subnets:    []string{"567.8.9.10"},
+				}})
 
 				// Remove subnet
 				baseSubnetMap["test-allowlist-1"] = baseSubnetMap["test-allowlist-1"][1:]
@@ -472,7 +581,10 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 10)
 				actualChanges, err = generateChanges(ctx, 5, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "remove subnet", actualChanges, 5, ChangeIPALSubnetsRemoved)
+				validateChanges(ctx, "remove subnet", 5, actualChanges, []*AuthDBChange{{
+					ChangeType: ChangeIPALSubnetsRemoved,
+					Subnets:    []string{"123.4.5.6"},
+				}})
 
 				// Delete allowlist with subnet
 				baseSubnetMap = map[string][]string{}
@@ -480,7 +592,13 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 12)
 				actualChanges, err = generateChanges(ctx, 6, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "delete allowlist w/ subnet", actualChanges, 6, ChangeIPALDeleted, ChangeIPALSubnetsRemoved)
+				validateChanges(ctx, "delete allowlist w/ subnet", 6, actualChanges, []*AuthDBChange{{
+					ChangeType:     ChangeIPALDeleted,
+					OldDescription: "Imported from ip_allowlist.cfg",
+				}, {
+					ChangeType: ChangeIPALSubnetsRemoved,
+					Subnets:    []string{"567.8.9.10"},
+				}})
 			})
 
 			Convey("AuthIPAllowlist description changed", func() {
@@ -499,7 +617,11 @@ func TestGenerateChanges(t *testing.T) {
 				}), ShouldBeNil)
 				actualChanges, err := generateChanges(ctx, 2, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "change description", actualChanges, 2, ChangeIPALDescriptionChanged)
+				validateChanges(ctx, "change description", 2, actualChanges, []*AuthDBChange{{
+					ChangeType:     ChangeIPALDescriptionChanged,
+					Description:    "new-desc",
+					OldDescription: "Imported from ip_allowlist.cfg",
+				}})
 			})
 		})
 
@@ -515,7 +637,11 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "update config with no old config present", actualChanges, 1, ChangeConfOauthClientChanged)
+				validateChanges(ctx, "update config with no old config present", 1, actualChanges, []*AuthDBChange{{
+					ChangeType:        ChangeConfOauthClientChanged,
+					OauthClientID:     "test-client-id",
+					OauthClientSecret: "test-client-secret",
+				}})
 
 				newCfg := &configspb.OAuthConfig{
 					PrimaryClientId: "diff-client-id",
@@ -524,7 +650,10 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
 				actualChanges, err = generateChanges(ctx, 2, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "update config with client id changed", actualChanges, 2, ChangeConfOauthClientChanged)
+				validateChanges(ctx, "update config with client id changed", 2, actualChanges, []*AuthDBChange{{
+					ChangeType:    ChangeConfOauthClientChanged,
+					OauthClientID: "diff-client-id",
+				}})
 			})
 
 			Convey("AuthGlobalConfig additional +/- ClientID's", func() {
@@ -536,7 +665,10 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "update config with client ids, old config not present", actualChanges, 1, ChangeConfClientIDsAdded)
+				validateChanges(ctx, "update config with client ids, old config not present", 1, actualChanges, []*AuthDBChange{{
+					ChangeType:               ChangeConfClientIDsAdded,
+					OauthAdditionalClientIDs: []string{"test.example.com"},
+				}})
 
 				newCfg := &configspb.OAuthConfig{
 					ClientIds: []string{"not-test.example.com"},
@@ -546,7 +678,13 @@ func TestGenerateChanges(t *testing.T) {
 				actualChanges, err = generateChanges(ctx, 2, false)
 				So(err, ShouldBeNil)
 				validateChanges(ctx, "update config with client id added and client id removed, old config is present",
-					actualChanges, 2, ChangeConfClientIDsAdded, ChangeConfClientIDsRemoved)
+					2, actualChanges, []*AuthDBChange{{
+						ChangeType:               ChangeConfClientIDsAdded,
+						OauthAdditionalClientIDs: []string{"not-test.example.com"},
+					}, {
+						ChangeType:               ChangeConfClientIDsRemoved,
+						OauthAdditionalClientIDs: []string{"test.example.com"},
+					}})
 			})
 
 			Convey("AuthGlobalConfig TokenServerURL change", func() {
@@ -558,7 +696,10 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "update config with token server url, old config not present", actualChanges, 1, ChangeConfTokenServerURLChanged)
+				validateChanges(ctx, "update config with token server url, old config not present", 1, actualChanges, []*AuthDBChange{{
+					ChangeType:        ChangeConfTokenServerURLChanged,
+					TokenServerURLNew: "test-token-server-url.example.com",
+				}})
 			})
 
 			Convey("AuthGlobalConfig Security Config change", func() {
@@ -570,17 +711,26 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "update config with security config, old config not present", actualChanges, 1, ChangeConfSecurityConfigChanged)
+				expectedNewConfig, _ := proto.Marshal(secCfg)
+				validateChanges(ctx, "update config with security config, old config not present", 1, actualChanges, []*AuthDBChange{{
+					ChangeType:        ChangeConfSecurityConfigChanged,
+					SecurityConfigNew: expectedNewConfig,
+				}})
 
 				secCfg = &protocol.SecurityConfig{
 					InternalServiceRegexp: []string{"def"},
 				}
+				expectedOldConfig := expectedNewConfig
+				expectedNewConfig, _ = proto.Marshal(secCfg)
 				So(UpdateAuthGlobalConfig(ctx, baseCfg, secCfg, false), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
 				actualChanges, err = generateChanges(ctx, 2, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "update config with security config, old config present", actualChanges, 2, ChangeConfSecurityConfigChanged)
-
+				validateChanges(ctx, "update config with security config, old config present", 2, actualChanges, []*AuthDBChange{{
+					ChangeType:        ChangeConfSecurityConfigChanged,
+					SecurityConfigNew: expectedNewConfig,
+					SecurityConfigOld: expectedOldConfig,
+				}})
 			})
 
 			Convey("AuthGlobalConfig all changes at once", func() {
@@ -593,11 +743,25 @@ func TestGenerateChanges(t *testing.T) {
 				secCfg := &protocol.SecurityConfig{
 					InternalServiceRegexp: []string{"test"},
 				}
+				expectedNewConfig, _ := proto.Marshal(secCfg)
 				So(UpdateAuthGlobalConfig(ctx, baseCfg, secCfg, false), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
 				So(err, ShouldBeNil)
-				validateChanges(ctx, "all changes at once, old config not present", actualChanges, 1, ChangeConfOauthClientChanged, ChangeConfClientIDsAdded, ChangeConfTokenServerURLChanged, ChangeConfSecurityConfigChanged)
+				validateChanges(ctx, "all changes at once, old config not present", 1, actualChanges, []*AuthDBChange{{
+					ChangeType:        ChangeConfOauthClientChanged,
+					OauthClientID:     "test-client-id",
+					OauthClientSecret: "test-client-secret",
+				}, {
+					ChangeType:               ChangeConfClientIDsAdded,
+					OauthAdditionalClientIDs: []string{"a", "b", "c"},
+				}, {
+					ChangeType:        ChangeConfTokenServerURLChanged,
+					TokenServerURLNew: "token-server.example.com",
+				}, {
+					ChangeType:        ChangeConfSecurityConfigChanged,
+					SecurityConfigNew: expectedNewConfig,
+				}})
 			})
 		})
 	})
