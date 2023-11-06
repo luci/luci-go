@@ -138,16 +138,11 @@ func computeBackendPubsubTopic(ctx context.Context, target string, globalCfg *pb
 }
 
 func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *model.BuildInfra, requestID string, globalCfg *pb.SettingsCfg) (*pb.RunTaskRequest, error) {
-	// Create task token and secrets.
-	registerTaskToken, err := buildtoken.GenerateToken(ctx, build.ID, pb.TokenBody_START_BUILD_TASK)
-	if err != nil {
-		return nil, err
-	}
+	// Create StartBuildToken and secrets.
 	startBuildToken, err := buildtoken.GenerateToken(ctx, build.ID, pb.TokenBody_START_BUILD)
 	if err != nil {
 		return nil, err
 	}
-
 	secrets := &pb.BuildSecrets{
 		StartBuildToken:               startBuildToken,
 		ResultdbInvocationUpdateToken: build.ResultDBUpdateToken,
@@ -174,22 +169,21 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 	}
 
 	taskReq := &pb.RunTaskRequest{
-		BuildbucketHost:          infra.Proto.Buildbucket.Hostname,
-		RegisterBackendTaskToken: registerTaskToken,
-		Secrets:                  secrets,
-		Target:                   backend.Task.Id.Target,
-		RequestId:                requestID,
-		BuildId:                  strconv.FormatInt(build.Proto.Id, 10),
-		Realm:                    build.Realm(),
-		BackendConfig:            backend.Config,
-		ExecutionTimeout:         build.Proto.GetExecutionTimeout(),
-		GracePeriod:              gracePeriod,
-		Caches:                   caches,
-		AgentArgs:                computeAgentArgs(build.Proto, infra.Proto),
-		Dimensions:               infra.Proto.Backend.GetTaskDimensions(),
-		StartDeadline:            startDeadline,
-		Experiments:              build.Proto.Input.GetExperiments(),
-		PubsubTopic:              pubsubTopic,
+		BuildbucketHost:  infra.Proto.Buildbucket.Hostname,
+		Secrets:          secrets,
+		Target:           backend.Task.Id.Target,
+		RequestId:        requestID,
+		BuildId:          strconv.FormatInt(build.Proto.Id, 10),
+		Realm:            build.Realm(),
+		BackendConfig:    backend.Config,
+		ExecutionTimeout: build.Proto.GetExecutionTimeout(),
+		GracePeriod:      gracePeriod,
+		Caches:           caches,
+		AgentArgs:        computeAgentArgs(build.Proto, infra.Proto),
+		Dimensions:       infra.Proto.Backend.GetTaskDimensions(),
+		StartDeadline:    startDeadline,
+		Experiments:      build.Proto.Input.GetExperiments(),
+		PubsubTopic:      pubsubTopic,
 	}
 
 	project := build.Proto.Builder.Project

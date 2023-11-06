@@ -80,7 +80,8 @@ message RunTaskRequest {
 
   // A REGISTER_TASK token that the backend can use to register the backend task
   // to Buildbucket via the RegisterBuildTask RPC.
-  string register_backend_task_token = 2;
+  // DEPRECATED: The StartBuildToken in RunTaskRequest.Secrets will be used.
+  string register_backend_task_token = 2 [deprecated = true];
 
   // The LUCI Realm that the created task should be associated with.
   string realm = 3;
@@ -143,13 +144,11 @@ message RunTaskRequest {
   // e.g. -task-id and -cache-base.
   repeated string agent_args = 5;
 
-  // Secrets contains key material for clients to call UpdateBuild.
-  // This can either be passed via LUCI_CONTEXT['secrets'] to the agent,
-  // or can be passed by adding a `-secrets=<binarypb>` CLI argument.
+  // Secrets contains key material for clients to call StartBuild or UpdateBuild.
+  // This should be added to the BuildbucketAgentContext file for use in the agent.
+  // Alternatively (but not suggested), this can be passed via LUCI_CONTEXT['secrets']
+  // to the agent. There should be no CLI support for secrets in the agent.
   //
-  // NOTE: If passed via CLI, Backends SHOULD ensure that task
-  // command-lines are not widely readable, or the Backend risks tasks (or
-  // malicious actors) impersonating builds.
   BuildSecrets secrets = 6;
 
   // The hostname of the buildbucket service to send RPCs back to.
