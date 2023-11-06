@@ -488,6 +488,9 @@ func (p *structPLS) save(propMap PropertyMap, prefix string, inSlice bool, is In
 			// The field knows how to convert itself into a property.
 			prop, err = v.Addr().Interface().(PropertyConverter).ToProperty()
 			if err != nil {
+				if errors.Is(err, ErrSkipProperty) {
+					return nil
+				}
 				return err
 			}
 

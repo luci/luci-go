@@ -764,6 +764,7 @@ type StructForReset struct {
 	Field  string      `gae:"NoIndexIsAlsoReset,noindex"`
 	Struct SubStructForReset
 	Slice  []string
+	Opt    Optional[int64, Indexed]
 
 	Skip          string `gae:"-"`
 	private       int
@@ -822,6 +823,25 @@ func (*WithProtoMeta) embedsProtos()          {}
 func (*WithProtoIndirect) embedsProtos()      {}
 func (*WithProtoIndirectSlice) embedsProtos() {}
 func (*WithAnonymousProto) embedsProtos()     {}
+
+type IntAlias int64
+
+type Optionals struct {
+	Int       Optional[int64, Indexed]
+	IntAlias  Optional[IntAlias, Indexed]
+	Unindexed Optional[int64, Unindexed]
+	String    Optional[string, Indexed]
+	Bytes     Optional[[]byte, Indexed]
+	Time      Optional[time.Time, Indexed]
+	Geo       Optional[GeoPoint, Indexed]
+	Key       Optional[*Key, Indexed]
+	Slice     []Optional[int64, Indexed]
+}
+
+type Nullables struct {
+	Indexed   Nullable[int64, Indexed]
+	Unindexed Nullable[int64, Unindexed]
+}
 
 func legacyLSP(props ...*pb.Property) []byte {
 	blob, err := (proto.MarshalOptions{AllowPartial: true}).Marshal(&pb.EntityProto{
@@ -1959,6 +1979,89 @@ var testCases = []testCase{
 		},
 	},
 	{
+		desc: "storing unset optionals",
+		src:  &Optionals{},
+		want: PropertyMap{},
+	},
+	{
+		desc: "storing set optionals",
+		src: &Optionals{
+			Int:       NewIndexedOptional(int64(123)),
+			IntAlias:  NewIndexedOptional(IntAlias(456)),
+			Unindexed: NewUnindexedOptional(int64(789)),
+			String:    NewIndexedOptional("hi"),
+			Bytes:     NewIndexedOptional([]byte("bla")),
+			Time:      NewIndexedOptional(time.Time{}),
+			Geo:       NewIndexedOptional(testGeoPt0),
+			Key:       NewIndexedOptional(testKey0),
+			Slice: []Optional[int64, Indexed]{
+				NewIndexedOptional(int64(666)),
+				NewIndexedOptional(int64(777)),
+			},
+		},
+		want: PropertyMap{
+			"Int":       mp(int64(123)),
+			"IntAlias":  mp(int64(456)),
+			"Unindexed": mpNI(int64(789)),
+			"String":    mp("hi"),
+			"Bytes":     mp([]byte("bla")),
+			"Time":      mp(time.Time{}),
+			"Geo":       mp(testGeoPt0),
+			"Key":       mp(testKey0),
+			"Slice":     PropertySlice{mp(int64(666)), mp(int64(777))},
+		},
+	},
+	{
+		desc: "loading optionals",
+		src: PropertyMap{
+			"Int":       mp(int64(123)),
+			"IntAlias":  mp(int64(456)),
+			"Unindexed": mpNI(int64(789)),
+			"String":    mp("hi"),
+			"Bytes":     mp([]byte("bla")),
+			"Time":      mp(time.Time{}),
+			"Geo":       mp(testGeoPt0),
+			"Key":       mp(testKey0),
+			"Slice":     PropertySlice{mp(int64(666)), mp(int64(777))},
+		},
+		want: &Optionals{
+			Int:       NewIndexedOptional(int64(123)),
+			IntAlias:  NewIndexedOptional(IntAlias(456)),
+			Unindexed: NewUnindexedOptional(int64(789)),
+			String:    NewIndexedOptional("hi"),
+			Bytes:     NewIndexedOptional([]byte("bla")),
+			Time:      NewIndexedOptional(time.Time{}),
+			Geo:       NewIndexedOptional(testGeoPt0),
+			Key:       NewIndexedOptional(testKey0),
+			Slice: []Optional[int64, Indexed]{
+				NewIndexedOptional(int64(666)),
+				NewIndexedOptional(int64(777)),
+			},
+		},
+	},
+	{
+		desc: "loading null into optional",
+		src: PropertyMap{
+			"Int":   mp(nil),
+			"Slice": PropertySlice{mp(int64(666)), mp(nil), mp(int64(777))},
+		},
+		want: &Optionals{
+			Slice: []Optional[int64, Indexed]{
+				NewIndexedOptional(int64(666)),
+				{}, // unset nil
+				NewIndexedOptional(int64(777)),
+			},
+		},
+	},
+	{
+		desc: "storing unset nullables",
+		src:  &Nullables{},
+		want: PropertyMap{
+			"Indexed":   mp(nil),
+			"Unindexed": mpNI(nil),
+		},
+	},
+	{
 		desc: "load into unexported fields",
 		src: PropertyMap{
 			"Private": mp("s"),
@@ -2295,6 +2398,7 @@ var testCases = []testCase{
 			Struct: SubStructForReset{SubSlice: []string{"to", "be", "reset"}},
 			Slice:  []string{"pre", "slice"},
 			Extra:  PropertyMap{"should": mpNI("be reset")},
+			Opt:    NewIndexedOptional(int64(123)),
 			// $id and $parent preserved as is.
 			ID:     "not reset ID",
 			Parent: testKey2a,

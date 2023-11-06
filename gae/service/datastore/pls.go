@@ -84,7 +84,7 @@ import (
 //	   doesn't match the tag.
 //
 //	   The "legacy" option will store the protobuf without compression, BUT this
-//	   encoding doesn't have a "mode" bit. This is purely for compatibilty with
+//	   encoding doesn't have a "mode" bit. This is purely for compatibility with
 //	   the deprecated `proto-gae` generator, and is not recommended. The format
 //	   is a `[]byte` containing the binary serialization of the proto with no
 //	   other metadata.
@@ -270,7 +270,7 @@ import (
 //	}
 //
 //	func (n *Name) ToProperty() (Property, error) {
-//	  return fmt.Sprintf("%s|%s", n.First, n.Last)
+//	  return MkProperty(fmt.Sprintf("%s|%s", n.First, n.Last)), nil
 //	}
 //
 //	func (n *Name) FromProperty(p Property) error {

@@ -33,6 +33,10 @@ var (
 	utcTestTime = time.Unix(0, 0)
 )
 
+// ErrSkipProperty can be returned from ToProperty to instruct the default
+// PropertyLoadSaver to silently skip storing the property.
+var ErrSkipProperty = errors.New("the property should be skipped")
+
 // IndexSetting indicates whether or not a Property should be indexed by the
 // datastore.
 type IndexSetting bool
@@ -55,8 +59,10 @@ func (i IndexSetting) String() string {
 // is serialized by the struct PropertyLoadSaver from GetPLS. Its ToProperty
 // will be called on save, and it's FromProperty will be called on load (from
 // datastore). The method may do arbitrary computation, and if it encounters an
-// error, may return it.  This error will be a fatal error (as defined by
-// PropertyLoadSaver) for the struct conversion.
+// error, may return it. If ToProperty returns an error that is or wraps
+// ErrSkipProperty, then the property will silently be omitted. Other errors
+// will be treated as fatal struct conversion errors (as defined by
+// PropertyLoadSaver).
 //
 // Example:
 //
