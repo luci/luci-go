@@ -74,9 +74,15 @@ func (bs *BootstrapPackageExtractor) Run(ctx context.Context, inst *model.Instan
 	// Bootstrap packages are expected to contain only one top-level file (which
 	// we assume is the executable used for the bootstrap). Note that all packages
 	// contain ".cipdpkg" directory with some CIPD metadata, which we skip.
+	//
+	// For windows, a bat shim might be produced. If this is the case, we ignore
+	// it here since it is not the executable.
 	executable := ""
 	for _, f := range pkg.Files() {
 		if strings.HasPrefix(f, ".cipdpkg/") {
+			continue
+		}
+		if strings.HasSuffix(f, ".bat") {
 			continue
 		}
 		if executable != "" {

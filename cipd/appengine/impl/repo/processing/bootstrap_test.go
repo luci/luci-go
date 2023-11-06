@@ -65,6 +65,7 @@ func TestBootstrapPackageExtractor(t *testing.T) {
 		Convey("Happy path", func() {
 			res, err := ex.Run(ctx, testInstance, packageReader(map[string]string{
 				"some_binary.exe":       testBody,
+				"some_binary.bat":       "zzz",
 				".cipdpkg/ignored":      "zzz",
 				".cipdpkg/also ignored": "zzz",
 			}))
