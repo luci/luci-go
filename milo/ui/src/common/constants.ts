@@ -268,4 +268,9 @@ export enum UiPage {
   Goldeneye = 'goldeneye',
   ChromiumDash = 'chromium-dash',
   ReleaseNotes = 'release notes',
+  TestVerdict = 'test-verdict',
+}
+
+export enum CommonColors {
+  FADED_TEXT = '#888',
 }

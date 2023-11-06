@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { GerritClLink } from '@/common/components/gerrit_cl_link';
-import { GerritChange } from '@/common/services/buildbucket';
+import { GerritChange } from '@/common/services/common';
 
 export interface PatchRowProps {
   readonly gerritChange: GerritChange;

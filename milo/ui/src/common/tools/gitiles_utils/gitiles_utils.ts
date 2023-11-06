@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GitilesCommit } from '@/common/services/buildbucket';
+import { GitilesCommit } from '@/common/services/common';
 
 export function getGitilesRepoURL(
   commit: Pick<GitilesCommit, 'host' | 'project'>,

@@ -198,4 +198,14 @@ export const routes: RouteObject[] = [
     path: 'doc/changelog',
     lazy: () => import('@/app/pages/changelog_page'),
   },
+  {
+    path: 'labs',
+    children: [
+      {
+        // TODO(b/308856913): Fix all outstanding todo's before promoting the page to production.
+        path: 'p/:project/inv/:invID/test/:testID/variant/:vHash',
+        lazy: () => import('@/test_verdict/pages/test_verdict_page'),
+      },
+    ],
+  },
 ];

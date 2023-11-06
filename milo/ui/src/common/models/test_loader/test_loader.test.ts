@@ -25,6 +25,7 @@ import { LoadingStage, TestLoader } from './test_loader';
 
 const variant1 = {
   testId: 'a',
+  sourcesId: '1',
   variant: { def: { key1: 'val1' } },
   variantHash: 'key1:val1',
   status: TestVariantStatus.UNEXPECTED,
@@ -32,6 +33,7 @@ const variant1 = {
 
 const variant2 = {
   testId: 'a',
+  sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.UNEXPECTED,
@@ -39,6 +41,7 @@ const variant2 = {
 
 const variant3 = {
   testId: 'a',
+  sourcesId: '1',
   variant: { def: { key1: 'val3' } },
   variantHash: 'key1:val3',
   status: TestVariantStatus.UNEXPECTEDLY_SKIPPED,
@@ -46,6 +49,7 @@ const variant3 = {
 
 const variant4 = {
   testId: 'b',
+  sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.FLAKY,
@@ -53,6 +57,7 @@ const variant4 = {
 
 const variant5 = {
   testId: 'matched-id',
+  sourcesId: '1',
   variant: { def: { key1: 'val2', key2: 'val1' } },
   variantHash: 'key1:val2|key2:val1',
   status: TestVariantStatus.FLAKY,
@@ -60,6 +65,7 @@ const variant5 = {
 
 const variant6 = {
   testId: 'c',
+  sourcesId: '1',
   variant: { def: { key1: 'val2', key2: 'val2' } },
   variantHash: 'key1:val2|key2:val2',
   status: TestVariantStatus.EXONERATED,
@@ -67,6 +73,7 @@ const variant6 = {
 
 const variant7 = {
   testId: 'd',
+  sourcesId: '1',
   variant: { def: { key1: 'val1' } },
   variantHash: 'key1:val1',
   status: TestVariantStatus.EXONERATED,
@@ -74,6 +81,7 @@ const variant7 = {
 
 const variant8 = {
   testId: 'd',
+  sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.EXPECTED,
@@ -81,6 +89,7 @@ const variant8 = {
 
 const variant9 = {
   testId: 'e',
+  sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.EXPECTED,
@@ -88,6 +97,7 @@ const variant9 = {
 
 const variant10 = {
   testId: 'f',
+  sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.EXPECTED,
@@ -95,6 +105,7 @@ const variant10 = {
 
 const variant11 = {
   testId: 'g',
+  sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.EXPECTED,
@@ -102,6 +113,7 @@ const variant11 = {
 
 const variant12 = {
   testId: 'matched-id',
+  sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.EXPECTED,

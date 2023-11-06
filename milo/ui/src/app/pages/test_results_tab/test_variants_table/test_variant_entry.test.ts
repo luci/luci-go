@@ -165,6 +165,7 @@ describe('TestVariantEntry', () => {
 
     const tv: TestVariant = {
       testId: 'test-id',
+      sourcesId: '1',
       variantHash: 'vhash',
       status: TestVariantStatus.FLAKY,
       results: [
@@ -214,6 +215,7 @@ describe('TestVariantEntry', () => {
 
     const tv: TestVariant = {
       testId: 'test-id',
+      sourcesId: '1',
       variantHash: 'vhash',
       status: TestVariantStatus.UNEXPECTED,
       results: [
@@ -263,6 +265,7 @@ describe('TestVariantEntry', () => {
   test('should generate test URLs correctly', async () => {
     const tv: TestVariant = {
       testId: 'test-id',
+      sourcesId: '1',
       variantHash: 'vhash',
       status: TestVariantStatus.UNEXPECTED,
       results: [

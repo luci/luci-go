@@ -14,7 +14,7 @@
 
 import { Link } from '@mui/material';
 
-import { GitilesCommit } from '@/common/services/buildbucket';
+import { GitilesCommit } from '@/common/services/common';
 import { GitCommit } from '@/common/services/milo_internal';
 import { getGitilesRepoURL } from '@/common/tools/gitiles_utils';
 

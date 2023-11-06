@@ -1,0 +1,110 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import { Typography } from '@mui/material';
+import Button from '@mui/material/Button';
+import Divider from '@mui/material/Divider';
+import Drawer from '@mui/material/Drawer';
+import Grid from '@mui/material/Grid';
+import Link from '@mui/material/Link';
+import { Fragment, useState } from 'react';
+
+import { getSortedTestVariantDef } from '@/common/services/resultdb';
+import {
+  generateTestHistoryURLSearchParams,
+  getCodeSourceUrl,
+  getTestHistoryURLWithSearchParam,
+} from '@/common/tools/url_utils';
+
+import { useProject, useTestVariant } from '../context';
+
+export function ResultInfo() {
+  const variant = useTestVariant();
+  const project = useProject();
+
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  function toggleDrawer(open: boolean) {
+    setDrawerOpen(open);
+  }
+  return (
+    <Grid item container columnGap={1} alignItems="center" sx={{ ml: 0.5 }}>
+      <Typography fontSize="0.9rem">
+        {getSortedTestVariantDef(variant.variant?.def || {}).map((entry, i) => (
+          <Fragment key={entry[0]}>
+            {i > 0 && ', '}
+            {entry[0]}: {entry[1]}
+          </Fragment>
+        ))}
+      </Typography>
+      <Divider orientation="vertical" flexItem />
+      <Link
+        target="blank"
+        href={getTestHistoryURLWithSearchParam(
+          project,
+          variant,
+          generateTestHistoryURLSearchParams(variant),
+        )}
+      >
+        History
+      </Link>
+      {variant.testMetadata?.location && (
+        <>
+          <Divider orientation="vertical" flexItem />
+          <Link
+            target="_blank"
+            href={getCodeSourceUrl(variant.testMetadata.location)}
+          >
+            Test source
+          </Link>
+        </>
+      )}
+      {/** TODO(b/308716044): Display the test properties in the drawer. */}
+      {variant.testMetadata?.properties && (
+        <>
+          <Divider orientation="vertical" flexItem />
+          <Button
+            color="primary"
+            variant="outlined"
+            onClick={() => toggleDrawer(true)}
+            size="small"
+          >
+            Metadata
+          </Button>
+          <Drawer
+            anchor="bottom"
+            open={drawerOpen}
+            onClose={() => toggleDrawer(false)}
+            sx={{
+              height: '500px',
+            }}
+            PaperProps={{
+              sx: {
+                height: '500px',
+              },
+            }}
+          >
+            <Grid
+              container
+              sx={{
+                p: 1,
+              }}
+            >
+              name: {variant.testMetadata.name}
+            </Grid>
+          </Drawer>
+        </>
+      )}
+    </Grid>
+  );
+}

@@ -31,6 +31,7 @@ import { TestResultsTabCountIndicatorElement } from './count_indicator';
 
 const variant1 = {
   testId: 'a',
+  sourcesId: '1',
   variant: { def: { key1: 'val1' } },
   variantHash: 'key1:val1',
   status: TestVariantStatus.UNEXPECTED,
@@ -38,6 +39,7 @@ const variant1 = {
 
 const variant2 = {
   testId: 'a',
+  sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.UNEXPECTED,
@@ -45,6 +47,7 @@ const variant2 = {
 
 const variant3 = {
   testId: 'a',
+  sourcesId: '1',
   variant: { def: { key1: 'val3' } },
   variantHash: 'key1:val3',
   status: TestVariantStatus.UNEXPECTED,
@@ -52,6 +55,7 @@ const variant3 = {
 
 const variant4 = {
   testId: 'b',
+  sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.FLAKY,
@@ -59,6 +63,7 @@ const variant4 = {
 
 const variant5 = {
   testId: 'c',
+  sourcesId: '1',
   variant: { def: { key1: 'val2', key2: 'val1' } },
   variantHash: 'key1:val2|key2:val1',
   status: TestVariantStatus.FLAKY,

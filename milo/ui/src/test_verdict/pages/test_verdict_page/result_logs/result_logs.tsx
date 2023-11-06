@@ -12,23 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GitilesCommit } from '@/common/services/common';
-import { getGitilesCommitURL } from '@/common/tools/gitiles_utils';
+import Grid from '@mui/material/Grid';
 
-export interface RevisionRowProps {
-  readonly commit: GitilesCommit;
-}
+import { LogFiles } from './log_files';
+import { LogsTable } from './logs_table';
 
-export function RevisionRow({ commit }: RevisionRowProps) {
+export function ResultLogs() {
+  // TODO(b/308717211): Implement a basic logger.
   return (
-    <tr>
-      <td>Revision:</td>
-      <td>
-        <a href={getGitilesCommitURL(commit)} target="_blank" rel="noreferrer">
-          {commit.id}
-        </a>
-        {commit.position ? ` CP #${commit.position}` : ''}
-      </td>
-    </tr>
+    <Grid container item>
+      <LogFiles />
+      <LogsTable />
+    </Grid>
   );
 }

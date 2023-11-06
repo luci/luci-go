@@ -32,4 +32,5 @@ export const PAGE_LABEL_MAP = Object.freeze({
   [UiPage.Goldeneye]: 'Goldeneye',
   [UiPage.ChromiumDash]: 'ChromiumDash',
   [UiPage.ReleaseNotes]: "What's new",
+  [UiPage.TestVerdict]: 'Test verdict',
 });

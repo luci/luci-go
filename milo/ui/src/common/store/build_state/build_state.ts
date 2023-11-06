@@ -23,11 +23,10 @@ import {
   Build,
   BuildbucketStatus,
   getAssociatedGitilesCommit,
-  GitilesCommit,
   Log,
   Step,
 } from '@/common/services/buildbucket';
-import { StringPair } from '@/common/services/common';
+import { GitilesCommit, StringPair } from '@/common/services/common';
 import { Timestamp, TimestampInstance } from '@/common/store/timestamp';
 import { UserConfig, UserConfigInstance } from '@/common/store/user_config';
 import { renderMarkdown } from '@/common/tools/markdown/utils';

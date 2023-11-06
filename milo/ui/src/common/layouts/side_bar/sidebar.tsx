@@ -31,7 +31,7 @@ import {
   useSelectedPage,
   useProject,
 } from '@/common/components/page_meta/page_meta_provider';
-import { UiPage } from '@/common/constants';
+import { UiPage, CommonColors } from '@/common/constants';
 
 import { PAGE_LABEL_MAP, drawerWidth } from '../constants';
 
@@ -125,9 +125,9 @@ export const Sidebar = ({ open }: Props) => {
             ))}
           </Fragment>
         ))}
-        <div style={{ margin: '40px 20px', color: '#888' }}>
+        <div style={{ margin: '40px 20px', color: CommonColors.FADED_TEXT }}>
           {!project && (
-            <div style={{ margin: '10px 0', color: '#888' }}>
+            <div style={{ margin: '10px 0', color: CommonColors.FADED_TEXT }}>
               <Typography variant="caption">
                 To see more options, <Link to="/ui/">choose a project</Link>.
               </Typography>

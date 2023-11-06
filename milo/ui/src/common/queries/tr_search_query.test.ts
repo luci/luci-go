@@ -26,6 +26,7 @@ import {
 
 const variant1: TestVariant = {
   testId: 'invocation-a/test-suite-a/test-1',
+  sourcesId: '1',
   variant: { def: { key1: 'val1' } },
   variantHash: 'key1:val1',
   testMetadata: {
@@ -59,6 +60,7 @@ const variant1: TestVariant = {
 
 const variant2: TestVariant = {
   testId: 'invocation-a/test-suite-a/test-2',
+  sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   testMetadata: {
@@ -87,6 +89,7 @@ const variant2: TestVariant = {
 
 const variant3: TestVariant = {
   testId: 'invocation-a/test-suite-b/test-3',
+  sourcesId: '1',
   variant: { def: { key1: 'val3' } },
   variantHash: 'key1:val3',
   testMetadata: {
@@ -109,6 +112,7 @@ const variant3: TestVariant = {
 
 const variant4: TestVariant = {
   testId: 'invocation-a/test-suite-B/test-4',
+  sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.EXONERATED,
@@ -116,6 +120,7 @@ const variant4: TestVariant = {
 
 const variant5: TestVariant = {
   testId: 'invocation-a/test-suite-B/test-5',
+  sourcesId: '1',
   variant: { def: { key1: 'val2', key2: 'val1' } },
   variantHash: 'key1:val2|key2:val1',
   status: TestVariantStatus.EXPECTED,
@@ -130,6 +135,7 @@ const variant5: TestVariant = {
 
 const variant6: TestVariant = {
   testId: 'invocation-a/test-suite-b/test-5',
+  sourcesId: '1',
   variant: { def: { key1: 'val2', key2: 'val3' } },
   variantHash: 'key1:val2|key2:val3',
   testMetadata: {
@@ -147,6 +153,7 @@ const variant6: TestVariant = {
 
 const variant7: TestVariant = {
   testId: 'invocation-a/test-suite-b/test-5/sub',
+  sourcesId: '1',
   variant: { def: { key1: 'val2', key2: 'val3=val' } },
   variantHash: 'key1:val2|key2:val3=val',
   status: TestVariantStatus.EXPECTED,

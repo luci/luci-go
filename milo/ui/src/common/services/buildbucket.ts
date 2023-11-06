@@ -14,7 +14,11 @@
 
 import stableStringify from 'fast-json-stable-stringify';
 
-import { StringPair } from '@/common/services/common';
+import {
+  GerritChange,
+  GitilesCommit,
+  StringPair,
+} from '@/common/services/common';
 import { cached, CacheOption } from '@/generic_libs/tools/cached_fn';
 import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
 
@@ -187,21 +191,6 @@ export interface BuildInput {
   readonly gitilesCommit?: GitilesCommit;
   readonly gerritChanges?: GerritChange[];
   readonly experiments?: string[];
-}
-
-export interface GitilesCommit {
-  readonly host: string;
-  readonly project: string;
-  readonly id?: string;
-  readonly ref?: string;
-  readonly position?: number;
-}
-
-export interface GerritChange {
-  readonly host: string;
-  readonly project: string;
-  readonly change: string;
-  readonly patchset: string;
 }
 
 export interface BuildOutput {

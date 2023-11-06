@@ -12,23 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GitilesCommit } from '@/common/services/common';
-import { getGitilesCommitURL } from '@/common/tools/gitiles_utils';
+import Grid from '@mui/material/Grid';
 
-export interface RevisionRowProps {
-  readonly commit: GitilesCommit;
-}
+import { useSelectedResultIndex, useTestVariant } from '../context';
 
-export function RevisionRow({ commit }: RevisionRowProps) {
+import { ResultBasicInfo } from './result_basic_info';
+import { ResultTags } from './result_tags';
+
+export function ResultDetails() {
+  const selectedResultIndex = useSelectedResultIndex();
+  const variant = useTestVariant();
+
+  const result = variant.results![selectedResultIndex];
   return (
-    <tr>
-      <td>Revision:</td>
-      <td>
-        <a href={getGitilesCommitURL(commit)} target="_blank" rel="noreferrer">
-          {commit.id}
-        </a>
-        {commit.position ? ` CP #${commit.position}` : ''}
-      </td>
-    </tr>
+    <Grid item container flexDirection="column">
+      <ResultBasicInfo result={result.result} />
+      {result.result.tags && <ResultTags tags={result.result.tags} />}
+    </Grid>
   );
 }

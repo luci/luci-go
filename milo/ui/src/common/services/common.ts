@@ -16,3 +16,18 @@ export interface StringPair {
   readonly key: string;
   readonly value?: string;
 }
+
+export interface GitilesCommit {
+  readonly host: string;
+  readonly project: string;
+  readonly id?: string;
+  readonly ref?: string;
+  readonly position?: number;
+}
+
+export interface GerritChange {
+  readonly host: string;
+  readonly project: string;
+  readonly change: string;
+  readonly patchset: string;
+}

@@ -36,6 +36,7 @@ import {
   RESULT_LIMIT,
   TestStatus,
   TestVariant,
+  getSortedTestVariantDef,
 } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
@@ -50,14 +51,6 @@ import { attachTags, hasTags } from '@/generic_libs/tools/tag';
 import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
 
 import { consumeProject, consumeTestTabUrl } from './context';
-
-// This list defines the order in which variant def keys should be displayed.
-// Any unrecognized keys will be listed after the ones defined below.
-const ORDERED_VARIANT_DEF_KEYS = Object.freeze([
-  'bucket',
-  'builder',
-  'test_suite',
-]);
 
 /**
  * Renders an expandable entry of the given test variant.
@@ -228,21 +221,7 @@ export class TestVariantEntryElement
 
   @computed
   private get variantDef() {
-    const def = this.variant.variant?.def || {};
-    const res: Array<[string, string]> = [];
-    const seen = new Set();
-    for (const key of ORDERED_VARIANT_DEF_KEYS) {
-      if (Object.prototype.hasOwnProperty.call(def, key)) {
-        res.push([key, def[key]]);
-        seen.add(key);
-      }
-    }
-    for (const [key, value] of Object.entries(def)) {
-      if (!seen.has(key)) {
-        res.push([key, value]);
-      }
-    }
-    return res;
+    return getSortedTestVariantDef(this.variant.variant?.def || {});
   }
 
   @computed

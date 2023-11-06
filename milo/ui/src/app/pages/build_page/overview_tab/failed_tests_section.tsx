@@ -20,11 +20,11 @@ import { getPropKeyLabel } from '@/common/services/resultdb';
 import { useStore } from '@/common/store';
 import { useInvocation } from '@/common/store/invocation_state';
 import {
+  generateTestHistoryURLSearchParams,
   getBuildURLPath,
-  getTestHistoryURLPath,
+  getTestHistoryURLWithSearchParam,
 } from '@/common/tools/url_utils';
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
-import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
 
 import { TestVariantEntry } from '../../test_results_tab/test_variants_table/test_variant_entry';
 
@@ -114,24 +114,15 @@ export const FailedTestSection = observer(() => {
     }
 
     for (const testVariant of group) {
-      const q = Object.entries(testVariant.variant?.def || {})
-        .map(
-          ([dimension, value]) =>
-            `V:${encodeURIComponent(dimension)}=${encodeURIComponent(value)}`,
-        )
-        .join(' ');
       lists.push(
         <TestVariantEntry
           key={testVariant.testId + '|' + testVariant.variantHash}
           variant={testVariant}
           columnGetters={invState.columnGetters}
-          historyUrl={urlSetSearchQueryParam(
-            getTestHistoryURLPath(
-              store.buildPage.build.data.builder.project,
-              testVariant.testId,
-            ),
-            'q',
-            q,
+          historyUrl={getTestHistoryURLWithSearchParam(
+            store.buildPage.build.data.builder.project,
+            testVariant,
+            generateTestHistoryURLSearchParams(testVariant),
           )}
         />,
       );

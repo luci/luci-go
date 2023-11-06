@@ -14,7 +14,7 @@
 
 import { Link } from '@mui/material';
 
-import { GerritChange } from '@/common/services/buildbucket';
+import { GerritChange } from '@/common/services/common';
 import { getGerritChangeURL } from '@/common/tools/url_utils';
 
 interface Props {

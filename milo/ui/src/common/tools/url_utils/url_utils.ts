@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Build, BuilderID, GerritChange } from '@/common/services/buildbucket';
-import { TestLocation } from '@/common/services/resultdb';
+import { Build, BuilderID } from '@/common/services/buildbucket';
+import { GerritChange } from '@/common/services/common';
+import { TestLocation, TestVariant } from '@/common/services/resultdb';
+import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
 
 export function getBuildURLPathFromBuildData(
   build: Pick<Build, 'builder' | 'number' | 'id'>,
@@ -102,6 +104,27 @@ export function getTextDiffArtifactURLPath(artifactName: string) {
 
 export function getTestHistoryURLPath(realm: string, testId: string) {
   return `/ui/test/${realm}/${encodeURIComponent(testId)}`;
+}
+
+export function generateTestHistoryURLSearchParams(testVariant: TestVariant) {
+  return Object.entries(testVariant.variant?.def || {})
+    .map(
+      ([dimension, value]) =>
+        `V:${encodeURIComponent(dimension)}=${encodeURIComponent(value)}`,
+    )
+    .join(' ');
+}
+
+export function getTestHistoryURLWithSearchParam(
+  project: string,
+  testVariant: TestVariant,
+  queryParam: string,
+) {
+  return urlSetSearchQueryParam(
+    getTestHistoryURLPath(project, testVariant.testId),
+    'q',
+    queryParam,
+  );
 }
 
 export const NOT_FOUND_URL = '/ui/not-found';

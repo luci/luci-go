@@ -16,7 +16,11 @@ import stableStringify from 'fast-json-stable-stringify';
 import { groupBy } from 'lodash-es';
 
 import { BuilderID } from '@/common/services/buildbucket';
-import { StringPair } from '@/common/services/common';
+import {
+  GerritChange,
+  GitilesCommit,
+  StringPair,
+} from '@/common/services/common';
 import { logging } from '@/common/tools/logging';
 import { cached, CacheOption } from '@/generic_libs/tools/cached_fn';
 import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
@@ -105,8 +109,10 @@ export interface Artifact {
   readonly sizeBytes: number;
 }
 
+export type TestVariantDef = { [key: string]: string };
+
 export interface Variant {
-  readonly def: { [key: string]: string };
+  readonly def: TestVariantDef;
 }
 
 export interface FailureReason {
@@ -216,6 +222,12 @@ export interface TestVariant {
   readonly results?: readonly TestResultBundle[];
   readonly exonerations?: readonly TestExoneration[];
   readonly testMetadata?: TestMetadata;
+  readonly sourcesId: string;
+}
+
+export interface Sources {
+  readonly gitilesCommit?: GitilesCommit;
+  readonly changelists?: GerritChange[];
 }
 
 export const enum TestVariantStatus {
@@ -262,6 +274,7 @@ export interface BatchGetTestVariantsRequest {
 
 export interface BatchGetTestVariantsResponse {
   readonly testVariants?: readonly TestVariant[];
+  readonly sources: { [key: string]: Sources };
 }
 
 export interface QueryTestMetadataRequest {
@@ -642,4 +655,29 @@ export function getCriticalVariantKeys(variants: readonly Variant[]): string[] {
   }
 
   return criticalKeys;
+}
+
+// This list defines the order in which variant def keys should be displayed.
+// Any unrecognized keys will be listed after the ones defined below.
+export const ORDERED_VARIANT_DEF_KEYS = Object.freeze([
+  'bucket',
+  'builder',
+  'test_suite',
+]);
+
+export function getSortedTestVariantDef(def: TestVariantDef) {
+  const res: Array<[string, string]> = [];
+  const seen = new Set();
+  for (const key of ORDERED_VARIANT_DEF_KEYS) {
+    if (Object.prototype.hasOwnProperty.call(def, key)) {
+      res.push([key, def[key]]);
+      seen.add(key);
+    }
+  }
+  for (const [key, value] of Object.entries(def)) {
+    if (!seen.has(key)) {
+      res.push([key, value]);
+    }
+  }
+  return res;
 }

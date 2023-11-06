@@ -12,23 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GitilesCommit } from '@/common/services/common';
-import { getGitilesCommitURL } from '@/common/tools/gitiles_utils';
-
-export interface RevisionRowProps {
-  readonly commit: GitilesCommit;
-}
-
-export function RevisionRow({ commit }: RevisionRowProps) {
-  return (
-    <tr>
-      <td>Revision:</td>
-      <td>
-        <a href={getGitilesCommitURL(commit)} target="_blank" rel="noreferrer">
-          {commit.id}
-        </a>
-        {commit.position ? ` CP #${commit.position}` : ''}
-      </td>
-    </tr>
-  );
-}
+export * from './result_info';
