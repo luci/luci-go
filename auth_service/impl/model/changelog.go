@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -32,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/tq"
 )
 
@@ -653,8 +655,74 @@ func diffGlobalConfig(ctx context.Context, target string, old, new datastore.Pro
 }
 
 func diffRealmsGlobals(ctx context.Context, target string, old, new datastore.PropertyMap) ([]*AuthDBChange, error) {
-	// TODO(cjacomet): Implement, this one is a bit tricky with current permissions representation vs Python.
-	return nil, nil
+	changes := []*AuthDBChange{}
+	authDBRev := getInt64Prop(new, "auth_db_rev")
+	class := "AuthDBRealmsGlobalsChange"
+
+	oldRealms, err := toAuthRealmsGlobals(old)
+	if err != nil {
+		return changes, err
+	}
+	newRealms, err := toAuthRealmsGlobals(new)
+	if err != nil {
+		return changes, err
+	}
+
+	oldNames, oldPermissions := extractPermissions(oldRealms)
+	newNames, newPermissions := extractPermissions(newRealms)
+
+	var added, changed []string
+	for _, name := range newNames {
+		newPerm := newPermissions[name]
+		oldPerm, ok := oldPermissions[name]
+		if !ok {
+			// Permission is not in previous version.
+			added = append(added, name)
+		} else if oldPerm != newPerm {
+			// Permission is different between versions.
+			changed = append(changed, name)
+		}
+	}
+
+	var removed []string
+	for _, name := range oldNames {
+		if _, ok := newPermissions[name]; !ok {
+			// Permission is not in the newer version.
+			removed = append(removed, name)
+		}
+	}
+
+	// No changes at all; permissions are identical.
+	if len(added) == 0 && len(changed) == 0 && len(removed) == 0 {
+		return changes, nil
+	}
+
+	changes = append(changes, populateCommonFields(ctx, ChangeRealmsGlobalsChanged, target, authDBRev, class,
+		&AuthDBChange{
+			PermissionsAdded:   added,
+			PermissionsChanged: changed,
+			PermissionsRemoved: removed,
+		}))
+	return changes, nil
+}
+
+// Returns the permission names (in ascending order) and a map of the permissions,
+// where the key is the permission name.
+func extractPermissions(a *AuthRealmsGlobals) ([]string, map[string]*protocol.Permission) {
+	if a == nil || a.PermissionsList == nil {
+		return []string{}, map[string]*protocol.Permission{}
+	}
+
+	permissions := a.PermissionsList.GetPermissions()
+	names := make([]string, len(permissions))
+	permissionsByName := make(map[string]*protocol.Permission, len(permissions))
+	for i, permission := range permissions {
+		name := permission.GetName()
+		names[i] = name
+		permissionsByName[name] = permission
+	}
+	sort.Strings(names)
+	return names, permissionsByName
 }
 
 // /////////////////////////////////////////////////////////////////////
@@ -724,6 +792,27 @@ func getByteSliceProp(pm datastore.PropertyMap, key string) []byte {
 		return nil
 	}
 	return value.([]byte)
+}
+
+func toAuthRealmsGlobals(pm datastore.PropertyMap) (*AuthRealmsGlobals, error) {
+	// Copy the map, excluding meta fields.
+	filteredPM, err := pm.Save(false)
+	if err != nil {
+		return nil, errors.New("failed to copy PropertyMap without meta")
+	}
+
+	// Delete *History fields, if present.
+	historyFields := []string{"auth_db_deleted", "auth_db_change_comment", "auth_db_app_version"}
+	for _, name := range historyFields {
+		delete(filteredPM, name)
+	}
+
+	a := &AuthRealmsGlobals{}
+	if err := datastore.GetPLS(a).Load(filteredPM); err != nil {
+		return nil, err
+	}
+
+	return a, nil
 }
 
 ///////////////////////////////////////////////////////////////////////

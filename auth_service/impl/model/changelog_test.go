@@ -764,5 +764,59 @@ func TestGenerateChanges(t *testing.T) {
 				}})
 			})
 		})
+
+		Convey("AuthRealmsGlobals changes", func() {
+			permCfg := &configspb.PermissionsConfig{
+				Role: []*configspb.PermissionsConfig_Role{
+					{
+						Name: "role/test.role.editor",
+						Permissions: []*protocol.Permission{
+							{
+								Name: "test.perm.edit",
+							},
+						},
+					},
+					{
+						Name: "role/test.role.creator",
+						Permissions: []*protocol.Permission{
+							{
+								Name: "test.perm.create",
+							},
+						},
+					},
+				},
+			}
+			So(UpdateAuthRealmsGlobals(ctx, permCfg, false), ShouldBeNil)
+			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+			actualChanges, err := generateChanges(ctx, 1, false)
+			So(err, ShouldBeNil)
+			validateChanges(ctx, "update realms globals, old config not present", 1, actualChanges, []*AuthDBChange{{
+				ChangeType:       ChangeRealmsGlobalsChanged,
+				PermissionsAdded: []string{"test.perm.create", "test.perm.edit"},
+			}})
+
+			permCfg = &configspb.PermissionsConfig{
+				Role: []*configspb.PermissionsConfig_Role{
+					{
+						Name: "role/test.role.creator",
+						Permissions: []*protocol.Permission{
+							{
+								Name:     "test.perm.create",
+								Internal: true,
+							},
+						},
+					},
+				},
+			}
+			So(UpdateAuthRealmsGlobals(ctx, permCfg, false), ShouldBeNil)
+			So(taskScheduler.Tasks(), ShouldHaveLength, 4)
+			actualChanges, err = generateChanges(ctx, 2, false)
+			So(err, ShouldBeNil)
+			validateChanges(ctx, "update realms globals, old config present", 2, actualChanges, []*AuthDBChange{{
+				ChangeType:         ChangeRealmsGlobalsChanged,
+				PermissionsChanged: []string{"test.perm.create"},
+				PermissionsRemoved: []string{"test.perm.edit"},
+			}})
+		})
 	})
 }
