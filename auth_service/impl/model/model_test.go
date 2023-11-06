@@ -326,21 +326,21 @@ func TestCreateAuthGroup(t *testing.T) {
 		Convey("empty group name", func() {
 			group := testAuthGroup(ctx, "")
 
-			_, err := CreateAuthGroup(ctx, group, false)
+			_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API")
 			So(err, ShouldEqual, ErrInvalidName)
 		})
 
 		Convey("invalid group name", func() {
 			group := testAuthGroup(ctx, "foo^")
 
-			_, err := CreateAuthGroup(ctx, group, false)
+			_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API")
 			So(err, ShouldEqual, ErrInvalidName)
 		})
 
 		Convey("external group name", func() {
 			group := testAuthGroup(ctx, "mdb/foo")
 
-			_, err := CreateAuthGroup(ctx, group, false)
+			_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API")
 			So(err, ShouldEqual, ErrInvalidName)
 		})
 
@@ -351,7 +351,7 @@ func TestCreateAuthGroup(t *testing.T) {
 
 			group := testAuthGroup(ctx, "foo")
 
-			_, err := CreateAuthGroup(ctx, group, false)
+			_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API")
 			So(err, ShouldEqual, ErrAlreadyExists)
 		})
 
@@ -359,7 +359,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			group := testAuthGroup(ctx, "foo")
 			group.Members = []string{"no-prefix@google.com"}
 
-			_, err := CreateAuthGroup(ctx, group, false)
+			_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API")
 			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
 			So(err, ShouldErrLike, "bad identity string \"no-prefix@google.com\"")
 		})
@@ -368,7 +368,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			group := testAuthGroup(ctx, "foo")
 			group.Members = []string{"project:abc"}
 
-			_, err := CreateAuthGroup(ctx, group, false)
+			_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API")
 			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
 			So(err, ShouldErrLike, `"project:..." identities aren't allowed in groups`)
 		})
@@ -377,7 +377,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			group := testAuthGroup(ctx, "foo")
 			group.Globs = []string{"*@no-prefix.com"}
 
-			_, err := CreateAuthGroup(ctx, group, false)
+			_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API")
 			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
 			So(err, ShouldErrLike, "bad identity glob string \"*@no-prefix.com\"")
 		})
@@ -386,7 +386,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			group := testAuthGroup(ctx, "foo")
 			group.Globs = []string{"project:*"}
 
-			_, err := CreateAuthGroup(ctx, group, false)
+			_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API")
 			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
 			So(err, ShouldErrLike, `"project:..." globs aren't allowed in groups`)
 		})
@@ -396,7 +396,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			group.Owners = "bar"
 			group.Nested = []string{"baz", "qux"}
 
-			_, err := CreateAuthGroup(ctx, group, false)
+			_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API")
 			So(err, ShouldUnwrapTo, ErrInvalidReference)
 			So(err, ShouldErrLike, "some referenced groups don't exist: baz, qux, bar")
 		})
@@ -405,7 +405,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			group := testAuthGroup(ctx, "foo")
 			group.Owners = "bar"
 
-			_, err := CreateAuthGroup(ctx, group, false)
+			_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API")
 			So(err, ShouldErrLike, "bar")
 		})
 
@@ -417,7 +417,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			group := emptyAuthGroup(ctx, "foo")
 			group.Owners = ""
 
-			createdGroup, err := CreateAuthGroup(ctx, group, false)
+			createdGroup, err := CreateAuthGroup(ctx, group, false, "Go pRPC API")
 			So(err, ShouldBeNil)
 			So(createdGroup.Owners, ShouldEqual, AdminGroup)
 		})
@@ -426,7 +426,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			group := emptyAuthGroup(ctx, "foo")
 			group.Owners = "foo"
 
-			createdGroup, err := CreateAuthGroup(ctx, group, false)
+			createdGroup, err := CreateAuthGroup(ctx, group, false, "Go pRPC API")
 			So(err, ShouldBeNil)
 			So(createdGroup.Owners, ShouldEqual, createdGroup.ID)
 		})
@@ -434,7 +434,7 @@ func TestCreateAuthGroup(t *testing.T) {
 		Convey("successfully writes to datastore", func() {
 			group := emptyAuthGroup(ctx, "foo")
 
-			createdGroup, err := CreateAuthGroup(ctx, group, false)
+			createdGroup, err := CreateAuthGroup(ctx, group, false, "Go pRPC API")
 			So(err, ShouldBeNil)
 			So(createdGroup.ID, ShouldEqual, group.ID)
 			So(createdGroup.Description, ShouldEqual, group.Description)
@@ -470,7 +470,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			{
 				group1 := emptyAuthGroup(ctx, "foo")
 
-				createdGroup1, err := CreateAuthGroup(ctx, group1, false)
+				createdGroup1, err := CreateAuthGroup(ctx, group1, false, "Go pRPC API")
 				So(err, ShouldBeNil)
 				So(createdGroup1.AuthDBRev, ShouldEqual, 1)
 				So(createdGroup1.AuthDBPrevRev, ShouldEqual, 0)
@@ -492,7 +492,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			{
 				group2 := emptyAuthGroup(ctx, "foo2")
 
-				createdGroup2, err := CreateAuthGroup(ctx, group2, false)
+				createdGroup2, err := CreateAuthGroup(ctx, group2, false, "Go pRPC API")
 				So(err, ShouldBeNil)
 				So(createdGroup2.AuthDBRev, ShouldEqual, 2)
 				So(createdGroup2.AuthDBPrevRev, ShouldEqual, 0)
@@ -506,7 +506,7 @@ func TestCreateAuthGroup(t *testing.T) {
 
 			// Try to create another group the same as the second, which should fail.
 			{
-				_, err := CreateAuthGroup(ctx, emptyAuthGroup(ctx, "foo2"), false)
+				_, err := CreateAuthGroup(ctx, emptyAuthGroup(ctx, "foo2"), false, "Go pRPC API")
 				So(err, ShouldBeError)
 
 				state3, err := GetReplicationState(ctx)
@@ -522,7 +522,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			{
 				group := emptyAuthGroup(ctx, "foo")
 
-				_, err := CreateAuthGroup(ctx, group, false)
+				_, err := CreateAuthGroup(ctx, group, false, "test historical comment")
 				So(err, ShouldBeNil)
 
 				entities, err := getAllDatastoreEntities(ctx, "AuthGroupHistory", HistoricalRevisionKey(ctx, 1))
@@ -542,7 +542,7 @@ func TestCreateAuthGroup(t *testing.T) {
 				So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
 				So(getProp(historicalEntity, "auth_db_prev_rev"), ShouldBeNil)
 				So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeFalse)
-				So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "Go pRPC API")
+				So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "test historical comment")
 				So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
 
 				// Check no properties are indexed.
@@ -555,7 +555,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			{
 				group := emptyAuthGroup(ctx, "foo2")
 
-				_, err := CreateAuthGroup(ctx, group, false)
+				_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API")
 				So(err, ShouldBeNil)
 
 				entities, err := getAllDatastoreEntities(ctx, "AuthGroupHistory", HistoricalRevisionKey(ctx, 2))
@@ -612,7 +612,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 		Convey("can't update external group", func() {
 			group.ID = "mdb/foo"
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			_, err := UpdateAuthGroup(ctx, group, nil, etag, false)
+			_, err := UpdateAuthGroup(ctx, group, nil, etag, false, "Go pRPC API")
 			So(err, ShouldErrLike, "cannot update external group")
 		})
 
@@ -621,7 +621,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 				Identity: "user:someone@example.com",
 			})
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			_, err := UpdateAuthGroup(ctx, group, nil, etag, false)
+			_, err := UpdateAuthGroup(ctx, group, nil, etag, false, "Go pRPC API")
 			So(err, ShouldEqual, ErrPermissionDenied)
 		})
 
@@ -631,19 +631,19 @@ func TestUpdateAuthGroup(t *testing.T) {
 				IdentityGroups: []string{AdminGroup},
 			})
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			_, err := UpdateAuthGroup(ctx, group, nil, etag, false)
+			_, err := UpdateAuthGroup(ctx, group, nil, etag, false, "Go pRPC API")
 			So(err, ShouldBeNil)
 		})
 
 		Convey("can't delete if etag doesn't match", func() {
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			_, err := UpdateAuthGroup(ctx, group, nil, "bad-etag", false)
+			_, err := UpdateAuthGroup(ctx, group, nil, "bad-etag", false, "Go pRPC API")
 			So(err, ShouldErrLike, ErrConcurrentModification)
 		})
 
 		Convey("group name that doesn't exist", func() {
 			group.ID = "non-existent-group"
-			_, err := UpdateAuthGroup(ctx, group, nil, etag, false)
+			_, err := UpdateAuthGroup(ctx, group, nil, etag, false, "Go pRPC API")
 			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 		})
 
@@ -652,7 +652,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 
 			group.Members = []string{"no-prefix@google.com"}
 
-			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"members"}}, etag, false)
+			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"members"}}, etag, false, "Go pRPC API")
 			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
 			So(err, ShouldErrLike, "bad identity string \"no-prefix@google.com\"")
 		})
@@ -662,7 +662,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 
 			group.Members = []string{"project:abc"}
 
-			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"members"}}, etag, false)
+			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"members"}}, etag, false, "Go pRPC API")
 			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
 			So(err, ShouldErrLike, `"project:..." identities aren't allowed in groups`)
 		})
@@ -672,7 +672,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 
 			group.Globs = []string{"*@no-prefix.com"}
 
-			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"globs"}}, etag, false)
+			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"globs"}}, etag, false, "Go pRPC API")
 			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
 			So(err, ShouldErrLike, "bad identity glob string \"*@no-prefix.com\"")
 		})
@@ -682,7 +682,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 
 			group.Globs = []string{"project:*"}
 
-			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"globs"}}, etag, false)
+			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"globs"}}, etag, false, "Go pRPC API")
 			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
 			So(err, ShouldErrLike, `"project:..." globs aren't allowed in groups`)
 		})
@@ -692,7 +692,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 
 			group.Nested = []string{"baz", "qux"}
 
-			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, etag, false)
+			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, etag, false, "Go pRPC API")
 			So(err, ShouldUnwrapTo, ErrInvalidReference)
 			So(err, ShouldErrLike, "some referenced groups don't exist")
 		})
@@ -702,7 +702,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 
 			group.Owners = "bar"
 
-			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"owners"}}, etag, false)
+			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"owners"}}, etag, false, "Go pRPC API")
 			So(err, ShouldErrLike, "bar")
 		})
 
@@ -712,7 +712,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 
 			group.Owners = ""
 
-			updatedGroup, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"owners"}}, etag, false)
+			updatedGroup, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"owners"}}, etag, false, "Go pRPC API")
 			So(err, ShouldBeNil)
 			So(updatedGroup.Owners, ShouldEqual, AdminGroup)
 		})
@@ -728,7 +728,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 			group.Globs = []string{"user:*@updated.com"}
 			group.Nested = []string{"new-nested-group"}
 
-			updatedGroup, err := UpdateAuthGroup(ctx, group, nil, etag, false)
+			updatedGroup, err := UpdateAuthGroup(ctx, group, nil, etag, false, "Go pRPC API")
 			So(err, ShouldBeNil)
 			So(updatedGroup.ID, ShouldEqual, group.ID)
 			So(updatedGroup.Description, ShouldEqual, group.Description)
@@ -771,7 +771,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 			group.Globs = []string{"user:*@updated.com"}
 			group.Nested = []string{"new-nested-group"}
 
-			updatedGroup, err := UpdateAuthGroup(ctx, group, nil, etag, false)
+			updatedGroup, err := UpdateAuthGroup(ctx, group, nil, etag, false, "Go pRPC API")
 			So(err, ShouldBeNil)
 			So(updatedGroup.AuthDBRev, ShouldEqual, 11)
 			So(updatedGroup.AuthDBPrevRev, ShouldEqual, 1)
@@ -789,7 +789,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 			So(replicationTask.Payload, ShouldResembleProto, &taskspb.ReplicationTask{AuthDbRev: 11})
 
 			// Update a group, should fail (due to bad etag) and *not* bump AuthDB revision.
-			_, err = UpdateAuthGroup(ctx, group, nil, "bad-etag", false)
+			_, err = UpdateAuthGroup(ctx, group, nil, "bad-etag", false, "Go pRPC API")
 			So(err, ShouldBeError)
 
 			state, err = GetReplicationState(ctx)
@@ -810,7 +810,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 			group.Globs = []string{"user:*@updated.com"}
 			group.Nested = []string{"new-nested-group"}
 
-			_, err := UpdateAuthGroup(ctx, group, nil, etag, false)
+			_, err := UpdateAuthGroup(ctx, group, nil, etag, false, "Go pRPC API")
 			So(err, ShouldBeNil)
 
 			entities, err := getAllDatastoreEntities(ctx, "AuthGroupHistory", HistoricalRevisionKey(ctx, 11))
@@ -868,7 +868,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 				// A
 				a.Nested = []string{"A"}
 
-				_, err := UpdateAuthGroup(ctx, a, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false)
+				_, err := UpdateAuthGroup(ctx, a, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false, "Go pRPC API")
 				So(err, ShouldErrLike, "groups can not have cyclic dependencies: A -> A.")
 			})
 
@@ -880,7 +880,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 				//   A
 				b2.Nested = []string{"A"}
 
-				_, err := UpdateAuthGroup(ctx, b2, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false)
+				_, err := UpdateAuthGroup(ctx, b2, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false, "Go pRPC API")
 				So(err, ShouldErrLike, "groups can not have cyclic dependencies: B2 -> A -> B2.")
 			})
 
@@ -894,7 +894,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 				// A
 				c.Nested = []string{"A"}
 
-				_, err := UpdateAuthGroup(ctx, c, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false)
+				_, err := UpdateAuthGroup(ctx, c, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false, "Go pRPC API")
 				So(err, ShouldErrLike, "groups can not have cyclic dependencies: C -> A -> B1 -> C.")
 			})
 
@@ -906,7 +906,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 				//   B1
 				c.Nested = []string{"B1"}
 
-				_, err := UpdateAuthGroup(ctx, c, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false)
+				_, err := UpdateAuthGroup(ctx, c, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false, "Go pRPC API")
 				So(err, ShouldErrLike, "groups can not have cyclic dependencies: C -> B1 -> C.")
 			})
 
@@ -918,7 +918,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 				//      C
 				b2.Nested = []string{"C"}
 
-				_, err := UpdateAuthGroup(ctx, b2, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false)
+				_, err := UpdateAuthGroup(ctx, b2, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false, "Go pRPC API")
 				So(err, ShouldBeNil)
 			})
 		})
@@ -947,14 +947,14 @@ func TestDeleteAuthGroup(t *testing.T) {
 		etag := `W/"MjAyMS0wOC0xNlQxMjoyMDowMFo="`
 
 		Convey("can't delete the admin group", func() {
-			err := DeleteAuthGroup(ctx, AdminGroup, "", false)
+			err := DeleteAuthGroup(ctx, AdminGroup, "", false, "Go pRPC API")
 			So(err, ShouldEqual, ErrPermissionDenied)
 		})
 
 		Convey("can't delete external group", func() {
 			group.ID = "mdb/foo"
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			err := DeleteAuthGroup(ctx, group.ID, "", false)
+			err := DeleteAuthGroup(ctx, group.ID, "", false, "Go pRPC API")
 			So(err, ShouldErrLike, "cannot delete external group")
 		})
 
@@ -963,18 +963,18 @@ func TestDeleteAuthGroup(t *testing.T) {
 				Identity: "user:someone@example.com",
 			})
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			err := DeleteAuthGroup(ctx, group.ID, "", false)
+			err := DeleteAuthGroup(ctx, group.ID, "", false, "Go pRPC API")
 			So(err, ShouldEqual, ErrPermissionDenied)
 		})
 
 		Convey("can't delete if etag doesn't match", func() {
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			err := DeleteAuthGroup(ctx, group.ID, "bad-etag", false)
+			err := DeleteAuthGroup(ctx, group.ID, "bad-etag", false, "Go pRPC API")
 			So(err, ShouldErrLike, ErrConcurrentModification)
 		})
 
 		Convey("group name that doesn't exist", func() {
-			err := DeleteAuthGroup(ctx, "non-existent-group", "", false)
+			err := DeleteAuthGroup(ctx, "non-existent-group", "", false, "Go pRPC API")
 			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 		})
 
@@ -985,7 +985,7 @@ func TestDeleteAuthGroup(t *testing.T) {
 			ownedGroup.Owners = group.ID
 			So(datastore.Put(ctx, ownedGroup), ShouldBeNil)
 
-			err := DeleteAuthGroup(ctx, group.ID, "", false)
+			err := DeleteAuthGroup(ctx, group.ID, "", false, "Go pRPC API")
 			So(err, ShouldErrLike, ErrReferencedEntity)
 			So(err, ShouldErrLike, "this group is referenced by other groups: [owned]")
 		})
@@ -997,14 +997,14 @@ func TestDeleteAuthGroup(t *testing.T) {
 			nestingGroup.Nested = []string{group.ID}
 			So(datastore.Put(ctx, nestingGroup), ShouldBeNil)
 
-			err := DeleteAuthGroup(ctx, group.ID, "", false)
+			err := DeleteAuthGroup(ctx, group.ID, "", false, "Go pRPC API")
 			So(err, ShouldErrLike, ErrReferencedEntity)
 			So(err, ShouldErrLike, "this group is referenced by other groups: [nester]")
 		})
 
 		Convey("successfully deletes from datastore and updates AuthDB", func() {
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			err := DeleteAuthGroup(ctx, group.ID, etag, false)
+			err := DeleteAuthGroup(ctx, group.ID, etag, false, "Go pRPC API")
 			So(err, ShouldBeNil)
 
 			state1, err := GetReplicationState(ctx)
@@ -1022,7 +1022,7 @@ func TestDeleteAuthGroup(t *testing.T) {
 
 		Convey("creates historical group entities", func() {
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			err := DeleteAuthGroup(ctx, group.ID, "", false)
+			err := DeleteAuthGroup(ctx, group.ID, "", false, "Go pRPC API")
 			So(err, ShouldBeNil)
 
 			entities, err := getAllDatastoreEntities(ctx, "AuthGroupHistory", HistoricalRevisionKey(ctx, 1))
@@ -1170,7 +1170,7 @@ func TestUpdateAllowlistEntities(t *testing.T) {
 
 		Convey("Create allowlist entity", func() {
 			baseSubnetMap["test-allowlist-3"] = []string{"123.4.5.6"}
-			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false), ShouldBeNil)
+			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
 			So(err, ShouldBeNil)
 			expectedSlice := append(baseAllowlistSlice, allowlistToCreate)
@@ -1179,7 +1179,7 @@ func TestUpdateAllowlistEntities(t *testing.T) {
 
 		Convey("Update allowlist entity", func() {
 			baseSubnetMap["test-allowlist-1"] = []string{"122.22.44.66"}
-			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false), ShouldBeNil)
+			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
 			baseAllowlistSlice[0].Subnets = []string{"122.22.44.66"}
 			So(err, ShouldBeNil)
@@ -1188,7 +1188,7 @@ func TestUpdateAllowlistEntities(t *testing.T) {
 
 		Convey("Delete allowlist entity", func() {
 			delete(baseSubnetMap, "test-allowlist-1")
-			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false), ShouldBeNil)
+			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
 			expectedSlice := baseAllowlistSlice[1:]
 			So(err, ShouldBeNil)
@@ -1199,7 +1199,7 @@ func TestUpdateAllowlistEntities(t *testing.T) {
 			baseSubnetMap["test-allowlist-3"] = []string{"123.4.5.6"}
 			baseSubnetMap["test-allowlist-1"] = []string{"122.22.44.66"}
 			delete(baseSubnetMap, "test-allowlist-2")
-			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false), ShouldBeNil)
+			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
 			allowlist0Copy := *baseAllowlistSlice[0]
 			allowlist0Copy.Subnets = baseSubnetMap["test-allowlist-1"]
@@ -1302,7 +1302,7 @@ func TestAuthGlobalConfig(t *testing.T) {
 		seccfgpb := testSecurityConfig()
 
 		Convey("Creating new AuthGlobalConfig", func() {
-			So(UpdateAuthGlobalConfig(ctx, oauthcfgpb, seccfgpb, false), ShouldBeNil)
+			So(UpdateAuthGlobalConfig(ctx, oauthcfgpb, seccfgpb, false, "Go pRPC API"), ShouldBeNil)
 			updatedCfg, err := GetAuthGlobalConfig(ctx)
 			So(err, ShouldBeNil)
 			So(updatedCfg, ShouldResemble, &AuthGlobalConfig{
@@ -1352,7 +1352,7 @@ func TestAuthGlobalConfig(t *testing.T) {
 
 		Convey("Updating AuthGlobalConfig", func() {
 			So(datastore.Put(ctx, testAuthGlobalConfig(ctx)), ShouldBeNil)
-			So(UpdateAuthGlobalConfig(ctx, oauthcfgpb, seccfgpb, false), ShouldBeNil)
+			So(UpdateAuthGlobalConfig(ctx, oauthcfgpb, seccfgpb, false, "Go pRPC API"), ShouldBeNil)
 			updatedCfg, err := GetAuthGlobalConfig(ctx)
 			So(err, ShouldBeNil)
 			So(updatedCfg, ShouldResemble, &AuthGlobalConfig{
@@ -1457,11 +1457,11 @@ func TestAuthRealmsConfig(t *testing.T) {
 		_, err = GetAuthProjectRealms(ctx, testProject)
 		So(err, ShouldBeNil)
 
-		err = DeleteAuthProjectRealms(ctx, testProject)
+		err = DeleteAuthProjectRealms(ctx, testProject, "Go pRPC API")
 		So(err, ShouldBeNil)
 		So(ts.Tasks(), ShouldHaveLength, 2)
 
-		err = DeleteAuthProjectRealms(ctx, testProject)
+		err = DeleteAuthProjectRealms(ctx, testProject, "Go pRPC API")
 		So(err, ShouldErrLike, datastore.ErrNoSuchEntity)
 	})
 
@@ -1530,7 +1530,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 				Internal: false,
 			}
 
-			err := UpdateAuthRealmsGlobals(ctx, permCfg, false)
+			err := UpdateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API")
 			So(err, ShouldBeNil)
 			So(ts.Tasks(), ShouldHaveLength, 2)
 
@@ -1597,7 +1597,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 				},
 			}
 
-			So(UpdateAuthRealmsGlobals(ctx, permsCfg, false), ShouldBeNil)
+			So(UpdateAuthRealmsGlobals(ctx, permsCfg, false, "Go pRPC API"), ShouldBeNil)
 			So(ts.Tasks(), ShouldHaveLength, 2)
 		})
 	})

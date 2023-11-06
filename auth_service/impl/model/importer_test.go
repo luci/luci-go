@@ -217,7 +217,8 @@ func TestIngestTarball(t *testing.T) {
 		Convey("happy", func() {
 			g := makeAuthGroup(ctx, "administrators")
 			g.AuthVersionedEntityMixin = testAuthVersionedEntityMixin()
-			CreateAuthGroup(ctx, g, false)
+			_, err := CreateAuthGroup(ctx, g, false, "Imported from group bundles")
+			So(err, ShouldBeNil)
 			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 			updatedGroups, revision, err := IngestTarball(ctx, "test_groups.tar.gz", bytes.NewReader(bundle))
 			So(err, ShouldBeNil)
@@ -305,7 +306,7 @@ func TestImportBundles(t *testing.T) {
 
 		Convey("Updating Groups", func() {
 			g := testExternalAuthGroup(ctx, "sys/group-a", []string{"user:b@example.com", "user:c@example.com"})
-			_, err := CreateAuthGroup(ctx, g, true)
+			_, err := CreateAuthGroup(ctx, g, true, "Imported from group bundles")
 			So(err, ShouldBeNil)
 			group, err := GetAuthGroup(ctx, sGroupA.ID)
 			So(err, ShouldBeNil)
@@ -321,7 +322,7 @@ func TestImportBundles(t *testing.T) {
 
 		Convey("Deleting Groups", func() {
 			g := testExternalAuthGroup(ctx, "sys/group-d", []string{"user:a@example.com"})
-			_, err := CreateAuthGroup(ctx, g, true)
+			_, err := CreateAuthGroup(ctx, g, true, "Imported from group bundles")
 			So(err, ShouldBeNil)
 
 			grDS, err := GetAuthGroup(ctx, g.ID)

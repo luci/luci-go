@@ -44,6 +44,8 @@ func main() {
 
 	impl.Main(modules, func(srv *server.Server) error {
 		cron.RegisterHandler("update-config", func(ctx context.Context) error {
+			historicalComment := "Updated from update-config cron"
+
 			// ip_allowlist.cfg handling.
 			if err := allowlistcfg.Update(ctx); err != nil {
 				return err
@@ -56,7 +58,7 @@ func main() {
 			if err != nil {
 				return err
 			}
-			if err := model.UpdateAllowlistEntities(ctx, subnets, true); err != nil {
+			if err := model.UpdateAllowlistEntities(ctx, subnets, true, historicalComment); err != nil {
 				return err
 			}
 
@@ -78,7 +80,7 @@ func main() {
 				return err
 			}
 
-			if err := model.UpdateAuthGlobalConfig(ctx, oauthcfg, securitycfg, true); err != nil {
+			if err := model.UpdateAuthGlobalConfig(ctx, oauthcfg, securitycfg, true, historicalComment); err != nil {
 				return err
 			}
 			return nil
@@ -93,7 +95,7 @@ func main() {
 			if err != nil {
 				return err
 			}
-			if err := model.UpdateAuthRealmsGlobals(ctx, permscfg, true); err != nil {
+			if err := model.UpdateAuthRealmsGlobals(ctx, permscfg, true, "Updated from update-realms cron"); err != nil {
 				return err
 			}
 			return nil

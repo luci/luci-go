@@ -97,7 +97,7 @@ func UpdateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*mo
 	}
 
 	logging.Infof(ctx, "entering transaction")
-	if err := model.UpdateAuthProjectRealms(ctx, expanded, db.Rev); err != nil {
+	if err := model.UpdateAuthProjectRealms(ctx, expanded, db.Rev, "Updated from latest realms.cfg"); err != nil {
 		return err
 	}
 	logging.Infof(ctx, "transaction landed")
@@ -106,8 +106,8 @@ func UpdateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*mo
 
 // DeleteRealms will try to delete the AuthProjectRealms for a given projectID.
 func DeleteRealms(ctx context.Context, projectID string) error {
-	switch err := model.DeleteAuthProjectRealms(ctx, projectID); {
-	case err == datastore.ErrNoSuchEntity:
+	switch err := model.DeleteAuthProjectRealms(ctx, projectID, "Triggered by call to DeleteRealms"); {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return errors.Annotate(err, "realms for %s do not exist or have already been deleted", projectID).Err()
 	case err != nil:
 		return err

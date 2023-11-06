@@ -299,7 +299,7 @@ func importBundles(ctx context.Context, bundles map[string]GroupBundle, provided
 	// Transactionally puts and deletes a bunch of entities.
 	applyImport := func(expectedRevision int64, entitiesToPut, entitiesToDelete []*AuthGroup, ts time.Time) error {
 		// Runs in transaction.
-		return runAuthDBChange(ctx, func(ctx context.Context, cae commitAuthEntity) error {
+		return runAuthDBChange(ctx, "Imported from group bundles", func(ctx context.Context, cae commitAuthEntity) error {
 			rev, err := getAuthDBRevision(ctx)
 			if err != nil {
 				return err

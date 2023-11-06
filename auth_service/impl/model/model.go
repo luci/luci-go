@@ -544,7 +544,7 @@ type commitAuthEntity func(e versionedEntity, time time.Time, author identity.Id
 // and incrementing the AuthDB revision.
 //
 // NOTE: The provided `commitAuthEntity` callback is not safe to call concurrently.
-func runAuthDBChange(ctx context.Context, f func(context.Context, commitAuthEntity) error) error {
+func runAuthDBChange(ctx context.Context, historicalComment string, f func(context.Context, commitAuthEntity) error) error {
 	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		// Get current AuthDB state and increment the revision.
 		state, err := GetReplicationState(ctx)
@@ -584,7 +584,7 @@ func runAuthDBChange(ctx context.Context, f func(context.Context, commitAuthEnti
 			state.ModifiedTS = t
 
 			// Make a historical copy of the entity.
-			historicalCopy, err := makeHistoricalCopy(ctx, entity, deletion, "Go pRPC API")
+			historicalCopy, err := makeHistoricalCopy(ctx, entity, deletion, historicalComment)
 			if err != nil {
 				return err
 			}
@@ -803,7 +803,7 @@ func findGroupDependencyCycle(ctx context.Context, group *AuthGroup) ([]string, 
 // CreateAuthGroup creates a new AuthGroup and writes it to the datastore.
 // Only the following fields will be read from the input:
 // ID, Description, Owners, Members, Globs, Nested.
-func CreateAuthGroup(ctx context.Context, group *AuthGroup, external bool) (*AuthGroup, error) {
+func CreateAuthGroup(ctx context.Context, group *AuthGroup, external bool, historicalComment string) (*AuthGroup, error) {
 	if external {
 		if !isExternalAuthGroupName(group.ID) {
 			return nil, ErrInvalidName
@@ -827,7 +827,7 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup, external bool) (*Aut
 	newGroup := makeAuthGroup(ctx, group.ID)
 
 	// The rest of the validation checks interact with the datastore, so run inside a transaction.
-	err := runAuthDBChange(ctx, func(ctx context.Context, commitEntity commitAuthEntity) error {
+	err := runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		// Check the group doesn't already exist.
 		exists, err := datastore.Exists(ctx, newGroup)
 		if err != nil {
@@ -930,7 +930,7 @@ func findReferencingGroups(ctx context.Context, groupName string) (stringset.Set
 //	ErrPermissionDenied if the caller is not allowed to update the group.
 //	ErrConcurrentModification if the provided etag is not up-to-date.
 //	Annotated error for other errors.
-func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fieldmaskpb.FieldMask, etag string, fromExternal bool) (*AuthGroup, error) {
+func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fieldmaskpb.FieldMask, etag string, fromExternal bool, historicalComment string) (*AuthGroup, error) {
 	// A nil updateMask means we should update all fields.
 	// If updateable fields are added to AuthGroup in future, they need to be
 	// added to the below list.
@@ -968,7 +968,7 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 	}
 
 	var authGroup *AuthGroup
-	err := runAuthDBChange(ctx, func(ctx context.Context, commitEntity commitAuthEntity) error {
+	err := runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		var err error
 		var ok bool
 		// Fetch the group and check the user is an admin or a group owner.
@@ -1059,7 +1059,7 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 //	ErrConcurrentModification if the provided etag is not up-to-date.
 //	ErrReferencedEntity if the group is referenced by another group.
 //	Annotated error for other errors.
-func DeleteAuthGroup(ctx context.Context, groupName string, etag string, external bool) error {
+func DeleteAuthGroup(ctx context.Context, groupName string, etag string, external bool, historicalComment string) error {
 	// Disallow deletion of the admin group.
 	if groupName == AdminGroup {
 		return ErrPermissionDenied
@@ -1070,7 +1070,7 @@ func DeleteAuthGroup(ctx context.Context, groupName string, etag string, externa
 		return errors.Annotate(ErrPermissionDenied, "cannot delete external group").Err()
 	}
 
-	return runAuthDBChange(ctx, func(ctx context.Context, commitEntity commitAuthEntity) error {
+	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		// Fetch the group and check the user is an admin or a group owner.
 		authGroup, err := GetAuthGroup(ctx, groupName)
 		if err != nil {
@@ -1145,8 +1145,8 @@ func GetAllAuthIPAllowlists(ctx context.Context) ([]*AuthIPAllowlist, error) {
 // UpdateAllowlistEntities updates all the entities in datastore from ip_allowlist.cfg.
 //
 // TODO(crbug/1336135): Remove dryrun checks when turning off Python Auth Service.
-func UpdateAllowlistEntities(ctx context.Context, subnetMap map[string][]string, dryRun bool) error {
-	return runAuthDBChange(ctx, func(ctx context.Context, commitEntity commitAuthEntity) error {
+func UpdateAllowlistEntities(ctx context.Context, subnetMap map[string][]string, dryRun bool, historicalComment string) error {
+	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		oldAllowlists, err := GetAllAuthIPAllowlists(ctx)
 		if err != nil {
 			return err
@@ -1245,8 +1245,8 @@ func GetAuthGlobalConfig(ctx context.Context) (*AuthGlobalConfig, error) {
 // created.
 //
 // TODO(crbug/1336135): Remove dryrun checks when turning off Python Auth Service.
-func UpdateAuthGlobalConfig(ctx context.Context, oauthcfg *configspb.OAuthConfig, seccfg *protocol.SecurityConfig, dryRun bool) error {
-	return runAuthDBChange(ctx, func(ctx context.Context, commitEntity commitAuthEntity) error {
+func UpdateAuthGlobalConfig(ctx context.Context, oauthcfg *configspb.OAuthConfig, seccfg *protocol.SecurityConfig, dryRun bool, historicalComment string) error {
+	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		rootAuthGlobalCfg, err := GetAuthGlobalConfig(ctx)
 		if err != nil && err != datastore.ErrNoSuchEntity {
 			return err
@@ -1359,8 +1359,8 @@ func GetAuthRealmsGlobals(ctx context.Context) (*AuthRealmsGlobals, error) {
 //
 // TODO(crbug/1336137): Remove all references and checks to old permissions
 // once Python version knows how to work with permissions.cfg.
-func UpdateAuthRealmsGlobals(ctx context.Context, permcfg *configspb.PermissionsConfig, dryRun bool) error {
-	return runAuthDBChange(ctx, func(ctx context.Context, commitEntity commitAuthEntity) error {
+func UpdateAuthRealmsGlobals(ctx context.Context, permcfg *configspb.PermissionsConfig, dryRun bool, historicalComment string) error {
+	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		// map the permission name to the protobuf.
 		permsMap := make(map[string]*protocol.Permission)
 
@@ -1446,8 +1446,8 @@ func GetAuthProjectRealms(ctx context.Context, project string) (*AuthProjectReal
 //
 // Returns error if Get from datastore failed
 // Returns error if transaction delete failed
-func DeleteAuthProjectRealms(ctx context.Context, project string) error {
-	return runAuthDBChange(ctx, func(ctx context.Context, commitEntity commitAuthEntity) error {
+func DeleteAuthProjectRealms(ctx context.Context, project string, historicalComment string) error {
+	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		authProjectRealms, err := GetAuthProjectRealms(ctx, project)
 		if err != nil {
 			return err
@@ -1489,8 +1489,8 @@ type ExpandedRealms struct {
 //		Failed to create new AuthProjectRealm entity
 //		Failed to update AuthProjectRealm entity
 //		Failed to put AuthProjectRealmsMeta entity
-func UpdateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, permsRev string) error {
-	return runAuthDBChange(ctx, func(ctx context.Context, commitEntity commitAuthEntity) error {
+func UpdateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, permsRev string, historicalComment string) error {
+	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		metas := []*AuthProjectRealmsMeta{}
 		existing := []*AuthProjectRealms{}
 		for _, r := range eRealms {
