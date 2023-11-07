@@ -119,23 +119,6 @@ export interface MonorailPriority {
 }
 
 // See luci.analysis.v1.Projects.GetProjectConfigResponse.Monorail for documentation.
-// Captures the fields available when populated inside the top-level ProjectConfig message.
-export interface LegacyMonorailProject {
-  // The monorail project used for this LUCI project.
-  project: string;
-
-  // The shortlink format used for this bug tracker.
-  // For example, "crbug.com".
-  displayPrefix: string;
-
-  // The possible bug priorities and their associated impact thresholds.
-  // Priorities must be listed from highest (i.e. P0) to lowest (i.e. P3).
-  // Higher priorities can only be reached if the thresholds for all lower
-  // priorities are also met.
-  priorities?: MonorailPriority[];
-}
-
-// See luci.analysis.v1.Projects.GetProjectConfigResponse.Monorail for documentation.
 // Captures the fields set when populated inside the BugManagement message.
 export interface MonorailProject {
   // The monorail project used for this LUCI project.
@@ -178,18 +161,6 @@ export interface BugManagement {
 export interface ProjectConfig {
   // The format is: `projects/{project}/config`.
   name: string;
-
-  // The bug system to use for filing bugs.
-  // Deprecated, will be removed once policy-based bug filing in production.
-  bugSystem?: BugSystem;
-
-  // Details about the monorail project used for this LUCI project.
-  // Deprecated, will be removed once policy-based bug filing in production.
-  monorail?: LegacyMonorailProject;
-
-  // Details about the Buganizer configuration used for this LUCI project.
-  // Deprecated, will be removed once policy-based bug filing in production.
-  buganizer?: BuganizerProject;
 
   // Configuration for automatic bug management.
   bugManagement: BugManagement;

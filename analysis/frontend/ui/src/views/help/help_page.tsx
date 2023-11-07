@@ -164,49 +164,25 @@ const HelpPage = () => {
           </AccordionHeading>
         </AccordionSummary>
         <AccordionDetails>
-          {
-            window.isPolicyBasedBugManagementEnabled && (
-              <>
-                <Typography paragraph>
-                  LUCI Analysis files bugs for <strong>problems</strong> identified by <Link href="http://goto.google.com/luci-analysis-setup#project-configuration">policies configured by your project</Link>
-                  &nbsp;(<Link href="https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/config/project_config.proto?q=%22BugManagementPolicy%20policies%22">
-                    schema
-                  </Link>).
-                  When you receive a LUCI Analysis bug, the objective should be to fix these problems.
-                  Problem(s) can always be resolved by fixing the problematic test(s), but there may be other ways too.
-                  Click the <em>more info</em> button next to the problem on the <Link component={RouterLink} to='#find-rule'>rule page</Link> to
-                  view its suggested resolution steps and resolution criteria.
-                </Typography>
-                <Typography paragraph>
-                  <strong>Key point:</strong> the bug is for <strong>problems</strong>, not <strong>failures</strong>. To fix the problems,
-                  you may not need to fix all failures. For example, depending on the problem, failures occuring on experimental
-                  builders or tests having no impact would be irrelevant.
-                </Typography>
-                <Typography paragraph>
-                  Once all problems have been resolved and verified as such by LUCI Analysis, the bug will
-                  be <Link component={RouterLink} to='#bug-verified'>automatically be marked as verified by LUCI Analysis</Link>.
-                </Typography>
-              </>
-            )
-          }
-          {
-            !window.isPolicyBasedBugManagementEnabled && (
-              <>
-                <Typography paragraph>
-                  LUCI Analysis files bugs for clusters when their impact exceeds the&nbsp;
-                  <Link href="https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/config/project_config.proto?q=bug_filing_threshold">
-                    threshold configured by the project
-                  </Link>.
-                  When you receive a LUCI Analysis bug, the objective should be to reduce the impact by fixing the problematic test(s).
-                </Typography>
-                <Typography paragraph>
-                  <strong>Key point:</strong> the bug is for <em>impact</em>, not <em>failures</em>. To resolve the impact,
-                  you may not need to fix all failures. For example, failures occuring on experimental builders or tests
-                  with no impact would be irrelevant.
-                </Typography>
-              </>
-            )
-          }
+          <Typography paragraph>
+            LUCI Analysis files bugs for <strong>problems</strong> identified by <Link href="http://goto.google.com/luci-analysis-setup#project-configuration">policies configured by your project</Link>
+            &nbsp;(<Link href="https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/config/project_config.proto?q=%22BugManagementPolicy%20policies%22">
+              schema
+            </Link>).
+            When you receive a LUCI Analysis bug, the objective should be to fix these problems.
+            Problem(s) can always be resolved by fixing the problematic test(s), but there may be other ways too.
+            Click the <em>more info</em> button next to the problem on the <Link component={RouterLink} to='#find-rule'>rule page</Link> to
+            view its suggested resolution steps and resolution criteria.
+          </Typography>
+          <Typography paragraph>
+            <strong>Key point:</strong> the bug is for <strong>problems</strong>, not <strong>failures</strong>. To fix the problems,
+            you may not need to fix all failures. For example, depending on the problem, failures occuring on experimental
+            builders or tests having no impact would be irrelevant.
+          </Typography>
+          <Typography paragraph>
+            Once all problems have been resolved and verified as such by LUCI Analysis, the bug will
+            be <Link component={RouterLink} to='#bug-verified'>automatically be marked as verified by LUCI Analysis</Link>.
+          </Typography>
           <Typography paragraph>
             To investigate a bug:
             <ul>
@@ -239,31 +215,16 @@ const HelpPage = () => {
           </AccordionHeading>
         </AccordionSummary>
         <AccordionDetails>
-          {
-            window.isPolicyBasedBugManagementEnabled && (
-              <>
-                <Typography paragraph>
-                  LUCI Analysis automatically adjusts the bug priority to match the priority of the problems identified by your project.
-                  Problems can be viewed on the <Link component={RouterLink} to='#find-rule'>rule page</Link>, under the heading <em>Problems</em>.
-                </Typography>
-                <Typography paragraph>
-                  Problems and their associated priority are controlled by <Link href="http://goto.google.com/luci-analysis-setup#project-configuration">policies configured by your project</Link>
-                  &nbsp;(<Link href="https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/config/project_config.proto?q=%22BugManagementPolicy%20policies%22">
-                  schema
-                  </Link>).
-                </Typography>
-              </>
-            )
-          }
-          {
-            !window.isPolicyBasedBugManagementEnabled && (
-              <Typography paragraph>
-                LUCI Analysis automatically adjusts the bug priority according to the impact of the bug&apos;s failures.
-                The bug priority thresholds are specified your project&apos;s&nbsp;
-                <Link href="https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/config/project_config.proto?q=priorities">LUCI Analysis configuration</Link>.
-              </Typography>
-            )
-          }
+          <Typography paragraph>
+            LUCI Analysis automatically adjusts the bug priority to match the priority of the problems identified by your project.
+            Problems can be viewed on the <Link component={RouterLink} to='#find-rule'>rule page</Link>, under the heading <em>Problems</em>.
+          </Typography>
+          <Typography paragraph>
+            Problems and their associated priority are controlled by <Link href="http://goto.google.com/luci-analysis-setup#project-configuration">policies configured by your project</Link>
+            &nbsp;(<Link href="https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/config/project_config.proto?q=%22BugManagementPolicy%20policies%22">
+            schema
+            </Link>).
+          </Typography>
           <Typography paragraph>
             <strong>If the priority update is erroneous,</strong> manually set the bug priority to the correct value.
             LUCI Analysis will respect the priority you have set and will not change it.
@@ -277,30 +238,16 @@ const HelpPage = () => {
           </AccordionHeading>
         </AccordionSummary>
         <AccordionDetails>
-          {
-            window.isPolicyBasedBugManagementEnabled && (
-              <>
-                <Typography paragraph>
-                  LUCI Analysis automatically verifies bugs once all problems identified by your project have been resolved.
-                  Problems can be viewed on the <Link component={RouterLink} to='#find-rule'>rule page</Link>, under the heading <em>Problems</em>.
-                </Typography>
-                <Typography paragraph>
-                  Problems are identified according to <Link href="http://goto.google.com/luci-analysis-setup#project-configuration">policies configured by your project</Link>
-                  &nbsp;(<Link href="https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/config/project_config.proto?q=%22BugManagementPolicy%20policies%22">
-                  schema
-                  </Link>).
-                </Typography>
-              </>
-            )
-          }
-          {
-            !window.isPolicyBasedBugManagementEnabled && (
-              <Typography paragraph>
-                LUCI Analysis automatically verifies bugs once the impact of the remaining failures falls below a&nbsp;
-                <Link href="https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/config/project_config.proto?q=%22closure%20threshold%22">project-specific threshold</Link>.
-              </Typography>
-            )
-          }
+          <Typography paragraph>
+            LUCI Analysis automatically verifies bugs once all problems identified by your project have been resolved.
+            Problems can be viewed on the <Link component={RouterLink} to='#find-rule'>rule page</Link>, under the heading <em>Problems</em>.
+          </Typography>
+          <Typography paragraph>
+            Problems are identified according to <Link href="http://goto.google.com/luci-analysis-setup#project-configuration">policies configured by your project</Link>
+            &nbsp;(<Link href="https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/config/project_config.proto?q=%22BugManagementPolicy%20policies%22">
+            schema
+            </Link>).
+          </Typography>
           <Typography paragraph>
             <strong>If the bug closure is erroneous,</strong> go to the <Link component={RouterLink} to='#find-rule'>rule page</Link>, and turn the <em>Update bug</em> switch in the <em>Associated bug</em> panel to off.
             Then manually set the bug state you desire.

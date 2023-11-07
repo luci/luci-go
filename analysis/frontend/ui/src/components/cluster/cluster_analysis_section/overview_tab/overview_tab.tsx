@@ -25,16 +25,14 @@ import useFetchMetrics from '@/hooks/use_fetch_metrics';
 
 import { HistoryChartsSection } from './history_charts/history_charts_section';
 import { OverviewTabContextProvider } from './overview_tab_context';
-import { RecommendedPrioritySection } from './recommended_priority/recommended_priority_section';
 import { ProblemsSection } from './problems_section/problems_section';
 
 interface Props {
   // The name of the tab.
   value: string;
-  policyBasedBugManagementEnabled: boolean;
 }
 
-const OverviewTab = ({ value, policyBasedBugManagementEnabled }: Props) => {
+const OverviewTab = ({ value }: Props) => {
   const {
     project,
     algorithm,
@@ -67,14 +65,7 @@ const OverviewTab = ({ value, policyBasedBugManagementEnabled }: Props) => {
           isSuccess && metrics !== undefined && (
             <Stack direction="column" spacing={4}>
               {
-                !policyBasedBugManagementEnabled &&
-                (<>
-                  <RecommendedPrioritySection />
-                  <Divider />
-                </>)
-              }
-              {
-                policyBasedBugManagementEnabled && algorithm == 'rules' &&
+                algorithm == 'rules' &&
                 (<>
                   <ProblemsSection />
                   <Divider />

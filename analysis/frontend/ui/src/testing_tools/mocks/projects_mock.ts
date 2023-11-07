@@ -41,10 +41,6 @@ export const createMockExonerationsPolicy = (): BugManagementPolicy => {
 export const createMockProjectConfig = (): ProjectConfig => {
   return {
     name: 'projects/chromium/config',
-    monorail: {
-      project: 'chromium',
-      displayPrefix: 'crbug.com',
-    },
     bugManagement: {
       policies: [createMockExonerationsPolicy(), {
         id: 'cls-rejected',
@@ -70,74 +66,6 @@ export const createMockProjectConfig = (): ProjectConfig => {
         displayPrefix: 'crbug.com',
       },
     },
-  };
-};
-
-export const createMockProjectConfigWithBuganizerThresholds = (): ProjectConfig => {
-  return {
-    name: 'projects/chromium/config',
-    buganizer: {
-      priorityMappings: [
-        {
-          priority: 'P0',
-          thresholds: [
-            {
-              metricId: 'human-cls-failed-presubmit',
-              threshold: {
-                oneDay: '20',
-              },
-            },
-          ],
-        },
-        {
-          priority: 'P1',
-          thresholds: [
-            {
-              metricId: 'human-cls-failed-presubmit',
-              threshold: {
-                oneDay: '10',
-              },
-            },
-          ],
-        },
-      ],
-    },
-    bugManagement: {},
-  };
-};
-
-export const createMockProjectConfigWithMonorailThresholds = (): ProjectConfig => {
-  return {
-    name: 'projects/chromium/config',
-    monorail: {
-      project: 'chromium',
-      displayPrefix: 'crbug.com',
-      priorities: [
-        {
-          priority: '0',
-          thresholds: [
-            {
-              metricId: 'human-cls-failed-presubmit',
-              threshold: {
-                oneDay: '20',
-              },
-            },
-          ],
-        },
-        {
-          priority: '1',
-          thresholds: [
-            {
-              metricId: 'human-cls-failed-presubmit',
-              threshold: {
-                oneDay: '10',
-              },
-            },
-          ],
-        },
-      ],
-    },
-    bugManagement: {},
   };
 };
 

@@ -32,10 +32,11 @@ import {
   mockFetchMetrics,
 } from '@/testing_tools/mocks/metrics_mock';
 import {
-  createMockProjectConfigWithBuganizerThresholds,
+  createMockProjectConfig,
   mockFetchProjectConfig,
 } from '@/testing_tools/mocks/projects_mock';
 
+import { createDefaultMockRule, mockFetchRule } from '@/testing_tools/mocks/rule_mock';
 import OverviewTab from './overview_tab';
 
 // Mock the window.ResizeObserver that is needed by recharts.
@@ -63,13 +64,14 @@ describe('Test OverviewTab component', () => {
     fetchMock.reset();
   });
 
-  it('given a project and cluster ID, should recommend priority and show cluster history for that cluster', async () => {
+  it('given a project and cluster ID, should show problems and cluster history for that cluster', async () => {
     const algorithm = 'rules';
     const id = '123456';
 
+    mockFetchRule(createDefaultMockRule());
     const mockCluster = getMockCluster(id, project, algorithm);
     mockGetCluster(project, algorithm, id, mockCluster);
-    const mockConfig = createMockProjectConfigWithBuganizerThresholds();
+    const mockConfig = createMockProjectConfig();
     mockFetchProjectConfig(mockConfig);
 
     const history: QueryClusterHistoryResponse = {
@@ -89,12 +91,13 @@ describe('Test OverviewTab component', () => {
           project={project}
           clusterAlgorithm={algorithm}
           clusterId={id} >
-          <OverviewTab value='test' policyBasedBugManagementEnabled={false} />
+          <OverviewTab value='test' />
         </ClusterContextProvider>,
     );
 
-    await screen.findByTestId('recommended-priority-summary');
-    expect(screen.getByText('P0')).toBeInTheDocument();
+    await screen.findByTestId('policy-row-exonerations');
+    expect(screen.getByText('test variant(s) are being exonerated (ignored) in presubmit')).toBeInTheDocument();
+    expect(screen.getByText('many CL(s) are being rejected')).toBeInTheDocument();
 
     await screen.findByTestId('history-charts-container');
     // Expect charts only for the default metrics.

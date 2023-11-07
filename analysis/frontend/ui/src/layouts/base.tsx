@@ -19,7 +19,6 @@ import TopBar from '@/components/top_bar/top_bar';
 declare global {
     interface Window {
       isAnonymous: boolean;
-      isPolicyBasedBugManagementEnabled: boolean;
       avatar: string;
       fullName: string;
       email: string;
