@@ -547,10 +547,6 @@ func validateBugAgainstConfig(cfg *compiledcfg.ProjectConfig, bug bugs.BugID) er
 		}
 		monorailCfg := cfg.Config.BugManagement.GetMonorail()
 		if monorailCfg == nil {
-			// Try to use legacy monorail config.
-			monorailCfg = cfg.Config.Monorail
-		}
-		if monorailCfg == nil {
 			return fmt.Errorf("monorail bug system not enabled for this LUCI project")
 		}
 		if project != monorailCfg.Project {

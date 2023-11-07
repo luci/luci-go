@@ -31,10 +31,6 @@ func createAssociatedBugPB(b bugs.BugID, cfg *configpb.ProjectConfig) *pb.Associ
 	case bugs.MonorailSystem:
 		monorailCfg := cfg.BugManagement.GetMonorail()
 		if monorailCfg == nil {
-			// Try fetching from legacy config location.
-			monorailCfg = cfg.Monorail
-		}
-		if monorailCfg == nil {
 			break
 		}
 		project, id, err := b.MonorailProjectAndID()
