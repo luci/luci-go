@@ -108,7 +108,7 @@ func TestTriggerer(t *testing.T) {
 		}
 		schedule := func(origin int64, deps ...int64) string {
 			task := &prjpb.TriggeringCLDepsTask{LuciProject: project}
-			dl := timestamppb.New(now.Add(prjpb.MaxTriggeringCLsDuration))
+			dl := timestamppb.New(now.Add(prjpb.MaxTriggeringCLDepsDuration))
 			originCL := loadCL(origin)
 			task.TriggeringClDeps = &prjpb.TriggeringCLDeps{
 				OriginClid:  int64(originCL.ID),
@@ -181,7 +181,7 @@ func TestTriggerer(t *testing.T) {
 
 		Convey("skips voting, if deadline exceeded", func() {
 			Convey("if deadline exceeded", func() {
-				ct.Clock.Add(prjpb.MaxTriggeringCLsDuration + time.Minute)
+				ct.Clock.Add(prjpb.MaxTriggeringCLDepsDuration + time.Minute)
 			})
 			Convey("if origin no longer has CQ+2", func() {
 				ct.GFake.MutateChange(gHost, change3, func(c *gf.Change) {

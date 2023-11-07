@@ -144,24 +144,22 @@ func (t *TriggerPurgeCLTasks) Do(ctx context.Context) error {
 	return common.MostSevereError(err)
 }
 
-// ScheduleTriggeringCLsTasks schedules TriggeringCLsTask(s) via TQ.
-type ScheduleTriggeringCLsTasks struct {
-	payloads    []*prjpb.TriggeringCLsTask
+// ScheduleTriggeringCLDepsTasks schedules TriggeringCLDepsTask(s) via TQ.
+type ScheduleTriggeringCLDepsTasks struct {
+	payloads    []*prjpb.TriggeringCLDepsTask
 	clTriggerer *cltriggerer.Triggerer
 }
 
 // Do implements SideEffect interface.
-func (t *ScheduleTriggeringCLsTasks) Do(ctx context.Context) error {
+func (t *ScheduleTriggeringCLDepsTasks) Do(ctx context.Context) error {
 	if len(t.payloads) == 0 {
 		return nil
 	}
 	err := parallel.WorkPool(concurrency, func(work chan<- func() error) {
 		for _, p := range t.payloads {
 			p := p
-			// TODO(ddoman): remove the below
-			_ = p
 			work <- func() error {
-				return t.clTriggerer.Schedule(ctx, nil)
+				return t.clTriggerer.Schedule(ctx, p)
 			}
 		}
 	})

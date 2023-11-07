@@ -280,6 +280,55 @@ func TestComponentsActions(t *testing.T) {
 			})
 		})
 
+		Convey("trigger CL Deps", func() {
+			markComponentsForTriage(1, 2, 3)
+			h.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
+				switch clid := c.GetClids()[0]; clid {
+				case 3:
+					return itriager.Result{CLsToTriggerDeps: []*prjpb.TriggeringCLDeps{{
+						OriginClid: 3,
+						DepClids:   []int64{1, 2},
+					}}}, nil
+				case 1, 2:
+					return itriager.Result{}, nil
+				}
+				panic("unreachable")
+			}
+			actions, saveForDebug, err := h.triageComponents(ctx, state)
+			So(err, ShouldBeNil)
+			So(saveForDebug, ShouldBeFalse)
+			So(actions, ShouldHaveLength, 3)
+			So(state.PB, ShouldResembleProto, pb)
+
+			Convey("ExecDeferred", func() {
+				state2, sideEffects, err := h.ExecDeferred(ctx, state)
+				So(err, ShouldBeNil)
+				expectedDeadline := timestamppb.New(now.Add(prjpb.MaxTriggeringCLDepsDuration))
+				So(state2.PB.GetTriggeringClDeps(), ShouldHaveLength, 1)
+				So(state2.PB.GetTriggeringClDeps()[0], ShouldResembleProto, &prjpb.TriggeringCLDeps{
+					OriginClid:  3,
+					DepClids:    []int64{1, 2},
+					OperationId: fmt.Sprintf("%d-3", expectedDeadline.AsTime().Unix()),
+					Deadline:    expectedDeadline,
+				})
+
+				sideEffect := sideEffects.(*SideEffects).items[0]
+				So(sideEffect, ShouldHaveSameTypeAs, &ScheduleTriggeringCLDepsTasks{})
+				ts := sideEffect.(*ScheduleTriggeringCLDepsTasks).payloads
+				So(ts, ShouldHaveLength, 1)
+				// Sort tasks. Tasks aren't necessarily sorted.
+				sort.Slice(ts, func(i, j int) bool {
+					lhs := ts[i].GetTriggeringClDeps().GetOriginClid()
+					rhs := ts[j].GetTriggeringClDeps().GetOriginClid()
+					return lhs < rhs
+				})
+				So(ts, ShouldHaveLength, 1)
+				So(ts[0].GetLuciProject(), ShouldEqual, lProject)
+				So(ts[0].GetTriggeringClDeps(), ShouldResembleProto,
+					state2.PB.GetTriggeringClDeps()[0])
+			})
+		})
+
 		Convey("partial failure in triage", func() {
 			markComponentsForTriage(1, 2, 3)
 			h.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {

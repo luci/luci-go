@@ -74,8 +74,7 @@ type Result struct {
 	//  * .PurgingCL.Clid
 	//  * .PurgeReasons
 	CLsToPurge []*prjpb.PurgeCLTask
-
-	// CLsToTrigger are CLs that shoul be triggered with CQ votes.
+	// CLsToTrigger are CLs that should be triggered with CQ votes.
 	CLsToTrigger []*prjpb.TriggeringCL
 	// CLsToTriggerDeps are CLs to propagate the CQ votes to the deps of.
 	CLsToTriggerDeps []*prjpb.TriggeringCLDeps

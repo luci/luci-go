@@ -513,7 +513,7 @@ func shouldRemoveOp(tcl *prjpb.TriggeringCL, pcl *prjpb.PCL) bool {
 		// If the vote was made before the Op creation time, consider that
 		// the op was suceeded, but the PCL hasn't been updated yet.
 		// i.e., keep the Op until the PCL gets updated.
-		opCreationTime := tcl.GetDeadline().AsTime().Add(-prjpb.MaxTriggeringCLsDuration)
+		opCreationTime := tcl.GetDeadline().AsTime().Add(-prjpb.MaxTriggeringCLDepsDuration)
 		if tr.GetTime().AsTime().Before(opCreationTime) {
 			return false
 		}

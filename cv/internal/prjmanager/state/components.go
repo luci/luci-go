@@ -217,14 +217,14 @@ func (h *Handler) actOnComponents(ctx context.Context, s *State, actions []*cAct
 	// likely to be modified in a loop below.
 	s.PB.Components = append(([]*prjpb.Component)(nil), s.PB.GetComponents()...)
 	runsCreated, componentsUpdated := 0, 0
-	var clsToPurge []*prjpb.PurgeCLTask
-	var clsToTrigger []*prjpb.TriggeringCLsTask
+	var purgeTasks []*prjpb.PurgeCLTask
+	var triggerTasks []*prjpb.TriggeringCLDepsTask
 	for _, action := range actions {
 		if action.runsFailed > 0 {
 			continue
 		}
 		runsCreated += len(action.RunsToCreate)
-		clsToPurge = append(clsToPurge, action.CLsToPurge...)
+		purgeTasks = append(purgeTasks, action.CLsToPurge...)
 		// CLsToTrigger in each action is a series of the deps are chained
 		// together, and the TQ handler will vote them sequentially.
 		//
@@ -246,10 +246,12 @@ func (h *Handler) actOnComponents(ctx context.Context, s *State, actions []*cAct
 		//
 		// There is a very small chance that CL4 may get voted earlier than
 		// CL1/2/3. However, it's not a big deal, even if it happens.
-		if len(action.CLsToTrigger) > 0 {
-			clsToTrigger = append(clsToTrigger, &prjpb.TriggeringCLsTask{
-				TriggeringCls: action.CLsToTrigger,
-			})
+		if len(action.CLsToTriggerDeps) > 0 {
+			for _, item := range action.CLsToTriggerDeps {
+				triggerTasks = append(triggerTasks, &prjpb.TriggeringCLDepsTask{
+					TriggeringClDeps: item,
+				})
+			}
 		}
 		if action.NewValue != nil {
 			s.PB.Components[action.componentIndex] = action.NewValue
@@ -258,23 +260,23 @@ func (h *Handler) actOnComponents(ctx context.Context, s *State, actions []*cAct
 	}
 	var purgeSE SideEffect
 	curPurgeCLCount := len(s.PB.PurgingCls)
-	if len(clsToPurge) > 0 {
-		purgeSE = h.addCLsToPurge(ctx, s, clsToPurge)
+	if len(purgeTasks) > 0 {
+		purgeSE = h.addCLsToPurge(ctx, s, purgeTasks)
 	}
 	var triggerSE SideEffect
-	curTriggerCLCount := len(s.PB.TriggeringCls)
-	if len(clsToTrigger) > 0 {
-		triggerSE = h.addCLsToTrigger(ctx, s, clsToTrigger)
+	curTriggerCLDepsCount := len(s.PB.TriggeringClDeps)
+	if len(triggerTasks) > 0 {
+		triggerSE = h.addCLsToTriggerDeps(ctx, s, triggerTasks)
 	}
 	sideEffect := NewSideEffects(purgeSE, triggerSE)
 	proceedMsg := fmt.Sprintf(
 		// report # of events processed and the new CLs that will be triggered
 		// or purged. i.e., the existing CLs that are in the process of purge
 		// or trigger are not counted.
-		"proceeding to save %d components, purge %d CLs, and trigger %d CLs",
+		"proceeding to save %d components, purge %d CLs, and trigger %d CL Deps",
 		componentsUpdated,
 		len(s.PB.PurgingCls)-curPurgeCLCount,
-		len(s.PB.TriggeringCls)-curTriggerCLCount,
+		len(s.PB.TriggeringClDeps)-curTriggerCLDepsCount,
 	)
 	// Finally, decide the final result.
 	switch merrs, ok := runsErr.(errors.MultiError); {
@@ -285,7 +287,7 @@ func (h *Handler) actOnComponents(ctx context.Context, s *State, actions []*cAct
 		panic(fmt.Errorf("unexpected return from parallel.WorkPool"))
 	default:
 		logging.Warningf(ctx, "actOnComponents: created %d Runs, failed to create %d Runs", runsCreated, len(merrs))
-		if componentsUpdated+len(clsToPurge) == 0 {
+		if componentsUpdated+len(purgeTasks) == 0 {
 			err := common.MostSevereError(merrs)
 			return nil, errors.Annotate(err, "failed to actOnComponents, most severe error").Err()
 		}
@@ -376,52 +378,24 @@ func (h *Handler) addCLsToPurge(ctx context.Context, s *State, ts []*prjpb.Purge
 	return &TriggerPurgeCLTasks{payloads: ts, clPurger: h.CLPurger}
 }
 
-// addCLsTrigger updates PB.TriggerCLs and prepares TQ tasks for the CLs
+// addCLsTriggerDeps updates PB.TriggerCLDeps and prepares TQ tasks for the CLs
 // to trigger.
-func (h *Handler) addCLsToTrigger(ctx context.Context, s *State, ts []*prjpb.TriggeringCLsTask) SideEffect {
+func (h *Handler) addCLsToTriggerDeps(ctx context.Context, s *State, ts []*prjpb.TriggeringCLDepsTask) SideEffect {
 	if len(ts) == 0 {
 		return nil
 	}
-	// TODO: this can possibly be refactored to maintain per-TQ-message
-	// opID and deadline, instead of per-TriggeringCL opID and deadline.
-	//
-	// In the current flow, PM tracks each TriggeringCL separately to dedup
-	// TriggeringCL works for the same CL. However, they are given to
-	// TriggeringCLsTask with a certain order to achieve the goal of CQ votes
-	// from the bottommost CL to the originating CL.
-	//
-	// The other important goal that it aims to achieve is to stop the vote
-	// process if a TriggeringCL was expired or canncelled. For example,
-	// If the TriggeringCL for a middle CL was cancelled, there is no reason
-	// to vote the further child CLs. (maybe, it shouldn't)
-	//
-	// The cancellation of the vote chaining process currently relys how PM
-	// creates and manages the tracked TriggeringCLs.
-	// 1) parenTriggeringCL.deadline <= childTriggeringCL.deadline
-	// 2) If PM cancels a parent TriggeringCL for a reason, it always cancels
-	// TriggeringCLs for the child TriggeringCLs, too.
-	//
-	// (1) may be obvious and simple to maintain, whereas (2) may not.
-	// Per-task PM can possibly simplify the TriggeringCL cancellation logic
-	// in PM. Though the per-TQ opID/deadline will have its own challenges.
-	// PM will still need to track each TriggeringCL to perform per-CL task
-	// deduplication. If TriggeringCLs are grouped by a TQ task, then PM would
-	// need to find a way to ensure that there is no duplicate across multiple
-	// TQ messages.
-	deadline := timestamppb.New(clock.Now(ctx).Add(prjpb.MaxTriggeringCLsDuration))
+	deadline := timestamppb.New(clock.Now(ctx).Add(prjpb.MaxTriggeringCLDepsDuration))
 	opInt := deadline.AsTime().Unix()
-	tCLs := make([]*prjpb.TriggeringCL, 0, len(ts)*8)
-	for _, t := range ts {
-		cls := t.GetTriggeringCls()
-		for _, tcl := range t.GetTriggeringCls() {
-			tcl.OperationId = fmt.Sprintf("%d-%d", opInt, tcl.GetClid())
-			tcl.Deadline = deadline
-		}
+	payloads := make([]*prjpb.TriggeringCLDeps, len(ts))
+	for i, t := range ts {
+		payload := t.GetTriggeringClDeps()
+		payload.OperationId = fmt.Sprintf("%d-%d", opInt, payload.GetOriginClid())
+		payload.Deadline = deadline
+		payloads[i] = payload
 		t.LuciProject = s.PB.GetLuciProject()
-		tCLs = append(tCLs, cls...)
 	}
-	s.PB.TriggeringCls, _ = s.PB.COWTriggeringCLs(nil, tCLs)
-	return &ScheduleTriggeringCLsTasks{payloads: ts, clTriggerer: h.CLTriggerer}
+	s.PB.TriggeringClDeps, _ = s.PB.COWTriggeringCLDeps(nil, payloads)
+	return &ScheduleTriggeringCLDepsTasks{payloads: ts, clTriggerer: h.CLTriggerer}
 }
 
 // maxPurgingCLDuration limits the time that a TQ task has to execute

@@ -1387,7 +1387,7 @@ func TestOnTriggeringCLsCompleted(t *testing.T) {
 				Convey("if PCL has CQ+1 voted before the Op creation", func() {
 					s1.PB.Pcls[0].Triggers = &run.Triggers{CqVoteTrigger: &run.Trigger{
 						Mode: string(run.DryRun),
-						Time: timestamppb.New(now.Add(-prjpb.MaxTriggeringCLsDuration)),
+						Time: timestamppb.New(now.Add(-prjpb.MaxTriggeringCLDepsDuration)),
 					}}
 				})
 				s2, sideEffect, err := h.OnTriggeringCLsCompleted(ctx, s1, succeeded, failed, skipped)
