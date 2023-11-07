@@ -859,6 +859,9 @@ message BuildInfra {
 
     // Dimensions for the task.
     repeated RequestedDimension task_dimensions = 5;
+
+    // Hostname is the hostname for the backend itself.
+    string hostname = 6;
   }
 
   Buildbucket buildbucket = 1 [ (buildbucket.v2.create_build_field_option).field_behavior = REQUIRED ];

@@ -962,7 +962,7 @@ func setSwarmingOrBackend(ctx context.Context, req *pb.ScheduleBuildRequest, cfg
 		if cfg.GetBackendAlt() != nil {
 			cfgToPass = cfg.BackendAlt
 		}
-		setInfraBackend(ctx, build, cfgToPass, taskCaches, taskServiceAccount, priority, req.GetPriority())
+		setInfraBackend(ctx, globalCfg, build, cfgToPass, taskCaches, taskServiceAccount, priority, req.GetPriority())
 		isTaskBackend = true
 	case backendAltExpIsTrue:
 		// Derive backend settings using swarming info.
@@ -973,7 +973,7 @@ func setSwarmingOrBackend(ctx context.Context, req *pb.ScheduleBuildRequest, cfg
 		// all builder configs are updated with backend/backend_alt configs.
 		derivedBackendCfg := deriveBackendCfgFromSwarming(cfg, globalCfg)
 		if derivedBackendCfg != nil {
-			setInfraBackend(ctx, build, derivedBackendCfg, taskCaches, taskServiceAccount, priority, req.GetPriority())
+			setInfraBackend(ctx, globalCfg, build, derivedBackendCfg, taskCaches, taskServiceAccount, priority, req.GetPriority())
 			isTaskBackend = true
 		}
 	}
@@ -1346,7 +1346,7 @@ func setInfraBackendConfigAgent(b *pb.Build) {
 	b.Infra.Backend.Config.Fields["agent_binary_cipd_filename"] = structpb.NewStringValue("bbagent${EXECUTABLE_SUFFIX}")
 }
 
-func setInfraBackend(ctx context.Context, build *pb.Build, backend *pb.BuilderConfig_Backend, taskCaches []*pb.CacheEntry, taskServiceAccount string, priority, reqPriority int32) {
+func setInfraBackend(ctx context.Context, globalCfg *pb.SettingsCfg, build *pb.Build, backend *pb.BuilderConfig_Backend, taskCaches []*pb.CacheEntry, taskServiceAccount string, priority, reqPriority int32) {
 	config := &structpb.Struct{}
 	err := json.Unmarshal([]byte(backend.GetConfigJson()), config)
 	if err != nil {
@@ -1366,6 +1366,10 @@ func setInfraBackend(ctx context.Context, build *pb.Build, backend *pb.BuilderCo
 	if config.Fields["priority"].GetNumberValue() == 0 || reqPriority > 0 {
 		config.Fields["priority"] = structpb.NewNumberValue(float64(priority))
 	}
+	hostname, err := clients.ComputeHostnameFromTarget(backend.GetTarget(), globalCfg)
+	if err != nil {
+		logging.Warningf(ctx, err.Error())
+	}
 
 	build.Infra.Backend = &pb.BuildInfra_Backend{
 		Caches: taskCaches,
@@ -1376,6 +1380,7 @@ func setInfraBackend(ctx context.Context, build *pb.Build, backend *pb.BuilderCo
 			},
 			UpdateId: 0,
 		},
+		Hostname: hostname,
 	}
 }
 

@@ -50,7 +50,7 @@ func newRawTaskBackendClient(ctx context.Context, host string, project string) (
 	return pb.NewTaskBackendPRPCClient(prpcClient), nil
 }
 
-func computeHostnameFromTarget(target string, globalCfg *pb.SettingsCfg) (hostname string, err error) {
+func ComputeHostnameFromTarget(target string, globalCfg *pb.SettingsCfg) (hostname string, err error) {
 	if globalCfg == nil {
 		return "", errors.Reason("could not get global settings config").Err()
 	}
@@ -64,7 +64,7 @@ func computeHostnameFromTarget(target string, globalCfg *pb.SettingsCfg) (hostna
 
 // NewBackendClient creates a client to communicate with Buildbucket.
 func NewBackendClient(ctx context.Context, project, target string, globalCfg *pb.SettingsCfg) (*BackendClient, error) {
-	hostname, err := computeHostnameFromTarget(target, globalCfg)
+	hostname, err := ComputeHostnameFromTarget(target, globalCfg)
 	if err != nil {
 		return nil, err
 	}

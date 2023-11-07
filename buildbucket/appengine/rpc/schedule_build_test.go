@@ -3759,7 +3759,8 @@ func TestScheduleBuild(t *testing.T) {
 						WaitForWarmCache: &durationpb.Duration{Seconds: 240},
 					},
 				},
-				Config: expectedBackendConfig,
+				Config:   expectedBackendConfig,
+				Hostname: "chromium-swarm.appspot.com",
 				Task: &pb.Task{
 					Id: &pb.TaskID{
 						Target: "swarming://chromium-swarm",
@@ -4663,7 +4664,8 @@ func TestScheduleBuild(t *testing.T) {
 							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
 						},
 					},
-					Config: expectedBackendConfig,
+					Config:   expectedBackendConfig,
+					Hostname: "chromium-swarm.appspot.com",
 					Task: &pb.Task{
 						Id: &pb.TaskID{
 							Target: "swarming://chromium-swarm",
@@ -4689,7 +4691,8 @@ func TestScheduleBuild(t *testing.T) {
 							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
 						},
 					},
-					Config: expectedBackendConfig,
+					Config:   expectedBackendConfig,
+					Hostname: "chromium-swarm.appspot.com",
 					Task: &pb.Task{
 						Id: &pb.TaskID{
 							Target: "swarming://chromium-swarm",
@@ -4715,7 +4718,8 @@ func TestScheduleBuild(t *testing.T) {
 							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
 						},
 					},
-					Config: expectedBackendConfig,
+					Config:   expectedBackendConfig,
+					Hostname: "chromium-swarm.appspot.com",
 					Task: &pb.Task{
 						Id: &pb.TaskID{
 							Target: "swarming://chromium-swarm",
@@ -4782,7 +4786,8 @@ func TestScheduleBuild(t *testing.T) {
 							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
 						},
 					},
-					Config: expectedBackendConfig,
+					Config:   expectedBackendConfig,
+					Hostname: "chromium-swarm.appspot.com",
 					Task: &pb.Task{
 						Id: &pb.TaskID{
 							Target: "swarming://chromium-swarm",
