@@ -45,7 +45,17 @@ release tag numbers.
 
 <!-- Add new changes here. See the instruction above for more details. -->
 
+<!-- __RELEASE__: 5 -->
+## 2023-11-07
+ [LUCI Analysis](https://luci-analysis.appspot.com) is now using problem-based bug management.
+
+ You will now see a more detailed description of problem(s) a bug has been
+ filed for on the LUCI Analysis rule page and new, more descriptive, bug comments.
+
 <!-- __RELEASE__: 4 -->
+<br/><br/><br/>
+
+# Past changes
 ## 2023-10-25
  LUCI is now [finding and bisecting test failures](/ui/p/chromium/bisection/test-analysis).
 <!-- __RELEASE__: 3 -->
@@ -55,11 +65,8 @@ release tag numbers.
 You can see all of the bisections that LUCI is performing on the [Bisection Test Analysis page](/ui/p/chromium/bisection/test-analysis).
 
 (Bisection is currently only running on Chromium.  If you want to explore enabling Bisection for your project, please feel free to send feedback from the titlebar)
-<br/><br/><br/>
-
 
 <!-- __RELEASE__: 2 -->
-# Past changes
 ## 2023-10-24
  * Migrated the builder groups page (e.g. [chromium consoles](/ui/p/chromium)) to React.
 
