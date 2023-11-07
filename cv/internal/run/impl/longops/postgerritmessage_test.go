@@ -120,7 +120,8 @@ func TestPostGerritMessage(t *testing.T) {
 			return r
 		}
 
-		makeOp := func(r *run.Run) *PostGerritMessageOp {
+		testMsg := "This is a test message."
+		makeOp := func(r *run.Run, testMsg string) *PostGerritMessageOp {
 			return &PostGerritMessageOp{
 				Base: &Base{
 					Op: &run.OngoingLongOps_Op{
@@ -128,7 +129,7 @@ func TestPostGerritMessage(t *testing.T) {
 						CancelRequested: false,
 						Work: &run.OngoingLongOps_Op_PostGerritMessage_{
 							PostGerritMessage: &run.OngoingLongOps_Op_PostGerritMessage{
-								Message: "This is a test message.",
+								Message: testMsg,
 							},
 						},
 					},
@@ -141,7 +142,7 @@ func TestPostGerritMessage(t *testing.T) {
 		}
 
 		Convey("Happy path", func() {
-			op := makeOp(makeRunWithCLs(nil, gf.CI(gChange1, gf.CQ(+2))))
+			op := makeOp(makeRunWithCLs(nil, gf.CI(gChange1, gf.CQ(+2))), testMsg)
 			res, err := op.Do(ctx)
 
 			So(err, ShouldBeNil)
@@ -154,7 +155,7 @@ func TestPostGerritMessage(t *testing.T) {
 				&run.Run{Mode: run.DryRun},
 				gf.CI(gChange1, gf.CQ(+1)),
 				gf.CI(gChange2, gf.CQ(+1)),
-			))
+			), testMsg)
 			res, err := op.Do(ctx)
 			So(err, ShouldBeNil)
 			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
@@ -174,8 +175,13 @@ func TestPostGerritMessage(t *testing.T) {
 		Convey("Best effort avoidance of duplicated messages", func() {
 			// Make two same PostGerritMessageOp objects, since they are single-use
 			// only.
-			opFirst := makeOp(makeRunWithCLs(nil, gf.CI(gChange1, gf.CQ(+2))))
-			opRetry := makeOp(makeRunWithCLs(nil, gf.CI(gChange1, gf.CQ(+2))))
+			opFirst := makeOp(makeRunWithCLs(nil, gf.CI(gChange1, gf.CQ(+2))), testMsg)
+			opRetry := makeOp(makeRunWithCLs(nil, gf.CI(gChange1, gf.CQ(+2))), testMsg)
+
+			// For test simplicity, this retry would have a substring of the
+			// originally posted testMsg. This simulates gerrit appending
+			// metadata such as the patchset name to the message.
+			opRetrySubstring := makeOp(makeRunWithCLs(nil, gf.CI(gChange1, gf.CQ(+2))), "test message")
 
 			// Simulate first try updating Gerrit, but somehow crashing before getting
 			// response from Gerrit.
@@ -206,13 +212,25 @@ func TestPostGerritMessage(t *testing.T) {
 				// and the timestamp must be exactly correct.
 				So(res.GetPostGerritMessage().GetTime().AsTime(), ShouldResemble, ci.GetMessages()[0].GetDate().AsTime())
 			})
+
+			Convey("later retry avoids reposting msg even when gerrit appends metadata", func() {
+				ct.Clock.Add(util.StaleCLAgeThreshold)
+				res, err := opRetrySubstring.Do(ctx)
+				So(err, ShouldBeNil)
+				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
+				// There should still be exactly 1 message.
+				ci := ct.GFake.GetChange(gHost, gChange1).Info
+				So(ci.GetMessages(), ShouldHaveLength, 1)
+				// and the timestamp must be exactly correct.
+				So(res.GetPostGerritMessage().GetTime().AsTime(), ShouldResemble, ci.GetMessages()[0].GetDate().AsTime())
+			})
 		})
 
 		Convey("Failures", func() {
 			op := makeOp(makeRunWithCLs(
 				&run.Run{Mode: run.DryRun},
 				gf.CI(gChange1, gf.CQ(+1)),
-			))
+			), testMsg)
 			ctx, cancel := clock.WithDeadline(ctx, op.Op.Deadline.AsTime())
 			defer cancel()
 			ct.Clock.Set(op.Op.Deadline.AsTime().Add(-8 * time.Minute))

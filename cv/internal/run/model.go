@@ -138,6 +138,10 @@ type Run struct {
 	// - will be canceled if any of the deps is canceled or failed.
 	// - will be submitted only after all the deps are submitted.
 	DepRuns common.RunIDs
+
+	// QuotaExhaustionMsgLongOpRequested is set true when the current run
+	// already has a pending msg posted.
+	QuotaExhaustionMsgLongOpRequested bool `gae:",noindex"`
 }
 
 // RunOwner keeps tracks of all open (active or pending) Runs for a user.

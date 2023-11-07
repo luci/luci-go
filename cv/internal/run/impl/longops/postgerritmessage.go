@@ -193,7 +193,10 @@ func (op *PostGerritMessageOp) hasGerritMessagePosted(rcl *run.RunCL, ci *gerrit
 		switch m := ci.GetMessages()[i]; {
 		case m.GetDate().AsTime().Before(clTriggeredAt):
 			return notPosted
-		case strings.TrimSpace(m.Message) == msg:
+		// Gerrit might prepend some metadata around the posted msg such as the
+		// patchset this is posted on to the msg. We use contains check instead
+		// of equality to work around this.
+		case strings.Contains(m.Message, msg):
 			// This msg has been already posted to gerrit.
 			return m.GetDate().AsTime()
 		}

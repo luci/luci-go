@@ -137,17 +137,8 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		// run quota isn't currently available for the user; leave the run in pending.
 		logging.Debugf(ctx, "Run quota underflow for %s; leaving the run %s pending", rs.Run.CreatedBy.Email(), rs.Run.ID)
 
-		// Post pending message to all gerrit CLs for this run if not enqueued already.
-		shouldEnqueue := true
-		for _, op := range rs.OngoingLongOps.GetOps() {
-			if op.GetPostGerritMessage().GetMessage() == pendingMsg {
-				shouldEnqueue = false
-				break
-			}
-		}
-
-		// Only enqueue once.
-		if shouldEnqueue {
+		// Post pending message to all gerrit CLs for this run if not posted already.
+		if !rs.QuotaExhaustionMsgLongOpRequested {
 			rs.EnqueueLongOp(&run.OngoingLongOps_Op{
 				Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxPostMessageDuration)),
 				Work: &run.OngoingLongOps_Op_PostGerritMessage_{
@@ -156,6 +147,8 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 					},
 				},
 			})
+
+			rs.QuotaExhaustionMsgLongOpRequested = true // Only enqueue once.
 		}
 
 		return &Result{State: rs, PreserveEvents: true}, nil
