@@ -1667,71 +1667,49 @@ func TestUpdate(t *testing.T) {
 							issueOne.Issue.IssueState.Status = issuetracker.Issue_DUPLICATE
 							issueOne.Issue.IssueState.CanonicalIssueId = 1234
 
-							Convey("bug managed by a rule in another project", func() {
-								buganizerStore.StoreIssue(ctx, buganizer.NewFakeIssue(1234))
+							buganizerStore.StoreIssue(ctx, buganizer.NewFakeIssue(1234))
 
-								extraRule := &rules.Entry{
-									Project:                 "otherproject",
-									RuleDefinition:          `reason LIKE "blah"`,
-									RuleID:                  "1234567890abcdef1234567890abcdef",
-									BugID:                   bugs.BugID{System: bugs.BuganizerSystem, ID: "1234"},
-									IsActive:                true,
-									IsManagingBug:           true,
-									IsManagingBugPriority:   true,
-									BugManagementState:      &bugspb.BugManagementState{},
-									CreateUser:              "user@chromium.org",
-									LastAuditableUpdateUser: "user@chromium.org",
+							extraRule := &rules.Entry{
+								Project:                 "otherproject",
+								RuleDefinition:          `reason LIKE "blah"`,
+								RuleID:                  "1234567890abcdef1234567890abcdef",
+								BugID:                   bugs.BugID{System: bugs.BuganizerSystem, ID: "1234"},
+								IsActive:                true,
+								IsManagingBug:           true,
+								IsManagingBugPriority:   true,
+								BugManagementState:      &bugspb.BugManagementState{},
+								CreateUser:              "user@chromium.org",
+								LastAuditableUpdateUser: "user@chromium.org",
+							}
+							_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+								ms, err := rules.Create(extraRule, "user@chromium.org")
+								if err != nil {
+									return err
 								}
-								_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-									ms, err := rules.Create(extraRule, "user@chromium.org")
-									if err != nil {
-										return err
-									}
-									span.BufferWrite(ctx, ms)
-									return nil
-								})
-								So(err, ShouldBeNil)
-
-								// Act
-								err = updateBugsForProject(ctx, opts)
-
-								// Verify
-								So(err, ShouldBeNil)
-								expectedRules[0].BugID = bugs.BugID{System: bugs.BuganizerSystem, ID: "1234"}
-								expectedRules[0].IsManagingBug = false // The other rule should continue to manage the bug.
-								// Should reset because of the change in associated bug.
-								expectedRules[0].BugManagementState.RuleAssociationNotified = false
-								for _, policyState := range expectedRules[0].BugManagementState.PolicyState {
-									policyState.ActivationNotified = false
-								}
-								expectedRules = append(expectedRules, extraRule)
-								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-
-								So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+1)
-								So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
-								So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, expectedRules[0].RuleID)
+								span.BufferWrite(ctx, ms)
+								return nil
 							})
-							Convey("bug not managed by a rule in any project", func() {
-								buganizerStore.StoreIssue(ctx, buganizer.NewFakeIssue(1234))
+							So(err, ShouldBeNil)
 
-								// Act
-								err = updateBugsForProject(ctx, opts)
+							// Act
+							err = updateBugsForProject(ctx, opts)
 
-								// Verify
-								So(err, ShouldBeNil)
-								expectedRules[0].BugID = bugs.BugID{System: bugs.BuganizerSystem, ID: "1234"}
-								expectedRules[0].IsManagingBug = true
-								// Should reset because of the change in associated bug.
-								expectedRules[0].BugManagementState.RuleAssociationNotified = false
-								for _, policyState := range expectedRules[0].BugManagementState.PolicyState {
-									policyState.ActivationNotified = false
-								}
-								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+							// Verify
+							So(err, ShouldBeNil)
+							expectedRules[0].BugID = bugs.BugID{System: bugs.BuganizerSystem, ID: "1234"}
+							// Should reset to false as we didn't create the destination bug.
+							expectedRules[0].IsManagingBug = false
+							// Should reset because of the change in associated bug.
+							expectedRules[0].BugManagementState.RuleAssociationNotified = false
+							for _, policyState := range expectedRules[0].BugManagementState.PolicyState {
+								policyState.ActivationNotified = false
+							}
+							expectedRules = append(expectedRules, extraRule)
+							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 
-								So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+1)
-								So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
-								So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, expectedRules[1].RuleID)
-							})
+							So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+1)
+							So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
+							So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, expectedRules[0].RuleID)
 						})
 						Convey("error cases", func() {
 							Convey("bugs are in a duplicate bug cycle", func() {

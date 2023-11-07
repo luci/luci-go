@@ -770,7 +770,7 @@ func (b *BugUpdater) handleDuplicateBugHappyPath(ctx context.Context, duplicateD
 			return nil
 		}
 		// Try and read the rule for the bug we are merging into.
-		destinationRule, anyRuleManagingDestBug, err :=
+		destinationRule, _, err :=
 			readRuleForBugAndProject(ctx, destBug, b.project)
 		if err != nil {
 			return errors.Annotate(err, "reading rule for destination bug").Err()
@@ -788,12 +788,10 @@ func (b *BugUpdater) handleDuplicateBugHappyPath(ctx context.Context, duplicateD
 				}
 			}
 
-			// Only one rule can manage a bug at a given time.
-			// If there is a rule in another project already managing this bug,
-			// do not manage the bug from this rule.
-			if anyRuleManagingDestBug {
-				sourceRule.IsManagingBug = false
-			}
+			// The destination bug is not a LUCI Analysis bug.
+			// Do not automatically verify/auto-close it as we do not
+			// know what problems it was for.
+			sourceRule.IsManagingBug = false
 
 			sourceRule.BugManagementState.RuleAssociationNotified = false
 
