@@ -123,3 +123,20 @@ func BotInfoQuery() *datastore.Query {
 func BotRootKey(ctx context.Context, botID string) *datastore.Key {
 	return datastore.NewKey(ctx, "BotRoot", botID, 0, nil)
 }
+
+// BotDimensions is a map with bot dimensions as `key => [values]`.
+//
+// This type represents bot dimensions in the datastore as a JSON-encoded
+// unindexed blob. There's an alternative "flat" indexed representation as a
+// list of `key:value` pairs. It is used in BotInfo.Dimensions property.
+type BotDimensions map[string][]string
+
+// ToProperty stores the value as a JSON-blob property.
+func (p *BotDimensions) ToProperty() (datastore.Property, error) {
+	return ToJSONProperty(p)
+}
+
+// FromProperty loads a JSON-blob property.
+func (p *BotDimensions) FromProperty(prop datastore.Property) error {
+	return FromJSONProperty(prop, p)
+}
