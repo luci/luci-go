@@ -1261,10 +1261,30 @@ func addInfraAgentInputData(build *pb.Build, builderID, cipdServer, basePath str
 // The build.Builder, build.Canary, build.Exe, and build.Infra.Buildbucket.Agent must be set
 func setInfraAgentInputData(build *pb.Build, globalCfg *pb.SettingsCfg, experiments stringset.Set, builderID string) {
 	inputData := make(map[string]*pb.InputDataRef)
+	cipdServer := globalCfg.GetCipd().GetServer()
+	version := globalCfg.GetCipd().GetSource().GetVersion()
+	if build.Canary && globalCfg.GetCipd().GetSource().GetVersionCanary() != "" {
+		version = globalCfg.GetCipd().GetSource().GetVersionCanary()
+	}
 	build.Infra.Buildbucket.Agent.Input = &pb.BuildInfra_Buildbucket_Agent_Input{
 		Data: inputData,
+		CipdSource: map[string]*pb.InputDataRef{
+			CipdClientDir: &pb.InputDataRef{
+				DataType: &pb.InputDataRef_Cipd{
+					Cipd: &pb.InputDataRef_CIPD{
+						Server: cipdServer,
+						Specs: []*pb.InputDataRef_CIPD_PkgSpec{
+							{
+								Package: globalCfg.GetCipd().GetSource().GetPackageName(),
+								Version: version,
+							},
+						},
+					},
+				},
+				OnPath: []string{CipdClientDir, fmt.Sprintf("%s/%s", CipdClientDir, "bin")},
+			},
+		},
 	}
-	cipdServer := globalCfg.GetCipd().GetServer()
 
 	// add user packages.
 	addInfraAgentInputData(build, builderID, cipdServer, UserPackageDir, experiments, globalCfg.GetSwarming().GetUserPackages())

@@ -246,7 +246,21 @@ message ResultDBSettings {
 }
 
 message CipdSettings {
+  message Source {
+    // CIPD package name, e.g. "infra/tools/cipd/${platform}"
+    string package_name = 2;
+    // CIPD instance version, e.g. "L34sd94gsdgs4gsd" or some hash.
+    // Used for non-canary builds.
+    string version = 3;
+    // CIPD instance version for canary builds.
+    // Defaults to version.
+    string version_canary = 4;
+  }
+
   // default CIPD server to use for this setting configuration,
   // e.g. "chrome-infra-packages.appspot.com".
   string server = 1;
+
+  // Source of the cipd package itself
+  Source source = 2;
 }

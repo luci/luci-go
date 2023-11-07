@@ -511,6 +511,11 @@ message BuildInfra {
         // TODO(crbug.com/1266060): Enforce the above constraints in a later phase.
         // Currently users don't have the flexibility to set the parent directory path.
         map<string, InputDataRef> data = 1;
+
+        // Maps relative-to-root directory to the cipd package itself.
+        // This is the CIPD client itself and  should be downloaded first so that
+        // the packages in the data field above can be downloaded.
+        map<string, InputDataRef> cipd_source = 2;
       }
       message Output {
         // Maps relative-to-root directory to the fully-resolved ref.

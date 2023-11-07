@@ -51,10 +51,13 @@ const (
 	buildSetMaxLength = 1024
 )
 
-const UserPackageDir = "cipd_bin_packages"
-
-// BbagentUtilPkgDir is the directory containing packages that bbagent uses.
-const BbagentUtilPkgDir = "bbagent_utility_packages"
+const (
+	// BbagentUtilPkgDir is the directory containing packages that bbagent uses.
+	BbagentUtilPkgDir = "bbagent_utility_packages"
+	// CipdClientDir is the directory containing cipd itself
+	CipdClientDir  = "cipd"
+	UserPackageDir = "cipd_bin_packages"
+)
 
 var (
 	sha1Regex          = regexp.MustCompile(`^[a-f0-9]{40}$`)

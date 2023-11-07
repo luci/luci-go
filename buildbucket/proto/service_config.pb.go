@@ -573,6 +573,8 @@ type CipdSettings struct {
 	// default CIPD server to use for this setting configuration,
 	// e.g. "chrome-infra-packages.appspot.com".
 	Server string `protobuf:"bytes,1,opt,name=server,proto3" json:"server,omitempty"`
+	// Source of the cipd package itself
+	Source *CipdSettings_Source `protobuf:"bytes,2,opt,name=source,proto3" json:"source,omitempty"`
 }
 
 func (x *CipdSettings) Reset() {
@@ -612,6 +614,13 @@ func (x *CipdSettings) GetServer() string {
 		return x.Server
 	}
 	return ""
+}
+
+func (x *CipdSettings) GetSource() *CipdSettings_Source {
+	if x != nil {
+		return x.Source
+	}
+	return nil
 }
 
 // Setting for the fetch tasks cron job.
@@ -908,6 +917,74 @@ func (x *ExperimentSettings_Experiment) GetInactive() bool {
 	return false
 }
 
+type CipdSettings_Source struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// CIPD package name, e.g. "infra/tools/cipd/${platform}"
+	PackageName string `protobuf:"bytes,2,opt,name=package_name,json=packageName,proto3" json:"package_name,omitempty"`
+	// CIPD instance version, e.g. "L34sd94gsdgs4gsd" or some hash.
+	// Used for non-canary builds.
+	Version string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+	// CIPD instance version for canary builds.
+	// Defaults to version.
+	VersionCanary string `protobuf:"bytes,4,opt,name=version_canary,json=versionCanary,proto3" json:"version_canary,omitempty"`
+}
+
+func (x *CipdSettings_Source) Reset() {
+	*x = CipdSettings_Source{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_buildbucket_proto_service_config_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CipdSettings_Source) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CipdSettings_Source) ProtoMessage() {}
+
+func (x *CipdSettings_Source) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_buildbucket_proto_service_config_proto_msgTypes[12]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CipdSettings_Source.ProtoReflect.Descriptor instead.
+func (*CipdSettings_Source) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_buildbucket_proto_service_config_proto_rawDescGZIP(), []int{7, 0}
+}
+
+func (x *CipdSettings_Source) GetPackageName() string {
+	if x != nil {
+		return x.PackageName
+	}
+	return ""
+}
+
+func (x *CipdSettings_Source) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+func (x *CipdSettings_Source) GetVersionCanary() string {
+	if x != nil {
+		return x.VersionCanary
+	}
+	return ""
+}
+
 var File_go_chromium_org_luci_buildbucket_proto_service_config_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_buildbucket_proto_service_config_proto_rawDesc = []byte{
@@ -1057,13 +1134,24 @@ var file_go_chromium_org_luci_buildbucket_proto_service_config_proto_rawDesc = [
 	0x45, 0x78, 0x63, 0x6c, 0x75, 0x64, 0x65, 0x22, 0x2e, 0x0a, 0x10, 0x52, 0x65, 0x73, 0x75, 0x6c,
 	0x74, 0x44, 0x42, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x12, 0x1a, 0x0a, 0x08, 0x68,
 	0x6f, 0x73, 0x74, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x68,
-	0x6f, 0x73, 0x74, 0x6e, 0x61, 0x6d, 0x65, 0x22, 0x26, 0x0a, 0x0c, 0x43, 0x69, 0x70, 0x64, 0x53,
-	0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x65, 0x72, 0x76, 0x65,
-	0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x42,
-	0x36, 0x5a, 0x34, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f,
-	0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63,
-	0x6b, 0x65, 0x74, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x3b, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62,
-	0x75, 0x63, 0x6b, 0x65, 0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6f, 0x73, 0x74, 0x6e, 0x61, 0x6d, 0x65, 0x22, 0xce, 0x01, 0x0a, 0x0c, 0x43, 0x69, 0x70, 0x64,
+	0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x65, 0x72, 0x76,
+	0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72,
+	0x12, 0x38, 0x0a, 0x06, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x20, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x43,
+	0x69, 0x70, 0x64, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x2e, 0x53, 0x6f, 0x75, 0x72,
+	0x63, 0x65, 0x52, 0x06, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x1a, 0x6c, 0x0a, 0x06, 0x53, 0x6f,
+	0x75, 0x72, 0x63, 0x65, 0x12, 0x21, 0x0a, 0x0c, 0x70, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x5f,
+	0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x70, 0x61, 0x63, 0x6b,
+	0x61, 0x67, 0x65, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69,
+	0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f,
+	0x6e, 0x12, 0x25, 0x0a, 0x0e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x63, 0x61, 0x6e,
+	0x61, 0x72, 0x79, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x76, 0x65, 0x72, 0x73, 0x69,
+	0x6f, 0x6e, 0x43, 0x61, 0x6e, 0x61, 0x72, 0x79, 0x42, 0x36, 0x5a, 0x34, 0x67, 0x6f, 0x2e, 0x63,
+	0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69,
+	0x2f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x3b, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x70, 0x62,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1078,7 +1166,7 @@ func file_go_chromium_org_luci_buildbucket_proto_service_config_proto_rawDescGZI
 	return file_go_chromium_org_luci_buildbucket_proto_service_config_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_buildbucket_proto_service_config_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_go_chromium_org_luci_buildbucket_proto_service_config_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_go_chromium_org_luci_buildbucket_proto_service_config_proto_goTypes = []interface{}{
 	(*SettingsCfg)(nil),                     // 0: buildbucket.SettingsCfg
 	(*BackendSetting)(nil),                  // 1: buildbucket.BackendSetting
@@ -1092,7 +1180,8 @@ var file_go_chromium_org_luci_buildbucket_proto_service_config_proto_goTypes = [
 	(*BackendSetting_BuildSyncSetting)(nil), // 9: buildbucket.BackendSetting.BuildSyncSetting
 	(*SwarmingSettings_Package)(nil),        // 10: buildbucket.SwarmingSettings.Package
 	(*ExperimentSettings_Experiment)(nil),   // 11: buildbucket.ExperimentSettings.Experiment
-	(*BuilderConfig_CacheEntry)(nil),        // 12: buildbucket.BuilderConfig.CacheEntry
+	(*CipdSettings_Source)(nil),             // 12: buildbucket.CipdSettings.Source
+	(*BuilderConfig_CacheEntry)(nil),        // 13: buildbucket.BuilderConfig.CacheEntry
 }
 var file_go_chromium_org_luci_buildbucket_proto_service_config_proto_depIdxs = []int32{
 	2,  // 0: buildbucket.SettingsCfg.swarming:type_name -> buildbucket.SwarmingSettings
@@ -1103,20 +1192,21 @@ var file_go_chromium_org_luci_buildbucket_proto_service_config_proto_depIdxs = [
 	1,  // 5: buildbucket.SettingsCfg.backends:type_name -> buildbucket.BackendSetting
 	8,  // 6: buildbucket.SettingsCfg.swarming_backends:type_name -> buildbucket.SettingsCfg.SwarmingBackendsEntry
 	9,  // 7: buildbucket.BackendSetting.build_sync_setting:type_name -> buildbucket.BackendSetting.BuildSyncSetting
-	12, // 8: buildbucket.SwarmingSettings.global_caches:type_name -> buildbucket.BuilderConfig.CacheEntry
+	13, // 8: buildbucket.SwarmingSettings.global_caches:type_name -> buildbucket.BuilderConfig.CacheEntry
 	10, // 9: buildbucket.SwarmingSettings.user_packages:type_name -> buildbucket.SwarmingSettings.Package
 	10, // 10: buildbucket.SwarmingSettings.bbagent_package:type_name -> buildbucket.SwarmingSettings.Package
 	10, // 11: buildbucket.SwarmingSettings.kitchen_package:type_name -> buildbucket.SwarmingSettings.Package
 	10, // 12: buildbucket.SwarmingSettings.alternative_agent_packages:type_name -> buildbucket.SwarmingSettings.Package
 	10, // 13: buildbucket.SwarmingSettings.bbagent_utility_packages:type_name -> buildbucket.SwarmingSettings.Package
 	11, // 14: buildbucket.ExperimentSettings.experiments:type_name -> buildbucket.ExperimentSettings.Experiment
-	5,  // 15: buildbucket.SwarmingSettings.Package.builders:type_name -> buildbucket.BuilderPredicate
-	5,  // 16: buildbucket.ExperimentSettings.Experiment.builders:type_name -> buildbucket.BuilderPredicate
-	17, // [17:17] is the sub-list for method output_type
-	17, // [17:17] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	12, // 15: buildbucket.CipdSettings.source:type_name -> buildbucket.CipdSettings.Source
+	5,  // 16: buildbucket.SwarmingSettings.Package.builders:type_name -> buildbucket.BuilderPredicate
+	5,  // 17: buildbucket.ExperimentSettings.Experiment.builders:type_name -> buildbucket.BuilderPredicate
+	18, // [18:18] is the sub-list for method output_type
+	18, // [18:18] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_buildbucket_proto_service_config_proto_init() }
@@ -1258,6 +1348,18 @@ func file_go_chromium_org_luci_buildbucket_proto_service_config_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_buildbucket_proto_service_config_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CipdSettings_Source); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1265,7 +1367,7 @@ func file_go_chromium_org_luci_buildbucket_proto_service_config_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_buildbucket_proto_service_config_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
