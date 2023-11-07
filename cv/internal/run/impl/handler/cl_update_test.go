@@ -316,7 +316,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 				So(err, ShouldBeNil)
 				verifyHasResetTriggerLongOpScheduled(res, map[common.CLID]string{
-					1: "CV cannot start a Run because this CL is missing approval.",
+					1: "CV cannot start a Run because this CL is not submittable.",
 				}, run.Status_FAILED)
 			})
 		})
@@ -367,7 +367,7 @@ func TestOnCLsUpdated(t *testing.T) {
 						res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 						So(err, ShouldBeNil)
 						verifyHasResetTriggerLongOpScheduled(res, map[common.CLID]string{
-							1: "CV cannot start a Run because this CL is missing approval.",
+							1: "CV cannot start a Run because this CL is not submittable.",
 							2: "CV cannot start a Run due to errors in the following CL(s).",
 						}, run.Status_FAILED)
 					})
@@ -381,8 +381,8 @@ func TestOnCLsUpdated(t *testing.T) {
 						res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1, 2})
 						So(err, ShouldBeNil)
 						verifyHasResetTriggerLongOpScheduled(res, map[common.CLID]string{
-							1: "CV cannot start a Run because this CL is missing approval.",
-							2: "CV cannot start a Run because this CL is missing approval.",
+							1: "CV cannot start a Run because this CL is not submittable.",
+							2: "CV cannot start a Run because this CL is not submittable.",
 						}, run.Status_FAILED)
 					})
 				})

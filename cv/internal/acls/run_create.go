@@ -39,20 +39,23 @@ const (
 	ownerNotDryRunner    = "CV cannot start a Run for `%s` because the user is not a dry-runner."
 	notOwnerNotCommitter = "CV cannot start a Run for `%s` because the user is neither the CL owner nor a committer."
 
-	noLGTM           = "CV cannot start a Run because this CL is missing approval."
-	noLGTMWithReqs   = "CV cannot start a Run because this CL is %s"
-	noLGTMSuspicious = noLGTM + " " +
-		"However, all requirements appear to be satisfied. " +
+	notSubmittable           = "CV cannot start a Run because this CL is not submittable. " + submitReqHint
+	notSubmittableWithReqs   = "CV cannot start a Run because this CL is %s. " + submitReqHint
+	notSubmittableSuspicious = notSubmittable + " " +
+		"However, all submit requirements appear to be satisfied. " +
 		"It's likely caused by an issue in Gerrit or Gerrit configuration. " +
 		"Please contact your Git admin."
+	submitReqHint = "Please hover over the corresponding entry in the Submit Requirements section to check what is missing."
 
 	untrustedDeps = "" +
 		"CV cannot start a Run because of the following dependencies. " +
-		"They must be approved because their owners are not committers. " +
+		"They must be submittable (please check the submit requirement) because " +
+		"their owners are not committers. " +
 		"Alternatively, you can ask the owner of this CL to trigger a dry-run."
 	untrustedDepsTrustDryRunnerDeps = "" +
 		"CV cannot start a Run because of the following dependencies. " +
-		"They must be approved because their owners are not committers or dry-runners. " +
+		"They must be submittable (please check the submit requirement) because " +
+		"their owners are not committers or dry-runners. " +
 		"Alternatively, you can ask the owner of this CL to trigger a dry-run."
 	untrustedDepsSuspicious = "" +
 		"However, some or all of the dependencies appear to satisfy all the requirements. " +
@@ -74,7 +77,7 @@ type runCreateChecker struct {
 	owner          identity.Identity // the CL owner
 	triggerer      identity.Identity // the Run triggerer
 	triggererEmail string            // email of the Run triggerer
-	isApproved     bool              // if the CL has been approved (LGTMed) in Gerrit
+	submittable    bool              // if the CL is submittable in Gerrit
 	depsToExamine  common.CLIDs      // deps that are possibly untrusted.
 	trustedDeps    common.CLIDsSet   // deps that have been proven to be trustable.
 }
@@ -102,13 +105,21 @@ func (ck runCreateChecker) canTrustDeps(ctx context.Context) (evalResult, error)
 	untrusted := deps[:0]
 	for _, d := range deps {
 		// Dep is trusted, if
-		// - it has been approved in Gerrit, OR
+		// - it has been submitted, OR
+		// - it is submittable, OR
 		// - the owner is a committer, OR
 		// - config enables trust_dry_runner_deps and the owner is a dry runner
-		switch isApproved, err := checkApproval(d.Snapshot); {
+		switch submitted, err := d.Snapshot.IsSubmitted(); {
 		case err != nil:
 			return no, errors.Annotate(err, "dep-CL(%d)", d.ID).Err()
-		case isApproved:
+		case submitted:
+			ck.trustedDeps.Add(d.ID)
+			continue
+		}
+		switch submittable, err := d.Snapshot.IsSubmittable(); {
+		case err != nil:
+			return no, errors.Annotate(err, "dep-CL(%d)", d.ID).Err()
+		case submittable:
 			ck.trustedDeps.Add(d.ID)
 			continue
 		}
@@ -160,26 +171,24 @@ func (ck runCreateChecker) canCreateRun(ctx context.Context) (evalResult, error)
 }
 
 func (ck runCreateChecker) canCreateFullRun(ctx context.Context) (evalResult, error) {
-	// A committer can run a full run, as long as the CL has been approved.
-	isCommitter, err := ck.isCommitter(ctx, ck.triggerer)
-	if err != nil {
+	// A committer can run a full run, as long as the CL is submittable.
+	switch isCommitter, err := ck.isCommitter(ctx, ck.triggerer); {
+	case err != nil:
 		return no, err
+	case isCommitter && ck.submittable:
+		return yes, nil
+	case isCommitter:
+		return noWithReason(notSubmittableReason(ctx, ck.cl)), nil
 	}
-	if isCommitter {
-		if ck.isApproved {
-			return yes, nil
-		}
-		return noWithReason(noLGTMReason(ctx, ck.cl)), nil
-	}
-
 	// A non-committer can trigger a full-run,
 	// if all of the following conditions are met.
 	//
 	// 1) triggerer == owner
 	// 2) triggerer is a dry-runner OR cg.AllowOwnerIfSubmittable == COMMIT
-	// 3) the CL has been approved in Gerrit.
+	// 3) the CL is submittable in Gerrit.
 	//
-	// That is, a dry-runner can trigger a full-run for own CLs w/ an approval.
+	// That is, a dry-runner can trigger a full-run for own submittable CLs
+	// (typically means the CL has been approved).
 	// For more context, crbug.com/692611 and go/cq-after-lgtm.
 	if ck.triggerer != ck.owner {
 		return noWithReason(fmt.Sprintf(notOwnerNotCommitter, ck.triggererEmail)), nil
@@ -191,8 +200,8 @@ func (ck runCreateChecker) canCreateFullRun(ctx context.Context) (evalResult, er
 	if !isDryRunner && ck.allowOwnerIfSubmittable != cfgpb.Verifiers_GerritCQAbility_COMMIT {
 		return noWithReason(fmt.Sprintf(ownerNotCommitter, ck.triggererEmail)), nil
 	}
-	if !ck.isApproved {
-		return noWithReason(noLGTMReason(ctx, ck.cl)), nil
+	if !ck.submittable {
+		return noWithReason(notSubmittableReason(ctx, ck.cl)), nil
 	}
 	return yes, nil
 }
@@ -209,18 +218,16 @@ func (ck runCreateChecker) canCreateNewPatchsetRun(ctx context.Context) (evalRes
 }
 
 func (ck runCreateChecker) canCreateDryRun(ctx context.Context) (evalResult, error) {
-	// A committer can trigger a [Quick]DryRun w/o approval for own CLs.
-	isCommitter, err := ck.isCommitter(ctx, ck.triggerer)
-	if err != nil {
+	switch isCommitter, err := ck.isCommitter(ctx, ck.triggerer); {
+	case err != nil:
 		return no, err
-	}
-	if isCommitter {
-		if ck.triggerer == ck.owner {
-			return yes, nil
-		}
-		// In order for a committer to trigger a dry-run for
-		// someone else' CL, all the dependencies, of which owner
-		// is not a committer, must be approved in Gerrit.
+	case isCommitter && ck.triggerer == ck.owner:
+		// A committer can trigger a dry run on their own CL without CL being
+		// submittable.
+		return yes, nil
+	case isCommitter:
+		// In order for a committer to trigger a dry-run for someone else' CL, all
+		// the dependencies must be trusted dependencies.
 		return ck.canTrustDeps(ctx)
 	}
 
@@ -231,13 +238,13 @@ func (ck runCreateChecker) canCreateDryRun(ctx context.Context) (evalResult, err
 	// 2) triggerer is a dry-runner
 	//    OR
 	//    cg.AllowOwnerIfSubmittable in [COMMIT, DRY_RUN] AND
-	//      the CL has been approved in Gerrit.
+	//      the CL is submittable in Gerrit.
 	// 3) all the deps are trusted.
 	//
 	// A dep is trusted, if at least one of the following conditions are met.
 	// - the dep is one of the CLs included in the Run
 	// - the owner of the dep is a committer
-	// - the dep has been approved in Gerrit
+	// - the dep is submittable in Gerrit
 	//
 	// For more context, crbug.com/692611 and go/cq-after-lgtm.
 	if ck.triggerer != ck.owner {
@@ -254,8 +261,8 @@ func (ck runCreateChecker) canCreateDryRun(ctx context.Context) (evalResult, err
 		default:
 			return noWithReason(fmt.Sprintf(ownerNotDryRunner, ck.triggererEmail)), nil
 		}
-		if !ck.isApproved {
-			return noWithReason(noLGTMReason(ctx, ck.cl)), nil
+		if !ck.submittable {
+			return noWithReason(notSubmittableReason(ctx, ck.cl)), nil
 		}
 		return ck.canTrustDeps(ctx)
 	}
@@ -302,20 +309,6 @@ func CheckRunCreate(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trig
 	return res, nil
 }
 
-func checkApproval(snap *changelist.Snapshot) (bool, error) {
-	switch isSubmitted, err := snap.IsSubmitted(); {
-	case err != nil:
-		return false, err
-	case isSubmitted:
-		return true, nil
-	}
-	isSubmittable, err := snap.IsSubmittable()
-	if err != nil {
-		return false, err
-	}
-	return isSubmittable, nil
-}
-
 func evaluateCLs(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger, cls []*changelist.CL) ([]*runCreateChecker, error) {
 	gVerifier := cg.Content.Verifiers.GetGerritCqAbility()
 
@@ -331,7 +324,8 @@ func evaluateCLs(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger
 		if err != nil {
 			return nil, errors.Annotate(err, "CL(%d)", cl.ID).Err()
 		}
-		isApproved, err := checkApproval(cl.Snapshot)
+
+		submittable, err := cl.Snapshot.IsSubmittable()
 		if err != nil {
 			return nil, errors.Annotate(err, "CL(%d)", cl.ID).Err()
 		}
@@ -356,7 +350,7 @@ func evaluateCLs(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger
 			owner:          owner,
 			triggerer:      triggerer,
 			triggererEmail: tr.Email,
-			isApproved:     isApproved,
+			submittable:    submittable,
 			depsToExamine:  depsToExamine,
 			trustedDeps:    trustedDeps,
 		}
@@ -375,7 +369,7 @@ func untrustedDepsReason(ctx context.Context, udeps []*changelist.CL, trustDryRu
 	}
 	for _, d := range udeps {
 		fmt.Fprintf(&sb, "\n- %s:", d.ExternalID.MustURL())
-		if allSatisfied, msg := strSubmitReqsForUnapprovedCL(ctx, d); len(msg) > 0 {
+		if allSatisfied, msg := strSubmitReqsForNotSubmittableCL(ctx, d); len(msg) > 0 {
 			fmt.Fprintf(&sb, " %s", msg)
 			anySuspicious = anySuspicious || allSatisfied
 		}
@@ -386,18 +380,19 @@ func untrustedDepsReason(ctx context.Context, udeps []*changelist.CL, trustDryRu
 	return sb.String()
 }
 
-// noLGTMReason generates a RunCreate rejection comment for unapproved CL.
-func noLGTMReason(ctx context.Context, cl *changelist.CL) string {
-	switch allSatisfied, msg := strSubmitReqsForUnapprovedCL(ctx, cl); {
+// notSubmittableReason generates a RunCreate rejection comment for not
+// submittable CL.
+func notSubmittableReason(ctx context.Context, cl *changelist.CL) string {
+	switch allSatisfied, msg := strSubmitReqsForNotSubmittableCL(ctx, cl); {
 	case allSatisfied:
-		return noLGTMSuspicious
+		return notSubmittableSuspicious
 	case len(msg) > 0:
-		return fmt.Sprintf(noLGTMWithReqs, msg)
+		return fmt.Sprintf(notSubmittableWithReqs, msg)
 	}
-	return noLGTM
+	return notSubmittable
 }
 
-func strSubmitReqsForUnapprovedCL(ctx context.Context, cl *changelist.CL) (allSatisfied bool, msg string) {
+func strSubmitReqsForNotSubmittableCL(ctx context.Context, cl *changelist.CL) (allSatisfied bool, msg string) {
 	reqs := cl.Snapshot.GetGerrit().GetInfo().GetSubmitRequirements()
 	if len(reqs) == 0 {
 		return
@@ -431,7 +426,7 @@ func strSubmitReqsForUnapprovedCL(ctx context.Context, cl *changelist.CL) (allSa
 		}
 		allSatisfied = len(satisfied) != 0
 	default:
-		msg = fmt.Sprintf("not satisfying the %s submit requirement. Please hover over the corresponding entry in the Submit Requirements section to check what is missing.", join(unsatisfied))
+		msg = fmt.Sprintf("not satisfying the %s submit requirement", join(unsatisfied))
 	}
 	if allSatisfied {
 		logging.Errorf(ctx, "CL(%d): all submit reqs satisfied; but CL not submittable", cl.ID)
@@ -451,13 +446,13 @@ func groupSubmitReqs(ctx context.Context, reqs []*gerritpb.SubmitRequirementResu
 			panic(errors.New("Unspecified SubmitRequirement.Status; this should never happen"))
 		case gerritpb.SubmitRequirementResultInfo_NOT_APPLICABLE:
 
-		// satisfied stauses
+		// satisfied statuses
 		case gerritpb.SubmitRequirementResultInfo_SATISFIED,
 			gerritpb.SubmitRequirementResultInfo_OVERRIDDEN,
 			gerritpb.SubmitRequirementResultInfo_FORCED:
 			satisfied = append(satisfied, req.Name)
 
-		// unsatified statuses
+		// unsatisfied statuses
 		case gerritpb.SubmitRequirementResultInfo_ERROR:
 			// log the error. It may be helpful for diagnosing the reason of a Run rejection.
 			logging.Warningf(ctx, "Gerrit reported SubmissionRequirement error %s", req)

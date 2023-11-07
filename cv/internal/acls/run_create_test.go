@@ -145,7 +145,7 @@ func TestCheckRunCLs(t *testing.T) {
 			So(res.Failure(cl), ShouldContainSubstring, fmt.Sprintf(format, args...))
 			return res
 		}
-		approveCL := func(cl *changelist.CL) {
+		markCLSubmittable := func(cl *changelist.CL) {
 			cl.Snapshot.GetGerrit().GetInfo().Submittable = true
 			So(datastore.Put(ctx, cl), ShouldBeNil)
 		}
@@ -166,10 +166,10 @@ func TestCheckRunCLs(t *testing.T) {
 				&gerritpb.SubmitRequirementResultInfo{Name: name, Status: st})
 			So(datastore.Put(ctx, cl), ShouldBeNil)
 		}
-		satisfyReq := func(cl *changelist.CL, name string) {
+		satisfiedReq := func(cl *changelist.CL, name string) {
 			addSubmitReq(cl, name, gerritpb.SubmitRequirementResultInfo_SATISFIED)
 		}
-		unsatisfyReq := func(cl *changelist.CL, name string) {
+		unsatisfiedReq := func(cl *changelist.CL, name string) {
 			addSubmitReq(cl, name, gerritpb.SubmitRequirementResultInfo_UNSATISFIED)
 		}
 		naReq := func(cl *changelist.CL, name string) {
@@ -186,41 +186,41 @@ func TestCheckRunCLs(t *testing.T) {
 				Convey("triggerer is a committer", func() {
 					addCommitter(tr)
 
-					// Should succeed w/ approval.
-					mustFailWith(cl, noLGTM)
-					approveCL(cl)
+					// Should succeed when CL becomes submittable.
+					mustFailWith(cl, notSubmittable)
+					markCLSubmittable(cl)
 					mustOK()
 				})
 				Convey("triggerer is a dry-runner", func() {
 					addDryRunner(tr)
 
-					// Dry-runner can trigger a full-run for own CL w/ approval.
-					unsatisfyReq(cl, "Code-Review")
+					// Dry-runner can trigger a full-run for own submittable CL.
+					unsatisfiedReq(cl, "Code-Review")
 
 					mustFailWith(cl, "CV cannot start a Run because this CL is not satisfying the `Code-Review` submit requirement. Please hover over the corresponding entry in the Submit Requirements section to check what is missing.")
-					approveCL(cl)
+					markCLSubmittable(cl)
 					mustOK()
 				})
 				Convey("triggerer is neither dry-runner nor committer", func() {
-					Convey("CL approved", func() {
-						// Should fail, even if it was approved.
-						approveCL(cl)
+					Convey("CL submittable", func() {
+						// Should fail, even if it was submittable.
+						markCLSubmittable(cl)
 						mustFailWith(cl, "CV cannot start a Run for `%s` because the user is not a committer", tr)
 						// unless AllowOwnerIfSubmittable == COMMIT
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
 						mustOK()
 					})
-					Convey("CL not approved", func() {
+					Convey("CL not submittable", func() {
 						// Should fail always.
 						mustFailWith(cl, "CV cannot start a Run for `%s` because the user is not a committer", tr)
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
-						mustFailWith(cl, noLGTM)
+						mustFailWith(cl, notSubmittable)
 					})
 				})
-				Convey("suspiciously noLGTM", func() {
+				Convey("suspiciously not submittable", func() {
 					addDryRunner(tr)
 					addSubmitReq(cl, "Code-Review", gerritpb.SubmitRequirementResultInfo_SATISFIED)
-					mustFailWith(cl, noLGTMSuspicious)
+					mustFailWith(cl, notSubmittableSuspicious)
 				})
 			})
 
@@ -231,18 +231,18 @@ func TestCheckRunCLs(t *testing.T) {
 				Convey("triggerer is a committer", func() {
 					addCommitter(tr)
 
-					// Should succeed w/ approval.
-					mustFailWith(cl, noLGTM)
-					approveCL(cl)
+					// Should succeed when CL becomes submittable.
+					mustFailWith(cl, notSubmittable)
+					markCLSubmittable(cl)
 					mustOK()
 				})
 				Convey("triggerer is a dry-runner", func() {
 					addDryRunner(tr)
 
 					// Dry-runner cannot trigger a full-run for someone else' CL,
-					// w/ or w/o approval.
+					// whether it is submittable or not
 					mustFailWith(cl, "neither the CL owner nor a committer")
-					approveCL(cl)
+					markCLSubmittable(cl)
 					mustFailWith(cl, "neither the CL owner nor a committer")
 
 					// AllowOwnerIfSubmittable doesn't change the decision, either.
@@ -256,14 +256,14 @@ func TestCheckRunCLs(t *testing.T) {
 				Convey("triggerer is neither dry-runner nor committer", func() {
 					// Should fail always.
 					mustFailWith(cl, "neither the CL owner nor a committer")
-					approveCL(cl)
+					markCLSubmittable(cl)
 					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
 					mustFailWith(cl, "neither the CL owner nor a committer")
 				})
-				Convey("suspiciously noLGTM", func() {
+				Convey("suspiciously not submittable", func() {
 					addCommitter(tr)
 					addSubmitReq(cl, "Code-Review", gerritpb.SubmitRequirementResultInfo_SATISFIED)
-					mustFailWith(cl, noLGTMSuspicious)
+					mustFailWith(cl, notSubmittableSuspicious)
 				})
 			})
 		})
@@ -277,19 +277,19 @@ func TestCheckRunCLs(t *testing.T) {
 
 				Convey("triggerer is a committer", func() {
 					// Committers can trigger a dry-run for someone else' CL
-					// w/o approval.
+					// even if the CL is not submittable
 					addCommitter(tr)
 					mustOK()
 				})
 				Convey("triggerer is a dry-runner", func() {
-					// Should succeed w/o approval.
+					// Should succeed even if the CL is not submittable.
 					addDryRunner(tr)
 					mustOK()
 				})
 				Convey("triggerer is neither dry-runner nor committer", func() {
-					Convey("CL approved", func() {
-						// Should fail, even if it was approved.
-						approveCL(cl)
+					Convey("CL submittable", func() {
+						// Should fail, even if the CL is submittable.
+						markCLSubmittable(cl)
 						mustFailWith(cl, "CV cannot start a Run for `%s` because the user is not a dry-runner", owner)
 						// Unless AllowOwnerIfSubmittable == DRY_RUN
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_DRY_RUN)
@@ -298,11 +298,11 @@ func TestCheckRunCLs(t *testing.T) {
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
 						mustOK()
 					})
-					Convey("CL not approved", func() {
+					Convey("CL not submittable", func() {
 						// Should fail always.
 						mustFailWith(cl, "CV cannot start a Run for `%s` because the user is not a dry-runner", owner)
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
-						mustFailWith(cl, noLGTM)
+						mustFailWith(cl, notSubmittable)
 					})
 				})
 			})
@@ -312,17 +312,17 @@ func TestCheckRunCLs(t *testing.T) {
 				cl := addCL(tr, owner, m)
 
 				Convey("triggerer is a committer", func() {
-					// Should succeed w/ or w/o approval.
+					// Should succeed whether CL is submittable or not.
 					addCommitter(tr)
 					mustOK()
-					approveCL(cl)
+					markCLSubmittable(cl)
 					mustOK()
 				})
 				Convey("triggerer is a dry-runner", func() {
 					// Only committers can trigger a dry-run for someone else' CL.
 					addDryRunner(tr)
 					mustFailWith(cl, "neither the CL owner nor a committer")
-					approveCL(cl)
+					markCLSubmittable(cl)
 					mustFailWith(cl, "neither the CL owner nor a committer")
 					// AllowOwnerIfSubmittable doesn't change the decision, either.
 					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
@@ -336,7 +336,7 @@ func TestCheckRunCLs(t *testing.T) {
 				Convey("triggerer is neither dry-runner nor committer", func() {
 					// Only committers can trigger a dry-run for someone else' CL.
 					mustFailWith(cl, "neither the CL owner nor a committer")
-					approveCL(cl)
+					markCLSubmittable(cl)
 					mustFailWith(cl, "neither the CL owner nor a committer")
 					// AllowOwnerIfSubmittable doesn't change the decision, either.
 					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
@@ -373,9 +373,9 @@ func TestCheckRunCLs(t *testing.T) {
 
 					Convey("but dep2 satisfies all the SubmitRequirements", func() {
 						naReq(dep1, "Code-Review")
-						unsatisfyReq(dep1, "Code-Owner")
-						satisfyReq(dep2, "Code-Review")
-						satisfyReq(dep2, "Code-Owner")
+						unsatisfiedReq(dep1, "Code-Owner")
+						satisfiedReq(dep2, "Code-Review")
+						satisfiedReq(dep2, "Code-Owner")
 						res := mustFailWith(cl, untrustedDeps)
 						So(res.Failure(cl), ShouldContainSubstring, fmt.Sprintf(""+
 							"- %s: not submittable, although submit requirements `Code-Review` and `Code-Owner` are satisfied",
@@ -388,12 +388,12 @@ func TestCheckRunCLs(t *testing.T) {
 						dep3 := addDep(cl, "dep_owner3@example.org")
 						dep3URL := dep3.ExternalID.MustURL()
 
-						unsatisfyReq(dep1, "Code-Review")
-						unsatisfyReq(dep2, "Code-Review")
-						unsatisfyReq(dep2, "Code-Owner")
-						unsatisfyReq(dep3, "Code-Review")
-						unsatisfyReq(dep3, "Code-Owner")
-						unsatisfyReq(dep3, "Code-Quiz")
+						unsatisfiedReq(dep1, "Code-Review")
+						unsatisfiedReq(dep2, "Code-Review")
+						unsatisfiedReq(dep2, "Code-Owner")
+						unsatisfiedReq(dep3, "Code-Review")
+						unsatisfiedReq(dep3, "Code-Owner")
+						unsatisfiedReq(dep3, "Code-Quiz")
 
 						res := mustFailWith(cl, untrustedDeps)
 						So(res.Failure(cl), ShouldNotContainSubstring, untrustedDepsSuspicious)
@@ -411,9 +411,9 @@ func TestCheckRunCLs(t *testing.T) {
 					trs = append(trs, &run.Trigger{Email: tr, Mode: string(m)})
 					mustOK()
 				})
-				Convey("trusted because of an approval", func() {
-					approveCL(dep1)
-					approveCL(dep2)
+				Convey("trusted because of submittable", func() {
+					markCLSubmittable(dep1)
+					markCLSubmittable(dep2)
 					mustOK()
 				})
 				Convey("trusterd because they have been merged already", func() {
@@ -467,18 +467,18 @@ func TestCheckRunCLs(t *testing.T) {
 			setAllowOwner(cfgpb.Verifiers_GerritCQAbility_DRY_RUN)
 
 			Convey("all CLs passed", func() {
-				approveCL(cl1)
-				approveCL(cl2)
+				markCLSubmittable(cl1)
+				markCLSubmittable(cl2)
 				mustOK()
 			})
 			Convey("all CLs failed", func() {
-				mustFailWith(cl1, noLGTM)
-				mustFailWith(cl2, noLGTM)
+				mustFailWith(cl1, notSubmittable)
+				mustFailWith(cl2, notSubmittable)
 			})
 			Convey("Some CLs failed", func() {
-				approveCL(cl1)
+				markCLSubmittable(cl1)
 				mustFailWith(cl1, "CV cannot start a Run due to errors in the following CL(s)")
-				mustFailWith(cl2, noLGTM)
+				mustFailWith(cl2, notSubmittable)
 			})
 		})
 	})
