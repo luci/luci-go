@@ -131,7 +131,6 @@ func TestUpdate(t *testing.T) {
 			maxBugsFiledPerRun:       1,
 			reclusteringProgress:     progress,
 			runTimestamp:             time.Date(2100, 2, 2, 2, 2, 2, 2, time.UTC),
-			usePolicyBasedManagement: true,
 		}
 
 		// Mock current time. This is needed to control behaviours like

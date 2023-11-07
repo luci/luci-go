@@ -30,12 +30,6 @@ func ChromeOSTestConfig() *configpb.BuganizerProject {
 	}
 }
 
-func ChromeOSLegacyTestConfig() *configpb.BuganizerProject {
-	result := ChromeOSTestConfig()
-	result.PriorityMappings = createPriorityMappings()
-	return result
-}
-
 func createPriorityMappings() []*configpb.BuganizerProject_PriorityMapping {
 	return []*configpb.BuganizerProject_PriorityMapping{
 		{

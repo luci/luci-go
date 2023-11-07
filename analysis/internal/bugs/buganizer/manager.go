@@ -95,15 +95,9 @@ type BugManager struct {
 	project string
 	// The default buganizer component to file into.
 	defaultComponent *configpb.BuganizerComponent
-	// Whether we are using policy-based bug management (or legacy
-	// bug management).
-	usePolicyBasedManagement bool
 	// The generator used to generate updates to Buganizer bugs.
 	// Set if and only if usePolicyBasedManagement.
 	requestGenerator *RequestGenerator
-	// The legacy generator used to generate updates to Buganizer bugs.
-	// Set if and only if !usePolicyBasedManagement.
-	legacyRequestGenerator *LegacyRequestGenerator
 	// This flags toggles the bug manager to stub the calls to
 	// Buganizer and mock the responses and behaviour of issue manipluation.
 	// Use this flag for testing purposes ONLY.
@@ -117,48 +111,27 @@ type BugManager struct {
 func NewBugManager(client Client,
 	uiBaseURL, project, selfEmail string,
 	projectCfg *configpb.ProjectConfig,
-	simulate, usePolicyBasedManagement bool) (*BugManager, error) {
+	simulate bool) (*BugManager, error) {
 
-	var generator *RequestGenerator
-	var legacyGenerator *LegacyRequestGenerator
-	var defaultComponent *configpb.BuganizerComponent
-	if usePolicyBasedManagement {
-		var err error
-		generator, err = NewRequestGenerator(
-			client,
-			project,
-			uiBaseURL,
-			selfEmail,
-			projectCfg,
-		)
-		if err != nil {
-			return nil, errors.Annotate(err, "create request generator").Err()
-		}
-		defaultComponent = projectCfg.BugManagement.Buganizer.DefaultComponent
-	} else {
-		var err error
-		legacyGenerator, err = NewLegacyRequestGenerator(
-			client,
-			project,
-			uiBaseURL,
-			selfEmail,
-			projectCfg,
-		)
-		if err != nil {
-			return nil, errors.Annotate(err, "create request generator").Err()
-		}
-		defaultComponent = projectCfg.Buganizer.DefaultComponent
+	generator, err := NewRequestGenerator(
+		client,
+		project,
+		uiBaseURL,
+		selfEmail,
+		projectCfg,
+	)
+	if err != nil {
+		return nil, errors.Annotate(err, "create request generator").Err()
 	}
+	defaultComponent := projectCfg.BugManagement.Buganizer.DefaultComponent
 
 	return &BugManager{
-		client:                   client,
-		defaultComponent:         defaultComponent,
-		project:                  project,
-		selfEmail:                selfEmail,
-		usePolicyBasedManagement: usePolicyBasedManagement,
-		requestGenerator:         generator,
-		legacyRequestGenerator:   legacyGenerator,
-		Simulate:                 simulate,
+		client:           client,
+		defaultComponent: defaultComponent,
+		project:          project,
+		selfEmail:        selfEmail,
+		requestGenerator: generator,
+		Simulate:         simulate,
 	}, nil
 }
 
@@ -185,26 +158,15 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 		}
 	}
 
-	var createIssueRequest *issuetracker.CreateIssueRequest
-	if bm.usePolicyBasedManagement {
-		var err error
-		createIssueRequest, err = bm.requestGenerator.PrepareNew(
-			createRequest.Description,
-			createRequest.ActivePolicyIDs,
-			createRequest.RuleID,
-			componentID,
-		)
-		if err != nil {
-			response.Error = errors.Annotate(err, "prepare new issue").Err()
-			return response
-		}
-	} else {
-		createIssueRequest = bm.legacyRequestGenerator.PrepareNewLegacy(
-			createRequest.Metrics,
-			createRequest.Description,
-			createRequest.RuleID,
-			componentID,
-		)
+	createIssueRequest, err := bm.requestGenerator.PrepareNew(
+		createRequest.Description,
+		createRequest.ActivePolicyIDs,
+		createRequest.RuleID,
+		componentID,
+	)
+	if err != nil {
+		response.Error = errors.Annotate(err, "prepare new issue").Err()
+		return response
 	}
 
 	var issueID int64
@@ -224,12 +186,7 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 	response.ID = strconv.Itoa(int(issueID))
 
 	if wantedComponentID > 0 && wantedComponentID != componentID {
-		var commentRequest *issuetracker.CreateIssueCommentRequest
-		if bm.usePolicyBasedManagement {
-			commentRequest = bm.requestGenerator.PrepareNoPermissionComment(issueID, wantedComponentID)
-		} else {
-			commentRequest = bm.legacyRequestGenerator.PrepareNoPermissionComment(issueID, wantedComponentID)
-		}
+		commentRequest := bm.requestGenerator.PrepareNoPermissionComment(issueID, wantedComponentID)
 		if bm.Simulate {
 			logging.Debugf(ctx, "Would post comment on Buganizer issue: %s", textPBMultiline.Format(commentRequest))
 		} else {
@@ -240,19 +197,16 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 		}
 	}
 
-	if bm.usePolicyBasedManagement {
-		var err error
-		response.PolicyActivationsNotified, err = bm.notifyPolicyActivation(ctx, createRequest.RuleID, issueID, createRequest.ActivePolicyIDs)
-		if err != nil {
-			response.Error = errors.Annotate(err, "notify policy activations").Err()
-			return response
-		}
+	response.PolicyActivationsNotified, err = bm.notifyPolicyActivation(ctx, createRequest.RuleID, issueID, createRequest.ActivePolicyIDs)
+	if err != nil {
+		response.Error = errors.Annotate(err, "notify policy activations").Err()
+		return response
+	}
 
-		hotlistIDs := bm.requestGenerator.ExpectedHotlistIDs(createRequest.ActivePolicyIDs)
-		if err := bm.insertIntoHotlists(ctx, hotlistIDs, issueID); err != nil {
-			response.Error = errors.Annotate(err, "insert into hotlists").Err()
-			return response
-		}
+	hotlistIDs := bm.requestGenerator.ExpectedHotlistIDs(createRequest.ActivePolicyIDs)
+	if err := bm.insertIntoHotlists(ctx, hotlistIDs, issueID); err != nil {
+		response.Error = errors.Annotate(err, "insert into hotlists").Err()
+		return response
 	}
 
 	return response
@@ -336,14 +290,7 @@ func (bm *BugManager) Update(ctx context.Context, requests []bugs.BugUpdateReque
 			logging.Warningf(ctx, "Buganizer issue %s not found or we don't have permission to access it, skipping.", request.Bug.ID)
 			continue
 		}
-		var updateResponse bugs.BugUpdateResponse
-		if request.BugManagementState != nil {
-			// Use policy-based bug management.
-			updateResponse = bm.updateIssue(ctx, request, issue)
-		} else {
-			// Use legacy bug management.
-			updateResponse = bm.updateIssueLegacy(ctx, request, issue)
-		}
+		updateResponse := bm.updateIssue(ctx, request, issue)
 		responses = append(responses, updateResponse)
 	}
 	return responses, nil
@@ -465,53 +412,6 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 	}
 
 	return response
-}
-
-// updateIssueLegacy updates the given issue, adjusting its priority,
-// and verify or unverifying it.
-// TODO(meiring): Delete once we have migrated fully to policy-based
-// bug management.
-func (bm *BugManager) updateIssueLegacy(ctx context.Context, request bugs.BugUpdateRequest, issue *issuetracker.Issue) bugs.BugUpdateResponse {
-	updateResponse := bugs.BugUpdateResponse{
-		ShouldArchive:              shouldArchiveRule(ctx, issue, request.IsManagingBug),
-		DisableRulePriorityUpdates: false,
-		PolicyActivationsNotified:  map[bugs.PolicyID]struct{}{},
-	}
-	if issue.IssueState.Status == issuetracker.Issue_DUPLICATE {
-		updateResponse.IsDuplicate = true
-		updateResponse.IsDuplicateAndAssigned = issue.IssueState.Assignee != nil
-	}
-
-	if !updateResponse.IsDuplicate &&
-		!updateResponse.ShouldArchive &&
-		request.IsManagingBug &&
-		request.Metrics != nil {
-		if bm.legacyRequestGenerator.NeedsUpdateLegacy(request.Metrics, issue, request.IsManagingBugPriority) {
-			mur, err := bm.legacyRequestGenerator.MakeUpdateLegacy(ctx, MakeUpdateLegacyOptions{
-				metrics:                          request.Metrics,
-				issue:                            issue,
-				IsManagingBugPriority:            request.IsManagingBugPriority,
-				IsManagingBugPriorityLastUpdated: request.IsManagingBugPriorityLastUpdated,
-			})
-			if err != nil {
-				return bugs.BugUpdateResponse{
-					Error: errors.Annotate(err, "create update request for issue").Err(),
-				}
-			}
-			if bm.Simulate {
-				logging.Debugf(ctx, "Would update Buganizer issue: %s", textPBMultiline.Format(mur.request))
-			} else {
-				if _, err := bm.client.ModifyIssue(ctx, mur.request); err != nil {
-					return bugs.BugUpdateResponse{
-						Error: errors.Annotate(err, "update Buganizer issue").Err(),
-					}
-				}
-				bugs.BugsUpdatedCounter.Add(ctx, 1, bm.project, "buganizer")
-			}
-			updateResponse.DisableRulePriorityUpdates = mur.disablePriorityUpdates
-		}
-	}
-	return updateResponse
 }
 
 func (bm *BugManager) createIssueComment(ctx context.Context, commentRequest *issuetracker.CreateIssueCommentRequest) error {
@@ -694,51 +594,12 @@ func (bm *BugManager) UpdateDuplicateSource(ctx context.Context, request bugs.Up
 	if err != nil {
 		return errors.Annotate(err, "update duplicate source").Err()
 	}
-	var req *issuetracker.ModifyIssueRequest
-	if bm.usePolicyBasedManagement {
-		req = bm.requestGenerator.UpdateDuplicateSource(int64(issueId), request.ErrorMessage, request.BugDetails.RuleID, request.DestinationRuleID, request.BugDetails.IsAssigned)
-	} else {
-		req = bm.legacyRequestGenerator.UpdateDuplicateSource(int64(issueId), request.ErrorMessage, request.DestinationRuleID, request.BugDetails.IsAssigned)
-	}
+	req := bm.requestGenerator.UpdateDuplicateSource(int64(issueId), request.ErrorMessage, request.BugDetails.RuleID, request.DestinationRuleID, request.BugDetails.IsAssigned)
 	if bm.Simulate {
 		logging.Debugf(ctx, "Would update Buganizer issue: %s", textPBMultiline.Format(req))
 	} else {
 		if _, err := bm.client.ModifyIssue(ctx, req); err != nil {
 			return errors.Annotate(err, "failed to update duplicate source Buganizer issue %s", request.BugDetails.Bug.ID).Err()
-		}
-	}
-	return nil
-}
-
-// UpdateDuplicateDestination updates the destination bug of a duplicate
-// bug relationship.
-// It posts a message advising the user LUCI Analysis
-// has merged the rule for the source bug to the destination
-// (merged-into) bug, and provides a link to the failure
-// association rule.
-func (bm *BugManager) UpdateDuplicateDestination(ctx context.Context, destinationBug bugs.BugID, destinationRuleID string) error {
-	if destinationBug.System != bugs.BuganizerSystem {
-		// Indicates an implementation error with the caller.
-		panic("Buganizer bug manager can only deal with Buganizer bugs")
-	}
-	issueId, err := strconv.Atoi(destinationBug.ID)
-	if err != nil {
-		return errors.Annotate(err, "update duplicate destination").Err()
-	}
-	var req *issuetracker.ModifyIssueRequest
-	if bm.usePolicyBasedManagement {
-		req = bm.requestGenerator.UpdateDuplicateDestination(int64(issueId), destinationRuleID)
-	} else {
-		req = bm.legacyRequestGenerator.UpdateDuplicateDestination(int64(issueId))
-	}
-	if err != nil {
-		return errors.Annotate(err, "mark issue as available").Err()
-	}
-	if bm.Simulate {
-		logging.Debugf(ctx, "Would update Buganizer issue: %s", textPBMultiline.Format(req))
-	} else {
-		if _, err := bm.client.ModifyIssue(ctx, req); err != nil {
-			return errors.Annotate(err, "failed to update duplicate destination Buganizer issue %s", destinationBug.ID).Err()
 		}
 	}
 	return nil

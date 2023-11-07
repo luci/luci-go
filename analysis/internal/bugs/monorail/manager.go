@@ -55,15 +55,9 @@ type BugManager struct {
 	project string
 	// The monorail project.
 	monorailProject string
-	// Whether we are using policy-based bug management (or legacy
-	// bug management).
-	usePolicyBasedManagement bool
 	// The generator used to generate updates to monorail bugs.
 	// Set if and only if usePolicyBasedManagement.
 	generator *RequestGenerator
-	// The legacy generator used to generate updates to monorail bugs.
-	// Set if and only if !usePolicyBasedManagement.
-	legacyGenerator *LegacyRequestGenerator
 	// Simulate, if set, tells BugManager not to make mutating changes
 	// to monorail but only log the changes it would make. Must be set
 	// when running locally as RPCs made from developer systems will
@@ -74,33 +68,21 @@ type BugManager struct {
 
 // NewBugManager initialises a new bug manager, using the specified
 // monorail client.
-func NewBugManager(client *Client, uiBaseURL, project string, projectCfg *configpb.ProjectConfig, usePolicyBasedManagement bool) (*BugManager, error) {
+func NewBugManager(client *Client, uiBaseURL, project string, projectCfg *configpb.ProjectConfig) (*BugManager, error) {
 	var g *RequestGenerator
-	var lg *LegacyRequestGenerator
 	var monorailProject string
-	if usePolicyBasedManagement {
-		var err error
-		g, err = NewGenerator(uiBaseURL, project, projectCfg)
-		if err != nil {
-			return nil, errors.Annotate(err, "create issue generator").Err()
-		}
-		monorailProject = projectCfg.BugManagement.Monorail.Project
-	} else {
-		var err error
-		lg, err = NewLegacyGenerator(uiBaseURL, project, projectCfg)
-		if err != nil {
-			return nil, errors.Annotate(err, "create legacy issue generator").Err()
-		}
-		monorailProject = projectCfg.Monorail.Project
+	var err error
+	g, err = NewGenerator(uiBaseURL, project, projectCfg)
+	if err != nil {
+		return nil, errors.Annotate(err, "create issue generator").Err()
 	}
+	monorailProject = projectCfg.BugManagement.Monorail.Project
 	return &BugManager{
-		client:                   client,
-		project:                  project,
-		monorailProject:          monorailProject,
-		usePolicyBasedManagement: usePolicyBasedManagement,
-		generator:                g,
-		legacyGenerator:          lg,
-		Simulate:                 false,
+		client:          client,
+		project:         project,
+		monorailProject: monorailProject,
+		generator:       g,
+		Simulate:        false,
 	}, nil
 }
 
@@ -118,16 +100,10 @@ func (m *BugManager) Create(ctx context.Context, request bugs.BugCreateRequest) 
 		return response
 	}
 
-	var makeReq *mpb.MakeIssueRequest
-	if m.usePolicyBasedManagement {
-		var err error
-		makeReq, err = m.generator.PrepareNew(request.RuleID, request.ActivePolicyIDs, request.Description, components)
-		if err != nil {
-			response.Error = errors.Annotate(err, "prepare new issue").Err()
-			return response
-		}
-	} else {
-		makeReq = m.legacyGenerator.PrepareNew(request.RuleID, request.Metrics, request.Description, components)
+	makeReq, err := m.generator.PrepareNew(request.RuleID, request.ActivePolicyIDs, request.Description, components)
+	if err != nil {
+		response.Error = errors.Annotate(err, "prepare new issue").Err()
+		return response
 	}
 
 	var bugID string
@@ -151,12 +127,10 @@ func (m *BugManager) Create(ctx context.Context, request bugs.BugCreateRequest) 
 	// A bug was filed.
 	response.ID = bugID
 
-	if m.usePolicyBasedManagement {
-		response.PolicyActivationsNotified, err = m.notifyPolicyActivation(ctx, request.RuleID, bugID, request.ActivePolicyIDs)
-		if err != nil {
-			response.Error = errors.Annotate(err, "notify policy activations").Err()
-			return response
-		}
+	response.PolicyActivationsNotified, err = m.notifyPolicyActivation(ctx, request.RuleID, bugID, request.ActivePolicyIDs)
+	if err != nil {
+		response.Error = errors.Annotate(err, "notify policy activations").Err()
+		return response
 	}
 
 	return response
@@ -234,12 +208,7 @@ func (m *BugManager) Update(ctx context.Context, request []bugs.BugUpdateRequest
 			continue
 		}
 
-		var response bugs.BugUpdateResponse
-		if m.usePolicyBasedManagement {
-			response = m.updateIssue(ctx, req, issue)
-		} else {
-			response = m.updateIssueLegacy(ctx, req, issue)
-		}
+		response := m.updateIssue(ctx, req, issue)
 		responses = append(responses, response)
 	}
 	return responses, nil
@@ -344,50 +313,6 @@ func (m *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateRequ
 	return response
 }
 
-func (m *BugManager) updateIssueLegacy(ctx context.Context, request bugs.BugUpdateRequest, issue *mpb.Issue) bugs.BugUpdateResponse {
-	isDuplicate := issue.Status.Status == DuplicateStatus
-	shouldArchive := shouldArchiveRule(issue, clock.Now(ctx), request.IsManagingBug)
-	isAssigned := issue.Owner.GetUser() != ""
-	disableRulePriorityUpdates := false
-
-	if !isDuplicate && !shouldArchive && request.IsManagingBug && request.Metrics != nil {
-		if m.legacyGenerator.NeedsUpdate(request.Metrics, issue, request.IsManagingBugPriority) {
-			comments, err := m.client.ListComments(ctx, issue.Name)
-			if err != nil {
-				return bugs.BugUpdateResponse{
-					Error: errors.Annotate(err, "list comments").Err(),
-				}
-			}
-			hasManuallySetPriority := hasManuallySetPriority(comments, request.IsManagingBugPriorityLastUpdated)
-
-			mur := m.legacyGenerator.MakeUpdate(MakeUpdateLegacyOptions{
-				metrics:                request.Metrics,
-				issue:                  issue,
-				IsManagingBugPriority:  request.IsManagingBugPriority,
-				HasManuallySetPriority: hasManuallySetPriority,
-			})
-			disableRulePriorityUpdates = mur.disableBugPriorityUpdates
-			if m.Simulate {
-				logging.Debugf(ctx, "Would update Monorail issue: %s", textPBMultiline.Format(mur.request))
-			} else {
-				if err := m.client.ModifyIssues(ctx, mur.request); err != nil {
-					return bugs.BugUpdateResponse{
-						Error: errors.Annotate(err, "update monorail issue").Err(),
-					}
-				}
-				bugs.BugsUpdatedCounter.Add(ctx, 1, m.project, "monorail")
-			}
-		}
-	}
-	return bugs.BugUpdateResponse{
-		IsDuplicate:                isDuplicate,
-		IsDuplicateAndAssigned:     isAssigned,
-		ShouldArchive:              shouldArchive && !isDuplicate,
-		DisableRulePriorityUpdates: disableRulePriorityUpdates,
-		PolicyActivationsNotified:  map[bugs.PolicyID]struct{}{},
-	}
-}
-
 func (m *BugManager) applyModification(ctx context.Context, modifyRequest *mpb.ModifyIssuesRequest) error {
 	if m.Simulate {
 		logging.Debugf(ctx, "Would update Monorail issue: %s", textPBMultiline.Format(modifyRequest))
@@ -451,13 +376,7 @@ func (m *BugManager) UpdateDuplicateSource(ctx context.Context, request bugs.Upd
 		// Indicates an implementation error with the caller.
 		panic("monorail bug manager can only deal with monorail bugs")
 	}
-	var req *mpb.ModifyIssuesRequest
-	var err error
-	if m.usePolicyBasedManagement {
-		req, err = m.generator.UpdateDuplicateSource(request.BugDetails.Bug.ID, request.ErrorMessage, request.BugDetails.RuleID, request.DestinationRuleID)
-	} else {
-		req, err = m.legacyGenerator.UpdateDuplicateSource(request.BugDetails.Bug.ID, request.ErrorMessage, request.DestinationRuleID)
-	}
+	req, err := m.generator.UpdateDuplicateSource(request.BugDetails.Bug.ID, request.ErrorMessage, request.BugDetails.RuleID, request.DestinationRuleID)
 	if err != nil {
 		return errors.Annotate(err, "mark issue as available").Err()
 	}
@@ -466,31 +385,6 @@ func (m *BugManager) UpdateDuplicateSource(ctx context.Context, request bugs.Upd
 	} else {
 		if err := m.client.ModifyIssues(ctx, req); err != nil {
 			return errors.Annotate(err, "failed to update duplicate source monorail issue %s", request.BugDetails.Bug.ID).Err()
-		}
-	}
-	return nil
-}
-
-func (m *BugManager) UpdateDuplicateDestination(ctx context.Context, destinationBug bugs.BugID, ruleID string) error {
-	if destinationBug.System != bugs.MonorailSystem {
-		// Indicates an implementation error with the caller.
-		panic("monorail bug manager can only deal with monorail bugs")
-	}
-	var req *mpb.ModifyIssuesRequest
-	var err error
-	if m.usePolicyBasedManagement {
-		req, err = m.generator.UpdateDuplicateDestination(destinationBug.ID, ruleID)
-	} else {
-		req, err = m.legacyGenerator.UpdateDuplicateDestination(destinationBug.ID)
-	}
-	if err != nil {
-		return errors.Annotate(err, "mark issue as available").Err()
-	}
-	if m.Simulate {
-		logging.Debugf(ctx, "Would update Monorail issue: %s", textPBMultiline.Format(req))
-	} else {
-		if err := m.client.ModifyIssues(ctx, req); err != nil {
-			return errors.Annotate(err, "failed to update duplicate destination monorail issue %s", destinationBug.ID).Err()
 		}
 	}
 	return nil

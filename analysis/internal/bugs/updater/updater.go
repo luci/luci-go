@@ -127,13 +127,6 @@ type BugManager interface {
 	// duplicate bug could not be handled and marks the bug no
 	// longer a duplicate to break the cycle.
 	UpdateDuplicateSource(ctx context.Context, request bugs.UpdateDuplicateSourceRequest) error
-	// UpdateDuplicateDestination updates the destination bug of a duplicate
-	// bug relationship.
-	// It posts a message advising the user LUCI Analysis
-	// has merged the rule for the source bug to the destination
-	// (merged-into) bug, and provides a link to the failure
-	// association rule.
-	UpdateDuplicateDestination(ctx context.Context, destinationBug bugs.BugID, destinationRuleID string) error
 }
 
 // BugUpdater performs updates to bugs and failure association
@@ -158,10 +151,6 @@ type BugUpdater struct {
 	// Timestamp of the cron job. Used to timestamp policy activations/deactivations
 	// that happen as a result of this run.
 	RunTimestamp time.Time
-	// UsePolicyBasedManagement controls whether policy-based bug
-	// management should be used. This flag is used to control rollout of
-	// this new functionality.
-	UsePolicyBasedManagement bool
 }
 
 // NewBugUpdater initialises a new BugUpdater.
@@ -197,12 +186,8 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 	metricsByRuleID := make(map[string]bugs.ClusterMetrics)
 	if metricsValid {
 		var thresholds []*configpb.ImpactMetricThreshold
-		if b.UsePolicyBasedManagement {
-			for _, p := range b.projectCfg.Config.BugManagement.GetPolicies() {
-				thresholds = append(thresholds, bugs.ActivationThresholds(p)...)
-			}
-		} else {
-			thresholds = append(thresholds, b.projectCfg.Config.BugFilingThresholds...)
+		for _, p := range b.projectCfg.Config.BugManagement.GetPolicies() {
+			thresholds = append(thresholds, bugs.ActivationThresholds(p)...)
 		}
 
 		// We want to read analysis for two categories of clusters:
@@ -239,14 +224,8 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 			}
 		}
 
-		if b.UsePolicyBasedManagement {
-			if err := b.fileNewBugs(ctx, clusters, blockedSourceClusterIDs); err != nil {
-				return err
-			}
-		} else {
-			if err := b.fileNewBugsLegacy(ctx, clusters, blockedSourceClusterIDs); err != nil {
-				return err
-			}
+		if err := b.fileNewBugs(ctx, clusters, blockedSourceClusterIDs); err != nil {
+			return err
 		}
 
 		for _, cluster := range clusters {
@@ -426,11 +405,7 @@ func (b *BugUpdater) updateBugManagementStateBatch(ctx context.Context, rulesAnd
 				IsManagingBugPriorityLastUpdated: r.IsManagingBugPriorityLastUpdateTime,
 				RuleID:                           r.RuleID,
 			}
-			if b.UsePolicyBasedManagement {
-				updateRequest.BugManagementState = r.BugManagementState
-			} else {
-				updateRequest.Metrics = clusterMetrics
-			}
+			updateRequest.BugManagementState = r.BugManagementState
 			result = append(result, updateRequest)
 		}
 		return nil
@@ -613,76 +588,6 @@ func (b *BugUpdater) fileNewBugs(ctx context.Context, clusters []*analysis.Clust
 	// File new bugs.
 	bugsFiled := 0
 	for _, cluster := range clustersToCreateBugsFor {
-		if bugsFiled >= b.MaxBugsFiledPerRun {
-			break
-		}
-		created, err := b.createBug(ctx, cluster)
-		if err != nil {
-			return err
-		}
-		if created {
-			bugsFiled++
-		}
-	}
-	return nil
-}
-
-// fileNewBugsLegacy files new bugs for suggested clusters whose residual impact
-// exceed the configured bug-filing threshold. Clusters specified in
-// blockedClusterIDs will not have a bug filed. This can be used to
-// suppress bug-filing for suggested clusters that have recently had a
-// bug filed for them and re-clustering is not yet complete.
-func (b *BugUpdater) fileNewBugsLegacy(ctx context.Context, clusters []*analysis.Cluster, blockedClusterIDs map[clustering.ClusterID]struct{}) error {
-	sortByBugFilingPreferenceLegacy(clusters)
-
-	var toCreateBugsFor []*analysis.Cluster
-	for _, cluster := range clusters {
-		if cluster.ClusterID.IsBugCluster() {
-			// Never file another bug for a bug cluster.
-			continue
-		}
-
-		// Was a bug recently filed for this suggested cluster?
-		// We want to avoid race conditions whereby we file multiple bug
-		// clusters for the same suggested cluster, because re-clustering and
-		// re-analysis has not yet run and moved residual impact from the
-		// suggested cluster to the bug cluster.
-		_, ok := blockedClusterIDs[cluster.ClusterID]
-		if ok {
-			// Do not file a bug.
-			continue
-		}
-
-		// Were the failures are confined to only automation CLs
-		// and/or 1-2 user CLs? In other words, are the failures in this
-		// clusters unlikely to be present in the tree?
-		if cluster.DistinctUserCLsWithFailures7d.Residual < 3 &&
-			cluster.PostsubmitBuildsWithFailures7d.Residual == 0 {
-			// Do not file a bug.
-			continue
-		}
-
-		// Only file a bug if the residual impact exceeds the threshold.
-		impact := ExtractResidualMetrics(cluster)
-		bugFilingThresholds := b.projectCfg.Config.BugFilingThresholds
-		if cluster.ClusterID.IsTestNameCluster() {
-			// Use an inflated threshold for test name clusters to bias
-			// bug creation towards failure reason clusters.
-			bugFilingThresholds =
-				bugs.InflateThreshold(b.projectCfg.Config.BugFilingThresholds,
-					testnameThresholdInflationPercent)
-		}
-		if !impact.MeetsAnyOfThresholds(bugFilingThresholds) {
-			continue
-		}
-
-		toCreateBugsFor = append(toCreateBugsFor, cluster)
-	}
-
-	// File new bugs.
-	bugsFiled := 0
-	for _, cluster := range toCreateBugsFor {
-		// Throttle how many bugs may be filed each time.
 		if bugsFiled >= b.MaxBugsFiledPerRun {
 			break
 		}
@@ -965,14 +870,6 @@ func (b *BugUpdater) handleDuplicateBugHappyPath(ctx context.Context, duplicateD
 		if err := b.updateDuplicateSource(ctx, request); err != nil {
 			return errors.Annotate(err, "updating source bug").Err()
 		}
-		if !b.UsePolicyBasedManagement {
-			// With policy-based bug management, we use the standard rule
-			// attachment notifications to notify the destination bug
-			// it is attached to a rule.
-			if err := b.updateDuplicateDestination(ctx, destBug, destinationBugRuleID); err != nil {
-				return errors.Annotate(err, "updating destination bug %s", destBug).Err()
-			}
-		}
 	}
 
 	return err
@@ -1046,25 +943,6 @@ func (b *BugUpdater) updateDuplicateSource(ctx context.Context, request bugs.Upd
 	return nil
 }
 
-// updateDuplicateDestination updates the destination bug of a duplicate
-// bug pair (source bug, destination bug).
-// It posts a message notifying the user the rule was successfully
-// merged to the destination.
-func (b *BugUpdater) updateDuplicateDestination(ctx context.Context, destinationBug bugs.BugID, destinationRuleID string) error {
-	manager, ok := b.managers[destinationBug.System]
-	if !ok {
-		// Not all destination bug systems need to be supported
-		// in order to be able to merge a bug there. We simply
-		// won't be able to post an update there.
-		return nil
-	}
-	err := manager.UpdateDuplicateDestination(ctx, destinationBug, destinationRuleID)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // readRuleForBugAndProject reads the failure association rule for the given
 // bug in the given project, if it exists. It additionally returns whether
 // there is any rule in the system that manages the given bug, even if in
@@ -1109,35 +987,6 @@ func sortByPolicyBugFilingPreference(cs []*analysis.Cluster, policy *configpb.Bu
 			if equal, less := rankByMetric(cs[i], cs[j], metrics.ID(metric.MetricId)); !equal {
 				return less
 			}
-		}
-		// If all else fails, sort by cluster ID. This is mostly to ensure
-		// the code behaves deterministically when under unit testing.
-		if cs[i].ClusterID.Algorithm != cs[j].ClusterID.Algorithm {
-			return cs[i].ClusterID.Algorithm < cs[j].ClusterID.Algorithm
-		}
-		return cs[i].ClusterID.ID < cs[j].ClusterID.ID
-	})
-}
-
-// sortByBugFilingPreferenceLegacy sorts clusters based on our preference
-// to file bugs for these clusters.
-func sortByBugFilingPreferenceLegacy(cs []*analysis.Cluster) {
-	// The current ranking approach prefers filing bugs for clusters with more
-	// impact, with a bias towards reason clusters.
-	//
-	// The order of this ranking is only important where there are
-	// multiple competing clusters which meet the bug-filing threshold.
-	// As bug filing runs relatively often, except in cases of contention,
-	// the first bug to meet the threshold will be filed.
-	sort.Slice(cs, func(i, j int) bool {
-		if equal, less := rankByMetric(cs[i], cs[j], metrics.HumanClsFailedPresubmit.ID); !equal {
-			return less
-		}
-		if equal, less := rankByMetric(cs[i], cs[j], metrics.CriticalFailuresExonerated.ID); !equal {
-			return less
-		}
-		if equal, less := rankByMetric(cs[i], cs[j], metrics.Failures.ID); !equal {
-			return less
 		}
 		// If all else fails, sort by cluster ID. This is mostly to ensure
 		// the code behaves deterministically when under unit testing.
@@ -1216,17 +1065,14 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 		RuleID:      ruleID,
 		Description: description,
 	}
-	if b.UsePolicyBasedManagement {
-		activePolicyIDs := make(map[bugs.PolicyID]struct{})
-		for policyID, state := range bugManagementState.PolicyState {
-			if state.IsActive {
-				activePolicyIDs[bugs.PolicyID(policyID)] = struct{}{}
-			}
+
+	activePolicyIDs := make(map[bugs.PolicyID]struct{})
+	for policyID, state := range bugManagementState.PolicyState {
+		if state.IsActive {
+			activePolicyIDs[bugs.PolicyID(policyID)] = struct{}{}
 		}
-		request.ActivePolicyIDs = activePolicyIDs
-	} else {
-		request.Metrics = impact
 	}
+	request.ActivePolicyIDs = activePolicyIDs
 
 	system, err := b.routeToBugSystem(cs)
 	if err != nil {
@@ -1295,17 +1141,10 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 }
 
 func (b *BugUpdater) routeToBugSystem(cs *analysis.Cluster) (string, error) {
-	var hasMonorail, hasBuganizer bool
-	var defaultSystem configpb.BugSystem
-	if b.UsePolicyBasedManagement {
-		hasMonorail = b.projectCfg.Config.BugManagement.GetMonorail() != nil
-		hasBuganizer = b.projectCfg.Config.BugManagement.GetBuganizer() != nil
-		defaultSystem = b.projectCfg.Config.BugManagement.GetDefaultBugSystem()
-	} else {
-		hasMonorail = b.projectCfg.Config.Monorail != nil
-		hasBuganizer = b.projectCfg.Config.Buganizer != nil
-		defaultSystem = b.projectCfg.Config.BugSystem
-	}
+	hasMonorail := b.projectCfg.Config.BugManagement.GetMonorail() != nil
+	hasBuganizer := b.projectCfg.Config.BugManagement.GetBuganizer() != nil
+	defaultSystem := b.projectCfg.Config.BugManagement.GetDefaultBugSystem()
+
 	if !hasMonorail && !hasBuganizer {
 		return "", errors.New("at least one bug filing system need to be configured")
 	}

@@ -202,17 +202,16 @@ func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string,
 	taskGenerator := func(c chan<- func() error) {
 		for _, project := range projectCfg.Keys() {
 			opts := updateOptions{
-				uiBaseURL:                uiBaseURL,
-				project:                  project,
-				analysisClient:           analysisClient,
-				monorailClient:           monorailClient,
-				buganizerClient:          buganizerClient,
-				simulateBugUpdates:       simulate,
-				maxBugsFiledPerRun:       1,
-				updateRuleBatchSize:      1000,
-				reclusteringProgress:     projectProgress[project],
-				runTimestamp:             runTimestamp,
-				usePolicyBasedManagement: cfg.BugManagement.GetPolicyBasedManagementEnabled(),
+				uiBaseURL:            uiBaseURL,
+				project:              project,
+				analysisClient:       analysisClient,
+				monorailClient:       monorailClient,
+				buganizerClient:      buganizerClient,
+				simulateBugUpdates:   simulate,
+				maxBugsFiledPerRun:   1,
+				updateRuleBatchSize:  1000,
+				reclusteringProgress: projectProgress[project],
+				runTimestamp:         runTimestamp,
 			}
 
 			// Assign project to local variable to ensure it can be
@@ -272,17 +271,16 @@ func createBuganizerClient(ctx context.Context) (buganizer.Client, error) {
 }
 
 type updateOptions struct {
-	uiBaseURL                string
-	project                  string
-	analysisClient           AnalysisClient
-	monorailClient           *monorail.Client
-	buganizerClient          buganizer.Client
-	simulateBugUpdates       bool
-	maxBugsFiledPerRun       int
-	updateRuleBatchSize      int
-	reclusteringProgress     *runs.ReclusteringProgress
-	runTimestamp             time.Time
-	usePolicyBasedManagement bool
+	uiBaseURL            string
+	project              string
+	analysisClient       AnalysisClient
+	monorailClient       *monorail.Client
+	buganizerClient      buganizer.Client
+	simulateBugUpdates   bool
+	maxBugsFiledPerRun   int
+	updateRuleBatchSize  int
+	reclusteringProgress *runs.ReclusteringProgress
+	runTimestamp         time.Time
 }
 
 // updateBugsForProject updates LUCI Analysis-managed bugs for a particular LUCI project.
@@ -308,10 +306,9 @@ func updateBugsForProject(ctx context.Context, opts updateOptions) (retErr error
 
 	mgrs := make(map[string]BugManager)
 
-	if (opts.usePolicyBasedManagement && projectCfg.Config.BugManagement.GetMonorail() != nil) ||
-		(!opts.usePolicyBasedManagement && projectCfg.Config.Monorail != nil) {
+	if projectCfg.Config.BugManagement.GetMonorail() != nil {
 		// Create Monorail bug manager.
-		monorailBugManager, err := monorail.NewBugManager(opts.monorailClient, opts.uiBaseURL, opts.project, projectCfg.Config, opts.usePolicyBasedManagement)
+		monorailBugManager, err := monorail.NewBugManager(opts.monorailClient, opts.uiBaseURL, opts.project, projectCfg.Config)
 		if err != nil {
 			return errors.Annotate(err, "create monorail bug manager").Err()
 		}
@@ -320,8 +317,7 @@ func updateBugsForProject(ctx context.Context, opts updateOptions) (retErr error
 		mgrs[bugs.MonorailSystem] = monorailBugManager
 	}
 
-	if (opts.usePolicyBasedManagement && projectCfg.Config.BugManagement.GetBuganizer() != nil) ||
-		(!opts.usePolicyBasedManagement && projectCfg.Config.Buganizer != nil) {
+	if projectCfg.Config.BugManagement.GetBuganizer() != nil {
 		if opts.buganizerClient == nil {
 			return errors.New("buganizerClient cannot be nil")
 		}
@@ -339,7 +335,6 @@ func updateBugsForProject(ctx context.Context, opts updateOptions) (retErr error
 			selfEmail,
 			projectCfg.Config,
 			opts.simulateBugUpdates,
-			opts.usePolicyBasedManagement,
 		)
 		if err != nil {
 			return errors.Annotate(err, "create buganizer bug manager").Err()
@@ -355,7 +350,6 @@ func updateBugsForProject(ctx context.Context, opts updateOptions) (retErr error
 
 	bugUpdater := NewBugUpdater(opts.project, mgrs, opts.analysisClient, projectCfg, opts.runTimestamp)
 	bugUpdater.MaxBugsFiledPerRun = opts.maxBugsFiledPerRun
-	bugUpdater.UsePolicyBasedManagement = opts.usePolicyBasedManagement
 	if err := bugUpdater.Run(ctx, opts.reclusteringProgress); err != nil {
 		return errors.Annotate(err, "update bugs").Err()
 	}

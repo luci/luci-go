@@ -231,27 +231,6 @@ func (rg *RequestGenerator) UpdateDuplicateSource(issueID int64, errorMessage, s
 	return updateRequest
 }
 
-// UpdateDuplicateDestination updates the destination bug of a
-// (source, destination) duplicate bug pair, after LUCI Analysis has attempted
-// to merge their failure association rules.
-func (rg *RequestGenerator) UpdateDuplicateDestination(issueID int64, destinationRuleID string) *issuetracker.ModifyIssueRequest {
-	comment := strings.Join([]string{bugs.DestinationBugRuleUpdatedMessage, rg.linkToRuleComment(destinationRuleID)}, "\n\n")
-	return &issuetracker.ModifyIssueRequest{
-		IssueId: issueID,
-		IssueComment: &issuetracker.IssueComment{
-			Comment: comment,
-		},
-		AddMask: &fieldmaskpb.FieldMask{
-			Paths: []string{},
-		},
-		Add: &issuetracker.IssueState{},
-		RemoveMask: &fieldmaskpb.FieldMask{
-			Paths: []string{},
-		},
-		Remove: &issuetracker.IssueState{},
-	}
-}
-
 // NeedsPriorityOrVerifiedUpdate returns whether the bug priority and/or verified
 // status needs to be updated.
 func (rg *RequestGenerator) NeedsPriorityOrVerifiedUpdate(bms *bugspb.BugManagementState,

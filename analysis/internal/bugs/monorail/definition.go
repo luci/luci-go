@@ -307,35 +307,6 @@ func (rg *RequestGenerator) UpdateDuplicateSource(bugID, errorMessage, sourceRul
 	return req, nil
 }
 
-// UpdateDuplicateDestination updates the destination bug of a
-// (source, destination) duplicate bug pair, after LUCI Analysis has attempted
-// to merge their failure association rules.
-func (rg *RequestGenerator) UpdateDuplicateDestination(bugName string, ruleID string) (*mpb.ModifyIssuesRequest, error) {
-	name, err := toMonorailIssueName(bugName)
-	if err != nil {
-		return nil, err
-	}
-
-	delta := &mpb.IssueDelta{
-		Issue: &mpb.Issue{
-			Name: name,
-		},
-		UpdateMask: &field_mask.FieldMask{
-			Paths: []string{},
-		},
-	}
-
-	comment := strings.Join([]string{bugs.DestinationBugRuleUpdatedMessage, rg.linkToRuleComment(ruleID)}, "\n\n")
-	req := &mpb.ModifyIssuesRequest{
-		Deltas: []*mpb.IssueDelta{
-			delta,
-		},
-		NotifyType:     mpb.NotifyType_EMAIL,
-		CommentContent: comment,
-	}
-	return req, nil
-}
-
 func (rg *RequestGenerator) priorityFieldName() string {
 	return fmt.Sprintf("projects/%s/fieldDefs/%v", rg.monorailCfg.Project, rg.monorailCfg.PriorityFieldId)
 }
@@ -566,17 +537,6 @@ func isAutomationUser(user string) bool {
 		}
 	}
 	return false
-}
-
-// IssuePriorityLegacy returns the priority of the given issue.
-func (rg *RequestGenerator) IssuePriorityLegacy(issue *mpb.Issue) string {
-	priorityFieldName := rg.priorityFieldName()
-	for _, fv := range issue.FieldValues {
-		if fv.Field == priorityFieldName {
-			return fv.Value
-		}
-	}
-	return ""
 }
 
 func issueVerified(issue *mpb.Issue) bool {

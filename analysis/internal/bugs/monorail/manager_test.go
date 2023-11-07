@@ -99,7 +99,7 @@ func TestManager(t *testing.T) {
 			},
 		}
 
-		bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg, true /* usePolicyBasedManagement */)
+		bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg)
 		So(err, ShouldBeNil)
 		now := time.Date(2040, time.January, 1, 2, 3, 4, 5, time.UTC)
 		ctx, tc := testclock.UseTime(ctx, now)
@@ -187,7 +187,7 @@ func TestManager(t *testing.T) {
 				Convey("Policy with comment template", func() {
 					policyA.BugTemplate.CommentTemplate = "RuleURL:{{.RuleURL}},BugID:{{if .BugID.IsMonorail}}{{.BugID.MonorailProject}}/{{.BugID.MonorailBugID}}{{end}}"
 
-					bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg, true /* usePolicyBasedManagement */)
+					bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg)
 					So(err, ShouldBeNil)
 
 					// Act
@@ -213,7 +213,7 @@ func TestManager(t *testing.T) {
 				Convey("Policy has no comment template", func() {
 					policyA.BugTemplate.CommentTemplate = ""
 
-					bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg, true /* usePolicyBasedManagement */)
+					bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg)
 					So(err, ShouldBeNil)
 
 					// Act
@@ -239,7 +239,7 @@ func TestManager(t *testing.T) {
 					policyA.BugTemplate.CommentTemplate = ""
 					policyA.BugTemplate.Monorail = nil
 
-					bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg, true /* usePolicyBasedManagement */)
+					bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg)
 					So(err, ShouldBeNil)
 
 					expectedIssue.Labels = removeLabel(expectedIssue.Labels, "Policy-A-Label")
@@ -265,7 +265,7 @@ func TestManager(t *testing.T) {
 				Convey("Policy has no monorail template", func() {
 					policyA.BugTemplate.Monorail = nil
 
-					bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg, true /* usePolicyBasedManagement */)
+					bm, err := NewBugManager(cl, "https://luci-analysis-test.appspot.com", "luciproject", projectCfg)
 					So(err, ShouldBeNil)
 
 					expectedIssue.Labels = removeLabel(expectedIssue.Labels, "Policy-A-Label")
@@ -923,7 +923,6 @@ func TestManager(t *testing.T) {
 		})
 		Convey("GetMergedInto", func() {
 			c := NewCreateRequest()
-			c.Metrics = bugs.P2Impact()
 			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
 				"policy-a": {},
 			}
@@ -978,7 +977,6 @@ func TestManager(t *testing.T) {
 		})
 		Convey("UpdateDuplicateSource", func() {
 			c := NewCreateRequest()
-			c.Metrics = bugs.P2Impact()
 			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
 				"policy-a": {},
 			}
@@ -1032,34 +1030,6 @@ func TestManager(t *testing.T) {
 				So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
 					"https://luci-analysis-test.appspot.com/p/luciproject/rules/12345abcdef")
 			})
-		})
-		Convey("UpdateDuplicateDestination", func() {
-			c := NewCreateRequest()
-			c.Metrics = bugs.P2Impact()
-			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
-				"policy-a": {},
-			}
-			response := bm.Create(ctx, c)
-			So(response, ShouldResemble, bugs.BugCreateResponse{
-				ID: "chromium/100",
-				PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
-					"policy-a": {},
-				},
-			})
-			So(f.Issues, ShouldHaveLength, 1)
-			So(f.Issues[0].Comments, ShouldHaveLength, 2)
-			originalCommentCount := len(f.Issues[0].Comments)
-
-			bugID := bugs.BugID{System: bugs.MonorailSystem, ID: "chromium/100"}
-			ruleID := "destination-rule-id"
-			err = bm.UpdateDuplicateDestination(ctx, bugID, ruleID)
-			So(err, ShouldBeNil)
-
-			So(f.Issues[0].Issue.Status, ShouldNotEqual, DuplicateStatus)
-			So(f.Issues[0].Comments, ShouldHaveLength, originalCommentCount+1)
-			So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring, "merged the failure association rule for that bug into the rule for this bug.")
-			So(f.Issues[0].Comments[originalCommentCount].Content, ShouldContainSubstring,
-				"https://luci-analysis-test.appspot.com/p/luciproject/rules/destination-rule-id")
 		})
 	})
 }

@@ -73,7 +73,7 @@ func TestBugManager(t *testing.T) {
 			},
 		}
 
-		bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false, true /* usePolicyBasedManagement */)
+		bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false)
 		So(err, ShouldBeNil)
 		now := time.Date(2044, time.April, 4, 4, 4, 4, 4, time.UTC)
 		ctx, tc := testclock.UseTime(ctx, now)
@@ -147,7 +147,7 @@ func TestBugManager(t *testing.T) {
 				Convey("Policy with comment template", func() {
 					policyA.BugTemplate.CommentTemplate = "RuleURL:{{.RuleURL}},BugID:{{if .BugID.IsBuganizer}}{{.BugID.BuganizerBugID}}{{end}}"
 
-					bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false, true /* usePolicyBasedManagement */)
+					bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false)
 					So(err, ShouldBeNil)
 
 					response := bm.Create(ctx, createRequest)
@@ -169,7 +169,7 @@ func TestBugManager(t *testing.T) {
 				Convey("Policy has no comment template", func() {
 					policyA.BugTemplate.CommentTemplate = ""
 
-					bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false, true /* usePolicyBasedManagement */)
+					bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false)
 					So(err, ShouldBeNil)
 
 					response := bm.Create(ctx, createRequest)
@@ -401,7 +401,6 @@ func TestBugManager(t *testing.T) {
 				bugsToUpdate := []bugs.BugUpdateRequest{
 					{
 						Bug:                              bugs.BugID{System: bugs.BuganizerSystem, ID: response.ID},
-						Metrics:                          c.Metrics,
 						RuleID:                           "rule-id",
 						IsManagingBug:                    true,
 						IsManagingBugPriority:            true,
@@ -827,7 +826,6 @@ func TestBugManager(t *testing.T) {
 		})
 		Convey("GetMergedInto", func() {
 			c := newCreateRequest()
-			c.Metrics = bugs.P2Impact()
 			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{"policy-a": {}}
 			response := bm.Create(ctx, c)
 			So(response, ShouldResemble, bugs.BugCreateResponse{
@@ -863,7 +861,6 @@ func TestBugManager(t *testing.T) {
 		})
 		Convey("UpdateDuplicateSource", func() {
 			c := newCreateRequest()
-			c.Metrics = bugs.P2Impact()
 			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{"policy-a": {}}
 			response := bm.Create(ctx, c)
 			So(response, ShouldResemble, bugs.BugCreateResponse{
@@ -931,34 +928,6 @@ func TestBugManager(t *testing.T) {
 				So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
 					"https://luci-analysis-test.appspot.com/p/chromeos/rules/12345abcdef")
 			})
-		})
-		Convey("UpdateDuplicateDestination", func() {
-			c := newCreateRequest()
-			c.Metrics = bugs.P2Impact()
-			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
-				"policy-a": {},
-			}
-			response := bm.Create(ctx, c)
-			So(response, ShouldResemble, bugs.BugCreateResponse{
-				ID: "1",
-				PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
-					"policy-a": {},
-				},
-			})
-			So(fakeStore.Issues, ShouldHaveLength, 1)
-			So(fakeStore.Issues[1].Comments, ShouldHaveLength, 2)
-			originalCommentCount := len(fakeStore.Issues[1].Comments)
-
-			bugID := bugs.BugID{System: bugs.BuganizerSystem, ID: "1"}
-			destinationRuleID := "destination-rule-id"
-			err := bm.UpdateDuplicateDestination(ctx, bugID, destinationRuleID)
-			So(err, ShouldBeNil)
-
-			So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldNotEqual, issuetracker.Issue_DUPLICATE)
-			So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
-			So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring, "merged the failure association rule for that bug into the rule for this bug.")
-			So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-				"https://luci-analysis-test.appspot.com/p/chromeos/rules/destination-rule-id")
 		})
 	})
 }

@@ -39,20 +39,9 @@ type BugUpdateRequest struct {
 	IsManagingBugPriorityLastUpdated time.Time
 	// The identity of the rule associated with the bug.
 	RuleID string
-
-	// Policy-based bug management fields.
-
 	// The bug management state of the rule. Only set if policy-based bug
 	// management should be used; see Metrics field otherwise.
 	BugManagementState *bugspb.BugManagementState
-
-	// Legacy bug management fields.
-
-	// Metrics for the given bug. This is only set if valid metrics are available.
-	// If re-clustering is currently ongoing for the failure association rule
-	// and metrics are unreliable, this will be unset to avoid erroneous
-	// priority updates.
-	Metrics ClusterMetrics
 }
 
 type BugUpdateResponse struct {
@@ -160,17 +149,9 @@ type BugCreateRequest struct {
 	// The buganizer component id (if any) to use.
 	// This value is ignored for Monorail.
 	BuganizerComponent int64
-
-	// Policy-based bug management fields.
-
 	// The bug management policies which activated for this
 	// cluster and are triggering the filing of this bug.
 	ActivePolicyIDs map[PolicyID]struct{}
-
-	// Legacy bug management fields.
-
-	// Metrics contains metrics for the cluster.
-	Metrics ClusterMetrics
 }
 
 type BugCreateResponse struct {
