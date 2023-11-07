@@ -40,6 +40,7 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/proto"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -85,7 +86,7 @@ func TestUpdate(t *testing.T) {
 		defer ctl.Finish()
 		mc := buildbucket.NewMockedClient(ctx, ctl)
 		ctx = mc.Ctx
-		mockBuildBucket(mc)
+		mockBuildBucket(mc, false)
 
 		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
 			ID: 100,
@@ -647,7 +648,7 @@ func TestScheduleNewRerun(t *testing.T) {
 	defer ctl.Finish()
 	mc := buildbucket.NewMockedClient(ctx, ctl)
 	ctx = mc.Ctx
-	mockBuildBucket(mc)
+	mockBuildBucket(mc, false)
 
 	Convey("Nth section found culprit", t, func() {
 		culpritverification.RegisterTaskClass()
@@ -765,6 +766,9 @@ func TestScheduleNewRerun(t *testing.T) {
 	})
 
 	Convey("Nth section should schedule another run", t, func() {
+		mc := buildbucket.NewMockedClient(ctx, ctl)
+		ctx = mc.Ctx
+		mockBuildBucket(mc, true)
 		tfa, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, 1)
 		enableBisection(ctx, true, tfa.Project)
 		// Commit 1 pass -> commit 0 is the culprit.
@@ -777,9 +781,6 @@ func TestScheduleNewRerun(t *testing.T) {
 		rerun.Status = pb.RerunStatus_RERUN_STATUS_PASSED
 		So(datastore.Put(ctx, rerun), ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
-		// TODO (nqmtuan): Write a test to check the ScheduleBuild request
-		// to verify the "id" field is check.
-		// Somehow proto.MatcherEqual cannot compare ScheduleBuildRequest.
 		req := &pb.UpdateTestAnalysisProgressRequest{
 			BotId: "bot",
 		}
@@ -889,7 +890,7 @@ func enableBisection(ctx context.Context, enabled bool, project string) {
 	So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 }
 
-func mockBuildBucket(mc *buildbucket.MockedClient) {
+func mockBuildBucket(mc *buildbucket.MockedClient, withBotID bool) {
 	bootstrapProperties := &structpb.Struct{
 		Fields: map[string]*structpb.Value{
 			"bs_key_1": structpb.NewStringValue("bs_val_1"),
@@ -944,5 +945,59 @@ func mockBuildBucket(mc *buildbucket.MockedClient) {
 	}
 
 	mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(getBuildRes, nil).AnyTimes()
-	mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(scheduleBuildRes, nil).AnyTimes()
+	if !withBotID {
+		mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(scheduleBuildRes, nil).AnyTimes()
+	} else {
+		mc.Client.EXPECT().ScheduleBuild(gomock.Any(), proto.MatcherEqual(&bbpb.ScheduleBuildRequest{
+			Builder: &bbpb.BuilderID{
+				Project: "chromium",
+				Bucket:  "findit",
+				Builder: "test-single-revision",
+			},
+			Dimensions: []*bbpb.RequestedDimension{
+				{
+					Key:   "id",
+					Value: "bot",
+				},
+			},
+			Tags: []*bbpb.StringPair{
+				{
+					Key:   "analyzed_build_id",
+					Value: "8000",
+				},
+			},
+			GitilesCommit: &bbpb.GitilesCommit{
+				Host:    "chromium.googlesource.com",
+				Project: "chromium/src",
+				Id:      "commit1",
+				Ref:     "ref",
+			},
+			Properties: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"$bootstrap/properties": structpb.NewStructValue(bootstrapProperties),
+					"analysis_id":           structpb.NewNumberValue(100),
+					"bisection_host":        structpb.NewStringValue("app.appspot.com"),
+					"builder_group":         structpb.NewStringValue("buildergroup1"),
+					"target_builder": structpb.NewStructValue(&structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"builder": structpb.NewStringValue("linux-test"),
+							"group":   structpb.NewStringValue("buildergroup1"),
+						},
+					}),
+					"tests_to_run": structpb.NewListValue(&structpb.ListValue{
+						Values: []*structpb.Value{
+							structpb.NewStructValue(&structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"test_id":         structpb.NewStringValue("test0"),
+									"test_name":       structpb.NewStringValue(""),
+									"test_suite_name": structpb.NewStringValue(""),
+									"variant_hash":    structpb.NewStringValue("hash0"),
+								},
+							}),
+						},
+					}),
+				},
+			},
+		}), gomock.Any()).Return(scheduleBuildRes, nil).Times(1)
+	}
 }

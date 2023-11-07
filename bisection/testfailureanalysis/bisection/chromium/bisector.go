@@ -62,6 +62,7 @@ func (b *Bisector) TriggerRerun(ctx context.Context, tfa *model.TestFailureAnaly
 	}
 
 	extraProperties := getExtraProperties(ctx, tfa, tfs, option)
+	extraDimensions := getExtraDimensions(option)
 
 	options := &rerun.TriggerOptions{
 		Builder:         builder,
@@ -69,6 +70,7 @@ func (b *Bisector) TriggerRerun(ctx context.Context, tfa *model.TestFailureAnaly
 		Priority:        tfa.Priority,
 		SampleBuildID:   tfa.FailedBuildID,
 		ExtraProperties: extraProperties,
+		ExtraDimensions: extraDimensions,
 	}
 
 	build, err := rerun.TriggerRerun(ctx, options)
@@ -99,10 +101,15 @@ func getExtraProperties(ctx context.Context, tfa *model.TestFailureAnalysis, tfs
 		props["should_clobber"] = true
 		props["run_all"] = true
 	}
-	if option.BotID != "" {
-		props["id"] = option.BotID
-	}
 	return props
+}
+
+func getExtraDimensions(option projectbisector.RerunOption) map[string]string {
+	dims := map[string]string{}
+	if option.BotID != "" {
+		dims["id"] = option.BotID
+	}
+	return dims
 }
 
 // populateTestSuiteName set the correct TestSuiteName for TestFailures.
