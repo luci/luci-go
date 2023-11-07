@@ -19,16 +19,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	cipdVersion "go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 )
 
 const (
@@ -59,12 +63,90 @@ func prependPath(bld *bbpb.Build, workDir string) error {
 		extraPathEnv.AddAll(ref.OnPath)
 	}
 
+	// Add cipd binary to front of path.
+	for _, ref := range bld.Infra.Buildbucket.Agent.Input.CipdSource {
+		extraPathEnv.AddAll(ref.OnPath)
+	}
+
 	var extraAbsPaths []string
 	for _, p := range extraPathEnv.ToSortedSlice() {
 		extraAbsPaths = append(extraAbsPaths, filepath.Join(workDir, p))
 	}
 	original := os.Getenv("PATH")
 	if err := os.Setenv("PATH", strings.Join(append(extraAbsPaths, original), string(os.PathListSeparator))); err != nil {
+		return err
+	}
+	return nil
+}
+
+// getCipdClientWithRetry attempts to download the cipd client using http.Get with a retry strategy.
+func getCipdClientWithRetry(ctx context.Context, cipdURL string) (resp *http.Response, err error) {
+	doGetCipd := func() error {
+		resp, err = http.Get(cipdURL)
+		if err != nil {
+			return transient.Tag.Apply(err)
+		}
+		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+			return nil
+		}
+		return transient.Tag.Apply(errors.New(fmt.Sprintf("HTTP request failed with status code: %d", resp.StatusCode)))
+	}
+	// Configure the retry
+	err = retry.Retry(ctx, transient.Only(func() retry.Iterator {
+		// Configure the retry strategy
+		return &retry.ExponentialBackoff{
+			Limited: retry.Limited{
+				Delay:   500 * time.Millisecond, // initial delay time
+				Retries: 5,                      // number of retries
+			},
+			Multiplier: 2,               // backoff multiplier
+			MaxDelay:   5 * time.Second, // maximum delay time
+		}
+	}), doGetCipd, nil)
+	return
+}
+
+// installCipd installs the cipd client provided to us for the build. It will return
+// the path on disk of the binary so that installCipdPackages can use the downloaded cipd client.
+func installCipd(ctx context.Context, build *bbpb.Build, workDir, platform string) error {
+	var cipdFile, cipdDir, cipdServer, cipdVersion string
+	// We "loop" through this because it is a map, however, there should only be one entry in this map.
+	for relativePath, cipdSource := range build.Infra.Buildbucket.Agent.Input.CipdSource {
+		// The binary itself will be located at "workdir/cipd/cipd"
+		// where "workdir/cipd" is the directory.
+		cipdDir = filepath.Join(workDir, relativePath)
+		cipdFile = filepath.Join(cipdDir, "cipd")
+		cipdServer = cipdSource.GetCipd().Server
+		cipdVersion = cipdSource.GetCipd().Specs[0].Version
+		break
+	}
+	// Pull cipd binary
+	cipdURL := fmt.Sprintf("https://%s/client?platform=%s&version=%s", cipdServer, platform, cipdVersion)
+	logging.Infof(ctx, "Install CIPD client from URL: %s", cipdURL)
+	resp, err := getCipdClientWithRetry(ctx, cipdURL)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	// Make the directory to save cipd client into if it does not exist.
+	err = os.MkdirAll(cipdDir, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	// Create file to store cipd binary in
+	out, err := os.Create(cipdFile)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	// Write binary to file
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
+	// Give the binary executable permission.
+	err = os.Chmod(cipdFile, 0700)
+	if err != nil {
 		return err
 	}
 	return nil
@@ -78,7 +160,7 @@ func prependPath(bld *bbpb.Build, workDir string) error {
 //   - Infra.Buildbucket.Agent.Purposes
 //
 // Note:
-//  1. It assumes `cipd` client tool binary is already in path.
+//  1. It will use the `cipd` client tool binary path that is in path.
 //  2. Hack: it includes bbagent version in the ensure file if it's called from
 //     a cipd installed bbagent.
 func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir string) error {

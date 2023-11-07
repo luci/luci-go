@@ -375,6 +375,10 @@ func downloadInputs(ctx context.Context, cwd string, c clientInput) int {
 				Seconds: int64(clock.Since(ctx, start).Round(time.Second).Seconds()),
 			}
 		}()
+		// Download CIPD.
+		if err := installCipd(ctx, c.input.Build, cwd, agent.Output.AgentPlatform); err != nil {
+			return err
+		}
 		if err := prependPath(c.input.Build, cwd); err != nil {
 			return err
 		}
@@ -405,7 +409,7 @@ func downloadInputs(ctx context.Context, cwd string, c clientInput) int {
 		logging.Warningf(ctx, "Failed to report build agent output status: %s", bbErr)
 	}
 	if err != nil {
-		os.Exit(-1)
+		return -1
 	}
 	// The build has been canceled, bail out early.
 	if bldCompleteCipd.CancelTime != nil {

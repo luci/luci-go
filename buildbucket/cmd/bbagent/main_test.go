@@ -17,7 +17,6 @@ package main
 import (
 	"context"
 	"flag"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
@@ -103,6 +102,21 @@ func TestDownloadInputs(t *testing.T) {
 			Buildbucket: &bbpb.BuildInfra_Buildbucket{
 				Agent: &bbpb.BuildInfra_Buildbucket_Agent{
 					Input: &bbpb.BuildInfra_Buildbucket_Agent_Input{
+						CipdSource: map[string]*bbpb.InputDataRef{
+							"cipddir": &bbpb.InputDataRef{
+								DataType: &bbpb.InputDataRef_Cipd{
+									Cipd: &bbpb.InputDataRef_CIPD{
+										Server: "chrome-infra-packages.appspot.com",
+										Specs: []*bbpb.InputDataRef_CIPD_PkgSpec{
+											{
+												Package: "infra/tools/cipd/${platform}",
+												Version: "latest",
+											},
+										},
+									},
+								},
+							},
+						},
 						Data: map[string]*bbpb.InputDataRef{
 							"path_a": {
 								DataType: &bbpb.InputDataRef_Cipd{
@@ -132,12 +146,11 @@ func TestDownloadInputs(t *testing.T) {
 			ctx = memlogger.Use(ctx)
 			execCommandContext = fakeExecCommand
 			defer func() { execCommandContext = exec.CommandContext }()
-			cwd, err := os.Getwd()
-			So(err, ShouldBeNil)
+			tempDir := t.TempDir()
 
 			bbclient := &testBBClient{}
 			input := &bbpb.BBAgentArgs{Build: build}
-			rc := downloadInputs(ctx, cwd, clientInput{bbclient, input})
+			rc := downloadInputs(ctx, tempDir, clientInput{bbclient, input})
 
 			So(rc, ShouldEqual, 0)
 			So(len(bbclient.requests), ShouldEqual, 2)

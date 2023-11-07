@@ -76,7 +76,7 @@ func TestHelperProcess(t *testing.T) {
 	}
 
 	// check if it's a `cipd ensure` command.
-	if !(args[0] == "cipd" && args[1] == "ensure") {
+	if !(args[0][len(args[0])-4:] == "cipd" && args[1] == "ensure") {
 		fmt.Fprintf(os.Stderr, "Not a cipd ensure command: %s\n", args)
 		os.Exit(1)
 	}
@@ -128,6 +128,11 @@ func TestPrependPath(t *testing.T) {
 									OnPath: []string{"path_b/bin", "path_b"},
 								},
 							},
+							CipdSource: map[string]*bbpb.InputDataRef{
+								"cipd": {
+									OnPath: []string{"cipd"},
+								},
+							},
 						},
 						Output: &bbpb.BuildInfra_Buildbucket_Agent_Output{},
 					},
@@ -143,7 +148,7 @@ func TestPrependPath(t *testing.T) {
 		So(prependPath(build, cwd), ShouldBeNil)
 		pathEnv := os.Getenv("PATH")
 		var expectedPath []string
-		for _, p := range []string{"path_a", "path_a/bin", "path_b", "path_b/bin"} {
+		for _, p := range []string{"cipd", "path_a", "path_a/bin", "path_b", "path_b/bin"} {
 			expectedPath = append(expectedPath, filepath.Join(cwd, p))
 		}
 		So(strings.Contains(pathEnv, strings.Join(expectedPath, string(os.PathListSeparator))), ShouldBeTrue)
@@ -269,5 +274,70 @@ func TestInstallCipdPackages(t *testing.T) {
 				})
 			})
 		})
+	})
+}
+
+func TestInstallCipd(t *testing.T) {
+	t.Parallel()
+	Convey("InstallCipd", t, func() {
+		ctx := context.Background()
+		build := &bbpb.Build{
+			Id: 123,
+			Infra: &bbpb.BuildInfra{
+				Buildbucket: &bbpb.BuildInfra_Buildbucket{
+					Agent: &bbpb.BuildInfra_Buildbucket_Agent{
+						Input: &bbpb.BuildInfra_Buildbucket_Agent_Input{
+							CipdSource: map[string]*bbpb.InputDataRef{
+								"cipd": &bbpb.InputDataRef{
+									DataType: &bbpb.InputDataRef_Cipd{
+										Cipd: &bbpb.InputDataRef_CIPD{
+											Server: "chrome-infra-packages.appspot.com",
+											Specs: []*bbpb.InputDataRef_CIPD_PkgSpec{
+												{
+													Package: "infra/tools/cipd/${platform}",
+													Version: "latest",
+												},
+											},
+										},
+									},
+									OnPath: []string{"cipd"},
+								},
+							},
+							Data: map[string]*bbpb.InputDataRef{
+								"path_a": {
+									DataType: &bbpb.InputDataRef_Cipd{
+										Cipd: &bbpb.InputDataRef_CIPD{
+											Specs: []*bbpb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_a", Version: "latest"}},
+										},
+									},
+									OnPath: []string{"path_a/bin", "path_a"},
+								},
+								"path_b": {
+									DataType: &bbpb.InputDataRef_Cipd{
+										Cipd: &bbpb.InputDataRef_CIPD{
+											Specs: []*bbpb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_b", Version: "latest"}},
+										},
+									},
+									OnPath: []string{"path_b/bin", "path_b"},
+								},
+							},
+						},
+						Output: &bbpb.BuildInfra_Buildbucket_Agent_Output{},
+					},
+				},
+			},
+			Input: &bbpb.Build_Input{
+				Experiments: []string{"luci.buildbucket.agent.cipd_installation"},
+			},
+		}
+		tempDir := t.TempDir()
+		err := installCipd(ctx, build, tempDir, "linux-amd64")
+		So(err, ShouldBeNil)
+		// check to make sure cipd is correctly saved in the directory
+		files, err := os.ReadDir(filepath.Join(tempDir, "cipd"))
+		So(err, ShouldBeNil)
+		for _, file := range files {
+			So(file.Name(), ShouldEqual, "cipd")
+		}
 	})
 }
