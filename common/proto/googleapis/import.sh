@@ -19,6 +19,7 @@ PROTOS_TO_IMPORT=(
   google/api/annotations.proto
   google/api/client.proto
   google/api/field_behavior.proto
+  google/api/field_info.proto
   google/api/http.proto
   google/api/launch_stage.proto
   google/api/resource.proto
