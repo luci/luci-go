@@ -917,7 +917,7 @@ func (c *clientImpl) EndBatch(ctx context.Context) {
 	c.batchLock.Lock()
 	defer c.batchLock.Unlock()
 	if c.batchNesting <= 0 {
-		panic("EndBatch called without corresponding BeginBatch")
+		panic("EndBatch was called without a corresponding BeginBatch")
 	}
 	if c.batchNesting--; c.batchNesting == 0 {
 		for op := range c.batchPending {
