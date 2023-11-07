@@ -120,6 +120,9 @@ func installCipd(ctx context.Context, build *bbpb.Build, workDir, platform strin
 		cipdVersion = cipdSource.GetCipd().Specs[0].Version
 		break
 	}
+	if cipdDir == "" {
+		return nil
+	}
 	// Pull cipd binary
 	cipdURL := fmt.Sprintf("https://%s/client?platform=%s&version=%s", cipdServer, platform, cipdVersion)
 	logging.Infof(ctx, "Install CIPD client from URL: %s", cipdURL)
