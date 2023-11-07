@@ -75,5 +75,5 @@ func (*LegacyNullProperty) FromProperty(p datastore.Property) error {
 
 // ToProperty implements datastore.PropertyConverter.
 func (*LegacyNullProperty) ToProperty() (datastore.Property, error) {
-	return datastore.MkPropertyNI(nil), nil
+	return datastore.Property{}, datastore.ErrSkipProperty
 }

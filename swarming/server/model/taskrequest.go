@@ -70,6 +70,8 @@ type TaskRequest struct {
 	LegacyProperties LegacyNullProperty `gae:"properties"`
 
 	// CreatedTS is a timestamp when this request was registered.
+	//
+	// The index is used in BQ exports and when cleaning up old tasks.
 	CreatedTS time.Time `gae:"created_ts"`
 
 	// ExpirationTS is when to give up trying to run the task.
@@ -82,31 +84,32 @@ type TaskRequest struct {
 	ExpirationTS time.Time `gae:"expiration_ts,noindex"`
 
 	// Name of this task request as provided by the caller. Only for description.
-	//
-	// TODO(vadimsh): Why is it indexed?
-	Name string `gae:"name"`
+	Name string `gae:"name,noindex"`
 
 	// ParentTaskID is set when this task was created from another task.
 	//
-	// This is packed TaskToRun ID of an attempt that launched this task or an
-	// empty string if this task doesn't have a parent.
-	ParentTaskID string `gae:"parent_task_id"`
+	// This is packed TaskToRun ID of an attempt that launched this task or null
+	// if this task doesn't have a parent.
+	//
+	// The index is used to find children of a particular parent task to cancel
+	// them when the parent task dies.
+	ParentTaskID datastore.Nullable[string, datastore.Indexed] `gae:"parent_task_id"`
 
 	// Authenticated is an identity that triggered this task.
 	//
 	// Derived from the caller credentials.
-	Authenticated identity.Identity `gae:"authenticated"`
+	Authenticated identity.Identity `gae:"authenticated,noindex"`
 
 	// What user to "blame" for this task.
 	//
 	// Can be arbitrary, not asserted by any credentials.
-	User string `gae:"user"`
+	User string `gae:"user,noindex"`
 
 	// Tags classify this task in some way.
 	//
 	// This is a generated property. This property contains both the tags
 	// specified by the user and the tags from every TaskSlice.
-	Tags []string `gae:"tags"`
+	Tags []string `gae:"tags,noindex"`
 
 	// ManualTags are tags that are provided by the user.
 	//
@@ -118,10 +121,12 @@ type TaskRequest struct {
 	// services.
 	//
 	// Possible values are: `none`, `bot` or `<email>`.
-	ServiceAccount string `gae:"service_account"`
+	ServiceAccount string `gae:"service_account,noindex"`
 
 	// Realm is task's realm controlling who can see and cancel this task.
-	Realm string `gae:"realm"`
+	//
+	// Missing for internally generated tasks such as termination tasks.
+	Realm string `gae:"realm,noindex"`
 
 	// RealmsEnabled is a legacy flag that should always be True.
 	//
@@ -181,7 +186,7 @@ type TaskRequest struct {
 // bot.
 //
 // This entity is not saved in the DB as a standalone entity, instead it is
-// embedded in a TaskRequest.
+// embedded in a TaskRequest, unindexed.
 //
 // This entity is immutable.
 type TaskSlice struct {
@@ -195,7 +200,7 @@ type TaskSlice struct {
 	// If a task is marked as an idempotent (see TaskProperties), property values
 	// are hashed in a reproducible way and the final hash is used to find a
 	// previously succeeded task that has the same properties.
-	Properties TaskProperties `gae:"properties,lsp,noindex"`
+	Properties TaskProperties `gae:"properties,lsp"`
 
 	// ExpirationSecs defines how long the slice can sit in a pending queue.
 	//
@@ -212,7 +217,7 @@ type TaskSlice struct {
 // TaskProperties defines where and how to run the task.
 //
 // This entity is not saved in the DB as a standalone entity, instead it is
-// embedded in a TaskSlice.
+// embedded in a TaskSlice, unindexed.
 //
 // This entity is immutable.
 type TaskProperties struct {

@@ -149,7 +149,7 @@ func TestTaskRequest(t *testing.T) {
 			CreatedTS:            testTime,
 			ExpirationTS:         testTime.Add(20 * time.Minute),
 			Name:                 "name",
-			ParentTaskID:         "parent-task-id",
+			ParentTaskID:         datastore.NewIndexedNullable("parent-task-id"),
 			Authenticated:        "authenticated",
 			User:                 "user",
 			Tags:                 []string{"tag1", "tag2"},
