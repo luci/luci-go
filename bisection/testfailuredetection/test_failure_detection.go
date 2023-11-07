@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	"go.chromium.org/luci/bisection/model"
+	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/rerun"
 	tpb "go.chromium.org/luci/bisection/task/proto"
@@ -88,7 +89,7 @@ func Schedule(ctx context.Context, task *tpb.TestFailureDetectionTask) error {
 }
 
 type analysisClient interface {
-	ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask, excludedBuckets []string, excludedPools []string) ([]*lucianalysis.BuilderRegressionGroup, error)
+	ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask, filter *configpb.FailureIngestionFilter) ([]*lucianalysis.BuilderRegressionGroup, error)
 	ReadBuildInfo(ctx context.Context, tf *model.TestFailure) (lucianalysis.BuildInfo, error)
 }
 
@@ -103,16 +104,11 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 		logging.Infof(ctx, "Dectection is not enabled")
 		return nil
 	}
-	excludedBuckets, err := getExcludedBuckets(ctx, task.Project)
+	filter, err := getFailureIngestionFilter(ctx, task.Project)
 	if err != nil {
 		return errors.Annotate(err, "get excluded buckets").Err()
 	}
-	excludedPools, err := getExcludedPools(ctx, task.Project)
-	if err != nil {
-		return errors.Annotate(err, "get excluded pools").Err()
-	}
-
-	groups, err := client.ReadTestFailures(ctx, task, excludedBuckets, excludedPools)
+	groups, err := client.ReadTestFailures(ctx, task, filter)
 	if err != nil {
 		return errors.Annotate(err, "read test failures").Err()
 	}
@@ -318,18 +314,10 @@ func isEnabled(ctx context.Context, project string) (bool, error) {
 	return cfg.TestAnalysisConfig.GetDetectorEnabled(), nil
 }
 
-func getExcludedBuckets(ctx context.Context, project string) ([]string, error) {
+func getFailureIngestionFilter(ctx context.Context, project string) (*configpb.FailureIngestionFilter, error) {
 	cfg, err := config.Project(ctx, project)
 	if err != nil {
 		return nil, err
 	}
-	return cfg.TestAnalysisConfig.GetExcludedBuckets(), nil
-}
-
-func getExcludedPools(ctx context.Context, project string) ([]string, error) {
-	cfg, err := config.Project(ctx, project)
-	if err != nil {
-		return nil, err
-	}
-	return cfg.TestAnalysisConfig.GetExcludedTestPools(), nil
+	return cfg.TestAnalysisConfig.GetFailureIngestionFilter(), nil
 }

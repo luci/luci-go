@@ -75,13 +75,14 @@ func TestUpdateAnalysisStatus(t *testing.T) {
       ANY_VALUE(COALESCE(b2.infra.swarming.task_dimensions, b.infra.swarming.task_dimensions) HAVING MAX v.partition_time) AS task_dimensions,
       ANY_VALUE(b.builder.bucket HAVING MAX v.partition_time) AS bucket,
       ANY_VALUE(JSON_VALUE_ARRAY(b.input.properties, "$.sheriff_rotations") HAVING MAX v.partition_time) AS SheriffRotations,
+      ANY_VALUE(JSON_VALUE(b.input.properties, "$.builder_group") HAVING MAX v.partition_time) AS BuilderGroup,
     FROM builder_regression_groups g
     -- Join with test_verdict table to get the build id of the lastest build for a test variant.
     LEFT JOIN test_verdicts v
     ON g.testVariants[0].TestId = v.test_id
       AND g.testVariants[0].VariantHash = v.variant_hash
       AND g.RefHash = v.source_ref_hash
-    -- Join with buildbucket builds table to get the task dimensions for tests.
+    -- Join with buildbucket builds table to get the buildbucket related information for tests.
     LEFT JOIN cr-buildbucket.chromium.builds b
     ON v.buildbucket_build.id  = b.id
     -- JOIN with buildbucket builds table again to get task dimensions of parent builds.
@@ -100,6 +101,7 @@ SELECT regression_group.*,
   IFNULL(SheriffRotations, []) as SheriffRotations
 FROM builder_regression_groups_with_latest_build
 WHERE (NOT (SELECT LOGICAL_OR((SELECT count(*) > 0 FROM UNNEST(task_dimensions) WHERE KEY = kv.key and value = kv.value)) FROM UNNEST(@dimensionExcludes) kv)) AND (bucket NOT IN UNNEST(@excludedBuckets))
+  AND ((BuilderGroup IN UNNEST(@allowedBuilderGroups)) OR ARRAY_LENGTH(@allowedBuilderGroups) = 0 )
 ORDER BY regression_group.RegressionEndPosition DESC
 LIMIT 5000`)
 		})
@@ -148,13 +150,14 @@ LIMIT 5000`)
       ANY_VALUE(COALESCE(b2.infra.swarming.task_dimensions, b.infra.swarming.task_dimensions) HAVING MAX v.partition_time) AS task_dimensions,
       ANY_VALUE(b.builder.bucket HAVING MAX v.partition_time) AS bucket,
       ANY_VALUE(JSON_VALUE_ARRAY(b.input.properties, "$.sheriff_rotations") HAVING MAX v.partition_time) AS SheriffRotations,
+      ANY_VALUE(JSON_VALUE(b.input.properties, "$.builder_group") HAVING MAX v.partition_time) AS BuilderGroup,
     FROM builder_regression_groups g
     -- Join with test_verdict table to get the build id of the lastest build for a test variant.
     LEFT JOIN test_verdicts v
     ON g.testVariants[0].TestId = v.test_id
       AND g.testVariants[0].VariantHash = v.variant_hash
       AND g.RefHash = v.source_ref_hash
-    -- Join with buildbucket builds table to get the task dimensions for tests.
+    -- Join with buildbucket builds table to get the buildbucket related information for tests.
     LEFT JOIN cr-buildbucket.chromium.builds b
     ON v.buildbucket_build.id  = b.id
     -- JOIN with buildbucket builds table again to get task dimensions of parent builds.
@@ -177,6 +180,7 @@ ON g.swarming_run_id = s.run_id
 WHERE s.end_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
   AND (NOT (SELECT LOGICAL_OR((SELECT count(*) > 0 FROM UNNEST(task_dimensions) WHERE KEY = kv.key and value = kv.value)) FROM UNNEST(@dimensionExcludes) kv)) AND (bucket NOT IN UNNEST(@excludedBuckets))
   AND (s.bot.pools[0] NOT IN UNNEST(@excludedPools))
+  AND ((BuilderGroup IN UNNEST(@allowedBuilderGroups)) OR ARRAY_LENGTH(@allowedBuilderGroups) = 0 )
 ORDER BY regression_group.RegressionEndPosition DESC
 LIMIT 5000`)
 		})

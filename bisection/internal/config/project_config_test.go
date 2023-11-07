@@ -57,7 +57,9 @@ func TestProjectConfig(t *testing.T) {
 	Convey("With mocks", t, func() {
 		projectA := CreatePlaceholderProjectConfig()
 		projectB := CreatePlaceholderProjectConfig()
-		projectB.TestAnalysisConfig.ExcludedBuckets = []string{"try"}
+		projectB.TestAnalysisConfig.FailureIngestionFilter = &configpb.FailureIngestionFilter{
+			ExcludedBuckets: []string{"try"},
+		}
 
 		configs := map[config.Set]cfgmem.Files{
 			"projects/a": {"${appid}.cfg": textPBMultiline.Format(projectA)},
@@ -90,7 +92,9 @@ func TestProjectConfig(t *testing.T) {
 			// Real update.
 			projectC := CreatePlaceholderProjectConfig()
 			newProjectB := CreatePlaceholderProjectConfig()
-			newProjectB.TestAnalysisConfig.ExcludedBuckets = []string{"try2"}
+			newProjectB.TestAnalysisConfig.FailureIngestionFilter = &configpb.FailureIngestionFilter{
+				ExcludedBuckets: []string{"try2"},
+			}
 			delete(configs, "projects/a")
 			configs["projects/b"]["${appid}.cfg"] = textPBMultiline.Format(newProjectB)
 			configs["projects/c"] = cfgmem.Files{

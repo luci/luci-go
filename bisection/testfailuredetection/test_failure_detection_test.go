@@ -343,7 +343,7 @@ type fakeLUCIAnalysisClient struct {
 	buildInfoByProject    map[string]lucianalysis.BuildInfo
 }
 
-func (f *fakeLUCIAnalysisClient) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask, excludedBuckets []string, excludedPools []string) ([]*lucianalysis.BuilderRegressionGroup, error) {
+func (f *fakeLUCIAnalysisClient) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask, filter *configpb.FailureIngestionFilter) ([]*lucianalysis.BuilderRegressionGroup, error) {
 	return f.testFailuresByProject[task.Project], nil
 }
 
@@ -414,7 +414,10 @@ func setupTestingContext() (context.Context, *tqtesting.Scheduler) {
 	ctx = clock.Set(ctx, cl)
 	projectCfg := config.CreatePlaceholderProjectConfig()
 	projectCfg.TestAnalysisConfig.DetectorEnabled = true
-	projectCfg.TestAnalysisConfig.ExcludedBuckets = []string{"try", "findit", "reviver"}
+
+	projectCfg.TestAnalysisConfig.FailureIngestionFilter = &configpb.FailureIngestionFilter{
+		ExcludedBuckets: []string{"try", "findit", "reviver"},
+	}
 	cfg := map[string]*configpb.ProjectConfig{"testProject": projectCfg}
 	So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 	datastore.GetTestable(ctx).Consistent(true)

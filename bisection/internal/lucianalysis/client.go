@@ -25,6 +25,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"go.chromium.org/luci/bisection/model"
+	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util"
@@ -80,13 +81,14 @@ WITH
       ANY_VALUE(COALESCE(b2.infra.swarming.task_dimensions, b.infra.swarming.task_dimensions) HAVING MAX v.partition_time) AS task_dimensions,
       ANY_VALUE(b.builder.bucket HAVING MAX v.partition_time) AS bucket,
       ANY_VALUE(JSON_VALUE_ARRAY(b.input.properties, "$.sheriff_rotations") HAVING MAX v.partition_time) AS SheriffRotations,
+      ANY_VALUE(JSON_VALUE(b.input.properties, "$.builder_group") HAVING MAX v.partition_time) AS BuilderGroup,
     FROM builder_regression_groups g
     -- Join with test_verdict table to get the build id of the lastest build for a test variant.
     LEFT JOIN test_verdicts v
     ON g.testVariants[0].TestId = v.test_id
       AND g.testVariants[0].VariantHash = v.variant_hash
       AND g.RefHash = v.source_ref_hash
-    -- Join with buildbucket builds table to get the task dimensions for tests.
+    -- Join with buildbucket builds table to get the buildbucket related information for tests.
     LEFT JOIN {{.BBTableName}} b
     ON v.buildbucket_build.id  = b.id
     -- JOIN with buildbucket builds table again to get task dimensions of parent builds.
@@ -115,6 +117,7 @@ SELECT regression_group.*,
   IFNULL(SheriffRotations, []) as SheriffRotations
 FROM builder_regression_groups_with_latest_build
 WHERE {{.DimensionExcludeFilter}} AND (bucket NOT IN UNNEST(@excludedBuckets))
+  AND ((BuilderGroup IN UNNEST(@allowedBuilderGroups)) OR ARRAY_LENGTH(@allowedBuilderGroups) = 0 )
 {{end}}
 
 {{define "withExcludedPools"}}
@@ -127,6 +130,7 @@ ON g.swarming_run_id = s.run_id
 WHERE s.end_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
   AND {{.DimensionExcludeFilter}} AND (bucket NOT IN UNNEST(@excludedBuckets))
   AND (s.bot.pools[0] NOT IN UNNEST(@excludedPools))
+  AND ((BuilderGroup IN UNNEST(@allowedBuilderGroups)) OR ARRAY_LENGTH(@allowedBuilderGroups) = 0 )
 {{end}}
 	`))
 
@@ -198,13 +202,13 @@ type TestVariant struct {
 	Variant     bigquery.NullJSON
 }
 
-func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask, excludedBuckets []string, excludedPools []string) ([]*BuilderRegressionGroup, error) {
+func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask, filter *configpb.FailureIngestionFilter) ([]*BuilderRegressionGroup, error) {
 	dimensionExcludeFilter := "(TRUE)"
 	if len(task.DimensionExcludes) > 0 {
 		dimensionExcludeFilter = "(NOT (SELECT LOGICAL_OR((SELECT count(*) > 0 FROM UNNEST(task_dimensions) WHERE KEY = kv.key and value = kv.value)) FROM UNNEST(@dimensionExcludes) kv))"
 	}
 
-	queryStm, err := generateTestFailuresQuery(task, dimensionExcludeFilter, excludedPools)
+	queryStm, err := generateTestFailuresQuery(task, dimensionExcludeFilter, filter.ExcludedTestPools)
 	if err != nil {
 		return nil, errors.Annotate(err, "generate test failures query").Err()
 	}
@@ -213,8 +217,9 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
 	q.DefaultProjectID = c.luciAnalysisProject
 	q.Parameters = []bigquery.QueryParameter{
 		{Name: "dimensionExcludes", Value: task.DimensionExcludes},
-		{Name: "excludedBuckets", Value: excludedBuckets},
-		{Name: "excludedPools", Value: excludedPools},
+		{Name: "excludedBuckets", Value: filter.GetExcludedBuckets()},
+		{Name: "excludedPools", Value: filter.GetExcludedTestPools()},
+		{Name: "allowedBuilderGroups", Value: filter.GetAllowedBuilderGroups()},
 	}
 	job, err := q.Run(ctx)
 	if err != nil {
