@@ -196,7 +196,8 @@ func TestCheckRunCLs(t *testing.T) {
 
 					// Dry-runner can trigger a full-run for own CL w/ approval.
 					unsatisfyReq(cl, "Code-Review")
-					mustFailWith(cl, fmt.Sprintf(noLGTMWithReqs, "missing `Code-Review`"))
+
+					mustFailWith(cl, "CV cannot start a Run because this CL is not satisfying the `Code-Review` submit requirement. Please hover over the corresponding entry in the Submit Requirements section to check what is missing.")
 					approveCL(cl)
 					mustOK()
 				})
@@ -377,7 +378,7 @@ func TestCheckRunCLs(t *testing.T) {
 						satisfyReq(dep2, "Code-Owner")
 						res := mustFailWith(cl, untrustedDeps)
 						So(res.Failure(cl), ShouldContainSubstring, fmt.Sprintf(""+
-							"- %s missing approval, although `Code-Review` and `Code-Owner` are satisfied",
+							"- %s: not submittable, although submit requirements `Code-Review` and `Code-Owner` are satisfied",
 							dep2URL,
 						))
 						So(res.Failure(cl), ShouldContainSubstring, untrustedDepsSuspicious)
@@ -396,12 +397,12 @@ func TestCheckRunCLs(t *testing.T) {
 
 						res := mustFailWith(cl, untrustedDeps)
 						So(res.Failure(cl), ShouldNotContainSubstring, untrustedDepsSuspicious)
-						So(res.Failure(cl), ShouldContainSubstring, fmt.Sprintf(""+
-							"- %s missing `Code-Review`\n"+
-							"- %s missing `Code-Review` and `Code-Owner`\n"+
-							"- %s missing `Code-Review`, `Code-Owner`, and `Code-Quiz`",
-							dep1URL, dep2URL, dep3URL,
-						))
+						So(res.Failure(cl), ShouldContainSubstring,
+							dep1URL+": not satisfying the `Code-Review` submit requirement")
+						So(res.Failure(cl), ShouldContainSubstring,
+							dep2URL+": not satisfying the `Code-Review` and `Code-Owner` submit requirement")
+						So(res.Failure(cl), ShouldContainSubstring,
+							dep3URL+": not satisfying the `Code-Review`, `Code-Owner`, and `Code-Quiz` submit requirement")
 					})
 				})
 				Convey("trusted because it's apart of the Run", func() {

@@ -131,7 +131,7 @@ func (ck runCreateChecker) canTrustDeps(ctx context.Context) (evalResult, error)
 			switch isDryRunner, err := ck.isDryRunner(ctx, depOwner); {
 			case err != nil:
 				return no, errors.Annotate(err,
-				"dep-CL(%d): checking if owner %q is a dry-runner", d.ID, depOwner).Err()
+					"dep-CL(%d): checking if owner %q is a dry-runner", d.ID, depOwner).Err()
 			case isDryRunner:
 				ck.trustedDeps.Add(d.ID)
 				continue
@@ -374,7 +374,7 @@ func untrustedDepsReason(ctx context.Context, udeps []*changelist.CL, trustDryRu
 		sb.WriteString(untrustedDeps)
 	}
 	for _, d := range udeps {
-		fmt.Fprintf(&sb, "\n- %s", d.ExternalID.MustURL())
+		fmt.Fprintf(&sb, "\n- %s:", d.ExternalID.MustURL())
 		if allSatisfied, msg := strSubmitReqsForUnapprovedCL(ctx, d); len(msg) > 0 {
 			fmt.Fprintf(&sb, " %s", msg)
 			anySuspicious = anySuspicious || allSatisfied
@@ -425,14 +425,13 @@ func strSubmitReqsForUnapprovedCL(ctx context.Context, cl *changelist.CL) (allSa
 			// submit requirements agreed with Submittable.
 			logging.Errorf(ctx, "CL(%d): all submit reqs(%d) are NOT_APPLICABLE", cl.ID, len(reqs))
 		case 1:
-			msg = fmt.Sprintf("missing approval, although `%s` is satisfied", satisfied[0])
+			msg = fmt.Sprintf("not submittable, although submit requirement `%s` is satisfied", satisfied[0])
 		default:
-			msg = fmt.Sprintf("missing approval, although %s are satisfied", join(satisfied))
+			msg = fmt.Sprintf("not submittable, although submit requirements %s are satisfied", join(satisfied))
 		}
 		allSatisfied = len(satisfied) != 0
-
 	default:
-		msg = fmt.Sprintf("missing %s", join(unsatisfied))
+		msg = fmt.Sprintf("not satisfying the %s submit requirement. Please hover over the corresponding entry in the Submit Requirements section to check what is missing.", join(unsatisfied))
 	}
 	if allSatisfied {
 		logging.Errorf(ctx, "CL(%d): all submit reqs satisfied; but CL not submittable", cl.ID)
