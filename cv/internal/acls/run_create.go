@@ -78,6 +78,7 @@ type runCreateChecker struct {
 	triggerer      identity.Identity // the Run triggerer
 	triggererEmail string            // email of the Run triggerer
 	submittable    bool              // if the CL is submittable in Gerrit
+	submitted      bool              // if the CL has been submitted in Gerrit
 	depsToExamine  common.CLIDs      // deps that are possibly untrusted.
 	trustedDeps    common.CLIDsSet   // deps that have been proven to be trustable.
 }
@@ -175,7 +176,7 @@ func (ck runCreateChecker) canCreateFullRun(ctx context.Context) (evalResult, er
 	switch isCommitter, err := ck.isCommitter(ctx, ck.triggerer); {
 	case err != nil:
 		return no, err
-	case isCommitter && ck.submittable:
+	case isCommitter && (ck.submittable || ck.submitted):
 		return yes, nil
 	case isCommitter:
 		return noWithReason(notSubmittableReason(ctx, ck.cl)), nil
@@ -200,7 +201,7 @@ func (ck runCreateChecker) canCreateFullRun(ctx context.Context) (evalResult, er
 	if !isDryRunner && ck.allowOwnerIfSubmittable != cfgpb.Verifiers_GerritCQAbility_COMMIT {
 		return noWithReason(fmt.Sprintf(ownerNotCommitter, ck.triggererEmail)), nil
 	}
-	if !ck.submittable {
+	if !ck.submittable && !ck.submitted {
 		return noWithReason(notSubmittableReason(ctx, ck.cl)), nil
 	}
 	return yes, nil
@@ -261,7 +262,7 @@ func (ck runCreateChecker) canCreateDryRun(ctx context.Context) (evalResult, err
 		default:
 			return noWithReason(fmt.Sprintf(ownerNotDryRunner, ck.triggererEmail)), nil
 		}
-		if !ck.submittable {
+		if !ck.submittable && !ck.submitted {
 			return noWithReason(notSubmittableReason(ctx, ck.cl)), nil
 		}
 		return ck.canTrustDeps(ctx)
@@ -329,6 +330,10 @@ func evaluateCLs(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger
 		if err != nil {
 			return nil, errors.Annotate(err, "CL(%d)", cl.ID).Err()
 		}
+		submitted, err := cl.Snapshot.IsSubmitted()
+		if err != nil {
+			return nil, errors.Annotate(err, "CL(%d)", cl.ID).Err()
+		}
 		// by default, all deps are untrusted, unless they are part of the Run.
 		var depsToExamine common.CLIDs
 		if len(cl.Snapshot.Deps) > 0 {
@@ -351,6 +356,7 @@ func evaluateCLs(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger
 			triggerer:      triggerer,
 			triggererEmail: tr.Email,
 			submittable:    submittable,
+			submitted:      submitted,
 			depsToExamine:  depsToExamine,
 			trustedDeps:    trustedDeps,
 		}
