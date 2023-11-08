@@ -15,33 +15,143 @@
 package model
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
+const (
+	// TaskToRunShards is the number of TaskToRun entity kinds to shard across.
+	TaskToRunShards = 16
+)
+
 // TaskToRun defines a TaskRequest slice ready to be scheduled on a bot.
+//
+// Each TaskRequest results in one or more TaskToRun entities (one per slice).
+// They are created sequentially, one by one, as the task progresses through its
+// slices. Each TaskToRun is eventually either picked up by a bot for execution
+// or expires. Each TaskToRun picked up for execution has an TaskRunResult
+// entity (expired ones don't).
+//
+// A TaskToRun can either be in "native mode" (dispatched via the native
+// Swarming scheduler implemented in Python code base) or in "RBE mode"
+// (dispatched via the remote RBE scheduler service). This is controlled by
+// RBEReservation field.
+//
+// A TaskToRun (regardless of mode) can be in two states:
+//
+// 1. "reapable"
+//   - Native mode: QueueNumber and ExpirationTS are both set.
+//   - RBE mode: ClaimID is unset and ExpirationTS is set.
+//
+// 2. "consumed":
+//   - Native mode: QueueNumber and ExpirationTS are both unset.
+//   - RBE mode: ClaimID is set and ExpirationTS is unset.
+//
+// The entity starts its life in reapable state and then transitions to consumed
+// state either by being picked up by a bot for execution or when it expires.
+// Consumed state is final.
+//
+// The key ID is (see TaskToRunID):
+// - lower 4 bits is the try number. The only supported value is 1 now.
+// - next 5 bits are TaskResultSummary.CurrentTaskSlice (shifted by 4 bits).
+// - the rest is 0.
+//
+// This entity is stored using a bunch of different shards. The shard number is
+// derived deterministically by calculating dimensions hash % TaskToRunShards,
+// see TaskToRunKey.
 type TaskToRun struct {
-	// Kind is TaskToRunShard<index>.
-	Kind string `gae:"$kind"`
-	// ID is derived from the slice index.
-	ID int64 `gae:"$id"`
-	// Parent is the parent TaskRequest key.
-	Parent *datastore.Key `gae:"$parent"`
+	// Extra are entity properties that didn't match any declared ones below.
+	//
+	// Should normally be empty.
+	Extra datastore.PropertyMap `gae:"-,extra"`
+
+	// Key identifies the task and its slice, see TaskToRunKey().
+	//
+	// Note that the kind is TaskToRunShard<index>, see TaskToRunKind().
+	Key *datastore.Key `gae:"$key"`
+
+	// CreatedTS is used to know when the entity is enqueued.
+	//
+	// The very first TaskToRun has the same value as TaskRequest.CreatedTS,
+	// but the following ones (when using multiple task slices) have CreatedTS set
+	// at the time they are created.
+	//
+	// Used in both native and RBE mode.
+	CreatedTS time.Time `gae:"created_ts,noindex"`
+
+	// Dimensions is a copy of dimensions from the corresponding task slice of
+	// TaskRequest.
+	//
+	// It is used to quickly check if a bot can reap this TaskToRun right after
+	// fetching it from a datastore query.
+	//
+	// Used in both native and RBE mode.
+	Dimensions TaskDimensions `gae:"dimensions"`
+
+	// RBEReservation is the RBE reservation name that is (or will be) handling
+	// this TaskToRun.
+	//
+	// If set, then TaskToRunShard is in RBE mode. If not, then in native
+	// mode. TaskToRunShard in RBE mode are always (transactionally) created with
+	// a Task Queue task to actually dispatch them to the RBE scheduler.
+	RBEReservation string `gae:"rbe_reservation,noindex"`
 
 	// Expiration is the scheduling deadline for this TaskToRun.
 	//
-	// It is unset if the TaskToRun has already been claimed, was canceled or
-	// has expired.
-	Expiration time.Time `gae:"expiration_ts"`
+	// It is based on TaskSlice.ExpirationTS. It is used to figure out when to
+	// fallback on the next task slice. It is scanned by a cron job and thus needs
+	// to be indexed.
+	//
+	// It is unset when the TaskToRun is claimed, canceled or expires.
+	//
+	// Used in both native and RBE mode.
+	ExpirationTS datastore.Optional[time.Time, datastore.Indexed] `gae:"expiration_ts"`
 
-	_extra datastore.PropertyMap `gae:"-,extra"`
+	// QueueNumber is a magical number by which bots and tasks find one another.
+	//
+	// Used only in native mode. Always unset and unused in RBE mode.
+	//
+	// Priority and request creation timestamp are mixed together to allow queries
+	// to order the results by this field to allow sorting by priority first, and
+	// then timestamp.
+	//
+	// Gets unset when the TaskToRun is consumed.
+	QueueNumber datastore.Optional[int64, datastore.Indexed] `gae:"queue_number"`
+
+	// ClaimID is set if some bot claimed this TaskToRun and will execute it.
+	//
+	// Used only in RBE mode. Always unset in native mode.
+	//
+	// It is an opaque ID supplied by the bot when it attempts to claim this
+	// entity. If TaskToRun is already claimed and ClaimID matches the one
+	// supplied by the bot, then it means this bot has actually claimed the entity
+	// already and now just retries the call.
+	//
+	// Never gets unset once set.
+	ClaimID datastore.Optional[string, datastore.Unindexed] `gae:"claim_id"`
+
+	// ExpirationDelay is a delay from ExpirationTS to the actual expiry time.
+	//
+	// This is set at expiration process if the last task slice expired by
+	// reaching its deadline. Unset if the last slice expired because there were
+	// no bots that could run it.
+	//
+	// Exclusively for monitoring.
+	ExpirationDelay datastore.Optional[float64, datastore.Unindexed] `gae:"expiration_delay"`
 }
 
 // IsReapable returns true if the TaskToRun is still pending.
 func (t *TaskToRun) IsReapable() bool {
-	return !t.Expiration.IsZero()
+	return t.ExpirationTS.IsSet()
+}
+
+// TaskToRunKey builds a TaskToRun key given the task request key, the entity
+// kind shard index and the task to run ID.
+func TaskToRunKey(ctx context.Context, taskReq *datastore.Key, shardIdx int32, ttrID int64) *datastore.Key {
+	return datastore.NewKey(ctx, TaskToRunKind(shardIdx), "", ttrID, taskReq)
 }
 
 // TaskToRunKind returns the TaskToRun entity kind name given a shard index.

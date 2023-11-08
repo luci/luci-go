@@ -90,10 +90,11 @@ func TestReservationServer(t *testing.T) {
 		taskReqKey, err := model.TaskRequestKey(ctx, enqueueTask.Payload.TaskId)
 		So(err, ShouldBeNil)
 		taskToRun := &model.TaskToRun{
-			Kind:       model.TaskToRunKind(enqueueTask.Payload.TaskToRunShard),
-			ID:         enqueueTask.Payload.TaskToRunId,
-			Parent:     taskReqKey,
-			Expiration: expiry,
+			Key: model.TaskToRunKey(ctx, taskReqKey,
+				enqueueTask.Payload.TaskToRunShard,
+				enqueueTask.Payload.TaskToRunId,
+			),
+			ExpirationTS: datastore.NewIndexedOptional(expiry),
 		}
 		So(datastore.Put(ctx, taskToRun), ShouldBeNil)
 
@@ -139,7 +140,7 @@ func TestReservationServer(t *testing.T) {
 		})
 
 		Convey("handleEnqueueRBETask TaskToRun is claimed", func() {
-			taskToRun.Expiration = time.Time{}
+			taskToRun.ExpirationTS.Unset()
 			So(datastore.Put(ctx, taskToRun), ShouldBeNil)
 
 			err := srv.handleEnqueueRBETask(ctx, enqueueTask)
@@ -261,16 +262,14 @@ func TestReservationServer(t *testing.T) {
 			}
 
 			prepTaskToRun := func(reapable bool) {
-				exp := time.Time{}
+				var exp datastore.Optional[time.Time, datastore.Indexed]
 				if reapable {
-					exp = testclock.TestRecentTimeUTC.Add(time.Hour)
+					exp.Set(testclock.TestRecentTimeUTC.Add(time.Hour))
 				}
 				taskReqKey, _ := model.TaskRequestKey(ctx, taskID)
 				So(datastore.Put(ctx, &model.TaskToRun{
-					Kind:       model.TaskToRunKind(taskToRunShard),
-					ID:         taskToRunID,
-					Parent:     taskReqKey,
-					Expiration: exp,
+					Key:          model.TaskToRunKey(ctx, taskReqKey, taskToRunShard, taskToRunID),
+					ExpirationTS: exp,
 				}), ShouldBeNil)
 			}
 

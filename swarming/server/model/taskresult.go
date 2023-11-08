@@ -249,12 +249,12 @@ type TaskResultSummary struct {
 	// ExpirationDelay is a delay from TaskRequest.ExpirationTS to the actual
 	// expiry time.
 	//
-	// This is set at expiration process if the last task slice expired by reaching
-	// its deadline. Unset if the last slice expired because there were no bots
-	// that could run it.
+	// This is set at expiration process if the last task slice expired by
+	// reaching its deadline. Unset if the last slice expired because there were
+	// no bots that could run it.
 	//
 	// Exclusively for monitoring.
-	ExpirationDelay float64 `gae:"expiration_delay,noindex"`
+	ExpirationDelay datastore.Optional[float64, datastore.Unindexed] `gae:"expiration_delay"`
 }
 
 // TaskRequestKey returns the parent task request key or panics if it is unset.

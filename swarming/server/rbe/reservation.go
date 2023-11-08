@@ -410,9 +410,7 @@ func newTaskToRunFromPayload(ctx context.Context, p *internalspb.TaskPayload) (*
 		return nil, err
 	}
 	return &model.TaskToRun{
-		Kind:   model.TaskToRunKind(p.TaskToRunShard),
-		ID:     p.TaskToRunId,
-		Parent: taskReqKey,
+		Key: model.TaskToRunKey(ctx, taskReqKey, p.TaskToRunShard, p.TaskToRunId),
 	}, nil
 }
 
