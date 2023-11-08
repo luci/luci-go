@@ -25,6 +25,20 @@ import (
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
+const (
+	// ChunkSize is the size of each TaskOutputChunk.Chunk in uncompressed form.
+	//
+	// The rationale is that appending data to an entity requires reading it
+	// first, so it must not be too big. On the other hand, having thousands of
+	// small entities is pure overhead.
+	//
+	// Note that changing this value is a breaking change for existing logs.
+	ChunkSize = 100 * 1024
+
+	// MaxChunks sets a limit on how much of a task output to store.
+	MaxChunks = 1024
+)
+
 // TaskResultCommon contains properties that are common to both TaskRunResult
 // and TaskResultSummary.
 //
@@ -299,4 +313,109 @@ type TaskRunResult struct {
 // TaskRunResultKey constructs a task run result key given a task request key.
 func TaskRunResultKey(ctx context.Context, taskReq *datastore.Key) *datastore.Key {
 	return datastore.NewKey(ctx, "TaskRunResult", "", 1, TaskResultSummaryKey(ctx, taskReq))
+}
+
+// PerformanceStats contains various timing and performance information about
+// the task as reported by the bot.
+type PerformanceStats struct {
+	// Extra are entity properties that didn't match any declared ones below.
+	//
+	// Should normally be empty.
+	Extra datastore.PropertyMap `gae:"-,extra"`
+
+	// Key identifies the task, see PerformanceStatsKey.
+	Key *datastore.Key `gae:"$key"`
+
+	// BotOverheadSecs is the total overhead in seconds, summing overhead from all
+	// sections defined below.
+	BotOverheadSecs float64 `gae:"bot_overhead,noindex"`
+
+	// CacheTrim is stats of cache trimming before the dependency installations.
+	CacheTrim OperationStats `gae:"cache_trim,lsp,noindex"`
+
+	// PackageInstallation is stats of installing CIPD packages before the task.
+	PackageInstallation OperationStats `gae:"package_installation,lsp,noindex"`
+
+	// NamedCachesInstall is stats of named cache mounting before the task.
+	NamedCachesInstall OperationStats `gae:"named_caches_install,lsp,noindex"`
+
+	// NamedCachesUninstall is stats of named cache unmounting after the task.
+	NamedCachesUninstall OperationStats `gae:"named_caches_uninstall,lsp,noindex"`
+
+	// IsolatedDownload is stats of CAS dependencies download before the task.
+	IsolatedDownload CASOperationStats `gae:"isolated_download,lsp,noindex"`
+
+	// IsolatedUpload is stats of CAS uploading operation after the task.
+	IsolatedUpload CASOperationStats `gae:"isolated_upload,lsp,noindex"`
+
+	// Cleanup is stats of work directory cleanup operation after the task.
+	Cleanup OperationStats `gae:"cleanup,lsp,noindex"`
+}
+
+// OperationStats is performance stats of a particular operation.
+//
+// Stored as a unindexed subentity of PerformanceStats entity.
+type OperationStats struct {
+	// DurationSecs is how long the operation ran.
+	DurationSecs float64 `gae:"duration"`
+}
+
+// CASOperationStats is performance stats of a CAS operation.
+//
+// Stored as a unindexed subentity of PerformanceStats entity.
+type CASOperationStats struct {
+	// DurationSecs is how long the operation ran.
+	DurationSecs float64 `gae:"duration"`
+
+	// InitialItems is the number of items in the cache before the operation.
+	InitialItems int64 `gae:"initial_number_items"`
+
+	// InitialSize is the total cache size before the operation.
+	InitialSize int64 `gae:"initial_size"`
+
+	// ItemsCold is a set of sizes of items that were downloaded or uploaded.
+	//
+	// It is encoded in a special way, see packedintset.Inflate.
+	ItemsCold []byte `gae:"items_cold"`
+
+	// ItemsHot is a set of sizes of items that were already present in the cache.
+	//
+	// It is encoded in a special way, see packedintset.Inflate.
+	ItemsHot []byte `gae:"items_hot"`
+}
+
+// PerformanceStatsKey builds a PerformanceStats key given a task request key.
+func PerformanceStatsKey(ctx context.Context, taskReq *datastore.Key) *datastore.Key {
+	return datastore.NewKey(ctx, "PerformanceStats", "", 1, TaskRunResultKey(ctx, taskReq))
+}
+
+// TaskOutputChunk represents a chunk of the task console output.
+//
+// The number of such chunks per task is tracked in TaskRunResult.StdoutChunks.
+// Each entity holds a compressed segment of the task output. For all entities
+// except the last one, the uncompressed size of the segment is ChunkSize. That
+// way it is always possible to figure out what chunk to use for a given output
+// offset.
+type TaskOutputChunk struct {
+	// Extra are entity properties that didn't match any declared ones below.
+	//
+	// Should normally be empty.
+	Extra datastore.PropertyMap `gae:"-,extra"`
+
+	// Key identifies the task and the chunk index, see TaskOutputChunkKey.
+	Key *datastore.Key `gae:"$key"`
+
+	// Chunk is zlib-compressed chunk of the output.
+	Chunk []byte `gae:"chunk,noindex"`
+
+	// Gaps is a series of 2 integer pairs, which specifies the part that are
+	// invalid. Normally it should be empty. All values are relative to the start
+	// of this chunk offset.
+	Gaps []int32 `gae:"gaps,noindex"`
+}
+
+// TaskOutputChunkKey builds a TaskOutputChunk key for the given chunk index.
+func TaskOutputChunkKey(ctx context.Context, taskReq *datastore.Key, idx int64) *datastore.Key {
+	return datastore.NewKey(ctx, "TaskOutputChunk", "", idx+1,
+		datastore.NewKey(ctx, "TaskOutput", "", 1, TaskRunResultKey(ctx, taskReq)))
 }
