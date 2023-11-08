@@ -27,7 +27,10 @@ message ProjectConfig {
 }
 
 // CompileAnalysisConfig is the configuration data for compile failure bisection.
+// Next available tag: 5.
 message CompileAnalysisConfig {
+  // The build config to run compile analysis.
+  BuildConfig build_config = 4;
   // Whether we should run culprit verification
   bool culprit_verification_enabled = 1;
   // Whether we should run nthsection analysis
@@ -37,8 +40,11 @@ message CompileAnalysisConfig {
 }
 
 // TestAnalysisConfig is the configuration data for test failure bisection.
-// Next available tag: 9.
+// Next available tag: 10.
 message TestAnalysisConfig {
+  reserved 1;
+  // The build config to run test analysis.
+  BuildConfig build_config = 9;
   // Flag of whether test failure detector is enabled.
   // Usually the flag is on for both dev and prod, but we may want to turn
   // it off for the cases when the bisector is down and we don't want to
@@ -132,4 +138,20 @@ message GerritConfig {
   }
 
   NthSectionSettings nthsection_settings = 5;
+}
+
+// BuildConfig contains configuration of how we run rerun builds.
+message BuildConfig {
+  // The buildbucket builder.
+  Builder builder = 1;
+}
+
+// Builder specifies a buildbucket builder.
+message Builder {
+  // The name of the project that the builder belongs to.
+  string project = 1;
+  // The name of the bucket that the builder belongs to.
+  string bucket = 2;
+  // The name of the builder.
+  string builder = 3;
 }
