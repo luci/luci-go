@@ -598,11 +598,12 @@ func computeSwarmingNewTaskReq(ctx context.Context, build *model.Build) (*apipb.
 	}
 	taskReq := &apipb.NewTaskRequest{
 		// to prevent accidental multiple task creation
-		RequestUuid: uuid.NewSHA1(uuid.Nil, []byte(strconv.FormatInt(build.ID, 10))).String(),
-		Name:        fmt.Sprintf("bb-%d-%s", build.ID, build.BuilderID),
-		Realm:       build.Realm(),
-		Tags:        computeTags(ctx, build),
-		Priority:    int32(sw.Priority),
+		RequestUuid:      uuid.NewSHA1(uuid.Nil, []byte(strconv.FormatInt(build.ID, 10))).String(),
+		Name:             fmt.Sprintf("bb-%d-%s", build.ID, build.BuilderID),
+		Realm:            build.Realm(),
+		Tags:             computeTags(ctx, build),
+		Priority:         int32(sw.Priority),
+		PoolTaskTemplate: apipb.NewTaskRequest_SKIP,
 	}
 
 	if build.Proto.Number > 0 {

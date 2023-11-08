@@ -308,14 +308,15 @@ func TestTaskDef(t *testing.T) {
 			SwarmingHostname: "swarm.com",
 		})
 		expected := &apipb.NewTaskRequest{
-			RequestUuid:    "203882df-ce4b-5012-b32a-2c1d29c321a7",
-			Name:           "bb-123-builder-1",
-			Realm:          "project:bucket",
-			Tags:           []string{"buildbucket_bucket:bucket", "buildbucket_build_id:123", "buildbucket_hostname:app-id.appspot.com", "buildbucket_template_canary:0", "luci_project:project"},
-			Priority:       int32(20),
-			PubsubTopic:    "projects/app-id/topics/swarming-go",
-			PubsubUserdata: string(ud),
-			ServiceAccount: "abc",
+			RequestUuid:      "203882df-ce4b-5012-b32a-2c1d29c321a7",
+			Name:             "bb-123-builder-1",
+			Realm:            "project:bucket",
+			Tags:             []string{"buildbucket_bucket:bucket", "buildbucket_build_id:123", "buildbucket_hostname:app-id.appspot.com", "buildbucket_template_canary:0", "luci_project:project"},
+			Priority:         int32(20),
+			PubsubTopic:      "projects/app-id/topics/swarming-go",
+			PubsubUserdata:   string(ud),
+			ServiceAccount:   "abc",
+			PoolTaskTemplate: apipb.NewTaskRequest_SKIP,
 		}
 		So(req, ShouldResemble, expected)
 	})
