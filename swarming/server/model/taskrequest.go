@@ -378,6 +378,64 @@ type ResultDBConfig struct {
 	Enable bool `gae:"enable"`
 }
 
+// SecretBytes defines an optional secret byte string logically defined within
+// TaskRequest.
+//
+// Stored separately for size and data-leakage reasons. All task slices reuse
+// the same secret bytes (which is an implementation artifact, not a desired
+// property). If a task slice uses secret bytes, it has HasSecretBytes == true.
+type SecretBytes struct {
+	// Extra are entity properties that didn't match any declared ones below.
+	//
+	// Should normally be empty.
+	Extra datastore.PropertyMap `gae:"-,extra"`
+
+	// Key identifies the task and its concrete slice.
+	//
+	// See SecretBytesKey.
+	Key *datastore.Key `gae:"$key"`
+
+	// SecretBytes is the actual secret bytes blob.
+	SecretBytes []byte `gae:"secret_bytes,noindex"`
+}
+
+// SecretBytesKey constructs SecretBytes key given a TaskRequest key.
+func SecretBytesKey(ctx context.Context, taskReq *datastore.Key) *datastore.Key {
+	return datastore.NewKey(ctx, "SecretBytes", "", 1, taskReq)
+}
+
+// TaskRequestID defines a mapping between request's idempotency ID and task ID.
+//
+// It is a root-level entity. Used to make sure at most one TaskRequest entity
+// is created per the given request ID.
+type TaskRequestID struct {
+	// Extra are entity properties that didn't match any declared ones below.
+	//
+	// Should normally be empty.
+	Extra datastore.PropertyMap `gae:"-,extra"`
+
+	// Key is derived from the request ID.
+	//
+	// See TaskRequestIDKey.
+	Key *datastore.Key `gae:"$key"`
+
+	// TaskID is a packed TaskResultSummary key identifying TaskRequest matching
+	// this request ID.
+	//
+	// Use TaskRequestKey(...) to get the actual datastore key from it.
+	TaskID string `gae:"task_id,noindex"`
+
+	// ExpireAt is when this entity should be removed from the datastore.
+	//
+	// This is used by a TTL policy: https://cloud.google.com/datastore/docs/ttl
+	ExpireAt time.Time `gae:"expire_at,noindex"`
+}
+
+// TaskRequestIDKey constructs a top-level TaskRequestID key.
+func TaskRequestIDKey(ctx context.Context, requestID string) *datastore.Key {
+	return datastore.NewKey(ctx, "TaskRequestID", requestID, 0, nil)
+}
+
 // TaskDimensions defines requirements for a bot to match a task.
 //
 // Stored in JSON form in the datastore.
