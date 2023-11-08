@@ -122,12 +122,12 @@ func (rm *RunManager) doLongOperation(ctx context.Context, task *eventpb.ManageR
 	case nerr == nil:
 		return err
 	case err == nil:
-		// the op suceeded, but notify failed.
-		logging.Errorf(ctx, "Long op suceeded but it failed to notify Run Manager: %s", err)
+		// the op succeeded, but notify failed.
+		logging.Errorf(ctx, "Long op succeeded but it failed to notify Run Manager: %s", nerr)
 		return nerr
 	default:
 		// both op and notify failed.
-		logging.Errorf(ctx, "Long op %T permanently failed with %s, but also failed to notify Run Manager", op.GetWork(), nerr)
+		logging.Errorf(ctx, "Long op %T permanently failed with %s, but also failed to notify Run Manager due to %s", op.GetWork(), err, nerr)
 		return err
 	}
 }
