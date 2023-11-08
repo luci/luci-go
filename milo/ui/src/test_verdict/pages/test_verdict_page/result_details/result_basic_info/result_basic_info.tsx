@@ -13,16 +13,21 @@
 // limitations under the License.
 
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { AccordionDetails, Typography } from '@mui/material';
 import Accordion from '@mui/material/Accordion';
+import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
-import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
+import Typography from '@mui/material/Typography';
+import { Duration } from 'luxon';
 import { useState } from 'react';
 
-import { TestResult } from '@/common/services/resultdb';
+import { DurationBadge } from '@/common/components/duration_badge';
+import { TestResult, parseTestResultName } from '@/common/services/resultdb';
+import { parseProtoDuration } from '@/common/tools/time_utils';
+import { getSwarmingTaskURL } from '@/common/tools/url_utils';
+import { parseSwarmingTaskFromInvId } from '@/common/tools/utils';
 
 interface Props {
   result: TestResult;
@@ -30,7 +35,10 @@ interface Props {
 
 export function ResultBasicInfo({ result }: Props) {
   const [expanded, setExpanded] = useState(true);
-
+  const parsedResultName = parseTestResultName(result.name);
+  const swarmingTaskId = parseSwarmingTaskFromInvId(
+    parsedResultName.invocationId,
+  );
   return (
     <Accordion
       variant="outlined"
@@ -59,19 +67,36 @@ export function ResultBasicInfo({ result }: Props) {
         <Grid container rowGap={2}>
           <Grid item container columnGap={1} alignItems="center">
             {result.duration && (
+              <DurationBadge
+                duration={Duration.fromMillis(
+                  parseProtoDuration(result.duration),
+                )}
+              />
+            )}
+            {swarmingTaskId !== null && (
               <>
-                <Chip label={result.duration} />
                 <Divider orientation="vertical" />
+                Swarming Task:
+                <Link
+                  href={getSwarmingTaskURL(
+                    swarmingTaskId.swarmingHost,
+                    swarmingTaskId.taskId,
+                  )}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {swarmingTaskId.taskId}
+                </Link>
               </>
             )}
-            {/** TODO(b/308716449): Display swarming task when available. */}
-            Swarming Task:
-            <Link href="#">626a273fe4f74c11</Link>
           </Grid>
           {result.failureReason && (
             <Grid item container columnGap={1} alignItems="center">
               <Grid item>
-                Failure reason (<Link href="#">similar failures</Link>):
+                Failure reason (
+                {/** TODO(b/309560827): add similar failures url. */}
+                <Link href="#">similar failures</Link>
+                ):
               </Grid>
               <Grid
                 className="failure-bg"

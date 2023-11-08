@@ -46,7 +46,12 @@ import {
   displayDuration,
   parseProtoDuration,
 } from '@/common/tools/time_utils';
-import { getInvURLPath, getRawArtifactURLPath } from '@/common/tools/url_utils';
+import {
+  getInvURLPath,
+  getRawArtifactURLPath,
+  getSwarmingTaskURL,
+} from '@/common/tools/url_utils';
+import { parseSwarmingTaskFromInvId } from '@/common/tools/utils';
 import { reportRenderError } from '@/generic_libs/tools/error_handler';
 import { consumer } from '@/generic_libs/tools/lit_context';
 import { unwrapObservable } from '@/generic_libs/tools/mobx_utils';
@@ -410,16 +415,19 @@ ${errMsg}</pre
   });
 
   private renderParentLink() {
-    const matchSwarming = this.parentInvId.match(/^task-(.+)-([0-9a-f]+)$/);
-    if (matchSwarming) {
+    const swarmingTaskId = parseSwarmingTaskFromInvId(this.parentInvId);
+    if (swarmingTaskId !== null) {
       return html`
         in task:
         <a
-          href="https://${matchSwarming[1]}/task?id=${matchSwarming[2]}"
+          href="${getSwarmingTaskURL(
+            swarmingTaskId.swarmingHost,
+            swarmingTaskId.taskId,
+          )}"
           target="_blank"
           @click=${(e: Event) => e.stopPropagation()}
         >
-          ${matchSwarming[2]}
+          ${swarmingTaskId.taskId}
         </a>
       `;
     }
