@@ -130,7 +130,7 @@ func reportBots(ctx context.Context, state *tsmon.State, serviceName string) err
 			// These appear to be phantom GCE provider bots which are either being created
 			// or weren't fully deleted. They don't have `state` JSON dict populated, and
 			// they aren't really running.
-			if bot.LastSeen.IsZero() || len(bot.State) == 0 {
+			if !bot.LastSeen.IsSet() || len(bot.State) == 0 {
 				return nil
 			}
 			shards[shardIdx].collect(ctx, bot)
@@ -206,7 +206,7 @@ func (s *shardState) collect(ctx context.Context, bot *model.BotInfo) {
 				migrationState = "RBE"
 			}
 		} else {
-			logging.Warningf(ctx, "Bot %s: bad state:\n:%s", bot.Parent.StringID(), bot.State)
+			logging.Warningf(ctx, "Bot %s: bad state:\n:%s", bot.BotID(), bot.State)
 		}
 	}
 
@@ -237,7 +237,7 @@ func setExecutorMetrics(mctx context.Context, bot *model.BotInfo, serviceName st
 	tctx := target.Set(mctx, &target.Task{
 		DataCenter:  "appengine",
 		ServiceName: serviceName,
-		HostName:    fmt.Sprintf("autogen:%s", bot.Parent.StringID()),
+		HostName:    fmt.Sprintf("autogen:%s", bot.BotID()),
 	})
 	// Status.
 	status := bot.GetStatus()
@@ -255,7 +255,7 @@ func setExecutorMetrics(mctx context.Context, bot *model.BotInfo, serviceName st
 			rbeState = botState.RBEInstance
 		}
 	} else {
-		logging.Warningf(mctx, "Bot %s: bad state:\n:%s", bot.Parent.StringID(), bot.State)
+		logging.Warningf(mctx, "Bot %s: bad state:\n:%s", bot.BotID(), bot.State)
 	}
 	botsRBEInstance.Set(tctx, rbeState)
 }
