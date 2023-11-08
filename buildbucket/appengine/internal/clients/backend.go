@@ -37,6 +37,7 @@ type BackendClient struct {
 type TaskBackendClient interface {
 	RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*pb.RunTaskResponse, error)
 	FetchTasks(ctx context.Context, in *pb.FetchTasksRequest, opts ...grpc.CallOption) (*pb.FetchTasksResponse, error)
+	ValidateConfigs(ctx context.Context, in *pb.ValidateConfigsRequest, opts ...grpc.CallOption) (*pb.ValidateConfigsResponse, error)
 }
 
 func newRawTaskBackendClient(ctx context.Context, host string, project string) (TaskBackendClient, error) {
@@ -85,4 +86,9 @@ func (c *BackendClient) RunTask(ctx context.Context, taskReq *pb.RunTaskRequest,
 // FetchTasks returns the requested tasks.
 func (c *BackendClient) FetchTasks(ctx context.Context, taskReq *pb.FetchTasksRequest, opts ...grpc.CallOption) (*pb.FetchTasksResponse, error) {
 	return c.client.FetchTasks(ctx, taskReq, opts...)
+}
+
+// ValidateConfigs returns validation errors (if any).
+func (c *BackendClient) ValidateConfigs(ctx context.Context, req *pb.ValidateConfigsRequest, opts ...grpc.CallOption) (*pb.ValidateConfigsResponse, error) {
+	return c.client.ValidateConfigs(ctx, req, opts...)
 }

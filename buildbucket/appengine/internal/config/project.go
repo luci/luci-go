@@ -29,6 +29,7 @@ import (
 
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/data/stringset"
@@ -542,7 +543,7 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 		bucketNames.Add(bucket.Name)
 		// TODO(crbug/1399576): Change this once bucket proto replaces Swarming message name
 		if s := bucket.Swarming; s != nil {
-			validateProjectSwarming(ctx, s, wellKnownExperiments)
+			validateProjectSwarming(ctx, s, wellKnownExperiments, project)
 		}
 		ctx.Exit()
 	}
@@ -598,7 +599,7 @@ func validateBuildNotifyTopics(ctx *validation.Context, topics []*pb.Buildbucket
 }
 
 // validateProjectSwarming validates project_config.Swarming.
-func validateProjectSwarming(ctx *validation.Context, s *pb.Swarming, wellKnownExperiments stringset.Set) {
+func validateProjectSwarming(ctx *validation.Context, s *pb.Swarming, wellKnownExperiments stringset.Set, project string) {
 	ctx.Enter("swarming")
 	defer ctx.Exit()
 
@@ -609,7 +610,7 @@ func validateProjectSwarming(ctx *validation.Context, s *pb.Swarming, wellKnownE
 	builderNames := stringset.New(len(s.Builders))
 	for i, b := range s.Builders {
 		ctx.Enter("builders #%d - %s", i, b.Name)
-		validateBuilderCfg(ctx, b, wellKnownExperiments)
+		validateBuilderCfg(ctx, b, wellKnownExperiments, project)
 		if builderNames.Has(b.Name) {
 			ctx.Errorf("name: duplicate")
 		} else {
@@ -642,7 +643,44 @@ func ValidateTaskBackendTarget(globalCfg *pb.SettingsCfg, target string) error {
 	return errors.Reason("provided backend target was not in global config").Err()
 }
 
-func validateTaskBackend(ctx *validation.Context, backend *pb.BuilderConfig_Backend) {
+// validateTaskBackendConfigJson makes an api call to the task backend server's
+// ValidateConfigs RPC. If there are errors with the config it propagates them
+// into the validation context.
+func validateTaskBackendConfigJson(ctx *validation.Context, backend *pb.BuilderConfig_Backend, project string) error {
+	globalCfg, err := GetSettingsCfg(ctx.Context)
+	if err != nil {
+		return err
+	}
+	backendClient, err := clients.NewBackendClient(ctx.Context, project, backend.Target, globalCfg)
+	if err != nil {
+		return err
+	}
+	configJsonPb := &structpb.Struct{}
+	err = configJsonPb.UnmarshalJSON([]byte(backend.ConfigJson))
+	if err != nil {
+		return err
+	}
+	req := &pb.ValidateConfigsRequest{
+		Configs: []*pb.ValidateConfigsRequest_ConfigContext{
+			{
+				Target:     backend.Target,
+				ConfigJson: configJsonPb,
+			},
+		},
+	}
+	resp, err := backendClient.ValidateConfigs(ctx.Context, req)
+	if err != nil {
+		return err
+	}
+	if len(resp.ConfigErrors) > 0 {
+		for _, configErr := range resp.ConfigErrors {
+			ctx.Errorf("error validating task backend ConfigJson at index %d: %s", configErr.Index, configErr.Error)
+		}
+	}
+	return nil
+}
+
+func validateTaskBackend(ctx *validation.Context, backend *pb.BuilderConfig_Backend, project string) {
 	globalCfg, err := GetSettingsCfg(ctx.Context)
 	if err != nil {
 		ctx.Errorf("could not get global settings config")
@@ -651,14 +689,18 @@ func validateTaskBackend(ctx *validation.Context, backend *pb.BuilderConfig_Back
 	// validating backend.Target
 	err = ValidateTaskBackendTarget(globalCfg, backend.GetTarget())
 	if err != nil {
-		ctx.Errorf("error validating task backend: %s", err)
+		ctx.Errorf("error validating task backend target: %s", err)
 	}
-	// TODO(randymaldonado@): Once backend.config_json has values populated and we know what will be in it
-	// create validation for that.
+	if backend.ConfigJson != "" {
+		err = validateTaskBackendConfigJson(ctx, backend, project)
+		if err != nil {
+			ctx.Errorf("error validating task backend ConfigJson: %s", err)
+		}
+	}
 }
 
 // validateBuilderCfg validate a Builder config message.
-func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownExperiments stringset.Set) {
+func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownExperiments stringset.Set, project string) {
 	// TODO(iannucci): also validate builder allowed_property_overrides field. See
 	// //lucicfg/starlark/stdlib/internal/luci/rules/builder.star
 
@@ -673,7 +715,7 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 	case b.GetSwarmingHost() != "" && b.GetBackend() != nil:
 		ctx.Errorf("only one of swarming host or task backend is allowed")
 	case b.GetBackend() != nil:
-		validateTaskBackend(ctx, b.Backend)
+		validateTaskBackend(ctx, b.Backend, project)
 	case b.GetSwarmingHost() != "":
 		validateHostname(ctx, "swarming_host", b.SwarmingHost)
 	default:
@@ -682,7 +724,7 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 
 	if b.GetBackendAlt() != nil {
 		// validate backend_alt
-		validateTaskBackend(ctx, b.BackendAlt)
+		validateTaskBackend(ctx, b.BackendAlt, project)
 	}
 
 	// validate swarming_tags

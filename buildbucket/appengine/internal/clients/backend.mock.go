@@ -74,3 +74,23 @@ func (mr *MockTaskBackendClientMockRecorder) RunTask(ctx, taskReq interface{}, o
 	varargs := append([]interface{}{ctx, taskReq}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunTask", reflect.TypeOf((*MockTaskBackendClient)(nil).RunTask), varargs...)
 }
+
+// ValidateConfigs mocks base method.
+func (m *MockTaskBackendClient) ValidateConfigs(ctx context.Context, in *buildbucketpb.ValidateConfigsRequest, opts ...grpc.CallOption) (*buildbucketpb.ValidateConfigsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ValidateConfigs", varargs...)
+	ret0, _ := ret[0].(*buildbucketpb.ValidateConfigsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ValidateConfigs indicates an expected call of ValidateConfigs.
+func (mr *MockTaskBackendClientMockRecorder) ValidateConfigs(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateConfigs", reflect.TypeOf((*MockTaskBackendClient)(nil).ValidateConfigs), varargs...)
+}

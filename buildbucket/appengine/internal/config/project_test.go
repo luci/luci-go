@@ -21,6 +21,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
@@ -32,6 +34,7 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -128,8 +131,13 @@ func TestValidateProject(t *testing.T) {
 	})
 
 	Convey("validate project_config.Swarming", t, func() {
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mockBackend := clients.NewMockTaskBackendClient(ctl)
+		ctx := context.Background()
+		ctx = context.WithValue(ctx, clients.MockTaskBackendClientKey, mockBackend)
 		vctx := &validation.Context{
-			Context: memory.Use(context.Background()),
+			Context: memory.Use(ctx),
 		}
 		wellKnownExperiments := stringset.NewFromSlice("luci.well_known")
 		toBBSwarmingCfg := func(content string) *pb.Swarming {
@@ -211,7 +219,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "")
 			So(vctx.Finalize(), ShouldBeNil)
 		})
 
@@ -230,7 +238,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "")
 				ve, ok := vctx.Finalize().(*validation.Error)
 				So(ok, ShouldEqual, true)
 				So(len(ve.Errors), ShouldEqual, 1)
@@ -250,7 +258,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "")
 				ve, ok := vctx.Finalize().(*validation.Error)
 				So(ok, ShouldEqual, true)
 				So(len(ve.Errors), ShouldEqual, 1)
@@ -270,7 +278,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "")
 				ve, ok := vctx.Finalize().(*validation.Error)
 				So(ok, ShouldEqual, true)
 				So(len(ve.Errors), ShouldEqual, 1)
@@ -291,7 +299,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "")
 				ve, ok := vctx.Finalize().(*validation.Error)
 				So(ok, ShouldEqual, true)
 				So(len(ve.Errors), ShouldEqual, 1)
@@ -314,7 +322,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "")
 				ve, ok := vctx.Finalize().(*validation.Error)
 				So(ok, ShouldEqual, true)
 				So(len(ve.Errors), ShouldEqual, 1)
@@ -324,7 +332,7 @@ func TestValidateProject(t *testing.T) {
 
 		Convey("empty builders", func() {
 			content := `builders {}`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "")
 			ve, ok := vctx.Finalize().(*validation.Error)
 			So(ok, ShouldEqual, true)
 			So(len(ve.Errors), ShouldEqual, 3)
@@ -421,7 +429,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "")
 			ve, ok := vctx.Finalize().(*validation.Error)
 			So(ok, ShouldEqual, true)
 			So(len(ve.Errors), ShouldEqual, 10)
@@ -468,7 +476,7 @@ func TestValidateProject(t *testing.T) {
 					priority: 300
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "")
 			ve, ok := vctx.Finalize().(*validation.Error)
 			So(ok, ShouldEqual, true)
 			So(len(ve.Errors), ShouldEqual, 5)
@@ -535,7 +543,7 @@ func TestValidateProject(t *testing.T) {
 					properties: "{}"
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "")
 			ve, ok := vctx.Finalize().(*validation.Error)
 			So(ok, ShouldEqual, true)
 			So(len(ve.Errors), ShouldEqual, 11)
@@ -584,7 +592,7 @@ func TestValidateProject(t *testing.T) {
 					properties: "{}"
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "")
 			ve, ok := vctx.Finalize().(*validation.Error)
 			So(ok, ShouldEqual, true)
 			So(len(ve.Errors), ShouldEqual, 4)
@@ -619,14 +627,17 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "")
 			ve, ok := vctx.Finalize().(*validation.Error)
 			So(ok, ShouldEqual, true)
 			So(len(ve.Errors), ShouldEqual, 1)
 			So(ve.Errors[0].Error(), ShouldContainSubstring, "only one of swarming host or task backend is allowed")
 		})
 
-		Convey("backend and no swarming in builder", func() {
+		Convey("backend and no swarming in builder; valid config_json present", func() {
+			mockBackend.EXPECT().ValidateConfigs(gomock.Any(), gomock.Any()).Return(&pb.ValidateConfigsResponse{
+				ConfigErrors: []*pb.ValidateConfigsResponse_ErrorDetail{},
+			}, nil)
 			backendSettings := []*pb.BackendSetting{
 				{
 					Target:   "swarming://chromium-swarm",
@@ -645,10 +656,11 @@ func TestValidateProject(t *testing.T) {
 					properties: "{}"
 					backend: {
 						target: "swarming://chromium-swarm"
+						config_json: '{"a":"b","x":true}'
 					}
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "myluciproject")
 			_, ok := vctx.Finalize().(*validation.Error)
 			So(ok, ShouldEqual, false)
 		})
@@ -682,7 +694,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "")
 			_, ok := vctx.Finalize().(*validation.Error)
 			So(ok, ShouldEqual, false)
 		})
@@ -713,11 +725,85 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "")
 			ve, ok := vctx.Finalize().(*validation.Error)
 			So(ok, ShouldEqual, true)
 			So(len(ve.Errors), ShouldEqual, 1)
 			So(ve.Errors[0].Error(), ShouldContainSubstring, "either swarming host or task backend must be set")
+		})
+
+		Convey("backend and no swarming in builder; invalid config_json present", func() {
+			mockBackend.EXPECT().ValidateConfigs(gomock.Any(), gomock.Any()).Return(&pb.ValidateConfigsResponse{
+				ConfigErrors: []*pb.ValidateConfigsResponse_ErrorDetail{
+					{
+						Index: 1,
+						Error: "really bad error",
+					},
+					{
+						Index: 1,
+						Error: "the worst possible error",
+					},
+				},
+			}, nil)
+			backendSettings := []*pb.BackendSetting{
+				{
+					Target:   "swarming://chromium-swarm",
+					Hostname: "swarming_hostname",
+				},
+			}
+			settingsCfg := &pb.SettingsCfg{Backends: backendSettings}
+			_ = SetTestSettingsCfg(vctx.Context, settingsCfg)
+			content := `
+				builders {
+					name: "b1"
+					exe {
+						cipd_package: "infra/executable/bar"
+						cipd_version: "refs/heads/main"
+					}
+					properties: "{}"
+					backend: {
+						target: "swarming://chromium-swarm"
+						config_json: '{"a":"b","x":true}'
+					}
+				}
+			`
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "myluciproject")
+			ve, ok := vctx.Finalize().(*validation.Error)
+			So(ok, ShouldEqual, true)
+			So(len(ve.Errors), ShouldEqual, 2)
+			So(ve.Errors[0].Error(), ShouldContainSubstring, "error validating task backend ConfigJson at index 1: really bad error")
+			So(ve.Errors[1].Error(), ShouldContainSubstring, "error validating task backend ConfigJson at index 1: the worst possible error")
+		})
+
+		Convey("backend and no swarming in builder; error validating config_json", func() {
+			mockBackend.EXPECT().ValidateConfigs(gomock.Any(), gomock.Any()).Return(nil, &googleapi.Error{Code: 400})
+			backendSettings := []*pb.BackendSetting{
+				{
+					Target:   "swarming://chromium-swarm",
+					Hostname: "swarming_hostname",
+				},
+			}
+			settingsCfg := &pb.SettingsCfg{Backends: backendSettings}
+			_ = SetTestSettingsCfg(vctx.Context, settingsCfg)
+			content := `
+				builders {
+					name: "b1"
+					exe {
+						cipd_package: "infra/executable/bar"
+						cipd_version: "refs/heads/main"
+					}
+					properties: "{}"
+					backend: {
+						target: "swarming://chromium-swarm"
+						config_json: '{"a":"b","x":true}'
+					}
+				}
+			`
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "myluciproject")
+			ve, ok := vctx.Finalize().(*validation.Error)
+			So(ok, ShouldEqual, true)
+			So(len(ve.Errors), ShouldEqual, 1)
+			So(ve.Errors[0].Error(), ShouldContainSubstring, "error validating task backend ConfigJson: googleapi: got HTTP response code 400 ")
 		})
 
 		Convey("timeout", func() {
@@ -797,7 +883,7 @@ func TestValidateProject(t *testing.T) {
 					execution_timeout_secs: 172800
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "")
 			ve, ok := vctx.Finalize().(*validation.Error)
 			So(ok, ShouldEqual, true)
 			So(len(ve.Errors), ShouldEqual, 3)
