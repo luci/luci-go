@@ -1,5 +1,6 @@
 <!--
-The changelog is divided by version tags (e.g. `__RELEASE__: 1`) into sections.
+The release notes are divided by version tags (e.g. `__RELEASE__: 1`) into
+sections.
  * The top section without a tag contains unreleased/unannounced changes. This
    section will not be shown to the users.
  * The section under the first version tag contains the newest changes. Users
@@ -23,8 +24,8 @@ Instructions:
    3. Release to prod.
 
 Design decisions:
- * The version number is incremental so we won't repeatedly show the changelog
-   after rolling back a release.
+ * The version number is incremental so we won't repeatedly show the release
+   notes after rolling back a release.
  * We do not use the AppEngine version string (i.e. `VERSION`) because
    * there might be releases without user facing features, and
    * it's hard to annotate sections with AppEngine versions since we don't know
@@ -55,7 +56,7 @@ release tag numbers.
 <!-- __RELEASE__: 4 -->
 <br/><br/><br/>
 
-# Past changes
+# Past releases
 ## 2023-10-25
  LUCI is now [finding and bisecting test failures](/ui/p/chromium/bisection/test-analysis).
 <!-- __RELEASE__: 3 -->
@@ -73,7 +74,7 @@ You can see all of the bisections that LUCI is performing on the [Bisection Test
 <!-- __RELEASE__: 1 -->
 ## 2023-09-20
  * A brand new [project selector page](/ui/).
- * A changelog page.
+ * A release notes page.
 
 <!-- __RELEASE__: 0 -->
 ## 2023-09-12

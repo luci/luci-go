@@ -15,35 +15,35 @@
 import { cleanup, render, screen } from '@testing-library/react';
 
 import {
-  ChangelogProvider,
-  useHasNewChangelog,
-} from '@/app/components/changelog';
+  ReleaseNotesProvider,
+  useHasNewRelease,
+} from '@/app/components/release_notes';
 import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
 
-import { ChangelogPage } from './changelog_page';
+import { ReleaseNotesPage } from './release_notes_page';
 
-function ShowUnreadChangelogComponent() {
-  const hasNew = useHasNewChangelog();
-  return <>{hasNew ? 'has new changelog' : 'no new changelog'}</>;
+function ShowUnreadReleaseNotesComponent() {
+  const hasNew = useHasNewRelease();
+  return <>{hasNew ? 'has new release notes' : 'no new release notes'}</>;
 }
 
-describe('ChangelogPage', () => {
+describe('ReleaseNotesPage', () => {
   afterEach(() => {
     cleanup();
     localStorage.clear();
   });
 
-  it('marks changelog as read', () => {
+  it('marks release notes as read', () => {
     render(
       <PageMetaProvider>
-        <ChangelogProvider
-          initChangelog={{ latest: '', latestVersion: 10, past: '' }}
+        <ReleaseNotesProvider
+          initReleaseNotes={{ latest: '', latestVersion: 10, past: '' }}
         >
-          <ShowUnreadChangelogComponent />
-          <ChangelogPage />
-        </ChangelogProvider>
+          <ShowUnreadReleaseNotesComponent />
+          <ReleaseNotesPage />
+        </ReleaseNotesProvider>
       </PageMetaProvider>,
     );
-    expect(screen.queryByText('has new changelog')).not.toBeInTheDocument();
+    expect(screen.queryByText('has new release notes')).not.toBeInTheDocument();
   });
 });

@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export { renderChangelog } from './common';
-export * from './changelog_tooltip';
-export * from './changelog_provider';
+export { renderReleaseNotes } from './common';
+export * from './release_notes_tooltip';
+export * from './release_notes_provider';

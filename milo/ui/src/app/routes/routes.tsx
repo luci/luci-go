@@ -195,8 +195,8 @@ export const routes: RouteObject[] = [
     ],
   },
   {
-    path: 'doc/changelog',
-    lazy: () => import('@/app/pages/changelog_page'),
+    path: 'doc/release-notes',
+    lazy: () => import('@/app/pages/release_notes_page'),
   },
   {
     path: 'labs',

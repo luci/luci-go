@@ -17,10 +17,10 @@ import markdownIt from 'markdown-it';
 import { logging } from '@/common/tools/logging';
 import { defaultTarget } from '@/common/tools/markdown/plugins/default_target';
 
-export interface Changelog {
+export interface ReleaseNotes {
   /**
-   * The version of the latest changelog section.
-   * -1 if there's no latest changelog.
+   * The version of the latest release note section.
+   * -1 if there's no latest release note.
    */
   readonly latestVersion: number;
   readonly latest: string;
@@ -30,9 +30,9 @@ export interface Changelog {
 const RELEASE_SPLITTER_RE =
   /(?<=^|\r\n|\r|\n)(<!-- __RELEASE__: (\d)+ -->(?:$|\r\n|\r|\n))/;
 
-export function parseChangelog(changelog: string): Changelog {
+export function parseReleaseNotes(releaseNote: string): ReleaseNotes {
   const [unreleased, latestVersionTag, latestVersion, latestContent] =
-    changelog.split(RELEASE_SPLITTER_RE, 4);
+    releaseNote.split(RELEASE_SPLITTER_RE, 4);
 
   if (!latestVersionTag) {
     return {
@@ -46,7 +46,7 @@ export function parseChangelog(changelog: string): Changelog {
   return {
     latestVersion: Number(latestVersion),
     latest,
-    past: changelog.slice(unreleased.length + latest.length),
+    past: releaseNote.slice(unreleased.length + latest.length),
   };
 }
 
@@ -55,11 +55,11 @@ const md = markdownIt({ html: true, linkify: true }).use(
   '_blank',
 );
 
-export function renderChangelog(changelog: string) {
-  return md.render(changelog);
+export function renderReleaseNotes(releaseNotes: string) {
+  return md.render(releaseNotes);
 }
 
-const LAST_READ_CHANGELOG_VERSION_CACHE_KEY = 'last-read-changelog-version';
+const LAST_READ_RELEASE_VERSION_CACHE_KEY = 'last-read-release-version';
 
 /**
  * Get the last read version from local storage. If it's not set or the value
@@ -68,7 +68,7 @@ const LAST_READ_CHANGELOG_VERSION_CACHE_KEY = 'last-read-changelog-version';
 export function getLastReadVersion() {
   try {
     const ver = JSON.parse(
-      localStorage.getItem(LAST_READ_CHANGELOG_VERSION_CACHE_KEY) || '-1',
+      localStorage.getItem(LAST_READ_RELEASE_VERSION_CACHE_KEY) || '-1',
     );
     return typeof ver === 'number' ? ver : -1;
   } catch (e) {
@@ -93,7 +93,7 @@ export function bumpLastReadVersion(newVer: number) {
   }
 
   localStorage.setItem(
-    LAST_READ_CHANGELOG_VERSION_CACHE_KEY,
+    LAST_READ_RELEASE_VERSION_CACHE_KEY,
     JSON.stringify(newVer),
   );
 }

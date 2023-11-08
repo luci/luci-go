@@ -24,8 +24,7 @@ import { observer } from 'mobx-react-lite';
 import { useState, MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
 
-import { ChangelogTooltip } from '@root/src/app/components/changelog';
-
+import { ReleaseNotesTooltip } from '@/app/components/release_notes';
 import { useStore } from '@/common/store';
 
 export const AppMenu = observer(() => {
@@ -41,7 +40,7 @@ export const AppMenu = observer(() => {
 
   return (
     <>
-      <ChangelogTooltip>
+      <ReleaseNotesTooltip>
         <IconButton
           onClick={handleOpenMenu}
           color="inherit"
@@ -51,7 +50,7 @@ export const AppMenu = observer(() => {
         >
           <MoreVertIcon />
         </IconButton>
-      </ChangelogTooltip>
+      </ReleaseNotesTooltip>
       <Menu
         sx={{ mt: 4 }}
         anchorEl={menuAnchorEl}
@@ -69,8 +68,8 @@ export const AppMenu = observer(() => {
       >
         <MenuItem
           component={Link}
-          to="/ui/doc/changelog"
-          title="View LUCI UI changelog"
+          to="/ui/doc/release-notes"
+          title="View LUCI UI Release Notes"
           onClick={handleCloseMenu}
         >
           <ListItemIcon>

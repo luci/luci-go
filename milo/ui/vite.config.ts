@@ -135,7 +135,7 @@ export default defineConfig(({ mode }) => {
       // anyway. Large chunks won't hurt much.
       chunkSizeWarningLimit: Math.pow(2, 13),
     },
-    assetsInclude: ['CHANGELOG.md'],
+    assetsInclude: ['RELEASE_NOTES.md'],
     plugins: [
       replace({
         preventAssignment: true,

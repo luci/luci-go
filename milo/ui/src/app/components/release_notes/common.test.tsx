@@ -15,7 +15,7 @@
 import {
   bumpLastReadVersion,
   getLastReadVersion,
-  parseChangelog,
+  parseReleaseNotes,
 } from './common';
 
 const unreleased = `\
@@ -40,57 +40,57 @@ const past = `\
  * update 0
 `;
 
-const changelog = `\
+const releaseNotes = `\
 ${unreleased}\
 ${latest}\
 ${past}\
 `;
 
-const noUnreleasedChangelog = `\
+const noUnreleasedNotes = `\
 ${latest}\
 ${past}\
 `;
 
-const noPastChangelog = `\
+const noPastNotes = `\
 ${unreleased}\
 ${latest}\
 `;
 
-const onlyUnreleasedChangelog = `\
+const onlyUnreleasedNotes = `\
 ${unreleased}\
 `;
 
-describe('parseChangelog', () => {
-  it('can parse changelog', () => {
-    const log = parseChangelog(changelog);
+describe('parseReleaseNotes', () => {
+  it('can parse release notes', () => {
+    const log = parseReleaseNotes(releaseNotes);
     expect(log.latestVersion).toEqual(2);
     expect(log.latest).toEqual(latest);
     expect(log.past).toEqual(past);
   });
 
-  it('can parse changelog without unreleased changes', () => {
-    const log = parseChangelog(noUnreleasedChangelog);
+  it('can parse release notes without unreleased notes', () => {
+    const log = parseReleaseNotes(noUnreleasedNotes);
     expect(log.latestVersion).toEqual(2);
     expect(log.latest).toEqual(latest);
     expect(log.past).toEqual(past);
   });
 
-  it('can parse changelog without past changes', () => {
-    const log = parseChangelog(noPastChangelog);
+  it('can parse release notes without past notes', () => {
+    const log = parseReleaseNotes(noPastNotes);
     expect(log.latestVersion).toEqual(2);
     expect(log.latest).toEqual(latest);
     expect(log.past).toEqual('');
   });
 
-  it('can parse changelog with only unreleased changes', () => {
-    const log = parseChangelog(onlyUnreleasedChangelog);
+  it('can parse release notes with only unreleased notes', () => {
+    const log = parseReleaseNotes(onlyUnreleasedNotes);
     expect(log.latestVersion).toEqual(-1);
     expect(log.latest).toEqual('');
     expect(log.past).toEqual('');
   });
 
-  it('can parse empty changelog', () => {
-    const log = parseChangelog('');
+  it('can parse empty release notes', () => {
+    const log = parseReleaseNotes('');
     expect(log.latestVersion).toEqual(-1);
     expect(log.latest).toEqual('');
     expect(log.past).toEqual('');

@@ -267,7 +267,7 @@ export enum UiPage {
   CQStatus = 'cq-status',
   Goldeneye = 'goldeneye',
   ChromiumDash = 'chromium-dash',
-  ReleaseNotes = 'release notes',
+  ReleaseNotes = 'release-notes',
   TestVerdict = 'test-verdict',
 }
 

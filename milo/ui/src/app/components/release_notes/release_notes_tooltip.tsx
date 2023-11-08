@@ -26,12 +26,12 @@ import { useClickAway, useTimeout } from 'react-use';
 
 import { SanitizedHtml } from '@/common/components/sanitized_html';
 
+import { renderReleaseNotes } from './common';
 import {
-  useChangelog,
-  useHasNewChangelog,
-  useMarkChangelogAsRead,
-} from './changelog_provider';
-import { renderChangelog } from './common';
+  useReleaseNotes,
+  useHasNewRelease,
+  useMarkReleaseNotesRead,
+} from './release_notes_provider';
 
 const TooltipDisplay = styled(
   forwardRef(function TooltipDisplay(
@@ -55,21 +55,21 @@ const TooltipDisplay = styled(
   },
 }));
 
-export interface ChangelogTooltipProps {
+export interface ReleaseNotesTooltipProps {
   readonly children: JSX.Element;
 }
 
-export function ChangelogTooltip({ children }: ChangelogTooltipProps) {
-  const changelog = useChangelog();
-  const hasNewChanges = useHasNewChangelog();
-  const markAsRead = useMarkChangelogAsRead();
-  const changelogHtml = useMemo(() => {
-    const latestWithoutDates = changelog.latest.replace(
+export function ReleaseNotesTooltip({ children }: ReleaseNotesTooltipProps) {
+  const releaseNotes = useReleaseNotes();
+  const hasNewRelease = useHasNewRelease();
+  const markAsRead = useMarkReleaseNotesRead();
+  const releaseNotesHtml = useMemo(() => {
+    const latestWithoutDates = releaseNotes.latest.replace(
       /(?<=^|\n)## \d{4}-\d{2}-\d{2}\n/g,
       '\n',
     );
-    return renderChangelog(latestWithoutDates);
-  }, [changelog.latest]);
+    return renderReleaseNotes(latestWithoutDates);
+  }, [releaseNotes.latest]);
 
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [stayedLongEnough] = useTimeout(5000);
@@ -85,19 +85,19 @@ export function ChangelogTooltip({ children }: ChangelogTooltipProps) {
         <div ref={tooltipRef}>
           <Typography variant="h6">{"What's new?"}</Typography>
           <SanitizedHtml
-            html={changelogHtml}
+            html={releaseNotesHtml}
             sx={{ '& ul': { margin: '5px' } }}
           />
           <div css={{ display: 'grid', gridTemplateColumns: '1fr auto' }}>
             <div css={{ paddingTop: '9px' }}>
-              <Link to="/ui/doc/changelog">Full changelog</Link>
+              <Link to="/ui/doc/release-notes">Full release notes</Link>
             </div>
             <Button onClick={() => markAsRead()}>Dismiss</Button>
           </div>
         </div>
       }
       arrow
-      open={hasNewChanges}
+      open={hasNewRelease}
     >
       {/* Elements under a MUI tooltip shall not have its own tooltip/title. But
        ** we use it as a notification box rather than a regular tooltip. Add an

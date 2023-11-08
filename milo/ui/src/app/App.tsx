@@ -26,9 +26,9 @@ import { useEffect, useRef, useState } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { Workbox } from 'workbox-window';
 
-import changelog from '@root/CHANGELOG.md?raw';
+import releaseNotes from '@root/RELEASE_NOTES.md?raw';
 
-import { ChangelogProvider } from '@/app/components/changelog';
+import { ReleaseNotesProvider } from '@/app/components/release_notes';
 import { routes } from '@/app/routes';
 import { obtainAuthState } from '@/common/api/auth_state';
 import { AuthStateInitializer } from '@/common/components/auth_state_provider';
@@ -48,7 +48,7 @@ import { createStaticTrustedURL } from '@/generic_libs/tools/utils';
 import '@/common/styles/common_style.css';
 import '@/common/styles/color_classes.css';
 import '@/common/components/tooltip';
-import { parseChangelog } from './components/changelog/common';
+import { parseReleaseNotes } from './components/release_notes/common';
 
 const isNonTransientError = (error: unknown) =>
   error instanceof GrpcError && NON_TRANSIENT_ERROR_CODES.includes(error.code);
@@ -201,10 +201,12 @@ export function App({ initOpts }: AppProps) {
           <StoreProvider value={store}>
             <LitEnvProvider>
               <PageMetaProvider>
-                <ChangelogProvider initChangelog={parseChangelog(changelog)}>
+                <ReleaseNotesProvider
+                  initReleaseNotes={parseReleaseNotes(releaseNotes)}
+                >
                   <milo-tooltip />
                   <RouterProvider router={router} />
-                </ChangelogProvider>
+                </ReleaseNotesProvider>
               </PageMetaProvider>
             </LitEnvProvider>
           </StoreProvider>

@@ -15,13 +15,16 @@
 import { Typography, styled } from '@mui/material';
 import { useEffect, useMemo } from 'react';
 
-import { renderChangelog, useChangelog } from '@/app/components/changelog';
-import { useMarkChangelogAsRead } from '@/app/components/changelog';
+import {
+  renderReleaseNotes,
+  useReleaseNotes,
+} from '@/app/components/release_notes';
+import { useMarkReleaseNotesRead } from '@/app/components/release_notes';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { SanitizedHtml } from '@/common/components/sanitized_html';
 
-const ChangelogContainer = styled(SanitizedHtml)({
+const ReleaseNotesContainer = styled(SanitizedHtml)({
   '& *': {
     fontSize: '20px',
   },
@@ -31,14 +34,17 @@ const ChangelogContainer = styled(SanitizedHtml)({
   },
 });
 
-export function ChangelogPage() {
-  const changelog = useChangelog();
-  const markChangelogAsRead = useMarkChangelogAsRead();
-  useEffect(() => markChangelogAsRead(), [markChangelogAsRead]);
+export function ReleaseNotesPage() {
+  const releaseNotes = useReleaseNotes();
+  const markReleaseNotesAsRead = useMarkReleaseNotesRead();
+  useEffect(() => markReleaseNotesAsRead(), [markReleaseNotesAsRead]);
 
   const [latestHtml, pastHtml] = useMemo(
-    () => [renderChangelog(changelog.latest), renderChangelog(changelog.past)],
-    [changelog],
+    () => [
+      renderReleaseNotes(releaseNotes.latest),
+      renderReleaseNotes(releaseNotes.past),
+    ],
+    [releaseNotes],
   );
 
   return (
@@ -53,17 +59,18 @@ export function ChangelogPage() {
         }}
       >
         <Typography variant="h4">{"What's new?"}</Typography>
-        <ChangelogContainer html={latestHtml} />
-        {/* Temporarily move the "Past changes" heading to CHANGELOG.md itself
-         ** so we can create dummy release tag to divide summary and details.
+        <ReleaseNotesContainer html={latestHtml} />
+        {/* Temporarily move the "Past releases" heading to RELEASE_NOTES.md
+         ** itself so we can create dummy release tag to divide summary and
+         ** details.
          **
-         ** TODO: move the "Past changes" heading back once we have a formal
+         ** TODO: move the "Past releases" heading back once we have a formal
          ** mechanism for annotating highlights.
          **/}
         {/* <Typography variant="h4" sx={{ mt: 15 }}>
-          {'Past changes'}
+          {'Past releases'}
         </Typography> */}
-        <ChangelogContainer html={pastHtml} />
+        <ReleaseNotesContainer html={pastHtml} />
       </div>
     </>
   );
@@ -71,7 +78,7 @@ export function ChangelogPage() {
 
 export const element = (
   // See the documentation for `<LoginPage />` for why we handle error this way.
-  <RecoverableErrorBoundary key="changelog">
-    <ChangelogPage />
+  <RecoverableErrorBoundary key="release-notes">
+    <ReleaseNotesPage />
   </RecoverableErrorBoundary>
 );

@@ -22,10 +22,10 @@ import {
 
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { ChangelogProvider } from './changelog_provider';
-import { ChangelogTooltip } from './changelog_tooltip';
+import { ReleaseNotesProvider } from './release_notes_provider';
+import { ReleaseNotesTooltip } from './release_notes_tooltip';
 
-describe('ChangelogTooltip', () => {
+describe('ReleaseNotesTooltip', () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -36,80 +36,80 @@ describe('ChangelogTooltip', () => {
     cleanup();
   });
 
-  it('only renders the latest changelog', () => {
+  it('only renders the latest release notes', () => {
     render(
       <FakeContextProvider>
-        <ChangelogProvider
-          initChangelog={{
-            latest: 'new changelog',
+        <ReleaseNotesProvider
+          initReleaseNotes={{
+            latest: 'new release notes',
             latestVersion: 10,
-            past: 'old changelog',
+            past: 'old release notes',
           }}
         >
-          <ChangelogTooltip>
+          <ReleaseNotesTooltip>
             <div></div>
-          </ChangelogTooltip>
-        </ChangelogProvider>
+          </ReleaseNotesTooltip>
+        </ReleaseNotesProvider>
       </FakeContextProvider>,
     );
-    expect(screen.getByText('new changelog')).toBeInTheDocument();
-    expect(screen.queryByText('old changelog')).not.toBeInTheDocument();
+    expect(screen.getByText('new release notes')).toBeInTheDocument();
+    expect(screen.queryByText('old release notes')).not.toBeInTheDocument();
   });
 
-  it('can dismiss changelog', async () => {
+  it('can dismiss release notes', async () => {
     render(
       <FakeContextProvider>
-        <ChangelogProvider
-          initChangelog={{
-            latest: 'new changelog',
+        <ReleaseNotesProvider
+          initReleaseNotes={{
+            latest: 'new release notes',
             latestVersion: 10,
-            past: 'old changelog',
+            past: 'old release notes',
           }}
         >
-          <ChangelogTooltip>
+          <ReleaseNotesTooltip>
             <div></div>
-          </ChangelogTooltip>
-        </ChangelogProvider>
+          </ReleaseNotesTooltip>
+        </ReleaseNotesProvider>
       </FakeContextProvider>,
     );
-    expect(screen.getByText('new changelog')).toBeInTheDocument();
+    expect(screen.getByText('new release notes')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Dismiss'));
     await act(() => jest.advanceTimersByTimeAsync(1000));
     await act(() => jest.advanceTimersByTimeAsync(1000));
-    expect(screen.queryByText('new changelog')).not.toBeInTheDocument();
+    expect(screen.queryByText('new release notes')).not.toBeInTheDocument();
   });
 
-  it('can dismiss changelog by clicking away', async () => {
+  it('can dismiss release notes by clicking away', async () => {
     render(
       <FakeContextProvider>
-        <ChangelogProvider
-          initChangelog={{
-            latest: 'new changelog',
+        <ReleaseNotesProvider
+          initReleaseNotes={{
+            latest: 'new release notes',
             latestVersion: 10,
-            past: 'old changelog',
+            past: 'old release notes',
           }}
         >
-          <ChangelogTooltip>
+          <ReleaseNotesTooltip>
             <div></div>
-          </ChangelogTooltip>
-        </ChangelogProvider>
+          </ReleaseNotesTooltip>
+        </ReleaseNotesProvider>
       </FakeContextProvider>,
     );
-    expect(screen.getByText('new changelog')).toBeInTheDocument();
+    expect(screen.getByText('new release notes')).toBeInTheDocument();
 
     // Persist the tooltip for a while initially.
     act(() => fireEvent.mouseDown(document.body));
     await act(() => jest.advanceTimersByTimeAsync(1000));
-    expect(screen.queryByText('new changelog')).toBeInTheDocument();
+    expect(screen.queryByText('new release notes')).toBeInTheDocument();
 
     // Still persist after 5s when there are no more clicks.
     await act(() => jest.advanceTimersByTimeAsync(5000));
-    expect(screen.queryByText('new changelog')).toBeInTheDocument();
+    expect(screen.queryByText('new release notes')).toBeInTheDocument();
 
     // Dismiss when the user clicks away after 5s.
     act(() => fireEvent.mouseDown(document.body));
     await act(() => jest.advanceTimersByTimeAsync(1000));
     await act(() => jest.advanceTimersByTimeAsync(1000));
-    expect(screen.queryByText('new changelog')).not.toBeInTheDocument();
+    expect(screen.queryByText('new release notes')).not.toBeInTheDocument();
   });
 });
