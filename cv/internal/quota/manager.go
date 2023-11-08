@@ -34,7 +34,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/run"
-	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
 
 var qinit sync.Once
@@ -51,7 +50,7 @@ const (
 	defaultPolicy = "default"
 
 	// Default lifetime of a quota account.
-	accountLifeTimeSeconds = 60 * 60 * 24 * 3 // 3 days
+	accountLifeTime = 3 * 24 * time.Hour // 3 days
 )
 
 // Manager manages the quota accounts for CV users.
@@ -66,23 +65,23 @@ type SrvQuota interface {
 }
 
 // DebitRunQuota debits the run quota from a given user's account.
-func (qm *Manager) DebitRunQuota(ctx context.Context, rs *state.RunState) (*quotapb.OpResult, error) {
-	return qm.runQuotaOp(ctx, rs, requestID(rs.Run.ID, "debit"), -1)
+func (qm *Manager) DebitRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, error) {
+	return qm.runQuotaOp(ctx, r, requestID(r.ID, "debit"), -1)
 }
 
 // CreditRunQuota credits the run quota into a given user's account.
-func (qm *Manager) CreditRunQuota(ctx context.Context, rs *state.RunState) (*quotapb.OpResult, error) {
+func (qm *Manager) CreditRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, error) {
 	// The debit op is rerun before crediting back the quota. In the event where
 	// redis is wiped out and the debit op is lost, this ensures that it is
 	// reapplied to avoid crediting additional quota. server/quota uses
 	// requestId for deduping requests so if debit already exists, it would be a
 	// no-op. Given requestId is used for deduping, debit and credit are kept
 	// separate and are not combined into a single ApplyOps call.
-	if res, err := qm.runQuotaOp(ctx, rs, requestID(rs.Run.ID, "debit"), -1); err != nil {
+	if res, err := qm.runQuotaOp(ctx, r, requestID(r.ID, "debit"), -1); err != nil {
 		return res, err
 	}
 
-	return qm.runQuotaOp(ctx, rs, requestID(rs.Run.ID, "credit"), 1)
+	return qm.runQuotaOp(ctx, r, requestID(r.ID, "credit"), 1)
 }
 
 // DebitTryjobQuota debits the tryjob quota from a given user's account.
@@ -101,8 +100,8 @@ func (qm *Manager) RunQuotaAccountID(r *run.Run) *quotapb.AccountID {
 }
 
 // runQuotaOp updates the run quota for the given run state by the given delta.
-func (qm *Manager) runQuotaOp(ctx context.Context, rs *state.RunState, requestID string, delta int64) (*quotapb.OpResult, error) {
-	policyID, err := qm.findRunPolicy(ctx, rs)
+func (qm *Manager) runQuotaOp(ctx context.Context, r *run.Run, requestID string, delta int64) (*quotapb.OpResult, error) {
+	policyID, err := qm.findRunPolicy(ctx, r)
 
 	// policyID == nil when no policy limit is configured for this user.
 	if err != nil || policyID == nil {
@@ -115,7 +114,7 @@ func (qm *Manager) runQuotaOp(ctx context.Context, rs *state.RunState, requestID
 	// a limit of 10, Foo's balance should be updated to 8.
 	quotaOp := []*quotapb.Op{
 		{
-			AccountId:  qm.RunQuotaAccountID(&rs.Run),
+			AccountId:  qm.RunQuotaAccountID(r),
 			PolicyId:   policyID,
 			RelativeTo: quotapb.Op_CURRENT_BALANCE,
 			Delta:      delta,
@@ -125,9 +124,9 @@ func (qm *Manager) runQuotaOp(ctx context.Context, rs *state.RunState, requestID
 	// When server/quota does not have the policyId already, rewrite the policy and retry the op.
 	var opResponse *quotapb.ApplyOpsResponse
 	err = retry.Retry(clock.Tag(ctx, common.LaunchRetryClockTag), makeRetryFactory(), func() (err error) {
-		opResponse, err = srvquota.ApplyOps(ctx, requestID, durationpb.New(time.Second*accountLifeTimeSeconds), quotaOp)
+		opResponse, err = srvquota.ApplyOps(ctx, requestID, durationpb.New(accountLifeTime), quotaOp)
 		if errors.Unwrap(err) == srvquota.ErrQuotaApply && opResponse.Results[0].Status == quotapb.OpResult_ERR_UNKNOWN_POLICY {
-			if _, err := qm.WritePolicy(ctx, rs.Run.ID.LUCIProject()); err != nil {
+			if _, err := qm.WritePolicy(ctx, r.ID.LUCIProject()); err != nil {
 				return err
 			}
 
@@ -157,15 +156,15 @@ func makeRetryFactory() retry.Factory {
 	})
 }
 
-// requestID contructs the idempotent requestID for the quota operation.
+// requestID constructs the idempotent requestID for the quota operation.
 func requestID(runID common.RunID, op string) string {
 	return string(runID) + "/" + op
 }
 
 // findRunPolicy returns the PolicyID for the given run state.
-func (qm *Manager) findRunPolicy(ctx context.Context, rs *state.RunState) (*quotapb.PolicyID, error) {
-	project := rs.Run.ID.LUCIProject()
-	cfgGroup, err := prjcfg.GetConfigGroup(ctx, project, rs.Run.ConfigGroupID)
+func (qm *Manager) findRunPolicy(ctx context.Context, r *run.Run) (*quotapb.PolicyID, error) {
+	project := r.ID.LUCIProject()
+	cfgGroup, err := prjcfg.GetConfigGroup(ctx, project, r.ConfigGroupID)
 	if err != nil {
 		return nil, err
 	}
@@ -175,8 +174,8 @@ func (qm *Manager) findRunPolicy(ctx context.Context, rs *state.RunState) (*quot
 		return nil, fmt.Errorf("cannot find cfgGroup content")
 	}
 
-	policyConfigID := policyConfigID(project, rs.Run.ConfigGroupID.Hash())
-	user := rs.Run.CreatedBy
+	policyConfigID := policyConfigID(project, r.ConfigGroupID.Hash())
+	user := r.CreatedBy
 	for _, userLimit := range config.GetUserLimits() {
 		runLimit := userLimit.GetRun()
 		if runLimit == nil {
@@ -252,7 +251,7 @@ func runPolicyEntry(polkey *quotapb.PolicyKey, limit uint64) *quotapb.PolicyConf
 			Default: limit,
 			Limit:   limit,
 			Lifetime: &durationpb.Duration{
-				Seconds: accountLifeTimeSeconds,
+				Seconds: int64(accountLifeTime.Seconds()),
 			},
 		},
 	}

@@ -130,7 +130,7 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 	// Run quota should be debited from the creator before the run is started.
 	// When run quota isn't available, the run is left in the pending state.
 	pendingMsg := fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.", rs.Run.CreatedBy.Email())
-	switch quotaOp, err := impl.QM.DebitRunQuota(ctx, rs); {
+	switch quotaOp, err := impl.QM.DebitRunQuota(ctx, &rs.Run); {
 	case err == nil && quotaOp != nil:
 		logging.Debugf(ctx, "Run quota debited from %s; new balance: %d", rs.Run.CreatedBy.Email(), quotaOp.GetNewBalance())
 	case err == quota.ErrQuotaApply && quotaOp.GetStatus() == quotapb.OpResult_ERR_UNDERFLOW:

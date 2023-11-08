@@ -139,7 +139,7 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 		// redis is wiped out and the debit op is lost, this ensures that it is
 		// restored. debit op is idempotent and hence would be deduped if the
 		// op has already been performed.
-		switch quotaOp, err := impl.QM.DebitRunQuota(ctx, rs); {
+		switch quotaOp, err := impl.QM.DebitRunQuota(ctx, &rs.Run); {
 		// In the case of error, it is probable that redis was wiped out and
 		// this run cannot debit its quota again. In such cases, given the run
 		// is already in process, we should softly try to debit back the quota

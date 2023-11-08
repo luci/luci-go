@@ -79,7 +79,7 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status,
 	return eventbox.Chain(
 		func(ctx context.Context) error {
 			// Credit back run quota when the run ends.
-			switch quotaOp, err := impl.QM.CreditRunQuota(ctx, rs); {
+			switch quotaOp, err := impl.QM.CreditRunQuota(ctx, &rs.Run); {
 			case err == nil && quotaOp != nil:
 				logging.Debugf(ctx, "Run quota credited back to %s; new balance: %d", rs.Run.CreatedBy.Email(), quotaOp.GetNewBalance())
 			case err == quota.ErrQuotaApply:

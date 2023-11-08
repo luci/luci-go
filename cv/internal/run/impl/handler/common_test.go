@@ -559,12 +559,12 @@ type quotaManagerMock struct {
 	creditRunQuotaCalls int
 }
 
-func (qm *quotaManagerMock) DebitRunQuota(ctx context.Context, rs *state.RunState) (*quotapb.OpResult, error) {
+func (qm *quotaManagerMock) DebitRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, error) {
 	qm.debitRunQuotaCalls++
 	return qm.runQuotaOp, qm.runQuotaErr
 }
 
-func (qm *quotaManagerMock) CreditRunQuota(ctx context.Context, rs *state.RunState) (*quotapb.OpResult, error) {
+func (qm *quotaManagerMock) CreditRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, error) {
 	qm.creditRunQuotaCalls++
 	return qm.runQuotaOp, qm.runQuotaErr
 }

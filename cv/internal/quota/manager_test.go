@@ -21,23 +21,25 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gomodule/redigo/redis"
-	. "github.com/smartystreets/goconvey/convey"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
-	. "go.chromium.org/luci/common/testing/assertions"
-	cfgpb "go.chromium.org/luci/cv/api/config/v2"
-	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/configs/prjcfg"
-	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
-	"go.chromium.org/luci/cv/internal/cvtesting"
-	"go.chromium.org/luci/cv/internal/run"
-	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/quota"
 	"go.chromium.org/luci/server/quota/quotapb"
 	_ "go.chromium.org/luci/server/quota/quotatestmonkeypatch"
 	"go.chromium.org/luci/server/redisconn"
+
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
+	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/run"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestManager(t *testing.T) {
@@ -161,15 +163,13 @@ func TestManager(t *testing.T) {
 			)
 			prjcfgtest.Update(ctx, lProject, cfg)
 
-			rs := &state.RunState{
-				Run: run.Run{
-					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
-					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-					CreatedBy:     makeIdentity(tEmail),
-				},
+			r := &run.Run{
+				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				CreatedBy:     makeIdentity(tEmail),
 			}
 
-			res, err := qm.findRunPolicy(ctx, rs)
+			res, err := qm.findRunPolicy(ctx, r)
 			So(err, ShouldBeNil)
 			So(res.Key, ShouldResembleProto, runPolicyKey("infra", "googlers-limit"))
 		})
@@ -183,15 +183,12 @@ func TestManager(t *testing.T) {
 			)
 			prjcfgtest.Update(ctx, lProject, cfg)
 
-			rs := &state.RunState{
-				Run: run.Run{
-					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
-					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-					CreatedBy:     makeIdentity(tEmail),
-				},
+			r := &run.Run{
+				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				CreatedBy:     makeIdentity(tEmail),
 			}
-
-			res, err := qm.findRunPolicy(ctx, rs)
+			res, err := qm.findRunPolicy(ctx, r)
 			So(err, ShouldBeNil)
 			So(res.Key, ShouldResembleProto, runPolicyKey("infra", "example-limit"))
 		})
@@ -205,15 +202,13 @@ func TestManager(t *testing.T) {
 			cg.UserLimitDefault = genUserLimit("", 5, nil)
 			prjcfgtest.Update(ctx, lProject, cfg)
 
-			rs := &state.RunState{
-				Run: run.Run{
-					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
-					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-					CreatedBy:     makeIdentity(tEmail),
-				},
+			r := &run.Run{
+				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				CreatedBy:     makeIdentity(tEmail),
 			}
 
-			res, err := qm.findRunPolicy(ctx, rs)
+			res, err := qm.findRunPolicy(ctx, r)
 			So(err, ShouldBeNil)
 			So(res.Key, ShouldResembleProto, runPolicyKey("infra", "default"))
 		})
@@ -226,15 +221,13 @@ func TestManager(t *testing.T) {
 			)
 			prjcfgtest.Update(ctx, lProject, cfg)
 
-			rs := &state.RunState{
-				Run: run.Run{
-					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
-					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-					CreatedBy:     makeIdentity(tEmail),
-				},
+			r := &run.Run{
+				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				CreatedBy:     makeIdentity(tEmail),
 			}
 
-			res, err := qm.findRunPolicy(ctx, rs)
+			res, err := qm.findRunPolicy(ctx, r)
 			So(err, ShouldBeNil)
 			So(res, ShouldBeNil)
 		})
@@ -247,15 +240,13 @@ func TestManager(t *testing.T) {
 			)
 			prjcfgtest.Update(ctx, lProject, cfg)
 
-			rs := &state.RunState{
-				Run: run.Run{
-					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
-					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-					CreatedBy:     makeIdentity(tEmail),
-				},
+			r := &run.Run{
+				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				CreatedBy:     makeIdentity(tEmail),
 			}
 
-			res, err := qm.DebitRunQuota(ctx, rs)
+			res, err := qm.DebitRunQuota(ctx, r)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
 				NewBalance:    4,
@@ -271,15 +262,13 @@ func TestManager(t *testing.T) {
 			)
 			prjcfgtest.Update(ctx, lProject, cfg)
 
-			rs := &state.RunState{
-				Run: run.Run{
-					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
-					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-					CreatedBy:     makeIdentity(tEmail),
-				},
+			r := &run.Run{
+				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				CreatedBy:     makeIdentity(tEmail),
 			}
 
-			res, err := qm.CreditRunQuota(ctx, rs)
+			res, err := qm.CreditRunQuota(ctx, r)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
 				NewBalance:      5,
@@ -295,22 +284,20 @@ func TestManager(t *testing.T) {
 			)
 			prjcfgtest.Update(ctx, lProject, cfg)
 
-			rs := &state.RunState{
-				Run: run.Run{
-					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
-					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-					CreatedBy:     makeIdentity(tEmail),
-				},
+			r := &run.Run{
+				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				CreatedBy:     makeIdentity(tEmail),
 			}
 
-			res, err := qm.runQuotaOp(ctx, rs, "foo1", -1)
+			res, err := qm.runQuotaOp(ctx, r, "foo1", -1)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
 			})
 
-			res, err = qm.runQuotaOp(ctx, rs, "foo2", -2)
+			res, err = qm.runQuotaOp(ctx, r, "foo2", -2)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
 				NewBalance:      2,
@@ -325,16 +312,14 @@ func TestManager(t *testing.T) {
 			)
 			prjcfgtest.Update(ctx, lProject, cfg)
 
-			rs := &state.RunState{
-				Run: run.Run{
-					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
-					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-					CreatedBy:     makeIdentity(tEmail),
-				},
+			r := &run.Run{
+				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				CreatedBy:     makeIdentity(tEmail),
 			}
 
 			Convey("quota underflow", func() {
-				res, err := qm.runQuotaOp(ctx, rs, "", -2)
+				res, err := qm.runQuotaOp(ctx, r, "", -2)
 				So(err, ShouldEqual, quota.ErrQuotaApply)
 				So(res, ShouldResembleProto, &quotapb.OpResult{
 					AccountStatus: quotapb.OpResult_CREATED,
@@ -344,7 +329,7 @@ func TestManager(t *testing.T) {
 
 			Convey("quota overflow", func() {
 				// overflow doesn't err but gets capped.
-				res, err := qm.runQuotaOp(ctx, rs, "", 10)
+				res, err := qm.runQuotaOp(ctx, r, "", 10)
 				So(err, ShouldBeNil)
 				So(res, ShouldResembleProto, &quotapb.OpResult{
 					AccountStatus: quotapb.OpResult_CREATED,
@@ -361,15 +346,13 @@ func TestManager(t *testing.T) {
 			)
 			prjcfgtest.Update(ctx, lProject, cfg)
 
-			rs := &state.RunState{
-				Run: run.Run{
-					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
-					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-					CreatedBy:     makeIdentity(tEmail),
-				},
+			r := &run.Run{
+				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				CreatedBy:     makeIdentity(tEmail),
 			}
 
-			res, err := qm.runQuotaOp(ctx, rs, "", -1)
+			res, err := qm.runQuotaOp(ctx, r, "", -1)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
 				NewBalance:    4,
@@ -383,7 +366,7 @@ func TestManager(t *testing.T) {
 					IdentityGroups: []string{"partners"},
 				})
 
-				res, err = qm.runQuotaOp(ctx, rs, "", -2)
+				res, err = qm.runQuotaOp(ctx, r, "", -2)
 				So(err, ShouldBeNil)
 				So(res, ShouldResembleProto, &quotapb.OpResult{
 					NewBalance:      2,
@@ -399,7 +382,7 @@ func TestManager(t *testing.T) {
 					IdentityGroups: []string{"chromies"},
 				})
 
-				res, err = qm.runQuotaOp(ctx, rs, "", 2)
+				res, err = qm.runQuotaOp(ctx, r, "", 2)
 				So(err, ShouldBeNil)
 				So(res, ShouldResembleProto, &quotapb.OpResult{
 					NewBalance:      6,
@@ -418,29 +401,27 @@ func TestManager(t *testing.T) {
 			)
 			prjcfgtest.Update(ctx, lProject, cfg)
 
-			rs := &state.RunState{
-				Run: run.Run{
-					ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
-					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-					CreatedBy:     makeIdentity(tEmail),
-				},
+			r := &run.Run{
+				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				CreatedBy:     makeIdentity(tEmail),
 			}
 
-			res, err := qm.runQuotaOp(ctx, rs, "foo", -1)
+			res, err := qm.runQuotaOp(ctx, r, "foo", -1)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
 			})
 
-			res, err = qm.runQuotaOp(ctx, rs, "foo", -1)
+			res, err = qm.runQuotaOp(ctx, r, "foo", -1)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
 			})
 
-			res, err = qm.runQuotaOp(ctx, rs, "foo2", -2)
+			res, err = qm.runQuotaOp(ctx, r, "foo2", -2)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
 				NewBalance:      2,
@@ -448,7 +429,7 @@ func TestManager(t *testing.T) {
 				AccountStatus:   quotapb.OpResult_ALREADY_EXISTS,
 			})
 
-			res, err = qm.runQuotaOp(ctx, rs, "foo2", -2)
+			res, err = qm.runQuotaOp(ctx, r, "foo2", -2)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
 				NewBalance:      2,
