@@ -73,19 +73,6 @@ func (exe *Executor) Do(ctx context.Context) (string, error) {
 		return "cancellation has been requested before the post action starts",
 			errors.Reason("CancelRequested for Run %q", exe.Run.ID).Err()
 	}
-
-	if exe.Payload.GetAction() != nil { // TODO(yiwzhang):remove
-		// determine the action handler.
-		switch w := exe.Payload.GetAction().GetAction().(type) {
-		case *cfgpb.ConfigGroup_PostAction_VoteGerritLabels_:
-			return exe.voteGerritLabels(ctx, w.VoteGerritLabels.GetVotes())
-		case nil:
-			panic(errors.New("action == nil"))
-		default:
-			panic(errors.Reason("unknown action type %q", w).Err())
-		}
-	}
-
 	switch k := exe.Payload.Kind.(type) {
 	case *run.OngoingLongOps_Op_ExecutePostActionPayload_ConfigAction:
 		// determine the action handler.

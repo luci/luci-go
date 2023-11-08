@@ -418,7 +418,7 @@ message OngoingLongOps {
     // ExecutePostActionPayload is the payload of a long-op task that executes
     // a given post action.
     message ExecutePostActionPayload {
-      cv.config.ConfigGroup.PostAction action = 1 [deprecated=true];
+      reserved 1;  // action
 
       // Name of the post action.
       //

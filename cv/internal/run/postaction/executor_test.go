@@ -128,7 +128,10 @@ func TestExecutePostActionOp(t *testing.T) {
 				Run:               r,
 				IsCancelRequested: func() bool { return false },
 				Payload: &run.OngoingLongOps_Op_ExecutePostActionPayload{
-					Action: postActionCfg,
+					Name: postActionCfg.GetName(),
+					Kind: &run.OngoingLongOps_Op_ExecutePostActionPayload_ConfigAction{
+						ConfigAction: postActionCfg,
+					},
 				},
 			}
 		}
