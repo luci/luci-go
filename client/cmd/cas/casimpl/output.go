@@ -15,13 +15,11 @@
 package casimpl
 
 import (
-	"bytes"
-	"compress/zlib"
 	"encoding/json"
-	"io"
 	"os"
 	"sort"
 
+	"go.chromium.org/luci/common/data/packedintset"
 	"go.chromium.org/luci/common/errors"
 )
 
@@ -102,12 +100,12 @@ func writeStats(path string, hot, cold []int64) error {
 		sizeHot += fileSize
 	}
 
-	packedCold, err := pack(cold)
+	packedCold, err := packedintset.Pack(cold)
 	if err != nil {
 		return errors.Annotate(err, "failed to pack uploaded items").Err()
 	}
 
-	packedHot, err := pack(hot)
+	packedHot, err := packedintset.Pack(hot)
 	if err != nil {
 		return errors.Annotate(err, "failed to pack not uploaded items").Err()
 	}
@@ -133,81 +131,4 @@ func writeStats(path string, hot, cold []int64) error {
 	}
 
 	return nil
-}
-
-// pack returns a deflate'd buffer of delta encoded varints.
-func pack(values []int64) ([]byte, error) {
-	if len(values) == 0 {
-		return nil, nil
-	}
-	if values[0] < 0 {
-		return nil, errors.Reason("values must be between 0 and 2**63").Err()
-	}
-	if values[len(values)-1] < 0 {
-		return nil, errors.Reason("values must be between 0 and 2**63").Err()
-	}
-
-	var b bytes.Buffer
-	w := zlib.NewWriter(&b)
-	var last int64
-	for _, value := range values {
-		v := value
-		value -= last
-		if value < 0 {
-			return nil, errors.Reason("list must be sorted ascending").Err()
-		}
-		last = v
-		for value > 127 {
-			if _, err := w.Write([]byte{byte(1<<7 | value&0x7f)}); err != nil {
-				return nil, errors.Annotate(err, "failed to write").Err()
-			}
-			value >>= 7
-		}
-		if _, err := w.Write([]byte{byte(value)}); err != nil {
-			return nil, errors.Annotate(err, "failed to write").Err()
-		}
-
-	}
-	if err := w.Close(); err != nil {
-		return nil, errors.Annotate(err, "failed to close zlib writer").Err()
-	}
-
-	return b.Bytes(), nil
-}
-
-// unpack decompresses a deflate'd delta encoded list of varints.
-func unpack(data []byte) ([]int64, error) {
-	if len(data) == 0 {
-		return nil, nil
-	}
-
-	var ret []int64
-	var value int64
-	var base int64 = 1
-	var last int64
-
-	r, err := zlib.NewReader(bytes.NewReader(data))
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to get zlib reader").Err()
-	}
-	defer r.Close()
-
-	data, err = io.ReadAll(r)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to read all").Err()
-	}
-
-	for _, valByte := range data {
-		value += int64(valByte&0x7f) * base
-		if valByte&0x80 > 0 {
-			base <<= 7
-			continue
-		}
-		ret = append(ret, value+last)
-		last += value
-		value = 0
-		base = 1
-	}
-
-	return ret, nil
 }

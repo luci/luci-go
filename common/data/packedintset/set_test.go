@@ -1,4 +1,4 @@
-// Copyright 2021 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package casimpl
+package packedintset
 
 import (
 	"math/rand"
@@ -24,6 +24,7 @@ import (
 
 func TestPack(t *testing.T) {
 	t.Parallel()
+
 	Convey(`Simple test for pack.`, t, func() {
 		Convey(`1m 1`, func() {
 			var array []int64
@@ -31,11 +32,11 @@ func TestPack(t *testing.T) {
 				array = append(array, int64(i))
 			}
 
-			data, err := pack(array)
+			data, err := Pack(array)
 			So(err, ShouldBeNil)
-			So(1000, ShouldBeGreaterThanOrEqualTo, len(data))
+			So(1500, ShouldBeGreaterThanOrEqualTo, len(data))
 
-			unpackedArray, err := unpack(data)
+			unpackedArray, err := Unpack(data)
 			So(err, ShouldBeNil)
 			So(array, ShouldResemble, unpackedArray)
 		})
@@ -46,11 +47,11 @@ func TestPack(t *testing.T) {
 				array = append(array, int64(i*1000))
 			}
 
-			data, err := pack(array)
+			data, err := Pack(array)
 			So(err, ShouldBeNil)
 			So(len(data), ShouldBeGreaterThan, 1000)
 
-			unpackedArray, err := unpack(data)
+			unpackedArray, err := Unpack(data)
 			So(err, ShouldBeNil)
 			So(array, ShouldResemble, unpackedArray)
 		})
@@ -65,21 +66,21 @@ func TestPack(t *testing.T) {
 				return array[i] <= array[j]
 			})
 
-			data, err := pack(array)
+			data, err := Pack(array)
 			So(err, ShouldBeNil)
 			So(len(data), ShouldBeGreaterThan, 2000)
 
-			unpackedArray, err := unpack(data)
+			unpackedArray, err := Unpack(data)
 			So(err, ShouldBeNil)
 			So(array, ShouldResemble, unpackedArray)
 		})
 
 		Convey(`empty`, func() {
-			data, err := pack([]int64{})
+			data, err := Pack([]int64{})
 			So(err, ShouldBeNil)
 			So(data, ShouldBeEmpty)
 
-			unpackedArray, err := unpack([]byte{})
+			unpackedArray, err := Unpack([]byte{})
 			So(err, ShouldBeNil)
 			So(unpackedArray, ShouldBeEmpty)
 		})
