@@ -17,6 +17,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"time"
 
 	configpb "go.chromium.org/luci/bisection/proto/config"
@@ -40,6 +41,9 @@ const projectConfigKind = "luci.bisection.ProjectConfig"
 // ProjectCacheExpiry defines how often project configuration stored
 // in the in-process cache is refreshed from datastore.
 const ProjectCacheExpiry = 1 * time.Minute
+
+// ChromiumMilestoneProjectRe is the chromium milestone projects, e.g. chromium-m100.
+var ChromiumMilestoneProjectRe = regexp.MustCompile(`^(chrome|chromium)-m[0-9]+$`)
 
 var (
 	importAttemptCounter = metric.NewCounter(
@@ -67,8 +71,9 @@ type cachedProjectConfig struct {
 func init() {
 	// Registers validation of the given configuration paths with cfgmodule.
 	validation.Rules.Add("regex:projects/.*", "${appid}.cfg", func(ctx *validation.Context, configSet, path string, content []byte) error {
+		project := config.Set(configSet).Project()
 		// Discard the returned deserialized message.
-		validateProjectConfigRaw(ctx, string(content))
+		validateProjectConfigRaw(ctx, project, string(content))
 		return nil
 	})
 }
@@ -85,9 +90,14 @@ func UpdateProjects(ctx context.Context) error {
 	var errs []error
 	parsedConfigs := make(map[string]*fetchedProjectConfig)
 	for project, fetch := range fetchedConfigs {
+		// We don't support milestone projects, skipping them.
+		if IsMilestoneProject(project) {
+			continue
+		}
+
 		valCtx := validation.Context{Context: ctx}
 		valCtx.SetFile(fetch.Path)
-		msg := validateProjectConfigRaw(&valCtx, fetch.Content)
+		msg := validateProjectConfigRaw(&valCtx, project, fetch.Content)
 		if err := valCtx.Finalize(); err != nil {
 			blocking := err.(*validation.Error).WithSeverity(validation.Blocking)
 			if blocking != nil {
@@ -315,4 +325,8 @@ func Project(ctx context.Context, project string) (*configpb.ProjectConfig, erro
 		return c, nil
 	}
 	return nil, errors.Annotate(ErrNotFoundProjectConfig, "%s", project).Err()
+}
+
+func IsMilestoneProject(project string) bool {
+	return ChromiumMilestoneProjectRe.MatchString(project)
 }

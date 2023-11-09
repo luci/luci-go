@@ -70,7 +70,11 @@ func validateCulpritAge(ctx *validation.Context, age int64) {
 
 // validateProjectConfigRaw deserializes the project-level config message
 // and passes it through the validator.
-func validateProjectConfigRaw(ctx *validation.Context, content string) *configpb.ProjectConfig {
+func validateProjectConfigRaw(ctx *validation.Context, project, content string) *configpb.ProjectConfig {
+	// We don't validate milestone projects.
+	if IsMilestoneProject(project) {
+		return nil
+	}
 	msg := &configpb.ProjectConfig{}
 	if err := luciproto.UnmarshalTextML(content, msg); err != nil {
 		ctx.Errorf("failed to unmarshal as text proto: %s", err)

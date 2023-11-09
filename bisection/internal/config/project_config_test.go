@@ -137,6 +137,22 @@ func TestProjectConfig(t *testing.T) {
 			So(len(projects), ShouldEqual, 2)
 			So(projects["b"], ShouldResembleProto, newProjectB)
 			So(projects["c"], ShouldResembleProto, projectC)
+
+			// Update with milestone project should be ignored.
+			milestoneProject := CreatePlaceholderProjectConfig()
+			configs["projects/chromium-m110"] = cfgmem.Files{
+				"${appid}.cfg": textPBMultiline.Format(milestoneProject),
+			}
+			err = UpdateProjects(ctx)
+			So(err, ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Fetch only returns 2 project
+			projects, err = fetchProjects(ctx)
+			So(err, ShouldBeNil)
+			So(len(projects), ShouldEqual, 2)
+			So(projects["b"], ShouldResembleProto, newProjectB)
+			So(projects["c"], ShouldResembleProto, projectC)
 		})
 
 		Convey("Validation works", func() {
