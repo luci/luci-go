@@ -50,8 +50,8 @@ type TaskResultCommon struct {
 	// The index is used in task listing queries to filter by.
 	State apipb.TaskState `gae:"state"`
 
-	// ModifiedTS is when this entity was created or last modified.
-	ModifiedTS time.Time `gae:"modified_ts,noindex"`
+	// Modified is when this entity was created or last modified.
+	Modified time.Time `gae:"modified_ts,noindex"`
 
 	// BotVersion is a version of the bot code running the task, if already known.
 	BotVersion string `gae:"bot_version,noindex"`
@@ -59,9 +59,9 @@ type TaskResultCommon struct {
 	// BotDimensions are bot dimensions at the moment the bot claimed the task.
 	BotDimensions BotDimensions `gae:"bot_dimensions"`
 
-	// BotIdleSinceTS is when the bot running this task finished its previous
-	// task, if already known.
-	BotIdleSinceTS datastore.Optional[time.Time, datastore.Unindexed] `gae:"bot_idle_since_ts"`
+	// BotIdleSince is when the bot running this task finished its previous task,
+	// if already known.
+	BotIdleSince datastore.Optional[time.Time, datastore.Unindexed] `gae:"bot_idle_since_ts"`
 
 	// BotLogsCloudProject is a GCP project where the bot uploads its logs.
 	BotLogsCloudProject string `gae:"bot_logs_cloud_project,noindex"`
@@ -76,12 +76,12 @@ type TaskResultCommon struct {
 	// index representing this concrete run.
 	CurrentTaskSlice int64 `gae:"current_task_slice,noindex"`
 
-	// StartedTS is when the bot started executing the task.
+	// Started is when the bot started executing the task.
 	//
 	// The index is used in task listing queries to order by this property.
-	StartedTS datastore.Nullable[time.Time, datastore.Indexed] `gae:"started_ts"`
+	Started datastore.Nullable[time.Time, datastore.Indexed] `gae:"started_ts"`
 
-	// CompletedTS is when the task switched into a final state.
+	// Completed is when the task switched into a final state.
 	//
 	// This is either when the bot finished executing it, or when it expired or
 	// was canceled.
@@ -90,13 +90,13 @@ type TaskResultCommon struct {
 	//   1. In task listing queries to order by this property.
 	//   2. In crashed bot detection to list still pending or running tasks.
 	//   3. In BQ export pagination.
-	CompletedTS datastore.Nullable[time.Time, datastore.Indexed] `gae:"completed_ts"`
+	Completed datastore.Nullable[time.Time, datastore.Indexed] `gae:"completed_ts"`
 
-	// AbandonedTS is set when a task had an internal failure, timed out or was
+	// Abandoned is set when a task had an internal failure, timed out or was
 	// killed by a client request.
 	//
 	// The index is used in task listing queries to order by this property.
-	AbandonedTS datastore.Nullable[time.Time, datastore.Indexed] `gae:"abandoned_ts"`
+	Abandoned datastore.Nullable[time.Time, datastore.Indexed] `gae:"abandoned_ts"`
 
 	// DurationSecs is how long the task process was running.
 	//
@@ -172,10 +172,10 @@ type TaskResultSummary struct {
 	// BotID is ID of a bot that runs this task, if already known.
 	BotID datastore.Optional[string, datastore.Unindexed] `gae:"bot_id"`
 
-	// CreatedTS is a timestamp when the task was submitted.
+	// Created is a timestamp when the task was submitted.
 	//
 	// The index is used in task listing queries to order by this property.
-	CreatedTS time.Time `gae:"created_ts"`
+	Created time.Time `gae:"created_ts"`
 
 	// Tags are copied from the corresponding TaskRequest entity.
 	//
@@ -302,12 +302,12 @@ type TaskRunResult struct {
 	// This transition also unsets Killing back to false.
 	Killing bool `gae:"killing,noindex"`
 
-	// DeadAfterTS specifies the time after which the bot executing this task
+	// DeadAfter specifies the time after which the bot executing this task
 	// is considered dead.
 	//
 	// It is set after every ping from the bot if the task is in RUNNING state
 	// and get unset once the task terminates.
-	DeadAfterTS datastore.Optional[time.Time, datastore.Unindexed] `gae:"dead_after_ts"`
+	DeadAfter datastore.Optional[time.Time, datastore.Unindexed] `gae:"dead_after_ts"`
 }
 
 // TaskRunResultKey constructs a task run result key given a task request key.
@@ -375,12 +375,12 @@ type CASOperationStats struct {
 
 	// ItemsCold is a set of sizes of items that were downloaded or uploaded.
 	//
-	// It is encoded in a special way, see packedintset.Inflate.
+	// It is encoded in a special way, see packedintset.Unpack.
 	ItemsCold []byte `gae:"items_cold"`
 
 	// ItemsHot is a set of sizes of items that were already present in the cache.
 	//
-	// It is encoded in a special way, see packedintset.Inflate.
+	// It is encoded in a special way, see packedintset.Unpack.
 	ItemsHot []byte `gae:"items_hot"`
 }
 

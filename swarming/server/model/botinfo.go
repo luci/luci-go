@@ -143,8 +143,8 @@ type BotCommon struct {
 	// LegacyProperties is no longer used and should be null.
 	LegacyLeaseID LegacyNullProperty `gae:"lease_id"`
 
-	// LegacyLeaseExpirationTS is no longer used and should be null.
-	LegacyLeaseExpirationTS LegacyNullProperty `gae:"lease_expiration_ts"`
+	// LegacyLeaseExpiration is no longer used and should be null.
+	LegacyLeaseExpiration LegacyNullProperty `gae:"lease_expiration_ts"`
 
 	// LegacyLeasedIndefinitely is no longer used and should be null.
 	LegacyLeasedIndefinitely LegacyNullProperty `gae:"leased_indefinitely"`

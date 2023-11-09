@@ -69,19 +69,19 @@ type TaskRequest struct {
 	// LegacyProperties is no longer used and should be null.
 	LegacyProperties LegacyNullProperty `gae:"properties"`
 
-	// CreatedTS is a timestamp when this request was registered.
+	// Created is a timestamp when this request was registered.
 	//
 	// The index is used in BQ exports and when cleaning up old tasks.
-	CreatedTS time.Time `gae:"created_ts"`
+	Created time.Time `gae:"created_ts"`
 
-	// ExpirationTS is when to give up trying to run the task.
+	// Expiration is when to give up trying to run the task.
 	//
 	// If the task request is not scheduled by this moment, it will be aborted
-	// with EXPIRED status. This value always matches ExpirationTS of the last
+	// with EXPIRED status. This value always matches Expiration of the last
 	// TaskSlice.
 	//
 	// TODO(vadimsh): Why is it stored separately at all?
-	ExpirationTS time.Time `gae:"expiration_ts,noindex"`
+	Expiration time.Time `gae:"expiration_ts,noindex"`
 
 	// Name of this task request as provided by the caller. Only for description.
 	Name string `gae:"name,noindex"`

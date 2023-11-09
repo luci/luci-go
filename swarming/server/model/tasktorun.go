@@ -43,12 +43,12 @@ const (
 // A TaskToRun (regardless of mode) can be in two states:
 //
 // 1. "reapable"
-//   - Native mode: QueueNumber and ExpirationTS are both set.
-//   - RBE mode: ClaimID is unset and ExpirationTS is set.
+//   - Native mode: QueueNumber and Expiration are both set.
+//   - RBE mode: ClaimID is unset and Expiration is set.
 //
 // 2. "consumed":
-//   - Native mode: QueueNumber and ExpirationTS are both unset.
-//   - RBE mode: ClaimID is set and ExpirationTS is unset.
+//   - Native mode: QueueNumber and Expiration are both unset.
+//   - RBE mode: ClaimID is set and Expiration is unset.
 //
 // The entity starts its life in reapable state and then transitions to consumed
 // state either by being picked up by a bot for execution or when it expires.
@@ -73,14 +73,14 @@ type TaskToRun struct {
 	// Note that the kind is TaskToRunShard<index>, see TaskToRunKind().
 	Key *datastore.Key `gae:"$key"`
 
-	// CreatedTS is used to know when the entity is enqueued.
+	// Created is used to know when the entity is enqueued.
 	//
-	// The very first TaskToRun has the same value as TaskRequest.CreatedTS,
-	// but the following ones (when using multiple task slices) have CreatedTS set
-	// at the time they are created.
+	// The very first TaskToRun has the same value as TaskRequest.Created, but the
+	// following ones (when using multiple task slices) have Created set at the
+	// time they are created.
 	//
 	// Used in both native and RBE mode.
-	CreatedTS time.Time `gae:"created_ts,noindex"`
+	Created time.Time `gae:"created_ts,noindex"`
 
 	// Dimensions is a copy of dimensions from the corresponding task slice of
 	// TaskRequest.
@@ -101,14 +101,14 @@ type TaskToRun struct {
 
 	// Expiration is the scheduling deadline for this TaskToRun.
 	//
-	// It is based on TaskSlice.ExpirationTS. It is used to figure out when to
+	// It is based on TaskSlice.Expiration. It is used to figure out when to
 	// fallback on the next task slice. It is scanned by a cron job and thus needs
 	// to be indexed.
 	//
 	// It is unset when the TaskToRun is claimed, canceled or expires.
 	//
 	// Used in both native and RBE mode.
-	ExpirationTS datastore.Optional[time.Time, datastore.Indexed] `gae:"expiration_ts"`
+	Expiration datastore.Optional[time.Time, datastore.Indexed] `gae:"expiration_ts"`
 
 	// QueueNumber is a magical number by which bots and tasks find one another.
 	//
@@ -133,7 +133,7 @@ type TaskToRun struct {
 	// Never gets unset once set.
 	ClaimID datastore.Optional[string, datastore.Unindexed] `gae:"claim_id"`
 
-	// ExpirationDelay is a delay from ExpirationTS to the actual expiry time.
+	// ExpirationDelay is a delay from Expiration to the actual expiry time.
 	//
 	// This is set at expiration process if the last task slice expired by
 	// reaching its deadline. Unset if the last slice expired because there were
@@ -145,7 +145,7 @@ type TaskToRun struct {
 
 // IsReapable returns true if the TaskToRun is still pending.
 func (t *TaskToRun) IsReapable() bool {
-	return t.ExpirationTS.IsSet()
+	return t.Expiration.IsSet()
 }
 
 // TaskToRunKey builds a TaskToRun key given the task request key, the entity
