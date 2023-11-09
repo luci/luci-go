@@ -1943,6 +1943,21 @@ var testCases = []testCase{
 		},
 	},
 	{
+		desc: "lsp wrong type",
+		src: PropertyMap{
+			"One": mpNI(123),
+		},
+		want:    &LSPOuter{},
+		loadErr: "expecting a property map or null",
+	},
+	{
+		desc: "lsp null",
+		src: PropertyMap{
+			"One": mpNI(nil),
+		},
+		want: &LSPOuter{},
+	},
+	{
 		desc: "legacy LSP",
 		src: PropertyMap{
 			"Slice": PropertySlice{

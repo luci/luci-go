@@ -317,8 +317,8 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 		} else if pmap, ok := p.Value().(PropertyMap); ok {
 			pm = pmap
 			hasMeta = true
-		} else {
-			return fmt.Sprintf("expecting a property map, but got %s", p.Type())
+		} else if p.Type() != PTNull {
+			return fmt.Sprintf("expecting a property map or null, but got %s", p.Type())
 		}
 		if err := (&structPLS{o: v, c: substructCodec}).loadWithMeta(pm, hasMeta); err != nil {
 			return fmt.Sprintf("loading LSP: %s", err)
