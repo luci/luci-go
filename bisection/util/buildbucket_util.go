@@ -16,6 +16,7 @@
 package util
 
 import (
+	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"google.golang.org/protobuf/proto"
@@ -79,4 +80,12 @@ func GetSheriffRotationsForBuild(build *bbpb.Build) []string {
 		}
 	}
 	return rotations
+}
+
+func BuilderFromConfigBuilder(builder *configpb.Builder) *bbpb.BuilderID {
+	return &bbpb.BuilderID{
+		Project: builder.Project,
+		Bucket:  builder.Bucket,
+		Builder: builder.Builder,
+	}
 }

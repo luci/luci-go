@@ -29,6 +29,7 @@ func validateTestAnalysisConfig(ctx *validation.Context, testAnalysisConfig *con
 		return
 	}
 	validateGerritConfig(ctx, testAnalysisConfig.GerritConfig)
+	validateBuildConfig(ctx, testAnalysisConfig.BuildConfig)
 }
 
 func validateCompileAnalysisConfig(ctx *validation.Context, compileAnalysisConfig *configpb.CompileAnalysisConfig) {
@@ -38,7 +39,37 @@ func validateCompileAnalysisConfig(ctx *validation.Context, compileAnalysisConfi
 		ctx.Errorf("missing compile analysis config")
 		return
 	}
+	validateBuildConfig(ctx, compileAnalysisConfig.BuildConfig)
 	validateGerritConfig(ctx, compileAnalysisConfig.GerritConfig)
+}
+
+func validateBuildConfig(ctx *validation.Context, cfg *configpb.BuildConfig) {
+	ctx.Enter("build_config")
+	defer ctx.Exit()
+
+	if cfg == nil {
+		ctx.Errorf("missing build config")
+		return
+	}
+	validateBuilder(ctx, cfg.Builder)
+}
+
+func validateBuilder(ctx *validation.Context, cfg *configpb.Builder) {
+	ctx.Enter("builder")
+	defer ctx.Exit()
+	if cfg == nil {
+		ctx.Errorf("missing builder config")
+		return
+	}
+	if cfg.Project == "" {
+		ctx.Errorf("missing project")
+	}
+	if cfg.Bucket == "" {
+		ctx.Errorf("missing bucket")
+	}
+	if cfg.Builder == "" {
+		ctx.Errorf("missing builder")
+	}
 }
 
 // Validates the settings in a GerritConfig

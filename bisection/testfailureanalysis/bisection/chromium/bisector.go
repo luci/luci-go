@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 
+	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/rerun"
@@ -56,16 +57,16 @@ func (b *Bisector) Prepare(ctx context.Context, tfa *model.TestFailureAnalysis, 
 }
 
 func (b *Bisector) TriggerRerun(ctx context.Context, tfa *model.TestFailureAnalysis, tfs []*model.TestFailure, gitilesCommit *bbpb.GitilesCommit, option projectbisector.RerunOption) (*bbpb.Build, error) {
-	builder, err := util.GetTestRerunBuilder(tfa.Project)
+	builder, err := config.GetTestBuilder(ctx, tfa.Project)
 	if err != nil {
-		return nil, errors.Annotate(err, "get test rerun builder").Err()
+		return nil, errors.Annotate(err, "get test builder").Err()
 	}
 
 	extraProperties := getExtraProperties(ctx, tfa, tfs, option)
 	extraDimensions := getExtraDimensions(option)
 
 	options := &rerun.TriggerOptions{
-		Builder:         builder,
+		Builder:         util.BuilderFromConfigBuilder(builder),
 		GitilesCommit:   gitilesCommit,
 		Priority:        tfa.Priority,
 		SampleBuildID:   tfa.FailedBuildID,

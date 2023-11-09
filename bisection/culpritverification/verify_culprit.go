@@ -242,12 +242,12 @@ func VerifySuspectCommit(c context.Context, project string, suspect *model.Suspe
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "get parent commit for commit %s", commit.Id).Err()
 	}
-	builder, err := util.GetCompileRerunBuilder(project)
+	builder, err := config.GetCompileBuilder(c, project)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "get compile rerun builder").Err()
+		return nil, nil, errors.Annotate(err, "get compile builder").Err()
 	}
 	options := &rerun.TriggerOptions{
-		Builder:         builder,
+		Builder:         util.BuilderFromConfigBuilder(builder),
 		GitilesCommit:   commit,
 		SampleBuildID:   failedBuildID,
 		ExtraProperties: props,
