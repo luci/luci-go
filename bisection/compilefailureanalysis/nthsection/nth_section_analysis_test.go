@@ -148,7 +148,9 @@ func TestAnalyze(t *testing.T) {
 
 		// Set up the config
 		projectCfg := config.CreatePlaceholderProjectConfig()
-		cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
+		projectCfg.CompileAnalysisConfig.CulpritVerificationEnabled = true
+		projectCfg.CompileAnalysisConfig.NthsectionEnabled = true
+		cfg := map[string]*configpb.ProjectConfig{"testProject": projectCfg}
 		So(config.SetTestProjectConfig(c, cfg), ShouldBeNil)
 
 		gitilesResponse := model.ChangeLogResponse{
@@ -237,7 +239,7 @@ func TestAnalyze(t *testing.T) {
 			}
 
 			fb := &model.LuciFailedBuild{
-				LuciBuild: model.LuciBuild{Project: "chromium"},
+				LuciBuild: model.LuciBuild{Project: "testProject"},
 			}
 			So(datastore.Put(c, fb), ShouldBeNil)
 			datastore.GetTestable(c).CatchupIndexes()
@@ -310,7 +312,7 @@ func TestAnalyze(t *testing.T) {
 			}
 
 			fb := &model.LuciFailedBuild{
-				LuciBuild: model.LuciBuild{Project: "chromium"},
+				LuciBuild: model.LuciBuild{Project: "testProject"},
 			}
 			So(datastore.Put(c, fb), ShouldBeNil)
 			datastore.GetTestable(c).CatchupIndexes()

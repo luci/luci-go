@@ -226,12 +226,12 @@ func RerunCommit(c context.Context, nsa *model.CompileNthSectionAnalysis, commit
 
 	// TODO(nqmtuan): Pass in the project.
 	// For now, hardcode to "chromium", since we only support chromium for compile failure.
-	builder, err := config.GetCompileBuilder(c, "chromium")
+	builder, err := util.GetCompileRerunBuilder("chromium")
 	if err != nil {
-		return errors.Annotate(err, "get compile builder").Err()
+		return errors.Annotate(err, "get compile rerun builder").Err()
 	}
 	options := &rerun.TriggerOptions{
-		Builder:         util.BuilderFromConfigBuilder(builder),
+		Builder:         builder,
 		GitilesCommit:   commit,
 		SampleBuildID:   failedBuildID,
 		ExtraProperties: props,

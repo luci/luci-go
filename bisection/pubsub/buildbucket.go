@@ -22,7 +22,6 @@ import (
 	"net/http"
 
 	"go.chromium.org/luci/bisection/compilefailuredetection"
-	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/metrics"
 	"go.chromium.org/luci/bisection/rerun"
 	taskpb "go.chromium.org/luci/bisection/task/proto"
@@ -130,55 +129,39 @@ func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
 		// Special handling for pubsub message for compile failure for
 		// LUCI Bisection.
 		// This is only triggered for rerun builds.
-		compileBuilder, err := config.GetCompileBuilder(c, project)
-		if err != nil {
-			// If there are no configs for the project, just ignore.
-			if !errors.Is(err, config.ErrNotFoundProjectConfig) {
-				return errors.Annotate(err, "get compile builder").Err()
-			}
-		} else {
-			if bucket == compileBuilder.Bucket && builder == compileBuilder.Builder {
-				logging.Infof(c, "Received pubsub for luci bisection compile rerun build %d status %s", bbid, buildbucketpb.Status_name[int32(status)])
-				bbCounter.Add(c, 1, project, string(OutcomeTypeUpdateRerun))
+		if project == "chromium" && bucket == "findit" && builder == "gofindit-culprit-verification" {
+			logging.Infof(c, "Received pubsub for luci bisection compile rerun build %d status %s", bbid, buildbucketpb.Status_name[int32(status)])
+			bbCounter.Add(c, 1, project, string(OutcomeTypeUpdateRerun))
 
-				// We only update the rerun counter after the build finished.
-				// Status_ENDED_MASK is a union of all terminal statuses.
-				if status&buildbucketpb.Status_ENDED_MASK == buildbucketpb.Status_ENDED_MASK {
-					rerunCounter.Add(c, 1, project, status.String(), string(metrics.AnalysisTypeCompile))
-				}
-
-				if bbmsg.Build.Status != buildbucketpb.Status_SCHEDULED {
-					return rerun.UpdateCompileRerunStatus(c, bbid)
-				}
-				return nil
+			// We only update the rerun counter after the build finished.
+			// Status_ENDED_MASK is a union of all terminal statuses.
+			if status&buildbucketpb.Status_ENDED_MASK == buildbucketpb.Status_ENDED_MASK {
+				rerunCounter.Add(c, 1, project, status.String(), string(metrics.AnalysisTypeCompile))
 			}
+
+			if bbmsg.Build.Status != buildbucketpb.Status_SCHEDULED {
+				return rerun.UpdateCompileRerunStatus(c, bbid)
+			}
+			return nil
 		}
 
 		// Handle test rerun build.
 		// Hardcode the builder name for now.
 		// TODO (nqmtuan): Move this to config when we support other projects.
-		testBuilder, err := config.GetTestBuilder(c, project)
-		if err != nil {
-			// If there are no configs for the project, just ignore.
-			if !errors.Is(err, config.ErrNotFoundProjectConfig) {
-				return errors.Annotate(err, "get test builder").Err()
-			}
-		} else {
-			if bucket == testBuilder.Bucket && builder == testBuilder.Builder {
-				logging.Infof(c, "Test bisection: received pubsub for rerun build %d status %s", bbid, buildbucketpb.Status_name[int32(status)])
-				bbCounter.Add(c, 1, project, string(OutcomeTypeUpdateRerun))
+		if project == "chromium" && bucket == "findit" && builder == "test-single-revision" {
+			logging.Infof(c, "Test bisection: received pubsub for rerun build %d status %s", bbid, buildbucketpb.Status_name[int32(status)])
+			bbCounter.Add(c, 1, project, string(OutcomeTypeUpdateRerun))
 
-				// We only update the rerun counter after the build finished.
-				// Status_ENDED_MASK is a union of all terminal statuses.
-				if status&buildbucketpb.Status_ENDED_MASK == buildbucketpb.Status_ENDED_MASK {
-					rerunCounter.Add(c, 1, project, status.String(), string(metrics.AnalysisTypeTest))
-				}
-
-				if bbmsg.Build.Status != buildbucketpb.Status_SCHEDULED {
-					return rerun.UpdateTestRerunStatus(c, bbmsg.GetBuild())
-				}
-				return nil
+			// We only update the rerun counter after the build finished.
+			// Status_ENDED_MASK is a union of all terminal statuses.
+			if status&buildbucketpb.Status_ENDED_MASK == buildbucketpb.Status_ENDED_MASK {
+				rerunCounter.Add(c, 1, project, status.String(), string(metrics.AnalysisTypeTest))
 			}
+
+			if bbmsg.Build.Status != buildbucketpb.Status_SCHEDULED {
+				return rerun.UpdateTestRerunStatus(c, bbmsg.GetBuild())
+			}
+			return nil
 		}
 
 		// For now, we only handle chromium/ci builds

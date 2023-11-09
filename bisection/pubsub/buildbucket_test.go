@@ -27,8 +27,6 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/bisection/compilefailuredetection"
-	"go.chromium.org/luci/bisection/internal/config"
-	configpb "go.chromium.org/luci/bisection/proto/config"
 	taskpb "go.chromium.org/luci/bisection/task/proto"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -39,93 +37,70 @@ import (
 
 func TestBuildBucketPubsub(t *testing.T) {
 	t.Parallel()
+	c := memory.Use(context.Background())
 
 	Convey("Buildbucket Pubsub Handler", t, func() {
-		c := memory.Use(context.Background())
-		// Setup config.
-		projectCfg := config.CreatePlaceholderProjectConfig()
-		cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
-		So(config.SetTestProjectConfig(c, cfg), ShouldBeNil)
+		c, scheduler := tq.TestingContext(c, nil)
+		compilefailuredetection.RegisterTaskClass()
 
-		Convey("Should create new task", func() {
-			c, scheduler := tq.TestingContext(c, nil)
-			compilefailuredetection.RegisterTaskClass()
-
-			buildPubsub := &buildbucketpb.BuildsV2PubSub{
-				Build: &buildbucketpb.Build{
-					Id: 8000,
-					Builder: &buildbucketpb.BuilderID{
-						Project: "chromium",
-						Bucket:  "ci",
-					},
-					Status: buildbucketpb.Status_FAILURE,
+		buildPubsub := &buildbucketpb.BuildsV2PubSub{
+			Build: &buildbucketpb.Build{
+				Id: 8000,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
 				},
-			}
-			r := &http.Request{Body: makeBBReq(buildPubsub)}
-			err := buildbucketPubSubHandlerImpl(c, r)
-			So(err, ShouldBeNil)
-			// Check that a test was created
-			task := &taskpb.FailedBuildIngestionTask{
-				Bbid: 8000,
-			}
-			expected := proto.Clone(task).(*taskpb.FailedBuildIngestionTask)
-			So(scheduler.Tasks().Payloads()[0], ShouldResembleProto, expected)
-		})
+				Status: buildbucketpb.Status_FAILURE,
+			},
+		}
+		r := &http.Request{Body: makeBBReq(buildPubsub)}
+		err := buildbucketPubSubHandlerImpl(c, r)
+		So(err, ShouldBeNil)
+		// Check that a test was created
+		task := &taskpb.FailedBuildIngestionTask{
+			Bbid: 8000,
+		}
+		expected := proto.Clone(task).(*taskpb.FailedBuildIngestionTask)
+		So(scheduler.Tasks().Payloads()[0], ShouldResembleProto, expected)
+	})
 
-		Convey("Unsupported project", func() {
-			c, _ := tsmon.WithDummyInMemory(c)
-			buildPubsub := &buildbucketpb.BuildsV2PubSub{
-				Build: &buildbucketpb.Build{
-					Builder: &buildbucketpb.BuilderID{
-						Project: "chrome",
-						Bucket:  "ci",
-					},
-					Status: buildbucketpb.Status_FAILURE,
+	Convey("Rerun metrics captured", t, func() {
+		c, _ := tsmon.WithDummyInMemory(c)
+
+		// Receiving a pubsub message for a terminal status should increase counter.
+		buildPubsub := &buildbucketpb.BuildsV2PubSub{
+			Build: &buildbucketpb.Build{
+				Id: 8000,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "findit",
+					Builder: "gofindit-culprit-verification",
 				},
-			}
-			r := &http.Request{Body: makeBBReq(buildPubsub)}
-			err := buildbucketPubSubHandlerImpl(c, r)
-			So(err, ShouldBeNil)
-			So(bbCounter.Get(c, "chrome", "unsupported"), ShouldEqual, 1)
-		})
+				Status: buildbucketpb.Status_INFRA_FAILURE,
+			},
+		}
+		r := &http.Request{Body: makeBBReq(buildPubsub)}
+		err := buildbucketPubSubHandlerImpl(c, r)
+		So(err, ShouldBeNil)
+		So(rerunCounter.Get(c, "chromium", "INFRA_FAILURE", "compile"), ShouldEqual, 1)
 
-		Convey("Rerun metrics captured", func() {
-			c, _ := tsmon.WithDummyInMemory(c)
-
-			// Receiving a pubsub message for a terminal status should increase counter.
-			buildPubsub := &buildbucketpb.BuildsV2PubSub{
-				Build: &buildbucketpb.Build{
-					Id: 8000,
-					Builder: &buildbucketpb.BuilderID{
-						Project: "chromium",
-						Bucket:  "findit",
-						Builder: "gofindit-culprit-verification",
-					},
-					Status: buildbucketpb.Status_INFRA_FAILURE,
+		// Receiving a pubsub message for a terminal status should not increase counter.
+		buildPubsub = &buildbucketpb.BuildsV2PubSub{
+			Build: &buildbucketpb.Build{
+				Id: 8001,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "findit",
+					Builder: "gofindit-culprit-verification",
 				},
-			}
-			r := &http.Request{Body: makeBBReq(buildPubsub)}
-			err := buildbucketPubSubHandlerImpl(c, r)
-			So(err, ShouldBeNil)
-			So(rerunCounter.Get(c, "chromium", "INFRA_FAILURE", "compile"), ShouldEqual, 1)
+				Status: buildbucketpb.Status_SCHEDULED,
+			},
+		}
+		r = &http.Request{Body: makeBBReq(buildPubsub)}
+		err = buildbucketPubSubHandlerImpl(c, r)
+		So(err, ShouldBeNil)
+		So(rerunCounter.Get(c, "chromium", "SCHEDULED", "compile"), ShouldEqual, 0)
 
-			// Receiving a pubsub message for a terminal status should not increase counter.
-			buildPubsub = &buildbucketpb.BuildsV2PubSub{
-				Build: &buildbucketpb.Build{
-					Id: 8001,
-					Builder: &buildbucketpb.BuilderID{
-						Project: "chromium",
-						Bucket:  "findit",
-						Builder: "gofindit-culprit-verification",
-					},
-					Status: buildbucketpb.Status_SCHEDULED,
-				},
-			}
-			r = &http.Request{Body: makeBBReq(buildPubsub)}
-			err = buildbucketPubSubHandlerImpl(c, r)
-			So(err, ShouldBeNil)
-			So(rerunCounter.Get(c, "chromium", "SCHEDULED", "compile"), ShouldEqual, 0)
-		})
 	})
 }
 

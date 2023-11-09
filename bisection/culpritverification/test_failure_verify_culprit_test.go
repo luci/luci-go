@@ -24,10 +24,8 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
-	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/model"
-	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util/testutil"
@@ -57,12 +55,6 @@ func TestProcessTestFailureTask(t *testing.T) {
 	Convey("process test failure task", t, func() {
 		c = memory.Use(c)
 		testutil.UpdateIndices(c)
-
-		// Setup config.
-		projectCfg := config.CreatePlaceholderProjectConfig()
-		cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
-		So(config.SetTestProjectConfig(c, cfg), ShouldBeNil)
-
 		Convey("trigger rerun", func() {
 			tfa := testutil.CreateTestFailureAnalysis(c, nil)
 			nsa := testutil.CreateTestNthSectionAnalysis(c, &testutil.TestNthSectionAnalysisCreationOption{

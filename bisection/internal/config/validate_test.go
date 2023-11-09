@@ -34,65 +34,18 @@ func TestValidateProjectConfig(t *testing.T) {
 		return ctx.Finalize()
 	}
 
-	Convey("missing test analysis config", t, func() {
+	Convey("missing compile analysis config", t, func() {
 		cfg := &configpb.ProjectConfig{CompileAnalysisConfig: &configpb.CompileAnalysisConfig{
 			GerritConfig: createPlaceHolderGerritConfig(),
-			BuildConfig:  createPlaceHolderCompileBuildConfig(),
 		}}
 		So(validate(cfg), ShouldErrLike, "missing test analysis config")
 	})
 
-	Convey("missing compile analysis config", t, func() {
+	Convey("missing test analysis config", t, func() {
 		cfg := &configpb.ProjectConfig{TestAnalysisConfig: &configpb.TestAnalysisConfig{
 			GerritConfig: createPlaceHolderGerritConfig(),
-			BuildConfig:  createPlaceHolderTestBuildConfig(),
 		}}
 		So(validate(cfg), ShouldErrLike, "missing compile analysis config")
-	})
-}
-
-func TestValidateBuildConfig(t *testing.T) {
-	t.Parallel()
-
-	validate := func(cfg *configpb.BuildConfig) error {
-		ctx := validation.Context{Context: context.Background()}
-		validateBuildConfig(&ctx, cfg)
-		return ctx.Finalize()
-	}
-
-	Convey("build config is nil", t, func() {
-		So(validate(nil), ShouldErrLike, "missing build config")
-	})
-
-	Convey("missing builder config", t, func() {
-		cfg := &configpb.BuildConfig{}
-		So(validate(cfg), ShouldErrLike, "missing builder config")
-	})
-
-	Convey("missing project", t, func() {
-		cfg := &configpb.BuildConfig{
-			Builder: &configpb.Builder{},
-		}
-		So(validate(cfg), ShouldErrLike, "missing project")
-	})
-
-	Convey("missing bucket", t, func() {
-		cfg := &configpb.BuildConfig{
-			Builder: &configpb.Builder{
-				Project: "chromium",
-			},
-		}
-		So(validate(cfg), ShouldErrLike, "missing bucket")
-	})
-
-	Convey("missing builder", t, func() {
-		cfg := &configpb.BuildConfig{
-			Builder: &configpb.Builder{
-				Project: "chromium",
-				Bucket:  "findit",
-			},
-		}
-		So(validate(cfg), ShouldErrLike, "missing builder")
 	})
 }
 
