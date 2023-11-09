@@ -17,7 +17,6 @@ package model
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 
 	"github.com/klauspost/compress/zlib"
@@ -93,24 +92,23 @@ func FromJSONProperty(prop datastore.Property, val any) error {
 	return json.Unmarshal(w.Bytes(), val)
 }
 
-// LegacyNullProperty is a placeholder for "recognizing" legacy properties.
+// LegacyProperty is a placeholder for "recognizing" known legacy properties.
 //
-// The python side still writes them, but with `null` value. If we just ignore
-// them completely from the Go side, they'll end up in `Extra` maps, which we
-// want to avoid (`Extra` is only for truly unexpected properties).
-type LegacyNullProperty struct{}
+// Properties of this type are silently discarded when read (and consequently
+// not stored back when written). This is useful for dropping properties that
+// were known to exist at some point, but which are no longer used by anything
+// at all. If we just ignore them completely, they'll end up in `Extra` maps,
+// which we want to avoid (`Extra` is only for truly unexpected properties).
+type LegacyProperty struct{}
 
-var _ datastore.PropertyConverter = &LegacyNullProperty{}
+var _ datastore.PropertyConverter = &LegacyProperty{}
 
 // FromProperty implements datastore.PropertyConverter.
-func (*LegacyNullProperty) FromProperty(p datastore.Property) error {
-	if p.Type() != datastore.PTNull {
-		return fmt.Errorf("expecting null, but got %v", p)
-	}
+func (*LegacyProperty) FromProperty(p datastore.Property) error {
 	return nil
 }
 
 // ToProperty implements datastore.PropertyConverter.
-func (*LegacyNullProperty) ToProperty() (datastore.Property, error) {
+func (*LegacyProperty) ToProperty() (datastore.Property, error) {
 	return datastore.Property{}, datastore.ErrSkipProperty
 }

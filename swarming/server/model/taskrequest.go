@@ -66,9 +66,6 @@ type TaskRequest struct {
 	// back on more generic bots.
 	TaskSlices []TaskSlice `gae:"task_slices,lsp,noindex"`
 
-	// LegacyProperties is no longer used and should be null.
-	LegacyProperties LegacyNullProperty `gae:"properties"`
-
 	// Created is a timestamp when this request was registered.
 	//
 	// The index is used in BQ exports and when cleaning up old tasks.
@@ -178,6 +175,9 @@ type TaskRequest struct {
 
 	// HasBuildTask is true if the TaskRequest has an associated BuildTask.
 	HasBuildTask bool `gae:"has_build_task,noindex"`
+
+	// LegacyProperties is no longer used.
+	LegacyProperties LegacyProperty `gae:"properties"`
 }
 
 // TaskSlice defines where and how to run the task and when to give up.
@@ -290,9 +290,6 @@ type TaskProperties struct {
 	// CIPDInput defines what CIPD packages to install.
 	CIPDInput CIPDInput `gae:"cipd_input,lsp"`
 
-	// LegacyInputsRef is no longer used and should be null.
-	LegacyInputsRef LegacyNullProperty `gae:"inputs_ref"`
-
 	// Outputs is a list of extra outputs to upload to RBE-CAS as task results.
 	//
 	// If empty, only files written to `${ISOLATED_OUTDIR}` will be returned.
@@ -307,6 +304,9 @@ type TaskProperties struct {
 	//
 	// Not really implemented currently.
 	Containment Containment `gae:"containment,lsp"`
+
+	// LegacyInputsRef is no longer used.
+	LegacyInputsRef LegacyProperty `gae:"inputs_ref"`
 }
 
 // CacheEntry describes a named cache that should be present on the bot.

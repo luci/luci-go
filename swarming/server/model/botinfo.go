@@ -140,20 +140,29 @@ type BotCommon struct {
 	// It is unset when running the task or hooks.
 	IdleSince datastore.Optional[time.Time, datastore.Unindexed] `gae:"idle_since_ts"`
 
-	// LegacyProperties is no longer used and should be null.
-	LegacyLeaseID LegacyNullProperty `gae:"lease_id"`
+	// LegacyProperties is no longer used.
+	LegacyLeaseID LegacyProperty `gae:"lease_id"`
 
-	// LegacyLeaseExpiration is no longer used and should be null.
-	LegacyLeaseExpiration LegacyNullProperty `gae:"lease_expiration_ts"`
+	// LegacyLeaseExpiration is no longer used.
+	LegacyLeaseExpiration LegacyProperty `gae:"lease_expiration_ts"`
 
-	// LegacyLeasedIndefinitely is no longer used and should be null.
-	LegacyLeasedIndefinitely LegacyNullProperty `gae:"leased_indefinitely"`
+	// LegacyLeasedIndefinitely is no longer used.
+	LegacyLeasedIndefinitely LegacyProperty `gae:"leased_indefinitely"`
 
-	// LegacyMachineType is no longer used and should be null.
-	LegacyMachineType LegacyNullProperty `gae:"machine_type"`
+	// LegacyMachineType is no longer used.
+	LegacyMachineType LegacyProperty `gae:"machine_type"`
 
-	// LegacyMachineLease is no longer used and should be null.
-	LegacyMachineLease LegacyNullProperty `gae:"machine_lease"`
+	// LegacyMachineLease is no longer used.
+	LegacyMachineLease LegacyProperty `gae:"machine_lease"`
+
+	// LegacyStateJSON is no longer used.
+	LegacyStateJSON LegacyProperty `gae:"state_json"`
+
+	// LegacyDimensions is no longer used.
+	LegacyDimensions LegacyProperty `gae:"dimensions"`
+
+	// LegacyIsBusy is no longer used.
+	LegacyIsBusy LegacyProperty `gae:"is_busy"`
 }
 
 // BotInfo contains the latest information about a bot.

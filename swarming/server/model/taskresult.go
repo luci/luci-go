@@ -123,9 +123,6 @@ type TaskResultCommon struct {
 	// CASOutputRoot is the digest of the output root uploaded to RBE-CAS.
 	CASOutputRoot CASReference `gae:"cas_output_root,lsp,noindex"`
 
-	// LegacyOutputsRef is no longer used and should be null.
-	LegacyOutputsRef LegacyNullProperty `gae:"outputs_ref"`
-
 	// CIPDPins is resolved versions of all the CIPD packages used in the task.
 	CIPDPins CIPDInput `gae:"cipd_pins,lsp,noindex"`
 
@@ -140,6 +137,9 @@ type TaskResultCommon struct {
 	// If this task was deduplicated, this contains invocation info from the
 	// previously ran the task deduplicated from.
 	ResultDBInfo ResultDBInfo `gae:"resultdb_info,lsp,noindex"`
+
+	// LegacyOutputsRef is no longer used.
+	LegacyOutputsRef LegacyProperty `gae:"outputs_ref"`
 }
 
 // ResultDBInfo contains invocation ID of the task.
