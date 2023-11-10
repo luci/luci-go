@@ -47,6 +47,11 @@ message NetworkInterface {
   // The name of a network to use for this interface.
   // https://cloud.google.com/compute/docs/reference/rest/v1/networks/list.
   string network = 2;
+
+  // The name of a network to use for this interface.
+  // https://cloud.google.com/compute/docs/reference/rest/v1/subnetworks/list.
+  // Example: regions/us-west2/subnetworks/cloudbots-network-us-west2.
+  string subnetwork = 3;
 }
 
 // A disk interface.
