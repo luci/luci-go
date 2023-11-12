@@ -310,12 +310,6 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 		return errors.Annotate(err, "record test results").Err()
 	}
 
-	// Clustering and test variant analysis currently don't support chromium
-	// milestone projects.
-	if config.ChromiumMilestoneProjectRe.MatchString(payload.Build.Project) {
-		return nil
-	}
-
 	nextPageToken := rsp.NextPageToken
 
 	// Ingest for test variant analysis (change point analysis).
@@ -343,6 +337,11 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 
 	ingestForTestVariantAnalysis := realmCfg != nil &&
 		shouldIngestForTestVariants(realmCfg, payload)
+
+	if config.ChromiumMilestoneProjectRe.MatchString(payload.Build.Project) {
+		// Test variant analysis currently don't support chromium milestone projects.
+		ingestForTestVariantAnalysis = false
+	}
 
 	if ingestForTestVariantAnalysis {
 		failingTVs := filterToTestVariantsWithUnexpectedFailures(rsp.TestVariants)
