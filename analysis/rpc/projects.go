@@ -63,15 +63,12 @@ func (*projectServer) GetConfig(ctx context.Context, req *pb.GetProjectConfigReq
 func createProjectConfigPB(project string, cfg *configpb.ProjectConfig) *pb.ProjectConfig {
 	result := &pb.ProjectConfig{
 		Name:          fmt.Sprintf("projects/%s/config", project),
-		BugSystem:     pb.ProjectConfig_BugSystem(cfg.BugSystem),
-		Monorail:      toLegacyMonorailProjectPB(cfg.Monorail),
-		Buganizer:     toLegacyBuganizerProjectPB(cfg.Buganizer),
-		BugManagement: toBugManagementPB(cfg.BugManagement, cfg.Monorail),
+		BugManagement: toBugManagementPB(cfg.BugManagement),
 	}
 	return result
 }
 
-func toBugManagementPB(bm *configpb.BugManagement, legacyMonorailCfg *configpb.MonorailProject) *pb.BugManagement {
+func toBugManagementPB(bm *configpb.BugManagement) *pb.BugManagement {
 	// Always set BugManagement struct to avoid clients needing to
 	// do pointless nullness checks. Having an empty BugManagement struct
 	// is semantically identical to having an unset BugManagement struct.
@@ -84,11 +81,6 @@ func toBugManagementPB(bm *configpb.BugManagement, legacyMonorailCfg *configpb.M
 		}
 		result.Policies = policies
 		result.Monorail = toMonorailProjectPB(bm.Monorail)
-	}
-	// If the monorail block is not set in the new config,
-	// try to set it from the old config.
-	if result.Monorail == nil {
-		result.Monorail = toMonorailProjectPB(legacyMonorailCfg)
 	}
 	return result
 }
@@ -124,44 +116,6 @@ func toMonorailProjectPB(cfg *configpb.MonorailProject) *pb.MonorailProject {
 	return &pb.MonorailProject{
 		Project:       cfg.Project,
 		DisplayPrefix: cfg.DisplayPrefix,
-	}
-}
-
-func toLegacyMonorailProjectPB(cfg *configpb.MonorailProject) *pb.MonorailProject {
-	if cfg == nil {
-		return nil
-	}
-	// Similar to toMetricProjectPB, but converts legacy fields as well.
-	thresholds := make([]*pb.MonorailPriority, 0, len(cfg.Priorities))
-	for _, monorailPriorityThreshold := range cfg.Priorities {
-		priorityThreshold := &pb.MonorailPriority{
-			Priority:   monorailPriorityThreshold.Priority,
-			Thresholds: toImpactMetricThresholdsPB(monorailPriorityThreshold.Thresholds),
-		}
-		thresholds = append(thresholds, priorityThreshold)
-	}
-
-	return &pb.MonorailProject{
-		Project:       cfg.Project,
-		DisplayPrefix: cfg.DisplayPrefix,
-		Priorities:    thresholds,
-	}
-}
-
-func toLegacyBuganizerProjectPB(cfg *configpb.BuganizerProject) *pb.BuganizerProject {
-	if cfg == nil {
-		return nil
-	}
-	thresholds := []*pb.BuganizerProject_PriorityMapping{}
-	for _, p := range cfg.PriorityMappings {
-		threshold := &pb.BuganizerProject_PriorityMapping{
-			Priority:   pb.BuganizerPriority(p.Priority),
-			Thresholds: toImpactMetricThresholdsPB(p.Thresholds),
-		}
-		thresholds = append(thresholds, threshold)
-	}
-	return &pb.BuganizerProject{
-		PriorityMappings: thresholds,
 	}
 }
 

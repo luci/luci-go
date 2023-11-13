@@ -99,61 +99,6 @@ func TestProjects(t *testing.T) {
 			Convey("Valid request", func() {
 				expectedResponse := &pb.ProjectConfig{
 					Name: "projects/testproject/config",
-					Monorail: &pb.MonorailProject{
-						Project:       "chromium",
-						DisplayPrefix: "crbug.com",
-						Priorities: []*pb.MonorailPriority{
-							{
-								Priority: "0",
-								Thresholds: []*pb.ImpactMetricThreshold{
-									{
-										MetricId: metrics.Failures.ID.String(),
-										Threshold: &pb.MetricThreshold{
-											OneDay: proto.Int64(1500),
-										},
-									},
-								},
-							},
-							{
-								Priority: "1",
-								Thresholds: []*pb.ImpactMetricThreshold{
-									{
-										MetricId: metrics.Failures.ID.String(),
-										Threshold: &pb.MetricThreshold{
-											OneDay: proto.Int64(500),
-										},
-									},
-								},
-							},
-						},
-					},
-					Buganizer: &pb.BuganizerProject{
-						PriorityMappings: []*pb.BuganizerProject_PriorityMapping{
-							{
-								Priority: pb.BuganizerPriority_P0,
-								Thresholds: []*pb.ImpactMetricThreshold{
-									{
-										MetricId: metrics.Failures.ID.String(),
-										Threshold: &pb.MetricThreshold{
-											OneDay: proto.Int64(1500),
-										},
-									},
-								},
-							},
-							{
-								Priority: pb.BuganizerPriority_P1,
-								Thresholds: []*pb.ImpactMetricThreshold{
-									{
-										MetricId: metrics.Failures.ID.String(),
-										Threshold: &pb.MetricThreshold{
-											OneDay: proto.Int64(500),
-										},
-									},
-								},
-							},
-						},
-					},
-					BugSystem: pb.ProjectConfig_BUGANIZER,
 					BugManagement: &pb.BugManagement{
 						Policies: []*pb.BugManagementPolicy{
 							{
@@ -193,20 +138,7 @@ func TestProjects(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(response, ShouldResembleProto, expectedResponse)
 				})
-				Convey("without buganizer config", func() {
-					projectCfg.Buganizer = nil
-					So(config.SetTestProjectConfig(ctx, configs), ShouldBeNil)
-
-					// Run
-					response, err := server.GetConfig(ctx, request)
-
-					// Verify
-					So(err, ShouldBeNil)
-					expectedResponse.Buganizer = nil
-					So(response, ShouldResembleProto, expectedResponse)
-				})
 				Convey("without monorail config", func() {
-					projectCfg.Monorail = nil
 					projectCfg.BugManagement.Monorail = nil
 					So(config.SetTestProjectConfig(ctx, configs), ShouldBeNil)
 
@@ -215,19 +147,7 @@ func TestProjects(t *testing.T) {
 
 					// Verify
 					So(err, ShouldBeNil)
-					expectedResponse.Monorail = nil
 					expectedResponse.BugManagement.Monorail = nil
-					So(response, ShouldResembleProto, expectedResponse)
-				})
-				Convey("with only legacy monorail config", func() {
-					projectCfg.BugManagement.Monorail = nil
-					So(config.SetTestProjectConfig(ctx, configs), ShouldBeNil)
-
-					// Run
-					response, err := server.GetConfig(ctx, request)
-
-					// Verify
-					So(err, ShouldBeNil)
 					So(response, ShouldResembleProto, expectedResponse)
 				})
 				Convey("policy without activation threshold", func() {

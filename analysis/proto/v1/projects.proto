@@ -53,7 +53,7 @@ message GetProjectConfigRequest {
 }
 
 message ProjectConfig {
-  reserved 2;
+  reserved 2, 3, 4, 5; // Deleted
 
   // An enum that represents the bug filing system that the project uses.
   enum BugSystem {
@@ -70,21 +70,6 @@ message ProjectConfig {
   // Format: projects/{project}/config.
   // See also https://google.aip.dev/122.
   string name = 1;
-
-  // The bug system to use for filing bugs.
-  //
-  // TODO(meiring): Remove once policy-based bug filing in production.
-  BugSystem bug_system = 3;
-
-  // Details about the monorail project used for this LUCI project.
-  //
-  // TODO(meiring): Remove once policy-based bug filing in production.
-  MonorailProject monorail = 4;
-
-  // Details about the Buganizer configuration used for this LUCI Project.
-  //
-  // TODO(meiring): Remove once policy-based bug filing in production.
-  BuganizerProject buganizer = 5;
 
   // Configuration for automatic bug management.
   BugManagement bug_management = 6;
@@ -266,6 +251,8 @@ message BuganizerProject {
 // MonorailProject describes the configuration to use when filing bugs
 // into a given monorail project.
 message MonorailProject {
+  reserved 3; // Deleted.
+
   // The monorail project being described.
   // E.g. "chromium".
   string project = 1;
@@ -277,19 +264,6 @@ message MonorailProject {
   // forward slash ("/"), followed by the bug number.
   // Valid prefixes match `^[a-z0-9\-.]{0,64}$`.
   string display_prefix = 2;
-
-  // The possible bug priorities and their associated impact thresholds.
-  // Priorities must be listed from highest (i.e. P0) to lowest (i.e. P3).
-  // Higher priorities can only be reached if the thresholds for all lower
-  // priorities are also met.
-  // The impact thresholds for setting the lowest priority implicitly
-  // identifies the bug closure threshold -- if no priority can be
-  // matched, the bug is closed. Satisfying the threshold for filing bugs MUST
-  // at least imply the threshold for the lowest priority, and MAY imply
-  // the thresholds of higher priorities.
-  //
-  // TODO(meiring): Remove once policy-based bug filing in production.
-  repeated MonorailPriority priorities = 3;
 }
 
 // MonorailPriority represents configuration for when to use a given
