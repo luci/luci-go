@@ -504,7 +504,13 @@ func updateBuildStatusFromTaskResult(ctx context.Context, bld *model.Build, task
 				setEndStatus(pb.Status_INFRA_FAILURE, nil)
 			}
 		} else {
-			setEndStatus(pb.Status_SUCCESS, nil)
+			finalStatus := pb.Status_SUCCESS
+			if protoutil.IsEnded(bld.Proto.Output.GetStatus()) {
+				// Swarming task ends with COMPLETED(SUCCESS), use the build status
+				// as final status.
+				finalStatus = bld.Proto.Output.GetStatus()
+			}
+			setEndStatus(finalStatus, nil)
 		}
 	default:
 		err = errors.Reason("Unexpected task state: %s", taskResult.State).Err()
