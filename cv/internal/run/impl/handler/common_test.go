@@ -144,7 +144,6 @@ func TestEndRun(t *testing.T) {
 		So(rs.Status, ShouldEqual, run.Status_FAILED)
 		So(rs.EndTime, ShouldEqual, ct.Clock.Now())
 		So(datastore.RunInTransaction(ctx, se, nil), ShouldBeNil)
-		So(deps.qm.creditRunQuotaCalls, ShouldEqual, 1)
 
 		Convey("removeRunFromCLs", func() {
 			// fetch the updated CL entity.

@@ -78,6 +78,7 @@ func TestCreditQuotaOp(t *testing.T) {
 		configGroupID := prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0]
 
 		rm := &mockRM{}
+		qm := &mockQM{quotaSpecified: true}
 		executor := &Executor{
 			Run: &run.Run{
 				ID:            common.MakeRunID(lProject, clock.Now(ctx).Add(-1*time.Hour), 1, []byte("deadbeef")),
@@ -87,7 +88,7 @@ func TestCreditQuotaOp(t *testing.T) {
 				ConfigGroupID: configGroupID,
 			},
 			RM:                rm,
-			QM:                &mockQM{},
+			QM:                qm,
 			IsCancelRequested: func() bool { return false },
 			Payload: &run.OngoingLongOps_Op_ExecutePostActionPayload{
 				Name: CreditRunQuotaPostActionName,
@@ -97,7 +98,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			},
 		}
 		runCreateTime := clock.Now(ctx).UTC().Add(-1 * time.Minute)
-		Convey("notify single pending run", func() {
+		Convey("credit quota and notify single pending run", func() {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, runCreateTime, 1, []byte("deadbeef")),
 				Status:        run.Status_PENDING,
@@ -110,7 +111,25 @@ func TestCreditQuotaOp(t *testing.T) {
 			summary, err := executor.Do(ctx)
 			So(err, ShouldBeNil)
 			So(summary, ShouldEqual, fmt.Sprintf("notified next Run %q to start", r.ID))
+			So(qm.creditQuotaCalledWith, ShouldResemble, common.RunIDs{executor.Run.ID})
 			So(rm.notifyStarted, ShouldResemble, common.RunIDs{r.ID})
+		})
+		Convey("do not notify if quota is not specified", func() {
+			r := &run.Run{
+				ID:            common.MakeRunID(lProject, runCreateTime, 1, []byte("deadbeef")),
+				Status:        run.Status_PENDING,
+				CreatedBy:     userIdentity,
+				Mode:          run.FullRun,
+				CreateTime:    runCreateTime,
+				ConfigGroupID: configGroupID,
+			}
+			So(datastore.Put(ctx, r), ShouldBeNil)
+			qm.quotaSpecified = false
+			summary, err := executor.Do(ctx)
+			So(err, ShouldBeNil)
+			So(summary, ShouldEqual, fmt.Sprintf("run quota limit is not specified for user %q", r.CreatedBy.Email()))
+			So(qm.creditQuotaCalledWith, ShouldResemble, common.RunIDs{executor.Run.ID})
+			So(rm.notifyStarted, ShouldBeEmpty)
 		})
 		Convey("do not notify pending run from different project", func() {
 			r := &run.Run{
@@ -220,7 +239,10 @@ func (rm *mockRM) Start(ctx context.Context, runID common.RunID) error {
 	return nil
 }
 
-type mockQM struct{}
+type mockQM struct {
+	quotaSpecified        bool
+	creditQuotaCalledWith common.RunIDs
+}
 
 func (qm *mockQM) RunQuotaAccountID(r *run.Run) *quotapb.AccountID {
 	return &quotapb.AccountID{
@@ -230,4 +252,17 @@ func (qm *mockQM) RunQuotaAccountID(r *run.Run) *quotapb.AccountID {
 		Name:         r.CreatedBy.Email(),
 		ResourceType: "mock-runs",
 	}
+}
+
+func (qm *mockQM) CreditRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, error) {
+	qm.creditQuotaCalledWith = append(qm.creditQuotaCalledWith, r.ID)
+	if !qm.quotaSpecified {
+		return nil, nil
+	}
+	return &quotapb.OpResult{
+		PreviousBalance: 0,
+		NewBalance:      1,
+		AccountStatus:   quotapb.OpResult_ALREADY_EXISTS,
+		Status:          quotapb.OpResult_SUCCESS,
+	}, nil
 }

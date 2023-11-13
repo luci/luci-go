@@ -20,8 +20,10 @@ import (
 	"sort"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/quota"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -33,7 +35,20 @@ import (
 const CreditRunQuotaPostActionName = "credit-run-quota"
 
 func (exe *Executor) creditQuota(ctx context.Context) (string, error) {
-	// TODO(yiwzhang): move the credit quota operation here.
+	// Credit back run quota when the run ends.
+	switch quotaOp, err := exe.QM.CreditRunQuota(ctx, exe.Run); {
+	case err == nil && quotaOp != nil:
+		logging.Debugf(ctx, "Run quota credited back to %q; new balance: %d", exe.Run.CreatedBy.Email(), quotaOp.GetNewBalance())
+		// continue to pick the next pending run to start for the run creator
+	case err == nil:
+		// no quota operation executed means no run quota limit has been specified
+		// for the user.
+		return fmt.Sprintf("run quota limit is not specified for user %q", exe.Run.CreatedBy.Email()), nil
+	case err == quota.ErrQuotaApply:
+		return "", errors.Annotate(err, "QM.CreditRunQuota: unexpected quotaOp Status %s", quotaOp.GetStatus()).Tag(transient.Tag).Err()
+	case err != nil:
+		return "", errors.Annotate(err, "QM.CreditRunQuota").Tag(transient.Tag).Err()
+	}
 
 	switch nextRun, err := exe.pickNextRunToStart(ctx); {
 	case err != nil:
