@@ -2411,11 +2411,15 @@ func (s *Server) initAuthDB() error {
 	// Periodically refresh it in the background.
 	s.RunInBackground("luci.authdb", func(c context.Context) {
 		for {
-			if r := <-clock.After(c, 30*time.Second); r.Err != nil {
+			jitter := time.Duration(rand.Int63n(int64(10 * time.Second)))
+			if r := <-clock.After(c, 30*time.Second+jitter); r.Err != nil {
 				return // the context is canceled
 			}
 			if err := s.refreshAuthDB(c); err != nil {
-				logging.WithError(err).Errorf(c, "Failed to reload AuthDB, using the cached one")
+				// Don't log the error if the server is shutting down.
+				if !errors.Is(err, context.Canceled) {
+					logging.WithError(err).Errorf(c, "Failed to reload AuthDB, using the cached one")
+				}
 			}
 		}
 	})
