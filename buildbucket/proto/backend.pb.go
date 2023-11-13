@@ -159,9 +159,6 @@ type RunTaskRequest struct {
 	// However proper deduplication can be difficult to properly implement,
 	// so it may be worth the tradeoff for simple backends to just accept
 	// the possibility of occasional duplicated, useless, work.
-	//
-	// See the "RunTask Protocol" section for the full details on how
-	// Buildbucket will avoid raciness even in the face of duplicate tasks.
 	RequestId string `protobuf:"bytes,16,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	// The pubsub topic that the backend will use to send
 	// UpdateBuildTask messages to buildbucket. It is set by buildbucket using
@@ -1168,11 +1165,17 @@ var file_go_chromium_org_luci_buildbucket_proto_backend_proto_rawDesc = []byte{
 	0x6e, 0x66, 0x69, 0x67, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x27, 0x2e, 0x62,
 	0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x56, 0x61,
 	0x6c, 0x69, 0x64, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x73, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x36, 0x5a, 0x34, 0x67, 0x6f, 0x2e, 0x63, 0x68,
-	0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f,
-	0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x3b, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x70, 0x62, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x32, 0x5f, 0x0a, 0x0f, 0x54, 0x61, 0x73, 0x6b, 0x42,
+	0x61, 0x63, 0x6b, 0x65, 0x6e, 0x64, 0x4c, 0x69, 0x74, 0x65, 0x12, 0x4c, 0x0a, 0x07, 0x52, 0x75,
+	0x6e, 0x54, 0x61, 0x73, 0x6b, 0x12, 0x1e, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63,
+	0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x52, 0x75, 0x6e, 0x54, 0x61, 0x73, 0x6b, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63,
+	0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x52, 0x75, 0x6e, 0x54, 0x61, 0x73, 0x6b, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x36, 0x5a, 0x34, 0x67, 0x6f, 0x2e, 0x63,
+	0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69,
+	0x2f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x3b, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x70, 0x62,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1238,12 +1241,14 @@ var file_go_chromium_org_luci_buildbucket_proto_backend_proto_depIdxs = []int32{
 	2,  // 21: buildbucket.v2.TaskBackend.FetchTasks:input_type -> buildbucket.v2.FetchTasksRequest
 	4,  // 22: buildbucket.v2.TaskBackend.CancelTasks:input_type -> buildbucket.v2.CancelTasksRequest
 	6,  // 23: buildbucket.v2.TaskBackend.ValidateConfigs:input_type -> buildbucket.v2.ValidateConfigsRequest
-	1,  // 24: buildbucket.v2.TaskBackend.RunTask:output_type -> buildbucket.v2.RunTaskResponse
-	3,  // 25: buildbucket.v2.TaskBackend.FetchTasks:output_type -> buildbucket.v2.FetchTasksResponse
-	5,  // 26: buildbucket.v2.TaskBackend.CancelTasks:output_type -> buildbucket.v2.CancelTasksResponse
-	7,  // 27: buildbucket.v2.TaskBackend.ValidateConfigs:output_type -> buildbucket.v2.ValidateConfigsResponse
-	24, // [24:28] is the sub-list for method output_type
-	20, // [20:24] is the sub-list for method input_type
+	0,  // 24: buildbucket.v2.TaskBackendLite.RunTask:input_type -> buildbucket.v2.RunTaskRequest
+	1,  // 25: buildbucket.v2.TaskBackend.RunTask:output_type -> buildbucket.v2.RunTaskResponse
+	3,  // 26: buildbucket.v2.TaskBackend.FetchTasks:output_type -> buildbucket.v2.FetchTasksResponse
+	5,  // 27: buildbucket.v2.TaskBackend.CancelTasks:output_type -> buildbucket.v2.CancelTasksResponse
+	7,  // 28: buildbucket.v2.TaskBackend.ValidateConfigs:output_type -> buildbucket.v2.ValidateConfigsResponse
+	1,  // 29: buildbucket.v2.TaskBackendLite.RunTask:output_type -> buildbucket.v2.RunTaskResponse
+	25, // [25:30] is the sub-list for method output_type
+	20, // [20:25] is the sub-list for method input_type
 	20, // [20:20] is the sub-list for extension type_name
 	20, // [20:20] is the sub-list for extension extendee
 	0,  // [0:20] is the sub-list for field type_name
@@ -1427,7 +1432,7 @@ func file_go_chromium_org_luci_buildbucket_proto_backend_proto_init() {
 			NumEnums:      0,
 			NumMessages:   14,
 			NumExtensions: 0,
-			NumServices:   1,
+			NumServices:   2,
 		},
 		GoTypes:           file_go_chromium_org_luci_buildbucket_proto_backend_proto_goTypes,
 		DependencyIndexes: file_go_chromium_org_luci_buildbucket_proto_backend_proto_depIdxs,
@@ -1454,19 +1459,13 @@ type TaskBackendClient interface {
 	// RunTask instructs the backend to run a task (which contains payload for
 	// executing a Buildbucket Build).
 	//
-	// This should return OK as long as the backend will EVENTUALLY run the
-	// task. It's expected that the backend will either call
-	// Builds.UpdateBuildTask or the agent will call UpdateBuild once
-	// the task is running.
-	//
-	// Notably this doesn't return anything other than the gRPC status
-	// code due to complexities of the "RunTask Protocol" (see this section
-	// below).
+	// The RunTaskResponse should contain the created task.
+	// And the implementation of this RPC should be idempotent.
 	//
 	// Buildbucket will invoke this RPC with the Project-scoped identity.
 	RunTask(ctx context.Context, in *RunTaskRequest, opts ...grpc.CallOption) (*RunTaskResponse, error)
-	// BB will call FetchTasks when it needs to understand the current
-	// status of jobs.
+	// Buildbucket will call FetchTasks when it needs to understand the current
+	// status of tasks.
 	//
 	// This will happen at a regular, unspecified, interval when
 	// UpdateBuild/UpdateBuildTask haven't been called recently.
@@ -1476,7 +1475,7 @@ type TaskBackendClient interface {
 	//
 	// Buildbucket will invoke this RPC with the Project-scoped identity.
 	FetchTasks(ctx context.Context, in *FetchTasksRequest, opts ...grpc.CallOption) (*FetchTasksResponse, error)
-	// BB will call this if it was requested to cancel some build(s).
+	// Buildbucket will call this if it was requested to cancel some build(s).
 	// The backend SHOULD implement cancelation as best as it can, but
 	// simple backends may choose to ignore this (because the next call
 	// to UpdateBuild will indicate that the build is Canceled, and so the
@@ -1484,8 +1483,8 @@ type TaskBackendClient interface {
 	//
 	// Buildbucket will invoke this RPC with the Project-scoped identity.
 	CancelTasks(ctx context.Context, in *CancelTasksRequest, opts ...grpc.CallOption) (*CancelTasksResponse, error)
-	// BB will call this when it is asked to validate project configuration i.e.
-	// the Builder.backend.config_json field.
+	// Buildbucket will call this when it is asked to validate project
+	// configuration i.e. the Builder.backend.config_json field.
 	//
 	// Buildbucket will invoke this RPC with the Project-scoped identity.
 	ValidateConfigs(ctx context.Context, in *ValidateConfigsRequest, opts ...grpc.CallOption) (*ValidateConfigsResponse, error)
@@ -1583,19 +1582,13 @@ type TaskBackendServer interface {
 	// RunTask instructs the backend to run a task (which contains payload for
 	// executing a Buildbucket Build).
 	//
-	// This should return OK as long as the backend will EVENTUALLY run the
-	// task. It's expected that the backend will either call
-	// Builds.UpdateBuildTask or the agent will call UpdateBuild once
-	// the task is running.
-	//
-	// Notably this doesn't return anything other than the gRPC status
-	// code due to complexities of the "RunTask Protocol" (see this section
-	// below).
+	// The RunTaskResponse should contain the created task.
+	// And the implementation of this RPC should be idempotent.
 	//
 	// Buildbucket will invoke this RPC with the Project-scoped identity.
 	RunTask(context.Context, *RunTaskRequest) (*RunTaskResponse, error)
-	// BB will call FetchTasks when it needs to understand the current
-	// status of jobs.
+	// Buildbucket will call FetchTasks when it needs to understand the current
+	// status of tasks.
 	//
 	// This will happen at a regular, unspecified, interval when
 	// UpdateBuild/UpdateBuildTask haven't been called recently.
@@ -1605,7 +1598,7 @@ type TaskBackendServer interface {
 	//
 	// Buildbucket will invoke this RPC with the Project-scoped identity.
 	FetchTasks(context.Context, *FetchTasksRequest) (*FetchTasksResponse, error)
-	// BB will call this if it was requested to cancel some build(s).
+	// Buildbucket will call this if it was requested to cancel some build(s).
 	// The backend SHOULD implement cancelation as best as it can, but
 	// simple backends may choose to ignore this (because the next call
 	// to UpdateBuild will indicate that the build is Canceled, and so the
@@ -1613,8 +1606,8 @@ type TaskBackendServer interface {
 	//
 	// Buildbucket will invoke this RPC with the Project-scoped identity.
 	CancelTasks(context.Context, *CancelTasksRequest) (*CancelTasksResponse, error)
-	// BB will call this when it is asked to validate project configuration i.e.
-	// the Builder.backend.config_json field.
+	// Buildbucket will call this when it is asked to validate project
+	// configuration i.e. the Builder.backend.config_json field.
 	//
 	// Buildbucket will invoke this RPC with the Project-scoped identity.
 	ValidateConfigs(context.Context, *ValidateConfigsRequest) (*ValidateConfigsResponse, error)
@@ -1732,6 +1725,110 @@ var _TaskBackend_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ValidateConfigs",
 			Handler:    _TaskBackend_ValidateConfigs_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "go.chromium.org/luci/buildbucket/proto/backend.proto",
+}
+
+// TaskBackendLiteClient is the client API for TaskBackendLite service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type TaskBackendLiteClient interface {
+	// RunTask instructs the backend to run a task (which contains payload for
+	// executing a Buildbucket Build).
+	//
+	// This should return a dummy or empty task.
+	//
+	// While idempotency is not required, it's still nice to have if possible.
+	//
+	// Buildbucket will invoke this RPC with the Project-scoped identity.
+	RunTask(ctx context.Context, in *RunTaskRequest, opts ...grpc.CallOption) (*RunTaskResponse, error)
+}
+type taskBackendLitePRPCClient struct {
+	client *prpc.Client
+}
+
+func NewTaskBackendLitePRPCClient(client *prpc.Client) TaskBackendLiteClient {
+	return &taskBackendLitePRPCClient{client}
+}
+
+func (c *taskBackendLitePRPCClient) RunTask(ctx context.Context, in *RunTaskRequest, opts ...grpc.CallOption) (*RunTaskResponse, error) {
+	out := new(RunTaskResponse)
+	err := c.client.Call(ctx, "buildbucket.v2.TaskBackendLite", "RunTask", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+type taskBackendLiteClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewTaskBackendLiteClient(cc grpc.ClientConnInterface) TaskBackendLiteClient {
+	return &taskBackendLiteClient{cc}
+}
+
+func (c *taskBackendLiteClient) RunTask(ctx context.Context, in *RunTaskRequest, opts ...grpc.CallOption) (*RunTaskResponse, error) {
+	out := new(RunTaskResponse)
+	err := c.cc.Invoke(ctx, "/buildbucket.v2.TaskBackendLite/RunTask", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// TaskBackendLiteServer is the server API for TaskBackendLite service.
+type TaskBackendLiteServer interface {
+	// RunTask instructs the backend to run a task (which contains payload for
+	// executing a Buildbucket Build).
+	//
+	// This should return a dummy or empty task.
+	//
+	// While idempotency is not required, it's still nice to have if possible.
+	//
+	// Buildbucket will invoke this RPC with the Project-scoped identity.
+	RunTask(context.Context, *RunTaskRequest) (*RunTaskResponse, error)
+}
+
+// UnimplementedTaskBackendLiteServer can be embedded to have forward compatible implementations.
+type UnimplementedTaskBackendLiteServer struct {
+}
+
+func (*UnimplementedTaskBackendLiteServer) RunTask(context.Context, *RunTaskRequest) (*RunTaskResponse, error) {
+	return nil, status1.Errorf(codes.Unimplemented, "method RunTask not implemented")
+}
+
+func RegisterTaskBackendLiteServer(s prpc.Registrar, srv TaskBackendLiteServer) {
+	s.RegisterService(&_TaskBackendLite_serviceDesc, srv)
+}
+
+func _TaskBackendLite_RunTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RunTaskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaskBackendLiteServer).RunTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buildbucket.v2.TaskBackendLite/RunTask",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaskBackendLiteServer).RunTask(ctx, req.(*RunTaskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _TaskBackendLite_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "buildbucket.v2.TaskBackendLite",
+	HandlerType: (*TaskBackendLiteServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "RunTask",
+			Handler:    _TaskBackendLite_RunTask_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
