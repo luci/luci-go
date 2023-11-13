@@ -207,6 +207,12 @@ message PCL {
   // If set, describes problems that require that some or all of the PCL's
   // triggers be purged.
   repeated PurgeReason purge_reasons = 17;
+
+  // Outdated if set means Snapshot must be considered likely outdated due to
+  // recent CV mutations.
+  //
+  // In particular, Project Manager does not act on the CLs with .Outdated set.
+  cv.internal.changelist.Snapshot.Outdated outdated = 18;
 }
 
 // PRun is an incomplete Run on which CV is currently working.

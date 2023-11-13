@@ -455,6 +455,7 @@ func TestUpdateConfig(t *testing.T) {
 					Clid:     int64(cl101.ID),
 					Eversion: cl101.EVersion,
 					Status:   prjpb.PCL_UNKNOWN,
+					Outdated: &changelist.Snapshot_Outdated{},
 				})
 			})
 
