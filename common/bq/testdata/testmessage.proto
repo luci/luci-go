@@ -56,3 +56,23 @@ message TestMessage {
 message NestedTestMessage {
   string name = 1;
 }
+
+enum BAR {
+  Q = 0;
+  R = 1;
+  S = 2;
+}
+
+message TestOptionalEnumMessage {
+  string name = 1;
+
+  optional BAR bar = 2;
+}
+
+message TestRepeatedFieldMessage {
+  string name = 1;
+  repeated string strings = 2;
+  repeated BAR bar = 3;
+  repeated NestedTestMessage nested = 4;
+  repeated google.protobuf.Empty empties = 5;
+}

@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -46,8 +45,7 @@ func TestMetric(t *testing.T) {
 func TestSave(t *testing.T) {
 	Convey("filled", t, func() {
 		recentTime := testclock.TestRecentTimeUTC
-		ts, err := ptypes.TimestampProto(recentTime)
-		So(err, ShouldBeNil)
+		ts := timestamppb.New(recentTime)
 
 		r := &Row{
 			Message: &testdata.TestMessage{
@@ -64,12 +62,6 @@ func TestSave(t *testing.T) {
 				FooRepeated: []testdata.TestMessage_FOO{
 					testdata.TestMessage_Y,
 					testdata.TestMessage_X,
-				},
-				Struct: &structpb.Struct{
-					Fields: map[string]*structpb.Value{
-						"num": {Kind: &structpb.Value_NumberValue{NumberValue: 1}},
-						"str": {Kind: &structpb.Value_StringValue{StringValue: "a"}},
-					},
 				},
 
 				Empty:    &emptypb.Empty{},
@@ -113,7 +105,6 @@ func TestSave(t *testing.T) {
 			},
 			"foo":          "Y",
 			"foo_repeated": []any{"Y", "X"},
-			"struct":       `{"num":1,"str":"a"}`,
 			"duration":     2.003,
 			"first":        map[string]bigquery.Value{"name": "first"},
 			"string_map": []any{
@@ -138,6 +129,46 @@ func TestSave(t *testing.T) {
 		})
 	})
 
+	Convey("known proto types", t, func() {
+		recentTime := testclock.TestRecentTimeUTC
+		ts := timestamppb.New(recentTime)
+		inputStruct := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"num": {Kind: &structpb.Value_NumberValue{NumberValue: 1}},
+				"str": {Kind: &structpb.Value_StringValue{StringValue: "a"}},
+			},
+		}
+
+		r := &Row{
+			Message: &testdata.TestMessage{
+				Name:      "testname",
+				Timestamp: ts,
+				Struct:    inputStruct,
+				Duration:  durationpb.New(2*time.Second + 3*time.Millisecond),
+			},
+			InsertID: "testid",
+		}
+		row, id, err := r.Save()
+		So(err, ShouldBeNil)
+		So(id, ShouldEqual, "testid")
+
+		So(row, ShouldContainKey, "name")
+		So(row, ShouldContainKey, "timestamp")
+		So(row, ShouldContainKey, "struct")
+		So(row, ShouldContainKey, "duration")
+
+		So(row["name"], ShouldEqual, "testname")
+		So(row["timestamp"], ShouldEqual, recentTime)
+		So(row["duration"], ShouldEqual, 2.003)
+
+		outputStruct := &structpb.Struct{}
+		bytesString, ok := row["struct"].(string)
+		So(ok, ShouldBeTrue)
+		err = outputStruct.UnmarshalJSON([]byte(bytesString))
+		So(err, ShouldBeNil)
+		So(outputStruct, ShouldResemble, inputStruct)
+	})
+
 	Convey("empty", t, func() {
 		r := &Row{
 			Message:  &testdata.TestMessage{},
@@ -153,6 +184,95 @@ func TestSave(t *testing.T) {
 			"bq_type_override": int64(0),
 			"foo":              "X", // enums are always set
 			"name":             "",  // in proto3, empty string and unset are indistinguishable
+		})
+	})
+
+	Convey("empty optional enum", t, func() {
+		r := &Row{
+			Message:  &testdata.TestOptionalEnumMessage{},
+			InsertID: "testid",
+		}
+		row, id, err := r.Save()
+		So(err, ShouldBeNil)
+		So(id, ShouldEqual, "testid")
+		So(row, ShouldResemble, map[string]bigquery.Value{
+			// only scalar proto fields
+			// because for them, proto3 does not distinguish empty and unset
+			// values.
+			"bar":  "Q", // enums are always set
+			"name": "",  // in proto3, empty string and unset are indistinguishable
+		})
+	})
+
+	Convey("repeated fields", t, func() {
+		Convey("empty message", func() {
+			r := &Row{
+				Message:  &testdata.TestRepeatedFieldMessage{},
+				InsertID: "testid",
+			}
+			row, id, err := r.Save()
+			So(err, ShouldBeNil)
+			So(id, ShouldEqual, "testid")
+			So(row, ShouldResemble, map[string]bigquery.Value{
+				// only scalar proto fields (ie. Name)
+				"name": "",
+			})
+		})
+
+		Convey("arrays of empty values", func() {
+			r := &Row{
+				Message: &testdata.TestRepeatedFieldMessage{
+					Name:    "",
+					Strings: []string{"", ""},
+					Bar:     []testdata.BAR{},
+					Nested:  []*testdata.NestedTestMessage{{}, {}},
+					Empties: []*emptypb.Empty{{}, {}},
+				},
+				InsertID: "testid",
+			}
+			row, id, err := r.Save()
+			So(err, ShouldBeNil)
+			So(id, ShouldEqual, "testid")
+			So(row, ShouldResemble, map[string]bigquery.Value{
+				// only scalar proto fields (ie. strings)
+				"name":    "",
+				"strings": []any{"", ""},
+				"nested": []any{
+					map[string]bigquery.Value{"name": ""},
+					map[string]bigquery.Value{"name": ""},
+				},
+			})
+		})
+
+		Convey("arrays of filled values", func() {
+			r := &Row{
+				Message: &testdata.TestRepeatedFieldMessage{
+					Name:    "Repeated Fields",
+					Strings: []string{"string1", "string2"},
+					Bar: []testdata.BAR{
+						testdata.BAR_Q,
+						testdata.BAR_R,
+					},
+					Nested: []*testdata.NestedTestMessage{
+						{Name: "nested1"},
+						{Name: "nested2"},
+					},
+					Empties: []*emptypb.Empty{{}, {}},
+				},
+				InsertID: "testid",
+			}
+			row, id, err := r.Save()
+			So(err, ShouldBeNil)
+			So(id, ShouldEqual, "testid")
+			So(row, ShouldResemble, map[string]bigquery.Value{
+				"name":    "Repeated Fields",
+				"strings": []any{"string1", "string2"},
+				"bar":     []any{"Q", "R"},
+				"nested": []any{
+					map[string]bigquery.Value{"name": "nested1"},
+					map[string]bigquery.Value{"name": "nested2"},
+				},
+			})
 		})
 	})
 }

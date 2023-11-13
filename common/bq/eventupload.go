@@ -15,20 +15,19 @@
 package bq
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"math"
-	"reflect"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/exp/slices"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -42,29 +41,6 @@ import (
 
 // ID is the global InsertIDGenerator
 var ID InsertIDGenerator
-
-// fieldInfo is metadata of a proto field.
-// Retrieve field infos using getFieldInfos.
-//
-// For oneof, one oneof declaration is mapped to one fieldinfo,
-// as opposed to one fieldinfo per oneof member.
-type fieldInfo struct {
-	*proto.Properties
-	structIndex []int
-	// oneOfFields maps a oneof struct type to its metadata.
-	// Initialized only for oneof declaration fields.
-	oneOfFields map[reflect.Type]oneOfFieldInfo
-}
-
-type oneOfFieldInfo struct {
-	*proto.Properties
-	valueFieldIndex []int // index of the field within a oneof struct
-}
-
-var bqFields = map[reflect.Type][]fieldInfo{}
-var bqFieldsLock = sync.RWMutex{}
-
-var protoMessageType = reflect.TypeOf((*proto.Message)(nil)).Elem()
 
 const insertLimit = 10000
 const batchDefault = 500
@@ -100,112 +76,98 @@ type Row struct {
 
 // Save is used by bigquery.Inserter.Put when inserting values into a table.
 func (r *Row) Save() (map[string]bigquery.Value, string, error) {
-	m, err := mapFromMessage(r.Message, nil)
+	messageV2 := proto.MessageV2(r.Message)
+	m, err := mapFromMessage(messageV2, nil)
 	return m, r.InsertID, err
 }
 
 // mapFromMessage returns a {BQ Field name: BQ value} map.
 // path is a slice of Go field names leading to m.
-func mapFromMessage(m proto.Message, path []string) (map[string]bigquery.Value, error) {
-	sPtr := reflect.ValueOf(m)
-	switch {
-	case sPtr.Kind() != reflect.Ptr:
-		return nil, fmt.Errorf("type %T implementing proto.Message is not a pointer", m)
-	case sPtr.IsNil():
+func mapFromMessage(pm protoreflect.ProtoMessage, path []string) (map[string]bigquery.Value, error) {
+	type kvPair struct {
+		key string
+		val protoreflect.Value
+	}
+
+	m := pm.ProtoReflect()
+	if !m.IsValid() {
 		return nil, nil
 	}
-
-	s := sPtr.Elem()
-	if s.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("type %T implementing proto.Message is not a pointer to a struct", m)
-	}
-
-	t := s.Type()
-	infos, err := getFieldInfos(t)
-	if err != nil {
-		return nil, errors.Annotate(err, "could not populate bqFields for type %v", t).Err()
-	}
-	path = append(path, "")
+	fields := m.Descriptor().Fields()
 
 	var row map[string]bigquery.Value // keep it nil unless there are values
-	for _, fi := range infos {
-		var bqField string
+	path = append(path, "")
+
+	for i := 0; i < fields.Len(); i++ {
 		var bqValue any
-		path[len(path)-1] = fi.Name
+		var err error
+		field := fields.Get(i)
+		fieldValue := m.Get(field)
+		bqField := string(field.Name())
+		path[len(path)-1] = bqField
 
 		switch {
-		case len(fi.oneOfFields) != 0:
-			val := s.FieldByIndex(fi.structIndex)
-			if val.IsNil() {
-				continue
-			}
-			structPtr := val.Elem()
-			oof := fi.oneOfFields[structPtr.Type()]
-			bqField = oof.OrigName
-			rawValue := structPtr.Elem().FieldByIndex(oof.valueFieldIndex).Interface()
-			if bqValue, err = getValue(rawValue, path, oof.Properties); err != nil {
-				return nil, errors.Annotate(err, "%s", fi.OrigName).Err()
-			} else if bqValue == nil {
-				// Omit NULL values.
-				continue
-			}
+		case field.IsList():
+			list := fieldValue.List()
 
-		case fi.Repeated:
-			f := s.FieldByIndex(fi.structIndex)
-			// init value only if there are elements
-			n := f.Len()
-			if n == 0 {
-				// omit a repeated field with no elements.
-				continue
-			}
-
-			elems := make([]any, n)
+			elems := make([]any, 0, list.Len())
 			vPath := append(path, "")
-			switch f.Kind() {
-			case reflect.Slice:
-				for i := 0; i < len(elems); i++ {
-					vPath[len(vPath)-1] = strconv.Itoa(i)
-					elems[i], err = getValue(f.Index(i).Interface(), vPath, fi.Properties)
-					if err != nil {
-						return nil, errors.Annotate(err, "%s[%d]", fi.OrigName, i).Err()
-					}
+			for i := 0; i < list.Len(); i++ {
+				vPath[len(vPath)-1] = strconv.Itoa(i)
+				elemValue, err := getValue(field, list.Get(i), vPath)
+				if err != nil {
+					return nil, errors.Annotate(err, "%s[%d]", bqField, i).Err()
 				}
-
-			case reflect.Map:
-				if f.Type().Key().Kind() != reflect.String {
-					return nil, fmt.Errorf("map key must be a string")
+				if elemValue == nil {
+					continue
 				}
-
-				keys := f.MapKeys()
-				sort.Slice(keys, func(i, j int) bool {
-					return keys[i].String() < keys[j].String()
-				})
-
-				for i, k := range keys {
-					kStr := k.String()
-					vPath[len(vPath)-1] = kStr
-					elemValue, err := getValue(f.MapIndex(k).Interface(), vPath, fi.Properties.MapValProp)
-					if err != nil {
-						return nil, errors.Annotate(err, "%s[%s]", fi.OrigName, kStr).Err()
-					}
-					elems[i] = map[string]bigquery.Value{
-						"key":   kStr,
-						"value": elemValue,
-					}
-				}
-
-			default:
-				return nil, fmt.Errorf("kind %s not supported as a repeated field", f.Kind())
+				elems = append(elems, elemValue)
 			}
-			bqField = fi.OrigName
+			if len(elems) == 0 {
+				continue
+			}
 			bqValue = elems
+		case field.IsMap():
+			if field.MapKey().Kind() != protoreflect.StringKind {
+				return nil, fmt.Errorf("map key must be a string")
+			}
 
+			mapValue := fieldValue.Map()
+			if mapValue.Len() == 0 {
+				continue
+			}
+
+			pairs := make([]kvPair, 0, mapValue.Len())
+			mapValue.Range(func(key protoreflect.MapKey, value protoreflect.Value) bool {
+				pairs = append(pairs, kvPair{key.String(), value})
+				return true
+			})
+			slices.SortFunc(pairs, func(i, j kvPair) bool {
+				return i.key < j.key
+			})
+
+			valueDesc := field.MapValue()
+			elems := make([]any, mapValue.Len())
+			vPath := append(path, "")
+			for i, pair := range pairs {
+				vPath[len(vPath)-1] = pair.key
+				elemValue, err := getValue(valueDesc, pair.val, vPath)
+				if err != nil {
+					return nil, errors.Annotate(err, "%s[%s]", bqField, pair.key).Err()
+				}
+
+				elems[i] = map[string]bigquery.Value{
+					"key":   pair.key,
+					"value": elemValue,
+				}
+			}
+
+			bqValue = elems
 		default:
-			bqField = fi.OrigName
-			if bqValue, err = getValue(s.FieldByIndex(fi.structIndex).Interface(), path, fi.Properties); err != nil {
-				return nil, errors.Annotate(err, "%s", fi.OrigName).Err()
+			if bqValue, err = getValue(field, fieldValue, path); err != nil {
+				return nil, errors.Annotate(err, "%s", bqField).Err()
 			} else if bqValue == nil {
-				// Omit NULL values.
+				// Omit NULL/nil values
 				continue
 			}
 		}
@@ -215,98 +177,23 @@ func mapFromMessage(m proto.Message, path []string) (map[string]bigquery.Value, 
 		}
 		row[bqField] = bigquery.Value(bqValue)
 	}
+
 	return row, nil
 }
 
-// getFieldInfos returns field metadata for a given proto go type.
-// Caches results.
-func getFieldInfos(t reflect.Type) ([]fieldInfo, error) {
-	bqFieldsLock.RLock()
-	f := bqFields[t]
-	bqFieldsLock.RUnlock()
-	if f != nil {
-		return f, nil
+func getValue(field protoreflect.FieldDescriptor, value protoreflect.Value, path []string) (any, error) {
+	// enums and primitives
+	if enumField := field.Enum(); enumField != nil {
+		enumName := string(enumField.Values().ByNumber(value.Enum()).Name())
+		return enumName, nil
+	}
+	if field.Kind() != protoreflect.MessageKind && field.Kind() != protoreflect.GroupKind {
+		return value.Interface(), nil
 	}
 
-	bqFieldsLock.Lock()
-	defer bqFieldsLock.Unlock()
-	return getFieldInfosLocked(t)
-}
-
-func getFieldInfosLocked(t reflect.Type) ([]fieldInfo, error) {
-	if f := bqFields[t]; f != nil {
-		return f, nil
-	}
-
-	structProp := proto.GetProperties(t)
-
-	oneOfs := map[int]map[reflect.Type]oneOfFieldInfo{}
-	for _, of := range structProp.OneofTypes {
-		f, ok := of.Type.Elem().FieldByName(of.Prop.Name)
-		if !ok {
-			return nil, fmt.Errorf("field %q not found in %q", of.Prop.Name, of.Type)
-		}
-
-		typeMap := oneOfs[of.Field]
-		if typeMap == nil {
-			typeMap = map[reflect.Type]oneOfFieldInfo{}
-			oneOfs[of.Field] = typeMap
-		}
-		typeMap[of.Type] = oneOfFieldInfo{
-			Properties:      of.Prop,
-			valueFieldIndex: f.Index,
-		}
-	}
-
-	fields := make([]fieldInfo, 0, len(structProp.Prop))
-	for _, p := range structProp.Prop {
-		if strings.HasPrefix(p.Name, "XXX_") {
-			continue
-		}
-
-		f, ok := t.FieldByName(p.Name)
-		if !ok {
-			return nil, fmt.Errorf("field %q not found in %q", p.Name, t)
-		}
-
-		ft := f.Type
-		if ft.Kind() == reflect.Slice {
-			ft = ft.Elem()
-		}
-		if ft.Implements(protoMessageType) && ft.Kind() == reflect.Ptr {
-			if st := ft.Elem(); st.Kind() == reflect.Struct {
-				// Note: this will crash with a stack overflow if the protobuf
-				// message is recursive, but bqschemaupdater should catch that
-				// earlier.
-				subfields, err := getFieldInfosLocked(st)
-				if err != nil {
-					return nil, err
-				}
-				if len(subfields) == 0 {
-					// Skip RECORD fields with no sub-fields.
-					continue
-				}
-			}
-		}
-		fields = append(fields, fieldInfo{
-			Properties:  p,
-			structIndex: f.Index,
-			oneOfFields: oneOfs[f.Index[0]],
-		})
-	}
-
-	bqFields[t] = fields
-	return fields, nil
-}
-
-func getValue(value any, path []string, prop *proto.Properties) (any, error) {
-	if prop.Enum != "" {
-		stringer, ok := value.(fmt.Stringer)
-		if !ok {
-			return nil, fmt.Errorf("could not convert enum value to string")
-		}
-		return stringer.String(), nil
-	} else if dpb, ok := value.(*durationpb.Duration); ok {
+	// structs
+	messageInterface := value.Message().Interface()
+	if dpb, ok := messageInterface.(*durationpb.Duration); ok {
 		if dpb == nil {
 			return nil, nil
 		}
@@ -316,7 +203,8 @@ func getValue(value any, path []string, prop *proto.Properties) (any, error) {
 		value := dpb.AsDuration()
 		// Convert to FLOAT64.
 		return value.Seconds(), nil
-	} else if tspb, ok := value.(*timestamppb.Timestamp); ok {
+	}
+	if tspb, ok := messageInterface.(*timestamppb.Timestamp); ok {
 		if tspb == nil {
 			return nil, nil
 		}
@@ -325,31 +213,27 @@ func getValue(value any, path []string, prop *proto.Properties) (any, error) {
 		}
 		value := tspb.AsTime()
 		return value, nil
-	} else if s, ok := value.(*structpb.Struct); ok {
+	}
+	if s, ok := messageInterface.(*structpb.Struct); ok {
 		if s == nil {
 			return nil, nil
 		}
 		// Structs are persisted as JSONPB strings.
 		// See also https://bit.ly/chromium-bq-struct
-		var buf bytes.Buffer
-		if err := (&jsonpb.Marshaler{}).Marshal(&buf, s); err != nil {
+		var buf []byte
+		var err error
+		if buf, err = protojson.Marshal(s); err != nil {
 			return nil, err
 		}
-		return buf.String(), nil
-	} else if nested, ok := value.(proto.Message); ok {
-		if nested == nil {
-			return nil, nil
-		}
-		m, err := mapFromMessage(nested, path)
-		if m == nil {
-			// a nil map is not nil when converted to any,
-			// so return nil explicitly.
-			return nil, err
-		}
-		return m, err
-	} else {
-		return value, nil
+		return string(buf), nil
 	}
+	message, err := mapFromMessage(messageInterface, path)
+	if message == nil {
+		// a nil map is not nil when converted to any,
+		// so return nil explicitly.
+		return nil, err
+	}
+	return message, err
 }
 
 // NewUploader constructs a new Uploader struct.
