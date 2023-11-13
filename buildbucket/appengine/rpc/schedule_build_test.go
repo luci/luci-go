@@ -468,18 +468,7 @@ func TestScheduleBuild(t *testing.T) {
 							Buildbucket: &pb.BuildInfra_Buildbucket{
 								Hostname: "app.appspot.com",
 								Agent: &pb.BuildInfra_Buildbucket_Agent{
-									Input: &pb.BuildInfra_Buildbucket_Agent_Input{
-										CipdSource: map[string]*pb.InputDataRef{
-											"cipd": &pb.InputDataRef{
-												DataType: &pb.InputDataRef_Cipd{
-													Cipd: &pb.InputDataRef_CIPD{
-														Specs: []*pb.InputDataRef_CIPD_PkgSpec{{}},
-													},
-												},
-												OnPath: []string{"cipd", "cipd/bin"},
-											},
-										},
-									},
+									Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
 									Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 										"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 									},
@@ -600,18 +589,7 @@ func TestScheduleBuild(t *testing.T) {
 							Buildbucket: &pb.BuildInfra_Buildbucket{
 								Hostname: "app.appspot.com",
 								Agent: &pb.BuildInfra_Buildbucket_Agent{
-									Input: &pb.BuildInfra_Buildbucket_Agent_Input{
-										CipdSource: map[string]*pb.InputDataRef{
-											"cipd": &pb.InputDataRef{
-												DataType: &pb.InputDataRef_Cipd{
-													Cipd: &pb.InputDataRef_CIPD{
-														Specs: []*pb.InputDataRef_CIPD_PkgSpec{{}},
-													},
-												},
-												OnPath: []string{"cipd", "cipd/bin"},
-											},
-										},
-									},
+									Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
 									Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 										"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 									},
@@ -718,18 +696,7 @@ func TestScheduleBuild(t *testing.T) {
 						Buildbucket: &pb.BuildInfra_Buildbucket{
 							Hostname: "app.appspot.com",
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
-								Input: &pb.BuildInfra_Buildbucket_Agent_Input{
-									CipdSource: map[string]*pb.InputDataRef{
-										"cipd": &pb.InputDataRef{
-											DataType: &pb.InputDataRef_Cipd{
-												Cipd: &pb.InputDataRef_CIPD{
-													Specs: []*pb.InputDataRef_CIPD_PkgSpec{{}},
-												},
-											},
-											OnPath: []string{"cipd", "cipd/bin"},
-										},
-									},
-								},
+								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
 								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 								},
@@ -913,18 +880,7 @@ func TestScheduleBuild(t *testing.T) {
 						Buildbucket: &pb.BuildInfra_Buildbucket{
 							Hostname: "app.appspot.com",
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
-								Input: &pb.BuildInfra_Buildbucket_Agent_Input{
-									CipdSource: map[string]*pb.InputDataRef{
-										"cipd": &pb.InputDataRef{
-											DataType: &pb.InputDataRef_Cipd{
-												Cipd: &pb.InputDataRef_CIPD{
-													Specs: []*pb.InputDataRef_CIPD_PkgSpec{{}},
-												},
-											},
-											OnPath: []string{"cipd", "cipd/bin"},
-										},
-									},
-								},
+								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
 								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 								},
@@ -994,18 +950,7 @@ func TestScheduleBuild(t *testing.T) {
 						Buildbucket: &pb.BuildInfra_Buildbucket{
 							Hostname: "app.appspot.com",
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
-								Input: &pb.BuildInfra_Buildbucket_Agent_Input{
-									CipdSource: map[string]*pb.InputDataRef{
-										"cipd": &pb.InputDataRef{
-											DataType: &pb.InputDataRef_Cipd{
-												Cipd: &pb.InputDataRef_CIPD{
-													Specs: []*pb.InputDataRef_CIPD_PkgSpec{{}},
-												},
-											},
-											OnPath: []string{"cipd", "cipd/bin"},
-										},
-									},
-								},
+								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
 								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 								},
@@ -1075,18 +1020,7 @@ func TestScheduleBuild(t *testing.T) {
 						Buildbucket: &pb.BuildInfra_Buildbucket{
 							Hostname: "app.appspot.com",
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
-								Input: &pb.BuildInfra_Buildbucket_Agent_Input{
-									CipdSource: map[string]*pb.InputDataRef{
-										"cipd": &pb.InputDataRef{
-											DataType: &pb.InputDataRef_Cipd{
-												Cipd: &pb.InputDataRef_CIPD{
-													Specs: []*pb.InputDataRef_CIPD_PkgSpec{{}},
-												},
-											},
-											OnPath: []string{"cipd", "cipd/bin"},
-										},
-									},
-								},
+								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
 								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 								},
@@ -1280,18 +1214,7 @@ func TestScheduleBuild(t *testing.T) {
 						Buildbucket: &pb.BuildInfra_Buildbucket{
 							Hostname: "app.appspot.com",
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
-								Input: &pb.BuildInfra_Buildbucket_Agent_Input{
-									CipdSource: map[string]*pb.InputDataRef{
-										"cipd": &pb.InputDataRef{
-											DataType: &pb.InputDataRef_Cipd{
-												Cipd: &pb.InputDataRef_CIPD{
-													Specs: []*pb.InputDataRef_CIPD_PkgSpec{{}},
-												},
-											},
-											OnPath: []string{"cipd", "cipd/bin"},
-										},
-									},
-								},
+								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
 								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 								},
@@ -1484,18 +1407,7 @@ func TestScheduleBuild(t *testing.T) {
 						Buildbucket: &pb.BuildInfra_Buildbucket{
 							Hostname: "app.appspot.com",
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
-								Input: &pb.BuildInfra_Buildbucket_Agent_Input{
-									CipdSource: map[string]*pb.InputDataRef{
-										"cipd": &pb.InputDataRef{
-											DataType: &pb.InputDataRef_Cipd{
-												Cipd: &pb.InputDataRef_CIPD{
-													Specs: []*pb.InputDataRef_CIPD_PkgSpec{{}},
-												},
-											},
-											OnPath: []string{"cipd", "cipd/bin"},
-										},
-									},
-								},
+								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
 								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 								},
@@ -1875,18 +1787,7 @@ func TestScheduleBuild(t *testing.T) {
 						Buildbucket: &pb.BuildInfra_Buildbucket{
 							Hostname: "app.appspot.com",
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
-								Input: &pb.BuildInfra_Buildbucket_Agent_Input{
-									CipdSource: map[string]*pb.InputDataRef{
-										"cipd": &pb.InputDataRef{
-											DataType: &pb.InputDataRef_Cipd{
-												Cipd: &pb.InputDataRef_CIPD{
-													Specs: []*pb.InputDataRef_CIPD_PkgSpec{{}},
-												},
-											},
-											OnPath: []string{"cipd", "cipd/bin"},
-										},
-									},
-								},
+								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
 								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 								},
@@ -5979,18 +5880,7 @@ func TestScheduleBuild(t *testing.T) {
 							Buildbucket: &pb.BuildInfra_Buildbucket{
 								Hostname: "app.appspot.com",
 								Agent: &pb.BuildInfra_Buildbucket_Agent{
-									Input: &pb.BuildInfra_Buildbucket_Agent_Input{
-										CipdSource: map[string]*pb.InputDataRef{
-											"cipd": &pb.InputDataRef{
-												DataType: &pb.InputDataRef_Cipd{
-													Cipd: &pb.InputDataRef_CIPD{
-														Specs: []*pb.InputDataRef_CIPD_PkgSpec{{}},
-													},
-												},
-												OnPath: []string{"cipd", "cipd/bin"},
-											},
-										},
-									},
+									Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
 									Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 										"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 									},
