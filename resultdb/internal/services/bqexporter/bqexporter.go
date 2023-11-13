@@ -32,7 +32,6 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/genproto/googleapis/bytestream"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/runtime/protoiface"
 
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
@@ -201,7 +200,7 @@ func hasReason(apiErr *googleapi.Error, reason string) bool {
 // rowInput is information required to generate a BigQuery row.
 type rowInput interface {
 	// row returns a BigQuery row.
-	row() protoiface.MessageV1
+	row() proto.Message
 
 	// id returns an identifier for the row.
 	id() []byte

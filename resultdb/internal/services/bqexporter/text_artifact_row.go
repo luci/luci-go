@@ -26,7 +26,7 @@ import (
 	"github.com/golang/protobuf/descriptor"
 	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/protobuf/runtime/protoiface"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
@@ -79,7 +79,7 @@ type textArtifactRowInput struct {
 	content  string
 }
 
-func (i *textArtifactRowInput) row() protoiface.MessageV1 {
+func (i *textArtifactRowInput) row() proto.Message {
 	_, testID, resultID, artifactID := artifacts.MustParseName(i.a.Name)
 	expRec := invocationProtoToRecord(i.exported)
 	parRec := invocationProtoToRecord(i.parent)

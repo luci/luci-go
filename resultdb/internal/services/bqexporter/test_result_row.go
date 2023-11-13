@@ -23,7 +23,6 @@ import (
 	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/runtime/protoiface"
 
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
@@ -86,7 +85,7 @@ type testResultRowInput struct {
 	exonerated bool
 }
 
-func (i *testResultRowInput) row() protoiface.MessageV1 {
+func (i *testResultRowInput) row() proto.Message {
 	tr := i.tr
 
 	ret := &bqpb.TestResultRow{

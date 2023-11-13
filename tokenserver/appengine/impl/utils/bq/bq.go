@@ -23,7 +23,6 @@ import (
 	"net/http"
 
 	"cloud.google.com/go/bigquery"
-	protov1 "github.com/golang/protobuf/proto"
 
 	"google.golang.org/api/option"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -144,7 +143,7 @@ func (ins *Inserter) insert(ctx context.Context, table string, row proto.Message
 	tab := ins.bq.Dataset("tokens").Table(table)
 
 	err := tab.Inserter().Put(ctx, &bq.Row{
-		Message:  protov1.MessageV1(row),
+		Message:  row,
 		InsertID: fmt.Sprintf("v1:%s", messageID),
 	})
 

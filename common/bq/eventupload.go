@@ -24,9 +24,9 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -76,14 +76,13 @@ type Row struct {
 
 // Save is used by bigquery.Inserter.Put when inserting values into a table.
 func (r *Row) Save() (map[string]bigquery.Value, string, error) {
-	messageV2 := proto.MessageV2(r.Message)
-	m, err := mapFromMessage(messageV2, nil)
+	m, err := mapFromMessage(r.Message, nil)
 	return m, r.InsertID, err
 }
 
 // mapFromMessage returns a {BQ Field name: BQ value} map.
 // path is a slice of Go field names leading to m.
-func mapFromMessage(pm protoreflect.ProtoMessage, path []string) (map[string]bigquery.Value, error) {
+func mapFromMessage(pm proto.Message, path []string) (map[string]bigquery.Value, error) {
 	type kvPair struct {
 		key string
 		val protoreflect.Value

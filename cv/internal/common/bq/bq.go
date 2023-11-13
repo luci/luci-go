@@ -20,7 +20,6 @@ import (
 	"net/http"
 
 	"cloud.google.com/go/bigquery"
-	protov1 "github.com/golang/protobuf/proto"
 
 	"google.golang.org/api/option"
 	"google.golang.org/protobuf/proto"
@@ -82,7 +81,7 @@ func (c *prodClient) SendRow(ctx context.Context, row Row) error {
 		table = c.b.DatasetInProject(row.CloudProject, row.Dataset).Table(row.Table)
 	}
 	r := &lucibq.Row{
-		Message:  protov1.MessageV1(row.Payload),
+		Message:  row.Payload,
 		InsertID: row.OperationID,
 	}
 	if err := table.Inserter().Put(ctx, r); err != nil {
