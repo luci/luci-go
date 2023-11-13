@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/service/protocol"
@@ -353,13 +354,24 @@ func EnqueueProcessChangeTask(ctx context.Context, authdbrev int64) error {
 	})
 }
 
-func handleProcessChangeTask(ctx context.Context, task *taskspb.ProcessChangeTask) error {
-	// TODO(cjacomet): Implement
-	return nil
-}
+func handleProcessChangeTask(ctx context.Context, task *taskspb.ProcessChangeTask, dryRun bool) error {
+	authDBRev := task.GetAuthDbRev()
+	logging.Infof(ctx, "processing changes for AuthDB rev %d (dry run: %s)", authDBRev, dryRun)
 
-func ensureInitialSnapshot() {
-	// TODO(cjacomet): Implement
+	_, err := generateChanges(ctx, authDBRev, dryRun)
+	if err != nil {
+		if !dryRun && transient.Tag.In(err) {
+			// Return the error to signal retry.
+			return err
+		}
+
+		// Either dryRun is enabled, or error is non-transient;
+		// do not retry.
+		logging.Errorf(ctx, "error generating changes: %v", err)
+		return nil
+	}
+
+	return nil
 }
 
 var knownHistoricalEntities = map[string]diffFunc{

@@ -25,6 +25,7 @@ import (
 )
 
 func init() {
+	dryRun := true
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        "process-change-task",
 		Prototype: (*taskspb.ProcessChangeTask)(nil),
@@ -33,7 +34,7 @@ func init() {
 		Handler: func(ctx context.Context, payload protoreflect.ProtoMessage) error {
 			task := payload.(*taskspb.ProcessChangeTask)
 			logging.Infof(ctx, "got revision %d", task.AuthDbRev)
-			return handleProcessChangeTask(ctx, payload.(*taskspb.ProcessChangeTask))
+			return handleProcessChangeTask(ctx, payload.(*taskspb.ProcessChangeTask), dryRun)
 		},
 		Custom: func(ctx context.Context, payload protoreflect.ProtoMessage) (*tq.CustomPayload, error) {
 			task := payload.(*taskspb.ProcessChangeTask)
