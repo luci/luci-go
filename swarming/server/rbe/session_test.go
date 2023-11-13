@@ -573,7 +573,7 @@ func TestSessionServer(t *testing.T) {
 				}, nil
 			})
 
-			_, err := srv.UpdateBotSession(ctx, &UpdateBotSessionRequest{
+			resp, err := srv.UpdateBotSession(ctx, &UpdateBotSessionRequest{
 				Status: "OK",
 				Lease: &Lease{
 					ID:    fakeFirstLeaseID,
@@ -581,8 +581,8 @@ func TestSessionServer(t *testing.T) {
 				},
 			}, fakeRequest)
 
-			So(err, ShouldHaveGRPCStatus, codes.Internal)
-			So(err, ShouldErrLike, "silently dropped by RBE")
+			So(err, ShouldBeNil)
+			So(resp.(*UpdateBotSessionResponse).Lease, ShouldBeNil)
 		})
 
 		Convey("UpdateBotSession unexpected ACTIVE lease transition", func() {

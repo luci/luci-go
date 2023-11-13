@@ -276,6 +276,11 @@ type UpdateBotSessionResponse struct {
 	//   * CANCELLED: the bot should stop working on the lease it just reported.
 	//     Once the bot is done working on the lease, it should update the session
 	//     again, marking the lease as COMPLETED. Payload is not populated.
+	//
+	// If the bot was stuck for a while and the RBE canceled the lease as lost,
+	// this field will be unpopulated, even if the bot reported an active lease.
+	// The bot should give up on the current lease ASAP, without even reporting
+	// its result back (because the server gave up on it already anyway).
 	Lease *Lease `json:"lease,omitempty"`
 }
 
@@ -422,13 +427,18 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 	var leaseOut *remoteworkers.Lease
 	var leasePayload *internalspb.TaskPayload
 
-	// If a bot reported an ACTIVE lease, it can't just disappear. The RBE server
-	// should either ack it as ACTIVE as well or report it as CANCELED.
+	// If a bot reported an ACTIVE lease the RBE server should either ack it as
+	// ACTIVE as well or report it as CANCELED. Additionally if the bot was stuck
+	// and didn't ping the lease in a while, the RBE server marks the lease as
+	// lost and silently ignores it, i.e. doesn't return it in session.Leases.
 	if leaseIn != nil && leaseIn.State == remoteworkers.LeaseState_ACTIVE {
 		// Find the reported lease in the response. There should be no other leases.
 		for _, lease := range session.Leases {
 			if lease.Id == leaseIn.Id {
 				leaseOut = lease
+				if leaseOut.State != remoteworkers.LeaseState_ACTIVE && leaseOut.State != remoteworkers.LeaseState_CANCELLED {
+					return nil, status.Errorf(codes.Internal, "unexpected ACTIVE lease state transition to %s", leaseOut.State)
+				}
 				if leaseOut.Payload != nil {
 					logging.Errorf(ctx, "Unexpected payload in the lease, dropping it")
 					leaseOut.Payload = nil
@@ -437,11 +447,8 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 				logging.Errorf(ctx, "Unexpected RBE lease: %s", lease)
 			}
 		}
-		switch {
-		case leaseOut == nil:
-			return nil, status.Errorf(codes.Internal, "the reported active lease was silently dropped by RBE")
-		case leaseOut.State != remoteworkers.LeaseState_ACTIVE && leaseOut.State != remoteworkers.LeaseState_CANCELLED:
-			return nil, status.Errorf(codes.Internal, "unexpected ACTIVE lease state transition to %s", leaseOut.State)
+		if leaseOut == nil {
+			logging.Warningf(ctx, "The bot lost the lease")
 		}
 	}
 
