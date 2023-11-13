@@ -117,9 +117,6 @@ type TaskResultCommon struct {
 	// StdoutChunks is the number of TaskOutputChunk entities with the output.
 	StdoutChunks int64 `gae:"stdout_chunks,noindex"`
 
-	// CostUSD is an approximate bot time cost spent executing this task.
-	CostUSD float64 `gae:"costs_usd,noindex"` // legacy plural property name
-
 	// CASOutputRoot is the digest of the output root uploaded to RBE-CAS.
 	CASOutputRoot CASReference `gae:"cas_output_root,lsp,noindex"`
 
@@ -235,6 +232,9 @@ type TaskResultSummary struct {
 	// dedupped.
 	TryNumber datastore.Nullable[int64, datastore.Indexed] `gae:"try_number"`
 
+	// CostUSD is an approximate bot time cost spent executing this task.
+	CostUSD float64 `gae:"costs_usd,noindex"` // legacy plural property name
+
 	// CostSavedUSD is an approximate cost saved by deduping this task.
 	CostSavedUSD float64 `gae:"cost_saved_usd,noindex"`
 
@@ -294,6 +294,9 @@ type TaskRunResult struct {
 	//
 	// The index is used in task listing queries to filter by a specific bot.
 	BotID string `gae:"bot_id"`
+
+	// CostUSD is an approximate bot time cost spent executing this task.
+	CostUSD float64 `gae:"cost_usd,noindex"`
 
 	// Killing is true if a user requested the task to be canceled while it is
 	// already running.

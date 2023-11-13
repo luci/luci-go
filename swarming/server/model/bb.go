@@ -60,6 +60,9 @@ type BuildTask struct {
 	// The same as in TaskRunResult.BotDimensions. Stored here to avoid extra
 	// datastore fetch when sending updates to Buildbucket.
 	BotDimensions BotDimensions `gae:"bot_dimensions"`
+
+	// LegacyTaskStatus is no longer used.
+	LegacyTaskStatus LegacyProperty `gae:"task_status"`
 }
 
 // BuildTaskKey construct a BuildTask key given a task request key.

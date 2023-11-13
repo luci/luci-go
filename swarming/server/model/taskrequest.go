@@ -178,6 +178,9 @@ type TaskRequest struct {
 
 	// LegacyProperties is no longer used.
 	LegacyProperties LegacyProperty `gae:"properties"`
+
+	// LegacyHasBuildToken is no longer used.
+	LegacyHasBuildToken LegacyProperty `gae:"has_build_token"`
 }
 
 // TaskSlice defines where and how to run the task and when to give up.

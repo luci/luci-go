@@ -70,6 +70,9 @@ type BotRoot struct {
 
 	// Key is derived based on the bot ID, see BotRootKey.
 	Key *datastore.Key `gae:"$key"`
+
+	// LegacyCurrent is no longer used.
+	LegacyCurrent LegacyProperty `gae:"current"`
 }
 
 // BotRootKey is a root key of an entity group with info about a bot.
