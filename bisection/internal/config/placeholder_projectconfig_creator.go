@@ -21,11 +21,13 @@ import (
 func CreatePlaceholderProjectConfig() *configpb.ProjectConfig {
 	return &configpb.ProjectConfig{
 		CompileAnalysisConfig: &configpb.CompileAnalysisConfig{
+			BuildConfig:                createPlaceHolderCompileBuildConfig(),
 			CulpritVerificationEnabled: true,
 			NthsectionEnabled:          true,
 			GerritConfig:               createPlaceHolderGerritConfig(),
 		},
 		TestAnalysisConfig: &configpb.TestAnalysisConfig{
+			BuildConfig:     createPlaceHolderTestBuildConfig(),
 			DetectorEnabled: true,
 			BisectorEnabled: true,
 			DailyLimit:      10,
@@ -49,6 +51,26 @@ func createPlaceHolderGerritConfig() *configpb.GerritConfig {
 		NthsectionSettings: &configpb.GerritConfig_NthSectionSettings{
 			Enabled:                     true,
 			ActionWhenVerificationError: false,
+		},
+	}
+}
+
+func createPlaceHolderCompileBuildConfig() *configpb.BuildConfig {
+	return &configpb.BuildConfig{
+		Builder: &configpb.Builder{
+			Project: "chromium",
+			Bucket:  "findit",
+			Builder: "gofindit-culprit-verification",
+		},
+	}
+}
+
+func createPlaceHolderTestBuildConfig() *configpb.BuildConfig {
+	return &configpb.BuildConfig{
+		Builder: &configpb.Builder{
+			Project: "chromium",
+			Bucket:  "findit",
+			Builder: "test-single-revision",
 		},
 	}
 }
