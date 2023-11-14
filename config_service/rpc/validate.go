@@ -16,7 +16,6 @@ package rpc
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -27,6 +26,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/klauspost/compress/gzip"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -195,8 +195,15 @@ func (vf validationFile) GetRawContent(ctx context.Context) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gzip reader: %w", err)
 	}
-	defer func() { _ = r.Close() }()
-	return io.ReadAll(r)
+	blob, err := io.ReadAll(r)
+	if err != nil {
+		_ = r.Close()
+		return nil, err
+	}
+	if err := r.Close(); err != nil {
+		return nil, fmt.Errorf("failed to close gzip reader: %w", err)
+	}
+	return blob, nil
 }
 
 // makeValidationFiles creates a `validationFile` for each file_hash in the

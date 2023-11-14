@@ -17,11 +17,12 @@ package model
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
 	"time"
+
+	"github.com/klauspost/compress/gzip"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
@@ -162,11 +163,13 @@ func decompressData(data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create gzip reader").Err()
 	}
-	// TODO(vadimsh): Check err, it may be non-nil on checksum mismatch.
-	defer func() { _ = gr.Close() }()
 	ret, err := io.ReadAll(gr)
 	if err != nil {
+		_ = gr.Close()
 		return nil, errors.Annotate(err, "failed to decompress the data").Err()
+	}
+	if err := gr.Close(); err != nil {
+		return nil, errors.Annotate(err, "errors closing gzip reader").Err()
 	}
 	return ret, nil
 }

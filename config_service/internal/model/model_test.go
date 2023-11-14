@@ -16,12 +16,12 @@ package model
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"testing"
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/klauspost/compress/gzip"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"

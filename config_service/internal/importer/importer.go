@@ -18,7 +18,6 @@ package importer
 import (
 	"archive/tar"
 	"bytes"
-	"compress/gzip"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -29,6 +28,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
+	"github.com/klauspost/compress/gzip"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/api/gitiles"

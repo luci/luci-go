@@ -16,7 +16,6 @@ package validation
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
@@ -30,6 +29,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/golang/mock/gomock"
+	"github.com/klauspost/compress/gzip"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 

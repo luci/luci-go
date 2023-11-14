@@ -16,7 +16,6 @@ package validation
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -27,6 +26,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/klauspost/compress/gzip"
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/gcloud/gs"
@@ -272,6 +272,7 @@ func (sv *serviceValidator) validateFileLegacy(ctx context.Context, file File) (
 	if sv.service.LegacyMetadata.GetSupportsGzipCompression() && len(payload) > 512*1024 {
 		gzipWriter := gzip.NewWriter(&buf)
 		if _, err := gzipWriter.Write(payload); err != nil {
+			_ = gzipWriter.Close()
 			return nil, fmt.Errorf("failed to gzip compress the request: %w", err)
 		}
 		if err := gzipWriter.Close(); err != nil {
