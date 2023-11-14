@@ -446,6 +446,25 @@ func TestVM(t *testing.T) {
 			})
 
 			Convey("non-empty", func() {
+				Convey("network and subnetwork", func() {
+					v := &VM{
+						Attributes: config.VM{
+							NetworkInterface: []*config.NetworkInterface{
+								{
+									AccessConfig: []*config.AccessConfig{},
+									Network:      "network",
+									Subnetwork:   "subnetwork",
+								},
+							},
+						},
+					}
+					n := v.getNetworkInterfaces()
+					So(n, ShouldHaveLength, 1)
+					So(n[0].AccessConfigs, ShouldBeNil)
+					So(n[0].Network, ShouldEqual, "network")
+					So(n[0].Subnetwork, ShouldEqual, "subnetwork")
+				})
+
 				Convey("network", func() {
 					v := &VM{
 						Attributes: config.VM{
@@ -461,6 +480,23 @@ func TestVM(t *testing.T) {
 					So(n, ShouldHaveLength, 1)
 					So(n[0].AccessConfigs, ShouldBeNil)
 					So(n[0].Network, ShouldEqual, "network")
+				})
+
+				Convey("subnetwork", func() {
+					v := &VM{
+						Attributes: config.VM{
+							NetworkInterface: []*config.NetworkInterface{
+								{
+									AccessConfig: []*config.AccessConfig{},
+									Subnetwork:   "subnetwork",
+								},
+							},
+						},
+					}
+					n := v.getNetworkInterfaces()
+					So(n, ShouldHaveLength, 1)
+					So(n[0].AccessConfigs, ShouldBeNil)
+					So(n[0].Subnetwork, ShouldEqual, "subnetwork")
 				})
 
 				Convey("access configs", func() {

@@ -201,7 +201,8 @@ func (vm *VM) getNetworkInterfaces() []*compute.NetworkInterface {
 	nics := make([]*compute.NetworkInterface, len(vm.Attributes.NetworkInterface))
 	for i, nic := range vm.Attributes.NetworkInterface {
 		nics[i] = &compute.NetworkInterface{
-			Network: nic.Network,
+			Network:    nic.Network,
+			Subnetwork: nic.Subnetwork,
 		}
 		if len(nic.GetAccessConfig()) > 0 {
 			nics[i].AccessConfigs = make([]*compute.AccessConfig, len(nic.AccessConfig))
