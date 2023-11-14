@@ -101,11 +101,17 @@ func (qm *Manager) RunQuotaAccountID(r *run.Run) *quotapb.AccountID {
 
 // runQuotaOp updates the run quota for the given run state by the given delta.
 func (qm *Manager) runQuotaOp(ctx context.Context, r *run.Run, requestID string, delta int64) (*quotapb.OpResult, error) {
-	policyID, err := qm.findRunPolicy(ctx, r)
+	policyID, isUnlimited, err := qm.findRunPolicy(ctx, r)
 
 	// policyID == nil when no policy limit is configured for this user.
 	if err != nil || policyID == nil {
 		return nil, err
+	}
+
+	// When policy is set to unlimited, the op is applied with IGNORE_POLICY_BOUNDS.
+	options := quotapb.Op_NO_OPTIONS
+	if isUnlimited {
+		options |= quotapb.Op_IGNORE_POLICY_BOUNDS
 	}
 
 	// TODO(crbug/1466346): When policy changes, server/quota should replenish
@@ -118,6 +124,7 @@ func (qm *Manager) runQuotaOp(ctx context.Context, r *run.Run, requestID string,
 			PolicyId:   policyID,
 			RelativeTo: quotapb.Op_CURRENT_BALANCE,
 			Delta:      delta,
+			Options:    uint32(options),
 		},
 	}
 
@@ -161,17 +168,19 @@ func requestID(runID common.RunID, op string) string {
 	return string(runID) + "/" + op
 }
 
-// findRunPolicy returns the PolicyID for the given run state.
-func (qm *Manager) findRunPolicy(ctx context.Context, r *run.Run) (*quotapb.PolicyID, error) {
+// findRunPolicy returns the PolicyID and isUnlimited for the given run state.
+// PolicyID is the ID used by server/quota's ApplyOps fn. isUnlimited is set
+// true if the found policy for the run is unlimited.
+func (qm *Manager) findRunPolicy(ctx context.Context, r *run.Run) (*quotapb.PolicyID, bool, error) {
 	project := r.ID.LUCIProject()
 	cfgGroup, err := prjcfg.GetConfigGroup(ctx, project, r.ConfigGroupID)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	config := cfgGroup.Content
 	if config == nil {
-		return nil, fmt.Errorf("cannot find cfgGroup content")
+		return nil, false, fmt.Errorf("cannot find cfgGroup content")
 	}
 
 	policyConfigID := policyConfigID(project, r.ConfigGroupID.Hash())
@@ -182,17 +191,18 @@ func (qm *Manager) findRunPolicy(ctx context.Context, r *run.Run) (*quotapb.Poli
 			continue
 		}
 
+		isUnlimited := runLimit.GetMaxActive().GetUnlimited()
 		var groups []string
 		for _, principal := range userLimit.GetPrincipals() {
 			switch parts := strings.SplitN(principal, ":", 2); {
 			case len(parts) != 2:
 				// Each entry can be either an identity string "user:<email>" or a LUCI group reference "group:<name>".
-				return nil, fmt.Errorf("improper format for principal: %s", principal)
+				return nil, false, fmt.Errorf("improper format for principal: %s", principal)
 			case parts[0] == "user" && parts[1] == user.Email():
 				return &quotapb.PolicyID{
 					Config: policyConfigID,
 					Key:    runPolicyKey(config.GetName(), userLimit.GetName()),
-				}, nil
+				}, isUnlimited, nil
 			case parts[0] == "group":
 				groups = append(groups, parts[1])
 			}
@@ -204,25 +214,26 @@ func (qm *Manager) findRunPolicy(ctx context.Context, r *run.Run) (*quotapb.Poli
 
 		switch result, err := auth.GetState(ctx).DB().IsMember(ctx, user, groups); {
 		case err != nil:
-			return nil, err
+			return nil, false, err
 		case result:
 			return &quotapb.PolicyID{
 				Config: policyConfigID,
 				Key:    runPolicyKey(config.GetName(), userLimit.GetName()),
-			}, nil
+			}, isUnlimited, nil
 		}
 	}
 
 	// Check default run limit if user is not a part of any defined user limit groups.
 	if config.GetUserLimitDefault().GetRun() != nil {
+		isUnlimited := config.GetUserLimitDefault().GetRun().GetMaxActive().GetUnlimited()
 		return &quotapb.PolicyID{
 			Config: policyConfigID,
 			Key:    runPolicyKey(config.GetName(), defaultPolicy),
-		}, nil
+		}, isUnlimited, nil
 	}
 
 	// No limits configured for this user.
-	return nil, nil
+	return nil, false, nil
 }
 
 // policyConfigID is a helper to generate quota policyConfigID.

@@ -169,8 +169,26 @@ func TestManager(t *testing.T) {
 				CreatedBy:     makeIdentity(tEmail),
 			}
 
-			res, err := qm.findRunPolicy(ctx, r)
+			res, isUnlimited, err := qm.findRunPolicy(ctx, r)
 			So(err, ShouldBeNil)
+			So(isUnlimited, ShouldBeFalse)
+			So(res.Key, ShouldResembleProto, runPolicyKey("infra", "googlers-limit"))
+		})
+
+		Convey("findRunPolicy() returns true for isUnlimited when the found policy is unlimited", func() {
+			cg.UserLimits = append(cg.UserLimits,
+				genUserLimit("googlers-limit", 0, []string{"group:googlers"}))
+			prjcfgtest.Update(ctx, lProject, cfg)
+
+			r := &run.Run{
+				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				CreatedBy:     makeIdentity(tEmail),
+			}
+
+			res, isUnlimited, err := qm.findRunPolicy(ctx, r)
+			So(err, ShouldBeNil)
+			So(isUnlimited, ShouldBeTrue)
 			So(res.Key, ShouldResembleProto, runPolicyKey("infra", "googlers-limit"))
 		})
 
@@ -188,8 +206,9 @@ func TestManager(t *testing.T) {
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
 				CreatedBy:     makeIdentity(tEmail),
 			}
-			res, err := qm.findRunPolicy(ctx, r)
+			res, isUnlimited, err := qm.findRunPolicy(ctx, r)
 			So(err, ShouldBeNil)
+			So(isUnlimited, ShouldBeFalse)
 			So(res.Key, ShouldResembleProto, runPolicyKey("infra", "example-limit"))
 		})
 
@@ -208,8 +227,9 @@ func TestManager(t *testing.T) {
 				CreatedBy:     makeIdentity(tEmail),
 			}
 
-			res, err := qm.findRunPolicy(ctx, r)
+			res, isUnlimited, err := qm.findRunPolicy(ctx, r)
 			So(err, ShouldBeNil)
+			So(isUnlimited, ShouldBeFalse)
 			So(res.Key, ShouldResembleProto, runPolicyKey("infra", "default"))
 		})
 
@@ -227,8 +247,9 @@ func TestManager(t *testing.T) {
 				CreatedBy:     makeIdentity(tEmail),
 			}
 
-			res, err := qm.findRunPolicy(ctx, r)
+			res, isUnlimited, err := qm.findRunPolicy(ctx, r)
 			So(err, ShouldBeNil)
+			So(isUnlimited, ShouldBeFalse)
 			So(res, ShouldBeNil)
 		})
 
@@ -303,6 +324,25 @@ func TestManager(t *testing.T) {
 				NewBalance:      2,
 				PreviousBalance: 4,
 				AccountStatus:   quotapb.OpResult_ALREADY_EXISTS,
+			})
+		})
+
+		Convey("runQuotaOp() respects unlimited policy", func() {
+			cg.UserLimits = append(cg.UserLimits,
+				genUserLimit("googlers-limit", 0, []string{"group:googlers"}))
+			prjcfgtest.Update(ctx, lProject, cfg)
+
+			r := &run.Run{
+				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				CreatedBy:     makeIdentity(tEmail),
+			}
+
+			res, err := qm.runQuotaOp(ctx, r, "", -1)
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &quotapb.OpResult{
+				NewBalance:    -1,
+				AccountStatus: quotapb.OpResult_CREATED,
 			})
 		})
 
