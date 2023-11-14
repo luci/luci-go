@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"sort"
 	"time"
 
 	configpb "go.chromium.org/luci/bisection/proto/config"
@@ -329,4 +330,18 @@ func Project(ctx context.Context, project string) (*configpb.ProjectConfig, erro
 
 func IsMilestoneProject(project string) bool {
 	return ChromiumMilestoneProjectRe.MatchString(project)
+}
+
+// SupportedProjects returns the list of projects supported by LUCI Bisection.
+func SupportedProjects(ctx context.Context) ([]string, error) {
+	configs, err := Projects(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]string, 0, len(configs))
+	for project := range configs {
+		result = append(result, project)
+	}
+	sort.Strings(result)
+	return result, nil
 }

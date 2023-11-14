@@ -44,9 +44,11 @@ const (
 	cutoffThreshold = -time.Hour * 7 * 24
 )
 
-var projectsToProcess = []string{"chromium"}
-
 func CronHandler(ctx context.Context) error {
+	projectsToProcess, err := config.SupportedProjects(ctx)
+	if err != nil {
+		return errors.Annotate(err, "supported projects").Err()
+	}
 	for _, project := range projectsToProcess {
 		count, err := dailyAnalysisCount(ctx, project)
 		if err != nil {

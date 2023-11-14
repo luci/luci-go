@@ -153,6 +153,11 @@ func TestProjectConfig(t *testing.T) {
 			So(len(projects), ShouldEqual, 2)
 			So(projects["b"], ShouldResembleProto, newProjectB)
 			So(projects["c"], ShouldResembleProto, projectC)
+
+			// Check supported projects.
+			projectNames, err := SupportedProjects(ctx)
+			So(err, ShouldBeNil)
+			So(projectNames, ShouldResemble, []string{"b", "c"})
 		})
 
 		Convey("Validation works", func() {
