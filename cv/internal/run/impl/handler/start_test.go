@@ -23,6 +23,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/auth/identity"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
@@ -89,6 +90,13 @@ func TestStart(t *testing.T) {
 			},
 		}}})
 
+		makeIdentity := func(email string) identity.Identity {
+			id, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, email))
+			So(err, ShouldBeNil)
+			return id
+		}
+
+		const tEmail = "t@example.org"
 		rs := &state.RunState{
 			Run: run.Run{
 				ID:            lProject + "/1111111111111-deadbeef",
@@ -96,6 +104,7 @@ func TestStart(t *testing.T) {
 				CreateTime:    clock.Now(ctx).UTC().Add(-startLatency),
 				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
 				Mode:          run.DryRun,
+				CreatedBy:     makeIdentity(tEmail),
 			},
 		}
 		h, deps := makeTestHandler(&ct)
@@ -141,6 +150,12 @@ func TestStart(t *testing.T) {
 		ct.AddMember(owner, committers)
 
 		Convey("Starts when Run is PENDING", func() {
+			deps.qm.runQuotaOp = &quotapb.OpResult{
+				Status:          quotapb.OpResult_SUCCESS,
+				NewBalance:      5,
+				PreviousBalance: 4,
+			}
+
 			res, err := h.Start(ctx, rs)
 			So(err, ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
@@ -165,9 +180,10 @@ func TestStart(t *testing.T) {
 				RequirementVersion:    1,
 				RequirementComputedAt: timestamppb.New(ct.Clock.Now().UTC()),
 			})
-			So(res.State.LogEntries, ShouldHaveLength, 2)
-			So(res.State.LogEntries[0].GetInfo().GetMessage(), ShouldEqual, "LUCI CV is managing the Tryjobs for this Run")
-			So(res.State.LogEntries[1].GetStarted(), ShouldNotBeNil)
+			So(res.State.LogEntries, ShouldHaveLength, 3)
+			So(res.State.LogEntries[0].GetInfo().GetMessage(), ShouldEqual, "Run quota debited from t@example.org; balance: 5")
+			So(res.State.LogEntries[1].GetInfo().GetMessage(), ShouldEqual, "LUCI CV is managing the Tryjobs for this Run")
+			So(res.State.LogEntries[2].GetStarted(), ShouldNotBeNil)
 
 			So(res.State.NewLongOpIDs, ShouldHaveLength, 2)
 			So(res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]].GetExecuteTryjobs(), ShouldNotBeNil)
