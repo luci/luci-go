@@ -703,8 +703,8 @@ func TestUpdateBuildTask(t *testing.T) {
 						Id:     "one",
 						Target: "swarming://chromium-swarm",
 					},
-					UpdateId:    2,
-					SummaryHtml: "imo, html is ugly to read",
+					UpdateId:        2,
+					SummaryMarkdown: "imo, html is ugly to read",
 				},
 			}
 			body := makeUpdateBuildTaskPubsubMsg(req, "msg_id_1")
@@ -714,7 +714,7 @@ func TestUpdateBuildTask(t *testing.T) {
 			So(datastore.Get(ctx, expectedBuildInfra), ShouldBeNil)
 			So(expectedBuildInfra.Proto.Backend.Task.Status, ShouldEqual, pb.Status_STARTED)
 			So(expectedBuildInfra.Proto.Backend.Task.UpdateId, ShouldEqual, 2)
-			So(expectedBuildInfra.Proto.Backend.Task.SummaryHtml, ShouldEqual, "imo, html is ugly to read")
+			So(expectedBuildInfra.Proto.Backend.Task.SummaryMarkdown, ShouldEqual, "imo, html is ugly to read")
 		})
 	})
 }

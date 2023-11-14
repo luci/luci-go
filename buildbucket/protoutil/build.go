@@ -120,7 +120,7 @@ func CacheDir(b *pb.Build) string {
 func MergeSummary(b *pb.Build) string {
 	summaries := []string{
 		b.Output.GetSummaryMarkdown(),
-		b.Infra.GetBackend().GetTask().GetSummaryHtml(),
+		b.Infra.GetBackend().GetTask().GetSummaryMarkdown(),
 		b.CancellationMarkdown,
 	}
 

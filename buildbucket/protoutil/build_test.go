@@ -140,6 +140,20 @@ func TestMergeSummary(t *testing.T) {
 			So(MergeSummary(b), ShouldEqual, "summary\ncancellation")
 		})
 
+		Convey("Summary and task message", func() {
+			b := &pb.Build{
+				SummaryMarkdown: "summary",
+				Infra: &pb.BuildInfra{
+					Backend: &pb.BuildInfra_Backend{
+						Task: &pb.Task{
+							SummaryMarkdown: "bot_died",
+						},
+					},
+				},
+			}
+			So(MergeSummary(b), ShouldEqual, "summary\nbot_died")
+		})
+
 		Convey("Neither summary nor CancelMessage", func() {
 			b := &pb.Build{}
 			So(MergeSummary(b), ShouldBeEmpty)
