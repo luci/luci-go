@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/encryptedcookies"
@@ -32,6 +33,7 @@ import (
 	"go.chromium.org/luci/swarming/internal/notifications"
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/botsrv"
+	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/hmactoken"
 	"go.chromium.org/luci/swarming/server/internals"
 	"go.chromium.org/luci/swarming/server/pubsub"
@@ -44,6 +46,7 @@ import (
 
 func main() {
 	modules := []module.Module{
+		cfgmodule.NewModuleFromFlags(),
 		cron.NewModuleFromFlags(),
 		encryptedcookies.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
@@ -71,6 +74,22 @@ func main() {
 		if err != nil {
 			return err
 		}
+
+		// A cron job that fetches most recent configs from LUCI Config and puts
+		// them into the datastore.
+		cron.RegisterHandler("update-config", cfg.UpdateConfigs)
+
+		// A config loader for the current process which reads configs from the
+		// datastore on launch (i.e. now) and then periodically refetches them in
+		// background.
+		cfg, err := cfg.NewProvider(srv.Context)
+		if err != nil {
+			return err
+		}
+		srv.RunInBackground("swarming.config", cfg.RefreshPeriodically)
+
+		// TODO(vadimsh): Pass &cfg to various RPC server implementations to allow
+		// them to grab server configs when necessary.
 
 		// Open *connPoolSize connections for SessionServer and one dedicated
 		// connection for ReservationServer.
