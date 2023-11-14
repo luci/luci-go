@@ -139,13 +139,13 @@ WHERE s.end_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
 // NewClient creates a new client for reading test failures from LUCI Analysis.
 // Close() MUST be called after you have finished using this client.
 // GCP project where the query operations are billed to, either luci-bisection or luci-bisection-dev.
-// luciAnalysisProject is the gcp project that contains the BigQuery table we want to query.
-func NewClient(ctx context.Context, gcpProject, luciAnalysisProject string) (*Client, error) {
+// luciAnalysisProject is the function that returns the gcp project that contains the BigQuery table we want to query.
+func NewClient(ctx context.Context, gcpProject string, luciAnalysisProjectFunc func(luciProject string) string) (*Client, error) {
 	if gcpProject == "" {
 		return nil, errors.New("GCP Project must be specified")
 	}
-	if luciAnalysisProject == "" {
-		return nil, errors.New("LUCI analysis Project must be specified")
+	if luciAnalysisProjectFunc == nil {
+		return nil, errors.New("LUCI Analysis Project function must be specified")
 	}
 	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(bigquery.Scope))
 	if err != nil {
@@ -158,15 +158,17 @@ func NewClient(ctx context.Context, gcpProject, luciAnalysisProject string) (*Cl
 		return nil, err
 	}
 	return &Client{
-		client:              client,
-		luciAnalysisProject: luciAnalysisProject,
+		client:                  client,
+		luciAnalysisProjectFunc: luciAnalysisProjectFunc,
 	}, nil
 }
 
 // Client may be used to read LUCI Analysis test failures.
 type Client struct {
-	client              *bigquery.Client
-	luciAnalysisProject string
+	client *bigquery.Client
+	// luciAnalysisProjectFunc is a function that return LUCI Analysis project
+	// given a LUCI Project.
+	luciAnalysisProjectFunc func(luciProject string) string
 }
 
 // Close releases any resources held by the client.
@@ -216,7 +218,7 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
 	}
 	q := c.client.Query(queryStm)
 	q.DefaultDatasetID = task.Project
-	q.DefaultProjectID = c.luciAnalysisProject
+	q.DefaultProjectID = c.luciAnalysisProjectFunc(task.Project)
 	q.Parameters = []bigquery.QueryParameter{
 		{Name: "dimensionExcludes", Value: task.DimensionExcludes},
 		{Name: "excludedBuckets", Value: filter.GetExcludedBuckets()},
@@ -315,7 +317,7 @@ func (c *Client) ReadBuildInfo(ctx context.Context, tf *model.TestFailure) (Buil
 	ORDER BY sources.gitiles_commit.position DESC
 `)
 	q.DefaultDatasetID = tf.Project
-	q.DefaultProjectID = c.luciAnalysisProject
+	q.DefaultProjectID = c.luciAnalysisProjectFunc(tf.Project)
 	q.Parameters = []bigquery.QueryParameter{
 		{Name: "testID", Value: tf.TestID},
 		{Name: "variantHash", Value: tf.VariantHash},
@@ -418,7 +420,7 @@ func (c *Client) ReadLatestVerdict(ctx context.Context, project string, keys []T
 	logging.Infof(ctx, "Running query %s", query)
 	q := c.client.Query(query)
 	q.DefaultDatasetID = project
-	q.DefaultProjectID = c.luciAnalysisProject
+	q.DefaultProjectID = c.luciAnalysisProjectFunc(project)
 	job, err := q.Run(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err, "querying test name").Err()
@@ -477,7 +479,7 @@ func (c *Client) TestIsUnexpectedConsistently(ctx context.Context, project strin
 	logging.Infof(ctx, "Running query %s", query)
 	q := c.client.Query(query)
 	q.DefaultDatasetID = project
-	q.DefaultProjectID = c.luciAnalysisProject
+	q.DefaultProjectID = c.luciAnalysisProjectFunc(project)
 	q.Parameters = []bigquery.QueryParameter{
 		{Name: "testID", Value: key.TestID},
 		{Name: "variantHash", Value: key.VariantHash},

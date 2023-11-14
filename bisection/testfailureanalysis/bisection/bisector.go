@@ -61,9 +61,9 @@ var taskClassRef = tq.RegisterTaskClass(tq.TaskClass{
 })
 
 // RegisterTaskClass registers the task class for tq dispatcher.
-func RegisterTaskClass(srv *server.Server, luciAnalysisProject string) error {
+func RegisterTaskClass(srv *server.Server, luciAnalysisProjectFunc func(luciProject string) string) error {
 	ctx := srv.Context
-	client, err := lucianalysis.NewClient(ctx, srv.Options.CloudProject, luciAnalysisProject)
+	client, err := lucianalysis.NewClient(ctx, srv.Options.CloudProject, luciAnalysisProjectFunc)
 	if err != nil {
 		return err
 	}

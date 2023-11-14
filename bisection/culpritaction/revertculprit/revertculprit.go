@@ -60,11 +60,14 @@ var TestFailureTasks = tq.RegisterTaskClass(tq.TaskClass{
 })
 
 // RegisterTaskClass registers the task class for tq dispatcher
-func RegisterTaskClass(srv *server.Server, luciAnalysisProject string) error {
-	client, err := lucianalysis.NewClient(srv.Context, srv.Options.CloudProject, luciAnalysisProject)
+func RegisterTaskClass(srv *server.Server, luciAnalysisProjectFunc func(luciProject string) string) error {
+	client, err := lucianalysis.NewClient(srv.Context, srv.Options.CloudProject, luciAnalysisProjectFunc)
 	if err != nil {
 		return err
 	}
+	srv.RegisterCleanup(func(context.Context) {
+		client.Close()
+	})
 
 	CompileFailureTasks.AttachHandler(processRevertCulpritTask)
 	TestFailureTasks.AttachHandler(func(ctx context.Context, payload proto.Message) error {

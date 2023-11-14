@@ -148,18 +148,37 @@ func main() {
 
 		// Task queues
 		compilefailuredetection.RegisterTaskClass()
-		if err := revertculprit.RegisterTaskClass(srv, luciAnalysisProject); err != nil {
+		pg := &LUCIAnalysisProject{
+			DefaultProject: luciAnalysisProject,
+		}
+		if err := revertculprit.RegisterTaskClass(srv, pg.Project); err != nil {
 			return errors.Annotate(err, "register revert culprit").Err()
 		}
 		cancelanalysis.RegisterTaskClass()
 		culpritverification.RegisterTaskClass()
-		if err := testfailuredetection.RegisterTaskClass(srv, luciAnalysisProject); err != nil {
+		if err := testfailuredetection.RegisterTaskClass(srv, pg.Project); err != nil {
 			return errors.Annotate(err, "register test failure detection").Err()
 		}
-		if err := bisection.RegisterTaskClass(srv, luciAnalysisProject); err != nil {
+		if err := bisection.RegisterTaskClass(srv, pg.Project); err != nil {
 			return errors.Annotate(err, "register test failure bisector").Err()
 		}
 
 		return nil
 	})
+}
+
+type LUCIAnalysisProject struct {
+	DefaultProject string
+}
+
+// Project return LUCI Analysis project given a LUCI Project.
+// In normal cases, it will just check the app.yaml for the LUCI Analysis project.
+// However, for the case of Chrome, where we don't have dev data, we need to
+// query from LUCI Analysis prod instead.
+func (pg *LUCIAnalysisProject) Project(luciProject string) string {
+	// TODO (nqmtuan): Remove this when we finish testing Chrome.
+	if luciProject == "chrome" {
+		return "luci-analysis"
+	}
+	return pg.DefaultProject
 }
