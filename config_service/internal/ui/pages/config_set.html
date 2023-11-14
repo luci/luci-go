@@ -117,7 +117,7 @@ LUCI Config - Config Set: {{.ConfigSet.Name}}
     <div class="col-lg-6">
       <h4 class="mb-3">Files</h4>
       <ul class="list-group">
-        {{range .Configs}}
+        {{range .ConfigSet.Configs}}
         <li class="list-group-item d-flex justify-content-between align-items-center">
           <div class="ms-2 me-auto">
             <div class="fw-bold">{{.Path}}</div>

@@ -73,6 +73,18 @@ func toConfigSetMask(fields *fieldmaskpb.FieldMask) (*mask.Mask, error) {
 	return mask.FromFieldMask(fields, &pb.ConfigSet{}, false, false)
 }
 
+// toConfigPb converts *model.File to Config proto, excluding its content.
+func toConfigPb(cs string, f *model.File) *pb.Config {
+	return &pb.Config{
+		ConfigSet:     cs,
+		Path:          f.Path,
+		ContentSha256: f.ContentSHA256,
+		Size:          f.Size,
+		Revision:      f.Revision.StringID(),
+		Url:           common.GitilesURL(f.Location.GetGitilesLocation()),
+	}
+}
+
 // toConfigSetPb converts *model.ConfigSet to ConfigSet proto.
 func toConfigSetPb(cs *model.ConfigSet) *pb.ConfigSet {
 	if cs == nil {

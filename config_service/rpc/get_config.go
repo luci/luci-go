@@ -100,14 +100,7 @@ func (c Configs) GetConfig(ctx context.Context, req *pb.GetConfigRequest) (*pb.C
 	}
 
 	// Convert to the response proto by the Fields mask.
-	configPb := &pb.Config{
-		ConfigSet:     cs,
-		Path:          f.Path,
-		ContentSha256: f.ContentSHA256,
-		Size:          f.Size,
-		Revision:      f.Revision.StringID(),
-		Url:           common.GitilesURL(f.Location.GetGitilesLocation()),
-	}
+	configPb := toConfigPb(cs, f)
 	if len(f.Content) != 0 && f.Size < int64(maxRawContentSize) {
 		rawContent, err := f.GetRawContent(ctx)
 		if err != nil {

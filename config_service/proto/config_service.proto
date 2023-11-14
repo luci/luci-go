@@ -210,8 +210,8 @@ message ListConfigSetsRequest {
 
   // Fields of ConfigSet proto to include.
   // By default, only return config_set, url and revision fields.
-  // Note: "file_paths" is not supported in this rpc and only be supported in
-  // GetConfigSet rpc.
+  // Note: "file_paths" and "configs" is not supported in this rpc and only be
+  // supported in GetConfigSet rpc.
   google.protobuf.FieldMask fields = 2;
 }
 
@@ -260,10 +260,18 @@ message ConfigSet {
   Revision revision = 3;
 
   // All file paths related to the corresponding config set location.
-  repeated string file_paths = 4;
+  //
+  // Use `configs` instead.
+  repeated string file_paths = 4 [deprecated = true];
 
   // Last import attempt information.
   Attempt last_import_attempt = 5;
+
+  // Metadata of all config files in the set.
+  //
+  // Messages here exclude `raw_content` and `signed_url`. Use separate
+  // GetConfig call to fetch the full config file body.
+  repeated Config configs = 6;
 }
 
 // GetConfigSetRequest is the request of GetConfigSet rpc.

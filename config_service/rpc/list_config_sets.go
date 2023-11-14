@@ -35,11 +35,16 @@ import (
 func (c Configs) ListConfigSets(ctx context.Context, req *pb.ListConfigSetsRequest) (*pb.ListConfigSetsResponse, error) {
 	// Validate fields mask
 	m, err := toConfigSetMask(req.GetFields())
-	if err != nil {
+	switch {
+	case err != nil:
 		return nil, status.Errorf(codes.InvalidArgument, "invalid fields mask: %s", err)
-	} else if m.MustIncludes("file_paths") != mask.Exclude {
+	case m.MustIncludes("file_paths") != mask.Exclude:
 		return nil, status.Errorf(codes.InvalidArgument, `
 			'file_paths' is not supported in fields mask. Must specify a config set in
+			order to include file paths (via GetConfigSet rpc).`)
+	case m.MustIncludes("configs") != mask.Exclude:
+		return nil, status.Errorf(codes.InvalidArgument, `
+			'configs' is not supported in fields mask. Must specify a config set in
 			order to include file paths (via GetConfigSet rpc).`)
 	}
 
@@ -77,9 +82,9 @@ func (c Configs) ListConfigSets(ctx context.Context, req *pb.ListConfigSetsReque
 	}
 
 	// Fetch last_import_attempt if needed.
-        // TODO(crbug.com/1465995): Might be inconsistent between ConfigSet and ImportAttempt
-        // if the ConfigSet gets updated during the two fetches. But it’s rare and costs an
-        // extra call every time. So not putting it in a transaction for now.
+	// TODO(crbug.com/1465995): Might be inconsistent between ConfigSet and ImportAttempt
+	// if the ConfigSet gets updated during the two fetches. But it’s rare and costs an
+	// extra call every time. So not putting it in a transaction for now.
 	if m.MustIncludes("last_import_attempt") != mask.Exclude {
 		attempts := make([]*model.ImportAttempt, len(cfgSets))
 		for i, cs := range cfgSets {

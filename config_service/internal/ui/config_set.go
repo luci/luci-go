@@ -15,15 +15,12 @@
 package ui
 
 import (
-	"fmt"
 	"strings"
 
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/server/router"
@@ -34,17 +31,11 @@ import (
 )
 
 var getConfigSetMask *fieldmaskpb.FieldMask
-var getConfigMask *fieldmaskpb.FieldMask
 
 func init() {
 	var err error
 	getConfigSetMask, err = fieldmaskpb.New(&configpb.ConfigSet{},
-		"name", "url", "revision", "file_paths", "last_import_attempt")
-	if err != nil {
-		panic(err)
-	}
-	getConfigMask, err = fieldmaskpb.New(&configpb.Config{},
-		"path", "content_sha256", "size", "url")
+		"name", "url", "revision", "last_import_attempt", "configs")
 	if err != nil {
 		panic(err)
 	}
@@ -64,39 +55,13 @@ func configSetPage(c *router.Context) error {
 	if err != nil {
 		return err
 	}
-	eg, ectx := errgroup.WithContext(ctx)
-	eg.SetLimit(8)
-	configs := make([]*configpb.Config, len(cs.GetFilePaths()))
-	errs := make(errors.MultiError, len(cs.GetFilePaths()))
-	for i, file := range cs.GetFilePaths() {
-		i, file := i, file
-		eg.Go(func() error {
-			configs[i], errs[i] = server.GetConfig(ectx, &configpb.GetConfigRequest{
-				ConfigSet: cs.Name,
-				Path:      file,
-				Fields:    getConfigMask,
-			})
-			return nil
-		})
-	}
-	switch err := eg.Wait(); {
-	case err != nil:
-		panic(fmt.Errorf("impossible; errors should be all recoded in errs, got error: %w", err))
-	default:
-		if cnt, first := errs.Summary(); cnt > 0 {
-			return first
-		}
-	}
-
 	var canReimport bool
 	if canReimport, err = acl.CanReimportConfigSet(ctx, csName); err != nil {
 		logging.Warningf(ctx, "failed to check reimport acl: %s. continue without rendering reimport button", err)
 	}
-
 	templates.MustRender(ctx, c.Writer, "pages/config_set.html", map[string]any{
 		"CanReimport": canReimport,
 		"ConfigSet":   cs,
-		"Configs":     configs,
 	})
 	return nil
 }

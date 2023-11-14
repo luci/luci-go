@@ -69,11 +69,11 @@ func TestListConfigSets(t *testing.T) {
 		Convey("invalid mask", func() {
 			res, err := srv.ListConfigSets(ctx, &pb.ListConfigSetsRequest{
 				Fields: &field_mask.FieldMask{
-					Paths: []string{"file_paths"},
+					Paths: []string{"configs"},
 				},
 			})
 			So(res, ShouldBeNil)
-			So(err, ShouldHaveRPCCode, codes.InvalidArgument, `'file_paths' is not supported in fields mask`)
+			So(err, ShouldHaveRPCCode, codes.InvalidArgument, `'configs' is not supported in fields mask`)
 
 			res, err = srv.ListConfigSets(ctx, &pb.ListConfigSetsRequest{
 				Fields: &field_mask.FieldMask{

@@ -81,10 +81,9 @@ func (c Configs) GetConfigSet(ctx context.Context, req *pb.GetConfigSetRequest) 
 	}
 
 	var files []*model.File
-	if m.MustIncludes("file_paths") != mask.Exclude {
+	if m.MustIncludes("file_paths") != mask.Exclude || m.MustIncludes("configs") != mask.Exclude {
 		query := datastore.NewQuery(model.FileKind).
-			Ancestor(datastore.MakeKey(ctx, model.ConfigSetKind, string(cfgSet.ID), model.RevisionKind, cfgSet.LatestRevision.ID)).
-			KeysOnly(true)
+			Ancestor(datastore.MakeKey(ctx, model.ConfigSetKind, string(cfgSet.ID), model.RevisionKind, cfgSet.LatestRevision.ID))
 		if err = datastore.GetAll(ctx, query, &files); err != nil {
 			logging.Errorf(ctx, "error while fetching config files: %s", err)
 			return nil, status.Errorf(codes.Internal, "error while fetching config files")
@@ -94,7 +93,12 @@ func (c Configs) GetConfigSet(ctx context.Context, req *pb.GetConfigSetRequest) 
 	// To proto.
 	cfgSetPb := toConfigSetPb(cfgSet)
 	cfgSetPb.LastImportAttempt = toImportAttempt(attempt)
-	cfgSetPb.FilePaths = extractFilePaths(files)
+	if m.MustIncludes("file_paths") != mask.Exclude {
+		cfgSetPb.FilePaths = extractFilePaths(files)
+	}
+	if m.MustIncludes("configs") != mask.Exclude {
+		cfgSetPb.Configs = extractConfigsPb(req.ConfigSet, files)
+	}
 	if err := m.Trim(cfgSetPb); err != nil {
 		logging.Errorf(ctx, "cannot trim the config set proto: %s", err)
 		return nil, status.Errorf(codes.Internal, "error while constructing response")
@@ -111,4 +115,15 @@ func extractFilePaths(files []*model.File) []string {
 		filePaths[i] = f.Path
 	}
 	return filePaths
+}
+
+func extractConfigsPb(cs string, files []*model.File) []*pb.Config {
+	if files == nil {
+		return nil
+	}
+	cfgs := make([]*pb.Config, len(files))
+	for i, f := range files {
+		cfgs[i] = toConfigPb(cs, f)
+	}
+	return cfgs
 }

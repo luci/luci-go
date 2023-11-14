@@ -39,6 +39,9 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+// sha256("")
+const emptySHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
 func TestGetConfigSet(t *testing.T) {
 	t.Parallel()
 
@@ -198,11 +201,37 @@ func TestGetConfigSet(t *testing.T) {
 			})
 		})
 
+		Convey("with configs", func() {
+			res, err := srv.GetConfigSet(ctx, &pb.GetConfigSetRequest{
+				ConfigSet: "projects/project",
+				Fields: &field_mask.FieldMask{
+					Paths: []string{"configs", "name", "revision"},
+				},
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &pb.ConfigSet{
+				Name: "projects/project",
+				Revision: &pb.ConfigSet_Revision{
+					Id:        "1",
+					Timestamp: timestamppb.New(commitTime),
+				},
+				Configs: []*pb.Config{
+					{ConfigSet: "projects/project", Path: "config1.cfg", Revision: "1", ContentSha256: emptySHA256},
+					{ConfigSet: "projects/project", Path: "config2.cfg", Revision: "1", ContentSha256: emptySHA256},
+				},
+			})
+		})
+
 		Convey("with mixed masks and sub-masks", func() {
 			res, err := srv.GetConfigSet(ctx, &pb.GetConfigSetRequest{
 				ConfigSet: "projects/project",
 				Fields: &field_mask.FieldMask{
-					Paths: []string{"file_paths", "name", "revision.id", "last_import_attempt.success"},
+					Paths: []string{
+						"configs",
+						"name",
+						"revision.id",
+						"last_import_attempt.success",
+					},
 				},
 			})
 			So(err, ShouldBeNil)
@@ -211,7 +240,10 @@ func TestGetConfigSet(t *testing.T) {
 				Revision: &pb.ConfigSet_Revision{
 					Id: "1",
 				},
-				FilePaths: []string{"config1.cfg", "config2.cfg"},
+				Configs: []*pb.Config{
+					{ConfigSet: "projects/project", Path: "config1.cfg", Revision: "1", ContentSha256: emptySHA256},
+					{ConfigSet: "projects/project", Path: "config2.cfg", Revision: "1", ContentSha256: emptySHA256},
+				},
 				LastImportAttempt: &pb.ConfigSet_Attempt{
 					Success: true,
 				},

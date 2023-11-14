@@ -84,7 +84,11 @@ func (cs *ConfigSet) Load(p datastore.PropertyMap) error {
 	return datastore.GetPLS(cs).Load(p)
 }
 
-// File represents a single config file. Immutable
+// File represents a single config file. Immutable.
+//
+// TODO(vadimsh): `Content` can be moved to a child entity to allow listing
+// file metadata without pulling large blob from the datastore. This will be
+// useful in GetConfigSet and DeleteStaleConfigs implementations.
 type File struct {
 	_kind string `gae:"$kind,FileV2"`
 
@@ -158,6 +162,7 @@ func decompressData(data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create gzip reader").Err()
 	}
+	// TODO(vadimsh): Check err, it may be non-nil on checksum mismatch.
 	defer func() { _ = gr.Close() }()
 	ret, err := io.ReadAll(gr)
 	if err != nil {
