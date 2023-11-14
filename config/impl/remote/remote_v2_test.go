@@ -16,7 +16,6 @@ package remote
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"net/http"
 	"net/http/httptest"
@@ -25,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/klauspost/compress/gzip"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

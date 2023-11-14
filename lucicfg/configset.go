@@ -15,9 +15,8 @@
 package lucicfg
 
 import (
+	"bufio"
 	"bytes"
-	"compress/gzip"
-	"compress/zlib"
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
@@ -33,12 +32,15 @@ import (
 	"sync"
 
 	"github.com/dustin/go-humanize"
+	"github.com/klauspost/compress/gzip"
+	"github.com/klauspost/compress/zlib"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 
 	legacy_config "go.chromium.org/luci/common/api/luci_config/config/v1"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -127,7 +129,7 @@ func (r *remoteValidator) Validate(ctx context.Context, cs ConfigSet) ([]*config
 		}
 		validateReq.FileHashes = filterOutUnvalidatableFiles(ctx, validateReq.GetFileHashes(), fixInfo.GetUnvalidatableFiles())
 		if len(validateReq.FileHashes) == 0 {
-			logging.Debugf(ctx, "no config file need to be validated by LUCI Config")
+			logging.Debugf(ctx, "No config file need to be validated by LUCI Config")
 			return nil, nil
 		}
 		switch res, err := r.cfgClient.ValidateConfigs(ctx, validateReq); { // now try again
@@ -178,25 +180,51 @@ func uploadMissingFiles(ctx context.Context, cs ConfigSet, uploadFiles []*config
 	for _, uf := range uploadFiles {
 		uf := uf
 		eg.Go(func() error {
-			logging.Debugf(ectx, "uploading file %q for validation", uf.GetPath())
-			var buf bytes.Buffer
-			zw := gzip.NewWriter(&buf)
-			if _, err := zw.Write(cs.Data[uf.GetPath()]); err != nil {
-				return errors.Annotate(err, "failed to write gzip data").Err()
-			}
-			if err := zw.Close(); err != nil {
-				return errors.Annotate(err, "failed to close gzip writer").Err()
-			}
+			logging.Debugf(ectx, "Uploading file %q for validation", uf.GetPath())
+			start := clock.Now(ctx)
 
-			req, err := http.NewRequestWithContext(ectx, http.MethodPut, uf.GetSignedUrl(), &buf)
+			pr, pw := io.Pipe()
+
+			// Read and gzip in background, writing the compressed data into the pipe.
+			// Buffer writes, since gzip writer outputs often and writes to a pipe are
+			// slow-ish if unbuffered.
+			done := make(chan struct{})
+			go func() (err error) {
+				defer func() {
+					_ = pw.CloseWithError(err)
+					close(done)
+				}()
+				bw := bufio.NewWriterSize(pw, 1024*512)
+				zw := gzip.NewWriter(bw)
+				if _, err := zw.Write(cs.Data[uf.GetPath()]); err != nil {
+					_ = zw.Close()
+					return errors.Annotate(err, "failed to write gzip data").Err()
+				}
+				if err := zw.Close(); err != nil {
+					return errors.Annotate(err, "failed to close gzip writer").Err()
+				}
+				if err := bw.Flush(); err != nil {
+					return errors.Annotate(err, "failed to flush writer").Err()
+				}
+				return nil
+			}()
+			defer func() {
+				_ = pr.Close() // unblocks writes in the goroutine, if still blocked
+				<-done         // waits for the goroutine to finish running
+			}()
+
+			// Read from the pipe and upload.
+			req, err := http.NewRequestWithContext(ectx, http.MethodPut, uf.GetSignedUrl(), pr)
 			if err != nil {
 				return errors.Annotate(err, "failed to create http request to upload file %q", uf.GetPath()).Err()
 			}
 			req.Header.Add("Content-Encoding", "gzip")
 			req.Header.Add("x-goog-content-length-range", fmt.Sprintf("0,%d", uf.GetMaxConfigSize()))
+
 			switch res, err := http.DefaultClient.Do(req); {
 			case err != nil:
 				return errors.Annotate(err, "failed to execute http request to upload file %q", uf.GetPath()).Err()
+
 			case res.StatusCode != http.StatusOK:
 				defer func() { _ = res.Body.Close() }()
 				body, err := io.ReadAll(res.Body)
@@ -204,9 +232,10 @@ func uploadMissingFiles(ctx context.Context, cs ConfigSet, uploadFiles []*config
 					return errors.Annotate(err, "failed to read response body").Err()
 				}
 				return errors.Reason("failed to upload file %q;  got http response code: %d, body: %s", uf.GetPath(), res.StatusCode, string(body)).Err()
+
 			default:
 				defer func() { _ = res.Body.Close() }()
-				logging.Debugf(ectx, "successfully uploaded file %q for validation", uf.GetPath())
+				logging.Debugf(ectx, "Successfully uploaded file %q for validation in %s", uf.GetPath(), clock.Since(ctx, start))
 				return nil
 			}
 		})

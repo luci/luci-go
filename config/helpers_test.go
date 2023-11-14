@@ -16,12 +16,13 @@ package config
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/klauspost/compress/gzip"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

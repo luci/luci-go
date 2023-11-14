@@ -16,7 +16,6 @@ package lucicfg
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -30,14 +29,16 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	"github.com/klauspost/compress/gzip"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	legacy_config "go.chromium.org/luci/common/api/luci_config/config/v1"
 	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/proto/config"
 	configpb "go.chromium.org/luci/config_service/proto"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
-	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )

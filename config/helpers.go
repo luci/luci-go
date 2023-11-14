@@ -15,11 +15,12 @@
 package config
 
 import (
-	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/klauspost/compress/gzip"
 )
 
 // DownloadConfigFromSignedURL downloads the config file content from the
@@ -41,23 +42,34 @@ func DownloadConfigFromSignedURL(ctx context.Context, client *http.Client, signe
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute http request to download file: %w", err)
 	}
-	reader := res.Body
-	defer func() { _ = reader.Close() }()
+
+	defer func() { _ = res.Body.Close() }()
+
 	switch {
 	case res.StatusCode != http.StatusOK:
-		body, err := io.ReadAll(reader)
+		body, err := io.ReadAll(res.Body)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read response body: %w", err)
 		}
 		return nil, fmt.Errorf("failed to download file, got http response code: %d, body: %q", res.StatusCode, string(body))
+
 	case res.Header.Get("Content-Encoding") == "gzip":
-		reader, err = gzip.NewReader(reader)
+		reader, err := gzip.NewReader(res.Body)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create gzip reader: %w", err)
 		}
-		fallthrough
-	default:
 		ret, err := io.ReadAll(reader)
+		if err != nil {
+			_ = reader.Close()
+			return nil, fmt.Errorf("failed to read or decompress response body: %w", err)
+		}
+		if err := reader.Close(); err != nil {
+			return nil, fmt.Errorf("failed to close gzip reader: %w", err)
+		}
+		return ret, nil
+
+	default:
+		ret, err := io.ReadAll(res.Body)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read response body: %w", err)
 		}
