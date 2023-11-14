@@ -112,6 +112,7 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 	if err != nil {
 		return errors.Annotate(err, "read test failures").Err()
 	}
+	logging.Infof(ctx, "There are %d groups from LUCI Analysis query", len(groups))
 	bundles := []*model.TestFailureBundle{}
 	skippedBundleLogLines := []string{}
 	for _, g := range groups {
@@ -136,6 +137,7 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 		bundles = append(bundles, bundle)
 	}
 	logging.Infof(ctx, fmt.Sprintf("skip completely redundant bundles\n%s", strings.Join(skippedBundleLogLines, "\n")))
+	logging.Infof(ctx, "There are %d bundles after redundancy filter", len(bundles))
 	if len(bundles) == 0 {
 		logging.Infof(ctx, "Cannot find new test failures to bisect for project %s", task.Project)
 		return nil

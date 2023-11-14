@@ -101,7 +101,8 @@ SELECT regression_group.*,
   IFNULL(SheriffRotations, []) as SheriffRotations
 FROM builder_regression_groups_with_latest_build
 WHERE (NOT (SELECT LOGICAL_OR((SELECT count(*) > 0 FROM UNNEST(task_dimensions) WHERE KEY = kv.key and value = kv.value)) FROM UNNEST(@dimensionExcludes) kv)) AND (bucket NOT IN UNNEST(@excludedBuckets))
-  AND ((BuilderGroup IN UNNEST(@allowedBuilderGroups)) OR ARRAY_LENGTH(@allowedBuilderGroups) = 0 )
+  -- We need to compare ARRAY_LENGTH with null because of unexpected Bigquery behaviour b/138262091.
+  AND ((BuilderGroup IN UNNEST(@allowedBuilderGroups)) OR ARRAY_LENGTH(@allowedBuilderGroups) = 0 OR ARRAY_LENGTH(@allowedBuilderGroups) IS NULL)
 ORDER BY regression_group.RegressionEndPosition DESC
 LIMIT 5000`)
 		})
@@ -180,7 +181,8 @@ ON g.swarming_run_id = s.run_id
 WHERE s.end_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
   AND (NOT (SELECT LOGICAL_OR((SELECT count(*) > 0 FROM UNNEST(task_dimensions) WHERE KEY = kv.key and value = kv.value)) FROM UNNEST(@dimensionExcludes) kv)) AND (bucket NOT IN UNNEST(@excludedBuckets))
   AND (s.bot.pools[0] NOT IN UNNEST(@excludedPools))
-  AND ((BuilderGroup IN UNNEST(@allowedBuilderGroups)) OR ARRAY_LENGTH(@allowedBuilderGroups) = 0 )
+  -- We need to compare ARRAY_LENGTH with null because of unexpected Bigquery behaviour b/138262091.
+  AND ((BuilderGroup IN UNNEST(@allowedBuilderGroups)) OR ARRAY_LENGTH(@allowedBuilderGroups) = 0 OR ARRAY_LENGTH(@allowedBuilderGroups) IS NULL)
 ORDER BY regression_group.RegressionEndPosition DESC
 LIMIT 5000`)
 		})
