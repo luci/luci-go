@@ -257,13 +257,18 @@ func (r *remoteV2Impl) ListFiles(ctx context.Context, configSet config.Set) ([]s
 	res, err := r.grpcClient.GetConfigSet(ctx, &pb.GetConfigSetRequest{
 		ConfigSet: string(configSet),
 		Fields: &field_mask.FieldMask{
-			Paths: []string{"file_paths"},
+			Paths: []string{"configs"},
 		},
 	})
 	if err != nil {
 		return nil, err
 	}
-	return res.FilePaths, nil
+
+	paths := make([]string, len(res.Configs))
+	for i, cfg := range res.Configs {
+		paths[i] = cfg.Path
+	}
+	return paths, nil
 }
 
 func (r *remoteV2Impl) Close() error {

@@ -397,10 +397,13 @@ func TestRemoteV2Calls(t *testing.T) {
 				mockClient.EXPECT().GetConfigSet(gomock.Any(), proto.MatcherEqual(&pb.GetConfigSetRequest{
 					ConfigSet: "projects/project",
 					Fields: &field_mask.FieldMask{
-						Paths: []string{"file_paths"},
+						Paths: []string{"configs"},
 					},
 				})).Return(&pb.ConfigSet{
-					FilePaths: []string{"file1", "file2"},
+					Configs: []*pb.Config{
+						{Path: "file1"},
+						{Path: "file2"},
+					},
 				}, nil)
 
 				files, err := v2Impl.ListFiles(ctx, config.Set("projects/project"))
@@ -412,7 +415,7 @@ func TestRemoteV2Calls(t *testing.T) {
 				mockClient.EXPECT().GetConfigSet(gomock.Any(), proto.MatcherEqual(&pb.GetConfigSetRequest{
 					ConfigSet: "projects/project",
 					Fields: &field_mask.FieldMask{
-						Paths: []string{"file_paths"},
+						Paths: []string{"configs"},
 					},
 				})).Return(nil, status.Errorf(codes.Internal, "server internal error"))
 
