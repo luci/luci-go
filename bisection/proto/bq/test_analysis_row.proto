@@ -1,0 +1,65 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.bisection.proto.bq;
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/bisection/proto/v1/analyses.proto";
+import "go.chromium.org/luci/bisection/proto/v1/common.proto";
+import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
+
+option go_package = "go.chromium.org/luci/bisection/proto/bq;bqpb";
+
+// TestAnalysisRow Represents a test analysis exported to BigQuery.
+// A test analysis is only exported to BigQuery if it has finished,
+// and all the culprit actions have been taken.
+// It means once a row has been exported, its data is immutable.
+message TestAnalysisRow {
+  // The project of the analysis.
+  string project = 1;
+  // ID to identify this analysis, same as the one in Datastore.
+  int64 analysis_id = 2;
+  // Timestamp for the create time of the analysis.
+  google.protobuf.Timestamp created_time = 3;
+  // Timestamp for the start time of the analysis.
+  google.protobuf.Timestamp start_time = 4;
+  // Timestamp for the end time of the analysis.
+  google.protobuf.Timestamp end_time = 5;
+  // Result status of the analysis.
+  luci.bisection.v1.AnalysisStatus status = 6;
+  // Run status of the analysis.
+  luci.bisection.v1.AnalysisRunStatus run_status = 7;
+  // The verified culprit for the analysis.
+  luci.bisection.v1.TestCulprit culprit = 8;
+  // The builder that the analysis analyzed.
+  buildbucket.v2.BuilderID builder = 9;
+  // Test failures that the analysis analyzed.
+  // The first item will be the primary failure, followed by other failures.
+  repeated luci.bisection.v1.TestFailure test_failures = 10;
+  // The start commit of the regression range (exclusive).
+  buildbucket.v2.GitilesCommit start_gitiles_commit = 11;
+  // The end commit of the regression range (inclusive).
+  buildbucket.v2.GitilesCommit end_gitiles_commit = 12;
+  // The start failure rate of the failures.
+  float start_failure_rate = 13;
+  // The end failure rate of the failures.
+  float end_failure_rate = 14;
+  // Sample build bucket ID where the primary test failure failed.
+  int64 sample_bbid = 15;
+  // Details of nthsection analysis, including the reruns.
+  luci.bisection.v1.TestNthSectionAnalysisResult nth_section_result = 16;
+}
