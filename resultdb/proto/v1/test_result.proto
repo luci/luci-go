@@ -160,6 +160,11 @@ message TestResult {
   //
   // Output only.
   bool is_masked = 16 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Reasoning behind a test skip, in machine-readable form.
+  // Used to assist downstream analyses, such as automatic bug-filing.
+  // MUST not be set unless status is SKIP.
+  SkipReason skip_reason = 18;
 }
 
 // Machine-readable status of a test result.
@@ -194,6 +199,22 @@ enum TestStatus {
   // - The test harness configuration specified that the test case MUST be
   //   skipped.
   SKIP = 5;
+}
+
+// Machine-readable reason that a test execution was skipped.
+// Only reasons actually used are listed here, if you need a new reason
+// please add it here and send a CL to the OWNERS.
+enum SkipReason {
+  // Skip reason was not specified.
+  // This represents an unset field which should be used for non-skip test
+  // result statuses.  It can also be used if none of the other statuses
+  // apply.
+  SKIP_REASON_UNSPECIFIED = 0;
+
+  // Disabled automatically in response to a test skipping policy that skips
+  // flaky tests.
+  // Used for ChromeOS CQ test filtering.
+  AUTOMATICALLY_DISABLED_FOR_FLAKINESS = 1;
 }
 
 // Indicates the test subject (e.g. a CL) is absolved from blame
