@@ -109,7 +109,7 @@ func (p *Purger) PurgeCL(ctx context.Context, task *prjpb.PurgeCLTask) error {
 			return err
 		}
 	}
-	return p.pmNotifier.NotifyPurgeCompleted(ctx, task.GetLuciProject(), task.GetPurgingCl().GetOperationId())
+	return p.pmNotifier.NotifyPurgeCompleted(ctx, task.GetLuciProject(), task.GetPurgingCl())
 }
 
 func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask) error {

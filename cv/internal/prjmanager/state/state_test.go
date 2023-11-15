@@ -1137,7 +1137,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 					checkPurgeTask(tasks.payloads[1], 204, 202)
 
 					// Only the top CL should be configured to send an email.
-					So(tasks.payloads[0].PurgingCl.Notification, ShouldResembleProto, &prjpb.PurgingCL_Notification{})
+					So(tasks.payloads[0].PurgingCl.Notification, ShouldResembleProto, clpurger.NoNotification)
 					So(tasks.payloads[1].PurgingCl.Notification, ShouldBeNil)
 				})
 				Convey("unless the finished Run is failed", func() {
@@ -1174,100 +1174,211 @@ func TestOnPurgesCompleted(t *testing.T) {
 	t.Parallel()
 
 	Convey("OnPurgesCompleted works", t, func() {
-		ct := cvtesting.Test{}
+		ct := ctest{
+			lProject: "test",
+			gHost:    "c-review.example.com",
+			Test:     cvtesting.Test{},
+		}
 		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
+		cfg1 := &cfgpb.Config{}
+		So(prototext.Unmarshal([]byte(cfgText1), cfg1), ShouldBeNil)
+
+		prjcfgtest.Create(ctx, ct.lProject, cfg1)
+		meta := prjcfgtest.MustExist(ctx, ct.lProject)
+		gobmaptest.Update(ctx, ct.lProject)
+
 		h := Handler{}
+		triggerTS := timestamppb.New(ct.Clock.Now())
+		ci101 := gf.CI(
+			101, gf.PS(1), gf.Ref("refs/heads/main"), gf.Project("repo/a"),
+			gf.CQ(+2, ct.Clock.Now(), gf.U("user-1")), gf.Updated(ct.Clock.Now()),
+		)
+		ci202 := gf.CI(
+			202, gf.PS(3), gf.Ref("refs/heads/other"), gf.Project("repo/a"), gf.AllRevs(),
+			gf.CQ(+1, ct.Clock.Now(), gf.U("user-2")), gf.Updated(ct.Clock.Now()),
+		)
+		ci203 := gf.CI(
+			203, gf.PS(3), gf.Ref("refs/heads/other"), gf.Project("repo/a"), gf.AllRevs(),
+			gf.CQ(+1, ct.Clock.Now(), gf.U("user-2")), gf.Updated(ct.Clock.Now()),
+		)
+		ci209 := gf.CI(
+			209, gf.PS(3), gf.Ref("refs/heads/other"), gf.Project("repo/a"), gf.AllRevs(),
+			gf.CQ(+1, ct.Clock.Now(), gf.U("user-2")), gf.Updated(ct.Clock.Now()),
+		)
+
+		ct.GFake.CreateChange(&gf.Change{Host: ct.gHost, ACLs: gf.ACLPublic(), Info: ci101})
+		ct.GFake.CreateChange(&gf.Change{Host: ct.gHost, ACLs: gf.ACLPublic(), Info: ci202})
+		ct.GFake.CreateChange(&gf.Change{Host: ct.gHost, ACLs: gf.ACLPublic(), Info: ci203})
+		ct.GFake.CreateChange(&gf.Change{Host: ct.gHost, ACLs: gf.ACLPublic(), Info: ci209})
+		cl101 := ct.runCLUpdater(ctx, 101)
+		cl202 := ct.runCLUpdater(ctx, 202)
+		cl203 := ct.runCLUpdater(ctx, 203)
+		cl209 := ct.runCLUpdater(ctx, 209)
 
 		Convey("Empty", func() {
 			s1 := &State{PB: &prjpb.PState{}}
-			s2, sideEffect, err := h.OnPurgesCompleted(ctx, s1, []*prjpb.PurgeCompleted{{OperationId: "op1"}})
+			s2, sideEffect, evsToConsume, err := h.OnPurgesCompleted(ctx, s1, nil)
 			So(err, ShouldBeNil)
 			So(sideEffect, ShouldBeNil)
 			So(s1, ShouldEqual, s2)
+			So(evsToConsume, ShouldHaveLength, 0)
 		})
 
 		Convey("With existing", func() {
 			now := testclock.TestRecentTimeUTC
 			ctx, _ := testclock.UseTime(ctx, now)
 			s1 := &State{PB: &prjpb.PState{
+				LuciProject: ct.lProject,
 				PurgingCls: []*prjpb.PurgingCL{
 					// expires later
 					{
-						Clid: 1, OperationId: "1", Deadline: timestamppb.New(now.Add(time.Minute)),
-						ApplyTo: &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
+						Clid:        int64(cl101.ID),
+						OperationId: "1",
+						Deadline:    timestamppb.New(now.Add(time.Minute)),
+						ApplyTo:     &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
 					},
 					// expires now, but due to grace period it'll stay here.
 					{
-						Clid: 2, OperationId: "2", Deadline: timestamppb.New(now),
-						ApplyTo: &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
+						Clid:        int64(cl202.ID),
+						OperationId: "2",
+						Deadline:    timestamppb.New(now),
+						ApplyTo:     &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
 					},
 					// definitely expired.
 					{
-						Clid: 3, OperationId: "3", Deadline: timestamppb.New(now.Add(-time.Hour)),
-						ApplyTo: &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
+						Clid:        int64(cl203.ID),
+						OperationId: "3",
+						Deadline:    timestamppb.New(now.Add(-time.Hour)),
+						ApplyTo:     &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
 					},
 				},
 				// Components require PCLs, but in this test it doesn't matter.
 				Components: []*prjpb.Component{
-					{Clids: []int64{9}}, // for unconfusing indexes below.
-					{Clids: []int64{1}},
-					{Clids: []int64{2}, TriageRequired: true},
-					{Clids: []int64{3}},
+					{Clids: []int64{int64(cl209.ID)}}, // for unconfusing indexes below.
+					{Clids: []int64{int64(cl101.ID)}},
+					{Clids: []int64{int64(cl202.ID)}, TriageRequired: true},
+					{Clids: []int64{int64(cl203.ID)}},
 				},
+				// PCLs are supposed to be sorted.
+				Pcls: []*prjpb.PCL{
+					{
+						Clid:               int64(cl101.ID),
+						Eversion:           cl101.EVersion,
+						Status:             prjpb.PCL_OK,
+						ConfigGroupIndexes: []int32{0},
+						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
+							Mode:            string(run.FullRun),
+							Time:            triggerTS,
+							Email:           gf.U("user-1").GetEmail(),
+							GerritAccountId: gf.U("user-1").GetAccountId(),
+						}},
+					},
+					{
+						Clid:               int64(cl202.ID),
+						Eversion:           1,
+						Status:             prjpb.PCL_OK,
+						ConfigGroupIndexes: []int32{1},
+						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
+							Mode:            string(run.DryRun),
+							Time:            triggerTS,
+							Email:           gf.U("user-2").GetEmail(),
+							GerritAccountId: gf.U("user-2").GetAccountId(),
+						}},
+					},
+					{
+						Clid:               int64(cl203.ID),
+						Eversion:           1,
+						Status:             prjpb.PCL_OK,
+						ConfigGroupIndexes: []int32{1},
+						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
+							Mode:            string(run.DryRun),
+							Time:            triggerTS,
+							Email:           gf.U("user-2").GetEmail(),
+							GerritAccountId: gf.U("user-2").GetAccountId(),
+						}},
+					},
+					{
+						Clid:               int64(cl209.ID),
+						Eversion:           1,
+						Status:             prjpb.PCL_OK,
+						ConfigGroupIndexes: []int32{1},
+						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
+							Mode:            string(run.DryRun),
+							Time:            triggerTS,
+							Email:           gf.U("user-2").GetEmail(),
+							GerritAccountId: gf.U("user-2").GetAccountId(),
+						}},
+					},
+				},
+				ConfigGroupNames: []string{"g0", "g1"},
+				ConfigHash:       meta.Hash(),
 			}}
 			pb := backupPB(s1)
 
 			Convey("Expires and removed", func() {
-				s2, sideEffect, err := h.OnPurgesCompleted(ctx, s1, []*prjpb.PurgeCompleted{{OperationId: "1"}})
+				s2, sideEffect, evsToConsume, err := h.OnPurgesCompleted(ctx, s1, []*prjpb.PurgeCompleted{{OperationId: "1", Clid: int64(cl101.ID)}})
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
 				So(s1.PB, ShouldResembleProto, pb)
+				So(evsToConsume, ShouldEqual, []int{0})
 
 				pb.PurgingCls = []*prjpb.PurgingCL{
 					{
-						Clid: 2, OperationId: "2", Deadline: timestamppb.New(now),
+						Clid: int64(cl202.ID), OperationId: "2", Deadline: timestamppb.New(now),
 						ApplyTo: &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
 					},
 				}
 				pb.Components = []*prjpb.Component{
 					pb.Components[0],
-					{Clids: []int64{1}, TriageRequired: true},
+					{Clids: []int64{int64(cl101.ID)}, TriageRequired: true},
 					pb.Components[2],
-					{Clids: []int64{3}, TriageRequired: true},
+					{Clids: []int64{int64(cl203.ID)}, TriageRequired: true},
 				}
 				So(s2.PB, ShouldResembleProto, pb)
 			})
 
 			Convey("All removed", func() {
-				s2, sideEffect, err := h.OnPurgesCompleted(ctx, s1, []*prjpb.PurgeCompleted{
-					{OperationId: "3"},
-					{OperationId: "1"},
-					{OperationId: "5"},
-					{OperationId: "2"},
+				s2, sideEffect, evsToConsume, err := h.OnPurgesCompleted(ctx, s1, []*prjpb.PurgeCompleted{
+					{OperationId: "3", Clid: int64(cl203.ID)},
+					{OperationId: "1", Clid: int64(cl101.ID)},
+					{OperationId: "5", Clid: int64(cl209.ID)},
+					{OperationId: "2", Clid: int64(cl202.ID)},
 				})
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
 				So(s1.PB, ShouldResembleProto, pb)
-
+				So(evsToConsume, ShouldEqual, []int{0, 1, 2, 3})
 				pb.PurgingCls = nil
 				pb.Components = []*prjpb.Component{
 					pb.Components[0],
-					{Clids: []int64{1}, TriageRequired: true},
+					{Clids: []int64{int64(cl101.ID)}, TriageRequired: true},
 					pb.Components[2], // it was waiting for triage already
-					{Clids: []int64{3}, TriageRequired: true},
+					{Clids: []int64{int64(cl203.ID)}, TriageRequired: true},
 				}
 				So(s2.PB, ShouldResembleProto, pb)
+			})
+
+			Convey("Outdated", func() {
+				cl101.Snapshot.Outdated = &changelist.Snapshot_Outdated{}
+				So(datastore.Put(ctx, cl101), ShouldBeNil)
+				s2, sideEffect, evsToConsume, err := h.OnPurgesCompleted(ctx, s1, []*prjpb.PurgeCompleted{
+					{OperationId: "1", Clid: int64(cl101.ID)},
+				})
+				So(err, ShouldBeNil)
+				So(sideEffect, ShouldBeNil)
+				So(s2.PB.GetPurgingCL(int64(cl101.ID)), ShouldNotBeNil)
+				So(evsToConsume, ShouldBeNil)
 			})
 
 			Convey("Doesn't modify components if they are due re-repartition anyway", func() {
 				s1.PB.RepartitionRequired = true
 				pb := backupPB(s1)
-				s2, sideEffect, err := h.OnPurgesCompleted(ctx, s1, []*prjpb.PurgeCompleted{
-					{OperationId: "1"},
-					{OperationId: "2"},
-					{OperationId: "3"},
+				s2, sideEffect, evsToConsume, err := h.OnPurgesCompleted(ctx, s1, []*prjpb.PurgeCompleted{
+					{OperationId: "1", Clid: int64(cl101.ID)},
+					{OperationId: "2", Clid: int64(cl202.ID)},
+					{OperationId: "3", Clid: int64(cl203.ID)},
 				})
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
@@ -1275,6 +1386,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 
 				pb.PurgingCls = nil
 				So(s2.PB, ShouldResembleProto, pb)
+				So(evsToConsume, ShouldEqual, []int{0, 1, 2})
 			})
 		})
 	})

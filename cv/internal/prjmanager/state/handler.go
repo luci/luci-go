@@ -269,16 +269,34 @@ func (h *Handler) OnCLsUpdated(ctx context.Context, s *State, clEVersions map[in
 }
 
 // OnPurgesCompleted updates state as a result of completed purge operations.
-func (h *Handler) OnPurgesCompleted(ctx context.Context, s *State, events []*prjpb.PurgeCompleted) (_ *State, __ SideEffect, err error) {
+func (h *Handler) OnPurgesCompleted(ctx context.Context, s *State, events []*prjpb.PurgeCompleted) (_ *State, __ SideEffect, evsToConsume []int, err error) {
 	s.ensureNotYetCloned()
 
 	ctx, span := tracing.Start(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/OnPurgesCompleted")
 	defer func() { tracing.End(span, err) }()
 
 	opIDs := stringset.New(len(events))
-	for _, e := range events {
+	clids := make([]int64, len(events))
+	for i, e := range events {
+		clids[i] = e.GetClid()
 		opIDs.Add(e.GetOperationId())
 	}
+	if len(clids) > 0 {
+		s = s.cloneShallow()
+		if err := s.evalCLs(ctx, clids); err != nil {
+			return s, nil, nil, err
+		}
+		for i, clid := range clids {
+			switch pcl := s.PB.GetPCL(clid); {
+			case pcl.GetOutdated() == nil:
+				// Consume the event only if the snapshot is fresh.
+				evsToConsume = append(evsToConsume, i)
+			default:
+				opIDs.Del(events[i].GetOperationId())
+			}
+		}
+	}
+
 	// Give 1 minute grace before expiring purging tasks. This doesn't change
 	// correctness, but decreases probability of starting another purge before
 	// PM observes CLUpdated event with results of prior purge.
@@ -298,32 +316,36 @@ func (h *Handler) OnPurgesCompleted(ctx context.Context, s *State, events []*prj
 		return p // keep as is
 	}, nil)
 	if !mutated {
-		return s, nil, nil
+		return s, nil, evsToConsume, nil
 	}
-	s = s.cloneShallow()
+
+	if !s.alreadyCloned {
+		s = s.cloneShallow()
+	}
 	s.PB.PurgingCls = out
 
-	// Must mark affected components for re-evaluation.
-	if s.PB.GetRepartitionRequired() {
-		return s, nil, nil
-	}
-	cs, mutatedComponents := s.PB.COWComponents(func(c *prjpb.Component) *prjpb.Component {
-		if c.GetTriageRequired() {
-			return c
-		}
-		for _, id := range c.GetClids() {
-			if _, yes := deleted[id]; yes {
-				c = c.CloneShallow()
-				c.TriageRequired = true
+	switch {
+	case s.PB.GetRepartitionRequired():
+		// all the components will be retriaged during the repartition process.
+	default:
+		cs, mutatedComponents := s.PB.COWComponents(func(c *prjpb.Component) *prjpb.Component {
+			if c.GetTriageRequired() {
 				return c
 			}
+			for _, id := range c.GetClids() {
+				if _, yes := deleted[id]; yes {
+					c = c.CloneShallow()
+					c.TriageRequired = true
+					return c
+				}
+			}
+			return c
+		}, nil)
+		if mutatedComponents {
+			s.PB.Components = cs
 		}
-		return c
-	}, nil)
-	if mutatedComponents {
-		s.PB.Components = cs
 	}
-	return s, nil, nil
+	return s, nil, evsToConsume, nil
 }
 
 // ExecDeferred performs previously postponed actions, notably creating Runs.

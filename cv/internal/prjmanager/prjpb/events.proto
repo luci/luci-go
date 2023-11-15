@@ -71,6 +71,8 @@ message RunFinished {
 message PurgeCompleted {
   // Operation ID suffices to identify a purge.
   string operation_id = 1;
+  // ID of the CL that was purged.
+  int64 clid = 2;
 }
 
 // TriggeringCLsCompleted is sent to PM when a TriggeringCLsTask is completed.

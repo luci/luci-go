@@ -88,11 +88,12 @@ func (n *Notifier) NotifyCLsUpdated(ctx context.Context, luciProject string, cls
 //
 // The ultimate result of CL purge is the updated state of a CL itself, thus no
 // information is provided here.
-func (n *Notifier) NotifyPurgeCompleted(ctx context.Context, luciProject string, operationID string) error {
+func (n *Notifier) NotifyPurgeCompleted(ctx context.Context, luciProject string, purgingCL *prjpb.PurgingCL) error {
 	return n.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_PurgeCompleted{
 			PurgeCompleted: &prjpb.PurgeCompleted{
-				OperationId: operationID,
+				OperationId: purgingCL.GetOperationId(),
+				Clid:        purgingCL.GetClid(),
 			},
 		},
 	})

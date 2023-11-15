@@ -895,6 +895,8 @@ func (m *PurgeCompleted) validate(all bool) error {
 
 	// no validation rules for OperationId
 
+	// no validation rules for Clid
+
 	if len(errors) > 0 {
 		return PurgeCompletedMultiError(errors)
 	}

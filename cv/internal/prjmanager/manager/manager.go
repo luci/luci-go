@@ -473,11 +473,11 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 	}
 
 	// OnPurgesCompleted may expire purges even without incoming event.
-	if s, se, err = proc.handler.OnPurgesCompleted(ctx, s, tr.purgesCompleted.purges); err != nil {
+	if s, se, evIndexesToConsume, err = proc.handler.OnPurgesCompleted(ctx, s, tr.purgesCompleted.purges); err != nil {
 		return nil, err
 	}
 	ret = append(ret, eventbox.Transition{
-		Events:       tr.purgesCompleted.events,
+		Events:       shallowCopyEvents(tr.purgesCompleted.events, evIndexesToConsume),
 		SideEffectFn: state.SideEffectFn(se),
 		TransitionTo: s,
 	})

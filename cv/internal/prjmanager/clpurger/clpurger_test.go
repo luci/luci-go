@@ -97,10 +97,11 @@ func TestPurgeCL(t *testing.T) {
 		}
 		clBefore := loadCL()
 
-		assertPMNotified := func(op string) {
+		assertPMNotified := func(purgingCL *prjpb.PurgingCL) {
 			pmtest.AssertInEventbox(ctx, lProject, &prjpb.Event{Event: &prjpb.Event_PurgeCompleted{
 				PurgeCompleted: &prjpb.PurgeCompleted{
-					OperationId: op,
+					OperationId: purgingCL.GetOperationId(),
+					Clid:        purgingCL.GetClid(),
 				},
 			}})
 		}
@@ -162,7 +163,7 @@ func TestPurgeCL(t *testing.T) {
 			So(triggersAfter.NewPatchsetRunTrigger, ShouldNotBeNil)
 			So(ciAfter, gf.ShouldLastMessageContain, "its deps are not watched")
 			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 1)
-			assertPMNotified("op")
+			assertPMNotified(task.PurgingCl)
 
 			task.PurgeReasons = []*prjpb.PurgeReason{
 				{
@@ -189,7 +190,7 @@ func TestPurgeCL(t *testing.T) {
 			So(triggersAfter, ShouldBeNil)
 			So(ciAfter, gf.ShouldLastMessageContain, "is not supported")
 			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 2)
-			assertPMNotified("op")
+			assertPMNotified(task.PurgingCl)
 		})
 		Convey("Happy path: reset both triggers, schedule CL refresh, and notify PM", func() {
 			So(schedule(), ShouldBeNil)
@@ -204,7 +205,7 @@ func TestPurgeCL(t *testing.T) {
 			So(ciAfter, gf.ShouldLastMessageContain, "owner doesn't have a preferred email")
 
 			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 1)
-			assertPMNotified("op")
+			assertPMNotified(task.PurgingCl)
 
 			Convey("Idempotent: if TQ task is retried, just notify PM", func() {
 				verifyIdempotency := func() {
@@ -217,7 +218,7 @@ func TestPurgeCL(t *testing.T) {
 					ciAfter2 := ct.GFake.GetChange(gHost, change).Info
 					So(ciAfter2, ShouldResembleProto, ciAfter)
 					// But PM must be notified.
-					assertPMNotified("op-2")
+					assertPMNotified(task.PurgingCl)
 					So(pmDispatcher.LatestETAof(lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
 				}
 				// Idempotency must not rely on CL being updated between retries.
@@ -237,7 +238,7 @@ func TestPurgeCL(t *testing.T) {
 				So(schedule(), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion) // no changes.
-				assertPMNotified("op")
+				assertPMNotified(task.PurgingCl)
 				So(pmDispatcher.LatestETAof(lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
 			})
 
@@ -252,7 +253,7 @@ func TestPurgeCL(t *testing.T) {
 				So(schedule(), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion) // no changes.
-				assertPMNotified("op")
+				assertPMNotified(task.PurgingCl)
 				// The PM task should be ASAP.
 				So(pmDispatcher.LatestETAof(lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
 			})
@@ -288,7 +289,7 @@ func TestPurgeCL(t *testing.T) {
 			})
 			Convey("with a custom Notification target", func() {
 				// 0 implies nobody
-				task.PurgingCl.Notification = &prjpb.PurgingCL_Notification{}
+				task.PurgingCl.Notification = NoNotification
 				So(schedule(), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 				findSetReviewReqs()
