@@ -72,7 +72,9 @@ message BackendSetting {
   //         project/cr-buildbucket/topics/chormium-swarm-backend
   //     The pubsub_id would be:
   //         chormium-swarm-backend
-  string pubsub_id = 3;
+  //
+  // DEPRECATED: please set into `full_mode` field.
+  string pubsub_id = 3 [deprecated = true];
 
   // Setting for the fetch tasks cron job.
   message BuildSyncSetting {
@@ -106,7 +108,43 @@ message BackendSetting {
 
     // In the future, we could also add backoff factor here when have a use case.
   }
-  BuildSyncSetting build_sync_setting = 4;
+
+  // DEPRECATED: please set into `full_mode` field.
+  BuildSyncSetting build_sync_setting = 4 [deprecated = true];
+
+  // The corresponding backend should be a full-featured `TaskBackend`
+  // implementation.
+  message FullMode {
+    // The associated UpdateBuildTask pubsub id for this task backend.
+    // This must be set in order for buildbucket to recieve task updates and send
+    // a pubsup topic that the task backend can use to send updates to.
+    // This id is provided by the backend owner, but added to buildbucket's service
+    // config by the buildbucket team.
+    // Buildbucket will subscribe to the pubsub subscription, which itself is
+    // subscribed to the topic that task backends send messages to.
+    // i.e.
+    //     For this pubsub subscription:
+    //         project/cr-buildbucket/subscriptions/chormium-swarm-backend
+    //     and topic:
+    //         project/cr-buildbucket/topics/chormium-swarm-backend
+    //     The pubsub_id would be:
+    //         chormium-swarm-backend
+    string pubsub_id = 1;
+
+    // The setting for syncing backend tasks.
+    BuildSyncSetting build_sync_setting = 2;
+  }
+
+  // The corresponding backend should be a `TaskBackendLite` implementation,
+  // where it doesn't support the task update and sync.
+  message LiteMode {
+  }
+
+  // The mode of the backend.
+  oneof Mode {
+    FullMode full_mode = 5;
+    LiteMode lite_mode = 6;
+  }
 }
 
 // Swarmbucket settings.
