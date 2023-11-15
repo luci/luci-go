@@ -19,6 +19,8 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"sort"
+	"sync"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/sync/errgroup"
@@ -29,6 +31,7 @@ import (
 	"google.golang.org/grpc/encoding/gzip"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 	pb "go.chromium.org/luci/config_service/proto"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -159,23 +162,124 @@ func (r *remoteV2Impl) GetConfig(ctx context.Context, configSet config.Set, path
 	}
 
 	res, err := r.grpcClient.GetConfig(ctx, req, grpc.UseCompressor(gzip.Name))
-	switch {
-	case grpcutil.Code(err) == codes.NotFound:
-		return nil, config.ErrNoConfig
-	case err != nil:
-		return nil, err
+	if err != nil {
+		return nil, wrapGrpcErr(err)
 	}
 
 	cfg := toConfig(res)
 	if res.GetSignedUrl() != "" {
 		content, err := config.DownloadConfigFromSignedURL(ctx, r.httpClient, res.GetSignedUrl())
 		if err != nil {
-			return nil, err
+			return nil, transient.Tag.Apply(err)
 		}
 		cfg.Content = string(content)
 	}
 
 	return cfg, nil
+}
+
+func (r *remoteV2Impl) GetConfigs(ctx context.Context, cfgSet config.Set, filter func(path string) bool, metaOnly bool) (map[string]config.Config, error) {
+	if err := r.checkInitialized(); err != nil {
+		return nil, err
+	}
+
+	// Fetch the list of files in the config set together with their hashes.
+	confSetPb, err := r.grpcClient.GetConfigSet(ctx, &pb.GetConfigSetRequest{
+		ConfigSet: string(cfgSet),
+		Fields: &field_mask.FieldMask{
+			Paths: []string{"configs"},
+		},
+	})
+	if err != nil {
+		return nil, wrapGrpcErr(err)
+	}
+
+	// An edge case. This should be impossible in practice.
+	if len(confSetPb.Configs) == 0 {
+		return nil, nil
+	}
+
+	// Assert all returned files are from the same revision. They should be.
+	rev := confSetPb.Configs[0].Revision
+	for _, cfg := range confSetPb.Configs {
+		if cfg.Revision != rev {
+			return nil, errors.Reason("internal error: the reply contains files from revisions %q and %q", cfg.Revision, rev).Err()
+		}
+	}
+
+	// Filter the file list through the callback.
+	var filtered []*pb.Config
+	if filter != nil {
+		filtered = confSetPb.Configs[:0]
+		for _, cfg := range confSetPb.Configs {
+			if filter(cfg.Path) {
+				filtered = append(filtered, cfg)
+			}
+		}
+	} else {
+		filtered = confSetPb.Configs
+	}
+
+	// If the caller only cares about metadata, we are done.
+	if metaOnly {
+		out := make(map[string]config.Config, len(filtered))
+		for _, cfg := range filtered {
+			cfg.Content = nil // in case the server decides to return something
+			out[cfg.Path] = *toConfig(cfg)
+		}
+		return out, nil
+	}
+
+	// Fetch all files in parallel using their SHA256 as the key.
+	out := make(map[string]config.Config, len(filtered))
+	var m sync.Mutex
+	eg, ectx := errgroup.WithContext(ctx)
+	eg.SetLimit(8)
+	for _, cfg := range filtered {
+		cfg := cfg
+		eg.Go(func() error {
+			body, err := r.grpcClient.GetConfig(ectx, &pb.GetConfigRequest{
+				ConfigSet:     string(cfgSet),
+				ContentSha256: cfg.ContentSha256,
+			}, grpc.UseCompressor(gzip.Name))
+			if err != nil {
+				err = wrapGrpcErr(err)
+				// Do not return ErrNoConfig if an individual file is missing. First of
+				// all, it should never happen. If it does happen for some reason, we
+				// must not return ErrNoConfig anyway, because it will be interpreted
+				// as if the config set is gone, which will be incorrect.
+				if err == config.ErrNoConfig {
+					return errors.Reason("internal error: config %q at SHA256 %q is unexpectedly gone", cfg.Path, cfg.ContentSha256).Err()
+				}
+				return errors.Annotate(err, "fetching %q at SHA256 %q", cfg.Path, cfg.ContentSha256).Err()
+			}
+
+			// Ignore all metadata from `body`. It may be pointing to some other
+			// file or revision that happened to have the exact same SHA256 as the one
+			// we are requesting. We only care about the content.
+			resolved := toConfig(cfg)
+			if url := body.GetSignedUrl(); url != "" {
+				content, err := config.DownloadConfigFromSignedURL(ectx, r.httpClient, url)
+				if err != nil {
+					return errors.Annotate(err, "fetching %q from signed URL", cfg.Path).Tag(transient.Tag).Err()
+				}
+				resolved.Content = string(content)
+			} else {
+				resolved.Content = string(body.GetRawContent())
+			}
+
+			m.Lock()
+			out[resolved.Path] = *resolved
+			m.Unlock()
+
+			return nil
+		})
+	}
+
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (r *remoteV2Impl) GetProjectConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {
@@ -193,7 +297,7 @@ func (r *remoteV2Impl) GetProjectConfigs(ctx context.Context, path string, metaO
 	// return a compressed response to allow data transfer faster.
 	res, err := r.grpcClient.GetProjectConfigs(ctx, req, grpc.UseCompressor(gzip.Name))
 	if err != nil {
-		return nil, err
+		return nil, wrapGrpcErr(err)
 	}
 
 	eg, ectx := errgroup.WithContext(ctx)
@@ -207,7 +311,7 @@ func (r *remoteV2Impl) GetProjectConfigs(ctx context.Context, path string, metaO
 			eg.Go(func() error {
 				content, err := config.DownloadConfigFromSignedURL(ectx, r.httpClient, signedURL)
 				if err != nil {
-					return errors.Annotate(err, "For file(%s) in config_set(%s)", configs[i].Path, configs[i].ConfigSet).Err()
+					return errors.Annotate(err, "for file(%s) in config_set(%s)", configs[i].Path, configs[i].ConfigSet).Tag(transient.Tag).Err()
 				}
 				configs[i].Content = string(content)
 				return nil
@@ -228,7 +332,7 @@ func (r *remoteV2Impl) GetProjects(ctx context.Context) ([]config.Project, error
 
 	res, err := r.grpcClient.ListConfigSets(ctx, &pb.ListConfigSetsRequest{Domain: pb.ListConfigSetsRequest_PROJECT})
 	if err != nil {
-		return nil, err
+		return nil, wrapGrpcErr(err)
 	}
 
 	projects := make([]config.Project, len(res.ConfigSets))
@@ -261,13 +365,14 @@ func (r *remoteV2Impl) ListFiles(ctx context.Context, configSet config.Set) ([]s
 		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, wrapGrpcErr(err)
 	}
 
 	paths := make([]string, len(res.Configs))
 	for i, cfg := range res.Configs {
 		paths[i] = cfg.Path
 	}
+	sort.Strings(paths)
 	return paths, nil
 }
 
@@ -283,6 +388,17 @@ func (r *remoteV2Impl) checkInitialized() error {
 		return errors.New("The Luci-config client is not initialized")
 	}
 	return nil
+}
+
+func wrapGrpcErr(err error) error {
+	switch code := grpcutil.Code(err); {
+	case code == codes.NotFound:
+		return config.ErrNoConfig
+	case grpcutil.IsTransientCode(code):
+		return transient.Tag.Apply(err)
+	default:
+		return err
+	}
 }
 
 func toConfig(configPb *pb.Config) *config.Config {

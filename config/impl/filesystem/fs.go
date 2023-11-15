@@ -425,6 +425,29 @@ func (fs *filesystemImpl) GetConfig(ctx context.Context, cfgSet config.Set, cfgP
 	return nil, config.ErrNoConfig
 }
 
+func (fs *filesystemImpl) GetConfigs(ctx context.Context, cfgSet config.Set, filter func(path string) bool, metaOnly bool) (map[string]config.Config, error) {
+	cs := configSet{luciPath(cfgSet)}
+	if err := cs.validate(); err != nil {
+		return nil, err
+	}
+
+	out := map[string]config.Config{}
+	err := fs.iterContentRevPath(func(lk lookupKey, cfg *config.Config) {
+		if lk.configSet == cs && (filter == nil || filter(cfg.Path)) {
+			c := *cfg
+			if metaOnly {
+				c.Content = ""
+			}
+			out[cfg.Path] = c
+		}
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (fs *filesystemImpl) ListFiles(ctx context.Context, cfgSet config.Set) ([]string, error) {
 	cs := configSet{luciPath(cfgSet)}
 	if err := cs.validate(); err != nil {
@@ -437,6 +460,7 @@ func (fs *filesystemImpl) ListFiles(ctx context.Context, cfgSet config.Set) ([]s
 			files = append(files, cfg.Path)
 		}
 	})
+	sort.Strings(files)
 	return files, err
 }
 

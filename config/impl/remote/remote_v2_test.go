@@ -32,6 +32,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/common/retry/transient"
 	pb "go.chromium.org/luci/config_service/proto"
 
 	"go.chromium.org/luci/config"
@@ -84,17 +85,8 @@ func TestRemoteV2Calls(t *testing.T) {
 			})
 
 			Convey("ok - signed url", func(c C) {
-				signedURLSever := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					buf := &bytes.Buffer{}
-					gw := gzip.NewWriter(buf)
-					_, err := gw.Write([]byte("content"))
-					c.So(err, ShouldBeNil)
-					c.So(gw.Close(), ShouldBeNil)
-					w.Header().Set("Content-Encoding", "gzip")
-					_, err = w.Write(buf.Bytes())
-					c.So(err, ShouldBeNil)
-				}))
-				defer signedURLSever.Close()
+				signedURLServer := signedURLServer(c, "content")
+				defer signedURLServer.Close()
 
 				mockClient.EXPECT().GetConfig(gomock.Any(), proto.MatcherEqual(&pb.GetConfigRequest{
 					ConfigSet: "projects/project1",
@@ -103,7 +95,7 @@ func TestRemoteV2Calls(t *testing.T) {
 					ConfigSet: "projects/project1",
 					Path:      "config.cfg",
 					Content: &pb.Config_SignedUrl{
-						SignedUrl: signedURLSever.URL,
+						SignedUrl: signedURLServer.URL,
 					},
 					Revision:      "revision",
 					ContentSha256: "sha256",
@@ -170,6 +162,7 @@ func TestRemoteV2Calls(t *testing.T) {
 
 				So(cfg, ShouldBeNil)
 				So(err, ShouldHaveGRPCStatus, codes.Internal, "internal error")
+				So(transient.Tag.In(err), ShouldBeTrue)
 			})
 		})
 
@@ -209,17 +202,8 @@ func TestRemoteV2Calls(t *testing.T) {
 			})
 
 			Convey("ok - raw + signed url", func(c C) {
-				signedURLSever := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					buf := &bytes.Buffer{}
-					gw := gzip.NewWriter(buf)
-					_, err := gw.Write([]byte("large content"))
-					c.So(err, ShouldBeNil)
-					c.So(gw.Close(), ShouldBeNil)
-					w.Header().Set("Content-Encoding", "gzip")
-					_, err = w.Write(buf.Bytes())
-					c.So(err, ShouldBeNil)
-				}))
-				defer signedURLSever.Close()
+				signedURLServer := signedURLServer(c, "large content")
+				defer signedURLServer.Close()
 
 				mockClient.EXPECT().GetProjectConfigs(gomock.Any(), proto.MatcherEqual(&pb.GetProjectConfigsRequest{
 					Path: "config.cfg",
@@ -242,7 +226,7 @@ func TestRemoteV2Calls(t *testing.T) {
 							ContentSha256: "sha256",
 							Url:           "url",
 							Content: &pb.Config_SignedUrl{
-								SignedUrl: signedURLSever.URL,
+								SignedUrl: signedURLServer.URL,
 							},
 						},
 					},
@@ -292,6 +276,7 @@ func TestRemoteV2Calls(t *testing.T) {
 				configs, err := v2Impl.GetProjectConfigs(ctx, "config.cfg", false)
 				So(configs, ShouldBeNil)
 				So(err, ShouldHaveGRPCStatus, codes.Internal, "config server internal error")
+				So(transient.Tag.In(err), ShouldBeTrue)
 			})
 
 			Convey("signed url error", func(c C) {
@@ -336,7 +321,8 @@ func TestRemoteV2Calls(t *testing.T) {
 
 				configs, err := v2Impl.GetProjectConfigs(ctx, "config.cfg", false)
 				So(configs, ShouldBeNil)
-				So(err, ShouldErrLike, `For file(config.cfg) in config_set(projects/project2): failed to download file, got http response code: 500, body: "internal error"`)
+				So(err, ShouldErrLike, `for file(config.cfg) in config_set(projects/project2): failed to download file, got http response code: 500, body: "internal error"`)
+				So(transient.Tag.In(err), ShouldBeTrue)
 			})
 		})
 
@@ -389,6 +375,7 @@ func TestRemoteV2Calls(t *testing.T) {
 				projects, err := v2Impl.GetProjects(ctx)
 				So(projects, ShouldBeNil)
 				So(err, ShouldHaveGRPCStatus, codes.Internal, "server internal error")
+				So(transient.Tag.In(err), ShouldBeTrue)
 			})
 		})
 
@@ -422,7 +409,213 @@ func TestRemoteV2Calls(t *testing.T) {
 				files, err := v2Impl.ListFiles(ctx, config.Set("projects/project"))
 				So(files, ShouldBeNil)
 				So(err, ShouldHaveGRPCStatus, codes.Internal, "server internal error")
+				So(transient.Tag.In(err), ShouldBeTrue)
+			})
+		})
+
+		Convey("GetConfigs", func() {
+			Convey("listing err", func() {
+				mockClient.EXPECT().GetConfigSet(gomock.Any(), proto.MatcherEqual(&pb.GetConfigSetRequest{
+					ConfigSet: "projects/project",
+					Fields: &field_mask.FieldMask{
+						Paths: []string{"configs"},
+					},
+				})).Return(nil, status.Errorf(codes.NotFound, "no config set"))
+				files, err := v2Impl.GetConfigs(ctx, "projects/project", nil, false)
+				So(files, ShouldBeNil)
+				So(err, ShouldEqual, config.ErrNoConfig)
+			})
+
+			Convey("listing ok", func() {
+				mockClient.EXPECT().GetConfigSet(gomock.Any(), proto.MatcherEqual(&pb.GetConfigSetRequest{
+					ConfigSet: "projects/project",
+					Fields: &field_mask.FieldMask{
+						Paths: []string{"configs"},
+					},
+				})).Return(&pb.ConfigSet{
+					Configs: []*pb.Config{
+						{
+							ConfigSet:     "projects/project",
+							Path:          "file1",
+							ContentSha256: "file1-hash",
+							Size:          123,
+							Revision:      "rev",
+							Url:           "file1-url",
+						},
+						{
+							ConfigSet: "projects/project",
+							Path:      "ignored",
+							Revision:  "rev",
+						},
+						{
+							ConfigSet:     "projects/project",
+							Path:          "file2",
+							ContentSha256: "file2-hash",
+							Size:          456,
+							Revision:      "rev",
+							Url:           "file2-url",
+						},
+					},
+				}, nil)
+
+				filter := func(path string) bool { return path != "ignored" }
+
+				expectedOutput := func(metaOnly bool) map[string]config.Config {
+					content := func(p string) string { return "" }
+					if !metaOnly {
+						content = func(p string) string { return p + " content" }
+					}
+					return map[string]config.Config{
+						"file1": {
+							Meta: config.Meta{
+								ConfigSet:   "projects/project",
+								Path:        "file1",
+								ContentHash: "file1-hash",
+								Revision:    "rev",
+								ViewURL:     "file1-url",
+							},
+							Content: content("file1"),
+						},
+						"file2": {
+							Meta: config.Meta{
+								ConfigSet:   "projects/project",
+								Path:        "file2",
+								ContentHash: "file2-hash",
+								Revision:    "rev",
+								ViewURL:     "file2-url",
+							},
+							Content: content("file2"),
+						},
+					}
+				}
+
+				expectGetConfigCall := func(hash string, err error, cfg *pb.Config) {
+					if cfg != nil {
+						cfg.ConfigSet = "ignore-me"
+						cfg.Path = "ignore-me"
+						cfg.Revision = "ignore-me"
+						cfg.ContentSha256 = "ignore-me"
+						cfg.Url = "ignore-me"
+					}
+					mockClient.EXPECT().GetConfig(gomock.Any(), proto.MatcherEqual(&pb.GetConfigRequest{
+						ConfigSet:     "projects/project",
+						ContentSha256: hash,
+					}), grpc.UseCompressor(grpcGzip.Name)).Return(cfg, err)
+				}
+
+				Convey("meta only", func() {
+					files, err := v2Impl.GetConfigs(ctx, "projects/project", filter, true)
+					So(err, ShouldBeNil)
+					So(files, ShouldResemble, expectedOutput(true))
+				})
+
+				Convey("small bodies", func() {
+					expectGetConfigCall("file1-hash", nil, &pb.Config{
+						Content: &pb.Config_RawContent{
+							RawContent: []byte("file1 content"),
+						},
+					})
+					expectGetConfigCall("file2-hash", nil, &pb.Config{
+						Content: &pb.Config_RawContent{
+							RawContent: []byte("file2 content"),
+						},
+					})
+
+					files, err := v2Impl.GetConfigs(ctx, "projects/project", filter, false)
+					So(err, ShouldBeNil)
+					So(files, ShouldResemble, expectedOutput(false))
+				})
+
+				Convey("single fetch err", func() {
+					expectGetConfigCall("file1-hash", nil, &pb.Config{
+						Content: &pb.Config_RawContent{
+							RawContent: []byte("file1 content"),
+						},
+					})
+					expectGetConfigCall("file2-hash",
+						status.Errorf(codes.Internal, "server internal error"), nil)
+
+					files, err := v2Impl.GetConfigs(ctx, "projects/project", filter, false)
+					So(files, ShouldBeNil)
+					So(err, ShouldHaveGRPCStatus, codes.Internal, "server internal error")
+					So(transient.Tag.In(err), ShouldBeTrue)
+				})
+
+				Convey("single fetch unexpectedly missing", func() {
+					expectGetConfigCall("file1-hash", nil, &pb.Config{
+						Content: &pb.Config_RawContent{
+							RawContent: []byte("file1 content"),
+						},
+					})
+					expectGetConfigCall("file2-hash",
+						status.Errorf(codes.NotFound, "gone but why"), nil)
+
+					files, err := v2Impl.GetConfigs(ctx, "projects/project", filter, false)
+					So(files, ShouldBeNil)
+					So(err, ShouldErrLike, "is unexpectedly gone")
+					So(transient.Tag.In(err), ShouldBeFalse)
+				})
+
+				Convey("large body - ok", func(c C) {
+					signedURLServer := signedURLServer(c, "file2 content")
+					defer signedURLServer.Close()
+
+					expectGetConfigCall("file1-hash", nil, &pb.Config{
+						Content: &pb.Config_RawContent{
+							RawContent: []byte("file1 content"),
+						},
+					})
+					expectGetConfigCall("file2-hash", nil, &pb.Config{
+						Content: &pb.Config_SignedUrl{
+							SignedUrl: signedURLServer.URL,
+						},
+					})
+
+					files, err := v2Impl.GetConfigs(ctx, "projects/project", filter, false)
+					So(err, ShouldBeNil)
+					So(files, ShouldResemble, expectedOutput(false))
+				})
+
+				Convey("large body - err", func(c C) {
+					signedURLServer := signedURLServer(c, "file2 content")
+					defer signedURLServer.Close()
+
+					expectGetConfigCall("file1-hash", nil, &pb.Config{
+						Content: &pb.Config_RawContent{
+							RawContent: []byte("file1 content"),
+						},
+					})
+					expectGetConfigCall("file2-hash", nil, &pb.Config{
+						Content: &pb.Config_SignedUrl{
+							SignedUrl: signedURLServer.URL + "/err",
+						},
+					})
+
+					files, err := v2Impl.GetConfigs(ctx, "projects/project", filter, false)
+					So(files, ShouldBeNil)
+					So(err, ShouldErrLike, `fetching "file2" from signed URL: failed to download file`)
+					So(transient.Tag.In(err), ShouldBeTrue)
+				})
 			})
 		})
 	})
+}
+
+func signedURLServer(c C, body string) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.String(), "err") {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, err := w.Write([]byte(body))
+			c.So(err, ShouldBeNil)
+			return
+		}
+		buf := &bytes.Buffer{}
+		gw := gzip.NewWriter(buf)
+		_, err := gw.Write([]byte(body))
+		c.So(err, ShouldBeNil)
+		c.So(gw.Close(), ShouldBeNil)
+		w.Header().Set("Content-Encoding", "gzip")
+		_, err = w.Write(buf.Bytes())
+		c.So(err, ShouldBeNil)
+	}))
 }

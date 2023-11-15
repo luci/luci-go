@@ -59,6 +59,7 @@ func TestFSImpl(t *testing.T) {
 	withFolder(map[string]string{
 		"projects/doodly/something/file.cfg": "",
 		"projects/foobar/something/file.cfg": "",
+		"projects/foobar/another/file.cfg":   "",
 		"services/foosrv/something.cfg":      "",
 		"projects/foobar.json": `{
 			"Name": "A cool project",
@@ -66,6 +67,8 @@ func TestFSImpl(t *testing.T) {
 		}`,
 	}, func(folder string) {
 		Convey("basic Test Filesystem config client", t, func() {
+			const expectedRev = "a1b9f654acc5008452980a98ec930cbfdeec82d6"
+
 			client, err := New(folder)
 			So(err, ShouldBeNil)
 
@@ -75,7 +78,7 @@ func TestFSImpl(t *testing.T) {
 						ConfigSet:   "projects/foobar",
 						Path:        "something/file.cfg",
 						ContentHash: "v1:72b8fe0ecd5e7560762aed58063aeb3795e69bd8",
-						Revision:    "14311207cf77cf29c4538109fa3e145f1c83b81d",
+						Revision:    expectedRev,
 						ViewURL:     "file://./something/file.cfg",
 					},
 					Content: "projects/foobar/something/file.cfg",
@@ -95,7 +98,7 @@ func TestFSImpl(t *testing.T) {
 							ConfigSet:   "services/foosrv",
 							Path:        "something.cfg",
 							ContentHash: "v1:536a41710e0cb4f21950d5e0e32642bda58fce9a",
-							Revision:    "14311207cf77cf29c4538109fa3e145f1c83b81d",
+							Revision:    expectedRev,
 							ViewURL:     "file://./something.cfg",
 						},
 						Content: "services/foosrv/something.cfg",
@@ -116,10 +119,40 @@ func TestFSImpl(t *testing.T) {
 				})
 			})
 
+			Convey("GetConfigs", func() {
+				cfg, err := client.GetConfigs(ctx, "projects/foobar", nil, false)
+				So(err, ShouldBeNil)
+				So(cfg, ShouldResemble, map[string]config.Config{
+					"another/file.cfg": {
+						Meta: config.Meta{
+							ConfigSet:   "projects/foobar",
+							Path:        "another/file.cfg",
+							ContentHash: "v1:1b136cf89ccbd1d5f42cecae874367b0258d810d",
+							Revision:    expectedRev,
+							ViewURL:     "file://./another/file.cfg",
+						},
+						Content: "projects/foobar/another/file.cfg",
+					},
+					"something/file.cfg": {
+						Meta: config.Meta{
+							ConfigSet:   "projects/foobar",
+							Path:        "something/file.cfg",
+							ContentHash: "v1:72b8fe0ecd5e7560762aed58063aeb3795e69bd8",
+							Revision:    expectedRev,
+							ViewURL:     "file://./something/file.cfg",
+						},
+						Content: "projects/foobar/something/file.cfg",
+					},
+				})
+			})
+
 			Convey("ListFiles", func() {
 				cfg, err := client.ListFiles(ctx, "projects/foobar")
 				So(err, ShouldBeNil)
-				So(cfg, ShouldResemble, []string{"something/file.cfg"})
+				So(cfg, ShouldResemble, []string{
+					"another/file.cfg",
+					"something/file.cfg",
+				})
 			})
 
 			Convey("GetProjectConfigs", func() {
@@ -131,7 +164,7 @@ func TestFSImpl(t *testing.T) {
 							ConfigSet:   "projects/doodly",
 							Path:        "something/file.cfg",
 							ContentHash: "v1:5a2f9983dbb615a58e1d267633396e72f6710ef2",
-							Revision:    "14311207cf77cf29c4538109fa3e145f1c83b81d",
+							Revision:    expectedRev,
 							ViewURL:     "file://./something/file.cfg",
 						},
 						Content: "projects/doodly/something/file.cfg",
@@ -141,7 +174,7 @@ func TestFSImpl(t *testing.T) {
 							ConfigSet:   "projects/foobar",
 							Path:        "something/file.cfg",
 							ContentHash: "v1:72b8fe0ecd5e7560762aed58063aeb3795e69bd8",
-							Revision:    "14311207cf77cf29c4538109fa3e145f1c83b81d",
+							Revision:    expectedRev,
 							ViewURL:     "file://./something/file.cfg",
 						},
 						Content: "projects/foobar/something/file.cfg",

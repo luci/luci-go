@@ -69,6 +69,33 @@ func TestMemoryImpl(t *testing.T) {
 			})
 		})
 
+		Convey("GetConfigs", func() {
+			out, err := impl.GetConfigs(ctx, "projects/proj2", nil, false)
+			So(err, ShouldBeNil)
+			So(out, ShouldResemble, map[string]config.Config{
+				"another/file": {
+					Meta: config.Meta{
+						ConfigSet:   "projects/proj2",
+						Path:        "another/file",
+						ContentHash: "v2:d63f27b6c9bec5886662ba0378c6b49c08fc68c4b9f0cddf5d558bbe4c82592a",
+						Revision:    "d8d48bd9c29f7a3cb1a88fe69028b74f71f22fb4",
+						ViewURL:     "https://example.com/view/here/another/file",
+					},
+					Content: "project2 another file",
+				},
+				"file": {
+					Meta: config.Meta{
+						ConfigSet:   "projects/proj2",
+						Path:        "file",
+						ContentHash: "v2:0098b08f0108cd69b0cc27d152c319dd47e1cfb184f8ee335efa9148fdc204e3",
+						Revision:    "d8d48bd9c29f7a3cb1a88fe69028b74f71f22fb4",
+						ViewURL:     "https://example.com/view/here/file",
+					},
+					Content: "project2 file",
+				},
+			})
+		})
+
 		Convey("ListFiles", func() {
 			templates, err := impl.ListFiles(ctx, "projects/proj2")
 			So(err, ShouldBeNil)

@@ -68,6 +68,28 @@ func (m *memoryImpl) GetConfig(ctx context.Context, configSet config.Set, path s
 	return nil, config.ErrNoConfig
 }
 
+func (m *memoryImpl) GetConfigs(ctx context.Context, configSet config.Set, filter func(path string) bool, metaOnly bool) (map[string]config.Config, error) {
+	if err := m.err; err != nil {
+		return nil, err
+	}
+
+	if set, ok := m.sets[configSet]; ok {
+		out := make(map[string]config.Config, len(set))
+		for path := range set {
+			if filter == nil || filter(path) {
+				cfg := set.configMaybe(configSet, path, metaOnly)
+				if cfg == nil {
+					panic("impossible")
+				}
+				out[path] = *cfg
+			}
+		}
+		return out, nil
+	}
+
+	return nil, config.ErrNoConfig
+}
+
 func (m *memoryImpl) ListFiles(ctx context.Context, configSet config.Set) ([]string, error) {
 	if err := m.err; err != nil {
 		return nil, err

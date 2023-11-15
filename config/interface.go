@@ -98,6 +98,15 @@ type Interface interface {
 	// (and the call is faster).
 	GetConfig(ctx context.Context, configSet Set, path string, metaOnly bool) (*Config, error)
 
+	// GetConfigs returns a bunch of config files fetched at the same revision.
+	// If filter is nil, will return all files in the config set. Otherwise only
+	// files that pass the filter are returned. The filter is called sequentially
+	// in the same goroutine as GetConfigs itself and it receives paths in some
+	// arbitrary order. If metaOnly is true, returned Config structs have only
+	// Meta set (and the call is much faster). If there's no such config set at
+	// all, returns ErrNoConfig.
+	GetConfigs(ctx context.Context, configSet Set, filter func(path string) bool, metaOnly bool) (map[string]Config, error)
+
 	// GetProjectConfigs returns all the configs at the given path in all
 	// projects that have such config. If metaOnly is true, returned Config
 	// structs have only Meta set (and the call is faster).

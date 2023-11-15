@@ -41,6 +41,10 @@ func (i erroringInterface) GetConfig(ctx context.Context, configSet config.Set, 
 	return nil, i.err
 }
 
+func (i erroringInterface) GetConfigs(ctx context.Context, configSet config.Set, filter func(path string) bool, metaOnly bool) (map[string]config.Config, error) {
+	return nil, i.err
+}
+
 func (i erroringInterface) GetProjectConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {
 	return nil, i.err
 }

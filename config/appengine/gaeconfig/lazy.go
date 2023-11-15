@@ -51,25 +51,31 @@ func (client *lazyConfigClient) GetConfig(ctx context.Context, configSet config.
 	return client.inner.GetConfig(ctx, configSet, path, metaOnly)
 }
 
-// GetConfig implements config.Interface.
+// GetConfigs implements config.Interface.
+func (client *lazyConfigClient) GetConfigs(ctx context.Context, configSet config.Set, filter func(path string) bool, metaOnly bool) (map[string]config.Config, error) {
+	client.lazyInit(ctx)
+	return client.inner.GetConfigs(ctx, configSet, filter, metaOnly)
+}
+
+// GetProjectConfigs implements config.Interface.
 func (client *lazyConfigClient) GetProjectConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {
 	client.lazyInit(ctx)
 	return client.inner.GetProjectConfigs(ctx, path, metaOnly)
 }
 
-// GetConfig implements config.Interface.
+// GetProjects implements config.Interface.
 func (client *lazyConfigClient) GetProjects(ctx context.Context) ([]config.Project, error) {
 	client.lazyInit(ctx)
 	return client.inner.GetProjects(ctx)
 }
 
-// GetConfig implements config.Interface.
+// ListFiles implements config.Interface.
 func (client *lazyConfigClient) ListFiles(ctx context.Context, configSet config.Set) ([]string, error) {
 	client.lazyInit(ctx)
 	return client.inner.ListFiles(ctx, configSet)
 }
 
-// GetConfig implements config.Interface.
+// Close implements config.Interface.
 func (client *lazyConfigClient) Close() error {
 	// This is potentially racy if client is initialized and closed at the same
 	// time. But in this case, Close is never called so it's not a big deal.

@@ -29,6 +29,7 @@ import (
 	"google.golang.org/api/googleapi"
 
 	configApi "go.chromium.org/luci/common/api/luci_config/config/v1"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config"
@@ -131,6 +132,10 @@ func (r *remoteImpl) GetConfig(ctx context.Context, configSet config.Set, path s
 		},
 		Content: string(decoded),
 	}, nil
+}
+
+func (r *remoteImpl) GetConfigs(ctx context.Context, cfgSet config.Set, filter func(path string) bool, metaOnly bool) (map[string]config.Config, error) {
+	return nil, errors.New("this method is not supported when using v1 API")
 }
 
 func (r *remoteImpl) ListFiles(ctx context.Context, configSet config.Set) ([]string, error) {

@@ -64,6 +64,14 @@ func (r *resolvingInterface) GetConfig(ctx context.Context, configSet config.Set
 	return r.next.GetConfig(ctx, configSet, path, metaOnly)
 }
 
+func (r *resolvingInterface) GetConfigs(ctx context.Context, configSet config.Set, filter func(path string) bool, metaOnly bool) (map[string]config.Config, error) {
+	configSet, err := r.configSet(ctx, configSet)
+	if err != nil {
+		return nil, err
+	}
+	return r.next.GetConfigs(ctx, configSet, filter, metaOnly)
+}
+
 func (r *resolvingInterface) GetProjectConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {
 	path, err := r.path(ctx, path)
 	if err != nil {
