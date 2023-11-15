@@ -37,7 +37,6 @@ message Event {
     RunFinished run_finished = 5;
 
     PurgeCompleted purge_completed = 6;
-    TriggeringCLsCompleted triggering_cls_completed = 8 [deprecated = true];
     TriggeringCLDepsCompleted triggering_cl_deps_completed = 9;
   }
 }
@@ -73,21 +72,6 @@ message PurgeCompleted {
   string operation_id = 1;
   // ID of the CL that was purged.
   int64 clid = 2;
-}
-
-// TriggeringCLsCompleted is sent to PM when a TriggeringCLsTask is completed.
-message TriggeringCLsCompleted {
-  message OpResult {
-      // Operation ID
-      string operation_id = 1;
-      // ID of the CL where the CQ trigger is originated.
-      int64 origin_clid = 2;
-      // Provide the reason of the Op failure, if the Op was failed.
-      cv.internal.changelist.CLError.TriggerDeps reason = 3;
-  }
-  repeated OpResult succeeded = 1;
-  repeated OpResult failed = 2;
-  repeated OpResult skipped = 3;
 }
 
 // TriggeringCLDepsCompleted is sent to PM on a TriggeringCLDepsTask completion.

@@ -156,15 +156,6 @@ func (n *Notifier) sendWithoutDispatch(ctx context.Context, luciProject string, 
 	return eventbox.Emit(ctx, value, EventboxRecipient(ctx, luciProject))
 }
 
-// NotifyTriggeringCLsCompleted tells Project Manager CL trigger completion.
-func (n *Notifier) NotifyTriggeringCLsCompleted(ctx context.Context, luciProject string, completed *prjpb.TriggeringCLsCompleted) error {
-	return n.SendNow(ctx, luciProject, &prjpb.Event{
-		Event: &prjpb.Event_TriggeringClsCompleted{
-			TriggeringClsCompleted: completed,
-		},
-	})
-}
-
 // NotifyTriggeringCLDepsCompleted tells Project Manager CL deps trigger completion.
 func (n *Notifier) NotifyTriggeringCLDepsCompleted(ctx context.Context, luciProject string, event *prjpb.TriggeringCLDepsCompleted) error {
 	return n.SendNow(ctx, luciProject, &prjpb.Event{

@@ -62,16 +62,6 @@ message PurgeCLTask {
   repeated string config_groups = 6;
 }
 
-// TriggeringCLsTask starts a task to trigger CLs.
-//
-// Queue: "trigger-project-cls"
-message TriggeringCLsTask {
-  // LUCI project of the CL
-  string luci_project = 1;
-  // CLs to trigger.
-  repeated TriggeringCL triggering_cls = 2;
-}
-
 // TriggeringDepsTask starts a task to trigger the deps of a CL.
 //
 // Queue: "trigger-project-cl-deps"

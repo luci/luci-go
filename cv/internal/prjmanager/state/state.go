@@ -85,7 +85,6 @@ func (s *State) cloneShallow(reasons ...prjpb.LogReason) *State {
 		CreatedPruns:        s.PB.GetCreatedPruns(),
 		NextEvalTime:        s.PB.GetNextEvalTime(),
 		PurgingCls:          s.PB.GetPurgingCls(),
-		TriggeringCls:       s.PB.GetTriggeringCls(),
 		TriggeringClDeps:    s.PB.GetTriggeringClDeps(),
 	}
 

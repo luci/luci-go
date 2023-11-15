@@ -85,11 +85,6 @@ queue:
   rate: 30/s
   target: default
 
-# TODO(ddoman): remove this once the rewrite for MCE logic is done.
-- name: trigger-project-cls
-  rate: 30/s
-  target: default
-
 - name: trigger-project-cl-deps
   rate: 30/s
   target: default

@@ -83,13 +83,6 @@ message PState {
   // Sorted by CL ID.
   repeated PurgingCL purging_cls = 13;
 
-  // TriggeringCLs are CLs currently being triggered.
-  //
-  // They are tracked in PState to avoid creating duplicate triggering tasks.
-  // A TriggeringCL is kept in PState until the triggering process stops.
-  //
-  // Sorted by CL ID.
-  repeated TriggeringCL triggering_cls = 14 [deprecated = true];
   // TriggeringCLDeps are the CLs of which deps are being triggered.
   //
   // They are tracked in PState to avoid creating duplicate triggering tasks.
@@ -315,37 +308,6 @@ message PurgingCL {
   // If specified, the Gerrit request will be sent with the notify and
   // attention.
   Notification notification = 6;
-}
-
-// TriggeringCL represents CQ trigger of a CL.
-//
-// The triggering process is initiated to the deps of a given CL, if
-// - the given CL received a CQ vote,
-// - the dependencies do not have the CQ vote yet.
-//
-// These tasks are tracked in PM state to deduplicate TQ tasks for
-// the same dep.
-message TriggeringCL {
-  // ID of the CL to trigger.
-  int64 clid = 1;
-  // ID of the CL where this CQ trigger is originated.
-  //
-  // If this task is to trigger a dep CL from a child CQ vote, then
-  // this field tells the ID of the child CL.
-  int64 origin_clid = 2;
-  // Operation ID uniquely identifies the TriggeringCL operation within
-  // the project.
-  string operation_id = 3;
-  // Deadline is obeyed by the TQ task handler.
-  //
-  // TQ task SHOULD NOT modify a CL (e.g., via Gerrit RPCs) beyond this point.
-  // If PM doesn't receive TriggerCompleted event before this deadline + grace
-  // period, PM will consider the task expired and the task will be removed from
-  // PState, so that the deps will be re-triaged and PM may schedule another
-  // TQ task for the triggering operation for the CL.
-  google.protobuf.Timestamp deadline = 4;
-  // trigger is the trigger information of the original CL.
-  cv.internal.run.Trigger trigger = 5;
 }
 
 // TriggeringCLDeps propagates the trigger to the deps of a given CL.

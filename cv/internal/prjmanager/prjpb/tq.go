@@ -45,7 +45,6 @@ const (
 	ManageProjectTaskClass        = "manage-project"
 	KickManageProjectTaskClass    = "kick-" + ManageProjectTaskClass
 	PurgeProjectCLTaskClass       = "purge-project-cl"
-	TriggerProjectCLsTaskClass    = "trigger-project-cls"
 	TriggerProjectCLDepsTaskClass = "trigger-project-cl-deps"
 )
 
@@ -88,14 +87,6 @@ func Register(tqd *tq.Dispatcher) TasksBinding {
 			Queue:        "purge-project-cl",
 			Kind:         tq.Transactional,
 			Quiet:        false, // these tasks are rare enough that verbosity only helps.
-			QuietOnError: true,
-		}),
-		TriggerProjectCLs: tqd.RegisterTaskClass(tq.TaskClass{
-			ID:           TriggerProjectCLsTaskClass,
-			Prototype:    &TriggeringCLsTask{},
-			Queue:        "trigger-project-cls",
-			Kind:         tq.Transactional,
-			Quiet:        true,
 			QuietOnError: true,
 		}),
 		TriggerProjectCLDeps: tqd.RegisterTaskClass(tq.TaskClass{
