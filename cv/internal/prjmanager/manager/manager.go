@@ -304,11 +304,9 @@ type triageResult struct {
 		events eventbox.Events
 		purges []*prjpb.PurgeCompleted
 	}
-	triggeringCLsCompleted struct {
-		events    eventbox.Events
-		succeeded []*prjpb.TriggeringCLsCompleted_OpResult
-		failed    []*prjpb.TriggeringCLsCompleted_OpResult
-		skipped   []*prjpb.TriggeringCLsCompleted_OpResult
+	triggeringCLDepsCompleted struct {
+		events   eventbox.Events
+		triggers []*prjpb.TriggeringCLDepsCompleted
 	}
 }
 
@@ -345,14 +343,8 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 		tr.purgesCompleted.events = append(tr.purgesCompleted.events, item)
 		tr.purgesCompleted.purges = append(tr.purgesCompleted.purges, v.PurgeCompleted)
 	case *prjpb.Event_TriggeringClDepsCompleted:
-	case *prjpb.Event_TriggeringClsCompleted:
-		tr.triggeringCLsCompleted.events = append(tr.triggeringCLsCompleted.events, item)
-		tr.triggeringCLsCompleted.succeeded = append(
-			tr.triggeringCLsCompleted.succeeded, v.TriggeringClsCompleted.GetSucceeded()...)
-		tr.triggeringCLsCompleted.failed = append(
-			tr.triggeringCLsCompleted.failed, v.TriggeringClsCompleted.GetFailed()...)
-		tr.triggeringCLsCompleted.skipped = append(
-			tr.triggeringCLsCompleted.skipped, v.TriggeringClsCompleted.GetSkipped()...)
+		tr.triggeringCLDepsCompleted.events = append(tr.triggeringCLDepsCompleted.events, item)
+		tr.triggeringCLDepsCompleted.triggers = append(tr.triggeringCLDepsCompleted.triggers, v.TriggeringClDepsCompleted)
 	default:
 		panic(fmt.Errorf("unknown event: %T [id=%q]", e.GetEvent(), item.ID))
 	}
@@ -408,6 +400,7 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 	var err error
 	var se state.SideEffect
 	ret := make([]eventbox.Transition, 0, 7)
+	var evIndexesToConsume []int
 
 	if upgraded := s.UpgradeIfNecessary(); upgraded != s {
 		ret = append(ret, eventbox.Transition{TransitionTo: upgraded})
@@ -489,17 +482,15 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 		TransitionTo: s,
 	})
 
-	// OnTriggeringCLsCompleted may expire triggers even without incoming event.
-	s, se, err = proc.handler.OnTriggeringCLsCompleted(ctx, s,
-		tr.triggeringCLsCompleted.succeeded,
-		tr.triggeringCLsCompleted.failed,
-		tr.triggeringCLsCompleted.skipped,
+	// OnTriggeringCLDepsCompleted may expire triggers even without incoming event.
+	s, se, evIndexesToConsume, err = proc.handler.OnTriggeringCLDepsCompleted(ctx, s,
+		tr.triggeringCLDepsCompleted.triggers,
 	)
 	if err != nil {
 		return nil, err
 	}
 	ret = append(ret, eventbox.Transition{
-		Events:       tr.triggeringCLsCompleted.events,
+		Events:       shallowCopyEvents(tr.triggeringCLDepsCompleted.events, evIndexesToConsume),
 		SideEffectFn: state.SideEffectFn(se),
 		TransitionTo: s,
 	})
@@ -511,4 +502,15 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 		SideEffectFn: state.SideEffectFn(se),
 		TransitionTo: s,
 	}), nil
+}
+
+func shallowCopyEvents(events []eventbox.Event, indexesToCopy []int) []eventbox.Event {
+	if len(events) == len(indexesToCopy) {
+		return events
+	}
+	ret := make([]eventbox.Event, len(events))
+	for i, index := range indexesToCopy {
+		ret[i] = events[index]
+	}
+	return ret
 }

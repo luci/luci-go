@@ -54,6 +54,12 @@ type clUpdater interface {
 	Schedule(context.Context, *changelist.UpdateCLTask) error
 }
 
+// NoNotification indicates that no notification should be sent for the purging
+// task on a given CL.
+//
+// this is just for readability.
+var NoNotification = &prjpb.PurgingCL_Notification{}
+
 // New creates a Purger and registers it for handling tasks created by the given
 // PM Notifier.
 func New(n *prjmanager.Notifier, g gerrit.Factory, u clUpdater, clm *changelist.Mutator) *Purger {

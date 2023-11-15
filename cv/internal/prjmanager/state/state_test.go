@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	gerritupdater "go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
+	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
@@ -638,7 +639,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
-				So(s1, ShouldEqual, s2) // pointer comparison only.
+				So(s1.PB.GetPcls(), ShouldEqual, s2.PB.GetPcls()) // pointer comparison only.
 			})
 
 			Convey("Marks affected components for triage", func() {
@@ -1280,6 +1281,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 }
 
 func TestOnTriggeringCLsCompleted(t *testing.T) {
+	/* TODO(ddoman): remove
 	t.Parallel()
 
 	const (
@@ -1464,6 +1466,227 @@ func TestOnTriggeringCLsCompleted(t *testing.T) {
 						ApplyTo: &prjpb.PurgeReason_Triggers{Triggers: tr},
 					},
 				},
+			})
+		})
+	})
+	*/
+}
+
+func TestOnTriggeringCLDepsCompleted(t *testing.T) {
+	t.Parallel()
+
+	Convey("OnTriggeringCLDepsCompleted", t, func() {
+		ct := ctest{
+			lProject: "test",
+			gHost:    "c-review.example.com",
+			Test:     cvtesting.Test{},
+		}
+		ctx, cancel := ct.SetUp(t)
+		defer cancel()
+
+		cfg1 := &cfgpb.Config{}
+		So(prototext.Unmarshal([]byte(cfgText1), cfg1), ShouldBeNil)
+
+		prjcfgtest.Create(ctx, ct.lProject, cfg1)
+		meta := prjcfgtest.MustExist(ctx, ct.lProject)
+		gobmaptest.Update(ctx, ct.lProject)
+
+		clPoller := poller.New(ct.TQDispatcher, nil, nil, nil)
+		h := Handler{CLPoller: clPoller}
+
+		// mock CLs
+		now := ct.Clock.Now()
+		ci101 := gf.CI(
+			101, gf.PS(1), gf.Ref("refs/heads/main"), gf.Project("repo/a"),
+			gf.CQ(+2, now, gf.U("user-1")), gf.Updated(now),
+		)
+		ci102 := gf.CI(
+			102, gf.PS(3), gf.Ref("refs/heads/main"), gf.Project("repo/a"), gf.AllRevs(),
+			gf.CQ(+1, now, gf.U("user-1")), gf.Updated(now),
+		)
+		ci103 := gf.CI(
+			103, gf.PS(3), gf.Ref("refs/heads/main"), gf.Project("repo/a"), gf.AllRevs(),
+			gf.CQ(+1, now, gf.U("user-1")), gf.Updated(now),
+		)
+		ct.GFake.CreateChange(&gf.Change{Host: ct.gHost, ACLs: gf.ACLPublic(), Info: ci101})
+		ct.GFake.CreateChange(&gf.Change{Host: ct.gHost, ACLs: gf.ACLPublic(), Info: ci102})
+		ct.GFake.CreateChange(&gf.Change{Host: ct.gHost, ACLs: gf.ACLPublic(), Info: ci103})
+		ct.GFake.SetDependsOn(ct.gHost, "103_3", "102_3", "101_1")
+		cl101 := ct.runCLUpdater(ctx, 101)
+		cl102 := ct.runCLUpdater(ctx, 102)
+		cl103 := ct.runCLUpdater(ctx, 103)
+
+		s1 := &State{PB: &prjpb.PState{
+			LuciProject: ct.lProject,
+			Pcls: []*prjpb.PCL{
+				{
+					Clid:     int64(cl101.ID),
+					Eversion: 1,
+					Status:   prjpb.PCL_OK,
+					Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
+						Mode: string(run.FullRun),
+						Time: timestamppb.New(now.Add(-10 * time.Minute)),
+					}},
+					ConfigGroupIndexes: []int32{0},
+				},
+				{
+					Clid:     int64(cl102.ID),
+					Eversion: 1,
+					Status:   prjpb.PCL_OK,
+					Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
+						Mode: string(run.FullRun),
+						Time: timestamppb.New(now.Add(-10 * time.Minute)),
+					}},
+					ConfigGroupIndexes: []int32{0},
+				},
+				{
+					Clid:               int64(cl103.ID),
+					Eversion:           1,
+					Status:             prjpb.PCL_OK,
+					ConfigGroupIndexes: []int32{0},
+				},
+			},
+			// Components require PCLs, but in this test it doesn't matter.
+			Components: []*prjpb.Component{
+				{Clids: []int64{int64(cl101.ID)}}, // for unconfusing indexes below.
+				{Clids: []int64{int64(cl102.ID)}},
+				{Clids: []int64{int64(cl103.ID)}},
+			},
+			ConfigGroupNames: []string{"g0"},
+			ConfigHash:       meta.Hash(),
+		}}
+		addTriggeringCLDeps := func(s *State, deadline time.Time, origin *changelist.CL, deps ...*changelist.CL) *prjpb.TriggeringCLDeps {
+			var clids []int64
+			for _, dep := range deps {
+				clids = append(clids, int64(dep.ID))
+			}
+			op := &prjpb.TriggeringCLDeps{
+				OriginClid:  int64(origin.ID),
+				DepClids:    clids,
+				OperationId: fmt.Sprintf("op-%d", origin.ID),
+				Deadline:    timestamppb.New(deadline),
+				Trigger:     &run.Trigger{Mode: string(run.FullRun)},
+			}
+			s.PB.TriggeringClDeps, _ = s.PB.COWTriggeringCLDeps(nil, []*prjpb.TriggeringCLDeps{op})
+			return op
+		}
+		TriggeringCLDeps := func(s *State, cl *changelist.CL) *prjpb.TriggeringCLDeps {
+			return s.PB.GetTriggeringCLDeps(int64(cl.ID))
+		}
+
+		Convey("effectively noop if empty", func() {
+			s2, se, evIndexes, err := h.OnTriggeringCLDepsCompleted(ctx, s1, nil)
+			So(err, ShouldBeNil)
+			So(se, ShouldBeNil)
+			So(evIndexes, ShouldBeNil)
+			// OnTriggeringCLDepsCompleted() always makes a shallow clone for
+			// PCL evaluations. There shouldn't be any changes other than that.
+			s2.alreadyCloned = true
+			So(s1, ShouldEqual, s2)
+		})
+		Convey("removes an expired op", func() {
+			addTriggeringCLDeps(s1, now.Add(-time.Hour), cl103, cl101, cl102)
+			s2, se, evIndexes, err := h.OnTriggeringCLDepsCompleted(ctx, s1, nil)
+			So(err, ShouldBeNil)
+			So(TriggeringCLDeps(s2, cl103), ShouldBeNil)
+			So(se, ShouldBeNil)
+			So(evIndexes, ShouldBeNil)
+		})
+		Convey("with succeeeded ops", func() {
+			op := addTriggeringCLDeps(s1, now.Add(time.Minute), cl103, cl101, cl102)
+			events := []*prjpb.TriggeringCLDepsCompleted{
+				{
+					OperationId: op.GetOperationId(),
+					Origin:      int64(cl103.ID),
+					Succeeded:   []int64{int64(cl101.ID), int64(cl102.ID)},
+				},
+			}
+			Convey("removes the op", func() {
+				s2, se, evIndexes, err := h.OnTriggeringCLDepsCompleted(ctx, s1, events)
+				So(err, ShouldBeNil)
+				So(TriggeringCLDeps(s2, cl103), ShouldBeNil)
+				So(se, ShouldBeNil)
+				So(evIndexes, ShouldEqual, []int{0})
+			})
+			Convey("keeps the op, if any dep PCL is outdated", func() {
+				cl102.Snapshot.Outdated = &changelist.Snapshot_Outdated{}
+				So(datastore.Put(ctx, cl102 /* dep */), ShouldBeNil)
+				s2, se, evIndexes, err := h.OnTriggeringCLDepsCompleted(ctx, s1, events)
+				So(err, ShouldBeNil)
+				So(TriggeringCLDeps(s2, cl103 /* origin */), ShouldNotBeNil)
+				So(se, ShouldBeNil)
+				So(evIndexes, ShouldBeNil)
+			})
+		})
+		Convey("enqueues PurgeCLTasks for the origin and dep CLs, if an Op has fails", func() {
+			op := addTriggeringCLDeps(s1, now.Add(time.Minute), cl103, cl101, cl102)
+			events := []*prjpb.TriggeringCLDepsCompleted{
+				{
+					OperationId: op.GetOperationId(),
+					Origin:      int64(cl103.ID),
+					Succeeded:   []int64{int64(cl101.ID)},
+					Failed: []*changelist.CLError_TriggerDeps{{
+						PermissionDenied: []*changelist.CLError_TriggerDeps_PermissionDenied{{
+							Clid:  int64(cl102.ID),
+							Email: "foo@example.org",
+						}},
+					}},
+				},
+			}
+			s2, se, evIndexes, err := h.OnTriggeringCLDepsCompleted(ctx, s1, events)
+			So(err, ShouldBeNil)
+			So(evIndexes, ShouldEqual, []int{0})
+
+			// remove the TriggeringCLDeps, but schedule PurgingCL(s).
+			So(TriggeringCLDeps(s2, cl103), ShouldBeNil)
+			So(s2.PB.GetPurgingCL(int64(cl101.ID)), ShouldNotBeNil)
+			So(s2.PB.GetPurgingCL(int64(cl102.ID)), ShouldBeNil)
+
+			// verify the PurginCL payload.
+			tasks := se.(*TriggerPurgeCLTasks)
+			dl := timestamppb.New(now.Add(maxPurgingCLDuration))
+			opID := dl.AsTime().Unix()
+			So(tasks.payloads, ShouldHaveLength, 2)
+			tr := &run.Triggers{
+				CqVoteTrigger: &run.Trigger{
+					Mode: string(run.FullRun),
+				},
+			}
+			oriPT, depPT := tasks.payloads[0], tasks.payloads[1]
+			if oriPT.GetPurgingCl().GetClid() != int64(cl103.ID) {
+				oriPT, depPT = depPT, oriPT
+			}
+			expectedPurgeReasons := []*prjpb.PurgeReason{
+				{
+					ClError: &changelist.CLError{
+						Kind: &changelist.CLError_TriggerDeps_{
+							TriggerDeps: &changelist.CLError_TriggerDeps{
+								PermissionDenied: []*changelist.CLError_TriggerDeps_PermissionDenied{{
+									Clid:  int64(cl102.ID),
+									Email: "foo@example.org",
+								}},
+							},
+						},
+					},
+					ApplyTo: &prjpb.PurgeReason_Triggers{Triggers: tr},
+				},
+			}
+			So(oriPT.GetPurgeReasons(), ShouldResembleProto, expectedPurgeReasons)
+			So(oriPT.GetPurgingCl(), ShouldResembleProto, &prjpb.PurgingCL{
+				Clid:     int64(cl103.ID),
+				Deadline: dl,
+				// Must be nil for the default notifications.
+				Notification: nil,
+				OperationId:  fmt.Sprintf("%d-%d", opID, cl103.ID),
+				ApplyTo:      &prjpb.PurgingCL_Triggers{Triggers: tr},
+			})
+			So(depPT.GetPurgeReasons(), ShouldResembleProto, expectedPurgeReasons)
+			So(depPT.GetPurgingCl(), ShouldResembleProto, &prjpb.PurgingCL{
+				Clid:         int64(cl101.ID),
+				Deadline:     dl,
+				Notification: clpurger.NoNotification,
+				OperationId:  fmt.Sprintf("%d-%d", opID, cl101.ID),
+				ApplyTo:      &prjpb.PurgingCL_Triggers{Triggers: tr},
 			})
 		})
 	})

@@ -260,13 +260,6 @@ func (h *Handler) OnCLsUpdated(ctx context.Context, s *State, clEVersions map[in
 		return s, nil, nil
 	}
 
-	// Avoid doing anything in cases where all CL updates sent due to recent full
-	// poll iff we already know about each CL based on its EVersion.
-	s.filterOutUpToDate(clEVersions)
-	if len(clEVersions) == 0 {
-		return s, nil, nil
-	}
-
 	// Most likely there will be changes to state.
 	s = s.cloneShallow()
 	if err := s.evalUpdatedCLs(ctx, clEVersions); err != nil {
@@ -399,6 +392,7 @@ func (h *Handler) ExecDeferred(ctx context.Context, s *State) (_ *State, __ Side
 	return s, sideEffect, nil
 }
 
+/* TODO(ddoman): remove
 // OnTriggeringCLsCompleted manages the tracked TriggeringCL ops with the op completion results.
 func (h *Handler) OnTriggeringCLsCompleted(ctx context.Context, s *State, succeeded, failed, skipped []*prjpb.TriggeringCLsCompleted_OpResult) (_ *State, __ SideEffect, err error) {
 	s.ensureNotYetCloned()
@@ -493,114 +487,172 @@ func (h *Handler) OnTriggeringCLsCompleted(ctx context.Context, s *State, succee
 	se := h.addCLsToPurge(ctx, s, makePurgeCLTasksForFailedTriggerDeps(ctx, s, failed))
 	return s, se, nil
 }
+*/
 
-func shouldRemoveOp(tcl *prjpb.TriggeringCL, pcl *prjpb.PCL) bool {
-	if pcl == nil {
-		// Delete the Op if the PCL is no longer tracked.
-		return true
-	}
+// OnTriggeringCLDepsCompleted manages TriggeringCLDeps completion events.
+func (h *Handler) OnTriggeringCLDepsCompleted(ctx context.Context, s *State, events []*prjpb.TriggeringCLDepsCompleted) (_ *State, __ SideEffect, evIndexesToConsume []int, err error) {
+	s.ensureNotYetCloned()
 
-	switch tr := pcl.GetTriggers().GetCqVoteTrigger(); {
-	case tcl.GetTrigger().GetMode() == tr.GetMode():
-		return true
-	case tr.GetMode() == "":
-		// The PCL hasn't been updated yet. Keep the Op in state.
-		return false
-	default:
-		// This is the case where the PCL has a CQ vote, but not the intended
-		// value. e.g., the PCL has CQ+1, whereas the intended value is CQ+2.
-		//
-		// If the vote was made before the Op creation time, consider that
-		// the op was suceeded, but the PCL hasn't been updated yet.
-		// i.e., keep the Op until the PCL gets updated.
-		opCreationTime := tcl.GetDeadline().AsTime().Add(-prjpb.MaxTriggeringCLDepsDuration)
-		if tr.GetTime().AsTime().Before(opCreationTime) {
-			return false
-		}
-	}
-	// The PCL has unintended CQ vote that was made at or after the Op creation
-	// time. There can be two possible scenarios.
-	// (1) The unintended vote was made before cltriggerrer called SetReview().
-	// (2) The unintended vote was made after cltriggerer called SetReview().
-	//
-	// It's hard to firmly distinguish (1) from (2), because it requires
-	// the vote time to be compared with the time of SetReview()
-	// call, but it'd likely cause racy issues.
-	//
-	// Note that this can happen only if all the following conditions are true
-	// - someone votes CQ+2 on a child CL.
-	// - CV triages the deps of the child CL, and creates TriggeringCLTasks
-	// for the deps.
-	// - The one manually votes CQ+1 on the child CL after the CL scheduled, but
-	// before the Op is processed by OnTriggeringsCompleted, which is the time
-	// before the Run creation.
-	//
-	// If the intention was to stop a CQ *Run*, then the manual CQ override will
-	// be honored, and it wouldn't reach this point. It's all good.
-	// If the intention was to stop CV to create a CQ Run, then the user should
-	// remove the CQ vote on the originating CL.
-	//
-	// Hence, this returns true to remove the TriggeringCLTask. Then,
-	// the component triager will reschedule TriggeringCLTask for the dep with
-	// a manual vote override.
-	return true
-}
+	ctx, span := tracing.Start(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/OnTriggeringCLDepsCompleted")
+	defer func() { tracing.End(span, err) }()
 
-func makePurgeCLTasksForFailedTriggerDeps(ctx context.Context, s *State, failed []*prjpb.TriggeringCLsCompleted_OpResult) []*prjpb.PurgeCLTask {
-	tasks := make(map[int64]*prjpb.PurgeCLTask)
-	for _, f := range failed {
-		// check the originating PCL status
-		origin := f.GetOriginClid()
-		opcl := s.PB.GetPCL(origin)
-		if opcl == nil {
-			// It's rare, but it's possible that the origin CL is no longer
-			// tracked. e.g., abandoned. Maybe, that's why the vote failed.
-			logging.Infof(ctx, "originating PCL %d is no longer tracked in the component", f.GetOriginClid())
-			continue
-		}
-		// skip creating a new PurgeCLTask, if there exists already.
-		if s.PB.GetPurgingCL(origin) != nil {
-			continue
-		}
-		// does the originating CL still have the CQ vote?
-		triggerToPurge := opcl.GetTriggers().GetCqVoteTrigger()
-		if run.Mode(triggerToPurge.GetMode()) != run.FullRun {
-			continue
-		}
-		if task, ok := tasks[origin]; ok {
-			proto.Merge(task.PurgeReasons[0].GetClError().GetTriggerDeps(), f.GetReason())
-		} else {
-			tasks[origin] = &prjpb.PurgeCLTask{
-				PurgeReasons: []*prjpb.PurgeReason{{
-					ClError: &changelist.CLError{
-						Kind: &changelist.CLError_TriggerDeps_{
-							TriggerDeps: f.GetReason(),
-						},
-					},
-					ApplyTo: &prjpb.PurgeReason_Triggers{
-						Triggers: &run.Triggers{
-							CqVoteTrigger: triggerToPurge,
-						},
-					},
-				}},
-				PurgingCl: &prjpb.PurgingCL{
-					Clid: origin,
-					ApplyTo: &prjpb.PurgingCL_Triggers{
-						Triggers: &run.Triggers{
-							CqVoteTrigger: triggerToPurge,
-						},
-					},
-				},
+	// give one extra minute before processing an expired op.
+	expireCutOff := clock.Now(ctx).Add(-time.Minute)
+	opsToRemove := make(map[string]int, len(events))
+	var clidsToEval []int64
+	var purgeTasks []*prjpb.PurgeCLTask
+	for i, evt := range events {
+		ctx := logging.SetField(ctx, "origin_cl", evt.GetOrigin())
+		switch op := s.PB.GetTriggeringCLDeps(evt.GetOrigin()); {
+		case op == nil:
+			logging.Warningf(ctx, "OnTriggeringCLDepsCompleted: event arrived but the op(%s) doesn't exist", evt.GetOperationId())
+		default:
+			if len(evt.GetFailed()) > 0 {
+				// If any vote failed, schedule Purge tasks for the origin and all
+				// the vote suceeded CLs.
+				if tasks := purgeFailedTriggeringCLDeps(s, op.GetTrigger(), evt); len(tasks) > 0 {
+					logging.Debugf(ctx, "purging votes for %v due to vote failures on %v",
+						evt.GetSucceeded(), evt.GetFailed())
+					purgeTasks = append(purgeTasks, tasks...)
+				}
+			}
+			for _, clid := range evt.GetSucceeded() {
+				if pcl := s.PB.GetPCL(clid); pcl != nil {
+					clidsToEval = append(clidsToEval, clid)
+				}
 			}
 		}
+		// The event should still be added into opsToRemove, even if
+		// there is no matching op in s.PB. Otherwise, the event will be
+		// preserved forever.
+		opsToRemove[evt.GetOperationId()] = i
 	}
-	if len(tasks) == 0 {
-		return nil
+
+	s = s.cloneShallow()
+	if len(clidsToEval) > 0 {
+		if err := s.evalCLs(ctx, clidsToEval); err != nil {
+			return s, nil, nil, err
+		}
 	}
-	ret := make([]*prjpb.PurgeCLTask, 0, len(tasks))
-	for _, t := range tasks {
-		ret = append(ret, t)
+	for opID, evIndex := range opsToRemove {
+		consume := true
+		// ensure that all the succeeded deps are fresh to remove the Op.
+		for _, depCLID := range events[evIndex].GetSucceeded() {
+			if pcl := s.PB.GetPCL(depCLID); pcl.GetOutdated() != nil {
+				delete(opsToRemove, opID)
+				consume = false
+				break
+			}
+		}
+		if consume {
+			evIndexesToConsume = append(evIndexesToConsume, evIndex)
+		}
 	}
+	deleted := map[int64]struct{}{}
+	out, mutated := s.PB.COWTriggeringCLDeps(func(op *prjpb.TriggeringCLDeps) *prjpb.TriggeringCLDeps {
+		if op.GetDeadline().AsTime().Before(expireCutOff) {
+			ctx := logging.SetField(ctx, "origin_cl", op.GetOriginClid())
+			logging.Warningf(ctx, "TriggeringCLDeps(%s): deadline exceeded", op.GetOperationId())
+			deleted[op.GetOriginClid()] = struct{}{}
+			return nil // delete
+		}
+		if _, ok := opsToRemove[op.GetOperationId()]; ok {
+			deleted[op.GetOriginClid()] = struct{}{}
+			return nil // delete
+		}
+		return op
+	}, nil)
+	if !mutated {
+		// if there is a cl to purge, there must be an op to remove.
+		if len(purgeTasks) > 0 {
+			panic(fmt.Errorf("OnTriggeringCLDepsCompleted: BUG"))
+		}
+		return s, nil, evIndexesToConsume, nil
+	}
+	s.PB.TriggeringClDeps = out
+
+	switch {
+	case s.PB.GetRepartitionRequired():
+		// all the components will be retriaged during the repartition process.
+	default:
+		cs, mutatedComponents := s.PB.COWComponents(func(c *prjpb.Component) *prjpb.Component {
+			if c.GetTriageRequired() {
+				return c
+			}
+			for _, id := range c.GetClids() {
+				if _, yes := deleted[id]; yes {
+					c = c.CloneShallow()
+					c.TriageRequired = true
+					return c
+				}
+			}
+			return c
+		}, nil)
+		if mutatedComponents {
+			s.PB.Components = cs
+		}
+	}
+	var se SideEffect
+	if len(purgeTasks) > 0 {
+		se = h.addCLsToPurge(ctx, s, purgeTasks)
+	}
+	return s, se, evIndexesToConsume, nil
+}
+
+// purgeFailedTriggeringCLDeps schedules PurgingCLTasks for the successfully
+// voted deps of a given failed TriggeringCLDeps.
+func purgeFailedTriggeringCLDeps(s *State, tr *run.Trigger, evt *prjpb.TriggeringCLDepsCompleted) []*prjpb.PurgeCLTask {
+	depErr := &changelist.CLError_TriggerDeps{}
+	for _, err := range evt.GetFailed() {
+		proto.Merge(depErr, err)
+	}
+	reasons := []*prjpb.PurgeReason{{
+		ClError: &changelist.CLError{
+			Kind: &changelist.CLError_TriggerDeps_{
+				TriggerDeps: depErr,
+			},
+		},
+		ApplyTo: &prjpb.PurgeReason_Triggers{
+			Triggers: &run.Triggers{
+				CqVoteTrigger: tr,
+			},
+		},
+	}}
+	ret := make([]*prjpb.PurgeCLTask, 0, len(evt.GetSucceeded())+1)
+	for _, clid := range evt.GetSucceeded() {
+		if s.PB.GetPurgingCL(clid) != nil {
+			continue
+		}
+		ret = append(ret, &prjpb.PurgeCLTask{
+			PurgeReasons: reasons,
+			PurgingCl: &prjpb.PurgingCL{
+				// No email for purging the CQ vote from deps.
+				// The purge operations on the originating CL will send out
+				// an email. That should be enough.
+				Notification: clpurger.NoNotification,
+				Clid:         clid,
+				ApplyTo: &prjpb.PurgingCL_Triggers{
+					Triggers: &run.Triggers{
+						CqVoteTrigger: tr,
+					},
+				},
+			},
+		})
+	}
+	// and the origin CL
+	ret = append(ret, &prjpb.PurgeCLTask{
+		PurgeReasons: reasons,
+		PurgingCl: &prjpb.PurgingCL{
+			Clid: evt.GetOrigin(),
+			// Nil to send the default notifications.
+			Notification: nil,
+			ApplyTo: &prjpb.PurgingCL_Triggers{
+				Triggers: &run.Triggers{
+					CqVoteTrigger: tr,
+				},
+			},
+		},
+	})
 	return ret
 }
 
@@ -657,7 +709,7 @@ func makePurgeCLTasksForFailedMCERuns(ctx context.Context, s *State, failed []*p
 					// In case a parent Run fails in a huge stack, we want to
 					// minimize # of emails sent out by the Purge opertaions.
 					// One mail for the probably-top CL should be enough.
-					Notification: &prjpb.PurgingCL_Notification{},
+					Notification: clpurger.NoNotification,
 					ApplyTo: &prjpb.PurgingCL_Triggers{
 						Triggers: &run.Triggers{
 							CqVoteTrigger: trigger,

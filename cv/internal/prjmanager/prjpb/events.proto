@@ -88,6 +88,7 @@ message TriggeringCLsCompleted {
   repeated OpResult skipped = 3;
 }
 
+// TriggeringCLDepsCompleted is sent to PM on a TriggeringCLDepsTask completion.
 message TriggeringCLDepsCompleted {
   // Operational ID, uniquely identifying a given TriggeringCLDepsCompleted
   // event in the LUCI project.

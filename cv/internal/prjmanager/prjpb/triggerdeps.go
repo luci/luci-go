@@ -15,6 +15,7 @@
 package prjpb
 
 import (
+	"sort"
 	"time"
 
 	"go.chromium.org/luci/cv/internal/prjmanager/copyonwrite"
@@ -33,6 +34,20 @@ func (p *PState) COWTriggeringCLDeps(m func(*TriggeringCLDeps) *TriggeringCLDeps
 	in := cowTriggeringCLDeps(p.GetTriggeringClDeps())
 	out, updated := copyonwrite.Update(in, triggerCLDepsModifier(m), cowTriggeringCLDeps(toAdd))
 	return []*TriggeringCLDeps(out.(cowTriggeringCLDeps)), updated
+}
+
+// GetTriggeringCLDeps returns the TriggeringCLDeps of a given origin clid.
+//
+// Returns nil, if not found.
+func (p *PState) GetTriggeringCLDeps(clid int64) *TriggeringCLDeps {
+	items := p.GetTriggeringClDeps()
+	idx := sort.Search(len(items), func(i int) bool {
+		return items[i].GetOriginClid() >= clid
+	})
+	if idx >= len(items) || items[idx].GetOriginClid() != clid {
+		return nil
+	}
+	return items[idx]
 }
 
 func triggerCLDepsModifier(f func(*TriggeringCLDeps) *TriggeringCLDeps) copyonwrite.Modifier {

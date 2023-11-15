@@ -68,11 +68,29 @@ func (s *State) reevalPCLs(ctx context.Context) error {
 	return nil
 }
 
-// evalUpdatedCLs updates/inserts PCLs.
+// evalUpdatedCLs updates/inserts PCLs, if the PCL doesn't exist or with
+// an older eversion than the given eversion.
 func (s *State) evalUpdatedCLs(ctx context.Context, clEVersions map[int64]int64) error {
 	cls := make([]*changelist.CL, 0, len(clEVersions))
-	for id := range clEVersions {
-		cls = append(cls, &changelist.CL{ID: common.CLID(id)})
+	// Avoid doing anything in cases where all CL updates sent due to recent full
+	// poll iff we already know about each CL based on its EVersion.
+	for clid, ev := range clEVersions {
+		switch pcl := s.PB.GetPCL(clid); {
+		case pcl != nil && ev <= pcl.GetEversion():
+		default:
+			cls = append(cls, &changelist.CL{ID: common.CLID(clid)})
+		}
+	}
+	if len(cls) == 0 {
+		return nil
+	}
+	return s.evalCLsFromDS(ctx, cls)
+}
+
+func (s *State) evalCLs(ctx context.Context, clids []int64) error {
+	cls := make([]*changelist.CL, len(clids))
+	for i, clid := range clids {
+		cls[i] = &changelist.CL{ID: common.CLID(clid)}
 	}
 	return s.evalCLsFromDS(ctx, cls)
 }
@@ -150,19 +168,6 @@ func (s *State) evalCLsFromDS(ctx context.Context, cls []*changelist.CL) error {
 	s.PB.Components = markForTriageOnChangedPCLs(s.PB.GetComponents(), s.PB.GetPcls(), changed)
 	s.pclIndex = nil
 	return nil
-}
-
-// filterOutUpToDate removes from the given clid -> EVersion map entries for
-// which PCL is already up to date.
-func (s *State) filterOutUpToDate(clEVersions map[int64]int64) {
-	// This isn't the most efficient way when P=len(PCLs) >> E=len(events)
-	// (e.g. O(E*log(P)) is possible by iterating sorted CLID events
-	// and doing binary search on PCLs at each step), but it mostly works.
-	for _, pcl := range s.PB.GetPcls() {
-		if ev, exists := clEVersions[pcl.GetClid()]; exists && ev <= pcl.GetEversion() {
-			delete(clEVersions, pcl.GetClid())
-		}
-	}
 }
 
 func (s *State) makePCLFromDS(ctx context.Context, cl *changelist.CL, err error, old *prjpb.PCL) (*prjpb.PCL, error) {

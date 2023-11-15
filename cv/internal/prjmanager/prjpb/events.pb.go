@@ -507,6 +507,7 @@ func (x *TriggeringCLsCompleted) GetSkipped() []*TriggeringCLsCompleted_OpResult
 	return nil
 }
 
+// TriggeringCLDepsCompleted is sent to PM on a TriggeringCLDepsTask completion.
 type TriggeringCLDepsCompleted struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
