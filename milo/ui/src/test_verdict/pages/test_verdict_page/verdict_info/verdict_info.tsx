@@ -27,10 +27,10 @@ import {
   getTestHistoryURLWithSearchParam,
 } from '@/common/tools/url_utils';
 
-import { useProject, useTestVariant } from '../context';
+import { useProject, useTestVerdict } from '../context';
 
-export function ResultInfo() {
-  const variant = useTestVariant();
+export function VerdictInfo() {
+  const verdict = useTestVerdict();
   const project = useProject();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -40,7 +40,7 @@ export function ResultInfo() {
   return (
     <Grid item container columnGap={1} alignItems="center" sx={{ ml: 0.5 }}>
       <Typography fontSize="0.9rem">
-        {getSortedTestVariantDef(variant.variant?.def || {}).map((entry, i) => (
+        {getSortedTestVariantDef(verdict.variant?.def || {}).map((entry, i) => (
           <Fragment key={entry[0]}>
             {i > 0 && ', '}
             {entry[0]}: {entry[1]}
@@ -52,25 +52,25 @@ export function ResultInfo() {
         target="blank"
         href={getTestHistoryURLWithSearchParam(
           project,
-          variant,
-          generateTestHistoryURLSearchParams(variant),
+          verdict,
+          generateTestHistoryURLSearchParams(verdict),
         )}
       >
         History
       </Link>
-      {variant.testMetadata?.location && (
+      {verdict.testMetadata?.location && (
         <>
           <Divider orientation="vertical" flexItem />
           <Link
             target="_blank"
-            href={getCodeSourceUrl(variant.testMetadata.location)}
+            href={getCodeSourceUrl(verdict.testMetadata.location)}
           >
             Test source
           </Link>
         </>
       )}
       {/** TODO(b/308716044): Display the test properties in the drawer. */}
-      {variant.testMetadata?.properties && (
+      {verdict.testMetadata?.properties && (
         <>
           <Divider orientation="vertical" flexItem />
           <Button
@@ -100,7 +100,7 @@ export function ResultInfo() {
                 p: 1,
               }}
             >
-              name: {variant.testMetadata.name}
+              name: {verdict.testMetadata.name}
             </Grid>
           </Drawer>
         </>

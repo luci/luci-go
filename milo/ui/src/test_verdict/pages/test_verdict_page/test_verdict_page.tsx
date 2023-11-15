@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
 import { useParams } from 'react-router-dom';
@@ -23,12 +22,10 @@ import { UiPage } from '@/common/constants';
 import { usePrpcQuery } from '@/common/hooks/prpc_query';
 import { ResultDb } from '@/common/services/resultdb';
 
-import { TestVariantContextProvider } from './context';
-import { ResultDetails } from './result_details';
-import { ResultHeader } from './result_header';
-import { ResultInfo } from './result_info';
-import { ResultLogs } from './result_logs';
+import { TestVerdictContextProvider } from './context';
 import { TestIdentifier } from './test_identifier';
+import { TestResults } from './test_results';
+import { VerdictInfo } from './verdict_info';
 
 export function TestVerdictPage() {
   const { project, invID, testID, vHash } = useParams();
@@ -70,8 +67,11 @@ export function TestVerdictPage() {
   if (!results?.testVariants?.length) {
     throw new Error('No test verdict found matching the provided details.');
   }
-  const variant = results.testVariants[0];
-  const sources = variant.sourcesId ? results.sources[variant.sourcesId] : {};
+  // The variable is called `verdict` even though it is from a test variants
+  // array because the test variants array is actually a test verdict array despite its name.
+  // We also only expect this array to only contain 1 item.
+  const verdict = results.testVariants[0];
+  const sources = verdict.sourcesId ? results.sources[verdict.sourcesId] : {};
 
   return (
     <Grid
@@ -84,19 +84,16 @@ export function TestVerdictPage() {
     >
       {/** TODO(b/308858986): Format metadata to reflect verdict status. */}
       <PageMeta title="" selectedPage={UiPage.TestVerdict} project={project} />
-      <TestVariantContextProvider
+      <TestVerdictContextProvider
         invocationID={invID}
-        variant={variant}
+        testVerdict={verdict}
         project={project}
         sources={sources}
       >
         <TestIdentifier />
-        <ResultInfo />
-        <ResultHeader />
-        <ResultDetails />
-        <Divider orientation="horizontal" flexItem />
-        <ResultLogs />
-      </TestVariantContextProvider>
+        <VerdictInfo />
+        {verdict.results && <TestResults results={verdict.results} />}
+      </TestVerdictContextProvider>
     </Grid>
   );
 }

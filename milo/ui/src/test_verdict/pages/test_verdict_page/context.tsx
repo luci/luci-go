@@ -23,114 +23,89 @@ import {
 
 import { Sources, TestVariant } from '@/common/services/resultdb';
 
-interface TestVariantContext {
+interface TestVerdictContext {
   readonly invocationID: string;
-  readonly testVariant: TestVariant;
-  readonly setTestVariant: Dispatch<SetStateAction<TestVariant>>;
+  readonly testVerdict: TestVariant;
+  readonly setTestVerdict: Dispatch<SetStateAction<TestVariant>>;
   readonly project: string;
-  readonly selectedResultIndex: number;
-  readonly setSelectedResultIndex: Dispatch<SetStateAction<number>>;
   readonly sources: Sources;
 }
 
-const TestVariantCtx = createContext<TestVariantContext | null>(null);
+const TestVerdictCtx = createContext<TestVerdictContext | null>(null);
 
-export interface TestVariantContextProviderProps {
+export interface TestVerdictContextProviderProps {
   readonly children: ReactNode;
   readonly invocationID: string;
-  readonly variant: TestVariant;
+  readonly testVerdict: TestVariant;
   readonly project: string;
   readonly sources: Sources;
 }
 
-export function TestVariantContextProvider({
+export function TestVerdictContextProvider({
   children,
   invocationID,
-  variant,
+  testVerdict,
   project,
   sources,
-}: TestVariantContextProviderProps) {
-  const [testVariant, setTestVariant] = useState(variant);
-  const [selectedResultIndex, setSelectedResultIndex] = useState(0);
+}: TestVerdictContextProviderProps) {
+  const [verdict, setVerdict] = useState(testVerdict);
   return (
-    <TestVariantCtx.Provider
+    <TestVerdictCtx.Provider
       value={{
         invocationID,
-        testVariant,
-        setTestVariant,
+        testVerdict: verdict,
+        setTestVerdict: setVerdict,
         project,
-        selectedResultIndex,
-        setSelectedResultIndex,
         sources,
       }}
     >
       {children}
-    </TestVariantCtx.Provider>
+    </TestVerdictCtx.Provider>
   );
 }
 
 export function useInvocationID() {
-  const context = useContext(TestVariantCtx);
+  const context = useContext(TestVerdictCtx);
   if (!context) {
     throw Error(
-      'useInvocationID can only be used in a TestVariantContextProvider.',
+      'useInvocationID can only be used in a TestVerdictContextProvider.',
     );
   }
   return context.invocationID;
 }
 
-export function useTestVariant() {
-  const context = useContext(TestVariantCtx);
+export function useTestVerdict() {
+  const context = useContext(TestVerdictCtx);
   if (!context) {
     throw Error(
-      'useTestVariant can only be used in a TestVariantContextProvider.',
+      'useTestVerdict can only be used in a TestVerdictContextProvider.',
     );
   }
-  return context.testVariant;
+  return context.testVerdict;
 }
 
-export function useSetTestVariant() {
-  const context = useContext(TestVariantCtx);
+export function useSetTestVerdict() {
+  const context = useContext(TestVerdictCtx);
   if (!context) {
     throw Error(
-      'useTestVariant can only be used in a TestVariantContextProvider.',
+      'useSetTestVerdict can only be used in a TestVerdictContextProvider.',
     );
   }
-  return context.setTestVariant;
+  return context.setTestVerdict;
 }
 
 export function useProject() {
-  const context = useContext(TestVariantCtx);
+  const context = useContext(TestVerdictCtx);
   if (!context) {
-    throw Error('useProject can only be used in a TestVariantContextProvider.');
+    throw Error('useProject can only be used in a TestVerdictContextProvider.');
   }
   return context.project;
 }
 
-export function useSelectedResultIndex() {
-  const context = useContext(TestVariantCtx);
-  if (!context) {
-    throw Error(
-      'useSelectedResultIndex can only be used in a TestVariantContextProvider.',
-    );
-  }
-  return context.selectedResultIndex;
-}
-
-export function useSetSelectedResultIndex() {
-  const context = useContext(TestVariantCtx);
-  if (!context) {
-    throw Error(
-      'useSetSelectedResultIndex can only be used in a TestVariantContextProvider.',
-    );
-  }
-  return context.setSelectedResultIndex;
-}
-
 export function useSources() {
-  const context = useContext(TestVariantCtx);
+  const context = useContext(TestVerdictCtx);
   if (!context) {
-    throw Error('useSources can only be used in a TestVariantContextProvider.');
+    throw Error('useSources can only be used in a TestVerdictContextProvider.');
   }
   return context.sources;
 }

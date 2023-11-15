@@ -26,9 +26,9 @@ import { TEST_STATUS_DISPLAY_MAP } from '@/common/constants';
 import { TestResult, TestStatus } from '@/common/services/resultdb';
 
 import {
+  useResults,
   useSelectedResultIndex,
   useSetSelectedResultIndex,
-  useTestVariant,
 } from '../context';
 
 function getRunStatusIcon(status: TestStatus) {
@@ -56,10 +56,10 @@ function getTitle(result: TestResult) {
 }
 
 // TODO(b/308716499): Make tabs navigatable.
-export function ResultHeader() {
+export function ResultsHeader() {
   const selectedResult = useSelectedResultIndex();
   const setSelectedResult = useSetSelectedResultIndex();
-  const testVariant = useTestVariant();
+  const results = useResults();
   return (
     <Grid
       item
@@ -75,19 +75,18 @@ export function ResultHeader() {
         }}
         onChange={(_, newValue: number) => setSelectedResult(newValue)}
       >
-        {testVariant.results &&
-          testVariant.results.map((result, i) => (
-            <Tab
-              sx={{
-                minHeight: 0,
-              }}
-              key={result.result.resultId}
-              icon={getRunStatusIcon(result.result.status)}
-              iconPosition="end"
-              title={getTitle(result.result)}
-              label={`Run ${i + 1}`}
-            />
-          ))}
+        {results.map((result, i) => (
+          <Tab
+            sx={{
+              minHeight: 0,
+            }}
+            key={result.result.resultId}
+            icon={getRunStatusIcon(result.result.status)}
+            iconPosition="end"
+            title={getTitle(result.result)}
+            label={`Run ${i + 1}`}
+          />
+        ))}
       </Tabs>
     </Grid>
   );

@@ -22,7 +22,7 @@ import Grid from '@mui/material/Grid';
 
 import { TestVariantStatus } from '@/common/services/resultdb';
 
-import { useTestVariant } from '../context';
+import { useTestVerdict } from '../context';
 
 import { CLInfo } from './cl_info';
 
@@ -69,7 +69,7 @@ function getTestStatusIconLabel(status: TestVariantStatus) {
 }
 
 export function TestIdentifier() {
-  const { status, testId } = useTestVariant();
+  const { status, testId } = useTestVerdict();
 
   return (
     <Grid item container rowGap={1}>
