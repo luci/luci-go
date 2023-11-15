@@ -48,6 +48,7 @@ import { CountIndicator } from '../test_results_tab/count_indicator';
 
 import { BuildLitEnvProvider } from './build_lit_env_provider';
 import { ChangeConfigDialog } from './change_config_dialog';
+import { BuildContextProvider } from './context';
 import { CustomBugLink } from './custom_bug_link';
 
 const STATUS_FAVICON_MAP = Object.freeze({
@@ -119,153 +120,157 @@ export const BuildPage = observer(() => {
   };
 
   return (
-    <InvocationProvider value={store.buildPage.invocation}>
-      <BuildLitEnvProvider>
-        <PageMeta
-          project={project}
-          selectedPage={UiPage.Builders}
-          title={documentTitle}
-        />
-        <ChangeConfigDialog
-          open={store.showSettingsDialog}
-          onClose={() => store.setShowSettingsDialog(false)}
-        />
-        <div
-          css={{
-            backgroundColor: 'var(--block-background-color)',
-            padding: '6px 16px',
-            fontFamily: "'Google Sans', 'Helvetica Neue', sans-serif",
-            fontSize: '14px',
-            display: 'flex',
-          }}
-        >
+    <BuildContextProvider build={store.buildPage.build?.data || null}>
+      <InvocationProvider value={store.buildPage.invocation}>
+        <BuildLitEnvProvider>
+          <PageMeta
+            project={project}
+            selectedPage={UiPage.Builders}
+            title={documentTitle}
+          />
+          <ChangeConfigDialog
+            open={store.showSettingsDialog}
+            onClose={() => store.setShowSettingsDialog(false)}
+          />
           <div
             css={{
-              flex: '0 auto',
-              fontSize: '0px',
-              '& > *': {
-                fontSize: '14px',
-              },
+              backgroundColor: 'var(--block-background-color)',
+              padding: '6px 16px',
+              fontFamily: "'Google Sans', 'Helvetica Neue', sans-serif",
+              fontSize: '14px',
+              display: 'flex',
             }}
           >
-            <span css={{ color: 'var(--light-text-color)' }}>Build </span>
-            <Link component={RouterLink} to={getProjectURLPath(project)}>
-              {project}
+            <div
+              css={{
+                flex: '0 auto',
+                fontSize: '0px',
+                '& > *': {
+                  fontSize: '14px',
+                },
+              }}
+            >
+              <span css={{ color: 'var(--light-text-color)' }}>Build </span>
+              <Link component={RouterLink} to={getProjectURLPath(project)}>
+                {project}
+              </Link>
+              <span>&nbsp;/&nbsp;</span>
+              <span>{bucket}</span>
+              <span>&nbsp;/&nbsp;</span>
+              <Link href={getOldBuilderURLPath({ project, bucket, builder })}>
+                {builder}
+              </Link>
+              <span>&nbsp;/&nbsp;</span>
+              <span>{buildNumOrId}</span>
+            </div>
+            <div css={delimiter}></div>
+            <CustomBugLink project={project} build={build?.data} />
+            <div css={delimiter}></div>
+            <Link
+              onClick={handleSwitchVersion}
+              href={getLegacyBuildURLPath(
+                { project, bucket, builder },
+                buildNumOrId,
+              )}
+            >
+              Switch to the legacy build page
             </Link>
-            <span>&nbsp;/&nbsp;</span>
-            <span>{bucket}</span>
-            <span>&nbsp;/&nbsp;</span>
-            <Link href={getOldBuilderURLPath({ project, bucket, builder })}>
-              {builder}
-            </Link>
-            <span>&nbsp;/&nbsp;</span>
-            <span>{buildNumOrId}</span>
+            <div
+              css={{
+                marginLeft: 'auto',
+                flex: '0 auto',
+              }}
+            >
+              {build && (
+                <>
+                  <i
+                    className={`status ${
+                      BUILD_STATUS_CLASS_MAP[build.data.status]
+                    }`}
+                  >
+                    {BUILD_STATUS_DISPLAY_MAP[build.data.status] ||
+                      'unknown status'}{' '}
+                  </i>
+                  {(() => {
+                    switch (build.data.status) {
+                      case BuildbucketStatus.Scheduled:
+                        return `since ${build.createTime.toFormat(
+                          LONG_TIME_FORMAT,
+                        )}`;
+                      case BuildbucketStatus.Started:
+                        return `since ${build.startTime!.toFormat(
+                          LONG_TIME_FORMAT,
+                        )}`;
+                      case BuildbucketStatus.Canceled:
+                        return `after ${displayDuration(
+                          build.endTime!.diff(build.createTime),
+                        )} by ${build.data.canceledBy || 'unknown'}`;
+                      case BuildbucketStatus.Failure:
+                      case BuildbucketStatus.InfraFailure:
+                      case BuildbucketStatus.Success:
+                        return `after ${displayDuration(
+                          build.endTime!.diff(
+                            build.startTime || build.createTime,
+                          ),
+                        )}`;
+                      default:
+                        return '';
+                    }
+                  })()}
+                </>
+              )}
+            </div>
           </div>
-          <div css={delimiter}></div>
-          <CustomBugLink project={project} build={build?.data} />
-          <div css={delimiter}></div>
-          <Link
-            onClick={handleSwitchVersion}
-            href={getLegacyBuildURLPath(
-              { project, bucket, builder },
-              buildNumOrId,
-            )}
-          >
-            Switch to the legacy build page
-          </Link>
-          <div
-            css={{
-              marginLeft: 'auto',
-              flex: '0 auto',
-            }}
-          >
-            {build && (
-              <>
-                <i
-                  className={`status ${
-                    BUILD_STATUS_CLASS_MAP[build.data.status]
-                  }`}
-                >
-                  {BUILD_STATUS_DISPLAY_MAP[build.data.status] ||
-                    'unknown status'}{' '}
-                </i>
-                {(() => {
-                  switch (build.data.status) {
-                    case BuildbucketStatus.Scheduled:
-                      return `since ${build.createTime.toFormat(
-                        LONG_TIME_FORMAT,
-                      )}`;
-                    case BuildbucketStatus.Started:
-                      return `since ${build.startTime!.toFormat(
-                        LONG_TIME_FORMAT,
-                      )}`;
-                    case BuildbucketStatus.Canceled:
-                      return `after ${displayDuration(
-                        build.endTime!.diff(build.createTime),
-                      )} by ${build.data.canceledBy || 'unknown'}`;
-                    case BuildbucketStatus.Failure:
-                    case BuildbucketStatus.InfraFailure:
-                    case BuildbucketStatus.Success:
-                      return `after ${displayDuration(
-                        build.endTime!.diff(
-                          build.startTime || build.createTime,
-                        ),
-                      )}`;
-                    default:
-                      return '';
-                  }
-                })()}
-              </>
-            )}
-          </div>
-        </div>
-        <LinearProgress
-          value={100}
-          variant={build ? 'determinate' : 'indeterminate'}
-          color={
-            build ? BUILD_STATUS_COLOR_THEME_MAP[build.data.status] : 'primary'
-          }
-        />
-        <AppRoutedTabs>
-          <AppRoutedTab label="Overview" value="overview" to="overview" />
-          <AppRoutedTab
-            label="Test Results"
-            value="test-results"
-            to="test-results"
-            hideWhenInactive={
-              !store.buildPage.hasInvocation ||
-              !store.buildPage.canReadTestVerdicts
+          <LinearProgress
+            value={100}
+            variant={build ? 'determinate' : 'indeterminate'}
+            color={
+              build
+                ? BUILD_STATUS_COLOR_THEME_MAP[build.data.status]
+                : 'primary'
             }
-            icon={<CountIndicator />}
-            iconPosition="end"
           />
-          <AppRoutedTab
-            label="Steps & Logs"
-            value="steps"
-            to="steps"
-            hideWhenInactive={!store.buildPage.canReadFullBuild}
-          />
-          <AppRoutedTab
-            label="Related Builds"
-            value="related-builds"
-            to="related-builds"
-            hideWhenInactive={!store.buildPage.canReadFullBuild}
-          />
-          <AppRoutedTab
-            label="Timeline"
-            value="timeline"
-            to="timeline"
-            hideWhenInactive={!store.buildPage.canReadFullBuild}
-          />
-          <AppRoutedTab
-            label="Blamelist"
-            value="blamelist"
-            to="blamelist"
-            hideWhenInactive={!store.buildPage.canReadFullBuild}
-          />
-        </AppRoutedTabs>
-      </BuildLitEnvProvider>
-    </InvocationProvider>
+          <AppRoutedTabs>
+            <AppRoutedTab label="Overview" value="overview" to="overview" />
+            <AppRoutedTab
+              label="Test Results"
+              value="test-results"
+              to="test-results"
+              hideWhenInactive={
+                !store.buildPage.hasInvocation ||
+                !store.buildPage.canReadTestVerdicts
+              }
+              icon={<CountIndicator />}
+              iconPosition="end"
+            />
+            <AppRoutedTab
+              label="Steps & Logs"
+              value="steps"
+              to="steps"
+              hideWhenInactive={!store.buildPage.canReadFullBuild}
+            />
+            <AppRoutedTab
+              label="Related Builds"
+              value="related-builds"
+              to="related-builds"
+              hideWhenInactive={!store.buildPage.canReadFullBuild}
+            />
+            <AppRoutedTab
+              label="Timeline"
+              value="timeline"
+              to="timeline"
+              hideWhenInactive={!store.buildPage.canReadFullBuild}
+            />
+            <AppRoutedTab
+              label="Blamelist"
+              value="blamelist"
+              to="blamelist"
+              hideWhenInactive={!store.buildPage.canReadFullBuild}
+            />
+          </AppRoutedTabs>
+        </BuildLitEnvProvider>
+      </InvocationProvider>
+    </BuildContextProvider>
   );
 });
 

@@ -15,13 +15,11 @@
 import { observer } from 'mobx-react-lite';
 import { useMemo } from 'react';
 
-import { RelativeTimestamp } from '@/common/components/relative_timestamp';
 import { SanitizedHtml } from '@/common/components/sanitized_html';
 import {
   BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_DISPLAY_MAP,
 } from '@/common/constants';
-import { BuildbucketStatus } from '@/common/services/buildbucket';
 import { useStore } from '@/common/store';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
 
@@ -41,70 +39,31 @@ export const SummarySection = observer(() => {
     return <></>;
   }
 
-  const scheduledCancelTime =
-    build.gracePeriod &&
-    build.cancelTime
-      ?.plus(build.gracePeriod)
-      // Add min_update_interval (currently always 30s).
-      // TODO(crbug/1299302): read min_update_interval from buildbucket.
-      .plus({ seconds: 30 });
-
   return (
-    <>
-      {build?.isCanary &&
-        [BuildbucketStatus.Failure, BuildbucketStatus.InfraFailure].includes(
-          build.data.status,
-        ) && (
-          <div
-            css={{
-              padding: '5px',
-              backgroundColor: 'var(--warning-color)',
-              fontWeight: 500,
-            }}
-          >
-            WARNING: This build ran on a canary version of LUCI. If you suspect
-            it failed due to infra, retry the build. Next time it may use the
-            non-canary version.
-          </div>
-        )}
-      {scheduledCancelTime && (
-        <div
-          css={{
-            backgroundColor: 'var(--canceled-bg-color)',
-            fontWeight: 500,
-            padding: '5px',
-          }}
-        >
-          This build was scheduled to be canceled by{' '}
-          {build.data.canceledBy || 'unknown'}{' '}
-          <RelativeTimestamp timestamp={scheduledCancelTime} />
+    <div
+      css={{
+        padding: '0 10px',
+        clear: 'both',
+        overflowWrap: 'break-word',
+        '& pre': {
+          whiteSpace: 'pre-wrap',
+          overflowWrap: 'break-word',
+          fontSize: '12px',
+        },
+        '& *': {
+          marginBlock: '10px',
+        },
+      }}
+      className={`${BUILD_STATUS_CLASS_MAP[build.data.status]}-bg`}
+    >
+      {summaryHtml ? (
+        <SanitizedHtml html={summaryHtml} />
+      ) : (
+        <div css={{ fontWeight: 500 }}>
+          Build{' '}
+          {BUILD_STATUS_DISPLAY_MAP[build.data.status] || 'status unknown'}
         </div>
       )}
-      <div
-        css={{
-          padding: '0 10px',
-          clear: 'both',
-          overflowWrap: 'break-word',
-          '& pre': {
-            whiteSpace: 'pre-wrap',
-            overflowWrap: 'break-word',
-            fontSize: '12px',
-          },
-          '& *': {
-            marginBlock: '10px',
-          },
-        }}
-        className={`${BUILD_STATUS_CLASS_MAP[build.data.status]}-bg`}
-      >
-        {summaryHtml ? (
-          <SanitizedHtml html={summaryHtml} />
-        ) : (
-          <div css={{ fontWeight: 500 }}>
-            Build{' '}
-            {BUILD_STATUS_DISPLAY_MAP[build.data.status] || 'status unknown'}
-          </div>
-        )}
-      </div>
-    </>
+    </div>
   );
 });

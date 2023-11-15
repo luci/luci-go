@@ -21,6 +21,7 @@ import { useStore } from '@/common/store';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
 import { ActionsSection, Dialog } from './actions_section';
+import { AlertsSection } from './alerts_section';
 import { BuildLogSection } from './build_log_section';
 import { BuildPackagesInfoSection } from './build_packages_info_section';
 import { BuilderInfoSection } from './builder_info_section';
@@ -75,6 +76,7 @@ export const OverviewTab = observer(() => {
       />
       <ContainerDiv>
         <FirstColumn>
+          <AlertsSection />
           <SummarySection />
           <FailedTestSection />
           <StepsSection />

@@ -18,7 +18,7 @@ import { useMemo } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { buildCategoryTree } from '@/build/tools/category_tree';
-import { formatBuilderId } from '@/build/tools/utils';
+import { formatBuilderId } from '@/build/tools/build_utils';
 import { BUILD_STATUS_CLASS_MAP } from '@/common/constants';
 import { ConsoleSnapshot } from '@/common/services/milo_internal';
 import {

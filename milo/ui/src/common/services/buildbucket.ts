@@ -42,7 +42,7 @@ export const BLAMELIST_PIN_KEY = '$recipe_engine/milo/blamelist_pins';
 
 export const BUILD_FIELD_MASK =
   'id,builder,builderInfo,number,canceledBy,' +
-  'createTime,startTime,endTime,cancelTime,status,summaryMarkdown,input,output,steps,' +
+  'createTime,startTime,endTime,cancelTime,status,statusDetails,summaryMarkdown,input,output,steps,' +
   'infra.buildbucket.agent,infra.swarming,infra.resultdb,infra.backend,' +
   'tags,exe,schedulingTimeout,executionTimeout,gracePeriod,ancestorIds,retriable';
 
@@ -128,6 +128,7 @@ export interface Build {
   readonly endTime?: string;
   readonly cancelTime?: string;
   readonly status: BuildbucketStatus;
+  readonly statusDetails?: StatusDetails;
   readonly summaryMarkdown?: string;
   readonly input?: BuildInput;
   readonly output?: BuildOutput;

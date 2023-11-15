@@ -12,8 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { BuilderID } from '@/common/services/buildbucket';
-
-export function formatBuilderId(builderId: BuilderID) {
-  return `${builderId.project}/${builderId.bucket}/${builderId.builder}`;
-}
+export * from './alerts_section';
