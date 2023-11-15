@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/api/taskspb"
+	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -129,6 +130,17 @@ var (
 	}
 )
 
+// AuthDBLogRev is used to record that the changelog was generated for
+// an AuthDB revision.
+type AuthDBLogRev struct {
+	Kind   string         `gae:"$kind,AuthDBLogRev"`
+	ID     int64          `gae:"$id"` // The AuthDB revision.
+	Parent *datastore.Key `gae:"$parent"`
+
+	When       time.Time `gae:"when" json:"when"`               // When the changes were processed.
+	AppVersion string    `gae:"app_version" json:"app_version"` // GAE application version that processed the change.
+}
+
 // AuthDBChange is the base (embedded) struct for change log entries.
 // Has a change type and a bunch of common change properties (like who and when
 // made the change). Change type order is important, it is used in UI when
@@ -230,6 +242,14 @@ func ChangeLogRevisionKey(ctx context.Context, authDBRev int64) *datastore.Key {
 	return datastore.NewKey(ctx, "AuthDBLogRev", "", authDBRev, ChangeLogRootKey(ctx))
 }
 
+func constructLogRevisionKey(ctx context.Context, authDBRev int64) *datastore.Key {
+	if authDBRev != 0 {
+		return ChangeLogRevisionKey(ctx, authDBRev)
+	}
+
+	return ChangeLogRootKey(ctx)
+}
+
 // ChangeID returns the ID of an AuthDBChange entity based on its properties.
 //
 // Returns error when change.Target is invalid (doesn't contain '$' or contains '!').
@@ -249,13 +269,7 @@ func ChangeID(ctx context.Context, change *AuthDBChange) (string, error) {
 //
 // Returns an annotated error.
 func GetAllAuthDBChange(ctx context.Context, target string, authDBRev int64, pageSize int32, pageToken string) (changes []*AuthDBChange, nextPageToken string, err error) {
-	var ancestor *datastore.Key
-	if authDBRev != 0 {
-		ancestor = ChangeLogRevisionKey(ctx, authDBRev)
-	} else {
-		ancestor = ChangeLogRootKey(ctx)
-	}
-
+	ancestor := constructLogRevisionKey(ctx, authDBRev)
 	logging.Infof(ctx, "Ancestor: %v", ancestor)
 
 	query := datastore.NewQuery("AuthDBChange").Ancestor(ancestor).Order("-__key__")
@@ -385,7 +399,46 @@ var knownHistoricalEntities = map[string]diffFunc{
 
 type diffFunc = func(context.Context, string, datastore.PropertyMap, datastore.PropertyMap) ([]*AuthDBChange, error)
 
+// getAuthDBLogRev returns the AuthDBLogRev in the datastore for the
+// given AuthDB revision.
+//
+// Note: if the AuthDBLogRev is not found, this will return (nil, nil).
+func getAuthDBLogRev(ctx context.Context, authDBRev int64) (*AuthDBLogRev, error) {
+	logRev := &AuthDBLogRev{}
+	if populated := datastore.PopulateKey(logRev, ChangeLogRevisionKey(ctx, authDBRev)); !populated {
+		return nil, errors.New("failed getting AuthDBLogRev; problem setting key")
+	}
+
+	switch err := datastore.Get(ctx, logRev); {
+	case err == nil:
+		return logRev, nil
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return nil, nil
+	default:
+		return nil, errors.Annotate(err, "failed getting AuthDBLogRev").Err()
+	}
+}
+
+// generateChanges generates the changelog for the given AuthDB
+// revision, and records it in the datastore. Returns the generated
+// AuthDBChange's.
+//
+// Note: if the changelog for the AuthDB revision already existed, and
+// thus no AuthDBChange's were added to the datastore, this will return
+// (nil, nil).
 func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*AuthDBChange, error) {
+	existingLogRev, err := getAuthDBLogRev(ctx, authDBRev)
+	if err != nil {
+		return nil, err
+	}
+	if existingLogRev != nil {
+		logging.Infof(ctx,
+			"Rev %d was already processed at %s by app ver %s",
+			existingLogRev.ID, existingLogRev.When, existingLogRev.AppVersion)
+		return nil, nil
+	}
+
+	// If here, changelog has not been generated for this revision yet.
 	query := datastore.NewQuery("").Ancestor(HistoricalRevisionKey(ctx, authDBRev))
 	changes := []*AuthDBChange{}
 
@@ -406,7 +459,7 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 		return target, oldpm, pm, nil
 	}
 
-	err := datastore.Run(ctx, query, func(pm datastore.PropertyMap) error {
+	err = datastore.Run(ctx, query, func(pm datastore.PropertyMap) error {
 		c := &AuthDBChange{
 			Kind:   "AuthDBChange",
 			Parent: ChangeLogRevisionKey(ctx, authDBRev),
@@ -452,7 +505,27 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 	if dryRun {
 		logging.Infof(ctx, "dryRun: changes generated %v", changes)
 	} else {
-		if err := datastore.Put(ctx, changes); err != nil {
+		// Check if the changelog was processed concurrently.
+		existingLogRev, err = getAuthDBLogRev(ctx, authDBRev)
+		if err != nil {
+			return nil, err
+		}
+		if existingLogRev != nil {
+			logging.Warningf(ctx,
+				"Rev %d was already processed concurrently at %s by app ver %s",
+				existingLogRev.ID, existingLogRev.When, existingLogRev.AppVersion)
+			return nil, nil
+		}
+
+		// Save the changelog and mark it as processed.
+		logRev := &AuthDBLogRev{
+			Kind:       "AuthDBLogRev",
+			ID:         authDBRev,
+			Parent:     ChangeLogRootKey(ctx),
+			When:       clock.Now(ctx).UTC(),
+			AppVersion: info.ImageVersion(ctx),
+		}
+		if err := datastore.Put(ctx, changes, logRev); err != nil {
 			return nil, err
 		}
 	}
@@ -467,15 +540,7 @@ func diffLists(old, new []string) ([]string, []string) {
 
 // Populates the fields common to all AuthDBChanges; returns the populated AuthDBChange for convenience.
 func populateCommonFields(ctx context.Context, ct ChangeType, target string, authDBRev int64, class string, a *AuthDBChange) *AuthDBChange {
-	var ancestor *datastore.Key
-	if authDBRev != 0 {
-		ancestor = ChangeLogRevisionKey(ctx, authDBRev)
-	} else {
-		ancestor = ChangeLogRootKey(ctx)
-	}
-
-	// Set fields common to all changes.
-	a.Parent = ancestor
+	a.Parent = constructLogRevisionKey(ctx, authDBRev)
 	a.Kind = "AuthDBChange"
 	a.ID = fmt.Sprintf("%s!%d", target, ct)
 	a.Class = []string{"AuthDBChange", class}
@@ -484,6 +549,7 @@ func populateCommonFields(ctx context.Context, ct ChangeType, target string, aut
 	a.AuthDBRev = authDBRev
 	a.Who = string(auth.CurrentIdentity(ctx))
 	a.When = clock.Now(ctx).UTC()
+	a.AppVersion = info.ImageVersion(ctx)
 
 	return a
 }

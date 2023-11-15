@@ -248,12 +248,7 @@ func TestGenerateChanges(t *testing.T) {
 		//////////////////////////////////////////////////////////
 		// Helper functions
 		getChanges := func(ctx context.Context, authDBRev int64) []*AuthDBChange {
-			var ancestor *datastore.Key
-			if authDBRev != 0 {
-				ancestor = ChangeLogRevisionKey(ctx, authDBRev)
-			} else {
-				ancestor = ChangeLogRootKey(ctx)
-			}
+			ancestor := constructLogRevisionKey(ctx, authDBRev)
 			query := datastore.NewQuery("AuthDBChange").Ancestor(ancestor)
 			changes := []*AuthDBChange{}
 			datastore.Run(ctx, query, func(change *AuthDBChange) {
@@ -265,7 +260,7 @@ func TestGenerateChanges(t *testing.T) {
 		// The fields in AuthDBChange to ignore when comparing results;
 		// these fields are not signficant to the test cases below.
 		ignoredAuthDBChangeFields := cmpopts.IgnoreFields(AuthDBChange{},
-			"Kind", "ID", "Parent", "Class", "Target", "Who", "When")
+			"Kind", "ID", "Parent", "Class", "Target", "Who", "When", "AppVersion")
 
 		validateChanges := func(ctx context.Context, msg string, authDBRev int64, actualChanges []*AuthDBChange, expectedChanges []*AuthDBChange) {
 			changeCount := len(expectedChanges)
@@ -311,6 +306,18 @@ func TestGenerateChanges(t *testing.T) {
 					ChangeType: ChangeGroupDeleted,
 					Owners:     AdminGroup,
 				}})
+
+				// Check calling generateChanges for an already-processed
+				// AuthDB revision does not make duplicate changes.
+				repeated, err := generateChanges(ctx, 2, false)
+				So(err, ShouldBeNil)
+				So(repeated, ShouldBeNil)
+				// Check the changelog for the revision actually exists.
+				expectedStoredChanges := []*AuthDBChange(actualChanges)
+				sort.Slice(expectedStoredChanges, func(i, j int) bool {
+					return expectedStoredChanges[i].ChangeType < expectedStoredChanges[j].ChangeType
+				})
+				So(getChanges(ctx, 2), ShouldResemble, expectedStoredChanges)
 			})
 
 			Convey("AuthGroup Owners / Description changed", func() {
