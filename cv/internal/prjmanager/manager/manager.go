@@ -344,6 +344,7 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 	case *prjpb.Event_PurgeCompleted:
 		tr.purgesCompleted.events = append(tr.purgesCompleted.events, item)
 		tr.purgesCompleted.purges = append(tr.purgesCompleted.purges, v.PurgeCompleted)
+	case *prjpb.Event_TriggeringClDepsCompleted:
 	case *prjpb.Event_TriggeringClsCompleted:
 		tr.triggeringCLsCompleted.events = append(tr.triggeringCLsCompleted.events, item)
 		tr.triggeringCLsCompleted.succeeded = append(
