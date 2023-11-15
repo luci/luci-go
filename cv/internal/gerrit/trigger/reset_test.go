@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	"github.com/smartystreets/goconvey/convey"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
@@ -40,19 +39,21 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/usertext"
 
-	. "github.com/smarty/assertions"
-	. "go.chromium.org/luci/common/testing/assertions"
+	// Convey package also exports `Reset` method that conflicts with the function
+	// in this package. This is a workaround since we can not dot import the convey
+	// package.
+	//
+	// WARNING: importing the below packages as "." will make So() and
+	// assertions, like ShouldErrLike, silently ignore the assertion results.
+	// e.g., So(1, ShouldBeNil) will pass.
+	c "github.com/smartystreets/goconvey/convey"
+	la "go.chromium.org/luci/common/testing/assertions"
 )
-
-// Convey package also exports `Reset` method that conflicts with the function
-// in this package. This is a workaround since we can not dot import the convey
-// package.
-var Convey = convey.Convey
 
 func TestReset(t *testing.T) {
 	t.Parallel()
 
-	Convey("Reset", t, func() {
+	c.Convey("Reset", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp(t)
 		defer cancel()
@@ -73,13 +74,13 @@ func TestReset(t *testing.T) {
 			gf.Reviewer(gf.U(fmt.Sprintf("user-%d", reviewerID))),
 		)
 		triggers := Find(&FindInput{ChangeInfo: ci, ConfigGroup: &cfgpb.ConfigGroup{}})
-		So(triggers.GetCqVoteTrigger(), ShouldResembleProto, &run.Trigger{
+		c.So(triggers.GetCqVoteTrigger(), la.ShouldResembleProto, &run.Trigger{
 			Time:            timestamppb.New(triggerTime),
 			Mode:            string(run.FullRun),
 			Email:           fmt.Sprintf("user-%d@example.com", triggererID),
 			GerritAccountId: triggererID,
 		})
-		So(triggers.GetCqVoteTrigger().GerritAccountId, ShouldEqual, 100)
+		c.So(triggers.GetCqVoteTrigger().GerritAccountId, c.ShouldEqual, 100)
 		cl := &changelist.CL{
 			ID:         99999,
 			ExternalID: changelist.MustGobID(gHost, int64(changeNum)),
@@ -98,7 +99,7 @@ func TestReset(t *testing.T) {
 			},
 			TriggerNewPatchsetRunAfterPS: 1,
 		}
-		So(datastore.Put(ctx, cl), ShouldBeNil)
+		c.So(datastore.Put(ctx, cl), c.ShouldBeNil)
 		ct.GFake.CreateChange(&gf.Change{
 			Host: gHost,
 			Info: proto.Clone(ci).(*gerritpb.ChangeInfo),
@@ -143,11 +144,11 @@ func TestReset(t *testing.T) {
 		nprTrigger := ts.GetNewPatchsetRunTrigger()
 		input.Triggers = &run.Triggers{}
 
-		Convey("Fails PreCondition if CL is AccessDenied from code review site", func() {
-			Convey("For CQ-Label trigger", func() {
+		c.Convey("Fails PreCondition if CL is AccessDenied from code review site", func() {
+			c.Convey("For CQ-Label trigger", func() {
 				input.Triggers.CqVoteTrigger = cqTrigger
 			})
-			Convey("For NewPatchset trigger", func() {
+			c.Convey("For NewPatchset trigger", func() {
 				input.Triggers.NewPatchsetRunTrigger = nprTrigger
 			})
 			noAccessTime := ct.Clock.Now().UTC().Add(1 * time.Minute)
@@ -160,11 +161,11 @@ func TestReset(t *testing.T) {
 				},
 			}
 			err := Reset(ctx, input)
-			So(err, ShouldErrLike, "failed to reset trigger because CV lost access to this CL")
-			So(ErrResetPreconditionFailedTag.In(err), ShouldBeTrue)
+			c.So(err, la.ShouldErrLike, "failed to reset trigger because CV lost access to this CL")
+			c.So(ErrResetPreconditionFailedTag.In(err), c.ShouldBeTrue)
 		})
 
-		Convey("Fails PreCondition if CL has newer PS in datastore", func() {
+		c.Convey("Fails PreCondition if CL has newer PS in datastore", func() {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			newCI := proto.Clone(ci).(*gerritpb.ChangeInfo)
 			gf.PS(3)(newCI)
@@ -185,48 +186,48 @@ func TestReset(t *testing.T) {
 					},
 				},
 			}
-			So(datastore.Put(ctx, newCL), ShouldBeNil)
+			c.So(datastore.Put(ctx, newCL), c.ShouldBeNil)
 			err := Reset(ctx, input)
-			So(err, ShouldErrLike, "failed to cancel because ps 2 is not current for cl(99999)")
-			So(ErrResetPreconditionFailedTag.In(err), ShouldBeTrue)
+			c.So(err, la.ShouldErrLike, "failed to reset because ps 2 is not current for cl(99999)")
+			c.So(ErrResetPreconditionFailedTag.In(err), c.ShouldBeTrue)
 		})
 
-		Convey("Fails PreCondition if CL has newer PS in Gerrit", func() {
+		c.Convey("Fails PreCondition if CL has newer PS in Gerrit", func() {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				gf.PS(3)(c.Info)
 			})
 			err := Reset(ctx, input)
-			So(err, ShouldErrLike, "failed to cancel because ps 2 is not current for x-review.example.com/10001")
-			So(ErrResetPreconditionFailedTag.In(err), ShouldBeTrue)
+			c.So(err, la.ShouldErrLike, "failed to reset because ps 2 is not current for x-review.example.com/10001")
+			c.So(ErrResetPreconditionFailedTag.In(err), c.ShouldBeTrue)
 		})
 
-		Convey("Cancelling CQ Vote fails if receive stale data from gerrit", func() {
+		c.Convey("Cancelling CQ Vote fails if receive stale data from gerrit", func() {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				gf.Updated(clock.Now(ctx).Add(-3 * time.Minute))(c.Info)
 			})
 			err := Reset(ctx, input)
-			So(err, ShouldErrLike, gerrit.ErrStaleData)
-			So(transient.Tag.In(err), ShouldBeTrue)
+			c.So(err, la.ShouldErrLike, gerrit.ErrStaleData)
+			c.So(transient.Tag.In(err), c.ShouldBeTrue)
 		})
 
-		Convey("Cancelling NewPatchsetRun", func() {
+		c.Convey("Cancelling NewPatchsetRun", func() {
 			input.Triggers.NewPatchsetRunTrigger = nprTrigger
 			input.Message = "reset new patchset run trigger"
 
 			cl := &changelist.CL{ID: input.CL.ID}
-			So(datastore.Get(ctx, cl), ShouldBeNil)
+			c.So(datastore.Get(ctx, cl), c.ShouldBeNil)
 			originalValue := cl.TriggerNewPatchsetRunAfterPS
 
-			So(Reset(ctx, input), ShouldBeNil)
+			c.So(Reset(ctx, input), c.ShouldBeNil)
 
 			cl = &changelist.CL{ID: input.CL.ID}
-			So(datastore.Get(ctx, cl), ShouldBeNil)
-			So(cl.TriggerNewPatchsetRunAfterPS, ShouldNotEqual, originalValue)
-			So(cl.TriggerNewPatchsetRunAfterPS, ShouldEqual, input.CL.Snapshot.Patchset)
+			c.So(datastore.Get(ctx, cl), c.ShouldBeNil)
+			c.So(cl.TriggerNewPatchsetRunAfterPS, c.ShouldNotEqual, originalValue)
+			c.So(cl.TriggerNewPatchsetRunAfterPS, c.ShouldEqual, input.CL.Snapshot.Patchset)
 			change := ct.GFake.GetChange(input.CL.Snapshot.GetGerrit().GetHost(), int(input.CL.Snapshot.GetGerrit().GetInfo().GetNumber()))
-			So(change.Info.GetMessages()[len(change.Info.GetMessages())-1].Message, ShouldEqual, input.Message)
+			c.So(change.Info.GetMessages()[len(change.Info.GetMessages())-1].Message, c.ShouldEqual, input.Message)
 		})
 
 		splitSetReviewRequests := func() (onBehalf, asSelf []*gerritpb.SetReviewRequest) {
@@ -235,7 +236,7 @@ func TestReset(t *testing.T) {
 				case !ok:
 				case r.GetOnBehalfOf() != 0:
 					// OnBehalfOf removes votes and must happen before any asSelf.
-					So(asSelf, ShouldBeEmpty)
+					c.So(asSelf, c.ShouldBeEmpty)
 					onBehalf = append(onBehalf, r)
 				default:
 					asSelf = append(asSelf, r)
@@ -243,27 +244,27 @@ func TestReset(t *testing.T) {
 			}
 			return onBehalf, asSelf
 		}
-		Convey("cancel new patchset run and cq vote run at the same time", func() {
+		c.Convey("cancel new patchset run and cq vote run at the same time", func() {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			input.Triggers.NewPatchsetRunTrigger = nprTrigger
 			cl := &changelist.CL{ID: input.CL.ID}
-			So(datastore.Get(ctx, cl), ShouldBeNil)
+			c.So(datastore.Get(ctx, cl), c.ShouldBeNil)
 			originalValue := cl.TriggerNewPatchsetRunAfterPS
 
 			err := Reset(ctx, input)
-			So(err, ShouldBeNil)
+			c.So(err, c.ShouldBeNil)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
-			So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
-			So(resultCI.Info.GetMessages()[0].GetMessage(), ShouldEqual, input.Message)
-			So(gf.NonZeroVotes(resultCI.Info, CQLabelName), ShouldBeEmpty)
+			c.So(resultCI.Info.GetMessages(), c.ShouldHaveLength, 1)
+			c.So(resultCI.Info.GetMessages()[0].GetMessage(), c.ShouldEqual, input.Message)
+			c.So(gf.NonZeroVotes(resultCI.Info, CQLabelName), c.ShouldBeEmpty)
 
 			onBehalfs, asSelf := splitSetReviewRequests()
-			So(onBehalfs, ShouldHaveLength, 1)
-			So(onBehalfs[0].GetOnBehalfOf(), ShouldEqual, triggererID)
-			So(onBehalfs[0].GetNotifyDetails(), ShouldBeNil)
-			So(asSelf, ShouldHaveLength, 1)
-			So(asSelf[0].GetNotify(), ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
-			So(asSelf[0].GetNotifyDetails(), ShouldResembleProto,
+			c.So(onBehalfs, c.ShouldHaveLength, 1)
+			c.So(onBehalfs[0].GetOnBehalfOf(), c.ShouldEqual, triggererID)
+			c.So(onBehalfs[0].GetNotifyDetails(), c.ShouldBeNil)
+			c.So(asSelf, c.ShouldHaveLength, 1)
+			c.So(asSelf[0].GetNotify(), c.ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
+			c.So(asSelf[0].GetNotifyDetails(), la.ShouldResembleProto,
 				&gerritpb.NotifyDetails{
 					Recipients: []*gerritpb.NotifyDetails_Recipient{
 						{
@@ -274,30 +275,30 @@ func TestReset(t *testing.T) {
 						},
 					},
 				})
-			So(asSelf[0].GetAddToAttentionSet(), ShouldResembleProto, []*gerritpb.AttentionSetInput{
+			c.So(asSelf[0].GetAddToAttentionSet(), la.ShouldResembleProto, []*gerritpb.AttentionSetInput{
 				{User: strconv.FormatInt(reviewerID, 10), Reason: "ps#2: " + usertext.StoppedRun},
 			})
 			cl = &changelist.CL{ID: input.CL.ID}
-			So(datastore.Get(ctx, cl), ShouldBeNil)
-			So(cl.TriggerNewPatchsetRunAfterPS, ShouldNotEqual, originalValue)
-			So(cl.TriggerNewPatchsetRunAfterPS, ShouldEqual, input.CL.Snapshot.Patchset)
+			c.So(datastore.Get(ctx, cl), c.ShouldBeNil)
+			c.So(cl.TriggerNewPatchsetRunAfterPS, c.ShouldNotEqual, originalValue)
+			c.So(cl.TriggerNewPatchsetRunAfterPS, c.ShouldEqual, input.CL.Snapshot.Patchset)
 		})
-		Convey("Remove single vote", func() {
+		c.Convey("Remove single vote", func() {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			err := Reset(ctx, input)
-			So(err, ShouldBeNil)
+			c.So(err, c.ShouldBeNil)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
-			So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
-			So(resultCI.Info.GetMessages()[0].GetMessage(), ShouldEqual, input.Message)
-			So(gf.NonZeroVotes(resultCI.Info, CQLabelName), ShouldBeEmpty)
+			c.So(resultCI.Info.GetMessages(), c.ShouldHaveLength, 1)
+			c.So(resultCI.Info.GetMessages()[0].GetMessage(), c.ShouldEqual, input.Message)
+			c.So(gf.NonZeroVotes(resultCI.Info, CQLabelName), c.ShouldBeEmpty)
 
 			onBehalfs, asSelf := splitSetReviewRequests()
-			So(onBehalfs, ShouldHaveLength, 1)
-			So(onBehalfs[0].GetOnBehalfOf(), ShouldEqual, triggererID)
-			So(onBehalfs[0].GetNotifyDetails(), ShouldBeNil)
-			So(asSelf, ShouldHaveLength, 1)
-			So(asSelf[0].GetNotify(), ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
-			So(asSelf[0].GetNotifyDetails(), ShouldResembleProto,
+			c.So(onBehalfs, c.ShouldHaveLength, 1)
+			c.So(onBehalfs[0].GetOnBehalfOf(), c.ShouldEqual, triggererID)
+			c.So(onBehalfs[0].GetNotifyDetails(), c.ShouldBeNil)
+			c.So(asSelf, c.ShouldHaveLength, 1)
+			c.So(asSelf[0].GetNotify(), c.ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
+			c.So(asSelf[0].GetNotifyDetails(), la.ShouldResembleProto,
 				&gerritpb.NotifyDetails{
 					Recipients: []*gerritpb.NotifyDetails_Recipient{
 						{
@@ -308,13 +309,13 @@ func TestReset(t *testing.T) {
 						},
 					},
 				})
-			So(asSelf[0].GetAddToAttentionSet(), ShouldResembleProto, []*gerritpb.AttentionSetInput{
+			c.So(asSelf[0].GetAddToAttentionSet(), la.ShouldResembleProto, []*gerritpb.AttentionSetInput{
 				{User: strconv.FormatInt(reviewerID, 10), Reason: "ps#2: " + usertext.StoppedRun},
 			})
-			So(asSelf[0].GetTag(), ShouldResemble, fmt.Sprintf("autogenerated:cq:full-run:%d", triggerTime.Unix()))
+			c.So(asSelf[0].GetTag(), c.ShouldResemble, fmt.Sprintf("autogenerated:cq:full-run:%d", triggerTime.Unix()))
 		})
 
-		Convey("Remove multiple votes", func() {
+		c.Convey("Remove multiple votes", func() {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				gf.CQ(1, clock.Now(ctx).Add(-130*time.Second), gf.U("user-1"))(c.Info)
@@ -322,25 +323,25 @@ func TestReset(t *testing.T) {
 				gf.CQ(1, clock.Now(ctx).Add(-100*time.Second), gf.U("user-1000"))(c.Info)
 			})
 
-			Convey("Success", func() {
+			c.Convey("Success", func() {
 				err := Reset(ctx, input)
-				So(err, ShouldBeNil)
+				c.So(err, c.ShouldBeNil)
 				resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
-				So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
-				So(resultCI.Info.GetMessages()[0].GetMessage(), ShouldEqual, input.Message)
-				So(gf.NonZeroVotes(resultCI.Info, CQLabelName), ShouldBeEmpty)
+				c.So(resultCI.Info.GetMessages(), c.ShouldHaveLength, 1)
+				c.So(resultCI.Info.GetMessages()[0].GetMessage(), c.ShouldEqual, input.Message)
+				c.So(gf.NonZeroVotes(resultCI.Info, CQLabelName), c.ShouldBeEmpty)
 
 				onBehalfs, asSelf := splitSetReviewRequests()
 				for _, r := range onBehalfs {
-					So(r.GetNotify(), ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
-					So(r.GetNotifyDetails(), ShouldBeNil)
+					c.So(r.GetNotify(), c.ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
+					c.So(r.GetNotifyDetails(), c.ShouldBeNil)
 				}
 				// The triggering vote(s) must have been removed last, the order of
 				// removals for the rest doesn't matter so long as it does the job.
-				So(onBehalfs[len(onBehalfs)-1].GetOnBehalfOf(), ShouldEqual, 100)
-				So(asSelf, ShouldHaveLength, 1)
-				So(asSelf[0].GetNotify(), ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
-				So(asSelf[0].GetNotifyDetails(), ShouldResembleProto,
+				c.So(onBehalfs[len(onBehalfs)-1].GetOnBehalfOf(), c.ShouldEqual, 100)
+				c.So(asSelf, c.ShouldHaveLength, 1)
+				c.So(asSelf[0].GetNotify(), c.ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
+				c.So(asSelf[0].GetNotifyDetails(), la.ShouldResembleProto,
 					&gerritpb.NotifyDetails{
 						Recipients: []*gerritpb.NotifyDetails_Recipient{
 							{
@@ -351,27 +352,27 @@ func TestReset(t *testing.T) {
 							},
 						},
 					})
-				So(asSelf[0].GetAddToAttentionSet(), ShouldResembleProto, []*gerritpb.AttentionSetInput{
+				c.So(asSelf[0].GetAddToAttentionSet(), la.ShouldResembleProto, []*gerritpb.AttentionSetInput{
 					{User: strconv.FormatInt(reviewerID, 10), Reason: "ps#2: " + usertext.StoppedRun},
 				})
 			})
 
-			Convey("Removing non-triggering votes fails", func() {
+			c.Convey("Removing non-triggering votes fails", func() {
 				ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 					c.ACLs = gf.ACLGrant(gf.OpRead, codes.PermissionDenied, lProject).Or(
 						gf.ACLGrant(gf.OpReview, codes.PermissionDenied, lProject),
 					) // no permission to vote on behalf of others
 				})
 				err := Reset(ctx, input)
-				So(err, ShouldBeNil)
+				c.So(err, c.ShouldBeNil)
 				onBehalfs, _ := splitSetReviewRequests()
-				So(onBehalfs, ShouldHaveLength, 3) // all non-triggering votes
+				c.So(onBehalfs, c.ShouldHaveLength, 3) // all non-triggering votes
 				for _, r := range onBehalfs {
 					switch r.GetOnBehalfOf() {
 					case triggererID:
 						// CV shouldn't remove triggering votes if removal of non-triggering
 						// votes fails.
-						So(r.GetOnBehalfOf(), ShouldNotEqual, triggererID)
+						c.So(r.GetOnBehalfOf(), c.ShouldNotEqual, triggererID)
 					case 1, 70, 1000:
 					default:
 						panic(fmt.Errorf("unknown on_behalf_of %d", r.GetOnBehalfOf()))
@@ -380,7 +381,7 @@ func TestReset(t *testing.T) {
 			})
 		})
 
-		Convey("Removing votes from non-CQ labels used in additional modes", func() {
+		c.Convey("Removing votes from non-CQ labels used in additional modes", func() {
 			const uLabel = "Ultra-Quick-Label"
 			const qLabel = "Quick-Label"
 			input.Triggers.CqVoteTrigger = cqTrigger
@@ -438,24 +439,24 @@ func TestReset(t *testing.T) {
 				ultraQuick(0, clock.Now(ctx).Add(-90*time.Second), gf.U("user-104"))(c.Info)
 			})
 			err := Reset(ctx, input)
-			So(err, ShouldBeNil)
+			c.So(err, c.ShouldBeNil)
 
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
-			So(gf.NonZeroVotes(resultCI.Info, CQLabelName), ShouldBeEmpty)
-			So(gf.NonZeroVotes(resultCI.Info, qLabel), ShouldBeEmpty)
-			So(gf.NonZeroVotes(resultCI.Info, uLabel), ShouldBeEmpty)
+			c.So(gf.NonZeroVotes(resultCI.Info, CQLabelName), c.ShouldBeEmpty)
+			c.So(gf.NonZeroVotes(resultCI.Info, qLabel), c.ShouldBeEmpty)
+			c.So(gf.NonZeroVotes(resultCI.Info, uLabel), c.ShouldBeEmpty)
 
 			onBehalfs, _ := splitSetReviewRequests()
 			// The last request must be for account 100.
-			So(onBehalfs[len(onBehalfs)-1].GetOnBehalfOf(), ShouldEqual, 100)
-			So(onBehalfs[len(onBehalfs)-1].GetLabels(), ShouldResemble, map[string]int32{
+			c.So(onBehalfs[len(onBehalfs)-1].GetOnBehalfOf(), c.ShouldEqual, 100)
+			c.So(onBehalfs[len(onBehalfs)-1].GetLabels(), c.ShouldResemble, map[string]int32{
 				CQLabelName: 0,
 				qLabel:      0,
 				uLabel:      0,
 			})
 		})
 
-		Convey("Skips zero votes", func() {
+		c.Convey("Skips zero votes", func() {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				gf.CQ(0, clock.Now(ctx).Add(-90*time.Second), gf.U("user-101"))(c.Info)
@@ -464,29 +465,29 @@ func TestReset(t *testing.T) {
 			})
 
 			err := Reset(ctx, input)
-			So(err, ShouldBeNil)
+			c.So(err, c.ShouldBeNil)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
-			So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
-			So(resultCI.Info.GetMessages()[0].GetMessage(), ShouldEqual, input.Message)
-			So(gf.NonZeroVotes(resultCI.Info, CQLabelName), ShouldBeEmpty)
+			c.So(resultCI.Info.GetMessages(), c.ShouldHaveLength, 1)
+			c.So(resultCI.Info.GetMessages()[0].GetMessage(), c.ShouldEqual, input.Message)
+			c.So(gf.NonZeroVotes(resultCI.Info, CQLabelName), c.ShouldBeEmpty)
 			onBehalfs, _ := splitSetReviewRequests()
-			So(onBehalfs, ShouldHaveLength, 1)
-			So(onBehalfs[0].GetOnBehalfOf(), ShouldEqual, triggererID)
+			c.So(onBehalfs, c.ShouldHaveLength, 1)
+			c.So(onBehalfs[0].GetOnBehalfOf(), c.ShouldEqual, triggererID)
 		})
 
-		Convey("Post Message even if triggering votes has been removed already", func() {
+		c.Convey("Post Message even if triggering votes has been removed already", func() {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				gf.CQ(0, clock.Now(ctx), triggerer)(c.Info)
 			})
 			err := Reset(ctx, input)
-			So(err, ShouldBeNil)
+			c.So(err, c.ShouldBeNil)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
-			So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
-			So(resultCI.Info.GetMessages()[0].GetMessage(), ShouldEqual, input.Message)
+			c.So(resultCI.Info.GetMessages(), c.ShouldHaveLength, 1)
+			c.So(resultCI.Info.GetMessages()[0].GetMessage(), c.ShouldEqual, input.Message)
 		})
 
-		Convey("Post Message if CV has no permission to vote", func() {
+		c.Convey("Post Message if CV has no permission to vote", func() {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				c.ACLs = gf.ACLGrant(gf.OpRead, codes.PermissionDenied, lProject).Or(
@@ -494,10 +495,10 @@ func TestReset(t *testing.T) {
 					gf.ACLGrant(gf.OpReview, codes.PermissionDenied, lProject),
 				)
 			})
-			So(Reset(ctx, input), ShouldBeNil)
+			c.So(Reset(ctx, input), c.ShouldBeNil)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
 			// CQ+2 vote remains.
-			So(gf.NonZeroVotes(resultCI, CQLabelName), ShouldResembleProto, []*gerritpb.ApprovalInfo{
+			c.So(gf.NonZeroVotes(resultCI, CQLabelName), la.ShouldResembleProto, []*gerritpb.ApprovalInfo{
 				{
 					User:  triggerer,
 					Value: 2,
@@ -505,17 +506,17 @@ func TestReset(t *testing.T) {
 				},
 			})
 			// But CL is no longer triggered.
-			So(findTriggers(resultCI).GetCqVoteTrigger(), ShouldBeNil)
+			c.So(findTriggers(resultCI).GetCqVoteTrigger(), c.ShouldBeNil)
 			// Still, user should know what happened.
 			expectedMsg := input.Message + `
 
 CV failed to unset the Commit-Queue label on your behalf. Please unvote and revote on the Commit-Queue label to retry.
 
 Bot data: {"action":"cancel","triggered_at":"2020-02-02T10:28:00Z","revision":"rev-010001-002"}`
-			So(resultCI.GetMessages()[0].GetMessage(), ShouldEqual, expectedMsg)
+			c.So(resultCI.GetMessages()[0].GetMessage(), c.ShouldEqual, expectedMsg)
 		})
 
-		Convey("Post Message if change is in bad state", func() {
+		c.Convey("Post Message if change is in bad state", func() {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				gf.Status(gerritpb.ChangeStatus_ABANDONED)(c.Info)
@@ -527,10 +528,10 @@ Bot data: {"action":"cancel","triggered_at":"2020-02-02T10:28:00Z","revision":"r
 				}
 			})
 			err := Reset(ctx, input)
-			So(err, ShouldBeNil)
+			c.So(err, c.ShouldBeNil)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
 			// CQ+2 vote remains.
-			So(gf.NonZeroVotes(resultCI, CQLabelName), ShouldResembleProto, []*gerritpb.ApprovalInfo{
+			c.So(gf.NonZeroVotes(resultCI, CQLabelName), la.ShouldResembleProto, []*gerritpb.ApprovalInfo{
 				{
 					User:  triggerer,
 					Value: 2,
@@ -538,29 +539,29 @@ Bot data: {"action":"cancel","triggered_at":"2020-02-02T10:28:00Z","revision":"r
 				},
 			})
 			// But CL is no longer triggered.
-			So(findTriggers(resultCI).GetCqVoteTrigger(), ShouldBeNil)
+			c.So(findTriggers(resultCI).GetCqVoteTrigger(), c.ShouldBeNil)
 			// Still, user should know what happened.
-			So(resultCI.GetMessages(), ShouldHaveLength, 1)
-			So(resultCI.GetMessages()[0].GetMessage(), ShouldContainSubstring, "CV failed to unset the Commit-Queue label on your behalf")
+			c.So(resultCI.GetMessages(), c.ShouldHaveLength, 1)
+			c.So(resultCI.GetMessages()[0].GetMessage(), c.ShouldContainSubstring, "CV failed to unset the Commit-Queue label on your behalf")
 		})
 
-		Convey("Post Message also fails", func() {
+		c.Convey("Post Message also fails", func() {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				c.ACLs = gf.ACLGrant(gf.OpRead, codes.PermissionDenied, lProject)
 			})
 			err := Reset(ctx, input)
-			So(err, ShouldErrLike, "no permission to remove vote x-review.example.com/10001")
-			So(ErrResetPermanentTag.In(err), ShouldBeTrue)
+			c.So(err, la.ShouldErrLike, "no permission to remove vote x-review.example.com/10001")
+			c.So(ErrResetPermanentTag.In(err), c.ShouldBeTrue)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
-			So(gf.NonZeroVotes(resultCI, CQLabelName), ShouldResembleProto, []*gerritpb.ApprovalInfo{
+			c.So(gf.NonZeroVotes(resultCI, CQLabelName), la.ShouldResembleProto, []*gerritpb.ApprovalInfo{
 				{
 					User:  triggerer,
 					Value: 2,
 					Date:  timestamppb.New(triggerTime),
 				},
 			})
-			So(resultCI.GetMessages(), ShouldBeEmpty)
+			c.So(resultCI.GetMessages(), c.ShouldBeEmpty)
 		})
 	})
 }
