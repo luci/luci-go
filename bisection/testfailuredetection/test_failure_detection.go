@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection"
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
+	"go.chromium.org/luci/bisection/util/loggingutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -95,6 +96,8 @@ type analysisClient interface {
 
 // Run finds and group test failures to send to bisector.
 func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetectionTask) error {
+	ctx = loggingutil.SetProject(ctx, task.Project)
+	logging.Infof(ctx, "Run test failure detection")
 	// Checks if test failure detection is enabled.
 	enabled, err := isEnabled(ctx, task.Project)
 	if err != nil {

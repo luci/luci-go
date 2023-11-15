@@ -56,3 +56,8 @@ func SetRerunBBID(c context.Context, rerunBBID int64) context.Context {
 func SetQueryBBID(c context.Context, bbid int64) context.Context {
 	return logging.SetField(c, "query_bbid", bbid)
 }
+
+// SetProject returns a context with the logging field project set
+func SetProject(c context.Context, project string) context.Context {
+	return logging.SetField(c, "project", project)
+}
