@@ -26,6 +26,7 @@ import (
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
+	"go.chromium.org/luci/bisection/util/protoutil"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
@@ -185,7 +186,7 @@ func (server *AnalysesServer) ListTestAnalyses(ctx context.Context, req *pb.List
 			i := i
 			tfa := tfa
 			workC <- func() error {
-				analysis, err := testFailureAnalysisToPb(ctx, tfa)
+				analysis, err := protoutil.TestFailureAnalysisToPb(ctx, tfa)
 				if err != nil {
 					err = errors.Annotate(err, "test failure analysis to pb").Err()
 					logging.Errorf(ctx, "Could not get analysis data for analysis %d: %s", tfa.ID, err)
@@ -219,7 +220,7 @@ func (server *AnalysesServer) GetTestAnalysis(ctx context.Context, req *pb.GetTe
 		logging.Errorf(ctx, err.Error())
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
-	result, err := testFailureAnalysisToPb(ctx, tfa)
+	result, err := protoutil.TestFailureAnalysisToPb(ctx, tfa)
 	if err != nil {
 		err = errors.Annotate(err, "test failure analysis to pb").Err()
 		logging.Errorf(ctx, err.Error())
@@ -327,7 +328,7 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 			return nil, err
 		}
 		pbCulprit.VerificationDetails = verificationDetails
-		pbCulprit.CulpritAction = culpritActionsForSuspect(suspect)
+		pbCulprit.CulpritAction = protoutil.CulpritActionsForSuspect(suspect)
 		culprits[i] = pbCulprit
 	}
 	result.Culprits = culprits
@@ -629,46 +630,4 @@ func validateListTestAnalysesRequest(req *pb.ListTestAnalysesRequest) error {
 		return status.Errorf(codes.InvalidArgument, "page size must not be negative")
 	}
 	return nil
-}
-
-func culpritActionsForSuspect(suspect *model.Suspect) []*pb.CulpritAction {
-	culpritActions := []*pb.CulpritAction{}
-	if suspect.IsRevertCommitted {
-		// culprit action for auto-committing a revert
-		culpritActions = append(culpritActions, &pb.CulpritAction{
-			ActionType:  pb.CulpritActionType_CULPRIT_AUTO_REVERTED,
-			RevertClUrl: suspect.RevertURL,
-			ActionTime:  timestamppb.New(suspect.RevertCommitTime),
-		})
-	} else if suspect.IsRevertCreated {
-		// culprit action for creating a revert
-		culpritActions = append(culpritActions, &pb.CulpritAction{
-			ActionType:  pb.CulpritActionType_REVERT_CL_CREATED,
-			RevertClUrl: suspect.RevertURL,
-			ActionTime:  timestamppb.New(suspect.RevertCreateTime),
-		})
-	} else if suspect.HasSupportRevertComment {
-		// culprit action for commenting on an existing revert
-		culpritActions = append(culpritActions, &pb.CulpritAction{
-			ActionType:  pb.CulpritActionType_EXISTING_REVERT_CL_COMMENTED,
-			RevertClUrl: suspect.RevertURL,
-			ActionTime:  timestamppb.New(suspect.SupportRevertCommentTime),
-		})
-	} else if suspect.HasCulpritComment {
-		// culprit action for commenting on the culprit
-		culpritActions = append(culpritActions, &pb.CulpritAction{
-			ActionType: pb.CulpritActionType_CULPRIT_CL_COMMENTED,
-			ActionTime: timestamppb.New(suspect.CulpritCommentTime),
-		})
-	} else {
-		action := &pb.CulpritAction{
-			ActionType:     pb.CulpritActionType_NO_ACTION,
-			InactionReason: suspect.InactionReason,
-		}
-		if suspect.RevertURL != "" {
-			action.RevertClUrl = suspect.RevertURL
-		}
-		culpritActions = append(culpritActions, action)
-	}
-	return culpritActions
 }

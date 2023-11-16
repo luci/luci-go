@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package server
+// Package protoutil contains the utility functions to convert to protobuf.
+package protoutil
 
 import (
 	"context"
@@ -28,8 +29,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// testFailureAnalysisToPb converts model.TestFailureAnalysis to pb.TestAnalysis
-func testFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis) (*pb.TestAnalysis, error) {
+// TestFailureAnalysisToPb converts model.TestFailureAnalysis to pb.TestAnalysis
+func TestFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis) (*pb.TestAnalysis, error) {
 	result := &pb.TestAnalysis{
 		AnalysisId:  tfa.ID,
 		CreatedTime: timestamppb.New(tfa.CreateTime),
@@ -54,7 +55,7 @@ func testFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis
 	if err != nil {
 		return nil, errors.Annotate(err, "get test failure bundle").Err()
 	}
-	result.TestFailures = testFailureBundleToPb(ctx, bundle)
+	result.TestFailures = TestFailureBundleToPb(ctx, bundle)
 	primary := bundle.Primary()
 	result.StartFailureRate = float32(primary.StartPositionFailureRate)
 	result.EndFailureRate = float32(primary.EndPositionFailureRate)
@@ -78,7 +79,7 @@ func testFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis
 		return nil, errors.Annotate(err, "get test nthsection for analysis").Err()
 	}
 	if nsa != nil {
-		nsaResult, err := nthSectionAnalysisToPb(ctx, tfa, nsa, primary.Ref)
+		nsaResult, err := NthSectionAnalysisToPb(ctx, tfa, nsa, primary.Ref)
 		if err != nil {
 			return nil, errors.Annotate(err, "nthsection analysis to pb").Err()
 		}
@@ -88,7 +89,7 @@ func testFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis
 			return nil, errors.Annotate(err, "get verified culprit").Err()
 		}
 		if culprit != nil {
-			culpritPb, err := culpritToPb(ctx, culprit, nsa)
+			culpritPb, err := CulpritToPb(ctx, culprit, nsa)
 			if err != nil {
 				return nil, errors.Annotate(err, "culprit to pb").Err()
 			}
@@ -98,7 +99,7 @@ func testFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis
 	return result, nil
 }
 
-func nthSectionAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis, nsa *model.TestNthSectionAnalysis, sourceRef *pb.SourceRef) (*pb.TestNthSectionAnalysisResult, error) {
+func NthSectionAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis, nsa *model.TestNthSectionAnalysis, sourceRef *pb.SourceRef) (*pb.TestNthSectionAnalysisResult, error) {
 	result := &pb.TestNthSectionAnalysisResult{
 		Status:    nsa.Status,
 		RunStatus: nsa.RunStatus,
@@ -114,7 +115,7 @@ func nthSectionAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis,
 		if err != nil {
 			return nil, errors.Annotate(err, "get suspect").Err()
 		}
-		culpritPb, err := culpritToPb(ctx, culprit, nsa)
+		culpritPb, err := CulpritToPb(ctx, culprit, nsa)
 		if err != nil {
 			return nil, errors.Annotate(err, "culprit to pb").Err()
 		}
@@ -187,7 +188,7 @@ func nthSectionAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis,
 	return result, nil
 }
 
-func culpritToPb(ctx context.Context, culprit *model.Suspect, nsa *model.TestNthSectionAnalysis) (*pb.TestCulprit, error) {
+func CulpritToPb(ctx context.Context, culprit *model.Suspect, nsa *model.TestNthSectionAnalysis) (*pb.TestCulprit, error) {
 	result := &pb.TestCulprit{
 		Commit: &buildbucketpb.GitilesCommit{
 			Host:     culprit.GitilesCommit.Host,
@@ -198,7 +199,7 @@ func culpritToPb(ctx context.Context, culprit *model.Suspect, nsa *model.TestNth
 		},
 		ReviewUrl:     culprit.ReviewUrl,
 		ReviewTitle:   culprit.ReviewTitle,
-		CulpritAction: culpritActionsForSuspect(culprit),
+		CulpritAction: CulpritActionsForSuspect(culprit),
 	}
 
 	verificationDetails, err := testVerificationDetails(ctx, culprit, nsa)
@@ -209,7 +210,7 @@ func culpritToPb(ctx context.Context, culprit *model.Suspect, nsa *model.TestNth
 	return result, nil
 }
 
-func testFailureBundleToPb(ctx context.Context, bundle *model.TestFailureBundle) []*pb.TestFailure {
+func TestFailureBundleToPb(ctx context.Context, bundle *model.TestFailureBundle) []*pb.TestFailure {
 	result := []*pb.TestFailure{}
 	// Add primary test failure first, and the rest.
 	// Primary should not be nil here, because it is from GetTestFailureBundle.
@@ -347,4 +348,46 @@ func rerunTestSingleResultToPb(ctx context.Context, singleResult model.RerunSing
 	pb.TestId = tf.TestID
 	pb.VariantHash = tf.VariantHash
 	return pb, nil
+}
+
+func CulpritActionsForSuspect(suspect *model.Suspect) []*pb.CulpritAction {
+	culpritActions := []*pb.CulpritAction{}
+	if suspect.IsRevertCommitted {
+		// culprit action for auto-committing a revert
+		culpritActions = append(culpritActions, &pb.CulpritAction{
+			ActionType:  pb.CulpritActionType_CULPRIT_AUTO_REVERTED,
+			RevertClUrl: suspect.RevertURL,
+			ActionTime:  timestamppb.New(suspect.RevertCommitTime),
+		})
+	} else if suspect.IsRevertCreated {
+		// culprit action for creating a revert
+		culpritActions = append(culpritActions, &pb.CulpritAction{
+			ActionType:  pb.CulpritActionType_REVERT_CL_CREATED,
+			RevertClUrl: suspect.RevertURL,
+			ActionTime:  timestamppb.New(suspect.RevertCreateTime),
+		})
+	} else if suspect.HasSupportRevertComment {
+		// culprit action for commenting on an existing revert
+		culpritActions = append(culpritActions, &pb.CulpritAction{
+			ActionType:  pb.CulpritActionType_EXISTING_REVERT_CL_COMMENTED,
+			RevertClUrl: suspect.RevertURL,
+			ActionTime:  timestamppb.New(suspect.SupportRevertCommentTime),
+		})
+	} else if suspect.HasCulpritComment {
+		// culprit action for commenting on the culprit
+		culpritActions = append(culpritActions, &pb.CulpritAction{
+			ActionType: pb.CulpritActionType_CULPRIT_CL_COMMENTED,
+			ActionTime: timestamppb.New(suspect.CulpritCommentTime),
+		})
+	} else {
+		action := &pb.CulpritAction{
+			ActionType:     pb.CulpritActionType_NO_ACTION,
+			InactionReason: suspect.InactionReason,
+		}
+		if suspect.RevertURL != "" {
+			action.RevertClUrl = suspect.RevertURL
+		}
+		culpritActions = append(culpritActions, action)
+	}
+	return culpritActions
 }

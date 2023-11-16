@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package server
+package protoutil
 
 import (
 	"context"
@@ -251,7 +251,7 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 		So(datastore.Put(ctx, nsa), ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
-		tfaProto, err := testFailureAnalysisToPb(ctx, tfa)
+		tfaProto, err := TestFailureAnalysisToPb(ctx, tfa)
 		So(err, ShouldBeNil)
 
 		pbSuspectRerun := &pb.TestSingleRerun{
@@ -471,7 +471,7 @@ func TestRegressionRange(t *testing.T) {
 				},
 			},
 		}
-		pbNsa, err := nthSectionAnalysisToPb(ctx, tfa, nsa, sourceRef)
+		pbNsa, err := NthSectionAnalysisToPb(ctx, tfa, nsa, sourceRef)
 		So(err, ShouldBeNil)
 		So(pbNsa.RemainingNthSectionRange, ShouldResembleProto, &pb.RegressionRange{
 			LastPassed: &buildbucketpb.GitilesCommit{
@@ -503,7 +503,7 @@ func TestRegressionRange(t *testing.T) {
 			},
 		})
 
-		pbNsa, err = nthSectionAnalysisToPb(ctx, tfa, nsa, sourceRef)
+		pbNsa, err = NthSectionAnalysisToPb(ctx, tfa, nsa, sourceRef)
 		So(err, ShouldBeNil)
 		So(pbNsa.RemainingNthSectionRange, ShouldResembleProto, &pb.RegressionRange{
 			LastPassed: &buildbucketpb.GitilesCommit{
