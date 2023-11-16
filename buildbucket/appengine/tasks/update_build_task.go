@@ -161,14 +161,13 @@ func validateBuildTaskUpdate(ctx context.Context, req *pb.BuildTaskUpdate) error
 
 // validateBuildTask ensures that the taskID provided in the request matches
 // the taskID that is stored in the build model. If there is no task associated
-// with the build, the task is associated here.
+// with the build, an error is returned and the update message is lost.
 func validateBuildTask(ctx context.Context, req *pb.BuildTaskUpdate, infra *model.BuildInfra) error {
-	if infra.Proto.GetBackend() == nil {
-		infra.Proto.Backend = &pb.BuildInfra_Backend{}
-	}
 	switch {
-	case infra.Proto.Backend.GetTask() == nil:
-		infra.Proto.Backend.Task = &pb.Task{}
+	case infra.Proto.GetBackend() == nil:
+		return appstatus.Errorf(codes.NotFound, "Build %s does not support task backend", req.BuildId)
+	case infra.Proto.Backend.GetTask().GetId().GetId() == "":
+		return appstatus.Errorf(codes.NotFound, "No task is associated with the build. Cannot update.")
 	case infra.Proto.Backend.Task.Id.GetTarget() != req.Task.Id.GetTarget() || (infra.Proto.Backend.Task.Id.GetId() != "" && infra.Proto.Backend.Task.Id.GetId() != req.Task.Id.GetId()):
 		return errors.Reason("TaskID in request does not match TaskID associated with build").Err()
 	}
@@ -265,7 +264,7 @@ func updateBuildTask(ctx context.Context, req buildTaskUpdate) error {
 	// Pre-check if the task can be updated before updating it with a transaction.
 	// Ensures that the taskID provided in the request matches the taskID that is
 	// stored in the build model. If there is no task associated with the build model,
-	// the task is associated here in buildInfra.Infra.Backend.Task.
+	// an error is returned and the update message is lost.
 	err = validateBuildTask(ctx, req.BuildTaskUpdate, infra)
 	if err != nil {
 		return errors.Annotate(err, "invalid task").Err()

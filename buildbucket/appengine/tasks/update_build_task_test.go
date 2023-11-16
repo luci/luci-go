@@ -82,7 +82,7 @@ func TestValidateBuildTask(t *testing.T) {
 				},
 			}
 			err := validateBuildTask(ctx, req, infra)
-			So(err, ShouldBeNil)
+			So(err, ShouldErrLike, "Build 1 does not support task backend")
 		})
 		Convey("task not in build infra", func() {
 			infra := &model.BuildInfra{
@@ -102,7 +102,7 @@ func TestValidateBuildTask(t *testing.T) {
 				},
 			}
 			err := validateBuildTask(ctx, req, infra)
-			So(err, ShouldBeNil)
+			So(err, ShouldErrLike, "No task is associated with the build. Cannot update.")
 		})
 		Convey("task ID target mismatch", func() {
 			infra := &model.BuildInfra{
@@ -137,12 +137,9 @@ func TestValidateBuildTask(t *testing.T) {
 				Proto: &pb.BuildInfra{
 					Backend: &pb.BuildInfra_Backend{
 						Task: &pb.Task{
-							Status: pb.Status_SCHEDULED,
 							Id: &pb.TaskID{
-								Id:     "",
 								Target: "swarming",
 							},
-							Link: "www.website.com",
 						},
 					},
 				},
@@ -159,7 +156,7 @@ func TestValidateBuildTask(t *testing.T) {
 				},
 			}
 			err := validateBuildTask(ctx, req, infra)
-			So(err, ShouldBeNil)
+			So(err, ShouldErrLike, "No task is associated with the build. Cannot update.")
 		})
 		Convey("task is complete and success", func() {
 			infra := &model.BuildInfra{
@@ -654,7 +651,7 @@ func TestUpdateBuildTask(t *testing.T) {
 
 		t0 := testclock.TestRecentTimeUTC
 
-		// Create and save a sample build in the datastore.
+		// Create a "scheduled" build.
 		build := &model.Build{
 			ID: 1,
 			Proto: &pb.Build{
@@ -683,18 +680,20 @@ func TestUpdateBuildTask(t *testing.T) {
 				Backend: &pb.BuildInfra_Backend{
 					Task: &pb.Task{
 						Id: &pb.TaskID{
-							Id:     "one",
 							Target: "swarming://chromium-swarm",
 						},
-						Status:   pb.Status_SCHEDULED,
-						UpdateId: 1,
+						UpdateId: 0,
 					},
 				},
 			},
 		}
-		So(datastore.Put(ctx, build, infra), ShouldBeNil)
 
 		Convey("ok", func() {
+			// Update the backend task as if RunTask had responded.
+			infra.Proto.Backend.Task.Id.Id = "one"
+			infra.Proto.Backend.Task.UpdateId = 1
+			infra.Proto.Backend.Task.Status = pb.Status_SCHEDULED
+			So(datastore.Put(ctx, build, infra), ShouldBeNil)
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
@@ -715,6 +714,24 @@ func TestUpdateBuildTask(t *testing.T) {
 			So(expectedBuildInfra.Proto.Backend.Task.Status, ShouldEqual, pb.Status_STARTED)
 			So(expectedBuildInfra.Proto.Backend.Task.UpdateId, ShouldEqual, 2)
 			So(expectedBuildInfra.Proto.Backend.Task.SummaryMarkdown, ShouldEqual, "imo, html is ugly to read")
+		})
+
+		Convey("task is not registered", func() {
+			So(datastore.Put(ctx, build, infra), ShouldBeNil)
+			req := &pb.BuildTaskUpdate{
+				BuildId: "1",
+				Task: &pb.Task{
+					Status: pb.Status_STARTED,
+					Id: &pb.TaskID{
+						Id:     "one",
+						Target: "swarming://chromium-swarm",
+					},
+					UpdateId:        2,
+					SummaryMarkdown: "imo, html is ugly to read",
+				},
+			}
+			body := makeUpdateBuildTaskPubsubMsg(req, "msg_id_1")
+			So(UpdateBuildTask(ctx, body), ShouldErrLike, "No task is associated with the build. Cannot update.")
 		})
 	})
 }

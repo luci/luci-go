@@ -227,6 +227,11 @@ func (x *TaskID) GetId() string {
 // pubsub topic corresponding with that backend. Buildbucket handles these
 // pubsub messages with the UpdateBuildTask cloud task.
 // Backends must use this proto when sending pubsub updates to buildbucket.
+//
+// NOTE: If the task has not been registered with buildbucket yet (by means of
+// RunTask returning or StartBuild doing an initial associaton of the task to
+// the build), then the message will be dropped and lost forever.
+// Use with caution.
 type BuildTaskUpdate struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
