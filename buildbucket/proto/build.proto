@@ -126,7 +126,7 @@ message Build {
     Status status = 6;
     StatusDetails status_details = 7;
     // Deprecated. Use summary_markdown instead.
-    string summary_html = 8;
+    string summary_html = 8 [deprecated = true];
     string summary_markdown = 2;
   }
 
@@ -525,7 +525,8 @@ message BuildInfra {
 
         Status status = 2;
         StatusDetails status_details = 3;
-        string summary_html = 4;
+        // Deprecated. Use summary_markdown instead.
+        string summary_html = 4 [deprecated = true];
 
         // The agent's resolved CIPD ${platform} (e.g. "linux-amd64",
         // "windows-386", etc.).
@@ -541,6 +542,7 @@ message BuildInfra {
         // Total installation duration for all input data. Currently only record
         // cipd packages installation time.
         google.protobuf.Duration total_duration = 6;
+        string summary_markdown = 7;
       }
 
       // TODO(crbug.com/1297809): for a long-term solution, we may need to add

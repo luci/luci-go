@@ -391,7 +391,7 @@ func downloadInputs(ctx context.Context, cwd string, c clientInput) int {
 	if err != nil {
 		logging.Errorf(ctx, "Failure in installing user packages: %s", err)
 		agent.Output.Status = bbpb.Status_FAILURE
-		agent.Output.SummaryHtml = err.Error()
+		agent.Output.SummaryMarkdown = err.Error()
 		updateReq.Build.Output = &bbpb.Build_Output{
 			Status:          bbpb.Status_INFRA_FAILURE,
 			SummaryMarkdown: "Failed to install user packages for this build",
