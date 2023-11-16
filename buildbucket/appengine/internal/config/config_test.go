@@ -197,50 +197,94 @@ func TestConfig(t *testing.T) {
 				backends {
 					target: ""
 					hostname: "chromium-swarm-dev.appspot.com"
+					lite_mode {}
 				}
 			`)
 			So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
 			So(vctx.Finalize(), ShouldBeNil)
 		})
 
-		Convey("invalid backend build_sync_setting", func() {
-			Convey("sync_interval_seconds", func() {
-				content := []byte(`
-				logdog {
-					hostname: "logs.chromium.org"
-				}
-				resultdb {
-					hostname: "results.api.cr.dev"
-				}
-				backends {
-					target: "swarming://chromium-swarm"
-					hostname: "chromium-swarm.appspot.com"
-					build_sync_setting {
-						sync_interval_seconds: 30
-					}
-				}
-			`)
-				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, "sync_interval_seconds must be greater than or equal to 60")
+		Convey("invalid backend full mode", func() {
+			Convey("build_sync_setting", func() {
+				Convey("sync_interval_seconds", func() {
+					content := []byte(`
+						logdog {
+							hostname: "logs.chromium.org"
+						}
+						resultdb {
+							hostname: "results.api.cr.dev"
+						}
+						backends {
+							target: "swarming://chromium-swarm"
+							hostname: "chromium-swarm.appspot.com"
+							full_mode {
+								build_sync_setting {
+									sync_interval_seconds: 30
+								}
+								pubsub_id: "topic"
+							}
+						}
+					`)
+					So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
+					So(vctx.Finalize().Error(), ShouldContainSubstring, "sync_interval_seconds must be greater than or equal to 60")
+				})
+				Convey("shards", func() {
+					content := []byte(`
+						logdog {
+							hostname: "logs.chromium.org"
+						}
+						resultdb {
+							hostname: "results.api.cr.dev"
+						}
+						backends {
+							target: "swarming://chromium-swarm"
+							hostname: "chromium-swarm.appspot.com"
+							full_mode {
+								build_sync_setting {
+									shards: -60
+								}
+								pubsub_id: "topic"
+							}
+						}
+					`)
+					So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
+					So(vctx.Finalize().Error(), ShouldContainSubstring, "shards must be greater than or equal to 0")
+				})
 			})
-			Convey("shards", func() {
+			Convey("pubsub_id", func() {
 				content := []byte(`
-				logdog {
-					hostname: "logs.chromium.org"
-				}
-				resultdb {
-					hostname: "results.api.cr.dev"
-				}
-				backends {
-					target: "swarming://chromium-swarm"
-					hostname: "chromium-swarm.appspot.com"
-					build_sync_setting {
-						shards: -60
-					}
-				}
-			`)
+						logdog {
+							hostname: "logs.chromium.org"
+						}
+						resultdb {
+							hostname: "results.api.cr.dev"
+						}
+						backends {
+							target: "swarming://chromium-swarm"
+							hostname: "chromium-swarm.appspot.com"
+							full_mode {
+							}
+						}
+					`)
 				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, "shards must be greater than or equal to 0")
+				So(vctx.Finalize().Error(), ShouldContainSubstring, "pubsub_id for UpdateBuildTask must be specified")
+			})
+
+			Convey("empty", func() {
+				content := []byte(`
+						logdog {
+							hostname: "logs.chromium.org"
+						}
+						resultdb {
+							hostname: "results.api.cr.dev"
+						}
+						backends {
+							target: "swarming://chromium-swarm"
+							hostname: "chromium-swarm.appspot.com"
+						}
+					`)
+				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, "mode field is not set or its type is unsupported")
 			})
 		})
 
@@ -287,6 +331,9 @@ func TestConfig(t *testing.T) {
 				backends {
 					target: "swarming://chromium-swarm"
 					hostname: "chromium-swarm.appspot.com"
+					full_mode {
+						pubsub_id: "topic"
+					}
 				}
 			`
 			So(validateSettingsCfg(vctx, configSet, path, []byte(okCfg)), ShouldBeNil)

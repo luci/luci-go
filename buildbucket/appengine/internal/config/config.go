@@ -68,13 +68,29 @@ func validateSettingsCfg(ctx *validation.Context, configSet, path string, conten
 	for i, backend := range cfg.GetBackends() {
 		ctx.Enter("Backends.BackendSetting #%d", i)
 		validateHostname(ctx, "BackendSetting.hostname", backend.GetHostname())
+		// TODO(crbug.com/1502021): delete it once `mode` really takes effect.
 		validateBuildSyncSetting(ctx, backend.GetBuildSyncSetting())
+
+		switch backend.Mode.(type) {
+		case *pb.BackendSetting_FullMode_:
+			validateBackendFullMode(ctx, backend.GetFullMode())
+		case *pb.BackendSetting_LiteMode_:
+		default:
+			ctx.Errorf("mode field is not set or its type is unsupported")
+		}
 		ctx.Exit()
 	}
 
 	validateHostname(ctx, "logdog.hostname", cfg.Logdog.GetHostname())
 	validateHostname(ctx, "resultdb.hostname", cfg.Resultdb.GetHostname())
 	return nil
+}
+
+func validateBackendFullMode(ctx *validation.Context, m *pb.BackendSetting_FullMode) {
+	if m.PubsubId == "" {
+		ctx.Errorf("pubsub_id for UpdateBuildTask must be specified")
+	}
+	validateBuildSyncSetting(ctx, m.GetBuildSyncSetting())
 }
 
 func validateSwarmingSettings(ctx *validation.Context, s *pb.SwarmingSettings) {
