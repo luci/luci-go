@@ -303,7 +303,21 @@ func resetLeased(ctx context.Context, client gerrit.Client, in *ResetInput, cl *
 	})
 
 	removeErr := c.removeVotesAndPostMsg(ctx, ci, in.Triggers.GetCqVoteTrigger(), in.Message, in.Notify, in.AddToAttentionSet, in.AttentionReason)
-	if removeErr == nil || !ErrResetPermanentTag.In(removeErr) {
+	switch {
+	case removeErr == nil:
+		_, outErr := in.CLMutator.Update(ctx, in.LUCIProject, in.CL.ID, func(cl *changelist.CL) error {
+			if cl.Snapshot == nil || cl.Snapshot.GetOutdated() != nil {
+				return changelist.ErrStopMutation // noop
+			}
+			cl.Snapshot.Outdated = &changelist.Snapshot_Outdated{}
+			return nil
+		})
+		if outErr != nil {
+			// Let's log and ignore the error.
+			logging.Errorf(ctx, "CLMutator.Update: ignoring %s", outErr)
+		}
+		return nil
+	case !ErrResetPermanentTag.In(removeErr):
 		return removeErr
 	}
 

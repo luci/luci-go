@@ -46,13 +46,22 @@ const maxConcurrency = 16
 type Triggerer struct {
 	pmNotifier *prjmanager.Notifier
 	gFactory   gerrit.Factory
+	clUpdater  clUpdater
+	clMutator  *changelist.Mutator
+}
+
+// clUpdater is a subset of the *changelist.Updater which Triggerer needs.
+type clUpdater interface {
+	Schedule(context.Context, *changelist.UpdateCLTask) error
 }
 
 // New creates a Triggerer.
-func New(n *prjmanager.Notifier, gf gerrit.Factory) *Triggerer {
+func New(n *prjmanager.Notifier, gf gerrit.Factory, clu clUpdater, clm *changelist.Mutator) *Triggerer {
 	v := &Triggerer{
 		pmNotifier: n,
 		gFactory:   gf,
+		clUpdater:  clu,
+		clMutator:  clm,
 	}
 	n.TasksBinding.TriggerProjectCLDeps.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
@@ -104,7 +113,7 @@ func (tr *Triggerer) makeDispatcherChannel(ctx context.Context, task *prjpb.Trig
 			panic(fmt.Errorf("unexpected batch data item type %T", data.Data[0].Item))
 		}
 		ctx := logging.SetFields(ctx, logging.Fields{"cl": op.depCLID})
-		return op.execute(ctx, tr.gFactory, prj)
+		return op.execute(ctx, tr.gFactory, prj, tr.clMutator, tr.clUpdater)
 	})
 	if err != nil {
 		panic(fmt.Errorf("cltriggerer: unexpected failure in dispatcher creation"))

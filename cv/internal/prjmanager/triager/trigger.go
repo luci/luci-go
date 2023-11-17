@@ -92,7 +92,7 @@ func computeSortedCLIDs(clinfos map[int64]*clInfo) []int64 {
 		return nil
 	}
 	clids := make([]int64, 0, len(clinfos))
-	for clid, _ := range clinfos {
+	for clid := range clinfos {
 		clids = append(clids, clid)
 	}
 	sort.Slice(clids, func(i, j int) bool {
@@ -101,8 +101,8 @@ func computeSortedCLIDs(clinfos map[int64]*clInfo) []int64 {
 	return clids
 }
 
-// canScheduleTriggerCLDeps returns whether triager can schedule a new TriggeringCLDeps
-// for a given CL.
+// canScheduleTriggerCLDeps returns whether triager can schedule
+// a new TriggeringCLDeps for a given CL.
 //
 // Panic if the ci has no needToTrigger
 func canScheduleTriggerCLDeps(ctx context.Context, clid int64, cls map[int64]*clInfo) bool {
@@ -115,6 +115,8 @@ func canScheduleTriggerCLDeps(ctx context.Context, clid int64, cls map[int64]*cl
 		return false
 	}
 	switch {
+	case ci.pcl.GetOutdated() != nil:
+		return false
 	case len(ci.deps.notYetLoaded) > 0:
 		return false
 	case ci.purgingCL != nil || len(ci.purgeReasons) > 0:
@@ -137,6 +139,8 @@ func canScheduleTriggerCLDeps(ctx context.Context, clid int64, cls map[int64]*cl
 		switch dci, ok := cls[dep.GetClid()]; {
 		case !ok:
 			continue
+		case dci.pcl.GetOutdated() != nil:
+			return false
 		case dci.purgingCL != nil, len(dci.purgeReasons) > 0:
 			return false
 		case dci.triggeringCLDeps != nil:

@@ -19,8 +19,9 @@ import (
 	"fmt"
 	"time"
 
-	"go.chromium.org/luci/common/clock"
 	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/common/clock"
 
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
@@ -33,7 +34,7 @@ func stagePurges(ctx context.Context, cls map[int64]*clInfo, pm pmState) ([]*prj
 	var out []*prjpb.PurgeCLTask
 	next := time.Time{}
 	for clid, info := range cls {
-		if info.purgingCL != nil {
+		if info.purgingCL != nil || info.pcl.GetOutdated() != nil {
 			// the CL is already being purged, do not schedule a new task.
 			continue
 		}
@@ -68,8 +69,8 @@ func stagePurges(ctx context.Context, cls map[int64]*clInfo, pm pmState) ([]*prj
 	}
 	return out, next
 }
-func (ci *clInfo) isTriggered() bool {
-	return ci.pcl.GetTriggers().GetCqVoteTrigger() != nil || ci.pcl.GetTriggers().GetNewPatchsetRunTrigger() != nil
+func (info *clInfo) isTriggered() bool {
+	return info.pcl.GetTriggers().GetCqVoteTrigger() != nil || info.pcl.GetTriggers().GetNewPatchsetRunTrigger() != nil
 }
 
 // purgeETA returns the earliest time a CL may be purged and Zero time if CL

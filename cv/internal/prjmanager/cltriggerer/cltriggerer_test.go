@@ -17,6 +17,7 @@ package cltriggerer
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -40,7 +41,7 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
-	// . "go.chromium.org/luci/common/testing/assertions"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTriggerer(t *testing.T) {
@@ -89,9 +90,17 @@ func TestTriggerer(t *testing.T) {
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		tjNotifier := tryjob.NewNotifier(ct.TQDispatcher)
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, nil, tjNotifier)
+
+		// The real CL Updater for realistic CL Snapshot in datastore.
 		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
 		gerritupdater.RegisterUpdater(clUpdater, ct.GFactory())
-		triggerer := New(pmNotifier, ct.GFactory())
+
+		// triggerer with fakeCLUpdater so that tests can examine the scheduled
+		// tasks.
+		fakeCLUpdater := &clUpdaterMock{}
+		triggerer := New(pmNotifier, ct.GFactory(), fakeCLUpdater, clMutator)
+
+		// helper functions
 		refreshCL := func() {
 			for _, change := range []int64{change1, change2, change3} {
 				So(clUpdater.TestingForceUpdate(ctx, &changelist.UpdateCLTask{
@@ -159,6 +168,29 @@ func TestTriggerer(t *testing.T) {
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLDepsTaskClass))
 			So(ct.FailedTQTasks, ShouldHaveLength, 0)
 
+			Convey("schedules CL update tasks for deps", func() {
+				var tasks []*changelist.UpdateCLTask
+				tasks = append(tasks, fakeCLUpdater.scheduledTasks...)
+				sort.Slice(tasks, func(i, j int) bool {
+					return string(tasks[i].ExternalId) < string(tasks[j].ExternalId)
+				})
+
+				cl1, cl2 := loadCL(change1), loadCL(change2)
+				So(tasks, ShouldHaveLength, 2)
+				So(tasks[0], ShouldResembleProto, &changelist.UpdateCLTask{
+					LuciProject: project,
+					ExternalId:  string(cl1.ExternalID),
+					Id:          int64(cl1.ID),
+					Requester:   changelist.UpdateCLTask_DEP_CL_TRIGGERER,
+				})
+				So(tasks[1], ShouldResembleProto, &changelist.UpdateCLTask{
+					LuciProject: project,
+					ExternalId:  string(cl2.ExternalID),
+					Id:          int64(cl2.ID),
+					Requester:   changelist.UpdateCLTask_DEP_CL_TRIGGERER,
+				})
+			})
+
 			// Verify that change 1 and 2 now have a CQ vote.
 			expectedMsg := func(mode string) string {
 				return fmt.Sprintf("Triggering %s, because %s is triggered on %s",
@@ -170,6 +202,7 @@ func TestTriggerer(t *testing.T) {
 			So(v1.GetMode(), ShouldEqual, string(run.FullRun))
 			So(v1.GetGerritAccountId(), ShouldEqual, voterAccountID)
 			So(ci1, gf.ShouldLastMessageContain, expectedMsg(v1.GetMode()))
+			So(loadCL(change1).Snapshot.GetOutdated(), ShouldNotBeNil)
 
 			// So change2 does.
 			ci2 := ct.GFake.GetChange(gHost, int(change2)).Info
@@ -177,6 +210,7 @@ func TestTriggerer(t *testing.T) {
 			So(v2.GetMode(), ShouldEqual, string(run.FullRun))
 			So(v2.GetGerritAccountId(), ShouldEqual, voterAccountID)
 			So(ci2, gf.ShouldLastMessageContain, expectedMsg(v2.GetMode()))
+			So(loadCL(change2).Snapshot.GetOutdated(), ShouldNotBeNil)
 		})
 
 		Convey("skips voting, if deadline exceeded", func() {
@@ -196,14 +230,17 @@ func TestTriggerer(t *testing.T) {
 			So(ct.FailedTQTasks, ShouldHaveLength, 0)
 			ci1 := ct.GFake.GetChange(gHost, int(change1)).Info
 			So(findCQVoteTrigger(ci1), ShouldBeNil)
+			So(loadCL(change1).Snapshot.GetOutdated(), ShouldBeNil)
 			ci2 := ct.GFake.GetChange(gHost, int(change2)).Info
 			So(findCQVoteTrigger(ci2), ShouldBeNil)
+			So(loadCL(change2).Snapshot.GetOutdated(), ShouldBeNil)
 
 			assertPMNotified(&prjpb.TriggeringCLDepsCompleted{
 				OperationId: opID,
 				Origin:      clid3,
 				Incompleted: []int64{clid1, clid2},
 			})
+			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 0)
 		})
 
 		Convey("noop if already voted", func() {
@@ -228,8 +265,10 @@ func TestTriggerer(t *testing.T) {
 			// no SetReviewRequest(s) should have been sent.
 			ci1 := ct.GFake.GetChange(gHost, int(change1)).Info
 			So(findCQVoteTrigger(ci1).GetMode(), ShouldEqual, string(run.FullRun))
+			So(loadCL(change1).Snapshot.GetOutdated(), ShouldBeNil)
 			ci2 := ct.GFake.GetChange(gHost, int(change2)).Info
 			So(findCQVoteTrigger(ci2).GetMode(), ShouldEqual, string(run.FullRun))
+			So(loadCL(change2).Snapshot.GetOutdated(), ShouldBeNil)
 			assertPMNotified(&prjpb.TriggeringCLDepsCompleted{
 				OperationId: opID,
 				Origin:      clid3,
@@ -239,6 +278,7 @@ func TestTriggerer(t *testing.T) {
 				_, ok := req.(*gerritpb.SetReviewRequest)
 				So(ok, ShouldBeFalse)
 			}
+			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 0)
 		})
 
 		Convey("overrides CQ+1", func() {
@@ -253,12 +293,37 @@ func TestTriggerer(t *testing.T) {
 			So(ct.FailedTQTasks, ShouldHaveLength, 0)
 			ci1 := ct.GFake.GetChange(gHost, int(change1)).Info
 			So(findCQVoteTrigger(ci1).GetMode(), ShouldEqual, string(run.FullRun))
+			So(loadCL(change1).Snapshot.GetOutdated(), ShouldNotBeNil)
 			ci2 := ct.GFake.GetChange(gHost, int(change2)).Info
 			So(findCQVoteTrigger(ci2).GetMode(), ShouldEqual, string(run.FullRun))
+			So(loadCL(change2).Snapshot.GetOutdated(), ShouldNotBeNil)
 			assertPMNotified(&prjpb.TriggeringCLDepsCompleted{
 				OperationId: opID,
 				Origin:      clid3,
 				Succeeded:   []int64{clid1, clid2},
+			})
+
+			Convey("schedules CL update tasks for deps", func() {
+				var tasks []*changelist.UpdateCLTask
+				tasks = append(tasks, fakeCLUpdater.scheduledTasks...)
+				sort.Slice(tasks, func(i, j int) bool {
+					return string(tasks[i].ExternalId) < string(tasks[j].ExternalId)
+				})
+
+				cl1, cl2 := loadCL(change1), loadCL(change2)
+				So(tasks, ShouldHaveLength, 2)
+				So(tasks[0], ShouldResembleProto, &changelist.UpdateCLTask{
+					LuciProject: project,
+					ExternalId:  string(cl1.ExternalID),
+					Id:          int64(cl1.ID),
+					Requester:   changelist.UpdateCLTask_DEP_CL_TRIGGERER,
+				})
+				So(tasks[1], ShouldResembleProto, &changelist.UpdateCLTask{
+					LuciProject: project,
+					ExternalId:  string(cl2.ExternalID),
+					Id:          int64(cl2.ID),
+					Requester:   changelist.UpdateCLTask_DEP_CL_TRIGGERER,
+				})
 			})
 		})
 		Convey("handle permanent errors", func() {
@@ -274,8 +339,10 @@ func TestTriggerer(t *testing.T) {
 			So(ct.FailedTQTasks, ShouldHaveLength, 0)
 			ci1 := ct.GFake.GetChange(gHost, int(change1)).Info
 			So(findCQVoteTrigger(ci1), ShouldBeNil)
+			So(loadCL(change1).Snapshot.GetOutdated(), ShouldBeNil)
 			ci2 := ct.GFake.GetChange(gHost, int(change2)).Info
 			So(findCQVoteTrigger(ci2), ShouldBeNil)
+			So(loadCL(change2).Snapshot.GetOutdated(), ShouldBeNil)
 			assertPMNotified(&prjpb.TriggeringCLDepsCompleted{
 				OperationId: opID,
 				Origin:      clid3,
@@ -294,6 +361,7 @@ func TestTriggerer(t *testing.T) {
 					},
 				},
 			})
+			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 0)
 		})
 	})
 }
@@ -326,4 +394,13 @@ func makeConfig(gHost string, gRepo string) *cfgpb.Config {
 			},
 		},
 	}
+}
+
+type clUpdaterMock struct {
+	scheduledTasks []*changelist.UpdateCLTask
+}
+
+func (c *clUpdaterMock) Schedule(_ context.Context, task *changelist.UpdateCLTask) error {
+	c.scheduledTasks = append(c.scheduledTasks, task)
+	return nil
 }

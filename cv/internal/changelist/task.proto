@@ -42,6 +42,7 @@ message UpdateCLTask {
     FULL_POLL_UNMATCHED = 3;
     PUBSUB_POLL = 4;
     CL_PURGER = 5;
+    DEP_CL_TRIGGERER = 12;
     RPC_ADMIN = 6;
     RUN_POKE = 7;
     RUN_REMOVAL = 8;

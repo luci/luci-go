@@ -206,6 +206,7 @@ func TestPurgeCL(t *testing.T) {
 
 			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 1)
 			assertPMNotified(task.PurgingCl)
+			So(loadCL().Snapshot.GetOutdated(), ShouldNotBeNil)
 
 			Convey("Idempotent: if TQ task is retried, just notify PM", func() {
 				verifyIdempotency := func() {
@@ -224,10 +225,17 @@ func TestPurgeCL(t *testing.T) {
 				// Idempotency must not rely on CL being updated between retries.
 				Convey("CL updated between retries", func() {
 					verifyIdempotency()
+					// should remain with the same value in Outdated.
+					So(loadCL().Snapshot.GetOutdated(), ShouldNotBeNil)
 				})
 				Convey("CL not updated between retries", func() {
 					refreshCL()
+					// Outdated should be nil after refresh().
+					So(loadCL().Snapshot.GetOutdated(), ShouldBeNil)
 					verifyIdempotency()
+					// Idempotency should not make it outdated, because
+					// no purge is performed actually.
+					So(loadCL().Snapshot.GetOutdated(), ShouldBeNil)
 				})
 			})
 		})
@@ -252,7 +260,7 @@ func TestPurgeCL(t *testing.T) {
 
 				So(schedule(), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
-				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion) // no changes.
+				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion+1) // +1 for setting Outdated{}
 				assertPMNotified(task.PurgingCl)
 				// The PM task should be ASAP.
 				So(pmDispatcher.LatestETAof(lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))

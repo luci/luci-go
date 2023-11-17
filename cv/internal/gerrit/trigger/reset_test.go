@@ -164,6 +164,11 @@ func TestReset(t *testing.T) {
 			c.So(err, la.ShouldErrLike, "failed to reset trigger because CV lost access to this CL")
 			c.So(ErrResetPreconditionFailedTag.In(err), c.ShouldBeTrue)
 		})
+		isOutdated := func(cl *changelist.CL) bool {
+			e := &changelist.CL{ID: cl.ID}
+			c.So(datastore.Get(ctx, e), c.ShouldBeNil)
+			return e.Snapshot.GetOutdated() != nil
+		}
 
 		c.Convey("Fails PreCondition if CL has newer PS in datastore", func() {
 			input.Triggers.CqVoteTrigger = cqTrigger
@@ -190,6 +195,7 @@ func TestReset(t *testing.T) {
 			err := Reset(ctx, input)
 			c.So(err, la.ShouldErrLike, "failed to reset because ps 2 is not current for cl(99999)")
 			c.So(ErrResetPreconditionFailedTag.In(err), c.ShouldBeTrue)
+			c.So(isOutdated(cl), c.ShouldBeFalse)
 		})
 
 		c.Convey("Fails PreCondition if CL has newer PS in Gerrit", func() {
@@ -200,6 +206,7 @@ func TestReset(t *testing.T) {
 			err := Reset(ctx, input)
 			c.So(err, la.ShouldErrLike, "failed to reset because ps 2 is not current for x-review.example.com/10001")
 			c.So(ErrResetPreconditionFailedTag.In(err), c.ShouldBeTrue)
+			c.So(isOutdated(cl), c.ShouldBeFalse)
 		})
 
 		c.Convey("Cancelling CQ Vote fails if receive stale data from gerrit", func() {
@@ -210,6 +217,7 @@ func TestReset(t *testing.T) {
 			err := Reset(ctx, input)
 			c.So(err, la.ShouldErrLike, gerrit.ErrStaleData)
 			c.So(transient.Tag.In(err), c.ShouldBeTrue)
+			c.So(isOutdated(cl), c.ShouldBeFalse)
 		})
 
 		c.Convey("Cancelling NewPatchsetRun", func() {
@@ -221,6 +229,9 @@ func TestReset(t *testing.T) {
 			originalValue := cl.TriggerNewPatchsetRunAfterPS
 
 			c.So(Reset(ctx, input), c.ShouldBeNil)
+			// cancelling a new patchset run doesn't mark the snapshot
+			// as outdated.
+			c.So(isOutdated(cl), c.ShouldBeFalse)
 
 			cl = &changelist.CL{ID: input.CL.ID}
 			c.So(datastore.Get(ctx, cl), c.ShouldBeNil)
@@ -253,6 +264,7 @@ func TestReset(t *testing.T) {
 
 			err := Reset(ctx, input)
 			c.So(err, c.ShouldBeNil)
+			c.So(isOutdated(cl), c.ShouldBeTrue) // snapshot is outdated
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
 			c.So(resultCI.Info.GetMessages(), c.ShouldHaveLength, 1)
 			c.So(resultCI.Info.GetMessages()[0].GetMessage(), c.ShouldEqual, input.Message)
@@ -287,6 +299,7 @@ func TestReset(t *testing.T) {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			err := Reset(ctx, input)
 			c.So(err, c.ShouldBeNil)
+			c.So(isOutdated(cl), c.ShouldBeTrue) // snapshot is outdated
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
 			c.So(resultCI.Info.GetMessages(), c.ShouldHaveLength, 1)
 			c.So(resultCI.Info.GetMessages()[0].GetMessage(), c.ShouldEqual, input.Message)
@@ -326,6 +339,7 @@ func TestReset(t *testing.T) {
 			c.Convey("Success", func() {
 				err := Reset(ctx, input)
 				c.So(err, c.ShouldBeNil)
+				c.So(isOutdated(cl), c.ShouldBeTrue) // snapshot is outdated
 				resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
 				c.So(resultCI.Info.GetMessages(), c.ShouldHaveLength, 1)
 				c.So(resultCI.Info.GetMessages()[0].GetMessage(), c.ShouldEqual, input.Message)
@@ -365,6 +379,7 @@ func TestReset(t *testing.T) {
 				})
 				err := Reset(ctx, input)
 				c.So(err, c.ShouldBeNil)
+				c.So(isOutdated(cl), c.ShouldBeFalse)
 				onBehalfs, _ := splitSetReviewRequests()
 				c.So(onBehalfs, c.ShouldHaveLength, 3) // all non-triggering votes
 				for _, r := range onBehalfs {
@@ -440,6 +455,7 @@ func TestReset(t *testing.T) {
 			})
 			err := Reset(ctx, input)
 			c.So(err, c.ShouldBeNil)
+			c.So(isOutdated(cl), c.ShouldBeTrue) // snapshot is outdated
 
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
 			c.So(gf.NonZeroVotes(resultCI.Info, CQLabelName), c.ShouldBeEmpty)
@@ -466,6 +482,7 @@ func TestReset(t *testing.T) {
 
 			err := Reset(ctx, input)
 			c.So(err, c.ShouldBeNil)
+			c.So(isOutdated(cl), c.ShouldBeTrue) // snapshot is outdated
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
 			c.So(resultCI.Info.GetMessages(), c.ShouldHaveLength, 1)
 			c.So(resultCI.Info.GetMessages()[0].GetMessage(), c.ShouldEqual, input.Message)
@@ -482,6 +499,7 @@ func TestReset(t *testing.T) {
 			})
 			err := Reset(ctx, input)
 			c.So(err, c.ShouldBeNil)
+			c.So(isOutdated(cl), c.ShouldBeTrue) // snapshot is outdated
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
 			c.So(resultCI.Info.GetMessages(), c.ShouldHaveLength, 1)
 			c.So(resultCI.Info.GetMessages()[0].GetMessage(), c.ShouldEqual, input.Message)
@@ -496,6 +514,7 @@ func TestReset(t *testing.T) {
 				)
 			})
 			c.So(Reset(ctx, input), c.ShouldBeNil)
+			c.So(isOutdated(cl), c.ShouldBeFalse)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
 			// CQ+2 vote remains.
 			c.So(gf.NonZeroVotes(resultCI, CQLabelName), la.ShouldResembleProto, []*gerritpb.ApprovalInfo{
@@ -529,6 +548,7 @@ Bot data: {"action":"cancel","triggered_at":"2020-02-02T10:28:00Z","revision":"r
 			})
 			err := Reset(ctx, input)
 			c.So(err, c.ShouldBeNil)
+			c.So(isOutdated(cl), c.ShouldBeFalse)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
 			// CQ+2 vote remains.
 			c.So(gf.NonZeroVotes(resultCI, CQLabelName), la.ShouldResembleProto, []*gerritpb.ApprovalInfo{
@@ -552,6 +572,7 @@ Bot data: {"action":"cancel","triggered_at":"2020-02-02T10:28:00Z","revision":"r
 			})
 			err := Reset(ctx, input)
 			c.So(err, la.ShouldErrLike, "no permission to remove vote x-review.example.com/10001")
+			c.So(isOutdated(cl), c.ShouldBeFalse)
 			c.So(ErrResetPermanentTag.In(err), c.ShouldBeTrue)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
 			c.So(gf.NonZeroVotes(resultCI, CQLabelName), la.ShouldResembleProto, []*gerritpb.ApprovalInfo{

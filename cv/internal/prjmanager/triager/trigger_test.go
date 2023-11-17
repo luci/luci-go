@@ -122,6 +122,11 @@ func (ci *testCLInfo) SetTriggeringCLDeps() *testCLInfo {
 	return ci
 }
 
+func (ci *testCLInfo) Outdated() *testCLInfo {
+	ci.pcl.Outdated = &changelist.Snapshot_Outdated{}
+	return ci
+}
+
 func TestStageTriggerCLDeps(t *testing.T) {
 	t.Parallel()
 
@@ -177,6 +182,18 @@ func TestStageTriggerCLDeps(t *testing.T) {
 						DepClids:   []int64{cl1.Clid(), cl2.Clid()},
 						Trigger:    cq2,
 					},
+				})
+
+				Convey("unless outdated", func() {
+					Convey("the origin CL", func() {
+						cl3 = cl3.Outdated()
+					})
+					Convey("a dep CL", func() {
+						cl2 = cl2.Outdated()
+					})
+					triageDeps(cl1, cl2, cl3)
+					So(cl3.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid(), cl2.Clid()})
+					So(stageTriggerCLDeps(ctx, cls), ShouldBeNil)
 				})
 
 				Convey("retriaging it should be noop", func() {
