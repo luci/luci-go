@@ -1,0 +1,23 @@
+// Copyright 2023 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package swarming.internals.cfg;
+
+option go_package = "go.chromium.org/luci/swarming/server/cfg/internalcfgpb";
+
+import "go.chromium.org/luci/swarming/proto/config/bots.proto";
+import "go.chromium.org/luci/swarming/proto/config/config.proto";
+import "go.chromium.org/luci/swarming/proto/config/pools.proto";
+
+// ConfigBundle is stored in the datastore in a compressed form.
+message ConfigBundle {
+  string revision = 1;
+  string digest = 2;
+  swarming.config.SettingsCfg settings = 3;
+  swarming.config.PoolsCfg pools = 4;
+  swarming.config.BotsCfg bots = 5;
+  map<string, string> scripts = 6;
+}
