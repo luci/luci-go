@@ -504,17 +504,20 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 
 	if dryRun {
 		logging.Infof(ctx, "dryRun: changes generated %v", changes)
-	} else {
+		return changes, nil
+	}
+
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		// Check if the changelog was processed concurrently.
-		existingLogRev, err = getAuthDBLogRev(ctx, authDBRev)
+		existingLogRev, err := getAuthDBLogRev(ctx, authDBRev)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if existingLogRev != nil {
 			logging.Warningf(ctx,
 				"Rev %d was already processed concurrently at %s by app ver %s",
 				existingLogRev.ID, existingLogRev.When, existingLogRev.AppVersion)
-			return nil, nil
+			return nil
 		}
 
 		// Save the changelog and mark it as processed.
@@ -526,9 +529,37 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 			AppVersion: info.ImageVersion(ctx),
 		}
 		if err := datastore.Put(ctx, changes, logRev); err != nil {
-			return nil, err
+			return err
 		}
+
+		// Enqueue a task to process previous revision if not yet done.
+		if authDBRev <= 1 {
+			// No need to generate a changelog for the initial revision.
+			return nil
+		}
+		prevAuthDBRev := authDBRev - 1
+		existingPrevLogRev, err := getAuthDBLogRev(ctx, prevAuthDBRev)
+		if err != nil {
+			// Non-fatal, just log the error; this enqueuing is for redundancy.
+			logging.Errorf(
+				ctx, "failed when checking changelog processed for previous AuthDB revision %d: %s",
+				prevAuthDBRev, err)
+		} else if existingPrevLogRev == nil {
+			// Previous revision's changelog has not been processed yet.
+			err = EnqueueProcessChangeTask(ctx, prevAuthDBRev)
+			// Non-fatal, just log the error; this enqueuing is for redundancy.
+			logging.Warningf(
+				ctx, "failed when enqueuing changelog task for previous AuthDB revision %d: %s",
+				prevAuthDBRev, err)
+		}
+
+		return nil
+	}, nil)
+
+	if err != nil {
+		return nil, err
 	}
+
 	return changes, nil
 }
 

@@ -825,5 +825,48 @@ func TestGenerateChanges(t *testing.T) {
 				PermissionsRemoved: []string{"test.perm.edit"},
 			}})
 		})
+
+		Convey("Changelog generation cascades", func() {
+			// Create and add 3 AuthGroups.
+			groupNames := []string{"group-1", "group-2", "group-3"}
+			for _, groupName := range groupNames {
+				ag := makeAuthGroup(ctx, groupName)
+				_, err := CreateAuthGroup(ctx, ag, false, "Go pRPC API")
+				So(err, ShouldBeNil)
+			}
+			// There should be a changelog task and replication task for
+			// each group.
+			So(taskScheduler.Tasks(), ShouldHaveLength, 6)
+
+			actualChanges, err := generateChanges(ctx, 1, false)
+			So(err, ShouldBeNil)
+			validateChanges(ctx, "created first group in cascade test", 1, actualChanges, []*AuthDBChange{{
+				ChangeType: ChangeGroupCreated,
+				Owners:     AdminGroup,
+			}})
+			// First change has no prior revision, so a task should not
+			// have been added.
+			So(taskScheduler.Tasks(), ShouldHaveLength, 6)
+
+			actualChanges, err = generateChanges(ctx, 3, false)
+			So(err, ShouldBeNil)
+			validateChanges(ctx, "created third group in cascade test", 3, actualChanges, []*AuthDBChange{{
+				ChangeType: ChangeGroupCreated,
+				Owners:     AdminGroup,
+			}})
+			// Changelog for rev 2 has not been generated yet, so there
+			// should be an added task.
+			So(taskScheduler.Tasks(), ShouldHaveLength, 7)
+
+			actualChanges, err = generateChanges(ctx, 2, false)
+			So(err, ShouldBeNil)
+			validateChanges(ctx, "created second group in cascade test", 2, actualChanges, []*AuthDBChange{{
+				ChangeType: ChangeGroupCreated,
+				Owners:     AdminGroup,
+			}})
+			// Changelog for rev 1 has already been generated, so a task
+			// should not have been added.
+			So(taskScheduler.Tasks(), ShouldHaveLength, 7)
+		})
 	})
 }
