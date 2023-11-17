@@ -39,6 +39,16 @@ func (ci *testCLInfo) Deps(deps ...*testCLInfo) *testCLInfo {
 	return ci
 }
 
+func (ci *testCLInfo) SoftDeps(deps ...*testCLInfo) *testCLInfo {
+	for _, dep := range deps {
+		ci.pcl.Deps = append(ci.pcl.Deps, &changelist.Dep{
+			Clid: dep.Clid(),
+			Kind: changelist.DepKind_SOFT,
+		})
+	}
+	return ci
+}
+
 func (ci *testCLInfo) CQ(val int) *testCLInfo {
 	switch val {
 	case 0:

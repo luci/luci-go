@@ -692,7 +692,7 @@ func TestCLsTriage(t *testing.T) {
 				cls := do(&prjpb.Component{Clids: []int64{clid1, clid2, clid3, clid4}})
 				So(cls, ShouldHaveLength, 4)
 
-				// - all CLs should be not-cq-ready.
+				// - all CLs should not be cq-ready.
 				So(cls[clid1].cqReady, ShouldBeFalse)
 				So(cls[clid2].cqReady, ShouldBeFalse)
 				So(cls[clid3].cqReady, ShouldBeFalse)
@@ -710,6 +710,36 @@ func TestCLsTriage(t *testing.T) {
 					// Should NOT have clid4 in needToTrigger, as it is already
 					// voted.
 					Dep(clid1), Dep(clid3),
+				})
+			})
+
+			Convey("CqReady if all voted", func() {
+				// Vote on all the CLs.
+				for i := 0; i < 4; i++ {
+					sup.pb.Pcls[i].Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
+					sup.pb.Pcls[i].Triggers.CqVoteTrigger.Email = voter
+				}
+				cls := do(&prjpb.Component{Clids: []int64{clid1, clid2, clid3, clid4}})
+				So(cls, ShouldHaveLength, 4)
+
+				// They all should be cq-ready.
+				So(cls[clid1].cqReady, ShouldBeTrue)
+				So(cls[clid2].cqReady, ShouldBeTrue)
+				So(cls[clid3].cqReady, ShouldBeTrue)
+				So(cls[clid4].cqReady, ShouldBeTrue)
+
+				Convey("unless there is an inflight TriggeringCLDeps{}", func() {
+					sup.pb.TriggeringClDeps, _ = sup.pb.COWTriggeringCLDeps(nil, []*prjpb.TriggeringCLDeps{
+						{OperationId: "op-1", OriginClid: clid4, DepClids: []int64{1, 2, 3}},
+					})
+					cls := do(&prjpb.Component{Clids: []int64{clid1, clid2, clid3, clid4}})
+					So(cls, ShouldHaveLength, 4)
+
+					// They all should not be cq-ready.
+					So(cls[clid1].cqReady, ShouldBeFalse)
+					So(cls[clid2].cqReady, ShouldBeFalse)
+					So(cls[clid3].cqReady, ShouldBeFalse)
+					So(cls[clid4].cqReady, ShouldBeFalse)
 				})
 			})
 		})

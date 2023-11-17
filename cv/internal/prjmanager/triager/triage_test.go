@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/runcreator"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -246,7 +247,7 @@ func TestTriage(t *testing.T) {
 				So(res.RunsToCreate, ShouldBeEmpty)
 				So(res.CLsToPurge, ShouldBeEmpty)
 			})
-			Convey("with CQ vote on multi CLs", func() {
+			Convey("with CQ vote on some dep CLs, but not all", func() {
 				_, pcl31 := putPCL(cl31, singIdx, run.FullRun, now.Add(-time.Second))
 				_, pcl32 := putPCL(cl32, singIdx, "", now.Add(-time.Second), cl31)
 				_, pcl33 := putPCL(cl33, singIdx, run.FullRun, now.Add(-time.Minute), cl31, cl32)
@@ -266,6 +267,7 @@ func TestTriage(t *testing.T) {
 				So(res.RunsToCreate, ShouldHaveLength, 1)
 				So(res.RunsToCreate[0].InputCLs, ShouldHaveLength, 1)
 				So(res.RunsToCreate[0].InputCLs[0].ID, ShouldEqual, cl31)
+				So(res.RunsToCreate[0].DepRuns, ShouldBeNil)
 
 				// a single TriggeringCLDeps{} should be created for CL34 to
 				// trigger CL32.
@@ -276,6 +278,79 @@ func TestTriage(t *testing.T) {
 						DepClids:   []int64{cl32},
 						Trigger:    pcl34.Triggers.GetCqVoteTrigger(),
 					},
+				})
+			})
+			Convey("with CQ votes on all CLs", func() {
+				_, pcl31 := putPCL(cl31, singIdx, run.FullRun, now.Add(-time.Second))
+				_, pcl32 := putPCL(cl32, singIdx, run.FullRun, now.Add(-time.Second), cl31)
+				pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32}
+				component := &prjpb.Component{Clids: []int64{cl31, cl32}, TriageRequired: true}
+				mockRunCreation := func(rc *runcreator.Creator) common.RunID {
+					component.Pruns = makePrunsWithMode(
+						run.FullRun, rc.ExpectedRunID(), rc.InputCLs[0].ID)
+					So(datastore.Put(ctx, &run.Run{
+						ID:     rc.ExpectedRunID(),
+						Status: run.Status_RUNNING}), ShouldBeNil)
+					return rc.ExpectedRunID()
+				}
+
+				// The first triage should create runcreator for pcl31 only.
+				res := mustTriage(component)
+				So(res.RunsToCreate, ShouldHaveLength, 1)
+				So(res.RunsToCreate[0].InputCLs, ShouldHaveLength, 1)
+				So(res.RunsToCreate[0].InputCLs[0].ID, ShouldEqual, cl31)
+				So(res.RunsToCreate[0].DepRuns, ShouldBeNil)
+				So(res.CLsToPurge, ShouldBeEmpty)
+				So(res.CLsToTriggerDeps, ShouldBeEmpty)
+				rid31 := mockRunCreation(res.RunsToCreate[0])
+
+				Convey("with a dep that has an incomplete Run", func() {
+					// pcl32, next, but with DepRuns this time.
+					res = mustTriage(component)
+					So(res.RunsToCreate, ShouldHaveLength, 1)
+					So(res.RunsToCreate[0].InputCLs, ShouldHaveLength, 1)
+					So(res.RunsToCreate[0].InputCLs[0].ID, ShouldEqual, cl32)
+					So(res.RunsToCreate[0].DepRuns, ShouldEqual, common.RunIDs{rid31})
+					So(res.CLsToPurge, ShouldBeEmpty)
+					So(res.CLsToTriggerDeps, ShouldBeEmpty)
+					mockRunCreation(res.RunsToCreate[0])
+
+					// the next triage should produce nothing.
+					res = mustTriage(component)
+					So(res.RunsToCreate, ShouldHaveLength, 0)
+					So(res.CLsToPurge, ShouldBeEmpty)
+					So(res.CLsToTriggerDeps, ShouldBeEmpty)
+				})
+
+				Convey("with a dep of which run has been submitted", func() {
+					pcl31.Submitted = true
+					// Actually, run submitter doesn't remove the CQ vote,
+					// but State.makePCL() skips setting the trigger in
+					// the PCL if the CL is submitted,.
+					//
+					// triageNewTriggers() panics, if the assumption is
+					// wrong.
+					pcl31.Triggers = nil
+					So(datastore.Put(ctx, &run.Run{
+						ID:     rid31,
+						Status: run.Status_SUCCEEDED}), ShouldBeNil)
+					component.Pruns = nil
+
+					res = mustTriage(component)
+					So(res.RunsToCreate, ShouldHaveLength, 1)
+					So(res.RunsToCreate[0].InputCLs, ShouldHaveLength, 1)
+					So(res.RunsToCreate[0].InputCLs[0].ID, ShouldEqual, cl32)
+					// DepRuns should be nil, as pcl31 has been submitted.
+					So(res.RunsToCreate[0].DepRuns, ShouldBeNil)
+					So(res.CLsToPurge, ShouldBeEmpty)
+					So(res.CLsToTriggerDeps, ShouldBeEmpty)
+					mockRunCreation(res.RunsToCreate[0])
+
+					// the next triage should produce nothing.
+					res = mustTriage(component)
+					So(res.RunsToCreate, ShouldHaveLength, 0)
+					So(res.CLsToPurge, ShouldBeEmpty)
+					So(res.CLsToTriggerDeps, ShouldBeEmpty)
 				})
 			})
 		})

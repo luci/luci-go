@@ -182,6 +182,7 @@ func TestRunBuilder(t *testing.T) {
 					Snapshot:         cl2.Snapshot,
 				},
 			},
+			DepRuns: common.RunIDs{"dead-beef"},
 		}
 
 		projectStateOffload := &prjmanager.ProjectStateOffload{
@@ -318,6 +319,7 @@ func TestRunBuilder(t *testing.T) {
 				Owner:               rb.Owner,
 				CreatedBy:           rb.CreatedBy,
 				Options:             &run.Options{},
+				DepRuns:             common.RunIDs{"dead-beef"},
 			}
 			So(r, runtest.ShouldResembleRun, expectedRun)
 

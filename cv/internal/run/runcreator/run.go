@@ -87,6 +87,8 @@ type Creator struct {
 	//
 	// Optional. By default, it's the current time.
 	CreateTime time.Time
+	// DepRuns are the Runs that the created Run will depend on.
+	DepRuns common.RunIDs
 
 	// Internal state: pre-computed once before transaction starts.
 
@@ -402,6 +404,7 @@ func (rb *Creator) saveRun(ctx context.Context, now time.Time) error {
 		Owner:         rb.Owner,
 		CreatedBy:     rb.CreatedBy,
 		Options:       rb.Options,
+		DepRuns:       rb.DepRuns,
 	}
 	if err := datastore.Put(ctx, rb.run); err != nil {
 		return errors.Annotate(err, "failed to save Run").Tag(transient.Tag).Err()

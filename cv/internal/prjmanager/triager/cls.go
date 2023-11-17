@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
@@ -44,6 +45,36 @@ func triageCLs(ctx context.Context, c *prjpb.Component, pm pmState) map[int64]*c
 	}
 	for _, info := range cls {
 		info.triage(ctx, c, pm)
+	}
+	for clid, info := range cls {
+		// Say the following events happens in sequence.
+		// 1. there are CL1(parent) and CL2(child).
+		// 2. CQ+2 is triggered on CL2, and TriggeringCLDeps is created.
+		// 3. cltriggerer voted CL1 and CL2 in parallel.
+		// 4. CLUpdated event is delivered for CL1 only.
+		// 5. Triager created a Run for CL1.
+		// 6. For some reasons, *before* PM receives a CLUpdated event for CL2,
+		//    - PM receives a CLUpdated event,
+		//    - triager created a run for CL1,
+		//    - the run ended
+		// 7. PM receives a CLUpdated event for CL2.
+		//
+		// At (7), CL1 has CQ=0 and CL2 has CQ+2.
+		// there is no easy way for triager to find the reason of CL1 not having
+		// CQ+2. Hence, it will create a new TriggeringCLDeps{} to vote on CL1
+		// again, of which run just failed.
+		//
+		// To prevent this, the below marks deps as not-cq-ready if there is
+		// an inflight TriggeringCLDeps{} referencing the CL as a dep.
+		// i.e., triager starts creating Runs for a stack of CLs, only if
+		// the entire stack is ready.
+		for _, depCLID := range info.triggeringCLDeps.GetDepClids() {
+			ctx = logging.SetField(ctx, "origin_cl", clid)
+			info.cqReady = false
+			if di, ok := cls[depCLID]; ok {
+				di.cqReady = false
+			}
+		}
 	}
 	return cls
 }

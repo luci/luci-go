@@ -49,7 +49,7 @@ import (
 // matches the existing finalized Run.
 func stageNewRuns(ctx context.Context, c *prjpb.Component, cls map[int64]*clInfo, pm pmState) ([]*runcreator.Creator, time.Time, error) {
 	var next time.Time
-	var out []*runcreator.Creator
+	var candidates []*runcreator.Creator
 
 	rs := runStage{
 		pm:         pm,
@@ -64,12 +64,22 @@ func stageNewRuns(ctx context.Context, c *prjpb.Component, cls map[int64]*clInfo
 		case err != nil:
 			return nil, time.Time{}, err
 		case len(rcs) != 0:
-			out = append(out, rcs...)
+			candidates = append(candidates, rcs...)
 		default:
 			next = earliest(next, nt)
 		}
 	}
-	return out, next, nil
+	if len(candidates) == 0 {
+		return nil, next, nil
+	}
+	final := make([]*runcreator.Creator, 0, len(candidates))
+	for _, rc := range candidates {
+		if shouldCreateNow, depRuns := rs.resolveDepRuns(ctx, rc); shouldCreateNow {
+			rc.DepRuns = append(rc.DepRuns, depRuns...)
+			final = append(final, rc)
+		}
+	}
+	return final, next, nil
 }
 
 type runStage struct {
@@ -577,4 +587,114 @@ func useNewPatchsetTrigger(ts *run.Triggers) *run.Trigger {
 
 func useCQVoteTrigger(ts *run.Triggers) *run.Trigger {
 	return ts.GetCqVoteTrigger()
+}
+
+func (rs *runStage) findImmediateHardDeps(pcl *prjpb.PCL) []int64 {
+	// TODO: use Snapshot.GitDeps.Immediate to find the immediate hard deps.
+	candidates := make(map[int64]struct{})
+	notCandidates := make(map[int64]struct{})
+
+	// Iterate the deps in reverse, because child CLs have higher CLIDs than
+	// its deps in most cases (but not guaranteed)
+	for i := len(pcl.GetDeps()) - 1; i >= 0; i-- {
+		dep := pcl.GetDeps()[i]
+		if _, exist := notCandidates[dep.GetClid()]; exist {
+			continue
+		}
+		if dep.GetKind() == changelist.DepKind_HARD {
+			candidates[dep.GetClid()] = struct{}{}
+
+			var dpcl *prjpb.PCL
+			switch info, exist := rs.cls[dep.GetClid()]; {
+			case exist:
+				dpcl = info.pcl
+			default:
+				// Panic if the dep PCL is unknown.
+				//
+				// If a dep is unknown, the dep triager shouldn't mark the CL
+				// as cqReady. If it did, there must be a bug.
+				dpcl = rs.pm.MustPCL(dep.GetClid())
+			}
+			// none of its deps can be a candidate.
+			for _, depdep := range dpcl.GetDeps() {
+				notCandidates[depdep.GetClid()] = struct{}{}
+				delete(candidates, depdep.GetClid())
+			}
+		}
+	}
+
+	var clids []int64
+	if len(candidates) > 0 {
+		clids = make([]int64, 0, len(candidates))
+		for clid := range candidates {
+			clids = append(clids, clid)
+		}
+	}
+	sort.Slice(clids, func(i, j int) bool {
+		return clids[i] < clids[j]
+	})
+	return clids
+}
+
+func (rs *runStage) resolveDepRuns(ctx context.Context, rc *runcreator.Creator) (shouldCreateNow bool, depRuns common.RunIDs) {
+	info, ok := rs.cls[int64(rc.InputCLs[0].ID)]
+	if !ok {
+		panic(fmt.Errorf("resolveDepRuns: rc has a CL %d, not tracked in the component",
+			rc.InputCLs[0].ID))
+	}
+	ctx = logging.SetField(ctx, "cl", info.pcl.GetClid())
+
+	var ideps []int64
+	switch cg := rs.pm.ConfigGroup(info.pcl.GetConfigGroupIndexes()[0]); {
+	case !common.IsMCEDogfooder(ctx, rc.CreatedBy),
+		rc.Mode != run.Mode(run.FullRun),
+		cg.Content.GetCombineCls() != nil:
+		// The CL is cqReady. Otherwise, `rc` wouldn't be created.
+		// If the triggerer is not a dogfooder, return true to let it go.
+		return true, nil
+	default:
+		ideps = rs.findImmediateHardDeps(info.pcl)
+		if len(ideps) == 0 {
+			logging.Debugf(ctx, "resolvDepRuns: no immediate hard deps found")
+			return true, nil
+		}
+		logging.Debugf(ctx, "resolveDepRuns: immediate hard-deps %v", ideps)
+	}
+
+	shouldCreateNow = true // be optimistic
+	for _, idep := range ideps {
+		switch dPCL := rs.pm.MustPCL(idep); {
+		case dPCL.GetSubmitted():
+			continue
+		case dPCL.GetStatus() != prjpb.PCL_OK:
+			// If the dep status is not PCL_OK, the dep triager should have put
+			// it in notYetLoaded or invalidDeps.Unwatched.
+			//
+			// Therefore, the origin CL must not be cqReady and
+			// runcreator.Creator() should have not been created.
+			panic(fmt.Errorf("resolveDepRuns: depCL %d has status %q", dPCL.GetClid(), dPCL.GetStatus()))
+		}
+		switch dinfo, ok := rs.cls[idep]; {
+		case !ok:
+			// The dep is not in the same component.
+			// All hard-deps are supposed to be tracked in the same component,
+			// this could still check the other component and the run status.
+			//
+			// Let's ignore now. The submission will be rejected at the worst
+			// case.
+			// TODO(ddoman): check if there is a Run triggered from
+			// the dep's CQ vote, either completed or not.
+			logging.Errorf(ctx, "resolveDepRuns: a HARD dep CL %d is not tracked in the same component", idep)
+			continue
+		case dinfo.runCountByMode[run.FullRun] > 0:
+			for _, idx := range dinfo.runIndexes {
+				if prun := rs.c.GetPruns()[idx]; prun.GetMode() == string(run.FullRun) {
+					depRuns = append(depRuns, common.RunID(prun.GetId()))
+				}
+			}
+		default:
+			shouldCreateNow = false
+		}
+	}
+	return shouldCreateNow, depRuns
 }
