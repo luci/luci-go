@@ -315,6 +315,15 @@ message ValidateConfigsResponse {
 // Buildbucket to execute and update Buildbucket about the
 // final state of the builds.
 //
+// Note: Because Buildbucket cannot track the underlying tasks, the following
+// service degradation occurs:
+// TODO(crbug.com/1502975): Update this docstring after we implement the proposed
+// improvement.
+//  * if the underlying task fails, BB will not know about this until the
+//  execution deadline, at which point the build will be marked as infra_failure
+//  * there is no way to get to the real underlying task via the BB API
+//  (you would have to go to the backend and somehow look for the build id)
+//
 // Backends that opt in backend task syncing/tracking with Buildbucket
 // should use `TaskBackend` instead.
 service TaskBackendLite {
