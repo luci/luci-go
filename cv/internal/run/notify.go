@@ -217,7 +217,7 @@ func (n *Notifier) NotifyParentRunCompleted(ctx context.Context, runID common.Ru
 			ParentRunCompleted: &eventpb.ParentRunCompleted{},
 		},
 	}
-	return n.sendWithoutDispatch(ctx, runID, evt)
+	return n.SendNow(ctx, runID, evt)
 }
 
 // SendNow sends the event to Run's eventbox and invokes RunManager immediately.
