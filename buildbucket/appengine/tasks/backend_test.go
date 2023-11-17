@@ -411,9 +411,13 @@ func TestCreateBackendTask(t *testing.T) {
 		backendSetting = append(backendSetting, &pb.BackendSetting{
 			Target:   "swarming://chromium-swarm",
 			Hostname: "hostname2",
-			BuildSyncSetting: &pb.BackendSetting_BuildSyncSetting{
-				Shards:              5,
-				SyncIntervalSeconds: 300,
+			Mode: &pb.BackendSetting_FullMode_{
+				FullMode: &pb.BackendSetting_FullMode{
+					BuildSyncSetting: &pb.BackendSetting_BuildSyncSetting{
+						Shards:              5,
+						SyncIntervalSeconds: 300,
+					},
+				},
 			},
 		})
 		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}

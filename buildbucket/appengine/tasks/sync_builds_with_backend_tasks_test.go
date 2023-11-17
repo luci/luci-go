@@ -394,11 +394,22 @@ func TestSyncBuildsWithBackendTasks(t *testing.T) {
 	Convey("SyncBuildsWithBackendTasks", t, func() {
 		ctx, sch := tq.TestingContext(ctx, nil)
 		backendSetting := []*pb.BackendSetting{
-			&pb.BackendSetting{
+			{
 				Target:   "swarming",
 				Hostname: "hostname",
-				BuildSyncSetting: &pb.BackendSetting_BuildSyncSetting{
-					Shards: shards,
+				Mode: &pb.BackendSetting_FullMode_{
+					FullMode: &pb.BackendSetting_FullMode{
+						BuildSyncSetting: &pb.BackendSetting_BuildSyncSetting{
+							Shards: shards,
+						},
+					},
+				},
+			},
+			{
+				Target:   "foo",
+				Hostname: "foo_hostname",
+				Mode: &pb.BackendSetting_LiteMode_{
+					LiteMode: &pb.BackendSetting_LiteMode{},
 				},
 			},
 		}
@@ -406,7 +417,7 @@ func TestSyncBuildsWithBackendTasks(t *testing.T) {
 		err := config.SetTestSettingsCfg(ctx, settingsCfg)
 		So(err, ShouldBeNil)
 
-		Convey("ok", func() {
+		Convey("ok - full mode", func() {
 			bIDs := []int64{101, 102, 103, 104, 105}
 			fetchBatchSize = 1
 			updateBatchSize = 1
@@ -425,6 +436,12 @@ func TestSyncBuildsWithBackendTasks(t *testing.T) {
 					So(b.Status, ShouldEqual, pb.Status_SUCCESS)
 				}
 			}
+		})
+
+		Convey("no sync - lite mode", func() {
+			err = SyncBuildsWithBackendTasks(ctx, "foo", "project")
+			So(err, ShouldBeNil)
+			So(sch.Tasks(), ShouldHaveLength, 0)
 		})
 
 		Convey("backend setting not found", func() {

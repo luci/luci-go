@@ -314,8 +314,12 @@ func SyncBuildsWithBackendTasks(ctx context.Context, backend, project string) er
 	backendFound := false
 	for _, config := range globalCfg.Backends {
 		if config.Target == backend {
+			if config.GetFullMode() == nil {
+				// No need to sync tasks if it's not in a full mode.
+				return nil
+			}
 			backendFound = true
-			shards = config.GetBuildSyncSetting().GetShards()
+			shards = config.GetFullMode().GetBuildSyncSetting().GetShards()
 		}
 	}
 	if !backendFound {

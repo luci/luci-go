@@ -343,13 +343,13 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 		target := taskResp.Task.Id.Target
 		for _, backendSetting := range globalCfg.Backends {
 			if backendSetting.Target == target {
-				if backendSetting.GetBuildSyncSetting() != nil {
+				if backendSetting.GetFullMode().GetBuildSyncSetting() != nil {
 					bld.BackendTarget = target
-					interval := backendSetting.GetBuildSyncSetting().GetSyncIntervalSeconds()
+					interval := backendSetting.GetFullMode().GetBuildSyncSetting().GetSyncIntervalSeconds()
 					if interval > 0 {
 						bld.BackendSyncInterval = time.Duration(interval) * time.Second
 					}
-					bld.GenerateNextBackendSyncTime(ctx, backendSetting.GetBuildSyncSetting().GetShards())
+					bld.GenerateNextBackendSyncTime(ctx, backendSetting.GetFullMode().GetBuildSyncSetting().GetShards())
 				}
 				break
 			}
