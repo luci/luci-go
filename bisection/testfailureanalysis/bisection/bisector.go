@@ -38,7 +38,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/tq"
@@ -83,10 +82,8 @@ func RegisterTaskClass(srv *server.Server, luciAnalysisProjectFunc func(luciProj
 		if err != nil {
 			err = errors.Annotate(err, "run bisection").Err()
 			logging.Errorf(ctx, err.Error())
-			// If the error is transient, return err to retry.
-			if transient.Tag.In(err) {
-				return err
-			}
+			// Return nil so the task will not be retried.
+			// We intentionally disable retrying because bisector does not support retrying at the moment.
 			return nil
 		}
 		return nil

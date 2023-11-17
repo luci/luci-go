@@ -75,10 +75,10 @@ func RegisterTaskClass(srv *server.Server, luciAnalysisProjectFunc func(luciProj
 		if err := processTestFailureCulpritTask(ctx, task.AnalysisId, client); err != nil {
 			err := errors.Annotate(err, "run test failure culprit action").Err()
 			logging.Errorf(ctx, err.Error())
-			// If the error is transient, return err to retry
-			if transient.Tag.In(err) {
-				return err
-			}
+
+			// Return nil so the task will not be retried.
+			// If in the future, task retry is required, remember to update HasTakenActions
+			// field to false before retry.
 			return nil
 		}
 		return nil

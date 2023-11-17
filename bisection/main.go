@@ -28,6 +28,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/bisection/bqexporter"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/cancelanalysis"
 	"go.chromium.org/luci/bisection/compilefailuredetection"
 	"go.chromium.org/luci/bisection/culpritaction/revertculprit"
@@ -145,6 +146,7 @@ func main() {
 		cron.RegisterHandler("update-config", config.UpdateProjects)
 		cron.RegisterHandler("collect-global-metrics", metrics.CollectGlobalMetrics)
 		cron.RegisterHandler("throttle-bisection", throttle.CronHandler)
+		cron.RegisterHandler("export-test-analyses", bqexporter.ExportTestAnalyses)
 
 		// Task queues
 		compilefailuredetection.RegisterTaskClass()

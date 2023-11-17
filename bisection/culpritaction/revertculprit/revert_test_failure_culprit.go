@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/bisection/util/loggingutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 type AnalysisClient interface {
@@ -39,11 +40,22 @@ func processTestFailureCulpritTask(ctx context.Context, analysisID int64, luciAn
 	if err != nil {
 		return errors.Annotate(err, "get test failure analysis").Err()
 	}
+
 	culpritKey := tfa.VerifiedCulpritKey
 	culpritModel, err := datastoreutil.GetSuspect(ctx, culpritKey.IntID(), culpritKey.Parent())
 	if err != nil {
 		return errors.Annotate(err, "get suspect").Err()
 	}
+
+	// We mark that actions have been taken for the analyses.
+	defer func() {
+		culpritModel.HasTakenActions = true
+		err := datastore.Put(ctx, culpritModel)
+		if err != nil {
+			// Just log, nothing we can do now.
+			logging.Errorf(ctx, "failed to set HasTakenActions: %v", err)
+		}
+	}()
 
 	// Check if primary test is still failing.
 	primaryTestFailure, err := datastoreutil.GetPrimaryTestFailure(ctx, tfa)

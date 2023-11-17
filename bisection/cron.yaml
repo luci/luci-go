@@ -28,3 +28,7 @@ cron:
 - description: "Send task to test failure detector based on machine availability."
   url: /internal/cron/throttle-bisection
   schedule: every 5 minutes
+
+- description: "Job for exporting test failure analyses to BigQuery."
+  url: /internal/cron/export-test-analyses
+  schedule: every 10 minutes from 00:07 to 23:59

@@ -156,6 +156,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 			// Suspect action has been saved.
 			So(datastore.Get(ctx, suspect), ShouldBeNil)
 			So(suspect.InactionReason, ShouldEqual, pb.CulpritInactionReason_TEST_NO_LONGER_UNEXPECTED)
+			So(suspect.HasTakenActions, ShouldBeTrue)
 		})
 
 		Convey("gerrit action disabled", func() {
@@ -168,6 +169,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 			// Suspect action has been saved.
 			So(datastore.Get(ctx, suspect), ShouldBeNil)
 			So(suspect.InactionReason, ShouldEqual, pb.CulpritInactionReason_ACTIONS_DISABLED)
+			So(suspect.HasTakenActions, ShouldBeTrue)
 		})
 
 		Convey("has existing revert", func() {
@@ -191,6 +193,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				// Suspect action has been saved.
 				So(datastore.Get(ctx, suspect), ShouldBeNil)
 				So(suspect.InactionReason, ShouldEqual, pb.CulpritInactionReason_REVERTED_MANUALLY)
+				So(suspect.HasTakenActions, ShouldBeTrue)
 			})
 
 			Convey("has new revert", func() {
@@ -229,6 +232,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				So(suspect.SupportRevertCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
 				// Check counter incremented.
 				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_revert"), ShouldEqual, 1)
+				So(suspect.HasTakenActions, ShouldBeTrue)
 			})
 
 			Convey("only abandoned revert", func() {
@@ -267,6 +271,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
 				// Check counter incremented.
 				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
+				So(suspect.HasTakenActions, ShouldBeTrue)
 			})
 		})
 
@@ -287,6 +292,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				// Suspect action has been saved.
 				So(datastore.Get(ctx, suspect), ShouldBeNil)
 				So(suspect.InactionReason, ShouldEqual, pb.CulpritInactionReason_CULPRIT_HAS_COMMENT)
+				So(suspect.HasTakenActions, ShouldBeTrue)
 			})
 
 			Convey("comment culprit", func() {
@@ -314,6 +320,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				So(datastore.Get(ctx, suspect), ShouldBeNil)
 				So(suspect.HasCulpritComment, ShouldBeTrue)
 				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
+				So(suspect.HasTakenActions, ShouldBeTrue)
 				// Check counter incremented.
 				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
 			})
@@ -359,6 +366,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				So(datastore.Get(ctx, suspect), ShouldBeNil)
 				So(suspect.HasCulpritComment, ShouldBeTrue)
 				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
+				So(suspect.HasTakenActions, ShouldBeTrue)
 				// Check counter incremented.
 				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
 			})
@@ -397,6 +405,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				So(datastore.Get(ctx, suspect), ShouldBeNil)
 				So(suspect.HasCulpritComment, ShouldBeTrue)
 				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
+				So(suspect.HasTakenActions, ShouldBeTrue)
 				// Check counter incremented.
 				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
 			})
@@ -433,6 +442,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				So(datastore.Get(ctx, suspect), ShouldBeNil)
 				So(suspect.HasCulpritComment, ShouldBeTrue)
 				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
+				So(suspect.HasTakenActions, ShouldBeTrue)
 				// Check counter incremented.
 				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
 			})
@@ -483,6 +493,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				So(datastore.Get(ctx, suspect), ShouldBeNil)
 				So(suspect.HasCulpritComment, ShouldBeTrue)
 				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
+				So(suspect.HasTakenActions, ShouldBeTrue)
 				// Check counter incremented.
 				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
 			})
@@ -521,6 +532,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				So(datastore.Get(ctx, suspect), ShouldBeNil)
 				So(suspect.HasCulpritComment, ShouldBeTrue)
 				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
+				So(suspect.HasTakenActions, ShouldBeTrue)
 				// Check counter incremented.
 				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
 			})
@@ -570,6 +582,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				So(datastore.Get(ctx, suspect), ShouldBeNil)
 				So(suspect.HasCulpritComment, ShouldBeTrue)
 				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
+				So(suspect.HasTakenActions, ShouldBeTrue)
 				// Check counter incremented.
 				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
 			})
@@ -638,6 +651,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				So(datastore.Get(ctx, suspect), ShouldBeNil)
 				So(suspect.IsRevertCreated, ShouldBeTrue)
 				So(suspect.RevertCreateTime, ShouldEqual, time.Unix(10000, 0).UTC())
+				So(suspect.HasTakenActions, ShouldBeTrue)
 				// Check counter incremented.
 				So(culpritActionCounter.Get(ctx, "chromium", "test", "create_revert"), ShouldEqual, 1)
 			})

@@ -178,6 +178,13 @@ func processCulpritVerificationUpdate(ctx context.Context, rerun *model.TestSing
 			// Non-critical, just log the error
 			err := errors.Annotate(err, "schedule culprit action task %d", tfa.ID).Err()
 			logging.Errorf(ctx, err.Error())
+			// No task scheduled, we should update suspect's HasTakenActions field.
+			suspect.HasTakenActions = true
+			err = datastore.Put(ctx, suspect)
+			if err != nil {
+				err = errors.Annotate(err, "saving suspect's HasActionTaken field").Err()
+				logging.Errorf(ctx, err.Error())
+			}
 		}
 		return testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
 	}

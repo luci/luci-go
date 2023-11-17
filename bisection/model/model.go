@@ -260,6 +260,13 @@ type ActionDetails struct {
 
 	// Optional explanation for when processing the culprit results in no action.
 	InactionReason pb.CulpritInactionReason `gae:"inaction_reason"`
+
+	// HasTakenActions indicates if the all actions for culprit
+	// (e.g. comment, revert...) have been taken.
+	// This field is only valid if a culprit is confirmed by culprit verification.
+	// If there is no action to be taken (e.g. if actions are disabled),
+	// then this field is set to true.
+	HasTakenActions bool `gae:"has_taken_actions"`
 }
 
 // Suspect is the suspect of heuristic analysis or nthsection.
