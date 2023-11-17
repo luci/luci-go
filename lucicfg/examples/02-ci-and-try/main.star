@@ -100,7 +100,6 @@ luci.cq_group(
             users = ["foo@example.com"],
             groups = ["bar"],
             run = cq.run_limits(max_active = 60),
-            tryjob = cq.tryjob_limits(max_active = 60),
         ),
         cq.user_limit(
             name = "user_limits_for_committers",

@@ -445,12 +445,12 @@ def _buildbucket_builders(bucket):
         combined_experiments.update(experiments)
         task_template_canary_percentage = None
         if _use_experiment_for_task_template_canary_percentage.is_enabled():
-          if node.props.task_template_canary_percentage:
-            combined_experiments['luci.buildbucket.canary_software'] = node.props.task_template_canary_percentage
+            if node.props.task_template_canary_percentage:
+                combined_experiments["luci.buildbucket.canary_software"] = node.props.task_template_canary_percentage
         else:
-          task_template_canary_percentage = optional_UInt32Value(
-            node.props.task_template_canary_percentage,
-          )
+            task_template_canary_percentage = optional_UInt32Value(
+                node.props.task_template_canary_percentage,
+            )
         bldr_config = buildbucket_pb.BuilderConfig(
             name = node.props.name,
             description_html = node.props.description_html,
@@ -1352,20 +1352,11 @@ def _cq_user_limit(limit):
         name = limit.name,
         principals = limit.principals,
         run = _cq_user_limit_run(limit.run),
-        tryjob = _cq_user_limit_tryjob(limit.tryjob),
     )
 
 def _cq_user_limit_run(limits):
     """cq.run_limits(...) => cq_pb.UserLimit.Run."""
     return cq_pb.UserLimit.Run(
-        max_active = _cq_user_limit_limit(
-            limits.max_active if limits != None else None,
-        ),
-    )
-
-def _cq_user_limit_tryjob(limits):
-    """cq.tryjob_limits(...) => cq_pb.UserLimit.Tryjob."""
-    return cq_pb.UserLimit.Tryjob(
         max_active = _cq_user_limit_limit(
             limits.max_active if limits != None else None,
         ),

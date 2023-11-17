@@ -3584,7 +3584,6 @@ cq.user_limit(
     users = None,
     groups = None,
     run = None,
-    tryjob = None,
 )
 ```
 
@@ -3606,7 +3605,6 @@ find how user_limit(s) are used in cq_group(...).
 * **users**: a list of user identities to apply the limits to. User identities are the email addresses in most cases.
 * **groups**: a list of chrome infra auth groups to apply the limits to the members of.
 * **run**: [cq.run_limits(...)](#cq.run-limits). If omitted, runs are unlimited for the users.
-* **tryjob**: [cq.tryjob_limits(...)](#cq.tryjob-limits). If omitted, tryjobs are unlimited for the users.
 
 
 
@@ -3626,25 +3624,6 @@ All limit values must be > 0, or None if no limit.
 #### Arguments {#cq.run-limits-args}
 
 * **max_active**: Max number of ongoing Runs that there can be at any moment.
-
-
-
-
-### cq.tryjob_limits {#cq.tryjob-limits}
-
-```python
-cq.tryjob_limits(max_active = None)
-```
-
-
-
-Constructs Tryjob limits.
-
-All limit values must be > 0, or None if no limit.
-
-#### Arguments {#cq.tryjob-limits-args}
-
-* **max_active**: Max number of ongoing Tryjobs that there can be at any moment.
 
 
 

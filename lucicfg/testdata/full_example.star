@@ -535,7 +535,6 @@ luci.cq_group(
     user_limit_default = cq.user_limit(
         name = "user_limit_default",
         run = cq.run_limits(max_active = 1),
-        tryjob = cq.tryjob_limits(max_active = 40),
     ),
     tryjob_experiments = [
         cq.tryjob_experiment(
@@ -729,22 +728,12 @@ lucicfg.emit(
 #         value: 3
 #       }
 #     }
-#     tryjob {
-#       max_active {
-#         unlimited: true
-#       }
-#     }
 #   }
 #   user_limit_default {
 #     name: "user_limit_default"
 #     run {
 #       max_active {
 #         value: 1
-#       }
-#     }
-#     tryjob {
-#       max_active {
-#         value: 40
 #       }
 #     }
 #   }

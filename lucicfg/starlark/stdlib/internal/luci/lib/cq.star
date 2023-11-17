@@ -46,9 +46,6 @@ _user_limit_ctor = __native__.genstruct("cq.user_limit")
 # A struct returned by cq.run_limits(...).
 _run_limits_ctor = __native__.genstruct("cq.run_limits")
 
-# A struct returned by cq.tryjob_limits(...).
-_tryjob_limits_ctor = __native__.genstruct("cq.tryjob_limits")
-
 # A struct returned by _post_action(...).
 _post_action_ctor = __native__.genstruct("cq.post_action")
 
@@ -272,8 +269,7 @@ def _user_limit(
         name = None,
         users = None,
         groups = None,
-        run = None,
-        tryjob = None):
+        run = None):
     """Construct a user_limit for run and tryjob limits.
 
     At the time of Run creation, CV looks up a user_limit applicable for
@@ -296,8 +292,6 @@ def _user_limit(
       groups: a list of chrome infra auth groups to apply the limits to
         the members of.
       run: cq.run_limits(...). If omitted, runs are unlimited for the users.
-      tryjob: cq.tryjob_limits(...). If omitted, tryjobs are unlimited for
-        the users.
     """
     name = validate.string(
         "name",
@@ -315,13 +309,11 @@ def _user_limit(
         p = "group:%s" % validate.string("groups[%d]" % i, g, required = True)
         principals.append(p)
     _validate_run_limits("run", run, required = False)
-    _validate_tryjob_limits("tryjob", tryjob, required = False)
 
     return _user_limit_ctor(
         name = name,
         principals = principals,
         run = run,
-        tryjob = tryjob,
     )
 
 def _validate_run_limits(attr, val, *, default = None, required = False):
@@ -337,28 +329,6 @@ def _run_limits(max_active = None):
       max_active: Max number of ongoing Runs that there can be at any moment.
     """
     return _run_limits_ctor(
-        max_active = validate.int(
-            "max_active",
-            max_active,
-            min = 1,
-            default = None,
-            required = False,
-        ),
-    )
-
-def _validate_tryjob_limits(attr, val, *, default = None, required = False):
-    """Validates that `val` was constructed via cq.tryjob_limits(...)."""
-    return validate.struct(attr, val, _tryjob_limits_ctor, default = default, required = required)
-
-def _tryjob_limits(max_active = None):
-    """Constructs Tryjob limits.
-
-    All limit values must be > 0, or None if no limit.
-
-    Args:
-      max_active: Max number of ongoing Tryjobs that there can be at any moment.
-    """
-    return _tryjob_limits_ctor(
         max_active = validate.int(
             "max_active",
             max_active,
@@ -612,7 +582,6 @@ cq = struct(
     tryjob_experiment = _tryjob_experiment,
     user_limit = _user_limit,
     run_limits = _run_limits,
-    tryjob_limits = _tryjob_limits,
     ACTION_NONE = cq_pb.Verifiers.GerritCQAbility.UNSET,
     ACTION_DRY_RUN = cq_pb.Verifiers.GerritCQAbility.DRY_RUN,
     ACTION_COMMIT = cq_pb.Verifiers.GerritCQAbility.COMMIT,
