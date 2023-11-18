@@ -125,16 +125,25 @@ func computeAgentArgs(build *pb.Build, infra *pb.BuildInfra) (args []string) {
 	return
 }
 
+// computeBackendPubsubTopic computes the pubsub topic that should be included
+// in RunTaskRequest. Return an empty string if the backend is in lite mode.
 func computeBackendPubsubTopic(ctx context.Context, target string, globalCfg *pb.SettingsCfg) (string, error) {
 	if globalCfg == nil {
 		return "", errors.Reason("error fetching service config").Err()
 	}
 	for _, backend := range globalCfg.Backends {
 		if backend.Target == target {
-			return fmt.Sprintf("projects/%s/topics/%s", info.AppID(ctx), backend.PubsubId), nil
+			switch backend.Mode.(type) {
+			case *pb.BackendSetting_LiteMode_:
+				return "", nil
+			case *pb.BackendSetting_FullMode_:
+				return fmt.Sprintf("projects/%s/topics/%s", info.AppID(ctx), backend.GetFullMode().GetPubsubId()), nil
+			default:
+				return "", errors.Reason("getting pubsub_id from backend %s is not supported", target).Err()
+			}
 		}
 	}
-	return "", errors.Reason("pubsub id not found").Err()
+	return "", errors.Reason("backend %s not found in global settings", target).Err()
 }
 
 func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *model.BuildInfra, requestID string, globalCfg *pb.SettingsCfg) (*pb.RunTaskRequest, error) {

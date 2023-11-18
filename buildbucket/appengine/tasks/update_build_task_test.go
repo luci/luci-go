@@ -644,7 +644,16 @@ func TestUpdateBuildTask(t *testing.T) {
 				{
 					Target:   "swarming://chromium-swarm",
 					Hostname: "chromium-swarm.appspot.com",
-					PubsubId: "chromium-swarm-backend",
+					Mode: &pb.BackendSetting_FullMode_{
+						FullMode: &pb.BackendSetting_FullMode{
+							PubsubId: "chromium-swarm-backend",
+						},
+					},
+				},
+				{
+					Target:   "foo://foo-backend",
+					Hostname: "foo.com",
+					Mode:     &pb.BackendSetting_LiteMode_{},
 				},
 			},
 		}), ShouldBeNil)
@@ -687,56 +696,89 @@ func TestUpdateBuildTask(t *testing.T) {
 				},
 			},
 		}
-
-		Convey("ok", func() {
-			// Update the backend task as if RunTask had responded.
-			infra.Proto.Backend.Task.Id.Id = "one"
-			infra.Proto.Backend.Task.UpdateId = 1
-			infra.Proto.Backend.Task.Status = pb.Status_SCHEDULED
-			So(datastore.Put(ctx, build, infra), ShouldBeNil)
-			req := &pb.BuildTaskUpdate{
-				BuildId: "1",
-				Task: &pb.Task{
-					Status: pb.Status_STARTED,
-					Id: &pb.TaskID{
-						Id:     "one",
-						Target: "swarming://chromium-swarm",
+		Convey("full mode", func() {
+			Convey("ok", func() {
+				// Update the backend task as if RunTask had responded.
+				infra.Proto.Backend.Task.Id.Id = "one"
+				infra.Proto.Backend.Task.UpdateId = 1
+				infra.Proto.Backend.Task.Status = pb.Status_SCHEDULED
+				So(datastore.Put(ctx, build, infra), ShouldBeNil)
+				req := &pb.BuildTaskUpdate{
+					BuildId: "1",
+					Task: &pb.Task{
+						Status: pb.Status_STARTED,
+						Id: &pb.TaskID{
+							Id:     "one",
+							Target: "swarming://chromium-swarm",
+						},
+						UpdateId:        2,
+						SummaryMarkdown: "imo, html is ugly to read",
 					},
-					UpdateId:        2,
-					SummaryMarkdown: "imo, html is ugly to read",
-				},
-			}
-			body := makeUpdateBuildTaskPubsubMsg(req, "msg_id_1")
-			So(UpdateBuildTask(ctx, body), ShouldBeRPCOK)
+				}
+				body := makeUpdateBuildTaskPubsubMsg(req, "msg_id_1", "chromium-swarm-backend")
+				So(UpdateBuildTask(ctx, body), ShouldBeRPCOK)
 
-			expectedBuildInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, &model.Build{ID: 1})}
-			So(datastore.Get(ctx, expectedBuildInfra), ShouldBeNil)
-			So(expectedBuildInfra.Proto.Backend.Task.Status, ShouldEqual, pb.Status_STARTED)
-			So(expectedBuildInfra.Proto.Backend.Task.UpdateId, ShouldEqual, 2)
-			So(expectedBuildInfra.Proto.Backend.Task.SummaryMarkdown, ShouldEqual, "imo, html is ugly to read")
+				expectedBuildInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, &model.Build{ID: 1})}
+				So(datastore.Get(ctx, expectedBuildInfra), ShouldBeNil)
+				So(expectedBuildInfra.Proto.Backend.Task.Status, ShouldEqual, pb.Status_STARTED)
+				So(expectedBuildInfra.Proto.Backend.Task.UpdateId, ShouldEqual, 2)
+				So(expectedBuildInfra.Proto.Backend.Task.SummaryMarkdown, ShouldEqual, "imo, html is ugly to read")
+			})
+
+			Convey("task is not registered", func() {
+				So(datastore.Put(ctx, build, infra), ShouldBeNil)
+				req := &pb.BuildTaskUpdate{
+					BuildId: "1",
+					Task: &pb.Task{
+						Status: pb.Status_STARTED,
+						Id: &pb.TaskID{
+							Id:     "one",
+							Target: "swarming://chromium-swarm",
+						},
+						UpdateId:        2,
+						SummaryMarkdown: "imo, html is ugly to read",
+					},
+				}
+				body := makeUpdateBuildTaskPubsubMsg(req, "msg_id_1", "chromium-swarm-backend")
+				So(UpdateBuildTask(ctx, body), ShouldErrLike, "No task is associated with the build. Cannot update.")
+			})
+
+			Convey("subscription id mismatch", func() {
+				req := &pb.BuildTaskUpdate{
+					BuildId: "1",
+					Task: &pb.Task{
+						Status: pb.Status_STARTED,
+						Id: &pb.TaskID{
+							Id:     "one",
+							Target: "swarming://chromium-swarm",
+						},
+						UpdateId:        2,
+						SummaryMarkdown: "imo, html is ugly to read",
+					},
+				}
+				body := makeUpdateBuildTaskPubsubMsg(req, "msg_id_1", "chromium-swarm-backend-v2")
+				So(UpdateBuildTask(ctx, body), ShouldErrLike, "pubsub subscription projects/app-id/subscriptions/chromium-swarm-backend-v2 did not match the one configured for target swarming://chromium-swarm")
+			})
 		})
-
-		Convey("task is not registered", func() {
-			So(datastore.Put(ctx, build, infra), ShouldBeNil)
+		Convey("lite mode", func() {
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
 					Status: pb.Status_STARTED,
 					Id: &pb.TaskID{
 						Id:     "one",
-						Target: "swarming://chromium-swarm",
+						Target: "foo://foo-backend",
 					},
-					UpdateId:        2,
-					SummaryMarkdown: "imo, html is ugly to read",
+					UpdateId: 2,
 				},
 			}
-			body := makeUpdateBuildTaskPubsubMsg(req, "msg_id_1")
-			So(UpdateBuildTask(ctx, body), ShouldErrLike, "No task is associated with the build. Cannot update.")
+			body := makeUpdateBuildTaskPubsubMsg(req, "msg_id_1", "foo")
+			So(UpdateBuildTask(ctx, body), ShouldErrLike, "backend target foo://foo-backend is in lite mode. The task update isn't supported")
 		})
 	})
 }
 
-func makeUpdateBuildTaskPubsubMsg(req *pb.BuildTaskUpdate, msgID string) io.Reader {
+func makeUpdateBuildTaskPubsubMsg(req *pb.BuildTaskUpdate, msgID, subID string) io.Reader {
 	data, err := proto.Marshal(req)
 	if err != nil {
 		return nil
@@ -746,7 +788,7 @@ func makeUpdateBuildTaskPubsubMsg(req *pb.BuildTaskUpdate, msgID string) io.Read
 			Data:      base64.StdEncoding.EncodeToString(data),
 			MessageId: msgID,
 		},
-		Subscription: "projects/app-id/subscriptions/chromium-swarm-backend",
+		Subscription: "projects/app-id/subscriptions/" + subID,
 	}
 	jmsg, _ := json.Marshal(msg)
 	return bytes.NewReader(jmsg)

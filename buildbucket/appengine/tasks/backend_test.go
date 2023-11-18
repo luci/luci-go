@@ -214,7 +214,11 @@ func TestCreateBackendTask(t *testing.T) {
 		backendSetting = append(backendSetting, &pb.BackendSetting{
 			Target:   "swarming:/chromium-swarm-dev",
 			Hostname: "chromium-swarm-dev",
-			PubsubId: "chromium-swarm-dev-backend",
+			Mode: &pb.BackendSetting_FullMode_{
+				FullMode: &pb.BackendSetting_FullMode{
+					PubsubId: "chromium-swarm-dev-backend",
+				},
+			},
 		})
 		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 		server := httptest.NewServer(describeBootstrapBundle(c))

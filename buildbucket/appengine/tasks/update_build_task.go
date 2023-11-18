@@ -120,9 +120,17 @@ func validatePubsubSubscription(ctx context.Context, req buildTaskUpdate) error 
 
 	isValid := false
 	for _, backend := range globalCfg.Backends {
-		subscription := fmt.Sprintf("projects/%s/subscriptions/%s", info.AppID(ctx), backend.PubsubId)
-		if backend.Target == target && subscription == req.subscription {
-			isValid = true
+		if backend.Target == target {
+			var subscription string
+			switch backend.Mode.(type) {
+			case *pb.BackendSetting_LiteMode_:
+				return errors.Reason("backend target %s is in lite mode. The task update isn't supported", target).Err()
+			case *pb.BackendSetting_FullMode_:
+				subscription = fmt.Sprintf("projects/%s/subscriptions/%s", info.AppID(ctx), backend.GetFullMode().GetPubsubId())
+			}
+			if subscription == req.subscription {
+				isValid = true
+			}
 			break
 		}
 	}
