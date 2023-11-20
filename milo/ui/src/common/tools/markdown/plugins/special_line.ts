@@ -71,6 +71,14 @@ class SpecialLineRulesProcessor {
           token = s.push(`special_line_${activeRuleIndex}`, '', 0);
           token.hidden = true;
 
+          // markdown-it@13.0.2 requires all plugins to advance the cursor.
+          // Add a character to src and advance the pos by 1 to avoid this
+          // issue.
+          if (prefix.length === 0) {
+            s.src = s.src.slice(0, s.pos) + '@' + content;
+            s.pos += 1;
+          }
+
           s.pos += prefix.length;
           return true;
         }

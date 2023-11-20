@@ -82,7 +82,7 @@ describe('AssociatedBugsBadge', () => {
       ></milo-associated-bugs-badge>
     `);
 
-    const listener = oneEvent(window, 'show-tooltip');
+    const listener = oneEvent(window, 'show-tooltip', false);
     ele
       .shadowRoot!.querySelector('.badge')!
       .dispatchEvent(new MouseEvent('mouseover'));
