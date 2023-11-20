@@ -225,42 +225,12 @@ func validateProjectConfigRaw(ctx *validation.Context, project, content string) 
 }
 
 func ValidateProjectConfig(ctx *validation.Context, project string, cfg *configpb.ProjectConfig) {
-	if cfg.BugSystem == configpb.BugSystem_MONORAIL && cfg.Monorail == nil {
-		ctx.Errorf("monorail configuration is required when the configured bug system is Monorail")
-		return
-	}
-
-	if cfg.BugSystem == configpb.BugSystem_BUGANIZER && cfg.Buganizer == nil {
-		ctx.Errorf("buganizer configuration is required when the configured bug system is Buganizer")
-		return
-	}
-
-	validateMonorailLegacy(ctx, project, cfg.Monorail, cfg.BugFilingThresholds)
-	validateBuganizerLegacy(ctx, project, cfg.Buganizer, cfg.BugFilingThresholds)
-
-	// Validate BugFilingThreshold when it is not nil or there is a bug system specified.
-	if cfg.BugFilingThresholds != nil || cfg.BugSystem != configpb.BugSystem_BUG_SYSTEM_UNSPECIFIED {
-		validateImpactMetricThresholds(ctx, "bug_filing_thresholds", project, cfg.BugFilingThresholds)
-	}
 	for _, rCfg := range cfg.Realms {
 		validateRealmConfig(ctx, rCfg)
 	}
 	validateClustering(ctx, cfg.Clustering)
 	validateMetrics(ctx, cfg.Metrics)
 	validateBugManagement(ctx, cfg.BugManagement)
-}
-
-func validateBuganizerLegacy(ctx *validation.Context, project string, cfg *configpb.BuganizerProject, bugFilingThres []*configpb.ImpactMetricThreshold) {
-	ctx.Enter("buganizer")
-	defer ctx.Exit()
-
-	if cfg == nil {
-		// Allow non-existent buganizer section.
-		return
-	}
-	validateBuganizerDefaultComponent(ctx, cfg.DefaultComponent)
-	validatePriorityHysteresisPercent(ctx, cfg.PriorityHysteresisPercent)
-	validateBuganizerPriorityMappings(ctx, project, cfg.PriorityMappings, bugFilingThres)
 }
 
 func validateBuganizerDefaultComponent(ctx *validation.Context, component *configpb.BuganizerComponent) {
@@ -282,50 +252,6 @@ func validateBuganizerDefaultComponent(ctx *validation.Context, component *confi
 	}
 }
 
-func validateBuganizerPriorityMappings(ctx *validation.Context, project string, mappings []*configpb.BuganizerProject_PriorityMapping, bugFilingThres []*configpb.ImpactMetricThreshold) {
-	ctx.Enter("priority_mappings")
-	defer ctx.Exit()
-
-	if mappings == nil {
-		ctx.Errorf(unspecifiedMessage)
-		return
-	}
-	if len(mappings) == 0 {
-		ctx.Errorf("at least one buganizer priority mapping must be specified")
-	}
-
-	for i, mapping := range mappings {
-		ctx.Enter("[%v]", i)
-		validateBuganizerPriorityMapping(ctx, project, mapping, bugFilingThres)
-		if i == len(mappings)-1 {
-			// The lowest priority threshold must be satisfied by
-			// the bug-filing threshold. This ensures that bugs meeting the
-			// bug-filing threshold meet the bug keep-open threshold.
-			validatePrioritySatisfiedByBugFilingThreshold(ctx, mapping.Thresholds, bugFilingThres)
-		}
-		ctx.Exit()
-	}
-
-	// Validate priorites are in decending order
-	for i := len(mappings) - 1; i >= 1; i-- {
-		ctx.Enter("[%v]", i)
-		for j := i - 1; j >= 0; j-- {
-			if mappings[j].Priority > mappings[i].Priority {
-				ctx.Errorf("invalid priority_mappings order, must be in decending order, found: %s before %s",
-					mappings[i].Priority.String(),
-					mappings[j].Priority.String())
-				break
-			}
-		}
-		ctx.Exit()
-	}
-}
-
-func validateBuganizerPriorityMapping(ctx *validation.Context, project string, mapping *configpb.BuganizerProject_PriorityMapping, bugFilingThres []*configpb.ImpactMetricThreshold) {
-	validateBuganizerPriority(ctx, mapping.Priority)
-	validateImpactMetricThresholds(ctx, "thresholds", project, mapping.Thresholds)
-}
-
 func validateBuganizerPriority(ctx *validation.Context, priority configpb.BuganizerPriority) {
 	ctx.Enter("priority")
 	defer ctx.Exit()
@@ -333,26 +259,6 @@ func validateBuganizerPriority(ctx *validation.Context, priority configpb.Bugani
 	if priority == configpb.BuganizerPriority_BUGANIZER_PRIORITY_UNSPECIFIED {
 		ctx.Errorf(unspecifiedMessage)
 		return
-	}
-}
-
-func validateMonorailLegacy(ctx *validation.Context, project string, cfg *configpb.MonorailProject, bugFilingThres []*configpb.ImpactMetricThreshold) {
-	ctx.Enter("monorail")
-	defer ctx.Exit()
-
-	if cfg == nil {
-		// Allow non-existent monorail section.
-		return
-	}
-
-	validateStringConfig(ctx, "project", cfg.Project, monorailProjectRE, monorailProjectMaxLengthBytes)
-	validateDefaultFieldValues(ctx, cfg.DefaultFieldValues)
-	validateFieldID(ctx, "priority_field_id", cfg.PriorityFieldId)
-	validateMonorailPriorities(ctx, project, cfg.Priorities, bugFilingThres)
-	validatePriorityHysteresisPercent(ctx, cfg.PriorityHysteresisPercent)
-	validateDisplayPrefix(ctx, cfg.DisplayPrefix)
-	if cfg.MonorailHostname != "" {
-		validateStringConfig(ctx, "monorail_hostname", cfg.MonorailHostname, hostnameRE, hostnameMaxLengthBytes)
 	}
 }
 
@@ -393,85 +299,6 @@ func validateFieldID(ctx *validation.Context, fieldName string, fieldID int64) {
 	}
 }
 
-func validateMonorailPriorities(ctx *validation.Context, project string, ps []*configpb.MonorailPriority, bugFilingThres []*configpb.ImpactMetricThreshold) {
-	ctx.Enter("priorities")
-	defer ctx.Exit()
-
-	if len(ps) == 0 {
-		ctx.Errorf("at least one monorail priority must be specified")
-	}
-	for i, priority := range ps {
-		ctx.Enter("[%v]", i)
-		validateMonorailPriority(ctx, project, priority)
-		if i == len(ps)-1 {
-			// The lowest priority threshold must be satisfied by
-			// the bug-filing threshold. This ensures that bugs meeting the
-			// bug-filing threshold meet the bug keep-open threshold.
-			validatePrioritySatisfiedByBugFilingThreshold(ctx, priority.Thresholds, bugFilingThres)
-		}
-		ctx.Exit()
-	}
-}
-
-func validateMonorailPriority(ctx *validation.Context, project string, p *configpb.MonorailPriority) {
-	validatePriorityValue(ctx, p.Priority)
-	validateImpactMetricThresholds(ctx, "thresholds", project, p.Thresholds)
-}
-
-func validatePrioritySatisfiedByBugFilingThreshold(ctx *validation.Context, priorityThreshold, bugFilingThres []*configpb.ImpactMetricThreshold) {
-	ctx.Enter("threshold")
-	defer ctx.Exit()
-
-	if len(priorityThreshold) == 0 {
-		// Priority without threshold is already reported as errors elsewhere.
-		return
-	}
-	// Check if all condition in the bug filing threshold satisfy the priority threshold.
-	for i, t := range bugFilingThres {
-		ctx.Enter("[%v]", i)
-
-		// Verify bug-filing threshold implies priority threshold.
-		lhs := t.Threshold
-		rhs := pbutil.MetricThresholdByID(t.MetricId, priorityThreshold)
-		opts := validateImplicationOptions{
-			lhsDescription:         "the bug-filing threshold",
-			implicationDescription: "this ensures that bugs which are filed meet the criteria to stay open",
-		}
-		validateMetricThresholdImpliedBy(ctx, t.MetricId, rhs, lhs, opts)
-		ctx.Exit()
-	}
-}
-
-func validatePriorityValue(ctx *validation.Context, value string) {
-	ctx.Enter("priority")
-	defer ctx.Exit()
-
-	// Although it is possible to allow the priority field to be empty, it
-	// would be rather unusual for a project to set itself up this way. For
-	// now, prefer to enforce priority values are non-empty as this will pick
-	// likely configuration errors.
-	if value == "" {
-		ctx.Errorf("empty value is not allowed")
-	}
-}
-
-func validateImpactMetricThresholds(ctx *validation.Context, fieldName, project string, ts []*configpb.ImpactMetricThreshold) {
-	ctx.Enter(fieldName)
-	defer ctx.Exit()
-
-	// Must have the impact metric tresholds unless it is a chromium milestone projects.
-	if len(ts) == 0 && !ChromiumMilestoneProjectRe.MatchString(project) {
-		ctx.Errorf("impact thresholds must be specified")
-	}
-	seenIDs := map[string]struct{}{}
-	for i, t := range ts {
-		ctx.Enter("[%v]", i)
-		validateMetricID(ctx, t.MetricId, seenIDs)
-		validateMetricThreshold(ctx, "threshold", t.Threshold, false /* mustBeSatisfiable */)
-		ctx.Exit()
-	}
-}
-
 // validateMetricThreshold a metric threshold message. If mustBeSatisfiable is set,
 // the metric threshold must have at least one of one_day, three_day or seven_day set.
 func validateMetricThreshold(ctx *validation.Context, fieldName string, t *configpb.MetricThreshold, mustBeSatisfiable bool) {
@@ -495,18 +322,6 @@ func validateMetricThreshold(ctx *validation.Context, fieldName string, t *confi
 	validateThresholdValue(ctx, t.OneDay, "one_day")
 	validateThresholdValue(ctx, t.ThreeDay, "three_day")
 	validateThresholdValue(ctx, t.SevenDay, "seven_day")
-}
-
-func validatePriorityHysteresisPercent(ctx *validation.Context, value int64) {
-	ctx.Enter("priority_hysteresis_percent")
-	defer ctx.Exit()
-
-	if value > maxHysteresisPercent {
-		ctx.Errorf("value must not exceed %v percent", maxHysteresisPercent)
-	}
-	if value < 0 {
-		ctx.Errorf("value must not be negative")
-	}
 }
 
 func validateThresholdValue(ctx *validation.Context, value *int64, fieldName string) {
@@ -656,15 +471,6 @@ func validateBugFilingThresholdSatisfiesThresold(ctx *validation.Context, rhsThr
 		ctx.Errorf("%s threshold must be set, with a value of at most %v (%s); %s", fieldName, *lhsThres, lhsDescription, implicationDescription)
 	} else if *rhsThreshold > *lhsThres {
 		ctx.Errorf("value must be at most %v (%s); %s", *lhsThres, lhsDescription, implicationDescription)
-	}
-}
-
-func validateDisplayPrefix(ctx *validation.Context, prefix string) {
-	ctx.Enter(prefix)
-	defer ctx.Exit()
-
-	if !prefixRE.MatchString(prefix) {
-		ctx.Errorf("invalid display prefix: %q", prefix)
 	}
 }
 

@@ -119,17 +119,6 @@ func toMonorailProjectPB(cfg *configpb.MonorailProject) *pb.MonorailProject {
 	}
 }
 
-func toImpactMetricThresholdsPB(impactThresholds []*configpb.ImpactMetricThreshold) []*pb.ImpactMetricThreshold {
-	result := make([]*pb.ImpactMetricThreshold, len(impactThresholds))
-	for i, impactThreshold := range impactThresholds {
-		result[i] = &pb.ImpactMetricThreshold{
-			MetricId:  impactThreshold.MetricId,
-			Threshold: toMetricThresholdPB(impactThreshold.Threshold),
-		}
-	}
-	return result
-}
-
 func toMetricThresholdPB(threshold *configpb.MetricThreshold) *pb.MetricThreshold {
 	if threshold == nil {
 		return nil

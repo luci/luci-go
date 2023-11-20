@@ -159,21 +159,17 @@ type ProjectConfig struct {
 
 	// The project metadata (eg. display name).
 	ProjectMetadata *ProjectMetadata `protobuf:"bytes,6,opt,name=project_metadata,json=projectMetadata,proto3" json:"project_metadata,omitempty"`
-	// The default bug system to route new bugs to, when the bug system and
-	// component could not be automatically detected from a test metadata.
-	//
-	// TODO(meiring): Indicate deprecation once policy-based bug filing available.
+	// Deprecated. No longer has any effect. Retained for textproto
+	// compatibility only. Use bug_management.default_bug_system instead.
 	BugSystem BugSystem `protobuf:"varint,7,opt,name=bug_system,json=bugSystem,proto3,enum=luci.analysis.config.BugSystem" json:"bug_system,omitempty"`
-	// The monorail configuration to use when filing bugs.
-	//
-	// TODO(meiring): Indicate deprecation once policy-based bug filing available.
+	// Deprecated. No longer has any effect. Retained for textproto
+	// compatibility only. Use bug_management.monorail instead.
 	Monorail *MonorailProject `protobuf:"bytes,1,opt,name=monorail,proto3" json:"monorail,omitempty"`
-	// The Buganzier configuration to use when filing bugs.
-	//
-	// TODO(meiring): Indicate deprecation once policy-based bug filing available.
+	// Deprecated. No longer has any effect. Retained for textproto
+	// compatibility only. Use bug_management.buganizer instead.
 	Buganizer *BuganizerProject `protobuf:"bytes,8,opt,name=buganizer,proto3" json:"buganizer,omitempty"`
 	// Deprecated. No longer has any effect. Retained for textproto
-	// compatibility only. Use bug_filing_thresholds instead.
+	// compatibility only. Use bug_management.policies instead.
 	BugFilingThreshold *ImpactThreshold `protobuf:"bytes,2,opt,name=bug_filing_threshold,json=bugFilingThreshold,proto3" json:"bug_filing_threshold,omitempty"`
 	// Per realm configurations.
 	Realms []*RealmConfig `protobuf:"bytes,3,rep,name=realms,proto3" json:"realms,omitempty"`
@@ -185,22 +181,8 @@ type ProjectConfig struct {
 	Clustering *Clustering `protobuf:"bytes,5,opt,name=clustering,proto3" json:"clustering,omitempty"`
 	// Configuration for automatic bug management.
 	BugManagement *BugManagement `protobuf:"bytes,9,opt,name=bug_management,json=bugManagement,proto3" json:"bug_management,omitempty"`
-	// The threshold at which to file bugs.
-	// If a reason cluster's impact exceeds the given threshold,
-	// a bug will be filed for it.
-	// Alternatively, if a test name cluster's impact exceeds 134% of the given
-	// threshold, a bug will also be filed for it.
-	//
-	// LUCI Analysis's bias towards reason clusters reflects the fact that bugs
-	// filed for reasons should be better scoped and more actionable
-	// (focus on one problem).
-	//
-	// The thresholds are considered satisfied if any of the individual impact metric
-	// thresholds is met or exceeded (i.e. if multiple thresholds are set, they
-	// are combined using an OR-semantic). If no threshold is set on any individual
-	// metric, the threshold as a whole is unsatisfiable.
-	//
-	// TODO(meiring): Indicate deprecation once policy-based bug filing available.
+	// Deprecated. No longer has any effect. Retained for textproto
+	// compatibility only. Use bug_management.policies instead.
 	BugFilingThresholds []*ImpactMetricThreshold `protobuf:"bytes,10,rep,name=bug_filing_thresholds,json=bugFilingThresholds,proto3" json:"bug_filing_thresholds,omitempty"`
 	// Configuration related to metrics in LUCI Analysis.
 	Metrics *Metrics `protobuf:"bytes,11,opt,name=metrics,proto3" json:"metrics,omitempty"`
@@ -662,38 +644,20 @@ func (x *BugManagementPolicy) GetBugTemplate() *BugManagementPolicy_BugTemplate 
 	return nil
 }
 
-// ImpactThreshold specifies a condition on a cluster's impact metrics.
-// The threshold is considered satisfied if any of the individual metric
-// thresholds is met or exceeded (i.e. if multiple thresholds are set, they
-// are combined using an OR-semantic). If no threshold is set on any individual
-// metric, the threshold as a whole is unsatisfiable.
+// Deprecated. No longer has any effect. Retained for textproto
+// compatibility only.
 type ImpactThreshold struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The number of test results that were unexpected failures.
-	TestResultsFailed *MetricThreshold `protobuf:"bytes,4,opt,name=test_results_failed,json=testResultsFailed,proto3" json:"test_results_failed,omitempty"`
-	// The number of test runs that failed.
-	// A test run (also known as a 'shard' (chromium) or 'task' (Chrome OS))
-	// is considered failed if all tries of test(s) in it unexpectedly failed.
-	// The failed test run is attributed to the last failure of each of the
-	// test(s) that failed on all tries.
-	TestRunsFailed *MetricThreshold `protobuf:"bytes,5,opt,name=test_runs_failed,json=testRunsFailed,proto3" json:"test_runs_failed,omitempty"`
-	// The number of presubmit runs that failed.
-	PresubmitRunsFailed *MetricThreshold `protobuf:"bytes,6,opt,name=presubmit_runs_failed,json=presubmitRunsFailed,proto3" json:"presubmit_runs_failed,omitempty"`
-	// The number of test failures on critical builders that were exonerated,
-	// with an exoneration reason other than NOT_CRITICAL.
+	TestResultsFailed          *MetricThreshold `protobuf:"bytes,4,opt,name=test_results_failed,json=testResultsFailed,proto3" json:"test_results_failed,omitempty"`
+	TestRunsFailed             *MetricThreshold `protobuf:"bytes,5,opt,name=test_runs_failed,json=testRunsFailed,proto3" json:"test_runs_failed,omitempty"`
+	PresubmitRunsFailed        *MetricThreshold `protobuf:"bytes,6,opt,name=presubmit_runs_failed,json=presubmitRunsFailed,proto3" json:"presubmit_runs_failed,omitempty"`
 	CriticalFailuresExonerated *MetricThreshold `protobuf:"bytes,7,opt,name=critical_failures_exonerated,json=criticalFailuresExonerated,proto3" json:"critical_failures_exonerated,omitempty"`
-	// Deprecated. No longer has any effect. Retained for textproto
-	// compatibility only.
-	UnexpectedFailures_1D *int64 `protobuf:"varint,1,opt,name=unexpected_failures_1d,json=unexpectedFailures1d,proto3,oneof" json:"unexpected_failures_1d,omitempty"`
-	// Deprecated. No longer has any effect. Retained for textproto
-	// compatibility only.
-	UnexpectedFailures_3D *int64 `protobuf:"varint,2,opt,name=unexpected_failures_3d,json=unexpectedFailures3d,proto3,oneof" json:"unexpected_failures_3d,omitempty"`
-	// Deprecated. No longer has any effect. Retained for textproto
-	// compatibility only.
-	UnexpectedFailures_7D *int64 `protobuf:"varint,3,opt,name=unexpected_failures_7d,json=unexpectedFailures7d,proto3,oneof" json:"unexpected_failures_7d,omitempty"`
+	UnexpectedFailures_1D      *int64           `protobuf:"varint,1,opt,name=unexpected_failures_1d,json=unexpectedFailures1d,proto3,oneof" json:"unexpected_failures_1d,omitempty"`
+	UnexpectedFailures_3D      *int64           `protobuf:"varint,2,opt,name=unexpected_failures_3d,json=unexpectedFailures3d,proto3,oneof" json:"unexpected_failures_3d,omitempty"`
+	UnexpectedFailures_7D      *int64           `protobuf:"varint,3,opt,name=unexpected_failures_7d,json=unexpectedFailures7d,proto3,oneof" json:"unexpected_failures_7d,omitempty"`
 }
 
 func (x *ImpactThreshold) Reset() {
@@ -784,18 +748,20 @@ type ImpactMetricThreshold struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The id of the impact metric.
-	// eg.
+	// e.g.
 	// human-cls-failed-presubmit: The number of presubmit runs that failed.
-	// critical-failures-exonerated: The number of test failures on critical builders that were exonerated
+	// critical-failures-exonerated: The number of test failures on critical
 	//
-	//	with an exoneration reason other than NOT_CRITICAL.
+	//	builders that were exonerated with an
+	//	exoneration reason other than NOT_CRITICAL.
 	//
 	// test-runs-failed: The number of test runs that failed.
 	//
-	//	A test run (also known as a 'shard' (chromium) or 'task' (Chrome OS))
-	//	is considered failed if all tries of test(s) in it unexpectedly failed.
-	//	The failed test run is attributed to the last failure of each of the
-	//	test(s) that failed on all tries.
+	//	A test run (also known as a 'shard' (chromium) or
+	//	'task' (Chrome OS)) is considered failed if all tries of
+	//	test(s) in it unexpectedly failed. The failed test run is
+	//	attributed to the last failure of each of the test(s)
+	//	that failed on all tries.
 	//
 	// failures: The number of test results that were unexpected failures.
 	//
@@ -943,28 +909,11 @@ type MonorailProject struct {
 	//
 	// This field must support the values: "Pri-0", "Pri-1", "Pri-2", "Pri-3".
 	PriorityFieldId int64 `protobuf:"varint,3,opt,name=priority_field_id,json=priorityFieldId,proto3" json:"priority_field_id,omitempty"`
-	// The possible bug priorities and their associated impact thresholds.
-	// Priorities must be listed from highest (i.e. P0) to lowest (i.e. P3).
-	// Higher priorities can only be reached if the thresholds for all lower
-	// priorities are also met.
-	// The impact thresholds for setting the lowest priority implicitly
-	// identifies the bug closure threshold -- if no priority can be
-	// matched, the bug is closed. Satisfying the threshold for filing bugs MUST
-	// at least imply the threshold for the lowest priority, and MAY imply
-	// the thresholds of higher priorities.
+	// Deprecated. No longer has any effect. Retained for textproto
+	// compatibility only. Use bug_management.policies instead.
 	Priorities []*MonorailPriority `protobuf:"bytes,4,rep,name=priorities,proto3" json:"priorities,omitempty"`
-	// Controls the amount of hysteresis used in setting bug priorities.
-	// Once a bug is assigned a given priority, its priority will only be
-	// increased if it exceeds the next priority's thresholds by the
-	// specified percentage margin, and decreased if the current priority's
-	// thresholds exceed the bug's impact by the given percentage margin.
-	//
-	// A value of 100 indicates impact may be double the threshold for
-	// the next highest priority value, (or half the threshold of the
-	// current priority value,) before a bug's priority is increased
-	// (or decreased).
-	//
-	// Valid values are from 0 (no hystersis) to 1,000 (10x hysteresis).
+	// Deprecated. No longer has any effect. Retained for textproto
+	// compatibility only.
 	PriorityHysteresisPercent int64 `protobuf:"varint,5,opt,name=priority_hysteresis_percent,json=priorityHysteresisPercent,proto3" json:"priority_hysteresis_percent,omitempty"`
 	// The prefix that should appear when displaying bugs from the
 	// given bug tracking system. E.g. "crbug.com" or "fxbug.dev".
@@ -1146,23 +1095,15 @@ func (x *MonorailFieldValue) GetValue() string {
 	return ""
 }
 
-// MonorailPriority represents configuration for when to use a given
-// priority value in a bug.
+// Deprecated. No longer has any effect. Retained for textproto
+// compatibility only.
 type MonorailPriority struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The monorail priority value. For example, "0". This depends on the
-	// valid priority field values you have defined in your monorail project.
-	Priority string `protobuf:"bytes,1,opt,name=priority,proto3" json:"priority,omitempty"`
-	// Deprecated. No longer has any effect. Retained for textproto
-	// compatibility only. Use thresholds instead.
-	Threshold *ImpactThreshold `protobuf:"bytes,2,opt,name=threshold,proto3" json:"threshold,omitempty"`
-	// The threshold at which to apply the priority.
-	// The thresholds are considered satisfied if any of the individual impact metric
-	// thresholds is met or exceeded (i.e. if multiple thresholds are set, they
-	// are combined using an OR-semantic).
+	Priority   string                   `protobuf:"bytes,1,opt,name=priority,proto3" json:"priority,omitempty"`
+	Threshold  *ImpactThreshold         `protobuf:"bytes,2,opt,name=threshold,proto3" json:"threshold,omitempty"`
 	Thresholds []*ImpactMetricThreshold `protobuf:"bytes,3,rep,name=thresholds,proto3" json:"thresholds,omitempty"`
 }
 
@@ -1595,26 +1536,11 @@ type BuganizerProject struct {
 	// This component will be used if we failed to find
 	// a component for a cluster.
 	DefaultComponent *BuganizerComponent `protobuf:"bytes,1,opt,name=default_component,json=defaultComponent,proto3" json:"default_component,omitempty"`
-	// Controls the amount of hysteresis used in setting bug priorities.
-	// Once a bug is assigned a given priority, its priority will only be
-	// increased if it exceeds the next priority's thresholds by the
-	// specified percentage margin, and decreased if the current priority's
-	// thresholds exceed the bug's impact by the given percentage margin.
-	//
-	// A value of 100 indicates impact may be double the threshold for
-	// the next highest priority value, (or half the threshold of the
-	// current priority value,) before a bug's priority is increased
-	// (or decreased).
-	//
-	// Valid values are from 0 (no hystersis) to 1,000 (10x hysteresis).
+	// Deprecated. No longer has any effect. Retained for textproto
+	// compatibility only.
 	PriorityHysteresisPercent int64 `protobuf:"varint,2,opt,name=priority_hysteresis_percent,json=priorityHysteresisPercent,proto3" json:"priority_hysteresis_percent,omitempty"`
-	// A list of priority mappings that will be used to determine the
-	// priority of the bug based on the threshold.
-	// The priorities must be the ones in BuganizerPriority.
-	// They must be in descending order of highest to lowset priority
-	// and without duplicates.
-	// In order to meet a higher priority, the impact must match all lower
-	// priorities' criteria first.
+	// Deprecated. No longer has any effect. Retained for textproto
+	// compatibility only. Use bug_management.policies instead.
 	PriorityMappings []*BuganizerProject_PriorityMapping `protobuf:"bytes,3,rep,name=priority_mappings,json=priorityMappings,proto3" json:"priority_mappings,omitempty"`
 }
 
@@ -2090,22 +2016,15 @@ func (x *BugManagementPolicy_BugTemplate_Monorail) GetLabels() []string {
 	return nil
 }
 
-// A mapping between a Buganizer priority to an Impact Threshold.
-// We use this to determine that which priority to set for a bug.
+// Deprecated. No longer has any effect. Retained for textproto
+// compatibility only.
 type BuganizerProject_PriorityMapping struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The Buganizer priority that will be mapped to a threshold.
-	Priority BuganizerPriority `protobuf:"varint,1,opt,name=priority,proto3,enum=luci.analysis.config.BuganizerPriority" json:"priority,omitempty"`
-	// Deprecated. No longer has any effect. Retained for textproto
-	// compatibility only. Use thresholds instead.
-	Threshold *ImpactThreshold `protobuf:"bytes,2,opt,name=threshold,proto3" json:"threshold,omitempty"`
-	// The threshold at which to apply the priority.
-	// The thresholds are considered satisfied if any of the individual impact metric
-	// thresholds is met or exceeded (i.e. if multiple thresholds are set, they
-	// are combined using an OR-semantic).
+	Priority   BuganizerPriority        `protobuf:"varint,1,opt,name=priority,proto3,enum=luci.analysis.config.BuganizerPriority" json:"priority,omitempty"`
+	Threshold  *ImpactThreshold         `protobuf:"bytes,2,opt,name=threshold,proto3" json:"threshold,omitempty"`
 	Thresholds []*ImpactMetricThreshold `protobuf:"bytes,3,rep,name=thresholds,proto3" json:"thresholds,omitempty"`
 }
 

@@ -27,24 +27,20 @@ message ProjectConfig {
   // The project metadata (eg. display name).
   ProjectMetadata project_metadata = 6;
 
-  // The default bug system to route new bugs to, when the bug system and
-  // component could not be automatically detected from a test metadata.
-  //
-  // TODO(meiring): Indicate deprecation once policy-based bug filing available.
+  // Deprecated. No longer has any effect. Retained for textproto
+  // compatibility only. Use bug_management.default_bug_system instead.
   BugSystem bug_system = 7;
 
-  // The monorail configuration to use when filing bugs.
-  //
-  // TODO(meiring): Indicate deprecation once policy-based bug filing available.
+  // Deprecated. No longer has any effect. Retained for textproto
+  // compatibility only. Use bug_management.monorail instead.
   MonorailProject monorail = 1;
 
-  // The Buganzier configuration to use when filing bugs.
-  //
-  // TODO(meiring): Indicate deprecation once policy-based bug filing available.
+  // Deprecated. No longer has any effect. Retained for textproto
+  // compatibility only. Use bug_management.buganizer instead.
   BuganizerProject buganizer = 8;
 
   // Deprecated. No longer has any effect. Retained for textproto
-  // compatibility only. Use bug_filing_thresholds instead.
+  // compatibility only. Use bug_management.policies instead.
   ImpactThreshold bug_filing_threshold = 2;
 
   // Per realm configurations.
@@ -61,22 +57,8 @@ message ProjectConfig {
   // Configuration for automatic bug management.
   BugManagement bug_management = 9;
 
-  // The threshold at which to file bugs.
-  // If a reason cluster's impact exceeds the given threshold,
-  // a bug will be filed for it.
-  // Alternatively, if a test name cluster's impact exceeds 134% of the given
-  // threshold, a bug will also be filed for it.
-  //
-  // LUCI Analysis's bias towards reason clusters reflects the fact that bugs
-  // filed for reasons should be better scoped and more actionable
-  // (focus on one problem).
-  //
-  // The thresholds are considered satisfied if any of the individual impact metric
-  // thresholds is met or exceeded (i.e. if multiple thresholds are set, they
-  // are combined using an OR-semantic). If no threshold is set on any individual
-  // metric, the threshold as a whole is unsatisfiable.
-  //
-  // TODO(meiring): Indicate deprecation once policy-based bug filing available.
+  // Deprecated. No longer has any effect. Retained for textproto
+  // compatibility only. Use bug_management.policies instead.
   repeated ImpactMetricThreshold bug_filing_thresholds = 10;
 
   // Configuration related to metrics in LUCI Analysis.
@@ -322,54 +304,32 @@ message BugManagementPolicy {
   }
 }
 
-// ImpactThreshold specifies a condition on a cluster's impact metrics.
-// The threshold is considered satisfied if any of the individual metric
-// thresholds is met or exceeded (i.e. if multiple thresholds are set, they
-// are combined using an OR-semantic). If no threshold is set on any individual
-// metric, the threshold as a whole is unsatisfiable.
+// Deprecated. No longer has any effect. Retained for textproto
+// compatibility only.
 message ImpactThreshold {
-  // The number of test results that were unexpected failures.
   MetricThreshold test_results_failed = 4;
-
-  // The number of test runs that failed.
-  // A test run (also known as a 'shard' (chromium) or 'task' (Chrome OS))
-  // is considered failed if all tries of test(s) in it unexpectedly failed.
-  // The failed test run is attributed to the last failure of each of the
-  // test(s) that failed on all tries.
   MetricThreshold test_runs_failed = 5;
-
-  // The number of presubmit runs that failed.
   MetricThreshold presubmit_runs_failed = 6;
-
-  // The number of test failures on critical builders that were exonerated,
-  // with an exoneration reason other than NOT_CRITICAL.
   MetricThreshold critical_failures_exonerated = 7;
-
-  // Deprecated. No longer has any effect. Retained for textproto
-  // compatibility only.
   optional int64 unexpected_failures_1d = 1;
-
-  // Deprecated. No longer has any effect. Retained for textproto
-  // compatibility only.
   optional int64 unexpected_failures_3d = 2;
-
-  // Deprecated. No longer has any effect. Retained for textproto
-  // compatibility only.
   optional int64 unexpected_failures_7d = 3;
 }
 
 // ImpactMetricThreshold specifies a condition on a cluster's impact metric.
 message ImpactMetricThreshold {
   // The id of the impact metric.
-  // eg.
+  // e.g.
   // human-cls-failed-presubmit: The number of presubmit runs that failed.
-  // critical-failures-exonerated: The number of test failures on critical builders that were exonerated
-  //                               with an exoneration reason other than NOT_CRITICAL.
+  // critical-failures-exonerated: The number of test failures on critical
+  //                               builders that were exonerated with an
+  //                               exoneration reason other than NOT_CRITICAL.
   // test-runs-failed: The number of test runs that failed.
-  //                   A test run (also known as a 'shard' (chromium) or 'task' (Chrome OS))
-  //                   is considered failed if all tries of test(s) in it unexpectedly failed.
-  //                   The failed test run is attributed to the last failure of each of the
-  //                   test(s) that failed on all tries.
+  //                   A test run (also known as a 'shard' (chromium) or
+  //                   'task' (Chrome OS)) is considered failed if all tries of
+  //                   test(s) in it unexpectedly failed. The failed test run is
+  //                   attributed to the last failure of each of the test(s)
+  //                   that failed on all tries.
   // failures: The number of test results that were unexpected failures.
   //
   // Full list of available metrics here:
@@ -415,29 +375,12 @@ message MonorailProject {
   // This field must support the values: "Pri-0", "Pri-1", "Pri-2", "Pri-3".
   int64 priority_field_id = 3;
 
-  // The possible bug priorities and their associated impact thresholds.
-  // Priorities must be listed from highest (i.e. P0) to lowest (i.e. P3).
-  // Higher priorities can only be reached if the thresholds for all lower
-  // priorities are also met.
-  // The impact thresholds for setting the lowest priority implicitly
-  // identifies the bug closure threshold -- if no priority can be
-  // matched, the bug is closed. Satisfying the threshold for filing bugs MUST
-  // at least imply the threshold for the lowest priority, and MAY imply
-  // the thresholds of higher priorities.
+  // Deprecated. No longer has any effect. Retained for textproto
+  // compatibility only. Use bug_management.policies instead.
   repeated MonorailPriority priorities = 4;
 
-  // Controls the amount of hysteresis used in setting bug priorities.
-  // Once a bug is assigned a given priority, its priority will only be
-  // increased if it exceeds the next priority's thresholds by the
-  // specified percentage margin, and decreased if the current priority's
-  // thresholds exceed the bug's impact by the given percentage margin.
-  //
-  // A value of 100 indicates impact may be double the threshold for
-  // the next highest priority value, (or half the threshold of the
-  // current priority value,) before a bug's priority is increased
-  // (or decreased).
-  //
-  // Valid values are from 0 (no hystersis) to 1,000 (10x hysteresis).
+  // Deprecated. No longer has any effect. Retained for textproto
+  // compatibility only.
   int64 priority_hysteresis_percent = 5;
 
   // The prefix that should appear when displaying bugs from the
@@ -485,21 +428,12 @@ message MonorailFieldValue {
   string value = 2;
 }
 
-// MonorailPriority represents configuration for when to use a given
-// priority value in a bug.
+
+// Deprecated. No longer has any effect. Retained for textproto
+// compatibility only.
 message MonorailPriority {
-  // The monorail priority value. For example, "0". This depends on the
-  // valid priority field values you have defined in your monorail project.
   string priority = 1;
-
-  // Deprecated. No longer has any effect. Retained for textproto
-  // compatibility only. Use thresholds instead.
   ImpactThreshold threshold = 2;
-
-  // The threshold at which to apply the priority.
-  // The thresholds are considered satisfied if any of the individual impact metric
-  // thresholds is met or exceeded (i.e. if multiple thresholds are set, they
-  // are combined using an OR-semantic).
   repeated ImpactMetricThreshold thresholds = 3;
 }
 
@@ -698,44 +632,19 @@ message BuganizerProject {
   // a component for a cluster.
   BuganizerComponent default_component = 1;
 
-  // Controls the amount of hysteresis used in setting bug priorities.
-  // Once a bug is assigned a given priority, its priority will only be
-  // increased if it exceeds the next priority's thresholds by the
-  // specified percentage margin, and decreased if the current priority's
-  // thresholds exceed the bug's impact by the given percentage margin.
-  //
-  // A value of 100 indicates impact may be double the threshold for
-  // the next highest priority value, (or half the threshold of the
-  // current priority value,) before a bug's priority is increased
-  // (or decreased).
-  //
-  // Valid values are from 0 (no hystersis) to 1,000 (10x hysteresis).
+  // Deprecated. No longer has any effect. Retained for textproto
+  // compatibility only.
   int64 priority_hysteresis_percent = 2;
 
-  // A mapping between a Buganizer priority to an Impact Threshold.
-  // We use this to determine that which priority to set for a bug.
+  // Deprecated. No longer has any effect. Retained for textproto
+  // compatibility only.
   message PriorityMapping {
-
-    // The Buganizer priority that will be mapped to a threshold.
     BuganizerPriority priority = 1;
-
-    // Deprecated. No longer has any effect. Retained for textproto
-    // compatibility only. Use thresholds instead.
     ImpactThreshold threshold = 2;
-
-    // The threshold at which to apply the priority.
-    // The thresholds are considered satisfied if any of the individual impact metric
-    // thresholds is met or exceeded (i.e. if multiple thresholds are set, they
-    // are combined using an OR-semantic).
     repeated ImpactMetricThreshold thresholds = 3;
   }
 
-  // A list of priority mappings that will be used to determine the
-  // priority of the bug based on the threshold.
-  // The priorities must be the ones in BuganizerPriority.
-  // They must be in descending order of highest to lowset priority
-  // and without duplicates.
-  // In order to meet a higher priority, the impact must match all lower
-  // priorities' criteria first.
+  // Deprecated. No longer has any effect. Retained for textproto
+  // compatibility only. Use bug_management.policies instead.
   repeated PriorityMapping priority_mappings = 3;
 }

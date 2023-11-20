@@ -39,10 +39,9 @@ func ChromiumTestConfig() *configpb.MonorailProject {
 				Value:   "Bug",
 			},
 		},
-		PriorityFieldId:           11,
-		PriorityHysteresisPercent: 10,
-		DisplayPrefix:             "crbug.com",
-		MonorailHostname:          "bugs.chromium.org",
+		PriorityFieldId:  11,
+		DisplayPrefix:    "crbug.com",
+		MonorailHostname: "bugs.chromium.org",
 	}
 	return projectCfg
 }

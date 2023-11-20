@@ -406,8 +406,8 @@ type BugManagementSystem struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Whether policy-based bug management is enabled. This is a feature
-	// flag intended to control the rollout of the new functionality.
+	// Deprecated. No longer has any effect. Retained for textproto
+	// compatibility only. Policy-based bug filing is now always enabled.
 	PolicyBasedManagementEnabled bool `protobuf:"varint,1,opt,name=policy_based_management_enabled,json=policyBasedManagementEnabled,proto3" json:"policy_based_management_enabled,omitempty"`
 }
 

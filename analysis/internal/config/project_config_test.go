@@ -63,7 +63,7 @@ func TestProjectConfig(t *testing.T) {
 	Convey("With mocks", t, WithBothBugSystems(func(system configpb.BugSystem, name string) {
 		projectA := CreateConfigWithBothBuganizerAndMonorail(system)
 		projectB := CreateConfigWithBothBuganizerAndMonorail(system)
-		projectB.Monorail.PriorityFieldId = 1
+		projectB.BugManagement.Monorail.PriorityFieldId = 1
 
 		configs := map[config.Set]cfgmem.Files{
 			"projects/a": {"${appid}.cfg": textPBMultiline.Format(projectA)},
@@ -101,7 +101,7 @@ func TestProjectConfig(t *testing.T) {
 			// Real update.
 			projectC := CreateConfigWithBothBuganizerAndMonorail(system)
 			newProjectB := CreateConfigWithBothBuganizerAndMonorail(system)
-			newProjectB.Monorail.PriorityFieldId = 2
+			newProjectB.BugManagement.Monorail.PriorityFieldId = 2
 			delete(configs, "projects/a")
 			configs["projects/b"]["${appid}.cfg"] = textPBMultiline.Format(newProjectB)
 			configs["projects/c"] = cfgmem.Files{
@@ -225,9 +225,9 @@ func TestProjectConfig(t *testing.T) {
 
 			// Attempt to update with an invalid config for project B.
 			newProjectA := CreateConfigWithBothBuganizerAndMonorail(system)
-			newProjectA.Monorail.Project = "new-project-a"
+			newProjectA.BugManagement.Monorail.Project = "new-project-a"
 			newProjectB := CreateConfigWithBothBuganizerAndMonorail(system)
-			newProjectB.Monorail.Project = ""
+			newProjectB.BugManagement.Monorail.Project = ""
 			configs["projects/a"]["${appid}.cfg"] = textPBMultiline.Format(newProjectA)
 			configs["projects/b"]["${appid}.cfg"] = textPBMultiline.Format(newProjectB)
 			updateTime := clock.Now(ctx)

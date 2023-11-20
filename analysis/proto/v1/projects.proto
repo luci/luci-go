@@ -55,17 +55,6 @@ message GetProjectConfigRequest {
 message ProjectConfig {
   reserved 2, 3, 4, 5; // Deleted
 
-  // An enum that represents the bug filing system that the project uses.
-  enum BugSystem {
-    // An unspecified bug system, Do not use, this will
-    // break LUCI Analysis bug filing functionality.
-    BUG_SYSTEM_UNSPECIFIED = 0;
-    // Use Monorail to file bugs.
-    MONORAIL = 1;
-    // Use Buganizer to file bugs.
-    BUGANIZER = 2;
-  }
-
   // Resource name of the project configuration.
   // Format: projects/{project}/config.
   // See also https://google.aip.dev/122.
@@ -222,32 +211,6 @@ enum BuganizerPriority {
   P4 = 5;
 }
 
-// The Buganizer configuration, this should only be
-// used when the bug tracking system ins Buganizer.
-message BuganizerProject {
-  // A mapping between a Buganizer priority to an Impact Threshold.
-  // We use this to determine that which priority to set for a bug.
-  message PriorityMapping {
-    // The Buganizer priority that will be mapped to a threshold.
-    BuganizerPriority priority = 1;
-
-    // The threshold at which to apply the priority.
-    // The thresholds are considered satisfied if any of the individual impact metric
-    // thresholds is met or exceeded (i.e. if multiple thresholds are set, they
-    // are combined using an OR-semantic).
-    repeated ImpactMetricThreshold thresholds = 2;
-  }
-
-  // A list of priority mappings that will be used to determine the
-  // priority of the bug based on the threshold.
-  // The priorities must be the ones in BuganizerPriority.
-  // They must be in descending order of highest to lowset priority
-  // and without duplicates.
-  // In order to meet a higher priority, the impact must match all lower
-  // priorities' criteria first.
-  repeated PriorityMapping priority_mappings = 1;
-}
-
 // MonorailProject describes the configuration to use when filing bugs
 // into a given monorail project.
 message MonorailProject {
@@ -264,44 +227,6 @@ message MonorailProject {
   // forward slash ("/"), followed by the bug number.
   // Valid prefixes match `^[a-z0-9\-.]{0,64}$`.
   string display_prefix = 2;
-}
-
-// MonorailPriority represents configuration for when to use a given
-// priority value for a Monorail bug.
-message MonorailPriority {
-  // The Monorail priority value. For example, "0". This depends on the
-  // valid priority field values you have defined in your Monorail project.
-  string priority = 1;
-
-  // The thresholds at which to apply the priority.
-  // The thresholds are considered satisfied if any of the individual impact
-  // metric thresholds is met or exceeded (i.e. if multiple thresholds are set,
-  // they are combined using an OR-semantic).
-  repeated ImpactMetricThreshold thresholds = 2;
-}
-
-// ImpactMetricThreshold specifies a condition on a cluster's impact metric.
-message ImpactMetricThreshold {
-  // The id of the impact metric.
-  // e.g.
-  // human-cls-failed-presubmit: The number of presubmit runs that failed.
-  // critical-failures-exonerated: The number of test failures on critical
-  //                               builders that were exonerated with an
-  //                               exoneration reason other than NOT_CRITICAL.
-  // test-runs-failed: The number of test runs that failed.
-  //                   A test run (also known as a 'shard' (chromium) or
-  //                   'task' (Chrome OS)) is considered failed if all tries of
-  //                   test(s) in it unexpectedly failed. The failed test run is
-  //                   attributed to the last failure of each of the test(s)
-  //                   that failed on all tries.
-  // failures: The number of test results that were unexpected failures.
-  //
-  // Full list of available metrics here:
-  // https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/internal/analysis/metrics/metrics.go
-  string metric_id = 1;
-
-  // The thresholds against a metric.
-  MetricThreshold threshold = 2;
 }
 
 // MetricThreshold specifies thresholds for a particular metric.
