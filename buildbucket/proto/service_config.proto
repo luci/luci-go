@@ -18,6 +18,7 @@ syntax = "proto3";
 
 package buildbucket;
 
+import "google/protobuf/duration.proto";
 import "go.chromium.org/luci/buildbucket/proto/project_config.proto";
 
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
@@ -145,6 +146,13 @@ message BackendSetting {
     FullMode full_mode = 5;
     LiteMode lite_mode = 6;
   }
+
+  // Maximum time for Buildbucket to retry creating a task.
+  //
+  // Default timeout is 10 minutes.
+  //
+  // If the timeout is reached, the build is marked as INFRA_FAILURE status.
+  google.protobuf.Duration task_creating_timeout = 7;
 }
 
 // Swarmbucket settings.
