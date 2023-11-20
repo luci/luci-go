@@ -975,7 +975,7 @@ func TestUpdateRealms(t *testing.T) {
 			Parent:    model.RootKey(ctx),
 			Realms:    expectedRealmsBody,
 			ConfigRev: testRevision,
-			PermsRev:  "permissionsDB:123",
+			PermsRev:  "permissions.cfg:123",
 		}
 	}
 
@@ -987,7 +987,7 @@ func TestUpdateRealms(t *testing.T) {
 			ConfigRev:    testRevision,
 			ConfigDigest: testContentHash,
 			ModifiedTS:   testCreatedTS,
-			PermsRev:     "permissionsDB:123",
+			PermsRev:     "permissions.cfg:123",
 		}
 	}
 

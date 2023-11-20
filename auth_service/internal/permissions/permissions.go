@@ -62,12 +62,18 @@ type Role struct {
 }
 
 // NewPermissionsDB constructs a new instance of PermissionsDB from a given permissions.cfg.
-func NewPermissionsDB(permissionscfg *configspb.PermissionsConfig, meta config.Meta) (*PermissionsDB, error) {
+func NewPermissionsDB(permissionscfg *configspb.PermissionsConfig, meta *config.Meta) *PermissionsDB {
+	rev := "config-without-metadata"
+	if meta != nil {
+		rev = fmt.Sprintf("%s:%s", meta.Path, meta.Revision)
+	}
+
 	permissionsDB := &PermissionsDB{
+		Rev:         rev,
 		Permissions: make(map[string]*protocol.Permission),
 		Roles:       make(map[string]*Role),
 	}
-	permissionsDB.Rev = fmt.Sprintf("permissionsDB:%s", meta.Revision)
+
 	for _, role := range permissionscfg.GetRole() {
 
 		permissionsDB.Roles[role.GetName()] = &Role{role.GetName(), stringset.Set{}}
@@ -100,5 +106,5 @@ func NewPermissionsDB(permissionscfg *configspb.PermissionsConfig, meta config.M
 			},
 		}
 	}
-	return permissionsDB, nil
+	return permissionsDB
 }

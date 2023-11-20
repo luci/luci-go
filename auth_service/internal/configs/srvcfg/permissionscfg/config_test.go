@@ -21,6 +21,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/auth_service/api/configspb"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth/service/protocol"
 )
@@ -71,5 +72,17 @@ func TestConfigContext(t *testing.T) {
 		cfgFromGet, err := Get(ctx)
 		So(err, ShouldBeNil)
 		So(cfgFromGet, ShouldResembleProto, permissionsCfg)
+	})
+
+	Convey("Testing config operations with metadata", t, func() {
+		metadata := &config.Meta{
+			Path:     "permissions.cfg",
+			Revision: "123abc",
+		}
+		So(SetConfigWithMetadata(ctx, permissionsCfg, metadata), ShouldBeNil)
+		cfgFromGet, metadataFromGet, err := GetWithMetadata(ctx)
+		So(err, ShouldBeNil)
+		So(cfgFromGet, ShouldResembleProto, permissionsCfg)
+		So(metadataFromGet, ShouldResembleProto, metadata)
 	})
 }

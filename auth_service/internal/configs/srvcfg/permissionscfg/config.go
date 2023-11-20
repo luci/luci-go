@@ -33,9 +33,21 @@ func Get(ctx context.Context) (*configspb.PermissionsConfig, error) {
 	return cfg.(*configspb.PermissionsConfig), err
 }
 
-// SetConfig installs the cfg into the context ctx.
+// GetWithMetadata returns the config and its metadata stored in context.
+func GetWithMetadata(ctx context.Context) (*configspb.PermissionsConfig, *config.Meta, error) {
+	meta := &config.Meta{}
+	cfg, err := cachedPermissionsCfg.Get(ctx, meta)
+	return cfg.(*configspb.PermissionsConfig), meta, err
+}
+
+// SetConfig installs the cfg with empty metadata into the context ctx.
 func SetConfig(ctx context.Context, cfg *configspb.PermissionsConfig) error {
 	return cachedPermissionsCfg.Set(ctx, cfg, &config.Meta{})
+}
+
+// SetConfigWithMetadata installs the cfg with the given metadata into the context ctx.
+func SetConfigWithMetadata(ctx context.Context, cfg *configspb.PermissionsConfig, meta *config.Meta) error {
+	return cachedPermissionsCfg.Set(ctx, cfg, meta)
 }
 
 // Update fetches the config and puts it into the datastore.

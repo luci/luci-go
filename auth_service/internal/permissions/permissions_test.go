@@ -28,6 +28,7 @@ import (
 func TestPermissionsDBGeneration(t *testing.T) {
 	t.Parallel()
 	Convey("testing permissionsDB generation", t, func() {
+		attrs := []string{"attr-A", "attr-B"}
 		cfg := &configspb.PermissionsConfig{
 			Role: []*configspb.PermissionsConfig_Role{
 				{
@@ -58,6 +59,7 @@ func TestPermissionsDBGeneration(t *testing.T) {
 					},
 				},
 			},
+			Attribute: attrs,
 		}
 		expectedDB := &PermissionsDB{
 			Rev: fmt.Sprintf("permissionsDB:%d", 123),
@@ -87,7 +89,7 @@ func TestPermissionsDBGeneration(t *testing.T) {
 					),
 				},
 			},
-			attributes: map[string]struct{}{},
+			attributes: stringset.NewFromSlice(attrs...),
 			ImplicitRootBindings: func(projID string) []*realmsconf.Binding {
 				return []*realmsconf.Binding{
 					{
@@ -105,11 +107,36 @@ func TestPermissionsDBGeneration(t *testing.T) {
 				}
 			},
 		}
-		db, err := NewPermissionsDB(cfg, config.Meta{
-			Revision: "123",
+
+		Convey("succeeds without permissions config", func() {
+			db := NewPermissionsDB(nil, nil)
+			So(db.Rev, ShouldEqual, "config-without-metadata")
+			So(db.Permissions, ShouldBeEmpty)
+			So(db.Roles, ShouldBeEmpty)
+			So(db.attributes, ShouldBeEmpty)
 		})
-		So(err, ShouldBeNil)
-		So(db.Permissions, ShouldResemble, expectedDB.Permissions)
-		So(db.Roles, ShouldResemble, expectedDB.Roles)
+
+		Convey("succeeds without metadata", func() {
+			db := NewPermissionsDB(cfg, nil)
+			So(db.Rev, ShouldEqual, "config-without-metadata")
+			So(db.Permissions, ShouldResemble, expectedDB.Permissions)
+			So(db.Roles, ShouldResemble, expectedDB.Roles)
+			So(setsAreEqual(db.attributes, expectedDB.attributes), ShouldBeTrue)
+		})
+
+		Convey("has metadata info", func() {
+			db := NewPermissionsDB(cfg, &config.Meta{
+				Path:     "permissions.cfg",
+				Revision: "123",
+			})
+			So(db.Rev, ShouldEqual, "permissions.cfg:123")
+			So(db.Permissions, ShouldResemble, expectedDB.Permissions)
+			So(db.Roles, ShouldResemble, expectedDB.Roles)
+			So(setsAreEqual(db.attributes, expectedDB.attributes), ShouldBeTrue)
+		})
 	})
+}
+
+func setsAreEqual(a, b stringset.Set) bool {
+	return a.Contains(b) && b.Contains(a)
 }

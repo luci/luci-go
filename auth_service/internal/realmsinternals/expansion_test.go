@@ -27,7 +27,7 @@ import (
 )
 
 func testPermissionsDB(implicitRootBindings bool) *permissions.PermissionsDB {
-	db, _ := permissions.NewPermissionsDB(&configspb.PermissionsConfig{
+	db := permissions.NewPermissionsDB(&configspb.PermissionsConfig{
 		Role: []*configspb.PermissionsConfig_Role{
 			{
 				Name: "role/dev.a",
@@ -88,7 +88,8 @@ func testPermissionsDB(implicitRootBindings bool) *permissions.PermissionsDB {
 			},
 		},
 		Attribute: []string{"a1", "a2", "root"},
-	}, config.Meta{
+	}, &config.Meta{
+		Path:     "permissions.cfg",
 		Revision: "123",
 	})
 	db.ImplicitRootBindings = func(s string) []*realmsconf.Binding { return nil }
