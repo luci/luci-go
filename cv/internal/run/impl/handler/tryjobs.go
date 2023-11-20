@@ -161,18 +161,20 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 				var msg string
 				switch t, err := template.New("FailureReason").Parse(msgTmpl); {
 				case err != nil:
-					logging.Errorf(ctx, "failed to parse FailureReason template %s", err)
+					logging.Errorf(ctx, "CL %d: failed to parse FailureReason template %q: %s", cl.ID, msgTmpl, err)
 					msg = "This CL has failed the run. LUCI CV is having trouble with generating the reason. Please visit the check result tab for the failed Tryjobs."
 				default:
 					msgBuf := bytes.Buffer{}
 					if err := t.Execute(&msgBuf, tmplInfo{cl: cl}); err != nil {
-						return nil, errors.Annotate(err, "failed to execute FailureReason template").Err()
+						logging.Errorf(ctx, "CL %d: failed to execute FailureReason template: %q: %s", cl.ID, msgTmpl, err)
+						msg = "This CL has failed the run. LUCI CV is having trouble with generating the reason. Please visit the check result tab for the failed Tryjobs."
+						//return nil, errors.Annotate(err, "failed to execute FailureReason template").Err()
 					}
 					msg = msgBuf.String()
 				}
 				meta = reviewInputMeta{
-					message:        msg,
-					notify:         whoms,
+					message: msg,
+					notify:  whoms,
 				}
 				if attentionReason != "" {
 					meta.addToAttention = whoms
