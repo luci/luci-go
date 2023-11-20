@@ -21,7 +21,7 @@ import { useStore } from '@/common/store';
 import { getBuildURLPath } from '@/common/tools/url_utils';
 
 export const BuildPageShortLink = observer(() => {
-  const { buildId, ['*']: pathSuffix } = useParams();
+  const { buildId, ['__luci_ui__-raw-*']: pathSuffix } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const store = useStore();

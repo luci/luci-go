@@ -1,0 +1,34 @@
+diff --git a/node_modules/@remix-run/router/dist/router.js b/node_modules/@remix-run/router/dist/router.js
+index 130715d..ec892d4 100644
+--- a/node_modules/@remix-run/router/dist/router.js
++++ b/node_modules/@remix-run/router/dist/router.js
+@@ -530,7 +530,15 @@ function matchRoutes(routes, locationArg, basename) {
+     // encoded here but there also shouldn't be anything to decode so this
+     // should be a safe operation.  This avoids needing matchRoutes to be
+     // history-aware.
+-    safelyDecodeURI(pathname));
++    //
++    // PATCH by weiweilin: the whole purpose of URL encoding is to avoid the
++    // encoded character to be treated as special characters. Therefore we must
++    // use the original pathname when matching against routes. More importantly,
++    // react-router itself decodes the string again when extracting the URL path
++    // params. Decoding the pathname here will cause the param params to be
++    // double decoded.
++    // See also https://github.com/remix-run/react-router/issues/10814.
++    pathname);
+   }
+   return matches;
+ }
+@@ -788,8 +796,12 @@ function matchPath(pattern, pathname) {
+     const value = captureGroups[index];
+     if (isOptional && !value) {
+       memo[paramName] = undefined;
++      // PATCH by weiweilin: to be consistent with the raw value property below.
++      memo['__luci_ui__-raw-'+paramName] = undefined;
+     } else {
+       memo[paramName] = safelyDecodeURIComponent(value || "", paramName);
++      // PATCH by weiweilin: make the raw value available.
++      memo['__luci_ui__-raw-'+paramName] = value || "";
+     }
+     return memo;
+   }, {});
