@@ -423,6 +423,7 @@ func TestCreateBackendTask(t *testing.T) {
 					},
 				},
 			},
+			TaskCreatingTimeout: durationpb.New(8 * time.Minute),
 		})
 		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 		err := config.SetTestSettingsCfg(ctx, settingsCfg)
@@ -453,9 +454,7 @@ func TestCreateBackendTask(t *testing.T) {
 					Bucket:  "bucket",
 					Project: "project",
 				},
-				CreateTime: &timestamppb.Timestamp{
-					Seconds: 1,
-				},
+				CreateTime:       timestamppb.New(now.Add(-5 * time.Minute)),
 				ExecutionTimeout: &durationpb.Duration{Seconds: 500},
 				Input: &pb.Build_Input{
 					Experiments: []string{
@@ -560,7 +559,6 @@ func TestCreateBackendTask(t *testing.T) {
 
 		Convey("fail", func() {
 			mockBackend.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(nil, &googleapi.Error{Code: 400})
-			So(datastore.Put(ctx, infra), ShouldBeNil)
 			err = CreateBackendTask(ctx, 1, "request_id")
 			expectedBuild := &model.Build{ID: 1}
 			So(datastore.Get(ctx, expectedBuild), ShouldBeNil)
@@ -579,6 +577,17 @@ func TestCreateBackendTask(t *testing.T) {
 			So(expectedBuildInfra.Proto.Backend.Task.Id.Id, ShouldEqual, "task")
 			So(logs, memlogger.ShouldHaveLog,
 				logging.Info, "build 1 has associated with task")
+		})
+
+		Convey("give up after backend timeout", func() {
+			now = now.Add(9 * time.Minute)
+			ctx, _ = testclock.UseTime(ctx, now)
+			err = CreateBackendTask(ctx, 1, "request_id")
+			expectedBuild := &model.Build{ID: 1}
+			So(datastore.Get(ctx, expectedBuild), ShouldBeNil)
+			So(err, ShouldErrLike, "creating backend task for build 1 has expired after 8m0s")
+			So(expectedBuild.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+			So(expectedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "Backend task creation failure.")
 		})
 	})
 }

@@ -56,9 +56,9 @@ const (
 	// UpdateBuild's new performance in Buildbucket Go.
 	bbagentReservedGracePeriod = 180
 
-	// runTaskGiveUpTimeout indicates how long to retry
+	// runTaskGiveUpTimeoutDefault is the default value for how long to retry
 	// the CreateBackendTask before giving up with INFRA_FAILURE.
-	runTaskGiveUpTimeout = 10 * 60 * time.Second
+	runTaskGiveUpTimeoutDefault = 10 * 60 * time.Second
 
 	cipdCacheTTL = 10 * time.Minute
 )
@@ -302,6 +302,32 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 	globalCfg, err := config.GetSettingsCfg(ctx)
 	if err != nil {
 		return errors.Annotate(err, "could not get global settings config").Err()
+	}
+
+	var backendCfg *pb.BackendSetting
+	for _, backend := range globalCfg.GetBackends() {
+		if backend.Target == infra.Proto.Backend.Task.Id.Target {
+			backendCfg = backend
+		}
+	}
+	if backendCfg == nil {
+		return tq.Fatal.Apply(errors.Reason("failed to get backend config from global settings").Err())
+	}
+
+	var runTaskGiveUpTimeout time.Duration
+	if backendCfg.TaskCreatingTimeout.GetSeconds() == 0 {
+		runTaskGiveUpTimeout = runTaskGiveUpTimeoutDefault
+	} else {
+		runTaskGiveUpTimeout = backendCfg.TaskCreatingTimeout.AsDuration()
+	}
+
+	// If task creation has already expired, fail the build immediately.
+	if clock.Now(ctx).Sub(bld.CreateTime) >= runTaskGiveUpTimeout {
+		dsPutErr := failBuild(ctx, buildID, "Backend task creation failure.")
+		if dsPutErr != nil {
+			return dsPutErr
+		}
+		return tq.Fatal.Apply(errors.Reason("creating backend task for build %d has expired after %s", buildID, runTaskGiveUpTimeout.String()).Err())
 	}
 
 	// Create a backend task client
