@@ -33,8 +33,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
@@ -179,8 +177,6 @@ func TestValidateUpdate(t *testing.T) {
 	})
 
 	Convey("validate output without sub masks", t, func() {
-		ctx = memlogger.Use(ctx)
-		logs := logging.Get(ctx).(*memlogger.MemLogger)
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output"}}
 		Convey("ok", func() {
@@ -203,17 +199,13 @@ func TestValidateUpdate(t *testing.T) {
 				Properties:      props,
 				SummaryMarkdown: "summary",
 			}
-			So(validateUpdate(ctx, req, nil), ShouldBeNil)
-			So(logs, memlogger.ShouldHaveLog,
-				logging.Warning, "value is not set")
+			So(validateUpdate(ctx, req, nil), ShouldErrLike, "value is not set")
 		})
 		Convey("summary_markdown is invalid", func() {
 			req.Build.Output = &pb.Build_Output{
 				SummaryMarkdown: strings.Repeat("☕", protoutil.SummaryMarkdownMaxLength),
 			}
-			So(validateUpdate(ctx, req, nil), ShouldBeNil)
-			So(logs, memlogger.ShouldHaveLog,
-				logging.Warning, "too big to accept")
+			So(validateUpdate(ctx, req, nil), ShouldErrLike, "too big to accept")
 		})
 		Convey("gitiles_commit is invalid", func() {
 			req.Build.Output = &pb.Build_Output{
@@ -223,9 +215,7 @@ func TestValidateUpdate(t *testing.T) {
 					Position: 1,
 				},
 			}
-			So(validateUpdate(ctx, req, nil), ShouldBeNil)
-			So(logs, memlogger.ShouldHaveLog,
-				logging.Warning, "ref is required")
+			So(validateUpdate(ctx, req, nil), ShouldErrLike, "ref is required")
 		})
 	})
 
