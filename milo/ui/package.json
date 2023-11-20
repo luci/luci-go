@@ -12,7 +12,8 @@
     "build": "vite build",
     "dev": "vite",
     "test": "jest",
-    "lint": "eslint ./src"
+    "lint": "eslint ./src",
+    "gen_proto": "sh ./scripts/gen_proto.sh"
   },
   "files": [
     "src"
@@ -42,6 +43,7 @@
     "idb-keyval": "^6.2.1",
     "lit": "^2.8.0",
     "lodash-es": "^4.17.21",
+    "long": "^5.2.3",
     "luxon": "^3.4.4",
     "markdown-it": "^13.0.2",
     "mobx": "^6.11.0",
@@ -117,6 +119,7 @@
     "rollup": "^3.29.4",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.1",
+    "ts-proto": "^1.161.1",
     "typescript": "^5.2.2",
     "vite": "^4.5.0",
     "vite-plugin-pwa": "^0.16.7",

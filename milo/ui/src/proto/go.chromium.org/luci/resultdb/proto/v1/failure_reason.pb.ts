@@ -1,0 +1,231 @@
+/* eslint-disable */
+import _m0 from "protobufjs/minimal";
+
+export const protobufPackage = "luci.resultdb.v1";
+
+/**
+ * Information about why a test failed. This information may be displayed
+ * to developers in result viewing UIs and will also be used to cluster
+ * similar failures together.
+ * For example, this will contain assertion failure messages and stack traces.
+ */
+export interface FailureReason {
+  /**
+   * The error message that ultimately caused the test to fail. This should
+   * only be the error message and should not include any stack traces.
+   * An example would be the message from an Exception in a Java test.
+   * In the case that a test failed due to multiple expectation failures, any
+   * immediately fatal failure should be chosen, or otherwise the first
+   * expectation failure.
+   * If this field is empty, other fields (including those from the TestResult)
+   * may be used to cluster the failure instead.
+   *
+   * The size of the message must be equal to or smaller than 1024 bytes in
+   * UTF-8.
+   */
+  readonly primaryErrorMessage: string;
+  /**
+   * The error(s) that caused the test to fail.
+   *
+   * If there is more than one error (e.g. due to multiple expectation failures),
+   * a stable sorting should be used. A recommended form of stable sorting is:
+   * - Fatal errors (errors that cause the test to terminate immediately first,
+   *   then
+   * - Within fatal/non-fatal errors, sort by chronological order
+   *   (earliest error first).
+   *
+   * Where this field is populated, errors[0].message shall match
+   * primary_error_message.
+   *
+   * The total combined size of all errors (as measured by proto.Size()) must
+   * not exceed 3,172 bytes.
+   */
+  readonly errors: readonly FailureReason_Error[];
+  /**
+   * The number of errors that are truncated from the errors list above due to
+   * the size limits.
+   */
+  readonly truncatedErrorsCount: number;
+}
+
+/**
+ * Error represents a problem that caused a test to fail, such as a crash
+ * or expectation failure.
+ */
+export interface FailureReason_Error {
+  /**
+   * The error message. This should only be the error message and
+   * should not include any stack traces. An example would be the
+   * message from an Exception in a Java test.
+   *
+   * This message may be used to cluster related failures together.
+   *
+   * The size of the message must be equal to or smaller than 1024 bytes in
+   * UTF-8.
+   */
+  readonly message: string;
+}
+
+function createBaseFailureReason(): FailureReason {
+  return { primaryErrorMessage: "", errors: [], truncatedErrorsCount: 0 };
+}
+
+export const FailureReason = {
+  encode(message: FailureReason, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.primaryErrorMessage !== "") {
+      writer.uint32(10).string(message.primaryErrorMessage);
+    }
+    for (const v of message.errors) {
+      FailureReason_Error.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.truncatedErrorsCount !== 0) {
+      writer.uint32(24).int32(message.truncatedErrorsCount);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): FailureReason {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFailureReason() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.primaryErrorMessage = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.errors.push(FailureReason_Error.decode(reader, reader.uint32()));
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.truncatedErrorsCount = reader.int32();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FailureReason {
+    return {
+      primaryErrorMessage: isSet(object.primaryErrorMessage) ? globalThis.String(object.primaryErrorMessage) : "",
+      errors: globalThis.Array.isArray(object?.errors)
+        ? object.errors.map((e: any) => FailureReason_Error.fromJSON(e))
+        : [],
+      truncatedErrorsCount: isSet(object.truncatedErrorsCount) ? globalThis.Number(object.truncatedErrorsCount) : 0,
+    };
+  },
+
+  toJSON(message: FailureReason): unknown {
+    const obj: any = {};
+    if (message.primaryErrorMessage !== "") {
+      obj.primaryErrorMessage = message.primaryErrorMessage;
+    }
+    if (message.errors?.length) {
+      obj.errors = message.errors.map((e) => FailureReason_Error.toJSON(e));
+    }
+    if (message.truncatedErrorsCount !== 0) {
+      obj.truncatedErrorsCount = Math.round(message.truncatedErrorsCount);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<FailureReason>, I>>(base?: I): FailureReason {
+    return FailureReason.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<FailureReason>, I>>(object: I): FailureReason {
+    const message = createBaseFailureReason() as any;
+    message.primaryErrorMessage = object.primaryErrorMessage ?? "";
+    message.errors = object.errors?.map((e) => FailureReason_Error.fromPartial(e)) || [];
+    message.truncatedErrorsCount = object.truncatedErrorsCount ?? 0;
+    return message;
+  },
+};
+
+function createBaseFailureReason_Error(): FailureReason_Error {
+  return { message: "" };
+}
+
+export const FailureReason_Error = {
+  encode(message: FailureReason_Error, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.message !== "") {
+      writer.uint32(10).string(message.message);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): FailureReason_Error {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFailureReason_Error() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.message = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FailureReason_Error {
+    return { message: isSet(object.message) ? globalThis.String(object.message) : "" };
+  },
+
+  toJSON(message: FailureReason_Error): unknown {
+    const obj: any = {};
+    if (message.message !== "") {
+      obj.message = message.message;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<FailureReason_Error>, I>>(base?: I): FailureReason_Error {
+    return FailureReason_Error.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<FailureReason_Error>, I>>(object: I): FailureReason_Error {
+    const message = createBaseFailureReason_Error() as any;
+    message.message = object.message ?? "";
+    return message;
+  },
+};
+
+type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+
+export type DeepPartial<T> = T extends Builtin ? T
+  : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
+  : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
+  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
+  : Partial<T>;
+
+type KeysOfUnion<T> = T extends T ? keyof T : never;
+export type Exact<P, I extends P> = P extends Builtin ? P
+  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
+
+function isSet(value: any): boolean {
+  return value !== null && value !== undefined;
+}

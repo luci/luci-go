@@ -1,0 +1,1416 @@
+/* eslint-disable */
+import Long from "long";
+import _m0 from "protobufjs/minimal";
+import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
+import { GitilesCommit } from "../../../buildbucket/proto/common.pb";
+
+export const protobufPackage = "luci.bisection.v1";
+
+/** AnalysisStatus represents the result status of an analysis. */
+export enum AnalysisStatus {
+  UNSPECIFIED = 0,
+  /**
+   * CREATED - The analysis has been created, but not yet started.
+   * We don't have this status in code. It's here for backward-compatability.
+   */
+  CREATED = 1,
+  /** RUNNING - The analysis is running, but results have not been finalised. */
+  RUNNING = 2,
+  /** FOUND - The analysis has finished and found (and verified) the culprit. */
+  FOUND = 3,
+  /** NOTFOUND - The analysis has finished but no culprit/suspect has been found. */
+  NOTFOUND = 4,
+  /** ERROR - The analysis resulted in an error. */
+  ERROR = 5,
+  /** SUSPECTFOUND - The analysis found some suspects, either from heuristic or nth-section. */
+  SUSPECTFOUND = 6,
+  /** UNSUPPORTED - The analysis is unsupported (unsupported project, test...). */
+  UNSUPPORTED = 7,
+  /** DISABLED - The analysis was disabled (e.g. from config). */
+  DISABLED = 8,
+  /**
+   * INSUFFICENTDATA - This status is to mark for the case when an analysis was created,
+   * but was not sent to bisector, because we couldn't get sufficient data
+   * to proceed.
+   * One example is if we cannot get the commit ID for the regression range
+   * because the commit was too old.
+   */
+  INSUFFICENTDATA = 9,
+}
+
+export function analysisStatusFromJSON(object: any): AnalysisStatus {
+  switch (object) {
+    case 0:
+    case "ANALYSIS_STATUS_UNSPECIFIED":
+      return AnalysisStatus.UNSPECIFIED;
+    case 1:
+    case "CREATED":
+      return AnalysisStatus.CREATED;
+    case 2:
+    case "RUNNING":
+      return AnalysisStatus.RUNNING;
+    case 3:
+    case "FOUND":
+      return AnalysisStatus.FOUND;
+    case 4:
+    case "NOTFOUND":
+      return AnalysisStatus.NOTFOUND;
+    case 5:
+    case "ERROR":
+      return AnalysisStatus.ERROR;
+    case 6:
+    case "SUSPECTFOUND":
+      return AnalysisStatus.SUSPECTFOUND;
+    case 7:
+    case "UNSUPPORTED":
+      return AnalysisStatus.UNSUPPORTED;
+    case 8:
+    case "DISABLED":
+      return AnalysisStatus.DISABLED;
+    case 9:
+    case "INSUFFICENTDATA":
+      return AnalysisStatus.INSUFFICENTDATA;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum AnalysisStatus");
+  }
+}
+
+export function analysisStatusToJSON(object: AnalysisStatus): string {
+  switch (object) {
+    case AnalysisStatus.UNSPECIFIED:
+      return "ANALYSIS_STATUS_UNSPECIFIED";
+    case AnalysisStatus.CREATED:
+      return "CREATED";
+    case AnalysisStatus.RUNNING:
+      return "RUNNING";
+    case AnalysisStatus.FOUND:
+      return "FOUND";
+    case AnalysisStatus.NOTFOUND:
+      return "NOTFOUND";
+    case AnalysisStatus.ERROR:
+      return "ERROR";
+    case AnalysisStatus.SUSPECTFOUND:
+      return "SUSPECTFOUND";
+    case AnalysisStatus.UNSUPPORTED:
+      return "UNSUPPORTED";
+    case AnalysisStatus.DISABLED:
+      return "DISABLED";
+    case AnalysisStatus.INSUFFICENTDATA:
+      return "INSUFFICENTDATA";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum AnalysisStatus");
+  }
+}
+
+export enum RerunStatus {
+  UNSPECIFIED = 0,
+  /**
+   * IN_PROGRESS - The rerun is in progress.
+   * It may be scheduled or started, but not finished yet.
+   */
+  IN_PROGRESS = 1,
+  /**
+   * PASSED - For compile failure, it means the rerun succeeded.
+   * For deterministic test failure, it means that the primary test failure
+   * got expected result.
+   */
+  PASSED = 2,
+  /**
+   * FAILED - For compile failure, it means the compile was unsuccessful.
+   * For deterministic test failure, it means that the primary test failure
+   * got unexpected result.
+   */
+  FAILED = 3,
+  /**
+   * INFRA_FAILED - The rerun ended with infra failure.
+   * It means we will not know which direction to continue the bisection.
+   * This case usually mean that the bisection will not be able to
+   * find culprit.
+   */
+  INFRA_FAILED = 4,
+  /** CANCELED - The rerun was canceled. */
+  CANCELED = 5,
+  /**
+   * TEST_SKIPPED - Only used for test failure rerun.
+   * The rerun ended, but the primary test failure was not run.
+   * It usually means that we won't be able to continue the bisection.
+   */
+  TEST_SKIPPED = 6,
+}
+
+export function rerunStatusFromJSON(object: any): RerunStatus {
+  switch (object) {
+    case 0:
+    case "RERUN_STATUS_UNSPECIFIED":
+      return RerunStatus.UNSPECIFIED;
+    case 1:
+    case "RERUN_STATUS_IN_PROGRESS":
+      return RerunStatus.IN_PROGRESS;
+    case 2:
+    case "RERUN_STATUS_PASSED":
+      return RerunStatus.PASSED;
+    case 3:
+    case "RERUN_STATUS_FAILED":
+      return RerunStatus.FAILED;
+    case 4:
+    case "RERUN_STATUS_INFRA_FAILED":
+      return RerunStatus.INFRA_FAILED;
+    case 5:
+    case "RERUN_STATUS_CANCELED":
+      return RerunStatus.CANCELED;
+    case 6:
+    case "RERUN_STATUS_TEST_SKIPPED":
+      return RerunStatus.TEST_SKIPPED;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum RerunStatus");
+  }
+}
+
+export function rerunStatusToJSON(object: RerunStatus): string {
+  switch (object) {
+    case RerunStatus.UNSPECIFIED:
+      return "RERUN_STATUS_UNSPECIFIED";
+    case RerunStatus.IN_PROGRESS:
+      return "RERUN_STATUS_IN_PROGRESS";
+    case RerunStatus.PASSED:
+      return "RERUN_STATUS_PASSED";
+    case RerunStatus.FAILED:
+      return "RERUN_STATUS_FAILED";
+    case RerunStatus.INFRA_FAILED:
+      return "RERUN_STATUS_INFRA_FAILED";
+    case RerunStatus.CANCELED:
+      return "RERUN_STATUS_CANCELED";
+    case RerunStatus.TEST_SKIPPED:
+      return "RERUN_STATUS_TEST_SKIPPED";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum RerunStatus");
+  }
+}
+
+/**
+ * Status of a test result.
+ * It is a mirror of luci.resultdb.v1.TestStatus, but the right to evolve
+ * it independently is reserved.
+ */
+export enum TestResultStatus {
+  /**
+   * UNSPECIFIED - Status was not specified.
+   * Not to be used in actual test results; serves as a default value for an
+   * unset field.
+   */
+  UNSPECIFIED = 0,
+  /** PASS - The test case has passed. */
+  PASS = 1,
+  /**
+   * FAIL - The test case has failed.
+   * Suggests that the code under test is incorrect, but it is also possible
+   * that the test is incorrect or it is a flake.
+   */
+  FAIL = 2,
+  /**
+   * CRASH - The test case has crashed during execution.
+   * The outcome is inconclusive: the code under test might or might not be
+   * correct, but the test+code is incorrect.
+   */
+  CRASH = 3,
+  /**
+   * ABORT - The test case has started, but was aborted before finishing.
+   * A common reason: timeout.
+   */
+  ABORT = 4,
+  /**
+   * SKIP - The test case did not execute.
+   * Examples:
+   * - The execution of the collection of test cases, such as a test
+   *   binary, was aborted prematurely and execution of some test cases was
+   *   skipped.
+   * - The test harness configuration specified that the test case MUST be
+   *   skipped.
+   */
+  SKIP = 5,
+}
+
+export function testResultStatusFromJSON(object: any): TestResultStatus {
+  switch (object) {
+    case 0:
+    case "TEST_RESULT_STATUS_UNSPECIFIED":
+      return TestResultStatus.UNSPECIFIED;
+    case 1:
+    case "PASS":
+      return TestResultStatus.PASS;
+    case 2:
+    case "FAIL":
+      return TestResultStatus.FAIL;
+    case 3:
+    case "CRASH":
+      return TestResultStatus.CRASH;
+    case 4:
+    case "ABORT":
+      return TestResultStatus.ABORT;
+    case 5:
+    case "SKIP":
+      return TestResultStatus.SKIP;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestResultStatus");
+  }
+}
+
+export function testResultStatusToJSON(object: TestResultStatus): string {
+  switch (object) {
+    case TestResultStatus.UNSPECIFIED:
+      return "TEST_RESULT_STATUS_UNSPECIFIED";
+    case TestResultStatus.PASS:
+      return "PASS";
+    case TestResultStatus.FAIL:
+      return "FAIL";
+    case TestResultStatus.CRASH:
+      return "CRASH";
+    case TestResultStatus.ABORT:
+      return "ABORT";
+    case TestResultStatus.SKIP:
+      return "SKIP";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestResultStatus");
+  }
+}
+
+/** AnalysisType specifies type of the analysis. */
+export enum AnalysisType {
+  UNSPECIFIED = 0,
+  /** COMPILE_FAILURE_ANALYSIS - Compile analysis type. */
+  COMPILE_FAILURE_ANALYSIS = 1,
+  /** TEST_FAILURE_ANALYSIS - Test analysis type. */
+  TEST_FAILURE_ANALYSIS = 2,
+}
+
+export function analysisTypeFromJSON(object: any): AnalysisType {
+  switch (object) {
+    case 0:
+    case "ANALYSIS_TYPE_UNSPECIFIED":
+      return AnalysisType.UNSPECIFIED;
+    case 1:
+    case "COMPILE_FAILURE_ANALYSIS":
+      return AnalysisType.COMPILE_FAILURE_ANALYSIS;
+    case 2:
+    case "TEST_FAILURE_ANALYSIS":
+      return AnalysisType.TEST_FAILURE_ANALYSIS;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum AnalysisType");
+  }
+}
+
+export function analysisTypeToJSON(object: AnalysisType): string {
+  switch (object) {
+    case AnalysisType.UNSPECIFIED:
+      return "ANALYSIS_TYPE_UNSPECIFIED";
+    case AnalysisType.COMPILE_FAILURE_ANALYSIS:
+      return "COMPILE_FAILURE_ANALYSIS";
+    case AnalysisType.TEST_FAILURE_ANALYSIS:
+      return "TEST_FAILURE_ANALYSIS";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum AnalysisType");
+  }
+}
+
+export enum SuspectVerificationStatus {
+  UNSPECIFIED = 0,
+  UNVERIFIED = 1,
+  VERIFICATION_SCHEDULED = 2,
+  UNDER_VERIFICATION = 3,
+  CONFIRMED_CULPRIT = 4,
+  VINDICATED = 5,
+  VERIFICATION_ERROR = 6,
+  VERIFICATION_CANCELED = 7,
+}
+
+export function suspectVerificationStatusFromJSON(object: any): SuspectVerificationStatus {
+  switch (object) {
+    case 0:
+    case "SUSPECT_VERIFICATION_STATUS_UNSPECIFIED":
+      return SuspectVerificationStatus.UNSPECIFIED;
+    case 1:
+    case "UNVERIFIED":
+      return SuspectVerificationStatus.UNVERIFIED;
+    case 2:
+    case "VERIFICATION_SCHEDULED":
+      return SuspectVerificationStatus.VERIFICATION_SCHEDULED;
+    case 3:
+    case "UNDER_VERIFICATION":
+      return SuspectVerificationStatus.UNDER_VERIFICATION;
+    case 4:
+    case "CONFIRMED_CULPRIT":
+      return SuspectVerificationStatus.CONFIRMED_CULPRIT;
+    case 5:
+    case "VINDICATED":
+      return SuspectVerificationStatus.VINDICATED;
+    case 6:
+    case "VERIFICATION_ERROR":
+      return SuspectVerificationStatus.VERIFICATION_ERROR;
+    case 7:
+    case "VERIFICATION_CANCELED":
+      return SuspectVerificationStatus.VERIFICATION_CANCELED;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum SuspectVerificationStatus");
+  }
+}
+
+export function suspectVerificationStatusToJSON(object: SuspectVerificationStatus): string {
+  switch (object) {
+    case SuspectVerificationStatus.UNSPECIFIED:
+      return "SUSPECT_VERIFICATION_STATUS_UNSPECIFIED";
+    case SuspectVerificationStatus.UNVERIFIED:
+      return "UNVERIFIED";
+    case SuspectVerificationStatus.VERIFICATION_SCHEDULED:
+      return "VERIFICATION_SCHEDULED";
+    case SuspectVerificationStatus.UNDER_VERIFICATION:
+      return "UNDER_VERIFICATION";
+    case SuspectVerificationStatus.CONFIRMED_CULPRIT:
+      return "CONFIRMED_CULPRIT";
+    case SuspectVerificationStatus.VINDICATED:
+      return "VINDICATED";
+    case SuspectVerificationStatus.VERIFICATION_ERROR:
+      return "VERIFICATION_ERROR";
+    case SuspectVerificationStatus.VERIFICATION_CANCELED:
+      return "VERIFICATION_CANCELED";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum SuspectVerificationStatus");
+  }
+}
+
+/**
+ * Status of a test verdict.
+ * It is a mirror of luci.resultdb.v1.TestVariantStatus.
+ */
+export enum TestVerdictStatus {
+  /**
+   * UNSPECIFIED - a test verdict must not have this status.
+   * This is only used when filtering verdicts.
+   */
+  UNSPECIFIED = 0,
+  /** UNEXPECTED - The test verdict has no exonerations, and all results are unexpected. */
+  UNEXPECTED = 10,
+  /** UNEXPECTEDLY_SKIPPED - The test verdict has no exonerations, and all results are unexpectedly skipped. */
+  UNEXPECTEDLY_SKIPPED = 20,
+  /**
+   * FLAKY - The test verdict has no exonerations, and has both expected and unexpected
+   * results.
+   */
+  FLAKY = 30,
+  /** EXONERATED - The test verdict has one or more test exonerations. */
+  EXONERATED = 40,
+  /** EXPECTED - The test verdict has no exonerations, and all results are expected. */
+  EXPECTED = 50,
+}
+
+export function testVerdictStatusFromJSON(object: any): TestVerdictStatus {
+  switch (object) {
+    case 0:
+    case "TEST_VERDICT_STATUS_UNSPECIFIED":
+      return TestVerdictStatus.UNSPECIFIED;
+    case 10:
+    case "UNEXPECTED":
+      return TestVerdictStatus.UNEXPECTED;
+    case 20:
+    case "UNEXPECTEDLY_SKIPPED":
+      return TestVerdictStatus.UNEXPECTEDLY_SKIPPED;
+    case 30:
+    case "FLAKY":
+      return TestVerdictStatus.FLAKY;
+    case 40:
+    case "EXONERATED":
+      return TestVerdictStatus.EXONERATED;
+    case 50:
+    case "EXPECTED":
+      return TestVerdictStatus.EXPECTED;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestVerdictStatus");
+  }
+}
+
+export function testVerdictStatusToJSON(object: TestVerdictStatus): string {
+  switch (object) {
+    case TestVerdictStatus.UNSPECIFIED:
+      return "TEST_VERDICT_STATUS_UNSPECIFIED";
+    case TestVerdictStatus.UNEXPECTED:
+      return "UNEXPECTED";
+    case TestVerdictStatus.UNEXPECTEDLY_SKIPPED:
+      return "UNEXPECTEDLY_SKIPPED";
+    case TestVerdictStatus.FLAKY:
+      return "FLAKY";
+    case TestVerdictStatus.EXONERATED:
+      return "EXONERATED";
+    case TestVerdictStatus.EXPECTED:
+      return "EXPECTED";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestVerdictStatus");
+  }
+}
+
+/**
+ * RerunResult contains the result of one rerun.
+ * It is for the bots to update result back to LUCI Bisection.
+ */
+export interface RerunResult {
+  /** Status of the rerun. */
+  readonly rerunStatus: RerunStatus;
+  /** Error message, in case of FAILED or INFRA_FAILED status. */
+  readonly errorMessage: string;
+}
+
+/**
+ * SingleRerun contains information about a single rerun.
+ * The same bot may be reused for multiple rerun (to speed up compilation time).
+ */
+export interface SingleRerun {
+  /** Timestamp for the created time of the rerun. */
+  readonly startTime:
+    | string
+    | undefined;
+  /** Timestamp for the last updated time of the rerun. */
+  readonly lastUpdatedTime:
+    | string
+    | undefined;
+  /** Timestamp for the end time of the rerun. */
+  readonly endTime:
+    | string
+    | undefined;
+  /** Buildbucket ID of the rerun build. */
+  readonly bbid: string;
+  /** Task ID of the rerun. */
+  readonly taskId: string;
+  /** ID of the bot. */
+  readonly botId: string;
+  /** Result of the rerun. */
+  readonly rerunResult:
+    | RerunResult
+    | undefined;
+  /** Gitiles commit to do the rerun with. */
+  readonly commit:
+    | GitilesCommit
+    | undefined;
+  /**
+   * Index of the commit to rerun within the blamelist, if this is an
+   * nth-section rerun. We need to use a string instead of an int here because
+   * 0 is a possible valid value but would get lost due to the "omitempty" flag
+   * in the generated proto.
+   */
+  readonly index: string;
+  /** Type of rerun: either "Culprit Verification" or "NthSection". */
+  readonly type: string;
+}
+
+export interface SuspectVerificationDetails {
+  /** The status of the suspect verification. */
+  readonly status: string;
+  /** The verification rerun build for the suspect commit. */
+  readonly suspectRerun:
+    | SingleRerun
+    | undefined;
+  /** The verification rerun build for the parent commit of the suspect. */
+  readonly parentRerun: SingleRerun | undefined;
+}
+
+/**
+ * Variant represents a way of running a test case.
+ *
+ * The same test case can be executed in different ways, for example on
+ * different OS, GPUs, with different compile options or runtime flags.
+ */
+export interface Variant {
+  /**
+   * The definition of the variant. Each key-value pair represents a
+   * parameter describing how the test was run (e.g. OS, GPU, etc.).
+   */
+  readonly def: { [key: string]: string };
+}
+
+export interface Variant_DefEntry {
+  readonly key: string;
+  readonly value: string;
+}
+
+/** Represents a reference in a source control system. */
+export interface SourceRef {
+  /** A branch in gitiles repository. */
+  readonly gitiles?: GitilesRef | undefined;
+}
+
+/** Represents a branch in a gitiles repository. */
+export interface GitilesRef {
+  /** The gitiles host, e.g. "chromium.googlesource.com". */
+  readonly host: string;
+  /** The project on the gitiles host, e.g. "chromium/src". */
+  readonly project: string;
+  /**
+   * Commit ref, e.g. "refs/heads/main" from which the commit was fetched.
+   * Not the branch name, use "refs/heads/branch"
+   */
+  readonly ref: string;
+}
+
+/** Represents dimensions requested to buildbucket. */
+export interface Dimensions {
+  /** List of dimensions, ordered by key ascendingly. */
+  readonly dimensions: readonly Dimension[];
+}
+
+/** Represent one dimension requested to buildbucket. */
+export interface Dimension {
+  /** Key, e.g. "os". */
+  readonly key: string;
+  /** Value, e.g. "Ubuntu". */
+  readonly value: string;
+}
+
+function createBaseRerunResult(): RerunResult {
+  return { rerunStatus: 0, errorMessage: "" };
+}
+
+export const RerunResult = {
+  encode(message: RerunResult, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.rerunStatus !== 0) {
+      writer.uint32(8).int32(message.rerunStatus);
+    }
+    if (message.errorMessage !== "") {
+      writer.uint32(18).string(message.errorMessage);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): RerunResult {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRerunResult() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.rerunStatus = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.errorMessage = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RerunResult {
+    return {
+      rerunStatus: isSet(object.rerunStatus) ? rerunStatusFromJSON(object.rerunStatus) : 0,
+      errorMessage: isSet(object.errorMessage) ? globalThis.String(object.errorMessage) : "",
+    };
+  },
+
+  toJSON(message: RerunResult): unknown {
+    const obj: any = {};
+    if (message.rerunStatus !== 0) {
+      obj.rerunStatus = rerunStatusToJSON(message.rerunStatus);
+    }
+    if (message.errorMessage !== "") {
+      obj.errorMessage = message.errorMessage;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<RerunResult>, I>>(base?: I): RerunResult {
+    return RerunResult.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<RerunResult>, I>>(object: I): RerunResult {
+    const message = createBaseRerunResult() as any;
+    message.rerunStatus = object.rerunStatus ?? 0;
+    message.errorMessage = object.errorMessage ?? "";
+    return message;
+  },
+};
+
+function createBaseSingleRerun(): SingleRerun {
+  return {
+    startTime: undefined,
+    lastUpdatedTime: undefined,
+    endTime: undefined,
+    bbid: "0",
+    taskId: "",
+    botId: "",
+    rerunResult: undefined,
+    commit: undefined,
+    index: "",
+    type: "",
+  };
+}
+
+export const SingleRerun = {
+  encode(message: SingleRerun, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.startTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.startTime), writer.uint32(10).fork()).ldelim();
+    }
+    if (message.lastUpdatedTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.lastUpdatedTime), writer.uint32(18).fork()).ldelim();
+    }
+    if (message.endTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.endTime), writer.uint32(26).fork()).ldelim();
+    }
+    if (message.bbid !== "0") {
+      writer.uint32(32).int64(message.bbid);
+    }
+    if (message.taskId !== "") {
+      writer.uint32(42).string(message.taskId);
+    }
+    if (message.botId !== "") {
+      writer.uint32(50).string(message.botId);
+    }
+    if (message.rerunResult !== undefined) {
+      RerunResult.encode(message.rerunResult, writer.uint32(58).fork()).ldelim();
+    }
+    if (message.commit !== undefined) {
+      GitilesCommit.encode(message.commit, writer.uint32(66).fork()).ldelim();
+    }
+    if (message.index !== "") {
+      writer.uint32(74).string(message.index);
+    }
+    if (message.type !== "") {
+      writer.uint32(82).string(message.type);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SingleRerun {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSingleRerun() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.startTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.lastUpdatedTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.endTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 4:
+          if (tag !== 32) {
+            break;
+          }
+
+          message.bbid = longToString(reader.int64() as Long);
+          continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        case 6:
+          if (tag !== 50) {
+            break;
+          }
+
+          message.botId = reader.string();
+          continue;
+        case 7:
+          if (tag !== 58) {
+            break;
+          }
+
+          message.rerunResult = RerunResult.decode(reader, reader.uint32());
+          continue;
+        case 8:
+          if (tag !== 66) {
+            break;
+          }
+
+          message.commit = GitilesCommit.decode(reader, reader.uint32());
+          continue;
+        case 9:
+          if (tag !== 74) {
+            break;
+          }
+
+          message.index = reader.string();
+          continue;
+        case 10:
+          if (tag !== 82) {
+            break;
+          }
+
+          message.type = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SingleRerun {
+    return {
+      startTime: isSet(object.startTime) ? globalThis.String(object.startTime) : undefined,
+      lastUpdatedTime: isSet(object.lastUpdatedTime) ? globalThis.String(object.lastUpdatedTime) : undefined,
+      endTime: isSet(object.endTime) ? globalThis.String(object.endTime) : undefined,
+      bbid: isSet(object.bbid) ? globalThis.String(object.bbid) : "0",
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "",
+      botId: isSet(object.botId) ? globalThis.String(object.botId) : "",
+      rerunResult: isSet(object.rerunResult) ? RerunResult.fromJSON(object.rerunResult) : undefined,
+      commit: isSet(object.commit) ? GitilesCommit.fromJSON(object.commit) : undefined,
+      index: isSet(object.index) ? globalThis.String(object.index) : "",
+      type: isSet(object.type) ? globalThis.String(object.type) : "",
+    };
+  },
+
+  toJSON(message: SingleRerun): unknown {
+    const obj: any = {};
+    if (message.startTime !== undefined) {
+      obj.startTime = message.startTime;
+    }
+    if (message.lastUpdatedTime !== undefined) {
+      obj.lastUpdatedTime = message.lastUpdatedTime;
+    }
+    if (message.endTime !== undefined) {
+      obj.endTime = message.endTime;
+    }
+    if (message.bbid !== "0") {
+      obj.bbid = message.bbid;
+    }
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    if (message.botId !== "") {
+      obj.botId = message.botId;
+    }
+    if (message.rerunResult !== undefined) {
+      obj.rerunResult = RerunResult.toJSON(message.rerunResult);
+    }
+    if (message.commit !== undefined) {
+      obj.commit = GitilesCommit.toJSON(message.commit);
+    }
+    if (message.index !== "") {
+      obj.index = message.index;
+    }
+    if (message.type !== "") {
+      obj.type = message.type;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SingleRerun>, I>>(base?: I): SingleRerun {
+    return SingleRerun.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SingleRerun>, I>>(object: I): SingleRerun {
+    const message = createBaseSingleRerun() as any;
+    message.startTime = object.startTime ?? undefined;
+    message.lastUpdatedTime = object.lastUpdatedTime ?? undefined;
+    message.endTime = object.endTime ?? undefined;
+    message.bbid = object.bbid ?? "0";
+    message.taskId = object.taskId ?? "";
+    message.botId = object.botId ?? "";
+    message.rerunResult = (object.rerunResult !== undefined && object.rerunResult !== null)
+      ? RerunResult.fromPartial(object.rerunResult)
+      : undefined;
+    message.commit = (object.commit !== undefined && object.commit !== null)
+      ? GitilesCommit.fromPartial(object.commit)
+      : undefined;
+    message.index = object.index ?? "";
+    message.type = object.type ?? "";
+    return message;
+  },
+};
+
+function createBaseSuspectVerificationDetails(): SuspectVerificationDetails {
+  return { status: "", suspectRerun: undefined, parentRerun: undefined };
+}
+
+export const SuspectVerificationDetails = {
+  encode(message: SuspectVerificationDetails, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.status !== "") {
+      writer.uint32(10).string(message.status);
+    }
+    if (message.suspectRerun !== undefined) {
+      SingleRerun.encode(message.suspectRerun, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.parentRerun !== undefined) {
+      SingleRerun.encode(message.parentRerun, writer.uint32(26).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SuspectVerificationDetails {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSuspectVerificationDetails() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.status = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.suspectRerun = SingleRerun.decode(reader, reader.uint32());
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.parentRerun = SingleRerun.decode(reader, reader.uint32());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SuspectVerificationDetails {
+    return {
+      status: isSet(object.status) ? globalThis.String(object.status) : "",
+      suspectRerun: isSet(object.suspectRerun) ? SingleRerun.fromJSON(object.suspectRerun) : undefined,
+      parentRerun: isSet(object.parentRerun) ? SingleRerun.fromJSON(object.parentRerun) : undefined,
+    };
+  },
+
+  toJSON(message: SuspectVerificationDetails): unknown {
+    const obj: any = {};
+    if (message.status !== "") {
+      obj.status = message.status;
+    }
+    if (message.suspectRerun !== undefined) {
+      obj.suspectRerun = SingleRerun.toJSON(message.suspectRerun);
+    }
+    if (message.parentRerun !== undefined) {
+      obj.parentRerun = SingleRerun.toJSON(message.parentRerun);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SuspectVerificationDetails>, I>>(base?: I): SuspectVerificationDetails {
+    return SuspectVerificationDetails.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SuspectVerificationDetails>, I>>(object: I): SuspectVerificationDetails {
+    const message = createBaseSuspectVerificationDetails() as any;
+    message.status = object.status ?? "";
+    message.suspectRerun = (object.suspectRerun !== undefined && object.suspectRerun !== null)
+      ? SingleRerun.fromPartial(object.suspectRerun)
+      : undefined;
+    message.parentRerun = (object.parentRerun !== undefined && object.parentRerun !== null)
+      ? SingleRerun.fromPartial(object.parentRerun)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseVariant(): Variant {
+  return { def: {} };
+}
+
+export const Variant = {
+  encode(message: Variant, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    Object.entries(message.def).forEach(([key, value]) => {
+      Variant_DefEntry.encode({ key: key as any, value }, writer.uint32(10).fork()).ldelim();
+    });
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): Variant {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseVariant() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          const entry1 = Variant_DefEntry.decode(reader, reader.uint32());
+          if (entry1.value !== undefined) {
+            message.def[entry1.key] = entry1.value;
+          }
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Variant {
+    return {
+      def: isObject(object.def)
+        ? Object.entries(object.def).reduce<{ [key: string]: string }>((acc, [key, value]) => {
+          acc[key] = String(value);
+          return acc;
+        }, {})
+        : {},
+    };
+  },
+
+  toJSON(message: Variant): unknown {
+    const obj: any = {};
+    if (message.def) {
+      const entries = Object.entries(message.def);
+      if (entries.length > 0) {
+        obj.def = {};
+        entries.forEach(([k, v]) => {
+          obj.def[k] = v;
+        });
+      }
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<Variant>, I>>(base?: I): Variant {
+    return Variant.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<Variant>, I>>(object: I): Variant {
+    const message = createBaseVariant() as any;
+    message.def = Object.entries(object.def ?? {}).reduce<{ [key: string]: string }>((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = globalThis.String(value);
+      }
+      return acc;
+    }, {});
+    return message;
+  },
+};
+
+function createBaseVariant_DefEntry(): Variant_DefEntry {
+  return { key: "", value: "" };
+}
+
+export const Variant_DefEntry = {
+  encode(message: Variant_DefEntry, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== "") {
+      writer.uint32(18).string(message.value);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): Variant_DefEntry {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseVariant_DefEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Variant_DefEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? globalThis.String(object.value) : "",
+    };
+  },
+
+  toJSON(message: Variant_DefEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== "") {
+      obj.value = message.value;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<Variant_DefEntry>, I>>(base?: I): Variant_DefEntry {
+    return Variant_DefEntry.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<Variant_DefEntry>, I>>(object: I): Variant_DefEntry {
+    const message = createBaseVariant_DefEntry() as any;
+    message.key = object.key ?? "";
+    message.value = object.value ?? "";
+    return message;
+  },
+};
+
+function createBaseSourceRef(): SourceRef {
+  return { gitiles: undefined };
+}
+
+export const SourceRef = {
+  encode(message: SourceRef, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.gitiles !== undefined) {
+      GitilesRef.encode(message.gitiles, writer.uint32(10).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SourceRef {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSourceRef() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.gitiles = GitilesRef.decode(reader, reader.uint32());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SourceRef {
+    return { gitiles: isSet(object.gitiles) ? GitilesRef.fromJSON(object.gitiles) : undefined };
+  },
+
+  toJSON(message: SourceRef): unknown {
+    const obj: any = {};
+    if (message.gitiles !== undefined) {
+      obj.gitiles = GitilesRef.toJSON(message.gitiles);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SourceRef>, I>>(base?: I): SourceRef {
+    return SourceRef.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SourceRef>, I>>(object: I): SourceRef {
+    const message = createBaseSourceRef() as any;
+    message.gitiles = (object.gitiles !== undefined && object.gitiles !== null)
+      ? GitilesRef.fromPartial(object.gitiles)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseGitilesRef(): GitilesRef {
+  return { host: "", project: "", ref: "" };
+}
+
+export const GitilesRef = {
+  encode(message: GitilesRef, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.host !== "") {
+      writer.uint32(10).string(message.host);
+    }
+    if (message.project !== "") {
+      writer.uint32(18).string(message.project);
+    }
+    if (message.ref !== "") {
+      writer.uint32(26).string(message.ref);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GitilesRef {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGitilesRef() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.host = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.project = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.ref = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GitilesRef {
+    return {
+      host: isSet(object.host) ? globalThis.String(object.host) : "",
+      project: isSet(object.project) ? globalThis.String(object.project) : "",
+      ref: isSet(object.ref) ? globalThis.String(object.ref) : "",
+    };
+  },
+
+  toJSON(message: GitilesRef): unknown {
+    const obj: any = {};
+    if (message.host !== "") {
+      obj.host = message.host;
+    }
+    if (message.project !== "") {
+      obj.project = message.project;
+    }
+    if (message.ref !== "") {
+      obj.ref = message.ref;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GitilesRef>, I>>(base?: I): GitilesRef {
+    return GitilesRef.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GitilesRef>, I>>(object: I): GitilesRef {
+    const message = createBaseGitilesRef() as any;
+    message.host = object.host ?? "";
+    message.project = object.project ?? "";
+    message.ref = object.ref ?? "";
+    return message;
+  },
+};
+
+function createBaseDimensions(): Dimensions {
+  return { dimensions: [] };
+}
+
+export const Dimensions = {
+  encode(message: Dimensions, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.dimensions) {
+      Dimension.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): Dimensions {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDimensions() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.dimensions.push(Dimension.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Dimensions {
+    return {
+      dimensions: globalThis.Array.isArray(object?.dimensions)
+        ? object.dimensions.map((e: any) => Dimension.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: Dimensions): unknown {
+    const obj: any = {};
+    if (message.dimensions?.length) {
+      obj.dimensions = message.dimensions.map((e) => Dimension.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<Dimensions>, I>>(base?: I): Dimensions {
+    return Dimensions.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<Dimensions>, I>>(object: I): Dimensions {
+    const message = createBaseDimensions() as any;
+    message.dimensions = object.dimensions?.map((e) => Dimension.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseDimension(): Dimension {
+  return { key: "", value: "" };
+}
+
+export const Dimension = {
+  encode(message: Dimension, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== "") {
+      writer.uint32(18).string(message.value);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): Dimension {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDimension() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Dimension {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? globalThis.String(object.value) : "",
+    };
+  },
+
+  toJSON(message: Dimension): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== "") {
+      obj.value = message.value;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<Dimension>, I>>(base?: I): Dimension {
+    return Dimension.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<Dimension>, I>>(object: I): Dimension {
+    const message = createBaseDimension() as any;
+    message.key = object.key ?? "";
+    message.value = object.value ?? "";
+    return message;
+  },
+};
+
+type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+
+export type DeepPartial<T> = T extends Builtin ? T
+  : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
+  : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
+  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
+  : Partial<T>;
+
+type KeysOfUnion<T> = T extends T ? keyof T : never;
+export type Exact<P, I extends P> = P extends Builtin ? P
+  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
+
+function toTimestamp(dateStr: string): Timestamp {
+  const date = new globalThis.Date(dateStr);
+  const seconds = Math.trunc(date.getTime() / 1_000).toString();
+  const nanos = (date.getTime() % 1_000) * 1_000_000;
+  return { seconds, nanos };
+}
+
+function fromTimestamp(t: Timestamp): string {
+  let millis = (globalThis.Number(t.seconds) || 0) * 1_000;
+  millis += (t.nanos || 0) / 1_000_000;
+  return new globalThis.Date(millis).toISOString();
+}
+
+function longToString(long: Long) {
+  return long.toString();
+}
+
+if (_m0.util.Long !== Long) {
+  _m0.util.Long = Long as any;
+  _m0.configure();
+}
+
+function isObject(value: any): boolean {
+  return typeof value === "object" && value !== null;
+}
+
+function isSet(value: any): boolean {
+  return value !== null && value !== undefined;
+}

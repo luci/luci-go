@@ -70,6 +70,20 @@ type DeepMutable<T> = {
   -readonly [key in keyof T]: DeepMutable<T[key]>;
 };
 
+type NonNullableProps<T, K extends keyof T = keyof T> = Omit<T, K> & {
+  [key in K]-?: NonNullable<T[key]>;
+};
+
+type DeepNonNullable<T> = T extends object
+  ? NonNullable<{
+      [key in keyof T]-?: DeepNonNullable<T[key]>;
+    }>
+  : NonNullable<T>;
+
+type DeepNonNullableProps<T, K extends keyof T = keyof T> = Omit<T, K> & {
+  [key in K]-?: DeepNonNullable<T[key]>;
+};
+
 interface ToString {
   toString(): string;
 }

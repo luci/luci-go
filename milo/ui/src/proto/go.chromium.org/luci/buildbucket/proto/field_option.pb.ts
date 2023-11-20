@@ -1,0 +1,82 @@
+/* eslint-disable */
+import _m0 from "protobufjs/minimal";
+import { FieldBehavior, fieldBehaviorFromJSON, fieldBehaviorToJSON } from "../../../../google/api/field_behavior.pb";
+
+export const protobufPackage = "buildbucket.v2";
+
+export interface CreateBuildFieldOption {
+  readonly fieldBehavior: FieldBehavior;
+}
+
+function createBaseCreateBuildFieldOption(): CreateBuildFieldOption {
+  return { fieldBehavior: 0 };
+}
+
+export const CreateBuildFieldOption = {
+  encode(message: CreateBuildFieldOption, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.fieldBehavior !== 0) {
+      writer.uint32(8).int32(message.fieldBehavior);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): CreateBuildFieldOption {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCreateBuildFieldOption() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.fieldBehavior = reader.int32() as any;
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CreateBuildFieldOption {
+    return { fieldBehavior: isSet(object.fieldBehavior) ? fieldBehaviorFromJSON(object.fieldBehavior) : 0 };
+  },
+
+  toJSON(message: CreateBuildFieldOption): unknown {
+    const obj: any = {};
+    if (message.fieldBehavior !== 0) {
+      obj.fieldBehavior = fieldBehaviorToJSON(message.fieldBehavior);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CreateBuildFieldOption>, I>>(base?: I): CreateBuildFieldOption {
+    return CreateBuildFieldOption.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CreateBuildFieldOption>, I>>(object: I): CreateBuildFieldOption {
+    const message = createBaseCreateBuildFieldOption() as any;
+    message.fieldBehavior = object.fieldBehavior ?? 0;
+    return message;
+  },
+};
+
+type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+
+export type DeepPartial<T> = T extends Builtin ? T
+  : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
+  : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
+  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
+  : Partial<T>;
+
+type KeysOfUnion<T> = T extends T ? keyof T : never;
+export type Exact<P, I extends P> = P extends Builtin ? P
+  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
+
+function isSet(value: any): boolean {
+  return value !== null && value !== undefined;
+}
