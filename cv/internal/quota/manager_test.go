@@ -292,8 +292,9 @@ func TestManager(t *testing.T) {
 			res, err := qm.CreditRunQuota(ctx, r)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
-				NewBalance:      5,
-				PreviousBalance: 4, // credit reapplies debit beforehand.
+				NewBalance:              5,
+				PreviousBalance:         4, // credit reapplies debit beforehand.
+				PreviousBalanceAdjusted: 4,
 			})
 		})
 
@@ -321,9 +322,10 @@ func TestManager(t *testing.T) {
 			res, err = qm.runQuotaOp(ctx, r, "foo2", -2)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
-				NewBalance:      2,
-				PreviousBalance: 4,
-				AccountStatus:   quotapb.OpResult_ALREADY_EXISTS,
+				NewBalance:              2,
+				PreviousBalance:         4,
+				PreviousBalanceAdjusted: 4,
+				AccountStatus:           quotapb.OpResult_ALREADY_EXISTS,
 			})
 		})
 
@@ -399,19 +401,38 @@ func TestManager(t *testing.T) {
 				AccountStatus: quotapb.OpResult_CREATED,
 			})
 
-			Convey("decrease in quota allowance", func() {
+			Convey("decrease in quota allowance results in underflow", func() {
 				// Update policy
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity:       makeIdentity(tEmail),
 					IdentityGroups: []string{"partners"},
 				})
 
+				// This is not a real scenario within CV but just checks
+				// extreme examples.
 				res, err = qm.runQuotaOp(ctx, r, "", -2)
+				So(err, ShouldEqual, quota.ErrQuotaApply)
+				So(res, ShouldResembleProto, &quotapb.OpResult{
+					PreviousBalance:         4,
+					PreviousBalanceAdjusted: 1,
+					Status:                  quotapb.OpResult_ERR_UNDERFLOW,
+				})
+			})
+
+			Convey("decrease in quota allowance within bounds", func() {
+				// Update policy
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity:       makeIdentity(tEmail),
+					IdentityGroups: []string{"partners"},
+				})
+
+				res, err = qm.runQuotaOp(ctx, r, "", -1)
 				So(err, ShouldBeNil)
 				So(res, ShouldResembleProto, &quotapb.OpResult{
-					NewBalance:      2,
-					PreviousBalance: 4,
-					AccountStatus:   quotapb.OpResult_ALREADY_EXISTS,
+					NewBalance:              0,
+					PreviousBalance:         4,
+					PreviousBalanceAdjusted: 1,
+					AccountStatus:           quotapb.OpResult_ALREADY_EXISTS,
 				})
 			})
 
@@ -422,15 +443,34 @@ func TestManager(t *testing.T) {
 					IdentityGroups: []string{"chromies"},
 				})
 
-				res, err = qm.runQuotaOp(ctx, r, "", 2)
+				res, err = qm.runQuotaOp(ctx, r, "", -1)
 				So(err, ShouldBeNil)
 				So(res, ShouldResembleProto, &quotapb.OpResult{
-					NewBalance:      6,
-					PreviousBalance: 4,
-					AccountStatus:   quotapb.OpResult_ALREADY_EXISTS,
+					NewBalance:              8,
+					PreviousBalance:         4,
+					PreviousBalanceAdjusted: 9,
+					AccountStatus:           quotapb.OpResult_ALREADY_EXISTS,
 				})
 			})
 
+			Convey("increase in quota allowance in the overflow case is bounded by the new limit", func() {
+				// Update policy
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity:       makeIdentity(tEmail),
+					IdentityGroups: []string{"chromies"},
+				})
+
+				// This is not a real scenario within CV but just checks
+				// extreme examples.
+				res, err = qm.runQuotaOp(ctx, r, "", 2)
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, &quotapb.OpResult{
+					NewBalance:              10,
+					PreviousBalance:         4,
+					PreviousBalanceAdjusted: 9,
+					AccountStatus:           quotapb.OpResult_ALREADY_EXISTS,
+				})
+			})
 		})
 
 		Convey("runQuotaOp() is idempotent", func() {
@@ -464,17 +504,19 @@ func TestManager(t *testing.T) {
 			res, err = qm.runQuotaOp(ctx, r, "foo2", -2)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
-				NewBalance:      2,
-				PreviousBalance: 4,
-				AccountStatus:   quotapb.OpResult_ALREADY_EXISTS,
+				NewBalance:              2,
+				PreviousBalance:         4,
+				PreviousBalanceAdjusted: 4,
+				AccountStatus:           quotapb.OpResult_ALREADY_EXISTS,
 			})
 
 			res, err = qm.runQuotaOp(ctx, r, "foo2", -2)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
-				NewBalance:      2,
-				PreviousBalance: 4,
-				AccountStatus:   quotapb.OpResult_ALREADY_EXISTS,
+				NewBalance:              2,
+				PreviousBalance:         4,
+				PreviousBalanceAdjusted: 4,
+				AccountStatus:           quotapb.OpResult_ALREADY_EXISTS,
 			})
 		})
 	})

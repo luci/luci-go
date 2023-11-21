@@ -137,6 +137,13 @@ message OpResult {
   // Extra context for `status` as english text. Usually unset, but will be most
   // frequently set for UNKNOWN errors.
   string status_msg = 5;
+
+  // When WITH_POLICY_LIMIT_DELTA option is used, previous_balance_adjusted is
+  // set to the previous balance + delta (where delta is the difference between
+  // the new Policy.limit and the old Policy.limit). If WITH_POLICY_LIMIT_DELTA
+  // is not set or if there is no change in policy_ref, or if the account has no
+  // existing policy_ref, previous_balance_adjusted is same as previous_balance.
+  int64 previous_balance_adjusted = 6;
 }
 
 message ApplyOpsResponse {

@@ -21,6 +21,7 @@ Utils = G.Utils
 
 local DO_NOT_CAP_PROPOSED = PB.E["go.chromium.org.luci.server.quota.quotapb.Op.Options"].DO_NOT_CAP_PROPOSED
 local IGNORE_POLICY_BOUNDS = PB.E["go.chromium.org.luci.server.quota.quotapb.Op.Options"].IGNORE_POLICY_BOUNDS
+local WITH_POLICY_LIMIT_DELTA = PB.E["go.chromium.org.luci.server.quota.quotapb.Op.Options"].WITH_POLICY_LIMIT_DELTA
 
 function enumMap(e)
   local ret = {}
@@ -269,25 +270,30 @@ end
 function testAccountApplyOpFinitePolicy()
   local account = Account:get(KEYS[1])
 
-  local p = {
-    pb = PB.new("go.chromium.org.luci.server.quota.quotapb.Policy", {
-      limit = 1000,
-    }),
-    policy_ref = PB.new("go.chromium.org.luci.server.quota.quotapb.PolicyRef", {
-      config = "policy_key",
-      key = "policy_name",
-    }),
-  }
-  account:setPolicy(p)
+  local updateAccountPolicy = function(config, key, limit)
+    local p = {
+      pb = PB.new("go.chromium.org.luci.server.quota.quotapb.Policy", {
+        limit = limit,
+      }),
+      policy_ref = PB.new("go.chromium.org.luci.server.quota.quotapb.PolicyRef", {
+        config = config,
+        key = key,
+      }),
+    }
+    account:setPolicy(p)
+  end
 
-  local setOp = function(cur, amt, options)
+  local setOp = function(cur, amt, options, relative_to, ref)
     account.pb.balance = cur
     return mkOp({
       delta = amt,
-      relative_to = "ZERO",
+      relative_to = relative_to or "ZERO",
       options = options or 0,
+      policy_ref = ref,
     })
   end
+
+  updateAccountPolicy("policy_key", "policy_name", 1000)
 
   lu.assertEquals(account:applyOp(setOp(20, 300)), nil)  -- increase < limit
   lu.assertEquals(account.pb.balance, 300)
@@ -340,6 +346,33 @@ function testAccountApplyOpFinitePolicy()
   Account.applyOp(account, setOp(1500, 2000, DO_NOT_CAP_PROPOSED), rslt)
   lu.assertEquals(rslt.status, "ERR_OVERFLOW")
   lu.assertEquals(account.pb.balance, 1500)
+
+  -- WITH_POLICY_LIMIT_DELTA test cases
+  local rslt = {}
+  updateAccountPolicy("config1", "key1", 5)
+  local ref = setPolicy("config2", "key2", {limit = 10})
+  Account.applyOp(account, setOp(3, -2, WITH_POLICY_LIMIT_DELTA, "CURRENT_BALANCE", ref), rslt) -- policy limit increase 5 < 10
+  lu.assertEquals(rslt.previous_balance_adjusted, 8)
+  lu.assertEquals(account.pb.balance, 6)
+
+  local rslt = {}
+  local ref = setPolicy("config3", "key3", {limit = 5})
+  Account.applyOp(account, setOp(3, 1, WITH_POLICY_LIMIT_DELTA, "CURRENT_BALANCE", ref), rslt) -- policy limit decrease 10 > 5
+  lu.assertEquals(rslt.previous_balance_adjusted, -2)
+  lu.assertEquals(account.pb.balance, -1)
+
+  local rslt = {}
+  local ref = setPolicy("config4", "key4", {limit = 5})
+  Account.applyOp(account, setOp(3, 1, WITH_POLICY_LIMIT_DELTA, "CURRENT_BALANCE", ref), rslt) -- old limit == new limit
+  lu.assertEquals(rslt.previous_balance_adjusted, 3)
+  lu.assertEquals(account.pb.balance, 4)
+
+  account:setPolicy(nil) -- unset policy
+  local rslt = {}
+  local ref = setPolicy("config5", "key5", {limit = 5})
+  Account.applyOp(account, setOp(3, 1, WITH_POLICY_LIMIT_DELTA, "CURRENT_BALANCE", ref), rslt) -- no-op since old policy_Ref == nil
+  lu.assertEquals(rslt.previous_balance_adjusted, nil)
+  lu.assertEquals(account.pb.balance, 4)
 end
 
 function testAccountApplyOpInfinitePolicy()

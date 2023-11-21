@@ -138,6 +138,7 @@ end
 local opts = PB.E["go.chromium.org.luci.server.quota.quotapb.Op.Options"]
 local IGNORE_POLICY_BOUNDS = opts.IGNORE_POLICY_BOUNDS
 local DO_NOT_CAP_PROPOSED = opts.DO_NOT_CAP_PROPOSED
+local WITH_POLICY_LIMIT_DELTA = opts.WITH_POLICY_LIMIT_DELTA
 
 -- computeProposed computes the new, proposed, balance value for an account.
 --
@@ -186,6 +187,12 @@ local computeProposed = function(op, new_account, current, policy)
 end
 
 function Account:applyOp(op, result)
+  -- this weird construction checks if the bit is set in options.
+  local options = op.options
+  local ignore_bounds = (options/IGNORE_POLICY_BOUNDS)%2 >= 1
+  local no_cap = (options/DO_NOT_CAP_PROPOSED)%2 >= 1
+  local with_policy_limit_delta = (options/WITH_POLICY_LIMIT_DELTA)%2 >= 1
+
   -- If there is a policy_ref attempt to set the policy.
   if op.policy_ref ~= nil then
     local policy_raw = Policy.get(op.policy_ref)
@@ -193,15 +200,11 @@ function Account:applyOp(op, result)
       result.status = "ERR_UNKNOWN_POLICY"
       return
     end
-    self:setPolicy(policy_raw)
+    self:setPolicy(policy_raw, result, with_policy_limit_delta)
   end
   local pb = self.pb
   local policy = pb.policy
 
-  -- this weird construction checks if the bit is set in options.
-  local options = op.options
-  local ignore_bounds = (options/IGNORE_POLICY_BOUNDS)%2 >= 1
-  local no_cap = (options/DO_NOT_CAP_PROPOSED)%2 >= 1
   if ignore_bounds and no_cap then
     error("IGNORE_POLICY_BOUNDS and DO_NOT_CAP_PROPOSED both set")
   end
@@ -355,10 +358,21 @@ local policyRefEq = function(a, b)
   return a.config == b.config and a.key == b.key
 end
 
-function Account:setPolicy(policy)
+function Account:setPolicy(policy, result, with_policy_limit_delta)
   if policy then
     -- sets Policy on this Account, updating its policy entry and replenishing it.
     if not policyRefEq(self.pb.policy_ref, policy.policy_ref) then
+      -- When with_policy_limit_delta is set for an account with an existing
+      -- policy_ref, and there is a policy update, add the delta of the new
+      -- policy limit and the old policy limit to the current account balance.
+      if with_policy_limit_delta and self.pb.policy_ref ~= nil then
+        local delta = policy.pb.limit - self.pb.policy.limit
+        self.pb.balance = self.pb.balance + delta
+
+        -- Update previous_balance_adjusted to the updated balance.
+        result.previous_balance_adjusted = self.pb.balance
+      end
+
       self.pb.policy = policy.pb
       self.pb.policy_ref = policy.policy_ref
       self.pb.policy_change_ts = NOW
@@ -404,6 +418,9 @@ function Account.ApplyOps(oplist)
       status = "SUCCESS",  -- by default; applyOp can overwrite this.
       account_status = account.account_status,
       previous_balance = account.pb.balance,
+      -- This will be updated if WITH_POLICY_LIMIT_DELTA is set, the account
+      -- has an existing policy_ref, and the op introduces a policy change.
+      previous_balance_adjusted = account.pb.balance,
     })
     ret.results[i] = result
 

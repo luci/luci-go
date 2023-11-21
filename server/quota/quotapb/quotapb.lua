@@ -11,6 +11,8 @@ PB.E = {
     [1] = "IGNORE_POLICY_BOUNDS",
     ["DO_NOT_CAP_PROPOSED"] = 2,
     [2] = "DO_NOT_CAP_PROPOSED",
+    ["WITH_POLICY_LIMIT_DELTA"] = 4,
+    [4] = "WITH_POLICY_LIMIT_DELTA",
   },
 
   ["go.chromium.org.luci.server.quota.quotapb.Op.RelativeTo"] = {
@@ -937,6 +939,21 @@ PB.M = {
         acc[5] = val
       end
 
+      val = obj["previous_balance_adjusted"] -- 6: int64
+      if val ~= 0 then
+        local T = type(val)
+        if T ~= "number" then
+          error("field previous_balance_adjusted: expected number, but got "..T)
+        end
+        if val > 9007199254740991 then
+          error("field previous_balance_adjusted: overflows lua max integer")
+        end
+        if val < -9007199254740991 then
+          error("field previous_balance_adjusted: underflows lua min integer")
+        end
+        acc[6] = val
+      end
+
       local unknown = obj["$unknown"]
       if unknown ~= nil then
         for k, v in next, unknown do acc[k] = v end
@@ -954,6 +971,7 @@ PB.M = {
         ["account_status"] = "ALREADY_EXISTS",
         ["status"] = "SUCCESS",
         ["status_msg"] = "",
+        ["previous_balance_adjusted"] = 0,
       }
       local dec = {
         [1] = function(val) -- new_balance: int64
@@ -1013,6 +1031,13 @@ PB.M = {
           end
           ret["status_msg"] = val
         end,
+        [6] = function(val) -- previous_balance_adjusted: int64
+          local T = type(val)
+          if T ~= "number" then
+            error("field previous_balance_adjusted: expected number, but got "..T)
+          end
+          ret["previous_balance_adjusted"] = val
+        end,
       }
       for k, v in next, raw do
         local fn = dec[k]
@@ -1030,6 +1055,7 @@ PB.M = {
       ["account_status"] = true,
       ["status"] = true,
       ["status_msg"] = true,
+      ["previous_balance_adjusted"] = true,
     },
   },
 

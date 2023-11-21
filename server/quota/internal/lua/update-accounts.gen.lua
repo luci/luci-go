@@ -16,6 +16,8 @@ PB.E = {
     [1] = "IGNORE_POLICY_BOUNDS",
     ["DO_NOT_CAP_PROPOSED"] = 2,
     [2] = "DO_NOT_CAP_PROPOSED",
+    ["WITH_POLICY_LIMIT_DELTA"] = 4,
+    [4] = "WITH_POLICY_LIMIT_DELTA",
   },
 
   ["go.chromium.org.luci.server.quota.quotapb.Op.RelativeTo"] = {
@@ -236,31 +238,40 @@ PB.M = {
         acc[2] = val
       end
 
-      val = obj["namespace"] -- 3: string
+      val = obj["identity"] -- 3: string
+      if val ~= "" then
+        local T = type(val)
+        if T ~= "string" then
+          error("field identity: expected string, but got "..T)
+        end
+        acc[3] = val
+      end
+
+      val = obj["namespace"] -- 4: string
       if val ~= "" then
         local T = type(val)
         if T ~= "string" then
           error("field namespace: expected string, but got "..T)
         end
-        acc[3] = val
+        acc[4] = val
       end
 
-      val = obj["name"] -- 4: string
+      val = obj["name"] -- 5: string
       if val ~= "" then
         local T = type(val)
         if T ~= "string" then
           error("field name: expected string, but got "..T)
         end
-        acc[4] = val
+        acc[5] = val
       end
 
-      val = obj["resource_type"] -- 5: string
+      val = obj["resource_type"] -- 6: string
       if val ~= "" then
         local T = type(val)
         if T ~= "string" then
           error("field resource_type: expected string, but got "..T)
         end
-        acc[5] = val
+        acc[6] = val
       end
 
       local unknown = obj["$unknown"]
@@ -277,6 +288,7 @@ PB.M = {
         ["$type"] = "go.chromium.org.luci.server.quota.quotapb.AccountID",
         ["app_id"] = "",
         ["realm"] = "",
+        ["identity"] = "",
         ["namespace"] = "",
         ["name"] = "",
         ["resource_type"] = "",
@@ -320,7 +332,26 @@ PB.M = {
           end
           ret["realm"] = val
         end,
-        [3] = function(val) -- namespace: string
+        [3] = function(val) -- identity: string
+          local T = type(val)
+          if T == "number" then
+            if not PB.internUnmarshalTable then
+              error("field identity: failed to look up interned string: intern table not set")
+            end
+            local origval = val
+            local newval = PB.internUnmarshalTable[val]
+            if newval == nil then
+              error("field identity: failed to look up interned string: "..origval)
+            end
+            val = newval
+            T = type(val)
+          end
+          if T ~= "string" then
+            error("field identity: expected string, but got "..T)
+          end
+          ret["identity"] = val
+        end,
+        [4] = function(val) -- namespace: string
           local T = type(val)
           if T == "number" then
             if not PB.internUnmarshalTable then
@@ -339,7 +370,7 @@ PB.M = {
           end
           ret["namespace"] = val
         end,
-        [4] = function(val) -- name: string
+        [5] = function(val) -- name: string
           local T = type(val)
           if T == "number" then
             if not PB.internUnmarshalTable then
@@ -358,7 +389,7 @@ PB.M = {
           end
           ret["name"] = val
         end,
-        [5] = function(val) -- resource_type: string
+        [6] = function(val) -- resource_type: string
           local T = type(val)
           if T == "number" then
             if not PB.internUnmarshalTable then
@@ -391,6 +422,7 @@ PB.M = {
     keys = {
       ["app_id"] = true,
       ["realm"] = true,
+      ["identity"] = true,
       ["namespace"] = true,
       ["name"] = true,
       ["resource_type"] = true,
@@ -912,6 +944,21 @@ PB.M = {
         acc[5] = val
       end
 
+      val = obj["previous_balance_adjusted"] -- 6: int64
+      if val ~= 0 then
+        local T = type(val)
+        if T ~= "number" then
+          error("field previous_balance_adjusted: expected number, but got "..T)
+        end
+        if val > 9007199254740991 then
+          error("field previous_balance_adjusted: overflows lua max integer")
+        end
+        if val < -9007199254740991 then
+          error("field previous_balance_adjusted: underflows lua min integer")
+        end
+        acc[6] = val
+      end
+
       local unknown = obj["$unknown"]
       if unknown ~= nil then
         for k, v in next, unknown do acc[k] = v end
@@ -929,6 +976,7 @@ PB.M = {
         ["account_status"] = "ALREADY_EXISTS",
         ["status"] = "SUCCESS",
         ["status_msg"] = "",
+        ["previous_balance_adjusted"] = 0,
       }
       local dec = {
         [1] = function(val) -- new_balance: int64
@@ -988,6 +1036,13 @@ PB.M = {
           end
           ret["status_msg"] = val
         end,
+        [6] = function(val) -- previous_balance_adjusted: int64
+          local T = type(val)
+          if T ~= "number" then
+            error("field previous_balance_adjusted: expected number, but got "..T)
+          end
+          ret["previous_balance_adjusted"] = val
+        end,
       }
       for k, v in next, raw do
         local fn = dec[k]
@@ -1005,6 +1060,7 @@ PB.M = {
       ["account_status"] = true,
       ["status"] = true,
       ["status_msg"] = true,
+      ["previous_balance_adjusted"] = true,
     },
   },
 
@@ -2512,6 +2568,7 @@ end
 local opts = PB.E["go.chromium.org.luci.server.quota.quotapb.Op.Options"]
 local IGNORE_POLICY_BOUNDS = opts.IGNORE_POLICY_BOUNDS
 local DO_NOT_CAP_PROPOSED = opts.DO_NOT_CAP_PROPOSED
+local WITH_POLICY_LIMIT_DELTA = opts.WITH_POLICY_LIMIT_DELTA
 
 local computeProposed = function(op, new_account, current, policy)
   local relative_to = op.relative_to
@@ -2543,20 +2600,22 @@ local computeProposed = function(op, new_account, current, policy)
 end
 
 function Account:applyOp(op, result)
+  local options = op.options
+  local ignore_bounds = (options/IGNORE_POLICY_BOUNDS)%2 >= 1
+  local no_cap = (options/DO_NOT_CAP_PROPOSED)%2 >= 1
+  local with_policy_limit_delta = (options/WITH_POLICY_LIMIT_DELTA)%2 >= 1
+
   if op.policy_ref ~= nil then
     local policy_raw = Policy.get(op.policy_ref)
     if not policy_raw then
       result.status = "ERR_UNKNOWN_POLICY"
       return
     end
-    self:setPolicy(policy_raw)
+    self:setPolicy(policy_raw, result, with_policy_limit_delta)
   end
   local pb = self.pb
   local policy = pb.policy
 
-  local options = op.options
-  local ignore_bounds = (options/IGNORE_POLICY_BOUNDS)%2 >= 1
-  local no_cap = (options/DO_NOT_CAP_PROPOSED)%2 >= 1
   if ignore_bounds and no_cap then
     error("IGNORE_POLICY_BOUNDS and DO_NOT_CAP_PROPOSED both set")
   end
@@ -2661,9 +2720,16 @@ local policyRefEq = function(a, b)
   return a.config == b.config and a.key == b.key
 end
 
-function Account:setPolicy(policy)
+function Account:setPolicy(policy, result, with_policy_limit_delta)
   if policy then
     if not policyRefEq(self.pb.policy_ref, policy.policy_ref) then
+      if with_policy_limit_delta and self.pb.policy_ref ~= nil then
+        local delta = policy.pb.limit - self.pb.policy.limit
+        self.pb.balance = self.pb.balance + delta
+
+        result.previous_balance_adjusted = self.pb.balance
+      end
+
       self.pb.policy = policy.pb
       self.pb.policy_ref = policy.policy_ref
       self.pb.policy_change_ts = NOW
@@ -2705,6 +2771,7 @@ function Account.ApplyOps(oplist)
       status = "SUCCESS",  -- by default; applyOp can overwrite this.
       account_status = account.account_status,
       previous_balance = account.pb.balance,
+      previous_balance_adjusted = account.pb.balance,
     })
     ret.results[i] = result
 

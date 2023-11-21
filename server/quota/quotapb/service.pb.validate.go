@@ -505,6 +505,8 @@ func (m *OpResult) validate(all bool) error {
 
 	// no validation rules for StatusMsg
 
+	// no validation rules for PreviousBalanceAdjusted
+
 	if len(errors) > 0 {
 		return OpResultMultiError(errors)
 	}

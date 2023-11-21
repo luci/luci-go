@@ -109,15 +109,11 @@ func (qm *Manager) runQuotaOp(ctx context.Context, r *run.Run, requestID string,
 	}
 
 	// When policy is set to unlimited, the op is applied with IGNORE_POLICY_BOUNDS.
-	options := quotapb.Op_NO_OPTIONS
+	options := quotapb.Op_WITH_POLICY_LIMIT_DELTA
 	if isUnlimited {
 		options |= quotapb.Op_IGNORE_POLICY_BOUNDS
 	}
 
-	// TODO(crbug/1466346): When policy changes, server/quota should replenish
-	// the account with the difference in balance. Say, for example, if account
-	// Foo has a balance of 3 and a limit of 5. If Foo's policy is updated with
-	// a limit of 10, Foo's balance should be updated to 8.
 	quotaOp := []*quotapb.Op{
 		{
 			AccountId:  qm.RunQuotaAccountID(r),
