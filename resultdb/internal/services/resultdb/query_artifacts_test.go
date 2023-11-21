@@ -191,56 +191,13 @@ func TestQueryArtifacts(t *testing.T) {
 		})
 
 		Convey(`Fetch URL with GcsURI`, func() {
-			ctx = testutil.TestProjectConfigContext(ctx)
-
 			testutil.MustApply(ctx,
 				insert.Artifact("inv1", "", "a", map[string]any{"GcsURI": "gs://bucket1/file1.txt"}),
 			)
 
-			Convey(`Realm GCS path allowed`, func() {
-				testutil.SetRealmGCSAllowedPrefix(ctx, "testproject", "testrealm", "bucket1", "file1.txt")
-
-				actual, _ := mustFetch(req)
-				So(actual, ShouldHaveLength, 1)
-				So(actual[0].FetchUrl, ShouldStartWith, "https://storage.googleapis.com/bucket1/file1.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential")
-			})
-
-			Convey(`Realm GCS path wildcard allowed`, func() {
-				testutil.SetRealmGCSAllowedPrefix(ctx, "testproject", "testrealm", "bucket1", "*")
-
-				actual, _ := mustFetch(req)
-				So(actual, ShouldHaveLength, 1)
-				So(actual[0].FetchUrl, ShouldStartWith, "https://storage.googleapis.com/bucket1/file1.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential")
-			})
-
-			Convey(`Realm GCS path not allowed`, func() {
-				testutil.SetRealmGCSAllowedPrefix(ctx, "testproject", "testrealm", "bucket1", "file2.txt")
-
-				actual, _ := mustFetch(req)
-				So(actual, ShouldHaveLength, 1)
-				So(actual[0].FetchUrl, ShouldEqual, "")
-			})
-
-			Convey(`GCS path not allowed in all realms`, func() {
-				testutil.SetRealmGCSAllowedPrefix(ctx, "testproject", "testrealm", "bucket1", "file1.txt")
-
-				req.Invocations = []string{"invocations/inv1", "invocations/inv3"}
-				actual, _ := mustFetch(req)
-				So(actual, ShouldHaveLength, 1)
-
-				// Even though inv1 realm (testproject:testrealm) is allowed to
-				// access the GCS object, inv3 belongs to a different realm
-				// (testproject2:testrealm2) and the access is denied.
-				So(actual[0].FetchUrl, ShouldEqual, "")
-			})
-
-			Convey(`No project config found`, func() {
-				testutil.SetRealmGCSAllowedPrefix(ctx, "otherproject", "testrealm", "bucket1", "file1.txt")
-
-				actual, _ := mustFetch(req)
-				So(actual, ShouldHaveLength, 1)
-				So(actual[0].FetchUrl, ShouldEqual, "")
-			})
+			actual, _ := mustFetch(req)
+			So(actual, ShouldHaveLength, 1)
+			So(actual[0].FetchUrl, ShouldStartWith, "https://storage.googleapis.com/bucket1/file1.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential")
 		})
 	})
 }

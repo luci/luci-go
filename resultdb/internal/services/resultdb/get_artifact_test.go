@@ -21,22 +21,20 @@ import (
 	"testing"
 	"time"
 
+	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
-
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/resultdb/internal/gsutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 )
 
 var textPBMultiline = prototext.MarshalOptions{
@@ -121,70 +119,12 @@ func TestGetArtifact(t *testing.T) {
 			opts := testutil.GetSignedURLOptions(ctx)
 			ctx := context.WithValue(ctx, gsutil.Key("signedURLOpts"), opts)
 
-			// Set up project config context.
-			ctx = testutil.TestProjectConfigContext(ctx)
-
-			Convey(`Realm GCS path allowed`, func() {
-				testutil.SetRealmGCSAllowedPrefix(ctx, project, realm, bucket, object[:2])
-
-				art, err := srv.GetArtifact(ctx, req)
-				So(err, ShouldBeNil)
-				So(art.Name, ShouldEqual, name)
-				So(art.ArtifactId, ShouldEqual, "a")
-				So(art.FetchUrl, ShouldStartWith,
-					fmt.Sprintf("https://storage.googleapis.com/%s/%s?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential", bucket, object))
-			})
-
-			Convey(`Realm GCS path wildcard allowed`, func() {
-				testutil.SetRealmGCSAllowedPrefix(ctx, project, realm, bucket, "*")
-
-				art, err := srv.GetArtifact(ctx, req)
-				So(err, ShouldBeNil)
-				So(art.Name, ShouldEqual, name)
-				So(art.ArtifactId, ShouldEqual, "a")
-				So(art.FetchUrl, ShouldStartWith,
-					fmt.Sprintf("https://storage.googleapis.com/%s/%s?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential", bucket, object))
-			})
-
-			Convey(`Realm GCS path not allowed`, func() {
-				testutil.SetRealmGCSAllowedPrefix(ctx, project, realm, bucket, "other")
-
-				art, err := srv.GetArtifact(ctx, req)
-				So(err, ShouldBeNil)
-				So(art.Name, ShouldEqual, name)
-				So(art.ArtifactId, ShouldEqual, "a")
-				So(art.FetchUrl, ShouldEqual, "")
-			})
-
-			Convey(`No project config found`, func() {
-				testutil.SetRealmGCSAllowedPrefix(ctx, "otherproject", realm, bucket, "*")
-
-				art, err := srv.GetArtifact(ctx, req)
-				So(err, ShouldBeNil)
-				So(art.Name, ShouldEqual, name)
-				So(art.ArtifactId, ShouldEqual, "a")
-				So(art.FetchUrl, ShouldEqual, "")
-			})
-
-			Convey(`No realm match`, func() {
-				testutil.SetRealmGCSAllowedPrefix(ctx, project, "otherrealm", bucket, "*")
-
-				art, err := srv.GetArtifact(ctx, req)
-				So(err, ShouldBeNil)
-				So(art.Name, ShouldEqual, name)
-				So(art.ArtifactId, ShouldEqual, "a")
-				So(art.FetchUrl, ShouldEqual, "")
-			})
-
-			Convey(`No bucket match`, func() {
-				testutil.SetRealmGCSAllowedPrefix(ctx, project, realm, "otherbucket", "*")
-
-				art, err := srv.GetArtifact(ctx, req)
-				So(err, ShouldBeNil)
-				So(art.Name, ShouldEqual, name)
-				So(art.ArtifactId, ShouldEqual, "a")
-				So(art.FetchUrl, ShouldEqual, "")
-			})
+			art, err := srv.GetArtifact(ctx, req)
+			So(err, ShouldBeNil)
+			So(art.Name, ShouldEqual, name)
+			So(art.ArtifactId, ShouldEqual, "a")
+			So(art.FetchUrl, ShouldStartWith,
+				fmt.Sprintf("https://storage.googleapis.com/%s/%s?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential", bucket, object))
 		})
 
 		Convey(`Does not exist`, func() {

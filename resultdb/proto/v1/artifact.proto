@@ -62,14 +62,16 @@ message Artifact {
   // Size of the file.
   // Can be used in UI to decide between displaying the artifact inline or only
   // showing a link if it is too large.
+  // If you are using the gcs_uri, this field is not verified, but only treated as a hint.
   int64 size_bytes = 6;
 
   // Contents of the artifact.
   // This is INPUT_ONLY, and taken by BatchCreateArtifacts().
   // All getter RPCs, such as ListArtifacts(), do not populate values into
   // the field in the response.
+  // If specified, `gcs_uri` must be empty.
   bytes contents = 7 [ (google.api.field_behavior) = INPUT_ONLY ];
 
-  // The GCS URI of the artifact if it's stored in GCS.
+  // The GCS URI of the artifact if it's stored in GCS.  If specified, `contents` must be empty.
   string gcs_uri = 8;
 }

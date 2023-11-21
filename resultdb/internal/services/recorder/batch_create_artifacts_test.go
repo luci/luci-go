@@ -24,22 +24,22 @@ import (
 	"time"
 
 	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
+	. "github.com/smartystreets/goconvey/convey"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/tsmon"
-
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 )
 
 // fakeRBEClient mocks BatchUpdateBlobs.
@@ -114,6 +114,15 @@ func TestNewArtifactCreationRequestsFromProto(t *testing.T) {
 			So(arts[0].size, ShouldEqual, 10249)
 		})
 
+		Convey("contents and gcs_uri both specified", func() {
+			bReq.Requests = append(bReq.Requests, trArt)
+			trArt.Artifact.SizeBytes = 0
+			trArt.Artifact.Contents = make([]byte, 10249)
+			trArt.Artifact.GcsUri = "gs://testbucket/testfile"
+			_, _, err := parseBatchCreateArtifactsRequest(bReq)
+			So(err, ShouldErrLike, `only one of contents and gcs_uri can be given`)
+		})
+
 		Convey("sum() of artifact.Contents is too big", func() {
 			for i := 0; i < 11; i++ {
 				req := newArtReq("invocations/inv1", fmt.Sprintf("art%d", i), "text/html")
@@ -139,11 +148,15 @@ func TestBatchCreateArtifacts(t *testing.T) {
 
 	Convey("TestBatchCreateArtifacts", t, func() {
 		ctx := testutil.SpannerTestContext(t)
+		ctx = testutil.TestProjectConfigContext(ctx, "testproject", "user:test@test.com", "testbucket")
 		token, err := generateInvocationToken(ctx, "inv")
 		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		store := tsmon.Store(ctx)
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: "user:test@test.com",
+		})
 
 		casClient := &fakeRBEClient{}
 		recorder := newTestRecorderServer()
@@ -184,6 +197,49 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			return hex.EncodeToString(h[:])
 		}
 
+		Convey("GCS reference isAllowed", func() {
+			Convey("reference is allowed", func() {
+				testutil.SetGCSAllowedBuckets(ctx, "testproject", "user:test@test.com", "testbucket")
+
+				testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+				appendGcsArtReq("art1", 0, "text/plain", "gs://testbucket/art1")
+
+				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
+				So(err, ShouldBeNil)
+			})
+			Convey("project not configured", func() {
+				testutil.SetGCSAllowedBuckets(ctx, "otherproject", "user:test@test.com", "testbucket")
+
+				testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+				appendGcsArtReq("art1", 0, "text/plain", "gs://testbucket/art1")
+
+				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "testproject")
+			})
+			Convey("user not configured", func() {
+				testutil.SetGCSAllowedBuckets(ctx, "testproject", "user:test@test.com", "testbucket")
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:other@test.com",
+				})
+				testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+				appendGcsArtReq("art1", 0, "text/plain", "gs://testbucket/art1")
+
+				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "user:other@test.com")
+			})
+			Convey("bucket not listed", func() {
+				testutil.SetGCSAllowedBuckets(ctx, "testproject", "user:test@test.com", "otherbucket")
+
+				testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+				appendGcsArtReq("art1", 0, "text/plain", "gs://testbucket/art1")
+
+				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "testbucket")
+			})
+		})
 		Convey("works", func() {
 			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 			appendArtReq("art1", "c0ntent", "text/plain")
@@ -258,13 +314,13 @@ func TestBatchCreateArtifacts(t *testing.T) {
 
 			size, hash, cType, gcsURI = fetchState("art3")
 			So(size, ShouldEqual, 0)
-			So(hash, ShouldEqual, artifacts.AddHashPrefix(compHash("")))
+			So(hash, ShouldEqual, "")
 			So(cType, ShouldEqual, "text/plain")
 			So(gcsURI, ShouldEqual, "gs://testbucket/art3")
 
 			size, hash, cType, gcsURI = fetchState("art4")
 			So(size, ShouldEqual, 500)
-			So(hash, ShouldEqual, artifacts.AddHashPrefix(compHash("")))
+			So(hash, ShouldEqual, "")
 			So(cType, ShouldEqual, "text/richtext")
 			So(gcsURI, ShouldEqual, "gs://testbucket/art4")
 
@@ -312,11 +368,11 @@ func TestBatchCreateArtifacts(t *testing.T) {
 		})
 
 		Convey("Verify state", func() {
-			appendArtReq("art1", "c0ntent", "text/plain")
 			casClient.mockResp(nil, codes.OK, codes.OK)
 
 			Convey("Finalized invocation", func() {
 				testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
+				appendArtReq("art1", "c0ntent", "text/plain")
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
 				So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/inv is not active`)
 			})
@@ -330,22 +386,33 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				"ContentType":  "text/plain",
 			}
 
+			gcsArt := map[string]any{
+				"InvocationId": invocations.ID("inv"),
+				"ParentId":     "",
+				"ArtifactId":   "art1",
+				"ContentType":  "text/plain",
+				"GcsURI":       "gs://testbucket/art1",
+			}
+
 			Convey("Same artifact exists", func() {
 				testutil.MustApply(ctx,
 					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 					spanutil.InsertMap("Artifacts", art),
 				)
+				appendArtReq("art1", "c0ntent", "text/plain")
 				resp, err := recorder.BatchCreateArtifacts(ctx, bReq)
 				So(err, ShouldBeNil)
 				So(resp, ShouldResemble, &pb.BatchCreateArtifactsResponse{})
 			})
 
 			Convey("Different artifact exists", func() {
+				testutil.SetGCSAllowedBuckets(ctx, "testproject", "user:test@test.com", "testbucket")
 				testutil.MustApply(ctx,
 					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 					spanutil.InsertMap("Artifacts", art),
 				)
 
+				appendArtReq("art1", "c0ntent", "text/plain")
 				bReq.Requests[0].Artifact.Contents = []byte("loooong content")
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
 				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different size")
@@ -353,6 +420,33 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				bReq.Requests[0].Artifact.Contents = []byte("c1ntent")
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
 				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different hash")
+
+				bReq.Requests[0].Artifact.Contents = []byte("")
+				bReq.Requests[0].Artifact.GcsUri = "gs://testbucket/art1"
+				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
+				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different storage scheme")
+			})
+
+			Convey("Different artifact exists GCS", func() {
+				testutil.SetGCSAllowedBuckets(ctx, "testproject", "user:test@test.com", "testbucket")
+				testutil.MustApply(ctx,
+					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
+					spanutil.InsertMap("Artifacts", gcsArt),
+				)
+
+				appendArtReq("art1", "c0ntent", "text/plain")
+				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
+				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different storage scheme")
+
+				bReq.Requests[0].Artifact.Contents = []byte("")
+				bReq.Requests[0].Artifact.GcsUri = "gs://testbucket/art2"
+				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
+				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different GCS URI")
+
+				appendArtReq("art1", "c0ntent", "text/plain")
+				bReq.Requests[0].Artifact.SizeBytes = 42
+				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
+				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different size")
 			})
 
 			// RowCount metric should have no changes from any of the above Convey()s.

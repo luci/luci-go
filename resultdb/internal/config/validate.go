@@ -20,10 +20,9 @@ import (
 	"strconv"
 	"strings"
 
+	"go.chromium.org/luci/auth/identity"
 	luciproto "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/config/validation"
-	"go.chromium.org/luci/server/auth/realms"
-
 	configpb "go.chromium.org/luci/resultdb/proto/config"
 )
 
@@ -62,19 +61,29 @@ func validateGCSBucketPrefix(ctx *validation.Context, name string, prefix string
 	}
 }
 
-func validateRealmGCSAllowlist(ctx *validation.Context, name string, allowList *configpb.RealmGcsAllowList) {
+func validateGCSAllowlist(ctx *validation.Context, name string, allowList *configpb.GcsAllowList) {
 	ctx.Enter(name)
 	defer ctx.Exit()
 
-	err := realms.ValidateRealmName(allowList.Realm, realms.ProjectScope)
-	if err != nil {
-		ctx.Errorf(err.Error())
+	if len(allowList.Users) == 0 {
+		ctx.Errorf("users must have at least one user")
 	}
-	for _, prefixes := range allowList.GcsBucketPrefixes {
-		validateStringConfig(ctx, "bucket", prefixes.Bucket, GCSBucketRE)
-		for i, prefix := range prefixes.AllowedPrefixes {
-			validateGCSBucketPrefix(ctx, fmt.Sprintf("allowed_prefixes[%d]", i), prefix)
+	for _, user := range allowList.Users {
+		identity, err := identity.MakeIdentity(user)
+		if err != nil {
+			ctx.Errorf(err.Error())
 		}
+		err = identity.Validate()
+		if err != nil {
+			ctx.Errorf(err.Error())
+		}
+	}
+
+	if len(allowList.Buckets) == 0 {
+		ctx.Errorf("buckets must have at least one bucket")
+	}
+	for _, bucket := range allowList.Buckets {
+		validateStringConfig(ctx, "bucket", bucket, GCSBucketRE)
 	}
 }
 
@@ -91,13 +100,7 @@ func validateProjectConfigRaw(ctx *validation.Context, content string) *configpb
 }
 
 func validateProjectConfig(ctx *validation.Context, cfg *configpb.ProjectConfig) {
-	realms := make(map[string]bool, len(cfg.RealmGcsAllowlist))
-	for i, allowList := range cfg.RealmGcsAllowlist {
-		realm := allowList.Realm
-		if _, ok := realms[realm]; ok {
-			ctx.Errorf("realm: %s is configured more than once", realm)
-		}
-		realms[realm] = true
-		validateRealmGCSAllowlist(ctx, fmt.Sprintf("realm_gcs_allowlist[%d]", i), allowList)
+	for i, allowList := range cfg.GcsAllowList {
+		validateGCSAllowlist(ctx, fmt.Sprintf("gcs_allow_list[%d]", i), allowList)
 	}
 }

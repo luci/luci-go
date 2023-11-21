@@ -20,37 +20,22 @@ option go_package = "go.chromium.org/luci/resultdb/proto/config;resultpb";
 
 // ProjectConfig is the project-specific configuration data for Luci ResultDB.
 message ProjectConfig {
-  // Per realm allow list to control GCS artifacts that could be uploaded to
-  // ResultDB for the associated realm.
+  // Per user allow list to control GCS buckets that can be referenced as
+  // artifacts in ResultDB invocations.
   // Since ResultDB returns GCS artifacts through signed urls, the allow list
   // is needed to prevent potential exploit where user could gain access to
-  // artifacts in GCS locations they don't have access to by feigning the
+  // artifacts in GCS buckets they don't have access to by feigning the
   // uploaded artifact GCS path.
-  repeated RealmGcsAllowList realm_gcs_allowlist = 1;
+  repeated GcsAllowList gcs_allow_list = 1;
 }
 
-// Capture the per realm GCS artifact allow list.
-message RealmGcsAllowList {
-  // Realm name. e.g. testplatform, cq, etc.
-  // Note that the realm is implicitly scoped to the project the config is
-  // defined.
-  string realm = 1;
+// Capture the per user GCS bucket allow list.
+message GcsAllowList {
+  // The users allowed to reference the specified buckets.
+  // Each user is a LUCI Auth identity string, e.g. user:username@email.com
+  // For all available identity kinds see luci/auth/identity/identity.go
+  repeated string users = 1;
 
-  // Allowed GCS bucket prefixes associated with the realm.
-  // Each bucket should be an entry along with allowed object prefixes for the
-  // bucket.
-  // There should not be multiple entries for the same bucket.
-  repeated GcsBucketPrefixes gcs_bucket_prefixes = 2;
-}
-
-
-// Capture a GCS bucket along with the allowed object prefixes.
-message GcsBucketPrefixes {
-  // GCS bucket name.
-  // e.g. chromeos-test-logs
-  string bucket = 1;
-
-  // Object prefixes that are allowed for the bucket.
-  // Wildcard can be used to indicate everything e.g. '*'.
-  repeated string allowed_prefixes = 2;
+  // GCS buckets the user is allowed to reference.
+  repeated string buckets = 2;
 }

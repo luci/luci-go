@@ -18,6 +18,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/encoding/prototext"
+
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
@@ -26,9 +29,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	rdbcfg "go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/server/caching"
-	"google.golang.org/protobuf/encoding/prototext"
-
-	"github.com/smartystreets/goconvey/convey"
 )
 
 var textPBMultiline = prototext.MarshalOptions{
@@ -36,25 +36,23 @@ var textPBMultiline = prototext.MarshalOptions{
 }
 
 // TestProjectConfigContext returns a context to be used in project config related tests.
-func TestProjectConfigContext(ctx context.Context) context.Context {
+func TestProjectConfigContext(ctx context.Context, project, user, bucket string) context.Context {
 	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 	ctx = memory.Use(ctx)
 	ctx = caching.WithEmptyProcessCache(ctx)
-	ctx = SetRealmGCSAllowedPrefix(ctx, "", "", "", "*")
+	ctx = SetGCSAllowedBuckets(ctx, project, user, bucket)
 	return ctx
 }
 
-// SetRealmGCSAllowedPrefix overrides the only existing project-config
-// RealmGcsAllowlist entry to match the rule defined by project, realm, bucket
+// SetGCSAllowedBuckets overrides the only existing project-config
+// GcsAllowlist entry to match the rule defined by project, realm, bucket
 // and prefix.
-func SetRealmGCSAllowedPrefix(ctx context.Context, project string, realm string, bucket string, prefix string) context.Context {
+func SetGCSAllowedBuckets(ctx context.Context, project, user, bucket string) context.Context {
 	testProject := rdbcfg.CreatePlaceholderProjectConfig()
-	convey.So(len(testProject.RealmGcsAllowlist), convey.ShouldEqual, 1)
-	testProject.RealmGcsAllowlist[0].Realm = realm
-	convey.So(len(testProject.RealmGcsAllowlist[0].GcsBucketPrefixes), convey.ShouldEqual, 1)
-	testProject.RealmGcsAllowlist[0].GcsBucketPrefixes[0].Bucket = bucket
-	convey.So(len(testProject.RealmGcsAllowlist[0].GcsBucketPrefixes[0].AllowedPrefixes), convey.ShouldEqual, 1)
-	testProject.RealmGcsAllowlist[0].GcsBucketPrefixes[0].AllowedPrefixes[0] = prefix
+	convey.So(len(testProject.GcsAllowList), convey.ShouldEqual, 1)
+	testProject.GcsAllowList[0].Users = []string{user}
+	convey.So(len(testProject.GcsAllowList[0].Buckets), convey.ShouldEqual, 1)
+	testProject.GcsAllowList[0].Buckets[0] = bucket
 
 	cfgSet := config.Set(fmt.Sprintf("projects/%s", project))
 	configs := map[config.Set]cfgmem.Files{

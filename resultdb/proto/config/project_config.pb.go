@@ -40,13 +40,13 @@ type ProjectConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Per realm allow list to control GCS artifacts that could be uploaded to
-	// ResultDB for the associated realm.
+	// Per user allow list to control GCS buckets that can be referenced as
+	// artifacts in ResultDB invocations.
 	// Since ResultDB returns GCS artifacts through signed urls, the allow list
 	// is needed to prevent potential exploit where user could gain access to
-	// artifacts in GCS locations they don't have access to by feigning the
+	// artifacts in GCS buckets they don't have access to by feigning the
 	// uploaded artifact GCS path.
-	RealmGcsAllowlist []*RealmGcsAllowList `protobuf:"bytes,1,rep,name=realm_gcs_allowlist,json=realmGcsAllowlist,proto3" json:"realm_gcs_allowlist,omitempty"`
+	GcsAllowList []*GcsAllowList `protobuf:"bytes,1,rep,name=gcs_allow_list,json=gcsAllowList,proto3" json:"gcs_allow_list,omitempty"`
 }
 
 func (x *ProjectConfig) Reset() {
@@ -81,32 +81,29 @@ func (*ProjectConfig) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_resultdb_proto_config_project_config_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *ProjectConfig) GetRealmGcsAllowlist() []*RealmGcsAllowList {
+func (x *ProjectConfig) GetGcsAllowList() []*GcsAllowList {
 	if x != nil {
-		return x.RealmGcsAllowlist
+		return x.GcsAllowList
 	}
 	return nil
 }
 
-// Capture the per realm GCS artifact allow list.
-type RealmGcsAllowList struct {
+// Capture the per user GCS bucket allow list.
+type GcsAllowList struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Realm name. e.g. testplatform, cq, etc.
-	// Note that the realm is implicitly scoped to the project the config is
-	// defined.
-	Realm string `protobuf:"bytes,1,opt,name=realm,proto3" json:"realm,omitempty"`
-	// Allowed GCS bucket prefixes associated with the realm.
-	// Each bucket should be an entry along with allowed object prefixes for the
-	// bucket.
-	// There should not be multiple entries for the same bucket.
-	GcsBucketPrefixes []*GcsBucketPrefixes `protobuf:"bytes,2,rep,name=gcs_bucket_prefixes,json=gcsBucketPrefixes,proto3" json:"gcs_bucket_prefixes,omitempty"`
+	// The users allowed to reference the specified buckets.
+	// Each user is a LUCI Auth identity string, e.g. user:username@email.com
+	// For all available identity kinds see luci/auth/identity/identity.go
+	Users []string `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
+	// GCS buckets the user is allowed to reference.
+	Buckets []string `protobuf:"bytes,2,rep,name=buckets,proto3" json:"buckets,omitempty"`
 }
 
-func (x *RealmGcsAllowList) Reset() {
-	*x = RealmGcsAllowList{}
+func (x *GcsAllowList) Reset() {
+	*x = GcsAllowList{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_go_chromium_org_luci_resultdb_proto_config_project_config_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -114,13 +111,13 @@ func (x *RealmGcsAllowList) Reset() {
 	}
 }
 
-func (x *RealmGcsAllowList) String() string {
+func (x *GcsAllowList) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RealmGcsAllowList) ProtoMessage() {}
+func (*GcsAllowList) ProtoMessage() {}
 
-func (x *RealmGcsAllowList) ProtoReflect() protoreflect.Message {
+func (x *GcsAllowList) ProtoReflect() protoreflect.Message {
 	mi := &file_go_chromium_org_luci_resultdb_proto_config_project_config_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -132,81 +129,21 @@ func (x *RealmGcsAllowList) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RealmGcsAllowList.ProtoReflect.Descriptor instead.
-func (*RealmGcsAllowList) Descriptor() ([]byte, []int) {
+// Deprecated: Use GcsAllowList.ProtoReflect.Descriptor instead.
+func (*GcsAllowList) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_resultdb_proto_config_project_config_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *RealmGcsAllowList) GetRealm() string {
+func (x *GcsAllowList) GetUsers() []string {
 	if x != nil {
-		return x.Realm
-	}
-	return ""
-}
-
-func (x *RealmGcsAllowList) GetGcsBucketPrefixes() []*GcsBucketPrefixes {
-	if x != nil {
-		return x.GcsBucketPrefixes
+		return x.Users
 	}
 	return nil
 }
 
-// Capture a GCS bucket along with the allowed object prefixes.
-type GcsBucketPrefixes struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// GCS bucket name.
-	// e.g. chromeos-test-logs
-	Bucket string `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
-	// Object prefixes that are allowed for the bucket.
-	// Wildcard can be used to indicate everything e.g. '*'.
-	AllowedPrefixes []string `protobuf:"bytes,2,rep,name=allowed_prefixes,json=allowedPrefixes,proto3" json:"allowed_prefixes,omitempty"`
-}
-
-func (x *GcsBucketPrefixes) Reset() {
-	*x = GcsBucketPrefixes{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_resultdb_proto_config_project_config_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *GcsBucketPrefixes) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GcsBucketPrefixes) ProtoMessage() {}
-
-func (x *GcsBucketPrefixes) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_resultdb_proto_config_project_config_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GcsBucketPrefixes.ProtoReflect.Descriptor instead.
-func (*GcsBucketPrefixes) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_resultdb_proto_config_project_config_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *GcsBucketPrefixes) GetBucket() string {
+func (x *GcsAllowList) GetBuckets() []string {
 	if x != nil {
-		return x.Bucket
-	}
-	return ""
-}
-
-func (x *GcsBucketPrefixes) GetAllowedPrefixes() []string {
-	if x != nil {
-		return x.AllowedPrefixes
+		return x.Buckets
 	}
 	return nil
 }
@@ -219,31 +156,21 @@ var file_go_chromium_org_luci_resultdb_proto_config_project_config_proto_rawDesc
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2f, 0x70, 0x72, 0x6f,
 	0x6a, 0x65, 0x63, 0x74, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x12, 0x14, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62,
-	0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x22, 0x68, 0x0a, 0x0d, 0x50, 0x72, 0x6f, 0x6a, 0x65,
-	0x63, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x57, 0x0a, 0x13, 0x72, 0x65, 0x61, 0x6c,
-	0x6d, 0x5f, 0x67, 0x63, 0x73, 0x5f, 0x61, 0x6c, 0x6c, 0x6f, 0x77, 0x6c, 0x69, 0x73, 0x74, 0x18,
-	0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73,
-	0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x52, 0x65, 0x61,
-	0x6c, 0x6d, 0x47, 0x63, 0x73, 0x41, 0x6c, 0x6c, 0x6f, 0x77, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x11,
-	0x72, 0x65, 0x61, 0x6c, 0x6d, 0x47, 0x63, 0x73, 0x41, 0x6c, 0x6c, 0x6f, 0x77, 0x6c, 0x69, 0x73,
-	0x74, 0x22, 0x82, 0x01, 0x0a, 0x11, 0x52, 0x65, 0x61, 0x6c, 0x6d, 0x47, 0x63, 0x73, 0x41, 0x6c,
-	0x6c, 0x6f, 0x77, 0x4c, 0x69, 0x73, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x72, 0x65, 0x61, 0x6c, 0x6d,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x72, 0x65, 0x61, 0x6c, 0x6d, 0x12, 0x57, 0x0a,
-	0x13, 0x67, 0x63, 0x73, 0x5f, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x5f, 0x70, 0x72, 0x65, 0x66,
-	0x69, 0x78, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x6c, 0x75, 0x63,
-	0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69,
-	0x67, 0x2e, 0x47, 0x63, 0x73, 0x42, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x50, 0x72, 0x65, 0x66, 0x69,
-	0x78, 0x65, 0x73, 0x52, 0x11, 0x67, 0x63, 0x73, 0x42, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x50, 0x72,
-	0x65, 0x66, 0x69, 0x78, 0x65, 0x73, 0x22, 0x56, 0x0a, 0x11, 0x47, 0x63, 0x73, 0x42, 0x75, 0x63,
-	0x6b, 0x65, 0x74, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x65, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x62,
-	0x75, 0x63, 0x6b, 0x65, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x62, 0x75, 0x63,
-	0x6b, 0x65, 0x74, 0x12, 0x29, 0x0a, 0x10, 0x61, 0x6c, 0x6c, 0x6f, 0x77, 0x65, 0x64, 0x5f, 0x70,
-	0x72, 0x65, 0x66, 0x69, 0x78, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0f, 0x61,
-	0x6c, 0x6c, 0x6f, 0x77, 0x65, 0x64, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x65, 0x73, 0x42, 0x35,
-	0x5a, 0x33, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72,
-	0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2f,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x3b, 0x72, 0x65, 0x73,
-	0x75, 0x6c, 0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x22, 0x59, 0x0a, 0x0d, 0x50, 0x72, 0x6f, 0x6a, 0x65,
+	0x63, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x48, 0x0a, 0x0e, 0x67, 0x63, 0x73, 0x5f,
+	0x61, 0x6c, 0x6c, 0x6f, 0x77, 0x5f, 0x6c, 0x69, 0x73, 0x74, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x22, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62,
+	0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x47, 0x63, 0x73, 0x41, 0x6c, 0x6c, 0x6f, 0x77,
+	0x4c, 0x69, 0x73, 0x74, 0x52, 0x0c, 0x67, 0x63, 0x73, 0x41, 0x6c, 0x6c, 0x6f, 0x77, 0x4c, 0x69,
+	0x73, 0x74, 0x22, 0x3e, 0x0a, 0x0c, 0x47, 0x63, 0x73, 0x41, 0x6c, 0x6c, 0x6f, 0x77, 0x4c, 0x69,
+	0x73, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x75, 0x73, 0x65, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
+	0x09, 0x52, 0x05, 0x75, 0x73, 0x65, 0x72, 0x73, 0x12, 0x18, 0x0a, 0x07, 0x62, 0x75, 0x63, 0x6b,
+	0x65, 0x74, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x07, 0x62, 0x75, 0x63, 0x6b, 0x65,
+	0x74, 0x73, 0x42, 0x35, 0x5a, 0x33, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75,
+	0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c,
+	0x74, 0x64, 0x62, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67,
+	0x3b, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x33,
 }
 
 var (
@@ -258,20 +185,18 @@ func file_go_chromium_org_luci_resultdb_proto_config_project_config_proto_rawDes
 	return file_go_chromium_org_luci_resultdb_proto_config_project_config_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_resultdb_proto_config_project_config_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_go_chromium_org_luci_resultdb_proto_config_project_config_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_go_chromium_org_luci_resultdb_proto_config_project_config_proto_goTypes = []interface{}{
-	(*ProjectConfig)(nil),     // 0: luci.resultdb.config.ProjectConfig
-	(*RealmGcsAllowList)(nil), // 1: luci.resultdb.config.RealmGcsAllowList
-	(*GcsBucketPrefixes)(nil), // 2: luci.resultdb.config.GcsBucketPrefixes
+	(*ProjectConfig)(nil), // 0: luci.resultdb.config.ProjectConfig
+	(*GcsAllowList)(nil),  // 1: luci.resultdb.config.GcsAllowList
 }
 var file_go_chromium_org_luci_resultdb_proto_config_project_config_proto_depIdxs = []int32{
-	1, // 0: luci.resultdb.config.ProjectConfig.realm_gcs_allowlist:type_name -> luci.resultdb.config.RealmGcsAllowList
-	2, // 1: luci.resultdb.config.RealmGcsAllowList.gcs_bucket_prefixes:type_name -> luci.resultdb.config.GcsBucketPrefixes
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	1, // 0: luci.resultdb.config.ProjectConfig.gcs_allow_list:type_name -> luci.resultdb.config.GcsAllowList
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_resultdb_proto_config_project_config_proto_init() }
@@ -293,19 +218,7 @@ func file_go_chromium_org_luci_resultdb_proto_config_project_config_proto_init()
 			}
 		}
 		file_go_chromium_org_luci_resultdb_proto_config_project_config_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RealmGcsAllowList); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_go_chromium_org_luci_resultdb_proto_config_project_config_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GcsBucketPrefixes); i {
+			switch v := v.(*GcsAllowList); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -323,7 +236,7 @@ func file_go_chromium_org_luci_resultdb_proto_config_project_config_proto_init()
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_resultdb_proto_config_project_config_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

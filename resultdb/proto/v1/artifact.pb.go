@@ -77,13 +77,15 @@ type Artifact struct {
 	// Size of the file.
 	// Can be used in UI to decide between displaying the artifact inline or only
 	// showing a link if it is too large.
+	// If you are using the gcs_uri, this field is not verified, but only treated as a hint.
 	SizeBytes int64 `protobuf:"varint,6,opt,name=size_bytes,json=sizeBytes,proto3" json:"size_bytes,omitempty"`
 	// Contents of the artifact.
 	// This is INPUT_ONLY, and taken by BatchCreateArtifacts().
 	// All getter RPCs, such as ListArtifacts(), do not populate values into
 	// the field in the response.
+	// If specified, `gcs_uri` must be empty.
 	Contents []byte `protobuf:"bytes,7,opt,name=contents,proto3" json:"contents,omitempty"`
-	// The GCS URI of the artifact if it's stored in GCS.
+	// The GCS URI of the artifact if it's stored in GCS.  If specified, `contents` must be empty.
 	GcsUri string `protobuf:"bytes,8,opt,name=gcs_uri,json=gcsUri,proto3" json:"gcs_uri,omitempty"`
 }
 

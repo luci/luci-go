@@ -20,6 +20,8 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/encoding/prototext"
+
 	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/config"
@@ -27,10 +29,8 @@ import (
 	cfgmem "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/caching"
-	"google.golang.org/protobuf/encoding/prototext"
-
 	configpb "go.chromium.org/luci/resultdb/proto/config"
+	"go.chromium.org/luci/server/caching"
 )
 
 var textPBMultiline = prototext.MarshalOptions{
@@ -58,8 +58,8 @@ func TestProjectConfig(t *testing.T) {
 	Convey("With mocks", t, func() {
 		projectA := CreatePlaceholderProjectConfig()
 		projectB := CreatePlaceholderProjectConfig()
-		So(len(projectB.RealmGcsAllowlist), ShouldEqual, 1)
-		projectB.RealmGcsAllowlist[0].Realm = "b"
+		So(len(projectB.GcsAllowList), ShouldEqual, 1)
+		projectB.GcsAllowList[0].Users = []string{"user:b@test.com"}
 
 		configs := map[config.Set]cfgmem.Files{
 			"projects/a": {"${appid}.cfg": textPBMultiline.Format(projectA)},
@@ -92,8 +92,8 @@ func TestProjectConfig(t *testing.T) {
 			// Real update.
 			projectC := CreatePlaceholderProjectConfig()
 			newProjectB := CreatePlaceholderProjectConfig()
-			So(len(newProjectB.RealmGcsAllowlist), ShouldEqual, 1)
-			newProjectB.RealmGcsAllowlist[0].Realm = "newb"
+			So(len(newProjectB.GcsAllowList), ShouldEqual, 1)
+			newProjectB.GcsAllowList[0].Users = []string{"user:newb@test.com"}
 			delete(configs, "projects/a")
 			configs["projects/b"]["${appid}.cfg"] = textPBMultiline.Format(newProjectB)
 			configs["projects/c"] = cfgmem.Files{
@@ -168,11 +168,11 @@ func TestProjectConfig(t *testing.T) {
 
 			// Attempt to update with an invalid config for project B.
 			newProjectA := CreatePlaceholderProjectConfig()
-			So(len(newProjectA.RealmGcsAllowlist), ShouldEqual, 1)
-			newProjectA.RealmGcsAllowlist[0].Realm = "newa"
+			So(len(newProjectA.GcsAllowList), ShouldEqual, 1)
+			newProjectA.GcsAllowList[0].Users = []string{"user:newa@test.com"}
 			newProjectB := CreatePlaceholderProjectConfig()
-			So(len(newProjectB.RealmGcsAllowlist), ShouldEqual, 1)
-			newProjectB.RealmGcsAllowlist[0].Realm = ""
+			So(len(newProjectB.GcsAllowList), ShouldEqual, 1)
+			newProjectB.GcsAllowList[0].Users = []string{""}
 			configs["projects/a"]["${appid}.cfg"] = textPBMultiline.Format(newProjectA)
 			configs["projects/b"]["${appid}.cfg"] = textPBMultiline.Format(newProjectB)
 			err = UpdateProjects(ctx)

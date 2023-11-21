@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"time"
 
-	configpb "go.chromium.org/luci/resultdb/proto/config"
-
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
@@ -32,6 +30,7 @@ import (
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/datastore"
+	configpb "go.chromium.org/luci/resultdb/proto/config"
 	"go.chromium.org/luci/server/caching"
 )
 

@@ -252,6 +252,7 @@ CREATE TABLE Artifacts (
   ContentType STRING(MAX),
 
   -- Content size in bytes.
+  -- In the case of a GCS artifact, this field is user supplied, optional and not verified.
   Size INT64,
 
   -- Hash of the artifact content if it is stored in RBE-CAS.
@@ -260,6 +261,7 @@ CREATE TABLE Artifacts (
   -- Example: e.g. "sha256:deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
   --
   -- The RBE-CAS instance is in the same Cloud project, named "artifacts".
+  -- This field is NULL for a GCS artifact.
   RBECASHash STRING(MAX),
 
   -- A string of format "isolate://{isolateServerHost}/{namespace}/{hash}"

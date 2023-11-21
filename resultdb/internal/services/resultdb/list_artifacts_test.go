@@ -18,11 +18,10 @@ import (
 	"context"
 	"testing"
 
+	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
-
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/resultdb/internal/gsutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -30,9 +29,8 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 )
 
 func TestValidateListArtifactsRequest(t *testing.T) {
@@ -153,43 +151,13 @@ func TestListArtifacts(t *testing.T) {
 		})
 
 		Convey(`Fetch URL with Gcs URI`, func() {
-			ctx = testutil.TestProjectConfigContext(ctx)
-
 			testutil.MustApply(ctx,
 				insert.Artifact("inv1", "", "a", map[string]any{"GcsURI": "gs://bucket1/file1.txt"}),
 			)
 
-			Convey(`Realm GCS path allowed`, func() {
-				testutil.SetRealmGCSAllowedPrefix(ctx, "testproject", "testrealm", "bucket1", "file1.txt")
-
-				actual, _ := mustFetch(req)
-				So(actual, ShouldHaveLength, 1)
-				So(actual[0].FetchUrl, ShouldStartWith, "https://storage.googleapis.com/bucket1/file1.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential")
-			})
-
-			Convey(`Realm GCS path wildcard allowed`, func() {
-				testutil.SetRealmGCSAllowedPrefix(ctx, "testproject", "testrealm", "bucket1", "*")
-
-				actual, _ := mustFetch(req)
-				So(actual, ShouldHaveLength, 1)
-				So(actual[0].FetchUrl, ShouldStartWith, "https://storage.googleapis.com/bucket1/file1.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential")
-			})
-
-			Convey(`Realm GCS path not allowed`, func() {
-				testutil.SetRealmGCSAllowedPrefix(ctx, "testproject", "testrealm", "bucket1", "file2.txt")
-
-				actual, _ := mustFetch(req)
-				So(actual, ShouldHaveLength, 1)
-				So(actual[0].FetchUrl, ShouldEqual, "")
-			})
-
-			Convey(`No project config found`, func() {
-				testutil.SetRealmGCSAllowedPrefix(ctx, "otherproject", "testrealm", "bucket1", "file1.txt")
-
-				actual, _ := mustFetch(req)
-				So(actual, ShouldHaveLength, 1)
-				So(actual[0].FetchUrl, ShouldEqual, "")
-			})
+			actual, _ := mustFetch(req)
+			So(actual, ShouldHaveLength, 1)
+			So(actual[0].FetchUrl, ShouldStartWith, "https://storage.googleapis.com/bucket1/file1.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential")
 		})
 
 	})

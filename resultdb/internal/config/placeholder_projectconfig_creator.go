@@ -18,16 +18,15 @@ import (
 	configpb "go.chromium.org/luci/resultdb/proto/config"
 )
 
-// Creates a placeholder `RealmGcsAllowlist` config with default values.
-func createPlaceholderRealmGcsAllowlist() []*configpb.RealmGcsAllowList {
-	return []*configpb.RealmGcsAllowList{
+// Creates a placeholder `GcsAllowlist` config with default values.
+func createPlaceholderGcsAllowlist() []*configpb.GcsAllowList {
+	return []*configpb.GcsAllowList{
 		{
-			Realm: "a",
-			GcsBucketPrefixes: []*configpb.GcsBucketPrefixes{
-				{
-					Bucket:          "bucket",
-					AllowedPrefixes: []string{"*"},
-				},
+			Users: []string{
+				"user:test@test.com",
+			},
+			Buckets: []string{
+				"bucket",
 			},
 		},
 	}
@@ -37,6 +36,6 @@ func createPlaceholderRealmGcsAllowlist() []*configpb.RealmGcsAllowList {
 // default values.
 func CreatePlaceholderProjectConfig() *configpb.ProjectConfig {
 	return &configpb.ProjectConfig{
-		RealmGcsAllowlist: createPlaceholderRealmGcsAllowlist(),
+		GcsAllowList: createPlaceholderGcsAllowlist(),
 	}
 }
