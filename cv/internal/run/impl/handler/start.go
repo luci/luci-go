@@ -140,6 +140,7 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 
 		// Post pending message to all gerrit CLs for this run if not posted already.
 		if !rs.QuotaExhaustionMsgLongOpRequested {
+			rs.QuotaExhaustionMsgLongOpRequested = true // Only enqueue once.
 			rs.EnqueueLongOp(&run.OngoingLongOps_Op{
 				Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxPostMessageDuration)),
 				Work: &run.OngoingLongOps_Op_PostGerritMessage_{
@@ -149,7 +150,20 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 				},
 			})
 
-			rs.QuotaExhaustionMsgLongOpRequested = true // Only enqueue once.
+			switch host, _, err := runCLs[0].ExternalID.ParseGobID(); {
+			case err != nil:
+				logging.Errorf(ctx, "ParseGobID failed; skipping RunQuotaRejection metric %v", err)
+			default:
+				hostID := strings.TrimSuffix(host, "-review.googlesource.com")
+				gerritAccountID := fmt.Sprintf("%s/%d", hostID, runCLs[0].Trigger.GerritAccountId)
+				metrics.Public.RunQuotaRejection.Add(
+					ctx,
+					1,
+					rs.Run.ID.LUCIProject(),
+					rs.Run.ConfigGroupID.Name(),
+					gerritAccountID,
+				)
+			}
 		}
 
 		return &Result{State: rs, PreserveEvents: true}, nil

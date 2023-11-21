@@ -110,8 +110,10 @@ func TestStart(t *testing.T) {
 		h, deps := makeTestHandler(&ct)
 
 		var clid common.CLID
+		var accountID int64
 		addCL := func(triggerer, owner string) *changelist.CL {
 			clid++
+			accountID++
 			rs.CLs = append(rs.CLs, clid)
 			ci := gf.CI(100+int(clid),
 				gf.Owner(owner),
@@ -129,12 +131,14 @@ func TestStart(t *testing.T) {
 				},
 			}
 			rCL := &run.RunCL{
-				ID:  clid,
-				Run: datastore.MakeKey(ctx, common.RunKind, string(rs.ID)),
+				ID:         clid,
+				Run:        datastore.MakeKey(ctx, common.RunKind, string(rs.ID)),
+				ExternalID: changelist.MustGobID(gerritHost, ci.GetNumber()),
 				Trigger: &run.Trigger{
-					Email: gf.U(triggerer).Email,
-					Time:  timestamppb.New(rs.CreateTime),
-					Mode:  string(rs.Mode),
+					Email:           gf.U(triggerer).Email,
+					Time:            timestamppb.New(rs.CreateTime),
+					Mode:            string(rs.Mode),
+					GerritAccountId: accountID,
 				},
 			}
 			So(datastore.Put(ctx, cl, rCL), ShouldBeNil)
@@ -215,6 +219,13 @@ func TestStart(t *testing.T) {
 			So(ops["1-1"].GetPostGerritMessage(), ShouldResembleProto, &run.OngoingLongOps_Op_PostGerritMessage{
 				Message: fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.", rs.Run.CreatedBy.Email()),
 			})
+			So(ct.TSMonSentValue(
+				ctx,
+				metrics.Public.RunQuotaRejection,
+				lProject,
+				"combinable",
+				"chromium/1",
+			), ShouldEqual, 1)
 
 			Convey("Enqueue pending message only once when quota is exhausted", func() {
 				res, err := h.Start(ctx, rs)

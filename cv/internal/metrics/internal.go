@@ -34,6 +34,7 @@ var Internal = struct {
 	BigQueryExportDelay            metric.CumulativeDistribution
 	RunTryjobResultReportDelay     metric.CumulativeDistribution
 	RunResetTriggerAttempted       metric.Counter
+	QuotaOp                        metric.Counter
 }{
 	BuildbucketRPCCount: metric.NewCounter(
 		"cv/internal/buildbucket_rpc/count",
@@ -143,5 +144,16 @@ var Internal = struct {
 		field.String("mode"),
 		field.Bool("succeeded"),
 		field.String("gerrit_error"),
+	),
+	QuotaOp: metric.NewCounter(
+		"cv/internal/quota/op",
+		"Count of server quota operation",
+		nil,
+		field.String("project"),
+		field.String("policy_namespace"),
+		field.String("policy_name"),
+		field.String("policy_resource"),
+		field.String("op"),
+		field.String("status"),
 	),
 }

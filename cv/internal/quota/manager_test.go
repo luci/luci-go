@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -273,6 +274,16 @@ func TestManager(t *testing.T) {
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
 			})
+			So(ct.TSMonSentValue(
+				ctx,
+				metrics.Internal.QuotaOp,
+				lProject,
+				"infra",
+				"googlers-limit",
+				"runs",
+				"debit",
+				"SUCCESS",
+			), ShouldEqual, 1)
 		})
 
 		Convey("CreditRunQuota() credits quota for a given run state", func() {
@@ -296,6 +307,26 @@ func TestManager(t *testing.T) {
 				PreviousBalance:         4, // credit reapplies debit beforehand.
 				PreviousBalanceAdjusted: 4,
 			})
+			So(ct.TSMonSentValue(
+				ctx,
+				metrics.Internal.QuotaOp,
+				lProject,
+				"infra",
+				"googlers-limit",
+				"runs",
+				"debit",
+				"SUCCESS",
+			), ShouldEqual, 1)
+			So(ct.TSMonSentValue(
+				ctx,
+				metrics.Internal.QuotaOp,
+				lProject,
+				"infra",
+				"googlers-limit",
+				"runs",
+				"credit",
+				"SUCCESS",
+			), ShouldEqual, 1)
 		})
 
 		Convey("runQuotaOp() updates the same account on multiple ops", func() {
@@ -318,6 +349,16 @@ func TestManager(t *testing.T) {
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
 			})
+			So(ct.TSMonSentValue(
+				ctx,
+				metrics.Internal.QuotaOp,
+				lProject,
+				"infra",
+				"googlers-limit",
+				"runs",
+				"foo1",
+				"SUCCESS",
+			), ShouldEqual, 1)
 
 			res, err = qm.runQuotaOp(ctx, r, "foo2", -2)
 			So(err, ShouldBeNil)
@@ -327,6 +368,16 @@ func TestManager(t *testing.T) {
 				PreviousBalanceAdjusted: 4,
 				AccountStatus:           quotapb.OpResult_ALREADY_EXISTS,
 			})
+			So(ct.TSMonSentValue(
+				ctx,
+				metrics.Internal.QuotaOp,
+				lProject,
+				"infra",
+				"googlers-limit",
+				"runs",
+				"foo2",
+				"SUCCESS",
+			), ShouldEqual, 1)
 		})
 
 		Convey("runQuotaOp() respects unlimited policy", func() {
@@ -361,22 +412,42 @@ func TestManager(t *testing.T) {
 			}
 
 			Convey("quota underflow", func() {
-				res, err := qm.runQuotaOp(ctx, r, "", -2)
+				res, err := qm.runQuotaOp(ctx, r, "debit", -2)
 				So(err, ShouldEqual, quota.ErrQuotaApply)
 				So(res, ShouldResembleProto, &quotapb.OpResult{
 					AccountStatus: quotapb.OpResult_CREATED,
 					Status:        quotapb.OpResult_ERR_UNDERFLOW,
 				})
+				So(ct.TSMonSentValue(
+					ctx,
+					metrics.Internal.QuotaOp,
+					lProject,
+					"infra",
+					"googlers-limit",
+					"runs",
+					"debit",
+					"ERR_UNDERFLOW",
+				), ShouldEqual, 1)
 			})
 
 			Convey("quota overflow", func() {
 				// overflow doesn't err but gets capped.
-				res, err := qm.runQuotaOp(ctx, r, "", 10)
+				res, err := qm.runQuotaOp(ctx, r, "credit", 10)
 				So(err, ShouldBeNil)
 				So(res, ShouldResembleProto, &quotapb.OpResult{
 					AccountStatus: quotapb.OpResult_CREATED,
 					NewBalance:    1,
 				})
+				So(ct.TSMonSentValue(
+					ctx,
+					metrics.Internal.QuotaOp,
+					lProject,
+					"infra",
+					"googlers-limit",
+					"runs",
+					"credit",
+					"SUCCESS",
+				), ShouldEqual, 1)
 			})
 		})
 

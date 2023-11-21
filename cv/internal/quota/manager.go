@@ -33,6 +33,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -66,7 +67,7 @@ type SrvQuota interface {
 
 // DebitRunQuota debits the run quota from a given user's account.
 func (qm *Manager) DebitRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, error) {
-	return qm.runQuotaOp(ctx, r, requestID(r.ID, "debit"), -1)
+	return qm.runQuotaOp(ctx, r, "debit", -1)
 }
 
 // CreditRunQuota credits the run quota into a given user's account.
@@ -77,11 +78,11 @@ func (qm *Manager) CreditRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpR
 	// requestId for deduping requests so if debit already exists, it would be a
 	// no-op. Given requestId is used for deduping, debit and credit are kept
 	// separate and are not combined into a single ApplyOps call.
-	if res, err := qm.runQuotaOp(ctx, r, requestID(r.ID, "debit"), -1); err != nil {
+	if res, err := qm.runQuotaOp(ctx, r, "debit", -1); err != nil {
 		return res, err
 	}
 
-	return qm.runQuotaOp(ctx, r, requestID(r.ID, "credit"), 1)
+	return qm.runQuotaOp(ctx, r, "credit", 1)
 }
 
 // DebitTryjobQuota debits the tryjob quota from a given user's account.
@@ -100,7 +101,7 @@ func (qm *Manager) RunQuotaAccountID(r *run.Run) *quotapb.AccountID {
 }
 
 // runQuotaOp updates the run quota for the given run state by the given delta.
-func (qm *Manager) runQuotaOp(ctx context.Context, r *run.Run, requestID string, delta int64) (*quotapb.OpResult, error) {
+func (qm *Manager) runQuotaOp(ctx context.Context, r *run.Run, opID string, delta int64) (*quotapb.OpResult, error) {
 	policyID, isUnlimited, err := qm.findRunPolicy(ctx, r)
 
 	// policyID == nil when no policy limit is configured for this user.
@@ -125,9 +126,10 @@ func (qm *Manager) runQuotaOp(ctx context.Context, r *run.Run, requestID string,
 	}
 
 	// When server/quota does not have the policyId already, rewrite the policy and retry the op.
+
 	var opResponse *quotapb.ApplyOpsResponse
 	err = retry.Retry(clock.Tag(ctx, common.LaunchRetryClockTag), makeRetryFactory(), func() (err error) {
-		opResponse, err = srvquota.ApplyOps(ctx, requestID, durationpb.New(accountLifeTime), quotaOp)
+		opResponse, err = srvquota.ApplyOps(ctx, requestID(r.ID, opID), durationpb.New(accountLifeTime), quotaOp)
 		if errors.Unwrap(err) == srvquota.ErrQuotaApply && opResponse.Results[0].Status == quotapb.OpResult_ERR_UNKNOWN_POLICY {
 			if _, err := qm.WritePolicy(ctx, r.ID.LUCIProject()); err != nil {
 				return err
@@ -139,10 +141,32 @@ func (qm *Manager) runQuotaOp(ctx context.Context, r *run.Run, requestID string,
 		return
 	}, nil)
 
-	// On ErrQuotaApply, OpResult.Status stores the reason for failure.
 	if err == nil || errors.Unwrap(err) == srvquota.ErrQuotaApply {
+		metrics.Internal.QuotaOp.Add(
+			ctx,
+			1,
+			r.ID.LUCIProject(),
+			r.ConfigGroupID.Name(),
+			policyID.GetKey().GetName(),
+			runResource,
+			opID,
+			opResponse.Results[0].Status.String(),
+		)
+
+		// On ErrQuotaApply, OpResult.Status stores the reason for failure.
 		return opResponse.Results[0], err
 	}
+
+	metrics.Internal.QuotaOp.Add(
+		ctx,
+		1,
+		r.ID.LUCIProject(),
+		r.ConfigGroupID.Name(),
+		policyID.GetKey().GetName(),
+		runResource,
+		opID,
+		"UNKNOWN_ERROR",
+	)
 
 	return nil, err
 }

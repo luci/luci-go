@@ -43,6 +43,8 @@ var Public = struct {
 	TryjobLaunched        metric.Counter
 	TryjobEnded           metric.Counter
 	TryjobBuilderPresence metric.Bool
+
+	RunQuotaRejection metric.Counter
 }{
 	RunCreated: metric.NewCounter(
 		"cv/runs/created",
@@ -168,5 +170,13 @@ var Public = struct {
 		field.Bool("includable_only"),
 		field.Bool("path_cond"),
 		field.Bool("experimental"),
+	),
+	RunQuotaRejection: metric.NewCounter(
+		"cv/runs/quota/rejected",
+		"Count of run rejection",
+		nil,
+		field.String("project"),
+		field.String("config_group"),
+		field.String("gerrit_account_id"), // `{gerrit_host}/{account_id}`.
 	),
 }
