@@ -37,6 +37,7 @@ import {
   RouteErrorDisplay,
 } from '@/common/components/error_handling';
 import { LitEnvProvider } from '@/common/components/lit_env_provider';
+import { PageConfigStateProvider } from '@/common/components/page_config_state_provider';
 import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
 import { NON_TRANSIENT_ERROR_CODES } from '@/common/constants';
 import { BaseLayout } from '@/common/layouts/base_layout';
@@ -204,8 +205,10 @@ export function App({ initOpts }: AppProps) {
                 <ReleaseNotesProvider
                   initReleaseNotes={parseReleaseNotes(releaseNotes)}
                 >
-                  <milo-tooltip />
-                  <RouterProvider router={router} />
+                  <PageConfigStateProvider>
+                    <milo-tooltip />
+                    <RouterProvider router={router} />
+                  </PageConfigStateProvider>
                 </ReleaseNotesProvider>
               </PageMetaProvider>
             </LitEnvProvider>

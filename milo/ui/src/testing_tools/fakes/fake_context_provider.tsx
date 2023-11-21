@@ -20,6 +20,7 @@ import React, { useState } from 'react';
 import { Outlet, RouterProvider, createMemoryRouter } from 'react-router-dom';
 
 import { ReleaseNotesProvider } from '@/app/components/release_notes';
+import { PageConfigStateProvider } from '@/common/components/page_config_state_provider';
 import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
 import { UiPage } from '@/common/constants';
 import { theme } from '@/common/themes/base';
@@ -108,7 +109,9 @@ export function FakeContextProvider({
               <ReleaseNotesProvider
                 initReleaseNotes={{ latest: '', latestVersion: -1, past: '' }}
               >
-                <RouterProvider router={router} />
+                <PageConfigStateProvider>
+                  <RouterProvider router={router} />
+                </PageConfigStateProvider>
               </ReleaseNotesProvider>
             </PageMetaProvider>
           </QueryClientProvider>

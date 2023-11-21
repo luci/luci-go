@@ -30,19 +30,6 @@ export const Store = types
     currentTime: types.optional(Timestamp, {}),
     refreshTime: types.optional(Timestamp, {}),
 
-    // Use number instead of boolean because previousPage.disconnectedCallback
-    // might be called after currentPage.disconnectedCallback.
-    // Number allows us to reset the setting even when the execution is out of
-    // order.
-    /**
-     * When hasSettingsDialog > 0, the current page has a settings dialog.
-     *
-     * If the page has a setting dialog, it should increment the number on connect
-     * and decrement it on disconnect.
-     */
-    hasSettingsDialog: 0,
-    showSettingsDialog: false,
-
     authState: types.optional(AuthStateStore, {}),
     userConfig: types.optional(UserConfig, {}),
     services: types.optional(ServicesStore, {}),
@@ -63,15 +50,6 @@ export const Store = types
   .actions((self) => ({
     setRedirectSw(redirectSw: ServiceWorkerRegistration | null) {
       self.redirectSw = redirectSw;
-    },
-    registerSettingsDialog() {
-      self.hasSettingsDialog++;
-    },
-    unregisterSettingsDialog() {
-      self.hasSettingsDialog--;
-    },
-    setShowSettingsDialog(show: boolean) {
-      self.showSettingsDialog = show;
     },
     afterCreate() {
       self.services.setDependencies({ authState: self.authState });

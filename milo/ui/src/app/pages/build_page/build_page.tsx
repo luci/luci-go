@@ -26,6 +26,7 @@ import redFavicon from '@/common/assets/favicons/red-32.png';
 import tealFavicon from '@/common/assets/favicons/teal-32.png';
 import yellowFavicon from '@/common/assets/favicons/yellow-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { usePageSpecificConfig } from '@/common/components/page_config_state_provider';
 import { PageMeta } from '@/common/components/page_meta/page_meta';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import {
@@ -80,10 +81,7 @@ export const BuildPage = observer(() => {
     );
   }
 
-  useEffect(() => {
-    store.registerSettingsDialog();
-    return () => store.unregisterSettingsDialog();
-  }, [store]);
+  const [showConfigDialog, setShowConfigDialog] = usePageSpecificConfig();
 
   useEffect(() => {
     store.buildPage.setParams({ project, bucket, builder }, buildNumOrId);
@@ -129,8 +127,8 @@ export const BuildPage = observer(() => {
             title={documentTitle}
           />
           <ChangeConfigDialog
-            open={store.showSettingsDialog}
-            onClose={() => store.setShowSettingsDialog(false)}
+            open={showConfigDialog}
+            onClose={() => setShowConfigDialog(false)}
           />
           <div
             css={{

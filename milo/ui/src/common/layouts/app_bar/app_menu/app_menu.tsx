@@ -20,15 +20,14 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import { observer } from 'mobx-react-lite';
 import { useState, MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
 
 import { ReleaseNotesTooltip } from '@/app/components/release_notes';
-import { useStore } from '@/common/store';
+import { useSetShowPageConfig } from '@/common/components/page_config_state_provider';
 
-export const AppMenu = observer(() => {
-  const store = useStore();
+export function AppMenu() {
+  const setShowPageConfig = useSetShowPageConfig();
 
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const handleOpenMenu = (event: MouseEvent<HTMLElement>) => {
@@ -78,8 +77,8 @@ export const AppMenu = observer(() => {
           <ListItemText>{"What's new"}</ListItemText>
         </MenuItem>
         <MenuItem
-          onClick={() => store.setShowSettingsDialog(true)}
-          disabled={store.hasSettingsDialog === 0}
+          onClick={() => setShowPageConfig!(true)}
+          disabled={setShowPageConfig === null}
           title="Change settings specific to the page."
         >
           <ListItemIcon>
@@ -90,4 +89,4 @@ export const AppMenu = observer(() => {
       </Menu>
     </>
   );
-});
+}
