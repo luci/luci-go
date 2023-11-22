@@ -1272,6 +1272,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "build-1234",
 					},
+					Name:        "invocations/build-1234/tests/ninja%3A%2F%2Ftest_consistent_failure/results/one",
 					ResultId:    "one",
 					Expected:    false,
 					Status:      pb.TestResultStatus_FAIL,
@@ -1336,6 +1337,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "build-1234",
 					},
+					Name:       "invocations/build-1234/tests/ninja%3A%2F%2Ftest_expected/results/one",
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.May, 1, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_PASS,
@@ -1363,6 +1365,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "build-1234",
 					},
+					Name:       "invocations/build-1234/tests/ninja%3A%2F%2Ftest_from_luci_bisection/results/one",
 					ResultId:   "one",
 					Status:     pb.TestResultStatus_PASS,
 					Expected:   false,
@@ -1389,6 +1392,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "invocation-0b",
 					},
+					Name:       "invocations/invocation-0b/tests/ninja%3A%2F%2Ftest_has_unexpected/results/one",
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 10, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -1399,6 +1403,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "invocation-0a",
 					},
+					Name:       "invocations/invocation-0a/tests/ninja%3A%2F%2Ftest_has_unexpected/results/two",
 					ResultId:   "two",
 					StartTime:  timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 20, 0, time.UTC)),
 					Status:     pb.TestResultStatus_PASS,
@@ -1426,6 +1431,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "build-1234",
 					},
+					Name:       "invocations/build-1234/tests/ninja%3A%2F%2Ftest_known_flake/results/one",
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -1455,6 +1461,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "build-1234",
 					},
+					Name:       "invocations/build-1234/tests/ninja%3A%2F%2Ftest_new_failure/results/one",
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -1483,6 +1490,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "invocation-1234",
 					},
+					Name:       "invocations/invocation-1234/tests/ninja%3A%2F%2Ftest_new_flake/results/two",
 					ResultId:   "two",
 					StartTime:  timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 20, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -1494,6 +1502,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "invocation-1234",
 					},
+					Name:       "invocations/invocation-1234/tests/ninja%3A%2F%2Ftest_new_flake/results/one",
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 10, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -1505,6 +1514,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "invocation-4567",
 					},
+					Name:       "invocations/invocation-4567/tests/ninja%3A%2F%2Ftest_new_flake/results/three",
 					ResultId:   "three",
 					StartTime:  timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 15, 0, time.UTC)),
 					Status:     pb.TestResultStatus_PASS,
@@ -1532,6 +1542,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "build-1234",
 					},
+					Name:       "invocations/build-1234/tests/ninja%3A%2F%2Ftest_no_new_results/results/one",
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.April, 1, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -1559,6 +1570,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "build-1234",
 					},
+					Name:       "invocations/build-1234/tests/ninja%3A%2F%2Ftest_skip/results/one",
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.February, 2, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_SKIP,
@@ -1585,6 +1597,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "build-1234",
 					},
+					Name:       "invocations/build-1234/tests/ninja%3A%2F%2Ftest_unexpected_pass/results/one",
 					ResultId:   "one",
 					Status:     pb.TestResultStatus_PASS,
 					Expected:   false,

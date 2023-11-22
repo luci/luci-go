@@ -19,6 +19,9 @@ import (
 	"context"
 	"encoding/hex"
 
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/structpb"
+
 	"go.chromium.org/luci/analysis/internal/analysis"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
@@ -30,8 +33,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // InsertClient defines an interface for inserting rows into BigQuery.
@@ -231,6 +232,7 @@ func result(result *rdbpb.TestResult) (*bqpb.TestVerdictRow_TestResult, error) {
 		Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 			Id: invID,
 		},
+		Name:        result.Name,
 		ResultId:    result.ResultId,
 		Expected:    result.Expected,
 		Status:      pbutil.TestResultStatusFromResultDB(result.Status),

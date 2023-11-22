@@ -19,8 +19,9 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 	"google.golang.org/protobuf/types/known/structpb"
+
+	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestVariantJSON(t *testing.T) {

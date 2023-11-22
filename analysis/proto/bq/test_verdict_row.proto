@@ -113,9 +113,15 @@ message TestVerdictRow {
     string id = 1;
   }
 
+  // NextId: 12
   message TestResult {
     // Parent contains info of the result's immediate parent invocation.
     ParentInvocationRecord parent = 1;
+
+    // The global identifier of a test result in ResultDB.
+    // Format:
+    // "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}".
+    string name = 11;
 
     // Identifies a test result in a given invocation and test id.
     string result_id = 2;
