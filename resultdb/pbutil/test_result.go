@@ -163,6 +163,7 @@ func ValidateTestResult(now time.Time, msg *pb.TestResult) (err error) {
 	case msg.TestMetadata != nil && ec.isErr(ValidateTestMetadata(msg.TestMetadata), "test_metadata"):
 	case msg.FailureReason != nil && ec.isErr(ValidateFailureReason(msg.FailureReason), "failure_reason"):
 	case msg.Properties != nil && ec.isErr(ValidateProperties(msg.Properties), "properties"):
+	case ec.isErr(ValidateTestResultSkipReason(msg.Status, msg.SkipReason), "skip_reason"):
 	}
 	return err
 }
@@ -328,6 +329,17 @@ func ValidateError(error *pb.FailureReason_Error) error {
 		return errors.Reason(
 			"message: exceeds the maximum size of %d bytes",
 			maxLenPrimaryErrorMessage).Err()
+	}
+	return nil
+}
+
+// ValidateTestResultSkipReason returns a non-nil error if reason is invalid for a test result with the given status.
+func ValidateTestResultSkipReason(status pb.TestStatus, reason pb.SkipReason) error {
+	if err := ValidateEnum(int32(reason), pb.SkipReason_name); err != nil {
+		return err
+	}
+	if reason != pb.SkipReason_SKIP_REASON_UNSPECIFIED && status != pb.TestStatus_SKIP {
+		return errors.Reason("value must be zero (UNSPECIFIED) when status is not SKIP").Err()
 	}
 	return nil
 }

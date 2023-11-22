@@ -229,6 +229,12 @@ CREATE TABLE TestResults (
   -- domain-specific properties of the test result.
   -- See spanutil.Compressed type for details of compression.
   Properties BYTES(MAX),
+
+  -- Reasoning behind a test skip, in machine-readable form.
+  -- Used to assist downstream analyses, such as automatic bug-filing.
+  -- Skip reason 0 (SKIP_REASON_UNSPECIFIED) is mapped to NULL.
+  -- MUST be NULL unless status is SKIP.
+  SkipReason INT64,
 ) PRIMARY KEY (InvocationId, TestId, ResultId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 

@@ -161,6 +161,7 @@ type tvResult struct {
 	FailureReason   []byte
 	Tags            []string
 	Properties      []byte
+	SkipReason      spanner.NullInt64
 }
 
 // resultSelectColumns returns a list of columns needed to fetch `tvResult`s
@@ -199,6 +200,7 @@ func (q *Query) resultSelectColumns() []string {
 	selectIfIncluded("FailureReason", "results.*.result.failure_reason")
 	selectIfIncluded("Tags", "results.*.result.tags")
 	selectIfIncluded("Properties", "results.*.result.properties")
+	selectIfIncluded("SkipReason", "results.*.result.skip_reason")
 
 	return columnSet.ToSortedSlice()
 }
@@ -240,6 +242,7 @@ func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, e
 	}
 	testresults.PopulateExpectedField(tr, r.IsUnexpected)
 	testresults.PopulateDurationField(tr, r.RunDurationUsec)
+	testresults.PopulateSkipReasonField(tr, r.SkipReason)
 
 	var err error
 	if tr.SummaryHtml, err = q.decompressText(r.SummaryHTML); err != nil {

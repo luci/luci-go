@@ -107,6 +107,8 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr any) error {
 		spanPtr = &b.Int64
 	case *pb.TestStatus:
 		spanPtr = &b.Int64
+	case *pb.SkipReason:
+		spanPtr = &b.Int64
 	case *pb.Invocation_State:
 		spanPtr = &b.Int64
 	case **pb.Variant:
@@ -156,6 +158,9 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr any) error {
 
 	case *pb.TestStatus:
 		*goPtr = pb.TestStatus(b.Int64)
+
+	case *pb.SkipReason:
+		*goPtr = pb.SkipReason(b.Int64)
 
 	case **pb.Variant:
 		if *goPtr, err = pbutil.VariantFromStrings(b.StringSlice); err != nil {
@@ -230,6 +235,9 @@ func ToSpanner(v any) any {
 		return int64(v)
 
 	case pb.TestStatus:
+		return int64(v)
+
+	case pb.SkipReason:
 		return int64(v)
 
 	case *pb.Variant:

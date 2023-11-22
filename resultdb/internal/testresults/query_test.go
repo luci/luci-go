@@ -395,6 +395,16 @@ func TestQueryTestResults(t *testing.T) {
 			So(actual, ShouldResembleProto, expected)
 		})
 
+		Convey(`Skip reason`, func() {
+			expected := insert.MakeTestResults("inv1", "WithSkipReason", nil, pb.TestStatus_SKIP)
+			expected[0].SkipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
+			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, insert.TestResultMessages(expected)...)
+
+			actual, _ := mustFetch(q)
+			So(actual, ShouldResembleProto, expected)
+		})
+
 		Convey(`Variant in the mask`, func() {
 			testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, nil))
 
@@ -635,6 +645,7 @@ func TestToLimitedData(t *testing.T) {
 						"key": structpb.NewStringValue("value"),
 					},
 				},
+				SkipReason: pb.SkipReason_SKIP_REASON_UNSPECIFIED,
 			}
 			So(pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, testResult), ShouldBeNil)
 
@@ -655,7 +666,8 @@ func TestToLimitedData(t *testing.T) {
 					},
 					TruncatedErrorsCount: 0,
 				},
-				IsMasked: true,
+				IsMasked:   true,
+				SkipReason: pb.SkipReason_SKIP_REASON_UNSPECIFIED,
 			}
 			So(pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, expected), ShouldBeNil)
 
@@ -712,6 +724,7 @@ func TestToLimitedData(t *testing.T) {
 						"key": structpb.NewStringValue("value"),
 					},
 				},
+				SkipReason: pb.SkipReason_SKIP_REASON_UNSPECIFIED,
 			}
 			So(pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, testResult), ShouldBeNil)
 
@@ -736,7 +749,37 @@ func TestToLimitedData(t *testing.T) {
 					},
 					TruncatedErrorsCount: 0,
 				},
-				IsMasked: true,
+				IsMasked:   true,
+				SkipReason: pb.SkipReason_SKIP_REASON_UNSPECIFIED,
+			}
+			So(pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, expected), ShouldBeNil)
+
+			err := ToLimitedData(ctx, testResult)
+			So(err, ShouldBeNil)
+			So(testResult, ShouldResembleProto, expected)
+		})
+		Convey(`mask preserves skip reason`, func() {
+			testResult := &pb.TestResult{
+				Name:        name,
+				TestId:      testID,
+				ResultId:    resultID,
+				Variant:     variant,
+				Expected:    true,
+				Status:      pb.TestStatus_SKIP,
+				VariantHash: variantHash,
+				SkipReason:  pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS,
+			}
+			So(pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, testResult), ShouldBeNil)
+
+			expected := &pb.TestResult{
+				Name:        name,
+				TestId:      testID,
+				ResultId:    resultID,
+				Expected:    true,
+				Status:      pb.TestStatus_SKIP,
+				VariantHash: variantHash,
+				IsMasked:    true,
+				SkipReason:  pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS,
 			}
 			So(pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, expected), ShouldBeNil)
 

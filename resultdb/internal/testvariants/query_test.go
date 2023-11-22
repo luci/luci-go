@@ -229,6 +229,7 @@ func TestQueryTestVariants(t *testing.T) {
 				"SummaryHtml":     spanutil.Compressed("SummaryHtml"),
 				"Tags":            pbutil.StringPairsToStrings(strPairs...),
 				"TestMetadata":    spanutil.Compressed(tmdBytes),
+				"SkipReason":      pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS,
 			}),
 		)
 
@@ -427,6 +428,7 @@ func TestQueryTestVariants(t *testing.T) {
 							So(result.Result.Status, ShouldNotBeEmpty)
 							So(result.Result.SummaryHtml, ShouldNotBeBlank)
 							So(result.Result.Duration, ShouldNotBeNil)
+							So(result.Result.SkipReason, ShouldNotBeEmpty)
 							So(result.Result.Tags, ShouldNotBeNil)
 							if tv.TestId == "T4" {
 								So(result.Result.FailureReason, ShouldNotBeNil)
@@ -444,6 +446,7 @@ func TestQueryTestVariants(t *testing.T) {
 									Tags:          result.Result.Tags,
 									FailureReason: result.Result.FailureReason,
 									Properties:    result.Result.Properties,
+									SkipReason:    result.Result.SkipReason,
 								},
 							})
 						}

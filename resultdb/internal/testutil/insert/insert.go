@@ -106,6 +106,9 @@ func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 			"RunDurationUsec": 1e6*i + 234567,
 			"SummaryHtml":     spanutil.Compressed("SummaryHtml"),
 		}
+		if tr.SkipReason != pb.SkipReason_SKIP_REASON_UNSPECIFIED {
+			mutMap["SkipReason"] = tr.SkipReason
+		}
 		if !trs[i].Expected {
 			mutMap["IsUnexpected"] = true
 		}

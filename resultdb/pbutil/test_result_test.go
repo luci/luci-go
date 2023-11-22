@@ -172,6 +172,12 @@ func TestValidateTestResult(t *testing.T) {
 			}
 			So(validate(msg), ShouldBeNil)
 		})
+
+		Convey("with skip reason", func() {
+			msg.Status = pb.TestStatus_SKIP
+			msg.SkipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
+			So(validate(msg), ShouldBeNil)
+		})
 	})
 
 	Convey("Fails", t, func() {
@@ -233,6 +239,12 @@ func TestValidateTestResult(t *testing.T) {
 		Convey("with STATUS_UNSPECIFIED", func() {
 			msg.Status = pb.TestStatus_STATUS_UNSPECIFIED
 			So(validate(msg), ShouldErrLike, "status: cannot be STATUS_UNSPECIFIED")
+		})
+
+		Convey("with skip reason but not skip status", func() {
+			msg.Status = pb.TestStatus_ABORT
+			msg.SkipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
+			So(validate(msg), ShouldErrLike, "skip_reason: value must be zero (UNSPECIFIED) when status is not SKIP")
 		})
 
 		Convey("with too big summary", func() {

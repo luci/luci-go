@@ -28,7 +28,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
-
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -52,6 +51,7 @@ var limitedFields = mask.MustFromReadMask(&pb.TestResult{},
 	"duration",
 	"variant_hash",
 	"failure_reason",
+	"skip_reason",
 )
 
 // limitedReasonLength is the length to which the failure reason's primary error
@@ -71,6 +71,7 @@ var defaultListMask = mask.MustFromReadMask(&pb.TestResult{},
 	"status",
 	"start_time",
 	"duration",
+	"skip_reason",
 )
 
 // ListMask returns mask.Mask converted from field_mask.FieldMask.
@@ -176,6 +177,7 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 	selectIfIncluded("VariantHash", "variant_hash")
 	selectIfIncluded("FailureReason", "failure_reason")
 	selectIfIncluded("Properties", "properties")
+	selectIfIncluded("SkipReason", "skip_reason")
 
 	// Build a parser function.
 	var b spanutil.Buffer
@@ -187,6 +189,7 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		var invID invocations.ID
 		var maybeUnexpected spanner.NullBool
 		var micros spanner.NullInt64
+		var skipReason spanner.NullInt64
 		tr := &pb.TestResult{}
 
 		ptrs := []any{
@@ -215,6 +218,8 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 				ptrs = append(ptrs, &fr)
 			case "Properties":
 				ptrs = append(ptrs, &properties)
+			case "SkipReason":
+				ptrs = append(ptrs, &skipReason)
 			default:
 				panic("impossible")
 			}
@@ -231,6 +236,7 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		tr.SummaryHtml = string(summaryHTML)
 		PopulateExpectedField(tr, maybeUnexpected)
 		PopulateDurationField(tr, micros)
+		PopulateSkipReasonField(tr, skipReason)
 		if err := populateTestMetadata(tr, tmd); err != nil {
 			return nil, errors.Annotate(err, "error unmarshalling test_metadata for %s", trName).Err()
 		}

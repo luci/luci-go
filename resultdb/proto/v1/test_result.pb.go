@@ -361,6 +361,7 @@ type TestResult struct {
 	// * duration
 	// * variant_hash
 	// * failure_reason.primary_error_message (truncated to 140 characters)
+	// * skip_reason
 	//
 	// Output only.
 	IsMasked bool `protobuf:"varint,16,opt,name=is_masked,json=isMasked,proto3" json:"is_masked,omitempty"`

@@ -28,7 +28,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
-
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -77,6 +76,7 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 	var tmd spanutil.Compressed
 	var fr spanutil.Compressed
 	var properties spanutil.Compressed
+	var skipReason spanner.NullInt64
 	err := spanutil.ReadRow(ctx, "TestResults", invID.Key(testID, resultID), map[string]any{
 		"Variant":         &tr.Variant,
 		"VariantHash":     &tr.VariantHash,
@@ -89,6 +89,7 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 		"TestMetadata":    &tmd,
 		"FailureReason":   &fr,
 		"Properties":      &properties,
+		"SkipReason":      &skipReason,
 	})
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
@@ -101,6 +102,7 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 	tr.SummaryHtml = string(summaryHTML)
 	PopulateExpectedField(tr, maybeUnexpected)
 	PopulateDurationField(tr, micros)
+	PopulateSkipReasonField(tr, skipReason)
 	if err := populateTestMetadata(tr, tmd); err != nil {
 		return nil, errors.Annotate(err, "failed to unmarshal test metadata").Err()
 	}
@@ -118,6 +120,14 @@ func PopulateDurationField(tr *pb.TestResult, micros spanner.NullInt64) {
 	tr.Duration = nil
 	if micros.Valid {
 		tr.Duration = durationpb.New(time.Duration(1000 * micros.Int64))
+	}
+}
+
+// PopulateSkipReasonField populates tr.SkipReason from NullInt64.
+func PopulateSkipReasonField(tr *pb.TestResult, skipReason spanner.NullInt64) {
+	tr.SkipReason = pb.SkipReason_SKIP_REASON_UNSPECIFIED
+	if skipReason.Valid {
+		tr.SkipReason = pb.SkipReason(skipReason.Int64)
 	}
 }
 

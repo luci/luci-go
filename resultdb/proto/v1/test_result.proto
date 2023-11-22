@@ -157,6 +157,7 @@ message TestResult {
   // * duration
   // * variant_hash
   // * failure_reason.primary_error_message (truncated to 140 characters)
+  // * skip_reason
   //
   // Output only.
   bool is_masked = 16 [(google.api.field_behavior) = OUTPUT_ONLY];
