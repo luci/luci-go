@@ -18,13 +18,14 @@ package bqutil
 import (
 	"context"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/bisection/model"
 	bqpb "go.chromium.org/luci/bisection/proto/bq"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/protoutil"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // TestFailureAnalysisToBqRow returns a TestAnalysisRow for a TestFailureAnalysis.

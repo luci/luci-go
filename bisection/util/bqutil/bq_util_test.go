@@ -20,6 +20,8 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/bisection/model"
 	bqpb "go.chromium.org/luci/bisection/proto/bq"
 	pb "go.chromium.org/luci/bisection/proto/v1"
@@ -28,7 +30,6 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {

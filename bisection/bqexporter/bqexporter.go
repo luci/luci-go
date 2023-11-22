@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/bisection/model"
-	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -46,12 +46,23 @@ func ExportTestAnalyses(ctx context.Context) error {
 		logging.Warningf(ctx, "export test analyses is not enabled")
 	}
 
+	// Ensure the schema.
+	client, err := NewClient(ctx, info.AppID(ctx))
+	if err != nil {
+		return errors.Annotate(err, "new client").Err()
+	}
+	defer client.Close()
+	err = client.EnsureSchema(ctx)
+	if err != nil {
+		return errors.Annotate(err, "ensure schema").Err()
+	}
+
 	analyses, err := fetchTestAnalyses(ctx)
 	if err != nil {
 		return errors.Annotate(err, "fetch test analyses").Err()
 	}
 	logging.Infof(ctx, "There are %d test analyses fetched", len(analyses))
-	// TODO(nqmtuan): Query existing rows from BigQuery table (need to create table first).
+	// TODO(nqmtuan): Query existing rows from BigQuery table.
 	// TODO (nqmtuan): Filter out existing rows.
 	// TODO (nqmtuan): Export to BQ rows.
 	return nil
@@ -81,7 +92,7 @@ func fetchTestAnalyses(ctx context.Context) ([]*model.TestFailureAnalysis, error
 		}
 		// If the analyses did not find any culprit, then we don't
 		// need to check for culprit actions.
-		if tfa.Status != bisectionpb.AnalysisStatus_FOUND {
+		if tfa.Status != pb.AnalysisStatus_FOUND {
 			results = append(results, tfa)
 			continue
 		}
