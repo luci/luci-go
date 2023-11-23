@@ -174,5 +174,6 @@ func fetchTestAnalyses(ctx context.Context) ([]*model.TestFailureAnalysis, error
 }
 
 func isEnabled(ctx context.Context) bool {
-	return info.AppID(ctx) == "luci-bisection-dev"
+	// return info.AppID(ctx) == "luci-bisection-dev"
+	return true
 }
