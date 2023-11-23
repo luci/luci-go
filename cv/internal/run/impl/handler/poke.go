@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/tryjob"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/quota"
 )
 
 const (
@@ -131,26 +130,6 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 			return nil, common.MostSevereError(errs.Get())
 		default:
 			rs.LatestTryjobsRefresh = datastore.RoundTime(clock.Now(ctx).UTC())
-		}
-	}
-
-	if !(rs.Status == run.Status_PENDING || run.IsEnded(rs.Status)) {
-		// Re-debit run quota from the owner of the run. In the event where
-		// redis is wiped out and the debit op is lost, this ensures that it is
-		// restored. debit op is idempotent and hence would be deduped if the
-		// op has already been performed.
-		switch quotaOp, err := impl.QM.DebitRunQuota(ctx, &rs.Run); {
-		// In the case of error, it is probable that redis was wiped out and
-		// this run cannot debit its quota again. In such cases, given the run
-		// is already in process, we should softly try to debit back the quota
-		// for the lifetime of the run with every poke. Making this error
-		// transient would make CV indefinitely retry the poke event until it
-		// can debit back the quota. This would not be ideal given if redis is
-		// down, every run would be stuck indefinitely retrying poke.
-		case errors.Unwrap(err) == quota.ErrQuotaApply:
-			logging.Errorf(ctx, "QM.DebitRunQuota %s error: %w", quotaOp.GetStatus(), err)
-		case err != nil:
-			logging.Errorf(ctx, "QM.DebitRunQuota error: %w", err)
 		}
 	}
 

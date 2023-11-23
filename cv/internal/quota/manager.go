@@ -72,16 +72,6 @@ func (qm *Manager) DebitRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpRe
 
 // CreditRunQuota credits the run quota into a given user's account.
 func (qm *Manager) CreditRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, error) {
-	// The debit op is rerun before crediting back the quota. In the event where
-	// redis is wiped out and the debit op is lost, this ensures that it is
-	// reapplied to avoid crediting additional quota. server/quota uses
-	// requestId for deduping requests so if debit already exists, it would be a
-	// no-op. Given requestId is used for deduping, debit and credit are kept
-	// separate and are not combined into a single ApplyOps call.
-	if res, err := qm.runQuotaOp(ctx, r, "debit", -1); err != nil {
-		return res, err
-	}
-
 	return qm.runQuotaOp(ctx, r, "credit", 1)
 }
 

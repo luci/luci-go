@@ -395,23 +395,5 @@ func TestPoke(t *testing.T) {
 				})
 			})
 		})
-
-		Convey("Debit Quota", func() {
-			Convey("reapplied when run has not ended", func() {
-				rs.Status = run.Status_RUNNING
-				_, err := h.Poke(ctx, rs)
-
-				So(err, ShouldBeNil)
-				So(deps.qm.debitRunQuotaCalls, ShouldEqual, 1)
-			})
-
-			Convey("not reapplied when run has ended", func() {
-				rs.Status = run.Status_FAILED
-				_, err := h.Poke(ctx, rs)
-
-				So(err, ShouldBeNil)
-				So(deps.qm.debitRunQuotaCalls, ShouldEqual, 0)
-			})
-		})
 	})
 }

@@ -303,20 +303,9 @@ func TestManager(t *testing.T) {
 			res, err := qm.CreditRunQuota(ctx, r)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
-				NewBalance:              5,
-				PreviousBalance:         4, // credit reapplies debit beforehand.
-				PreviousBalanceAdjusted: 4,
+				NewBalance:    5,
+				AccountStatus: quotapb.OpResult_CREATED,
 			})
-			So(ct.TSMonSentValue(
-				ctx,
-				metrics.Internal.QuotaOp,
-				lProject,
-				"infra",
-				"googlers-limit",
-				"runs",
-				"debit",
-				"SUCCESS",
-			), ShouldEqual, 1)
 			So(ct.TSMonSentValue(
 				ctx,
 				metrics.Internal.QuotaOp,
