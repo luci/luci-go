@@ -147,6 +147,7 @@ func main() {
 		cron.RegisterHandler("collect-global-metrics", metrics.CollectGlobalMetrics)
 		cron.RegisterHandler("throttle-bisection", throttle.CronHandler)
 		cron.RegisterHandler("export-test-analyses", bqexporter.ExportTestAnalyses)
+		cron.RegisterHandler("ensure-views", bqexporter.EnsureViews)
 
 		// Task queues
 		compilefailuredetection.RegisterTaskClass()
