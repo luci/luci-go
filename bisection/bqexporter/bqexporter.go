@@ -20,7 +20,9 @@ import (
 	"time"
 
 	"go.chromium.org/luci/bisection/model"
+	bqpb "go.chromium.org/luci/bisection/proto/bq"
 	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/util/bqutil"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -28,6 +30,10 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
 )
+
+// The number of days to look back for past analyses.
+// We only look back and export analyses within the past 14 days.
+const daysToLookBack = 14
 
 // ExportTestAnalyses exports test failure analyses to BigQuery.
 // A test failure analysis will be exported if it satisfies the following conditions:
@@ -46,13 +52,26 @@ func ExportTestAnalyses(ctx context.Context) error {
 		logging.Warningf(ctx, "export test analyses is not enabled")
 	}
 
-	// Ensure the schema.
 	client, err := NewClient(ctx, info.AppID(ctx))
 	if err != nil {
 		return errors.Annotate(err, "new client").Err()
 	}
 	defer client.Close()
-	err = client.EnsureSchema(ctx)
+	err = export(ctx, client)
+	if err != nil {
+		return errors.Annotate(err, "export").Err()
+	}
+	return nil
+}
+
+type ExportClient interface {
+	EnsureSchema(ctx context.Context) error
+	Insert(ctx context.Context, rows []*bqpb.TestAnalysisRow) error
+	ReadTestFailureAnalysisRows(ctx context.Context) ([]*TestFailureAnalysisRow, error)
+}
+
+func export(ctx context.Context, client ExportClient) error {
+	err := client.EnsureSchema(ctx)
 	if err != nil {
 		return errors.Annotate(err, "ensure schema").Err()
 	}
@@ -61,10 +80,40 @@ func ExportTestAnalyses(ctx context.Context) error {
 	if err != nil {
 		return errors.Annotate(err, "fetch test analyses").Err()
 	}
-	logging.Infof(ctx, "There are %d test analyses fetched", len(analyses))
-	// TODO(nqmtuan): Query existing rows from BigQuery table.
-	// TODO (nqmtuan): Filter out existing rows.
-	// TODO (nqmtuan): Export to BQ rows.
+	logging.Infof(ctx, "There are %d test analyses fetched from datastore", len(analyses))
+
+	// Read existing rows from bigquery.
+	bqrows, err := client.ReadTestFailureAnalysisRows(ctx)
+	if err != nil {
+		return errors.Annotate(err, "read test failure analysis rows").Err()
+	}
+	logging.Infof(ctx, "There are %d existing rows in BigQuery", len(bqrows))
+
+	// Filter out existing rows.
+	// Construct a map for fast filtering.
+	existingIDs := map[int64]bool{}
+	for _, r := range bqrows {
+		existingIDs[r.AnalysisID] = true
+	}
+
+	// Construct BQ rows.
+	rowsToInsert := []*bqpb.TestAnalysisRow{}
+	for _, tfa := range analyses {
+		if _, ok := existingIDs[tfa.ID]; !ok {
+			row, err := bqutil.TestFailureAnalysisToBqRow(ctx, tfa)
+			if err != nil {
+				return errors.Annotate(err, "test failure analysis to bq row for analysis ID: %d", tfa.ID).Err()
+			}
+			rowsToInsert = append(rowsToInsert, row)
+		}
+	}
+	logging.Infof(ctx, "After filtering, there are %d rows to insert to BigQuery.", len(rowsToInsert))
+
+	// Insert into BQ.
+	err = client.Insert(ctx, rowsToInsert)
+	if err != nil {
+		return errors.Annotate(err, "insert").Err()
+	}
 	return nil
 }
 
@@ -75,7 +124,7 @@ func ExportTestAnalyses(ctx context.Context) error {
 // or the it has ended more than 1 day ago.
 func fetchTestAnalyses(ctx context.Context) ([]*model.TestFailureAnalysis, error) {
 	// Query all analyses within 14 days.
-	cutoffTime := clock.Now(ctx).Add(-time.Hour * 24 * 14)
+	cutoffTime := clock.Now(ctx).Add(-time.Hour * 24 * daysToLookBack)
 	q := datastore.NewQuery("TestFailureAnalysis").Gt("create_time", cutoffTime).Order("-create_time")
 	analyses := []*model.TestFailureAnalysis{}
 	err := datastore.GetAll(ctx, q, &analyses)

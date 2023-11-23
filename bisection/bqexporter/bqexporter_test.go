@@ -22,6 +22,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/bisection/model"
+	bqpb "go.chromium.org/luci/bisection/proto/bq"
 	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
 	"go.chromium.org/luci/common/clock"
@@ -30,6 +31,40 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
+func TestExport(t *testing.T) {
+	t.Parallel()
+	ctx := memory.Use(context.Background())
+	testutil.UpdateIndices(ctx)
+	cl := testclock.New(testclock.TestTimeUTC)
+	baseTime := time.Unix(3600*24*30, 0).UTC()
+	cl.Set(baseTime)
+	ctx = clock.Set(ctx, cl)
+
+	Convey("export", t, func() {
+		// Create 5 test analyses.
+		for i := 1; i <= 5; i++ {
+			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+				ID:         int64(1000 + i),
+				RunStatus:  bisectionpb.AnalysisRunStatus_ENDED,
+				Status:     bisectionpb.AnalysisStatus(bisectionpb.AnalysisStatus_NOTFOUND),
+				CreateTime: clock.Now(ctx).Add(time.Hour * time.Duration(-i)),
+			})
+			testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+				ID:        int64(2000 + i),
+				Analysis:  tfa,
+				IsPrimary: true,
+			})
+		}
+
+		client := &fakeExportClient{}
+		err := export(ctx, client)
+		So(err, ShouldBeNil)
+		// Filtered out 3.
+		So(len(client.rows), ShouldEqual, 2)
+		So(client.rows[0].AnalysisId, ShouldEqual, 1002)
+		So(client.rows[1].AnalysisId, ShouldEqual, 1004)
+	})
+}
 func TestFetchTestAnalyses(t *testing.T) {
 	t.Parallel()
 	ctx := memory.Use(context.Background())
@@ -106,4 +141,32 @@ func createSuspect(ctx context.Context, tfa *model.TestFailureAnalysis, hasTaken
 	So(datastore.Put(ctx, suspect), ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()
 	tfa.VerifiedCulpritKey = datastore.KeyForObj(ctx, suspect)
+}
+
+// Fake client.
+type fakeExportClient struct {
+	rows []*bqpb.TestAnalysisRow
+}
+
+func (cl *fakeExportClient) EnsureSchema(ctx context.Context) error {
+	return nil
+}
+
+func (cl *fakeExportClient) Insert(ctx context.Context, rows []*bqpb.TestAnalysisRow) error {
+	cl.rows = append(cl.rows, rows...)
+	return nil
+}
+
+func (cl *fakeExportClient) ReadTestFailureAnalysisRows(ctx context.Context) ([]*TestFailureAnalysisRow, error) {
+	return []*TestFailureAnalysisRow{
+		{
+			AnalysisID: 1001,
+		},
+		{
+			AnalysisID: 1003,
+		},
+		{
+			AnalysisID: 1005,
+		},
+	}, nil
 }

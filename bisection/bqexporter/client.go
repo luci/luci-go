@@ -20,11 +20,13 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/bigquery/storage/managedwriter"
+	"google.golang.org/api/iterator"
 	"google.golang.org/protobuf/proto"
 
 	bqpb "go.chromium.org/luci/bisection/proto/bq"
 	"go.chromium.org/luci/bisection/util/bqutil"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/service/info"
 )
 
 // NewClient creates a new client for exporting test analyses
@@ -100,4 +102,44 @@ func (client *Client) Insert(ctx context.Context, rows []*bqpb.TestAnalysisRow) 
 	// We use pending stream instead of default stream here because
 	// default stream does not offer exactly-once insert.
 	return writer.AppendRowsWithPendingStream(ctx, payload)
+}
+
+type TestFailureAnalysisRow struct {
+	// We only need analysis ID for now.
+	AnalysisID int64
+}
+
+// ReadTestFailureAnalysisRows returns the Test Failure analysis rows
+// in test_failure_analyses table that has created_time within the past 14 days.
+func (client *Client) ReadTestFailureAnalysisRows(ctx context.Context) ([]*TestFailureAnalysisRow, error) {
+	queryStm := fmt.Sprintf(`
+		SELECT DISTINCT
+			analysis_id as AnalysisID
+		FROM test_failure_analyses
+		WHERE created_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL %d DAY)
+ 	`, daysToLookBack)
+	q := client.bqClient.Query(queryStm)
+	q.DefaultDatasetID = bqutil.InternalDatasetID
+	q.DefaultProjectID = info.AppID(ctx)
+	job, err := q.Run(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "querying test failure analyses").Err()
+	}
+	it, err := job.Read(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rows := []*TestFailureAnalysisRow{}
+	for {
+		row := &TestFailureAnalysisRow{}
+		err := it.Next(row)
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, errors.Annotate(err, "obtain next test failure analysis row").Err()
+		}
+		rows = append(rows, row)
+	}
+	return rows, nil
 }
