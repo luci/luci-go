@@ -17,7 +17,7 @@ import { useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import { TasksServices } from '@/common/services/swarming';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { getBuildURLPathFromTags } from '@/swarming/tools/utils';

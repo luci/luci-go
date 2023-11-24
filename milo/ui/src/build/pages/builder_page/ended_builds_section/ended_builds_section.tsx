@@ -18,7 +18,7 @@ import { DateTime } from 'luxon';
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import {
   BuilderID,
   BuildsService,

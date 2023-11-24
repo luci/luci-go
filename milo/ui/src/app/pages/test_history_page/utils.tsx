@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import { QueryTestMetadataRequest, ResultDb } from '@/common/services/resultdb';
 
 const MAIN_GIT_REF = 'refs/heads/main';

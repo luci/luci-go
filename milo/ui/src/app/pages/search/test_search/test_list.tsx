@@ -15,7 +15,7 @@
 import { Link, Typography } from '@mui/material';
 import { Fragment } from 'react';
 
-import { useInfinitePrpcQuery } from '@/common/hooks/prpc_query';
+import { useInfinitePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import { TestHistoryService } from '@/common/services/luci_analysis';
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 

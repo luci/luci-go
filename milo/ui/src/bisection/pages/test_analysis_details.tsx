@@ -30,7 +30,7 @@ import { CulpritsTable } from '@/bisection/components/culprits_table/culprits_ta
 import { NthSectionAnalysisTable } from '@/bisection/components/nthsection_analysis_table/nthsection_analysis_table';
 import { TestFailuresTable } from '@/bisection/components/test_table/test_failures_table';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import { LUCIBisectionService } from '@/common/services/luci_bisection';
 
 import { TabPanel } from './analysis_details';

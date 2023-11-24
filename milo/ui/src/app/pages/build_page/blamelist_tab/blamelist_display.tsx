@@ -14,7 +14,7 @@
 
 import { Button, CircularProgress } from '@mui/material';
 
-import { useInfinitePrpcQuery } from '@/common/hooks/prpc_query';
+import { useInfinitePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import { BuilderID } from '@/common/services/buildbucket';
 import { GitilesCommit } from '@/common/services/common';
 import { MiloInternal } from '@/common/services/milo_internal';

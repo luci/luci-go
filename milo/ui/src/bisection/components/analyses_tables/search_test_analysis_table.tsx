@@ -20,7 +20,7 @@ import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import { LUCIBisectionService } from '@/common/services/luci_bisection';
 
 import { TestAnalysesTable } from './test_analyses_table';

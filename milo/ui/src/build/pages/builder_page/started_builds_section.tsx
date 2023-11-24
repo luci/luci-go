@@ -16,7 +16,7 @@ import { CircularProgress, Link } from '@mui/material';
 import { DateTime } from 'luxon';
 
 import { RelativeDurationBadge } from '@/common/components/relative_duration_badge';
-import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import {
   BuilderID,
   BuildsService,

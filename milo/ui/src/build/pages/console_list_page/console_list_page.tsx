@@ -19,7 +19,7 @@ import { useParams } from 'react-router-dom';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants';
-import { useInfinitePrpcQuery } from '@/common/hooks/prpc_query';
+import { useInfinitePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import { MiloInternal } from '@/common/services/milo_internal';
 
 import { ConsoleSnapshotRow } from './console_snapshot_row';

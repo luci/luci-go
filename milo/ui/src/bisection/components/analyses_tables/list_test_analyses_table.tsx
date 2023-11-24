@@ -24,7 +24,7 @@ import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import {
   LUCIBisectionService,
   TestAnalysis,

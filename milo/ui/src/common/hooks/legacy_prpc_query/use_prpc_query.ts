@@ -50,6 +50,8 @@ export interface UsePrpcQueryOptions<S, MK, Req, Res, TError, TData>
 }
 
 /**
+ * @deprecated use `usePrpcQuery` from `@common/hooks/prpc_query` instead.
+ *
  * Call a pRPC method via `@tanstack/react-query`.
  *
  * This hook

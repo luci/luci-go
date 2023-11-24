@@ -19,7 +19,7 @@ import { useParams } from 'react-router-dom';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants';
-import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import { ResultDb } from '@/common/services/resultdb';
 
 import { TestVerdictProvider } from './context';

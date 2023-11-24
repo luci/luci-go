@@ -14,7 +14,7 @@
 
 import { useMemo } from 'react';
 
-import { usePrpcQueries } from '@/common/hooks/prpc_query';
+import { usePrpcQueries } from '@/common/hooks/legacy_prpc_query';
 import {
   Build,
   BuildsService,

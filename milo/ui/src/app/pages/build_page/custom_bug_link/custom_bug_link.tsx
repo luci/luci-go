@@ -16,7 +16,7 @@ import { GrpcError } from '@chopsui/prpc-client';
 import { Link } from '@mui/material';
 
 import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants';
-import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import { Build } from '@/common/services/buildbucket';
 import { MiloInternal } from '@/common/services/milo_internal';
 import { renderBugUrlTemplate } from '@/common/tools/build_utils';

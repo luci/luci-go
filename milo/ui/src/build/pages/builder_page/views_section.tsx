@@ -14,7 +14,7 @@
 
 import { CircularProgress, Link } from '@mui/material';
 
-import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import { BuilderID } from '@/common/services/buildbucket';
 import { MiloInternal } from '@/common/services/milo_internal';
 import { extractProject } from '@/common/tools/utils';

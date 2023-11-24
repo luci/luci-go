@@ -16,7 +16,7 @@ import { Box, CircularProgress, Typography } from '@mui/material';
 import { useEffect, useMemo } from 'react';
 import { useLocalStorage } from 'react-use';
 
-import { useInfinitePrpcQuery } from '@/common/hooks/prpc_query/use_infinite_prpc_query';
+import { useInfinitePrpcQuery } from '@/common/hooks/legacy_prpc_query/use_infinite_prpc_query';
 import { MiloInternal } from '@/common/services/milo_internal';
 
 import { ProjectListDisplay } from './project_list_display';

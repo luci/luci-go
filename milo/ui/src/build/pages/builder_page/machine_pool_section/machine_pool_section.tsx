@@ -18,7 +18,7 @@ import { Alert, AlertTitle, CircularProgress, Link } from '@mui/material';
 import { useState } from 'react';
 
 import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants';
-import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import { StringPair } from '@/common/services/common';
 import {
   BotsService,

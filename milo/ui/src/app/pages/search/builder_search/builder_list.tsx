@@ -15,7 +15,7 @@
 import { groupBy, mapValues } from 'lodash-es';
 import { useEffect, useMemo } from 'react';
 
-import { useInfinitePrpcQuery } from '@/common/hooks/prpc_query';
+import { useInfinitePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import { MiloInternal } from '@/common/services/milo_internal';
 
 import { BuilderListDisplay } from './builder_list_display';

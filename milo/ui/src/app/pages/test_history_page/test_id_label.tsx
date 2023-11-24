@@ -14,7 +14,7 @@
 
 import Link from '@mui/material/Link';
 
-import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import { StringPair } from '@/common/services/common';
 import { MiloInternal, Project } from '@/common/services/milo_internal';
 import { TestMetadata } from '@/common/services/resultdb';

@@ -14,16 +14,16 @@
 
 import { act, render, screen } from '@testing-library/react';
 
-import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import { MiloInternal } from '@/common/services/milo_internal';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { CustomBugLink } from './custom_bug_link';
 
-jest.mock('@/common/hooks/prpc_query', () => {
+jest.mock('@/common/hooks/legacy_prpc_query', () => {
   return createSelectiveSpiesFromModule<
-    typeof import('@/common/hooks/prpc_query')
-  >('@/common/hooks/prpc_query', ['usePrpcQuery']);
+    typeof import('@/common/hooks/legacy_prpc_query')
+  >('@/common/hooks/legacy_prpc_query', ['usePrpcQuery']);
 });
 
 describe('CustomBugLink', () => {

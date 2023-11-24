@@ -16,7 +16,7 @@ import { UseQueryResult } from '@tanstack/react-query';
 import { cleanup, render, screen } from '@testing-library/react';
 import { act } from 'react-dom/test-utils';
 
-import { usePrpcQueries } from '@/common/hooks/prpc_query';
+import { usePrpcQueries } from '@/common/hooks/legacy_prpc_query';
 import {
   Build,
   BuildbucketStatus,
@@ -42,10 +42,10 @@ function createMockBuild(id: string): Build {
   };
 }
 
-jest.mock('@/common/hooks/prpc_query', () => {
+jest.mock('@/common/hooks/legacy_prpc_query', () => {
   return createSelectiveMockFromModule<
-    typeof import('@/common/hooks/prpc_query')
-  >('@/common/hooks/prpc_query', ['usePrpcQueries']);
+    typeof import('@/common/hooks/legacy_prpc_query')
+  >('@/common/hooks/legacy_prpc_query', ['usePrpcQueries']);
 });
 
 jest.mock('./related_build_table', () => {
