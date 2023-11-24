@@ -52,7 +52,7 @@ func TestCronHandler(t *testing.T) {
 			ctx, skdr := tq.TestingContext(ctx, nil)
 			err := CronHandler(ctx)
 			So(err, ShouldBeNil)
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 2)
 		})
 		Convey("analysis is disabled", func() {
 			ctx, skdr := tq.TestingContext(ctx, nil)
@@ -62,7 +62,7 @@ func TestCronHandler(t *testing.T) {
 			})
 			err := CronHandler(ctx)
 			So(err, ShouldBeNil)
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 2)
 		})
 		Convey("analysis is not supported", func() {
 			ctx, skdr := tq.TestingContext(ctx, nil)
@@ -72,7 +72,7 @@ func TestCronHandler(t *testing.T) {
 			})
 			err := CronHandler(ctx)
 			So(err, ShouldBeNil)
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 2)
 		})
 		Convey("analysis is not recent", func() {
 			ctx, skdr := tq.TestingContext(ctx, nil)
@@ -82,7 +82,7 @@ func TestCronHandler(t *testing.T) {
 			})
 			err := CronHandler(ctx)
 			So(err, ShouldBeNil)
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 2)
 		})
 		Convey("analysis is recent", func() {
 			ctx, skdr := tq.TestingContext(ctx, nil)
@@ -114,7 +114,7 @@ func TestCronHandler(t *testing.T) {
 
 			err := CronHandler(ctx)
 			So(err, ShouldBeNil)
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 2)
 			resultsTask := skdr.Tasks().Payloads()[0].(*tpb.TestFailureDetectionTask)
 			So(resultsTask, ShouldResembleProto, &tpb.TestFailureDetectionTask{
 				Project:           "chromium",
@@ -153,7 +153,7 @@ func TestCronHandler(t *testing.T) {
 
 			err := CronHandler(ctx)
 			So(err, ShouldBeNil)
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 2)
 			resultsTask := skdr.Tasks().Payloads()[0].(*tpb.TestFailureDetectionTask)
 			expectedDimensionExcludes := []*pb.Dimension{{Key: "os", Value: "test_os1"}, {Key: "os", Value: "compile_os1"}}
 			util.SortDimension(expectedDimensionExcludes)
@@ -207,6 +207,9 @@ func createCompileReruns(ctx context.Context, status buildbucketpb.Status, creat
 func setDailyLimit(ctx context.Context, limit int) {
 	projectCfg := config.CreatePlaceholderProjectConfig()
 	projectCfg.TestAnalysisConfig.DailyLimit = uint32(limit)
-	cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
+	cfg := map[string]*configpb.ProjectConfig{
+		"chromium": projectCfg,
+		"chrome":   projectCfg,
+	}
 	So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 }
