@@ -12,11 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { GrpcError } from '@chopsui/prpc-client';
+import Alert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
 import Divider from '@mui/material/Divider';
 
-import { TestResultBundle } from '@/common/services/resultdb';
+import { useProject } from '@/common/components/page_meta/page_meta_provider';
+import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import { ClustersService } from '@/common/services/luci_analysis';
+import { TestResultBundle, TestStatus } from '@/common/services/resultdb';
 
-import { TestResultsContextProvider } from './context';
+import { useTestVerdict } from '../context';
+
+import { TestResultsProvider } from './context';
 import { ResultDetails } from './result_details';
 import { ResultLogs } from './result_logs';
 import { ResultsHeader } from './results_header';
@@ -26,12 +34,61 @@ interface Props {
 }
 
 export function TestResults({ results }: Props) {
+  const project = useProject();
+  const verdict = useTestVerdict();
+  // We filter out skipped, passed, or expected results as these are not clustered.
+  const filteredResults = results.filter(
+    (r) =>
+      !r.result.expected &&
+      ![TestStatus.Pass, TestStatus.Skip].includes(r.result.status),
+  );
+  const {
+    data: clustersResponse,
+    error,
+    isError,
+  } = usePrpcQuery({
+    Service: ClustersService,
+    host: SETTINGS.luciAnalysis.host,
+    method: 'cluster',
+    options: {
+      enabled: !!project,
+    },
+    request: {
+      // The request is only enabled if the project is set.
+      project: project!,
+      testResults: filteredResults.map((r) => ({
+        testId: verdict.testId,
+        failureReason: r.result.failureReason && {
+          primaryErrorMessage: r.result.failureReason.primaryErrorMessage,
+        },
+      })),
+    },
+  });
+
+  if (error && !(error instanceof GrpcError)) {
+    throw error;
+  }
+
+  const resultsClustersMap = new Map(
+    clustersResponse?.clusteredTestResults.map((ctr, i) => [
+      filteredResults[i].result.resultId,
+      ctr.clusters,
+    ]),
+  );
+
   return (
-    <TestResultsContextProvider results={results}>
+    <TestResultsProvider results={results} clustersMap={resultsClustersMap}>
+      {isError && (
+        <Alert severity="error">
+          <AlertTitle>Failed to load clusters for results</AlertTitle>
+          Loading clusters failed due to:{' '}
+          {error instanceof GrpcError && error.message}
+        </Alert>
+      )}
       <ResultsHeader />
       <ResultDetails />
       <Divider orientation="horizontal" flexItem />
       <ResultLogs />
-    </TestResultsContextProvider>
+    </TestResultsProvider>
   );
 }

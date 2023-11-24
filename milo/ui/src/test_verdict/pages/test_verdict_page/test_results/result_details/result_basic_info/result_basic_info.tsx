@@ -24,10 +24,14 @@ import { Duration } from 'luxon';
 import { useState } from 'react';
 
 import { DurationBadge } from '@/common/components/duration_badge';
+import { useProject } from '@/common/components/page_meta/page_meta_provider';
+import { makeClusterLink } from '@/common/services/luci_analysis';
 import { TestResult, parseTestResultName } from '@/common/services/resultdb';
 import { parseProtoDuration } from '@/common/tools/time_utils';
 import { getSwarmingTaskURL } from '@/common/tools/url_utils';
 import { parseSwarmingTaskFromInvId } from '@/common/tools/utils';
+
+import { useClustersByResultId } from '../../context';
 
 interface Props {
   result: TestResult;
@@ -35,10 +39,18 @@ interface Props {
 
 export function ResultBasicInfo({ result }: Props) {
   const [expanded, setExpanded] = useState(true);
+  const clustersByResultId = useClustersByResultId(result.resultId);
+  const project = useProject();
+
   const parsedResultName = parseTestResultName(result.name);
   const swarmingTaskId = parseSwarmingTaskFromInvId(
     parsedResultName.invocationId,
   );
+  // There can be at most one failureReason cluster.
+  const reasonCluster = clustersByResultId?.filter((c) =>
+    c.clusterId.algorithm.startsWith('reason-'),
+  )?.[0];
+
   return (
     <Accordion
       variant="outlined"
@@ -93,10 +105,20 @@ export function ResultBasicInfo({ result }: Props) {
           {result.failureReason && (
             <Grid item container columnGap={1} alignItems="center">
               <Grid item>
-                Failure reason (
-                {/** TODO(b/309560827): add similar failures url. */}
-                <Link href="#">similar failures</Link>
-                ):
+                Failure reason
+                {reasonCluster && project && (
+                  <>
+                    (
+                    <Link
+                      target="_blank"
+                      href={makeClusterLink(project, reasonCluster.clusterId)}
+                    >
+                      similar failures
+                    </Link>
+                    )
+                  </>
+                )}
+                :
               </Grid>
               <Grid
                 className="failure-bg"

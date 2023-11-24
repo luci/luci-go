@@ -27,27 +27,24 @@ interface TestVerdictContext {
   readonly invocationID: string;
   readonly testVerdict: TestVariant;
   readonly setTestVerdict: Dispatch<SetStateAction<TestVariant>>;
-  readonly project: string;
   readonly sources: Sources;
 }
 
 const TestVerdictCtx = createContext<TestVerdictContext | null>(null);
 
-export interface TestVerdictContextProviderProps {
+export interface TestVerdictProviderProps {
   readonly children: ReactNode;
   readonly invocationID: string;
   readonly testVerdict: TestVariant;
-  readonly project: string;
   readonly sources: Sources;
 }
 
-export function TestVerdictContextProvider({
+export function TestVerdictProvider({
   children,
   invocationID,
   testVerdict,
-  project,
   sources,
-}: TestVerdictContextProviderProps) {
+}: TestVerdictProviderProps) {
   const [verdict, setVerdict] = useState(testVerdict);
   return (
     <TestVerdictCtx.Provider
@@ -55,7 +52,6 @@ export function TestVerdictContextProvider({
         invocationID,
         testVerdict: verdict,
         setTestVerdict: setVerdict,
-        project,
         sources,
       }}
     >
@@ -67,9 +63,7 @@ export function TestVerdictContextProvider({
 export function useInvocationID() {
   const context = useContext(TestVerdictCtx);
   if (!context) {
-    throw Error(
-      'useInvocationID can only be used in a TestVerdictContextProvider.',
-    );
+    throw Error('useInvocationID can only be used in a TestVerdictProvider.');
   }
   return context.invocationID;
 }
@@ -77,9 +71,7 @@ export function useInvocationID() {
 export function useTestVerdict() {
   const context = useContext(TestVerdictCtx);
   if (!context) {
-    throw Error(
-      'useTestVerdict can only be used in a TestVerdictContextProvider.',
-    );
+    throw Error('useTestVerdict can only be used in a TestVerdictProvider.');
   }
   return context.testVerdict;
 }
@@ -87,25 +79,15 @@ export function useTestVerdict() {
 export function useSetTestVerdict() {
   const context = useContext(TestVerdictCtx);
   if (!context) {
-    throw Error(
-      'useSetTestVerdict can only be used in a TestVerdictContextProvider.',
-    );
+    throw Error('useSetTestVerdict can only be used in a TestVerdictProvider.');
   }
   return context.setTestVerdict;
-}
-
-export function useProject() {
-  const context = useContext(TestVerdictCtx);
-  if (!context) {
-    throw Error('useProject can only be used in a TestVerdictContextProvider.');
-  }
-  return context.project;
 }
 
 export function useSources() {
   const context = useContext(TestVerdictCtx);
   if (!context) {
-    throw Error('useSources can only be used in a TestVerdictContextProvider.');
+    throw Error('useSources can only be used in a TestVerdictProvider.');
   }
   return context.sources;
 }

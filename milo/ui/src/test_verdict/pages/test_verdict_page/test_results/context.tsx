@@ -21,30 +21,35 @@ import {
   useState,
 } from 'react';
 
+import { Cluster } from '@/common/services/luci_analysis';
 import { TestResultBundle } from '@/common/services/resultdb';
 
 interface TestResultsContext {
   readonly results: readonly TestResultBundle[];
+  readonly clustersMap?: ReadonlyMap<string, readonly Cluster[]>;
   readonly selectedResultIndex: number;
   readonly setSelectedResultIndex: Dispatch<SetStateAction<number>>;
 }
 
 export const TestResultsCtx = createContext<TestResultsContext | null>(null);
 
-interface TestResultsContextProviderProps {
+interface TestResultsProviderProps {
   readonly children: ReactNode;
   readonly results: readonly TestResultBundle[];
+  readonly clustersMap?: ReadonlyMap<string, readonly Cluster[]>;
 }
 
-export function TestResultsContextProvider({
+export function TestResultsProvider({
   children,
   results,
-}: TestResultsContextProviderProps) {
+  clustersMap,
+}: TestResultsProviderProps) {
   const [selectedResultIndex, setSelectedResultIndex] = useState(0);
   return (
     <TestResultsCtx.Provider
       value={{
         results,
+        clustersMap,
         selectedResultIndex,
         setSelectedResultIndex,
       }}
@@ -58,17 +63,27 @@ export function useResults() {
   const context = useContext(TestResultsCtx);
   if (!context) {
     throw Error(
-      'useSelectedResultIndex can only be used in a TestResultsContextProvider.',
+      'useSelectedResultIndex can only be used in a TestResultsProvider.',
     );
   }
   return context.results;
+}
+
+export function useClustersByResultId(resultId: string) {
+  const context = useContext(TestResultsCtx);
+  if (!context) {
+    throw Error(
+      'useClustersByResultId can only be used in a TestResultsProvider.',
+    );
+  }
+  return context.clustersMap && context.clustersMap.get(resultId);
 }
 
 export function useSelectedResultIndex() {
   const context = useContext(TestResultsCtx);
   if (!context) {
     throw Error(
-      'useSelectedResultIndex can only be used in a TestResultsContextProvider.',
+      'useSelectedResultIndex can only be used in a TestResultsProvider.',
     );
   }
   return context.selectedResultIndex;
@@ -78,8 +93,19 @@ export function useSetSelectedResultIndex() {
   const context = useContext(TestResultsCtx);
   if (!context) {
     throw Error(
-      'useSetSelectedResultIndex can only be used in a TestResultsContextProvider.',
+      'useSetSelectedResultIndex can only be used in a TestResultsProvider.',
     );
   }
   return context.setSelectedResultIndex;
+}
+
+export function useSelectedResult() {
+  const context = useContext(TestResultsCtx);
+  if (!context) {
+    throw Error(
+      'useSetSelectedResultIndex can only be used in a TestResultsProvider.',
+    );
+  }
+
+  return context.results[context.selectedResultIndex];
 }

@@ -64,8 +64,8 @@ export function ResultTags({ tags }: Props) {
           <Grid item xs={2}>
             <Table size="small">
               <TableBody>
-                {tags.map((entry) => (
-                  <TableRow key={entry.key}>
+                {tags.map((entry, i) => (
+                  <TableRow key={entry.key + '/' + i}>
                     <TableCell>{entry.key}</TableCell>
                     <TableCell>{entry.value}</TableCell>
                   </TableRow>

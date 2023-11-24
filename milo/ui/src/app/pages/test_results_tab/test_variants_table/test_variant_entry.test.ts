@@ -203,6 +203,7 @@ describe('TestVariantEntry', () => {
           { testId: 'test-id', failureReason: undefined },
         ],
       },
+      {},
       { maxPendingMs: 1000 },
     ]);
   });
@@ -249,6 +250,7 @@ describe('TestVariantEntry', () => {
         project: 'proj',
         testResults: [{ testId: 'test-id', failureReason: undefined }],
       },
+      {},
       { maxPendingMs: 1000 },
     ]);
 

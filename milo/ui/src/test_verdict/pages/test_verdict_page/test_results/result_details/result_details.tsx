@@ -14,17 +14,13 @@
 
 import Grid from '@mui/material/Grid';
 
-import { useTestVerdict } from '../../context';
-import { useSelectedResultIndex } from '../context';
+import { useSelectedResult } from '../context';
 
 import { ResultBasicInfo } from './result_basic_info';
 import { ResultTags } from './result_tags';
 
 export function ResultDetails() {
-  const selectedResultIndex = useSelectedResultIndex();
-  const verdict = useTestVerdict();
-
-  const result = verdict.results![selectedResultIndex];
+  const result = useSelectedResult();
   return (
     <Grid item container flexDirection="column">
       <ResultBasicInfo result={result.result} />

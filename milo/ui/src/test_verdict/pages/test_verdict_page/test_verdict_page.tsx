@@ -22,7 +22,7 @@ import { UiPage } from '@/common/constants';
 import { usePrpcQuery } from '@/common/hooks/prpc_query';
 import { ResultDb } from '@/common/services/resultdb';
 
-import { TestVerdictContextProvider } from './context';
+import { TestVerdictProvider } from './context';
 import { TestIdentifier } from './test_identifier';
 import { TestResults } from './test_results';
 import { VerdictInfo } from './verdict_info';
@@ -84,16 +84,15 @@ export function TestVerdictPage() {
     >
       {/** TODO(b/308858986): Format metadata to reflect verdict status. */}
       <PageMeta title="" selectedPage={UiPage.TestVerdict} project={project} />
-      <TestVerdictContextProvider
+      <TestVerdictProvider
         invocationID={invID}
         testVerdict={verdict}
-        project={project}
         sources={sources}
       >
         <TestIdentifier />
         <VerdictInfo />
         {verdict.results && <TestResults results={verdict.results} />}
-      </TestVerdictContextProvider>
+      </TestVerdictProvider>
     </Grid>
   );
 }

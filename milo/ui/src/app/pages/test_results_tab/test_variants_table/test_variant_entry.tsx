@@ -135,6 +135,7 @@ export class TestVariantEntryElement
               },
             })),
           },
+          {},
           { maxPendingMs: 1000 },
         )
         .catch((err) => {

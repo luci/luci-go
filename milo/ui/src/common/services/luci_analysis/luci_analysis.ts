@@ -320,8 +320,8 @@ export class ClustersService {
 
   async cluster(
     req: ClusterRequest,
-    batchOpt: BatchOption = {},
     cacheOpt: CacheOption = {},
+    batchOpt: BatchOption = {},
   ): Promise<ClusterResponse> {
     return (await this.cachedBatchedCluster(
       cacheOpt,

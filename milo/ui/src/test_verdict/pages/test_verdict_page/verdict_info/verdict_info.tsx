@@ -20,6 +20,7 @@ import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import { Fragment, useState } from 'react';
 
+import { useProject } from '@/common/components/page_meta/page_meta_provider';
 import { getSortedTestVariantDef } from '@/common/services/resultdb';
 import {
   generateTestHistoryURLSearchParams,
@@ -27,7 +28,7 @@ import {
   getTestHistoryURLWithSearchParam,
 } from '@/common/tools/url_utils';
 
-import { useProject, useTestVerdict } from '../context';
+import { useTestVerdict } from '../context';
 
 export function VerdictInfo() {
   const verdict = useTestVerdict();
@@ -37,6 +38,11 @@ export function VerdictInfo() {
   function toggleDrawer(open: boolean) {
     setDrawerOpen(open);
   }
+
+  if (!project) {
+    throw new Error('Invariant violated: a project must be selected.');
+  }
+
   return (
     <Grid item container columnGap={1} alignItems="center" sx={{ ml: 0.5 }}>
       <Typography fontSize="0.9rem">
@@ -47,9 +53,10 @@ export function VerdictInfo() {
           </Fragment>
         ))}
       </Typography>
+
       <Divider orientation="vertical" flexItem />
       <Link
-        target="blank"
+        target="_blank"
         href={getTestHistoryURLWithSearchParam(
           project,
           verdict,
@@ -58,6 +65,7 @@ export function VerdictInfo() {
       >
         History
       </Link>
+
       {verdict.testMetadata?.location && (
         <>
           <Divider orientation="vertical" flexItem />
