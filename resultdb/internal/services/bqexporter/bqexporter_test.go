@@ -98,7 +98,8 @@ func TestExportToBigQuery(t *testing.T) {
 					Variant:     pbutil.Variant("k2", "v2", "k3", "v3"),
 					VariantHash: pbutil.VariantHash(pbutil.Variant("k2", "v2", "k3", "v3")),
 					Expected:    true,
-					Status:      pb.TestStatus_PASS,
+					Status:      pb.TestStatus_SKIP,
+					SkipReason:  pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS,
 					Properties: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
 							"key_1": structpb.NewStringValue("value_1"),
@@ -172,8 +173,10 @@ func TestExportToBigQuery(t *testing.T) {
 							}),
 						},
 					})
+					So(tr.SkipReason, ShouldEqual, pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS.String())
 				} else {
 					So(tr.Properties, ShouldBeNil)
+					So(tr.SkipReason, ShouldBeEmpty)
 				}
 
 				So(tr.Sources, ShouldResembleProto, testutil.TestSources())

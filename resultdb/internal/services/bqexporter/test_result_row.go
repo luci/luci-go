@@ -110,6 +110,10 @@ func (i *testResultRowInput) row() proto.Message {
 		Properties:    tr.Properties,
 	}
 
+	if tr.Status == pb.TestStatus_SKIP {
+		ret.SkipReason = tr.SkipReason.String()
+	}
+
 	if len(ret.SummaryHtml) > maxSummaryLength {
 		ret.SummaryHtml = "[Trimmed] " + ret.SummaryHtml[:maxSummaryLength]
 	}
