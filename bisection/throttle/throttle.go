@@ -45,13 +45,10 @@ const (
 )
 
 func CronHandler(ctx context.Context) error {
-	// TODO (nqmtuan): This does not seem to return chromium project in prod.
-	// Enable this back when we know what is wrong.
-	// projectsToProcess, err := config.SupportedProjects(ctx)
-	// if err != nil {
-	// 	return errors.Annotate(err, "supported projects").Err()
-	// }
-	projectsToProcess := []string{"chromium", "chrome"}
+	projectsToProcess, err := config.SupportedProjects(ctx)
+	if err != nil {
+		return errors.Annotate(err, "supported projects").Err()
+	}
 	for _, project := range projectsToProcess {
 		count, err := dailyAnalysisCount(ctx, project)
 		if err != nil {
