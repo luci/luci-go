@@ -47,9 +47,11 @@ rm -rf google
 
 # Get pinned version of googleapis that the version of
 # google.golang.org/genproto in go.mod pins.
-export GOPATH=$HOME/go
 genproto_version=$(grep "google.golang.org/genproto" ../../../go.sum | grep -v go.mod | awk '{print $2}' | sort -V | tail -n1)
-googleapis_version=$(cat "${GOPATH}/pkg/mod/google.golang.org/genproto@${genproto_version}/regen.txt")
+genproto_mod_dir=$(go mod download -json google.golang.org/genproto | \
+  python3 -c "import sys, json; print(json.load(sys.stdin)['Dir'])")
+googleapis_version=$(cat "${genproto_mod_dir}/regen.txt")
+
 echo "using googleapis hash: ${googleapis_version}"
 
 # Grab the most recent checkout of "googleapis" repo.
