@@ -17,24 +17,28 @@
 // It handles task queue tasks and cron jobs.
 package main
 
+// Disable linting for imports, because of the dependency on config
+// validation globals.
+//nolint:all
 import (
+	"context"
+
+	"go.chromium.org/luci/auth_service/impl"
+	"go.chromium.org/luci/auth_service/impl/model"
+
 	// Ensure registration of validation rules.
 	// NOTE: this must go before anything that depends on validation globals,
 	// e.g. cfgcache.Register in srvcfg files in allowlistcfg/ or oauthcfg/.
 	"go.chromium.org/luci/auth_service/internal/configs/validation"
 
-	"context"
-
-	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/cron"
-	"go.chromium.org/luci/server/module"
-
-	"go.chromium.org/luci/auth_service/impl"
-	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/allowlistcfg"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/oauthcfg"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/permissionscfg"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/securitycfg"
+
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/cron"
+	"go.chromium.org/luci/server/module"
 )
 
 func main() {
@@ -43,6 +47,7 @@ func main() {
 	}
 
 	impl.Main(modules, func(srv *server.Server) error {
+		dryRun := true
 		cron.RegisterHandler("update-config", func(ctx context.Context) error {
 			historicalComment := "Updated from update-config cron"
 
@@ -58,7 +63,7 @@ func main() {
 			if err != nil {
 				return err
 			}
-			if err := model.UpdateAllowlistEntities(ctx, subnets, true, historicalComment); err != nil {
+			if err := model.UpdateAllowlistEntities(ctx, subnets, dryRun, historicalComment); err != nil {
 				return err
 			}
 
@@ -80,7 +85,7 @@ func main() {
 				return err
 			}
 
-			if err := model.UpdateAuthGlobalConfig(ctx, oauthcfg, securitycfg, true, historicalComment); err != nil {
+			if err := model.UpdateAuthGlobalConfig(ctx, oauthcfg, securitycfg, dryRun, historicalComment); err != nil {
 				return err
 			}
 			return nil
@@ -91,11 +96,11 @@ func main() {
 			if err := permissionscfg.Update(ctx); err != nil {
 				return err
 			}
-			permscfg, err := permissionscfg.Get(ctx)
+			permsCfg, err := permissionscfg.Get(ctx)
 			if err != nil {
 				return err
 			}
-			if err := model.UpdateAuthRealmsGlobals(ctx, permscfg, true, "Updated from update-realms cron"); err != nil {
+			if err := model.UpdateAuthRealmsGlobals(ctx, permsCfg, dryRun, "Updated from update-realms cron"); err != nil {
 				return err
 			}
 			return nil
