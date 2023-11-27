@@ -123,14 +123,14 @@ func TestUpdate(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		opts := updateOptions{
-			uiBaseURL:                "https://luci-analysis-test.appspot.com",
-			project:                  project,
-			analysisClient:           analysisClient,
-			buganizerClient:          buganizerClient,
-			monorailClient:           monorailClient,
-			maxBugsFiledPerRun:       1,
-			reclusteringProgress:     progress,
-			runTimestamp:             time.Date(2100, 2, 2, 2, 2, 2, 2, time.UTC),
+			uiBaseURL:            "https://luci-analysis-test.appspot.com",
+			project:              project,
+			analysisClient:       analysisClient,
+			buganizerClient:      buganizerClient,
+			monorailClient:       monorailClient,
+			maxBugsFiledPerRun:   1,
+			reclusteringProgress: progress,
+			runTimestamp:         time.Date(2100, 2, 2, 2, 2, 2, 2, time.UTC),
 		}
 
 		// Mock current time. This is needed to control behaviours like

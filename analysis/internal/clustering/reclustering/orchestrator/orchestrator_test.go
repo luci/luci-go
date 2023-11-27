@@ -453,7 +453,7 @@ func readRuns(ctx context.Context, projects []string) map[string]*runs.Recluster
 
 	result := make(map[string]*runs.ReclusteringRun)
 	for _, project := range projects {
-		run, err := runs.ReadLast(txn, project)
+		run, err := runs.ReadLastUpTo(txn, project, runs.MaxAttemptTimestamp)
 		So(err, ShouldBeNil)
 		result[project] = run
 	}

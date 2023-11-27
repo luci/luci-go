@@ -73,40 +73,55 @@ func TestSpan(t *testing.T) {
 					So(run, ShouldResemble, runs[2])
 				})
 			})
-			Convey(`ReadLast`, func() {
+			Convey(`ReadLastUpTo`, func() {
 				Convey(`Not Exists`, func() {
-					run, err := ReadLast(span.Single(ctx), "emptyproject")
+					run, err := ReadLastUpTo(span.Single(ctx), "emptyproject", MaxAttemptTimestamp)
 					So(err, ShouldBeNil)
 					So(run, ShouldResemble, expectedFake)
 				})
-				Convey(`Exists`, func() {
-					run, err := ReadLast(span.Single(ctx), testProject)
+				Convey(`Latest`, func() {
+					run, err := ReadLastUpTo(span.Single(ctx), testProject, MaxAttemptTimestamp)
 					So(err, ShouldBeNil)
 					So(run, ShouldResemble, runs[1])
 				})
+				Convey(`Stale`, func() {
+					run, err := ReadLastUpTo(span.Single(ctx), testProject, reference.Add(-10*time.Minute))
+					So(err, ShouldBeNil)
+					So(run, ShouldResemble, runs[2])
+				})
 			})
-			Convey(`ReadLastWithProgress`, func() {
+			Convey(`ReadLastWithProgressUpTo`, func() {
 				Convey(`Not Exists`, func() {
-					run, err := ReadLastWithProgress(span.Single(ctx), "emptyproject")
+					run, err := ReadLastWithProgressUpTo(span.Single(ctx), "emptyproject", MaxAttemptTimestamp)
 					So(err, ShouldBeNil)
 					So(run, ShouldResemble, expectedFake)
 				})
 				Convey(`Exists`, func() {
-					run, err := ReadLastWithProgress(span.Single(ctx), testProject)
+					run, err := ReadLastWithProgressUpTo(span.Single(ctx), testProject, MaxAttemptTimestamp)
 					So(err, ShouldBeNil)
 					So(run, ShouldResemble, runs[3])
 				})
+				Convey(`Stale`, func() {
+					run, err := ReadLastWithProgressUpTo(span.Single(ctx), testProject, reference.Add(-30*time.Minute))
+					So(err, ShouldBeNil)
+					So(run, ShouldResemble, runs[4])
+				})
 			})
-			Convey(`ReadLastComplete`, func() {
+			Convey(`ReadLastCompleteUpTo`, func() {
 				Convey(`Not Exists`, func() {
-					run, err := ReadLastComplete(span.Single(ctx), "emptyproject")
+					run, err := ReadLastCompleteUpTo(span.Single(ctx), "emptyproject", MaxAttemptTimestamp)
 					So(err, ShouldBeNil)
 					So(run, ShouldResemble, expectedFake)
 				})
 				Convey(`Exists`, func() {
-					run, err := ReadLastComplete(span.Single(ctx), testProject)
+					run, err := ReadLastCompleteUpTo(span.Single(ctx), testProject, MaxAttemptTimestamp)
 					So(err, ShouldBeNil)
 					So(run, ShouldResemble, runs[5])
+				})
+				Convey(`Stale`, func() {
+					run, err := ReadLastCompleteUpTo(span.Single(ctx), testProject, reference.Add(-50*time.Minute))
+					So(err, ShouldBeNil)
+					So(run, ShouldResemble, runs[6])
 				})
 			})
 		})
@@ -185,6 +200,25 @@ func TestSpan(t *testing.T) {
 				So(progress.Next.ConfigVersion, ShouldEqual, configVersion)
 				So(progress.IsReclusteringToNewAlgorithms(), ShouldBeFalse)
 				So(progress.IsReclusteringToNewConfig(), ShouldBeFalse)
+			})
+			Convey(`Stale Progress Read`, func() {
+				rulesVersion := time.Date(2021, time.January, 1, 1, 0, 0, 0, time.UTC)
+
+				reference := time.Date(2020, time.January, 1, 1, 0, 0, 0, time.UTC)
+				runs := []*ReclusteringRun{
+					NewRun(0).WithAttemptTimestamp(reference.Add(-1 * time.Minute)).WithRulesVersion(rulesVersion.Add(1 * time.Hour)).WithCompletedProgress().Build(),
+					NewRun(1).WithAttemptTimestamp(reference.Add(-5 * time.Minute)).WithRulesVersion(rulesVersion).WithNoReportedProgress().Build(),
+					NewRun(2).WithAttemptTimestamp(reference.Add(-10 * time.Minute)).WithRulesVersion(rulesVersion).WithReportedProgress(500).Build(),
+					NewRun(3).WithAttemptTimestamp(reference.Add(-20 * time.Minute)).WithRulesVersion(rulesVersion.Add(-1 * time.Hour)).WithCompletedProgress().Build(),
+				}
+				err := SetRunsForTesting(ctx, runs)
+				So(err, ShouldBeNil)
+
+				progress, err := ReadReclusteringProgressUpTo(ctx, testProject, reference.Add(-2*time.Minute))
+				So(err, ShouldBeNil)
+
+				So(progress.IncorporatesRulesVersion(rulesVersion), ShouldBeFalse)
+				So(progress.IncorporatesRulesVersion(rulesVersion.Add(-1*time.Hour)), ShouldBeTrue)
 			})
 			Convey(`Uses live progress`, func() {
 				rulesVersion := time.Date(2021, time.January, 1, 1, 0, 0, 0, time.UTC)

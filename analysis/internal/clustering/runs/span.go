@@ -65,6 +65,10 @@ var NotFound = errors.New("reclustering run row not found")
 // StartingEpoch is the earliest valid run attempt time.
 var StartingEpoch = shards.StartingEpoch
 
+// MaxAttemptTimestamp can be passed to any Read....() method to
+// return data up to the last attempt.
+var MaxAttemptTimestamp = time.Date(9999, 12, 31, 23, 59, 0, 0, time.UTC)
+
 // Read reads the run with the given attempt timestamp in the given LUCI
 // project. If the row does not exist, the error NotFound is returned.
 func Read(ctx context.Context, projectID string, attemptTimestamp time.Time) (*ReclusteringRun, error) {
@@ -82,7 +86,8 @@ func Read(ctx context.Context, projectID string, attemptTimestamp time.Time) (*R
 	return r, nil
 }
 
-// ReadLast reads the last run in the given LUCI project. If no row exists,
+// ReadLastUpTo reads the last run in the given LUCI project up to
+// the given attempt timestamp. If no row exists,
 // a fake run is returned with the following details:
 // - Project matching the requested Project ID.
 // - AttemptTimestamp of StartingEpoch.
@@ -91,9 +96,12 @@ func Read(ctx context.Context, projectID string, attemptTimestamp time.Time) (*R
 // - RulesVersion of rules.StartingEpoch.
 // - ShardCount and ShardsReported of 1.
 // - Progress of 1000.
-func ReadLast(ctx context.Context, projectID string) (*ReclusteringRun, error) {
-	whereClause := `TRUE`
-	r, err := readLastWhere(ctx, projectID, whereClause, nil)
+func ReadLastUpTo(ctx context.Context, projectID string, upToAttemptTimestamp time.Time) (*ReclusteringRun, error) {
+	whereClause := `AttemptTimestamp <= @upToAttemptTimestamp`
+	params := map[string]any{
+		"upToAttemptTimestamp": upToAttemptTimestamp,
+	}
+	r, err := readLastWhere(ctx, projectID, whereClause, params)
 	if err != nil {
 		return nil, errors.Annotate(err, "query last run").Err()
 	}
@@ -104,12 +112,17 @@ func ReadLast(ctx context.Context, projectID string) (*ReclusteringRun, error) {
 }
 
 // ReadLastWithProgress reads the last run with progress in the given LUCI
-// project. If no row exists, a fake row is returned; see ReadLast for details.
-func ReadLastWithProgress(ctx context.Context, projectID string) (*ReclusteringRun, error) {
-	whereClause := `ShardsReported = ShardCount`
-	r, err := readLastWhere(ctx, projectID, whereClause, nil)
+// project up to the given attempt timestamp.
+//
+// If no row exists, a fake row is returned; see ReadLast for details.
+func ReadLastWithProgressUpTo(ctx context.Context, projectID string, upToAttemptTimestamp time.Time) (*ReclusteringRun, error) {
+	whereClause := `ShardsReported = ShardCount AND AttemptTimestamp <= @upToAttemptTimestamp`
+	params := map[string]any{
+		"upToAttemptTimestamp": upToAttemptTimestamp,
+	}
+	r, err := readLastWhere(ctx, projectID, whereClause, params)
 	if err != nil {
-		return nil, errors.Annotate(err, "query last run").Err()
+		return nil, errors.Annotate(err, "query last run with progress up to").Err()
 	}
 	if r == nil {
 		r = fakeLastRow(projectID)
@@ -117,13 +130,17 @@ func ReadLastWithProgress(ctx context.Context, projectID string) (*ReclusteringR
 	return r, nil
 }
 
-// ReadLastComplete reads the last run that completed in the given LUCI
-// project. If no row exists, a fake row is returned; see ReadLast for details.
-func ReadLastComplete(ctx context.Context, projectID string) (*ReclusteringRun, error) {
-	whereClause := `Progress = (ShardCount * 1000)`
-	r, err := readLastWhere(ctx, projectID, whereClause, nil)
+// ReadLastCompleteUpTo reads the last run that completed in the given LUCI
+// project up to the given attempt timestamp.
+// If no row exists, a fake row is returned; see ReadLast for details.
+func ReadLastCompleteUpTo(ctx context.Context, projectID string, upToAttemptTimestamp time.Time) (*ReclusteringRun, error) {
+	whereClause := `Progress = (ShardCount * 1000) AND AttemptTimestamp <= @upToAttemptTimestamp`
+	params := map[string]any{
+		"upToAttemptTimestamp": upToAttemptTimestamp,
+	}
+	r, err := readLastWhere(ctx, projectID, whereClause, params)
 	if err != nil {
-		return nil, errors.Annotate(err, "query last run").Err()
+		return nil, errors.Annotate(err, "query last run up to").Err()
 	}
 	if r == nil {
 		r = fakeLastRow(projectID)

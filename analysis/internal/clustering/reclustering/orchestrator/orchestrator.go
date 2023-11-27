@@ -267,11 +267,11 @@ func startProjectRun(ctx context.Context, project string, runEnd time.Time, work
 	var progress *metrics
 	var newRun *runs.ReclusteringRun
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-		lastComplete, err := runs.ReadLastComplete(ctx, project)
+		lastComplete, err := runs.ReadLastCompleteUpTo(ctx, project, runs.MaxAttemptTimestamp)
 		if err != nil {
 			return errors.Annotate(err, "read last complete run").Err()
 		}
-		lastRun, err := runs.ReadLast(ctx, project)
+		lastRun, err := runs.ReadLastUpTo(ctx, project, runs.MaxAttemptTimestamp)
 		if err != nil {
 			return errors.Annotate(err, "read last run").Err()
 		}

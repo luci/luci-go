@@ -53,15 +53,39 @@ type ReclusteringProgress struct {
 // ReadReclusteringProgress reads the re-clustering progress for
 // the given LUCI project.
 func ReadReclusteringProgress(ctx context.Context, project string) (*ReclusteringProgress, error) {
+	return ReadReclusteringProgressUpTo(ctx, project, MaxAttemptTimestamp)
+}
+
+// ReadReclusteringProgressUpTo reads the re-clustering progress for
+// the given LUCI project up to the given reclustering attempt
+// timestamp.
+//
+// For the latest re-clustering progess, pass MaxAttemptTimestamp.
+// For re-clustering as it was at a given attempt minute in the
+// past, pass the timestamp for that minute. Reading past reclustering
+// progress is useful for understanding the versions of rules and
+// algorithms reflected in outputs of BigQuery jobs which ran
+// using data some minutes old.
+//
+// When reading historic progress, data for reclustering progress
+// as it was part way through a minute is not available; this is
+// also why the passed timestamp is called 'upToAttemptTimestamp'
+// not an asAtTime.
+func ReadReclusteringProgressUpTo(ctx context.Context, project string, upToAttemptTimestamp time.Time) (*ReclusteringProgress, error) {
+
+	// Reading reclustering progress as at a time in the past can also
+	// be achieved with Spanner stale reads, but this does not have
+	// good testability. Implement reading past reclustering state
+	// using the history we are already storing in the table.
 	txn, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 
-	lastCompleted, err := ReadLastComplete(txn, project)
+	lastCompleted, err := ReadLastCompleteUpTo(txn, project, upToAttemptTimestamp)
 	if err != nil {
 		return nil, err
 	}
 
-	last, err := ReadLast(txn, project)
+	last, err := ReadLastUpTo(txn, project, upToAttemptTimestamp)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +109,7 @@ func ReadReclusteringProgress(ctx context.Context, project string) (*Reclusterin
 	} else {
 		// Otherwise, try to use the progress that was on the last
 		// run with progress.
-		lastWithProgress, err := ReadLastWithProgress(txn, project)
+		lastWithProgress, err := ReadLastWithProgressUpTo(txn, project, upToAttemptTimestamp)
 		if err != nil {
 			return nil, err
 		}
