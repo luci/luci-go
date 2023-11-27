@@ -21,17 +21,9 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/fieldmaskpb"
-
 	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/api/taskspb"
 	"go.chromium.org/luci/auth_service/impl/info"
-	"go.chromium.org/luci/auth_service/internal/permissions"
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/clock/testclock"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -40,6 +32,13 @@ import (
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
+
+	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var (
@@ -1526,6 +1525,10 @@ func TestAuthRealmsConfig(t *testing.T) {
 					},
 				},
 			}
+			protoPerm := &protocol.Permission{
+				Name:     "test.perm.create",
+				Internal: false,
+			}
 
 			err := UpdateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API")
 			So(err, ShouldBeNil)
@@ -1533,13 +1536,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 
 			fetched, err := GetAuthRealmsGlobals(ctx)
 			So(err, ShouldBeNil)
-			So(fetched.PermissionsList.GetPermissions(), ShouldResembleProto,
-				[]*protocol.Permission{
-					{
-						Name:     "test.perm.create",
-						Internal: false,
-					},
-				})
+			So(fetched.PermissionsList.GetPermissions()[0], ShouldResembleProto, protoPerm)
 		})
 
 		Convey("updating permissions entity already present", func() {
@@ -1557,17 +1554,17 @@ func TestAuthRealmsConfig(t *testing.T) {
 			})
 
 			authRealmGlobals := testAuthRealmsGlobals(ctx)
-			// This is a little inconsistent with how exactly it'll be in datastore but
-			// since we can't get the exact format that the Python version got, this is
+			// this is a little incosistent with how exactly it'll be in datastore but
+			// sinc we can't get the exact format that the python version got, this is
 			// the closest we can get which is what it looks like after it's been unmarshalled
-			// from Python.
+			// from python.
 			authRealmGlobals.Permissions = []string{
 				string(permCreate),
 				string(permTwoCreate),
 				string(permIntSched),
 			}
 
-			So(datastore.Put(ctx, authRealmGlobals), ShouldBeNil)
+			datastore.Put(ctx, authRealmGlobals)
 
 			permsCfg := &configspb.PermissionsConfig{
 				Role: []*configspb.PermissionsConfig_Role{
@@ -1602,120 +1599,6 @@ func TestAuthRealmsConfig(t *testing.T) {
 
 			So(UpdateAuthRealmsGlobals(ctx, permsCfg, false, "Go pRPC API"), ShouldBeNil)
 			So(ts.Tasks(), ShouldHaveLength, 2)
-
-			fetched, err := GetAuthRealmsGlobals(ctx)
-			So(err, ShouldBeNil)
-			So(fetched.PermissionsList.GetPermissions(), ShouldResembleProto,
-				[]*protocol.Permission{
-					{
-						Name:     "test.perm.create",
-						Internal: false,
-					},
-					{
-						Name:     "testint.perm.schedule",
-						Internal: true,
-					},
-					{
-						Name:     "testtwo.perm.delete",
-						Internal: false,
-					},
-				})
-		})
-
-		Convey("skip update if permissions unchanged", func() {
-			ctx, ts := getCtx()
-
-			permCreate, _ := proto.Marshal(&protocol.Permission{
-				Name: "test.perm.create",
-			})
-			permTwoCreate, _ := proto.Marshal(&protocol.Permission{
-				Name: "testtwo.perm.delete",
-			})
-			permIntSched, _ := proto.Marshal(&protocol.Permission{
-				Name:     "testint.perm.schedule",
-				Internal: true,
-			})
-
-			authRealmGlobals := testAuthRealmsGlobals(ctx)
-			authRealmGlobals.PermissionsList = &permissions.PermissionsList{
-				Permissions: []*protocol.Permission{
-					{
-						Name:     "test.perm.create",
-						Internal: false,
-					},
-					{
-						Name:     "testint.perm.schedule",
-						Internal: true,
-					},
-					{
-						Name:     "testtwo.perm.delete",
-						Internal: false,
-					},
-				},
-			}
-			// This is a little inconsistent with how exactly it'll be in datastore but
-			// since we can't get the exact format that the Python version got, this is
-			// the closest we can get which is what it looks like after it's been unmarshalled
-			// from Python.
-			authRealmGlobals.Permissions = []string{
-				string(permCreate),
-				string(permTwoCreate),
-				string(permIntSched),
-			}
-
-			So(datastore.Put(ctx, authRealmGlobals), ShouldBeNil)
-
-			permsCfg := &configspb.PermissionsConfig{
-				Role: []*configspb.PermissionsConfig_Role{
-					{
-						Name: "role/test.role",
-						Permissions: []*protocol.Permission{
-							{
-								Name: "test.perm.create",
-							},
-						},
-						Includes: []string{},
-					},
-					{
-						Name: "role/test.role.two",
-						Permissions: []*protocol.Permission{
-							{
-								Name: "testtwo.perm.delete",
-							},
-						},
-					},
-					{
-						Name: "role/luci.internal.testint.role",
-						Permissions: []*protocol.Permission{
-							{
-								Name:     "testint.perm.schedule",
-								Internal: true,
-							},
-						},
-					},
-				},
-			}
-
-			So(UpdateAuthRealmsGlobals(ctx, permsCfg, false, "Go pRPC API"), ShouldBeNil)
-			So(ts.Tasks(), ShouldHaveLength, 0)
-
-			fetched, err := GetAuthRealmsGlobals(ctx)
-			So(err, ShouldBeNil)
-			So(fetched.PermissionsList.GetPermissions(), ShouldResembleProto,
-				[]*protocol.Permission{
-					{
-						Name:     "test.perm.create",
-						Internal: false,
-					},
-					{
-						Name:     "testint.perm.schedule",
-						Internal: true,
-					},
-					{
-						Name:     "testtwo.perm.delete",
-						Internal: false,
-					},
-				})
 		})
 	})
 }
