@@ -65,20 +65,6 @@ type BuilderSummary struct {
 	_ datastore.PropertyMap `gae:"-,extra"`
 }
 
-// BuilderPool is a datastore entity that associates a BuilderSummary entity
-// with a BotPool entity.  BuilderPool is a separate entity from BuilderSummary
-// to allow for transaction-less updates.
-type BuilderPool struct {
-	// _entityID is always 1, as each BuildSummary entity only has a single BuilderPool child.
-	_entityID int `gae:"$id,1"`
-
-	// BuilderID is a datastore key pointing to the parent BuilderSummary entity.
-	BuilderID *datastore.Key `gae:"$parent"`
-
-	// PoolKey is a datastore key pointing to the BotPool associated with this Builder.
-	PoolKey *datastore.Key
-}
-
 // LastFinishedBuildIDLink returns a link to the last finished build.
 func (b *BuilderSummary) LastFinishedBuildIDLink() string {
 	return buildIDLink(b.LastFinishedBuildID, b.ProjectID)

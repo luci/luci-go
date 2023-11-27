@@ -50,7 +50,6 @@ func Run(srv *server.Server, templatePath string) {
 	htmlMW := baseAuthMW.Extend(
 		withGitMiddleware,
 		withBuildbucketBuildsClient,
-		withBuildbucketBuildersClient,
 		templates.WithTemplates(getTemplateBundle(templatePath, srv.Options.ImageVersion(), srv.Options.Prod)),
 	)
 	xsrfMW := htmlMW.Extend(xsrf.WithTokenCheck)

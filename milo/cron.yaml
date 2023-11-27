@@ -5,9 +5,6 @@ cron:
  - description: Update project configs
    url: /internal/cron/update-project-configs
    schedule: every 1 minutes
- - description: Update swarming bot pool information
-   url: /internal/cron/update-pools
-   schedule: every 1 minutes
  - description: Update buildbucket builders cache
    url: /internal/cron/update-builders
    schedule: every 5 minutes

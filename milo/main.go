@@ -100,7 +100,6 @@ func main() {
 		cron.RegisterHandler("update-project-configs", projectconfig.UpdateProjectConfigsHandler)
 		cron.RegisterHandler("update-config", config.UpdateConfigHandler)
 		cron.RegisterHandler("update-builders", service.UpdateBuilderCache)
-		cron.RegisterHandler("update-pools", buildbucket.UpdatePools)
 		cron.RegisterHandler("delete-builds", buildbucket.DeleteOldBuilds)
 		cron.RegisterHandler("sync-builds", buildbucket.SyncBuilds)
 

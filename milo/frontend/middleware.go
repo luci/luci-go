@@ -521,12 +521,6 @@ func withBuildbucketBuildsClient(c *router.Context, next router.Handler) {
 	next(c)
 }
 
-// withBuildbucketBuildersClient is a middleware that installs a production buildbucket builders RPC client into the context.
-func withBuildbucketBuildersClient(c *router.Context, next router.Handler) {
-	c.Request = c.Request.WithContext(buildbucket.WithBuildersClientFactory(c.Request.Context(), buildbucket.ProdBuildersClientFactory))
-	next(c)
-}
-
 // withGitMiddleware is a middleware that installs a prod Gerrit and Gitiles client
 // factory into the context. Both use Milo's credentials if current user is
 // has been granted read access in settings.cfg.

@@ -174,26 +174,6 @@ func (b *MiloBuildLegacy) Fix(c context.Context) {
 	}
 }
 
-// BuildSummary returns the BuildSummary representation of the MiloBuildLegacy.  This
-// is the subset of fields that is interesting to the builder view.
-func (b *MiloBuildLegacy) BuildSummary() *BuildSummaryLegacy {
-	if b == nil {
-		return nil
-	}
-	result := &BuildSummaryLegacy{
-		Link:          b.Summary.Label,
-		Status:        b.Summary.Status,
-		PendingTime:   b.Summary.PendingTime,
-		ExecutionTime: b.Summary.ExecutionTime,
-		Text:          b.Summary.Text,
-		Blame:         b.Blame,
-	}
-	if b.Trigger != nil {
-		result.Revision = &b.Trigger.Commit
-	}
-	return result
-}
-
 // Trigger is the combination of pointing to a single commit, with information
 // about where that commit came from (e.g. the repository), and the project
 // that triggered it.
