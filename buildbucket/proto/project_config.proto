@@ -52,7 +52,7 @@ message Acl {
 // a user that has permissions to schedule a build to the bucket, can override
 // this config.
 //
-// Next tag: 38.
+// Next tag: 40.
 message BuilderConfig {
   reserved 8;  // cipd_packages
   reserved 11; // build_numbers of the old format.
@@ -283,6 +283,17 @@ message BuilderConfig {
   // ScheduleBuildRequest.execution_timeout; The name `execution_timeout_secs` and
   // uint32 type are relics of the past.
   uint32 execution_timeout_secs = 7;
+
+  // Maximum amount of time to wait for the next heartbeat(i.e UpdateBuild).
+  //
+  // After a build is started, the client can send heartbeat requests
+  // periodically. Buildbucket will mark the build as INFRA_FAILURE, if the
+  // timeout threshold reaches. It’s to fail a build more quickly, rather than
+  // waiting for `execution_timeout_secs` to expire. Some V1 users, which don't
+  // have real task backends, can utilize this feature.
+  //
+  // By default, the value is 0, which means no timeout threshold is applied.
+  uint32 heartbeat_timeout_secs = 39;
 
   // Maximum build pending time.
   //
