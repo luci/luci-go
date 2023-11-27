@@ -69,6 +69,17 @@ module.exports = {
       },
     ],
 
+    // Code generated from protobuf may contain '_' in the identifier name,
+    // (e.g. `BuilderMask_BuilderMaskType`) and therefore triggering the error.
+    // `"ignoreImports": true` doesn't fix the issue because checks are still
+    // applied where the imported symbol is used.
+    //
+    // Since this rule doesn't add a lot of value (it only checks whether there
+    // are '_' in non-leading/trailing positions), disable it to reduce noise.
+    //
+    // Note that we should still generally use camelcase.
+    camelcase: 0,
+
     // We need to import Lit component definition file separately as a
     // side-effect (e.g. `import './a_component'`) because type-only imports
     // (e.g. `import { AComponent } from './a_component'`) may get optimized
