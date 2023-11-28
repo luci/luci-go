@@ -68,9 +68,6 @@ func validateSettingsCfg(ctx *validation.Context, configSet, path string, conten
 	for i, backend := range cfg.GetBackends() {
 		ctx.Enter("Backends.BackendSetting #%d", i)
 		validateHostname(ctx, "BackendSetting.hostname", backend.GetHostname())
-		// TODO(crbug.com/1502021): delete it once `mode` really takes effect.
-		validateBuildSyncSetting(ctx, backend.GetBuildSyncSetting())
-
 		switch backend.Mode.(type) {
 		case *pb.BackendSetting_FullMode_:
 			validateBackendFullMode(ctx, backend.GetFullMode())
