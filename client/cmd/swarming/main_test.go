@@ -137,6 +137,7 @@ func runIntegrationTest(t *testing.T, triggerArgs []string) {
 
 func TestWithCAS(t *testing.T) {
 	t.Parallel()
+	t.Skip("no Linux bots in infra.tests dev pool")
 
 	Convey(`ok`, t, func() {
 		// TODO(jwata): ensure the digest is uploaded on CAS.
