@@ -391,6 +391,158 @@ func TestGetBuild(t *testing.T) {
 				})
 			})
 		})
+
+		Convey("led build", func() {
+			testutil.PutBucket(ctx, "project", "bucket", nil)
+			testutil.PutBucket(ctx, "project", "bucket.shadow", nil)
+			build := &model.Build{
+				Proto: &pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket.shadow",
+						Builder: "builder",
+					},
+					Input: &pb.Build_Input{
+						GerritChanges: []*pb.GerritChange{
+							{Host: "h1"},
+							{Host: "h2"},
+						},
+					},
+					CancellationMarkdown: "cancelled",
+					SummaryMarkdown:      "summary",
+				},
+			}
+			So(datastore.Put(ctx, build), ShouldBeNil)
+			key := datastore.KeyForObj(ctx, build)
+			s, err := proto.Marshal(&pb.Build{
+				Steps: []*pb.Step{
+					{
+						Name: "step",
+					},
+				},
+			})
+			So(err, ShouldBeNil)
+			So(datastore.Put(ctx, &model.BuildSteps{
+				Build:    key,
+				Bytes:    s,
+				IsZipped: false,
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.BuildInfra{
+				Build: key,
+				Proto: &pb.BuildInfra{
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "example.com",
+					},
+					Resultdb: &pb.BuildInfra_ResultDB{
+						Hostname:   "rdb.example.com",
+						Invocation: "bb-12345",
+					},
+					Led: &pb.BuildInfra_Led{
+						ShadowedBucket: "bucket",
+					},
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.BuildInputProperties{
+				Build: key,
+				Proto: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"input": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "input value",
+							},
+						},
+					},
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.BuildOutputProperties{
+				Build: key,
+				Proto: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"output": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "output value",
+							},
+						},
+					},
+				},
+			}), ShouldBeNil)
+
+			req := &pb.GetBuildRequest{
+				Id: 1,
+				Mask: &pb.BuildMask{
+					AllFields: true,
+				},
+			}
+
+			Convey("permission denied", func() {
+				rsp, err := srv.GetBuild(ctx, req)
+				So(err, ShouldErrLike, "not found")
+				So(rsp, ShouldBeNil)
+			})
+
+			Convey("found with permission on shadowed bucket", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: userID,
+					FakeDB: authtest.NewFakeDB(
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+					),
+				})
+				rsp, err := srv.GetBuild(ctx, req)
+				So(err, ShouldBeNil)
+				So(rsp, ShouldResembleProto, &pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket.shadow",
+						Builder: "builder",
+					},
+					Input: &pb.Build_Input{
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"input": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "input value",
+									},
+								},
+							},
+						},
+						GerritChanges: []*pb.GerritChange{
+							{Host: "h1"},
+							{Host: "h2"},
+						},
+					},
+					Output: &pb.Build_Output{
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"output": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "output value",
+									},
+								},
+							},
+						},
+					},
+					Infra: &pb.BuildInfra{
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "example.com",
+						},
+						Resultdb: &pb.BuildInfra_ResultDB{
+							Hostname:   "rdb.example.com",
+							Invocation: "bb-12345",
+						},
+						Led: &pb.BuildInfra_Led{
+							ShadowedBucket: "bucket",
+						},
+					},
+					Steps: []*pb.Step{
+						{Name: "step"},
+					},
+					CancellationMarkdown: "cancelled",
+					SummaryMarkdown:      "summary\ncancelled",
+				})
+			})
+		})
 	})
 
 	Convey("validateGet", t, func() {

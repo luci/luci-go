@@ -88,7 +88,31 @@ func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build
 	// User needs BuildsGet or BuildsGetLimited permission to call this endpoint.
 	readPerm, err := perm.GetFirstAvailablePerm(ctx, bld.Proto.Builder, bbperms.BuildsGet, bbperms.BuildsGetLimited)
 	if err != nil {
-		return nil, err
+		var readShadowedErr error
+		var shadowedBkt string
+		// Checks if the build is a led build.
+		entities, getInfraErr := common.GetBuildEntities(ctx, req.Id, model.BuildInfraKind)
+		if getInfraErr == nil {
+			infra := entities[0].(*model.BuildInfra)
+			shadowedBkt = infra.Proto.GetLed().GetShadowedBucket()
+			if shadowedBkt != "" && shadowedBkt != bld.Proto.Builder.Bucket {
+				// The build is a led build. Check the use permission from the shadowed
+				// bucket.
+				shadowedBldr := &pb.BuilderID{
+					Project: bld.Proto.Builder.Project,
+					Bucket:  shadowedBkt,
+					Builder: bld.Proto.Builder.Builder,
+				}
+				readPerm, readShadowedErr = perm.GetFirstAvailablePerm(ctx, shadowedBldr, bbperms.BuildsGet, bbperms.BuildsGetLimited)
+			}
+		}
+		if getInfraErr != nil || shadowedBkt == "" || readShadowedErr != nil {
+			// Either there's error getting build infra, or the build is not a led
+			// build, or the user doesn't have read permission in the shadowed bucket
+			// either.
+			// Return the original error.
+			return nil, err
+		}
 	}
 
 	bp, err := bld.ToProto(ctx, m, func(b *pb.Build) error {
