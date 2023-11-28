@@ -87,7 +87,6 @@ func TestCronHandler(t *testing.T) {
 		Convey("analysis is recent", func() {
 			ctx, skdr := tq.TestingContext(ctx, nil)
 			testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
-				Project:    "chrome",
 				Status:     pb.AnalysisStatus_FOUND,
 				CreateTime: clock.Now(ctx).Add(-23 * time.Hour),
 			})
@@ -118,7 +117,7 @@ func TestCronHandler(t *testing.T) {
 			So(len(skdr.Tasks().Payloads()), ShouldEqual, 2)
 			resultsTask := skdr.Tasks().Payloads()[0].(*tpb.TestFailureDetectionTask)
 			So(resultsTask, ShouldResembleProto, &tpb.TestFailureDetectionTask{
-				Project:           "chrome",
+				Project:           "chromium",
 				DimensionExcludes: []*pb.Dimension{},
 			})
 		})
@@ -159,7 +158,7 @@ func TestCronHandler(t *testing.T) {
 			expectedDimensionExcludes := []*pb.Dimension{{Key: "os", Value: "test_os1"}, {Key: "os", Value: "compile_os1"}}
 			util.SortDimension(expectedDimensionExcludes)
 			So(resultsTask, ShouldResembleProto, &tpb.TestFailureDetectionTask{
-				Project:           "chrome",
+				Project:           "chromium",
 				DimensionExcludes: expectedDimensionExcludes,
 			})
 		})
@@ -171,7 +170,7 @@ func createTestSingleRerun(ctx context.Context, status buildbucketpb.Status, cre
 		ID: 0,
 		LUCIBuild: model.LUCIBuild{
 			BuildID:    0,
-			Project:    "chrome",
+			Project:    "chromium",
 			CreateTime: createdTime,
 			Status:     status,
 		},
@@ -190,7 +189,7 @@ func createTestSingleRerun(ctx context.Context, status buildbucketpb.Status, cre
 func createCompileReruns(ctx context.Context, status buildbucketpb.Status, createdTime time.Time, os string) (*model.CompileRerunBuild, *model.SingleRerun) {
 	crb := &model.CompileRerunBuild{
 		LuciBuild: model.LuciBuild{
-			Project:    "chrome",
+			Project:    "chromium",
 			CreateTime: createdTime,
 			Status:     status,
 		},

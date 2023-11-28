@@ -245,32 +245,23 @@ func fetchProjectConfigEntities(ctx context.Context) (map[string]*cachedProjectC
 // Uses in-memory cache to avoid hitting datastore all the time.
 // Note that the config may be stale by up to 1 minute.
 func Projects(ctx context.Context) (map[string]*configpb.ProjectConfig, error) {
-	logging.Infof(ctx, "Getting configs for projects")
 	val, err := projectCacheSlot.Fetch(ctx, func(any) (val any, exp time.Duration, err error) {
-		logging.Debugf(ctx, "Inside fetch callback")
 		var pc map[string]*configpb.ProjectConfig
 		if pc, err = fetchProjects(ctx); err != nil {
-			logging.Debugf(ctx, "Fetch callback fetchProjects error %v", err)
 			return nil, 0, err
 		}
-		logging.Debugf(ctx, "fetchProjects returns %d items", len(pc))
 		return pc, time.Minute, nil
 	})
 	switch {
 	case errors.Is(err, caching.ErrNoProcessCache):
-		logging.Debugf(ctx, "fetch encounters caching.ErrNoProcessCache")
 		// A fallback useful in unit tests that may not have the process cache
 		// available. Production environments usually have the cache installed
 		// by the framework code that initializes the root context.
-		pc, err := fetchProjects(ctx)
-		logging.Debugf(ctx, "fetchProjects returns %d items", len(pc))
-		return pc, err
+		return fetchProjects(ctx)
 	case err != nil:
-		logging.Debugf(ctx, "fetch encounters other error: %v", err)
 		return nil, err
 	default:
 		pc := val.(map[string]*configpb.ProjectConfig)
-		logging.Debugf(ctx, "fetch successfully. configs have %d items", len(pc))
 		return pc, nil
 	}
 }
@@ -352,8 +343,5 @@ func SupportedProjects(ctx context.Context) ([]string, error) {
 		result = append(result, project)
 	}
 	sort.Strings(result)
-	logging.Infof(ctx, "Supported projects: %v", result)
-	// Hardcode this because there seems to be something wrong with fetching configs.
-	// TODO (nqmtuan): Remove this when we know what went wrong.
-	return []string{"chrome", "chromium"}, nil
+	return result, nil
 }
