@@ -45,13 +45,12 @@ const (
 )
 
 func CronHandler(ctx context.Context) error {
-	// TODO (nqmtuan): This does not seem to return chromium project in prod.
-	// Enable this back when we know what is wrong.
-	// projectsToProcess, err := config.SupportedProjects(ctx)
-	// if err != nil {
-	// 	return errors.Annotate(err, "supported projects").Err()
-	// }
-	projectsToProcess := []string{"chromium", "chrome"}
+	projectsToProcess, err := config.SupportedProjects(ctx)
+	if err != nil {
+		return errors.Annotate(err, "supported projects").Err()
+	}
+	// TODO(beining@): We should continue to next iteration when there is an error.
+	// Because error in one project should not block other projects.
 	for _, project := range projectsToProcess {
 		count, err := dailyAnalysisCount(ctx, project)
 		if err != nil {
@@ -63,7 +62,7 @@ func CronHandler(ctx context.Context) error {
 		}
 		if count >= dailyLimit {
 			logging.Warningf(ctx, "%d reached daily limit %d for project %s", count, dailyLimit, project)
-			return nil
+			continue
 		}
 		rerunBuilds, err := congestedCompileReruns(ctx, project)
 		if err != nil {

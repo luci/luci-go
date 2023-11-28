@@ -87,13 +87,19 @@ func TestCronHandler(t *testing.T) {
 		Convey("analysis is recent", func() {
 			ctx, skdr := tq.TestingContext(ctx, nil)
 			testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+				Project:    "chrome",
 				Status:     pb.AnalysisStatus_FOUND,
 				CreateTime: clock.Now(ctx).Add(-23 * time.Hour),
 			})
 			err := CronHandler(ctx)
 			So(err, ShouldBeNil)
-			// Should not schedule a task.
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+			// Chromium
+			resultsTask := skdr.Tasks().Payloads()[0].(*tpb.TestFailureDetectionTask)
+			So(resultsTask, ShouldResembleProto, &tpb.TestFailureDetectionTask{
+				Project:           "chromium",
+				DimensionExcludes: []*pb.Dimension{},
+			})
 		})
 	})
 
@@ -117,7 +123,7 @@ func TestCronHandler(t *testing.T) {
 			So(len(skdr.Tasks().Payloads()), ShouldEqual, 2)
 			resultsTask := skdr.Tasks().Payloads()[0].(*tpb.TestFailureDetectionTask)
 			So(resultsTask, ShouldResembleProto, &tpb.TestFailureDetectionTask{
-				Project:           "chromium",
+				Project:           "chrome",
 				DimensionExcludes: []*pb.Dimension{},
 			})
 		})
@@ -154,7 +160,7 @@ func TestCronHandler(t *testing.T) {
 			err := CronHandler(ctx)
 			So(err, ShouldBeNil)
 			So(len(skdr.Tasks().Payloads()), ShouldEqual, 2)
-			resultsTask := skdr.Tasks().Payloads()[0].(*tpb.TestFailureDetectionTask)
+			resultsTask := skdr.Tasks().Payloads()[1].(*tpb.TestFailureDetectionTask)
 			expectedDimensionExcludes := []*pb.Dimension{{Key: "os", Value: "test_os1"}, {Key: "os", Value: "compile_os1"}}
 			util.SortDimension(expectedDimensionExcludes)
 			So(resultsTask, ShouldResembleProto, &tpb.TestFailureDetectionTask{
