@@ -358,6 +358,9 @@ func TestSynthesizeBuild(t *testing.T) {
 								},
 							},
 						},
+						Led: &pb.BuildInfra_Led{
+							ShadowedBucket: "bucket",
+						},
 					},
 					Input: &pb.Build_Input{
 						Properties: &structpb.Struct{
@@ -487,6 +490,9 @@ func TestSynthesizeBuild(t *testing.T) {
 									Value: "pool2",
 								},
 							},
+						},
+						Led: &pb.BuildInfra_Led{
+							ShadowedBucket: "bucket",
 						},
 					},
 					Input: &pb.Build_Input{

@@ -1712,6 +1712,9 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							},
 						},
+						Led: &pb.BuildInfra_Led{
+							ShadowedBucket: "bucket",
+						},
 					},
 					Input: &pb.Build_Input{
 						Properties: &structpb.Struct{

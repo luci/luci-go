@@ -85,6 +85,9 @@ func scheduleShadowBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest, a
 	bld := buildFromScheduleRequest(ctx, schReq, ancestors, "", cfgCopy, globalCfg)
 
 	if shadowBucket != "" && shadowBucket != origBucket {
+		bld.Infra.Led = &pb.BuildInfra_Led{
+			ShadowedBucket: origBucket,
+		}
 		bld.Input.Properties.Fields["$recipe_engine/led"] = &structpb.Value{
 			Kind: &structpb.Value_StructValue{
 				StructValue: &structpb.Struct{
@@ -137,5 +140,6 @@ func (*Builds) SynthesizeBuild(ctx context.Context, req *pb.SynthesizeBuildReque
 	return synthesizeBuild(ctx, &pb.ScheduleBuildRequest{
 		Builder:     req.GetBuilder(),
 		Experiments: exps,
+		ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
 	})
 }
