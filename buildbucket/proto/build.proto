@@ -798,6 +798,12 @@ message BuildInfra {
     luci.resultdb.v1.HistoryOptions history_options = 5;
   }
 
+  // Led specific information.
+  message Led {
+    // The original bucket this led build is shadowing.
+    string shadowed_bucket = 1;
+  }
+
   // BBAgent-specific information.
   //
   // All paths are relateive to bbagent's working directory, and must be delimited
@@ -878,4 +884,6 @@ message BuildInfra {
   ResultDB resultdb = 5 [ (visible_with) = BUILDS_GET_LIMITED_PERMISSION ];
   BBAgent bbagent = 6;
   Backend backend = 7;
+  // It should only be set for led builds.
+  Led led = 8;
 }
