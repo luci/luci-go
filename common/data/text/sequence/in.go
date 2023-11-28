@@ -14,7 +14,9 @@
 
 package sequence
 
-import "go.chromium.org/luci/common/errors"
+import (
+	"go.chromium.org/luci/common/errors"
+)
 
 // In checks this pattern against the given sequence.
 //
@@ -86,9 +88,18 @@ func (p Pattern) In(seq ...string) bool {
 				matcher := p[matcherIdx]
 
 				if matcher == Edge {
-					if seqIdx == 0 || seqIdx == len(seq)-1 {
+					// edge is a 0-width match if the current sequence item is the start
+					// or end of the sequence.
+					//
+					// Note that we compare against len(seq) rather than len(seq)-1,
+					// because a 1-length sequence would, in fact, have seqIdx==0 and
+					// numMatched==1.
+					if (seqIdx+numMatched) == 0 || (seqIdx+numMatched) == len(seq) {
 						continue
 					}
+
+					// If the edge doesn't match, there is no use in trying to match it at
+					// other positions.
 					return false
 				}
 

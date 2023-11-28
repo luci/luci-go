@@ -162,11 +162,15 @@ func TestPatternIn(t *testing.T) {
 				So(m("foo", "...", "bar", "$").In(
 					"a", "foo", "narp", "bar"), ShouldBeTrue)
 
+				So(m("a", "b", "$").In(
+					"extra", "a", "b"), ShouldBeTrue)
+
 				So(m("^", "foo", "...", "bar").In(
 					"a", "foo", "narp", "bar"), ShouldBeFalse)
 
 				So(m("foo", "...", "bar", "$").In(
 					"a", "foo", "narp", "bar", "stuff"), ShouldBeFalse)
+
 			})
 		})
 
