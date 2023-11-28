@@ -23,9 +23,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/analysis/internal"
 	"go.chromium.org/luci/analysis/pbutil"
-	atvpb "go.chromium.org/luci/analysis/proto/analyzedtestvariant"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
@@ -101,8 +99,6 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr any) error {
 		spanPtr = &b.NullString
 	case **timestamppb.Timestamp:
 		spanPtr = &b.NullTime
-	case *atvpb.Status:
-		spanPtr = &b.Int64
 	case *pb.BuildStatus:
 		spanPtr = &b.Int64
 	case *[]pb.ExonerationReason:
@@ -115,10 +111,6 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr any) error {
 		spanPtr = &b.StringSlice
 	case proto.Message:
 		spanPtr = &b.ByteSlice
-	case *[]atvpb.Status:
-		spanPtr = &b.Int64Slice
-	case *internal.VerdictStatus:
-		spanPtr = &b.Int64
 	default:
 		spanPtr = goPtr
 	}
@@ -149,9 +141,6 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr any) error {
 		if b.NullTime.Valid {
 			*goPtr = pbutil.MustTimestampProto(b.NullTime.Time)
 		}
-
-	case *atvpb.Status:
-		*goPtr = atvpb.Status(b.Int64)
 
 	case *pb.BuildStatus:
 		*goPtr = pb.BuildStatus(b.Int64)
@@ -193,15 +182,6 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr any) error {
 			panic(err)
 		}
 
-	case *internal.VerdictStatus:
-		*goPtr = internal.VerdictStatus(b.Int64)
-
-	case *[]atvpb.Status:
-		*goPtr = make([]atvpb.Status, len(b.Int64Slice))
-		for i, p := range b.Int64Slice {
-			(*goPtr)[i] = atvpb.Status(p)
-		}
-
 	default:
 		panic(fmt.Sprintf("impossible %q", goPtr))
 	}
@@ -233,9 +213,6 @@ func ToSpanner(v any) any {
 		// Not returning an error here significantly simplifies usage
 		// of this function and functions based on this one.
 		return ret
-
-	case atvpb.Status:
-		return int64(v)
 
 	case pb.BuildStatus:
 		return int64(v)
@@ -285,16 +262,6 @@ func ToSpanner(v any) any {
 			ret[key] = ToSpanner(el)
 		}
 		return ret
-
-	case internal.VerdictStatus:
-		return int64(v)
-
-	case []atvpb.Status:
-		spanPtr := make([]int64, len(v))
-		for i, s := range v {
-			spanPtr[i] = int64(s)
-		}
-		return spanPtr
 
 	default:
 		return v

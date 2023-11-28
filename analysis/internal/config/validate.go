@@ -21,8 +21,6 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"google.golang.org/protobuf/types/known/durationpb"
-
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bugs"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/testname/rules"
@@ -141,77 +139,6 @@ func validateIntegerConfig(ctx *validation.Context, name string, cfg, max int64)
 	}
 }
 
-func validateDuration(ctx *validation.Context, name string, du *durationpb.Duration) {
-	ctx.Enter(name)
-	defer ctx.Exit()
-
-	switch {
-	case du == nil:
-		ctx.Errorf("empty %s is not allowed", name)
-	case du.CheckValid() != nil:
-		ctx.Errorf("%s is invalid", name)
-	case du.AsDuration() < 0:
-		ctx.Errorf("%s is less than 0", name)
-	}
-}
-
-func validateUpdateTestVariantTask(ctx *validation.Context, utCfg *configpb.UpdateTestVariantTask) {
-	ctx.Enter("update_test_variant")
-	defer ctx.Exit()
-	if utCfg == nil {
-		return
-	}
-	validateDuration(ctx, "interval", utCfg.UpdateTestVariantTaskInterval)
-	validateDuration(ctx, "duration", utCfg.TestVariantStatusUpdateDuration)
-}
-
-func validateBigQueryTable(ctx *validation.Context, tCfg *configpb.BigQueryExport_BigQueryTable) {
-	ctx.Enter("table")
-	defer ctx.Exit()
-	if tCfg == nil {
-		ctx.Errorf("empty bigquery table is not allowed")
-		return
-	}
-	validateStringConfig(ctx, "cloud_project", tCfg.CloudProject, cloudProjectRE, cloudProjectMaxLengthBytes)
-	validateStringConfig(ctx, "dataset", tCfg.Dataset, datasetRE, datasetMaxLengthBytes)
-	validateStringConfig(ctx, "table_name", tCfg.Table, tableRE, tableMaxLengthBytes)
-}
-
-func validateBigQueryExport(ctx *validation.Context, bqCfg *configpb.BigQueryExport) {
-	ctx.Enter("bigquery_export")
-	defer ctx.Exit()
-	if bqCfg == nil {
-		return
-	}
-	validateBigQueryTable(ctx, bqCfg.Table)
-	if bqCfg.GetPredicate() == nil {
-		return
-	}
-	if err := pbutil.ValidateAnalyzedTestVariantPredicate(bqCfg.Predicate); err != nil {
-		ctx.Errorf(fmt.Sprintf("%s", err))
-	}
-}
-
-func validateTestVariantAnalysisConfig(ctx *validation.Context, tvCfg *configpb.TestVariantAnalysisConfig) {
-	ctx.Enter("test_variant")
-	defer ctx.Exit()
-	if tvCfg == nil {
-		return
-	}
-	validateUpdateTestVariantTask(ctx, tvCfg.UpdateTestVariantTask)
-	for _, bqe := range tvCfg.BqExports {
-		validateBigQueryExport(ctx, bqe)
-	}
-}
-
-func validateRealmConfig(ctx *validation.Context, rCfg *configpb.RealmConfig) {
-	ctx.Enter(fmt.Sprintf("realm %s", rCfg.Name))
-	defer ctx.Exit()
-
-	validateStringConfig(ctx, "realm_name", rCfg.Name, realmRE, realmMaxLengthBytes)
-	validateTestVariantAnalysisConfig(ctx, rCfg.TestVariantAnalysis)
-}
-
 // validateProjectConfigRaw deserializes the project-level config message
 // and passes it through the validator.
 func validateProjectConfigRaw(ctx *validation.Context, project, content string) *configpb.ProjectConfig {
@@ -225,9 +152,6 @@ func validateProjectConfigRaw(ctx *validation.Context, project, content string) 
 }
 
 func ValidateProjectConfig(ctx *validation.Context, project string, cfg *configpb.ProjectConfig) {
-	for _, rCfg := range cfg.Realms {
-		validateRealmConfig(ctx, rCfg)
-	}
 	validateClustering(ctx, cfg.Clustering)
 	validateMetrics(ctx, cfg.Metrics)
 	validateBugManagement(ctx, cfg.BugManagement)

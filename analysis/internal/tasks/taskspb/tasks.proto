@@ -17,9 +17,6 @@ syntax = "proto3";
 package luci.analysis.internal.tasks;
 
 import "google/protobuf/timestamp.proto";
-import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
-import "go.chromium.org/luci/analysis/proto/v1/common.proto";
-import "go.chromium.org/luci/analysis/proto/analyzedtestvariant/predicate.proto";
 import "go.chromium.org/luci/analysis/internal/ingestion/control/proto/control.proto";
 
 option go_package = "go.chromium.org/luci/analysis/internal/tasks/taskspb";
@@ -52,71 +49,6 @@ message IngestTestResults {
   int64 task_index = 11;
 }
 
-// ResultDB-specific information.
-message ResultDB {
-  // Information of the invocation.
-  luci.resultdb.v1.Invocation invocation = 1;
-  // Hostname of the ResultDB instance, such as "results.api.cr.dev".
-  string host = 2;
-}
-
-// Payload of CollectTestResults task.
-message CollectTestResults {
-  // ResultDB-specific information.
-  ResultDB resultdb = 1;
-  // Builder of the invocation.
-  string builder = 2;
-  // If the task is for a try build.
-  bool is_pre_submit = 3;
-  // If the try build contributes to a CL's submission.
-  bool contributed_to_cl_submission = 4;
-  // The LUCI Project of the build.
-  string project = 5;
-}
-
-// Information that can form a key to an AnalyzedTestVariant row.
-message TestVariantKey {
-  string realm = 1;
-  string test_id = 2;
-  string variant_hash = 3;
-
-}
-// Payload of UpdateTestVariant task.
-message UpdateTestVariant {
-  TestVariantKey test_variant_key = 1;
-
-  // The time this task is ready to be enqueued.
-  // The task will run only if this time matches the AnalyzedTestVariants row's
-  // NextUpdateTaskEnqueueTime.
-  google.protobuf.Timestamp enqueue_time = 2;
-}
-
-
-// Payload of ExportTestVariants task.
-message ExportTestVariants {
-  // LUCI Realm. Test variants in this realm are exported.
-  string realm = 1;
-
-  // BigQuery table to export test variants to.
-  string cloud_project = 2;
-  string dataset = 3;
-  string table = 4;
-
-  // Represents a function Variant -> bool.
-  // Test variants satisfy this predicate are exported.
-  luci.analysis.analyzedtestvariant.Predicate predicate = 5;
-
-  // Time range of the task.
-  // The ranges serves 2 purposes:
-  // - Test variants satisfy the predicate within the time_range are exported.
-  // - Each row uses this time_range as their default time range*. Meaning each row
-  //   contains the information of the test variants within the time range,
-  //   especially, the row contains the verdicts that LUCI Analysis ingested within
-  //   the range, and compute the flake_statistics using those verdicts.
-  //   * Note that a row can have a narrower time_range, if the test variant's
-  //     status changes within the time_range.
-  luci.analysis.v1.TimeRange time_range = 6;
-}
 
 // Payload of the ReclusterChunks task.
 message ReclusterChunks {

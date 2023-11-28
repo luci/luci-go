@@ -24,7 +24,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
-	atvpb "go.chromium.org/luci/analysis/proto/analyzedtestvariant"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
@@ -129,37 +128,6 @@ func ValidateTestVerdictPredicate(predicate *pb.TestVerdictPredicate) error {
 func ValidateEnum(value int32, validValues map[int32]string) error {
 	if _, ok := validValues[value]; !ok {
 		return errors.Reason("invalid value %d", value).Err()
-	}
-	return nil
-}
-
-// ValidateAnalyzedTestVariantStatus returns a non-nil error if s is invalid
-// for a test variant.
-func ValidateAnalyzedTestVariantStatus(s atvpb.Status) error {
-	if err := ValidateEnum(int32(s), atvpb.Status_name); err != nil {
-		return err
-	}
-	return nil
-}
-
-// ValidateAnalyzedTestVariantPredicate returns a non-nil error if p is
-// determined to be invalid.
-func ValidateAnalyzedTestVariantPredicate(p *atvpb.Predicate) error {
-	if err := validateRegexp(p.GetTestIdRegexp()); err != nil {
-		return errors.Annotate(err, "test_id_regexp").Err()
-	}
-
-	if p.GetVariant() != nil {
-		if err := ValidateVariantPredicate(p.GetVariant()); err != nil {
-			return errors.Annotate(err, "variant").Err()
-		}
-	}
-
-	if p.GetStatus() == atvpb.Status_STATUS_UNSPECIFIED {
-		return nil
-	}
-	if err := ValidateAnalyzedTestVariantStatus(p.Status); err != nil {
-		return errors.Annotate(err, "status").Err()
 	}
 	return nil
 }

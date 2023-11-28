@@ -16,20 +16,27 @@ syntax = "proto3";
 
 package luci.analysis.analyzedtestvariant;
 
-import "go.chromium.org/luci/analysis/proto/analyzedtestvariant/analyzed_test_variant.proto";
 import "go.chromium.org/luci/analysis/proto/v1/predicate.proto";
 
 option go_package = "go.chromium.org/luci/analysis/proto/analyzedtestvariant;atvpb";
 
-// Represents a function AnalyzedTestVariant -> bool.
+// Deprecated. Retained only for config compatibility.
+// Can be deleted once chromium-m120 / chrome-m120 and all prior
+// versions have had their LUCI configs deleted.
 message Predicate {
-  // A test variant must have a test id matching this regular expression
-  // entirely, i.e. the expression is implicitly wrapped with ^ and $.
   string test_id_regexp = 1;
-
-  // A test variant must have a variant satisfying this predicate.
   luci.analysis.v1.VariantPredicate variant = 2;
-
-  // A test variant must have this status.
   Status status = 3;
+}
+
+// Deprecated. Retained only for config compatibility.
+// Can be deleted once chromium-m120 / chrome-m120 and all prior
+// versions have had their LUCI configs deleted.
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  HAS_UNEXPECTED_RESULTS = 5;
+  FLAKY = 10;
+  CONSISTENTLY_UNEXPECTED = 20;
+  CONSISTENTLY_EXPECTED = 30;
+  NO_NEW_RESULTS = 40;
 }

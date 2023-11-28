@@ -37,6 +37,9 @@ const (
 )
 
 // Configurations for BigQuery export.
+// Deprecated, retained for config compatibility only.
+// Can be deleted once chromium/chrome-m120 and all earlier
+// versions have their LUCI config deleted.
 type BigQueryExport struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -101,6 +104,9 @@ func (x *BigQueryExport) GetPredicate() *analyzedtestvariant.Predicate {
 }
 
 // Configurations for UpdateTestVariant task.
+// Deprecated, retained for config compatibility only.
+// Can be deleted once chromium/chrome-m120 and all earlier
+// versions have their LUCI config deleted.
 type UpdateTestVariantTask struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -162,6 +168,9 @@ func (x *UpdateTestVariantTask) GetTestVariantStatusUpdateDuration() *durationpb
 	return nil
 }
 
+// Deprecated, retained for config compatibility only.
+// Can be deleted once chromium/chrome-m120 and all earlier
+// versions have their LUCI config deleted.
 type TestVariantAnalysisConfig struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

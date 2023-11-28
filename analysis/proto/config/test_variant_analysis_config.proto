@@ -22,6 +22,9 @@ import "go.chromium.org/luci/analysis/proto/analyzedtestvariant/predicate.proto"
 option go_package = "go.chromium.org/luci/analysis/proto/config;configpb";
 
 // Configurations for BigQuery export.
+// Deprecated, retained for config compatibility only.
+// Can be deleted once chromium/chrome-m120 and all earlier
+// versions have their LUCI config deleted.
 message BigQueryExport {
   message BigQueryTable {
     string cloud_project = 1;
@@ -42,6 +45,9 @@ message BigQueryExport {
 }
 
 // Configurations for UpdateTestVariant task.
+// Deprecated, retained for config compatibility only.
+// Can be deleted once chromium/chrome-m120 and all earlier
+// versions have their LUCI config deleted.
 message UpdateTestVariantTask {
   // A task will run every interval to calculate the test variant's status.
   google.protobuf.Duration update_test_variant_task_interval = 1;
@@ -54,6 +60,9 @@ message UpdateTestVariantTask {
   google.protobuf.Duration test_variant_status_update_duration = 2;
 }
 
+// Deprecated, retained for config compatibility only.
+// Can be deleted once chromium/chrome-m120 and all earlier
+// versions have their LUCI config deleted.
 message TestVariantAnalysisConfig {
   // Configurations for UpdateTestVariant task.
   UpdateTestVariantTask update_test_variant_task = 1;

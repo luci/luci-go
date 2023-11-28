@@ -283,29 +283,3 @@ func TestProject(t *testing.T) {
 		})
 	}))
 }
-
-func TestRealm(t *testing.T) {
-	t.Parallel()
-
-	Convey("Realm", t, WithBothBugSystems(func(system configpb.BugSystem, name string) {
-		pj := CreateConfigWithBothBuganizerAndMonorail(system)
-		configs := map[string]*configpb.ProjectConfig{
-			"chromium": pj,
-		}
-
-		ctx := memory.Use(context.Background())
-		SetTestProjectConfig(ctx, configs)
-
-		Convey(fmt.Sprintf("%s - success", name), func() {
-			rj, err := Realm(ctx, "chromium:ci")
-			So(err, ShouldBeNil)
-			So(rj, ShouldResembleProto, pj.Realms[0])
-		})
-
-		Convey(fmt.Sprintf("%s - not found", name), func() {
-			rj, err := Realm(ctx, "chromium:random")
-			So(err, ShouldEqual, RealmNotExistsErr)
-			So(rj, ShouldBeNil)
-		})
-	}))
-}

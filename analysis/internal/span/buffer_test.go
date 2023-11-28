@@ -26,7 +26,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/pbutil"
-	atvpb "go.chromium.org/luci/analysis/proto/analyzedtestvariant"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
@@ -58,10 +57,6 @@ func TestTypeConversion(t *testing.T) {
 			&timestamppb.Timestamp{Seconds: 1000, Nanos: 1234},
 			spanner.NullTime{Valid: true, Time: time.Unix(1000, 1234).UTC()},
 		)
-	})
-
-	Convey(`atvpb.Status`, t, func() {
-		test(atvpb.Status_STATUS_UNSPECIFIED, int64(0))
 	})
 
 	Convey(`pb.BuildStatus`, t, func() {
@@ -123,28 +118,28 @@ func TestTypeConversion(t *testing.T) {
 
 	Convey(`Map`, t, func() {
 		var varIntA, varIntB int64
-		var varState atvpb.Status
+		var varStatus pb.BuildStatus
 
 		row, err := spanner.NewRow([]string{"a", "b", "c"}, []any{int64(42), int64(56), int64(0)})
 		So(err, ShouldBeNil)
-		err = b.FromSpanner(row, &varIntA, &varIntB, &varState)
+		err = b.FromSpanner(row, &varIntA, &varIntB, &varStatus)
 		So(err, ShouldBeNil)
 		So(varIntA, ShouldEqual, 42)
 		So(varIntB, ShouldEqual, 56)
-		So(varState, ShouldEqual, atvpb.Status_STATUS_UNSPECIFIED)
+		So(varStatus, ShouldEqual, pb.BuildStatus_BUILD_STATUS_UNSPECIFIED)
 
 		// ToSpanner
 		spValues := ToSpannerMap(map[string]any{
 			"a": varIntA,
 			"b": varIntB,
-			"c": varState,
+			"c": varStatus,
 		})
 		So(spValues, ShouldResemble, map[string]any{"a": int64(42), "b": int64(56), "c": int64(0)})
 	})
 
 	Convey(`proto.Message`, t, func() {
-		msg := &atvpb.FlakeStatistics{
-			FlakyVerdictRate: 0.5,
+		msg := &pb.FailureReason{
+			PrimaryErrorMessage: "primary error message",
 		}
 		expected, err := proto.Marshal(msg)
 		So(err, ShouldBeNil)
@@ -154,26 +149,16 @@ func TestTypeConversion(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		Convey(`success`, func() {
-			expectedPtr := &atvpb.FlakeStatistics{}
+			expectedPtr := &pb.FailureReason{}
 			err = b.FromSpanner(row, expectedPtr)
 			So(err, ShouldBeNil)
 			So(expectedPtr, ShouldResembleProto, msg)
 		})
 
 		Convey(`Passing nil pointer to fromSpanner`, func() {
-			var expectedPtr *atvpb.FlakeStatistics
+			var expectedPtr *pb.FailureReason
 			err = b.FromSpanner(row, expectedPtr)
 			So(err, ShouldErrLike, "nil pointer encountered")
 		})
-	})
-
-	Convey(`[]atvpb.Status`, t, func() {
-		test(
-			[]atvpb.Status{
-				atvpb.Status_FLAKY,
-				atvpb.Status_STATUS_UNSPECIFIED,
-			},
-			[]int64{int64(10), int64(0)},
-		)
 	})
 }

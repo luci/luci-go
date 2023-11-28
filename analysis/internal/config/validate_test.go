@@ -20,14 +20,12 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/config/validation"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	configpb "go.chromium.org/luci/analysis/proto/config"
@@ -123,112 +121,6 @@ func TestProjectConfigValidator(t *testing.T) {
 		cfg := &configpb.ProjectConfig{}
 		So(prototext.Unmarshal(content, cfg), ShouldBeNil)
 		So(validate(project, cfg), ShouldBeNil)
-	})
-
-	Convey("realm config", t, func() {
-		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.BugSystem_MONORAIL)
-
-		So(len(cfg.Realms), ShouldEqual, 1)
-		realm := cfg.Realms[0]
-
-		Convey("realm name", func() {
-			Convey("must be specified", func() {
-				realm.Name = ""
-				So(validate(project, cfg), ShouldErrLike, "(realm  / realm_name): must be specified")
-			})
-			Convey("invalid", func() {
-				realm.Name = "chromium:ci"
-				So(validate(project, cfg), ShouldErrLike, `(realm chromium:ci / realm_name): does not match pattern "^[a-z0-9_\\.\\-/]{1,400}$"`)
-			})
-			Convey("valid", func() {
-				realm.Name = "ci"
-				So(validate(project, cfg), ShouldBeNil)
-			})
-		})
-
-		Convey("TestVariantAnalysisConfig", func() {
-			tvCfg := realm.TestVariantAnalysis
-			So(tvCfg, ShouldNotBeNil)
-			utCfg := tvCfg.UpdateTestVariantTask
-			So(utCfg, ShouldNotBeNil)
-			Convey("UpdateTestVariantTask", func() {
-				Convey("interval", func() {
-					Convey("empty not allowed", func() {
-						utCfg.UpdateTestVariantTaskInterval = nil
-						So(validate(project, cfg), ShouldErrLike, `empty interval is not allowed`)
-					})
-					Convey("must be greater than 0", func() {
-						utCfg.UpdateTestVariantTaskInterval = durationpb.New(-time.Hour)
-						So(validate(project, cfg), ShouldErrLike, `interval is less than 0`)
-					})
-				})
-
-				Convey("duration", func() {
-					Convey("empty not allowed", func() {
-						utCfg.TestVariantStatusUpdateDuration = nil
-						So(validate(project, cfg), ShouldErrLike, `empty duration is not allowed`)
-					})
-					Convey("must be greater than 0", func() {
-						utCfg.TestVariantStatusUpdateDuration = durationpb.New(-time.Hour)
-						So(validate(project, cfg), ShouldErrLike, `duration is less than 0`)
-					})
-				})
-			})
-
-			bqExports := tvCfg.BqExports
-			So(len(bqExports), ShouldEqual, 1)
-			bqe := bqExports[0]
-			So(bqe, ShouldNotBeNil)
-			Convey("BqExport", func() {
-				table := bqe.Table
-				So(table, ShouldNotBeNil)
-				Convey("BigQueryTable", func() {
-					Convey("cloud project", func() {
-						path := `(realm ci / test_variant / bigquery_export / table / cloud_project)`
-						Convey("should npt be empty", func() {
-							table.CloudProject = ""
-							So(validate(project, cfg), ShouldErrLike, path+": must be specified")
-						})
-						Convey("not end with hyphen", func() {
-							table.CloudProject = "project-"
-							So(validate(project, cfg), ShouldErrLike, path+`: does not match pattern "^[a-z][a-z0-9\\-]{4,28}[a-z0-9]$"`)
-						})
-						Convey("not too short", func() {
-							table.CloudProject = "p"
-							So(validate(project, cfg), ShouldErrLike, path+`: does not match pattern "^[a-z][a-z0-9\\-]{4,28}[a-z0-9]$"`)
-						})
-						Convey("must start with letter", func() {
-							table.CloudProject = "0project"
-							So(validate(project, cfg), ShouldErrLike, path+`: does not match pattern "^[a-z][a-z0-9\\-]{4,28}[a-z0-9]$"`)
-						})
-					})
-
-					Convey("dataset", func() {
-						path := `(realm ci / test_variant / bigquery_export / table / dataset)`
-						Convey("should not be empty", func() {
-							table.Dataset = ""
-							So(validate(project, cfg), ShouldErrLike, path+": must be specified")
-						})
-						Convey("should be valid", func() {
-							table.Dataset = "data-set"
-							So(validate(project, cfg), ShouldErrLike, path+`: does not match pattern "^[a-zA-Z0-9_]*$"`)
-						})
-					})
-
-					Convey("table", func() {
-						path := `(realm ci / test_variant / bigquery_export / table / table_name)`
-						Convey("should not be empty", func() {
-							table.Table = ""
-							So(validate(project, cfg), ShouldErrLike, path+`: must be specified`)
-						})
-						Convey("should be valid", func() {
-							table.Table = "table/name"
-							So(validate(project, cfg), ShouldErrLike, path+`: does not match pattern "^[\\p{L}\\p{M}\\p{N}\\p{Pc}\\p{Pd}\\p{Zs}]*$"`)
-						})
-					})
-				})
-			})
-		})
 	})
 
 	Convey("clustering", t, func() {

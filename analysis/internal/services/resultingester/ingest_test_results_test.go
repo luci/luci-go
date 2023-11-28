@@ -17,7 +17,6 @@ package resultingester
 import (
 	"context"
 	"encoding/hex"
-	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -35,7 +34,6 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 	_ "go.chromium.org/luci/server/tq/txn/spanner"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/analysis"
@@ -52,17 +50,12 @@ import (
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	ctrlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/resultdb"
-	"go.chromium.org/luci/analysis/internal/services/resultcollector"
-	"go.chromium.org/luci/analysis/internal/services/testvariantupdator"
-	spanutil "go.chromium.org/luci/analysis/internal/span"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/internal/testresults/gitreferences"
 	"go.chromium.org/luci/analysis/internal/testutil"
-	"go.chromium.org/luci/analysis/internal/testutil/insert"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/pbutil"
-	atvpb "go.chromium.org/luci/analysis/proto/analyzedtestvariant"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
@@ -91,90 +84,11 @@ func TestSchedule(t *testing.T) {
 	})
 }
 
-func TestShouldIngestForTestVariants(t *testing.T) {
-	t.Parallel()
-	Convey(`With realm config`, t, func() {
-		realm := &configpb.RealmConfig{
-			Name: "ci",
-			TestVariantAnalysis: &configpb.TestVariantAnalysisConfig{
-				UpdateTestVariantTask: &configpb.UpdateTestVariantTask{
-					UpdateTestVariantTaskInterval:   durationpb.New(time.Hour),
-					TestVariantStatusUpdateDuration: durationpb.New(24 * time.Hour),
-				},
-			},
-		}
-		payload := &taskspb.IngestTestResults{
-			Build: &ctrlpb.BuildResult{
-				Host: "host",
-				Id:   int64(1),
-			},
-			PartitionTime: timestamppb.New(time.Date(2025, time.January, 1, 12, 0, 0, 0, time.UTC)),
-		}
-		Convey(`CI`, func() {
-			So(shouldIngestForTestVariants(realm, payload), ShouldBeTrue)
-		})
-		Convey(`CQ run`, func() {
-			payload.PresubmitRun = &ctrlpb.PresubmitResult{
-				PresubmitRunId: &pb.PresubmitRunId{
-					System: "luci-cv",
-					Id:     "chromium/1111111111111-1-1111111111111111",
-				},
-				Status: pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED,
-				Mode:   pb.PresubmitRunMode_FULL_RUN,
-			}
-			Convey(`Successful full run`, func() {
-				So(shouldIngestForTestVariants(realm, payload), ShouldBeTrue)
-			})
-			Convey(`Successful dry run`, func() {
-				payload.PresubmitRun.Mode = pb.PresubmitRunMode_DRY_RUN
-				So(shouldIngestForTestVariants(realm, payload), ShouldBeFalse)
-			})
-			Convey(`Successful quick dry run`, func() {
-				payload.PresubmitRun.Mode = pb.PresubmitRunMode_QUICK_DRY_RUN
-				So(shouldIngestForTestVariants(realm, payload), ShouldBeFalse)
-			})
-			Convey(`Successful new patchset run`, func() {
-				payload.PresubmitRun.Mode = pb.PresubmitRunMode_NEW_PATCHSET_RUN
-				So(shouldIngestForTestVariants(realm, payload), ShouldBeFalse)
-			})
-			Convey(`Failed run`, func() {
-				payload.PresubmitRun.Status = pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_FAILED
-				So(shouldIngestForTestVariants(realm, payload), ShouldBeFalse)
-			})
-		})
-		Convey(`Test Variant analysis not configured`, func() {
-			realm.TestVariantAnalysis = nil
-			So(shouldIngestForTestVariants(realm, payload), ShouldBeFalse)
-		})
-	})
-}
-
-func createProjectsConfig() map[string]*configpb.ProjectConfig {
-	return map[string]*configpb.ProjectConfig{
-		"project": {
-			Realms: []*configpb.RealmConfig{
-				{
-					Name: "ci",
-					TestVariantAnalysis: &configpb.TestVariantAnalysisConfig{
-						UpdateTestVariantTask: &configpb.UpdateTestVariantTask{
-							UpdateTestVariantTaskInterval:   durationpb.New(time.Hour),
-							TestVariantStatusUpdateDuration: durationpb.New(24 * time.Hour),
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
 const testInvocation = "invocations/build-87654321"
 const testRealm = "project:ci"
 const testBuildID = int64(87654321)
 
 func TestIngestTestResults(t *testing.T) {
-	resultcollector.RegisterTaskClass()
-	testvariantupdator.RegisterTaskClass()
-
 	Convey(`TestIngestTestResults`, t, func() {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx) // For failure association rules cache.
@@ -214,8 +128,6 @@ func TestIngestTestResults(t *testing.T) {
 		})
 
 		Convey(`valid payload`, func() {
-			config.SetTestProjectConfig(ctx, createProjectsConfig())
-
 			ctl := gomock.NewController(t)
 			defer ctl.Finish()
 
@@ -306,25 +218,6 @@ func TestIngestTestResults(t *testing.T) {
 				So(err, ShouldBeNil)
 			}
 
-			// Prepare some existing analyzed test variants to update.
-			tmdBytes, _ := proto.Marshal(originalTmd)
-			ms := []*spanner.Mutation{
-				// Known flake's status should remain unchanged.
-				insert.AnalyzedTestVariant(testRealm, "ninja://test_known_flake", "hash_2", atvpb.Status_FLAKY, map[string]any{
-					"Tags":         pbutil.StringPairs("test_name", "test_known_flake", "monorail_component", "Monorail>OldComponent"),
-					"TestMetadata": spanutil.Compressed(tmdBytes),
-				}),
-				// Non-flake test variant's status will change when see a flaky occurrence.
-				insert.AnalyzedTestVariant(testRealm, "ninja://test_has_unexpected", "hash", atvpb.Status_HAS_UNEXPECTED_RESULTS, nil),
-				// Consistently failed test variant.
-				insert.AnalyzedTestVariant(testRealm, "ninja://test_consistent_failure", "hash", atvpb.Status_CONSISTENTLY_UNEXPECTED, map[string]any{
-					"TestMetadata": spanutil.Compressed(tmdBytes),
-				}),
-				// Stale test variant has new failure.
-				insert.AnalyzedTestVariant(testRealm, "ninja://test_no_new_results", "hash", atvpb.Status_NO_NEW_RESULTS, nil),
-			}
-			testutil.MustApply(ctx, ms...)
-
 			// Populate some existing test variant analysis.
 			setupTestVariantAnalysis(ctx, partitionTime)
 
@@ -410,11 +303,8 @@ func TestIngestTestResults(t *testing.T) {
 				verifyIngestionControl(ctx, ingestionCtl)
 				verifyTestResults(ctx, expectedInvocation)
 				verifyClustering(chunkStore, clusteredFailures)
-				verifyAnalyzedTestVariants(ctx, skdr)
 				verifyTestVerdicts(testVerdicts, partitionTime)
 				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
-				expectCollectTaskExists := false
-				verifyCollectTask(skdr, expectCollectTaskExists)
 			})
 			Convey(`Last task`, func() {
 				payload.TaskIndex = 10
@@ -445,13 +335,8 @@ func TestIngestTestResults(t *testing.T) {
 				verifyIngestionControl(ctx, ingestionCtl)
 				verifyTestResults(ctx, expectedInvocation)
 				verifyClustering(chunkStore, clusteredFailures)
-				verifyAnalyzedTestVariants(ctx, skdr)
 				verifyTestVerdicts(testVerdicts, partitionTime)
 				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
-
-				// Expect a collect task to be created.
-				expectCollectTaskExists := true
-				verifyCollectTask(skdr, expectCollectTaskExists)
 			})
 			Convey(`Retry task after continuation task already created`, func() {
 				// Scenario: First task fails after it has already scheduled
@@ -479,12 +364,8 @@ func TestIngestTestResults(t *testing.T) {
 				verifyIngestionControl(ctx, ingestionCtl)
 				verifyTestResults(ctx, expectedInvocation)
 				verifyClustering(chunkStore, clusteredFailures)
-				verifyAnalyzedTestVariants(ctx, skdr)
 				verifyTestVerdicts(testVerdicts, partitionTime)
 				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
-
-				expectCollectTaskExists := false
-				verifyCollectTask(skdr, expectCollectTaskExists)
 			})
 			Convey(`No commit position`, func() {
 				// Scenario: The build which completed did not include commit
@@ -1101,106 +982,6 @@ func verifyClustering(chunkStore *chunkstore.FakeClient, clusteredFailures *clus
 	}
 }
 
-func verifyAnalyzedTestVariants(ctx context.Context, skdr *tqtesting.Scheduler) {
-	// Read rows from Spanner to confirm the analyzed test variants are saved.
-	ctx, cancel := span.ReadOnlyTransaction(ctx)
-	defer cancel()
-
-	exp := map[string]atvpb.Status{
-		"ninja://test_new_failure":        atvpb.Status_HAS_UNEXPECTED_RESULTS,
-		"ninja://test_known_flake":        atvpb.Status_FLAKY,
-		"ninja://test_consistent_failure": atvpb.Status_CONSISTENTLY_UNEXPECTED,
-		"ninja://test_no_new_results":     atvpb.Status_HAS_UNEXPECTED_RESULTS,
-		"ninja://test_new_flake":          atvpb.Status_FLAKY,
-		"ninja://test_has_unexpected":     atvpb.Status_FLAKY,
-	}
-	act := make(map[string]atvpb.Status)
-	expProtos := map[string]*atvpb.AnalyzedTestVariant{
-		"ninja://test_new_failure": {
-			Realm:       testRealm,
-			TestId:      "ninja://test_new_failure",
-			VariantHash: "hash_1",
-			Status:      atvpb.Status_HAS_UNEXPECTED_RESULTS,
-			Variant:     pbutil.VariantFromResultDB(sampleVar),
-			Tags:        pbutil.StringPairs("monorail_component", "Monorail>Component"),
-			// Mock ResultDB data specifies test metadata for the
-			// new test failure. Make sure it is used.
-			TestMetadata: pbutil.TestMetadataFromResultDB(updatedTmd),
-		},
-		"ninja://test_known_flake": {
-			Realm:       testRealm,
-			TestId:      "ninja://test_known_flake",
-			VariantHash: "hash_2",
-			Status:      atvpb.Status_FLAKY,
-			Tags:        pbutil.StringPairs("monorail_component", "Monorail>Component", "os", "Mac", "test_name", "test_known_flake"),
-			// Mock ResultDB data specifies test metadata for the
-			// test result. Make sure it is used.
-			TestMetadata: pbutil.TestMetadataFromResultDB(updatedTmd),
-		},
-		"ninja://test_consistent_failure": {
-			Realm:       testRealm,
-			TestId:      "ninja://test_consistent_failure",
-			VariantHash: "hash",
-			Status:      atvpb.Status_CONSISTENTLY_UNEXPECTED,
-			Tags:        pbutil.StringPairs(),
-			// Mock ResultDB data does not specify test metadata for the
-			// ingested test result. Keep the same test metadata.
-			TestMetadata: pbutil.TestMetadataFromResultDB(originalTmd),
-		},
-	}
-
-	var testIDsWithNextTask []string
-	fields := []string{"Realm", "TestId", "VariantHash", "Status", "Variant", "Tags", "TestMetadata", "NextUpdateTaskEnqueueTime"}
-	actProtos := make(map[string]*atvpb.AnalyzedTestVariant, len(expProtos))
-	var b spanutil.Buffer
-	err := span.Read(ctx, "AnalyzedTestVariants", spanner.AllKeys(), fields).Do(
-		func(row *spanner.Row) error {
-			tv := &atvpb.AnalyzedTestVariant{}
-			var tmd spanutil.Compressed
-			var enqTime spanner.NullTime
-			err := b.FromSpanner(row, &tv.Realm, &tv.TestId, &tv.VariantHash, &tv.Status, &tv.Variant, &tv.Tags, &tmd, &enqTime)
-			So(err, ShouldBeNil)
-			So(tv.Realm, ShouldEqual, testRealm)
-
-			if len(tmd) > 0 {
-				tv.TestMetadata = &pb.TestMetadata{}
-				err = proto.Unmarshal(tmd, tv.TestMetadata)
-				So(err, ShouldBeNil)
-			}
-
-			act[tv.TestId] = tv.Status
-			if _, ok := expProtos[tv.TestId]; ok {
-				actProtos[tv.TestId] = tv
-			}
-
-			if !enqTime.IsNull() {
-				testIDsWithNextTask = append(testIDsWithNextTask, tv.TestId)
-			}
-			return nil
-		},
-	)
-	So(err, ShouldBeNil)
-	So(act, ShouldResemble, exp)
-	for k, actProto := range actProtos {
-		v, ok := expProtos[k]
-		So(ok, ShouldBeTrue)
-		So(actProto, ShouldResembleProto, v)
-	}
-	sort.Strings(testIDsWithNextTask)
-
-	var actTestIDsWithTasks []string
-	for _, pl := range skdr.Tasks().Payloads() {
-		switch pl := pl.(type) {
-		case *taskspb.UpdateTestVariant:
-			actTestIDsWithTasks = append(actTestIDsWithTasks, pl.TestVariantKey.TestId)
-		default:
-		}
-	}
-	sort.Strings(actTestIDsWithTasks)
-	So(len(actTestIDsWithTasks), ShouldEqual, 3)
-	So(actTestIDsWithTasks, ShouldResemble, testIDsWithNextTask)
-}
-
 func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime time.Time) {
 	actualRows := client.Insertions
 
@@ -1614,34 +1395,6 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 	So(actualRows, ShouldHaveLength, len(expectedRows))
 	for i, row := range actualRows {
 		So(row, ShouldResembleProto, expectedRows[i])
-	}
-}
-
-func verifyCollectTask(skdr *tqtesting.Scheduler, expectExists bool) {
-	expColTask := &taskspb.CollectTestResults{
-		Resultdb: &taskspb.ResultDB{
-			Invocation: &rdbpb.Invocation{
-				Name:  testInvocation,
-				Realm: testRealm,
-			},
-			Host: "results.api.cr.dev",
-		},
-		Builder:                   "builder",
-		Project:                   "project",
-		IsPreSubmit:               true,
-		ContributedToClSubmission: true,
-	}
-	collectTaskCount := 0
-	for _, pl := range skdr.Tasks().Payloads() {
-		if pl, ok := pl.(*taskspb.CollectTestResults); ok {
-			So(pl, ShouldResembleProto, expColTask)
-			collectTaskCount++
-		}
-	}
-	if expectExists {
-		So(collectTaskCount, ShouldEqual, 1)
-	} else {
-		So(collectTaskCount, ShouldEqual, 0)
 	}
 }
 

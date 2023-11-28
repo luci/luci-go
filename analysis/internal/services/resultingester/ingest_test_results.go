@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	"go.chromium.org/luci/analysis/internal/resultdb"
-	"go.chromium.org/luci/analysis/internal/services/resultcollector"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
@@ -52,6 +51,9 @@ import (
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
+
+	// Add support for Spanner transactions in TQ.
+	_ "go.chromium.org/luci/server/tq/txn/spanner"
 )
 
 const (
@@ -329,52 +331,6 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 		return err
 	}
 
-	// Ingest for test variant analysis.
-	realmCfg, err := config.Realm(ctx, inv.Realm)
-	if err != nil && err != config.RealmNotExistsErr {
-		return transient.Tag.Apply(err)
-	}
-
-	ingestForTestVariantAnalysis := realmCfg != nil &&
-		shouldIngestForTestVariants(realmCfg, payload)
-
-	if config.ChromiumMilestoneProjectRe.MatchString(payload.Build.Project) {
-		// Test variant analysis currently don't support chromium milestone projects.
-		ingestForTestVariantAnalysis = false
-	}
-
-	if ingestForTestVariantAnalysis {
-		failingTVs := filterToTestVariantsWithUnexpectedFailures(rsp.TestVariants)
-
-		builder := payload.Build.Builder
-		if err := createOrUpdateAnalyzedTestVariants(ctx, inv.Realm, builder, failingTVs); err != nil {
-			err = errors.Annotate(err, "ingesting for test variant analysis").Err()
-			return transient.Tag.Apply(err)
-		}
-
-		if nextPageToken == "" {
-			// In the last task, after all test variants ingested.
-			isPreSubmit := payload.PresubmitRun != nil
-			contributedToCLSubmission := payload.PresubmitRun != nil &&
-				payload.PresubmitRun.Mode == pb.PresubmitRunMode_FULL_RUN &&
-				payload.PresubmitRun.Status == pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED
-
-			task := &taskspb.CollectTestResults{
-				Resultdb: &taskspb.ResultDB{
-					Invocation: inv,
-					Host:       rdbHost,
-				},
-				Builder:                   builder,
-				Project:                   payload.Build.Project,
-				IsPreSubmit:               isPreSubmit,
-				ContributedToClSubmission: contributedToCLSubmission,
-			}
-			if err = resultcollector.Schedule(ctx, task); err != nil {
-				return transient.Tag.Apply(err)
-			}
-		}
-	}
-
 	err = ingestForVerdictExport(ctx, i.verdictExporter, rsp, inv, payload)
 	if err != nil {
 		return errors.Annotate(err, "export verdicts").Err()
@@ -418,6 +374,22 @@ func filterToTestVariantsWithUnexpectedFailures(tvs []*rdbpb.TestVariant) []*rdb
 		}
 	}
 	return results
+}
+
+func hasUnexpectedFailures(tv *rdbpb.TestVariant) bool {
+	if tv.Status == rdbpb.TestVariantStatus_UNEXPECTEDLY_SKIPPED ||
+		tv.Status == rdbpb.TestVariantStatus_EXPECTED {
+		return false
+	}
+
+	for _, trb := range tv.Results {
+		tr := trb.Result
+		if !tr.Expected && tr.Status != rdbpb.TestStatus_PASS && tr.Status != rdbpb.TestStatus_SKIP {
+			// If any result is an unexpected failure, LUCI Analysis should save this test variant.
+			return true
+		}
+	}
+	return false
 }
 
 // scheduleNextTask schedules a task to continue the ingestion,

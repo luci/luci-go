@@ -15,13 +15,9 @@
 package config
 
 import (
-	"time"
-
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
-	atvpb "go.chromium.org/luci/analysis/proto/analyzedtestvariant"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 )
 
@@ -71,31 +67,6 @@ func createPlaceholderClustering() *configpb.Clustering {
 		},
 		ReasonMaskPatterns: []string{
 			`^\[Fixture failure\] ([a-zA-Z0-9_]+)[:]`,
-		},
-	}
-}
-
-// Creates a placeholder realms config.
-func createPlaceholderRealms() []*configpb.RealmConfig {
-	return []*configpb.RealmConfig{
-		{
-			Name: "ci",
-			TestVariantAnalysis: &configpb.TestVariantAnalysisConfig{
-				UpdateTestVariantTask: &configpb.UpdateTestVariantTask{
-					UpdateTestVariantTaskInterval:   durationpb.New(time.Hour),
-					TestVariantStatusUpdateDuration: durationpb.New(6 * time.Hour),
-				},
-				BqExports: []*configpb.BigQueryExport{
-					{
-						Table: &configpb.BigQueryExport_BigQueryTable{
-							CloudProject: "test-hrd",
-							Dataset:      "chromium",
-							Table:        "flaky_test_variants",
-						},
-						Predicate: &atvpb.Predicate{},
-					},
-				},
-			},
 		},
 	}
 }
@@ -163,7 +134,6 @@ func CreatePlaceholderBugManagementPolicy(id string) *configpb.BugManagementPoli
 // for a project that uses both Monorail and Buganizer.
 func CreateConfigWithBothBuganizerAndMonorail(defaultBugSystem configpb.BugSystem) *configpb.ProjectConfig {
 	return &configpb.ProjectConfig{
-		Realms:     createPlaceholderRealms(),
 		Clustering: createPlaceholderClustering(),
 		Metrics:    createPlaceholderMetrics(),
 		BugManagement: &configpb.BugManagement{

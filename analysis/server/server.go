@@ -20,10 +20,7 @@ import (
 	"context"
 
 	"go.chromium.org/luci/analysis/app"
-	"go.chromium.org/luci/analysis/internal/admin"
-	adminpb "go.chromium.org/luci/analysis/internal/admin/proto"
 	"go.chromium.org/luci/analysis/internal/analysis"
-	"go.chromium.org/luci/analysis/internal/analyzedtestvariants"
 	"go.chromium.org/luci/analysis/internal/bugs/buganizer"
 	"go.chromium.org/luci/analysis/internal/bugs/updater"
 	cpbq "go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
@@ -34,10 +31,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/scopedauth"
 	"go.chromium.org/luci/analysis/internal/services/buildjoiner"
 	"go.chromium.org/luci/analysis/internal/services/reclustering"
-	"go.chromium.org/luci/analysis/internal/services/resultcollector"
 	"go.chromium.org/luci/analysis/internal/services/resultingester"
-	"go.chromium.org/luci/analysis/internal/services/testvariantbqexporter"
-	"go.chromium.org/luci/analysis/internal/services/testvariantupdator"
 	"go.chromium.org/luci/analysis/internal/span"
 	"go.chromium.org/luci/analysis/internal/views"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
@@ -94,7 +88,6 @@ func Main(init func(srv *luciserver.Server) error) {
 			return errors.Annotate(err, "creating analysis client").Err()
 		}
 
-		adminpb.RegisterAdminServer(srv, admin.CreateServer())
 		analysispb.RegisterClustersServer(srv, rpc.NewClustersServer(ac))
 		analysispb.RegisterMetricsServer(srv, rpc.NewMetricsServer())
 		analysispb.RegisterProjectsServer(srv, rpc.NewProjectsServer())
@@ -108,8 +101,6 @@ func Main(init func(srv *luciserver.Server) error) {
 		updateAnalysisAndBugsHandler := updater.NewHandler(srv.Options.CloudProject, srv.Options.Prod)
 		cron.RegisterHandler("update-analysis-and-bugs", updateAnalysisAndBugsHandler.CronHandler)
 		cron.RegisterHandler("read-config", config.Update)
-		cron.RegisterHandler("export-test-variants", testvariantbqexporter.ScheduleTasks)
-		cron.RegisterHandler("purge-test-variants", analyzedtestvariants.Purge)
 		cron.RegisterHandler("reclustering", orchestrator.CronHandler)
 		cron.RegisterHandler("global-metrics", metrics.GlobalMetrics)
 		cron.RegisterHandler("clear-rules-users", rules.ClearRulesUsers)
@@ -136,9 +127,6 @@ func Main(init func(srv *luciserver.Server) error) {
 			return errors.Annotate(err, "register result ingester").Err()
 		}
 		buildjoiner.RegisterTaskClass()
-		resultcollector.RegisterTaskClass()
-		testvariantbqexporter.RegisterTaskClass()
-		testvariantupdator.RegisterTaskClass()
 
 		return init(srv)
 	})
