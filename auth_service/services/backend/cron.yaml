@@ -4,9 +4,9 @@ cron:
   schedule: every 1 minutes
 
 - description: Update Allowlist config.
-  url: /internal/cron/update_config
+  url: /internal/cron/update-config
   schedule: every 1 minutes
 
-- description: fetch realm configs from luci-config
-  url: /internal/cron/update_realms
+- description: Update permissions and realms configs from luci-config.
+  url: /internal/cron/update-realms
   schedule: every 1 minutes

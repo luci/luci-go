@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -1339,6 +1340,19 @@ func GetAuthRealmsGlobals(ctx context.Context) (*AuthRealmsGlobals, error) {
 	}
 }
 
+// permsEqual returns whether two slices of permissions are equal by
+// value and order.
+//
+// e.g.
+//   - permsEqual([perm1, perm2], [perm1])                     -> false
+//   - permsEqual([perm1, perm2], [proto.Clone(perm1), perm2]) -> true
+//   - permsEqual([perm1, perm2], [perm2, perm1])              -> false
+func permsEqual(permsA, permsB []*protocol.Permission) bool {
+	return slices.EqualFunc(permsA, permsB, func(a, b *protocol.Permission) bool {
+		return proto.Equal(a, b)
+	})
+}
+
 // UpdateAuthRealmsGlobals updates the AuthRealmsGlobals singleton entity in datastore, creating
 // the entity if necessary.
 //
@@ -1359,23 +1373,8 @@ func GetAuthRealmsGlobals(ctx context.Context) (*AuthRealmsGlobals, error) {
 //
 // TODO(crbug/1336137): Remove all references and checks to old permissions
 // once Python version knows how to work with permissions.cfg.
-func UpdateAuthRealmsGlobals(ctx context.Context, permcfg *configspb.PermissionsConfig, dryRun bool, historicalComment string) error {
+func UpdateAuthRealmsGlobals(ctx context.Context, permsCfg *configspb.PermissionsConfig, dryRun bool, historicalComment string) error {
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
-		// map the permission name to the protobuf.
-		permsMap := make(map[string]*protocol.Permission)
-
-		// set of permission names found in config
-		cfgPermsSet := stringset.Set{}
-
-		// All permissions from cfg
-		for _, r := range permcfg.GetRole() {
-			for _, p := range r.GetPermissions() {
-				permName := p.GetName()
-				permsMap[permName] = p
-				cfgPermsSet.Add(permName)
-			}
-		}
-
 		stored, err := GetAuthRealmsGlobals(ctx)
 		if err != nil && err != datastore.ErrNoSuchEntity {
 			return errors.Annotate(err, "error while fetching AuthRealmsGlobals entity").Err()
@@ -1383,6 +1382,29 @@ func UpdateAuthRealmsGlobals(ctx context.Context, permcfg *configspb.Permissions
 
 		if stored == nil {
 			stored = makeAuthRealmsGlobals(ctx)
+		}
+
+		var storedPermsList []*protocol.Permission
+		if stored.PermissionsList != nil {
+			storedPermsList = stored.PermissionsList.GetPermissions()
+		}
+
+		// Get the permissions from the config, using the stored
+		// permissions count as a size hint for initial allocation.
+		storedCount := len(storedPermsList)
+		cfgPermsNames := make(stringset.Set, storedCount)
+		cfgPermsMap := make(map[string]*protocol.Permission, storedCount)
+		for _, r := range permsCfg.GetRole() {
+			for _, p := range r.GetPermissions() {
+				name := p.GetName()
+				cfgPermsNames.Add(name)
+				cfgPermsMap[name] = p
+			}
+		}
+
+		orderedCfgPerms := make([]*protocol.Permission, len(cfgPermsNames))
+		for i, name := range cfgPermsNames.ToSortedSlice() {
+			orderedCfgPerms[i] = cfgPermsMap[name]
 		}
 
 		// convert what is stored by Python to proto to compare to cfg we pulled
@@ -1405,16 +1427,19 @@ func UpdateAuthRealmsGlobals(ctx context.Context, permcfg *configspb.Permissions
 		}
 
 		// enforce that permissions match each other
-		diff := storedPermsSet.Difference(cfgPermsSet)
+		diff := storedPermsSet.Difference(cfgPermsNames)
 		if len(diff) != 0 && stored.Permissions != nil {
 			return fmt.Errorf("the stored permissions and the permissions.cfg are not the same... diff: %v", diff)
 		}
 
-		stored.PermissionsList = &permissions.PermissionsList{
-			Permissions: make([]*protocol.Permission, len(cfgPermsSet)),
+		// Exit early if the permissions haven't actually changed.
+		if stored.PermissionsList != nil && permsEqual(storedPermsList, orderedCfgPerms) {
+			logging.Infof(ctx, "skipping update of AuthRealmsGlobals; stored.PermissionsList matches latest permissions.cfg")
+			return nil
 		}
-		for i, p := range cfgPermsSet.ToSortedSlice() {
-			stored.PermissionsList.Permissions[i] = permsMap[p]
+
+		stored.PermissionsList = &permissions.PermissionsList{
+			Permissions: orderedCfgPerms,
 		}
 
 		if !dryRun {
