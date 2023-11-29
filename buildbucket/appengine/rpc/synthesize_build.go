@@ -140,6 +140,5 @@ func (*Builds) SynthesizeBuild(ctx context.Context, req *pb.SynthesizeBuildReque
 	return synthesizeBuild(ctx, &pb.ScheduleBuildRequest{
 		Builder:     req.GetBuilder(),
 		Experiments: exps,
-		ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
 	})
 }
