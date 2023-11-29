@@ -33,10 +33,12 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/pagination"
 	"go.chromium.org/luci/common/pagination/dscursor"
+	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -131,9 +133,20 @@ func (server *AnalysesServer) UpdateAnalysis(c context.Context, req *pb.UpdateAn
 
 func (server *AnalysesServer) ListTestAnalyses(ctx context.Context, req *pb.ListTestAnalysesRequest) (*pb.ListTestAnalysesResponse, error) {
 	logging.Infof(ctx, "ListTestAnalyses for project %s", req.Project)
+
 	// Validate the request.
 	if err := validateListTestAnalysesRequest(req); err != nil {
 		return nil, err
+	}
+
+	// By default, returning all fields.
+	fieldMask := req.Fields
+	if fieldMask == nil {
+		fieldMask = defaultFieldMask()
+	}
+	mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, false, false)
+	if err != nil {
+		return nil, errors.Annotate(err, "from field mask").Err()
 	}
 
 	// Decode cursor from page token.
@@ -186,7 +199,7 @@ func (server *AnalysesServer) ListTestAnalyses(ctx context.Context, req *pb.List
 			i := i
 			tfa := tfa
 			workC <- func() error {
-				analysis, err := protoutil.TestFailureAnalysisToPb(ctx, tfa)
+				analysis, err := protoutil.TestFailureAnalysisToPb(ctx, tfa, mask)
 				if err != nil {
 					err = errors.Annotate(err, "test failure analysis to pb").Err()
 					logging.Errorf(ctx, "Could not get analysis data for analysis %d: %s", tfa.ID, err)
@@ -210,6 +223,17 @@ func (server *AnalysesServer) ListTestAnalyses(ctx context.Context, req *pb.List
 
 func (server *AnalysesServer) GetTestAnalysis(ctx context.Context, req *pb.GetTestAnalysisRequest) (*pb.TestAnalysis, error) {
 	ctx = loggingutil.SetAnalysisID(ctx, req.AnalysisId)
+
+	// By default, returning all fields.
+	fieldMask := req.Fields
+	if fieldMask == nil {
+		fieldMask = defaultFieldMask()
+	}
+	mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, false, false)
+	if err != nil {
+		return nil, errors.Annotate(err, "from field mask").Err()
+	}
+
 	tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, req.AnalysisId)
 	if err != nil {
 		if errors.Is(err, datastore.ErrNoSuchEntity) {
@@ -220,7 +244,7 @@ func (server *AnalysesServer) GetTestAnalysis(ctx context.Context, req *pb.GetTe
 		logging.Errorf(ctx, err.Error())
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
-	result, err := protoutil.TestFailureAnalysisToPb(ctx, tfa)
+	result, err := protoutil.TestFailureAnalysisToPb(ctx, tfa, mask)
 	if err != nil {
 		err = errors.Annotate(err, "test failure analysis to pb").Err()
 		logging.Errorf(ctx, err.Error())
@@ -630,4 +654,10 @@ func validateListTestAnalysesRequest(req *pb.ListTestAnalysesRequest) error {
 		return status.Errorf(codes.InvalidArgument, "page size must not be negative")
 	}
 	return nil
+}
+
+func defaultFieldMask() *fieldmaskpb.FieldMask {
+	return &fieldmaskpb.FieldMask{
+		Paths: []string{"*"},
+	}
 }

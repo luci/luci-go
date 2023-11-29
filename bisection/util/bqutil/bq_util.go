@@ -18,14 +18,17 @@ package bqutil
 import (
 	"context"
 
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/bisection/model"
 	bqpb "go.chromium.org/luci/bisection/proto/bq"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/protoutil"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/mask"
 )
 
 // TestFailureAnalysisToBqRow returns a TestAnalysisRow for a TestFailureAnalysis.
@@ -58,7 +61,15 @@ func TestFailureAnalysisToBqRow(ctx context.Context, tfa *model.TestFailureAnaly
 	if err != nil {
 		return nil, errors.Annotate(err, "get test failure bundle").Err()
 	}
-	result.TestFailures = protoutil.TestFailureBundleToPb(ctx, bundle)
+	tfFieldMask := fieldmaskpb.FieldMask{
+		Paths: []string{"*"},
+	}
+	tfMask, err := mask.FromFieldMask(&tfFieldMask, &pb.TestFailure{}, false, false)
+	if err != nil {
+		return nil, errors.Annotate(err, "from field mask").Err()
+	}
+
+	result.TestFailures = protoutil.TestFailureBundleToPb(ctx, bundle, tfMask)
 	primary := bundle.Primary()
 	result.StartFailureRate = float32(primary.StartPositionFailureRate)
 	result.EndFailureRate = float32(primary.EndPositionFailureRate)
@@ -82,7 +93,15 @@ func TestFailureAnalysisToBqRow(ctx context.Context, tfa *model.TestFailureAnaly
 		return nil, errors.Annotate(err, "get test nthsection for analysis").Err()
 	}
 	if nsa != nil {
-		nsaResult, err := protoutil.NthSectionAnalysisToPb(ctx, tfa, nsa, primary.Ref)
+		nsaFieldMask := fieldmaskpb.FieldMask{
+			Paths: []string{"*"},
+		}
+		nsaMask, err := mask.FromFieldMask(&nsaFieldMask, &pb.TestNthSectionAnalysisResult{}, false, false)
+		if err != nil {
+			return nil, errors.Annotate(err, "from field mask").Err()
+		}
+
+		nsaResult, err := protoutil.NthSectionAnalysisToPb(ctx, tfa, nsa, primary.Ref, nsaMask)
 		if err != nil {
 			return nil, errors.Annotate(err, "nthsection analysis to pb").Err()
 		}
@@ -92,7 +111,15 @@ func TestFailureAnalysisToBqRow(ctx context.Context, tfa *model.TestFailureAnaly
 			return nil, errors.Annotate(err, "get verified culprit").Err()
 		}
 		if culprit != nil {
-			culpritPb, err := protoutil.CulpritToPb(ctx, culprit, nsa)
+			culpritFieldMask := fieldmaskpb.FieldMask{
+				Paths: []string{"*"},
+			}
+			culpritMask, err := mask.FromFieldMask(&culpritFieldMask, &pb.TestCulprit{}, false, false)
+			if err != nil {
+				return nil, errors.Annotate(err, "from field mask").Err()
+			}
+
+			culpritPb, err := protoutil.CulpritToPb(ctx, culprit, nsa, culpritMask)
 			if err != nil {
 				return nil, errors.Annotate(err, "culprit to pb").Err()
 			}

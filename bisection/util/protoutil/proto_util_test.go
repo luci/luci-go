@@ -20,22 +20,24 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/proto/mask"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 	t.Parallel()
-	ctx := memory.Use(context.Background())
-	testutil.UpdateIndices(ctx)
-
-	Convey("TestFailureAnalysisToPb", t, func() {
+	Convey("TestConvertTestFailureAnalysisToPb", t, func() {
+		ctx := memory.Use(context.Background())
+		testutil.UpdateIndices(ctx)
 		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
 			ID:              int64(100),
 			Project:         "chromium",
@@ -251,199 +253,274 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 		So(datastore.Put(ctx, nsa), ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
-		tfaProto, err := TestFailureAnalysisToPb(ctx, tfa)
-		So(err, ShouldBeNil)
+		Convey("TestFailureAnalysisToPb", func() {
+			fieldMask := &fieldmaskpb.FieldMask{
+				Paths: []string{"*"},
+			}
+			mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, false, false)
+			So(err, ShouldBeNil)
 
-		pbSuspectRerun := &pb.TestSingleRerun{
-			Bbid:       3000,
-			CreateTime: timestamppb.New(time.Unix(103, 0).UTC()),
-			StartTime:  timestamppb.New(time.Unix(104, 0).UTC()),
-			ReportTime: timestamppb.New(time.Unix(105, 0).UTC()),
-			EndTime:    timestamppb.New(time.Unix(106, 0).UTC()),
-			Index:      "2",
-			Commit: &buildbucketpb.GitilesCommit{
-				Host:    "chromium.googlesource.com",
-				Project: "chromium/src",
-				Ref:     "ref",
-				Id:      "commit2",
-			},
-			RerunResult: &pb.RerunTestResults{
-				RerunStatus: pb.RerunStatus_RERUN_STATUS_FAILED,
-				Results: []*pb.RerunTestSingleResult{
-					{
-						TestId:          "testID1",
-						VariantHash:     "vhash1",
-						UnexpectedCount: 1,
-					},
+			tfaProto, err := TestFailureAnalysisToPb(ctx, tfa, mask)
+			So(err, ShouldBeNil)
+
+			pbSuspectRerun := &pb.TestSingleRerun{
+				Bbid:       3000,
+				CreateTime: timestamppb.New(time.Unix(103, 0).UTC()),
+				StartTime:  timestamppb.New(time.Unix(104, 0).UTC()),
+				ReportTime: timestamppb.New(time.Unix(105, 0).UTC()),
+				EndTime:    timestamppb.New(time.Unix(106, 0).UTC()),
+				Index:      "2",
+				Commit: &buildbucketpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Ref:     "ref",
+					Id:      "commit2",
 				},
-			},
-		}
-
-		pbParentRerun := &pb.TestSingleRerun{
-			Bbid:       3001,
-			CreateTime: timestamppb.New(time.Unix(103, 0).UTC()),
-			StartTime:  timestamppb.New(time.Unix(104, 0).UTC()),
-			ReportTime: timestamppb.New(time.Unix(105, 0).UTC()),
-			EndTime:    timestamppb.New(time.Unix(106, 0).UTC()),
-			Index:      "3",
-			Commit: &buildbucketpb.GitilesCommit{
-				Host:    "chromium.googlesource.com",
-				Project: "chromium/src",
-				Ref:     "ref",
-				Id:      "commit3",
-			},
-			RerunResult: &pb.RerunTestResults{
-				RerunStatus: pb.RerunStatus_RERUN_STATUS_PASSED,
-				Results: []*pb.RerunTestSingleResult{
-					{
-						TestId:        "testID1",
-						VariantHash:   "vhash1",
-						ExpectedCount: 1,
-					},
-				},
-			},
-		}
-
-		pbNthsectionRerun1 := &pb.TestSingleRerun{
-			Bbid:       2998,
-			CreateTime: timestamppb.New(time.Unix(103, 0).UTC()),
-			StartTime:  timestamppb.New(time.Unix(104, 0).UTC()),
-			ReportTime: timestamppb.New(time.Unix(105, 0).UTC()),
-			EndTime:    timestamppb.New(time.Unix(106, 0).UTC()),
-			Index:      "2",
-			Commit: &buildbucketpb.GitilesCommit{
-				Host:    "chromium.googlesource.com",
-				Project: "chromium/src",
-				Ref:     "ref",
-				Id:      "commit2",
-			},
-			RerunResult: &pb.RerunTestResults{
-				RerunStatus: pb.RerunStatus_RERUN_STATUS_FAILED,
-				Results: []*pb.RerunTestSingleResult{
-					{
-						TestId:          "testID1",
-						VariantHash:     "vhash1",
-						UnexpectedCount: 1,
-					},
-				},
-			},
-		}
-
-		pbNthsectionRerun2 := &pb.TestSingleRerun{
-			Bbid:       2999,
-			CreateTime: timestamppb.New(time.Unix(104, 0).UTC()),
-			StartTime:  timestamppb.New(time.Unix(105, 0).UTC()),
-			ReportTime: timestamppb.New(time.Unix(106, 0).UTC()),
-			EndTime:    timestamppb.New(time.Unix(107, 0).UTC()),
-			Index:      "3",
-			Commit: &buildbucketpb.GitilesCommit{
-				Host:    "chromium.googlesource.com",
-				Project: "chromium/src",
-				Ref:     "ref",
-				Id:      "commit3",
-			},
-			RerunResult: &pb.RerunTestResults{
-				RerunStatus: pb.RerunStatus_RERUN_STATUS_PASSED,
-				Results: []*pb.RerunTestSingleResult{
-					{
-						TestId:        "testID1",
-						VariantHash:   "vhash1",
-						ExpectedCount: 1,
-					},
-				},
-			},
-		}
-
-		culpritPb := &pb.TestCulprit{
-			ReviewUrl:   "review_url",
-			ReviewTitle: "review_title",
-			Commit: &buildbucketpb.GitilesCommit{
-				Host:    "chromium.googlesource.com",
-				Project: "chromium/src",
-				Ref:     "ref",
-				Id:      "culprit_commit_id",
-			},
-			CulpritAction: []*pb.CulpritAction{
-				{
-					ActionType:  pb.CulpritActionType_REVERT_CL_CREATED,
-					RevertClUrl: "http://revert",
-					ActionTime:  timestamppb.New(time.Unix(120, 0)),
-				},
-			},
-			VerificationDetails: &pb.TestSuspectVerificationDetails{
-				Status:       pb.SuspectVerificationStatus_CONFIRMED_CULPRIT,
-				SuspectRerun: pbSuspectRerun,
-				ParentRerun:  pbParentRerun,
-			},
-		}
-
-		So(tfaProto, ShouldResembleProto, &pb.TestAnalysis{
-			AnalysisId: 100,
-			Builder: &buildbucketpb.BuilderID{
-				Project: "chromium",
-				Bucket:  "ci",
-				Builder: "linux-rel",
-			},
-			CreatedTime: timestamppb.New(time.Unix(int64(100), 0).UTC()),
-			StartTime:   timestamppb.New(time.Unix(int64(110), 0).UTC()),
-			EndTime:     timestamppb.New(time.Unix(int64(120), 0).UTC()),
-			Status:      pb.AnalysisStatus_FOUND,
-			RunStatus:   pb.AnalysisRunStatus_ENDED,
-			StartCommit: &buildbucketpb.GitilesCommit{
-				Host:     "chromium.googlesource.com",
-				Project:  "chromium/src",
-				Ref:      "ref",
-				Id:       "start_commit_hash",
-				Position: 100,
-			},
-			EndCommit: &buildbucketpb.GitilesCommit{
-				Host:     "chromium.googlesource.com",
-				Project:  "chromium/src",
-				Ref:      "ref",
-				Id:       "end_commit_hash",
-				Position: 199,
-			},
-			SampleBbid:       8000,
-			StartFailureRate: 0,
-			EndFailureRate:   1.0,
-			TestFailures: []*pb.TestFailure{
-				{
-					TestId:      "testID1",
-					VariantHash: "vhash1",
-					RefHash:     "refhash",
-					Variant: &pb.Variant{
-						Def: map[string]string{
-							"key1": "val1",
+				RerunResult: &pb.RerunTestResults{
+					RerunStatus: pb.RerunStatus_RERUN_STATUS_FAILED,
+					Results: []*pb.RerunTestSingleResult{
+						{
+							TestId:          "testID1",
+							VariantHash:     "vhash1",
+							UnexpectedCount: 1,
 						},
 					},
-					IsPrimary: true,
-					StartHour: timestamppb.New(time.Unix(int64(100), 0).UTC()),
 				},
-				{
-					TestId:      "testID2",
-					VariantHash: "vhash2",
-					RefHash:     "refhash",
-					Variant: &pb.Variant{
-						Def: map[string]string{
-							"key2": "val2",
+			}
+
+			pbParentRerun := &pb.TestSingleRerun{
+				Bbid:       3001,
+				CreateTime: timestamppb.New(time.Unix(103, 0).UTC()),
+				StartTime:  timestamppb.New(time.Unix(104, 0).UTC()),
+				ReportTime: timestamppb.New(time.Unix(105, 0).UTC()),
+				EndTime:    timestamppb.New(time.Unix(106, 0).UTC()),
+				Index:      "3",
+				Commit: &buildbucketpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Ref:     "ref",
+					Id:      "commit3",
+				},
+				RerunResult: &pb.RerunTestResults{
+					RerunStatus: pb.RerunStatus_RERUN_STATUS_PASSED,
+					Results: []*pb.RerunTestSingleResult{
+						{
+							TestId:        "testID1",
+							VariantHash:   "vhash1",
+							ExpectedCount: 1,
 						},
 					},
-					IsDiverged: true,
-					StartHour:  timestamppb.New(time.Unix(int64(100), 0).UTC()),
 				},
-			},
-			NthSectionResult: &pb.TestNthSectionAnalysisResult{
-				Status:    pb.AnalysisStatus_SUSPECTFOUND,
-				RunStatus: pb.AnalysisRunStatus_ENDED,
-				StartTime: timestamppb.New(time.Unix(int64(100), 0).UTC()),
-				EndTime:   timestamppb.New(time.Unix(int64(109), 0).UTC()),
-				BlameList: testutil.CreateBlamelist(4),
-				Suspect:   culpritPb,
-				Reruns: []*pb.TestSingleRerun{
-					pbNthsectionRerun1, pbNthsectionRerun2,
+			}
+
+			pbNthsectionRerun1 := &pb.TestSingleRerun{
+				Bbid:       2998,
+				CreateTime: timestamppb.New(time.Unix(103, 0).UTC()),
+				StartTime:  timestamppb.New(time.Unix(104, 0).UTC()),
+				ReportTime: timestamppb.New(time.Unix(105, 0).UTC()),
+				EndTime:    timestamppb.New(time.Unix(106, 0).UTC()),
+				Index:      "2",
+				Commit: &buildbucketpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Ref:     "ref",
+					Id:      "commit2",
 				},
-			},
-			Culprit: culpritPb,
+				RerunResult: &pb.RerunTestResults{
+					RerunStatus: pb.RerunStatus_RERUN_STATUS_FAILED,
+					Results: []*pb.RerunTestSingleResult{
+						{
+							TestId:          "testID1",
+							VariantHash:     "vhash1",
+							UnexpectedCount: 1,
+						},
+					},
+				},
+			}
+
+			pbNthsectionRerun2 := &pb.TestSingleRerun{
+				Bbid:       2999,
+				CreateTime: timestamppb.New(time.Unix(104, 0).UTC()),
+				StartTime:  timestamppb.New(time.Unix(105, 0).UTC()),
+				ReportTime: timestamppb.New(time.Unix(106, 0).UTC()),
+				EndTime:    timestamppb.New(time.Unix(107, 0).UTC()),
+				Index:      "3",
+				Commit: &buildbucketpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Ref:     "ref",
+					Id:      "commit3",
+				},
+				RerunResult: &pb.RerunTestResults{
+					RerunStatus: pb.RerunStatus_RERUN_STATUS_PASSED,
+					Results: []*pb.RerunTestSingleResult{
+						{
+							TestId:        "testID1",
+							VariantHash:   "vhash1",
+							ExpectedCount: 1,
+						},
+					},
+				},
+			}
+
+			culpritPb := &pb.TestCulprit{
+				ReviewUrl:   "review_url",
+				ReviewTitle: "review_title",
+				Commit: &buildbucketpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Ref:     "ref",
+					Id:      "culprit_commit_id",
+				},
+				CulpritAction: []*pb.CulpritAction{
+					{
+						ActionType:  pb.CulpritActionType_REVERT_CL_CREATED,
+						RevertClUrl: "http://revert",
+						ActionTime:  timestamppb.New(time.Unix(120, 0)),
+					},
+				},
+				VerificationDetails: &pb.TestSuspectVerificationDetails{
+					Status:       pb.SuspectVerificationStatus_CONFIRMED_CULPRIT,
+					SuspectRerun: pbSuspectRerun,
+					ParentRerun:  pbParentRerun,
+				},
+			}
+
+			So(tfaProto, ShouldResembleProto, &pb.TestAnalysis{
+				AnalysisId: 100,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
+					Builder: "linux-rel",
+				},
+				CreatedTime: timestamppb.New(time.Unix(int64(100), 0).UTC()),
+				StartTime:   timestamppb.New(time.Unix(int64(110), 0).UTC()),
+				EndTime:     timestamppb.New(time.Unix(int64(120), 0).UTC()),
+				Status:      pb.AnalysisStatus_FOUND,
+				RunStatus:   pb.AnalysisRunStatus_ENDED,
+				StartCommit: &buildbucketpb.GitilesCommit{
+					Host:     "chromium.googlesource.com",
+					Project:  "chromium/src",
+					Ref:      "ref",
+					Id:       "start_commit_hash",
+					Position: 100,
+				},
+				EndCommit: &buildbucketpb.GitilesCommit{
+					Host:     "chromium.googlesource.com",
+					Project:  "chromium/src",
+					Ref:      "ref",
+					Id:       "end_commit_hash",
+					Position: 199,
+				},
+				SampleBbid:       8000,
+				StartFailureRate: 0,
+				EndFailureRate:   1.0,
+				TestFailures: []*pb.TestFailure{
+					{
+						TestId:      "testID1",
+						VariantHash: "vhash1",
+						RefHash:     "refhash",
+						Variant: &pb.Variant{
+							Def: map[string]string{
+								"key1": "val1",
+							},
+						},
+						IsPrimary: true,
+						StartHour: timestamppb.New(time.Unix(int64(100), 0).UTC()),
+					},
+					{
+						TestId:      "testID2",
+						VariantHash: "vhash2",
+						RefHash:     "refhash",
+						Variant: &pb.Variant{
+							Def: map[string]string{
+								"key2": "val2",
+							},
+						},
+						IsDiverged: true,
+						StartHour:  timestamppb.New(time.Unix(int64(100), 0).UTC()),
+					},
+				},
+				NthSectionResult: &pb.TestNthSectionAnalysisResult{
+					Status:    pb.AnalysisStatus_SUSPECTFOUND,
+					RunStatus: pb.AnalysisRunStatus_ENDED,
+					StartTime: timestamppb.New(time.Unix(int64(100), 0).UTC()),
+					EndTime:   timestamppb.New(time.Unix(int64(109), 0).UTC()),
+					BlameList: testutil.CreateBlamelist(4),
+					Suspect:   culpritPb,
+					Reruns: []*pb.TestSingleRerun{
+						pbNthsectionRerun1, pbNthsectionRerun2,
+					},
+				},
+				Culprit: culpritPb,
+			})
+		})
+
+		Convey("Bisection overview field mask", func() {
+			fieldMask := &fieldmaskpb.FieldMask{
+				Paths: []string{
+					"analysis_id",
+					"created_time",
+					"start_time",
+					"end_time",
+					"status",
+					"run_status",
+					"builder",
+					"culprit.commit",
+					"culprit.review_url",
+					"culprit.review_title",
+					"culprit.culprit_action",
+					"test_failures.*.is_primary",
+					"test_failures.*.start_hour",
+				},
+			}
+			mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, false, false)
+			So(err, ShouldBeNil)
+
+			tfaProto, err := TestFailureAnalysisToPb(ctx, tfa, mask)
+			So(err, ShouldBeNil)
+
+			culpritPb := &pb.TestCulprit{
+				ReviewUrl:   "review_url",
+				ReviewTitle: "review_title",
+				Commit: &buildbucketpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Ref:     "ref",
+					Id:      "culprit_commit_id",
+				},
+				CulpritAction: []*pb.CulpritAction{
+					{
+						ActionType:  pb.CulpritActionType_REVERT_CL_CREATED,
+						RevertClUrl: "http://revert",
+						ActionTime:  timestamppb.New(time.Unix(120, 0)),
+					},
+				},
+			}
+
+			So(tfaProto, ShouldResembleProto, &pb.TestAnalysis{
+				AnalysisId: 100,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
+					Builder: "linux-rel",
+				},
+				CreatedTime: timestamppb.New(time.Unix(int64(100), 0).UTC()),
+				StartTime:   timestamppb.New(time.Unix(int64(110), 0).UTC()),
+				EndTime:     timestamppb.New(time.Unix(int64(120), 0).UTC()),
+				Status:      pb.AnalysisStatus_FOUND,
+				RunStatus:   pb.AnalysisRunStatus_ENDED,
+				TestFailures: []*pb.TestFailure{
+					{
+						IsPrimary: true,
+						StartHour: timestamppb.New(time.Unix(int64(100), 0).UTC()),
+					},
+					{
+						StartHour: timestamppb.New(time.Unix(int64(100), 0).UTC()),
+					},
+				},
+				Culprit: culpritPb,
+			})
 		})
 	})
 }
@@ -471,7 +548,12 @@ func TestRegressionRange(t *testing.T) {
 				},
 			},
 		}
-		pbNsa, err := NthSectionAnalysisToPb(ctx, tfa, nsa, sourceRef)
+		nsaFieldMask := fieldmaskpb.FieldMask{
+			Paths: []string{"*"},
+		}
+		nsaMask, err := mask.FromFieldMask(&nsaFieldMask, &pb.TestNthSectionAnalysisResult{}, false, false)
+		So(err, ShouldBeNil)
+		pbNsa, err := NthSectionAnalysisToPb(ctx, tfa, nsa, sourceRef, nsaMask)
 		So(err, ShouldBeNil)
 		So(pbNsa.RemainingNthSectionRange, ShouldResembleProto, &pb.RegressionRange{
 			LastPassed: &buildbucketpb.GitilesCommit{
@@ -503,7 +585,7 @@ func TestRegressionRange(t *testing.T) {
 			},
 		})
 
-		pbNsa, err = NthSectionAnalysisToPb(ctx, tfa, nsa, sourceRef)
+		pbNsa, err = NthSectionAnalysisToPb(ctx, tfa, nsa, sourceRef, nsaMask)
 		So(err, ShouldBeNil)
 		So(pbNsa.RemainingNthSectionRange, ShouldResembleProto, &pb.RegressionRange{
 			LastPassed: &buildbucketpb.GitilesCommit{

@@ -17,6 +17,7 @@ syntax = "proto3";
 package luci.bisection.v1;
 
 import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/bisection/proto/v1/bugs.proto";
 import "go.chromium.org/luci/bisection/proto/v1/common.proto";
@@ -205,6 +206,9 @@ message ListTestAnalysesRequest {
   // match the call that provided the page token,
   // with the exception of page_size and page_token.
   string page_token = 3;
+  // The fields to be included in the response.
+  // By default, all fields are included.
+  google.protobuf.FieldMask fields = 4;
 }
 
 message ListTestAnalysesResponse {
@@ -218,6 +222,9 @@ message ListTestAnalysesResponse {
 message GetTestAnalysisRequest {
   // ID of the analysis.
   int64 analysis_id = 1 [ (google.api.field_behavior) = REQUIRED ];
+  // The fields to be included in the response.
+  // By default, all fields are included.
+  google.protobuf.FieldMask fields = 2;
 }
 
 message TestAnalysis {
