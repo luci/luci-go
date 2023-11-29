@@ -15,13 +15,15 @@
 import { Interpolation, Theme } from '@emotion/react';
 import { css, html, svg, SVGTemplateResult } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import { Duration } from 'luxon';
 import { computed, makeObservable, observable } from 'mobx';
 
 import { QueryTestHistoryStatsResponseGroup } from '@/common/services/luci_analysis';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
-import { displayDuration, parseProtoDuration } from '@/common/tools/time_utils';
+import {
+  displayDuration,
+  parseProtoDurationStr,
+} from '@/common/tools/time_utils';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
 import { consumer } from '@/generic_libs/tools/lit_context';
 
@@ -93,8 +95,9 @@ export class TestHistoryDurationGraphElement extends MobxExtLitElement {
   }
 
   private renderEntries(group: QueryTestHistoryStatsResponseGroup) {
-    const averageDurationMs = parseProtoDuration(group.passedAvgDuration!);
-    this.pageState.setDuration(averageDurationMs);
+    const avgDuration = parseProtoDurationStr(group.passedAvgDuration!);
+    const avgDurationMs = avgDuration.toMillis();
+    this.pageState.setDuration(avgDurationMs);
 
     return svg`
       <rect
@@ -102,12 +105,12 @@ export class TestHistoryDurationGraphElement extends MobxExtLitElement {
         y=${CELL_PADDING}
         width=${INNER_CELL_SIZE}
         height=${INNER_CELL_SIZE}
-        fill=${this.pageState.scaleDurationColor(averageDurationMs)}
+        fill=${this.pageState.scaleDurationColor(avgDurationMs)}
         style="cursor: pointer;"
         @click=${() => this.pageState.setSelectedGroup(group)}
       >
         <title>Average Duration: ${displayDuration(
-          Duration.fromMillis(averageDurationMs),
+          avgDuration,
         )}\nClick to view test run details.</title>
       </rect>
     `;

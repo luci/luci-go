@@ -20,14 +20,13 @@ import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
-import { Duration } from 'luxon';
 import { useState } from 'react';
 
 import { DurationBadge } from '@/common/components/duration_badge';
 import { useProject } from '@/common/components/page_meta/page_meta_provider';
 import { makeClusterLink } from '@/common/services/luci_analysis';
 import { TestResult, parseTestResultName } from '@/common/services/resultdb';
-import { parseProtoDuration } from '@/common/tools/time_utils';
+import { parseProtoDurationStr } from '@/common/tools/time_utils';
 import { getSwarmingTaskURL } from '@/common/tools/url_utils';
 import { parseSwarmingTaskFromInvId } from '@/common/tools/utils';
 
@@ -80,9 +79,7 @@ export function ResultBasicInfo({ result }: Props) {
           <Grid item container columnGap={1} alignItems="center">
             {result.duration && (
               <DurationBadge
-                duration={Duration.fromMillis(
-                  parseProtoDuration(result.duration),
-                )}
+                duration={parseProtoDurationStr(result.duration)}
               />
             )}
             {swarmingTaskId !== null && (

@@ -16,7 +16,7 @@ import { html } from 'lit';
 
 import { Suggestion } from '@/common/components/auto_complete';
 import { TestVariant } from '@/common/services/resultdb';
-import { parseProtoDuration } from '@/common/tools/time_utils';
+import { parseProtoDurationStr } from '@/common/tools/time_utils';
 import { highlight } from '@/generic_libs/tools/lit_utils';
 
 import { KV_SYNTAX_EXPLANATION, parseKeyValue } from './utils';
@@ -130,7 +130,8 @@ export function parseTestResultSearchQuery(
             if (!r.result.duration) {
               return false;
             }
-            const durationMs = parseProtoDuration(r.result.duration);
+            const duration = parseProtoDurationStr(r.result.duration);
+            const durationMs = duration.toMillis();
             return durationMs >= minDuration && durationMs <= maxDuration;
           });
       }

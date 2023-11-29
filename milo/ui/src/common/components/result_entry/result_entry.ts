@@ -18,7 +18,6 @@ import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import { Duration } from 'luxon';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable, PENDING } from 'mobx-utils';
 
@@ -44,7 +43,7 @@ import { logging } from '@/common/tools/logging';
 import {
   displayCompactDuration,
   displayDuration,
-  parseProtoDuration,
+  parseProtoDurationStr,
 } from '@/common/tools/time_utils';
 import {
   getInvURLPath,
@@ -92,7 +91,7 @@ export class ResultEntryElement extends MobxLitElement {
     if (!durationStr) {
       return null;
     }
-    return Duration.fromMillis(parseProtoDuration(durationStr));
+    return parseProtoDurationStr(durationStr);
   }
 
   @computed

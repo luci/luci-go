@@ -96,6 +96,8 @@ export function displayCompactDuration(
  * Returns the number of milliseconds.
  */
 /* eslint-disable max-len */
-export function parseProtoDuration(duration: string): number {
-  return Number(duration.substring(0, duration.length - 1)) * 1000;
+export function parseProtoDurationStr(duration: string): Duration {
+  return Duration.fromObject({
+    second: Number(duration.substring(0, duration.length - 1)),
+  });
 }
