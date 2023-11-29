@@ -140,7 +140,7 @@ func TestBqTableCache(t *testing.T) {
 			So(t.updateMD, ShouldBeNil)
 		})
 
-		Convey(`View is up to date`, func() {
+		Convey(`Views`, func() {
 			mockTable := &tableMock{
 				fullyQualifiedName: "project.dataset.table",
 				md: &bigquery.TableMetadata{
@@ -148,22 +148,107 @@ func TestBqTableCache(t *testing.T) {
 					ViewQuery: "SELECT * FROM a",
 				},
 			}
-			err := sa.EnsureTable(ctx, mockTable, &bigquery.TableMetadata{ViewQuery: "SELECT * FROM a"})
-			So(err, ShouldBeNil)
-			So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+			spec := &bigquery.TableMetadata{ViewQuery: "SELECT * FROM a"}
+
+			Convey(`View is up to date`, func() {
+				err := EnsureTable(ctx, mockTable, spec, EnforceAllSettings())
+				So(err, ShouldBeNil)
+				So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+			})
+
+			Convey(`View require update`, func() {
+				spec.ViewQuery = "SELECT * FROM b"
+				err := EnsureTable(ctx, mockTable, spec, EnforceAllSettings())
+				So(err, ShouldBeNil)
+				So(mockTable.updateMD, ShouldNotBeNil)
+				So(mockTable.updateMD, ShouldResemble, &bigquery.TableMetadataToUpdate{
+					ViewQuery: "SELECT * FROM b",
+				})
+			})
+
+			Convey(`View require update but not enforced`, func() {
+				spec.ViewQuery = "SELECT * FROM b"
+				err := EnsureTable(ctx, mockTable, spec)
+				So(err, ShouldBeNil)
+				So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+			})
 		})
 
-		Convey(`View require update`, func() {
+		Convey(`Description`, func() {
+			mockTable := &tableMock{
+				fullyQualifiedName: "project.dataset.table",
+				md: &bigquery.TableMetadata{
+					Type:        bigquery.ViewTable,
+					ViewQuery:   "SELECT * FROM a",
+					Description: "Description A",
+				},
+			}
+			spec := &bigquery.TableMetadata{
+				ViewQuery:   "SELECT * FROM a",
+				Description: "Description A",
+			}
+
+			Convey(`Description is up to date`, func() {
+				err := EnsureTable(ctx, mockTable, spec, EnforceAllSettings())
+				So(err, ShouldBeNil)
+				So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+			})
+
+			Convey(`Description require update`, func() {
+				spec.Description = "Description B"
+				err := EnsureTable(ctx, mockTable, spec, EnforceAllSettings())
+				So(err, ShouldBeNil)
+				So(mockTable.updateMD, ShouldResemble, &bigquery.TableMetadataToUpdate{
+					Description: "Description B",
+				})
+			})
+
+			Convey(`Description require update but not enforced`, func() {
+				spec.Description = "Description B"
+				err := EnsureTable(ctx, mockTable, spec)
+				So(err, ShouldBeNil)
+				So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+			})
+		})
+
+		Convey(`Labels`, func() {
 			mockTable := &tableMock{
 				fullyQualifiedName: "project.dataset.table",
 				md: &bigquery.TableMetadata{
 					Type:      bigquery.ViewTable,
 					ViewQuery: "SELECT * FROM a",
+					Labels:    map[string]string{"key-a": "value-a", "key-b": "value-b", "key-c": "value-c"},
 				},
 			}
-			err := sa.EnsureTable(ctx, mockTable, &bigquery.TableMetadata{ViewQuery: "SELECT * FROM b"})
-			So(err, ShouldBeNil)
-			So(mockTable.updateMD, ShouldNotBeNil)
+			spec := &bigquery.TableMetadata{
+				ViewQuery: "SELECT * FROM a",
+				Labels:    map[string]string{"key-a": "value-a", "key-b": "value-b", "key-c": "value-c"},
+			}
+
+			Convey(`Labels are up to date`, func() {
+				err := EnsureTable(ctx, mockTable, spec, EnforceAllSettings())
+				So(err, ShouldBeNil)
+				So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+			})
+
+			Convey(`Labels require update`, func() {
+				spec.Labels = map[string]string{"key-a": "value-a", "key-b": "new-value-b", "key-d": "value-d"}
+				err := EnsureTable(ctx, mockTable, spec, EnforceAllSettings())
+				So(err, ShouldBeNil)
+
+				update := &bigquery.TableMetadataToUpdate{}
+				update.DeleteLabel("key-c")
+				update.SetLabel("key-b", "new-value-b")
+				update.SetLabel("key-d", "value-d")
+				So(mockTable.updateMD, ShouldResemble, update)
+			})
+
+			Convey(`Labels require update but not enforced`, func() {
+				spec.Labels = map[string]string{"key-a": "value-a", "key-b": "new-value-b", "key-d": "value-d"}
+				err := EnsureTable(ctx, mockTable, spec)
+				So(err, ShouldBeNil)
+				So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+			})
 		})
 
 		Convey(`Cache is working`, func() {

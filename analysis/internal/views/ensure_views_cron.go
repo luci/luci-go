@@ -29,8 +29,6 @@ import (
 	"google.golang.org/api/iterator"
 )
 
-var schemaApplyer = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(50))
-
 const rulesViewBaseQuery = `
 	WITH items AS (
 		SELECT
@@ -83,7 +81,8 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 		}
 
 		return &bigquery.TableMetadata{
-			ViewQuery: `SELECT * FROM internal.failure_association_rules WHERE project = "` + luciProject + `"`,
+			Description: "Failure association rules for " + luciProject + ". See go/luci-analysis-concepts#failure-association-rules.",
+			ViewQuery:   `SELECT * FROM internal.failure_association_rules WHERE project = "` + luciProject + `"`,
 		}
 	},
 	"clustered_failures": func(luciProject string) *bigquery.TableMetadata {
@@ -92,7 +91,8 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 			panic(err)
 		}
 		return &bigquery.TableMetadata{
-			ViewQuery: `SELECT * FROM internal.clustered_failures WHERE project = "` + luciProject + `"`,
+			Description: "Clustered test failures for " + luciProject + ". Each failure is repeated for each cluster it is contained in.",
+			ViewQuery:   `SELECT * FROM internal.clustered_failures WHERE project = "` + luciProject + `"`,
 		}
 	},
 	"cluster_summaries": func(luciProject string) *bigquery.TableMetadata {
@@ -101,7 +101,8 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 			panic(err)
 		}
 		return &bigquery.TableMetadata{
-			ViewQuery: `SELECT * FROM internal.cluster_summaries WHERE project = "` + luciProject + `"`,
+			Description: "Test failure clusters for " + luciProject + " with cluster metrics. Periodically updated from clustered_failures table with ~15 minute staleness.",
+			ViewQuery:   `SELECT * FROM internal.cluster_summaries WHERE project = "` + luciProject + `"`,
 		}
 	},
 	"test_verdicts": func(luciProject string) *bigquery.TableMetadata {
@@ -110,7 +111,8 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 			panic(err)
 		}
 		return &bigquery.TableMetadata{
-			ViewQuery: `SELECT * FROM internal.test_verdicts WHERE project = "` + luciProject + `"`,
+			Description: "Contains all test verdicts produced by " + luciProject + ". See go/luci-analysis-verdict-export-proposal.",
+			ViewQuery:   `SELECT * FROM internal.test_verdicts WHERE project = "` + luciProject + `"`,
 		}
 	},
 	"test_variant_segments": func(luciProject string) *bigquery.TableMetadata {
@@ -119,7 +121,8 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 			panic(err)
 		}
 		return &bigquery.TableMetadata{
-			ViewQuery: `SELECT * FROM internal.test_variant_segments WHERE project = "` + luciProject + `"`,
+			Description: "Contains test variant histories segmented by change point analysis. See go/luci-test-variant-analysis-design.",
+			ViewQuery:   `SELECT * FROM internal.test_variant_segments WHERE project = "` + luciProject + `"`,
 		}
 	},
 	"test_variant_segments_unexpected_realtime": func(luciProject string) *bigquery.TableMetadata {
@@ -129,6 +132,8 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 		}
 		viewQuery := fmt.Sprintf(segmentsUnexpectedRealtimeQuery, luciProject)
 		return &bigquery.TableMetadata{
+			Description: "Contains test variant histories segmented by change point analysis, limited to test variants with unexpected" +
+				" results in postsubmit in the last 90 days. See go/luci-test-variant-analysis-design.",
 			ViewQuery: viewQuery,
 		}
 	},
@@ -157,7 +162,7 @@ func ensureViews(ctx context.Context, bqClient *bigquery.Client) error {
 	for datasetID, tableSpecs := range datasetViewQueries {
 		for tableName, spec := range tableSpecs {
 			table := bqClient.Dataset(datasetID).Table(tableName)
-			if err := schemaApplyer.EnsureTable(ctx, table, spec); err != nil {
+			if err := bq.EnsureTable(ctx, table, spec, bq.EnforceAllSettings()); err != nil {
 				return errors.Annotate(err, "ensure view %s", tableName).Err()
 			}
 		}
@@ -185,7 +190,7 @@ func createViewsForLUCIDataset(ctx context.Context, bqClient *bigquery.Client, d
 	for tableName, specFunc := range luciProjectViewQueries {
 		table := bqClient.Dataset(datasetID).Table(tableName)
 		spec := specFunc(luciProject)
-		if err := schemaApplyer.EnsureTable(ctx, table, spec); err != nil {
+		if err := bq.EnsureTable(ctx, table, spec, bq.EnforceAllSettings()); err != nil {
 			return errors.Annotate(err, "ensure view %s", tableName).Err()
 		}
 	}

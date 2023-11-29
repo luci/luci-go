@@ -22,6 +22,7 @@ import (
 	"google.golang.org/api/iterator"
 
 	"go.chromium.org/luci/bisection/util/bqutil"
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/info"
@@ -78,7 +79,7 @@ func createViewsForLUCIDataset(ctx context.Context, bqClient *bigquery.Client, d
 	for tableName, specFunc := range luciProjectViewQueries {
 		table := bqClient.Dataset(datasetID).Table(tableName)
 		spec := specFunc(luciProject)
-		if err := schemaApplyer.EnsureTable(ctx, table, spec); err != nil {
+		if err := bq.EnsureTable(ctx, table, spec, bq.EnforceAllSettings()); err != nil {
 			return errors.Annotate(err, "ensure view %s", tableName).Err()
 		}
 	}

@@ -30,7 +30,7 @@ import (
 )
 
 // ErrWrongTableKind represents a mismatch in BigQuery table type.
-var ErrWrongTableKind = errors.New("cannot change a regular table into a view table")
+var ErrWrongTableKind = errors.New("cannot change a regular table into a view table or vice-versa")
 
 // Table is implemented by *bigquery.Table.
 // See its documentation for description of the methods below.
@@ -131,13 +131,63 @@ func (s *SchemaApplyer) EnsureTable(ctx context.Context, t Table, spec *bigquery
 	return cachedErr
 }
 
+// ensureTableOpts captures options passed to EnsureTable(...).
+type ensureTableOpts struct {
+	// Whether all table settings should be enforced, not just schema.
+	// This creates the possibility of edit wars as updates may
+	// not converge.
+	complete bool
+}
+
+// EnsureTableOption defines an option passed to EnsureTable(...).
+type EnsureTableOption func(opts *ensureTableOpts)
+
+// EnforceAllSettings specifies that EnsureTable should
+// not just enforce the schema, but all table specification settings
+// permitted by BigQuery and supported by the implementation.
+//
+// This list of settings is currently:
+// - view definition
+// - description
+// - labels
+//
+// WARNING: If this option is used and there are multiple version of
+// the table specification in production simultaneously (e.g. as canary
+// and stable deployments), an edit war may ensue and EnsureTable may get
+// stuck in an read-modify-update loop contending with other updates.
+//
+// Applications using this option must take steps to prevent such
+// edit wars themselves, e.g. by only performing such table updates
+// on a periodic cron job where edit wars, if they occur, are sufficiently
+// slow that they do not cause contention.
+func EnforceAllSettings() EnsureTableOption {
+	return func(opts *ensureTableOpts) {
+		opts.complete = true
+	}
+}
+
 // EnsureTable creates a BigQuery table if it doesn't exist and updates its
-// schema (or a view query for view tables) if it is stale. Non-schema options,
-// like Partitioning and Clustering settings, will be applied if the table is
-// being created but will not be synchronised after creation.
+// schema if it is stale.
+//
+// By default, non-schema fields, like View Definition, Partitioning and
+// Clustering settings, will be applied if the table is being created but
+// will not be synchronised after creation.
+//
+// To synchronise more of the table specification, including view definition,
+// see EnforceAllSettings.
 //
 // Existing fields will not be deleted.
-func EnsureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata) error {
+func EnsureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata, options ...EnsureTableOption) error {
+	var opts ensureTableOpts
+	for _, apply := range options {
+		apply(&opts)
+	}
+	return ensureTable(ctx, t, spec, opts)
+}
+
+// ensureTable creates a BigQuery table if it doesn't exist and updates its
+// schema if it is stale.
+func ensureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata, opts ensureTableOpts) error {
 	md, err := t.Metadata(ctx)
 	apiErr, ok := err.(*googleapi.Error)
 	switch {
@@ -155,18 +205,14 @@ func EnsureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata) err
 	}
 
 	// Table exists and is accessible.
-	// Ensure its schema is up to date.
-	if md.Type == bigquery.ViewTable {
-		if err = ensureBQTableViewQuery(ctx, t, spec.ViewQuery); err != nil {
-			return errors.Annotate(err, "ensure bq table view query").Err()
-		}
-	} else {
-		if spec.ViewQuery != "" {
-			return ErrWrongTableKind
-		}
-		if err = ensureBQTableFields(ctx, t, spec.Schema); err != nil {
-			return errors.Annotate(err, "ensure bq table fields").Err()
-		}
+	// Ensure its specification is up to date.
+	if md.Type == bigquery.ViewTable && len(spec.Schema) > 0 ||
+		md.Type != bigquery.ViewTable && spec.ViewQuery != "" {
+		// View without view query or non-View table with View query.
+		return ErrWrongTableKind
+	}
+	if err = ensureBQTable(ctx, t, spec, opts); err != nil {
+		return errors.Annotate(err, "ensure bq table").Err()
 	}
 	return nil
 }
@@ -189,43 +235,8 @@ func createBQTable(ctx context.Context, t Table, spec *bigquery.TableMetadata) e
 	}
 }
 
-func ensureBQTableViewQuery(ctx context.Context, t Table, viewQuery string) error {
-	err := retry.Retry(ctx, transient.Only(retry.Default), func() error {
-		// We should retrieve Metadata in a retry loop because of the ETag check
-		// below.
-		md, err := t.Metadata(ctx)
-		if err != nil {
-			return err
-		}
-		if viewQuery == md.ViewQuery {
-			return nil
-		}
-		_, err = t.Update(ctx, bigquery.TableMetadataToUpdate{ViewQuery: viewQuery}, md.ETag)
-		apiErr, ok := err.(*googleapi.Error)
-		switch {
-		case ok && apiErr.Code == http.StatusConflict:
-			// ETag became stale since we requested it. Try again.
-			return transient.Tag.Apply(err)
-		case err != nil:
-			return err
-		default:
-			logging.Infof(ctx, "Updated BigQuery table view %s", t.FullyQualifiedName())
-			return nil
-		}
-	}, nil)
-	apiErr, ok := err.(*googleapi.Error)
-	switch {
-	case ok && apiErr.Code == http.StatusForbidden:
-		// No read or modify table permission.
-		return err
-	case err != nil:
-		return transient.Tag.Apply(err)
-	}
-	return nil
-}
-
-// ensureBQTableFields adds missing fields to t.
-func ensureBQTableFields(ctx context.Context, t Table, newSchema bigquery.Schema) error {
+// ensureBQTable updates the BigQuery table t to match specification spec.
+func ensureBQTable(ctx context.Context, t Table, spec *bigquery.TableMetadata, opts ensureTableOpts) error {
 	err := retry.Retry(ctx, transient.Only(retry.Default), func() error {
 		// We should retrieve Metadata in a retry loop because of the ETag check
 		// below.
@@ -234,37 +245,53 @@ func ensureBQTableFields(ctx context.Context, t Table, newSchema bigquery.Schema
 			return err
 		}
 
-		combinedSchema := md.Schema
-
-		// Append fields missing in the actual schema.
+		var update bigquery.TableMetadataToUpdate
 		mutated := false
-		var appendMissing func(schema, newSchema bigquery.Schema) bigquery.Schema
-		appendMissing = func(schema, newFields bigquery.Schema) bigquery.Schema {
-			indexed := make(map[string]*bigquery.FieldSchema, len(schema))
-			for _, c := range schema {
-				indexed[c.Name] = c
-			}
 
-			for _, newField := range newFields {
-				if existingField := indexed[newField.Name]; existingField == nil {
-					// The field is missing.
-					schema = append(schema, newField)
-					mutated = true
-				} else {
-					existingField.Schema = appendMissing(existingField.Schema, newField.Schema)
-				}
+		// Only consider Schema updates for tables that are not views.
+		if md.Type != bigquery.ViewTable {
+			combinedSchema, updated := appendMissing(md.Schema, spec.Schema)
+			if updated {
+				mutated = true
+				update.Schema = combinedSchema
 			}
-			return schema
+		}
+		// The following fields are subject of a possible edit war
+		// if there are multiple versions of the table specification
+		// deployed simultaneously (e.g. to canary and stable).
+		// Only perform them if the application has asked us to enforce
+		// the full table specification and it has a solution to
+		// manage the edit war.
+		if opts.complete {
+			if md.Type == bigquery.ViewTable && spec.ViewQuery != md.ViewQuery {
+				// Apply view updates to views.
+				update.ViewQuery = spec.ViewQuery
+				mutated = true
+			}
+			if md.Description != spec.Description {
+				// Update description.
+				update.Description = spec.Description
+				mutated = true
+			}
+			setLabels, deleteLabels := diffLabels(md.Labels, spec.Labels)
+			if len(setLabels) > 0 || len(deleteLabels) > 0 {
+				// Update labels.
+				for k, v := range setLabels {
+					update.SetLabel(k, v)
+				}
+				for k := range deleteLabels {
+					update.DeleteLabel(k)
+				}
+				mutated = true
+			}
 		}
 
-		// Relax the new fields because we cannot add new required fields.
-		combinedSchema = appendMissing(combinedSchema, newSchema)
 		if !mutated {
 			// Nothing to update.
 			return nil
 		}
 
-		_, err = t.Update(ctx, bigquery.TableMetadataToUpdate{Schema: combinedSchema}, md.ETag)
+		_, err = t.Update(ctx, update, md.ETag)
 		apiErr, ok := err.(*googleapi.Error)
 		switch {
 		case ok && apiErr.Code == http.StatusConflict:
@@ -289,4 +316,76 @@ func ensureBQTableFields(ctx context.Context, t Table, newSchema bigquery.Schema
 		return transient.Tag.Apply(err)
 	}
 	return nil
+}
+
+// appendMissing merges BigQuery schemas, adding to schema
+// those fields that only exist in newFields and returning
+// the result.
+// Schema merging happens recursively, e.g. so that missing
+// fields are added to struct-valued fields as well.
+func appendMissing(schema, newFields bigquery.Schema) (combinedSchema bigquery.Schema, updated bool) {
+	// Shallow copy schema to avoid changes propogating backwards
+	// to the caller via arguments.
+	combinedSchema = copySchema(schema)
+
+	updated = false
+	indexed := make(map[string]*bigquery.FieldSchema, len(combinedSchema))
+	for _, c := range combinedSchema {
+		indexed[c.Name] = c
+	}
+
+	for _, newField := range newFields {
+		if existingField := indexed[newField.Name]; existingField == nil {
+			// The field is missing.
+			combinedSchema = append(combinedSchema, newField)
+			updated = true
+		} else {
+			var didUpdate bool
+			existingField.Schema, didUpdate = appendMissing(existingField.Schema, newField.Schema)
+			if didUpdate {
+				updated = true
+			}
+		}
+	}
+	return combinedSchema, updated
+}
+
+// copySchema creates a shallow copy of the existing schema.
+func copySchema(schema bigquery.Schema) bigquery.Schema {
+	if schema == nil {
+		// Preserve existing 'nil' schemas as nil instead of
+		// converting them to zero-length slices.
+		return nil
+	}
+	copy := make(bigquery.Schema, 0, len(schema))
+	for _, fieldSchema := range schema {
+		fieldCopy := *fieldSchema
+		copy = append(copy, &fieldCopy)
+	}
+	return copy
+}
+
+// diffLabels returns the difference between two set of BigQuery
+// labels, in terms of the updates that need to be applied to
+// currentLabels to reach newLabels:
+// - the set of new/updated labels
+// - the set of labels that should be deleted
+func diffLabels(currentLabels, newLabels map[string]string) (setLabels map[string]string, deleteLabels map[string]struct{}) {
+	setLabels = make(map[string]string)
+	deleteLabels = make(map[string]struct{})
+
+	// Identify new and updated labels in newLabels.
+	for k, v := range newLabels {
+		existingValue, ok := currentLabels[k]
+		if !(ok && existingValue == v) {
+			setLabels[k] = v
+		}
+	}
+	// Identify labels that were deleted (in currentLabels but not in newLabels).
+	for k := range currentLabels {
+		if _, ok := newLabels[k]; !ok {
+			deleteLabels[k] = struct{}{}
+		}
+	}
+	return setLabels, deleteLabels
 }
