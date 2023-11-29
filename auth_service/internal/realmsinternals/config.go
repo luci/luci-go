@@ -30,6 +30,7 @@ import (
 
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/internal/permissions"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -50,13 +51,117 @@ const (
 	RealmsDevCfgPath = "realms-dev.cfg"
 )
 
+// The maximum number of AuthDB revisions to produce when permissions
+// change and realms need to be reevaluated.
+const maxReevaluationRevisions int = 10
+
 type realmsMap struct {
 	mu     *sync.Mutex
 	cfgMap map[string]*config.Config
 }
 
-func CheckConfigChanges(permissionsDB *permissions.PermissionsDB, latest []*model.RealmsCfgRev, stored []*model.RealmsCfgRev) {
-	// TODO(cjacomet): Implement
+// CheckConfigChanges returns a slice of parameterless callbacks to
+// update the AuthDB based on detected realms.cfg and permissions
+// changes.
+//
+// Args:
+//   - permissionsDB: the current permissions and roles;
+//   - latest: RealmsCfgRev's for the realms configs fetched from
+//     LUCI Config;
+//   - stored: RealmsCfgRev's for the last processed realms configs;
+//   - dryRun: whether this is a dry run (if yes, changes wil not be
+//     committed in the AuthDB);
+//   - historicalComment: the comment to use in entities' history if
+//     changes are committed.
+//
+// Returns:
+//   - jobs: parameterless callbacks to update the AuthDB.
+func CheckConfigChanges(
+	ctx context.Context, permissionsDB *permissions.PermissionsDB,
+	latest []*model.RealmsCfgRev, stored []*model.RealmsCfgRev,
+	dryRun bool, historicalComment string) ([]func() error, error) {
+	toMap := func(revisions []*model.RealmsCfgRev) (map[string]*model.RealmsCfgRev, error) {
+		result := make(map[string]*model.RealmsCfgRev, len(revisions))
+		for _, cfgRev := range revisions {
+			result[cfgRev.ProjectID] = cfgRev
+		}
+
+		if len(result) != len(revisions) {
+			return nil, fmt.Errorf("multiple realms configs for the same project ID")
+		}
+		return result, nil
+	}
+
+	latestMap, err := toMap(latest)
+	if err != nil {
+		return nil, err
+	}
+	storedMap, err := toMap(stored)
+	if err != nil {
+		return nil, err
+	}
+
+	var jobs []func() error
+
+	// For the realms configs that should be reevaluated, because they
+	// were generated with a previous revision of permissions.
+	toReevaluate := []*model.RealmsCfgRev{}
+
+	// Detect changes to realms configs. Going through the latest
+	// configs in a random order helps to progress if one of the configs
+	// is somehow very problematic (e.g. causes OOM). When the cron job
+	// is repeatedly retried, all healthy configs will eventually be
+	// processed before the problematic ones.
+	randomOrder := mathrand.Perm(ctx, len(latest))
+	for _, i := range randomOrder {
+		latestCfgRev := latest[i]
+		storedCfgRev, ok := storedMap[latestCfgRev.ProjectID]
+		if !ok || (storedCfgRev.ConfigDigest != latestCfgRev.ConfigDigest) {
+			// Add a job to update this project's realms.
+			revs := []*model.RealmsCfgRev{latestCfgRev}
+			comment := fmt.Sprintf("%s - using realms config rev %s", historicalComment, latestCfgRev.ConfigRev)
+			jobs = append(jobs, func() error {
+				return UpdateRealms(ctx, permissionsDB, revs, dryRun, comment)
+			})
+		} else if storedCfgRev.PermsRev != permissionsDB.Rev {
+			// This config needs to be reevaluated.
+			toReevaluate = append(toReevaluate, latestCfgRev)
+		}
+	}
+
+	// Detect realms.cfg that were removed completely.
+	for _, storedCfgRev := range stored {
+		if _, ok := latestMap[storedCfgRev.ProjectID]; !ok {
+			// Add a job to delete this project's realms.
+			projID := storedCfgRev.ProjectID
+			comment := fmt.Sprintf("%s - config no longer exists", historicalComment)
+			jobs = append(jobs, func() error {
+				return DeleteRealms(ctx, projID, dryRun, comment)
+			})
+		}
+	}
+
+	// Changing the permissions (e.g. adding a new permission to a widely used
+	// role) may affect ALL projects. In this case, generating a ton of AuthDB
+	// revisions is wasteful. We could try to generate a single giant revision,
+	// but it may end up being too big, hitting datastore limits. So we
+	// "heuristically" split it into at most maxReevaluationRevisions, hoping
+	// for the best.
+	reevaluations := len(toReevaluate)
+	batchSize := reevaluations / maxReevaluationRevisions
+	if batchSize < 1 {
+		batchSize = 1
+	}
+	for i := 0; i < reevaluations; i = i + batchSize {
+		revs := toReevaluate[i : i+batchSize]
+		comment := fmt.Sprintf("%s - generating realms with permissions rev %s",
+			historicalComment, permissionsDB.Rev)
+		jobs = append(jobs, func() error {
+			return UpdateRealms(ctx, permissionsDB, revs, dryRun, comment)
+		})
+	}
+
+	return jobs, nil
 }
 
 // UpdateRealms updates realms for projects given the fetched or previously processed realms.cfg.

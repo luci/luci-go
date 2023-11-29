@@ -166,7 +166,6 @@ func TestGetConfigs(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(stored, ShouldHaveLength, 0)
 	})
-
 }
 
 func TestRealmsExpansion(t *testing.T) {
@@ -1215,6 +1214,197 @@ func TestUpdateRealms(t *testing.T) {
 			})
 		})
 	})
+}
+
+func TestCheckConfigChanges(t *testing.T) {
+	t.Parallel()
+
+	Convey("testing realms config changes", t, func() {
+		ctx := auth.WithState(gaemem.Use(context.Background()), &authtest.FakeState{
+			Identity: "user:someone@example.com",
+		})
+		ctx = clock.Set(ctx, testclock.New(testCreatedTS))
+		ctx = info.SetImageVersion(ctx, "test-version")
+		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
+
+		permsDB := testPermissionsDB(false)
+		configBody, _ := proto.Marshal(&realmsconf.RealmsCfg{
+			Realms: []*realmsconf.Realm{
+				{
+					Name: "test-realm",
+				},
+			},
+		})
+
+		// makeFetchedCfgRev returns a RealmsCfgRev for the project,
+		// with only the fields that would be populated when fetching it
+		// from LUCI Config.
+		// from stored info.
+		makeFetchedCfgRev := func(projectID string) *model.RealmsCfgRev {
+			return &model.RealmsCfgRev{
+				ProjectID:    projectID,
+				ConfigRev:    testRevision,
+				ConfigDigest: testContentHash,
+				ConfigBody:   configBody,
+				PermsRev:     "",
+			}
+		}
+
+		// makeStoredCfgRev returns a RealmsCfgRev for the project,
+		// with only the fields that would be populated when creating it
+		// from stored info.
+		makeStoredCfgRev := func(projectID string) *model.RealmsCfgRev {
+			return &model.RealmsCfgRev{
+				ProjectID:    projectID,
+				ConfigRev:    testRevision,
+				ConfigDigest: testContentHash,
+				ConfigBody:   []byte{},
+				PermsRev:     permsDB.Rev,
+			}
+		}
+
+		// putProjectRealms stores an AuthProjectRealms into datastore
+		// for the project.
+		putProjectRealms := func(ctx context.Context, projectID string) error {
+			return datastore.Put(ctx, &model.AuthProjectRealms{
+				AuthVersionedEntityMixin: testAuthVersionedEntityMixin(),
+				Kind:                     "AuthProjectRealms",
+				ID:                       projectID,
+				Parent:                   model.RootKey(ctx),
+			})
+		}
+
+		// runJobs is a helper function to execute callbacks.
+		runJobs := func(jobs []func() error) bool {
+			success := true
+			for _, job := range jobs {
+				if err := job(); err != nil {
+					success = false
+				}
+			}
+			return success
+		}
+
+		Convey("no-op when up to date", func() {
+			latest := []*model.RealmsCfgRev{
+				makeFetchedCfgRev("@internal"),
+				makeFetchedCfgRev("test-project-a"),
+			}
+			stored := []*model.RealmsCfgRev{
+				makeStoredCfgRev("test-project-a"),
+				makeStoredCfgRev("@internal"),
+			}
+			So(putProjectRealms(ctx, "test-project-a"), ShouldBeNil)
+			So(putProjectRealms(ctx, "@internal"), ShouldBeNil)
+
+			jobs, err := CheckConfigChanges(ctx, permsDB, latest, stored, false, "Updated from update-realms cron job")
+			So(err, ShouldBeNil)
+			So(jobs, ShouldBeEmpty)
+
+			So(runJobs(jobs), ShouldBeTrue)
+			So(taskScheduler.Tasks(), ShouldHaveLength, 0)
+		})
+
+		Convey("add realms for new project", func() {
+			latest := []*model.RealmsCfgRev{
+				makeFetchedCfgRev("@internal"),
+				makeFetchedCfgRev("test-project-a"),
+			}
+			stored := []*model.RealmsCfgRev{
+				makeStoredCfgRev("@internal"),
+			}
+			So(putProjectRealms(ctx, "@internal"), ShouldBeNil)
+
+			jobs, err := CheckConfigChanges(ctx, permsDB, latest, stored, false, "Updated from update-realms cron job")
+			So(err, ShouldBeNil)
+			So(jobs, ShouldHaveLength, 1)
+
+			So(runJobs(jobs), ShouldBeTrue)
+			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+		})
+
+		Convey("update existing realms.cfg", func() {
+			latest := []*model.RealmsCfgRev{
+				makeFetchedCfgRev("@internal"),
+				makeFetchedCfgRev("test-project-a"),
+			}
+			latest[1].ConfigDigest = "different-digest"
+			stored := []*model.RealmsCfgRev{
+				makeStoredCfgRev("test-project-a"),
+				makeStoredCfgRev("@internal"),
+			}
+			So(putProjectRealms(ctx, "test-project-a"), ShouldBeNil)
+			So(putProjectRealms(ctx, "@internal"), ShouldBeNil)
+
+			jobs, err := CheckConfigChanges(ctx, permsDB, latest, stored, false, "Updated from update-realms cron job")
+			So(err, ShouldBeNil)
+			So(jobs, ShouldHaveLength, 1)
+
+			So(runJobs(jobs), ShouldBeTrue)
+			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+		})
+
+		Convey("delete project realms if realms.cfg no longer exists", func() {
+			latest := []*model.RealmsCfgRev{
+				makeFetchedCfgRev("@internal"),
+			}
+			stored := []*model.RealmsCfgRev{
+				makeStoredCfgRev("test-project-a"),
+				makeStoredCfgRev("@internal"),
+			}
+			So(putProjectRealms(ctx, "test-project-a"), ShouldBeNil)
+			So(putProjectRealms(ctx, "@internal"), ShouldBeNil)
+
+			jobs, err := CheckConfigChanges(ctx, permsDB, latest, stored, false, "Updated from update-realms cron job")
+			So(err, ShouldBeNil)
+			So(jobs, ShouldHaveLength, 1)
+
+			So(runJobs(jobs), ShouldBeTrue)
+			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+		})
+
+		Convey("update if there is a new revision of permissions", func() {
+			latest := []*model.RealmsCfgRev{
+				makeFetchedCfgRev("@internal"),
+				makeFetchedCfgRev("test-project-a"),
+			}
+			stored := []*model.RealmsCfgRev{
+				makeStoredCfgRev("test-project-a"),
+				makeStoredCfgRev("@internal"),
+			}
+			stored[1].PermsRev = "permissions.cfg:old"
+			So(putProjectRealms(ctx, "test-project-a"), ShouldBeNil)
+			So(putProjectRealms(ctx, "@internal"), ShouldBeNil)
+
+			jobs, err := CheckConfigChanges(ctx, permsDB, latest, stored, false, "Updated from update-realms cron job")
+			So(err, ShouldBeNil)
+			So(jobs, ShouldHaveLength, 1)
+
+			So(runJobs(jobs), ShouldBeTrue)
+			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+		})
+
+		Convey("AuthDB revisions are limited when permissions change", func() {
+			projectCount := 3 * maxReevaluationRevisions
+			latest := make([]*model.RealmsCfgRev, projectCount)
+			stored := make([]*model.RealmsCfgRev, projectCount)
+			for i := 0; i < projectCount; i++ {
+				projectID := fmt.Sprintf("test-project-%d", i)
+				latest[i] = makeFetchedCfgRev(projectID)
+				stored[i] = makeStoredCfgRev(projectID)
+				stored[i].PermsRev = "permissions.cfg:old"
+				So(putProjectRealms(ctx, projectID), ShouldBeNil)
+			}
+
+			jobs, err := CheckConfigChanges(ctx, permsDB, latest, stored, false, "Updated from update-realms cron job")
+			So(err, ShouldBeNil)
+			So(jobs, ShouldHaveLength, maxReevaluationRevisions)
+
+			So(runJobs(jobs), ShouldBeTrue)
+			So(taskScheduler.Tasks(), ShouldHaveLength, 2*maxReevaluationRevisions)
+		})
+	})
+
 }
 
 func sortRevsByID(revs []*model.RealmsCfgRev) {
