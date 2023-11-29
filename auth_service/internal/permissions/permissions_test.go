@@ -104,6 +104,10 @@ func TestPermissionsDBGeneration(t *testing.T) {
 						Role:       "role/luci.internal.resultdb.reader",
 						Principals: []string{"group:resultdb-internal-readers"},
 					},
+					{
+						Role:       "role/luci.internal.resultdb.invocationSubmittedSetter",
+						Principals: []string{"group:resultdb-internal-invocation-submitters"},
+					},
 				}
 			},
 		}

@@ -104,6 +104,10 @@ func NewPermissionsDB(permissionscfg *configspb.PermissionsConfig, meta *config.
 				Role:       "role/luci.internal.resultdb.reader",
 				Principals: []string{"group:resultdb-internal-readers"},
 			},
+			{
+				Role:       "role/luci.internal.resultdb.invocationSubmittedSetter",
+				Principals: []string{"group:resultdb-internal-invocation-submitters"},
+			},
 		}
 	}
 	return permissionsDB
