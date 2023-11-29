@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/lease"
 	"go.chromium.org/luci/cv/internal/gerrit"
+	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
@@ -121,22 +122,29 @@ func (tr *Triggerer) makeDispatcherChannel(ctx context.Context, task *prjpb.Trig
 	return dc
 }
 
-func (tr *Triggerer) process(ctx context.Context, task *prjpb.TriggeringCLDepsTask) error {
+func (tr *Triggerer) process(ctx context.Context, task *prjpb.TriggeringCLDepsTask) (err error) {
+	var isCanceled atomic.Bool
 	payload := task.GetTriggeringClDeps()
 	evt := &prjpb.TriggeringCLDepsCompleted{
 		OperationId: payload.GetOperationId(),
 		Origin:      payload.GetOriginClid(),
 	}
+	ctx = logging.SetField(ctx, "origin_cl", payload.GetOriginClid())
+	startTS := clock.Now(ctx)
+	defer func() {
+		if err == nil {
+			reportMetrics(ctx, task, evt, isCanceled.Load(), startTS)
+		}
+	}()
+
 	taskCtx, cancel := clock.WithDeadline(ctx, payload.GetDeadline().AsTime())
 	defer cancel()
-
-	// It's necessary to find the originating CL before executing any ops.
 	originCL := &changelist.CL{ID: common.CLID(payload.GetOriginClid())}
 	switch err := changelist.LoadCLs(taskCtx, []*changelist.CL{originCL}); errors.Unwrap(err) {
 	case nil:
 	case context.Canceled, context.DeadlineExceeded:
-		evt.Incompleted = append(evt.Incompleted, payload.GetDepClids()...)
 		// ctx instead of taskCtx.
+		evt.Incompleted = append(evt.Incompleted, payload.GetDepClids()...)
 		return tr.pmNotifier.NotifyTriggeringCLDepsCompleted(ctx, task.GetLuciProject(), evt)
 	default:
 		// always return a transient to retry fetching the originating CL
@@ -146,7 +154,6 @@ func (tr *Triggerer) process(ctx context.Context, task *prjpb.TriggeringCLDepsTa
 
 	// trigger votes in parallel while constantly checking the vote status
 	// of the originating CL.
-	var isCanceled atomic.Bool
 	ops := makeTriggerDepOps(originCL.ExternalID.MustURL(), payload, &isCanceled)
 	if ensureOriginCLVote(taskCtx, originCL) {
 		go checkVoteStatus(taskCtx, payload.GetOriginClid(), &isCanceled)
@@ -229,4 +236,40 @@ func checkVoteStatus(ctx context.Context, originCLID int64, isCanceled *atomic.B
 			isCanceled.Store(ensureOriginCLVote(ctx, originCL))
 		}
 	}
+}
+
+func taskMetricStatus(isCanceled bool, evt *prjpb.TriggeringCLDepsCompleted) string {
+	switch {
+	case isCanceled:
+		return "CANCELED"
+	case len(evt.GetFailed()) > 0:
+		return "FAILED"
+	case len(evt.GetIncompleted()) > 0:
+		// if isCancelled == false, len(Incompleted) > 0 can happen only if
+		// the context expires.
+		return "TIMEDOUT"
+	default:
+		return "SUCCEEDED"
+	}
+}
+
+func reportMetrics(ctx context.Context, task *prjpb.TriggeringCLDepsTask, evt *prjpb.TriggeringCLDepsCompleted, isCanceled bool, startTS time.Time) {
+	payload := task.GetTriggeringClDeps()
+	status := taskMetricStatus(isCanceled, evt)
+	metrics.Internal.CLTriggererTaskCompleted.Add(
+		ctx,
+		1,
+		task.GetLuciProject(),
+		payload.GetConfigGroupName(),
+		len(payload.GetDepClids()),
+		status,
+	)
+	metrics.Internal.CLTriggererTaskDuration.Add(
+		ctx,
+		float64(clock.Since(ctx, startTS).Milliseconds()),
+		task.GetLuciProject(),
+		payload.GetConfigGroupName(),
+		len(payload.GetDepClids()),
+		status,
+	)
 }

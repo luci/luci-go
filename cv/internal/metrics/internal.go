@@ -31,6 +31,8 @@ var Internal = struct {
 	CLIngestionAttempted           metric.Counter
 	CLIngestionLatency             metric.CumulativeDistribution
 	CLIngestionLatencyWithoutFetch metric.CumulativeDistribution
+	CLTriggererTaskCompleted       metric.Counter
+	CLTriggererTaskDuration        metric.CumulativeDistribution
 	BigQueryExportDelay            metric.CumulativeDistribution
 	RunTryjobResultReportDelay     metric.CumulativeDistribution
 	RunResetTriggerAttempted       metric.Counter
@@ -40,7 +42,6 @@ var Internal = struct {
 		"cv/internal/buildbucket_rpc/count",
 		"Total number of RPCs to Buildbucket.",
 		nil,
-
 		field.String("project"),
 		field.String("host"),
 		field.String("method"),
@@ -53,13 +54,11 @@ var Internal = struct {
 		// Bucketer for 1ms..10m range since CV isn't going to wait longer than 10m
 		// anyway.
 		distribution.GeometricBucketer(math.Pow(float64(10*time.Minute/time.Millisecond), 1.0/nBuckets), nBuckets),
-
 		field.String("project"),
 		field.String("host"),
 		field.String("method"),
 		field.String("canonical_code"), // status.Code of the result as string in UPPER_CASE.
 	),
-
 	CLIngestionAttempted: metric.NewCounter(
 		"cv/internal/changelist/ingestion_attempted",
 		"Occurrences of CL updates by processing UpdateCLTask with an actual "+
@@ -108,6 +107,36 @@ var Internal = struct {
 		field.Bool("dep"),
 		field.String("project"),
 		field.Bool("changed_snapshot"),
+	),
+	CLTriggererTaskCompleted: metric.NewCounter(
+		"cv/internal/cltriggerer/tasks/completed",
+		"Count of Chained CQ vote tasks completed",
+		nil,
+		// LUCI project
+		field.String("project"),
+		// Config Group name
+		field.String("config_group"),
+		// # of deps to trigger
+		field.Int("num_deps"),
+		// Status - skipped | succeeded | failed | canceled
+		field.String("status"),
+	),
+	CLTriggererTaskDuration: metric.NewCumulativeDistribution(
+		"cv/internal/cltriggerer/tasks/duration",
+		"Distribution of processing time for chained CQ vote processes",
+		&types.MetricMetadata{Units: types.Milliseconds},
+		// Bucketer for 1ms...20m range.
+		distribution.GeometricBucketer(
+			math.Pow(float64(20*time.Minute/time.Millisecond), 1.0/nBuckets), nBuckets,
+		),
+		// LUCI project
+		field.String("project"),
+		// Config Group name
+		field.String("config_group"),
+		// # of deps to trigger
+		field.Int("num_deps"),
+		// Status - skipped | succeeded | failed | canceled
+		field.String("status"),
 	),
 	BigQueryExportDelay: metric.NewCumulativeDistribution(
 		"cv/internal/runs/bq_export_delay",

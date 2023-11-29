@@ -216,9 +216,10 @@ func TestTriage(t *testing.T) {
 					res = mustTriage(oldC)
 					So(res.CLsToTriggerDeps, ShouldResembleProto, []*prjpb.TriggeringCLDeps{
 						&prjpb.TriggeringCLDeps{
-							OriginClid: cl33,
-							DepClids:   []int64{cl31, cl32},
-							Trigger:    pcl33.Triggers.GetCqVoteTrigger(),
+							OriginClid:      cl33,
+							DepClids:        []int64{cl31, cl32},
+							Trigger:         pcl33.Triggers.GetCqVoteTrigger(),
+							ConfigGroupName: "singular",
 						},
 					})
 				})
@@ -274,9 +275,10 @@ func TestTriage(t *testing.T) {
 				So(res.CLsToPurge, ShouldBeEmpty)
 				So(res.CLsToTriggerDeps, ShouldResembleProto, []*prjpb.TriggeringCLDeps{
 					&prjpb.TriggeringCLDeps{
-						OriginClid: cl34,
-						DepClids:   []int64{cl32},
-						Trigger:    pcl34.Triggers.GetCqVoteTrigger(),
+						OriginClid:      cl34,
+						DepClids:        []int64{cl32},
+						Trigger:         pcl34.Triggers.GetCqVoteTrigger(),
+						ConfigGroupName: "singular",
 					},
 				})
 			})

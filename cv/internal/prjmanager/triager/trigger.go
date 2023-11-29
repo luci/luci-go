@@ -26,7 +26,7 @@ import (
 
 // stageTriggerCLDeps creates TriggeringCLsTasks(s) for CLs that shoul propagate
 // its CQ votes to its deps.
-func stageTriggerCLDeps(ctx context.Context, cls map[int64]*clInfo) []*prjpb.TriggeringCLDeps {
+func stageTriggerCLDeps(ctx context.Context, cls map[int64]*clInfo, pm pmState) []*prjpb.TriggeringCLDeps {
 	if len(cls) == 0 {
 		return nil
 	}
@@ -71,9 +71,10 @@ func stageTriggerCLDeps(ctx context.Context, cls map[int64]*clInfo) []*prjpb.Tri
 	var ret []*prjpb.TriggeringCLDeps
 	for clid, ci := range clsToTriggerDeps {
 		t := &prjpb.TriggeringCLDeps{
-			OriginClid: clid,
-			DepClids:   make([]int64, len(ci.deps.needToTrigger)),
-			Trigger:    ci.pcl.GetTriggers().GetCqVoteTrigger(),
+			OriginClid:      clid,
+			DepClids:        make([]int64, len(ci.deps.needToTrigger)),
+			Trigger:         ci.pcl.GetTriggers().GetCqVoteTrigger(),
+			ConfigGroupName: pm.ConfigGroup(ci.pcl.GetConfigGroupIndexes()[0]).ID.Name(),
 		}
 		for i, dep := range ci.deps.needToTrigger {
 			t.DepClids[i] = dep.GetClid()

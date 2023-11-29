@@ -22,6 +22,7 @@ import (
 	"time"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -34,6 +35,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap/gobmaptest"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	gerritupdater "go.chromium.org/luci/cv/internal/gerrit/updater"
+	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -51,6 +53,7 @@ func TestTriggerer(t *testing.T) {
 		project        = "chromium"
 		gHost          = "x-review"
 		gRepo          = "repo"
+		cgName         = "cg1"
 		owner          = "owner@example.org"
 		voter          = "voter@example.org"
 		voterAccountID = 9978561
@@ -128,6 +131,7 @@ func TestTriggerer(t *testing.T) {
 					Mode:            string(run.FullRun),
 					GerritAccountId: voterAccountID,
 				},
+				ConfigGroupName: cgName,
 			}
 			for _, dep := range deps {
 				cl := loadCL(dep)
@@ -152,6 +156,14 @@ func TestTriggerer(t *testing.T) {
 					TriggeringClDepsCompleted: evt,
 				},
 			})
+		}
+		taskCounterMetric := func(fvs ...any) bool {
+			_, exist := ct.TSMonSentValue(ctx, metrics.Internal.CLTriggererTaskCompleted, fvs...).(int64)
+			return exist
+		}
+		taskDurationMetric := func(fvs ...any) bool {
+			_, exist := ct.TSMonSentValue(ctx, metrics.Internal.CLTriggererTaskDuration, fvs...).(*distribution.Distribution)
+			return exist
 		}
 
 		mockCI(change1)
@@ -211,11 +223,18 @@ func TestTriggerer(t *testing.T) {
 			So(v2.GetGerritAccountId(), ShouldEqual, voterAccountID)
 			So(ci2, gf.ShouldLastMessageContain, expectedMsg(v2.GetMode()))
 			So(loadCL(change2).Snapshot.GetOutdated(), ShouldNotBeNil)
+
+			exist := taskCounterMetric(project, cgName, 2 /* nDeps */, "SUCCEEDED")
+			So(exist, ShouldBeTrue)
+			exist = taskDurationMetric(project, cgName, 2 /* nDeps */, "SUCCEEDED")
+			So(exist, ShouldBeTrue)
 		})
 
 		Convey("skips voting, if deadline exceeded", func() {
+			var statusWant string
 			Convey("if deadline exceeded", func() {
 				ct.Clock.Add(prjpb.MaxTriggeringCLDepsDuration + time.Minute)
+				statusWant = "TIMEDOUT"
 			})
 			Convey("if origin no longer has CQ+2", func() {
 				ct.GFake.MutateChange(gHost, change3, func(c *gf.Change) {
@@ -224,6 +243,7 @@ func TestTriggerer(t *testing.T) {
 				})
 				ct.Clock.Add(time.Minute)
 				refreshCL()
+				statusWant = "CANCELED"
 			})
 
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLDepsTaskClass))
@@ -241,6 +261,10 @@ func TestTriggerer(t *testing.T) {
 				Incompleted: []int64{clid1, clid2},
 			})
 			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 0)
+			exist := taskCounterMetric(project, cgName, 2 /* nDeps */, statusWant)
+			So(exist, ShouldBeTrue)
+			exist = taskDurationMetric(project, cgName, 2 /* nDeps */, statusWant)
+			So(exist, ShouldBeTrue)
 		})
 
 		Convey("noop if already voted", func() {
@@ -279,6 +303,13 @@ func TestTriggerer(t *testing.T) {
 				So(ok, ShouldBeFalse)
 			}
 			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 0)
+
+			// triggerDepOp{} skips SetReview(), but it'd still report itself
+			// as succeeded, and so metric does.
+			exist := taskCounterMetric(project, cgName, 2 /* nDeps */, "SUCCEEDED")
+			So(exist, ShouldBeTrue)
+			exist = taskDurationMetric(project, cgName, 2 /* nDeps */, "SUCCEEDED")
+			So(exist, ShouldBeTrue)
 		})
 
 		Convey("overrides CQ+1", func() {
@@ -302,6 +333,11 @@ func TestTriggerer(t *testing.T) {
 				Origin:      clid3,
 				Succeeded:   []int64{clid1, clid2},
 			})
+			exist := taskCounterMetric(project, cgName, 2 /* nDeps */, "SUCCEEDED")
+			So(exist, ShouldBeTrue)
+			exist = taskDurationMetric(project, cgName, 2 /* nDeps */, "SUCCEEDED")
+
+			So(exist, ShouldBeTrue)
 
 			Convey("schedules CL update tasks for deps", func() {
 				var tasks []*changelist.UpdateCLTask
@@ -362,6 +398,10 @@ func TestTriggerer(t *testing.T) {
 				},
 			})
 			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 0)
+			exist := taskCounterMetric(project, cgName, 2 /* nDeps */, "FAILED")
+			So(exist, ShouldBeTrue)
+			exist = taskDurationMetric(project, cgName, 2 /* nDeps */, "FAILED")
+			So(exist, ShouldBeTrue)
 		})
 	})
 }

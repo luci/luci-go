@@ -18,7 +18,9 @@ import (
 	"fmt"
 	"testing"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
@@ -152,7 +154,8 @@ func TestStageTriggerCLDeps(t *testing.T) {
 			defer func() { nextCLID++ }()
 			tci := &testCLInfo{
 				pcl: &prjpb.PCL{
-					Clid: nextCLID,
+					Clid:               nextCLID,
+					ConfigGroupIndexes: []int32{0},
 				},
 				triagedCL: triagedCL{
 					deps: &triagedDeps{},
@@ -167,6 +170,13 @@ func TestStageTriggerCLDeps(t *testing.T) {
 				ci.triageDeps(cls)
 			}
 		}
+		sup := &simplePMState{
+			pb: &prjpb.PState{},
+			cgs: []*prjcfg.ConfigGroup{
+				{ID: "hash/cg1", Content: &cfgpb.ConfigGroup{}},
+			},
+		}
+		pm := pmState{sup}
 
 		Convey("CLs without deps", func() {
 			cl1 := newCL().CQ(0)
@@ -174,7 +184,7 @@ func TestStageTriggerCLDeps(t *testing.T) {
 			triageDeps(cl1, cl2)
 			So(cl1.NeedToTrigger(), ShouldBeNil)
 			So(cl2.NeedToTrigger(), ShouldBeNil)
-			So(stageTriggerCLDeps(ctx, cls), ShouldHaveLength, 0)
+			So(stageTriggerCLDeps(ctx, cls, pm), ShouldHaveLength, 0)
 		})
 
 		Convey("CL with deps", func() {
@@ -186,11 +196,12 @@ func TestStageTriggerCLDeps(t *testing.T) {
 				cl3 = cl3.CQ(+2)
 				triageDeps(cl1, cl2, cl3)
 				So(cl3.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid(), cl2.Clid()})
-				So(stageTriggerCLDeps(ctx, cls), ShouldResembleProto, []*prjpb.TriggeringCLDeps{
+				So(stageTriggerCLDeps(ctx, cls, pm), ShouldResembleProto, []*prjpb.TriggeringCLDeps{
 					{
-						OriginClid: cl3.Clid(),
-						DepClids:   []int64{cl1.Clid(), cl2.Clid()},
-						Trigger:    cq2,
+						OriginClid:      cl3.Clid(),
+						DepClids:        []int64{cl1.Clid(), cl2.Clid()},
+						Trigger:         cq2,
+						ConfigGroupName: "cg1",
 					},
 				})
 
@@ -203,7 +214,7 @@ func TestStageTriggerCLDeps(t *testing.T) {
 					})
 					triageDeps(cl1, cl2, cl3)
 					So(cl3.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid(), cl2.Clid()})
-					So(stageTriggerCLDeps(ctx, cls), ShouldBeNil)
+					So(stageTriggerCLDeps(ctx, cls, pm), ShouldBeNil)
 				})
 
 				Convey("retriaging it should be noop", func() {
@@ -218,13 +229,13 @@ func TestStageTriggerCLDeps(t *testing.T) {
 					// task.
 					So(cl2.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid()})
 					So(cl3.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid()})
-					So(stageTriggerCLDeps(ctx, cls), ShouldBeNil)
+					So(stageTriggerCLDeps(ctx, cls, pm), ShouldBeNil)
 				})
 
 				Convey("unless a dep was not loaded yet", func() {
 					delete(cls, cl1.pcl.GetClid())
 					triageDeps(cl1, cl2, cl3)
-					So(stageTriggerCLDeps(ctx, cls), ShouldHaveLength, 0)
+					So(stageTriggerCLDeps(ctx, cls, pm), ShouldHaveLength, 0)
 				})
 			})
 			Convey("all deps have CQ vote", func() {
@@ -233,7 +244,7 @@ func TestStageTriggerCLDeps(t *testing.T) {
 				cl3 = cl3.CQ(+2)
 				triageDeps(cl1, cl2, cl3)
 				So(cl3.NeedToTrigger(), ShouldBeNil)
-				So(stageTriggerCLDeps(ctx, cls), ShouldHaveLength, 0)
+				So(stageTriggerCLDeps(ctx, cls, pm), ShouldHaveLength, 0)
 			})
 			Convey("some deps have and some others don't have CQ votes", func() {
 				cl2 = cl2.CQ(+2)
@@ -243,11 +254,12 @@ func TestStageTriggerCLDeps(t *testing.T) {
 				// TriggerCLDeps{} should be created for cl3 only.
 				So(cl2.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid()})
 				So(cl3.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid()})
-				So(stageTriggerCLDeps(ctx, cls), ShouldResembleProto, []*prjpb.TriggeringCLDeps{
+				So(stageTriggerCLDeps(ctx, cls, pm), ShouldResembleProto, []*prjpb.TriggeringCLDeps{
 					{
-						OriginClid: cl3.Clid(),
-						DepClids:   []int64{cl1.Clid()},
-						Trigger:    cq2,
+						OriginClid:      cl3.Clid(),
+						DepClids:        []int64{cl1.Clid()},
+						Trigger:         cq2,
+						ConfigGroupName: "cg1",
 					},
 				})
 			})
@@ -284,7 +296,7 @@ func TestStageTriggerCLDeps(t *testing.T) {
 				So(cl2.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid()})
 				So(cl3.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid()})
 			})
-			So(stageTriggerCLDeps(ctx, cls), ShouldHaveLength, 0)
+			So(stageTriggerCLDeps(ctx, cls, pm), ShouldHaveLength, 0)
 		})
 
 		Convey("with inflight TriggeringCLDeps", func() {
@@ -305,7 +317,7 @@ func TestStageTriggerCLDeps(t *testing.T) {
 				So(cl2.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid()})
 				So(cl3.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid()})
 			})
-			So(stageTriggerCLDeps(ctx, cls), ShouldHaveLength, 0)
+			So(stageTriggerCLDeps(ctx, cls, pm), ShouldHaveLength, 0)
 		})
 
 		Convey("with incomplete run", func() {
@@ -324,7 +336,7 @@ func TestStageTriggerCLDeps(t *testing.T) {
 				So(cl2.NeedToTrigger(), ShouldBeNil)
 				So(cl3.NeedToTrigger(), ShouldBeNil)
 				So(cl4.NeedToTrigger(), ShouldBeNil)
-				So(stageTriggerCLDeps(ctx, cls), ShouldHaveLength, 0)
+				So(stageTriggerCLDeps(ctx, cls, pm), ShouldHaveLength, 0)
 			})
 
 			Convey("incomplete run with different CQVotes in deps", func() {
@@ -337,7 +349,7 @@ func TestStageTriggerCLDeps(t *testing.T) {
 				So(cl2.NeedToTrigger(), ShouldBeNil)
 				So(cl3.NeedToTrigger(), ShouldEqual, []int64{cl1.pcl.GetClid(), cl2.pcl.GetClid()})
 				So(cl4.NeedToTrigger(), ShouldBeNil)
-				So(stageTriggerCLDeps(ctx, cls), ShouldHaveLength, 0)
+				So(stageTriggerCLDeps(ctx, cls, pm), ShouldHaveLength, 0)
 			})
 
 			Convey("incomplete run on parent CLs", func() {
@@ -353,7 +365,7 @@ func TestStageTriggerCLDeps(t *testing.T) {
 				So(cl2.NeedToTrigger(), ShouldBeNil)
 				So(cl3.NeedToTrigger(), ShouldBeNil)
 				So(cl4.NeedToTrigger(), ShouldBeNil)
-				So(stageTriggerCLDeps(ctx, cls), ShouldHaveLength, 0)
+				So(stageTriggerCLDeps(ctx, cls, pm), ShouldHaveLength, 0)
 			})
 
 			Convey("MCE over MCE", func() {
@@ -369,11 +381,12 @@ func TestStageTriggerCLDeps(t *testing.T) {
 				So(cl2.NeedToTrigger(), ShouldBeNil)
 				So(cl3.NeedToTrigger(), ShouldBeNil)
 				So(cl4.NeedToTrigger(), ShouldEqual, []int64{cl3.Clid()})
-				So(stageTriggerCLDeps(ctx, cls), ShouldResembleProto, []*prjpb.TriggeringCLDeps{
+				So(stageTriggerCLDeps(ctx, cls, pm), ShouldResembleProto, []*prjpb.TriggeringCLDeps{
 					{
-						OriginClid: cl4.Clid(),
-						DepClids:   []int64{cl3.Clid()},
-						Trigger:    cq2,
+						OriginClid:      cl4.Clid(),
+						DepClids:        []int64{cl3.Clid()},
+						Trigger:         cq2,
+						ConfigGroupName: "cg1",
 					},
 				})
 			})
@@ -391,11 +404,12 @@ func TestStageTriggerCLDeps(t *testing.T) {
 				So(cl2.NeedToTrigger(), ShouldBeNil)
 				So(cl3.NeedToTrigger(), ShouldBeNil)
 				So(cl4.NeedToTrigger(), ShouldEqual, []int64{cl3.Clid()})
-				So(stageTriggerCLDeps(ctx, cls), ShouldResembleProto, []*prjpb.TriggeringCLDeps{
+				So(stageTriggerCLDeps(ctx, cls, pm), ShouldResembleProto, []*prjpb.TriggeringCLDeps{
 					{
-						OriginClid: cl4.Clid(),
-						DepClids:   []int64{cl3.Clid()},
-						Trigger:    cq2,
+						OriginClid:      cl4.Clid(),
+						DepClids:        []int64{cl3.Clid()},
+						Trigger:         cq2,
+						ConfigGroupName: "cg1",
 					},
 				})
 			})

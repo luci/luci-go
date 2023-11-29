@@ -329,6 +329,8 @@ message TriggeringCLDeps {
   google.protobuf.Timestamp deadline = 4;
   // Trigger to propagate.
   cv.internal.run.Trigger trigger = 5;
+  // Name of the config group watching the origin CL.
+  string config_group_name = 6;
 }
 
 // PurgeReason represent a list of errors with the CL that would require that

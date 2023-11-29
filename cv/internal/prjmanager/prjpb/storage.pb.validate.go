@@ -1278,6 +1278,8 @@ func (m *TriggeringCLDeps) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for ConfigGroupName
+
 	if len(errors) > 0 {
 		return TriggeringCLDepsMultiError(errors)
 	}

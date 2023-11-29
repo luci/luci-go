@@ -41,7 +41,7 @@ func Triage(ctx context.Context, c *prjpb.Component, s itriager.PMState) (itriag
 		return res, err
 	}
 	res.CLsToPurge, nextPurge = stagePurges(ctx, cls, pm)
-	res.CLsToTriggerDeps = stageTriggerCLDeps(ctx, cls)
+	res.CLsToTriggerDeps = stageTriggerCLDeps(ctx, cls, pm)
 
 	if len(res.RunsToCreate) > 0 || len(res.CLsToPurge) > 0 || len(res.CLsToTriggerDeps) > 0 {
 		res.NewValue = c.CloneShallow()
