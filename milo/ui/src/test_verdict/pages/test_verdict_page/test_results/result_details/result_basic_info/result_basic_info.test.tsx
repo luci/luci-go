@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { userEvent } from '@testing-library/user-event';
 import { ReactNode } from 'react';
 
 import { Cluster } from '@/common/services/luci_analysis';
@@ -61,9 +61,7 @@ describe('<ResultBasicInfo />', () => {
     return render(
       <FakeContextProvider>
         <FakeTestVerdictContextProvider>
-          <TestResultsProvider results={[]}>
-            {entry}
-          </TestResultsProvider>
+          <TestResultsProvider results={[]}>{entry}</TestResultsProvider>
         </FakeTestVerdictContextProvider>
       </FakeContextProvider>,
     );
@@ -172,5 +170,73 @@ describe('<ResultBasicInfo />', () => {
     // verify
     await screen.findByText('Details');
     expect(screen.getByText('similar failures')).toBeInTheDocument();
+  });
+
+  it('given a list of clusters with bugs, should display a list of bugs', async () => {
+    // set up
+    const failedResult: TestResult = {
+      testId: 'tast.inputs.VirtualKeyboardAutocorrect.fr_fr_a11y',
+      name:
+        'invocations/task-chromium-swarm.appspot.com-659c82e40f213711/tests/' +
+        'ninja:%2F%2F:blink_web_tests%2Ffast%2Fbackgrounds%2Fbackground-position-parsing.html/results/b5b8a970-03989',
+      resultId: '87ecc8c3-00063',
+      status: TestStatus.Fail,
+      summaryHtml: '<text-artifact artifact-id="Test Log" />',
+      startTime: '2023-10-25T09:01:00.167244802Z',
+      failureReason: {
+        primaryErrorMessage:
+          'Failed to validate VK autocorrect: failed to validate VK autocorrect on step 4: failed' +
+          ' to validate field text on step 2: failed to validate input value: got: francais ; want: français',
+      },
+    };
+    const clustersMap: Map<string, readonly Cluster[]> = new Map();
+    clustersMap.set(failedResult.resultId, [
+      {
+        clusterId: {
+          algorithm: 'reason-failure-reason',
+          id: '123456abcd',
+        },
+        bug: {
+          id: '123456',
+          linkText: 'b/123456',
+          system: 'buganizer',
+          url: 'http://buganizer.example/123456',
+        },
+      },
+      {
+        clusterId: {
+          algorithm: 'test-failure-reason',
+          id: '123456abcdf',
+        },
+        bug: {
+          id: '1234567',
+          linkText: 'b/1234567',
+          system: 'buganizer',
+          url: 'http://buganizer.example/1234567',
+        },
+      },
+    ]);
+
+    // act
+    render(
+      <FakeContextProvider
+        pageMeta={{
+          project: 'chromium',
+        }}
+      >
+        <FakeTestVerdictContextProvider>
+          <TestResultsProvider results={[]} clustersMap={clustersMap}>
+            <ResultBasicInfo result={failedResult} />
+          </TestResultsProvider>
+        </FakeTestVerdictContextProvider>
+      </FakeContextProvider>,
+    );
+
+    // verify
+    await screen.findByText('Details');
+    expect(screen.getByText('similar failures')).toBeInTheDocument();
+    expect(screen.getByText('Related bugs:')).toBeInTheDocument();
+    expect(screen.getByText('b/123456')).toBeInTheDocument();
+    expect(screen.getByText('b/1234567')).toBeInTheDocument();
   });
 });

@@ -17,12 +17,11 @@ import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Divider from '@mui/material/Divider';
 
-import { useProject } from '@/common/components/page_meta/page_meta_provider';
 import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import { ClustersService } from '@/common/services/luci_analysis';
 import { TestResultBundle, TestStatus } from '@/common/services/resultdb';
 
-import { useTestVerdict } from '../context';
+import { useProject, useTestVerdict } from '../context';
 
 import { TestResultsProvider } from './context';
 import { ResultDetails } from './result_details';

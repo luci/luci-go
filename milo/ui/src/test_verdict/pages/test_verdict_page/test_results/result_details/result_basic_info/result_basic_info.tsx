@@ -20,16 +20,17 @@ import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 
 import { DurationBadge } from '@/common/components/duration_badge';
-import { useProject } from '@/common/components/page_meta/page_meta_provider';
 import { makeClusterLink } from '@/common/services/luci_analysis';
 import { TestResult, parseTestResultName } from '@/common/services/resultdb';
+import { getClustersUniqueBugs } from '@/common/tools/cluster_utils/cluster_utils';
 import { parseProtoDurationStr } from '@/common/tools/time_utils';
 import { getSwarmingTaskURL } from '@/common/tools/url_utils';
 import { parseSwarmingTaskFromInvId } from '@/common/tools/utils';
 
+import { useProject } from '../../../context';
 import { useClustersByResultId } from '../../context';
 
 interface Props {
@@ -49,6 +50,9 @@ export function ResultBasicInfo({ result }: Props) {
   const reasonCluster = clustersByResultId?.filter((c) =>
     c.clusterId.algorithm.startsWith('reason-'),
   )?.[0];
+
+  const uniqueBugs =
+    clustersByResultId && getClustersUniqueBugs(clustersByResultId);
 
   return (
     <Accordion
@@ -128,13 +132,19 @@ export function ResultBasicInfo({ result }: Props) {
               </Grid>
             </Grid>
           )}
-          {/** TODO(b/308716449): Display related bugs. */}
-          <Grid item container columnGap={1}>
-            Related bugs:
-            <Link href="#">b/123456789</Link>
-            <Link href="#">b/123456789</Link>
-            <Link href="#">b/123456789</Link>
-          </Grid>
+          {uniqueBugs && (
+            <Grid item container columnGap={1}>
+              Related bugs:
+              {uniqueBugs.map((bug, i) => (
+                <Fragment key={bug.id}>
+                  {i > 0 && i < uniqueBugs.length - 1 && ', '}
+                  <Link href={bug.url} target="_blank">
+                    {bug.linkText}
+                  </Link>
+                </Fragment>
+              ))}
+            </Grid>
+          )}
           {/** TODO(b/308716449): Display last successful patchset of the CL. */}
           <Grid item container columnGap={1}>
             Last successful CV run:

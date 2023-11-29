@@ -72,7 +72,6 @@ export function TestVerdictPage() {
   // We also only expect this array to only contain 1 item.
   const verdict = results.testVariants[0];
   const sources = verdict.sourcesId ? results.sources[verdict.sourcesId] : {};
-
   return (
     <Grid
       container
@@ -86,6 +85,7 @@ export function TestVerdictPage() {
       <PageMeta title="" selectedPage={UiPage.TestVerdict} project={project} />
       <TestVerdictProvider
         invocationID={invID}
+        project={project}
         testVerdict={verdict}
         sources={sources}
       >

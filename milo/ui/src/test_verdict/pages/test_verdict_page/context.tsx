@@ -25,6 +25,7 @@ import { Sources, TestVariant } from '@/common/services/resultdb';
 
 interface TestVerdictContext {
   readonly invocationID: string;
+  readonly project: string;
   readonly testVerdict: TestVariant;
   readonly setTestVerdict: Dispatch<SetStateAction<TestVariant>>;
   readonly sources: Sources;
@@ -35,6 +36,7 @@ const TestVerdictCtx = createContext<TestVerdictContext | null>(null);
 export interface TestVerdictProviderProps {
   readonly children: ReactNode;
   readonly invocationID: string;
+  readonly project: string;
   readonly testVerdict: TestVariant;
   readonly sources: Sources;
 }
@@ -42,6 +44,7 @@ export interface TestVerdictProviderProps {
 export function TestVerdictProvider({
   children,
   invocationID,
+  project,
   testVerdict,
   sources,
 }: TestVerdictProviderProps) {
@@ -50,6 +53,7 @@ export function TestVerdictProvider({
     <TestVerdictCtx.Provider
       value={{
         invocationID,
+        project,
         testVerdict: verdict,
         setTestVerdict: setVerdict,
         sources,
@@ -66,6 +70,14 @@ export function useInvocationID() {
     throw Error('useInvocationID can only be used in a TestVerdictProvider.');
   }
   return context.invocationID;
+}
+
+export function useProject() {
+  const context = useContext(TestVerdictCtx);
+  if (!context) {
+    throw Error('useProject can only be used in a TestVerdictProvider.');
+  }
+  return context.project;
 }
 
 export function useTestVerdict() {

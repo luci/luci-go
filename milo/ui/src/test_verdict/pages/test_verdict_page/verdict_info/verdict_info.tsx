@@ -20,7 +20,6 @@ import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import { Fragment, useState } from 'react';
 
-import { useProject } from '@/common/components/page_meta/page_meta_provider';
 import { getSortedTestVariantDef } from '@/common/services/resultdb';
 import {
   generateTestHistoryURLSearchParams,
@@ -28,7 +27,7 @@ import {
   getTestHistoryURLWithSearchParam,
 } from '@/common/tools/url_utils';
 
-import { useTestVerdict } from '../context';
+import { useProject, useTestVerdict } from '../context';
 
 export function VerdictInfo() {
   const verdict = useTestVerdict();

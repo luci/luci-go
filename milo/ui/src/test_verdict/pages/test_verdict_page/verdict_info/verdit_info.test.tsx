@@ -14,8 +14,6 @@
 
 import { render, screen, waitFor } from '@testing-library/react';
 
-import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-
 import {
   FakeTestVerdictContextProvider,
   placeholderVerdict,
@@ -23,18 +21,12 @@ import {
 
 import { VerdictInfo } from './verdict_info';
 
-describe('<VerdictInfo>', () => {
+describe('<VerdictInfo />', () => {
   it('given a verdict, should display verdict data', async () => {
     render(
-      <FakeContextProvider
-        pageMeta={{
-          project: 'chromium',
-        }}
-      >
-        <FakeTestVerdictContextProvider>
-          <VerdictInfo />
-        </FakeTestVerdictContextProvider>
-      </FakeContextProvider>,
+      <FakeTestVerdictContextProvider>
+        <VerdictInfo />
+      </FakeTestVerdictContextProvider>,
     );
     waitFor(() => {
       expect(

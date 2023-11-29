@@ -24,6 +24,7 @@ import {
 } from '@/common/components/tooltip';
 import { AssociatedBug, Cluster } from '@/common/services/luci_analysis';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { getClustersUniqueBugs } from '@/common/tools/cluster_utils/cluster_utils';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
 
 @customElement('milo-associated-bugs-badge')
@@ -35,19 +36,7 @@ export class AssociatedBugsBadgeElement extends MobxExtLitElement {
    * Unique bugs in the provided clusters.
    */
   @computed.struct private get uniqueBugs(): readonly AssociatedBug[] {
-    const uniqueBugs: AssociatedBug[] = [];
-    const seen = new Set<string>();
-    for (const cluster of this.clusters) {
-      if (!cluster.bug) {
-        continue;
-      }
-      if (seen.has(cluster.bug.url)) {
-        continue;
-      }
-      seen.add(cluster.bug.url);
-      uniqueBugs.push(cluster.bug);
-    }
-    return uniqueBugs;
+    return getClustersUniqueBugs(this.clusters);
   }
 
   constructor() {

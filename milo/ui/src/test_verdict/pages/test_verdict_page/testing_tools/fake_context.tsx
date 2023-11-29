@@ -85,7 +85,8 @@ export function FakeTestVerdictContextProvider({ children }: Props) {
   const placeholderSources: Sources = {};
   return (
     <TestVerdictProvider
-      invocationID={'inv-123456'}
+      invocationID="inv-123456"
+      project="chromium"
       testVerdict={placeholderVerdict}
       sources={placeholderSources}
     >

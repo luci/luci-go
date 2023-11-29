@@ -28,7 +28,7 @@ import { FakeTestVerdictContextProvider } from '../testing_tools/fake_context';
 
 import { TestResults } from './test_results';
 
-describe('<TestResults>', () => {
+describe('<TestResults />', () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
