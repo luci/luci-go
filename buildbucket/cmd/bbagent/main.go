@@ -407,13 +407,12 @@ func downloadInputs(ctx context.Context, cwd string, c clientInput) int {
 	bldCompleteCipd, bbErr := c.bbclient.UpdateBuild(ctx, updateReq)
 	if bbErr != nil {
 		logging.Warningf(ctx, "Failed to report build agent output status: %s", bbErr)
+	} else if bldCompleteCipd.CancelTime != nil {
+		// The build has been canceled, bail out early.
+		return cancelBuild(ctx, c.bbclient, bldCompleteCipd)
 	}
 	if err != nil {
 		return -1
-	}
-	// The build has been canceled, bail out early.
-	if bldCompleteCipd.CancelTime != nil {
-		return cancelBuild(ctx, c.bbclient, bldCompleteCipd)
 	}
 	return 0
 }
