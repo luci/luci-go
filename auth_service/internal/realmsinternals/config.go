@@ -25,6 +25,9 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/internal/permissions"
 	"go.chromium.org/luci/common/data/sortby"
@@ -34,13 +37,10 @@ import (
 	realmsconf "go.chromium.org/luci/common/proto/realms"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
-	"google.golang.org/appengine/datastore"
-	"google.golang.org/protobuf/proto"
-
-	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -67,7 +67,7 @@ func CheckConfigChanges(permissionsDB *permissions.PermissionsDB, latest []*mode
 //		Unmarshalling proto error
 //		Failed Realm Expansion
 //		Failed to update datastore with Realms changes
-func UpdateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*model.RealmsCfgRev) error {
+func UpdateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*model.RealmsCfgRev, dryRun bool, historicalComment string) error {
 	expanded := []*model.ExpandedRealms{}
 	for _, r := range revs {
 		logging.Infof(ctx, "expanding realms of project \"%s\"...", r.ProjectID)
@@ -97,7 +97,7 @@ func UpdateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*mo
 	}
 
 	logging.Infof(ctx, "entering transaction")
-	if err := model.UpdateAuthProjectRealms(ctx, expanded, db.Rev, "Updated from latest realms.cfg"); err != nil {
+	if err := model.UpdateAuthProjectRealms(ctx, expanded, db.Rev, dryRun, historicalComment); err != nil {
 		return err
 	}
 	logging.Infof(ctx, "transaction landed")
@@ -105,8 +105,8 @@ func UpdateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*mo
 }
 
 // DeleteRealms will try to delete the AuthProjectRealms for a given projectID.
-func DeleteRealms(ctx context.Context, projectID string) error {
-	switch err := model.DeleteAuthProjectRealms(ctx, projectID, "Triggered by call to DeleteRealms"); {
+func DeleteRealms(ctx context.Context, projectID string, dryRun bool, historicalComment string) error {
+	switch err := model.DeleteAuthProjectRealms(ctx, projectID, dryRun, historicalComment); {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return errors.Annotate(err, "realms for %s do not exist or have already been deleted", projectID).Err()
 	case err != nil:
@@ -477,8 +477,12 @@ func GetConfigs(ctx context.Context) ([]*model.RealmsCfgRev, []*model.RealmsCfgR
 	}
 
 	for i, meta := range storedMeta {
+		projID, err := meta.ProjectID()
+		if err != nil {
+			return nil, nil, err
+		}
 		storedRevs[i] = &model.RealmsCfgRev{
-			ProjectID:    meta.ID,
+			ProjectID:    projID,
 			ConfigRev:    meta.ConfigRev,
 			ConfigDigest: meta.ConfigDigest,
 			PermsRev:     meta.PermsRev,

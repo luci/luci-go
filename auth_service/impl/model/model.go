@@ -518,8 +518,8 @@ func makeAuthProjectRealmsMeta(ctx context.Context, project string) *AuthProject
 	}
 }
 
-// projectID is for checking the project that an AuthProjectRealmsMeta is connected to.
-func (aprm *AuthProjectRealmsMeta) projectID() (string, error) {
+// ProjectID returns the project that an AuthProjectRealmsMeta is connected to.
+func (aprm *AuthProjectRealmsMeta) ProjectID() (string, error) {
 	if aprm.Parent.Kind() != "AuthProjectRealms" {
 		return "", fmt.Errorf("incorrect key pattern for AuthProjectRealmsMeta %s", aprm.ID)
 	}
@@ -1445,7 +1445,7 @@ func UpdateAuthRealmsGlobals(ctx context.Context, permsCfg *configspb.Permission
 		if !dryRun {
 			return commitEntity(stored, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), false)
 		}
-		logging.Infof(ctx, "(dryRun) entity: %v", stored)
+		logging.Infof(ctx, "(dry run) updating AuthRealmsGlobals entity")
 		return nil
 	})
 }
@@ -1471,26 +1471,32 @@ func GetAuthProjectRealms(ctx context.Context, project string) (*AuthProjectReal
 //
 // Returns error if Get from datastore failed
 // Returns error if transaction delete failed
-func DeleteAuthProjectRealms(ctx context.Context, project string, historicalComment string) error {
+func DeleteAuthProjectRealms(ctx context.Context, project string, dryRun bool, historicalComment string) error {
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		authProjectRealms, err := GetAuthProjectRealms(ctx, project)
 		if err != nil {
 			return err
 		}
+
+		if dryRun {
+			logging.Infof(ctx, "(dry run) deleting realms for project %s", project)
+			return nil
+		}
+
 		return commitEntity(authProjectRealms, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), true)
 	})
 }
 
 // RealmsCfgRev is information about fetched or previously processed realms.cfg.
-// Comes either from LUCI Config (then `config_body` is set, but `perms_rev`
-// isn't) or from the datastore (then `perms_rev` is set, but `config_body`
+// Comes either from LUCI Config (then `ConfigBody` is set, but `PermsRev`
+// isn't) or from the datastore (then `PermsRev` is set, but `ConfigBody`
 // isn't). All other fields are always set.
 type RealmsCfgRev struct {
 	ProjectID    string
 	ConfigRev    string
 	ConfigDigest string
 
-	// Thes two are mutually exclusive
+	// These two are mutually exclusive.
 	ConfigBody []byte
 	PermsRev   string
 }
@@ -1514,7 +1520,7 @@ type ExpandedRealms struct {
 //		Failed to create new AuthProjectRealm entity
 //		Failed to update AuthProjectRealm entity
 //		Failed to put AuthProjectRealmsMeta entity
-func UpdateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, permsRev string, historicalComment string) error {
+func UpdateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, permsRev string, dryRun bool, historicalComment string) error {
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		metas := []*AuthProjectRealmsMeta{}
 		existing := []*AuthProjectRealms{}
@@ -1538,16 +1544,24 @@ func UpdateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, per
 				newRealm.Realms = realms
 				newRealm.ConfigRev = r.CfgRev.ConfigRev
 				newRealm.PermsRev = permsRev
-				if err := commitEntity(newRealm, now, auth.CurrentIdentity(ctx), false); err != nil {
-					return errors.Annotate(err, "failed to create new AuthProjectRealm %s", r.CfgRev.ProjectID).Err()
+				if dryRun {
+					logging.Infof(ctx, "(dry run) creating realms for project %s", newRealm.ID)
+				} else {
+					if err := commitEntity(newRealm, now, auth.CurrentIdentity(ctx), false); err != nil {
+						return errors.Annotate(err, "failed to create new AuthProjectRealm %s", r.CfgRev.ProjectID).Err()
+					}
 				}
 			} else if !bytes.Equal(existing[idx].Realms, realms) {
 				// update
 				existing[idx].Realms = realms
 				existing[idx].ConfigRev = r.CfgRev.ConfigRev
 				existing[idx].PermsRev = permsRev
-				if err := commitEntity(existing[idx], now, auth.CurrentIdentity(ctx), false); err != nil {
-					return errors.Annotate(err, "failed to update AuthProjectRealm %s", r.CfgRev.ProjectID).Err()
+				if dryRun {
+					logging.Infof(ctx, "(dry run) updating realms for project %s", existing[idx].ID)
+				} else {
+					if err := commitEntity(existing[idx], now, auth.CurrentIdentity(ctx), false); err != nil {
+						return errors.Annotate(err, "failed to update AuthProjectRealm %s", r.CfgRev.ProjectID).Err()
+					}
 				}
 			} else {
 				logging.Infof(ctx, "configs are fresh!")

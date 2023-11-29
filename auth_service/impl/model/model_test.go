@@ -1458,11 +1458,11 @@ func TestAuthRealmsConfig(t *testing.T) {
 		_, err = GetAuthProjectRealms(ctx, testProject)
 		So(err, ShouldBeNil)
 
-		err = DeleteAuthProjectRealms(ctx, testProject, "Go pRPC API")
+		err = DeleteAuthProjectRealms(ctx, testProject, false, "Go pRPC API")
 		So(err, ShouldBeNil)
 		So(ts.Tasks(), ShouldHaveLength, 2)
 
-		err = DeleteAuthProjectRealms(ctx, testProject, "Go pRPC API")
+		err = DeleteAuthProjectRealms(ctx, testProject, false, "Go pRPC API")
 		So(err, ShouldErrLike, datastore.ErrNoSuchEntity)
 	})
 
@@ -1482,7 +1482,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 		actual, err := GetAuthProjectRealmsMeta(ctx, testProject)
 		So(err, ShouldBeNil)
 		So(actual, ShouldResemble, projectRealmsMeta)
-		actualID, err := actual.projectID()
+		actualID, err := actual.ProjectID()
 		So(err, ShouldBeNil)
 		So(actualID, ShouldEqual, testProject)
 	})
@@ -1504,7 +1504,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(actual, ShouldResemble, projectRealmsMeta)
 		for idx, proj := range testProjects {
-			id, err := actual[idx].projectID()
+			id, err := actual[idx].ProjectID()
 			So(err, ShouldBeNil)
 			So(id, ShouldEqual, proj)
 		}

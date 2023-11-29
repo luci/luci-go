@@ -21,8 +21,15 @@ import (
 	"testing"
 	"time"
 
+	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/auth_service/impl/model"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	realmsconf "go.chromium.org/luci/common/proto/realms"
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
@@ -33,13 +40,6 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/tq"
-	"google.golang.org/protobuf/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/clock/testclock"
-	realmsconf "go.chromium.org/luci/common/proto/realms"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var (
@@ -65,7 +65,7 @@ func TestGetConfigs(t *testing.T) {
 		ctx := gaemem.Use(context.Background())
 		ctx = cfgclient.Use(ctx, &fakeCfgClient{})
 		ctx = txndefer.FilterRDS(ctx)
-		datastore.Put(ctx, &model.AuthProjectRealms{
+		err := datastore.Put(ctx, &model.AuthProjectRealms{
 			AuthVersionedEntityMixin: testAuthVersionedEntityMixin(),
 			Kind:                     "AuthProjectRealms",
 			ID:                       "test",
@@ -74,7 +74,8 @@ func TestGetConfigs(t *testing.T) {
 			PermsRev:                 "123",
 			ConfigRev:                "1234",
 		})
-		datastore.Put(ctx, &model.AuthProjectRealmsMeta{
+		So(err, ShouldBeNil)
+		err = datastore.Put(ctx, &model.AuthProjectRealmsMeta{
 			Kind:         "AuthProjectRealmsMeta",
 			ID:           "meta",
 			Parent:       projectRealmsKey(ctx, "test"),
@@ -83,6 +84,7 @@ func TestGetConfigs(t *testing.T) {
 			ConfigDigest: "test-digest",
 			ModifiedTS:   testModifiedTS,
 		})
+		So(err, ShouldBeNil)
 
 		latestExpected := []*model.RealmsCfgRev{
 			{
@@ -110,7 +112,7 @@ func TestGetConfigs(t *testing.T) {
 
 		storedExpected := []*model.RealmsCfgRev{
 			{
-				ProjectID:    "meta",
+				ProjectID:    "test",
 				ConfigRev:    "1234",
 				PermsRev:     "123",
 				ConfigDigest: "test-digest",
@@ -131,7 +133,7 @@ func TestGetConfigs(t *testing.T) {
 		ctx := gaemem.Use(context.Background())
 		ctx = cfgclient.Use(ctx, memory.New(map[config.Set]memory.Files{}))
 		ctx = txndefer.FilterRDS(ctx)
-		datastore.Put(ctx, &model.AuthProjectRealms{
+		err := datastore.Put(ctx, &model.AuthProjectRealms{
 			AuthVersionedEntityMixin: testAuthVersionedEntityMixin(),
 			Kind:                     "AuthProjectRealms",
 			ID:                       "test",
@@ -140,7 +142,8 @@ func TestGetConfigs(t *testing.T) {
 			PermsRev:                 "123",
 			ConfigRev:                "1234",
 		})
-		datastore.Put(ctx, &model.AuthProjectRealmsMeta{
+		So(err, ShouldBeNil)
+		err = datastore.Put(ctx, &model.AuthProjectRealmsMeta{
 			Kind:         "AuthProjectRealmsMeta",
 			ID:           "meta",
 			Parent:       projectRealmsKey(ctx, "test"),
@@ -149,7 +152,8 @@ func TestGetConfigs(t *testing.T) {
 			ConfigDigest: "test-digest",
 			ModifiedTS:   testModifiedTS,
 		})
-		_, _, err := GetConfigs(ctx)
+		So(err, ShouldBeNil)
+		_, _, err = GetConfigs(ctx)
 		So(err, ShouldErrLike, config.ErrNoConfig)
 	})
 
@@ -1017,7 +1021,7 @@ func TestUpdateRealms(t *testing.T) {
 						ConfigBody:   configBody,
 					},
 				}
-				err := UpdateRealms(ctx, testPermissionsDB(false), revs)
+				err := UpdateRealms(ctx, testPermissionsDB(false), revs, false, "latest config")
 				So(err, ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 
@@ -1058,7 +1062,7 @@ func TestUpdateRealms(t *testing.T) {
 						ConfigBody:   cfgBody,
 					},
 				}
-				So(UpdateRealms(ctx, testPermissionsDB(false), revs), ShouldBeNil)
+				So(UpdateRealms(ctx, testPermissionsDB(false), revs, false, "latest config"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 
 				expectedRealmsBody, _ := proto.Marshal(&protocol.Realms{
@@ -1099,7 +1103,7 @@ func TestUpdateRealms(t *testing.T) {
 						ConfigBody:   cfgBody,
 					},
 				}
-				So(UpdateRealms(ctx, testPermissionsDB(false), revs), ShouldBeNil)
+				So(UpdateRealms(ctx, testPermissionsDB(false), revs, false, "latest config"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
 
 				expectedRealmsBody, _ = proto.Marshal(&protocol.Realms{
@@ -1162,7 +1166,7 @@ func TestUpdateRealms(t *testing.T) {
 						ConfigBody:   cfgBody2,
 					},
 				}
-				So(UpdateRealms(ctx, testPermissionsDB(false), revs), ShouldBeNil)
+				So(UpdateRealms(ctx, testPermissionsDB(false), revs, false, "latest config"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 
 				expectedRealmsBodyA, _ := proto.Marshal(&protocol.Realms{
