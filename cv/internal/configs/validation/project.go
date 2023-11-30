@@ -771,19 +771,6 @@ func (vd *projectConfigValidator) validateUserLimit(limit *cfgpb.UserLimit, name
 		vd.ctx.Exit()
 	}
 	vd.ctx.Exit()
-
-	vd.ctx.Enter("tryjob")
-	switch tj := limit.GetTryjob(); {
-	case tj == nil:
-		vd.ctx.Errorf("missing; set all limits with `unlimited` if there are no limits")
-	default:
-		vd.ctx.Enter("max_active")
-		if err := vd.validateLimit(tj.GetMaxActive()); err != nil {
-			vd.ctx.Errorf("%s", err)
-		}
-		vd.ctx.Exit()
-	}
-	vd.ctx.Exit()
 }
 
 func (vd *projectConfigValidator) validatePrincipalID(id string) error {

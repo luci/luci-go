@@ -881,11 +881,6 @@ func TestValidateProjectDetailed(t *testing.T) {
 				fail(ulimit.Run.MaxActive, 0, false, "invalid limit 0;")
 				ok(ulimit.Run.MaxActive, 3, false)
 				ok(ulimit.Run.MaxActive, 0, true)
-
-				// tryjob limits
-				fail(ulimit.Tryjob.MaxActive, 0, false, "invalid limit 0;")
-				ok(ulimit.Tryjob.MaxActive, 3, false)
-				ok(ulimit.Tryjob.MaxActive, 0, true)
 			})
 		})
 	})
