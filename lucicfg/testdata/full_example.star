@@ -484,7 +484,7 @@ luci.cq_group(
                     exclude = True,
                 ),
             ],
-            mode_allowlist = [cq.MODE_DRY_RUN, cq.MODE_QUICK_DRY_RUN],
+            mode_allowlist = [cq.MODE_DRY_RUN, cq.MODE_FULL_RUN],
         ),
         # An experimental verifier with a location filter.
         luci.cq_tryjob_verifier(
@@ -676,7 +676,7 @@ lucicfg.emit(
 #           exclude: true
 #         }
 #         mode_allowlist: "DRY_RUN"
-#         mode_allowlist: "QUICK_DRY_RUN"
+#         mode_allowlist: "FULL_RUN"
 #       }
 #       builders {
 #         name: "infra/try/linux try builder 2"

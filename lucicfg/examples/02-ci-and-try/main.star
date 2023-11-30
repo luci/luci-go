@@ -141,7 +141,6 @@ luci.cq_group(
                 for m in [
                     cq.MODE_DRY_RUN,
                     cq.MODE_FULL_RUN,
-                    cq.MODE_QUICK_DRY_RUN,
                     cq.MODE_NEW_PATCHSET_RUN,
                 ]
             ],

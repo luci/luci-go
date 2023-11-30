@@ -413,21 +413,12 @@ def _post_action_triggering_condition(mode = None, statuses = None):
       the statuses.
 
     Args:
-        mode: a Run mode. Must be one of the terminal cq.MODE_*. Required.
+        mode: a Run mode. Could be one of the cq.MODE_* or additional mode
+            name. Required.
         statuses: a list of cq.STATUS_*. Required
     """
-    supported_modes = [
-        cq.MODE_DRY_RUN,
-        cq.MODE_QUICK_DRY_RUN,
-        cq.MODE_FULL_RUN,
-        cq.MODE_NEW_PATCHSET_RUN,
-    ]
-    if mode == None:
-        fail("missing required param `mode`")
-    if mode not in supported_modes:
-        fail("unknown mode %r" % mode)
-
-    validate.list("statuses", statuses, required = True)
+    mode = validate.string("mode", mode, required = True)
+    statuses = validate.list("statuses", statuses, required = True)
     terminal = [cq.STATUS_CANCELLED, cq.STATUS_FAILED, cq.STATUS_SUCCEEDED]
     for i, st in enumerate(statuses):
         if st not in terminal:
@@ -540,11 +531,8 @@ def _validate_tryjob_experiment(attr, val, *, default = None, required = False):
 #
 # `cq.MODE_*` constants define common values for cq run modes.
 #   * **cq.MODE_DRY_RUN**: Run all tests but do not submit.
-#   * **cq.MODE_QUICK_DRY_RUN**: Run some tests but do not submit.
-#     See https://crbug.com/1189817. To show Quick Run status in Gerrit, set the
-#     `rts_was_used` output property to true. For more, see the
-#     [Gerrit plugin](https://chromium.googlesource.com/infra/gerrit-plugins/buildbucket/+/refs/heads/main/README.md).
 #   * **cq.MODE_FULL_RUN**: Run all tests and potentially submit.
+#   * **cq.MODE_NEW_PATCHSET_RUN**: Run tryjobs on patchset upload.
 #   * **cq.MODE_ANALYZER_RUN**: Run code analyzers on patchset upload.
 #     As of April 2021, all such runs are launched by Tricium. Eventually,
 #     Change Verifier(CV) will launch and manage all analyzer runs.
@@ -604,7 +592,6 @@ cq = struct(
     COMMENT_LEVEL_FULL = cq_pb.COMMENT_LEVEL_FULL,
     COMMENT_LEVEL_RESTRICTED = cq_pb.COMMENT_LEVEL_RESTRICTED,
     MODE_DRY_RUN = "DRY_RUN",
-    MODE_QUICK_DRY_RUN = "QUICK_DRY_RUN",
     MODE_FULL_RUN = "FULL_RUN",
     MODE_ANALYZER_RUN = "ANALYZER_RUN",
     MODE_NEW_PATCHSET_RUN = "NEW_PATCHSET_RUN",
