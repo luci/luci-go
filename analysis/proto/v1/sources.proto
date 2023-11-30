@@ -35,7 +35,7 @@ message Sources {
   //
   // At most 10 changelist(s) may be specified here. If there
   // are more, only include the first 10 and set is_dirty.
-  repeated Changelist changelists = 2;
+  repeated GerritChange changelists = 2;
 
   // Whether there were any changes made to the sources, not described above.
   // For example, a version of a dependency was upgraded before testing (e.g.
@@ -75,6 +75,27 @@ message GitilesCommit {
   // as the same scheme is used consistently for a ref.
   // Mandatory.
   int64 position = 5;
+}
+
+// A Gerrit patchset.
+message GerritChange {
+  // Gerrit hostname, e.g. "chromium-review.googlesource.com".
+  string host = 1;
+
+  // Due to a historical mistake, this proto needs to be
+  // binary compatible with the Changelist message until
+  // March 2024. (I.E. support being deserialized from legacy
+  // serialized Changelist messages).
+  reserved 4;
+
+  // Gerrit project, e.g. "chromium/src".
+  string project = 5;
+
+  // Change number, e.g. 12345.
+  int64 change = 2;
+
+  // Patch set number, e.g. 1.
+  int64 patchset = 3;
 }
 
 // A gerrit changelist.

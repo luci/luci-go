@@ -1092,12 +1092,12 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
 					Position:   16801,
 				},
-				Changelists: []*pb.Changelist{
+				Changelists: []*pb.GerritChange{
 					{
-						Host:      "project-review.googlesource.com",
-						Change:    9991,
-						Patchset:  82,
-						OwnerKind: pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED,
+						Host:     "project-review.googlesource.com",
+						Project:  "myproject/src2",
+						Change:   9991,
+						Patchset: 82,
 					},
 				},
 				IsDirty: false,

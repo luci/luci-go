@@ -20,10 +20,10 @@ import (
 	"testing"
 	"time"
 
-	pb "go.chromium.org/luci/analysis/proto/v1"
+	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	. "github.com/smartystreets/goconvey/convey"
+	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
 )

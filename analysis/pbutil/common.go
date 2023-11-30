@@ -22,11 +22,11 @@ import (
 	"sort"
 	"time"
 
-	"go.chromium.org/luci/common/errors"
-	cvv0 "go.chromium.org/luci/cv/api/v0"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "go.chromium.org/luci/analysis/proto/v1"
+	"go.chromium.org/luci/common/errors"
+	cvv0 "go.chromium.org/luci/cv/api/v0"
 )
 
 // EmptyJSON corresponds to a serialized, empty JSON object.

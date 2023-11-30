@@ -539,9 +539,10 @@ func testSources() *pb.Sources {
 			Position:   12345,
 		},
 		IsDirty: true,
-		Changelists: []*pb.Changelist{
+		Changelists: []*pb.GerritChange{
 			{
 				Host:     "chromium-review.googlesource.com",
+				Project:  "myproject",
 				Change:   87654,
 				Patchset: 321,
 			},

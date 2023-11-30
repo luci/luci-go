@@ -16,10 +16,9 @@
 package pbutil
 
 import (
+	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
-
-	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 // TestResultIDFromResultDB returns a LUCI Analysis TestResultId corresponding
@@ -186,12 +185,12 @@ func GitilesCommitFromResultDB(c *rdbpb.GitilesCommit) *pb.GitilesCommit {
 
 // ChangelistFromResultDB returns the LUCI Analysis gerrit changelist
 // corresponding to a ResultDB gerrit changelist.
-func ChangelistFromResultDB(cl *rdbpb.GerritChange) *pb.Changelist {
-	return &pb.Changelist{
-		Host:      cl.Host,
-		Change:    cl.Change,
-		Patchset:  int32(cl.Patchset),
-		OwnerKind: pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED,
+func ChangelistFromResultDB(cl *rdbpb.GerritChange) *pb.GerritChange {
+	return &pb.GerritChange{
+		Host:     cl.Host,
+		Project:  cl.Project,
+		Change:   cl.Change,
+		Patchset: cl.Patchset,
 	}
 }
 
