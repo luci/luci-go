@@ -517,6 +517,7 @@ luci.cq_group(
             builder = "spell-checker",
             owner_whitelist = ["project-contributor"],
             mode_allowlist = [cq.MODE_ANALYZER_RUN],
+            disable_reuse = True,
         ),
     ],
     additional_modes = cq.run_mode(
@@ -697,6 +698,7 @@ lucicfg.emit(
 #       }
 #       builders {
 #         name: "infra/try/spell-checker"
+#         disable_reuse: true
 #         owner_whitelist_group: "project-contributor"
 #         mode_allowlist: "ANALYZER_RUN"
 #       }
@@ -1646,6 +1648,7 @@ lucicfg.emit(
 #     git_url: "https://example.googlesource.com/another/repo"
 #   }
 #   whitelisted_group: "project-contributor"
+#   check_all_revision_kinds: true
 # }
 # repos {
 #   gerrit_project {
@@ -1654,6 +1657,7 @@ lucicfg.emit(
 #     git_url: "https://example.googlesource.com/repo"
 #   }
 #   whitelisted_group: "project-contributor"
+#   check_all_revision_kinds: true
 # }
 # service_account: "tricium-prod@appspot.gserviceaccount.com"
 # ===

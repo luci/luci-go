@@ -1568,6 +1568,7 @@ def _tricium_config(verifiers, cq_group, project):
     ret = tricium_pb.ProjectConfig()
     whitelisted_group = None
     watching_gerrit_projects = None
+    disable_reuse = None
     for verifier in verifiers:
         if cq.MODE_ANALYZER_RUN not in verifier.props.mode_allowlist:
             continue
@@ -1582,6 +1583,18 @@ def _tricium_config(verifiers, cq_group, project):
                     verifier,
                     ["%s-review.googlesource.com/%s" % (host, proj) for host, proj in gerrit_projs],
                     ["%s-review.googlesource.com/%s" % (host, proj) for host, proj in watching_gerrit_projects],
+                ),
+                trace = verifier.trace,
+            )
+        verifier_disable_reuse = verifier.props.disable_reuse
+        if disable_reuse == None:
+            disable_reuse = verifier_disable_reuse
+        elif disable_reuse != verifier_disable_reuse:
+            error(
+                "The disable_reuse field of analyzer %s does not match the others, got: %s, others: %s" % (
+                    verifier,
+                    verifier_disable_reuse,
+                    disable_reuse,
                 ),
                 trace = verifier.trace,
             )
@@ -1629,6 +1642,7 @@ def _tricium_config(verifiers, cq_group, project):
                 git_url = "https://%s.googlesource.com/%s" % (host, proj),
             ),
             whitelisted_group = whitelisted_group,
+            check_all_revision_kinds = disable_reuse,
         )
         for host, proj in watching_gerrit_projects
     ]
