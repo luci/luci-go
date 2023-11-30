@@ -22,6 +22,8 @@ package main
 //nolint:all
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"go.chromium.org/luci/auth_service/impl"
 	"go.chromium.org/luci/auth_service/impl/model"
@@ -29,13 +31,16 @@ import (
 	// Ensure registration of validation rules.
 	// NOTE: this must go before anything that depends on validation globals,
 	// e.g. cfgcache.Register in srvcfg files in allowlistcfg/ or oauthcfg/.
-	"go.chromium.org/luci/auth_service/internal/configs/validation"
-
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/allowlistcfg"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/oauthcfg"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/permissionscfg"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/securitycfg"
+	"go.chromium.org/luci/auth_service/internal/configs/validation"
 
+	"go.chromium.org/luci/auth_service/internal/permissions"
+	"go.chromium.org/luci/auth_service/internal/realmsinternals"
+
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/module"
@@ -92,20 +97,58 @@ func main() {
 		})
 
 		cron.RegisterHandler("update-realms", func(ctx context.Context) error {
+			historicalComment := "Updated from update-realms cron"
+
 			// permissions.cfg handling.
 			if err := permissionscfg.Update(ctx); err != nil {
 				return err
 			}
-			permsCfg, err := permissionscfg.Get(ctx)
+			permsCfg, permsMeta, err := permissionscfg.GetWithMetadata(ctx)
 			if err != nil {
 				return err
 			}
-			if err := model.UpdateAuthRealmsGlobals(ctx, permsCfg, dryRun, "Updated from update-realms cron"); err != nil {
+			if err := model.UpdateAuthRealmsGlobals(ctx, permsCfg, dryRun, historicalComment); err != nil {
 				return err
 			}
+
+			// Make the PermissionsDB for realms expansion.
+			permsDB := permissions.NewPermissionsDB(permsCfg, permsMeta)
+
+			// realms.cfg handling.
+			latestRealms, storedRealms, err := realmsinternals.GetConfigs(ctx)
+			if err != nil {
+				return err
+			}
+			jobs, err := realmsinternals.CheckConfigChanges(ctx, permsDB, latestRealms, storedRealms, dryRun, historicalComment)
+			if err != nil {
+				return err
+			}
+			if !executeJobs(ctx, jobs, 2*time.Second) {
+				return fmt.Errorf("not all jobs succeeded when refreshing realms")
+			}
+
 			return nil
 		})
 
 		return nil
 	})
+}
+
+// executeJobs executes the callbacks, sleeping the set amount of time
+// between each. Note: all callbacks will be run, even if a previous job
+// returned an error.
+//
+// Returns whether any job returned an error.
+func executeJobs(ctx context.Context, jobs []func() error, sleepTime time.Duration) bool {
+	success := true
+	for i, job := range jobs {
+		if i > 0 {
+			time.Sleep(sleepTime)
+		}
+		if err := job(); err != nil {
+			logging.Errorf(ctx, "job %d out of %d failed: %s", i+1, len(jobs), err)
+			success = false
+		}
+	}
+	return success
 }

@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/internal/permissions"
@@ -179,7 +179,7 @@ func UpdateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*mo
 		start := time.Now()
 
 		parsed := &realmsconf.RealmsCfg{}
-		if err := proto.Unmarshal(r.ConfigBody, parsed); err != nil {
+		if err := prototext.Unmarshal(r.ConfigBody, parsed); err != nil {
 			return errors.Annotate(err, "couldn't unmarshal config body").Err()
 		}
 		expandedRev, err := ExpandRealms(db, r.ProjectID, parsed)

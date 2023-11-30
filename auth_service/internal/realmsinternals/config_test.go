@@ -22,6 +22,7 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth_service/impl/info"
@@ -1004,7 +1005,7 @@ func TestUpdateRealms(t *testing.T) {
 
 		Convey("works", func() {
 			Convey("simple config 1 entry", func() {
-				configBody, _ := proto.Marshal(&realmsconf.RealmsCfg{
+				configBody, _ := prototext.Marshal(&realmsconf.RealmsCfg{
 					Realms: []*realmsconf.Realm{
 						{
 							Name: "test-realm",
@@ -1045,7 +1046,7 @@ func TestUpdateRealms(t *testing.T) {
 			})
 
 			Convey("updating project entry with config changes", func() {
-				cfgBody, _ := proto.Marshal(&realmsconf.RealmsCfg{
+				cfgBody, _ := prototext.Marshal(&realmsconf.RealmsCfg{
 					Realms: []*realmsconf.Realm{
 						{
 							Name: "test-realm",
@@ -1083,7 +1084,7 @@ func TestUpdateRealms(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(fetchedPRealmMeta, ShouldResemble, simpleProjectRealmMeta(ctx, "a"))
 
-				cfgBody, _ = proto.Marshal(&realmsconf.RealmsCfg{
+				cfgBody, _ = prototext.Marshal(&realmsconf.RealmsCfg{
 					Realms: []*realmsconf.Realm{
 						{
 							Name: "test-realm",
@@ -1129,7 +1130,7 @@ func TestUpdateRealms(t *testing.T) {
 			})
 
 			Convey("updating many projects", func() {
-				cfgBody1, _ := proto.Marshal(&realmsconf.RealmsCfg{
+				cfgBody1, _ := prototext.Marshal(&realmsconf.RealmsCfg{
 					Realms: []*realmsconf.Realm{
 						{
 							Name: "test-realm",
@@ -1140,7 +1141,7 @@ func TestUpdateRealms(t *testing.T) {
 					},
 				})
 
-				cfgBody2, _ := proto.Marshal(&realmsconf.RealmsCfg{
+				cfgBody2, _ := prototext.Marshal(&realmsconf.RealmsCfg{
 					Realms: []*realmsconf.Realm{
 						{
 							Name: "test-realm",
@@ -1228,7 +1229,7 @@ func TestCheckConfigChanges(t *testing.T) {
 		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 
 		permsDB := testPermissionsDB(false)
-		configBody, _ := proto.Marshal(&realmsconf.RealmsCfg{
+		configBody, _ := prototext.Marshal(&realmsconf.RealmsCfg{
 			Realms: []*realmsconf.Realm{
 				{
 					Name: "test-realm",
