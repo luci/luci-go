@@ -17,6 +17,7 @@ package bqexporter
 import (
 	"context"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/iterator"
@@ -34,6 +35,7 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 	"test_failure_analyses": func(luciProject string) *bigquery.TableMetadata {
 		return &bigquery.TableMetadata{
 			ViewQuery: `SELECT * FROM internal.test_failure_analyses WHERE project = "` + luciProject + `"`,
+			Labels:    map[string]string{bq.MetadataVersionKey: "1"},
 		}
 	},
 }
@@ -79,7 +81,7 @@ func createViewsForLUCIDataset(ctx context.Context, bqClient *bigquery.Client, d
 	for tableName, specFunc := range luciProjectViewQueries {
 		table := bqClient.Dataset(datasetID).Table(tableName)
 		spec := specFunc(luciProject)
-		if err := bq.EnsureTable(ctx, table, spec, bq.EnforceAllSettings()); err != nil {
+		if err := bq.EnsureTable(ctx, table, spec, bq.UpdateMetadata(), bq.RefreshViewInterval(time.Hour)); err != nil {
 			return errors.Annotate(err, "ensure view %s", tableName).Err()
 		}
 	}

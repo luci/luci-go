@@ -16,12 +16,17 @@ package bq
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/googleapi"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
@@ -31,6 +36,10 @@ import (
 
 // ErrWrongTableKind represents a mismatch in BigQuery table type.
 var ErrWrongTableKind = errors.New("cannot change a regular table into a view table or vice-versa")
+
+var errMetadataVersionLabelMissing = errors.New("table definition is missing MetadataVersionKey label or label value is not a positive integer")
+
+var errViewRefreshEnabledOnNonView = errors.New("RefreshViewInterval option cannot be used on a table without a ViewQuery")
 
 // Table is implemented by *bigquery.Table.
 // See its documentation for description of the methods below.
@@ -111,11 +120,11 @@ func NewSchemaApplyer(cache SchemaApplyerCache) *SchemaApplyer {
 //	      // Handle fatal error.
 //	   }
 //	}
-func (s *SchemaApplyer) EnsureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata) error {
+func (s *SchemaApplyer) EnsureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata, options ...EnsureTableOption) error {
 	// Note: creating/updating the table inside GetOrCreate ensures that different
 	// goroutines do not attempt to create/update the same table concurrently.
 	cachedErr, err := s.cache.handle.LRU(ctx).GetOrCreate(ctx, t.FullyQualifiedName(), func() (error, time.Duration, error) {
-		if err := EnsureTable(ctx, t, spec); err != nil {
+		if err := EnsureTable(ctx, t, spec, options...); err != nil {
 			if !transient.Tag.In(err) {
 				// Cache the fatal error for one minute.
 				return err, time.Minute, nil
@@ -133,48 +142,112 @@ func (s *SchemaApplyer) EnsureTable(ctx context.Context, t Table, spec *bigquery
 
 // ensureTableOpts captures options passed to EnsureTable(...).
 type ensureTableOpts struct {
-	// Whether all table settings should be enforced, not just schema.
-	// This creates the possibility of edit wars as updates may
-	// not converge.
-	complete bool
+	// Whether metadata versioning is enabled and metadata
+	// updates can be rolled out, not just schema.
+	metadataVersioned bool
+
+	// Whether view definitions should be periodically refreshed
+	// so that indirect schema updates can be propogated to schema.
+	viewRefreshEnabled bool
+	// The view refresh interval.
+	viewRefreshInterval time.Duration
 }
 
 // EnsureTableOption defines an option passed to EnsureTable(...).
 type EnsureTableOption func(opts *ensureTableOpts)
 
-// EnforceAllSettings specifies that EnsureTable should
-// not just enforce the schema, but all table specification settings
-// permitted by BigQuery and supported by the implementation.
+// RefreshViewInterval ensures the BigQuery view definition is
+// updated if it has not been updated for duration d. This is
+// to ensure indirect schema changes are propogated.
 //
-// This list of settings is currently:
-// - view definition
-// - description
-// - labels
+// Scenario:
+// You have a view defined with the SQL:
 //
-// WARNING: If this option is used and there are multiple version of
-// the table specification in production simultaneously (e.g. as canary
-// and stable deployments), an edit war may ensue and EnsureTable may get
-// stuck in an read-modify-update loop contending with other updates.
+//	`SELECT * FROM base_table WHERE project = 'chromium'`.
 //
-// Applications using this option must take steps to prevent such
-// edit wars themselves, e.g. by only performing such table updates
-// on a periodic cron job where edit wars, if they occur, are sufficiently
-// slow that they do not cause contention.
-func EnforceAllSettings() EnsureTableOption {
+// By default, schema changes to base_table will not be
+// reflected in the schema for the view (e.g. as seen in BigQuery UI).
+// This is a usability issue for users of the view.
+//
+// To cause indirect schema changes to propogate, when this
+// option is set, the view definition will be prefixed with a
+// one line comment like:
+// -- Indirect schema version: 2023-05-01T12:34:56Z
+//
+// The view (including comment) will be periodically refreshed
+// if duration d has elapsed, triggering BigQuery to refresh the
+// view schema.
+//
+// If this option is set but the table definition is not for
+// a view, an error will be returned by EnsureTable(...).
+func RefreshViewInterval(d time.Duration) EnsureTableOption {
 	return func(opts *ensureTableOpts) {
-		opts.complete = true
+		opts.viewRefreshEnabled = true
+		opts.viewRefreshInterval = d
+	}
+}
+
+// MetadataVersionKey is the label key used to version table
+// metadata. Increment the integer assigned to this label
+// to push updated table metadata.
+//
+// This label must be used in conjunction with the UpdateMetadata()
+// EnsureTable(...) option to have effect.
+//
+// The value assigned to this label must be a positive integer,
+// like "1" or "9127".
+//
+// See UpdateMetadata option for usage.
+const MetadataVersionKey = "metadata_version"
+
+// UpdateMetadata allows the non-schema metadata to be updated in
+// EnsureTable(...), namely the view definition, clustering settings,
+// description and labels.
+//
+// This option requires the caller to use the `MetadataVersionKey`
+// label to control metadata update rollouts.
+//
+// Usage:
+//
+// The table definition passed to EnsureTable(...) must define
+// a label with the key `MetadataVersionKey`. The value of
+// the label must be a positive integer. Incrementing the integer
+// will trigger an update of table metadata.
+//
+//	table := client.Dataset("my_dataset").Table("my_table")
+//	spec :=	&bigquery.TableMetadata{
+//	   ...
+//	   Labels: map[string]string {
+//	      // Increment to update table metadata.
+//	      MetadataVersionKey: "2",
+//	   }
+//	}
+//	err := EnsureTable(ctx, table, spec, UpdateMetadata())
+//
+// Rationale:
+// Without a system to control rollouts, if there are multiple
+// versions of the table metadata in production simultaneously
+// (e.g. in canary and stable deployments), an edit war may
+// ensue.
+//
+// Such an edit war scenario is not an issue when we update
+// schema only as columns are only added, never removed, so
+// schema will always converge to the union of all columns.
+func UpdateMetadata() EnsureTableOption {
+	return func(opts *ensureTableOpts) {
+		opts.metadataVersioned = true
 	}
 }
 
 // EnsureTable creates a BigQuery table if it doesn't exist and updates its
 // schema if it is stale.
 //
-// By default, non-schema fields, like View Definition, Partitioning and
+// By default, non-schema metadata, like View Definition, Partitioning and
 // Clustering settings, will be applied if the table is being created but
 // will not be synchronised after creation.
 //
-// To synchronise more of the table specification, including view definition,
-// see EnforceAllSettings.
+// To synchronise more of the table metadata, including view definition,
+// description and labels, see the MetadataVersioned option.
 //
 // Existing fields will not be deleted.
 func EnsureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata, options ...EnsureTableOption) error {
@@ -188,6 +261,15 @@ func EnsureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata, opt
 // ensureTable creates a BigQuery table if it doesn't exist and updates its
 // schema if it is stale.
 func ensureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata, opts ensureTableOpts) error {
+	// If metadata versioning is enabled, confirm the caller has
+	// specified a version.
+	if opts.metadataVersioned && metadataVersion(spec.Labels) <= 0 {
+		return errMetadataVersionLabelMissing
+	}
+	if spec.ViewQuery == "" && opts.viewRefreshEnabled {
+		return errViewRefreshEnabledOnNonView
+	}
+
 	md, err := t.Metadata(ctx)
 	apiErr, ok := err.(*googleapi.Error)
 	switch {
@@ -206,11 +288,11 @@ func ensureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata, opt
 
 	// Table exists and is accessible.
 	// Ensure its specification is up to date.
-	if md.Type == bigquery.ViewTable && len(spec.Schema) > 0 ||
-		md.Type != bigquery.ViewTable && spec.ViewQuery != "" {
+	if (md.Type == bigquery.ViewTable) != (spec.ViewQuery != "") {
 		// View without view query or non-View table with View query.
 		return ErrWrongTableKind
 	}
+
 	if err = ensureBQTable(ctx, t, spec, opts); err != nil {
 		return errors.Annotate(err, "ensure bq table").Err()
 	}
@@ -248,42 +330,73 @@ func ensureBQTable(ctx context.Context, t Table, spec *bigquery.TableMetadata, o
 		var update bigquery.TableMetadataToUpdate
 		mutated := false
 
-		// Only consider Schema updates for tables that are not views.
 		if md.Type != bigquery.ViewTable {
+			// Only consider Schema updates for tables that are not views.
 			combinedSchema, updated := appendMissing(md.Schema, spec.Schema)
 			if updated {
 				mutated = true
 				update.Schema = combinedSchema
 			}
 		}
+
 		// The following fields are subject of a possible edit war
 		// if there are multiple versions of the table specification
 		// deployed simultaneously (e.g. to canary and stable).
-		// Only perform them if the application has asked us to enforce
-		// the full table specification and it has a solution to
-		// manage the edit war.
-		if opts.complete {
-			if md.Type == bigquery.ViewTable && spec.ViewQuery != md.ViewQuery {
-				// Apply view updates to views.
-				update.ViewQuery = spec.ViewQuery
-				mutated = true
-			}
-			if md.Description != spec.Description {
-				// Update description.
-				update.Description = spec.Description
-				mutated = true
-			}
-			setLabels, deleteLabels := diffLabels(md.Labels, spec.Labels)
-			if len(setLabels) > 0 || len(deleteLabels) > 0 {
-				// Update labels.
-				for k, v := range setLabels {
-					update.SetLabel(k, v)
+		// Only perform them if there is a versioning scheme
+		// in place to prevent an edit war.
+		pushMetadata := opts.metadataVersioned && metadataVersion(spec.Labels) > metadataVersion(md.Labels)
+
+		if md.Type == bigquery.ViewTable {
+			// Update view query, if necessary.
+
+			existingQuery := parseViewQuery(md.ViewQuery)
+
+			now := clock.Now(ctx)
+			updateQueryContent := pushMetadata && spec.ViewQuery != existingQuery.query
+			isViewStale := opts.viewRefreshEnabled && now.Sub(existingQuery.lastIndirectSchemaUpdate) > opts.viewRefreshInterval
+
+			if updateQueryContent || isViewStale {
+				var newQuery viewQuery
+				if updateQueryContent {
+					newQuery.query = spec.ViewQuery
+				} else {
+					// Only update the indirect schema version header
+					// without changing the rest of the query. New
+					// query contents should only be rolled out with
+					// an uprev of the schema version.
+					newQuery.query = existingQuery.query
 				}
-				for k := range deleteLabels {
-					update.DeleteLabel(k)
+
+				if opts.viewRefreshEnabled {
+					newQuery.lastIndirectSchemaUpdate = now
+				} else {
+					newQuery.lastIndirectSchemaUpdate = time.Time{}
 				}
+
+				update.ViewQuery = newQuery.SQL()
 				mutated = true
 			}
+		}
+		if pushMetadata && isClusteringDifferent(md.Clustering, spec.Clustering) {
+			// Update clustering.
+			update.Clustering = spec.Clustering
+			mutated = true
+		}
+		if pushMetadata && md.Description != spec.Description {
+			// Update description.
+			update.Description = spec.Description
+			mutated = true
+		}
+		setLabels, deleteLabels := diffLabels(md.Labels, spec.Labels)
+		if pushMetadata && (len(setLabels) > 0 || len(deleteLabels) > 0) {
+			// Update labels.
+			for k, v := range setLabels {
+				update.SetLabel(k, v)
+			}
+			for k := range deleteLabels {
+				update.DeleteLabel(k)
+			}
+			mutated = true
 		}
 
 		if !mutated {
@@ -350,6 +463,28 @@ func appendMissing(schema, newFields bigquery.Schema) (combinedSchema bigquery.S
 	return combinedSchema, updated
 }
 
+// metadataVersion attempts to extract the metadata version from the
+// given table labels, and returns it if it is found.
+// If it cannot be found, or is invalid, zero (0) is returned.
+func metadataVersion(labels map[string]string) int64 {
+	if labels == nil {
+		// No labels. Invalid.
+		return 0
+	}
+	versionString := labels[MetadataVersionKey]
+	i, err := strconv.ParseInt(versionString, 10, 64)
+	if err != nil || i < 0 {
+		// No version string or negative version. Invalid.
+		return 0
+	}
+	if versionString != fmt.Sprintf("%v", i) {
+		// Integer is not in its canoncial string representation,
+		// e.g. "+1" instead of "1". Invalid.
+		return 0
+	}
+	return i
+}
+
 // copySchema creates a shallow copy of the existing schema.
 func copySchema(schema bigquery.Schema) bigquery.Schema {
 	if schema == nil {
@@ -388,4 +523,84 @@ func diffLabels(currentLabels, newLabels map[string]string) (setLabels map[strin
 		}
 	}
 	return setLabels, deleteLabels
+}
+
+// isClusteringDifferent returns whether clusterings settings a and b
+// are semantically different.
+func isClusteringDifferent(a, b *bigquery.Clustering) bool {
+	aLength := 0
+	if a != nil {
+		aLength = len(a.Fields)
+	}
+	bLength := 0
+	if b != nil {
+		bLength = len(b.Fields)
+	}
+	if aLength != bLength {
+		return true
+	}
+	for i := 0; i < aLength; i++ {
+		if !strings.EqualFold(a.Fields[i], b.Fields[i]) {
+			return true
+		}
+	}
+	return false
+}
+
+var indirectSchemaVersionRE = regexp.MustCompile(`^-- Indirect schema version: ([0-9\-:TZ]+)$`)
+
+// viewQuery is the logical representation of a SQL query
+// in a BigQuery view, separating the indirect schema version
+// header comment (if any) from the residual query content.
+type viewQuery struct {
+	// lastIndirectSchemaUpdate is the timestamp in the Indirect schema version
+	// header that may appear before the query, if any.
+	// If there is no such header, this is the zero time (time.Time{}).
+	lastIndirectSchemaUpdate time.Time
+	// query is the residual query content.
+	query string
+}
+
+// parseViewQuery parses the SQL of a view query, separating
+// the indirect schema version header from the rest of the
+// query content.
+func parseViewQuery(sql string) viewQuery {
+	lines := strings.Split(sql, "\n")
+
+	// Try to find the header in the first line of the SQL.
+	matches := indirectSchemaVersionRE.FindStringSubmatch(lines[0])
+	if len(matches) == 0 {
+		// No indirect schema version header found.
+		return viewQuery{
+			lastIndirectSchemaUpdate: time.Time{}, // Use zero time.
+			query:                    sql,
+		}
+	}
+
+	// Indirect schema version header is present.
+	timestampString := matches[1]
+	residualSQL := strings.Join(lines[1:], "\n")
+
+	lastUpdateTime, err := time.Parse(time.RFC3339, timestampString)
+	if err != nil {
+		// Invalid timestamp.
+		return viewQuery{
+			lastIndirectSchemaUpdate: time.Time{}, // Use zero time.
+			query:                    residualSQL,
+		}
+	}
+	return viewQuery{
+		lastIndirectSchemaUpdate: lastUpdateTime,
+		query:                    residualSQL,
+	}
+}
+
+// SQL returns the raw SQL representation of the view query.
+func (v viewQuery) SQL() string {
+	var b strings.Builder
+	if (v.lastIndirectSchemaUpdate != time.Time{}) {
+		b.WriteString(fmt.Sprintf("-- Indirect schema version: %s\n", v.lastIndirectSchemaUpdate.Format(time.RFC3339)))
+	}
+	b.WriteString(v.query)
+	return b.String()
 }
