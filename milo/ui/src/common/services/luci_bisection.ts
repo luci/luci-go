@@ -239,6 +239,11 @@ export interface ListTestAnalysesRequest {
   project: string;
   pageSize?: number;
   pageToken?: string;
+  fields?: FieldMask;
+}
+
+export interface FieldMask {
+  paths: string[];
 }
 
 export interface ListTestAnalysesResponse {

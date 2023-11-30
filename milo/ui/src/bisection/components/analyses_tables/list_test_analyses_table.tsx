@@ -69,6 +69,23 @@ export const ListTestAnalysesTable = () => {
       project: project,
       pageSize: pageSize,
       pageToken: pageTokens.get(page * pageSize) || '',
+      fields: {
+        paths: [
+          'analysis_id',
+          'created_time',
+          'start_time',
+          'end_time',
+          'status',
+          'run_status',
+          'builder',
+          'culprit.commit',
+          'culprit.review_url',
+          'culprit.review_title',
+          'culprit.culprit_action',
+          'test_failures.*.is_primary',
+          'test_failures.*.start_hour',
+        ],
+      },
     },
     options: {
       keepPreviousData: true,
