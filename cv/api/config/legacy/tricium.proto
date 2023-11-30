@@ -143,4 +143,10 @@ message RepoDetails {
   // https://chrome-infra-auth.appspot.com. Contact a Chromium trooper
   // if you need to add or modify a group: g.co/bugatrooper.
   repeated string whitelisted_group = 7;
+
+  // Whether we want to process REWORK changes (code changes), or all of them
+  // including rebases and changes in the commit message (default run only
+  // on REWORK). Check all the types at:
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-info
+  bool check_all_revision_kinds = 8;
 }
