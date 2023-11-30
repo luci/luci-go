@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"cloud.google.com/go/bigquery"
-
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/analysis/internal/analysis"

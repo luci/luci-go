@@ -388,6 +388,95 @@ func (x *JoinBuild) GetProject() string {
 	return ""
 }
 
+// Payload of the UpdateBugs task. Prior to running this task,
+// the cluster_summaries table should have been updated from the
+// contents of the clustered_failures table.
+type UpdateBugs struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The LUCI Project to update bugs for.
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	// The reclustering attempt minute that reflects the reclustering
+	// state of the failures summarized by the cluster_summaries table.
+	//
+	// Explanation:
+	// Bug management relies upon knowing when reclustering
+	// is ongoing for rules and algorithms to inhibit erroneous bug updates
+	// for those rules / algorithms as cluster metrics may be invalid.
+	//
+	// The re-clustering progress tracked in ReclusteringRuns table tracks
+	// the progress applying re-clustering to the clustered_failures
+	// table (not the cluster_summaries table).
+	// As there is a delay between when clustered_failures table
+	// is updated and when cluster_summaries is updated, we cannot
+	// use the latest reclustering run but need to read the run
+	// that was current when the clustered_failures table was
+	// summarized into the cluster_summaries table.
+	//
+	// This will be the run that was current when the BigQuery
+	// job to recompute cluster_summaries table from the
+	// clustered_failures table started.
+	ReclusteringAttemptMinute *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=reclustering_attempt_minute,json=reclusteringAttemptMinute,proto3" json:"reclustering_attempt_minute,omitempty"`
+	// The time the task should be completed by to avoid overruning
+	// the next bug update task.
+	Deadline *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=deadline,proto3" json:"deadline,omitempty"`
+}
+
+func (x *UpdateBugs) Reset() {
+	*x = UpdateBugs{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UpdateBugs) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateBugs) ProtoMessage() {}
+
+func (x *UpdateBugs) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateBugs.ProtoReflect.Descriptor instead.
+func (*UpdateBugs) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *UpdateBugs) GetProject() string {
+	if x != nil {
+		return x.Project
+	}
+	return ""
+}
+
+func (x *UpdateBugs) GetReclusteringAttemptMinute() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ReclusteringAttemptMinute
+	}
+	return nil
+}
+
+func (x *UpdateBugs) GetDeadline() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Deadline
+	}
+	return nil
+}
+
 var File_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDesc = []byte{
@@ -467,11 +556,23 @@ var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDes
 	0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x02, 0x69, 0x64, 0x12, 0x12, 0x0a, 0x04,
 	0x68, 0x6f, 0x73, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x68, 0x6f, 0x73, 0x74,
 	0x12, 0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x42, 0x36, 0x5a, 0x34, 0x67, 0x6f,
-	0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75,
-	0x63, 0x69, 0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f, 0x69, 0x6e, 0x74, 0x65,
-	0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x73, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x73,
-	0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x09, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x22, 0xba, 0x01, 0x0a, 0x0a, 0x55,
+	0x70, 0x64, 0x61, 0x74, 0x65, 0x42, 0x75, 0x67, 0x73, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f,
+	0x6a, 0x65, 0x63, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a,
+	0x65, 0x63, 0x74, 0x12, 0x5a, 0x0a, 0x1b, 0x72, 0x65, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72,
+	0x69, 0x6e, 0x67, 0x5f, 0x61, 0x74, 0x74, 0x65, 0x6d, 0x70, 0x74, 0x5f, 0x6d, 0x69, 0x6e, 0x75,
+	0x74, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c,
+	0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73,
+	0x74, 0x61, 0x6d, 0x70, 0x52, 0x19, 0x72, 0x65, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x69,
+	0x6e, 0x67, 0x41, 0x74, 0x74, 0x65, 0x6d, 0x70, 0x74, 0x4d, 0x69, 0x6e, 0x75, 0x74, 0x65, 0x12,
+	0x36, 0x0a, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x08, 0x64,
+	0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x42, 0x36, 0x5a, 0x34, 0x67, 0x6f, 0x2e, 0x63, 0x68,
+	0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f,
+	0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61,
+	0x6c, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x73, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x73, 0x70, 0x62, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -486,30 +587,33 @@ func file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDe
 	return file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_goTypes = []interface{}{
 	(*IngestTestResults)(nil),     // 0: luci.analysis.internal.tasks.IngestTestResults
 	(*ReclusterChunks)(nil),       // 1: luci.analysis.internal.tasks.ReclusterChunks
 	(*ReclusterChunkState)(nil),   // 2: luci.analysis.internal.tasks.ReclusterChunkState
 	(*JoinBuild)(nil),             // 3: luci.analysis.internal.tasks.JoinBuild
-	(*timestamppb.Timestamp)(nil), // 4: google.protobuf.Timestamp
-	(*proto.BuildResult)(nil),     // 5: luci.analysis.internal.ingestion.control.BuildResult
-	(*proto.PresubmitResult)(nil), // 6: luci.analysis.internal.ingestion.control.PresubmitResult
+	(*UpdateBugs)(nil),            // 4: luci.analysis.internal.tasks.UpdateBugs
+	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
+	(*proto.BuildResult)(nil),     // 6: luci.analysis.internal.ingestion.control.BuildResult
+	(*proto.PresubmitResult)(nil), // 7: luci.analysis.internal.ingestion.control.PresubmitResult
 }
 var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_depIdxs = []int32{
-	4, // 0: luci.analysis.internal.tasks.IngestTestResults.partition_time:type_name -> google.protobuf.Timestamp
-	5, // 1: luci.analysis.internal.tasks.IngestTestResults.build:type_name -> luci.analysis.internal.ingestion.control.BuildResult
-	6, // 2: luci.analysis.internal.tasks.IngestTestResults.presubmit_run:type_name -> luci.analysis.internal.ingestion.control.PresubmitResult
-	4, // 3: luci.analysis.internal.tasks.ReclusterChunks.attempt_time:type_name -> google.protobuf.Timestamp
-	4, // 4: luci.analysis.internal.tasks.ReclusterChunks.rules_version:type_name -> google.protobuf.Timestamp
-	4, // 5: luci.analysis.internal.tasks.ReclusterChunks.config_version:type_name -> google.protobuf.Timestamp
-	2, // 6: luci.analysis.internal.tasks.ReclusterChunks.state:type_name -> luci.analysis.internal.tasks.ReclusterChunkState
-	4, // 7: luci.analysis.internal.tasks.ReclusterChunkState.next_report_due:type_name -> google.protobuf.Timestamp
-	8, // [8:8] is the sub-list for method output_type
-	8, // [8:8] is the sub-list for method input_type
-	8, // [8:8] is the sub-list for extension type_name
-	8, // [8:8] is the sub-list for extension extendee
-	0, // [0:8] is the sub-list for field type_name
+	5,  // 0: luci.analysis.internal.tasks.IngestTestResults.partition_time:type_name -> google.protobuf.Timestamp
+	6,  // 1: luci.analysis.internal.tasks.IngestTestResults.build:type_name -> luci.analysis.internal.ingestion.control.BuildResult
+	7,  // 2: luci.analysis.internal.tasks.IngestTestResults.presubmit_run:type_name -> luci.analysis.internal.ingestion.control.PresubmitResult
+	5,  // 3: luci.analysis.internal.tasks.ReclusterChunks.attempt_time:type_name -> google.protobuf.Timestamp
+	5,  // 4: luci.analysis.internal.tasks.ReclusterChunks.rules_version:type_name -> google.protobuf.Timestamp
+	5,  // 5: luci.analysis.internal.tasks.ReclusterChunks.config_version:type_name -> google.protobuf.Timestamp
+	2,  // 6: luci.analysis.internal.tasks.ReclusterChunks.state:type_name -> luci.analysis.internal.tasks.ReclusterChunkState
+	5,  // 7: luci.analysis.internal.tasks.ReclusterChunkState.next_report_due:type_name -> google.protobuf.Timestamp
+	5,  // 8: luci.analysis.internal.tasks.UpdateBugs.reclustering_attempt_minute:type_name -> google.protobuf.Timestamp
+	5,  // 9: luci.analysis.internal.tasks.UpdateBugs.deadline:type_name -> google.protobuf.Timestamp
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_init() }
@@ -566,6 +670,18 @@ func file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_init(
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UpdateBugs); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -573,7 +689,7 @@ func file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_init(
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

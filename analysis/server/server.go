@@ -22,13 +22,14 @@ import (
 	"go.chromium.org/luci/analysis/app"
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/bugs/buganizer"
-	"go.chromium.org/luci/analysis/internal/bugs/updater"
+	bugscron "go.chromium.org/luci/analysis/internal/bugs/cron"
 	cpbq "go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/clustering/reclustering/orchestrator"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/metrics"
 	"go.chromium.org/luci/analysis/internal/scopedauth"
+	"go.chromium.org/luci/analysis/internal/services/bugupdater"
 	"go.chromium.org/luci/analysis/internal/services/buildjoiner"
 	"go.chromium.org/luci/analysis/internal/services/reclustering"
 	"go.chromium.org/luci/analysis/internal/services/resultingester"
@@ -98,7 +99,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		analysispb.RegisterTestVariantBranchesServer(srv, rpc.NewTestVariantBranchesServer())
 
 		// GAE crons.
-		updateAnalysisAndBugsHandler := updater.NewHandler(srv.Options.CloudProject, srv.Options.Prod)
+		updateAnalysisAndBugsHandler := bugscron.NewHandler(srv.Options.CloudProject, srv.Options.Prod)
 		cron.RegisterHandler("update-analysis-and-bugs", updateAnalysisAndBugsHandler.CronHandler)
 		cron.RegisterHandler("read-config", config.Update)
 		cron.RegisterHandler("reclustering", orchestrator.CronHandler)
@@ -125,6 +126,9 @@ func Main(init func(srv *luciserver.Server) error) {
 		}
 		if err := resultingester.RegisterTaskHandler(srv); err != nil {
 			return errors.Annotate(err, "register result ingester").Err()
+		}
+		if err := bugupdater.RegisterTaskHandler(srv); err != nil {
+			return errors.Annotate(err, "register bug updater").Err()
 		}
 		buildjoiner.RegisterTaskClass()
 

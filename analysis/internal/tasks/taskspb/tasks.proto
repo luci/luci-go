@@ -113,3 +113,37 @@ message JoinBuild {
   // The LUCI Project to which the build belongs.
   string project = 3;
 }
+
+// Payload of the UpdateBugs task. Prior to running this task,
+// the cluster_summaries table should have been updated from the
+// contents of the clustered_failures table.
+message UpdateBugs {
+  // The LUCI Project to update bugs for.
+  string project = 1;
+
+  // The reclustering attempt minute that reflects the reclustering
+  // state of the failures summarized by the cluster_summaries table.
+  //
+  // Explanation:
+  // Bug management relies upon knowing when reclustering
+  // is ongoing for rules and algorithms to inhibit erroneous bug updates
+  // for those rules / algorithms as cluster metrics may be invalid.
+  //
+  // The re-clustering progress tracked in ReclusteringRuns table tracks
+  // the progress applying re-clustering to the clustered_failures
+  // table (not the cluster_summaries table).
+  // As there is a delay between when clustered_failures table
+  // is updated and when cluster_summaries is updated, we cannot
+  // use the latest reclustering run but need to read the run
+  // that was current when the clustered_failures table was
+  // summarized into the cluster_summaries table.
+  //
+  // This will be the run that was current when the BigQuery
+  // job to recompute cluster_summaries table from the
+  // clustered_failures table started.
+  google.protobuf.Timestamp reclustering_attempt_minute = 2;
+
+  // The time the task should be completed by to avoid overruning
+  // the next bug update task.
+  google.protobuf.Timestamp deadline = 3;
+}

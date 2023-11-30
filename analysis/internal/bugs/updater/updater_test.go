@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -46,13 +47,11 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestUpdate(t *testing.T) {
@@ -122,15 +121,15 @@ func TestUpdate(t *testing.T) {
 		progress, err := runs.ReadReclusteringProgress(ctx, project)
 		So(err, ShouldBeNil)
 
-		opts := updateOptions{
-			uiBaseURL:            "https://luci-analysis-test.appspot.com",
-			project:              project,
-			analysisClient:       analysisClient,
-			buganizerClient:      buganizerClient,
-			monorailClient:       monorailClient,
-			maxBugsFiledPerRun:   1,
-			reclusteringProgress: progress,
-			runTimestamp:         time.Date(2100, 2, 2, 2, 2, 2, 2, time.UTC),
+		opts := UpdateOptions{
+			UIBaseURL:            "https://luci-analysis-test.appspot.com",
+			Project:              project,
+			AnalysisClient:       analysisClient,
+			BuganizerClient:      buganizerClient,
+			MonorailClient:       monorailClient,
+			MaxBugsFiledPerRun:   1,
+			ReclusteringProgress: progress,
+			RunTimestamp:         time.Date(2100, 2, 2, 2, 2, 2, 2, time.UTC),
 		}
 
 		// Mock current time. This is needed to control behaviours like
@@ -171,7 +170,7 @@ func TestUpdate(t *testing.T) {
 					PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
 						"exoneration-policy": {
 							IsActive:           true,
-							LastActivationTime: timestamppb.New(opts.runTimestamp),
+							LastActivationTime: timestamppb.New(opts.RunTimestamp),
 							ActivationNotified: true,
 						},
 						"cls-rejected-policy": {},
@@ -210,7 +209,7 @@ func TestUpdate(t *testing.T) {
 						suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
 
 						// Act
-						err = updateBugsForProject(ctx, opts)
+						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify
 						So(err, ShouldBeNil)
@@ -220,7 +219,7 @@ func TestUpdate(t *testing.T) {
 						So(issueCount(), ShouldEqual, 1)
 
 						// Further updates do nothing.
-						err = updateBugsForProject(ctx, opts)
+						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify
 						So(err, ShouldBeNil)
@@ -233,7 +232,7 @@ func TestUpdate(t *testing.T) {
 						suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 99}}
 
 						// Act
-						err = updateBugsForProject(ctx, opts)
+						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify
 						So(err, ShouldBeNil)
@@ -259,7 +258,7 @@ func TestUpdate(t *testing.T) {
 						suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 134}}
 
 						// Act
-						err = updateBugsForProject(ctx, opts)
+						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify
 						So(err, ShouldBeNil)
@@ -268,7 +267,7 @@ func TestUpdate(t *testing.T) {
 						So(issueCount(), ShouldEqual, 1)
 
 						// Further updates do nothing.
-						err = updateBugsForProject(ctx, opts)
+						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify
 						So(err, ShouldBeNil)
@@ -280,7 +279,7 @@ func TestUpdate(t *testing.T) {
 						suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 133}}
 
 						// Act
-						err = updateBugsForProject(ctx, opts)
+						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify
 						So(err, ShouldBeNil)
@@ -296,7 +295,7 @@ func TestUpdate(t *testing.T) {
 					suggestedClusters[1].MetricValues[metrics.HumanClsFailedPresubmit.ID] = metrics.TimewiseCounts{SevenDay: metrics.Counts{Residual: 9}}
 
 					// Act
-					err = updateBugsForProject(ctx, opts)
+					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify
 					So(err, ShouldBeNil)
@@ -307,7 +306,7 @@ func TestUpdate(t *testing.T) {
 				Convey("other policy activation threshold met", func() {
 					suggestedClusters[1].MetricValues[metrics.HumanClsFailedPresubmit.ID] = metrics.TimewiseCounts{SevenDay: metrics.Counts{Residual: 10}}
 					expectedRule.BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-					expectedRule.BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+					expectedRule.BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.RunTimestamp)
 					expectedRule.BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
 					expectedBuganizerBug.ExpectedPolicyIDsActivated = []string{
 						"cls-rejected-policy",
@@ -315,7 +314,7 @@ func TestUpdate(t *testing.T) {
 					}
 
 					// Act
-					err = updateBugsForProject(ctx, opts)
+					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify
 					So(err, ShouldBeNil)
@@ -330,7 +329,7 @@ func TestUpdate(t *testing.T) {
 					suggestedClusters[1].PostsubmitBuildsWithFailures7d.Residual = 0
 
 					// Act
-					err = updateBugsForProject(ctx, opts)
+					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify
 					So(err, ShouldBeNil)
@@ -343,7 +342,7 @@ func TestUpdate(t *testing.T) {
 					suggestedClusters[1].PostsubmitBuildsWithFailures7d.Residual = 1
 
 					// Act
-					err = updateBugsForProject(ctx, opts)
+					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify
 					So(err, ShouldBeNil)
@@ -356,7 +355,7 @@ func TestUpdate(t *testing.T) {
 					suggestedClusters[1].PostsubmitBuildsWithFailures7d.Residual = 0
 
 					// Act
-					err = updateBugsForProject(ctx, opts)
+					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify
 					So(err, ShouldBeNil)
@@ -385,7 +384,7 @@ func TestUpdate(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					// Initially do not expect a new bug to be filed.
-					err = updateBugsForProject(ctx, opts)
+					err = UpdateBugsForProject(ctx, opts)
 
 					So(err, ShouldBeNil)
 					So(verifyRulesResemble(ctx, []*rules.Entry{existingRule}), ShouldBeNil)
@@ -407,10 +406,10 @@ func TestUpdate(t *testing.T) {
 					So(err, ShouldBeNil)
 					progress, err := runs.ReadReclusteringProgress(ctx, project)
 					So(err, ShouldBeNil)
-					opts.reclusteringProgress = progress
+					opts.ReclusteringProgress = progress
 
 					// Act
-					err = updateBugsForProject(ctx, opts)
+					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify
 					So(err, ShouldBeNil)
@@ -432,10 +431,10 @@ func TestUpdate(t *testing.T) {
 					So(err, ShouldBeNil)
 					progress, err := runs.ReadReclusteringProgress(ctx, project)
 					So(err, ShouldBeNil)
-					opts.reclusteringProgress = progress
+					opts.ReclusteringProgress = progress
 
 					// Act
-					err = updateBugsForProject(ctx, opts)
+					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify no bugs were filed.
 					So(err, ShouldBeNil)
@@ -454,10 +453,10 @@ func TestUpdate(t *testing.T) {
 					So(err, ShouldBeNil)
 					progress, err := runs.ReadReclusteringProgress(ctx, project)
 					So(err, ShouldBeNil)
-					opts.reclusteringProgress = progress
+					opts.ReclusteringProgress = progress
 
 					// Act
-					err = updateBugsForProject(ctx, opts)
+					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify no bugs were filed.
 					So(err, ShouldBeNil)
@@ -505,7 +504,7 @@ func TestUpdate(t *testing.T) {
 					}}
 
 					// Act
-					err = updateBugsForProject(ctx, opts)
+					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify
 					So(err, ShouldBeNil)
@@ -525,7 +524,7 @@ func TestUpdate(t *testing.T) {
 					expectedBuganizerBug.Component = 681721
 
 					// Act
-					err = updateBugsForProject(ctx, opts)
+					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify
 					So(err, ShouldBeNil)
@@ -550,7 +549,7 @@ func TestUpdate(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					// Act
-					err = updateBugsForProject(ctx, opts)
+					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify
 					So(err, ShouldBeNil)
@@ -571,7 +570,7 @@ func TestUpdate(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					// Act
-					err = updateBugsForProject(ctx, opts)
+					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify
 					So(err, ShouldBeNil)
@@ -601,7 +600,7 @@ func TestUpdate(t *testing.T) {
 					expectedBuganizerBug.Component = 681721
 
 					// Act
-					err = updateBugsForProject(ctx, opts)
+					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify we filed into Buganizer.
 					So(err, ShouldBeNil)
@@ -615,7 +614,7 @@ func TestUpdate(t *testing.T) {
 				buganizerClient.CreateCommentError = status.Errorf(codes.Internal, "internal error creating comment")
 
 				// Act
-				err = updateBugsForProject(ctx, opts)
+				err = UpdateBugsForProject(ctx, opts)
 
 				// Do not expect policy activations to have been notified.
 				expectedBuganizerBug.ExpectedPolicyIDsActivated = []string{}
@@ -649,14 +648,14 @@ func TestUpdate(t *testing.T) {
 
 			// Limit to one bug filed each time, so that
 			// we test change throttling.
-			opts.maxBugsFiledPerRun = 1
+			opts.MaxBugsFiledPerRun = 1
 
 			Convey("reason clusters preferred over test name clusters", func() {
 				// Test name cluster has <34% more impact than the reason
 				// cluster.
 
 				// Act
-				err = updateBugsForProject(ctx, opts)
+				err = UpdateBugsForProject(ctx, opts)
 
 				// Verify reason cluster filed.
 				rs, err := rules.ReadAllForTesting(span.Single(ctx))
@@ -676,7 +675,7 @@ func TestUpdate(t *testing.T) {
 				}
 
 				// Act
-				err = updateBugsForProject(ctx, opts)
+				err = UpdateBugsForProject(ctx, opts)
 
 				// Verify test name cluster filed.
 				rs, err := rules.ReadAllForTesting(span.Single(ctx))
@@ -743,7 +742,7 @@ func TestUpdate(t *testing.T) {
 						PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
 							"exoneration-policy": {
 								IsActive:           true,
-								LastActivationTime: timestamppb.New(opts.runTimestamp),
+								LastActivationTime: timestamppb.New(opts.RunTimestamp),
 								ActivationNotified: true,
 							},
 							"cls-rejected-policy": {},
@@ -765,7 +764,7 @@ func TestUpdate(t *testing.T) {
 						PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
 							"exoneration-policy": {
 								IsActive:           true,
-								LastActivationTime: timestamppb.New(opts.runTimestamp),
+								LastActivationTime: timestamppb.New(opts.RunTimestamp),
 								ActivationNotified: true,
 							},
 							"cls-rejected-policy": {},
@@ -787,7 +786,7 @@ func TestUpdate(t *testing.T) {
 						PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
 							"exoneration-policy": {
 								IsActive:           true,
-								LastActivationTime: timestamppb.New(opts.runTimestamp),
+								LastActivationTime: timestamppb.New(opts.RunTimestamp),
 								ActivationNotified: true,
 							},
 							"cls-rejected-policy": {},
@@ -809,7 +808,7 @@ func TestUpdate(t *testing.T) {
 						PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
 							"exoneration-policy": {
 								IsActive:           true,
-								LastActivationTime: timestamppb.New(opts.runTimestamp),
+								LastActivationTime: timestamppb.New(opts.RunTimestamp),
 								ActivationNotified: true,
 							},
 							"cls-rejected-policy": {},
@@ -825,12 +824,12 @@ func TestUpdate(t *testing.T) {
 
 			// Limit to one bug filed each time, so that
 			// we test change throttling.
-			opts.maxBugsFiledPerRun = 1
+			opts.MaxBugsFiledPerRun = 1
 
 			// Verify one bug is filed at a time.
 			for i := 0; i < len(expectedRules); i++ {
 				// Act
-				err = updateBugsForProject(ctx, opts)
+				err = UpdateBugsForProject(ctx, opts)
 
 				// Verify
 				So(err, ShouldBeNil)
@@ -838,7 +837,7 @@ func TestUpdate(t *testing.T) {
 			}
 
 			// Further updates do nothing.
-			err = updateBugsForProject(ctx, opts)
+			err = UpdateBugsForProject(ctx, opts)
 
 			So(err, ShouldBeNil)
 			So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
@@ -870,7 +869,7 @@ func TestUpdate(t *testing.T) {
 					})
 
 					// Act
-					err = updateBugsForProject(ctx, opts)
+					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify.
 					So(err, ShouldBeNil)
@@ -908,13 +907,13 @@ func TestUpdate(t *testing.T) {
 
 				progress, err := runs.ReadReclusteringProgress(ctx, project)
 				So(err, ShouldBeNil)
-				opts.reclusteringProgress = progress
+				opts.ReclusteringProgress = progress
 
-				opts.runTimestamp = opts.runTimestamp.Add(10 * time.Minute)
+				opts.RunTimestamp = opts.RunTimestamp.Add(10 * time.Minute)
 
 				Convey("policy activation", func() {
 					// Verify updates work, even when rules are in later batches.
-					opts.updateRuleBatchSize = 1
+					opts.UpdateRuleBatchSize = 1
 
 					Convey("policy remains inactive if activation threshold unmet", func() {
 						// The policy should be inactive from previous setup.
@@ -929,7 +928,7 @@ func TestUpdate(t *testing.T) {
 						}
 
 						// Act
-						err = updateBugsForProject(ctx, opts)
+						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify policy activation unchanged.
 						So(err, ShouldBeNil)
@@ -953,12 +952,12 @@ func TestUpdate(t *testing.T) {
 						existingCommentCount := len(issue.Comments)
 
 						// Act
-						err = updateBugsForProject(ctx, opts)
+						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify policy activates.
 						So(err, ShouldBeNil)
 						expectedPolicyState.IsActive = true
-						expectedPolicyState.LastActivationTime = timestamppb.New(opts.runTimestamp)
+						expectedPolicyState.LastActivationTime = timestamppb.New(opts.RunTimestamp)
 						expectedPolicyState.ActivationNotified = true
 						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 
@@ -982,7 +981,7 @@ func TestUpdate(t *testing.T) {
 						}
 
 						// Act
-						err = updateBugsForProject(ctx, opts)
+						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify policy activation should be unchanged.
 						So(err, ShouldBeNil)
@@ -1001,12 +1000,12 @@ func TestUpdate(t *testing.T) {
 						}
 
 						// Act
-						err = updateBugsForProject(ctx, opts)
+						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify policy deactivated.
 						So(err, ShouldBeNil)
 						expectedPolicyState.IsActive = false
-						expectedPolicyState.LastDeactivationTime = timestamppb.New(opts.runTimestamp)
+						expectedPolicyState.LastDeactivationTime = timestamppb.New(opts.RunTimestamp)
 						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 					})
 					Convey("policy configuration changes are handled", func() {
@@ -1015,7 +1014,7 @@ func TestUpdate(t *testing.T) {
 						projectCfg.BugManagement.Policies[0].Id = "new-exoneration-policy"
 
 						// Act
-						err = updateBugsForProject(ctx, opts)
+						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify state for the old policy is deleted, and state for the new policy is added.
 						So(err, ShouldBeNil)
@@ -1023,7 +1022,7 @@ func TestUpdate(t *testing.T) {
 							"new-exoneration-policy": {
 								// The new policy should activate, because the metrics justify its activation.
 								IsActive:           true,
-								LastActivationTime: timestamppb.New(opts.runTimestamp),
+								LastActivationTime: timestamppb.New(opts.RunTimestamp),
 							},
 							"cls-rejected-policy": {},
 						}
@@ -1053,7 +1052,7 @@ func TestUpdate(t *testing.T) {
 						originalCommentCount := len(issue.Comments)
 
 						// Act
-						err = updateBugsForProject(ctx, opts)
+						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify
 						So(err, ShouldBeNil)
@@ -1064,7 +1063,7 @@ func TestUpdate(t *testing.T) {
 								" To view failure examples or update the association, go to LUCI Analysis at: https://luci-analysis-test.appspot.com/p/chromeos/rules/"+rule.RuleID)
 
 						// Further runs should not lead to repeated posting of the comment.
-						err = updateBugsForProject(ctx, opts)
+						err = UpdateBugsForProject(ctx, opts)
 						So(err, ShouldBeNil)
 						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 						So(issue.Comments, ShouldHaveLength, originalCommentCount+1)
@@ -1086,7 +1085,7 @@ func TestUpdate(t *testing.T) {
 						originalCommentCount := len(issue.Comments)
 
 						// Act
-						err = updateBugsForProject(ctx, opts)
+						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify
 						So(err, ShouldBeNil)
@@ -1097,7 +1096,7 @@ func TestUpdate(t *testing.T) {
 								" To view failure examples or update the association, go to LUCI Analysis at: https://luci-analysis-test.appspot.com/p/chromeos/rules/"+rule.RuleID)
 
 						// Further runs should not lead to repeated posting of the comment.
-						err = updateBugsForProject(ctx, opts)
+						err = UpdateBugsForProject(ctx, opts)
 						So(err, ShouldBeNil)
 						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 						So(issue.Comments, ShouldHaveLength, originalCommentCount+1)
@@ -1124,12 +1123,12 @@ func TestUpdate(t *testing.T) {
 
 						Convey("priority updates to reflect active policies", func() {
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.RunTimestamp)
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
 							So(originalPriority, ShouldNotEqual, issuetracker.Issue_P1)
 
 							// Act
-							err = updateBugsForProject(ctx, opts)
+							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
@@ -1138,7 +1137,7 @@ func TestUpdate(t *testing.T) {
 						})
 						Convey("disabling IsManagingBugPriority prevents priority updates", func() {
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.RunTimestamp)
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
 
 							// Set IsManagingBugPriority to false on the rule.
@@ -1146,7 +1145,7 @@ func TestUpdate(t *testing.T) {
 							So(rules.SetForTesting(ctx, rs), ShouldBeNil)
 
 							// Act
-							err = updateBugsForProject(ctx, opts)
+							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
@@ -1161,7 +1160,7 @@ func TestUpdate(t *testing.T) {
 						})
 						Convey("manually setting a priority prevents bug updates", func() {
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.RunTimestamp)
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
 
 							issue.IssueUpdates = append(issue.IssueUpdates, &issuetracker.IssueUpdate{
@@ -1178,7 +1177,7 @@ func TestUpdate(t *testing.T) {
 
 							Convey("happy path", func() {
 								// Act
-								err = updateBugsForProject(ctx, opts)
+								err = UpdateBugsForProject(ctx, opts)
 
 								// Verify
 								So(err, ShouldBeNil)
@@ -1191,7 +1190,7 @@ func TestUpdate(t *testing.T) {
 									initialComments := len(issue.Comments)
 
 									// Act
-									err = updateBugsForProject(ctx, opts)
+									err = UpdateBugsForProject(ctx, opts)
 
 									// Verify
 									So(err, ShouldBeNil)
@@ -1222,7 +1221,7 @@ func TestUpdate(t *testing.T) {
 								buganizerStore.Issues[2].UpdateError = modifyError
 
 								// Act
-								err = updateBugsForProject(ctx, opts)
+								err = UpdateBugsForProject(ctx, opts)
 
 								// Verify
 
@@ -1236,7 +1235,7 @@ func TestUpdate(t *testing.T) {
 								// Furthermore, we record that we notified the policy
 								// activation, so repeated notifications do not occur.
 								expectedRules[1].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-								expectedRules[1].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+								expectedRules[1].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.RunTimestamp)
 								expectedRules[1].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
 
 								otherIssue := buganizerStore.Issues[2]
@@ -1260,12 +1259,12 @@ func TestUpdate(t *testing.T) {
 							})
 
 							// Act
-							err = updateBugsForProject(ctx, opts)
+							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
 							expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].IsActive = false
-							expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.runTimestamp)
+							expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.RunTimestamp)
 							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 							So(issue.Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_VERIFIED)
 							So(issue.Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P2)
@@ -1276,14 +1275,14 @@ func TestUpdate(t *testing.T) {
 								metrics.HumanClsFailedPresubmit.ID:    bugs.MetricValues{},
 							})
 							expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].IsActive = false
-							expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.runTimestamp)
+							expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.RunTimestamp)
 
 							// Set IsManagingBug to false on the rule.
 							rule.IsManagingBug = false
 							So(rules.SetForTesting(ctx, rs), ShouldBeNil)
 
 							// Act
-							err = updateBugsForProject(ctx, opts)
+							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
@@ -1303,12 +1302,12 @@ func TestUpdate(t *testing.T) {
 							analysisClient.clusters = append(suggestedClusters, bugClusters...)
 
 							// Act
-							err = updateBugsForProject(ctx, opts)
+							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
 							expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].IsActive = false
-							expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.runTimestamp)
+							expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.RunTimestamp)
 							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 							So(issue.Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_VERIFIED)
 
@@ -1316,7 +1315,7 @@ func TestUpdate(t *testing.T) {
 								tc.Add(time.Hour * 24 * 30)
 
 								// Act
-								err = updateBugsForProject(ctx, opts)
+								err = UpdateBugsForProject(ctx, opts)
 
 								// Verify
 								So(err, ShouldBeNil)
@@ -1335,7 +1334,7 @@ func TestUpdate(t *testing.T) {
 							}
 
 							// Act
-							err = updateBugsForProject(ctx, opts)
+							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
@@ -1366,12 +1365,12 @@ func TestUpdate(t *testing.T) {
 
 						Convey("priority updates to reflect active policies", func() {
 							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.RunTimestamp)
 							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
 							So(originalPriority, ShouldNotEqual, "1")
 
 							// Act
-							err = updateBugsForProject(ctx, opts)
+							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
@@ -1381,7 +1380,7 @@ func TestUpdate(t *testing.T) {
 						})
 						Convey("disabling IsManagingBugPriority prevents priority updates", func() {
 							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.RunTimestamp)
 							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
 
 							// Set IsManagingBugPriority to false on the rule.
@@ -1389,7 +1388,7 @@ func TestUpdate(t *testing.T) {
 							So(rules.SetForTesting(ctx, rs), ShouldBeNil)
 
 							// Act
-							err = updateBugsForProject(ctx, opts)
+							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
@@ -1404,7 +1403,7 @@ func TestUpdate(t *testing.T) {
 						})
 						Convey("manually setting a priority prevents bug updates", func() {
 							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.RunTimestamp)
 							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
 
 							// Create a fake client to interact with monorail as a user.
@@ -1436,7 +1435,7 @@ func TestUpdate(t *testing.T) {
 
 							Convey("happy path", func() {
 								// Act
-								err = updateBugsForProject(ctx, opts)
+								err = UpdateBugsForProject(ctx, opts)
 
 								// Verify
 								So(err, ShouldBeNil)
@@ -1455,7 +1454,7 @@ func TestUpdate(t *testing.T) {
 									initialComments := len(issue.Comments)
 
 									// Act
-									err = updateBugsForProject(ctx, opts)
+									err = UpdateBugsForProject(ctx, opts)
 
 									// Verify
 									So(err, ShouldBeNil)
@@ -1480,14 +1479,14 @@ func TestUpdate(t *testing.T) {
 									metrics.HumanClsFailedPresubmit.ID:    bugs.MetricValues{SevenDay: 10},
 								})
 								expectedRules[firstMonorailRuleIndex+1].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-								expectedRules[firstMonorailRuleIndex+1].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.runTimestamp)
+								expectedRules[firstMonorailRuleIndex+1].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.RunTimestamp)
 
 								// But prevent LUCI Analysis from applying that priority update, due to an error.
 								modifyError := errors.New("this issue may not be modified")
 								monorailStore.Issues[1].UpdateError = modifyError
 
 								// Act
-								err = updateBugsForProject(ctx, opts)
+								err = UpdateBugsForProject(ctx, opts)
 
 								// Verify
 								So(err, ShouldNotBeNil)
@@ -1512,12 +1511,12 @@ func TestUpdate(t *testing.T) {
 							})
 
 							// Act
-							err = updateBugsForProject(ctx, opts)
+							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
 							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].IsActive = false
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.runTimestamp)
+							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.RunTimestamp)
 							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 							So(issue.Issue.Status.Status, ShouldEqual, monorail.VerifiedStatus)
 							So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, originalPriority)
@@ -1528,14 +1527,14 @@ func TestUpdate(t *testing.T) {
 								metrics.HumanClsFailedPresubmit.ID:    bugs.MetricValues{},
 							})
 							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].IsActive = false
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.runTimestamp)
+							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.RunTimestamp)
 
 							// Set IsManagingBug to false on the rule.
 							rule.IsManagingBug = false
 							So(rules.SetForTesting(ctx, rs), ShouldBeNil)
 
 							// Act
-							err = updateBugsForProject(ctx, opts)
+							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
@@ -1557,12 +1556,12 @@ func TestUpdate(t *testing.T) {
 							analysisClient.clusters = append(suggestedClusters, newBugClusters...)
 
 							// Act
-							err = updateBugsForProject(ctx, opts)
+							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
 							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].IsActive = false
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.runTimestamp)
+							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.RunTimestamp)
 							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 							So(issue.Issue.Status.Status, ShouldEqual, monorail.VerifiedStatus)
 							So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, originalPriority)
@@ -1571,7 +1570,7 @@ func TestUpdate(t *testing.T) {
 								tc.Add(time.Hour * 24 * 30)
 
 								// Act
-								err = updateBugsForProject(ctx, opts)
+								err = UpdateBugsForProject(ctx, opts)
 
 								// Verify
 								So(err, ShouldBeNil)
@@ -1591,7 +1590,7 @@ func TestUpdate(t *testing.T) {
 							}
 
 							// Act
-							err = updateBugsForProject(ctx, opts)
+							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
@@ -1627,7 +1626,7 @@ func TestUpdate(t *testing.T) {
 
 						Convey("happy path", func() {
 							// Act
-							err = updateBugsForProject(ctx, opts)
+							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
@@ -1651,7 +1650,7 @@ func TestUpdate(t *testing.T) {
 							So(err, ShouldBeNil)
 
 							// Act
-							err = updateBugsForProject(ctx, opts)
+							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
@@ -1692,7 +1691,7 @@ func TestUpdate(t *testing.T) {
 							So(err, ShouldBeNil)
 
 							// Act
-							err = updateBugsForProject(ctx, opts)
+							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
@@ -1719,7 +1718,7 @@ func TestUpdate(t *testing.T) {
 								issueTwo.Issue.IssueState.CanonicalIssueId = issueOne.Issue.IssueId
 
 								// Act
-								err = updateBugsForProject(ctx, opts)
+								err = UpdateBugsForProject(ctx, opts)
 
 								// Verify
 								So(err, ShouldBeNil)
@@ -1762,7 +1761,7 @@ func TestUpdate(t *testing.T) {
 								So(err, ShouldBeNil)
 
 								// Act
-								err = updateBugsForProject(ctx, opts)
+								err = UpdateBugsForProject(ctx, opts)
 
 								// Verify
 								So(err, ShouldBeNil)
@@ -1782,7 +1781,7 @@ func TestUpdate(t *testing.T) {
 								issueTwo.ShouldReturnAccessPermissionError = true
 
 								// Act
-								err = updateBugsForProject(ctx, opts)
+								err = UpdateBugsForProject(ctx, opts)
 
 								// Verify issue one kicked out of duplicate status.
 								So(err, ShouldBeNil)
@@ -1798,7 +1797,7 @@ func TestUpdate(t *testing.T) {
 									EmailAddress: "user@google.com",
 								}
 								// Act
-								err = updateBugsForProject(ctx, opts)
+								err = UpdateBugsForProject(ctx, opts)
 
 								// Verify issue is put back to assigned status, instead of New.
 								So(err, ShouldBeNil)
@@ -1811,7 +1810,7 @@ func TestUpdate(t *testing.T) {
 								issueOne.Issue.IssueState.Assignee = nil
 
 								// Act
-								err = updateBugsForProject(ctx, opts)
+								err = UpdateBugsForProject(ctx, opts)
 
 								// Verify issue is put back to New status, instead of Assigned.
 								So(err, ShouldBeNil)
@@ -1841,7 +1840,7 @@ func TestUpdate(t *testing.T) {
 
 						Convey("happy path", func() {
 							// Act
-							err = updateBugsForProject(ctx, opts)
+							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
@@ -1864,7 +1863,7 @@ func TestUpdate(t *testing.T) {
 							}
 
 							// Act
-							err = updateBugsForProject(ctx, opts)
+							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
@@ -1899,7 +1898,7 @@ func TestUpdate(t *testing.T) {
 
 						Convey("happy path", func() {
 							// Act
-							err = updateBugsForProject(ctx, opts)
+							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
 							So(err, ShouldBeNil)
@@ -1921,7 +1920,7 @@ func TestUpdate(t *testing.T) {
 						issueOne.IsArchived = true
 
 						// Act
-						err = updateBugsForProject(ctx, opts)
+						err = UpdateBugsForProject(ctx, opts)
 						So(err, ShouldBeNil)
 
 						// Verify
@@ -1933,7 +1932,7 @@ func TestUpdate(t *testing.T) {
 						issue.Issue.Status.Status = "Archived"
 
 						// Act
-						err = updateBugsForProject(ctx, opts)
+						err = UpdateBugsForProject(ctx, opts)
 						So(err, ShouldBeNil)
 
 						// Verify
