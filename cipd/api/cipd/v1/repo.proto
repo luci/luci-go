@@ -885,6 +885,8 @@ message DescribeInstanceRequest {
   bool describe_tags = 4;
   // Whether the response should include "processors" field.
   bool describe_processors = 5;
+  // Whether the response should include "metadata" field.
+  bool describe_metadata = 6;
 }
 
 
@@ -895,20 +897,25 @@ message DescribeInstanceResponse {
   // Refs pointing to the instance, sorted by modification time, most recent
   // first.
   //
-  // Present only if the request has describe_refs == true.
+  // Present only if the request has describe_refs = true.
   repeated Ref refs = 2;
 
   // Tags attached to the instance, sorted by the tag key first, and then
   // by the timestamp (most recent first).
   //
-  // Present only if the request has describe_tags == true.
+  // Present only if the request has describe_tags = true.
   repeated Tag tags = 3;
 
   // State of the processors that handled the instance (if any), sorted by their
   // ID.
   //
-  // Present only if the request has describe_processors == true.
+  // Present only if the request has describe_processors = true.
   repeated Processor processors = 4;
+
+  // Metadata attached to the instance.
+  //
+  // Present only if the request has describe_metadata = true.
+  repeated InstanceMetadata metadata = 5;
 }
 
 
