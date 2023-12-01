@@ -139,6 +139,9 @@ func extractFieldsFromRequest(entry *cipdpb.AccessLogEntry, req any) {
 		if r.DescribeProcessors {
 			entry.Flags = append(entry.Flags, "processors")
 		}
+		if r.DescribeMetadata {
+			entry.Flags = append(entry.Flags, "metadata")
+		}
 	}
 }
 

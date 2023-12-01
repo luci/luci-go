@@ -2658,6 +2658,19 @@ func TestDescribeInstance(t *testing.T) {
 			model.SetRef(as("ref@example.com"), "ref_a", inst)
 			model.SetRef(as("ref@example.com"), "ref_b", inst)
 
+			model.AttachMetadata(as("metadata@example.com"), inst, []*api.InstanceMetadata{
+				{
+					Key:         "foo",
+					Value:       []byte("bar"),
+					ContentType: "image/png",
+				},
+				{
+					Key:         "bar",
+					Value:       []byte("baz"),
+					ContentType: "text/plain",
+				},
+			})
+
 			inst.ProcessorsSuccess = []string{"proc"}
 			datastore.Put(ctx, inst, &model.ProcessingResult{
 				ProcID:    "proc",
@@ -2672,6 +2685,7 @@ func TestDescribeInstance(t *testing.T) {
 				DescribeTags:       true,
 				DescribeRefs:       true,
 				DescribeProcessors: true,
+				DescribeMetadata:   true,
 			})
 			So(err, ShouldBeNil)
 			So(resp, ShouldResembleProto, &api.DescribeInstanceResponse{
@@ -2711,6 +2725,25 @@ func TestDescribeInstance(t *testing.T) {
 						Id:         "proc",
 						State:      api.Processor_SUCCEEDED,
 						FinishedTs: timestamppb.New(testutil.TestTime),
+					},
+				},
+				// Note that metadata is returned LIFO.
+				Metadata: []*api.InstanceMetadata{
+					{
+						Key:         "bar",
+						Value:       []byte("baz"),
+						ContentType: "text/plain",
+						Fingerprint: "aec8a983ee3429852adfcfecacad886d",
+						AttachedBy:  "user:metadata@example.com",
+						AttachedTs:  timestamppb.New(testutil.TestTime),
+					},
+					{
+						Key:         "foo",
+						Value:       []byte("bar"),
+						ContentType: "image/png",
+						Fingerprint: "a765a8beaa9d561d4c5cbed29d8f4e30",
+						AttachedBy:  "user:metadata@example.com",
+						AttachedTs:  timestamppb.New(testutil.TestTime),
 					},
 				},
 			})

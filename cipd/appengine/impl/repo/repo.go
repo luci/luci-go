@@ -1200,6 +1200,14 @@ func (impl *repoImpl) DetachMetadata(ctx context.Context, r *api.DetachMetadataR
 	return &emptypb.Empty{}, nil
 }
 
+func listMetadata(ctx context.Context, inst *model.Instance, keys ...string) ([]*model.InstanceMetadata, error) {
+	if len(keys) != 0 {
+		return model.ListMetadataWithKeys(ctx, inst, keys)
+	}
+
+	return model.ListMetadata(ctx, inst)
+}
+
 // ListMetadata implements the corresponding RPC method, see the proto doc.
 func (impl *repoImpl) ListMetadata(ctx context.Context, r *api.ListMetadataRequest) (resp *api.ListMetadataResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
@@ -1236,11 +1244,7 @@ func (impl *repoImpl) ListMetadata(ctx context.Context, r *api.ListMetadataReque
 
 	// Actually list metadata.
 	var md []*model.InstanceMetadata
-	if len(r.Keys) != 0 {
-		md, err = model.ListMetadataWithKeys(ctx, inst, r.Keys)
-	} else {
-		md, err = model.ListMetadata(ctx, inst)
-	}
+	md, err = listMetadata(ctx, inst, r.Keys...)
 	if err != nil {
 		return nil, err
 	}
@@ -1345,6 +1349,7 @@ func (impl *repoImpl) DescribeInstance(ctx context.Context, r *api.DescribeInsta
 	var refs []*model.Ref
 	var tags []*model.Tag
 	var proc []*api.Processor
+	var mds []*model.InstanceMetadata
 	err = parallel.FanOutIn(func(tasks chan<- func() error) {
 		if r.DescribeRefs {
 			tasks <- func() error {
@@ -1365,6 +1370,13 @@ func (impl *repoImpl) DescribeInstance(ctx context.Context, r *api.DescribeInsta
 				var err error
 				proc, err = model.FetchProcessors(ctx, inst)
 				return errors.Annotate(err, "failed to fetch processors").Err()
+			}
+		}
+		if r.DescribeMetadata {
+			tasks <- func() error {
+				var err error
+				mds, err = listMetadata(ctx, inst)
+				return errors.Annotate(err, "failed to fetch metadata").Err()
 			}
 		}
 	})
@@ -1389,6 +1401,12 @@ func (impl *repoImpl) DescribeInstance(ctx context.Context, r *api.DescribeInsta
 	}
 	if len(proc) != 0 {
 		resp.Processors = proc
+	}
+	if len(mds) != 0 {
+		resp.Metadata = make([]*api.InstanceMetadata, len(mds))
+		for i, md := range mds {
+			resp.Metadata[i] = md.Proto()
+		}
 	}
 	return resp, nil
 }

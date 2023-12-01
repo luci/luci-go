@@ -136,11 +136,12 @@ func TestFields(t *testing.T) {
 				DescribeRefs:       true,
 				DescribeTags:       true,
 				DescribeProcessors: true,
+				DescribeMetadata:   true,
 			},
 			&cipdpb.AccessLogEntry{
 				Package:  pkg,
 				Instance: iid,
-				Flags:    []string{"refs", "tags", "processors"},
+				Flags:    []string{"refs", "tags", "processors", "metadata"},
 			},
 		},
 		{
