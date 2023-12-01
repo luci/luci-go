@@ -319,6 +319,10 @@ type BuilderConfig struct {
 	// have real task backends, can utilize this feature.
 	//
 	// By default, the value is 0, which means no timeout threshold is applied.
+	//
+	// Note: this field only takes effect for TaskBackendLite builds. For builds
+	// with full-featured TaskBackend Implementation, `sync_backend_tasks` cron
+	// job fulfills the similar functionality.
 	HeartbeatTimeoutSecs uint32 `protobuf:"varint,39,opt,name=heartbeat_timeout_secs,json=heartbeatTimeoutSecs,proto3" json:"heartbeat_timeout_secs,omitempty"`
 	// Maximum build pending time.
 	//

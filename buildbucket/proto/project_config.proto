@@ -293,6 +293,10 @@ message BuilderConfig {
   // have real task backends, can utilize this feature.
   //
   // By default, the value is 0, which means no timeout threshold is applied.
+  //
+  // Note: this field only takes effect for TaskBackendLite builds. For builds
+  // with full-featured TaskBackend Implementation, `sync_backend_tasks` cron
+  // job fulfills the similar functionality.
   uint32 heartbeat_timeout_secs = 39;
 
   // Maximum build pending time.

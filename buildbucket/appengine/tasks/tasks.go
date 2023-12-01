@@ -307,6 +307,17 @@ func init() {
 			return SyncBuildsWithBackendTasks(ctx, t.Backend, t.Project)
 		},
 	})
+
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "check-build-liveness",
+		Kind:      tq.FollowsContext,
+		Prototype: (*taskdefs.CheckBuildLiveness)(nil),
+		Queue:     "backend-go-default",
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			// TODO(crbug.com/1502975): implement it.
+			return errors.New("check-build-liveness hasn't been implemented")
+		},
+	})
 }
 
 // CancelBackendTask enqueues a task queue task to cancel the given Backend
@@ -432,5 +443,19 @@ func SyncWithBackend(ctx context.Context, backend, project string) error {
 			Backend: backend,
 			Project: project,
 		},
+	})
+}
+
+// CheckBuildLiveness enqueues a task queue task to check a build's liveness.
+func CheckBuildLiveness(ctx context.Context, buildID int64, heartbeatTimeout uint32, delay time.Duration) error {
+	if buildID <= 0 {
+		return errors.Reason("build_id is invalid").Err()
+	}
+	return tq.AddTask(ctx, &tq.Task{
+		Payload: &taskdefs.CheckBuildLiveness{
+			BuildId:          buildID,
+			HeartbeatTimeout: heartbeatTimeout,
+		},
+		Delay: delay,
 	})
 }

@@ -149,3 +149,14 @@ message CancelBackendTask {
   // Task ID.
   string task_id = 3;
 }
+
+// CheckBuildLiveness is a task to check if any build updates are received for
+// the given build during the give time period.
+message CheckBuildLiveness {
+  // ID of a build in the datastore. See model.Build.
+  int64 build_id = 1;
+
+  // The maximum amount of seconds for not hearing any build heartbeats before
+  // failing the build.
+  uint32 heartbeat_timeout = 2;
+}

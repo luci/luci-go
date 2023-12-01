@@ -52,6 +52,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -405,6 +406,7 @@ func TestCreateBackendTask(t *testing.T) {
 		ctx = secrets.Use(ctx, store)
 		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 		ctx = memlogger.Use(ctx)
+		ctx, sch := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 		logs := logging.Get(ctx).(*memlogger.MemLogger)
 
 		backendSetting := []*pb.BackendSetting{}
@@ -424,6 +426,13 @@ func TestCreateBackendTask(t *testing.T) {
 				},
 			},
 			TaskCreatingTimeout: durationpb.New(8 * time.Minute),
+		})
+		backendSetting = append(backendSetting, &pb.BackendSetting{
+			Target:   "lite://foo-lite",
+			Hostname: "foo-hostname",
+			Mode: &pb.BackendSetting_LiteMode_{
+				LiteMode: &pb.BackendSetting_LiteMode{},
+			},
 		})
 		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 		err := config.SetTestSettingsCfg(ctx, settingsCfg)
@@ -555,6 +564,7 @@ func TestCreateBackendTask(t *testing.T) {
 				Link:     "this_is_a_url_link",
 				UpdateId: 1,
 			})
+			So(sch.Tasks(), ShouldBeEmpty)
 		})
 
 		Convey("fail", func() {
@@ -588,6 +598,79 @@ func TestCreateBackendTask(t *testing.T) {
 			So(err, ShouldErrLike, "creating backend task for build 1 has expired after 8m0s")
 			So(expectedBuild.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 			So(expectedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "Backend task creation failure.")
+		})
+
+		Convey("Lite backend", func() {
+			bldr := &model.Builder{
+				ID:     "builder",
+				Parent: model.BucketKey(ctx, "project", "bucket"),
+				Config: &pb.BuilderConfig{
+					Name:                 "builder",
+					HeartbeatTimeoutSecs: 5,
+				},
+			}
+			build.Proto.SchedulingTimeout = durationpb.New(1 * time.Minute)
+			infra.Proto.Backend.Task.Id.Target = "lite://foo-lite"
+			So(datastore.Put(ctx, build, infra, bldr), ShouldBeNil)
+
+			mockBackend.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(&pb.RunTaskResponse{
+				Task: &pb.Task{
+					Id:       &pb.TaskID{Id: "abc123", Target: "lite://foo-lite"},
+					Link:     "this_is_a_url_link",
+					UpdateId: 1,
+				},
+			}, nil)
+
+			Convey("ok", func() {
+				err = CreateBackendTask(ctx, 1, "request_id")
+				So(err, ShouldBeNil)
+				eb := &model.Build{ID: build.ID}
+				expectedBuildInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, build)}
+				So(datastore.Get(ctx, eb, expectedBuildInfra), ShouldBeNil)
+				updateTime := eb.Proto.UpdateTime.AsTime()
+				So(updateTime, ShouldEqual, now)
+				So(expectedBuildInfra.Proto.Backend.Task, ShouldResembleProto, &pb.Task{
+					Id: &pb.TaskID{
+						Id:     "abc123",
+						Target: "lite://foo-lite",
+					},
+					Link:     "this_is_a_url_link",
+					UpdateId: 1,
+				})
+				tasks := sch.Tasks()
+				So(tasks, ShouldHaveLength, 1)
+				So(tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetBuildId(), ShouldEqual, build.ID)
+				So(tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetHeartbeatTimeout(), ShouldEqual, 5)
+				So(tasks[0].ETA, ShouldEqual, now.Add(5*time.Second))
+			})
+
+			Convey("SchedulingTimeout shorter than heartbeat timeout", func() {
+				bldr.Config.HeartbeatTimeoutSecs = 60
+				build.Proto.SchedulingTimeout = durationpb.New(10 * time.Second)
+				So(datastore.Put(ctx, build, bldr), ShouldBeNil)
+
+				err = CreateBackendTask(ctx, 1, "request_id")
+				So(err, ShouldBeNil)
+				tasks := sch.Tasks()
+				So(tasks, ShouldHaveLength, 1)
+				So(tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetBuildId(), ShouldEqual, build.ID)
+				So(tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetHeartbeatTimeout(), ShouldEqual, 60)
+				So(tasks[0].ETA, ShouldEqual, now.Add(10*time.Second))
+			})
+
+			Convey("no heartbeat_timeout_secs field set", func() {
+				bldr.Config.HeartbeatTimeoutSecs = 0
+				build.Proto.SchedulingTimeout = durationpb.New(10 * time.Second)
+				So(datastore.Put(ctx, build, bldr), ShouldBeNil)
+
+				err = CreateBackendTask(ctx, 1, "request_id")
+				So(err, ShouldBeNil)
+				tasks := sch.Tasks()
+				So(tasks, ShouldHaveLength, 1)
+				So(tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetBuildId(), ShouldEqual, build.ID)
+				So(tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetHeartbeatTimeout(), ShouldEqual, 0)
+				So(tasks[0].ETA, ShouldEqual, now.Add(10*time.Second))
+			})
 		})
 	})
 }

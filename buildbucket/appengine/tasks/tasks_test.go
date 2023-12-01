@@ -345,5 +345,21 @@ func TestTasks(t *testing.T) {
 				So(sch.Tasks(), ShouldHaveLength, 1)
 			})
 		})
+
+		Convey("CheckBuildLiveness", func() {
+			Convey("invalid", func() {
+				Convey("build id", func() {
+					So(CheckBuildLiveness(ctx, 0, 0, time.Duration(1)), ShouldErrLike, "build_id is invalid")
+					So(sch.Tasks(), ShouldBeEmpty)
+				})
+			})
+
+			Convey("valid", func() {
+				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					return CheckBuildLiveness(ctx, 123, 60, time.Duration(1))
+				}, nil), ShouldBeNil)
+				So(sch.Tasks(), ShouldHaveLength, 1)
+			})
+		})
 	})
 }

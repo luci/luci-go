@@ -363,6 +363,12 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 	if taskResp.Task.GetUpdateId() == 0 {
 		return tq.Fatal.Apply(errors.Reason("task returned with an updateID of 0").Err())
 	}
+
+	checkLiveness, heartbeatTimeout, err := shouldCheckLiveness(ctx, bld, backendCfg)
+	if err != nil {
+		return transient.Tag.Apply(err)
+	}
+
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		entities, err := common.GetBuildEntities(ctx, buildID, model.BuildKind, model.BuildInfraKind)
 		if err != nil {
@@ -390,11 +396,46 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 			}
 		}
 
-		return datastore.Put(ctx, bld, infra)
+		if checkLiveness {
+			// SchedulingTimeout is always set in schedule_build flow.
+			delay := bld.Proto.SchedulingTimeout.Seconds
+			if heartbeatTimeout != 0 && int64(heartbeatTimeout) < delay {
+				// Better to choose a shorter delay as a first CheckBuildLiveness task.
+				delay = int64(heartbeatTimeout)
+			}
+			if err = CheckBuildLiveness(ctx, bld.ID, heartbeatTimeout, time.Duration(delay)*time.Second); err != nil {
+				return errors.Annotate(err, "failed to enqueue CheckBuildLiveness task").Err()
+			}
+		}
+		return errors.Annotate(datastore.Put(ctx, bld, infra), "failed to save Build and BuildInfra").Err()
 	}, nil)
 	if txErr != nil {
-		logging.Errorf(ctx, "Task failed to save in BuildInfra: %s", taskResp.String())
-		return transient.Tag.Apply(errors.Annotate(err, "failed to save the backend task in BuildInfra").Err())
+		logging.Errorf(ctx, "Task failed to save: %s", taskResp.String())
+		return transient.Tag.Apply(err)
 	}
 	return nil
+}
+
+// shouldCheckLiveness checks if Buildbucket should enqueue a task to
+// periodically check the build liveness.
+func shouldCheckLiveness(ctx context.Context, bld *model.Build, backendCfg *pb.BackendSetting) (bool, uint32, error) {
+	if _, ok := backendCfg.Mode.(*pb.BackendSetting_LiteMode_); ok {
+		bldr := &model.Builder{
+			ID:     bld.Proto.Builder.Builder,
+			Parent: model.BucketKey(ctx, bld.Proto.Builder.Project, bld.Proto.Builder.Bucket),
+		}
+		switch err := datastore.Get(ctx, bldr); {
+		case errors.Contains(err, datastore.ErrNoSuchEntity):
+			// TODO(crbug.com/1502975): It could be a dynamic builder. Fetching its
+			// bucket to look for `dynamic_builder_template` after builder_config is
+			// added into `dynamic_builder_template` message proto.
+			return false, 0, errors.Annotate(err, "builder %s not found", bld.BuilderID).Err()
+		case err != nil:
+			return false, 0, errors.Annotate(err, "cannot fetch builder %s", bld.BuilderID).Err()
+		}
+		// No matter whether the hearbeat_timeout_secs is set or not, Buildbucket
+		// should always monitor the liveness for the build on TaskBackendLite.
+		return true, bldr.Config.GetHeartbeatTimeoutSecs(), nil
+	}
+	return false, 0, nil
 }
