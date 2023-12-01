@@ -314,8 +314,8 @@ func init() {
 		Prototype: (*taskdefs.CheckBuildLiveness)(nil),
 		Queue:     "backend-go-default",
 		Handler: func(ctx context.Context, payload proto.Message) error {
-			// TODO(crbug.com/1502975): implement it.
-			return errors.New("check-build-liveness hasn't been implemented")
+			t := payload.(*taskdefs.CheckBuildLiveness)
+			return CheckLiveness(ctx, t.BuildId, t.HeartbeatTimeout)
 		},
 	})
 }
