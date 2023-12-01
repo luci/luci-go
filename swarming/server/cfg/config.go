@@ -156,11 +156,43 @@ func defaultConfigs() *internalcfgpb.ConfigBundle {
 	return &internalcfgpb.ConfigBundle{
 		Revision: emptyRev,
 		Digest:   emptyDigest,
-		Settings: &configpb.SettingsCfg{},
+		Settings: withDefaultSettings(&configpb.SettingsCfg{}),
 		Pools:    &configpb.PoolsCfg{},
 		Bots:     &configpb.BotsCfg{},
 		Scripts:  map[string]string{},
 	}
+}
+
+// withDefaultSettings fills in defaults in `cfg` and returns it.
+func withDefaultSettings(cfg *configpb.SettingsCfg) *configpb.SettingsCfg {
+	if cfg.ReusableTaskAgeSecs == 0 {
+		cfg.ReusableTaskAgeSecs = 7 * 24 * 60 * 60
+	}
+	if cfg.BotDeathTimeoutSecs == 0 {
+		cfg.BotDeathTimeoutSecs = 10 * 60
+	}
+	if cfg.Auth == nil {
+		cfg.Auth = &configpb.AuthSettings{}
+	}
+	if cfg.Auth.AdminsGroup == "" {
+		cfg.Auth.AdminsGroup = "administrators"
+	}
+	if cfg.Auth.BotBootstrapGroup == "" {
+		cfg.Auth.BotBootstrapGroup = cfg.Auth.AdminsGroup
+	}
+	if cfg.Auth.PrivilegedUsersGroup == "" {
+		cfg.Auth.PrivilegedUsersGroup = cfg.Auth.AdminsGroup
+	}
+	if cfg.Auth.UsersGroup == "" {
+		cfg.Auth.UsersGroup = cfg.Auth.AdminsGroup
+	}
+	if cfg.Auth.ViewAllBotsGroup == "" {
+		cfg.Auth.ViewAllBotsGroup = cfg.Auth.AdminsGroup
+	}
+	if cfg.Auth.ViewAllTasksGroup == "" {
+		cfg.Auth.ViewAllTasksGroup = cfg.Auth.AdminsGroup
+	}
+	return cfg
 }
 
 // parseAndValidateConfigs parses config files fetched from LUCI Config, if any.
@@ -344,6 +376,6 @@ func buildQueriableConfig(ctx context.Context, ent *configBundle) (*Config, erro
 		Digest:    ent.Digest,
 		Fetched:   ent.Fetched,
 		Refreshed: clock.Now(ctx).UTC(),
-		settings:  ent.Bundle.Settings,
+		settings:  withDefaultSettings(ent.Bundle.Settings),
 	}, nil
 }

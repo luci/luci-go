@@ -246,13 +246,23 @@ func TestFetchFromDatastore(t *testing.T) {
 			// A real config appears.
 			So(update(cfgmem.Files{"settings.cfg": `google_analytics: "boo"`}), ShouldBeNil)
 
-			// It replaces the empty config when fetched.
+			// It replaces the empty config when fetched (with defaults filled in).
 			cfg, err = fetch(cfg)
 			So(err, ShouldBeNil)
 			So(cfg.Revision, ShouldEqual, "bcf7460a098890cc7efc8eda1c8279658ec25eb3")
 			So(cfg.Digest, ShouldEqual, "xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ")
 			So(cfg.settings, ShouldResembleProto, &configpb.SettingsCfg{
 				GoogleAnalytics: "boo",
+				Auth: &configpb.AuthSettings{
+					AdminsGroup:          "administrators",
+					BotBootstrapGroup:    "administrators",
+					PrivilegedUsersGroup: "administrators",
+					UsersGroup:           "administrators",
+					ViewAllBotsGroup:     "administrators",
+					ViewAllTasksGroup:    "administrators",
+				},
+				BotDeathTimeoutSecs: 600,
+				ReusableTaskAgeSecs: 604800,
 			})
 
 			// Suddenly the config is completely gone.
@@ -275,18 +285,18 @@ func TestFetchFromDatastore(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(cfg.Revision, ShouldEqual, "bcf7460a098890cc7efc8eda1c8279658ec25eb3")
 			So(cfg.Digest, ShouldEqual, "xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ")
-			So(cfg.settings, ShouldResembleProto, &configpb.SettingsCfg{
+			So(cfg.settings, ShouldResembleProto, withDefaultSettings(&configpb.SettingsCfg{
 				GoogleAnalytics: "boo",
-			})
+			}))
 
 			// Nothing change. The same config is returned.
 			cfg, err = fetch(cfg)
 			So(err, ShouldBeNil)
 			So(cfg.Revision, ShouldEqual, "bcf7460a098890cc7efc8eda1c8279658ec25eb3")
 			So(cfg.Digest, ShouldEqual, "xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ")
-			So(cfg.settings, ShouldResembleProto, &configpb.SettingsCfg{
+			So(cfg.settings, ShouldResembleProto, withDefaultSettings(&configpb.SettingsCfg{
 				GoogleAnalytics: "boo",
-			})
+			}))
 
 			// A noop config change happens.
 			So(update(cfgmem.Files{
@@ -310,9 +320,9 @@ func TestFetchFromDatastore(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(cfg.Revision, ShouldEqual, "3a7123badfd5426f2a75932433f99b0aee8baf9b")
 			So(cfg.Digest, ShouldEqual, "+JawsgfwWonAz8wFE/iR2AcdVmMhK3OwFbNSgCjBiRo")
-			So(cfg.settings, ShouldResembleProto, &configpb.SettingsCfg{
+			So(cfg.settings, ShouldResembleProto, withDefaultSettings(&configpb.SettingsCfg{
 				GoogleAnalytics: "blah",
-			})
+			}))
 		})
 	})
 }
