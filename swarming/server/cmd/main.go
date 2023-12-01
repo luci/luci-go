@@ -19,10 +19,13 @@ import (
 	"flag"
 	"fmt"
 
+	"google.golang.org/grpc"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth/rpcacl"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
@@ -38,11 +41,18 @@ import (
 	"go.chromium.org/luci/swarming/server/internals"
 	"go.chromium.org/luci/swarming/server/pubsub"
 	"go.chromium.org/luci/swarming/server/rbe"
+	"go.chromium.org/luci/swarming/server/rpcs"
 	"go.chromium.org/luci/swarming/server/testing/integrationmocks"
 
 	// Store auth sessions in the datastore.
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 )
+
+// Members of this group will be able to hit WIP Go Swarming API.
+//
+// Eventually it will go away. This is temporary during the development to
+// reduce the risk of leaking stuff by exposing unfinished or buggy API routes.
+const devAPIAccessGroup = "swarming-go-api-allowlist"
 
 func main() {
 	modules := []module.Module{
@@ -87,9 +97,6 @@ func main() {
 			return err
 		}
 		srv.RunInBackground("swarming.config", cfg.RefreshPeriodically)
-
-		// TODO(vadimsh): Pass &cfg to various RPC server implementations to allow
-		// them to grab server configs when necessary.
 
 		// Open *connPoolSize connections for SessionServer and one dedicated
 		// connection for ReservationServer.
@@ -156,12 +163,32 @@ func main() {
 			))
 		}
 
-		// Register noop gRPC servers to make them available in RPC Explorer. Actual
-		// implementation still lives in Python and RPCs are routed there via
-		// dispatch.yaml.
-		apipb.RegisterBotsServer(srv, apipb.UnimplementedBotsServer{})
-		apipb.RegisterTasksServer(srv, apipb.UnimplementedTasksServer{})
-		apipb.RegisterSwarmingServer(srv, apipb.UnimplementedSwarmingServer{})
+		// A temporary interceptor with very crude but solid ACL check for the
+		// duration of the development. To avoid accidentally leaking stuff due to
+		// bugs in the WIP code.
+		srv.RegisterUnifiedServerInterceptors(rpcacl.Interceptor(rpcacl.Map{
+			// Protect Swarming APIs.
+			fmt.Sprintf("/%s/*", apipb.Bots_ServiceDesc.ServiceName):     devAPIAccessGroup,
+			fmt.Sprintf("/%s/*", apipb.Tasks_ServiceDesc.ServiceName):    devAPIAccessGroup,
+			fmt.Sprintf("/%s/*", apipb.Swarming_ServiceDesc.ServiceName): devAPIAccessGroup,
+			// An API used in local integration tests.
+			fmt.Sprintf("/%s/*", integrationmocks.IntegrationMocks_ServiceDesc.ServiceName): devAPIAccessGroup,
+			// Leave other gRPC services open, they do they own authorization already.
+			"/discovery.Discovery/*": rpcacl.All,
+			"/config.Consumer/*":     rpcacl.All,
+		}))
+
+		// An interceptor that prepares per-RPC context for public gRPC servers.
+		srv.RegisterUnifiedServerInterceptors(rpcs.ServerInterceptor(cfg, []*grpc.ServiceDesc{
+			&apipb.Bots_ServiceDesc,
+			&apipb.Tasks_ServiceDesc,
+			&apipb.Swarming_ServiceDesc,
+		}))
+
+		// Register gRPC server implementations.
+		apipb.RegisterBotsServer(srv, &rpcs.BotsServer{})
+		apipb.RegisterTasksServer(srv, &rpcs.TasksServer{})
+		apipb.RegisterSwarmingServer(srv, &rpcs.SwarmingServer{})
 
 		return nil
 	})

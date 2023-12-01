@@ -7,12 +7,15 @@ To deploy from a local checkout:
 gae.py upload -A chromium-swarm-dev default-go
 ```
 
-To run locally using fake bots and tasks:
+To run locally using fake bots and tasks (but with real Datastore and real RBE):
 
 ```
 # Terminal 1: launch the server locally and keep it running.
 cd server/cmd
-go run main.go -shared-hmac-secret devsecret://aaaa -expose-integration-mocks
+go run main.go \
+  -cloud-project chromium-swarm-dev \
+  -shared-hmac-secret devsecret://aaaa \
+  -expose-integration-mocks
 
 # Terminal 2: launch a fake bot and keep it running.
 cd server/testing/fakebot
