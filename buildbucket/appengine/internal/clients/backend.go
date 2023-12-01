@@ -35,7 +35,8 @@ type BackendClient struct {
 }
 
 type TaskBackendClient interface {
-	RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*pb.RunTaskResponse, error)
+	CancelTasks(ctx context.Context, in *pb.CancelTasksRequest, opts ...grpc.CallOption) (*pb.CancelTasksResponse, error)
+	RunTask(ctx context.Context, in *pb.RunTaskRequest, opts ...grpc.CallOption) (*pb.RunTaskResponse, error)
 	FetchTasks(ctx context.Context, in *pb.FetchTasksRequest, opts ...grpc.CallOption) (*pb.FetchTasksResponse, error)
 	ValidateConfigs(ctx context.Context, in *pb.ValidateConfigsRequest, opts ...grpc.CallOption) (*pb.ValidateConfigsResponse, error)
 }
@@ -78,17 +79,22 @@ func NewBackendClient(ctx context.Context, project, target string, globalCfg *pb
 	}, nil
 }
 
+// CancelTasks sends a cancel request to the backend
+func (c *BackendClient) CancelTasks(ctx context.Context, in *pb.CancelTasksRequest, opts ...grpc.CallOption) (*pb.CancelTasksResponse, error) {
+	return c.client.CancelTasks(ctx, in, opts...)
+}
+
 // RunTask returns for the requested task.
-func (c *BackendClient) RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*pb.RunTaskResponse, error) {
-	return c.client.RunTask(ctx, taskReq, opts...)
+func (c *BackendClient) RunTask(ctx context.Context, in *pb.RunTaskRequest, opts ...grpc.CallOption) (*pb.RunTaskResponse, error) {
+	return c.client.RunTask(ctx, in, opts...)
 }
 
 // FetchTasks returns the requested tasks.
-func (c *BackendClient) FetchTasks(ctx context.Context, taskReq *pb.FetchTasksRequest, opts ...grpc.CallOption) (*pb.FetchTasksResponse, error) {
-	return c.client.FetchTasks(ctx, taskReq, opts...)
+func (c *BackendClient) FetchTasks(ctx context.Context, in *pb.FetchTasksRequest, opts ...grpc.CallOption) (*pb.FetchTasksResponse, error) {
+	return c.client.FetchTasks(ctx, in, opts...)
 }
 
 // ValidateConfigs returns validation errors (if any).
-func (c *BackendClient) ValidateConfigs(ctx context.Context, req *pb.ValidateConfigsRequest, opts ...grpc.CallOption) (*pb.ValidateConfigsResponse, error) {
-	return c.client.ValidateConfigs(ctx, req, opts...)
+func (c *BackendClient) ValidateConfigs(ctx context.Context, in *pb.ValidateConfigsRequest, opts ...grpc.CallOption) (*pb.ValidateConfigsResponse, error) {
+	return c.client.ValidateConfigs(ctx, in, opts...)
 }

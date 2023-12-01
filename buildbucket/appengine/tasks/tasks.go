@@ -48,6 +48,17 @@ func rejectionHandler(tq string) tq.Handler {
 
 func init() {
 	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "cancel-backend-task",
+		Kind:      tq.FollowsContext,
+		Prototype: (*taskdefs.CancelBackendTask)(nil),
+		Queue:     "backend-go-default",
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			t := payload.(*taskdefs.CancelBackendTask)
+			return HandleCancelBackendTask(ctx, t.Project, t.Target, t.TaskId)
+		},
+	})
+
+	tq.RegisterTaskClass(tq.TaskClass{
 		ID: "cancel-swarming-task",
 		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
 			task := m.(*taskdefs.CancelSwarmingTask)
@@ -295,6 +306,22 @@ func init() {
 			t := payload.(*taskdefs.SyncBuildsWithBackendTasks)
 			return SyncBuildsWithBackendTasks(ctx, t.Backend, t.Project)
 		},
+	})
+}
+
+// CancelBackendTask enqueues a task queue task to cancel the given Backend
+// task.
+func CancelBackendTask(ctx context.Context, task *taskdefs.CancelBackendTask) error {
+	switch {
+	case task.Project == "":
+		return errors.Reason("project is required").Err()
+	case task.TaskId == "":
+		return errors.Reason("task_id is required").Err()
+	case task.Target == "":
+		return errors.Reason("task target is required").Err()
+	}
+	return tq.AddTask(ctx, &tq.Task{
+		Payload: task,
 	})
 }
 

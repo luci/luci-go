@@ -120,7 +120,7 @@ func TestCancelBuild(t *testing.T) {
 			So(sch.Tasks(), ShouldBeEmpty)
 		})
 
-		Convey("task cancellation", func() {
+		Convey("swarming task cancellation", func() {
 			So(datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
@@ -137,6 +137,57 @@ func TestCancelBuild(t *testing.T) {
 					Swarming: &pb.BuildInfra_Swarming{
 						Hostname: "example.com",
 						TaskId:   "id",
+					},
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.BuildStatus{
+				Build:  datastore.MakeKey(ctx, "Build", 1),
+				Status: pb.Status_STARTED,
+			}), ShouldBeNil)
+			bld, err := Cancel(ctx, 1)
+			So(err, ShouldBeNil)
+			So(bld.Proto, ShouldResembleProto, &pb.Build{
+				Id: 1,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				UpdateTime: timestamppb.New(now),
+				EndTime:    timestamppb.New(now),
+				Status:     pb.Status_CANCELED,
+			})
+			So(sch.Tasks(), ShouldHaveLength, 4)
+			bs := &model.BuildStatus{
+				Build: datastore.MakeKey(ctx, "Build", 1),
+			}
+			So(datastore.Get(ctx, bs), ShouldBeNil)
+			So(bs.Status, ShouldEqual, pb.Status_CANCELED)
+		})
+
+		Convey("backend task cancellation", func() {
+			So(datastore.Put(ctx, &model.Build{
+				Proto: &pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.BuildInfra{
+				Build: datastore.MakeKey(ctx, "Build", 1),
+				Proto: &pb.BuildInfra{
+					Backend: &pb.BuildInfra_Backend{
+						Hostname: "example.com",
+						Task: &pb.Task{
+							Id: &pb.TaskID{
+								Id:     "123",
+								Target: "swarming://chromium-swarmin-dev",
+							},
+							Status: pb.Status_STARTED,
+						},
 					},
 				},
 			}), ShouldBeNil)

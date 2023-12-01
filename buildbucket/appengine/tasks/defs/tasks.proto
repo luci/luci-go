@@ -137,3 +137,15 @@ message SyncBuildsWithBackendTasks {
   // LUCI project .
   string project = 2;
 }
+
+// A cloud task to cancel a backend task
+message CancelBackendTask {
+  // LUCI project the task belongs to.
+  string project = 1;
+
+  // Target for the backend.
+  string target = 2;
+
+  // Task ID.
+  string task_id = 3;
+}

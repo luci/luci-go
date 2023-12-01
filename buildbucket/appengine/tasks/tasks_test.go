@@ -312,5 +312,38 @@ func TestTasks(t *testing.T) {
 				So(sch.Tasks(), ShouldHaveLength, 1)
 			})
 		})
+
+		Convey("CancelBackendTask", func() {
+			Convey("invalid", func() {
+				Convey("empty target", func() {
+					So(CancelBackendTask(ctx, &taskdef.CancelBackendTask{
+						Project: "project",
+						TaskId:  "123",
+					}), ShouldErrLike, "target is required")
+				})
+
+				Convey("empty task_id", func() {
+					So(CancelBackendTask(ctx, &taskdef.CancelBackendTask{
+						Project: "project",
+						Target:  "123",
+					}), ShouldErrLike, "task_id is required")
+				})
+				Convey("invalid project", func() {
+					So(CancelBackendTask(ctx, &taskdef.CancelBackendTask{
+						TaskId: "123",
+						Target: "123",
+					}), ShouldErrLike, "project is required")
+				})
+			})
+
+			Convey("valid", func() {
+				So(CancelBackendTask(ctx, &taskdef.CancelBackendTask{
+					Target:  "abc",
+					TaskId:  "123",
+					Project: "project",
+				}), ShouldBeNil)
+				So(sch.Tasks(), ShouldHaveLength, 1)
+			})
+		})
 	})
 }

@@ -179,6 +179,15 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 				return errors.Annotate(err, "failed to enqueue swarming task cancellation task: %d", bld.ID).Err()
 			}
 		}
+		if bk := inf.Proto.GetBackend(); bk.GetTask().GetId().GetId() != "" && bk.GetTask().GetId().GetTarget() != "" {
+			if err := CancelBackendTask(ctx, &taskdefs.CancelBackendTask{
+				Target:  bk.Task.Id.Target,
+				TaskId:  bk.Task.Id.Id,
+				Project: bld.Project,
+			}); err != nil {
+				return errors.Annotate(err, "failed to enqueue backend task cancelation task: %d", bld.ID).Err()
+			}
+		}
 		if rdb := inf.Proto.GetResultdb(); rdb.GetHostname() != "" && rdb.Invocation != "" {
 			if err := FinalizeResultDB(ctx, &taskdefs.FinalizeResultDBGo{
 				BuildId: bld.ID,

@@ -870,6 +870,73 @@ func (x *SyncBuildsWithBackendTasks) GetProject() string {
 	return ""
 }
 
+// A cloud task to cancel a backend task
+type CancelBackendTask struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// LUCI project the task belongs to.
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	// Target for the backend.
+	Target string `protobuf:"bytes,2,opt,name=target,proto3" json:"target,omitempty"`
+	// Task ID.
+	TaskId string `protobuf:"bytes,3,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
+}
+
+func (x *CancelBackendTask) Reset() {
+	*x = CancelBackendTask{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CancelBackendTask) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelBackendTask) ProtoMessage() {}
+
+func (x *CancelBackendTask) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelBackendTask.ProtoReflect.Descriptor instead.
+func (*CancelBackendTask) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *CancelBackendTask) GetProject() string {
+	if x != nil {
+		return x.Project
+	}
+	return ""
+}
+
+func (x *CancelBackendTask) GetTarget() string {
+	if x != nil {
+		return x.Target
+	}
+	return ""
+}
+
+func (x *CancelBackendTask) GetTaskId() string {
+	if x != nil {
+		return x.TaskId
+	}
+	return ""
+}
+
 var File_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDesc = []byte{
@@ -947,7 +1014,13 @@ var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDe
 	0x61, 0x63, 0x6b, 0x65, 0x6e, 0x64, 0x54, 0x61, 0x73, 0x6b, 0x73, 0x12, 0x18, 0x0a, 0x07, 0x62,
 	0x61, 0x63, 0x6b, 0x65, 0x6e, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x62, 0x61,
 	0x63, 0x6b, 0x65, 0x6e, 0x64, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x42,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x22,
+	0x5e, 0x0a, 0x11, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x42, 0x61, 0x63, 0x6b, 0x65, 0x6e, 0x64,
+	0x54, 0x61, 0x73, 0x6b, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x16,
+	0x0a, 0x06, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06,
+	0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x12, 0x17, 0x0a, 0x07, 0x74, 0x61, 0x73, 0x6b, 0x5f, 0x69,
+	0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x74, 0x61, 0x73, 0x6b, 0x49, 0x64, 0x42,
 	0x40, 0x5a, 0x3e, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f,
 	0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63,
 	0x6b, 0x65, 0x74, 0x2f, 0x61, 0x70, 0x70, 0x65, 0x6e, 0x67, 0x69, 0x6e, 0x65, 0x2f, 0x74, 0x61,
@@ -967,7 +1040,7 @@ func file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawD
 	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_goTypes = []interface{}{
 	(*CancelSwarmingTask)(nil),         // 0: taskdefs.CancelSwarmingTask
 	(*CancelSwarmingTaskGo)(nil),       // 1: taskdefs.CancelSwarmingTaskGo
@@ -984,10 +1057,11 @@ var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_goTyp
 	(*CancelBuildTask)(nil),            // 12: taskdefs.CancelBuildTask
 	(*NotifyPubSubGoProxy)(nil),        // 13: taskdefs.NotifyPubSubGoProxy
 	(*SyncBuildsWithBackendTasks)(nil), // 14: taskdefs.SyncBuildsWithBackendTasks
-	(*proto.BuildbucketCfg_Topic)(nil), // 15: buildbucket.BuildbucketCfg.Topic
+	(*CancelBackendTask)(nil),          // 15: taskdefs.CancelBackendTask
+	(*proto.BuildbucketCfg_Topic)(nil), // 16: buildbucket.BuildbucketCfg.Topic
 }
 var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_depIdxs = []int32{
-	15, // 0: taskdefs.NotifyPubSubGo.topic:type_name -> buildbucket.BuildbucketCfg.Topic
+	16, // 0: taskdefs.NotifyPubSubGo.topic:type_name -> buildbucket.BuildbucketCfg.Topic
 	1,  // [1:1] is the sub-list for method output_type
 	1,  // [1:1] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name
@@ -1181,6 +1255,18 @@ func file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_init
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CancelBackendTask); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1188,7 +1274,7 @@ func file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_init
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   15,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

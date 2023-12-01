@@ -50,18 +50,18 @@ func (mr *MockSwarmingClientMockRecorder) CancelTask(ctx, req interface{}) *gomo
 }
 
 // CreateTask mocks base method.
-func (m *MockSwarmingClient) CreateTask(c context.Context, createTaskReq *apipb.NewTaskRequest) (*apipb.TaskRequestMetadataResponse, error) {
+func (m *MockSwarmingClient) CreateTask(ctx context.Context, createTaskReq *apipb.NewTaskRequest) (*apipb.TaskRequestMetadataResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateTask", c, createTaskReq)
+	ret := m.ctrl.Call(m, "CreateTask", ctx, createTaskReq)
 	ret0, _ := ret[0].(*apipb.TaskRequestMetadataResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateTask indicates an expected call of CreateTask.
-func (mr *MockSwarmingClientMockRecorder) CreateTask(c, createTaskReq interface{}) *gomock.Call {
+func (mr *MockSwarmingClientMockRecorder) CreateTask(ctx, createTaskReq interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTask", reflect.TypeOf((*MockSwarmingClient)(nil).CreateTask), c, createTaskReq)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTask", reflect.TypeOf((*MockSwarmingClient)(nil).CreateTask), ctx, createTaskReq)
 }
 
 // GetTaskResult mocks base method.

@@ -35,6 +35,26 @@ func (m *MockTaskBackendClient) EXPECT() *MockTaskBackendClientMockRecorder {
 	return m.recorder
 }
 
+// CancelTasks mocks base method.
+func (m *MockTaskBackendClient) CancelTasks(ctx context.Context, in *buildbucketpb.CancelTasksRequest, opts ...grpc.CallOption) (*buildbucketpb.CancelTasksResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CancelTasks", varargs...)
+	ret0, _ := ret[0].(*buildbucketpb.CancelTasksResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CancelTasks indicates an expected call of CancelTasks.
+func (mr *MockTaskBackendClientMockRecorder) CancelTasks(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelTasks", reflect.TypeOf((*MockTaskBackendClient)(nil).CancelTasks), varargs...)
+}
+
 // FetchTasks mocks base method.
 func (m *MockTaskBackendClient) FetchTasks(ctx context.Context, in *buildbucketpb.FetchTasksRequest, opts ...grpc.CallOption) (*buildbucketpb.FetchTasksResponse, error) {
 	m.ctrl.T.Helper()
@@ -56,9 +76,9 @@ func (mr *MockTaskBackendClientMockRecorder) FetchTasks(ctx, in interface{}, opt
 }
 
 // RunTask mocks base method.
-func (m *MockTaskBackendClient) RunTask(ctx context.Context, taskReq *buildbucketpb.RunTaskRequest, opts ...grpc.CallOption) (*buildbucketpb.RunTaskResponse, error) {
+func (m *MockTaskBackendClient) RunTask(ctx context.Context, in *buildbucketpb.RunTaskRequest, opts ...grpc.CallOption) (*buildbucketpb.RunTaskResponse, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, taskReq}
+	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
@@ -69,9 +89,9 @@ func (m *MockTaskBackendClient) RunTask(ctx context.Context, taskReq *buildbucke
 }
 
 // RunTask indicates an expected call of RunTask.
-func (mr *MockTaskBackendClientMockRecorder) RunTask(ctx, taskReq interface{}, opts ...interface{}) *gomock.Call {
+func (mr *MockTaskBackendClientMockRecorder) RunTask(ctx, in interface{}, opts ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, taskReq}, opts...)
+	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunTask", reflect.TypeOf((*MockTaskBackendClient)(nil).RunTask), varargs...)
 }
 
