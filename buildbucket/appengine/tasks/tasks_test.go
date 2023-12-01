@@ -27,7 +27,6 @@ import (
 	taskdef "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 
 	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
