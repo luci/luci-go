@@ -134,6 +134,7 @@ luci.builder(
     ],
     execution_timeout = 3 * time.hour,
     grace_period = 2 * time.minute,
+    heartbeat_timeout = 10 * time.minute,
     dimensions = {
         "os": "Linux",
         "builder": "linux ci builder",  # no auto_builder_dimension
@@ -889,6 +890,7 @@ lucicfg.emit(
 #       allowed_property_overrides: "prop1"
 #       priority: 80
 #       execution_timeout_secs: 10800
+#       heartbeat_timeout_secs: 600
 #       expiration_secs: 3600
 #       grace_period {
 #         seconds: 120

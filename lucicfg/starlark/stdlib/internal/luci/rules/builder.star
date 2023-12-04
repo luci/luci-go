@@ -44,6 +44,7 @@ def _builder(
         caches = None,
         execution_timeout = None,
         grace_period = None,
+        heartbeat_timeout = None,
 
         # Scheduling parameters.
         dimensions = None,
@@ -167,6 +168,12 @@ def _builder(
         build can use this time as a 'last gasp' to do quick actions like
         killing child processes, cleaning resources, etc. Supports the
         module-scoped default.
+      heartbeat_timeout: How long Buildbucket should wait for a running build to
+        send any updates before forcefully fail it with `INFRA_FAILURE`. If
+        None, Buildbucket won't check the heartbeat timeout. This field only
+        takes effect for builds that don't have Buildbucket managing their
+        underlying backend tasks, namely the ones on TaskBackendLite. E.g.
+        builds running on Swarming don't need to set this.
 
       dimensions: a dict with swarming dimensions, indicating requirements for
         a bot to execute the build. Keys are strings (e.g. `os`), and values
@@ -297,6 +304,7 @@ def _builder(
         "caches": swarming.validate_caches("caches", caches),
         "execution_timeout": validate.duration("execution_timeout", execution_timeout, required = False),
         "grace_period": validate.duration("grace_period", grace_period, required = False),
+        "heartbeat_timeout": validate.duration("heartbeat_timeout", heartbeat_timeout, required = False),
         "dimensions": swarming.validate_dimensions("dimensions", dimensions, allow_none = True),
         "priority": validate.int("priority", priority, min = 1, max = 255, required = False),
         "swarming_host": validate.string("swarming_host", swarming_host, required = False),
@@ -495,6 +503,7 @@ builder = lucicfg.rule(
         "caches": swarming.validate_caches,
         "execution_timeout": validate.duration,
         "grace_period": validate.duration,
+        "heartbeat_timeout": validate.duration,
         "dimensions": swarming.validate_dimensions,
         "priority": lambda attr, val: validate.int(attr, val, min = 1, max = 255),
         "swarming_host": validate.string,

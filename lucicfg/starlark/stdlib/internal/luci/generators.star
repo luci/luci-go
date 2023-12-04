@@ -462,6 +462,7 @@ def _buildbucket_builders(bucket):
             caches = _buildbucket_caches(node.props.caches),
             execution_timeout_secs = optional_sec(node.props.execution_timeout),
             grace_period = optional_duration_pb(node.props.grace_period),
+            heartbeat_timeout_secs = optional_sec(node.props.heartbeat_timeout),
             dimensions = _buildbucket_dimensions(node.props.dimensions),
             priority = node.props.priority,
             expiration_secs = optional_sec(node.props.expiration_timeout),
