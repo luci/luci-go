@@ -1466,6 +1466,19 @@ func GetAuthProjectRealms(ctx context.Context, project string) (*AuthProjectReal
 	}
 }
 
+// GetAllAuthProjectRealms returns all the AuthProjectRealms entities in datastore.
+//
+// Returns an annotated error.
+func GetAllAuthProjectRealms(ctx context.Context) ([]*AuthProjectRealms, error) {
+	query := datastore.NewQuery("AuthProjectRealms").Ancestor(RootKey(ctx))
+	var authProjectRealms []*AuthProjectRealms
+	err := datastore.GetAll(ctx, query, &authProjectRealms)
+	if err != nil {
+		return nil, errors.Annotate(err, "error getting all AuthProjectRealms entities").Err()
+	}
+	return authProjectRealms, nil
+}
+
 // DeleteAuthProjectRealms deletes an AuthProjectRealms entity from datastore.
 // The caller is expected to handle the error.
 //

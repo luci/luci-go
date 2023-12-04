@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -1445,6 +1446,32 @@ func TestAuthRealmsConfig(t *testing.T) {
 		actual, err := GetAuthProjectRealms(ctx, testProject)
 		So(err, ShouldBeNil)
 		So(actual, ShouldResemble, projectRealms)
+	})
+
+	Convey("Testing GetAllAuthProjectRealms", t, func() {
+		ctx := memory.Use(context.Background())
+
+		// Querying when there are no project realms should succeed.
+		actual, err := GetAllAuthProjectRealms(ctx)
+		So(err, ShouldBeNil)
+		So(actual, ShouldBeEmpty)
+
+		// Put 2 project realms in datastore.
+		projectRealmsA := testAuthProjectRealms(ctx, "testproject-a")
+		projectRealmsB := testAuthProjectRealms(ctx, "testproject-b")
+		So(datastore.Put(ctx, projectRealmsA, projectRealmsB), ShouldBeNil)
+
+		actual, err = GetAllAuthProjectRealms(ctx)
+		So(err, ShouldBeNil)
+		So(actual, ShouldHaveLength, 2)
+		// No guarantees on order, so sort the output before comparing.
+		sort.Slice(actual, func(i, j int) bool {
+			return actual[i].ID < actual[j].ID
+		})
+		So(actual, ShouldResembleProto, []*AuthProjectRealms{
+			projectRealmsA,
+			projectRealmsB,
+		})
 	})
 
 	Convey("Testing DeleteAuthProjectRealms", t, func() {
