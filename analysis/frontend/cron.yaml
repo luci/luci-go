@@ -42,3 +42,6 @@ cron:
 - description: "Merge Bigquery data from test_variant_segment_updates table to test_variant_segments table."
   url: /internal/cron/merge-test-variant-branches
   schedule: every 10 minutes from 00:07 to 23:59
+- description: "Attribute filtered test runs to the test failures that caused the test to be filtered."
+  url: /internal/cron/attribute-filtered-test-runs
+  schedule: every 15 minutes from 00:11 to 23:59

@@ -1,0 +1,90 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.analysis.bq;
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/analysis/proto/v1/common.proto";
+import "go.chromium.org/luci/analysis/proto/v1/sources.proto";
+import "go.chromium.org/luci/analysis/proto/v1/failure_reason.proto";
+
+option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
+
+// FailureAttributeRow represents a row in a BigQuery table,
+// `failure_attrbiutes`, that records the additional attributes of a test
+// failure.
+// Next ID: 7.
+message FailureAttributeRow {
+  // The LUCI project that the test failure belongs to.
+  string project = 1;
+
+  // The test results system from which the test originated.
+  //
+  // Currently, the only valid value is "resultdb".
+  string test_result_system = 2;
+
+  // The invocation from which this test result was ingested. This is
+  // the top-level invocation that was ingested, an "invocation" being
+  // a container of test results as identified by the source test result
+  // system.
+  //
+  // For ResultDB, LUCI Analysis ingests invocations corresponding to
+  // buildbucket builds.
+  //
+  // All test results ingested from the same invocation (i.e. with the
+  // same ingested_invocation_id) will have the same partition time.
+  string ingested_invocation_id = 3;
+
+  // The identity of the test result in the test results system. Together
+  // with the test results sytstem, this uniquely identifies the test result
+  // that was clustered.
+  //
+  // For test results in ResultDB, the format is:
+  // "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}"
+  // Where INVOCATION_ID, URL_ESCAPED_TEST_ID and RESULT_ID are values
+  // defined in ResultDB.
+  //
+  // Note that the test result ID is split over two fields (test_result_system,
+  // test_result_id), rather than as one field with a record type, so that
+  // BigQuery clustering can be defined over the ID (not possible if a
+  // record type was used).
+  string test_result_id = 4;
+
+  // The test result partition time identifies the beginning of the test
+  // result retention period, and corresponds approximately to the time
+  // the test result was produced.
+  //
+  // It is guaranteed that all test results from one presubmit run
+  // will have the same partition time. It is also guaranteed that all
+  // test results from one build will have the same partition time (in
+  // case of builds associated with presubmit runs this was implied by
+  // previous guarantee, but for testing that occurs outside presubmit
+  // this is an added guarantee).
+  google.protobuf.Timestamp partition_time = 5;
+
+  // The number of test runs that filtered out the test due to this failure.
+  //
+  // Conceptually, a test scheduler may decide to filter out certain tests when
+  // it sees the tests failed in some places. This field records the number of
+  // test runs that filerterd out the test due to this failure. The exact
+  // attribution rule (to determine which failures triggered the test filtering)
+  // is up to the implementation.
+  //
+  // For now, this field records the number of skipped runs caused by
+  // go/cros-test-filtering, and the attribution rule is defined in
+  // go/attribute-test-filtering-events-to-failures.
+  int64 attributed_filtered_run_count = 6;
+}

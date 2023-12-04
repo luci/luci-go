@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering/reclustering/orchestrator"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/config"
+	"go.chromium.org/luci/analysis/internal/failureattributes"
 	"go.chromium.org/luci/analysis/internal/metrics"
 	"go.chromium.org/luci/analysis/internal/scopedauth"
 	"go.chromium.org/luci/analysis/internal/services/bugupdater"
@@ -101,6 +102,8 @@ func Main(init func(srv *luciserver.Server) error) {
 		// GAE crons.
 		updateAnalysisAndBugsHandler := bugscron.NewHandler(srv.Options.CloudProject, srv.Options.Prod)
 		cron.RegisterHandler("update-analysis-and-bugs", updateAnalysisAndBugsHandler.CronHandler)
+		attributeFilteredTestRunsHandler := failureattributes.NewFilteredRunsAttributionHandler(srv.Options.CloudProject)
+		cron.RegisterHandler("attribute-filtered-test-runs", attributeFilteredTestRunsHandler.CronHandler)
 		cron.RegisterHandler("read-config", config.Update)
 		cron.RegisterHandler("reclustering", orchestrator.CronHandler)
 		cron.RegisterHandler("global-metrics", metrics.GlobalMetrics)
