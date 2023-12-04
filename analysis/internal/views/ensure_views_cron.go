@@ -33,12 +33,16 @@ import (
 const rulesViewBaseQuery = `
 	WITH items AS (
 		SELECT
+		project,
+		rule_id,
 		ARRAY_AGG(rh1 ORDER BY rh1.last_update_time DESC LIMIT 1)[OFFSET(0)] as row
 		FROM internal.failure_association_rules_history rh1
 		GROUP BY rh1.project, rh1.rule_id
 	)
 	SELECT
-	row.*
+		project,
+		rule_id,
+		row.* EXCEPT(project, rule_id)
 	FROM items`
 
 const segmentsUnexpectedRealtimeQuery = `
@@ -52,15 +56,13 @@ const segmentsUnexpectedRealtimeQuery = `
 		WHERE project = "%[1]s" AND has_recent_unexpected_results = 1
 	), merged_table_grouped AS(
 		SELECT
+			project, test_id, variant_hash, ref_hash,
 			ARRAY_AGG(m ORDER BY version DESC LIMIT 1)[OFFSET(0)] as row
 		FROM merged_table m
 		GROUP BY project, test_id, variant_hash, ref_hash
 	)
 	SELECT
-		row.project AS project,
-		row.test_id AS test_id,
-		row.variant_hash AS variant_hash,
-		row.ref_hash AS ref_hash,
+		project, test_id, variant_hash, ref_hash,
 		row.variant AS variant,
 		row.ref AS ref,
 		-- Omit has_recent_unexpected_results here as all rows have unexpected results.
@@ -71,7 +73,7 @@ const segmentsUnexpectedRealtimeQuery = `
 var datasetViewQueries = map[string]map[string]*bigquery.TableMetadata{
 	"internal": {"failure_association_rules": &bigquery.TableMetadata{
 		ViewQuery: rulesViewBaseQuery,
-		Labels:    map[string]string{bq.MetadataVersionKey: "1"},
+		Labels:    map[string]string{bq.MetadataVersionKey: "2"},
 	}},
 }
 
@@ -144,7 +146,7 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 			Description: "Contains test variant histories segmented by change point analysis, limited to test variants with unexpected" +
 				" results in postsubmit in the last 90 days. See go/luci-test-variant-analysis-design.",
 			ViewQuery: viewQuery,
-			Labels:    map[string]string{bq.MetadataVersionKey: "1"},
+			Labels:    map[string]string{bq.MetadataVersionKey: "2"},
 		}
 	},
 }
