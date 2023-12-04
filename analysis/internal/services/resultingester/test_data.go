@@ -126,6 +126,23 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
+				TestId:      "ninja://test_filtering_event",
+				VariantHash: "hash",
+				Status:      rdbpb.TestVariantStatus_EXPECTED,
+				Results: []*rdbpb.TestResultBundle{
+					{
+						Result: &rdbpb.TestResult{
+							ResultId:   "one",
+							Name:       "invocations/build-1234/tests/ninja%3A%2F%2Ftest_filtering_event/results/one",
+							StartTime:  timestamppb.New(time.Date(2010, time.February, 2, 0, 0, 0, 0, time.UTC)),
+							Status:     rdbpb.TestStatus_SKIP,
+							SkipReason: rdbpb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS,
+							Expected:   true,
+						},
+					},
+				},
+			},
+			{
 				TestId:      "ninja://test_from_luci_bisection",
 				VariantHash: "hash",
 				Status:      rdbpb.TestVariantStatus_UNEXPECTED,

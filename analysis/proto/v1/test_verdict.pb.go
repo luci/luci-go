@@ -184,6 +184,62 @@ func (TestVerdictStatus) EnumDescriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_analysis_proto_v1_test_verdict_proto_rawDescGZIP(), []int{1}
 }
 
+// Machine-readable reason that a test execution was skipped.
+// It is a mirror of luci.resultdb.v1.SkipReason, but the right to evolve
+// it independently is reserved.
+type SkipReason int32
+
+const (
+	// Skip reason was not specified.
+	// This represents an unset field which should be used for non-skip test
+	// result statuses.  It can also be used if none of the other statuses
+	// apply.
+	SkipReason_SKIP_REASON_UNSPECIFIED SkipReason = 0
+	// Disabled automatically in response to a test skipping policy that skips
+	// flaky tests.
+	// Used for ChromeOS CQ test filtering.
+	SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS SkipReason = 1
+)
+
+// Enum value maps for SkipReason.
+var (
+	SkipReason_name = map[int32]string{
+		0: "SKIP_REASON_UNSPECIFIED",
+		1: "AUTOMATICALLY_DISABLED_FOR_FLAKINESS",
+	}
+	SkipReason_value = map[string]int32{
+		"SKIP_REASON_UNSPECIFIED":              0,
+		"AUTOMATICALLY_DISABLED_FOR_FLAKINESS": 1,
+	}
+)
+
+func (x SkipReason) Enum() *SkipReason {
+	p := new(SkipReason)
+	*p = x
+	return p
+}
+
+func (x SkipReason) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SkipReason) Descriptor() protoreflect.EnumDescriptor {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_verdict_proto_enumTypes[2].Descriptor()
+}
+
+func (SkipReason) Type() protoreflect.EnumType {
+	return &file_go_chromium_org_luci_analysis_proto_v1_test_verdict_proto_enumTypes[2]
+}
+
+func (x SkipReason) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SkipReason.Descriptor instead.
+func (SkipReason) EnumDescriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_verdict_proto_rawDescGZIP(), []int{2}
+}
+
 type TestVerdict struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -345,11 +401,16 @@ var file_go_chromium_org_luci_analysis_proto_v1_test_verdict_proto_rawDesc = []b
 	0x45, 0x43, 0x54, 0x45, 0x44, 0x4c, 0x59, 0x5f, 0x53, 0x4b, 0x49, 0x50, 0x50, 0x45, 0x44, 0x10,
 	0x14, 0x12, 0x09, 0x0a, 0x05, 0x46, 0x4c, 0x41, 0x4b, 0x59, 0x10, 0x1e, 0x12, 0x0e, 0x0a, 0x0a,
 	0x45, 0x58, 0x4f, 0x4e, 0x45, 0x52, 0x41, 0x54, 0x45, 0x44, 0x10, 0x28, 0x12, 0x0c, 0x0a, 0x08,
-	0x45, 0x58, 0x50, 0x45, 0x43, 0x54, 0x45, 0x44, 0x10, 0x32, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x6f,
-	0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75,
-	0x63, 0x69, 0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x70, 0x62, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x45, 0x58, 0x50, 0x45, 0x43, 0x54, 0x45, 0x44, 0x10, 0x32, 0x2a, 0x53, 0x0a, 0x0a, 0x53, 0x6b,
+	0x69, 0x70, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x12, 0x1b, 0x0a, 0x17, 0x53, 0x4b, 0x49, 0x50,
+	0x5f, 0x52, 0x45, 0x41, 0x53, 0x4f, 0x4e, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46,
+	0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x28, 0x0a, 0x24, 0x41, 0x55, 0x54, 0x4f, 0x4d, 0x41, 0x54,
+	0x49, 0x43, 0x41, 0x4c, 0x4c, 0x59, 0x5f, 0x44, 0x49, 0x53, 0x41, 0x42, 0x4c, 0x45, 0x44, 0x5f,
+	0x46, 0x4f, 0x52, 0x5f, 0x46, 0x4c, 0x41, 0x4b, 0x49, 0x4e, 0x45, 0x53, 0x53, 0x10, 0x01, 0x42,
+	0x33, 0x5a, 0x31, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f,
+	0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73,
+	0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73,
+	0x69, 0x73, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -364,21 +425,22 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_verdict_proto_rawDescGZIP(
 	return file_go_chromium_org_luci_analysis_proto_v1_test_verdict_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_analysis_proto_v1_test_verdict_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_go_chromium_org_luci_analysis_proto_v1_test_verdict_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_go_chromium_org_luci_analysis_proto_v1_test_verdict_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_go_chromium_org_luci_analysis_proto_v1_test_verdict_proto_goTypes = []interface{}{
 	(TestResultStatus)(0),         // 0: luci.analysis.v1.TestResultStatus
 	(TestVerdictStatus)(0),        // 1: luci.analysis.v1.TestVerdictStatus
-	(*TestVerdict)(nil),           // 2: luci.analysis.v1.TestVerdict
-	(*timestamppb.Timestamp)(nil), // 3: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),   // 4: google.protobuf.Duration
-	(*Changelist)(nil),            // 5: luci.analysis.v1.Changelist
+	(SkipReason)(0),               // 2: luci.analysis.v1.SkipReason
+	(*TestVerdict)(nil),           // 3: luci.analysis.v1.TestVerdict
+	(*timestamppb.Timestamp)(nil), // 4: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),   // 5: google.protobuf.Duration
+	(*Changelist)(nil),            // 6: luci.analysis.v1.Changelist
 }
 var file_go_chromium_org_luci_analysis_proto_v1_test_verdict_proto_depIdxs = []int32{
 	1, // 0: luci.analysis.v1.TestVerdict.status:type_name -> luci.analysis.v1.TestVerdictStatus
-	3, // 1: luci.analysis.v1.TestVerdict.partition_time:type_name -> google.protobuf.Timestamp
-	4, // 2: luci.analysis.v1.TestVerdict.passed_avg_duration:type_name -> google.protobuf.Duration
-	5, // 3: luci.analysis.v1.TestVerdict.changelists:type_name -> luci.analysis.v1.Changelist
+	4, // 1: luci.analysis.v1.TestVerdict.partition_time:type_name -> google.protobuf.Timestamp
+	5, // 2: luci.analysis.v1.TestVerdict.passed_avg_duration:type_name -> google.protobuf.Duration
+	6, // 3: luci.analysis.v1.TestVerdict.changelists:type_name -> luci.analysis.v1.Changelist
 	4, // [4:4] is the sub-list for method output_type
 	4, // [4:4] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name
@@ -411,7 +473,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_verdict_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_analysis_proto_v1_test_verdict_proto_rawDesc,
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,

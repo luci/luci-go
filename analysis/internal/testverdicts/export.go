@@ -228,7 +228,7 @@ func result(result *rdbpb.TestResult) (*bqpb.TestVerdictRow_TestResult, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "invocation from test result name").Err()
 	}
-	return &bqpb.TestVerdictRow_TestResult{
+	tr := &bqpb.TestVerdictRow_TestResult{
 		Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 			Id: invID,
 		},
@@ -245,7 +245,14 @@ func result(result *rdbpb.TestResult) (*bqpb.TestVerdictRow_TestResult, error) {
 		Tags:          pbutil.StringPairFromResultDB(result.Tags),
 		FailureReason: pbutil.FailureReasonFromResultDB(result.FailureReason),
 		Properties:    propertiesJSON,
-	}, nil
+	}
+
+	skipReason := pbutil.SkipReasonFromResultDB(result.SkipReason)
+	if skipReason != pb.SkipReason_SKIP_REASON_UNSPECIFIED {
+		tr.SkipReason = skipReason.String()
+	}
+
+	return tr, nil
 }
 
 // variantJSON returns the JSON equivalent for a variant.

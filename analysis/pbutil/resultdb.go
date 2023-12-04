@@ -74,6 +74,17 @@ func FailureReasonFromResultDB(fr *rdbpb.FailureReason) *pb.FailureReason {
 	}
 }
 
+// SkipReasonFromResultDB returns a LUCI Analysis SkipReason
+// corresponding to the supplied ResultDB SkipReason.
+func SkipReasonFromResultDB(sr rdbpb.SkipReason) pb.SkipReason {
+	switch sr {
+	case rdbpb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS:
+		return pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
+	default:
+		return pb.SkipReason_SKIP_REASON_UNSPECIFIED
+	}
+}
+
 // TestMetadataFromResultDB converts a ResultDB TestMetadata to a LUCI Analysis
 // TestMetadata.
 func TestMetadataFromResultDB(rdbTmd *rdbpb.TestMetadata) *pb.TestMetadata {

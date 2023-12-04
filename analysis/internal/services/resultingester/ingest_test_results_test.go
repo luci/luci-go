@@ -17,6 +17,7 @@ package resultingester
 import (
 	"context"
 	"encoding/hex"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -665,6 +666,16 @@ func verifyTestResults(ctx context.Context, expectedInvocation *testresults.Inge
 			WithoutExoneration().
 			WithIsFromBisection(false).
 			Build(),
+		trBuilder.WithTestID("ninja://test_filtering_event").
+			WithVariantHash("hash").
+			WithRunIndex(0).
+			WithResultIndex(0).
+			WithIsUnexpected(false).
+			WithStatus(pb.TestResultStatus_SKIP).
+			WithoutRunDuration().
+			WithoutExoneration().
+			WithIsFromBisection(false).
+			Build(),
 		trBuilder.WithTestID("ninja://test_from_luci_bisection").
 			WithVariantHash("hash").
 			WithRunIndex(0).
@@ -811,6 +822,13 @@ func verifyTestResults(ctx context.Context, expectedInvocation *testresults.Inge
 		},
 		{
 			Project:     "project",
+			TestID:      "ninja://test_filtering_event",
+			VariantHash: "hash",
+			SubRealm:    "ci",
+			Variant:     nil,
+		},
+		{
+			Project:     "project",
 			TestID:      "ninja://test_from_luci_bisection",
 			VariantHash: "hash",
 			SubRealm:    "ci",
@@ -883,6 +901,23 @@ func verifyTestResults(ctx context.Context, expectedInvocation *testresults.Inge
 	})
 	So(err, ShouldBeNil)
 
+	// The order of test realms doesn't matter. Sort it to make comparing it
+	// against the expected test realm list easier.
+	sort.Slice(testRealms, func(i, j int) bool {
+		item1 := testRealms[i]
+		item2 := testRealms[j]
+		if item1.Project != item2.Project {
+			return item1.Project <= item2.Project
+		}
+		if item1.SubRealm != item2.SubRealm {
+			return item1.SubRealm <= item2.SubRealm
+		}
+		if item1.TestID != item2.TestID {
+			return item1.TestID <= item2.TestID
+		}
+		return false
+	})
+
 	expectedTestRealms := []*testresults.TestRealm{
 		{
 			Project:  "project",
@@ -892,6 +927,11 @@ func verifyTestResults(ctx context.Context, expectedInvocation *testresults.Inge
 		{
 			Project:  "project",
 			TestID:   "ninja://test_expected",
+			SubRealm: "ci",
+		},
+		{
+			Project:  "project",
+			TestID:   "ninja://test_filtering_event",
 			SubRealm: "ci",
 		},
 		{
@@ -1129,6 +1169,34 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			},
 			Counts: &bqpb.TestVerdictRow_Counts{
 				Total: 1, TotalNonSkipped: 1, Unexpected: 0, UnexpectedNonSkipped: 0, UnexpectedNonSkippedNonPassed: 0,
+			},
+			BuildbucketBuild:  buildbucketBuild,
+			ChangeVerifierRun: cvRun,
+		},
+		{
+			Project:       "project",
+			TestId:        "ninja://test_filtering_event",
+			Variant:       "{}",
+			VariantHash:   "hash",
+			Invocation:    invocation,
+			PartitionTime: timestamppb.New(expectedPartitionTime),
+			Status:        pb.TestVerdictStatus_EXPECTED,
+			Results: []*bqpb.TestVerdictRow_TestResult{
+				{
+					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
+						Id: "build-1234",
+					},
+					Name:       "invocations/build-1234/tests/ninja%3A%2F%2Ftest_filtering_event/results/one",
+					ResultId:   "one",
+					StartTime:  timestamppb.New(time.Date(2010, time.February, 2, 0, 0, 0, 0, time.UTC)),
+					Status:     pb.TestResultStatus_SKIP,
+					SkipReason: pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS.String(),
+					Expected:   true,
+					Properties: "{}",
+				},
+			},
+			Counts: &bqpb.TestVerdictRow_Counts{
+				Total: 1, TotalNonSkipped: 0, Unexpected: 0, UnexpectedNonSkipped: 0, UnexpectedNonSkippedNonPassed: 0,
 			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,

@@ -105,6 +105,7 @@ var (
 			"results.*.result.duration",
 			"results.*.result.tags",
 			"results.*.result.failure_reason",
+			"results.*.result.skip_reason",
 			"results.*.result.properties",
 		},
 	}

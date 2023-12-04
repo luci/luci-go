@@ -36,6 +36,8 @@ const (
 )
 
 // Deprecated. Retained only for config compatibility.
+// Can be deleted once chromium-m120 / chrome-m120 and all prior
+// versions have had their LUCI configs deleted.
 type Status int32
 
 const (
@@ -95,6 +97,8 @@ func (Status) EnumDescriptor() ([]byte, []int) {
 }
 
 // Deprecated. Retained only for config compatibility.
+// Can be deleted once chromium-m120 / chrome-m120 and all prior
+// versions have had their LUCI configs deleted.
 type Predicate struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

@@ -113,7 +113,7 @@ message TestVerdictRow {
     string id = 1;
   }
 
-  // NextId: 12
+  // NextId: 13
   message TestResult {
     // Parent contains info of the result's immediate parent invocation.
     ParentInvocationRecord parent = 1;
@@ -150,6 +150,12 @@ message TestVerdictRow {
     // Information about failed tests.
     // e.g. the assertion failure message.
     luci.analysis.v1.FailureReason failure_reason = 9;
+
+    // Reasoning behind a test skip, in machine-readable form.
+    // Only set when status is SKIP.
+    // It's the string presentation of luci.analysis.v1.SkipReason when
+    // specified, "" when the skip reason is unspecified.
+    string skip_reason = 12;
 
     // Arbitrary JSON object that contains structured, domain-specific properties
     // of the test result. Stored here stringified as this is the only protocol

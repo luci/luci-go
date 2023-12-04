@@ -35,6 +35,22 @@ func TestResultDB(t *testing.T) {
 			PrimaryErrorMessage: "Some error message.",
 		})
 	})
+	Convey("SkipReasonFromResultDB", t, func() {
+		// Confirm LUCI Analysis handles every skip reason defined by ResultDB.
+		// This test is designed to break if ResultDB extends the set of
+		// allowed values, without a corresponding update to LUCI Analysis.
+		for _, v := range rdbpb.SkipReason_value {
+			rdbReason := rdbpb.SkipReason(v)
+
+			reason := SkipReasonFromResultDB(rdbReason)
+			if rdbReason == rdbpb.SkipReason_SKIP_REASON_UNSPECIFIED {
+				So(reason, ShouldEqual, pb.TestVerdictStatus_TEST_VERDICT_STATUS_UNSPECIFIED)
+				continue
+			}
+			So(reason, ShouldNotEqual, pb.TestVerdictStatus_TEST_VERDICT_STATUS_UNSPECIFIED)
+		}
+
+	})
 	Convey("TestMetadataFromResultDB", t, func() {
 		rdbTestMetadata := &rdbpb.TestMetadata{
 			Name: "name",
