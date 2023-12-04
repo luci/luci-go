@@ -88,8 +88,13 @@ export class TestVariantEntryElement
       return this.variant.testMetadata.name;
     }
 
+    if (this.variant.testId.length <= 80) {
+      // Name is already short enough as-is, no need to truncate.
+      return this.variant.testId;
+    }
+
     // Generate a good enough short name base on the test ID.
-    const suffix = this.variant.testId.match(/^.*[./]([^./]*?.{40})$/);
+    const suffix = this.variant.testId.match(/^.*[./]([^./]*?.{60})$/);
     if (suffix) {
       return '...' + suffix[1];
     }
