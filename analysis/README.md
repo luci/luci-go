@@ -46,6 +46,7 @@ go run main.go \
  -auth-service-host chrome-infra-auth-dev.appspot.com \
  -default-request-timeout 10m0s \
  -config-local-dir ../configs \
+ -buganizer-mode disable
  -encrypted-cookies-expose-state-endpoint
 ```
 
@@ -53,6 +54,10 @@ go run main.go \
 portal as cron jobs run through the /admin/ endpoint attract the default
 timeout of 1 minute, instead of the 10 minute timeout of the /internal/ endpoint
 (hit by GAE cron jobs when they are actually executing).
+
+`-buganizer-mode` is needed when running cron jobs that create/update buganizer
+issues (e.g. update-analysis-and-bugs). Set the mode to `disable` to prevent the
+cron job from filing buganizer bugs.
 
 Note that `-config-local-dir` is required only if you plan on modifying config
 and loading it into Cloud Datastore via the read-config cron job accessible via
