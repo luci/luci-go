@@ -9,11 +9,12 @@
     "node": "^16.13.0"
   },
   "scripts": {
-    "build": "vite build",
+    "postinstall": "patch-package",
+    "gen_proto": "sh ./scripts/gen_proto.sh",
     "dev": "vite",
     "test": "jest",
     "lint": "eslint ./src",
-    "gen_proto": "sh ./scripts/gen_proto.sh"
+    "build": "vite build"
   },
   "files": [
     "src"
