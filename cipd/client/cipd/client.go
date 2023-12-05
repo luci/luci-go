@@ -128,7 +128,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.6.15"
+	UserAgent = "cipd 2.6.16"
 )
 
 func init() {
@@ -149,8 +149,9 @@ type UploadSession struct {
 
 // DescribeInstanceOpts is passed to DescribeInstance.
 type DescribeInstanceOpts struct {
-	DescribeRefs bool // if true, will fetch all refs pointing to the instance
-	DescribeTags bool // if true, will fetch all tags attached to the instance
+	DescribeRefs     bool // if true, will fetch all refs pointing to the instance
+	DescribeTags     bool // if true, will fetch all tags attached to the instance
+	DescribeMetadata bool // if true, will fetch all metadata attached to the instance
 }
 
 // Client provides high-level CIPD client interface. Thread safe.
@@ -1420,10 +1421,11 @@ func (c *clientImpl) DescribeInstance(ctx context.Context, pin common.Pin, opts 
 	}
 
 	resp, err := c.repo.DescribeInstance(ctx, &api.DescribeInstanceRequest{
-		Package:      pin.PackageName,
-		Instance:     common.InstanceIDToObjectRef(pin.InstanceID),
-		DescribeRefs: opts.DescribeRefs,
-		DescribeTags: opts.DescribeTags,
+		Package:          pin.PackageName,
+		Instance:         common.InstanceIDToObjectRef(pin.InstanceID),
+		DescribeRefs:     opts.DescribeRefs,
+		DescribeTags:     opts.DescribeTags,
+		DescribeMetadata: opts.DescribeMetadata,
 	}, expectedCodes)
 	if err != nil {
 		return nil, c.rpcErr(err, nil)

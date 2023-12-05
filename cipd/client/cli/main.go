@@ -31,6 +31,7 @@ import (
 	"time"
 
 	"github.com/maruel/subcommands"
+	"golang.org/x/exp/slices"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/versioncli"
@@ -1808,6 +1809,14 @@ type describeRun struct {
 	version string
 }
 
+func isPrintableContentType(contentType string) bool {
+	if strings.HasPrefix(contentType, "text/") ||
+		slices.Contains([]string{"application/json", "application/jwt"}, contentType) {
+		return true
+	}
+	return false
+}
+
 func (c *describeRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
@@ -1834,8 +1843,9 @@ func describeInstance(ctx context.Context, pkg, version string, clientOpts clien
 	}
 
 	desc, err := client.DescribeInstance(ctx, pin, &cipd.DescribeInstanceOpts{
-		DescribeRefs: true,
-		DescribeTags: true,
+		DescribeRefs:     true,
+		DescribeTags:     true,
+		DescribeMetadata: true,
 	})
 	if err != nil {
 		return nil, err
@@ -1860,6 +1870,26 @@ func describeInstance(ctx context.Context, pkg, version string, clientOpts clien
 		}
 	} else {
 		fmt.Printf("Tags:          none\n")
+	}
+	if len(desc.Metadata) != 0 {
+		fmt.Printf("Metadata:\n")
+		for _, md := range desc.Metadata {
+			printValue := string(md.Value)
+			if !isPrintableContentType(md.ContentType) {
+				// Content type is highly unlikely to be meaningfully printable.
+				// Output something reasonable to the CLI (JSON will still have
+				// the full payload).
+				printValue = fmt.Sprintf("<%s binary, %d bytes>", md.ContentType, len(md.Value))
+			}
+			// Add indentation if the value contains newlines.
+			if strings.Contains(printValue, "\n") {
+				printValue = "\n" + printValue
+				printValue = strings.ReplaceAll(printValue, "\n", "\n    ")
+			}
+			fmt.Printf("  %s:%s\n", md.Key, printValue)
+		}
+	} else {
+		fmt.Printf("Metadata:      none\n")
 	}
 
 	return desc, nil

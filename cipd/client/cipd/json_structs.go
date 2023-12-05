@@ -149,6 +149,11 @@ type InstanceDescription struct {
 	//
 	// Present only if DescribeTags in DescribeInstanceOpts is true.
 	Tags []TagInfo `json:"tags,omitempty"`
+
+	// Metadata is a list of metadata attached to the instance.
+	//
+	// Present only if DescribeMetadata in DescribeInstanceOpts is true.
+	Metadata []MetadataInfo `json:"metadata,omitempty"`
 }
 
 // ClientDescription contains extended information about a CIPD client binary
@@ -222,6 +227,17 @@ func apiTagToInfo(t *api.Tag) TagInfo {
 	}
 }
 
+func apiMetadataToInfo(md *api.InstanceMetadata) MetadataInfo {
+	return MetadataInfo{
+		Fingerprint: md.GetFingerprint(),
+		Key:         md.GetKey(),
+		Value:       md.GetValue(),
+		ContentType: md.GetContentType(),
+		AttachedBy:  md.GetAttachedBy(),
+		AttachedTs:  UnixTime(md.GetAttachedTs().AsTime()),
+	}
+}
+
 func apiDescToInfo(d *api.DescribeInstanceResponse) *InstanceDescription {
 	desc := &InstanceDescription{
 		InstanceInfo: apiInstanceToInfo(d.Instance),
@@ -236,6 +252,12 @@ func apiDescToInfo(d *api.DescribeInstanceResponse) *InstanceDescription {
 		desc.Tags = make([]TagInfo, len(d.Tags))
 		for i, t := range d.Tags {
 			desc.Tags[i] = apiTagToInfo(t)
+		}
+	}
+	if len(d.Metadata) != 0 {
+		desc.Metadata = make([]MetadataInfo, len(d.GetMetadata()))
+		for i, md := range d.GetMetadata() {
+			desc.Metadata[i] = apiMetadataToInfo(md)
 		}
 	}
 	return desc
