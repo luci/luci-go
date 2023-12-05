@@ -16,6 +16,7 @@ import {
   getOldBuilderURLPath,
   getSwarmingBotListURL,
   getTestHistoryURLPath,
+  setSingleQueryParam,
 } from './url_utils';
 
 describe('getBuilderURLPath', () => {
@@ -47,5 +48,19 @@ describe('getSwarmingBotListURL', () => {
     expect(url).toStrictEqual(
       'https://chromium-swarm-dev.appspot.com/botlist?f=cpu%3Ax86-64&f=os%3AWindows-11',
     );
+  });
+});
+
+describe('setSingleQueryParam', () => {
+  it('should set parameter string value', () => {
+    const parameterString = 'a=b&c=d';
+    const updatedParams = setSingleQueryParam(parameterString, 'e', 'f');
+    expect(updatedParams.toString()).toEqual('a=b&c=d&e=f');
+  });
+
+  it('should update parameter string value', () => {
+    const parameterString = 'a=b&c=d';
+    const updatedParams = setSingleQueryParam(parameterString, 'a', 'f');
+    expect(updatedParams.toString()).toEqual('a=f&c=d');
   });
 });

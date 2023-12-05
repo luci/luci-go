@@ -146,3 +146,21 @@ export function getCodeSourceUrl(testLocation: TestLocation, branch = 'HEAD') {
     (testLocation.line ? '#' + testLocation.line : '')
   );
 }
+
+/**
+ * Update a single query parameter and return the update query string.
+ *
+ * @param currentSearchString The current search parameters string.
+ * @param paramKey The parameter key to set.
+ * @param paramValue The value to set.
+ * @returns The updated parameter string.
+ */
+export function setSingleQueryParam(
+  currentSearchString: string,
+  paramKey: string,
+  paramValue: string,
+): URLSearchParams {
+  const updatedSearchParams = new URLSearchParams(currentSearchString);
+  updatedSearchParams.set(paramKey, paramValue);
+  return updatedSearchParams;
+}

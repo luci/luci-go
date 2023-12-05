@@ -14,13 +14,33 @@
 
 import Grid from '@mui/material/Grid';
 
-import { useSelectedResult } from '../context';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+
+import { useResults } from '../context';
+import { getSelectedResultIndex } from '../utils';
 
 import { ResultBasicInfo } from './result_basic_info';
 import { ResultTags } from './result_tags';
 
 export function ResultDetails() {
-  const result = useSelectedResult();
+  const [searchParams] = useSyncedSearchParams();
+  const results = useResults();
+
+  const selecteResultIndex = getSelectedResultIndex(searchParams);
+
+  if (selecteResultIndex === null) {
+    // This component should not fail if there is no selected result
+    // as the default result will be selected auomatically,
+    // but it also should not render anything as that would increase load time.
+    return <></>;
+  }
+
+  const result = results[selecteResultIndex];
+
+  if (!result) {
+    throw new Error('Selected result index out of bounds.');
+  }
+
   return (
     <Grid item container flexDirection="column">
       <ResultBasicInfo result={result.result} />

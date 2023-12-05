@@ -21,15 +21,22 @@ import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import Grid from '@mui/material/Grid';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
+import { useEffectOnce } from 'react-use';
 
 import { TEST_STATUS_DISPLAY_MAP } from '@/common/constants';
-import { TestResult, TestStatus } from '@/common/services/resultdb';
-
 import {
-  useResults,
-  useSelectedResultIndex,
-  useSetSelectedResultIndex,
-} from '../context';
+  TestResult,
+  TestResultBundle,
+  TestStatus,
+} from '@/common/services/resultdb';
+import { setSingleQueryParam } from '@/common/tools/url_utils';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+
+import { useResults } from '../context';
+import {
+  RESULT_INDEX_SEARCH_PARAM_KEY,
+  getSelectedResultIndex,
+} from '../utils';
 
 function getRunStatusIcon(status: TestStatus) {
   switch (status) {
@@ -55,11 +62,31 @@ function getTitle(result: TestResult) {
   }`;
 }
 
-// TODO(b/308716499): Make tabs navigatable.
+function getFirstFailedResult(results: readonly TestResultBundle[]) {
+  return results.findIndex((e) => !e.result?.expected) ?? 0;
+}
+
 export function ResultsHeader() {
-  const selectedResult = useSelectedResultIndex();
-  const setSelectedResult = useSetSelectedResultIndex();
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const selectedResultIndex = getSelectedResultIndex(searchParams);
   const results = useResults();
+
+  useEffectOnce(() => {
+    if (selectedResultIndex === null) {
+      updateSelectedTabIndex(getFirstFailedResult(results));
+    }
+  });
+
+  function updateSelectedTabIndex(index: number) {
+    setSearchParams(
+      setSingleQueryParam(
+        searchParams.toString(),
+        RESULT_INDEX_SEARCH_PARAM_KEY,
+        index.toString(),
+      ),
+    );
+  }
+
   return (
     <Grid
       item
@@ -68,12 +95,12 @@ export function ResultsHeader() {
       flexGrow="1"
     >
       <Tabs
-        value={selectedResult}
+        value={selectedResultIndex || 0}
         aria-label="Test verdict runs"
         sx={{
           minHeight: '30px',
         }}
-        onChange={(_, newValue: number) => setSelectedResult(newValue)}
+        onChange={(_, newValue: number) => updateSelectedTabIndex(newValue)}
       >
         {results.map((result, i) => (
           <Tab

@@ -35,6 +35,7 @@ interface Props {
 export function TestResults({ results }: Props) {
   const project = useProject();
   const verdict = useTestVerdict();
+
   // We filter out skipped, passed, or expected results as these are not clustered.
   const filteredResults = results.filter(
     (r) =>
