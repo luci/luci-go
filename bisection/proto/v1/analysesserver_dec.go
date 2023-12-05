@@ -141,3 +141,20 @@ func (s *DecoratedAnalyses) GetTestAnalysis(ctx context.Context, req *GetTestAna
 	}
 	return
 }
+
+func (s *DecoratedAnalyses) BatchGetTestAnalyses(ctx context.Context, req *BatchGetTestAnalysesRequest) (rsp *BatchGetTestAnalysesResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "BatchGetTestAnalyses", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.BatchGetTestAnalyses(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "BatchGetTestAnalyses", rsp, err)
+	}
+	return
+}

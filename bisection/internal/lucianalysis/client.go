@@ -506,6 +506,77 @@ func (c *Client) TestIsUnexpectedConsistently(ctx context.Context, project strin
 	return row.Count.Int64 == 0, nil
 }
 
+type ChangepointResult struct {
+	TestID      string
+	VariantHash string
+	RefHash     string
+	Segments    []*Segment
+}
+type Segment struct {
+	StartPosition          bigquery.NullInt64
+	EndPosition            bigquery.NullInt64
+	CountTotalResults      bigquery.NullInt64
+	CountUnexpectedResults bigquery.NullInt64
+}
+
+func (c *Client) ChangepointAnalysisForTestVariant(ctx context.Context, project string, keys []TestVerdictKey) (map[TestVerdictKey]*ChangepointResult, error) {
+	err := validateTestVerdictKeys(keys)
+	if err != nil {
+		return nil, errors.Annotate(err, "validate keys").Err()
+	}
+	clauses := make([]string, len(keys))
+	for i, key := range keys {
+		clauses[i] = fmt.Sprintf("(test_id = %q AND variant_hash = %q AND ref_hash = %q)", key.TestID, key.VariantHash, key.RefHash)
+	}
+	whereClause := fmt.Sprintf("(%s)", strings.Join(clauses, " OR "))
+	query := `
+		SELECT
+			test_id as TestID,
+			variant_hash as VariantHash,
+			ref_hash as RefHash,
+			(SELECT
+					ARRAY_AGG(STRUCT(
+					s.start_position as StartPosition,
+					s.end_position as EndPosition,
+					s.counts.total_results as CountTotalResults,
+					s.counts.unexpected_results as CountUnexpectedResults))
+				FROM UNNEST(segments) s
+			) AS Segments
+		FROM test_variant_segments_unexpected_realtime
+		WHERE ` + whereClause
+	logging.Infof(ctx, "Running query %s", query)
+	q := c.client.Query(query)
+	q.DefaultDatasetID = project
+	q.DefaultProjectID = c.luciAnalysisProjectFunc(project)
+
+	job, err := q.Run(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "running query").Err()
+	}
+	it, err := job.Read(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "read").Err()
+	}
+	results := map[TestVerdictKey]*ChangepointResult{}
+	for {
+		row := &ChangepointResult{}
+		err := it.Next(row)
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, errors.Annotate(err, "obtain next changepoint row").Err()
+		}
+		key := TestVerdictKey{
+			TestID:      row.TestID,
+			VariantHash: row.VariantHash,
+			RefHash:     row.RefHash,
+		}
+		results[key] = row
+	}
+	return results, nil
+}
+
 func validateTestVerdictKeys(keys []TestVerdictKey) error {
 	for _, key := range keys {
 		if err := rdbpbutil.ValidateTestID(key.TestID); err != nil {

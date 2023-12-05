@@ -16,9 +16,12 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
+	"cloud.google.com/go/bigquery"
+	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
@@ -784,4 +787,213 @@ func TestGetTestAnalyses(t *testing.T) {
 			})
 		})
 	})
+}
+
+func TestBatchGetTestAnalyses(t *testing.T) {
+	t.Parallel()
+	analysisClient := &fakeLUCIAnalysisClient{}
+	server := &AnalysesServer{AnalysisClient: analysisClient}
+	Convey("invalid request", t, func() {
+		ctx := memory.Use(context.Background())
+		testutil.UpdateIndices(ctx)
+		Convey("missing project", func() {
+			req := &pb.BatchGetTestAnalysesRequest{
+				TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{},
+			}
+			_, err := server.BatchGetTestAnalyses(ctx, req)
+			So(err, ShouldNotBeNil)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err.Error(), ShouldContainSubstring, "project: unspecified")
+		})
+
+		Convey("missing test failures", func() {
+			req := &pb.BatchGetTestAnalysesRequest{
+				Project:      "chromium",
+				TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{},
+			}
+			_, err := server.BatchGetTestAnalyses(ctx, req)
+			So(err, ShouldNotBeNil)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err.Error(), ShouldContainSubstring, "test_failures: unspecified")
+		})
+
+		Convey("missing test id", func() {
+			req := &pb.BatchGetTestAnalysesRequest{
+				Project:      "chromium",
+				TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{{}},
+			}
+			_, err := server.BatchGetTestAnalyses(ctx, req)
+			So(err, ShouldNotBeNil)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err.Error(), ShouldContainSubstring, "test_variants[0]: test_id: unspecified")
+		})
+
+		Convey("invalid variant hash", func() {
+			req := &pb.BatchGetTestAnalysesRequest{
+				Project: "chromium",
+				TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{{
+					TestId:      "testid",
+					VariantHash: "randomstring",
+					RefHash:     "randomstring",
+				}},
+			}
+			_, err := server.BatchGetTestAnalyses(ctx, req)
+			So(err, ShouldNotBeNil)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err.Error(), ShouldContainSubstring, "test_variants[0].variant_hash")
+		})
+
+		Convey("duplicated test variant", func() {
+			req := &pb.BatchGetTestAnalysesRequest{
+				Project: "chromium",
+				TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{{
+					TestId:      "testid",
+					VariantHash: "aaaaaaaaaaaaaaaa",
+					RefHash:     "bbbbbbbbbbbbbbbb",
+				},
+					{
+						TestId:      "testid",
+						VariantHash: "aaaaaaaaaaaaaaaa",
+						RefHash:     "bbbbbbbbbbbbbbbb",
+					}},
+			}
+			_, err := server.BatchGetTestAnalyses(ctx, req)
+			So(err, ShouldNotBeNil)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err.Error(), ShouldContainSubstring, "test_variants[1]: already requested in the same request")
+		})
+	})
+
+	Convey("valid request", t, func() {
+		ctx := memory.Use(context.Background())
+		testutil.UpdateIndices(ctx)
+
+		testFailureInRequest := []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{}
+		testVerdictKeys := []lucianalysis.TestVerdictKey{}
+		for i := 1; i < 5; i++ {
+			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+				ID:             int64(100 + i),
+				CreateTime:     time.Unix(int64(100), 0).UTC(),
+				TestFailureKey: datastore.MakeKey(ctx, "TestFailure", 100+i),
+			})
+			// Create the most recent test failure.
+			testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+				ID:            int64(100 + i),
+				Analysis:      tfa,
+				TestID:        "testid" + fmt.Sprint(i),
+				VariantHash:   "aaaaaaaaaaaaaaa" + fmt.Sprint(i),
+				RefHash:       "bbbbbbbbbbbbbbb" + fmt.Sprint(i),
+				StartPosition: 101,
+				EndPosition:   110,
+				IsPrimary:     true,
+				StartHour:     time.Unix(int64(99), 0).UTC(),
+			})
+			// Create another less recent test failure.
+			testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+				ID:            int64(1000 + i),
+				TestID:        "testid" + fmt.Sprint(i),
+				VariantHash:   "aaaaaaaaaaaaaaa" + fmt.Sprint(i),
+				RefHash:       "bbbbbbbbbbbbbbb" + fmt.Sprint(i),
+				StartPosition: 90,
+				EndPosition:   99,
+				IsPrimary:     true,
+			})
+			testFailureInRequest = append(testFailureInRequest, &pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{
+				TestId:      "testid" + fmt.Sprint(i),
+				VariantHash: "aaaaaaaaaaaaaaa" + fmt.Sprint(i),
+				RefHash:     "bbbbbbbbbbbbbbb" + fmt.Sprint(i),
+			})
+			testVerdictKeys = append(testVerdictKeys, lucianalysis.TestVerdictKey{
+				TestID:      "testid" + fmt.Sprint(i),
+				VariantHash: "aaaaaaaaaaaaaaa" + fmt.Sprint(i),
+				RefHash:     "bbbbbbbbbbbbbbb" + fmt.Sprint(i),
+			})
+		}
+
+		Convey("request with multiple test failures", func() {
+			req := &pb.BatchGetTestAnalysesRequest{
+				Project:      "chromium",
+				TestFailures: testFailureInRequest,
+			}
+			segments := [][]*lucianalysis.Segment{
+				nil, // No changepoint data -> return nil.
+				{{
+					StartPosition:          bigquery.NullInt64{Int64: 1, Valid: true},
+					EndPosition:            bigquery.NullInt64{Int64: 100, Valid: true},
+					CountTotalResults:      bigquery.NullInt64{Int64: 1, Valid: true},
+					CountUnexpectedResults: bigquery.NullInt64{Int64: 1, Valid: true},
+				}}, // One segment -> return nil.
+				{{
+					StartPosition:          bigquery.NullInt64{Int64: 111, Valid: true},
+					EndPosition:            bigquery.NullInt64{Int64: 200, Valid: true},
+					CountTotalResults:      bigquery.NullInt64{Int64: 1, Valid: true},
+					CountUnexpectedResults: bigquery.NullInt64{Int64: 1, Valid: true},
+				},
+					{
+						StartPosition:          bigquery.NullInt64{Int64: 1, Valid: true},
+						EndPosition:            bigquery.NullInt64{Int64: 105, Valid: true},
+						CountTotalResults:      bigquery.NullInt64{Int64: 1, Valid: true},
+						CountUnexpectedResults: bigquery.NullInt64{Int64: 0, Valid: true},
+					}}, // Two segment, failure not ongoing, regression range (105,111]-> return nil.
+				{{
+					StartPosition:          bigquery.NullInt64{Int64: 109, Valid: true},
+					EndPosition:            bigquery.NullInt64{Int64: 200, Valid: true},
+					CountTotalResults:      bigquery.NullInt64{Int64: 1, Valid: true},
+					CountUnexpectedResults: bigquery.NullInt64{Int64: 1, Valid: true},
+				},
+					{
+						StartPosition:          bigquery.NullInt64{Int64: 1, Valid: true},
+						EndPosition:            bigquery.NullInt64{Int64: 101, Valid: true},
+						CountTotalResults:      bigquery.NullInt64{Int64: 1, Valid: true},
+						CountUnexpectedResults: bigquery.NullInt64{Int64: 0, Valid: true},
+					}}, // Two segment, failure is ongoing, regression range (101,109] -> return nil.
+			}
+			analysisClient.ChangepointAnalysisForTestVariantResponse = makeChangepointAnalysisForTestVariantResponse(testVerdictKeys, segments)
+
+			resp, err := server.BatchGetTestAnalyses(ctx, req)
+			So(err, ShouldBeNil)
+			So(resp, ShouldResembleProto, &pb.BatchGetTestAnalysesResponse{
+				TestAnalyses: []*pb.TestAnalysis{nil, nil, nil, {
+					AnalysisId:  104,
+					Builder:     &buildbucketpb.BuilderID{Project: "chromium", Bucket: "bucket", Builder: "builder"},
+					CreatedTime: timestamppb.New(time.Unix(int64(100), 0).UTC()),
+					EndCommit:   &buildbucketpb.GitilesCommit{Position: 110},
+					SampleBbid:  8000,
+					StartCommit: &buildbucketpb.GitilesCommit{Position: 101},
+					TestFailures: []*pb.TestFailure{
+						{
+							TestId:      "testid4",
+							VariantHash: "aaaaaaaaaaaaaaa4",
+							RefHash:     "bbbbbbbbbbbbbbb4",
+							Variant:     &pb.Variant{},
+							IsDiverged:  false,
+							IsPrimary:   true,
+							StartHour:   timestamppb.New(time.Unix(int64(99), 0).UTC()),
+						},
+					},
+				}},
+			})
+		})
+	})
+}
+
+type fakeLUCIAnalysisClient struct {
+	ChangepointAnalysisForTestVariantResponse map[lucianalysis.TestVerdictKey]*lucianalysis.ChangepointResult
+}
+
+func (cl *fakeLUCIAnalysisClient) ChangepointAnalysisForTestVariant(ctx context.Context, project string, keys []lucianalysis.TestVerdictKey) (map[lucianalysis.TestVerdictKey]*lucianalysis.ChangepointResult, error) {
+	return cl.ChangepointAnalysisForTestVariantResponse, nil
+}
+
+func makeChangepointAnalysisForTestVariantResponse(keys []lucianalysis.TestVerdictKey, segments [][]*lucianalysis.Segment) map[lucianalysis.TestVerdictKey]*lucianalysis.ChangepointResult {
+	results := map[lucianalysis.TestVerdictKey]*lucianalysis.ChangepointResult{}
+	for i, key := range keys {
+		results[key] = &lucianalysis.ChangepointResult{
+			TestID:      key.TestID,
+			VariantHash: key.VariantHash,
+			RefHash:     key.RefHash,
+			Segments:    segments[i],
+		}
+	}
+	return results
 }

@@ -61,6 +61,13 @@ service Analyses {
 
   // GetTestAnalysis is used to get a test analysis by its ID.
   rpc GetTestAnalysis(GetTestAnalysisRequest) returns (TestAnalysis);
+
+  // BatchGetTestAnalyses is an RPC to batch get test analyses for test failures.
+  // At this moment it only support getting the bisection for the ongoing test failure.
+  // TODO(@beining): This endpoint can be extended to support returning bisection for
+  // any test failure by specifying source position in the request.
+  rpc BatchGetTestAnalyses(BatchGetTestAnalysesRequest) returns (BatchGetTestAnalysesResponse);
+
 }
 
 message GetAnalysisRequest {
@@ -372,3 +379,33 @@ message TestCulprit {
   TestSuspectVerificationDetails verification_details = 5;
 }
 
+message BatchGetTestAnalysesRequest {
+  // The LUCI project.
+  string project = 1;
+ // Identify a test failure.
+ message TestFailureIdentifier {
+   // Identify a test variant. All fields are required.
+   // This represents the ongoing test failure of this test variant.
+   string test_id = 1;
+   string variant_hash = 2;
+   string ref_hash = 3;
+   // TODO: Add an optional source_position field in this proto.
+   // This is the source position where a failure occurs.
+   // See go/surface-bisection-and-changepoint-analysis-som.
+ }
+ // The response will only contain analyses which analyze failures in this list.
+ // It is an error to request for more than 100 test failures, or the same test failure twice in one request.
+  repeated TestFailureIdentifier test_failures = 2;
+
+  // The fields to be included in the response.
+  // By default, all fields are included.
+  google.protobuf.FieldMask fields = 3;
+}
+
+
+message BatchGetTestAnalysesResponse {
+ // Test analyses for each test failure in the order they were requested.
+ // The test analysis will be null if the requested test failure has not been
+ // analyzed by any bisection.
+ repeated TestAnalysis test_analyses = 1;
+}

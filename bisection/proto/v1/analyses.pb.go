@@ -1831,6 +1831,190 @@ func (x *TestCulprit) GetVerificationDetails() *TestSuspectVerificationDetails {
 	return nil
 }
 
+type BatchGetTestAnalysesRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The LUCI project.
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	// The response will only contain analyses which analyze failures in this list.
+	// It is an error to request for more than 100 test failures, or the same test failure twice in one request.
+	TestFailures []*BatchGetTestAnalysesRequest_TestFailureIdentifier `protobuf:"bytes,2,rep,name=test_failures,json=testFailures,proto3" json:"test_failures,omitempty"`
+	// The fields to be included in the response.
+	// By default, all fields are included.
+	Fields *fieldmaskpb.FieldMask `protobuf:"bytes,3,opt,name=fields,proto3" json:"fields,omitempty"`
+}
+
+func (x *BatchGetTestAnalysesRequest) Reset() {
+	*x = BatchGetTestAnalysesRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[21]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BatchGetTestAnalysesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BatchGetTestAnalysesRequest) ProtoMessage() {}
+
+func (x *BatchGetTestAnalysesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[21]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BatchGetTestAnalysesRequest.ProtoReflect.Descriptor instead.
+func (*BatchGetTestAnalysesRequest) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *BatchGetTestAnalysesRequest) GetProject() string {
+	if x != nil {
+		return x.Project
+	}
+	return ""
+}
+
+func (x *BatchGetTestAnalysesRequest) GetTestFailures() []*BatchGetTestAnalysesRequest_TestFailureIdentifier {
+	if x != nil {
+		return x.TestFailures
+	}
+	return nil
+}
+
+func (x *BatchGetTestAnalysesRequest) GetFields() *fieldmaskpb.FieldMask {
+	if x != nil {
+		return x.Fields
+	}
+	return nil
+}
+
+type BatchGetTestAnalysesResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Test analyses for each test failure in the order they were requested.
+	// The test analysis will be null if the requested test failure has not been
+	// analyzed by any bisection.
+	TestAnalyses []*TestAnalysis `protobuf:"bytes,1,rep,name=test_analyses,json=testAnalyses,proto3" json:"test_analyses,omitempty"`
+}
+
+func (x *BatchGetTestAnalysesResponse) Reset() {
+	*x = BatchGetTestAnalysesResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[22]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BatchGetTestAnalysesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BatchGetTestAnalysesResponse) ProtoMessage() {}
+
+func (x *BatchGetTestAnalysesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[22]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BatchGetTestAnalysesResponse.ProtoReflect.Descriptor instead.
+func (*BatchGetTestAnalysesResponse) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *BatchGetTestAnalysesResponse) GetTestAnalyses() []*TestAnalysis {
+	if x != nil {
+		return x.TestAnalyses
+	}
+	return nil
+}
+
+// Identify a test failure.
+type BatchGetTestAnalysesRequest_TestFailureIdentifier struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Identify a test variant. All fields are required.
+	// This represents the ongoing test failure of this test variant.
+	TestId      string `protobuf:"bytes,1,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`
+	VariantHash string `protobuf:"bytes,2,opt,name=variant_hash,json=variantHash,proto3" json:"variant_hash,omitempty"`
+	RefHash     string `protobuf:"bytes,3,opt,name=ref_hash,json=refHash,proto3" json:"ref_hash,omitempty"`
+}
+
+func (x *BatchGetTestAnalysesRequest_TestFailureIdentifier) Reset() {
+	*x = BatchGetTestAnalysesRequest_TestFailureIdentifier{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[23]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BatchGetTestAnalysesRequest_TestFailureIdentifier) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BatchGetTestAnalysesRequest_TestFailureIdentifier) ProtoMessage() {}
+
+func (x *BatchGetTestAnalysesRequest_TestFailureIdentifier) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[23]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BatchGetTestAnalysesRequest_TestFailureIdentifier.ProtoReflect.Descriptor instead.
+func (*BatchGetTestAnalysesRequest_TestFailureIdentifier) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP(), []int{21, 0}
+}
+
+func (x *BatchGetTestAnalysesRequest_TestFailureIdentifier) GetTestId() string {
+	if x != nil {
+		return x.TestId
+	}
+	return ""
+}
+
+func (x *BatchGetTestAnalysesRequest_TestFailureIdentifier) GetVariantHash() string {
+	if x != nil {
+		return x.VariantHash
+	}
+	return ""
+}
+
+func (x *BatchGetTestAnalysesRequest_TestFailureIdentifier) GetRefHash() string {
+	if x != nil {
+		return x.RefHash
+	}
+	return ""
+}
+
 var File_go_chromium_org_luci_bisection_proto_v1_analyses_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDesc = []byte{
@@ -2198,66 +2382,101 @@ var file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDesc = []byte
 	0x73, 0x74, 0x53, 0x75, 0x73, 0x70, 0x65, 0x63, 0x74, 0x56, 0x65, 0x72, 0x69, 0x66, 0x69, 0x63,
 	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x44, 0x65, 0x74, 0x61, 0x69, 0x6c, 0x73, 0x52, 0x13, 0x76, 0x65,
 	0x72, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x44, 0x65, 0x74, 0x61, 0x69, 0x6c,
-	0x73, 0x2a, 0x5e, 0x0a, 0x11, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x52, 0x75, 0x6e,
-	0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x23, 0x0a, 0x1f, 0x41, 0x4e, 0x41, 0x4c, 0x59, 0x53,
-	0x49, 0x53, 0x5f, 0x52, 0x55, 0x4e, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x55, 0x4e,
-	0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x53,
-	0x54, 0x41, 0x52, 0x54, 0x45, 0x44, 0x10, 0x02, 0x12, 0x09, 0x0a, 0x05, 0x45, 0x4e, 0x44, 0x45,
-	0x44, 0x10, 0x03, 0x12, 0x0c, 0x0a, 0x08, 0x43, 0x41, 0x4e, 0x43, 0x45, 0x4c, 0x45, 0x44, 0x10,
-	0x04, 0x2a, 0x63, 0x0a, 0x10, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72,
-	0x65, 0x54, 0x79, 0x70, 0x65, 0x12, 0x22, 0x0a, 0x1e, 0x42, 0x55, 0x49, 0x4c, 0x44, 0x5f, 0x46,
-	0x41, 0x49, 0x4c, 0x55, 0x52, 0x45, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x55, 0x4e, 0x53, 0x50,
-	0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x43, 0x4f, 0x4d,
-	0x50, 0x49, 0x4c, 0x45, 0x10, 0x01, 0x12, 0x08, 0x0a, 0x04, 0x54, 0x45, 0x53, 0x54, 0x10, 0x02,
-	0x12, 0x09, 0x0a, 0x05, 0x49, 0x4e, 0x46, 0x52, 0x41, 0x10, 0x03, 0x12, 0x09, 0x0a, 0x05, 0x4f,
-	0x54, 0x48, 0x45, 0x52, 0x10, 0x04, 0x32, 0xb1, 0x05, 0x0a, 0x08, 0x41, 0x6e, 0x61, 0x6c, 0x79,
-	0x73, 0x65, 0x73, 0x12, 0x51, 0x0a, 0x0b, 0x47, 0x65, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73,
-	0x69, 0x73, 0x12, 0x25, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74,
-	0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73,
-	0x69, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x6c, 0x75, 0x63, 0x69,
-	0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x6e,
-	0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x12, 0x62, 0x0a, 0x0d, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41,
-	0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x12, 0x27, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62,
-	0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x28, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f,
-	0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73,
-	0x69, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5f, 0x0a, 0x0c, 0x4c, 0x69,
-	0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x65, 0x73, 0x12, 0x26, 0x2e, 0x6c, 0x75, 0x63,
-	0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c,
-	0x69, 0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x27, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74,
-	0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79,
-	0x73, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x68, 0x0a, 0x0f, 0x54,
-	0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x12, 0x29,
-	0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e,
-	0x76, 0x31, 0x2e, 0x54, 0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73,
-	0x69, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2a, 0x2e, 0x6c, 0x75, 0x63, 0x69,
-	0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x72,
-	0x69, 0x67, 0x67, 0x65, 0x72, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x57, 0x0a, 0x0e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x41,
-	0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x12, 0x28, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62,
-	0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x70, 0x64, 0x61,
-	0x74, 0x65, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x1b, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69,
-	0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x12, 0x6b,
-	0x0a, 0x10, 0x4c, 0x69, 0x73, 0x74, 0x54, 0x65, 0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73,
-	0x65, 0x73, 0x12, 0x2a, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74,
-	0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x54, 0x65, 0x73, 0x74, 0x41,
-	0x6e, 0x61, 0x6c, 0x79, 0x73, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2b,
-	0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e,
-	0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x54, 0x65, 0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79,
-	0x73, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5d, 0x0a, 0x0f, 0x47,
-	0x65, 0x74, 0x54, 0x65, 0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x12, 0x29,
-	0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e,
-	0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x54, 0x65, 0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73,
-	0x69, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x6c, 0x75, 0x63, 0x69,
-	0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65,
-	0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x42, 0x35, 0x5a, 0x33, 0x67, 0x6f,
-	0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75,
-	0x63, 0x69, 0x2f, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x70,
-	0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x73, 0x22, 0xc6, 0x02, 0x0a, 0x1b, 0x42, 0x61, 0x74, 0x63, 0x68, 0x47, 0x65, 0x74, 0x54, 0x65,
+	0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x69, 0x0a, 0x0d, 0x74,
+	0x65, 0x73, 0x74, 0x5f, 0x66, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x44, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74,
+	0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x47, 0x65, 0x74, 0x54,
+	0x65, 0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x49, 0x64,
+	0x65, 0x6e, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x52, 0x0c, 0x74, 0x65, 0x73, 0x74, 0x46, 0x61,
+	0x69, 0x6c, 0x75, 0x72, 0x65, 0x73, 0x12, 0x32, 0x0a, 0x06, 0x66, 0x69, 0x65, 0x6c, 0x64, 0x73,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x46, 0x69, 0x65, 0x6c, 0x64, 0x4d, 0x61,
+	0x73, 0x6b, 0x52, 0x06, 0x66, 0x69, 0x65, 0x6c, 0x64, 0x73, 0x1a, 0x6e, 0x0a, 0x15, 0x54, 0x65,
+	0x73, 0x74, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x49, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x66,
+	0x69, 0x65, 0x72, 0x12, 0x17, 0x0a, 0x07, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x74, 0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x21, 0x0a, 0x0c,
+	0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x0b, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x48, 0x61, 0x73, 0x68, 0x12,
+	0x19, 0x0a, 0x08, 0x72, 0x65, 0x66, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x07, 0x72, 0x65, 0x66, 0x48, 0x61, 0x73, 0x68, 0x22, 0x64, 0x0a, 0x1c, 0x42, 0x61,
+	0x74, 0x63, 0x68, 0x47, 0x65, 0x74, 0x54, 0x65, 0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73,
+	0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x44, 0x0a, 0x0d, 0x74, 0x65,
+	0x73, 0x74, 0x5f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x1f, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69,
+	0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73,
+	0x69, 0x73, 0x52, 0x0c, 0x74, 0x65, 0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x65, 0x73,
+	0x2a, 0x5e, 0x0a, 0x11, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x52, 0x75, 0x6e, 0x53,
+	0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x23, 0x0a, 0x1f, 0x41, 0x4e, 0x41, 0x4c, 0x59, 0x53, 0x49,
+	0x53, 0x5f, 0x52, 0x55, 0x4e, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x55, 0x4e, 0x53,
+	0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x53, 0x54,
+	0x41, 0x52, 0x54, 0x45, 0x44, 0x10, 0x02, 0x12, 0x09, 0x0a, 0x05, 0x45, 0x4e, 0x44, 0x45, 0x44,
+	0x10, 0x03, 0x12, 0x0c, 0x0a, 0x08, 0x43, 0x41, 0x4e, 0x43, 0x45, 0x4c, 0x45, 0x44, 0x10, 0x04,
+	0x2a, 0x63, 0x0a, 0x10, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65,
+	0x54, 0x79, 0x70, 0x65, 0x12, 0x22, 0x0a, 0x1e, 0x42, 0x55, 0x49, 0x4c, 0x44, 0x5f, 0x46, 0x41,
+	0x49, 0x4c, 0x55, 0x52, 0x45, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45,
+	0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x43, 0x4f, 0x4d, 0x50,
+	0x49, 0x4c, 0x45, 0x10, 0x01, 0x12, 0x08, 0x0a, 0x04, 0x54, 0x45, 0x53, 0x54, 0x10, 0x02, 0x12,
+	0x09, 0x0a, 0x05, 0x49, 0x4e, 0x46, 0x52, 0x41, 0x10, 0x03, 0x12, 0x09, 0x0a, 0x05, 0x4f, 0x54,
+	0x48, 0x45, 0x52, 0x10, 0x04, 0x32, 0xaa, 0x06, 0x0a, 0x08, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73,
+	0x65, 0x73, 0x12, 0x51, 0x0a, 0x0b, 0x47, 0x65, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69,
+	0x73, 0x12, 0x25, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69,
+	0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69,
+	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e,
+	0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x6e, 0x61,
+	0x6c, 0x79, 0x73, 0x69, 0x73, 0x12, 0x62, 0x0a, 0x0d, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6e,
+	0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x12, 0x27, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69,
+	0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79,
+	0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x28, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e,
+	0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69,
+	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5f, 0x0a, 0x0c, 0x4c, 0x69, 0x73,
+	0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x65, 0x73, 0x12, 0x26, 0x2e, 0x6c, 0x75, 0x63, 0x69,
+	0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69,
+	0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x27, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69,
+	0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73,
+	0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x68, 0x0a, 0x0f, 0x54, 0x72,
+	0x69, 0x67, 0x67, 0x65, 0x72, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x12, 0x29, 0x2e,
+	0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76,
+	0x31, 0x2e, 0x54, 0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69,
+	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2a, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e,
+	0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x72, 0x69,
+	0x67, 0x67, 0x65, 0x72, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x57, 0x0a, 0x0e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x41, 0x6e,
+	0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x12, 0x28, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69,
+	0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x70, 0x64, 0x61, 0x74,
+	0x65, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x1b, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f,
+	0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x12, 0x6b, 0x0a,
+	0x10, 0x4c, 0x69, 0x73, 0x74, 0x54, 0x65, 0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x65,
+	0x73, 0x12, 0x2a, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69,
+	0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x54, 0x65, 0x73, 0x74, 0x41, 0x6e,
+	0x61, 0x6c, 0x79, 0x73, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2b, 0x2e,
+	0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76,
+	0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x54, 0x65, 0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73,
+	0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5d, 0x0a, 0x0f, 0x47, 0x65,
+	0x74, 0x54, 0x65, 0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x12, 0x29, 0x2e,
+	0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76,
+	0x31, 0x2e, 0x47, 0x65, 0x74, 0x54, 0x65, 0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69,
+	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e,
+	0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73,
+	0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x12, 0x77, 0x0a, 0x14, 0x42, 0x61, 0x74,
+	0x63, 0x68, 0x47, 0x65, 0x74, 0x54, 0x65, 0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x65,
+	0x73, 0x12, 0x2e, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69,
+	0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x47, 0x65, 0x74, 0x54, 0x65,
+	0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x2f, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69,
+	0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x47, 0x65, 0x74, 0x54, 0x65,
+	0x73, 0x74, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x42, 0x35, 0x5a, 0x33, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75,
+	0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x69, 0x73, 0x65, 0x63,
+	0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x62, 0x69,
+	0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x33,
 }
 
 var (
@@ -2273,123 +2492,131 @@ func file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP() [
 }
 
 var file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_goTypes = []interface{}{
-	(AnalysisRunStatus)(0),                 // 0: luci.bisection.v1.AnalysisRunStatus
-	(BuildFailureType)(0),                  // 1: luci.bisection.v1.BuildFailureType
-	(*GetAnalysisRequest)(nil),             // 2: luci.bisection.v1.GetAnalysisRequest
-	(*QueryAnalysisRequest)(nil),           // 3: luci.bisection.v1.QueryAnalysisRequest
-	(*QueryAnalysisResponse)(nil),          // 4: luci.bisection.v1.QueryAnalysisResponse
-	(*ListAnalysesRequest)(nil),            // 5: luci.bisection.v1.ListAnalysesRequest
-	(*ListAnalysesResponse)(nil),           // 6: luci.bisection.v1.ListAnalysesResponse
-	(*TriggerAnalysisRequest)(nil),         // 7: luci.bisection.v1.TriggerAnalysisRequest
-	(*TriggerAnalysisResponse)(nil),        // 8: luci.bisection.v1.TriggerAnalysisResponse
-	(*UpdateAnalysisRequest)(nil),          // 9: luci.bisection.v1.UpdateAnalysisRequest
-	(*Analysis)(nil),                       // 10: luci.bisection.v1.Analysis
-	(*BuildFailure)(nil),                   // 11: luci.bisection.v1.BuildFailure
-	(*ListTestAnalysesRequest)(nil),        // 12: luci.bisection.v1.ListTestAnalysesRequest
-	(*ListTestAnalysesResponse)(nil),       // 13: luci.bisection.v1.ListTestAnalysesResponse
-	(*GetTestAnalysisRequest)(nil),         // 14: luci.bisection.v1.GetTestAnalysisRequest
-	(*TestAnalysis)(nil),                   // 15: luci.bisection.v1.TestAnalysis
-	(*TestFailure)(nil),                    // 16: luci.bisection.v1.TestFailure
-	(*TestNthSectionAnalysisResult)(nil),   // 17: luci.bisection.v1.TestNthSectionAnalysisResult
-	(*TestSingleRerun)(nil),                // 18: luci.bisection.v1.TestSingleRerun
-	(*RerunTestResults)(nil),               // 19: luci.bisection.v1.RerunTestResults
-	(*RerunTestSingleResult)(nil),          // 20: luci.bisection.v1.RerunTestSingleResult
-	(*TestSuspectVerificationDetails)(nil), // 21: luci.bisection.v1.TestSuspectVerificationDetails
-	(*TestCulprit)(nil),                    // 22: luci.bisection.v1.TestCulprit
-	(*BugInfo)(nil),                        // 23: luci.bisection.v1.BugInfo
-	(AnalysisStatus)(0),                    // 24: luci.bisection.v1.AnalysisStatus
-	(*timestamppb.Timestamp)(nil),          // 25: google.protobuf.Timestamp
-	(*HeuristicAnalysisResult)(nil),        // 26: luci.bisection.v1.HeuristicAnalysisResult
-	(*NthSectionAnalysisResult)(nil),       // 27: luci.bisection.v1.NthSectionAnalysisResult
-	(*proto.BuilderID)(nil),                // 28: buildbucket.v2.BuilderID
-	(*Culprit)(nil),                        // 29: luci.bisection.v1.Culprit
-	(*fieldmaskpb.FieldMask)(nil),          // 30: google.protobuf.FieldMask
-	(*proto.GitilesCommit)(nil),            // 31: buildbucket.v2.GitilesCommit
-	(*Variant)(nil),                        // 32: luci.bisection.v1.Variant
-	(*RegressionRange)(nil),                // 33: luci.bisection.v1.RegressionRange
-	(*BlameList)(nil),                      // 34: luci.bisection.v1.BlameList
-	(RerunStatus)(0),                       // 35: luci.bisection.v1.RerunStatus
-	(SuspectVerificationStatus)(0),         // 36: luci.bisection.v1.SuspectVerificationStatus
-	(*CulpritAction)(nil),                  // 37: luci.bisection.v1.CulpritAction
+	(AnalysisRunStatus)(0),                                    // 0: luci.bisection.v1.AnalysisRunStatus
+	(BuildFailureType)(0),                                     // 1: luci.bisection.v1.BuildFailureType
+	(*GetAnalysisRequest)(nil),                                // 2: luci.bisection.v1.GetAnalysisRequest
+	(*QueryAnalysisRequest)(nil),                              // 3: luci.bisection.v1.QueryAnalysisRequest
+	(*QueryAnalysisResponse)(nil),                             // 4: luci.bisection.v1.QueryAnalysisResponse
+	(*ListAnalysesRequest)(nil),                               // 5: luci.bisection.v1.ListAnalysesRequest
+	(*ListAnalysesResponse)(nil),                              // 6: luci.bisection.v1.ListAnalysesResponse
+	(*TriggerAnalysisRequest)(nil),                            // 7: luci.bisection.v1.TriggerAnalysisRequest
+	(*TriggerAnalysisResponse)(nil),                           // 8: luci.bisection.v1.TriggerAnalysisResponse
+	(*UpdateAnalysisRequest)(nil),                             // 9: luci.bisection.v1.UpdateAnalysisRequest
+	(*Analysis)(nil),                                          // 10: luci.bisection.v1.Analysis
+	(*BuildFailure)(nil),                                      // 11: luci.bisection.v1.BuildFailure
+	(*ListTestAnalysesRequest)(nil),                           // 12: luci.bisection.v1.ListTestAnalysesRequest
+	(*ListTestAnalysesResponse)(nil),                          // 13: luci.bisection.v1.ListTestAnalysesResponse
+	(*GetTestAnalysisRequest)(nil),                            // 14: luci.bisection.v1.GetTestAnalysisRequest
+	(*TestAnalysis)(nil),                                      // 15: luci.bisection.v1.TestAnalysis
+	(*TestFailure)(nil),                                       // 16: luci.bisection.v1.TestFailure
+	(*TestNthSectionAnalysisResult)(nil),                      // 17: luci.bisection.v1.TestNthSectionAnalysisResult
+	(*TestSingleRerun)(nil),                                   // 18: luci.bisection.v1.TestSingleRerun
+	(*RerunTestResults)(nil),                                  // 19: luci.bisection.v1.RerunTestResults
+	(*RerunTestSingleResult)(nil),                             // 20: luci.bisection.v1.RerunTestSingleResult
+	(*TestSuspectVerificationDetails)(nil),                    // 21: luci.bisection.v1.TestSuspectVerificationDetails
+	(*TestCulprit)(nil),                                       // 22: luci.bisection.v1.TestCulprit
+	(*BatchGetTestAnalysesRequest)(nil),                       // 23: luci.bisection.v1.BatchGetTestAnalysesRequest
+	(*BatchGetTestAnalysesResponse)(nil),                      // 24: luci.bisection.v1.BatchGetTestAnalysesResponse
+	(*BatchGetTestAnalysesRequest_TestFailureIdentifier)(nil), // 25: luci.bisection.v1.BatchGetTestAnalysesRequest.TestFailureIdentifier
+	(*BugInfo)(nil),                                           // 26: luci.bisection.v1.BugInfo
+	(AnalysisStatus)(0),                                       // 27: luci.bisection.v1.AnalysisStatus
+	(*timestamppb.Timestamp)(nil),                             // 28: google.protobuf.Timestamp
+	(*HeuristicAnalysisResult)(nil),                           // 29: luci.bisection.v1.HeuristicAnalysisResult
+	(*NthSectionAnalysisResult)(nil),                          // 30: luci.bisection.v1.NthSectionAnalysisResult
+	(*proto.BuilderID)(nil),                                   // 31: buildbucket.v2.BuilderID
+	(*Culprit)(nil),                                           // 32: luci.bisection.v1.Culprit
+	(*fieldmaskpb.FieldMask)(nil),                             // 33: google.protobuf.FieldMask
+	(*proto.GitilesCommit)(nil),                               // 34: buildbucket.v2.GitilesCommit
+	(*Variant)(nil),                                           // 35: luci.bisection.v1.Variant
+	(*RegressionRange)(nil),                                   // 36: luci.bisection.v1.RegressionRange
+	(*BlameList)(nil),                                         // 37: luci.bisection.v1.BlameList
+	(RerunStatus)(0),                                          // 38: luci.bisection.v1.RerunStatus
+	(SuspectVerificationStatus)(0),                            // 39: luci.bisection.v1.SuspectVerificationStatus
+	(*CulpritAction)(nil),                                     // 40: luci.bisection.v1.CulpritAction
 }
 var file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_depIdxs = []int32{
 	11, // 0: luci.bisection.v1.QueryAnalysisRequest.build_failure:type_name -> luci.bisection.v1.BuildFailure
 	10, // 1: luci.bisection.v1.QueryAnalysisResponse.analyses:type_name -> luci.bisection.v1.Analysis
 	10, // 2: luci.bisection.v1.ListAnalysesResponse.analyses:type_name -> luci.bisection.v1.Analysis
 	11, // 3: luci.bisection.v1.TriggerAnalysisRequest.build_failure:type_name -> luci.bisection.v1.BuildFailure
-	23, // 4: luci.bisection.v1.TriggerAnalysisRequest.bug_info:type_name -> luci.bisection.v1.BugInfo
+	26, // 4: luci.bisection.v1.TriggerAnalysisRequest.bug_info:type_name -> luci.bisection.v1.BugInfo
 	10, // 5: luci.bisection.v1.TriggerAnalysisResponse.result:type_name -> luci.bisection.v1.Analysis
-	23, // 6: luci.bisection.v1.UpdateAnalysisRequest.bug_info:type_name -> luci.bisection.v1.BugInfo
+	26, // 6: luci.bisection.v1.UpdateAnalysisRequest.bug_info:type_name -> luci.bisection.v1.BugInfo
 	11, // 7: luci.bisection.v1.Analysis.build_failure:type_name -> luci.bisection.v1.BuildFailure
-	24, // 8: luci.bisection.v1.Analysis.status:type_name -> luci.bisection.v1.AnalysisStatus
+	27, // 8: luci.bisection.v1.Analysis.status:type_name -> luci.bisection.v1.AnalysisStatus
 	0,  // 9: luci.bisection.v1.Analysis.run_status:type_name -> luci.bisection.v1.AnalysisRunStatus
-	25, // 10: luci.bisection.v1.Analysis.created_time:type_name -> google.protobuf.Timestamp
-	25, // 11: luci.bisection.v1.Analysis.last_updated_time:type_name -> google.protobuf.Timestamp
-	25, // 12: luci.bisection.v1.Analysis.end_time:type_name -> google.protobuf.Timestamp
-	26, // 13: luci.bisection.v1.Analysis.heuristic_result:type_name -> luci.bisection.v1.HeuristicAnalysisResult
-	27, // 14: luci.bisection.v1.Analysis.nth_section_result:type_name -> luci.bisection.v1.NthSectionAnalysisResult
-	28, // 15: luci.bisection.v1.Analysis.builder:type_name -> buildbucket.v2.BuilderID
+	28, // 10: luci.bisection.v1.Analysis.created_time:type_name -> google.protobuf.Timestamp
+	28, // 11: luci.bisection.v1.Analysis.last_updated_time:type_name -> google.protobuf.Timestamp
+	28, // 12: luci.bisection.v1.Analysis.end_time:type_name -> google.protobuf.Timestamp
+	29, // 13: luci.bisection.v1.Analysis.heuristic_result:type_name -> luci.bisection.v1.HeuristicAnalysisResult
+	30, // 14: luci.bisection.v1.Analysis.nth_section_result:type_name -> luci.bisection.v1.NthSectionAnalysisResult
+	31, // 15: luci.bisection.v1.Analysis.builder:type_name -> buildbucket.v2.BuilderID
 	1,  // 16: luci.bisection.v1.Analysis.build_failure_type:type_name -> luci.bisection.v1.BuildFailureType
-	29, // 17: luci.bisection.v1.Analysis.culprits:type_name -> luci.bisection.v1.Culprit
-	30, // 18: luci.bisection.v1.ListTestAnalysesRequest.fields:type_name -> google.protobuf.FieldMask
+	32, // 17: luci.bisection.v1.Analysis.culprits:type_name -> luci.bisection.v1.Culprit
+	33, // 18: luci.bisection.v1.ListTestAnalysesRequest.fields:type_name -> google.protobuf.FieldMask
 	15, // 19: luci.bisection.v1.ListTestAnalysesResponse.analyses:type_name -> luci.bisection.v1.TestAnalysis
-	30, // 20: luci.bisection.v1.GetTestAnalysisRequest.fields:type_name -> google.protobuf.FieldMask
-	25, // 21: luci.bisection.v1.TestAnalysis.created_time:type_name -> google.protobuf.Timestamp
-	25, // 22: luci.bisection.v1.TestAnalysis.start_time:type_name -> google.protobuf.Timestamp
-	25, // 23: luci.bisection.v1.TestAnalysis.end_time:type_name -> google.protobuf.Timestamp
-	24, // 24: luci.bisection.v1.TestAnalysis.status:type_name -> luci.bisection.v1.AnalysisStatus
+	33, // 20: luci.bisection.v1.GetTestAnalysisRequest.fields:type_name -> google.protobuf.FieldMask
+	28, // 21: luci.bisection.v1.TestAnalysis.created_time:type_name -> google.protobuf.Timestamp
+	28, // 22: luci.bisection.v1.TestAnalysis.start_time:type_name -> google.protobuf.Timestamp
+	28, // 23: luci.bisection.v1.TestAnalysis.end_time:type_name -> google.protobuf.Timestamp
+	27, // 24: luci.bisection.v1.TestAnalysis.status:type_name -> luci.bisection.v1.AnalysisStatus
 	0,  // 25: luci.bisection.v1.TestAnalysis.run_status:type_name -> luci.bisection.v1.AnalysisRunStatus
 	22, // 26: luci.bisection.v1.TestAnalysis.culprit:type_name -> luci.bisection.v1.TestCulprit
-	28, // 27: luci.bisection.v1.TestAnalysis.builder:type_name -> buildbucket.v2.BuilderID
+	31, // 27: luci.bisection.v1.TestAnalysis.builder:type_name -> buildbucket.v2.BuilderID
 	16, // 28: luci.bisection.v1.TestAnalysis.test_failures:type_name -> luci.bisection.v1.TestFailure
-	31, // 29: luci.bisection.v1.TestAnalysis.start_commit:type_name -> buildbucket.v2.GitilesCommit
-	31, // 30: luci.bisection.v1.TestAnalysis.end_commit:type_name -> buildbucket.v2.GitilesCommit
+	34, // 29: luci.bisection.v1.TestAnalysis.start_commit:type_name -> buildbucket.v2.GitilesCommit
+	34, // 30: luci.bisection.v1.TestAnalysis.end_commit:type_name -> buildbucket.v2.GitilesCommit
 	17, // 31: luci.bisection.v1.TestAnalysis.nth_section_result:type_name -> luci.bisection.v1.TestNthSectionAnalysisResult
-	32, // 32: luci.bisection.v1.TestFailure.variant:type_name -> luci.bisection.v1.Variant
-	25, // 33: luci.bisection.v1.TestFailure.start_hour:type_name -> google.protobuf.Timestamp
-	24, // 34: luci.bisection.v1.TestNthSectionAnalysisResult.status:type_name -> luci.bisection.v1.AnalysisStatus
+	35, // 32: luci.bisection.v1.TestFailure.variant:type_name -> luci.bisection.v1.Variant
+	28, // 33: luci.bisection.v1.TestFailure.start_hour:type_name -> google.protobuf.Timestamp
+	27, // 34: luci.bisection.v1.TestNthSectionAnalysisResult.status:type_name -> luci.bisection.v1.AnalysisStatus
 	0,  // 35: luci.bisection.v1.TestNthSectionAnalysisResult.run_status:type_name -> luci.bisection.v1.AnalysisRunStatus
-	25, // 36: luci.bisection.v1.TestNthSectionAnalysisResult.start_time:type_name -> google.protobuf.Timestamp
-	25, // 37: luci.bisection.v1.TestNthSectionAnalysisResult.end_time:type_name -> google.protobuf.Timestamp
-	33, // 38: luci.bisection.v1.TestNthSectionAnalysisResult.remaining_nth_section_range:type_name -> luci.bisection.v1.RegressionRange
+	28, // 36: luci.bisection.v1.TestNthSectionAnalysisResult.start_time:type_name -> google.protobuf.Timestamp
+	28, // 37: luci.bisection.v1.TestNthSectionAnalysisResult.end_time:type_name -> google.protobuf.Timestamp
+	36, // 38: luci.bisection.v1.TestNthSectionAnalysisResult.remaining_nth_section_range:type_name -> luci.bisection.v1.RegressionRange
 	18, // 39: luci.bisection.v1.TestNthSectionAnalysisResult.reruns:type_name -> luci.bisection.v1.TestSingleRerun
-	34, // 40: luci.bisection.v1.TestNthSectionAnalysisResult.blame_list:type_name -> luci.bisection.v1.BlameList
+	37, // 40: luci.bisection.v1.TestNthSectionAnalysisResult.blame_list:type_name -> luci.bisection.v1.BlameList
 	22, // 41: luci.bisection.v1.TestNthSectionAnalysisResult.suspect:type_name -> luci.bisection.v1.TestCulprit
-	25, // 42: luci.bisection.v1.TestSingleRerun.create_time:type_name -> google.protobuf.Timestamp
-	25, // 43: luci.bisection.v1.TestSingleRerun.start_time:type_name -> google.protobuf.Timestamp
-	25, // 44: luci.bisection.v1.TestSingleRerun.end_time:type_name -> google.protobuf.Timestamp
-	25, // 45: luci.bisection.v1.TestSingleRerun.report_time:type_name -> google.protobuf.Timestamp
+	28, // 42: luci.bisection.v1.TestSingleRerun.create_time:type_name -> google.protobuf.Timestamp
+	28, // 43: luci.bisection.v1.TestSingleRerun.start_time:type_name -> google.protobuf.Timestamp
+	28, // 44: luci.bisection.v1.TestSingleRerun.end_time:type_name -> google.protobuf.Timestamp
+	28, // 45: luci.bisection.v1.TestSingleRerun.report_time:type_name -> google.protobuf.Timestamp
 	19, // 46: luci.bisection.v1.TestSingleRerun.rerun_result:type_name -> luci.bisection.v1.RerunTestResults
-	31, // 47: luci.bisection.v1.TestSingleRerun.commit:type_name -> buildbucket.v2.GitilesCommit
+	34, // 47: luci.bisection.v1.TestSingleRerun.commit:type_name -> buildbucket.v2.GitilesCommit
 	20, // 48: luci.bisection.v1.RerunTestResults.results:type_name -> luci.bisection.v1.RerunTestSingleResult
-	35, // 49: luci.bisection.v1.RerunTestResults.rerun_status:type_name -> luci.bisection.v1.RerunStatus
-	36, // 50: luci.bisection.v1.TestSuspectVerificationDetails.status:type_name -> luci.bisection.v1.SuspectVerificationStatus
+	38, // 49: luci.bisection.v1.RerunTestResults.rerun_status:type_name -> luci.bisection.v1.RerunStatus
+	39, // 50: luci.bisection.v1.TestSuspectVerificationDetails.status:type_name -> luci.bisection.v1.SuspectVerificationStatus
 	18, // 51: luci.bisection.v1.TestSuspectVerificationDetails.suspect_rerun:type_name -> luci.bisection.v1.TestSingleRerun
 	18, // 52: luci.bisection.v1.TestSuspectVerificationDetails.parent_rerun:type_name -> luci.bisection.v1.TestSingleRerun
-	31, // 53: luci.bisection.v1.TestCulprit.commit:type_name -> buildbucket.v2.GitilesCommit
-	37, // 54: luci.bisection.v1.TestCulprit.culprit_action:type_name -> luci.bisection.v1.CulpritAction
+	34, // 53: luci.bisection.v1.TestCulprit.commit:type_name -> buildbucket.v2.GitilesCommit
+	40, // 54: luci.bisection.v1.TestCulprit.culprit_action:type_name -> luci.bisection.v1.CulpritAction
 	21, // 55: luci.bisection.v1.TestCulprit.verification_details:type_name -> luci.bisection.v1.TestSuspectVerificationDetails
-	2,  // 56: luci.bisection.v1.Analyses.GetAnalysis:input_type -> luci.bisection.v1.GetAnalysisRequest
-	3,  // 57: luci.bisection.v1.Analyses.QueryAnalysis:input_type -> luci.bisection.v1.QueryAnalysisRequest
-	5,  // 58: luci.bisection.v1.Analyses.ListAnalyses:input_type -> luci.bisection.v1.ListAnalysesRequest
-	7,  // 59: luci.bisection.v1.Analyses.TriggerAnalysis:input_type -> luci.bisection.v1.TriggerAnalysisRequest
-	9,  // 60: luci.bisection.v1.Analyses.UpdateAnalysis:input_type -> luci.bisection.v1.UpdateAnalysisRequest
-	12, // 61: luci.bisection.v1.Analyses.ListTestAnalyses:input_type -> luci.bisection.v1.ListTestAnalysesRequest
-	14, // 62: luci.bisection.v1.Analyses.GetTestAnalysis:input_type -> luci.bisection.v1.GetTestAnalysisRequest
-	10, // 63: luci.bisection.v1.Analyses.GetAnalysis:output_type -> luci.bisection.v1.Analysis
-	4,  // 64: luci.bisection.v1.Analyses.QueryAnalysis:output_type -> luci.bisection.v1.QueryAnalysisResponse
-	6,  // 65: luci.bisection.v1.Analyses.ListAnalyses:output_type -> luci.bisection.v1.ListAnalysesResponse
-	8,  // 66: luci.bisection.v1.Analyses.TriggerAnalysis:output_type -> luci.bisection.v1.TriggerAnalysisResponse
-	10, // 67: luci.bisection.v1.Analyses.UpdateAnalysis:output_type -> luci.bisection.v1.Analysis
-	13, // 68: luci.bisection.v1.Analyses.ListTestAnalyses:output_type -> luci.bisection.v1.ListTestAnalysesResponse
-	15, // 69: luci.bisection.v1.Analyses.GetTestAnalysis:output_type -> luci.bisection.v1.TestAnalysis
-	63, // [63:70] is the sub-list for method output_type
-	56, // [56:63] is the sub-list for method input_type
-	56, // [56:56] is the sub-list for extension type_name
-	56, // [56:56] is the sub-list for extension extendee
-	0,  // [0:56] is the sub-list for field type_name
+	25, // 56: luci.bisection.v1.BatchGetTestAnalysesRequest.test_failures:type_name -> luci.bisection.v1.BatchGetTestAnalysesRequest.TestFailureIdentifier
+	33, // 57: luci.bisection.v1.BatchGetTestAnalysesRequest.fields:type_name -> google.protobuf.FieldMask
+	15, // 58: luci.bisection.v1.BatchGetTestAnalysesResponse.test_analyses:type_name -> luci.bisection.v1.TestAnalysis
+	2,  // 59: luci.bisection.v1.Analyses.GetAnalysis:input_type -> luci.bisection.v1.GetAnalysisRequest
+	3,  // 60: luci.bisection.v1.Analyses.QueryAnalysis:input_type -> luci.bisection.v1.QueryAnalysisRequest
+	5,  // 61: luci.bisection.v1.Analyses.ListAnalyses:input_type -> luci.bisection.v1.ListAnalysesRequest
+	7,  // 62: luci.bisection.v1.Analyses.TriggerAnalysis:input_type -> luci.bisection.v1.TriggerAnalysisRequest
+	9,  // 63: luci.bisection.v1.Analyses.UpdateAnalysis:input_type -> luci.bisection.v1.UpdateAnalysisRequest
+	12, // 64: luci.bisection.v1.Analyses.ListTestAnalyses:input_type -> luci.bisection.v1.ListTestAnalysesRequest
+	14, // 65: luci.bisection.v1.Analyses.GetTestAnalysis:input_type -> luci.bisection.v1.GetTestAnalysisRequest
+	23, // 66: luci.bisection.v1.Analyses.BatchGetTestAnalyses:input_type -> luci.bisection.v1.BatchGetTestAnalysesRequest
+	10, // 67: luci.bisection.v1.Analyses.GetAnalysis:output_type -> luci.bisection.v1.Analysis
+	4,  // 68: luci.bisection.v1.Analyses.QueryAnalysis:output_type -> luci.bisection.v1.QueryAnalysisResponse
+	6,  // 69: luci.bisection.v1.Analyses.ListAnalyses:output_type -> luci.bisection.v1.ListAnalysesResponse
+	8,  // 70: luci.bisection.v1.Analyses.TriggerAnalysis:output_type -> luci.bisection.v1.TriggerAnalysisResponse
+	10, // 71: luci.bisection.v1.Analyses.UpdateAnalysis:output_type -> luci.bisection.v1.Analysis
+	13, // 72: luci.bisection.v1.Analyses.ListTestAnalyses:output_type -> luci.bisection.v1.ListTestAnalysesResponse
+	15, // 73: luci.bisection.v1.Analyses.GetTestAnalysis:output_type -> luci.bisection.v1.TestAnalysis
+	24, // 74: luci.bisection.v1.Analyses.BatchGetTestAnalyses:output_type -> luci.bisection.v1.BatchGetTestAnalysesResponse
+	67, // [67:75] is the sub-list for method output_type
+	59, // [59:67] is the sub-list for method input_type
+	59, // [59:59] is the sub-list for extension type_name
+	59, // [59:59] is the sub-list for extension extendee
+	0,  // [0:59] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_init() }
@@ -2655,6 +2882,42 @@ func file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BatchGetTestAnalysesRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BatchGetTestAnalysesResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BatchGetTestAnalysesRequest_TestFailureIdentifier); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -2662,7 +2925,7 @@ func file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   21,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -2712,6 +2975,11 @@ type AnalysesClient interface {
 	ListTestAnalyses(ctx context.Context, in *ListTestAnalysesRequest, opts ...grpc.CallOption) (*ListTestAnalysesResponse, error)
 	// GetTestAnalysis is used to get a test analysis by its ID.
 	GetTestAnalysis(ctx context.Context, in *GetTestAnalysisRequest, opts ...grpc.CallOption) (*TestAnalysis, error)
+	// BatchGetTestAnalyses is an RPC to batch get test analyses for test failures.
+	// At this moment it only support getting the bisection for the ongoing test failure.
+	// TODO(@beining): This endpoint can be extended to support returning bisection for
+	// any test failure by specifying source position in the request.
+	BatchGetTestAnalyses(ctx context.Context, in *BatchGetTestAnalysesRequest, opts ...grpc.CallOption) (*BatchGetTestAnalysesResponse, error)
 }
 type analysesPRPCClient struct {
 	client *prpc.Client
@@ -2778,6 +3046,15 @@ func (c *analysesPRPCClient) ListTestAnalyses(ctx context.Context, in *ListTestA
 func (c *analysesPRPCClient) GetTestAnalysis(ctx context.Context, in *GetTestAnalysisRequest, opts ...grpc.CallOption) (*TestAnalysis, error) {
 	out := new(TestAnalysis)
 	err := c.client.Call(ctx, "luci.bisection.v1.Analyses", "GetTestAnalysis", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *analysesPRPCClient) BatchGetTestAnalyses(ctx context.Context, in *BatchGetTestAnalysesRequest, opts ...grpc.CallOption) (*BatchGetTestAnalysesResponse, error) {
+	out := new(BatchGetTestAnalysesResponse)
+	err := c.client.Call(ctx, "luci.bisection.v1.Analyses", "BatchGetTestAnalyses", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2855,6 +3132,15 @@ func (c *analysesClient) GetTestAnalysis(ctx context.Context, in *GetTestAnalysi
 	return out, nil
 }
 
+func (c *analysesClient) BatchGetTestAnalyses(ctx context.Context, in *BatchGetTestAnalysesRequest, opts ...grpc.CallOption) (*BatchGetTestAnalysesResponse, error) {
+	out := new(BatchGetTestAnalysesResponse)
+	err := c.cc.Invoke(ctx, "/luci.bisection.v1.Analyses/BatchGetTestAnalyses", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AnalysesServer is the server API for Analyses service.
 type AnalysesServer interface {
 	// GetAnalysis is used to get an analysis by analysis ID.
@@ -2880,6 +3166,11 @@ type AnalysesServer interface {
 	ListTestAnalyses(context.Context, *ListTestAnalysesRequest) (*ListTestAnalysesResponse, error)
 	// GetTestAnalysis is used to get a test analysis by its ID.
 	GetTestAnalysis(context.Context, *GetTestAnalysisRequest) (*TestAnalysis, error)
+	// BatchGetTestAnalyses is an RPC to batch get test analyses for test failures.
+	// At this moment it only support getting the bisection for the ongoing test failure.
+	// TODO(@beining): This endpoint can be extended to support returning bisection for
+	// any test failure by specifying source position in the request.
+	BatchGetTestAnalyses(context.Context, *BatchGetTestAnalysesRequest) (*BatchGetTestAnalysesResponse, error)
 }
 
 // UnimplementedAnalysesServer can be embedded to have forward compatible implementations.
@@ -2906,6 +3197,9 @@ func (*UnimplementedAnalysesServer) ListTestAnalyses(context.Context, *ListTestA
 }
 func (*UnimplementedAnalysesServer) GetTestAnalysis(context.Context, *GetTestAnalysisRequest) (*TestAnalysis, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTestAnalysis not implemented")
+}
+func (*UnimplementedAnalysesServer) BatchGetTestAnalyses(context.Context, *BatchGetTestAnalysesRequest) (*BatchGetTestAnalysesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BatchGetTestAnalyses not implemented")
 }
 
 func RegisterAnalysesServer(s prpc.Registrar, srv AnalysesServer) {
@@ -3038,6 +3332,24 @@ func _Analyses_GetTestAnalysis_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Analyses_BatchGetTestAnalyses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchGetTestAnalysesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AnalysesServer).BatchGetTestAnalyses(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.bisection.v1.Analyses/BatchGetTestAnalyses",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AnalysesServer).BatchGetTestAnalyses(ctx, req.(*BatchGetTestAnalysesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Analyses_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "luci.bisection.v1.Analyses",
 	HandlerType: (*AnalysesServer)(nil),
@@ -3069,6 +3381,10 @@ var _Analyses_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTestAnalysis",
 			Handler:    _Analyses_GetTestAnalysis_Handler,
+		},
+		{
+			MethodName: "BatchGetTestAnalyses",
+			Handler:    _Analyses_BatchGetTestAnalyses_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

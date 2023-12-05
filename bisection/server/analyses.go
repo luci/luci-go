@@ -18,16 +18,18 @@ package server
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
+	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
 	"go.chromium.org/luci/bisection/util/protoutil"
-
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -36,6 +38,7 @@ import (
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
+	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -59,8 +62,14 @@ var listTestAnalysesPageSizeLimiter = PageSizeLimiter{
 	Default: 50,
 }
 
+type AnalysisClient interface {
+	ChangepointAnalysisForTestVariant(ctx context.Context, project string, keys []lucianalysis.TestVerdictKey) (map[lucianalysis.TestVerdictKey]*lucianalysis.ChangepointResult, error)
+}
+
 // AnalysesServer implements the LUCI Bisection proto service for Analyses.
-type AnalysesServer struct{}
+type AnalysesServer struct {
+	AnalysisClient AnalysisClient
+}
 
 // GetAnalysis returns the analysis given the analysis id
 func (server *AnalysesServer) GetAnalysis(c context.Context, req *pb.GetAnalysisRequest) (*pb.Analysis, error) {
@@ -251,6 +260,105 @@ func (server *AnalysesServer) GetTestAnalysis(ctx context.Context, req *pb.GetTe
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 	return result, nil
+}
+
+func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.BatchGetTestAnalysesRequest) (*pb.BatchGetTestAnalysesResponse, error) {
+	// Validate request.
+	if err := validateBatchGetTestAnalysesRequest(req); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+	// By default, returning all fields.
+	fieldMask := req.Fields
+	if fieldMask == nil {
+		fieldMask = defaultFieldMask()
+	}
+	tfamask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, false, false)
+	if err != nil {
+		return nil, errors.Annotate(err, "from field mask").Err()
+	}
+	// Query Changepoint analysis.
+	keys := []lucianalysis.TestVerdictKey{}
+	for _, tf := range req.TestFailures {
+		keys = append(keys, lucianalysis.TestVerdictKey{
+			TestID:      tf.TestId,
+			VariantHash: tf.VariantHash,
+			RefHash:     tf.RefHash,
+		})
+	}
+	changePointResults, err := server.AnalysisClient.ChangepointAnalysisForTestVariant(ctx, req.Project, keys)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "read changepoint analysis %s", err)
+	}
+
+	result := make([]*pb.TestAnalysis, len(req.TestFailures))
+	// Find the test analysis to return for each test failure.
+	for i, tf := range req.TestFailures {
+		tfs, err := datastoreutil.GetTestFailures(ctx, req.Project, tf.TestId, tf.RefHash, tf.VariantHash)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "get test failures %s", err)
+		}
+		if len(tfs) == 0 {
+			continue
+		}
+		sort.Slice(tfs, func(i, j int) bool {
+			return tfs[i].RegressionStartPosition > tfs[j].RegressionStartPosition
+		})
+		latestTestFailure := tfs[0]
+		changepointResult, ok := changePointResults[lucianalysis.TestVerdictKey{
+			TestID:      tf.TestId,
+			VariantHash: tf.VariantHash,
+			RefHash:     tf.RefHash,
+		}]
+		if !ok {
+			logging.Infof(ctx, "no changepoint analysis for test %s %s %s", tf.TestId, tf.VariantHash, tf.RefHash)
+			continue
+		}
+		ongoing, reason := isTestFailureDeterministicallyOngoing(latestTestFailure, changepointResult)
+		// Do not return the test analysis if the failure is not ongoing.
+		if !ongoing {
+			logging.Infof(ctx, "no bisection returned for test %s %s %s because %s", tf.TestId, tf.VariantHash, tf.RefHash, reason)
+			continue
+		}
+		// Return the test analysis that analyze this test failure.
+		tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, latestTestFailure.AnalysisKey.IntID())
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "get test failure analysis %s", err)
+		}
+		tfaProto, err := protoutil.TestFailureAnalysisToPb(ctx, tfa, tfamask)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "convert test failure analysis to protobuf %s", err)
+		}
+		result[i] = tfaProto
+	}
+	return &pb.BatchGetTestAnalysesResponse{
+		TestAnalyses: result,
+	}, nil
+}
+
+// IsTestFailureDeterministicallyOngoing returns a boolean which indicate whether
+// a test failure is still deterministically failing.
+// It also returns a string to explain why it is not deterministically failing.
+func isTestFailureDeterministicallyOngoing(tf *model.TestFailure, changepointResult *lucianalysis.ChangepointResult) (bool, string) {
+	segments := changepointResult.Segments
+	if len(segments) < 2 {
+		return false, "not deterministically failing"
+	}
+	curSegment := segments[0]
+	prevSegment := segments[1]
+	// The latest failure is not deterministically failing, return false.
+	if curSegment.CountTotalResults != curSegment.CountUnexpectedResults {
+		return false, "not deterministically failing"
+	}
+	// If the test failure is still ongoing, the regression range of the failure
+	// on record should equal or contain the current regression range of
+	// the latest segment in changepoint analysis.
+	// Because the regression range of deterministic failure obtained from changepoint analysis
+	// only shrinks or stays the same over time.
+	if (curSegment.StartPosition.Int64 <= tf.RegressionEndPosition) &&
+		(prevSegment.EndPosition.Int64 >= tf.RegressionStartPosition) {
+		return true, ""
+	}
+	return false, "latest bisected failure is not ongoing"
 }
 
 // GetAnalysisResult returns an analysis for pRPC from CompileFailureAnalysis
@@ -652,6 +760,52 @@ func validateListTestAnalysesRequest(req *pb.ListTestAnalysesRequest) error {
 	}
 	if req.PageSize < 0 {
 		return status.Errorf(codes.InvalidArgument, "page size must not be negative")
+	}
+	return nil
+}
+
+func validateBatchGetTestAnalysesRequest(req *pb.BatchGetTestAnalysesRequest) error {
+	// MaxTestFailures is the maximum number of test failures to be queried in one request.
+	const MaxTestFailures = 100
+	if err := util.ValidateProject(req.Project); err != nil {
+		return errors.Annotate(err, "project").Err()
+	}
+	if len(req.TestFailures) == 0 {
+		return errors.Reason("test_failures: unspecified").Err()
+	}
+	if len(req.TestFailures) > MaxTestFailures {
+		return errors.Reason("test_failures: no more than %v may be queried at a time", MaxTestFailures).Err()
+	}
+	type testVariant struct {
+		testID      string
+		variantHash string
+		refHash     string
+	}
+	uniqueTestVariants := make(map[testVariant]struct{})
+	for i, tf := range req.TestFailures {
+		if tf.GetTestId() == "" {
+			return errors.Reason("test_variants[%v]: test_id: unspecified", i).Err()
+		}
+		if tf.VariantHash == "" {
+			return errors.Reason("test_variants[%v]: variant_hash: unspecified", i).Err()
+		}
+		if tf.RefHash == "" {
+			return errors.Reason("test_variants[%v]: ref_hash: unspecified", i).Err()
+		}
+		if err := rdbpbutil.ValidateTestID(tf.TestId); err != nil {
+			return errors.Annotate(err, "test_variants[%v].test_id", i).Err()
+		}
+		if err := util.ValidateVariantHash(tf.VariantHash); err != nil {
+			return errors.Annotate(err, "test_variants[%v].variant_hash", i).Err()
+		}
+		if err := util.ValidateRefHash(tf.RefHash); err != nil {
+			return errors.Annotate(err, "test_variants[%v].ref_hash", i).Err()
+		}
+		key := testVariant{testID: tf.TestId, variantHash: tf.VariantHash, refHash: tf.RefHash}
+		if _, ok := uniqueTestVariants[key]; ok {
+			return errors.Reason("test_variants[%v]: already requested in the same request", i).Err()
+		}
+		uniqueTestVariants[key] = struct{}{}
 	}
 	return nil
 }

@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/bisection/culpritaction/revertculprit"
 	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/internal/config"
+	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	"go.chromium.org/luci/bisection/metrics"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/pubsub"
@@ -123,10 +124,19 @@ func main() {
 				pubsub.BuildbucketPubSubHandler(ctx)
 			}
 		})
+		pg := &LUCIAnalysisProject{
+			DefaultProject: luciAnalysisProject,
+		}
+		ac, err := lucianalysis.NewClient(srv.Context, srv.Options.CloudProject, pg.Project)
+		if err != nil {
+			return errors.Annotate(err, "creating analysis client").Err()
+		}
 
 		// Installs gRPC service.
 		pb.RegisterAnalysesServer(srv, &pb.DecoratedAnalyses{
-			Service: &server.AnalysesServer{},
+			Service: &server.AnalysesServer{
+				AnalysisClient: ac,
+			},
 			Prelude: checkAPIAccess,
 		})
 
@@ -151,9 +161,6 @@ func main() {
 
 		// Task queues
 		compilefailuredetection.RegisterTaskClass()
-		pg := &LUCIAnalysisProject{
-			DefaultProject: luciAnalysisProject,
-		}
 		if err := revertculprit.RegisterTaskClass(srv, pg.Project); err != nil {
 			return errors.Annotate(err, "register revert culprit").Err()
 		}
