@@ -45,8 +45,8 @@ go run main.go \
  -spanner-database projects/luci-analysis-dev/instances/dev/databases/luci-analysis-dev \
  -auth-service-host chrome-infra-auth-dev.appspot.com \
  -default-request-timeout 10m0s \
+ -buganizer-mode disable \
  -config-local-dir ../configs \
- -buganizer-mode disable
  -encrypted-cookies-expose-state-endpoint
 ```
 
