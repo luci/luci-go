@@ -56,6 +56,10 @@ const ANALYSIS_STATUS_LABELS: Record<AnalysisStatus, LabelProps> = {
   ERROR: { text: 'Error', color: 'var(--critical-failure-color)' },
   UNSUPPORTED: { text: 'Unsupported', color: 'var(--canceled-color)' },
   DISABLED: { text: 'Disabled', color: 'var(--canceled-color)' },
+  INSUFFICENTDATA: {
+    text: 'Insufficient data',
+    color: 'var(--canceled-color)',
+  },
 };
 
 interface RerunStatusProps {

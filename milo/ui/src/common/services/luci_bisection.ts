@@ -28,7 +28,8 @@ export type AnalysisStatus =
   | 'ERROR'
   | 'SUSPECTFOUND'
   | 'UNSUPPORTED'
-  | 'DISABLED';
+  | 'DISABLED'
+  | 'INSUFFICENTDATA';
 
 export type AnalysisRunStatus =
   | 'ANALYSIS_RUN_STATUS_UNSPECIFIED'
@@ -59,7 +60,8 @@ export type CulpritInactionReason =
   | 'REVERT_HAS_COMMENT'
   | 'CULPRIT_HAS_COMMENT'
   | 'ANALYSIS_CANCELED'
-  | 'ACTIONS_DISABLED';
+  | 'ACTIONS_DISABLED'
+  | 'TEST_NO_LONGER_UNEXPECTED';
 
 export type BuildFailureType =
   | 'BUILD_FAILURE_TYPE_UNSPECIFIED'

@@ -78,6 +78,7 @@ const CULPRIT_INACTION_EXPLANATIONS: Record<CulpritInactionReason, string> = {
     'the culprit already has a comment from another LUCI Bisection analysis',
   ANALYSIS_CANCELED: 'the analysis was canceled',
   ACTIONS_DISABLED: 'actions on culprits are disabled',
+  TEST_NO_LONGER_UNEXPECTED: 'the test is no longer deterministically failing',
 };
 
 const INACTION_REASONS_WITH_REVERT_LINK: CulpritInactionReason[] = [
