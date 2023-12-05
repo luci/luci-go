@@ -543,7 +543,7 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 		bucketNames.Add(bucket.Name)
 		// TODO(crbug/1399576): Change this once bucket proto replaces Swarming message name
 		if s := bucket.Swarming; s != nil {
-			validateProjectSwarming(ctx, s, wellKnownExperiments, project)
+			validateProjectSwarming(ctx, s, wellKnownExperiments, project, globalCfg)
 		}
 		ctx.Exit()
 	}
@@ -599,7 +599,7 @@ func validateBuildNotifyTopics(ctx *validation.Context, topics []*pb.Buildbucket
 }
 
 // validateProjectSwarming validates project_config.Swarming.
-func validateProjectSwarming(ctx *validation.Context, s *pb.Swarming, wellKnownExperiments stringset.Set, project string) {
+func validateProjectSwarming(ctx *validation.Context, s *pb.Swarming, wellKnownExperiments stringset.Set, project string, globalCfg *pb.SettingsCfg) {
 	ctx.Enter("swarming")
 	defer ctx.Exit()
 
@@ -610,7 +610,7 @@ func validateProjectSwarming(ctx *validation.Context, s *pb.Swarming, wellKnownE
 	builderNames := stringset.New(len(s.Builders))
 	for i, b := range s.Builders {
 		ctx.Enter("builders #%d - %s", i, b.Name)
-		validateBuilderCfg(ctx, b, wellKnownExperiments, project)
+		validateBuilderCfg(ctx, b, wellKnownExperiments, project, globalCfg)
 		if builderNames.Has(b.Name) {
 			ctx.Errorf("name: duplicate")
 		} else {
@@ -700,7 +700,7 @@ func validateTaskBackend(ctx *validation.Context, backend *pb.BuilderConfig_Back
 }
 
 // validateBuilderCfg validate a Builder config message.
-func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownExperiments stringset.Set, project string) {
+func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownExperiments stringset.Set, project string, globalCfg *pb.SettingsCfg) {
 	// TODO(iannucci): also validate builder allowed_property_overrides field. See
 	// //lucicfg/starlark/stdlib/internal/luci/rules/builder.star
 
@@ -709,7 +709,7 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 		ctx.Errorf("name must match %s", builderRegex)
 	}
 
-	// Need to do seperate checks here since backend and backend_alt can both be set.
+	// Need to do separate checks here since backend and backend_alt can both be set.
 	// Either backend or swarming must be set, but not both.
 	switch {
 	case b.GetSwarmingHost() != "" && b.GetBackend() != nil:
@@ -761,6 +761,11 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 				ctx.Errorf("execution_timeout_secs %d + expiration_secs %d exceeds max build completion time %d", exeTimeoutSec, schedulingTimeoutSec, limitTimeoutSec)
 			}
 		}
+	}
+	if b.HeartbeatTimeoutSecs != 0 &&
+		!isLiteBackend(b.GetBackend().GetTarget(), globalCfg) &&
+		!isLiteBackend(b.GetBackendAlt().GetTarget(), globalCfg) {
+		ctx.Errorf("heartbeat_timeout_secs should only be set for builders using a TaskBackendLite backend")
 	}
 
 	// resultdb
@@ -1036,4 +1041,16 @@ func ValidateExperimentName(expName string, wellKnownExperiments stringset.Set) 
 		return errors.New(`unknown experiment has reserved prefix "luci."`)
 	}
 	return nil
+}
+
+func isLiteBackend(target string, globalCfg *pb.SettingsCfg) bool {
+	if target == "" {
+		return false
+	}
+	for _, backend := range globalCfg.Backends {
+		if backend.Target == target {
+			return backend.GetLiteMode() != nil
+		}
+	}
+	return false
 }
