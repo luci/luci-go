@@ -1,0 +1,95 @@
+#!/bin/bash
+
+# Copyright 2023 The LUCI Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# sample usage and meaning
+#
+# ./test-fft -i   ~/cr     -p      9
+#               infra-dir      patchset-#
+
+# Defensively set the CDPATH to something safe before doing anything.
+export CDPATH=
+
+# This script owns the branch below in every git repo ever. This should be safe
+# since it contains a UUID.
+readonly MY_INFRA_BRANCH='ftt-test-branch-149cb550-9322-46a2-a27d-06c05781102d'
+export MY_INFRA_BRANCH
+# We use the devel branch in the LUCI repo to make it easier to patch the
+# commit series and upload a new chain.
+readonly MY_DEVEL_BRANCH='ftt-devel-branch-91e1de00-c43a-4d07-b6fe-ed05322a465b'
+export MY_DEVEL_BRANCH
+
+# die writes a message to stderr and then exits abnormally.
+die() {
+  printf '%s\n' "$@" 1>&2
+  exit 1
+}
+
+# checkdep checks for a dependency and dies if it isn't available.
+checkdep() {
+  which -- "$1" 1>/dev/null 2>/dev/null || die 'missing dependency: '"$1"
+}
+
+# main takes the input args and runs the tests.
+main() {
+  local -r usage='test-ftt [-h] [-i infra-dir] [-p patchset-number]
+
+  This script produces the branch "ftt-test-branch-149cb550-9322-46a2-a27d-06c05781102d"
+  in the infra tree. This branch is temporary.
+
+  This script produces the branch "ftt-devel-branch-149cb550-9322-46a2-a27d-06c05781102d"
+  in the LUCI tree. This branch can be modified and then re-uploaded.
+  '
+
+  while getopts ':hi:p:' opt; do
+    case "${opt}" in
+      h) printf '%s' "${usage}"; exit 0;;
+      i) local infra_dir="${OPTARG}";;
+      p) local patchset="${OPTARG}";;
+      :)
+         1>&2 printf '%s' "${usage}"; exit 1;;
+      *)
+         1>&2 printf '%s' "${usage}"; exit 1;;
+    esac
+  done
+
+  checkdep 'realpath'
+  checkdep 'git'
+  checkdep 'mktemp'
+
+  [[ -n ${infra_dir} ]] || die "no directory given"
+  [[ -e ${infra_dir} ]] || die "path \`${infra_dir}' does not exist"
+  [[ -d ${infra_dir} ]] || die "path \`${infra_dir}' is not directory"
+
+  [[ -n "${patchset}" ]] || die 'no patchset given'
+
+  local -r infra_dir="$(realpath -- "${infra_dir}")" || die "failed to get realpath to \`$1'"
+
+  # cd to a defensive dir so we catch inadvertent uses of relative paths rather
+  # than computed absolute paths.
+  local -r defensive_dir="$(mktemp -d)" || die 'failed to make defensive dir'
+  cd -- "${defensive_dir}" || die 'failed to cd to defensive dir'
+
+  [[ -f ${infra_dir}/.gclient ]] || die 'failed heuristic: no gclient file: is the file path correct?'
+
+  local -r luci_dir="${infra_dir}"/infra/go/src/go.chromium.org/luci
+
+  [[ -d $luci_dir ]] || die "luci directory \`${luci_dir}' does not exist or is not directory"
+  [[ -f $luci_dir/AUTHORS ]] || die "failed heuristic: derived directory \`${luci_dir}' has no AUTHORS file"
+
+  die 'not yet implemented'
+}
+
+main "$@"
