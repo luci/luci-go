@@ -21,3 +21,25 @@ indexes:
   properties:
   - name: Summary.Status
   - name: Version
+
+- kind: Console
+  properties:
+  - name: __key__
+  - name: Ordinal
+
+- kind: Console
+  properties:
+  - name: Builders
+  - name: __key__
+  - name: Ordinal
+
+- kind: Console
+  ancestor: yes
+  properties:
+  - name: Ordinal
+
+- kind: Console
+  ancestor: yes
+  properties:
+  - name: Builders
+  - name: Ordinal
