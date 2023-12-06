@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/gae/impl/memory"
+
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 
 	. "github.com/smartystreets/goconvey/convey"

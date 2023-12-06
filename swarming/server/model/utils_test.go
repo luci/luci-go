@@ -19,9 +19,9 @@ import (
 	"compress/zlib"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/gae/service/datastore"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestToJSONProperty(t *testing.T) {

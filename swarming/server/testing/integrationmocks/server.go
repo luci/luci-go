@@ -21,10 +21,11 @@ package integrationmocks
 import (
 	"context"
 
-	internalspb "go.chromium.org/luci/swarming/proto/internals"
-	"go.chromium.org/luci/swarming/server/hmactoken"
 	"google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+
+	internalspb "go.chromium.org/luci/swarming/proto/internals"
+	"go.chromium.org/luci/swarming/server/hmactoken"
 )
 
 // server implements IntegrationMocksServer.

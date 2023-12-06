@@ -15,11 +15,10 @@
 package main
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-
-	"strconv"
 )
 
 func TestPoolFromDimensions(t *testing.T) {

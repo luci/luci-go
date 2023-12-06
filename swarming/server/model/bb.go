@@ -17,9 +17,8 @@ package model
 import (
 	"context"
 
-	"go.chromium.org/luci/gae/service/datastore"
-
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 // BuildTask stores the Buildbucket related fields.
