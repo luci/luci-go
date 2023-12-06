@@ -43,6 +43,7 @@ func TestQueryConsoles(t *testing.T) {
 		ctx = testutils.SetUpTestGlobalCache(ctx)
 		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 
+		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
 		err := datastore.Put(ctx, []*projectconfig.Project{

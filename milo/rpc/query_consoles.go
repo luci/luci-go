@@ -94,11 +94,15 @@ func (s *MiloInternalService) QueryConsoles(ctx context.Context, req *milopb.Que
 	q := datastore.NewQuery("Console")
 	if req.GetPredicate().GetProject() != "" {
 		q = q.Ancestor(datastore.MakeKey(ctx, "Project", req.Predicate.Project))
+	} else {
+		// Ordinal is only useful within a project. If the consoles are not limited
+		// to a single project, sort them by projects first.
+		q = q.Order("__key__")
 	}
 	if req.GetPredicate().GetBuilder() != nil {
 		q = q.Eq("Builders", utils.LegacyBuilderIDString(req.Predicate.Builder))
 	}
-	q = q.Start(cur)
+	q = q.Order("Ordinal").Start(cur)
 
 	// Query consoles.
 	consoles := make([]*projectconfigpb.Console, 0, pageSize)

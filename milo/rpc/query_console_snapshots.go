@@ -121,7 +121,7 @@ func (s *MiloInternalService) QueryConsoleSnapshots(ctx context.Context, req *mi
 	if req.GetPredicate().GetBuilder() != nil {
 		q = q.Eq("Builders", utils.LegacyBuilderIDString(req.Predicate.Builder))
 	}
-	q = q.Start(cur)
+	q = q.Order("Ordinal").Start(cur)
 
 	// Query consoles.
 	consoles := make([]*projectconfigpb.Console, 0, pageSize)
