@@ -68,6 +68,15 @@ export const VARIANT_STATUS_ICON_MAP = Object.freeze({
   [TestVariantStatus.EXPECTED]: 'check_circle',
 });
 
+export const VARIANT_STATUS_HUMAN_READABLE_MAP = Object.freeze({
+  [TestVariantStatus.EXONERATED]: 'exonerated',
+  [TestVariantStatus.EXPECTED]: 'expected',
+  [TestVariantStatus.FLAKY]: 'flaky',
+  [TestVariantStatus.UNEXPECTED]: 'unexpectedly failed',
+  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 'unexpectedly skipped',
+  [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: 'unspecified status',
+});
+
 export const VERDICT_VARIANT_STATUS_MAP = Object.freeze({
   [TestVerdictStatus.TEST_VERDICT_STATUS_UNSPECIFIED]:
     TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED,

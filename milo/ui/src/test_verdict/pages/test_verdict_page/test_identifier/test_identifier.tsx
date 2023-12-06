@@ -19,52 +19,34 @@ import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
 import ReportIcon from '@mui/icons-material/Report';
 import WarningIcon from '@mui/icons-material/Warning';
 import Grid from '@mui/material/Grid';
+import { upperFirst } from 'lodash-es';
 
+import { VARIANT_STATUS_HUMAN_READABLE_MAP } from '@/common/constants';
 import { TestVariantStatus } from '@/common/services/resultdb';
 
 import { useTestVerdict } from '../context';
 
 import { CLInfo } from './cl_info';
 
-function getTestStatusIconLabel(status: TestVariantStatus) {
+function getTestVariantStatusLabel(status: TestVariantStatus) {
+  return upperFirst(VARIANT_STATUS_HUMAN_READABLE_MAP[status]);
+}
+
+function getTestVariantStatusIcon(status: TestVariantStatus) {
   switch (status) {
     case TestVariantStatus.UNEXPECTED:
-      return (
-        <>
-          <CancelIcon className="unexpected" /> Unexpectedly failed:
-        </>
-      );
+      return <CancelIcon className="unexpected" />;
     case TestVariantStatus.UNEXPECTEDLY_SKIPPED:
-      return (
-        <>
-          <ReportIcon className="unexpectedly-skipped" /> Unexpectedly skipped:
-        </>
-      );
+      return <ReportIcon className="unexpectedly-skipped" />;
     case TestVariantStatus.FLAKY:
-      return (
-        <>
-          <WarningIcon className="flaky" /> Flaky:
-        </>
-      );
+      return <WarningIcon className="flaky" />;
     case TestVariantStatus.EXONERATED:
-      return (
-        <>
-          <RemoveCircleIcon className="exonerated" /> Exonerated:
-        </>
-      );
+      return <RemoveCircleIcon className="exonerated" />;
     case TestVariantStatus.EXPECTED:
-      return (
-        <>
-          <CheckCircleIcon className="expected" /> Expected:
-        </>
-      );
+      return <CheckCircleIcon className="expected" />;
     case TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED:
     default:
-      return (
-        <>
-          <QuestionMarkIcon className="unspecified" /> Unknown status:
-        </>
-      );
+      return <QuestionMarkIcon className="unspecified" />;
   }
 }
 
@@ -84,7 +66,8 @@ export function TestIdentifier() {
           fontWeight: '700',
         }}
       >
-        {getTestStatusIconLabel(status)} {testId}
+        {getTestVariantStatusIcon(status)}
+        {getTestVariantStatusLabel(status)}: {testId}
       </Grid>
     </Grid>
   );

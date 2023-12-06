@@ -14,12 +14,13 @@
 
 import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
+import { upperFirst } from 'lodash-es';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { LabsWarningAlert } from '@/common/components/labs_warning_alert';
 import { PageMeta } from '@/common/components/page_meta';
-import { UiPage } from '@/common/constants';
+import { UiPage, VARIANT_STATUS_HUMAN_READABLE_MAP } from '@/common/constants';
 import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import { ResultDb } from '@/common/services/resultdb';
 
@@ -68,6 +69,7 @@ export function TestVerdictPage() {
   if (!results?.testVariants?.length) {
     throw new Error('No test verdict found matching the provided details.');
   }
+
   // The variable is called `verdict` even though it is from a test variants
   // array because the test variants array is actually a test verdict array despite its name.
   // We also only expect this array to only contain 1 item.
@@ -83,8 +85,13 @@ export function TestVerdictPage() {
       flexDirection="column"
     >
       <LabsWarningAlert />
-      {/** TODO(b/308858986): Format metadata to reflect verdict status. */}
-      <PageMeta title="" selectedPage={UiPage.TestVerdict} project={project} />
+      <PageMeta
+        title={`${upperFirst(
+          VARIANT_STATUS_HUMAN_READABLE_MAP[verdict.status],
+        )} | ${verdict.testId}`}
+        selectedPage={UiPage.TestVerdict}
+        project={project}
+      />
       <TestVerdictProvider
         invocationID={invID}
         project={project}
