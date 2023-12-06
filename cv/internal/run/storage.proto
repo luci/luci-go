@@ -80,6 +80,12 @@ message Trigger {
   // Additional label is recorded in case applicable ConfigGroup had additional
   // modes, e.g. for QUICK_DRY_RUN mode.
   string additional_label = 5;
+  // ModeDefinition is the definition of the mode in case `mode` is not standard
+  // modes supported by LUCI CV (e.g. DRY_RUN, FULL_RUN, NEW_PATCHSET_RUN) but
+  // is provided through project configuration.
+  //
+  // This field is empty if `mode` is standard mode in LUCI CV.
+  cv.config.Mode mode_definition = 6;
   // Triggering user email. Always known for Runs created since July 2021.
   //
   // Gerrit doesn't guarantee that every user has set their preferred email,
@@ -94,16 +100,16 @@ message Trigger {
 }
 
 // Triggers describes the triggers associated with a CL.
-message Triggers{
+message Triggers {
   // CQVoteTrigger is the trigger that corresponds to a vote on the
   // `Commit-Queue` Gerrit label.
- Trigger cq_vote_trigger = 1;
+  Trigger cq_vote_trigger = 1;
 
- // NewPatchsetRunTrigger is the trigger that is created automatically by
- // uploading a new patchset.
- //
- // This is only populated if the CL matches a config group that allows this.
- Trigger new_patchset_run_trigger = 2;
+  // NewPatchsetRunTrigger is the trigger that is created automatically by
+  // uploading a new patchset.
+  //
+  // This is only populated if the CL matches a config group that allows this.
+  Trigger new_patchset_run_trigger = 2;
 }
 
 // Submission describes the state of Run submission.
@@ -441,7 +447,7 @@ message OngoingLongOps {
     // a run's gerrit CLs.
     message PostGerritMessage {
       // Message to post to gerrit. The current implementation treats the
-      // message as a unique key to achieve idempotency. If multiple payloads
+      // message as a unique key to achieve idempotence. If multiple payloads
       // with the same message is triggered for the same run, only one would
       // be posted.
       string message = 1;

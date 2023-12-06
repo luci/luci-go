@@ -225,6 +225,7 @@ func TestFindCQTrigger(t *testing.T) {
 				c.So(t, la.ShouldResembleProto, &run.Trigger{
 					Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 					Mode:            customRunMode,
+					ModeDefinition:  cg.AdditionalModes[0],
 					GerritAccountId: user1.GetAccountId(),
 					Email:           user1.GetEmail(),
 					AdditionalLabel: customLabel,
