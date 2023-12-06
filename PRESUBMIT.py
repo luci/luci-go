@@ -103,6 +103,22 @@ def CheckGoModTidy(input_api, output_api):
       message=output_api.PresubmitError)
   ])
 
+
+def CheckGoLinterConfigs(input_api, output_api):
+  root = input_api.change.RepositoryRoot()
+  return input_api.RunTests([
+    input_api.Command(
+      name='regen_golangci_config.py --check',
+      cmd=[
+        input_api.python3_executable,
+        os.path.join(root, 'scripts', 'regen_golangci_config.py'),
+        '--check',
+      ],
+      kwargs={},
+      message=output_api.PresubmitError)
+  ])
+
+
 def CheckGoogleapisInSync(input_api, output_api):
   root = input_api.change.RepositoryRoot()
   return input_api.RunTests([
@@ -130,7 +146,8 @@ def CommonChecks(input_api, output_api):
       source_file_filter=source_file_filter(input_api)))
   if os.environ.get('GO111MODULE') != 'off':
     results.extend(CheckGoModTidy(input_api, output_api))
-    results.extend(CheckGoogleapisInSync(input_api, output_api))
+  results.extend(CheckGoLinterConfigs(input_api, output_api))
+  results.extend(CheckGoogleapisInSync(input_api, output_api))
   return results
 
 

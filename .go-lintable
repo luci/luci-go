@@ -1,0 +1,72 @@
+# This file defines directories that should have .golangci.yaml in them.
+#
+# See scripts/regen_golangci_config.py for the format of this file and for
+# details of how it is parsed. Basically it is a list of sections. Each section
+# defines a template to use for generating .golangci.yaml and a list of
+# directory paths. regen_golangci_config.py script will use the template name to
+# figure out how to generate .golangci.yaml and place each such generated file
+# into every given path.
+#
+# Each directory in the repository that contains *.go files should be covered
+# by exactly one generated .golangci.yaml. Otherwise `golangci-lint` may get
+# confused and use a wrong config. The script will check that.
+#
+# See also:
+#   https://github.com/golangci/golangci-lint/issues/2689
+#   https://github.com/golangci/golangci-lint/issues/828
+
+# Miscellaneous packages that contain collections of unrelated things. Their
+# local imports are not grouped together (since it makes little sense to group
+# unrelated things together).
+[libraries]
+template = library.yaml
+paths =
+    appengine
+    auth
+    client
+    common
+    examples
+    hardcoded
+    lucictx
+    starlark
+    third_party
+    tools
+    web
+
+
+# Packages that are roots of projects. Local imports from such projects are
+# groups together.
+[projects]
+template = project.yaml
+paths =
+    analysis
+    auth_service
+    bisection
+    buildbucket
+    casviewer
+    cipd
+    cipkg
+    config
+    config_service
+    cv
+    deploy
+    gae
+    gce
+    grpc
+    led
+    logdog
+    luci_notify
+    lucicfg
+    luciexe
+    mailer
+    milo
+    mmutex
+    provenance
+    resultdb
+    scheduler
+    server
+    standalone
+    swarming
+    tokenserver
+    tree_status
+    vpython
