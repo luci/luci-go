@@ -21,21 +21,22 @@ import (
 	"fmt"
 	"net/http"
 
+	"google.golang.org/protobuf/encoding/protojson"
+
 	"go.chromium.org/luci/bisection/compilefailuredetection"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/metrics"
 	"go.chromium.org/luci/bisection/rerun"
 	taskpb "go.chromium.org/luci/bisection/task/proto"
+	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/loggingutil"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server/router"
-	"google.golang.org/protobuf/encoding/protojson"
-
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/server/tq"
 )
 
@@ -155,8 +156,6 @@ func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
 		}
 
 		// Handle test rerun build.
-		// Hardcode the builder name for now.
-		// TODO (nqmtuan): Move this to config when we support other projects.
 		testBuilder, err := config.GetTestBuilder(c, project)
 		if err != nil {
 			// If there are no configs for the project, just ignore.
@@ -187,6 +186,21 @@ func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
 			logging.Debugf(c, "Unsupported build for bucket (%q, %q). Exiting early...", project, bucket)
 			bbCounter.Add(c, 1, project, string(OutcomeTypeUnsupported))
 			return nil
+		}
+
+		excludedBgs, err := config.GetExcludedBuilderGroupsForCompile(c, project)
+		if err != nil {
+			return errors.Annotate(err, "get excluded builder groups for compile").Err()
+		}
+		builderGroup := util.GetBuilderGroup(bbmsg.Build)
+		if builderGroup != "" {
+			for _, excludedBg := range excludedBgs {
+				if builderGroup == excludedBg {
+					logging.Debugf(c, "Builder group is excluded %s. Exiting early...", builderGroup)
+					bbCounter.Add(c, 1, project, string(OutcomeTypeUnsupported))
+					return nil
+				}
+			}
 		}
 
 		// Just ignore non-successful and non-failed builds

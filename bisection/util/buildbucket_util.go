@@ -89,3 +89,14 @@ func BuilderFromConfigBuilder(builder *configpb.Builder) *bbpb.BuilderID {
 		Builder: builder.Builder,
 	}
 }
+
+// GetBuilderGroup returns the builder group for a build.
+// If there is no builder group set, return empty string.
+func GetBuilderGroup(build *bbpb.Build) string {
+	fields := build.GetInput().GetProperties().GetFields()
+	value, found := fields["builder_group"]
+	if !found {
+		return ""
+	}
+	return value.GetStringValue()
+}

@@ -25,6 +25,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/bisection/compilefailuredetection"
 	"go.chromium.org/luci/bisection/internal/config"
@@ -87,6 +88,30 @@ func TestBuildBucketPubsub(t *testing.T) {
 			err := buildbucketPubSubHandlerImpl(c, r)
 			So(err, ShouldBeNil)
 			So(bbCounter.Get(c, "chrome", "unsupported"), ShouldEqual, 1)
+		})
+
+		Convey("Excluded builder group", func() {
+			c, _ := tsmon.WithDummyInMemory(c)
+			buildPubsub := &buildbucketpb.BuildsV2PubSub{
+				Build: &buildbucketpb.Build{
+					Builder: &buildbucketpb.BuilderID{
+						Project: "chromium",
+						Bucket:  "ci",
+					},
+					Input: &buildbucketpb.Build_Input{
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"builder_group": structpb.NewStringValue("chromium.clang"),
+							},
+						},
+					},
+					Status: buildbucketpb.Status_FAILURE,
+				},
+			}
+			r := &http.Request{Body: makeBBReq(buildPubsub)}
+			err := buildbucketPubSubHandlerImpl(c, r)
+			So(err, ShouldBeNil)
+			So(bbCounter.Get(c, "chromium", "unsupported"), ShouldEqual, 1)
 		})
 
 		Convey("Rerun metrics captured", func() {

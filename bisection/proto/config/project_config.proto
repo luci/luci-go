@@ -27,7 +27,7 @@ message ProjectConfig {
 }
 
 // CompileAnalysisConfig is the configuration data for compile failure bisection.
-// Next available tag: 5.
+// Next available tag: 6.
 message CompileAnalysisConfig {
   // The build config to run compile analysis.
   BuildConfig build_config = 4;
@@ -37,6 +37,8 @@ message CompileAnalysisConfig {
   bool nthsection_enabled = 2;
   // Configuration data for Gerrit integration for compile failures.
   GerritConfig gerrit_config = 3;
+  // Only compile failure which satisfies this filter will be ingested.
+  FailureIngestionFilter failure_ingestion_filter = 5;
 }
 
 // TestAnalysisConfig is the configuration data for test failure bisection.
@@ -87,17 +89,22 @@ message TestAnalysisConfig {
 message FailureIngestionFilter {
   // The list of buildbucket buckets that we should not bisect on.
   // For example, "reviver", "try", and "findit".
+  // Only applicable for test failure analysis.
   repeated string excluded_buckets = 1;
   // The list of swarming test task pools that we want to exclude running bisection.
   // For example, we want to exclude the "chromium.tests.gpu" pool (b/301523224)
   // because there are limited resources in the pool.
   // Note: this is not the pools that the builder run, but the swarming test task pool,
   // which contains the bots that actually run the tests on swarming.
+  // Only applicable for test failure analysis.
   repeated string excluded_test_pools = 2;
   // If this is specified, bisection will only run on failures
   // from the builder groups in the list.
   // An empty list means that failures from all builder groups can be ingested.
+  // Only applicable for test failure analysis.
   repeated string allowed_builder_groups = 3;
+  // The list of builder groups that we should not run bisect on.
+  repeated string excluded_builder_groups = 4;
 }
 
 // GerritConfig is the configuration data for Gerrit integration

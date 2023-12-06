@@ -25,6 +25,9 @@ func CreatePlaceholderProjectConfig() *configpb.ProjectConfig {
 			CulpritVerificationEnabled: true,
 			NthsectionEnabled:          true,
 			GerritConfig:               createPlaceHolderGerritConfig(),
+			FailureIngestionFilter: &configpb.FailureIngestionFilter{
+				ExcludedBuilderGroups: []string{"chromium.clang"},
+			},
 		},
 		TestAnalysisConfig: &configpb.TestAnalysisConfig{
 			BuildConfig:     createPlaceHolderTestBuildConfig(),
