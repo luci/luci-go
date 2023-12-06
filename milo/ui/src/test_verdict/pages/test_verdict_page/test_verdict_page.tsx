@@ -17,6 +17,7 @@ import LinearProgress from '@mui/material/LinearProgress';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { LabsWarningAlert } from '@/common/components/labs_warning_alert';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants';
 import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
@@ -81,6 +82,7 @@ export function TestVerdictPage() {
       rowGap={1}
       flexDirection="column"
     >
+      <LabsWarningAlert />
       {/** TODO(b/308858986): Format metadata to reflect verdict status. */}
       <PageMeta title="" selectedPage={UiPage.TestVerdict} project={project} />
       <TestVerdictProvider
