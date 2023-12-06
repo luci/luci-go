@@ -123,6 +123,7 @@ func TestParseAndValidateConfigs(t *testing.T) {
 			"pools.cfg": `
 				pool {
 					name: "blah"
+					realm: "test:bleh"
 				}
 			`,
 			"bots.cfg": `
@@ -146,13 +147,13 @@ func TestParseAndValidateConfigs(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(bundle, ShouldResembleProto, &internalcfgpb.ConfigBundle{
 			Revision: "rev",
-			Digest:   "QFraUvvnl/Ew1tL4pxwOQmnFLMlJH15UVvrtptR8kcM",
+			Digest:   "gqRBCV2RrzjkYIbzgEswbfB2JkDdQMx7CR0uLKbQoNM",
 			Settings: &configpb.SettingsCfg{
 				GoogleAnalytics: "boo",
 			},
 			Pools: &configpb.PoolsCfg{
 				Pool: []*configpb.Pool{
-					{Name: []string{"blah"}},
+					{Name: []string{"blah"}, Realm: "test:bleh"},
 				},
 			},
 			Bots: &configpb.BotsCfg{
@@ -324,6 +325,44 @@ func TestFetchFromDatastore(t *testing.T) {
 				GoogleAnalytics: "blah",
 			}))
 		})
+	})
+}
+
+func TestBuildQueriableConfig(t *testing.T) {
+	t.Parallel()
+
+	build := func(bundle *internalcfgpb.ConfigBundle) (*Config, error) {
+		return buildQueriableConfig(context.Background(), &configBundle{
+			Revision: "some-revision",
+			Digest:   "some-digest",
+			Bundle:   bundle,
+		})
+	}
+
+	Convey("OK", t, func() {
+		cfg, err := build(&internalcfgpb.ConfigBundle{
+			Settings: defaultConfigs().Settings,
+			Pools: &configpb.PoolsCfg{
+				Pool: []*configpb.Pool{
+					{
+						Name:  []string{"a"},
+						Realm: "realm:a",
+					},
+					{
+						Name:  []string{"b"},
+						Realm: "realm:b",
+					},
+				},
+			},
+			Bots: &configpb.BotsCfg{},
+		})
+		So(err, ShouldBeNil)
+
+		// Pools.cfg processed correctly.
+		So(cfg.Pools(), ShouldResemble, []string{"a", "b"})
+		So(cfg.Pool("a").Realm, ShouldEqual, "realm:a")
+		So(cfg.Pool("b").Realm, ShouldEqual, "realm:b")
+		So(cfg.Pool("unknown"), ShouldBeNil)
 	})
 }
 

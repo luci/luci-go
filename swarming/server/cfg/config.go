@@ -72,7 +72,19 @@ type Config struct {
 	Refreshed time.Time
 
 	// TODO: Add the rest of configs.
-	settings *configpb.SettingsCfg
+	settings  *configpb.SettingsCfg
+	poolMap   map[string]*Pool // pool name => config
+	poolNames []string         // sorted list of pool names
+}
+
+// Pool returns a config for the given pool or nil if there's no such pool.
+func (cfg *Config) Pool(name string) *Pool {
+	return cfg.poolMap[name]
+}
+
+// Pools returns a sorted list of all known pools.
+func (cfg *Config) Pools() []string {
+	return cfg.poolNames
 }
 
 // UpdateConfigs fetches the most recent server configs from LUCI Config and
@@ -370,12 +382,25 @@ func fetchFromDatastore(ctx context.Context, cur *Config) (*Config, error) {
 // buildQueriableConfig transforms config protos into data structures optimized
 // for config queries.
 func buildQueriableConfig(ctx context.Context, ent *configBundle) (*Config, error) {
-	// TODO: Implement.
+	// TODO: Implement the rest.
+
+	pools, err := newPoolsConfig(ent.Bundle.Pools)
+	if err != nil {
+		return nil, errors.Annotate(err, "bad pools.cfg").Err()
+	}
+	poolNames := make([]string, 0, len(pools))
+	for name := range pools {
+		poolNames = append(poolNames, name)
+	}
+	sort.Strings(poolNames)
+
 	return &Config{
 		Revision:  ent.Revision,
 		Digest:    ent.Digest,
 		Fetched:   ent.Fetched,
 		Refreshed: clock.Now(ctx).UTC(),
 		settings:  withDefaultSettings(ent.Bundle.Settings),
+		poolMap:   pools,
+		poolNames: poolNames,
 	}, nil
 }

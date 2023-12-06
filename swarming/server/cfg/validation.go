@@ -18,6 +18,7 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config/validation"
 
 	configpb "go.chromium.org/luci/swarming/proto/config"
@@ -53,12 +54,16 @@ func validateSettingsCfg(ctx *validation.Context, cfg *configpb.SettingsCfg) {
 	// TODO
 }
 
-// validatePoolsCfg validates pools.cfg, writing errors into `ctx`.
-func validatePoolsCfg(ctx *validation.Context, cfg *configpb.PoolsCfg) {
-	// TODO
-}
-
 // validateBotsCfg validates bots.cfg, writing errors into `ctx`.
 func validateBotsCfg(ctx *validation.Context, cfg *configpb.BotsCfg) {
 	// TODO
+}
+
+// validateDimensionValue checks if `val` can be a dimensions value
+func validateDimensionValue(val string) error {
+	if val == "" {
+		return errors.Reason("the value cannot be empty").Err()
+	}
+	// TODO(vadimsh): Implement.
+	return nil
 }
