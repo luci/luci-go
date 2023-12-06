@@ -22,19 +22,14 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 )
 
+const body = "CV is trying the patch."
+
 // OnRunStarted generates a starting message for humans.
 func OnRunStarted(mode run.Mode) string {
-	const body = "CV is trying the patch."
-	switch mode {
-	case run.QuickDryRun:
-		return "Quick dry run: " + body
-	case run.DryRun:
+	if mode == run.DryRun {
 		return "Dry run: " + body
-	case run.FullRun:
-		return body
-	default:
-		panic(fmt.Sprintf("impossible Run mode %q", mode))
 	}
+	return body
 }
 
 // OnRunStartedGerritMessage generates a starting message to be posted on each

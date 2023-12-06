@@ -59,13 +59,9 @@ func send(ctx context.Context, env *common.Env, client cvbq.Client, id common.Ru
 		panic(fmt.Errorf("the Run status must be final before sending to BQ"))
 	}
 
-	switch r.Mode {
-	case run.DryRun, run.FullRun, run.QuickDryRun:
-	case run.NewPatchsetRun:
-		// New patchset runs need not be exported to BQ at the moment.
+	if r.Mode != run.DryRun && r.Mode != run.FullRun {
+		// only export dry run and full run to bq
 		return nil
-	default:
-		panic(fmt.Errorf("unknown run mode: %s", r.Mode))
 	}
 	// Load CLs and convert them to GerritChanges including submit status.
 	cls, err := run.LoadRunCLs(ctx, r.ID, r.CLs)

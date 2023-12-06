@@ -171,9 +171,6 @@ message ConfigGroup {
   // mode, CQ will fallback to standard DRY_RUN or FULL_RUN.
   //
   // All the mode names must be unique.
-  //
-  // **NOTE**: As of Jan 2023, this field may be given either 1 or 0 mode, and
-  // the name must be "QUICK_DRY_RUN", if provided.
   repeated Mode additional_modes = 7;
 
   // Per-user limits.
@@ -198,8 +195,8 @@ message ConfigGroup {
     message TriggeringCondition {
       // Name of the mode to be matched.
       //
-      // Must be FULL_RUN, DRY_RUN, QUICK_DRY_RUN, NEW_PATCHSET_RUN, or one of
-      // the additional modes configured.
+      // Must be FULL_RUN, DRY_RUN, NEW_PATCHSET_RUN, or one of the additional
+      // modes configured.
       string mode = 1 [(validate.rules).string.min_len = 1];
       // Statuses to trigger the action on.
       //
@@ -683,9 +680,9 @@ message Verifiers {
 
       reserved 12, 13; // mode_regexp[_exclude]
 
-      // If set, require this builder only if the Run mode matches
-      // one of the modes in this list. If unset, it implies that only FULL_RUN
-      // and DRY_RUN are allowed, and temporarily QUICK_DRY_RUN. Optional.
+      // If set, require this builder only if the Run mode matches one of the
+      // modes in this list. If unset, it implies that only FULL_RUN and
+      // DRY_RUN are allowed. Optional.
       repeated string mode_allowlist = 14;
     }
 

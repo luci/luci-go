@@ -156,13 +156,12 @@ type Run struct {
 	// The possible values include
 	// - FULL_RUN
 	// - DRY_RUN
-	// - QUICK_DRY_RUN
+	// - NEW_PATCHSET_RUN
+	// - Any additional run mode defined in the config
 	//
 	// If the mode is FULL_RUN, the Run triggers TryJobs and then submits the CL
 	// if they succeeded.
 	// If the mode is DRY_RUN, the Run trigger TryJobs w/o submission.
-	// If the mode is QUICK_DRY_RUN, the Run triggers a different, usually
-	// smaller/faster, set of TryJobs.
 	Mode string `protobuf:"bytes,4,opt,name=mode,proto3" json:"mode,omitempty"`
 	// Time when the Run was created.
 	//
@@ -176,7 +175,7 @@ type Run struct {
 	EndTime *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	// Owner of the Run.
 	//
-	// For a single-CL Run, this is the preferred email of the owner of
+	// For a single-CL Run, this is the identity string of the owner of
 	// the Gerrit CL (whoever authenticated to Gerrit to upload the first
 	// patchset of the CL). Note that Gerrit CL owner may differ from author and
 	// committer encoded in the Git commit. Also, depending on Gerrit
@@ -186,9 +185,9 @@ type Run struct {
 	// For a multi-CL Run, this is the owner of the Gerrit CL which has the latest
 	// triggering timestamp (e.g. latest CQ+2 vote).
 	Owner string `protobuf:"bytes,9,opt,name=owner,proto3" json:"owner,omitempty"`
-	// Creator of the Run
+	// Creator of the Run.
 	//
-	// This is the preferred email of the user that triggers the run (i.e. first
+	// This is the identity string of the user that triggers the run (i.e. first
 	// user who votes CQ+1 or CQ+2). For multi-CL Run, the will be the triggerer
 	// of the Gerrit CL which has the latest triggering timestamp (e.g. latest
 	// CQ+2 vote).

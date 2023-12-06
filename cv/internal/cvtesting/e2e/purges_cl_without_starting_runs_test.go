@@ -287,13 +287,14 @@ func TestPurgesCLWithMismatchedDepsMode(t *testing.T) {
 		defer cancel()
 
 		const (
-			lProject   = "chromiumos"
-			gHost      = "chromium-review.example.com"
-			gRepo      = "cros/platform"
-			gRef       = "refs/heads/main"
-			gChange44  = 44
-			gChange45  = 45
-			quickLabel = "Quick-Label"
+			lProject      = "chromiumos"
+			gHost         = "chromium-review.example.com"
+			gRepo         = "cros/platform"
+			gRef          = "refs/heads/main"
+			gChange44     = 44
+			gChange45     = 45
+			customLabel   = "Custom-Label"
+			customRunMode = "CUSTOM_RUN"
 		)
 
 		ct.LogPhase(ctx, "Set up stack of 2 CLs with active combine_cls setting but differing modes")
@@ -305,8 +306,8 @@ func TestPurgesCLWithMismatchedDepsMode(t *testing.T) {
 		}
 		cfg.GetConfigGroups()[0].AdditionalModes = []*cfgpb.Mode{{
 			CqLabelValue:    1,
-			Name:            "QUICK_DRY_RUN",
-			TriggeringLabel: quickLabel,
+			Name:            customRunMode,
+			TriggeringLabel: customLabel,
 			TriggeringValue: 1,
 		}}
 		prjcfgtest.Create(ctx, lProject, cfg)
@@ -321,11 +322,11 @@ func TestPurgesCLWithMismatchedDepsMode(t *testing.T) {
 		ci45 := gf.CI(
 			gChange45, gf.Project(gRepo), gf.Ref(gRef), gf.Updated(tStart),
 			gf.Owner("user-1"),
-			// These 2 votes trigger QUICK_DRY_RUN.
+			// These 2 votes trigger customRunMode.
 			gf.CQ(+1, tStart, gf.U("user-1")),
-			gf.Vote(quickLabel, +1, tStart, gf.U("user-1")),
-			// Some other user triggering just the quickLabel, which is a noop.
-			gf.Vote(quickLabel, +1, tStart.Add(-time.Minute), gf.U("user-2")),
+			gf.Vote(customLabel, +1, tStart, gf.U("user-1")),
+			// Some other user triggering just the customLabel, which is a noop.
+			gf.Vote(customLabel, +1, tStart.Add(-time.Minute), gf.U("user-2")),
 		)
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci45, ci44))
 		// Make ci45 depend on ci44 via Git relationship (ie make it a CL stack).
@@ -337,7 +338,7 @@ func TestPurgesCLWithMismatchedDepsMode(t *testing.T) {
 		ct.RunUntil(ctx, func() bool {
 			return (ct.MaxCQVote(ctx, gHost, gChange44) == 0 &&
 				ct.MaxCQVote(ctx, gHost, gChange45) == 0 &&
-				ct.MaxVote(ctx, gHost, gChange45, quickLabel) == 0)
+				ct.MaxVote(ctx, gHost, gChange45, customLabel) == 0)
 		})
 
 		ct.LogPhase(ctx, "Ensure purging happened only after stabilizationDelay")

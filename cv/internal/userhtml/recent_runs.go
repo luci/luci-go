@@ -96,12 +96,8 @@ func parseFormParams(c *router.Context) (recentRunsParams, error) {
 		return params, fmt.Errorf("invalid Run status %q", s)
 	}
 
-	switch m := run.Mode(c.Request.Form.Get("mode")); {
-	case m == "":
-	case m.Valid():
+	if m := run.Mode(c.Request.Form.Get("mode")); m != "" {
 		params.mode = m
-	default:
-		return params, fmt.Errorf("invalid Run mode %q", params.mode)
 	}
 
 	params.pageTokenString = strings.TrimSpace(c.Request.Form.Get("page"))

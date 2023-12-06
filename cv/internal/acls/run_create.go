@@ -162,12 +162,14 @@ func (ck runCreateChecker) canCreateRun(ctx context.Context) (evalResult, error)
 	switch ck.runMode {
 	case run.FullRun:
 		return ck.canCreateFullRun(ctx)
-	case run.DryRun, run.QuickDryRun:
+	case run.DryRun:
 		return ck.canCreateDryRun(ctx)
 	case run.NewPatchsetRun:
 		return ck.canCreateNewPatchsetRun(ctx)
 	default:
-		panic(fmt.Errorf("unknown mode %q", ck.runMode))
+		// TODO - crbug/1484829: check whether the run mode can submit the change
+		// and use canCreateFullRun instead.
+		return ck.canCreateDryRun(ctx)
 	}
 }
 

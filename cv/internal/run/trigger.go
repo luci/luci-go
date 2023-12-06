@@ -22,14 +22,9 @@ import (
 //
 // A trigger is no longer valid if it is no longer found in the CL.
 func HasTriggerChanged(old *Trigger, ts *Triggers, clURL string) string {
-	var cur *Trigger
-	switch Mode(old.Mode) {
-	case NewPatchsetRun:
+	cur := ts.GetCqVoteTrigger()
+	if Mode(old.Mode) == NewPatchsetRun {
 		cur = ts.GetNewPatchsetRunTrigger()
-	case FullRun, DryRun, QuickDryRun:
-		cur = ts.GetCqVoteTrigger()
-	default:
-		panic(fmt.Errorf("unsupported mode %v", old.Mode))
 	}
 
 	switch {
@@ -61,13 +56,10 @@ func (ts *Triggers) WithTrigger(t *Trigger) *Triggers {
 	if ts == nil {
 		ts = &Triggers{}
 	}
-	switch Mode(t.Mode) {
-	case DryRun, FullRun, QuickDryRun:
-		ts.CqVoteTrigger = t
-	case NewPatchsetRun:
+	if Mode(t.Mode) == NewPatchsetRun {
 		ts.NewPatchsetRunTrigger = t
-	default:
-		panic(fmt.Errorf("unsupported mode %s", t.Mode))
+	} else {
+		ts.CqVoteTrigger = t
 	}
 	return ts
 }

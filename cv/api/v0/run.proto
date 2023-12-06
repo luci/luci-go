@@ -94,13 +94,12 @@ message Run {
   // The possible values include
   // - FULL_RUN
   // - DRY_RUN
-  // - QUICK_DRY_RUN
+  // - NEW_PATCHSET_RUN
+  // - Any additional run mode defined in the config
   //
   // If the mode is FULL_RUN, the Run triggers TryJobs and then submits the CL
   // if they succeeded.
   // If the mode is DRY_RUN, the Run trigger TryJobs w/o submission.
-  // If the mode is QUICK_DRY_RUN, the Run triggers a different, usually
-  // smaller/faster, set of TryJobs.
   string mode = 4;
 
   // Time when the Run was created.

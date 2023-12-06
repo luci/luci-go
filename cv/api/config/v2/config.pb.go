@@ -358,9 +358,6 @@ type ConfigGroup struct {
 	// mode, CQ will fallback to standard DRY_RUN or FULL_RUN.
 	//
 	// All the mode names must be unique.
-	//
-	// **NOTE**: As of Jan 2023, this field may be given either 1 or 0 mode, and
-	// the name must be "QUICK_DRY_RUN", if provided.
 	AdditionalModes []*Mode `protobuf:"bytes,7,rep,name=additional_modes,json=additionalModes,proto3" json:"additional_modes,omitempty"`
 	// Per-user limits.
 	//
@@ -1242,8 +1239,8 @@ type ConfigGroup_PostAction_TriggeringCondition struct {
 
 	// Name of the mode to be matched.
 	//
-	// Must be FULL_RUN, DRY_RUN, QUICK_DRY_RUN, NEW_PATCHSET_RUN, or one of
-	// the additional modes configured.
+	// Must be FULL_RUN, DRY_RUN, NEW_PATCHSET_RUN, or one of the additional
+	// modes configured.
 	Mode string `protobuf:"bytes,1,opt,name=mode,proto3" json:"mode,omitempty"`
 	// Statuses to trigger the action on.
 	//
@@ -1900,9 +1897,9 @@ type Verifiers_Tryjob_Builder struct {
 	// If set, this builder will only be triggered if the CL owner (who first
 	// uploaded the CL) is a member of at least one of these groups.
 	OwnerWhitelistGroup []string `protobuf:"bytes,8,rep,name=owner_whitelist_group,json=ownerWhitelistGroup,proto3" json:"owner_whitelist_group,omitempty"`
-	// If set, require this builder only if the Run mode matches
-	// one of the modes in this list. If unset, it implies that only FULL_RUN
-	// and DRY_RUN are allowed, and temporarily QUICK_DRY_RUN. Optional.
+	// If set, require this builder only if the Run mode matches one of the
+	// modes in this list. If unset, it implies that only FULL_RUN and
+	// DRY_RUN are allowed. Optional.
 	ModeAllowlist []string `protobuf:"bytes,14,rep,name=mode_allowlist,json=modeAllowlist,proto3" json:"mode_allowlist,omitempty"`
 }
 

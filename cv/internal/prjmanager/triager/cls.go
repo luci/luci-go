@@ -155,10 +155,8 @@ func (info *clInfo) prunCountByType(c *prjpb.Component) (int, int) {
 		switch mode := run.Mode(c.Pruns[i].GetMode()); mode {
 		case run.NewPatchsetRun:
 			nNewPatchsetRuns++
-		case run.DryRun, run.FullRun, run.QuickDryRun, "":
-			nCQVoteRuns++
 		default:
-			panic(fmt.Errorf("unsupported runmode: %s", mode))
+			nCQVoteRuns++
 		}
 	}
 	return nCQVoteRuns, nNewPatchsetRuns
@@ -288,9 +286,7 @@ func (info *clInfo) addPurgeReason(t *run.Trigger, clError *changelist.CLError) 
 				},
 			},
 		})
-	case (run.Mode(t.Mode) == run.DryRun ||
-		run.Mode(t.Mode) == run.FullRun ||
-		run.Mode(t.Mode) == run.QuickDryRun):
+	default:
 		info.purgeReasons = append(info.purgeReasons, &prjpb.PurgeReason{
 			ClError: clError,
 			ApplyTo: &prjpb.PurgeReason_Triggers{
@@ -299,8 +295,6 @@ func (info *clInfo) addPurgeReason(t *run.Trigger, clError *changelist.CLError) 
 				},
 			},
 		})
-	default:
-		panic(fmt.Sprintf("impossible Run mode %q", t.GetMode()))
 	}
 }
 

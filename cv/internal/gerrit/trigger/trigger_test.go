@@ -196,12 +196,13 @@ func TestFindCQTrigger(t *testing.T) {
 			})
 		})
 		c.Convey("Additional modes", func() {
-			const quickLabel = "Quick"
+			const customLabel = "Custom"
+			const customRunMode = "CUSTOM_RUN"
 			cg.AdditionalModes = []*cfgpb.Mode{
 				{
-					Name:            string(run.QuickDryRun),
+					Name:            customRunMode,
 					CqLabelValue:    +1,
-					TriggeringLabel: quickLabel,
+					TriggeringLabel: customLabel,
 					TriggeringValue: +1,
 				},
 			}
@@ -212,24 +213,24 @@ func TestFindCQTrigger(t *testing.T) {
 					Date:  timestamppb.New(now.Add(-15 * time.Minute)),
 				},
 			}
-			ci.Labels[quickLabel] = &gerritpb.LabelInfo{All: []*gerritpb.ApprovalInfo{
+			ci.Labels[customLabel] = &gerritpb.LabelInfo{All: []*gerritpb.ApprovalInfo{
 				{
 					User:  user1,
 					Value: +1,
 					Date:  timestamppb.New(now.Add(-15 * time.Minute)),
 				},
 			}}
-			c.Convey("Simplest possible QuickDryRun", func() {
+			c.Convey("Simplest possible custom run", func() {
 				t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
 				c.So(t, la.ShouldResembleProto, &run.Trigger{
 					Time:            timestamppb.New(now.Add(-15 * time.Minute)),
-					Mode:            string(run.QuickDryRun),
+					Mode:            customRunMode,
 					GerritAccountId: user1.GetAccountId(),
 					Email:           user1.GetEmail(),
-					AdditionalLabel: quickLabel,
+					AdditionalLabel: customLabel,
 				})
 			})
-			c.Convey("QuickDryRun despite other users' votes", func() {
+			c.Convey("Custom run despite other users' votes", func() {
 				ci.Labels[CQLabelName].All = []*gerritpb.ApprovalInfo{
 					{
 						User:  user1,
@@ -242,7 +243,7 @@ func TestFindCQTrigger(t *testing.T) {
 						Date:  timestamppb.New(now.Add(-10 * time.Minute)),
 					},
 				}
-				ci.Labels[quickLabel] = &gerritpb.LabelInfo{All: []*gerritpb.ApprovalInfo{
+				ci.Labels[customLabel] = &gerritpb.LabelInfo{All: []*gerritpb.ApprovalInfo{
 					{
 						User:  user2,
 						Value: +2,
@@ -255,45 +256,34 @@ func TestFindCQTrigger(t *testing.T) {
 					},
 				}}
 				t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-				c.So(t.GetMode(), c.ShouldEqual, string(run.QuickDryRun))
-			})
-			c.Convey("Custom mode", func() {
-				cg.AdditionalModes[0].Name = "CUSTOM_RUN"
-				t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-				c.So(t, la.ShouldResembleProto, &run.Trigger{
-					Time:            timestamppb.New(now.Add(-15 * time.Minute)),
-					Mode:            "CUSTOM_RUN",
-					GerritAccountId: user1.GetAccountId(),
-					Email:           user1.GetEmail(),
-					AdditionalLabel: quickLabel,
-				})
+				c.So(t.GetMode(), c.ShouldEqual, customRunMode)
 			})
 			c.Convey("Not applicable cases", func() {
 				c.Convey("Additional vote must have the same timestamp", func() {
 					c.Convey("before", func() {
-						ci.Labels[quickLabel].GetAll()[0].Date.Seconds++
+						ci.Labels[customLabel].GetAll()[0].Date.Seconds++
 						t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
 						c.So(t.GetMode(), c.ShouldEqual, string(run.DryRun))
 					})
 					c.Convey("after", func() {
-						ci.Labels[quickLabel].GetAll()[0].Date.Seconds--
+						ci.Labels[customLabel].GetAll()[0].Date.Seconds--
 						t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
 						c.So(t.GetMode(), c.ShouldEqual, string(run.DryRun))
 					})
 				})
 				c.Convey("Additional vote be from the same account", func() {
-					ci.Labels[quickLabel].GetAll()[0].User = user2
+					ci.Labels[customLabel].GetAll()[0].User = user2
 					t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
 					c.So(t.GetMode(), c.ShouldEqual, string(run.DryRun))
 				})
 				c.Convey("Additional vote must have expected value", func() {
-					ci.Labels[quickLabel].GetAll()[0].Value = 100
+					ci.Labels[customLabel].GetAll()[0].Value = 100
 					t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
 					c.So(t.GetMode(), c.ShouldEqual, string(run.DryRun))
 				})
 				c.Convey("Additional vote must be for the correct label", func() {
-					ci.Labels[quickLabel+"-Other"] = ci.Labels[quickLabel]
-					delete(ci.Labels, quickLabel)
+					ci.Labels[customLabel+"-Other"] = ci.Labels[customLabel]
+					delete(ci.Labels, customLabel)
 					t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
 					c.So(t.GetMode(), c.ShouldEqual, string(run.DryRun))
 				})

@@ -124,12 +124,8 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 				return impl.OnReadyForSubmission(ctx, rs)
 			case executionStatus == tryjob.ExecutionState_SUCCEEDED:
 				runStatus = run.Status_SUCCEEDED
-				switch rs.Mode {
-				case run.DryRun, run.FullRun, run.QuickDryRun:
+				if rs.Mode != run.NewPatchsetRun {
 					msgTmpl = "This CL has passed the run"
-				case run.NewPatchsetRun:
-				default:
-					panic(fmt.Errorf("unsupported mode %s", rs.Mode))
 				}
 			case executionStatus == tryjob.ExecutionState_FAILED:
 				runStatus = run.Status_FAILED

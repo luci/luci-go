@@ -280,15 +280,13 @@ func checkRunCreate(ctx context.Context, rs *state.RunState, cg *prjcfg.ConfigGr
 			case run.NewPatchsetRun:
 				// silently
 				metas[cl.ID] = reviewInputMeta{}
-			case run.DryRun, run.QuickDryRun, run.FullRun:
+			default:
 				metas[cl.ID] = reviewInputMeta{
 					message:        aclResult.Failure(cl),
 					notify:         gerrit.Whoms{gerrit.Whom_OWNER, gerrit.Whom_CQ_VOTERS},
 					addToAttention: gerrit.Whoms{gerrit.Whom_OWNER, gerrit.Whom_CQ_VOTERS},
 					reason:         "CQ/CV Run failed",
 				}
-			default:
-				panic(errors.Reason("unknown run mode %s", rs.Mode).Err())
 			}
 		}
 		scheduleTriggersReset(ctx, rs, metas, run.Status_FAILED)

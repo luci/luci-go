@@ -213,8 +213,6 @@ func (t *triagedDeps) categorizeSingle(ctx context.Context, tr, dtr *run.Trigger
 	}
 	// dependent is guaranteed non-nil.
 	switch mode := run.Mode(tr.GetMode()); {
-	case mode == run.DryRun || mode == run.QuickDryRun:
-		// OK.
 	case mode == run.FullRun && isMCEDogfooder && dep.GetKind() == changelist.DepKind_HARD:
 		// If a dep has no or different (prob CQ+1) CQ vote, then schedule
 		// a trigger for CQ+2 on the dep, and postpone a run creation for
@@ -231,8 +229,6 @@ func (t *triagedDeps) categorizeSingle(ctx context.Context, tr, dtr *run.Trigger
 		}
 		t.ensureInvalidDeps()
 		t.invalidDeps.SingleFullDeps = append(t.invalidDeps.SingleFullDeps, dep)
-	default:
-		panic(fmt.Errorf("unknown dependent mode %v", tr))
 	}
 }
 

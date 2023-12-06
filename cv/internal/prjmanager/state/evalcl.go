@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"strings"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
@@ -380,7 +381,7 @@ func (s *State) setTriggers(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL, latestPSRun
 	// In case of misconfiguration, there may be 0 or 2+ applicable
 	// ConfigGroups, in which case we use empty ConfigGroup{}.
 	// This doesn't matter much, since such CLs will be soon purged.
-	// In the very worst case, CL purger will  remove just the CQ vote and not
+	// In the very worst case, CL purger will remove just the CQ vote and not
 	// the additional label's vote defined in actually intended ConfigGroup,
 	// which isn't a big deal.
 	var cg *cfgpb.ConfigGroup
@@ -394,10 +395,18 @@ func (s *State) setTriggers(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL, latestPSRun
 		return
 	}
 
+	allowedRunModes := stringset.NewFromSlice(
+		"",
+		string(run.DryRun),
+		string(run.FullRun),
+		string(run.NewPatchsetRun),
+	)
+	for _, am := range cg.GetAdditionalModes() {
+		allowedRunModes.Add(am.GetName())
+	}
+
 	for _, modeString := range []string{ts.GetCqVoteTrigger().GetMode(), ts.GetNewPatchsetRunTrigger().GetMode()} {
-		switch run.Mode(modeString) {
-		case "", run.DryRun, run.FullRun, run.QuickDryRun, run.NewPatchsetRun:
-		default:
+		if !allowedRunModes.Has(modeString) {
 			err := &changelist.CLError{
 				Kind: &changelist.CLError_UnsupportedMode{UnsupportedMode: string(modeString)},
 			}

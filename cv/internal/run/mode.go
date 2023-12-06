@@ -33,22 +33,10 @@ const (
 	DryRun Mode = "DRY_RUN"
 	// FullRun is DryRun followed by submit.
 	FullRun Mode = "FULL_RUN"
-	// QuickDryRun is like DryRun but different thus allowing either different or
-	// faster yet less thorough Tryjobs.
-	QuickDryRun Mode = "QUICK_DRY_RUN"
 	// NewPatchsetRun is triggered by uploading a new patchset.
 	// It only runs tryjobs explicitly allowed in this mode.
 	NewPatchsetRun Mode = "NEW_PATCHSET_RUN"
 )
-
-func (m Mode) Valid() bool {
-	switch m {
-	case DryRun, FullRun, QuickDryRun, NewPatchsetRun:
-		return true
-	default:
-		return false
-	}
-}
 
 // BQAttemptMode returns corresponding value for legacy CQ BQ export.
 func (m Mode) BQAttemptMode() bqpb.Mode {
@@ -57,15 +45,8 @@ func (m Mode) BQAttemptMode() bqpb.Mode {
 		return bqpb.Mode_DRY_RUN
 	case FullRun:
 		return bqpb.Mode_FULL_RUN
-	case QuickDryRun:
-		return bqpb.Mode_QUICK_DRY_RUN
-	case NewPatchsetRun:
-		// TODO(robertocn): Remove this hack, either by adding a supported mode in bq
-		// export, or by filtering out NPRs from the response to CQD when it calls
-		// FetchActiveRuns().
-		return bqpb.Mode_MODE_UNSPECIFIED
 	default:
-		panic(fmt.Sprintf("unknown RunMode %q", m))
+		panic(fmt.Sprintf("run mode %s should not be exported to bq", m))
 	}
 }
 
@@ -76,8 +57,6 @@ func ModeFromBQAttempt(m bqpb.Mode) (Mode, error) {
 		return DryRun, nil
 	case bqpb.Mode_FULL_RUN:
 		return FullRun, nil
-	case bqpb.Mode_QUICK_DRY_RUN:
-		return QuickDryRun, nil
 	default:
 		return "", fmt.Errorf("unknown Attempt mode %d %s", m, m)
 	}
@@ -86,7 +65,7 @@ func ModeFromBQAttempt(m bqpb.Mode) (Mode, error) {
 // DefaultAllowedModes is the list of RunModes implied by an empty ModeAllowList
 // in tryjob verifier configuration.
 func DefaultAllowedModes() []string {
-	return []string{string(DryRun), string(FullRun), string(QuickDryRun)}
+	return []string{string(DryRun), string(FullRun)}
 }
 
 // GerritMessageTag returns corresponding value for the Gerrit message tag.
@@ -101,12 +80,10 @@ func (m Mode) GerritMessageTag() string {
 		return prefix + "dry-run"
 	case FullRun:
 		return prefix + "full-run"
-	case QuickDryRun:
-		return prefix + "quick-dry-run"
 	case NewPatchsetRun:
 		return prefix + "new-patchset-run"
 	default:
-		panic(fmt.Sprintf("unknown RunMode %q", m))
+		return prefix + "custom:" + string(m)
 	}
 }
 
@@ -118,12 +95,8 @@ func (m Mode) GerritMessageTag() string {
 // Runs triggered by uploading a new patchset, it would notify the owner of the
 // CL and the uploader of the given patchset.
 func (m Mode) GerritNotifyTargets() gerrit.Whoms {
-	switch m {
-	case NewPatchsetRun:
+	if m == NewPatchsetRun {
 		return gerrit.Whoms{gerrit.Whom_OWNER, gerrit.Whom_PS_UPLOADER}
-	case DryRun, FullRun, QuickDryRun:
-		return gerrit.Whoms{gerrit.Whom_OWNER, gerrit.Whom_CQ_VOTERS}
-	default:
-		panic(fmt.Errorf("unsupported mode %s", m))
 	}
+	return gerrit.Whoms{gerrit.Whom_OWNER, gerrit.Whom_CQ_VOTERS}
 }

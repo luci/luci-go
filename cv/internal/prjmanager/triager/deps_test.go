@@ -235,14 +235,6 @@ func TestDepsTriage(t *testing.T) {
 					lastCQVoteTriggered: epoch.Add(3 * time.Second),
 				})
 			})
-			Convey("quick dry run doesn't care about deps' triggers", func() {
-				pcl33 := sup.PCL(33)
-				pcl33.Triggers.CqVoteTrigger.Mode = string(run.QuickDryRun)
-				td := do(pcl33, singIdx)
-				So(td, cvtesting.SafeShouldResemble, &triagedDeps{
-					lastCQVoteTriggered: epoch.Add(3 * time.Second),
-				})
-			})
 			Convey("full run doesn't allow any dep by default", func() {
 				pcl32 := sup.PCL(32)
 				td := do(pcl32, singIdx)

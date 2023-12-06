@@ -123,8 +123,8 @@ func TestRunAggregator(t *testing.T) {
 			putRun(lProject, configGroupName, run.DryRun, run.Status_PENDING, now.Add(-time.Minute), time.Time{})
 			putRun(lProject, configGroupName, run.DryRun, run.Status_RUNNING, now.Add(-time.Hour), now.Add(-time.Hour)) // active run won't be reported
 
-			// Quick DryRun
-			putRun(lProject, configGroupName, run.QuickDryRun, run.Status_PENDING, now.Add(-2*time.Second), time.Time{})
+			// New Patchset Run
+			putRun(lProject, configGroupName, run.NewPatchsetRun, run.Status_PENDING, now.Add(-2*time.Second), time.Time{})
 
 			// Full Run
 			putRun(lProject, configGroupName, run.FullRun, run.Status_PENDING, now.Add(-time.Minute), time.Time{})
@@ -137,10 +137,10 @@ func TestRunAggregator(t *testing.T) {
 			So(pendingRunDurationSent(lProject, configGroupName, run.DryRun).Sum(), ShouldEqual, float64((time.Second + time.Minute).Milliseconds()))
 			So(maxPendingRunAgeSent(lProject, configGroupName, run.DryRun), ShouldEqual, time.Minute.Milliseconds())
 
-			So(pendingRunCountSent(lProject, configGroupName, run.QuickDryRun), ShouldEqual, 1)
-			So(pendingRunDurationSent(lProject, configGroupName, run.QuickDryRun).Count(), ShouldEqual, 1)
-			So(pendingRunDurationSent(lProject, configGroupName, run.QuickDryRun).Sum(), ShouldEqual, float64((2 * time.Second).Milliseconds()))
-			So(maxPendingRunAgeSent(lProject, configGroupName, run.QuickDryRun), ShouldEqual, (2 * time.Second).Milliseconds())
+			So(pendingRunCountSent(lProject, configGroupName, run.NewPatchsetRun), ShouldEqual, 1)
+			So(pendingRunDurationSent(lProject, configGroupName, run.NewPatchsetRun).Count(), ShouldEqual, 1)
+			So(pendingRunDurationSent(lProject, configGroupName, run.NewPatchsetRun).Sum(), ShouldEqual, float64((2 * time.Second).Milliseconds()))
+			So(maxPendingRunAgeSent(lProject, configGroupName, run.NewPatchsetRun), ShouldEqual, (2 * time.Second).Milliseconds())
 
 			So(pendingRunCountSent(lProject, configGroupName, run.FullRun), ShouldEqual, 2)
 			So(pendingRunDurationSent(lProject, configGroupName, run.FullRun).Count(), ShouldEqual, 2)
@@ -155,8 +155,8 @@ func TestRunAggregator(t *testing.T) {
 			putRun(lProject, configGroupName, run.DryRun, run.Status_RUNNING, now.Add(-time.Minute), now.Add(-time.Minute))
 			putRun(lProject, configGroupName, run.DryRun, run.Status_SUCCEEDED, now.Add(-time.Hour), now.Add(-time.Hour)) // ended run won't be reported
 
-			// Quick DryRun
-			putRun(lProject, configGroupName, run.QuickDryRun, run.Status_RUNNING, now.Add(-2*time.Second), now.Add(-time.Second))
+			// New Patchset Run
+			putRun(lProject, configGroupName, run.NewPatchsetRun, run.Status_RUNNING, now.Add(-2*time.Second), now.Add(-time.Second))
 
 			// Full Run
 			putRun(lProject, configGroupName, run.FullRun, run.Status_WAITING_FOR_SUBMISSION, now.Add(-time.Minute), now.Add(-time.Minute))
@@ -168,9 +168,9 @@ func TestRunAggregator(t *testing.T) {
 			So(activeRunDurationSent(lProject, configGroupName, run.DryRun).Count(), ShouldEqual, 1)
 			So(activeRunDurationSent(lProject, configGroupName, run.DryRun).Sum(), ShouldEqual, (time.Minute).Seconds())
 
-			So(activeRunCountSent(lProject, configGroupName, run.QuickDryRun), ShouldEqual, 1)
-			So(activeRunDurationSent(lProject, configGroupName, run.QuickDryRun).Count(), ShouldEqual, 1)
-			So(activeRunDurationSent(lProject, configGroupName, run.QuickDryRun).Sum(), ShouldEqual, (time.Second).Seconds())
+			So(activeRunCountSent(lProject, configGroupName, run.NewPatchsetRun), ShouldEqual, 1)
+			So(activeRunDurationSent(lProject, configGroupName, run.NewPatchsetRun).Count(), ShouldEqual, 1)
+			So(activeRunDurationSent(lProject, configGroupName, run.NewPatchsetRun).Sum(), ShouldEqual, (time.Second).Seconds())
 
 			So(activeRunCountSent(lProject, configGroupName, run.FullRun), ShouldEqual, 2)
 			So(activeRunDurationSent(lProject, configGroupName, run.FullRun).Count(), ShouldEqual, 2)

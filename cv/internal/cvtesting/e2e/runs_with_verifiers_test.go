@@ -122,10 +122,10 @@ func TestCreatesSingularRun(t *testing.T) {
 	})
 }
 
-func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
+func TestCreatesSingularCustomRunSuccess(t *testing.T) {
 	t.Parallel()
 
-	Convey("CV creates 1 CL Quick Dry Run, which succeeds", t, func() {
+	Convey("CV creates 1 CL Custom Run, which succeeds", t, func() {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
 		ctx, cancel := ct.SetUp(t)
@@ -136,17 +136,19 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 		const gRepo = "re/po"
 		const gRef = "refs/heads/main"
 		const gChange = 33
-		const quickLabel = "Quick-Label"
+		const customLabel = "Custom-Label"
+		const customRunMode = "CUSTOM_RUN"
 
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef, &cfgpb.Verifiers_Tryjob_Builder{
-			Host: buildbucketHost,
-			Name: fmt.Sprintf("%s/try/test-builder", lProject),
+			Host:          buildbucketHost,
+			Name:          fmt.Sprintf("%s/try/test-builder", lProject),
+			ModeAllowlist: []string{customRunMode},
 		})
 		cfg.GetConfigGroups()[0].AdditionalModes = []*cfgpb.Mode{{
-			Name:            string(run.QuickDryRun),
+			Name:            customRunMode,
 			CqLabelValue:    1,
 			TriggeringValue: 1,
-			TriggeringLabel: quickLabel,
+			TriggeringLabel: customLabel,
 		}}
 		ct.BuildbucketFake.EnsureBuilders(cfg)
 		prjcfgtest.Create(ctx, lProject, cfg)
@@ -158,9 +160,9 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 			gf.Owner("user-1"),
 			gf.Updated(tStart),
 			gf.CQ(+1, tStart, gf.U("user-2")),
-			gf.Vote(quickLabel, +1, tStart, gf.U("user-2")),
+			gf.Vote(customLabel, +1, tStart, gf.U("user-2")),
 			// Spurious vote from user-3.
-			gf.Vote(quickLabel, +5, tStart.Add(-10*time.Second), gf.U("user-3")),
+			gf.Vote(customLabel, +5, tStart.Add(-10*time.Second), gf.U("user-3")),
 		)))
 		// Only a committer can trigger a DryRun for someone else' CL.
 		ct.AddCommitter("user-2")
@@ -173,7 +175,7 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
 			return r != nil && r.Status == run.Status_RUNNING
 		})
-		So(r.Mode, ShouldEqual, run.QuickDryRun)
+		So(r.Mode, ShouldEqual, run.Mode(customRunMode))
 
 		ct.LogPhase(ctx, "All Tryjobs complete successfully")
 		var buildID int64
@@ -211,11 +213,8 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 		So(ct.LoadRunsOf(ctx, lProject), ShouldHaveLength, 1)
 		So(finalRun.Status, ShouldEqual, run.Status_SUCCEEDED)
 		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 0)
-		So(ct.MaxVote(ctx, gHost, gChange, quickLabel), ShouldEqual, 0)
+		So(ct.MaxVote(ctx, gHost, gChange, customLabel), ShouldEqual, 0)
 		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, "This CL has passed the run")
-
-		ct.LogPhase(ctx, "BQ export must complete")
-		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
 
 		ct.LogPhase(ctx, "RunEnded pubsub message must be sent")
 		ct.RunUntil(ctx, func() bool { return len(ct.RunEndedPubSubTasks()) == 1 })
@@ -225,10 +224,10 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 	})
 }
 
-func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
+func TestCreatesSingularDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 	t.Parallel()
 
-	Convey("CV creates 1 CL Quick Dry Run first and then upgrades to Full Run", t, func() {
+	Convey("CV creates 1 CL Dry Run first and then upgrades to Full Run", t, func() {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
 		ctx, cancel := ct.SetUp(t)
@@ -239,18 +238,11 @@ func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 		const gRepo = "re/po"
 		const gRef = "refs/heads/main"
 		const gChange = 33
-		const quickLabel = "Quick-Label"
 
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef, &cfgpb.Verifiers_Tryjob_Builder{
 			Host: buildbucketHost,
 			Name: fmt.Sprintf("%s/try/test-builder", lProject),
 		})
-		cfg.GetConfigGroups()[0].AdditionalModes = []*cfgpb.Mode{{
-			Name:            string(run.QuickDryRun),
-			CqLabelValue:    1,
-			TriggeringValue: 1,
-			TriggeringLabel: quickLabel,
-		}}
 		ct.BuildbucketFake.EnsureBuilders(cfg)
 		prjcfgtest.Create(ctx, lProject, cfg)
 
@@ -261,7 +253,6 @@ func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 			gf.Owner("user-1"),
 			gf.Updated(tStart),
 			gf.CQ(+1, tStart, gf.U("user-2")),
-			gf.Vote(quickLabel, +1, tStart, gf.U("user-2")),
 		)))
 		// Only a committer can trigger a DryRun for someone else' CL.
 		ct.AddCommitter("user-2")
@@ -274,16 +265,15 @@ func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 			qdr = ct.EarliestCreatedRunOf(ctx, lProject)
 			return qdr != nil && qdr.Status == run.Status_RUNNING
 		})
-		So(qdr.Mode, ShouldEqual, run.QuickDryRun)
+		So(qdr.Mode, ShouldEqual, run.DryRun)
 
-		ct.LogPhase(ctx, "User upgrades to Full Run but doesn't unvote Quick-Label")
+		ct.LogPhase(ctx, "User upgrades to Full Run")
 		tStart2 := ct.Clock.Now()
 		ct.GFake.MutateChange(gHost, gChange, func(c *gf.Change) {
 			gf.CQ(+2, tStart2, gf.U("user-2"))(c.Info)
 			gf.Approve()(c.Info)
 			gf.Updated(tStart2)(c.Info)
 		})
-		So(ct.MaxVote(ctx, gHost, gChange, quickLabel), ShouldEqual, 1) // vote stays
 		var fr *run.Run
 		ct.RunUntil(ctx, func() bool {
 			runs := ct.LoadRunsOf(ctx, lProject)
@@ -332,8 +322,6 @@ func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 		So(ct.LoadRunsOf(ctx, lProject), ShouldHaveLength, 2)
 		So(finalRun.Status, ShouldEqual, run.Status_FAILED)
 		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 0)
-		// Removed the stale Quick-Run vote.
-		So(ct.MaxVote(ctx, gHost, gChange, quickLabel), ShouldEqual, 0)
 		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, "This CL has failed the run")
 
 		ct.LogPhase(ctx, "BQ export must complete")

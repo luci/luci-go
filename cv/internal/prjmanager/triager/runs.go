@@ -208,9 +208,7 @@ func (rs *runStage) stageNewCQVoteRunsFrom(ctx context.Context, clid int64, info
 	if runs := combo.overlappingRuns(); len(runs) > 0 {
 		for runIndex, sharedCLsCount := range runs {
 			prun := rs.c.GetPruns()[runIndex]
-			switch run.Mode(prun.Mode) {
-			case run.DryRun, run.FullRun, run.QuickDryRun:
-			default:
+			if run.Mode(prun.Mode) == run.NewPatchsetRun {
 				continue
 			}
 

@@ -44,7 +44,7 @@ func TestIsModeAllowed(t *testing.T) {
 			So(isModeAllowed(run.DryRun, []string{string(run.FullRun), string(run.DryRun)}), ShouldBeTrue)
 		})
 		Convey("when the mode is not allowed", func() {
-			So(isModeAllowed(run.DryRun, []string{string(run.FullRun), string(run.QuickDryRun)}), ShouldBeFalse)
+			So(isModeAllowed(run.DryRun, []string{string(run.FullRun)}), ShouldBeFalse)
 		})
 	})
 }

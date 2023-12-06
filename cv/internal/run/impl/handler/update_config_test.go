@@ -107,7 +107,7 @@ func TestUpdateConfig(t *testing.T) {
 						},
 					},
 					AdditionalModes: []*cfgpb.Mode{{
-						Name:            "QUICK_DRY_RUN",
+						Name:            "CUSTOM_RUN",
 						CqLabelValue:    1,
 						TriggeringValue: 1,
 						TriggeringLabel: "Will-Be-Changed-In-Tests-Below",
@@ -133,8 +133,8 @@ func TestUpdateConfig(t *testing.T) {
 		putRunCL(gf.CI(
 			2, gf.Project(gRepoSecond),
 			gf.CQ(+1, triggerTime, gf.U("user-1")),
-			// Quick+1 has no effect as AdditionalModes above is misconfigured.
-			gf.Vote("Quick", +1, triggerTime, gf.U("user-1")),
+			// Custom+1 has no effect as AdditionalModes above is misconfigured.
+			gf.Vote("Custom", +1, triggerTime, gf.U("user-1")),
 		), cgMain)
 		rs := &state.RunState{
 			Run: run.Run{
@@ -286,7 +286,7 @@ func TestUpdateConfig(t *testing.T) {
 				ensureCancelled()
 			})
 			Convey("CLs trigger has changed", func() {
-				cfgNew.ConfigGroups[0].AdditionalModes[0].TriggeringLabel = "Quick"
+				cfgNew.ConfigGroups[0].AdditionalModes[0].TriggeringLabel = "Custom"
 				ensureCancelled()
 			})
 		})
