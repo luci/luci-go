@@ -309,9 +309,16 @@ message SubmitOptions {
 message Mode {
   // Name of the mode.
   //
-  // Must match regex "^[a-zA-Z][a-zA-Z0-9_-]{0,39}$".
+  // Must match regex "^[A-Z][A-Z_]{0,39}$".
+  // Must not be one of the reserved Run modes
+  //  - DRY_RUN
+  //  - FULL_RUN
+  //  - NEW_PATCHSET_RUN
   string name = 1 [
-      (validate.rules).string.pattern = "^[a-zA-Z][a-zA-Z0-9-9_-]{0,39}$"
+      (validate.rules).string = {
+        pattern: '^[A-Z][A-Z_]{0,39}$',
+        not_in: ['DRY_RUN', 'FULL_RUN', 'NEW_PATCHSET_RUN'],
+      }
   ];
 
   // Value of Commit-Queue label that triggers a CQ Run in the mode.
@@ -329,7 +336,7 @@ message Mode {
      }
   ];
 
-  // Value of the `trigerring_label` that triggers a CQ Run in the mode.
+  // Value of the `triggering_label` that triggers a CQ Run in the mode.
   //
   // Must be > 0
   int32 triggering_value = 4 [(validate.rules).int32.gt = 0];

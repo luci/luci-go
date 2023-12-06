@@ -328,7 +328,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 			})
 
 			mode := &cfgpb.Mode{
-				Name:            "QUICK_DRY_RUN",
+				Name:            "TEST_RUN",
 				CqLabelValue:    1,
 				TriggeringLabel: "TEST_RUN_LABEL",
 				TriggeringValue: 2,
@@ -379,22 +379,10 @@ func TestValidateProjectDetailed(t *testing.T) {
 			// Tests for additional mode specific verifiers.
 			Convey("additional_modes", func() {
 				cfg.ConfigGroups[0].AdditionalModes = []*cfgpb.Mode{mode}
-				Convey("reserved names", func() {
-					Convey("DRY_RUN", func() { mode.Name = "DRY_RUN" })
-					Convey("FULL_RUN", func() { mode.Name = "FULL_RUN" })
-
-					validateProjectConfig(vctx, &cfg)
-					So(vctx.Finalize(), ShouldErrLike, "MUST be `QUICK_DRY_RUN`")
-				})
-				Convey("not QUICK_DRY_RUN", func() {
-					mode.Name = "TEST_RUN"
-					validateProjectConfig(vctx, &cfg)
-					So(vctx.Finalize(), ShouldErrLike, "MUST be `QUICK_DRY_RUN`")
-				})
 				Convey("duplicate names", func() {
 					cfg.ConfigGroups[0].AdditionalModes = []*cfgpb.Mode{mode, mode}
 					validateProjectConfig(vctx, &cfg)
-					So(vctx.Finalize(), ShouldErrLike, `"QUICK_DRY_RUN" is already in use`)
+					So(vctx.Finalize(), ShouldErrLike, `"TEST_RUN" is already in use`)
 				})
 			})
 
@@ -483,15 +471,15 @@ func TestValidateProjectDetailed(t *testing.T) {
 
 						cfg.ConfigGroups[0].AdditionalModes = []*cfgpb.Mode{mode}
 						Convey("with an existing additional mode", func() {
-							tc.Mode = "QUICK_DRY_RUN"
+							tc.Mode = mode.Name
 							validateProjectConfig(vctx, &cfg)
 							So(vctx.Finalize(), ShouldBeNil)
 						})
 
 						Convey("with an non-existing additional mode", func() {
-							tc.Mode = "SLOW_DRY_RUN"
+							tc.Mode = "NON_EXISTING_RUN"
 							validateProjectConfig(vctx, &cfg)
-							So(vctx.Finalize(), ShouldErrLike, `invalid mode "SLOW_DRY_RUN"`)
+							So(vctx.Finalize(), ShouldErrLike, `invalid mode "NON_EXISTING_RUN"`)
 						})
 					})
 					Convey("statuses", func() {

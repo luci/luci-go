@@ -217,11 +217,8 @@ func (vd *projectConfigValidator) validateConfigGroup(group *cfgpb.ConfigGroup, 
 			vd.ctx.Errorf("%s", err)
 		}
 		vd.ctx.Enter("name")
-		switch n := m.Name; {
-		case n != "QUICK_DRY_RUN":
-			vd.ctx.Errorf("MUST be `QUICK_DRY_RUN`")
-		case !additionalModes.Add(n):
-			vd.ctx.Errorf("%q is already in use", n)
+		if !additionalModes.Add(m.Name) {
+			vd.ctx.Errorf("%q is already in use", m.Name)
 		}
 		vd.ctx.Exit()
 		vd.ctx.Exit()
@@ -244,7 +241,6 @@ func (vd *projectConfigValidator) validateConfigGroup(group *cfgpb.ConfigGroup, 
 			switch m := tc.GetMode(); {
 			case m == "DRY_RUN":
 			case m == "FULL_RUN":
-			case m == "QUICK_DRY_RUN":
 			case m == "NEW_PATCHSET_RUN":
 			case additionalModes.Has(m):
 			default:

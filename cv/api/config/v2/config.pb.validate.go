@@ -740,10 +740,21 @@ func (m *Mode) validate(all bool) error {
 
 	var errors []error
 
+	if _, ok := _Mode_Name_NotInLookup[m.GetName()]; ok {
+		err := ModeValidationError{
+			field:  "Name",
+			reason: "value must not be in list [DRY_RUN FULL_RUN NEW_PATCHSET_RUN]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if !_Mode_Name_Pattern.MatchString(m.GetName()) {
 		err := ModeValidationError{
 			field:  "Name",
-			reason: "value does not match regex pattern \"^[a-zA-Z][a-zA-Z0-9-9_-]{0,39}$\"",
+			reason: "value does not match regex pattern \"^[A-Z][A-Z_]{0,39}$\"",
 		}
 		if !all {
 			return err
@@ -872,7 +883,13 @@ var _ interface {
 	ErrorName() string
 } = ModeValidationError{}
 
-var _Mode_Name_Pattern = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9-9_-]{0,39}$")
+var _Mode_Name_NotInLookup = map[string]struct{}{
+	"DRY_RUN":          {},
+	"FULL_RUN":         {},
+	"NEW_PATCHSET_RUN": {},
+}
+
+var _Mode_Name_Pattern = regexp.MustCompile("^[A-Z][A-Z_]{0,39}$")
 
 var _Mode_CqLabelValue_InLookup = map[int32]struct{}{
 	1: {},
