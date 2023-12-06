@@ -16,7 +16,9 @@ package tasks
 
 import (
 	"context"
+	"encoding/json"
 	"strconv"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/bigquery"
@@ -32,6 +34,8 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 // maxBuildSizeInBQ is (10MB-5KB) as the maximum allowed request size in either
@@ -55,6 +59,16 @@ func ExportBuild(ctx context.Context, buildID int64) error {
 	p, err := b.ToProto(ctx, model.NoopBuildMask, nil)
 	if err != nil {
 		return errors.Annotate(err, "failed to convert build to proto").Err()
+	}
+
+	// Backfill Infra.Swarming for builds running on Swarming implemented backends.
+	// TODO(crbug.com/1508416) Stop backfill after Buildbucket taskbackend
+	// migration completes and all BQ queries are migrated away from Infra.Swarming.
+	err = tryBackfillSwarming(p)
+	if err != nil {
+		// Since the backfill is best effort, only log the error but not fail
+		// this bq export task.
+		logging.Warningf(ctx, "failed to backfill swarming data for build %d: %s", buildID, err)
 	}
 
 	// Clear fields that we don't want in BigQuery.
@@ -109,4 +123,90 @@ func ExportBuild(ctx context.Context, buildID int64) error {
 		return errors.Annotate(err, "transient error when inserting BQ for build %d", buildID).Tag(transient.Tag).Err()
 	}
 	return nil
+}
+
+// tryBackfillSwarming does a best effort backfill on Infra.Swarming for builds
+// running on Swarming implemented backends.
+// TODO(crbug.com/1508416) Stop backfill after Buildbucket taskbackend
+// migration completes and all BQ queries are migrated away from Infra.Swarming.
+func tryBackfillSwarming(b *pb.Build) error {
+	if b.Infra.Swarming != nil {
+		return nil
+	}
+
+	backend := b.Infra.Backend
+	if backend.GetTask().GetId().GetId() == "" {
+		// No backend task associated with the build, bail out.
+		return nil
+	}
+	if !strings.HasPrefix(backend.Task.Id.Target, "swarming://") {
+		// The build doesn't run on a Swarming implemented backend, bail out.
+		return nil
+	}
+
+	sw := &pb.BuildInfra_Swarming{
+		Hostname:       backend.Hostname,
+		TaskId:         backend.Task.Id.Id,
+		Caches:         commonCacheToSwarmingCache(backend.Caches),
+		TaskDimensions: backend.TaskDimensions,
+		// ParentRunId is not set because Buildbucket (instead of backend) manages
+		// builds' parent/child relationships.
+	}
+	b.Infra.Swarming = sw
+
+	if backend.Config != nil {
+		for k, v := range backend.Config.AsMap() {
+			if k == "priority" {
+				if p, ok := v.(float64); ok {
+					sw.Priority = int32(p)
+				}
+			}
+			if k == "service_account" {
+				if s, ok := v.(string); ok {
+					sw.TaskServiceAccount = s
+				}
+			}
+		}
+	}
+
+	var botDimensions map[string][]string
+	sw.BotDimensions = make([]*pb.StringPair, 0)
+	if backend.Task.Details != nil {
+		details := backend.Task.Details.GetFields()
+		if bds, ok := details["bot_dimensions"]; ok {
+			bdsJSON, err := bds.MarshalJSON()
+			if err != nil {
+				return errors.Annotate(err, "failed to marshal task details to JSON for build %d", b.Id).Err()
+			}
+			err = json.Unmarshal(bdsJSON, &botDimensions)
+			if err != nil {
+				return errors.Annotate(err, "failed to unmarshal task details JSON for build %d", b.Id).Err()
+			}
+
+			for k, vs := range botDimensions {
+				for _, v := range vs {
+					sw.BotDimensions = append(sw.BotDimensions, &pb.StringPair{Key: k, Value: v})
+				}
+			}
+			protoutil.SortStringPairs(sw.BotDimensions)
+		}
+	}
+
+	return nil
+}
+
+// commonCacheToSwarmingCache returns the equivalent
+// []*pb.BuildInfra_Swarming_CacheEntry for the given []*pb.CacheEntry.
+func commonCacheToSwarmingCache(cache []*pb.CacheEntry) []*pb.BuildInfra_Swarming_CacheEntry {
+	var swarmingCache []*pb.BuildInfra_Swarming_CacheEntry
+	for _, c := range cache {
+		cacheEntry := &pb.BuildInfra_Swarming_CacheEntry{
+			EnvVar:           c.GetEnvVar(),
+			Name:             c.GetName(),
+			Path:             c.GetPath(),
+			WaitForWarmCache: c.GetWaitForWarmCache(),
+		}
+		swarmingCache = append(swarmingCache, cacheEntry)
+	}
+	return swarmingCache
 }

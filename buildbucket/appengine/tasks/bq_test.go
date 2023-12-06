@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"cloud.google.com/go/bigquery"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -168,6 +169,9 @@ func TestBQ(t *testing.T) {
 						},
 					},
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
+					Swarming: &pb.BuildInfra_Swarming{
+						TaskId: "s93k0402js90",
+					},
 				},
 				Input: &pb.Build_Input{},
 				Output: &pb.Build_Output{
@@ -220,6 +224,9 @@ func TestBQ(t *testing.T) {
 						},
 					},
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
+					Swarming: &pb.BuildInfra_Swarming{
+						TaskId: "s93k0402js90",
+					},
 				},
 				Input:  &pb.Build_Input{},
 				Output: &pb.Build_Output{},
@@ -261,9 +268,177 @@ func TestBQ(t *testing.T) {
 						},
 					},
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
+					Swarming: &pb.BuildInfra_Swarming{
+						TaskId: "s93k0402js90",
+					},
 				},
 				Input:  &pb.Build_Input{},
 				Output: &pb.Build_Output{},
+			})
+		})
+	})
+}
+
+func TestTryBackfillSwarming(t *testing.T) {
+	t.Parallel()
+
+	Convey("tryBackfillSwarming", t, func() {
+		b := &pb.Build{
+			Id: 1,
+			Builder: &pb.BuilderID{
+				Project: "project",
+				Bucket:  "bucket",
+				Builder: "builder",
+			},
+			Status: pb.Status_SUCCESS,
+			Infra:  &pb.BuildInfra{},
+		}
+		Convey("noop", func() {
+			Convey("build runs on swarming", func() {
+				b.Infra.Swarming = &pb.BuildInfra_Swarming{
+					TaskId: "s93k0402js90",
+				}
+				So(tryBackfillSwarming(b), ShouldBeNil)
+			})
+
+			Convey("no backend", func() {
+				So(tryBackfillSwarming(b), ShouldBeNil)
+				So(b.Infra.Swarming, ShouldBeNil)
+			})
+
+			Convey("no backend task", func() {
+				b.Infra.Backend = &pb.BuildInfra_Backend{
+					Task: &pb.Task{
+						Id: &pb.TaskID{
+							Target: "swarming://chromium-swarm",
+						},
+					},
+				}
+				So(tryBackfillSwarming(b), ShouldBeNil)
+				So(b.Infra.Swarming, ShouldBeNil)
+			})
+
+			Convey("not a swarming implemented backend", func() {
+				b.Infra.Backend = &pb.BuildInfra_Backend{
+					Task: &pb.Task{
+						Id: &pb.TaskID{
+							Id:     "s93k0402js90",
+							Target: "other://chromium-swarm",
+						},
+					},
+				}
+				So(tryBackfillSwarming(b), ShouldBeNil)
+				So(b.Infra.Swarming, ShouldBeNil)
+			})
+		})
+
+		Convey("swarming backfilled", func() {
+			taskDims := []*pb.RequestedDimension{
+				{
+					Key:   "key",
+					Value: "value",
+				},
+			}
+			b.Infra.Backend = &pb.BuildInfra_Backend{
+				Task: &pb.Task{
+					Id: &pb.TaskID{
+						Id:     "s93k0402js90",
+						Target: "swarming://chromium-swarm",
+					},
+					Status: pb.Status_SUCCESS,
+				},
+				Hostname: "chromium-swarm.appspot.com",
+				Caches: []*pb.CacheEntry{
+					{
+						Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+						Path: "builder",
+						WaitForWarmCache: &durationpb.Duration{
+							Seconds: 240,
+						},
+					},
+				},
+				Config: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"priority":        &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 20}},
+						"service_account": &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}},
+					},
+				},
+				TaskDimensions: taskDims,
+			}
+			Convey("partially fail", func() {
+				b.Infra.Backend.Task.Details = &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"bot_dimensions": &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "wrong format"}},
+					},
+				}
+				So(tryBackfillSwarming(b), ShouldErrLike, "failed to unmarshal task details JSON for build 1")
+				So(b.Infra.Swarming.BotDimensions, ShouldHaveLength, 0)
+			})
+
+			Convey("pass", func() {
+				b.Infra.Backend.Task.Details = &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"bot_dimensions": &structpb.Value{
+							Kind: &structpb.Value_StructValue{
+								StructValue: &structpb.Struct{
+									Fields: map[string]*structpb.Value{
+										"cpu": &structpb.Value{
+											Kind: &structpb.Value_ListValue{
+												ListValue: &structpb.ListValue{
+													Values: []*structpb.Value{
+														&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "x86"}},
+														&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "x86-64"}},
+													},
+												},
+											},
+										},
+										"os": &structpb.Value{
+											Kind: &structpb.Value_ListValue{
+												ListValue: &structpb.ListValue{
+													Values: []*structpb.Value{
+														&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "Linux"}},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+				expected := &pb.BuildInfra_Swarming{
+					Hostname: "chromium-swarm.appspot.com",
+					TaskId:   "s93k0402js90",
+					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+						{
+							Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path: "builder",
+							WaitForWarmCache: &durationpb.Duration{
+								Seconds: 240,
+							},
+						},
+					},
+					TaskDimensions:     taskDims,
+					Priority:           int32(20),
+					TaskServiceAccount: "account",
+					BotDimensions: []*pb.StringPair{
+						{
+							Key:   "cpu",
+							Value: "x86",
+						},
+						{
+							Key:   "cpu",
+							Value: "x86-64",
+						},
+						{
+							Key:   "os",
+							Value: "Linux",
+						},
+					},
+				}
+				So(tryBackfillSwarming(b), ShouldBeNil)
+				So(b.Infra.Swarming, ShouldResembleProto, expected)
 			})
 		})
 	})
