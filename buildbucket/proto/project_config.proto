@@ -435,6 +435,8 @@ message BuilderConfig {
 
   // Configurations that need to be replaced when running a led build for this
   // Builder.
+  //
+  // Note: Builders in a dynamic bucket cannot have ShadowBuilderAdjustments.
   message ShadowBuilderAdjustments {
     string service_account = 1;
     string pool = 2;
@@ -539,6 +541,9 @@ message Bucket {
   // * Led builds will share the same ResultDB config as the real builds, so
   //   their test results will be exported to the same BigQuery tables.
   // * Subscribers of Buildbucket PubSub need to filter them out.
+  //
+  // Note: Don't set it if it's a dynamic bucket. Currently, a dynamic bucket is
+  // not allowed to have a shadow bucket.
   string shadow = 5;
 
   // Constraints for a bucket.
@@ -570,7 +575,9 @@ message Bucket {
 
   // Template of builders in a dynamic bucket.
   message DynamicBuilderTemplate {
-
+    // The Builder template which is shared among all builders in this dynamic
+    // bucket.
+    BuilderConfig template = 1;
   }
 
   // Template of builders in a dynamic bucket.

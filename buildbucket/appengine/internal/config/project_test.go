@@ -127,6 +127,109 @@ func TestValidateProject(t *testing.T) {
 			So(len(ve.Errors), ShouldEqual, 1)
 			So(ve.Errors[0].Error(), ShouldContainSubstring, "mutually exclusive fields swarming and dynamic_builder_template both exist in bucket \"a\"")
 		})
+
+		Convey("dynamic_builder_template", func() {
+			Convey("builder name", func() {
+				var badCfg = `
+					buckets {
+						name: "a"
+						dynamic_builder_template: {
+							template: {
+								name: "foo"
+								swarming_host: "swarming_hostname"
+							}
+						}
+					}
+			`
+				So(validateProjectCfg(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+				ve, ok := vctx.Finalize().(*validation.Error)
+				So(ok, ShouldEqual, true)
+				So(len(ve.Errors), ShouldEqual, 1)
+				So(ve.Errors[0].Error(), ShouldContainSubstring, "builder name should not be set in a dynamic bucket")
+			})
+
+			Convey("shadow", func() {
+				var badCfg = `
+					buckets {
+						name: "a"
+						shadow: "a.shadow"
+						dynamic_builder_template: {
+							template: {
+								swarming_host: "swarming_hostname"
+								shadow_builder_adjustments {
+									pool: "shadow_pool"
+								}
+							}
+						}
+					}
+			`
+				So(validateProjectCfg(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+				ve, ok := vctx.Finalize().(*validation.Error)
+				So(ok, ShouldEqual, true)
+				So(len(ve.Errors), ShouldEqual, 2)
+				So(ve.Errors[0].Error(), ShouldContainSubstring, `dynamic bucket "a" cannot have a shadow bucket "a.shadow"`)
+				So(ve.Errors[1].Error(), ShouldContainSubstring, "cannot set shadow_builder_adjustments in a dynamic builder template")
+			})
+
+			Convey("empty builder", func() {
+				var badCfg = `
+					buckets {
+						name: "a"
+						dynamic_builder_template: {
+							template: {}
+						}
+					}
+				`
+				settingsCfg := &pb.SettingsCfg{Backends: []*pb.BackendSetting{}}
+				_ = SetTestSettingsCfg(vctx.Context, settingsCfg)
+
+				So(validateProjectCfg(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+				ve, ok := vctx.Finalize().(*validation.Error)
+				So(ok, ShouldEqual, true)
+				So(len(ve.Errors), ShouldEqual, 1)
+				So(ve.Errors[0].Error(), ShouldContainSubstring, "either swarming host or task backend must be set")
+			})
+
+			Convey("empty dynamic_builder_template", func() {
+				var goodCfg = `
+					buckets {
+						name: "a"
+						dynamic_builder_template: {
+						}
+					}
+				`
+				settingsCfg := &pb.SettingsCfg{Backends: []*pb.BackendSetting{}}
+				_ = SetTestSettingsCfg(vctx.Context, settingsCfg)
+
+				So(validateProjectCfg(vctx, configSet, path, []byte(goodCfg)), ShouldBeNil)
+				So(vctx.Finalize(), ShouldBeNil)
+			})
+
+			Convey("valid", func() {
+				var goodCfg = `
+					buckets {
+						name: "a"
+						dynamic_builder_template: {
+							template: {
+								backend: {
+									target: "lite://foo-lite"
+								}
+							}
+						}
+					}
+				`
+				settingsCfg := &pb.SettingsCfg{Backends: []*pb.BackendSetting{
+					{
+						Target:   "lite://foo-lite",
+						Hostname: "foo_hostname",
+					},
+				}}
+				_ = SetTestSettingsCfg(vctx.Context, settingsCfg)
+
+				So(validateProjectCfg(vctx, configSet, path, []byte(goodCfg)), ShouldBeNil)
+				So(vctx.Finalize(), ShouldBeNil)
+			})
+		})
 	})
 
 	Convey("validate project_config.Swarming", t, func() {

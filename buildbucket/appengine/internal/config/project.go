@@ -539,11 +539,16 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 			ctx.Warningf("bucket %q out of order", bucket.Name)
 		case bucket.GetSwarming() != nil && bucket.GetDynamicBuilderTemplate() != nil:
 			ctx.Errorf("mutually exclusive fields swarming and dynamic_builder_template both exist in bucket %q", bucket.Name)
+		case bucket.GetDynamicBuilderTemplate() != nil && bucket.GetShadow() != "":
+			ctx.Errorf("dynamic bucket %q cannot have a shadow bucket %q", bucket.Name, bucket.Shadow)
 		}
 		bucketNames.Add(bucket.Name)
 		// TODO(crbug/1399576): Change this once bucket proto replaces Swarming message name
 		if s := bucket.Swarming; s != nil {
 			validateProjectSwarming(ctx, s, wellKnownExperiments, project, globalCfg)
+		}
+		if builderTemp := bucket.DynamicBuilderTemplate.GetTemplate(); builderTemp != nil {
+			validateBuilderCfg(ctx, builderTemp, wellKnownExperiments, project, globalCfg, true)
 		}
 		ctx.Exit()
 	}
@@ -610,7 +615,7 @@ func validateProjectSwarming(ctx *validation.Context, s *pb.Swarming, wellKnownE
 	builderNames := stringset.New(len(s.Builders))
 	for i, b := range s.Builders {
 		ctx.Enter("builders #%d - %s", i, b.Name)
-		validateBuilderCfg(ctx, b, wellKnownExperiments, project, globalCfg)
+		validateBuilderCfg(ctx, b, wellKnownExperiments, project, globalCfg, false)
 		if builderNames.Has(b.Name) {
 			ctx.Errorf("name: duplicate")
 		} else {
@@ -700,12 +705,14 @@ func validateTaskBackend(ctx *validation.Context, backend *pb.BuilderConfig_Back
 }
 
 // validateBuilderCfg validate a Builder config message.
-func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownExperiments stringset.Set, project string, globalCfg *pb.SettingsCfg) {
+func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownExperiments stringset.Set, project string, globalCfg *pb.SettingsCfg, isDynamic bool) {
 	// TODO(iannucci): also validate builder allowed_property_overrides field. See
 	// //lucicfg/starlark/stdlib/internal/luci/rules/builder.star
 
 	// name
-	if !builderRegex.MatchString(b.Name) {
+	if isDynamic && b.Name != "" {
+		ctx.Errorf("builder name should not be set in a dynamic bucket")
+	} else if !isDynamic && !builderRegex.MatchString(b.Name) {
 		ctx.Errorf("name must match %s", builderRegex)
 	}
 
@@ -783,7 +790,7 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 
 	// exe and recipe
 	switch {
-	case (b.Exe == nil && b.Recipe == nil) || (b.Exe != nil && b.Recipe != nil):
+	case (b.Exe == nil && b.Recipe == nil && !isDynamic) || (b.Exe != nil && b.Recipe != nil):
 		ctx.Errorf("exactly one of exe or recipe must be specified")
 	case b.Exe != nil && b.Exe.CipdPackage == "":
 		ctx.Errorf("exe.cipd_package: unspecified")
@@ -827,43 +834,47 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 
 	// shadow_builder_adjustments
 	if b.ShadowBuilderAdjustments != nil {
-		ctx.Enter("shadow_builder_adjustments")
+		if isDynamic {
+			ctx.Errorf("cannot set shadow_builder_adjustments in a dynamic builder template")
+		} else {
+			ctx.Enter("shadow_builder_adjustments")
 
-		if b.ShadowBuilderAdjustments.GetProperties() != "" {
-			if !strings.HasPrefix(b.ShadowBuilderAdjustments.Properties, "{") || !json.Valid([]byte(b.ShadowBuilderAdjustments.Properties)) {
-				ctx.Errorf("properties is not a JSON object")
-			}
-		}
-
-		// Ensure pool and dimensions are consistent.
-		// In builder config:
-		// * setting shadow_pool would add the corresponding "pool:<shadow_pool>" dimension
-		//   to shadow_dimensions;
-		// * setting shadow_dimensions with "pool:<shadow_pool>" would also set shadow_pool.
-		dims := b.ShadowBuilderAdjustments.GetDimensions()
-		if b.ShadowBuilderAdjustments.GetPool() != "" && len(dims) == 0 {
-			ctx.Errorf("dimensions.pool must be consistent with pool")
-		}
-		if len(dims) != 0 {
-			validateDimensions(ctx, dims, true)
-
-			empty := stringset.New(len(dims))
-			nonEmpty := stringset.New(len(dims))
-			for _, dim := range b.ShadowBuilderAdjustments.Dimensions {
-				_, key, value := ParseDimension(dim)
-				if value == "" {
-					if nonEmpty.Has(key) {
-						ctx.Errorf(fmt.Sprintf("dimensions contain both empty and non-empty value for the same key - %q", key))
-					}
-					empty.Add(key)
-				} else {
-					if empty.Has(key) {
-						ctx.Errorf(fmt.Sprintf("dimensions contain both empty and non-empty value for the same key - %q", key))
-					}
-					nonEmpty.Add(key)
+			if b.ShadowBuilderAdjustments.GetProperties() != "" {
+				if !strings.HasPrefix(b.ShadowBuilderAdjustments.Properties, "{") || !json.Valid([]byte(b.ShadowBuilderAdjustments.Properties)) {
+					ctx.Errorf("properties is not a JSON object")
 				}
-				if key == "pool" && value != b.ShadowBuilderAdjustments.Pool {
-					ctx.Errorf("dimensions.pool must be consistent with pool")
+			}
+
+			// Ensure pool and dimensions are consistent.
+			// In builder config:
+			// * setting shadow_pool would add the corresponding "pool:<shadow_pool>" dimension
+			//   to shadow_dimensions;
+			// * setting shadow_dimensions with "pool:<shadow_pool>" would also set shadow_pool.
+			dims := b.ShadowBuilderAdjustments.GetDimensions()
+			if b.ShadowBuilderAdjustments.GetPool() != "" && len(dims) == 0 {
+				ctx.Errorf("dimensions.pool must be consistent with pool")
+			}
+			if len(dims) != 0 {
+				validateDimensions(ctx, dims, true)
+
+				empty := stringset.New(len(dims))
+				nonEmpty := stringset.New(len(dims))
+				for _, dim := range b.ShadowBuilderAdjustments.Dimensions {
+					_, key, value := ParseDimension(dim)
+					if value == "" {
+						if nonEmpty.Has(key) {
+							ctx.Errorf(fmt.Sprintf("dimensions contain both empty and non-empty value for the same key - %q", key))
+						}
+						empty.Add(key)
+					} else {
+						if empty.Has(key) {
+							ctx.Errorf(fmt.Sprintf("dimensions contain both empty and non-empty value for the same key - %q", key))
+						}
+						nonEmpty.Add(key)
+					}
+					if key == "pool" && value != b.ShadowBuilderAdjustments.Pool {
+						ctx.Errorf("dimensions.pool must be consistent with pool")
+					}
 				}
 			}
 		}
