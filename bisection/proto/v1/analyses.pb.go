@@ -1839,7 +1839,7 @@ type BatchGetTestAnalysesRequest struct {
 	// The LUCI project.
 	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// The response will only contain analyses which analyze failures in this list.
-	// It is an error to request for more than 100 test failures, or the same test failure twice in one request.
+	// It is an error to request for more than 100 test failures.
 	TestFailures []*BatchGetTestAnalysesRequest_TestFailureIdentifier `protobuf:"bytes,2,rep,name=test_failures,json=testFailures,proto3" json:"test_failures,omitempty"`
 	// The fields to be included in the response.
 	// By default, all fields are included.

@@ -394,7 +394,7 @@ message BatchGetTestAnalysesRequest {
    // See go/surface-bisection-and-changepoint-analysis-som.
  }
  // The response will only contain analyses which analyze failures in this list.
- // It is an error to request for more than 100 test failures, or the same test failure twice in one request.
+ // It is an error to request for more than 100 test failures.
   repeated TestFailureIdentifier test_failures = 2;
 
   // The fields to be included in the response.

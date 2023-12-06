@@ -842,26 +842,6 @@ func TestBatchGetTestAnalyses(t *testing.T) {
 			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err.Error(), ShouldContainSubstring, "test_variants[0].variant_hash")
 		})
-
-		Convey("duplicated test variant", func() {
-			req := &pb.BatchGetTestAnalysesRequest{
-				Project: "chromium",
-				TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{{
-					TestId:      "testid",
-					VariantHash: "aaaaaaaaaaaaaaaa",
-					RefHash:     "bbbbbbbbbbbbbbbb",
-				},
-					{
-						TestId:      "testid",
-						VariantHash: "aaaaaaaaaaaaaaaa",
-						RefHash:     "bbbbbbbbbbbbbbbb",
-					}},
-			}
-			_, err := server.BatchGetTestAnalyses(ctx, req)
-			So(err, ShouldNotBeNil)
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err.Error(), ShouldContainSubstring, "test_variants[1]: already requested in the same request")
-		})
 	})
 
 	Convey("valid request", t, func() {

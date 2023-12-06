@@ -776,12 +776,6 @@ func validateBatchGetTestAnalysesRequest(req *pb.BatchGetTestAnalysesRequest) er
 	if len(req.TestFailures) > MaxTestFailures {
 		return errors.Reason("test_failures: no more than %v may be queried at a time", MaxTestFailures).Err()
 	}
-	type testVariant struct {
-		testID      string
-		variantHash string
-		refHash     string
-	}
-	uniqueTestVariants := make(map[testVariant]struct{})
 	for i, tf := range req.TestFailures {
 		if tf.GetTestId() == "" {
 			return errors.Reason("test_variants[%v]: test_id: unspecified", i).Err()
@@ -801,11 +795,6 @@ func validateBatchGetTestAnalysesRequest(req *pb.BatchGetTestAnalysesRequest) er
 		if err := util.ValidateRefHash(tf.RefHash); err != nil {
 			return errors.Annotate(err, "test_variants[%v].ref_hash", i).Err()
 		}
-		key := testVariant{testID: tf.TestId, variantHash: tf.VariantHash, refHash: tf.RefHash}
-		if _, ok := uniqueTestVariants[key]; ok {
-			return errors.Reason("test_variants[%v]: already requested in the same request", i).Err()
-		}
-		uniqueTestVariants[key] = struct{}{}
 	}
 	return nil
 }
