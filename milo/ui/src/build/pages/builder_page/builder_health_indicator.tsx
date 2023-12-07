@@ -27,18 +27,24 @@ const SCORE_COLOR_MAP: { [score: string]: string } = Object.freeze({
   ...Object.fromEntries(
     Array(8)
       .fill(0)
-      .map((_, i) => [`${i + 2}`, 'var(--warning-color)']),
+      .map((_, i) => [`${i + 2}`, 'var(--warning-color)'])
   ),
   '10': 'var(--success-color)',
 });
 
 const TEXT_MAP: { [key: string]: string } = Object.freeze({
   '0': 'Not set',
-  '1': 'Unhealthy',
+  '1': 'Low Value',
   ...Object.fromEntries(
-    Array(8)
+    Array(3)
       .fill(0)
-      .map((_, i) => [`${i + 2}`, 'Partially unhealthy']),
+      .map((_, i) => [`${i + 2}`, 'Very unhealthy'])
+  ),
+  '5': 'Unhealthy',
+  ...Object.fromEntries(
+    Array(4)
+      .fill(0)
+      .map((_, i) => [`${i + 6}`, 'Slightly unhealthy'])
   ),
   '10': 'Healthy',
 });
@@ -71,6 +77,7 @@ export function BuilderHealthIndicator({
                   SCORE_COLOR_MAP[healthStatus.healthScore || '0'] ||
                   '--critical-failure-color',
               }}
+              title={healthStatus.description || ''}
             >
               {TEXT_MAP[healthStatus.healthScore || '0'] ||
                 `Unknown health ${healthStatus.healthScore}`}
