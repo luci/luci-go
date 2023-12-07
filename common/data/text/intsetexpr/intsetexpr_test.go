@@ -1,4 +1,4 @@
-// Copyright 2019 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package lucicfg
+package intsetexpr
 
 import (
 	"testing"
@@ -21,45 +21,45 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestExpandIntSet(t *testing.T) {
+func TestExpand(t *testing.T) {
 	t.Parallel()
 
 	Convey("Tokenizer works", t, func() {
 		So(tokenize(""), ShouldHaveLength, 0)
-		So(tokenize("abc"), ShouldResemble, []token{{TOK_RUNES, "abc"}})
-		So(tokenize("01234"), ShouldResemble, []token{{TOK_NUM, "01234"}})
+		So(tokenize("abc"), ShouldResemble, []token{{TokRunes, "abc"}})
+		So(tokenize("01234"), ShouldResemble, []token{{TokNum, "01234"}})
 		So(tokenize("{},.."), ShouldResemble, []token{
-			{TOK_LB, "{"},
-			{TOK_RB, "}"},
-			{TOK_COMMA, ","},
-			{TOK_DOTS, ".."},
+			{TokLB, "{"},
+			{TokRB, "}"},
+			{TokComma, ","},
+			{TokDots, ".."},
 		})
 		So(tokenize("{{{}}}"), ShouldResemble, []token{
-			{TOK_RUNES, "{"},
-			{TOK_LB, "{"},
-			{TOK_RUNES, "}"},
-			{TOK_RB, "}"},
+			{TokRunes, "{"},
+			{TokLB, "{"},
+			{TokRunes, "}"},
+			{TokRB, "}"},
 		})
 		So(tokenize("ab.{01..02,03}{{c}}de"), ShouldResemble, []token{
-			{TOK_RUNES, "ab"},
-			{TOK_RUNES, "."},
-			{TOK_LB, "{"},
-			{TOK_NUM, "01"},
-			{TOK_DOTS, ".."},
-			{TOK_NUM, "02"},
-			{TOK_COMMA, ","},
-			{TOK_NUM, "03"},
-			{TOK_RB, "}"},
-			{TOK_RUNES, "{"},
-			{TOK_RUNES, "c"},
-			{TOK_RUNES, "}"},
-			{TOK_RUNES, "de"},
+			{TokRunes, "ab"},
+			{TokRunes, "."},
+			{TokLB, "{"},
+			{TokNum, "01"},
+			{TokDots, ".."},
+			{TokNum, "02"},
+			{TokComma, ","},
+			{TokNum, "03"},
+			{TokRB, "}"},
+			{TokRunes, "{"},
+			{TokRunes, "c"},
+			{TokRunes, "}"},
+			{TokRunes, "de"},
 		})
 	})
 
-	Convey("expandIntSet works", t, func() {
+	Convey("Expand works", t, func() {
 		call := func(s string) []string {
-			out, err := expandIntSet(s)
+			out, err := Expand(s)
 			So(err, ShouldBeNil)
 			return out
 		}
@@ -89,9 +89,9 @@ func TestExpandIntSet(t *testing.T) {
 		So(call("a{001,02..003}b"), ShouldResemble, []string{"a001b", "a2b", "a3b"})
 	})
 
-	Convey("expandIntSet handles errors", t, func() {
+	Convey("Expand handles errors", t, func() {
 		call := func(s string) error {
-			_, err := expandIntSet(s)
+			_, err := Expand(s)
 			return err
 		}
 
