@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"sync"
 	"testing"
 	"time"
 
@@ -438,9 +439,12 @@ func makeConfig(gHost string, gRepo string) *cfgpb.Config {
 
 type clUpdaterMock struct {
 	scheduledTasks []*changelist.UpdateCLTask
+	mu             sync.Mutex
 }
 
 func (c *clUpdaterMock) Schedule(_ context.Context, task *changelist.UpdateCLTask) error {
+	c.mu.Lock()
 	c.scheduledTasks = append(c.scheduledTasks, task)
+	c.mu.Unlock()
 	return nil
 }
