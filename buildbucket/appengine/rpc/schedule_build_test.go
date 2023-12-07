@@ -204,6 +204,10 @@ func TestScheduleBuild(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(bldrs["project/bucket 2"]["builder 1"], ShouldBeNil)
 			So(len(dynamicBuckets), ShouldEqual, 1)
+			So(dynamicBuckets["project/bucket 2"], ShouldResembleProto, &pb.Bucket{
+				Name:                   "bucket 2",
+				DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{},
+			})
 			So(shadowMap, ShouldResemble, map[string]string{"project/bucket 2": ""})
 		})
 
@@ -5608,6 +5612,13 @@ func TestScheduleBuild(t *testing.T) {
 					Version:     "kitchen-version",
 				},
 			},
+			Backends: []*pb.BackendSetting{
+				{
+					Target:   "lite://foo-lite",
+					Hostname: "foo_hostname",
+					Mode:     &pb.BackendSetting_LiteMode_{},
+				},
+			},
 		}), ShouldBeNil)
 
 		Convey("builder", func() {
@@ -5657,31 +5668,109 @@ func TestScheduleBuild(t *testing.T) {
 					),
 				})
 
-				testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{}})
-				req := &pb.ScheduleBuildRequest{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-				}
+				Convey("no template in dynamic_builder_template", func() {
+					testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{}})
+					req := &pb.ScheduleBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					}
 
-				rsp, err := srv.ScheduleBuild(ctx, req)
-				So(err, ShouldBeNil)
-				So(rsp, ShouldResembleProto, &pb.Build{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-					CreatedBy:  string(userID),
-					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					Id:         9021868963221667745,
-					Input:      &pb.Build_Input{},
-					Status:     pb.Status_SCHEDULED,
+					rsp, err := srv.ScheduleBuild(ctx, req)
+					So(err, ShouldBeNil)
+					So(rsp, ShouldResembleProto, &pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						CreatedBy:  string(userID),
+						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+						UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+						Id:         9021868963221667745,
+						Input:      &pb.Build_Input{},
+						Status:     pb.Status_SCHEDULED,
+					})
+					So(sch.Tasks(), ShouldBeEmpty)
 				})
-				So(sch.Tasks(), ShouldBeEmpty)
+
+				Convey("has template in dynamic_builder_template", func() {
+					testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
+						DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{
+							Template: &pb.BuilderConfig{
+								Backend: &pb.BuilderConfig_Backend{
+									Target: "lite://foo-lite",
+								},
+								Experiments: map[string]int32{
+									"luci.buildbucket.backend_alt": 100,
+								},
+							},
+						},
+					})
+					req := &pb.ScheduleBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					}
+
+					rsp, err := srv.ScheduleBuild(ctx, req)
+					So(err, ShouldBeNil)
+					So(rsp, ShouldResembleProto, &pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						CreatedBy:  string(userID),
+						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+						UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+						Id:         9021868963221667745,
+						Input:      &pb.Build_Input{},
+						Status:     pb.Status_SCHEDULED,
+					})
+
+					buildInDB := &model.Build{ID: 9021868963221667745}
+					bInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, buildInDB)}
+					So(datastore.Get(ctx, buildInDB, bInfra), ShouldBeNil)
+					So(bInfra.Proto.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
+						Caches: []*pb.CacheEntry{
+							{
+								Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+								Path:             "builder",
+								WaitForWarmCache: &durationpb.Duration{Seconds: 240},
+							},
+						},
+						Config: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"priority": structpb.NewNumberValue(30),
+							},
+						},
+						Hostname: "foo_hostname",
+						Task: &pb.Task{
+							Id: &pb.TaskID{
+								Target: "lite://foo-lite",
+							},
+						},
+					})
+
+					tasks := sch.Tasks()
+					So(tasks, ShouldHaveLength, 3)
+					sortTasksByClassName(tasks)
+					backendTask, ok := tasks.Payloads()[0].(*taskdefs.CreateBackendBuildTask)
+					So(ok, ShouldBeTrue)
+					So(backendTask.BuildId, ShouldEqual, 9021868963221667745)
+					So(tasks.Payloads()[1], ShouldResembleProto, &taskdefs.NotifyPubSub{
+						BuildId: 9021868963221667745,
+					})
+					So(tasks.Payloads()[2], ShouldResembleProto, &taskdefs.NotifyPubSubGoProxy{
+						BuildId: 9021868963221667745,
+						Project: "project",
+					})
+				})
 			})
 
 			Convey("static", func() {

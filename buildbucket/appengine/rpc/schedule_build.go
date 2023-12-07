@@ -419,11 +419,11 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 
 // fetchBuilderConfigs returns the Builder configs referenced by the given
 // requests in a map of Bucket ID -> Builder name -> *pb.BuilderConfig,
-// a map of buckets to their shadow buckets and also a set of dynamic buckets.
+// a map of buckets to their shadow buckets and a map of Bucket ID -> *pb.Bucket.
 //
 // A single returned error means a global error which applies to every request.
 // Otherwise, it would be a MultiError where len(MultiError) equals to len(builderIDs).
-func fetchBuilderConfigs(ctx context.Context, builderIDs []*pb.BuilderID) (map[string]map[string]*pb.BuilderConfig, stringset.Set, map[string]string, error) {
+func fetchBuilderConfigs(ctx context.Context, builderIDs []*pb.BuilderID) (map[string]map[string]*pb.BuilderConfig, map[string]*pb.Bucket, map[string]string, error) {
 	merr := make(errors.MultiError, len(builderIDs))
 	var bcks []*model.Bucket
 
@@ -467,7 +467,7 @@ func fetchBuilderConfigs(ctx context.Context, builderIDs []*pb.BuilderID) (map[s
 		return nil, nil, nil, errors.Annotate(err, "failed to fetch entities").Err()
 	}
 
-	dynamicBuckets := stringset.New(0)
+	dynamicBuckets := map[string]*pb.Bucket{}
 	shadowMap := make(map[string]string)
 	// Check buckets to see if they support dynamically scheduling builds for builders which are not pre-defined.
 	for _, b := range bcks {
@@ -494,7 +494,7 @@ func fetchBuilderConfigs(ctx context.Context, builderIDs []*pb.BuilderID) (map[s
 			if (*bckCfgs[bucket]).GetSwarming() == nil {
 				delete(bldrCfgs[bucket], b.ID)
 				if (*bckCfgs[bucket]).GetDynamicBuilderTemplate() != nil {
-					dynamicBuckets.Add(bucket)
+					dynamicBuckets[bucket] = *bckCfgs[bucket]
 				}
 				continue
 			}
@@ -629,7 +629,7 @@ func setDimensions(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *p
 		dims["builder"] = []*pb.RequestedDimension{
 			{
 				Key:   "builder",
-				Value: cfg.Name,
+				Value: cfg.GetName(),
 			},
 		}
 	}
@@ -1049,7 +1049,7 @@ func setInput(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder
 	} else if cfg.GetProperties() != "" {
 		if err := protojson.Unmarshal([]byte(cfg.Properties), build.Input.Properties); err != nil {
 			// Builder config should have been validated already.
-			panic(errors.Annotate(err, "error unmarshaling builder properties for %q", cfg.Name).Err())
+			panic(errors.Annotate(err, "error unmarshaling builder properties for %q", cfg.GetName()).Err())
 		}
 	}
 
@@ -1372,15 +1372,17 @@ func setInfraBackendConfigAgent(b *pb.Build) {
 
 func setInfraBackend(ctx context.Context, globalCfg *pb.SettingsCfg, build *pb.Build, backend *pb.BuilderConfig_Backend, taskCaches []*pb.CacheEntry, taskServiceAccount string, priority, reqPriority int32) {
 	config := &structpb.Struct{}
-	err := json.Unmarshal([]byte(backend.GetConfigJson()), config)
-	if err != nil {
-		logging.Warningf(ctx, err.Error())
+	if backend.GetConfigJson() != "" { // bypass empty config_json
+		err := json.Unmarshal([]byte(backend.ConfigJson), config)
+		if err != nil {
+			logging.Warningf(ctx, err.Error())
+		}
 	}
 	if config.GetFields() == nil {
 		config.Fields = make(map[string]*structpb.Value)
 	}
 
-	if config.Fields["service_account"].GetStringValue() == "" {
+	if config.Fields["service_account"].GetStringValue() == "" && taskServiceAccount != "" {
 		config.Fields["service_account"] = structpb.NewStringValue(taskServiceAccount)
 	}
 
@@ -1538,6 +1540,11 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 		origI := idxMapBlds[i]
 		bucket := fmt.Sprintf("%s/%s", validReq[i].Builder.Project, validReq[i].Builder.Bucket)
 		cfg := cfgs[bucket][validReq[i].Builder.Builder]
+		inDynamicBucket := false
+		if bkt, ok := dynamicBuckets[bucket]; ok {
+			inDynamicBucket = true
+			cfg = bkt.GetDynamicBuilderTemplate().GetTemplate()
+		}
 
 		var build *pb.Build
 		if reqs[origI].ShadowInput != nil {
@@ -1579,7 +1586,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 		}
 
 		setExperimentsFromProto(blds[i])
-		blds[i].IsLuci = cfg != nil || dynamicBuckets.Has(bucket)
+		blds[i].IsLuci = cfg != nil || inDynamicBucket
 		blds[i].PubSubCallback.Topic = validReq[i].GetNotify().GetPubsubTopic()
 		blds[i].PubSubCallback.UserData = validReq[i].GetNotify().GetUserData()
 		// Tags are stored in the outer struct (see model/build.go).
