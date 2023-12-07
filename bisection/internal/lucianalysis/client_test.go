@@ -83,17 +83,15 @@ func TestUpdateAnalysisStatus(t *testing.T) {
       AND g.testVariants[0].VariantHash = v.variant_hash
       AND g.RefHash = v.source_ref_hash
     -- Join with buildbucket builds table to get the buildbucket related information for tests.
-    LEFT JOIN cr-buildbucket.chromium.builds b
+    LEFT JOIN (select * from cr-buildbucket.chromium.builds where create_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)) b
     ON v.buildbucket_build.id  = b.id
     -- JOIN with buildbucket builds table again to get task dimensions of parent builds.
-    LEFT JOIN cr-buildbucket.chromium.builds b2
+    LEFT JOIN (select * from cr-buildbucket.chromium.builds where create_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)) b2
     ON JSON_VALUE(b.input.properties, "$.parent_build_id") = CAST(b2.id AS string)
     -- Filter by test_verdict.partition_time to only return test failures that have test verdict recently.
     -- 3 days is chosen as we expect tests run at least once every 3 days if they are not disabled.
     -- If this is found to be too restricted, we can increase it later.
     WHERE v.partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
-      AND b.create_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
-      AND b2.create_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
     GROUP BY g.testVariants[0].TestId,  g.testVariants[0].VariantHash, g.RefHash
   )
 SELECT regression_group.*,
@@ -160,17 +158,15 @@ LIMIT 5000`)
       AND g.testVariants[0].VariantHash = v.variant_hash
       AND g.RefHash = v.source_ref_hash
     -- Join with buildbucket builds table to get the buildbucket related information for tests.
-    LEFT JOIN cr-buildbucket.chromium.builds b
+    LEFT JOIN (select * from cr-buildbucket.chromium.builds where create_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)) b
     ON v.buildbucket_build.id  = b.id
     -- JOIN with buildbucket builds table again to get task dimensions of parent builds.
-    LEFT JOIN cr-buildbucket.chromium.builds b2
+    LEFT JOIN (select * from cr-buildbucket.chromium.builds where create_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)) b2
     ON JSON_VALUE(b.input.properties, "$.parent_build_id") = CAST(b2.id AS string)
     -- Filter by test_verdict.partition_time to only return test failures that have test verdict recently.
     -- 3 days is chosen as we expect tests run at least once every 3 days if they are not disabled.
     -- If this is found to be too restricted, we can increase it later.
     WHERE v.partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
-      AND b.create_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
-      AND b2.create_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
     GROUP BY g.testVariants[0].TestId,  g.testVariants[0].VariantHash, g.RefHash
   )
 SELECT regression_group.*,
