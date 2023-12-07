@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
@@ -62,6 +63,14 @@ type Run struct {
 	CreationOperationID string `gae:",noindex"`
 	// Mode dictates the behavior of this Run.
 	Mode Mode `gae:",noindex"`
+	// ModeDefinition is the definition for non-standard run mode.
+	//
+	// It is supplied in the project config. Note that ModeDefinition is fixed
+	// after the run creation and wouldn't be changed even if the mode definition
+	// has changed in the project config unless the mode name has changed. In that
+	// case, the run would be cancelled and a new run with new mode name would be
+	// created.
+	ModeDefinition *cfgpb.Mode
 	// Status describes the status of this Run.
 	Status Status
 	// EVersion is the entity version.

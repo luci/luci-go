@@ -371,5 +371,22 @@ func TestRunBuilder(t *testing.T) {
 			// RM must have an immediate task to start working on a new Run.
 			So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, common.RunIDs{r.ID})
 		})
+
+		Convey("Non standard run", func() {
+			rb.Mode = "CUSTOM_RUN"
+			Convey("Panic if mode definition is not provided", func() {
+				So(func() { rb.Create(ctx, clMutator, pmNotifier, runNotifier) }, ShouldPanic)
+			})
+			rb.ModeDefinition = &cfgpb.Mode{
+				Name:            string(rb.Mode),
+				CqLabelValue:    1,
+				TriggeringLabel: "Custom",
+				TriggeringValue: 1,
+			}
+			r, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
+			So(err, ShouldBeNil)
+			So(r.Mode, ShouldEqual, run.Mode("CUSTOM_RUN"))
+			So(r.ModeDefinition, ShouldResembleProto, rb.ModeDefinition)
+		})
 	})
 }

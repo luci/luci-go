@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
@@ -62,6 +63,8 @@ type Creator struct {
 	InputCLs []CL
 	// Mode is the Run's mode. Required.
 	Mode run.Mode
+	// Definition of user defined run mode. Required if mode is not standard mode.
+	ModeDefinition *cfgpb.Mode
 	// Owner is the Run Owner. Required.
 	Owner identity.Identity
 	// CreatedBy is the creator of the Run. Required.
@@ -204,6 +207,8 @@ func (rb *Creator) prepare(now time.Time) {
 		panic("At least 1 CL is required")
 	case rb.Mode == "":
 		panic("Mode is required")
+	case !rb.Mode.IsStandard() && rb.ModeDefinition == nil:
+		panic("ModeDefinition is required for non-standard mode")
 	case rb.Owner == "":
 		panic("Owner is required")
 	case rb.CreatedBy == "":
@@ -397,14 +402,15 @@ func (rb *Creator) saveRun(ctx context.Context, now time.Time) error {
 		UpdateTime:          now,
 		// EndTime & StartTime intentionally left unset.
 
-		CLs:           ids,
-		ConfigGroupID: rb.ConfigGroupID,
-		Mode:          rb.Mode,
-		Status:        run.Status_PENDING,
-		Owner:         rb.Owner,
-		CreatedBy:     rb.CreatedBy,
-		Options:       rb.Options,
-		DepRuns:       rb.DepRuns,
+		CLs:            ids,
+		ConfigGroupID:  rb.ConfigGroupID,
+		Mode:           rb.Mode,
+		ModeDefinition: rb.ModeDefinition,
+		Status:         run.Status_PENDING,
+		Owner:          rb.Owner,
+		CreatedBy:      rb.CreatedBy,
+		Options:        rb.Options,
+		DepRuns:        rb.DepRuns,
 	}
 	if err := datastore.Put(ctx, rb.run); err != nil {
 		return errors.Annotate(err, "failed to save Run").Tag(transient.Tag).Err()

@@ -38,6 +38,16 @@ const (
 	NewPatchsetRun Mode = "NEW_PATCHSET_RUN"
 )
 
+// IsStandard reports whether mode is standard mode supported by LUCI CV.
+func (m Mode) IsStandard() bool {
+	switch m {
+	case DryRun, FullRun, NewPatchsetRun:
+		return true
+	default:
+		return false
+	}
+}
+
 // BQAttemptMode returns corresponding value for legacy CQ BQ export.
 func (m Mode) BQAttemptMode() bqpb.Mode {
 	switch m {

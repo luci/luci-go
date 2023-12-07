@@ -411,6 +411,7 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 		ConfigGroupID:            cg.ID,
 		LUCIProject:              cg.ProjectString(),
 		Mode:                     run.Mode(t.GetMode()),
+		ModeDefinition:           t.GetModeDefinition(),
 		CreateTime:               t.GetTime().AsTime(),
 		Owner:                    owner,
 		CreatedBy:                triggererIdentity,
