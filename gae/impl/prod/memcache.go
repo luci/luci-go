@@ -18,9 +18,10 @@ import (
 	"context"
 	"time"
 
-	mc "go.chromium.org/luci/gae/service/memcache"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/memcache"
+
+	mc "go.chromium.org/luci/gae/service/memcache"
 )
 
 // useMC adds a gae.Memcache implementation to context, accessible

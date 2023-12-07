@@ -20,10 +20,11 @@ import (
 	"reflect"
 	"time"
 
-	bs "go.chromium.org/luci/gae/service/blobstore"
-	ds "go.chromium.org/luci/gae/service/datastore"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
+
+	bs "go.chromium.org/luci/gae/service/blobstore"
+	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
 type typeFilter struct {

@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/errors"
+
 	infoS "go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/gae/service/info/support"
 )

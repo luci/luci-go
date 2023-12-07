@@ -17,8 +17,9 @@ package prod
 import (
 	"context"
 
-	gae_user "go.chromium.org/luci/gae/service/user"
 	"google.golang.org/appengine/user"
+
+	gae_user "go.chromium.org/luci/gae/service/user"
 )
 
 // useUser adds a user service implementation to context, accessible

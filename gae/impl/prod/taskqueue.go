@@ -20,10 +20,11 @@ import (
 	"reflect"
 	"time"
 
-	"go.chromium.org/luci/gae/impl/prod/constraints"
-	tq "go.chromium.org/luci/gae/service/taskqueue"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/taskqueue"
+
+	"go.chromium.org/luci/gae/impl/prod/constraints"
+	tq "go.chromium.org/luci/gae/service/taskqueue"
 )
 
 // useTQ adds a gae.TaskQueue implementation to context, accessible

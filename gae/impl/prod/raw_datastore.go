@@ -17,12 +17,13 @@ package prod
 import (
 	"context"
 
-	"go.chromium.org/luci/gae/impl/prod/constraints"
-	ds "go.chromium.org/luci/gae/service/datastore"
-
-	"go.chromium.org/luci/common/errors"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
+
+	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/gae/impl/prod/constraints"
+	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
 // useRDS adds a gae.RawDatastore implementation to context, accessible

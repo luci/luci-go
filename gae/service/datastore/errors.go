@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"reflect"
 
-	"go.chromium.org/luci/common/errors"
-
 	"google.golang.org/appengine/datastore"
+
+	"go.chromium.org/luci/common/errors"
 )
 
 type stopErr struct{}

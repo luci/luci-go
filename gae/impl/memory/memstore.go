@@ -17,10 +17,11 @@ package memory
 import (
 	"bytes"
 
-	"go.chromium.org/luci/gae/service/datastore"
-
 	"github.com/luci/gtreap"
+
 	"go.chromium.org/luci/common/data/treapstore"
+
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 type storeEntry struct {

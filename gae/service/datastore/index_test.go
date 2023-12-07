@@ -21,8 +21,9 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"gopkg.in/yaml.v2"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var indexDefinitionTests = []struct {

@@ -20,6 +20,7 @@ import (
 	"sort"
 
 	"go.chromium.org/luci/common/data/cmpbin"
+
 	ds "go.chromium.org/luci/gae/service/datastore"
 )
 

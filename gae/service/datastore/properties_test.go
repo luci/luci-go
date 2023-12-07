@@ -21,8 +21,9 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/gae/service/blobstore"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 type mybool bool

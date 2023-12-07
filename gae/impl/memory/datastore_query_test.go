@@ -18,10 +18,10 @@ import (
 	"bytes"
 	"testing"
 
-	dstore "go.chromium.org/luci/gae/service/datastore"
-
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/common/data/stringset"
+
+	dstore "go.chromium.org/luci/gae/service/datastore"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

@@ -18,9 +18,9 @@ import (
 	"context"
 	"sync/atomic"
 
-	ds "go.chromium.org/luci/gae/service/datastore"
-
 	"go.chromium.org/luci/common/errors"
+
+	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
 type transactionImpl struct {

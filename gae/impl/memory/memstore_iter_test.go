@@ -18,9 +18,9 @@ import (
 	"bytes"
 	"testing"
 
-	"go.chromium.org/luci/gae/service/datastore"
-
 	"go.chromium.org/luci/common/data/cmpbin"
+
+	"go.chromium.org/luci/gae/service/datastore"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

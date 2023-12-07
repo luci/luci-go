@@ -22,14 +22,14 @@ import (
 	"sync"
 	"time"
 
+	"cloud.google.com/go/datastore"
+	"google.golang.org/api/iterator"
+	pb "google.golang.org/genproto/googleapis/datastore/v1"
+
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/gae/impl/prod/constraints"
 	ds "go.chromium.org/luci/gae/service/datastore"
-
-	"cloud.google.com/go/datastore"
-	"google.golang.org/api/iterator"
-	pb "google.golang.org/genproto/googleapis/datastore/v1"
 )
 
 type cloudDatastore struct {

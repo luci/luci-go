@@ -17,8 +17,9 @@ package prod
 import (
 	"context"
 
-	gae_mail "go.chromium.org/luci/gae/service/mail"
 	"google.golang.org/appengine/mail"
+
+	gae_mail "go.chromium.org/luci/gae/service/mail"
 )
 
 // useMail adds a mail service implementation to context, accessible

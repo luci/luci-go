@@ -29,6 +29,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/gae/service/info"
 
 	. "github.com/smartystreets/goconvey/convey"

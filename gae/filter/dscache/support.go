@@ -20,10 +20,10 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	ds "go.chromium.org/luci/gae/service/datastore"
-
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
+
+	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
 type supportContext struct {

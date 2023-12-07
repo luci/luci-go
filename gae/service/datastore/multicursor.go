@@ -21,9 +21,11 @@ import (
 	"fmt"
 	"sort"
 
-	"go.chromium.org/luci/common/errors"
-	mc "go.chromium.org/luci/gae/service/datastore/internal/protos/multicursor"
 	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/common/errors"
+
+	mc "go.chromium.org/luci/gae/service/datastore/internal/protos/multicursor"
 )
 
 // multiCursorVersion stores the proto version for mc.Cursors

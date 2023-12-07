@@ -23,12 +23,13 @@ import (
 	"testing"
 	"time"
 
-	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
-
 	"cloud.google.com/go/datastore"
+
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

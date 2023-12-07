@@ -17,10 +17,12 @@ package prod
 import (
 	"context"
 
-	"go.chromium.org/luci/common/errors"
-	ds "go.chromium.org/luci/gae/service/datastore"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
+
+	"go.chromium.org/luci/common/errors"
+
+	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
 // dsR2F (DS real-to-fake) converts an SDK Key to a ds.Key

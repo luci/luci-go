@@ -18,7 +18,6 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	dsS "go.chromium.org/luci/gae/service/datastore"
 	infoS "go.chromium.org/luci/gae/service/info"
 	mailS "go.chromium.org/luci/gae/service/mail"
@@ -26,6 +25,8 @@ import (
 	modS "go.chromium.org/luci/gae/service/module"
 	tqS "go.chromium.org/luci/gae/service/taskqueue"
 	userS "go.chromium.org/luci/gae/service/user"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestContextAccess(t *testing.T) {

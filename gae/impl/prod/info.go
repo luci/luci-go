@@ -18,9 +18,10 @@ import (
 	"context"
 	"time"
 
-	"go.chromium.org/luci/gae/service/info"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
+
+	"go.chromium.org/luci/gae/service/info"
 )
 
 // useGI adds a gae.GlobalInfo implementation to context, accessible

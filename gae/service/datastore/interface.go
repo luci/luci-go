@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+
 	multicursor "go.chromium.org/luci/gae/service/datastore/internal/protos/multicursor"
 )
 

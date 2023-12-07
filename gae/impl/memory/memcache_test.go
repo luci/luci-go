@@ -19,13 +19,13 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/clock/testclock"
+
 	"go.chromium.org/luci/gae/service/info"
 	mc "go.chromium.org/luci/gae/service/memcache"
 
-	"go.chromium.org/luci/common/clock/testclock"
-	. "go.chromium.org/luci/common/testing/assertions"
-
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMemcache(t *testing.T) {

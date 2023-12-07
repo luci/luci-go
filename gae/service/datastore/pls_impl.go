@@ -27,6 +27,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/gae/internal/zlib"
 )
 

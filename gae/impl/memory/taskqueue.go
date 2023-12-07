@@ -20,11 +20,11 @@ import (
 	"net/http"
 	"time"
 
-	"go.chromium.org/luci/gae/service/info"
-	tq "go.chromium.org/luci/gae/service/taskqueue"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/gae/service/info"
+	tq "go.chromium.org/luci/gae/service/taskqueue"
 )
 
 /////////////////////////////// public functions ///////////////////////////////

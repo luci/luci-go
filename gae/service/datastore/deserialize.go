@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/data/cmpbin"
+
 	"go.chromium.org/luci/gae/service/blobstore"
 )
 

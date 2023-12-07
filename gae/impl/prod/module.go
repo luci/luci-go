@@ -17,8 +17,9 @@ package prod
 import (
 	"context"
 
-	"go.chromium.org/luci/gae/service/module"
 	aeModule "google.golang.org/appengine/module"
+
+	"go.chromium.org/luci/gae/service/module"
 )
 
 // useModule adds a Module implementation to context.

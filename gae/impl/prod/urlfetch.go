@@ -18,8 +18,9 @@ import (
 	"context"
 	"net/http"
 
-	uf "go.chromium.org/luci/gae/service/urlfetch"
 	"google.golang.org/appengine/urlfetch"
+
+	uf "go.chromium.org/luci/gae/service/urlfetch"
 )
 
 // useURLFetch adds a http.RoundTripper implementation to the context.
