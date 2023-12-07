@@ -564,18 +564,20 @@ type Mode struct {
 	//   - FULL_RUN
 	//   - NEW_PATCHSET_RUN
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// Value of Commit-Queue label that triggers a CQ Run in the mode.
+	// Value of Commit-Queue label that triggers a run in the mode.
 	//
-	// Must be either 1 or 2.
+	// Must be either 1 or 2. If 2 is provided, LUCI CV will follow the
+	// FULL_RUN behavior that it will submit CL(s) in this run after all
+	// tryjobs have passed.
 	CqLabelValue int32 `protobuf:"varint,2,opt,name=cq_label_value,json=cqLabelValue,proto3" json:"cq_label_value,omitempty"`
 	// Label that MUST also be voted with `triggering_value` in addition to
-	// "Commit-Queue" label to trigger a CQ Run in the mode.
+	// "Commit-Queue" label to trigger a run in the mode.
 	//
 	// Must not be "Commit-Queue"
 	TriggeringLabel string `protobuf:"bytes,3,opt,name=triggering_label,json=triggeringLabel,proto3" json:"triggering_label,omitempty"`
-	// Value of the `triggering_label` that triggers a CQ Run in the mode.
+	// Value of the `triggering_label` that triggers a run in the mode.
 	//
-	// Must be > 0
+	// Must be > 0.
 	TriggeringValue int32 `protobuf:"varint,4,opt,name=triggering_value,json=triggeringValue,proto3" json:"triggering_value,omitempty"`
 }
 

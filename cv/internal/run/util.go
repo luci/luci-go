@@ -95,3 +95,8 @@ func ComputeCLGroupKey(cls []*RunCL, isEquivalent bool) string {
 	}
 	return hex.EncodeToString(h.Sum(nil)[:8])
 }
+
+// ShouldSubmit returns true if the run should submit the CL(s) at the end.
+func ShouldSubmit(r *Run) bool {
+	return r.Mode == FullRun || r.ModeDefinition.GetCqLabelValue() == 2
+}

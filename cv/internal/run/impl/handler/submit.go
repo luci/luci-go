@@ -109,7 +109,7 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		}
 	}
 
-	if rs.Mode != run.FullRun {
+	if !run.ShouldSubmit(&rs.Run) {
 		panic(fmt.Errorf("impossible, %s runs cannot submit CLs", rs.Mode))
 	}
 	if len(rs.Submission.GetSubmittedCls()) > 0 {

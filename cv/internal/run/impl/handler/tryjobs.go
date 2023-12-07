@@ -119,7 +119,7 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 			}
 			rs.Tryjobs.State = es // Copy the execution state to Run entity
 			switch executionStatus := es.GetStatus(); {
-			case executionStatus == tryjob.ExecutionState_SUCCEEDED && rs.Mode == run.FullRun:
+			case executionStatus == tryjob.ExecutionState_SUCCEEDED && run.ShouldSubmit(&rs.Run):
 				rs.Status = run.Status_WAITING_FOR_SUBMISSION
 				return impl.OnReadyForSubmission(ctx, rs)
 			case executionStatus == tryjob.ExecutionState_SUCCEEDED:

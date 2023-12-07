@@ -321,12 +321,14 @@ message Mode {
       }
   ];
 
-  // Value of Commit-Queue label that triggers a CQ Run in the mode.
+  // Value of Commit-Queue label that triggers a run in the mode.
   //
-  // Must be either 1 or 2.
+  // Must be either 1 or 2. If 2 is provided, LUCI CV will follow the
+  // FULL_RUN behavior that it will submit CL(s) in this run after all
+  // tryjobs have passed.
   int32 cq_label_value = 2 [(validate.rules).int32 = {in: [1, 2]}];
   // Label that MUST also be voted with `triggering_value` in addition to
-  // "Commit-Queue" label to trigger a CQ Run in the mode.
+  // "Commit-Queue" label to trigger a run in the mode.
   //
   // Must not be "Commit-Queue"
   string triggering_label = 3 [
@@ -336,9 +338,9 @@ message Mode {
      }
   ];
 
-  // Value of the `triggering_label` that triggers a CQ Run in the mode.
+  // Value of the `triggering_label` that triggers a run in the mode.
   //
-  // Must be > 0
+  // Must be > 0.
   int32 triggering_value = 4 [(validate.rules).int32.gt = 0];
 }
 
