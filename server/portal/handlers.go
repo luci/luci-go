@@ -29,18 +29,17 @@ import (
 	"net"
 	"net/http"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/xsrf"
+	"go.chromium.org/luci/server/portal/internal/assets"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
-
-	"go.chromium.org/luci/server/portal/internal/assets"
 )
 
 // AssumeTrustedPort can be passed as auth.Method to InstallHandlers to indicate

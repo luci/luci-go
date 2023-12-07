@@ -25,11 +25,10 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/luci/server/auth/realms"
-	"go.chromium.org/luci/server/auth/service/protocol"
-
 	"go.chromium.org/luci/server/auth/authdb/internal/conds"
 	"go.chromium.org/luci/server/auth/authdb/internal/graph"
+	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/auth/service/protocol"
 )
 
 // ExpectedAPIVersion is the supported value of api_version field.

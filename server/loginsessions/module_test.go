@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/auth/loginsessionspb"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/gologger"
+
 	"go.chromium.org/luci/server/loginsessions/internal"
 	"go.chromium.org/luci/server/loginsessions/internal/statepb"
 	"go.chromium.org/luci/server/router"

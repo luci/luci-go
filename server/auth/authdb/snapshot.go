@@ -25,10 +25,6 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/server/auth/internal/tracing"
-	"go.chromium.org/luci/server/auth/realms"
-	"go.chromium.org/luci/server/auth/service/protocol"
-	"go.chromium.org/luci/server/auth/signing"
 
 	"go.chromium.org/luci/server/auth/authdb/internal/certs"
 	"go.chromium.org/luci/server/auth/authdb/internal/graph"
@@ -36,6 +32,10 @@ import (
 	"go.chromium.org/luci/server/auth/authdb/internal/oauthid"
 	"go.chromium.org/luci/server/auth/authdb/internal/realmset"
 	"go.chromium.org/luci/server/auth/authdb/internal/seccfg"
+	"go.chromium.org/luci/server/auth/internal/tracing"
+	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/auth/service/protocol"
+	"go.chromium.org/luci/server/auth/signing"
 )
 
 // SnapshotDB implements DB using AuthDB proto message.

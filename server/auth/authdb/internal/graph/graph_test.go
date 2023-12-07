@@ -21,9 +21,9 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/server/auth/service/protocol"
 
 	"go.chromium.org/luci/server/auth/authdb/internal/globset"
+	"go.chromium.org/luci/server/auth/service/protocol"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

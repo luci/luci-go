@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
+
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"

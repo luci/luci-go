@@ -19,6 +19,7 @@ import (
 	"net"
 
 	"go.chromium.org/luci/auth/identity"
+
 	"go.chromium.org/luci/server/auth/service/protocol"
 )
 

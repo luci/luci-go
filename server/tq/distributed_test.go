@@ -19,9 +19,8 @@ import (
 	"sync"
 	"testing"
 
-	"go.chromium.org/luci/server/tq/tqtesting"
-
 	"go.chromium.org/luci/server/tq/internal/tqpb"
+	"go.chromium.org/luci/server/tq/tqtesting"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

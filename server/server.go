@@ -190,12 +190,6 @@ import (
 	credentials "cloud.google.com/go/iam/credentials/apiv1"
 	"cloud.google.com/go/iam/credentials/apiv1/credentialspb"
 	"cloud.google.com/go/profiler"
-	"golang.org/x/oauth2"
-	"google.golang.org/api/option"
-	codepb "google.golang.org/genproto/googleapis/rpc/code"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/status"
-
 	texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	gcppropagator "github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator"
 	"go.opentelemetry.io/contrib/detectors/gcp"
@@ -207,7 +201,13 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	oteltrace "go.opentelemetry.io/otel/trace"
+	"golang.org/x/oauth2"
+	"google.golang.org/api/option"
+	codepb "google.golang.org/genproto/googleapis/rpc/code"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 
+	clientauth "go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
@@ -221,17 +221,12 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/target"
-
-	"go.chromium.org/luci/hardcoded/chromeinfra" // should be used ONLY in Main()
-
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
-
+	"go.chromium.org/luci/hardcoded/chromeinfra" // should be used ONLY in Main()
 	"go.chromium.org/luci/web/rpcexplorer"
-
-	clientauth "go.chromium.org/luci/auth"
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"

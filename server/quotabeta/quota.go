@@ -26,10 +26,10 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/server/redisconn"
 
 	pb "go.chromium.org/luci/server/quotabeta/proto"
 	"go.chromium.org/luci/server/quotabeta/quotaconfig"
+	"go.chromium.org/luci/server/redisconn"
 )
 
 // ErrInsufficientQuota is returned by UpdateQuota when the updates were not

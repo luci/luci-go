@@ -41,21 +41,18 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/grpc/prpc"
-
+	clientauth "go.chromium.org/luci/auth"
+	clientauthtest "go.chromium.org/luci/auth/integration/authtest"
+	"go.chromium.org/luci/auth/integration/localauth"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/sdlogger"
-
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
-
-	clientauth "go.chromium.org/luci/auth"
-	clientauthtest "go.chromium.org/luci/auth/integration/authtest"
-	"go.chromium.org/luci/auth/integration/localauth"
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"

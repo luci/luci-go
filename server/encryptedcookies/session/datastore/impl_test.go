@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+
 	"go.chromium.org/luci/server/encryptedcookies/session"
 	"go.chromium.org/luci/server/encryptedcookies/session/sessionpb"
 

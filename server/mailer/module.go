@@ -31,13 +31,13 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/mailer/api/mailer"
+
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/internal/gae"
 	gaebasepb "go.chromium.org/luci/server/internal/gae/base"
 	gaemailpb "go.chromium.org/luci/server/internal/gae/mail"
 	"go.chromium.org/luci/server/module"
-
-	"go.chromium.org/luci/mailer/api/mailer"
 )
 
 // ModuleName can be used to refer to this module when declaring dependencies.

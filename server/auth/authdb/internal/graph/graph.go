@@ -25,9 +25,9 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/server/auth/service/protocol"
 
 	"go.chromium.org/luci/server/auth/authdb/internal/globset"
+	"go.chromium.org/luci/server/auth/service/protocol"
 )
 
 // Graph is a static group graph optimized for traversals.

@@ -20,10 +20,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/smarty/assertions"
+
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 
-	"github.com/smarty/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

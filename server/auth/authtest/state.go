@@ -20,6 +20,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/auth/identity"
+
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/realms"

@@ -69,5 +69,5 @@ func (*noopAppendRowsClient) Header() (metadata.MD, error) { panic("unused") }
 func (*noopAppendRowsClient) Trailer() metadata.MD         { panic("unused") }
 func (*noopAppendRowsClient) CloseSend() error             { return nil }
 func (*noopAppendRowsClient) Context() context.Context     { panic("unused") }
-func (*noopAppendRowsClient) SendMsg(m any) error  { panic("unused") }
-func (*noopAppendRowsClient) RecvMsg(m any) error  { panic("unused") }
+func (*noopAppendRowsClient) SendMsg(m any) error          { panic("unused") }
+func (*noopAppendRowsClient) RecvMsg(m any) error          { panic("unused") }

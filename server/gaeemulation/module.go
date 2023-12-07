@@ -48,13 +48,13 @@ import (
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/appengine/gaesecrets"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/filter/dscache"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/cloud"
 	"go.chromium.org/luci/grpc/grpcmon"
 
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"

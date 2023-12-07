@@ -22,10 +22,10 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/server/module"
-	"go.chromium.org/luci/server/redisconn"
 
+	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/quota/quotapb"
+	"go.chromium.org/luci/server/redisconn"
 )
 
 // ModuleName is the globally-unique name for this module.

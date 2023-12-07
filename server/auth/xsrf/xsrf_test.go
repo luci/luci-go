@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/secrets/testsecrets"

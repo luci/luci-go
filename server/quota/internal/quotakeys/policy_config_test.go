@@ -17,9 +17,10 @@ package quotakeys
 import (
 	"testing"
 
+	"go.chromium.org/luci/server/quota/quotapb"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	"go.chromium.org/luci/server/quota/quotapb"
 )
 
 func TestPolicyConfigID(t *testing.T) {

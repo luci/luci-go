@@ -21,11 +21,10 @@ import (
 	"strings"
 	"time"
 
-	"go.chromium.org/luci/gae/filter/txndefer"
-	ds "go.chromium.org/luci/gae/service/datastore"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/filter/txndefer"
+	ds "go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/server/tq/internal/reminder"
 )

@@ -22,6 +22,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/common/clock"
+
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 )

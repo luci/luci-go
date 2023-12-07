@@ -38,16 +38,16 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/loginsessions/internal"
+	"go.chromium.org/luci/server/loginsessions/internal/assets"
+	"go.chromium.org/luci/server/loginsessions/internal/statepb"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/templates"
-
-	"go.chromium.org/luci/server/loginsessions/internal"
-	"go.chromium.org/luci/server/loginsessions/internal/assets"
-	"go.chromium.org/luci/server/loginsessions/internal/statepb"
 )
 
 // ModuleName can be used to refer to this module when declaring dependencies.

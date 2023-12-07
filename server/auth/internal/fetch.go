@@ -22,10 +22,10 @@ import (
 	"io"
 	"net/http"
 
+	"golang.org/x/net/context/ctxhttp"
+
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-
-	"golang.org/x/net/context/ctxhttp"
 )
 
 // ClientFactory knows how to produce http.Client that attach proper OAuth
@@ -60,8 +60,8 @@ type Request struct {
 	URL     string            // URL to access
 	Scopes  []string          // OAuth2 scopes to authenticate with or anonymous call if empty
 	Headers map[string]string // optional map with request headers
-	Body    any       // object to convert to JSON and send as body or []byte with the body
-	Out     any       // where to deserialize the response to
+	Body    any               // object to convert to JSON and send as body or []byte with the body
+	Out     any               // where to deserialize the response to
 }
 
 // Do performs an HTTP request with retries on transient errors.

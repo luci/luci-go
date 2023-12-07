@@ -21,20 +21,22 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gomodule/redigo/redis"
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	. "go.chromium.org/luci/common/testing/assertions"
+
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/quota"
-	"go.chromium.org/luci/server/redisconn"
-
 	"go.chromium.org/luci/server/quota/internal/quotakeys"
 	"go.chromium.org/luci/server/quota/quotapb"
+	"go.chromium.org/luci/server/redisconn"
+
 	_ "go.chromium.org/luci/server/quota/quotatestmonkeypatch"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var integrationTestApp = quota.Register("ita", &quota.ApplicationOptions{

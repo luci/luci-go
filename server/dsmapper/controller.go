@@ -24,19 +24,17 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/gae/service/datastore"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
-
-	"go.chromium.org/luci/server/tq"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/server/dsmapper/dsmapperpb"
 	"go.chromium.org/luci/server/dsmapper/internal/splitter"
 	"go.chromium.org/luci/server/dsmapper/internal/tasks"
+	"go.chromium.org/luci/server/tq"
 
 	// Need this to enqueue tasks inside Datastore transactions.
 	_ "go.chromium.org/luci/server/tq/txn/datastore"

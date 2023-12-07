@@ -23,8 +23,8 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/spantest"
-	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq/internal/partition"
 
 	. "github.com/smartystreets/goconvey/convey"

@@ -26,8 +26,8 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
-	"go.chromium.org/luci/server/caching"
 
+	"go.chromium.org/luci/server/caching"
 	pb "go.chromium.org/luci/server/quotabeta/proto"
 	"go.chromium.org/luci/server/quotabeta/quotaconfig"
 )

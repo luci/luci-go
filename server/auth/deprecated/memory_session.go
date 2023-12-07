@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+
 	"go.chromium.org/luci/server/auth"
 )
 

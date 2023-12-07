@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/auth/identity"
+
 	"go.chromium.org/luci/server/auth/authdb/internal/graph"
 	"go.chromium.org/luci/server/auth/service/protocol"
 )

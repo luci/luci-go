@@ -21,12 +21,14 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/msgpackpb"
+
 	"go.chromium.org/luci/server/quota/internal/quotakeys"
 	"go.chromium.org/luci/server/quota/quotapb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // LoadPoliciesManual ensures that the given policy config is uploaded at

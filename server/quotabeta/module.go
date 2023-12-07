@@ -20,9 +20,8 @@ import (
 
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/module"
-	"go.chromium.org/luci/server/redisconn"
-
 	pb "go.chromium.org/luci/server/quotabeta/proto"
+	"go.chromium.org/luci/server/redisconn"
 )
 
 // ModuleName is the globally-unique name for this module.

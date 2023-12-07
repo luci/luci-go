@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
+
 	"go.chromium.org/luci/server/auth/internal"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/cachingtest"

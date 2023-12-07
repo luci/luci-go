@@ -17,10 +17,9 @@ package reminder
 import (
 	"time"
 
-	"google.golang.org/protobuf/proto"
-
 	taskspb "cloud.google.com/go/cloudtasks/apiv2/cloudtaskspb"
 	"cloud.google.com/go/pubsub/apiv1/pubsubpb"
+	"google.golang.org/protobuf/proto"
 )
 
 // Payload incapsulates the Reminder's payload.

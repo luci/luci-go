@@ -31,6 +31,11 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
+
+	"go.chromium.org/luci/server/auth/authdb/internal/graph"
+	"go.chromium.org/luci/server/auth/authdb/internal/legacy"
+	"go.chromium.org/luci/server/auth/authdb/internal/oauthid"
+	"go.chromium.org/luci/server/auth/authdb/internal/realmset"
 	"go.chromium.org/luci/server/auth/internal"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
@@ -38,13 +43,7 @@ import (
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 	"go.chromium.org/luci/server/caching"
 
-	"go.chromium.org/luci/server/auth/authdb/internal/graph"
-	"go.chromium.org/luci/server/auth/authdb/internal/legacy"
-	"go.chromium.org/luci/server/auth/authdb/internal/oauthid"
-	"go.chromium.org/luci/server/auth/authdb/internal/realmset"
-
 	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 

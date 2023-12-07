@@ -21,6 +21,7 @@ import (
 	"google.golang.org/api/idtoken"
 
 	"go.chromium.org/luci/common/logging/gologger"
+
 	"go.chromium.org/luci/server/auth/authtest"
 
 	. "github.com/smartystreets/goconvey/convey"

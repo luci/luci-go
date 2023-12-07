@@ -27,9 +27,9 @@ import (
 	"net/http"
 
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/server/pprof/internal"
+	"go.chromium.org/luci/server/router"
 )
 
 var pprofRoutes = map[string]http.HandlerFunc{

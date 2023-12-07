@@ -26,16 +26,16 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
+	"go.chromium.org/luci/server/encryptedcookies/internal"
+	"go.chromium.org/luci/server/encryptedcookies/internal/fakecookies"
+	"go.chromium.org/luci/server/encryptedcookies/session"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/warmup"
-
-	"go.chromium.org/luci/server/encryptedcookies/internal"
-	"go.chromium.org/luci/server/encryptedcookies/internal/fakecookies"
-	"go.chromium.org/luci/server/encryptedcookies/session"
 )
 
 // ModuleName can be used to refer to this module when declaring dependencies.

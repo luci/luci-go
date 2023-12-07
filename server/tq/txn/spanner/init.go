@@ -27,7 +27,6 @@ import (
 	"context"
 
 	"go.chromium.org/luci/server/span"
-
 	"go.chromium.org/luci/server/tq/internal/db"
 	"go.chromium.org/luci/server/tq/internal/lessor"
 )
