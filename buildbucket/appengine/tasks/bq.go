@@ -17,6 +17,8 @@ package tasks
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -61,14 +63,27 @@ func ExportBuild(ctx context.Context, buildID int64) error {
 		return errors.Annotate(err, "failed to convert build to proto").Err()
 	}
 
-	// Backfill Infra.Swarming for builds running on Swarming implemented backends.
-	// TODO(crbug.com/1508416) Stop backfill after Buildbucket taskbackend
-	// migration completes and all BQ queries are migrated away from Infra.Swarming.
-	err = tryBackfillSwarming(p)
-	if err != nil {
-		// Since the backfill is best effort, only log the error but not fail
-		// this bq export task.
-		logging.Warningf(ctx, "failed to backfill swarming data for build %d: %s", buildID, err)
+	if p.Infra.Swarming == nil {
+		// Backfill Infra.Swarming for builds running on Swarming implemented backends.
+		// TODO(crbug.com/1508416) Stop backfill after Buildbucket taskbackend
+		// migration completes and all BQ queries are migrated away from Infra.Swarming.
+		err = tryBackfillSwarming(p)
+		if err != nil {
+			// Since the backfill is best effort, only log the error but not fail
+			// this bq export task.
+			logging.Warningf(ctx, "failed to backfill swarming data for build %d: %s", buildID, err)
+		}
+	} else if p.Infra.Backend == nil {
+		// Backfill Infra.Backend for builds running on Swarming directly.
+		// TODO(crbug.com/1508416) Stop backfill after Buildbucket taskbackend
+		// migration completes - by then there will be no more builds running on
+		// Swarming directly, so this flow can be removed.
+		err = tryBackfillBackend(p)
+		if err != nil {
+			// Since the backfill is best effort, only log the error but not fail
+			// this bq export task.
+			logging.Warningf(ctx, "failed to backfill backend data for build %d: %s", buildID, err)
+		}
 	}
 
 	// Clear fields that we don't want in BigQuery.
@@ -130,10 +145,6 @@ func ExportBuild(ctx context.Context, buildID int64) error {
 // TODO(crbug.com/1508416) Stop backfill after Buildbucket taskbackend
 // migration completes and all BQ queries are migrated away from Infra.Swarming.
 func tryBackfillSwarming(b *pb.Build) error {
-	if b.Infra.Swarming != nil {
-		return nil
-	}
-
 	backend := b.Infra.Backend
 	if backend.GetTask().GetId().GetId() == "" {
 		// No backend task associated with the build, bail out.
@@ -209,4 +220,88 @@ func commonCacheToSwarmingCache(cache []*pb.CacheEntry) []*pb.BuildInfra_Swarmin
 		swarmingCache = append(swarmingCache, cacheEntry)
 	}
 	return swarmingCache
+}
+
+// tryBackfillBackend does a best effort backfill on Infra.Backend for builds
+// running on Swarming directly.
+// TODO(crbug.com/1508416) Stop backfill after Buildbucket taskbackend
+// migration completes.
+func tryBackfillBackend(b *pb.Build) (err error) {
+	sw := b.Infra.Swarming
+	if sw.GetTaskId() == "" {
+		// No swarming task associated with the build, bail out.
+		return
+	}
+
+	backend := &pb.BuildInfra_Backend{
+		Hostname: sw.Hostname,
+		Task: &pb.Task{
+			Id: &pb.TaskID{
+				Target: computeBackendTarget(sw.Hostname),
+				Id:     sw.TaskId,
+			},
+			// Status, Link, StatusDetails, SummaryMarkdown and UpdateId are not
+			// populated in this backfill.
+		},
+		Caches:         swarmingCacheToCommonCache(sw.Caches),
+		TaskDimensions: sw.TaskDimensions,
+		Config: &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"priority":        structpb.NewNumberValue(float64(sw.Priority)),
+				"service_account": structpb.NewStringValue(sw.TaskServiceAccount),
+			},
+		},
+	}
+	b.Infra.Backend = backend
+
+	// set backend.Task.Details
+	botDimensions := make(map[string][]string)
+	for _, dim := range sw.BotDimensions {
+		if _, ok := botDimensions[dim.Key]; !ok {
+			botDimensions[dim.Key] = make([]string, 0)
+		}
+		botDimensions[dim.Key] = append(botDimensions[dim.Key], dim.Value)
+	}
+	// Use json as an intermediate format to convert.
+	j, err := json.Marshal(map[string]any{
+		"bot_dimensions": botDimensions,
+	})
+	if err != nil {
+		return err
+	}
+	var m map[string]any
+	if err = json.Unmarshal(j, &m); err != nil {
+		return err
+	}
+	backend.Task.Details, err = structpb.NewStruct(m)
+	return err
+}
+
+// computeBackendTarget returns the backend target based on the swarming hostname.
+// It's essentially a hack. The accurate way is to find the backend in global
+// config by matching the hostname. But it's a bit heavy for a temporary solution
+// like this.
+func computeBackendTarget(swHost string) string {
+	swHostRe := regexp.MustCompile(`(.*).appspot.com`)
+	var swInstance string
+	if m := swHostRe.FindStringSubmatch(swHost); m != nil {
+		swInstance = m[1]
+	}
+	return fmt.Sprintf("swarming://%s", swInstance)
+}
+
+// swarmingCacheToCommonCache returns the equivalent []*pb.CacheEntry
+// for the given []*pb.BuildInfra_Swarming_CacheEntry.
+func swarmingCacheToCommonCache(swCache []*pb.BuildInfra_Swarming_CacheEntry) []*pb.CacheEntry {
+	var cache []*pb.CacheEntry
+	for _, c := range swCache {
+		cacheEntry := &pb.CacheEntry{
+			EnvVar:           c.GetEnvVar(),
+			Name:             c.GetName(),
+			Path:             c.GetPath(),
+			WaitForWarmCache: c.GetWaitForWarmCache(),
+		}
+		cache = append(cache, cacheEntry)
+	}
+	return cache
 }

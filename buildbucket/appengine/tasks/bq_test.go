@@ -294,13 +294,6 @@ func TestTryBackfillSwarming(t *testing.T) {
 			Infra:  &pb.BuildInfra{},
 		}
 		Convey("noop", func() {
-			Convey("build runs on swarming", func() {
-				b.Infra.Swarming = &pb.BuildInfra_Swarming{
-					TaskId: "s93k0402js90",
-				}
-				So(tryBackfillSwarming(b), ShouldBeNil)
-			})
-
 			Convey("no backend", func() {
 				So(tryBackfillSwarming(b), ShouldBeNil)
 				So(b.Infra.Swarming, ShouldBeNil)
@@ -440,6 +433,135 @@ func TestTryBackfillSwarming(t *testing.T) {
 				So(tryBackfillSwarming(b), ShouldBeNil)
 				So(b.Infra.Swarming, ShouldResembleProto, expected)
 			})
+		})
+	})
+}
+
+func TestTryBackfillBackend(t *testing.T) {
+	t.Parallel()
+
+	Convey("tryBackfillBackend", t, func() {
+		b := &pb.Build{
+			Id: 1,
+			Builder: &pb.BuilderID{
+				Project: "project",
+				Bucket:  "bucket",
+				Builder: "builder",
+			},
+			Status: pb.Status_SUCCESS,
+			Infra:  &pb.BuildInfra{},
+		}
+		Convey("noop", func() {
+			Convey("no swarming", func() {
+				So(tryBackfillBackend(b), ShouldBeNil)
+				So(b.Infra.Backend, ShouldBeNil)
+			})
+
+			Convey("no swarming task", func() {
+				b.Infra.Swarming = &pb.BuildInfra_Swarming{
+					Hostname: "host",
+				}
+				So(tryBackfillBackend(b), ShouldBeNil)
+				So(b.Infra.Backend, ShouldBeNil)
+			})
+		})
+
+		Convey("backend backfilled", func() {
+			taskDims := []*pb.RequestedDimension{
+				{
+					Key:   "key",
+					Value: "value",
+				},
+			}
+			b.Infra.Swarming = &pb.BuildInfra_Swarming{
+				Hostname: "chromium-swarm.appspot.com",
+				TaskId:   "s93k0402js90",
+				Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+					{
+						Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+						Path: "builder",
+						WaitForWarmCache: &durationpb.Duration{
+							Seconds: 240,
+						},
+					},
+				},
+				TaskDimensions:     taskDims,
+				Priority:           int32(20),
+				TaskServiceAccount: "account",
+				BotDimensions: []*pb.StringPair{
+					{
+						Key:   "cpu",
+						Value: "x86",
+					},
+					{
+						Key:   "cpu",
+						Value: "x86-64",
+					},
+					{
+						Key:   "os",
+						Value: "Linux",
+					},
+				},
+			}
+			expected := &pb.BuildInfra_Backend{
+				Task: &pb.Task{
+					Id: &pb.TaskID{
+						Id:     "s93k0402js90",
+						Target: "swarming://chromium-swarm",
+					},
+				},
+				Hostname: "chromium-swarm.appspot.com",
+				Caches: []*pb.CacheEntry{
+					{
+						Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+						Path: "builder",
+						WaitForWarmCache: &durationpb.Duration{
+							Seconds: 240,
+						},
+					},
+				},
+				Config: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"priority":        &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 20}},
+						"service_account": &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}},
+					},
+				},
+				TaskDimensions: taskDims,
+			}
+
+			expected.Task.Details = &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"bot_dimensions": &structpb.Value{
+						Kind: &structpb.Value_StructValue{
+							StructValue: &structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"cpu": &structpb.Value{
+										Kind: &structpb.Value_ListValue{
+											ListValue: &structpb.ListValue{
+												Values: []*structpb.Value{
+													&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "x86"}},
+													&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "x86-64"}},
+												},
+											},
+										},
+									},
+									"os": &structpb.Value{
+										Kind: &structpb.Value_ListValue{
+											ListValue: &structpb.ListValue{
+												Values: []*structpb.Value{
+													&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "Linux"}},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			So(tryBackfillBackend(b), ShouldBeNil)
+			So(b.Infra.Backend, ShouldResembleProto, expected)
 		})
 	})
 }
