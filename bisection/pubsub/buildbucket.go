@@ -16,12 +16,16 @@
 package pubsub
 
 import (
+	"bytes"
+	"compress/zlib"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/bisection/compilefailuredetection"
 	"go.chromium.org/luci/bisection/internal/config"
@@ -192,7 +196,17 @@ func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
 		if err != nil {
 			return errors.Annotate(err, "get excluded builder groups for compile").Err()
 		}
-		builderGroup := util.GetBuilderGroup(bbmsg.Build)
+		// Pubsub message stores input properties in large fields.
+		largeFieldsData, err := zlibDecompress(bbmsg.BuildLargeFields)
+		if err != nil {
+			return errors.Annotate(err, "decompress large field").Err()
+		}
+		largeFields := &buildbucketpb.Build{}
+		if err := proto.Unmarshal(largeFieldsData, largeFields); err != nil {
+			return errors.Annotate(err, "unmarshal large field").Err()
+		}
+
+		builderGroup := util.GetBuilderGroup(largeFields)
 		if builderGroup != "" {
 			for _, excludedBg := range excludedBgs {
 				if builderGroup == excludedBg {
@@ -244,4 +258,14 @@ func parseBBV2Message(ctx context.Context, pbMsg pubsubMessage) (*buildbucketpb.
 		return nil, err
 	}
 	return buildsV2Msg, nil
+}
+
+// zlibDecompress decompresses data using zlib.
+func zlibDecompress(compressed []byte) ([]byte, error) {
+	r, err := zlib.NewReader(bytes.NewReader(compressed))
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = r.Close() }()
+	return io.ReadAll(r)
 }

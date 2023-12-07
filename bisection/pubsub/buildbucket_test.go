@@ -16,6 +16,7 @@ package pubsub
 
 import (
 	"bytes"
+	"compress/zlib"
 	"context"
 	"encoding/json"
 	"io"
@@ -51,6 +52,8 @@ func TestBuildBucketPubsub(t *testing.T) {
 		Convey("Should create new task", func() {
 			c, scheduler := tq.TestingContext(c, nil)
 			compilefailuredetection.RegisterTaskClass()
+			largeField, err := largeField("bg")
+			So(err, ShouldBeNil)
 
 			buildPubsub := &buildbucketpb.BuildsV2PubSub{
 				Build: &buildbucketpb.Build{
@@ -61,11 +64,12 @@ func TestBuildBucketPubsub(t *testing.T) {
 					},
 					Status: buildbucketpb.Status_FAILURE,
 				},
+				BuildLargeFields: largeField,
 			}
 			r := &http.Request{Body: makeBBReq(buildPubsub)}
-			err := buildbucketPubSubHandlerImpl(c, r)
+			err = buildbucketPubSubHandlerImpl(c, r)
 			So(err, ShouldBeNil)
-			// Check that a test was created
+			// Check that a task was created.
 			task := &taskpb.FailedBuildIngestionTask{
 				Bbid: 8000,
 			}
@@ -92,24 +96,20 @@ func TestBuildBucketPubsub(t *testing.T) {
 
 		Convey("Excluded builder group", func() {
 			c, _ := tsmon.WithDummyInMemory(c)
+			largeField, err := largeField("chromium.clang")
+			So(err, ShouldBeNil)
 			buildPubsub := &buildbucketpb.BuildsV2PubSub{
 				Build: &buildbucketpb.Build{
 					Builder: &buildbucketpb.BuilderID{
 						Project: "chromium",
 						Bucket:  "ci",
 					},
-					Input: &buildbucketpb.Build_Input{
-						Properties: &structpb.Struct{
-							Fields: map[string]*structpb.Value{
-								"builder_group": structpb.NewStringValue("chromium.clang"),
-							},
-						},
-					},
 					Status: buildbucketpb.Status_FAILURE,
 				},
+				BuildLargeFields: largeField,
 			}
 			r := &http.Request{Body: makeBBReq(buildPubsub)}
-			err := buildbucketPubSubHandlerImpl(c, r)
+			err = buildbucketPubSubHandlerImpl(c, r)
 			So(err, ShouldBeNil)
 			So(bbCounter.Get(c, "chromium", "unsupported"), ShouldEqual, 1)
 		})
@@ -175,4 +175,30 @@ func makeBBReq(message *buildbucketpb.BuildsV2PubSub) io.ReadCloser {
 	}{Data: bm, Attributes: attributes}}
 	jmsg, _ := json.Marshal(msg)
 	return io.NopCloser(bytes.NewReader(jmsg))
+}
+
+func largeField(builderGroup string) ([]byte, error) {
+	large := &buildbucketpb.Build{
+		Input: &buildbucketpb.Build_Input{
+			Properties: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"builder_group": structpb.NewStringValue(builderGroup),
+				},
+			},
+		},
+	}
+	largeBytes, err := proto.Marshal(large)
+	if err != nil {
+		return nil, err
+	}
+
+	buf := &bytes.Buffer{}
+	zw := zlib.NewWriter(buf)
+	if _, err := zw.Write(largeBytes); err != nil {
+		return nil, err
+	}
+	if err := zw.Close(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
