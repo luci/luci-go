@@ -716,6 +716,11 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 		ctx.Errorf("name must match %s", builderRegex)
 	}
 
+	// auto_builder_dimension
+	if isDynamic && b.GetAutoBuilderDimension() == pb.Toggle_YES {
+		ctx.Errorf("should not toggle on auto_builder_dimension in a dynamic bucket")
+	}
+
 	// Need to do separate checks here since backend and backend_alt can both be set.
 	// Either backend or swarming must be set, but not both.
 	switch {

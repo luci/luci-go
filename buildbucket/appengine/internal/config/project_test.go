@@ -155,6 +155,7 @@ func TestValidateProject(t *testing.T) {
 						shadow: "a.shadow"
 						dynamic_builder_template: {
 							template: {
+								auto_builder_dimension: YES
 								swarming_host: "swarming_hostname"
 								shadow_builder_adjustments {
 									pool: "shadow_pool"
@@ -166,9 +167,10 @@ func TestValidateProject(t *testing.T) {
 				So(validateProjectCfg(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
 				ve, ok := vctx.Finalize().(*validation.Error)
 				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 2)
+				So(len(ve.Errors), ShouldEqual, 3)
 				So(ve.Errors[0].Error(), ShouldContainSubstring, `dynamic bucket "a" cannot have a shadow bucket "a.shadow"`)
-				So(ve.Errors[1].Error(), ShouldContainSubstring, "cannot set shadow_builder_adjustments in a dynamic builder template")
+				So(ve.Errors[1].Error(), ShouldContainSubstring, "should not toggle on auto_builder_dimension in a dynamic bucket")
+				So(ve.Errors[2].Error(), ShouldContainSubstring, "cannot set shadow_builder_adjustments in a dynamic builder template")
 			})
 
 			Convey("empty builder", func() {
