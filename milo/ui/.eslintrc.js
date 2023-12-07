@@ -138,12 +138,15 @@ module.exports = {
       },
     ],
 
-    // TypeScript and LitElement template is hard to fit in 80 cols.
-    // Note that the prettier will still try to reformat the code into 80 cols.
-    // But the prettier does not apply a hard limit.
+    // Generated protobuf types could be very long (e.g.
+    // `ClusterResponse_ClusteredTestResult_ClusterEntry`). Set a high max-len
+    // so we don't need to disable this rule whenever those long types are used.
+    //
+    // Note that the prettier will still try to reformat the code into 80 cols
+    // when appropriate. And we should generally fit our code in 80 cols too.
     'max-len': [
       'error',
-      { code: 120, ignoreUrls: true, ignoreRegExpLiterals: true },
+      { code: 140, ignoreUrls: true, ignoreRegExpLiterals: true },
     ],
 
     // Ban `console.log` to encourage displaying message via DOM and prevent

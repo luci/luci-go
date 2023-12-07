@@ -12,17 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AssociatedBug } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
-
-export function getUniqueBugs(bugs: readonly AssociatedBug[]) {
-  const uniqueBugs: AssociatedBug[] = [];
-  const seen = new Set<string>();
-  for (const bug of bugs) {
-    if (seen.has(bug.url)) {
-      continue;
-    }
-    seen.add(bug.url);
-    uniqueBugs.push(bug);
-  }
-  return uniqueBugs;
-}
+export * from './utils';

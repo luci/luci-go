@@ -14,26 +14,31 @@
 
 import { render, screen } from '@testing-library/react';
 
-import { TestStatus } from '@/common/services/resultdb';
+import { TestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { OutputTestResultBundle } from '@/test_verdict/types';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { TestResultsProvider } from '../context';
 
 import { ResultsHeader } from './results_header';
 
-const SampleResults = [
-  {
+const sampleResults = [
+  TestResultBundle.fromPartial({
     result: {
       testId: 'tast.inputs.VirtualKeyboardAutocorrect.fr_fr_a11y',
       name:
         'invocations/u-chrome-bot-2023-10-25-09-08-00-26592efa1f477db0/tests/' +
         'tast.inputs.VirtualKeyboardAutocorrect.fr_fr_a11y/results/87ecc8c3-00063',
       resultId: '87ecc8c3-000623',
-      status: TestStatus.Fail,
+      status: TestStatus.FAIL,
       summaryHtml: '<text-artifact artifact-id="Test Log" />',
       startTime: '2023-10-25T09:01:00.167244802Z',
-      duration: '55.567s',
-      tags: [
+      duration: {
+        seconds: '55',
+        nanos: 567000000,
+      },
+      tags: Object.freeze([
         {
           key: 'ancestor_buildbucket_ids',
           value: '8766287273535464561',
@@ -46,7 +51,7 @@ const SampleResults = [
           key: 'bug_component',
           value: 'b:95887',
         },
-      ],
+      ]),
       failureReason: {
         primaryErrorMessage:
           'Failed to validate VK autocorrect: failed to validate VK autocorrect on step 4: failed' +
@@ -54,19 +59,22 @@ const SampleResults = [
           ' want: français',
       },
     },
-  },
-  {
+  }),
+  TestResultBundle.fromPartial({
     result: {
       testId: 'tast.inputs.VirtualKeyboardAutocorrect.fr_fr_a11y',
       name:
         'invocations/u-chrome-bot-2023-10-25-09-08-00-26592efa1f477db0/tests/' +
         'tast.inputs.VirtualKeyboardAutocorrect.fr_fr_a11y/results/87ecc8c3-00063',
       resultId: '87ecc8c3-00063',
-      status: TestStatus.Pass,
+      status: TestStatus.PASS,
       summaryHtml: '<text-artifact artifact-id="Test Log" />',
       startTime: '2023-10-25T09:01:00.167244802Z',
-      duration: '55.567s',
-      tags: [
+      duration: {
+        seconds: '55',
+        nanos: 567000000,
+      },
+      tags: Object.freeze([
         {
           key: 'ancestor_buildbucket_ids',
           value: '8766287273535464561',
@@ -79,16 +87,16 @@ const SampleResults = [
           key: 'bug_component',
           value: 'b:95887',
         },
-      ],
+      ]),
     },
-  },
-];
+  }),
+] as readonly OutputTestResultBundle[];
 
 describe('<ResultsHeader />', () => {
   it('given no selected result in the route, then should select the first failed result', async () => {
     render(
       <FakeContextProvider>
-        <TestResultsProvider results={SampleResults}>
+        <TestResultsProvider results={sampleResults}>
           <ResultsHeader />
         </TestResultsProvider>
       </FakeContextProvider>,
@@ -105,7 +113,7 @@ describe('<ResultsHeader />', () => {
           initialEntries: ['/?resultIndex=1'],
         }}
       >
-        <TestResultsProvider results={SampleResults}>
+        <TestResultsProvider results={sampleResults}>
           <ResultsHeader />
         </TestResultsProvider>
       </FakeContextProvider>,

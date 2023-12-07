@@ -36,7 +36,6 @@ import {
   RESULT_LIMIT,
   TestStatus,
   TestVariant,
-  getSortedTestVariantDef,
 } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
@@ -49,6 +48,8 @@ import {
 } from '@/generic_libs/tools/observer_element';
 import { attachTags, hasTags } from '@/generic_libs/tools/tag';
 import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
+import { TestLocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_metadata.pb';
+import { getSortedTestVariantDef } from '@/test_verdict/tools/utils';
 
 import { consumeProject, consumeTestTabUrl } from './context';
 
@@ -213,7 +214,9 @@ export class TestVariantEntryElement
   @computed
   private get sourceUrl() {
     const testLocation = this.variant?.testMetadata?.location;
-    return testLocation ? getCodeSourceUrl(testLocation) : null;
+    return testLocation
+      ? getCodeSourceUrl(TestLocation.fromPartial(testLocation))
+      : null;
   }
 
   @computed

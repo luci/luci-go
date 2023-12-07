@@ -21,14 +21,15 @@ import {
   useState,
 } from 'react';
 
-import { Sources, TestVariant } from '@/common/services/resultdb';
+import { Sources } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
+import { OutputTestVerdict } from '@/test_verdict/types';
 
 interface TestVerdictContext {
   readonly invocationID: string;
   readonly project: string;
-  readonly testVerdict: TestVariant;
-  readonly setTestVerdict: Dispatch<SetStateAction<TestVariant>>;
-  readonly sources: Sources;
+  readonly testVerdict: OutputTestVerdict;
+  readonly setTestVerdict: Dispatch<SetStateAction<OutputTestVerdict>>;
+  readonly sources: Sources | null;
 }
 
 const TestVerdictCtx = createContext<TestVerdictContext | null>(null);
@@ -37,8 +38,8 @@ export interface TestVerdictProviderProps {
   readonly children: ReactNode;
   readonly invocationID: string;
   readonly project: string;
-  readonly testVerdict: TestVariant;
-  readonly sources: Sources;
+  readonly testVerdict: OutputTestVerdict;
+  readonly sources: Sources | null;
 }
 
 export function TestVerdictProvider({

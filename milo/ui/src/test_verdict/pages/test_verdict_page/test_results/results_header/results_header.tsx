@@ -23,14 +23,14 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import { useEffectOnce } from 'react-use';
 
-import { TEST_STATUS_DISPLAY_MAP } from '@/common/constants';
-import {
-  TestResult,
-  TestResultBundle,
-  TestStatus,
-} from '@/common/services/resultdb';
 import { setSingleQueryParam } from '@/common/tools/url_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import {
+  TestResult,
+  TestStatus,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { TEST_STATUS_DISPLAY_MAP } from '@/test_verdict/constants';
 
 import { useResults } from '../context';
 import {
@@ -40,17 +40,17 @@ import {
 
 function getRunStatusIcon(status: TestStatus) {
   switch (status) {
-    case TestStatus.Abort:
+    case TestStatus.ABORT:
       return <DoNotDisturbOnTotalSilenceIcon className="exonerated" />;
-    case TestStatus.Crash:
+    case TestStatus.CRASH:
       return <BrokenImageIcon className="unexpected" />;
-    case TestStatus.Fail:
+    case TestStatus.FAIL:
       return <CancelIcon className="unexpected" />;
-    case TestStatus.Pass:
+    case TestStatus.PASS:
       return <CheckCircleIcon className="expected" />;
-    case TestStatus.Skip:
+    case TestStatus.SKIP:
       return <DoNotDisturbIcon className="unexpectedly-skipped" />;
-    case TestStatus.Unspecified:
+    case TestStatus.STATUS_UNSPECIFIED:
     default:
       return <QuestionMarkIcon className="unspecified" />;
   }

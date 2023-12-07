@@ -14,20 +14,22 @@
 
 import { ReactNode, createContext, useContext } from 'react';
 
-import { Cluster } from '@/common/services/luci_analysis';
-import { TestResultBundle } from '@/common/services/resultdb';
+import {
+  OutputClusterEntry,
+  OutputTestResultBundle,
+} from '@/test_verdict/types';
 
 interface TestResultsContext {
-  readonly results: readonly TestResultBundle[];
-  readonly clustersMap?: ReadonlyMap<string, readonly Cluster[]>;
+  readonly results: readonly OutputTestResultBundle[];
+  readonly clustersMap?: ReadonlyMap<string, readonly OutputClusterEntry[]>;
 }
 
 export const TestResultsCtx = createContext<TestResultsContext | null>(null);
 
 interface TestResultsProviderProps {
   readonly children: ReactNode;
-  readonly results: readonly TestResultBundle[];
-  readonly clustersMap?: ReadonlyMap<string, readonly Cluster[]>;
+  readonly results: readonly OutputTestResultBundle[];
+  readonly clustersMap?: ReadonlyMap<string, readonly OutputClusterEntry[]>;
 }
 
 export function TestResultsProvider({

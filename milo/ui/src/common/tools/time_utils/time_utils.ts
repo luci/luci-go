@@ -14,6 +14,8 @@
 
 import { Duration } from 'luxon';
 
+import { Duration as ProtoDuration } from '@/proto/google/protobuf/duration.pb';
+
 export const SHORT_TIME_FORMAT = 'y-MM-dd HH:mm';
 export const LONG_TIME_FORMAT = 'HH:mm:ss ccc, MMM dd yyyy ZZZZ';
 export const NUMERIC_TIME_FORMAT = 'y-MM-dd HH:mm:ss ZZ';
@@ -99,5 +101,15 @@ export function displayCompactDuration(
 export function parseProtoDurationStr(duration: string): Duration {
   return Duration.fromObject({
     second: Number(duration.substring(0, duration.length - 1)),
+  });
+}
+
+/**
+ * Converts a google.protobuf.Duration object to a luxon Duration object.
+ */
+export function parseProtoDuration(duration: ProtoDuration): Duration {
+  return Duration.fromObject({
+    second: Number(duration.seconds),
+    millisecond: duration.nanos / 1000000,
   });
 }

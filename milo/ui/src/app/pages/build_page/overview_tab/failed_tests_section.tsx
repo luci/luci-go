@@ -121,8 +121,10 @@ export const FailedTestSection = observer(() => {
           columnGetters={invState.columnGetters}
           historyUrl={getTestHistoryURLWithSearchParam(
             store.buildPage.build.data.builder.project,
-            testVariant,
-            generateTestHistoryURLSearchParams(testVariant),
+            testVariant.testId,
+            generateTestHistoryURLSearchParams(
+              testVariant.variant || { def: {} },
+            ),
           )}
         />,
       );

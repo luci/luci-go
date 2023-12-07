@@ -31,24 +31,6 @@ export const INVOCATION_STATE_DISPLAY_MAP = {
   [InvocationState.Finalized]: 'finalized',
 };
 
-export const VARIANT_STATUS_DISPLAY_MAP = Object.freeze({
-  [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: 'unspecified',
-  [TestVariantStatus.UNEXPECTED]: 'unexpected',
-  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 'unexpectedly skipped',
-  [TestVariantStatus.FLAKY]: 'flaky',
-  [TestVariantStatus.EXONERATED]: 'exonerated',
-  [TestVariantStatus.EXPECTED]: 'expected',
-});
-
-export const VARIANT_STATUS_DISPLAY_MAP_TITLE_CASE = Object.freeze({
-  [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: 'Unspecified',
-  [TestVariantStatus.UNEXPECTED]: 'Unexpected',
-  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 'Unexpectedly Skipped',
-  [TestVariantStatus.FLAKY]: 'Flaky',
-  [TestVariantStatus.EXONERATED]: 'Exonerated',
-  [TestVariantStatus.EXPECTED]: 'Expected',
-});
-
 // Just so happens to be the same as VARIANT_STATUS_DISPLAY_MAP.
 export const VARIANT_STATUS_CLASS_MAP = Object.freeze({
   [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: 'unspecified',
@@ -66,15 +48,6 @@ export const VARIANT_STATUS_ICON_MAP = Object.freeze({
   [TestVariantStatus.FLAKY]: 'warning',
   [TestVariantStatus.EXONERATED]: 'remove_circle',
   [TestVariantStatus.EXPECTED]: 'check_circle',
-});
-
-export const VARIANT_STATUS_HUMAN_READABLE_MAP = Object.freeze({
-  [TestVariantStatus.EXONERATED]: 'exonerated',
-  [TestVariantStatus.EXPECTED]: 'expected',
-  [TestVariantStatus.FLAKY]: 'flaky',
-  [TestVariantStatus.UNEXPECTED]: 'unexpectedly failed',
-  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 'unexpectedly skipped',
-  [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: 'unspecified status',
 });
 
 export const VERDICT_VARIANT_STATUS_MAP = Object.freeze({

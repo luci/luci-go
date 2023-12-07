@@ -21,18 +21,19 @@ import WarningIcon from '@mui/icons-material/Warning';
 import Grid from '@mui/material/Grid';
 import { upperFirst } from 'lodash-es';
 
-import { VARIANT_STATUS_HUMAN_READABLE_MAP } from '@/common/constants';
-import { TestVariantStatus } from '@/common/services/resultdb';
+import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { VARIANT_STATUS_DISPLAY_MAP } from '@/test_verdict/constants';
+import { SpecifiedTestVerdictStatus } from '@/test_verdict/types';
 
 import { useTestVerdict } from '../context';
 
 import { CLInfo } from './cl_info';
 
-function getTestVariantStatusLabel(status: TestVariantStatus) {
-  return upperFirst(VARIANT_STATUS_HUMAN_READABLE_MAP[status]);
+function getTestVariantStatusLabel(status: SpecifiedTestVerdictStatus) {
+  return upperFirst(VARIANT_STATUS_DISPLAY_MAP[status]);
 }
 
-function getTestVariantStatusIcon(status: TestVariantStatus) {
+function getTestVariantStatusIcon(status: SpecifiedTestVerdictStatus) {
   switch (status) {
     case TestVariantStatus.UNEXPECTED:
       return <CancelIcon className="unexpected" />;
@@ -44,7 +45,6 @@ function getTestVariantStatusIcon(status: TestVariantStatus) {
       return <RemoveCircleIcon className="exonerated" />;
     case TestVariantStatus.EXPECTED:
       return <CheckCircleIcon className="expected" />;
-    case TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED:
     default:
       return <QuestionMarkIcon className="unspecified" />;
   }

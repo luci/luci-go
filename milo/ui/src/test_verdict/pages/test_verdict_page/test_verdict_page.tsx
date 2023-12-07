@@ -20,9 +20,14 @@ import { useParams } from 'react-router-dom';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { LabsWarningAlert } from '@/common/components/labs_warning_alert';
 import { PageMeta } from '@/common/components/page_meta';
-import { UiPage, VARIANT_STATUS_HUMAN_READABLE_MAP } from '@/common/constants';
-import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
-import { ResultDb } from '@/common/services/resultdb';
+import { UiPage } from '@/common/constants';
+import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import {
+  BatchGetTestVariantsRequest,
+  ResultDBClientImpl,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
+import { VARIANT_STATUS_DISPLAY_MAP } from '@/test_verdict/constants';
+import { OutputTestVerdict } from '@/test_verdict/types';
 
 import { TestVerdictProvider } from './context';
 import { TestIdentifier } from './test_identifier';
@@ -44,18 +49,18 @@ export function TestVerdictPage() {
     isError,
     isLoading,
   } = usePrpcQuery({
-    Service: ResultDb,
+    ClientImpl: ResultDBClientImpl,
     host: SETTINGS.resultdb.host,
-    method: 'batchGetTestVariants',
-    request: {
+    method: 'BatchGetTestVariants',
+    request: BatchGetTestVariantsRequest.fromPartial({
       invocation: `invocations/${invID}`,
-      testVariants: [
+      testVariants: Object.freeze([
         {
           testId: testID!,
           variantHash: vHash,
         },
-      ],
-    },
+      ]),
+    }),
   });
 
   if (isError) {
@@ -66,15 +71,17 @@ export function TestVerdictPage() {
     return <LinearProgress />;
   }
 
-  if (!results?.testVariants?.length) {
+  if (!results.testVariants.length) {
     throw new Error('No test verdict found matching the provided details.');
   }
 
   // The variable is called `verdict` even though it is from a test variants
-  // array because the test variants array is actually a test verdict array despite its name.
+  // array because the test variants array is actually a test verdict array
+  // despite its name.
   // We also only expect this array to only contain 1 item.
-  const verdict = results.testVariants[0];
-  const sources = verdict.sourcesId ? results.sources[verdict.sourcesId] : {};
+  const verdict = results.testVariants[0] as OutputTestVerdict;
+  const sources = verdict.sourcesId ? results.sources[verdict.sourcesId] : null;
+
   return (
     <Grid
       container
@@ -86,9 +93,9 @@ export function TestVerdictPage() {
     >
       <LabsWarningAlert />
       <PageMeta
-        title={`${upperFirst(
-          VARIANT_STATUS_HUMAN_READABLE_MAP[verdict.status],
-        )} | ${verdict.testId}`}
+        title={`${upperFirst(VARIANT_STATUS_DISPLAY_MAP[verdict.status])} | ${
+          verdict.testId
+        }`}
         selectedPage={UiPage.TestVerdict}
         project={project}
       />

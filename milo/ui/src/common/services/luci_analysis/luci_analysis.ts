@@ -337,10 +337,3 @@ export class ClustersService {
 export function makeRuleLink(project: string, ruleId: string) {
   return `https://${SETTINGS.luciAnalysis.host}/p/${project}/rules/${ruleId}`;
 }
-
-/**
- * Construct a link to a luci-analysis cluster.
- */
-export function makeClusterLink(project: string, clusterId: ClusterId) {
-  return `https://${SETTINGS.luciAnalysis.host}/p/${project}/clusters/${clusterId.algorithm}/${clusterId.id}`;
-}

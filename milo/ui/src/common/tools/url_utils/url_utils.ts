@@ -14,8 +14,9 @@
 
 import { Build, BuilderID } from '@/common/services/buildbucket';
 import { GerritChange } from '@/common/services/common';
-import { TestLocation, TestVariant } from '@/common/services/resultdb';
 import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
+import { Variant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
+import { TestLocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_metadata.pb';
 
 export function getBuildURLPathFromBuildData(
   build: Pick<Build, 'builder' | 'number' | 'id'>,
@@ -106,8 +107,8 @@ export function getTestHistoryURLPath(realm: string, testId: string) {
   return `/ui/test/${realm}/${encodeURIComponent(testId)}`;
 }
 
-export function generateTestHistoryURLSearchParams(testVariant: TestVariant) {
-  return Object.entries(testVariant.variant?.def || {})
+export function generateTestHistoryURLSearchParams(variant: Variant) {
+  return Object.entries(variant.def || {})
     .map(
       ([dimension, value]) =>
         `V:${encodeURIComponent(dimension)}=${encodeURIComponent(value)}`,
@@ -117,11 +118,11 @@ export function generateTestHistoryURLSearchParams(testVariant: TestVariant) {
 
 export function getTestHistoryURLWithSearchParam(
   project: string,
-  testVariant: TestVariant,
+  testId: string,
   queryParam: string,
 ) {
   return urlSetSearchQueryParam(
-    getTestHistoryURLPath(project, testVariant.testId),
+    getTestHistoryURLPath(project, testId),
     'q',
     queryParam,
   );

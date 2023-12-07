@@ -22,13 +22,15 @@ import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 import { Fragment, useState } from 'react';
 
+import { makeClusterLink } from '@/analysis/tools/utils';
 import { DurationBadge } from '@/common/components/duration_badge';
-import { makeClusterLink } from '@/common/services/luci_analysis';
-import { TestResult, parseTestResultName } from '@/common/services/resultdb';
-import { getClustersUniqueBugs } from '@/common/tools/cluster_utils/cluster_utils';
-import { parseProtoDurationStr } from '@/common/tools/time_utils';
+import { getUniqueBugs } from '@/common/tools/cluster_utils/cluster_utils';
+import { parseProtoDuration } from '@/common/tools/time_utils';
 import { getSwarmingTaskURL } from '@/common/tools/url_utils';
 import { parseSwarmingTaskFromInvId } from '@/common/tools/utils';
+import { AssociatedBug } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
+import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 import { useProject } from '../../../context';
 import { useClustersByResultId } from '../../context';
@@ -52,7 +54,12 @@ export function ResultBasicInfo({ result }: Props) {
   )?.[0];
 
   const uniqueBugs =
-    clustersByResultId && getClustersUniqueBugs(clustersByResultId);
+    clustersByResultId &&
+    getUniqueBugs(
+      clustersByResultId
+        .map((c) => c.bug)
+        .filter((b) => !!b) as Array<AssociatedBug>,
+    );
 
   return (
     <Accordion
@@ -82,9 +89,7 @@ export function ResultBasicInfo({ result }: Props) {
         <Grid container rowGap={2}>
           <Grid item container columnGap={1} alignItems="center">
             {result.duration && (
-              <DurationBadge
-                duration={parseProtoDurationStr(result.duration)}
-              />
+              <DurationBadge duration={parseProtoDuration(result.duration)} />
             )}
             {swarmingTaskId !== null && (
               <>

@@ -24,10 +24,10 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
-import { StringPair } from '@/common/services/common';
+import { StringPair } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 
 interface Props {
-  tags: StringPair[];
+  tags: readonly StringPair[];
 }
 
 export function ResultTags({ tags }: Props) {

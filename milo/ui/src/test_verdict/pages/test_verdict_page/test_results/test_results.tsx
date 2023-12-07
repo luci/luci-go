@@ -12,14 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GrpcError } from '@chopsui/prpc-client';
+import { GrpcError, ProtocolError } from '@chopsui/prpc-client';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Divider from '@mui/material/Divider';
 
-import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
-import { ClustersService } from '@/common/services/luci_analysis';
-import { TestResultBundle, TestStatus } from '@/common/services/resultdb';
+import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import {
+  ClusterRequest_TestResult,
+  ClustersClientImpl,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
+import { TestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import {
+  OutputClusterEntry,
+  OutputTestResultBundle,
+} from '@/test_verdict/types';
 
 import { useProject, useTestVerdict } from '../context';
 
@@ -29,7 +36,7 @@ import { ResultLogs } from './result_logs';
 import { ResultsHeader } from './results_header';
 
 interface Props {
-  readonly results: readonly TestResultBundle[];
+  readonly results: readonly OutputTestResultBundle[];
 }
 
 export function TestResults({ results }: Props) {
@@ -40,49 +47,52 @@ export function TestResults({ results }: Props) {
   const filteredResults = results.filter(
     (r) =>
       !r.result.expected &&
-      ![TestStatus.Pass, TestStatus.Skip].includes(r.result.status),
+      ![TestStatus.PASS, TestStatus.SKIP].includes(r.result.status),
   );
   const {
     data: clustersResponse,
     error,
     isError,
   } = usePrpcQuery({
-    Service: ClustersService,
+    ClientImpl: ClustersClientImpl,
     host: SETTINGS.luciAnalysis.host,
-    method: 'cluster',
+    method: 'Cluster',
     options: {
       enabled: !!project,
     },
     request: {
       // The request is only enabled if the project is set.
       project: project!,
-      testResults: filteredResults.map((r) => ({
-        testId: verdict.testId,
-        failureReason: r.result.failureReason && {
-          primaryErrorMessage: r.result.failureReason.primaryErrorMessage,
-        },
-      })),
+      testResults: filteredResults.map((r) =>
+        ClusterRequest_TestResult.fromPartial({
+          testId: verdict.testId,
+          failureReason: r.result.failureReason && {
+            primaryErrorMessage: r.result.failureReason.primaryErrorMessage,
+          },
+        }),
+      ),
     },
   });
 
-  if (error && !(error instanceof GrpcError)) {
+  const isReqError =
+    error instanceof GrpcError || error instanceof ProtocolError;
+  if (isError && !isReqError) {
     throw error;
   }
 
   const resultsClustersMap = new Map(
     clustersResponse?.clusteredTestResults.map((ctr, i) => [
       filteredResults[i].result.resultId,
-      ctr.clusters,
+      ctr.clusters as readonly OutputClusterEntry[],
     ]),
   );
 
   return (
     <TestResultsProvider results={results} clustersMap={resultsClustersMap}>
-      {isError && (
+      {isReqError && (
         <Alert severity="error">
           <AlertTitle>Failed to load clusters for results</AlertTitle>
-          Loading clusters failed due to:{' '}
-          {error instanceof GrpcError && error.message}
+          Loading clusters failed due to: {error.message}
         </Alert>
       )}
       <ResultsHeader />

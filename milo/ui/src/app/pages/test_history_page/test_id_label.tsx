@@ -21,6 +21,7 @@ import { TestMetadata } from '@/common/services/resultdb';
 import { getCodeSourceUrl } from '@/common/tools/url_utils';
 import { extractProject } from '@/common/tools/utils';
 import { extractProperty } from '@/generic_libs/tools/utils';
+import { TestLocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_metadata.pb';
 
 import { useTestMetadata } from './utils';
 
@@ -69,7 +70,10 @@ export function TestIdLabel({ projectOrRealm, testId }: TestIdLabelProps) {
   const metadata = testMetadataDetail?.testMetadata;
   const testLocation = metadata?.location;
   const sourceURL = testLocation
-    ? getCodeSourceUrl(testLocation, testMetadataDetail?.sourceRef.gitiles?.ref)
+    ? getCodeSourceUrl(
+        TestLocation.fromPartial(testLocation),
+        testMetadataDetail?.sourceRef.gitiles?.ref,
+      )
     : null;
   const {
     data: projectCfg,

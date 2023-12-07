@@ -19,11 +19,11 @@ import Link from '@mui/material/Link';
 import Tooltip, { TooltipProps, tooltipClasses } from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
-import { GerritChange } from '@/common/services/common';
 import {
   getBuildURLPathFromBuildId,
   getGerritChangeURL,
 } from '@/common/tools/url_utils';
+import { GerritChange } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 
 import { useInvocationID, useSources } from '../../context';
 

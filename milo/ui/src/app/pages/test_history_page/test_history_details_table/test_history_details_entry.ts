@@ -45,6 +45,7 @@ import {
   lazyRendering,
   RenderPlaceHolder,
 } from '@/generic_libs/tools/observer_element';
+import { TestLocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_metadata.pb';
 
 // This list defines the order in which variant def keys should be displayed.
 // Any unrecognized keys will be listed after the ones defined below.
@@ -114,7 +115,9 @@ export class TestHistoryDetailsEntryElement
   @computed
   private get sourceUrl() {
     const testLocation = this.testVariant?.testMetadata?.location;
-    return testLocation ? getCodeSourceUrl(testLocation) : null;
+    return testLocation
+      ? getCodeSourceUrl(TestLocation.fromPartial(testLocation))
+      : null;
   }
 
   @computed

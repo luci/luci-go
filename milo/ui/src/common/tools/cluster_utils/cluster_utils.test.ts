@@ -12,65 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Cluster } from '@/common/services/luci_analysis';
+import { AssociatedBug } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
 
-import { getClustersUniqueBugs } from './cluster_utils';
+import { getUniqueBugs } from './cluster_utils';
 
 describe('cluster_utils', () => {
-  const cluster1: Cluster = {
-    clusterId: {
-      algorithm: 'rule',
-      id: 'cluster1',
-    },
-    bug: {
-      system: 'monorail',
-      id: '1234',
-      linkText: 'crbug.com/1234',
-      url: 'http://crbug.com/1234',
-    },
+  const bug1: AssociatedBug = {
+    system: 'monorail',
+    id: '1234',
+    linkText: 'crbug.com/1234',
+    url: 'http://crbug.com/1234',
   };
 
-  const cluster2: Cluster = {
-    clusterId: {
-      algorithm: 'rule',
-      id: 'cluster2',
-    },
-    bug: {
-      system: 'monorail',
-      id: '5678',
-      linkText: 'crbug.com/5678',
-      url: 'http://crbug.com/5678',
-    },
+  const bug2: AssociatedBug = {
+    system: 'monorail',
+    id: '5678',
+    linkText: 'crbug.com/5678',
+    url: 'http://crbug.com/5678',
   };
 
-  const cluster3: Cluster = {
-    clusterId: {
-      algorithm: 'rule',
-      id: 'cluster2',
-    },
-    bug: {
-      system: 'buganizer',
-      id: '1234',
-      linkText: 'b/1234',
-      url: 'http://b/1234',
-    },
+  const bug3: AssociatedBug = {
+    system: 'buganizer',
+    id: '1234',
+    linkText: 'b/1234',
+    url: 'http://b/1234',
   };
 
-  const cluster4: Cluster = {
-    clusterId: {
-      algorithm: 'rule',
-      id: 'cluster2',
-    },
-    bug: {
-      system: 'buganizer',
-      id: '1234',
-      linkText: 'b/1234',
-      url: 'http://b/1234',
-    },
+  const bug4: AssociatedBug = {
+    system: 'buganizer',
+    id: '1234',
+    linkText: 'b/1234',
+    url: 'http://b/1234',
   };
 
   it('getUniqueBugs should remove duplicate bugs', () => {
-    const uniqueBugs = getClustersUniqueBugs([cluster1, cluster2, cluster3, cluster4]);
+    const uniqueBugs = getUniqueBugs([bug1, bug2, bug3, bug4]);
     expect(uniqueBugs.length).toBe(3);
   });
 });

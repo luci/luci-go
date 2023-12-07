@@ -29,12 +29,12 @@ import './image_diff_artifact';
 import './link_artifact';
 import './text_artifact';
 import './text_diff_artifact';
+import { makeClusterLink } from '@/analysis/tools/utils';
 import { TEST_STATUS_DISPLAY_MAP } from '@/common/constants';
-import { Cluster, makeClusterLink } from '@/common/services/luci_analysis';
+import { Cluster } from '@/common/services/luci_analysis';
 import {
   Artifact,
   ListArtifactsResponse,
-  parseTestResultName,
   TestResult,
 } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
@@ -55,6 +55,7 @@ import { reportRenderError } from '@/generic_libs/tools/error_handler';
 import { consumer } from '@/generic_libs/tools/lit_context';
 import { unwrapObservable } from '@/generic_libs/tools/mobx_utils';
 import { unwrapOrElse } from '@/generic_libs/tools/utils';
+import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 /**
  * Renders an expandable entry of the given test result.
