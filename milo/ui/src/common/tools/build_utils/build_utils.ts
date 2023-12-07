@@ -16,13 +16,13 @@ import Mustache from 'mustache';
 
 import { Link } from '@/common/models/link';
 import { Build, BuildInfraSwarming } from '@/common/services/buildbucket';
-import { getBotUrl } from '@/common/services/swarming';
 import { logging } from '@/common/tools/logging';
 import {
   getOldBuilderURLPath,
   getInvURLPath,
   getSwarmingTaskURL,
 } from '@/common/tools/url_utils';
+import { getBotUrl } from '@/swarming/tools/utils';
 
 // getBotLink generates a link to a swarming bot.
 export function getBotLink(swarming: BuildInfraSwarming): Link | null {

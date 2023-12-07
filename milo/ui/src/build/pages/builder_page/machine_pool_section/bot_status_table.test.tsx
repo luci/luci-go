@@ -14,8 +14,7 @@
 
 import { render, screen } from '@testing-library/react';
 
-import { BOT_STATUS_LABEL_MAP } from '@/common/constants';
-import { BotStatus } from '@/common/services/swarming';
+import { BOT_STATUS_LABEL_MAP, BotStatus } from '@/swarming/tools/bot_status';
 
 import { BotStatusTable } from './bot_status_table';
 

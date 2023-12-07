@@ -14,22 +14,34 @@
 
 import { useMemo } from 'react';
 
-import { usePrpcQueries } from '@/common/hooks/legacy_prpc_query';
+import { OutputBuild } from '@/build/types';
+import { usePrpcQueries } from '@/common/hooks/prpc_query';
 import {
-  Build,
-  BuildsService,
-  SEARCH_BUILD_FIELD_MASK,
-} from '@/common/services/buildbucket';
+  BuildsClientImpl,
+  SearchBuildsRequest,
+} from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
+import { StringPair } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import { RelatedBuildTable } from './related_build_table';
 
+export const RELATED_BUILDS_FIELD_MASK = Object.freeze([
+  'builds.*.id',
+  'builds.*.builder',
+  'builds.*.number',
+  'builds.*.create_time',
+  'builds.*.start_time',
+  'builds.*.end_time',
+  'builds.*.status',
+  'builds.*.summary_markdown',
+]);
+
 export interface RelatedBuildsDisplayProps {
-  readonly build: Pick<Build, 'tags'>;
+  readonly buildTags: readonly StringPair[];
 }
 
-export function RelatedBuildsDisplay({ build }: RelatedBuildsDisplayProps) {
+export function RelatedBuildsDisplay({ buildTags }: RelatedBuildsDisplayProps) {
   const buildsets =
-    build.tags?.filter(
+    buildTags.filter(
       (t) =>
         t.key === 'buildset' &&
         // Remove the commit/git/ buildsets because we know they're redundant
@@ -40,13 +52,15 @@ export function RelatedBuildsDisplay({ build }: RelatedBuildsDisplayProps) {
 
   const responses = usePrpcQueries({
     host: SETTINGS.buildbucket.host,
-    Service: BuildsService,
-    method: 'searchBuilds',
-    requests: buildsets.map((tag) => ({
-      predicate: { tags: [tag] },
-      fields: SEARCH_BUILD_FIELD_MASK,
-      pageSize: 1000,
-    })),
+    ClientImpl: BuildsClientImpl,
+    method: 'SearchBuilds',
+    requests: buildsets.map((tag) =>
+      SearchBuildsRequest.fromPartial({
+        predicate: { tags: [tag] as readonly StringPair[] },
+        fields: RELATED_BUILDS_FIELD_MASK,
+        pageSize: 1000,
+      }),
+    ),
   });
 
   for (const res of responses) {
@@ -61,11 +75,11 @@ export function RelatedBuildsDisplay({ build }: RelatedBuildsDisplayProps) {
       return [];
     }
 
-    const buildMap = new Map<string, Build>();
+    const buildMap = new Map<string, OutputBuild>();
     for (const res of responses) {
       for (const build of res.data?.builds || []) {
         // Filter out duplicate builds by overwriting them.
-        buildMap.set(build.id, build);
+        buildMap.set(build.id, build as OutputBuild);
       }
     }
     const builds = [...buildMap.values()].sort((b1, b2) =>

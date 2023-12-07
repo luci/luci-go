@@ -16,9 +16,14 @@ import { Link } from '@mui/material';
 import { DateTime } from 'luxon';
 
 import { Timestamp } from '@/common/components/timestamp';
-import { BOT_STATUS_COLOR_MAP, BOT_STATUS_LABEL_MAP } from '@/common/constants';
-import { BotInfo, getBotStatus, getBotUrl } from '@/common/services/swarming';
 import { NUMERIC_TIME_FORMAT } from '@/common/tools/time_utils';
+import { BotInfo } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
+import {
+  BOT_STATUS_COLOR_MAP,
+  BOT_STATUS_LABEL_MAP,
+  getBotStatus,
+} from '@/swarming/tools/bot_status';
+import { getBotUrl } from '@/swarming/tools/utils';
 
 interface BotRowProps {
   readonly swarmingHost: string;
@@ -45,7 +50,7 @@ function BotRow({ swarmingHost, bot }: BotRowProps) {
       </td>
       <td>
         <Timestamp
-          datetime={DateTime.fromISO(bot.lastSeenTs)}
+          datetime={DateTime.fromISO(bot.lastSeenTs!)}
           format={NUMERIC_TIME_FORMAT}
         />
       </td>

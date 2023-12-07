@@ -14,7 +14,7 @@
 
 import { Dispatch, SetStateAction, createContext, useContext } from 'react';
 
-import { Build } from '@/common/services/buildbucket';
+import { OutputBuild } from '@/build/types';
 
 const DefaultExpandedContext = createContext<boolean | null>(null);
 
@@ -46,7 +46,7 @@ export function useSetDefaultExpanded() {
   return ctx;
 }
 
-const BuildContext = createContext<Build | null>(null);
+const BuildContext = createContext<OutputBuild | null>(null);
 
 export const BuildProvider = BuildContext.Provider;
 

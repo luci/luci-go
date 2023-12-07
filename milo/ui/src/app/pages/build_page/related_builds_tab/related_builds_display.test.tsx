@@ -16,36 +16,42 @@ import { UseQueryResult } from '@tanstack/react-query';
 import { cleanup, render, screen } from '@testing-library/react';
 import { act } from 'react-dom/test-utils';
 
-import { usePrpcQueries } from '@/common/hooks/legacy_prpc_query';
+import { usePrpcQueries } from '@/common/hooks/prpc_query';
+import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import {
-  Build,
-  BuildbucketStatus,
-  BuildsService,
-  SEARCH_BUILD_FIELD_MASK,
+  BuildsClientImpl,
+  SearchBuildsRequest,
   SearchBuildsResponse,
-} from '@/common/services/buildbucket';
+} from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
+import {
+  Status,
+  StringPair,
+} from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { RelatedBuildTable } from './related_build_table';
-import { RelatedBuildsDisplay } from './related_builds_display';
+import {
+  RELATED_BUILDS_FIELD_MASK,
+  RelatedBuildsDisplay,
+} from './related_builds_display';
 
 function createMockBuild(id: string): Build {
-  return {
+  return Build.fromPartial({
     id,
     builder: {
       bucket: 'buck',
       builder: 'builder',
       project: 'proj',
     },
-    status: BuildbucketStatus.Success,
+    status: Status.SUCCESS,
     createTime: '2020-01-01',
-  };
+  });
 }
 
-jest.mock('@/common/hooks/legacy_prpc_query', () => {
+jest.mock('@/common/hooks/prpc_query', () => {
   return createSelectiveMockFromModule<
-    typeof import('@/common/hooks/legacy_prpc_query')
-  >('@/common/hooks/legacy_prpc_query', ['usePrpcQueries']);
+    typeof import('@/common/hooks/prpc_query')
+  >('@/common/hooks/prpc_query', ['usePrpcQueries']);
 });
 
 jest.mock('./related_build_table', () => {
@@ -57,14 +63,14 @@ jest.mock('./related_build_table', () => {
 
 describe('RelatedBuildsDisplay', () => {
   let usePrpcQueriesMock: jest.MockedFunction<
-    typeof usePrpcQueries<BuildsService, 'searchBuilds'>
+    typeof usePrpcQueries<BuildsClientImpl, 'SearchBuilds'>
   >;
   let relatedBuildsTableSpy: jest.MockedFunction<typeof RelatedBuildTable>;
   beforeEach(() => {
     jest.useFakeTimers();
     relatedBuildsTableSpy = jest.mocked(RelatedBuildTable);
     usePrpcQueriesMock = jest.mocked(
-      usePrpcQueries<BuildsService, 'searchBuilds'>,
+      usePrpcQueries<BuildsClientImpl, 'SearchBuilds'>,
     );
   });
 
@@ -80,14 +86,14 @@ describe('RelatedBuildsDisplay', () => {
     render(
       <FakeContextProvider>
         <RelatedBuildsDisplay
-          build={{ tags: [{ key: 'otherkey', value: 'othervalue' }] }}
+          buildTags={[{ key: 'otherkey', value: 'othervalue' }]}
         />
       </FakeContextProvider>,
     );
     expect(usePrpcQueriesMock).toHaveBeenCalledWith({
       host: SETTINGS.buildbucket.host,
-      Service: BuildsService,
-      method: 'searchBuilds',
+      ClientImpl: BuildsClientImpl,
+      method: 'SearchBuilds',
       requests: [],
     });
 
@@ -99,46 +105,46 @@ describe('RelatedBuildsDisplay', () => {
   it('can dedupe builds', async () => {
     usePrpcQueriesMock.mockReturnValue([
       {
-        data: {
-          builds: [createMockBuild('00001'), createMockBuild('00002')],
-        },
+        data: SearchBuildsResponse.fromPartial({
+          builds: [
+            createMockBuild('00001'),
+            createMockBuild('00002'),
+          ] as ReadonlyArray<Build>,
+        }),
         isError: false,
         isLoading: false,
-      } as Partial<
-        UseQueryResult<SearchBuildsResponse>
-      > as UseQueryResult<SearchBuildsResponse>,
+      } as UseQueryResult<SearchBuildsResponse>,
       {
-        data: {
-          builds: [createMockBuild('00002'), createMockBuild('00003')],
-        },
+        data: SearchBuildsResponse.fromPartial({
+          builds: [
+            createMockBuild('00002'),
+            createMockBuild('00003'),
+          ] as ReadonlyArray<Build>,
+        }),
         isError: false,
         isLoading: false,
-      } as Partial<
-        UseQueryResult<SearchBuildsResponse>
-      > as UseQueryResult<SearchBuildsResponse>,
+      } as UseQueryResult<SearchBuildsResponse>,
     ]);
     render(
       <FakeContextProvider>
         <RelatedBuildsDisplay
-          build={{
-            tags: [
-              { key: 'otherkey', value: 'othervalue' },
-              { key: 'buildset', value: 'commit/git/1234' },
-              { key: 'buildset', value: 'commit/gitiles/1234' },
-              { key: 'buildset', value: 'commit/git/5678' },
-              { key: 'buildset', value: 'commit/gitiles/5678' },
-            ],
-          }}
+          buildTags={[
+            { key: 'otherkey', value: 'othervalue' },
+            { key: 'buildset', value: 'commit/git/1234' },
+            { key: 'buildset', value: 'commit/gitiles/1234' },
+            { key: 'buildset', value: 'commit/git/5678' },
+            { key: 'buildset', value: 'commit/gitiles/5678' },
+          ]}
         />
       </FakeContextProvider>,
     );
     expect(usePrpcQueriesMock).toHaveBeenCalledWith({
       host: SETTINGS.buildbucket.host,
-      Service: BuildsService,
-      method: 'searchBuilds',
+      ClientImpl: BuildsClientImpl,
+      method: 'SearchBuilds',
       requests: [
-        {
-          fields: SEARCH_BUILD_FIELD_MASK,
+        SearchBuildsRequest.fromPartial({
+          fields: RELATED_BUILDS_FIELD_MASK,
           pageSize: 1000,
           predicate: {
             tags: [
@@ -146,11 +152,11 @@ describe('RelatedBuildsDisplay', () => {
                 key: 'buildset',
                 value: 'commit/gitiles/1234',
               },
-            ],
+            ] as ReadonlyArray<StringPair>,
           },
-        },
-        {
-          fields: SEARCH_BUILD_FIELD_MASK,
+        }),
+        SearchBuildsRequest.fromPartial({
+          fields: RELATED_BUILDS_FIELD_MASK,
           pageSize: 1000,
           predicate: {
             tags: [
@@ -158,9 +164,9 @@ describe('RelatedBuildsDisplay', () => {
                 key: 'buildset',
                 value: 'commit/gitiles/5678',
               },
-            ],
+            ] as ReadonlyArray<StringPair>,
           },
-        },
+        }),
       ],
     });
 
@@ -182,34 +188,31 @@ describe('RelatedBuildsDisplay', () => {
   it('one query is loading', async () => {
     usePrpcQueriesMock.mockReturnValue([
       {
-        data: {
-          builds: [createMockBuild('00001'), createMockBuild('00002')],
-        },
+        data: SearchBuildsResponse.fromPartial({
+          builds: [
+            createMockBuild('00001'),
+            createMockBuild('00002'),
+          ] as ReadonlyArray<Build>,
+        }),
         isError: false,
         isLoading: false,
-      } as Partial<
-        UseQueryResult<SearchBuildsResponse>
-      > as UseQueryResult<SearchBuildsResponse>,
+      } as UseQueryResult<SearchBuildsResponse>,
       {
         data: undefined,
         isError: false,
         isLoading: true,
-      } as Partial<
-        UseQueryResult<SearchBuildsResponse>
-      > as UseQueryResult<SearchBuildsResponse>,
+      } as UseQueryResult<SearchBuildsResponse>,
     ]);
     render(
       <FakeContextProvider>
         <RelatedBuildsDisplay
-          build={{
-            tags: [
-              { key: 'otherkey', value: 'othervalue' },
-              { key: 'buildset', value: 'commit/git/1234' },
-              { key: 'buildset', value: 'commit/gitiles/1234' },
-              { key: 'buildset', value: 'commit/git/5678' },
-              { key: 'buildset', value: 'commit/gitiles/5678' },
-            ],
-          }}
+          buildTags={[
+            { key: 'otherkey', value: 'othervalue' },
+            { key: 'buildset', value: 'commit/git/1234' },
+            { key: 'buildset', value: 'commit/gitiles/1234' },
+            { key: 'buildset', value: 'commit/git/5678' },
+            { key: 'buildset', value: 'commit/gitiles/5678' },
+          ]}
         />
       </FakeContextProvider>,
     );

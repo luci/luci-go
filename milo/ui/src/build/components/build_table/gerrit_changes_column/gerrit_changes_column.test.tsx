@@ -14,7 +14,7 @@
 
 import { act, cleanup, render, screen } from '@testing-library/react';
 
-import { Build } from '@/common/services/buildbucket';
+import { OutputBuild } from '@/build/types';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { BuildTable } from '../build_table';
@@ -38,7 +38,7 @@ jest.mock('../context', () =>
 const buildWithMultipleCls = {
   id: '1234',
   input: {
-    gerritChanges: [
+    gerritChanges: Object.freeze([
       {
         host: 'gerrit-host',
         project: 'proj',
@@ -57,14 +57,14 @@ const buildWithMultipleCls = {
         change: 'cl3',
         patchset: '1',
       },
-    ],
+    ]),
   },
-} as Build;
+} as OutputBuild;
 
 const buildWithNoCls = {
   id: '2345',
   input: {},
-} as Build;
+} as OutputBuild;
 
 describe('GerritChangesContentCell', () => {
   beforeEach(() => {

@@ -16,8 +16,9 @@ import { ChevronRight, ExpandMore } from '@mui/icons-material';
 import { IconButton, TableCell, styled } from '@mui/material';
 import { useMemo } from 'react';
 
+import { BUILD_STATUS_CLASS_MAP } from '@/build/common';
+import { SpecifiedBuildStatus } from '@/build/types';
 import { SanitizedHtml } from '@/common/components/sanitized_html';
-import { BUILD_STATUS_CLASS_MAP } from '@/common/constants';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
 
 import {
@@ -132,7 +133,9 @@ export function SummaryContentCell() {
           </IconButton>
         </div>
         <SummaryContainer
-          className={`${BUILD_STATUS_CLASS_MAP[build.status]}-bg`}
+          className={`${
+            BUILD_STATUS_CLASS_MAP[build.status as SpecifiedBuildStatus]
+          }-bg`}
           html={summaryHtml}
         />
       </div>

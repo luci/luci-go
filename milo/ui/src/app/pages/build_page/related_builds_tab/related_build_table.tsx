@@ -30,10 +30,10 @@ import {
   PendingDurationContentCell,
 } from '@/build/components/build_table';
 import { BuildTableBody } from '@/build/components/build_table/build_table_body';
-import { Build } from '@/common/services/buildbucket';
+import { OutputBuild } from '@/build/types';
 
 export interface RelatedBuildTableProps {
-  readonly relatedBuilds: readonly Build[];
+  readonly relatedBuilds: readonly OutputBuild[];
   readonly showLoadingBar?: boolean;
 }
 

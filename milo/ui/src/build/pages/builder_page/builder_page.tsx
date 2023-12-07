@@ -20,9 +20,13 @@ import { useParams } from 'react-router-dom';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants';
-import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
-import { BuildersService, BuilderMask } from '@/common/services/buildbucket';
+import { usePrpcQuery } from '@/common/hooks/prpc_query';
 import { parseLegacyBucketId } from '@/common/tools/build_utils';
+import {
+  BuilderMask_BuilderMaskType,
+  BuildersClientImpl,
+  GetBuilderRequest,
+} from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_service.pb';
 
 import { BuilderIdBar } from './builder_id_bar';
 import { EndedBuildsSection } from './ended_builds_section';
@@ -57,22 +61,27 @@ export function BuilderPage() {
 
   const { data, error, isLoading } = usePrpcQuery({
     host: SETTINGS.buildbucket.host,
-    Service: BuildersService,
-    method: 'getBuilder',
-    request: { id: builderId, mask: { type: BuilderMask.ALL } },
+    ClientImpl: BuildersClientImpl,
+    method: 'GetBuilder',
+    request: GetBuilderRequest.fromPartial({
+      id: builderId,
+      mask: {
+        type: BuilderMask_BuilderMaskType.ALL,
+      },
+    }),
     options: {
       select: (res) => ({
-        swarmingHost: res.config.swarmingHost,
+        swarmingHost: res.config!.swarmingHost,
         // Convert dimensions to StringPair[] and remove expirations.
         dimensions:
-          res.config.dimensions?.map((dim) => {
+          res.config!.dimensions?.map((dim) => {
             const parts = dim.split(':', 3);
             if (parts.length === 3) {
               return { key: parts[1], value: parts[2] };
             }
             return { key: parts[0], value: parts[1] };
           }) || [],
-        descriptionHtml: res.config.descriptionHtml,
+        descriptionHtml: res.config!.descriptionHtml,
         metadata: res.metadata,
         // TODO guterman: check reported date and whether it's expired
       }),

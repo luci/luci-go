@@ -15,7 +15,7 @@
 import { TableRow } from '@mui/material';
 import { ReactNode, useEffect, useState } from 'react';
 
-import { Build } from '@/common/services/buildbucket';
+import { OutputBuild } from '@/build/types';
 
 import {
   BuildProvider,
@@ -25,7 +25,7 @@ import {
 } from './context';
 
 export interface BuildTableRowProps {
-  readonly build: Build;
+  readonly build: OutputBuild;
   readonly children: ReactNode;
 }
 

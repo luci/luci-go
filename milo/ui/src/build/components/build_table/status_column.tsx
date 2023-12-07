@@ -18,7 +18,7 @@ import {
   BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_DISPLAY_MAP,
   BUILD_STATUS_ICON_MAP,
-} from '@/common/constants';
+} from '@/build/common';
 
 import { useBuild } from './context';
 

@@ -18,6 +18,8 @@ import {
   Build,
 } from '@/common/services/buildbucket';
 
+import { OutputBuild } from '../types';
+
 export function formatBuilderId(builderId: BuilderID) {
   return `${builderId.project}/${builderId.bucket}/${builderId.builder}`;
 }
@@ -43,4 +45,8 @@ export function isTerminalStatus(status: BuildbucketStatus) {
 
 export function isCanary(build: Build) {
   return build.input?.experiments?.includes('luci.buildbucket.canary_software');
+}
+
+export function getAssociatedGitilesCommit(build: OutputBuild) {
+  return build.output?.gitilesCommit || build.input?.gitilesCommit;
 }

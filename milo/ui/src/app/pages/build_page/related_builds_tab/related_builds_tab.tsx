@@ -18,6 +18,7 @@ import { observer } from 'mobx-react-lite';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useStore } from '@/common/store';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
+import { StringPair } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import { RelatedBuildsDisplay } from './related_builds_display';
 
@@ -29,7 +30,11 @@ export const RelatedBuildsTab = observer(() => {
     return <CircularProgress sx={{ margin: '10px' }} />;
   }
 
-  return <RelatedBuildsDisplay build={build} />;
+  return (
+    <RelatedBuildsDisplay
+      buildTags={(build.tags || []) as readonly StringPair[]}
+    />
+  );
 });
 
 export function Component() {

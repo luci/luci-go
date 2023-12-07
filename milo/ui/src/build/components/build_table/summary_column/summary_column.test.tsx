@@ -14,7 +14,8 @@
 
 import { act, cleanup, render, screen } from '@testing-library/react';
 
-import { Build, BuildbucketStatus } from '@/common/services/buildbucket';
+import { OutputBuild } from '@/build/types';
+import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { BuildTable } from '../build_table';
@@ -34,14 +35,14 @@ jest.mock('../context', () =>
 
 const buildWithSummary = {
   id: '1234',
-  status: BuildbucketStatus.Success,
+  status: Status.SUCCESS,
   summaryMarkdown: '<strong>build is fine</strong>',
-} as Build;
+} as OutputBuild;
 
 const buildWithNoSummary = {
   id: '2345',
-  status: BuildbucketStatus.Success,
-} as Build;
+  status: Status.SUCCESS,
+} as OutputBuild;
 
 describe('SummaryContentCell', () => {
   beforeEach(() => {

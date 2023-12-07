@@ -12,8 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { BOT_STATUS_COLOR_MAP, BOT_STATUS_LABEL_MAP } from '@/common/constants';
-import { BotStatus } from '@/common/services/swarming';
+import {
+  BOT_STATUS_COLOR_MAP,
+  BOT_STATUS_LABEL_MAP,
+  BotStatus,
+} from '@/swarming/tools/bot_status';
 
 interface BotStatusRowProps {
   readonly status: BotStatus;

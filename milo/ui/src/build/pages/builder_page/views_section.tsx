@@ -14,10 +14,13 @@
 
 import { CircularProgress, Link } from '@mui/material';
 
-import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
-import { BuilderID } from '@/common/services/buildbucket';
-import { MiloInternal } from '@/common/services/milo_internal';
+import { usePrpcQuery } from '@/common/hooks/prpc_query';
 import { extractProject } from '@/common/tools/utils';
+import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
+import {
+  MiloInternalClientImpl,
+  QueryConsolesRequest,
+} from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 
 const PAGE_SIZE = 100;
 
@@ -29,14 +32,14 @@ export function ViewsSection({ builderId }: ViewsSectionProps) {
   const { data, error, isError, isLoading } = usePrpcQuery({
     host: '',
     insecure: location.protocol === 'http:',
-    Service: MiloInternal,
-    method: 'queryConsoles',
-    request: {
+    ClientImpl: MiloInternalClientImpl,
+    method: 'QueryConsoles',
+    request: QueryConsolesRequest.fromPartial({
       predicate: {
         builder: builderId,
       },
       pageSize: PAGE_SIZE,
-    },
+    }),
   });
 
   if (isError) {

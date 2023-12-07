@@ -37,13 +37,13 @@ import {
   SummaryHeadCell,
 } from '@/build/components/build_table';
 import { BuildTableBody } from '@/build/components/build_table/build_table_body';
-import { Build } from '@/common/services/buildbucket';
+import { OutputBuild } from '@/build/types';
 
 const ENDED_BUILDS_TABLE_DEFAULT_EXPANDED =
   'ended-builds-table-default-expanded';
 
 interface EndedBuildTableBodyProps {
-  readonly endedBuilds: readonly Build[];
+  readonly endedBuilds: readonly OutputBuild[];
   readonly hasChanges: boolean;
 }
 
@@ -73,7 +73,7 @@ const EndedBuildTableBody = memo(function EndedBuildTableBody({
 });
 
 export interface EndedBuildTableProps {
-  readonly endedBuilds: readonly Build[];
+  readonly endedBuilds: readonly OutputBuild[];
   readonly isLoading: boolean;
 }
 

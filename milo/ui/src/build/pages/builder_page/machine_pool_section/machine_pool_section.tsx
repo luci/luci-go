@@ -18,19 +18,19 @@ import { Alert, AlertTitle, CircularProgress, Link } from '@mui/material';
 import { useState } from 'react';
 
 import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants';
-import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
+import { usePrpcQuery } from '@/common/hooks/prpc_query';
 import { StringPair } from '@/common/services/common';
-import {
-  BotsService,
-  BotStatus,
-  getBotStatus,
-} from '@/common/services/swarming';
 import { getSwarmingBotListURL } from '@/common/tools/url_utils';
 import {
   ExpandableEntry,
   ExpandableEntryBody,
   ExpandableEntryHeader,
 } from '@/generic_libs/components/expandable_entry';
+import {
+  BotsClientImpl,
+  BotsRequest,
+} from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
+import { BotStatus, getBotStatus } from '@/swarming/tools/bot_status';
 
 import { BotStatusTable } from './bot_status_table';
 import { BotTable } from './bot_table';
@@ -55,12 +55,12 @@ export function MachinePoolSection({
 
   const { data, error, isError, isSuccess, isLoading } = usePrpcQuery({
     host: swarmingHost,
-    Service: BotsService,
-    method: 'listBots',
-    request: {
+    ClientImpl: BotsClientImpl,
+    method: 'ListBots',
+    request: BotsRequest.fromPartial({
       limit: PAGE_SIZE,
       dimensions,
-    },
+    }),
     options: {
       select: (res) => {
         const bots = res.items?.filter((b) => !b.deleted) || [];
@@ -79,7 +79,7 @@ export function MachinePoolSection({
           [BotStatus.Deleted]: 0,
         };
         for (const bot of bots) {
-          const status = getBotStatus(bot);
+          const status = getBotStatus(bot as DeepNonNullable<typeof bot>);
           stats[status]++;
         }
         return {

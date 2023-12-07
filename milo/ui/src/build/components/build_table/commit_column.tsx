@@ -14,7 +14,7 @@
 
 import { Link, TableCell } from '@mui/material';
 
-import { getAssociatedGitilesCommit } from '@/common/services/buildbucket';
+import { getAssociatedGitilesCommit } from '@/build/tools/build_utils';
 import {
   getGitilesCommitLabel,
   getGitilesCommitURL,

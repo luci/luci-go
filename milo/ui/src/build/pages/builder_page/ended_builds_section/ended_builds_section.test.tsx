@@ -21,12 +21,12 @@ import {
 } from '@testing-library/react';
 import { DateTime } from 'luxon';
 
+import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import {
-  Build,
-  BuildbucketStatus,
-  BuildsService,
+  BuildsClientImpl,
   SearchBuildsResponse,
-} from '@/common/services/buildbucket';
+} from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
+import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { EndedBuildTable } from './ended_build_table';
@@ -43,12 +43,12 @@ const builderId = {
 };
 
 function createMockBuild(id: string): Build {
-  return {
+  return Build.fromPartial({
     id,
     builder: builderId,
-    status: BuildbucketStatus.Success,
+    status: Status.SUCCESS,
     createTime: '2020-01-01',
-  };
+  });
 }
 
 const builds = [
@@ -73,6 +73,7 @@ const pages: {
     },
     page3: {
       builds: builds.slice(4, 5),
+      nextPageToken: '',
     },
   },
   '2020-02-02T02:02:02.000+00:00': {
@@ -82,6 +83,7 @@ const pages: {
     },
     page2: {
       builds: builds.slice(3, 5),
+      nextPageToken: '',
     },
   },
 };
@@ -92,10 +94,10 @@ describe('EndedBuildsSection', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest
-      .spyOn(BuildsService.prototype, 'searchBuilds')
+      .spyOn(BuildsClientImpl.prototype, 'SearchBuilds')
       .mockImplementation(
         async ({ pageToken, predicate }) =>
-          pages[predicate.createTime?.endTime || ''][pageToken || ''],
+          pages[predicate?.createTime?.endTime || ''][pageToken || ''],
       );
     endedBuildsTableMock = jest.mocked(EndedBuildTable);
   });

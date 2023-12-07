@@ -102,34 +102,3 @@ export class TasksServices {
     return (await this.callFn('GetRequest', req)) as TaskRequestResponse;
   }
 }
-
-export enum BotStatus {
-  Idle,
-  Busy,
-  Quarantined,
-  Dead,
-  Deleted,
-}
-
-/**
- * Computes bot status.
- */
-export function getBotStatus(bot: BotInfo): BotStatus {
-  if (bot.deleted) {
-    return BotStatus.Deleted;
-  }
-  if (bot.isDead) {
-    return BotStatus.Dead;
-  }
-  if (bot.quarantined) {
-    return BotStatus.Dead;
-  }
-  if (bot.maintenanceMsg || bot.taskId) {
-    return BotStatus.Busy;
-  }
-  return BotStatus.Idle;
-}
-
-export function getBotUrl(swarmingHost: string, botId: string): string {
-  return `https://${swarmingHost}/bot?id=${botId}`;
-}

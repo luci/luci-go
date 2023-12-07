@@ -15,12 +15,12 @@
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { act, render, screen } from '@testing-library/react';
 
-import {
-  BuilderItem,
-  BuildersService,
-  GetBuilderRequest,
-} from '@/common/services/buildbucket';
 import { CacheOption } from '@/generic_libs/tools/cached_fn';
+import { BuilderItem } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
+import {
+  BuildersClientImpl,
+  GetBuilderRequest,
+} from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { BuilderPage } from './builder_page';
@@ -76,7 +76,7 @@ describe('BuilderPage', () => {
 
   beforeEach(() => {
     jest.useFakeTimers();
-    getBuilderMock = jest.spyOn(BuildersService.prototype, 'getBuilder');
+    getBuilderMock = jest.spyOn(BuildersClientImpl.prototype, 'GetBuilder');
     mockedEndedBuildsSection = jest
       .mocked(EndedBuildsSection)
       .mockReturnValue(<>mocked ended builds section</>);
@@ -91,14 +91,16 @@ describe('BuilderPage', () => {
   });
 
   test('should render correctly', async () => {
-    getBuilderMock.mockResolvedValue({
-      id: { project: 'project', bucket: 'bucket', builder: 'builder' },
-      config: {
-        swarmingHost: 'https://swarming.host',
-        descriptionHtml: 'some builder description',
-        dimensions: ['10:key1:val1', '12:key2:val2'],
-      },
-    });
+    getBuilderMock.mockResolvedValue(
+      BuilderItem.fromPartial({
+        id: { project: 'project', bucket: 'bucket', builder: 'builder' },
+        config: {
+          swarmingHost: 'https://swarming.host',
+          descriptionHtml: 'some builder description',
+          dimensions: ['10:key1:val1', '12:key2:val2'] as readonly string[],
+        },
+      }),
+    );
     render(
       <FakeContextProvider
         mountedPath="/p/:project/builder/:bucket/:builder"

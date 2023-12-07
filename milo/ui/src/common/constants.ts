@@ -22,7 +22,6 @@ import {
   TestStatus,
   TestVariantStatus,
 } from '@/common/services/resultdb';
-import { BotStatus } from '@/common/services/swarming';
 
 export const INVOCATION_STATE_DISPLAY_MAP = {
   [InvocationState.Unspecified]: 'unspecified',
@@ -113,22 +112,6 @@ export const BUILD_STATUS_COLOR_THEME_MAP = Object.freeze({
   [BuildbucketStatus.Failure]: 'error',
   [BuildbucketStatus.InfraFailure]: 'criticalFailure',
   [BuildbucketStatus.Canceled]: 'canceled',
-});
-
-export const BOT_STATUS_LABEL_MAP = Object.freeze({
-  [BotStatus.Idle]: 'Idle',
-  [BotStatus.Busy]: 'Busy',
-  [BotStatus.Quarantined]: 'Quarantined',
-  [BotStatus.Dead]: 'Offline',
-  [BotStatus.Deleted]: 'Deleted',
-});
-
-export const BOT_STATUS_COLOR_MAP = Object.freeze({
-  [BotStatus.Idle]: 'var(--success-color)',
-  [BotStatus.Busy]: 'var(--warning-color)',
-  [BotStatus.Quarantined]: 'var(--exonerated-color)',
-  [BotStatus.Dead]: 'var(--failure-color)',
-  [BotStatus.Deleted]: 'var(--critical-failure-color)',
 });
 
 export const ARTIFACT_LENGTH_LIMIT = 50000;

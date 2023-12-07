@@ -18,14 +18,16 @@ import { DateTime } from 'luxon';
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
-import {
-  BuilderID,
-  BuildsService,
-  BuildStatusMask,
-} from '@/common/services/buildbucket';
+import { OutputBuild } from '@/build/types';
+import { usePrpcQuery } from '@/common/hooks/prpc_query';
 import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
+import {
+  BuildsClientImpl,
+  SearchBuildsRequest,
+} from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
+import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import { EndedBuildTable } from './ended_build_table';
 import {
@@ -37,9 +39,18 @@ import {
   pageTokenUpdater,
 } from './search_param_utils';
 
-const FIELD_MASK =
-  'builds.*.status,builds.*.id,builds.*.number,builds.*.createTime,builds.*.endTime,builds.*.startTime,' +
-  'builds.*.output.gitilesCommit,builds.*.input.gitilesCommit,builds.*.input.gerritChanges,builds.*.summaryMarkdown';
+const FIELD_MASK = Object.freeze([
+  'builds.*.status',
+  'builds.*.id',
+  'builds.*.number',
+  'builds.*.create_time',
+  'builds.*.end_time',
+  'builds.*.start_time',
+  'builds.*.output.gitiles_commit',
+  'builds.*.input.gitiles_commit',
+  'builds.*.input.gerrit_changes',
+  'builds.*.summary_markdown',
+]);
 
 export interface EndedBuildsSectionProps {
   readonly builderId: BuilderID;
@@ -62,13 +73,13 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
 
   const { data, error, isError, isLoading, isPreviousData } = usePrpcQuery({
     host: SETTINGS.buildbucket.host,
-    Service: BuildsService,
-    method: 'searchBuilds',
-    request: {
+    ClientImpl: BuildsClientImpl,
+    method: 'SearchBuilds',
+    request: SearchBuildsRequest.fromPartial({
       predicate: {
         builder: builderId,
         includeExperimental: true,
-        status: BuildStatusMask.EndedMask,
+        status: Status.ENDED_MASK,
         createTime: {
           endTime: createdBefore?.toISO(),
         },
@@ -76,7 +87,7 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
       pageSize,
       pageToken,
       fields: FIELD_MASK,
-    },
+    }),
     options: { keepPreviousData: true },
   });
 
@@ -89,6 +100,7 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
     : null;
   const nextPageToken =
     !isPreviousData && data?.nextPageToken ? data?.nextPageToken : null;
+  const builds = (data?.builds || []) as readonly OutputBuild[];
 
   return (
     <>
@@ -119,7 +131,7 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
         />
       </Box>
       <EndedBuildTable
-        endedBuilds={data?.builds || []}
+        endedBuilds={builds}
         isLoading={isLoading || isPreviousData}
       />
       <Box sx={{ mt: '5px' }}>

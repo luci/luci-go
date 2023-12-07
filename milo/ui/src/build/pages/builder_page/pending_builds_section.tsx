@@ -16,16 +16,21 @@ import { CircularProgress, Link } from '@mui/material';
 import { DateTime } from 'luxon';
 
 import { RelativeDurationBadge } from '@/common/components/relative_duration_badge';
-import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
-import {
-  BuilderID,
-  BuildsService,
-  BuildbucketStatus,
-} from '@/common/services/buildbucket';
+import { usePrpcQuery } from '@/common/hooks/prpc_query';
 import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
+import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
+import {
+  BuildsClientImpl,
+  SearchBuildsRequest,
+} from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
+import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 const PAGE_SIZE = 100;
-const FIELD_MASK = 'builds.*.id,builds.*.number,builds.*.createTime';
+const FIELD_MASK = Object.freeze([
+  'builds.*.id',
+  'builds.*.number',
+  'builds.*.create_time',
+]);
 
 export interface PendingBuildsSectionProps {
   readonly builderId: BuilderID;
@@ -34,17 +39,17 @@ export interface PendingBuildsSectionProps {
 export function PendingBuildsSection({ builderId }: PendingBuildsSectionProps) {
   const { data, error, isError, isLoading } = usePrpcQuery({
     host: SETTINGS.buildbucket.host,
-    Service: BuildsService,
-    method: 'searchBuilds',
-    request: {
+    ClientImpl: BuildsClientImpl,
+    method: 'SearchBuilds',
+    request: SearchBuildsRequest.fromPartial({
       predicate: {
         builder: builderId,
         includeExperimental: true,
-        status: BuildbucketStatus.Scheduled,
+        status: Status.SCHEDULED,
       },
       pageSize: PAGE_SIZE,
       fields: FIELD_MASK,
-    },
+    }),
   });
 
   if (isError) {
@@ -78,7 +83,7 @@ export function PendingBuildsSection({ builderId }: PendingBuildsSectionProps) {
                 </Link>{' '}
                 <RelativeDurationBadge
                   css={{ verticalAlign: 'text-top' }}
-                  from={DateTime.fromISO(b.createTime)}
+                  from={DateTime.fromISO(b.createTime!)}
                 />{' '}
                 ago
               </li>

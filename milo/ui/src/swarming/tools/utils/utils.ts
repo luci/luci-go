@@ -34,3 +34,7 @@ export function getBuildURLPathFromTags(tags: readonly string[]) {
 
   return null;
 }
+
+export function getBotUrl(swarmingHost: string, botId: string): string {
+  return `https://${swarmingHost}/bot?id=${botId}`;
+}
