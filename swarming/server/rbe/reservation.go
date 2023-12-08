@@ -405,7 +405,7 @@ func (s *ReservationServer) handleCancelRBETask(ctx context.Context, task *inter
 // newTaskToRunFromPayload returns an empty TaskToRun struct with populated
 // entity key using information from the TaskPayload proto.
 func newTaskToRunFromPayload(ctx context.Context, p *internalspb.TaskPayload) (*model.TaskToRun, error) {
-	taskReqKey, err := model.UnpackTaskRequestKey(ctx, p.TaskId)
+	taskReqKey, err := model.TaskIDToRequestKey(ctx, p.TaskId)
 	if err != nil {
 		return nil, err
 	}

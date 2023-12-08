@@ -88,7 +88,7 @@ func TestReservationServer(t *testing.T) {
 			Priority: 123,
 		}
 
-		taskReqKey, err := model.UnpackTaskRequestKey(ctx, enqueueTask.Payload.TaskId)
+		taskReqKey, err := model.TaskIDToRequestKey(ctx, enqueueTask.Payload.TaskId)
 		So(err, ShouldBeNil)
 		taskToRun := &model.TaskToRun{
 			Key: model.TaskToRunKey(ctx, taskReqKey,
@@ -267,7 +267,7 @@ func TestReservationServer(t *testing.T) {
 				if reapable {
 					exp.Set(testclock.TestRecentTimeUTC.Add(time.Hour))
 				}
-				taskReqKey, _ := model.UnpackTaskRequestKey(ctx, taskID)
+				taskReqKey, _ := model.TaskIDToRequestKey(ctx, taskID)
 				So(datastore.Put(ctx, &model.TaskToRun{
 					Key:        model.TaskToRunKey(ctx, taskReqKey, taskToRunShard, taskToRunID),
 					Expiration: exp,

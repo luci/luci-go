@@ -232,7 +232,7 @@ func TestTaskRequestConversion(t *testing.T) {
 	Convey("Convert TaskRequest with empty parent task", t, func() {
 		ctx := memory.Use(context.Background())
 		taskID := "65aba3a3e6b99310"
-		key, err := model.UnpackTaskRequestKey(ctx, taskID)
+		key, err := model.TaskIDToRequestKey(ctx, taskID)
 		So(err, ShouldBeNil)
 		sampleRequest := createSampleTaskRequest(key, testTime)
 		expected := createSampleBQTaskRequest(taskID, testTime)
@@ -243,7 +243,7 @@ func TestTaskRequestConversion(t *testing.T) {
 	Convey("Converting empty EnvPrefixes works", t, func() {
 		ctx := memory.Use(context.Background())
 		taskID := "65aba3a3e6b99310"
-		key, err := model.UnpackTaskRequestKey(ctx, taskID)
+		key, err := model.TaskIDToRequestKey(ctx, taskID)
 		So(err, ShouldBeNil)
 		sampleRequest := createSampleTaskRequest(key, testTime)
 		// Set this field to zero

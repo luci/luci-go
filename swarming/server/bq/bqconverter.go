@@ -162,7 +162,7 @@ func taskRequestToBQ(tr *model.TaskRequest) *bqpb.TaskRequest {
 		Resultdb: &bqpb.ResultDBCfg{
 			Enable: tr.ResultDB.Enable,
 		},
-		TaskId: model.PackTaskRequestKey(tr.Key),
+		TaskId: model.RequestKeyToTaskID(tr.Key, model.AsRequest),
 		PubsubNotification: &bqpb.PubSub{
 			Topic:    tr.PubSubTopic,
 			Userdata: tr.PubSubUserData,

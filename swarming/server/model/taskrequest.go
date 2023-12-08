@@ -16,21 +16,14 @@ package model
 
 import (
 	"context"
-	"fmt"
-	"strconv"
 	"time"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/swarming/proto/api_v2"
 	configpb "go.chromium.org/luci/swarming/proto/config"
 )
-
-// taskRequestIDMask is xored with TaskRequest entity ID.
-const taskRequestIDMask = 0x7fffffffffffffff
 
 // TaskRequest contains a user request to execute a task.
 //
@@ -486,42 +479,7 @@ func (p *EnvPrefixes) FromProperty(prop datastore.Property) error {
 	return FromJSONProperty(prop, p)
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// UnpackTaskRequestKey returns TaskRequest entity key given a task ID string.
-//
-// The task ID is something that looks like "60b2ed0a43023110", it is either
-// a "packed TaskResultSummary key" (when ends with 0) or "a packed
-// TaskRunResult key" (when ends with non-0).
-//
-// Task request key is a root key of the hierarchy of entities representing
-// a particular task. All key constructor functions for such entities take
-// the request key as an argument.
-func UnpackTaskRequestKey(ctx context.Context, taskID string) (*datastore.Key, error) {
-	if err := checkIsHex(taskID, 2); err != nil {
-		return nil, errors.Annotate(err, "bad task ID").Tag(grpcutil.InvalidArgumentTag).Err()
-	}
-	// Chop the suffix byte. It is TaskRunResult index, we don't care about it.
-	num, err := strconv.ParseInt(taskID[:len(taskID)-1], 16, 64)
-	if err != nil {
-		return nil, errors.Annotate(err, "bad task ID").Tag(grpcutil.InvalidArgumentTag).Err()
-	}
-	return datastore.NewKey(ctx, "TaskRequest", "", num^taskRequestIDMask, nil), nil
-}
-
 // NewTaskRequestID generates an ID for a new task.
 func NewTaskRequestID(ctx context.Context) int64 {
 	panic("not implemented")
-}
-
-// PackTaskRequestKey is the inverse of UnpackTaskRequestKey
-func PackTaskRequestKey(key *datastore.Key) string {
-	if key.Kind() != "TaskRequest" {
-		panic(fmt.Sprintf("expecting TaskRequest key, but got %q", key.Kind()))
-	}
-	integerID := key.IntID()
-	// We add a 0 to the end of the formatted string for legacy reasons
-	// This behaviour came from when swarming used to support retries
-	// See https://source.chromium.org/chromium/infra/infra/+/main:luci/appengine/swarming/server/task_pack.py;l=110;drc=361c3fbf33a686c792b3d148d67e346ac9b53523
-	return fmt.Sprintf("%x0", integerID^taskRequestIDMask)
 }

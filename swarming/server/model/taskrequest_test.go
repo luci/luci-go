@@ -25,65 +25,7 @@ import (
 	configpb "go.chromium.org/luci/swarming/proto/config"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
-
-func TestUnpackTaskRequestKey(t *testing.T) {
-	t.Parallel()
-
-	Convey("With datastore", t, func() {
-		ctx := memory.Use(context.Background())
-
-		Convey("Good task ID: TaskResultSummary", func() {
-			key, err := UnpackTaskRequestKey(ctx, "60b2ed0a43023110")
-			So(err, ShouldBeNil)
-			So(key.IntID(), ShouldEqual, 8787878774240697582)
-		})
-
-		Convey("Good task ID: TaskRunResult", func() {
-			key, err := UnpackTaskRequestKey(ctx, "60b2ed0a43023111")
-			So(err, ShouldBeNil)
-			So(key.IntID(), ShouldEqual, 8787878774240697582)
-		})
-
-		Convey("Bad hex", func() {
-			_, err := UnpackTaskRequestKey(ctx, "60b2ed0a4302311z")
-			So(err, ShouldErrLike, "bad task ID: bad lowercase hex string")
-		})
-
-		Convey("Empty", func() {
-			_, err := UnpackTaskRequestKey(ctx, "")
-			So(err, ShouldErrLike, "bad task ID: too small")
-		})
-
-		Convey("Overflow", func() {
-			_, err := UnpackTaskRequestKey(ctx, "ff60b2ed0a4302311f")
-			So(err, ShouldErrLike, "value out of range")
-		})
-	})
-}
-
-func TestPackTaskRequestKey(t *testing.T) {
-	t.Parallel()
-
-	Convey("With datastore", t, func() {
-		ctx := memory.Use(context.Background())
-
-		Convey("Pack TaskRequestKey", func() {
-			expected := "60b2ed0a43023110"
-			key := datastore.NewKey(ctx, "TaskRequest", "", 8787878774240697582, nil)
-			So(expected, ShouldEqual, PackTaskRequestKey(key))
-		})
-
-		Convey("Round trip pack and unpack", func() {
-			expected := "65beeeafbd2a4b10"
-			key, err := UnpackTaskRequestKey(ctx, expected)
-			So(err, ShouldBeNil)
-			So(8765149556731894606, ShouldEqual, key.IntID())
-			So(expected, ShouldEqual, PackTaskRequestKey(key))
-		})
-	})
-}
 
 func TestTaskRequest(t *testing.T) {
 	t.Parallel()
@@ -158,7 +100,7 @@ func TestTaskRequest(t *testing.T) {
 			}
 		}
 
-		key, err := UnpackTaskRequestKey(ctx, "65aba3a3e6b99310")
+		key, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
 		So(err, ShouldBeNil)
 
 		fullyPopulated := TaskRequest{
