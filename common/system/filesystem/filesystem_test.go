@@ -614,10 +614,8 @@ func TestGetCommonAncestor(t *testing.T) {
 						ShouldResemble, []int{11, 21})
 					So(findPathSeparators(`\\some\host\`),
 						ShouldResemble, []int{11})
-					// Note: Go treats '\\?' as a volume name, see
-					// https://go-review.googlesource.com/c/go/+/540276
 					So(findPathSeparators(`\\?\C:\Test\`),
-						ShouldResemble, []int{3, 6, 11})
+						ShouldResemble, []int{6, 11})
 				})
 			} else {
 				Convey(`*nix paths`, func() {
