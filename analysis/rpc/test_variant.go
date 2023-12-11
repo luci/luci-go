@@ -20,8 +20,10 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/span"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/analysis/internal/perms"
 	"go.chromium.org/luci/analysis/internal/testresults"
@@ -74,6 +76,10 @@ func (*testVariantsServer) QueryFailureRate(ctx context.Context, req *pb.QueryTe
 		return nil, err
 	}
 	return response, nil
+}
+
+func (*testVariantsServer) QueryStability(ctx context.Context, req *pb.QueryTestVariantStabilityRequest) (*pb.QueryTestVariantStabilityResponse, error) {
+	return nil, appstatus.Error(codes.Unimplemented, "not implemented")
 }
 
 func validateQueryTestVariantFailureRateRequest(req *pb.QueryTestVariantFailureRateRequest) error {

@@ -39,3 +39,20 @@ func (s *DecoratedTestVariants) QueryFailureRate(ctx context.Context, req *Query
 	}
 	return
 }
+
+func (s *DecoratedTestVariants) QueryStability(ctx context.Context, req *QueryTestVariantStabilityRequest) (rsp *QueryTestVariantStabilityResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryStability", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryStability(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryStability", rsp, err)
+	}
+	return
+}

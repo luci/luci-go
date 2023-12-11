@@ -29,12 +29,18 @@ service TestVariants {
     // deterministically failing. Intended for use by recipes to
     // inform exoneration decisions.
     //
-    // TODO(crbug.com/1314194): This is an experimental RPC implemented for
-    // Chrome CQ exoneration and is subject to change or removal.
+    // This RPC is used to support version one of exoneration.
+    // It will be replaced by QueryStability over time.
     //
     // Changes to this RPC should comply with https://google.aip.dev/231.
     rpc QueryFailureRate(QueryTestVariantFailureRateRequest)
         returns (QueryTestVariantFailureRateResponse) {};
+
+    // Queries the stability of specified test variants.
+    // Intended for use by recipes to inform exoneration decisions,
+    // and by UI to show test stability.
+    rpc QueryStability(QueryTestVariantStabilityRequest)
+        returns (QueryTestVariantStabilityResponse) {};
 }
 
 message QueryTestVariantFailureRateRequest {
@@ -106,7 +112,6 @@ message QueryTestVariantFailureRateResponse {
     // Test variants are returned in the order they were requested.
     repeated TestVariantFailureRateAnalysis test_variants = 2;
 }
-
 
 // Signals relevant to determining whether a test variant should be
 // exonerated in presubmit.
@@ -220,4 +225,291 @@ message TestVariantFailureRateAnalysis {
     // since 5 weekdays ago (this corresponds to the exact same time range
     // as for which interval data is provided).
     repeated RecentVerdict recent_verdicts = 6;
+}
+
+message QueryTestVariantStabilityRequest {
+    // The LUCI Project for which test variants should be looked up.
+    string project = 1;
+
+    // The test variant positions to query.
+    repeated TestVariantPosition test_variants = 2;
+
+    // Represents a test variant at a particular source position.
+    message TestVariantPosition {
+        // The unique identifier of the test in a LUCI project.
+        string test_id = 1;
+
+        // Description of one specific way of running the test,
+        // e.g. a specific bucket, builder and test suite.
+        Variant variant = 2;
+
+        // The variant hash. Alternative to specifying the variant.
+        // Prefer to specify the full variant (if available), as the
+        // variant hashing implementation is an implementation detail
+        // and may change.
+        string variant_hash = 3;
+
+        // The source positions to obtain stability relevant to.
+        //
+        // The base sources (e.g. base git commit branch and position)
+        // is mandatory, except for the commit hash, which is ignored.
+        //
+        // If any changelists are specified then any stability analysis
+        // will exclude prior results for that changelist from the
+        // analysis.
+        //
+        // is_dirty is ignored.
+        Sources sources = 4;
+    }
+}
+
+message QueryTestVariantStabilityResponse {
+    // The requested test variant stability analysis.
+    repeated TestVariantStabilityAnalysis test_variants = 1;
+
+    // The criteria used to determine if tests are stable.
+    // This is as configured in the project's LUCI Analysis configuration.
+    TestStabilityCriteria criteria = 2;
+}
+
+// Criteria used to determine test stability. This criteria is used
+// to inform test exoneration in presubmit via the
+// TestVariants.QueryStability RPC.
+//
+// Criteria is applied using a data source which contains
+// the last 14 days' of test result data for all test variants,
+// with certain filterings applied.
+//
+// See go/luci-exoneration-v2 as well each criteria below for more details.
+message TestStabilityCriteria {
+  // The failure rate criteria to apply. Mandatory.
+  FailureRateCriteria failure_rate = 1;
+
+  // The failure rate criteria detects consistently failing
+  // and highly flaky tests (e.g. 95%+ failing) by looking for
+  // a high number of failures at the queried position of the
+  // test's history.
+  //
+  // The criteria obtains from the last 14 days' of filtered test data
+  // a set of (up to) 20 test runs centered on the queried commit
+  // position (10 prior and 10 after) and applies criteria
+  // to this in various ways.
+  // The 20 test runs are sorted by commit position and then time.
+  //
+  // See go/luci-exoneration-v2 for more detail.
+  message FailureRateCriteria {
+      // The number of unexpected test runs that must be
+      // found in a sliding window of size 10 containing the
+      // queried position to begin exoneration.
+      // 6 is a good starting value.
+      //
+      // The criteria is applied over sliding windows of size
+      // 10 around the query position. Assuming the full 20 test
+      // runs are obtained, this means 11 window positions are considered.
+      // If any window satisifes the threshold, the criteria is met
+      // and the test is considered unstable.
+      //
+      // In the event that 10 test runs cannot be found in the last
+      // 14 days of test history, a window sized to the available
+      // test runs is used but the criteria is not scaled.
+      int32 failure_threshold = 1;
+
+      // The number of consecutive unexpected test runs, which if
+      // present at the leading or trailing part of the (up to) 20
+      // test verdicts, will trigger exoneration.
+      // 3 is a good starting value.
+      //
+      // The consecutive failures must also touch the query position.
+      //
+      // This is designed to create a fast path to exoneration for
+      // 100% failing tests which produce a strong and consistent
+      // failing signal, leveraging the statistical significance
+      // of consecutive failures. If this threshold is met,
+      // the failure_threshold above does NOT need to be met.
+      //
+      // E.g. the following scenario WILL trigger this criteria for
+      // a threshold of four or less.
+      //
+      // History: >F F F F< P P P P P P P
+      //            ^
+      //            Query position
+      //
+      // The following scenario WILL NOT trigger this criteria:
+      //
+      // History:>P F F F F< P P P P P P P
+      //              ^
+      //              Query position
+      //
+      // (N.B. Direction of history is irrelevant as criteria is
+      // applied symmetrically. Either the left or right could
+      // represent 'later' by commit position.)
+      int32 consecutive_failure_threshold = 2;
+  }
+
+  // The flake rate criteria to apply. Mandatory.
+  FlakeRateCriteria flake_rate = 2;
+
+  // The flake rate criteria detects flaky tests by looking for
+  // examples where a test has obtained expected and unexpected
+  // test runs for the same sources under test.
+  //
+  // If there are more flaky source verdicts found than a threshold,
+  // the test is considered flaky.
+  //
+  // The analysis window is all source verdicts for 7 days' worth
+  // of commit positions either side of the queried position.
+  // The conversion between time and commit position is discussed
+  // in go/luci-exoneration-v2.
+  //
+  // In the event that an unsatisfactory number of source positions
+  // are found using this method, the window is enlarged to possibly
+  // include any verdict in the last 14 days. This is to improve
+  // detection performance on tests with a low volume of results.
+  message FlakeRateCriteria {
+    // The minimum number of source verdicts desired
+    // for the analysis window.
+    //
+    // As standard, all source verdicts for sources
+    // +/- 7 days from the queried position are used.
+    //
+    // However, if the number of verdicts is not equal
+    // to or greater than min_window, all source verdicts
+    // from the last 14 days will be used. This is designed
+    // to prioritise adequate flake detection performance
+    // for test variants with low result volumes, at the
+    // cost of data recency.
+    //
+    // If the number of source verdicts in the last 14 days
+    // is less than min_window, then whatever source verdicts
+    // are available are still used.
+    //
+    // 100 is a good starting value.
+    int32 min_window = 1;
+
+    // The minimum number of flaky source verdicts required
+    // to trigger the criteria. 2 is a good starting value.
+    int32 flake_threshold = 2;
+
+    // The minimum flake rate required to trigger the criteria,
+    // as a proportion of all source verdicts. This must be a
+    // value between 0.0 and 1.0.
+    // 0.01 (1%) is a good starting value.
+    //
+    // Both flake_threshold AND the flake_rate_threshold must be met
+    // for a test to be considered unstable.
+    //
+    // Note that not even the most flaky (50% flaky) test would
+    // be expected to produce more than a 25% flake rate if
+    // failures are retried once. This is because its expected
+    // outcomes are:
+    // - Pass on first try = 50%
+    // - Fail on first try, pass on second try = 25% (flaky)
+    // - Fail on both tries = 25%
+    double flake_rate_threshold = 3;
+  }
+}
+
+// Stability analysis for a test variant at a particular source position.
+message TestVariantStabilityAnalysis {
+    // A unique identifier of the test in a LUCI project.
+    string test_id = 1;
+
+    // Description of one specific way of running the test,
+    // e.g. a specific bucket, builder and a test suite.
+    // Only populated if populated on the request.
+    Variant variant = 2;
+
+    // The variant hash.
+    // Only populated if populated on the request.
+    string variant_hash = 3;
+
+    // Information related to the application of failure rate
+    // criteria, if this criteria was considered.
+    FailureRate failure_rate = 4;
+
+    message FailureRate {
+        // Whether the failure rate criteria was met. If set, this means the
+        // test is unstable by this criteria.
+        bool is_met = 1;
+
+        // Debug information follows.
+
+        // The maximum number of failures observed in any analysis window.
+        int32 unexpected_test_runs = 2;
+
+        // The number of consecutive unexpected test runs from the leading
+        // and/or trailing part of test history, which touches the
+        // the query position.
+        // If there is no such sequence, this is 0.
+        int32 consecutive_unexpected_test_runs = 3;
+
+        message RecentVerdict {
+            // The commit position of the source verdict on the queried branch.
+            int32 position = 1;
+
+            // The partition time of the verdict.
+            google.protobuf.Timestamp partition_time = 2;
+
+            // The changelist(s) tested, if any.
+            repeated Changelist changelists = 3;
+
+            // The number of unexpected runs associated with the verdict.
+            // An unexpected run is a run (e.g. swarming task) which
+            // had only unexpected results, after excluding skips.
+            // Presubmit results are limited to contributing 1 unexpected
+            // run to the analysis by design. Postsubmit results can have more.
+            int32 unexpected_runs = 4;
+
+            // The total number of test runs associated with the verdict.
+            // Presubmit results are limited to contributing 1 unexpected
+            // run to the analysis by design. Postsubmit results can have more.
+            int32 total_runs = 5;
+        }
+
+        // Relevant source verdicts used in the analysis. Limited to 20 runs,
+        // which may span between 1 and 20 source verdicts.
+        repeated RecentVerdict recent_verdicts = 4;
+    }
+
+    // Information related to the application of flake rate
+    // criteria, if this criteria was considered.
+    FlakeRate flake_rate = 5;
+
+    message FlakeRate {
+        // Whether the flake rate criteria was met. If set, this means the
+        // test was deemed unstable by this criteria.
+        bool is_met = 1;
+
+        // Debug information follows.
+
+        // The total number of run-flaky verdicts observed.
+        int32 run_flaky_verdicts = 2;
+
+        // The total number of verdicts in the run flaky verdicts analysis window.
+        int32 total_verdicts = 3;
+
+        // VerdictExample describes a source verdict that is part of a statistic.
+        // Note that a source verdict may contain data from multiple test verdicts,
+        // such as in the case of retried presubmit runs on the same patchset.
+        message VerdictExample {
+            // The commit position of the verdict on the queried branch.
+            int32 position = 1;
+
+            // The earliest partition time of the source verdict.
+            // This is the earliest time associated with any of the
+            // source verdict's test verdicts.
+            google.protobuf.Timestamp earliest_partition_time = 2;
+
+            // The changelist(s) tested, if any.
+            repeated Changelist changelists = 3;
+        }
+
+        // Examples of source verdicts which had both expected and unexpected runs,
+        // that contributed to run_flaky_verdicts.
+        //
+        // Ordered by recency, starting at the most recent example.
+        //
+        // Limited to at most 10 examples.
+        repeated VerdictExample flake_examples = 4;
+    }
 }

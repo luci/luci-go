@@ -27,6 +27,32 @@ message ProjectConfig {
   // The project metadata (eg. display name).
   ProjectMetadata project_metadata = 6;
 
+  // The last time this project configuration was updated.
+  // LUCI Analysis sets and stores this value internally. Do not set
+  // in your project's configuration file, it will be ignored.
+  google.protobuf.Timestamp last_updated = 4;
+
+  // Configuration for how to cluster test results.
+  Clustering clustering = 5;
+
+  // Configuration for automatic bug management.
+  BugManagement bug_management = 9;
+
+  // Configuration related to metrics in LUCI Analysis.
+  Metrics metrics = 11;
+
+  // Configuration for when tests are considered stable enough
+  // to gate code changes. Only relevant for projects which integrate
+  // with the TestVariants.QueryStability RPC to exonerate
+  // unstable tests in presubmit.
+  TestStabilityCriteria test_stability_criteria = 12;
+
+  // Deprecated configuration follows. Setting these no longer
+  // has any effect.
+
+  // Per realm configurations.
+  repeated RealmConfig realms = 3;
+
   // Deprecated. No longer has any effect. Retained for textproto
   // compatibility only. Use bug_management.default_bug_system instead.
   BugSystem bug_system = 7;
@@ -43,28 +69,11 @@ message ProjectConfig {
   // compatibility only. Use bug_management.policies instead.
   ImpactThreshold bug_filing_threshold = 2;
 
-  // Per realm configurations.
-  repeated RealmConfig realms = 3;
-
-  // The last time this project configuration was updated.
-  // LUCI Analysis sets and stores this value internally. Do not set
-  // in your project's configuration file, it will be ignored.
-  google.protobuf.Timestamp last_updated = 4;
-
-  // Configuration for how to cluster test results.
-  Clustering clustering = 5;
-
-  // Configuration for automatic bug management.
-  BugManagement bug_management = 9;
-
   // Deprecated. No longer has any effect. Retained for textproto
   // compatibility only. Use bug_management.policies instead.
   repeated ImpactMetricThreshold bug_filing_thresholds = 10;
 
-  // Configuration related to metrics in LUCI Analysis.
-  Metrics metrics = 11;
-
-  // Next ID: 12
+  // Next ID: 13
 }
 
 
@@ -647,4 +656,141 @@ message BuganizerProject {
   // Deprecated. No longer has any effect. Retained for textproto
   // compatibility only. Use bug_management.policies instead.
   repeated PriorityMapping priority_mappings = 3;
+}
+
+// Criteria used to determine test stability. This criteria is used
+// to inform test exoneration in presubmit via the
+// TestVariants.QueryStability RPC.
+//
+// Criteria is applied using a data source which contains
+// the last 14 days' of test result data for all test variants,
+// with certain filterings applied.
+//
+// See go/luci-exoneration-v2 as well each criteria below for more details.
+message TestStabilityCriteria {
+  // The failure rate criteria to apply. Mandatory.
+  FailureRateCriteria failure_rate = 1;
+
+  // The failure rate criteria detects consistently failing
+  // and highly flaky tests (e.g. 95%+ failing) by looking for
+  // a high number of failures at the queried position of the
+  // test's history.
+  //
+  // The criteria obtains from the last 14 days' of filtered test data
+  // a set of (up to) 20 test runs centered on the queried commit
+  // position (10 prior and 10 after) and applies criteria
+  // to this in various ways.
+  // The 20 test runs are sorted by commit position and then time.
+  //
+  // See go/luci-exoneration-v2 for more detail.
+  message FailureRateCriteria {
+      // The number of unexpected test runs that must be
+      // found in a sliding window of size 10 containing the
+      // queried position to begin exoneration.
+      // 6 is a good starting value.
+      //
+      // The criteria is applied over sliding windows of size
+      // 10 around the query position. Assuming the full 20 test
+      // runs are obtained, this means 11 window positions are considered.
+      // If any window satisifes the threshold, the criteria is met
+      // and the test is considered unstable.
+      //
+      // In the event that 10 test runs cannot be found in the last
+      // 14 days of test history, a window sized to the available
+      // test runs is used but the criteria is not scaled.
+      int32 failure_threshold = 1;
+
+      // The number of consecutive unexpected test runs, which if
+      // present at the leading or trailing part of the (up to) 20
+      // test verdicts, will trigger exoneration.
+      // 3 is a good starting value.
+      //
+      // The consecutive failures must also touch the query position.
+      //
+      // This is designed to create a fast path to exoneration for
+      // 100% failing tests which produce a strong and consistent
+      // failing signal, leveraging the statistical significance
+      // of consecutive failures. If this threshold is met,
+      // the failure_threshold above does NOT need to be met.
+      //
+      // E.g. the following scenario WILL trigger this criteria for
+      // a threshold of four or less.
+      //
+      // History: >F F F F< P P P P P P P
+      //            ^
+      //            Query position
+      //
+      // The following scenario WILL NOT trigger this criteria:
+      //
+      // History:>P F F F F< P P P P P P P
+      //              ^
+      //              Query position
+      //
+      // (N.B. Direction of history is irrelevant as criteria is
+      // applied symmetrically. Either the left or right could
+      // represent 'later' by commit position.)
+      int32 consecutive_failure_threshold = 2;
+  }
+
+  // The flake rate criteria to apply. Mandatory.
+  FlakeRateCriteria flake_rate = 2;
+
+  // The flake rate criteria detects flaky tests by looking for
+  // examples where a test has obtained expected and unexpected
+  // test runs for the same sources under test.
+  //
+  // If there are more flaky source verdicts found than a threshold,
+  // the test is considered flaky.
+  //
+  // The analysis window is all source verdicts for 7 days' worth
+  // of commit positions either side of the queried position.
+  // The conversion between time and commit position is discussed
+  // in go/luci-exoneration-v2.
+  //
+  // In the event that an unsatisfactory number of source positions
+  // are found using this method, the window is enlarged to possibly
+  // include any verdict in the last 14 days. This is to improve
+  // detection performance on tests with a low volume of results.
+  message FlakeRateCriteria {
+    // The minimum number of source verdicts desired
+    // for the analysis window.
+    //
+    // As standard, all source verdicts for sources
+    // +/- 7 days from the queried position are used.
+    //
+    // However, if the number of verdicts is not equal
+    // to or greater than min_window, all source verdicts
+    // from the last 14 days will be used. This is designed
+    // to prioritise adequate flake detection performance
+    // for test variants with low result volumes, at the
+    // cost of data recency.
+    //
+    // If the number of source verdicts in the last 14 days
+    // is less than min_window, then whatever source verdicts
+    // are available are still used.
+    //
+    // 100 is a good starting value.
+    int32 min_window = 1;
+
+    // The minimum number of flaky source verdicts required
+    // to trigger the criteria. 2 is a good starting value.
+    int32 flake_threshold = 2;
+
+    // The minimum flake rate required to trigger the criteria,
+    // as a proportion of all source verdicts. This must be a
+    // value between 0.0 and 1.0.
+    // 0.01 (1%) is a good starting value.
+    //
+    // Both flake_threshold AND the flake_rate_threshold must be met
+    // for a test to be considered unstable.
+    //
+    // Note that not even the most flaky (50% flaky) test would
+    // be expected to produce more than a 25% flake rate if
+    // failures are retried once. This is because its expected
+    // outcomes are:
+    // - Pass on first try = 50%
+    // - Fail on first try, pass on second try = 25% (flaky)
+    // - Fail on both tries = 25%
+    double flake_rate_threshold = 3;
+  }
 }

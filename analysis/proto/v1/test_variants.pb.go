@@ -371,6 +371,277 @@ func (x *TestVariantFailureRateAnalysis) GetRecentVerdicts() []*TestVariantFailu
 	return nil
 }
 
+type QueryTestVariantStabilityRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The LUCI Project for which test variants should be looked up.
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	// The test variant positions to query.
+	TestVariants []*QueryTestVariantStabilityRequest_TestVariantPosition `protobuf:"bytes,2,rep,name=test_variants,json=testVariants,proto3" json:"test_variants,omitempty"`
+}
+
+func (x *QueryTestVariantStabilityRequest) Reset() {
+	*x = QueryTestVariantStabilityRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QueryTestVariantStabilityRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryTestVariantStabilityRequest) ProtoMessage() {}
+
+func (x *QueryTestVariantStabilityRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QueryTestVariantStabilityRequest.ProtoReflect.Descriptor instead.
+func (*QueryTestVariantStabilityRequest) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *QueryTestVariantStabilityRequest) GetProject() string {
+	if x != nil {
+		return x.Project
+	}
+	return ""
+}
+
+func (x *QueryTestVariantStabilityRequest) GetTestVariants() []*QueryTestVariantStabilityRequest_TestVariantPosition {
+	if x != nil {
+		return x.TestVariants
+	}
+	return nil
+}
+
+type QueryTestVariantStabilityResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The requested test variant stability analysis.
+	TestVariants []*TestVariantStabilityAnalysis `protobuf:"bytes,1,rep,name=test_variants,json=testVariants,proto3" json:"test_variants,omitempty"`
+	// The criteria used to determine if tests are stable.
+	// This is as configured in the project's LUCI Analysis configuration.
+	Criteria *TestStabilityCriteria `protobuf:"bytes,2,opt,name=criteria,proto3" json:"criteria,omitempty"`
+}
+
+func (x *QueryTestVariantStabilityResponse) Reset() {
+	*x = QueryTestVariantStabilityResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QueryTestVariantStabilityResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryTestVariantStabilityResponse) ProtoMessage() {}
+
+func (x *QueryTestVariantStabilityResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QueryTestVariantStabilityResponse.ProtoReflect.Descriptor instead.
+func (*QueryTestVariantStabilityResponse) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *QueryTestVariantStabilityResponse) GetTestVariants() []*TestVariantStabilityAnalysis {
+	if x != nil {
+		return x.TestVariants
+	}
+	return nil
+}
+
+func (x *QueryTestVariantStabilityResponse) GetCriteria() *TestStabilityCriteria {
+	if x != nil {
+		return x.Criteria
+	}
+	return nil
+}
+
+// Criteria used to determine test stability. This criteria is used
+// to inform test exoneration in presubmit via the
+// TestVariants.QueryStability RPC.
+//
+// Criteria is applied using a data source which contains
+// the last 14 days' of test result data for all test variants,
+// with certain filterings applied.
+//
+// See go/luci-exoneration-v2 as well each criteria below for more details.
+type TestStabilityCriteria struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The failure rate criteria to apply. Mandatory.
+	FailureRate *TestStabilityCriteria_FailureRateCriteria `protobuf:"bytes,1,opt,name=failure_rate,json=failureRate,proto3" json:"failure_rate,omitempty"`
+	// The flake rate criteria to apply. Mandatory.
+	FlakeRate *TestStabilityCriteria_FlakeRateCriteria `protobuf:"bytes,2,opt,name=flake_rate,json=flakeRate,proto3" json:"flake_rate,omitempty"`
+}
+
+func (x *TestStabilityCriteria) Reset() {
+	*x = TestStabilityCriteria{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TestStabilityCriteria) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestStabilityCriteria) ProtoMessage() {}
+
+func (x *TestStabilityCriteria) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestStabilityCriteria.ProtoReflect.Descriptor instead.
+func (*TestStabilityCriteria) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *TestStabilityCriteria) GetFailureRate() *TestStabilityCriteria_FailureRateCriteria {
+	if x != nil {
+		return x.FailureRate
+	}
+	return nil
+}
+
+func (x *TestStabilityCriteria) GetFlakeRate() *TestStabilityCriteria_FlakeRateCriteria {
+	if x != nil {
+		return x.FlakeRate
+	}
+	return nil
+}
+
+// Stability analysis for a test variant at a particular source position.
+type TestVariantStabilityAnalysis struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// A unique identifier of the test in a LUCI project.
+	TestId string `protobuf:"bytes,1,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`
+	// Description of one specific way of running the test,
+	// e.g. a specific bucket, builder and a test suite.
+	// Only populated if populated on the request.
+	Variant *Variant `protobuf:"bytes,2,opt,name=variant,proto3" json:"variant,omitempty"`
+	// The variant hash.
+	// Only populated if populated on the request.
+	VariantHash string `protobuf:"bytes,3,opt,name=variant_hash,json=variantHash,proto3" json:"variant_hash,omitempty"`
+	// Information related to the application of failure rate
+	// criteria, if this criteria was considered.
+	FailureRate *TestVariantStabilityAnalysis_FailureRate `protobuf:"bytes,4,opt,name=failure_rate,json=failureRate,proto3" json:"failure_rate,omitempty"`
+	// Information related to the application of flake rate
+	// criteria, if this criteria was considered.
+	FlakeRate *TestVariantStabilityAnalysis_FlakeRate `protobuf:"bytes,5,opt,name=flake_rate,json=flakeRate,proto3" json:"flake_rate,omitempty"`
+}
+
+func (x *TestVariantStabilityAnalysis) Reset() {
+	*x = TestVariantStabilityAnalysis{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TestVariantStabilityAnalysis) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestVariantStabilityAnalysis) ProtoMessage() {}
+
+func (x *TestVariantStabilityAnalysis) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestVariantStabilityAnalysis.ProtoReflect.Descriptor instead.
+func (*TestVariantStabilityAnalysis) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *TestVariantStabilityAnalysis) GetTestId() string {
+	if x != nil {
+		return x.TestId
+	}
+	return ""
+}
+
+func (x *TestVariantStabilityAnalysis) GetVariant() *Variant {
+	if x != nil {
+		return x.Variant
+	}
+	return nil
+}
+
+func (x *TestVariantStabilityAnalysis) GetVariantHash() string {
+	if x != nil {
+		return x.VariantHash
+	}
+	return ""
+}
+
+func (x *TestVariantStabilityAnalysis) GetFailureRate() *TestVariantStabilityAnalysis_FailureRate {
+	if x != nil {
+		return x.FailureRate
+	}
+	return nil
+}
+
+func (x *TestVariantStabilityAnalysis) GetFlakeRate() *TestVariantStabilityAnalysis_FlakeRate {
+	if x != nil {
+		return x.FlakeRate
+	}
+	return nil
+}
+
 // Interval defines the time buckets used for time interval
 // data.
 type QueryTestVariantFailureRateResponse_Interval struct {
@@ -391,7 +662,7 @@ type QueryTestVariantFailureRateResponse_Interval struct {
 func (x *QueryTestVariantFailureRateResponse_Interval) Reset() {
 	*x = QueryTestVariantFailureRateResponse_Interval{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[4]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -404,7 +675,7 @@ func (x *QueryTestVariantFailureRateResponse_Interval) String() string {
 func (*QueryTestVariantFailureRateResponse_Interval) ProtoMessage() {}
 
 func (x *QueryTestVariantFailureRateResponse_Interval) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[4]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -473,7 +744,7 @@ type TestVariantFailureRateAnalysis_IntervalStats struct {
 func (x *TestVariantFailureRateAnalysis_IntervalStats) Reset() {
 	*x = TestVariantFailureRateAnalysis_IntervalStats{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[5]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -486,7 +757,7 @@ func (x *TestVariantFailureRateAnalysis_IntervalStats) String() string {
 func (*TestVariantFailureRateAnalysis_IntervalStats) ProtoMessage() {}
 
 func (x *TestVariantFailureRateAnalysis_IntervalStats) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -549,7 +820,7 @@ type TestVariantFailureRateAnalysis_VerdictExample struct {
 func (x *TestVariantFailureRateAnalysis_VerdictExample) Reset() {
 	*x = TestVariantFailureRateAnalysis_VerdictExample{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[6]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -562,7 +833,7 @@ func (x *TestVariantFailureRateAnalysis_VerdictExample) String() string {
 func (*TestVariantFailureRateAnalysis_VerdictExample) ProtoMessage() {}
 
 func (x *TestVariantFailureRateAnalysis_VerdictExample) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[6]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -627,7 +898,7 @@ type TestVariantFailureRateAnalysis_RecentVerdict struct {
 func (x *TestVariantFailureRateAnalysis_RecentVerdict) Reset() {
 	*x = TestVariantFailureRateAnalysis_RecentVerdict{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[7]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -640,7 +911,7 @@ func (x *TestVariantFailureRateAnalysis_RecentVerdict) String() string {
 func (*TestVariantFailureRateAnalysis_RecentVerdict) ProtoMessage() {}
 
 func (x *TestVariantFailureRateAnalysis_RecentVerdict) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[7]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -682,6 +953,643 @@ func (x *TestVariantFailureRateAnalysis_RecentVerdict) GetHasUnexpectedRuns() bo
 		return x.HasUnexpectedRuns
 	}
 	return false
+}
+
+// Represents a test variant at a particular source position.
+type QueryTestVariantStabilityRequest_TestVariantPosition struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The unique identifier of the test in a LUCI project.
+	TestId string `protobuf:"bytes,1,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`
+	// Description of one specific way of running the test,
+	// e.g. a specific bucket, builder and test suite.
+	Variant *Variant `protobuf:"bytes,2,opt,name=variant,proto3" json:"variant,omitempty"`
+	// The variant hash. Alternative to specifying the variant.
+	// Prefer to specify the full variant (if available), as the
+	// variant hashing implementation is an implementation detail
+	// and may change.
+	VariantHash string `protobuf:"bytes,3,opt,name=variant_hash,json=variantHash,proto3" json:"variant_hash,omitempty"`
+	// The source positions to obtain stability relevant to.
+	//
+	// The base sources (e.g. base git commit branch and position)
+	// is mandatory, except for the commit hash, which is ignored.
+	//
+	// If any changelists are specified then any stability analysis
+	// will exclude prior results for that changelist from the
+	// analysis.
+	//
+	// is_dirty is ignored.
+	Sources *Sources `protobuf:"bytes,4,opt,name=sources,proto3" json:"sources,omitempty"`
+}
+
+func (x *QueryTestVariantStabilityRequest_TestVariantPosition) Reset() {
+	*x = QueryTestVariantStabilityRequest_TestVariantPosition{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QueryTestVariantStabilityRequest_TestVariantPosition) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryTestVariantStabilityRequest_TestVariantPosition) ProtoMessage() {}
+
+func (x *QueryTestVariantStabilityRequest_TestVariantPosition) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[12]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QueryTestVariantStabilityRequest_TestVariantPosition.ProtoReflect.Descriptor instead.
+func (*QueryTestVariantStabilityRequest_TestVariantPosition) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_rawDescGZIP(), []int{4, 0}
+}
+
+func (x *QueryTestVariantStabilityRequest_TestVariantPosition) GetTestId() string {
+	if x != nil {
+		return x.TestId
+	}
+	return ""
+}
+
+func (x *QueryTestVariantStabilityRequest_TestVariantPosition) GetVariant() *Variant {
+	if x != nil {
+		return x.Variant
+	}
+	return nil
+}
+
+func (x *QueryTestVariantStabilityRequest_TestVariantPosition) GetVariantHash() string {
+	if x != nil {
+		return x.VariantHash
+	}
+	return ""
+}
+
+func (x *QueryTestVariantStabilityRequest_TestVariantPosition) GetSources() *Sources {
+	if x != nil {
+		return x.Sources
+	}
+	return nil
+}
+
+// The failure rate criteria detects consistently failing
+// and highly flaky tests (e.g. 95%+ failing) by looking for
+// a high number of failures at the queried position of the
+// test's history.
+//
+// The criteria obtains from the last 14 days' of filtered test data
+// a set of (up to) 20 test runs centered on the queried commit
+// position (10 prior and 10 after) and applies criteria
+// to this in various ways.
+// The 20 test runs are sorted by commit position and then time.
+//
+// See go/luci-exoneration-v2 for more detail.
+type TestStabilityCriteria_FailureRateCriteria struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The number of unexpected test runs that must be
+	// found in a sliding window of size 10 containing the
+	// queried position to begin exoneration.
+	// 6 is a good starting value.
+	//
+	// The criteria is applied over sliding windows of size
+	// 10 around the query position. Assuming the full 20 test
+	// runs are obtained, this means 11 window positions are considered.
+	// If any window satisifes the threshold, the criteria is met
+	// and the test is considered unstable.
+	//
+	// In the event that 10 test runs cannot be found in the last
+	// 14 days of test history, a window sized to the available
+	// test runs is used but the criteria is not scaled.
+	FailureThreshold int32 `protobuf:"varint,1,opt,name=failure_threshold,json=failureThreshold,proto3" json:"failure_threshold,omitempty"`
+	// The number of consecutive unexpected test runs, which if
+	// present at the leading or trailing part of the (up to) 20
+	// test verdicts, will trigger exoneration.
+	// 3 is a good starting value.
+	//
+	// The consecutive failures must also touch the query position.
+	//
+	// This is designed to create a fast path to exoneration for
+	// 100% failing tests which produce a strong and consistent
+	// failing signal, leveraging the statistical significance
+	// of consecutive failures. If this threshold is met,
+	// the failure_threshold above does NOT need to be met.
+	//
+	// E.g. the following scenario WILL trigger this criteria for
+	// a threshold of four or less.
+	//
+	// History: >F F F F< P P P P P P P
+	//
+	//	^
+	//	Query position
+	//
+	// The following scenario WILL NOT trigger this criteria:
+	//
+	// History:>P F F F F< P P P P P P P
+	//
+	//	^
+	//	Query position
+	//
+	// (N.B. Direction of history is irrelevant as criteria is
+	// applied symmetrically. Either the left or right could
+	// represent 'later' by commit position.)
+	ConsecutiveFailureThreshold int32 `protobuf:"varint,2,opt,name=consecutive_failure_threshold,json=consecutiveFailureThreshold,proto3" json:"consecutive_failure_threshold,omitempty"`
+}
+
+func (x *TestStabilityCriteria_FailureRateCriteria) Reset() {
+	*x = TestStabilityCriteria_FailureRateCriteria{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[13]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TestStabilityCriteria_FailureRateCriteria) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestStabilityCriteria_FailureRateCriteria) ProtoMessage() {}
+
+func (x *TestStabilityCriteria_FailureRateCriteria) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[13]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestStabilityCriteria_FailureRateCriteria.ProtoReflect.Descriptor instead.
+func (*TestStabilityCriteria_FailureRateCriteria) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_rawDescGZIP(), []int{6, 0}
+}
+
+func (x *TestStabilityCriteria_FailureRateCriteria) GetFailureThreshold() int32 {
+	if x != nil {
+		return x.FailureThreshold
+	}
+	return 0
+}
+
+func (x *TestStabilityCriteria_FailureRateCriteria) GetConsecutiveFailureThreshold() int32 {
+	if x != nil {
+		return x.ConsecutiveFailureThreshold
+	}
+	return 0
+}
+
+// The flake rate criteria detects flaky tests by looking for
+// examples where a test has obtained expected and unexpected
+// test runs for the same sources under test.
+//
+// If there are more flaky source verdicts found than a threshold,
+// the test is considered flaky.
+//
+// The analysis window is all source verdicts for 7 days' worth
+// of commit positions either side of the queried position.
+// The conversion between time and commit position is discussed
+// in go/luci-exoneration-v2.
+//
+// In the event that an unsatisfactory number of source positions
+// are found using this method, the window is enlarged to possibly
+// include any verdict in the last 14 days. This is to improve
+// detection performance on tests with a low volume of results.
+type TestStabilityCriteria_FlakeRateCriteria struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The minimum number of source verdicts desired
+	// for the analysis window.
+	//
+	// As standard, all source verdicts for sources
+	// +/- 7 days from the queried position are used.
+	//
+	// However, if the number of verdicts is not equal
+	// to or greater than min_window, all source verdicts
+	// from the last 14 days will be used. This is designed
+	// to prioritise adequate flake detection performance
+	// for test variants with low result volumes, at the
+	// cost of data recency.
+	//
+	// If the number of source verdicts in the last 14 days
+	// is less than min_window, then whatever source verdicts
+	// are available are still used.
+	//
+	// 100 is a good starting value.
+	MinWindow int32 `protobuf:"varint,1,opt,name=min_window,json=minWindow,proto3" json:"min_window,omitempty"`
+	// The minimum number of flaky source verdicts required
+	// to trigger the criteria. 2 is a good starting value.
+	FlakeThreshold int32 `protobuf:"varint,2,opt,name=flake_threshold,json=flakeThreshold,proto3" json:"flake_threshold,omitempty"`
+	// The minimum flake rate required to trigger the criteria,
+	// as a proportion of all source verdicts. This must be a
+	// value between 0.0 and 1.0.
+	// 0.01 (1%) is a good starting value.
+	//
+	// Both flake_threshold AND the flake_rate_threshold must be met
+	// for a test to be considered unstable.
+	//
+	// Note that not even the most flaky (50% flaky) test would
+	// be expected to produce more than a 25% flake rate if
+	// failures are retried once. This is because its expected
+	// outcomes are:
+	// - Pass on first try = 50%
+	// - Fail on first try, pass on second try = 25% (flaky)
+	// - Fail on both tries = 25%
+	FlakeRateThreshold float64 `protobuf:"fixed64,3,opt,name=flake_rate_threshold,json=flakeRateThreshold,proto3" json:"flake_rate_threshold,omitempty"`
+}
+
+func (x *TestStabilityCriteria_FlakeRateCriteria) Reset() {
+	*x = TestStabilityCriteria_FlakeRateCriteria{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[14]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TestStabilityCriteria_FlakeRateCriteria) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestStabilityCriteria_FlakeRateCriteria) ProtoMessage() {}
+
+func (x *TestStabilityCriteria_FlakeRateCriteria) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[14]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestStabilityCriteria_FlakeRateCriteria.ProtoReflect.Descriptor instead.
+func (*TestStabilityCriteria_FlakeRateCriteria) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_rawDescGZIP(), []int{6, 1}
+}
+
+func (x *TestStabilityCriteria_FlakeRateCriteria) GetMinWindow() int32 {
+	if x != nil {
+		return x.MinWindow
+	}
+	return 0
+}
+
+func (x *TestStabilityCriteria_FlakeRateCriteria) GetFlakeThreshold() int32 {
+	if x != nil {
+		return x.FlakeThreshold
+	}
+	return 0
+}
+
+func (x *TestStabilityCriteria_FlakeRateCriteria) GetFlakeRateThreshold() float64 {
+	if x != nil {
+		return x.FlakeRateThreshold
+	}
+	return 0
+}
+
+type TestVariantStabilityAnalysis_FailureRate struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Whether the failure rate criteria was met. If set, this means the
+	// test is unstable by this criteria.
+	IsMet bool `protobuf:"varint,1,opt,name=is_met,json=isMet,proto3" json:"is_met,omitempty"`
+	// The maximum number of failures observed in any analysis window.
+	UnexpectedTestRuns int32 `protobuf:"varint,2,opt,name=unexpected_test_runs,json=unexpectedTestRuns,proto3" json:"unexpected_test_runs,omitempty"`
+	// The number of consecutive unexpected test runs from the leading
+	// and/or trailing part of test history, which touches the
+	// the query position.
+	// If there is no such sequence, this is 0.
+	ConsecutiveUnexpectedTestRuns int32 `protobuf:"varint,3,opt,name=consecutive_unexpected_test_runs,json=consecutiveUnexpectedTestRuns,proto3" json:"consecutive_unexpected_test_runs,omitempty"`
+	// Relevant source verdicts used in the analysis. Limited to 20 runs,
+	// which may span between 1 and 20 source verdicts.
+	RecentVerdicts []*TestVariantStabilityAnalysis_FailureRate_RecentVerdict `protobuf:"bytes,4,rep,name=recent_verdicts,json=recentVerdicts,proto3" json:"recent_verdicts,omitempty"`
+}
+
+func (x *TestVariantStabilityAnalysis_FailureRate) Reset() {
+	*x = TestVariantStabilityAnalysis_FailureRate{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TestVariantStabilityAnalysis_FailureRate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestVariantStabilityAnalysis_FailureRate) ProtoMessage() {}
+
+func (x *TestVariantStabilityAnalysis_FailureRate) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestVariantStabilityAnalysis_FailureRate.ProtoReflect.Descriptor instead.
+func (*TestVariantStabilityAnalysis_FailureRate) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_rawDescGZIP(), []int{7, 0}
+}
+
+func (x *TestVariantStabilityAnalysis_FailureRate) GetIsMet() bool {
+	if x != nil {
+		return x.IsMet
+	}
+	return false
+}
+
+func (x *TestVariantStabilityAnalysis_FailureRate) GetUnexpectedTestRuns() int32 {
+	if x != nil {
+		return x.UnexpectedTestRuns
+	}
+	return 0
+}
+
+func (x *TestVariantStabilityAnalysis_FailureRate) GetConsecutiveUnexpectedTestRuns() int32 {
+	if x != nil {
+		return x.ConsecutiveUnexpectedTestRuns
+	}
+	return 0
+}
+
+func (x *TestVariantStabilityAnalysis_FailureRate) GetRecentVerdicts() []*TestVariantStabilityAnalysis_FailureRate_RecentVerdict {
+	if x != nil {
+		return x.RecentVerdicts
+	}
+	return nil
+}
+
+type TestVariantStabilityAnalysis_FlakeRate struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Whether the flake rate criteria was met. If set, this means the
+	// test was deemed unstable by this criteria.
+	IsMet bool `protobuf:"varint,1,opt,name=is_met,json=isMet,proto3" json:"is_met,omitempty"`
+	// The total number of run-flaky verdicts observed.
+	RunFlakyVerdicts int32 `protobuf:"varint,2,opt,name=run_flaky_verdicts,json=runFlakyVerdicts,proto3" json:"run_flaky_verdicts,omitempty"`
+	// The total number of verdicts in the run flaky verdicts analysis window.
+	TotalVerdicts int32 `protobuf:"varint,3,opt,name=total_verdicts,json=totalVerdicts,proto3" json:"total_verdicts,omitempty"`
+	// Examples of source verdicts which had both expected and unexpected runs,
+	// that contributed to run_flaky_verdicts.
+	//
+	// Ordered by recency, starting at the most recent example.
+	//
+	// Limited to at most 10 examples.
+	FlakeExamples []*TestVariantStabilityAnalysis_FlakeRate_VerdictExample `protobuf:"bytes,4,rep,name=flake_examples,json=flakeExamples,proto3" json:"flake_examples,omitempty"`
+}
+
+func (x *TestVariantStabilityAnalysis_FlakeRate) Reset() {
+	*x = TestVariantStabilityAnalysis_FlakeRate{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[16]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TestVariantStabilityAnalysis_FlakeRate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestVariantStabilityAnalysis_FlakeRate) ProtoMessage() {}
+
+func (x *TestVariantStabilityAnalysis_FlakeRate) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[16]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestVariantStabilityAnalysis_FlakeRate.ProtoReflect.Descriptor instead.
+func (*TestVariantStabilityAnalysis_FlakeRate) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_rawDescGZIP(), []int{7, 1}
+}
+
+func (x *TestVariantStabilityAnalysis_FlakeRate) GetIsMet() bool {
+	if x != nil {
+		return x.IsMet
+	}
+	return false
+}
+
+func (x *TestVariantStabilityAnalysis_FlakeRate) GetRunFlakyVerdicts() int32 {
+	if x != nil {
+		return x.RunFlakyVerdicts
+	}
+	return 0
+}
+
+func (x *TestVariantStabilityAnalysis_FlakeRate) GetTotalVerdicts() int32 {
+	if x != nil {
+		return x.TotalVerdicts
+	}
+	return 0
+}
+
+func (x *TestVariantStabilityAnalysis_FlakeRate) GetFlakeExamples() []*TestVariantStabilityAnalysis_FlakeRate_VerdictExample {
+	if x != nil {
+		return x.FlakeExamples
+	}
+	return nil
+}
+
+type TestVariantStabilityAnalysis_FailureRate_RecentVerdict struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The commit position of the source verdict on the queried branch.
+	Position int32 `protobuf:"varint,1,opt,name=position,proto3" json:"position,omitempty"`
+	// The partition time of the verdict.
+	PartitionTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=partition_time,json=partitionTime,proto3" json:"partition_time,omitempty"`
+	// The changelist(s) tested, if any.
+	Changelists []*Changelist `protobuf:"bytes,3,rep,name=changelists,proto3" json:"changelists,omitempty"`
+	// The number of unexpected runs associated with the verdict.
+	// An unexpected run is a run (e.g. swarming task) which
+	// had only unexpected results, after excluding skips.
+	// Presubmit results are limited to contributing 1 unexpected
+	// run to the analysis by design. Postsubmit results can have more.
+	UnexpectedRuns int32 `protobuf:"varint,4,opt,name=unexpected_runs,json=unexpectedRuns,proto3" json:"unexpected_runs,omitempty"`
+	// The total number of test runs associated with the verdict.
+	// Presubmit results are limited to contributing 1 unexpected
+	// run to the analysis by design. Postsubmit results can have more.
+	TotalRuns int32 `protobuf:"varint,5,opt,name=total_runs,json=totalRuns,proto3" json:"total_runs,omitempty"`
+}
+
+func (x *TestVariantStabilityAnalysis_FailureRate_RecentVerdict) Reset() {
+	*x = TestVariantStabilityAnalysis_FailureRate_RecentVerdict{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[17]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TestVariantStabilityAnalysis_FailureRate_RecentVerdict) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestVariantStabilityAnalysis_FailureRate_RecentVerdict) ProtoMessage() {}
+
+func (x *TestVariantStabilityAnalysis_FailureRate_RecentVerdict) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[17]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestVariantStabilityAnalysis_FailureRate_RecentVerdict.ProtoReflect.Descriptor instead.
+func (*TestVariantStabilityAnalysis_FailureRate_RecentVerdict) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_rawDescGZIP(), []int{7, 0, 0}
+}
+
+func (x *TestVariantStabilityAnalysis_FailureRate_RecentVerdict) GetPosition() int32 {
+	if x != nil {
+		return x.Position
+	}
+	return 0
+}
+
+func (x *TestVariantStabilityAnalysis_FailureRate_RecentVerdict) GetPartitionTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.PartitionTime
+	}
+	return nil
+}
+
+func (x *TestVariantStabilityAnalysis_FailureRate_RecentVerdict) GetChangelists() []*Changelist {
+	if x != nil {
+		return x.Changelists
+	}
+	return nil
+}
+
+func (x *TestVariantStabilityAnalysis_FailureRate_RecentVerdict) GetUnexpectedRuns() int32 {
+	if x != nil {
+		return x.UnexpectedRuns
+	}
+	return 0
+}
+
+func (x *TestVariantStabilityAnalysis_FailureRate_RecentVerdict) GetTotalRuns() int32 {
+	if x != nil {
+		return x.TotalRuns
+	}
+	return 0
+}
+
+// VerdictExample describes a source verdict that is part of a statistic.
+// Note that a source verdict may contain data from multiple test verdicts,
+// such as in the case of retried presubmit runs on the same patchset.
+type TestVariantStabilityAnalysis_FlakeRate_VerdictExample struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The commit position of the verdict on the queried branch.
+	Position int32 `protobuf:"varint,1,opt,name=position,proto3" json:"position,omitempty"`
+	// The earliest partition time of the source verdict.
+	// This is the earliest time associated with any of the
+	// source verdict's test verdicts.
+	EarliestPartitionTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=earliest_partition_time,json=earliestPartitionTime,proto3" json:"earliest_partition_time,omitempty"`
+	// The changelist(s) tested, if any.
+	Changelists []*Changelist `protobuf:"bytes,3,rep,name=changelists,proto3" json:"changelists,omitempty"`
+}
+
+func (x *TestVariantStabilityAnalysis_FlakeRate_VerdictExample) Reset() {
+	*x = TestVariantStabilityAnalysis_FlakeRate_VerdictExample{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[18]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TestVariantStabilityAnalysis_FlakeRate_VerdictExample) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestVariantStabilityAnalysis_FlakeRate_VerdictExample) ProtoMessage() {}
+
+func (x *TestVariantStabilityAnalysis_FlakeRate_VerdictExample) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[18]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestVariantStabilityAnalysis_FlakeRate_VerdictExample.ProtoReflect.Descriptor instead.
+func (*TestVariantStabilityAnalysis_FlakeRate_VerdictExample) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_rawDescGZIP(), []int{7, 1, 0}
+}
+
+func (x *TestVariantStabilityAnalysis_FlakeRate_VerdictExample) GetPosition() int32 {
+	if x != nil {
+		return x.Position
+	}
+	return 0
+}
+
+func (x *TestVariantStabilityAnalysis_FlakeRate_VerdictExample) GetEarliestPartitionTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.EarliestPartitionTime
+	}
+	return nil
+}
+
+func (x *TestVariantStabilityAnalysis_FlakeRate_VerdictExample) GetChangelists() []*Changelist {
+	if x != nil {
+		return x.Changelists
+	}
+	return nil
 }
 
 var File_go_chromium_org_luci_analysis_proto_v1_test_variants_proto protoreflect.FileDescriptor
@@ -815,20 +1723,174 @@ var file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_rawDesc = []
 	0x0b, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x73, 0x12, 0x2e, 0x0a, 0x13,
 	0x68, 0x61, 0x73, 0x5f, 0x75, 0x6e, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x72,
 	0x75, 0x6e, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x08, 0x52, 0x11, 0x68, 0x61, 0x73, 0x55, 0x6e,
-	0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x52, 0x75, 0x6e, 0x73, 0x32, 0x92, 0x01, 0x0a,
-	0x0c, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x73, 0x12, 0x81, 0x01,
-	0x0a, 0x10, 0x51, 0x75, 0x65, 0x72, 0x79, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x52, 0x61,
-	0x74, 0x65, 0x12, 0x34, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73,
+	0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x52, 0x75, 0x6e, 0x73, 0x22, 0xe7, 0x02, 0x0a,
+	0x20, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e,
+	0x74, 0x53, 0x74, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x6b, 0x0a, 0x0d, 0x74,
+	0x65, 0x73, 0x74, 0x5f, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x73, 0x18, 0x02, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x46, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73,
 	0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74, 0x56,
-	0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x52, 0x61, 0x74,
-	0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x35, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e,
-	0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x46, 0x61, 0x69, 0x6c,
-	0x75, 0x72, 0x65, 0x52, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
-	0x00, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d,
-	0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73,
-	0x69, 0x73, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x61, 0x6e, 0x61, 0x6c,
-	0x79, 0x73, 0x69, 0x73, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61,
+	0x6e, 0x74, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0c, 0x74, 0x65, 0x73, 0x74,
+	0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x73, 0x1a, 0xbb, 0x01, 0x0a, 0x13, 0x54, 0x65, 0x73,
+	0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e,
+	0x12, 0x17, 0x0a, 0x07, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x06, 0x74, 0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x33, 0x0a, 0x07, 0x76, 0x61, 0x72,
+	0x69, 0x61, 0x6e, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x6c, 0x75, 0x63,
+	0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x56, 0x61,
+	0x72, 0x69, 0x61, 0x6e, 0x74, 0x52, 0x07, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x12, 0x21,
+	0x0a, 0x0c, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x48, 0x61, 0x73,
+	0x68, 0x12, 0x33, 0x0a, 0x07, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x73, 0x18, 0x04, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x19, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73,
+	0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x73, 0x52, 0x07, 0x73,
+	0x6f, 0x75, 0x72, 0x63, 0x65, 0x73, 0x22, 0xbd, 0x01, 0x0a, 0x21, 0x51, 0x75, 0x65, 0x72, 0x79,
+	0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x62, 0x69,
+	0x6c, 0x69, 0x74, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x53, 0x0a, 0x0d,
+	0x74, 0x65, 0x73, 0x74, 0x5f, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x73, 0x18, 0x01, 0x20,
+	0x03, 0x28, 0x0b, 0x32, 0x2e, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79,
+	0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61,
+	0x6e, 0x74, 0x53, 0x74, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x41, 0x6e, 0x61, 0x6c, 0x79,
+	0x73, 0x69, 0x73, 0x52, 0x0c, 0x74, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74,
+	0x73, 0x12, 0x43, 0x0a, 0x08, 0x63, 0x72, 0x69, 0x74, 0x65, 0x72, 0x69, 0x61, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79,
+	0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x53, 0x74, 0x61, 0x62, 0x69,
+	0x6c, 0x69, 0x74, 0x79, 0x43, 0x72, 0x69, 0x74, 0x65, 0x72, 0x69, 0x61, 0x52, 0x08, 0x63, 0x72,
+	0x69, 0x74, 0x65, 0x72, 0x69, 0x61, 0x22, 0xea, 0x03, 0x0a, 0x15, 0x54, 0x65, 0x73, 0x74, 0x53,
+	0x74, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x43, 0x72, 0x69, 0x74, 0x65, 0x72, 0x69, 0x61,
+	0x12, 0x5e, 0x0a, 0x0c, 0x66, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x5f, 0x72, 0x61, 0x74, 0x65,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x3b, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e,
+	0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x53, 0x74,
+	0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x43, 0x72, 0x69, 0x74, 0x65, 0x72, 0x69, 0x61, 0x2e,
+	0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x52, 0x61, 0x74, 0x65, 0x43, 0x72, 0x69, 0x74, 0x65,
+	0x72, 0x69, 0x61, 0x52, 0x0b, 0x66, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x52, 0x61, 0x74, 0x65,
+	0x12, 0x58, 0x0a, 0x0a, 0x66, 0x6c, 0x61, 0x6b, 0x65, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x39, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c,
+	0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x53, 0x74, 0x61, 0x62,
+	0x69, 0x6c, 0x69, 0x74, 0x79, 0x43, 0x72, 0x69, 0x74, 0x65, 0x72, 0x69, 0x61, 0x2e, 0x46, 0x6c,
+	0x61, 0x6b, 0x65, 0x52, 0x61, 0x74, 0x65, 0x43, 0x72, 0x69, 0x74, 0x65, 0x72, 0x69, 0x61, 0x52,
+	0x09, 0x66, 0x6c, 0x61, 0x6b, 0x65, 0x52, 0x61, 0x74, 0x65, 0x1a, 0x86, 0x01, 0x0a, 0x13, 0x46,
+	0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x52, 0x61, 0x74, 0x65, 0x43, 0x72, 0x69, 0x74, 0x65, 0x72,
+	0x69, 0x61, 0x12, 0x2b, 0x0a, 0x11, 0x66, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x5f, 0x74, 0x68,
+	0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x10, 0x66,
+	0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x54, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x12,
+	0x42, 0x0a, 0x1d, 0x63, 0x6f, 0x6e, 0x73, 0x65, 0x63, 0x75, 0x74, 0x69, 0x76, 0x65, 0x5f, 0x66,
+	0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x5f, 0x74, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x1b, 0x63, 0x6f, 0x6e, 0x73, 0x65, 0x63, 0x75, 0x74,
+	0x69, 0x76, 0x65, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x54, 0x68, 0x72, 0x65, 0x73, 0x68,
+	0x6f, 0x6c, 0x64, 0x1a, 0x8d, 0x01, 0x0a, 0x11, 0x46, 0x6c, 0x61, 0x6b, 0x65, 0x52, 0x61, 0x74,
+	0x65, 0x43, 0x72, 0x69, 0x74, 0x65, 0x72, 0x69, 0x61, 0x12, 0x1d, 0x0a, 0x0a, 0x6d, 0x69, 0x6e,
+	0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x09, 0x6d,
+	0x69, 0x6e, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x12, 0x27, 0x0a, 0x0f, 0x66, 0x6c, 0x61, 0x6b,
+	0x65, 0x5f, 0x74, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x05, 0x52, 0x0e, 0x66, 0x6c, 0x61, 0x6b, 0x65, 0x54, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c,
+	0x64, 0x12, 0x30, 0x0a, 0x14, 0x66, 0x6c, 0x61, 0x6b, 0x65, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x5f,
+	0x74, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x01, 0x52,
+	0x12, 0x66, 0x6c, 0x61, 0x6b, 0x65, 0x52, 0x61, 0x74, 0x65, 0x54, 0x68, 0x72, 0x65, 0x73, 0x68,
+	0x6f, 0x6c, 0x64, 0x22, 0x82, 0x0a, 0x0a, 0x1c, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69,
+	0x61, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x41, 0x6e, 0x61, 0x6c,
+	0x79, 0x73, 0x69, 0x73, 0x12, 0x17, 0x0a, 0x07, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x74, 0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x33, 0x0a,
+	0x07, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19,
+	0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76,
+	0x31, 0x2e, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x52, 0x07, 0x76, 0x61, 0x72, 0x69, 0x61,
+	0x6e, 0x74, 0x12, 0x21, 0x0a, 0x0c, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x5f, 0x68, 0x61,
+	0x73, 0x68, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e,
+	0x74, 0x48, 0x61, 0x73, 0x68, 0x12, 0x5d, 0x0a, 0x0c, 0x66, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65,
+	0x5f, 0x72, 0x61, 0x74, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x3a, 0x2e, 0x6c, 0x75,
+	0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x54,
+	0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x62, 0x69, 0x6c,
+	0x69, 0x74, 0x79, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x46, 0x61, 0x69, 0x6c,
+	0x75, 0x72, 0x65, 0x52, 0x61, 0x74, 0x65, 0x52, 0x0b, 0x66, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65,
+	0x52, 0x61, 0x74, 0x65, 0x12, 0x57, 0x0a, 0x0a, 0x66, 0x6c, 0x61, 0x6b, 0x65, 0x5f, 0x72, 0x61,
+	0x74, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x38, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e,
+	0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73, 0x74,
+	0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79,
+	0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x46, 0x6c, 0x61, 0x6b, 0x65, 0x52, 0x61,
+	0x74, 0x65, 0x52, 0x09, 0x66, 0x6c, 0x61, 0x6b, 0x65, 0x52, 0x61, 0x74, 0x65, 0x1a, 0x8b, 0x04,
+	0x0a, 0x0b, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x52, 0x61, 0x74, 0x65, 0x12, 0x15, 0x0a,
+	0x06, 0x69, 0x73, 0x5f, 0x6d, 0x65, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x05, 0x69,
+	0x73, 0x4d, 0x65, 0x74, 0x12, 0x30, 0x0a, 0x14, 0x75, 0x6e, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74,
+	0x65, 0x64, 0x5f, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x72, 0x75, 0x6e, 0x73, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x05, 0x52, 0x12, 0x75, 0x6e, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x54, 0x65,
+	0x73, 0x74, 0x52, 0x75, 0x6e, 0x73, 0x12, 0x47, 0x0a, 0x20, 0x63, 0x6f, 0x6e, 0x73, 0x65, 0x63,
+	0x75, 0x74, 0x69, 0x76, 0x65, 0x5f, 0x75, 0x6e, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64,
+	0x5f, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x72, 0x75, 0x6e, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x05,
+	0x52, 0x1d, 0x63, 0x6f, 0x6e, 0x73, 0x65, 0x63, 0x75, 0x74, 0x69, 0x76, 0x65, 0x55, 0x6e, 0x65,
+	0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x54, 0x65, 0x73, 0x74, 0x52, 0x75, 0x6e, 0x73, 0x12,
+	0x71, 0x0a, 0x0f, 0x72, 0x65, 0x63, 0x65, 0x6e, 0x74, 0x5f, 0x76, 0x65, 0x72, 0x64, 0x69, 0x63,
+	0x74, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x48, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e,
+	0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73, 0x74,
+	0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79,
+	0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65,
+	0x52, 0x61, 0x74, 0x65, 0x2e, 0x52, 0x65, 0x63, 0x65, 0x6e, 0x74, 0x56, 0x65, 0x72, 0x64, 0x69,
+	0x63, 0x74, 0x52, 0x0e, 0x72, 0x65, 0x63, 0x65, 0x6e, 0x74, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63,
+	0x74, 0x73, 0x1a, 0xf6, 0x01, 0x0a, 0x0d, 0x52, 0x65, 0x63, 0x65, 0x6e, 0x74, 0x56, 0x65, 0x72,
+	0x64, 0x69, 0x63, 0x74, 0x12, 0x1a, 0x0a, 0x08, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x08, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e,
+	0x12, 0x41, 0x0a, 0x0e, 0x70, 0x61, 0x72, 0x74, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x74, 0x69,
+	0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c,
+	0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73,
+	0x74, 0x61, 0x6d, 0x70, 0x52, 0x0d, 0x70, 0x61, 0x72, 0x74, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x54,
+	0x69, 0x6d, 0x65, 0x12, 0x3e, 0x0a, 0x0b, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x6c, 0x69, 0x73,
+	0x74, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e,
+	0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x68, 0x61, 0x6e,
+	0x67, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x52, 0x0b, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x6c, 0x69,
+	0x73, 0x74, 0x73, 0x12, 0x27, 0x0a, 0x0f, 0x75, 0x6e, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65,
+	0x64, 0x5f, 0x72, 0x75, 0x6e, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0e, 0x75, 0x6e,
+	0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x52, 0x75, 0x6e, 0x73, 0x12, 0x1d, 0x0a, 0x0a,
+	0x74, 0x6f, 0x74, 0x61, 0x6c, 0x5f, 0x72, 0x75, 0x6e, 0x73, 0x18, 0x05, 0x20, 0x01, 0x28, 0x05,
+	0x52, 0x09, 0x74, 0x6f, 0x74, 0x61, 0x6c, 0x52, 0x75, 0x6e, 0x73, 0x1a, 0xaa, 0x03, 0x0a, 0x09,
+	0x46, 0x6c, 0x61, 0x6b, 0x65, 0x52, 0x61, 0x74, 0x65, 0x12, 0x15, 0x0a, 0x06, 0x69, 0x73, 0x5f,
+	0x6d, 0x65, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x05, 0x69, 0x73, 0x4d, 0x65, 0x74,
+	0x12, 0x2c, 0x0a, 0x12, 0x72, 0x75, 0x6e, 0x5f, 0x66, 0x6c, 0x61, 0x6b, 0x79, 0x5f, 0x76, 0x65,
+	0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x10, 0x72, 0x75,
+	0x6e, 0x46, 0x6c, 0x61, 0x6b, 0x79, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x12, 0x25,
+	0x0a, 0x0e, 0x74, 0x6f, 0x74, 0x61, 0x6c, 0x5f, 0x76, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0d, 0x74, 0x6f, 0x74, 0x61, 0x6c, 0x56, 0x65, 0x72,
+	0x64, 0x69, 0x63, 0x74, 0x73, 0x12, 0x6e, 0x0a, 0x0e, 0x66, 0x6c, 0x61, 0x6b, 0x65, 0x5f, 0x65,
+	0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x47, 0x2e,
+	0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31,
+	0x2e, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x62,
+	0x69, 0x6c, 0x69, 0x74, 0x79, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x46, 0x6c,
+	0x61, 0x6b, 0x65, 0x52, 0x61, 0x74, 0x65, 0x2e, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x45,
+	0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x52, 0x0d, 0x66, 0x6c, 0x61, 0x6b, 0x65, 0x45, 0x78, 0x61,
+	0x6d, 0x70, 0x6c, 0x65, 0x73, 0x1a, 0xc0, 0x01, 0x0a, 0x0e, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63,
+	0x74, 0x45, 0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x70, 0x6f, 0x73, 0x69,
+	0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x08, 0x70, 0x6f, 0x73, 0x69,
+	0x74, 0x69, 0x6f, 0x6e, 0x12, 0x52, 0x0a, 0x17, 0x65, 0x61, 0x72, 0x6c, 0x69, 0x65, 0x73, 0x74,
+	0x5f, 0x70, 0x61, 0x72, 0x74, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d,
+	0x70, 0x52, 0x15, 0x65, 0x61, 0x72, 0x6c, 0x69, 0x65, 0x73, 0x74, 0x50, 0x61, 0x72, 0x74, 0x69,
+	0x74, 0x69, 0x6f, 0x6e, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x3e, 0x0a, 0x0b, 0x63, 0x68, 0x61, 0x6e,
+	0x67, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e,
+	0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31,
+	0x2e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x52, 0x0b, 0x63, 0x68, 0x61,
+	0x6e, 0x67, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x73, 0x32, 0x8f, 0x02, 0x0a, 0x0c, 0x54, 0x65, 0x73,
+	0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x73, 0x12, 0x81, 0x01, 0x0a, 0x10, 0x51, 0x75,
+	0x65, 0x72, 0x79, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x52, 0x61, 0x74, 0x65, 0x12, 0x34,
+	0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76,
+	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61,
+	0x6e, 0x74, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x52, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x35, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c,
+	0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x65, 0x73,
+	0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x52,
+	0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x7b, 0x0a,
+	0x0e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x74, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x12,
+	0x32, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e,
+	0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69,
+	0x61, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x33, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79,
+	0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74,
+	0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x6f,
+	0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75,
+	0x63, 0x69, 0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x70, 0x62, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -843,42 +1905,72 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_rawDescGZIP
 	return file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_goTypes = []interface{}{
-	(*QueryTestVariantFailureRateRequest)(nil),            // 0: luci.analysis.v1.QueryTestVariantFailureRateRequest
-	(*TestVariantIdentifier)(nil),                         // 1: luci.analysis.v1.TestVariantIdentifier
-	(*QueryTestVariantFailureRateResponse)(nil),           // 2: luci.analysis.v1.QueryTestVariantFailureRateResponse
-	(*TestVariantFailureRateAnalysis)(nil),                // 3: luci.analysis.v1.TestVariantFailureRateAnalysis
-	(*QueryTestVariantFailureRateResponse_Interval)(nil),  // 4: luci.analysis.v1.QueryTestVariantFailureRateResponse.Interval
-	(*TestVariantFailureRateAnalysis_IntervalStats)(nil),  // 5: luci.analysis.v1.TestVariantFailureRateAnalysis.IntervalStats
-	(*TestVariantFailureRateAnalysis_VerdictExample)(nil), // 6: luci.analysis.v1.TestVariantFailureRateAnalysis.VerdictExample
-	(*TestVariantFailureRateAnalysis_RecentVerdict)(nil),  // 7: luci.analysis.v1.TestVariantFailureRateAnalysis.RecentVerdict
-	(*Variant)(nil),               // 8: luci.analysis.v1.Variant
-	(*timestamppb.Timestamp)(nil), // 9: google.protobuf.Timestamp
-	(*Changelist)(nil),            // 10: luci.analysis.v1.Changelist
+	(*QueryTestVariantFailureRateRequest)(nil),                     // 0: luci.analysis.v1.QueryTestVariantFailureRateRequest
+	(*TestVariantIdentifier)(nil),                                  // 1: luci.analysis.v1.TestVariantIdentifier
+	(*QueryTestVariantFailureRateResponse)(nil),                    // 2: luci.analysis.v1.QueryTestVariantFailureRateResponse
+	(*TestVariantFailureRateAnalysis)(nil),                         // 3: luci.analysis.v1.TestVariantFailureRateAnalysis
+	(*QueryTestVariantStabilityRequest)(nil),                       // 4: luci.analysis.v1.QueryTestVariantStabilityRequest
+	(*QueryTestVariantStabilityResponse)(nil),                      // 5: luci.analysis.v1.QueryTestVariantStabilityResponse
+	(*TestStabilityCriteria)(nil),                                  // 6: luci.analysis.v1.TestStabilityCriteria
+	(*TestVariantStabilityAnalysis)(nil),                           // 7: luci.analysis.v1.TestVariantStabilityAnalysis
+	(*QueryTestVariantFailureRateResponse_Interval)(nil),           // 8: luci.analysis.v1.QueryTestVariantFailureRateResponse.Interval
+	(*TestVariantFailureRateAnalysis_IntervalStats)(nil),           // 9: luci.analysis.v1.TestVariantFailureRateAnalysis.IntervalStats
+	(*TestVariantFailureRateAnalysis_VerdictExample)(nil),          // 10: luci.analysis.v1.TestVariantFailureRateAnalysis.VerdictExample
+	(*TestVariantFailureRateAnalysis_RecentVerdict)(nil),           // 11: luci.analysis.v1.TestVariantFailureRateAnalysis.RecentVerdict
+	(*QueryTestVariantStabilityRequest_TestVariantPosition)(nil),   // 12: luci.analysis.v1.QueryTestVariantStabilityRequest.TestVariantPosition
+	(*TestStabilityCriteria_FailureRateCriteria)(nil),              // 13: luci.analysis.v1.TestStabilityCriteria.FailureRateCriteria
+	(*TestStabilityCriteria_FlakeRateCriteria)(nil),                // 14: luci.analysis.v1.TestStabilityCriteria.FlakeRateCriteria
+	(*TestVariantStabilityAnalysis_FailureRate)(nil),               // 15: luci.analysis.v1.TestVariantStabilityAnalysis.FailureRate
+	(*TestVariantStabilityAnalysis_FlakeRate)(nil),                 // 16: luci.analysis.v1.TestVariantStabilityAnalysis.FlakeRate
+	(*TestVariantStabilityAnalysis_FailureRate_RecentVerdict)(nil), // 17: luci.analysis.v1.TestVariantStabilityAnalysis.FailureRate.RecentVerdict
+	(*TestVariantStabilityAnalysis_FlakeRate_VerdictExample)(nil),  // 18: luci.analysis.v1.TestVariantStabilityAnalysis.FlakeRate.VerdictExample
+	(*Variant)(nil),               // 19: luci.analysis.v1.Variant
+	(*timestamppb.Timestamp)(nil), // 20: google.protobuf.Timestamp
+	(*Changelist)(nil),            // 21: luci.analysis.v1.Changelist
+	(*Sources)(nil),               // 22: luci.analysis.v1.Sources
 }
 var file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_depIdxs = []int32{
 	1,  // 0: luci.analysis.v1.QueryTestVariantFailureRateRequest.test_variants:type_name -> luci.analysis.v1.TestVariantIdentifier
-	8,  // 1: luci.analysis.v1.TestVariantIdentifier.variant:type_name -> luci.analysis.v1.Variant
-	4,  // 2: luci.analysis.v1.QueryTestVariantFailureRateResponse.intervals:type_name -> luci.analysis.v1.QueryTestVariantFailureRateResponse.Interval
+	19, // 1: luci.analysis.v1.TestVariantIdentifier.variant:type_name -> luci.analysis.v1.Variant
+	8,  // 2: luci.analysis.v1.QueryTestVariantFailureRateResponse.intervals:type_name -> luci.analysis.v1.QueryTestVariantFailureRateResponse.Interval
 	3,  // 3: luci.analysis.v1.QueryTestVariantFailureRateResponse.test_variants:type_name -> luci.analysis.v1.TestVariantFailureRateAnalysis
-	8,  // 4: luci.analysis.v1.TestVariantFailureRateAnalysis.variant:type_name -> luci.analysis.v1.Variant
-	5,  // 5: luci.analysis.v1.TestVariantFailureRateAnalysis.interval_stats:type_name -> luci.analysis.v1.TestVariantFailureRateAnalysis.IntervalStats
-	6,  // 6: luci.analysis.v1.TestVariantFailureRateAnalysis.run_flaky_verdict_examples:type_name -> luci.analysis.v1.TestVariantFailureRateAnalysis.VerdictExample
-	7,  // 7: luci.analysis.v1.TestVariantFailureRateAnalysis.recent_verdicts:type_name -> luci.analysis.v1.TestVariantFailureRateAnalysis.RecentVerdict
-	9,  // 8: luci.analysis.v1.QueryTestVariantFailureRateResponse.Interval.start_time:type_name -> google.protobuf.Timestamp
-	9,  // 9: luci.analysis.v1.QueryTestVariantFailureRateResponse.Interval.end_time:type_name -> google.protobuf.Timestamp
-	9,  // 10: luci.analysis.v1.TestVariantFailureRateAnalysis.VerdictExample.partition_time:type_name -> google.protobuf.Timestamp
-	10, // 11: luci.analysis.v1.TestVariantFailureRateAnalysis.VerdictExample.changelists:type_name -> luci.analysis.v1.Changelist
-	9,  // 12: luci.analysis.v1.TestVariantFailureRateAnalysis.RecentVerdict.partition_time:type_name -> google.protobuf.Timestamp
-	10, // 13: luci.analysis.v1.TestVariantFailureRateAnalysis.RecentVerdict.changelists:type_name -> luci.analysis.v1.Changelist
-	0,  // 14: luci.analysis.v1.TestVariants.QueryFailureRate:input_type -> luci.analysis.v1.QueryTestVariantFailureRateRequest
-	2,  // 15: luci.analysis.v1.TestVariants.QueryFailureRate:output_type -> luci.analysis.v1.QueryTestVariantFailureRateResponse
-	15, // [15:16] is the sub-list for method output_type
-	14, // [14:15] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	19, // 4: luci.analysis.v1.TestVariantFailureRateAnalysis.variant:type_name -> luci.analysis.v1.Variant
+	9,  // 5: luci.analysis.v1.TestVariantFailureRateAnalysis.interval_stats:type_name -> luci.analysis.v1.TestVariantFailureRateAnalysis.IntervalStats
+	10, // 6: luci.analysis.v1.TestVariantFailureRateAnalysis.run_flaky_verdict_examples:type_name -> luci.analysis.v1.TestVariantFailureRateAnalysis.VerdictExample
+	11, // 7: luci.analysis.v1.TestVariantFailureRateAnalysis.recent_verdicts:type_name -> luci.analysis.v1.TestVariantFailureRateAnalysis.RecentVerdict
+	12, // 8: luci.analysis.v1.QueryTestVariantStabilityRequest.test_variants:type_name -> luci.analysis.v1.QueryTestVariantStabilityRequest.TestVariantPosition
+	7,  // 9: luci.analysis.v1.QueryTestVariantStabilityResponse.test_variants:type_name -> luci.analysis.v1.TestVariantStabilityAnalysis
+	6,  // 10: luci.analysis.v1.QueryTestVariantStabilityResponse.criteria:type_name -> luci.analysis.v1.TestStabilityCriteria
+	13, // 11: luci.analysis.v1.TestStabilityCriteria.failure_rate:type_name -> luci.analysis.v1.TestStabilityCriteria.FailureRateCriteria
+	14, // 12: luci.analysis.v1.TestStabilityCriteria.flake_rate:type_name -> luci.analysis.v1.TestStabilityCriteria.FlakeRateCriteria
+	19, // 13: luci.analysis.v1.TestVariantStabilityAnalysis.variant:type_name -> luci.analysis.v1.Variant
+	15, // 14: luci.analysis.v1.TestVariantStabilityAnalysis.failure_rate:type_name -> luci.analysis.v1.TestVariantStabilityAnalysis.FailureRate
+	16, // 15: luci.analysis.v1.TestVariantStabilityAnalysis.flake_rate:type_name -> luci.analysis.v1.TestVariantStabilityAnalysis.FlakeRate
+	20, // 16: luci.analysis.v1.QueryTestVariantFailureRateResponse.Interval.start_time:type_name -> google.protobuf.Timestamp
+	20, // 17: luci.analysis.v1.QueryTestVariantFailureRateResponse.Interval.end_time:type_name -> google.protobuf.Timestamp
+	20, // 18: luci.analysis.v1.TestVariantFailureRateAnalysis.VerdictExample.partition_time:type_name -> google.protobuf.Timestamp
+	21, // 19: luci.analysis.v1.TestVariantFailureRateAnalysis.VerdictExample.changelists:type_name -> luci.analysis.v1.Changelist
+	20, // 20: luci.analysis.v1.TestVariantFailureRateAnalysis.RecentVerdict.partition_time:type_name -> google.protobuf.Timestamp
+	21, // 21: luci.analysis.v1.TestVariantFailureRateAnalysis.RecentVerdict.changelists:type_name -> luci.analysis.v1.Changelist
+	19, // 22: luci.analysis.v1.QueryTestVariantStabilityRequest.TestVariantPosition.variant:type_name -> luci.analysis.v1.Variant
+	22, // 23: luci.analysis.v1.QueryTestVariantStabilityRequest.TestVariantPosition.sources:type_name -> luci.analysis.v1.Sources
+	17, // 24: luci.analysis.v1.TestVariantStabilityAnalysis.FailureRate.recent_verdicts:type_name -> luci.analysis.v1.TestVariantStabilityAnalysis.FailureRate.RecentVerdict
+	18, // 25: luci.analysis.v1.TestVariantStabilityAnalysis.FlakeRate.flake_examples:type_name -> luci.analysis.v1.TestVariantStabilityAnalysis.FlakeRate.VerdictExample
+	20, // 26: luci.analysis.v1.TestVariantStabilityAnalysis.FailureRate.RecentVerdict.partition_time:type_name -> google.protobuf.Timestamp
+	21, // 27: luci.analysis.v1.TestVariantStabilityAnalysis.FailureRate.RecentVerdict.changelists:type_name -> luci.analysis.v1.Changelist
+	20, // 28: luci.analysis.v1.TestVariantStabilityAnalysis.FlakeRate.VerdictExample.earliest_partition_time:type_name -> google.protobuf.Timestamp
+	21, // 29: luci.analysis.v1.TestVariantStabilityAnalysis.FlakeRate.VerdictExample.changelists:type_name -> luci.analysis.v1.Changelist
+	0,  // 30: luci.analysis.v1.TestVariants.QueryFailureRate:input_type -> luci.analysis.v1.QueryTestVariantFailureRateRequest
+	4,  // 31: luci.analysis.v1.TestVariants.QueryStability:input_type -> luci.analysis.v1.QueryTestVariantStabilityRequest
+	2,  // 32: luci.analysis.v1.TestVariants.QueryFailureRate:output_type -> luci.analysis.v1.QueryTestVariantFailureRateResponse
+	5,  // 33: luci.analysis.v1.TestVariants.QueryStability:output_type -> luci.analysis.v1.QueryTestVariantStabilityResponse
+	32, // [32:34] is the sub-list for method output_type
+	30, // [30:32] is the sub-list for method input_type
+	30, // [30:30] is the sub-list for extension type_name
+	30, // [30:30] is the sub-list for extension extendee
+	0,  // [0:30] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_init() }
@@ -938,7 +2030,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryTestVariantFailureRateResponse_Interval); i {
+			switch v := v.(*QueryTestVariantStabilityRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -950,7 +2042,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TestVariantFailureRateAnalysis_IntervalStats); i {
+			switch v := v.(*QueryTestVariantStabilityResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -962,7 +2054,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TestVariantFailureRateAnalysis_VerdictExample); i {
+			switch v := v.(*TestStabilityCriteria); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -974,7 +2066,139 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TestVariantStabilityAnalysis); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*QueryTestVariantFailureRateResponse_Interval); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TestVariantFailureRateAnalysis_IntervalStats); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TestVariantFailureRateAnalysis_VerdictExample); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*TestVariantFailureRateAnalysis_RecentVerdict); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*QueryTestVariantStabilityRequest_TestVariantPosition); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TestStabilityCriteria_FailureRateCriteria); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TestStabilityCriteria_FlakeRateCriteria); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TestVariantStabilityAnalysis_FailureRate); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TestVariantStabilityAnalysis_FlakeRate); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TestVariantStabilityAnalysis_FailureRate_RecentVerdict); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TestVariantStabilityAnalysis_FlakeRate_VerdictExample); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -992,7 +2216,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -1023,11 +2247,15 @@ type TestVariantsClient interface {
 	// deterministically failing. Intended for use by recipes to
 	// inform exoneration decisions.
 	//
-	// TODO(crbug.com/1314194): This is an experimental RPC implemented for
-	// Chrome CQ exoneration and is subject to change or removal.
+	// This RPC is used to support version one of exoneration.
+	// It will be replaced by QueryStability over time.
 	//
 	// Changes to this RPC should comply with https://google.aip.dev/231.
 	QueryFailureRate(ctx context.Context, in *QueryTestVariantFailureRateRequest, opts ...grpc.CallOption) (*QueryTestVariantFailureRateResponse, error)
+	// Queries the stability of specified test variants.
+	// Intended for use by recipes to inform exoneration decisions,
+	// and by UI to show test stability.
+	QueryStability(ctx context.Context, in *QueryTestVariantStabilityRequest, opts ...grpc.CallOption) (*QueryTestVariantStabilityResponse, error)
 }
 type testVariantsPRPCClient struct {
 	client *prpc.Client
@@ -1040,6 +2268,15 @@ func NewTestVariantsPRPCClient(client *prpc.Client) TestVariantsClient {
 func (c *testVariantsPRPCClient) QueryFailureRate(ctx context.Context, in *QueryTestVariantFailureRateRequest, opts ...grpc.CallOption) (*QueryTestVariantFailureRateResponse, error) {
 	out := new(QueryTestVariantFailureRateResponse)
 	err := c.client.Call(ctx, "luci.analysis.v1.TestVariants", "QueryFailureRate", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *testVariantsPRPCClient) QueryStability(ctx context.Context, in *QueryTestVariantStabilityRequest, opts ...grpc.CallOption) (*QueryTestVariantStabilityResponse, error) {
+	out := new(QueryTestVariantStabilityResponse)
+	err := c.client.Call(ctx, "luci.analysis.v1.TestVariants", "QueryStability", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1063,6 +2300,15 @@ func (c *testVariantsClient) QueryFailureRate(ctx context.Context, in *QueryTest
 	return out, nil
 }
 
+func (c *testVariantsClient) QueryStability(ctx context.Context, in *QueryTestVariantStabilityRequest, opts ...grpc.CallOption) (*QueryTestVariantStabilityResponse, error) {
+	out := new(QueryTestVariantStabilityResponse)
+	err := c.cc.Invoke(ctx, "/luci.analysis.v1.TestVariants/QueryStability", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TestVariantsServer is the server API for TestVariants service.
 type TestVariantsServer interface {
 	// Queries the failure rate of specified test variants, returning
@@ -1070,11 +2316,15 @@ type TestVariantsServer interface {
 	// deterministically failing. Intended for use by recipes to
 	// inform exoneration decisions.
 	//
-	// TODO(crbug.com/1314194): This is an experimental RPC implemented for
-	// Chrome CQ exoneration and is subject to change or removal.
+	// This RPC is used to support version one of exoneration.
+	// It will be replaced by QueryStability over time.
 	//
 	// Changes to this RPC should comply with https://google.aip.dev/231.
 	QueryFailureRate(context.Context, *QueryTestVariantFailureRateRequest) (*QueryTestVariantFailureRateResponse, error)
+	// Queries the stability of specified test variants.
+	// Intended for use by recipes to inform exoneration decisions,
+	// and by UI to show test stability.
+	QueryStability(context.Context, *QueryTestVariantStabilityRequest) (*QueryTestVariantStabilityResponse, error)
 }
 
 // UnimplementedTestVariantsServer can be embedded to have forward compatible implementations.
@@ -1083,6 +2333,9 @@ type UnimplementedTestVariantsServer struct {
 
 func (*UnimplementedTestVariantsServer) QueryFailureRate(context.Context, *QueryTestVariantFailureRateRequest) (*QueryTestVariantFailureRateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryFailureRate not implemented")
+}
+func (*UnimplementedTestVariantsServer) QueryStability(context.Context, *QueryTestVariantStabilityRequest) (*QueryTestVariantStabilityResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryStability not implemented")
 }
 
 func RegisterTestVariantsServer(s prpc.Registrar, srv TestVariantsServer) {
@@ -1107,6 +2360,24 @@ func _TestVariants_QueryFailureRate_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TestVariants_QueryStability_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryTestVariantStabilityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TestVariantsServer).QueryStability(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.analysis.v1.TestVariants/QueryStability",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TestVariantsServer).QueryStability(ctx, req.(*QueryTestVariantStabilityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _TestVariants_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "luci.analysis.v1.TestVariants",
 	HandlerType: (*TestVariantsServer)(nil),
@@ -1114,6 +2385,10 @@ var _TestVariants_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "QueryFailureRate",
 			Handler:    _TestVariants_QueryFailureRate_Handler,
+		},
+		{
+			MethodName: "QueryStability",
+			Handler:    _TestVariants_QueryStability_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
