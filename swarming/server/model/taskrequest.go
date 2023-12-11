@@ -16,13 +16,16 @@ package model
 
 import (
 	"context"
+	"reflect"
+	"sort"
 	"time"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	"go.chromium.org/luci/swarming/proto/api_v2"
+	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	configpb "go.chromium.org/luci/swarming/proto/config"
+	"go.chromium.org/luci/swarming/server/acls"
 )
 
 // TaskRequest contains a user request to execute a task.
@@ -178,6 +181,35 @@ type TaskRequest struct {
 	LegacyHasBuildToken LegacyProperty `gae:"has_build_token"`
 }
 
+// Pool is the pool the task wants to run in.
+func (p *TaskRequest) Pool() string {
+	pool, ok := p.TaskSlices[0].Properties.Dimensions["pool"]
+	if !ok || len(pool) == 0 {
+		return ""
+	}
+	return pool[0]
+}
+
+// BotID is a specific bot the task wants to run on, if any.
+func (p *TaskRequest) BotID() string {
+	botID, ok := p.TaskSlices[0].Properties.Dimensions["id"]
+	if !ok || len(botID) == 0 {
+		return ""
+	}
+	return botID[0]
+}
+
+// TaskAuthInfo is information about the task for ACL checks.
+func (p *TaskRequest) TaskAuthInfo() acls.TaskAuthInfo {
+	return acls.TaskAuthInfo{
+		TaskID:    RequestKeyToTaskID(p.Key, AsRequest),
+		Realm:     p.Realm,
+		Pool:      p.Pool(),
+		BotID:     p.BotID(),
+		Submitter: p.Authenticated,
+	}
+}
+
 // TaskSlice defines where and how to run the task and when to give up.
 //
 // The task will fallback from one slice to the next until it finds a matching
@@ -210,6 +242,18 @@ type TaskSlice struct {
 	//
 	// TODO(vadimsh): Remove it when no longer referenced
 	WaitForCapacity bool `gae:"wait_for_capacity"`
+}
+
+// ToProto returns an apipb.TaskSlice version of the TaskSlice.
+func (p *TaskSlice) ToProto() *apipb.TaskSlice {
+	ts := &apipb.TaskSlice{
+		ExpirationSecs:  int32(p.ExpirationSecs),
+		WaitForCapacity: p.WaitForCapacity,
+	}
+	if properties := p.Properties.ToProto(); properties != nil {
+		ts.Properties = properties
+	}
+	return ts
 }
 
 // TaskProperties defines where and how to run the task.
@@ -307,6 +351,37 @@ type TaskProperties struct {
 	LegacyInputsRef LegacyProperty `gae:"inputs_ref"`
 }
 
+// ToProto converts TaskProperties to apipb.TaskProperties.
+func (p *TaskProperties) ToProto() *apipb.TaskProperties {
+	if reflect.DeepEqual(*p, TaskProperties{}) {
+		return nil
+	}
+	caches := make([]*apipb.CacheEntry, len(p.Caches))
+	for i, cache := range p.Caches {
+		caches[i] = cache.ToProto()
+	}
+	taskProperties := &apipb.TaskProperties{
+		Caches:               caches,
+		CipdInput:            p.CIPDInput.ToProto(),
+		Command:              p.Command,
+		RelativeCwd:          p.RelativeCwd,
+		Dimensions:           p.Dimensions.ToProto(),
+		Env:                  p.Env.ToProto(),
+		EnvPrefixes:          p.EnvPrefixes.ToProto(),
+		ExecutionTimeoutSecs: int32(p.ExecutionTimeoutSecs),
+		GracePeriodSecs:      int32(p.GracePeriodSecs),
+		Idempotent:           p.Idempotent,
+		CasInputRoot:         p.CASInputRoot.ToProto(),
+		IoTimeoutSecs:        int32(p.IOTimeoutSecs),
+		Outputs:              p.Outputs,
+		Containment:          p.Containment.ToProto(),
+	}
+	if p.HasSecretBytes {
+		taskProperties.SecretBytes = []byte("<REDACTED>")
+	}
+	return taskProperties
+}
+
 // CacheEntry describes a named cache that should be present on the bot.
 type CacheEntry struct {
 	// Name is a logical cache name.
@@ -315,12 +390,34 @@ type CacheEntry struct {
 	Path string `gae:"path"`
 }
 
+// ToProto converts CacheEntry to apipb.CacheEntry.
+func (p *CacheEntry) ToProto() *apipb.CacheEntry {
+	if p.Name == "" && p.Path == "" {
+		return nil
+	}
+	return &apipb.CacheEntry{
+		Name: p.Name,
+		Path: p.Path,
+	}
+}
+
 // CASReference described where to fetch input files from.
 type CASReference struct {
 	// CASInstance is a full name of RBE-CAS instance.
 	CASInstance string `gae:"cas_instance"`
 	// Digest identifies the root tree to fetch.
 	Digest CASDigest `gae:"digest,lsp"`
+}
+
+// ToProto converts CASReference to apipb.CASReference.
+func (p *CASReference) ToProto() *apipb.CASReference {
+	if p.CASInstance == "" && p.Digest.Hash == "" && p.Digest.SizeBytes == 0 {
+		return nil
+	}
+	return &apipb.CASReference{
+		CasInstance: p.CASInstance,
+		Digest:      p.Digest.ToProto(),
+	}
 }
 
 // CASDigest represents an RBE-CAS blob's digest.
@@ -334,6 +431,17 @@ type CASDigest struct {
 	SizeBytes int64 `gae:"size_bytes"`
 }
 
+// ToProto converts CASDigest to apipb.CASDigest.
+func (p *CASDigest) ToProto() *apipb.Digest {
+	if p.Hash == "" {
+		return nil
+	}
+	return &apipb.Digest{
+		Hash:      p.Hash,
+		SizeBytes: p.SizeBytes,
+	}
+}
+
 // CIPDInput specifies which CIPD client and packages to install.
 type CIPDInput struct {
 	// Server is URL of the CIPD server (including "https://" schema).
@@ -342,6 +450,22 @@ type CIPDInput struct {
 	ClientPackage CIPDPackage `gae:"client_package,lsp"`
 	// Packages is a list of packages to install.
 	Packages []CIPDPackage `gae:"packages,lsp"`
+}
+
+// ToProto converts CIPDInput to apipb.CIPDInput.
+func (p *CIPDInput) ToProto() *apipb.CipdInput {
+	if len(p.Packages) == 0 && p.ClientPackage.PackageName == "" {
+		return nil
+	}
+	packages := make([]*apipb.CipdPackage, len(p.Packages))
+	for i, pkg := range p.Packages {
+		packages[i] = pkg.ToProto()
+	}
+	return &apipb.CipdInput{
+		Server:        p.Server,
+		ClientPackage: p.ClientPackage.ToProto(),
+		Packages:      packages,
+	}
 }
 
 // CIPDPackage defines a CIPD package to install into the task directory.
@@ -354,12 +478,34 @@ type CIPDPackage struct {
 	Path string `gae:"path"`
 }
 
+// ToProto converts CIPDPackage to apipb.CipdPackage.
+func (p *CIPDPackage) ToProto() *apipb.CipdPackage {
+	if p.PackageName == "" {
+		return nil
+	}
+	return &apipb.CipdPackage{
+		PackageName: p.PackageName,
+		Version:     p.Version,
+		Path:        p.Path,
+	}
+}
+
 // Containment describes the task process containment.
 type Containment struct {
 	LowerPriority             bool                  `gae:"lower_priority"`
 	ContainmentType           apipb.ContainmentType `gae:"containment_type"`
 	LimitProcesses            int64                 `gae:"limit_processes"`
 	LimitTotalCommittedMemory int64                 `gae:"limit_total_committed_memory"`
+}
+
+// ToProto converts Containment struct to apipb.Containment
+func (p *Containment) ToProto() *apipb.Containment {
+	if p.ContainmentType == 0 {
+		return nil
+	}
+	return &apipb.Containment{
+		ContainmentType: p.ContainmentType,
+	}
 }
 
 // ResultDBConfig is ResultDB integration configuration for a task.
@@ -374,6 +520,13 @@ type ResultDBConfig struct {
 	// If the task is deduplicated, then TaskResult.InvocationName will be the
 	// invocation name of the original task.
 	Enable bool `gae:"enable"`
+}
+
+// ToProto converts ResultDBConfig struct to apipb.ResultDBCfg.
+func (p *ResultDBConfig) ToProto() *apipb.ResultDBCfg {
+	return &apipb.ResultDBCfg{
+		Enable: p.Enable,
+	}
 }
 
 // SecretBytes defines an optional secret byte string logically defined within
@@ -449,6 +602,24 @@ func (p *TaskDimensions) FromProperty(prop datastore.Property) error {
 	return FromJSONProperty(prop, p)
 }
 
+// ToProto converts TaskDimensions to []*apipb.StringPair
+func (p *TaskDimensions) ToProto() []*apipb.StringPair {
+	if len(*p) == 0 {
+		return nil
+	}
+	td := []*apipb.StringPair{}
+	for k, v := range *p {
+		for _, val := range v {
+			td = append(td, &apipb.StringPair{
+				Key:   k,
+				Value: val,
+			})
+		}
+	}
+	SortStringPairs(td)
+	return td
+}
+
 // Env is a list of `(key, value)` pairs with environment variables to set.
 //
 // Stored in JSON form in the datastore.
@@ -464,6 +635,22 @@ func (p *Env) FromProperty(prop datastore.Property) error {
 	return FromJSONProperty(prop, p)
 }
 
+// ToProto converts Env to []*apipb.StringPair
+func (p *Env) ToProto() []*apipb.StringPair {
+	if len(*p) == 0 {
+		return nil
+	}
+	sp := []*apipb.StringPair{}
+	for k, v := range *p {
+		sp = append(sp, &apipb.StringPair{
+			Key:   k,
+			Value: v,
+		})
+	}
+	SortStringPairs(sp)
+	return sp
+}
+
 // EnvPrefixes is a list of `(key, []value)` pairs with env prefixes to add.
 //
 // Stored in JSON form in the datastore.
@@ -477,6 +664,27 @@ func (p *EnvPrefixes) ToProperty() (datastore.Property, error) {
 // FromProperty loads a JSON-blob property.
 func (p *EnvPrefixes) FromProperty(prop datastore.Property) error {
 	return FromJSONProperty(prop, p)
+}
+
+// ToProto converts EnvPrefixes to []*apipb.StringListPair
+func (p *EnvPrefixes) ToProto() []*apipb.StringListPair {
+	if len(*p) == 0 {
+		return nil
+	}
+	// Need to first sort the keys of the map.
+	keys := make([]string, 0, len(*p))
+	for k := range *p {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	sp := make([]*apipb.StringListPair, len(keys))
+	for i, key := range keys {
+		sp[i] = &apipb.StringListPair{
+			Key:   key,
+			Value: (*p)[key],
+		}
+	}
+	return sp
 }
 
 // NewTaskRequestID generates an ID for a new task.

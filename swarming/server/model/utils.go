@@ -18,11 +18,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"sort"
 
 	"github.com/klauspost/compress/zlib"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // checkIsHex returns an error if the string doesn't look like a lowercase hex
@@ -111,4 +114,22 @@ func (*LegacyProperty) FromProperty(p datastore.Property) error {
 // ToProperty implements datastore.PropertyConverter.
 func (*LegacyProperty) ToProperty() (datastore.Property, error) {
 	return datastore.Property{}, datastore.ErrSkipProperty
+}
+
+// SortStringPairs sorts string pairs.
+// This was stolen from go.chromium.org/luci/buildbucket/protoutil/tag.go
+// and should probably be moved to go.chromium.org/luci/common, but that would
+// require a larger refactor, hence the following:
+// TODO (crbug.com/1508908): remove this once refactored.
+func SortStringPairs(pairs []*apipb.StringPair) {
+	sort.Slice(pairs, func(i, j int) bool {
+		switch {
+		case pairs[i].Key < pairs[j].Key:
+			return true
+		case pairs[i].Key > pairs[j].Key:
+			return false
+		default:
+			return pairs[i].Value < pairs[j].Value
+		}
+	})
 }
