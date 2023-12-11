@@ -17,12 +17,13 @@ package resultingester
 import (
 	"time"
 
-	"go.chromium.org/luci/common/proto/mask"
-	"go.chromium.org/luci/resultdb/pbutil"
-	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/common/proto/mask"
+	"go.chromium.org/luci/resultdb/pbutil"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 var sampleVar = pbutil.Variant("k1", "v1")

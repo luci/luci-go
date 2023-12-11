@@ -18,10 +18,11 @@ import (
 	"context"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
-	"google.golang.org/grpc/codes"
 )
 
 const luciAnalysisAccessGroup = "luci-analysis-access"

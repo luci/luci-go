@@ -23,6 +23,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/resultdb/rdbperms"
+
 	"go.chromium.org/luci/analysis/internal/aip"
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
@@ -35,12 +42,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/perms"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 // MaxClusterRequestSize is the maximum number of test results to cluster in

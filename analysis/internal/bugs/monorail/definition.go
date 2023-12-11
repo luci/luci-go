@@ -22,12 +22,13 @@ import (
 
 	"google.golang.org/genproto/protobuf/field_mask"
 
+	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/analysis/internal/bugs"
 	mpb "go.chromium.org/luci/analysis/internal/bugs/monorail/api_proto"
 	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	configpb "go.chromium.org/luci/analysis/proto/config"
-	"go.chromium.org/luci/common/errors"
 )
 
 const (

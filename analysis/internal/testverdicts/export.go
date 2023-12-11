@@ -22,6 +22,10 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/common/errors"
+	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+
 	"go.chromium.org/luci/analysis/internal/analysis"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
@@ -30,9 +34,6 @@ import (
 	"go.chromium.org/luci/analysis/pbutil"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-	"go.chromium.org/luci/common/errors"
-	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
-	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // InsertClient defines an interface for inserting rows into BigQuery.

@@ -20,14 +20,16 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"go.chromium.org/luci/analysis/internal/ingestion/join"
+	"google.golang.org/protobuf/encoding/protojson"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/router"
-	"google.golang.org/protobuf/encoding/protojson"
+
+	"go.chromium.org/luci/analysis/internal/ingestion/join"
 )
 
 var (

@@ -16,12 +16,11 @@ package bqutil
 
 import (
 	"cloud.google.com/go/bigquery"
+	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google/descutil"
-
-	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 )
 
 // GenerateSchema generates BigQuery schema for the given proto message

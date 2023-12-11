@@ -18,11 +18,12 @@ import (
 	"encoding/hex"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	pb "go.chromium.org/luci/analysis/proto/v1"
+
+	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestResultDB(t *testing.T) {

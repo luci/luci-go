@@ -18,12 +18,13 @@ import (
 	"context"
 	"strings"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
-	"google.golang.org/grpc/codes"
 )
 
 var (

@@ -24,11 +24,11 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
-	_ "go.chromium.org/luci/server/tq/txn/spanner"
 
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
@@ -40,8 +40,9 @@ import (
 	"go.chromium.org/luci/analysis/internal/testutil"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 
+	_ "go.chromium.org/luci/server/tq/txn/spanner"
+
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 

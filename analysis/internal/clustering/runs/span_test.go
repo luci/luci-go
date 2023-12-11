@@ -19,8 +19,6 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms"
@@ -28,6 +26,9 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering/shards"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/testutil"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSpan(t *testing.T) {

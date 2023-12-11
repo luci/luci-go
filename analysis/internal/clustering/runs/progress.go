@@ -18,8 +18,9 @@ import (
 	"context"
 	"time"
 
-	"go.chromium.org/luci/analysis/internal/clustering/shards"
 	"go.chromium.org/luci/server/span"
+
+	"go.chromium.org/luci/analysis/internal/clustering/shards"
 )
 
 // ReclusteringTarget captures the rules and algorithms a re-clustering run

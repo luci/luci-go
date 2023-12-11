@@ -18,10 +18,10 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/analysis/internal/clustering"
 	cpb "go.chromium.org/luci/analysis/internal/clustering/proto"
-
-	"go.chromium.org/luci/common/errors"
 )
 
 // decodeClusters decodes:

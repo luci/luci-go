@@ -19,10 +19,11 @@ import (
 	"context"
 	"net/http"
 
-	"go.chromium.org/luci/analysis/internal/scopedauth"
 	"go.chromium.org/luci/grpc/prpc"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth"
+
+	"go.chromium.org/luci/analysis/internal/scopedauth"
 )
 
 // mockResultDBClientKey is the context key indicates using mocked resultb client in tests.

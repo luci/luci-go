@@ -17,8 +17,9 @@ package inputbuffer
 import (
 	"time"
 
-	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 )
 
 // Segment is a representation of segments in input buffer.

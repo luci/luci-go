@@ -15,8 +15,9 @@
 package rpc
 
 import (
-	"go.chromium.org/luci/grpc/appstatus"
 	"google.golang.org/grpc/codes"
+
+	"go.chromium.org/luci/grpc/appstatus"
 )
 
 // invalidArgumentError annotates err as having an invalid argument.

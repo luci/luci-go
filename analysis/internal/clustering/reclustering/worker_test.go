@@ -25,15 +25,14 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/clock/testclock"
-	. "go.chromium.org/luci/common/testing/assertions"
-	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/server/caching"
-	"go.chromium.org/luci/server/span"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/analysis/clusteredfailures"
@@ -57,6 +56,9 @@ import (
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 const testProject = "testproject"

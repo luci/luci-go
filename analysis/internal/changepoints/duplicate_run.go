@@ -17,11 +17,12 @@ package changepoints
 import (
 	"context"
 
+	"go.chromium.org/luci/common/errors"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
-	"go.chromium.org/luci/common/errors"
-	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // readDuplicateInvocations contructs an duplicate map for test variants.

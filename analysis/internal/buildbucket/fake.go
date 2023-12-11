@@ -17,11 +17,12 @@ package buildbucket
 import (
 	"context"
 
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/proto"
 )
 
 // FakeClient is a fake implementation of bbpb.BuildsClient for testing.

@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"cloud.google.com/go/spanner"
+
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/span"
 )

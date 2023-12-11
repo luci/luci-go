@@ -22,12 +22,14 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"go.chromium.org/luci/analysis/internal/bqutil"
-	"go.chromium.org/luci/analysis/pbutil"
+	"google.golang.org/api/iterator"
+
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"google.golang.org/api/iterator"
+
+	"go.chromium.org/luci/analysis/internal/bqutil"
+	"go.chromium.org/luci/analysis/pbutil"
 )
 
 const rulesViewBaseQuery = `

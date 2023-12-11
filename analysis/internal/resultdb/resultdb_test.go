@@ -19,9 +19,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestResultDB(t *testing.T) {

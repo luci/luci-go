@@ -19,6 +19,18 @@ package server
 import (
 	"context"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/config/server/cfgmodule"
+	"go.chromium.org/luci/grpc/prpc"
+	luciserver "go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/cron"
+	"go.chromium.org/luci/server/encryptedcookies"
+	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/secrets"
+	spanmodule "go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
+
 	"go.chromium.org/luci/analysis/app"
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/bugs/buganizer"
@@ -38,17 +50,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/views"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/analysis/rpc"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/config/server/cfgmodule"
-	"go.chromium.org/luci/grpc/prpc"
-	luciserver "go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/cron"
-	"go.chromium.org/luci/server/encryptedcookies"
-	"go.chromium.org/luci/server/gaeemulation"
-	"go.chromium.org/luci/server/module"
-	"go.chromium.org/luci/server/secrets"
-	spanmodule "go.chromium.org/luci/server/span"
-	"go.chromium.org/luci/server/tq"
 )
 
 // Main implements the common entrypoint for all LUCI Analysis GAE services.

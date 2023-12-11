@@ -62,6 +62,7 @@ import (
 
 	participle "github.com/alecthomas/participle/v2"
 	"github.com/alecthomas/participle/v2/lexer"
+
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/analysis/internal/clustering"

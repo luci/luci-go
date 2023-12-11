@@ -18,8 +18,9 @@ import (
 	"testing"
 	"time"
 
-	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

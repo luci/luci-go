@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 )
 

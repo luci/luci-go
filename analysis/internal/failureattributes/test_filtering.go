@@ -20,9 +20,10 @@ import (
 
 	"cloud.google.com/go/bigquery"
 
+	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/config"
-	"go.chromium.org/luci/common/errors"
 )
 
 // NewFilteredRunsAttributionHandler initialises a new TestFilteringHandler instance.

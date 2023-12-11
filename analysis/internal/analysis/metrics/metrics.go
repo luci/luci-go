@@ -20,8 +20,9 @@ import (
 	"regexp"
 	"strings"
 
-	configpb "go.chromium.org/luci/analysis/proto/config"
 	"go.chromium.org/luci/common/errors"
+
+	configpb "go.chromium.org/luci/analysis/proto/config"
 )
 
 // MetricIDPattern defines the valid format for metric identifiers.

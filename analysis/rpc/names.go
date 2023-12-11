@@ -19,13 +19,14 @@ import (
 	"net/url"
 	"regexp"
 
+	"go.chromium.org/luci/common/errors"
+	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
+
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/pbutil"
-	"go.chromium.org/luci/common/errors"
-	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 )
 
 // Regular expressions for matching resource names used in APIs.

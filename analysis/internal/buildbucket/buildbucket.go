@@ -21,9 +21,10 @@ import (
 
 	"google.golang.org/grpc"
 
-	"go.chromium.org/luci/analysis/internal/scopedauth"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/grpc/prpc"
+
+	"go.chromium.org/luci/analysis/internal/scopedauth"
 )
 
 // testBBClientKey is the context key controls the use of buildbucket client test doubles in tests.

@@ -22,8 +22,9 @@ import (
 	"regexp/syntax"
 	"strings"
 
-	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/common/errors"
+
+	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 var (

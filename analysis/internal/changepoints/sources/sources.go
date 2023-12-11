@@ -16,9 +16,10 @@
 package sources
 
 import (
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
-	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // FromUnsubmittedCode Return true if sources is from unsubmitted code, i.e.

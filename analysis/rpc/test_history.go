@@ -20,18 +20,19 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"golang.org/x/text/unicode/norm"
+
 	"go.chromium.org/luci/common/errors"
+	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
-	"golang.org/x/text/unicode/norm"
 
 	"go.chromium.org/luci/analysis/internal/pagination"
 	"go.chromium.org/luci/analysis/internal/perms"
 	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 )
 
 func init() {

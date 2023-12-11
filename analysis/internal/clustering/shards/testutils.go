@@ -20,10 +20,10 @@ import (
 
 	"cloud.google.com/go/spanner"
 
+	"go.chromium.org/luci/server/span"
+
 	spanutil "go.chromium.org/luci/analysis/internal/span"
 	"go.chromium.org/luci/analysis/internal/testutil"
-
-	"go.chromium.org/luci/server/span"
 )
 
 const testProject = "myproject"

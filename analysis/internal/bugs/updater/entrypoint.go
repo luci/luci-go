@@ -19,6 +19,9 @@ import (
 	"runtime/debug"
 	"time"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/bugs"
 	"go.chromium.org/luci/analysis/internal/bugs/buganizer"
@@ -26,8 +29,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering/runs"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 )
 
 // AnalysisClient is an interface for building and accessing cluster analysis.

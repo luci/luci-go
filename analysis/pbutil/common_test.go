@@ -18,12 +18,13 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
-	pb "go.chromium.org/luci/analysis/proto/v1"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/cv/api/bigquery/v1"
 	cvv0 "go.chromium.org/luci/cv/api/v0"
+
+	pb "go.chromium.org/luci/analysis/proto/v1"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCommon(t *testing.T) {

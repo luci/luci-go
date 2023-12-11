@@ -24,14 +24,13 @@ import (
 
 	"cloud.google.com/go/storage"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"google.golang.org/api/option"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/server/auth"
-
-	"google.golang.org/api/option"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/proto"
 
 	cpb "go.chromium.org/luci/analysis/internal/clustering/proto"
 	"go.chromium.org/luci/analysis/pbutil"

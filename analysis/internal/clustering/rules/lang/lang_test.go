@@ -19,10 +19,10 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/analysis/internal/clustering"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestRules(t *testing.T) {

@@ -21,12 +21,13 @@ import (
 
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
+
 	"go.chromium.org/luci/analysis/internal/bugs"
 	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	configpb "go.chromium.org/luci/analysis/proto/config"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
 )
 
 // The status which are consider to be closed.

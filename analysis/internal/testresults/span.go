@@ -22,9 +22,10 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
-	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/analysis/internal/pagination"
 	spanutil "go.chromium.org/luci/analysis/internal/span"

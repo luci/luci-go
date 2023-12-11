@@ -19,15 +19,17 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
-	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
-	pb "go.chromium.org/luci/analysis/proto/v1"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/span"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/span"
+
+	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
+	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 // NewTestVariantBranchesServer returns a new pb.TestVariantBranchesServer.

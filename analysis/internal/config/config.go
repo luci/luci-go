@@ -18,14 +18,14 @@ package config
 import (
 	"context"
 
-	configpb "go.chromium.org/luci/analysis/proto/config"
-
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgcache"
 	"go.chromium.org/luci/config/validation"
+
+	configpb "go.chromium.org/luci/analysis/proto/config"
 )
 
 // Cached service config.

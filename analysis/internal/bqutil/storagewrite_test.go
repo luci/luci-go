@@ -18,13 +18,14 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"google.golang.org/protobuf/proto"
 
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
-	. "go.chromium.org/luci/common/testing/assertions"
+
 	_ "go.chromium.org/luci/server/tq/txn/spanner"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBatch(t *testing.T) {

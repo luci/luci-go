@@ -18,7 +18,6 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/gae/impl/memory"
 
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
@@ -26,6 +25,8 @@ import (
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	configpb "go.chromium.org/luci/analysis/proto/config"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGlobalMetrics(t *testing.T) {

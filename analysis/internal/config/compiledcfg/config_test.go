@@ -20,15 +20,16 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/server/caching"
+
 	"go.chromium.org/luci/analysis/internal/config"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 
-	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/server/caching"
-	"google.golang.org/protobuf/types/known/timestamppb"
-
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 

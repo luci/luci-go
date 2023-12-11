@@ -19,9 +19,11 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"go.chromium.org/luci/analysis/internal/bugs"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+
+	"go.chromium.org/luci/analysis/internal/bugs"
 )
 
 // WaitForJob waits for a BigQuery job to finish.

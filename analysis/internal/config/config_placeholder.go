@@ -15,8 +15,9 @@
 package config
 
 import (
-	"go.chromium.org/luci/common/errors"
 	"google.golang.org/protobuf/encoding/prototext"
+
+	"go.chromium.org/luci/common/errors"
 
 	configpb "go.chromium.org/luci/analysis/proto/config"
 )

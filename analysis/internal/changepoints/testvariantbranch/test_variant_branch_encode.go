@@ -15,11 +15,13 @@
 package testvariantbranch
 
 import (
+	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/common/errors"
+
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"go.chromium.org/luci/analysis/internal/span"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-	"go.chromium.org/luci/common/errors"
-	"google.golang.org/protobuf/proto"
 )
 
 // EncodeProtoMessage uses zstd to encode a proto message into []byte.

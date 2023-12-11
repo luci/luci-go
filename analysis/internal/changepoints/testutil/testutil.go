@@ -18,11 +18,13 @@ package testutil
 import (
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	configpb "go.chromium.org/luci/analysis/proto/config"
-	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func SamplePayload() *taskspb.IngestTestResults {

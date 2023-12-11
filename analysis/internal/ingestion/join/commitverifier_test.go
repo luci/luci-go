@@ -21,20 +21,23 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/clock"
-	. "go.chromium.org/luci/common/testing/assertions"
-	cvv0 "go.chromium.org/luci/cv/api/v0"
-	"go.chromium.org/luci/server/tq"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
+	cvv0 "go.chromium.org/luci/cv/api/v0"
+	"go.chromium.org/luci/server/tq"
+
 	"go.chromium.org/luci/analysis/internal/cv"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
-	_ "go.chromium.org/luci/analysis/internal/services/resultingester" // Needed to ensure task class is registered.
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
+
+	_ "go.chromium.org/luci/analysis/internal/services/resultingester" // Needed to ensure task class is registered.
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 // bbCreateTime is the create time assigned to buildbucket builds, for testing.

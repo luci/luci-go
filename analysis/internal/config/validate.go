@@ -21,14 +21,15 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"go.chromium.org/luci/common/errors"
+	luciproto "go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/config/validation"
+
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bugs"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/testname/rules"
 	"go.chromium.org/luci/analysis/pbutil"
 	configpb "go.chromium.org/luci/analysis/proto/config"
-	"go.chromium.org/luci/common/errors"
-	luciproto "go.chromium.org/luci/common/proto"
-	"go.chromium.org/luci/config/validation"
 )
 
 const maxHysteresisPercent = 1000

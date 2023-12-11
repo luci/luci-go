@@ -18,10 +18,12 @@ import (
 	"context"
 
 	"cloud.google.com/go/spanner"
-	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
-	spanutil "go.chromium.org/luci/analysis/internal/span"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
+
+	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	spanutil "go.chromium.org/luci/analysis/internal/span"
 )
 
 // RefHash is used for RefHash field in TestVariantBranchKey.

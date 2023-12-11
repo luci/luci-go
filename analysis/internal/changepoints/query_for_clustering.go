@@ -18,13 +18,14 @@ import (
 	"context"
 	"time"
 
+	"go.chromium.org/luci/common/errors"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/span"
+
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	clusteringpb "go.chromium.org/luci/analysis/internal/clustering/proto"
 	"go.chromium.org/luci/analysis/pbutil"
-	"go.chromium.org/luci/common/errors"
-	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server/span"
 )
 
 // QueryStatsForClustering reads selected statistics for the

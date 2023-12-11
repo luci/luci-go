@@ -19,8 +19,9 @@ import (
 	"strconv"
 	"strings"
 
-	spanutil "go.chromium.org/luci/analysis/internal/span"
 	"go.chromium.org/luci/common/errors"
+
+	spanutil "go.chromium.org/luci/analysis/internal/span"
 )
 
 // whereClause constructs Standard SQL WHERE clause parts from

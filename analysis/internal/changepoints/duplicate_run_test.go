@@ -20,10 +20,12 @@ import (
 	"testing"
 
 	"cloud.google.com/go/spanner"
-	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
-	"go.chromium.org/luci/analysis/internal/testutil"
+
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
+
+	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
+	"go.chromium.org/luci/analysis/internal/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

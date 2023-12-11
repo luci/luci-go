@@ -18,9 +18,11 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/analysis/internal/testutil"
 	"go.chromium.org/luci/server/span"
+
+	"go.chromium.org/luci/analysis/internal/testutil"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestClearRuleUsers(t *testing.T) {

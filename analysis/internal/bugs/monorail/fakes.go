@@ -28,11 +28,12 @@ import (
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	mpb "go.chromium.org/luci/analysis/internal/bugs/monorail/api_proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/grpc/appstatus"
+
+	mpb "go.chromium.org/luci/analysis/internal/bugs/monorail/api_proto"
 )
 
 // projectsRE matches valid monorail project references.

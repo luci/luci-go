@@ -18,12 +18,13 @@ import (
 	"context"
 	"fmt"
 
-	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
+
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 )
 
 // fakeClientFactory produces FakeClients.

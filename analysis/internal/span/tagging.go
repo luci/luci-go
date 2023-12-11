@@ -17,8 +17,9 @@ package span
 import (
 	"context"
 
-	"go.chromium.org/luci/server/span"
 	"google.golang.org/grpc"
+
+	"go.chromium.org/luci/server/span"
 )
 
 // SpannerDefaultsInterceptor returns a gRPC interceptor that adds default

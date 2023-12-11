@@ -22,11 +22,13 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	. "github.com/smartystreets/goconvey/convey"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/spantest"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/server/span"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 // cleanupDatabase deletes all data from all tables.

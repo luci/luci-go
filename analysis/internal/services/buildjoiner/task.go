@@ -25,10 +25,11 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/analysis/internal/ingestion/join"
-	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/tq"
+
+	"go.chromium.org/luci/analysis/internal/ingestion/join"
+	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 )
 
 const (

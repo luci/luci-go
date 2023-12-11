@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
 

@@ -21,8 +21,9 @@ import (
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
 	"github.com/golang/protobuf/descriptor"
 	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
-	"go.chromium.org/luci/common/bq"
 	"google.golang.org/protobuf/types/descriptorpb"
+
+	"go.chromium.org/luci/common/bq"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"

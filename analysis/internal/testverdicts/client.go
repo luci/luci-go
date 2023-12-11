@@ -22,10 +22,11 @@ import (
 	"cloud.google.com/go/bigquery/storage/managedwriter"
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/analysis/internal/bqutil"
-	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/analysis/internal/bqutil"
+	bqpb "go.chromium.org/luci/analysis/proto/bq"
 )
 
 // NewClient creates a new client for exporting test verdicts

@@ -19,10 +19,11 @@ import (
 	"sort"
 	"strings"
 
+	"go.chromium.org/luci/common/errors"
+
 	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	configpb "go.chromium.org/luci/analysis/proto/config"
-	"go.chromium.org/luci/common/errors"
 )
 
 // PolicyApplyer provides methods to apply bug managment policies

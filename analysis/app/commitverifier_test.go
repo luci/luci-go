@@ -22,14 +22,16 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"google.golang.org/protobuf/encoding/protojson"
+
 	"go.chromium.org/luci/common/tsmon"
 	cvv1 "go.chromium.org/luci/cv/api/v1"
 	"go.chromium.org/luci/server/router"
-	"google.golang.org/protobuf/encoding/protojson"
 
 	_ "go.chromium.org/luci/analysis/internal/services/resultingester" // Needed to ensure task class is registered.
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCVRunHandler(t *testing.T) {

@@ -16,7 +16,6 @@ package monorail
 
 import (
 	mpb "go.chromium.org/luci/analysis/internal/bugs/monorail/api_proto"
-
 	configpb "go.chromium.org/luci/analysis/proto/config"
 )
 

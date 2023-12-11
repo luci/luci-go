@@ -18,8 +18,9 @@ import (
 	"context"
 	"time"
 
-	"go.chromium.org/luci/server/span"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"

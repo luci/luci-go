@@ -20,12 +20,14 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/span"
+
 	"go.chromium.org/luci/analysis/internal/clustering/rules/exporter"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/server/span"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type exporterClient interface {

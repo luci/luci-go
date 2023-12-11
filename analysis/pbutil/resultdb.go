@@ -16,9 +16,10 @@
 package pbutil
 
 import (
-	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+
+	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 // TestResultIDFromResultDB returns a LUCI Analysis TestResultId corresponding

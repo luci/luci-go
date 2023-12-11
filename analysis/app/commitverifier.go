@@ -19,12 +19,13 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"google.golang.org/protobuf/encoding/protojson"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	cvv1 "go.chromium.org/luci/cv/api/v1"
 	"go.chromium.org/luci/server/router"
-	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/analysis/internal/ingestion/join"
 )

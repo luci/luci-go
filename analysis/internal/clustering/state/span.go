@@ -23,16 +23,17 @@ import (
 	"strings"
 	"time"
 
+	"cloud.google.com/go/spanner"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/server/span"
+
 	"go.chromium.org/luci/analysis/internal/clustering"
 	cpb "go.chromium.org/luci/analysis/internal/clustering/proto"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/config"
 	spanutil "go.chromium.org/luci/analysis/internal/span"
 	"go.chromium.org/luci/analysis/pbutil"
-
-	"cloud.google.com/go/spanner"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/server/span"
 )
 
 // Entry represents the clustering state of a chunk, consisting of:

@@ -18,14 +18,14 @@ import (
 	"context"
 	"fmt"
 
-	"go.chromium.org/luci/analysis/internal/bqutil"
-	bqpb "go.chromium.org/luci/analysis/proto/bq"
-
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/bigquery/storage/managedwriter"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/analysis/internal/bqutil"
+	bqpb "go.chromium.org/luci/analysis/proto/bq"
 )
 
 // NewClient creates a new client for exporting test variant branches

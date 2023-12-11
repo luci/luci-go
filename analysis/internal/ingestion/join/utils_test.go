@@ -20,21 +20,23 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	cvv0 "go.chromium.org/luci/cv/api/v0"
 	cvv1 "go.chromium.org/luci/cv/api/v1"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
-	"google.golang.org/protobuf/types/known/structpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/buildbucket"
 	"go.chromium.org/luci/analysis/internal/cv"
 	"go.chromium.org/luci/analysis/internal/gerrit"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
-	_ "go.chromium.org/luci/analysis/internal/services/resultingester" // Needed to ensure task class is registered.
 	pb "go.chromium.org/luci/analysis/proto/v1"
+
+	_ "go.chromium.org/luci/analysis/internal/services/resultingester" // Needed to ensure task class is registered.
 )
 
 // cvCreateTime is the create time assigned to CV Runs, for testing.

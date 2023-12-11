@@ -18,9 +18,11 @@ import (
 	"context"
 
 	"cloud.google.com/go/spanner"
+
+	"go.chromium.org/luci/server/span"
+
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
-	"go.chromium.org/luci/server/span"
 )
 
 func FetchTestVariantBranches(ctx context.Context) ([]*testvariantbranch.Entry, error) {

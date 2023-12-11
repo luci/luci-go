@@ -17,8 +17,9 @@ package bayesian
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestChangePointPositionConfidenceInterval(t *testing.T) {

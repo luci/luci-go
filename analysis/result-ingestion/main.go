@@ -16,9 +16,10 @@ package main
 
 import (
 	luciserver "go.chromium.org/luci/server"
-	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 
 	"go.chromium.org/luci/analysis/server"
+
+	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 )
 
 // Entrypoint for the result-ingestion service.

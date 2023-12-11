@@ -19,11 +19,12 @@ import (
 	"context"
 	"net/http"
 
-	"go.chromium.org/luci/analysis/internal/scopedauth"
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/server/auth"
+
+	"go.chromium.org/luci/analysis/internal/scopedauth"
 )
 
 // testingGerritClientKey is the context key to indicate using a substitute

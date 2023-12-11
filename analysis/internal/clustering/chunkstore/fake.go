@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	"go.chromium.org/luci/common/errors"
-
 	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/common/errors"
 
 	cpb "go.chromium.org/luci/analysis/internal/clustering/proto"
 	"go.chromium.org/luci/analysis/pbutil"

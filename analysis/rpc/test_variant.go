@@ -18,12 +18,13 @@ import (
 	"context"
 	"regexp"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/span"
-	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/analysis/internal/perms"
 	"go.chromium.org/luci/analysis/internal/testresults"

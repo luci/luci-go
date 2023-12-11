@@ -23,12 +23,13 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/protobuf/encoding/prototext"
 
-	"go.chromium.org/luci/analysis/internal/bugs"
-	configpb "go.chromium.org/luci/analysis/proto/config"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
+
+	"go.chromium.org/luci/analysis/internal/bugs"
+	configpb "go.chromium.org/luci/analysis/proto/config"
 )
 
 // The maximum number of issues you can get from Buganizer

@@ -18,12 +18,12 @@ import (
 	"context"
 	"time"
 
-	"go.chromium.org/luci/analysis/internal/clustering/state"
-	"go.chromium.org/luci/analysis/internal/tracing"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
+
+	"go.chromium.org/luci/analysis/internal/clustering/state"
+	"go.chromium.org/luci/analysis/internal/tracing"
 )
 
 const (

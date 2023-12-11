@@ -21,14 +21,15 @@ import (
 
 	"google.golang.org/protobuf/encoding/protojson"
 
-	"go.chromium.org/luci/analysis/internal/services/buildjoiner"
-	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server/router"
+
+	"go.chromium.org/luci/analysis/internal/services/buildjoiner"
+	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 )
 
 var (

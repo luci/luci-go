@@ -16,6 +16,7 @@ package analysis
 
 import (
 	"cloud.google.com/go/bigquery"
+
 	"go.chromium.org/luci/common/errors"
 )
 

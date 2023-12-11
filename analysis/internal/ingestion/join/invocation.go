@@ -18,12 +18,13 @@ import (
 	"context"
 	"strconv"
 
-	"go.chromium.org/luci/analysis/internal/ingestion/control"
-	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth/realms"
+
+	"go.chromium.org/luci/analysis/internal/ingestion/control"
+	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 )
 
 // JoinInvocation notifies ingestion that the given invocation has finalized.

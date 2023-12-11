@@ -20,9 +20,10 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/span"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	spanutil "go.chromium.org/luci/analysis/internal/span"
 	"go.chromium.org/luci/analysis/pbutil"

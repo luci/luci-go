@@ -15,10 +15,10 @@
 package clustering
 
 import (
+	"google.golang.org/protobuf/proto"
+
 	cpb "go.chromium.org/luci/analysis/internal/clustering/proto"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	"google.golang.org/protobuf/proto"
 )
 
 // Failure captures the minimal information required to cluster a failure.

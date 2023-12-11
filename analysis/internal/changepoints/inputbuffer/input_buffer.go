@@ -21,8 +21,9 @@ import (
 	"fmt"
 	"time"
 
-	"go.chromium.org/luci/analysis/internal/span"
 	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/analysis/internal/span"
 )
 
 const (

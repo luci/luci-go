@@ -17,9 +17,10 @@ package ingestion
 import (
 	"fmt"
 
-	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	cpb "go.chromium.org/luci/analysis/internal/clustering/proto"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"

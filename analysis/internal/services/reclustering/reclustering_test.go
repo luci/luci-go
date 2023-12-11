@@ -23,10 +23,11 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/server/tq"
-	_ "go.chromium.org/luci/server/tq/txn/spanner"
 
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
+
+	_ "go.chromium.org/luci/server/tq/txn/spanner"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

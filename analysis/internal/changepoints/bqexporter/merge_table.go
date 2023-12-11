@@ -19,10 +19,12 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"go.chromium.org/luci/analysis/internal/bqutil"
-	"go.chromium.org/luci/analysis/internal/config"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+
+	"go.chromium.org/luci/analysis/internal/bqutil"
+	"go.chromium.org/luci/analysis/internal/config"
 )
 
 // MergeTables is the entry point of the merge-test-variant-branches cron job.

@@ -19,15 +19,17 @@ import (
 	"net/http"
 	"os"
 
-	"go.chromium.org/luci/analysis/frontend/handlers"
-	"go.chromium.org/luci/analysis/internal/config"
-	analysisserver "go.chromium.org/luci/analysis/server"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
-	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
+
+	"go.chromium.org/luci/analysis/frontend/handlers"
+	"go.chromium.org/luci/analysis/internal/config"
+	analysisserver "go.chromium.org/luci/analysis/server"
+
+	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 )
 
 // prepareTemplates configures templates.Bundle used by all UI handlers.
