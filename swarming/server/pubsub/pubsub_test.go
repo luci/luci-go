@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 
@@ -87,16 +88,11 @@ func TestPubSubHandler(t *testing.T) {
 
 			So(resp, ShouldEqual, http.StatusOK)
 			So(gotMsg, ShouldResembleProto, testMsg)
-			So(gotMD, ShouldResemble, &Metadata{
-				Subscription: "sub",
-				MessageID:    "msg",
-				PublishTime:  testTime,
-				Attributes:   body.Message.Attributes,
-				Query: map[string][]string{
-					"a": {"1"},
-					"b": {"2"},
-				},
-			})
+			So(gotMD.Subscription, ShouldEqual, "sub")
+			So(gotMD.MessageID, ShouldEqual, "msg")
+			So(gotMD.PublishTime, ShouldEqual, testTime)
+			So(gotMD.Attributes, ShouldResemble, body.Message.Attributes)
+			So(gotMD.Query, ShouldResemble, url.Values{"a": {"1"}, "b": {"2"}})
 		})
 
 		Convey("Transient error", func() {
