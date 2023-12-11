@@ -22,17 +22,11 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
-	"go.chromium.org/luci/auth_service/api/configspb"
-	"go.chromium.org/luci/auth_service/api/taskspb"
-	"go.chromium.org/luci/auth_service/impl/info"
-	"go.chromium.org/luci/auth_service/internal/permissions"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -41,6 +35,14 @@ import (
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
+
+	"go.chromium.org/luci/auth_service/api/configspb"
+	"go.chromium.org/luci/auth_service/api/taskspb"
+	"go.chromium.org/luci/auth_service/impl/info"
+	"go.chromium.org/luci/auth_service/internal/permissions"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var (
