@@ -21,6 +21,7 @@ luci_gae_vars:
     OAUTH_REDIRECT_URL: https://chromium-swarm-dev.appspot.com/auth/openid/callback
     TINK_AEAD_KEY: sm://tink-aead-primary
     TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
+    BQ_EXPORT_DATASET: none
 
 entrypoint: >
   main
@@ -35,3 +36,4 @@ entrypoint: >
   -frontend-client-id ${OAUTH_CLIENT_ID}
   -ts-mon-account ${TS_MON_ACCOUNT}
   -cloud-error-reporting
+  -bq-export-dataset ${BQ_EXPORT_DATASET}
