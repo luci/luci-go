@@ -130,9 +130,28 @@ var (
 		CountSQL: "f.ingested_invocation_id",
 	}.Build()
 
+	HasAttributedFilteredTestRuns = metricBuilder{
+		ID:                "has-attributed-filtered-test-runs",
+		HumanReadableName: "Has Attributed Filtered Test Runs",
+		Description: "The number of failures in this cluster that has filtered test runs being attributed to them," +
+			" which means those failures caused some tests to be filtered out in the test scheduler.",
+		DefaultConfig: Configuration{
+			SortPriority: 350,
+		},
+		RequireAttrs: true,
+		FilterSQL:    "attrs.attributed_filtered_run_count > 0",
+	}.Build()
+
 	// ComputedMetrics is the set of metrics computed for each cluster and
 	// stored on the cluster summaries table.
-	ComputedMetrics = []BaseDefinition{HumanClsFailedPresubmit, CriticalFailuresExonerated, TestRunsFailed, Failures, BuildsFailedDueToFlakyTests}
+	ComputedMetrics = []BaseDefinition{
+		HumanClsFailedPresubmit,
+		CriticalFailuresExonerated,
+		TestRunsFailed,
+		Failures,
+		BuildsFailedDueToFlakyTests,
+		HasAttributedFilteredTestRuns,
+	}
 )
 
 // ByID returns the metric with the given ID, if any.
@@ -174,6 +193,10 @@ type metricBuilder struct {
 	// individual LUCI Projects.
 	DefaultConfig Configuration
 
+	// RequireAttrs indicates whether calculating this metric requires joining the
+	// failure_attributes table. See Definition.RequireAttrs for more details.
+	RequireAttrs bool
+
 	// A predicate on failures, that defines which failures are included in
 	// the metric. See Definition.FilterSQL for more details.
 	FilterSQL string
@@ -203,6 +226,7 @@ func (m metricBuilder) Build() BaseDefinition {
 		Description:       m.Description,
 		DefaultConfig:     m.DefaultConfig,
 		BaseColumnName:    strings.ReplaceAll(m.ID, "-", "_"),
+		RequireAttrs:      m.RequireAttrs,
 		FilterSQL:         m.FilterSQL,
 		CountSQL:          m.CountSQL,
 	}
@@ -250,9 +274,17 @@ type BaseDefinition struct {
 	// underscores.
 	BaseColumnName string
 
+	// RequireAttrs indicates whether calculating this metric requires joining the
+	// failure_attributes table. When set to true, fields on the
+	// failure_attributes table may be accessed via the prefix "attrs." by the
+	// metric definition SQLs.
+	RequireAttrs bool
+
 	// The predicate on failures, that defines when an item is eligible to be
 	// counted. Fields on the clustered_failures table may be accessed via the
-	// prefix "f.".
+	// prefix "f.". If `RequireAttrs` is set to true, fields on the
+	// failure_attributes table may be accessed via the prefix "attrs.".
+	//
 	// For example, to count over failures on critical builds, use:
 	// "f.build_critical".
 	//
@@ -260,7 +292,9 @@ type BaseDefinition struct {
 	FilterSQL string
 
 	// An expression that defines the distinct items to count. Fields on the
-	// clustered_failures table may be accessed via the prefix "f.".
+	// clustered_failures table may be accessed via the prefix "f.". If
+	// `RequireAttrs` is set to true, fields on the failure_attributes table may
+	// be accessed via the prefix "attrs.".
 	//
 	// For example, to count distinct changelists, use:
 	// `IF(ARRAY_LENGTH(f.changelists)>0,

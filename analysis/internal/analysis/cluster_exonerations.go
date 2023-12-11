@@ -63,7 +63,7 @@ func (c *Client) ReadClusterExoneratedTestVariants(ctx context.Context, opts Rea
 			  AND cluster_algorithm = @clusterAlgorithm
 			  AND cluster_id = @clusterID
 			  AND realm IN UNNEST(@realms)
-			GROUP BY project, cluster_algorithm, cluster_id, test_result_system, test_result_id
+			GROUP BY project, cluster_algorithm, cluster_id, test_result_system, ingested_invocation_id, test_result_id
 			HAVING r.is_included
 		)
 		SELECT

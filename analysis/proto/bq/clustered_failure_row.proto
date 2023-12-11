@@ -50,19 +50,38 @@ message ClusteredFailureRow {
   // Currently, the only valid value is "resultdb".
   string test_result_system = 3;
 
+  // The invocation from which this test result was ingested. This is
+  // the top-level invocation that was ingested, an "invocation" being
+  // a container of test results as identified by the source test result
+  // system.
+  //
+  // For ResultDB, LUCI Analysis ingests invocations corresponding to
+  // buildbucket builds.
+  //
+  // All test results ingested from the same invocation (i.e. with the
+  // same ingested_invocation_id) will have the same partition time.
+  string ingested_invocation_id = 21;
+
   // The identity of the test result in the test results system. Together
-  // with the test results sytstem, this uniquely identifies the test result
-  // that was clustered.
+  // with the test results system and the ingested invocation ID, this uniquely
+  // identifies the failure that was clustered.
+  //
+  // In some test result systems (e.g. ResultDB), a test result might be
+  // included in multiple invocations. Where this occurs, the test result may be
+  // ingested by LUCI Analysis multiple times, once for each top-level
+  // invocation it appears in. The same test result may have different
+  // attributes (e.g. presubmit_run_owner) depending on which top-level
+  // invocation it is ingested under.
   //
   // For test results in ResultDB, the format is:
   // "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}"
   // Where INVOCATION_ID, URL_ESCAPED_TEST_ID and RESULT_ID are values
   // defined in ResultDB.
   //
-  // Note that the test result ID is split over two fields (test_result_system,
-  // test_result_id), rather than as one field with a record type, so that
-  // BigQuery clustering can be defined over the ID (not possible if a
-  // record type was used).
+  // Note that the test result ID is split over three fields
+  // (test_result_system, ingested_invocation_id, test_result_id), rather than
+  // as one field with a record type, so that BigQuery clustering can be defined
+  // over the ID (not possible if a record type was used).
   string test_result_id = 4;
 
   // Last Updated defines the version of test result-cluster inclusion status,
@@ -72,10 +91,10 @@ message ClusteredFailureRow {
   //
   // To achieve deletion in an append-optimised datastore like BigQuery,
   // a new row will be exported for a given (cluster_algorithm, cluster_id,
-  // test_result_system, test_result_id) tuple with a later last_updated
-  // time that changes the is_included and/or is_included_with_high_priority
-  // fields. A scheduled query periodically purges superseded rows, to
-  // avoid excessive growth in the table.
+  // test_result_system, ingested_invocation_id, test_result_id) tuple with a
+  // later last_updated time that changes the is_included and/or
+  // is_included_with_high_priority fields. A scheduled query periodically
+  // purges superseded rows, to avoid excessive growth in the table.
   //
   // Clients should filter the rows they read to ensure they only use the
   // rows with the latest last_updated time.
@@ -88,7 +107,7 @@ message ClusteredFailureRow {
   //   -- Recommended: Apply restriction on partitions (e.g. last 14 days) as
   //   -- desired.
   //   -- WHERE partition_time >= TIMESTAMP_SUB(@as_at_time, INTERVAL 14 DAY)
-  //   GROUP BY project, cluster_algorithm, cluster_id, test_result_system, test_result_id
+  //   GROUP BY project, cluster_algorithm, cluster_id, test_result_system, ingested_invocation_id, test_result_id
   //   HAVING row.is_included
   //
   // This is based on the query design in [1].
@@ -244,18 +263,6 @@ message ClusteredFailureRow {
   // Changelists are sorted in ascending (host, change, patchset) order.
   // Up to 10 changelists are captured.
   repeated luci.analysis.v1.Changelist changelists = 38;
-
-  // The invocation from which this test result was ingested. This is
-  // the top-level invocation that was ingested, an "invocation" being
-  // a container of test results as identified by the source test result
-  // system.
-  //
-  // For ResultDB, LUCI Analysis ingests invocations corresponding to
-  // buildbucket builds.
-  //
-  // All test results ingested from the same invocation (i.e. with the
-  // same ingested_invocation_id) will have the same partition time.
-  string ingested_invocation_id = 21;
 
   // The zero-based index for this test result, in the sequence of the
   // ingested invocation's results for this test variant. Within the sequence,

@@ -295,6 +295,7 @@ func constructQueryString(includeMetricBreakdown bool, queryMetrics []metrics.De
 	// number of distinct failures / other items in the cluster.
 	var precomputeList []string
 	var metricSelectList []string
+	joinSQL := ""
 	for _, metric := range queryMetrics {
 		itemIdentifier := "unique_test_result_id"
 		if metric.CountSQL != "" {
@@ -309,22 +310,29 @@ func constructQueryString(includeMetricBreakdown bool, queryMetrics []metrics.De
 		metricColumnName := metric.ColumnName(MetricValueColumnSuffix)
 		metricSelect := fmt.Sprintf("APPROX_COUNT_DISTINCT(IF(%s,%s,NULL)) AS %s,", filterIdentifier, itemIdentifier, metricColumnName)
 		metricSelectList = append(metricSelectList, metricSelect)
+
+		if metric.RequireAttrs {
+			joinSQL = `
+				LEFT JOIN failure_attributes attrs
+					USING (project, test_result_system, ingested_invocation_id, test_result_id)
+			`
+		}
 	}
 
 	clusteredFailurePrecomputeSQL := `
 		SELECT
 			cluster_algorithm,
 			cluster_id,
-			partition_time,
+			f.partition_time AS partition_time,
 			test_id,
 			failure_reason,
 			CONCAT(chunk_id, '/', COALESCE(chunk_index, 0)) AS unique_test_result_id,
 			` + strings.Join(precomputeList, "\n") + `
-		FROM clustered_failures f
+		FROM clustered_failures f ` + joinSQL + `
 		WHERE
 			is_included_with_high_priority
-			AND partition_time >= @earliest
-			AND partition_time < @latest
+			AND f.partition_time >= @earliest
+			AND f.partition_time < @latest
 			AND project = @project
 			AND (` + whereClause + `)
 			AND realm IN UNNEST(@realms)

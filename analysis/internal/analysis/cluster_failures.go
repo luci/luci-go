@@ -89,8 +89,12 @@ func (c *Client) ReadClusterFailures(ctx context.Context, opts ReadClusterFailur
 	defer func() { tracing.End(s, err, attribute.Int("outcome", len(cfs))) }()
 
 	var metricFilterSQL string
+	metricBaseView := "latest_failures_7d"
 	if opts.MetricFilter != nil && opts.MetricFilter.FilterSQL != "" {
 		metricFilterSQL = opts.MetricFilter.FilterSQL
+		if opts.MetricFilter.RequireAttrs {
+			metricBaseView = "latest_failures_with_attrs_7d"
+		}
 	} else {
 		// If the is no filter, include all failures.
 		metricFilterSQL = "TRUE"
@@ -103,6 +107,7 @@ func (c *Client) ReadClusterFailures(ctx context.Context, opts ReadClusterFailur
 				cluster_algorithm,
 				cluster_id,
 				test_result_system,
+				ingested_invocation_id,
 				test_result_id,
 				ARRAY_AGG(cf ORDER BY cf.last_updated DESC LIMIT 1)[OFFSET(0)] as f
 			FROM clustered_failures cf
@@ -111,8 +116,26 @@ func (c *Client) ReadClusterFailures(ctx context.Context, opts ReadClusterFailur
 			  AND cluster_algorithm = @clusterAlgorithm
 			  AND cluster_id = @clusterID
 			  AND realm IN UNNEST(@realms)
-			GROUP BY project, cluster_algorithm, cluster_id, test_result_system, test_result_id
+			GROUP BY project, cluster_algorithm, cluster_id, test_result_system, ingested_invocation_id, test_result_id
 			HAVING f.is_included
+		), latest_failures_with_attrs_7d AS (
+			SELECT
+				lf.project AS project,
+				lf.cluster_algorithm AS cluster_algorithm,
+				lf.cluster_id AS cluster_id ,
+				lf.test_result_system AS test_result_system,
+				lf.ingested_invocation_id AS ingested_invocation_id,
+				lf.test_result_id AS test_result_id,
+				lf.f AS f,
+				attrs AS attrs,
+			FROM latest_failures_7d AS lf
+				LEFT JOIN failure_attributes AS attrs
+					ON (
+						lf.project = attrs.project
+						AND lf.test_result_system = attrs.test_result_system
+						AND lf.ingested_invocation_id = attrs.ingested_invocation_id
+						AND lf.test_result_id = attrs.test_result_id
+					)
 		)
 		SELECT
 			f.realm as Realm,
@@ -130,7 +153,7 @@ func (c *Client) ReadClusterFailures(ctx context.Context, opts ReadClusterFailur
 			f.ingested_invocation_id as IngestedInvocationID,
 			ANY_VALUE(f.is_ingested_invocation_blocked) as IsIngestedInvocationBlocked,
 			count(*) as Count
-		FROM latest_failures_7d
+		FROM ` + metricBaseView + `
 		WHERE (` + metricFilterSQL + `)
 		GROUP BY
 			f.realm,

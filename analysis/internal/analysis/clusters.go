@@ -146,11 +146,14 @@ func (c *Client) rebuildAnalysisForDataset(ctx context.Context, dataset *bigquer
 			cluster_id,
 			test_result_system,
 			test_result_id,
-			partition_time,
-			ARRAY_AGG(cf ORDER BY last_updated DESC LIMIT 1)[OFFSET(0)] as f
+			ANY_VALUE(cf.partition_time) as partition_time,
+			ARRAY_AGG(cf ORDER BY last_updated DESC LIMIT 1)[OFFSET(0)] as f,
+			ANY_VALUE(attrs) as attrs,
 		  FROM clustered_failures cf
-		  WHERE partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
-		  GROUP BY ` + projectSelection + `cluster_algorithm, cluster_id, test_result_system, test_result_id, partition_time
+				LEFT JOIN failure_attributes attrs
+					USING (project, test_result_system, ingested_invocation_id, test_result_id)
+		  WHERE cf.partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
+		  GROUP BY ` + projectSelection + `cluster_algorithm, cluster_id, test_result_system, ingested_invocation_id, test_result_id
 		  HAVING f.is_included
 		),
 		clustered_failures_precompute AS (

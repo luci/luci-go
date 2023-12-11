@@ -64,6 +64,7 @@ func (c *Client) ReadClusterHistory(ctx context.Context, options ReadClusterHist
 
 	var precomputeList []string
 	var metricSelectList []string
+	metricsBaseView := "latest_failures"
 	for _, metric := range options.Metrics {
 		filterIdentifier := metric.ColumnName("filter")
 		filterSQL := "TRUE"
@@ -87,6 +88,10 @@ func (c *Client) ReadClusterHistory(ctx context.Context, options ReadClusterHist
 			metricExpr = fmt.Sprintf("COUNTIF(%s)", filterIdentifier)
 		}
 
+		if metric.RequireAttrs {
+			metricsBaseView = "latest_failures_with_attrs"
+		}
+
 		metricSelect := fmt.Sprintf("%s AS %s,", metricExpr, metricColumnName)
 		metricSelectList = append(metricSelectList, metricSelect)
 	}
@@ -100,6 +105,7 @@ func (c *Client) ReadClusterHistory(ctx context.Context, options ReadClusterHist
 				cluster_algorithm,
 				cluster_id,
 				test_result_system,
+				ingested_invocation_id,
 				test_result_id,
 				ARRAY_AGG(cf ORDER BY cf.last_updated DESC LIMIT 1)[OFFSET(0)] as f
 			FROM clustered_failures cf
@@ -107,15 +113,33 @@ func (c *Client) ReadClusterHistory(ctx context.Context, options ReadClusterHist
 				AND project = @project
 				AND (` + whereClause + `)
 				AND realm IN UNNEST(@realms)
-			GROUP BY partition_day, project, cluster_algorithm, cluster_id, test_result_system, test_result_id
+			GROUP BY partition_day, project, cluster_algorithm, cluster_id, test_result_system, ingested_invocation_id, test_result_id
 			HAVING f.is_included
+		), latest_failures_with_attrs AS (
+			SELECT
+				lf.partition_day AS partition_day,
+				lf.project AS project,
+				lf.cluster_algorithm AS cluster_algorithm,
+				lf.cluster_id AS cluster_id ,
+				lf.test_result_system AS test_result_system,
+				lf.test_result_id AS test_result_system,
+				lf.f AS f,
+				attrs AS attrs,
+			FROM latest_failures AS lf
+				LEFT JOIN failure_attributes AS attrs
+					ON (
+						lf.project = attrs.project
+						AND lf.test_result_system = attrs.test_result_system
+						AND lf.ingested_invocation_id = attrs.ingested_invocation_id
+						AND lf.test_result_id = attrs.test_result_id
+					)
 		), failures_precompute AS (
 			SELECT
 				partition_day,
 				cluster_algorithm,
 				cluster_id,
 				` + strings.Join(precomputeList, "\n") + `
-			FROM latest_failures
+			FROM ` + metricsBaseView + `
 		)
 		SELECT
 			TIMESTAMP(day) as day,
