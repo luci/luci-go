@@ -83,7 +83,7 @@ func TestCheckRunCLs(t *testing.T) {
 		var cls []*changelist.CL
 		var trs []*run.Trigger
 		var clid int64
-		addCL := func(triggerer, owner string, m run.Mode) *changelist.CL {
+		addCL := func(triggerer, owner string, m run.Mode) (*changelist.CL, *run.Trigger) {
 			clid++
 			cl := &changelist.CL{
 				ID:         common.CLID(clid),
@@ -103,11 +103,12 @@ func TestCheckRunCLs(t *testing.T) {
 			}
 			So(datastore.Put(ctx, cl), ShouldBeNil)
 			cls = append(cls, cl)
-			trs = append(trs, &run.Trigger{
+			tr := &run.Trigger{
 				Email: triggerer,
 				Mode:  string(m),
-			})
-			return cl
+			}
+			trs = append(trs, tr)
+			return cl, tr
 		}
 		addDep := func(base *changelist.CL, owner string) *changelist.CL {
 			clid++
@@ -181,7 +182,7 @@ func TestCheckRunCLs(t *testing.T) {
 
 			Convey("triggerer == owner", func() {
 				tr, owner := "t@example.org", "t@example.org"
-				cl := addCL(tr, owner, m)
+				cl, _ := addCL(tr, owner, m)
 
 				Convey("triggerer is a committer", func() {
 					addCommitter(tr)
@@ -226,7 +227,7 @@ func TestCheckRunCLs(t *testing.T) {
 
 			Convey("triggerer != owner", func() {
 				tr, owner := "t@example.org", "o@example.org"
-				cl := addCL(tr, owner, m)
+				cl, _ := addCL(tr, owner, m)
 
 				Convey("triggerer is a committer", func() {
 					addCommitter(tr)
@@ -273,7 +274,7 @@ func TestCheckRunCLs(t *testing.T) {
 
 			Convey("triggerer == owner", func() {
 				tr, owner := "t@example.org", "t@example.org"
-				cl := addCL(tr, owner, m)
+				cl, _ := addCL(tr, owner, m)
 
 				Convey("triggerer is a committer", func() {
 					// Committers can trigger a dry-run for someone else' CL
@@ -309,7 +310,7 @@ func TestCheckRunCLs(t *testing.T) {
 
 			Convey("triggerer != owner", func() {
 				tr, owner := "t@example.org", "o@example.org"
-				cl := addCL(tr, owner, m)
+				cl, _ := addCL(tr, owner, m)
 
 				Convey("triggerer is a committer", func() {
 					// Should succeed whether CL is submittable or not.
@@ -350,7 +351,7 @@ func TestCheckRunCLs(t *testing.T) {
 				// if triggerer is not the owner, but a committer, then
 				// untrusted deps should be checked.
 				tr, owner := "t@example.org", "o@example.org"
-				cl := addCL(tr, owner, m)
+				cl, _ := addCL(tr, owner, m)
 				addCommitter(tr)
 
 				dep1 := addDep(cl, "dep_owner1@example.org")
@@ -449,7 +450,7 @@ func TestCheckRunCLs(t *testing.T) {
 
 		Convey("mode == NewPatchsetRun", func() {
 			tr, owner := "t@example.org", "t@example.org"
-			cl := addCL(tr, owner, run.NewPatchsetRun)
+			cl, _ := addCL(tr, owner, run.NewPatchsetRun)
 			Convey("owner is disallowed", func() {
 				mustFailWith(cl, "CL owner is not in the allowlist.")
 			})
@@ -459,11 +460,42 @@ func TestCheckRunCLs(t *testing.T) {
 			})
 		})
 
+		Convey("mode is non standard mode", func() {
+			tr, owner := "t@example.org", "t@example.org"
+			cl, trigger := addCL(tr, owner, "CUSTOM_RUN")
+			trigger.ModeDefinition = &cfgpb.Mode{
+				Name:            "CUSTOM_RUN",
+				TriggeringLabel: "CUSTOM",
+				TriggeringValue: 1,
+			}
+			Convey("dry", func() {
+				trigger.ModeDefinition.CqLabelValue = 1
+				Convey("disallowed", func() {
+					mustFailWith(cl, "CV cannot start a Run for `%s` because the user is not a dry-runner", owner)
+				})
+				Convey("allowed", func() {
+					addDryRunner(owner)
+					mustOK()
+				})
+			})
+			Convey("full", func() {
+				trigger.ModeDefinition.CqLabelValue = 2
+				markCLSubmittable(cl)
+				Convey("disallowed", func() {
+					mustFailWith(cl, "CV cannot start a Run for `%s` because the user is not a committer", owner)
+				})
+				Convey("allowed", func() {
+					addCommitter(owner)
+					mustOK()
+				})
+			})
+		})
+
 		Convey("multiple CLs", func() {
 			m := run.DryRun
 			tr, owner := "t@example.org", "t@example.org"
-			cl1 := addCL(tr, owner, m)
-			cl2 := addCL(tr, owner, m)
+			cl1, _ := addCL(tr, owner, m)
+			cl2, _ := addCL(tr, owner, m)
 			setAllowOwner(cfgpb.Verifiers_GerritCQAbility_DRY_RUN)
 
 			Convey("all CLs passed", func() {

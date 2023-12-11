@@ -68,6 +68,7 @@ const (
 type runCreateChecker struct {
 	cl                      *changelist.CL
 	runMode                 run.Mode
+	runModeDef              *cfgpb.Mode // if mode is not standard mode in CV
 	allowOwnerIfSubmittable cfgpb.Verifiers_GerritCQAbility_CQAction
 	trustDryRunnerDeps      bool
 	commGroups              []string // committer groups
@@ -167,9 +168,19 @@ func (ck runCreateChecker) canCreateRun(ctx context.Context) (evalResult, error)
 	case run.NewPatchsetRun:
 		return ck.canCreateNewPatchsetRun(ctx)
 	default:
-		// TODO - crbug/1484829: check whether the run mode can submit the change
-		// and use canCreateFullRun instead.
-		return ck.canCreateDryRun(ctx)
+		// TODO(yiwzhang): Ideally, each mode should have its own ACL. Redo
+		// this when revamping the ACL system of LUCI CV. For now, use dry run ACL
+		// for mode trigger by CQ+1 and full run ACL for mode trigger by CQ+2.
+		switch {
+		case ck.runModeDef == nil:
+			panic(fmt.Errorf("impossible; run has non standard mode %q but mode definition is not provided", ck.runMode))
+		case ck.runModeDef.GetCqLabelValue() == 1:
+			return ck.canCreateDryRun(ctx)
+		case ck.runModeDef.GetCqLabelValue() == 2:
+			return ck.canCreateFullRun(ctx)
+		default:
+			panic(fmt.Errorf("impossible; mode specify CQ label value %d, expecting 1, or 2", ck.runModeDef.GetCqLabelValue()))
+		}
 	}
 }
 
@@ -348,6 +359,7 @@ func evaluateCLs(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger
 		cks[i] = &runCreateChecker{
 			cl:                      cl,
 			runMode:                 run.Mode(tr.Mode),
+			runModeDef:              tr.GetModeDefinition(),
 			allowOwnerIfSubmittable: gVerifier.GetAllowOwnerIfSubmittable(),
 			trustDryRunnerDeps:      gVerifier.GetTrustDryRunnerDeps(),
 			commGroups:              gVerifier.GetCommitterList(),

@@ -551,6 +551,11 @@ func (x *SubmitOptions) GetBurstDelay() *durationpb.Duration {
 }
 
 // Mode defines a CQ Run mode and how it can be triggered.
+//
+// The mode ACL check will be same as dry run (i.e. use `dry_run_access_list`)
+// if 1 is provided for `cq_label_value`. Otherwise, the check will the same as
+// full run (i.e. checking whether CL is approved and whether CL owner is
+// committer) if 2 is provided for `cq_label_value`.
 type Mode struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
