@@ -16,14 +16,59 @@ package workflow
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"testing"
 
 	"go.chromium.org/luci/cipkg/base/actions"
 	"go.chromium.org/luci/cipkg/base/generators"
 	"go.chromium.org/luci/cipkg/core"
+	"go.chromium.org/luci/common/exec/execmock"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func TestExecutor(t *testing.T) {
+	Convey("Test executor", t, func() {
+		ctx := execmock.Init(context.Background())
+		uses := execmock.Simple.Mock(ctx, execmock.SimpleInput{})
+		out := t.TempDir()
+
+		Convey("ok", func() {
+			err := Execute(ctx, &ExecutionConfig{
+				OutputDir:  out,
+				WorkingDir: out,
+				Stdin:      os.Stdin,
+				Stdout:     os.Stdout,
+				Stderr:     os.Stderr,
+			}, &core.Derivation{
+				Args: []string{"bin", "-args", "1"},
+				Env:  []string{"env1=1", "env2=2"},
+			})
+			So(err, ShouldBeNil)
+			usage := uses.Snapshot()
+			So(usage[0].Args, ShouldEqual, []string{"bin", "-args", "1"})
+			So(usage[0].Env.Sorted(), ShouldEqual, []string{"env1=1", "env2=2", fmt.Sprintf("out=%s", out)})
+		})
+
+		Convey("env - override out", func() {
+			err := Execute(ctx, &ExecutionConfig{
+				OutputDir:  out,
+				WorkingDir: out,
+				Stdin:      os.Stdin,
+				Stdout:     os.Stdout,
+				Stderr:     os.Stderr,
+			}, &core.Derivation{
+				Args: []string{"bin", "-args", "1"},
+				Env:  []string{"env1=1", "env2=2", "out=something"},
+			})
+			So(err, ShouldBeNil)
+			usage := uses.Snapshot()
+			So(usage[0].Args, ShouldEqual, []string{"bin", "-args", "1"})
+			So(usage[0].Env.Sorted(), ShouldEqual, []string{"env1=1", "env2=2", fmt.Sprintf("out=%s", out)})
+		})
+	})
+}
 
 func TestBuilder(t *testing.T) {
 	Convey("Test Builder", t, func() {

@@ -20,14 +20,15 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"go.chromium.org/luci/cipkg/base/actions"
 	"go.chromium.org/luci/cipkg/base/generators"
 	"go.chromium.org/luci/cipkg/core"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/exec"
 	"go.chromium.org/luci/common/logging"
 
 	"google.golang.org/protobuf/encoding/protojson"
@@ -59,9 +60,10 @@ func Execute(ctx context.Context, cfg *ExecutionConfig, drv *core.Derivation) er
 	cmd.Stdin = cfg.Stdin
 	cmd.Stdout = cfg.Stdout
 	cmd.Stderr = cfg.Stderr
-	cmd.Env = append([]string{
-		"out=" + cfg.OutputDir,
-	}, drv.Env...)
+	cmd.Env = slices.Clone(drv.Env)
+
+	// Set out last to make sure it won't be overridden.
+	cmd.Env = append(cmd.Env, "out="+cfg.OutputDir)
 	return cmd.Run()
 }
 
