@@ -139,8 +139,9 @@ func main() {
 			}
 			return bq.ScheduleExportTasks(
 				ctx,
+				srv.Options.CloudProject,
+				*bqExportDataset,
 				bq.TaskRequests,
-				fmt.Sprintf("%s.%s", *bqExportDataset, srv.Options.CloudProject),
 			)
 		})
 

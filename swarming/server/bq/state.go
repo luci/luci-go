@@ -21,29 +21,21 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
-// ExportType specifies the type of data to export from datastore to bigquery.
-type ExportType string
-
 const (
 	// TaskRequests exports model.TaskRequest to the `task_requests` table.
-	TaskRequests ExportType = "task_requests"
+	TaskRequests = "task_requests"
 
 	// Bots exports model.BotInfo and model.BotEvent to the `bot_events` table.
-	Bots ExportType = "bot_events"
+	Bots = "bot_events"
 
 	// TaskRunResults exports model.TaskRunResults to the `task_results_run`
 	// table.
-	TaskRunResults ExportType = "task_results_run"
+	TaskRunResults = "task_results_run"
 
 	// TaskResultSummaries exports model.TaskResultSummaries to the
 	// `task_results_summary` table.
-	TaskResultSummaries ExportType = "task_results_summary"
+	TaskResultSummaries = "task_results_summary"
 )
-
-// Table returns the tableName for the given ExportType
-func (t ExportType) Table() string {
-	return string(t)
-}
 
 // ExportSchedule stores the highest timestamp which has been exported to
 // bigquery for a specific type of data.
@@ -58,6 +50,6 @@ type ExportSchedule struct {
 	NextExport time.Time `gae:",noindex"`
 }
 
-func (t ExportType) exportScheduleKey(ctx context.Context) *datastore.Key {
-	return datastore.NewKey(ctx, "bq.ExportSchedule", string(t), 0, nil)
+func exportScheduleKey(ctx context.Context, tableName string) *datastore.Key {
+	return datastore.NewKey(ctx, "bq.ExportSchedule", tableName, 0, nil)
 }

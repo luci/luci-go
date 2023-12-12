@@ -12,7 +12,9 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 
 message CreateExportTask {
-  string table_id = 1;
-  google.protobuf.Timestamp start = 2;
-  google.protobuf.Duration duration = 3;
+  google.protobuf.Timestamp start = 1;
+  google.protobuf.Duration duration = 2;
+  string cloud_project = 3;
+  string dataset = 4;
+  string table_name = 5;
 }

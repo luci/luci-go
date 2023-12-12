@@ -54,35 +54,48 @@ func TestCreateExportTask(t *testing.T) {
 		}
 		Convey("Creates 4 ExportTasks", func() {
 			ctx, tc, skdr := setup()
-			start := tc.Now().Add(-latestAge - time.Minute).Truncate(time.Minute)
+			cutoff := tc.Now().UTC().Add(-latestAge)
+			start := cutoff.Add(-time.Minute)
+			// It appears that datastore testing implementation strips away
+			// nanosecond time precision.
+			// Truncate by microsecond matches this behaviour in UTs
+			start = start.Truncate(time.Microsecond)
 			state := ExportSchedule{
-				Key:        TaskRequests.exportScheduleKey(ctx),
+				Key:        exportScheduleKey(ctx, TaskRequests),
 				NextExport: start,
 			}
 			err := datastore.Put(ctx, &state)
 			So(err, ShouldBeNil)
-			err = ScheduleExportTasks(ctx, TaskRequests, "foo")
+			err = ScheduleExportTasks(ctx, "foo", "bar", TaskRequests)
 			So(err, ShouldBeNil)
 			expected := []*taskspb.CreateExportTask{
 				{
-					TableId:  "foo.task_requests",
-					Start:    timestamppb.New(start),
-					Duration: durationpb.New(exportDuration),
+					CloudProject: "foo",
+					Dataset:      "bar",
+					TableName:    TaskRequests,
+					Start:        timestamppb.New(start),
+					Duration:     durationpb.New(exportDuration),
 				},
 				{
-					TableId:  "foo.task_requests",
-					Start:    timestamppb.New(start.Add(1 * exportDuration)),
-					Duration: durationpb.New(exportDuration),
+					CloudProject: "foo",
+					Dataset:      "bar",
+					TableName:    TaskRequests,
+					Start:        timestamppb.New(start.Add(1 * exportDuration)),
+					Duration:     durationpb.New(exportDuration),
 				},
 				{
-					TableId:  "foo.task_requests",
-					Start:    timestamppb.New(start.Add(2 * exportDuration)),
-					Duration: durationpb.New(exportDuration),
+					CloudProject: "foo",
+					Dataset:      "bar",
+					TableName:    TaskRequests,
+					Start:        timestamppb.New(start.Add(2 * exportDuration)),
+					Duration:     durationpb.New(exportDuration),
 				},
 				{
-					TableId:  "foo.task_requests",
-					Start:    timestamppb.New(start.Add(3 * exportDuration)),
-					Duration: durationpb.New(exportDuration),
+					CloudProject: "foo",
+					Dataset:      "bar",
+					TableName:    TaskRequests,
+					Start:        timestamppb.New(start.Add(3 * exportDuration)),
+					Duration:     durationpb.New(exportDuration),
 				},
 			}
 			So(skdr.Tasks(), ShouldHaveLength, len(expected))
@@ -102,10 +115,10 @@ func TestCreateExportTask(t *testing.T) {
 		})
 		Convey("Creates 0 export tasks if ExportSchedule doesn't exist", func() {
 			ctx, tc, skdr := setup()
-			err := ScheduleExportTasks(ctx, TaskRequests, "foo")
+			err := ScheduleExportTasks(ctx, "foo", "bar", TaskRequests)
 			So(err, ShouldBeNil)
 			So(skdr.Tasks(), ShouldBeEmpty)
-			state := ExportSchedule{Key: TaskRequests.exportScheduleKey(ctx)}
+			state := ExportSchedule{Key: exportScheduleKey(ctx, TaskRequests)}
 			err = datastore.Get(ctx, &state)
 			So(err, ShouldBeNil)
 			So(state.NextExport, ShouldEqual, tc.Now().Truncate(time.Minute))
@@ -114,13 +127,25 @@ func TestCreateExportTask(t *testing.T) {
 			ctx, tc, skdr := setup()
 			start := tc.Now().Add(-(2 + 10) * time.Minute).Truncate(time.Minute)
 			state := ExportSchedule{
-				Key:        TaskRequests.exportScheduleKey(ctx),
+				Key:        exportScheduleKey(ctx, TaskRequests),
 				NextExport: start,
 			}
 			So(datastore.Put(ctx, &state), ShouldBeNil)
-			err := ScheduleExportTasks(ctx, TaskRequests, "foo")
+			err := ScheduleExportTasks(ctx, "foo", "bar", TaskRequests)
 			So(err, ShouldBeNil)
 			So(skdr.Tasks(), ShouldHaveLength, 20)
+		})
+		Convey("We cannot schedule an exportTask in the future", func() {
+			ctx, tc, skdr := setup()
+			start := tc.Now().Add(5 * time.Minute)
+			state := ExportSchedule{
+				Key:        exportScheduleKey(ctx, TaskRequests),
+				NextExport: start,
+			}
+			So(datastore.Put(ctx, &state), ShouldBeNil)
+			err := ScheduleExportTasks(ctx, "foo", "bar", TaskRequests)
+			So(err, ShouldBeNil)
+			So(skdr.Tasks(), ShouldHaveLength, 0)
 		})
 	})
 }

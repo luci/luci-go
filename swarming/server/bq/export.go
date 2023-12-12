@@ -41,7 +41,7 @@ const maxTasksToSchedule = 20
 
 // latestAge represents the latest time in the past which can be scheduled for
 // export by ScheduleExportTasks
-const latestAge = -2 * time.Minute
+const latestAge = 2 * time.Minute
 
 func RegisterTQTasks() {
 	tq.RegisterTaskClass(tq.TaskClass{
@@ -55,6 +55,10 @@ func RegisterTQTasks() {
 	})
 }
 
+func tableID(cloudProject, dataset, tableName string) string {
+	return fmt.Sprintf("%s.%s.%s", cloudProject, dataset, tableName)
+}
+
 // ScheduleExportTasks creates a series of tasks responsible for
 // exporting a specific time interval to bigquery. All of the TQ tasks scheduled
 // will cover the range [NextExport, cutoff). If exports fall behind schedule,
@@ -62,12 +66,12 @@ func RegisterTQTasks() {
 // tasks as possible. A `DuplicationKey` is used to ensure that no duplicate
 // tasks are created if there are temporary failures to write to datastore. Will
 // schedule a maxium of MaxTasksToSchedule export tasks.
-func ScheduleExportTasks(ctx context.Context, t ExportType, datasetID string) error {
+func ScheduleExportTasks(ctx context.Context, cloudProject, dataset, tableName string) error {
 	now := clock.Now(ctx).UTC()
 	cutoff := now.Add(-latestAge)
-	tableID := fmt.Sprintf("%s.%s", datasetID, t.Table())
+	tableID := tableID(cloudProject, dataset, tableName)
 	logging.Infof(ctx, "Scheduling export tasks: %s - %s", tableID, cutoff)
-	sch := ExportSchedule{Key: t.exportScheduleKey(ctx)}
+	sch := ExportSchedule{Key: exportScheduleKey(ctx, tableName)}
 	err := datastore.Get(ctx, &sch)
 	if err != nil {
 		if errors.Is(err, datastore.ErrNoSuchEntity) {
@@ -87,17 +91,22 @@ func ScheduleExportTasks(ctx context.Context, t ExportType, datasetID string) er
 			break
 		}
 		payload := taskspb.CreateExportTask{
-			TableId:  tableID,
-			Start:    timestamppb.New(sch.NextExport),
-			Duration: durationpb.New(exportDuration),
+			Start:        timestamppb.New(sch.NextExport),
+			Duration:     durationpb.New(exportDuration),
+			CloudProject: cloudProject,
+			Dataset:      dataset,
+			TableName:    tableName,
 		}
-		dedupKey := fmt.Sprintf("%s:%d:%d", tableID, sch.NextExport.Unix(), exportDuration)
+		ts := sch.NextExport.Unix()
+		dedupKey := fmt.Sprintf("%s:%d:%d", tableID, ts, exportDuration/time.Second)
 		task := tq.Task{
 			Title:            dedupKey,
 			DeduplicationKey: dedupKey,
 			Payload:          &payload,
 		}
-		logging.Debugf(ctx, "Triggering export task: %s - %+v", dedupKey, &payload)
+		logging.Debugf(ctx, "Triggering %s: - %+v",
+			dedupKey,
+			&payload)
 		err = tq.AddTask(ctx, &task)
 		if err != nil {
 			logging.Warningf(ctx, "Failed to trigger export task: %+v", &payload)
@@ -110,7 +119,10 @@ func ScheduleExportTasks(ctx context.Context, t ExportType, datasetID string) er
 	return errors.Join(err, datastore.Put(ctx, &sch))
 }
 
-func exportTask(ctx context.Context, et *taskspb.CreateExportTask) error {
-	logging.Infof(ctx, "ExportTask started for %s - %s - %d", et.TableId, et.Start.AsTime().String(), et.Duration)
+func exportTask(ctx context.Context, t *taskspb.CreateExportTask) error {
+	logging.Infof(ctx, "ExportTask started for %s:%s:%d",
+		tableID(t.CloudProject, t.Dataset, t.TableName),
+		t.Start.AsTime(),
+		t.Duration)
 	return nil
 }
