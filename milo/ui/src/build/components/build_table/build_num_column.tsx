@@ -28,7 +28,7 @@ export function BuildNumContentCell() {
   return (
     <TableCell>
       <Link href={getBuildURLPathFromBuildId(build.id)}>
-        {build.number ?? 'b' + build.id}
+        {build.number ? build.number : 'b' + build.id}
       </Link>
     </TableCell>
   );
