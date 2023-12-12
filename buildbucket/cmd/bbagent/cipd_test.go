@@ -27,6 +27,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -148,7 +149,7 @@ func TestPrependPath(t *testing.T) {
 		So(prependPath(build, cwd), ShouldBeNil)
 		pathEnv := os.Getenv("PATH")
 		var expectedPath []string
-		for _, p := range []string{"cipd", "path_a", "path_a/bin", "path_b", "path_b/bin"} {
+		for _, p := range []string{"path_a", "path_a/bin", "path_b", "path_b/bin"} {
 			expectedPath = append(expectedPath, filepath.Join(cwd, p))
 		}
 		So(strings.Contains(pathEnv, strings.Join(expectedPath, string(os.PathListSeparator))), ShouldBeTrue)
@@ -281,6 +282,8 @@ func TestInstallCipd(t *testing.T) {
 	t.Parallel()
 	Convey("InstallCipd", t, func() {
 		ctx := context.Background()
+		ctx = memlogger.Use(ctx)
+		logs := logging.Get(ctx).(*memlogger.MemLogger)
 		build := &bbpb.Build{
 			Id: 123,
 			Infra: &bbpb.BuildInfra{
@@ -288,7 +291,7 @@ func TestInstallCipd(t *testing.T) {
 					Agent: &bbpb.BuildInfra_Buildbucket_Agent{
 						Input: &bbpb.BuildInfra_Buildbucket_Agent_Input{
 							CipdSource: map[string]*bbpb.InputDataRef{
-								"cipd": &bbpb.InputDataRef{
+								"cipd": {
 									DataType: &bbpb.InputDataRef_Cipd{
 										Cipd: &bbpb.InputDataRef_CIPD{
 											Server: "chrome-infra-packages.appspot.com",
@@ -331,13 +334,70 @@ func TestInstallCipd(t *testing.T) {
 			},
 		}
 		tempDir := t.TempDir()
-		err := installCipd(ctx, build, tempDir, "linux-amd64")
-		So(err, ShouldBeNil)
-		// check to make sure cipd is correctly saved in the directory
-		files, err := os.ReadDir(filepath.Join(tempDir, "cipd"))
-		So(err, ShouldBeNil)
-		for _, file := range files {
-			So(file.Name(), ShouldEqual, "cipd")
-		}
+		cacheBase := "cache"
+		cipdURL := "https://chrome-infra-packages.appspot.com/client?platform=linux-amd64&version=latest"
+		Convey("without cache", func() {
+			err := installCipd(ctx, build, tempDir, cacheBase, "linux-amd64")
+			So(err, ShouldBeNil)
+			// check to make sure cipd is correctly saved in the directory
+			cipdDir := filepath.Join(tempDir, "cipd")
+			files, err := os.ReadDir(cipdDir)
+			So(err, ShouldBeNil)
+			for _, file := range files {
+				So(file.Name(), ShouldEqual, "cipd")
+			}
+			// check the cipd path in set in PATH
+			pathEnv := os.Getenv("PATH")
+			So(strings.Contains(pathEnv, "cipd"), ShouldBeTrue)
+			So(logs, memlogger.ShouldHaveLog,
+				logging.Info, fmt.Sprintf("Install CIPD client from URL: %s into %s", cipdURL, cipdDir))
+		})
+
+		Convey("with cache", func() {
+			build.Infra.Buildbucket.Agent.CipdClientCache = &bbpb.CacheEntry{
+				Name: "cipd_client_hash",
+				Path: "cipd_client",
+			}
+			cipdCacheDir := filepath.Join(tempDir, cacheBase, "cipd_client")
+			err := os.MkdirAll(cipdCacheDir, 0750)
+			So(err, ShouldBeNil)
+
+			Convey("hit", func() {
+				// create an empty file as if it's the cipd client.
+				err := os.WriteFile(filepath.Join(cipdCacheDir, "cipd"), []byte(""), 0644)
+				So(err, ShouldBeNil)
+				err = installCipd(ctx, build, tempDir, cacheBase, "linux-amd64")
+				So(err, ShouldBeNil)
+				// check to make sure cipd is correctly saved in the directory
+				files, err := os.ReadDir(cipdCacheDir)
+				So(err, ShouldBeNil)
+				for _, file := range files {
+					So(file.Name(), ShouldEqual, "cipd")
+				}
+				So(logs, memlogger.ShouldNotHaveLog,
+					logging.Info, fmt.Sprintf("Install CIPD client from URL: %s into %s", cipdURL, cipdCacheDir))
+
+				// check the cipd path in set in PATH
+				pathEnv := os.Getenv("PATH")
+				So(strings.Contains(pathEnv, strings.Join([]string{cipdCacheDir, filepath.Join(cipdCacheDir, "bin")}, string(os.PathListSeparator))), ShouldBeTrue)
+			})
+
+			Convey("miss", func() {
+				err := installCipd(ctx, build, tempDir, cacheBase, "linux-amd64")
+				So(err, ShouldBeNil)
+				// check to make sure cipd is correctly saved in the directory
+				files, err := os.ReadDir(cipdCacheDir)
+				So(err, ShouldBeNil)
+				for _, file := range files {
+					So(file.Name(), ShouldEqual, "cipd")
+				}
+				So(logs, memlogger.ShouldHaveLog,
+					logging.Info, fmt.Sprintf("Install CIPD client from URL: %s into %s", cipdURL, cipdCacheDir))
+
+				// check the cipd path in set in PATH
+				pathEnv := os.Getenv("PATH")
+				So(strings.Contains(pathEnv, strings.Join([]string{cipdCacheDir, filepath.Join(cipdCacheDir, "bin")}, string(os.PathListSeparator))), ShouldBeTrue)
+			})
+		})
 	})
 }

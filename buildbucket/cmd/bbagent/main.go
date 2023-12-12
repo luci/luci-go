@@ -330,7 +330,7 @@ func prepareInputBuild(ctx context.Context, build, updatedBuild *bbpb.Build) {
 }
 
 // downloadInputs downloads CIPD and CAS inputs then updates the build.
-func downloadInputs(ctx context.Context, cwd string, c clientInput) int {
+func downloadInputs(ctx context.Context, cwd, cacheBase string, c clientInput) int {
 	// Most likely happens in `led get-build` process where it creates from an old build
 	// before new Agent field was there. This new feature shouldn't work for those builds.
 	if c.input.Build.Infra.Buildbucket.Agent == nil {
@@ -376,7 +376,7 @@ func downloadInputs(ctx context.Context, cwd string, c clientInput) int {
 			}
 		}()
 		// Download CIPD.
-		if err := installCipd(ctx, c.input.Build, cwd, agent.Output.AgentPlatform); err != nil {
+		if err := installCipd(ctx, c.input.Build, cwd, cacheBase, agent.Output.AgentPlatform); err != nil {
 			return err
 		}
 		if err := prependPath(c.input.Build, cwd); err != nil {
@@ -679,8 +679,9 @@ func mainImpl() int {
 	logging.Infof(ctx, "Input args:\n%s", initialJSONPB)
 
 	// Downloading cipd packages if any.
+	resolvedCacheBase := chooseCacheDir(bbclientInput.input, *cacheBase)
 	if stringset.NewFromSlice(bbclientInput.input.Build.Input.Experiments...).Has(buildbucket.ExperimentBBAgentDownloadCipd) {
-		if retcode := downloadInputs(cctx, cwd, bbclientInput); retcode != 0 {
+		if retcode := downloadInputs(cctx, cwd, resolvedCacheBase, bbclientInput); retcode != 0 {
 			return retcode
 		}
 	}
@@ -713,12 +714,11 @@ func mainImpl() int {
 	var statusDetails *bbpb.StatusDetails
 	var subprocErr error
 	builds, err := host.Run(cctx, opts, func(ctx context.Context, hostOpts host.Options, deadlineEvntCh <-chan lucictx.DeadlineEvent, shutdown func()) {
-		cache := chooseCacheDir(bbclientInput.input, *cacheBase)
 		logging.Infof(ctx, "running luciexe: %q", exeArgs)
-		logging.Infof(ctx, "  (cache dir): %q", cache)
+		logging.Infof(ctx, "  (cache dir): %q", resolvedCacheBase)
 		invokeOpts := &invoke.Options{
 			BaseDir:  hostOpts.BaseDir,
-			CacheDir: cache,
+			CacheDir: resolvedCacheBase,
 			Env:      environ.System(),
 		}
 
