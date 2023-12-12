@@ -18,11 +18,11 @@ import (
 	"context"
 	"fmt"
 
-	"go.chromium.org/luci/auth_service/api/taskspb"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/tq"
+
+	"go.chromium.org/luci/auth_service/api/taskspb"
 )
 
 // EnqueueReplicationTask adds a ReplicationTask task to the cloud task

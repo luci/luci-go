@@ -18,13 +18,32 @@ import (
 	"context"
 	"testing"
 
-	"go.chromium.org/luci/auth_service/impl/model"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/authdb"
+	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/auth/service/protocol"
+
+	"go.chromium.org/luci/auth_service/impl/model"
+	"go.chromium.org/luci/auth_service/internal/permissions"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+var (
+	testPerm1 = realms.RegisterPermission("testing.tests.perm1")
+	testPerm2 = realms.RegisterPermission("testing.tests.perm2")
+)
+
+func makeTestPermissions(names ...string) []*protocol.Permission {
+	perms := make([]*protocol.Permission, len(names))
+	for i, name := range names {
+		perms[i] = &protocol.Permission{Name: name}
+	}
+	return perms
+}
 
 func TestAuthDBProvider(t *testing.T) {
 	t.Parallel()
@@ -45,7 +64,38 @@ func TestAuthDBProvider(t *testing.T) {
 					Parent:  model.RootKey(ctx),
 					Members: members,
 				}
-				return datastore.Put(ctx, globals, state, group)
+				realmsGlobals := &model.AuthRealmsGlobals{
+					Kind:   "AuthRealmsGlobals",
+					ID:     "globals",
+					Parent: model.RootKey(ctx),
+					PermissionsList: &permissions.PermissionsList{
+						Permissions: makeTestPermissions(testPerm1.String(), testPerm2.String()),
+					},
+				}
+				// Grant all members of test-group testPerm2 permission
+				// in project "test-project" root realm.
+				marshalled, marshalErr := proto.Marshal(&protocol.Realms{
+					Permissions: makeTestPermissions(testPerm2.String()),
+					Realms: []*protocol.Realm{
+						{
+							Name: "test-project:@root",
+							Bindings: []*protocol.Binding{
+								{
+									Permissions: []uint32{0},
+									Principals:  []string{"group:test-group"},
+								},
+							},
+						},
+					},
+				})
+				So(marshalErr, ShouldBeNil)
+				projectRealms := &model.AuthProjectRealms{
+					Kind:   "AuthProjectRealms",
+					ID:     "test-project",
+					Parent: model.RootKey(ctx),
+					Realms: marshalled,
+				}
+				return datastore.Put(ctx, globals, state, group, realmsGlobals, projectRealms)
 			}, nil)
 			So(err, ShouldBeNil)
 		}
@@ -62,6 +112,19 @@ func TestAuthDBProvider(t *testing.T) {
 		yes, err := db1.IsMember(ctx, "user:a@example.com", []string{"test-group"})
 		So(err, ShouldBeNil)
 		So(yes, ShouldBeTrue)
+
+		// Check permission which hasn't been granted.
+		allowed, err := db1.HasPermission(ctx, "user:a@example.com", testPerm1, "test-project:@root", nil)
+		So(err, ShouldBeNil)
+		So(allowed, ShouldBeFalse)
+		// Check permission which has been granted.
+		allowed, err = db1.HasPermission(ctx, "user:a@example.com", testPerm2, "test-project:@root", nil)
+		So(err, ShouldBeNil)
+		So(allowed, ShouldBeTrue)
+		// Check realms fall back to @root.
+		allowed, err = db1.HasPermission(ctx, "user:a@example.com", testPerm2, "test-project:unknown", nil)
+		So(err, ShouldBeNil)
+		So(allowed, ShouldBeTrue)
 
 		// Calling again returns the exact same object.
 		db2, err := authDB.GetAuthDB(ctx)
@@ -80,5 +143,11 @@ func TestAuthDBProvider(t *testing.T) {
 		yes, err = db3.IsMember(ctx, "user:a@example.com", []string{"test-group"})
 		So(err, ShouldBeNil)
 		So(yes, ShouldBeFalse)
+
+		// Check permission which hasn't been granted, as the member is
+		// no longer in the group.
+		allowed, err = db3.HasPermission(ctx, "user:a@example.com", testPerm2, "test-project:@root", nil)
+		So(err, ShouldBeNil)
+		So(allowed, ShouldBeFalse)
 	})
 }

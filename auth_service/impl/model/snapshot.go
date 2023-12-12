@@ -21,6 +21,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"golang.org/x/sync/errgroup"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/service/protocol"
@@ -34,11 +35,11 @@ type Snapshot struct {
 	GlobalConfig     *AuthGlobalConfig
 	Groups           []*AuthGroup
 	IPAllowlists     []*AuthIPAllowlist
+	RealmsGlobals    *AuthRealmsGlobals
+	ProjectRealms    []*AuthProjectRealms
 
 	// TODO:
 	//   IPAllowlistAssignments
-	//   RealmsGlobals
-	//   ProjectRealms
 }
 
 // TakeSnapshot takes a consistent snapshot of the replicated subset of AuthDB
@@ -71,7 +72,10 @@ func TakeSnapshot(ctx context.Context) (snap *Snapshot, err error) {
 
 		gr, ctx := errgroup.WithContext(ctx)
 		gr.Go(func() error {
-			return datastore.Get(ctx, snap.GlobalConfig, snap.ReplicationState)
+			return datastore.Get(ctx, snap.GlobalConfig)
+		})
+		gr.Go(func() error {
+			return datastore.Get(ctx, snap.ReplicationState)
 		})
 		gr.Go(func() (err error) {
 			snap.Groups, err = GetAllAuthGroups(ctx)
@@ -81,11 +85,17 @@ func TakeSnapshot(ctx context.Context) (snap *Snapshot, err error) {
 			snap.IPAllowlists, err = GetAllAuthIPAllowlists(ctx)
 			return
 		})
+		gr.Go(func() (err error) {
+			snap.RealmsGlobals, err = GetAuthRealmsGlobals(ctx)
+			return
+		})
+		gr.Go(func() (err error) {
+			snap.ProjectRealms, err = GetAllAuthProjectRealms(ctx)
+			return
+		})
 
 		// TODO:
 		//  IPAllowlistAssignments
-		//  RealmsGlobals
-		//  ProjectRealms
 
 		return gr.Wait()
 	}, &datastore.TransactionOptions{ReadOnly: true})
@@ -97,7 +107,7 @@ func TakeSnapshot(ctx context.Context) (snap *Snapshot, err error) {
 }
 
 // ToAuthDBProto converts the snapshot to an AuthDB proto message.
-func (s *Snapshot) ToAuthDBProto() *protocol.AuthDB {
+func (s *Snapshot) ToAuthDBProto() (*protocol.AuthDB, error) {
 	groups := make([]*protocol.AuthGroup, len(s.Groups))
 	for i, v := range s.Groups {
 		groups[i] = &protocol.AuthGroup{
@@ -127,6 +137,11 @@ func (s *Snapshot) ToAuthDBProto() *protocol.AuthDB {
 		}
 	}
 
+	realms, err := MergeRealms(s.RealmsGlobals, s.ProjectRealms)
+	if err != nil {
+		return nil, errors.Annotate(err, "error merging realms").Err()
+	}
+
 	return &protocol.AuthDB{
 		OauthClientId:            s.GlobalConfig.OAuthClientID,
 		OauthClientSecret:        s.GlobalConfig.OAuthClientSecret,
@@ -135,14 +150,19 @@ func (s *Snapshot) ToAuthDBProto() *protocol.AuthDB {
 		SecurityConfig:           s.GlobalConfig.SecurityConfig,
 		Groups:                   groups,
 		IpWhitelists:             allowlists,
+		Realms:                   realms,
 		IpWhitelistAssignments:   nil, // TODO
-		Realms:                   nil, // TODO
-	}
+	}, nil
 }
 
 // ToAuthDB converts the snapshot to an authdb.SnapshotDB.
 //
 // It then can be used by the auth service itself to make ACL checks.
 func (s *Snapshot) ToAuthDB() (*authdb.SnapshotDB, error) {
-	return authdb.NewSnapshotDB(s.ToAuthDBProto(), "", s.ReplicationState.AuthDBRev, false)
+	authDBProto, err := s.ToAuthDBProto()
+	if err != nil {
+		return nil, errors.Annotate(err,
+			"failed converting AuthDB snapshot to proto").Err()
+	}
+	return authdb.NewSnapshotDB(authDBProto, "", s.ReplicationState.AuthDBRev, false)
 }

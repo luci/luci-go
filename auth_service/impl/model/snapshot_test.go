@@ -19,10 +19,13 @@ import (
 	"fmt"
 	"testing"
 
-	"go.chromium.org/luci/common/errors"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/service/protocol"
+
+	"go.chromium.org/luci/auth_service/internal/permissions"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -37,8 +40,49 @@ func TestTakeSnapshot(t *testing.T) {
 		ctx := memory.Use(context.Background())
 
 		_, err := TakeSnapshot(ctx)
-		So(err.(errors.MultiError).First(), ShouldEqual, datastore.ErrNoSuchEntity)
+		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 
+		realmsGlobals := testAuthRealmsGlobals(ctx)
+		perms := makeTestPermissions("luci.dev.p1", "luci.dev.p2")
+		realmsGlobals.PermissionsList = &permissions.PermissionsList{
+			Permissions: perms,
+		}
+		projectRealms1 := testAuthProjectRealms(ctx, "project-1")
+		projectRealms1.Realms, err = proto.Marshal(&protocol.Realms{
+			Permissions: makeTestPermissions("luci.dev.p2"),
+			Conditions:  makeTestConditions("a", "c"),
+			Realms: []*protocol.Realm{
+				{
+					Name: "project-1:@root",
+					Bindings: []*protocol.Binding{
+						{
+							Permissions: []uint32{0},
+							Conditions:  []uint32{0, 1},
+							Principals:  []string{"group:group-1"},
+						},
+					},
+				},
+			},
+		})
+		So(err, ShouldBeNil)
+		projectRealms2 := testAuthProjectRealms(ctx, "project-2")
+		projectRealms2.Realms, err = proto.Marshal(&protocol.Realms{
+			Permissions: makeTestPermissions("luci.dev.p1"),
+			Conditions:  makeTestConditions("b"),
+			Realms: []*protocol.Realm{
+				{
+					Name: "project-2:@root",
+					Bindings: []*protocol.Binding{
+						{
+							Permissions: []uint32{0},
+							Conditions:  []uint32{0},
+							Principals:  []string{"group:group-2"},
+						},
+					},
+				},
+			},
+		})
+		So(err, ShouldBeNil)
 		So(datastore.Put(ctx,
 			testAuthReplicationState(ctx, testAuthDBRev),
 			testAuthGlobalConfig(ctx),
@@ -46,12 +90,15 @@ func TestTakeSnapshot(t *testing.T) {
 			testAuthGroup(ctx, "group-1"),
 			testIPAllowlist(ctx, "ip-allowlist-2", nil),
 			testIPAllowlist(ctx, "ip-allowlist-1", nil),
+			realmsGlobals,
+			projectRealms2,
+			projectRealms1,
 		), ShouldBeNil)
 
 		snap, err := TakeSnapshot(ctx)
 		So(err, ShouldBeNil)
 
-		So(snap, ShouldResemble, &Snapshot{
+		So(snap, ShouldResembleProto, &Snapshot{
 			ReplicationState: testAuthReplicationState(ctx, 12345),
 			GlobalConfig:     testAuthGlobalConfig(ctx),
 			Groups: []*AuthGroup{
@@ -61,6 +108,11 @@ func TestTakeSnapshot(t *testing.T) {
 			IPAllowlists: []*AuthIPAllowlist{
 				testIPAllowlist(ctx, "ip-allowlist-1", nil),
 				testIPAllowlist(ctx, "ip-allowlist-2", nil),
+			},
+			RealmsGlobals: realmsGlobals,
+			ProjectRealms: []*AuthProjectRealms{
+				projectRealms1,
+				projectRealms2,
 			},
 		})
 
@@ -98,7 +150,37 @@ func TestTakeSnapshot(t *testing.T) {
 				}
 			}
 
-			So(snap.ToAuthDBProto(), ShouldResembleProto, &protocol.AuthDB{
+			expectedMergedRealmsProto := &protocol.Realms{
+				ApiVersion:  RealmsAPIVersion,
+				Permissions: makeTestPermissions("luci.dev.p1", "luci.dev.p2"),
+				Conditions:  makeTestConditions("a", "c", "b"),
+				Realms: []*protocol.Realm{
+					{
+						Name: "project-1:@root",
+						Bindings: []*protocol.Binding{
+							{
+								Permissions: []uint32{1},
+								Conditions:  []uint32{0, 1},
+								Principals:  []string{"group:group-1"},
+							},
+						},
+					},
+					{
+						Name: "project-2:@root",
+						Bindings: []*protocol.Binding{
+							{
+								Permissions: []uint32{0},
+								Conditions:  []uint32{2},
+								Principals:  []string{"group:group-2"},
+							},
+						},
+					},
+				},
+			}
+
+			authDBProto, err := snap.ToAuthDBProto()
+			So(err, ShouldBeNil)
+			So(authDBProto, ShouldResembleProto, &protocol.AuthDB{
 				OauthClientId:     "test-client-id",
 				OauthClientSecret: "test-client-secret",
 				OauthAdditionalClientIds: []string{
@@ -115,6 +197,7 @@ func TestTakeSnapshot(t *testing.T) {
 					allowlistProto("ip-allowlist-1"),
 					allowlistProto("ip-allowlist-2"),
 				},
+				Realms: expectedMergedRealmsProto,
 			})
 		})
 
