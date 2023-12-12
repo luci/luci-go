@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {
-  getOldBuilderURLPath,
+  getBuilderURLPath,
   getSwarmingBotListURL,
   getTestHistoryURLPath,
   setSingleQueryParam,
@@ -21,13 +21,13 @@ import {
 
 describe('getBuilderURLPath', () => {
   test('should encode the builder', () => {
-    const url = getOldBuilderURLPath({
+    const url = getBuilderURLPath({
       project: 'testproject',
       bucket: 'testbucket',
       builder: 'test builder',
     });
     expect(url).toStrictEqual(
-      '/p/testproject/builders/testbucket/test%20builder',
+      '/ui/p/testproject/builders/testbucket/test%20builder',
     );
   });
 });

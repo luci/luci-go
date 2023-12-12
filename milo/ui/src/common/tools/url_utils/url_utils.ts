@@ -35,13 +35,13 @@ export function getBuildURLPath(
   builder: BuilderID,
   buildIdOrNum: string,
 ): string {
-  return `/ui${getOldBuilderURLPath(builder)}/${buildIdOrNum}`;
+  return `${getBuilderURLPath(builder)}/${buildIdOrNum}`;
 }
 
-export function getOldBuilderURLPath(builder: BuilderID): string {
-  return `/p/${builder.project}/builders/${builder.bucket}/${encodeURIComponent(
-    builder.builder,
-  )}`;
+export function getBuilderURLPath(builder: BuilderID): string {
+  return `/ui/p/${builder.project}/builders/${
+    builder.bucket
+  }/${encodeURIComponent(builder.builder)}`;
 }
 
 export function getOldConsoleURLPath(proj: string, consoleId: string) {
@@ -56,11 +56,9 @@ export function getLegacyBuildURLPath(
   builder: BuilderID,
   buildNumOrId: string,
 ) {
-  return `${getLegacyBuilderURLPath(builder)}/${buildNumOrId}`;
-}
-
-export function getLegacyBuilderURLPath(builder: BuilderID) {
-  return `/old${getOldBuilderURLPath(builder)}`;
+  return `/old/p/${builder.project}/builders/${
+    builder.bucket
+  }/${encodeURIComponent(builder.builder)}/${buildNumOrId}`;
 }
 
 export function getGerritChangeURL(change: GerritChange): string {

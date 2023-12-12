@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Typography } from '@mui/material';
+import { Box, Link, Typography } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 
 import { BuilderID } from '@/common/services/buildbucket';
-import { getOldBuilderURLPath } from '@/common/tools/url_utils';
+import { getBuilderURLPath } from '@/common/tools/url_utils';
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 
 interface BuilderListDisplayProps {
@@ -37,7 +38,9 @@ export function BuilderListDisplay({
           <ul>
             {builders?.map((builder) => (
               <li key={builder.builder}>
-                <a href={getOldBuilderURLPath(builder)}>{builder.builder}</a>
+                <Link component={RouterLink} to={getBuilderURLPath(builder)}>
+                  {builder.builder}
+                </Link>
               </li>
             ))}
           </ul>

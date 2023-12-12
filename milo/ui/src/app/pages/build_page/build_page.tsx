@@ -40,7 +40,7 @@ import { useStore } from '@/common/store';
 import { InvocationProvider } from '@/common/store/invocation_state';
 import { displayDuration, LONG_TIME_FORMAT } from '@/common/tools/time_utils';
 import {
-  getOldBuilderURLPath,
+  getBuilderURLPath,
   getLegacyBuildURLPath,
   getProjectURLPath,
 } from '@/common/tools/url_utils';
@@ -155,7 +155,10 @@ export const BuildPage = observer(() => {
               <span>&nbsp;/&nbsp;</span>
               <span>{bucket}</span>
               <span>&nbsp;/&nbsp;</span>
-              <Link href={getOldBuilderURLPath({ project, bucket, builder })}>
+              <Link
+                component={RouterLink}
+                to={getBuilderURLPath({ project, bucket, builder })}
+              >
                 {builder}
               </Link>
               <span>&nbsp;/&nbsp;</span>

@@ -142,7 +142,7 @@ describe('ConsoleSnapshotRow', () => {
     expect(builderSnapshots.childNodes.item(2)).toHaveClass('no-build-cell');
     expect(builderSnapshots.childNodes.item(2)).toHaveAttribute(
       'href',
-      '/p/the_project/builders/the_bucket/the_builder_2',
+      '/ui/p/the_project/builders/the_bucket/the_builder_2',
     );
   });
 });

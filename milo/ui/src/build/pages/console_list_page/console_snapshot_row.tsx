@@ -17,13 +17,13 @@ import { Link } from '@mui/material';
 import { useMemo } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { buildCategoryTree } from '@/build/tools/category_tree';
 import { formatBuilderId } from '@/build/tools/build_utils';
+import { buildCategoryTree } from '@/build/tools/category_tree';
 import { BUILD_STATUS_CLASS_MAP } from '@/common/constants';
 import { ConsoleSnapshot } from '@/common/services/milo_internal';
 import {
   getBuildURLPathFromBuildData,
-  getOldBuilderURLPath,
+  getBuilderURLPath,
   getOldConsoleURLPath,
 } from '@/common/tools/url_utils';
 import { extractProject } from '@/common/tools/utils';
@@ -126,7 +126,7 @@ export function ConsoleSnapshotRow({ snapshot }: ConsoleSnapshotRowProps) {
           const builderId = formatBuilderId(s.builder);
           const link = s.build
             ? getBuildURLPathFromBuildData(s.build)
-            : getOldBuilderURLPath(s.builder);
+            : getBuilderURLPath(s.builder);
           const className = s.build
             ? BUILD_STATUS_CLASS_MAP[s.build.status] + '-cell'
             : 'no-build-cell';

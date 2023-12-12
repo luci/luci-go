@@ -17,7 +17,7 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import {
   getBuildURLPathFromBuildData,
-  getOldBuilderURLPath,
+  getBuilderURLPath,
   getProjectURLPath,
 } from '@/common/tools/url_utils';
 
@@ -39,7 +39,7 @@ export function BuildIdentifierContentCell() {
         {build.builder.project}
       </Link>
       /{build.builder.bucket}/
-      <Link href={getOldBuilderURLPath(build.builder)}>
+      <Link component={RouterLink} to={getBuilderURLPath(build.builder)}>
         {build.builder.builder}
       </Link>
       /

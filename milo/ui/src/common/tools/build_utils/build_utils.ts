@@ -18,7 +18,7 @@ import { Link } from '@/common/models/link';
 import { Build, BuildInfraSwarming } from '@/common/services/buildbucket';
 import { logging } from '@/common/tools/logging';
 import {
-  getOldBuilderURLPath,
+  getBuilderURLPath,
   getInvURLPath,
   getSwarmingTaskURL,
 } from '@/common/tools/url_utils';
@@ -104,7 +104,7 @@ export function getSafeUrlFromTagValue(tagValue: string): string | null {
     );
     if (match) {
       const [, project, bucket, builder, buildIdOrNum] = match as string[];
-      return `${getOldBuilderURLPath({
+      return `${getBuilderURLPath({
         project,
         bucket,
         builder,
@@ -148,7 +148,7 @@ export function renderBugUrlTemplate(
       },
       milo_build_url: encodeURIComponent(miloOrigin + `/b/${build.id}`),
       milo_builder_url: encodeURIComponent(
-        miloOrigin + getOldBuilderURLPath(build.builder),
+        miloOrigin + getBuilderURLPath(build.builder),
       ),
     });
   } catch (_e) {

@@ -24,7 +24,7 @@ import { BuilderStats } from '@/common/services/milo_internal';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
 import {
-  getOldBuilderURLPath,
+  getBuilderURLPath,
   getBuildURLPathFromBuildData,
 } from '@/common/tools/url_utils';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
@@ -43,7 +43,7 @@ export class BuildersPageRowElement extends MobxExtLitElement {
   @observable.ref numOfBuilds = 25;
 
   @computed private get builderLink() {
-    return getOldBuilderURLPath(this.builder);
+    return getBuilderURLPath(this.builder);
   }
 
   @computed private get recentBuilds$(): IPromiseBasedObservable<
