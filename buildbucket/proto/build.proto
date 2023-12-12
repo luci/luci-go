@@ -577,6 +577,13 @@ message BuildInfra {
       //
       // If a path is not listed here, it is the same as PURPOSE_UNSPECIFIED.
       map<string, Purpose> purposes = 4;
+
+      // Cache for the cipd client.
+      // The cache name should be in the format like `cipd_client_<client_version>`.
+      CacheEntry cipd_client_cache = 5;
+      // Cache for the cipd packages.
+      // The cache name should be in the format like `cipd_cache_<sha(task_service_account)>`.
+      CacheEntry cipd_packages_cache = 6;
     }
 
     reserved 4; // field "canary" was moved to Build message.
