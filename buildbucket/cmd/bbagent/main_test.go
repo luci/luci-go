@@ -103,7 +103,7 @@ func TestDownloadInputs(t *testing.T) {
 				Agent: &bbpb.BuildInfra_Buildbucket_Agent{
 					Input: &bbpb.BuildInfra_Buildbucket_Agent_Input{
 						CipdSource: map[string]*bbpb.InputDataRef{
-							"cipddir": &bbpb.InputDataRef{
+							"cipddir": {
 								DataType: &bbpb.InputDataRef_Cipd{
 									Cipd: &bbpb.InputDataRef_CIPD{
 										Server: "chrome-infra-packages.appspot.com",
@@ -150,7 +150,7 @@ func TestDownloadInputs(t *testing.T) {
 
 			bbclient := &testBBClient{}
 			input := &bbpb.BBAgentArgs{Build: build}
-			rc := downloadInputs(ctx, tempDir, clientInput{bbclient, input})
+			rc := downloadInputs(ctx, tempDir, "cache", clientInput{bbclient, input})
 
 			So(rc, ShouldEqual, 0)
 			So(len(bbclient.requests), ShouldEqual, 2)

@@ -57,14 +57,17 @@ type cipdOut struct {
 	Result map[string][]*cipdPkg `json:"result"`
 }
 
+func setPathEnv(extraAbsPaths []string) error {
+	if len(extraAbsPaths) == 0 {
+		return nil
+	}
+	original := os.Getenv("PATH")
+	return os.Setenv("PATH", strings.Join(append(extraAbsPaths, original), string(os.PathListSeparator)))
+}
+
 func prependPath(bld *bbpb.Build, workDir string) error {
 	extraPathEnv := stringset.Set{}
 	for _, ref := range bld.Infra.Buildbucket.Agent.Input.Data {
-		extraPathEnv.AddAll(ref.OnPath)
-	}
-
-	// Add cipd binary to front of path.
-	for _, ref := range bld.Infra.Buildbucket.Agent.Input.CipdSource {
 		extraPathEnv.AddAll(ref.OnPath)
 	}
 
@@ -72,11 +75,7 @@ func prependPath(bld *bbpb.Build, workDir string) error {
 	for _, p := range extraPathEnv.ToSortedSlice() {
 		extraAbsPaths = append(extraAbsPaths, filepath.Join(workDir, p))
 	}
-	original := os.Getenv("PATH")
-	if err := os.Setenv("PATH", strings.Join(append(extraAbsPaths, original), string(os.PathListSeparator))); err != nil {
-		return err
-	}
-	return nil
+	return setPathEnv(extraAbsPaths)
 }
 
 // getCipdClientWithRetry attempts to download the cipd client using http.Get with a retry strategy.
@@ -108,8 +107,9 @@ func getCipdClientWithRetry(ctx context.Context, cipdURL string) (resp *http.Res
 
 // installCipd installs the cipd client provided to us for the build. It will return
 // the path on disk of the binary so that installCipdPackages can use the downloaded cipd client.
-func installCipd(ctx context.Context, build *bbpb.Build, workDir, platform string) error {
+func installCipd(ctx context.Context, build *bbpb.Build, workDir, cacheBase, platform string) error {
 	var cipdFile, cipdDir, cipdServer, cipdVersion string
+	var onPath []string
 	// We "loop" through this because it is a map, however, there should only be one entry in this map.
 	for relativePath, cipdSource := range build.Infra.Buildbucket.Agent.Input.CipdSource {
 		// The binary itself will be located at "workdir/cipd/cipd"
@@ -118,14 +118,54 @@ func installCipd(ctx context.Context, build *bbpb.Build, workDir, platform strin
 		cipdFile = filepath.Join(cipdDir, "cipd")
 		cipdServer = cipdSource.GetCipd().Server
 		cipdVersion = cipdSource.GetCipd().Specs[0].Version
+		onPath = cipdSource.OnPath
 		break
 	}
-	if cipdDir == "" {
+	if cipdVersion == "" {
 		return nil
 	}
+
+	cipdClientCache := build.Infra.Buildbucket.Agent.CipdClientCache
+
+	needtoDownload := true
+	if cipdClientCache != nil {
+		// Use cipd client cache.
+		cipdCacheDirRel := filepath.Join(cacheBase, cipdClientCache.Path) // cache/cipd_client
+		cipdCacheDir := filepath.Join(workDir, cipdCacheDirRel)           // b/s/w/ir/cache/cipd_client
+		cipdCachePath := filepath.Join(cipdCacheDir, "cipd")              // b/s/w/ir/cache/cipd_client/cipd
+		cipdCacheOnPath := []string{cipdCacheDirRel, filepath.Join(cipdCacheDirRel, "bin")}
+
+		_, err := os.Stat(cipdCachePath)
+		switch {
+		case err == nil:
+			// cache hit, use the client directly.
+			needtoDownload = false
+			onPath = cipdCacheOnPath
+		case os.IsNotExist(err):
+			// cache miss, download and install cipd client in cipdCacheDir.
+			cipdDir = cipdCacheDir
+			cipdFile = cipdCachePath
+			onPath = cipdCacheOnPath
+		default:
+			logging.Infof(ctx, "failed to get cipd client from cache: %s.", err)
+			// Forget about cache, download and install cipd client directly.
+		}
+	}
+
+	if needtoDownload {
+		if err := downloadCipd(ctx, cipdServer, platform, cipdVersion, cipdDir, cipdFile); err != nil {
+			return err
+		}
+	}
+
+	// Append cipd path to $PATH.
+	return setPathEnv(onPath)
+}
+
+func downloadCipd(ctx context.Context, cipdServer, platform, cipdVersion, cipdDir, cipdFile string) error {
 	// Pull cipd binary
 	cipdURL := fmt.Sprintf("https://%s/client?platform=%s&version=%s", cipdServer, platform, cipdVersion)
-	logging.Infof(ctx, "Install CIPD client from URL: %s", cipdURL)
+	logging.Infof(ctx, "Install CIPD client from URL: %s into %s", cipdURL, cipdDir)
 	resp, err := getCipdClientWithRetry(ctx, cipdURL)
 	if err != nil {
 		return err
