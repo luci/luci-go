@@ -850,7 +850,7 @@ func TestBatchGetTestAnalyses(t *testing.T) {
 
 		testFailureInRequest := []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{}
 		testVerdictKeys := []lucianalysis.TestVerdictKey{}
-		for i := 1; i < 5; i++ {
+		for i := 1; i < 6; i++ {
 			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
 				ID:             int64(100 + i),
 				CreateTime:     time.Unix(int64(100), 0).UTC(),
@@ -867,6 +867,7 @@ func TestBatchGetTestAnalyses(t *testing.T) {
 				EndPosition:   110,
 				IsPrimary:     true,
 				StartHour:     time.Unix(int64(99), 0).UTC(),
+				IsDiverged:    i == 5, // TestFailure 105 is diverged.
 			})
 			// Create another less recent test failure.
 			testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
@@ -926,7 +927,19 @@ func TestBatchGetTestAnalyses(t *testing.T) {
 						EndPosition:            bigquery.NullInt64{Int64: 101, Valid: true},
 						CountTotalResults:      bigquery.NullInt64{Int64: 1, Valid: true},
 						CountUnexpectedResults: bigquery.NullInt64{Int64: 0, Valid: true},
-					}}, // Two segment, failure is ongoing, regression range (101,109] -> return nil.
+					}}, // Two segment, failure is ongoing, regression range (101,109] -> return test analysis 104.
+				{{
+					StartPosition:          bigquery.NullInt64{Int64: 109, Valid: true},
+					EndPosition:            bigquery.NullInt64{Int64: 200, Valid: true},
+					CountTotalResults:      bigquery.NullInt64{Int64: 1, Valid: true},
+					CountUnexpectedResults: bigquery.NullInt64{Int64: 1, Valid: true},
+				},
+					{
+						StartPosition:          bigquery.NullInt64{Int64: 1, Valid: true},
+						EndPosition:            bigquery.NullInt64{Int64: 101, Valid: true},
+						CountTotalResults:      bigquery.NullInt64{Int64: 1, Valid: true},
+						CountUnexpectedResults: bigquery.NullInt64{Int64: 0, Valid: true},
+					}}, // Two segment, failure is ongoing, regression range (101,109] -> not return test analysis because test failure is diverged.
 			}
 			analysisClient.ChangepointAnalysisForTestVariantResponse = makeChangepointAnalysisForTestVariantResponse(testVerdictKeys, segments)
 
@@ -951,7 +964,7 @@ func TestBatchGetTestAnalyses(t *testing.T) {
 							StartHour:   timestamppb.New(time.Unix(int64(99), 0).UTC()),
 						},
 					},
-				}},
+				}, nil},
 			})
 		})
 	})

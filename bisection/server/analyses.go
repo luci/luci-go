@@ -304,6 +304,11 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 			return tfs[i].RegressionStartPosition > tfs[j].RegressionStartPosition
 		})
 		latestTestFailure := tfs[0]
+		if latestTestFailure.IsDiverged {
+			// Do not return test analysis if diverged.
+			// Because diverged test failure is considered excluded from the test analyses.
+			continue
+		}
 		changepointResult, ok := changePointResults[lucianalysis.TestVerdictKey{
 			TestID:      tf.TestId,
 			VariantHash: tf.VariantHash,
