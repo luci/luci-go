@@ -53,63 +53,48 @@ func (srv *SwarmingServer) GetPermissions(ctx context.Context, req *apipb.Permis
 		if internalErr != nil {
 			return false
 		}
-		var err error
+		var res acls.CheckResult
 		if len(pools) == 0 {
-			err = state.ACL.CheckServerPerm(ctx, perm)
+			res = state.ACL.CheckServerPerm(ctx, perm)
 		} else {
-			err = state.ACL.CheckAllPoolsPerm(ctx, pools, perm)
+			res = state.ACL.CheckAllPoolsPerm(ctx, pools, perm)
 		}
-		switch {
-		case err == nil:
-			return true
-		case acls.IsDeniedErr(err):
-			return false
-		default:
-			internalErr = err
-			return false
+		if res.Internal {
+			internalErr = res.ToGrpcErr()
 		}
+		return res.Permitted
 	}
 
 	checkTaskPerm := func(perm realms.Permission) bool {
 		if internalErr != nil {
 			return false
 		}
-		var err error
+		var res acls.CheckResult
 		if req.TaskId == "" {
-			err = state.ACL.CheckServerPerm(ctx, perm)
+			res = state.ACL.CheckServerPerm(ctx, perm)
 		} else {
-			err = state.ACL.CheckTaskPerm(ctx, taskInfo, perm)
+			res = state.ACL.CheckTaskPerm(ctx, taskInfo, perm)
 		}
-		switch {
-		case err == nil:
-			return true
-		case acls.IsDeniedErr(err):
-			return false
-		default:
-			internalErr = err
-			return false
+		if res.Internal {
+			internalErr = res.ToGrpcErr()
 		}
+		return res.Permitted
 	}
 
 	checkBotPerm := func(perm realms.Permission) bool {
 		if internalErr != nil {
 			return false
 		}
-		var err error
+		var res acls.CheckResult
 		if req.BotId == "" {
-			err = state.ACL.CheckServerPerm(ctx, perm)
+			res = state.ACL.CheckServerPerm(ctx, perm)
 		} else {
-			err = state.ACL.CheckBotPerm(ctx, req.BotId, perm)
+			res = state.ACL.CheckBotPerm(ctx, req.BotId, perm)
 		}
-		switch {
-		case err == nil:
-			return true
-		case acls.IsDeniedErr(err):
-			return false
-		default:
-			internalErr = err
-			return false
+		if res.Internal {
+			internalErr = res.ToGrpcErr()
 		}
+		return res.Permitted
 	}
 
 	resp := &apipb.ClientPermissions{

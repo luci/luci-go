@@ -50,6 +50,56 @@ type Checker struct {
 	cfg *cfg.Config
 }
 
+// CheckResult is returned by all Checker methods.
+type CheckResult struct {
+	// Permitted is true if the permission check passed successfully.
+	//
+	// It is false if the caller doesn't have the requested permission or the
+	// check itself failed. Look at Internal field to distinguish these cases if
+	// necessary.
+	//
+	// Use ToGrpcErr to convert a failure to a gRPC error. Note that CheckResult
+	// explicitly **does not** implement `error` interface to make sure callers
+	// are aware they need to return the gRPC error without any additional
+	// wrapping via `return nil, res.ToGrpcErr()`.
+	Permitted bool
+
+	// Internal indicates there were some internal error checking ACLs.
+	//
+	// An internal error means the check itself failed due to internal errors,
+	// such as a timeout contacting the backend. This should abort the request
+	// handler ASAP with Internal gRPC error. Use ToGrpcErr to get such error.
+	//
+	// If both Permitted and Internal are false, it means the caller has no
+	// requested permission. Use ToGrpcErr to get the error that must be returned
+	// to the caller in that case.
+	Internal bool
+
+	// err is a gRPC error to return.
+	err error
+}
+
+// ToGrpcErr converts this failure to a gRPC error.
+//
+// To avoid accidentally leaking private information or implementation details,
+// this error should be returned to the gRPC caller as is, without any
+// additional wrapping. It is constructed to have all necessary information
+// about the call already.
+//
+// If the check succeeded and the access is permitted, returns nil.
+func (res *CheckResult) ToGrpcErr() error {
+	switch {
+	case res.Internal:
+		return status.Errorf(codes.Internal, "internal error when checking permissions")
+	case res.Permitted:
+		return nil
+	case res.err == nil:
+		panic("err is not populated")
+	default:
+		return res.err
+	}
+}
+
 // TaskAuthInfo are properties of a task that affect who can access it.
 //
 // Extracted either from TaskRequest or from TaskResultSummary.
@@ -75,28 +125,16 @@ func NewChecker(ctx context.Context, cfg *cfg.Config) *Checker {
 //
 // Having a permission on a server level means it applies to all pools, tasks
 // and bots in this instance of Swarming.
-//
-// Returns nil if the caller has the permission. Returns a gRPC error if the
-// caller doesn't have the permission or the check itself failed. The error can
-// be returned to the caller as is. Use IsDeniedErr to see if the error
-// represents "permission denied" response. Note that IsDeniedErr(err) will be
-// false for internal errors (e.g. timeouts).
-func (chk *Checker) CheckServerPerm(ctx context.Context, perm realms.Permission) error {
+func (chk *Checker) CheckServerPerm(ctx context.Context, perm realms.Permission) CheckResult {
 	// TODO(vadimsh): Implement.
-	return nil
+	return CheckResult{Permitted: true}
 }
 
 // CheckPoolPerm checks if the caller has a permission on a pool level.
 //
 // Having a permission on a pool level means it applies for all tasks and bots
 // in that pool. CheckPoolPerm implicitly calls CheckServerPerm.
-//
-// Returns nil if the caller has the permission. Returns a gRPC error if the
-// caller doesn't have the permission or the check itself failed. The error can
-// be returned to the caller as is. Use IsDeniedErr to see if the error
-// represents "permission denied" response. Note that IsDeniedErr(err) will be
-// false for internal errors (e.g. timeouts).
-func (chk *Checker) CheckPoolPerm(ctx context.Context, pool string, perm realms.Permission) error {
+func (chk *Checker) CheckPoolPerm(ctx context.Context, pool string, perm realms.Permission) CheckResult {
 	// TODO(vadimsh): Implement.
 	return chk.CheckServerPerm(ctx, perm)
 }
@@ -104,77 +142,51 @@ func (chk *Checker) CheckPoolPerm(ctx context.Context, pool string, perm realms.
 // CheckAllPoolsPerm checks if the caller has a permission in *all* given pools.
 //
 // The list of pools must not be empty. Panics if it is.
-//
-// Returns nil if the caller has the permission. Returns a gRPC error if the
-// caller doesn't have the permission or the check itself failed. The error can
-// be returned to the caller as is. Use IsDeniedErr to see if the error
-// represents "permission denied" response. Note that IsDeniedErr(err) will be
-// false for internal errors (e.g. timeouts).
-func (chk *Checker) CheckAllPoolsPerm(ctx context.Context, pools []string, perm realms.Permission) error {
+func (chk *Checker) CheckAllPoolsPerm(ctx context.Context, pools []string, perm realms.Permission) CheckResult {
 	if len(pools) == 0 {
 		panic("empty list of pools in CheckAllPoolsPerm")
 	}
 	// If have a server-level permission, no need to check individual pools.
-	switch err := chk.CheckServerPerm(ctx, perm); {
-	case err == nil:
-		return nil
-	case !IsDeniedErr(err):
-		return err
+	if res := chk.CheckServerPerm(ctx, perm); res.Permitted || res.Internal {
+		return res
 	}
 	// TODO(vadimsh): Optimize.
 	for _, pool := range pools {
-		if err := chk.CheckPoolPerm(ctx, pool, perm); err != nil {
-			return err
+		if res := chk.CheckPoolPerm(ctx, pool, perm); !res.Permitted || res.Internal {
+			// TODO(vadimsh): Improve the error message.
+			return res
 		}
 	}
-	return nil
+	return CheckResult{Permitted: true}
 }
 
 // CheckAnyPoolsPerm checks if the caller has a permission in *any* given pool.
 //
 // The list of pools must not be empty. Panics if it is.
-//
-// Returns nil if the caller has the permission. Returns a gRPC error if the
-// caller doesn't have the permission or the check itself failed. The error can
-// be returned to the caller as is. Use IsDeniedErr to see if the error
-// represents "permission denied" response. Note that IsDeniedErr(err) will be
-// false for internal errors (e.g. timeouts).
-func (chk *Checker) CheckAnyPoolsPerm(ctx context.Context, pools []string, perm realms.Permission) error {
+func (chk *Checker) CheckAnyPoolsPerm(ctx context.Context, pools []string, perm realms.Permission) CheckResult {
 	if len(pools) == 0 {
 		panic("empty list of pools in CheckAnyPoolsPerm")
 	}
 	// If have a server-level permission, no need to check individual pools.
-	switch err := chk.CheckServerPerm(ctx, perm); {
-	case err == nil:
-		return nil
-	case !IsDeniedErr(err):
-		return err
+	if res := chk.CheckServerPerm(ctx, perm); res.Permitted || res.Internal {
+		return res
 	}
 	// TODO(vadimsh): Optimize.
 	for _, pool := range pools {
-		switch err := chk.CheckPoolPerm(ctx, pool, perm); {
-		case err == nil:
-			return nil
-		case !IsDeniedErr(err):
-			return err
+		if res := chk.CheckPoolPerm(ctx, pool, perm); res.Permitted || res.Internal {
+			return res
 		}
 	}
 	// TODO(vadimsh): Improve the error message to mention concrete pools if the
 	// caller has permissions to see them at all.
-	return status.Errorf(codes.PermissionDenied, "no %q permission in required pools", perm)
+	return CheckResult{err: status.Errorf(codes.PermissionDenied, "no %q permission in required pools", perm)}
 }
 
 // CheckTaskPerm checks if the caller has a permission in a specific task.
 //
 // It checks individual task ACL (based on task realm), as well as task's pool
 // permissions (via CheckPoolPerm).
-//
-// Returns nil if the caller has the permission. Returns a gRPC error if the
-// caller doesn't have the permission or the check itself failed. The error can
-// be returned to the caller as is. Use IsDeniedErr to see if the error
-// represents "permission denied" response. Note that IsDeniedErr(err) will be
-// false for internal errors (e.g. timeouts).
-func (chk *Checker) CheckTaskPerm(ctx context.Context, task TaskAuthInfo, perm realms.Permission) error {
+func (chk *Checker) CheckTaskPerm(ctx context.Context, task TaskAuthInfo, perm realms.Permission) CheckResult {
 	// TODO(vadimsh): Implement.
 	return chk.CheckServerPerm(ctx, perm)
 }
@@ -182,32 +194,7 @@ func (chk *Checker) CheckTaskPerm(ctx context.Context, task TaskAuthInfo, perm r
 // CheckBotPerm checks if the caller has a permission in a specific bot.
 //
 // It checks bot's pool permissions via CheckPoolPerm.
-//
-// Returns nil if the caller has the permission. Returns a gRPC error if the
-// caller doesn't have the permission or the check itself failed. The error can
-// be returned to the caller as is. Use IsDeniedErr to see if the error
-// represents "permission denied" response. Note that IsDeniedErr(err) will be
-// false for internal errors (e.g. timeouts).
-func (chk *Checker) CheckBotPerm(ctx context.Context, botID string, perm realms.Permission) error {
+func (chk *Checker) CheckBotPerm(ctx context.Context, botID string, perm realms.Permission) CheckResult {
 	// TODO(vadimsh): Implement.
 	return chk.CheckServerPerm(ctx, perm)
-}
-
-// IsDeniedErr returns true if the error means "permission denied" or similar.
-//
-// It returns false if the error represents some internal error. It panics if
-// `err` is nil.
-//
-// To avoid leaking existence of private resources, permission errors can
-// sometimes surface as "not found" errors to the end user. This function
-// recognizes "not found" as a "permission denied" error as well.
-func IsDeniedErr(err error) bool {
-	switch status.Code(err) {
-	case codes.OK:
-		panic("unexpected non-error in IsDeniedErr")
-	case codes.PermissionDenied, codes.Unauthenticated, codes.NotFound:
-		return true
-	default:
-		return false
-	}
 }

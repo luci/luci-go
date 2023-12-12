@@ -82,10 +82,9 @@ func (*TasksServer) GetRequest(ctx context.Context, req *apipb.TaskIdRequest) (*
 		logging.Errorf(ctx, "Error fetching TaskRequest %s: %s", req.TaskId, err)
 		return nil, status.Errorf(codes.Internal, "datastore error fetching the task")
 	}
-	err = State(ctx).ACL.CheckTaskPerm(ctx, taskRequest.TaskAuthInfo(), acls.PermTasksGet)
-	if err != nil {
-		// The error from CheckTaskPerm must be returned as is. See CheckTaskPerm doc.
-		return nil, err
+	res := State(ctx).ACL.CheckTaskPerm(ctx, taskRequest.TaskAuthInfo(), acls.PermTasksGet)
+	if !res.Permitted {
+		return nil, res.ToGrpcErr()
 	}
 	return taskRequestToResponse(ctx, req, taskRequest)
 }
