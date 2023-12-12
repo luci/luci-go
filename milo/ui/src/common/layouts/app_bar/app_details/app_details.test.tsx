@@ -15,7 +15,7 @@
 import { render, screen } from '@testing-library/react';
 
 import { PageMetaContext } from '@/common/components/page_meta/page_meta_provider';
-import { UiPage } from '@/common/constants';
+import { UiPage } from '@/common/constants/view';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { AppDetails } from './app_details';

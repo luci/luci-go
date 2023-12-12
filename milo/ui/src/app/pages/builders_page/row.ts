@@ -18,7 +18,7 @@ import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '@/generic_libs/components/dot_spinner';
-import { BUILD_STATUS_CLASS_MAP } from '@/common/constants';
+import { BUILD_STATUS_CLASS_MAP } from '@/common/constants/legacy';
 import { Build, BuilderID } from '@/common/services/buildbucket';
 import { BuilderStats } from '@/common/services/milo_internal';
 import { consumeStore, StoreInstance } from '@/common/store';

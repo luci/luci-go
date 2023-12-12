@@ -20,13 +20,13 @@ import { useParams } from 'react-router-dom';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { LabsWarningAlert } from '@/common/components/labs_warning_alert';
 import { PageMeta } from '@/common/components/page_meta';
-import { UiPage } from '@/common/constants';
+import { VERDICT_STATUS_DISPLAY_MAP } from '@/common/constants/test';
+import { UiPage } from '@/common/constants/view';
 import { usePrpcQuery } from '@/common/hooks/prpc_query';
 import {
   BatchGetTestVariantsRequest,
   ResultDBClientImpl,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { VARIANT_STATUS_DISPLAY_MAP } from '@/test_verdict/constants';
 import { OutputTestVerdict } from '@/test_verdict/types';
 
 import { TestVerdictProvider } from './context';
@@ -93,7 +93,7 @@ export function TestVerdictPage() {
     >
       <LabsWarningAlert />
       <PageMeta
-        title={`${upperFirst(VARIANT_STATUS_DISPLAY_MAP[verdict.status])} | ${
+        title={`${upperFirst(VERDICT_STATUS_DISPLAY_MAP[verdict.status])} | ${
           verdict.testId
         }`}
         selectedPage={UiPage.TestVerdict}

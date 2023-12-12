@@ -33,7 +33,7 @@ import {
   HideTooltipEventDetail,
   ShowTooltipEventDetail,
 } from '@/common/components/tooltip';
-import { PREDEFINED_TIME_INTERVALS } from '@/common/constants';
+import { PREDEFINED_TIME_INTERVALS } from '@/common/constants/time';
 import { commonStyles } from '@/common/styles/stylesheets';
 import {
   displayDuration,

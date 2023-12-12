@@ -17,7 +17,7 @@ import styled from '@emotion/styled';
 import { Alert, AlertTitle, CircularProgress, Link } from '@mui/material';
 import { useState } from 'react';
 
-import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants';
+import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants/rpc';
 import { usePrpcQuery } from '@/common/hooks/prpc_query';
 import { StringPair } from '@/common/services/common';
 import { getSwarmingBotListURL } from '@/common/tools/url_utils';

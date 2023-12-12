@@ -30,7 +30,7 @@ import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '@/common/common_tags';
 import {
   VARIANT_STATUS_CLASS_MAP,
   VARIANT_STATUS_ICON_MAP,
-} from '@/common/constants';
+} from '@/common/constants/legacy';
 import { Cluster } from '@/common/services/luci_analysis';
 import {
   RESULT_LIMIT,

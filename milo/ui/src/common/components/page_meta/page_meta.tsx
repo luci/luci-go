@@ -15,7 +15,7 @@
 import { useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 
-import { UiPage } from '@/common/constants';
+import { UiPage } from '@/common/constants/view';
 
 import {
   useProject,

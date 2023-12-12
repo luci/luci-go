@@ -18,7 +18,7 @@ import { computed, makeObservable, observable, reaction } from 'mobx';
 import { ReactNode } from 'react';
 
 import { OPTIONAL_RESOURCE } from '@/common/common_tags';
-import { POTENTIALLY_EXPIRED } from '@/common/constants';
+import { POTENTIALLY_EXPIRED } from '@/common/constants/legacy';
 import { LoadTestVariantsError } from '@/common/models/test_loader';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { GetBuildError } from '@/common/store/build_page';

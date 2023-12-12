@@ -27,7 +27,7 @@ import TableViewIcon from '@mui/icons-material/TableView';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import React from 'react';
 
-import { UiPage } from '@/common/constants';
+import { UiPage } from '@/common/constants/view';
 import { getProjectURLPath } from '@/common/tools/url_utils';
 
 export interface SidebarPage {

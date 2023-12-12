@@ -18,7 +18,7 @@ import { useDebounce } from 'react-use';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
-import { UiPage } from '@/common/constants';
+import { UiPage } from '@/common/constants/view';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { SearchInput } from '../search_input';

@@ -33,8 +33,8 @@ import {
   BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_COLOR_THEME_MAP,
   BUILD_STATUS_DISPLAY_MAP,
-  UiPage,
-} from '@/common/constants';
+} from '@/common/constants/legacy';
+import { UiPage } from '@/common/constants/view';
 import { BuildbucketStatus } from '@/common/services/buildbucket';
 import { useStore } from '@/common/store';
 import { InvocationProvider } from '@/common/store/invocation_state';

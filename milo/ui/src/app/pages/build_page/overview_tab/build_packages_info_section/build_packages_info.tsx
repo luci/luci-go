@@ -20,7 +20,7 @@ import { SanitizedHtml } from '@/common/components/sanitized_html';
 import {
   BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_DISPLAY_MAP,
-} from '@/common/constants';
+} from '@/common/constants/legacy';
 import { Build } from '@/common/services/buildbucket';
 import { getCipdLink } from '@/common/tools/build_utils';
 

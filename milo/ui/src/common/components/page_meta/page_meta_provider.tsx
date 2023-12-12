@@ -20,7 +20,7 @@ import {
   useState,
 } from 'react';
 
-import { UiPage } from '@/common/constants';
+import { UiPage } from '@/common/constants/view';
 
 interface PageMetaContextData {
   selectedPage?: UiPage;

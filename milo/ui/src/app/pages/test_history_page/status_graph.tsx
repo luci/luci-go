@@ -25,7 +25,7 @@ import checkCircleStacked from '@/common/assets/svgs/check_circle_stacked_24dp.s
 import {
   VARIANT_STATUS_CLASS_MAP,
   VERDICT_VARIANT_STATUS_MAP,
-} from '@/common/constants';
+} from '@/common/constants/legacy';
 import {
   QueryTestHistoryStatsResponseGroup,
   TestVerdictStatus,

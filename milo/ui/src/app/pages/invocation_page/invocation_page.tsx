@@ -20,7 +20,7 @@ import { useParams } from 'react-router-dom';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta/page_meta';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
-import { INVOCATION_STATE_DISPLAY_MAP } from '@/common/constants';
+import { INVOCATION_STATE_DISPLAY_MAP } from '@/common/constants/legacy';
 import { useStore } from '@/common/store';
 import {
   getBuildURLPathFromBuildId,

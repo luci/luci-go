@@ -25,7 +25,10 @@ import {
 } from 'mobx-state-tree';
 import { fromPromise } from 'mobx-utils';
 
-import { NEVER_OBSERVABLE, POTENTIALLY_EXPIRED } from '@/common/constants';
+import {
+  NEVER_OBSERVABLE,
+  POTENTIALLY_EXPIRED,
+} from '@/common/constants/legacy';
 import {
   Build,
   BUILD_FIELD_MASK,

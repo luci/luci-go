@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ORDERED_VARIANT_DEF_KEYS } from '@/test_verdict/constants';
+import { ORDERED_VARIANT_DEF_KEYS } from '@/common/constants/test';
 
 /**
  * Parses the test result name and get the individual components.

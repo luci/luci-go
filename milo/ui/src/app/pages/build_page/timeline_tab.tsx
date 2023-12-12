@@ -34,10 +34,8 @@ import {
   HideTooltipEventDetail,
   ShowTooltipEventDetail,
 } from '@/common/components/tooltip';
-import {
-  BUILD_STATUS_CLASS_MAP,
-  PREDEFINED_TIME_INTERVALS,
-} from '@/common/constants';
+import { BUILD_STATUS_CLASS_MAP } from '@/common/constants/legacy';
+import { PREDEFINED_TIME_INTERVALS } from '@/common/constants/time';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { StepExt } from '@/common/store/build_state';
 import { commonStyles } from '@/common/styles/stylesheets';

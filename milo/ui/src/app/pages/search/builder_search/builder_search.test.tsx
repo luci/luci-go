@@ -20,7 +20,7 @@ import {
   screen,
 } from '@testing-library/react';
 
-import { UiPage } from '@/common/constants';
+import { UiPage } from '@/common/constants/view';
 import {
   ListBuildersRequest,
   MiloInternal,

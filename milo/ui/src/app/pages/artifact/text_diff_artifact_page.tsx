@@ -23,7 +23,7 @@ import { fromPromise } from 'mobx-utils';
 import '@/generic_libs/components/dot_spinner';
 import '@/common/components/status_bar';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants';
+import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/test';
 import {
   ArtifactIdentifier,
   constructArtifactName,

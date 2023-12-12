@@ -33,7 +33,7 @@ import {
   BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_DISPLAY_MAP,
   BUILD_STATUS_ICON_MAP,
-} from '@/common/constants';
+} from '@/common/constants/legacy';
 import { BuildbucketStatus } from '@/common/services/buildbucket';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { StepExt } from '@/common/store/build_state';

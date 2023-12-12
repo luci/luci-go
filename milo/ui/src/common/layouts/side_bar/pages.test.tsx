@@ -26,7 +26,7 @@ import SpokeIcon from '@mui/icons-material/Spoke';
 import TableViewIcon from '@mui/icons-material/TableView';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 
-import { UiPage } from '@/common/constants';
+import { UiPage } from '@/common/constants/view';
 
 import {
   SidebarSection,

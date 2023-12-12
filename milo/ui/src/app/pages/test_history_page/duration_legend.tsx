@@ -32,7 +32,7 @@ import {
   MINUTE_MS,
   PREDEFINED_TIME_INTERVALS,
   SECOND_MS,
-} from '@/common/constants';
+} from '@/common/constants/time';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
 import { consumer } from '@/generic_libs/tools/lit_context';

@@ -29,7 +29,7 @@ import {
   VARIANT_STATUS_CLASS_MAP,
   VARIANT_STATUS_ICON_MAP,
   VERDICT_VARIANT_STATUS_MAP,
-} from '@/common/constants';
+} from '@/common/constants/legacy';
 import { TestVerdictBundle } from '@/common/services/luci_analysis';
 import { RESULT_LIMIT } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';

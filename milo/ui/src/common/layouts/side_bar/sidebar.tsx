@@ -31,7 +31,7 @@ import {
   useSelectedPage,
   useProject,
 } from '@/common/components/page_meta/page_meta_provider';
-import { UiPage, CommonColors } from '@/common/constants';
+import { UiPage, CommonColors } from '@/common/constants/view';
 
 import { PAGE_LABEL_MAP, drawerWidth } from '../constants';
 

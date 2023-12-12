@@ -23,6 +23,7 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import { useEffectOnce } from 'react-use';
 
+import { TEST_STATUS_DISPLAY_MAP } from '@/common/constants/test';
 import { setSingleQueryParam } from '@/common/tools/url_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
@@ -30,7 +31,6 @@ import {
   TestStatus,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
-import { TEST_STATUS_DISPLAY_MAP } from '@/test_verdict/constants';
 
 import { useResults } from '../context';
 import {

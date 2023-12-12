@@ -24,7 +24,7 @@ import { makeObservable, observable, reaction } from 'mobx';
 import '@/generic_libs/components/dot_spinner';
 import '@/common/components/column_header';
 import './test_variant_entry';
-import { VARIANT_STATUS_CLASS_MAP } from '@/common/constants';
+import { VARIANT_STATUS_CLASS_MAP } from '@/common/constants/legacy';
 import {
   getPropKeyLabel,
   TestVariant,

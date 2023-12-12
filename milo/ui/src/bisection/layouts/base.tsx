@@ -16,7 +16,7 @@ import { Outlet, useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
-import { UiPage } from '@/common/constants';
+import { UiPage } from '@/common/constants/view';
 
 export const BisectionLayout = () => {
   const { project } = useParams();

@@ -22,7 +22,7 @@ import { Outlet, RouterProvider, createMemoryRouter } from 'react-router-dom';
 import { ReleaseNotesProvider } from '@/app/components/release_notes';
 import { PageConfigStateProvider } from '@/common/components/page_config_state_provider';
 import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
-import { UiPage } from '@/common/constants';
+import { UiPage } from '@/common/constants/view';
 import { theme } from '@/common/themes/base';
 import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_params';
 

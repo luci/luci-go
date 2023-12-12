@@ -21,7 +21,7 @@ import { useLatest } from 'react-use';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
-import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants';
+import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants/rpc';
 import { getLoginUrl } from '@/common/tools/url_utils';
 
 import { ErrorDisplay } from './error_display';

@@ -30,7 +30,7 @@ import './link_artifact';
 import './text_artifact';
 import './text_diff_artifact';
 import { makeClusterLink } from '@/analysis/tools/utils';
-import { TEST_STATUS_DISPLAY_MAP } from '@/common/constants';
+import { TEST_STATUS_DISPLAY_MAP } from '@/common/constants/legacy';
 import { Cluster } from '@/common/services/luci_analysis';
 import {
   Artifact,

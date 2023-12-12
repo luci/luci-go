@@ -15,7 +15,7 @@
 import { TestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 
-export const VARIANT_STATUS_DISPLAY_MAP = Object.freeze({
+export const VERDICT_STATUS_DISPLAY_MAP = Object.freeze({
   [TestVariantStatus.EXONERATED]: 'exonerated',
   [TestVariantStatus.EXPECTED]: 'expected',
   [TestVariantStatus.FLAKY]: 'flaky',
@@ -40,3 +40,5 @@ export const ORDERED_VARIANT_DEF_KEYS = Object.freeze([
   'builder',
   'test_suite',
 ]);
+
+export const ARTIFACT_LENGTH_LIMIT = 50000;

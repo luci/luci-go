@@ -20,7 +20,7 @@ import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '@/generic_libs/components/dot_spinner';
-import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants';
+import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/test';
 import { Artifact } from '@/common/services/resultdb';
 import { commonStyles } from '@/common/styles/stylesheets';
 import { reportRenderError } from '@/generic_libs/tools/error_handler';

@@ -15,7 +15,7 @@
 import { render, screen } from '@testing-library/react';
 import { destroy } from 'mobx-state-tree';
 
-import { UiPage } from '@/common/constants';
+import { UiPage } from '@/common/constants/view';
 import { Store, StoreInstance, StoreProvider } from '@/common/store';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 

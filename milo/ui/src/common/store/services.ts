@@ -25,7 +25,7 @@ import {
 import { keepAlive } from 'mobx-utils';
 
 import { MAY_REQUIRE_SIGNIN } from '@/common/common_tags';
-import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants';
+import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants/rpc';
 import { BuildsService } from '@/common/services/buildbucket';
 import {
   ClustersService,

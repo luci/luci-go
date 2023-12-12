@@ -24,7 +24,7 @@ import '@/generic_libs/components/dot_spinner';
 import './row';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
-import { UiPage } from '@/common/constants';
+import { UiPage } from '@/common/constants/view';
 import { BuilderID } from '@/common/services/buildbucket';
 import {
   ListBuildersRequest,

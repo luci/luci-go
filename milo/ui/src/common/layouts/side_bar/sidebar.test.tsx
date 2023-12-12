@@ -14,7 +14,7 @@
 
 import { render, screen } from '@testing-library/react';
 
-import { UiPage } from '@/common/constants';
+import { UiPage } from '@/common/constants/view';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { Sidebar } from './sidebar';

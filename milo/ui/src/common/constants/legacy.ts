@@ -12,7 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { RpcCode } from '@chopsui/prpc-client';
+/**
+ * @fileoverview
+ * The constants defined in this file rely on old hand-written protobuf types.
+ * They should be replaced by equivalent constants that supports the generated
+ * protobuf types overtime.
+ */
+
 import { fromPromise } from 'mobx-utils';
 
 import { BuildbucketStatus } from '@/common/services/buildbucket';
@@ -114,8 +120,6 @@ export const BUILD_STATUS_COLOR_THEME_MAP = Object.freeze({
   [BuildbucketStatus.Canceled]: 'canceled',
 });
 
-export const ARTIFACT_LENGTH_LIMIT = 50000;
-
 /**
  * Some resources are purged from the server after certain period (e.g. builds
  * are removed from buildbucket server after 1.5 years). 404 errors that ocurred
@@ -123,119 +127,7 @@ export const ARTIFACT_LENGTH_LIMIT = 50000;
  */
 export const POTENTIALLY_EXPIRED = Symbol('POTENTIALLY_EXPIRED');
 
-/**
- * The number of milliseconds in a second.
- */
-export const SECOND_MS = 1000;
-
-/**
- * The number of milliseconds in a minute.
- */
-export const MINUTE_MS = 60000;
-
-/**
- * The number of milliseconds in an hour.
- */
-export const HOUR_MS = 3600000;
-
-/**
- * A list of numbers in ascending order that are suitable to be used as time
- * intervals (in ms).
- */
-export const PREDEFINED_TIME_INTERVALS = Object.freeze([
-  // Values that can divide 10ms.
-  1, // 1ms
-  5, // 5ms
-  10, // 10ms
-  // Values that can divide 100ms.
-  20, // 20ms
-  25, // 25ms
-  50, // 50ms
-  // Values that can divide 1 second.
-  100, // 100ms
-  125, // 125ms
-  200, // 200ms
-  250, // 250ms
-  500, // 500ms
-  // Values that can divide 15 seconds.
-  1000, // 1s
-  2000, // 2s
-  3000, // 3s
-  5000, // 5s
-  // Values that can divide 1 minute.
-  10000, // 10s
-  15000, // 15s
-  20000, // 20s
-  30000, // 30s
-  60000, // 1min
-  // Values that can divide 15 minutes.
-  120000, // 2min
-  180000, // 3min
-  300000, // 5min
-  // Values that can divide 1 hour.
-  600000, // 10min
-  900000, // 15min
-  1200000, // 20min
-  1800000, // 30min
-  3600000, // 1hr
-  // Values that can divide 12 hours.
-  7200000, // 2hr
-  10800000, // 3hr
-  14400000, // 4hr
-  21600000, // 6hr
-  // Values that can divide 1 day.
-  28800000, // 8hr
-  43200000, // 12hr
-  86400000, // 24hr
-]);
-
 export const NEVER_PROMISE = new Promise<never>(() => {
   /* Never resolves. */
 });
 export const NEVER_OBSERVABLE = fromPromise(NEVER_PROMISE);
-
-/**
- * A list of RPC Error code that MAY indicate the user lacks permission.
- */
-export const POTENTIAL_PERM_ERROR_CODES = Object.freeze([
-  // Some RPCs will return NOT_FOUND when user isn't able to access it.
-  RpcCode.NOT_FOUND,
-  RpcCode.PERMISSION_DENIED,
-  RpcCode.UNAUTHENTICATED,
-]);
-
-/**
- * A list of RPC Error code that indicates the error is non-transient.
- */
-export const NON_TRANSIENT_ERROR_CODES = Object.freeze([
-  RpcCode.INVALID_ARGUMENT,
-  RpcCode.PERMISSION_DENIED,
-  RpcCode.UNAUTHENTICATED,
-  RpcCode.UNIMPLEMENTED,
-]);
-
-/*
- * An enum representing the pages
- */
-export enum UiPage {
-  BuilderSearch = 'builder-search',
-  ProjectSearch = 'project-search',
-  Builders = 'builders',
-  Scheduler = 'scheduler',
-  Bisection = 'bisection',
-  TestHistory = 'test-history',
-  FailureClusters = 'failure-clusters',
-  Testhaus = 'test-haus',
-  Crosbolt = 'crosbolt',
-  BuilderGroups = 'builder-groups',
-  SoM = 'som',
-  CQStatus = 'cq-status',
-  Goldeneye = 'goldeneye',
-  ChromiumDash = 'chromium-dash',
-  ReleaseNotes = 'release-notes',
-  TestVerdict = 'test-verdict',
-}
-
-export enum CommonColors {
-  FADED_TEXT = '#888',
-}

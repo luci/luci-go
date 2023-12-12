@@ -26,7 +26,11 @@ const config: Config = {
   // plugin supporting that yet.
   preset: 'ts-jest/presets/js-with-babel',
   testEnvironment: 'jsdom',
-  testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(test).[jt]s?(x)'],
+  // Match all JS/TS files under `**/__tests__/**` and all JS/TS files with
+  // extension `.test` before the JS/TS extension. Unlike the default patterns,
+  // `test.ts` is not treated as a test file since `test` in `test.ts` is not an
+  // extension.
+  testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/*.test.[jt]s?(x)'],
   // Some modules use `es6` modules, which is not compatible with jest, so we
   // need to transform them.
   transformIgnorePatterns: ['/node_modules/?!(lodash-es|lit)'],

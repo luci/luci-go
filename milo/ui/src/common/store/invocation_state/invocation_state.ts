@@ -26,7 +26,7 @@ import { fromPromise } from 'mobx-utils';
 import { createContext, useContext } from 'react';
 
 import { VariantGroup } from '@/app/pages/test_results_tab/test_variants_table/test_variants_table';
-import { NEVER_OBSERVABLE, NEVER_PROMISE } from '@/common/constants';
+import { NEVER_OBSERVABLE, NEVER_PROMISE } from '@/common/constants/legacy';
 import { TestLoader } from '@/common/models/test_loader';
 import {
   parseTestResultSearchQuery,

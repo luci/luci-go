@@ -18,7 +18,7 @@ import {
   BUILD_STATUS_COLOR_MAP,
   BUILD_STATUS_DISPLAY_MAP,
   BUILD_STATUS_ICON_MAP,
-} from '@/common/constants';
+} from '@/common/constants/legacy';
 import { BuildInfraBackend } from '@/common/services/buildbucket';
 
 export interface BackendRowsProps {

@@ -21,7 +21,7 @@ import {
 import { addDisposer, flow, IAnyStateTreeNode, isAlive } from 'mobx-state-tree';
 import { IPromiseBasedObservable, PENDING, REJECTED } from 'mobx-utils';
 
-import { NEVER_PROMISE } from '@/common/constants';
+import { NEVER_PROMISE } from '@/common/constants/legacy';
 
 /**
  * Unwraps the value in a promise based observable.
