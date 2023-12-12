@@ -59,7 +59,7 @@ func (srv *SwarmingServer) GetPermissions(ctx context.Context, req *apipb.Permis
 		} else {
 			res = state.ACL.CheckAllPoolsPerm(ctx, pools, perm)
 		}
-		if res.Internal {
+		if res.InternalError {
 			internalErr = res.ToGrpcErr()
 		}
 		return res.Permitted
@@ -75,7 +75,7 @@ func (srv *SwarmingServer) GetPermissions(ctx context.Context, req *apipb.Permis
 		} else {
 			res = state.ACL.CheckTaskPerm(ctx, taskInfo, perm)
 		}
-		if res.Internal {
+		if res.InternalError {
 			internalErr = res.ToGrpcErr()
 		}
 		return res.Permitted
@@ -91,7 +91,7 @@ func (srv *SwarmingServer) GetPermissions(ctx context.Context, req *apipb.Permis
 		} else {
 			res = state.ACL.CheckBotPerm(ctx, req.BotId, perm)
 		}
-		if res.Internal {
+		if res.InternalError {
 			internalErr = res.ToGrpcErr()
 		}
 		return res.Permitted

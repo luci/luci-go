@@ -55,8 +55,8 @@ type CheckResult struct {
 	// Permitted is true if the permission check passed successfully.
 	//
 	// It is false if the caller doesn't have the requested permission or the
-	// check itself failed. Look at Internal field to distinguish these cases if
-	// necessary.
+	// check itself failed. Look at InternalError field to distinguish these cases
+	// if necessary.
 	//
 	// Use ToGrpcErr to convert a failure to a gRPC error. Note that CheckResult
 	// explicitly **does not** implement `error` interface to make sure callers
@@ -64,16 +64,16 @@ type CheckResult struct {
 	// wrapping via `return nil, res.ToGrpcErr()`.
 	Permitted bool
 
-	// Internal indicates there were some internal error checking ACLs.
+	// InternalError indicates there were some internal error checking ACLs.
 	//
 	// An internal error means the check itself failed due to internal errors,
 	// such as a timeout contacting the backend. This should abort the request
 	// handler ASAP with Internal gRPC error. Use ToGrpcErr to get such error.
 	//
-	// If both Permitted and Internal are false, it means the caller has no
+	// If both Permitted and InternalError are false, it means the caller has no
 	// requested permission. Use ToGrpcErr to get the error that must be returned
 	// to the caller in that case.
-	Internal bool
+	InternalError bool
 
 	// err is a gRPC error to return.
 	err error
@@ -89,7 +89,7 @@ type CheckResult struct {
 // If the check succeeded and the access is permitted, returns nil.
 func (res *CheckResult) ToGrpcErr() error {
 	switch {
-	case res.Internal:
+	case res.InternalError:
 		return status.Errorf(codes.Internal, "internal error when checking permissions")
 	case res.Permitted:
 		return nil
@@ -147,12 +147,12 @@ func (chk *Checker) CheckAllPoolsPerm(ctx context.Context, pools []string, perm 
 		panic("empty list of pools in CheckAllPoolsPerm")
 	}
 	// If have a server-level permission, no need to check individual pools.
-	if res := chk.CheckServerPerm(ctx, perm); res.Permitted || res.Internal {
+	if res := chk.CheckServerPerm(ctx, perm); res.Permitted || res.InternalError {
 		return res
 	}
 	// TODO(vadimsh): Optimize.
 	for _, pool := range pools {
-		if res := chk.CheckPoolPerm(ctx, pool, perm); !res.Permitted || res.Internal {
+		if res := chk.CheckPoolPerm(ctx, pool, perm); !res.Permitted || res.InternalError {
 			// TODO(vadimsh): Improve the error message.
 			return res
 		}
@@ -168,12 +168,12 @@ func (chk *Checker) CheckAnyPoolsPerm(ctx context.Context, pools []string, perm 
 		panic("empty list of pools in CheckAnyPoolsPerm")
 	}
 	// If have a server-level permission, no need to check individual pools.
-	if res := chk.CheckServerPerm(ctx, perm); res.Permitted || res.Internal {
+	if res := chk.CheckServerPerm(ctx, perm); res.Permitted || res.InternalError {
 		return res
 	}
 	// TODO(vadimsh): Optimize.
 	for _, pool := range pools {
-		if res := chk.CheckPoolPerm(ctx, pool, perm); res.Permitted || res.Internal {
+		if res := chk.CheckPoolPerm(ctx, pool, perm); res.Permitted || res.InternalError {
 			return res
 		}
 	}
