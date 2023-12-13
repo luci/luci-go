@@ -12,24 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Link, TableCell } from '@mui/material';
-
-import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
-
-import { useBuild } from './context';
-
-export function BuildNumHeadCell() {
-  return <TableCell width="1px">Build #</TableCell>;
-}
-
-export function BuildNumContentCell() {
-  const build = useBuild();
-
-  return (
-    <TableCell>
-      <Link href={getBuildURLPathFromBuildId(build.id)}>
-        {build.number ? build.number : 'b' + build.id}
-      </Link>
-    </TableCell>
-  );
-}
+export * from './build_num_column';

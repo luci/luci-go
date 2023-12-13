@@ -21,7 +21,7 @@ import {
   getProjectURLPath,
 } from '@/common/tools/url_utils';
 
-import { useBuild } from './context';
+import { useBuild } from '../context';
 
 export function BuildIdentifierHeadCell() {
   return <TableCell width="1px">Build</TableCell>;
@@ -44,7 +44,7 @@ export function BuildIdentifierContentCell() {
       </Link>
       /
       <Link component={RouterLink} to={getBuildURLPathFromBuildData(build)}>
-        {build.number ?? 'b' + build.id}
+        {build.number ? build.number : 'b' + build.id}
       </Link>
     </TableCell>
   );
