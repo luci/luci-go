@@ -71,10 +71,10 @@ type Config struct {
 	// Refreshed is when the process config was fetched from the datastore.
 	Refreshed time.Time
 
-	// TODO: Add the rest of configs.
 	settings  *configpb.SettingsCfg
 	poolMap   map[string]*Pool // pool name => config
 	poolNames []string         // sorted list of pool names
+	botGroups *botGroups       // can map bot ID to a bot group config
 }
 
 // Pool returns a config for the given pool or nil if there's no such pool.
@@ -85,6 +85,34 @@ func (cfg *Config) Pool(name string) *Pool {
 // Pools returns a sorted list of all known pools.
 func (cfg *Config) Pools() []string {
 	return cfg.poolNames
+}
+
+// BotGroup returns a BotGroup config matching the given bot ID.
+//
+// Understands composite bot IDs, see HostBotID(...). Always returns some
+// config (never nil). If there's no config assigned to a bot, returns a default
+// config.
+func (cfg *Config) BotGroup(botID string) *BotGroup {
+	hostID := HostBotID(botID)
+
+	// If this is a composite bot ID, try to find if there's a config for this
+	// *specific* composite ID first. This acts as an override if we need to
+	// single-out a bot that uses a concrete composite IDs.
+	if hostID != botID {
+		if group := cfg.botGroups.directMatches[botID]; group != nil {
+			return group
+		}
+	}
+
+	// Otherwise look it up based on the host ID (which is the same as bot ID
+	// for non-composite IDs).
+	if group := cfg.botGroups.directMatches[hostID]; group != nil {
+		return group
+	}
+	if _, group, ok := cfg.botGroups.prefixMatches.LongestPrefix(hostID); ok {
+		return group.(*BotGroup)
+	}
+	return cfg.botGroups.defaultGroup
 }
 
 // UpdateConfigs fetches the most recent server configs from LUCI Config and
@@ -164,14 +192,23 @@ func UpdateConfigs(ctx context.Context) error {
 
 // defaultConfigs returns default config protos used on an "empty" server.
 func defaultConfigs() *internalcfgpb.ConfigBundle {
-	// TODO: Figure out actually good default values.
 	return &internalcfgpb.ConfigBundle{
 		Revision: emptyRev,
 		Digest:   emptyDigest,
 		Settings: withDefaultSettings(&configpb.SettingsCfg{}),
 		Pools:    &configpb.PoolsCfg{},
-		Bots:     &configpb.BotsCfg{},
-		Scripts:  map[string]string{},
+		Bots: &configpb.BotsCfg{
+			TrustedDimensions: []string{"pool"},
+			BotGroup: []*configpb.BotGroup{
+				{
+					Dimensions: []string{"pool:unassigned"},
+					Auth: []*configpb.BotAuth{
+						{RequireLuciMachineToken: true, LogIfFailed: true},
+					},
+				},
+			},
+		},
+		Scripts: map[string]string{},
 	}
 }
 
@@ -382,8 +419,6 @@ func fetchFromDatastore(ctx context.Context, cur *Config) (*Config, error) {
 // buildQueriableConfig transforms config protos into data structures optimized
 // for config queries.
 func buildQueriableConfig(ctx context.Context, ent *configBundle) (*Config, error) {
-	// TODO: Implement the rest.
-
 	pools, err := newPoolsConfig(ent.Bundle.Pools)
 	if err != nil {
 		return nil, errors.Annotate(err, "bad pools.cfg").Err()
@@ -394,6 +429,11 @@ func buildQueriableConfig(ctx context.Context, ent *configBundle) (*Config, erro
 	}
 	sort.Strings(poolNames)
 
+	botGroups, err := newBotGroups(ent.Bundle.Bots)
+	if err != nil {
+		return nil, errors.Annotate(err, "bad bots.cfg").Err()
+	}
+
 	return &Config{
 		Revision:  ent.Revision,
 		Digest:    ent.Digest,
@@ -402,5 +442,6 @@ func buildQueriableConfig(ctx context.Context, ent *configBundle) (*Config, erro
 		settings:  withDefaultSettings(ent.Bundle.Settings),
 		poolMap:   pools,
 		poolNames: poolNames,
+		botGroups: botGroups,
 	}, nil
 }

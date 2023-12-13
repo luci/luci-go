@@ -54,9 +54,13 @@ func validateSettingsCfg(ctx *validation.Context, cfg *configpb.SettingsCfg) {
 	// TODO
 }
 
-// validateBotsCfg validates bots.cfg, writing errors into `ctx`.
-func validateBotsCfg(ctx *validation.Context, cfg *configpb.BotsCfg) {
-	// TODO
+// validateDimensionKey checks if `key` can be a dimension key.
+func validateDimensionKey(key string) error {
+	if key == "" {
+		return errors.Reason("the key cannot be empty").Err()
+	}
+	// TODO(vadimsh): Implement.
+	return nil
 }
 
 // validateDimensionValue checks if `val` can be a dimensions value

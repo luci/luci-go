@@ -61,14 +61,17 @@ func TestUpdateConfigs(t *testing.T) {
 		So(call(nil), ShouldBeNil)
 		So(fetchDS().Bundle, ShouldResembleProto, defaultConfigs())
 
-		configSet1 := cfgmem.Files{"bots.cfg": `trusted_dimensions: "boo"`}
+		configSet1 := cfgmem.Files{"bots.cfg": `
+			trusted_dimensions: "pool"
+			trusted_dimensions: "boo"
+		`}
 		configBundle1 := &internalcfgpb.ConfigBundle{
-			Revision: "52c28bde9e27457d3b6ef76d73c3eca72289fe81",
-			Digest:   "mdpudjzSaYvrwIy8F6v6+5FmxgaocvTSUGzFECuyFv8",
+			Revision: "05005a8f6c612324b96acefed49d2bdb2e18032c",
+			Digest:   "IH0p/sGs1VVrZznds3TIk+XnC+QI9kSx0sNjr4tzYmI",
 			Settings: defaultConfigs().Settings,
 			Pools:    defaultConfigs().Pools,
 			Bots: &configpb.BotsCfg{
-				TrustedDimensions: []string{"boo"},
+				TrustedDimensions: []string{"pool", "boo"},
 			},
 		}
 
@@ -77,14 +80,17 @@ func TestUpdateConfigs(t *testing.T) {
 		So(fetchDS().Bundle, ShouldResembleProto, configBundle1)
 
 		Convey("Updates good configs", func() {
-			configSet2 := cfgmem.Files{"bots.cfg": `trusted_dimensions: "blah"`}
+			configSet2 := cfgmem.Files{"bots.cfg": `
+				trusted_dimensions: "pool"
+				trusted_dimensions: "blah"
+			`}
 			configBundle2 := &internalcfgpb.ConfigBundle{
-				Revision: "3c79c4e6bd845fbeb4715d6fb5d4613084a345d9",
-				Digest:   "Y/TeCiZzHF8BByQG3zBho2Mqv+L+k9SlePjOomKdpmw",
+				Revision: "33f6ad5030e26987ee3d875e5eaef977680d1c88",
+				Digest:   "yyMjJF0NqFzIHJbHtCwuUFkYMW1NgaM3bSAdAnai7sI",
 				Settings: defaultConfigs().Settings,
 				Pools:    defaultConfigs().Pools,
 				Bots: &configpb.BotsCfg{
-					TrustedDimensions: []string{"blah"},
+					TrustedDimensions: []string{"pool", "blah"},
 				},
 			}
 
@@ -127,17 +133,27 @@ func TestParseAndValidateConfigs(t *testing.T) {
 				}
 			`,
 			"bots.cfg": `
+				trusted_dimensions: "pool"
 				bot_group {
 					bot_id: "id1"
 					bot_config_script: "script1.py"
+					auth {
+						require_luci_machine_token: true
+					}
 				}
 				bot_group {
 					bot_id: "id2"
 					bot_config_script: "script1.py"
+					auth {
+						require_luci_machine_token: true
+					}
 				}
 				bot_group {
 					bot_id: "id3"
 					bot_config_script: "script2.py"
+					auth {
+						require_luci_machine_token: true
+					}
 				}
 			`,
 			"scripts/script1.py": "script1 body",
@@ -147,7 +163,7 @@ func TestParseAndValidateConfigs(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(bundle, ShouldResembleProto, &internalcfgpb.ConfigBundle{
 			Revision: "rev",
-			Digest:   "gqRBCV2RrzjkYIbzgEswbfB2JkDdQMx7CR0uLKbQoNM",
+			Digest:   "LBLN3ToniTYTTcn5xamgqOWbmwiFx32hNaQfOdrW3mQ",
 			Settings: &configpb.SettingsCfg{
 				GoogleAnalytics: "boo",
 			},
@@ -157,10 +173,23 @@ func TestParseAndValidateConfigs(t *testing.T) {
 				},
 			},
 			Bots: &configpb.BotsCfg{
+				TrustedDimensions: []string{"pool"},
 				BotGroup: []*configpb.BotGroup{
-					{BotId: []string{"id1"}, BotConfigScript: "script1.py"},
-					{BotId: []string{"id2"}, BotConfigScript: "script1.py"},
-					{BotId: []string{"id3"}, BotConfigScript: "script2.py"},
+					{
+						BotId:           []string{"id1"},
+						BotConfigScript: "script1.py",
+						Auth:            []*configpb.BotAuth{{RequireLuciMachineToken: true}},
+					},
+					{
+						BotId:           []string{"id2"},
+						BotConfigScript: "script1.py",
+						Auth:            []*configpb.BotAuth{{RequireLuciMachineToken: true}},
+					},
+					{
+						BotId:           []string{"id3"},
+						BotConfigScript: "script2.py",
+						Auth:            []*configpb.BotAuth{{RequireLuciMachineToken: true}},
+					},
 				},
 			},
 			Scripts: map[string]string{
@@ -186,13 +215,20 @@ func TestParseAndValidateConfigs(t *testing.T) {
 	Convey("Missing scripts", t, func() {
 		_, err := call(map[string]string{
 			"bots.cfg": `
+				trusted_dimensions: "pool"
 				bot_group {
 					bot_id: "id1"
 					bot_config_script: "script1.py"
+					auth {
+						require_luci_machine_token: true
+					}
 				}
 				bot_group {
 					bot_id: "id2"
 					bot_config_script: "missing.py"
+					auth {
+						require_luci_machine_token: true
+					}
 				}
 			`,
 			"scripts/script1.py": "script1 body",
@@ -354,7 +390,25 @@ func TestBuildQueriableConfig(t *testing.T) {
 					},
 				},
 			},
-			Bots: &configpb.BotsCfg{},
+			Bots: &configpb.BotsCfg{
+				BotGroup: []*configpb.BotGroup{
+					{
+						BotId:      []string{"host-0-0", "host-0-1--abc"},
+						Dimensions: []string{"pool:a"},
+					},
+					{
+						BotIdPrefix: []string{"host-0-"},
+						Dimensions:  []string{"pool:b"},
+					},
+					{
+						BotIdPrefix: []string{"host-1-"},
+						Dimensions:  []string{"pool:c"},
+					},
+					{
+						Dimensions: []string{"pool:default"},
+					},
+				},
+			},
 		})
 		So(err, ShouldBeNil)
 
@@ -363,6 +417,16 @@ func TestBuildQueriableConfig(t *testing.T) {
 		So(cfg.Pool("a").Realm, ShouldEqual, "realm:a")
 		So(cfg.Pool("b").Realm, ShouldEqual, "realm:b")
 		So(cfg.Pool("unknown"), ShouldBeNil)
+
+		// Bots.cfg processed correctly.
+		botPool := func(botID string) string {
+			return cfg.BotGroup(botID).Dimensions["pool"][0]
+		}
+		So(botPool("host-0-0"), ShouldEqual, "a")
+		So(botPool("host-0-1--abc"), ShouldEqual, "a")
+		So(botPool("host-0-1"), ShouldEqual, "b")
+		So(botPool("host-1-0"), ShouldEqual, "c")
+		So(botPool("host-0"), ShouldEqual, "default")
 	})
 }
 
