@@ -579,7 +579,7 @@ message BuildInfra {
       map<string, Purpose> purposes = 4;
 
       // Cache for the cipd client.
-      // The cache name should be in the format like `cipd_client_<client_version>`.
+      // The cache name should be in the format like `cipd_client_<sha(client_version)>`.
       CacheEntry cipd_client_cache = 5;
       // Cache for the cipd packages.
       // The cache name should be in the format like `cipd_cache_<sha(task_service_account)>`.

@@ -314,6 +314,10 @@ func TestCreateBackendTask(t *testing.T) {
 									},
 								},
 							},
+							CipdClientCache: &pb.CacheEntry{
+								Name: "cipd_client_hash",
+								Path: "cipd_client",
+							},
 						},
 					},
 				},
@@ -349,6 +353,10 @@ func TestCreateBackendTask(t *testing.T) {
 				{
 					Name: "cache_name",
 					Path: "cache_value",
+				},
+				{
+					Name: "cipd_client_hash",
+					Path: "cipd_client",
 				},
 			})
 			So(req.ExecutionTimeout, ShouldResembleProto, &durationpb.Duration{Seconds: 500})

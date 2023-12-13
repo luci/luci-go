@@ -1273,7 +1273,7 @@ func setInfraAgentInputData(build *pb.Build, globalCfg *pb.SettingsCfg, experime
 	}
 	if version != "" {
 		build.Infra.Buildbucket.Agent.Input.CipdSource = map[string]*pb.InputDataRef{
-			CipdClientDir: &pb.InputDataRef{
+			CipdClientDir: {
 				DataType: &pb.InputDataRef_Cipd{
 					Cipd: &pb.InputDataRef_CIPD{
 						Server: cipdServer,
@@ -1287,6 +1287,12 @@ func setInfraAgentInputData(build *pb.Build, globalCfg *pb.SettingsCfg, experime
 				},
 				OnPath: []string{CipdClientDir, fmt.Sprintf("%s/%s", CipdClientDir, "bin")},
 			},
+		}
+		build.Infra.Buildbucket.Agent.CipdClientCache = &pb.CacheEntry{
+			// Sha the version to make sure the cache name matches
+			// "^[a-z0-9_]{1,4096}$".
+			Name: fmt.Sprintf("cipd_client_%x", sha256.Sum256([]byte(version))),
+			Path: "cipd_client",
 		}
 	}
 

@@ -2378,7 +2378,7 @@ type BuildInfra_Buildbucket_Agent struct {
 	// If a path is not listed here, it is the same as PURPOSE_UNSPECIFIED.
 	Purposes map[string]BuildInfra_Buildbucket_Agent_Purpose `protobuf:"bytes,4,rep,name=purposes,proto3" json:"purposes,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3,enum=buildbucket.v2.BuildInfra_Buildbucket_Agent_Purpose"`
 	// Cache for the cipd client.
-	// The cache name should be in the format like `cipd_client_<client_version>`.
+	// The cache name should be in the format like `cipd_client_<sha(client_version)>`.
 	CipdClientCache *CacheEntry `protobuf:"bytes,5,opt,name=cipd_client_cache,json=cipdClientCache,proto3" json:"cipd_client_cache,omitempty"`
 	// Cache for the cipd packages.
 	// The cache name should be in the format like `cipd_cache_<sha(task_service_account)>`.

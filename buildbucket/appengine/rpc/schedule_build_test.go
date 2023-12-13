@@ -7650,6 +7650,10 @@ func TestScheduleBuild(t *testing.T) {
 				Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 					"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 				},
+				CipdClientCache: &pb.CacheEntry{
+					Name: "cipd_client_c3bb9331ecf2d9dfe25df9012569bcc1278974c87ea33a56b2f4aa2761078578",
+					Path: "cipd_client",
+				},
 			})
 		})
 
@@ -7811,6 +7815,10 @@ func TestScheduleBuild(t *testing.T) {
 					Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 						"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 					},
+					CipdClientCache: &pb.CacheEntry{
+						Name: "cipd_client_6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+						Path: "cipd_client",
+					},
 				})
 			})
 		})
@@ -7950,6 +7958,10 @@ func TestScheduleBuild(t *testing.T) {
 					"kitchen-checkout":                pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 					"bbagent_utility_packages":        pb.BuildInfra_Buildbucket_Agent_PURPOSE_BBAGENT_UTILITY,
 					"bbagent_utility_packages/subdir": pb.BuildInfra_Buildbucket_Agent_PURPOSE_BBAGENT_UTILITY,
+				},
+				CipdClientCache: &pb.CacheEntry{
+					Name: "cipd_client_6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+					Path: "cipd_client",
 				},
 			})
 		})
