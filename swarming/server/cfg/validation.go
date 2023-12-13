@@ -18,10 +18,10 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/cipd/client/cipd/template"
+	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config/validation"
-
-	configpb "go.chromium.org/luci/swarming/proto/config"
 )
 
 func init() {
@@ -49,9 +49,20 @@ func addProtoValidator[T any, TP interface {
 	)
 }
 
-// validateSettingsCfg validates settings.cfg, writing errors into `ctx`.
-func validateSettingsCfg(ctx *validation.Context, cfg *configpb.SettingsCfg) {
-	// TODO
+// validateCipdPackage checks CIPD package name and version.
+//
+// The package name is allowed to be a template e.g. have "${platform}" and
+// other substitutions inside.
+func validateCipdPackage(ctx *validation.Context, pkg, ver string) {
+	expanded, err := template.DefaultExpander().Expand(pkg)
+	if err != nil {
+		ctx.Errorf("bad package name template %q: %s", pkg, err)
+	} else if err := common.ValidatePackageName(expanded); err != nil {
+		ctx.Errorf("%s", err) // the error has all details already
+	}
+	if err := common.ValidateInstanceVersion(ver); err != nil {
+		ctx.Errorf("%s", err) // the error has all details already
+	}
 }
 
 // validateDimensionKey checks if `key` can be a dimension key.
