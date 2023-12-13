@@ -16,6 +16,7 @@ package config
 
 import (
 	"fmt"
+	"math"
 	"regexp"
 	"strings"
 	"unicode"
@@ -110,7 +111,7 @@ func validateConfig(ctx *validation.Context, cfg *configpb.Config) {
 	validateStringConfig(ctx, "chunk_gcs_bucket", cfg.ChunkGcsBucket, bucketRE, bucketMaxLengthBytes)
 	// Limit to default max_concurrent_requests of 1000.
 	// https://cloud.google.com/appengine/docs/standard/go111/config/queueref
-	validateIntegerConfig(ctx, "reclustering_workers", cfg.ReclusteringWorkers, 1000)
+	validateIntegerConfig(ctx, "reclustering_workers", cfg.ReclusteringWorkers, 1, 1000)
 }
 
 func validateStringConfig(ctx *validation.Context, name, cfg string, re *regexp.Regexp, maxLengthBytes int) {
@@ -128,15 +129,37 @@ func validateStringConfig(ctx *validation.Context, name, cfg string, re *regexp.
 	}
 }
 
-func validateIntegerConfig(ctx *validation.Context, name string, cfg, max int64) {
+// validateIntegerConfig validates that an integer field is within the
+// range [minInclusive, maxInclusive].
+func validateIntegerConfig(ctx *validation.Context, name string, cfg, minInclusive, maxInclusive int64) {
 	ctx.Enter(name)
 	defer ctx.Exit()
 
-	if cfg < 0 {
-		ctx.Errorf("value is less than zero")
+	if cfg < minInclusive || cfg > maxInclusive {
+		if cfg == 0 {
+			ctx.Errorf(unspecifiedMessage)
+		} else {
+			ctx.Errorf("must be in the range [%v, %v]", minInclusive, maxInclusive)
+		}
 	}
-	if cfg >= max {
-		ctx.Errorf("value is greater than %v", max)
+}
+
+// validateFloat64Config validates that a float64 field is within the
+// range [minInclusive, maxInclusive].
+func validateFloat64Config(ctx *validation.Context, name string, cfg, minInclusive, maxInclusive float64) {
+	ctx.Enter(name)
+	defer ctx.Exit()
+
+	if math.IsInf(cfg, 0) || math.IsNaN(cfg) {
+		ctx.Errorf("must be a finite number")
+		return
+	}
+	if cfg == 0.0 && (cfg < minInclusive || cfg > maxInclusive) {
+		ctx.Errorf(unspecifiedMessage)
+		return
+	}
+	if cfg < minInclusive || cfg > maxInclusive {
+		ctx.Errorf("must be in the range [%f, %f]", minInclusive, maxInclusive)
 	}
 }
 
@@ -156,6 +179,7 @@ func ValidateProjectConfig(ctx *validation.Context, project string, cfg *configp
 	validateClustering(ctx, cfg.Clustering)
 	validateMetrics(ctx, cfg.Metrics)
 	validateBugManagement(ctx, cfg.BugManagement)
+	validateTestStabilityCriteria(ctx, cfg.TestStabilityCriteria)
 }
 
 func validateBuganizerDefaultComponent(ctx *validation.Context, component *configpb.BuganizerComponent) {
@@ -818,4 +842,46 @@ func validateMonorailLabels(ctx *validation.Context, labels []string) {
 		}
 		seenLabels[label] = struct{}{}
 	}
+}
+
+func validateTestStabilityCriteria(ctx *validation.Context, t *configpb.TestStabilityCriteria) {
+	ctx.Enter("test_stability_criteria")
+	defer ctx.Exit()
+
+	if t == nil {
+		// It is valid not to specify test stability criteria.
+		return
+	}
+
+	validateFailureRateCriteria(ctx, t.FailureRate)
+	validateFlakeRateCriteria(ctx, t.FlakeRate)
+}
+
+func validateFailureRateCriteria(ctx *validation.Context, f *configpb.TestStabilityCriteria_FailureRateCriteria) {
+	ctx.Enter("failure_rate")
+	defer ctx.Exit()
+
+	if f == nil {
+		ctx.Errorf(unspecifiedMessage)
+		return
+	}
+	validateIntegerConfig(ctx, "failure_threshold", int64(f.FailureThreshold), 1, 10)
+	validateIntegerConfig(ctx, "consecutive_failure_threshold", int64(f.ConsecutiveFailureThreshold), 1, 10)
+}
+
+func validateFlakeRateCriteria(ctx *validation.Context, f *configpb.TestStabilityCriteria_FlakeRateCriteria) {
+	ctx.Enter("flake_rate")
+	defer ctx.Exit()
+
+	if f == nil {
+		ctx.Errorf(unspecifiedMessage)
+		return
+	}
+
+	// Window sizes on the order of 100-10,000 source verdicts are expected in normal operation.
+	// 1,000,000 should be far larger than anything we ever need to use.
+	const largeValue = 1_000_000
+	validateIntegerConfig(ctx, "min_window", int64(f.MinWindow), 0, largeValue)
+	validateIntegerConfig(ctx, "flake_threshold", int64(f.FlakeThreshold), 1, largeValue)
+	validateFloat64Config(ctx, "flake_rate_threshold", f.FlakeRateThreshold, 0.0, 1.0)
 }

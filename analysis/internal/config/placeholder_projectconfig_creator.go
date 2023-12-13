@@ -142,5 +142,16 @@ func CreateConfigWithBothBuganizerAndMonorail(defaultBugSystem configpb.BugSyste
 			Monorail:         createPlaceholderMonorailProject(),
 			Buganizer:        createPlaceholderBuganizerProject(),
 		},
+		TestStabilityCriteria: &configpb.TestStabilityCriteria{
+			FailureRate: &configpb.TestStabilityCriteria_FailureRateCriteria{
+				FailureThreshold:            6,
+				ConsecutiveFailureThreshold: 3,
+			},
+			FlakeRate: &configpb.TestStabilityCriteria_FlakeRateCriteria{
+				MinWindow:          100,
+				FlakeThreshold:     2,
+				FlakeRateThreshold: 0.01,
+			},
+		},
 	}
 }

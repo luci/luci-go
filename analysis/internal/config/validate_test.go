@@ -17,6 +17,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"math"
 	"os"
 	"strings"
 	"testing"
@@ -95,13 +96,17 @@ func TestServiceConfigValidator(t *testing.T) {
 		cfg, err := CreatePlaceholderConfig()
 		So(err, ShouldBeNil)
 
-		Convey("less than zero", func() {
+		Convey("zero", func() {
+			cfg.ReclusteringWorkers = 0
+			So(validate(cfg), ShouldErrLike, `(reclustering_workers): must be specified`)
+		})
+		Convey("less than one", func() {
 			cfg.ReclusteringWorkers = -1
-			So(validate(cfg), ShouldErrLike, `(reclustering_workers): value is less than zero`)
+			So(validate(cfg), ShouldErrLike, `(reclustering_workers): must be in the range [1, 1000]`)
 		})
 		Convey("too large", func() {
 			cfg.ReclusteringWorkers = 1001
-			So(validate(cfg), ShouldErrLike, `(reclustering_workers): value is greater than 1000`)
+			So(validate(cfg), ShouldErrLike, `(reclustering_workers): must be in the range [1, 1000]`)
 		})
 	})
 }
@@ -760,6 +765,116 @@ func TestProjectConfigValidator(t *testing.T) {
 							So(validate(project, cfg), ShouldErrLike, `(`+path+` / [0]): exceeds maximum allowed length of 60 bytes`)
 						})
 					})
+				})
+			})
+		})
+	})
+	Convey("test stability criteria", t, func() {
+		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.BugSystem_BUGANIZER)
+
+		path := "test_stability_criteria"
+		tsc := cfg.TestStabilityCriteria
+
+		Convey("may be left unset", func() {
+			cfg.TestStabilityCriteria = nil
+			So(validate(project, cfg), ShouldBeNil)
+		})
+		Convey("failure rate", func() {
+			path := path + " / failure_rate"
+			fr := tsc.FailureRate
+			Convey("unset", func() {
+				tsc.FailureRate = nil
+				So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+			})
+			Convey("consecutive failure threshold", func() {
+				path := path + " / consecutive_failure_threshold"
+				Convey("unset", func() {
+					fr.ConsecutiveFailureThreshold = 0
+					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+				})
+				Convey("invalid - more than ten", func() {
+					fr.ConsecutiveFailureThreshold = 11
+					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be in the range [1, 10]`)
+				})
+				Convey("invalid - less than zero", func() {
+					fr.ConsecutiveFailureThreshold = -1
+					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be in the range [1, 10]`)
+				})
+			})
+			Convey("failure threshold", func() {
+				path := path + " / failure_threshold"
+				Convey("unset", func() {
+					fr.FailureThreshold = 0
+					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+				})
+				Convey("invalid - more than ten", func() {
+					fr.FailureThreshold = 11
+					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be in the range [1, 10]`)
+				})
+				Convey("invalid - less than zero", func() {
+					fr.FailureThreshold = -1
+					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be in the range [1, 10]`)
+				})
+			})
+		})
+		Convey("flake rate", func() {
+			path := path + " / flake_rate"
+			fr := tsc.FlakeRate
+			Convey("unset", func() {
+				tsc.FlakeRate = nil
+				So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+			})
+			Convey("min window", func() {
+				path := path + " / min_window"
+				Convey("may be unset", func() {
+					fr.MinWindow = 0
+					So(validate(project, cfg), ShouldBeNil)
+				})
+				Convey("invalid - too large", func() {
+					fr.MinWindow = 1_000_001
+					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be in the range [0, 1000000]`)
+				})
+				Convey("invalid - less than zero", func() {
+					fr.MinWindow = -1
+					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be in the range [0, 1000000]`)
+				})
+			})
+			Convey("flake threshold", func() {
+				path := path + " / flake_threshold"
+				Convey("unset", func() {
+					fr.FlakeThreshold = 0
+					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+				})
+				Convey("invalid - too large", func() {
+					fr.FlakeThreshold = 1_000_001
+					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be in the range [1, 1000000]`)
+				})
+				Convey("invalid - less than zero", func() {
+					fr.FlakeThreshold = -1
+					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be in the range [1, 1000000]`)
+				})
+			})
+			Convey("flake rate threshold", func() {
+				path := path + " / flake_rate_threshold"
+				Convey("may be unset", func() {
+					fr.FlakeRateThreshold = 0
+					So(validate(project, cfg), ShouldBeNil)
+				})
+				Convey("invalid - NaN", func() {
+					fr.FlakeRateThreshold = math.NaN()
+					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be a finite number`)
+				})
+				Convey("invalid - infinity", func() {
+					fr.FlakeRateThreshold = math.Inf(1)
+					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be a finite number`)
+				})
+				Convey("invalid - too large", func() {
+					fr.FlakeRateThreshold = 1.0001
+					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be in the range [0.000000, 1.000000]`)
+				})
+				Convey("invalid - less than zero", func() {
+					fr.FlakeRateThreshold = -0.0001
+					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be in the range [0.000000, 1.000000]`)
 				})
 			})
 		})
