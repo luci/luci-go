@@ -1288,10 +1288,6 @@ func setInfraAgentInputData(build *pb.Build, globalCfg *pb.SettingsCfg, experime
 				OnPath: []string{CipdClientDir, fmt.Sprintf("%s/%s", CipdClientDir, "bin")},
 			},
 		}
-		build.Infra.Buildbucket.Agent.CipdClientCache = &pb.CacheEntry{
-			Name: fmt.Sprintf("cipd_client_%s", version),
-			Path: "cipd_client",
-		}
 	}
 
 	// add user packages.

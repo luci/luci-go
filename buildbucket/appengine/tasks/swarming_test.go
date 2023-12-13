@@ -87,10 +87,6 @@ func TestTaskDef(t *testing.T) {
 									},
 								},
 							},
-							CipdClientCache: &pb.CacheEntry{
-								Name: "cipd_client_hash",
-								Path: "cipd_client",
-							},
 						},
 					},
 				},
@@ -108,16 +104,10 @@ func TestTaskDef(t *testing.T) {
 			slices, err := computeTaskSlice(b)
 			So(err, ShouldBeNil)
 			So(len(slices), ShouldEqual, 1)
-			So(slices[0].Properties.Caches, ShouldResemble, []*apipb.CacheEntry{
-				{
-					Path: filepath.Join("cache", "builder"),
-					Name: "shared_builder_cache",
-				},
-				{
-					Path: filepath.Join("cache", "cipd_client"),
-					Name: "cipd_client_hash",
-				},
-			})
+			So(slices[0].Properties.Caches, ShouldResemble, []*apipb.CacheEntry{{
+				Path: filepath.Join("cache", "builder"),
+				Name: "shared_builder_cache",
+			}})
 			So(slices[0].Properties.Dimensions, ShouldResemble, []*apipb.StringPair{
 				{
 					Key:   "pool",
@@ -155,7 +145,6 @@ func TestTaskDef(t *testing.T) {
 				So(tSlice.Properties.Caches, ShouldResemble, []*apipb.CacheEntry{
 					{Path: filepath.Join("cache", "builder"), Name: "shared_builder_cache"},
 					{Path: filepath.Join("cache", "second"), Name: "second_cache"},
-					{Path: filepath.Join("cache", "cipd_client"), Name: "cipd_client_hash"},
 				})
 				So(tSlice.Properties.Env, ShouldResemble, []*apipb.StringPair{
 					{Key: "BUILDBUCKET_EXPERIMENTAL", Value: "FALSE"},

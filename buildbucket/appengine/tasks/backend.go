@@ -95,12 +95,14 @@ func NewCipdClient(ctx context.Context, host string, project string) (client *pr
 
 // computeTaskCaches computes the task caches.
 func computeTaskCaches(infra *model.BuildInfra) []*pb.CacheEntry {
-	caches := make([]*pb.CacheEntry, 0, len(infra.Proto.Backend.GetCaches())+1)
-	if len(infra.Proto.Backend.GetCaches()) > 0 {
-		caches = append(caches, infra.Proto.Backend.Caches...)
-	}
-	if infra.Proto.Buildbucket.GetAgent().GetCipdClientCache() != nil {
-		caches = append(caches, infra.Proto.Buildbucket.Agent.CipdClientCache)
+	caches := make([]*pb.CacheEntry, len(infra.Proto.Backend.GetCaches()))
+	for i, c := range infra.Proto.Backend.GetCaches() {
+		caches[i] = &pb.CacheEntry{
+			EnvVar:           c.GetEnvVar(),
+			Name:             c.GetName(),
+			Path:             c.GetPath(),
+			WaitForWarmCache: c.GetWaitForWarmCache(),
+		}
 	}
 	return caches
 }
@@ -159,6 +161,9 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 		return nil, errors.New("infra.Proto.Backend isn't set")
 	}
 	caches := computeTaskCaches(infra)
+	if err != nil {
+		return nil, errors.Annotate(err, "RunTaskRequest.Caches could not be created").Err()
+	}
 	gracePeriod := &durationpb.Duration{
 		Seconds: build.Proto.GetGracePeriod().GetSeconds() + bbagentReservedGracePeriod,
 	}
