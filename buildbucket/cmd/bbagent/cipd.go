@@ -205,7 +205,7 @@ func downloadCipd(ctx context.Context, cipdServer, platform, cipdVersion, cipdDi
 //  1. It will use the `cipd` client tool binary path that is in path.
 //  2. Hack: it includes bbagent version in the ensure file if it's called from
 //     a cipd installed bbagent.
-func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir string) error {
+func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir, cacheBase string) error {
 	logging.Infof(ctx, "Installing cipd packages into %s", workDir)
 	inputData := build.Infra.Buildbucket.Agent.Input.Data
 
@@ -252,6 +252,16 @@ func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir string)
 
 	// TODO(crbug.com/1297809): Remove this redundant log once this feature development is done.
 	logging.Infof(ctx, "===ensure file===\n%s\n=========", ensureFileBuilder.String())
+
+	// Find cipd packages cache and set $CIPD_CACHE_DIR.
+	cache := build.Infra.Buildbucket.Agent.CipdPackagesCache
+	if cache != nil {
+		cacheDir := filepath.Join(workDir, cacheBase, cache.Path)
+		logging.Infof(ctx, "Setting $CIPD_CACHE_DIR to %q", cacheDir)
+		if err := os.Setenv("CIPD_CACHE_DIR", cacheDir); err != nil {
+			return err
+		}
+	}
 
 	// Install packages
 	cmd := execCommandContext(ctx, "cipd", "ensure", "-root", workDir, "-ensure-file", "-", "-json-output", resultsFilePath)

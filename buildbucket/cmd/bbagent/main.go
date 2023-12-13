@@ -382,7 +382,7 @@ func downloadInputs(ctx context.Context, cwd, cacheBase string, c clientInput) i
 		if err := prependPath(c.input.Build, cwd); err != nil {
 			return err
 		}
-		if err := installCipdPackages(ctx, c.input.Build, cwd); err != nil {
+		if err := installCipdPackages(ctx, c.input.Build, cwd, cacheBase); err != nil {
 			return err
 		}
 		return downloadCasFiles(ctx, c.input.Build, cwd)
