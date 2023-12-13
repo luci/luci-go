@@ -117,7 +117,7 @@ func TestSettingsValidation(t *testing.T) {
 						},
 					},
 				},
-				err: `(cipd / default_client_package): bad package name template "some/pkg/${zzz}": unknown variable "${zzz}"`,
+				err: `(cipd / default_client_package / package_name): bad package name template "some/pkg/${zzz}": unknown variable "${zzz}"`,
 			},
 			{
 				cfg: &configpb.SettingsCfg{
@@ -129,7 +129,7 @@ func TestSettingsValidation(t *testing.T) {
 						},
 					},
 				},
-				err: `(cipd / default_client_package): invalid package name "some/pkg//pkg": must be a slash-separated path where each component matches "[a-z0-9_\-\.]+"`,
+				err: `(cipd / default_client_package / package_name): invalid package name "some/pkg//pkg": must be a slash-separated path where each component matches "[a-z0-9_\-\.]+"`,
 			},
 			{
 				cfg: &configpb.SettingsCfg{
@@ -141,7 +141,7 @@ func TestSettingsValidation(t *testing.T) {
 						},
 					},
 				},
-				err: `(cipd / default_client_package): bad version "???": not an instance ID, a ref or a tag`,
+				err: `(cipd / default_client_package / version): bad version "???": not an instance ID, a ref or a tag`,
 			},
 			{
 				cfg: &configpb.SettingsCfg{

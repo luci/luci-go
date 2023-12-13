@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 
 	configpb "go.chromium.org/luci/swarming/proto/config"
+	"go.chromium.org/luci/swarming/server/validate"
 )
 
 // Pool is a parsed config of some single pool.
@@ -88,7 +89,7 @@ func validatePoolsCfg(ctx *validation.Context, cfg *configpb.PoolsCfg) {
 			ctx.Errorf("at least one pool name must be given")
 		}
 		for _, name := range pb.Name {
-			if err := validateDimensionValue(name); err != nil {
+			if err := validate.DimensionValue(name); err != nil {
 				ctx.Errorf("bad pool name %q: %s", name, err)
 			}
 			if !pools.Add(name) {

@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/config/validation"
 
 	configpb "go.chromium.org/luci/swarming/proto/config"
+	"go.chromium.org/luci/swarming/server/validate"
 )
 
 // withDefaultSettings fills in defaults in `cfg` and returns it.
@@ -93,10 +94,16 @@ func validateSettingsCfg(ctx *validation.Context, cfg *configpb.SettingsCfg) {
 		if cfg.Cipd.DefaultClientPackage == nil {
 			ctx.Errorf("this is a required field")
 		} else {
-			validateCipdPackage(ctx,
-				cfg.Cipd.DefaultClientPackage.PackageName,
-				cfg.Cipd.DefaultClientPackage.Version,
-			)
+			ctx.Enter("package_name")
+			if err := validate.CipdPackageName(cfg.Cipd.DefaultClientPackage.PackageName); err != nil {
+				ctx.Errorf("%s", err)
+			}
+			ctx.Exit()
+			ctx.Enter("version")
+			if err := validate.CipdPackageVersion(cfg.Cipd.DefaultClientPackage.Version); err != nil {
+				ctx.Errorf("%s", err)
+			}
+			ctx.Exit()
 		}
 		ctx.Exit()
 		ctx.Exit()

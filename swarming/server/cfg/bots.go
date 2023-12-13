@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/config/validation"
 
 	configpb "go.chromium.org/luci/swarming/proto/config"
+	"go.chromium.org/luci/swarming/server/validate"
 )
 
 // unassignedPools is returned as pools of a bot not in the config.
@@ -147,7 +148,7 @@ func validateBotsCfg(ctx *validation.Context, cfg *configpb.BotsCfg) {
 	for i, dim := range cfg.TrustedDimensions {
 		seenPool = seenPool || dim == "pool"
 		ctx.Enter("trusted_dimensions #%d (%q)", i, dim)
-		if err := validateDimensionKey(dim); err != nil {
+		if err := validate.DimensionKey(dim); err != nil {
 			ctx.Errorf("%s", err)
 		}
 		ctx.Exit()
@@ -241,10 +242,10 @@ func validateBotsCfg(ctx *validation.Context, cfg *configpb.BotsCfg) {
 			ctx.Errorf(`not a "key:value" pair`)
 			return
 		}
-		if err := validateDimensionKey(key); err != nil {
+		if err := validate.DimensionKey(key); err != nil {
 			ctx.Errorf("bad dimension key %q: %s", key, err)
 		}
-		if err := validateDimensionValue(val); err != nil {
+		if err := validate.DimensionValue(val); err != nil {
 			ctx.Errorf("bad dimension value %q: %s", val, err)
 		}
 	}
