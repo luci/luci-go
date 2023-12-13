@@ -95,12 +95,15 @@ func NewCipdClient(ctx context.Context, host string, project string) (client *pr
 
 // computeTaskCaches computes the task caches.
 func computeTaskCaches(infra *model.BuildInfra) []*pb.CacheEntry {
-	caches := make([]*pb.CacheEntry, 0, len(infra.Proto.Backend.GetCaches())+1)
+	caches := make([]*pb.CacheEntry, 0, len(infra.Proto.Backend.GetCaches())+2)
 	if len(infra.Proto.Backend.GetCaches()) > 0 {
 		caches = append(caches, infra.Proto.Backend.Caches...)
 	}
 	if infra.Proto.Buildbucket.GetAgent().GetCipdClientCache() != nil {
 		caches = append(caches, infra.Proto.Buildbucket.Agent.CipdClientCache)
+	}
+	if infra.Proto.Buildbucket.GetAgent().GetCipdPackagesCache() != nil {
+		caches = append(caches, infra.Proto.Buildbucket.Agent.CipdPackagesCache)
 	}
 	return caches
 }

@@ -1530,6 +1530,7 @@ func TestScheduleBuild(t *testing.T) {
 			tk, err := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_BUILD)
 			ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
 			So(err, ShouldBeNil)
+			// This is the parent led build of the newly requested led build.
 			So(datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
@@ -1649,6 +1650,7 @@ func TestScheduleBuild(t *testing.T) {
 						Buildbucket: &pb.BuildInfra_Buildbucket{
 							Hostname: "app.appspot.com",
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
+								// Inherited from its parent.
 								Input: &pb.BuildInfra_Buildbucket_Agent_Input{
 									Data: map[string]*pb.InputDataRef{
 										"cipd_bin_packages": {
@@ -1687,6 +1689,10 @@ func TestScheduleBuild(t *testing.T) {
 											Server:  "cipd server",
 										},
 									},
+								},
+								CipdPackagesCache: &pb.CacheEntry{
+									Name: "cipd_cache_60bbd3834a15dabe356b6b277007f73bc1b4bdb8dff69da7db09d155463f8f75",
+									Path: "cipd_cache",
 								},
 							},
 						},
@@ -7654,6 +7660,10 @@ func TestScheduleBuild(t *testing.T) {
 					Name: "cipd_client_c3bb9331ecf2d9dfe25df9012569bcc1278974c87ea33a56b2f4aa2761078578",
 					Path: "cipd_client",
 				},
+				CipdPackagesCache: &pb.CacheEntry{
+					Name: "cipd_cache_e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+					Path: "cipd_cache",
+				},
 			})
 		})
 
@@ -7962,6 +7972,10 @@ func TestScheduleBuild(t *testing.T) {
 				CipdClientCache: &pb.CacheEntry{
 					Name: "cipd_client_6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
 					Path: "cipd_client",
+				},
+				CipdPackagesCache: &pb.CacheEntry{
+					Name: "cipd_cache_e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+					Path: "cipd_cache",
 				},
 			})
 		})

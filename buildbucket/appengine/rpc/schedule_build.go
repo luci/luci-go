@@ -1184,7 +1184,7 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 	setTimeouts(req, cfg, b)
 	setExperiments(ctx, req, cfg, globalCfg, b)         // Requires setExecutable, setInfra, setInput.
 	setSwarmingOrBackend(ctx, req, cfg, b, globalCfg)   // Requires setExecutable, setInfra, setInput, setExperiments.
-	if err := setInfraAgent(b, globalCfg); err != nil { // Requires setExecutable, setInfra, setExperiments.
+	if err := setInfraAgent(b, globalCfg); err != nil { // Requires setExecutable, setInfra, setExperiments, setSwarmingOrBackend.
 		// TODO(crbug.com/1266060) bubble up the error after TaskBackend workflow is ready.
 		// The current ScheduleBuild doesn't need this info. Swallow it to not interrupt the normal workflow.
 		logging.Warningf(ctx, "Failed to set build.Infra.Buildbucket.Agent for build %d: %s", b.Id, err)
@@ -1198,7 +1198,8 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 
 // setInfraAgent populate the agent info from the given settings.
 // Mutates the given *pb.Build.
-// The build.Builder, build.Canary, build.Exe, and build.Infra.Buildbucket must be set.
+// The build.Builder, build.Canary, build.Exe build.Infra.Buildbucket
+// and one of build.Infra.Swarming or build.Infra.Backend must be set.
 func setInfraAgent(build *pb.Build, globalCfg *pb.SettingsCfg) error {
 	build.Infra.Buildbucket.Agent = &pb.BuildInfra_Buildbucket_Agent{}
 	experiments := stringset.NewFromSlice(build.GetInput().GetExperiments()...)
@@ -1215,6 +1216,10 @@ func setInfraAgent(build *pb.Build, globalCfg *pb.SettingsCfg) error {
 	}
 
 	setInfraAgentInputData(build, globalCfg, experiments, builderID)
+	if len(build.Infra.Buildbucket.Agent.Input.Data) > 0 {
+		setCipdPackagesCache(build)
+	}
+
 	return setInfraAgentSource(build, globalCfg, experiments, builderID)
 }
 
@@ -1581,6 +1586,9 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 				build.Infra.Buildbucket.Agent.Input = pInfra.Proto.Buildbucket.Agent.Input
 				build.Infra.Buildbucket.Agent.Source = pInfra.Proto.Buildbucket.Agent.Source
 				build.Exe = pBld.Proto.Exe
+				if len(build.Infra.Buildbucket.Agent.Input.Data) > 0 {
+					setCipdPackagesCache(build)
+				}
 			}
 		} else {
 			// TODO(crbug.com/1042991): Parallelize build creation from requests if necessary.
@@ -1860,4 +1868,19 @@ func extractCipdVersion(p *pb.SwarmingSettings_Package, b *pb.Build) string {
 		return p.VersionCanary
 	}
 	return p.Version
+}
+
+// setCipdPackagesCache sets the named cache for bbagent downloaded cipd packages.
+// One of build.Infra.Swarming and build.Infra.Backend must be set.
+func setCipdPackagesCache(build *pb.Build) {
+	var taskServiceAccount string
+	if build.Infra.Swarming != nil {
+		taskServiceAccount = build.Infra.Swarming.TaskServiceAccount
+	} else if build.Infra.Backend.GetConfig() != nil {
+		taskServiceAccount = build.Infra.Backend.Config.Fields["service_account"].GetStringValue()
+	}
+	build.Infra.Buildbucket.Agent.CipdPackagesCache = &pb.CacheEntry{
+		Name: fmt.Sprintf("cipd_cache_%x", sha256.Sum256([]byte(taskServiceAccount))),
+		Path: "cipd_cache",
+	}
 }

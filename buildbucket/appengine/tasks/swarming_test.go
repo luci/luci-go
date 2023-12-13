@@ -91,6 +91,10 @@ func TestTaskDef(t *testing.T) {
 								Name: "cipd_client_hash",
 								Path: "cipd_client",
 							},
+							CipdPackagesCache: &pb.CacheEntry{
+								Name: "cipd_cache_hash",
+								Path: "cipd_cache",
+							},
 						},
 					},
 				},
@@ -116,6 +120,10 @@ func TestTaskDef(t *testing.T) {
 				{
 					Path: filepath.Join("cache", "cipd_client"),
 					Name: "cipd_client_hash",
+				},
+				{
+					Path: filepath.Join("cache", "cipd_cache"),
+					Name: "cipd_cache_hash",
 				},
 			})
 			So(slices[0].Properties.Dimensions, ShouldResemble, []*apipb.StringPair{
@@ -156,6 +164,7 @@ func TestTaskDef(t *testing.T) {
 					{Path: filepath.Join("cache", "builder"), Name: "shared_builder_cache"},
 					{Path: filepath.Join("cache", "second"), Name: "second_cache"},
 					{Path: filepath.Join("cache", "cipd_client"), Name: "cipd_client_hash"},
+					{Path: filepath.Join("cache", "cipd_cache"), Name: "cipd_cache_hash"},
 				})
 				So(tSlice.Properties.Env, ShouldResemble, []*apipb.StringPair{
 					{Key: "BUILDBUCKET_EXPERIMENTAL", Value: "FALSE"},

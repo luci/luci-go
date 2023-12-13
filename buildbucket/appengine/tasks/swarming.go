@@ -786,8 +786,8 @@ func computeTaskSlice(build *model.Build) ([]*apipb.TaskSlice, error) {
 // computeTaskSliceCaches computes the task slice caches.
 func computeTaskSliceCaches(build *model.Build) []*apipb.CacheEntry {
 	infra := build.Proto.Infra
-	caches := make([]*apipb.CacheEntry, 0, len(infra.Swarming.GetCaches())+1)
-	for _, c := range infra.Swarming.GetCaches() {
+	caches := make([]*apipb.CacheEntry, 0, len(infra.Swarming.GetCaches())+2)
+	for _, c := range build.Proto.Infra.Swarming.GetCaches() {
 		caches = append(caches, &apipb.CacheEntry{
 			Name: c.Name,
 			Path: filepath.Join(cacheDir, c.Path),
@@ -799,6 +799,13 @@ func computeTaskSliceCaches(build *model.Build) []*apipb.CacheEntry {
 			Path: filepath.Join(cacheDir, cipdClientCache.Path),
 		})
 	}
+	if cipdPackagesCache := infra.Buildbucket.GetAgent().GetCipdPackagesCache(); cipdPackagesCache != nil {
+		caches = append(caches, &apipb.CacheEntry{
+			Name: cipdPackagesCache.Name,
+			Path: filepath.Join(cacheDir, cipdPackagesCache.Path),
+		})
+	}
+
 	return caches
 }
 
