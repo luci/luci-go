@@ -328,8 +328,9 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 		return tq.Fatal.Apply(errors.Reason("creating backend task for build %d has expired after %s", buildID, runTaskGiveUpTimeout.String()).Err())
 	}
 
-	// Create a backend task client
-	backend, err := clients.NewBackendClient(ctx, bld.Proto.Builder.Project, infra.Proto.Backend.Task.Id.Target, globalCfg)
+	// Initialize a TaskCreator for creating the backend task.
+	_, isLite := backendCfg.Mode.(*pb.BackendSetting_LiteMode_)
+	backend, err := clients.NewTaskCreator(ctx, bld.Proto.Builder.Project, infra.Proto.Backend.Task.Id.Target, globalCfg, isLite)
 	if err != nil {
 		return tq.Fatal.Apply(errors.Annotate(err, "failed to connect to backend service").Err())
 	}

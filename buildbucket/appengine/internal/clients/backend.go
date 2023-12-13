@@ -27,6 +27,7 @@ import (
 type contextKey string
 
 var MockTaskBackendClientKey = contextKey("used in tests only for setting the mock SwarmingClient")
+var MockTaskCreatorKey = contextKey("used in tests only for setting the mock TaskCreator")
 
 // BackendClient is the client to communicate with TaskBackend.
 // It wraps a pb.TaskBackendClient.
@@ -34,6 +35,7 @@ type BackendClient struct {
 	client TaskBackendClient
 }
 
+// TaskBackendClient represents a full-featured TaskBackend.
 type TaskBackendClient interface {
 	CancelTasks(ctx context.Context, in *pb.CancelTasksRequest, opts ...grpc.CallOption) (*pb.CancelTasksResponse, error)
 	RunTask(ctx context.Context, in *pb.RunTaskRequest, opts ...grpc.CallOption) (*pb.RunTaskResponse, error)
@@ -64,7 +66,7 @@ func ComputeHostnameFromTarget(target string, globalCfg *pb.SettingsCfg) (hostna
 	return "", errors.Reason("could not find target in global config settings").Err()
 }
 
-// NewBackendClient creates a client to communicate with Buildbucket.
+// NewBackendClient creates a client to communicate with a full-featured TaskBackend server.
 func NewBackendClient(ctx context.Context, project, target string, globalCfg *pb.SettingsCfg) (*BackendClient, error) {
 	hostname, err := ComputeHostnameFromTarget(target, globalCfg)
 	if err != nil {
@@ -97,4 +99,46 @@ func (c *BackendClient) FetchTasks(ctx context.Context, in *pb.FetchTasksRequest
 // ValidateConfigs returns validation errors (if any).
 func (c *BackendClient) ValidateConfigs(ctx context.Context, in *pb.ValidateConfigsRequest, opts ...grpc.CallOption) (*pb.ValidateConfigsResponse, error) {
 	return c.client.ValidateConfigs(ctx, in, opts...)
+}
+
+// TaskCreator is the abstraction for TaskBackend or TaskBackendLite services
+// which expose the RunTask API.
+type TaskCreator interface {
+	RunTask(ctx context.Context, in *pb.RunTaskRequest, opts ...grpc.CallOption) (*pb.RunTaskResponse, error)
+}
+
+// TaskCreatorClient is the implementation of TaskCreator and will be used in
+// real Prod env.
+type TaskCreatorClient struct {
+	client TaskCreator
+}
+
+// RunTask returns for the requested task.
+func (c *TaskCreatorClient) RunTask(ctx context.Context, in *pb.RunTaskRequest, opts ...grpc.CallOption) (*pb.RunTaskResponse, error) {
+	return c.client.RunTask(ctx, in, opts...)
+}
+
+// NewTaskCreator creates a client to communicate with the backend which
+// implements RunTask API.
+func NewTaskCreator(ctx context.Context, project, target string, globalCfg *pb.SettingsCfg, isLite bool) (TaskCreator, error) {
+	if mockClient, ok := ctx.Value(MockTaskCreatorKey).(TaskCreator); ok {
+		return mockClient, nil
+	}
+
+	hostname, err := ComputeHostnameFromTarget(target, globalCfg)
+	if err != nil {
+		return nil, err
+	}
+	prpcClient, err := CreateRawPrpcClient(ctx, hostname, project)
+	if err != nil {
+		return nil, err
+	}
+	if isLite {
+		return &TaskCreatorClient{
+			client: pb.NewTaskBackendLitePRPCClient(prpcClient),
+		}, nil
+	}
+	return &TaskCreatorClient{
+		client: pb.NewTaskBackendPRPCClient(prpcClient),
+	}, nil
 }

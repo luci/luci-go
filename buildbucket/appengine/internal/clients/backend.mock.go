@@ -114,3 +114,46 @@ func (mr *MockTaskBackendClientMockRecorder) ValidateConfigs(ctx, in interface{}
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateConfigs", reflect.TypeOf((*MockTaskBackendClient)(nil).ValidateConfigs), varargs...)
 }
+
+// MockTaskCreator is a mock of TaskCreator interface.
+type MockTaskCreator struct {
+	ctrl     *gomock.Controller
+	recorder *MockTaskCreatorMockRecorder
+}
+
+// MockTaskCreatorMockRecorder is the mock recorder for MockTaskCreator.
+type MockTaskCreatorMockRecorder struct {
+	mock *MockTaskCreator
+}
+
+// NewMockTaskCreator creates a new mock instance.
+func NewMockTaskCreator(ctrl *gomock.Controller) *MockTaskCreator {
+	mock := &MockTaskCreator{ctrl: ctrl}
+	mock.recorder = &MockTaskCreatorMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockTaskCreator) EXPECT() *MockTaskCreatorMockRecorder {
+	return m.recorder
+}
+
+// RunTask mocks base method.
+func (m *MockTaskCreator) RunTask(ctx context.Context, in *buildbucketpb.RunTaskRequest, opts ...grpc.CallOption) (*buildbucketpb.RunTaskResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RunTask", varargs...)
+	ret0, _ := ret[0].(*buildbucketpb.RunTaskResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RunTask indicates an expected call of RunTask.
+func (mr *MockTaskCreatorMockRecorder) RunTask(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunTask", reflect.TypeOf((*MockTaskCreator)(nil).RunTask), varargs...)
+}

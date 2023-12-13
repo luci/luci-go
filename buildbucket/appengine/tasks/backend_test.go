@@ -192,10 +192,10 @@ func TestCreateBackendTask(t *testing.T) {
 	Convey("computeBackendNewTaskReq", t, func(c C) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
-		mockBackend := clients.NewMockTaskBackendClient(ctl)
+		mockTaskCreator := clients.NewMockTaskCreator(ctl)
 		now := testclock.TestRecentTimeUTC
 		ctx, _ := testclock.UseTime(context.Background(), now)
-		ctx = context.WithValue(ctx, clients.MockTaskBackendClientKey, mockBackend)
+		ctx = context.WithValue(ctx, clients.MockTaskCreatorKey, mockTaskCreator)
 		ctx = caching.WithEmptyProcessCache(ctx)
 		ctx = memory.UseWithAppID(ctx, "dev~app-id")
 		ctx = txndefer.FilterRDS(ctx)
@@ -403,10 +403,10 @@ func TestCreateBackendTask(t *testing.T) {
 	Convey("RunTask", t, func(c C) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
-		mockBackend := clients.NewMockTaskBackendClient(ctl)
+		mockTaskCreator := clients.NewMockTaskCreator(ctl)
 		now := testclock.TestRecentTimeUTC
 		ctx, _ := testclock.UseTime(context.Background(), now)
-		ctx = context.WithValue(ctx, clients.MockTaskBackendClientKey, mockBackend)
+		ctx = context.WithValue(ctx, clients.MockTaskCreatorKey, mockTaskCreator)
 		ctx = caching.WithEmptyProcessCache(ctx)
 		ctx = memory.UseWithAppID(ctx, "dev~app-id")
 		ctx = txndefer.FilterRDS(ctx)
@@ -547,7 +547,7 @@ func TestCreateBackendTask(t *testing.T) {
 		So(datastore.Put(ctx, build, infra, bs), ShouldBeNil)
 
 		Convey("ok", func() {
-			mockBackend.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(&pb.RunTaskResponse{
+			mockTaskCreator.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(&pb.RunTaskResponse{
 				Task: &pb.Task{
 					Id:       &pb.TaskID{Id: "abc123", Target: "swarming://chromium-swarm"},
 					Link:     "this_is_a_url_link",
@@ -584,7 +584,7 @@ func TestCreateBackendTask(t *testing.T) {
 		})
 
 		Convey("fail", func() {
-			mockBackend.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(nil, &googleapi.Error{Code: 400})
+			mockTaskCreator.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(nil, &googleapi.Error{Code: 400})
 			err = CreateBackendTask(ctx, 1, "request_id")
 			expectedBuild := &model.Build{ID: 1}
 			So(datastore.Get(ctx, expectedBuild), ShouldBeNil)
@@ -629,7 +629,7 @@ func TestCreateBackendTask(t *testing.T) {
 			infra.Proto.Backend.Task.Id.Target = "lite://foo-lite"
 			So(datastore.Put(ctx, build, infra, bldr), ShouldBeNil)
 
-			mockBackend.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(&pb.RunTaskResponse{
+			mockTaskCreator.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(&pb.RunTaskResponse{
 				Task: &pb.Task{
 					Id:       &pb.TaskID{Id: "abc123", Target: "lite://foo-lite"},
 					Link:     "this_is_a_url_link",
