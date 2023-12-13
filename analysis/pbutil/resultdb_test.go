@@ -146,7 +146,7 @@ func TestResultDB(t *testing.T) {
 			So(converted.BugComponent.System.(*pb.BugComponent_Monorail).Monorail.Value, ShouldEqual, "Blink>Data")
 		})
 	})
-	Convey("SourcesFromResultDB", t, func() {
+	Convey("Sources to/from ResultDB", t, func() {
 		rdbSources := &rdbpb.Sources{
 			GitilesCommit: &rdbpb.GitilesCommit{
 				Host:       "project.googlesource.com",
@@ -165,8 +165,7 @@ func TestResultDB(t *testing.T) {
 			},
 			IsDirty: true,
 		}
-		converted := SourcesFromResultDB(rdbSources)
-		So(converted, ShouldResembleProto, &pb.Sources{
+		analysisSources := &pb.Sources{
 			GitilesCommit: &pb.GitilesCommit{
 				Host:       "project.googlesource.com",
 				Project:    "myproject/src",
@@ -183,7 +182,9 @@ func TestResultDB(t *testing.T) {
 				},
 			},
 			IsDirty: true,
-		})
+		}
+		So(SourcesFromResultDB(rdbSources), ShouldResembleProto, analysisSources)
+		So(SourcesToResultDB(analysisSources), ShouldResembleProto, rdbSources)
 	})
 	Convey("SourceRef to resultdb", t, func() {
 		sourceRef := &pb.SourceRef{

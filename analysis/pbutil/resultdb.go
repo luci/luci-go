@@ -219,6 +219,51 @@ func SourcesFromResultDB(s *rdbpb.Sources) *pb.Sources {
 	return result
 }
 
+// GitilesCommitToResultDB returns the ResultDB gitiles commit
+// corresponding to a LUCI Analysis gitiles commit.
+func GitilesCommitToResultDB(c *pb.GitilesCommit) *rdbpb.GitilesCommit {
+	if c == nil {
+		return nil
+	}
+	return &rdbpb.GitilesCommit{
+		Host:       c.Host,
+		Project:    c.Project,
+		Ref:        c.Ref,
+		CommitHash: c.CommitHash,
+		Position:   c.Position,
+	}
+}
+
+// ChangelistToResultDB returns the ResultDB gerrit changelist
+// corresponding to a LUCI Analysis gerrit changelist.
+func ChangelistToResultDB(cl *pb.GerritChange) *rdbpb.GerritChange {
+	if cl == nil {
+		return nil
+	}
+	return &rdbpb.GerritChange{
+		Host:     cl.Host,
+		Project:  cl.Project,
+		Change:   cl.Change,
+		Patchset: cl.Patchset,
+	}
+}
+
+// SourcesToResultDB returns the ResultDB source description
+// corresponding to a LUCI Analysis source description.
+func SourcesToResultDB(s *pb.Sources) *rdbpb.Sources {
+	if s == nil {
+		return nil
+	}
+	result := &rdbpb.Sources{
+		GitilesCommit: GitilesCommitToResultDB(s.GitilesCommit),
+		IsDirty:       s.IsDirty,
+	}
+	for _, cl := range s.Changelists {
+		result.Changelists = append(result.Changelists, ChangelistToResultDB(cl))
+	}
+	return result
+}
+
 // SourceRefToResultDB returns a ResultDB SourceRef corresponding to the
 // supplied LUCI Analysis SourceRef.
 func SourceRefToResultDB(v *pb.SourceRef) *rdbpb.SourceRef {

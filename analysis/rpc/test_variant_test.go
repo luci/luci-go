@@ -70,9 +70,9 @@ func TestTestVariantsServer(t *testing.T) {
 
 			// Make some request (the request should not matter, as
 			// a common decorator is used for all requests.)
-			request := &pb.QueryTestVariantFailureRateRequest{}
+			request := &pb.QueryTestVariantStabilityRequest{}
 
-			response, err := server.QueryFailureRate(ctx, request)
+			response, err := server.QueryStability(ctx, request)
 			So(err, ShouldBeRPCPermissionDenied, "not a member of luci-analysis-access")
 			So(response, ShouldBeNil)
 		})
@@ -154,6 +154,60 @@ func TestTestVariantsServer(t *testing.T) {
 				st, _ := grpcStatus.FromError(err)
 				So(st.Code(), ShouldEqual, codes.InvalidArgument)
 				So(st.Message(), ShouldEqual, `project: unspecified`)
+				So(response, ShouldBeNil)
+			})
+		})
+		Convey("QueryStability", func() {
+			request := &pb.QueryTestVariantStabilityRequest{
+				Project: "project",
+				TestVariants: []*pb.QueryTestVariantStabilityRequest_TestVariantPosition{
+					{
+						TestId:  "test_id",
+						Variant: pbutil.Variant("key1", "val1", "key2", "val1"),
+						Sources: testSources(),
+					},
+					{
+						TestId:  "test_id",
+						Variant: pbutil.Variant("key1", "val2", "key2", "val2"),
+						Sources: testSources(),
+					},
+				},
+			}
+
+			Convey("Valid input", func() {
+				_, err := server.QueryStability(ctx, request)
+				So(err, ShouldHaveRPCCode, codes.Unimplemented)
+			})
+			Convey("Query by VariantHash", func() {
+				for _, tv := range request.TestVariants {
+					tv.VariantHash = pbutil.VariantHash(tv.Variant)
+					tv.Variant = nil
+				}
+				_, err := server.QueryStability(ctx, request)
+				So(err, ShouldHaveRPCCode, codes.Unimplemented)
+			})
+			Convey("No list test results permission", func() {
+				authState.IdentityPermissions = []authtest.RealmPermission{
+					{
+						// This permission is for a project other than the one
+						// being queried.
+						Realm:      "otherproject:realm",
+						Permission: rdbperms.PermListTestResults,
+					},
+				}
+
+				response, err := server.QueryStability(ctx, request)
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permissions [resultdb.testResults.list] in any realm")
+				So(response, ShouldBeNil)
+			})
+			Convey("Invalid input", func() {
+				// This checks at least one case of invalid input is detected, sufficient to verify
+				// validation is invoked.
+				// Exhaustive checking of request validation is performed in TestValidateQueryRateRequest.
+				request.Project = ""
+
+				response, err := server.QueryStability(ctx, request)
+				So(err, ShouldBeRPCInvalidArgument, `project: unspecified`)
 				So(response, ShouldBeNil)
 			})
 		})
@@ -243,4 +297,138 @@ func TestValidateQueryFailureRateRequest(t *testing.T) {
 			So(err, ShouldErrLike, `test_variants[1]: already requested in the same request`)
 		})
 	})
+}
+
+func TestValidateQueryTestVariantStabilityRequest(t *testing.T) {
+	Convey("ValidateQueryTestVariantStabilityRequest", t, func() {
+		req := &pb.QueryTestVariantStabilityRequest{
+			Project: "project",
+			TestVariants: []*pb.QueryTestVariantStabilityRequest_TestVariantPosition{
+				{
+					TestId: "my_test",
+					// Variant is optional as not all tests have variants.
+					Sources: testSources(),
+				},
+				{
+					TestId:  "my_test2",
+					Variant: pbutil.Variant("key1", "val1", "key2", "val2"),
+					Sources: testSources(),
+				},
+			},
+		}
+
+		Convey("valid", func() {
+			err := validateQueryTestVariantStabilityRequest(req)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("no project", func() {
+			req.Project = ""
+			err := validateQueryTestVariantStabilityRequest(req)
+			So(err, ShouldErrLike, "project: unspecified")
+		})
+
+		Convey("invalid project", func() {
+			req.Project = ":"
+			err := validateQueryTestVariantStabilityRequest(req)
+			So(err, ShouldErrLike, `project: must match ^[a-z0-9\-]{1,40}$`)
+		})
+
+		Convey("no test variants", func() {
+			req.TestVariants = nil
+			err := validateQueryTestVariantStabilityRequest(req)
+			So(err, ShouldErrLike, `test_variants: unspecified`)
+		})
+
+		Convey("too many test variants", func() {
+			req.TestVariants = make([]*pb.QueryTestVariantStabilityRequest_TestVariantPosition, 0, 101)
+			for i := 0; i < 101; i++ {
+				req.TestVariants = append(req.TestVariants, &pb.QueryTestVariantStabilityRequest_TestVariantPosition{
+					TestId:  fmt.Sprintf("test_id%v", i),
+					Sources: testSources(),
+				})
+			}
+			err := validateQueryTestVariantStabilityRequest(req)
+			So(err, ShouldErrLike, `no more than 100 may be queried at a time`)
+		})
+
+		Convey("no test id", func() {
+			req.TestVariants[1].TestId = ""
+			err := validateQueryTestVariantStabilityRequest(req)
+			So(err, ShouldErrLike, `test_variants[1]: test_id: unspecified`)
+		})
+
+		Convey("variant_hash invalid", func() {
+			req.TestVariants[1].VariantHash = "invalid"
+			err := validateQueryTestVariantStabilityRequest(req)
+			So(err, ShouldErrLike, `test_variants[1]: variant_hash: must match ^[0-9a-f]{16}$`)
+		})
+
+		Convey("variant_hash mismatch with variant", func() {
+			req.TestVariants[1].VariantHash = "0123456789abcdef"
+			err := validateQueryTestVariantStabilityRequest(req)
+			So(err, ShouldErrLike, `test_variants[1]: variant and variant_hash mismatch`)
+		})
+
+		Convey("variant_hash only", func() {
+			req.TestVariants[1].Variant = nil
+			req.TestVariants[1].VariantHash = "0123456789abcdef"
+			err := validateQueryTestVariantStabilityRequest(req)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("no sources", func() {
+			req.TestVariants[1].Sources = nil
+			err := validateQueryTestVariantStabilityRequest(req)
+			So(err, ShouldErrLike, `test_variants[1]: sources: unspecified`)
+		})
+
+		Convey("invalid sources", func() {
+			// This checks at least one case of invalid input is detected, sufficient to verify
+			// sources validation is invoked.
+			// Exhaustive checking of sources validation is performed in pbutil.
+			req.TestVariants[1].Sources.GitilesCommit.Host = ""
+			err := validateQueryTestVariantStabilityRequest(req)
+			So(err, ShouldErrLike, `test_variants[1]: sources: gitiles_commit: host: unspecified`)
+		})
+
+		Convey("duplicate test variants", func() {
+			req.TestVariants = append(req.TestVariants, []*pb.QueryTestVariantStabilityRequest_TestVariantPosition{
+				{
+					TestId:  "my_test",
+					Variant: pbutil.Variant("key1", "val1", "key2", "val2"),
+					Sources: testSources(),
+				},
+				{
+					TestId:  "my_test",
+					Variant: pbutil.Variant("key1", "val1", "key2", "val2"),
+					Sources: testSources(),
+				},
+			}...)
+			err := validateQueryTestVariantStabilityRequest(req)
+			So(err, ShouldErrLike, `test_variants[3]: same test variant already requested at index 2`)
+		})
+	})
+}
+
+func testSources() *pb.Sources {
+	result := &pb.Sources{
+		GitilesCommit: &pb.GitilesCommit{
+			Host:       "chromium.googlesource.com",
+			Project:    "infra/infra",
+			Ref:        "refs/heads/main",
+			CommitHash: "1234567890abcdefabcd1234567890abcdefabcd",
+			Position:   12345,
+		},
+		IsDirty: true,
+		Changelists: []*pb.GerritChange{
+			{
+				Host:     "chromium-review.googlesource.com",
+				Project:  "myproject",
+				Change:   87654,
+				Patchset: 321,
+			},
+		},
+	}
+	return result
 }

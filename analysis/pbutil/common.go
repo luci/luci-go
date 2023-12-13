@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	cvv0 "go.chromium.org/luci/cv/api/v0"
+	"go.chromium.org/luci/resultdb/pbutil"
 
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -261,4 +262,9 @@ func ValidateProject(project string) error {
 		return errors.Reason("must match %s", projectRe).Err()
 	}
 	return nil
+}
+
+// ValidateSources validates a set of sources.
+func ValidateSources(sources *pb.Sources) error {
+	return pbutil.ValidateSources(SourcesToResultDB(sources))
 }

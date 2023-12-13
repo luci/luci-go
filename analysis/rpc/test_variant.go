@@ -79,10 +79,6 @@ func (*testVariantsServer) QueryFailureRate(ctx context.Context, req *pb.QueryTe
 	return response, nil
 }
 
-func (*testVariantsServer) QueryStability(ctx context.Context, req *pb.QueryTestVariantStabilityRequest) (*pb.QueryTestVariantStabilityResponse, error) {
-	return nil, appstatus.Error(codes.Unimplemented, "not implemented")
-}
-
 func validateQueryTestVariantFailureRateRequest(req *pb.QueryTestVariantFailureRateRequest) error {
 	// MaxTestVariants is the maximum number of test variants to be queried in one request.
 	const MaxTestVariants = 100
@@ -127,6 +123,94 @@ func validateQueryTestVariantFailureRateRequest(req *pb.QueryTestVariantFailureR
 			return errors.Reason("test_variants[%v]: already requested in the same request", i).Err()
 		}
 		uniqueTestVariants[key] = struct{}{}
+	}
+	return nil
+}
+
+func (*testVariantsServer) QueryStability(ctx context.Context, req *pb.QueryTestVariantStabilityRequest) (*pb.QueryTestVariantStabilityResponse, error) {
+	if err := validateQueryTestVariantStabilityRequest(req); err != nil {
+		return nil, invalidArgumentError(err)
+	}
+
+	var err error
+	// Query all subrealms the caller can see test results in.
+	const subRealm = ""
+	_, err = perms.QuerySubRealmsNonEmpty(ctx, req.Project, subRealm, nil, rdbperms.PermListTestResults)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, appstatus.Error(codes.Unimplemented, "not implemented")
+}
+
+func validateQueryTestVariantStabilityRequest(req *pb.QueryTestVariantStabilityRequest) error {
+	// MaxTestVariants is the maximum number of test variants to be queried in one request.
+	const MaxTestVariants = 100
+
+	if err := pbutil.ValidateProject(req.Project); err != nil {
+		return errors.Annotate(err, "project").Err()
+	}
+	if len(req.TestVariants) == 0 {
+		return errors.Reason("test_variants: unspecified").Err()
+	}
+	if len(req.TestVariants) > MaxTestVariants {
+		return errors.Reason("test_variants: no more than %v may be queried at a time", MaxTestVariants).Err()
+	}
+	seenTestVariants := make(map[testVariant]int)
+	for i, tv := range req.TestVariants {
+		if err := validateTestVariantPosition(tv, i, seenTestVariants); err != nil {
+			return errors.Annotate(err, "test_variants[%v]", i).Err()
+		}
+	}
+	return nil
+}
+
+type testVariant struct {
+	testID      string
+	variantHash string
+}
+
+// validateTestVariantPosition validates the given test variant position at the given offset
+// in the request. seenTestVariants is used to track the previously seen test variants
+// and their offsets so that duplicates can be identified.
+func validateTestVariantPosition(tv *pb.QueryTestVariantStabilityRequest_TestVariantPosition, offset int, seenTestVariants map[testVariant]int) error {
+	if tv.GetTestId() == "" {
+		return errors.Reason("test_id: unspecified").Err()
+	}
+	var variantHash string
+	if tv.VariantHash != "" {
+		if !variantHashRe.MatchString(tv.VariantHash) {
+			return errors.Reason("variant_hash: must match %s", variantHashRe).Err()
+		}
+		variantHash = tv.VariantHash
+	}
+
+	// This RPC allows the Variant or VariantHash (or both)
+	// to be set to specify the variant. If both are specified,
+	// they must be consistent.
+	if tv.Variant != nil {
+		calculatedHash := pbutil.VariantHash(tv.Variant)
+		if tv.VariantHash != "" && calculatedHash != tv.VariantHash {
+			return errors.Reason("variant and variant_hash mismatch, variant hashed to %s, expected %s", calculatedHash, tv.VariantHash).Err()
+		}
+		variantHash = calculatedHash
+	}
+	// It is possible neither the VariantHash nor Variant is set.
+	// In this case, we interpret the request as being for the
+	// nil Variant (which is a valid variant).
+	if tv.VariantHash == "" && tv.Variant == nil {
+		variantHash = pbutil.VariantHash(nil)
+	}
+
+	// Each test variant may appear in the request only once.
+	key := testVariant{testID: tv.TestId, variantHash: variantHash}
+	if previousOffset, ok := seenTestVariants[key]; ok {
+		return errors.Reason("same test variant already requested at index %v", previousOffset).Err()
+	}
+	seenTestVariants[key] = offset
+
+	if err := pbutil.ValidateSources(tv.Sources); err != nil {
+		return errors.Annotate(err, "sources").Err()
 	}
 	return nil
 }
