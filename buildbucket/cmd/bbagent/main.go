@@ -200,7 +200,7 @@ func startBuild(ctx context.Context, bbclient BuildsClient, buildID int64, taskI
 func retrieveTaskIDFromContext(ctx context.Context) string {
 	swarmingCtx := lucictx.GetSwarming(ctx)
 	if swarmingCtx == nil || swarmingCtx.GetTask() == nil || swarmingCtx.Task.GetTaskId() == "" {
-		check(ctx, errors.New("incomplete swarming context"))
+		check(ctx, fmt.Errorf("incomplete swarming context: %+v", swarmingCtx))
 	}
 	return swarmingCtx.Task.TaskId
 }
