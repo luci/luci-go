@@ -106,6 +106,8 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr any) error {
 		spanPtr = &b.Int64Slice
 	case *pb.TestResultStatus:
 		spanPtr = &b.Int64
+	case *pb.ChangelistOwnerKind:
+		spanPtr = &b.Int64
 	case **pb.Variant:
 		spanPtr = &b.StringSlice
 	case *[]*pb.StringPair:
@@ -158,6 +160,9 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr any) error {
 
 	case *pb.TestResultStatus:
 		*goPtr = pb.TestResultStatus(b.Int64)
+
+	case *pb.ChangelistOwnerKind:
+		*goPtr = pb.ChangelistOwnerKind(b.Int64)
 
 	case **pb.Variant:
 		if *goPtr, err = pbutil.VariantFromStrings(b.StringSlice); err != nil {
@@ -230,6 +235,9 @@ func ToSpanner(v any) any {
 		return spanPtr
 
 	case pb.TestResultStatus:
+		return int64(v)
+
+	case pb.ChangelistOwnerKind:
 		return int64(v)
 
 	case *pb.Variant:

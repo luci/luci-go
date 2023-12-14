@@ -364,13 +364,31 @@ CREATE TABLE TestResults (
   -- all results for a test variant in an ingested invocation.
   ExonerationReasons ARRAY<INT64>,
 
-  -- The following data is stored denormalised. It is guaranteed to be
-  -- the same for all results for the ingested invocation.
+  -- The following data from the invocation that is stored denormalised.
+  -- It is guaranteed to be the same for all results for the ingested invocation.
 
   -- The realm of the test result, excluding project. 62 as ResultDB allows
   -- at most 64 characters for the construction "<project>:<realm>" and project
   -- must be at least one character.
   SubRealm STRING(62) NOT NULL,
+
+  -- Indicate if this test result is from LUCI Bisection run.
+  -- Test results from LUCI Bisection will have an option to be filtered out
+  -- from test history endpoints so that they do not show in the test history page.
+  -- The value 'true' is used to encode true, and NULL encodes false.
+  IsFromBisection BOOL,
+
+  -- The following data from the test verdict stored denormalised. It is guaranteed
+  -- to be the same for all results for the same test verdict.
+
+  -- The identity of the source reference (e.g. git reference / branch) that was tested.
+  -- See go.chromium.org/luci/analysis/pbutil.SourceRefHash for details.
+  SourceRefHash BYTES(8),
+
+  -- The position along the given source reference that was tested.
+  -- This excludes any unsubmitted changes that were tested, which are
+  -- noted separately in the Changelist... fields below.
+  SourcePosition INT64,
 
   -- The following fields capture information about any unsubmitted
   -- changelists that were tested by the test execution. The arrays
@@ -405,13 +423,38 @@ CREATE TABLE TestResults (
   -- changelist, and '' corresponds to a changelist of unspecified origin.
   ChangelistOwnerKinds ARRAY<STRING(1)>,
 
-  -- Indicate if this test result is from LUCI Bisection run.
-  -- Test results from LUCI Bisection will have an option to be filtered out
-  -- from test history endpoints so that they do not show in the test history page.
-  -- The value 'true' is used to encode true, and NULL encodes false.
-  IsFromBisection BOOL,
+  -- Whether there were any changes made to the sources, not described above.
+  -- For example, a version of a dependency was uprevved in the build (e.g.
+  -- in an autoroller recipe).
+  --
+  -- Cherry-picking a changelist on top of the base checkout is not considered
+  -- making the sources dirty as it is reported separately above.
+  --
+  -- NULL is used to indicate false, TRUE indicates true.
+  HasDirtySources BOOL,
 ) PRIMARY KEY(Project, TestId, PartitionTime DESC, VariantHash, IngestedInvocationId, RunIndex, ResultIndex)
 , ROW DELETION POLICY (OLDER_THAN(PartitionTime, INTERVAL 90 DAY));
+
+-- Stores whether gerrit changes are user or authomation authored.
+-- This is used as a cache to avoid excessive RPCs to gerrit.
+--
+-- The cache is per-project to avoid confused deputy issues.
+CREATE TABLE GerritChangelists (
+  -- LUCI Project on behalf of which the data was fetched.
+  -- This is the project we authenticated to gerrit as when we fetched
+  -- the data.
+  Project STRING(40) NOT NULL,
+  -- The gerrit host.
+  Host STRING(255) NOT NULL,
+  -- The gerrit change number.
+  Change INT64 NOT NULL,
+  -- The changelist owner kind. Corresponds to
+  -- one of the luci.analysis.v1.ChangelistOwnerKinds values.
+  OwnerKind INT64 NOT NULL,
+  -- Used to enforce a deletion policy on this data.
+  CreationTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+) PRIMARY KEY (Project, Host, Change),
+  ROW DELETION POLICY (OLDER_THAN(CreationTime, INTERVAL 100 DAY));
 
 -- Serves two purposes:
 -- - Permits listing of distinct variants observed for a test in a project,

@@ -86,11 +86,14 @@ type TestResult struct {
 	IsUnexpected         bool
 	RunDuration          *time.Duration
 	Status               pb.TestResultStatus
-	// Properties of the test variant in the invocation (stored denormalised) follow.
+	// Properties of the test verdict (stored denormalised) follow.
 	ExonerationReasons []pb.ExonerationReason
+	SourceRefHash      []byte
+	SourcePosition     int64
+	Changelists        []Changelist
+	HasDirtySources    bool
 	// Properties of the invocation (stored denormalised) follow.
 	SubRealm        string
-	Changelists     []Changelist
 	IsFromBisection bool
 }
 
@@ -103,8 +106,10 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 		"RunIndex", "ResultIndex",
 		"IsUnexpected", "RunDurationUsec", "Status",
 		"ExonerationReasons",
-		"SubRealm",
+		"SourceRefHash", "SourcePosition",
 		"ChangelistHosts", "ChangelistChanges", "ChangelistPatchsets", "ChangelistOwnerKinds",
+		"HasDirtySources",
+		"SubRealm",
 		"IsFromBisection",
 	}
 	return span.Read(ctx, "TestResults", keys, fields).Do(
@@ -112,10 +117,13 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 			tr := &TestResult{}
 			var runDurationUsec spanner.NullInt64
 			var isUnexpected spanner.NullBool
+			var sourceRefHash []byte
+			var sourcePosition spanner.NullInt64
 			var changelistHosts []string
 			var changelistChanges []int64
 			var changelistPatchsets []int64
 			var changelistOwnerKinds []string
+			var hasDirtySources spanner.NullBool
 			var isFromBisection spanner.NullBool
 			err := b.FromSpanner(
 				row,
@@ -123,8 +131,10 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 				&tr.RunIndex, &tr.ResultIndex,
 				&isUnexpected, &runDurationUsec, &tr.Status,
 				&tr.ExonerationReasons,
-				&tr.SubRealm,
+				&sourceRefHash, &sourcePosition,
 				&changelistHosts, &changelistChanges, &changelistPatchsets, &changelistOwnerKinds,
+				&hasDirtySources,
+				&tr.SubRealm,
 				&isFromBisection,
 			)
 			if err != nil {
@@ -136,6 +146,13 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 			}
 			tr.IsUnexpected = isUnexpected.Valid && isUnexpected.Bool
 			tr.IsFromBisection = isFromBisection.Valid && isFromBisection.Bool
+
+			// Data in Spanner should be consistent, so commitPosition.Valid ==
+			// (gitReferenceHash != nil).
+			if sourcePosition.Valid {
+				tr.SourceRefHash = sourceRefHash
+				tr.SourcePosition = sourcePosition.Int64
+			}
 
 			// Data in spanner should be consistent, so
 			// len(changelistHosts) == len(changelistChanges)
@@ -164,6 +181,8 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 				})
 			}
 			tr.Changelists = changelists
+			tr.HasDirtySources = hasDirtySources.Valid && hasDirtySources.Bool
+
 			return fn(tr)
 		})
 }
@@ -174,9 +193,12 @@ var TestResultSaveCols = []string{
 	"Project", "TestId", "PartitionTime", "VariantHash",
 	"IngestedInvocationId", "RunIndex", "ResultIndex",
 	"IsUnexpected", "RunDurationUsec", "Status",
-	"ExonerationReasons", "SubRealm",
+	"ExonerationReasons",
+	"SourceRefHash", "SourcePosition",
 	"ChangelistHosts", "ChangelistChanges", "ChangelistPatchsets",
-	"ChangelistOwnerKinds", "IsFromBisection",
+	"ChangelistOwnerKinds",
+	"HasDirtySources",
+	"SubRealm", "IsFromBisection",
 }
 
 // SaveUnverified prepare a mutation to insert the test result into the
@@ -186,6 +208,13 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 	if tr.RunDuration != nil {
 		runDurationUsec.Int64 = tr.RunDuration.Microseconds()
 		runDurationUsec.Valid = true
+	}
+
+	var sourceRefHash []byte
+	var sourcePosition spanner.NullInt64
+	if tr.SourcePosition > 0 && len(tr.SourceRefHash) > 0 {
+		sourceRefHash = tr.SourceRefHash
+		sourcePosition = spanner.NullInt64{Valid: true, Int64: tr.SourcePosition}
 	}
 
 	changelistHosts := make([]string, 0, len(tr.Changelists))
@@ -198,6 +227,8 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 		changelistPatchsets = append(changelistPatchsets, int64(cl.Patchset))
 		changelistOwnerKinds = append(changelistOwnerKinds, ownerKindToDB(cl.OwnerKind))
 	}
+
+	hasDirtySources := spanner.NullBool{Bool: tr.HasDirtySources, Valid: tr.HasDirtySources}
 
 	isUnexpected := spanner.NullBool{Bool: tr.IsUnexpected, Valid: tr.IsUnexpected}
 	isFromBisection := spanner.NullBool{Bool: tr.IsFromBisection, Valid: tr.IsFromBisection}
@@ -221,9 +252,11 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 		tr.Project, tr.TestID, tr.PartitionTime, tr.VariantHash,
 		tr.IngestedInvocationID, tr.RunIndex, tr.ResultIndex,
 		isUnexpected, runDurationUsec, int64(tr.Status),
-		spanutil.ToSpanner(exonerationReasons), tr.SubRealm,
+		spanutil.ToSpanner(exonerationReasons),
+		sourceRefHash, sourcePosition,
 		changelistHosts, changelistChanges, changelistPatchsets, changelistOwnerKinds,
-		isFromBisection,
+		hasDirtySources,
+		tr.SubRealm, isFromBisection,
 	}
 	return spanner.InsertOrUpdate("TestResults", TestResultSaveCols, vals)
 }
