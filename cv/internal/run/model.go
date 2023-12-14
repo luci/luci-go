@@ -153,19 +153,6 @@ type Run struct {
 	QuotaExhaustionMsgLongOpRequested bool `gae:",noindex"`
 }
 
-// RunOwner keeps tracks of all open (active or pending) Runs for a user.
-type RunOwner struct {
-	_kind string `gae:"$kind,RunOwner"`
-
-	// ID is the user identity.
-	ID identity.Identity `gae:"$id"`
-	// ActiveRuns are all Runs triggered by this user that are active.
-	ActiveRuns common.RunIDs `gae:",noindex"`
-	// PendingRuns are all Runs triggered by this user that are
-	// yet-to-be-launched (i.e. quota doesn't permit).
-	PendingRuns common.RunIDs `gae:",noindex"`
-}
-
 // RunCL is an immutable snapshot of a CL at the time of the Run start.
 type RunCL struct {
 	_kind string `gae:"$kind,RunCL"`
