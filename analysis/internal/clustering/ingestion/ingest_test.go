@@ -73,22 +73,8 @@ func TestIngest(t *testing.T) {
 				Mode:   pb.PresubmitRunMode_FULL_RUN,
 				Status: pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_FAILED,
 			},
-			BuildStatus:   pb.BuildStatus_BUILD_STATUS_FAILURE,
-			BuildCritical: true,
-			Changelists: []*pb.Changelist{
-				{
-					Host:      "chromium-review.googlesource.com",
-					Change:    12345,
-					Patchset:  1,
-					OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
-				},
-				{
-					Host:      "chromium-review.googlesource.com",
-					Change:    67890,
-					Patchset:  2,
-					OwnerKind: pb.ChangelistOwnerKind_HUMAN,
-				},
-			},
+			BuildStatus:            pb.BuildStatus_BUILD_STATUS_FAILURE,
+			BuildCritical:          true,
 			BuildGardenerRotations: []string{"gardener-rotation1", "gardener-rotation2"},
 		}
 		testIngestion := func(input []TestVerdict, expectedCFs []*bqpb.ClusteredFailureRow) {
@@ -593,26 +579,12 @@ func expectedClusteredFailure(uniqifier, testRunCount, testRunNum, resultsPerTes
 		Duration:     10.0,
 		Exonerations: nil,
 
-		PresubmitRunId:     &pb.PresubmitRunId{System: "luci-cv", Id: "cq-run-123"},
-		PresubmitRunOwner:  "automation",
-		PresubmitRunMode:   "FULL_RUN", // pb.PresubmitRunMode_FULL_RUN
-		PresubmitRunStatus: "FAILED",   // pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_FAILED,
-		BuildStatus:        "FAILURE",  // pb.BuildStatus_BUILD_STATUS_FAILURE
-		BuildCritical:      true,
-		Changelists: []*pb.Changelist{
-			{
-				Host:      "chromium-review.googlesource.com",
-				Change:    12345,
-				Patchset:  1,
-				OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
-			},
-			{
-				Host:      "chromium-review.googlesource.com",
-				Change:    67890,
-				Patchset:  2,
-				OwnerKind: pb.ChangelistOwnerKind_HUMAN,
-			},
-		},
+		PresubmitRunId:                &pb.PresubmitRunId{System: "luci-cv", Id: "cq-run-123"},
+		PresubmitRunOwner:             "automation",
+		PresubmitRunMode:              "FULL_RUN", // pb.PresubmitRunMode_FULL_RUN
+		PresubmitRunStatus:            "FAILED",   // pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_FAILED,
+		BuildStatus:                   "FAILURE",  // pb.BuildStatus_BUILD_STATUS_FAILURE
+		BuildCritical:                 true,
 		IngestedInvocationId:          "build-123456790123456",
 		IngestedInvocationResultIndex: int64(testRunNum*resultsPerTestRun + resultNum),
 		IngestedInvocationResultCount: int64(testRunCount * resultsPerTestRun),

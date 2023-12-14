@@ -516,14 +516,6 @@ func (b *testResultBuilder) buildFailure() *cpb.Failure {
 		},
 		BuildStatus:   pb.BuildStatus(1 + b.uniqifier%4),
 		BuildCritical: &buildCritical,
-		Changelists: []*pb.Changelist{
-			{
-				Host:      "chromium",
-				Change:    12345,
-				Patchset:  int32(b.uniqifier),
-				OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
-			},
-		},
 
 		IngestedInvocationId:          fmt.Sprintf("invocation-%v", b.uniqifier),
 		IngestedInvocationResultIndex: int64(b.uniqifier + 1),
@@ -603,14 +595,6 @@ func (b *testResultBuilder) buildBQExport(clusterIDs []clustering.ClusterID) []*
 			PresubmitRunStatus: presubmitRunStatus,
 			BuildStatus:        strings.TrimPrefix(pb.BuildStatus(1+b.uniqifier%4).String(), "BUILD_STATUS_"),
 			BuildCritical:      b.uniqifier%2 == 0,
-			Changelists: []*pb.Changelist{
-				{
-					Host:      "chromium",
-					Change:    12345,
-					Patchset:  int32(b.uniqifier),
-					OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
-				},
-			},
 
 			IngestedInvocationId:          fmt.Sprintf("invocation-%v", b.uniqifier),
 			IngestedInvocationResultIndex: int64(b.uniqifier + 1),

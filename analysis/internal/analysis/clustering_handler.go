@@ -177,7 +177,6 @@ func entryFromUpdate(project, chunkID string, cluster clustering.ClusterID, fail
 
 		BuildStatus:                   ToBQBuildStatus(failure.BuildStatus),
 		BuildCritical:                 failure.BuildCritical != nil && *failure.BuildCritical,
-		Changelists:                   failure.Changelists,
 		IngestedInvocationId:          failure.IngestedInvocationId,
 		IngestedInvocationResultIndex: failure.IngestedInvocationResultIndex,
 		IngestedInvocationResultCount: failure.IngestedInvocationResultCount,

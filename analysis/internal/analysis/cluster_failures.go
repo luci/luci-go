@@ -64,10 +64,9 @@ type PresubmitRunID struct {
 }
 
 type Changelist struct {
-	Host      bigquery.NullString
-	Change    bigquery.NullInt64
-	Patchset  bigquery.NullInt64
-	OwnerKind bigquery.NullString
+	Host     bigquery.NullString
+	Change   bigquery.NullInt64
+	Patchset bigquery.NullInt64
 }
 
 type ReadClusterFailuresOptions struct {
@@ -146,7 +145,7 @@ func (c *Client) ReadClusterFailures(ctx context.Context, opts ReadClusterFailur
 			ANY_VALUE(f.presubmit_run_owner) as PresubmitRunOwner,
 			ANY_VALUE(f.presubmit_run_mode) as PresubmitRunMode,
 			ANY_VALUE(f.presubmit_run_status) as PresubmitRunStatus,
-			ANY_VALUE(f.changelists) as Changelists,
+			ANY_VALUE(f.sources.changelists) as Changelists,
 			f.partition_time as PartitionTime,
 			ANY_VALUE(f.exonerations) as Exonerations,
 			ANY_VALUE(f.build_status) as BuildStatus,

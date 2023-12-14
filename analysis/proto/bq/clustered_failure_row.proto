@@ -259,10 +259,7 @@ message ClusteredFailureRow {
   // checking if presubmit_run_id is populated.
   bool build_critical = 37;
 
-  // The unsubmitted changelists that were tested (if any).
-  // Changelists are sorted in ascending (host, change, patchset) order.
-  // Up to 10 changelists are captured.
-  repeated luci.analysis.v1.Changelist changelists = 38;
+  reserved 38;
 
   // The zero-based index for this test result, in the sequence of the
   // ingested invocation's results for this test variant. Within the sequence,

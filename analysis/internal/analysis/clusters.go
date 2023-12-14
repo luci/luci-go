@@ -173,9 +173,9 @@ func (c *Client) rebuildAnalysisForDataset(ctx context.Context, dataset *bigquer
 			-- if the item does not exist, and CONCAT returns NULL if any argument
 			-- is null.
 			IF(f.presubmit_run_owner='user',
-				CONCAT(f.changelists[SAFE_OFFSET(0)].host, '/', f.changelists[SAFE_OFFSET(0)].change),
+				CONCAT(f.sources.changelists[SAFE_OFFSET(0)].host, '/', f.sources.changelists[SAFE_OFFSET(0)].change),
 				NULL) as presubmit_run_user_cl_id,
-			f.changelists IS NULL OR ARRAY_LENGTH(f.changelists) = 0 AS is_postsubmit,
+			f.sources.changelists IS NULL OR ARRAY_LENGTH(f.sources.changelists) = 0 AS is_postsubmit,
 		  FROM clustered_failures_latest
 		)
 		SELECT

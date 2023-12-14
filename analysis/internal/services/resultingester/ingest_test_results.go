@@ -443,16 +443,6 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForClustering")
 	defer func() { tracing.End(s, err) }()
 
-	changelists := make([]*pb.Changelist, 0, len(ing.Changelists))
-	for _, cl := range ing.Changelists {
-		changelists = append(changelists, &pb.Changelist{
-			Host:      cl.Host,
-			Change:    cl.Change,
-			Patchset:  int32(cl.Patchset),
-			OwnerKind: cl.OwnerKind,
-		})
-	}
-
 	// Setup clustering ingestion.
 	opts := ingestion.Options{
 		TaskIndex:              payload.TaskIndex,
@@ -461,7 +451,6 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 		Realm:                  ing.Project + ":" + ing.SubRealm,
 		InvocationID:           ing.IngestedInvocationID,
 		BuildStatus:            payload.Build.Status,
-		Changelists:            changelists,
 		BuildGardenerRotations: payload.Build.GardenerRotations,
 	}
 

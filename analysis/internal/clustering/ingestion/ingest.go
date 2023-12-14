@@ -55,11 +55,6 @@ type Options struct {
 	// Whether the build was critical to the presubmit run.
 	// Ignored if PresubmitRun is nil.
 	BuildCritical bool
-	// The unsubmitted changelists that were tested (if any).
-	// Changelists are sorted in ascending (host, change, patchset) order.
-	// Up to 10 changelists are captured.
-	// Deprecated.
-	Changelists []*pb.Changelist
 	// The gardener rotations the build is a part of. Corresponds to the
 	// `sheriff_rotations` field of the build input properties.
 	BuildGardenerRotations []string

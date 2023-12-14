@@ -131,7 +131,6 @@ func failureFromResult(tr *rdbpb.TestResult, tv TestVerdict, opts Options) *cpb.
 		PresubmitRun:                  presubmitRun,
 		BuildStatus:                   opts.BuildStatus,
 		BuildCritical:                 buildCritical,
-		Changelists:                   opts.Changelists,
 		IngestedInvocationId:          opts.InvocationID,
 		IngestedInvocationResultIndex: -1,    // To be populated by caller.
 		IngestedInvocationResultCount: -1,    // To be populated by caller.

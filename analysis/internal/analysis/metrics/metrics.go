@@ -57,7 +57,7 @@ var (
 		// Distinct CLs. Note that indexing with SAFE_OFFSET returns
 		// NULL if there is no such element, and CONCAT returns NULL
 		// if any argument is NULL.
-		CountSQL: `CONCAT(f.changelists[SAFE_OFFSET(0)].host, '/', f.changelists[SAFE_OFFSET(0)].change)`,
+		CountSQL: `CONCAT(f.sources.changelists[SAFE_OFFSET(0)].host, '/', f.sources.changelists[SAFE_OFFSET(0)].change)`,
 	}.Build()
 
 	// The number of failures on test variants which were configured to be
@@ -298,8 +298,8 @@ type BaseDefinition struct {
 	// be accessed via the prefix "attrs.".
 	//
 	// For example, to count distinct changelists, use:
-	// `IF(ARRAY_LENGTH(f.changelists)>0,
-	//	  CONCAT(f.changelists[OFFSET(0)].host, f.changelists[OFFSET(0)].change),
+	// `IF(ARRAY_LENGTH(f.sources.changelists)>0,
+	//	  CONCAT(f.sources.changelists[OFFSET(0)].host, f.sources.changelists[OFFSET(0)].change),
 	// NULL)`
 	// While this may return NULL for items not to be counted, it is generally
 	// preferred to use FilterSQL for that purpose.
