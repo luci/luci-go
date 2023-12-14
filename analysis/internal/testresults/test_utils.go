@@ -17,7 +17,6 @@ package testresults
 import (
 	"time"
 
-	"go.chromium.org/luci/analysis/internal/testresults/gitreferences"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
@@ -41,9 +40,6 @@ func NewTestResult() *TestResultBuilder {
 		Status:               pb.TestResultStatus_PASS,
 		ExonerationReasons:   nil,
 		SubRealm:             "realm",
-		BuildStatus:          pb.BuildStatus_BUILD_STATUS_SUCCESS,
-		GitReferenceHash:     gitreferences.GitReferenceHash("hostname", "repository", "reference"),
-		CommitPosition:       1893189,
 		Changelists: []Changelist{
 			{
 				Host:     "mygerrit-review.googlesource.com",
@@ -132,35 +128,6 @@ func (b *TestResultBuilder) WithSubRealm(subRealm string) *TestResultBuilder {
 	return b
 }
 
-func (b *TestResultBuilder) WithBuildStatus(buildStatus pb.BuildStatus) *TestResultBuilder {
-	b.result.BuildStatus = buildStatus
-	return b
-}
-
-func (b *TestResultBuilder) WithCommitPosition(gitReferenceHash []byte, commitPosition int64) *TestResultBuilder {
-	b.result.GitReferenceHash = gitReferenceHash
-	b.result.CommitPosition = commitPosition
-	return b
-}
-
-func (b *TestResultBuilder) WithoutCommitPosition() *TestResultBuilder {
-	b.result.GitReferenceHash = nil
-	b.result.CommitPosition = 0
-	return b
-}
-
-func (b *TestResultBuilder) WithPresubmitRun(run *PresubmitRun) *TestResultBuilder {
-	if run != nil {
-		// Copy run to stop changes the caller may make to run
-		// after this call propagating into the resultant test result.
-		r := new(PresubmitRun)
-		*r = *run
-		run = r
-	}
-	b.result.PresubmitRun = run
-	return b
-}
-
 func (b *TestResultBuilder) WithChangelists(changelist []Changelist) *TestResultBuilder {
 	// Copy changelist to stop changes the caller may make to changelist
 	// after this call propagating into the resultant test result.
@@ -184,11 +151,6 @@ func (b *TestResultBuilder) Build() *TestResult {
 	result := new(TestResult)
 	*result = b.result
 
-	if b.result.PresubmitRun != nil {
-		run := new(PresubmitRun)
-		*run = *b.result.PresubmitRun
-		result.PresubmitRun = run
-	}
 	cls := make([]Changelist, len(b.result.Changelists))
 	copy(cls, b.result.Changelists)
 	result.Changelists = cls

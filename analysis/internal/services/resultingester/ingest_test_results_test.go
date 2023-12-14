@@ -53,7 +53,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testresults"
-	"go.chromium.org/luci/analysis/internal/testresults/gitreferences"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/pbutil"
@@ -141,26 +140,12 @@ func TestIngestTestResults(t *testing.T) {
 			bHost := "host"
 			partitionTime := clock.Now(ctx).Add(-1 * time.Hour)
 
-			expectedGitReference := &gitreferences.GitReference{
-				Project:          "project",
-				GitReferenceHash: gitreferences.GitReferenceHash("myproject.googlesource.com", "someproject/src", "refs/heads/mybranch"),
-				Hostname:         "myproject.googlesource.com",
-				Repository:       "someproject/src",
-				Reference:        "refs/heads/mybranch",
-			}
-
-			expectedInvocation := &testresults.IngestedInvocation{
+			expectedInvocation := &IngestionContext{
 				Project:              "project",
 				IngestedInvocationID: "build-87654321",
 				SubRealm:             "ci",
 				PartitionTime:        timestamppb.New(partitionTime).AsTime(),
 				BuildStatus:          pb.BuildStatus_BUILD_STATUS_FAILURE,
-				PresubmitRun: &testresults.PresubmitRun{
-					Mode: pb.PresubmitRunMode_FULL_RUN,
-				},
-				GitReferenceHash: expectedGitReference.GitReferenceHash,
-				CommitPosition:   111888,
-				CommitHash:       strings.Repeat("0a", 20),
 				Changelists: []testresults.Changelist{
 					{
 						Host:      "anothergerrit.gerrit.instance",
@@ -297,8 +282,6 @@ func TestIngestTestResults(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				// Verify
-				verifyIngestedInvocation(ctx, expectedInvocation)
-				verifyGitReference(ctx, expectedGitReference)
 
 				// Expect a continuation task to be created.
 				verifyContinuationTask(skdr, expectedContinuation)
@@ -327,10 +310,6 @@ func TestIngestTestResults(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				// Verify
-				// Only the first task should create the ingested
-				// invocation record and git reference record (if any).
-				verifyIngestedInvocation(ctx, nil)
-				verifyGitReference(ctx, nil)
 
 				// As this is the last task, do not expect a continuation
 				// task to be created.
@@ -358,8 +337,6 @@ func TestIngestTestResults(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				// Verify
-				verifyIngestedInvocation(ctx, expectedInvocation)
-				verifyGitReference(ctx, expectedGitReference)
 
 				// Do not expect a continuation task to be created,
 				// as it was already scheduled.
@@ -367,41 +344,6 @@ func TestIngestTestResults(t *testing.T) {
 				verifyIngestionControl(ctx, ingestionCtl)
 				verifyTestResults(ctx, expectedInvocation)
 				verifyClustering(chunkStore, clusteredFailures)
-				verifyTestVerdicts(testVerdicts, partitionTime)
-				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
-			})
-			Convey(`No commit position`, func() {
-				// Scenario: The build which completed did not include commit
-				// position data in its output or input.
-				payload.Build.Commit = nil
-
-				setupGetInvocationMock()
-				setupQueryTestVariantsMock()
-				setupConfig(ctx, cfg)
-
-				_, err := control.SetEntriesForTesting(ctx, ingestionCtl)
-				So(err, ShouldBeNil)
-
-				// Act
-				err = ri.ingestTestResults(ctx, payload)
-				So(err, ShouldBeNil)
-
-				// Verify
-				// The ingested invocation record should not record
-				// the commit position.
-				expectedInvocation.CommitHash = ""
-				expectedInvocation.CommitPosition = 0
-				expectedInvocation.GitReferenceHash = nil
-				verifyIngestedInvocation(ctx, expectedInvocation)
-
-				// No git reference record should be created.
-				verifyGitReference(ctx, nil)
-
-				// Test result commit position infomration should
-				// match that of the ingested invocation.
-				verifyTestResults(ctx, expectedInvocation)
-
-				// Test verdicts exported.
 				verifyTestVerdicts(testVerdicts, partitionTime)
 				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
 			})
@@ -583,47 +525,12 @@ func verifyTestVariantAnalysis(ctx context.Context, partitionTime time.Time, cli
 	So(len(client.Insertions), ShouldEqual, 1)
 }
 
-func verifyIngestedInvocation(ctx context.Context, expected *testresults.IngestedInvocation) {
-	var invs []*testresults.IngestedInvocation
-	// Validate IngestedInvocations table is populated.
-	err := testresults.ReadIngestedInvocations(span.Single(ctx), spanner.AllKeys(), func(inv *testresults.IngestedInvocation) error {
-		invs = append(invs, inv)
-		return nil
-	})
-	So(err, ShouldBeNil)
-	if expected != nil {
-		So(invs, ShouldHaveLength, 1)
-		So(invs[0], ShouldResemble, expected)
-	} else {
-		So(invs, ShouldHaveLength, 0)
-	}
-}
-
-func verifyGitReference(ctx context.Context, expected *gitreferences.GitReference) {
-	refs, err := gitreferences.ReadAll(span.Single(ctx))
-	So(err, ShouldBeNil)
-	if expected != nil {
-		So(refs, ShouldHaveLength, 1)
-		actual := refs[0]
-		// LastIngestionTime is a commit timestamp in the
-		// control of the implementation. We check it is
-		// populated and assert nothing beyond that.
-		So(actual.LastIngestionTime, ShouldNotBeEmpty)
-		actual.LastIngestionTime = time.Time{}
-
-		So(actual, ShouldResemble, expected)
-	} else {
-		So(refs, ShouldHaveLength, 0)
-	}
-}
-
-func verifyTestResults(ctx context.Context, expectedInvocation *testresults.IngestedInvocation) {
+func verifyTestResults(ctx context.Context, expectedInvocation *IngestionContext) {
 	trBuilder := testresults.NewTestResult().
 		WithProject("project").
 		WithPartitionTime(expectedInvocation.PartitionTime).
 		WithIngestedInvocationID("build-87654321").
 		WithSubRealm("ci").
-		WithBuildStatus(pb.BuildStatus_BUILD_STATUS_FAILURE).
 		WithChangelists([]testresults.Changelist{
 			{
 				Host:      "anothergerrit.gerrit.instance",
@@ -637,15 +544,7 @@ func verifyTestResults(ctx context.Context, expectedInvocation *testresults.Inge
 				Patchset:  5,
 				OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
 			},
-		}).
-		WithPresubmitRun(&testresults.PresubmitRun{
-			Mode: pb.PresubmitRunMode_FULL_RUN,
 		})
-	if expectedInvocation.CommitPosition > 0 {
-		trBuilder = trBuilder.WithCommitPosition(expectedInvocation.GitReferenceHash, expectedInvocation.CommitPosition)
-	} else {
-		trBuilder = trBuilder.WithoutCommitPosition()
-	}
 
 	expectedTRs := []*testresults.TestResult{
 		trBuilder.WithTestID("ninja://test_consistent_failure").

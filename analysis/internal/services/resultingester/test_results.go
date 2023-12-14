@@ -16,12 +16,10 @@ package resultingester
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"cloud.google.com/go/spanner"
 
-	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
@@ -32,7 +30,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/perms"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testresults"
-	"go.chromium.org/luci/analysis/internal/testresults/gitreferences"
 	"go.chromium.org/luci/analysis/internal/tracing"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
@@ -44,21 +41,24 @@ import (
 // of data per failure.
 const maximumCLs = 10
 
-// extractGitReference extracts the git reference used to number the commit
-// tested by the given build.
-func extractGitReference(project string, commit *bbpb.GitilesCommit) *gitreferences.GitReference {
-	return &gitreferences.GitReference{
-		Project:          project,
-		GitReferenceHash: gitreferences.GitReferenceHash(commit.Host, commit.Project, commit.Ref),
-		Hostname:         commit.Host,
-		Repository:       commit.Project,
-		Reference:        commit.Ref,
-	}
+// IngestionContext captures context for test results ingested for a build.
+type IngestionContext struct {
+	Project string
+	// IngestedInvocationID is the ID of the (root) ResultDB invocation
+	// being ingested, excluding "invocations/".
+	IngestedInvocationID string
+	SubRealm             string
+	PartitionTime        time.Time
+	BuildStatus          pb.BuildStatus
+
+	// The unsubmitted changelists tested (if any). Limited to
+	// at most 10 changelists.
+	Changelists []testresults.Changelist
 }
 
 // extractIngestionContext extracts the ingested invocation and
 // the git reference tested (if any).
-func extractIngestionContext(task *taskspb.IngestTestResults, inv *rdbpb.Invocation) (*testresults.IngestedInvocation, *gitreferences.GitReference, error) {
+func extractIngestionContext(task *taskspb.IngestTestResults, inv *rdbpb.Invocation) (*IngestionContext, error) {
 	invID, err := rdbpbutil.ParseInvocationName(inv.Name)
 	if err != nil {
 		// This should never happen. Inv was originated from ResultDB.
@@ -67,10 +67,10 @@ func extractIngestionContext(task *taskspb.IngestTestResults, inv *rdbpb.Invocat
 
 	proj, subRealm, err := perms.SplitRealm(inv.Realm)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "invocation has invalid realm: %q", inv.Realm).Err()
+		return nil, errors.Annotate(err, "invocation has invalid realm: %q", inv.Realm).Err()
 	}
 	if proj != task.Build.Project {
-		return nil, nil, errors.Reason("invocation project (%q) does not match build project (%q) for build %s-%d",
+		return nil, errors.Reason("invocation project (%q) does not match build project (%q) for build %s-%d",
 			proj, task.Build.Project, task.Build.Host, task.Build.Id).Err()
 	}
 
@@ -78,7 +78,7 @@ func extractIngestionContext(task *taskspb.IngestTestResults, inv *rdbpb.Invocat
 	changelists := make([]testresults.Changelist, 0, len(gerritChanges))
 	for _, change := range gerritChanges {
 		if err := testresults.ValidateGerritHostname(change.Host); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		changelists = append(changelists, testresults.Changelist{
 			Host:      change.Host,
@@ -101,50 +101,16 @@ func extractIngestionContext(task *taskspb.IngestTestResults, inv *rdbpb.Invocat
 		changelists = changelists[:maximumCLs]
 	}
 
-	var presubmitRun *testresults.PresubmitRun
-	if task.PresubmitRun != nil {
-		presubmitRun = &testresults.PresubmitRun{
-			Mode: task.PresubmitRun.Mode,
-		}
-	}
-
-	invocation := &testresults.IngestedInvocation{
+	ingestion := &IngestionContext{
 		Project:              proj,
 		IngestedInvocationID: invID,
 		SubRealm:             subRealm,
 		PartitionTime:        task.PartitionTime.AsTime(),
 		BuildStatus:          task.Build.Status,
-		PresubmitRun:         presubmitRun,
 		Changelists:          changelists,
 	}
 
-	commit := task.Build.Commit
-	var gitRef *gitreferences.GitReference
-	if commit != nil {
-		gitRef = extractGitReference(proj, commit)
-		invocation.GitReferenceHash = gitRef.GitReferenceHash
-		invocation.CommitPosition = int64(commit.Position)
-		invocation.CommitHash = strings.ToLower(commit.Id)
-	}
-	return invocation, gitRef, nil
-}
-
-func recordIngestionContext(ctx context.Context, inv *testresults.IngestedInvocation, gitRef *gitreferences.GitReference) error {
-	// Update the IngestedInvocations table.
-	m := inv.SaveUnverified()
-
-	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-		span.BufferWrite(ctx, m)
-
-		if gitRef != nil {
-			// Ensure the git reference (if any) exists in the GitReferences table.
-			if err := gitreferences.EnsureExists(ctx, gitRef); err != nil {
-				return errors.Annotate(err, "ensuring git reference").Err()
-			}
-		}
-		return nil
-	})
-	return err
+	return ingestion, nil
 }
 
 type batch struct {
@@ -158,7 +124,7 @@ type batch struct {
 	testResults []*spanner.Mutation
 }
 
-func batchTestResults(inv *testresults.IngestedInvocation, tvs []*rdbpb.TestVariant, outputC chan batch) {
+func batchTestResults(ingestion *IngestionContext, tvs []*rdbpb.TestVariant, outputC chan batch) {
 	// Must be selected such that no more than 20,000 mutations occur in
 	// one transaction in the worst case.
 	const batchSize = 900
@@ -199,18 +165,18 @@ func batchTestResults(inv *testresults.IngestedInvocation, tvs []*rdbpb.TestVari
 		}
 
 		testRealm := testresults.TestRealm{
-			Project:           inv.Project,
+			Project:           ingestion.Project,
 			TestID:            tv.TestId,
-			SubRealm:          inv.SubRealm,
+			SubRealm:          ingestion.SubRealm,
 			LastIngestionTime: spanner.CommitTimestamp,
 		}
 		testRealmSet[testRealm] = true
 
 		tvr := testresults.TestVariantRealm{
-			Project:           inv.Project,
+			Project:           ingestion.Project,
 			TestID:            tv.TestId,
 			VariantHash:       tv.VariantHash,
-			SubRealm:          inv.SubRealm,
+			SubRealm:          ingestion.SubRealm,
 			Variant:           pbutil.VariantFromResultDB(tv.Variant),
 			LastIngestionTime: spanner.CommitTimestamp,
 		}
@@ -228,22 +194,18 @@ func batchTestResults(inv *testresults.IngestedInvocation, tvs []*rdbpb.TestVari
 		for runIndex, run := range resultsByRun {
 			for resultIndex, inputTR := range run {
 				tr := testresults.TestResult{
-					Project:              inv.Project,
+					Project:              ingestion.Project,
 					TestID:               tv.TestId,
-					PartitionTime:        inv.PartitionTime,
+					PartitionTime:        ingestion.PartitionTime,
 					VariantHash:          tv.VariantHash,
-					IngestedInvocationID: inv.IngestedInvocationID,
+					IngestedInvocationID: ingestion.IngestedInvocationID,
 					RunIndex:             int64(runIndex),
 					ResultIndex:          int64(resultIndex),
 					IsUnexpected:         !inputTR.Result.Expected,
 					Status:               pbutil.TestResultStatusFromResultDB(inputTR.Result.Status),
 					ExonerationReasons:   exonerationReasons,
-					SubRealm:             inv.SubRealm,
-					BuildStatus:          inv.BuildStatus,
-					PresubmitRun:         inv.PresubmitRun,
-					GitReferenceHash:     inv.GitReferenceHash,
-					CommitPosition:       inv.CommitPosition,
-					Changelists:          inv.Changelists,
+					SubRealm:             ingestion.SubRealm,
+					Changelists:          ingestion.Changelists,
 					IsFromBisection:      isFromBisection,
 				}
 				if inputTR.Result.Duration != nil {
@@ -265,7 +227,7 @@ func batchTestResults(inv *testresults.IngestedInvocation, tvs []*rdbpb.TestVari
 }
 
 // recordTestResults records test results from an test-verdict-ingestion task.
-func recordTestResults(ctx context.Context, inv *testresults.IngestedInvocation, tvs []*rdbpb.TestVariant) (err error) {
+func recordTestResults(ctx context.Context, ingestion *IngestionContext, tvs []*rdbpb.TestVariant) (err error) {
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.recordTestResults")
 	defer func() { tracing.End(s, err) }()
 
@@ -276,7 +238,7 @@ func recordTestResults(ctx context.Context, inv *testresults.IngestedInvocation,
 
 		c <- func() error {
 			defer close(batchC)
-			batchTestResults(inv, tvs, batchC)
+			batchTestResults(ingestion, tvs, batchC)
 			return nil
 		}
 

@@ -56,12 +56,6 @@ type Changelist struct {
 	OwnerKind pb.ChangelistOwnerKind
 }
 
-// PresubmitRun represents information about the presubmit run a test result
-// was part of.
-type PresubmitRun struct {
-	Mode pb.PresubmitRunMode
-}
-
 // SortChangelists sorts a slice of changelists to be in ascending
 // lexicographical order by (host, change, patchset).
 func SortChangelists(cls []Changelist) {
@@ -80,158 +74,6 @@ func SortChangelists(cls []Changelist) {
 	})
 }
 
-// IngestedInvocation represents a row in the IngestedInvocations table.
-type IngestedInvocation struct {
-	Project string
-	// IngestedInvocationID is the ID of the (root) ResultDB invocation
-	// being ingested, excluding "invocations/".
-	IngestedInvocationID string
-	SubRealm             string
-	PartitionTime        time.Time
-	BuildStatus          pb.BuildStatus
-	PresubmitRun         *PresubmitRun
-
-	// The following fields describe the commit tested, excluding any
-	// unsubmitted changelists. If information is not available,
-	// CommitPosition is zero and the other fields are their default
-	// values.
-	GitReferenceHash []byte
-	CommitPosition   int64
-	CommitHash       string
-
-	// The unsubmitted changelists tested (if any). Limited to
-	// at most 10 changelists.
-	Changelists []Changelist
-}
-
-// ReadIngestedInvocations read ingested invocations from the
-// IngestedInvocations table.
-// Must be called in a spanner transactional context.
-func ReadIngestedInvocations(ctx context.Context, keys spanner.KeySet, fn func(inv *IngestedInvocation) error) error {
-	var b spanutil.Buffer
-	fields := []string{
-		"Project", "IngestedInvocationId", "SubRealm", "PartitionTime",
-		"BuildStatus",
-		"PresubmitRunMode",
-		"GitReferenceHash", "CommitPosition", "CommitHash",
-		"ChangelistHosts", "ChangelistChanges", "ChangelistPatchsets",
-		"ChangelistOwnerKinds",
-	}
-	return span.Read(ctx, "IngestedInvocations", keys, fields).Do(
-		func(row *spanner.Row) error {
-			inv := &IngestedInvocation{}
-			var presubmitRunMode spanner.NullInt64
-			var gitReferenceHash []byte
-			var commitPosition spanner.NullInt64
-			var commitHash spanner.NullString
-			var changelistHosts []string
-			var changelistChanges []int64
-			var changelistPatchsets []int64
-			var changelistOwnerKinds []string
-
-			err := b.FromSpanner(
-				row,
-				&inv.Project, &inv.IngestedInvocationID, &inv.SubRealm, &inv.PartitionTime,
-				&inv.BuildStatus,
-				&presubmitRunMode,
-				&gitReferenceHash, &commitPosition, &commitHash,
-				&changelistHosts, &changelistChanges, &changelistPatchsets, &changelistOwnerKinds,
-			)
-			if err != nil {
-				return err
-			}
-
-			if presubmitRunMode.Valid {
-				inv.PresubmitRun = &PresubmitRun{
-					Mode: pb.PresubmitRunMode(presubmitRunMode.Int64),
-				}
-			}
-
-			// Data in Spanner should be consistent, so commitPosition.Valid ==
-			// commitHash.Valid == (gitReferenceHash != nil).
-			if commitPosition.Valid {
-				inv.GitReferenceHash = gitReferenceHash
-				inv.CommitPosition = commitPosition.Int64
-				inv.CommitHash = commitHash.StringVal
-			}
-
-			// Data in Spanner should be consistent, so
-			// len(changelistHosts) == len(changelistChanges)
-			//    == len(changelistPatchsets).
-			//
-			// ChangeListOwnerKinds was retrofitted after the table
-			// was first created, so it should be of equal length
-			// only if present. It was introduced in November 2022,
-			// so this special-case can be deleted in March 2023+.
-			if len(changelistHosts) != len(changelistChanges) ||
-				len(changelistChanges) != len(changelistPatchsets) ||
-				(changelistOwnerKinds != nil && len(changelistOwnerKinds) != len(changelistPatchsets)) {
-				panic("Changelist arrays have mismatched length in Spanner")
-			}
-			changelists := make([]Changelist, 0, len(changelistHosts))
-			for i := range changelistHosts {
-				var ownerKind pb.ChangelistOwnerKind
-				if changelistOwnerKinds != nil {
-					ownerKind = ownerKindFromDB(changelistOwnerKinds[i])
-				}
-				changelists = append(changelists, Changelist{
-					Host:      decompressHost(changelistHosts[i]),
-					Change:    changelistChanges[i],
-					Patchset:  int32(changelistPatchsets[i]),
-					OwnerKind: ownerKind,
-				})
-			}
-			inv.Changelists = changelists
-			return fn(inv)
-		})
-}
-
-// SaveUnverified returns a mutation to insert the ingested invocation into
-// the IngestedInvocations table. The ingested invocation is not validated.
-func (inv *IngestedInvocation) SaveUnverified() *spanner.Mutation {
-	var presubmitRunMode spanner.NullInt64
-	if inv.PresubmitRun != nil {
-		presubmitRunMode = spanner.NullInt64{Valid: true, Int64: int64(inv.PresubmitRun.Mode)}
-	}
-
-	var gitReferenceHash []byte
-	var commitPosition spanner.NullInt64
-	var commitHash spanner.NullString
-	if inv.CommitPosition > 0 {
-		gitReferenceHash = inv.GitReferenceHash
-		commitPosition = spanner.NullInt64{Valid: true, Int64: inv.CommitPosition}
-		commitHash = spanner.NullString{Valid: true, StringVal: inv.CommitHash}
-	}
-
-	changelistHosts := make([]string, 0, len(inv.Changelists))
-	changelistChanges := make([]int64, 0, len(inv.Changelists))
-	changelistPatchsets := make([]int64, 0, len(inv.Changelists))
-	changelistOwnerKinds := make([]string, 0, len(inv.Changelists))
-	for _, cl := range inv.Changelists {
-		changelistHosts = append(changelistHosts, compressHost(cl.Host))
-		changelistChanges = append(changelistChanges, cl.Change)
-		changelistPatchsets = append(changelistPatchsets, int64(cl.Patchset))
-		changelistOwnerKinds = append(changelistOwnerKinds, ownerKindToDB(cl.OwnerKind))
-	}
-
-	row := map[string]any{
-		"Project":              inv.Project,
-		"IngestedInvocationId": inv.IngestedInvocationID,
-		"SubRealm":             inv.SubRealm,
-		"PartitionTime":        inv.PartitionTime,
-		"BuildStatus":          inv.BuildStatus,
-		"GitReferenceHash":     gitReferenceHash,
-		"CommitPosition":       commitPosition,
-		"CommitHash":           commitHash,
-		"PresubmitRunMode":     presubmitRunMode,
-		"ChangelistHosts":      changelistHosts,
-		"ChangelistChanges":    changelistChanges,
-		"ChangelistPatchsets":  changelistPatchsets,
-		"ChangelistOwnerKinds": changelistOwnerKinds,
-	}
-	return spanner.InsertOrUpdateMap("IngestedInvocations", spanutil.ToSpannerMap(row))
-}
-
 // TestResult represents a row in the TestResults table.
 type TestResult struct {
 	Project              string
@@ -247,13 +89,9 @@ type TestResult struct {
 	// Properties of the test variant in the invocation (stored denormalised) follow.
 	ExonerationReasons []pb.ExonerationReason
 	// Properties of the invocation (stored denormalised) follow.
-	SubRealm         string
-	BuildStatus      pb.BuildStatus
-	PresubmitRun     *PresubmitRun
-	GitReferenceHash []byte
-	CommitPosition   int64
-	Changelists      []Changelist
-	IsFromBisection  bool
+	SubRealm        string
+	Changelists     []Changelist
+	IsFromBisection bool
 }
 
 // ReadTestResults reads test results from the TestResults table.
@@ -265,9 +103,7 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 		"RunIndex", "ResultIndex",
 		"IsUnexpected", "RunDurationUsec", "Status",
 		"ExonerationReasons",
-		"SubRealm", "BuildStatus",
-		"PresubmitRunMode",
-		"GitReferenceHash", "CommitPosition",
+		"SubRealm",
 		"ChangelistHosts", "ChangelistChanges", "ChangelistPatchsets", "ChangelistOwnerKinds",
 		"IsFromBisection",
 	}
@@ -276,9 +112,6 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 			tr := &TestResult{}
 			var runDurationUsec spanner.NullInt64
 			var isUnexpected spanner.NullBool
-			var presubmitRunMode spanner.NullInt64
-			var gitReferenceHash []byte
-			var commitPosition spanner.NullInt64
 			var changelistHosts []string
 			var changelistChanges []int64
 			var changelistPatchsets []int64
@@ -290,9 +123,7 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 				&tr.RunIndex, &tr.ResultIndex,
 				&isUnexpected, &runDurationUsec, &tr.Status,
 				&tr.ExonerationReasons,
-				&tr.SubRealm, &tr.BuildStatus,
-				&presubmitRunMode,
-				&gitReferenceHash, &commitPosition,
+				&tr.SubRealm,
 				&changelistHosts, &changelistChanges, &changelistPatchsets, &changelistOwnerKinds,
 				&isFromBisection,
 			)
@@ -305,19 +136,6 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 			}
 			tr.IsUnexpected = isUnexpected.Valid && isUnexpected.Bool
 			tr.IsFromBisection = isFromBisection.Valid && isFromBisection.Bool
-
-			if presubmitRunMode.Valid {
-				tr.PresubmitRun = &PresubmitRun{
-					Mode: pb.PresubmitRunMode(presubmitRunMode.Int64),
-				}
-			}
-
-			// Data in Spanner should be consistent, so commitPosition.Valid ==
-			// (gitReferenceHash != nil).
-			if commitPosition.Valid {
-				tr.GitReferenceHash = gitReferenceHash
-				tr.CommitPosition = commitPosition.Int64
-			}
 
 			// Data in spanner should be consistent, so
 			// len(changelistHosts) == len(changelistChanges)
@@ -356,9 +174,7 @@ var TestResultSaveCols = []string{
 	"Project", "TestId", "PartitionTime", "VariantHash",
 	"IngestedInvocationId", "RunIndex", "ResultIndex",
 	"IsUnexpected", "RunDurationUsec", "Status",
-	"ExonerationReasons", "SubRealm", "BuildStatus",
-	"PresubmitRunMode",
-	"GitReferenceHash", "CommitPosition",
+	"ExonerationReasons", "SubRealm",
 	"ChangelistHosts", "ChangelistChanges", "ChangelistPatchsets",
 	"ChangelistOwnerKinds", "IsFromBisection",
 }
@@ -370,18 +186,6 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 	if tr.RunDuration != nil {
 		runDurationUsec.Int64 = tr.RunDuration.Microseconds()
 		runDurationUsec.Valid = true
-	}
-
-	var presubmitRunMode spanner.NullInt64
-	if tr.PresubmitRun != nil {
-		presubmitRunMode = spanner.NullInt64{Valid: true, Int64: int64(tr.PresubmitRun.Mode)}
-	}
-
-	var gitReferenceHash []byte
-	var commitPosition spanner.NullInt64
-	if tr.CommitPosition > 0 {
-		gitReferenceHash = tr.GitReferenceHash
-		commitPosition = spanner.NullInt64{Valid: true, Int64: tr.CommitPosition}
 	}
 
 	changelistHosts := make([]string, 0, len(tr.Changelists))
@@ -417,9 +221,7 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 		tr.Project, tr.TestID, tr.PartitionTime, tr.VariantHash,
 		tr.IngestedInvocationID, tr.RunIndex, tr.ResultIndex,
 		isUnexpected, runDurationUsec, int64(tr.Status),
-		spanutil.ToSpanner(exonerationReasons), tr.SubRealm, int64(tr.BuildStatus),
-		presubmitRunMode,
-		gitReferenceHash, commitPosition,
+		spanutil.ToSpanner(exonerationReasons), tr.SubRealm,
 		changelistHosts, changelistChanges, changelistPatchsets, changelistOwnerKinds,
 		isFromBisection,
 	}

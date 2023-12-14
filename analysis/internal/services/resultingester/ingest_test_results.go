@@ -47,7 +47,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
-	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/internal/tracing"
 	"go.chromium.org/luci/analysis/pbutil"
@@ -267,19 +266,9 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 		return transient.Tag.Apply(errors.Annotate(err, "get invocation").Err())
 	}
 
-	ingestedInv, gitRef, err := extractIngestionContext(payload, inv)
+	ingestion, err := extractIngestionContext(payload, inv)
 	if err != nil {
 		return err
-	}
-
-	if payload.TaskIndex == 0 {
-		// The first task should create the ingested invocation record
-		// and git reference record referenced from the invocation record
-		// (if any).
-		err = recordIngestionContext(ctx, ingestedInv, gitRef)
-		if err != nil {
-			return err
-		}
 	}
 
 	// Query test variants from ResultDB.
@@ -307,7 +296,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 	}
 
 	// Record the test results for test history.
-	err = recordTestResults(ctx, ingestedInv, rsp.TestVariants)
+	err = recordTestResults(ctx, ingestion, rsp.TestVariants)
 	if err != nil {
 		// If any transaction failed, the task will be retried and the tables will be
 		// eventual-consistent.
@@ -328,7 +317,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 	// Insert the test results for clustering. This should occur
 	// after test variant analysis ingestion as it queries the results of the
 	// above analysis.
-	err = ingestForClustering(ctx, i.clustering, payload, ingestedInv, rsp)
+	err = ingestForClustering(ctx, i.clustering, payload, ingestion, rsp)
 	if err != nil {
 		return err
 	}
@@ -450,12 +439,12 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestResults, next
 	return err
 }
 
-func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, payload *taskspb.IngestTestResults, inv *testresults.IngestedInvocation, rsp *rdbpb.QueryTestVariantsResponse) (err error) {
+func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, payload *taskspb.IngestTestResults, ing *IngestionContext, rsp *rdbpb.QueryTestVariantsResponse) (err error) {
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForClustering")
 	defer func() { tracing.End(s, err) }()
 
-	changelists := make([]*pb.Changelist, 0, len(inv.Changelists))
-	for _, cl := range inv.Changelists {
+	changelists := make([]*pb.Changelist, 0, len(ing.Changelists))
+	for _, cl := range ing.Changelists {
 		changelists = append(changelists, &pb.Changelist{
 			Host:      cl.Host,
 			Change:    cl.Change,
@@ -467,11 +456,11 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 	// Setup clustering ingestion.
 	opts := ingestion.Options{
 		TaskIndex:              payload.TaskIndex,
-		Project:                inv.Project,
-		PartitionTime:          inv.PartitionTime,
-		Realm:                  inv.Project + ":" + inv.SubRealm,
-		InvocationID:           inv.IngestedInvocationID,
-		BuildStatus:            inv.BuildStatus,
+		Project:                ing.Project,
+		PartitionTime:          ing.PartitionTime,
+		Realm:                  ing.Project + ":" + ing.SubRealm,
+		InvocationID:           ing.IngestedInvocationID,
+		BuildStatus:            payload.Build.Status,
 		Changelists:            changelists,
 		BuildGardenerRotations: payload.Build.GardenerRotations,
 	}
@@ -484,7 +473,7 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 			Status: payload.PresubmitRun.Status,
 		}
 		opts.BuildCritical = payload.PresubmitRun.Critical
-		if payload.PresubmitRun.Critical && inv.BuildStatus == pb.BuildStatus_BUILD_STATUS_FAILURE &&
+		if payload.PresubmitRun.Critical && ing.BuildStatus == pb.BuildStatus_BUILD_STATUS_FAILURE &&
 			payload.PresubmitRun.Status == pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED {
 			logging.Warningf(ctx, "Inconsistent data from LUCI CV: build %v/%v was critical to presubmit run %v/%v and failed, but presubmit run succeeded.",
 				payload.Build.Host, payload.Build.Id, payload.PresubmitRun.PresubmitRunId.System, payload.PresubmitRun.PresubmitRunId.Id)
@@ -492,7 +481,7 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 	}
 
 	failingRDBVerdicts := filterToTestVariantsWithUnexpectedFailures(rsp.TestVariants)
-	testVariantBranchStats, err := queryTestVariantAnalysisForClustering(ctx, failingRDBVerdicts, inv.Project, inv.PartitionTime, rsp.Sources)
+	testVariantBranchStats, err := queryTestVariantAnalysisForClustering(ctx, failingRDBVerdicts, ing.Project, ing.PartitionTime, rsp.Sources)
 	if err != nil {
 		return errors.Annotate(err, "query test variant analysis for clustering").Err()
 	}
