@@ -95,8 +95,6 @@ func (m *Trigger) validate(all bool) error {
 
 	// no validation rules for Mode
 
-	// no validation rules for AdditionalLabel
-
 	if all {
 		switch v := interface{}(m.GetModeDefinition()).(type) {
 		case interface{ ValidateAll() error }:

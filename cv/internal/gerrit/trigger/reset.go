@@ -287,8 +287,8 @@ func resetLeased(ctx context.Context, client gerrit.Client, in *ResetInput, cl *
 	}
 
 	labelsToRemove := stringset.NewFromSlice(CQLabelName)
-	if l := in.Triggers.GetCqVoteTrigger().GetAdditionalLabel(); l != "" {
-		labelsToRemove.Add(l)
+	if modeDef := in.Triggers.GetCqVoteTrigger().GetModeDefinition(); modeDef != nil {
+		labelsToRemove.Add(modeDef.GetTriggeringLabel())
 	}
 	for _, cg := range in.ConfigGroups {
 		for _, am := range cg.Content.GetAdditionalModes() {

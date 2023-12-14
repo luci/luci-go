@@ -228,7 +228,6 @@ func TestFindCQTrigger(t *testing.T) {
 					ModeDefinition:  cg.AdditionalModes[0],
 					GerritAccountId: user1.GetAccountId(),
 					Email:           user1.GetEmail(),
-					AdditionalLabel: customLabel,
 				})
 			})
 			c.Convey("Custom run despite other users' votes", func() {

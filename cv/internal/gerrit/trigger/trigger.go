@@ -219,7 +219,6 @@ func applyAdditionalMode(ci *gerritpb.ChangeInfo, mode *cfgpb.Mode, res *run.Tri
 
 	for _, vote := range labelVotes.GetAll() {
 		if matchesVote(vote) {
-			res.AdditionalLabel = mode.GetTriggeringLabel()
 			res.Mode = mode.GetName()
 			res.ModeDefinition = mode
 			return true

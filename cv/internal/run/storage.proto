@@ -74,12 +74,10 @@ enum Status {
 
 // Trigger describes who/how CV was triggered on a specific CL.
 message Trigger {
+  reserved 5; // additional_label
   google.protobuf.Timestamp time = 1;
   // Mode is string value of run.Mode.
   string mode = 2;
-  // Additional label is recorded in case applicable ConfigGroup had additional
-  // modes, e.g. for QUICK_DRY_RUN mode.
-  string additional_label = 5;
   // ModeDefinition is the definition of the mode in case `mode` is not standard
   // modes supported by LUCI CV (e.g. DRY_RUN, FULL_RUN, NEW_PATCHSET_RUN) but
   // is provided through project configuration.
