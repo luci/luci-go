@@ -67,11 +67,26 @@ func synthesizeBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest) (*pb.
 		Parent: model.BucketKey(ctx, builder.Project, builder.Bucket),
 		ID:     builder.Builder,
 	}
-	if err := datastore.Get(ctx, bktCfg, bldrCfg); err != nil {
+	switch err := datastore.Get(ctx, bktCfg, bldrCfg); {
+	case errors.Contains(err, datastore.ErrNoSuchEntity):
+		switch {
+		case bktCfg == nil:
+			// Bucket not found.
+			return nil, perm.NotFoundErr(ctx)
+		case len(bktCfg.Shadows) > 0:
+			// This is a shadow bucket. Synthesizing a build from shadow bucket
+			// is not supported.
+			return nil, appstatus.BadRequest(errors.Reason("Synthesizing a build from a shadow bucket is not supported").Err())
+		default:
+			// Builder not found.
+			return nil, perm.NotFoundErr(ctx)
+		}
+	case err != nil:
 		return nil, errors.Annotate(err, "failed to get builder config").Err()
+	default:
+		bld := scheduleShadowBuild(ctx, schReq, nil, bktCfg.Proto.Shadow, globalCfg, bldrCfg.Config)
+		return bld, nil
 	}
-	bld := scheduleShadowBuild(ctx, schReq, nil, bktCfg.Proto.Shadow, globalCfg, bldrCfg.Config)
-	return bld, nil
 }
 
 func scheduleShadowBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest, ancestors []int64, shadowBucket string, globalCfg *pb.SettingsCfg, cfg *pb.BuilderConfig) *pb.Build {

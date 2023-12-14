@@ -94,51 +94,110 @@ func TestSynthesizeBuild(t *testing.T) {
 				authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
 			),
 		})
-		So(datastore.Put(ctx, &model.Bucket{
-			ID:     "bucket",
-			Parent: model.ProjectKey(ctx, "project"),
-			Proto:  &pb.Bucket{},
-		}), ShouldBeNil)
 
 		Convey("fail", func() {
-			Convey("permission denied for getting builder", func() {
-				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity: "user:unauthorized@example.com",
-				})
-				req := &pb.SynthesizeBuildRequest{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-				}
-				_, err := srv.SynthesizeBuild(ctx, req)
-				So(err, ShouldErrLike, "not found")
-			})
-			Convey("permission denied for getting template build", func() {
-				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity: "user:unauthorized@example.com",
-				})
-				So(datastore.Put(ctx, &model.Build{
-					Proto: &pb.Build{
-						Id: 1,
+			Convey("entities missing", func() {
+				Convey("bucket missing", func() {
+					req := &pb.SynthesizeBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-					},
+					}
+					_, err := srv.SynthesizeBuild(ctx, req)
+					So(err, ShouldErrLike, "not found")
+				})
+				Convey("shadow bucket", func() {
+					So(datastore.Put(ctx, &model.Bucket{
+						ID:      "bucket.shadow",
+						Parent:  model.ProjectKey(ctx, "project"),
+						Proto:   &pb.Bucket{},
+						Shadows: []string{"bucket"},
+					}), ShouldBeNil)
+					ctx = auth.WithState(ctx, &authtest.FakeState{
+						Identity: userID,
+						FakeDB: authtest.NewFakeDB(
+							authtest.MockPermission(userID, "project:bucket.shadow", bbperms.BuildersGet),
+						),
+					})
+					req := &pb.SynthesizeBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket.shadow",
+							Builder: "builder",
+						},
+					}
+					_, err := srv.SynthesizeBuild(ctx, req)
+					So(err, ShouldErrLike, "Synthesizing a build from a shadow bucket is not supported")
+				})
+				Convey("builder missing", func() {
+					So(datastore.Put(ctx, &model.Bucket{
+						ID:     "bucket",
+						Parent: model.ProjectKey(ctx, "project"),
+						Proto:  &pb.Bucket{},
+					}), ShouldBeNil)
+					req := &pb.SynthesizeBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					}
+					_, err := srv.SynthesizeBuild(ctx, req)
+					So(err, ShouldErrLike, "not found")
+				})
+			})
+			Convey("permissions denied", func() {
+				So(datastore.Put(ctx, &model.Bucket{
+					ID:     "bucket",
+					Parent: model.ProjectKey(ctx, "project"),
+					Proto:  &pb.Bucket{},
 				}), ShouldBeNil)
+				Convey("permission denied for getting builder", func() {
+					ctx = auth.WithState(ctx, &authtest.FakeState{
+						Identity: "user:unauthorized@example.com",
+					})
+					req := &pb.SynthesizeBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					}
+					_, err := srv.SynthesizeBuild(ctx, req)
+					So(err, ShouldErrLike, "not found")
+				})
+				Convey("permission denied for getting template build", func() {
+					ctx = auth.WithState(ctx, &authtest.FakeState{
+						Identity: "user:unauthorized@example.com",
+					})
+					So(datastore.Put(ctx, &model.Build{
+						Proto: &pb.Build{
+							Id: 1,
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+						},
+					}), ShouldBeNil)
 
-				req := &pb.SynthesizeBuildRequest{
-					TemplateBuildId: 1,
-				}
-				_, err := srv.SynthesizeBuild(ctx, req)
-				So(err, ShouldErrLike, "not found")
+					req := &pb.SynthesizeBuildRequest{
+						TemplateBuildId: 1,
+					}
+					_, err := srv.SynthesizeBuild(ctx, req)
+					So(err, ShouldErrLike, "not found")
+				})
 			})
 		})
 
 		Convey("pass", func() {
+			So(datastore.Put(ctx, &model.Bucket{
+				ID:     "bucket",
+				Parent: model.ProjectKey(ctx, "project"),
+				Proto:  &pb.Bucket{},
+			}), ShouldBeNil)
 			So(datastore.Put(ctx, &model.Builder{
 				Parent: model.BucketKey(ctx, "project", "bucket"),
 				ID:     "builder",
