@@ -18,6 +18,9 @@ package cv.v0;
 
 option go_package = "go.chromium.org/luci/cv/api/v0;cvpb";
 
+import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
+import "go.chromium.org/luci/cv/api/config/v2/config.proto";
+
 // Tryjob represents a Run's view of a Tryjob.
 message Tryjob {
   // Status is a high level status of a Tryjob.
@@ -104,4 +107,88 @@ message Tryjob {
   // its own Tryjob. A Run may reuse Tryjobs triggered by some previous Runs or
   // maually by users as long as CV sees fit.
   bool reuse = 5;
+}
+
+// TryjobStatus is the status of a tryjob.
+enum TryjobStatus {
+  // STATUS_UNSPECIFIED is never used.
+  TRYJOB_STATUS_UNSPECIFIED = 0;
+  // PENDING means tryjob is being triggered by CV.
+  PENDING = 1;
+  // RUNNING means tryjob is currently running.
+  //
+  // This status is from CV's PoV. As soon as LUCI CV successfully launches
+  // the tryjob against the backend, it's considered running. However, it's
+  // still possible the tryjob is pending the backend system (for example,
+  // waiting for the swarming bot).
+  RUNNING = 2;
+  // SUCCEEDED means that run's CL(s) are considered OK by this tryjob.
+  SUCCEEDED = 3;
+  // FAILED means that run's CL(s) are considered NOT OK by this tryjob.
+  FAILED = 4;
+  // CANCELLED means the tryjob gets cancelled by LUCI CV.
+  //
+  // Note that, this only counts the cancellation initiated by LUCI CV. If
+  // user requested cancelling a build through Buildbucket UI for example, the
+  // status would be FAILED instead.
+  CANCELLED = 5;
+  // UNTRIGGERED means the tryjob was not triggered.
+  //
+  // Possible reasons includes getting permission denied from Buildbucket,
+  // Buildbucket is temporarily down.
+  UNTRIGGERED = 6;
+}
+
+// TryjobResult is the result of a tryjob.
+message TryjobResult {
+  // Backend houses backend-specific output.
+  oneof backend {
+    Buildbucket buildbucket = 1;
+  }
+
+  message Buildbucket {
+    // Buildbucket host.
+    string host = 1;
+    // ID of the build.
+    int64 id = 2;
+    // Buildbucket builder.
+    buildbucket.v2.BuilderID builder = 3;
+  }
+}
+
+message TryjobInvocation {
+  // Attempt represents an attempt to invoke the tryjob.
+  message Attempt {
+    // Status is the status of this tryjob attempt at the time the run ends.
+    TryjobStatus status = 1;
+    // Result is the result of this tryjob attempt at the time the run ends.
+    //
+    // It's possible that result is empty. For example, the run ends even before
+    // LUCI CV launches any tryjob.
+    TryjobResult result = 2;
+    // Indicates whether this attempt is a reuse of previously triggered tryjob
+    // rather than launching its own tryjob.
+    bool reuse = 3;
+  }
+
+  // Config is the configuration of the tryjob defined in the project config.
+  cv.config.Verifiers.Tryjob.Builder builder_config = 1;
+  // Final status of this tryjob invocation at the time run ends.
+  //
+  // This should be the status of the latest attempt (i.e. first element in
+  // `attempts` field).
+  TryjobStatus status = 2;
+  // Indicates whether this tryjob invocation is considered critical to a run's
+  // final status. If true, failure of this tryjob invocation will fail the run
+  // immediately. Run is considered SUCCEEDED iff all critical tryjobs have
+  // passed.
+  //
+  // As of Dec 2023, a tryjob invocation is considered critical if it is not
+  // experimental or it is triggered directly by `Cq-Include-Trybots` footer.
+  bool critical = 3;
+  // Attempts are all attempts for this tryjob invocation.
+  //
+  // Sorted from the latest attempt made to the earliest attempt made.
+  // Must contain at least one element.
+  repeated Attempt attempts = 4;
 }

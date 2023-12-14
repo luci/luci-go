@@ -142,13 +142,24 @@ message Run {
   // corresponding backend system using the returned ID.
   //
   // It may also contain tryjobs that are no longer required.
-  // TODO(yiwzhang): Re-evalute whether the statement above is true after
+  // TODO(yiwzhang): Re-evaluate whether the statement above is true after
   // tryjobs are handled by LUCI CV instead of CQDaemon.
-  repeated Tryjob tryjobs = 11;
+  repeated Tryjob tryjobs = 11 [deprecated=true];
+
+  // TryjobInvocations record all attempts to invoke a tryjob defined in config.
+  //
+  // Note that this data is a snapshot at the time run has ended. It's possible
+  // that the latest attempt in the TryjobInvocation may not be in terminal
+  // status even though the run has ended. For example, the run has failed
+  // because tryjob A has failed. However, tryjob B is still in RUNNING status
+  // at the time run ends and tryjob B will be returned as RUNNING status
+  // in this field. If you need fresh data, query the corresponding backend
+  // system (i.e. buildbucket) using the returned ID.
+  repeated TryjobInvocation tryjob_invocations = 14;
 
   // Submission represents the state of a Run Submission.
   message Submission {
-    // Indexes of CLs in Run.CL IDs that have been submitted succeessfully.
+    // Indexes of CLs in Run.CL IDs that have been submitted successfully.
     repeated int32 submitted_cl_indexes = 2;
     // Indexes of CLs in Run.CL IDs that failed to be submitted.
     //

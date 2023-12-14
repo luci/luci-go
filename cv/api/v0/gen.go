@@ -22,4 +22,4 @@
 //     we may provide additional guarantees to you/your service.
 package cvpb
 
-//go:generate cproto -use-grpc-plugin
+//go:generate cproto -use-grpc-plugin -enable-pgv
