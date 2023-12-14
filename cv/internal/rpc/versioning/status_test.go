@@ -68,7 +68,7 @@ func TestStatusV0(t *testing.T) {
 		for name, val := range tryjob.Status_value {
 			name, val := name, val
 			Convey("for internal."+name, func() {
-				eq := TryjobStatusV0(tryjob.Status(val))
+				eq := LegacyTryjobStatusV0(tryjob.Status(val))
 
 				// check if it's typed with the API enum.
 				So(eq.Descriptor().FullName(), ShouldEqual,
@@ -84,7 +84,7 @@ func TestStatusV0(t *testing.T) {
 		for name, val := range tryjob.Result_Status_value {
 			name, val := name, val
 			Convey("for internal."+name, func() {
-				eq := TryjobResultStatusV0(tryjob.Result_Status(val))
+				eq := LegacyTryjobResultStatusV0(tryjob.Result_Status(val))
 
 				// check if it's typed with the API enum.
 				So(eq.Descriptor().FullName(), ShouldEqual,

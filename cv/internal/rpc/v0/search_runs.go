@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/acls"
@@ -150,6 +151,7 @@ func populateRuns(ctx context.Context, runs []*run.Run) ([]*apiv0pb.Run, error) 
 		for i, r := range runs {
 			i, r := i, r
 			work <- func() (err error) {
+				ctx := logging.SetField(ctx, "run", r.ID)
 				respRuns[i], err = populateRunResponse(ctx, r)
 				return err
 			}

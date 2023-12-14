@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -52,14 +53,31 @@ func TestGetRun(t *testing.T) {
 
 		rs := RunsServer{}
 
-		rid := common.RunID("prj/123-deadbeef")
-		prjcfgtest.Create(ctx, "prj", &cfgpb.Config{
+		const lProject = "infra"
+		rid := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("deadbeef"))
+		builderFoo := &bbpb.BuilderID{
+			Project: lProject,
+			Bucket:  "try",
+			Builder: "foo",
+		}
+		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{
 			// TODO(crbug/1233963): remove once non-legacy ACLs are implemented.
 			CqStatusHost: "chromium-cq-status.appspot.com",
 			ConfigGroups: []*cfgpb.ConfigGroup{{
 				Name: "first",
+				Verifiers: &cfgpb.Verifiers{
+					Tryjob: &cfgpb.Verifiers_Tryjob{
+						Builders: []*cfgpb.Verifiers_Tryjob_Builder{
+							{
+								Name: protoutil.FormatBuilderID(builderFoo),
+							},
+						},
+					},
+				},
 			}},
 		})
+
+		configGroupID := prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0]
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity:       "user:admin@example.com",
@@ -98,15 +116,16 @@ func TestGetRun(t *testing.T) {
 			cl3 := changelist.MustGobID(gHost, 3).MustCreateIfNotExists(ctx)
 			epoch := testclock.TestRecentTimeUTC.Truncate(time.Millisecond)
 			r := &run.Run{
-				ID:         rid,
-				Status:     run.Status_SUCCEEDED,
-				CreateTime: epoch,
-				StartTime:  epoch.Add(time.Second),
-				UpdateTime: epoch.Add(time.Minute),
-				EndTime:    epoch.Add(time.Hour),
-				Owner:      "user:foo@example.org",
-				CreatedBy:  "user:bar@example.org",
-				CLs:        common.MakeCLIDs(int64(cl1.ID), int64(cl2.ID), int64(cl3.ID)),
+				ID:            rid,
+				Status:        run.Status_SUCCEEDED,
+				ConfigGroupID: configGroupID,
+				CreateTime:    epoch,
+				StartTime:     epoch.Add(time.Second),
+				UpdateTime:    epoch.Add(time.Minute),
+				EndTime:       epoch.Add(time.Hour),
+				Owner:         "user:foo@example.org",
+				CreatedBy:     "user:bar@example.org",
+				CLs:           common.MakeCLIDs(int64(cl1.ID), int64(cl2.ID), int64(cl3.ID)),
 			}
 			So(datastore.Put(
 				ctx,
@@ -160,28 +179,11 @@ func TestGetRun(t *testing.T) {
 								{
 									Backend: &tryjob.Definition_Buildbucket_{
 										Buildbucket: &tryjob.Definition_Buildbucket{
-											Host: "bb",
-											Builder: &bbpb.BuilderID{
-												Project: "prj",
-												Bucket:  "ci",
-												Builder: "foo",
-											},
+											Host:    "bb.example.com",
+											Builder: builderFoo,
 										},
 									},
 									Critical: true,
-								},
-								{
-									Backend: &tryjob.Definition_Buildbucket_{
-										Buildbucket: &tryjob.Definition_Buildbucket{
-											Host: "bb",
-											Builder: &bbpb.BuilderID{
-												Project: "prj",
-												Bucket:  "ci",
-												Builder: "bar",
-											},
-										},
-									},
-									Critical: false,
 								},
 							},
 						},
@@ -190,33 +192,15 @@ func TestGetRun(t *testing.T) {
 								Attempts: []*tryjob.ExecutionState_Execution_Attempt{
 									{
 										TryjobId:   1,
-										ExternalId: string(tryjob.MustBuildbucketID("bb-host", 11)),
-										Status:     tryjob.Status_ENDED,
-										Result: &tryjob.Result{
-											Status: tryjob.Result_FAILED_TRANSIENTLY,
-											Backend: &tryjob.Result_Buildbucket_{
-												Buildbucket: &tryjob.Result_Buildbucket{
-													Id:     11,
-													Status: bbpb.Status_FAILURE,
-												},
-											},
-										},
-										Reused: false,
-									},
-								},
-							},
-							{
-								Attempts: []*tryjob.ExecutionState_Execution_Attempt{
-									{
-										TryjobId:   2,
-										ExternalId: string(tryjob.MustBuildbucketID("bb-host", 12)),
+										ExternalId: string(tryjob.MustBuildbucketID("bb.example.com", 11)),
 										Status:     tryjob.Status_ENDED,
 										Result: &tryjob.Result{
 											Status: tryjob.Result_SUCCEEDED,
 											Backend: &tryjob.Result_Buildbucket_{
 												Buildbucket: &tryjob.Result_Buildbucket{
-													Id:     12,
-													Status: bbpb.Status_SUCCESS,
+													Id:      11,
+													Status:  bbpb.Status_SUCCESS,
+													Builder: builderFoo,
 												},
 											},
 										},
@@ -227,28 +211,28 @@ func TestGetRun(t *testing.T) {
 						},
 					},
 				}
-				So(saveAndGet(r).Tryjobs, ShouldResembleProto, []*apiv0pb.Tryjob{
+				So(saveAndGet(r).TryjobInvocations, ShouldResembleProto, []*apiv0pb.TryjobInvocation{
 					{
-						Status: apiv0pb.Tryjob_ENDED,
-						Result: &apiv0pb.Tryjob_Result{
-							Status: apiv0pb.Tryjob_Result_FAILED_TRANSIENTLY,
-							Backend: &apiv0pb.Tryjob_Result_Buildbucket_{
-								Buildbucket: &apiv0pb.Tryjob_Result_Buildbucket{Id: 11},
-							},
+						BuilderConfig: &cfgpb.Verifiers_Tryjob_Builder{
+							Name: protoutil.FormatBuilderID(builderFoo),
 						},
+						Status:   apiv0pb.TryjobStatus_SUCCEEDED,
 						Critical: true,
-						Reuse:    false,
-					},
-					{
-						Status: apiv0pb.Tryjob_ENDED,
-						Result: &apiv0pb.Tryjob_Result{
-							Status: apiv0pb.Tryjob_Result_SUCCEEDED,
-							Backend: &apiv0pb.Tryjob_Result_Buildbucket_{
-								Buildbucket: &apiv0pb.Tryjob_Result_Buildbucket{Id: 12},
+						Attempts: []*apiv0pb.TryjobInvocation_Attempt{
+							{
+								Status: apiv0pb.TryjobStatus_SUCCEEDED,
+								Result: &apiv0pb.TryjobResult{
+									Backend: &apiv0pb.TryjobResult_Buildbucket_{
+										Buildbucket: &apiv0pb.TryjobResult_Buildbucket{
+											Host:    "bb.example.com",
+											Id:      11,
+											Builder: builderFoo,
+										},
+									},
+								},
+								Reuse: true,
 							},
 						},
-						Critical: false,
-						Reuse:    true,
 					},
 				})
 			})

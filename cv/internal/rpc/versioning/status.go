@@ -15,19 +15,52 @@
 package versioning
 
 import (
+	"errors"
+	"fmt"
+
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	apiv1pb "go.chromium.org/luci/cv/api/v1"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
-// TryjobStatusV0 converts internal Tryjob status to an APIv0 equivalent.
-func TryjobStatusV0(s tryjob.Status) apiv0pb.Tryjob_Status {
+// TryjobStatusV0 converts internal Tryjob statuses to an APIv0 equivalent.
+func TryjobStatusV0(tjs tryjob.Status, tjrs tryjob.Result_Status) apiv0pb.TryjobStatus {
+	switch tjs {
+	case tryjob.Status_STATUS_UNSPECIFIED:
+		panic(errors.New("tryjob status not specified"))
+	case tryjob.Status_PENDING:
+		return apiv0pb.TryjobStatus_PENDING
+	case tryjob.Status_TRIGGERED:
+		return apiv0pb.TryjobStatus_RUNNING
+	case tryjob.Status_ENDED:
+		switch tjrs {
+		case tryjob.Result_RESULT_STATUS_UNSPECIFIED:
+			panic(errors.New("tryjob result status not specified"))
+		case tryjob.Result_SUCCEEDED:
+			return apiv0pb.TryjobStatus_SUCCEEDED
+		case tryjob.Result_FAILED_TRANSIENTLY, tryjob.Result_FAILED_PERMANENTLY, tryjob.Result_TIMEOUT:
+			return apiv0pb.TryjobStatus_FAILED
+		default:
+			panic(fmt.Sprintf("unknown tryjob result status: %s", tjrs))
+		}
+	case tryjob.Status_CANCELLED:
+		return apiv0pb.TryjobStatus_CANCELLED
+	case tryjob.Status_UNTRIGGERED:
+		return apiv0pb.TryjobStatus_UNTRIGGERED
+	default:
+		panic(fmt.Sprintf("unknown tryjob status: %s", tjs))
+	}
+
+}
+
+// LegacyTryjobStatusV0 converts internal Tryjob status to an APIv0 equivalent.
+func LegacyTryjobStatusV0(s tryjob.Status) apiv0pb.Tryjob_Status {
 	return apiv0pb.Tryjob_Status(s)
 }
 
-// TryjobResultStatusV0 converts internal Tryjob Result status to an APIv0 equivalent.
-func TryjobResultStatusV0(s tryjob.Result_Status) apiv0pb.Tryjob_Result_Status {
+// LegacyTryjobResultStatusV0 converts internal Tryjob Result status to an APIv0 equivalent.
+func LegacyTryjobResultStatusV0(s tryjob.Result_Status) apiv0pb.Tryjob_Result_Status {
 	return apiv0pb.Tryjob_Result_Status(s)
 }
 

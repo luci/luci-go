@@ -224,7 +224,7 @@ func (u *Updater) conditionallyUpdate(ctx context.Context, id common.TryjobID, s
 						configGroup,
 						tj.Definition.GetCritical(),
 						isRetry,
-						versioning.TryjobResultStatusV0(tj.Result.GetStatus()).String(),
+						versioning.TryjobStatusV0(tj.Status, tj.Result.GetStatus()).String(),
 					)
 				})
 			})

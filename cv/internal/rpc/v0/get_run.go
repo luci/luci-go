@@ -19,6 +19,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
@@ -44,6 +45,7 @@ func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (re
 		return nil, err
 	}
 
+	ctx = logging.SetField(ctx, "run", r.ID)
 	return populateRunResponse(ctx, r)
 }
 

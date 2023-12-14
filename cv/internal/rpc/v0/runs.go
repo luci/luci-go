@@ -17,7 +17,9 @@ package rpc
 import (
 	"context"
 
-	"go.chromium.org/luci/common/errors"
+	"google.golang.org/grpc/codes"
+
+	"go.chromium.org/luci/grpc/appstatus"
 
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/common"
@@ -34,7 +36,7 @@ type RunsServer struct {
 func populateRunResponse(ctx context.Context, r *run.Run) (resp *apiv0pb.Run, err error) {
 	rcls, err := run.LoadRunCLs(ctx, r.ID, r.CLs)
 	if err != nil {
-		return nil, err
+		return nil, appstatus.Attachf(err, codes.Internal, "failed to load cls of the run")
 	}
 	gcls := make([]*apiv0pb.GerritChange, len(rcls))
 	sCLSet := common.MakeCLIDsSet(r.Submission.GetSubmittedCls()...)
@@ -46,8 +48,7 @@ func populateRunResponse(ctx context.Context, r *run.Run) (resp *apiv0pb.Run, er
 		host, change, err := rcl.ExternalID.ParseGobID()
 		switch {
 		case err != nil:
-			// As of Sep 2, 2021, CV works only with Gerrit (GoB) CL.
-			panic(errors.Annotate(err, "ParseGobID").Err())
+			return nil, appstatus.Attachf(err, codes.Unimplemented, "only Gerrit CL is supported")
 		case sCLSet.Has(rcl.ID):
 			sCLIndexes = append(sCLIndexes, int32(i))
 		case fCLSet.Has(rcl.ID):
@@ -68,7 +69,7 @@ func populateRunResponse(ctx context.Context, r *run.Run) (resp *apiv0pb.Run, er
 		}
 	}
 
-	return &apiv0pb.Run{
+	res := &apiv0pb.Run{
 		Id:         r.ID.PublicID(),
 		Eversion:   int64(r.EVersion),
 		Status:     versioning.RunStatusV0(r.Status),
@@ -80,24 +81,29 @@ func populateRunResponse(ctx context.Context, r *run.Run) (resp *apiv0pb.Run, er
 		Owner:      string(r.Owner),
 		CreatedBy:  string(r.CreatedBy),
 		Cls:        gcls,
-		Tryjobs:    constructTryjobs(ctx, r),
+		Tryjobs:    constructLegacyTryjobs(ctx, r),
 		Submission: submission,
-	}, nil
+	}
+	res.TryjobInvocations, err = makeTryjobInvocations(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
-func constructTryjobs(ctx context.Context, r *run.Run) []*apiv0pb.Tryjob {
+func constructLegacyTryjobs(ctx context.Context, r *run.Run) []*apiv0pb.Tryjob {
 	var ret []*apiv0pb.Tryjob
 	for i, execution := range r.Tryjobs.GetState().GetExecutions() {
 		definition := r.Tryjobs.GetState().GetRequirement().GetDefinitions()[i]
 		for _, attempt := range execution.GetAttempts() {
 			tj := &apiv0pb.Tryjob{
-				Status:   versioning.TryjobStatusV0(attempt.GetStatus()),
+				Status:   versioning.LegacyTryjobStatusV0(attempt.GetStatus()),
 				Critical: definition.GetCritical(),
 				Reuse:    attempt.GetReused(),
 			}
 			if result := attempt.GetResult(); result != nil {
 				tj.Result = &apiv0pb.Tryjob_Result{
-					Status: versioning.TryjobResultStatusV0(result.GetStatus()),
+					Status: versioning.LegacyTryjobResultStatusV0(result.GetStatus()),
 				}
 				if bbid := result.GetBuildbucket().GetId(); bbid != 0 {
 					tj.Result.Backend = &apiv0pb.Tryjob_Result_Buildbucket_{
