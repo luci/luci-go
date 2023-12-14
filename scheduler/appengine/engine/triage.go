@@ -427,6 +427,14 @@ func (op *triageOp) processTriggers(c context.Context, job *Job) (*dsset.PopOp, 
 		op.debugInfoLog(c, "New invocations enqueued, consumed %d triggers", consumed)
 	}
 
+	// Discard triggers the policy decided are no longer needed.
+	if len(out.Discard) != 0 {
+		for _, t := range out.Discard {
+			popOp.Pop(t.Id)
+		}
+		op.debugInfoLog(c, "%d triggers discarded, according to policy", len(out.Discard))
+	}
+
 	return popOp, nil
 }
 

@@ -19,7 +19,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/scheduler/appengine/internal"
@@ -57,6 +59,12 @@ type Out struct {
 	// Triggers specified in the each request will be removed from the set of
 	// pending triggers (they are consumed).
 	Requests []task.Request
+
+	// Discard is a list of triggers that the policy decided aren't needed anymore
+	// and should be discarded by the engine.
+	//
+	// A trigger associated with a request must not be also slated for discard.
+	Discard []*internal.Trigger
 }
 
 // Func is the concrete implementation of a triggering policy.
@@ -88,6 +96,8 @@ func New(p *messages.TriggeringPolicy) (Func, error) {
 		return GreedyBatchingPolicy(int(p.MaxConcurrentInvocations), int(p.MaxBatchSize))
 	case messages.TriggeringPolicy_LOGARITHMIC_BATCHING:
 		return LogarithmicBatchingPolicy(int(p.MaxConcurrentInvocations), int(p.MaxBatchSize), float64(p.LogBase))
+	case messages.TriggeringPolicy_NEWEST_FIRST:
+		return NewestFirstPolicy(int(p.MaxConcurrentInvocations), p.PendingTimeout.AsDuration())
 	default:
 		return nil, errors.Reason("unrecognized triggering policy kind %d", p.Kind).Err()
 	}
@@ -97,7 +107,10 @@ var defaultPolicy = messages.TriggeringPolicy{
 	Kind:                     messages.TriggeringPolicy_GREEDY_BATCHING,
 	MaxConcurrentInvocations: 1,
 	MaxBatchSize:             1000,
+	PendingTimeout:           durationpb.New(defaultPendingTimeout),
 }
+
+const defaultPendingTimeout = 7 * 24 * time.Hour // 7 days.
 
 // Default instantiates default triggering policy function.
 //
@@ -127,6 +140,9 @@ func UnmarshalDefinition(b []byte) (*messages.TriggeringPolicy, error) {
 	}
 	if msg.MaxBatchSize == 0 {
 		msg.MaxBatchSize = defaultPolicy.MaxBatchSize
+	}
+	if msg.Kind == messages.TriggeringPolicy_NEWEST_FIRST && msg.PendingTimeout.AsDuration() == 0 {
+		msg.PendingTimeout = defaultPolicy.PendingTimeout
 	}
 	return msg, nil
 }

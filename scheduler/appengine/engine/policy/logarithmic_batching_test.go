@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
 
@@ -77,6 +78,7 @@ func TestLogarithmicBatching(t *testing.T) {
 				So(s.Last().Request.TriggerIDs(), ShouldResemble, []string{"t-001"})
 				So(s.Last().Request.StringProperty("noop_trigger_data"), ShouldEqual, "data-001")
 				So(s.PendingTriggers, ShouldHaveLength, 0)
+				So(s.DiscardedTriggers, ShouldHaveLength, 0)
 			})
 
 			Convey("rounds down number of consumed triggers", func() {
@@ -86,6 +88,7 @@ func TestLogarithmicBatching(t *testing.T) {
 				So(s.Last().Request.TriggerIDs(), ShouldResemble, []string{"t-001"})
 				So(s.Last().Request.StringProperty("noop_trigger_data"), ShouldEqual, "data-001")
 				So(s.PendingTriggers, ShouldHaveLength, 2)
+				So(s.DiscardedTriggers, ShouldHaveLength, 0)
 			})
 
 			Convey("respects maxBatchSize", func() {
@@ -95,6 +98,7 @@ func TestLogarithmicBatching(t *testing.T) {
 				So(s.Last().Request.TriggerIDs(), ShouldHaveLength, maxBatchSize)
 				So(s.Last().Request.StringProperty("noop_trigger_data"), ShouldEqual, fmt.Sprintf("data-%03d", maxBatchSize))
 				So(s.PendingTriggers, ShouldHaveLength, N-maxBatchSize)
+				So(s.DiscardedTriggers, ShouldHaveLength, 0)
 			})
 
 			Convey("Many triggers", func() {
@@ -114,6 +118,7 @@ func TestLogarithmicBatching(t *testing.T) {
 				So(s.Invocations, ShouldHaveLength, 2) // new invocation created.
 				// log(2,11) = 3.459
 				So(s.Last().Request.TriggerIDs(), ShouldResemble, []string{"t-003", "t-004", "t-005"})
+				So(s.DiscardedTriggers, ShouldHaveLength, 0)
 			})
 		})
 
@@ -165,6 +170,9 @@ func TestLogarithmicBatching(t *testing.T) {
 					break
 				}
 			}
+
+			// There should never be any discarded triggers with this policy.
+			So(s.DiscardedTriggers, ShouldHaveLength, 0)
 
 			// Analyze.
 			var oldestCommitAgeMinutes []int

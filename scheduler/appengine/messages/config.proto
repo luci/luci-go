@@ -19,6 +19,7 @@ package scheduler.config;
 option go_package = "go.chromium.org/luci/scheduler/appengine/messages";
 
 import "go.chromium.org/luci/common/proto/options.proto";
+import "google/protobuf/duration.proto";
 
 option (luci.file_metadata) = {
   doc_url: "https://config.luci.app/schemas/projects:luci-scheduler.cfg";
@@ -82,6 +83,12 @@ message TriggeringPolicy {
     // trigger alone, where N is the total number of pending triggers and k is
     // specified by the log_base field below.
     LOGARITHMIC_BATCHING = 2;
+
+    // A triggering function that prioritizes the most recent pending triggers.
+    // Triggers stay pending until they either become the most recent pending
+    // trigger or expire. The timeout for pending triggers is specified by the
+    // pending_timeout field below.
+    NEWEST_FIRST = 3;
   }
 
   // Defines an algorithm to use for the triggering decisions.
@@ -103,7 +110,8 @@ message TriggeringPolicy {
   // Limits how many triggers can be put into one invocation request.
   //
   // For example, setting this to 1 will make each trigger launch its own
-  // invocation.
+  // invocation. This value is ignore dby NEWEST_FIRST, since batching
+  // isn't well-defined in that policy kind.
   //
   // Default is 1000 (which is ~= unlimited).
   int64 max_batch_size = 3;
@@ -117,6 +125,16 @@ message TriggeringPolicy {
   //
   // Required.
   float log_base = 4;
+
+  // How long until a pending trigger is discarded.
+  //
+  // For example, setting this to 1 day will cause triggers that stay pending
+  // for at least 1 day to be removed from consideration. This value is ignored
+  // by policy kinds other than NEWEST_FIRST, which can starve old triggers and
+  // cause the pending triggers list to grow without bound.
+  //
+  // Default is 7 days.
+  google.protobuf.Duration pending_timeout = 5;
 }
 
 

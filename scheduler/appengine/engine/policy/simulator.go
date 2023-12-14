@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/data/stringset"
+
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
@@ -75,6 +76,10 @@ type Simulator struct {
 	// running (based on Now). Use Last() as a shortcut to get the last item of
 	// this list.
 	Invocations []*SimulatedInvocation
+
+	// DiscardedTriggers is a log of all triggers that were discarded, sorted by time
+	// (most recent last).
+	DiscardedTriggers []*internal.Trigger
 
 	// Internals.
 
@@ -180,12 +185,21 @@ func (s *Simulator) triage() {
 		}
 	}
 
-	// Pop all consumed triggers from PendingTriggers list (keeping it sorted).
-	if consumed.Len() != 0 {
+	// Collect a set of discarded triggers.
+	discarded := stringset.New(0)
+	for _, t := range out.Discard {
+		discarded.Add(t.Id)
+	}
+
+	// Pop all consumed or discarded triggers from PendingTriggers list (keeping it sorted).
+	if consumed.Len() != 0 || discarded.Len() != 0 {
 		filtered := make([]*internal.Trigger, 0, len(s.PendingTriggers))
 		for _, t := range s.PendingTriggers {
-			if !consumed.Has(t.Id) {
+			if !consumed.Has(t.Id) && !discarded.Has(t.Id) {
 				filtered = append(filtered, t)
+			}
+			if discarded.Has(t.Id) {
+				s.DiscardedTriggers = append(s.DiscardedTriggers, t)
 			}
 		}
 		s.PendingTriggers = filtered
@@ -240,10 +254,10 @@ type event struct {
 // events implements heap.Interface, smallest eta is on top of the heap.
 type events []event
 
-func (e events) Len() int            { return len(e) }
-func (e events) Less(i, j int) bool  { return e[i].eta.Before(e[j].eta) }
-func (e events) Swap(i, j int)       { e[i], e[j] = e[j], e[i] }
-func (e *events) Push(x any) { *e = append(*e, x.(event)) }
+func (e events) Len() int           { return len(e) }
+func (e events) Less(i, j int) bool { return e[i].eta.Before(e[j].eta) }
+func (e events) Swap(i, j int)      { e[i], e[j] = e[j], e[i] }
+func (e *events) Push(x any)        { *e = append(*e, x.(event)) }
 func (e *events) Pop() any {
 	old := *e
 	n := len(old)

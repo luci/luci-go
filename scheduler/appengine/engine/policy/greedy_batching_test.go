@@ -60,6 +60,7 @@ func TestGreedyBatching(t *testing.T) {
 				internal.NoopTrigger("t2", "t2_data"))
 			So(s.PendingTriggers, ShouldHaveLength, 2)
 			So(s.Invocations, ShouldHaveLength, 0)
+			So(s.DiscardedTriggers, ShouldHaveLength, 0)
 		})
 
 		Convey("Unlimited batching works", func() {
@@ -119,6 +120,9 @@ func TestGreedyBatching(t *testing.T) {
 			s.AdvanceTime(time.Minute)
 			So(s.Invocations[1].Running, ShouldBeFalse)
 			So(s.Invocations, ShouldHaveLength, 3)
+
+			// Make sure the policy didn't discard anything.
+			So(s.DiscardedTriggers, ShouldHaveLength, 0)
 		})
 
 		Convey("Limited batching works", func() {
@@ -162,6 +166,9 @@ func TestGreedyBatching(t *testing.T) {
 			So(s.Invocations, ShouldHaveLength, 4)
 			So(s.Invocations[2].Request.TriggerIDs(), ShouldResemble, []string{"t5", "t6", "t7"})
 			So(s.Invocations[3].Request.TriggerIDs(), ShouldResemble, []string{"t8"})
+
+			// Make sure the policy didn't discard anything.
+			So(s.DiscardedTriggers, ShouldHaveLength, 0)
 		})
 	})
 }

@@ -28,7 +28,8 @@ func ValidateDefinition(ctx *validation.Context, p *messages.TriggeringPolicy) {
 	case
 		messages.TriggeringPolicy_UNDEFINED, // same as GREEDY_BATCHING
 		messages.TriggeringPolicy_GREEDY_BATCHING,
-		messages.TriggeringPolicy_LOGARITHMIC_BATCHING:
+		messages.TriggeringPolicy_LOGARITHMIC_BATCHING,
+		messages.TriggeringPolicy_NEWEST_FIRST:
 		// ok
 	default:
 		ctx.Errorf("unrecognized policy kind %d", p.Kind)
@@ -42,6 +43,17 @@ func ValidateDefinition(ctx *validation.Context, p *messages.TriggeringPolicy) {
 	if p.MaxBatchSize < 0 {
 		ctx.Errorf("max_batch_size should be positive, got %d", p.MaxBatchSize)
 	}
+	// And here.
+	if p.PendingTimeout.AsDuration() < 0 {
+		ctx.Errorf("pending_timeout should be positive, got %s", p.PendingTimeout.AsDuration())
+	}
+
+	// Let's make sure PendingTimeout is unset if Kind != NEWEST_FIRST, since it doesn't do
+	// anything in those cases. Otherwise it's easy to make a false assumption.
+	if p.Kind != messages.TriggeringPolicy_NEWEST_FIRST && p.PendingTimeout.AsDuration() != 0 {
+		ctx.Errorf("pending_timeout is non-zero with non-NEWEST_FIRST policy, but pending_timeout doesn't apply to those policies")
+	}
+
 	if p.Kind == messages.TriggeringPolicy_LOGARITHMIC_BATCHING && p.LogBase < 1.0001 {
 		ctx.Errorf("log_base should be larger or equal 1.0001, got %f", p.LogBase)
 	}

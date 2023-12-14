@@ -264,12 +264,47 @@ func TestTriageOp(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(listing.Items, ShouldHaveLength, 2)
 		})
+
+		Convey("discards triggers", func() {
+			tb.policyDiscardsTriggers = true
+
+			triggers := []*internal.Trigger{
+				{
+					Id:      "t0",
+					Created: timestamppb.New(epoch.Add(20 * time.Second)),
+				},
+				{
+					Id:      "t1",
+					Created: timestamppb.New(epoch.Add(20 * time.Second)),
+				},
+			}
+
+			before := &Job{
+				JobID:    "job",
+				Schedule: "with 10m interval", // This needs to be set, since the engine will poke cron.
+				Enabled:  true,
+			}
+			pendingTriggersSet(c, before.JobID).Add(c, triggers)
+
+			// Cycle 1. Pops triggers and discards them.
+			after, err := tb.runTestTriage(c, before)
+			So(err, ShouldBeNil)
+			So(after.ActiveInvocations, ShouldHaveLength, 0)
+			So(tb.requests, ShouldHaveLength, 0)
+
+			// Cycle 2. Nothing new.
+			after, err = tb.runTestTriage(c, after)
+			So(err, ShouldBeNil)
+			So(after.ActiveInvocations, ShouldHaveLength, 0)
+			So(tb.requests, ShouldHaveLength, 0)
+		})
 	})
 }
 
 type triageTestBed struct {
 	// Inputs.
-	maxAllowedTriggers int
+	maxAllowedTriggers     int
+	policyDiscardsTriggers bool
 
 	// Outputs.
 	nextInvID int64
@@ -288,10 +323,14 @@ func (t *triageTestBed) runTestTriage(c context.Context, before *Job) (after *Jo
 		jobID: before.JobID,
 		policyFactory: func(*messages.TriggeringPolicy) (policy.Func, error) {
 			return func(env policy.Environment, in policy.In) (out policy.Out) {
-				for _, t := range in.Triggers {
-					out.Requests = append(out.Requests, task.Request{
-						IncomingTriggers: []*internal.Trigger{t},
-					})
+				if t.policyDiscardsTriggers {
+					out.Discard = append(out.Discard, in.Triggers...)
+				} else {
+					for _, t := range in.Triggers {
+						out.Requests = append(out.Requests, task.Request{
+							IncomingTriggers: []*internal.Trigger{t},
+						})
+					}
 				}
 				return
 			}, nil
