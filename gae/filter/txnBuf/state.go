@@ -44,13 +44,6 @@ const DefaultSizeBudget = int64((10 * 1000 * 1000) * 0.95)
 // datastore error message.
 const DefaultWriteCountBudget = 500
 
-// XGTransactionGroupLimit is the number of transaction groups to allow in an
-// XG transaction.
-//
-// 25 taken on 2015/09/24:
-// https://cloud.google.com/appengine/docs/go/datastore/transactions#Go_What_can_be_done_in_a_transaction
-const XGTransactionGroupLimit = 25
-
 // sizeTracker tracks the size of a buffered transaction. The rules are simple:
 //   - deletes count for the size of their key, but 0 data
 //   - puts count for the size of their key plus the 'EstimateSize' for their
@@ -112,8 +105,7 @@ type txnBufState struct {
 	entState *sizeTracker
 	bufDS    datastore.RawInterface
 
-	roots     stringset.Set
-	rootLimit int
+	roots stringset.Set
 
 	kc       datastore.KeyContext
 	parentDS datastore.RawInterface
@@ -133,16 +125,9 @@ type txnBufState struct {
 func withTxnBuf(ctx context.Context, cb func(context.Context) error, opts *datastore.TransactionOptions) error {
 	parentState, _ := ctx.Value(&dsTxnBufParent).(*txnBufState)
 	roots := stringset.New(0)
-	rootLimit := XGTransactionGroupLimit
 	sizeBudget, writeCountBudget := DefaultSizeBudget, DefaultWriteCountBudget
 	if parentState != nil {
-		// TODO(riannucci): this is a bit wonky since it means that a child
-		// transaction declaring XG=true will only get to modify 25 groups IF
-		// they're same groups affected by the parent transactions. So instead of
-		// respecting opts.XG for inner transactions, we just dup everything from
-		// the parent transaction.
 		roots = parentState.roots.Dup()
-		rootLimit = parentState.rootLimit
 
 		sizeBudget = parentState.sizeBudget - parentState.entState.total
 		writeCountBudget = parentState.writeCountBudget - parentState.entState.numWrites()
@@ -152,7 +137,6 @@ func withTxnBuf(ctx context.Context, cb func(context.Context) error, opts *datas
 		entState:         &sizeTracker{},
 		bufDS:            memory.NewDatastore(ctx, info.Raw(ctx)),
 		roots:            roots,
-		rootLimit:        rootLimit,
 		kc:               datastore.GetKeyContext(ctx),
 		parentDS:         datastore.Raw(context.WithValue(ctx, &dsTxnBufHaveLock, true)),
 		sizeBudget:       sizeBudget,
@@ -216,17 +200,13 @@ func (i *item) getCmpRow(lower, upper []byte, order []datastore.IndexColumn) str
 }
 
 func (t *txnBufState) updateRootsLocked(roots stringset.Set) error {
-	curRootLen := t.roots.Len()
 	proposedRoots := stringset.New(1)
 	roots.Iter(func(root string) bool {
 		if !t.roots.Has(root) {
 			proposedRoots.Add(root)
 		}
-		return proposedRoots.Len()+curRootLen <= t.rootLimit
+		return true
 	})
-	if proposedRoots.Len()+curRootLen > t.rootLimit {
-		return ErrTooManyRoots
-	}
 	// only need to update the roots if they did something that required updating
 	if proposedRoots.Len() > 0 {
 		proposedRoots.Iter(func(root string) bool {

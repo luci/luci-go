@@ -288,10 +288,6 @@ func TestTransactionBuffers(t *testing.T) {
 						So(f, ShouldResemble, dataMultiRoot[i-1])
 					}
 
-					So(ds.RunInTransaction(c, func(c context.Context) error {
-						return ds.Get(c, &Foo{ID: 27})
-					}, nil), ShouldErrLike, "too many entity groups")
-
 					f := &Foo{ID: 7}
 					f.Value = []int64{9}
 					So(ds.Put(c, f), ShouldBeNil)

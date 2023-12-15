@@ -27,11 +27,6 @@ import (
 var ErrTransactionTooLarge = errors.New(
 	"applying the transaction would make the parent transaction too large")
 
-// ErrTooManyRoots is returned when executing an operation which would cause
-// the transaction to exceed it's allotted number of entity groups.
-var ErrTooManyRoots = errors.New(
-	"operating on too many entity groups in nested transaction")
-
 type dsTxnBuf struct {
 	ic       context.Context
 	state    *txnBufState

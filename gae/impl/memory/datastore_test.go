@@ -309,21 +309,6 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					So(ds.Get(c, &Foo{ID: 1}), ShouldEqual, ds.ErrNoSuchEntity)
 				})
 
-				Convey("A Get counts against your group count", func() {
-					err := ds.RunInTransaction(c, func(c context.Context) error {
-						pm := ds.PropertyMap{}
-						for i := 75; i < 100; i++ {
-							So(pm.SetMeta("key", ds.NewKey(c, "Foo", "", int64(i), nil)), ShouldBeTrue)
-							So(ds.Get(c, pm), ShouldEqual, ds.ErrNoSuchEntity)
-						}
-
-						So(pm.SetMeta("key", k), ShouldBeTrue)
-						So(ds.Get(c, pm), ShouldErrLike, "too many entity groups")
-						return nil
-					}, nil)
-					So(err, ShouldBeNil)
-				})
-
 				Convey("Get takes a snapshot", func() {
 					err := ds.RunInTransaction(c, func(c context.Context) error {
 						So(ds.Get(c, f), ShouldBeNil)
@@ -453,23 +438,6 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					f := &Foo{ID: 1}
 					So(ds.Get(c, f), ShouldBeNil)
 					So(f.Val, ShouldEqual, 27)
-				})
-
-				Convey("XG", func() {
-					Convey("Modifying >25 groups is invald", func() {
-						err := ds.RunInTransaction(c, func(c context.Context) error {
-							foos := make([]Foo, 25)
-							for i := int64(1); i < 26; i++ {
-								foos[i-1].ID = i
-								foos[i-1].Val = 200
-							}
-							So(ds.Put(c, foos), ShouldBeNil)
-							err := ds.Put(c, &Foo{ID: 26})
-							So(err.Error(), ShouldContainSubstring, "too many entity groups")
-							return err
-						}, nil)
-						So(err.Error(), ShouldContainSubstring, "too many entity groups")
-					})
 				})
 
 				Convey("Errors and panics", func() {

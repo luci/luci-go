@@ -583,8 +583,6 @@ type txnDataStoreData struct {
 
 var _ memContextObj = (*txnDataStoreData)(nil)
 
-const xgEGLimit = 25
-
 func (td *txnDataStoreData) endTxn() {
 	if err := td.txn.close(); err != nil {
 		panic(err)
@@ -636,14 +634,6 @@ func (td *txnDataStoreData) writeMutation(getOnly bool, key *ds.Key, data ds.Pro
 	defer td.lock.Unlock()
 
 	if _, ok := td.muts[rk]; !ok {
-		if len(td.muts)+1 > xgEGLimit {
-			return errors.New(
-				"operating on too many entity groups in a single transaction. " +
-					"NOTE: luci/gae/impl/memory currently emulates 'classic' Datastore " +
-					"semantics, not Firestore-in-datastore-mode semantics. If you're from " +
-					"the future where everything is Firestore now, then you should " +
-					"remove this check (and the one in 'filter/txnBuf', too).")
-		}
 		td.muts[rk] = []txnMutation{}
 	}
 	if !getOnly {
