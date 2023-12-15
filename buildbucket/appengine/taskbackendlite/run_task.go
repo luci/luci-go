@@ -15,7 +15,28 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"cloud.google.com/go/pubsub"
+	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/caching"
+
+	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	pb "go.chromium.org/luci/buildbucket/proto"
+)
+
+const (
+	DefaultTaskCreationTimeout = 10 * time.Minute
 )
 
 // TaskBackendLite implements pb.TaskBackendLiteServer.
@@ -29,4 +50,90 @@ var _ pb.TaskBackendLiteServer = &TaskBackendLite{}
 // NewTaskBackendLite returns a new pb.BuildsServer.
 func NewTaskBackendLite() pb.TaskBackendLiteServer {
 	return &TaskBackendLite{}
+}
+
+// TaskNotification is to notify users about a task creation event.
+// TaskBackendLite will publish this message to Cloud pubsub in its json format.
+type TaskNotification struct {
+	BuildID         string `json:"build_id"`
+	StartBuildToken string `json:"start_build_token"`
+}
+
+// RunTask handles the request to create a task. Implements pb.TaskBackendLiteServer.
+func (*TaskBackendLite) RunTask(ctx context.Context, req *pb.RunTaskRequest) (*pb.RunTaskResponse, error) {
+	logging.Debugf(ctx, "%q called RunTask with request %s", auth.CurrentIdentity(ctx), proto.MarshalTextString(req))
+	// Decide which topic to use.
+	var topicID string
+	cfg := req.BackendConfig.AsMap()
+	if val, ok := cfg["topic_id"].(string); !ok || val == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "'topic_id'in req.BackendConfig is not specified or it's not a string")
+	} else {
+		topicID = val
+	}
+
+	// TODO(crbug.com/1502020): Do permission check to see if it's allowed to use this task backend.
+
+	// dummyTaskID format is <BuildId>_<RequestId> to make it globally unique.
+	dummyTaskID := fmt.Sprintf("%s_%s", req.BuildId, req.RequestId)
+	resp := &pb.RunTaskResponse{
+		Task: &pb.Task{
+			Id: &pb.TaskID{
+				Id:     dummyTaskID,
+				Target: req.Target,
+			},
+			UpdateId: 1,
+		},
+	}
+
+	// Not process the same request more than once to make the entire operation idempotent.
+	cache := caching.GlobalCache(ctx, "taskbackendlite-run-task")
+	if cache == nil {
+		return nil, status.Errorf(codes.Internal, "cannot find the global cache")
+	}
+	taskCached, err := cache.Get(ctx, dummyTaskID)
+	switch {
+	case errors.Is(err, caching.ErrCacheMiss):
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, "cannot read %s from the global cache", dummyTaskID)
+	case taskCached != nil:
+		logging.Infof(ctx, "this task(%s) has been handled before, ignoring", dummyTaskID)
+		return resp, nil
+	}
+
+	// Publish the msg into Pubsub.
+	psClient, err := clients.NewPubsubClient(ctx, info.AppID(ctx), "")
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error when creating Pub/Sub client: %s", err)
+	}
+	defer psClient.Close()
+	topic := psClient.Topic(topicID)
+	defer topic.Stop()
+	data, err := json.MarshalIndent(&TaskNotification{
+		BuildID:         req.BuildId,
+		StartBuildToken: req.Secrets.StartBuildToken,
+	}, "", "  ")
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to compose pubsub message: %s", err)
+	}
+	result := topic.Publish(ctx, &pubsub.Message{
+		Data: data,
+		Attributes: map[string]string{
+			"dummy_task_id": dummyTaskID, // can be used for deduplication on the subscriber side.
+		},
+	})
+	if _, err = result.Get(ctx); err != nil {
+		if status.Code(err) == codes.NotFound {
+			return nil, status.Errorf(codes.InvalidArgument, "topic %s does not exist on Cloud project %s", topicID, psClient.Project())
+		}
+		return nil, status.Errorf(codes.Internal, "failed to publish pubsub message: %s", err)
+	}
+
+	// Save into cache
+	if err := cache.Set(ctx, dummyTaskID, []byte{1}, DefaultTaskCreationTimeout); err != nil {
+		// Ignore it. The cache is to dedup Buildbucket requests. Duplicate
+		// requests rarely happen. But if it returns the error back, Buildbucket
+		// will send the same request again, which shoots ourselves in the foot.
+		logging.Warningf(ctx, "failed to save the task %s into cache", dummyTaskID)
+	}
+	return resp, nil
 }

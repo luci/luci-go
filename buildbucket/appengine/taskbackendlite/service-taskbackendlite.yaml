@@ -6,6 +6,8 @@ runtime: go121
 luci_gae_vars:
   cr-buildbucket-dev:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
+    REDIS_ADDR: 10.90.74.59:6379
+    VPC_CONNECTOR: projects/cr-buildbucket-dev/locations/us-central1/connectors/connector
   cr-buildbucket:
     AUTH_SERVICE_HOST: chrome-infra-auth.appspot.com
 
@@ -18,11 +20,15 @@ inbound_services:
 
 instance_class: B1
 
+vpc_access_connector:
+  name: ${VPC_CONNECTOR}
+
 entrypoint: >
   main
   -auth-service-host ${AUTH_SERVICE_HOST}
   -ts-mon-account app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
   -cloud-error-reporting
+  -redis-addr ${REDIS_ADDR}
 
 handlers:
 - url: /.*

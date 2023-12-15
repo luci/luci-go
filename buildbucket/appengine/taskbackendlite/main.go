@@ -17,12 +17,19 @@ package main
 
 import (
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/redisconn"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func main() {
-	server.Main(nil, nil, func(srv *server.Server) error {
+	mods := []module.Module{
+		gaeemulation.NewModuleFromFlags(),
+		redisconn.NewModuleFromFlags(),
+	}
+	server.Main(nil, mods, func(srv *server.Server) error {
 		pb.RegisterTaskBackendLiteServer(srv, NewTaskBackendLite())
 		return nil
 	})
