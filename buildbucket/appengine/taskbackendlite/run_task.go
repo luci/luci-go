@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/pubsub"
@@ -25,6 +26,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/info"
@@ -60,7 +62,7 @@ type TaskNotification struct {
 }
 
 // RunTask handles the request to create a task. Implements pb.TaskBackendLiteServer.
-func (*TaskBackendLite) RunTask(ctx context.Context, req *pb.RunTaskRequest) (*pb.RunTaskResponse, error) {
+func (t *TaskBackendLite) RunTask(ctx context.Context, req *pb.RunTaskRequest) (*pb.RunTaskResponse, error) {
 	logging.Debugf(ctx, "%q called RunTask with request %s", auth.CurrentIdentity(ctx), proto.MarshalTextString(req))
 	// Decide which topic to use.
 	var topicID string
@@ -71,7 +73,10 @@ func (*TaskBackendLite) RunTask(ctx context.Context, req *pb.RunTaskRequest) (*p
 		topicID = val
 	}
 
-	// TODO(crbug.com/1502020): Do permission check to see if it's allowed to use this task backend.
+	project, err := t.checkPerm(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	// dummyTaskID format is <BuildId>_<RequestId> to make it globally unique.
 	dummyTaskID := fmt.Sprintf("%s_%s", req.BuildId, req.RequestId)
@@ -100,8 +105,8 @@ func (*TaskBackendLite) RunTask(ctx context.Context, req *pb.RunTaskRequest) (*p
 		return resp, nil
 	}
 
-	// Publish the msg into Pubsub.
-	psClient, err := clients.NewPubsubClient(ctx, info.AppID(ctx), "")
+	// Publish the msg into Pubsub by using the project-scoped identity.
+	psClient, err := clients.NewPubsubClient(ctx, info.AppID(ctx), project)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error when creating Pub/Sub client: %s", err)
 	}
@@ -122,7 +127,10 @@ func (*TaskBackendLite) RunTask(ctx context.Context, req *pb.RunTaskRequest) (*p
 		},
 	})
 	if _, err = result.Get(ctx); err != nil {
-		if status.Code(err) == codes.NotFound {
+		switch status.Code(err) {
+		case codes.PermissionDenied:
+			return nil, status.Errorf(codes.PermissionDenied, "luci project scoped account(%s) does not have the permission to publish to topic %s", project, topicID)
+		case codes.NotFound:
 			return nil, status.Errorf(codes.InvalidArgument, "topic %s does not exist on Cloud project %s", topicID, psClient.Project())
 		}
 		return nil, status.Errorf(codes.Internal, "failed to publish pubsub message: %s", err)
@@ -136,4 +144,27 @@ func (*TaskBackendLite) RunTask(ctx context.Context, req *pb.RunTaskRequest) (*p
 		logging.Warningf(ctx, "failed to save the task %s into cache", dummyTaskID)
 	}
 	return resp, nil
+}
+
+// checkPerm checks if the caller has the correct access.
+// Returns PermissionDenied if the it has no permission.
+func (*TaskBackendLite) checkPerm(ctx context.Context) (string, error) {
+	s := auth.GetState(ctx)
+	if s == nil {
+		return "", status.Errorf(codes.Internal, "the auth state is not properly configured")
+	}
+	switch peer := s.PeerIdentity(); {
+	case strings.HasSuffix(info.AppID(ctx), "-dev") && peer == identity.Identity("user:cr-buildbucket-dev@appspot.gserviceaccount.com"): // on Dev
+	case !strings.HasSuffix(info.AppID(ctx), "-dev") && peer == identity.Identity("user:cr-buildbucket@appspot.gserviceaccount.com"): // on Prod
+	default:
+		return "", status.Errorf(codes.PermissionDenied, "the peer %q is not allowed to access this task backend", peer)
+	}
+
+	// In TaskBackendLite protocal, Buildbucket uses Project-scoped identity:
+	// https://chromium.googlesource.com/infra/luci/luci-go/+/574d2290aefbfe586b31bb43f89d9b2027f73a70/buildbucket/proto/backend.proto#337
+	user := s.User().Identity
+	if user.Kind() != identity.Project {
+		return "", status.Errorf(codes.PermissionDenied, "The caller's user identity %q is not a project identity", user)
+	}
+	return user.Value(), nil
 }

@@ -22,7 +22,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/cachingtest"
 
@@ -37,11 +40,15 @@ func TestRunTask(t *testing.T) {
 	t.Parallel()
 
 	Convey("RunTask", t, func() {
-		ctx := memory.UseWithAppID(context.Background(), "myApp")
+		ctx := memory.UseWithAppID(context.Background(), "myApp-dev")
 		ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
 			"taskbackendlite-run-task": cachingtest.NewBlobCache(),
 		})
-		ctx, psserver, psclient, err := clients.SetupTestPubsub(ctx, "myApp")
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity:             identity.Identity("project:myProject"),
+			PeerIdentityOverride: identity.Identity("user:cr-buildbucket-dev@appspot.gserviceaccount.com"),
+		})
+		ctx, psserver, psclient, err := clients.SetupTestPubsub(ctx, "myApp-dev")
 		So(err, ShouldBeNil)
 		defer func() {
 			psclient.Close()
@@ -144,7 +151,29 @@ func TestRunTask(t *testing.T) {
 			So(err, ShouldBeNil)
 			res, err := srv.RunTask(ctx, req)
 			So(res, ShouldBeNil)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, "topic foo does not exist on Cloud project myApp")
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, "topic foo does not exist on Cloud project myApp-dev")
+		})
+
+		Convey("perm errors", func() {
+			Convey("no access", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity:             identity.Identity("project:myProject"),
+					PeerIdentityOverride: identity.Identity("user:user1@example.com"),
+				})
+				res, err := srv.RunTask(ctx, req)
+				So(res, ShouldBeNil)
+				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied, `the peer "user:user1@example.com" is not allowed to access this task backend`)
+			})
+
+			Convey("not a project identity", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity:             identity.Identity("user:user1"),
+					PeerIdentityOverride: identity.Identity("user:cr-buildbucket-dev@appspot.gserviceaccount.com"),
+				})
+				res, err := srv.RunTask(ctx, req)
+				So(res, ShouldBeNil)
+				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied, `The caller's user identity "user:user1" is not a project identity`)
+			})
 		})
 	})
 }
