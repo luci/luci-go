@@ -96,6 +96,32 @@ func countVMs(c context.Context, payload proto.Message) error {
 	return nil
 }
 
+// drainVMQueue is the name of the drain VM task handler queue.
+const drainVMQueue = "drain-vm"
+
+func drainVMQueueHandler(c context.Context, payload proto.Message) error {
+	task, ok := payload.(*tasks.DrainVM)
+	switch {
+	case !ok:
+		return errors.Reason("unexpected payload %q", payload).Err()
+	case task.GetId() == "":
+		return errors.Reason("ID is required").Err()
+	}
+	vm := &model.VM{
+		ID: task.Id,
+	}
+	switch err := datastore.Get(c, vm); {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return nil
+	case err != nil:
+		return errors.Annotate(err, "failed to fetch VM").Err()
+	case vm.URL == "":
+		logging.Debugf(c, "instance %q does not exist", vm.Hostname)
+		return nil
+	}
+	return drainVM(c, vm)
+}
+
 // drainVM drains a given VM if necessary.
 func drainVM(c context.Context, vm *model.VM) error {
 	if vm.Drained {

@@ -48,3 +48,8 @@ queue:
   rate: 100/s
   retry_parameters:
     task_retry_limit: 0
+
+- name: drain-vm
+  rate: 100/s
+  retry_parameters:
+    task_retry_limit: 0

@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/gae/service/taskqueue"
 	"go.chromium.org/luci/server/router"
 
+	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
 	"go.chromium.org/luci/gce/appengine/model"
@@ -100,6 +101,46 @@ func expandConfigsAsync(c context.Context) error {
 // manageBotsAsync schedules task queue tasks to manage each Swarming bot.
 func manageBotsAsync(c context.Context) error {
 	return trigger(c, &tasks.ManageBot{}, datastore.NewQuery(model.VMKind).Gt("url", ""))
+}
+
+// drainVMsAsync comapres the config table to the vm table and determines the VMs that can be
+// drained. It schedules a drainVM task for each of those VMs
+func drainVMsAsync(c context.Context) error {
+	configMap := make(map[string]*config.Config)
+	// Get all the configs in datastore
+	qC := datastore.NewQuery("Config")
+	if err := datastore.Run(c, qC, func(cfg *model.Config) {
+		configMap[cfg.ID] = cfg.Config
+	}); err != nil {
+		return errors.Annotate(err, "failed to list Config").Err()
+	}
+	vmMap := make(map[string]*model.VM)
+	qV := datastore.NewQuery("VM")
+	if err := datastore.Run(c, qV, func(vm *model.VM) {
+		vmMap[vm.ID] = vm
+	}); err != nil {
+		return errors.Annotate(err, "failed to list VMs").Err()
+	}
+	/* Config dictate how many VMs can be online for any given prefix. Check if there are
+	 * more bots assigned than required by the config and drain them.
+	 */
+	//TODO(anushruth): Delete VMs based on uptime instead of ID.
+	var taskList []*tq.Task
+	for id, vm := range vmMap {
+		if configMap[vm.Config].GetCurrentAmount() <= vm.Index {
+			taskList = append(taskList, &tq.Task{
+				Payload: &tasks.DrainVM{
+					Id: id,
+				},
+			})
+		}
+	}
+	if len(taskList) > 0 {
+		if err := getDispatcher(c).AddTask(c, taskList...); err != nil {
+			return errors.Annotate(err, "failed to schedule tasks").Err()
+		}
+	}
+	return nil
 }
 
 // auditInstances schedules an audit task for every project:zone combination

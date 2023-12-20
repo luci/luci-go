@@ -169,6 +169,83 @@ func TestCron(t *testing.T) {
 			})
 		})
 
+		Convey("drainVMsAsync", func() {
+			Convey("none", func() {
+				// No VMs will be drained as config is set for 2 VMs
+				So(datastore.Put(c, &model.VM{
+					ID:     "id-0",
+					Index:  0,
+					Config: "id",
+				}), ShouldBeNil)
+				So(datastore.Put(c, &model.VM{
+					ID:     "id-1",
+					Index:  1,
+					Config: "id",
+				}), ShouldBeNil)
+				So(datastore.Put(c, &model.Config{
+					ID: "id",
+					Config: &config.Config{
+						Prefix:        "id",
+						CurrentAmount: 2,
+					},
+				}), ShouldBeNil)
+				Convey("missing", func() {
+					So(drainVMsAsync(c), ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				})
+			})
+
+			Convey("one", func() {
+				// 1 VM will be drained as config is set for 1 VM
+				So(datastore.Put(c, &model.VM{
+					ID:     "id-0",
+					Index:  0,
+					Config: "id",
+				}), ShouldBeNil)
+				So(datastore.Put(c, &model.VM{
+					ID:     "id-1",
+					Index:  1,
+					Config: "id",
+				}), ShouldBeNil)
+				So(datastore.Put(c, &model.Config{
+					ID: "id",
+					Config: &config.Config{
+						Prefix:        "id",
+						CurrentAmount: 1,
+					},
+				}), ShouldBeNil)
+				Convey("missing", func() {
+					So(drainVMsAsync(c), ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+				})
+			})
+
+			Convey("all", func() {
+				// 2 VMs will be drained as config is set for 0 VM
+				So(datastore.Put(c, &model.VM{
+					ID:     "id-0",
+					Index:  0,
+					Config: "id",
+				}), ShouldBeNil)
+				So(datastore.Put(c, &model.VM{
+					ID:     "id-1",
+					Index:  1,
+					Config: "id",
+				}), ShouldBeNil)
+				So(datastore.Put(c, &model.Config{
+					ID: "id",
+					Config: &config.Config{
+						Prefix:        "id",
+						CurrentAmount: 0,
+					},
+				}), ShouldBeNil)
+				Convey("missing", func() {
+					So(drainVMsAsync(c), ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldHaveLength, 2)
+				})
+			})
+		})
+
 		Convey("payloadFactory", func() {
 			f := payloadFactory(&tasks.CountVMs{})
 			p := f("id")

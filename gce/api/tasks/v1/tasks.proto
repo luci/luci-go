@@ -98,3 +98,9 @@ message AuditProject {
   // Page token to use with the query
   string pageToken = 3;
 }
+
+// A task to drain/delete the VMs and instances that are no longer needed
+message DrainVM {
+  // The name of the VM to drain
+  string id = 1;
+}
