@@ -124,6 +124,7 @@ func (exe *Executor) voteGerritLabels(ctx context.Context, votes []*cfgpb.Config
 		for _, vote := range votes {
 			labelsToSet[vote.GetName()] = vote.GetValue()
 		}
+		tag := gerrit.Tag("post-action:vote-gerrit-labels", string(exe.Run.ID))
 		for i, rcl := range rcls {
 			i, rcl := i, rcl
 			work <- func() error {
@@ -133,6 +134,7 @@ func (exe *Executor) voteGerritLabels(ctx context.Context, votes []*cfgpb.Config
 					RevisionId: rcl.Detail.GetGerrit().GetInfo().GetCurrentRevision(),
 					Notify:     gerritpb.Notify_NOTIFY_NONE,
 					Labels:     labelsToSet,
+					Tag:        tag,
 				}
 				errs[i] = retry.Retry(ctx, exe.makeVoteLabelRetryFactory(), func() error {
 					if exe.testBeforeCLMutation != nil {
