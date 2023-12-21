@@ -490,17 +490,21 @@ func (rb *Creator) computeCLsDigest() {
 		h.Write([]byte(strconv.FormatInt(cl.Snapshot.GetGerrit().GetInfo().GetNumber(), 10)))
 		h.Write(separator)
 		h.Write([]byte(cl.Snapshot.GetGerrit().GetInfo().GetCurrentRevision()))
-		h.Write(separator)
 
-		// CQDaemon truncates ns precision to microseconds in gerrit_util.parse_time.
-		microsecs := int64(cl.TriggerInfo.GetTime().GetNanos() / 1000)
-		secs := cl.TriggerInfo.GetTime().GetSeconds()
-		h.Write([]byte(strconv.FormatInt(secs*1000*1000+microsecs, 10)))
-		h.Write(separator)
-
-		h.Write([]byte(cl.TriggerInfo.GetMode()))
-		h.Write(separator)
-		h.Write([]byte(strconv.FormatInt(cl.TriggerInfo.GetGerritAccountId(), 10)))
+		// Not all cls will have trigger info because in combined CL mode, user
+		// can trigger a multi-CL run by voting on a single root CL (i.e. only one
+		// CL in the run will have the trigger)
+		if cl.TriggerInfo != nil {
+			h.Write(separator)
+			// CQDaemon truncates ns precision to microseconds in gerrit_util.parse_time.
+			microsecs := int64(cl.TriggerInfo.GetTime().GetNanos() / 1000)
+			secs := cl.TriggerInfo.GetTime().GetSeconds()
+			h.Write([]byte(strconv.FormatInt(secs*1000*1000+microsecs, 10)))
+			h.Write(separator)
+			h.Write([]byte(cl.TriggerInfo.GetMode()))
+			h.Write(separator)
+			h.Write([]byte(strconv.FormatInt(cl.TriggerInfo.GetGerritAccountId(), 10)))
+		}
 	}
 	rb.runIDBuilder.digest = h.Sum(nil)[:8]
 }
