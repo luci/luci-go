@@ -21,6 +21,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -36,6 +37,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/cv/api/recipe/v1"
+	"go.chromium.org/luci/cv/internal/buildbucket"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
@@ -72,7 +74,8 @@ func (f *Facade) Launch(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.Ru
 			host, tryjobs := host, tryjobs
 			work <- func() error {
 				err := f.schedule(ctx, host, r, cls, tryjobs)
-				switch merrs, ok := err.(errors.MultiError); {
+				var merrs errors.MultiError
+				switch ok := errors.As(err, &merrs); {
 				case err == nil:
 				case !ok:
 					// assign singular error to all tryjobs.
@@ -111,16 +114,46 @@ func (f *Facade) schedule(ctx context.Context, host string, r *run.Run, cls []*r
 	if err != nil {
 		return errors.Annotate(err, "failed to create Buildbucket client").Err()
 	}
-	batchReq, err := prepareBatchRequest(ctx, tryjobs, r, cls)
+	batches, err := prepareBatches(ctx, tryjobs, r, cls)
 	if err != nil {
-		return errors.Annotate(err, "failed to create batch schedule build request").Err()
+		return errors.Annotate(err, "failed to create batch schedule build requests").Err()
 	}
-	batchRes, err := bbClient.Batch(ctx, batchReq)
+
+	scheduleErrs := errors.NewLazyMultiError(len(tryjobs))
+	var wg sync.WaitGroup
+	for _, batch := range batches {
+		batch := batch
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			err := makeRequestAndUpdateTryjobs(ctx, bbClient, batch, host)
+			var merrs errors.MultiError
+			switch ok := errors.As(err, &merrs); {
+			case err == nil:
+			case !ok:
+				// assign singular error to all tryjobs.
+				for i := 0; i < len(batch.tryjobs); i++ {
+					scheduleErrs.Assign(batch.offset+i, err)
+				}
+			default:
+				for i, merr := range merrs {
+					scheduleErrs.Assign(batch.offset+i, merr)
+				}
+			}
+		}()
+	}
+	wg.Wait()
+	return scheduleErrs.Get()
+}
+
+func makeRequestAndUpdateTryjobs(ctx context.Context, bbClient buildbucket.Client, batch batch, host string) error {
+	logging.Debugf(ctx, "scheduling a batch of %d builds against buildbucket", len(batch.req.GetRequests()))
+	res, err := bbClient.Batch(ctx, batch.req)
 	if err != nil {
 		return err
 	}
-	ret := errors.NewLazyMultiError(len(tryjobs))
-	for i, res := range batchRes.GetResponses() {
+	ret := errors.NewLazyMultiError(len(res.GetResponses()))
+	for i, res := range res.GetResponses() {
 		switch res.GetResponse().(type) {
 		case *bbpb.BatchResponse_Response_ScheduleBuild:
 			build := res.GetScheduleBuild()
@@ -128,15 +161,15 @@ func (f *Facade) schedule(ctx context.Context, host string, r *run.Run, cls []*r
 			if err != nil {
 				ret.Assign(i, err)
 			}
-			tj := tryjobs[i]
+			tj := batch.tryjobs[i]
 			tj.ExternalID = tryjob.MustBuildbucketID(host, build.Id)
 			tj.Status = status
 			tj.Result = result
 		case *bbpb.BatchResponse_Response_Error:
 			ret.Assign(i, status.ErrorProto(res.GetError()))
 		case nil:
-			logging.Errorf(ctx, "FIXME(crbug/1359509): received nil response at index %d for batch request:\n%s", i, batchReq)
-			return transient.Tag.Apply(errors.New("unexpected nil response from Buildbucket"))
+			logging.Errorf(ctx, "FIXME(crbug/1359509): received nil response at index %d for batch request:\n%s", i, batch.req)
+			ret.Assign(i, transient.Tag.Apply(errors.New("unexpected nil response from Buildbucket")))
 		default:
 			panic(fmt.Errorf("unexpected response type: %T", res.GetResponse()))
 		}
@@ -144,7 +177,19 @@ func (f *Facade) schedule(ctx context.Context, host string, r *run.Run, cls []*r
 	return ret.Get()
 }
 
-func prepareBatchRequest(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.Run, cls []*run.RunCL) (*bbpb.BatchRequest, error) {
+// limit comes from buildbucket:
+// https://pkg.go.dev/go.chromium.org/luci/buildbucket/proto#BatchRequest
+const maxBatchSize = 200
+
+// batch represents a batch request that contains smaller than $maxBatchSize
+// of tryjobs
+type batch struct {
+	req     *bbpb.BatchRequest
+	tryjobs []*tryjob.Tryjob // the tryjobs to launch in batch request
+	offset  int              // offset of the tryjobs in the overall tryjob slice
+}
+
+func prepareBatches(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.Run, cls []*run.RunCL) ([]batch, error) {
 	gcs := makeGerritChanges(cls)
 	nonOptProp, optProp, err := makeProperties(ctx, r.Mode, r.Owner)
 	if err != nil {
@@ -154,9 +199,7 @@ func prepareBatchRequest(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.R
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to make tags").Err()
 	}
-	batchReq := &bbpb.BatchRequest{
-		Requests: make([]*bbpb.BatchRequest_Request, len(tryjobs)),
-	}
+	requests := make([]*bbpb.BatchRequest_Request, len(tryjobs))
 	for i, tj := range tryjobs {
 		def := tj.Definition
 		req := &bbpb.ScheduleBuildRequest{
@@ -177,13 +220,30 @@ func prepareBatchRequest(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.R
 				req.Experiments[exp] = true
 			}
 		}
-		batchReq.Requests[i] = &bbpb.BatchRequest_Request{
+		requests[i] = &bbpb.BatchRequest_Request{
 			Request: &bbpb.BatchRequest_Request_ScheduleBuild{
 				ScheduleBuild: req,
 			},
 		}
 	}
-	return batchReq, nil
+
+	// creating $numBatch of batches with similar number of requests in each
+	// batch.
+	numBatch := (len(requests)-1)/maxBatchSize + 1
+	batchSize := len(requests) / numBatch
+	ret := make([]batch, 0, numBatch)
+	for offset := 0; offset < len(requests); {
+		req := &bbpb.BatchRequest{
+			Requests: requests[offset:min(offset+batchSize, len(requests))],
+		}
+		ret = append(ret, batch{
+			req:     req,
+			tryjobs: tryjobs[offset:min(offset+batchSize, len(requests))],
+			offset:  offset,
+		})
+		offset += len(req.GetRequests())
+	}
+	return ret, nil
 }
 
 func makeProperties(ctx context.Context, mode run.Mode, owner identity.Identity) (nonOpt, opt *structpb.Struct, err error) {

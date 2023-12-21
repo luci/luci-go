@@ -319,6 +319,47 @@ func TestLaunch(t *testing.T) {
 			}
 		})
 
+		Convey("Large number of tryjobs", func() {
+			tryjobs := make([]*tryjob.Tryjob, 2000)
+			for i := range tryjobs {
+				tryjobs[i] = &tryjob.Tryjob{
+					ID: common.TryjobID(10000 + i),
+					Definition: &tryjob.Definition{
+						Backend: &tryjob.Definition_Buildbucket_{
+							Buildbucket: &tryjob.Definition_Buildbucket{
+								Host: bbHost,
+								Builder: &bbpb.BuilderID{
+									Project: lProject,
+									Bucket:  "bucketFoo",
+									Builder: fmt.Sprintf("builderFoo-%d", i),
+								},
+							},
+						},
+					},
+					Status: tryjob.Status_PENDING,
+				}
+				ct.BuildbucketFake.AddBuilder(bbHost, tryjobs[i].Definition.GetBuildbucket().GetBuilder(), nil)
+			}
+			err := f.Launch(ctx, tryjobs, r, cls)
+			So(err, ShouldBeNil)
+			for i, tj := range tryjobs {
+				So(tj.ID, ShouldEqual, common.TryjobID(10000+i))
+				So(tj.ExternalID, ShouldNotBeEmpty)
+				host, id, err := tj.ExternalID.ParseBuildbucketID()
+				So(err, ShouldBeNil)
+				bbClient, err := ct.BuildbucketFake.NewClientFactory().MakeClient(ctx, host, lProject)
+				So(err, ShouldBeNil)
+				build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{
+					Id: id,
+					Mask: &bbpb.BuildMask{
+						AllFields: true,
+					},
+				})
+				So(err, ShouldBeNil)
+				So(build.GetBuilder(), ShouldResembleProto, tj.Definition.GetBuildbucket().GetBuilder())
+			}
+		})
+
 		Convey("Failure", func() {
 			tryjobs := []*tryjob.Tryjob{
 				{
