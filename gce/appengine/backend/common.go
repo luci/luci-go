@@ -131,6 +131,8 @@ func registerTasks(dsp *tq.Dispatcher) {
 	dsp.RegisterTask(&tasks.TerminateBot{}, terminateBot, terminateBotQueue, nil)
 	dsp.RegisterTask(&tasks.AuditProject{}, auditInstanceInZone, auditInstancesQueue, nil)
 	dsp.RegisterTask(&tasks.DrainVM{}, drainVMQueueHandler, drainVMQueue, nil)
+	dsp.RegisterTask(&tasks.InspectSwarming{}, inspectSwarming, inspectSwarmingQueue, nil)
+	dsp.RegisterTask(&tasks.DeleteStaleSwarmingBot{}, deleteStaleSwarmingBot, deleteStaleSwarmingBotQueue, nil)
 }
 
 // gceKey is the key to a *compute.Service in the context.
@@ -216,4 +218,5 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 	r.GET("/internal/cron/report-quota", mw, newHTTPHandler(reportQuotasAsync))
 	r.GET("/internal/cron/audit-project", mw, newHTTPHandler(auditInstances))
 	r.GET("/internal/cron/drain-vms", mw, newHTTPHandler(drainVMsAsync))
+	r.GET("/internal/cron/inspect-swarming", mw, newHTTPHandler(inspectSwarmingAsync))
 }

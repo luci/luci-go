@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
@@ -659,5 +660,370 @@ func TestTerminateBot(t *testing.T) {
 				})
 			})
 		})
+	})
+}
+
+func TestInspectSwarming(t *testing.T) {
+	t.Parallel()
+
+	Convey("inspectSwarmingAsync", t, func() {
+		dsp := &tq.Dispatcher{}
+		registerTasks(dsp)
+		c := withDispatcher(memory.Use(context.Background()), dsp)
+		tqt := tqtesting.GetTestable(c, dsp)
+		tqt.CreateQueues()
+		datastore.GetTestable(c).Consistent(true)
+
+		Convey("none", func() {
+			err := inspectSwarmingAsync(c)
+			So(err, ShouldBeNil)
+			So(tqt.GetScheduledTasks(), ShouldHaveLength, 0)
+		})
+
+		Convey("one", func() {
+			So(datastore.Put(c, &model.Config{
+				ID: "config-1",
+				Config: &config.Config{
+					Swarming: "https://gce-swarming.appspot.com",
+				},
+			}), ShouldBeNil)
+			err := inspectSwarmingAsync(c)
+			So(err, ShouldBeNil)
+			So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+		})
+
+		Convey("two", func() {
+			So(datastore.Put(c, &model.Config{
+				ID: "config-1",
+				Config: &config.Config{
+					Swarming: "https://gce-swarming.appspot.com",
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(c, &model.Config{
+				ID: "config-2",
+				Config: &config.Config{
+					Swarming: "https://vmleaser-swarming.appspot.com",
+				},
+			}), ShouldBeNil)
+			err := inspectSwarmingAsync(c)
+			So(err, ShouldBeNil)
+			So(tqt.GetScheduledTasks(), ShouldHaveLength, 2)
+		})
+	})
+
+	Convey("inspectSwarming", t, func() {
+		dsp := &tq.Dispatcher{}
+		registerTasks(dsp)
+		rt := &roundtripper.JSONRoundTripper{}
+		c := withDispatcher(memory.Use(context.Background()), dsp)
+		swr, err := swarming.NewService(c, option.WithHTTPClient(&http.Client{Transport: rt}))
+		So(err, ShouldBeNil)
+		c = withSwarming(c, swr)
+		tqt := tqtesting.GetTestable(c, dsp)
+		tqt.CreateQueues()
+		datastore.GetTestable(c).Consistent(true)
+		Convey("BadInputs", func() {
+			Convey("nil", func() {
+				err := inspectSwarming(c, nil)
+				So(err, ShouldNotBeNil)
+			})
+			Convey("empty", func() {
+				err := inspectSwarming(c, &tasks.InspectSwarming{})
+				So(err, ShouldNotBeNil)
+			})
+		})
+
+		Convey("Swarming error", func() {
+			So(datastore.Put(c, &model.VM{
+				ID:       "vm-1",
+				Hostname: "vm-1-abcd",
+				Swarming: "https://gce-swarming.appspot.com",
+			}), ShouldBeNil)
+			rt.Handler = func(_ any) (int, any) {
+				return http.StatusInternalServerError, nil
+			}
+			err := inspectSwarming(c, &tasks.InspectSwarming{
+				Swarming: "https://gce-swarming.appspot.com",
+			})
+			So(err, ShouldNotBeNil)
+		})
+		Convey("HappyPath-1", func() {
+			So(datastore.Put(c, &model.VM{
+				ID:       "vm-1",
+				Hostname: "vm-1-abcd",
+				Swarming: "https://gce-swarming.appspot.com",
+			}), ShouldBeNil)
+			So(datastore.Put(c, &model.VM{
+				ID:       "vm-2",
+				Hostname: "vm-2-abcd",
+				Swarming: "https://gce-swarming.appspot.com",
+			}), ShouldBeNil)
+			So(datastore.Put(c, &model.VM{
+				ID:       "vm-3",
+				Hostname: "vm-3-abcd",
+				Swarming: "https://vmleaser-swarming.appspot.com",
+			}), ShouldBeNil)
+			rt.Handler = func(_ any) (int, any) {
+				return http.StatusOK, &swarming.SwarmingRpcsBotList{
+					Cursor: "",
+					Items: []*swarming.SwarmingRpcsBotInfo{
+						&swarming.SwarmingRpcsBotInfo{
+							BotId:       "vm-1-abcd",
+							FirstSeenTs: "2023-01-02T15:04:05",
+						},
+						&swarming.SwarmingRpcsBotInfo{
+							BotId:       "vm-2-abcd",
+							FirstSeenTs: "2023-01-02T15:04:05",
+						},
+					},
+				}
+			}
+			err := inspectSwarming(c, &tasks.InspectSwarming{
+				Swarming: "https://gce-swarming.appspot.com",
+			})
+			So(err, ShouldBeNil)
+			So(tqt.GetScheduledTasks(), ShouldHaveLength, 2)
+		})
+		Convey("HappyPath-2", func() {
+			So(datastore.Put(c, &model.VM{
+				ID:       "vm-1",
+				Hostname: "vm-1-abcd",
+				Swarming: "https://gce-swarming.appspot.com",
+			}), ShouldBeNil)
+			So(datastore.Put(c, &model.VM{
+				ID:       "vm-2",
+				Hostname: "vm-2-abcd",
+				Swarming: "https://gce-swarming.appspot.com",
+			}), ShouldBeNil)
+			So(datastore.Put(c, &model.VM{
+				ID:       "vm-3",
+				Hostname: "vm-3-abcd",
+				Swarming: "https://vmleaser-swarming.appspot.com",
+			}), ShouldBeNil)
+			rt.Handler = func(_ any) (int, any) {
+				return http.StatusOK, &swarming.SwarmingRpcsBotList{
+					Cursor: "",
+					Items: []*swarming.SwarmingRpcsBotInfo{
+						&swarming.SwarmingRpcsBotInfo{
+							BotId:       "vm-3-abcd",
+							FirstSeenTs: "2023-01-02T15:04:05",
+						},
+					},
+				}
+			}
+			err := inspectSwarming(c, &tasks.InspectSwarming{
+				Swarming: "https://vmleaser-swarming.appspot.com",
+			})
+			So(err, ShouldBeNil)
+			So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+		})
+		Convey("HappyPath-3-pagination", func() {
+			So(datastore.Put(c, &model.VM{
+				ID:       "vm-1",
+				Hostname: "vm-1-abcd",
+				Swarming: "https://gce-swarming.appspot.com",
+			}), ShouldBeNil)
+			So(datastore.Put(c, &model.VM{
+				ID:       "vm-2",
+				Hostname: "vm-2-abcd",
+				Swarming: "https://gce-swarming.appspot.com",
+			}), ShouldBeNil)
+			So(datastore.Put(c, &model.VM{
+				ID:       "vm-3",
+				Hostname: "vm-3-abcd",
+				Swarming: "https://gce-swarming.appspot.com",
+			}), ShouldBeNil)
+			call := 0
+			rt.Handler = func(_ any) (int, any) {
+				// Returns 2 bots and a cursor for first call
+				if call == 0 {
+					call += 1
+					return http.StatusOK, &swarming.SwarmingRpcsBotList{
+						Cursor: "cursor",
+						Items: []*swarming.SwarmingRpcsBotInfo{
+							&swarming.SwarmingRpcsBotInfo{
+								BotId:       "vm-1-abcd",
+								FirstSeenTs: "2023-01-02T15:04:05",
+							},
+							&swarming.SwarmingRpcsBotInfo{
+								BotId:       "vm-2-abcd",
+								FirstSeenTs: "2023-01-02T15:04:05",
+							},
+						},
+					}
+				} else {
+					// Returns last bot and no cursor for subsequent calls
+					return http.StatusOK, &swarming.SwarmingRpcsBotList{
+						Cursor: "",
+						Items: []*swarming.SwarmingRpcsBotInfo{
+							&swarming.SwarmingRpcsBotInfo{
+								BotId:       "vm-3-abcd",
+								FirstSeenTs: "2023-01-02T15:04:05",
+							},
+						},
+					}
+				}
+			}
+			err := inspectSwarming(c, &tasks.InspectSwarming{
+				Swarming: "https://gce-swarming.appspot.com",
+			})
+			So(err, ShouldBeNil)
+			So(tqt.GetScheduledTasks(), ShouldHaveLength, 3)
+		})
+
+	})
+}
+
+func TestDeleteStaleSwarmingBot(t *testing.T) {
+	t.Parallel()
+
+	Convey("deleteStaleSwarmingBot", t, func() {
+		dsp := &tq.Dispatcher{}
+		registerTasks(dsp)
+		rt := &roundtripper.JSONRoundTripper{}
+		c := withDispatcher(memory.Use(context.Background()), dsp)
+		swr, err := swarming.NewService(c, option.WithHTTPClient(&http.Client{Transport: rt}))
+		So(err, ShouldBeNil)
+		c = withSwarming(c, swr)
+		tqt := tqtesting.GetTestable(c, dsp)
+		tqt.CreateQueues()
+		datastore.GetTestable(c).Consistent(true)
+
+		Convey("BadInputs", func() {
+			Convey("nil", func() {
+				err := deleteStaleSwarmingBot(c, nil)
+				So(err, ShouldNotBeNil)
+			})
+			Convey("empty", func() {
+				err := deleteStaleSwarmingBot(c, &tasks.DeleteStaleSwarmingBot{})
+				So(err, ShouldNotBeNil)
+			})
+			Convey("missing timestamp", func() {
+				err := deleteStaleSwarmingBot(c, &tasks.DeleteStaleSwarmingBot{
+					Id: "id-1",
+				})
+				So(err, ShouldNotBeNil)
+			})
+		})
+		Convey("VM issues", func() {
+			Convey("Missing VM", func() {
+				// Don't err if the VM is missing, prob deleted already
+				err := deleteStaleSwarmingBot(c, &tasks.DeleteStaleSwarmingBot{
+					Id:          "id-1",
+					FirstSeenTs: "onceUponATime",
+				})
+				So(err, ShouldBeNil)
+			})
+			Convey("Missing URL in VM", func() {
+				So(datastore.Put(c, &model.VM{
+					ID:       "vm-3",
+					Hostname: "vm-3-abcd",
+					Swarming: "https://gce-swarming.appspot.com",
+				}), ShouldBeNil)
+				// Don't err if the URL in VM is missing
+				err := deleteStaleSwarmingBot(c, &tasks.DeleteStaleSwarmingBot{
+					Id:          "id-1",
+					FirstSeenTs: "onceUponATime",
+				})
+				So(err, ShouldBeNil)
+			})
+		})
+		Convey("Swarming Issues", func() {
+			Convey("Failed to fetch", func() {
+				So(datastore.Put(c, &model.VM{
+					ID:       "vm-3",
+					Hostname: "vm-3-abcd",
+					URL:      "https://www.googleapis.com/compute/v1/projects/vmleaser/zones/us-numba1-c/instances/vm-3-abcd",
+					Swarming: "https://gce-swarming.appspot.com",
+				}), ShouldBeNil)
+				So(err, ShouldBeNil)
+				rt.Handler = func(_ any) (int, any) {
+					return http.StatusNotFound, nil
+				}
+				err := deleteStaleSwarmingBot(c, &tasks.DeleteStaleSwarmingBot{
+					Id:          "id-1",
+					FirstSeenTs: "onceUponATime",
+				})
+				So(err, ShouldBeNil)
+			})
+		})
+		Convey("Happy paths", func() {
+			Convey("Bot terminated", func() {
+				So(datastore.Put(c, &model.VM{
+					ID:       "vm-3",
+					Hostname: "vm-3-abcd",
+					URL:      "https://www.googleapis.com/compute/v1/projects/vmleaser/zones/us-numba1-c/instances/vm-3-abcd",
+					Swarming: "https://gce-swarming.appspot.com",
+				}), ShouldBeNil)
+				So(err, ShouldBeNil)
+				rt.Handler = func(_ any) (int, any) {
+					return http.StatusOK, map[string]any{
+						"bot_id":        "vm-3-abcd",
+						"first_seen_ts": "2019-03-13T00:12:29.882948",
+						"items": []*swarming.SwarmingRpcsBotEvent{
+							{
+								EventType: "bot_terminate",
+							},
+						},
+					}
+				}
+				err := deleteStaleSwarmingBot(c, &tasks.DeleteStaleSwarmingBot{
+					Id:          "vm-3",
+					FirstSeenTs: "2019-03-13T00:12:29.882948",
+				})
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+			})
+			Convey("Bot retirement", func() {
+				So(datastore.Put(c, &model.VM{
+					ID:       "vm-3",
+					Hostname: "vm-3-abcd",
+					URL:      "https://www.googleapis.com/compute/v1/projects/vmleaser/zones/us-numba1-c/instances/vm-3-abcd",
+					Swarming: "https://gce-swarming.appspot.com",
+					Lifetime: 99,
+					Created:  time.Now().Unix() - 100,
+				}), ShouldBeNil)
+				So(err, ShouldBeNil)
+				rt.Handler = func(_ any) (int, any) {
+					return http.StatusOK, map[string]any{
+						"bot_id":        "vm-3-abcd",
+						"first_seen_ts": "2019-03-13T00:12:29.882948",
+						"items":         []*swarming.SwarmingRpcsBotEvent{},
+					}
+				}
+				err := deleteStaleSwarmingBot(c, &tasks.DeleteStaleSwarmingBot{
+					Id:          "vm-3",
+					FirstSeenTs: "2019-03-13T00:12:29.882948",
+				})
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+			})
+			Convey("Bot drained", func() {
+				So(datastore.Put(c, &model.VM{
+					ID:       "vm-3",
+					Hostname: "vm-3-abcd",
+					URL:      "https://www.googleapis.com/compute/v1/projects/vmleaser/zones/us-numba1-c/instances/vm-3-abcd",
+					Swarming: "https://gce-swarming.appspot.com",
+					Lifetime: 100000000,
+					Created:  time.Now().Unix(),
+					Drained:  true,
+				}), ShouldBeNil)
+				So(err, ShouldBeNil)
+				rt.Handler = func(_ any) (int, any) {
+					return http.StatusOK, map[string]any{
+						"bot_id":        "vm-3-abcd",
+						"first_seen_ts": "2019-03-13T00:12:29.882948",
+						"items":         []*swarming.SwarmingRpcsBotEvent{},
+					}
+				}
+				err := deleteStaleSwarmingBot(c, &tasks.DeleteStaleSwarmingBot{
+					Id:          "vm-3",
+					FirstSeenTs: "2019-03-13T00:12:29.882948",
+				})
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+			})
+		})
+
 	})
 }

@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -208,6 +209,94 @@ func manageBot(c context.Context, payload proto.Message) error {
 	return manageExistingBot(c, bot, vm)
 }
 
+// inspectSwarmingAsync collects all the swarming servers and schedules a task for each of them
+func inspectSwarmingAsync(c context.Context) error {
+	// Collect all the swarming instances
+	swarmings := stringset.New(10)
+	qC := datastore.NewQuery("Config")
+	if err := datastore.Run(c, qC, func(cfg *model.Config) {
+		swarmings.Add(cfg.Config.Swarming)
+	}); err != nil {
+		return errors.Annotate(err, "inspectSwarmingAsync: Failed to query configs").Err()
+	}
+	// Generate all the inspectSwarmingTasks
+	var inspectSwarmingTasks []*tq.Task
+	swarmings.Iter(func(sw string) bool {
+		inspectSwarmingTasks = append(inspectSwarmingTasks, &tq.Task{
+			Payload: &tasks.InspectSwarming{
+				Swarming: sw,
+			},
+		})
+		return true
+	})
+	// schedule all the inspect swarming tasks
+	if len(inspectSwarmingTasks) > 0 {
+		if err := getDispatcher(c).AddTask(c, inspectSwarmingTasks...); err != nil {
+			return errors.Annotate(err, "inspectSwarmingAsync: failed to schedule task").Err()
+		}
+	}
+	return nil
+}
+
+// inspectSwarmingQueue is the name of the inspect swarming task queue
+const inspectSwarmingQueue = "inspect-swarming"
+
+// inspectSwarming is the task queue handler for inspect swarming queue
+func inspectSwarming(c context.Context, payload proto.Message) error {
+	task, ok := payload.(*tasks.InspectSwarming)
+	switch {
+	case !ok:
+		return errors.Reason("InspectSwarming: unexpected payload %q", payload).Err()
+	case task.GetSwarming() == "":
+		return errors.Reason("InspectSwarming: swarming is required").Err()
+	}
+	// Create a map to hold all the hostnames in the database
+	vmMap := make(map[string]*model.VM)
+	qV := datastore.NewQuery("VM").Eq("swarming", task.GetSwarming())
+	if err := datastore.Run(c, qV, func(vm *model.VM) {
+		vmMap[vm.Hostname] = vm
+	}); err != nil {
+		return errors.Annotate(err, "InspectSwarming: failed to listVMs").Err()
+	}
+	var manageExistingTasks []*tq.Task
+	cursor := ""
+	for botsRemaning := len(vmMap) > 0; botsRemaning; {
+		blc := getSwarming(c, task.GetSwarming()).Bots.List().Context(c)
+		// Add cursor if available
+		if cursor != "" {
+			blc = blc.Cursor(cursor)
+		}
+		listRPCResp, err := blc.Do()
+		if err != nil {
+			return errors.Annotate(err, "InspectSwarming: failed to List instances from swarming").Err()
+		}
+		cursor = listRPCResp.Cursor
+		for _, bot := range listRPCResp.Items {
+			vm, ok := vmMap[bot.BotId]
+			if ok {
+				manageExistingTasks = append(manageExistingTasks, &tq.Task{
+					Payload: &tasks.DeleteStaleSwarmingBot{
+						Id:          vm.ID,
+						FirstSeenTs: bot.FirstSeenTs,
+					},
+				})
+				delete(vmMap, bot.BotId)
+			}
+		}
+		// Stop the loop if we run out of cursors
+		if cursor == "" {
+			botsRemaning = false
+		}
+	}
+	// Dispatch all the tasks
+	if len(manageExistingTasks) > 0 {
+		if err := getDispatcher(c).AddTask(c, manageExistingTasks...); err != nil {
+			return errors.Annotate(err, "InspectSwarming: failed to schedule terminate task").Err()
+		}
+	}
+	return nil
+}
+
 // terminateBotAsync schedules a task queue task to terminate a Swarming bot.
 func terminateBotAsync(c context.Context, id, hostname string) error {
 	t := &tq.Task{
@@ -355,4 +444,74 @@ func deleteVM(c context.Context, id, hostname string) error {
 		logging.Debugf(c, "deleted VM %s from db", hostname)
 		return nil
 	}, nil)
+}
+
+// deleteStaleSwarmingBotQueue is the name of the queue that deletes stale swarming bots
+const deleteStaleSwarmingBotQueue = "delete-stale-swarming-bot"
+
+// deleteStaleSwarmingBot manages the existing swarming bot
+func deleteStaleSwarmingBot(c context.Context, payload proto.Message) error {
+	task, ok := payload.(*tasks.DeleteStaleSwarmingBot)
+	switch {
+	case !ok:
+		return errors.Reason("deleteStaleSwarmingBot: unexpected payload %q", payload).Err()
+	case task.GetId() == "":
+		return errors.Reason("deleteStaleSwarmingBot: ID is required").Err()
+	case task.GetFirstSeenTs() == "":
+		return errors.Reason("deleteStaleSwarmingBot: FirstSeenTs is required").Err()
+	}
+	vm := &model.VM{
+		ID: task.GetId(),
+	}
+	switch err := datastore.Get(c, vm); {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return nil
+	case err != nil:
+		return errors.Annotate(err, "deleteStaleSwarmingBot: failed to fetch VM %s", task.GetId()).Err()
+	case vm.URL == "":
+		logging.Debugf(c, "deleteStaleSwarmingBot: instance %q does not exist", vm.Hostname)
+		return nil
+	}
+	// bot_terminate occurs when the bot starts the termination task and is normally followed
+	// by task_completed and bot_shutdown. Responses also include the full set of dimensions
+	// when the event was recorded. Limit response size by fetching only recent events, and only
+	// the type of each.
+	// A VM may be recreated multiple times with the same name, so it is important to only
+	// query swarming for events since the current VM's creation.
+	srv := getSwarming(c, vm.Swarming).Bot
+	events, err := srv.Events(vm.Hostname).Context(c).Fields("items/event_type").Start(float64(vm.Created)).Limit(5).Do()
+	if err != nil {
+		var gerr *googleapi.Error
+		if errors.As(err, &gerr) {
+			logErrors(c, vm.Hostname, gerr)
+		}
+		return errors.Annotate(err, "deleteStaleSwarmingBot: failed to fetch bot events for %s", vm.Hostname).Err()
+	}
+	for _, e := range events.Items {
+		if e.EventType == "bot_terminate" {
+			logging.Debugf(c, "deleteStaleSwarmingBot: bot terminated (%s)", vm.Hostname)
+			return destroyInstanceAsync(c, vm.ID, vm.URL)
+		}
+	}
+	switch {
+	case vm.Lifetime > 0 && vm.Created+vm.Lifetime < time.Now().Unix():
+		logging.Debugf(c, "deleteStaleSwarmingBot: %s deadline %d exceeded", vm.ID, vm.Created+vm.Lifetime)
+		return terminateBotAsync(c, vm.ID, vm.Hostname)
+	case vm.Drained:
+		logging.Debugf(c, "deleteStaleSwarmingBot: VM %s drained", vm.ID)
+		return terminateBotAsync(c, vm.ID, vm.Hostname)
+	}
+	// This value of vm.Connected may be several seconds old, because the VM was fetched
+	// prior to sending an RPC to Swarming. Still, check it here to save a costly operation
+	// in setConnected, since DeleteStaleSwarmingBot may be called thousands of times per minute.
+	if vm.Connected == 0 {
+		t, err := time.Parse(utcRFC3339, task.GetFirstSeenTs())
+		if err != nil {
+			return errors.Annotate(err, "deleteStaleSwarmingBot: %s failed to parse bot connection time", vm.ID).Err()
+		}
+		if err := setConnected(c, vm.ID, vm.Hostname, t); err != nil {
+			return errors.Annotate(err, "deleteStaleSwarmingBot: %s failed to set connected time", vm.ID).Err()
+		}
+	}
+	return nil
 }

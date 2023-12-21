@@ -19,3 +19,5 @@ cron:
   schedule: every 15 minutes
 - url: /internal/cron/drain-vms
   schedule: every 15 minutes
+- url: /internal/cron/inspect-swarming
+  schedule: every 15 minutes

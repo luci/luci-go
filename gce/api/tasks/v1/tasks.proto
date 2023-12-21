@@ -104,3 +104,17 @@ message DrainVM {
   // The name of the VM to drain
   string id = 1;
 }
+
+// A task to inspect all the bots in swarming
+message InspectSwarming {
+  // The name of the swarming service to inspect
+  string swarming = 1;
+}
+
+// A task to delete bot that is stale in swarming.
+message DeleteStaleSwarmingBot {
+  // The name of the bot to delete.
+  string id = 1;
+  // The first seen timestamp of the bot
+  string firstSeenTs = 2;
+}
