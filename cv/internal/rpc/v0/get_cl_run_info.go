@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/runquery"
 )
 
 // GetCLRunInfo implements GerritIntegrationServer; it returns ongoing Run information related to the given CL.
@@ -63,7 +64,7 @@ func (g *GerritIntegrationServer) GetCLRunInfo(ctx context.Context, req *apiv0pb
 		return nil, appstatus.Errorf(codes.NotFound, "change %s not found", eid)
 	}
 
-	qb := run.CLQueryBuilder{CLID: cl.ID}
+	qb := runquery.CLQueryBuilder{CLID: cl.ID}
 	runs, _, err := qb.LoadRuns(ctx)
 	if err != nil {
 		return nil, err
@@ -110,7 +111,7 @@ func queryDepChangeInfos(ctx context.Context, cl *changelist.CL) ([]*apiv0pb.Get
 			var errsMu sync.Mutex
 			go func() {
 				defer wg.Done()
-				qb := run.CLQueryBuilder{CLID: depClid}
+				qb := runquery.CLQueryBuilder{CLID: depClid}
 				var err error
 				runs, _, err = qb.LoadRuns(ectx)
 				errsMu.Lock()

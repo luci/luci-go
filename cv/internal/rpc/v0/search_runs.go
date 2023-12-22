@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/rpc/pagination"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/runquery"
 )
 
 // Default and max numbers of result paging.
@@ -47,9 +48,9 @@ func (s *RunsServer) SearchRuns(ctx context.Context, req *apiv0pb.SearchRunsRequ
 	if err != nil {
 		return nil, err
 	}
-	var pt *run.PageToken
+	var pt *runquery.PageToken
 	if s := req.GetPageToken(); s != "" {
-		pt = &run.PageToken{}
+		pt = &runquery.PageToken{}
 		if err := pagination.DecryptPageToken(ctx, s, pt); err != nil {
 			return nil, err
 		}
@@ -76,10 +77,10 @@ func (s *RunsServer) SearchRuns(ctx context.Context, req *apiv0pb.SearchRunsRequ
 	}
 
 	var qb interface {
-		LoadRuns(context.Context, ...run.LoadRunChecker) ([]*run.Run, *run.PageToken, error)
+		LoadRuns(context.Context, ...run.LoadRunChecker) ([]*run.Run, *runquery.PageToken, error)
 	}
 	if gcs := pred.GetGerritChanges(); len(gcs) == 0 {
-		qb = run.ProjectQueryBuilder{
+		qb = runquery.ProjectQueryBuilder{
 			Project: project,
 			Limit:   limit,
 		}.PageToken(pt)
@@ -110,7 +111,7 @@ func (s *RunsServer) SearchRuns(ctx context.Context, req *apiv0pb.SearchRunsRequ
 		for _, clid := range clids[1:] {
 			additionalCLIDs.Add(clid)
 		}
-		qb = run.CLQueryBuilder{
+		qb = runquery.CLQueryBuilder{
 			CLID:            clids[0],
 			AdditionalCLIDs: additionalCLIDs,
 			Project:         project,

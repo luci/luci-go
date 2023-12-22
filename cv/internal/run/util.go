@@ -19,42 +19,7 @@ import (
 	"encoding/hex"
 	"sort"
 	"strconv"
-
-	"go.chromium.org/luci/gae/service/datastore"
 )
-
-// runHeapKey facilitates heap-based merge of multiple consistently sorted
-// ranges of Datastore keys, each range identified by its index.
-type runHeapKey struct {
-	dsKey   *datastore.Key
-	sortKey string
-	idx     int
-}
-type runHeap []runHeapKey
-
-func (r runHeap) Len() int {
-	return len(r)
-}
-
-func (r runHeap) Less(i int, j int) bool {
-	return r[i].sortKey < r[j].sortKey
-}
-
-func (r runHeap) Swap(i int, j int) {
-	r[i], r[j] = r[j], r[i]
-}
-
-func (r *runHeap) Push(x any) {
-	*r = append(*r, x.(runHeapKey))
-}
-
-func (r *runHeap) Pop() any {
-	idx := len(*r) - 1
-	v := (*r)[idx]
-	(*r)[idx].dsKey = nil // free memory as a good habit.
-	*r = (*r)[:idx]
-	return v
-}
 
 // ComputeCLGroupKey constructs keys for ClGroupKey and the related
 // EquivalentClGroupKey.

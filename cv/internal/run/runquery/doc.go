@@ -1,4 +1,4 @@
-// Copyright 2021 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
-
-package cv.internal.run;
-
-option go_package = "go.chromium.org/luci/cv/internal/run;run";
-
-
-// PageToken is a serializable page token for listing or searching Runs.
-message PageToken {
-  // CV RunID. May not actually exist.
-  string run = 1;
-}
+// Package runquery contains logic to query runs.
+package runquery

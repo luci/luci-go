@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/cv/internal/acls"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/runquery"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
@@ -192,7 +193,7 @@ func getNeighborsByCL(ctx context.Context, cl *run.RunCL, rID common.RunID) (com
 
 	prev := common.RunID("")
 	eg.Go(func() error {
-		qb := run.CLQueryBuilder{CLID: cl.ID, Limit: 1}.BeforeInProject(rID)
+		qb := runquery.CLQueryBuilder{CLID: cl.ID, Limit: 1}.BeforeInProject(rID)
 		switch keys, err := qb.GetAllRunKeys(ctx); {
 		case err != nil:
 			return err
@@ -217,7 +218,7 @@ func getNeighborsByCL(ctx context.Context, cl *run.RunCL, rID common.RunID) (com
 		// In practice, there should be << 100 Runs per CL, but since we are
 		// fetching just the keys and the query is very cheap, we go to 500.
 		const limit = 500
-		qb := run.CLQueryBuilder{CLID: cl.ID, Limit: limit}.AfterInProject(rID)
+		qb := runquery.CLQueryBuilder{CLID: cl.ID, Limit: limit}.AfterInProject(rID)
 		switch keys, err := qb.GetAllRunKeys(ctx); {
 		case err != nil:
 			return err

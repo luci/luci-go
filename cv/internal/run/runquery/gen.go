@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package run
+package runquery
 
-// IsEnded returns true if the given status is final.
-func IsEnded(status Status) bool {
-	return status&Status_ENDED_MASK == Status_ENDED_MASK
-}
+//go:generate cproto

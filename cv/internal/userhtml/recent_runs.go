@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/rpc/pagination"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/runquery"
 )
 
 func recentsPage(c *router.Context) {
@@ -116,9 +117,9 @@ func (r *recentRunsParams) modeString() string {
 }
 
 func searchRuns(ctx context.Context, project string, params recentRunsParams) (runs []*run.Run, prev, next string, err error) {
-	var pageToken *run.PageToken
+	var pageToken *runquery.PageToken
 	if params.pageTokenString != "" {
-		pageToken = &run.PageToken{}
+		pageToken = &runquery.PageToken{}
 		if err = pagination.DecryptPageToken(ctx, params.pageTokenString, pageToken); err != nil {
 			// Log but don't return to the user entire error to avoid any accidental
 			// leakage.
@@ -129,10 +130,10 @@ func searchRuns(ctx context.Context, project string, params recentRunsParams) (r
 	}
 
 	var qb interface {
-		LoadRuns(context.Context, ...run.LoadRunChecker) ([]*run.Run, *run.PageToken, error)
+		LoadRuns(context.Context, ...run.LoadRunChecker) ([]*run.Run, *runquery.PageToken, error)
 	}
 	if project == "" {
-		qb = run.RecentQueryBuilder{
+		qb = runquery.RecentQueryBuilder{
 			Limit:              50,
 			CheckProjectAccess: acls.CheckProjectAccess,
 			Status:             params.status,
@@ -149,14 +150,14 @@ func searchRuns(ctx context.Context, project string, params recentRunsParams) (r
 			// it may leak the existence of the project.
 			return nil, "", "", appstatus.Errorf(codes.NotFound, "Project %q not found", project)
 		}
-		qb = run.ProjectQueryBuilder{
+		qb = runquery.ProjectQueryBuilder{
 			Project: project,
 			Limit:   50,
 			Status:  params.status,
 		}.PageToken(pageToken)
 	}
 
-	var nextPageToken *run.PageToken
+	var nextPageToken *runquery.PageToken
 	runs, nextPageToken, err = qb.LoadRuns(ctx, acls.NewRunReadChecker())
 	if err != nil {
 		return

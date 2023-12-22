@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/runcreator"
+	"go.chromium.org/luci/cv/internal/run/runquery"
 	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -470,7 +471,7 @@ func TestComponentsActions(t *testing.T) {
 			}
 
 			findRunOf := func(clid int) *run.Run {
-				switch runs, _, err := (run.CLQueryBuilder{CLID: common.CLID(clid)}).LoadRuns(ctx); {
+				switch runs, _, err := (runquery.CLQueryBuilder{CLID: common.CLID(clid)}).LoadRuns(ctx); {
 				case err != nil:
 					panic(err)
 				case len(runs) == 0:

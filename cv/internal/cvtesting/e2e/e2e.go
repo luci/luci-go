@@ -67,6 +67,7 @@ import (
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
 	cvpubsub "go.chromium.org/luci/cv/internal/run/pubsub"
 	"go.chromium.org/luci/cv/internal/run/rdb"
+	"go.chromium.org/luci/cv/internal/run/runquery"
 	"go.chromium.org/luci/cv/internal/tryjob"
 	"go.chromium.org/luci/cv/internal/tryjob/tjcancel"
 	tjupdate "go.chromium.org/luci/cv/internal/tryjob/update"
@@ -307,7 +308,7 @@ func (t *Test) LoadRun(ctx context.Context, id common.RunID) *run.Run {
 
 // LoadRunsOf loads all Runs of a project from Datastore.
 func (t *Test) LoadRunsOf(ctx context.Context, lProject string) []*run.Run {
-	runs, _, err := run.ProjectQueryBuilder{Project: lProject}.LoadRuns(ctx)
+	runs, _, err := runquery.ProjectQueryBuilder{Project: lProject}.LoadRuns(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -320,7 +321,7 @@ func (t *Test) LoadGerritRuns(ctx context.Context, gHost string, gChange int64) 
 	if cl == nil {
 		return nil
 	}
-	runs, _, err := run.CLQueryBuilder{CLID: cl.ID}.LoadRuns(ctx)
+	runs, _, err := runquery.CLQueryBuilder{CLID: cl.ID}.LoadRuns(ctx)
 	if err != nil {
 		panic(err)
 	}

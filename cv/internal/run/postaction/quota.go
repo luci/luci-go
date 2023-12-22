@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/runquery"
 )
 
 // CreditRunQuotaPostActionName is the name of the internal post action that
@@ -67,12 +68,12 @@ func (exe *Executor) creditQuota(ctx context.Context) (string, error) {
 func (exe *Executor) pickNextRunToStart(ctx context.Context) (*run.Run, error) {
 	curRun := exe.Run
 	account := exe.QM.RunQuotaAccountID(curRun)
-	var tok *run.PageToken
+	var tok *runquery.PageToken
 	var candidates []*run.Run
 	var knownPendingRuns common.RunIDs
 	for {
 		// process 25 runs at a time.
-		qb := run.ProjectQueryBuilder{
+		qb := runquery.ProjectQueryBuilder{
 			Project: curRun.ID.LUCIProject(),
 			Status:  run.Status_PENDING,
 			Limit:   25,

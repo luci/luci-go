@@ -12,9 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package run
+syntax = "proto3";
 
-// IsEnded returns true if the given status is final.
-func IsEnded(status Status) bool {
-	return status&Status_ENDED_MASK == Status_ENDED_MASK
+package cv.internal.run.query;
+
+option go_package = "go.chromium.org/luci/cv/internal/run/runquery;runquery";
+
+
+// PageToken is a serializable page token for listing or searching Runs.
+message PageToken {
+  // CV RunID. May not actually exist.
+  string run = 1;
 }
