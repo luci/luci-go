@@ -18,14 +18,12 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/caching/layered"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
@@ -45,7 +43,7 @@ func recentsPage(c *router.Context) {
 		return
 	}
 
-	runs, prev, next, err := searchRuns(c.Request.Context(), project, params)
+	runs, next, err := searchRuns(c.Request.Context(), project, params)
 	if err != nil {
 		errPage(c, err)
 		return
@@ -68,7 +66,6 @@ func recentsPage(c *router.Context) {
 	templates.MustRender(c.Request.Context(), c.Writer, "pages/recent_runs.html", map[string]any{
 		"Runs":         runsWithCLs,
 		"Project":      project,
-		"PrevPage":     prev,
 		"NextPage":     next,
 		"FilterStatus": params.statusString(),
 		"FilterMode":   params.modeString(),
@@ -116,7 +113,7 @@ func (r *recentRunsParams) modeString() string {
 	return string(r.mode)
 }
 
-func searchRuns(ctx context.Context, project string, params recentRunsParams) (runs []*run.Run, prev, next string, err error) {
+func searchRuns(ctx context.Context, project string, params recentRunsParams) (runs []*run.Run, next string, err error) {
 	var pageToken *runquery.PageToken
 	if params.pageTokenString != "" {
 		pageToken = &runquery.PageToken{}
@@ -124,8 +121,7 @@ func searchRuns(ctx context.Context, project string, params recentRunsParams) (r
 			// Log but don't return to the user entire error to avoid any accidental
 			// leakage.
 			logging.Warningf(ctx, "bad page token: %s", err)
-			err = fmt.Errorf("bad page token")
-			return
+			return nil, "", appstatus.Errorf(codes.InvalidArgument, "bad page token")
 		}
 	}
 
@@ -141,14 +137,14 @@ func searchRuns(ctx context.Context, project string, params recentRunsParams) (r
 	} else {
 		switch ok, err := acls.CheckProjectAccess(ctx, project); {
 		case err != nil:
-			return nil, "", "", err
+			return nil, "", err
 		case !ok:
 			// Return NotFound error in the case of access denied.
 			//
 			// Rationale: the caller shouldn't be able to distinguish between
 			// project not existing and not having access to the project, because
 			// it may leak the existence of the project.
-			return nil, "", "", appstatus.Errorf(codes.NotFound, "Project %q not found", project)
+			return nil, "", appstatus.Errorf(codes.NotFound, "Project %q not found", project)
 		}
 		qb = runquery.ProjectQueryBuilder{
 			Project: project,
@@ -166,11 +162,9 @@ func searchRuns(ctx context.Context, project string, params recentRunsParams) (r
 
 	next, err = pagination.EncryptPageToken(ctx, nextPageToken)
 	if err != nil {
-		return
+		return nil, "", err
 	}
-
-	prev, err = pageTokens(ctx, params.pageTokenString, next)
-	return
+	return runs, next, nil
 }
 
 func resolveRunsCLs(ctx context.Context, runs []*run.Run) ([]runWithExternalCLs, error) {
@@ -200,48 +194,4 @@ func resolveRunsCLs(ctx context.Context, runs []*run.Run) ([]runWithExternalCLs,
 type runWithExternalCLs struct {
 	*run.Run
 	ExternalCLs []changelist.ExternalID
-}
-
-var tokenCache = layered.RegisterCache(layered.Parameters[string]{
-	ProcessCacheCapacity: 1024,
-	GlobalNamespace:      "recent_cv_runs_page_token_cache",
-	Marshal: func(item string) ([]byte, error) {
-		return []byte(item), nil
-	},
-	Unmarshal: func(blob []byte) (string, error) {
-		return string(blob), nil
-	},
-})
-
-var tokenExp = 24 * time.Hour
-
-// pageTokens caches the current pageToken associated to the next,
-// so as to populate the previous page link when rendering the next page.
-// Also returns a previously saved page token pointing to the previous page.
-func pageTokens(ctx context.Context, pageToken, nextPageToken string) (prev string, err error) {
-
-	// A whitespace will cause a 'Previous' link to render with no page token.
-	// i.e. going to the first page.
-	// An empty string will not render any 'Previous' link.
-
-	// TODO(crbug.com/1249253): Consider redirecting to the first page of the
-	// query when the given page token is valid, but we can't retrieve its
-	// previous page.
-	blankToken := " "
-
-	if pageToken == "" {
-		pageToken = blankToken
-	} else {
-		prev, err = tokenCache.GetOrCreate(ctx, pageToken, func() (v string, exp time.Duration, err error) {
-			// We haven't seen this token yet, we don't know what its previous page is.
-			return "", 0, nil
-		})
-		if err != nil {
-			return
-		}
-	}
-	_, err = tokenCache.GetOrCreate(ctx, nextPageToken, func() (v string, exp time.Duration, err error) {
-		return pageToken, tokenExp, nil
-	})
-	return
 }

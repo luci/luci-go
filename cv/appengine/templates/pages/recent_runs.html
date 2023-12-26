@@ -84,9 +84,6 @@
     </table>
 
     <div class="pager">
-      {{if .PrevPage}}
-      <span><a href="?page={{.PrevPage}}&mode={{.FilterMode}}&status={{.FilterStatus}}">&#10094;Previous</a></span>
-      {{end}}
       {{if .NextPage}}
       <span><a href="?page={{.NextPage}}&mode={{.FilterMode}}&status={{.FilterStatus}}">Next&#10095;</a></span>
       {{end}}
