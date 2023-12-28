@@ -102,6 +102,8 @@ type Run struct {
 	// patchset run, it is the  the identity of the user who uploads the new
 	// patchset.
 	CreatedBy identity.Identity `gae:",noindex"`
+	// BilledTo is the identity whose Run quota is consumed for the Run start.
+	BilledTo identity.Identity
 	// ConfigGroupID is ID of the ConfigGroup that is used by this Run.
 	//
 	// RunManager may update the ConfigGroup in the middle of the Run if it is
