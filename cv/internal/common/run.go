@@ -358,3 +358,23 @@ func IsMCEDogfooder(ctx context.Context, id identity.Identity) bool {
 	}
 	return ret
 }
+
+// InstantTriggerDogfooderGroup is the CrIA group who signed up for dogfooding
+// cros instant trigger.
+const InstantTriggerDogfooderGroup = "luci-cv-instant-trigger-dogfooders"
+
+// IsInstantTriggerDogfooder returns true if the given user participate in
+// the cros instant trigger dogfood.
+//
+// TODO(yiwzhang): remove this function, once cros instant trigger dogfood is
+// done.
+func IsInstantTriggerDogfooder(ctx context.Context, id identity.Identity) bool {
+	// if it fails to retrieve the authDB, then log the error and return false.
+	// this function will be removed, anyways.
+	ret, err := auth.GetState(ctx).DB().IsMember(ctx, id, []string{InstantTriggerDogfooderGroup})
+	if err != nil {
+		logging.Errorf(ctx, "IsInstantTriggerDogfooder: auth.IsMember: %s", err)
+		return false
+	}
+	return ret
+}
